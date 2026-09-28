@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import {
     compressWord,
     simplifyAndTruncate,
@@ -354,12 +355,12 @@
         onpointerleave={actions.onpointerleave}
         title={isContextualMessage
           ? word
-          : `Open word actions for ${actions.copyableWord}`}
+          : t("viewer_header_word_actions_for", { word: actions.copyableWord })}
         aria-haspopup={isContextualMessage ? undefined : "menu"}
         aria-expanded={isContextualMessage ? undefined : actions.isOpen}
         aria-label={isContextualMessage
           ? word
-          : `Current word: ${actions.copyableWord}. Open word actions.`}
+          : t("viewer_header_current_word_actions", { word: actions.copyableWord })}
       >
         {#if !isContextualMessage && displayUnits.length > 0}
           {#each displayUnits as unit, index (index)}
@@ -414,7 +415,7 @@
 
       {#if actions.copied}
         <div class="copied-message" role="status" aria-live="polite">
-          Copied “{actions.copyableWord}”
+          {t("create_word_copied", { word: actions.copyableWord })}
         </div>
       {/if}
     {/snippet}

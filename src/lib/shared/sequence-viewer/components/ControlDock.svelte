@@ -139,6 +139,10 @@
   ): a is ControlDockLink => "href" in a;
 
   const trayOpen = $derived(!!(activeTab && tray));
+  function closeTabLabel(label: string): string {
+    return t("viewer_ui_close_section", { name: label });
+  }
+
   function closeTray(): void {
     if (activeTab) onTabSelect(activeTab); // every consumer toggles on re-select
   }
@@ -356,7 +360,7 @@
           aria-pressed={activeTab === t.id || !!t.pressed}
           aria-expanded={activeTab === t.id && trayOpen}
           aria-label={activeTab === t.id && trayOpen
-            ? `Close ${t.label}`
+            ? closeTabLabel(t.label)
             : t.label}
         >
           {#if activeTab === t.id && trayOpen}

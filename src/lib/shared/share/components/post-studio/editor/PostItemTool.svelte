@@ -21,7 +21,6 @@
     type PostTextSize,
   } from "$lib/shared/media-composition/domain/post-project";
   import {
-    resetFraming,
     setItemFill,
     setTrackFlag,
     setVideoSpeed,
@@ -43,12 +42,21 @@
   } from "$lib/shared/media-composition/domain/post-project-keyframes";
   import type { PostEditorState } from "$lib/shared/media-composition/state/post-editor-state.svelte";
   import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
+  import FilterChipBase from "$lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
   import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
   import ValueSlider from "$lib/shared/ui/components/ValueSlider.svelte";
   import PostKeyframeControls from "./PostKeyframeControls.svelte";
   import { formatTakeClock } from "../builder/post-builder-format";
   import { itemDisplayLabel } from "./post-editor-labels";
   import { panelChannel, type PostPanelToolId } from "./post-editor-tools";
+  import {
+    STRAIGHTEN_LIMIT,
+    joinRotation,
+    quarterLeft,
+    splitRotation,
+    type CropFit,
+  } from "./post-crop-geometry";
+  import type { CropSession } from "./post-crop-session.svelte";
 
   /**
    * The body of one tool for the selected item. An amount is a slider, a
@@ -60,9 +68,14 @@
     editor: PostEditorState;
     item: PostItem;
     tool: PostPanelToolId;
+    /**
+     * The crop screen's session. Crop's controls go through it, so a turn
+     * or a zoom keeps the window filled the way a drag on the stage does.
+     */
+    crop?: CropSession | null;
   }
 
-  let { editor, item, tool }: Props = $props();
+  let { editor, item, tool, crop = null }: Props = $props();
 
   const FRAME_SECONDS = 1 / POST_FRAME_RATE;
 
@@ -148,15 +161,34 @@
     );
   }
 
-  function resetCrop(): void {
-    if (locked) return;
-    editor.edit((project, ctx) =>
-      resetFraming(
-        updateItem(project, item.id, { fit: "cover", flip: false }, ctx),
-        item.id,
-        ctx
-      )
-    );
+  // ---- Crop: through the crop screen's session when there is one ----------
+
+  function setCropZoom(zoom: number): void {
+    if (crop) crop.setZoom(zoom);
+    else change("zoom", { zoom });
+  }
+
+  function straighten(value: number, quarter: number): void {
+    if (crop) crop.setStraighten(value);
+    else change("rotation", { rotation: joinRotation(quarter, value) });
+  }
+
+  function rotateLeft(quarter: number, value: number): void {
+    if (crop) crop.rotateQuarter();
+    else
+      change("rotation", {
+        rotation: joinRotation(quarterLeft(quarter), value),
+      });
+  }
+
+  function setFit(fit: CropFit): void {
+    if (crop) crop.setFit(fit);
+    else patchItem({ fit });
+  }
+
+  function toggleMirror(): void {
+    if (crop) crop.toggleMirror();
+    else if (item.kind === "video") patchItem({ flip: !item.flip });
   }
 
   function unlock(): void {
@@ -321,7 +353,7 @@
   );
 
   const percent = (value: number) => `${Math.round(value)}%`;
-  const degrees = (value: number) => `${Math.round(value)}°`;
+  const fineDegrees = (value: number) => `${Number(value.toFixed(1))}°`;
   const fadeSeconds = (value: number) => `${value.toFixed(2)} s`;
 
   /**
@@ -388,7 +420,9 @@
     )}
   {/if}
 
-  {#if channel !== null}
+  <!-- The timeline's toolbar carries the keyframe buttons; the crop screen
+       stows the timeline, so there they sit here instead. -->
+  {#if channel !== null && crop}
     <PostKeyframeControls {editor} {item} {channel} {locked} />
   {/if}
 
@@ -432,6 +466,18 @@
     {/if}
   {:else if tool === "crop" && item.kind === "video"}
     {@const framing = framingAt(item, seconds)}
+    {@const parts = crop?.parts ?? splitRotation(framing.rotation)}
+    <ValueSlider
+      label={t("post_crop_straighten")}
+      value={parts.straighten}
+      min={-STRAIGHTEN_LIMIT}
+      max={STRAIGHTEN_LIMIT}
+      step={0.5}
+      origin={0}
+      format={fineDegrees}
+      disabled={locked || frozen}
+      onchange={(value) => straighten(value, parts.quarter)}
+    />
     <ValueSlider
       label={t("post_editor_zoom")}
       value={framing.zoom * 100}
@@ -441,73 +487,48 @@
       origin={100}
       format={percent}
       disabled={locked || frozen}
-      onchange={(value) => change("zoom", { zoom: value / 100 })}
+      onchange={(value) => setCropZoom(value / 100)}
     />
-    <ValueSlider
-      label={t("post_editor_rotation")}
-      value={framing.rotation}
-      min={-180}
-      max={180}
-      step={1}
-      origin={0}
-      format={degrees}
-      disabled={locked || frozen}
-      onchange={(value) => change("rotation", { rotation: value })}
-    />
-    <div class="pair">
-      <SegmentedControl
-        color="accent"
-        options={[
-          {
-            value: "cover",
-            label: t("post_editor_fit_cover"),
-            disabled: locked,
-          },
-          {
-            value: "contain",
-            label: t("post_editor_fit_contain"),
-            disabled: locked,
-          },
-        ]}
-        value={item.fit}
-        onchange={(fit) => patchItem({ fit })}
-        ariaLabel={t("post_editor_fit")}
-      />
-      <SegmentedControl
-        color="accent"
-        options={[
-          {
-            value: "normal",
-            label: t("post_editor_normal"),
-            disabled: locked,
-          },
-          {
-            value: "mirrored",
-            label: t("post_editor_mirrored"),
-            disabled: locked,
-          },
-        ]}
-        value={item.flip ? "mirrored" : "normal"}
-        onchange={(value) => patchItem({ flip: value === "mirrored" })}
-        ariaLabel={t("post_editor_flip")}
-      />
-    </div>
-    <div class="actions">
+    <div class="crop-row">
       <PanelButton
-        onclick={resetCrop}
-        disabled={locked ||
-          (item.fit === "cover" &&
-            item.zoom === 1 &&
-            item.panX === 0 &&
-            item.panY === 0 &&
-            item.rotation === 0 &&
-            !item.flip &&
-            !isAnimated(item, "framing"))}
+        onclick={() => rotateLeft(parts.quarter, parts.straighten)}
+        disabled={locked || frozen}
+        ariaLabel={t("post_crop_rotate_left")}
       >
-        <i class="fa-solid fa-arrows-rotate" aria-hidden="true"></i>
-        {t("post_editor_reset_crop")}
+        <i class="fa-solid fa-rotate-left" aria-hidden="true"></i>
+        {t("post_crop_rotate")}
       </PanelButton>
+      <FilterChipBase
+        mode="toggle"
+        emphasis="solid"
+        icon="fa-solid fa-left-right"
+        label={t("post_editor_flip")}
+        active={item.flip}
+        disabled={locked}
+        onclick={toggleMirror}
+      />
+      <div class="crop-fit">
+        <SegmentedControl
+          color="accent"
+          options={[
+            {
+              value: "cover",
+              label: t("post_editor_fit_cover"),
+              disabled: locked,
+            },
+            {
+              value: "contain",
+              label: t("post_editor_fit_contain"),
+              disabled: locked,
+            },
+          ]}
+          value={item.fit}
+          onchange={setFit}
+          ariaLabel={t("post_editor_fit")}
+        />
+      </div>
     </div>
+    <p class="hint">{t("post_crop_hint")}</p>
   {:else if tool === "speed" && item.kind === "video"}
     <ValueSlider
       label={t("post_editor_speed")}
@@ -730,16 +751,24 @@
     gap: 0.5rem;
   }
 
-  /* Two short picks share a line when the panel has room for both. */
-  .pair {
+  /* Rotate, Mirror and the fit share a line when the panel has room. */
+  .crop-row {
     display: flex;
     flex-wrap: wrap;
-    gap: 1rem;
+    align-items: center;
+    gap: 0.5rem 0.75rem;
   }
 
-  .pair > :global(*) {
-    flex: 1 1 11rem;
+  .crop-fit {
+    flex: 1 1 12rem;
     min-width: 0;
+  }
+
+  .hint {
+    margin: 0;
+    color: var(--theme-text-secondary, #aaa);
+    font-size: 0.875rem;
+    line-height: 1.4;
   }
 
   .field {

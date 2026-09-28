@@ -156,7 +156,7 @@ the geo dashboard).
       // CameraManager maps NotAllowedError/NotFoundError/NotReadableError
       // to user-readable messages already.
       cameraError =
-        err instanceof Error ? err.message : "Couldn't access your camera.";
+        err instanceof Error ? err.message : t("browse_verified_camera_access_failed");
     }
   }
 
@@ -192,12 +192,12 @@ the geo dashboard).
       );
       if (!resolution) {
         seen.delete(code); // re-aiming retries
-        toast.error("Couldn't read that card — try again.");
+        toast.error(t("browse_verified_card_read_failed"));
         return;
       }
 
       const word =
-        resolution.sequence.word || resolution.sequence.name || "Sequence";
+        resolution.sequence.word || resolution.sequence.name || t("browse_verified_sequence");
       let targetId = resolution.sequence.id;
       let createdLibraryId: string | null = null;
 
@@ -237,7 +237,7 @@ the geo dashboard).
             // id (e.g. two different printed cards of the same sequence).
             // We can't cheaply recover that id — tell the user instead of
             // importing a duplicate.
-            toast.info(`"${word}" is already in your library.`);
+            toast.info(t("browse_verified_already_in_library", { word }));
             return;
           }
           throw err;
@@ -245,9 +245,10 @@ the geo dashboard).
       }
 
       if (collectionsState.isIn(targetId, collectionId)) {
-        toast.info(
-          `"${word}" is already in ${target?.name ?? "this collection"}.`
-        );
+        toast.info(t("browse_verified_already_in_collection", {
+          word,
+          collection: target?.name ?? t("browse_verified_this_collection"),
+        }));
         return;
       }
 
@@ -255,9 +256,10 @@ the geo dashboard).
         target &&
         target.sequenceCount >= LIBRARY_LIMITS.MAX_SEQUENCES_PER_COLLECTION
       ) {
-        toast.error(
-          `"${target.name}" is full (${LIBRARY_LIMITS.MAX_SEQUENCES_PER_COLLECTION} max).`
-        );
+        toast.error(t("browse_verified_collection_full", {
+          name: target.name,
+          count: LIBRARY_LIMITS.MAX_SEQUENCES_PER_COLLECTION,
+        }));
         return;
       }
 
@@ -276,7 +278,7 @@ the geo dashboard).
       seen.delete(code);
       if (err instanceof LibraryError && err.code === "GUEST_CAP") return;
       console.error("[ScanCard] add failed:", err);
-      toast.error("Couldn't add that card — try again.");
+      toast.error(t("browse_verified_card_add_failed"));
     }
   }
 
@@ -447,10 +449,10 @@ the geo dashboard).
       trayTimer = null;
       lastScan = null;
       getHapticFeedback()?.trigger("selection");
-      toast.info(`"${scan.word}" removed.`);
+      toast.info(t("browse_verified_card_removed", { word: scan.word }));
     } catch (err) {
       console.error("[ScanCard] undo failed:", err);
-      toast.error("Couldn't remove that card — it's still in the collection.");
+      toast.error(t("browse_verified_card_remove_failed"));
     } finally {
       undoBusy = false;
     }
@@ -512,7 +514,7 @@ the geo dashboard).
   onDestroy(() => layoutUnsubscribe?.());
 
   function countLabel(n: number): string {
-    return `${n} ${n === 1 ? "card" : "cards"} added`;
+    return t(n === 1 ? "browse_verified_one_card_added" : "browse_verified_cards_added", { count: n });
   }
 </script>
 
@@ -523,7 +525,7 @@ the geo dashboard).
   closeOnEscape={true}
   dismissible={true}
   showHandle={placement === "bottom"}
-  ariaLabel="Scan cards"
+  ariaLabel={t("browse_verified_scan_cards")}
   class="scan-card-drawer"
   onOpenChange={(open) => {
     if (!open) requestClose();
@@ -532,7 +534,7 @@ the geo dashboard).
   <div class="sheet-content">
     <header class="panel-header">
       <div class="header-text">
-        <h2 class="panel-title">Scan into {target?.name ?? "collection"}</h2>
+        <h2 class="panel-title">{t("browse_verified_scan_into", { collection: target?.name ?? t("browse_verified_this_collection") })}</h2>
         <span class="panel-count" bind:this={counterEl}
           >{countLabel(addedCount)}</span
         >
@@ -550,21 +552,20 @@ the geo dashboard).
             <img
               class="handoff-qr"
               src={handoffQrDataUrl}
-              alt="QR code that opens this collection's card scanner on your phone"
+              alt={t("browse_verified_handoff_qr_alt")}
             />
           {:else if handoffQrFailed}
             <p class="handoff-link-fallback">
-              Open this on your phone:
+              {t("browse_verified_open_on_phone")}
               <span class="handoff-url">{handoffUrl}</span>
             </p>
           {/if}
         </div>
         <p class="handoff-copy">
-          Scan this with your phone to add cards. They'll appear here as you go.
+          {t("browse_verified_handoff_copy")}
         </p>
         <p class="phone-count" aria-live="polite">
-          {phoneAddedCount}
-          {phoneAddedCount === 1 ? "card" : "cards"} added from your phone
+          {t(phoneAddedCount === 1 ? "browse_verified_one_card_from_phone" : "browse_verified_cards_from_phone", { count: phoneAddedCount })}
         </p>
         <button
           type="button"
@@ -575,7 +576,7 @@ the geo dashboard).
           }}
         >
           <i class="fas fa-camera" aria-hidden="true"></i>
-          <span>Use this computer's camera</span>
+          <span>{t("browse_verified_use_computer_camera")}</span>
         </button>
       </div>
     {:else}
@@ -598,7 +599,7 @@ the geo dashboard).
           {#if !cameraReady}
             <div class="camera-starting" role="status">
               <i class="fas fa-camera" aria-hidden="true"></i>
-              <p>Starting camera…</p>
+              <p>{t("browse_verified_starting_camera")}</p>
             </div>
           {/if}
           {#if lastScan}
@@ -611,21 +612,21 @@ the geo dashboard).
               {#if lastScan.chipSrc}
                 <img class="tray-chip" src={lastScan.chipSrc} alt="" />
               {/if}
-              <span class="tray-text">“{lastScan.word}” added</span>
+              <span class="tray-text">{t("browse_verified_word_added", { word: lastScan.word })}</span>
               <button
                 data-undo-shortcut
-                data-undo-shortcut-label={`Add “${lastScan.word}”`}
+                data-undo-shortcut-label={t("browse_verified_add_word", { word: lastScan.word })}
                 type="button"
                 class="tray-undo"
                 onclick={() => void undoLastScan()}
                 disabled={undoBusy}
-                aria-label={`Remove "${lastScan.word}" from this collection`}
+                aria-label={t("browse_verified_remove_word", { word: lastScan.word })}
               >
                 <i class="fas fa-xmark" aria-hidden="true"></i>
               </button>
             </div>
           {:else}
-            <p class="scan-hint">Point at a card's QR code</p>
+            <p class="scan-hint">{t("browse_verified_point_at_qr")}</p>
           {/if}
         {/if}
       </div>

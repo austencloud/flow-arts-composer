@@ -100,10 +100,10 @@
     >
       <i class="fas fa-times" aria-hidden="true"></i>
     </button>
-    <span class="batch-title">Editing {count} steps</span>
+    <span class="batch-title">{t("create_edit_steps", { count })}</span>
     {#if count < totalBeats}
       <button class="header-btn select-all" type="button" onclick={onSelectAll}>
-        Select all
+        {t("create_review_select_all")}
       </button>
     {:else}
       <span class="header-spacer"></span>

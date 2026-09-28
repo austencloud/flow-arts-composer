@@ -7,6 +7,7 @@
 -->
 <script lang="ts">
   import type { Snippet } from "svelte";
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
 
   interface Props {
     icon: string;
@@ -100,7 +101,7 @@
   class:locked
   style:--btn-color={btnColor}
   {disabled}
-  aria-label={locked ? `${label} - locked, sign up to unlock` : label}
+  aria-label={locked ? `${label} - ${t("create_deep_locked_signup")}` : label}
   onpointerdown={handlePointerDown}
   onpointermove={handlePointerMove}
   onpointerup={handlePointerUp}

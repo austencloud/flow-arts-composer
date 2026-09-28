@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { localizePrintLabel } from "../_components/localize-print-label";
+  import { t as translate } from "$lib/shared/i18n/i18n.svelte.js";
   /**
    * 1|1 Turns - Type 1 - Level 2 body page 13 (manifest `one-one-t1`), faithful to
    * old p14. A turn on BOTH props writes a "1" in the high and low slot (1|1). Four
@@ -173,23 +175,20 @@
 <div class="oo1-page">
   <!-- Intro. -->
   <p class="para" style="top:{59 * S}px; font-size:{16 * S}px; line-height:{19 * S}px">
-    For a turn on both props, add a “1” in both the high and the low slot.<br />
-    This can also be written as 1|1.
+    {translate("guide_l2_print_oneone_intro")}
   </p>
   <p class="para" style="top:{113 * S}px; font-size:{16 * S}px; line-height:{19 * S}px">
-    Here are some cherry-picked examples of 1|1 in each Type.<br />
-    Since you know all the mechanisms involved, explanation is kept to a minimum.
+    {translate("guide_l2_print_oneone_examples")}
   </p>
 
   <!-- Section header. -->
   <div class="section" style="left:{33 * S}px; top:{163 * S}px; font-size:{26 * S}px">
-    Type 1 - <span style="color:#1b9fd8">Dual</span><span style="color:#7b3fa0">-Shift</span>
+    {translate("guide_l2_type1_heading")} – <span style="color:#1b9fd8">Dual</span><span style="color:#7b3fa0">-Shift</span>
   </div>
 
   <!-- Closing. -->
   <p class="para" style="top:{740 * S}px; font-size:{16 * S}px; line-height:{19 * S}px">
-    Pause at the halfway point of each motion while learning.<br />
-    This will ensure accurate timing.
+    {translate("guide_l2_print_oneone_practice")}
   </p>
 
   <!-- Rules. -->
@@ -207,16 +206,16 @@
 
     <!-- Captions. -->
     {#if strip.captions}
-      <span class="cap" style="left:{166 * S}px; top:{(strip.y - 32) * S}px">thumbs:</span>
-      <span class="frame-cap" style="left:{START_X * S}px; top:{(strip.y - 32) * S}px; width:{SIZE * S}px">start</span>
-      <span class="frame-cap" style="left:{HALF_X * S}px; top:{(strip.y - 32) * S}px; width:{SIZE * S}px">halfway</span>
-      <span class="frame-cap" style="left:{END_X * S}px; top:{(strip.y - 32) * S}px; width:{SIZE * S}px">end</span>
+      <span class="cap" style="left:{166 * S}px; top:{(strip.y - 32) * S}px">{translate("guide_l2_print_thumbs")}</span>
+      <span class="frame-cap" style="left:{START_X * S}px; top:{(strip.y - 32) * S}px; width:{SIZE * S}px">{translate("guide_l2_frame_start")}</span>
+      <span class="frame-cap" style="left:{HALF_X * S}px; top:{(strip.y - 32) * S}px; width:{SIZE * S}px">{translate("guide_l2_frame_halfway")}</span>
+      <span class="frame-cap" style="left:{END_X * S}px; top:{(strip.y - 32) * S}px; width:{SIZE * S}px">{translate("guide_l2_frame_end")}</span>
     {/if}
-    <span class="thumb-cap" style="left:{START_X * S}px; top:{(strip.y - 16) * S}px; width:{SIZE * S}px">in</span>
+    <span class="thumb-cap" style="left:{START_X * S}px; top:{(strip.y - 16) * S}px; width:{SIZE * S}px">{translate("guide_l2_frame_in")}</span>
     {#if strip.halfThumb}
-      <span class="thumb-cap" style="left:{HALF_X * S}px; top:{(strip.y - 16) * S}px; width:{SIZE * S}px">{strip.halfThumb}</span>
+      <span class="thumb-cap" style="left:{HALF_X * S}px; top:{(strip.y - 16) * S}px; width:{SIZE * S}px">{localizePrintLabel(strip.halfThumb)}</span>
     {/if}
-    <span class="thumb-cap" style="left:{END_X * S}px; top:{(strip.y - 16) * S}px; width:{SIZE * S}px">{strip.endThumb}</span>
+    <span class="thumb-cap" style="left:{END_X * S}px; top:{(strip.y - 16) * S}px; width:{SIZE * S}px">{localizePrintLabel(strip.endThumb)}</span>
 
     <!-- start -->
     <div class="mini" style="left:{START_X * S}px; top:{strip.y * S}px; width:{SIZE * S}px; height:{SIZE * S}px">

@@ -10,6 +10,7 @@
   deltas on those pages (content parity is what's being proofed).
 -->
 <script lang="ts">
+  import { t as translate } from "$lib/shared/i18n/i18n.svelte.js";
   import { onMount, tick } from "svelte";
   import "../../level-1/_styles/guide.css";
   import "../../level-1/_styles/guide-print.css";
@@ -147,7 +148,7 @@
 </script>
 
 <svelte:head>
-  <title>Guide Compare: Level 2</title>
+  <title>{translate("guide_l2_print_compare_title")}</title>
   <meta name="robots" content="noindex, nofollow" />
 </svelte:head>
 
@@ -177,32 +178,32 @@
 
 <div class="wrap">
   <div class="bar">
-    <span class="t">Level 2 · {mode === "compare" ? "compare" : "book"}</span>
+    <span class="t">Level 2 · {mode === "compare" ? translate("guide_l2_print_compare") : translate("guide_l2_print_book")}</span>
 
     {#if mode === "compare"}
       <div class="nav">
-        <button onclick={() => go(idx - 1)} disabled={idx <= 0}>‹ Prev</button>
-        <span class="lbl">new {idx + 1}/{newCount} · old {Math.max(0, idx + offset) + 1}/{oldCount || "…"}</span>
-        <button onclick={() => go(idx + 1)} disabled={idx >= newCount - 1}>Next ›</button>
-        <span class="dim">offset</span>
-        <button class="sm" onclick={() => offset--} title="old page −1">−</button>
-        <button class="sm" onclick={() => offset++} title="old page +1">+</button>
+        <button onclick={() => go(idx - 1)} disabled={idx <= 0}>‹ {translate("guide_l2_print_prev")}</button>
+        <span class="lbl">{translate("guide_l2_print_new")} {idx + 1}/{newCount} · {translate("guide_l2_print_old")} {Math.max(0, idx + offset) + 1}/{oldCount || "…"}</span>
+        <button onclick={() => go(idx + 1)} disabled={idx >= newCount - 1}>{translate("guide_l2_print_next")} ›</button>
+        <span class="dim">{translate("guide_l2_print_offset")}</span>
+        <button class="sm" onclick={() => offset--} title={translate("guide_l2_print_old_page_minus")}>−</button>
+        <button class="sm" onclick={() => offset++} title={translate("guide_l2_print_old_page_plus")}>+</button>
       </div>
     {/if}
 
     <div class="modes">
-      <button class:on={mode === "compare"} onclick={() => (mode = "compare")}>Compare</button>
-      <button class:on={mode === "flip"} onclick={() => { flipOpened = true; mode = "flip"; }}>Book</button>
+      <button class:on={mode === "compare"} onclick={() => (mode = "compare")}>{translate("guide_l2_print_compare")}</button>
+      <button class:on={mode === "flip"} onclick={() => { flipOpened = true; mode = "flip"; }}>{translate("guide_l2_print_book")}</button>
     </div>
   </div>
 
   <div class="cmp" style="display:{mode === 'compare' ? 'grid' : 'none'}">
     <div class="pane" bind:this={paneEl}>
-      <div class="cap">Old: v0.5</div>
+      <div class="cap">{translate("guide_l2_print_old")}: v0.5</div>
       <div class="oldwrap" bind:this={leftWrap}></div>
     </div>
     <div class="pane">
-      <div class="cap">New: rebuild</div>
+      <div class="cap">{translate("guide_l2_print_new")}: {translate("guide_l2_print_rebuild")}</div>
       <div class="newwrap" bind:this={newWrap} style="--s:{scale}">
         <Level2Document built={BUILT2} page={cmpPage} />
       </div>

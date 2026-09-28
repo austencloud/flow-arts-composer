@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { localizeLevel1Text, localizeLevel1SelectionLabel } from "../_data/localize-level1-content";
   /**
    * Type 1 LOOPs - body page (manifest `misc-permutations`, retitled "Type 1
    * LOOPs"), faithful to proof p37 / "1.2 - Type 1 Permutations - DJII, BBLF,
@@ -284,7 +285,7 @@
       ><span class="tka-font">{m.t}</span></span
     >
     {#if m.tagY != null}
-      <span class="margin-tag" style="left:{4 * S}px; top:{m.tagY * S}px; width:{96 * S}px; font-size:{13 * S}px">Swapped &amp; Rotated LOOP</span>
+      <span class="margin-tag" style="left:{4 * S}px; top:{m.tagY * S}px; width:{96 * S}px; font-size:{13 * S}px">{localizeLevel1Text("Swapped & Rotated LOOP")}</span>
     {/if}
   {/each}
 
@@ -329,7 +330,7 @@
       <SelectionHit
         groupId={l.key}
         isGroupStart
-        label={`Animate the ${l.word} LOOP`}
+        label={localizeLevel1SelectionLabel(`Animate the ${l.word} LOOP`)}
         onselect={() => emitSequence?.({ strip: loopSteps(l), word: l.word, key: l.key, propType: "staff" })}
       />
     </div>
@@ -345,7 +346,7 @@
       use:ptDrag={pt(`t1l-para-${i}`, "para", p)}
       use:editText={{ id: `t1l-para-${i}`, label: "para", get: () => p.html, set: (h2) => (p.html = h2) }}
     >
-      {@html p.html}
+      {@html localizeLevel1Text(p.html)}
     </p>
   {/each}
 </div>

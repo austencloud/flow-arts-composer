@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { localizeLevel1Text, localizeLevel1SelectionLabel } from "../_data/localize-level1-content";
   /**
    * Compound Letters - body page (manifest `lt1-dj-ek-fl`, retitled "Compound
    * Letters"), faithful to proof p23 / "1.1 - Compound Letters" artboard (the
@@ -325,7 +326,7 @@
           <SelectionHit
             groupId={key}
             isGroupStart
-            label={`Animate letter ${c.name} (${hi === 0 ? "Tog-Opp" : "Split-Opp"})`}
+            label={localizeLevel1SelectionLabel(`Animate letter ${c.name} (${hi === 0 ? "Tog-Opp" : "Split-Opp"})`)}
             onselect={() => emitSequence?.({ strip: CELL_RESOLVED[key]!, word: `Letter ${c.name}`, key, propType: "staff" })}
           />
         </div>
@@ -361,12 +362,12 @@
       <SelectionHit
         groupId={key}
         isGroupStart
-        label={`Animate the word ${w.word}`}
+        label={localizeLevel1SelectionLabel(`Animate the word ${w.word}`)}
         onselect={() => emitSequence?.({ strip: WORD_RESOLVED[key]!, word: w.word, key, propType: "staff" })}
       />
     </div>
     <p class="caption" style="left:{w.x * S}px; top:{716.2 * S}px; width:{CELL * 2 * S}px; font-size:{14 * S}px">
-      <span class="tka-font">{w.word}</span> - <em>{w.phrase}</em>
+      <span class="tka-font">{w.word}</span> - <em>{localizeLevel1Text(w.phrase)}</em>
     </p>
   {/each}
 
@@ -390,7 +391,7 @@
       use:ptDrag={pt(`cl-para-${i}`, "para", p)}
       use:editText={{ id: `cl-para-${i}`, label: "para", get: () => p.html, set: (h) => (p.html = h) }}
     >
-      {@html p.html}
+      {@html localizeLevel1Text(p.html)}
     </p>
   {/each}
 </div>

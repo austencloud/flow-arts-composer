@@ -17,6 +17,7 @@
   uses for its error state a few lines up in UserProfilePanel.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import PanelState from "$lib/shared/components/panel/PanelState.svelte";
   import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
   import { handleModuleChange } from "$lib/shared/navigation-coordinator/navigation-coordinator.svelte";
@@ -30,7 +31,7 @@
     displayName?: string;
   } = $props();
 
-  const who = $derived(displayName?.trim() || "This creator");
+  const who = $derived(displayName?.trim() || t("browse_verified_this_creator"));
 
   function goBuild(): void {
     void handleModuleChange("create", "construct");
@@ -58,7 +59,7 @@
        replaces. "Sequences 0" rather than a slogan, so the head still states a
        fact the way Showcase / Archive / Collections do. -->
   <header class="band-head">
-    <h2>Sequences</h2>
+    <h2>{t("browse_ui_sequences_tab")}</h2>
     <span class="rule" aria-hidden="true"></span>
     <span class="band-count">0</span>
   </header>
@@ -68,21 +69,21 @@
       <PanelState
         type="empty"
         icon="fa-wand-magic-sparkles"
-        title="Nothing on your profile yet"
-        message="Build a sequence and it shows up here."
+        title={t("browse_verified_own_profile_empty_title")}
+        message={t("browse_verified_own_profile_empty_message")}
       />
       <div class="actions">
         <PanelButton variant="primary" onclick={goBuild}>
           <i class="fas fa-pen-ruler" aria-hidden="true"></i>
-          Build a sequence
+          {t("browse_verified_build_sequence")}
         </PanelButton>
         <PanelButton variant="secondary" onclick={goGenerate}>
           <i class="fas fa-dice" aria-hidden="true"></i>
-          Generate one
+          {t("browse_verified_generate_one")}
         </PanelButton>
         <PanelButton variant="secondary" onclick={goGallery}>
           <i class="fas fa-images" aria-hidden="true"></i>
-          See what others made
+          {t("browse_verified_see_others_work")}
         </PanelButton>
       </div>
     {:else}
@@ -92,12 +93,12 @@
       <PanelState
         type="empty"
         icon="fa-folder-open"
-        title="{who} hasn't published anything yet"
+        title={t("browse_verified_profile_not_published", { name: who })}
       />
       <div class="actions">
         <PanelButton variant="secondary" onclick={goGallery}>
           <i class="fas fa-images" aria-hidden="true"></i>
-          Browse the gallery
+          {t("browse_verified_browse_gallery")}
         </PanelButton>
       </div>
     {/if}

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { onMount } from "svelte";
   import { getSettings } from "$lib/shared/application/state/app-state.svelte";
   import BaseModal from "$lib/shared/foundation/ui/modal/BaseModal.svelte";
@@ -80,18 +81,17 @@
     <div class="picker-header">
       <div>
         <h2 id="shape-matrix-tunnel-picker-title">
-          Shape Matrix for {targetLabel}
+          {t("tunnel_shape_for", { name: targetLabel })}
         </h2>
         <p id="shape-matrix-tunnel-picker-description">
-          Pick a cell, choose its timing and direction, then use that exact
-          realization.
+          {t("create_review_pick_a_cell_choose_its_timing_and_direction_then_use_that_exact_realization")}
         </p>
       </div>
       <button
         type="button"
         class="close-button"
         onclick={close}
-        aria-label="Close Shape Matrix"
+        aria-label={t("create_review_close_shape_matrix")}
       >
         <i class="fas fa-times" aria-hidden="true"></i>
       </button>
@@ -99,11 +99,11 @@
   {/snippet}
 
   <div class="picker-body">
-    <section class="matrix-pane" aria-label="Shape Matrix cells">
+    <section class="matrix-pane" aria-label={t("create_review_shape_matrix_cells")}>
       <header>
         <div class="matrix-heading">
-          <strong>Shape cells</strong>
-          <span>Left rows · right columns</span>
+          <strong>{t("create_review_shape_cells")}</strong>
+          <span>{t("create_review_left_rows_right_columns")}</span>
         </div>
         <div class="size-control">
           <SegmentedControl
@@ -113,14 +113,14 @@
             size="sm"
             color="accent"
             semantics="radiogroup"
-            ariaLabel="Shape Matrix size"
+            ariaLabel={t("tunnel_shape_size")}
           />
         </div>
       </header>
       <div class="matrix-stage">
         {#if loadError}
           <p class="status error" role="alert">
-            Couldn't load the Shape Matrix. Close this picker and try again.
+            {t("create_review_couldn_t_load_the_shape_matrix_close_this_picker_and_try_again")}
           </p>
         {:else if data}
           <ShapeMatrixGrid
@@ -131,15 +131,15 @@
             onselect={(pair) => (selectedPair = pair)}
           />
         {:else}
-          <p class="status">Building flowers…</p>
+          <p class="status">{t("create_review_building_flowers")}</p>
         {/if}
       </div>
     </section>
 
-    <section class="realization-pane" aria-label="Shape Matrix realizations">
+    <section class="realization-pane" aria-label={t("create_review_shape_matrix_realizations")}>
       <header>
-        <strong>Realization</strong>
-        <span>Six timing-and-direction choices per cell</span>
+        <strong>{t("create_review_realization")}</strong>
+        <span>{t("create_review_six_timing_and_direction_choices_per_cell")}</span>
       </header>
       <div class="drill-stage">
         {#if data}
@@ -147,10 +147,10 @@
             pair={selectedPair}
             {data}
             onselectRealization={select}
-            selectLabel={`Use for ${targetLabel}`}
+            selectLabel={t("tunnel_use_for", { name: targetLabel })}
           />
         {:else}
-          <p class="status">Building realizations…</p>
+          <p class="status">{t("create_review_building_realizations")}</p>
         {/if}
       </div>
     </section>

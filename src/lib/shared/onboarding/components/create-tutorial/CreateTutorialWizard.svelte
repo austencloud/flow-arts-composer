@@ -5,6 +5,7 @@
   Steps auto-advance when the user completes each action (no Continue button).
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte";
   import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
   import { onDestroy, onMount } from "svelte";
   import type { HapticFeedback } from "$lib/shared/application/services/haptic-feedback";
@@ -90,6 +91,12 @@
     "play-sequence",
     "ready",
   ];
+  const stepLabels = $derived({
+    'pick-start': t('tutorial_pick_start'),
+    'add-step': t('tutorial_step_add'),
+    'play-sequence': t('tutorial_step_play'),
+    ready: t('tutorial_workspace'),
+  });
   const viewedSteps = new Set<CreateTutorialStep>();
 
   $effect(() => {
@@ -251,10 +258,10 @@
   <!-- Navigation buttons -->
   {#if createTutorialState.currentStepIndex > 0}
     <button class="back-button" onclick={handleBack}>
-      <i class="fas fa-arrow-left" aria-hidden="true"></i> Back
+      <i class="fas fa-arrow-left" aria-hidden="true"></i> {t('learn_back')}
     </button>
   {/if}
-  <button class="skip-button" onclick={handleSkip}>Skip tutorial</button>
+  <button class="skip-button" onclick={handleSkip}>{t('tutorial_skip_tutorial')}</button>
 
   <!-- Step content. aria-live announces each step swap (title + body) to
        screen readers without moving focus, per the tours' announcement
@@ -277,7 +284,7 @@
       {#if i < createTutorialState.currentStepIndex}
         <button
           class="dot completed"
-          aria-label="Go back to step {i + 1}: {step}"
+          aria-label={t("tutorial_go_back_step", { number: i + 1, step: stepLabels[step] })}
           onclick={() => handleDotClick(i)}
         >
           <i class="fas {STEP_ICONS[step]}" aria-hidden="true"></i>
@@ -291,7 +298,7 @@
           class="dot"
           class:active={i === createTutorialState.currentStepIndex}
           role="img"
-          aria-label="Step {i + 1}: {step}"
+          aria-label={t("tutorial_step_label", { number: i + 1, step: stepLabels[step] })}
         >
           <i class="fas {STEP_ICONS[step]}" aria-hidden="true"></i>
         </div>
