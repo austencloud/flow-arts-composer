@@ -84,10 +84,11 @@
   import PostTimingStage from "../builder/PostTimingStage.svelte";
   import PostTimingPanel from "../builder/PostTimingPanel.svelte";
   import { createPostTimingSession } from "../builder/post-timing-session.svelte";
+  import { formatTakeClock } from "../builder/post-builder-format";
   import PostEditorCanvas from "./PostEditorCanvas.svelte";
   import PostEditorTopBar from "./PostEditorTopBar.svelte";
   import PostEditorTransport from "./PostEditorTransport.svelte";
-  import PostCropTimebar from "./PostCropTimebar.svelte";
+  import PostCropTimeline from "./PostCropTimeline.svelte";
   import PostToolRow from "./PostToolRow.svelte";
   import PostToolPanel from "./PostToolPanel.svelte";
   import PostItemTool from "./PostItemTool.svelte";
@@ -100,6 +101,7 @@
   import { channelLabel, itemDisplayLabel } from "./post-editor-labels";
   import { readVideoFile, videoFileError } from "./post-editor-files";
   import { createCropSession } from "./post-crop-session.svelte";
+  import { adjacentStepSeconds, clipSteps, type ClipStep } from "./post-crop-steps";
   import type { CropSize } from "./post-crop-geometry";
   import {
     availablePanels,
@@ -677,8 +679,12 @@
   });
 
   // On a phone the crop screen keeps at least half the room under the top
-  // bar for its stage. Its panel fits under the time bar and scrolls inside.
+  // bar for its stage. Its panel fits under the timeline and scrolls inside.
+  // A short phone gives the panel less, down to a slider and a half, before
+  // the stage goes under its 12rem or the dock covers the keyframes.
   const MIN_CROP_PANEL_REM = 10;
+  const SHORT_CROP_PANEL_REM = 6;
+  const MIN_CROP_STAGE_REM = 12;
   $effect(() => {
     if (!cropMode || layout !== "phone") return;
     void editorHeight;
@@ -698,9 +704,16 @@
         Number.parseFloat(dock.paddingTop) +
         Number.parseFloat(dock.paddingBottom) +
         Number.parseFloat(dock.borderTopWidth);
-      const room =
-        below / 2 - transportSlot.offsetHeight - gap * 1.5 - dockChrome;
-      dockPanelMax = Math.max(room, MIN_CROP_PANEL_REM * remPixels);
+      const underStage = transportSlot.offsetHeight + gap * 2 + dockChrome;
+      const room = below / 2 - underStage + gap / 2;
+      const fits = below - MIN_CROP_STAGE_REM * remPixels - underStage;
+      dockPanelMax = Math.max(
+        room,
+        Math.min(
+          MIN_CROP_PANEL_REM * remPixels,
+          Math.max(fits, SHORT_CROP_PANEL_REM * remPixels)
+        )
+      );
     });
   });
 
@@ -865,6 +878,43 @@
     const last = Math.max(clip.start, itemEnd(clip) - FRAME_SECONDS);
     const inside = Math.min(last, Math.max(clip.start, seconds));
     if (inside !== editor.previewSeconds) editor.seek(inside);
+  }
+
+  /** The beats tapped for the crop clip's take, where a keyframe likely goes. */
+  const cropSteps = $derived.by((): ClipStep[] => {
+    const clip = cropMode ? crop.item : null;
+    if (!clip) return [];
+    return clipSteps(
+      clip,
+      editor.timing(clip.takeId),
+      editor.resolvedTiming(clip.takeId)
+    );
+  });
+
+  function cropStepName(step: ClipStep): string {
+    const time = formatTakeClock(step.seconds - (crop.item?.start ?? 0));
+    return step.position === 0
+      ? t("post_crop_opening_at", { time })
+      : t("post_crop_beat_at", { count: step.label, time });
+  }
+
+  function stepCropBeat(direction: "previous" | "next"): void {
+    const seconds = adjacentStepSeconds(
+      cropSteps,
+      editor.previewSeconds,
+      direction
+    );
+    editor.pause();
+    if (seconds !== null) seekInClip(seconds);
+  }
+
+  /** The crop timeline's Curve chip, apart from the stowed timeline's. */
+  let cropCurveOpen = $state(false);
+
+  function openCropCurve(fromSeconds: number): void {
+    editor.pause();
+    seekInClip(fromSeconds);
+    cropCurveOpen = true;
   }
 
   /** Done on a phone: back to the row, on the tool that opened the panel. */
@@ -1151,8 +1201,9 @@
    * The crop screen's keys, true when the key is the screen's to answer.
    * Enter is Done and Escape is Cancel, unless a drag or a held corner is
    * running: Escape then drops only that. Space loops the clip, the arrows,
-   * Home and End stay on it, and K still keys the framing. Split, Delete,
-   * Duplicate and the timeline's zoom wait until the crop is done.
+   * Home and End stay on it, Up and Down go to the beat before or after, and
+   * K still keys the framing. Split, Delete, Duplicate and the timeline's
+   * zoom wait until the crop is done.
    */
   function handleCropKey(event: KeyboardEvent): boolean {
     switch (event.key) {
@@ -1189,6 +1240,12 @@
         );
         return true;
       }
+      case "ArrowUp":
+      case "ArrowDown":
+        if (ownsArrows(event.target)) return true;
+        event.preventDefault();
+        stepCropBeat(event.key === "ArrowUp" ? "previous" : "next");
+        return true;
       case "Home":
       case "End":
         if (ownsArrows(event.target)) return true;
@@ -1629,6 +1686,18 @@
   {/if}
 {/snippet}
 
+{#snippet cropKeys()}
+  {#if crop.item}
+    <PostKeyframeControls
+      {editor}
+      item={crop.item}
+      channel="framing"
+      locked={editor.isLocked(crop.item.id)}
+      bind:curveOpen={cropCurveOpen}
+    />
+  {/if}
+{/snippet}
+
 {#snippet timingPanel()}
   <div class="timing-panel">
     <div class="timing-back">
@@ -1750,11 +1819,23 @@
     {#if !showTimingStage}
       <div class="transport-slot" bind:this={transportSlot}>
         {#if cropMode && crop.item}
-          <PostCropTimebar
+          {@const clip = crop.item}
+          <PostCropTimeline
             {editor}
-            item={crop.item}
+            item={clip}
+            steps={cropSteps}
+            stepName={cropStepName}
+            locked={editor.isLocked(clip.id)}
+            keys={cropKeys}
             onToggle={toggleCropPlayback}
             onSeek={seekInClip}
+            onMoveKey={(fromSeconds, toSeconds) =>
+              editKeys(clip.id, (it) =>
+                moveKeyframe(it, "framing", fromSeconds, toSeconds)
+              )}
+            onDeleteKey={(seconds) =>
+              editKeys(clip.id, (it) => removeKeyframe(it, "framing", seconds))}
+            onOpenCurve={openCropCurve}
           />
         {:else}
           <PostEditorTransport {editor} disabled={exporting} />
@@ -2160,7 +2241,7 @@
   }
 
   /* The crop screen: the stage takes the room the timeline and the row
-     leave, with the clip's time bar under it. */
+     leave, with the clip's own timeline under it. */
   .post-editor[data-mode="crop"] .layout {
     position: relative;
   }
@@ -2195,10 +2276,10 @@
     height: 100%;
   }
 
-  /* Beside the panel the time bar sits under the picture and the panel runs
-     down past it, so a short screen scrolls the panel less. The panel keeps
-     the width it has while editing: 30% of the stage row, measured here
-     against the editor less the layout's padding. */
+  /* The panel sits beside the picture and the clip's timeline runs under
+     both, as wide as the screen. The panel keeps the width it has while
+     editing: 30% of the stage row, measured here against the editor less
+     the layout's padding. */
   .post-editor[data-mode="crop"][data-layout="wide"] .layout {
     --post-panel-width: clamp(
       20rem,
@@ -2206,7 +2287,7 @@
       26rem
     );
     grid-template-columns: minmax(0, 1fr) var(--post-panel-width);
-    grid-template-areas: "stage panel" "transport panel";
+    grid-template-areas: "stage panel" "transport transport";
     column-gap: 1rem;
   }
 

@@ -45,7 +45,6 @@
   import FilterChipBase from "$lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
   import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
   import ValueSlider from "$lib/shared/ui/components/ValueSlider.svelte";
-  import PostKeyframeControls from "./PostKeyframeControls.svelte";
   import { formatTakeClock } from "../builder/post-builder-format";
   import { itemDisplayLabel } from "./post-editor-labels";
   import { panelChannel, type PostPanelToolId } from "./post-editor-tools";
@@ -422,12 +421,6 @@
       t("post_editor_go_to_item"),
       goToItem
     )}
-  {/if}
-
-  <!-- The timeline's toolbar carries the keyframe buttons; the crop screen
-       stows the timeline, so there they sit here instead. -->
-  {#if channel !== null && crop}
-    <PostKeyframeControls {editor} {item} {channel} {locked} />
   {/if}
 
   {#if tool === "trim" && item.kind === "video"}
