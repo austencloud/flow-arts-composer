@@ -39,7 +39,6 @@
     buildFloatAxis,
     buildShapeMatrixAxis,
     flowerKey,
-    flowerLabel,
     flowerPetals,
     ratioLabel,
     type Flower,
@@ -51,7 +50,6 @@
   import { matrixTurnsForLevel } from "$lib/shared/shape-matrix/domain/matrix-turn-band";
   import {
     SHAPE_MATRIX_LEVELS,
-    SHAPE_MATRIX_LEVEL_DESCRIPTIONS,
   } from "$lib/shared/shape-matrix/app/shape-matrix-levels";
   import {
     levelForTurnValue,
@@ -67,6 +65,7 @@
     SHAPE_ENGINE_SHORT_NAME,
     SPIN_SCIENCE_URL,
   } from "$lib/shared/shape-matrix/app/shape-engine-identity";
+  import { tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
 
   /** The engine's own 144 band: three ratios, both styles, both starts, diamond. */
   const ORIGINAL_AXIS_FILTER = matrixFiltersForSize("large").left;
@@ -105,10 +104,10 @@
    */
   const floatFlowers = buildFloatAxis();
   const FLOAT_FACING: Record<string, string> = {
-    in: "Up",
-    out: "Down",
-    clock: "Left",
-    counter: "Right",
+    in: "guide_ratios_up",
+    out: "guide_ratios_down",
+    clock: "guide_ratios_left",
+    counter: "guide_ratios_right",
   };
 
   /**
@@ -123,10 +122,10 @@
   function flowerFacing(flower: RotatingFlower): string {
     const atBottom = (flower.style === "pro") === (flower.ori === "in");
     const petals = flower.petals;
-    if (petals % 2 === 1) return atBottom ? "Petal down" : "Petal up";
-    if (petals % 4 === 2) return atBottom ? "Vertical" : "Horizontal";
-    if (petals === 4) return atBottom ? "Diamond" : "Box";
-    return atBottom ? "Upright" : "Tilted";
+    if (petals % 2 === 1) return tDynamic(atBottom ? "guide_ratios_petal_down" : "guide_ratios_petal_up");
+    if (petals % 4 === 2) return tDynamic(atBottom ? "guide_ratios_vertical" : "guide_ratios_horizontal");
+    if (petals === 4) return tDynamic(atBottom ? "guide_ratios_diamond" : "guide_ratios_box");
+    return tDynamic(atBottom ? "guide_ratios_upright" : "guide_ratios_tilted");
   }
 
   /**
@@ -138,7 +137,7 @@
    * straight down, so the caption does not depend on the flower at all.
    */
   function quarterTurnFacing(): string {
-    return "Petal down";
+    return tDynamic("guide_ratios_petal_down");
   }
 
   /**
@@ -158,28 +157,28 @@
   }
 
   /** One row per turn value the Kinetic Alphabet can carry, Float included. */
-  const ladder = matrixTurnsForLevel(4).map((turns: TurnValue) => ({
+  const ladder = $derived(matrixTurnsForLevel(4).map((turns: TurnValue) => ({
     turns,
     ratio: ratioLabel(turns),
     level: levelForTurnValue(turns),
-    turnLabel: turns === "fl" ? "Float" : String(turns),
-    turnWords: turns === "fl" ? "Float" : turnWords(turns as number),
+    turnLabel: turns === "fl" ? tDynamic("guide_ratios_float_name") : String(turns),
+    turnWords: turns === "fl" ? tDynamic("guide_ratios_float_name") : turnWords(turns as number),
     family: turns === 0 || turns === 1 || turns === 2,
     starts: turns === "fl" ? null : cardStarts(turns as number),
-  }));
+  })));
 
   /* The ladder groups by level, because that is the order a reader meets
      these turn values in: each level opens a set of new ratios on top of the
      ones below it. Names and blurbs come from the level table the matrix
      selector reads, so the page and the selector cannot disagree. */
-  const levelGroups = SHAPE_MATRIX_LEVELS.map((level) => {
+  const levelGroups = $derived(SHAPE_MATRIX_LEVELS.map((level) => {
     const rows = ladder.filter((row) => row.level === level);
     /* Whole turns and quarter turns each carry one note card after their
        ratios: how a turn adds petals, and the two hand cycle arithmetic. */
     const noted = level === WHOLE_TURN_LEVEL || level === QUARTER_TURN_LEVEL;
     const cells = rows.length + (noted ? 1 : 0);
-    return { level, ...SHAPE_MATRIX_LEVEL_DESCRIPTIONS[level], rows, cells };
-  }).filter((group) => group.level !== BASE_LEVEL && group.rows.length > 0);
+    return { level, name: tDynamic(`guide_ratios_level_${level}_name`), blurb: tDynamic(`guide_ratios_level_${level}_blurb`), rows, cells };
+  }).filter((group) => group.level !== BASE_LEVEL && group.rows.length > 0));
 
   /**
    * What spinners call the flowers that have a common name. Every name
@@ -204,23 +203,23 @@
    * different base motions, the four shapes the original matrix gives this
    * ratio, so collapsing them to the in start would hide half of Level 1.
    */
-  const BASE_NAMES = { in: "Isolation", out: "Extension" } as const;
-  const baseLevel = SHAPE_MATRIX_LEVEL_DESCRIPTIONS[BASE_LEVEL];
+  const BASE_NAMES = { in: "guide_ratios_isolation", out: "guide_ratios_extension" } as const;
+  const baseLevel = $derived({ name: tDynamic("guide_ratios_level_1_name"), blurb: tDynamic("guide_ratios_level_1_blurb") });
   const baseRatio = ratioLabel(0);
-  const baseCards = (["in", "out"] as const).map((ori) => ({
+  const baseCards = $derived((["in", "out"] as const).map((ori) => ({
     ori,
-    label: ori === "in" ? "Starts in" : "Starts out",
+    label: tDynamic(ori === "in" ? "guide_ratios_starts_in" : "guide_ratios_starts_out"),
     flowers: (["pro", "anti"] as const).map((style) => {
       const flower = rotating(0, style, ori);
       return {
         flower,
         meta:
           style === "pro"
-            ? BASE_NAMES[ori]
+            ? tDynamic(BASE_NAMES[ori])
             : `${petalWord(flower.petals)}, ${flowerFacing(flower).toLowerCase()}`,
       };
     }),
-  }));
+  })));
 
   /**
    * The board is a grid of equal cards, two, four, or eight across. Each
@@ -247,7 +246,7 @@
   function turnWords(turns: number): string {
     const size = Math.abs(turns);
     const sign = turns < 0 ? "−" : "";
-    return `${sign}${size} turn${size === 1 ? "" : "s"}`;
+    return tDynamic(size === 1 ? "guide_ratios_one_turn" : "guide_ratios_many_turns", { count: `${sign}${size}` });
   }
 
   const example = { pro: rotating(1, "pro"), anti: rotating(1, "anti") };
@@ -297,18 +296,18 @@
       frames: [
         {
           flowers: [near],
-          label: "Starts in",
+          label: tDynamic("guide_ratios_starts_in"),
           meta: names?.in ?? petalWord(near.petals),
         },
         {
           flowers: [far],
-          label: "Starts out",
+          label: tDynamic("guide_ratios_starts_out"),
           meta:
-            names?.out ?? (twoCycles ? "The same path" : petalWord(far.petals)),
+            names?.out ?? (twoCycles ? tDynamic("guide_ratios_same_path") : petalWord(far.petals)),
         },
         {
           flowers: twoCycles ? [near] : [near, far],
-          label: "Both ends",
+          label: tDynamic("guide_ratios_both_ends"),
           meta: names?.both ?? petalWord(both),
         },
       ],
@@ -324,28 +323,28 @@
     const level = levelForTurns(turns, turns);
     return {
       level,
-      name: SHAPE_MATRIX_LEVEL_DESCRIPTIONS[level].name,
+      name: tDynamic(`guide_ratios_level_${level}_name`),
       cases: [endsCase(turns, "pro", proNames), endsCase(turns, "anti")],
       summary,
     };
   }
 
-  const endsLevels: EndsLevel[] = [
+  const endsLevels: EndsLevel[] = $derived([
     endsLevel(
       0,
-      "The isolation and the extension are one staff motion, and the two cat-eyes make a cross.",
-      { in: "Isolation", out: "Extension", both: "Point in a circle" }
+      tDynamic("guide_ratios_ends_summary_1"),
+      { in: tDynamic("guide_ratios_isolation"), out: tDynamic("guide_ratios_extension"), both: tDynamic("guide_ratios_point_in_circle") }
     ),
-    endsLevel(1, "Out is in turned half a petal, so each flower doubles."),
+    endsLevel(1, tDynamic("guide_ratios_ends_summary_2")),
     endsLevel(
       0.5,
-      "The same doubling at a half turn: 1 petal becomes 2, and 3 become 6."
+      tDynamic("guide_ratios_ends_summary_3")
     ),
     endsLevel(
       0.25,
-      "Two hand circles: the far end retraces the near end, so a staff draws what a poi draws."
+      tDynamic("guide_ratios_ends_summary_4")
     ),
-  ];
+  ]);
 
   /**
    * 1:2 and 2:1 share their petal counts because the counts use the two
@@ -380,13 +379,20 @@
   }));
 
   function styleWord(style: ShapePathStyle): string {
-    if (style === "float") return "Float";
-    return style === "pro" ? "Prospin" : "Antispin";
+    if (style === "float") return tDynamic("guide_ratios_float_name");
+    return tDynamic(style === "pro" ? "guide_ratios_prospin" : "guide_ratios_antispin");
   }
 
   function petalWord(petals: number): string {
-    if (petals === 0) return "no petals";
-    return `${petals} petal${petals === 1 ? "" : "s"}`;
+    if (petals === 0) return tDynamic("guide_ratios_no_petals");
+    return tDynamic(petals === 1 ? "guide_ratios_one_petal" : "guide_ratios_many_petals", { count: petals });
+  }
+
+  function flowerAlt(flower: Flower): string {
+    return tDynamic("guide_ratios_flower_alt", {
+      style: styleWord(flower.style),
+      petals: petalWord(flower.petals),
+    });
   }
 
   /** A band opens at the level the ladder names for it, so the two agree. */
@@ -478,14 +484,14 @@
 </script>
 
 <GuideSeo
-  title="Spin ratios, turns, and poi flowers · The Kinetic Alphabet Guide"
-  description="Spin ratios written hands to props, the Kinetic Alphabet turns each one names, and the poi flowers they draw, from the cat-eye and triquetra to the 4-petal antispin and 3-petal inspin flowers."
+  title={tDynamic("guide_ratios_seo_title")}
+  description={tDynamic("guide_ratios_seo_description")}
   path="/guide/ratios"
-  partOf={{ name: "The Kinetic Alphabet Guide", path: "/guide" }}
+  partOf={{ name: tDynamic("guide_paths_part_of"), path: "/guide" }}
   breadcrumbs={[
-    { name: "Home", path: "/" },
-    { name: "Guide", path: "/guide" },
-    { name: "Ratios", path: "/guide/ratios" },
+    { name: tDynamic("guide_paths_home"), path: "/" },
+    { name: tDynamic("guide_paths_part_of"), path: "/guide" },
+    { name: tDynamic("guide_ratios_title"), path: "/guide/ratios" },
   ]}
   datePublished="2026-09-04"
 />
@@ -494,31 +500,20 @@
   <article class="ratios guide-page-route" style="--tracks: {MATRIX_TRACKS}">
     <div class="opening">
       <header class="page-head">
-        <h1>Spin ratios</h1>
+        <h1>{tDynamic("guide_ratios_title")}</h1>
+        <p>{tDynamic("guide_ratios_intro")}</p>
         <p>
-          A spin ratio counts one pattern twice: how many circles the hand
-          travels, and how many rotations the prop makes over the same span. It
-          is written hands first, so <strong>1:3</strong> is one hand circle to three
-          prop rotations. The Kinetic Alphabet counts the same motion as turns, where
-          one turn is 180 degrees of prop rotation on top of the base rotation the
-          motion already carries.
-        </p>
-        <p>
-          Three ratios carry most of the vocabulary. Lorq Nichols, who publishes
-          as <a
+          {tDynamic("guide_ratios_origins_before")} <a
             class="external"
             href={SPIN_SCIENCE_URL}
             target="_blank"
             rel="noopener noreferrer"
-            >Spin Science<span class="sr-only"> (opens in a new tab)</span></a
-          >, built the {ORIGINAL_SHAPE_MATRIX_NAME} from 1:1, 1:3, and 1:5. The same
-          construction keeps working the rest of the way up the turn ladder, which
-          is what the tables below lay out.
+            >Spin Science<span class="sr-only"> {tDynamic("guide_ratios_new_tab")}</span></a
+          >{tDynamic("guide_ratios_origins_after", { name: ORIGINAL_SHAPE_MATRIX_NAME })}
         </p>
         {#if loadError}
           <p class="notice error" role="alert">
-            The flower drawings could not be built, so the shapes on this page
-            are blank. Reload to try again.
+            {tDynamic("guide_ratios_load_error")}
             <span class="notice-detail">{loadError}</span>
           </p>
         {/if}
@@ -526,35 +521,32 @@
 
       <section class="reading" aria-labelledby="reading-heading">
         <div class="reading-copy">
-          <h2 id="reading-heading">Reading a ratio</h2>
+          <h2 id="reading-heading">{tDynamic("guide_ratios_reading")}</h2>
 
           <dl class="terms">
             <div>
-              <dt>Hand cycles, H</dt>
-              <dd>Complete circles the hand travels.</dd>
+              <dt>{tDynamic("guide_ratios_hand_cycles")}</dt>
+              <dd>{tDynamic("guide_ratios_hand_cycles_definition")}</dd>
             </div>
             <div>
-              <dt>Prop rotations, P</dt>
-              <dd>Complete rotations the prop makes over those circles.</dd>
+              <dt>{tDynamic("guide_ratios_prop_rotations")}</dt>
+              <dd>{tDynamic("guide_ratios_prop_rotations_definition")}</dd>
             </div>
           </dl>
 
           <p>
-            For a moving hand the two systems convert directly. Prop rotations
-            per hand cycle are <code>P / H = 2 × turns + 1</code>, and the same
-            relation read backwards is <code>turns = (P / H − 1) / 2</code>.
+            {tDynamic("guide_ratios_formula_before")}
+            <code>P / H = 2 × turns + 1</code>{tDynamic("guide_ratios_formula_between")}
+            <code>turns = (P / H − 1) / 2</code>.
           </p>
           <p>
-            The reduced ratio also fixes the petal count. A prospin flower draws
-            <code>|P − H|</code> petals and an antispin flower draws
-            <code>P + H</code>. Both counts follow one end of the prop. A staff
-            draws with both of its ends, and what the second end adds depends on
-            the ratio, as <a href="#ends-heading">One end or two</a> lays out below.
+            {tDynamic("guide_ratios_petals_before")}
+            <code>|P − H|</code>{tDynamic("guide_ratios_petals_between")}
+            <code>P + H</code>{tDynamic("guide_ratios_petals_after")}
+            <a href="#ends-heading">{tDynamic("guide_ratios_one_or_two")}</a>{tDynamic("guide_ratios_petals_end")}
           </p>
           <p>
-            Float sits outside the arithmetic. The prop makes no rotation of its
-            own while the hand circles, which is the ratio 1:0, and the Kinetic
-            Alphabet names it Float instead of a number.
+            {tDynamic("guide_ratios_float")}
           </p>
 
           <h3>Common names</h3>
@@ -569,11 +561,16 @@
               </div>
             {/each}
           </dl>
-          <p>Each name describes the shape one end of the prop draws.</p>
+          <p>
+            Each name describes the shape one end of the prop draws. Inspin is
+            another name for prospin; <a href="/guide/prospin-and-inspin"
+              >Prospin and inspin</a
+            > compares the two.
+          </p>
         </div>
 
         <figure class="worked">
-          <figcaption>1:3, one turn</figcaption>
+          <figcaption>{tDynamic("guide_ratios_example_caption")}</figcaption>
           <div class="worked-shapes">
             {#each [example.pro, example.anti] as flower (flowerKey(flower))}
               <div class="worked-shape">
@@ -581,7 +578,7 @@
                   <ShapeMatrixMandalaArt
                     paint={paintFlower(flower)}
                     artKey={flowerKey(flower)}
-                    alt={flowerLabel(flower)}
+                    alt={flowerAlt(flower)}
                   />
                 </span>
                 <span class="shape-name">{styleWord(flower.style)}</span>
@@ -590,7 +587,7 @@
             {/each}
           </div>
           <p class="worked-note">
-            P is 3 and H is 1, so prospin draws 2 petals and antispin draws 4.
+            {tDynamic("guide_ratios_example_note")}
           </p>
         </figure>
       </section>
@@ -598,27 +595,11 @@
 
     <section class="ladder" aria-labelledby="ladder-heading">
       <div class="ladder-copy">
-        <h2 id="ladder-heading">Ratios and turns</h2>
-        <p>
-          Every turn value the Kinetic Alphabet carries, set out by the level
-          that first allows it. Each card gives the ratio, the turns it names,
-          and the two flowers one hand draws at that ratio, following one end of
-          the prop. A level keeps everything the levels before it allow and adds
-          the cards under it.
-        </p>
-        <p>
-          Through Level 3 each ratio shows four flowers: prospin and antispin,
-          each from a start with the prop pointing in and a start pointing out.
-          At Level 1 those are four different base motions. From Level 2 on, the
-          second start draws the first flower turned half a petal, so each
-          flower is named by how it sits: a petal pointing up or down, petals
-          stacked vertical or lying horizontal, four petals in diamond or box.
-          At Level 4's quarter turns both starts draw the very same flower, so
-          those cards show one, and every one of them puts a petal straight
-          down, prospin and antispin alike.
-        </p>
+        <h2 id="ladder-heading">{tDynamic("guide_ratios_ladder")}</h2>
+        <p>{tDynamic("guide_ratios_ladder_intro")}</p>
+        <p>{tDynamic("guide_ratios_ladder_orientation")}</p>
         <p class="ladder-note">
-          Tinted cards are the three ratios of the original matrix.
+          {tDynamic("guide_ratios_tinted_cards")}
         </p>
       </div>
 
@@ -631,7 +612,7 @@
           <DifficultyBadge level={BASE_LEVEL} size="2rem" />
           <span class="level-title">
             <span id="level-{BASE_LEVEL}-heading" class="level-name">
-              Level {BASE_LEVEL}, {baseLevel.name}
+              {tDynamic("guide_ratios_level_heading", { level: BASE_LEVEL, name: baseLevel.name })}
             </span>
             <span class="level-blurb">{baseLevel.blurb}</span>
           </span>
@@ -685,7 +666,7 @@
                 <DifficultyBadge level={group.level} size="2rem" />
                 <span class="level-title">
                   <span id={`level-${group.level}-heading`} class="level-name">
-                    Level {group.level}, {group.name}
+                    {tDynamic("guide_ratios_level_heading", { level: group.level, name: group.name })}
                   </span>
                   <span class="level-blurb">{group.blurb}</span>
                 </span>
@@ -701,8 +682,8 @@
                     {#if row.starts}
                       {@const paired = row.starts.length > 1}
                       <div class="card-grid">
-                        <span class="card-style">Prospin</span>
-                        <span class="card-style">Antispin</span>
+                        <span class="card-style">{tDynamic("guide_ratios_prospin")}</span>
+                        <span class="card-style">{tDynamic("guide_ratios_antispin")}</span>
                         {#each row.starts as start (start.ori)}
                           {#each start.flowers as flower (flowerKey(flower))}
                             {@const facing = (
@@ -741,17 +722,17 @@
                                 <ShapeMatrixMandalaArt
                                   paint={paintFlower(flower)}
                                   artKey={flowerKey(flower)}
-                                  alt={`${row.ratio} float, circle ${FLOAT_FACING[flower.ori]?.toLowerCase()}`}
+                                  alt={tDynamic("guide_ratios_float_alt", { ratio: row.ratio, direction: tDynamic(FLOAT_FACING[flower.ori] ?? "guide_ratios_up") })}
                                 />
                               </span>
                               <span class="card-facing" aria-hidden="true"
-                                >{FLOAT_FACING[flower.ori]}</span
+                                >{tDynamic(FLOAT_FACING[flower.ori] ?? "guide_ratios_up")}</span
                               >
                             </div>
                           {/each}
                         </div>
                         <span class="float-words">
-                          Holds one angle while the hand circles.
+                          {tDynamic("guide_ratios_float_caption")}
                         </span>
                       </div>
                     {/if}
@@ -761,16 +742,13 @@
 
               {#if group.level === WHOLE_TURN_LEVEL}
                 <p class="ladder-aside">
-                  Each whole turn adds two petals to both flowers, and a half
-                  turn adds one, so Level 3 fills the gaps between these counts.
+                  {tDynamic("guide_ratios_whole_turn_note")}
                 </p>
               {/if}
 
               {#if group.level === QUARTER_TURN_LEVEL}
                 <p class="ladder-aside">
-                  Quarter turns need two hand circles to bring the prop back, so
-                  they are written over 2. At 2:1 the prop turns slower than the
-                  hand: a quarter turn backwards.
+                  {tDynamic("guide_ratios_quarter_turn_note")}
                 </p>
               {/if}
             </section>
@@ -780,31 +758,17 @@
 
       <section class="swap" aria-labelledby="swap-heading">
         <div class="swap-copy">
-          <h3 id="swap-heading">Same petals, different laps</h3>
+          <h3 id="swap-heading">{tDynamic("guide_ratios_swap_title")}</h3>
+          <p>{tDynamic("guide_ratios_swap_intro")}</p>
+          <p>{tDynamic("guide_ratios_swap_laps")}</p>
           <p>
-            1:2 and 2:1 draw the same number of petals, one prospin and three
-            antispin, yet they move nothing alike. Watch the hand, the solid dot
-            on the dashed circle, and the prop, the line from it out to the blue
-            end that draws.
+            {tDynamic("guide_ratios_swap_formula_before")}
+            <code>|P − H|</code>{tDynamic("guide_ratios_swap_formula_between")}
+            <code>P + H</code>{tDynamic("guide_ratios_swap_formula_after")}
           </p>
           <p>
-            At 1:2 the hand goes around once while the prop spins twice, and the
-            drawing meets its start after that one lap. At 2:1 the prop turns
-            once while the hand goes around twice, so the drawing laps the
-            center twice before it closes. The 1:2 side finishes first and
-            waits.
-          </p>
-          <p>
-            The petal count uses the two numbers together,
-            <code>|P − H|</code> for prospin and <code>P + H</code> for antispin,
-            so swapping them leaves it alone. The laps tell them apart: here the hand
-            circle is wider than the prop's reach, so the drawing goes around the
-            center once for every hand circle.
-          </p>
-          <p>
-            Every quarter turn ratio laps twice. That second lap is also why a
-            staff draws nothing new there, as
-            <a href="#ends-heading">One end or two</a> shows.
+            {tDynamic("guide_ratios_swap_quarter_before")}
+            <a href="#ends-heading">{tDynamic("guide_ratios_one_or_two")}</a>{tDynamic("guide_ratios_swap_quarter_after")}
           </p>
         </div>
 
@@ -814,35 +778,22 @@
 
     <section class="twelve" aria-labelledby="twelve-heading">
       <div class="twelve-copy">
-        <h2 id="twelve-heading">The original twelve</h2>
-        <p>
-          Nichols took four even petaled driving styles from each family, which
-          gives twelve shapes for one hand. Three ratios, two spin directions,
-          and two starting orientations reach the same twelve: prospin or
-          antispin, started in or started out. A start pointing in puts the prop
-          toward the center of the hand path, a start pointing out puts it away,
-          and that choice moves where the figure sits.
-        </p>
-        <p>
-          The 1:1 prospin pair shows what the start does most plainly. Starting
-          in holds the tracked end of the prop in one place, so it draws a
-          point. Starting out carries that end around the whole hand circle. On
-          a staff the two starts are the two ends of one prop, so the twelve
-          fold into six.
-        </p>
+        <h2 id="twelve-heading">{tDynamic("guide_ratios_twelve_title")}</h2>
+        <p>{tDynamic("guide_ratios_twelve_intro")}</p>
+        <p>{tDynamic("guide_ratios_twelve_example")}</p>
       </div>
 
       <div class="family-band">
         <div class="family-list">
           {#each families as family (family.turns)}
-            <section class="family" aria-label={`${family.ratio} family`}>
+            <section class="family" aria-label={tDynamic("guide_ratios_family", { ratio: family.ratio })}>
               <header class="family-head">
                 <span class="family-ratio">{family.ratio}</span>
                 <span class="family-turns"
-                  >{family.turns} turn{family.turns === 1 ? "" : "s"}, level {family.level}</span
+                  >{tDynamic("guide_ratios_family_turns", { turns: turnWords(family.turns), level: family.level })}</span
                 >
                 <a class="family-link" href={bandHref(family.turns)}>
-                  Open the {family.ratio} band
+                  {tDynamic("guide_ratios_open_band", { ratio: family.ratio })}
                 </a>
               </header>
               <ol class="family-shapes">
@@ -852,12 +803,12 @@
                       <ShapeMatrixMandalaArt
                         paint={paintFlower(flower)}
                         artKey={flowerKey(flower)}
-                        alt={flowerLabel(flower)}
+                        alt={flowerAlt(flower)}
                       />
                     </span>
                     <span class="shape-name">{styleWord(flower.style)}</span>
                     <span class="shape-meta">
-                      {petalWord(flower.petals)}, starts {flower.ori}
+                      {tDynamic("guide_ratios_flower_start", { petals: petalWord(flower.petals), direction: tDynamic(flower.ori === "in" ? "guide_ratios_in" : "guide_ratios_out") })}
                     </span>
                   </li>
                 {/each}
@@ -870,33 +821,12 @@
 
     <section class="ends" aria-labelledby="ends-heading">
       <div class="ends-copy">
-        <h2 id="ends-heading">One end or two</h2>
+        <h2 id="ends-heading">{tDynamic("guide_ratios_one_or_two")}</h2>
+        <p>{tDynamic("guide_ratios_ends_intro")}</p>
+        <p>{tDynamic("guide_ratios_ends_opposite")}</p>
+        <p>{tDynamic("guide_ratios_ends_level1")}</p>
         <p>
-          Every flower above follows one end of the prop. A poi or a club is
-          held at one end and draws with the other, so that end is the whole
-          drawing. A staff is held in the middle, spun alone or as double staff,
-          and both of its ends draw.
-        </p>
-        <p>
-          The two ends of a staff point opposite ways, so when one starts in,
-          the other starts out. A staff draws the in figure and the out figure
-          at once: two one ended flowers become one staff flower that carries
-          both.
-        </p>
-        <p>
-          Level 1 shows it most plainly. Prospin started in is an isolation, the
-          end held in place as a point, and started out it is an extension
-          around the big circle. On a staff they are one motion. The two
-          antispin starts draw cat-eyes at right angles, and a staff draws both.
-        </p>
-        <p>
-          Through Level 3 every ratio takes one hand circle, and there the out
-          figure is the in figure turned half a petal, so a staff doubles the
-          petals. Level 4's quarter turns take two. After the first circle the
-          prop is back where it began with its ends swapped, so the far end
-          retraces the near end's path and nothing doubles. In and out draw the
-          same figure there, which is why the {SHAPE_ENGINE_SHORT_NAME} fills its
-          second quarter turn start with the prop pointing along the hand path instead.
+          {tDynamic("guide_ratios_ends_level4_before")}{SHAPE_ENGINE_SHORT_NAME}{tDynamic("guide_ratios_ends_level4_after")}
         </p>
       </div>
 
@@ -910,7 +840,7 @@
             <header class="ends-level-head">
               <DifficultyBadge level={tray.level} size="1.6rem" />
               <span id={`ends-level-${tray.level}`} class="level-name"
-                >Level {tray.level}, {tray.name}</span
+                >{tDynamic("guide_ratios_level_heading", { level: tray.level, name: tray.name })}</span
               >
             </header>
             <ul class="ends-cards" role="list">
@@ -951,20 +881,13 @@
 
     <section class="pairings" aria-labelledby="pairings-heading">
       <div class="pairings-copy">
-        <h2 id="pairings-heading">The 144 pairings</h2>
+        <h2 id="pairings-heading">{tDynamic("guide_ratios_pairings_title")}</h2>
+        <p>{tDynamic("guide_ratios_pairings_intro")}</p>
         <p>
-          One left hand shape over one right hand shape makes a cell. Twelve
-          shapes on each axis is 144 cells, and that is the whole matrix at the
-          three original ratios. Blue rows are the left hand and red columns are
-          the right hand, so a cell shows both paths at once.
-        </p>
-        <p>
-          Choosing a cell opens that pairing in the {SHAPE_ENGINE_SHORT_NAME},
-          where it animates. With a keyboard, the arrow keys move between cells.
+          {tDynamic("guide_ratios_pairings_choose_before")}{SHAPE_ENGINE_SHORT_NAME}{tDynamic("guide_ratios_pairings_choose_after")}
         </p>
         <p class="scroll-hint">
-          The grid is wider than this screen. Slide it sideways to reach every
-          column.
+          {tDynamic("guide_ratios_pairings_scroll")}
         </p>
       </div>
 
@@ -975,10 +898,10 @@
               <ShapeMatrixMandalaArt
                 paint={paintHand(anatomyLeft, "left")}
                 artKey={`anatomy-left-${flowerKey(anatomyLeft)}`}
-                alt="1:3 prospin in the left hand's blue"
+                alt={tDynamic("guide_ratios_anatomy_left_alt")}
               />
             </span>
-            <span class="anatomy-label">Row, left hand</span>
+            <span class="anatomy-label">{tDynamic("guide_ratios_row_left")}</span>
           </div>
           <div class="anatomy-part">
             <span class="still">
@@ -986,10 +909,10 @@
               <ShapeMatrixMandalaArt
                 paint={paintHand(anatomyRight, "right")}
                 artKey={`anatomy-right-${flowerKey(anatomyRight)}`}
-                alt="1:5 antispin in the right hand's red"
+                alt={tDynamic("guide_ratios_anatomy_right_alt")}
               />
             </span>
-            <span class="anatomy-label">Column, right hand</span>
+            <span class="anatomy-label">{tDynamic("guide_ratios_column_right")}</span>
           </div>
           <div class="anatomy-part anatomy-cell">
             <span class="still">
@@ -997,23 +920,23 @@
               <ShapeMatrixMandalaArt
                 paint={paintCell(anatomyLeft, anatomyRight)}
                 artKey={`anatomy-cell-${flowerKey(anatomyLeft)}-${flowerKey(anatomyRight)}`}
-                alt="The cell: both paths drawn together"
+                alt={tDynamic("guide_ratios_anatomy_cell_alt")}
               />
             </span>
-            <span class="anatomy-label">The cell</span>
+            <span class="anatomy-label">{tDynamic("guide_ratios_cell")}</span>
           </div>
         </div>
         <figcaption>
-          1:3 prospin in the left hand over 1:5 antispin in the right.
-          <a href={pairHref(anatomyLeft, anatomyRight)}>Open this pairing</a>
+          {tDynamic("guide_ratios_pairing_caption")}
+          <a href={pairHref(anatomyLeft, anatomyRight)}>{tDynamic("guide_ratios_open_pairing")}</a>
         </figcaption>
       </figure>
 
       <div class="matrix-stage">
         {#if loadError}
-          <p class="load-status error">Drawings unavailable</p>
+          <p class="load-status error">{tDynamic("guide_ratios_drawings_unavailable")}</p>
         {:else if !data}
-          <p class="load-status">Building flowers</p>
+          <p class="load-status">{tDynamic("guide_ratios_building_flowers")}</p>
         {:else}
           <ShapeMatrixGrid
             {data}
@@ -1028,19 +951,13 @@
       </div>
 
       <section class="beyond" aria-labelledby="beyond-heading">
-        <h3 id="beyond-heading">Past the original twelve</h3>
-        <p>
-          The pairing does not stop at three ratios. Levels 3 and 4 bring in the
-          half turn, quarter turn, and Float cards from the ladder above, and
-          each hand picks its ratio on its own, so the two do not have to sit in
-          the same family. Past the levels entirely, any two whole number ratios
-          up to 15 on each side pair the same way.
-        </p>
+        <h3 id="beyond-heading">{tDynamic("guide_ratios_beyond_title")}</h3>
+        <p>{tDynamic("guide_ratios_beyond_body")}</p>
       </section>
     </section>
 
     <section class="sources" aria-labelledby="sources-heading">
-      <h2 id="sources-heading">Sources</h2>
+      <h2 id="sources-heading">{tDynamic("guide_ratios_sources")}</h2>
       <ul class="source-list">
         <li>
           <a
@@ -1048,26 +965,24 @@
             href={ORIGINAL_SHAPE_MATRIX_URL}
             target="_blank"
             rel="noopener noreferrer"
-            >Lorq Nichols, {ORIGINAL_SHAPE_MATRIX_NAME}, on Spin Science<span
+            >{tDynamic("guide_ratios_source_label", { author: "Lorq Nichols", name: ORIGINAL_SHAPE_MATRIX_NAME })}<span
               class="sr-only"
             >
-              (opens in a new tab)</span
+              {tDynamic("guide_ratios_new_tab")}</span
             ></a
           >
         </li>
         <li>
-          <a href="/history#archive-record-vtg">The Vulcan Tech Gospel record</a
+          <a href="/history#archive-record-vtg">{tDynamic("guide_ratios_vtg_record")}</a
           >
         </li>
         <li>
-          <a href="/history#archive-record-lorq">The Lorq Nichols record</a>
+          <a href="/history#archive-record-lorq">{tDynamic("guide_ratios_lorq_record")}</a>
         </li>
         <li><a href="/shape-engine">{SHAPE_ENGINE_SHORT_NAME}</a></li>
       </ul>
       <p class="attribution">
-        The {SHAPE_ENGINE_SHORT_NAME} was built independently by {KINETIC_SHAPE_ENGINE_AUTHOR}.
-        It does not reproduce Nichols' original diagram and is not an official
-        Spin Science release.
+        {tDynamic("guide_ratios_attribution_before")}{SHAPE_ENGINE_SHORT_NAME}{tDynamic("guide_ratios_attribution_middle")}{KINETIC_SHAPE_ENGINE_AUTHOR}{tDynamic("guide_ratios_attribution_after")}
       </p>
     </section>
   </article>

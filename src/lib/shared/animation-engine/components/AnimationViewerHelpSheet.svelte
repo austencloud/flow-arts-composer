@@ -7,6 +7,7 @@
 -->
 <script lang="ts">
   import Drawer from "$lib/shared/foundation/ui/Drawer.svelte";
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { animationShortcutRegistrar } from "../services/animation-shortcut-registrar";
   const ANIMATION_SHORTCUTS = animationShortcutRegistrar.shortcuts;
 
@@ -38,20 +39,20 @@
   {snapPoints}
   closeOnBackdrop={true}
   closeOnEscape={true}
-  ariaLabel="Animation Viewer Help"
+  ariaLabel={t("animation_help_title")}
   showHandle={!isSideBySideLayout}
   class="help-sheet-drawer {isSideBySideLayout ? 'side-panel' : 'bottom-sheet'}"
 >
   <div class="help-content">
     <header class="help-header">
       <div class="header-info">
-        <h2 class="help-title">Animation Viewer</h2>
-        <p class="help-subtitle">Keyboard shortcuts & tips</p>
+        <h2 class="help-title">{t("animation_viewer_title")}</h2>
+        <p class="help-subtitle">{t("animation_help_subtitle")}</p>
       </div>
       <button
         class="close-btn"
         onclick={handleClose}
-        aria-label="Close help"
+        aria-label={t("animation_help_close")}
         type="button"
       >
         <i class="fas fa-times" aria-hidden="true"></i>
@@ -63,7 +64,7 @@
       <section class="help-section">
         <h3 class="section-title">
           <i class="fas fa-keyboard" aria-hidden="true"></i>
-          Keyboard Shortcuts
+          {t("keyboard_ui_title")}
         </h3>
         <div class="shortcuts-list">
           {#each ANIMATION_SHORTCUTS as shortcut}
@@ -82,15 +83,15 @@
       <section class="help-section">
         <h3 class="section-title">
           <i class="fas fa-lightbulb" aria-hidden="true"></i>
-          Tips
+          {t("animation_help_tips")}
         </h3>
         <ul class="tips-list">
           <li>
-            Use the step buttons to analyze specific positions in the animation
+            {t("animation_help_step_tip")}
           </li>
-          <li>Toggle motion visibility to focus on one prop at a time</li>
-          <li>Adjust BPM to slow down complex sequences for study</li>
-          <li>Enable trails to visualize the motion path over time</li>
+          <li>{t("animation_help_visibility_tip")}</li>
+          <li>{t("animation_help_tempo_tip")}</li>
+          <li>{t("animation_help_trails_tip")}</li>
         </ul>
       </section>
     </div>

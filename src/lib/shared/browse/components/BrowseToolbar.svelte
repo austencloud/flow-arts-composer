@@ -269,7 +269,7 @@
         engine.addFilter(
           BrowseFilterType.DIFFICULTY,
           level,
-          `Level ${level}`,
+          t("browse_audit_level_number", { level }),
           "var(--semantic-info)"
         );
     });
@@ -668,12 +668,10 @@
   {#if !onOpenFilters}
     <span class="result-count" aria-live="polite" aria-atomic="true">
       {#if resultTotal !== undefined && resultTotal !== engine.resultCount}
-        {engine.resultCount} of {resultTotal}<span class="result-count-word"
-          >&nbsp;shown</span
-        >
+        {t("browse_verified_results_shown", { count: engine.resultCount, total: resultTotal })}
       {:else}
         {engine.resultCount}<span class="result-count-word"
-          >&nbsp;{engine.resultCount === 1 ? "sequence" : "sequences"}</span
+          >&nbsp;{t(engine.resultCount === 1 ? "browse_audit_sequence" : "browse_audit_sequences")}</span
         >
       {/if}
     </span>

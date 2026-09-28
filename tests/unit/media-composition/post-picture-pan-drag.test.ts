@@ -64,6 +64,31 @@ describe("overscanPixels", () => {
     expect(drawRect.width).toBeGreaterThan(SAME_SHAPE.regionWidthPx);
     expect(overscanPixels({ ...SAME_SHAPE, fit: "cover", zoom: 1 })).toEqual({ x: 0, y: 0 });
   });
+
+  it("measures a turned picture by its turned outline", () => {
+    // A quarter turn stands the 1600x900 cover fit on end: 900 across and
+    // 1600 down, so it now overflows the 800x900 box both ways.
+    const quarter = overscanPixels({
+      ...SOURCE,
+      ...REGION,
+      fit: "cover",
+      zoom: 1,
+      rotation: 90,
+    });
+    close(quarter.x, 100);
+    close(quarter.y, 700);
+    // Turned 30 degrees, the 800x450 contain fit spans about 918 across and
+    // 790 down: past the box's width, still inside its height.
+    const tilted = overscanPixels({
+      ...SOURCE,
+      ...REGION,
+      fit: "contain",
+      zoom: 1,
+      rotation: 30,
+    });
+    expect(tilted.x).toBeCloseTo(117.82, 2);
+    close(tilted.y, 0);
+  });
 });
 
 describe("dragPicturePan", () => {
@@ -110,6 +135,24 @@ describe("dragPicturePan", () => {
       deltaYPx: 30,
     });
     expect(result).toEqual({ panX: 0, panY: 0 });
+  });
+
+  it("pans a turned picture against its turned overflow", () => {
+    // Stood on end, the picture hides only 100px across, so a 50px drag is
+    // half its pan range; before the turn it was a sixteenth.
+    const result = dragPicturePan({
+      ...SOURCE,
+      ...REGION,
+      fit: "cover",
+      zoom: 1,
+      rotation: 90,
+      startPanX: 0,
+      startPanY: 0,
+      deltaXPx: 50,
+      deltaYPx: -70,
+    });
+    close(result.panX, 0.5);
+    close(result.panY, -0.1);
   });
 });
 

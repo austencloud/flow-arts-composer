@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { localizeLevel1Text, localizeLevel1SelectionLabel } from "../_data/localize-level1-content";
   /**
    * LOOPs - body page (manifest `permutations`, retitled "LOOPs"), faithful to
    * proof p32 / "1.2 - Permutations" artboard ("CAPs"). FACELIFT TERMINOLOGY:
@@ -352,7 +353,7 @@
       <SelectionHit
         groupId={l.key}
         isGroupStart
-        label={`Animate the ${l.word} LOOP`}
+        label={localizeLevel1SelectionLabel(`Animate the ${l.word} LOOP`)}
         onselect={() => emitSequence?.({ strip: loopSteps(l), word: l.word, key: l.key, propType: "staff" })}
       />
     </div>
@@ -371,7 +372,7 @@
       use:ptDrag={pt(`loops-para-${i}`, "para", p)}
       use:editText={{ id: `loops-para-${i}`, label: "para", get: () => p.html, set: (h) => (p.html = h) }}
     >
-      {@html p.html}
+      {@html localizeLevel1Text(p.html)}
     </p>
   {/each}
 </div>

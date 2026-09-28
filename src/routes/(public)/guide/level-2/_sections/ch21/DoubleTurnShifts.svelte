@@ -9,6 +9,7 @@
    * avoid inventing new copy around it.
    */
   import GuideSection from "../../../level-1/_components/GuideSection.svelte";
+  import { t as translate } from "$lib/shared/i18n/i18n.svelte.js";
   import SequenceShowcase from "../../../level-1/_components/SequenceShowcase.svelte";
   import TurnStrip, {
     type TurnStripFrame,
@@ -238,14 +239,13 @@
   });
 </script>
 
-<GuideSection id="double-turn-shifts" title="Shifts">
+<GuideSection id="double-turn-shifts" title={translate("guide_l2_shifts_title")}>
   <div class="section-body">
-    <p>2 turns add a 360 degree rotation to a motion.</p>
+    <p>{translate("guide_l2_double_shifts_intro")}</p>
 
     <h3>Pro</h3>
     <p>
-      On a prospin with a double turn, note the 45° angle of the halfway
-      position.
+      {translate("guide_l2_double_shifts_pro_intro")}
     </p>
   </div>
 
@@ -261,7 +261,7 @@
         <TurnStrip
           frames={proFrames}
           activeT={t}
-          caption="Prospin, 2 turns: the staff spins twice around while still tracing one arc from east to south"
+          caption={translate("guide_l2_double_shifts_pro_caption")}
         />
       {/snippet}
     </SequenceShowcase>
@@ -269,14 +269,12 @@
 
   <div class="section-body">
     <p>
-      A base prospin (ASA isolation) has 0 thumb switches, therefore a prospin
-      with 2 turns has 2 thumb switches (in → out → in)
+      {translate("guide_l2_double_shifts_pro_thumb")}
     </p>
 
     <h3>Anti</h3>
     <p>
-      With a double-turning antispin, it's easier to visually conceive of the
-      motion in thirds. At each third there is a staff end at the center point.
+      {translate("guide_l2_double_shifts_anti_intro")}
     </p>
   </div>
 
@@ -292,7 +290,7 @@
         <TurnStrip
           frames={antiFrames}
           activeT={t}
-          caption="Antispin, 2 turns, broken into thirds so you can catch the staff fighting its own arc the whole way from east to south"
+          caption={translate("guide_l2_double_shifts_anti_caption")}
         />
       {/snippet}
     </SequenceShowcase>
@@ -300,8 +298,7 @@
 
   <div class="section-body">
     <p>
-      A base antispin has 1 thumb switch (in → out), therefore an antispin with
-      2 turns has 3 thumb switches (in → out → in → out)
+      {translate("guide_l2_double_shifts_anti_thumb")}
     </p>
   </div>
 </GuideSection>

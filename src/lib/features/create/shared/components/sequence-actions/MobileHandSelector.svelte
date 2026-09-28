@@ -6,6 +6,7 @@
   Visual height: 32px. Touch target: 48px via invisible padding.
 -->
 <script lang="ts">
+  import { t, tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
   import type { TargetHand } from "$lib/shared/create/domain/panel-types";
 
   interface HandOption {
@@ -13,12 +14,6 @@
     label: string;
     shortLabel: string;
   }
-
-  const defaultOptions: HandOption[] = [
-    { hand: "left", label: "Left", shortLabel: "L" },
-    { hand: "both", label: "Both", shortLabel: "Both" },
-    { hand: "right", label: "Right", shortLabel: "R" },
-  ];
 
   interface Props {
     value: TargetHand;
@@ -31,19 +26,39 @@
   let {
     value,
     onChange,
-    options = defaultOptions,
-    ariaLabel = "Apply transforms to hand",
+    options,
+    ariaLabel,
     fullWidth = false,
   }: Props = $props();
+
+  const displayedOptions = $derived(
+    options ?? [
+      {
+        hand: "left",
+        label: t("shared_controls_left"),
+        shortLabel: tDynamic("create_action_hand_left_short"),
+      },
+      {
+        hand: "both",
+        label: tDynamic("create_action_both_hands"),
+        shortLabel: tDynamic("create_action_both_hands"),
+      },
+      {
+        hand: "right",
+        label: t("shared_controls_right"),
+        shortLabel: tDynamic("create_action_hand_right_short"),
+      },
+    ]
+  );
 </script>
 
 <div
   class="segmented-group"
   class:full-width={fullWidth}
   role="group"
-  aria-label={ariaLabel}
+  aria-label={ariaLabel ?? tDynamic("create_action_apply_transforms_to_hand")}
 >
-  {#each options as opt}
+  {#each displayedOptions as opt}
     <button
       type="button"
       class="segment {opt.hand}"

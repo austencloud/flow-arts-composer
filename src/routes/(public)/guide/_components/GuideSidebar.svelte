@@ -36,11 +36,11 @@
     type GuideGroup,
   } from "../level-1/_data/guide-manifest";
   import { seoForSlug } from "../level-1/_data/guide-page-seo";
-  import {
-    LEVEL2_SECTION_ANCHORS,
-    LEVEL2_GROUP_TITLES,
-  } from "../level-2/_data/guide-manifest";
+  import { LEVEL2_SECTION_ANCHORS } from "../level-2/_data/guide-manifest";
   import { LEVEL2_ANCHOR_ROUTE_SLUG } from "../level-2/_data/level2-topic-routes";
+
+  const level2SectionKey = (id: string) =>
+    `guide_runtime_section_${id.replaceAll("-", "_")}`;
 
   let {
     activeSectionId = "",
@@ -77,6 +77,7 @@
   }
   const codexActive = $derived(pathname.startsWith("/guide/codex"));
   const ratiosActive = $derived(pathname === "/guide/ratios");
+  const prospinActive = $derived(pathname === "/guide/prospin-and-inspin");
   const motionPathsActive = $derived(pathname === "/guide/motion-paths");
 
   // A level opens when the reader is inside it or on the hub; the other level
@@ -234,7 +235,13 @@
           <div class="chapter-group">
             <div class="group-heading">
               <span class="group-num">{route.group}</span>
-              <span>{LEVEL2_GROUP_TITLES[route.group]}</span>
+              <span
+                >{tDynamic(
+                  route.group === "2.0"
+                    ? "guide_l2_turns_title"
+                    : "guide_l2_double_turns_title"
+                )}</span
+              >
             </div>
             <ul class="section-list">
               {#each route.sections as section (section.id)}
@@ -248,7 +255,7 @@
                     href={`/guide/level-2/${LEVEL2_ANCHOR_ROUTE_SLUG[section.id] ?? route.slug}#${section.id}`}
                     onclick={() => onLinkClick?.()}
                   >
-                    {section.title}
+                    {tDynamic(level2SectionKey(section.id))}
                   </a>
                 </li>
               {/each}
@@ -268,6 +275,18 @@
       onclick={() => onLinkClick?.()}
     >
       {tDynamic("guide_hub_ratios_title")}
+    </a>
+  </div>
+
+  <div class="chapter-group">
+    <a
+      class="chapter-title"
+      class:active={prospinActive}
+      aria-current={prospinActive ? "page" : undefined}
+      href="/guide/prospin-and-inspin"
+      onclick={() => onLinkClick?.()}
+    >
+      {tDynamic("guide_hub_prospin_title")}
     </a>
   </div>
 

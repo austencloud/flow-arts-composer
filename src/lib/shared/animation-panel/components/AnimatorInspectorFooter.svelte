@@ -9,7 +9,7 @@
     busy = false,
     disabled = false,
     ready = true,
-    pendingLabel = "Preparing export...",
+    pendingLabel = t("animation_export_preparing"),
     meta = "",
     showProgress = false,
     progress = null,
@@ -43,7 +43,7 @@
     <div class="export-progress-row" role="status" aria-live="polite">
       <div class="progress-info">
         <span class="progress-stage">
-          {#if !progress}Starting...{:else}Exporting{/if}
+          {#if !progress}{t("animation_export_starting")}{:else}{t("export_exporting")}{/if}
         </span>
         <span class="progress-pct"
           >{progress ? Math.round(progress.progress * 100) : 0}%</span
@@ -70,7 +70,7 @@
           aria-label={t("export_cancel_export")}
         >
           <i class="fas fa-times" aria-hidden="true"></i>
-          Cancel
+          {t("viewer_detail_cancel")}
         </button>
       {/if}
     </div>

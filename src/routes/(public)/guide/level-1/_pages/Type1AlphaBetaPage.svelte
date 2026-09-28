@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { localizeLevel1Text, localizeLevel1SelectionLabel } from "../_data/localize-level1-content";
   /**
    * Type 1 Dual-Shifts (Alpha, Beta) - body page 4, a faithful reproduction of
    * the proof PDF (level-1-v05.pdf, page 10) rebuilt in the CURRENT renderer's
@@ -334,7 +335,7 @@
       <SelectionHit
         groupId={`t1-${si}`}
         isGroupStart
-        label={`Animate the ${SEQ_WORDS[si]} sequence`}
+        label={localizeLevel1SelectionLabel(`Animate the ${SEQ_WORDS[si]} sequence`)}
         onselect={() =>
           emitSequence?.({
             strip: stripSteps(strip, `t1-${si}`),
@@ -361,7 +362,7 @@
         set: (h) => (p.html = h),
       }}
     >
-      {@html p.html}
+      {@html localizeLevel1Text(p.html)}
     </p>
   {/each}
 

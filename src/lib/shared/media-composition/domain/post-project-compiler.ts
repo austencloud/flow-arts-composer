@@ -55,10 +55,24 @@ export function itemIdFromTextRole(role: string): string | null {
     : null;
 }
 
+export const STAFF_EFFECT_ROLE_PREFIX = "staff:";
+
+/** The painted layer that draws a video clip's staff effect. */
+export function staffEffectRole(itemId: string): string {
+  return `${STAFF_EFFECT_ROLE_PREFIX}${itemId}`;
+}
+
+export function itemIdFromStaffEffectRole(role: string): string | null {
+  return role.startsWith(STAFF_EFFECT_ROLE_PREFIX)
+    ? role.slice(STAFF_EFFECT_ROLE_PREFIX.length)
+    : null;
+}
+
 /**
  * A piece clip's id is `<itemId>~<k>` and its overlay clip
  * `<itemId>~<k>:overlay`; a plain (unsplit) item's clip id is its own item
- * id. Either way the item it belongs to is the text up to the first `~`.
+ * id and its staff effect clip `<itemId>~staff`. Either way the item it
+ * belongs to is the text up to the first `~`.
  */
 export function itemIdFromClipId(clipId: string): string {
   const split = clipId.indexOf("~");
@@ -354,17 +368,14 @@ export function compilePostProject(
         const regionKeyframes = regionKeyframesFor(item);
         if (regionKeyframes) regionKeyframesList.push(regionKeyframes);
         const motion = motionFor(item, transformMotionKeys(item));
-        clips.push({
-          id: item.id,
-          kind: "visual",
-          sourceRole: roleKey,
+        const footage = {
           regionId: item.id,
           start: seconds(item.start),
           end: seconds(itemEnd(item)),
           sourceIn: seconds(item.sourceIn),
           sourceOut: seconds(item.sourceOut),
           playbackRate: item.speed,
-          loop: false,
+          loop: false as const,
           opacity: item.opacity,
           ...(item.fadeIn > 0 ? { fadeInSeconds: item.fadeIn } : {}),
           ...(item.fadeOut > 0 ? { fadeOutSeconds: item.fadeOut } : {}),
@@ -375,10 +386,29 @@ export function compilePostProject(
             translateY: item.panY,
             flipHorizontal: item.flip,
           },
+          ...(motion ? { motion } : {}),
+        };
+        clips.push({
+          id: item.id,
+          kind: "visual",
+          sourceRole: roleKey,
+          ...footage,
           useResolvedTimeMap: true,
           timeMapRole: roleKey,
-          ...(motion ? { motion } : {}),
         });
+        // The staff effect rides the footage: same span, media time, framing
+        // and fades, so its painter lands on the picture's own staff ends.
+        if (item.staffEffect) {
+          const staffRole = staffEffectRole(item.id);
+          useRole(presetRole(staffRole, "Staff effect", "manual", ["image"]));
+          clips.push({
+            id: `${item.id}~staff`,
+            kind: "visual",
+            sourceRole: staffRole,
+            ...footage,
+            useResolvedTimeMap: false,
+          });
+        }
         videoSegments.push({
           itemId: item.id,
           takeId: item.takeId,

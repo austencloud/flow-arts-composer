@@ -3,13 +3,14 @@ LOOPExplanationPanel.svelte - Displays explanation of selected LOOP transformati
 Shows contextual information based on current selection
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   let { explanationText } = $props<{
     explanationText: string;
   }>();
 </script>
 
 <div class="explanation-panel">
-  <h3>What this does:</h3>
+  <h3>{t("create_generate_what_this_does")}</h3>
   <p>{explanationText}</p>
 </div>
 

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { localizeLevel1Text, localizeLevel1SelectionLabel } from "../_data/localize-level1-content";
   /**
    * Mixed Words (ACAC, BCBC) - body page (manifest `examples-acac`), faithful
    * to "1.2 - Guide pt. 3 - ACAC, BCBC" artboard (old p36).
@@ -263,7 +264,7 @@
       <SelectionHit
         groupId={q.key}
         isGroupStart
-        label={`Animate ${q.word}`}
+        label={localizeLevel1SelectionLabel(`Animate ${q.word}`)}
         onselect={() => emitSequence?.({ strip: RESOLVED[q.key]!, word: q.word, key: q.key, propType: "staff" })}
       />
     </div>
@@ -279,7 +280,7 @@
       use:ptDrag={pt(`mw-para-${i}`, "para", p)}
       use:editText={{ id: `mw-para-${i}`, label: "para", get: () => p.html, set: (h2) => (p.html = h2) }}
     >
-      {@html p.html}
+      {@html localizeLevel1Text(p.html)}
     </p>
   {/each}
 </div>

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t as translate } from "$lib/shared/i18n/i18n.svelte.js";
   /**
    * Codex 2/1 + 1/2 - Type 4/5/6 - Level 2 body page 31 (manifest
    * `codex-21-12-t456`), faithful to old p31. Four quadrants split by a heavy H+V
@@ -98,11 +99,11 @@
 
 <div class="q-page">
   <div class="turn" style="left:{246 * S}px; top:{34 * S}px; width:{120 * S}px">2 / 1</div>
-  <div class="th" style="left:{LX * S}px; top:{64 * S}px">Type 4 - <span style="color:{GREEN}">Dash</span></div>
-  <div class="th" style="left:{RX * S}px; top:{64 * S}px">Type 5 - <span style="color:{TEAL}">Dual</span><span style="color:{GREEN}">-Dash</span></div>
+  <div class="th" style="left:{LX * S}px; top:{64 * S}px">{translate("guide_l2_print_type_4")} - <span style="color:{GREEN}">Dash</span></div>
+  <div class="th" style="left:{RX * S}px; top:{64 * S}px">{translate("guide_l2_print_type_5")} - <span style="color:{TEAL}">Dual</span><span style="color:{GREEN}">-Dash</span></div>
 
   <div class="turn small" style="left:{120 * S}px; top:{318 * S}px; width:{120 * S}px">1 / 2</div>
-  <div class="th" style="left:{RX * S}px; top:{322 * S}px">Type 6 - <span style="color:{ORANGE}">Static</span></div>
+  <div class="th" style="left:{RX * S}px; top:{322 * S}px">{translate("guide_l2_print_type_6")} - <span style="color:{ORANGE}">Static</span></div>
 
   <div class="vheavy" style="left:{338 * S}px; top:{88 * S}px; height:{450 * S}px"></div>
   <div class="hheavy" style="left:{16 * S}px; top:{292 * S}px; width:{580 * S}px"></div>

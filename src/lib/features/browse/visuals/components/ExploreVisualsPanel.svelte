@@ -105,7 +105,7 @@
     } catch (cause) {
       console.warn("[ExploreVisuals] List load failed:", cause);
       if (token === listToken) {
-        listError = "Community visuals couldn't be loaded.";
+        listError = t("browse_verified_visuals_load_failed");
       }
     } finally {
       if (token === listToken) listLoading = false;
@@ -194,7 +194,7 @@
         >(artifactId);
         if (token !== detailToken) return;
         if (!detail) {
-          detailError = "This visual is no longer public.";
+          detailError = t("browse_verified_visual_not_public");
           clearDetail();
           return;
         }
@@ -237,7 +237,7 @@
       } catch (cause) {
         console.warn("[ExploreVisuals] Detail load failed:", cause);
         if (token === detailToken) {
-          detailError = "This visual couldn't be loaded.";
+          detailError = t("browse_verified_visual_load_failed");
           clearDetail();
         }
       } finally {
@@ -307,9 +307,9 @@
               />
             </h2>
             <p class="detail-byline">
-              By {detailEnvelope.ownerDisplayName}
+              {t("browse_verified_by_creator", { name: detailEnvelope.ownerDisplayName })}
               {#if formatPublished(detailEnvelope.publishedAt)}
-                · Published {formatPublished(detailEnvelope.publishedAt)}
+                · {t("browse_verified_published_date", { date: formatPublished(detailEnvelope.publishedAt) })}
               {/if}
             </p>
           </div>
@@ -320,7 +320,7 @@
         {#if detailLoading}
           <div class="panel-status" role="status">
             <PanelSpinner size={10} />
-            <span>Loading visual…</span>
+            <span>{t("browse_verified_loading_visual")}</span>
           </div>
         {:else if detailError}
           <div class="panel-status error" role="alert">
@@ -342,7 +342,7 @@
       {#if listLoading}
         <div class="panel-status" role="status">
           <PanelSpinner size={10} />
-          <span>Loading community visuals…</span>
+          <span>{t("browse_verified_loading_community_visuals")}</span>
         </div>
       {:else if listError}
         <div class="panel-status error" role="alert">

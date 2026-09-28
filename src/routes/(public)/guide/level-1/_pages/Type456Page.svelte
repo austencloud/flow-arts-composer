@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { localizeLevel1Text, localizeLevel1SelectionLabel } from "../_data/localize-level1-content";
   /**
    * Type 4 / 5 / 6 - Dash, Dual-Dash, Static - body page 8, a faithful rebuild of
    * the proof PDF ("1.0 - Type 5 and 6" artboard, which actually leads with Type 4)
@@ -422,7 +423,7 @@
         <SelectionHit
           groupId={s.key}
           isGroupStart
-          label={`Animate the ${s.word} sequence`}
+          label={localizeLevel1SelectionLabel(`Animate the ${s.word} sequence`)}
           onselect={() =>
             emitSequence?.({
               strip: RESOLVED[s.key]!,
@@ -451,7 +452,7 @@
         set: (h) => (p.html = h),
       }}
     >
-      {@html p.html}
+      {@html localizeLevel1Text(p.html)}
     </p>
   {/each}
 </div>

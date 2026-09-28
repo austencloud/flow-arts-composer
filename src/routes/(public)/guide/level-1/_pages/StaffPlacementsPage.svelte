@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { localizeLevel1Text } from "../_data/localize-level1-content";
   /**
    * Staff Placements - body page 9 (manifest `staff-placements`), faithful to the
    * proof PDF (level-1-v05.pdf) / "1.0 - Layer 1 Staff Positions" artboard.
@@ -201,7 +202,7 @@
       use:ptDrag={pt(`sp-para-${i}`, "para", p)}
       use:editText={{ id: `sp-para-${i}`, label: "para", get: () => p.html, set: (h) => (p.html = h) }}
     >
-      {@html p.html}
+      {@html localizeLevel1Text(p.html)}
     </p>
   {/each}
 
@@ -215,7 +216,7 @@
       use:ptDrag={pt(`sp-run-${i}`, "header", r)}
       use:editText={{ id: `sp-run-${i}`, label: "header", get: () => r.html, set: (h) => (r.html = h) }}
     >
-      {@html r.html}
+      {@html localizeLevel1Text(r.html)}
     </span>
   {/each}
 </div>

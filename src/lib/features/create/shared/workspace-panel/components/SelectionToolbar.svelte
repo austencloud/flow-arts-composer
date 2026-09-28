@@ -64,7 +64,7 @@ Shows:
         onclick={onSelectAll}
         type="button"
       >
-        Select All
+        {t("create_review_select_all")}
       </button>
     {/if}
 
@@ -75,7 +75,7 @@ Shows:
       type="button"
     >
       <i class="fas fa-edit" aria-hidden="true"></i>
-      Edit
+      {t("create_review_edit")}
     </button>
   </div>
 </div>

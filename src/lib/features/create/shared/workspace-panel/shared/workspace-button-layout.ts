@@ -11,6 +11,7 @@
  * Because both read this one array, the tutorial diagram can never drift from
  * the real panel. Move a button here and it moves in both places.
  */
+import { t } from "$lib/shared/i18n/i18n.svelte.js";
 
 export type WorkspaceButtonId =
   | "undo"
@@ -92,49 +93,49 @@ export const WORKSPACE_BUTTON_ICON: Record<
   undo: {
     icon: "undo-svg",
     iconType: "svg",
-    actionLabel: "Undo",
-    visibleLabel: "Undo",
+    get actionLabel() { return t("create_workspace_undo"); },
+    get visibleLabel() { return t("create_workspace_undo"); },
   },
   redo: {
     icon: "undo-svg",
     iconType: "svg",
-    actionLabel: "Redo",
-    visibleLabel: "Redo",
+    get actionLabel() { return t("create_workspace_redo"); },
+    get visibleLabel() { return t("create_workspace_redo"); },
   },
   clear: {
     icon: "fa-eraser",
     iconType: "fa",
-    actionLabel: "Clear sequence",
-    visibleLabel: "Clear",
+    get actionLabel() { return t("create_workspace_clear_sequence"); },
+    get visibleLabel() { return t("shared_controls_clear"); },
   },
   view: {
     icon: "fa-play",
     iconType: "fa",
-    actionLabel: "Play sequence",
-    visibleLabel: "Play",
+    get actionLabel() { return t("create_workspace_play_sequence"); },
+    get visibleLabel() { return t("create_workspace_play"); },
   },
   "sequence-actions": {
     icon: "fa-tools",
     iconType: "fa",
-    actionLabel: "Sequence actions",
-    visibleLabel: "Actions",
+    get actionLabel() { return t("create_workspace_sequence_actions"); },
+    get visibleLabel() { return t("create_workspace_actions"); },
   },
   share: {
     icon: "fa-share-nodes",
     iconType: "fa",
-    actionLabel: "Share",
-    visibleLabel: "Share",
+    get actionLabel() { return t("create_workspace_share"); },
+    get visibleLabel() { return t("create_workspace_share"); },
   },
   save: {
     icon: "fa-bookmark",
     iconType: "fa",
-    actionLabel: "Save to library",
-    visibleLabel: "Save",
+    get actionLabel() { return t("create_workspace_save_to_library"); },
+    get visibleLabel() { return t("create_workspace_save"); },
   },
   "step-editor": {
     icon: "fa-hand-pointer",
     iconType: "fa",
-    actionLabel: "Edit step",
+    get actionLabel() { return t("create_workspace_edit_step"); },
   },
 };
 
@@ -156,45 +157,43 @@ export const WORKSPACE_BUTTON_TUTORIAL: Record<
   WorkspaceButtonTutorialMeta
 > = {
   undo: {
-    label: "Undo",
-    description: "Steps back to before your last action.",
+    get label() { return t("create_workspace_undo"); },
+    get description() { return t("create_workspace_undo_description"); },
     colorClass: "accent",
   },
   redo: {
-    label: "Redo",
-    description: "Restores the last action you undid.",
+    get label() { return t("create_workspace_redo"); },
+    get description() { return t("create_workspace_redo_description"); },
     colorClass: "accent",
   },
   clear: {
-    label: "Clear",
-    description: "Wipes the sequence so you can start fresh.",
+    get label() { return t("shared_controls_clear"); },
+    get description() { return t("create_workspace_clear_description"); },
     colorClass: "error",
   },
   view: {
-    label: WORKSPACE_BUTTON_ICON.view.actionLabel,
-    description:
-      "Plays the full sequence, with viewer, share, and export tools ready.",
+    get label() { return WORKSPACE_BUTTON_ICON.view.actionLabel; },
+    get description() { return t("create_workspace_view_description"); },
     colorClass: "success",
   },
   "sequence-actions": {
-    label: "Sequence Actions",
-    description: "Mirror, flip, rotate, and transform your sequence.",
+    get label() { return t("create_workspace_sequence_actions"); },
+    get description() { return t("create_workspace_actions_description"); },
     colorClass: "success",
   },
   share: {
-    label: "Share",
-    description:
-      "Share a card, send the sequence in Flow Arts Composer, copy a link, or download the card.",
+    get label() { return t("create_workspace_share"); },
+    get description() { return t("create_workspace_share_description"); },
     colorClass: "info",
   },
   save: {
-    label: "Save to Library",
-    description: "Stores your sequence so you can find it later.",
+    get label() { return t("create_workspace_save_to_library"); },
+    get description() { return t("create_workspace_save_description"); },
     colorClass: "accent",
   },
   "step-editor": {
-    label: "Step Editor",
-    description: "Tap any step to adjust turns, rotation, and duration.",
+    get label() { return t("create_workspace_step_editor"); },
+    get description() { return t("create_workspace_step_editor_description"); },
     colorClass: "info",
   },
 };

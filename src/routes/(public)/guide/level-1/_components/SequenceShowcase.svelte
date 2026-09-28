@@ -23,6 +23,8 @@
   import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
   import { describePictograph } from "$lib/shared/pictograph/shared/domain/utils/pictograph-description";
   import { stripToSequence } from "../_data/guide-sequence-adapter";
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { guideTurnDisplayWord } from "../_data/guide-turn-display-word";
   import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
   import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
   import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
@@ -185,6 +187,9 @@
          no layout shift (the reserved square never moves). -->
     <InlineAnimationPlayer
       sequence={curSequence}
+      displayWord={curSequence.word
+        ? guideTurnDisplayWord(curSequence.word)
+        : null}
       chrome="minimal"
       fill={true}
       autoPlay={shouldAutoPlay}
@@ -217,9 +222,11 @@
         type="button"
         class="cycle-btn"
         onclick={nextExample}
-        aria-label={`Show another ${entry?.loopLabel ?? ""} example`.replace(/\s+/g, " ").trim()}
+        aria-label={entry?.loopLabel
+          ? t("guide_show_another_loop_example", { loop: entry.loopLabel })
+          : t("guide_show_another_example")}
       >
-        Show another example
+        {t("guide_show_another_example")}
       </button>
       <span class="cycle-count" aria-hidden="true">{exampleIndex + 1} / {total}</span>
     </div>

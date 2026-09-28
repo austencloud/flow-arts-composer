@@ -114,16 +114,16 @@
         ? performer.source.provenance
         : null;
     if (provenance?.kind === "shape-matrix-realization") {
-      return `Shape Matrix ${provenance.mode}`;
+      return t("tunnel_shape_matrix_mode", { mode: provenance.mode });
     }
     if (provenance?.kind === "library-sequence") {
       return provenance.scope === "personal"
-        ? "Yours"
+        ? t("tunnel_yours")
         : provenance.scope === "public"
-          ? "Public"
-          : "Library";
+          ? t("tunnel_public")
+          : t("tunnel_library");
     }
-    return sourceOrigin === "generated" ? "Generated" : null;
+    return sourceOrigin === "generated" ? t("tunnel_generated") : null;
   });
   const primaryStageColors = $derived(stageColors[0] ?? null);
   const compactActions = $derived.by(() => {
@@ -138,54 +138,54 @@
 
     if (onEditPairing) {
       items.push({
-        label: linked ? "Edit relationship" : `Link ${label}`,
+        label: linked ? t("tunnel_edit_relationship") : t("tunnel_link", { name: label }),
         icon: "fas fa-link",
         action: onEditPairing,
       });
     }
     if (previousCount > 0 && onPrevious) {
       items.push({
-        label: "Previous sequence",
+        label: t("tunnel_previous_sequence"),
         icon: "fas fa-clock-rotate-left",
         action: onPrevious,
       });
     }
     if (onEditGeneration) {
       items.push({
-        label: "Change generation settings",
+        label: t("tunnel_change_generation_settings"),
         icon: "fas fa-sliders",
         action: onEditGeneration,
       });
     }
     items.push({
-      label: "Browse sequences",
+      label: t("tunnel_browse_sequences"),
       icon: "fas fa-folder-open",
       action: onChoose,
     });
     if (onChooseShapeMatrix) {
       items.push({
-        label: "Use Shape Matrix",
+        label: t("tunnel_use_shape_matrix"),
         icon: "fas fa-shapes",
         action: onChooseShapeMatrix,
       });
     }
     if (canMoveUp) {
       items.push({
-        label: "Move earlier",
+        label: t("tunnel_move_earlier"),
         icon: "fas fa-arrow-up",
         action: () => onMoveUp?.(),
       });
     }
     if (canMoveDown) {
       items.push({
-        label: "Move later",
+        label: t("tunnel_move_later"),
         icon: "fas fa-arrow-down",
         action: () => onMoveDown?.(),
       });
     }
     if (onRemove && canRemove) {
       items.push({
-        label: `Remove ${label}`,
+        label: t("tunnel_remove", { name: label }),
         icon: "fas fa-user-minus",
         action: onRemove,
         variant: "danger",
@@ -208,7 +208,7 @@
 <section
   class="source-card selected"
   class:short
-  aria-label={`${label} sequence`}
+  aria-label={t("tunnel_sequence_label", { name: label })}
 >
   <header class="source-heading">
     <div class="identity-transition">
@@ -224,28 +224,28 @@
           </div>
           <p class="source-meta">
             {#if previewSequence}
-              <span>{previewSequence.steps.length} steps</span>
+              <span>{t("tunnel_steps", { count: previewSequence.steps.length })}</span>
               {#if sourceDescriptor}<span>{sourceDescriptor}</span>{/if}
               {#if linked && sourceLabel}
                 <span
-                  >Linked to {sourcePerformerLabel ?? "earlier performer"}</span
+                  >{t("tunnel_linked_to", { source: sourcePerformerLabel ?? t("tunnel_earlier_performer") })}</span
                 >
               {/if}
               {#if formationCopy}
-                <span>Formation copy (not authored)</span>
+                <span>{t("create_review_formation_copy_not_authored")}</span>
               {/if}
               {#if generatedInstanceCount > 0}
                 <span
                   title={stageTransformLabel
-                    ? `Stage placement: ${stageTransformLabel}`
+                    ? t("tunnel_stage_placement", { placement: stageTransformLabel })
                     : undefined}
                 >
-                  {generatedInstanceCount} on stage
+                  {t("tunnel_on_stage", { count: generatedInstanceCount })}
                 </span>
               {/if}
             {:else if linked}
               <span
-                >Follows {sourcePerformerLabel ?? "an earlier performer"}</span
+                >{t("tunnel_follows", { source: sourcePerformerLabel ?? t("tunnel_earlier_performer") })}</span
               >
             {:else}
               <span>{t("create_ui_complete_two_prop_sequence")}</span>
@@ -258,8 +258,8 @@
     <div
       class="hand-key"
       aria-label={primaryStageColors
-        ? `${label} stage colors: Left ${primaryStageColors.left}, Right ${primaryStageColors.right}${stageColors.length > 1 ? `; ${stageColors.length} generated color pairs` : ""}`
-        : `${label} hand identity: Left and Right`}
+        ? t("tunnel_stage_colors", { name: label, left: primaryStageColors.left, right: primaryStageColors.right, count: stageColors.length })
+        : t("tunnel_hand_identity", { name: label })}
     >
       <span
         class="hand"
@@ -274,7 +274,7 @@
       {#if stageColors.length > 1}
         <span
           class="pair-count"
-          title={`${stageColors.length} stage instances use distinct spectrum pairs`}
+          title={t("tunnel_distinct_color_pairs", { count: stageColors.length })}
           >×{stageColors.length}</span
         >
       {/if}
@@ -282,13 +282,13 @@
 
     <div
       class="compact-source-actions"
-      aria-label={`${label} sequence actions`}
+      aria-label={t("tunnel_actions_label", { name: label })}
     >
       {#if onGenerateNow}
         <PanelButton
           variant="primary"
           onclick={onGenerateNow}
-          ariaLabel={`Generate a new ${label} sequence with the current settings`}
+          ariaLabel={t("tunnel_generate_label", { name: label })}
         >
           <i class="fas fa-dice" aria-hidden="true"></i>
           <span class="compact-generate-label">{t("generator_button")}</span>
@@ -297,7 +297,7 @@
       <OverflowMenu
         items={compactActions}
         placement="bottom"
-        ariaLabel={`More ${label} actions`}
+        ariaLabel={t("tunnel_more_label", { name: label })}
         triggerPresentation="labelled"
       >
         {#snippet trigger()}

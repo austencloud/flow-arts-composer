@@ -22,6 +22,7 @@
   import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
   import { codexData, type CodexCellDef } from "../_data/codex-groups";
   import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
+  import { tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
 
   let {
     cell,
@@ -134,7 +135,7 @@
     <SelectionHit
       groupId={cell.id}
       isGroupStart
-      label={`Explore ${cell.label}${cell.name ? `, ${cell.name}` : ""} variations`}
+      label={tDynamic("guide_codex_explore_variations", { letter: cell.label, name: cell.name ? `, ${cell.name}` : "" })}
       {href}
       onselect={() => onSelect?.(cell.id)}
     />

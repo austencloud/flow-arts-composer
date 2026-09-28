@@ -128,6 +128,7 @@
 
   let {
     sequence,
+    displayWord = null,
     sequenceLoadKey = null,
     autoPlay = true,
     autoPlayDelay = 300,
@@ -189,6 +190,8 @@
     ephemeral = false,
   }: {
     sequence: SequenceData;
+    /** Presentation-only word; sequence identity and playback use `sequence`. */
+    displayWord?: string | null;
     /** Distinguishes a deliberate host reload when selections share an ID. */
     sequenceLoadKey?: string | null;
     autoPlay?: boolean;
@@ -1048,7 +1051,7 @@
         letter={currentLetter}
         stepData={currentStepData}
         sequenceData={animationState.sequenceData}
-        word={animationState.sequenceData?.word ?? sequence.word}
+        word={displayWord ?? animationState.sequenceData?.word ?? sequence.word}
         currentStep={animationState.currentStep}
         isPlaying={canvasPlaying}
         onPlaybackToggle={togglePlayback}

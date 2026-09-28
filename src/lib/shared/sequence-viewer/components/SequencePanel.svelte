@@ -495,7 +495,7 @@
           aria-label={t("browse_view_videos")}
         >
           <i class="fas fa-video" aria-hidden="true"></i>
-          <span>Videos{videoCount > 0 ? ` (${videoCount})` : ""}</span>
+          <span>{t("browse_view_videos")}{videoCount > 0 ? ` (${videoCount})` : ""}</span>
         </button>
       {/if}
 

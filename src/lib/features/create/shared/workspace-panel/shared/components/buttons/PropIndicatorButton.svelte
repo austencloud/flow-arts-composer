@@ -79,7 +79,7 @@
 <button
   class="prop-indicator-button glass-button"
   onclick={(e) => handleClick(e)}
-  aria-label="Change prop type. Current: {displayInfo.label}"
+  aria-label={t("create_change_prop_type", { prop: displayInfo.label })}
   title={displayInfo.label}
   data-testid="prop-indicator-button"
   data-ghost="safe"
