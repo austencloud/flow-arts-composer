@@ -41,12 +41,19 @@
   CellRenderer retains its specialized image/bitmap dual-source path. The
   remount cost (not the sizing) is the carve-out line.
 
+  FOCUS: when the key change comes from a control inside the leaving layer
+  (Play trading places with the playing controls), focus moves to the
+  replacing layer's first control, or to that layer when it has none. It never
+  falls to <body>. A consumer that wants focus somewhere specific still moves
+  it after `tick()`, which runs later and wins.
+
   Boundary + rationale: docs/architecture/crossfade-primitive.md
   Routing rule: .claude/rules/crossfade-primitive.md
   Spec: docs/superpowers/specs/active/2026-06-30-crossfade-consolidation-design.md
 -->
 <script lang="ts">
   import { fade, type TransitionConfig } from "svelte/transition";
+  import { focusFirstOrContainer } from "$lib/shared/foundation/ui/modal/helpers/focus-restore";
   import { DURATION } from "$lib/shared/transitions/transitions";
   import {
     flyFade,
@@ -164,8 +171,30 @@
     // Outgoing controls stay painted during the fade but must stop accepting
     // input. A reversed transition restores the returning layer immediately.
     layer.inert = !interactive;
-    if (interactive) layer.removeAttribute("aria-hidden");
-    else layer.setAttribute("aria-hidden", "true");
+    if (interactive) {
+      layer.removeAttribute("aria-hidden");
+      return;
+    }
+    // Without a fade this fires inside the commit, before the focus effect
+    // below runs, and the layer is removed right after it.
+    handOffFocus(layer);
+    layer.setAttribute("aria-hidden", "true");
+  }
+
+  /**
+   * A key change often comes from a control inside the layer it replaces:
+   * Play trading places with the playing controls. The leaving layer turns
+   * inert on the commit that shows its replacement, and the browser then drops
+   * focus to <body>, sending a keyboard or screen-reader user back to the top
+   * of the page. Move focus to the replacing layer's first control instead, or
+   * to that layer itself when it has none, so Tab carries on from here.
+   */
+  function handOffFocus(leaving: Element): void {
+    if (!leaving.contains(document.activeElement)) return;
+    const shown = shownLayer();
+    if (shown && shown !== leaving) {
+      focusFirstOrContainer(shown, { preventScroll: true });
+    }
   }
 
   // The box is driven off the INCOMING layer's natural height. The outgoing
@@ -332,6 +361,15 @@
     if (!shown || shown === liveLayer) return;
     if (heightEnabled) animateNextMeasure = true;
     claimLayer(shown);
+  });
+
+  // Runs in the same flush as the commit, ahead of the browser's own focus
+  // fix-up for the now-inert layer. `outrostart` alone is too late: it fires
+  // a frame or more into the fade, and on a busy page the browser has
+  // dropped focus to <body> by then.
+  $effect(() => {
+    void key;
+    for (const layer of box?.children ?? []) handOffFocus(layer);
   });
 
   $effect(() => {

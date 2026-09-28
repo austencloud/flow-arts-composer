@@ -70,6 +70,17 @@ short directional drift through the shared motion helper, and animates a changed
 natural height on the same clock when `animateHeight` is enabled. This is the
 canonical wizard-step transition; feature code does not reproduce it.
 
+### Focus follows the swap
+
+A key change often comes from a control inside the leaving layer, such as Play
+trading places with the playing controls. The primitive moves focus to the
+replacing layer's first control, or to that layer when it has none, on the same
+commit that makes the leaving layer inert and before it is `aria-hidden`.
+Otherwise the browser drops focus to `<body>` and a keyboard or screen-reader
+user starts again from the top of the page. Consumers that want a specific
+target still move focus after `tick()`; that runs later and wins. Controls a
+consumer renders outside the keyed region are its own to focus.
+
 ## What is on the primitive (migrated 2026-06-30)
 
 | File                                             | Mode              | Note                                                                |
