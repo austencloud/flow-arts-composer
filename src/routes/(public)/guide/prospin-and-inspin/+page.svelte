@@ -1,14 +1,13 @@
 <script lang="ts">
   /**
    * /guide/prospin-and-inspin answers the community word. Inspin is what most
-   * spinners call the Kinetic Alphabet's prospin, so this page shows the two
-   * directions, who uses which name, where each first shows up in writing,
-   * and why the Kinetic Alphabet keeps prospin.
+   * spinners call the Kinetic Alphabet's prospin, so this page says they are
+   * the same motion, shows prospin beside antispin, and gives the two reasons
+   * the Kinetic Alphabet says prospin.
    *
    * The two motions are Level 1's own Staff Motions demonstrations, read from
    * SHIFT_DEMOS, and the definitions quote that chapter, so this page cannot
-   * describe prospin differently from the lesson that teaches it. Every dated
-   * entry links the page it was read from.
+   * describe prospin differently from the lesson that teaches it.
    */
   import GuideShell from "../_components/GuideShell.svelte";
   import GuideSeo from "../level-1/_components/GuideSeo.svelte";
@@ -19,7 +18,6 @@
   import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
 
   const PATH = "/guide/prospin-and-inspin";
-  const STAFF_MOTIONS_PATH = "/guide/level-1/staff-motions";
 
   const shifts = [
     {
@@ -28,7 +26,6 @@
       word: "Prospin",
       name: "guide_prospin_pro_name",
       definition: "guide_prospin_pro_definition",
-      note: "guide_prospin_pro_note",
     },
     {
       style: "anti",
@@ -36,7 +33,6 @@
       word: "Antispin",
       name: "guide_prospin_anti_name",
       definition: "guide_prospin_anti_definition",
-      note: "guide_prospin_anti_note",
     },
   ].map((shift) => ({
     ...shift,
@@ -45,58 +41,6 @@
       { word: shift.word, name: shift.word }
     ),
   }));
-
-  /** Each name's users link to their record in the history archive. */
-  const usage = [
-    {
-      word: "guide_prospin_who_inspin",
-      users: [
-        { label: "guide_prospin_who_vtg", href: "/history#archive-record-vtg" },
-        { label: "guide_prospin_who_drex", href: "/history#archive-record-drexfactor" },
-        { label: "guide_prospin_who_playpoi", href: "/history#archive-record-playpoi" },
-      ],
-    },
-    {
-      word: "guide_prospin_who_prospin",
-      users: [
-        { label: "guide_prospin_who_home_of_poi", href: "/history#archive-record-home-of-poi" },
-        { label: "guide_prospin_who_lorq", href: "/history#archive-record-lorq" },
-        { label: "guide_prospin_who_tka", href: STAFF_MOTIONS_PATH },
-      ],
-    },
-  ];
-
-  /**
-   * Earliest written uses found, oldest first. A 2009 Home of Poi forum
-   * thread reportedly debated both names, but it stays off this list until
-   * someone has read the thread itself rather than a search snippet.
-   */
-  const timeline = [
-    {
-      id: "2009",
-      url: "https://www.homeofpoi.com/en/lessons/teach/POI/Poi-terminology/Poi-terminology",
-    },
-    {
-      id: "2010",
-      url: "https://noelyee.com/instruction/vulcan-tech-gospel/",
-    },
-    {
-      id: "2010_drex",
-      url: "https://drexfactor.com/weirdscience/2010/11/07/poi_heresies_why_3_petal_antispin_flowers_are_not_triquetras",
-    },
-    {
-      id: "2012",
-      url: "https://drexfactor.com/category/tags/vulcan_tech_gospel",
-    },
-    {
-      id: "2013",
-      url: "https://sirlorq.wordpress.com/tag/driving-style/",
-    },
-    {
-      id: "2016",
-      url: "https://playpoi.com/learn/linking-4-buzzsaw-flower-combinations-together-poi-fu/",
-    },
-  ];
 </script>
 
 <GuideSeo
@@ -113,115 +57,85 @@
 />
 
 <GuideShell>
-  <article class="prospin">
+  <article class="prospin guide-page-route">
     <header class="page-head">
       <h1>{tDynamic("guide_prospin_title")}</h1>
       <p class="lede">{tDynamic("guide_prospin_intro")}</p>
-      <p>{tDynamic("guide_prospin_reader_note")}</p>
     </header>
 
-    <section aria-labelledby="motion-heading">
-      <h2 id="motion-heading">{tDynamic("guide_prospin_motion_heading")}</h2>
-      <p>{tDynamic("guide_prospin_motion_intro")}</p>
+    <div class="shifts">
+      {#each shifts as shift (shift.style)}
+        <SequenceShowcase
+          sequence={shift.sequence}
+          items={shift.demo.items}
+          render={shift.demo.render}
+          picTheme="dark"
+        >
+          {#snippet text()}
+            <h2 class="shift-name">{tDynamic(shift.name)}</h2>
+            <p class="shift-definition">{tDynamic(shift.definition)}</p>
+          {/snippet}
+        </SequenceShowcase>
+      {/each}
+    </div>
 
-      <div class="shifts">
-        {#each shifts as shift (shift.style)}
-          <SequenceShowcase
-            sequence={shift.sequence}
-            items={shift.demo.items}
-            render={shift.demo.render}
-            picTheme="dark"
-            variant="compact"
-          >
-            {#snippet text()}
-              <h3 class="shift-name">{tDynamic(shift.name)}</h3>
-              <p class="shift-definition">{tDynamic(shift.definition)}</p>
-              <p class="shift-note">{tDynamic(shift.note)}</p>
-            {/snippet}
-          </SequenceShowcase>
-        {/each}
-      </div>
+    <div class="closing">
+      <section class="why" aria-labelledby="why-heading">
+        <h2 id="why-heading">{tDynamic("guide_prospin_why_heading")}</h2>
+        <p>{tDynamic("guide_prospin_why_pair")}</p>
+        <p>{tDynamic("guide_prospin_why_orientation")}</p>
+      </section>
 
-      <p class="source-line">
-        {tDynamic("guide_prospin_motion_source_before")}<a href={STAFF_MOTIONS_PATH}
-          >{tDynamic("guide_prospin_more_staff")}</a
-        >{tDynamic("guide_prospin_motion_source_after")}
-      </p>
-    </section>
-
-    <section aria-labelledby="who-heading">
-      <h2 id="who-heading">{tDynamic("guide_prospin_who_heading")}</h2>
-      <div class="usage">
-        {#each usage as column (column.word)}
-          <div class="usage-column">
-            <h3>{tDynamic(column.word)}</h3>
-            <ul>
-              {#each column.users as user (user.label)}
-                <li><a href={user.href}>{tDynamic(user.label)}</a></li>
-              {/each}
-            </ul>
-          </div>
-        {/each}
-      </div>
-    </section>
-
-    <section aria-labelledby="history-heading">
-      <h2 id="history-heading">{tDynamic("guide_prospin_history_heading")}</h2>
-      <p>{tDynamic("guide_prospin_history_intro")}</p>
-      <ol class="timeline">
-        {#each timeline as entry (entry.id)}
+      <nav class="more" aria-labelledby="more-heading">
+        <h2 id="more-heading">{tDynamic("guide_prospin_more_heading")}</h2>
+        <ul>
           <li>
-            <span class="when">{tDynamic(`guide_prospin_history_${entry.id}_date`)}</span>
-            <span class="what">
-              {tDynamic(`guide_prospin_history_${entry.id}`)}
-              <a class="external" href={entry.url} target="_blank" rel="noopener noreferrer"
-                >{tDynamic(`guide_prospin_history_${entry.id}_source`)}<span class="sr-only">
-                  {tDynamic("guide_prospin_new_tab")}</span
-                ></a
-              >
-            </span>
+            <a href="/guide/level-1/staff-motions"
+              >{tDynamic("guide_prospin_more_staff")}</a
+            >
           </li>
-        {/each}
-      </ol>
-    </section>
-
-    <section aria-labelledby="why-heading">
-      <h2 id="why-heading">{tDynamic("guide_prospin_why_heading")}</h2>
-      <p>{tDynamic("guide_prospin_why_pair")}</p>
-      <p>{tDynamic("guide_prospin_why_misread")}</p>
-      <p>{tDynamic("guide_prospin_why_orientation")}</p>
-      <p>{tDynamic("guide_prospin_why_stance")}</p>
-    </section>
-
-    <nav class="more" aria-labelledby="more-heading">
-      <h2 id="more-heading">{tDynamic("guide_prospin_more_heading")}</h2>
-      <ul>
-        <li><a href={STAFF_MOTIONS_PATH}>{tDynamic("guide_prospin_more_staff")}</a></li>
-        <li><a href="/guide/ratios">{tDynamic("guide_prospin_more_ratios")}</a></li>
-        <li><a href="/history">{tDynamic("guide_prospin_more_history")}</a></li>
-      </ul>
-    </nav>
+          <li>
+            <a href="/guide/ratios">{tDynamic("guide_prospin_more_ratios")}</a>
+          </li>
+        </ul>
+      </nav>
+    </div>
   </article>
 </GuideShell>
 
 <style>
-  /* A reading page: one prose measure, with the two demonstrations allowed
-     the Guide's full prose column so their canvas and strip keep their size.
-     SequenceShowcase reads --ink and --ink-dim from its host, the same
-     contract the Level 2 pages give it on this dark canvas. */
+  /* The page spans the Guide's full content track on a desktop, the same band
+     the Ratios page uses, and recomposes by its own width: prose keeps one
+     reading measure while the two demonstrations share the full band. On a
+     phone the Guide keeps the route in its prose column and everything stacks
+     in reading order. SequenceShowcase reads --ink and --ink-dim from its
+     host, the same contract the Level 2 pages give it on this dark canvas. */
   .prospin {
     --ink: #ececf2;
     --ink-dim: #a8a8b4;
     --glyph-invert: 1;
-    --measure: 40rem;
+    --copy: 38rem;
     --accent: var(--theme-accent, oklch(0.74 0.11 265));
     --rule: var(--theme-stroke, oklch(0.4 0.04 270 / 0.22));
+    --gutter: clamp(1.5rem, 3vw, 3rem);
+    --pad: clamp(1rem, 3vw, 3rem);
+    container: prospin / inline-size;
+    box-sizing: border-box;
+    inline-size: 100%;
     display: grid;
-    /* One column that never grows past the page, so a wide child such as the
-       two-column usage list wraps instead of widening the whole article. */
+    /* One column that never grows past the page, so a wide child wraps
+       instead of widening the whole article. */
     grid-template-columns: minmax(0, 1fr);
-    gap: clamp(2.5rem, 5vw, 4rem);
-    padding-block: clamp(1.5rem, 3vw, 3rem) clamp(3rem, 6vw, 5rem);
+    gap: clamp(2rem, 4vw, 3.5rem);
+    padding: clamp(1.5rem, 3vw, 3rem) var(--pad) clamp(3rem, 6vw, 5rem);
+  }
+
+  /* Below the tablet breakpoint the Guide keeps this route in its prose
+     column, which already carries its own gutter. */
+  @media (max-width: 768px) {
+    .prospin {
+      padding-inline: 0;
+    }
   }
 
   .prospin h1 {
@@ -234,24 +148,33 @@
     text-align: left;
   }
 
+  .prospin h2 {
+    margin-top: 0;
+  }
+
   .prospin p,
-  .prospin ul,
-  .prospin ol {
-    max-inline-size: var(--measure);
+  .prospin ul {
+    max-inline-size: var(--copy);
   }
 
   .lede {
+    margin-bottom: 0;
     color: oklch(0.86 0.01 270);
   }
 
-  .page-head p:last-child,
-  .source-line {
+  .why p:last-child {
     margin-bottom: 0;
   }
 
-  .prospin section,
+  .closing {
+    padding-top: clamp(1.75rem, 3vw, 2.75rem);
+    border-top: 1px solid var(--rule);
+  }
+
+  /* Stacked, the reading links sit under the why as their own short section. */
   .more {
     padding-top: clamp(1.5rem, 3vw, 2.5rem);
+    margin-top: clamp(2rem, 4vw, 3rem);
     border-top: 1px solid var(--rule);
   }
 
@@ -267,20 +190,18 @@
     border-radius: 3px;
   }
 
-  /* Links that leave the site say so: a small arrow for sighted readers and
-     a hidden phrase for screen readers. */
-  .prospin a.external::after {
-    content: "\2197";
-    display: inline-block;
-    margin-left: 0.2em;
-    font-size: 0.8em;
-    text-decoration: none;
+  .more ul {
+    margin: 0;
+    padding-left: 1.1rem;
+  }
+
+  .more li + li {
+    margin-top: 0.35rem;
   }
 
   .shifts {
     display: grid;
-    gap: 1.25rem;
-    margin-block: 1.5rem;
+    gap: clamp(2rem, 4vw, 3rem) calc(var(--gutter) * 2);
   }
 
   .shift-name {
@@ -288,61 +209,28 @@
   }
 
   .shift-definition {
-    margin: 0 0 0.5rem;
+    margin: 0;
     color: var(--ink);
   }
 
-  .shift-note {
-    margin: 0;
-  }
-
-  /* Two short lists side by side once both fit; stacked on a phone. */
-  .usage {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(min(15rem, 100%), 1fr));
-    gap: 0.5rem 2rem;
-    max-inline-size: 48rem;
-  }
-
-  .usage-column h3 {
-    margin-top: 0;
-  }
-
-  .usage ul {
-    margin: 0;
-    padding-left: 1.1rem;
-  }
-
-  /* Date beside entry on a wide column, date over entry on a phone. */
-  .timeline {
-    display: grid;
-    gap: 0.9rem;
-    margin: 0;
-    padding: 0;
-    list-style: none;
-  }
-
-  .timeline li {
-    display: grid;
-    grid-template-columns: 8.5rem minmax(0, 1fr);
-    gap: 0.2rem 1rem;
-    margin: 0;
-  }
-
-  .when {
-    color: oklch(0.86 0.01 270);
-    font-variant-numeric: tabular-nums;
-    font-weight: 600;
-  }
-
-  @media (max-width: 480px) {
-    .timeline li {
-      grid-template-columns: minmax(0, 1fr);
+  /* Wide: the two demonstrations sit side by side for comparison, and the
+     why keeps its measure with the reading links beside it. */
+  @container prospin (min-width: 64rem) {
+    .shifts {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
     }
-  }
 
-  .more ul {
-    margin: 0;
-    padding-left: 1.1rem;
+    .closing {
+      display: grid;
+      grid-template-columns: minmax(0, var(--copy)) minmax(0, 1fr);
+      column-gap: calc(var(--gutter) * 2);
+      align-items: start;
+    }
+
+    .more {
+      margin-top: 0;
+      padding-top: 0;
+      border-top: 0;
+    }
   }
 </style>
