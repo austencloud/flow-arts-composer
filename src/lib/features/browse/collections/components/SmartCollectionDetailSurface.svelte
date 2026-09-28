@@ -29,14 +29,14 @@
   }
 
   let {
-    name = "Smart Collection",
+    name = t("browse_verified_smart_collection"),
     description,
     icon = "fa-wand-magic-sparkles",
     color = "var(--theme-accent, #8b6cff)",
     spec = null,
     matchCount = null,
     contentFirst = false,
-    backLabel = "Collections",
+    backLabel = t("tab_library_collections"),
     loading = false,
     error = false,
     readOnly = false,
@@ -51,7 +51,7 @@
   }: Props = $props();
 
   const sourceLabel = $derived(
-    spec?.source === "my-library" ? "My Library" : "Community"
+    spec?.source === "my-library" ? t("browse_verified_my_library") : t("browse_audit_community")
   );
   const empty = $derived(!loading && !error && matchCount === 0);
 </script>
@@ -68,7 +68,7 @@
         <button
           type="button"
           class="icon-button back-button"
-          aria-label={`Back to ${backLabel}`}
+          aria-label={t("browse_verified_back_to", { destination: backLabel })}
           onclick={onBack}
         >
           <i class="fas fa-arrow-left" aria-hidden="true"></i>
@@ -104,15 +104,15 @@
             {#if readOnly}
               <span class="built-in-badge">
                 <i class="fas fa-lock" aria-hidden="true"></i>
-                Built in
+                {t("browse_audit_built_in")}
               </span>
             {/if}
           </div>
           <p>
             {description ??
               (readOnly
-                ? "A Smart Collection maintained by Flow Arts Composer."
-                : "A live collection built from saved filters.")}
+                ? t("browse_verified_builtin_smart_description")
+                : t("browse_verified_smart_description"))}
           </p>
         </div>
       {/if}
@@ -122,7 +122,7 @@
           {#if onEdit}
             <PanelButton
               variant="secondary"
-              ariaLabel="Edit Smart Collection rule"
+              ariaLabel={t("browse_verified_edit_smart_rule")}
               onclick={onEdit}
             >
               <i class="fas fa-sliders" aria-hidden="true"></i>
@@ -160,14 +160,14 @@
       <PanelState
         type="error"
         title={t("browse_ui_couldn_t_load_this_smart_collection")}
-        message="Check your connection, then try again."
+        message={t("browse_verified_check_connection")}
         onretry={onRetry}
       />
     {:else if loading}
       <PanelState
         type="loading"
         title={t("browse_ui_checking_the_saved_rule")}
-        message={`Looking for matches in ${sourceLabel}.`}
+        message={t("browse_verified_looking_for_matches", { source: sourceLabel })}
       />
     {:else if empty}
       {#if !readOnly && onEdit}
@@ -175,12 +175,12 @@
           type="empty"
           icon="fa-wand-magic-sparkles"
           title={t("browse_ui_no_sequences_match_this_rule")}
-          message="The rule is active, but its current source has no matches."
+          message={t("browse_verified_rule_no_matches")}
         >
           {#snippet actions()}
             <PanelButton variant="primary" onclick={onEdit}>
               <i class="fas fa-sliders" aria-hidden="true"></i>
-              Edit rule
+              {t("browse_ui_edit_rule")}
             </PanelButton>
           {/snippet}
         </PanelState>
@@ -189,7 +189,7 @@
           type="empty"
           icon="fa-wand-magic-sparkles"
           title={t("browse_ui_no_sequences_match_this_rule")}
-          message="Nothing in the current source matches this built-in rule."
+          message={t("browse_verified_builtin_rule_no_matches")}
         />
       {/if}
     {:else if children}

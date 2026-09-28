@@ -17,6 +17,7 @@
 </script>
 
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import type { Snippet } from "svelte";
   import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
 
@@ -36,39 +37,38 @@
 
   let { value, sharedAvailable, onchange, content }: Props = $props();
 
-  const shelves: Record<WorkShelfId, ShelfDefinition> = {
+  const shelves = $derived<Record<WorkShelfId, ShelfDefinition>>({
     collections: {
-      label: "My Collections",
-      shortLabel: "Saved",
-      description: "All saved sequences and the collections you build.",
+      label: t("browse_ui_my_collections"),
+      shortLabel: t("browse_verified_saved"),
+      description: t("browse_verified_collections_description"),
       icon: "fa-folder",
     },
     art: {
-      label: "Visuals",
-      shortLabel: "Visuals",
-      description: "Your tunnels, 3D scenes, and mandalas.",
+      label: t("browse_ui_visuals"),
+      shortLabel: t("browse_ui_visuals"),
+      description: t("browse_verified_visuals_description"),
       icon: "fa-palette",
     },
     performances: {
-      label: "Performances",
-      shortLabel: "Videos",
-      description: "Your uploads and collaboration invites.",
+      label: t("browse_verified_performances"),
+      shortLabel: t("browse_verified_videos"),
+      description: t("browse_verified_performances_description"),
       icon: "fa-video",
     },
     core: {
-      label: "TKA Core",
-      shortLabel: "Core",
-      description: "The founding TKA decks.",
+      label: t("browse_verified_tka_core"),
+      shortLabel: t("browse_verified_core"),
+      description: t("browse_verified_core_description"),
       icon: "fa-book-open",
     },
     shared: {
-      label: "Shared",
-      shortLabel: "More",
-      description:
-        "Collections people shared with you, plus the ones you follow.",
+      label: t("browse_verified_shared"),
+      shortLabel: t("browse_verified_more"),
+      description: t("browse_verified_shared_description"),
       icon: "fa-user-group",
     },
-  };
+  });
 
   const shelfIds = Object.keys(shelves) as WorkShelfId[];
   const options = $derived(
@@ -80,10 +80,10 @@
       disabled: shelfId === "shared" && !sharedAvailable,
       ariaLabel:
         shelfId === "shared" && !sharedAvailable
-          ? `${shelves[shelfId].shortLabel}, ${shelves[shelfId].label}, no collections yet`
+          ? t("browse_verified_shelf_no_collections", { short: shelves[shelfId].shortLabel, label: shelves[shelfId].label })
           : shelves[shelfId].shortLabel === shelves[shelfId].label
             ? shelves[shelfId].label
-            : `${shelves[shelfId].shortLabel}, ${shelves[shelfId].label}`,
+            : t("browse_verified_shelf_label", { short: shelves[shelfId].shortLabel, label: shelves[shelfId].label }),
     }))
   );
 </script>

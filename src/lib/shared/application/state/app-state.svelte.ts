@@ -15,6 +15,7 @@ import { DEFAULT_FAN_APPEARANCE } from "../../pictograph/prop/domain/fan-appeara
 import { DEFAULT_PROP_LOOK } from "../../pictograph/prop/domain/prop-look";
 import type { AppSettings } from "../../settings/domain/app-settings";
 import { healPropPair } from "../../settings/domain/prop-pair-rule";
+import type { SettingsState } from "../../settings/state/settings-state.svelte";
 import {
   getIsInitialized,
   getIsInitializing,
@@ -24,6 +25,7 @@ import {
 import {
   areServicesInitialized,
   getSettingsServiceSync,
+  initializeAppServices,
 } from "./services.svelte";
 import {
   initializeModulePersistence,
@@ -103,8 +105,9 @@ export function getSettings() {
     // The saved settings rather than hardcoded defaults, so BackgroundHost
     // paints the user's background immediately. This copy is read once and
     // never changes. The root layout starts the settings service on every app
-    // route; a landing-mode page that has to follow setting changes calls
-    // initializeAppServices() itself.
+    // route. A landing-mode page starts it with its first settings change
+    // (see withSettingsService), or calls initializeAppServices() itself when
+    // it has to follow changes made in another tab.
     return getPreloadedSettings();
   }
 
@@ -153,6 +156,36 @@ export function getCanUseApp() {
   return getIsReady() && !getShowSettings();
 }
 
+// Public pages such as the Guide and the Shape Engine don't start the settings
+// service when they load, so visitors can start reading sooner. Their prop
+// pickers still change saved settings (colours, fan and prop looks, grip), and
+// without this those changes would vanish with only a console warning: the
+// colours would not swap and nothing would be saved. So the first change
+// starts the service and then applies. Changes made while it starts wait for
+// it and land in the order they were made.
+let settingsServiceStart: Promise<void> | null = null;
+
+function withSettingsService(
+  apply: (service: SettingsState) => void
+): Promise<void> {
+  if (areServicesInitialized()) {
+    apply(getSettingsServiceSync());
+    return Promise.resolve();
+  }
+  settingsServiceStart ??= initializeAppServices().finally(() => {
+    settingsServiceStart = null;
+  });
+  return settingsServiceStart.then(
+    () => apply(getSettingsServiceSync()),
+    (error: unknown) => {
+      console.warn(
+        "Settings service could not start, so this change was not saved:",
+        error
+      );
+    }
+  );
+}
+
 /**
  * Update a single setting key-value pair.
  * This is the preferred method for individual setting updates as it avoids
@@ -170,13 +203,8 @@ export function updateSetting<K extends keyof AppSettings>(
     return;
   }
 
-  if (!areServicesInitialized()) {
-    console.warn("Settings service not initialized, cannot update setting");
-    return;
-  }
-
   // Use the singular updateSetting method which directly updates the state
-  void getSettingsServiceSync().updateSetting(key, value);
+  void withSettingsService((service) => void service.updateSetting(key, value));
 }
 
 export async function updateSettings(
@@ -190,13 +218,10 @@ export async function updateSettings(
     return;
   }
 
-  if (!areServicesInitialized()) {
-    console.warn("Settings service not initialized, cannot update settings");
-    return;
-  }
-
   // Update each setting individually using the interface method
-  void getSettingsServiceSync().updateSettings(newSettings);
+  await withSettingsService(
+    (service) => void service.updateSettings(newSettings)
+  );
 }
 
 // Performance tracking

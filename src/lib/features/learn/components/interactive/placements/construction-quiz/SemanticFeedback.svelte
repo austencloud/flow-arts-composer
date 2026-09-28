@@ -3,6 +3,7 @@ SemanticFeedback - Shows what the user built vs. what was requested.
 Teaches WHY the answer was wrong with geometric explanations and visual comparison.
 -->
 <script lang="ts">
+  import { tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
   import {
     PLACEMENT_TYPE_INFO,
     type PlacementType,
@@ -29,12 +30,6 @@ Teaches WHY the answer was wrong with geometric explanations and visual comparis
     gamma: "#a78bfa",
   };
 
-  const GEOMETRIC_EXPLANATIONS: Record<PlacementType, string> = {
-    alpha: "Hands at opposite points \u2014 a straight line through center",
-    beta: "Both hands at the same point",
-    gamma: "Hands at adjacent points \u2014 a right angle",
-  };
-
   // Example correct placements for guide line display
   const EXAMPLE_PLACEMENTS: Record<
     PlacementType,
@@ -58,7 +53,7 @@ Teaches WHY the answer was wrong with geometric explanations and visual comparis
   const targetInfo = $derived(PLACEMENT_TYPE_INFO[targetType]);
   const builtColor = $derived(TYPE_COLORS[builtType]);
   const targetColor = $derived(TYPE_COLORS[targetType]);
-  const targetExplanation = $derived(GEOMETRIC_EXPLANATIONS[targetType]);
+  const targetExplanation = $derived(tDynamic(`learn_placement_${targetType}_geometry`));
 
   const gridKey = $derived(
     gridMode === GridMode.DIAMOND ? "diamond" : "box",
@@ -73,7 +68,7 @@ Teaches WHY the answer was wrong with geometric explanations and visual comparis
   <div class="comparison">
     <!-- What you built -->
     <div class="comparison-panel built">
-      <span class="panel-label">You built</span>
+      <span class="panel-label">{tDynamic("learn_placement_you_built")}</span>
       <div class="visualizer-wrapper">
         <PlacementVisualizer
           {leftHand}
@@ -94,7 +89,7 @@ Teaches WHY the answer was wrong with geometric explanations and visual comparis
 
     <!-- Target -->
     <div class="comparison-panel target">
-      <span class="panel-label">Target</span>
+      <span class="panel-label">{tDynamic("learn_placement_target")}</span>
       <div class="explanation-block">
         <span class="target-symbol" style="color: {targetColor};">
           {targetInfo.symbol}

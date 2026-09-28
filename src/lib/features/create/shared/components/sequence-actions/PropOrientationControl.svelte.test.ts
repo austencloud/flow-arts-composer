@@ -3,8 +3,34 @@ import { page } from "vitest/browser";
 import { describe, it, expect, vi } from "vitest";
 import PropOrientationControl from "./PropOrientationControl.svelte";
 import { expectNoA11yViolations } from "$test-helpers/component-a11y";
+import { getLocale, setLocale } from "$lib/shared/i18n/i18n.svelte.js";
 
 describe("PropOrientationControl", () => {
+  it("switches accessible names to German while preserving orientation values", async () => {
+    const originalLocale = getLocale();
+    const onOrientationChange = vi.fn();
+    try {
+      render(PropOrientationControl, {
+        hand: "left",
+        orientation: "in",
+        onOrientationChange,
+      });
+
+      await setLocale("de");
+      await expect
+        .element(
+          page.getByRole("radiogroup", { name: "Startausrichtung Links" })
+        )
+        .toBeVisible();
+      await page
+        .getByRole("radio", { name: "Ausrichtung links auf nach außen setzen" })
+        .click();
+      expect(onOrientationChange).toHaveBeenCalledExactlyOnceWith("out");
+    } finally {
+      await setLocale(originalLocale);
+    }
+  });
+
   it("shows the current orientation as the selected option", async () => {
     render(PropOrientationControl, {
       hand: "left",

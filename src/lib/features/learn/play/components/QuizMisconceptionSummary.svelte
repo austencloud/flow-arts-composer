@@ -9,6 +9,7 @@ Only renders if there are actual type-confusion gaps to report.
   import type { DetectedGap } from "../../services/types";
   import { handleModuleChange } from "$lib/shared/navigation-coordinator/navigation-coordinator.svelte";
   import { browser } from "$app/environment";
+  import { tDynamic } from "$lib/shared/i18n/i18n.svelte";
 
   let { gaps }: { gaps: DetectedGap[] } = $props();
 
@@ -23,12 +24,12 @@ Only renders if there are actual type-confusion gaps to report.
     let question: string;
     if (comparison) {
       question =
-        `I confused ${group.correctLabel} with ${group.chosenLabel} in a quiz (${group.count}x). Here's what I need to understand:\n\n` +
-        `${comparison.letterA.summary}. It's a Type ${comparison.letterA.typeNumber} (${comparison.letterA.typeName}) letter.\n` +
-        `${comparison.letterB.summary}. It's a Type ${comparison.letterB.typeNumber} (${comparison.letterB.typeName}) letter.\n\n` +
-        `Key difference: ${comparison.explanation}`;
+        `${tDynamic("learn_controls_tika_confused_intro", { correct: group.correctLabel, chosen: group.chosenLabel, count: group.count })}\n\n` +
+        `${tDynamic("learn_controls_tika_letter_type", { summary: comparison.letterA.summary, number: comparison.letterA.typeNumber, name: comparison.letterA.typeName })}\n` +
+        `${tDynamic("learn_controls_tika_letter_type", { summary: comparison.letterB.summary, number: comparison.letterB.typeNumber, name: comparison.letterB.typeName })}\n\n` +
+        tDynamic("learn_controls_tika_key_difference", { explanation: comparison.explanation });
     } else {
-      question = `I confused ${group.correctLabel} with ${group.chosenLabel} in a quiz (${group.count}x). What's the difference?`;
+      question = tDynamic("learn_controls_tika_confused_question", { correct: group.correctLabel, chosen: group.chosenLabel, count: group.count });
     }
 
     sessionStorage.setItem("tika-seed-message", question);
@@ -70,19 +71,19 @@ Only renders if there are actual type-confusion gaps to report.
 
 {#if groupedGaps.length > 0}
   <div class="misconception-summary">
-    <h4 class="summary-title">Areas to review</h4>
+    <h4 class="summary-title">{tDynamic("learn_controls_areas_to_review")}</h4>
     <div class="confusion-list">
       {#each groupedGaps as group}
         <button
           class="confusion-item"
           class:known={!!group.explanation}
           onclick={() => openInTika(group)}
-          aria-label="Ask TIKA about {group.correctLabel} vs {group.chosenLabel}"
+          aria-label={tDynamic("learn_controls_ask_tika_pair", { correct: group.correctLabel, chosen: group.chosenLabel })}
         >
           <div class="confusion-content">
             <div class="confusion-header">
               <span class="confusion-pair">
-                {group.correctLabel} vs {group.chosenLabel}
+                {tDynamic("learn_controls_pair_versus", { correct: group.correctLabel, chosen: group.chosenLabel })}
               </span>
               {#if group.count > 1}
                 <span class="confusion-count">{group.count}x</span>

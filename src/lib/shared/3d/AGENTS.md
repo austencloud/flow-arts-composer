@@ -24,6 +24,15 @@ higher-level `AGENTS.md` files remain higher priority.
 - Verify changed 3D behavior in the real surface and on every affected rig.
   Measure the claimed behavior and inspect visible contact, continuity,
   interpenetration, camera composition, and reduced-motion behavior.
+- Judge performer contact, collision, and realism with a real staff build (the
+  Fire Staff, the LED Baton, or a day staff once one exists) at the staff
+  length that performer uses. Performers use staffs sized to their body or
+  grid style (`docs/architecture/performer-grid-styles.md`), so pin `length=`
+  in the staff-grip lab to the length under test. The Fire Staff draws the
+  length it is given; the LED Baton always draws 86.36 cm. The procedural red
+  and blue staff with the T-bar end (`?prop=staff` in that lab) is a notation
+  marker that nobody spins. Keep it for notation and never offer it as realism
+  evidence.
 
 Use `.claude/rules/blender-first-3d-scenes.md` for scene assets and search
 `docs/architecture/canonical-capabilities.md` with `rg` for current behavior

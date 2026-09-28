@@ -12,9 +12,9 @@ This file applies under `mcp-server/`. The current user request and root
   feasibility interrogation. Use `constraintPreset: "smooth"` unless the user
   specifies a different constraint.
 - Named-word creative requests may offer tagline choices before generation.
-  Generating a result does not authorize modifying
-  `src/core/humor-profile.json`; save training data only when Austen explicitly
-  asks.
+  Generating a result does not authorize modifying the private humor profile,
+  `E:/flow-arts-private/humor/humor-profile.json`; save training data only when
+  Austen explicitly asks.
 - Effect previews use `InfiniteSequenceGenerator`, default to 16 counts, remain
   at least 8 counts, pass `isEffectPreviewLoop`, and play through the seam with
   no end hold or reset flash.

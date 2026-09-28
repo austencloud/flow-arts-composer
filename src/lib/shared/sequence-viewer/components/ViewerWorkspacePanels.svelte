@@ -83,7 +83,11 @@
             ? t("viewer_ui_resize_performances")
             : inspectorProfile === "share"
               ? t("viewer_ui_resize_share")
-              : t("viewer_ui_resize_settings", { name: inspectorProfile }),
+              : inspectorProfile === "card"
+                ? t("viewer_ui_resize_card_settings")
+                : inspectorProfile === "art"
+                  ? t("viewer_ui_resize_art_settings")
+                  : t("viewer_ui_resize_motion_settings"),
       },
     ];
 

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
   import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
   import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
   import { getSettings } from "$lib/shared/application/state/app-state.svelte";
@@ -28,7 +29,7 @@
   }: Props = $props();
 
   let canvas: HTMLCanvasElement | undefined = $state();
-  let state = $state<"loading" | "ready" | "error">("loading");
+  let renderState = $state<"loading" | "ready" | "error">("loading");
 
   const theme = $derived(
     themeOverride ?? settingsService.settings.backgroundType ?? "cosmic"
@@ -58,7 +59,7 @@
         : null,
     };
     let cancelled = false;
-    state = "loading";
+    renderState = "loading";
     void (async () => {
       try {
         const hydrated = hydrateSequence({ ...currentSequence });
@@ -76,12 +77,12 @@
         const context = target.getContext("2d");
         if (!context) throw new Error("Card back canvas is unavailable");
         context.drawImage(rendered, 0, 0);
-        state = "ready";
+        renderState = "ready";
         onready?.();
       } catch (error) {
         if (cancelled) return;
         console.warn("[BackJobPreview] card back render failed", error);
-        state = "error";
+        renderState = "error";
         onerror?.(error);
       }
     })();
@@ -91,12 +92,12 @@
   });
 </script>
 
-<div class="back-job-preview" class:ready={state === "ready"}>
-  <canvas bind:this={canvas} aria-label="Card back" role="img"></canvas>
-  {#if state === "loading"}
-    <div class="status" role="status">Preparing card back…</div>
-  {:else if state === "error"}
-    <div class="status" role="alert">Card back preview unavailable</div>
+<div class="back-job-preview" class:ready={renderState === "ready"}>
+  <canvas bind:this={canvas} aria-label={tDynamic("learn_card_anatomy_card_back_aria")} role="img"></canvas>
+  {#if renderState === "loading"}
+    <div class="status" role="status">{tDynamic("learn_card_anatomy_card_back_preparing")}</div>
+  {:else if renderState === "error"}
+    <div class="status" role="alert">{tDynamic("learn_card_anatomy_card_back_unavailable")}</div>
   {/if}
 </div>
 

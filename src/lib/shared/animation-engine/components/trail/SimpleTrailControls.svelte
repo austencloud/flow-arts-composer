@@ -6,6 +6,7 @@
   - Bilateral prop toggle for both ends vs single end
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { settingsService } from "$lib/shared/settings/state/settings-state.svelte";
   import { onMount } from "svelte";
   import {
@@ -69,12 +70,22 @@
   );
 
   // Get prop-specific labels for the ends (e.g., "Thumb"/"Pinky" for staff)
-  const endLabels = $derived.by(() => {
+  const endLabels = $derived.by((): [string, string] => {
     const propToCheck = effectiveLeftPropType ?? effectiveRightPropType;
     if (propToCheck && isBilateralProp(propToCheck)) {
-      return getBilateralEndLabels(propToCheck);
+      const localizeEnd = (label: string): string => {
+        switch (label) {
+          case "Pinky": return t("animation_trail_pinky");
+          case "Thumb": return t("animation_trail_thumb");
+          case "Knob": return t("animation_trail_knob");
+          case "Bulb": return t("animation_trail_bulb");
+          default: return label;
+        }
+      };
+      const [left, right] = getBilateralEndLabels(propToCheck);
+      return [localizeEnd(left), localizeEnd(right)];
     }
-    return ["End 1", "End 2"];
+    return [t("animation_trail_end_one"), t("animation_trail_end_two")];
   });
 
   // Get current trail visibility from visibility manager (global state)
@@ -126,25 +137,25 @@
 </script>
 
 <div class="trail-controls">
-  <span class="label">Trails</span>
+  <span class="label">{t("animation_trails")}</span>
   <div class="preset-buttons">
     <button
       class="preset-btn"
       class:active={currentPreset === "off"}
       onclick={() => setPreset("off")}
       type="button"
-      aria-label="Turn trails off"
+      aria-label={t("animation_trails_off_aria")}
     >
-      Off
+      {t("effect_deep_off")}
     </button>
     <button
       class="preset-btn"
       class:active={currentPreset === "on"}
       onclick={() => setPreset("on")}
       type="button"
-      aria-label="Turn trails on"
+      aria-label={t("animation_trails_on_aria")}
     >
-      On
+      {t("animation_on")}
     </button>
   </div>
 
@@ -155,8 +166,8 @@
         class:active={isLeftEnd}
         onclick={() => setTrackingMode(TrackingMode.LEFT_END)}
         type="button"
-        title="Track {endLabels[0]} end only"
-        aria-label="Track {endLabels[0]} end only"
+        title={t("animation_trail_track_end_only", { end: endLabels[0] })}
+        aria-label={t("animation_trail_track_end_only", { end: endLabels[0] })}
       >
         <span class="ends-label">{endLabels[0]}</span>
       </button>
@@ -165,8 +176,8 @@
         class:active={isBothEnds}
         onclick={() => setTrackingMode(TrackingMode.BOTH_ENDS)}
         type="button"
-        title="Track both ends"
-        aria-label="Track both ends"
+        title={t("animation_trail_track_both_ends")}
+        aria-label={t("animation_trail_track_both_ends")}
       >
         <i class="fas fa-arrows-alt-h" aria-hidden="true"></i>
       </button>
@@ -175,8 +186,8 @@
         class:active={isRightEnd}
         onclick={() => setTrackingMode(TrackingMode.RIGHT_END)}
         type="button"
-        title="Track {endLabels[1]} end only"
-        aria-label="Track {endLabels[1]} end only"
+        title={t("animation_trail_track_end_only", { end: endLabels[1] })}
+        aria-label={t("animation_trail_track_end_only", { end: endLabels[1] })}
       >
         <span class="ends-label">{endLabels[1]}</span>
       </button>

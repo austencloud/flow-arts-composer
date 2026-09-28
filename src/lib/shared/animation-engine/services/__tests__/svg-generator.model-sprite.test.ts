@@ -38,17 +38,18 @@ describe("model sprite orientation", () => {
     expect(svg).toMatch(/<\/g>\s*<\/svg>\s*$/);
   });
 
-  it("leaves a bilateral capture alone", () => {
-    const source = fakeSprite(252.8, 77.8);
-    expect(orientModelSpriteToTips("staff", source)).toBe(source);
+  it("leaves a symmetric capture alone", () => {
+    const source = fakeSprite(252.8, 40);
+    expect(orientModelSpriteToTips("capsule_baton", source)).toBe(source);
   });
 
-  it("draws the club model sprite facing its tip", async () => {
+  it("draws the club and staff model sprites facing their tips", async () => {
     const club = await generatePropSvg("club__model", "#2e3192");
     expect(club.svg).toContain("rotate(180 129.335 17.085)");
     expect(club.width).toBe(258.67);
 
+    // The staff capture's T-bar (its thumb end) was shot on -x.
     const staff = await generatePropSvg("staff__model", "#2e3192");
-    expect(staff.svg).not.toContain("rotate(180");
+    expect(staff.svg).toContain("rotate(180 126.4 38.9)");
   });
 });

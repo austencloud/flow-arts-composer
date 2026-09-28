@@ -17,6 +17,7 @@
 -->
 <script lang="ts">
   import { onDestroy } from "svelte";
+  import { t } from "$lib/shared/i18n/i18n.svelte";
   import { getLibraryRepository } from "$lib/shared/library/get-library-repository";
   import { scene3dCollectionState } from "$lib/features/scene-3d-collection/state/scene-3d-collection-state.svelte";
   import { scene3DHasSteps } from "$lib/features/scene-3d-collection/services/open-3d-scene";
@@ -107,7 +108,7 @@
         loading = false;
       })
       .catch((err: unknown) => {
-        loadError = err instanceof Error ? err.message : "Failed to load library";
+        loadError = err instanceof Error ? err.message : t("browse_verified_load_library_failed");
         loading = false;
       });
   });
@@ -182,7 +183,7 @@
       picks.push({
         key: `seq-${topStarred.id}`,
         medium: "sequence",
-        title: topStarred.word || topStarred.name || "Sequence",
+        title: topStarred.word || topStarred.name || t("browse_audit_sequence"),
         sequence: topStarred,
       });
     }
@@ -480,19 +481,19 @@
 
 <div class="stage" bind:this={stageEl}>
   {#if loadError}
-    <PanelState type="error" title="Could not load library" message={loadError} />
+    <PanelState type="error" title={t("browse_verified_load_library_failed")} message={loadError} />
   {:else}
     <section class="band" aria-labelledby="band-showcase">
       <header class="band-head">
-        <h2 id="band-showcase">Showcase</h2>
+        <h2 id="band-showcase">{t("browse_verified_showcase")}</h2>
         <span class="rule" aria-hidden="true"></span>
         <span class="band-count">{showcase.length}</span>
       </header>
       {#if showcase.length === 0}
         <p class="band-empty">
           {isOwnProfile
-            ? "Nothing saved yet — the showcase fills from your collections."
-            : "Nothing published yet."}
+            ? t("browse_verified_showcase_empty_own")
+            : t("browse_verified_nothing_published")}
         </p>
       {:else}
         <div
@@ -523,7 +524,7 @@
     {#if publishedVisuals.length > 0}
       <section class="band" aria-labelledby="band-published">
         <header class="band-head">
-          <h2 id="band-published">Published visuals</h2>
+          <h2 id="band-published">{t("browse_verified_published_visuals")}</h2>
           <span class="rule" aria-hidden="true"></span>
           <span class="band-count">{publishedVisuals.length}</span>
         </header>
@@ -555,14 +556,14 @@
     {#if isOwnProfile}
     <section class="band" aria-labelledby="band-collections">
       <header class="band-head">
-        <h2 id="band-collections">Collections</h2>
+        <h2 id="band-collections">{t("tab_library_collections")}</h2>
         <span class="rule" aria-hidden="true"></span>
         <span class="band-count">{totalSaved}</span>
       </header>
 
       {#if totalSaved === 0}
         <p class="band-empty">
-          No saved scenes, tunnels, or mandalas on this account yet.
+          {t("browse_verified_saved_visuals_empty")}
         </p>
       {:else}
         {#each collectionStrips as strip (strip.id)}
@@ -572,7 +573,7 @@
             label={strip.label}
             total={strip.items.length}
             columns={stripColumns(capFor("collection"))}
-            actionLabel="See all"
+            actionLabel={t("browse_verified_see_all")}
             onenter={() => enterShelf(strip.id, strip.label)}
             items={strip.items
               .slice(0, stripColumns(capFor("collection")))
@@ -593,18 +594,18 @@
 
     <section class="band" aria-labelledby="band-archive">
       <header class="band-head">
-        <h2 id="band-archive">Archive</h2>
+        <h2 id="band-archive">{t("browse_verified_archive")}</h2>
         <span class="rule" aria-hidden="true"></span>
         <span class="band-count">{sequences.length}</span>
       </header>
 
       {#if loading}
-        <PanelState type="loading" message="Loading your library..." />
+        <PanelState type="loading" message={t("browse_verified_loading_library")} />
       {:else if sequences.length === 0}
         <p class="band-empty">
           {isOwnProfile
-            ? "No sequences saved on this account yet."
-            : "No published sequences yet."}
+            ? t("browse_verified_saved_sequences_empty")
+            : t("browse_verified_published_sequences_empty")}
         </p>
       {:else}
         <!-- Always a doorway, never a grid. A band that is browsable at 40 and
@@ -613,12 +614,12 @@
           {slots}
           total={sequences.length}
           columns={capFor("archive")}
-          actionLabel="Browse all sequences"
+          actionLabel={t("browse_verified_browse_all_sequences")}
           onenter={enterArchive}
           items={archiveSample.map((s) => ({
             key: s.id,
             medium: "sequence" as const,
-            title: s.word || s.name || "Untitled",
+            title: s.word || s.name || t("browse_verified_untitled"),
             sequence: s as SequenceData,
           }))}
         />

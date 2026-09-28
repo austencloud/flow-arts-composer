@@ -2,19 +2,19 @@
 
 ## Full Drafting Workflow (`<id> draft`)
 
-**STEP 1:** Read `docs/grants/grant-tracker.md` to get the grant details and see which sections are done.
+**STEP 1:** Read `E:/flow-arts-private/grants/grant-tracker.md` to get the grant details and see which sections are done.
 
-**STEP 2:** Read `docs/grants/grant-writing-knowledge.md` for the knowledge base.
+**STEP 2:** Read `E:/flow-arts-private/grants/grant-writing-knowledge.md` for the knowledge base.
 
 **STEP 3:** If this grant has specific application requirements listed (sections with word/char limits), proceed. If sections say "TBD", first web search for the application requirements and update the tracker with actual sections before drafting.
 
 **STEP 4:** Find the first unchecked section. Tell the user which section you're working on and its constraints (word count, character limit, what reviewers look for).
 
 **STEP 5:** Pull relevant context. Depending on the section, read from:
-- `docs/museum/story-bible.md` — for project description, narrative concept
-- `docs/grants/grant-tracker.md` — for framing notes
+- `E:/flow-arts-private/museum/story-bible.md` — for project description, narrative concept
+- `E:/flow-arts-private/grants/grant-tracker.md` — for framing notes
 - The codebase itself — for technical description of what Flow Arts Composer does
-- Previous approved drafts in `docs/grants/drafts/` — for consistency
+- Previous approved drafts in `E:/flow-arts-private/grants/drafts/` — for consistency
 
 **STEP 6:** Draft the section. Follow the drafting rules below.
 
@@ -25,8 +25,8 @@
 - 2-3 specific questions for the user ("Does this accurately describe...?" "Should I emphasize X more?")
 
 **STEP 8:** Workshop with the user. Revise based on feedback. When they approve:
-1. Save to `docs/grants/drafts/<id>-<section-slug>.md`
-2. Check off the section in `docs/grants/grant-tracker.md`
+1. Save to `E:/flow-arts-private/grants/drafts/<id>-<section-slug>.md`
+2. Check off the section in `E:/flow-arts-private/grants/grant-tracker.md`
 3. Ask if they want to continue to the next section
 
 ### Drafting Rules

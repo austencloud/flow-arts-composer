@@ -1,4 +1,7 @@
-import { calculateMediaFit } from "$lib/shared/media-composition/services/media-fit";
+import {
+  calculateMediaFit,
+  turnedExtent,
+} from "$lib/shared/media-composition/services/media-fit";
 
 /**
  * The picture-pan math for dragging, wheel-zooming and pinching a video's
@@ -31,6 +34,8 @@ export interface OverscanInput {
   regionHeightPx: number;
   fit: "cover" | "contain";
   zoom: number;
+  /** The picture's turn in degrees; its turned outline is what overflows. */
+  rotation?: number;
 }
 
 /**
@@ -49,10 +54,10 @@ function overflowBeyond(drawnPx: number, regionPx: number): number {
 }
 
 /**
- * How far the picture overflows its box on each axis, at this zoom. Zero on
- * an axis the picture never overflows (a `contain` fit, most of the time),
- * zero on an axis it overflows by less than half a pixel, and zero on both
- * when a size is missing (the video's metadata hasn't loaded).
+ * How far the picture overflows its box on each axis, at this zoom and turn.
+ * Zero on an axis the picture never overflows (a `contain` fit, most of the
+ * time), zero on an axis it overflows by less than half a pixel, and zero on
+ * both when a size is missing (the video's metadata hasn't loaded).
  */
 export function overscanPixels(input: OverscanInput): { x: number; y: number } {
   if (
@@ -70,9 +75,14 @@ export function overscanPixels(input: OverscanInput): { x: number; y: number } {
     regionHeight: input.regionHeightPx,
     fit: input.fit,
   });
+  const extent = turnedExtent(
+    drawRect.width * input.zoom,
+    drawRect.height * input.zoom,
+    input.rotation ?? 0
+  );
   return {
-    x: overflowBeyond(drawRect.width * input.zoom, input.regionWidthPx),
-    y: overflowBeyond(drawRect.height * input.zoom, input.regionHeightPx),
+    x: overflowBeyond(extent.width, input.regionWidthPx),
+    y: overflowBeyond(extent.height, input.regionHeightPx),
   };
 }
 

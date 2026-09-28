@@ -14,6 +14,7 @@
 </script>
 
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import PropPairField from "$lib/shared/pictograph/prop/components/PropPairField.svelte";
   import CreatePanelDrawer from "./CreatePanelDrawer.svelte";
   import SaveProgressOverlay from "$lib/features/library/components/SaveProgressOverlay.svelte";
@@ -159,7 +160,7 @@
   showHandle={true}
   closeOnBackdrop={true}
   onClose={s.handleClose}
-  ariaLabel="Add to Gallery"
+  ariaLabel={t("create_review_add_to_gallery")}
 >
   <div class="panel-inner" bind:this={panelInnerEl}>
     {#if s.isSaving}
@@ -182,7 +183,7 @@
     <div class="panel-body">
       {#if !s.isSolo}
         <PropPairField bind:value={s.saveProps} disabled={s.isSaving} />
-        <p>Used when someone chooses As saved.</p>
+        <p>{t("create_review_used_when_someone_chooses_as_saved")}</p>
       {/if}
       <!-- Sequence Preview — WYSIWYG: the same card the save will produce.
            Every toggle comes from the composition manager / app settings (the
@@ -231,7 +232,7 @@
           {#if s.isExactDuplicate && !s.isFlagged}
             <span class="info-tag info-tag-saved">
               <i class="fas fa-check-circle" aria-hidden="true"></i>
-              Already saved
+              {t("create_review_already_saved")}
             </span>
           {:else if s.hasDuplicate && !s.isFlagged}
             <span class="info-tag info-tag-variation">
@@ -245,7 +246,7 @@
       {#if s.isSolo}
         <div class="form-group">
           <label for="solo-title">
-            Title <span class="required">*</span>
+            {t("create_review_title")} <span class="required">*</span>
           </label>
           <input
             id="solo-title"
@@ -257,8 +258,7 @@
             disabled={s.isSaving}
           />
           <p class="field-note">
-            Saved as {s.authoredHand}-hand choreography. It can still be
-            assigned to either hand when composing.
+            {t("create_save_solo_hand", { hand: s.authoredHand === 'left' ? t('create_save_hand_left') : t('create_save_hand_right') })}
           </p>
         </div>
       {:else if s.isMixed}
@@ -266,11 +266,10 @@
           <i class="fas fa-circle-exclamation" aria-hidden="true"></i>
           <div>
             <strong
-              >This choreography mixes paired and single-hand beats.</strong
+              >{t("create_review_this_choreography_mixes_paired_and_single_hand_beats")}</strong
             >
             <p>
-              Keep editing until every beat uses both hands or the same single
-              hand.
+              {t("create_review_keep_editing_until_every_beat_uses_both_hands_or_the_same_single_hand")}
             </p>
           </div>
         </div>
@@ -281,11 +280,10 @@
         <div class="moderation-warning">
           <div class="warning-header">
             <i class="fas fa-shield-alt" aria-hidden="true"></i>
-            <span>Content flagged by moderation</span>
+            <span>{t("create_review_content_flagged_by_moderation")}</span>
           </div>
           <p class="warning-text">
-            This sequence contains content that cannot be published to the
-            public gallery. You can still save it privately or share via link.
+            {t("create_review_this_sequence_contains_content_that_cannot_be_published_to_the_public_gallery_you_can_stil")}
           </p>
           <div class="flagged-terms">
             {#each s.moderationResult.flaggedTerms as term}
@@ -301,7 +299,7 @@
               onclick={s.handleOpenAppeal}
             >
               <i class="fas fa-gavel" aria-hidden="true"></i>
-              Appeal
+              {t("create_review_appeal")}
             </button>
             <button
               type="button"
@@ -311,7 +309,7 @@
             >
               {#if s.isSubmittingToShame}
                 <i class="fas fa-spinner fa-spin" aria-hidden="true"></i>
-                Submitting to Hall of Shame...
+                {t("create_review_submitting_to_hall_of_shame")}
               {:else}
                 <i class="fas fa-skull" aria-hidden="true"></i>
                 Hall of Shame
@@ -355,10 +353,10 @@
               disabled={s.isSaving || !s.canPublishToCommunity}
               aria-pressed={s.publishToCommunity}
               aria-label={!s.canPublishToCommunity
-                ? `Needs at least ${s.communityMinSteps} steps to make public`
+                ? t("create_save_min_public", { count: s.communityMinSteps })
                 : s.publishToCommunity
-                  ? "Will publish to community on save"
-                  : "Will save to personal library only"}
+                  ? t("create_save_publish_on_save")
+                  : t("create_save_private_only")}
             >
               <span class="toggle-track">
                 <span class="toggle-thumb"></span>
@@ -368,8 +366,7 @@
           {#if !s.canPublishToCommunity}
             <p class="community-note">
               <i class="fas fa-circle-info" aria-hidden="true"></i>
-              Needs at least {s.communityMinSteps} steps to post to the community.
-              Saves to your library.
+              {t("create_save_min_note", { count: s.communityMinSteps })}
             </p>
           {/if}
         </div>
@@ -402,7 +399,7 @@
           <CardFooterEditor
             value={s.cardPresentation}
             onchange={(value) => (s.cardPresentation = value)}
-            description="Saved with this card. Private notes stay private."
+            description={t("create_review_saved_with_this_card_private_notes_stay_private")}
             idBase="save-card-footer"
           />
         </div>
@@ -411,7 +408,7 @@
       <!-- Notes (optional) -->
       <div class="optional-section">
         <ExpandableField
-          label="Notes"
+          label={t("create_review_notes")}
           expanded={s.showNotes}
           onExpandedChange={(v) => (s.showNotes = v)}
           onCollapse={() => (s.notes = "")}
@@ -420,8 +417,8 @@
             id="notes"
             bind:value={s.notes}
             placeholder={s.isSolo
-              ? "Add personal notes about this choreography"
-              : "Add personal notes about this sequence"}
+              ? t("create_save_notes_choreo")
+              : t("create_save_notes_sequence")}
             class="textarea-field"
             rows="3"
             maxlength="500"
@@ -436,7 +433,7 @@
         class="button button-secondary"
         onclick={s.handleClose}
       >
-        Cancel
+        {t("create_review_cancel")}
       </button>
       <button
         data-save-shortcut
@@ -448,19 +445,19 @@
       >
         {#if s.isSaving}
           <i class="fas fa-spinner fa-spin" aria-hidden="true"></i>
-          Saving...
+          {t("create_review_saving")}
         {:else if s.requiresAccount}
           <i class="fas fa-user-plus" aria-hidden="true"></i>
-          Create account to save
+          {t("create_review_create_account_to_save")}
         {:else if s.isExactDuplicate && !s.isFlagged}
           <i class="fas fa-check" aria-hidden="true"></i>
-          Saved
+          {t("create_review_saved")}
         {:else if s.isFlagged}
           <i class="fas fa-ban" aria-hidden="true"></i>
-          Cannot Publish
+          {t("create_review_cannot_publish")}
         {:else}
           <i class="fas fa-bookmark" aria-hidden="true"></i>
-          Save to Library
+          {t("create_review_save_to_library")}
         {/if}
       </button>
     </div>

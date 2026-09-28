@@ -9,6 +9,7 @@
   Both act on the same axis (prop spin); this is the single destination for it.
 -->
 <script lang="ts">
+  import { t, tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
   import SettingsDrillRow from "$lib/shared/ui/components/settings-drill/SettingsDrillRow.svelte";
   import ReversalPatternView from "./ReversalPatternView.svelte";
   import RotationDirectionView from "./RotationDirectionView.svelte";
@@ -48,13 +49,13 @@
     <div class="hub-surface">
       <div class="direction-choices">
         <SettingsDrillRow
-          label="Reversals"
-          value="Flip spinning props on a rhythm"
+          label={t("create_review_reversals")}
+          value={tDynamic("create_action_flip_spinning_props_rhythm")}
           onclick={() => onRouteChange("reversals")}
         />
         <SettingsDrillRow
-          label="Rotation Direction"
-          value="Set CW or CCW across the sequence"
+          label={t("create_review_rotation_direction")}
+          value={tDynamic("create_action_set_rotation_sequence")}
           onclick={() => onRouteChange("absolute")}
         />
       </div>

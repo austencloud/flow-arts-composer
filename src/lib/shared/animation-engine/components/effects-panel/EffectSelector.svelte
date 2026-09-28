@@ -1,6 +1,7 @@
 <script lang="ts">
   import { effectUiLabel } from "./effect-ui-label";
   import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { claimedViewTransitionName } from "$lib/shared/transitions/claimed-view-transition-name";
   import type { Snippet } from "svelte";
   import { EFFECTS, type EffectMeta } from "./effect-registry";
   import {
@@ -33,6 +34,11 @@
      *  definite height; the others take the height their tiles need. */
     catalog?: EffectCatalogFit | null;
     portrait?: Snippet<[string]>;
+    /** While the host carries this grid from one arrangement to another, the
+     *  prefix under which each tile's box, picture, icon, name and badge claim
+     *  view-transition names, so each travels as its own piece. Null the rest
+     *  of the time, which keeps the names out of every other transition. */
+    morphName?: string | null;
   }
 
   const {
@@ -44,7 +50,15 @@
     availableEffects,
     catalog = null,
     portrait,
+    morphName = null,
   }: Props = $props();
+
+  function morphPart(part: string, effectId: string) {
+    return {
+      name: morphName ? `${morphName}-${part}-${effectId}` : "",
+      enabled: !!morphName,
+    };
+  }
 
   const showCatalog = $derived(!!catalog);
   const showPortraits = $derived(
@@ -111,25 +125,50 @@
         onclick={() => onSelect(effect.id)}
         onpointerenter={() => onPrewarm?.(effect.id)}
         onpointerdown={() => onPrewarm?.(effect.id)}
+        use:claimedViewTransitionName={morphPart("tile", effect.id)}
       >
         {#if showCatalog}
           {#if showPortraits && portrait}
-            <span class="effect-portrait" aria-hidden="true">
+            <span
+              class="effect-portrait"
+              aria-hidden="true"
+              use:claimedViewTransitionName={morphPart("picture", effect.id)}
+            >
               {@render portrait(effect.id)}
             </span>
           {/if}
           <span class="effect-caption">
             {#if !showPortraits}
-              <i class="fas {effect.icon}" aria-hidden="true"></i>
+              <i
+                class="fas effect-icon {effect.icon}"
+                aria-hidden="true"
+                use:claimedViewTransitionName={morphPart("icon", effect.id)}
+              ></i>
             {/if}
-            <span class="effect-label">{effectUiLabel(effect.label)}</span>
+            <span
+              class="effect-label"
+              use:claimedViewTransitionName={morphPart("name", effect.id)}
+              >{effectUiLabel(effect.label)}</span
+            >
           </span>
         {:else}
-          <i class="fas {effect.icon}" aria-hidden="true"></i>
-          <span class="effect-label">{effectUiLabel(effect.label)}</span>
+          <i
+            class="fas effect-icon {effect.icon}"
+            aria-hidden="true"
+            use:claimedViewTransitionName={morphPart("icon", effect.id)}
+          ></i>
+          <span
+            class="effect-label"
+            use:claimedViewTransitionName={morphPart("name", effect.id)}
+            >{effectUiLabel(effect.label)}</span
+          >
         {/if}
         {#if isActive && activeAction === "tune"}
-          <span class="tune-badge" aria-hidden="true">
+          <span
+            class="tune-badge"
+            aria-hidden="true"
+            use:claimedViewTransitionName={morphPart("badge", effect.id)}
+          >
             <i class="fas fa-sliders"></i>
           </span>
         {/if}
@@ -194,6 +233,19 @@
       background var(--duration-fast, 100ms) ease,
       border-color var(--duration-fast, 100ms) ease,
       color var(--duration-fast, 100ms) ease;
+    /* view-transitions.css: the box stretches between arrangements while the
+       parts inside it keep their own proportions. */
+    view-transition-class: fx-roster-box;
+  }
+
+  .effect-portrait,
+  .effect-icon,
+  .effect-label {
+    view-transition-class: fx-roster-part;
+  }
+
+  .tune-badge {
+    view-transition-class: fx-roster-swap;
   }
 
   .effect-btn.active {

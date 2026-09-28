@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { onDestroy, onMount } from "svelte";
   import DisplayTilePreview from "./DisplayTilePreview.svelte";
   import { getAnimationVisibilityManager } from "../../state/animation-visibility-state.svelte";
@@ -161,7 +162,7 @@
   const propChips: Chip[] = [
     {
       id: "left",
-      label: "Left",
+      label: t("viewer_ui_left"),
       preview: "props",
       hand: "left",
       accent: "var(--prop-blue, #2196f3)",
@@ -171,7 +172,7 @@
     },
     {
       id: "right",
-      label: "Right",
+      label: t("viewer_ui_right"),
       preview: "props",
       hand: "right",
       accent: "var(--prop-red, #f44336)",
@@ -183,7 +184,7 @@
 
   const masterPropsChip: Chip = {
     id: "props",
-    label: "Props",
+    label: t("viewer_ui_props"),
     preview: "props",
     active: () => propsVisible,
     toggle: () => toggleEffectivePropsVisibility(vm, trailOnlyState),
@@ -194,21 +195,21 @@
   const fieldChips: Chip[] = [
     {
       id: "grid",
-      label: "Grid",
+      label: t("playback_audit_visual_grid"),
       preview: "grid",
       active: () => gridVisible,
       toggle: toggleGrid,
     },
     {
       id: "pathLines",
-      label: "Hand paths",
+      label: t("animation_display_hand_paths"),
       preview: "paths",
       active: () => pathLines,
       toggle: togglePathLines,
     },
     {
       id: "mandala",
-      label: "Mandala",
+      label: t("share_mandala"),
       preview: "mandala",
       active: () => mandala,
       toggle: () => vm.toggleVisibility("mandala"),
@@ -220,35 +221,35 @@
   const markChips: Chip[] = [
     {
       id: "tkaGlyph",
-      label: "TKA Glyph",
+      label: t("animation_menu_tka_glyph"),
       preview: "tkaGlyph",
       active: () => tkaGlyph,
       toggle: () => vm.toggleVisibility("tkaGlyph"),
     },
     {
       id: "elementalGlyph",
-      label: "Hand TnD",
+      label: t("animation_menu_hand_tnd"),
       preview: "element",
       active: () => elementalGlyph,
       toggle: () => vm.toggleVisibility("elementalGlyph"),
     },
     {
       id: "propElementalGlyph",
-      label: "Prop TnD",
+      label: t("viewer_detail_prop_tnd"),
       preview: "element",
       active: () => propElementalGlyph,
       toggle: () => vm.toggleVisibility("propElementalGlyph"),
     },
     {
       id: "stepNumbers",
-      label: "Step #",
+      label: t("animation_display_step_number"),
       preview: "stepNumber",
       active: () => stepNumbers,
       toggle: () => vm.toggleVisibility("stepNumbers"),
     },
     {
       id: "wordHeader",
-      label: "Word",
+      label: t("viewer_ui_word"),
       preview: "word",
       active: () => wordHeader,
       toggle: () => vm.toggleVisibility("wordHeader"),

@@ -21,8 +21,7 @@
 
 {#if patterns.length === 0}
   <p class="empty-message">
-    No saved patterns yet. Save a pattern from the current sequence or try a
-    template above.
+    {t("create_review_no_saved_patterns_yet_save_a_pattern_from_the_current_sequence_or_try_a_template_above")}
   </p>
 {:else}
   <div class="saved-patterns-section">
@@ -43,12 +42,12 @@
             }
           }}
           title={currentStepCount !== pattern.stepCount
-            ? `Requires ${pattern.stepCount} steps`
-            : "Apply pattern"}
+            ? t("create_pattern_requires_steps", { count: pattern.stepCount })
+            : t("create_pattern_apply")}
         >
           <div class="pattern-info">
             <span class="pattern-name">{pattern.name}</span>
-            <span class="pattern-steps">{pattern.stepCount} steps</span>
+            <span class="pattern-steps">{t("create_pattern_steps", { count: pattern.stepCount })}</span>
           </div>
           <div class="pattern-actions">
             <button

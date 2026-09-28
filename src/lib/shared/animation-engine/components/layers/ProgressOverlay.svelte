@@ -5,6 +5,7 @@ Progress indicators for AnimatorCanvas.
 Shows pre-render progress and perfect playback badge.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import type { PreRenderProgress } from "$lib/shared/animation-engine/services/sequence-frame-pre-renderer";
   import ProgressRing from "$lib/shared/components/loading/ProgressRing.svelte";
 
@@ -29,7 +30,7 @@ Shows pre-render progress and perfect playback badge.
   >
     <div class="badge-content">
       <ProgressRing percent={-1} size={24} strokeWidth={2} />
-      <span>Optimizing... {Math.round(preRenderProgress.percent)}%</span>
+      <span>{t("animation_optimizing")} {Math.round(preRenderProgress.percent)}%</span>
     </div>
     <div class="progress-bar">
       <div
@@ -42,7 +43,7 @@ Shows pre-render progress and perfect playback badge.
 
 <!-- Perfect playback indicator (brief flash when ready) -->
 {#if preRenderedFramesReady}
-  <div class="perfect-mode-badge">✨ Perfect Playback</div>
+  <div class="perfect-mode-badge">✨ {t("animation_perfect_playback")}</div>
 {/if}
 
 <style>

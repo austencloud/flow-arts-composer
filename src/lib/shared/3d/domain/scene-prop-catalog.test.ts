@@ -7,6 +7,8 @@ import {
   isScenePhysicalProp,
   SCENE_PROP_FAMILIES,
   SCENE_PROP_REPRESENTATIVES,
+  scenePropDrawnLengthCm,
+  scenePropFixedLengthCm,
 } from "./scene-prop-catalog";
 
 describe("scene prop catalog", () => {
@@ -28,5 +30,16 @@ describe("scene prop catalog", () => {
         expect(findScenePropFamily(variant.id)).toBe(family);
       }
     }
+  });
+
+  it("reports the length each Double Staff build actually draws", () => {
+    // The scene stretches the Fire Staff's model to the length it is asked
+    // for, the way it sizes the procedural Staff, and leaves the LED Baton at
+    // its authored 86.36 cm. Reporting the Fire Staff at its authored 90 cm
+    // while it is drawn at a body's 67 cm fit misreads every grip on screen.
+    expect(scenePropDrawnLengthCm(PropType.STAFF, 67)).toBe(67);
+    expect(scenePropDrawnLengthCm(PropType.FIRE_DOUBLE_STAFF, 67)).toBe(67);
+    expect(scenePropDrawnLengthCm(PropType.CAPSULE_BATON, 67)).toBe(86.36);
+    expect(scenePropFixedLengthCm(PropType.FIRE_DOUBLE_STAFF)).toBeNull();
   });
 });

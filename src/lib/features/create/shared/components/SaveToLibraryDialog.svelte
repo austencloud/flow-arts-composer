@@ -19,6 +19,7 @@ Allows user to set name, visibility, tags, collections, and notes.
 </script>
 
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { untrack } from "svelte";
   import PropPairField from "$lib/shared/pictograph/prop/components/PropPairField.svelte";
   import { captureActivePropConfig } from "$lib/shared/foundation/services/recorded-prop-intent";
@@ -158,11 +159,11 @@ Allows user to set name, visibility, tags, collections, and notes.
     <!-- Form -->
     <div class="dialog-body">
       <PropPairField bind:value={saveProps} />
-      <p>Used when someone chooses As saved.</p>
+      <p>{t("create_review_used_when_someone_chooses_as_saved")}</p>
       <!-- Sequence Name -->
       <div class="form-group">
         <label for="sequence-name">
-          Sequence Name <span class="required">*</span>
+          {t("create_review_sequence_name")} <span class="required">*</span>
         </label>
         <input
           id="sequence-name"
@@ -177,7 +178,7 @@ Allows user to set name, visibility, tags, collections, and notes.
       <!-- Creator Info (compact) -->
       <div class="info-chip">
         <i class="fas fa-user" aria-hidden="true"></i>
-        <span>By {displayName}</span>
+        <span>{t("create_saved_by", { name: displayName })}</span>
         <span class="separator">•</span>
         <i class="fas fa-globe" aria-hidden="true"></i>
         <span>{t("create_ui_public")}</span>
@@ -216,7 +217,7 @@ Allows user to set name, visibility, tags, collections, and notes.
                   type="button"
                   class="tag-remove"
                   onclick={() => handleRemoveTag(tag)}
-                  aria-label="Remove tag {tag}"
+                  aria-label={t("create_save_remove_named_tag", { tag })}
                 >
                   <i class="fas fa-times" aria-hidden="true"></i>
                 </button>
@@ -237,7 +238,7 @@ Allows user to set name, visibility, tags, collections, and notes.
 
       <!-- Notes -->
       <div class="form-group">
-        <label for="notes">Notes (optional)</label>
+        <label for="notes">{t("create_review_notes_optional")}</label>
         <textarea
           id="notes"
           bind:value={notes}
@@ -256,7 +257,7 @@ Allows user to set name, visibility, tags, collections, and notes.
         class="button button-secondary"
         onclick={handleCancel}
       >
-        Cancel
+        {t("create_review_cancel")}
       </button>
       <button
         data-save-shortcut
@@ -266,7 +267,7 @@ Allows user to set name, visibility, tags, collections, and notes.
         disabled={!name.trim()}
       >
         <i class="fas fa-globe" aria-hidden="true"></i>
-        Publish & Continue
+        {t("create_review_publish_continue")}
       </button>
     </div>
   </div>

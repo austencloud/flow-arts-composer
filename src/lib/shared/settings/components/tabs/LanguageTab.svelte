@@ -7,12 +7,15 @@
 <script lang="ts">
   import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
   import { onMount } from "svelte";
-  import { t, locales, baseLocale } from "$lib/shared/i18n/i18n.svelte.js";
-  import type { HapticFeedback } from "../../../application/services/haptic-feedback";
   import {
-    getReactiveLocale,
-    switchLocale,
-  } from "$lib/shared/i18n/locale-state.svelte";
+    t,
+    locales,
+    baseLocale,
+    getBaseLocale,
+    getLocale,
+  } from "$lib/shared/i18n/i18n.svelte.js";
+  import type { HapticFeedback } from "../../../application/services/haptic-feedback";
+  import { switchLocale } from "$lib/shared/i18n/locale-state.svelte";
 
   // Language display names (native)
   const languageNames: Record<string, string> = {
@@ -46,7 +49,10 @@
 
   // State
   let isVisible = $state(false);
-  let currentLocale = $derived(getReactiveLocale());
+  let currentLocale = $derived(getLocale());
+  // This list offers plain languages, so a regional choice such as Mexican
+  // Spanish ("es-MX") is shown on its language's card (Español).
+  let currentLanguage = $derived(getBaseLocale(currentLocale));
   let previousLocale = $state<string>("");
   let localeChanged = $state(false);
 
@@ -73,11 +79,14 @@
 
   function handleLanguageSelect(locale: string) {
     hapticService?.trigger("selection");
+    // Tapping the language already in use keeps its regional variant, so
+    // Mexican Spanish keeps its 12-hour clock instead of becoming plain Spanish.
+    if (isCurrentLocale(locale)) return;
     switchLocale(locale);
   }
 
   function isCurrentLocale(locale: string): boolean {
-    return currentLocale === locale;
+    return currentLanguage === locale;
   }
 </script>
 

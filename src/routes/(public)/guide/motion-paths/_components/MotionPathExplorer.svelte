@@ -57,8 +57,10 @@
   } from "../_data/motion-path-explorer-state.svelte";
   import { loopDetector } from "$lib/features/create/generate/circular/services/loop-detector";
   import { registerLoopDetector } from "$lib/shared/create/get-loop-detector";
+  import { initializeAppServices } from "$lib/shared/application/state/services.svelte";
   import type { TurnValue } from "$lib/shared/create/services/level-turn-values";
   import type { MandalaPathShape } from "$lib/shared/mandala/domain/mandala-types";
+  import { tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
 
   const explorer = createMotionPathExplorerState();
   const matrixTipDx = $derived(shapeMatrixTipPoint(explorer.propType)?.dx);
@@ -118,13 +120,13 @@
   const studioLayout = $derived(
     studioPhase === "open" || studioPhase === "closing"
   );
-  const TOY_SECTION_LABELS: Partial<Record<PillId, string>> = {
-    effects: "Effects",
-    props: "Props",
-    effort: "Effort",
-    display: "Display",
+  const TOY_SECTION_KEYS: Partial<Record<PillId, string>> = {
+    effects: "guide_paths_effects",
+    props: "guide_paths_props",
+    effort: "guide_paths_effort",
+    display: "guide_paths_display",
   };
-  const shownLabel = $derived(TOY_SECTION_LABELS[shownSection] ?? "Animation");
+  const shownLabel = $derived(tDynamic(TOY_SECTION_KEYS[shownSection] ?? "guide_paths_animation"));
   // Side by side on a landscape screen, the canvas over its section on a
   // portrait one. The shape of the screen decides it, not its width: a short
   // landscape room (a phone on its side, a zoomed-in laptop) has no height
@@ -313,15 +315,16 @@
     matrixData ? applyFilter(matrixData.axis, matrixFilters.right, false) : []
   );
 
-  const SOURCE_OPTIONS: { value: ExplorerSource; label: string }[] = [
-    { value: "matrix", label: "Shape matrix" },
-    { value: "sequence", label: "Sequence" },
-  ];
+  const SOURCE_OPTIONS: { value: ExplorerSource; label: string }[] = $derived([
+    { value: "matrix", label: tDynamic("guide_paths_shape_matrix") },
+    { value: "sequence", label: tDynamic("guide_paths_sequence") },
+  ]);
 
   function describeHand(flower: Flower): string {
-    if (flower.style === "float") return "float";
-    const turns = flower.turns === 1 ? "1 turn" : `${flower.turns} turns`;
-    return `${flower.style}, ${turns}`;
+    if (flower.style === "float") return tDynamic("guide_paths_float");
+    const style = flower.style === "pro" ? tDynamic("guide_paths_prospin") : tDynamic("guide_paths_antispin");
+    const turns = tDynamic(flower.turns === 1 ? "guide_paths_one_turn" : "guide_paths_many_turns", { count: flower.turns });
+    return `${style}, ${turns}`;
   }
 
   // One plain line for what the canvas is playing. Sighted readers get it
@@ -330,16 +333,16 @@
     if (explorer.source === "sequence") {
       const word = simplifyRepeatedWord(explorer.browsed.word ?? "");
       const count = explorer.browsed.steps.length;
-      const steps = `${count} ${count === 1 ? "step" : "steps"}`;
-      return word ? `${word}, ${steps}.` : `A browsed sequence, ${steps}.`;
+      const steps = tDynamic(count === 1 ? "guide_paths_one_step" : "guide_paths_many_steps", { count });
+      return word ? `${word}, ${steps}.` : tDynamic("guide_paths_browsed_sequence", { steps });
     }
     const pair = explorer.selectedPair;
-    if (!pair) return "Loading a sequence…";
+    if (!pair) return tDynamic("guide_paths_loading_sequence");
     if (explorer.soloHand === "left")
-      return `Left hand ${describeHand(pair.left)}, on its own.`;
+      return tDynamic("guide_paths_left_solo", { hand: describeHand(pair.left) });
     if (explorer.soloHand === "right")
-      return `Right hand ${describeHand(pair.right)}, on its own.`;
-    return `Left hand ${describeHand(pair.left)}. Right hand ${describeHand(pair.right)}.`;
+      return tDynamic("guide_paths_right_solo", { hand: describeHand(pair.right) });
+    return tDynamic("guide_paths_both_hands", { left: describeHand(pair.left), right: describeHand(pair.right) });
   });
 
   function chooseSource(value: ExplorerSource): void {
@@ -398,7 +401,7 @@
       }
     } catch {
       if (mounted && request === matrixRequest)
-        matrixError = "The Shape Matrix could not load.";
+        matrixError = tDynamic("guide_paths_matrix_error");
     }
   }
 
@@ -426,6 +429,11 @@
   }
 
   onMount(() => {
+    // The toy box's prop look, fan build, colours and grip are the viewer's
+    // saved settings, the ones the canvas and the card's pictographs draw.
+    // Until the settings owner starts, those picks are dropped. The canvas
+    // already loads it, so starting it here adds no download.
+    initializeAppServices().catch(() => {});
     registerLoopDetector(loopDetector);
     void loadMatrix();
     const preference = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -477,7 +485,7 @@
 
 <section
   class="explorer"
-  aria-label="Motion path comparison"
+  aria-label={tDynamic("guide_paths_comparison")}
   bind:clientWidth={explorerWidth}
   bind:this={explorerElement}
 >
@@ -517,21 +525,21 @@
       <!-- Trace is the lesson's own switch: which point the mandala follows.
            Everything else about the canvas lives in the toy box under it. -->
       <div class="transport" data-rest-only inert={restFaded}>
-        <span class="stage-label">Animation</span>
+        <span class="stage-label">{tDynamic("guide_paths_animation")}</span>
         <div class="trace-choice">
-          <span class="control-label">Trace</span>
+          <span class="control-label">{tDynamic("guide_paths_trace")}</span>
           <SegmentedControl
             options={[
-              { value: "hands", label: "Hands" },
-              { value: "tips", label: "Prop tips" },
+              { value: "hands", label: tDynamic("guide_paths_hands") },
+              { value: "tips", label: tDynamic("guide_paths_prop_tips") },
             ]}
             value={explorer.trace}
-            ariaLabel="Trace point"
+            ariaLabel={tDynamic("guide_paths_trace_point")}
             onchange={(value) => (explorer.trace = value)}
           />
         </div>
       </div>
-      <div class="motion-stage" aria-label="Selected path animation">
+      <div class="motion-stage" aria-label={tDynamic("guide_paths_selected_animation")}>
         <div class="animation" data-studio-stage>
           {#if browser}
             <MotionPathTransitionStage
@@ -559,7 +567,7 @@
             />
           {/if}
           {#if !ready}<span class="loading" role="status"
-              >Loading animation…</span
+              >{tDynamic("guide_paths_loading_animation")}</span
             >{/if}
         </div>
       </div>
@@ -589,7 +597,7 @@
           presentation="navigation"
           controlledSection={toySection}
           onActiveSectionChange={chooseToySection}
-          regionLabel="Animation controls"
+          regionLabel={tDynamic("guide_paths_animation_controls")}
         />
       </div>
       <span class="sr-only" aria-live="polite">{nowPlaying}</span>
@@ -600,7 +608,7 @@
             ariaControls="motion-path-chooser"
             onclick={() => (chooserOpen = !chooserOpen)}
           >
-            Change what plays
+            {tDynamic("guide_paths_change_sequence")}
             <i
               class="fas fa-chevron-down chooser-chevron"
               class:open={chooserOpen}
@@ -617,7 +625,7 @@
       <section
         id="motion-path-chooser"
         class="chooser"
-        aria-label="Change what plays"
+        aria-label={tDynamic("guide_paths_change_sequence")}
         data-rest-only
         inert={restFaded}
         transition:growFade={{ axis: "y", duration: DURATION.normal }}
@@ -627,7 +635,7 @@
             <SegmentedControl
               options={SOURCE_OPTIONS}
               value={explorer.source}
-              ariaLabel="Sequence source"
+              ariaLabel={tDynamic("guide_paths_sequence_source")}
               onchange={chooseSource}
             />
           </div>
@@ -679,7 +687,7 @@
             {:else}
               <div class="browse-row">
                 <PanelButton fullWidth onclick={() => (pickerOpen = true)}
-                  >Browse sequences</PanelButton
+                  >{tDynamic("guide_paths_browse_sequences")}</PanelButton
                 >
               </div>
             {/if}
@@ -688,11 +696,11 @@
                moves nothing beside it. -->
           <div class="picker-feedback" aria-live="polite">
             {#if explorer.pickerStatus === "loading"}
-              <span>Building that sequence…</span>
+              <span>{tDynamic("guide_paths_building_sequence")}</span>
             {:else if explorer.pickerError}
-              <span role="alert">{explorer.pickerError}</span>
+              <span role="alert">{tDynamic(explorer.pickerError.startsWith("That hand relationship") ? "guide_paths_relationship_error" : "guide_paths_sequence_error")}</span>
               <PanelButton onclick={explorer.retryMatrixSelection}
-                >Try again</PanelButton
+                >{tDynamic("guide_paths_try_again")}</PanelButton
               >
             {/if}
           </div>
@@ -708,12 +716,12 @@
                   <div class="matrix-status error" role="alert">
                     <p>{matrixError}</p>
                     <PanelButton onclick={() => void loadMatrix()}
-                      >Try again</PanelButton
+                      >{tDynamic("guide_paths_try_again")}</PanelButton
                     >
                   </div>
                 {:else if !matrixData}
                   <p class="matrix-status" role="status">
-                    Building the Shape Matrix…
+                    {tDynamic("guide_paths_building_matrix")}
                   </p>
                 {:else}
                   <ShapeMatrixGrid
@@ -769,13 +777,13 @@
            layout waits for; a pill pressed mid-fade reverses it. -->
       <section
         class="toy-section"
-        aria-label="{shownLabel} settings"
+        aria-label={tDynamic("guide_paths_settings", { section: shownLabel })}
         transition:flyFade={{ y: 8, duration: DURATION.fast }}
       >
         <header class="toy-section-header">
           <PanelButton onclick={leaveStudio}>
             <i class="fas fa-arrow-left" aria-hidden="true"></i>
-            <span>Back to paths</span>
+            <span>{tDynamic("guide_paths_back")}</span>
           </PanelButton>
           <h3 class="toy-section-title">{shownLabel}</h3>
         </header>
@@ -797,17 +805,17 @@
 
 {#if pickerOpen}
   {#await import("$lib/shared/components/sequence-picker/SequencePickerModal.svelte")}
-    <p role="status">Loading sequence picker…</p>
+    <p role="status">{tDynamic("guide_paths_loading_picker")}</p>
   {:then { default: SequencePickerModal }}
     <SequencePickerModal
       open
       onClose={() => (pickerOpen = false)}
       onSelect={(sequence) => explorer.chooseSequence(sequence)}
-      title="Compare a sequence’s motion paths"
+      title={tDynamic("guide_paths_picker_title")}
     />
   {:catch}
-    <p role="alert">The sequence picker could not load.</p>
-    <PanelButton onclick={() => (pickerOpen = false)}>Close</PanelButton>
+    <p role="alert">{tDynamic("guide_paths_picker_error")}</p>
+    <PanelButton onclick={() => (pickerOpen = false)}>{tDynamic("guide_paths_close")}</PanelButton>
   {/await}
 {/if}
 

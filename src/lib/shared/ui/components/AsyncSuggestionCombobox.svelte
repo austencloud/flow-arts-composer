@@ -22,6 +22,7 @@
   first and last option.
 -->
 <script lang="ts" generics="T">
+  import { t } from "$lib/shared/i18n/i18n.svelte";
   import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
   import { onDestroy, type Snippet } from "svelte";
 
@@ -426,7 +427,7 @@
         type="button"
         class="clear-btn"
         onclick={clearSelection}
-        aria-label="Clear search"
+        aria-label="{t('browse_clear_search')}"
       >
         <i class="fas fa-times" aria-hidden="true"></i>
       </button>
@@ -436,7 +437,7 @@
   <!-- Screen reader status announcement -->
   <div class="sr-only" role="status" aria-live="polite" aria-atomic="true">
     {#if isSearching}
-      Searching...
+      {t('search_searching')}
     {:else if showResults && searchResults.length > 0}
       {announceCount(searchResults.length)}
     {:else if showResults && searchResults.length === 0 && searchQuery.length >= minQueryLength}

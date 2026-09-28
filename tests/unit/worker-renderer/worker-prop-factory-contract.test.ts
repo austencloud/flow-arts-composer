@@ -21,10 +21,15 @@ const canonicalPropRoot = path.join(
  */
 const CANONICAL_PROP_SOURCE_HASHES = {
   // Grip Lab staff length (95ef2c3bff): Prop3D gives the fire double staff a
-  // long-axis stretch of length / 0.9, its authored 900 mm.
-  // createRegistryWorkerProp applies the same stretch from options.length.
+  // long-axis stretch of length / 0.9, its authored 900 mm. Shared staff
+  // length: without a length of its own it now falls back to
+  // userProportionsState.staffLength, as Staff3D does.
+  // createRegistryWorkerProp applies the same stretch from options.length,
+  // which the worker snapshot resolves the same way. MODEL_BUILD_LENGTHS in
+  // scene-prop-catalog.ts records which models stretch, so the staff-grip lab
+  // reports the length that is drawn; change it with the stretch.
   "Prop3D.svelte":
-    "21dadfead8df151118536a0c1de3bf40b5305278edca0078bf6052b1b9861759",
+    "325058d080be065746d30769d98724463c32d0dd3c9c30e09e1fab2e94db5ad9",
   // Hand colors (d11b2ce06c): the component re-clones when the hand palette
   // changes. The worker recolors from the same live PROP_COLORS object and
   // rebuilds a performer whose snapshot handColors differ, so it already

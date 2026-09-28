@@ -1,11 +1,12 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   let { onBack }: { onBack: () => void } = $props();
 </script>
 
 <div class="profile-header">
-  <button class="back-btn" onclick={onBack} aria-label="Back">
+  <button class="back-btn" onclick={onBack} aria-label={t("action_go_back")}>
     <i class="fas fa-arrow-left" aria-hidden="true"></i>
-    <span class="back-text">Back</span>
+    <span class="back-text">{t("action_go_back")}</span>
   </button>
 </div>
 

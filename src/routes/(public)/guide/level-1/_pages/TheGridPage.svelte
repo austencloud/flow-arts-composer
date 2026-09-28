@@ -19,6 +19,7 @@
   import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
   import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
   import { THE_GRID_ALPHA3 } from "../_data/the-grid-pictograph";
+  import { localizeLevel1Text } from "../_data/localize-level1-content";
   import {
     guideEdit,
     ptDrag,
@@ -169,10 +170,10 @@
 {#snippet figure(type: "diamond" | "box" | "merged")}
   {@const gridLabel =
     type === "diamond"
-      ? "Diamond grid: four points at north, east, south, and west"
+      ? localizeLevel1Text("Diamond grid: four points at north, east, south, and west")
       : type === "box"
-        ? "Box grid: four points on the diagonals"
-        : "8-point grid: diamond and box combined"}
+        ? localizeLevel1Text("Box grid: four points on the diagonals")
+        : localizeLevel1Text("8-point grid: diamond and box combined")}
   <svg class="fig" viewBox="0 0 950 950" role="img" aria-label={gridLabel}>
     <desc>{gridLabel}</desc>
     <rect width="950" height="950" fill="#ffffff" />
@@ -235,7 +236,7 @@
       S}px; line-height:{intro.lh * S}px"
     use:ptDrag={pt(`grid-intro`, "intro", intro)}
   >
-    {@html intro.html}
+    {@html localizeLevel1Text(intro.html)}
   </p>
 
   {#each RUNS as r, i (i)}
@@ -249,7 +250,7 @@
       class:selected={guideEdit.selectedId === `grid-run-${i}`}
       style="left:{r.x * S}px; top:{r.y * S}px; width:{r.w *
         S}px; font-size:{r.h * S}px"
-      use:ptDrag={pt(`grid-run-${i}`, r.t, r)}>{r.t}</span
+      use:ptDrag={pt(`grid-run-${i}`, r.t, r)}>{localizeLevel1Text(r.t)}</span
     >
   {/each}
 
@@ -269,7 +270,7 @@
         set: (h) => (p.html = h),
       }}
     >
-      {@html p.html}
+      {@html localizeLevel1Text(p.html)}
     </p>
   {/each}
 

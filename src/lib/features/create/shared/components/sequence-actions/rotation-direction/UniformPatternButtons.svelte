@@ -23,7 +23,7 @@
       {disabled}
     >
       <i class="fas fa-rotate-right" aria-hidden="true"></i>
-      All CW
+      {t("create_review_all_cw")}
     </button>
     <button
       class="uniform-btn ccw"
@@ -31,7 +31,7 @@
       {disabled}
     >
       <i class="fas fa-rotate-left" aria-hidden="true"></i>
-      All CCW
+      {t("create_review_all_ccw")}
     </button>
   </div>
 </div>

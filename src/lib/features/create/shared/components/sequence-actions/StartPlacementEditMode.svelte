@@ -5,7 +5,7 @@
   placement. Location changes transform the prop through the whole sequence.
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t, tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
   import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
   import type { TargetHand } from "$lib/shared/create/domain/panel-types";
   import { GridLocation } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
@@ -60,10 +60,18 @@
     hand: TargetHand;
     label: string;
     shortLabel: string;
-  }[] = [
-    { hand: "left", label: "Left", shortLabel: "Left" },
-    { hand: "right", label: "Right", shortLabel: "Right" },
-  ];
+  }[] = $derived([
+    {
+      hand: "left",
+      label: t("shared_controls_left"),
+      shortLabel: t("shared_controls_left"),
+    },
+    {
+      hand: "right",
+      label: t("shared_controls_right"),
+      shortLabel: t("shared_controls_right"),
+    },
+  ]);
 
   // Stacked and focused layouts are both too narrow for two cards side by side,
   // so they share the hand picker and show one prop at a time.
@@ -71,9 +79,9 @@
 
   const statusMessage = $derived(
     isRepositioning
-      ? "Updating every step."
+      ? tDynamic("create_action_updating_every_step")
       : repositionDisabled
-        ? "Location controls are unavailable while a prop is at center."
+        ? tDynamic("create_action_location_unavailable_at_center")
         : ""
   );
 </script>
@@ -136,7 +144,7 @@
         value={visibleHand}
         onChange={(hand) => (visibleHand = hand)}
         options={HAND_OPTIONS}
-        ariaLabel="Choose start placement prop. Changes update every step."
+        ariaLabel={tDynamic("create_action_choose_start_placement_prop")}
         fullWidth
       />
     {/if}
