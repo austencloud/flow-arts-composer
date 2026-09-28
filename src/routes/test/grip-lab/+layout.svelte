@@ -2,8 +2,8 @@
   import type { Snippet } from "svelte";
   import "../../../app.css";
 
-  // Full-screen lab harness. The product shell's module restorer treats
-  // /test/* as an invalid product route and redirects it into Create.
+  // Full-screen lab harness. /test pages never mount the product shell, so
+  // this layout clears app.html's boot splash itself.
   let { children } = $props<{ children: Snippet }>();
 
   $effect(() => {

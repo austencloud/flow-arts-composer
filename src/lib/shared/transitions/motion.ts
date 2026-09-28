@@ -29,6 +29,12 @@ export function motionDuration(ms: number): number {
   return reducedMotion() ? 0 : ms;
 }
 
+/**
+ * Sideways drift of a stepped decision screen (Crossfade `motion="step"`).
+ * Chrome that leaves or returns with a stepped screen drifts the same way.
+ */
+export const STEP_DRIFT_PX = 12;
+
 /** Default duration for `animate:flip` list reordering. */
 export function flipDuration(): number {
   return motionDuration(DURATION.normal);

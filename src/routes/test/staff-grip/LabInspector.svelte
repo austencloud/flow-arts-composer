@@ -35,10 +35,13 @@
     deltaCm: number | null;
     /** What this configuration asks the prop to be. */
     configuredLengthCm: number | null;
-    /** What is actually drawn. Equals the ask only on a procedural build. */
+    /** What is actually drawn. Equals the ask unless `fixedLengthCm` is set. */
     drawnLengthCm: number | null;
-    /** Set when the build draws at an authored length and ignores the ask. */
-    authoredLengthCm: number | null;
+    /**
+     * Set when the build is a model the scene does not stretch, so it draws
+     * its authored length and ignores the ask.
+     */
+    fixedLengthCm: number | null;
     /** How tall the body on stage stands, in centimetres. */
     characterHeightCm: number;
     /** What the collision model is using. Does not follow the configuration. */
@@ -62,7 +65,7 @@
     deltaCm,
     configuredLengthCm,
     drawnLengthCm,
-    authoredLengthCm,
+    fixedLengthCm,
     characterHeightCm,
     collisionLengthCm,
     lengthDivergenceCm,
@@ -172,7 +175,7 @@
         <div class="panel">
           <p class="verdict" data-verdict={verdict}>
             <b>{cm(drawnLengthCm)} cm</b>
-            {authoredLengthCm === null ? "configured" : "on screen"} ·
+            {fixedLengthCm === null ? "configured" : "on screen"} ·
             {VERDICT_COPY[verdict]}{deltaCm !== null && verdict !== "fits"
               ? ` by ${Math.abs(deltaCm).toFixed(1)} cm`
               : ""}
@@ -185,7 +188,7 @@
                 <span class="sub">· {imperial(characterHeightCm)}</span>
               </dd>
             </div>
-            <div class="metric" data-diverged={authoredLengthCm !== null}>
+            <div class="metric" data-diverged={fixedLengthCm !== null}>
               <dt>Prop drawn length</dt>
               <dd>
                 {cm(drawnLengthCm)} cm
@@ -286,24 +289,24 @@
               live reading above should agree within a centimetre.
             </p>
           {/if}
-          {#if authoredLengthCm !== null}
+          {#if fixedLengthCm !== null}
             <p class="note">
-              This build is drawn from an authored model, so it measures {cm(
-                authoredLengthCm
-              )} cm whatever it is asked for: the scene package's
-              <code>Prop3D</code> hands <code>length</code> to procedural
-              geometry and drops it on its GLTF branch. Prop length above asks
-              for {cm(configuredLengthCm)} cm and nothing receives it. Switch to
-              the plain Staff to make the control reach the mesh, or change the
-              model's own <code>AUTHORED_LENGTH_M</code> and rebuild it.
+              This build is drawn from an authored model that the scene
+              package's <code>Prop3D</code> does not stretch, so it measures
+              {cm(fixedLengthCm)} cm whatever it is asked for. Prop length
+              above asks for {cm(configuredLengthCm)} cm and nothing receives
+              it. Switch to the plain Staff to make the control reach the mesh,
+              or change the model's own <code>AUTHORED_LENGTH_M</code> and
+              rebuild it.
             </p>
           {/if}
           <p class="note">
             Three lengths are live at once. The configured one reaches the drawn
-            prop through <code>propLength</code>, and only a procedural build
-            answers it. The collision model builds its segment from the scene
-            package's global <code>staffLength</code> and ignores both, so a
-            per-body length changes the picture and not the physics.
+            prop through <code>propLength</code>, and every build answers it
+            except a model the scene does not stretch. The collision model
+            builds its segment from the scene package's global
+            <code>staffLength</code> and ignores both, so a per-body length
+            changes the picture and not the physics.
           </p>
           <p class="note">
             The production sequence viewer takes a third route: it sizes the
