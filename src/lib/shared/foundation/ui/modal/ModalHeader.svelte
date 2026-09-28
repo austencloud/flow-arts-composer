@@ -9,6 +9,7 @@
   - Staggered entrance animations via data-animate attributes
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte";
   import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
   import type { HapticFeedback } from "$lib/shared/application/services/haptic-feedback";
 
@@ -63,7 +64,7 @@
     <button
       class="close-btn"
       onclick={handleClose}
-      aria-label="Close modal"
+      aria-label="{t('create_ui_close_modal')}"
       data-animate="2"
     >
       <i class="fas fa-times" aria-hidden="true"></i>

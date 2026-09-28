@@ -3,6 +3,7 @@
   import CodexSheet from "./_components/CodexSheet.svelte";
   import { SHEETS } from "./_data/codex-groups";
   import GuideSeo from "../level-1/_components/GuideSeo.svelte";
+  import { tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
 
   function print() {
     window.print();
@@ -44,19 +45,19 @@
 </script>
 
 <GuideSeo
-  title="Double Staff Codex: Every Base Letter, Printable | The Kinetic Alphabet"
-  description="The complete Kinetic Alphabet base-letter codex for double staves, Types 1–6, as a printable reference sheet."
+  title={tDynamic("guide_codex_seo_title")}
+  description={tDynamic("guide_codex_seo_description")}
   path="/guide/codex"
   breadcrumbs={[
-    { name: "Home", path: "/" },
-    { name: "Guide", path: "/guide" },
-    { name: "Codex", path: "/guide/codex" },
+    { name: tDynamic("guide_paths_home"), path: "/" },
+    { name: tDynamic("guide_paths_part_of"), path: "/guide" },
+    { name: tDynamic("guide_codex_title"), path: "/guide/codex" },
   ]}
 />
 
 <div class="codex-print-root">
   <div class="toolbar">
-    <button class="print-btn" onclick={print}>Print / Save PDF</button>
+    <button class="print-btn" onclick={print}>{tDynamic("guide_codex_print")}</button>
   </div>
 
   <div class="sheets" bind:this={sheetsEl}>

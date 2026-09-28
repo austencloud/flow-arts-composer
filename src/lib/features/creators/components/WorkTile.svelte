@@ -11,6 +11,7 @@
   and navigation; it does not own another preview player.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import RobustAvatar from "$lib/shared/components/avatar/RobustAvatar.svelte";
   import SequenceShowcasePreview from "$lib/shared/sequence-preview/components/SequenceShowcasePreview.svelte";
   import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
@@ -46,7 +47,7 @@
       activation="ambient"
       allowQR={false}
       onopen={() => onselect(sequence)}
-      openLabel="Open {creator.displayName}'s {sequenceWord} sequence"
+      openLabel={t("browse_verified_open_creators_sequence", { name: creator.displayName, word: sequenceWord })}
     />
   </div>
 
@@ -59,7 +60,7 @@
     class="credit"
     type="button"
     onclick={() => oncreator(creator)}
-    aria-label="View {creator.displayName}'s profile"
+    aria-label={t("browse_verified_view_creator_profile", { name: creator.displayName })}
   >
     <RobustAvatar
       src={creator.avatar}

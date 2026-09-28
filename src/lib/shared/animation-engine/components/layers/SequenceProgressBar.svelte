@@ -25,6 +25,7 @@ Design:
   import { motionDuration } from "$lib/shared/transitions/motion";
   import { DURATION } from "$lib/shared/transitions/transitions";
   import TransportControls from "../controls/TransportControls.svelte";
+  import { tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
 
   let {
     currentStep = 0,
@@ -102,11 +103,11 @@ Design:
    * currentStep is 1-based: 1.5 means beat 1, halfway through
    */
   const ariaLabel = $derived.by(() => {
-    if (totalSteps <= 0) return "Sequence progress: no sequence loaded";
+    if (totalSteps <= 0) return tDynamic("guide_runtime_progress_empty");
     // Convert to 0-based, modulo for looping, then back to 1-based for display
     const zeroBasedStep = currentStep < 1 ? 0 : currentStep - 1;
     const step = Math.floor(zeroBasedStep % totalSteps) + 1;
-    return `Sequence progress: step ${step} of ${totalSteps}`;
+    return tDynamic("guide_runtime_progress_step", { step, total: totalSteps });
   });
 
   // ── Seek gesture (only wired when interactive) ──
@@ -197,7 +198,7 @@ Design:
         transition:fade={fadeParams}
         role="slider"
         tabindex="0"
-        aria-label="Seek position"
+        aria-label={tDynamic("guide_runtime_seek_position")}
         aria-valuemin={0}
         aria-valuemax={100}
         aria-valuenow={Math.round(displayProgress * 100)}

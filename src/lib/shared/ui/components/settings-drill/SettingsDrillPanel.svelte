@@ -31,6 +31,7 @@ children, and detail bodies here are heavy pictograph grids — the carve-out
 named in .claude/rules/crossfade-primitive.md.
 -->
 <script module lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte";
   export type SettingsDrillItem = {
     id: string;
     label: string;
@@ -138,7 +139,7 @@ named in .claude/rules/crossfade-primitive.md.
               class="back-button"
               type="button"
               onclick={goBack}
-              aria-label="Back to all settings"
+              aria-label="{t('settings_back_all')}"
             >
               <svg
                 viewBox="0 0 24 24"

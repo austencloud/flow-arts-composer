@@ -90,8 +90,7 @@ collections have stable URLs and ordinary browser back/forward behavior.
       <p class="discover-message">{error}</p>
     {:else if items.length === 0}
       <p class="discover-message">
-        No public collections yet. Make one of yours public from its card menu
-        under You and it shows up here for everyone.
+        {t("browse_verified_community_collections_empty")}
       </p>
     {:else}
       <div class="card-grid">

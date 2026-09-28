@@ -4,6 +4,7 @@
   import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
   import type { GuideCodexVisibility } from "../../level-1/_data/guide-codex-persistence";
   import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
+  import { tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
 
   let {
     sheet,
@@ -37,15 +38,15 @@
 
 <section class="codex-sheet" class:embed>
   {#if sheet.title && !embed}
-    <h1 class="sheet-title">{sheet.title}</h1>
+    <h1 class="sheet-title">{sheet.title === "Double Staff" ? tDynamic("guide_codex_double_staff") : sheet.title}</h1>
   {/if}
 
   {#each sheet.types as type (type.n)}
     {#if type.divider}<hr class="type-divider" />{/if}
     <div class="type-block">
       <h2 class="type-head">
-        <span class="type-word">{type.word}</span>{#each type.segs as seg}<span
-            style:color={seg.c}>{seg.t}</span
+        <span class="type-word">{tDynamic("guide_codex_type_number", { number: type.n })}</span>{#each type.segs as seg}<span
+            style:color={seg.c}>{tDynamic(({ Dual: "guide_codex_dual", "-Shift": "guide_codex_dash_shift", Shift: "guide_codex_shift", Cross: "guide_codex_cross", Dash: "guide_codex_dash", "-Dash": "guide_codex_dash_dash", Static: "guide_codex_static" } as Record<string, string>)[seg.t] ?? "guide_codex_static")}</span
           >{/each}
       </h2>
       <div class="type-boxes">

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { localizeLevel1Text, localizeLevel1SelectionLabel } from "../_data/localize-level1-content";
   /**
    * Hybrid Reversals (CCCC) - body page (manifest `examples-cccc`), faithful to
    * "1.2 - Guide pt. 2 - CCCC" artboard (old p35).
@@ -264,7 +265,7 @@
 
   <!-- Row labels for the three CCCC variants. -->
   {#each SEQS.filter((q) => q.label) as q (q.key)}
-    <span class="row-label" style="left:{34 * S}px; top:{(q.rowYs[0]! + 38) * S}px; width:{126 * S}px; font-size:{16 * S}px">{q.label}</span>
+    <span class="row-label" style="left:{34 * S}px; top:{(q.rowYs[0]! + 38) * S}px; width:{126 * S}px; font-size:{16 * S}px">{localizeLevel1Text(q.label!)}</span>
   {/each}
 
   <!-- The four strips, each one clickable sequence. -->
@@ -294,7 +295,7 @@
       <SelectionHit
         groupId={q.key}
         isGroupStart
-        label={`Animate ${q.word}`}
+        label={localizeLevel1SelectionLabel(`Animate ${q.word}`)}
         onselect={() => emitSequence?.({ strip: RESOLVED[q.key]!, word: q.word, key: q.key, propType: "staff" })}
       />
     </div>
@@ -312,7 +313,7 @@
       use:ptDrag={pt(`hr-para-${i}`, "para", p)}
       use:editText={{ id: `hr-para-${i}`, label: "para", get: () => p.html, set: (h2) => (p.html = h2) }}
     >
-      {@html p.html}
+      {@html localizeLevel1Text(p.html)}
     </p>
   {/each}
 </div>

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t, tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
   import { saveMandalaToCollection } from "$lib/features/mandala/tabs/collection/services/save-mandala-to-collection";
   import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
   import type {
@@ -71,7 +71,10 @@
         pathShape: ctrl.pathShape,
         sequenceWord: sequence.word ?? "",
       });
-      if (name) toast.success(`Saved "${name}" to collection`);
+      if (name)
+        toast.success(
+          tDynamic("create_action_saved_mandala_to_collection", { name })
+        );
     } finally {
       saving = false;
     }
@@ -79,7 +82,9 @@
 
   const saveAction = $derived<ControlDockAction>({
     icon: "fa-folder-plus",
-    label: saving ? "Saving mandala" : "Save mandala to collection",
+    label: saving
+      ? tDynamic("create_action_saving_mandala")
+      : tDynamic("create_action_save_mandala_to_collection"),
     onClick: () => void handleSave(),
     disabled: saving,
     busy: saving,

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { localizeLevel1Text, localizeLevel1SelectionLabel } from "../_data/localize-level1-content";
   /**
    * Gamma Letters - body page (manifest `lt1-mp-nq-or-stuv`, retitled "Gamma
    * Letters"), faithful to proof p25 / "1.1 - Gamma Letters" artboard.
@@ -385,7 +386,7 @@
         <SelectionHit
           groupId={key}
           isGroupStart
-          label={`Animate letter ${c.name}`}
+          label={localizeLevel1SelectionLabel(`Animate letter ${c.name}`)}
           onselect={() =>
             emitSequence?.({
               strip: CELL_RESOLVED[key]!,
@@ -437,7 +438,7 @@
       <SelectionHit
         groupId={key}
         isGroupStart
-        label={`Animate the word ${w.word}`}
+        label={localizeLevel1SelectionLabel(`Animate the word ${w.word}`)}
         onselect={() =>
           emitSequence?.({
             strip: WORD_RESOLVED[key]!,
@@ -453,7 +454,7 @@
         2 *
         S}px; font-size:{16 * S}px"
     >
-      <span class="tka-font">{w.word}</span> - <em>{w.phrase}</em>
+      <span class="tka-font">{w.word}</span> - <em>{localizeLevel1Text(w.phrase)}</em>
     </p>
   {/each}
 
@@ -485,7 +486,7 @@
       <SelectionHit
         groupId={key}
         isGroupStart
-        label={`Animate letter ${c.name}`}
+        label={localizeLevel1SelectionLabel(`Animate letter ${c.name}`)}
         onselect={() =>
           emitSequence?.({
             strip: CELL_RESOLVED[key]!,
@@ -539,7 +540,7 @@
         set: (h) => (p.html = h),
       }}
     >
-      {@html p.html}
+      {@html localizeLevel1Text(p.html)}
     </p>
   {/each}
 </div>

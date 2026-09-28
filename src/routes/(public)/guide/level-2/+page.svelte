@@ -1,11 +1,12 @@
 <script lang="ts">
   import GuideSeo from "../level-1/_components/GuideSeo.svelte";
+  import { tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
 </script>
 
 <GuideSeo
   kind="Course"
-  title="Level 2 Guide: Turns | The Kinetic Alphabet"
-  description="The Kinetic Alphabet Level 2 guide: adding prop rotations (1-turns and 2-turns) to the base motions, with expanded glyphs, PADS ordering, and rotational-relationship dots."
+  title={tDynamic("guide_level2_seo_title")}
+  description={tDynamic("guide_level2_seo_description")}
   path="/guide/level-2"
   breadcrumbs={[
     { name: "Home", path: "/" },
@@ -16,39 +17,35 @@
 
 <div class="landing">
   <h1>The Kinetic Alphabet</h1>
-  <p class="subtitle">Level 2: Turns</p>
-  <p class="byline">Created by Austen Cloud</p>
+  <p class="subtitle">{tDynamic("guide_level2_subtitle")}</p>
+  <p class="byline">{tDynamic("guide_level2_byline")}</p>
 
   <section class="intro">
-    <p>
-      Level 2 introduces turns: 180° and 360° prop rotations layered onto the base motions
-      from Level 1. Each turn adds a thumb switch. The glyph system expands with high/low
-      slots, PADS ordering, and rotational-relationship dots.
-    </p>
+    <p>{tDynamic("guide_level2_intro")}</p>
   </section>
 
-  <nav class="toc" aria-label="Table of contents">
-    <h2>Chapters</h2>
+  <nav class="toc" aria-label={tDynamic("guide_level2_toc")}>
+    <h2>{tDynamic("guide_level2_chapters")}</h2>
     <ol>
       <li>
         <a href="/guide/level-2/turns">
-          <strong>2.0: 1-Turns</strong>
-          <span>Shifts, dashes, static turns, glyphs/PADS, Types 1–6 with turns, opening/closing, 1|1 turns</span>
+          <strong>{tDynamic("guide_level2_chapter1_title")}</strong>
+          <span>{tDynamic("guide_level2_chapter1_description")}</span>
         </a>
       </li>
       <li>
         <a href="/guide/level-2/double-turns">
-          <strong>2.1: 2-Turns</strong>
-          <span>Double-turning shifts, dashes, static, and codex reference pages</span>
+          <strong>{tDynamic("guide_level2_chapter2_title")}</strong>
+          <span>{tDynamic("guide_level2_chapter2_description")}</span>
         </a>
       </li>
     </ol>
   </nav>
 
   <section class="download">
-    <h2>PDF Version</h2>
+    <h2>{tDynamic("guide_level2_pdf_version")}</h2>
     <p>
-      <a href="/guides/level-2.pdf" download>Download Level 2 PDF</a>
+      <a href="/guides/level-2.pdf" download>{tDynamic("guide_level2_download_pdf")}</a>
     </p>
   </section>
 </div>

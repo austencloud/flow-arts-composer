@@ -73,12 +73,12 @@
     isDesktopPanel = false,
     compactMode = false,
     toolbar = false,
-    actionSubject = "sequence",
+    actionSubject = t("viewer_ui_sequence"),
     helpMode = false,
     rotationDegrees = 45,
     showRotationDegreesInLabel = false,
     desktopColumns = 2,
-    secondarySectionLabel = "Patterns",
+    secondarySectionLabel = t("create_transform_patterns"),
     shiftStartPlacement = "secondary",
     onReset,
     patternsLocked = false,
@@ -151,18 +151,18 @@
       onShiftStart && handleActionClick("shift-start", onShiftStart)}
     disabled={(!hasSequence || isTransforming || !canShiftStart) && !helpMode}
     aria-label={helpMode
-      ? "Learn about Choose Start"
+      ? t("create_transform_learn_choose_start")
       : patternsLocked
-        ? "Choose Start - locked, sign up to unlock"
-        : "Choose Start: tap the pose the sequence should start from"}
+        ? t("create_transform_choose_start_locked")
+        : t("create_transform_choose_start_aria")}
   >
     {@render lockBadge()}
     <div class="btn-icon">
       <i class="fas fa-forward" aria-hidden="true"></i>
     </div>
     <div class="btn-text">
-      <span class="btn-label">Choose Start</span>
-      <span class="btn-desc">Pick the start pose</span>
+      <span class="btn-label">{t("create_transform_choose_start")}</span>
+      <span class="btn-desc">{t("create_transform_pick_start_pose")}</span>
     </div>
   </button>
 {/snippet}
@@ -179,7 +179,7 @@
 >
   <!-- TRANSFORM Section -->
   <section class="section transform-section">
-    <span class="section-label">Transform</span>
+    <span class="section-label">{t("create_transform_heading")}</span>
     <div class="section-grid">
       <button
         class="grid-btn mirror"
@@ -187,18 +187,18 @@
         onclick={() => handleActionClick("mirror", onMirror)}
         data-ghost={disabled || helpMode ? undefined : "safe"}
         data-ghost-kind="transform"
-        data-ghost-label="Mirror"
+        data-ghost-label={t("create_ui_mirror")}
         disabled={disabled && !helpMode}
         aria-label={helpMode
-          ? "Learn about Mirror"
-          : `Mirror ${actionSubject}: flip left and right`}
+          ? t("create_transform_learn_mirror")
+          : t("create_transform_mirror_aria", { subject: actionSubject })}
       >
         <div class="btn-icon">
           <i class="fas fa-left-right" aria-hidden="true"></i>
         </div>
         <div class="btn-text">
           <span class="btn-label">{t("create_ui_mirror")}</span>
-          <span class="btn-desc">Flip left & right</span>
+          <span class="btn-desc">{t("create_transform_mirror_desc")}</span>
         </div>
       </button>
       {#if onFlip}
@@ -208,18 +208,18 @@
           onclick={() => handleActionClick("flip", onFlip)}
           data-ghost={disabled || helpMode ? undefined : "safe"}
           data-ghost-kind="transform"
-          data-ghost-label="Flip"
+          data-ghost-label={t("create_transform_flip")}
           disabled={disabled && !helpMode}
           aria-label={helpMode
-            ? "Learn about Flip"
-            : `Flip ${actionSubject}: flip up and down`}
+            ? t("create_transform_learn_flip")
+            : t("create_transform_flip_aria", { subject: actionSubject })}
         >
           <div class="btn-icon">
             <i class="fas fa-up-down" aria-hidden="true"></i>
           </div>
           <div class="btn-text">
-            <span class="btn-label">Flip</span>
-            <span class="btn-desc">Flip up & down</span>
+            <span class="btn-label">{t("create_transform_flip")}</span>
+            <span class="btn-desc">{t("create_transform_flip_desc")}</span>
           </div>
         </button>
       {/if}
@@ -231,21 +231,21 @@
           onclick={() => handleActionClick("swap", onSwap)}
           data-ghost={disabled || helpMode ? undefined : "safe"}
           data-ghost-kind="transform"
-          data-ghost-label="Swap"
+          data-ghost-label={t("create_transform_swap")}
           disabled={(disabled || swapDisabled) && !helpMode}
           aria-label={helpMode
-            ? "Learn about Swap Hands"
+            ? t("create_transform_learn_swap")
             : swapDisabled
-              ? "Swap requires both hands selected"
-              : `Swap hands in ${actionSubject}`}
+              ? t("create_transform_swap_requires_both")
+              : t("create_transform_swap_aria", { subject: actionSubject })}
         >
           <div class="btn-icon swap-icon-host">
             <SwapIcon size="1em" monochrome={toolbar} />
           </div>
           <div class="btn-text">
-            <span class="btn-label">Swap</span>
+            <span class="btn-label">{t("create_transform_swap")}</span>
             <span class="btn-desc"
-              >{swapDisabled ? "Needs both hands" : "Switch hands"}</span
+              >{swapDisabled ? t("create_transform_needs_both_hands") : t("create_transform_switch_hands")}</span
             >
           </div>
         </button>
@@ -257,18 +257,18 @@
           onclick={() => handleActionClick("invert", onInvert)}
           data-ghost={disabled || helpMode ? undefined : "safe"}
           data-ghost-kind="transform"
-          data-ghost-label="Invert"
+          data-ghost-label={t("create_transform_invert")}
           disabled={disabled && !helpMode}
           aria-label={helpMode
-            ? "Learn about Invert"
-            : "Invert sequence: reverse turn directions"}
+            ? t("create_transform_learn_invert")
+            : t("create_transform_invert_aria")}
         >
           <div class="btn-icon">
             <i class="fas fa-repeat" aria-hidden="true"></i>
           </div>
           <div class="btn-text">
-            <span class="btn-label">Invert</span>
-            <span class="btn-desc">Reverse turns</span>
+            <span class="btn-label">{t("create_transform_invert")}</span>
+            <span class="btn-desc">{t("create_transform_reverse_turns")}</span>
           </div>
         </button>
       {/if}
@@ -276,16 +276,16 @@
         <div class="rotation-pair">
           <button
             class="grid-btn rotate-ccw"
-            title={toolbar ? `Rotate left ${rotationDegrees}°` : undefined}
+            title={toolbar ? t("create_transform_rotate_left_title", { degrees: rotationDegrees }) : undefined}
             class:help-active={helpMode}
             onclick={() => handleActionClick("rotate", onRotateCCW)}
             data-ghost={disabled || helpMode ? undefined : "safe"}
             data-ghost-kind="transform"
-            data-ghost-label="Rotate L"
+            data-ghost-label={t("create_action_rotate_left_short")}
             disabled={disabled && !helpMode}
             aria-label={helpMode
-              ? "Learn about Rotate"
-              : `Rotate ${actionSubject} left ${rotationDegrees} degrees`}
+              ? t("create_transform_learn_rotate")
+              : t("create_transform_rotate_left_aria", { subject: actionSubject, degrees: rotationDegrees })}
           >
             <div class="btn-icon">
               <i class="fas fa-rotate-left" aria-hidden="true"></i>
@@ -294,23 +294,23 @@
               <span class="btn-label">
                 {showRotationDegreesInLabel
                   ? `${rotationDegrees}° L`
-                  : "Rotate L"}
+                  : t("create_transform_rotate_left")}
               </span>
-              <span class="btn-desc">Pivot {rotationDegrees}°</span>
+              <span class="btn-desc">{t("create_transform_pivot_degrees", { degrees: rotationDegrees })}</span>
             </div>
           </button>
           <button
             class="grid-btn rotate-cw"
-            title={toolbar ? `Rotate right ${rotationDegrees}°` : undefined}
+            title={toolbar ? t("create_transform_rotate_right_title", { degrees: rotationDegrees }) : undefined}
             class:help-active={helpMode}
             onclick={() => handleActionClick("rotate", onRotateCW)}
             data-ghost={disabled || helpMode ? undefined : "safe"}
             data-ghost-kind="transform"
-            data-ghost-label="Rotate R"
+            data-ghost-label={t("create_action_rotate_right_short")}
             disabled={disabled && !helpMode}
             aria-label={helpMode
-              ? "Learn about Rotate"
-              : `Rotate ${actionSubject} right ${rotationDegrees} degrees`}
+              ? t("create_transform_learn_rotate")
+              : t("create_transform_rotate_right_aria", { subject: actionSubject, degrees: rotationDegrees })}
           >
             <div class="btn-icon">
               <i class="fas fa-rotate-right" aria-hidden="true"></i>
@@ -319,9 +319,9 @@
               <span class="btn-label">
                 {showRotationDegreesInLabel
                   ? `${rotationDegrees}° R`
-                  : "Rotate R"}
+                  : t("create_transform_rotate_right")}
               </span>
-              <span class="btn-desc">Pivot {rotationDegrees}°</span>
+              <span class="btn-desc">{t("create_transform_pivot_degrees", { degrees: rotationDegrees })}</span>
             </div>
           </button>
         </div>
@@ -348,18 +348,18 @@
             onclick={() => handleActionClick("turn-pattern", onTurnPattern)}
             disabled={!hasSequence && !helpMode}
             aria-label={helpMode
-              ? "Learn about Turn Pattern"
+              ? t("create_transform_learn_turn_pattern")
               : patternsLocked
-                ? "Turn Pattern - locked, sign up to unlock"
-                : "Apply turn pattern to sequence"}
+                ? t("create_transform_turn_pattern_locked")
+                : t("create_transform_turn_pattern_aria")}
           >
             {@render lockBadge()}
             <div class="btn-icon">
               <i class="fas fa-wand-magic-sparkles" aria-hidden="true"></i>
             </div>
             <div class="btn-text">
-              <span class="btn-label">Turn Pattern</span>
-              <span class="btn-desc">Apply patterns</span>
+              <span class="btn-label">{t("create_transform_turn_pattern")}</span>
+              <span class="btn-desc">{t("create_transform_apply_patterns")}</span>
             </div>
           </button>
         {/if}
@@ -371,18 +371,18 @@
             onclick={() => handleActionClick("direction", onRotationDirection)}
             disabled={!hasSequence && !helpMode}
             aria-label={helpMode
-              ? "Learn about Rotation Direction"
+              ? t("create_transform_learn_direction")
               : patternsLocked
-                ? "Direction - locked, sign up to unlock"
-                : "Apply rotation direction pattern (clockwise or counter-clockwise)"}
+                ? t("create_transform_direction_locked")
+                : t("create_transform_direction_aria")}
           >
             {@render lockBadge()}
             <div class="btn-icon">
               <i class="fas fa-compass" aria-hidden="true"></i>
             </div>
             <div class="btn-text">
-              <span class="btn-label">Direction</span>
-              <span class="btn-desc">CW/CCW patterns</span>
+              <span class="btn-label">{t("create_transform_direction")}</span>
+              <span class="btn-desc">{t("create_transform_direction_desc")}</span>
             </div>
           </button>
         {/if}
@@ -394,10 +394,10 @@
             onclick={() => handleActionClick("duration", onDuration)}
             disabled={!hasSequence && !helpMode}
             aria-label={helpMode
-              ? "Learn about Duration"
+              ? t("create_transform_learn_duration")
               : patternsLocked
-                ? "Duration - locked, sign up to unlock"
-                : "Apply duration pattern (step timing)"}
+                ? t("create_transform_duration_locked")
+                : t("create_transform_duration_aria")}
           >
             {@render lockBadge()}
             <div class="btn-icon">
@@ -423,14 +423,14 @@
               ? undefined
               : "safe"}
             data-ghost-kind="extend"
-            data-ghost-label="Extend"
+            data-ghost-label={t("create_transform_extend")}
             aria-label={helpMode
-              ? "Learn about Extend"
+              ? t("create_transform_learn_extend")
               : patternsLocked
-                ? "Extend - locked, sign up to unlock"
+                ? t("create_transform_extend_locked")
                 : isExtending
-                  ? "Extending sequence"
-                  : "Extend sequence back to starting placement"}
+                  ? t("create_transform_extending")
+                  : t("create_transform_extend_aria")}
           >
             {@render lockBadge()}
             <div class="btn-icon">
@@ -441,8 +441,8 @@
               {/if}
             </div>
             <div class="btn-text">
-              <span class="btn-label">{isExtending ? "..." : "Extend"}</span>
-              <span class="btn-desc">Complete to start</span>
+              <span class="btn-label">{isExtending ? "..." : t("create_transform_extend")}</span>
+              <span class="btn-desc">{t("create_transform_complete_to_start")}</span>
             </div>
           </button>
         {/if}
@@ -457,18 +457,18 @@
             onclick={() => handleActionClick("rewind", onRewind)}
             disabled={disabled && !helpMode}
             aria-label={helpMode
-              ? "Learn about Rewind"
+              ? t("create_transform_learn_rewind")
               : patternsLocked
-                ? "Rewind - locked, sign up to unlock"
-                : "Rewind: add reversed sequence to the end"}
+                ? t("create_transform_rewind_locked")
+                : t("create_transform_rewind_aria")}
           >
             {@render lockBadge()}
             <div class="btn-icon">
               <i class="fas fa-backward" aria-hidden="true"></i>
             </div>
             <div class="btn-text">
-              <span class="btn-label">Rewind</span>
-              <span class="btn-desc">Add reverse to end</span>
+              <span class="btn-label">{t("create_transform_rewind")}</span>
+              <span class="btn-desc">{t("create_transform_rewind_desc")}</span>
             </div>
           </button>
         {/if}
@@ -477,14 +477,14 @@
             class="grid-btn reset"
             onclick={onReset}
             {disabled}
-            aria-label="Reset sequence to its original path"
+            aria-label={t("create_transform_reset_aria")}
           >
             <div class="btn-icon">
               <i class="fas fa-arrow-rotate-left" aria-hidden="true"></i>
             </div>
             <div class="btn-text">
               <span class="btn-label">{t("create_ui_reset")}</span>
-              <span class="btn-desc">Original path</span>
+              <span class="btn-desc">{t("create_transform_original_path")}</span>
             </div>
           </button>
         {/if}
@@ -504,16 +504,16 @@
             onclick={onTurns}
             disabled={!hasSelection}
             aria-label={hasSelection
-              ? "Edit turns for selected step"
-              : "Edit turns: select a step first"}
+              ? t("create_transform_edit_turns_aria")
+              : t("create_transform_edit_turns_disabled_aria")}
           >
             <div class="btn-icon">
               <i class="fas fa-sliders-h" aria-hidden="true"></i>
             </div>
             <div class="btn-text">
-              <span class="btn-label">Edit Turns</span>
+              <span class="btn-label">{t("create_transform_edit_turns")}</span>
               <span class="btn-desc"
-                >{hasSelection ? "Adjust rotation" : "Select step first"}</span
+                >{hasSelection ? t("create_transform_adjust_rotation") : t("create_transform_select_step_first")}</span
               >
             </div>
           </button>
@@ -524,14 +524,14 @@
             onclick={onEditInConstructor}
             disabled={!hasSequence}
             data-testid="edit-in-construct"
-            aria-label="Open sequence in construct for full editing"
+            aria-label={t("create_transform_edit_construct_aria")}
           >
             <div class="btn-icon">
               <i class="fas fa-pen-to-square" aria-hidden="true"></i>
             </div>
             <div class="btn-text">
-              <span class="btn-label">Edit in Construct</span>
-              <span class="btn-desc">Full editor</span>
+              <span class="btn-label">{t("create_transform_edit_in_construct")}</span>
+              <span class="btn-desc">{t("create_transform_full_editor")}</span>
             </div>
           </button>
         {/if}

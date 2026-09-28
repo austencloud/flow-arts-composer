@@ -535,9 +535,9 @@ Features:
               <!-- Empty feedback does not need measurements, so it appears on the first frame. -->
               <div class="empty-type-group" role="status">
                 <p>
-                  No pictographs in {getLocalizedGroupPresentation(
+                  {t("create_construct_no_pictographs_prefix")} {getLocalizedGroupPresentation(
                     getLetterTypeGroupDescriptor(section.title) ?? defaultGroup
-                  ).accessibleName} match these settings.
+                  ).accessibleName} {t("create_construct_no_pictographs_suffix")}
                 </p>
                 <span
                   >{t(

@@ -6,6 +6,7 @@
  */
 
 import type { KeyboardShortcutManager } from "$lib/shared/keyboard/services/keyboard-shortcut-manager";
+import { t } from "$lib/shared/i18n/i18n.svelte.js";
 export interface AnimationShortcutHandlers {
   onPlaybackToggle: () => void;
   onStepHalfBeatForward: () => void;
@@ -25,41 +26,43 @@ export interface AnimationShortcutDefinition {
 }
 
 export class AnimationShortcutRegistrar {
-  readonly shortcuts: readonly AnimationShortcutDefinition[] = [
+  get shortcuts(): readonly AnimationShortcutDefinition[] {
+    return [
     {
       key: "Space",
-      label: "Play / Pause",
-      description: "Toggle animation playback",
+      label: t("animation_shortcut_play_pause"),
+      description: t("animation_shortcut_play_pause_desc"),
     },
     {
       key: "←",
-      label: "Previous Beat",
-      description: "Move backward one full beat",
+      label: t("animation_shortcut_previous_beat"),
+      description: t("animation_shortcut_previous_beat_desc"),
     },
-    { key: "→", label: "Next Beat", description: "Move forward one full beat" },
+    { key: "→", label: t("animation_shortcut_next_beat"), description: t("animation_shortcut_next_beat_desc") },
     {
       key: "Shift + ←",
-      label: "Half Beat Back",
-      description: "Move backward half a beat",
+      label: t("animation_shortcut_half_beat_back"),
+      description: t("animation_shortcut_half_beat_back_desc"),
     },
     {
       key: "Shift + →",
-      label: "Half Beat Forward",
-      description: "Move forward half a beat",
+      label: t("animation_shortcut_half_beat_forward"),
+      description: t("animation_shortcut_half_beat_forward_desc"),
     },
     {
       key: "B",
-      label: "Toggle Left",
-      description: "Show/hide left motion path",
+      label: t("animation_shortcut_toggle_left"),
+      description: t("animation_shortcut_toggle_left_desc"),
     },
     {
       key: "R",
-      label: "Toggle Right",
-      description: "Show/hide right motion path",
+      label: t("animation_shortcut_toggle_right"),
+      description: t("animation_shortcut_toggle_right_desc"),
     },
-    { key: "Esc", label: "Close", description: "Close the animation viewer" },
-    { key: "?", label: "Help", description: "Show this help panel" },
-  ] as const;
+    { key: "Esc", label: t("animation_shortcut_close"), description: t("animation_shortcut_close_desc") },
+    { key: "?", label: t("animation_shortcut_help"), description: t("animation_shortcut_help_desc") },
+    ];
+  }
 
   register(
     service: KeyboardShortcutManager,
@@ -70,8 +73,8 @@ export class AnimationShortcutRegistrar {
     unregisterFns.push(
       service.register({
         id: "animation.play-pause",
-        label: "Play / Pause",
-        description: "Toggle animation playback",
+        label: t("animation_shortcut_play_pause"),
+        description: t("animation_shortcut_play_pause_desc"),
         key: "Space", // Normalized name; a raw " " never matches
         modifiers: [],
         context: "animation-panel",
@@ -87,8 +90,8 @@ export class AnimationShortcutRegistrar {
     unregisterFns.push(
       service.register({
         id: "animation.step-forward",
-        label: "Step Forward",
-        description: "Move forward one full beat",
+        label: t("animation_shortcut_step_forward"),
+        description: t("animation_shortcut_next_beat_desc"),
         key: "ArrowRight",
         modifiers: [],
         context: "animation-panel",
@@ -104,8 +107,8 @@ export class AnimationShortcutRegistrar {
     unregisterFns.push(
       service.register({
         id: "animation.step-backward",
-        label: "Step Backward",
-        description: "Move backward one full beat",
+        label: t("animation_shortcut_step_backward"),
+        description: t("animation_shortcut_previous_beat_desc"),
         key: "ArrowLeft",
         modifiers: [],
         context: "animation-panel",
@@ -121,8 +124,8 @@ export class AnimationShortcutRegistrar {
     unregisterFns.push(
       service.register({
         id: "animation.step-half-forward",
-        label: "Step Half Beat Forward",
-        description: "Move forward half a beat",
+        label: t("animation_shortcut_half_beat_forward"),
+        description: t("animation_shortcut_half_beat_forward_desc"),
         key: "ArrowRight",
         modifiers: ["shift"],
         context: "animation-panel",
@@ -138,8 +141,8 @@ export class AnimationShortcutRegistrar {
     unregisterFns.push(
       service.register({
         id: "animation.step-half-backward",
-        label: "Step Half Beat Backward",
-        description: "Move backward half a beat",
+        label: t("animation_shortcut_half_beat_back"),
+        description: t("animation_shortcut_half_beat_back_desc"),
         key: "ArrowLeft",
         modifiers: ["shift"],
         context: "animation-panel",
@@ -155,8 +158,8 @@ export class AnimationShortcutRegistrar {
     unregisterFns.push(
       service.register({
         id: "animation.toggle-blue",
-        label: "Toggle Left Motion",
-        description: "Show or hide left prop motion path",
+        label: t("animation_shortcut_toggle_left"),
+        description: t("animation_shortcut_toggle_left_desc"),
         key: "b",
         modifiers: [],
         context: "animation-panel",
@@ -172,8 +175,8 @@ export class AnimationShortcutRegistrar {
     unregisterFns.push(
       service.register({
         id: "animation.toggle-red",
-        label: "Toggle Right Motion",
-        description: "Show or hide right prop motion path",
+        label: t("animation_shortcut_toggle_right"),
+        description: t("animation_shortcut_toggle_right_desc"),
         key: "r",
         modifiers: [],
         context: "animation-panel",
@@ -189,8 +192,8 @@ export class AnimationShortcutRegistrar {
     unregisterFns.push(
       service.register({
         id: "animation.close",
-        label: "Close Panel",
-        description: "Close the animation viewer",
+        label: t("animation_shortcut_close"),
+        description: t("animation_shortcut_close_desc"),
         key: "Escape",
         modifiers: [],
         context: "animation-panel",
@@ -206,8 +209,8 @@ export class AnimationShortcutRegistrar {
     unregisterFns.push(
       service.register({
         id: "animation.show-help",
-        label: "Show Shortcuts",
-        description: "Display keyboard shortcuts help",
+        label: t("animation_shortcut_help"),
+        description: t("animation_shortcut_help_desc"),
         key: "?",
         modifiers: [],
         context: "animation-panel",

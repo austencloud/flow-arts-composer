@@ -10,6 +10,12 @@
   import RhythmGlyph from "./RhythmGlyph.svelte";
   import PatternStepStrip from "./PatternStepStrip.svelte";
   import type { StripBinding, StripValue } from "./pattern-strip-types";
+  import type { RhythmDef } from "$lib/shared/create/domain/rhythm/rhythm-catalog";
+  import { tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
+  import {
+    displayLane, displayMask, displayRhythm, sentenceAmount,
+    sentenceConnector, sentenceSubject, sentenceVerb,
+  } from "./pattern-strip-display";
   import {
     divisorsUpTo,
     uniformActive,
@@ -20,7 +26,6 @@
     resizePeriod,
     laneMaskFor,
   } from "$lib/shared/create/domain/rhythm/rhythm-mask";
-  import { describeMask } from "$lib/shared/create/domain/rhythm/pattern-sentence";
 
   interface Props {
     binding: StripBinding;
@@ -83,8 +88,7 @@
   /** What the amount chip reads. A hand-edited lane has no single amount. */
   function amountLabel(li: number): string {
     const a = laneAmount(li);
-    if (a === null) return "mixed";
-    return binding.format(a);
+    return sentenceAmount(binding.sentence?.verb ?? "", a === null ? "" : binding.format(a), a === null);
   }
 
   /** Does this lane act on any step at all? A lane that acts nowhere has no
@@ -125,12 +129,11 @@
     const next = value.map((l, idx) => (idx === li ? lane : l));
     onChange(next);
   }
-  type Rhythm = { id: string; label: string; sym: string; period?: number };
   /** A fixed-period rhythm is incompatible when the sequence length can't host it. */
-  function rhythmDisabled(rhythm: Rhythm): boolean {
+  function rhythmDisabled(rhythm: RhythmDef): boolean {
     return rhythm.period != null && sequenceLength % rhythm.period !== 0;
   }
-  function rhythmActive(rhythm: Rhythm): boolean {
+  function rhythmActive(rhythm: RhythmDef): boolean {
     // Fixed-period rhythms only light when the strip is at exactly that period.
     if (rhythm.period != null && period !== rhythm.period) return false;
     if (binding.lanes === 2)
@@ -142,7 +145,7 @@
       );
     return singleLaneRhythmMatches(rhythm.sym, value[0] ?? [], binding.base);
   }
-  function applyRhythm(rhythm: Rhythm) {
+  function applyRhythm(rhythm: RhythmDef) {
     if (rhythmDisabled(rhythm)) return;
     // Fixed-period rhythms resize the strip to their period; tileable ones stamp
     // at the user's current period (unchanged behavior).
@@ -203,7 +206,7 @@
 
   const stripLanes = $derived(
     binding.laneLabels.map((label, i) => ({
-      label,
+      label: displayLane(label),
       color: (binding.laneColors[i] === "accent"
         ? "hold"
         : binding.laneColors[i]) as "blue" | "red" | "hold",
@@ -223,10 +226,10 @@
   {#if sentenceMode && binding.sentence}
     <div class="sentences">
       {#each binding.laneLabels as _laneLabel, li}
-        {@const subject = subjectOf(li)}
+        {@const subject = sentenceSubject(subjectOf(li))}
         <p class="sentence">
           <span class="subject {binding.laneColors[li]}">{subject}</span>
-          <span class="prose verb">{binding.sentence.verb}</span>
+          <span class="prose verb">{sentenceVerb(binding.sentence.verb, laneAmount(li) === null)}</span>
           {#if binding.amountList && laneActive(li)}
             <span class="slot amount">
             <FilterChipBase
@@ -234,7 +237,7 @@
               mode="dropdown"
               size="sm"
               expanded={openSlot === `amount-${li}`}
-              ariaLabel="{subject} amount: {amountLabel(li)}"
+              ariaLabel={tDynamic("pattern_strip_amount_aria", { subject, amount: amountLabel(li) })}
               onclick={() => toggleSlot(`amount-${li}`)}
             >
               {#snippet children()}
@@ -252,14 +255,14 @@
             </FilterChipBase>
             </span>
           {/if}
-          <span class="prose on">on</span>
+          <span class="prose on">{sentenceConnector()}</span>
           <span class="slot rhythm">
           <FilterChipBase
-            label={describeMask(laneMask(li))}
+            label={displayMask(laneMask(li))}
             mode="dropdown"
             size="sm"
             expanded={openSlot === `rhythm-${li}`}
-            ariaLabel="{subject} rhythm: {describeMask(laneMask(li))}"
+            ariaLabel={tDynamic("pattern_strip_rhythm_aria", { subject, rhythm: displayMask(laneMask(li)) })}
             onclick={() => toggleSlot(`rhythm-${li}`)}
           >
             {#snippet children()}
@@ -268,7 +271,7 @@
                    that opened it. -->
               {#each laneRhythmOptions(li) as mask}
                 <ChipPopoverOption
-                  label={describeMask(mask)}
+                  label={displayMask(mask)}
                   selected={laneMaskMatches(li, mask)}
                   onclick={() => {
                     applyLaneMask(li, mask);
@@ -291,8 +294,8 @@
              but beside a 40-step sequence a control reading 1 / 2 / 5 is not a
              length — it is how often the figure comes back around. In sentence
              mode the words have to survive being read aloud. -->
-        <span class="axis-lbl">{sentenceMode ? "Repeats every" : "Length"}</span>
-        <span class="reps">×{reps} over {sequenceLength} steps</span>
+        <span class="axis-lbl">{tDynamic(sentenceMode ? "pattern_strip_repeats_every" : "pattern_strip_length")}</span>
+        <span class="reps">{tDynamic("pattern_strip_repetitions", { reps, steps: sequenceLength })}</span>
       </div>
       <div class="seg-wrap">
         <SegmentedControl
@@ -312,11 +315,11 @@
            live on a single hand's chip. Here they are true: one press writes
            both hands at once, and this is where a newcomer meets the words
            other people will say to them. -->
-      <div class="axis-lbl">{sentenceMode ? "Both hands" : "Rhythm"}</div>
+      <div class="axis-lbl">{tDynamic(sentenceMode ? "pattern_strip_both_hands" : "pattern_strip_rhythm")}</div>
       <div class="chips">
         {#each binding.rhythms as r}
           <FilterChipBase
-            label={r.label}
+            label={displayRhythm(r.id, r.label)}
             mode="toggle"
             size="md"
             active={rhythmActive(r)}
@@ -335,11 +338,11 @@
 
   {#if binding.amountList && !sentenceMode && (visibleAxis === "all" || visibleAxis === "amount")}
     <div class="axis">
-      <div class="axis-lbl">Amount</div>
+      <div class="axis-lbl">{tDynamic("pattern_strip_amount")}</div>
       <div class="amt-grid">
         {#each binding.laneLabels as label, li}
           <div class="amt-row">
-            <span class="amt-lane {binding.laneColors[li]}">{label}</span>
+            <span class="amt-lane {binding.laneColors[li]}">{displayLane(label)}</span>
             <div class="seg-wrap">
               <SegmentedControl
                 size="md"
@@ -360,7 +363,7 @@
 
   {#if visibleAxis === "all" || visibleAxis === "result"}
     <div class="axis result">
-      <div class="axis-lbl">Result</div>
+      <div class="axis-lbl">{tDynamic("pattern_strip_result")}</div>
       <PatternStepStrip
         lanes={stripLanes}
         cellKind={binding.cellKind ?? "number"}
@@ -424,8 +427,8 @@
   /* Same fix as PatternStepStrip's .pbs-label: 44px was narrower than the bold
      text it held, so the name spilled onto the control beside it. */
   .amt-lane {
-    width: 5ch;
-    flex: 0 0 5ch;
+    width: 6ch;
+    flex: 0 0 6ch;
     min-width: 0;
     font-size: 13px;
     font-weight: 800;

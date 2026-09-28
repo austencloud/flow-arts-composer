@@ -5,176 +5,115 @@
   import MotionPathExplorer from "./_components/MotionPathExplorer.svelte";
   import MotionPathExplanation from "./_components/MotionPathExplanation.svelte";
   import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
+  import { tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
 </script>
 
 <GuideSeo
-  title="Motion paths · The Kinetic Alphabet Guide"
-  description="Compare Arc, Linear, Concave, and Hybrid motion paths. Watch how hand travel changes a sequence’s mandala, and learn where to preview, save, and reset paths."
+  title={tDynamic("guide_paths_seo_title")}
+  description={tDynamic("guide_paths_seo_description")}
   path="/guide/motion-paths"
   datePublished="2026-09-08"
-  partOf={{ name: "The Kinetic Alphabet Guide", path: "/guide" }}
+  partOf={{ name: tDynamic("guide_paths_part_of"), path: "/guide" }}
   breadcrumbs={[
     { name: "Home", path: "/" },
     { name: "Guide", path: "/guide" },
-    { name: "Motion paths", path: "/guide/motion-paths" },
+    { name: tDynamic("guide_paths_title"), path: "/guide/motion-paths" },
   ]}
 />
 
 <GuideShell>
   <article class="motion-path-guide guide-page-route">
     <header class="intro">
-      <h1>Motion paths</h1>
-      <p>Change the path. See what it draws.</p>
+      <h1>{tDynamic("guide_paths_title")}</h1>
+      <p>{tDynamic("guide_paths_tagline")}</p>
     </header>
 
     <MotionPathExplanation />
 
     <header class="explorer-intro">
-      <h2>Try all four on a sequence</h2>
-      <p>
-        Switch the path while the sequence plays. Hybrid uses Arc for pro
-        motions and Concave for anti motions. Any motion can take any path;
-        Hybrid only sets the default.
-      </p>
+      <h2>{tDynamic("guide_paths_try_four")}</h2>
+      <p>{tDynamic("guide_paths_try_four_body")}</p>
     </header>
 
     {#if browser}
       <MotionPathExplorer />
     {:else}
-      <p role="status">The interactive comparison loads in your browser.</p>
+      <p role="status">{tDynamic("guide_paths_loading_comparison")}</p>
     {/if}
 
     <details class="reference">
-      <summary>Motion path reference</summary>
+      <summary>{tDynamic("guide_paths_reference")}</summary>
       <div class="reading">
         <section aria-labelledby="paths-heading">
-          <h2 id="paths-heading">What changes?</h2>
-          <p>
-            A path sets how a hand travels between its positions. The sequence
-            keeps its letters and turns.
-          </p>
+          <h2 id="paths-heading">{tDynamic("guide_paths_what_changes")}</h2>
+          <p>{tDynamic("guide_paths_what_changes_body")}</p>
           <dl class="definitions">
             <div>
-              <dt>Arc</dt>
-              <dd>The hand follows the circle around the grid center.</dd>
+              <dt>{tDynamic("guide_paths_arc")}</dt>
+              <dd>{tDynamic("guide_paths_arc_definition")}</dd>
             </div>
             <div>
-              <dt>Linear</dt>
-              <dd>The hand takes a straight line between the endpoints.</dd>
+              <dt>{tDynamic("guide_paths_linear")}</dt>
+              <dd>{tDynamic("guide_paths_linear_definition")}</dd>
             </div>
             <div>
-              <dt>Concave</dt>
-              <dd>The hand curves inward between the endpoints.</dd>
+              <dt>{tDynamic("guide_paths_concave")}</dt>
+              <dd>{tDynamic("guide_paths_concave_definition")}</dd>
             </div>
             <div>
-              <dt>Hybrid</dt>
-              <dd>Pro motions use Arc. Anti motions use Concave.</dd>
+              <dt>{tDynamic("guide_paths_hybrid")}</dt>
+              <dd>{tDynamic("guide_paths_hybrid_definition")}</dd>
             </div>
           </dl>
-          <p>
-            Dashes stay straight. Static hands stay at their grid point, even
-            when the prop rotates. Float uses the underlying fixed path when
-            Hybrid is on.
-          </p>
-          <p>
-            Pick a matrix cell, then compare Arc with Hybrid. When one hand is
-            pro and the other anti, they follow different kinds of paths. Switch
-            the trace between Hands and Prop tips to see what the prop’s
-            rotation adds.
-          </p>
+          <p>{tDynamic("guide_paths_exceptions")}</p>
+          <p>{tDynamic("guide_paths_compare")}</p>
         </section>
 
         <section aria-labelledby="scope-heading">
-          <h2 id="scope-heading">Where the setting applies</h2>
-          <p>
-            In the sequence viewer, open Motion on desktop or Playback on a
-            phone. You can also right-click the animation canvas and open Motion
-            Paths. Choose Arc to turn Hybrid off.
-          </p>
+          <h2 id="scope-heading">{tDynamic("guide_paths_scope")}</h2>
+          <p>{tDynamic("guide_paths_scope_body")}</p>
           <dl class="definitions">
             <div>
-              <dt>Preview</dt>
-              <dd>
-                A path choice applies to the sequence you’re viewing. It also
-                overrides any saved step exceptions while you compare.
-              </dd>
+              <dt>{tDynamic("guide_paths_preview")}</dt>
+              <dd>{tDynamic("guide_paths_preview_definition")}</dd>
             </div>
             <div>
-              <dt>Restore saved paths</dt>
-              <dd>
-                Returns to the sequence’s saved choices, including its step
-                exceptions.
-              </dd>
+              <dt>{tDynamic("guide_paths_restore")}</dt>
+              <dd>{tDynamic("guide_paths_restore_definition")}</dd>
             </div>
             <div>
-              <dt>Save paths</dt>
-              <dd>
-                Keeps the preview on a sequence already saved in your library
-                that you own.
-              </dd>
+              <dt>{tDynamic("guide_paths_save")}</dt>
+              <dd>{tDynamic("guide_paths_save_definition")}</dd>
             </div>
             <div>
-              <dt>Make default</dt>
-              <dd>
-                Sets your starting choice for sequences without a saved path
-                setting. Saved step exceptions still take precedence.
-              </dd>
+              <dt>{tDynamic("guide_paths_default")}</dt>
+              <dd>{tDynamic("guide_paths_default_definition")}</dd>
             </div>
           </dl>
-          <p>
-            In Composer, select a step to set a different path for either hand.
-            The reset arrow clears that hand’s exception and returns it to the
-            current default.
-          </p>
-          <p>
-            Path lines are the drawn guides. You can hide them while keeping the
-            same movement.
-          </p>
+          <p>{tDynamic("guide_paths_composer")}</p>
+          <p>{tDynamic("guide_paths_lines")}</p>
         </section>
 
         <section aria-labelledby="third-order-heading">
-          <h2 id="third-order-heading">The connection to third order</h2>
-          <p>
-            The hand’s path can be a motion of its own. In Third Order, a moving
-            grid carries another sequence. The outer motion moves the grid; the
-            inner sequence moves within it.
-          </p>
-          <p>
-            Explore extension and antispin by starting with circular travel,
-            then trying a flower as the carrier path. A flower can be built from
-            two rotations before the prop adds its own rotation.
-          </p>
-          <p>
-            The current Concave option bends an arc inward. It is not an exact
-            four-petal antispin construction. Use the flower carrier in Third
-            Order when you want to work with the constructed path and its spin
-            ratio.
-          </p>
+          <h2 id="third-order-heading">{tDynamic("guide_paths_third_order")}</h2>
+          <p>{tDynamic("guide_paths_third_order_body")}</p>
+          <p>{tDynamic("guide_paths_third_order_explore")}</p>
+          <p>{tDynamic("guide_paths_third_order_concave")}</p>
           <div class="links">
-            <PanelButton href="/toys/third-order">Open Third Order</PanelButton>
+            <PanelButton href="/toys/third-order">{tDynamic("guide_paths_open_third_order")}</PanelButton>
             <PanelButton href="/guide/ratios"
-              >Spin ratios and petals</PanelButton
+              >{tDynamic("guide_paths_spin_ratios")}</PanelButton
             >
           </div>
-          <p>Third Order requires sign-in.</p>
+          <p>{tDynamic("guide_paths_sign_in")}</p>
         </section>
 
         <section aria-labelledby="awkward-heading">
-          <h2 id="awkward-heading">
-            When the drawing works but the motion doesn’t
-          </h2>
-          <p>
-            A mandala shows the whole trace at once. It can hide a sharp change
-            where two steps meet.
-          </p>
-          <p>
-            Watch those joins in the animation, including the return to the
-            first step. Compare Arc with Concave, then try a per-hand exception
-            in Composer. Keep the path that suits the movement you want to
-            perform.
-          </p>
+          <h2 id="awkward-heading">{tDynamic("guide_paths_awkward")}</h2>
+          <p>{tDynamic("guide_paths_awkward_body")}</p>
+          <p>{tDynamic("guide_paths_awkward_advice")}</p>
           <div class="links">
-            <PanelButton href="/create">Open Composer</PanelButton>
+            <PanelButton href="/create">{tDynamic("guide_paths_open_composer")}</PanelButton>
           </div>
         </section>
       </div>

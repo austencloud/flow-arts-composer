@@ -199,8 +199,8 @@
   const stepLabel = $derived.by(() => {
     if (displayedStepNumber === null) return "";
     return displayedStepNumber === 0
-      ? "Start Placement"
-      : `Step ${displayedStepNumber}`;
+      ? t("create_ui_start_placement_label")
+      : t("create_editor_numbered_step", { number: displayedStepNumber });
   });
 
   // Calculate how many subsequent steps would be affected by orientation changes
@@ -505,7 +505,7 @@
         {stepLabel}
         {#if cascadeCount > 0 && !isStartPlacementSelected}
           <span class="cascade-indicator" class:pulse={showCascadePulse}>
-            → +{cascadeCount} step{cascadeCount === 1 ? "" : "s"}
+            → +{t(cascadeCount === 1 ? "create_deep_step_count_one" : "create_deep_step_count_many", { count: cascadeCount })}
           </span>
         {/if}
         {#if isBetaPlacement && isBetaSwapped}
@@ -515,8 +515,8 @@
             data-ghost={onBetaSwapToggle ? "safe" : undefined}
             data-ghost-kind={onBetaSwapToggle ? "step-edit" : undefined}
             data-ghost-label="Beta swap"
-            title="Beta offset swapped (B to toggle)"
-            aria-label="Beta offset swapped, press B to toggle"
+            title={t("create_review_beta_offset_swapped_b_to_toggle")}
+            aria-label={t("create_review_beta_offset_swapped_press_b_to_toggle")}
             aria-pressed="true">β⇄</button
           >
         {:else if isBetaPlacement}
@@ -526,8 +526,8 @@
             data-ghost={onBetaSwapToggle ? "safe" : undefined}
             data-ghost-kind={onBetaSwapToggle ? "step-edit" : undefined}
             data-ghost-label="Beta swap"
-            title="Swap beta offset (B)"
-            aria-label="Swap beta offset, press B to toggle"
+            title={t("create_review_swap_beta_offset_b")}
+            aria-label={t("create_review_swap_beta_offset_press_b_to_toggle")}
             aria-pressed="false">β⇄</button
           >
         {/if}

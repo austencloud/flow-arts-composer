@@ -43,7 +43,6 @@
  * slug (`turn-shifts` → #turn-shifts), and merged pages keep every source
  * id as an in-page anchor (`ANCHOR_ROUTE_SLUG` below resolves both).
  */
-
 export type Level2Chapter = "turns" | "double-turns";
 
 export type Level2TopicPage = {

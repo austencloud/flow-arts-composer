@@ -1,5 +1,7 @@
 <!-- DurationResizeHandle - Draggable right-edge handle for duration resize -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { formatNumber } from "$lib/shared/i18n/i18n-formatters";
   import { onDestroy } from "svelte";
   import {
     MIN_DURATION,
@@ -92,8 +94,13 @@
   onkeydown={handleKeyDown}
   role="separator"
   aria-orientation="vertical"
-  aria-roledescription="duration resize handle"
-  aria-label="Resize duration: {currentDuration} beats"
+  aria-roledescription={t("create_resize_handle_role")}
+  aria-label={t(
+    currentDuration === 1
+      ? "create_resize_duration_one"
+      : "create_resize_duration",
+    { count: formatNumber(currentDuration) }
+  )}
   aria-valuenow={currentDuration}
   aria-valuemin={MIN_DURATION}
   aria-valuemax={MAX_DURATION}
@@ -154,7 +161,9 @@
       var(--theme-accent, rgba(139, 92, 246, 0.8)) 55%,
       transparent
     );
-    transition: background 0.15s ease, transform 0.15s ease;
+    transition:
+      background 0.15s ease,
+      transform 0.15s ease;
   }
 
   .grip-dot {
