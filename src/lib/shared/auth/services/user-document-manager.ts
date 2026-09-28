@@ -9,7 +9,11 @@ import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
 import { type User } from "firebase/auth";
 import { getFirestoreInstance } from "../firebase";
 import { getProviderIds } from "./profile-picture-manager";
-import { generateUniqueUsername, claimUsername } from "./username-validator";
+import {
+  generateUniqueUsername,
+  claimUsername,
+  getUsernameOwner,
+} from "./username-validator";
 import { formatUsername } from "../domain/models/username-validation";
 import { retryAuthenticatedFirestoreOperation } from "./retry-authenticated-firestore-operation";
 
@@ -56,6 +60,25 @@ function capitalizeName(name: string): string {
     .join(" ");
 }
 
+/**
+ * How old lastActivityDate may get before a page load with nothing else to
+ * save refreshes it. An active user costs one write an hour instead of one per
+ * page load, and the date is never more than an hour behind their latest
+ * visit, which its readers (Pulse's six-hour "is back" alerts, the admin
+ * "active today" counts, the creators list's weekly bands) can absorb.
+ */
+const ACTIVITY_REFRESH_MS = 60 * 60 * 1000;
+
+function isActivityStale(lastActivityDate: unknown): boolean {
+  const recordedAt = (
+    lastActivityDate as { toMillis?: () => number } | null | undefined
+  )?.toMillis?.();
+  return (
+    typeof recordedAt !== "number" ||
+    Date.now() - recordedAt >= ACTIVITY_REFRESH_MS
+  );
+}
+
 interface ProfileSyncStep {
   action: string;
   message: string;
@@ -72,7 +95,7 @@ export class UserDocumentManager {
    * that can be displayed in the users browse panel.
    *
    * Creates new document with initial fields if doesn't exist.
-   * Updates existing document with latest auth data if exists.
+   * Updates an existing document only where it differs from the latest auth data.
    */
   async createOrUpdateUserDocument(user: User): Promise<void> {
     let currentStep: ProfileSyncStep = {
@@ -237,39 +260,46 @@ export class UserDocumentManager {
         // rules — a non-admin can't write another user's notifications —
         // and silently failed for every signup since launch.
       } else {
-        // EXISTING USER: Preserve username, update other fields
+        // EXISTING USER: this runs on every signed-in page load, so it writes
+        // only what differs from the stored profile and never the username.
+        // Rewriting the profile each time billed a write per page view, woke
+        // the pulseUserActivity trigger, and made updatedAt mean "last page
+        // view" instead of "last profile change".
         const existingData = userDoc.data();
         const existingUsername = existingData?.username;
 
-        // Build update object - don't overwrite username
         // NOTE: Email deliberately NOT stored - user documents are publicly readable
-        const updateData: Record<string, unknown> = {
-          updatedAt: serverTimestamp(),
-          lastActivityDate: serverTimestamp(),
-          // Keep the guest flag current. onAuthStateChanged doesn't reliably
-          // fire on in-place link, so anonymous-upgrade.ts also clears this
-          // explicitly — this just keeps it correct on any later auth refresh.
-          isAnonymous: user.isAnonymous,
-        };
+        const profileChanges: Record<string, unknown> = {};
+
+        // Keep the guest flag current. onAuthStateChanged doesn't reliably
+        // fire on in-place link, so anonymous-upgrade.ts also clears this
+        // explicitly — this just keeps it correct on any later auth refresh.
+        if (existingData?.isAnonymous !== user.isAnonymous) {
+          profileChanges.isAnonymous = user.isAnonymous;
+        }
 
         // Same rule the avatar below follows: only overwrite the stored name
         // when Auth actually has one. This branch runs on EVERY sign-in, so
         // writing the email-derived fallback unconditionally re-mangled a
         // repaired name (and clobbered a name the user had set themselves) the
         // next time they logged in.
-        if (hasRealAuthName || !existingData?.displayName) {
-          updateData.displayName = displayName;
+        if (
+          (hasRealAuthName || !existingData?.displayName) &&
+          existingData?.displayName !== displayName
+        ) {
+          profileChanges.displayName = displayName;
         }
 
         // Only overwrite avatar fields when Auth provides a real URL.
         // Prevents nulling out a generated or custom avatar on re-login.
-        if (user.photoURL) {
-          updateData.photoURL = user.photoURL;
-          updateData.avatar = user.photoURL;
-        } else if (!existingData?.photoURL) {
-          const fallback = generateAvatarUrl(displayName, 256);
-          updateData.photoURL = fallback;
-          updateData.avatar = fallback;
+        const avatarUrl =
+          user.photoURL ||
+          (existingData?.photoURL ? null : generateAvatarUrl(displayName, 256));
+        if (avatarUrl && existingData?.photoURL !== avatarUrl) {
+          profileChanges.photoURL = avatarUrl;
+        }
+        if (avatarUrl && existingData?.avatar !== avatarUrl) {
+          profileChanges.avatar = avatarUrl;
         }
 
         // Only update googlePhotoURL if we have a fresh one from the provider.
@@ -291,42 +321,75 @@ export class UserDocumentManager {
 
         // Add usernameLowercase if missing (backfill for existing users)
         if (existingUsername && !existingData?.usernameLowercase) {
-          updateData.usernameLowercase = formatUsername(existingUsername);
+          profileChanges.usernameLowercase = formatUsername(existingUsername);
         }
 
-        currentStep = {
-          action: "update-public-profile",
-          message: "Could not update the signed-in user's public profile",
-          path: `users/${user.uid}`,
-        };
-        await retryAuthenticatedFirestoreOperation(user, () =>
-          setDoc(userDocRef, updateData, { merge: true })
-        );
-
-        // Repair accounts whose parent profile was created while an anonymous
-        // token was still being replaced and whose first username claim was
-        // consequently denied.
-        if (existingUsername && !user.isAnonymous) {
+        // Every write stamps lastActivityDate because Pulse pairs it with the
+        // PostHog session saved just above, and allows only five minutes
+        // between the two, to link the replay in its signup and return
+        // alerts. With nothing else to write, the date alone is refreshed
+        // once it is an hour old.
+        const hasProfileChanges = Object.keys(profileChanges).length > 0;
+        if (
+          hasProfileChanges ||
+          isActivityStale(existingData?.lastActivityDate)
+        ) {
           currentStep = {
-            action: "claim-username",
-            message: "Could not claim the signed-in user's username",
-            path: `usernames/${formatUsername(existingUsername)}`,
+            action: "update-public-profile",
+            message: "Could not update the signed-in user's public profile",
+            path: `users/${user.uid}`,
           };
           await retryAuthenticatedFirestoreOperation(user, () =>
-            claimUsername(user.uid, existingUsername)
+            setDoc(
+              userDocRef,
+              {
+                ...profileChanges,
+                ...(hasProfileChanges ? { updatedAt: serverTimestamp() } : {}),
+                lastActivityDate: serverTimestamp(),
+              },
+              { merge: true }
+            )
           );
         }
 
+        // Repair accounts whose parent profile was created while an anonymous
+        // token was still being replaced and whose first username claim was
+        // consequently denied. A plain read comes first so an intact claim
+        // costs one read per page load: even a transaction that changes
+        // nothing sends a commit.
+        if (existingUsername && !user.isAnonymous) {
+          const usernameClaimPath = `usernames/${formatUsername(existingUsername)}`;
+          currentStep = {
+            action: "get-username-claim",
+            message: "Could not read the signed-in user's username claim",
+            path: usernameClaimPath,
+          };
+          const claimOwner = await retryAuthenticatedFirestoreOperation(
+            user,
+            () => getUsernameOwner(existingUsername)
+          );
+          if (claimOwner !== user.uid) {
+            currentStep = {
+              action: "claim-username",
+              message: "Could not claim the signed-in user's username",
+              path: usernameClaimPath,
+            };
+            await retryAuthenticatedFirestoreOperation(user, () =>
+              claimUsername(user.uid, existingUsername)
+            );
+          }
+        }
+
         const projectedDisplayName =
-          typeof updateData.displayName === "string"
-            ? updateData.displayName
+          typeof profileChanges.displayName === "string"
+            ? profileChanges.displayName
             : typeof existingData?.displayName === "string" &&
                 existingData.displayName.length > 0
               ? existingData.displayName
               : "Unknown";
         const projectedAvatarUrl =
-          typeof updateData.photoURL === "string"
-            ? updateData.photoURL
+          typeof profileChanges.photoURL === "string"
+            ? profileChanges.photoURL
             : typeof existingData?.photoURL === "string"
               ? existingData.photoURL
               : undefined;
