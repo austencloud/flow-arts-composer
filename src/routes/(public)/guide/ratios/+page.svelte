@@ -182,22 +182,22 @@
   }).filter((group) => group.level !== BASE_LEVEL && group.rows.length > 0);
 
   /**
-   * What spinners call the flowers that have a common name, by turn value and
-   * style. Every name describes one end of the prop, the drawing each card
-   * shows, and holds for both starts of its ratio. A staff's second end
-   * doubles the flower (see One end or two), so a two-ended picture would
-   * outgrow the name.
+   * What spinners call the flowers that have a common name. Every name
+   * describes one end of the prop, the drawing the ladder cards show. A
+   * staff's second end doubles the flower (see One end or two), so a
+   * two-ended picture would outgrow the name. The ratio is derived from the
+   * turn value, so a name cannot point at a ratio the ladder doesn't draw.
    */
-  const FLOWER_NAMES: Partial<Record<string, string>> = {
-    "0:anti": "Called a cat-eye",
-    "0.5:anti": "Called a triquetra",
-    "1:anti": "4-petal antispin flower",
-    "1.5:pro": "3-petal inspin flower",
-  };
-
-  function flowerName(turns: number, style: FlowerStyle): string | undefined {
-    return FLOWER_NAMES[`${turns}:${style}`];
-  }
+  const COMMON_NAMES: readonly {
+    name: string;
+    turns: number;
+    style: FlowerStyle;
+  }[] = [
+    { name: "Cat-eye", turns: 0, style: "anti" },
+    { name: "Triquetra", turns: 0.5, style: "anti" },
+    { name: "4-petal antispin flower", turns: 1, style: "anti" },
+    { name: "3-petal inspin flower", turns: 1.5, style: "pro" },
+  ];
 
   /**
    * Level 1 shows both starts. At 1:1 starting in and starting out draw four
@@ -218,7 +218,6 @@
           style === "pro"
             ? BASE_NAMES[ori]
             : `${petalWord(flower.petals)}, ${flowerFacing(flower).toLowerCase()}`,
-        name: flowerName(0, style),
       };
     }),
   }));
@@ -557,6 +556,20 @@
             own while the hand circles, which is the ratio 1:0, and the Kinetic
             Alphabet names it Float instead of a number.
           </p>
+
+          <h3>Common names</h3>
+          <dl class="terms">
+            {#each COMMON_NAMES as entry (entry.name)}
+              <div>
+                <dt>{entry.name}</dt>
+                <dd>
+                  {ratioLabel(entry.turns)}
+                  {styleWord(entry.style).toLowerCase()}
+                </dd>
+              </div>
+            {/each}
+          </dl>
+          <p>Each name describes the shape one end of the prop draws.</p>
         </div>
 
         <figure class="worked">
@@ -644,9 +657,6 @@
                       >{styleWord(item.flower.style)}</span
                     >
                     <span class="card-petals">{item.meta}</span>
-                    {#if item.name}
-                      <span class="card-name">{item.name}</span>
-                    {/if}
                   </div>
                 {/each}
               </div>
@@ -690,9 +700,6 @@
                     </p>
                     {#if row.starts}
                       {@const paired = row.starts.length > 1}
-                      {@const names = (row.starts[0]?.flowers ?? []).map(
-                        (flower) => flowerName(flower.turns, flower.style)
-                      )}
                       <div class="card-grid">
                         <span class="card-style">Prospin</span>
                         <span class="card-style">Antispin</span>
@@ -724,12 +731,6 @@
                             >{petalWord(flower.petals)}</span
                           >
                         {/each}
-                        {#if names.some(Boolean)}
-                          <!-- An empty cell keeps a name under its own column. -->
-                          {#each names as name, index (index)}
-                            <span class="card-name">{name ?? ""}</span>
-                          {/each}
-                        {/if}
                       </div>
                     {:else}
                       <div class="card-float">
@@ -1554,12 +1555,6 @@
     font-weight: 600;
   }
 
-  .card-name {
-    color: var(--ink-dim);
-    font-size: var(--font-size-compact, 0.78rem);
-    line-height: 1.3;
-  }
-
   .float-words {
     max-inline-size: 16rem;
     color: var(--ink-dim);
@@ -1949,6 +1944,7 @@
     padding-top: 0.5rem;
   }
 
+  .reading-copy h3,
   .swap-copy h3,
   .beyond h3 {
     margin: 0 0 0.6rem;
