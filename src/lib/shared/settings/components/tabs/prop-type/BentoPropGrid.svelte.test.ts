@@ -82,6 +82,79 @@ describe("BentoPropGrid style drill-down", () => {
   });
 });
 
+describe("BentoPropGrid style settings", () => {
+  beforeEach(async () => {
+    await page.viewport(760, 800);
+    document.body.style.margin = "0";
+  });
+
+  const openSection = (name: string) =>
+    document.querySelector(`section[aria-label="${name}"]`);
+
+  // Every Triad pick once opened a details page that held nothing but the
+  // size toggle. The styles page carries the size, and a pick stays there.
+  it("keeps a picked style on its styles page, with its size there", async () => {
+    const onSelect = vi.fn();
+    const { rerender } = render(BentoPropGrid, {
+      selectedPropType: PropType.TRIAD,
+      onSelect,
+      allowedProps: [PropType.TRIAD, PropType.TRIGENG, PropType.BIGTRIAD],
+    });
+
+    await page.getByRole("button", { name: "Choose Triad style" }).click();
+    const styles = page.getByRole("region", { name: "Triad styles" });
+    await expect
+      .element(styles.getByRole("button", { name: "Big", exact: true }))
+      .toBeVisible();
+
+    await page
+      .getByRole("button", { name: "Select Triad 3D prop type", exact: true })
+      .click();
+    expect(onSelect).toHaveBeenLastCalledWith(PropType.TRIAD);
+    // Past the page swap a details page would take.
+    await new Promise((resolve) => setTimeout(resolve, 600));
+    expect(openSection("Triad details")).toBeNull();
+    expect(openSection("Triad styles")).not.toBeNull();
+
+    await styles.getByRole("button", { name: "Big", exact: true }).click();
+    expect(onSelect).toHaveBeenLastCalledWith(PropType.BIGTRIAD);
+
+    // The tiles follow the size, so a later pick keeps it.
+    await rerender({ selectedPropType: PropType.BIGTRIAD });
+    const bigModel = page.getByRole("button", {
+      name: "Select Big Triad 3D prop type",
+      exact: true,
+    });
+    await expect.element(bigModel).toBeVisible();
+    await expect
+      .element(styles.getByRole("button", { name: "Big", exact: true }))
+      .toHaveAttribute("aria-pressed", "true");
+    await bigModel.click();
+    expect(onSelect).toHaveBeenLastCalledWith(PropType.BIGTRIAD);
+  });
+
+  it("keeps a buugeng style's chirality on the same page", async () => {
+    const onChange = vi.fn();
+    render(BentoPropGrid, {
+      selectedPropType: PropType.TRIGENG,
+      onSelect: vi.fn(),
+      allowedProps: [PropType.TRIAD, PropType.TRIGENG],
+      chirality: {
+        hands: [
+          { hand: "left", flipped: false },
+          { hand: "right", flipped: false },
+        ],
+        onChange,
+      },
+    });
+
+    await page.getByRole("button", { name: "Choose Triad style" }).click();
+    const styles = page.getByRole("region", { name: "Triad styles" });
+    await styles.getByRole("radio", { name: /^B/ }).first().click();
+    expect(onChange).toHaveBeenCalledWith("left", true);
+  });
+});
+
 describe("BentoPropGrid colours on a drill", () => {
   beforeEach(async () => {
     await page.viewport(760, 800);

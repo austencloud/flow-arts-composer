@@ -107,8 +107,8 @@ describe("PropGrid fan look credit", () => {
     for (const name of [
       "Triad prop type",
       "Trigeng prop type",
-      "Triad 3D",
-      "Trigeng 3D",
+      "Triad 3D prop type",
+      "Trigeng 3D prop type",
     ]) {
       await expect
         .element(
@@ -121,7 +121,7 @@ describe("PropGrid fan look credit", () => {
     ).toHaveLength(0);
 
     await page
-      .getByRole("button", { name: "Select Trigeng 3D", exact: true })
+      .getByRole("button", { name: "Select Trigeng 3D prop type", exact: true })
       .click();
     expect(onSelect).toHaveBeenCalledWith(PropType.TRIGENG);
     expect(onPropLookChange).toHaveBeenCalledWith("model");
