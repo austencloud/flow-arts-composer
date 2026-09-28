@@ -349,7 +349,8 @@ What changed:
 Staffs still pass through the chest when it turns side-on (642 / 1,271
 staff-frames as drawn, ch07 / ch18). The scoreboard holds them at those
 counts. The per-hand lanes and the 60° chest limit below were two attempts to
-clear them. Both were dropped.
+clear them. Both were dropped. The real staff recheck below traces most of
+this contact to staff length.
 
 Recommended order after this: trail cleanup; reference clips from Austen
 (front and side stills he confirms) for body turns and negative space,
@@ -427,8 +428,11 @@ Pictures of the same moments, before and after:
 - Better at gggg beats 1 and 2: both staffs leave the neck and chest.
 - Worse at gggg beat 4 and hhhh beat 1: the forearms cross in front of the
   face and the hands open away from their staffs.
-- Wrong both ways at vvvv beat 4: the current pose puts a staff through the
-  mouth, and the limited pose lays it across the neck with the hand open.
+- Wrong both ways at vvvv beat 4: the limited pose lays a staff across the
+  neck with the hand open. The current pose looked like it put a staff through
+  the mouth, but that piece was the notation staff's T-bar crossbar. With the
+  LED Baton the shaft stops at the lips, and the scoreboard counts no head hit
+  at that beat.
 
 Austen dropped the limit on 2026-09-27 from those pictures. It was never
 committed.
@@ -444,11 +448,50 @@ once one is modeled. The staff-grip lab opens on the LED Baton, so leave
 notation staff. The scoreboard measures a straight 86.36 cm staff (the default
 34-inch length) whatever build is drawn, which matches the LED Baton's length.
 
-Untested lead: the lab's fit panel gives 67.6 cm as the longest staff ch07 can
-hold inside its own hug, bounded by how far the converged grip sits in front of
-the torso surface. The LED Baton is 86.36 cm and the Fire Staff 90 cm. If the
-rig matches that bound, part of the side-on chest contact comes from staff
-length itself. Check it with the real builds before a third attempt.
+Judge a real build at its real length. The LED Baton always draws at
+86.36 cm. Since 2026-09-27 the Fire Staff stretches to the length it is given,
+so in the lab's default body-fit mode it draws at the hug fit (about 67 cm on
+ch07) while the lab's readout still says 90 cm. Add `length=90` to the lab URL
+when picturing it.
+
+### Real staff recheck (2026-09-27)
+
+Today's merged pose, pictured with the LED Baton at 86.36 cm and the Fire
+Staff pinned to 90 cm at the moments used above. Both builds read the same way:
+
+- gggg beat 1: the red end reaches the face and the blue end the collar.
+- gggg beat 2: the inner ends of both staffs come out at the collarbone.
+- gggg beat 4: the red staff lies across the face with its end at the neck.
+- hhhh beat 1: the red staff's top end passes just over the head.
+- vvvv beat 4: the red end stops at the lips.
+
+The lab's fit panel gives about 67 cm (67.0 to 67.7 cm across loads) as the
+longest staff ch07 can hold inside its own hug: half of it fits between the
+converged grip and the torso surface with 6 cm to spare. The test ran the
+scoreboard on today's poses at five staff lengths with nothing else changed.
+
+Scoreboard, ch07 / ch18, staff-frames of 12,960:
+
+| Staff length         | Torso, as drawn | Head, as drawn | Head and torso where the stance plans it |
+| -------------------- | --------------- | -------------- | ---------------------------------------- |
+| 61 cm                | 55 / 82         | 64 / 142       | 136 / 206                                |
+| 67.6 cm (hug fit)    | 86 / 188        | 64 / 142       | 256 / 448                                |
+| 76 cm                | 216 / 613       | 64 / 147       | 650 / 968                                |
+| 86.36 cm (LED Baton) | 642 / 1,271     | 64 / 149       | 1,189 / 1,610                            |
+| 90 cm (Fire Staff)   | 984 / 1,508     | 64 / 149       | 1,506 / 1,948                            |
+
+With the body square to the audience, no length puts a staff in the head or
+torso. At the LED Baton's length, 517 of 642 torso hits on ch07 and 1,053 of
+1,271 on ch18 fall in beats where the chest turns past 80°. At the hug-fit
+length, torso hits as drawn fall 87% on ch07 and 85% on ch18. Head hits
+barely move (64 at every length on ch07, 142 to 149 on ch18), so the staff
+meets the head within about 30 cm of the hand, not at its ends.
+
+Most of the side-on chest contact is staff length. Today's grips leave room
+for a half-length of about 34 cm in front of the turned chest, and the real
+builds reach 43 to 45 cm from the hand. How the pose makes that room is
+Austen's call, and the next attempt is judged by pictures of a real build at
+its real length.
 
 ## Target architecture
 
