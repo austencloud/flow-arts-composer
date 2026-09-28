@@ -79,6 +79,20 @@ describe("buildChoreoCardRenderKeys", () => {
     expect(fire.gridStableKey).toBe(lotus.gridStableKey);
   });
 
+  it("repaints a triangle grip change in place, like the fan build", () => {
+    const corner = buildChoreoCardRenderKeys({
+      ...base,
+      triangleGrip: "corner",
+    });
+    const side = buildChoreoCardRenderKeys({ ...base, triangleGrip: "side" });
+    // The corner grip is the notation glyph: the key it always had.
+    expect(corner).toEqual(buildChoreoCardRenderKeys(base));
+    expect(side.imageKey).not.toBe(corner.imageKey);
+    // Same arrows and placements, other artwork: a crossfade, not a swap.
+    expect(side.structuralKey).toBe(corner.structuralKey);
+    expect(side.gridStableKey).toBe(corner.gridStableKey);
+  });
+
   it("renderKey reflects darkMode; gridStableKey ignores image-only props", () => {
     expect(
       buildChoreoCardRenderKeys({ ...base, darkMode: true }).renderKey
