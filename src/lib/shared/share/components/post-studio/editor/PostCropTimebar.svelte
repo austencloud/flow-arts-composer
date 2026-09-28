@@ -20,9 +20,11 @@
     item: PostVideoItem;
     /** Play or pause, looping the clip. */
     onToggle: () => void;
+    /** Moves the playhead, kept on the clip. */
+    onSeek: (seconds: number) => void;
   }
 
-  let { editor, item, onToggle }: Props = $props();
+  let { editor, item, onToggle, onSeek }: Props = $props();
 
   const FRAME_SECONDS = 1 / POST_FRAME_RATE;
   const start = $derived(item.start);
@@ -37,7 +39,7 @@
 
   function seek(seconds: number): void {
     editor.pause();
-    editor.seek(seconds);
+    onSeek(seconds);
   }
 </script>
 
