@@ -85,20 +85,26 @@
     <div class="closing">
       <section class="why" aria-labelledby="why-heading">
         <h2 id="why-heading">{tDynamic("guide_prospin_why_heading")}</h2>
-        <p>{tDynamic("guide_prospin_why_pair")}</p>
-        <p>{tDynamic("guide_prospin_why_orientation")}</p>
+        <div class="reasons">
+          <p>{tDynamic("guide_prospin_why_pair")}</p>
+          <p>{tDynamic("guide_prospin_why_orientation")}</p>
+        </div>
       </section>
 
       <nav class="more" aria-labelledby="more-heading">
         <h2 id="more-heading">{tDynamic("guide_prospin_more_heading")}</h2>
         <ul>
           <li>
-            <a href="/guide/level-1/staff-motions"
-              >{tDynamic("guide_prospin_more_staff")}</a
-            >
+            <a class="read-chip" href="/guide/level-1/staff-motions">
+              {tDynamic("guide_prospin_more_staff")}
+              <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
+            </a>
           </li>
           <li>
-            <a href="/guide/ratios">{tDynamic("guide_prospin_more_ratios")}</a>
+            <a class="read-chip" href="/guide/ratios">
+              {tDynamic("guide_prospin_more_ratios")}
+              <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
+            </a>
           </li>
         </ul>
       </nav>
@@ -108,16 +114,16 @@
 
 <style>
   /* The page spans the Guide's full content track on a desktop, the same band
-     the Ratios page uses, and recomposes by its own width: prose keeps one
-     reading measure while the two demonstrations share the full band. On a
-     phone the Guide keeps the route in its prose column and everything stacks
-     in reading order. SequenceShowcase reads --ink and --ink-dim from its
-     host, the same contract the Level 2 pages give it on this dark canvas. */
+     the Ratios page uses, and composes on its centre line: the title and
+     lede, each motion's name over its two squares, the two reasons under the
+     two motions, and the reading links as one row of pills. On a phone the
+     Guide keeps the route in its prose column and everything stacks in
+     reading order. SequenceShowcase reads --ink and --ink-dim from its host,
+     the same contract the Level 2 pages give it on this dark canvas. */
   .prospin {
     --ink: #ececf2;
     --ink-dim: #a8a8b4;
     --glyph-invert: 1;
-    --copy: 38rem;
     --accent: var(--theme-accent, oklch(0.74 0.11 265));
     --rule: var(--theme-stroke, oklch(0.4 0.04 270 / 0.22));
     --gutter: clamp(1.5rem, 3vw, 3rem);
@@ -134,6 +140,7 @@
     align-content: start;
     gap: clamp(2rem, 4vw, 3.5rem);
     padding: clamp(1.5rem, 3vw, 3rem) var(--pad) clamp(3rem, 6vw, 5rem);
+    text-align: center;
   }
 
   /* Below the tablet breakpoint the Guide keeps this route in its prose
@@ -147,62 +154,26 @@
   .prospin h1 {
     margin: 0 0 1rem;
     padding: 0;
-    font-size: clamp(2.1rem, 1.6rem + 1.6vw, 3.2rem);
+    font-size: clamp(2.1rem, 1.6rem + 1.6vw, 3.4rem);
     font-weight: 700;
     letter-spacing: -0.03em;
     line-height: 1.05;
-    text-align: left;
+    text-align: center;
   }
 
   .prospin h2 {
     margin-top: 0;
+    text-align: center;
   }
 
-  .prospin p,
-  .prospin ul {
-    max-inline-size: var(--copy);
-  }
-
+  /* Three sentences read as two or three centred lines on a desktop; any
+     wider and each line runs too long to follow back to the next. */
   .lede {
-    margin-bottom: 0;
+    max-inline-size: 46rem;
+    margin: 0 auto;
+    font-size: clamp(1.05rem, 1rem + 0.3vw, 1.25rem);
+    line-height: 1.55;
     color: oklch(0.86 0.01 270);
-  }
-
-  .why p:last-child {
-    margin-bottom: 0;
-  }
-
-  .closing {
-    padding-top: clamp(1.75rem, 3vw, 2.75rem);
-    border-top: 1px solid var(--rule);
-  }
-
-  /* Stacked, the reading links sit under the why as their own short section. */
-  .more {
-    padding-top: clamp(1.5rem, 3vw, 2.5rem);
-    margin-top: clamp(2rem, 4vw, 3rem);
-    border-top: 1px solid var(--rule);
-  }
-
-  .prospin a {
-    color: var(--accent);
-    text-decoration: underline;
-    text-underline-offset: 0.18em;
-  }
-
-  .prospin a:focus-visible {
-    outline: 2px solid var(--accent);
-    outline-offset: 3px;
-    border-radius: 3px;
-  }
-
-  .more ul {
-    margin: 0;
-    padding-left: 1.1rem;
-  }
-
-  .more li + li {
-    margin-top: 0.35rem;
   }
 
   .shifts {
@@ -219,24 +190,85 @@
     color: var(--ink);
   }
 
+  .closing {
+    display: grid;
+    gap: clamp(2rem, 4vw, 3rem);
+    padding-top: clamp(1.75rem, 3vw, 2.75rem);
+    border-top: 1px solid var(--rule);
+  }
+
+  .reasons {
+    display: grid;
+    gap: 1rem calc(var(--gutter) * 2);
+  }
+
+  .reasons p {
+    max-inline-size: 36rem;
+    margin: 0 auto;
+    line-height: 1.6;
+    color: oklch(0.86 0.01 270);
+  }
+
+  .more h2 {
+    margin-bottom: 1rem;
+    font-size: 1rem;
+    font-weight: 650;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-dim);
+  }
+
+  .more ul {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.75rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  /* Each reading link is a pill, the Guide's shape for a place to go, so it
+     reads as something to press rather than as underlined text. */
+  .read-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    min-height: 2.75rem;
+    padding: 0.55rem 1.15rem;
+    border: 1px solid color-mix(in oklab, var(--accent) 38%, transparent);
+    border-radius: 999px;
+    background: color-mix(in oklab, var(--accent) 12%, transparent);
+    color: var(--ink);
+    font-size: 0.95rem;
+    font-weight: 600;
+    text-decoration: none;
+    transition:
+      border-color 140ms ease,
+      background-color 140ms ease;
+  }
+
+  .read-chip i {
+    font-size: 0.8em;
+    color: var(--accent);
+  }
+
+  .read-chip:hover {
+    border-color: color-mix(in oklab, var(--accent) 70%, transparent);
+    background: color-mix(in oklab, var(--accent) 22%, transparent);
+  }
+
+  .read-chip:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 3px;
+  }
+
   /* Wide: the two demonstrations sit side by side for comparison, and the
-     why keeps its measure with the reading links beside it. */
+     two reasons sit under them in the same two columns. */
   @container prospin (min-width: 64rem) {
-    .shifts {
+    .shifts,
+    .reasons {
       grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-
-    .closing {
-      display: grid;
-      grid-template-columns: minmax(0, var(--copy)) minmax(0, 1fr);
-      column-gap: calc(var(--gutter) * 2);
-      align-items: start;
-    }
-
-    .more {
-      margin-top: 0;
-      padding-top: 0;
-      border-top: 0;
     }
   }
 </style>

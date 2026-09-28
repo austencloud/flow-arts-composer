@@ -564,7 +564,7 @@
           <p>
             Each name describes the shape one end of the prop draws. Inspin is
             another name for prospin; <a href="/guide/prospin-and-inspin"
-              >Prospin and inspin</a
+              >Prospin and Inspin</a
             > compares the two.
           </p>
         </div>
