@@ -731,7 +731,8 @@
   );
 
   // The triangle's grip is a look on top of the tile, like the fan build. It
-  // shows as a two-pill row in the triangle's details and on the rail.
+  // shows as a two-pill row on the hoop styles page, in the triangle's
+  // details and on the rail.
   const showGrip = $derived(
     showAppearance && detailProp !== null && isTrianglePropType(detailProp)
   );

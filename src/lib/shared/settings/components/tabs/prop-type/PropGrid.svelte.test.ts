@@ -127,6 +127,45 @@ describe("PropGrid fan look credit", () => {
     expect(onPropLookChange).toHaveBeenCalledWith("model");
   });
 
+  // The grip once sat alone on a Triangle details page one level further
+  // down. It belongs on the styles page where the Triangle is picked.
+  it("keeps a picked Triangle on its styles page, with its grip there", async () => {
+    const onSelect = vi.fn();
+    const onTriangleGripChange = vi.fn();
+    const { rerender } = render(PropGrid, {
+      selectedPropType: PropType.MINIHOOP,
+      onSelect,
+      allowedProps: [PropType.MINIHOOP, PropType.BIGHOOP, PropType.TRIANGLE],
+      fanAppearance: { build: "fire", frameColor: "black", cover: "bare" },
+      onFanAppearanceChange: vi.fn(),
+      triangleGrip: "corner",
+      onTriangleGripChange,
+    });
+
+    await page.getByRole("button", { name: "Choose Mini Hoop style" }).click();
+    const styles = page.getByRole("region", { name: "Mini Hoop styles" });
+    await expect.element(styles).toBeVisible();
+    expect(styles.getByRole("group", { name: "Triangle grip" }).elements())
+      .toHaveLength(0);
+
+    await page
+      .getByRole("button", { name: "Select Triangle prop type", exact: true })
+      .click();
+    expect(onSelect).toHaveBeenLastCalledWith(PropType.TRIANGLE);
+    await rerender({ selectedPropType: PropType.TRIANGLE });
+
+    const side = styles.getByRole("button", { name: "Side", exact: true });
+    await expect.element(side).toBeVisible();
+    // Past the page swap a details page would take.
+    await new Promise((resolve) => setTimeout(resolve, 600));
+    expect(
+      document.querySelector('section[aria-label="Triangle details"]')
+    ).toBeNull();
+
+    await side.click();
+    expect(onTriangleGripChange).toHaveBeenCalledWith("side");
+  });
+
   it("selects Buugeng and replaces the root grid with its persistent details", async () => {
     const onSelect = vi.fn();
     const onPropLookChange = vi.fn();
