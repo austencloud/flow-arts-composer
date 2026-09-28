@@ -1,3 +1,6 @@
+import { t } from "$lib/shared/i18n/i18n.svelte";
+import { localizeLevel1Text } from "./localize-level1-content";
+
 /**
  * Per-topic SEO copy for the crawlable paginated guide routes
  * (`/guide/level-1/<slug>`), keyed by manifest id. Every string is Austen's -
@@ -239,11 +242,35 @@ export const GUIDE_PAGE_SEO: Record<string, GuidePageSeo> = {
 
 /** SEO copy for a slug, falling back to a manifest title when unharvested. */
 export function seoForSlug(slug: string, fallbackTitle: string): GuidePageSeo {
-  return (
-    GUIDE_PAGE_SEO[slug] ?? {
-      h1: fallbackTitle,
-      title: `${fallbackTitle} · Flow Arts Notation Guide`,
-      description: `${fallbackTitle} in The Kinetic Alphabet, a flow arts choreography notation system.`,
-    }
-  );
+  if (slug === "the-grid") {
+    return {
+      h1: t("verified_level1_the_grid"),
+      tagline: t("verified_level1_grid_intro"),
+      title: t("verified_level1_grid_seo_title"),
+      description: t("verified_level1_grid_intro"),
+    };
+  }
+  if (slug === "hand-placements") {
+    return {
+      h1: t("verified_level1_placements_seo_h1"),
+      tagline: t("verified_level1_placements_seo_tagline"),
+      title: t("verified_level1_placements_seo_title"),
+      description: t("verified_level1_placements_seo_description"),
+    };
+  }
+  const entry = GUIDE_PAGE_SEO[slug];
+  if (entry) {
+    return {
+      h1: localizeLevel1Text(entry.h1),
+      tagline: entry.tagline ? localizeLevel1Text(entry.tagline) : undefined,
+      title: localizeLevel1Text(entry.title),
+      description: localizeLevel1Text(entry.description),
+    };
+  }
+  const title = localizeLevel1Text(fallbackTitle);
+  return {
+    h1: title,
+    title: `${title} · ${t("verified_level1_seo_fallback_suffix")}`,
+    description: `${title} ${t("verified_level1_seo_fallback_description")}`,
+  };
 }

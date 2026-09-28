@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t as translate } from "$lib/shared/i18n/i18n.svelte.js";
   /**
    * Real-pictograph diagrams for the S/T leading-following breakdown,
    * mirroring SAndTPage.svelte's four `STRIPS` (S-High, S-Low, T-High,
@@ -121,49 +122,49 @@
   const { frames: tLowFrames, sequence: tLowSequence } = makeStrip({ id: "t-lo", word: "T-Low-One", left: T_BLUE, right: T_RED, leftTurns: 0, rightTurns: 1 });
 </script>
 
-<GuideSection id="s-and-t" title="S and T">
+<GuideSection id="s-and-t" title={translate("guide_l2_st_title")}>
   <div class="section-body">
     <p>
-      S and T are a different type of hybrid. Even though their motions are a matching shift type (pro|pro, anti|anti), each has one hand leading and the other following. Though this doesn't affect their base forms, it produces additional variations when modifying their motions. S and T are the only letters that have a leader and follower while both hands share the same motion type.
+      {translate("guide_l2_st_intro")}
     </p>
 
     <p>
-      Fortunately, we have a tool to disambiguate hybrids: the high/low slots. For S and T, high = leading and low = following.
+      {translate("guide_l2_st_slots")}
     </p>
   </div>
 
   <div class="showcase-wrap">
     <SequenceShowcase variant="compact" render={{ propType: PropType.STAFF }} sequence={sHighSequence} items={[]} bpm={60}>
       {#snippet strip(t)}
-        <TurnStrip frames={sHighFrames} activeT={t} caption="S-High-One - both hands prospin; the leading hand carries the turn, the following hand only travels" />
+        <TurnStrip frames={sHighFrames} activeT={t} caption={translate("guide_l2_st_s_high_caption")} />
       {/snippet}
     </SequenceShowcase>
   </div>
   <div class="showcase-wrap">
     <SequenceShowcase variant="compact" render={{ propType: PropType.STAFF }} sequence={sLowSequence} items={[]} bpm={60}>
       {#snippet strip(t)}
-        <TurnStrip frames={sLowFrames} activeT={t} caption="S-Low-One - both hands prospin; the following hand carries the turn, the leading hand only travels" />
+        <TurnStrip frames={sLowFrames} activeT={t} caption={translate("guide_l2_st_s_low_caption")} />
       {/snippet}
     </SequenceShowcase>
   </div>
   <div class="showcase-wrap">
     <SequenceShowcase variant="compact" render={{ propType: PropType.STAFF }} sequence={tHighSequence} items={[]} bpm={60}>
       {#snippet strip(t)}
-        <TurnStrip frames={tHighFrames} activeT={t} caption="T-High-One - both hands antispin; the leading hand carries the turn, the following hand only travels" />
+        <TurnStrip frames={tHighFrames} activeT={t} caption={translate("guide_l2_st_t_high_caption")} />
       {/snippet}
     </SequenceShowcase>
   </div>
   <div class="showcase-wrap">
     <SequenceShowcase variant="compact" render={{ propType: PropType.STAFF }} sequence={tLowSequence} items={[]} bpm={60}>
       {#snippet strip(t)}
-        <TurnStrip frames={tLowFrames} activeT={t} caption="T-Low-One - both hands antispin; the following hand carries the turn, the leading hand only travels" />
+        <TurnStrip frames={tLowFrames} activeT={t} caption={translate("guide_l2_st_t_low_caption")} />
       {/snippet}
     </SequenceShowcase>
   </div>
 
   <div class="section-body">
     <p>
-      Note that these leading/following rules do NOT apply to U and V. Even though U and V have a leader/follower, their slots refer to pro/anti.
+      {translate("guide_l2_st_uv_exception")}
     </p>
   </div>
 </GuideSection>

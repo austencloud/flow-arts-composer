@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
   import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
   import type { BuildModeId } from "$lib/shared/foundation/ui/ui-types";
@@ -111,9 +112,11 @@
 
   const ariaLabel = $derived.by(() => {
     if (isStartPlacement) {
-      return "Start Placement";
+      return t("create_ui_start_placement_label");
     }
-    return `Step ${displayStepNumber} ${step.isBlank ? "Empty" : "Pictograph"}`;
+    return step.isBlank
+      ? t("create_workspace_empty_step_label", { number: displayStepNumber })
+      : t("create_workspace_pictograph_step_label", { number: displayStepNumber });
   });
 
   // Create step data with selection state for the Pictograph component

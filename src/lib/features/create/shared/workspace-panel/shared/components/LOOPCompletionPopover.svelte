@@ -111,7 +111,7 @@
     {:else if isCircular}
       <div class="loop-status circular-only">
         <i class="fas fa-circle-notch" aria-hidden="true"></i>
-        <span>Circular sequence (no LOOP pattern detected)</span>
+        <span>{t("create_review_circular_sequence_no_loop_pattern_detected")}</span>
       </div>
     {/if}
 

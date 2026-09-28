@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { localizeLevel1Text, localizeLevel1SelectionLabel } from "../_data/localize-level1-content";
   /**
    * 16-Count Sequences - body page (manifest `sixteen-count`), faithful to
    * "1.2 - 16-count sequences - GΘOZ, EΔQY" artboard (old p40; CAP→LOOP
@@ -309,7 +310,7 @@
       <SelectionHit
         groupId={q.key}
         isGroupStart
-        label={`Animate ${q.word}`}
+        label={localizeLevel1SelectionLabel(`Animate ${q.word}`)}
         onselect={() => emitSequence?.({ strip: RESOLVED[q.key]!, word: q.word, key: q.key, propType: "staff" })}
       />
     </div>
@@ -327,7 +328,7 @@
       use:ptDrag={pt(`sc-para-${i}`, "para", p)}
       use:editText={{ id: `sc-para-${i}`, label: "para", get: () => p.html, set: (h2) => (p.html = h2) }}
     >
-      {@html p.html}
+      {@html localizeLevel1Text(p.html)}
     </p>
   {/each}
 </div>

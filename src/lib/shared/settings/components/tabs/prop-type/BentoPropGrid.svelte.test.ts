@@ -82,6 +82,68 @@ describe("BentoPropGrid style drill-down", () => {
   });
 });
 
+describe("BentoPropGrid colours on a drill", () => {
+  beforeEach(async () => {
+    await page.viewport(760, 800);
+    document.body.style.margin = "0";
+  });
+
+  const colorsSection = () =>
+    document.querySelector<HTMLElement>("section.primary-colors");
+  // True while an animation runs on the colours or on a box holding them.
+  const fading = (el: HTMLElement | null) =>
+    !!el &&
+    document.getAnimations().some((animation) => {
+      const target = (animation.effect as KeyframeEffect | null)?.target;
+      return target instanceof Element && target.contains(el);
+    });
+
+  // The colours once vanished in one frame, then squashed upward, while the
+  // tiles below them faded. They belong to the grid's page and leave with it.
+  it("fades out with the tiles as one page, without resizing", async () => {
+    render(BentoPropGrid, {
+      selectedPropType: PropType.BUUGENG,
+      onSelect: vi.fn(),
+      allowedProps: [PropType.BUUGENG, PropType.BIGBUUGENG],
+    });
+
+    const colors = colorsSection();
+    const tile = document.querySelector<HTMLElement>("[data-prop-tile]");
+    if (!colors || !tile) throw new Error("picker did not render");
+    // Opening the picker shows them at rest.
+    expect(fading(colors)).toBe(false);
+    const height = colors.getBoundingClientRect().height;
+    const gap =
+      tile.getBoundingClientRect().top - colors.getBoundingClientRect().top;
+
+    await page
+      .getByRole("button", { name: "Select Buugeng prop type" })
+      .click();
+    const leaving: { height: number; gap: number; fading: boolean }[] = [];
+    await expect
+      .poll(() => {
+        if (!colors.isConnected) return true;
+        const box = colors.getBoundingClientRect();
+        leaving.push({
+          height: box.height,
+          gap: tile.getBoundingClientRect().top - box.top,
+          fading: fading(colors),
+        });
+        return false;
+      })
+      .toBe(true);
+
+    expect(leaving.some((frame) => frame.fading)).toBe(true);
+    for (const frame of leaving) {
+      expect(frame.height).toBeCloseTo(height, 0);
+      expect(frame.gap).toBeCloseTo(gap, 0);
+    }
+
+    await page.getByRole("button", { name: "Back to all props" }).click();
+    await expect.poll(() => fading(colorsSection())).toBe(true);
+  });
+});
+
 describe("BentoPropGrid prop look", () => {
   beforeEach(async () => {
     await page.viewport(760, 800);

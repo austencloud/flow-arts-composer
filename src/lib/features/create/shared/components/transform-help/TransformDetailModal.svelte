@@ -55,21 +55,17 @@
   const isTransform = $derived(action?.category === "transform");
 
   // Concise descriptions - shorter than fullDesc, but still educational
-  const descriptions: Record<string, string> = {
-    mirror:
-      "Flips horizontally, like looking in a mirror. Left becomes right, clockwise becomes counter-clockwise.",
-    flip: "Flips vertically, like turning upside down. Up becomes down, clockwise becomes counter-clockwise.",
-    invert:
-      "Inverts rotation relative to the path. Pro becomes Anti, and Anti becomes Pro. Base motion types remain unchanged.",
-    rotate: "Pivots 45° around the center.",
-    swap: "Exchanges left and right hand movements. Same pattern, opposite hands perform each motion.",
-    rewind:
-      "Plays backwards. End becomes start, every step reverses order, turns flip direction.",
-  };
-
-  const description = $derived(
-    descriptions[transformId] ?? action?.fullDesc ?? ""
-  );
+  const description = $derived.by(() => {
+    const descriptions: Partial<Record<ActionHelpId, string>> = {
+      mirror: t("create_action_detail_mirror"),
+      flip: t("create_action_detail_flip"),
+      invert: t("create_action_detail_invert"),
+      rotate: t("create_action_detail_rotate"),
+      swap: t("create_action_detail_swap"),
+      rewind: t("create_action_detail_rewind"),
+    };
+    return descriptions[transformId] ?? action?.fullDesc ?? "";
+  });
 
   // Pictograph state
   let displayedPictograph = $state<PictographData | null>(null);
@@ -158,7 +154,7 @@
   onclick={handleBackdropClick}
   role="dialog"
   aria-modal="true"
-  aria-label="Help for {action?.name ?? 'action'}"
+  aria-label={t("create_action_help_for", { action: action?.name ?? t("create_action_help_action") })}
   tabindex="-1"
 >
   <div class="modal-container">
@@ -175,7 +171,7 @@
         {/if}
       </div>
       <div class="header-text">
-        <h2 class="header-title">{action?.name ?? "Action"}</h2>
+        <h2 class="header-title">{action?.name ?? t("create_action_help_action")}</h2>
         <p class="header-subtitle">{action?.shortDesc ?? ""}</p>
       </div>
       <button
@@ -249,7 +245,7 @@
 
     <!-- Footer -->
     <div class="modal-footer">
-      <button class="done-btn" onclick={onClose}> Done </button>
+      <button class="done-btn" onclick={onClose}> {t("create_review_done")} </button>
     </div>
   </div>
 </div>

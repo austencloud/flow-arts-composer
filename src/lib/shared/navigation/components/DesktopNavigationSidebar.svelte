@@ -297,6 +297,10 @@
 </script>
 
 <Sidebar
+  navigationLabel={t("nav_main_navigation")}
+  homeLabel={t("nav_go_home")}
+  pinLabel={t("nav_pin_sidebar")}
+  collapseLabel={t("nav_collapse_sidebar")}
   modules={hostModules}
   currentModule={hostCurrentModule}
   currentSection={hostCurrentSection}

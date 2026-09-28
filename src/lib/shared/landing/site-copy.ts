@@ -12,6 +12,7 @@ const keys: Record<string, string> = {
   Learn: "site_learn",
   "Interactive lessons": "site_interactive_lessons",
   "Timing & Direction": "site_timing_direction",
+  "Trick names": "site_trick_names",
   "Read the Guide": "site_read_guide",
   "Kinetic Atlas": "site_kinetic_atlas",
   Shop: "site_shop",

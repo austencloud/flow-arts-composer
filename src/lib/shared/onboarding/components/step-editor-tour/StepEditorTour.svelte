@@ -5,6 +5,7 @@
   5 tour stops. Dims non-active sections via CSS classes on the parent.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte";
   import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
   import {
     stepEditorTourState,
@@ -22,40 +23,40 @@
     highlight: "all" | "preview" | "duration" | "turns";
   }
 
-  const STOP_INFO: StopInfo[] = [
+  const STOP_INFO: StopInfo[] = $derived([
     {
       id: "welcome",
       icon: "fa-sliders-h",
-      title: "Step Editor",
+      title: t('tutorial_editor_title'),
       description:
-        "This panel opens when you tap any step. You can edit each step individually.",
+        t('tutorial_editor_body'),
       highlight: "all",
     },
     {
       id: "preview",
       icon: "fa-image",
-      title: "Step Preview",
+      title: t('tutorial_preview_title'),
       description:
-        "This pictograph shows the step you selected, with both props and their locations.",
+        t('tutorial_preview_body'),
       highlight: "preview",
     },
     {
       id: "turns",
       icon: "fa-redo",
-      title: "Turns",
+      title: t('tutorial_turns_title'),
       description:
-        "Control how many rotations each prop makes. The left prop is blue and the right prop is red. Set clockwise or counter-clockwise.",
+        t('tutorial_turns_body'),
       highlight: "turns",
     },
     {
       id: "duration",
       icon: "fa-clock",
-      title: "Duration",
+      title: t('tutorial_duration_title'),
       description:
-        "Adjust how long this step lasts in your sequence. Longer steps hold the placement.",
+        t('tutorial_duration_body'),
       highlight: "duration",
     },
-  ];
+  ]);
 
   const currentStopInfo: StopInfo = $derived(
     STOP_INFO[stepEditorTourState.currentStopIndex] ?? STOP_INFO[0]!
@@ -108,7 +109,7 @@
     <button
       class="tour-backdrop"
       onclick={handleSkip}
-      aria-label="Skip tour"
+      aria-label="{t('tutorial_skip_tour')}"
       tabindex="-1"
     ></button>
 
@@ -153,10 +154,10 @@
           data-ghost="safe"
           data-ghost-kind="dismiss"
           data-ghost-label="Skip"
-          onclick={handleSkip}>Skip</button
+          onclick={handleSkip}>{t('attribution_skip')}</button
         >
         <button class="next-btn" onclick={handleNext}>
-          {stepEditorTourState.isLastStop ? "Got it" : "Next"}
+          {stepEditorTourState.isLastStop ? t('action_understood') : t('action_next')}
           {#if !stepEditorTourState.isLastStop}
             <i class="fas fa-arrow-right" aria-hidden="true"></i>
           {/if}

@@ -19,7 +19,7 @@ carries no information.
     <span class="label">{t("create_ui_layers")}</span>
     <span class="value" class:uncertain>{signature}</span>
     {#if uncertain}
-      <span class="note">float, depends on the letters</span>
+      <span class="note">{t("create_review_float_depends_on_the_letters")}</span>
     {/if}
   </div>
 {/if}

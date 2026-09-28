@@ -77,6 +77,7 @@ export function resolveFrameLayerGeometry(input: {
     scale: input.transform.scale,
     translateX: input.transform.translateX,
     translateY: input.transform.translateY,
+    rotationDegrees: input.transform.rotationDegrees,
   });
 
   return {

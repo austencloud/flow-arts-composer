@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { localizeLevel1Text, localizeLevel1SelectionLabel } from "../_data/localize-level1-content";
   /**
    * Prop-Reversal LOOPs - body page (manifest `prop-reversal-loops`), faithful
    * to "1.2 - Prop-Reversal Permutations, EΣQY, TWKΘ, BΔMX" artboard (old p42;
@@ -316,7 +317,7 @@
       <SelectionHit
         groupId={l.key}
         isGroupStart
-        label={`Animate the ${l.word} LOOP`}
+        label={localizeLevel1SelectionLabel(`Animate the ${l.word} LOOP`)}
         onselect={() => emitSequence?.({ strip: loopSteps(l), word: l.word, key: l.key, propType: "staff" })}
       />
     </div>
@@ -332,7 +333,7 @@
       use:ptDrag={pt(`prl-para-${i}`, "para", p)}
       use:editText={{ id: `prl-para-${i}`, label: "para", get: () => p.html, set: (h2) => (p.html = h2) }}
     >
-      {@html p.html}
+      {@html localizeLevel1Text(p.html)}
     </p>
   {/each}
 </div>

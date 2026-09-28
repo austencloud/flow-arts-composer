@@ -251,7 +251,7 @@ Features square aspect ratio for consistent layout and settings dialog for camer
         <div class="error-icon">📷</div>
         <p class="error-message">{error}</p>
         <button class="retry-button" onclick={() => startCamera()}>
-          Try Again
+          {t("create_review_try_again")}
         </button>
       </div>
     {:else if !isCameraActive}

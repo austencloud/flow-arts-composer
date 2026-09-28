@@ -15,6 +15,7 @@
    * are equal). Left text-only; not a fit for this primitive.
    */
   import GuideSection from "../../../level-1/_components/GuideSection.svelte";
+  import { t as translate } from "$lib/shared/i18n/i18n.svelte.js";
   import SequenceShowcase from "../../../level-1/_components/SequenceShowcase.svelte";
   import TurnStrip, {
     type TurnStripFrame,
@@ -178,11 +179,10 @@
   });
 </script>
 
-<GuideSection id="turn-static" title="Static">
+<GuideSection id="turn-static" title={translate("guide_l2_static_title")}>
   <div class="section-body">
     <p>
-      Finally, we'll look at static turns. Here is a breakdown of a static turn
-      starting from thumb in:
+      {translate("guide_l2_static_intro")}
     </p>
   </div>
 
@@ -198,7 +198,7 @@
         <TurnStrip
           frames={staticFrames}
           activeT={t}
-          caption="The staff never leaves east - only its thumb reference flips as it turns in place, in to out"
+          caption={translate("guide_l2_static_caption")}
         />
       {/snippet}
     </SequenceShowcase>
@@ -206,24 +206,20 @@
 
   <div class="section-body">
     <p>
-      This can be executed at any hand point, starting from either thumb
-      orientation, turning in either direction.
+      {translate("guide_l2_static_any_point")}
     </p>
 
     <p>
-      Note the differences between the arrow for static turns and the arrow for
-      prospin turns:
+      {translate("guide_l2_static_arrow_intro")}
     </p>
 
     <!-- TODO: add diagram - comparison of static turn arrow vs prospin turn arrow -->
 
     <p>
-      <strong>Static:</strong> Prop remains at its start position. The arrow forms
-      a half circle with that position.
+      <strong>{translate("guide_l2_static_title")}:</strong> {translate("guide_l2_static_arrow")}
     </p>
     <p>
-      <strong>Shift:</strong> Prop ends at an adjacent position. The arrow forms a
-      half-circle around the empty start position.
+      <strong>{translate("guide_l2_shift_title")}:</strong> {translate("guide_l2_shift_arrow")}
     </p>
   </div>
 </GuideSection>

@@ -12,6 +12,10 @@ Used by Generate and Fuse so both tools expose one style vocabulary and policy.
     GenerationStyleAxis,
     GenerationStylePolicy,
   } from "$lib/shared/create/domain/generation-style";
+  import {
+    GENERATION_DASH_OPTIONS,
+    GENERATION_STYLE_OPTIONS,
+  } from "$lib/shared/create/domain/generation-style-display";
 
   let {
     constraintPreset,
@@ -38,41 +42,6 @@ Used by Generate and Fuse so both tools expose one style vocabulary and policy.
     onHandsChange: (v: GenerationStyleAxis) => void;
     onDashesChange: (v: GenerationDashChoice) => void;
   } = $props();
-
-  const propsOptions = [
-    { value: "smooth", label: "Smooth" },
-    { value: "mixed", label: "Mixed" },
-    { value: "choppy", label: "Choppy" },
-  ] as const;
-
-  const handsOptions = [
-    { value: "smooth", label: "Smooth" },
-    { value: "mixed", label: "Mixed" },
-    { value: "choppy", label: "Choppy" },
-  ] as const;
-
-  const dashOptions = [
-    { value: "no-dash", label: "Low" },
-    { value: "mixed", label: "Mixed" },
-    { value: "prefer-dash", label: "High" },
-  ] as const;
-
-  // What the selected value actually asks the builder for. Choppy pushes for a
-  // reversal on every step, which is a narrow target — worth saying so, because
-  // "the generator keeps giving me the same thing" is what it looks like from
-  // the outside. Mirrors createConstraintSet in constraint-presets.ts.
-  const REVERSAL_HINTS: Record<GenerationStyleAxis, string> = {
-    smooth: "Reversals kept to a minimum.",
-    mixed: "Reversals allowed where they fit.",
-    choppy:
-      "A reversal on every step — a narrow target, so results repeat more.",
-  };
-
-  const DASH_HINTS: Record<GenerationDashChoice, string> = {
-    "no-dash": "Dashes avoided.",
-    mixed: "Dashes allowed where they fit.",
-    "prefer-dash": "Dashes favored.",
-  };
 
   let currentDashValue = $derived.by(() => {
     if (motionTypeFilter === "no-dash") return "no-dash";
@@ -111,7 +80,7 @@ Used by Generate and Fuse so both tools expose one style vocabulary and policy.
     <div class="style-axis">
       <span class="style-axis-label">{t("create_ui_props")}</span>
       <div class="style-axis-options">
-        {#each propsOptions as opt}
+        {#each GENERATION_STYLE_OPTIONS as opt}
           <button
             class="option-btn"
             class:selected={constraintPreset === opt.value}
@@ -119,7 +88,7 @@ Used by Generate and Fuse so both tools expose one style vocabulary and policy.
           >
             <span class="option-label">{opt.label}</span>
             {#if defaultProps === opt.value}<span class="option-default"
-                >default</span
+                >{t("create_ui_default")}</span
               >{/if}
           </button>
         {/each}
@@ -129,9 +98,9 @@ Used by Generate and Fuse so both tools expose one style vocabulary and policy.
          tall as its longest line — switching options can't shove the axes
          below it around. -->
     <span class="style-hint">
-      {#each propsOptions as opt}
+      {#each GENERATION_STYLE_OPTIONS as opt}
         <span class="hint-layer" class:live={constraintPreset === opt.value}
-          >{REVERSAL_HINTS[opt.value]}</span
+          >{opt.hint}</span
         >
       {/each}
     </span>
@@ -141,7 +110,7 @@ Used by Generate and Fuse so both tools expose one style vocabulary and policy.
     <div class="style-axis">
       <span class="style-axis-label">{t("create_ui_hands")}</span>
       <div class="style-axis-options">
-        {#each handsOptions as opt}
+        {#each GENERATION_STYLE_OPTIONS as opt}
           <button
             class="option-btn"
             class:selected={handPathMode === opt.value}
@@ -149,16 +118,16 @@ Used by Generate and Fuse so both tools expose one style vocabulary and policy.
           >
             <span class="option-label">{opt.label}</span>
             {#if defaultHands === opt.value}<span class="option-default"
-                >default</span
+                >{t("create_ui_default")}</span
               >{/if}
           </button>
         {/each}
       </div>
     </div>
     <span class="style-hint">
-      {#each handsOptions as opt}
+      {#each GENERATION_STYLE_OPTIONS as opt}
         <span class="hint-layer" class:live={handPathMode === opt.value}
-          >{REVERSAL_HINTS[opt.value]}</span
+          >{opt.hint}</span
         >
       {/each}
     </span>
@@ -168,7 +137,7 @@ Used by Generate and Fuse so both tools expose one style vocabulary and policy.
     <div class="style-axis">
       <span class="style-axis-label">{t("create_ui_dashes")}</span>
       <div class="style-axis-options">
-        {#each dashOptions as opt}
+        {#each GENERATION_DASH_OPTIONS as opt}
           <button
             class="option-btn"
             class:selected={currentDashValue === opt.value}
@@ -176,16 +145,16 @@ Used by Generate and Fuse so both tools expose one style vocabulary and policy.
           >
             <span class="option-label">{opt.label}</span>
             {#if defaultDashes === opt.value}<span class="option-default"
-                >default</span
+                >{t("create_ui_default")}</span
               >{/if}
           </button>
         {/each}
       </div>
     </div>
     <span class="style-hint">
-      {#each dashOptions as opt}
+      {#each GENERATION_DASH_OPTIONS as opt}
         <span class="hint-layer" class:live={currentDashValue === opt.value}
-          >{DASH_HINTS[opt.value]}</span
+          >{opt.hint}</span
         >
       {/each}
     </span>
