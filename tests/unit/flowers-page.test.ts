@@ -9,7 +9,7 @@ import {
   flowerKey,
 } from "../../src/lib/shared/shape-matrix/domain/flower-signature";
 import { NAMED_SHAPES } from "../../src/routes/(public)/flowers/_data/named-shapes";
-import { LEVEL2_ANCHOR_ROUTE_SLUG } from "../../src/routes/(public)/guide/level-2/_data/level2-topic-manifest";
+import { LEVEL2_ANCHOR_ROUTE_SLUG } from "../../src/routes/(public)/guide/level-2/_data/level2-topic-routes";
 
 vi.mock("@capacitor/core", () => ({
   Capacitor: { isNativePlatform: () => false },
