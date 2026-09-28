@@ -91,10 +91,10 @@
         </div>
         <div class="offer-actions">
           <PanelButton variant="primary" onclick={acceptTour}>
-            Show tour
+            {t("create_generate_show_tour")}
           </PanelButton>
           <PanelButton variant="secondary" onclick={declineTour}>
-            Explore options
+            {t("create_generate_explore_options")}
           </PanelButton>
         </div>
       </div>

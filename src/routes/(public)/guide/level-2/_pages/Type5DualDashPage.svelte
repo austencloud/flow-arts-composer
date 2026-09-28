@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { localizePrintLabel } from "../_components/localize-print-label";
+  import { t as translate } from "$lib/shared/i18n/i18n.svelte.js";
   /**
    * Type 5 - Dual-Dash - Level 2 body page 11 (manifest `t5-dual-dash`), faithful
    * to old p12. Both hands dash (dash|dash), so there are no hybrids; matching type
@@ -209,41 +211,37 @@
 <div class="t5-page">
   <!-- Intro. -->
   <p class="para" style="top:{63 * S}px; font-size:{16 * S}px; line-height:{19.2 * S}px">
-    In Type 5 motions, both hands are dashing, so there are no hybrids.<br />
-    Since they’re the same type (dash|dash), the <strong style="color:#2342c9">left</strong> goes in the high slot,<br />
-    and the <strong style="color:#c01b1b">right</strong> goes in the low slot.
+    {@html translate("guide_l2_print_type5dualdashpage_0")}
   </p>
   <p class="para" style="top:{152 * S}px; right:{200 * S}px; font-size:{16 * S}px; line-height:{19 * S}px">
-    This includes <span class="tka">Φ</span>-, <span class="tka">Ψ</span>-, and <span class="tka">Λ</span>-.
+    {@html translate("guide_l2_print_type5dualdashpage_1")}
   </p>
   <div class="big-letter" style="left:{330 * S}px; top:{118 * S}px"><span class="tka">Ψ</span>-</div>
-  <span class="lr hi" style="left:{445 * S}px; top:{118 * S}px">Left</span>
-  <span class="lr lo" style="left:{441 * S}px; top:{167 * S}px">Right</span>
+  <span class="lr hi" style="left:{445 * S}px; top:{118 * S}px">{translate("guide_l2_print_left")}</span>
+  <span class="lr lo" style="left:{441 * S}px; top:{167 * S}px">{translate("guide_l2_print_right")}</span>
   <span class="psi-cap" style="left:{356 * S}px; top:{184 * S}px">Psi-Dash</span>
 
   <p class="para" style="top:{221 * S}px; font-size:{16 * S}px; line-height:{19 * S}px">
-    Let’s break down <span class="tka">Ψ</span>-<sup>1</sup>:
+    {@html translate("guide_l2_print_type5dualdashpage_2")}
   </p>
 
   <!-- Ψ- note. -->
   <p class="para bold" style="top:{379 * S}px; font-size:{16 * S}px; line-height:{19 * S}px">
-    Remember - the high/low slots do <u>not</u> refer to <span style="color:#2342c9">left</span>/<span style="color:#c01b1b">right</span>.
+    {@html translate("guide_l2_print_type5dualdashpage_3")}
   </p>
   <p class="para" style="top:{401 * S}px; font-size:{16 * S}px; line-height:{19 * S}px">
-    Instead, their purpose is to differentiate two motion types.<br />
-    In Type 5, those motion types are the same (dash|dash).
+    {@html translate("guide_l2_print_type5dualdashpage_4")}
   </p>
 
   <!-- Λ- lead-in. -->
   <p class="para" style="top:{462 * S}px; font-size:{16 * S}px; line-height:{18 * S}px">
-    Now let’s look at <span class="tka">Λ</span>-<sup>1</sup>, which again presents variations of <em>opening</em> and <em>closing.</em>
+    {@html translate("guide_l2_print_type5dualdashpage_5")}
   </p>
-  <div class="cont-header" style="left:{503 * S}px; top:{489 * S}px">Continuation</div>
+  <div class="cont-header" style="left:{503 * S}px; top:{489 * S}px">{translate("guide_l2_print_continuation")}</div>
 
   <!-- Closing. -->
   <p class="para" style="top:{724 * S}px; font-size:{16 * S}px; line-height:{19 * S}px">
-    As always, pause at the halfway point to drill it into your muscle memory.<br />
-    This will ensure proper timing.
+    {@html translate("guide_l2_print_type5dualdashpage_6")}
   </p>
 
   <!-- Rules. -->
@@ -265,13 +263,13 @@
 
     <!-- Captions. -->
     {#if strip.captions}
-      <span class="cap" style="left:{(c.start - 18) * S}px; top:{(strip.y - 32) * S}px">thumbs:</span>
-      <span class="frame-cap" style="left:{c.start * S}px; top:{(strip.y - 32) * S}px; width:{SIZE * S}px">start</span>
-      <span class="frame-cap" style="left:{c.half * S}px; top:{(strip.y - 32) * S}px; width:{SIZE * S}px">halfway</span>
-      <span class="frame-cap" style="left:{c.end * S}px; top:{(strip.y - 32) * S}px; width:{SIZE * S}px">end</span>
+      <span class="cap" style="left:{(c.start - 18) * S}px; top:{(strip.y - 32) * S}px">{translate("guide_l2_print_thumbs")}</span>
+      <span class="frame-cap" style="left:{c.start * S}px; top:{(strip.y - 32) * S}px; width:{SIZE * S}px">{translate("guide_l2_frame_start")}</span>
+      <span class="frame-cap" style="left:{c.half * S}px; top:{(strip.y - 32) * S}px; width:{SIZE * S}px">{translate("guide_l2_frame_halfway")}</span>
+      <span class="frame-cap" style="left:{c.end * S}px; top:{(strip.y - 32) * S}px; width:{SIZE * S}px">{translate("guide_l2_frame_end")}</span>
     {/if}
-    <span class="thumb-cap" style="left:{c.start * S}px; top:{(strip.y - 16) * S}px; width:{SIZE * S}px">in</span>
-    <span class="thumb-cap" style="left:{c.end * S}px; top:{(strip.y - 16) * S}px; width:{SIZE * S}px">{strip.endThumb}</span>
+    <span class="thumb-cap" style="left:{c.start * S}px; top:{(strip.y - 16) * S}px; width:{SIZE * S}px">{translate("guide_l2_frame_in")}</span>
+    <span class="thumb-cap" style="left:{c.end * S}px; top:{(strip.y - 16) * S}px; width:{SIZE * S}px">{localizePrintLabel(strip.endThumb)}</span>
     {#if strip.opcl}
       <span class="cont-opcl" style="left:{(CONT_X - 6) * S}px; top:{(strip.y - 18) * S}px; width:{(SIZE + 30) * S}px">{strip.opcl}</span>
     {/if}

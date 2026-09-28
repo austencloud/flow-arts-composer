@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { localizeLevel1Text, localizeLevel1SelectionLabel } from "../_data/localize-level1-content";
   /**
    * Type 3 - Cross-Shift (letters) - body page (manifest `lt3-dash-letters`),
    * faithful to proof p28 / "1.1 - Type 3 - Cross-Shifts" artboard.
@@ -356,7 +357,7 @@
 <div class="t3-letters">
   <!-- selfTitled: the calligraphic title with the canonical Type-3 colors. -->
   <div class="guide-title">
-    Type 3 - <span style="color:{T3_GREEN}">Cross</span><span style="color:{T3_PURPLE}">-Shift</span>
+    {localizeLevel1Text("Type 3 - ")}<span style="color:{T3_GREEN}">Cross</span><span style="color:{T3_PURPLE}">-Shift</span>
   </div>
 
   <!-- The four letter boxes (labels corrected to the dataset's start positions). -->
@@ -385,7 +386,7 @@
         <SelectionHit
           groupId={key}
           isGroupStart
-          label={`Animate letter ${c.name}`}
+          label={localizeLevel1SelectionLabel(`Animate letter ${c.name}`)}
           onselect={() => emitSequence?.({ strip: RESOLVED_CELLS[key]!, word: `Letter ${c.name}`, key, propType: "staff" })}
         />
       </div>
@@ -440,7 +441,7 @@
       <SelectionHit
         groupId={key}
         isGroupStart
-        label={`Animate ${b.name} step by step`}
+        label={localizeLevel1SelectionLabel(`Animate ${b.name} step by step`)}
         onselect={() => emitSequence?.({ strip: RESOLVED_BD[key]!, word: b.name, key, propType: "staff" })}
       />
     </div>
@@ -473,7 +474,7 @@
       use:ptDrag={pt(`t3l-para-${i}`, "para", p)}
       use:editText={{ id: `t3l-para-${i}`, label: "para", get: () => p.html, set: (h) => (p.html = h) }}
     >
-      {@html p.html}
+      {@html localizeLevel1Text(p.html)}
     </p>
   {/each}
 </div>

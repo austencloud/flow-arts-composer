@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { tDynamic } from "$lib/shared/i18n/i18n.svelte";
   let { accent }: { accent: string } = $props();
 </script>
 
@@ -10,7 +11,7 @@
     <span class="connector right"></span>
     <span class="letter">O</span>
   </div>
-  <span class="preview-label">bridge found</span>
+  <span class="preview-label">{tDynamic("learn_controls_bridge_found")}</span>
 </div>
 
 <style>

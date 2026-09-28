@@ -6,6 +6,7 @@
   Skip goes straight to the main app.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte";
   import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
   import { onMount } from "svelte";
   import type { HapticFeedback } from "$lib/shared/application/services/haptic-feedback";
@@ -83,15 +84,15 @@
     </div>
 
     <h2 id="tutorial-prompt-title" class="prompt-title">
-      Try the Construct guide?
+      {t('tutorial_construct_prompt')}
     </h2>
     <p class="prompt-body">
-      Choose a start placement, add one pictograph, then play the sequence.
+      {t('tutorial_construct_intro')}
     </p>
 
     <div class="prompt-actions">
       <button class="accept-button" onclick={handleAccept}>
-        Start guide
+        {t('tutorial_start_guide')}
         <i class="fas fa-arrow-right" aria-hidden="true"></i>
       </button>
       <!-- The presenter's way past an unsolicited overlay. This prompt is the
@@ -106,7 +107,7 @@
         data-ghost-label="Skip for now"
         onclick={handleSkip}
       >
-        Skip for now
+        {t('tutorial_skip_now')}
       </button>
     </div>
   </div>

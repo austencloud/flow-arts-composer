@@ -8,38 +8,38 @@
    * (rather than 301'd) since it already carries inbound/search traffic.
    */
   import GuideSeo from "../../level-1/_components/GuideSeo.svelte";
-  import { level2TopicPagesForChapter } from "../_data/level2-topic-manifest";
+  import { level2TopicPagesForChapter, localizedLevel2Topic } from "../_data/level2-topic-manifest";
+  import { tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
 
   const topics = level2TopicPagesForChapter("double-turns");
 </script>
 
 <GuideSeo
-  title="2.1 2-Turns · Level 2 · Flow Arts Notation Guide"
-  description="Level 2 chapter on 2-turns: 360° prop rotations on shifts, dashes, and static motions, plus the codex reference pages for double-turning letters."
+  title={tDynamic("guide_l2_double_turns_seo_title")}
+  description={tDynamic("guide_l2_double_turns_intro")}
   path="/guide/level-2/double-turns"
-  partOf={{ name: "Level 2 Guide: Turns", path: "/guide/level-2" }}
+  partOf={{ name: tDynamic("guide_level2_seo_title"), path: "/guide/level-2" }}
   breadcrumbs={[
-    { name: "Home", path: "/" },
-    { name: "Guide", path: "/guide" },
-    { name: "Level 2", path: "/guide/level-2" },
-    { name: "2-Turns", path: "/guide/level-2/double-turns" },
+    { name: tDynamic("guide_paths_home"), path: "/" },
+    { name: tDynamic("guide_paths_part_of"), path: "/guide" },
+    { name: tDynamic("guide_level2_subtitle"), path: "/guide/level-2" },
+    { name: tDynamic("guide_l2_double_turns_title"), path: "/guide/level-2/double-turns" },
   ]}
 />
 
 <div class="chapter-hub">
-  <h1>2-Turns</h1>
+  <h1>{tDynamic("guide_l2_double_turns_title")}</h1>
   <p class="intro">
-    Level 2 chapter on 2-turns: 360° prop rotations on shifts, dashes, and static motions, plus
-    the codex reference pages for double-turning letters.
+    {tDynamic("guide_l2_double_turns_intro")}
   </p>
 
-  <nav class="topic-list" aria-label="2-Turns topics">
+  <nav class="topic-list" aria-label={tDynamic("guide_l2_double_turns_topics")}>
     <ol>
       {#each topics as topic (topic.slug)}
         <li>
           <a href="/guide/level-2/{topic.slug}">
-            <strong>{topic.h1}</strong>
-            <span>{topic.description}</span>
+            <strong>{localizedLevel2Topic(topic, "h1")}</strong>
+            <span>{localizedLevel2Topic(topic, "description")}</span>
           </a>
         </li>
       {/each}

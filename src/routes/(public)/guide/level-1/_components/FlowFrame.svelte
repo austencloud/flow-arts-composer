@@ -26,6 +26,7 @@
     GuideBlock,
     PictographRender,
   } from "../_data/guide-content-blocks";
+  import { localizeLevel1Block, localizeLevel1Text } from "../_data/localize-level1-content";
 
   let {
     content,
@@ -69,7 +70,7 @@
       if (b.kind === "heading" && b.level === 1) continue;
       if (!firstProseSeen && b.kind === "prose") {
         firstProseSeen = true;
-        if (tag && stripHtml(b.html) === tag) continue;
+        if (tag && stripHtml(localizeLevel1Text(b.html)) === tag) continue;
       }
       out.push(b);
     }
@@ -123,7 +124,7 @@
   };
   const renderItems = $derived.by(() => {
     const items: RenderItem[] = [];
-    const blocks = rendered;
+    const blocks = rendered.map(localizeLevel1Block);
     let i = 0;
     while (i < blocks.length) {
       const b = blocks[i]!;
@@ -210,10 +211,10 @@
 
   const gridLabel = (mode: "diamond" | "box" | "merged") =>
     mode === "diamond"
-      ? "Diamond grid: four points at north, east, south, and west"
+      ? localizeLevel1Text("Diamond grid: four points at north, east, south, and west")
       : mode === "box"
-        ? "Box grid: four points on the diagonals"
-        : "8-point grid: diamond and box combined";
+        ? localizeLevel1Text("Box grid: four points on the diagonals")
+        : localizeLevel1Text("8-point grid: diamond and box combined");
 
   const areaClass = (block: GuideBlock) =>
     block.flowArea ? `flow-area-${block.flowArea}` : "";

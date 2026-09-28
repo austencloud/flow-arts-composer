@@ -174,7 +174,7 @@ Spec: docs/superpowers/specs/2026-08-02-customize-panel-drilldown-design.md
   const startPlacementPresets = $derived([
     {
       id: "classic",
-      label: "Classic 3",
+      label: t("create_deep_classic_three"),
       blockedPlacements: getBlockedPlacementsForPreset(
         StartPlacementPreset.CLASSIC,
         gridMode
@@ -183,17 +183,17 @@ Spec: docs/superpowers/specs/2026-08-02-customize-panel-drilldown-design.md
   ]);
 
   const startPosDisplay = $derived.by(() => {
-    if (!startEndOptions) return "Any";
-    if (currentPreset === StartPlacementPreset.ANY) return "Any";
-    if (currentPreset === StartPlacementPreset.CLASSIC) return "Classic 3";
-    return enabledCount === 1 ? "1 pos" : `${enabledCount} pos`;
+    if (!startEndOptions) return t("shared_controls_any_position");
+    if (currentPreset === StartPlacementPreset.ANY) return t("shared_controls_any_position");
+    if (currentPreset === StartPlacementPreset.CLASSIC) return t("create_deep_classic_three");
+    return t("create_deep_position_count", { count: enabledCount });
   });
 
   const endPosDisplay = $derived.by(() => {
     const n = localEndPlacements.length;
-    if (n === 0) return "Any";
+    if (n === 0) return t("shared_controls_any_position");
     if (n === 1) return String(localEndPlacements[0]);
-    return `${n} placements`;
+    return t("create_deep_placement_count", { count: n });
   });
 
   // The shared picker speaks blocklist; end placements are an allowlist. Invert
@@ -350,7 +350,7 @@ Spec: docs/superpowers/specs/2026-08-02-customize-panel-drilldown-design.md
           "create_ui_reset_all_generation_settings_to_their_defaults"
         )}
       >
-        Reset all
+        {t("settings_preset_reset_all")}
       </button>
     {/if}
   {/snippet}
@@ -365,7 +365,7 @@ Spec: docs/superpowers/specs/2026-08-02-customize-panel-drilldown-design.md
         <!-- These settings persist across sessions, which is what made a saved
              Choppy props value look like a broken generator. Say so up front. -->
         <p class="overlay-note">
-          These settings stick until you change them again.
+          {t("create_deep_settings_persist_note")}
         </p>
       {/snippet}
 
@@ -449,9 +449,9 @@ Spec: docs/superpowers/specs/2026-08-02-customize-panel-drilldown-design.md
 <ConfirmDialog
   bind:isOpen={resetConfirmOpen}
   title={t("create_ui_reset_all_settings")}
-  message="Style, start placements, level, length and LOOP settings all go back to their defaults. This can't be undone."
-  confirmText="Reset"
-  cancelText="Keep"
+  message={t("create_generate_reset_all_message")}
+  confirmText={t("viewer_ui_reset")}
+  cancelText={t("create_generate_keep_settings")}
   variant="danger"
   onConfirm={performResetAll}
   onCancel={() => (resetConfirmOpen = false)}

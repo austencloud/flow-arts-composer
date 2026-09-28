@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { localizePrintLabel } from "../_components/localize-print-label";
+  import { t as translate } from "$lib/shared/i18n/i18n.svelte.js";
   /**
    * 2-Turns (Dashes / Static) - Level 2 body page (manifest
    * `two-turns-dash-static`), faithful to the source artboard (level-2.pdf page
@@ -369,38 +371,38 @@
 
   // ── Text (pt coords, proof wording verbatim) ────────────────────────────────
   type Para = { y: number; fs: number; lh: number; html: string };
-  const PARAS: Para[] = [
+  const PARAS = $derived<Para[]>([
     {
       y: 46,
       fs: 15.5,
       lh: 18.5,
-      html: "Now let’s add a double turn to a dash.<br>It’s relatively complex, so we’ll break it down into four parts.<br><em>(These arrows refer to the pinky end on the first half,<br>then to the thumb end on the second half.)</em>",
+      html: translate("guide_l2_print_twoturnsdashstaticpage_0"),
     },
     {
       y: 265,
       fs: 14.5,
       lh: 18,
-      html: "As with all dashes, it’s important to travel in a straight handpath even though the prop is rotating.<br>Here is the same motion broken in half:",
+      html: translate("guide_l2_print_twoturnsdashstaticpage_1"),
     },
     {
       y: 439,
       fs: 15.5,
       lh: 19,
-      html: "A base dash starting from thumb in ends with thumb out, therefore<br><strong>A dash with 2 turns also ends with thumb out. (in → out)</strong><br><strong>For a vertical dash such as this, you can use up/down as indicators. (up → down → up)</strong>",
+      html: translate("guide_l2_print_twoturnsdashstaticpage_2"),
     },
     {
       y: 537,
       fs: 15.5,
       lh: 19,
-      html: "Finally, a static motion with 2 turns is simply a 360° turn in place.<br>It’s necessary to use negative space or a turn to achieve this.",
+      html: translate("guide_l2_print_twoturnsdashstaticpage_3"),
     },
     {
       y: 729,
       fs: 16,
       lh: 20,
-      html: "A static motion has 0 thumb switches, therefore<br><strong>A static motion with 2 turns has 2 thumb switches (in → out → in).</strong>",
+      html: translate("guide_l2_print_twoturnsdashstaticpage_4"),
     },
-  ];
+  ]);
 
   type Run = {
     x: number;
@@ -564,13 +566,13 @@
     {#if r.centered}
       <span
         class="run {r.style} centered"
-        style="top:{r.y * S}px; font-size:{r.fs * S}px">{r.t}</span
+        style="top:{r.y * S}px; font-size:{r.fs * S}px">{localizePrintLabel(r.t)}</span
       >
     {:else}
       <span
         class="run {r.style}"
         style="left:{r.x * S}px; top:{r.y * S}px; font-size:{r.fs * S}px"
-        >{r.t}</span
+        >{localizePrintLabel(r.t)}</span
       >
     {/if}
   {/each}

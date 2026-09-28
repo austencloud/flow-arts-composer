@@ -1,3 +1,4 @@
+import { t } from "$lib/shared/i18n/i18n.svelte.js";
 import { untrack } from "svelte";
 import { captureActivePropConfig } from "$lib/shared/foundation/services/recorded-prop-intent";
 import { withSavedProps } from "$lib/shared/foundation/services/prop-viewing";
@@ -68,13 +69,13 @@ export function createSavePanelState(deps: SavePanelDeps) {
 
   // Save steps definition (static)
   const saveSteps = [
-    { icon: "fa-save", label: "Saving locally" },
-    { icon: "fa-tags", label: "Creating tags" },
-    { icon: "fa-cloud-upload-alt", label: "Syncing to cloud" },
-    { icon: "fa-sync", label: "Refreshing library" },
+    { icon: "fa-save", get label() { return t("create_save_saving_locally"); } },
+    { icon: "fa-tags", get label() { return t("create_save_creating_tags"); } },
+    { icon: "fa-cloud-upload-alt", get label() { return t("create_save_syncing_to_cloud"); } },
+    { icon: "fa-sync", get label() { return t("create_save_refreshing_library"); } },
   ];
 
-  const headerTitle = "Save to Library";
+
 
   // Reactive state
 
@@ -136,7 +137,7 @@ export function createSavePanelState(deps: SavePanelDeps) {
 
   const currentUser = $derived(authState.user);
   const creatorName = $derived(
-    currentUser?.displayName || currentUser?.email || "Anonymous"
+    currentUser?.displayName || currentUser?.email || t("create_save_anonymous")
   );
   const darkMode = $derived(getSettings().darkMode ?? false);
 
@@ -251,7 +252,11 @@ export function createSavePanelState(deps: SavePanelDeps) {
       notes = "";
       title =
         motionProfile.kind === "solo"
-          ? `${motionProfile.authoredHand === "left" ? "Left" : "Right"}-hand choreography`
+          ? t(
+              motionProfile.authoredHand === "left"
+                ? "create_save_left_hand_choreography"
+                : "create_save_right_hand_choreography"
+            )
           : "";
       showNotes = false;
       cardPresentation = sequence.cardPresentation
@@ -305,7 +310,7 @@ export function createSavePanelState(deps: SavePanelDeps) {
       if (!soloPropSaveOrchestrator || !authoredHand || !soloHand) {
         logger.error("SoloPropSaveOrchestrator not available");
         showToast({
-          message: "Solo choreography could not be saved. Try again.",
+          message: t("create_save_solo_choreography_could_not_be_saved_try_again"),
           type: "error",
           duration: 6000,
         });
@@ -352,12 +357,12 @@ export function createSavePanelState(deps: SavePanelDeps) {
         props.onSaveComplete?.(result.soloPropId);
         showToast({
           message: result.reusedExisting
-            ? "Already in your solo library."
-            : "Saved to your solo library.",
+            ? t("create_save_already_in_your_solo_library")
+            : t("create_save_saved_to_your_solo_library"),
           type: "success",
           duration: 6000,
           action: {
-            label: "Go to library",
+            label: t("create_save_go_to_library"),
             onClick: () => void handleModuleChange("browse", "library"),
           },
         });
@@ -366,9 +371,7 @@ export function createSavePanelState(deps: SavePanelDeps) {
         logger.error("Failed to save solo choreography:", error);
         showToast({
           message:
-            error instanceof Error
-              ? `Couldn't save this choreography: ${error.message}`
-              : "Couldn't save this choreography. Try again.",
+            t("create_save_choreo_failed"),
           type: "error",
           duration: 6000,
         });
@@ -449,11 +452,11 @@ export function createSavePanelState(deps: SavePanelDeps) {
       // user can see it in context (its collection / the library grid) instead of
       // wondering whether it saved. Navigates to Browse > Library.
       showToast({
-        message: "Saved to your library.",
+        message: t("create_save_saved_to_your_library"),
         type: "success",
         duration: 6000,
         action: {
-          label: "Go to library",
+          label: t("create_save_go_to_library"),
           // Route through the coordinator, not navigationState.setCurrentModule
           // directly: setCurrentModule only moves the nav-bar highlight, while
           // the rendered module comes from ui-state's activeModule (set by
@@ -480,12 +483,10 @@ export function createSavePanelState(deps: SavePanelDeps) {
       saveStep = 0;
       const message =
         error instanceof LibraryError && error.code === "ALREADY_EXISTS"
-          ? "This exact sequence is already in your library."
+          ? t("create_save_this_exact_sequence_is_already_in_your_library")
           : error instanceof LibraryError && error.code === "PERSIST_FAILED"
-            ? "Couldn't save this sequence - local storage write failed. Try again."
-            : error instanceof Error
-              ? `Couldn't save this sequence: ${error.message}`
-              : "Couldn't save this sequence. Please try again.";
+            ? t("create_save_couldn_t_save_this_sequence_local_storage_write_failed_try_again")
+            : t("create_save_sequence_failed");
       showToast({ message, type: "error", duration: 6000 });
     } finally {
       isSaving = false;
@@ -518,12 +519,12 @@ export function createSavePanelState(deps: SavePanelDeps) {
     showShameGate = false;
 
     if (!sequence || !tkaName || !currentUser) {
-      shameSubmitError = "Missing required data for submission.";
+      shameSubmitError = t("create_save_missing_required_data_for_submission");
       return;
     }
 
     if (!hallOfShameSubmitter) {
-      shameSubmitError = "Hall of Shame service unavailable.";
+      shameSubmitError = t("create_save_hall_of_shame_service_unavailable");
       return;
     }
 
@@ -555,10 +556,7 @@ export function createSavePanelState(deps: SavePanelDeps) {
       handleClose();
     } catch (error) {
       logger.error("Failed to submit to Hall of Shame:", error);
-      shameSubmitError =
-        error instanceof Error
-          ? error.message
-          : "Failed to submit. Please try again.";
+      shameSubmitError = t("create_save_shame_submit_failed");
     } finally {
       isSubmittingToShame = false;
     }
@@ -581,7 +579,7 @@ export function createSavePanelState(deps: SavePanelDeps) {
     },
     // Static data
     saveSteps,
-    headerTitle,
+    get headerTitle() { return t("create_review_save_to_library"); },
 
     // Read props reactively (call from component to bind props)
     setPropsGetter(getter: () => SavePanelProps) {

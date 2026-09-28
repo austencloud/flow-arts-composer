@@ -2,6 +2,8 @@
   import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
   import type { LearnConcept, ConceptStatus } from "../domain/types";
   import ConceptPreview from "./ConceptPreview.svelte";
+  import { tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
+  import { localizedConcept } from "../domain/localized-concept";
 
   let {
     concept,
@@ -20,12 +22,12 @@
   const haptic = getHapticFeedback();
   const action = $derived(
     status === "completed"
-      ? "Review lesson"
+      ? tDynamic("learn_card_review")
       : status === "in-progress"
-        ? "Continue"
+        ? tDynamic("learn_card_continue")
         : status === "locked"
-          ? "Locked"
-          : "Start lesson"
+          ? tDynamic("learn_card_locked")
+          : tDynamic("learn_card_start")
   );
 
   function openLesson() {
@@ -41,25 +43,25 @@
   class:in-progress={status === "in-progress"}
   onclick={openLesson}
   disabled={status === "locked"}
-  aria-label={`${action}: ${concept.name}`}
+  aria-label={`${action}: ${localizedConcept(concept, "name")}`}
 >
   <span class="preview"><ConceptPreview conceptId={concept.id} /></span>
   <span class="lesson-info">
     {#if prominent}<span class="recommendation"
         >{status === "in-progress"
-          ? "Pick up where you left off"
-          : "Up next"}</span
+          ? tDynamic("learn_card_resume")
+          : tDynamic("learn_card_up_next")}</span
       >{/if}
-    <span class="name">{concept.name}</span>
-    <span class="description">{concept.description}</span>
+    <span class="name">{localizedConcept(concept, "name")}</span>
+    <span class="description">{localizedConcept(concept, "description")}</span>
     <span class="meta">
-      <span>{concept.estimatedMinutes} min</span>
+      <span>{tDynamic("learn_card_minutes", { minutes: concept.estimatedMinutes })}</span>
       {#if status === "completed"}
         <span class="completion"
-          ><i class="fa-solid fa-check" aria-hidden="true"></i> Completed</span
+          ><i class="fa-solid fa-check" aria-hidden="true"></i> {tDynamic("learn_card_completed")}</span
         >
       {:else if premiumGated}
-        <span><i class="fa-solid fa-crown" aria-hidden="true"></i> Premium</span
+        <span><i class="fa-solid fa-crown" aria-hidden="true"></i> {tDynamic("learn_card_premium")}</span
         >
       {/if}
     </span>

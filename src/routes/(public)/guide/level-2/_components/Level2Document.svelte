@@ -10,6 +10,8 @@
    * placeholder. Back matter is parked per the rebuild tracker.
    */
   import type { Snippet, Component } from "svelte";
+  import { t as translate } from "$lib/shared/i18n/i18n.svelte.js";
+  import { tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
   import GuideCover from "../../level-1/_components/GuideCover.svelte";
   import PagePlaceholder from "../../level-1/_components/PagePlaceholder.svelte";
   import type { GuidePageMeta } from "../../level-1/_data/guide-manifest";
@@ -32,7 +34,7 @@
 {/snippet}
 
 <!-- Front matter (unnumbered cover), then the numbered body pages. -->
-{@render page({ kind: "cover", fullBleed: true, label: "p1: Cover", content: coverContent })}
+{@render page({ kind: "cover", fullBleed: true, label: translate("guide_l2_print_cover_label"), content: coverContent })}
 {#each LEVEL2_BODY_PAGES as entry, i}
   {#snippet bodyContent()}
     {@const Built = built[entry.id]}
@@ -40,10 +42,10 @@
   {/snippet}
   {@render page({
     kind: "body",
-    title: entry.selfTitled ? undefined : entry.title,
+    title: entry.selfTitled ? undefined : tDynamic(`guide_l2_print_manifest_${entry.id.replaceAll("-", "_")}`),
     fullBleed: !!built[entry.id],
     pageNumber: i + 1,
-    label: `body p${i + 1}: ${entry.title}`,
+    label: `${translate("guide_l2_print_body_page")} ${i + 1}: ${tDynamic(`guide_l2_print_manifest_${entry.id.replaceAll("-", "_")}`)}`,
     content: bodyContent,
   })}
 {/each}

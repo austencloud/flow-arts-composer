@@ -9,6 +9,7 @@
     <DrawerHeader title="What's New" icon="fa-gift" onClose={handleClose} />
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte";
   import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
   import type { HapticFeedback } from "$lib/shared/application/services/haptic-feedback";
 
@@ -70,7 +71,7 @@
     <button
       class="drawer-back-btn"
       onclick={handleBack}
-      aria-label="Back"
+      aria-label="{t('learn_back')}"
       type="button"
     >
       <svg

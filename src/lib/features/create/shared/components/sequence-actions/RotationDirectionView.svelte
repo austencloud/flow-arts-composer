@@ -150,7 +150,7 @@
       class:active={mode === "save"}
       onclick={() => (mode = "save")}
     >
-      Save Current
+      {t("create_review_save_current")}
     </button>
   </div>
 
@@ -174,7 +174,7 @@
       {#if rotationDirectionPatternState.isLoading}
         <div class="loading">
           <i class="fas fa-spinner fa-spin" aria-hidden="true"></i>
-          Loading patterns...
+          {t("create_review_loading_patterns")}
         </div>
       {:else}
         {#if sequence && sequence.steps.length > 0}

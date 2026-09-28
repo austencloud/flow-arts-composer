@@ -38,6 +38,7 @@
  * id as an in-page anchor (`ANCHOR_ROUTE_SLUG` below resolves both).
  */
 import type { Component } from "svelte";
+import { tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
 import TurnShifts from "../_sections/ch20/TurnShifts.svelte";
 import TurnDashes from "../_sections/ch20/TurnDashes.svelte";
 import TurnStatic from "../_sections/ch20/TurnStatic.svelte";
@@ -217,4 +218,12 @@ export function level2TopicPagesForChapter(
   chapter: Level2Chapter
 ): Level2TopicPage[] {
   return LEVEL2_TOPIC_PAGES.filter((p) => p.chapter === chapter);
+}
+
+/** Resolve visitor-facing copy at render time so a locale switch updates it. */
+export function localizedLevel2Topic(
+  topic: Level2TopicPage,
+  field: "h1" | "description"
+): string {
+  return tDynamic(`guide_l2_topic_${topic.slug.replaceAll("-", "_")}_${field}`);
 }

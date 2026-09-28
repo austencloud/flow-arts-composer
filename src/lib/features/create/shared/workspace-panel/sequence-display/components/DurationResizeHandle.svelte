@@ -1,5 +1,6 @@
 <!-- DurationResizeHandle - Draggable right-edge handle for duration resize -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { onDestroy } from "svelte";
   import {
     MIN_DURATION,
@@ -93,7 +94,7 @@
   role="separator"
   aria-orientation="vertical"
   aria-roledescription="duration resize handle"
-  aria-label="Resize duration: {currentDuration} beats"
+  aria-label={t("create_resize_duration", { count: currentDuration })}
   aria-valuenow={currentDuration}
   aria-valuemin={MIN_DURATION}
   aria-valuemax={MAX_DURATION}

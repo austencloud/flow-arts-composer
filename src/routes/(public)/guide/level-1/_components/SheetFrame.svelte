@@ -9,14 +9,16 @@
   import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
   import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
   import type { GuideBlock } from "../_data/guide-content-blocks";
+  import { localizeLevel1Block } from "../_data/localize-level1-content";
 
   let { content }: { content: GuideBlock[] } = $props();
+  const localizedContent = $derived(content.map(localizeLevel1Block));
 
   const S = 816 / 612; // pt → px (4/3), identical to the original pages
 </script>
 
 <div class="sheet-frame">
-  {#each content as block, i (i)}
+  {#each localizedContent as block, i (i)}
     {#if (block.kind === "heading" || block.kind === "prose" || block.kind === "glyphImage") && !block.sheet}
       <!-- Flow-only block (no pt hint): the sheet omits it. The page title lives
            here - GuidePage paints the calligraphic .guide-title, so the content's

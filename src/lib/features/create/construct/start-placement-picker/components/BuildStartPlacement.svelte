@@ -203,7 +203,7 @@
         </div>
         <div class="prop-control">
           <div class="prop-label">
-            <span class="prop-dot right"></span>Right prop
+            <span class="prop-dot right"></span>{t("create_review_right_prop")}
           </div>
           <OrientationCycler
             orientation={rightOrientation}

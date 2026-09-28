@@ -283,7 +283,7 @@ Container-aware responsive design (2-tier):
               {#if !isValidLoopCombo}
                 <div class="combo-hint" role="status">
                   <i class="fas fa-flask" aria-hidden="true"></i>
-                  This combination isn't wired up yet
+                  {t("create_review_this_combination_isn_t_wired_up_yet")}
                 </div>
               {/if}
             </div>
@@ -360,7 +360,7 @@ Container-aware responsive design (2-tier):
           role="radio"
           aria-checked={gridMode === "diamond"}
         >
-          Diamond
+          {t("create_review_diamond")}
         </button>
         <button
           class="section-option"
@@ -372,7 +372,7 @@ Container-aware responsive design (2-tier):
           role="radio"
           aria-checked={gridMode === "box"}
         >
-          Box
+          {t("create_review_box")}
         </button>
       </div>
     </div>
@@ -399,7 +399,7 @@ Container-aware responsive design (2-tier):
       {#if !isValidLoopCombo}
         <div class="combo-hint" role="status">
           <i class="fas fa-flask" aria-hidden="true"></i>
-          This combination isn't wired up yet
+          {t("create_review_this_combination_isn_t_wired_up_yet")}
         </div>
       {/if}
     </div>

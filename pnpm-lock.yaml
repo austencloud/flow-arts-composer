@@ -11,6 +11,9 @@ patchedDependencies:
   '@austencloud/scene-3d@0.1.6':
     hash: 5b8c0113017f92fcc4fe016e9d63e04b0984bfbe54da79e05b417c87c459a9f7
     path: patches/@austencloud__scene-3d@0.1.6.patch
+  '@austencloud/sidebar@1.0.1':
+    hash: 2192b3d152a0161684740faf7c92bf7929b7ef1240c93d1dae4126925b9b2faf
+    path: patches/@austencloud__sidebar@1.0.1.patch
   svelte-fast-check@0.4.5:
     hash: 79c185fc32c5583774bc91ec4fa0ebcbac5c790d9b132fc5728f5d13a3d72474
     path: patches/svelte-fast-check@0.4.5.patch
@@ -63,7 +66,7 @@ importers:
         version: 0.1.6(patch_hash=5b8c0113017f92fcc4fe016e9d63e04b0984bfbe54da79e05b417c87c459a9f7)(@threlte/core@8.3.1(svelte@5.49.2)(three@0.182.0))(@threlte/extras@9.7.1(@types/three@0.182.0)(svelte@5.49.2)(three@0.182.0))(svelte@5.49.2)(three@0.182.0)
       '@austencloud/sidebar':
         specifier: ^1.0.1
-        version: 1.0.1(svelte@5.49.2)
+        version: 1.0.1(patch_hash=2192b3d152a0161684740faf7c92bf7929b7ef1240c93d1dae4126925b9b2faf)(svelte@5.49.2)
       '@austencloud/theme':
         specifier: ^0.1.0
         version: 0.1.0(svelte@5.49.2)
@@ -9008,7 +9011,7 @@ snapshots:
       svelte: 5.49.2
       three: 0.182.0
 
-  '@austencloud/sidebar@1.0.1(svelte@5.49.2)':
+  '@austencloud/sidebar@1.0.1(patch_hash=2192b3d152a0161684740faf7c92bf7929b7ef1240c93d1dae4126925b9b2faf)(svelte@5.49.2)':
     dependencies:
       svelte: 5.49.2
 

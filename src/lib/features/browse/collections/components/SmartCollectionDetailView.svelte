@@ -357,10 +357,10 @@ rule here; TKA's founding decks use the surrounding library hierarchy instead.
 
 <ConfirmDialog
   bind:isOpen={deleteConfirmOpen}
-  title={`Delete "${collection?.name ?? "collection"}"?`}
-  message="The rule goes away. The sequences it matched stay in the community library."
-  confirmText="Delete"
-  cancelText="Keep"
+  title={t("browse_audit_delete_named_collection", { name: collection?.name ?? t("browse_audit_collection") })}
+  message={t("browse_verified_delete_smart_community_message")}
+  confirmText={t("action_delete")}
+  cancelText={t("browse_verified_keep")}
   variant="danger"
   onConfirm={performDelete}
   onCancel={() => (deleteConfirmOpen = false)}
