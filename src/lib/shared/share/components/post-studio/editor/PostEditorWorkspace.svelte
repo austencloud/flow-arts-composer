@@ -33,11 +33,13 @@
     mainItemAt,
     type PostItem,
     type PostItemKind,
+    type PostKeyframeChannel,
     type PostVideoItem,
   } from "$lib/shared/media-composition/domain/post-project";
   import {
-    moveKeyframes,
-    removeKeyframesAt,
+    channelsOf,
+    moveKeyframe,
+    removeKeyframe,
     toggleKeyframe,
   } from "$lib/shared/media-composition/domain/post-project-keyframes";
   import {
@@ -85,12 +87,13 @@
   import PostToolRow from "./PostToolRow.svelte";
   import PostToolPanel from "./PostToolPanel.svelte";
   import PostItemTool from "./PostItemTool.svelte";
+  import PostKeyframeControls from "./PostKeyframeControls.svelte";
   import PostAddPanel from "./PostAddPanel.svelte";
   import PostMediaPanel from "./PostMediaPanel.svelte";
   import PostExportPanel from "./PostExportPanel.svelte";
   import PostTimeline from "./timeline/PostTimeline.svelte";
   import { clampPixelsPerSecond } from "./timeline/post-timeline-geometry";
-  import { itemDisplayLabel } from "./post-editor-labels";
+  import { channelLabel, itemDisplayLabel } from "./post-editor-labels";
   import { readVideoFile, videoFileError } from "./post-editor-files";
   import { createCropSession } from "./post-crop-session.svelte";
   import type { CropSize } from "./post-crop-geometry";
@@ -886,6 +889,56 @@
     editor.seek(seconds);
   }
 
+  // ---- Keyframe rows -------------------------------------------------------
+
+  /**
+   * A keyframe row picked on the timeline. It holds only while the same clip
+   * and tool stay up, so opening Fade goes back to keying Fade.
+   */
+  let pickedKeyRow = $state<{
+    itemId: string;
+    tool: PostPanelToolId | null;
+    channel: PostKeyframeChannel;
+  } | null>(null);
+  let keyCurveOpen = $state(false);
+
+  /** What the toolbar diamond and K key: the picked row, else the open tool's channel. */
+  const keyChannel = $derived.by((): PostKeyframeChannel | null => {
+    const item = editor.selectedItem;
+    if (!item) return null;
+    const picked = pickedKeyRow;
+    if (
+      picked &&
+      picked.itemId === item.id &&
+      picked.tool === shown &&
+      channelsOf(item).includes(picked.channel)
+    ) {
+      return picked.channel;
+    }
+    return keyframeChannelFor(shown, item.kind);
+  });
+
+  function pickKeyRow(channel: PostKeyframeChannel): void {
+    const item = editor.selectedItem;
+    if (item) pickedKeyRow = { itemId: item.id, tool: shown, channel };
+  }
+
+  function editKeys(itemId: string, change: (item: PostItem) => PostItem): void {
+    editor.edit((project, ctx) => editItemKeyframes(project, itemId, change, ctx));
+  }
+
+  // A curve's easing is edited from the toolbar's Curve chip, which follows
+  // the playhead, so the playhead goes to the curve's first key.
+  function openKeyCurve(
+    itemId: string,
+    channel: PostKeyframeChannel,
+    fromSeconds: number
+  ): void {
+    pickKeyRow(channel);
+    seekFromTimeline(fromSeconds);
+    keyCurveOpen = true;
+  }
+
   function zoomTimeline(factor: number): void {
     pixelsPerSecond = clampPixelsPerSecond(pixelsPerSecond * factor);
   }
@@ -977,8 +1030,9 @@
           return;
         }
         event.preventDefault();
-        // K keys what the tool on screen edits: Crop, Position or Fade.
-        const channel = keyframeChannelFor(shown, item.kind);
+        // K keys the picked keyframe row, else what the tool on screen
+        // edits: Crop, Position or Fade.
+        const channel = keyChannel ?? keyframeChannelFor(shown, item.kind);
         editor.edit((project, ctx) =>
           editItemKeyframes(
             project,
@@ -1505,6 +1559,19 @@
   </PostToolPanel>
 {/snippet}
 
+{#snippet timelineKeys()}
+  {#if editor.selectedItem && keyChannel}
+    <PostKeyframeControls
+      {editor}
+      item={editor.selectedItem}
+      channel={keyChannel}
+      locked={editor.isLocked(editor.selectedItem.id)}
+      label={channelLabel(keyChannel)}
+      bind:curveOpen={keyCurveOpen}
+    />
+  {/if}
+{/snippet}
+
 {#snippet timingPanel()}
   <div class="timing-panel">
     <div class="timing-back">
@@ -1676,24 +1743,19 @@
             editor.edit((project, context) =>
               setTrackFlag(project, trackId, flag, value, context)
             )}
-          onMoveKeyframe={(itemId, fromSeconds, toSeconds) =>
-            editor.edit((project, context) =>
-              editItemKeyframes(
-                project,
-                itemId,
-                (it) => moveKeyframes(it, fromSeconds, toSeconds),
-                context
-              )
-            )}
-          onDeleteKeyframesAt={(itemId, seconds) =>
-            editor.edit((project, context) =>
-              editItemKeyframes(
-                project,
-                itemId,
-                (it) => removeKeyframesAt(it, seconds),
-                context
-              )
-            )}
+          {keyChannel}
+          toolChannel={editor.selectedItem
+            ? keyframeChannelFor(shown, editor.selectedItem.kind)
+            : null}
+          onKeyChannel={pickKeyRow}
+          onToggleKey={(itemId, channel, seconds) =>
+            editKeys(itemId, (it) => toggleKeyframe(it, channel, seconds))}
+          onMoveKey={(itemId, channel, fromSeconds, toSeconds) =>
+            editKeys(itemId, (it) => moveKeyframe(it, channel, fromSeconds, toSeconds))}
+          onDeleteKey={(itemId, channel, seconds) =>
+            editKeys(itemId, (it) => removeKeyframe(it, channel, seconds))}
+          onOpenCurve={openKeyCurve}
+          toolbarStart={timelineKeys}
           onAddVideo={pickDeviceVideo}
           bind:pixelsPerSecond
         />

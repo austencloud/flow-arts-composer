@@ -37,15 +37,27 @@
   import ChipPopoverOption from "$lib/shared/browse/components/filter-chips/ChipPopoverOption.svelte";
   import PostCurveEditor from "./PostCurveEditor.svelte";
   import { formatPostClock } from "../builder/post-builder-format";
+  import { easingPresetLabel } from "./post-editor-labels";
 
   interface Props {
     editor: PostEditorState;
     item: PostItem;
     channel: PostKeyframeChannel;
     locked: boolean;
+    /** Whether the Curve popover is open; a keyframe row's curve opens it. */
+    curveOpen?: boolean;
+    /** Names the channel beside the buttons where no panel title does. */
+    label?: string;
   }
 
-  let { editor, item, channel, locked }: Props = $props();
+  let {
+    editor,
+    item,
+    channel,
+    locked,
+    curveOpen = $bindable(false),
+    label,
+  }: Props = $props();
 
   const PRESET_IDS = Object.keys(EASING_PRESETS) as PostEasingPresetId[];
 
@@ -71,10 +83,9 @@
   const chipLabel = $derived.by(() => {
     const id = presetId;
     if (id === null) return "";
-    return id === "custom" ? t("post_curve_custom") : presetLabel(id);
+    return id === "custom" ? t("post_curve_custom") : easingPresetLabel(id);
   });
 
-  let curveOpen = $state(false);
   let curveWrapperEl: HTMLDivElement | null = $state(null);
 
   // The chip goes away when the playhead leaves the item or its keyframes
@@ -97,25 +108,6 @@
     document.addEventListener("pointerdown", closeOnOutsidePress, true);
     return () => document.removeEventListener("pointerdown", closeOnOutsidePress, true);
   });
-
-  function presetLabel(id: PostEasingPresetId): string {
-    switch (id) {
-      case "linear":
-        return t("post_curve_preset_linear");
-      case "ease-in":
-        return t("post_curve_preset_ease_in");
-      case "ease-out":
-        return t("post_curve_preset_ease_out");
-      case "ease-in-out":
-        return t("post_curve_preset_ease_in_out");
-      case "smooth":
-        return t("post_curve_preset_smooth");
-      case "overshoot":
-        return t("post_curve_preset_overshoot");
-      case "hold":
-        return t("post_curve_preset_hold");
-    }
-  }
 
   function seekTo(value: number | null): void {
     if (value === null) return;
@@ -141,9 +133,12 @@
 
 {#if withinSpan}
   <div class="keyframe-controls">
+    {#if label}
+      <span class="kf-label">{label}</span>
+    {/if}
     <div class="kf-nav" role="group" aria-label={t("post_keyframe_nav")}>
       <button
-        class="kf-btn"
+        class="kf-btn kf-step"
         type="button"
         disabled={previous === null}
         onclick={() => seekTo(previous)}
@@ -163,7 +158,7 @@
         <i class="fa-solid fa-diamond" aria-hidden="true"></i>
       </button>
       <button
-        class="kf-btn"
+        class="kf-btn kf-step"
         type="button"
         disabled={next === null}
         onclick={() => seekTo(next)}
@@ -195,7 +190,7 @@
                   <div class="preset-list" role="listbox" aria-label={t("post_curve_presets")}>
                     {#each PRESET_IDS as id (id)}
                       <ChipPopoverOption
-                        label={presetLabel(id)}
+                        label={easingPresetLabel(id)}
                         selected={presetId === id}
                         onclick={() => choosePreset(id)}
                       />
@@ -217,6 +212,13 @@
     align-items: center;
     gap: 0.5rem;
     flex-wrap: wrap;
+  }
+
+  .kf-label {
+    color: var(--theme-text-dim);
+    font-size: var(--font-size-compact, 0.75rem);
+    font-weight: 600;
+    white-space: nowrap;
   }
 
   .kf-nav {
@@ -289,6 +291,16 @@
   .preset-list {
     display: grid;
     gap: 0.125rem;
+  }
+
+  /* A narrow timeline's toolbar keeps the diamond and the Curve chip on one
+     line. Its keyframe row already names the channel, and tapping a key
+     there goes to it. */
+  @container post-timeline-toolbar (max-width: 34rem) {
+    .kf-label,
+    .kf-step {
+      display: none;
+    }
   }
 
   @media (prefers-reduced-motion: reduce) {
