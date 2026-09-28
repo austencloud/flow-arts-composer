@@ -4,52 +4,81 @@
    * sections rest one at a time on a fixed stage instead of scrolling past.
    * Leaving a section, by scrolling past it or with Next, the rail, an
    * in-page link or Tab, starts one timed glide straight ahead: the section
-   * drifts back toward you as it fades and the next one arrives from just
-   * ahead. The browser's compositor runs the glide, so a busy page cannot
-   * make it stutter, and the rest of the gesture that started it is absorbed,
-   * so one flick moves one section. A section taller than the stage pans with
+   * drifts toward you as it fades and the next one arrives from just beyond
+   * it. The browser's compositor runs the glide, so a busy page cannot make
+   * it stutter, and the rest of the gesture that started it is absorbed, so
+   * one flick moves one section. A section taller than the stage pans with
    * the scroll while it rests, and a gesture that reaches its end stops there
    * before the next one glides on.
    *
    * The page prerenders and hydrates as the plain page, and the stage takes
-   * over once mounted. A smaller or zoomed-in window, a touch screen, and
-   * reduced motion keep the plain page; /about renders the same sections
-   * without this wrapper.
+   * over once SvelteKit has finished the navigation that brought the reader
+   * here. A smaller or zoomed-in window, a touch screen, and reduced motion
+   * keep the plain page; /about renders the same sections without this
+   * wrapper.
    */
   import type { Snippet } from "svelte";
-  import { onMount } from "svelte";
   import { MediaQuery } from "svelte/reactivity";
+  import { afterNavigate } from "$app/navigation";
   import { motionDuration } from "$lib/shared/transitions/motion";
   import { DURATION } from "$lib/shared/transitions/transitions";
   import GlideControls from "./GlideControls.svelte";
   import GlideStars from "./GlideStars.svelte";
+  import type { GlideMemory } from "./glide-memory";
   import {
     GLIDE_PERSPECTIVE,
     GLIDE_STAR_STEP,
+    fitPlace,
     glidePose,
     glideTarget,
     landingOffset,
     planStops,
     restPan,
     restRange,
+    type GlidePlace,
   } from "./glide-plan";
   import { headerHeight, pageSections, sectionTitle } from "./page-sections";
 
-  let { children }: { children: Snippet } = $props();
+  let { children, memory }: { children: Snippet; memory: GlideMemory } =
+    $props();
 
   // Keep in step with the stage media queries in the styles below.
   const roomy = new MediaQuery(
     "(min-width: 1100px) and (min-height: 700px) and (hover: hover) and (pointer: fine)"
   );
   const calm = new MediaQuery("(prefers-reduced-motion: reduce)");
+
+  /** What the navigation that brought the reader here asks the stage to
+      show first. */
+  type Arrival = { place: GlidePlace } | { target: Element };
+
   // The server cannot know the window, so hydration always matches the plain
-  // page it prerendered. The stage also clips the sections it has parked, so
-  // a browser without overflow: clip keeps the plain page.
-  let capable = $state(false);
-  onMount(() => {
-    capable = CSS.supports("overflow", "clip");
+  // page it prerendered. The stage then waits for SvelteKit to finish the
+  // navigation, which scrolls the plain page itself: to a restored position,
+  // to a link's #target, or to the top, and smoothly, so the stage must not
+  // mistake that scroll for the reader's. The stage also clips the sections
+  // it parks, so a browser without overflow: clip keeps the plain page.
+  let arrived = $state(false);
+  let arrival: Arrival | null = null;
+  afterNavigate((navigation) => {
+    const restored = memory.takeRestored();
+    if (arrived || !CSS.supports("overflow", "clip")) return;
+    const hash = navigation.to?.url.hash.slice(1);
+    const target = hash
+      ? document.getElementById(decodeURIComponent(hash))
+      : null;
+    // Only a stage starting now opens here; one that starts later, when the
+    // window grows, opens on the section the reader has reached.
+    if (roomy.current && !calm.current) {
+      arrival = restored
+        ? { place: restored }
+        : target
+          ? { target }
+          : { place: { stop: 0, pan: 0 } };
+    }
+    arrived = true;
   });
-  const staged = $derived(capable && roomy.current && !calm.current);
+  const staged = $derived(arrived && roomy.current && !calm.current);
 
   /** Gap under the header, and the band kept free below a section for Next. */
   const TOP_GAP = 16;
@@ -98,20 +127,40 @@
         .getPropertyValue("--ease-in-out")
         .trim() || "ease-in-out";
 
-    // Where the reader is on the plain page decides where the stage opens:
-    // the top on a fresh visit, the section a link pointed into, or the one
-    // being read when the window grew large enough for the stage.
-    const line = window.innerHeight * READING_LINE;
-    let opening = 0;
-    sections.forEach((section, index) => {
-      if (section.getBoundingClientRect().top < line) opening = index;
-    });
-    const openingPan = Math.max(
-      0,
-      headerHeight(page) +
-        TOP_GAP -
-        sections[opening].getBoundingClientRect().top
-    );
+    // Arriving, the stage opens where the navigation asked: the place this
+    // history entry was left at, the section holding a link's #target, or
+    // the top. A stage that starts later, because the window grew large
+    // enough, opens on the section being read on the plain page.
+    const entry = arrival;
+    arrival = null;
+    let opening: GlidePlace = { stop: 0, pan: 0 };
+    let openingTarget: Element | null = null;
+    if (entry && "target" in entry) {
+      const holder = sections.findIndex((section) =>
+        section.contains(entry.target)
+      );
+      if (holder >= 0) {
+        opening = { stop: holder, pan: 0 };
+        openingTarget = entry.target;
+      }
+    } else if (entry) {
+      opening = entry.place;
+    } else {
+      const line = window.innerHeight * READING_LINE;
+      let reading = 0;
+      let readingTop = 0;
+      sections.forEach((section, index) => {
+        const top = section.getBoundingClientRect().top;
+        if (index === 0 || top < line) {
+          reading = index;
+          readingTop = top;
+        }
+      });
+      opening = {
+        stop: reading,
+        pan: Math.max(0, headerHeight(page) + TOP_GAP - readingTop),
+      };
+    }
     stage.classList.add("staged");
 
     let plan = planStops({ heights: [], room: 1, travel: 1, hold: 0 });
@@ -139,7 +188,9 @@
     // Whole device pixels, so a resting section's text stays sharp.
     const restY = (index: number, panned: number) =>
       Math.round(
-        (restTop + Math.max(0, (room - heights[index]) / 2) - panned) *
+        (restTop +
+          Math.max(0, (room - (heights[index] ?? room)) / 2) -
+          panned) *
           devicePixelRatio
       ) / devicePixelRatio;
 
@@ -166,13 +217,20 @@
           return;
         }
         const panned =
-          relative === 0 ? pan : relative < 0 ? plan.pans[index] : 0;
+          relative === 0 ? pan : relative < 0 ? (plan.pans[index] ?? 0) : 0;
         const { transform, opacity } = pose(index, panned, relative);
         style.transform = transform;
         style.opacity = opacity;
         style.pointerEvents = relative === 0 ? "" : "none";
         style.zIndex = relative === 0 ? "2" : "1";
       });
+    };
+
+    /** Pans the resting stop in place. */
+    const panTo = (panned: number) => {
+      pan = panned;
+      const resting = sections[current];
+      if (resting) resting.style.transform = pose(current, pan, 0).transform;
     };
 
     const holdOffset = () => trackTop + landingOffset(plan, current, pan);
@@ -254,6 +312,9 @@
         });
         return;
       }
+      const leaving = sections[current];
+      const arriving = sections[to];
+      if (!leaving || !arriving) return;
       const from = current;
       const fromPan = pan;
       const direction = Math.sign(to - from);
@@ -261,8 +322,6 @@
       pan = Math.min(Math.max(landPan, 0), plan.pans[to] ?? 0);
       active = to;
       lock();
-      const leaving = sections[from];
-      const arriving = sections[to];
       for (const section of [leaving, arriving]) {
         section.style.pointerEvents = "none";
       }
@@ -277,11 +336,12 @@
         easing,
         fill: "forwards",
       };
-      glides = [
-        leaving.animate(frames(from, fromPan, 0, -direction), timing),
-        arriving.animate(frames(to, pan, direction, 0), timing),
-      ];
-      followStars(glides[0], direction);
+      const leave = leaving.animate(
+        frames(from, fromPan, 0, -direction),
+        timing
+      );
+      glides = [leave, arriving.animate(frames(to, pan, direction, 0), timing)];
+      followStars(leave, direction);
       Promise.all(glides.map((animation) => animation.finished)).then(
         land,
         () => {}
@@ -305,10 +365,7 @@
       const target = glideTarget(plan, current, offset);
       if (target === null) {
         const panned = restPan(plan, current, offset);
-        if (panned !== pan) {
-          pan = panned;
-          sections[current].style.transform = pose(current, pan, 0).transform;
-        }
+        if (panned !== pan) panTo(panned);
         return;
       }
       // One gesture reads on through a tall stop or leaves it, never both, so
@@ -320,15 +377,14 @@
         Math.abs(target - current) === 1 &&
         Math.abs(gesturePan - edge) > plan.hold
       ) {
-        pan = edge;
-        sections[current].style.transform = pose(current, pan, 0).transform;
+        panTo(edge);
         lastInput = now;
         lock();
         releaseWhenQuiet();
         return;
       }
       // Scrolling back arrives at the end of a tall stop, where it was left.
-      glide(target, target > current ? 0 : plan.pans[target]);
+      glide(target, target > current ? 0 : (plan.pans[target] ?? 0));
     };
 
     // While a glide runs, the rest of the gesture that started it is
@@ -343,6 +399,7 @@
     // Pan that brings an element into the upper part of the stage.
     const panToShow = (index: number, target: Element) => {
       const section = sections[index];
+      if (!section) return 0;
       const box = section.getBoundingClientRect();
       const scale = box.height / section.offsetHeight || 1;
       return (target.getBoundingClientRect().top - box.top) / scale - room / 3;
@@ -403,8 +460,12 @@
       const offset = window.scrollY - trackTop;
       const first = !measured;
       if (first) {
-        current = opening;
-        pan = openingPan;
+        ({ stop: current, pan } = fitPlace(plan, {
+          stop: opening.stop,
+          pan: openingTarget
+            ? panToShow(opening.stop, openingTarget)
+            : opening.pan,
+        }));
         active = current;
         measured = true;
       }
@@ -417,7 +478,7 @@
       // scrolls as usual.
       const moved =
         first ||
-        Math.abs(trackTop + plan.docks[current] - wasAt) > 0.5 ||
+        Math.abs(trackTop + (plan.docks[current] ?? 0) - wasAt) > 0.5 ||
         plan.pans[current] !== wasSpan;
       const last = plan.docks.length - 1;
       const onFooter =
@@ -428,6 +489,25 @@
     };
 
     goTo = (index) => glide(index, 0);
+
+    // Back or Forward to another entry of this page returns straight to the
+    // place it was left at, as the browser returns to a scroll position.
+    const jump = (spot: GlidePlace) => {
+      for (const animation of glides) animation.cancel();
+      glides = [];
+      queued = null;
+      locked = false;
+      clearTimeout(unlockTimer);
+      ({ stop: current, pan } = fitPlace(plan, spot));
+      active = current;
+      depth = starDepth;
+      place();
+      window.scrollTo({ top: holdOffset(), behavior: "instant" });
+    };
+    const disconnect = memory.connect({
+      resting: () => ({ stop: current, pan }),
+      jump,
+    });
 
     const observer = new ResizeObserver(() => measure());
     for (const section of sections) observer.observe(section);
@@ -441,6 +521,7 @@
     measure();
 
     return () => {
+      disconnect();
       observer.disconnect();
       clearTimeout(unlockTimer);
       cancelAnimationFrame(starFrame);
@@ -462,10 +543,11 @@
       // A window shrunk below the stage, or motion turned off, returns to
       // the plain page at the section that was resting on the stage.
       if (!staged && page.isConnected) {
+        const resting = sections[current];
         const top =
-          current === 0
+          current === 0 || !resting
             ? 0
-            : sections[current].getBoundingClientRect().top +
+            : resting.getBoundingClientRect().top +
               window.scrollY +
               pan -
               restTop;
@@ -486,11 +568,10 @@
     <GlideStars {depth} />
   {/if}
   {@render children()}
+  {#if staged}
+    <GlideControls {stops} {active} onGo={(index) => goTo(index)} />
+  {/if}
 </div>
-
-{#if staged}
-  <GlideControls {stops} {active} onGo={(index) => goTo(index)} />
-{/if}
 
 <style>
   .glide {
@@ -530,8 +611,12 @@
   }
 
   /* The track's height follows the sections; the browser must not read
-     that as content moving and nudge the scroll to compensate. */
+     that as content moving and nudge the scroll to compensate. As a column,
+     it ends with Next, which stays at the bottom of the window until the
+     footer scrolls in and then rides up with the stage above it. */
   .glide:global(.staged) {
+    display: flex;
+    flex-direction: column;
     overflow-anchor: none;
   }
 

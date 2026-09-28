@@ -250,10 +250,14 @@ A crop session in `post-editor-state` keeps history honest:
 - `post-picture-pan-drag.ts`: rotation-aware overflow; pinch and wheel zoom about
   a point.
 - `post-editor-state.svelte.ts`: the session.
-- `ValueSlider.svelte`: optional marks on the track, for the time bar.
+- `ValueSlider.svelte`: optional marks on the track, for the first time bar.
+  Nothing uses them since the crop timeline replaced it.
 - `PostEditorTopBar.svelte`: an optional trailing slot in place of Export.
 - `PostEditorCanvas.svelte`: the crop stage, gestures and handles.
-- `PostCropTimebar.svelte` (new): play/pause and the clip scrubber.
+- `PostCropTimeline.svelte` (new, replaced the first `PostCropTimebar`): the
+  clip's own timeline, with beat and frame stepping, a Beats row from the
+  take's tapped timing (`post-crop-steps.ts`), and a Crop keyframe row whose
+  keys drag, snap to a beat or the playhead, and delete.
 - `PostItemTool.svelte`: the crop panel.
 - `PostEditorWorkspace.svelte`: the mode, keys, session and layout.
 - `VideoCropEditor.svelte` (landing preview admin) is a separate legacy editor

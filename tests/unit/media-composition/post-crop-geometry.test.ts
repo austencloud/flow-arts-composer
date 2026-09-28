@@ -3,10 +3,10 @@ import type { PostFraming } from "$lib/shared/media-composition/domain/post-proj
 import {
   clampToCoverage,
   clampToPanRange,
-  cornerFrame,
-  cornerPoint,
-  cornerScaleAt,
-  cornerScaleRange,
+  handleFrame,
+  handlePoint,
+  handleScaleAt,
+  handleScaleRange,
   coverZoom,
   cropLimitFor,
   cropPoseOf,
@@ -20,7 +20,7 @@ import {
   overshootOf,
   pinchPose,
   quarterLeft,
-  releaseCorner,
+  releaseHandle,
   rubberBand,
   sameFraming,
   settleTransform,
@@ -452,29 +452,89 @@ describe("cropWindowScale", () => {
   });
 });
 
-describe("corner handles", () => {
+describe("frame handles", () => {
   it("keeps the opposite corner still", () => {
-    const frame = cornerFrame(WINDOW, "se", 0.5);
+    const frame = handleFrame(WINDOW, "se", 0.5);
     expect(frame.width).toBe(540);
     expect(frame.height).toBe(480);
     expectPoint(frame.center, { x: -270, y: -240 });
-    expectPoint(cornerPoint(WINDOW, "se", 0.5), { x: 0, y: 0 });
-    expectPoint(cornerPoint(WINDOW, "ne", 1), { x: 540, y: -480 });
+    expectPoint(handlePoint(WINDOW, "se", 0.5), { x: 0, y: 0 });
+    expectPoint(handlePoint(WINDOW, "ne", 1), { x: 540, y: -480 });
+  });
+
+  it("keeps the opposite side still and the frame's shape", () => {
+    const frame = handleFrame(WINDOW, "e", 0.5);
+    expect(frame.width).toBe(540);
+    expect(frame.height).toBe(480);
+    // The left side stays put and the frame shrinks evenly top and bottom.
+    expectPoint(frame.center, { x: -270, y: 0 });
+    expect(frame.center.x - frame.width / 2).toBeCloseTo(-540, 12);
+    expectPoint(handlePoint(WINDOW, "e", 0.5), { x: 0, y: 0 });
+    expectPoint(handlePoint(WINDOW, "n", 1), { x: 0, y: -480 });
+    const top = handleFrame(WINDOW, "n", 0.75);
+    expectPoint(top.center, { x: 0, y: 480 - 720 / 2 });
+    expect(top.center.y + top.height / 2).toBeCloseTo(480, 12);
+  });
+
+  it("reads a side's scale from how far out the pointer is", () => {
+    expect(handleScaleAt(WINDOW, "w", handlePoint(WINDOW, "w", 0.6))).toBeCloseTo(0.6, 12);
+    // Along the side, the pointer changes nothing.
+    const along = { x: handlePoint(WINDOW, "s", 0.8).x + 300, y: handlePoint(WINDOW, "s", 0.8).y };
+    expect(handleScaleAt(WINDOW, "s", along)).toBeCloseTo(0.8, 12);
+  });
+
+  it("fills the window with what a side's frame held when released", () => {
+    const before = placed(1.5, 15, { x: 40, y: 90 });
+    const frame = handleFrame(WINDOW, "w", 0.7);
+    const after = releaseHandle(before, "w", 0.7);
+    for (const corner of windowCorners(WINDOW)) {
+      const inFrame = {
+        x: frame.center.x + corner.x * 0.7,
+        y: frame.center.y + corner.y * 0.7,
+      };
+      expectPoint(pictureToStage(after, stageToPicture(before, inFrame)), corner, 9);
+    }
+  });
+
+  it("stops a side at the picture's edge in Fill", () => {
+    const pose = placed(coverZoom(poseOf(), 8) * 1.25, 8, { x: 30, y: -60 });
+    const range = handleScaleRange({
+      pose,
+      handle: "s",
+      limit: "cover",
+      displayScale: 1,
+      stage: { width: 1e6, height: 1e6 },
+    });
+    expect(range.max).toBeGreaterThan(1);
+    expect(coversWindow(releaseHandle(pose, "s", range.max))).toBe(true);
+    expect(coversWindow(releaseHandle(pose, "s", range.max * 1.01))).toBe(false);
+  });
+
+  it("keeps a side's frame on the stage, growing both ways along it", () => {
+    const range = handleScaleRange({
+      pose: placed(1, 0, { x: 0, y: 0 }),
+      handle: "e",
+      limit: "range",
+      displayScale: 0.5,
+      // 50 spare each side across, 20 spare above and below.
+      stage: { width: 640, height: 520 },
+    });
+    expect(range.max).toBeCloseTo(Math.min((640 / 540 + 1) / 2, 520 / 480), 12);
   });
 
   it("reads the scale from the pointer's place along the diagonal", () => {
-    expect(cornerScaleAt(WINDOW, "ne", cornerPoint(WINDOW, "ne", 0.7))).toBeCloseTo(0.7, 12);
+    expect(handleScaleAt(WINDOW, "ne", handlePoint(WINDOW, "ne", 0.7))).toBeCloseTo(0.7, 12);
     // Off the diagonal, the pointer counts by its projection onto it.
-    const onDiagonal = cornerPoint(WINDOW, "sw", 0.8);
+    const onDiagonal = handlePoint(WINDOW, "sw", 0.8);
     const across = { x: 480, y: 540 }; // at right angles to (-1080, 960)
     const off = { x: onDiagonal.x + across.x * 0.1, y: onDiagonal.y + across.y * 0.1 };
-    expect(cornerScaleAt(WINDOW, "sw", off)).toBeCloseTo(0.8, 12);
+    expect(handleScaleAt(WINDOW, "sw", off)).toBeCloseTo(0.8, 12);
   });
 
   it("fills the window with what the frame held when released", () => {
     const before = placed(1.5, 15, { x: 40, y: 90 });
-    const frame = cornerFrame(WINDOW, "sw", 0.6);
-    const after = releaseCorner(before, "sw", 0.6);
+    const frame = handleFrame(WINDOW, "sw", 0.6);
+    const after = releaseHandle(before, "sw", 0.6);
     expect(after.zoom).toBeCloseTo(2.5, 12);
     for (const corner of windowCorners(WINDOW)) {
       const inFrame = {
@@ -488,9 +548,9 @@ describe("corner handles", () => {
 
   it("settles the released picture from where the dragged one was", () => {
     const before = placed(1.5, 15, { x: 40, y: 90 });
-    const after = releaseCorner(before, "ne", 0.75);
+    const after = releaseHandle(before, "ne", 0.75);
     const settle = settleTransform(before, after);
-    const frame = cornerFrame(WINDOW, "ne", 0.75);
+    const frame = handleFrame(WINDOW, "ne", 0.75);
     expect(settle.scale).toBeCloseTo(0.75, 12);
     expectPoint(settle, frame.center, 9);
     const point = { x: 123, y: -45 };
@@ -508,9 +568,9 @@ describe("corner handles", () => {
   const HUGE_STAGE = { width: 1e6, height: 1e6 };
 
   it("stops at the zoom limits", () => {
-    const range = cornerScaleRange({
+    const range = handleScaleRange({
       pose: placed(2, 0, { x: 0, y: 0 }),
-      corner: "nw",
+      handle: "nw",
       limit: "range",
       displayScale: 1,
       stage: HUGE_STAGE,
@@ -521,25 +581,25 @@ describe("corner handles", () => {
   it("stops widening at the picture's edge in Fill", () => {
     const pose = placed(coverZoom(poseOf(), 8) * 1.25, 8, { x: 30, y: -60 });
     expect(coversWindow(pose)).toBe(true);
-    const range = cornerScaleRange({
+    const range = handleScaleRange({
       pose,
-      corner: "ne",
+      handle: "ne",
       limit: "cover",
       displayScale: 1,
       stage: HUGE_STAGE,
     });
     expect(range.max).toBeGreaterThan(1);
     expect(range.max).toBeLessThan(pose.zoom / 0.5);
-    expect(coversWindow(releaseCorner(pose, "ne", range.max))).toBe(true);
-    expect(coversWindow(releaseCorner(pose, "ne", range.max * 1.01))).toBe(false);
+    expect(coversWindow(releaseHandle(pose, "ne", range.max))).toBe(true);
+    expect(coversWindow(releaseHandle(pose, "ne", range.max * 1.01))).toBe(false);
   });
 
   it("keeps the frame on the stage and big enough to judge", () => {
     const pose = placed(1, 0, { x: 0, y: 0 });
     // The window shows 540x480; a 640-wide stage leaves 50 on each side.
-    const range = cornerScaleRange({
+    const range = handleScaleRange({
       pose,
-      corner: "se",
+      handle: "se",
       limit: "range",
       displayScale: 0.5,
       stage: { width: 640, height: 2000 },
@@ -548,17 +608,17 @@ describe("corner handles", () => {
     // A quarter of the window is 4x zoom, the most there is.
     expect(range.min).toBeCloseTo(0.25, 12);
     // Shown 96px high, the frame stops at 48px: half the window.
-    const small = cornerScaleRange({
+    const small = handleScaleRange({
       pose,
-      corner: "se",
+      handle: "se",
       limit: "range",
       displayScale: 0.1,
       stage: HUGE_STAGE,
     });
     expect(small.min).toBeCloseTo(0.5, 12);
-    const tiny = cornerScaleRange({
+    const tiny = handleScaleRange({
       pose,
-      corner: "se",
+      handle: "se",
       limit: "range",
       displayScale: 0.04,
       stage: HUGE_STAGE,

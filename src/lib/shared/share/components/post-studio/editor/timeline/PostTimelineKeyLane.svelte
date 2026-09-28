@@ -41,6 +41,8 @@
     onKeyClick: (seconds: number) => void;
     onKeyKeydown: (event: KeyboardEvent, seconds: number) => void;
     onCurveClick: (fromSeconds: number) => void;
+    /** How a key's time reads to a screen reader; the post's clock by default. */
+    formatTime?: (seconds: number) => string;
   }
 
   let {
@@ -56,6 +58,7 @@
     onKeyClick,
     onKeyKeydown,
     onCurveClick,
+    formatTime = formatPostClock,
   }: Props = $props();
 
   /** A curve this wide has room for its from and to values. */
@@ -113,8 +116,8 @@
                 : `${fromText} → ${toText}`,
           label: t("post_timeline_channel_curve", {
             channel: name,
-            start: formatPostClock(segment.fromSeconds),
-            end: formatPostClock(segment.toSeconds),
+            start: formatTime(segment.fromSeconds),
+            end: formatTime(segment.toSeconds),
             curve: curveName,
           }),
         },
@@ -223,7 +226,7 @@
       data-seconds={seconds}
       aria-label={t("post_timeline_channel_keyframe_at", {
         channel: name,
-        time: formatPostClock(seconds),
+        time: formatTime(seconds),
       })}
       onpointerdown={(event) => handleKeyPointerDown(event, seconds)}
       onclick={(event) => {
