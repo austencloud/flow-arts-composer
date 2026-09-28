@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { localizeLevel1Text, localizeLevel1SelectionLabel } from "../_data/localize-level1-content";
   /**
    * Type 2 - Shift (letters) - body page (manifest `lt2-wxyz`), faithful to
    * proof p27 / "1.1 - Type 2 - Shifts" artboard.
@@ -424,7 +425,7 @@
 <div class="t2-letters">
   <!-- selfTitled: the calligraphic title with the canonical Type-2 purple. -->
   <div class="guide-title">
-    Type 2 - <span style="color:{T2_PURPLE}">Shift</span>
+    {localizeLevel1Text("Type 2 - ")}<span style="color:{T2_PURPLE}">Shift</span>
   </div>
 
   <!-- The four letter boxes with position labels + OPEN/CLOSE tags. -->
@@ -449,7 +450,7 @@
     <span
       class="box-tag"
       style="left:{(box.x + BCELL * 2 - 60) * S}px; top:{(box.y - 16) *
-        S}px; width:{60 * S}px; font-size:{12 * S}px">{box.tag}</span
+        S}px; width:{60 * S}px; font-size:{12 * S}px">{localizeLevel1Text(box.tag)}</span
     >
     {#each box.cells as c, ci (ci)}
       {@const key = `t2-${c.name}`}
@@ -471,7 +472,7 @@
         <SelectionHit
           groupId={key}
           isGroupStart
-          label={`Animate letter ${c.name}`}
+          label={localizeLevel1SelectionLabel(`Animate letter ${c.name}`)}
           onselect={() =>
             emitSequence?.({
               strip: RESOLVED_BOX[key]!,
@@ -543,7 +544,7 @@
       <SelectionHit
         groupId={r.key}
         isGroupStart
-        label={`Animate the word ${r.word}`}
+        label={localizeLevel1SelectionLabel(`Animate the word ${r.word}`)}
         onselect={() =>
           emitSequence?.({
             strip: RESOLVED_ROWS[r.key]!,
@@ -570,7 +571,7 @@
         set: (h) => (p.html = h),
       }}
     >
-      {@html p.html}
+      {@html localizeLevel1Text(p.html)}
     </p>
   {/each}
 </div>

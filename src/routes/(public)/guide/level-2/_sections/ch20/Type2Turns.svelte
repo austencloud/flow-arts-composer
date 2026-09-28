@@ -1,28 +1,29 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import GuideSection from "../../../level-1/_components/GuideSection.svelte";
 </script>
 
-<GuideSection id="type-2-turns" title="Type 2: Shift (1-Turn)">
+<GuideSection id="type-2-turns" title={t("guide_l2_type2_title")}>
   <div class="section-body">
     <p>
-      Type 2 hybrids combine a shift and a static motion. These two motion types are different, so we use the high/low slots to differentiate them. To determine where they go, remember PADS. Because a shift (pro/anti) is higher than a static motion, we can confidently state that:
+      {t("guide_l2_type2_intro")}
     </p>
 
     <p>
-      For Type 2, high = shift and low = static. This includes W, X, Y, Z, Σ, Δ, Θ, and Ω.
+      {t("guide_l2_type2_slots")}
     </p>
 
     <!-- TODO: add diagram - W-High-One (static hand is still, should be simple to execute) -->
 
     <p>
-      Type 2 motions become more complex when we add turns to the static hand. Since this causes both props to rotate, it creates either a Same or Opposite relationship. To indicate this, add a dot above or below the letter. A same-dot goes above and an opp-dot goes below.
+      {t("guide_l2_type2_relationship")}
     </p>
 
     <!-- TODO: add diagram - W-Same Low-One (same-dot variant) -->
     <!-- TODO: add diagram - W-Opp Low-One (opp-dot variant) -->
 
     <p>
-      You can also use (s) or (o) as parameters to indicate "same" or "opp". E.g. "W(s,0,1)"
+      {t("guide_l2_type2_code")}
     </p>
   </div>
 </GuideSection>

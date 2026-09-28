@@ -4,6 +4,7 @@ packages:
 patchedDependencies:
   '@austencloud/backgrounds@0.7.12': patches/@austencloud__backgrounds@0.7.12.patch
   '@austencloud/scene-3d@0.1.6': patches/@austencloud__scene-3d@0.1.6.patch
+  '@austencloud/sidebar@1.0.1': patches/@austencloud__sidebar@1.0.1.patch
   svelte-fast-check@0.4.5: patches/svelte-fast-check@0.4.5.patch
 
 # canvas ships a native binding that only its install script provides

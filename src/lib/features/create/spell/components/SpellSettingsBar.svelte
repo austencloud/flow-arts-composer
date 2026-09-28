@@ -11,14 +11,15 @@ Container-aware responsive design (2-tier):
 - Desktop (>=700px tall): Vertical flex column with all options visible
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t, tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
+  import {
+    GENERATION_DASH_OPTIONS,
+    GENERATION_STYLE_OPTIONS,
+  } from "$lib/shared/create/domain/generation-style-display";
   import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
   import type { SpellPreferences } from "../domain/models/spell-models";
   import type { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-  import {
-    LOOPType,
-    LOOP_TYPE_LABELS,
-  } from "$lib/shared/foundation/domain/models/generation/circular-models";
+  import { LOOPType } from "$lib/shared/foundation/domain/models/generation/circular-models";
   import { LOOPComponent } from "$lib/features/create/generate/shared/domain/constants/loop-components";
   import {
     parseLoopComponents,
@@ -75,11 +76,9 @@ Container-aware responsive design (2-tier):
     if (preferences.motionTypeFilter === "prefer-dash") return "prefer-dash";
     return "mixed";
   });
-  const dashOptions = [
-    { value: "no-dash", label: "Low" },
-    { value: "mixed", label: "Mixed" },
-    { value: "prefer-dash", label: "High" },
-  ];
+  const dashOptions = $derived(
+    GENERATION_DASH_OPTIONS.map(({ value, label }) => ({ value, label }))
+  );
 
   function handleDashChange(v: string) {
     haptic.trigger("selection");
@@ -92,11 +91,9 @@ Container-aware responsive design (2-tier):
 
   // Props
   let propsValue = $derived(preferences.constraintPreset ?? "mixed");
-  const propsOptions = [
-    { value: "smooth", label: "Smooth" },
-    { value: "mixed", label: "Mixed" },
-    { value: "choppy", label: "Choppy" },
-  ];
+  const propsOptions = $derived(
+    GENERATION_STYLE_OPTIONS.map(({ value, label }) => ({ value, label }))
+  );
 
   function handlePropsChange(v: string) {
     haptic.trigger("selection");
@@ -108,11 +105,9 @@ Container-aware responsive design (2-tier):
 
   // Hands
   let handsValue = $derived(preferences.handPathMode ?? "mixed");
-  const handsOptions = [
-    { value: "smooth", label: "Smooth" },
-    { value: "mixed", label: "Mixed" },
-    { value: "choppy", label: "Choppy" },
-  ];
+  const handsOptions = $derived(
+    GENERATION_STYLE_OPTIONS.map(({ value, label }) => ({ value, label }))
+  );
 
   function handleHandsChange(v: string) {
     haptic.trigger("selection");
@@ -121,10 +116,10 @@ Container-aware responsive design (2-tier):
 
   // Grid (MorphChip with Diamond/Box options)
   let gridChipValue = $derived(gridMode === "diamond" ? "diamond" : "box");
-  const gridOptions = [
-    { value: "diamond", label: "Diamond" },
-    { value: "box", label: "Box" },
-  ];
+  const gridOptions = $derived([
+    { value: "diamond", label: t("generator_grid_diamond") },
+    { value: "box", label: t("generator_grid_box") },
+  ]);
 
   function handleGridChipChange(v: string) {
     haptic.trigger("selection");
@@ -133,26 +128,43 @@ Container-aware responsive design (2-tier):
 
   // Display values for chips
   const dashDisplayValue = $derived.by(() => {
-    if (preferences.motionTypeFilter === "no-dash") return "Low";
-    if (preferences.motionTypeFilter === "prefer-dash") return "High";
-    return "Mixed";
+    const value = preferences.motionTypeFilter ?? "mixed";
+    return dashOptions.find((option) => option.value === value)?.label ?? "";
   });
 
   const propsDisplayValue = $derived.by(() => {
-    if (preferences.constraintPreset === "smooth") return "Smooth";
-    if (preferences.constraintPreset === "choppy") return "Choppy";
-    return "Mixed";
+    const value = preferences.constraintPreset ?? "mixed";
+    return propsOptions.find((option) => option.value === value)?.label ?? "";
   });
 
   const handsDisplayValue = $derived.by(() => {
-    if (preferences.handPathMode === "smooth") return "Smooth";
-    if (preferences.handPathMode === "choppy") return "Choppy";
-    return "Mixed";
+    const value = preferences.handPathMode ?? "mixed";
+    return handsOptions.find((option) => option.value === value)?.label ?? "";
   });
 
   const gridDisplayValue = $derived(
     gridMode === "diamond" ? "\u25C7" : "\u25A2"
   );
+
+  function loopComponentLabel(component: LOOPComponent): string {
+    return component === LOOPComponent.MIRRORED
+      ? tDynamic("create_spell_loop_reflection")
+      : tDynamic(`generator_loop_${component}`);
+  }
+
+  function loopTypeLabel(type: LOOPType): string {
+    if (type === LOOPType.STRICT_REWOUND) return t("generator_loop_rewound");
+    if (type === LOOPType.MIRRORED_ROTATED_INVERTED_SWAPPED) {
+      return t("generator_loop_all_four");
+    }
+    const key = `generator_loop_${type}`;
+    const translated = tDynamic(key, { silent: true });
+    if (translated !== key) return translated;
+    const parts = [...parseLoopComponents(type)].map(loopComponentLabel);
+    return parts.length
+      ? parts.join(" / ")
+      : tDynamic("create_spell_loop_custom");
+  }
 
   /** Check if a set of components round-trips through LOOPType resolution */
   function isRoundTripValid(components: Set<LOOPComponent>): boolean {
@@ -194,12 +206,15 @@ Container-aware responsive design (2-tier):
   }
 
   const loopDisplayValue = $derived.by(() => {
-    if (localLoopSelection.size === 0) return "Off";
-    if (!isValidLoopCombo) return `${localLoopSelection.size} selected`;
+    if (localLoopSelection.size === 0) return t("create_ui_off");
+    if (!isValidLoopCombo)
+      return tDynamic("create_spell_loop_selected", {
+        count: localLoopSelection.size,
+      });
     if (preferences.selectedLOOPType) {
-      return LOOP_TYPE_LABELS[preferences.selectedLOOPType] ?? "Custom";
+      return loopTypeLabel(preferences.selectedLOOPType);
     }
-    return "On";
+    return tDynamic("create_spell_loop_on");
   });
 </script>
 
@@ -250,7 +265,7 @@ Container-aware responsive design (2-tier):
         />
         <MorphChip
           id="loop"
-          label="Loop"
+          label={t("create_ui_loop")}
           value={"loop"}
           options={[]}
           displayValue={loopDisplayValue}
@@ -272,18 +287,20 @@ Container-aware responsive design (2-tier):
                     onclick={() => handleLoopToggle(info.component)}
                     style:--chip-color={info.color}
                     aria-pressed={isActive}
-                    aria-label="{info.label}: {isActive ? 'on' : 'off'}"
+                    aria-label="{loopComponentLabel(info.component)}: {isActive
+                      ? tDynamic('create_spell_loop_on')
+                      : t('create_ui_off')}"
                     tabindex={morphProgress > 0.5 ? 0 : -1}
                   >
                     <i class="fas fa-{info.icon}" aria-hidden="true"></i>
-                    <span>{info.label}</span>
+                    <span>{loopComponentLabel(info.component)}</span>
                   </button>
                 {/each}
               </div>
               {#if !isValidLoopCombo}
                 <div class="combo-hint" role="status">
                   <i class="fas fa-flask" aria-hidden="true"></i>
-                  This combination isn't wired up yet
+                  {t("create_review_this_combination_isn_t_wired_up_yet")}
                 </div>
               {/if}
             </div>
@@ -360,7 +377,7 @@ Container-aware responsive design (2-tier):
           role="radio"
           aria-checked={gridMode === "diamond"}
         >
-          Diamond
+          {t("create_review_diamond")}
         </button>
         <button
           class="section-option"
@@ -372,7 +389,7 @@ Container-aware responsive design (2-tier):
           role="radio"
           aria-checked={gridMode === "box"}
         >
-          Box
+          {t("create_review_box")}
         </button>
       </div>
     </div>
@@ -389,17 +406,19 @@ Container-aware responsive design (2-tier):
             onclick={() => handleLoopToggle(info.component)}
             style:--chip-color={info.color}
             aria-pressed={isActive}
-            aria-label="{info.label}: {isActive ? 'on' : 'off'}"
+            aria-label="{loopComponentLabel(info.component)}: {isActive
+              ? tDynamic('create_spell_loop_on')
+              : t('create_ui_off')}"
           >
             <i class="fas fa-{info.icon}" aria-hidden="true"></i>
-            <span>{info.label}</span>
+            <span>{loopComponentLabel(info.component)}</span>
           </button>
         {/each}
       </div>
       {#if !isValidLoopCombo}
         <div class="combo-hint" role="status">
           <i class="fas fa-flask" aria-hidden="true"></i>
-          This combination isn't wired up yet
+          {t("create_review_this_combination_isn_t_wired_up_yet")}
         </div>
       {/if}
     </div>

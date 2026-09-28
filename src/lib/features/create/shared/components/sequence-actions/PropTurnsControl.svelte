@@ -9,6 +9,8 @@
   the primary actions together and gives path choices a full-width second row.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { handLabel, pathShapeLabel } from "./control-labels";
   import type { Snippet } from "svelte";
   import { RotationDirection } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
   import type { PathShapeValue } from "../../services/step-operations/path-shape-handler";
@@ -59,8 +61,8 @@
     rotationDirection === RotationDirection.NO_ROTATION
       ? ""
       : rotationDirection === RotationDirection.CLOCKWISE
-        ? "CW"
-        : "CCW"
+        ? t("create_controls_cw_short")
+        : t("create_controls_ccw_short")
   );
 
   function handleTurnsChangeClick(e: MouseEvent, delta: number) {
@@ -72,9 +74,9 @@
 
   const globalHint = $derived.by(() => {
     const vm = getAnimationVisibilityManager();
-    if (vm.getMotionAwarePaths()) return "Hybrid";
+    if (vm.getMotionAwarePaths()) return t("viewer_ui_hybrid");
     const s = vm.getPathShape();
-    return s.charAt(0).toUpperCase() + s.slice(1);
+    return pathShapeLabel(s);
   });
 
   function handleInvert(e: MouseEvent) {
@@ -98,7 +100,7 @@
     <button
       class="ctrl-btn"
       class:compact
-      aria-label="Decrease {hand} turns"
+      aria-label={t("create_controls_less_turns", { hand: handLabel(hand) })}
       onclick={(e) => handleTurnsChangeClick(e, -0.5)}
     >
       <i class="fas fa-minus" aria-hidden="true"></i>
@@ -107,7 +109,7 @@
     <button
       class="ctrl-btn"
       class:compact
-      aria-label="Increase {hand} turns"
+      aria-label={t("create_controls_more_turns", { hand: handLabel(hand) })}
       onclick={(e) => handleTurnsChangeClick(e, 0.5)}
     >
       <i class="fas fa-plus" aria-hidden="true"></i>
@@ -119,7 +121,7 @@
     <button
       class="invert-btn"
       class:compact
-      aria-label="Toggle {hand} rotation (currently {directionLabel})"
+      aria-label={t("create_controls_toggle_rotation", { hand: handLabel(hand), direction: directionLabel })}
       onclick={handleInvert}
     >
       <i class="fas {directionIcon}" aria-hidden="true"></i>
@@ -136,20 +138,20 @@
           class:active={pathShape === shape}
           class:compact
           aria-pressed={pathShape === shape}
-          aria-label="{hand} path: {shape}"
+          aria-label={t("create_controls_path", { hand: handLabel(hand), shape: pathShapeLabel(shape) })}
           onclick={(e) => {
             e.stopPropagation();
             onPathShapeChange(shape);
           }}
         >
-          {shape.charAt(0).toUpperCase() + shape.slice(1)}
+          {pathShapeLabel(shape)}
         </button>
       {/each}
       <button
         class="shape-pill reset"
         class:compact
         disabled={pathShape === undefined}
-        aria-label="Reset {hand} path to global"
+        aria-label={t("create_controls_reset_path", { hand: handLabel(hand) })}
         onclick={(e) => {
           e.stopPropagation();
           onPathShapeClear();

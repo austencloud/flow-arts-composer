@@ -39,6 +39,43 @@
   $effect(() => {
     categoryFilter = isMobile ? "alternating" : "all";
   });
+
+  function categoryLabel(category: TemplateCategory): string {
+    switch (category) {
+      case "uniform": return t("create_rotation_category_uniform");
+      case "alternating": return t("create_rotation_category_alternating");
+      case "split-hand": return t("create_rotation_category_split_hand");
+      case "split-half": return t("create_rotation_category_split_half");
+    }
+  }
+
+  function templateName(id: string): string {
+    switch (id) {
+      case "all-cw": return t("create_rotation_template_all_cw");
+      case "all-ccw": return t("create_rotation_template_all_ccw");
+      case "alternating-cw-first": return t("create_rotation_template_alternating_cw_first");
+      case "alternating-ccw-first": return t("create_rotation_template_alternating_ccw_first");
+      case "blue-cw-red-ccw": return t("create_rotation_template_left_cw_right_ccw");
+      case "blue-ccw-red-cw": return t("create_rotation_template_left_ccw_right_cw");
+      case "first-half-cw": return t("create_rotation_template_first_half_cw");
+      case "first-half-ccw": return t("create_rotation_template_first_half_ccw");
+      default: return id;
+    }
+  }
+
+  function templateDescription(id: string): string {
+    switch (id) {
+      case "all-cw": return t("create_rotation_template_all_cw_desc");
+      case "all-ccw": return t("create_rotation_template_all_ccw_desc");
+      case "alternating-cw-first": return t("create_rotation_template_alternating_cw_first_desc");
+      case "alternating-ccw-first": return t("create_rotation_template_alternating_ccw_first_desc");
+      case "blue-cw-red-ccw": return t("create_rotation_template_left_cw_right_ccw_desc");
+      case "blue-ccw-red-cw": return t("create_rotation_template_left_ccw_right_cw_desc");
+      case "first-half-cw": return t("create_rotation_template_first_half_cw_desc");
+      case "first-half-ccw": return t("create_rotation_template_first_half_ccw_desc");
+      default: return id;
+    }
+  }
 </script>
 
 {#if nonUniformTemplates.length > 0}
@@ -52,7 +89,7 @@
             class:active={categoryFilter === "all"}
             onclick={() => (categoryFilter = "all")}
           >
-            All
+            {t("create_rotation_filter_all")}
           </button>
         {/if}
         {#each ["alternating", "split-hand", "split-half"] as category}
@@ -69,7 +106,7 @@
             >
               <span class="category-dot" style="background: {info.color}"
               ></span>
-              {info.label}
+              {categoryLabel(category as TemplateCategory)}
             </button>
           {/if}
         {/each}
@@ -92,7 +129,7 @@
               >
                 <span class="group-dot" style="background: {categoryInfo.color}"
                 ></span>
-                <span class="group-label">{categoryInfo.label}</span>
+                <span class="group-label">{categoryLabel(category as TemplateCategory)}</span>
               </div>
               <div class="patterns-list">
                 {#each groupTemplates as template}
@@ -110,8 +147,8 @@
                     }}
                   >
                     <div class="pattern-info">
-                      <span class="pattern-name">{template.name}</span>
-                      <span class="pattern-desc">{template.description}</span>
+                      <span class="pattern-name">{templateName(template.id)}</span>
+                      <span class="pattern-desc">{templateDescription(template.id)}</span>
                     </div>
                   </div>
                 {/each}
@@ -139,9 +176,9 @@
             }}
           >
             <div class="pattern-info">
-              <span class="pattern-name">{template.name}</span>
+              <span class="pattern-name">{templateName(template.id)}</span>
               {#if !isMobile}
-                <span class="pattern-desc">{template.description}</span>
+                <span class="pattern-desc">{templateDescription(template.id)}</span>
               {/if}
             </div>
           </div>
@@ -149,7 +186,11 @@
 
         {#if filteredTemplates.length === 0}
           <p class="empty-filter-message">
-            No {categoryFilter} patterns available
+            {t("create_rotation_no_category_patterns", {
+              category: categoryFilter === "all"
+                ? t("create_rotation_filter_all")
+                : categoryLabel(categoryFilter),
+            })}
           </p>
         {/if}
       </div>

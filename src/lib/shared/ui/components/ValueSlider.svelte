@@ -8,6 +8,10 @@
   The fill runs from `origin` to the value, so a bipolar amount such as a
   rotation fills out from zero and a speed fills out from 1×.
 
+  `marks` puts small diamonds on the track, such as a clip's keyframes on
+  its scrubber. They are drawn over the thumb, so the thumb resting on one
+  shows it, and they are only a picture: the value comes from the thumb.
+
   Dense desktop tools that scrub a bare number use ScrubbableNumber instead.
 -->
 <script lang="ts">
@@ -21,6 +25,8 @@
     origin?: number;
     format?: (value: number) => string;
     disabled?: boolean;
+    /** Values along the track to mark with a diamond. */
+    marks?: readonly number[];
     onchange: (value: number) => void;
   }
 
@@ -33,6 +39,7 @@
     origin,
     format,
     disabled = false,
+    marks = [],
     onchange,
   }: Props = $props();
 
@@ -63,19 +70,24 @@
     <span class="name" id="{id}-name">{label}</span>
     <span class="reading" aria-hidden="true">{text}</span>
   </div>
-  <input
-    type="range"
-    {min}
-    {max}
-    {step}
-    value={clamped}
-    {disabled}
-    aria-labelledby="{id}-name"
-    aria-valuetext={text}
-    style:--from={Math.min(originFraction, valueFraction)}
-    style:--to={Math.max(originFraction, valueFraction)}
-    oninput={handleInput}
-  />
+  <div class="track">
+    <input
+      type="range"
+      {min}
+      {max}
+      {step}
+      value={clamped}
+      {disabled}
+      aria-labelledby="{id}-name"
+      aria-valuetext={text}
+      style:--from={Math.min(originFraction, valueFraction)}
+      style:--to={Math.max(originFraction, valueFraction)}
+      oninput={handleInput}
+    />
+    {#each marks as mark, index (index)}
+      <span class="mark" aria-hidden="true" style:--at={fraction(mark)}></span>
+    {/each}
+  </div>
 </div>
 
 <style>
@@ -106,6 +118,25 @@
     font-size: 0.875rem;
     font-variant-numeric: tabular-nums;
     white-space: nowrap;
+  }
+
+  .track {
+    position: relative;
+    min-width: 0;
+  }
+
+  /* On the thumb's path: half a thumb in from each end, as the fill is. */
+  .mark {
+    position: absolute;
+    top: 50%;
+    left: calc(var(--thumb) / 2 + (100% - var(--thumb)) * var(--at));
+    box-sizing: border-box;
+    width: 0.5rem;
+    height: 0.5rem;
+    border: 1px solid rgb(0 0 0 / 0.65);
+    background: var(--theme-accent, #d4813a);
+    transform: translate(-50%, -50%) rotate(45deg);
+    pointer-events: none;
   }
 
   input {
@@ -223,6 +254,12 @@
 
     input:focus-visible::-moz-range-thumb {
       box-shadow: 0 0 0 3px Highlight;
+    }
+
+    .mark {
+      forced-color-adjust: none;
+      border-color: ButtonFace;
+      background: Highlight;
     }
   }
 </style>

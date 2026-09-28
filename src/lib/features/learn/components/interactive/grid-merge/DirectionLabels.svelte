@@ -3,6 +3,7 @@
   Labels animate position/scale in sync with grid animations using CSS transitions
 -->
 <script lang="ts">
+	import { tDynamic } from '$lib/shared/i18n/i18n.svelte.js';
 	import { onDestroy } from 'svelte';
 	import { CARDINAL_LABELS, INTERCARDINAL_LABELS, type Phase, type HighlightPhase } from './grid-merge-constants';
 
@@ -83,7 +84,7 @@
 <g
 	class="direction-labels"
 	class:highlighting={isHighlighting}
-	aria-label="Grid direction labels: North, East, South, West, Northeast, Southeast, Southwest, Northwest"
+	aria-label={tDynamic('learn_grid_directions_aria')}
 >
 	<!-- Cardinal labels (N, E, S, W) - follow diamond grid -->
 	{#each CARDINAL_LABELS as label, i}

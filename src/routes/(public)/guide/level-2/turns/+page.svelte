@@ -9,37 +9,38 @@
    */
   import GuideSeo from "../../level-1/_components/GuideSeo.svelte";
   import { level2TopicPagesForChapter } from "../_data/level2-topic-routes";
+  import { localizedLevel2Topic } from "../_data/localize-level2-topic";
+  import { tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
 
   const topics = level2TopicPagesForChapter("turns");
 </script>
 
 <GuideSeo
-  title="2.0 1-Turns · Level 2 · Flow Arts Notation Guide"
-  description="Level 2 chapter on 1-turns: 180° prop rotations layered onto shifts, dashes, and static motions, with glyphs, PADS ordering, and Types 1–6 with turns."
+  title={tDynamic("guide_l2_turns_seo_title")}
+  description={tDynamic("guide_l2_turns_intro")}
   path="/guide/level-2/turns"
-  partOf={{ name: "Level 2 Guide: Turns", path: "/guide/level-2" }}
+  partOf={{ name: tDynamic("guide_level2_seo_title"), path: "/guide/level-2" }}
   breadcrumbs={[
-    { name: "Home", path: "/" },
-    { name: "Guide", path: "/guide" },
-    { name: "Level 2", path: "/guide/level-2" },
-    { name: "1-Turns", path: "/guide/level-2/turns" },
+    { name: tDynamic("guide_paths_home"), path: "/" },
+    { name: tDynamic("guide_paths_part_of"), path: "/guide" },
+    { name: tDynamic("guide_level2_subtitle"), path: "/guide/level-2" },
+    { name: tDynamic("guide_l2_turns_title"), path: "/guide/level-2/turns" },
   ]}
 />
 
 <div class="chapter-hub">
-  <h1>1-Turns</h1>
+  <h1>{tDynamic("guide_l2_turns_title")}</h1>
   <p class="intro">
-    Level 2 chapter on 1-turns: 180° prop rotations layered onto shifts, dashes, and static
-    motions, with glyphs, PADS ordering, and Types 1–6 with turns.
+    {tDynamic("guide_l2_turns_intro")}
   </p>
 
-  <nav class="topic-list" aria-label="1-Turns topics">
+  <nav class="topic-list" aria-label={tDynamic("guide_l2_turns_topics")}>
     <ol>
       {#each topics as topic (topic.slug)}
         <li>
           <a href="/guide/level-2/{topic.slug}">
-            <strong>{topic.h1}</strong>
-            <span>{topic.description}</span>
+            <strong>{localizedLevel2Topic(topic, "h1")}</strong>
+            <span>{localizedLevel2Topic(topic, "description")}</span>
           </a>
         </li>
       {/each}

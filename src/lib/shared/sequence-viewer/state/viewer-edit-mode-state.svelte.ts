@@ -1,4 +1,5 @@
 import type { AnimationPanelState } from "$lib/shared/animation-engine/state/animation-panel-state.svelte";
+import { t } from "$lib/shared/i18n/i18n.svelte.js";
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
 import type { ResolvedAutoLayout } from "$lib/shared/render/services/container-aware-layout";
 import type {
@@ -71,15 +72,16 @@ export function createViewerEditModeState(inputs: ViewerEditModeInputs) {
 
     if (pane === "video-upload") {
       inputs.accessibilityHelper.announce(
-        "Upload a performance video for this sequence.",
+        t("viewer_ui_announce_video_upload"),
         "assertive"
       );
       return;
     }
 
-    const label = pane === "animation" ? "Animation" : "Card";
     inputs.accessibilityHelper.announce(
-      `${label} export. Configure settings and tap Export when ready.`,
+      pane === "animation"
+        ? t("viewer_ui_announce_animation_export")
+        : t("viewer_ui_announce_card_export"),
       "assertive"
     );
   }
@@ -103,7 +105,9 @@ export function createViewerEditModeState(inputs: ViewerEditModeInputs) {
     }
     playbackRestoreOnExit = false;
     inputs.accessibilityHelper.announce(
-      wasVideoUpload ? "Upload closed. Back to videos." : "Export closed"
+      wasVideoUpload
+        ? t("viewer_ui_announce_upload_closed")
+        : t("viewer_ui_announce_export_closed")
     );
   }
 

@@ -6,6 +6,7 @@
   ChoreoCard; "Play" returns to the animation. Continue is always available.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte";
 
 import { getAnimationPlaybackController } from "$lib/shared/animation-engine/get-animation-playback-controller";
   import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
@@ -159,21 +160,21 @@ import { getAnimationPlaybackController } from "$lib/shared/animation-engine/get
 
 <div class="tutorial-step">
   <div class="step-header">
-    <h1 id="tutorial-step-title" class="title">Your sequence</h1>
+    <h1 id="tutorial-step-title" class="title">{t('composer_demo_your_sequence')}</h1>
     <p class="subtitle">
       {#if showCard}
-        Tap Play to watch it.
+        {t('tutorial_tap_play')}
       {:else if isPlaying}
-        Tap to pause.
+        {t('tutorial_tap_pause')}
       {:else}
-        Tap to play.
+        {t('tutorial_tap_resume')}
       {/if}
     </p>
   </div>
 
   <div class="viewer-container">
     {#if !tutorialSequence}
-      <p class="loading">Building sequence...</p>
+      <p class="loading">{t('tutorial_building')}</p>
     {:else if showCard}
       <div class="card-pane">
         <!-- Force the start placement into its own left column (not the top row),
@@ -208,15 +209,15 @@ import { getAnimationPlaybackController } from "$lib/shared/animation-engine/get
   <div class="button-row">
     {#if showCard}
       <button class="ghost-button" onclick={playFromCard}>
-        <i class="fas fa-play" aria-hidden="true"></i> Play
+        <i class="fas fa-play" aria-hidden="true"></i> {t('learn_play')}
       </button>
     {:else}
       <button class="ghost-button" onclick={backToCard}>
-        <i class="fas fa-table-cells-large" aria-hidden="true"></i> Back to card
+        <i class="fas fa-table-cells-large" aria-hidden="true"></i> {t('tutorial_back_card')}
       </button>
     {/if}
     <button class="continue-button" onclick={onAdvance}>
-      Continue <i class="fas fa-arrow-right" aria-hidden="true"></i>
+      {t('attribution_continue')} <i class="fas fa-arrow-right" aria-hidden="true"></i>
     </button>
   </div>
 </div>

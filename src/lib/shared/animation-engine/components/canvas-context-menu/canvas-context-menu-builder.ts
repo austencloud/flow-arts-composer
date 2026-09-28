@@ -23,6 +23,7 @@
  * left the menu showing nothing checked for two thirds of the effects.
  */
 
+import { t } from "$lib/shared/i18n/i18n.svelte.js";
 import type {
   ContextMenuEntry,
   ContextMenuItem,
@@ -67,7 +68,7 @@ function buildEffectChildren(
   return [
     {
       id: "effect-none",
-      label: "None",
+      label: t("viewer_ui_none"),
       icon: "fa-ban",
       checked: active === "none",
       action: () => setEffect("none"),
@@ -102,7 +103,7 @@ function buildEffectPresetChildren(
   return [
     {
       id: "effect-preset-default",
-      label: "Default",
+      label: t("create_ui_default"),
       icon: "fa-rotate-left",
       checked: activePresetId === null,
       action: () => ecs.resetToFactory(group.effectType),
@@ -168,14 +169,14 @@ function buildTrailTrackingChildren(): ContextMenuItem[] {
     },
     {
       id: "trail-both-ends",
-      label: "Both",
+      label: t("animation_menu_both"),
       icon: "fa-grip-lines",
       checked: current === TrackingMode.BOTH_ENDS,
       action: () => animationSettings.setTrackingMode(TrackingMode.BOTH_ENDS),
     },
     {
       id: "trail-hand",
-      label: "Hand",
+      label: t("animation_menu_hand"),
       icon: "fa-hand-back-fist",
       checked: current === TrackingMode.HAND,
       action: () => animationSettings.setTrackingMode(TrackingMode.HAND),
@@ -195,7 +196,7 @@ function buildPathShapeChildren(
   return [
     {
       id: "path-arc",
-      label: "Arc",
+      label: t("viewer_ui_arc"),
       icon: "fa-bezier-curve",
       iconColor: "#60a5fa",
       checked: !motionAware && current === "arc",
@@ -203,7 +204,7 @@ function buildPathShapeChildren(
     },
     {
       id: "path-linear",
-      label: "Linear",
+      label: t("viewer_ui_linear"),
       icon: "fa-arrows-left-right",
       iconColor: "#f97316",
       checked: !motionAware && current === "linear",
@@ -211,7 +212,7 @@ function buildPathShapeChildren(
     },
     {
       id: "path-concave",
-      label: "Concave",
+      label: t("viewer_ui_concave"),
       icon: "fa-compress",
       iconColor: "#a78bfa",
       checked: !motionAware && current === "concave",
@@ -219,7 +220,7 @@ function buildPathShapeChildren(
     },
     {
       id: "path-by-motion",
-      label: "Hybrid",
+      label: t("viewer_ui_hybrid"),
       icon: "fa-shuffle",
       iconColor: "#2dd4bf",
       checked: motionAware,
@@ -227,7 +228,7 @@ function buildPathShapeChildren(
     },
     {
       id: "path-explanation",
-      label: "About motion paths",
+      label: t("animation_menu_about_paths"),
       icon: "fa-circle-info",
       action: () => {
         window.open("/guide/motion-paths", "_blank", "noopener,noreferrer");
@@ -237,7 +238,7 @@ function buildPathShapeChildren(
       ? [
           {
             id: "path-restore",
-            label: "Undo path changes",
+            label: t("animation_menu_undo_paths"),
             icon: "fa-rotate-left",
             action: () => vm.restoreSavedPaths(),
           },
@@ -253,7 +254,7 @@ function buildGridChildren(
   return [
     {
       id: "grid-none",
-      label: "Off",
+      label: t("playback_audit_visual_off"),
       icon: "fa-border-none",
       checked: current === "none",
       action: () => vm.setGridMode("none"),
@@ -267,7 +268,7 @@ function buildGridChildren(
     },
     {
       id: "grid-auto",
-      label: "Auto",
+      label: t("viewer_ui_auto"),
       icon: "fa-wand-magic",
       checked: current === "auto",
       action: () => vm.setGridMode("auto"),
@@ -282,14 +283,14 @@ function buildPlaybackChildren(
   return [
     {
       id: "playback-continuous",
-      label: "Continuous",
+      label: t("effect_deep_option_continuous"),
       icon: "fa-play",
       checked: current === "continuous",
       action: () => vm.setPlaybackMode("continuous"),
     },
     {
       id: "playback-step",
-      label: "Step",
+      label: t("playback_audit_step"),
       icon: "fa-forward-step",
       checked: current === "step",
       action: () => vm.setPlaybackMode("step"),
@@ -307,7 +308,7 @@ function buildVisibilityChildren(
   return [
     {
       id: "vis-props",
-      label: "Props",
+      label: t("viewer_ui_props"),
       icon: "fa-wand-sparkles",
       checked: settings.props,
       keepOpen: true,
@@ -315,7 +316,7 @@ function buildVisibilityChildren(
     },
     {
       id: "vis-step-numbers",
-      label: "Step Numbers",
+      label: t("animation_menu_step_numbers"),
       icon: "fa-list-ol",
       checked: settings.stepNumbers,
       keepOpen: true,
@@ -323,7 +324,7 @@ function buildVisibilityChildren(
     },
     {
       id: "vis-tka-glyph",
-      label: "TKA Glyph",
+      label: t("animation_menu_tka_glyph"),
       icon: "fa-font",
       checked: settings.tkaGlyph,
       keepOpen: true,
@@ -334,7 +335,7 @@ function buildVisibilityChildren(
     // PROP pair (top-right). Same element icons, different question answered.
     {
       id: "vis-hand-tnd-glyph",
-      label: "Hand TnD",
+      label: t("animation_menu_hand_tnd"),
       icon: "fa-hand",
       checked: settings.elementalGlyph,
       keepOpen: true,
@@ -342,7 +343,7 @@ function buildVisibilityChildren(
     },
     {
       id: "vis-prop-tnd-glyph",
-      label: "Prop TnD",
+      label: t("viewer_detail_prop_tnd"),
       icon: "fa-fire-flame-curved",
       checked: settings.propElementalGlyph,
       keepOpen: true,
@@ -350,7 +351,7 @@ function buildVisibilityChildren(
     },
     {
       id: "vis-word-header",
-      label: "Word Header",
+      label: t("animation_menu_word_header"),
       icon: "fa-heading",
       checked: settings.wordHeader,
       keepOpen: true,
@@ -358,7 +359,7 @@ function buildVisibilityChildren(
     },
     {
       id: "vis-mandala",
-      label: "Mandala",
+      label: t("share_mandala"),
       icon: "fa-draw-polygon",
       checked: settings.mandala,
       keepOpen: true,
@@ -366,7 +367,7 @@ function buildVisibilityChildren(
     },
     {
       id: "vis-path-lines",
-      label: "Paths",
+      label: t("animation_menu_paths"),
       icon: "fa-route",
       checked: pathLinesOn,
       keepOpen: true,
@@ -377,7 +378,7 @@ function buildVisibilityChildren(
     },
     {
       id: "vis-progress-bar",
-      label: "Progress Bar",
+      label: t("animation_menu_progress_bar"),
       icon: "fa-bars-progress",
       checked: settings.progressBar,
       keepOpen: true,
@@ -385,7 +386,7 @@ function buildVisibilityChildren(
     },
     {
       id: "vis-dark-mode",
-      label: "Dark Mode",
+      label: t("animation_menu_dark_mode"),
       icon: "fa-moon",
       checked: settings.darkMode,
       keepOpen: true,
@@ -405,21 +406,21 @@ export function buildCanvasContextMenuItems(
     // Visibility toggles submenu
     {
       id: "visibility-submenu",
-      label: "Visibility",
+      label: t("tab_settings_visibility"),
       icon: "fa-eye",
       children: buildVisibilityChildren(vm),
     },
     // Grid mode submenu
     {
       id: "grid-submenu",
-      label: "Grid",
+      label: t("playback_audit_visual_grid"),
       icon: "fa-border-all",
       children: buildGridChildren(vm),
     },
     // Playback mode submenu
     {
       id: "playback-submenu",
-      label: "Playback",
+      label: t("animation_menu_playback"),
       icon: "fa-circle-play",
       children: buildPlaybackChildren(vm),
     },
@@ -427,7 +428,7 @@ export function buildCanvasContextMenuItems(
     // Effects submenu
     {
       id: "effects-submenu",
-      label: "Effects",
+      label: t("animation_menu_effects"),
       icon: "fa-wand-magic-sparkles",
       children: buildEffectChildren(active, ecs),
     },
@@ -439,7 +440,7 @@ export function buildCanvasContextMenuItems(
   if (presetChildren.length > 0) {
     items.push({
       id: "effect-presets-submenu",
-      label: "Effect Presets",
+      label: t("animation_menu_effect_presets"),
       icon: "fa-swatchbook",
       children: presetChildren,
     });
@@ -449,7 +450,7 @@ export function buildCanvasContextMenuItems(
   if (active === "trails") {
     items.push({
       id: "trail-tracking-submenu",
-      label: "Trail Tracking",
+      label: t("animation_menu_trail_tracking"),
       icon: "fa-route",
       children: buildTrailTrackingChildren(),
     });
@@ -458,13 +459,13 @@ export function buildCanvasContextMenuItems(
   items.push(
     {
       id: "efforts-submenu",
-      label: "Efforts",
+      label: t("animation_menu_efforts"),
       icon: "fa-gauge",
       children: buildEffortChildren(vm),
     },
     {
       id: "path-shape-submenu",
-      label: "Motion Paths",
+      label: t("animation_menu_motion_paths"),
       icon: "fa-draw-polygon",
       children: buildPathShapeChildren(vm),
     },
@@ -474,7 +475,7 @@ export function buildCanvasContextMenuItems(
   if (deps.onToggleDisassemble) {
     items.push({
       id: "toggle-disassemble",
-      label: deps.disassembled ? "Reassemble" : "Disassemble",
+      label: deps.disassembled ? t("animation_menu_reassemble") : t("animation_menu_disassemble"),
       icon: deps.disassembled ? "fa-compress" : "fa-table-columns",
       action: () => deps.onToggleDisassemble!(),
     });
@@ -487,7 +488,7 @@ export function buildCanvasContextMenuItems(
       { type: "separator" as const },
       {
         id: "report-effect-issue",
-        label: "Report Effect Issue",
+        label: t("animation_menu_report_effect"),
         icon: "fa-bug",
         iconColor: "#ef4444",
         action: async () => {
@@ -521,8 +522,8 @@ export function buildCanvasContextMenuItems(
       id: "toggle-3d-view",
       label:
         deps.viewer3DState.renderMode === "3d"
-          ? "Exit 3D View"
-          : "Enter 3D View",
+          ? t("animation_menu_exit_3d")
+          : t("animation_menu_enter_3d"),
       icon: "fa-cube",
       action: deps.onToggle3DView,
     });

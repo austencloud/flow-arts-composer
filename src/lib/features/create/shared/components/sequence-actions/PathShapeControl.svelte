@@ -6,6 +6,7 @@
 -->
 <script lang="ts">
   import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { handLabel, pathShapeLabel } from "./control-labels";
   import type { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
   import type { PathShapeValue } from "../../services/step-operations/path-shape-handler";
   import { getAnimationVisibilityManager } from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
@@ -30,16 +31,16 @@
 
   const globalHint = $derived.by(() => {
     const vm = getAnimationVisibilityManager();
-    if (vm.getMotionAwarePaths()) return "Motion-Aware";
+    if (vm.getMotionAwarePaths()) return t("viewer_ui_hybrid");
     const s = vm.getPathShape();
-    return s.charAt(0).toUpperCase() + s.slice(1);
+    return pathShapeLabel(s);
   });
 </script>
 
 <div class="path-shape-control" class:compact>
   <span class="section-label">{t("create_ui_path_shape")}</span>
 
-  {#each [{ label: "LEFT", hand: "left" as HandSide, current: leftPathShape, cssClass: "blue" }, { label: "RIGHT", hand: "right" as HandSide, current: rightPathShape, cssClass: "red" }] as hand}
+  {#each [{ label: handLabel("left"), hand: "left" as HandSide, current: leftPathShape, cssClass: "blue" }, { label: handLabel("right"), hand: "right" as HandSide, current: rightPathShape, cssClass: "red" }] as hand}
     <div class="hand-row">
       <span class="hand-label {hand.cssClass}">{hand.label}</span>
       <div class="shape-buttons">
@@ -51,23 +52,23 @@
               hand.cssClass === "blue"}
             class:red-active={hand.current === shape && hand.cssClass === "red"}
             aria-pressed={hand.current === shape}
-            aria-label="{hand.label} path shape: {shape}"
+            aria-label={t("create_controls_path", { hand: hand.label, shape: pathShapeLabel(shape) })}
             onclick={() => onPathShapeChange(hand.hand, shape)}
           >
-            {shape.charAt(0).toUpperCase() + shape.slice(1)}
+            {pathShapeLabel(shape)}
           </button>
         {/each}
         <button
           class="shape-btn reset"
           disabled={hand.current === undefined}
-          aria-label="Reset {hand.label} path shape to global"
+          aria-label={t("create_controls_reset_path", { hand: hand.label })}
           onclick={() => onPathShapeClear(hand.hand)}
         >
           <i class="fas fa-rotate-left" aria-hidden="true"></i>
         </button>
       </div>
       {#if hand.current === undefined}
-        <span class="global-hint">Global: {globalHint}</span>
+        <span class="global-hint">{t("create_controls_global_path", { shape: globalHint })}</span>
       {/if}
     </div>
   {/each}

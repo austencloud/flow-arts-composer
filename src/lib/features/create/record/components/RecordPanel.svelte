@@ -176,7 +176,7 @@ Combines video feed with playback controls for practicing sequences.
           ></div>
         </div>
         <div class="progress-text">
-          Beat {recordState.currentStepIndex + 1} of {recordState.totalSteps}
+          {t("create_record_beat_of", { number: recordState.currentStepIndex + 1, total: recordState.totalSteps })}
         </div>
       </div>
     </div>
@@ -185,8 +185,7 @@ Combines video feed with playback controls for practicing sequences.
       <div class="empty-icon">🎥</div>
       <h3>{t("create_ui_no_sequence_to_practice")}</h3>
       <p>
-        Create or select a sequence from the Construct or Generate tab to start
-        practicing.
+        {t("create_review_create_or_select_a_sequence_from_the_construct_or_generate_tab_to_start_practicing")}
       </p>
     </div>
   {/if}

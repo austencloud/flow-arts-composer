@@ -335,7 +335,7 @@
       onShowHelp={handleShowHelp}
     />
 
-    <h2 id="animation-panel-title" class="sr-only">Animation Viewer</h2>
+    <h2 id="animation-panel-title" class="sr-only">{t("animation_viewer_title")}</h2>
 
     {#if loading}
       <div

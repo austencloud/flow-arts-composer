@@ -1,5 +1,6 @@
 <script lang="ts">
   import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
+  import { t, tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
 
   interface Props {
     hand: "left" | "right";
@@ -31,23 +32,22 @@
   }: Props = $props();
 
   const tone = $derived(hand === "left" ? "blue" : "red");
-  const handLabel = $derived(hand === "left" ? "Left" : "Right");
+  const handLabel = $derived(
+    hand === "left" ? t("shared_controls_left") : t("shared_controls_right")
+  );
+  const accessibleHand = $derived(tDynamic(`create_action_hand_${hand}`));
 
   interface OrientationOption {
     value: string;
-    label: string;
-    name: string;
     icon: string;
   }
 
   const cardinalOptions: OrientationOption[] = [
-    { value: "in", label: "In", name: "Inward", icon: "fa-compress-alt" },
-    { value: "out", label: "Out", name: "Outward", icon: "fa-expand-alt" },
-    { value: "clock", label: "CW", name: "Clockwise", icon: "fa-rotate-right" },
+    { value: "in", icon: "fa-compress-alt" },
+    { value: "out", icon: "fa-expand-alt" },
+    { value: "clock", icon: "fa-rotate-right" },
     {
       value: "counter",
-      label: "CCW",
-      name: "Counterclockwise",
       icon: "fa-rotate-left",
     },
   ];
@@ -55,26 +55,18 @@
   const interradialOptions: OrientationOption[] = [
     {
       value: "clockIn",
-      label: "CW·In",
-      name: "Clockwise inward",
       icon: "fa-rotate-right",
     },
     {
       value: "clockOut",
-      label: "CW·Out",
-      name: "Clockwise outward",
       icon: "fa-rotate-right",
     },
     {
       value: "counterIn",
-      label: "CCW·In",
-      name: "Counterclockwise inward",
       icon: "fa-rotate-left",
     },
     {
       value: "counterOut",
-      label: "CCW·Out",
-      name: "Counterclockwise outward",
       icon: "fa-rotate-left",
     },
   ];
@@ -93,10 +85,15 @@
       )
       .map((option) => ({
         value: option.value,
-        label: option.name,
+        label: tDynamic(`create_action_orientation_${option.value}_name`),
         // The label is short and ambiguous on its own — CW could be a rotation
         // direction anywhere. The full name is what a screen reader announces.
-        ariaLabel: `Set ${hand} orientation to ${option.name}`,
+        ariaLabel: tDynamic("create_action_set_orientation", {
+          hand: accessibleHand,
+          orientation: tDynamic(
+            `create_action_orientation_${option.value}_name`
+          ),
+        }),
         tone,
         disabled,
       }))
@@ -112,7 +109,7 @@
     density="tight"
     columns={options.length > 4 ? 4 : undefined}
     semantics="radiogroup"
-    ariaLabel="{handLabel} start orientation"
+    ariaLabel={tDynamic("create_action_start_orientation", { hand: handLabel })}
     {ghostKind}
   >
     {#snippet optionContent(value)}
@@ -121,7 +118,15 @@
       )}
       <span class="orientation-option">
         <i class="fas {option?.icon}" aria-hidden="true"></i>
-        <span>{option?.label}</span>
+        <span
+          >{option
+            ? tDynamic(
+                option.value === "in" || option.value === "out"
+                  ? `create_ui_orientation_${option.value}_short`
+                  : `create_action_orientation_${option.value}_short`
+              )
+            : ""}</span
+        >
       </span>
     {/snippet}
   </SegmentedControl>

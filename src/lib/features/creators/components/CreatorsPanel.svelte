@@ -2,6 +2,7 @@
      face, prop, activity, and join date. Its panel-local `em` ramp keeps type,
      spacing, and avatars proportional at 4K without imposing a content cap. -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { onDestroy, onMount } from "svelte";
   import { browser } from "$app/environment";
   import { page } from "$app/state";
@@ -117,11 +118,11 @@
   });
 
   const viewOptions = $derived([
-    { value: "active" as const, label: "Active", count: roster.length },
-    { value: "new" as const, label: "New here", count: newCreatorIds.size },
+    { value: "active" as const, label: t("browse_verified_active"), count: roster.length },
+    { value: "new" as const, label: t("browse_verified_new_here"), count: newCreatorIds.size },
     {
       value: "following" as const,
-      label: "Following",
+      label: t("browse_verified_following"),
       count: roster.filter((c) => c.isFollowing).length,
       disabled: !canFollow,
     },
@@ -323,7 +324,7 @@
     openSequenceViewer(sequence, {
       source: "creator_directory",
       returnPath: "/creators",
-      returnLabel: "Creators",
+      returnLabel: t("browse_verified_creators"),
     });
   }
 
@@ -371,7 +372,7 @@
       await creatorsRequest;
     } catch (loadError) {
       console.error("[CreatorsPanel] Error loading creators:", loadError);
-      initError = "Failed to load creators. Please try again.";
+      initError = t("browse_verified_creators_load_failed");
     }
   });
 
@@ -462,8 +463,8 @@
       <div class="roster-view">
         <header class="command-row">
           <h2 class="title">
-            Creators
-            <span class="population" aria-label="{roster.length} creators">
+            {t("browse_verified_creators")}
+            <span class="population" aria-label={t("browse_ui_creators_count", { count: roster.length })}>
               <span class="dot" aria-hidden="true">·</span>{roster.length}
             </span>
           </h2>
@@ -471,7 +472,7 @@
           <div class="search-slot">
             <PanelSearch
               value={searchQuery}
-              placeholder="Search creators"
+              placeholder={t("browse_search_creators")}
               oninput={handleSearchInput}
               maxWidth="100%"
             />
@@ -487,7 +488,7 @@
             size="sm"
             density="compact"
             semantics="radiogroup"
-            ariaLabel="Roster view"
+            ariaLabel={t("browse_verified_roster_view")}
           />
         </header>
 
@@ -510,7 +511,7 @@
             <PanelState
               type="error"
               compact
-              title="Couldn't load creators"
+              title={t("browse_verified_creators_load_title")}
               message={activeError}
             />
           {:else if isLoading && roster.length === 0}
@@ -535,12 +536,12 @@
               type="empty"
               compact
               icon="fa-user-group"
-              title={searchQuery.trim() ? "No matches" : "Nobody here yet"}
+              title={searchQuery.trim() ? t("browse_verified_no_matches") : t("browse_verified_nobody_here")}
               message={searchQuery.trim()
-                ? `No creator matches "${searchQuery.trim()}".`
+                ? t("browse_verified_no_creator_matches", { query: searchQuery.trim() })
                 : view === "following"
-                  ? "Creators you follow will collect here."
-                  : "New creators will appear as they join."}
+                  ? t("browse_verified_followed_creators_empty")
+                  : t("browse_verified_new_creators_empty")}
             />
           {:else}
             {#if wallItems.length > 0}
@@ -576,10 +577,7 @@
 
             {#if publicCounts.creatorsWithWork > 0}
               <p class="denominator">
-                <span class="tabular">{publicCounts.creatorsWithWork}</span>
-                of
-                <span class="tabular">{publicCounts.totalCreators}</span>
-                creators have shared public work
+                {t("browse_verified_creators_shared_work", { count: publicCounts.creatorsWithWork, total: publicCounts.totalCreators })}
               </p>
             {/if}
           {/if}

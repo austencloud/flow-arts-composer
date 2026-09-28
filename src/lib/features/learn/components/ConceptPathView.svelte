@@ -22,7 +22,8 @@
   import CategoryHeader from "./CategoryHeader.svelte";
   import ConceptLevelMap from "./ConceptLevelMap.svelte";
   import { mutateCurrentUrl } from "$lib/shared/navigation/services/url-state";
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t, tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
+  import { localizedConcept } from "../domain/localized-concept";
 
   let {
     onConceptClick,
@@ -218,7 +219,7 @@
 
         {#if nextUpConcept()}
           <p class="next-lesson">
-            {t("learn_ui_after_this")} <span>{nextUpConcept()?.name}</span>
+            {t("learn_ui_after_this")} <span>{nextUpConcept() ? localizedConcept(nextUpConcept()!, "name") : ""}</span>
           </p>
         {/if}
       {/if}
@@ -269,7 +270,7 @@
       onclick={() => (showCourseMap = !showCourseMap)}
       ariaExpanded={showCourseMap}
     >
-      {showCourseMap ? "Hide course map" : "Explore the course map"}
+      {showCourseMap ? tDynamic("learn_map_hide") : tDynamic("learn_map_explore")}
       <i
         class="fa-solid {showCourseMap ? 'fa-chevron-up' : 'fa-chevron-down'}"
         aria-hidden="true"
