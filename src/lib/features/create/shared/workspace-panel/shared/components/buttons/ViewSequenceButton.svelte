@@ -7,6 +7,7 @@
   Choreographed entrance: hatches from nothing, overshoots, settles, then breathes.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
   import { WORKSPACE_BUTTON_ICON } from "../../workspace-button-layout";
 
@@ -42,27 +43,27 @@
   );
   const accessibleLabel = $derived(
     playbackState === "preparing"
-      ? "Cancel playback preparation"
+      ? t("create_workspace_cancel_playback_preparation")
       : playbackState === "retry"
-        ? "Retry playback after loading failed"
+        ? t("create_workspace_retry_playback")
         : isStopping
-          ? "Stop playback and return to card"
+          ? t("create_workspace_stop_playback")
           : purpose === "play"
             ? WORKSPACE_BUTTON_ICON.view.actionLabel
             : purpose === "expand-viewer"
-              ? "Expand sequence viewer"
-              : "Open sequence viewer"
+              ? t("create_workspace_expand_viewer")
+              : t("create_workspace_open_viewer")
   );
   const visibleLabel = $derived(
     playbackState === "preparing"
-      ? "Cancel"
+      ? t("common_cancel")
       : playbackState === "retry"
-        ? "Retry"
+        ? t("common_retry")
         : isStopping
-          ? "Stop"
+          ? t("viewer_ui_stop")
           : purpose === "play"
             ? WORKSPACE_BUTTON_ICON.view.visibleLabel
-            : "View"
+            : t("train_view_label")
   );
 
   /**

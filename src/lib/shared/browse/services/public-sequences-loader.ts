@@ -11,21 +11,12 @@
  */
 
 import { getErrorHandler } from "$lib/shared/application/get-error-handler";
-import {
-  collection,
-  getDocs,
-  query,
-  orderBy,
-  doc,
-  getDoc,
-  limit,
-  startAfter,
-  type DocumentData,
-  type Query,
-  type QueryDocumentSnapshot,
-  type QuerySnapshot,
+import type {
+  DocumentData,
+  Query,
+  QueryDocumentSnapshot,
+  QuerySnapshot,
 } from "firebase/firestore";
-import { getFirestoreInstance } from "$lib/shared/auth/firebase";
 import {
   getPublicSequencePath,
   getPublicSequencesPath,
@@ -62,6 +53,16 @@ function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T | null> {
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+// The public spinner imports this loader, and it can open from the bundled
+// index before any Firestore read. Loading Firebase on the first read lets the
+// spinner draw before Firebase downloads. The import() must name the Firebase
+// modules themselves: the build's small-chunk merge (vite.config.ts) can fold a
+// small wrapper module back into the page.
+async function loadFirestore() {
+  const { getFirestoreInstance } = await import("$lib/shared/auth/firebase");
+  return getFirestoreInstance();
 }
 
 export class PublicSequencesLoader {
@@ -263,7 +264,8 @@ export class PublicSequencesLoader {
     // there is not proof that a public sequence was deleted. Read the exact
     // public index document before returning null.
     if (!sourceRef && sequenceId) {
-      const firestore = await getFirestoreInstance();
+      const { doc, getDoc } = await import("firebase/firestore");
+      const firestore = await loadFirestore();
       const publicDoc = await getDoc(
         doc(firestore, getPublicSequencePath(sequenceId))
       );
@@ -335,7 +337,8 @@ export class PublicSequencesLoader {
     if (local && !networkStatusState.isOnline) return local;
 
     // Fetch full data from the source reference
-    const firestore = await getFirestoreInstance();
+    const { doc, getDoc } = await import("firebase/firestore");
+    const firestore = await loadFirestore();
     const read = getDoc(doc(firestore, sourceRef));
     const fullDoc =
       local && isDesktop()
@@ -504,7 +507,9 @@ export class PublicSequencesLoader {
   private async fetchPublicSequences(
     onFirstPage: (sequences: SequenceData[]) => void
   ): Promise<SequenceData[]> {
-    const firestore = await getFirestoreInstance();
+    const { collection, getDocs, limit, orderBy, query, startAfter } =
+      await import("firebase/firestore");
+    const firestore = await loadFirestore();
     const publicSeqRef = collection(firestore, getPublicSequencesPath());
     const sequences: SequenceData[] = [];
     const docs: PublicSequenceIndex[] = [];

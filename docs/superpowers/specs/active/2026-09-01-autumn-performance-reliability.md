@@ -49,12 +49,13 @@ This work extends existing owners:
 - `view-capture.ts`, tunnel-poster capture, scene-collection capture, and the
   offline exporter remain the capture consumers. They route through one shared
   readable-frame owner.
-- `AutumnPond.svelte` owns the pond surface and may change its shader/material
-  implementation while preserving the approved pond image.
-- `AutumnLighting.svelte` owns Autumn's moon shadow. Production performers and
-  props are animated casters, so the shadow stays live while Autumn is active
-  and the complete lighting rig leaves the renderer when Autumn is retained but
-  inactive.
+- `worlds/autumn/autumn-pond.ts`, with `autumn-pond-surface-material.ts`, owns
+  the pond surface and may change its shader/material implementation while
+  preserving the approved pond image.
+- `worlds/autumn/autumn-lighting.ts` owns Autumn's moon shadow. Production
+  performers and props are animated casters, so the shadow stays live while
+  Autumn is active and the complete lighting rig leaves the renderer when
+  Autumn is retained but inactive.
 - `autumn-geometry-tier.ts` remains the geometry-policy owner. It stops
   deleting authored placement counts and instead partitions exact authored
   instances into bounded culling cells.
@@ -65,6 +66,11 @@ This work extends existing owners:
 
 No parallel render loop, quality detector, capture service, or asset loader is
 introduced.
+
+The pond and lighting owners were `AutumnPond.svelte` and
+`AutumnLighting.svelte` when this spec was written. They moved into the shared
+Autumn world on 2026-09-04, and the unmounted Svelte copies were deleted on
+2026-09-28.
 
 ## Performance Contract
 

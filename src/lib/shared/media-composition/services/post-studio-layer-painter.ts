@@ -32,6 +32,8 @@ export interface PaintFrame {
   sequenceFrame?: SequenceFrame;
   /** The post's own clock, for overlays timed against the whole post. */
   projectTimeSeconds?: number;
+  /** The layer's framing right now, for a painter that places points itself. */
+  transform?: EvaluatedFrameLayer["transform"];
 }
 
 /** The painter's view of one evaluated layer at one post time. */
@@ -47,6 +49,7 @@ export function toPaintFrame(
     sourceTimeSeconds: layer.sourceTimeSeconds,
     sequenceFrame: layer.sequenceFrame,
     projectTimeSeconds,
+    transform: layer.transform,
   };
 }
 
@@ -98,6 +101,12 @@ export interface PostStudioLayerPainter {
    * (typically the background) rather than throwing.
    */
   prepare(target: { width: number; height: number }): Promise<void>;
+  /**
+   * A painter that frames its own drawing from `PaintFrame.transform`, so the
+   * export must not also turn and scale the context. The staff effects move
+   * points with the footage's framing but keep sparks and smoke upright.
+   */
+  readonly ownsTransform?: boolean;
   /** Draws synchronously into `rect` of `context`, in that context's pixels. */
   paint(
     context: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D,

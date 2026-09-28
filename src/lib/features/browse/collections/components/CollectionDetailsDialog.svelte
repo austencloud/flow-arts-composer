@@ -117,11 +117,10 @@ real profile exists.
         bind:value={credit}
         onkeydown={handleKeydown}
         maxlength="80"
-        placeholder="Concepts by Gage DeMello"
+        placeholder={t("browse_verified_credit_example")}
       />
       <span class="field-hint">
-        Shows on the card as a "by" line. Use it for someone who doesn't have a
-        profile yet.
+        {t("browse_verified_credit_hint")}
       </span>
     </label>
 

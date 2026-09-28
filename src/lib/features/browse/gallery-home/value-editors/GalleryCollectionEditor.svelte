@@ -81,7 +81,7 @@
         <span class="value-main">
           <span class="value-label" title={v.name}>{v.name}</span>
           {#if v.ownerName}
-            <span class="value-desc">Curated by {v.ownerName}</span>
+            <span class="value-desc">{t("browse_verified_curated_by", { name: v.ownerName })}</span>
           {/if}
           <span class="density-bar">
             <span

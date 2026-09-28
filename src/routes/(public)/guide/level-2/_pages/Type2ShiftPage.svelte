@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t as translate } from "$lib/shared/i18n/i18n.svelte.js";
   /**
    * Type 2 - Shift - Level 2 body page 7 (manifest `t2-shift`), faithful to old
    * p8. Type 2 hybrids combine a shift and a static motion; PADS puts the shift
@@ -177,44 +178,39 @@
 <div class="t2-page">
   <!-- Intro block. -->
   <p class="para" style="top:{60 * S}px; font-size:{16 * S}px; line-height:{18 * S}px">
-    Type 2 hybrids combine a shift and a static motion.<br />
-    These two motion types are different, so we use the high/low slots to differentiate them.<br />
-    To determine where they go, remember PADS.<br />
-    Because a shift (pro/anti) is higher than a static motion, we can confidently state that:
+    {@html translate("guide_l2_print_type2shiftpage_0")}
   </p>
 
   <!-- Slot rule + big W (shift|static). -->
   <p class="para bold" style="top:{149 * S}px; right:{142 * S}px; font-size:{20 * S}px; line-height:{24 * S}px">
-    For Type 2,<br />high = shift and low = static.
+    {@html translate("guide_l2_print_type2shiftpage_1")}
   </p>
   <p class="para" style="top:{215 * S}px; right:{142 * S}px; font-size:{16 * S}px; line-height:{19 * S}px">
-    This includes W, X, Y, Z, <span class="tka">Σ</span>, <span class="tka">Δ</span>, <span class="tka">Θ</span>, and <span class="tka">Ω</span>.
+    {@html translate("guide_l2_print_type2shiftpage_2")}
   </p>
   <div class="big-letter" style="left:{408 * S}px; top:{150 * S}px">W</div>
   <span class="cs hi" style="left:{458 * S}px; top:{152 * S}px">Shift</span>
   <span class="cs lo" style="left:{458 * S}px; top:{200 * S}px">Static</span>
 
   <p class="para" style="top:{251 * S}px; font-size:{16 * S}px; line-height:{19 * S}px">
-    Let’s add 1 high turn to a Type 2 motion, which only affects the shift.
+    {@html translate("guide_l2_print_type2shiftpage_3")}
   </p>
   <p class="para" style="top:{397 * S}px; font-size:{16 * S}px; line-height:{19 * S}px">
-    Since the static hand is still, this should be simple to execute.
+    {@html translate("guide_l2_print_type2shiftpage_4")}
   </p>
 
   <!-- Same/Opposite explanation. -->
   <p class="para" style="top:{441 * S}px; font-size:{16 * S}px; line-height:{18 * S}px">
-    Type 2 motions become more complex when we add turns to the static hand.<br />
-    Since this causes both props to rotate, it creates either a Same or Opposite relationship.<br />
-    To indicate this, add a dot above or below the letter.*
+    {@html translate("guide_l2_print_type2shiftpage_5")}
   </p>
   <p class="para bold" style="top:{492 * S}px; font-size:{16 * S}px; line-height:{18 * S}px">
-    A same-dot goes above and an opp-dot goes below.
+    {@html translate("guide_l2_print_type2shiftpage_6")}
   </p>
 
   <!-- Footnote. -->
   <div class="rule footnote" style="left:0; top:{757.2 * S}px; width:{612 * S}px"></div>
   <p class="para italic" style="top:{761 * S}px; font-size:{14.5 * S}px; line-height:{18 * S}px">
-    You can also use (s) or (o) as parameters to indicate “same” or “opp”. E.g. “W(s,0,1)”
+    {@html translate("guide_l2_print_type2shiftpage_7")}
   </p>
 
   <!-- Group separators. -->
@@ -238,13 +234,13 @@
 
     <!-- Captions. -->
     {#if strip.captions}
-      <span class="cap" style="left:{150 * S}px; top:{(strip.y - 32) * S}px">thumbs:</span>
-      <span class="frame-cap" style="left:{START_X * S}px; top:{(strip.y - 32) * S}px; width:{SIZE * S}px">start</span>
-      <span class="frame-cap" style="left:{HALF_X * S}px; top:{(strip.y - 32) * S}px; width:{SIZE * S}px">halfway</span>
-      <span class="frame-cap" style="left:{END_X * S}px; top:{(strip.y - 32) * S}px; width:{SIZE * S}px">end</span>
+      <span class="cap" style="left:{150 * S}px; top:{(strip.y - 32) * S}px">{translate("guide_l2_print_thumbs")}</span>
+      <span class="frame-cap" style="left:{START_X * S}px; top:{(strip.y - 32) * S}px; width:{SIZE * S}px">{translate("guide_l2_frame_start")}</span>
+      <span class="frame-cap" style="left:{HALF_X * S}px; top:{(strip.y - 32) * S}px; width:{SIZE * S}px">{translate("guide_l2_frame_halfway")}</span>
+      <span class="frame-cap" style="left:{END_X * S}px; top:{(strip.y - 32) * S}px; width:{SIZE * S}px">{translate("guide_l2_frame_end")}</span>
     {/if}
-    <span class="thumb-cap" style="left:{START_X * S}px; top:{(strip.y - 16) * S}px; width:{SIZE * S}px">in</span>
-    <span class="thumb-cap" style="left:{END_X * S}px; top:{(strip.y - 16) * S}px; width:{SIZE * S}px">out</span>
+    <span class="thumb-cap" style="left:{START_X * S}px; top:{(strip.y - 16) * S}px; width:{SIZE * S}px">{translate("guide_l2_frame_in")}</span>
+    <span class="thumb-cap" style="left:{END_X * S}px; top:{(strip.y - 16) * S}px; width:{SIZE * S}px">{translate("guide_l2_frame_out")}</span>
 
     <!-- start -->
     <div class="mini" style="left:{START_X * S}px; top:{strip.y * S}px; width:{SIZE * S}px; height:{SIZE * S}px">

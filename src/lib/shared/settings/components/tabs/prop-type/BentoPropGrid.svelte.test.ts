@@ -82,6 +82,141 @@ describe("BentoPropGrid style drill-down", () => {
   });
 });
 
+describe("BentoPropGrid style settings", () => {
+  beforeEach(async () => {
+    await page.viewport(760, 800);
+    document.body.style.margin = "0";
+  });
+
+  const openSection = (name: string) =>
+    document.querySelector(`section[aria-label="${name}"]`);
+
+  // Every Triad pick once opened a details page that held nothing but the
+  // size toggle. The styles page carries the size, and a pick stays there.
+  it("keeps a picked style on its styles page, with its size there", async () => {
+    const onSelect = vi.fn();
+    const { rerender } = render(BentoPropGrid, {
+      selectedPropType: PropType.TRIAD,
+      onSelect,
+      allowedProps: [PropType.TRIAD, PropType.TRIGENG, PropType.BIGTRIAD],
+    });
+
+    await page.getByRole("button", { name: "Choose Triad style" }).click();
+    const styles = page.getByRole("region", { name: "Triad styles" });
+    await expect
+      .element(styles.getByRole("button", { name: "Big", exact: true }))
+      .toBeVisible();
+
+    await page
+      .getByRole("button", { name: "Select Triad 3D prop type", exact: true })
+      .click();
+    expect(onSelect).toHaveBeenLastCalledWith(PropType.TRIAD);
+    // Past the page swap a details page would take.
+    await new Promise((resolve) => setTimeout(resolve, 600));
+    expect(openSection("Triad details")).toBeNull();
+    expect(openSection("Triad styles")).not.toBeNull();
+
+    await styles.getByRole("button", { name: "Big", exact: true }).click();
+    expect(onSelect).toHaveBeenLastCalledWith(PropType.BIGTRIAD);
+
+    // The tiles follow the size, so a later pick keeps it.
+    await rerender({ selectedPropType: PropType.BIGTRIAD });
+    const bigModel = page.getByRole("button", {
+      name: "Select Big Triad 3D prop type",
+      exact: true,
+    });
+    await expect.element(bigModel).toBeVisible();
+    await expect
+      .element(styles.getByRole("button", { name: "Big", exact: true }))
+      .toHaveAttribute("aria-pressed", "true");
+    await bigModel.click();
+    expect(onSelect).toHaveBeenLastCalledWith(PropType.BIGTRIAD);
+  });
+
+  it("keeps a buugeng style's chirality on the same page", async () => {
+    const onChange = vi.fn();
+    render(BentoPropGrid, {
+      selectedPropType: PropType.TRIGENG,
+      onSelect: vi.fn(),
+      allowedProps: [PropType.TRIAD, PropType.TRIGENG],
+      chirality: {
+        hands: [
+          { hand: "left", flipped: false },
+          { hand: "right", flipped: false },
+        ],
+        onChange,
+      },
+    });
+
+    await page.getByRole("button", { name: "Choose Triad style" }).click();
+    const styles = page.getByRole("region", { name: "Triad styles" });
+    await styles.getByRole("radio", { name: /^B/ }).first().click();
+    expect(onChange).toHaveBeenCalledWith("left", true);
+  });
+});
+
+describe("BentoPropGrid colours on a drill", () => {
+  beforeEach(async () => {
+    await page.viewport(760, 800);
+    document.body.style.margin = "0";
+  });
+
+  const colorsSection = () =>
+    document.querySelector<HTMLElement>("section.primary-colors");
+  // True while an animation runs on the colours or on a box holding them.
+  const fading = (el: HTMLElement | null) =>
+    !!el &&
+    document.getAnimations().some((animation) => {
+      const target = (animation.effect as KeyframeEffect | null)?.target;
+      return target instanceof Element && target.contains(el);
+    });
+
+  // The colours once vanished in one frame, then squashed upward, while the
+  // tiles below them faded. They belong to the grid's page and leave with it.
+  it("fades out with the tiles as one page, without resizing", async () => {
+    render(BentoPropGrid, {
+      selectedPropType: PropType.BUUGENG,
+      onSelect: vi.fn(),
+      allowedProps: [PropType.BUUGENG, PropType.BIGBUUGENG],
+    });
+
+    const colors = colorsSection();
+    const tile = document.querySelector<HTMLElement>("[data-prop-tile]");
+    if (!colors || !tile) throw new Error("picker did not render");
+    // Opening the picker shows them at rest.
+    expect(fading(colors)).toBe(false);
+    const height = colors.getBoundingClientRect().height;
+    const gap =
+      tile.getBoundingClientRect().top - colors.getBoundingClientRect().top;
+
+    await page
+      .getByRole("button", { name: "Select Buugeng prop type" })
+      .click();
+    const leaving: { height: number; gap: number; fading: boolean }[] = [];
+    await expect
+      .poll(() => {
+        if (!colors.isConnected) return true;
+        const box = colors.getBoundingClientRect();
+        leaving.push({
+          height: box.height,
+          gap: tile.getBoundingClientRect().top - box.top,
+          fading: fading(colors),
+        });
+        return false;
+      })
+      .toBe(true);
+
+    expect(leaving.some((frame) => frame.fading)).toBe(true);
+    for (const frame of leaving) {
+      expect(frame.height).toBeCloseTo(height, 0);
+      expect(frame.gap).toBeCloseTo(gap, 0);
+    }
+
+    await page.getByRole("button", { name: "Back to all props" }).click();
+    await expect.poll(() => fading(colorsSection())).toBe(true);
+  });
+});
+
 describe("BentoPropGrid prop look", () => {
   beforeEach(async () => {
     await page.viewport(760, 800);

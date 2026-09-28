@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { localizePrintLabel } from "../_components/localize-print-label";
+  import { t as translate } from "$lib/shared/i18n/i18n.svelte.js";
   /**
    * 1|1 - Type 2/3 - Level 2 body page 14 (manifest `one-one-t23`), faithful to old
    * p15. Cherry-picked 1|1 examples where both hands rotate, so a Same/Opp dot
@@ -188,10 +190,10 @@
 <div class="oo23-page">
   <!-- Section headers. -->
   <div class="section" style="left:{22 * S}px; top:{4 * S}px; font-size:{26 * S}px">
-    Type 2 - <span style="color:#7b3fa0">Shift</span>
+    {translate("guide_l2_print_type_2")} - <span style="color:#7b3fa0">Shift</span>
   </div>
   <div class="section" style="left:{22 * S}px; top:{279 * S}px; font-size:{26 * S}px">
-    Type 3 - <span style="color:#2e9e5b">Cross</span><span style="color:#7b3fa0">-Shift</span>
+    {translate("guide_l2_print_type_3")} - <span style="color:#2e9e5b">Cross</span><span style="color:#7b3fa0">-Shift</span>
   </div>
 
   <!-- Rules. -->
@@ -218,13 +220,13 @@
 
     <!-- Captions. -->
     {#if strip.captions}
-      <span class="cap" style="left:{186 * S}px; top:{(strip.y - 32) * S}px">thumbs:</span>
-      <span class="frame-cap" style="left:{START_X * S}px; top:{(strip.y - 32) * S}px; width:{SIZE * S}px">start</span>
-      <span class="frame-cap" style="left:{HALF_X * S}px; top:{(strip.y - 32) * S}px; width:{SIZE * S}px">halfway</span>
-      <span class="frame-cap" style="left:{END_X * S}px; top:{(strip.y - 32) * S}px; width:{SIZE * S}px">end</span>
+      <span class="cap" style="left:{186 * S}px; top:{(strip.y - 32) * S}px">{translate("guide_l2_print_thumbs")}</span>
+      <span class="frame-cap" style="left:{START_X * S}px; top:{(strip.y - 32) * S}px; width:{SIZE * S}px">{translate("guide_l2_frame_start")}</span>
+      <span class="frame-cap" style="left:{HALF_X * S}px; top:{(strip.y - 32) * S}px; width:{SIZE * S}px">{translate("guide_l2_frame_halfway")}</span>
+      <span class="frame-cap" style="left:{END_X * S}px; top:{(strip.y - 32) * S}px; width:{SIZE * S}px">{translate("guide_l2_frame_end")}</span>
     {/if}
-    <span class="thumb-cap" style="left:{START_X * S}px; top:{(strip.y - 16) * S}px; width:{SIZE * S}px">in</span>
-    <span class="thumb-cap" style="left:{END_X * S}px; top:{(strip.y - 16) * S}px; width:{SIZE * S}px">{strip.endThumb}</span>
+    <span class="thumb-cap" style="left:{START_X * S}px; top:{(strip.y - 16) * S}px; width:{SIZE * S}px">{translate("guide_l2_frame_in")}</span>
+    <span class="thumb-cap" style="left:{END_X * S}px; top:{(strip.y - 16) * S}px; width:{SIZE * S}px">{localizePrintLabel(strip.endThumb)}</span>
 
     <!-- start -->
     <div class="mini" style="left:{START_X * S}px; top:{strip.y * S}px; width:{SIZE * S}px; height:{SIZE * S}px">

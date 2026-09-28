@@ -6,6 +6,7 @@
    * source of truth for this data).
    */
   import GuideSection from "../../../level-1/_components/GuideSection.svelte";
+  import { t as translate } from "$lib/shared/i18n/i18n.svelte.js";
   import SequenceShowcase from "../../../level-1/_components/SequenceShowcase.svelte";
   import TurnStrip, {
     type TurnStripFrame,
@@ -227,11 +228,10 @@
   });
 </script>
 
-<GuideSection id="double-turn-dashes" title="Dashes">
+<GuideSection id="double-turn-dashes" title={translate("guide_l2_dashes_title")}>
   <div class="section-body">
     <p>
-      Now let's add a double turn to a dash. It's relatively complex, so we'll
-      break it down into four parts.
+      {translate("guide_l2_double_dashes_intro")}
     </p>
   </div>
 
@@ -247,7 +247,7 @@
         <TurnStrip
           frames={quartersFrames}
           activeT={t}
-          caption="Broken into quarters so you can catch the staff spinning through the straight crossing from south to north"
+          caption={translate("guide_l2_double_dashes_quarters")}
         />
       {/snippet}
     </SequenceShowcase>
@@ -255,18 +255,15 @@
 
   <div class="section-body">
     <p>
-      A base dash starting from thumb in ends with thumb out, therefore a dash
-      with 2 turns also ends with thumb out (in → out)
+      {translate("guide_l2_double_dashes_thumb")}
     </p>
 
     <p>
-      For a vertical dash such as this, you can use up/down as indicators (up →
-      down → up)
+      {translate("guide_l2_double_dashes_direction")}
     </p>
 
     <p>
-      As with all dashes, it's important to travel in a straight handpath even
-      though the prop is rotating. Here is the same motion broken in half:
+      {translate("guide_l2_double_dashes_path")}
     </p>
   </div>
 
@@ -282,7 +279,7 @@
         <TurnStrip
           frames={halvesFrames}
           activeT={t}
-          caption="The same motion in half instead of quarters - the staff has already completed one full rotation by the midpoint"
+          caption={translate("guide_l2_double_dashes_halves")}
         />
       {/snippet}
     </SequenceShowcase>

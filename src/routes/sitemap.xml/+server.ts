@@ -1,6 +1,6 @@
 import { LANDING_DOMAIN } from "../../config/domains";
 import { GUIDE_BODY_PAGES } from "../(public)/guide/level-1/_data/guide-manifest";
-import { LEVEL2_TOPIC_PAGES } from "../(public)/guide/level-2/_data/level2-topic-manifest";
+import { LEVEL2_TOPIC_PAGES } from "../(public)/guide/level-2/_data/level2-topic-routes";
 import { TIMING_DIRECTION_ARTICLE_SLUGS } from "../(public)/timing-and-direction/_data/timing-direction-articles";
 import { getAvailableConcepts } from "$lib/features/learn/domain/concept-experience-registry";
 import { getFirestoreRest } from "$lib/server/firestore/firestore-rest";
@@ -40,8 +40,6 @@ const pages: SitemapEntry[] = [
   { url: "timing-and-direction" },
   // Common trick names, each linked to the page that explains it.
   { url: "tricks" },
-  // Named flowers and dashes, each drawn from the motion that makes it.
-  { url: "flowers" },
   // The archive, rebuilt as a chronological catalog and un-gated 2026-07-27
   // (2026-07-26-notation-catalog-design.md), moved from /notation to /history
   // on 2026-09-03. /notation 301s here and is omitted, same as /roots below.
@@ -85,6 +83,7 @@ const pages: SitemapEntry[] = [
   { url: "guide/level-2/turns" },
   { url: "guide/level-2/double-turns" },
   { url: "guide/ratios" },
+  { url: "guide/prospin-and-inspin" },
   { url: "guide/motion-paths" },
   { url: "guide/codex" },
   // The interactive lesson course. The index is the course landing; each
@@ -105,7 +104,7 @@ const guideLevel1Entries = GUIDE_BODY_PAGES.map((p) => ({
 
 /**
  * Every Level-2 topic route (/guide/level-2/<slug>), enumerated from
- * level2-topic-manifest.ts so a new topic page is listed automatically -
+ * level2-topic-routes.ts so a new topic page is listed automatically -
  * mirrors guideLevel1Entries above.
  */
 const guideLevel2TopicEntries = LEVEL2_TOPIC_PAGES.map((p) => ({

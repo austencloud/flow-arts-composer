@@ -1444,7 +1444,7 @@ function buildViewer3DState(
       if (!p) return;
       p.position.x = ps.position.x;
       p.position.z = ps.position.z;
-      p.setFacingAngle(ps.facingAngle);
+      p.snapFacingAngle(ps.facingAngle);
       p.setHandPlane("left", ps.customLeftPlane);
       p.setHandPlane("right", ps.customRightPlane);
       if (_currentSequenceData && !p.totalSteps) {
@@ -1908,7 +1908,7 @@ function buildViewer3DState(
           if (!p) return;
           p.position.x = snap.position.x;
           p.position.z = snap.position.z;
-          p.setFacingAngle(snap.facingAngle);
+          p.snapFacingAngle(snap.facingAngle);
           p.setHandPlane("left", snap.customLeftPlane);
           p.setHandPlane("right", snap.customRightPlane);
           if (snap.characterId) p.setCharacter(snap.characterId);
@@ -2109,7 +2109,7 @@ function buildViewer3DState(
           if (!p) return;
           p.position.x = snap.position.x;
           p.position.z = snap.position.z;
-          p.setFacingAngle(snap.facingAngle);
+          p.snapFacingAngle(snap.facingAngle);
           p.setHandPlane("left", snap.customLeftPlane);
           p.setHandPlane("right", snap.customRightPlane);
           if (snap.characterId) p.setCharacter(snap.characterId);

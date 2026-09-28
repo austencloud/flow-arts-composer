@@ -40,6 +40,7 @@
   import { applyHandColorOverride } from "$lib/shared/pictograph/prop/domain/prop-preview-color";
   import { normalizePropLook } from "$lib/shared/pictograph/prop/domain/prop-look";
   import { normalizeFanAppearance } from "$lib/shared/pictograph/prop/domain/fan-appearance";
+  import { normalizeTriangleGrip } from "$lib/shared/pictograph/prop/domain/triangle-appearance";
   import { createMotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
   import { PropRotAngleManager } from "$lib/shared/pictograph/prop/services/prop-rot-angle-manager";
   import { LOCATION_ANGLES } from "$lib/shared/foundation/domain/math-constants";
@@ -174,6 +175,7 @@
     const appearance = {
       propLook: normalizePropLook(settings.propArtwork),
       fanAppearance: normalizeFanAppearance(settings.fanAppearance),
+      triangleGrip: normalizeTriangleGrip(settings.triangleGrip),
     };
 
     // Load left-hand prop SVG

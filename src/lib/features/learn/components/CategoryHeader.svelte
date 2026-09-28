@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { ConceptCategory } from "../domain/types";
-  import { CONCEPT_CATEGORIES } from "../domain/concepts";
+  import { tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
 
   let {
     category,
@@ -16,9 +16,9 @@
 </script>
 
 <header class="category-heading">
-  <h3>{CONCEPT_CATEGORIES[category].name}</h3>
-  <span class="count">{completedCount} of {totalCount} completed</span>
-  {#if premiumGated}<span class="premium">Premium</span>{/if}
+  <h3>{tDynamic(`learn_category_${category}`)}</h3>
+  <span class="count">{tDynamic("learn_category_completed", { completed: completedCount, total: totalCount })}</span>
+  {#if premiumGated}<span class="premium">{tDynamic("learn_card_premium")}</span>{/if}
 </header>
 
 <style>

@@ -6,6 +6,7 @@ import {
 } from "./src/config/vite-dev-watch-policy";
 import { createViteDependencyCachePlan } from "./src/config/vite-dependency-cache";
 import { createViteDependencyRefreshPlugin } from "./src/config/vite-plugin-dependency-refresh";
+import { deployStaticCopyPlugin } from "./src/config/vite-plugin-deploy-static-copy";
 import { SSR_RESOLVE_CONDITIONS } from "./src/config/vite-ssr-conditions";
 import { featureGatePlugin } from "./src/config/vite-plugin-feature-gate";
 import { museumPlacementPlugin } from "./src/lib/features/museum/dev/museum-placement-plugin";
@@ -947,6 +948,7 @@ export default defineConfig(({ command, mode }) => ({
     // For state preservation across HMR, use `// @hmr:keep-all` comments.
     sveltekit(),
     clientOnlyChunkMergePlugin(),
+    deployStaticCopyPlugin(), // Copies static/ into the client build minus files the deploy trim deletes
     dictionaryPlugin(),
     screenshotsPlugin(), // Screenshot gallery for Lab module
     fontCorsPlugin(), // 📱 CORS headers for fonts (mobile debugging)
@@ -1279,6 +1281,29 @@ export default defineConfig(({ command, mode }) => ({
       "dompurify",
       "three/examples/jsm/loaders/KTX2Loader.js",
       "three/examples/jsm/environments/RoomEnvironment.js",
+
+      // Discovered at runtime on :5173 in the week to 2026-09-28: 39 full
+      // page reloads, most of these found again after every restart. Inbox
+      // links, QR scanning, the desktop (Tauri) bridge, theme and sidebar,
+      // push, thumbnail metrics, card export, the raster fallback, the grip
+      // lab, and the CAPs notation page.
+      "linkifyjs",
+      "barcode-detector/ponyfill",
+      "@tauri-apps/api/core",
+      "@tauri-apps/api/path",
+      "@tauri-apps/plugin-fs",
+      "@tauri-apps/plugin-updater",
+      "svelte-awesome-color-picker",
+      "@austencloud/theme",
+      "@austencloud/sidebar",
+      "@capacitor/push-notifications",
+      "@datadog/sketches-js",
+      "modern-screenshot",
+      "pdf-lib",
+      "jszip",
+      "canvas",
+      "three/examples/jsm/controls/TransformControls.js",
+      "motion",
     ],
     exclude: [
       "pdfjs-dist",

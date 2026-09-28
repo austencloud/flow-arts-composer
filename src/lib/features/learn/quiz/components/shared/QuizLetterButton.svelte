@@ -2,6 +2,7 @@
 QuizLetterButton - Answer button for quiz
 -->
 <script lang="ts">
+  import { tDynamic } from "$lib/shared/i18n/i18n.svelte";
   let {
     letter,
     state,
@@ -22,7 +23,7 @@ QuizLetterButton - Answer button for quiz
   class:dimmed={state === "dimmed"}
   {onclick}
   {disabled}
-  aria-label="Answer: {letter}"
+  aria-label={tDynamic("learn_controls_answer_letter", { letter })}
 >
   <span class="letter-container">
     <span class="letter">{letter}</span>

@@ -5,14 +5,15 @@
   Clears the entire sequence when clicked.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
   import { WORKSPACE_BUTTON_ICON } from "../../workspace-button-layout";
 
   // Props
-  const {
+  let {
     onclick,
     disabled = false,
-    label = "Clear sequence",
+    label,
     quiet = false,
   }: {
     onclick?: () => void;
@@ -21,6 +22,7 @@
     /** Plain surface with a red icon, for Assemble's quiet rail. */
     quiet?: boolean;
   } = $props();
+  const accessibleLabel = $derived(label ?? t("create_workspace_clear_sequence"));
 
   // Services
   const hapticService = getHapticFeedback();
@@ -39,10 +41,10 @@
   data-testid="clear-sequence-button"
   data-ghost="safe"
   data-ghost-kind="clear"
-  data-ghost-label={label}
+  data-ghost-label={accessibleLabel}
   onclick={handleClick}
-  aria-label={label}
-  title={label}
+  aria-label={accessibleLabel}
+  title={accessibleLabel}
 >
   <i class="fa-solid {WORKSPACE_BUTTON_ICON.clear.icon}" aria-hidden="true"></i>
   <span class="workspace-action-label" aria-hidden="true">

@@ -120,7 +120,7 @@
     {
       id: "mirror",
       icon: "left-right",
-      label: "Mirror",
+      label: t("create_ui_mirror"),
       btnColor: "139, 92, 246",
       action: onMirror,
       disabled,
@@ -128,7 +128,7 @@
     {
       id: "flip",
       icon: "up-down",
-      label: "Flip",
+      label: t("create_transform_flip"),
       btnColor: "99, 102, 241",
       action: onFlip,
       disabled,
@@ -136,7 +136,7 @@
     {
       id: "swap",
       icon: "arrows-rotate",
-      label: "Swap",
+      label: t("create_transform_swap"),
       btnColor: "16, 185, 129",
       action: onSwap,
       disabled: disabled || swapDisabled,
@@ -145,7 +145,7 @@
     {
       id: "invert",
       icon: "repeat",
-      label: "Invert",
+      label: t("create_transform_invert"),
       btnColor: "245, 158, 11",
       action: onInvert,
       disabled,
@@ -153,7 +153,7 @@
     {
       id: "rotate",
       icon: "rotate-left",
-      label: "Rotate L",
+      label: t("create_action_rotate_left_short"),
       btnColor: "249, 115, 22",
       action: onRotateCCW,
       disabled,
@@ -161,7 +161,7 @@
     {
       id: "rotate",
       icon: "rotate-right",
-      label: "Rotate R",
+      label: t("create_action_rotate_right_short"),
       btnColor: "249, 115, 22",
       action: onRotateCW,
       disabled,
@@ -172,7 +172,7 @@
     {
       id: "turn-pattern",
       icon: "wand-magic-sparkles",
-      label: "Turn Pattern",
+      label: t("create_transform_turn_pattern"),
       btnColor: "20, 184, 166",
       action: onTurnPattern,
       disabled: !hasSequence,
@@ -181,7 +181,7 @@
     {
       id: "direction",
       icon: "compass",
-      label: "Direction",
+      label: t("create_transform_direction"),
       btnColor: "14, 165, 233",
       action: onRotationDirection,
       disabled: !hasSequence,
@@ -190,7 +190,7 @@
     {
       id: "duration",
       icon: "stopwatch",
-      label: "Duration",
+      label: t("clip_duration"),
       btnColor: "251, 146, 60",
       action: onDuration,
       disabled: !hasSequence,
@@ -199,7 +199,7 @@
     {
       id: "rewind",
       icon: "backward",
-      label: "Rewind",
+      label: t("create_transform_rewind"),
       btnColor: "244, 63, 94",
       action: onRewind,
       disabled,
@@ -210,7 +210,7 @@
           {
             id: "extend" as const,
             icon: "circle-check",
-            label: "Extend",
+            label: t("create_transform_extend"),
             btnColor: "34, 197, 94",
             action: onExtend,
             disabled: !hasSequence || isExtending,
@@ -223,7 +223,9 @@
           {
             id: "shift-start" as const,
             icon: shiftStartActive ? "xmark" : "forward",
-            label: shiftStartActive ? "Choosing Start" : "Choose Start",
+            label: shiftStartActive
+              ? t("create_action_choosing_start")
+              : t("create_transform_choose_start"),
             btnColor: "6, 182, 212",
             action: onShiftStart,
             disabled: !hasSequence || isTransforming || !canShiftStart,
@@ -239,7 +241,7 @@
     {
       id: "edit-turns",
       icon: "sliders-h",
-      label: "Edit Turns",
+      label: t("create_transform_edit_turns"),
       btnColor: "59, 130, 246",
       action: onTurns,
       disabled: !hasSelection,
@@ -250,7 +252,7 @@
           {
             id: "edit-in-construct" as const,
             icon: "pen-to-square",
-            label: "Edit in Construct",
+            label: t("create_transform_edit_in_construct"),
             btnColor: "124, 58, 237",
             action: onEditInConstructor,
             disabled: !hasSequence,
@@ -279,11 +281,15 @@
         : editActions
   );
 
-  const categories: { id: Category; label: string }[] = [
-    { id: "transform", label: "Transform" },
-    { id: "patterns", label: "Patterns" },
-    { id: "edit", label: "Edit" },
-  ];
+  const categories = $derived<{ id: Category; label: string }[]>([
+    { id: "transform", label: t("create_transform_heading") },
+    { id: "patterns", label: t("create_transform_patterns") },
+    { id: "edit", label: t("viewer_edit") },
+  ]);
+
+  const activeCategoryLabel = $derived(
+    categories.find((category) => category.id === activeCategory)?.label ?? ""
+  );
 
   function handleLongPress(actionId: string) {
     // Only trigger help for known action help IDs (not edit-turns or edit-in-construct)
@@ -332,9 +338,9 @@
     class="action-grid"
     id="panel-{activeCategory}"
     role="tabpanel"
-    aria-label="{activeCategory} actions"
+    aria-label={t("create_action_category_actions", { category: activeCategoryLabel })}
   >
-    {#each activeActions as action (action.id + action.label)}
+    {#each activeActions as action (action.id + action.icon)}
       {#if action.id === "swap"}
         <MobileActionButton
           icon={action.icon}

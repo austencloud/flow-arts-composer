@@ -77,7 +77,7 @@
   const motionScale = $derived(resolveMotionScale(prefersReducedMotion()));
 
   let assets = $state<AutumnEnvironmentAssets | null>(null);
-  let world = $state<AutumnEnvironmentWorld | null>(null);
+  let world = $state.raw<AutumnEnvironmentWorld | null>(null);
   let bootState = $state(createAutumnBootState());
   let environmentFailure = $state<unknown>(null);
   let environmentFailureMessage = $state(
@@ -86,8 +86,13 @@
   let generation = 0;
   let elapsed = 0;
 
+  // Reports arrive synchronously from inside the load and world effects. A
+  // tracked read here would subscribe them to the ledger the load effect
+  // replaces on every run, and that effect would restart the load forever.
   function reportAsset(asset: AutumnBootAsset, status: AutumnBootStatus): void {
-    bootState = setAutumnBootAsset(bootState, asset, status);
+    untrack(() => {
+      bootState = setAutumnBootAsset(bootState, asset, status);
+    });
   }
 
   $effect(() => {

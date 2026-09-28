@@ -77,6 +77,22 @@ function Test-SupervisorAlive {
     return $alive
 }
 
+function Get-HttpStatus {
+    param(
+        [string]$Url,
+        [bool]$SkipCertificateCheck = $false,
+        [int]$TimeoutSec = 8,
+        [string]$Accept = ""
+    )
+
+    $curlArguments = @("-g", "-s", "-o", "NUL", "-w", "%{http_code}", "--max-time", $TimeoutSec)
+    if ($SkipCertificateCheck) { $curlArguments += "-k" }
+    if ($Accept) { $curlArguments += @("-H", "Accept: $Accept") }
+    $curlArguments += $Url
+
+    return & curl.exe @curlArguments
+}
+
 function Test-Http200 {
     param(
         [string]$Url,
@@ -84,17 +100,45 @@ function Test-Http200 {
         [int]$TimeoutSec = 8
     )
 
-    $curlArguments = @("-g", "-s", "-o", "NUL", "-w", "%{http_code}", "--max-time", $TimeoutSec)
-    if ($SkipCertificateCheck) { $curlArguments += "-k" }
-    $curlArguments += $Url
-
-    $code = & curl.exe @curlArguments
-    return $code -eq "200"
+    return (Get-HttpStatus $Url $SkipCertificateCheck $TimeoutSec) -eq "200"
 }
 
+# Vite answers this Accept header itself with a 204 before any page renders,
+# which separates a live server that is still rendering from a dead one.
+function Test-VitePing([string]$Url) {
+    return (Get-HttpStatus $Url $true 5 "text/x-vite-ping") -eq "204"
+}
+
+function Get-TkaDevTunnelToken {
+    param([string]$TokenFile)
+
+    if (-not (Test-Path -LiteralPath $TokenFile)) { return $null }
+    return (Get-Content -LiteralPath $TokenFile -Raw).Trim()
+}
+
+# True when a cloudflared command line runs this tunnel, by name or by its
+# token. Other tunnels on this machine (dev2, dev3, tka-mcp) never match.
+function Test-TkaDevTunnelCommand {
+    param([string]$CommandLine, [string]$Token)
+
+    if (-not $CommandLine) { return $false }
+    $isNamedTunnel = $CommandLine -match '(?i)(?:^|\s)run\s+tka-dev(?:\s|$)'
+    $usesManagedToken = $Token -and $CommandLine.Contains($Token)
+    return [bool]($isNamedTunnel -or $usesManagedToken)
+}
+
+# The Windows service named Cloudflared runs the remotely managed tka-mcp
+# tunnel, which carries mcp.tkaflowarts.com to the Flow Arts Knowledge MCP
+# server (mcp-server/deploy/README.md). It must stay running. Refuse to launch
+# only when that service runs this tunnel instead. PathName holds a tunnel
+# token, so never print it.
 function Test-CompetingCloudflaredService {
-    $service = Get-Service -Name "Cloudflared" -ErrorAction SilentlyContinue
-    return $service -and $service.Status -eq "Running"
+    param([string]$TokenFile)
+
+    $service = Get-CimInstance Win32_Service -Filter "Name = 'Cloudflared'" -ErrorAction SilentlyContinue
+    if (-not $service -or $service.State -ne "Running") { return $false }
+
+    return Test-TkaDevTunnelCommand $service.PathName (Get-TkaDevTunnelToken $TokenFile)
 }
 
 # A previous launcher or an ad-hoc tunnel command can leave a connector alive
@@ -104,21 +148,9 @@ function Test-CompetingCloudflaredService {
 function Get-StaleTkaTunnelProcesses {
     param([string]$TokenFile)
 
-    $token = if (Test-Path -LiteralPath $TokenFile) {
-        (Get-Content -LiteralPath $TokenFile -Raw).Trim()
-    } else {
-        $null
-    }
-
+    $token = Get-TkaDevTunnelToken $TokenFile
     return @(Get-CimInstance Win32_Process -Filter "Name = 'cloudflared.exe'" -ErrorAction SilentlyContinue |
-        Where-Object {
-            $commandLine = $_.CommandLine
-            if (-not $commandLine) { return $false }
-
-            $isNamedTunnel = $commandLine -match '(?i)(?:^|\s)run\s+tka-dev(?:\s|$)'
-            $usesManagedToken = $token -and $commandLine.Contains($token)
-            return $isNamedTunnel -or $usesManagedToken
-        })
+        Where-Object { Test-TkaDevTunnelCommand $_.CommandLine $token })
 }
 
 function Clear-StaleTkaTunnelProcesses {
@@ -340,8 +372,8 @@ $tunnelProc = $null
 $hasTunnelCredentials = (Test-Path -LiteralPath $tokenFile) -or (Test-Path -LiteralPath $certFile)
 $manageTunnel = $cloudflared -and $hasTunnelCredentials
 
-if ($manageTunnel -and (Test-CompetingCloudflaredService)) {
-    throw "The Windows Cloudflared service is already running and would create a second tka-dev connector. Stop and disable that service before starting the Agent Hub dev server."
+if ($manageTunnel -and (Test-CompetingCloudflaredService $tokenFile)) {
+    throw "The Windows Cloudflared service runs the tka-dev tunnel and would create a second tka-dev connector. Stop and disable that service before starting the Agent Hub dev server."
 }
 if ($manageTunnel) {
     Clear-StaleTkaTunnelProcesses $tokenFile
@@ -403,6 +435,7 @@ try {
     $originUrl = "https://[::1]:5173/"
     $nextHealthProbeAt = Get-Date
     $originFailureCount = 0
+    $originBusySince = $null
     $publicFailureCount = 0
     $tunnelRestartCount = 0
     while ($viteProc -and -not $viteProc.HasExited) {
@@ -423,7 +456,21 @@ try {
             $publicFailureCount = 0
             $nextHealthProbeAt = (Get-Date).AddSeconds(10)
         } elseif ((Get-Date) -ge $nextHealthProbeAt) {
-            if (-not (Test-Http200 $originUrl $true)) {
+            $originStatus = Get-HttpStatus $originUrl $true
+            if ($originStatus -eq "000" -and (Test-VitePing $originUrl)) {
+                # The page outlasted the probe, but Vite itself answered. The
+                # first render after a restart can take minutes on a loaded
+                # machine; counting it as a failure turned a slow restart into
+                # a full cold boot.
+                if (-not $originBusySince) { $originBusySince = Get-Date }
+                $originBusySeconds = [int]((Get-Date) - $originBusySince).TotalSeconds
+                $originFailureCount = 0
+                $publicFailureCount = 0
+                Write-Status "Local Vite origin is busy: Vite answers, but the page took over 8s (${originBusySeconds}s so far)."
+                if ($originBusySeconds -ge 300) {
+                    throw "Local Vite origin answered pings but served no page for five minutes. Exiting so pm2 can restart the complete dev stack."
+                }
+            } elseif ($originStatus -ne "200") {
                 $originFailureCount += 1
                 $publicFailureCount = 0
                 Write-Status "Local Vite origin probe failed ($originFailureCount/3)."
@@ -434,10 +481,11 @@ try {
                     throw "Local Vite origin remained unavailable across three probes. Exiting so pm2 can restart the complete dev stack."
                 }
             } else {
-                if ($originFailureCount -gt 0) {
+                if ($originFailureCount -gt 0 -or $originBusySince) {
                     Write-Status "Local Vite origin recovered."
                 }
                 $originFailureCount = 0
+                $originBusySince = $null
 
                 if ($tunnelProc) {
                     if (Test-Http200 "https://dev.tkaflowarts.com/") {

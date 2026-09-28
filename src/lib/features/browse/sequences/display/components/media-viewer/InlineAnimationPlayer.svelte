@@ -47,8 +47,10 @@
   import { AnimationStateManager } from "$lib/shared/animation-engine/services/animation-state-manager";
   import { AnimationLoop } from "$lib/shared/animation-engine/services/animation-loop";
 
-  // Canvas-menu video download (opt-in via `videoDownload`)
-  import { getExportOrchestrator } from "$lib/shared/export-panel/get-export-orchestrator";
+  // Canvas-menu video download (opt-in via `videoDownload`). The export
+  // orchestrator loads inside downloadAnimationVideo() because the export
+  // stack imports Firebase, and the home page hero runs this player for
+  // visitors who never download anything.
   import { ensureVideoExportOrchestrator } from "$lib/shared/animation-engine/get-video-export-orchestrator";
   import {
     removeToast,
@@ -128,6 +130,7 @@
 
   let {
     sequence,
+    displayWord = null,
     sequenceLoadKey = null,
     autoPlay = true,
     autoPlayDelay = 300,
@@ -189,6 +192,8 @@
     ephemeral = false,
   }: {
     sequence: SequenceData;
+    /** Presentation-only word; sequence identity and playback use `sequence`. */
+    displayWord?: string | null;
     /** Distinguishes a deliberate host reload when selections share an ID. */
     sequenceLoadKey?: string | null;
     autoPlay?: boolean;
@@ -462,6 +467,8 @@
       // first (usually the export drawer). This player can be the first one
       // here, so it registers the same lazily-loaded singleton rather than
       // failing with "orchestrator not available".
+      const { getExportOrchestrator } =
+        await import("$lib/shared/export-panel/get-export-orchestrator");
       const exportOrchestrator = getExportOrchestrator();
       const videoExportOrchestrator = await ensureVideoExportOrchestrator();
       exportOrchestrator.setVideoOrchestrator(videoExportOrchestrator);
@@ -1048,7 +1055,7 @@
         letter={currentLetter}
         stepData={currentStepData}
         sequenceData={animationState.sequenceData}
-        word={animationState.sequenceData?.word ?? sequence.word}
+        word={displayWord ?? animationState.sequenceData?.word ?? sequence.word}
         currentStep={animationState.currentStep}
         isPlaying={canvasPlaying}
         onPlaybackToggle={togglePlayback}

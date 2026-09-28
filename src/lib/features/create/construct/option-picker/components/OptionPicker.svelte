@@ -241,6 +241,7 @@ Delegates all rendering to child components.
       const options = await preparer!.prepareBatch(turned, {
         themeMode: darkMode ? "dark" : "light",
         fanAppearance: s.fanAppearance,
+        triangleGrip: s.triangleGrip,
         leftBuugengFlipped: s.leftBuugengFlipped,
         rightBuugengFlipped: s.rightBuugengFlipped,
         leftPropType: leftPropTypeOverride ?? s.leftPropType,
@@ -533,14 +534,14 @@ Delegates all rendering to child components.
 
 {#if initError}
   <div class="error" role="alert">
-    <p>Couldn't start the option picker: {initError}</p>
+    <p>{t("create_construct_option_picker_start_error", { error: initError })}</p>
     <button onclick={initialize}>{t("action_retry")}</button>
   </div>
 {:else if !isReady || isAwaitingFirstOptions}
   <div class="loading">{t("create_ui_loading_options")}</div>
 {:else if pickerState?.error}
   <div class="error" role="alert">
-    <p>Error: {pickerState.error}</p>
+    <p>{t("create_construct_option_picker_error", { error: pickerState.error })}</p>
     <button onclick={retryLoadOptions}>{t("action_retry")}</button>
   </div>
 {:else}

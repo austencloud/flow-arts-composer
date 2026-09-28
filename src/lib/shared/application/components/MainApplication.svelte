@@ -679,7 +679,7 @@
     <!-- Auth Loading State (initial load only - never tears down MainInterface once shown) -->
     <div class="auth-loading">
       <div class="auth-loading-spinner"></div>
-      <p>Warming up...</p>
+      <p>{t('app_warming_up')}</p>
     </div>
   {:else}
     <!-- MainInterface always mounted - guest restrictions via context -->
@@ -827,10 +827,10 @@
   <ConfirmDialog
     bind:isOpen={anonymousImportPrompt.isOpen}
     variant="info"
-    title="Keep what you just made?"
-    message={`Add the ${anonymousImportPrompt.count} sequence${anonymousImportPrompt.count === 1 ? "" : "s"} you created as a guest to this account?`}
-    confirmText="Import"
-    cancelText="Not now"
+    title={t("guest_keep_work_title")}
+    message={anonymousImportPrompt.count === 1 ? t("guest_import_one") : t("guest_import_many", { count: anonymousImportPrompt.count })}
+    confirmText={t("action_import")}
+    cancelText={t("action_not_now")}
     onConfirm={confirmAnonymousImport}
     onCancel={cancelAnonymousImport}
   />

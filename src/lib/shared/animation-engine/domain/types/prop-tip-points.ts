@@ -743,7 +743,11 @@ export function modelSpriteFacesAwayFromTips(
   if (!entry?.bounds) return false;
   const key = baseKeyOf(propType.toLowerCase());
   if (MODEL_THUMB_END_ON_NEGATIVE_X.has(key)) return true;
-  const base = PROP_TIP_POINTS[key];
+  // A sprite key that is not a prop type (the side-grip triangle's
+  // triangle_side) keeps its table under its render key.
+  const base =
+    PROP_TIP_POINTS[key] ??
+    PROP_RENDER_KEY_TIP_POINTS[`${key}${MODEL_RENDER_KEY_SUFFIX}`];
   if (!base || base.points.length === 0) return false;
   const half = entry.width / 2;
   const paintBias = (entry.bounds.x + entry.bounds.width / 2 - half) / half;

@@ -3,7 +3,7 @@ import type { EntryGenerator, PageLoad } from "./$types";
 import {
   LEVEL2_TOPIC_PAGES,
   level2TopicPageForSlug,
-} from "../_data/level2-topic-manifest";
+} from "../_data/level2-topic-routes";
 
 /**
  * One prerendered route per Level-2 topic — the same crawlable-per-topic

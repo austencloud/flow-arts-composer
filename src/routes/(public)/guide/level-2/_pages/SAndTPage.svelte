@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t as translate } from "$lib/shared/i18n/i18n.svelte.js";
   /**
    * S and T - Level 2 body page 6 (manifest `s-and-t`), faithful to old p7.
    * S and T are the leading/following hybrids: their two hands trace a matching
@@ -269,28 +270,25 @@
     class="para"
     style="top:{59 * S}px; font-size:{16 * S}px; line-height:{19 * S}px"
   >
-    S and T are a different type of hybrid.
+    {@html translate("guide_l2_print_sandtpage_0")}
   </p>
   <p
     class="para"
     style="top:{98 * S}px; font-size:{16 * S}px; line-height:{19.2 * S}px"
   >
-    Even though their motions are a matching shift type (pro|pro, anti|anti),
-    each has one hand <strong><em>leading</em></strong> and the other
-    <strong><em>following</em></strong>. Though this doesn’t affect their base
-    forms, it produces additional variations when modifying their motions.
+    {@html translate("guide_l2_print_sandtpage_1")}
   </p>
   <p
     class="para bold"
     style="top:{152 * S}px; font-size:{16 * S}px; line-height:{19 * S}px"
   >
-    S and T are the only letters with this unique quality.
+    {@html translate("guide_l2_print_sandtpage_2")}
   </p>
   <p
     class="para"
     style="top:{196 * S}px; font-size:{16 * S}px; line-height:{19 * S}px"
   >
-    Fortunately, we have a tool to disambiguate hybrids - the high/low slots.
+    {@html translate("guide_l2_print_sandtpage_3")}
   </p>
 
   <!-- Slot rule + big S (leading|following). -->
@@ -299,7 +297,7 @@
     style="top:{224 * S}px; right:{142 * S}px; font-size:{20 *
       S}px; line-height:{24 * S}px"
   >
-    For S and T,<br />high = leading and low = following.
+    {@html translate("guide_l2_print_sandtpage_4")}
   </p>
   <div class="big-letter" style="left:{430 * S}px; top:{228 * S}px">S</div>
   <span class="cs hi" style="left:{462 * S}px; top:{228 * S}px">Leading</span>
@@ -310,13 +308,13 @@
     class="para bold-italic"
     style="top:{740 * S}px; font-size:{15 * S}px; line-height:{21.7 * S}px"
   >
-    Note that these leading/following rules do NOT apply to U and V.
+    {@html translate("guide_l2_print_sandtpage_5")}
   </p>
   <p
     class="para"
     style="top:{761.7 * S}px; font-size:{15 * S}px; line-height:{21.7 * S}px"
   >
-    Even though U and V have a leader/follower, their slots refer to pro/anti.
+    {@html translate("guide_l2_print_sandtpage_6")}
   </p>
 
   <!-- Group separators: thin within-group rules + one heavy between S and T. -->
@@ -352,26 +350,26 @@
     <!-- Captions. -->
     {#if si === 0}
       <span class="cap" style="left:{150 * S}px; top:{(strip.y - 30) * S}px"
-        >thumbs:</span
+        >{translate("guide_l2_print_thumbs")}</span
       >
       <span
         class="frame-cap"
         style="left:{START_X * S}px; top:{(strip.y - 44) * S}px; width:{SIZE *
-          S}px">start</span
+          S}px">{translate("guide_l2_frame_start")}</span
       >
       <span
         class="frame-cap"
         style="left:{HALF_X * S}px; top:{(strip.y - 44) * S}px; width:{SIZE *
-          S}px">halfway</span
+          S}px">{translate("guide_l2_frame_halfway")}</span
       >
       <span
         class="frame-cap"
         style="left:{END_X * S}px; top:{(strip.y - 44) * S}px; width:{SIZE *
-          S}px">end</span
+          S}px">{translate("guide_l2_frame_end")}</span
       >
     {:else if si === 2}
       <span class="cap" style="left:{150 * S}px; top:{(strip.y - 30) * S}px"
-        >thumbs:</span
+        >{translate("guide_l2_print_thumbs")}</span
       >
     {/if}
     <span

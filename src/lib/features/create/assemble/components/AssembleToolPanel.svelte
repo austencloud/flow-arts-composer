@@ -5,6 +5,7 @@
   size, while phase-specific controls update in reserved slots.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { untrack } from "svelte";
   import { settingsService } from "$lib/shared/settings/state/settings-state.svelte";
   import type { AssembleTabState } from "../../shared/state/assemble-tab-state.svelte";
@@ -150,8 +151,7 @@
 <div class="assemble-tool-panel">
   {#if props.tabState.hasError}
     <div class="restore-error" role="alert">
-      Couldn't restore your saved Assemble work. You can keep building, but this
-      session may not save.
+      {t("create_review_couldn_t_restore_your_saved_assemble_work_you_can_keep_building_but_this_session_may_not_s")}
     </div>
   {/if}
 

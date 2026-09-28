@@ -18,11 +18,14 @@
   import { browser } from "$app/environment";
   import InlineAnimationPlayer from "$lib/features/browse/sequences/display/components/media-viewer/InlineAnimationPlayer.svelte";
   import GuideStepStrip from "./GuideStepStrip.svelte";
+  import GuidePictograph from "./GuidePictograph.svelte";
   import Crossfade from "$lib/shared/components/Crossfade.svelte";
   import { DURATION } from "$lib/shared/transitions/transitions";
   import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
   import { describePictograph } from "$lib/shared/pictograph/shared/domain/utils/pictograph-description";
   import { stripToSequence } from "../_data/guide-sequence-adapter";
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { guideTurnDisplayWord } from "../_data/guide-turn-display-word";
   import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
   import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
   import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
@@ -56,8 +59,13 @@
      * - "compact": caption-only text → one tight band that hugs its content:
      *   smaller canvas left, label + strip stacked right. A caption-sized label
      *   in the feature banner's text column leaves a void of empty space.
+     * - "pair": one motion that a single pictograph draws whole → the text on
+     *   top, then two equal squares: the live canvas and `items[0]`. The reader
+     *   watches the motion beside its notation at the same size, with no strip
+     *   of start and end poses the animation already shows. `pool` and `strip`
+     *   do not apply.
      */
-    variant?: "feature" | "compact";
+    variant?: "feature" | "compact" | "pair";
     /**
      * Refreshable example pool. `pool[0]` is the DEFAULT (this component's
      * `sequence`/`items` props - the print example that prerenders). The reader
@@ -85,7 +93,7 @@
   // only the default example's strip prerenders (the SEO / page-weight split).
   // A `strip` override disables the pool (see the prop doc above).
   let exampleIndex = $state(0);
-  const effectivePool = $derived(strip ? undefined : pool);
+  const effectivePool = $derived(strip || variant === "pair" ? undefined : pool);
   const hasPool = $derived(!!effectivePool && effectivePool.length > 1);
   const total = $derived(effectivePool?.length ?? 1);
   const entry = $derived(effectivePool?.[exampleIndex]);
@@ -185,6 +193,9 @@
          no layout shift (the reserved square never moves). -->
     <InlineAnimationPlayer
       sequence={curSequence}
+      displayWord={curSequence.word
+        ? guideTurnDisplayWord(curSequence.word)
+        : null}
       chrome="minimal"
       fill={true}
       autoPlay={shouldAutoPlay}
@@ -217,9 +228,11 @@
         type="button"
         class="cycle-btn"
         onclick={nextExample}
-        aria-label={`Show another ${entry?.loopLabel ?? ""} example`.replace(/\s+/g, " ").trim()}
+        aria-label={entry?.loopLabel
+          ? t("guide_show_another_loop_example", { loop: entry.loopLabel })
+          : t("guide_show_another_example")}
       >
-        Show another example
+        {t("guide_show_another_example")}
       </button>
       <span class="cycle-count" aria-hidden="true">{exampleIndex + 1} / {total}</span>
     </div>
@@ -229,10 +242,37 @@
 <section
   class="showcase"
   class:compact={variant === "compact"}
+  class:pair={variant === "pair"}
   class:has-strip={!!strip}
   bind:this={rootEl}
 >
-  {#if variant === "compact"}
+  {#if variant === "pair"}
+    <!-- Text on top, then the canvas and the pictograph that draws the whole
+         motion as two equal squares. -->
+    <div class="pair-text">
+      {@render text?.()}
+    </div>
+    <div class="pair-squares">
+      <div class="canvas-box" class:in-view={inView}>
+        {@render player()}
+      </div>
+      {#if items[0]}
+        <div class="pair-still">
+          <GuidePictograph
+            data={items[0]}
+            eager
+            forceTheme={picTheme}
+            {propType}
+            showTKA={render?.showTKA ?? true}
+            showPlacements={render?.showPlacements ?? false}
+            showElemental={render?.showElemental ?? false}
+            showReversals={render?.showReversals ?? false}
+            showNonRadialPoints={render?.showNonRadialPoints ?? false}
+          />
+        </div>
+      {/if}
+    </div>
+  {:else if variant === "compact"}
     <!-- One tight band: canvas | (label over strip). Hugs its content and
          centres - a caption-sized label gets no empty text column. -->
     <div class="compact-band">
@@ -499,6 +539,53 @@
       width: 100%;
       gap: 0.9rem;
     }
+  }
+
+  /* ── Pair: text over two equal squares at every width. In a host grid the
+     showcase spans two of the host's rows as a subgrid, so pairs placed side
+     by side keep their squares level when one text runs a line longer. A
+     size container is an independent formatting context, which turns the
+     subgrid off, so the pair drops the showcase's containment; its cqw gap
+     reads the host's container instead. */
+  .pair {
+    container-type: normal;
+    display: grid;
+    grid-row: span 2;
+    grid-template-rows: subgrid;
+    row-gap: 0.85rem;
+  }
+  .pair-text {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+  .pair-squares {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: clamp(0.6rem, 2.5cqw, 1.25rem);
+  }
+  .pair .canvas-box,
+  .pair-still {
+    width: 100%;
+    margin: 0;
+  }
+  .pair-still {
+    aspect-ratio: 1;
+    border-radius: 14px;
+    overflow: hidden;
+    border: 1.5px solid color-mix(in oklab, var(--ink, #1a1a1a) 12%, transparent);
+  }
+  .pair-still :global(.guide-pictograph) {
+    width: 100%;
+  }
+  /* guide.css sizes wrappers by size class at higher specificity than the
+     component's own width: 100%, and GuidePictograph caps them at 140-280px.
+     The square is the sizer here, as in FlowFrame's pic-card. */
+  .pair-still :global(.pictograph-wrapper) {
+    width: 100% !important;
+    height: auto !important;
+    aspect-ratio: 1;
+    max-width: none !important;
   }
 
   .sr-only {

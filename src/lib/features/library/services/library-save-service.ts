@@ -210,7 +210,13 @@ export class LibrarySaveService {
           );
         }
       } catch (error) {
-        if (error instanceof LibraryError) throw error;
+        // Only the duplicate verdict above may stop the save. The repository
+        // refuses to run this check at all when nobody is signed in (it throws
+        // "User not authenticated"), which is the guest case this must let
+        // through, so every other error falls through to the warning.
+        if (error instanceof LibraryError && error.code === "ALREADY_EXISTS") {
+          throw error;
+        }
         console.warn(
           "[LibrarySaveService] Duplicate pre-check failed (proceeding without it):",
           error

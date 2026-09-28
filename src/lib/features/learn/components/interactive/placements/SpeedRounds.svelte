@@ -4,6 +4,7 @@ A pictograph appears center screen, user classifies as Alpha/Beta/Gamma via tap 
 Builds automaticity through speed pressure and streak mechanics.
 -->
 <script lang="ts">
+  import { tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
   import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
   import PlacementVisualizer from './PlacementVisualizer.svelte';
   import StreakDisplay from './construction-quiz/StreakDisplay.svelte';
@@ -244,29 +245,29 @@ import { onDestroy } from 'svelte';
 
 <svelte:window onkeydown={handleKeydown} />
 
-<div class="speed-rounds" role="application" aria-label="Speed classification drill">
+<div class="speed-rounds" role="application" aria-label={tDynamic("learn_placement_speed_aria")}>
   {#if showSummary}
     <!-- Summary overlay -->
-    <div class="summary" role="dialog" aria-label="Speed rounds summary">
-      <h2 class="summary-title">Speed Rounds Complete</h2>
+    <div class="summary" role="dialog" aria-label={tDynamic("learn_placement_speed_summary")}>
+      <h2 class="summary-title">{tDynamic("learn_placement_speed_complete")}</h2>
 
       <div class="summary-stats">
         <div class="stat">
           <span class="stat-value">{totalAttempted}</span>
-          <span class="stat-label">Attempted</span>
+          <span class="stat-label">{tDynamic("learn_placement_attempted")}</span>
         </div>
         <div class="stat">
           <span class="stat-value">{accuracy}%</span>
-          <span class="stat-label">Accuracy</span>
+          <span class="stat-label">{tDynamic("learn_placement_accuracy")}</span>
         </div>
         <div class="stat">
           <span class="stat-value">{bestStreak}</span>
-          <span class="stat-label">Best Streak</span>
+          <span class="stat-label">{tDynamic("learn_placement_best_streak_label")}</span>
         </div>
       </div>
 
       <button class="done-button-primary" onclick={handleDismissSummary}>
-        Continue
+        {tDynamic("learn_card_continue")}
       </button>
     </div>
   {:else}
@@ -336,8 +337,8 @@ import { onDestroy } from 'svelte';
     <div class="bottom-row">
       <StreakDisplay {streak} {bestStreak} />
 
-      <button class="done-button" onclick={handleDone} aria-label="Finish speed rounds">
-        Done
+      <button class="done-button" onclick={handleDone} aria-label={tDynamic("learn_placement_finish_speed")}>
+        {tDynamic("learn_placement_done")}
       </button>
     </div>
   {/if}

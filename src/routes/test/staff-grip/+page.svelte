@@ -24,9 +24,14 @@
   import { page } from "$app/state";
   import OrbitControls from "$lib/shared/3d/components/OrbitControls.svelte";
   import {
-    scenePropAuthoredLengthCm,
     scenePropDrawnLengthCm,
+    scenePropFixedLengthCm,
   } from "$lib/shared/3d/domain/scene-prop-catalog";
+  import {
+    fixedHandDistance,
+    largestHandDistance,
+    type PerformerHandDistance,
+  } from "$lib/shared/3d/domain/performer-hand-distance";
   import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
   import {
     describeStanceYawTrack,
@@ -202,13 +207,47 @@
 
   /**
    * The length actually on screen. A procedural build draws what it is asked
-   * for; a model-backed build draws its authored length and ignores the ask,
-   * because `Prop3D` drops `length` on its GLTF branch. The catalog owns which
-   * is which.
+   * for, and so does a model `Prop3D` stretches to the length it is handed;
+   * a model it does not stretch draws its authored length and ignores the ask.
+   * The catalog owns which builds are which.
    */
-  const authoredLengthCm = $derived(scenePropAuthoredLengthCm(lab.prop));
+  const fixedLengthCm = $derived(scenePropFixedLengthCm(lab.prop));
   const drawnLengthCm = $derived(
     scenePropDrawnLengthCm(lab.prop, configuredLengthCm)
+  );
+
+  /**
+   * The isolation style sizes the grid from the staff on screen. A body-fit
+   * length drifts by millimetres as this panel re-reads the skeleton, so it is
+   * held to whole centimetres rather than re-planning the turn every frame; a
+   * pinned or model length is used as it is.
+   */
+  const isolationStaffCm = $derived(
+    drawnLengthCm === null
+      ? null
+      : lab.propLength === "body" && fixedLengthCm === null
+        ? Math.round(drawnLengthCm)
+        : drawnLengthCm
+  );
+
+  /**
+   * In isolation each hand sits half the staff from the grid center in every
+   * direction, so a staff pointing in ends on the center point. The drawn
+   * rings follow: hands at half the staff, tips out to a whole staff. Null
+   * keeps the performer's fixed distance and the global rings.
+   */
+  const isolationHandM = $derived(
+    lab.gridStyle === "isolation" && isolationStaffCm !== null
+      ? isolationStaffCm / 200
+      : null
+  );
+  const labHandDistance = $derived<PerformerHandDistance | null>(
+    isolationHandM === null
+      ? null
+      : {
+          left: fixedHandDistance(isolationHandM),
+          right: fixedHandDistance(isolationHandM),
+        }
   );
 
   /**
@@ -401,6 +440,11 @@
   data-view={lab.view}
   data-panel={lab.panel}
   data-grid-labels={lab.gridLabels ? "1" : "0"}
+  data-grid-style={lab.gridStyle}
+  data-hand-distance-cm={formatMetric(
+    largestHandDistance(labHandDistance ?? undefined) * 100,
+    2
+  )}
   data-lab-href={lab.fullyQualifiedHref()}
   data-phase={lab.phase.toFixed(2)}
   data-body-max-staff-cm={formatMetric(
@@ -418,7 +462,7 @@
   )}
   data-configured-length-cm={formatMetric(configuredLengthCm, 2)}
   data-drawn-length-cm={formatMetric(drawnLengthCm, 2)}
-  data-prop-honours-length={authoredLengthCm === null}
+  data-prop-honours-length={fixedLengthCm === null}
   data-character-height-cm={formatMetric(characterHeightCm, 2)}
   data-collision-length-cm={formatMetric(collisionLengthCm, 2)}
   data-length-divergence-cm={formatMetric(lengthDivergenceCm, 2)}
@@ -531,7 +575,7 @@
           deltaCm={fitComparison.deltaCm}
           {configuredLengthCm}
           {drawnLengthCm}
-          {authoredLengthCm}
+          {fixedLengthCm}
           {characterHeightCm}
           {collisionLengthCm}
           {lengthDivergenceCm}
@@ -586,6 +630,11 @@
                 characterId={lab.character}
                 propType={lab.prop}
                 propLengthCm={lab.propLength === "body" ? null : lab.propLength}
+                handDistance={labHandDistance}
+                handPointRadius={isolationHandM ?? undefined}
+                outerPointRadius={isolationHandM === null
+                  ? undefined
+                  : isolationHandM * 2}
                 gridEmphasis={view.grid}
                 showGridLabels={lab.gridLabels}
                 onCollisionEvents={index === 0 ? collectGripMetrics : undefined}

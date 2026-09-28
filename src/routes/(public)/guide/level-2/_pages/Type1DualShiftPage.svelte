@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t as translate } from "$lib/shared/i18n/i18n.svelte.js";
   /**
    * Type 1 - Dual-Shift - Level 2 body page 5 (manifest `t1-dual-shift`),
    * faithful to old p6. Four two-hand breakdown strips, each start → halfway →
@@ -177,32 +178,29 @@
 
   <!-- Top intro + big B (left|right). -->
   <p class="para" style="top:{48 * S}px; right:{142 * S}px; font-size:{16 * S}px; line-height:{19 * S}px">
-    <strong><em>When motion types are exactly the same</em></strong>,<br />
-    put <strong style="color:#2342c9">left</strong> in the high slot and <strong style="color:#c01b1b">right</strong> in the low slot.<br />
-    Here is a breakdown of A<sup>1</sup> (pro|pro) and B<sup>1</sup> (anti|anti).
+    {@html translate("guide_l2_print_type1dualshiftpage_0")}
   </p>
   <div class="big-letter" style="left:{430 * S}px; top:{50 * S}px">B</div>
-  <span class="lr hi" style="left:{478 * S}px; top:{46 * S}px">Left</span>
-  <span class="lr lo" style="left:{478 * S}px; top:{93 * S}px">Right</span>
+  <span class="lr hi" style="left:{478 * S}px; top:{46 * S}px">{translate("guide_l2_print_left")}</span>
+  <span class="lr lo" style="left:{478 * S}px; top:{93 * S}px">{translate("guide_l2_print_right")}</span>
 
   <!-- Middle text between the two halves. -->
   <p class="para" style="top:{372 * S}px; font-size:{16 * S}px; line-height:{19 * S}px">
-    When motion types are different, high/low indicates how to label them.<br />
-    With hybrids, we can add a turn to either the pro or anti motion.
+    {@html translate("guide_l2_print_type1dualshiftpage_1")}
   </p>
   <p class="para bold" style="top:{428 * S}px; right:{142 * S}px; font-size:{20 * S}px; line-height:{24 * S}px">
-    For pro/anti hybrids,<br />high = prospin and low = antispin,
+    {@html translate("guide_l2_print_type1dualshiftpage_2")}
   </p>
   <div class="big-letter" style="left:{408 * S}px; top:{430 * S}px">C</div>
   <span class="cs hi" style="left:{460 * S}px; top:{435 * S}px">Prospin</span>
   <span class="cs lo" style="left:{460 * S}px; top:{487 * S}px">Antispin</span>
   <p class="para" style="top:{500 * S}px; font-size:{16 * S}px; line-height:{19 * S}px">
-    This includes C, F, I, L, O, R, U, and V.
+    {@html translate("guide_l2_print_type1dualshiftpage_3")}
   </p>
 
   <!-- Bottom code note. -->
   <p class="para italic" style="top:{776 * S}px; font-size:{14.5 * S}px; line-height:{18 * S}px">
-    For code or file-naming, indicate turns with parentheses like so:&nbsp; C<sup>1</sup> = C(1,0) and C<sub>1</sub> = C(0,1)
+    {@html translate("guide_l2_print_type1dualshiftpage_4")}
   </p>
 
   <!-- Four breakdown strips. -->
@@ -216,10 +214,10 @@
 
     <!-- Captions (thumbs / start / halfway / end). -->
     {#if si === 0 || si === 2}
-      <span class="cap" style="left:{150 * S}px; top:{(strip.y - 30) * S}px">thumbs:</span>
-      <span class="frame-cap" style="left:{START_X * S}px; top:{(strip.y - 44) * S}px; width:{SIZE * S}px">start</span>
-      <span class="frame-cap" style="left:{HALF_X * S}px; top:{(strip.y - 44) * S}px; width:{SIZE * S}px">halfway</span>
-      <span class="frame-cap" style="left:{END_X * S}px; top:{(strip.y - 44) * S}px; width:{SIZE * S}px">end</span>
+      <span class="cap" style="left:{150 * S}px; top:{(strip.y - 30) * S}px">{translate("guide_l2_print_thumbs")}</span>
+      <span class="frame-cap" style="left:{START_X * S}px; top:{(strip.y - 44) * S}px; width:{SIZE * S}px">{translate("guide_l2_frame_start")}</span>
+      <span class="frame-cap" style="left:{HALF_X * S}px; top:{(strip.y - 44) * S}px; width:{SIZE * S}px">{translate("guide_l2_frame_halfway")}</span>
+      <span class="frame-cap" style="left:{END_X * S}px; top:{(strip.y - 44) * S}px; width:{SIZE * S}px">{translate("guide_l2_frame_end")}</span>
     {/if}
     <span class="thumb-cap" style="left:{START_X * S}px; top:{(strip.y - 26) * S}px; width:{SIZE * S}px">{strip.startTop}</span>
     <span class="thumb-cap" style="left:{END_X * S}px; top:{(strip.y - 26) * S}px; width:{SIZE * S}px">{strip.endTop}</span>

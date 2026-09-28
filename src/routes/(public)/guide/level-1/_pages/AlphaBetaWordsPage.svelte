@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { localizeLevel1Text, localizeLevel1SelectionLabel } from "../_data/localize-level1-content";
   /**
    * Alpha/Beta Words · Same Direction - body page (manifest `lt1-abc-ghi`),
    * faithful to the proof p22 / "1.1 - Basic Words, ABC, GHI" artboard.
@@ -333,7 +334,7 @@
 <div class="ab-words">
   <!-- Subtitle under the manifest-painted title. -->
   <div class="subtitle" style="top:{SUBTITLE_Y * S}px; font-size:{18 * S}px">
-    Same Direction
+    {localizeLevel1Text("Same Direction")}
   </div>
 
   <!-- Heavy divider between the α and β blocks. -->
@@ -416,7 +417,7 @@
       <SelectionHit
         groupId={w.key}
         isGroupStart
-        label={`Animate the word ${w.word}`}
+        label={localizeLevel1SelectionLabel(`Animate the word ${w.word}`)}
         onselect={() =>
           emitSequence?.({
             strip: wordSteps(w),
@@ -468,7 +469,7 @@
         set: (h) => (p.html = h),
       }}
     >
-      {@html p.html}
+      {@html localizeLevel1Text(p.html)}
     </p>
   {/each}
 </div>

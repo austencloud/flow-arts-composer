@@ -1,5 +1,6 @@
 import type { FanAppearance } from "$lib/shared/pictograph/prop/domain/fan-appearance";
 import type { PropLook } from "$lib/shared/pictograph/prop/domain/prop-look";
+import type { TriangleGrip } from "$lib/shared/pictograph/prop/domain/triangle-appearance";
 /**
  * Preview Cell Renderer
  *
@@ -22,6 +23,9 @@ export interface PreviewCellRenderOptions {
   /** Artwork for non-fan props: the look the canvas beside the card draws.
    *  Omitted means notation artwork, which printed and scanned cards keep. */
   propLook?: PropLook;
+  /** Where the hand holds a triangle, in either look. Omitted means the
+   *  corner grip, which printed and scanned cards keep. */
+  triangleGrip?: TriangleGrip;
   primaryPropColors?: { left: string; right: string } | null;
   /** Render size in pixels (e.g., 480 for high-res) - this is the height; width = size * widthMultiplier */
   size: number;

@@ -114,7 +114,7 @@ Uses singleton state for caching - data persists across tab switches.
     <div class="header-section">
       <h2 class="panel-title">
         <i class="fas fa-book-open" aria-hidden="true"></i>
-        Browse Libraries
+        {t("browse_verified_browse_libraries")}
       </h2>
     </div>
   </div>
@@ -129,15 +129,15 @@ Uses singleton state for caching - data persists across tab switches.
     {#if error}
       <PanelState type="error" title={t("browse_error")} message={error} />
     {:else if isLoading}
-      <PanelState type="loading" message="Loading creator libraries..." />
+      <PanelState type="loading" message={t("browse_verified_loading_creator_libraries")} />
     {:else if creatorsWithContent.length === 0}
       <PanelState
         type="empty"
         icon="fa-book-open"
         title={t("browse_ui_no_libraries_found")}
         message={searchQuery
-          ? "No creators match your search"
-          : "No public content available yet"}
+          ? t("browse_verified_no_creators_match")
+          : t("browse_verified_no_public_content")}
       />
     {:else}
       <div class="creators-list">

@@ -16,7 +16,12 @@
   import { onMount, type Component } from "svelte";
   import RobustAvatar from "../../components/avatar/RobustAvatar.svelte";
   import NavDropdown, { type NavDropdownItem } from "./NavDropdown.svelte";
-  import type { authState as AuthStateModule } from "../../auth/state/auth-state.svelte";
+  import {
+    hasSavedFirebaseUser,
+    signInWhenIdle,
+    startAuthState,
+    type AuthStateApi,
+  } from "../../auth/services/deferred-sign-in";
   import { trackCtaClick } from "$lib/shared/analytics/landing-events";
   import { analyticsRoute } from "$lib/shared/analytics/analytics-context";
   import type { AuthCta } from "$lib/shared/analytics/auth-events";
@@ -34,11 +39,15 @@
   // (auth/firestore/db/functions) into the landing bundle via auth-state →
   // firebase top-level side effects.
   //
-  // Instead: on mount, run a cheap SDK-free probe for Firebase's auth
-  // persistence IndexedDB. No DB → first-time/signed-out visitor → show
-  // "Sign in", never load Firebase. DB present → returning signed-in user →
-  // lazily load the real authState at idle and populate the avatar.
-  let authApi = $state<typeof AuthStateModule | null>(null);
+  // Instead: on mount, run a cheap SDK-free check for a user Firebase saved in
+  // this browser: in localStorage on Safari and iOS, in its IndexedDB database
+  // elsewhere. None → first-time or signed-out visitor → show "Sign in", never
+  // load Firebase. Found → returning visitor → lazily load the real authState
+  // at idle and populate the avatar. Asking only whether that database exists
+  // missed every Safari and iOS visitor, and loaded Firebase for signed-out
+  // ones. The check and the idle start live in deferred-sign-in.ts, shared
+  // with Shape Engine.
+  let authApi = $state<AuthStateApi | null>(null);
   let probeDone = $state(false);
   let hasPersistedAuth = $state(false);
 
@@ -67,73 +76,29 @@
   const currentPath = $derived(page.url?.pathname ?? "");
   const showBack = $derived(MORPH_DEST_PATHS.has(currentPath));
 
-  // Cheap, SDK-free check: does Firebase's auth-persistence IndexedDB exist?
-  // Its presence means this browser has signed in at least once.
-  async function hasFirebaseAuthDb(): Promise<boolean> {
-    try {
-      if (typeof indexedDB === "undefined") return false;
-      // indexedDB.databases() is available in Chromium/WebKit. If unavailable,
-      // assume auth may exist and let the real init decide.
-      if (typeof indexedDB.databases !== "function") return true;
-      const dbs = await indexedDB.databases();
-      return dbs.some((d) => d.name === "firebaseLocalStorageDb");
-    } catch (error) {
-      console.debug("[SiteHeader] Auth persistence probe unavailable:", error);
-      return true;
-    }
-  }
-
   // Load the real authState once (idempotent). Pulls Firebase — only ever
   // called when there's a reason to (persisted session found, or the user
   // explicitly clicks Sign in). Assigning authApi first lets the derived
   // getters track the auth rune as initialize() resolves.
   let authLoadPromise: Promise<void> | null = null;
   function ensureAuthLoaded(): Promise<void> {
-    if (!authLoadPromise) {
-      authLoadPromise = (async () => {
-        const mod = await import("../../auth/state/auth-state.svelte");
-        authApi = mod.authState;
-        await mod.authState.initialize();
-      })();
-    }
+    authLoadPromise ??= startAuthState((authState) => {
+      authApi = authState;
+    });
     return authLoadPromise;
   }
 
-  onMount(() => {
-    let mounted = true;
-    let idleHandle: number | undefined;
-    let timeoutHandle: ReturnType<typeof setTimeout> | undefined;
-
-    void (async () => {
-      const persisted = await hasFirebaseAuthDb();
-      if (!mounted) return;
-      hasPersistedAuth = persisted;
-      probeDone = true;
-      if (!persisted) return; // signed out → stay Firebase-free
-
-      const loadAuth = () => {
-        if (!mounted) return;
-        void ensureAuthLoaded().catch((error) =>
-          console.warn(
-            "[SiteHeader] Deferred auth initialization failed:",
-            error
-          )
-        );
-      };
-
-      if (typeof requestIdleCallback !== "undefined") {
-        idleHandle = requestIdleCallback(loadAuth);
-      } else {
-        timeoutHandle = setTimeout(loadAuth, 0);
-      }
-    })();
-
-    return () => {
-      mounted = false;
-      if (idleHandle !== undefined) cancelIdleCallback(idleHandle);
-      if (timeoutHandle !== undefined) clearTimeout(timeoutHandle);
-    };
-  });
+  onMount(() =>
+    signInWhenIdle({
+      hasSession: hasSavedFirebaseUser,
+      onProbed: (persisted) => {
+        hasPersistedAuth = persisted;
+        probeDone = true;
+      },
+      signIn: ensureAuthLoaded,
+      label: "SiteHeader",
+    })
+  );
 
   // In-place sign in: open the centered AuthModal over the landing page rather
   // than navigating to /create?sheet=auth (which bumped the user into the app

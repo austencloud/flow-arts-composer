@@ -5,7 +5,7 @@
   Individual beat editing (turns, rotation) is handled by StepEditorPanel.
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t, tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
   import { getExtensionFlowCoordinator } from "$lib/features/create/shared/get-extension-flow-coordinator";
   import { copyToClipboard } from "$lib/features/create/shared/services/sequence-json-exporter";
   import * as sequenceTransferHandlerModule from "$lib/features/create/shared/services/sequence-transfer-handler";
@@ -693,7 +693,7 @@
   closeOnBackdrop={true}
   focusTrap={false}
   lockScroll={false}
-  ariaLabel="Sequence actions panel"
+  ariaLabel={tDynamic("create_action_sequence_actions_panel")}
   onClose={handleClose}
 >
   <div
