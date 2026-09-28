@@ -7,10 +7,10 @@
     children: Snippet;
   }>();
 
-  // This isolated review layout intentionally skips the app shell, so mirror
-  // the shell's gallery prewarm here. The builder and prefetcher share the same
-  // loader instance, which coalesces the first request instead of making each
-  // drill wait for a fresh gallery fetch.
+  // /test pages never mount the app shell, so mirror the shell's gallery
+  // prewarm here. The builder and prefetcher share the same loader instance,
+  // which coalesces the first request instead of making each drill wait for a
+  // fresh gallery fetch.
   if (browser) {
     void import("$lib/features/browse/shared/get-gallery-prefetcher")
       .then(({ getGalleryPrefetcher }) => getGalleryPrefetcher().prefetch())

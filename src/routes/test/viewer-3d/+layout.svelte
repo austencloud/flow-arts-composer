@@ -2,12 +2,11 @@
   import type { Snippet } from "svelte";
   import "../../../app.css";
 
-  // Layout reset: this harness renders bare print canvases and must not mount
-  // the app shell, which would route /test/* into a product module.
+  // The workbench owns its full viewport and needs none of the product shell,
+  // which /test pages never mount, so this layout clears the boot splash
+  // itself.
   let { children } = $props<{ children: Snippet }>();
 
-  // app.html ships a boot splash that the app shell removes once it mounts.
-  // Skipping the shell means nothing removes it, so it covers the harness.
   $effect(() => {
     document.getElementById("app-loading")?.remove();
   });

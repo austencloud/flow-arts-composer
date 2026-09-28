@@ -2,11 +2,10 @@
   import type { Snippet } from "svelte";
   import "../../../app.css";
 
-  // The Autumn review route owns a full-screen canvas and no account data.
-  // Keeping product boot outside this boundary prevents cloud initialization
-  // from covering a scene that has already passed its renderer-ready gate.
   let { children } = $props<{ children: Snippet }>();
 
+  // /test pages never mount the product shell, so this layout owns removal of
+  // the boot splash that the shell normally clears after initialization.
   $effect(() => {
     document.getElementById("app-loading")?.remove();
   });

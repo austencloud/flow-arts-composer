@@ -2,11 +2,12 @@
   import type { Snippet } from "svelte";
   import "../../../app.css";
 
-  // The Forest review route owns a full-screen canvas and no account data.
-  // Bypassing the product shell keeps cloud initialization from covering a
-  // healthy scene during long material and asset verification passes.
+  // This harness renders bare print canvases. Like every /test page, it never
+  // mounts the app shell.
   let { children } = $props<{ children: Snippet }>();
 
+  // app.html ships a boot splash that the app shell removes once it mounts.
+  // Skipping the shell means nothing removes it, so it covers the harness.
   $effect(() => {
     document.getElementById("app-loading")?.remove();
   });

@@ -2,10 +2,12 @@
   import type { Snippet } from "svelte";
   import "../../../app.css";
 
-  // This is a full-screen review harness. The product shell's module restorer
-  // treats /test/* as an invalid product route and redirects it into Create.
+  // This harness renders bare print canvases. Like every /test page, it never
+  // mounts the app shell.
   let { children } = $props<{ children: Snippet }>();
 
+  // app.html ships a boot splash that the app shell removes once it mounts.
+  // Skipping the shell means nothing removes it, so it covers the harness.
   $effect(() => {
     document.getElementById("app-loading")?.remove();
   });
