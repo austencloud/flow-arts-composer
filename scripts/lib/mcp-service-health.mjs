@@ -1,8 +1,8 @@
 /**
  * The rules that decide whether the Flow Arts Knowledge connector works.
- * verify-mcp-service.mjs gathers the facts read-only; anything that reports or
- * alerts on them should reuse classifyMcpServiceHealth, so every surface agrees
- * on what "down" means.
+ * mcp-service-probe.mjs gathers the facts read-only; every report or alert
+ * should reuse classifyMcpServiceHealth, so all surfaces agree on what "down"
+ * means.
  */
 
 export const MCP_SERVICE = Object.freeze({
@@ -12,11 +12,12 @@ export const MCP_SERVICE = Object.freeze({
   publicHostname: "mcp.tkaflowarts.com",
 });
 
-// NSSM logs event 1008 each time it starts the app. A deliberate restart or a
-// reboot is one start, so three within the hour means it keeps exiting, even
-// when a probe happens to land in the seconds it is up.
-export const RESTART_WINDOW_MINUTES = 60;
-export const RESTARTS_BEFORE_ALERT = 3;
+// NSSM logs event 1014 each time the server exits on its own and NSSM restarts
+// it. A deliberate restart or a reboot stops the service first and logs no
+// 1014, so two within the hour mean it keeps dying, even when a check happens
+// to land in the seconds a crash-looping server is up.
+export const EXIT_WINDOW_MINUTES = 60;
+export const EXITS_BEFORE_ALERT = 2;
 
 // Without --metrics, cloudflared serves /config on the first free port in this
 // range. Each running tunnel answers on its own port.
@@ -24,6 +25,7 @@ export const CLOUDFLARED_METRICS_PORTS = Object.freeze([
   20241, 20242, 20243, 20244, 20245,
 ]);
 
+const ROUTE_MISSING = "route-missing";
 const LAST_LINE_LIMIT = 240;
 
 /** The STATE word from `sc.exe query`, "MISSING" for error 1060, else null. */
@@ -121,8 +123,8 @@ function describeState(serviceState) {
 /**
  * facts.serviceState: parseServiceState result.
  * facts.health: { ok, error? } from GET MCP_SERVICE.healthUrl.
- * facts.recentStarts: NSSM starts within RESTART_WINDOW_MINUTES, or null when
- *   the event log could not be read.
+ * facts.recentExits: times NSSM restarted the server after it exited on its
+ *   own within EXIT_WINDOW_MINUTES, or null when the event log was unreadable.
  * facts.tunnels: { answered, hostnames } across running cloudflared metrics
  *   servers, or undefined to skip the public route check.
  */
@@ -140,12 +142,12 @@ export function classifyMcpServiceHealth(facts) {
   }
 
   if (
-    typeof facts.recentStarts === "number" &&
-    facts.recentStarts >= RESTARTS_BEFORE_ALERT
+    typeof facts.recentExits === "number" &&
+    facts.recentExits >= EXITS_BEFORE_ALERT
   ) {
     problems.push({
-      kind: "restarting",
-      message: `NSSM started it ${facts.recentStarts} times in the last ${RESTART_WINDOW_MINUTES} minutes.`,
+      kind: "crashing",
+      message: `It exited on its own ${facts.recentExits} times in the last ${EXIT_WINDOW_MINUTES} minutes, and NSSM restarted it each time.`,
     });
   }
 
@@ -153,7 +155,7 @@ export function classifyMcpServiceHealth(facts) {
     const { answered, hostnames } = facts.tunnels;
     if (!hostnames.includes(MCP_SERVICE.publicHostname)) {
       problems.push({
-        kind: "route-missing",
+        kind: ROUTE_MISSING,
         message:
           answered === 0
             ? `No cloudflared tunnel is running, so claude.ai cannot reach ${MCP_SERVICE.publicHostname}.`
@@ -163,4 +165,34 @@ export function classifyMcpServiceHealth(facts) {
   }
 
   return { healthy: problems.length === 0, problems };
+}
+
+/** True when a problem lies with the server itself rather than the route. */
+export function hasServiceProblem(problems) {
+  return problems.some((problem) => problem.kind !== ROUTE_MISSING);
+}
+
+function plural(count, noun) {
+  return `${count} ${noun}${count === 1 ? "" : "s"}`;
+}
+
+/** One line of facts for a report or a log. */
+export function describeFacts({ serviceState, health, recentExits, tunnels }) {
+  const exits =
+    typeof recentExits === "number"
+      ? `${plural(recentExits, "unexpected exit")} in the last ${EXIT_WINDOW_MINUTES} min`
+      : "exits unknown (event log unreadable)";
+  const parts = [
+    `state ${serviceState ?? "unknown"}`,
+    `health ${health?.ok ? "OK" : "failing"}`,
+    exits,
+  ];
+  if (tunnels) {
+    parts.push(
+      tunnels.hostnames.includes(MCP_SERVICE.publicHostname)
+        ? `${MCP_SERVICE.publicHostname} routed`
+        : `${MCP_SERVICE.publicHostname} not routed by ${plural(tunnels.answered, "running tunnel")}`
+    );
+  }
+  return parts.join(" · ");
 }

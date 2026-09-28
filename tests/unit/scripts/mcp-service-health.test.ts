@@ -4,8 +4,10 @@ import {
   classifyMcpServiceHealth,
   countEvents,
   lastErrorLine,
+  describeFacts,
+  EXITS_BEFORE_ALERT,
+  hasServiceProblem,
   parseServiceState,
-  RESTARTS_BEFORE_ALERT,
   routedHostnames,
 } from "../../../scripts/lib/mcp-service-health.mjs";
 
@@ -23,8 +25,8 @@ const SC_PAUSED = SC_RUNNING.replace("4  RUNNING", "7  PAUSED");
 const SC_MISSING =
   "[SC] EnumQueryServicesStatus:OpenService FAILED 1060:\r\n\r\nThe specified service does not exist as an installed service.\r\n";
 
-const START_EVENT =
-  "<Event xmlns='http://schemas.microsoft.com/win/2004/08/events/event'><System><Provider Name='nssm'/><EventID Qualifiers='16384'>1008</EventID></System><EventData><Data>E:\\tka-platform\\mcp-server\\deploy\\run-mcp-http.cmd</Data><Data></Data><Data>FlowArtsKnowledgeMCP</Data></EventData></Event>";
+const EXIT_EVENT =
+  "<Event xmlns='http://schemas.microsoft.com/win/2004/08/events/event'><System><Provider Name='nssm'/><EventID Qualifiers='16384'>1014</EventID></System><EventData><Data>FlowArtsKnowledgeMCP</Data><Data>1</Data><Data>Restart</Data><Data>E:\\tka-platform\\mcp-server\\deploy\\run-mcp-http.cmd</Data></EventData></Event>";
 
 const MODULE_CRASH = `
 node:internal/modules/run_main:107
@@ -52,7 +54,7 @@ const MCP_TUNNEL = {
 const HEALTHY = {
   serviceState: "RUNNING",
   health: { ok: true },
-  recentStarts: 1,
+  recentExits: 0,
   tunnels: MCP_TUNNEL,
 };
 
@@ -80,7 +82,7 @@ describe("parseServiceState", () => {
 
 describe("countEvents", () => {
   it("counts every event wevtutil returned", () => {
-    expect(countEvents(START_EVENT.repeat(3))).toBe(3);
+    expect(countEvents(EXIT_EVENT.repeat(3))).toBe(3);
     expect(countEvents("")).toBe(0);
   });
 });
@@ -150,25 +152,30 @@ describe("classifyMcpServiceHealth", () => {
       kinds({
         serviceState: "PAUSED",
         health: { ok: false, error: "nothing is listening on the port" },
-        recentStarts: 24,
+        recentExits: 24,
         tunnels: MCP_TUNNEL,
       })
-    ).toEqual(["service-paused", "health-failed", "restarting"]);
+    ).toEqual(["service-paused", "health-failed", "crashing"]);
   });
 
   // The probe can land in the seconds a crash-looping server is up, when the
   // state and the health URL both look fine.
   it("flags a crash loop caught during one of its brief runs", () => {
-    expect(kinds({ ...HEALTHY, recentStarts: RESTARTS_BEFORE_ALERT })).toEqual([
-      "restarting",
+    expect(kinds({ ...HEALTHY, recentExits: EXITS_BEFORE_ALERT })).toEqual([
+      "crashing",
     ]);
-    expect(
-      kinds({ ...HEALTHY, recentStarts: RESTARTS_BEFORE_ALERT - 1 })
-    ).toEqual([]);
   });
 
-  it("does not invent a restart problem when the event log was unreadable", () => {
-    expect(kinds({ ...HEALTHY, recentStarts: null })).toEqual([]);
+  // A deliberate restart logs no exit event, so it can never count; one exit
+  // that NSSM recovered from is not a pattern yet.
+  it("lets a single unexpected exit pass", () => {
+    expect(kinds({ ...HEALTHY, recentExits: EXITS_BEFORE_ALERT - 1 })).toEqual(
+      []
+    );
+  });
+
+  it("does not invent a crash problem when the event log was unreadable", () => {
+    expect(kinds({ ...HEALTHY, recentExits: null })).toEqual([]);
   });
 
   it("flags stopped, missing, and in-between service states", () => {
@@ -210,5 +217,33 @@ describe("classifyMcpServiceHealth", () => {
 
   it("skips the route when the caller did not check tunnels", () => {
     expect(kinds({ ...HEALTHY, tunnels: undefined })).toEqual([]);
+  });
+});
+
+describe("hasServiceProblem", () => {
+  // Reports read the server's stderr log only for a server problem.
+  it("separates a missing route from a server problem", () => {
+    const routeOnly = classifyMcpServiceHealth({
+      ...HEALTHY,
+      tunnels: { answered: 0, hostnames: [] },
+    });
+    expect(hasServiceProblem(routeOnly.problems)).toBe(false);
+    expect(
+      hasServiceProblem(
+        classifyMcpServiceHealth({ ...HEALTHY, serviceState: "PAUSED" })
+          .problems
+      )
+    ).toBe(true);
+  });
+});
+
+describe("describeFacts", () => {
+  it("says the exit count is unknown instead of reporting zero", () => {
+    expect(describeFacts({ ...HEALTHY, recentExits: null })).toContain(
+      "exits unknown"
+    );
+    expect(describeFacts({ ...HEALTHY, recentExits: 1 })).toContain(
+      "1 unexpected exit in the last 60 min"
+    );
   });
 });
