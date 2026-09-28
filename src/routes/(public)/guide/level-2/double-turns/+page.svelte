@@ -2,13 +2,13 @@
   /**
    * Chapter hub for 2-Turns. Used to concatenate all 4 ch21 GuideSection
    * components into one long page; each now has its own crawlable
-   * `/guide/level-2/<slug>` route (see level2-topic-manifest.ts for the
+   * `/guide/level-2/<slug>` route (see level2-topic-routes.ts for the
    * section → route mapping and why), so this page becomes an overview +
    * links, mirroring `/guide/level-2`'s own hub pattern. Kept at this URL
    * (rather than 301'd) since it already carries inbound/search traffic.
    */
   import GuideSeo from "../../level-1/_components/GuideSeo.svelte";
-  import { level2TopicPagesForChapter } from "../_data/level2-topic-manifest";
+  import { level2TopicPagesForChapter } from "../_data/level2-topic-routes";
 
   const topics = level2TopicPagesForChapter("double-turns");
 </script>
