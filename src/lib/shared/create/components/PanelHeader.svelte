@@ -11,7 +11,7 @@
   - Close button (always present)
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t, tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
   import type { Snippet } from "svelte";
 
   let {
@@ -55,7 +55,7 @@
     <button
       class="close-button"
       data-escape-shortcut
-      data-escape-shortcut-label="Panel"
+      data-escape-shortcut-label={tDynamic("create_ui_panel")}
       onclick={onClose}
       aria-label={t("compose_close_panel")}
     >

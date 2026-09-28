@@ -172,31 +172,47 @@
   // this builds the equivalent sentence from the HalfwayMotion + fraction.
   const motionName = (motion: MotionType): string => {
     switch (motion) {
-      case MotionType.PRO: return translate("guide_l2_aria_pro_shift");
-      case MotionType.ANTI: return translate("guide_l2_aria_anti_shift");
-      case MotionType.DASH: return translate("guide_l2_aria_dash");
-      case MotionType.STATIC: return translate("guide_l2_aria_static");
-      default: return String(motion);
+      case MotionType.PRO:
+        return translate("guide_l2_aria_pro_shift");
+      case MotionType.ANTI:
+        return translate("guide_l2_aria_anti_shift");
+      case MotionType.DASH:
+        return translate("guide_l2_aria_dash");
+      case MotionType.STATIC:
+        return translate("guide_l2_aria_static");
+      default:
+        return String(motion);
     }
   };
   const locName = (loc: string): string => {
     switch (loc) {
-      case "n": return translate("guide_l2_aria_north");
-      case "e": return translate("guide_l2_aria_east");
-      case "s": return translate("guide_l2_aria_south");
-      case "w": return translate("guide_l2_aria_west");
-      case "ne": return translate("guide_l2_aria_northeast");
-      case "se": return translate("guide_l2_aria_southeast");
-      case "sw": return translate("guide_l2_aria_southwest");
-      case "nw": return translate("guide_l2_aria_northwest");
-      default: return loc;
+      case "n":
+        return translate("guide_l2_aria_north");
+      case "e":
+        return translate("guide_l2_aria_east");
+      case "s":
+        return translate("guide_l2_aria_south");
+      case "w":
+        return translate("guide_l2_aria_west");
+      case "ne":
+        return translate("guide_l2_aria_northeast");
+      case "se":
+        return translate("guide_l2_aria_southeast");
+      case "sw":
+        return translate("guide_l2_aria_southwest");
+      case "nw":
+        return translate("guide_l2_aria_northwest");
+      default:
+        return loc;
     }
   };
   const fractionWord = (t: number): string => {
     if (Math.abs(t - 0.25) < 1e-6) return translate("guide_l2_aria_quarter");
-    if (Math.abs(t - 0.75) < 1e-6) return translate("guide_l2_aria_three_quarters");
+    if (Math.abs(t - 0.75) < 1e-6)
+      return translate("guide_l2_aria_three_quarters");
     if (Math.abs(t - 1 / 3) < 1e-6) return translate("guide_l2_aria_one_third");
-    if (Math.abs(t - 2 / 3) < 1e-6) return translate("guide_l2_aria_two_thirds");
+    if (Math.abs(t - 2 / 3) < 1e-6)
+      return translate("guide_l2_aria_two_thirds");
     if (Math.abs(t - 0.5) < 1e-6) return translate("guide_l2_aria_halfway");
     return `${Math.round(t * 100)}%`;
   };
@@ -204,8 +220,15 @@
     const verb = motionName(motion.type);
     const from = locName(motion.from);
     const to = locName(motion.to);
-    const where = from === to ? translate("guide_l2_aria_at", { place: from }) : translate("guide_l2_aria_from_to", { from, to });
-    return translate("guide_l2_aria_pose", { fraction: fractionWord(t), motion: verb, where });
+    const where =
+      from === to
+        ? translate("guide_l2_aria_at", { place: from })
+        : translate("guide_l2_aria_from_to", { from, to });
+    return translate("guide_l2_aria_pose", {
+      fraction: fractionWord(t),
+      motion: verb,
+      where,
+    });
   };
   const dualPoseAriaLabel = (
     poses: { motion: HalfwayMotion; color: HandSide; t: number }[]
@@ -218,12 +241,18 @@
       .join(" ");
   const frameText = (value?: string): string => {
     switch (value) {
-      case "start": return translate("guide_l2_frame_start");
-      case "halfway": return translate("guide_l2_frame_halfway");
-      case "end": return translate("guide_l2_frame_end");
-      case "in": return translate("guide_l2_frame_in");
-      case "out": return translate("guide_l2_frame_out");
-      default: return value ?? "";
+      case "start":
+        return translate("guide_l2_frame_start");
+      case "halfway":
+        return translate("guide_l2_frame_halfway");
+      case "end":
+        return translate("guide_l2_frame_end");
+      case "in":
+        return translate("guide_l2_frame_in");
+      case "out":
+        return translate("guide_l2_frame_out");
+      default:
+        return value ?? "";
     }
   };
 </script>
@@ -289,7 +318,14 @@
             <SelectionHit
               groupId={frame.animKey}
               isGroupStart
-              label={translate("guide_l2_animate", { word: frame.word })}
+              label={translate("guide_l2_animate", {
+                word:
+                  frame.word === "Prospin with a turn"
+                    ? translate("guide_runtime_prospin_turn")
+                    : frame.word === "Antispin with a turn"
+                      ? translate("guide_runtime_antispin_turn")
+                      : frame.word,
+              })}
               onselect={() =>
                 emitSequence?.({
                   strip: frame.rowSteps,
