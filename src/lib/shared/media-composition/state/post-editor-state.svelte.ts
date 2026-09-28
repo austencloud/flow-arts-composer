@@ -48,8 +48,9 @@ import {
   type TakeTimingStatus,
 } from "$lib/shared/media-composition/domain/take-timing";
 import {
-  evaluatePresetFrame,
+  evaluatePresetLayers,
   evaluateRegionRects,
+  isVisibleLayer,
   type EvaluatedFrameLayer,
   type RegionRect,
   type TakeClock,
@@ -187,9 +188,10 @@ export function createPostEditorState(deps: PostEditorDeps) {
   /** The timeline's length, hidden tracks included, so nothing sits past it. */
   const durationSeconds = $derived(projectDurationSeconds(project));
 
-  const frameLayers = $derived.by((): EvaluatedFrameLayer[] => {
+  /** Every layer at the playhead, one a fade leaves fully clear included. */
+  const presentLayers = $derived.by((): EvaluatedFrameLayer[] => {
     if (!compiled || compiled.durationSeconds <= 0) return [];
-    return evaluatePresetFrame(
+    return evaluatePresetLayers(
       compiled.preset,
       compiled.durationSeconds,
       previewSeconds,
@@ -200,6 +202,8 @@ export function createPostEditorState(deps: PostEditorDeps) {
       }
     );
   });
+
+  const frameLayers = $derived(presentLayers.filter(isVisibleLayer));
 
   /** Every region's rect at the playhead: static, or where its motion or a
    *  keyframed box has carried it. The canvas positions its region divs from
@@ -848,6 +852,10 @@ export function createPostEditorState(deps: PostEditorDeps) {
     },
     get frameLayers() {
       return frameLayers;
+    },
+    /** `frameLayers` plus any a fade leaves fully clear, for the crop screen. */
+    get presentLayers() {
+      return presentLayers;
     },
     get regionRects() {
       return regionRects;
