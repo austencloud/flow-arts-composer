@@ -105,6 +105,21 @@ export async function generateUniqueUsername(base: string): Promise<string> {
 	return `${cleanBase}_${Date.now().toString().slice(-6)}`;
 }
 
+/** The user id holding this username's claim, or null when nobody has claimed it. */
+export async function getUsernameOwner(username: string): Promise<string | null> {
+	const firestore = await getFirestoreInstance();
+	const usernameDoc = await getDoc(
+		doc(firestore, USERNAMES_COLLECTION, formatUsername(username)),
+	);
+	return usernameDoc.exists() ? usernameDoc.data().userId : null;
+}
+
+/**
+ * Claiming a name the user already holds writes nothing. The claim's createdAt
+ * records when the name was first taken, so it is only set on a new claim, and
+ * the profile is only updated when its stored spelling differs (a rename that
+ * changes only capitalization keeps the claim and updates the profile).
+ */
 export async function claimUsername(userId: string, username: string): Promise<void> {
 	const formatResult = validateUsernameFormat(username);
 	if (!formatResult.isValid) {
@@ -122,18 +137,24 @@ export async function claimUsername(userId: string, username: string): Promise<v
 			throw new Error('Username is already taken');
 		}
 
-		transaction.set(usernameDocRef, {
-			userId,
-			createdAt: serverTimestamp(),
-			updatedAt: serverTimestamp(),
-		});
-
 		const userDocRef = doc(firestore, USERS_COLLECTION, userId);
-		transaction.update(userDocRef, {
-			username,
-			usernameLowercase,
-			updatedAt: serverTimestamp(),
-		});
+		const profile = (await transaction.get(userDocRef)).data();
+
+		if (!usernameDoc.exists()) {
+			transaction.set(usernameDocRef, {
+				userId,
+				createdAt: serverTimestamp(),
+				updatedAt: serverTimestamp(),
+			});
+		}
+
+		if (profile?.username !== username || profile?.usernameLowercase !== usernameLowercase) {
+			transaction.update(userDocRef, {
+				username,
+				usernameLowercase,
+				updatedAt: serverTimestamp(),
+			});
+		}
 	});
 }
 

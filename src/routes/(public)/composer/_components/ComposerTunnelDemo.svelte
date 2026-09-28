@@ -323,12 +323,16 @@
   }
 
   /* Band: square stage left, control column right. The renderer is square-only,
-     so the stage keeps aspect-ratio 1 and is height-keyed. */
+     so the stage keeps aspect-ratio 1 and is height-keyed. A host that knows
+     the height it has, such as a stop on the /composer stage, sets
+     --tunnel-stage-size. */
   .tunnel-demo.band {
     display: grid;
     /* The stage track is sized here, not on .band-stage: a percentage width
        inside an `auto` track is cyclic and resolves to zero. */
-    grid-template-columns: minmax(0, min(46rem, 62vh)) minmax(16rem, 30rem);
+    grid-template-columns:
+      minmax(0, var(--tunnel-stage-size, min(46rem, 62vh)))
+      minmax(16rem, 30rem);
     gap: clamp(1.5rem, 4vw, 3rem);
     align-items: center;
     justify-content: center;
@@ -372,7 +376,7 @@
       grid-template-columns: minmax(0, 1fr);
     }
     .band-stage {
-      width: min(46rem, 62vh, 100%);
+      width: min(var(--tunnel-stage-size, min(46rem, 62vh)), 100%);
       margin-inline: auto;
     }
     .band-controls {

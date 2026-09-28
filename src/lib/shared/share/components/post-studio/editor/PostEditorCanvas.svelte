@@ -36,6 +36,10 @@
     boxAt,
     framingAt,
   } from "$lib/shared/media-composition/domain/post-project-keyframes";
+  import {
+    clipBox,
+    postOutputSize,
+  } from "$lib/shared/media-composition/domain/post-canvas";
   import PostStudioMediaLayer from "../PostStudioMediaLayer.svelte";
   import PostStudioPaintedLayer from "../PostStudioPaintedLayer.svelte";
   import {
@@ -56,15 +60,16 @@
   import {
     CROP_CORNERS,
     CROP_SIDES,
-    handleFrame,
+    cameraDisplayScale,
+    cameraWindowCenter,
+    cropCamera,
+    cropWindowScale,
     handlePoint,
     handleScaleAt,
     handleScaleRange,
-    cropWindowScale,
-    settleTransform,
+    type CropCamera,
     type CropHandle,
     type CropPoint,
-    type CropPose,
     type CropSize,
   } from "./post-crop-geometry";
   import type { CropSession } from "./post-crop-session.svelte";
@@ -259,6 +264,14 @@
       : null
   );
 
+  /** Where an item shows at `seconds`: a video in its shape inside its box. */
+  function shownBox(item: PostItem, seconds: number): PostBox {
+    const box = boxAt(item, seconds);
+    return item.kind === "video"
+      ? clipBox(item, box, postOutputSize(editor.project.canvas))
+      : box;
+  }
+
   /** A box this close to the whole frame reads as "fills the frame". */
   const FRAME_FILL_EPSILON = 1e-3;
 
@@ -329,7 +342,7 @@
     const seconds = editor.previewSeconds;
     return (
       itemsHere.find((item) => {
-        const box = boxAt(item, seconds);
+        const box = shownBox(item, seconds);
         return (
           x >= box.x &&
           x <= box.x + box.width &&
@@ -360,7 +373,7 @@
     editor.pause();
     (event.currentTarget as HTMLElement).setPointerCapture(event.pointerId);
     const seconds = editor.previewSeconds;
-    const box = boxAt(item, seconds);
+    const box = shownBox(item, seconds);
 
     if (handle === "move" && isPictureDragTarget(item, box)) {
       const video = item as PostVideoItem;
@@ -504,7 +517,7 @@
     event.preventDefault();
     event.stopPropagation();
     const seconds = editor.previewSeconds;
-    const current = boxAt(item, seconds);
+    const current = shownBox(item, seconds);
     if (item.kind === "video" && isPictureDragTarget(item, current)) {
       nudgePicture(item, current, direction, event.shiftKey, seconds);
       return;
@@ -646,7 +659,7 @@
     releaseDrag(true);
     const rect = root.getBoundingClientRect();
     const seconds = editor.previewSeconds;
-    const box = boxAt(item, seconds);
+    const box = shownBox(item, seconds);
     const framing = framingAt(item, seconds);
     const size = mountedVideoSize(item.id);
     editor.pause();
@@ -782,24 +795,31 @@
 
   const cropWindowWidth = $derived(crop?.window?.width ?? 0);
   const cropWindowHeight = $derived(crop?.window?.height ?? 0);
-  const cropPoseReady = $derived(crop?.pose != null);
+  const cropPose = $derived(cropping ? (crop?.pose ?? null) : null);
 
   /**
-   * Screen pixels per output pixel on the crop stage. Worked out when the
-   * screen opens, when the stage or the slot changes size and once the
-   * footage's size is known; never from an edit, so the window holds still
-   * under the finger.
+   * Where the stage shows the clip's whole picture, with the window over its
+   * part of it. Between gestures it follows the crop; while a drag, pinch or
+   * handle runs it holds still, so the picture stays put and the frame moves.
    */
+  let heldCamera = $state.raw<CropCamera | null>(null);
+  const liveCamera = $derived.by((): CropCamera | null => {
+    if (!cropPose || stageWidth <= 0 || stageHeight <= 0) return null;
+    return cropCamera({
+      stage: { width: stageWidth, height: stageHeight },
+      pose: cropPose,
+    });
+  });
+  const camera = $derived(heldCamera ?? liveCamera);
+
+  /** Screen pixels per output pixel on the crop stage. */
   const displayScale = $derived.by(() => {
     if (!cropping || stageWidth <= 0 || stageHeight <= 0) return 0;
+    if (cropPose && camera) return cameraDisplayScale(cropPose, camera);
     if (cropWindowWidth <= 0 || cropWindowHeight <= 0) return 0;
-    const stage = { width: stageWidth, height: stageHeight };
-    const window = { width: cropWindowWidth, height: cropWindowHeight };
-    if (!cropPoseReady) return cropWindowScale({ stage, window });
     return cropWindowScale({
-      stage,
-      window,
-      pose: untrack(() => crop?.pose ?? null),
+      stage: { width: stageWidth, height: stageHeight },
+      window: { width: cropWindowWidth, height: cropWindowHeight },
     });
   });
 
@@ -810,24 +830,42 @@
     height: number;
   }
 
-  /** The window on the stage, centred, in whole screen pixels. */
+  /**
+   * The window on the stage, over its part of the picture; centred until the
+   * footage's size is known.
+   */
   const windowRect = $derived.by((): ScreenRect | null => {
-    if (displayScale <= 0) return null;
-    const width = Math.max(1, Math.round(cropWindowWidth * displayScale));
-    const height = Math.max(1, Math.round(cropWindowHeight * displayScale));
+    if (displayScale <= 0 || cropWindowWidth <= 0 || cropWindowHeight <= 0)
+      return null;
+    const width = cropWindowWidth * displayScale;
+    const height = cropWindowHeight * displayScale;
+    const center =
+      cropPose && camera
+        ? cameraWindowCenter(cropPose, camera)
+        : { x: stageWidth / 2, y: stageHeight / 2 };
     return {
-      left: Math.round((stageWidth - width) / 2),
-      top: Math.round((stageHeight - height) / 2),
+      left: center.x - width / 2,
+      top: center.y - height / 2,
       width,
       height,
     };
   });
+
+  /** Where a gesture measures from: the window as the gesture began. */
+  interface GestureOrigin {
+    /** The window's centre, in client pixels. */
+    x: number;
+    y: number;
+    /** Screen pixels per output pixel. */
+    scale: number;
+  }
 
   interface CropDrag {
     pointerId: number;
     startX: number;
     startY: number;
     started: boolean;
+    origin: GestureOrigin;
   }
 
   interface CropPinch {
@@ -839,6 +877,7 @@
     /** Output pixels from the window's centre. */
     startMidpoint: CropPoint;
     started: boolean;
+    origin: GestureOrigin;
   }
 
   interface HandleDrag {
@@ -847,8 +886,9 @@
     /** Where on the handle it was taken, from its point, in output pixels. */
     grab: CropPoint;
     range: { min: number; max: number };
-    /** The frame's size as a share of the window. */
-    scale: number;
+    /** The window as the drag began, in output pixels. */
+    window: CropSize;
+    origin: GestureOrigin;
   }
 
   let cropDrag: CropDrag | null = null;
@@ -856,12 +896,11 @@
   let handleDrag = $state<HandleDrag | null>(null);
   /** A drag, pinch or handle is moving: the thirds show clearly. */
   let cropActive = $state(false);
-  /** How far past its limit the picture is pulled, in screen pixels. */
+  /** How far past its limit the frame is pulled, in screen pixels. */
   let rubber = $state<CropPoint>({ x: 0, y: 0 });
 
   /** The furthest a pull past the limit still shows, in screen pixels. */
   const RUBBER_RANGE_PX = 64;
-  const SPRING_EASING = "cubic-bezier(0.2, 0.8, 0.2, 1)";
   /** + and - zoom by this much about the window's centre. */
   const CROP_ZOOM_STEP = 1.1;
   /** Pixels a wheel scrolls per line, for wheels that count in lines. */
@@ -869,25 +908,17 @@
   /** A wheel this long idle has finished, and what it left is announced. */
   const WHEEL_SETTLE_MS = 400;
 
-  /** The frame on the stage: the window, or where a held handle has it. */
+  /** The frame on the stage in whole pixels: the window, and any pull past it. */
   const frameRect = $derived.by((): ScreenRect | null => {
     const rect = windowRect;
-    const held = handleDrag;
-    if (!rect || !held || held.scale === 1) return rect;
-    const frame = handleFrame(
-      { width: cropWindowWidth, height: cropWindowHeight },
-      held.handle,
-      held.scale
-    );
-    const width = rect.width * held.scale;
-    const height = rect.height * held.scale;
+    if (!rect) return null;
+    const left = Math.round(rect.left + rubber.x);
+    const top = Math.round(rect.top + rubber.y);
     return {
-      left:
-        rect.left + rect.width / 2 + frame.center.x * displayScale - width / 2,
-      top:
-        rect.top + rect.height / 2 + frame.center.y * displayScale - height / 2,
-      width,
-      height,
+      left,
+      top,
+      width: Math.max(1, Math.round(rect.left + rubber.x + rect.width) - left),
+      height: Math.max(1, Math.round(rect.top + rubber.y + rect.height) - top),
     };
   });
 
@@ -900,19 +931,35 @@
       cropPinch = null;
       handleDrag = null;
       cropActive = false;
+      heldCamera = null;
       rubber = { x: 0, y: 0 };
     });
   });
 
-  /** A client point in output pixels from the window's centre. */
-  function toWindowPoint(clientX: number, clientY: number): CropPoint | null {
+  /** The window's centre and scale now, for a gesture to measure from. */
+  function gestureOrigin(): GestureOrigin | null {
     const rect = windowRect;
     if (!root || !rect || displayScale <= 0) return null;
     const bounds = root.getBoundingClientRect();
     return {
-      x: (clientX - bounds.left - rect.left - rect.width / 2) / displayScale,
-      y: (clientY - bounds.top - rect.top - rect.height / 2) / displayScale,
+      x: bounds.left + rect.left + rect.width / 2,
+      y: bounds.top + rect.top + rect.height / 2,
+      scale: displayScale,
     };
+  }
+
+  /** A client point in output pixels from the window's centre at `origin`. */
+  function fromOrigin(origin: GestureOrigin, clientX: number, clientY: number): CropPoint {
+    return {
+      x: (clientX - origin.x) / origin.scale,
+      y: (clientY - origin.y) / origin.scale,
+    };
+  }
+
+  /** A client point in output pixels from the window's centre. */
+  function toWindowPoint(clientX: number, clientY: number): CropPoint | null {
+    const origin = gestureOrigin();
+    return origin ? fromOrigin(origin, clientX, clientY) : null;
   }
 
   function cropRegionElement(): HTMLElement | null {
@@ -929,7 +976,7 @@
       : RUBBER_RANGE_PX / displayScale;
   }
 
-  /** A new gesture takes the picture from wherever a flight or settle had it. */
+  /** A new gesture takes the frame from wherever a flight or settle had it. */
   function stopCropMotion(): void {
     for (const element of [cropRegionElement(), cropFrameElement()]) {
       for (const animation of element?.getAnimations() ?? [])
@@ -937,243 +984,44 @@
     }
   }
 
-  /** A pull past the limit eases back to it. */
-  function springBack(): void {
-    const from = rubber;
-    if (from.x === 0 && from.y === 0) return;
-    rubber = { x: 0, y: 0 };
-    const region = cropRegionElement();
-    const duration = motionDuration(DURATION.normal);
-    if (!region || duration <= 0) return;
-    region.animate(
-      [{ translate: `${from.x}px ${from.y}px` }, { translate: "0px 0px" }],
-      {
-        duration,
-        easing: SPRING_EASING,
-      }
-    );
-  }
-
-  function isPinchPointer(
-    state: { pointerA: number; pointerB: number },
-    event: PointerEvent
-  ): boolean {
-    return (
-      event.pointerId === state.pointerA || event.pointerId === state.pointerB
-    );
-  }
-
-  /** A press anywhere on the stage takes the picture, ready to drag. */
-  function pressCropStage(event: PointerEvent): void {
-    if (!crop || event.button !== 0 || handleDrag) return;
-    event.preventDefault();
-    releaseCropDrag(true);
-    (event.currentTarget as HTMLElement).setPointerCapture(event.pointerId);
-    cropDrag = {
-      pointerId: event.pointerId,
-      startX: event.clientX,
-      startY: event.clientY,
-      started: false,
-    };
-  }
-
-  /** The picture follows the pointer, and past its limit, with resistance. */
-  function moveCropDrag(event: PointerEvent): void {
-    const current = cropDrag;
-    if (!current || !crop || event.pointerId !== current.pointerId) return;
-    if (displayScale <= 0) return;
-    const dx = event.clientX - current.startX;
-    const dy = event.clientY - current.startY;
-    if (!current.started) {
-      if (Math.hypot(dx, dy) < TAP_PIXELS) return;
-      stopCropMotion();
-      if (!crop.startGesture(rubberRange())) {
-        cropDrag = null;
-        return;
-      }
-      current.started = true;
-      cropActive = true;
-    }
-    const over = crop.dragTo({ x: dx / displayScale, y: dy / displayScale });
-    rubber = { x: over.x * displayScale, y: over.y * displayScale };
-  }
-
-  function releaseCropDrag(keep: boolean): void {
-    const current = cropDrag;
-    if (!current) return;
-    cropDrag = null;
-    if (!current.started) return;
-    cropActive = false;
-    crop?.endGesture(keep);
-    springBack();
-  }
-
-  /** A second finger turns the drag into a pinch about the fingers. */
-  function startCropPinch(): void {
-    const [first, second] = [...touchPoints.entries()];
-    if (!crop || touchPoints.size !== 2 || !first || !second) return;
-    // A one-finger move already made is kept as its own step; a held corner
-    // or side is let go without a crop.
-    releaseCropDrag(true);
-    releaseHandleDrag(false);
-    const [idA, posA] = first;
-    const [idB, posB] = second;
-    const mid = midpointOf(posA, posB);
-    const startMidpoint = toWindowPoint(mid.x, mid.y);
-    if (!startMidpoint) return;
-    cropPinch = {
-      pointerA: idA,
-      pointerB: idB,
-      posA,
-      posB,
-      startDistance: distanceBetween(posA, posB),
-      startMidpoint,
-      started: false,
-    };
-  }
-
-  function stepCropPinch(event: PointerEvent): void {
-    const current = cropPinch;
-    if (!current || !crop || !isPinchPointer(current, event)) return;
-    const point = { x: event.clientX, y: event.clientY };
-    if (event.pointerId === current.pointerA) current.posA = point;
-    else current.posB = point;
-    const mid = midpointOf(current.posA, current.posB);
-    const midpoint = toWindowPoint(mid.x, mid.y);
-    if (!midpoint) return;
-    const distance = distanceBetween(current.posA, current.posB);
-    if (!current.started) {
-      const spread = Math.abs(distance - current.startDistance);
-      const shift =
-        Math.hypot(
-          midpoint.x - current.startMidpoint.x,
-          midpoint.y - current.startMidpoint.y
-        ) * displayScale;
-      if (spread < TAP_PIXELS && shift < TAP_PIXELS) return;
-      stopCropMotion();
-      if (!crop.startGesture(rubberRange())) {
-        cropPinch = null;
-        return;
-      }
-      current.started = true;
-      cropActive = true;
-    }
-    const over = crop.pinchTo({
-      startMidpoint: current.startMidpoint,
-      midpoint,
-      spread: current.startDistance > 0 ? distance / current.startDistance : 1,
-    });
-    rubber = { x: over.x * displayScale, y: over.y * displayScale };
-  }
-
-  function releaseCropPinch(keep: boolean): void {
-    const current = cropPinch;
-    if (!current) return;
-    cropPinch = null;
-    if (!current.started) return;
-    cropActive = false;
-    crop?.endGesture(keep);
-    springBack();
-  }
-
-  /** A corner or side takes the frame; the picture holds still under it. */
-  function pressHandle(event: PointerEvent, handle: CropHandle): void {
-    const pose = crop?.pose;
-    if (
-      !crop ||
-      !pose ||
-      crop.locked ||
-      event.button !== 0 ||
-      displayScale <= 0
-    )
-      return;
-    if (touchPoints.size > 1) return;
-    const point = toWindowPoint(event.clientX, event.clientY);
-    if (!point) return;
-    event.preventDefault();
-    event.stopPropagation();
-    releaseCropDrag(true);
-    stopCropMotion();
-    editor.pause();
-    (event.currentTarget as HTMLElement).setPointerCapture(event.pointerId);
-    const at = handlePoint(pose.window, handle, 1);
-    handleDrag = {
-      pointerId: event.pointerId,
-      handle,
-      grab: { x: point.x - at.x, y: point.y - at.y },
-      range: handleScaleRange({
-        pose,
-        handle,
-        limit: crop.limit,
-        displayScale,
-        stage: { width: stageWidth, height: stageHeight },
-      }),
-      scale: 1,
-    };
-    crop.holdHandle(true);
+  /** Starts a gesture with the picture held where it is. */
+  function beginCropGesture(range: number): boolean {
+    if (!crop || !crop.startGesture(range)) return false;
+    heldCamera = camera;
     cropActive = true;
-  }
-
-  function moveHandle(event: PointerEvent): void {
-    const current = handleDrag;
-    const pose = crop?.pose;
-    if (!current || !pose || event.pointerId !== current.pointerId) return;
-    const point = toWindowPoint(event.clientX, event.clientY);
-    if (!point) return;
-    const scale = handleScaleAt(pose.window, current.handle, {
-      x: point.x - current.grab.x,
-      y: point.y - current.grab.y,
-    });
-    current.scale = Math.min(
-      current.range.max,
-      Math.max(current.range.min, scale)
-    );
+    return true;
   }
 
   /**
-   * Let go, what the frame held becomes the crop: the frame eases back to
-   * the window while the picture, already reframed, grows or shrinks to it.
+   * Ends a gesture. A pull past the limit eases back to it, and where the
+   * frame was left past the picture the stage eases to show both again.
    */
-  function releaseHandleDrag(keep: boolean): void {
-    const current = handleDrag;
-    if (!current) return;
-    const from = frameRect;
-    const { handle, scale } = current;
-    handleDrag = null;
+  function finishCropGesture(keep: boolean): void {
+    const fromFrame = frameRect;
+    const fromRegion = windowRect;
     cropActive = false;
-    if (!crop) return;
-    const poses = keep ? crop.releaseHandle(handle, scale) : null;
-    if (!poses) crop.holdHandle(false);
-    void settleCrop(from, poses);
+    crop?.endGesture(keep);
+    heldCamera = null;
+    rubber = { x: 0, y: 0 };
+    void settleCamera(fromFrame, fromRegion);
   }
 
-  async function settleCrop(
-    from: ScreenRect | null,
-    poses: { before: CropPose; after: CropPose } | null
+  async function settleCamera(
+    fromFrame: ScreenRect | null,
+    fromRegion: ScreenRect | null
   ): Promise<void> {
     const duration = motionDuration(DURATION.emphasis);
     await tick();
-    const to = windowRect;
-    if (duration <= 0 || !to) return;
-    const frame = cropFrameElement();
-    if (frame && from && !sameRect(from, to)) {
-      frame.animate([rectKeyframe(from), rectKeyframe(to)], {
+    if (duration <= 0) return;
+    for (const [element, from, to] of [
+      [cropRegionElement(), fromRegion, windowRect],
+      [cropFrameElement(), fromFrame, frameRect],
+    ] as const) {
+      if (!element || !from || !to || sameRect(from, to)) continue;
+      element.animate([rectKeyframe(from), rectKeyframe(to)], {
         duration,
         easing: LAYOUT_MOTION_EASING,
       });
-    }
-    const region = cropRegionElement();
-    if (region && poses) {
-      const move = settleTransform(poses.before, poses.after);
-      region.animate(
-        [
-          {
-            transform: `translate(${move.x * displayScale}px, ${move.y * displayScale}px) scale(${move.scale})`,
-          },
-          { transform: "none" },
-        ],
-        { duration, easing: LAYOUT_MOTION_EASING }
-      );
     }
   }
 
@@ -1195,6 +1043,178 @@
     );
   }
 
+  function isPinchPointer(
+    state: { pointerA: number; pointerB: number },
+    event: PointerEvent
+  ): boolean {
+    return (
+      event.pointerId === state.pointerA || event.pointerId === state.pointerB
+    );
+  }
+
+  /** A press anywhere on the stage takes the frame, ready to drag. */
+  function pressCropStage(event: PointerEvent): void {
+    if (!crop || event.button !== 0 || handleDrag) return;
+    const origin = gestureOrigin();
+    if (!origin) return;
+    event.preventDefault();
+    releaseCropDrag(true);
+    (event.currentTarget as HTMLElement).setPointerCapture(event.pointerId);
+    cropDrag = {
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      startY: event.clientY,
+      started: false,
+      origin,
+    };
+  }
+
+  /** The frame follows the pointer, and past its limit, with resistance. */
+  function moveCropDrag(event: PointerEvent): void {
+    const current = cropDrag;
+    if (!current || !crop || event.pointerId !== current.pointerId) return;
+    const dx = event.clientX - current.startX;
+    const dy = event.clientY - current.startY;
+    if (!current.started) {
+      if (Math.hypot(dx, dy) < TAP_PIXELS) return;
+      stopCropMotion();
+      if (!beginCropGesture(rubberRange())) {
+        cropDrag = null;
+        return;
+      }
+      current.started = true;
+    }
+    const scale = current.origin.scale;
+    const over = crop.dragTo({ x: dx / scale, y: dy / scale });
+    rubber = { x: over.x * displayScale, y: over.y * displayScale };
+  }
+
+  function releaseCropDrag(keep: boolean): void {
+    const current = cropDrag;
+    if (!current) return;
+    cropDrag = null;
+    if (current.started) finishCropGesture(keep);
+  }
+
+  /** A second finger turns the drag into a pinch about the fingers. */
+  function startCropPinch(): void {
+    const [first, second] = [...touchPoints.entries()];
+    if (!crop || touchPoints.size !== 2 || !first || !second) return;
+    // A one-finger move or a corner already made is kept as its own step.
+    releaseCropDrag(true);
+    releaseHandleDrag(true);
+    const origin = gestureOrigin();
+    if (!origin) return;
+    const [idA, posA] = first;
+    const [idB, posB] = second;
+    const mid = midpointOf(posA, posB);
+    cropPinch = {
+      pointerA: idA,
+      pointerB: idB,
+      posA,
+      posB,
+      startDistance: distanceBetween(posA, posB),
+      startMidpoint: fromOrigin(origin, mid.x, mid.y),
+      started: false,
+      origin,
+    };
+  }
+
+  function stepCropPinch(event: PointerEvent): void {
+    const current = cropPinch;
+    if (!current || !crop || !isPinchPointer(current, event)) return;
+    const point = { x: event.clientX, y: event.clientY };
+    if (event.pointerId === current.pointerA) current.posA = point;
+    else current.posB = point;
+    const mid = midpointOf(current.posA, current.posB);
+    const midpoint = fromOrigin(current.origin, mid.x, mid.y);
+    const distance = distanceBetween(current.posA, current.posB);
+    if (!current.started) {
+      const spread = Math.abs(distance - current.startDistance);
+      const shift =
+        Math.hypot(
+          midpoint.x - current.startMidpoint.x,
+          midpoint.y - current.startMidpoint.y
+        ) * current.origin.scale;
+      if (spread < TAP_PIXELS && shift < TAP_PIXELS) return;
+      stopCropMotion();
+      if (!beginCropGesture(rubberRange())) {
+        cropPinch = null;
+        return;
+      }
+      current.started = true;
+    }
+    const over = crop.pinchTo({
+      startMidpoint: current.startMidpoint,
+      midpoint,
+      spread: current.startDistance > 0 ? distance / current.startDistance : 1,
+    });
+    rubber = { x: over.x * displayScale, y: over.y * displayScale };
+  }
+
+  function releaseCropPinch(keep: boolean): void {
+    const current = cropPinch;
+    if (!current) return;
+    cropPinch = null;
+    if (current.started) finishCropGesture(keep);
+  }
+
+  /** A corner or side takes the frame; the picture holds still under it. */
+  function pressHandle(event: PointerEvent, handle: CropHandle): void {
+    const pose = crop?.pose;
+    const rect = windowRect;
+    if (!crop || !pose || !rect || crop.locked || event.button !== 0) return;
+    if (touchPoints.size > 1) return;
+    const origin = gestureOrigin();
+    if (!origin) return;
+    event.preventDefault();
+    event.stopPropagation();
+    releaseCropDrag(true);
+    stopCropMotion();
+    const range = handleScaleRange({
+      pose,
+      handle,
+      limit: crop.limit,
+      displayScale,
+      stage: { width: stageWidth, height: stageHeight },
+      center: { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 },
+      free: crop.free,
+    });
+    if (!beginCropGesture(0)) return;
+    (event.currentTarget as HTMLElement).setPointerCapture(event.pointerId);
+    const point = fromOrigin(origin, event.clientX, event.clientY);
+    const at = handlePoint(pose.window, handle, 1);
+    handleDrag = {
+      pointerId: event.pointerId,
+      handle,
+      grab: { x: point.x - at.x, y: point.y - at.y },
+      range,
+      window: pose.window,
+      origin,
+    };
+  }
+
+  function moveHandle(event: PointerEvent): void {
+    const current = handleDrag;
+    if (!current || !crop || event.pointerId !== current.pointerId) return;
+    const point = fromOrigin(current.origin, event.clientX, event.clientY);
+    const scale = handleScaleAt(current.window, current.handle, {
+      x: point.x - current.grab.x,
+      y: point.y - current.grab.y,
+    });
+    crop.handleTo(
+      current.handle,
+      Math.min(current.range.max, Math.max(current.range.min, scale))
+    );
+  }
+
+  /** Let go, the frame stays where it was held: that is the crop. */
+  function releaseHandleDrag(keep: boolean): void {
+    if (!handleDrag) return;
+    handleDrag = null;
+    finishCropGesture(keep);
+  }
+
   /** Escape during a crop gesture puts it back; true when one was running. */
   function cancelCropGesture(): boolean {
     if (handleDrag) {
@@ -1214,7 +1234,7 @@
 
   let wheelSettle: ReturnType<typeof setTimeout> | undefined;
 
-  /** Ctrl or Cmd + scroll zooms about the pointer; a plain scroll moves the picture. */
+  /** Ctrl or Cmd + scroll zooms about the pointer; a plain scroll moves the frame. */
   function cropWheel(event: WheelEvent): void {
     if (
       !crop ||
@@ -1258,7 +1278,7 @@
 
   $effect(() => () => clearTimeout(wheelSettle));
 
-  /** On the window: arrows move the picture, + and - zoom it. */
+  /** On the frame: arrows move it, + and - zoom. */
   function cropKey(event: KeyboardEvent): void {
     if (!crop || event.altKey || event.ctrlKey || event.metaKey) return;
     const direction = ARROW_DIRECTIONS[event.key];
@@ -1426,9 +1446,6 @@
         style:top={cropWindow ? `${cropWindow.top}px` : pct(rect.y)}
         style:width={cropWindow ? `${cropWindow.width}px` : pct(rect.width)}
         style:height={cropWindow ? `${cropWindow.height}px` : pct(rect.height)}
-        style:translate={cropRegion && (rubber.x !== 0 || rubber.y !== 0)
-          ? `${rubber.x}px ${rubber.y}px`
-          : undefined}
         style:z-index={region.zIndex}
       >
         {#each entries.get(region.id) ?? [] as entry (entry.role)}
@@ -1566,7 +1583,7 @@
         {/if}
         {#if selected}
           {@const locked = trackLocked(selected.id)}
-          {@const box = boxAt(selected, editor.previewSeconds)}
+          {@const box = shownBox(selected, editor.previewSeconds)}
           {@const pictureMode = isPictureDragTarget(selected, box)}
           <div
             class="selection"
@@ -1612,7 +1629,7 @@
           : selected &&
               isPictureDragTarget(
                 selected,
-                boxAt(selected, editor.previewSeconds)
+                shownBox(selected, editor.previewSeconds)
               )
             ? t("post_editor_picture_hint")
             : t("post_editor_box_hint")}
@@ -1682,6 +1699,7 @@
     box-sizing: border-box;
     border: 2px solid var(--theme-primary, #d4813a);
     box-shadow: 0 0 0 100vmax rgb(0 0 0 / 0.55);
+    container-type: size;
   }
   .crop-frame:focus-visible {
     outline: 2px solid var(--theme-text, #fff);
@@ -1745,6 +1763,20 @@
   .crop-side.w::before {
     width: 4px;
     height: 28px;
+  }
+  /* A side too short to hold a bar between its corners drops the bar, and
+     the corners take that side. */
+  @container (height < 96px) {
+    .crop-side.e,
+    .crop-side.w {
+      display: none;
+    }
+  }
+  @container (width < 96px) {
+    .crop-side.n,
+    .crop-side.s {
+      display: none;
+    }
   }
   /* L-shaped marks on the corners, each with a 44px grab area. */
   .crop-corner {

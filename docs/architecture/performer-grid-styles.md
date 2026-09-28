@@ -1,8 +1,8 @@
 # Performer Grid Styles
 
 Status: design agreed with Austen on 2026-09-27, with his answers to the first
-three questions recorded below. Groundwork step 1 done on 2026-09-28; steps 2
-to 5 not started.
+three questions recorded below. Groundwork step 1 done on 2026-09-28, and the
+isolation staff cap settled the same day; steps 2 to 6 not started.
 
 ## Two ways to size the grid
 
@@ -19,18 +19,18 @@ Both stay available. Each performer carries a staff length and a hand
 distance (grid center to hand point), and its grid style sets them. The hand
 distance can differ by hand and by direction.
 
-| Style     | Hand distance                                | Staff length                                 |
-| --------- | -------------------------------------------- | -------------------------------------------- |
-| Isolation | Half the staff length in every direction     | The chosen length, under a looser body limit |
-| Extension | The arm's full reach, per hand and direction | The chosen length, capped by the body        |
+| Style     | Hand distance                                | Staff length                             |
+| --------- | -------------------------------------------- | ---------------------------------------- |
+| Isolation | Half the staff length in every direction     | The chosen length, capped by the hug fit |
+| Extension | The arm's full reach, per hand and direction | The chosen length, capped by the hug fit |
 
-The extension cap is the hug fit from `fitStaffLengthForHug`
+Both caps are the hug fit from `fitStaffLengthForHug`
 (`src/lib/shared/3d/domain/performer-reach-measurements.ts`): the longest
 staff the body can hold when the chest turns side-on, about 66 to 67 cm on
 the two rigs. The real staff recheck in
 [performer-contact-review.md](performer-contact-review.md) measured that
 length on today's grid and found 85 to 87% fewer chest hits than at 86 cm.
-The isolation limit waits on a focused session with Austen.
+The isolation section below shows why isolation takes the same cap.
 
 ## Extension: full reach
 
@@ -75,18 +75,60 @@ step 4 from pictures.
 ## Isolation: the staff limit
 
 Austen, 2026-09-27: a body limit applies to isolation staffs too, set
-reasonably, since isolation staffs can get pretty big. He wants a focused
-session on it before it becomes a rule. Material for that session:
+reasonably, since isolation staffs can get pretty big. On 2026-09-28 he
+looked at isolation pictures at five staff lengths beside today's grid and
+took the recommended cap: the hug fit, the same limit extension uses.
 
-- The hand sits half a staff from the center in every direction, so the
-  longest staff a body allows is twice its reach in the hardest direction the
-  sequence visits. From the table above that gives 54 to 58 cm with the chest
-  square, where across is the short way, 91 to 92 cm with the chest turned
-  60°, and 106 to 111 cm fully side-on.
-- These limits hold for one hand. Turning the chest toward one hand pulls the
-  other shoulder back, so pairs of hands need pictures.
-- The hug fit is a second limit. The real staff recheck found chest hits
-  climbing quickly above it on today's grid, so the session should weigh both.
+The contact scoreboard measured isolation, each hand half a staff from the
+center, at seven staff lengths on both rigs. Counts are ch07 / ch18, and a
+beat has 60 frames.
+
+| Staff                          | Beats with head or torso contact | Head frames | Torso frames  | Frames turned past 60° |
+| ------------------------------ | -------------------------------- | ----------- | ------------- | ---------------------- |
+| Today (0.52 m hands, 86.36 cm) | 115 / 141                        | 64 / 149    | 644 / 1,273   | 2,633 / 2,614          |
+| 61 cm                          | 86 / 118                         | 35 / 136    | 871 / 1,210   | 1,379 / 1,364          |
+| 67 cm, the hug fit             | 77 / 99                          | 16 / 130    | 1,002 / 1,360 | 1,818 / 1,810          |
+| 76 cm                          | 98 / 122                         | 84 / 192    | 1,332 / 1,709 | 2,018 / 1,994          |
+| 86 cm                          | 101 / 134                        | 101 / 214   | 1,339 / 1,644 | 2,398 / 2,372          |
+| 96 cm                          | 122 / 160                        | 72 / 182    | 1,431 / 1,747 | 2,548 / 2,522          |
+| 106 cm                         | 154 / 182                        | 65 / 153    | 1,934 / 2,179 | 2,633 / 2,616          |
+| 116 cm                         | 156 / 182                        | 67 / 157    | 2,331 / 2,896 | 2,777 / 2,748          |
+
+- The hug fit has the fewest beats with contact, and a quarter of today's
+  head frames on ch07. Each longer staff adds beats with contact, and from
+  96 cm there are more than today.
+- Shorter staffs bring the hands closer together, so the forearms crowd:
+  they pass within 4 cm of each other on 164 / 122 frames at 67 cm, against
+  97 / 68 today.
+- No length clears the together moves. With both hands at one point the
+  chest turns side-on, and each staff's inner end reaches the grid center.
+  G beat 2 has a staff in the head or torso on 30 to 41 of its 60 frames at
+  every isolation length, and on 1 today, where the inner ends stop 9 cm
+  short of the center.
+- Moving the wall plane forward does not clear them either. With the grid
+  10 cm farther out (offset 0.40 m instead of 0.30 m) at 67 cm, head frames
+  fell from 16 / 130 to 5 / 11, torso frames barely moved (1,002 / 1,360 to
+  967 / 1,306), and hands sat more than 3 cm off the staff on 2,032 / 2,776
+  frames instead of 1,068 / 1,624.
+- The reach sets an outer bound: twice the reach in the hardest direction a
+  sequence visits, which is 54 to 58 cm with the chest square (across is the
+  short way), 91 to 92 cm with the chest turned 60°, and 106 to 111 cm fully
+  side-on. A hug-fit staff therefore needs some chest turn at the cross-body
+  points.
+
+### The body clears the isolation point
+
+Austen, 2026-09-28: in a strict isolation the point being isolated around has
+to be empty space, because the staff's end occupies it. A performer who turns
+side-on cannot stand in that point, so the chest moves away from it and the
+point the audience sees the isolation around stays open for the staff.
+
+The performer cannot do this yet. The chest only turns, and hard-beat
+displacement moves the staff and hand together, never the body. The reach
+lean in the scene-3d `AvatarAnimator` leans toward an arm target, and
+`avatar-head-clearance-policy.test.ts` holds it at 0 so unreachable targets
+cannot pull the spine into their path; the move needed here goes the other
+way, away from the point. Step 5 below adds it.
 
 ## Formation spacing
 
@@ -196,12 +238,19 @@ Today's picture stays the same until step 4 turns a style on.
    `staffLengthCm`, with a scene-wide default in the settings cascade. The
    default keeps today's fixed radius until pictures approve a style.
 4. **The two rules.** Small pure functions beside `fitStaffLengthForHug`.
-   Isolation gives half the staff in every direction. Extension gives the full
-   reach for each hand and direction, with the chest turn that pictures
-   approve. The scoreboard runs both styles so neither regresses. The LED
-   Baton gets a length scale like the Fire Staff's, which is a scene-3d patch
-   change.
-5. **Spacing from reach.** Formations space each pair of neighbors by the sum
+   Isolation gives half the staff in every direction, capped at the hug fit
+   like extension. Extension gives the full reach for each hand and
+   direction, with the chest turn that pictures approve. The scoreboard runs
+   both styles so neither regresses. The LED Baton gets a length scale like
+   the Fire Staff's, which is a scene-3d patch change.
+5. **The body clears the isolation point.** When the chest would cover the
+   point a staff isolates around, the performer moves the chest off it
+   instead of moving the staff. Pictures settle which way the chest goes
+   (back, aside or a lean) and how the hips and feet follow; this joins the
+   hips-and-feet turn the performer review left for later. The check is the
+   together moves: their torso frames fall toward today's without hands
+   leaving the staff.
+6. **Spacing from reach.** Formations space each pair of neighbors by the sum
    of their reaches along the line between them, using their planes, in place
    of the fixed preset distances. This is also a scene-3d patch change.
 
@@ -211,7 +260,7 @@ staff length.
 
 ## Still open
 
-- The isolation staff limit, after the focused session with Austen.
+- Which way the chest moves to clear the isolation point, set in step 5.
 - How much chest turn the extension style's full reach may use, set in step 4.
 - What the drawn grid rings show once a hand's distance varies by direction.
   They follow the global staff length today (see Drawn grid above).

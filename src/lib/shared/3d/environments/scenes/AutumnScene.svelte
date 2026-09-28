@@ -77,7 +77,7 @@
   const motionScale = $derived(resolveMotionScale(prefersReducedMotion()));
 
   let assets = $state<AutumnEnvironmentAssets | null>(null);
-  let world = $state<AutumnEnvironmentWorld | null>(null);
+  let world = $state.raw<AutumnEnvironmentWorld | null>(null);
   let bootState = $state(createAutumnBootState());
   let environmentFailure = $state<unknown>(null);
   let environmentFailureMessage = $state(

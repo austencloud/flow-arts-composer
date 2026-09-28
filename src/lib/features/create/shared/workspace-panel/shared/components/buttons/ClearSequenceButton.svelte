@@ -14,10 +14,13 @@
     onclick,
     disabled = false,
     label,
+    quiet = false,
   }: {
     onclick?: () => void;
     disabled?: boolean;
     label?: string;
+    /** Plain surface with a red icon, for Assemble's quiet rail. */
+    quiet?: boolean;
   } = $props();
   const accessibleLabel = $derived(label ?? t("create_workspace_clear_sequence"));
 
@@ -34,6 +37,7 @@
   type="button"
   {disabled}
   class="panel-button clear-button"
+  class:quiet
   data-testid="clear-sequence-button"
   data-ghost="safe"
   data-ghost-kind="clear"
@@ -129,6 +133,21 @@
         var(--semantic-error, var(--semantic-error)) 60%,
         transparent
       );
+  }
+
+  .clear-button.quiet {
+    background: var(--theme-card-bg);
+    border-color: var(--theme-stroke);
+    box-shadow: none;
+  }
+
+  .clear-button.quiet:hover {
+    background: var(--theme-card-hover-bg);
+    box-shadow: none;
+  }
+
+  .clear-button.quiet i {
+    color: color-mix(in srgb, var(--semantic-error) 72%, white);
   }
 
   .panel-button:disabled {
