@@ -49,6 +49,14 @@ describe("toolRow", () => {
     }
   });
 
+  it("offers staff Effects on a video clip only, after Fade", () => {
+    const row = toolRow(MAIN_CLIP);
+    expect(row.indexOf("effects")).toBe(row.indexOf("fade") + 1);
+    for (const kind of ["animation", "moves", "carousel", "text", "card"] as const) {
+      expect(toolRow({ kind, hasLayout: false })).not.toContain("effects");
+    }
+  });
+
   it("offers each kind's own tool ahead of the shared ones", () => {
     expect(toolRow({ kind: "animation", hasLayout: false })[2]).toBe("labels");
     expect(toolRow({ kind: "moves", hasLayout: false })[2]).toBe("shows");

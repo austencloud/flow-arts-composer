@@ -13,6 +13,26 @@ import {
   shouldPreloadRouteAsset,
 } from "$lib/server/performance/landing-preload-policy";
 import { normalizeModuleId } from "$lib/shared/navigation/config/module-definitions";
+import { guardInternalRoute } from "./config/build-flags";
+
+/**
+ * Whether a request is for the dev-only harnesses under `/test`.
+ *
+ * Their pages already redirect production visitors through
+ * src/routes/test/+layout.ts, but a layout load never runs for a `+server.ts`
+ * endpoint or for the `__data.json` request that serves a `+page.server.ts`
+ * load. Several harness endpoints and server loads carry no dev check of their
+ * own, so they answered production requests until `handle` refused the tree.
+ *
+ * Matched on the route id rather than the URL. SvelteKit matches routes on the
+ * decoded path, so `/%74est/avatar-bakeoff` reaches the avatar-bakeoff handler
+ * even though its raw pathname does not start with `/test`.
+ */
+export function isTestHarnessRoute(
+  routeId: string | null | undefined
+): boolean {
+  return routeId === "/test" || routeId?.startsWith("/test/") === true;
+}
 
 /**
  * `/[...appPath]` (src/routes/[...appPath]/+layout.ts) is the client-only app
@@ -96,6 +116,13 @@ function isCssRequest(pathname: string): boolean {
 }
 
 export const handle: Handle = async ({ event, resolve }) => {
+  // Production sends every /test request (page, __data.json or endpoint) to
+  // the gallery before any harness load or handler runs. guardInternalRoute()
+  // throws SvelteKit's redirect, which answers a 307, or the JSON redirect the
+  // client router follows when the request is for __data.json. On the dev
+  // server it does nothing.
+  if (isTestHarnessRoute(event.route?.id)) guardInternalRoute();
+
   // Firebase OAuth handler reverse proxy. MUST run before resolve(): it serves
   // /__/auth/* first-party on the app host so the Google/Facebook popup completes
   // (see firebase-auth-handler-proxy.ts). Returning here also skips SvelteKit's

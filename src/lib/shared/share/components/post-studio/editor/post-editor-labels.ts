@@ -65,6 +65,7 @@ export const TOOL_ICON: Record<PostToolId, string> = {
   layout: "fa-table-cells-large",
   position: "fa-up-down-left-right",
   fade: "fa-circle-half-stroke",
+  effects: "fa-wand-sparkles",
   labels: "fa-hashtag",
   shows: "fa-shapes",
   text: "fa-font",
@@ -104,6 +105,8 @@ export function toolLabel(id: PostToolId): string {
       return t("post_editor_tool_position");
     case "fade":
       return t("post_editor_tool_fade");
+    case "effects":
+      return t("post_editor_tool_effects");
     case "labels":
       return t("post_editor_tool_labels");
     case "shows":

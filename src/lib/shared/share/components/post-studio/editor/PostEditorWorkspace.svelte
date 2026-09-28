@@ -22,7 +22,9 @@
     takeIdFromRole,
   } from "$lib/shared/media-composition/domain/post-plan-compiler";
   import {
+    itemIdFromStaffEffectRole,
     itemIdFromTextRole,
+    staffEffectRole,
     textRole,
   } from "$lib/shared/media-composition/domain/post-project-compiler";
   import {
@@ -59,6 +61,8 @@
   import { createBeatCarouselPainter } from "$lib/shared/media-composition/services/beat-carousel-painter";
   import { createSequenceStripPainter } from "$lib/shared/media-composition/services/sequence-strip-painter";
   import { createTextItemPainter } from "$lib/shared/media-composition/services/text-item-painter";
+  import { createStaffEffectPainter } from "$lib/shared/media-composition/services/staff-effect-painter";
+  import { createStaffTipAnalysis } from "$lib/shared/media-composition/state/staff-tip-analysis.svelte";
   import { loadAnimationOverlayPainter } from "$lib/shared/media-composition/services/animation-overlay-painter-registry";
   import { planProjectAudio } from "$lib/shared/media-composition/domain/post-audio-plan";
   import { buildMixedAudioTrack } from "$lib/shared/media-composition/services/post-audio-track";
@@ -261,6 +265,38 @@
     return painter;
   }
 
+  /** Where each take's LED staffs are, found once per video. */
+  const staffTips = createStaffTipAnalysis();
+  $effect(() => {
+    for (const take of editor.takes) staffTips.ensure(take.takeKey);
+  });
+
+  function videoItem(itemId: string): PostVideoItem | null {
+    const found = findItem(editor.project, itemId)?.item;
+    return found?.kind === "video" ? found : null;
+  }
+
+  /** One painter per clip, reading its effect and its take's staff ends live. */
+  const staffPainters = new Map<string, PostStudioLayerPainter>();
+  function staffPainterFor(itemId: string): PostStudioLayerPainter {
+    let painter = staffPainters.get(itemId);
+    if (!painter) {
+      painter = createStaffEffectPainter({
+        track: () => {
+          const item = videoItem(itemId);
+          const take = item
+            ? editor.takes.find((entry) => entry.id === item.takeId)
+            : null;
+          return take ? staffTips.track(take.takeKey) : null;
+        },
+        effect: () => videoItem(itemId)?.staffEffect?.effect ?? null,
+        fit: () => videoItem(itemId)?.fit ?? "cover",
+      });
+      staffPainters.set(itemId, painter);
+    }
+    return painter;
+  }
+
   let overlayVersion = 0;
   $effect(() => {
     const drawn = displaySequence;
@@ -306,6 +342,18 @@
         ...(take ? { durationSeconds: take.durationSeconds } : {}),
         status: url ? "ready" : "missing",
         missingMessage: t("share_studio_repick_local"),
+      };
+    }
+    const staffItemId = itemIdFromStaffEffectRole(role);
+    if (staffItemId) {
+      return {
+        roleKey: role,
+        kind: "image",
+        label: t("post_staff_effect"),
+        previewUrl: null,
+        renderMode: "painted",
+        painter: staffPainterFor(staffItemId),
+        status: "ready",
       };
     }
     const textItemId = itemIdFromTextRole(role);
@@ -389,6 +437,13 @@
       painters.set(textRole(text.itemId), textPainterFor(text.itemId));
     }
     if (overlayPainter) painters.set(ANIMATION_OVERLAY_ROLE, overlayPainter);
+    for (const track of editor.project.tracks) {
+      for (const item of track.items) {
+        if (item.kind === "video" && item.staffEffect) {
+          painters.set(staffEffectRole(item.id), staffPainterFor(item.id));
+        }
+      }
+    }
     return painters;
   }
 
@@ -1449,6 +1504,7 @@
     if (frameRequest !== null) cancelAnimationFrame(frameRequest);
     if (exportedUrl) URL.revokeObjectURL(exportedUrl);
     editor.dispose();
+    staffTips.dispose();
   });
 </script>
 
@@ -1543,6 +1599,7 @@
       item={editor.selectedItem}
       {tool}
       crop={cropMode ? crop : null}
+      {staffTips}
     />
   {/if}
 {/snippet}
