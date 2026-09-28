@@ -8,15 +8,8 @@
  * - users/{uid}/settings (document containing all app settings)
  */
 
-import {
-  doc,
-  getDoc,
-  setDoc,
-  onSnapshot,
-  serverTimestamp,
-  type Unsubscribe,
-} from "firebase/firestore";
-import { auth, getFirestoreInstance } from "../../auth/firebase";
+import type { Unsubscribe } from "firebase/firestore";
+import { loadedAuth } from "../../auth/loaded-auth";
 import { toast } from "$lib/shared/toast/state/toast-state.svelte";
 import { t } from "$lib/shared/i18n/i18n.svelte.js";
 import { isPermissionDeniedError } from "$lib/shared/auth/utils/is-permission-denied-error";
@@ -25,6 +18,16 @@ import {
   normalizeLegacyAppSettings,
   type AppSettings,
 } from "../domain/app-settings";
+
+// Public pages import this persister through settings-state, but settings
+// only sync after sign-in. The Firestore calls below load Firebase on first
+// use to keep it off those pages' first download. The import() must name the
+// Firebase modules themselves: the build's small-chunk merge (vite.config.ts)
+// can fold a small wrapper module back into the page.
+async function loadFirestore() {
+  const { getFirestoreInstance } = await import("../../auth/firebase");
+  return getFirestoreInstance();
+}
 
 export class FirebaseSettingsPersister {
   // Cancels whichever subscription attempt is current. Each onSettingsChange
@@ -43,11 +46,12 @@ export class FirebaseSettingsPersister {
    * Note: Uses actual user ID, not effective (preview) user ID
    */
   private async getSettingsDocRef() {
-    const userId = auth.currentUser?.uid;
+    const userId = loadedAuth.currentUser?.uid;
     if (!userId) {
       return null;
     }
-    const firestore = await getFirestoreInstance();
+    const { doc } = await import("firebase/firestore");
+    const firestore = await loadFirestore();
     return doc(firestore, `users/${userId}/settings/preferences`);
   }
 
@@ -63,6 +67,7 @@ export class FirebaseSettingsPersister {
       return null;
     }
 
+    const { getDoc } = await import("firebase/firestore");
     const docSnap = await getDoc(docRef);
     if (docSnap.exists()) {
       const data = docSnap.data();
@@ -87,7 +92,7 @@ export class FirebaseSettingsPersister {
     // Captured before any await, so the whole save — including the activeProp
     // mirror that runs after the settings write — is pinned to the account
     // this write belongs to.
-    const ownerId = auth.currentUser?.uid;
+    const ownerId = loadedAuth.currentUser?.uid;
     const docRef = await this.getSettingsDocRef();
     if (!docRef || !ownerId) {
       console.warn(
@@ -97,6 +102,7 @@ export class FirebaseSettingsPersister {
     }
 
     try {
+      const { setDoc, serverTimestamp } = await import("firebase/firestore");
       await trackWrite(() =>
         setDoc(
           docRef,
@@ -143,7 +149,7 @@ export class FirebaseSettingsPersister {
       return;
     }
 
-    const user = auth.currentUser;
+    const user = loadedAuth.currentUser;
     if (!user) return;
     // The settings write above was awaited, so the account can have changed
     // since. Mirroring now would stamp this payload's prop onto whoever is
@@ -157,10 +163,11 @@ export class FirebaseSettingsPersister {
     if (user.isAnonymous) return;
 
     try {
-      const firestore = await getFirestoreInstance();
+      const { doc, setDoc } = await import("firebase/firestore");
+      const firestore = await loadFirestore();
       // Re-check: awaiting the Firestore instance is another chance for the
       // account to change under this write.
-      if (auth.currentUser?.uid !== ownerId) return;
+      if (loadedAuth.currentUser?.uid !== ownerId) return;
       await trackWrite(() =>
         setDoc(
           doc(firestore, `users/${ownerId}`),
@@ -187,6 +194,7 @@ export class FirebaseSettingsPersister {
     }
 
     try {
+      const { setDoc, serverTimestamp } = await import("firebase/firestore");
       // Set to empty object with timestamp to preserve document
       await trackWrite(() =>
         setDoc(docRef, {
@@ -213,6 +221,7 @@ export class FirebaseSettingsPersister {
     }
 
     try {
+      const { getDoc } = await import("firebase/firestore");
       const docSnap = await getDoc(docRef);
       return docSnap.exists() && Object.keys(docSnap.data() || {}).length > 1; // More than just timestamps
     } catch (error) {
@@ -254,9 +263,13 @@ export class FirebaseSettingsPersister {
 
     // Start async subscription setup
     this.getSettingsDocRef()
-      .then((docRef) => {
+      .then(async (docRef) => {
         if (cancelled || !docRef) {
           return; // Torn down, or no user: no subscription
+        }
+        const { onSnapshot } = await import("firebase/firestore");
+        if (cancelled) {
+          return; // Torn down while Firestore loaded
         }
 
         active = onSnapshot(

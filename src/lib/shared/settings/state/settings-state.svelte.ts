@@ -34,7 +34,7 @@ async function logSettingChange(
 import type { FirebaseSettingsPersister } from "../services/firebase-settings-persister";
 import { normalizeBackgroundType } from "../domain/background-type-migration";
 import { defaultPropPresets } from "../domain/prop-presets";
-import { auth } from "../../auth/firebase";
+import { loadedAuth } from "../../auth/loaded-auth";
 import { createComponentLogger } from "$lib/shared/utils/debug-logger";
 import { getAnimationVisibilityManager } from "../../animation-engine/state/animation-visibility-state.svelte";
 import {
@@ -238,12 +238,12 @@ class SettingsState {
     await this.processOfflineQueue();
     if (this.lifecycleGeneration !== generation) return;
 
-    const syncUserId = auth.currentUser?.uid;
+    const syncUserId = loadedAuth.currentUser?.uid;
     if (syncUserId && this.firebasePersistence) {
       await this.syncFromFirebase(generation);
       if (
         this.lifecycleGeneration !== generation ||
-        auth.currentUser?.uid !== syncUserId
+        loadedAuth.currentUser?.uid !== syncUserId
       ) {
         return;
       }
@@ -268,7 +268,7 @@ class SettingsState {
             // at worst — until its next write put them back on the account.
             if (
               this.lifecycleGeneration === generation &&
-              auth.currentUser?.uid === syncUserId
+              loadedAuth.currentUser?.uid === syncUserId
             ) {
               this.applyRemoteSettings(remoteSettings, syncUserId);
             }
@@ -295,14 +295,14 @@ class SettingsState {
   async syncFromFirebase(
     generation: number = this.lifecycleGeneration
   ): Promise<void> {
-    if (!this.firebasePersistence || !auth.currentUser) return;
-    const userId = auth.currentUser.uid;
+    if (!this.firebasePersistence || !loadedAuth.currentUser) return;
+    const userId = loadedAuth.currentUser.uid;
 
     try {
       const firebaseSettings = await this.firebasePersistence.loadSettings();
       if (
         this.lifecycleGeneration !== generation ||
-        auth.currentUser?.uid !== userId
+        loadedAuth.currentUser?.uid !== userId
       ) {
         return;
       }
@@ -393,7 +393,7 @@ class SettingsState {
   }
 
   private getSettingsForPersistence(
-    userId = auth.currentUser?.uid
+    userId = loadedAuth.currentUser?.uid
   ): AppSettings {
     const snapshot = $state.snapshot(settingsState) as AppSettings & {
       _localTimestamp?: number;
@@ -500,7 +500,7 @@ class SettingsState {
 
   /** Record an edit this session made but Firestore has not confirmed. */
   private markLocallyEdited(key: keyof AppSettings): void {
-    const uid = auth.currentUser?.uid ?? null;
+    const uid = loadedAuth.currentUser?.uid ?? null;
     if (this.unsavedLocalOwner !== uid) {
       this.unsavedLocalKeys.clear();
       this.queuedLocalEdits.clear();
@@ -749,7 +749,7 @@ class SettingsState {
   saveSettings(): void {
     this.saveSettingsToStorage(settingsState);
 
-    if (auth.currentUser && this.firebasePersistence) {
+    if (loadedAuth.currentUser && this.firebasePersistence) {
       this.debouncedSaveToFirebase();
     }
   }
@@ -766,7 +766,7 @@ class SettingsState {
   }
 
   private saveToFirebaseWithRetry(): void {
-    const userId = auth.currentUser?.uid;
+    const userId = loadedAuth.currentUser?.uid;
     if (!this.firebasePersistence || !userId) {
       debug.warn(
         "Cannot save to Firebase: firebasePersistence not initialized"
@@ -852,7 +852,7 @@ class SettingsState {
         if (this.lifecycleGeneration !== generation) return;
         this.releaseConfirmedLocalEdits(userId, payloadSequence);
         if (
-          auth.currentUser?.uid === userId &&
+          loadedAuth.currentUser?.uid === userId &&
           !(this.unsavedLocalOwner === userId && this.unsavedLocalKeys.size > 0)
         ) {
           settingsState._localTimestamp = undefined;
@@ -1032,7 +1032,7 @@ class SettingsState {
   private async processOfflineQueue(): Promise<void> {
     if (!browser || !this.firebasePersistence) return;
 
-    const userId = auth.currentUser?.uid;
+    const userId = loadedAuth.currentUser?.uid;
     if (!userId) return;
     if (Object.keys(this.readOfflineQueue(userId)).length === 0) return;
 
@@ -1085,7 +1085,7 @@ class SettingsState {
       settingsState._localTimestamp = undefined;
       Object.assign(settingsState, DEFAULT_SETTINGS);
 
-      if (auth.currentUser && this.firebasePersistence) {
+      if (loadedAuth.currentUser && this.firebasePersistence) {
         void this.firebasePersistence.clearSettings().catch((error) => {
           console.error(
             "❌ [SettingsState] Failed to clear Firebase settings:",

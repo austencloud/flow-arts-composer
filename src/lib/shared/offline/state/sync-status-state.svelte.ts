@@ -11,8 +11,15 @@
  * - error: Sync failed (will retry)
  */
 
-import { getFirestoreInstance } from "$lib/shared/auth/firebase";
 import { networkStatusState } from "./network-status-state.svelte";
+
+// Public pages import this tracker through the feature-flag and settings
+// stores. It only talks to Firestore while writes are pending, so it loads
+// Firebase then, keeping it off those pages' first download.
+async function loadFirestore() {
+	const { getFirestoreInstance } = await import("$lib/shared/auth/firebase");
+	return getFirestoreInstance();
+}
 
 export type SyncState = "synced" | "syncing" | "pending" | "error";
 
@@ -114,7 +121,7 @@ function createSyncStatusState() {
 
 		try {
 			const { waitForPendingWrites } = await import("firebase/firestore");
-			const db = await getFirestoreInstance();
+			const db = await loadFirestore();
 
 			state = "syncing";
 
@@ -153,7 +160,7 @@ function createSyncStatusState() {
 			// Use waitForPendingWrites to know when sync is complete
 			try {
 				const { waitForPendingWrites } = await import("firebase/firestore");
-				const db = await getFirestoreInstance();
+				const db = await loadFirestore();
 				await waitForPendingWrites(db);
 				markSynced();
 			} catch (error) {
