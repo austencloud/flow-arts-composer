@@ -1,13 +1,13 @@
 <!--
   AssembleToolPanel - Tool panel content for the Assemble tab.
 
-  The grid stays anchored while phase-specific controls update in reserved slots.
+  The grid stays anchored above one dock of controls, the same on every screen
+  size, while phase-specific controls update in reserved slots.
 -->
 <script lang="ts">
   import { untrack } from "svelte";
   import { settingsService } from "$lib/shared/settings/state/settings-state.svelte";
   import type { AssembleTabState } from "../../shared/state/assemble-tab-state.svelte";
-  import BuilderInstructionHeader from "$lib/features/assemble-lab/components/BuilderInstructionHeader.svelte";
   import BuilderControls from "$lib/features/assemble-lab/components/BuilderControls.svelte";
   import InteractiveGrid from "$lib/features/assemble-lab/components/InteractiveGrid.svelte";
   import { attachAssembleKeyboard } from "$lib/features/assemble-lab/services/assemble-keyboard-dispatcher";
@@ -34,7 +34,7 @@
     const duration = motionDuration(240);
     if (duration === 0) return;
     const targets = builderSurfaceRef.querySelectorAll<HTMLElement>(
-      ".header-section, .builder-controls-overlay, .action-row"
+      ".dock-phase-row, .dock-hand-row"
     );
     const animations = Array.from(targets).map((target) =>
       target.animate(
@@ -160,10 +160,6 @@
     class="builder-surface"
     data-history-direction={builderState.historyTransition?.direction}
   >
-    <div class="header-section">
-      <BuilderInstructionHeader {builderState} />
-    </div>
-
     <div class="main-area">
       <div class="grid-slot">
         <div class="stage-slot">
@@ -230,11 +226,6 @@
     box-shadow: none;
   }
 
-  .header-section {
-    width: 100%;
-    flex-shrink: 0;
-  }
-
   .main-area {
     flex: 1;
     min-height: 0;
@@ -253,18 +244,19 @@
     max-width: none;
     height: 100%;
     display: grid;
-    grid-template-rows: auto minmax(0, 1fr);
+    /* The dock under the grid takes the second row. */
+    grid-template-rows: minmax(0, 1fr) auto;
     justify-items: center;
   }
 
   .stage-slot {
-    grid-row: 2;
+    grid-row: 1;
     width: 100%;
     height: 100%;
     min-width: 0;
     min-height: 0;
     display: grid;
-    place-items: start center;
+    place-items: center;
     container-type: size;
     container-name: assemble-stage;
   }
@@ -312,23 +304,6 @@
     .grid-slot {
       width: 100%;
     }
-
-    /* The dock under the grid takes the second row. */
-    .grid-slot {
-      grid-template-rows: minmax(0, 1fr) auto;
-    }
-
-    .stage-slot {
-      grid-row: 1;
-    }
-
-    .stage-slot {
-      place-items: center;
-    }
-
-    .header-section {
-      display: none;
-    }
   }
 
   /* Native 4K/TV viewports do not receive Windows display scaling. Raise the
@@ -339,10 +314,8 @@
       --font-size-compact: 16px;
       --font-size-min: 18px;
       --min-touch-target: 58px;
-      --assemble-instruction-size: 22px;
       --assemble-hand-label-size: 21px;
       --assemble-action-size: 19px;
-      --assemble-step-badge-size: 22px;
     }
   }
 

@@ -1,16 +1,17 @@
 <!--
   BuilderControls.svelte - Context-sensitive controls for the assemble grid.
 
-  Mobile: a dock under the grid holds the turn settings (or, before the first
-  point, the grid picker), centered, above the hand switch, with Complete in a
-  fixed slot beside it. Nothing floats over the dots. Desktop keeps these
-  controls in the builder header.
+  One dock under the grid on every screen size: the turn settings (or, before
+  the first point, the grid picker) sit centered above the hand switch, with
+  Complete in a fixed slot beside it. Nothing floats over the dots. Wide
+  panels also get the numpad toggle at the end of the turn row.
 -->
 <script lang="ts">
   import type { AssembleState } from "../state/assemble-state.svelte";
   import GridModePicker from "./GridModePicker.svelte";
   import BuilderHandPicker from "./BuilderHandPicker.svelte";
   import BuilderPhaseControls from "./BuilderPhaseControls.svelte";
+  import BuilderKeyboardControl from "./BuilderKeyboardControl.svelte";
   import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
   import EditHistoryShortcutBridge from "$lib/shared/keyboard/components/EditHistoryShortcutBridge.svelte";
 
@@ -37,11 +38,11 @@
   redoLabel={builderState.redoLabel}
 />
 
-{#snippet finishAction(fullWidth: boolean)}
+{#snippet finishAction()}
   {#if isComplete}
     <PanelButton
       variant="primary"
-      {fullWidth}
+      fullWidth
       onclick={() => builderState.reset()}
     >
       <i class="fas fa-plus" aria-hidden="true"></i>
@@ -50,7 +51,7 @@
   {:else}
     <PanelButton
       variant={builderState.canFinishHand ? "primary" : "secondary"}
-      {fullWidth}
+      fullWidth
       disabled={!builderState.canFinishHand || isAnimating}
       ariaBusy={isAnimating}
       onclick={() => builderState.finishHand()}
@@ -61,20 +62,25 @@
   {/if}
 {/snippet}
 
-<!-- Mobile dock under the grid. The phase row keeps its height when empty so
-     the grid never resizes as the phase changes. -->
-<div class="mobile-dock">
+<!-- The phase row keeps its height when empty so the grid never resizes as
+     the phase changes. -->
+<div class="dock">
   <div class="dock-phase-row">
-    {#if showGridPicker}
-      <GridModePicker
-        gridMode={builderState.gridMode}
-        showCenter={builderState.showCenter}
-        onGridModeChange={(mode) => builderState.setGridMode(mode)}
-        onCenterChange={(show) => builderState.setShowCenter(show)}
-      />
-    {:else}
-      <BuilderPhaseControls {builderState} reserveSlots={false} />
-    {/if}
+    <div class="dock-phase-center">
+      {#if showGridPicker}
+        <GridModePicker
+          gridMode={builderState.gridMode}
+          showCenter={builderState.showCenter}
+          onGridModeChange={(mode) => builderState.setGridMode(mode)}
+          onCenterChange={(show) => builderState.setShowCenter(show)}
+        />
+      {:else}
+        <BuilderPhaseControls {builderState} reserveSlots={false} />
+      {/if}
+    </div>
+    <div class="dock-keyboard">
+      <BuilderKeyboardControl {builderState} />
+    </div>
   </div>
 
   <div
@@ -93,58 +99,49 @@
     </div>
 
     <div class="dock-action-slot">
-      {@render finishAction(true)}
+      {@render finishAction()}
     </div>
   </div>
 </div>
 
-<!-- Persistent hand rail: desktop only. The reserved action slot keeps the two
-     hand targets stable when Complete becomes available. -->
-<div
-  class="action-row"
-  class:dimmed={actionsDimmed}
-  class:can-finish={builderState.canFinishHand}
->
-  <div class="desktop-hand-picker">
-    <BuilderHandPicker
-      activeHand={builderState.activeHand}
-      leftCount={builderState.leftSteps.length}
-      rightCount={builderState.rightSteps.length}
-      disabled={handSelectionDisabled}
-      onchange={(hand) => builderState.switchToHand(hand)}
-    />
-  </div>
-
-  <div class="desktop-action-slot">
-    {@render finishAction(true)}
-  </div>
-</div>
-
 <style>
-  /* ── Mobile dock ── */
-  .mobile-dock {
-    display: none;
+  .dock {
+    display: flex;
     grid-row: 2;
     flex-direction: column;
     align-items: stretch;
     gap: 6px;
     width: 100%;
+    max-width: 48rem;
     padding: 6px 8px 8px;
   }
 
-  @container tool-panel (max-width: 768px) {
-    .mobile-dock {
-      display: flex;
-    }
+  /* Tall enough for the grid picker, so the grid keeps its size when the
+     first point swaps the picker for the turn settings. The side columns
+     match, so the turn button stays centered under the grid. */
+  .dock-phase-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    align-items: center;
+    min-height: max(52px, var(--min-touch-target, 44px));
   }
 
-  /* Tall enough for the grid picker, so the grid keeps its size when the
-     first point swaps the picker for the turn settings. */
-  .dock-phase-row {
+  .dock-phase-center {
     display: flex;
-    align-items: center;
+    grid-column: 2;
     justify-content: center;
-    min-height: max(52px, var(--min-touch-target, 44px));
+  }
+
+  .dock-keyboard {
+    display: flex;
+    grid-column: 3;
+    justify-content: flex-end;
+  }
+
+  @container tool-panel (max-width: 768px) {
+    .dock-keyboard {
+      display: none;
+    }
   }
 
   .dock-hand-row {
@@ -171,20 +168,16 @@
     padding-inline: 12px;
   }
 
-  .dock-hand-row.dimmed,
-  .action-row.dimmed {
+  .dock-hand-row.dimmed {
     pointer-events: none;
   }
 
   .dock-hand-row.dimmed.can-finish :global(.panel-btn:disabled),
-  .action-row.dimmed.can-finish :global(.panel-btn:disabled),
-  .desktop-hand-picker :global(.segment:disabled),
   .dock-hand-picker :global(.segment:disabled) {
     opacity: 1;
   }
 
-  .dock-hand-row.can-finish :global(.panel-btn--primary),
-  .action-row.can-finish .desktop-action-slot :global(.panel-btn--primary) {
+  .dock-hand-row.can-finish :global(.panel-btn--primary) {
     border-color: color-mix(
       in srgb,
       var(--semantic-success, #22c55e) 52%,
@@ -201,42 +194,8 @@
     text-shadow: 0 1px 0 rgba(255, 255, 255, 0.2);
   }
 
-  .dock-hand-row.can-finish :global(.panel-btn--primary:hover:not(:disabled)),
-  .action-row.can-finish
-    .desktop-action-slot
-    :global(.panel-btn--primary:hover:not(:disabled)) {
+  .dock-hand-row.can-finish :global(.panel-btn--primary:hover:not(:disabled)) {
     filter: brightness(1.08);
-  }
-
-  /* ── Action row (desktop only) ── */
-  .action-row {
-    display: flex;
-    grid-row: 1;
-    align-items: stretch;
-    gap: var(--settings-spacing-md, 12px);
-    padding: 10px 12px;
-    width: 100%;
-    flex-shrink: 0;
-    min-height: var(--min-touch-target, 44px);
-    border-bottom: 1px solid var(--assemble-builder-stroke, var(--theme-stroke));
-    background: color-mix(in srgb, var(--theme-text, #fff) 3%, transparent);
-  }
-
-  .desktop-hand-picker {
-    min-width: 0;
-    flex: 1 1 auto;
-  }
-
-  .desktop-action-slot {
-    display: flex;
-    width: 9rem;
-    flex: 0 0 9rem;
-  }
-
-  @container tool-panel (max-width: 768px) {
-    .action-row {
-      display: none;
-    }
   }
 
   @container tool-panel (max-width: 360px) {
