@@ -8,9 +8,11 @@
   The fill runs from `origin` to the value, so a bipolar amount such as a
   rotation fills out from zero and a speed fills out from 1×.
 
-  `marks` puts small diamonds on the track, such as a clip's keyframes on
-  its scrubber. They are drawn over the thumb, so the thumb resting on one
-  shows it, and they are only a picture: the value comes from the thumb.
+  `marks` puts diamonds on the track, such as a clip's keyframes on its
+  scrubber, drawn like the timeline's keyframes and over the thumb, so the
+  thumb resting on one lights it up. With `onmark` each diamond is also a
+  button that goes to its value; the one under the thumb lets presses
+  through, so the thumb stays easy to grab.
 
   Dense desktop tools that scrub a bare number use ScrubbableNumber instead.
 -->
@@ -27,6 +29,10 @@
     disabled?: boolean;
     /** Values along the track to mark with a diamond. */
     marks?: readonly number[];
+    /** Makes each mark a button that goes to its value. */
+    onmark?: (mark: number) => void;
+    /** A mark button's name; defaults to its formatted value. */
+    markLabel?: (mark: number) => string;
     onchange: (value: number) => void;
   }
 
@@ -40,6 +46,8 @@
     format,
     disabled = false,
     marks = [],
+    onmark,
+    markLabel,
     onchange,
   }: Props = $props();
 
@@ -56,6 +64,16 @@
 
   const valueFraction = $derived(fraction(clamped));
   const originFraction = $derived(fraction(origin ?? min));
+
+  /** The thumb rests on a mark within half a step of it. */
+  function isOn(mark: number): boolean {
+    return Math.abs(mark - clamped) <= step / 2 + 1e-9;
+  }
+
+  function nameOf(mark: number): string {
+    if (markLabel) return markLabel(mark);
+    return format ? format(mark) : String(mark);
+  }
 
   function handleInput(
     event: Event & { currentTarget: HTMLInputElement }
@@ -85,7 +103,29 @@
       oninput={handleInput}
     />
     {#each marks as mark, index (index)}
-      <span class="mark" aria-hidden="true" style:--at={fraction(mark)}></span>
+      {#if onmark}
+        <button
+          type="button"
+          class="mark"
+          class:on={isOn(mark)}
+          style:--at={fraction(mark)}
+          aria-label={nameOf(mark)}
+          aria-current={isOn(mark) || undefined}
+          {disabled}
+          onclick={() => onmark(mark)}
+        >
+          <span class="glyph" aria-hidden="true"></span>
+        </button>
+      {:else}
+        <span
+          class="mark"
+          class:on={isOn(mark)}
+          aria-hidden="true"
+          style:--at={fraction(mark)}
+        >
+          <span class="glyph"></span>
+        </span>
+      {/if}
     {/each}
   </div>
 </div>
@@ -125,18 +165,71 @@
     min-width: 0;
   }
 
-  /* On the thumb's path: half a thumb in from each end, as the fill is. */
+  /* On the thumb's path: half a thumb in from each end, as the fill is. A
+     button mark is a touch target's width, centred on its value. */
   .mark {
     position: absolute;
-    top: 50%;
+    top: 0;
+    bottom: 0;
     left: calc(var(--thumb) / 2 + (100% - var(--thumb)) * var(--at));
-    box-sizing: border-box;
-    width: 0.5rem;
-    height: 0.5rem;
-    border: 1px solid rgb(0 0 0 / 0.65);
-    background: var(--theme-accent, #d4813a);
-    transform: translate(-50%, -50%) rotate(45deg);
+    display: grid;
+    place-items: center;
+    width: var(--min-touch-target, 44px);
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    transform: translateX(-50%);
     pointer-events: none;
+  }
+
+  button.mark {
+    pointer-events: auto;
+    cursor: pointer;
+  }
+
+  /* The thumb sits under this one: presses go to the thumb. */
+  button.mark.on,
+  button.mark:disabled {
+    pointer-events: none;
+  }
+
+  button.mark:focus-visible {
+    outline: none;
+  }
+
+  /* The timeline's keyframe: near-white with a dark outline reads on the
+     fill and the bare track alike. Under the thumb it takes the accent. */
+  .glyph {
+    box-sizing: border-box;
+    width: 0.875rem;
+    height: 0.875rem;
+    border: 2px solid var(--theme-bg, #101018);
+    border-radius: 3px;
+    background: var(--theme-text, #fff);
+    transform: rotate(45deg);
+    transition:
+      background-color var(--transition-fast),
+      box-shadow var(--transition-fast),
+      transform var(--transition-fast);
+  }
+
+  .mark.on .glyph {
+    background: var(--theme-accent, #d4813a);
+    box-shadow: 0 0 0 2px var(--theme-text, #fff);
+    transform: rotate(45deg) scale(1.2);
+  }
+
+  @media (hover: hover) {
+    button.mark:hover .glyph {
+      background: var(--theme-accent, #d4813a);
+      transform: rotate(45deg) scale(1.2);
+    }
+  }
+
+  button.mark:focus-visible .glyph {
+    outline: 2px solid var(--theme-accent, currentColor);
+    outline-offset: 3px;
   }
 
   input {
@@ -256,10 +349,21 @@
       box-shadow: 0 0 0 3px Highlight;
     }
 
-    .mark {
+    .glyph {
       forced-color-adjust: none;
       border-color: ButtonFace;
+      background: ButtonText;
+    }
+
+    .mark.on .glyph {
       background: Highlight;
+      box-shadow: 0 0 0 2px ButtonText;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .glyph {
+      transition: none;
     }
   }
 </style>
