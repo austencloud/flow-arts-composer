@@ -80,7 +80,11 @@ function flower(
   };
 }
 
-/** The left hand, so the path draws in the flowers' blue ink. */
+/**
+ * The left hand, so the path draws in the flowers' blue ink. Starting out
+ * points the thumb end away, so a one-ended prop traces the tall lens; the
+ * end that starts in stays near the hand and draws only the small bow-tie.
+ */
 function dashWithTurn(from: GridLocation, to: GridLocation): StepLike {
   return {
     motions: {
@@ -89,8 +93,8 @@ function dashWithTurn(from: GridLocation, to: GridLocation): StepLike {
         rotationDirection: RotationDirection.COUNTER_CLOCKWISE,
         startLocation: from,
         endLocation: to,
-        startOrientation: Orientation.IN,
-        endOrientation: Orientation.IN,
+        startOrientation: Orientation.OUT,
+        endOrientation: Orientation.OUT,
         turns: 1,
         hand: HandSide.LEFT,
         propType: PropType.STAFF,

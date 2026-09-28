@@ -305,8 +305,10 @@ function spriteSideForColor(color: string): PropSpriteSide {
  * a one-sided prop captured facing -x (club, torch, poi, chicken, sword,
  * triads, hoops, triquetras) is rotated a half turn about the box centre;
  * that puts the painted end on the +x side where every tip table, trail, and
- * the mandala expect it. Symmetric props are returned unchanged. The predicate lives
- * with the tip tables so the two never disagree about which sprites turn.
+ * the mandala expect it. The staff models turn too, because their T-bar thumb
+ * end was shot on -x. Other symmetric props are returned unchanged. The
+ * predicate lives with the tip tables so the two never disagree about which
+ * sprites turn.
  */
 export function orientModelSpriteToTips(propType: string, svg: string): string {
   if (!modelSpriteFacesAwayFromTips(propType)) return svg;

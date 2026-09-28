@@ -38,6 +38,8 @@
   // or external input, so it is a trusted, non-XSS surface — no sanitization pass.
   import { propSvgLoader } from "$lib/shared/pictograph/prop/services/prop-svg-loader";
   import { applyHandColorOverride } from "$lib/shared/pictograph/prop/domain/prop-preview-color";
+  import { normalizePropLook } from "$lib/shared/pictograph/prop/domain/prop-look";
+  import { normalizeFanAppearance } from "$lib/shared/pictograph/prop/domain/fan-appearance";
   import { createMotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
   import { PropRotAngleManager } from "$lib/shared/pictograph/prop/services/prop-rot-angle-manager";
   import { LOCATION_ANGLES } from "$lib/shared/foundation/domain/math-constants";
@@ -179,13 +181,19 @@
     };
   }
 
-  // Load prop SVGs reactively when prop type or hand color changes in settings
+  // Load prop SVGs reactively when prop type, look or hand color changes in settings
   $effect(() => {
     const settings = getSettings();
     const leftPropType = settings.leftPropType ?? PropType.STAFF;
     const rightPropType = settings.rightPropType ?? PropType.STAFF;
     const leftColor = settings.primaryPropColors?.left;
     const rightColor = settings.primaryPropColors?.right;
+    // Draw the look the pictographs draw (PictographContainer passes the
+    // same options), so the stage and the Start pictograph show one prop.
+    const appearance = {
+      propLook: normalizePropLook(settings.propArtwork),
+      fanAppearance: normalizeFanAppearance(settings.fanAppearance),
+    };
 
     // Load left-hand prop SVG
     const leftMotion = createMotionData({
@@ -196,7 +204,8 @@
       .loadPropSvg(
         { positionX: 0, positionY: 0, rotationAngle: 0 },
         leftMotion,
-        false
+        false,
+        appearance
       )
       .then((data) => {
         leftPropData = withUserColor(
@@ -219,7 +228,8 @@
       .loadPropSvg(
         { positionX: 0, positionY: 0, rotationAngle: 0 },
         rightMotion,
-        false
+        false,
+        appearance
       )
       .then((data) => {
         rightPropData = withUserColor(

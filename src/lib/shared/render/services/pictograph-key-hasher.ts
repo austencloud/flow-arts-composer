@@ -97,6 +97,15 @@ const PROP_APPEARANCE_REVISIONS: Readonly<Record<string, string>> = {
   torch: "torch-contrast-v2",
   bigtorch: "torch-contrast-v2",
 };
+const MODEL_LOOK_APPEARANCE_REVISIONS: Readonly<Record<string, string>> = {
+  // The Realistic staff captures used to draw with their T-bar (the thumb
+  // end) where the notation puts the far end, so "in" read as "out". They now
+  // turn to the thumb end, so Realistic cells cached before that must miss.
+  staff: "staff-model-thumb-end-v2",
+  simple_staff: "staff-model-thumb-end-v2",
+  staff_v2: "staff-model-thumb-end-v2",
+  bigstaff: "staff-model-thumb-end-v2",
+};
 const NON_RADIAL_ORIENTATIONS = new Set(["clock", "counter"]);
 const SHIFT_MOTION_TYPES = new Set(["pro", "anti", "float"]);
 const REVISED_NON_RADIAL_SHIFT_TRANSITIONS = new Set([
@@ -226,14 +235,23 @@ export function getTurnGlyphRevision(
  * Prop types are already part of the cache identity. This extra seam covers a
  * different case: the SVG behind an existing prop type changes while its enum
  * value stays stable. Keeping the revision prop-scoped avoids throwing away
- * the established cloud corpus for every unrelated prop.
+ * the established cloud corpus for every unrelated prop. Model-look revisions
+ * apply only to cells that draw the Realistic look, so notation keys (and the
+ * cloud corpus) stay as they were.
  */
 export function getPropAppearanceRevision(
   leftPropType: string,
-  rightPropType: string
+  rightPropType: string,
+  propLook?: "model"
 ): string | undefined {
   const revisions = [leftPropType, rightPropType]
-    .map((propType) => PROP_APPEARANCE_REVISIONS[propType.toLowerCase()])
+    .flatMap((propType) => {
+      const key = propType.toLowerCase();
+      return [
+        PROP_APPEARANCE_REVISIONS[key],
+        propLook === "model" ? MODEL_LOOK_APPEARANCE_REVISIONS[key] : undefined,
+      ];
+    })
     .filter((revision): revision is string => Boolean(revision));
 
   const uniqueRevisions = [...new Set(revisions)].sort();
@@ -273,18 +291,19 @@ export class PictographKeyHasher {
     const reversalsVisible = visibility.showReversals ?? true;
     const step = data as Partial<StepData>;
     const propGeometryRevision = getPictographGeometryRevision(data);
+    const propLook = renderedPropLook(visibility.propLook, [
+      resolvedLeftProp,
+      resolvedRightProp,
+    ]);
     const propAppearanceRevision = getPropAppearanceRevision(
       resolvedLeftProp,
-      resolvedRightProp
+      resolvedRightProp,
+      propLook
     );
     const turnGlyphRevision = getTurnGlyphRevision(
       data,
       visibility.showTKA ?? true
     );
-    const propLook = renderedPropLook(visibility.propLook, [
-      resolvedLeftProp,
-      resolvedRightProp,
-    ]);
 
     return {
       letter: data.letter ?? undefined,

@@ -712,13 +712,27 @@ function isAxialTable(config: PropTipConfig): boolean {
 const MODEL_SIDE_BIAS = 0.1;
 
 /**
+ * Staff captures whose thumb end was shot on -x. Staff3D builds its T-bar on
+ * the thumb end; the notation staff marks that end at +x, the end the rotation
+ * tables point at the centre for "in". The paint is centred and the tip table
+ * two-ended, so the geometry below cannot tell which way these face.
+ */
+const MODEL_THUMB_END_ON_NEGATIVE_X = new Set([
+  "staff",
+  "simple_staff",
+  "staff_v2",
+  "bigstaff",
+]);
+
+/**
  * True when a capture paints on the opposite side of the hand from its tip
- * table. The tables put a one-sided prop's business end at +x (a triad's lead
- * arm, a hoop's rim), so the animation canvas rotates such sprites 180 degrees
- * when it draws them (svg-generator) and the derived tips below assume the
- * rotated sprite. The decision is made from the painted geometry alone, so an
- * axial capture that paints clearly on -x turns even when its notation table
- * is two-ended (the big club model is a club held at its knob).
+ * table, or puts its thumb end where the notation glyph does not. The tables
+ * put a one-sided prop's business end at +x (a triad's lead arm, a hoop's
+ * rim), so the animation canvas rotates such sprites 180 degrees when it
+ * draws them (svg-generator) and the derived tips below assume the rotated
+ * sprite. Apart from the staff captures, the decision is made from the painted
+ * geometry, so an axial capture that paints clearly on -x turns even when its
+ * notation table is two-ended (the big club model is a club held at its knob).
  */
 export function modelSpriteFacesAwayFromTips(
   propType: string,
@@ -727,7 +741,9 @@ export function modelSpriteFacesAwayFromTips(
   ]
 ): boolean {
   if (!entry?.bounds) return false;
-  const base = PROP_TIP_POINTS[baseKeyOf(propType.toLowerCase())];
+  const key = baseKeyOf(propType.toLowerCase());
+  if (MODEL_THUMB_END_ON_NEGATIVE_X.has(key)) return true;
+  const base = PROP_TIP_POINTS[key];
   if (!base || base.points.length === 0) return false;
   const half = entry.width / 2;
   const paintBias = (entry.bounds.x + entry.bounds.width / 2 - half) / half;
