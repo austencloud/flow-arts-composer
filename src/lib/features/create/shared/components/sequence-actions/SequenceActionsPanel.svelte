@@ -116,10 +116,12 @@
   });
 
   const isMobileLayout = $derived(!isSideBySideLayout);
-  // The compact phone Assemble rail has no room for Share, so it lives here.
+  // The compact phone Assemble rail keeps one quiet row, so Share and Clear
+  // live here instead.
   const showHeaderShare = $derived(
-    panelState.isShareInSequenceActions && hasSequence && !!sequence
+    panelState.isWorkspaceRailCompact && hasSequence && !!sequence
   );
+  const showEditClear = $derived(panelState.isWorkspaceRailCompact);
 
   // Keep the sequence visible above the actions whenever the workspace and
   // controls are stacked. Phone-sized layouts still use the compact toolbar,
@@ -546,6 +548,11 @@
     onClose?.();
   }
 
+  function handleClearSequence() {
+    handleClose();
+    ctx.handlers.requestClearSequence();
+  }
+
   function handleStepSelect(stepNumber: number) {
     hapticService?.trigger("selection");
     activeSequenceState.selectStep(stepNumber);
@@ -903,6 +910,7 @@
                 ? cancelShiftStart
                 : gatedShiftStart}
               onEditInConstructor={handleEditInConstructor}
+              onClear={showEditClear ? handleClearSequence : undefined}
               {patternsLocked}
             />
           {:else}

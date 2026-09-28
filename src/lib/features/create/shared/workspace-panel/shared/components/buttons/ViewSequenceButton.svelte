@@ -16,12 +16,15 @@
     purpose = "open-viewer",
     isStopping = false,
     playbackState = "idle",
+    quiet = false,
   } = $props<{
     onclick?: () => void;
     isActive?: boolean;
     purpose?: "open-viewer" | "expand-viewer" | "play";
     isStopping?: boolean;
     playbackState?: "idle" | "preparing" | "retry";
+    /** Plain surface for the phone Assemble rail, where the pictures lead. */
+    quiet?: boolean;
   }>();
 
   const icon = $derived(
@@ -87,6 +90,7 @@
   class:stopping={isStopping}
   class:preparing={playbackState === "preparing"}
   class:retry={playbackState === "retry"}
+  class:quiet
   onclick={handleClick}
   aria-label={accessibleLabel}
   data-ghost={isActive ? undefined : "safe"}
@@ -287,6 +291,21 @@
     background: linear-gradient(135deg, var(--semantic-success), #059669);
     box-shadow: 0 6px 20px
       color-mix(in srgb, var(--semantic-success) 70%, transparent);
+  }
+
+  .view-sequence-button.quiet,
+  .view-sequence-button.quiet.play-purpose,
+  .view-sequence-button.quiet.expand-purpose {
+    border: 1px solid var(--theme-stroke);
+    background: var(--theme-card-bg);
+    box-shadow: none;
+    animation: none;
+  }
+
+  .view-sequence-button.quiet:hover,
+  .view-sequence-button.quiet.active {
+    background: var(--theme-card-hover-bg);
+    box-shadow: none;
   }
 
   .view-sequence-button i {

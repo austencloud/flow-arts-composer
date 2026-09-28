@@ -18,10 +18,13 @@
     CreateModuleState,
     direction = "undo",
     onAction = () => {},
+    quiet = false,
   }: {
     CreateModuleState: CreateModuleState;
     direction?: "undo" | "redo";
     onAction?: () => void;
+    /** Plain surface for the phone Assemble rail, where the pictures lead. */
+    quiet?: boolean;
   } = $props();
 
   // Resolve haptic feedback service
@@ -130,6 +133,7 @@
     ? historyButtonText().replace(/^Redo\s+/i, "")
     : undefined}
   class="undo-button"
+  class:quiet
   class:disabled={!canAct}
   onclick={handleAction}
   disabled={!canAct}
@@ -224,6 +228,17 @@
     );
     box-shadow: 0 6px 16px
       color-mix(in srgb, var(--theme-accent-strong) 60%, transparent);
+  }
+
+  .undo-button.quiet {
+    background: var(--theme-card-bg);
+    border: 1px solid var(--theme-stroke);
+    box-shadow: none;
+  }
+
+  .undo-button.quiet:hover:not(:disabled) {
+    background: var(--theme-card-hover-bg);
+    box-shadow: none;
   }
 
   .undo-button:active {

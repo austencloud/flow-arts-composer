@@ -125,8 +125,8 @@
   );
 
   $effect(() => {
-    panelState.setShareInSequenceActions(useCompactToolbar);
-    return () => panelState.setShareInSequenceActions(false);
+    panelState.setWorkspaceRailCompact(useCompactToolbar);
+    return () => panelState.setWorkspaceRailCompact(false);
   });
 
   $effect(() => {
@@ -256,8 +256,8 @@
 
 {#snippet compactHistoryActions()}
   <div class="compact-history-actions" inert={isWorkspacePlayback}>
-    <UndoButton {CreateModuleState} onAction={handleWorkspaceUndo} />
-    <UndoButton {CreateModuleState} direction="redo" />
+    <UndoButton {CreateModuleState} onAction={handleWorkspaceUndo} quiet />
+    <UndoButton {CreateModuleState} direction="redo" quiet />
   </div>
 {/snippet}
 
@@ -281,6 +281,7 @@
       <SaveToLibraryButton
         sequence={currentSequence}
         onclick={() => panelState.openSaveToLibraryPanel()}
+        quiet
       />
     </div>
   {/if}

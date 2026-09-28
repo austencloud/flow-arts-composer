@@ -339,7 +339,6 @@
       --font-size-min: 18px;
       --min-touch-target: 58px;
       --assemble-instruction-size: 22px;
-      --assemble-hand-heading-size: 20px;
       --assemble-hand-label-size: 21px;
       --assemble-action-size: 19px;
       --assemble-step-badge-size: 22px;

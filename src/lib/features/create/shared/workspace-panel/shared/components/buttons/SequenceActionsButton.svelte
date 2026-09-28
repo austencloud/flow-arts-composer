@@ -8,8 +8,10 @@
   import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
   import { WORKSPACE_BUTTON_ICON } from "../../workspace-button-layout";
 
-  let { onclick } = $props<{
+  let { onclick, quiet = false } = $props<{
     onclick?: () => void;
+    /** Plain surface for the phone Assemble rail, where the pictures lead. */
+    quiet?: boolean;
   }>();
 
   // Resolve haptic feedback service
@@ -23,6 +25,7 @@
 
 <button
   class="sequence-actions-button glass-button"
+  class:quiet
   onclick={handleClick}
   aria-label={t("create_ui_sequence_actions")}
   title={t("create_ui_sequence_actions")}
@@ -89,6 +92,17 @@
     transform: scale(1.05);
     box-shadow: 0 6px 16px
       color-mix(in srgb, var(--semantic-success, #22c55e) 64%, transparent);
+  }
+
+  .sequence-actions-button.quiet {
+    border: 1px solid var(--theme-stroke);
+    background: var(--theme-card-bg);
+    box-shadow: none;
+  }
+
+  .sequence-actions-button.quiet:hover {
+    background: var(--theme-card-hover-bg);
+    box-shadow: none;
   }
 
   .sequence-actions-button:active {

@@ -211,7 +211,7 @@
           {@render leadingActions()}
         {/if}
         {#each leftButtons as btn (btn.id)}
-          {#if btn.id === "clear" && canClearSequence && onClearSequence}
+          {#if btn.id === "clear" && canClearSequence && onClearSequence && !compact}
             <div transition:presenceTransition>
               <ClearSequencePanelButton onclick={() => onClearSequence?.()} />
             </div>
@@ -240,6 +240,7 @@
                     <div class="expand-viewer-action">
                       <ViewSequenceButton
                         purpose="expand-viewer"
+                        quiet={compact}
                         onclick={() => {
                           panelState.handoffWorkspacePlaybackToViewer();
                         }}
@@ -251,6 +252,7 @@
                     isActive={isExportPanelOpen}
                     isStopping={usesWorkspacePlayback &&
                       !!panelState.workspacePlayback}
+                    quiet={compact}
                     playbackState={isWorkspacePlaybackPreparing
                       ? "preparing"
                       : hasWorkspacePlaybackError
@@ -277,6 +279,7 @@
               transition:presenceTransition
             >
               <SequenceActionsButton
+                quiet={compact}
                 onclick={() =>
                   panelState.openSequenceActionsPanel("workspace_button")}
               />
