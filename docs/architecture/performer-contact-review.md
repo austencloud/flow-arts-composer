@@ -91,7 +91,8 @@ In code, `MAX_REACH_LEAN` and forward pitch are 0, the hips never rotate, and
 only a small clavicle raise remains. When a reach is still too far, clearance
 retraction shortens the arm to as little as 0.6 of its length, caches that,
 recovers 4% every 12 frames, and is never reset on seek, so a short arm can
-persist about two seconds after a scrub (computed).
+persist about two seconds after a scrub (computed). Since 2026-09-27 the reach
+grows back by time instead: from 0.6 to full length in 0.3 s at any frame rate.
 
 ## Cause 3: crossed hands get pulled apart
 
@@ -438,7 +439,7 @@ installed from `patches/@austencloud__scene-3d@0.1.6.patch`.
 | Un-crossing split, 7 cm minimum    | `AvatarAnimator.ts:473-510`, `:71`                                            |
 | Over/under routing                 | `ElbowPoleComputer.ts:75-102`, called at `AvatarAnimator.ts:1627`             |
 | Lean and pitch fixed at 0          | `AvatarAnimator.ts:98`, `SpineTwister.ts:53`                                  |
-| Retraction and its cache           | `AvatarAnimator.ts:102-106`, `:167-170`, `:251-254`                           |
+| Retraction and its cache           | `AvatarAnimator.ts:97-108`, `:174-175`, `:607-609`, `:2647-2830`              |
 | Wrist rate limit and smoothing     | `AvatarAnimator.ts:60`, `:2744-2752`, `:2848`                                 |
 | Render lock, 6 cm                  | `Avatar3D.svelte:529`, clamp `:652`, applied `:1663`, `:1670`, report `:1886` |
 | Orbit renderer without lock        | `worker-performer.ts:436-491`; routing `Viewer3DCanvas.svelte:346-385`        |
