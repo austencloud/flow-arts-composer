@@ -11,7 +11,10 @@ Primary and standalone actions look interactive without hover:
   navigates;
 - use the existing button primitive, visible focus, sufficient contrast, and a
   44px touch-target floor;
-- reserve inline text links for references inside running prose.
+- links are pills, never text: `LinkChip` for standalone links and
+  `LinkChip size="inline"` for mentions inside a sentence. See
+  `no-text-links.md`.
 
-Do not add a faint standalone text action, an affordance-free clickable, or a
-duplicate text CTA beside an existing button for the same action.
+Do not add a faint standalone text action, an affordance-free clickable, an
+underlined or colored text link, or a duplicate text CTA beside an existing
+button for the same action.
