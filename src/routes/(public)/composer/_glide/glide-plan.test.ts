@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   GLIDE_PERSPECTIVE,
+  fitPlace,
   glidePose,
   glideTarget,
   landingOffset,
@@ -91,5 +92,34 @@ describe("landing", () => {
     expect(landingOffset(plan, 1, 9999)).toBe(1600);
     expect(restPan(plan, 1, 1450)).toBe(250);
     expect(restPan(plan, 1, 900)).toBe(0);
+  });
+});
+
+describe("fitPlace", () => {
+  it("keeps a place the stage can still show", () => {
+    expect(fitPlace(plan, { stop: 1, pan: 250 })).toEqual({
+      stop: 1,
+      pan: 250,
+    });
+  });
+
+  it("fits a place remembered on a different window", () => {
+    expect(fitPlace(plan, { stop: 7, pan: 0 })).toEqual({ stop: 2, pan: 0 });
+    expect(fitPlace(plan, { stop: 1, pan: 900 })).toEqual({
+      stop: 1,
+      pan: 400,
+    });
+    expect(fitPlace(plan, { stop: 0, pan: 300 })).toEqual({ stop: 0, pan: 0 });
+  });
+
+  it("starts at the top when the remembered place is unreadable", () => {
+    expect(fitPlace(plan, { stop: Number.NaN, pan: 10 })).toEqual({
+      stop: 0,
+      pan: 0,
+    });
+    expect(fitPlace(plan, { stop: 1, pan: Number.NaN })).toEqual({
+      stop: 1,
+      pan: 0,
+    });
   });
 });

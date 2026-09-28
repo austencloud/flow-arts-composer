@@ -5,7 +5,7 @@
   animatable channel (framing, box or opacity) of the selected item. The
   chevrons seek to the nearest in-view keyframe; the diamond adds one at the
   playhead recording the value currently showing, or removes the one already
-  there. The Curve chip opens the segment under the playhead: easing presets
+  there, and its plus or minus says which a press will do. The Curve chip opens the segment under the playhead: easing presets
   plus PostCurveEditor for fine control, in a popover that closes on Escape
   or a press anywhere outside it.
 
@@ -143,6 +143,7 @@
         disabled={previous === null}
         onclick={() => seekTo(previous)}
         aria-label={t("post_keyframe_previous")}
+        title={t("post_keyframe_previous")}
       >
         <i class="fa-solid fa-chevron-left" aria-hidden="true"></i>
       </button>
@@ -153,9 +154,14 @@
         disabled={locked}
         aria-pressed={hasKeyframeHere}
         aria-label={t(hasKeyframeHere ? "post_keyframe_remove" : "post_keyframe_add")}
+        title={t(hasKeyframeHere ? "post_keyframe_remove" : "post_keyframe_add")}
         onclick={toggleHere}
       >
         <i class="fa-solid fa-diamond" aria-hidden="true"></i>
+        <i
+          class="kf-badge fa-solid {hasKeyframeHere ? 'fa-minus' : 'fa-plus'}"
+          aria-hidden="true"
+        ></i>
       </button>
       <button
         class="kf-btn kf-step"
@@ -163,6 +169,7 @@
         disabled={next === null}
         onclick={() => seekTo(next)}
         aria-label={t("post_keyframe_next")}
+        title={t("post_keyframe_next")}
       >
         <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>
       </button>
@@ -264,10 +271,34 @@
     cursor: not-allowed;
   }
 
+  .kf-diamond {
+    position: relative;
+  }
+
   .kf-diamond.active {
     border-color: color-mix(in srgb, var(--theme-accent, #d4813a) 50%, transparent);
     background: color-mix(in srgb, var(--theme-accent, #d4813a) 18%, transparent);
     color: var(--theme-accent, #d4813a);
+  }
+
+  /* Plus adds a keyframe here; minus, on a keyframe, takes it away. */
+  .kf-badge {
+    position: absolute;
+    right: 4px;
+    bottom: 4px;
+    display: grid;
+    place-items: center;
+    width: 15px;
+    height: 15px;
+    border-radius: 50%;
+    background: var(--theme-text, #fff);
+    color: var(--theme-bg, #101018);
+    font-size: 0.5625rem;
+  }
+
+  .kf-diamond.active .kf-badge {
+    background: var(--semantic-danger, #ff5d5d);
+    color: #fff;
   }
 
   .curve-chip-wrapper {
@@ -293,9 +324,9 @@
     gap: 0.125rem;
   }
 
-  /* A narrow timeline's toolbar keeps the diamond and the Curve chip on one
-     line. Its keyframe row already names the channel, and tapping a key
-     there goes to it. */
+  /* A narrow timeline's toolbar, the editor's or the crop screen's, keeps
+     the diamond and the Curve chip on one line. Its keyframe row already
+     names the channel, and tapping a key there goes to it. */
   @container post-timeline-toolbar (max-width: 34rem) {
     .kf-label,
     .kf-step {

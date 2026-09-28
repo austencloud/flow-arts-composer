@@ -7,7 +7,9 @@
    *
    * The two motions are Level 1's own Staff Motions demonstrations, read from
    * SHIFT_DEMOS, and the definitions quote that chapter, so this page cannot
-   * describe prospin differently from the lesson that teaches it.
+   * describe prospin differently from the lesson that teaches it. Each motion
+   * shows as its animation beside the pictograph that draws it; the start and
+   * end poses the chapter adds would only repeat what the animation shows.
    */
   import GuideShell from "../_components/GuideShell.svelte";
   import GuideSeo from "../level-1/_components/GuideSeo.svelte";
@@ -66,8 +68,9 @@
     <div class="shifts">
       {#each shifts as shift (shift.style)}
         <SequenceShowcase
+          variant="pair"
           sequence={shift.sequence}
-          items={shift.demo.items}
+          items={[shift.demo.motion]}
           render={shift.demo.render}
           picTheme="dark"
         >
@@ -126,6 +129,9 @@
     /* One column that never grows past the page, so a wide child wraps
        instead of widening the whole article. */
     grid-template-columns: minmax(0, 1fr);
+    /* The Guide gives the route a full-height column; spare height stays
+       below the page instead of spreading between its rows. */
+    align-content: start;
     gap: clamp(2rem, 4vw, 3.5rem);
     padding: clamp(1.5rem, 3vw, 3rem) var(--pad) clamp(3rem, 6vw, 5rem);
   }

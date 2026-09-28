@@ -123,18 +123,22 @@ use fixed distances. Checked on both rigs in the wall plane and dual wheel:
   extension. Dual wheel clears.
 - **Tunnel Stack** (1.2 m front to back) and **Facing Each Other** (1.0 m
   apart) clear in the wall plane and fall short in dual wheel.
-- **Back-to-Back** puts both performers on the same spot, so their bodies
-  overlap in every style.
-- **Circle** gets the facing wrong once there are three or more: only the
-  performers on the front-to-back line face the center, and the ones at the
-  sides face outward. With everyone facing the center, five to eight
-  performers' staff tips reach about 2 cm into each other's space today, so
-  the circle needs 1 to 2% more radius. Isolation with an 86 cm staff clears
+- **Back-to-Back** stands the pair 0.6 m apart along the line they face, so
+  their bodies no longer overlap. The wall plane clears. In dual wheel the
+  staffs still reach into each other's space, because a back-to-back pair
+  needs the same 1.90 m as a facing pair today.
+- **Circle** turns every performer to face the center. Five to eight
+  performers' staff tips then reach about 2 cm into each other's space today,
+  so the circle needs 1 to 2% more radius. Isolation with an 86 cm staff clears
   by 11 to 12 cm, and extension needs 8 to 9% more radius.
 - **Diagonal**, **Stage L/R** and V-Shape with three or more clear in every
   style.
 
-The Back-to-Back and Circle problems are preset bugs that need their own fix.
+Two preset bugs were fixed on 2026-09-28. Back-to-Back put both performers on
+the same spot, and Circle turned the performers at the sides to face outward.
+The viewer had a bug of its own. It moved performers into a new formation
+without turning them unless reduced motion was on, and undo and reloaded
+scenes dropped the facings too. Now each performer turns to its slot's facing.
 
 ## What the code does today
 

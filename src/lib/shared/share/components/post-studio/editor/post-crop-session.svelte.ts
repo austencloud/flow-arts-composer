@@ -28,13 +28,13 @@ import {
   overshootOf,
   pinchPose,
   quarterLeft,
-  releaseCorner,
+  releaseHandle,
   sameFraming,
   splitRotation,
   turnPose,
   zoomFloor,
   zoomPoseAbout,
-  type CropCorner,
+  type CropHandle,
   type CropFit,
   type CropLimit,
   type CropPoint,
@@ -148,13 +148,13 @@ export function createCropSession(deps: CropSessionDeps) {
 
   let sliderBase: SliderBase | null = null;
   let gesture = $state.raw<Gesture | null>(null);
-  /** A corner is held on the stage; nothing is written until it is let go. */
-  let cornerHeld = $state(false);
+  /** A handle is held on the stage; nothing is written until it is let go. */
+  let handleHeld = $state(false);
   let announcement = $state("");
 
   /** Whether an edit may land now: a clip, unlocked, with no drag running. */
   function editable(): PostVideoItem | null {
-    if (!item || locked || gesture || cornerHeld || editor.inGesture)
+    if (!item || locked || gesture || handleHeld || editor.inGesture)
       return null;
     return item;
   }
@@ -499,28 +499,28 @@ export function createCropSession(deps: CropSessionDeps) {
    */
   function abandonGesture(): void {
     gesture = null;
-    cornerHeld = false;
+    handleHeld = false;
   }
 
-  /** The stage holds a corner, or lets it go without a crop. */
-  function holdCorner(held: boolean): void {
-    cornerHeld = held && item !== null && !locked;
+  /** The stage holds a corner or side, or lets it go without a crop. */
+  function holdHandle(held: boolean): void {
+    handleHeld = held && item !== null && !locked;
   }
 
   /**
-   * A corner let go at `scale` of the window: what the dragged frame held
-   * now fills the slot. Returns the poses either side, for the settle.
+   * A corner or side let go at `scale` of the window: what the dragged frame
+   * held now fills the slot. Returns the poses either side, for the settle.
    */
-  function releaseCornerAt(
-    corner: CropCorner,
+  function releaseHandleAt(
+    handle: CropHandle,
     scale: number
   ): { before: CropPose; after: CropPose } | null {
-    cornerHeld = false;
+    handleHeld = false;
     const target = editable();
     const current = pose;
     if (!target || !current || !(scale > 0) || Math.abs(scale - 1) < 1e-6)
       return null;
-    const released = releaseCorner(current, corner, scale);
+    const released = releaseHandle(current, handle, scale);
     const next = limitPose(released, cropLimitFor(current, released));
     if (!writeStep(target, next)) return null;
     announce();
@@ -558,9 +558,9 @@ export function createCropSession(deps: CropSessionDeps) {
     get inGesture() {
       return gesture !== null;
     },
-    /** A drag, pinch or held corner is running; Enter and Escape wait for it. */
+    /** A drag, pinch or held handle is running; Enter and Escape wait for it. */
     get busy() {
-      return gesture !== null || cornerHeld;
+      return gesture !== null || handleHeld;
     },
     /** What the last settled change left, for a polite live region. */
     get announcement() {
@@ -580,8 +580,8 @@ export function createCropSession(deps: CropSessionDeps) {
     pinchTo,
     endGesture,
     abandonGesture,
-    holdCorner,
-    releaseCorner: releaseCornerAt,
+    holdHandle,
+    releaseHandle: releaseHandleAt,
     announce,
   };
 }

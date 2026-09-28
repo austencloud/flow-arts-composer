@@ -2,7 +2,7 @@ import type { BrowseViewMode } from "$lib/shared/browse/domain/browse-view-mode"
 import { encodeViewMode } from "$lib/shared/browse/domain/browse-view-mode";
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
 import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-import type { getQRCodeGenerator } from "$lib/shared/qr/get-qr-code-generator";
+import type { QRCodeGenerator } from "$lib/shared/qr/services/qr-code-generator";
 import {
   encodeSequence,
   UnencodableMotionError,
@@ -22,10 +22,42 @@ export interface ChoreoCardQrDeps {
   readonly exportPresentation?: boolean;
 }
 
+/** The two QR calls a card makes, so the generator can load lazily. */
+export type ChoreoCardQrGenerator = Pick<
+  QRCodeGenerator,
+  "generateForSequence" | "generateForUrl"
+>;
+
 export interface ChoreoCardQrServices {
-  readonly getGenerator: typeof getQRCodeGenerator;
-  readonly getUrlGenerator?: typeof getQRCodeGenerator;
+  readonly getGenerator: () => ChoreoCardQrGenerator;
+  readonly getUrlGenerator?: () => ChoreoCardQrGenerator;
 }
+
+function lazyQrGenerator(forUrl: boolean): ChoreoCardQrGenerator {
+  const load = async () => {
+    const qr = await import("$lib/shared/qr/get-qr-code-generator");
+    return forUrl ? qr.getUrlQRCodeGenerator() : qr.getQRCodeGenerator();
+  };
+  return {
+    generateForSequence: async (sequence, options) =>
+      (await load()).generateForSequence(sequence, options),
+    generateForUrl: async (url, options) =>
+      (await load()).generateForUrl(url, options),
+  };
+}
+
+const sequenceQrGenerator = lazyQrGenerator(false);
+const urlQrGenerator = lazyQrGenerator(true);
+
+/**
+ * The app's QR generators, loaded with import() the first time a card mints a
+ * code. Their short-code manager imports Firebase, and the home page launchpad
+ * renders cards without a QR code.
+ */
+export const lazyChoreoCardQrServices: ChoreoCardQrServices = {
+  getGenerator: () => sequenceQrGenerator,
+  getUrlGenerator: () => urlQrGenerator,
+};
 
 /** Owns QR minting, stale-result rejection, and the per-card QR cache. */
 export function createChoreoCardQrState(

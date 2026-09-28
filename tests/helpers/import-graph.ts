@@ -53,7 +53,8 @@ export function importSpecifiers(
   return [...specs];
 }
 
-function resolveLocal(spec: string, importer: string): string | null {
+/** The source file a `$lib/` or relative specifier names, or null for a package. */
+export function resolveLocal(spec: string, importer: string): string | null {
   let base: string;
   if (spec === "$lib") base = path.join(SRC, "lib/index");
   else if (spec.startsWith("$lib/"))
