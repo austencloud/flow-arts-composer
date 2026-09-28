@@ -218,7 +218,6 @@
     flex-direction: column;
     flex: 1;
     min-height: 0;
-    --prop-colors-inset: 12px 18px;
   }
   /* Bottom drawer sizing. Drawer.css caps the sheet at --sheet-max-width and
      centers it with auto margins (no transform, so drag is unaffected). */
