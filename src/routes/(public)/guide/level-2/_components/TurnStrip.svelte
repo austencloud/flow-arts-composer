@@ -77,6 +77,7 @@
 
 <script lang="ts">
   import GuidePictograph from "../../level-1/_components/GuidePictograph.svelte";
+  import { guideTurnDisplayWord } from "../../level-1/_data/guide-turn-display-word";
   import { t as translate } from "$lib/shared/i18n/i18n.svelte.js";
   import PoseFrame from "./PoseFrame.svelte";
   import SelectionHit from "$lib/shared/selection/SelectionHit.svelte";
@@ -319,12 +320,7 @@
               groupId={frame.animKey}
               isGroupStart
               label={translate("guide_l2_animate", {
-                word:
-                  frame.word === "Prospin with a turn"
-                    ? translate("guide_runtime_prospin_turn")
-                    : frame.word === "Antispin with a turn"
-                      ? translate("guide_runtime_antispin_turn")
-                      : frame.word,
+                word: guideTurnDisplayWord(frame.word),
               })}
               onselect={() =>
                 emitSequence?.({

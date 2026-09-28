@@ -1,5 +1,6 @@
 <script lang="ts">
   import { localizePrintLabel } from "../_components/localize-print-label";
+  import { guideTurnDisplayWord } from "../../level-1/_data/guide-turn-display-word";
   import { t as translate } from "$lib/shared/i18n/i18n.svelte.js";
   /**
    * Turns (Shifts) - Level 2 body page 2 (manifest `turns-shifts`), faithful to
@@ -464,10 +465,7 @@
         groupId={row.animKey}
         isGroupStart
         label={translate("guide_l2_animate", {
-          word:
-            row.word === "Prospin with a turn"
-              ? translate("guide_runtime_prospin_turn")
-              : translate("guide_runtime_antispin_turn"),
+          word: guideTurnDisplayWord(row.word),
         })}
         onselect={() =>
           emitSequence?.({
