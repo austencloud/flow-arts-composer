@@ -269,4 +269,25 @@ describe("Crossfade focus", () => {
       delete document.documentElement.dataset.motionPreference;
     }
   });
+
+  it("focusShown reaches a layer the key returns to mid-fade", async () => {
+    const { container } = render(CrossfadeTestHarness);
+    await settle();
+    const outsideLayers = () => [
+      ...container.querySelectorAll<HTMLElement>(
+        '[data-testid="outside-stage"] .crossfade > .layer'
+      ),
+    ];
+    const [idleLayer] = outsideLayers();
+
+    await page
+      .getByRole("button", { name: "Play and stop from outside" })
+      .click();
+    await settle();
+
+    // The same layer, resumed rather than remounted, and focus inside it.
+    expect(outsideLayers()).toEqual([idleLayer]);
+    expect(document.activeElement?.textContent).toBe("Idle action");
+    expect(idleLayer?.contains(document.activeElement)).toBe(true);
+  });
 });

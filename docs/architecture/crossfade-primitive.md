@@ -79,7 +79,13 @@ commit that makes the leaving layer inert and before it is `aria-hidden`.
 Otherwise the browser drops focus to `<body>` and a keyboard or screen-reader
 user starts again from the top of the page. Consumers that want a specific
 target still move focus after `tick()`; that runs later and wins. Controls a
-consumer renders outside the keyed region are its own to focus.
+consumer renders outside the keyed region are its own to focus. When such a
+control goes away with the key change, as the Construct demo's phone-width play
+actions do, the consumer binds the Crossfade and calls `focusShown()` after
+`tick()`. It makes the same handoff and returns the element that took focus,
+so the consumer can scroll it into view. It looks the shown layer up rather
+than trusting a `bind:this` inside the content, because a key that returns to
+a layer still fading out resumes that layer instead of remounting it.
 
 ## What is on the primitive (migrated 2026-06-30)
 

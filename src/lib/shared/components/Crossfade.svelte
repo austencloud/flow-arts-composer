@@ -45,7 +45,9 @@
   (Play trading places with the playing controls), focus moves to the
   replacing layer's first control, or to that layer when it has none. It never
   falls to <body>. A consumer that wants focus somewhere specific still moves
-  it after `tick()`, which runs later and wins.
+  it after `tick()`, which runs later and wins. A consumer whose focused
+  control sat outside the keyed region and went away with the change calls
+  `focusShown()` after `tick()` for the same handoff.
 
   Boundary + rationale: docs/architecture/crossfade-primitive.md
   Routing rule: .claude/rules/crossfade-primitive.md
@@ -195,6 +197,25 @@
     if (shown && shown !== leaving) {
       focusFirstOrContainer(shown, { preventScroll: true });
     }
+  }
+
+  /**
+   * The same handoff for a control outside the keyed region: a phone layout
+   * that shows the playing controls under the player removes them when play
+   * ends. Call it after `tick()`. It returns what took focus, so the caller
+   * can scroll it into view. A key that returns to a layer still fading out
+   * resumes that layer instead of remounting it, so a `bind:this` inside the
+   * content can still point at the layer leaving; this looks the shown layer
+   * up instead.
+   */
+  export function focusShown(options?: FocusOptions): HTMLElement | null {
+    const shown = shownLayer();
+    if (!shown) return null;
+    focusFirstOrContainer(shown, options);
+    const focused = document.activeElement;
+    return focused instanceof HTMLElement && shown.contains(focused)
+      ? focused
+      : null;
   }
 
   // The box is driven off the INCOMING layer's natural height. The outgoing
