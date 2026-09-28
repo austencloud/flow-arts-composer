@@ -25,16 +25,38 @@ let lazyRegistration: Promise<void> | null = null;
 
 function ensureRegistered(): Promise<void> {
   if (factory) return Promise.resolve();
-  lazyRegistration ??= import(
-    "$lib/shared/composition-root/register-library-repository"
-  )
-    .then(({ registerLibraryRepository }) => {
-      registerLibraryRepository();
-    })
+  lazyRegistration ??= Promise.all([
+    import("$lib/shared/composition-root/register-library-repository").then(
+      ({ registerLibraryRepository }) => registerLibraryRepository()
+    ),
+    learnWhoIsSignedIn(),
+  ])
+    .then(() => undefined)
     .finally(() => {
       lazyRegistration = null;
     });
   return lazyRegistration;
+}
+
+// Those pages never start listening for sign-in either, and the save decides
+// whose sequence it is from that. Without this a signed-in person was treated
+// as a stranger: the sequence stayed on this device, filed under nobody, and
+// never reached their library. Start the same listener the app and the site
+// header start, and wait until it knows who is here. If it cannot start, the
+// save still goes ahead as a guest save on this device.
+async function learnWhoIsSignedIn(): Promise<void> {
+  try {
+    const { initializeAuthListener, awaitAuthSettled } = await import(
+      "$lib/shared/auth/state/auth-state.svelte"
+    );
+    await initializeAuthListener();
+    await awaitAuthSettled();
+  } catch (error) {
+    console.warn(
+      "[library] Could not check who is signed in before saving:",
+      error
+    );
+  }
 }
 
 export async function getVisualSequenceSaveCoordinator(): Promise<IVisualSequenceSaveCoordinator> {
