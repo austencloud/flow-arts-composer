@@ -27,6 +27,11 @@
     scenePropDrawnLengthCm,
     scenePropFixedLengthCm,
   } from "$lib/shared/3d/domain/scene-prop-catalog";
+  import {
+    fixedHandDistance,
+    largestHandDistance,
+    type PerformerHandDistance,
+  } from "$lib/shared/3d/domain/performer-hand-distance";
   import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
   import {
     describeStanceYawTrack,
@@ -209,6 +214,40 @@
   const fixedLengthCm = $derived(scenePropFixedLengthCm(lab.prop));
   const drawnLengthCm = $derived(
     scenePropDrawnLengthCm(lab.prop, configuredLengthCm)
+  );
+
+  /**
+   * The isolation style sizes the grid from the staff on screen. A body-fit
+   * length drifts by millimetres as this panel re-reads the skeleton, so it is
+   * held to whole centimetres rather than re-planning the turn every frame; a
+   * pinned or model length is used as it is.
+   */
+  const isolationStaffCm = $derived(
+    drawnLengthCm === null
+      ? null
+      : lab.propLength === "body" && fixedLengthCm === null
+        ? Math.round(drawnLengthCm)
+        : drawnLengthCm
+  );
+
+  /**
+   * In isolation each hand sits half the staff from the grid center in every
+   * direction, so a staff pointing in ends on the center point. The drawn
+   * rings follow: hands at half the staff, tips out to a whole staff. Null
+   * keeps the performer's fixed distance and the global rings.
+   */
+  const isolationHandM = $derived(
+    lab.gridStyle === "isolation" && isolationStaffCm !== null
+      ? isolationStaffCm / 200
+      : null
+  );
+  const labHandDistance = $derived<PerformerHandDistance | null>(
+    isolationHandM === null
+      ? null
+      : {
+          left: fixedHandDistance(isolationHandM),
+          right: fixedHandDistance(isolationHandM),
+        }
   );
 
   /**
@@ -401,6 +440,11 @@
   data-view={lab.view}
   data-panel={lab.panel}
   data-grid-labels={lab.gridLabels ? "1" : "0"}
+  data-grid-style={lab.gridStyle}
+  data-hand-distance-cm={formatMetric(
+    largestHandDistance(labHandDistance ?? undefined) * 100,
+    2
+  )}
   data-lab-href={lab.fullyQualifiedHref()}
   data-phase={lab.phase.toFixed(2)}
   data-body-max-staff-cm={formatMetric(
@@ -586,6 +630,11 @@
                 characterId={lab.character}
                 propType={lab.prop}
                 propLengthCm={lab.propLength === "body" ? null : lab.propLength}
+                handDistance={labHandDistance}
+                handPointRadius={isolationHandM ?? undefined}
+                outerPointRadius={isolationHandM === null
+                  ? undefined
+                  : isolationHandM * 2}
                 gridEmphasis={view.grid}
                 showGridLabels={lab.gridLabels}
                 onCollisionEvents={index === 0 ? collectGripMetrics : undefined}
