@@ -1,7 +1,12 @@
 <script lang="ts">
+  import { onMount } from "svelte";
   import { browser } from "$app/environment";
   import { page } from "$app/state";
   import Seo from "$lib/shared/components/Seo.svelte";
+  import {
+    hasSavedFirebaseUser,
+    signInWhenIdle,
+  } from "$lib/shared/auth/services/deferred-sign-in";
 
   let { data } = $props();
 
@@ -28,6 +33,18 @@
   // instead of requiring the hand-copied <iframe> snippet from Share > Embed.
   const oembedUrl = $derived(
     `https://tkaflowarts.com/oembed?format=json&url=${encodeURIComponent(seo.canonical)}`
+  );
+
+  // This page has no site header to sign a returning visitor in, so a
+  // signed-in visitor's prop and color changes stayed on this device. Only a
+  // saved user record starts sign-in, so signed-out visitors load nothing new.
+  // It lives on the route, not in SequenceViewerPage, because the sequence
+  // embed reuses that component inside other websites, which never sign in.
+  onMount(() =>
+    signInWhenIdle({
+      hasSession: hasSavedFirebaseUser,
+      label: "SequenceViewer",
+    })
   );
 </script>
 
