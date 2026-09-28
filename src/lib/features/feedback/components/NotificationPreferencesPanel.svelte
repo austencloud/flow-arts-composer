@@ -601,7 +601,7 @@
           </span>
 
           {#if !isPreviewMode}
-            <span class="alert-actions" aria-label="Bulk alert controls">
+            <span class="alert-actions" aria-label={t("create_review_bulk_alert_controls")}>
               <PanelButton
                 variant="secondary"
                 onclick={() => setAllAlerts(true)}

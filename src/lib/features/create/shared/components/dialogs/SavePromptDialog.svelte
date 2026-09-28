@@ -21,8 +21,8 @@
 
   let {
     show = $bindable(false),
-    title = "Save Sequence First?",
-    message = "This sequence needs to be saved to your library before you can proceed. This allows you to view recordings and shared content later.",
+    title,
+    message,
     onSave,
     onCancel,
   }: Props = $props();
@@ -41,16 +41,16 @@
 <Drawer bind:isOpen={show}>
   <div class="save-prompt-dialog">
     <div class="dialog-header">
-      <h2>{title}</h2>
+      <h2>{title ?? t("create_review_save_sequence_first")}</h2>
     </div>
 
     <div class="dialog-content">
-      <p class="message">{message}</p>
+      <p class="message">{message ?? t("create_review_this_sequence_needs_to_be_saved_to_your_library_before_you_can_proceed_this_allows_you_to_")}</p>
 
       <div class="info-box">
         <i class="fas fa-info-circle" aria-hidden="true"></i>
         <span>
-          Saving allows you to:
+          {t("create_review_saving_allows_you_to")}
           <ul>
             <li>{t("create_ui_access_recordings_in_your_library")}</li>
             <li>{t("create_ui_find_shared_sequences_later")}</li>
@@ -63,11 +63,11 @@
     <div class="dialog-actions">
       <button class="btn-secondary" onclick={handleCancel}>
         <i class="fas fa-times" aria-hidden="true"></i>
-        Cancel
+        {t("create_review_cancel")}
       </button>
       <button data-save-shortcut class="btn-primary" onclick={handleSave}>
         <i class="fas fa-save" aria-hidden="true"></i>
-        Save & Continue
+        {t("create_review_save_continue")}
       </button>
     </div>
   </div>

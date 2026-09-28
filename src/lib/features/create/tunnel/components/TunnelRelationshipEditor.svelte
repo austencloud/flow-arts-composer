@@ -8,17 +8,17 @@
   import type { TunnelReflection } from "../domain/tunnel-relationship-rule";
 
   const state = getTunnelCreatorContext();
-  const reflectionOptions = [
-    { value: "none", label: "None" },
-    { value: "mirror", label: "Mirror" },
-    { value: "flip", label: "Flip" },
-  ] satisfies { value: TunnelReflection; label: string }[];
+  const reflectionOptions = $derived([
+    { value: "none", label: t("tunnel_none") },
+    { value: "mirror", label: t("tunnel_mirror") },
+    { value: "flip", label: t("tunnel_flip") },
+  ] satisfies { value: TunnelReflection; label: string }[]);
   const speedOptions = [0.25, 0.5, 1, 2, 4].map((speed) => ({
     value: String(speed),
     label: `${speed}×`,
   }));
   const target = $derived(state.pairingTarget);
-  const targetLabel = $derived(target?.label ?? "Performer");
+  const targetLabel = $derived(target?.label ?? t("tunnel_performer"));
   const sourceId = $derived(
     target?.performer?.source.kind === "derived"
       ? target.performer.source.performerId
@@ -26,10 +26,10 @@
   );
   const sourceLabel = $derived(
     sourceId === "independent"
-      ? "Independent choreography"
+      ? t("tunnel_independent_choreography")
       : (state.pairingSourceCandidates.find(
           (candidate) => candidate.id === sourceId
-        )?.label ?? "Earlier performer")
+        )?.label ?? t("tunnel_earlier_performer"))
   );
 </script>
 
@@ -44,7 +44,7 @@
     </div>
     <span class="recipe">
       {sourceId === "independent"
-        ? "Independent"
+        ? t("tunnel_independent")
         : copyOpsLabel(state.relationshipOps)}
     </span>
   </header>
@@ -66,20 +66,20 @@
     >
       <option value="independent">{t("create_ui_independent_sequence")}</option>
       {#each state.pairingSourceCandidates as candidate (candidate.id)}
-        <option value={candidate.id}>Follow {candidate.label}</option>
+        <option value={candidate.id}>{t("create_review_follow")} {candidate.label}</option>
       {/each}
     </select>
     <p>
       {sourceId === "independent"
-        ? `${targetLabel} owns a complete two-prop sequence.`
-        : `${targetLabel} derives choreography from ${sourceLabel} while keeping its own timing.`}
+        ? t("tunnel_own_sequence", { name: targetLabel })
+        : t("tunnel_derived_sequence", { name: targetLabel, source: sourceLabel })}
     </p>
   </div>
 
   {#if sourceId !== "independent"}
     <div class="relationship-grid">
       <div class="rotation-card">
-        <h4 id="tunnel-rotation-label">Rotation</h4>
+        <h4 id="tunnel-rotation-label">{t("create_review_rotation")}</h4>
         <FuseRotationDial
           value={state.relationship.rotationSteps}
           accent="var(--theme-accent)"
@@ -90,21 +90,21 @@
 
       <div class="rule-stack">
         <div class="control-group">
-          <span class="control-label">Reflection</span>
+          <span class="control-label">{t("create_review_reflection")}</span>
           <SegmentedControl
             options={reflectionOptions}
             value={state.relationship.reflect}
             onchange={(reflect) => state.setRelationship({ reflect })}
             semantics="radiogroup"
-            ariaLabel={`${targetLabel} reflection`}
+            ariaLabel={t("tunnel_reflection_label", { name: targetLabel })}
             color="accent"
             size="sm"
           />
         </div>
 
-        <div class="chip-row" aria-label={`${targetLabel} motion transforms`}>
+        <div class="chip-row" aria-label={t("tunnel_transforms_label", { name: targetLabel })}>
           <FilterChipBase
-            label="Invert"
+            label={t("create_review_invert")}
             icon="fas fa-arrows-rotate"
             mode="toggle"
             active={state.relationship.invert}
@@ -113,7 +113,7 @@
               state.setRelationship({ invert: !state.relationship.invert })}
           />
           <FilterChipBase
-            label="Rewind"
+            label={t("create_review_rewind")}
             icon="fas fa-backward"
             mode="toggle"
             active={state.relationship.rewind}
@@ -124,7 +124,7 @@
         </div>
 
         <div class="control-group">
-          <span class="control-label">{targetLabel} speed</span>
+          <span class="control-label">{t("tunnel_speed_label", { name: targetLabel })}</span>
           <SegmentedControl
             options={speedOptions}
             value={String(target?.timing.speed ?? 1)}
@@ -132,7 +132,7 @@
               target &&
               state.setPerformerTiming(target.id, { speed: Number(value) })}
             semantics="radiogroup"
-            ariaLabel={`${targetLabel} speed`}
+            ariaLabel={t("tunnel_speed_label", { name: targetLabel })}
             color="accent"
             size="sm"
           />
@@ -142,13 +142,13 @@
           <div>
             <span class="control-label">{t("create_ui_start_offset")}</span>
             <span class="offset-hint"
-              >Shift Performer 2 around the sequence</span
+              >{t("create_review_shift_performer_2_around_the_sequence")}</span
             >
           </div>
-          <div class="stepper" aria-label={`${targetLabel} start offset`}>
+          <div class="stepper" aria-label={t("tunnel_offset_label", { name: targetLabel })}>
             <button
               type="button"
-              aria-label={`Decrease ${targetLabel} offset`}
+              aria-label={t("tunnel_less_offset", { name: targetLabel })}
               onclick={() =>
                 target &&
                 state.setPerformerTiming(target.id, {
@@ -158,7 +158,7 @@
             <output>{target?.timing.stepOffset ?? 0}</output>
             <button
               type="button"
-              aria-label={`Increase ${targetLabel} offset`}
+              aria-label={t("tunnel_more_offset", { name: targetLabel })}
               onclick={() =>
                 target &&
                 state.setPerformerTiming(target.id, {

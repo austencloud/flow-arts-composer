@@ -5,6 +5,7 @@
   is owned by the parent; this emits edits.
 -->
 <script lang="ts" generics="T extends number | string | boolean">
+  import { tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
   interface Lane {
     label: string;
     color: "blue" | "red" | "hold";
@@ -117,9 +118,9 @@
               class:inert={lane.inert?.[bi]}
               role="switch"
               aria-checked={v !== base}
-              aria-label="{lane.label} step {bi + 1}{lane.inert?.[bi] ? ' (no spin, reversal has no effect)' : ''}"
+              aria-label={tDynamic(lane.inert?.[bi] ? "pattern_strip_inert_step_aria" : "pattern_strip_step_aria", { lane: lane.label, step: bi + 1 })}
               title={lane.inert?.[bi]
-                ? "This step isn't spinning, so a reversal here has no effect"
+                ? tDynamic("pattern_strip_inert_step_title")
                 : undefined}
               onclick={() => onEdit(li, bi, (v === base ? (valueList.find((x) => x !== base) ?? base) : base) as T)}
             >
@@ -149,7 +150,7 @@
      first cell; ch tracks the font, and the clamp is the backstop for a lane
      name longer than the two this ships with. */
   .pbs-label {
-    width: 5ch; flex: 0 0 5ch; min-width: 0;
+    width: 6ch; flex: 0 0 6ch; min-width: 0;
     font-size: 14px; font-weight: 800;
     overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
   }

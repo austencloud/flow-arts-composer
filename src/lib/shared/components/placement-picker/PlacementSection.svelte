@@ -4,6 +4,7 @@ Uses 4x4 pictograph grid with all 16 variations
 50px touch targets, modern Material 2026 design
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
   import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
   import PlacementPickerGrid from "./PlacementPickerGrid.svelte";
@@ -35,7 +36,7 @@ Uses 4x4 pictograph grid with all 16 variations
 
   // Get display value from the current placement
   const displayValue = $derived.by(() => {
-    if (!currentPlacement) return "Any";
+    if (!currentPlacement) return t("shared_controls_any_position");
     // Show the start placement name (e.g., "Alpha1", "Beta3", "Gamma11")
     return currentPlacement.startPlacement || currentPlacement.letter || "?";
   });
@@ -75,7 +76,7 @@ Uses 4x4 pictograph grid with all 16 variations
       {:else if hasSelection}
         <span class="value-badge">{displayValue}</span>
       {:else}
-        <span class="value-any">Any</span>
+        <span class="value-any">{t("shared_controls_any_position")}</span>
       {/if}
       {#if !disabled}
         <svg

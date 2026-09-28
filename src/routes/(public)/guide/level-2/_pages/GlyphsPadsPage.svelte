@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { localizePrintLabel } from "../_components/localize-print-label";
+  import { t as translate } from "$lib/shared/i18n/i18n.svelte.js";
   /**
    * Glyphs / PADS - Level 2 body page 4 (manifest `glyphs-pads`), faithful to
    * old p5. High/low turn slots, the PADS priority list, and the five hybrid
@@ -83,7 +85,7 @@
   const COLS: Col[] = [
     {
       cx: 78,
-      head: { t1: "Type 1", t2: "", parts: [["Dual", DUAL], ["-Shift", SHIFT]] },
+      head: { t1: translate("guide_l2_print_type_1"), t2: "", parts: [["Dual", DUAL], ["-Shift", SHIFT]] },
       data: EX_C,
       hi: "Pro",
       lo: "Anti",
@@ -92,7 +94,7 @@
     { cx: 212, data: EX_S, hi: "Leading", lo: "Following", letters: ["S, T"] },
     {
       cx: 348,
-      head: { t1: "Type 2", t2: "", parts: [["Shift", SHIFT]] },
+      head: { t1: translate("guide_l2_print_type_2"), t2: "", parts: [["Shift", SHIFT]] },
       data: EX_W,
       hi: "Shift",
       lo: "Static",
@@ -100,7 +102,7 @@
     },
     {
       cx: 462,
-      head: { t1: "Type 3", t2: "", parts: [["Cross", CROSS], ["-Shift", SHIFT]] },
+      head: { t1: translate("guide_l2_print_type_3"), t2: "", parts: [["Cross", CROSS], ["-Shift", SHIFT]] },
       data: EX_SIGD,
       hi: "Shift",
       lo: "Dash",
@@ -108,7 +110,7 @@
     },
     {
       cx: 562,
-      head: { t1: "Type 4", t2: "", parts: [["Dash", DASHC]] },
+      head: { t1: translate("guide_l2_print_type_4"), t2: "", parts: [["Dash", DASHC]] },
       data: EX_PHI,
       hi: "Dash",
       lo: "Static",
@@ -121,13 +123,13 @@
   const BOX_Y = 470;
 
   type Para = { y: number; fs: number; lh: number; html: string; x?: number; w?: number; left?: boolean };
-  const PARAS: Para[] = [
-    { y: 58, fs: 16, lh: 19, html: "A <strong>glyph</strong> is a letter combined with other characters, such as numbers or symbols." },
+  const PARAS = $derived<Para[]>([
+    { y: 58, fs: 16, lh: 19, html: translate("guide_l2_print_glyphspadspage_0") },
     {
       y: 92,
       fs: 15.5,
       lh: 19,
-      html: "To the right of each letter, there are two slots - high and low.<br>These slots contain numbers that indicate turns.",
+      html: translate("guide_l2_print_glyphspadspage_1"),
     },
     {
       x: 36,
@@ -136,7 +138,7 @@
       fs: 14.5,
       lh: 18,
       left: true,
-      html: "In a hybrid, motion types are<br>different and must be disambiguated.<br>These rules indicate where to place numbers:",
+      html: translate("guide_l2_print_glyphspadspage_2"),
     },
     {
       x: 322,
@@ -145,7 +147,7 @@
       fs: 15,
       lh: 19,
       left: true,
-      html: "<strong>The motion that is higher on the list is indicated by the high slot.</strong>",
+      html: translate("guide_l2_print_glyphspadspage_3"),
     },
     {
       x: 322,
@@ -154,7 +156,7 @@
       fs: 15,
       lh: 19,
       left: true,
-      html: "Remember the order with the acronym <strong>PADS</strong>, for <strong>Pro, Anti, Dash, Static.</strong>",
+      html: translate("guide_l2_print_glyphspadspage_4"),
     },
     {
       x: 322,
@@ -163,7 +165,7 @@
       fs: 15,
       lh: 19,
       left: true,
-      html: "The letters S and T have another factor - <em>leading/following</em>.<br>In their case, leading is high and following is low.",
+      html: translate("guide_l2_print_glyphspadspage_5"),
     },
     {
       x: 322,
@@ -172,7 +174,7 @@
       fs: 14.5,
       lh: 19,
       left: true,
-      html: "There are five hybrids, each shown below in their corresponding high/low slots.",
+      html: translate("guide_l2_print_glyphspadspage_6"),
     },
     {
       x: 30,
@@ -181,7 +183,7 @@
       fs: 14.5,
       lh: 17,
       left: true,
-      html: "The remaining letters have combinations of the same motion type.",
+      html: translate("guide_l2_print_glyphspadspage_7"),
     },
     {
       x: 30,
@@ -190,7 +192,7 @@
       fs: 14.5,
       lh: 17,
       left: true,
-      html: "For these, put <strong style=\"color:#2342c9\">left</strong> in the high slot and <strong style=\"color:#c01b1b\">right</strong> in the low slot.",
+      html: translate("guide_l2_print_glyphspadspage_8"),
     },
     {
       x: 30,
@@ -199,9 +201,9 @@
       fs: 14.5,
       lh: 17,
       left: true,
-      html: "These letters include:<br><strong>A, B, D, E, G, H, J, K, M, N, P, Q, S, T<br>Φ-, Ψ-, Λ-<br>α, β, Γ</strong>",
+      html: translate("guide_l2_print_glyphspadspage_9"),
     },
-  ];
+  ]);
 
   const PADS_WORDS = ["Pro", "Anti", "Dash", "Static"];
 </script>
@@ -209,25 +211,24 @@
 <div class="gp-page">
   <!-- Big A with High/Low slots (right of the intro). -->
   <div class="big-a" style="left:{432 * S}px; top:{100 * S}px">A</div>
-  <span class="slot-label" style="left:{506 * S}px; top:{124 * S}px">High</span>
-  <span class="slot-label" style="left:{506 * S}px; top:{178 * S}px">Low</span>
+  <span class="slot-label" style="left:{506 * S}px; top:{124 * S}px">{translate("guide_l2_print_high")}</span>
+  <span class="slot-label" style="left:{506 * S}px; top:{178 * S}px">{translate("guide_l2_print_low")}</span>
 
   <!-- Update note box. -->
   <div class="update-box" style="left:{50 * S}px; top:{136 * S}px; width:{330 * S}px">
-    <p><strong><em>Update May 2025:</em></strong><br /><em>TKA software now handles the placement of these numbers,
-    so it’s less important that you learn this. Don’t sweat it.<br />Focus on the motions.</em></p>
+    <p>{@html translate("guide_l2_print_glyphs_update")}</p>
   </div>
 
   <!-- PADS priority list with the High/Low arrow + Shifts brace. -->
   <div class="pads" style="left:{92 * S}px; top:{288 * S}px">
     <div class="pads-arrow">
-      <span class="hl hi">High</span>
+      <span class="hl hi">{translate("guide_l2_print_high")}</span>
       <svg width="16" height={92 * S} viewBox="0 0 16 {92 * S}" aria-hidden="true">
         <line x1="8" y1="10" x2="8" y2={92 * S - 10} stroke="#141414" stroke-width="2.5" />
         <polygon points="8,0 2.5,11 13.5,11" fill="#141414" />
         <polygon points="8,{92 * S} 2.5,{92 * S - 11} 13.5,{92 * S - 11}" fill="#141414" />
       </svg>
-      <span class="hl lo">Low</span>
+      <span class="hl lo">{translate("guide_l2_print_low")}</span>
     </div>
     <div class="pads-list">
       {#each PADS_WORDS as w (w)}<span>{w}</span>{/each}
@@ -271,7 +272,7 @@
       />
     </div>
     <div class="hilo" style="left:{(c.cx - 70) * S}px; top:{(BOX_Y + BOX + 14) * S}px; width:{140 * S}px">
-      <span class="hi-word">{c.hi}</span><br /><span class="lo-word">{c.lo}</span>
+      <span class="hi-word">{localizePrintLabel(c.hi)}</span><br /><span class="lo-word">{localizePrintLabel(c.lo)}</span>
     </div>
     <div class="letters" style="left:{(c.cx - 70) * S}px; top:{(BOX_Y + BOX + 62) * S}px; width:{140 * S}px">
       {#each c.letters as ln (ln)}{ln}<br />{/each}
@@ -299,7 +300,7 @@
     />
   </div>
   <div class="hilo" style="left:{(452 - 70) * S}px; top:{744 * S}px; width:{140 * S}px">
-    <span class="hi-word">Left</span><br /><span class="lo-word">Right</span>
+    <span class="hi-word">{translate("guide_l2_print_left")}</span><br /><span class="lo-word">{translate("guide_l2_print_right")}</span>
   </div>
 
   {#each PARAS as p, i (i)}

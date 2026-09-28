@@ -138,7 +138,7 @@ describe("/guide/level-2/[slug] route", () => {
   });
 
   it("renders a real <h1> (via Level2TopicBody)", () => {
-    expect(body).toMatch(/<h1>\{meta\.h1\}<\/h1>/);
+    expect(body).toContain('<h1>{localizedLevel2Topic(meta, "h1")}</h1>');
   });
 
   it("renders every manifest page's sections and prev/next nav", () => {

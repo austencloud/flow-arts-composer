@@ -23,12 +23,12 @@
     <div class="first-beat-dialog">
       <h3>{t("create_ui_start_from_here")}</h3>
       <p>
-        {isPlural ? `Steps 1 through ${stepsToRemove}` : "Step 1"} will be removed.
+        {isPlural ? t("create_start_remove_many", { count: stepsToRemove }) : t("create_start_remove_one")}
       </p>
       <div class="dialog-actions">
-        <button class="dialog-btn cancel" onclick={onCancel}> Cancel </button>
+        <button class="dialog-btn cancel" onclick={onCancel}> {t("create_review_cancel")} </button>
         <button class="dialog-btn confirm" onclick={onConfirm}>
-          Set Start
+          {t("create_start_set")}
         </button>
       </div>
     </div>

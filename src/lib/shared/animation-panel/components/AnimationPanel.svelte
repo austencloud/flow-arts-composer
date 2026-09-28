@@ -1058,7 +1058,7 @@
     <div class="section-pad export-fields">
       {#if openerRowEnabled}
         <div class="field">
-          <span class="field-label">Opens</span>
+          <span class="field-label">{t("animation_export_opens")}</span>
           <div class="rt-chip-row opener-row">
             {#each VIDEO_OPENER_OPTIONS as option (option.value)}
               <button
@@ -1066,7 +1066,7 @@
                 class="rt-chip"
                 aria-pressed={exportOptions.videoOpener === option.value}
                 onclick={() => setVideoOpener(option.value)}
-                >{option.label}</button
+                >{option.value === "first-beat" ? t("share_first_beat") : option.value === "this-frame" ? t("share_current_frame") : t("share_mandala")}</button
               >
             {/each}
           </div>
@@ -1077,17 +1077,14 @@
               <img
                 class="opener-thumb"
                 src={mandalaOpenerUrl}
-                alt="Mandala the clip opens with"
+                alt={t("animation_export_mandala_alt")}
               />
             {/if}
-            <span>Holds the sequence's mandala for a beat, then plays.</span>
+            <span>{t("animation_export_mandala_hold")}</span>
           {:else if exportOptions.videoOpener === "this-frame"}
-            <span
-              >Holds the frame on the stage when you press Download. Pause where
-              it looks right.</span
-            >
+            <span>{t("animation_export_frame_hold")}</span>
           {:else}
-            <span>Opens on the start position.</span>
+            <span>{t("animation_export_start_opener")}</span>
           {/if}
         </div>
       {/if}
@@ -1158,21 +1155,21 @@
               type="button"
               class="rt-chip"
               aria-pressed={exportOptions.videoQuality === "standard"}
-              onclick={() => setExportQuality("standard")}>Standard</button
+              onclick={() => setExportQuality("standard")}>{t("share_quality_standard")}</button
             >
             <button
               type="button"
               class="rt-chip"
               aria-pressed={exportOptions.videoQuality === "cinema"}
               onclick={() => setExportQuality("cinema")}
-              ><i class="fas fa-film" aria-hidden="true"></i> Cinema</button
+              ><i class="fas fa-film" aria-hidden="true"></i> {t("share_quality_cinema")}</button
             >
           </div>
         </div>
       {/if}
 
       <div class="field">
-        <span class="field-label">Timing</span>
+        <span class="field-label">{t("share_studio_timing")}</span>
         <div class="rt-chip-row">
           <button
             type="button"
@@ -1181,7 +1178,7 @@
             onclick={() =>
               setStartHold(!exportOptions.videoIncludeStartPlacement)}
           >
-            <i class="fas fa-step-backward" aria-hidden="true"></i> Start Hold
+            <i class="fas fa-step-backward" aria-hidden="true"></i> {t("animation_export_start_hold")}
           </button>
           <button
             type="button"
@@ -1189,7 +1186,7 @@
             aria-pressed={exportOptions.videoIncludeEndHold}
             onclick={() => setEndHold(!exportOptions.videoIncludeEndHold)}
           >
-            <i class="fas fa-step-forward" aria-hidden="true"></i> End Hold
+            <i class="fas fa-step-forward" aria-hidden="true"></i> {t("animation_export_end_hold")}
           </button>
         </div>
       </div>
@@ -1284,7 +1281,7 @@
       <div class="mobile-progress" role="status" aria-live="polite">
         <div class="progress-info">
           <span class="progress-stage">
-            {#if !exportProgress}Starting...{:else}Exporting{/if}
+            {#if !exportProgress}{t("animation_export_starting")}{:else}{t("export_exporting")}{/if}
           </span>
           <span class="progress-pct"
             >{exportProgress
@@ -1315,7 +1312,7 @@
             aria-label={t("export_cancel_export")}
           >
             <i class="fas fa-times" aria-hidden="true"></i>
-            Cancel
+            {t("viewer_detail_cancel")}
           </button>
         {/if}
       </div>

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from "$lib/shared/i18n/i18n.svelte.js";
 	import { getEffectsConfigContext } from "$lib/shared/effects/state/effects-config-context";
 	import { DEFAULT_EFFECTS_CONFIG } from "$lib/shared/effects/domain/defaults";
 	import {
@@ -38,14 +39,14 @@
 	}
 
 	function formatColorBlend(v: number): string {
-		if (v < 0.1) return "Natural";
-		if (v > 0.9) return "Colored";
+		if (v < 0.1) return t("animation_fire_natural");
+		if (v > 0.9) return t("animation_fire_colored");
 		return `${Math.round(v * 100)}%`;
 	}
 
 	function formatTurbulence(v: number): string {
-		if (v < 0.05) return "Off";
-		if (v > 0.95) return "Max";
+		if (v < 0.05) return t("effect_deep_off");
+		if (v > 0.95) return t("animation_fire_max");
 		return `${Math.round(v * 100)}%`;
 	}
 
@@ -63,7 +64,7 @@
 
 <div class="fire-controls">
 	<div class="slider-row">
-		<label for="ctx-fire-intensity">Intensity</label>
+		<label for="ctx-fire-intensity">{t("effect_deep_intensity")}</label>
 		<input
 			id="ctx-fire-intensity"
 			type="range"
@@ -77,7 +78,7 @@
 	</div>
 
 	<div class="slider-row">
-		<label for="ctx-fire-color-blend">Color</label>
+		<label for="ctx-fire-color-blend">{t("effect_deep_color")}</label>
 		<input
 			id="ctx-fire-color-blend"
 			type="range"
@@ -91,7 +92,7 @@
 	</div>
 
 	<div class="slider-row">
-		<label for="ctx-fire-turbulence">Turbulence</label>
+		<label for="ctx-fire-turbulence">{t("animation_fire_turbulence")}</label>
 		<input
 			id="ctx-fire-turbulence"
 			type="range"
@@ -105,7 +106,7 @@
 	</div>
 
 	<div class="color-row">
-		<span class="color-label">Colors</span>
+		<span class="color-label">{t("viewer_ui_colors")}</span>
 		<div class="color-pickers">
 			<label class="color-picker">
 				<input
@@ -113,7 +114,7 @@
 					value={leftFireColor}
 					oninput={(e) => setFireColor("left", (e.target as HTMLInputElement).value)}
 				/>
-				<span class="color-hand blue">Left</span>
+				<span class="color-hand blue">{t("viewer_ui_left")}</span>
 			</label>
 			<label class="color-picker">
 				<input
@@ -121,7 +122,7 @@
 					value={rightFireColor}
 					oninput={(e) => setFireColor("right", (e.target as HTMLInputElement).value)}
 				/>
-				<span class="color-hand red">Right</span>
+				<span class="color-hand red">{t("viewer_ui_right")}</span>
 			</label>
 		</div>
 	</div>
@@ -132,7 +133,7 @@
 		disabled={isDefault}
 		onclick={resetDefaults}
 	>
-		Reset
+		{t("viewer_ui_reset")}
 	</button>
 </div>
 

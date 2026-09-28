@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t as translate } from "$lib/shared/i18n/i18n.svelte.js";
   /**
    * Real-pictograph diagrams for the Lam (Λ) opening/closing breakdown,
    * mirroring OpeningClosingPage.svelte's four `STRIPS` exactly - same
@@ -136,56 +137,56 @@
   });
 </script>
 
-<GuideSection id="opening-closing" title="Opening / Closing">
+<GuideSection id="opening-closing" title={translate("guide_l2_open_close_title")}>
   <div class="section-body">
     <p>
-      Because of Gamma's asymmetry, Λ (Lam) presents an extra variation when adding a turn. We can't use rotational relationship to tell them apart, because there isn't one to describe. Instead, we can disambiguate them with opening and closing. This refers to the appearance of the 90° angle if we continue the rotation into a pro-shift.
+      {translate("guide_l2_open_close_intro")}
     </p>
   </div>
 
   <div class="showcase-wrap">
     <SequenceShowcase variant="compact" render={{ propType: PropType.STAFF }} sequence={highOpenSequence} items={[]} bpm={60}>
       {#snippet strip(t)}
-        <TurnStrip frames={highOpenFrames} activeT={t} caption="Opening - the dashing hand carries the turn; its spin resolves toward alpha, hands finishing apart" />
+        <TurnStrip frames={highOpenFrames} activeT={t} caption={translate("guide_l2_open_close_high_open_caption")} />
       {/snippet}
     </SequenceShowcase>
   </div>
   <div class="showcase-wrap">
     <SequenceShowcase variant="compact" render={{ propType: PropType.STAFF }} sequence={highCloseSequence} items={[]} bpm={60}>
       {#snippet strip(t)}
-        <TurnStrip frames={highCloseFrames} activeT={t} caption="Closing - the dashing hand carries the turn; its spin resolves toward beta, hands finishing together" />
+        <TurnStrip frames={highCloseFrames} activeT={t} caption={translate("guide_l2_open_close_high_close_caption")} />
       {/snippet}
     </SequenceShowcase>
   </div>
 
   <div class="section-body">
     <p>
-      Now let's add 1 turn to the static hand, leaving the dash in its base form. Since the dashing prop is not rotating, there is no rotational relationship to describe. However the rotating static prop can still be identified as opening or closing.
+      {translate("guide_l2_open_close_static_turn")}
     </p>
   </div>
 
   <div class="showcase-wrap">
     <SequenceShowcase variant="compact" render={{ propType: PropType.STAFF }} sequence={lowOpenSequence} items={[]} bpm={60}>
       {#snippet strip(t)}
-        <TurnStrip frames={lowOpenFrames} activeT={t} caption="Opening - the static hand carries the turn this time; its spin resolves toward alpha, hands finishing apart" />
+        <TurnStrip frames={lowOpenFrames} activeT={t} caption={translate("guide_l2_open_close_low_open_caption")} />
       {/snippet}
     </SequenceShowcase>
   </div>
   <div class="showcase-wrap">
     <SequenceShowcase variant="compact" render={{ propType: PropType.STAFF }} sequence={lowCloseSequence} items={[]} bpm={60}>
       {#snippet strip(t)}
-        <TurnStrip frames={lowCloseFrames} activeT={t} caption="Closing - the static hand carries the turn this time; its spin resolves toward beta, hands finishing together" />
+        <TurnStrip frames={lowCloseFrames} activeT={t} caption={translate("guide_l2_open_close_low_close_caption")} />
       {/snippet}
     </SequenceShowcase>
   </div>
 
   <div class="section-body">
     <p>
-      It's not necessary to speak all of the glyph modifications when talking about a letter. It would be cumbersome if you were required to say "Lam-Low-One-Closing". In the context of a word or sequence, you can just refer to the base letter "Lam" instead.
+      {translate("guide_l2_open_close_speech")}
     </p>
 
     <p>
-      To shorten this for code, include "op" or "cl" as a final parameter. E.g. "(0,1,op)" or "(0,1,cl)"
+      {translate("guide_l2_open_close_code")}
     </p>
   </div>
 </GuideSection>

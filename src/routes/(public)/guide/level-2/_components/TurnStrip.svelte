@@ -77,6 +77,7 @@
 
 <script lang="ts">
   import GuidePictograph from "../../level-1/_components/GuidePictograph.svelte";
+  import { t as translate } from "$lib/shared/i18n/i18n.svelte.js";
   import PoseFrame from "./PoseFrame.svelte";
   import SelectionHit from "$lib/shared/selection/SelectionHit.svelte";
   import "$lib/shared/selection/selection.css";
@@ -169,37 +170,42 @@
   // "pose" and the null-fallback "half" frames aren't real StepData, so they
   // don't get GuidePictograph's synchronous describePictograph aria-label -
   // this builds the equivalent sentence from the HalfwayMotion + fraction.
-  const MOTION_WORD: Partial<Record<MotionType, string>> = {
-    [MotionType.PRO]: "pro-spin shift",
-    [MotionType.ANTI]: "anti-spin shift",
-    [MotionType.DASH]: "dash",
-    [MotionType.STATIC]: "static hold",
+  const motionName = (motion: MotionType): string => {
+    switch (motion) {
+      case MotionType.PRO: return translate("guide_l2_aria_pro_shift");
+      case MotionType.ANTI: return translate("guide_l2_aria_anti_shift");
+      case MotionType.DASH: return translate("guide_l2_aria_dash");
+      case MotionType.STATIC: return translate("guide_l2_aria_static");
+      default: return String(motion);
+    }
   };
-  const LOC_NAME: Record<string, string> = {
-    n: "north",
-    e: "east",
-    s: "south",
-    w: "west",
-    ne: "northeast",
-    se: "southeast",
-    sw: "southwest",
-    nw: "northwest",
+  const locName = (loc: string): string => {
+    switch (loc) {
+      case "n": return translate("guide_l2_aria_north");
+      case "e": return translate("guide_l2_aria_east");
+      case "s": return translate("guide_l2_aria_south");
+      case "w": return translate("guide_l2_aria_west");
+      case "ne": return translate("guide_l2_aria_northeast");
+      case "se": return translate("guide_l2_aria_southeast");
+      case "sw": return translate("guide_l2_aria_southwest");
+      case "nw": return translate("guide_l2_aria_northwest");
+      default: return loc;
+    }
   };
-  const locName = (l: string): string => LOC_NAME[l] ?? l;
   const fractionWord = (t: number): string => {
-    if (Math.abs(t - 0.25) < 1e-6) return "quarter";
-    if (Math.abs(t - 0.75) < 1e-6) return "three-quarter";
-    if (Math.abs(t - 1 / 3) < 1e-6) return "one-third";
-    if (Math.abs(t - 2 / 3) < 1e-6) return "two-thirds";
-    if (Math.abs(t - 0.5) < 1e-6) return "halfway";
+    if (Math.abs(t - 0.25) < 1e-6) return translate("guide_l2_aria_quarter");
+    if (Math.abs(t - 0.75) < 1e-6) return translate("guide_l2_aria_three_quarters");
+    if (Math.abs(t - 1 / 3) < 1e-6) return translate("guide_l2_aria_one_third");
+    if (Math.abs(t - 2 / 3) < 1e-6) return translate("guide_l2_aria_two_thirds");
+    if (Math.abs(t - 0.5) < 1e-6) return translate("guide_l2_aria_halfway");
     return `${Math.round(t * 100)}%`;
   };
   const poseAriaLabel = (motion: HalfwayMotion, t: number): string => {
-    const verb = MOTION_WORD[motion.type] ?? String(motion.type);
+    const verb = motionName(motion.type);
     const from = locName(motion.from);
     const to = locName(motion.to);
-    const where = from === to ? `at ${from}` : `from ${from} to ${to}`;
-    return `Staff pose at the ${fractionWord(t)} point of the ${verb} motion ${where}.`;
+    const where = from === to ? translate("guide_l2_aria_at", { place: from }) : translate("guide_l2_aria_from_to", { from, to });
+    return translate("guide_l2_aria_pose", { fraction: fractionWord(t), motion: verb, where });
   };
   const dualPoseAriaLabel = (
     poses: { motion: HalfwayMotion; color: HandSide; t: number }[]
@@ -207,19 +213,29 @@
     poses
       .map(
         (p) =>
-          `${p.color === HandSide.LEFT ? "Left" : "Right"} ${poseAriaLabel(p.motion, p.t).charAt(0).toLowerCase()}${poseAriaLabel(p.motion, p.t).slice(1)}`
+          `${p.color === HandSide.LEFT ? translate("guide_l2_aria_left") : translate("guide_l2_aria_right")} ${poseAriaLabel(p.motion, p.t)}`
       )
       .join(" ");
+  const frameText = (value?: string): string => {
+    switch (value) {
+      case "start": return translate("guide_l2_frame_start");
+      case "halfway": return translate("guide_l2_frame_halfway");
+      case "end": return translate("guide_l2_frame_end");
+      case "in": return translate("guide_l2_frame_in");
+      case "out": return translate("guide_l2_frame_out");
+      default: return value ?? "";
+    }
+  };
 </script>
 
 <div
   class="turn-strip"
   role="group"
-  aria-label={caption ?? "Turn breakdown diagram"}
+  aria-label={caption ?? translate("guide_l2_turn_breakdown")}
 >
   {#each frames as frame, i (i)}
     <div class="turn-frame">
-      <span class="frame-cap top">{frame.frameLabel ?? ""}</span>
+      <span class="frame-cap top">{frameText(frame.frameLabel)}</span>
       <div class="frame-box" class:guide-step-active={isFrameActive(frame, i)}>
         {#if frame.kind === "pose"}
           <div
@@ -273,7 +289,7 @@
             <SelectionHit
               groupId={frame.animKey}
               isGroupStart
-              label={`Animate: ${frame.word}`}
+              label={translate("guide_l2_animate", { word: frame.word })}
               onselect={() =>
                 emitSequence?.({
                   strip: frame.rowSteps,
@@ -294,7 +310,7 @@
           />
         {/if}
       </div>
-      <span class="frame-cap bottom">{frame.thumbLabel ?? ""}</span>
+      <span class="frame-cap bottom">{frameText(frame.thumbLabel)}</span>
     </div>
     {#if i < frames.length - 1}
       <div class="connector" aria-hidden="true">

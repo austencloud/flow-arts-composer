@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { localizePrintLabel } from "../_components/localize-print-label";
+  import { t as translate } from "$lib/shared/i18n/i18n.svelte.js";
   /**
    * Dashes / Static turns - Level 2 body page 3 (manifest `turns-dash-static`),
    * faithful to old p4. Self-titled (two script heads).
@@ -199,50 +201,50 @@
   const NOTE_SIZE = 92;
 
   type Para = { y: number; fs: number; lh: number; html: string };
-  const PARAS: Para[] = [
+  const PARAS = $derived<Para[]>([
     {
       y: 36,
       fs: 15.5,
       lh: 19,
-      html: "You can also add a turn to a dash.<br>During the prop rotation, move the hand directly in a straight line.<br><strong><em>Pause at the halfway point while learning to ensure that your hand is in<br>the center point and the staff is perpendicular to your starting position.</em></strong>",
+      html: translate("guide_l2_print_dashstaticturnspage_0"),
     },
     {
       y: 246,
       fs: 16,
       lh: 20,
-      html: "A base dash has 1 thumb switch (in → out), therefore:<br><strong>A dash with a turn has 2 thumb switches (in → in)</strong>",
+      html: translate("guide_l2_print_dashstaticturnspage_1"),
     },
     {
       y: 295,
       fs: 15.5,
       lh: 19,
-      html: "Executing this move on repeat is commonly called a <strong><em>linear extension</em></strong>.<br>It feels peculiar to execute with staves because one end is in pro and the other end is in anti.",
+      html: translate("guide_l2_print_dashstaticturnspage_2"),
     },
     {
       y: 345,
       fs: 15.5,
       lh: 19,
-      html: "It helps to focus on the half that’s in antispin.<br>This will ensure that you pass your hand directly through the center point.",
+      html: translate("guide_l2_print_dashstaticturnspage_3"),
     },
     {
       y: 408,
       fs: 15.5,
       lh: 19,
-      html: "Finally, we’ll look at static turns.<br>Here is a breakdown of a static turn starting from thumb in:",
+      html: translate("guide_l2_print_dashstaticturnspage_4"),
     },
     {
       y: 585,
       fs: 16,
       lh: 19,
-      html: "This can be executed at any hand point, starting from either<br>thumb orientation, turning in either direction.",
+      html: translate("guide_l2_print_dashstaticturnspage_5"),
     },
     {
       y: 645,
       fs: 15.5,
       lh: 19,
-      html: "Note the differences between the arrow for static turns and the arrow for prospin turns:",
+      html: translate("guide_l2_print_dashstaticturnspage_6"),
     },
-  ];
+  ]);
 
   type Run = {
     x: number;
@@ -283,13 +285,13 @@
       x: 162,
       y: 690,
       w: 130,
-      html: "Prop remains at its start position. The arrow forms a half circle with that position.",
+      html: translate("guide_l2_print_dash_note_0"),
     },
     {
       x: 452,
       y: 690,
       w: 140,
-      html: "Prop ends at an adjacent position. The arrow forms a half-circle around the empty start position.",
+      html: translate("guide_l2_print_dash_note_1"),
     },
   ];
 
@@ -468,7 +470,7 @@
     <span
       class="run {r.style}"
       style="left:{r.x * S}px; top:{r.y * S}px; font-size:{r.fs * S}px"
-      >{r.t}</span
+      >{localizePrintLabel(r.t)}</span
     >
   {/each}
 </div>

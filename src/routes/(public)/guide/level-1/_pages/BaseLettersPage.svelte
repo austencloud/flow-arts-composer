@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { localizeLevel1Text, localizeLevel1SelectionLabel } from "../_data/localize-level1-content";
   /**
    * Letters intro / Type 1 Dual-Shift - body page 12 (manifest `base-letters`),
    * faithful to the proof PDF (level-1-v05.pdf) / "1.1 - Letters - Type 1"
@@ -266,7 +267,7 @@
   <!-- Heavy rule + the Type 1 section head (two-tone Dual-Shift, Type-1 colors). -->
   <div class="rule" style="left:{20 * S}px; top:{HEAVY_RULE * S}px; width:{572 * S}px"></div>
   <div class="guide-title section-head" style="top:{HEAD_Y * S}px">
-    Type 1 - <span class="cy">Dual</span><span class="pu">-Shift</span>
+    {localizeLevel1Text("Type 1 - ")}<span class="cy">Dual</span><span class="pu">-Shift</span>
   </div>
 
   <!-- Two 3-cell letter boxes; each cell is a real letter pictograph and (in the
@@ -301,7 +302,7 @@
         <SelectionHit
           groupId={key}
           isGroupStart
-          label={`Animate letter ${c.name}`}
+          label={localizeLevel1SelectionLabel(`Animate letter ${c.name}`)}
           onselect={() => emitSequence?.({ strip: RESOLVED[key]!, word: `Letter ${c.name}`, key, propType: "staff" })}
         />
       </div>
@@ -336,7 +337,7 @@
       use:ptDrag={pt(`bl-para-${i}`, "para", p)}
       use:editText={{ id: `bl-para-${i}`, label: "para", get: () => p.html, set: (h) => (p.html = h) }}
     >
-      {@html p.html}
+      {@html localizeLevel1Text(p.html)}
     </p>
   {/each}
 </div>

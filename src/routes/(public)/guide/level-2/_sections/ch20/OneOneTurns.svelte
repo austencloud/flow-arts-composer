@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t as translate } from "$lib/shared/i18n/i18n.svelte.js";
   /**
    * Real-pictograph diagrams for the Type 1 (dual-shift) 1|1 breakdown,
    * mirroring OneOneType1Page.svelte's four `STRIPS` (D, I, N, V) exactly -
@@ -138,59 +139,59 @@
   });
 </script>
 
-<GuideSection id="one-one-turns" title="1|1 Turns">
+<GuideSection id="one-one-turns" title={translate("guide_l2_one_one_title")}>
   <div class="section-body">
     <p>
-      For a turn on both props, add a "1" in both the high and the low slot. This can also be written as 1|1. Here are some cherry-picked examples of 1|1 in each Type. Since you know all the mechanisms involved, explanation is kept to a minimum.
+      {translate("guide_l2_one_one_intro")}
     </p>
 
-    <h3>Type 1</h3>
-    <p>Pause at the halfway point of each motion while learning. This will ensure accurate timing.</p>
+    <h3>{translate("guide_l2_type1_heading")}</h3>
+    <p>{translate("guide_l2_one_one_practice")}</p>
   </div>
 
   <div class="showcase-wrap">
     <SequenceShowcase variant="compact" render={{ propType: PropType.STAFF }} sequence={dSequence} items={[]} bpm={60}>
       {#snippet strip(t)}
-        <TurnStrip frames={dFrames} activeT={t} caption="D-One-One - both hands prospin together, watch them turn in sync, ending with thumbs out" />
+        <TurnStrip frames={dFrames} activeT={t} caption={translate("guide_l2_one_one_d_caption")} />
       {/snippet}
     </SequenceShowcase>
   </div>
   <div class="showcase-wrap">
     <SequenceShowcase variant="compact" render={{ propType: PropType.STAFF }} sequence={iSequence} items={[]} bpm={60}>
       {#snippet strip(t)}
-        <TurnStrip frames={iFrames} activeT={t} caption="I-One-One - one hand prospins while the other antispins at the same time, ending with mixed thumb references" />
+        <TurnStrip frames={iFrames} activeT={t} caption={translate("guide_l2_one_one_i_caption")} />
       {/snippet}
     </SequenceShowcase>
   </div>
   <div class="showcase-wrap">
     <SequenceShowcase variant="compact" render={{ propType: PropType.STAFF }} sequence={nSequence} items={[]} bpm={60}>
       {#snippet strip(t)}
-        <TurnStrip frames={nFrames} activeT={t} caption="N-One-One - both hands antispin together, watch them turn in sync, ending with thumbs in" />
+        <TurnStrip frames={nFrames} activeT={t} caption={translate("guide_l2_one_one_n_caption")} />
       {/snippet}
     </SequenceShowcase>
   </div>
   <div class="showcase-wrap">
     <SequenceShowcase variant="compact" render={{ propType: PropType.STAFF }} sequence={vSequence} items={[]} bpm={60}>
       {#snippet strip(t)}
-        <TurnStrip frames={vFrames} activeT={t} caption="V-One-One - one hand antispins while the other prospins at the same time, ending with mixed thumb references" />
+        <TurnStrip frames={vFrames} activeT={t} caption={translate("guide_l2_one_one_v_caption")} />
       {/snippet}
     </SequenceShowcase>
   </div>
 
   <div class="section-body">
-    <h3>Type 2</h3>
+    <h3>{translate("guide_l2_type2_heading")}</h3>
     <!-- TODO: add diagram - X-Same One-One, X-Opp One-One -->
 
-    <h3>Type 3</h3>
+    <h3>{translate("guide_l2_type3_heading")}</h3>
     <!-- TODO: add diagram - Theta-Dash Same One-One, Theta-Dash Opp One-One, Delta-Dash Same One-One, Delta-Dash Opp One-One -->
 
-    <h3>Type 4</h3>
+    <h3>{translate("guide_l2_type4_heading")}</h3>
     <!-- TODO: add diagram - Phi-Same One-One, Phi-Opp One-One -->
 
-    <h3>Type 5</h3>
+    <h3>{translate("guide_l2_type5_heading")}</h3>
     <!-- TODO: add diagram - Psi-Dash Same One-One, Psi-Dash Opp One-One -->
 
-    <h3>Type 6</h3>
+    <h3>{translate("guide_l2_type6_heading")}</h3>
     <!-- TODO: add diagram - Gamma Opp One-One (two variations) -->
   </div>
 </GuideSection>

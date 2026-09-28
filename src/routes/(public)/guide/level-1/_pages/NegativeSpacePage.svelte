@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { localizeLevel1Text, localizeLevel1SelectionLabel } from "../_data/localize-level1-content";
   /**
    * Negative Space / Body Turns - body page 11 (manifest `negative-space`),
    * faithful to the proof PDF / "1.0 - Prerequisites" artboard.
@@ -399,7 +400,7 @@
       <SelectionHit
         groupId={key}
         isGroupStart
-        label={`Animate the ${strip.word} sequence`}
+        label={localizeLevel1SelectionLabel(`Animate the ${strip.word} sequence`)}
         onselect={() =>
           emitSequence?.({
             strip: RESOLVED[strip.id]!,
@@ -430,7 +431,7 @@
         set: (h) => (p.html = h),
       }}
     >
-      {@html p.html}
+      {@html localizeLevel1Text(p.html)}
     </p>
   {/each}
 

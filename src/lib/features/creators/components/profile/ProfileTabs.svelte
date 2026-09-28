@@ -107,8 +107,8 @@
     <PanelState
       type="empty"
       icon="fa-list"
-      title="No sequences yet"
-      message="This creator hasn't published any sequences yet."
+      title={t("browse_verified_no_sequences_yet")}
+      message={t("browse_verified_creator_no_sequences")}
       compact
     />
   </div>
@@ -130,7 +130,7 @@
            SectionHeader parses it out; its explicit count prop is another
            session's in-flight addition, not safe to depend on yet. -->
       <SectionHeader
-        title={`${t("browse_n_steps", { count: String(steps) })} (${group.length} sequences)`}
+        title={`${t("browse_n_steps", { count: String(steps) })} (${t(group.length === 1 ? "browse_audit_one_sequence" : "browse_audit_many_sequences", { count: group.length })})`}
       />
       <div class="gallery-grid">
         {#each group as sequence (sequence.id)}
@@ -138,7 +138,7 @@
             class="gallery-card"
             onclick={() => handleSequenceClick(sequence)}
             transition:fade={{ duration: reducedMotion ? 0 : 200 }}
-            aria-label="View sequence {getDisplayName(sequence)}"
+            aria-label={t("browse_verified_view_sequence", { name: getDisplayName(sequence) })}
           >
             <div class="card-thumbnail">
               <PropAwareThumbnail {sequence} {lightMode} />

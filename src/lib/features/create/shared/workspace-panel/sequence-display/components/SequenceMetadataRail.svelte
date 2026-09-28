@@ -45,7 +45,7 @@
     class="difficulty-slot"
     class:visible={hasSteps}
     aria-hidden={!hasSteps}
-    aria-label="Difficulty level {difficultyLevel}"
+    aria-label={t("create_difficulty_level", { level: difficultyLevel })}
   >
     <DifficultyBadge level={difficultyLevel} size="20px" fontSize="12px" />
   </div>

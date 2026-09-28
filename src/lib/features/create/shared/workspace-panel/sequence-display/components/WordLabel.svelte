@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import {
     compressWord,
     simplifyAndTruncate,
@@ -414,7 +415,7 @@
 
       {#if actions.copied}
         <div class="copied-message" role="status" aria-live="polite">
-          Copied “{actions.copyableWord}”
+          {t("create_word_copied", { word: actions.copyableWord })}
         </div>
       {/if}
     {/snippet}

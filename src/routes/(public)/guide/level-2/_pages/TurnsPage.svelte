@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { localizePrintLabel } from "../_components/localize-print-label";
+  import { t as translate } from "$lib/shared/i18n/i18n.svelte.js";
   /**
    * Turns (Shifts) - Level 2 body page 2 (manifest `turns-shifts`), faithful to
    * old p3. Two teaching strips, each start → halfway → end = combined, now
@@ -280,40 +282,40 @@
     left?: boolean;
     html: string;
   };
-  const PARAS: Para[] = [
+  const PARAS = $derived<Para[]>([
     {
       y: 76,
       fs: 16,
       lh: 19,
-      html: "A turn is a 180° rotation that occurs during a motion.",
+      html: translate("guide_l2_print_turnspage_0"),
     },
-    { y: 122, fs: 16, lh: 19, html: "Let’s add a single turn to a shift." },
+    { y: 122, fs: 16, lh: 19, html: translate("guide_l2_print_turnspage_1") },
     {
       y: 168,
       fs: 15.5,
       lh: 19,
-      html: "First we’ll add 1 turn to a prospin.<br>Take note of the diagonal halfway position, and pause there for a moment before continuing.<br><em>These arrows refer to the pinky end on the first half, then to the thumb end on the second half.<br>The full arrow depicts a half-circle, from the start position’s outer point.</em>",
+      html: translate("guide_l2_print_turnspage_2"),
     },
-    { y: 264, fs: 16, lh: 19, html: "Each turn adds a thumb switch." },
+    { y: 264, fs: 16, lh: 19, html: translate("guide_l2_print_turnspage_3") },
     {
       y: 432,
       fs: 16,
       lh: 20,
-      html: "An isolation has 0 thumb switches, therefore<br><strong>A prospin with a turn has 1 thumb switch (in → out)</strong>",
+      html: translate("guide_l2_print_turnspage_4"),
     },
     {
       y: 505,
       fs: 15.5,
       lh: 19,
-      html: "Now let’s add 1 turn to an antispin.<br>Again, take note of the diagonal halfway position, and pause there before continuing.",
+      html: translate("guide_l2_print_turnspage_5"),
     },
     {
       y: 700,
       fs: 16,
       lh: 20,
-      html: "A base antispin has 1 thumb switch. (in → out), therefore<br><strong>An antispin with a turn has 2 thumb switches (in → out → in).</strong>",
+      html: translate("guide_l2_print_turnspage_6"),
     },
-  ];
+  ]);
 
   type Run = {
     x: number;
@@ -511,7 +513,7 @@
     <span
       class="run {r.style}"
       style="left:{r.x * S}px; top:{r.y * S}px; font-size:{r.fs * S}px"
-      >{r.t}</span
+      >{localizePrintLabel(r.t)}</span
     >
   {/each}
 </div>
