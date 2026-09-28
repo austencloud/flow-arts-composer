@@ -1,6 +1,6 @@
 /**
- * Finds the sections the unchanged ComposerExperience renders, so both
- * fly-through versions stage the real page instead of a copy of it.
+ * Finds the sections ComposerExperience renders, so the stage moves the real
+ * page instead of a copy of it.
  */
 
 export interface ComposerSections {
