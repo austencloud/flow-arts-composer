@@ -1,5 +1,6 @@
 <script lang="ts">
   import { localizePrintLabel } from "../_components/localize-print-label";
+  import { guideTurnDisplayWord } from "../../level-1/_data/guide-turn-display-word";
   import { t as translate } from "$lib/shared/i18n/i18n.svelte.js";
   /**
    * 2-Turns (Dashes / Static) - Level 2 body page (manifest
@@ -451,7 +452,9 @@
           <SelectionHit
             groupId={animKey}
             isGroupStart
-            label={`Animate: ${ANIM[animKey].word}`}
+            label={translate("guide_l2_animate", {
+              word: guideTurnDisplayWord(ANIM[animKey].word),
+            })}
             onselect={() =>
               emitSequence?.({
                 strip: rowSteps(animKey),
