@@ -18,8 +18,10 @@
   import type { GuideChapterData } from "../../level-1/_data/guide-types";
   import turnsData from "../_data/turns.json";
   import doubleTurnsData from "../_data/double-turns.json";
+  import { localizedLevel2Topic } from "../_data/localize-level2-topic";
   import type { Level2TopicPage } from "../_data/level2-topic-routes";
   import { LEVEL2_TOPIC_SECTIONS } from "../_data/level2-topic-sections";
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
 
   let {
     meta,
@@ -36,25 +38,25 @@
   );
 </script>
 
-<GuideCompanionHost pageTitle={meta.h1} levelLabel="Level 2">
-  <h1>{meta.h1}</h1>
+<GuideCompanionHost pageTitle={localizedLevel2Topic(meta, "h1")} levelLabel={t("guide_l2_level_label")}>
+  <h1>{localizedLevel2Topic(meta, "h1")}</h1>
 
   {#each LEVEL2_TOPIC_SECTIONS[meta.slug] ?? [] as Section (Section)}
     <Section />
   {/each}
 
-  <nav class="topic-nav" aria-label="Level 2 guide navigation">
+  <nav class="topic-nav" aria-label={t("guide_l2_topic_navigation")}>
     {#if prev}
       <a class="nav-link prev" href="/guide/level-2/{prev.slug}">
-        <span class="nav-dir">Previous</span><span class="nav-title">{prev.h1}</span>
+        <span class="nav-dir">{t("guide_l2_previous")}</span><span class="nav-title">{localizedLevel2Topic(prev, "h1")}</span>
       </a>
     {:else}
       <span class="nav-spacer"></span>
     {/if}
-    <a class="nav-link hub" href="/guide/level-2/{meta.chapter}">Chapter overview</a>
+    <a class="nav-link hub" href="/guide/level-2/{meta.chapter}">{t("guide_l2_chapter_overview")}</a>
     {#if next}
       <a class="nav-link next" href="/guide/level-2/{next.slug}">
-        <span class="nav-dir">Next</span><span class="nav-title">{next.h1}</span>
+        <span class="nav-dir">{t("guide_l2_next")}</span><span class="nav-title">{localizedLevel2Topic(next, "h1")}</span>
       </a>
     {:else}
       <span class="nav-spacer"></span>

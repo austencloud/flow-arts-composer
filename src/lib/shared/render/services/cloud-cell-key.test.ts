@@ -71,6 +71,21 @@ describe("canonicalCellKeyString", () => {
     expect(staff).not.toContain("propAppearanceRevision");
   });
 
+  it("keeps the triangle corpus on the corner glyph's key", () => {
+    const triangle = { ...base, leftPropType: PropType.TRIANGLE };
+    const corpus = canonicalCellKeyString(data, true, triangle);
+
+    expect(
+      canonicalCellKeyString(data, true, { ...triangle, triangleGrip: "corner" })
+    ).toBe(corpus);
+    expect(corpus).not.toContain("triangleGrip");
+    // A stray side-grip render misses the cloud instead of being served, or
+    // uploaded, under the corner glyph's hash.
+    expect(
+      canonicalCellKeyString(data, true, { ...triangle, triangleGrip: "side" })
+    ).not.toBe(corpus);
+  });
+
   it("normalizes per-device visibility: same hash regardless of showTKA/showTnD/showGrid", () => {
     const a = canonicalCellKeyString(data, true, {
       ...base,

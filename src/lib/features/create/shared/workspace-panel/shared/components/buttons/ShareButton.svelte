@@ -6,6 +6,7 @@
   control lives in WorkspaceShareControl.
 -->
 <script lang="ts">
+  import { getLocale, t } from "$lib/shared/i18n/i18n.svelte.js";
   import { onDestroy, onMount, untrack } from "svelte";
   import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
   import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
@@ -146,7 +147,7 @@
     announcedCardRequest?.startsWith(`${cardKey}:`) ?? false
   );
   const tooltip = $derived(
-    hasContent ? "Share sequence" : "Create a sequence first"
+    hasContent ? t("share_sequence") : t("create_workspace_create_sequence_first")
   );
   const sequenceName = $derived(
     sequence?.displayName ||
@@ -350,7 +351,7 @@
     announcedCardRequest = requestId;
 
     showToast({
-      message: "Preparing card.",
+      message: t("inbox_ui_preparing_card"),
       type: "info",
       duration: 2500,
     });
@@ -363,11 +364,13 @@
         const needsOptions =
           action === "Share" && !canNativeShareFile(card.blob, card.filename);
         showToast({
-          message: "Card ready.",
+          message: t("create_workspace_card_ready"),
           type: "success",
           duration: 7000,
           action: {
-            label: needsOptions ? "Options" : action,
+            label: needsOptions
+              ? t("create_workspace_options")
+              : t(action === "Share" ? "create_workspace_share" : "create_workspace_download"),
             onClick: needsOptions
               ? openShareOptions
               : action === "Share"
@@ -382,7 +385,7 @@
         }
         console.error("[ShareButton] Card preparation failed:", error);
         showToast({
-          message: "Couldn't prepare this card. Try again.",
+          message: t("create_workspace_card_preparation_failed_retry"),
           type: "error",
           duration: 6000,
         });
@@ -406,12 +409,12 @@
     showToast({
       message:
         result.status === "unavailable"
-          ? "Sharing isn't available here."
-          : "Couldn't open device share options.",
+          ? t("create_workspace_share_unavailable")
+          : t("create_workspace_device_share_failed"),
       type: result.status === "unavailable" ? "info" : "error",
       duration: 7000,
       action: {
-        label: "Download",
+        label: t("create_workspace_download"),
         onClick: () => void downloadPreparedCard(card),
       },
     });
@@ -426,7 +429,7 @@
     // This must be created in the click handler, before any await.
     const shareOperation = shareBlobNatively(card.blob, card.filename, {
       title: sequenceName,
-      text: `Flow Arts Composer sequence: ${sequenceName}`,
+      text: t("create_workspace_native_share_text", { name: sequenceName }),
     });
 
     void shareOperation
@@ -470,7 +473,7 @@
     if (!result.success) {
       console.error("[ShareButton] Card download failed:", result.error);
       showToast({
-        message: "Couldn't download this card. Try again.",
+        message: t("create_workspace_download_failed"),
         type: "error",
         duration: 6000,
       });
@@ -521,7 +524,7 @@
     }
 
     showToast({
-      message: "Preparing card.",
+      message: t("inbox_ui_preparing_card"),
       type: "info",
       duration: 2500,
     });
@@ -544,7 +547,7 @@
         if (requestGeneration !== sendRequestGeneration) return;
         console.error("[ShareButton] Card preparation failed:", error);
         showToast({
-          message: "Couldn't prepare this card. Try again.",
+          message: t("create_workspace_card_preparation_failed_retry"),
           type: "error",
           duration: 6000,
         });
@@ -567,10 +570,10 @@
     const domainMessage = getShortCodeShareMessage(error);
     showToast({
       message:
-        domainMessage ||
+        (getLocale() === "en" ? domainMessage : null) ||
         (navigator.onLine
-          ? "Couldn't create a shareable link. Try again."
-          : "Couldn't create a link while offline."),
+          ? t("create_workspace_link_creation_failed")
+          : t("create_workspace_link_creation_offline")),
       type: "error",
       duration: 6000,
     });
@@ -583,7 +586,7 @@
     announcedLinkKey = linkKey;
 
     showToast({
-      message: "Preparing link.",
+      message: t("viewer_ui_preparing_link"),
       type: "info",
       duration: 2500,
     });
@@ -592,11 +595,11 @@
       .then(() => {
         if (announcedLinkKey !== linkKey) return;
         showToast({
-          message: "Link ready.",
+          message: t("create_workspace_link_ready"),
           type: "success",
           duration: 7000,
           action: {
-            label: "Copy",
+            label: t("create_workspace_copy"),
             onClick: handleCopyLink,
           },
         });
@@ -631,7 +634,7 @@
       isCopyingLink = false;
       console.error("[ShareButton] Link copy failed:", error);
       showToast({
-        message: "Couldn't copy the link. Try again.",
+        message: t("create_workspace_copy_link_failed"),
         type: "error",
         duration: 6000,
       });
@@ -656,7 +659,7 @@
       .catch((error) => {
         console.error("[ShareButton] Link copy failed:", error);
         showToast({
-          message: "Couldn't copy the link. Try again.",
+          message: t("create_workspace_copy_link_failed"),
           type: "error",
           duration: 6000,
         });

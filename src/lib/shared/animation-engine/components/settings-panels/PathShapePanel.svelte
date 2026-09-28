@@ -1,5 +1,6 @@
 <script lang="ts">
   import { PATH_SHAPE_COLORS } from "$lib/shared/animation-engine/domain/path-shape-colors";
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { onDestroy, type Snippet } from "svelte";
   import { getAnimationVisibilityManager } from "../../state/animation-visibility-state.svelte";
   import { getAnimationVisibilityContext } from "../../state/animation-visibility-context";
@@ -47,12 +48,12 @@
     dots: [number, number][];
   }
 
-  const options: PathOption[] = [
+  const options = $derived<PathOption[]>([
     {
       id: "arc",
-      label: "Arc",
+      label: t("viewer_ui_arc"),
       color: PATH_SHAPE_COLORS.arc,
-      caption: "Hands swing along the circle",
+      caption: t("animation_path_arc_caption"),
       glyph: ["M3 9.5 Q12 0.5 21 9.5"],
       dots: [
         [3, 9.5],
@@ -61,9 +62,9 @@
     },
     {
       id: "linear",
-      label: "Linear",
+      label: t("viewer_ui_linear"),
       color: PATH_SHAPE_COLORS.linear,
-      caption: "Hands cut straight across",
+      caption: t("animation_path_linear_caption"),
       glyph: ["M3 6 L21 6"],
       dots: [
         [3, 6],
@@ -72,9 +73,9 @@
     },
     {
       id: "concave",
-      label: "Concave",
+      label: t("viewer_ui_concave"),
       color: PATH_SHAPE_COLORS.concave,
-      caption: "Hands curve in toward center",
+      caption: t("animation_path_concave_caption"),
       glyph: ["M3 2.5 Q12 11.5 21 2.5"],
       dots: [
         [3, 2.5],
@@ -83,16 +84,16 @@
     },
     {
       id: "byMotion",
-      label: "Hybrid",
+      label: t("viewer_ui_hybrid"),
       color: PATH_SHAPE_COLORS.hybrid,
-      caption: "Pro → Arc · Anti → Concave",
+      caption: t("animation_path_hybrid_caption"),
       glyph: ["M3 6 Q12 -1 21 6", "M3 6 Q12 13 21 6"],
       dots: [
         [3, 6],
         [21, 6],
       ],
     },
-  ];
+  ]);
 
   /* A preview tile is its square preview with the label under it, inside
      the tile's padding and border: about 24px taller than it is wide, with
@@ -134,7 +135,7 @@
      option's caption right. Fixed single-line row — captions swap with no
      layout shift. -->
 <div class="path-header">
-  <span class="rt-section-label">Motion paths</span>
+  <span class="rt-section-label">{t("animation_motion_paths")}</span>
   <span class="path-caption" style:color={selected.color}
     >{selected.caption}</span
   >
@@ -145,7 +146,7 @@
   class:with-preview={!!preview}
   class:fill={!!preview && fill}
   role="group"
-  aria-label="Motion paths"
+  aria-label={t("animation_motion_paths")}
   bind:clientWidth={previewWidth}
   bind:clientHeight={previewHeight}
 >
@@ -184,9 +185,7 @@
 {#if session}
   {#if session.overrideCount > 0}
     <p class="path-scope" aria-live="polite">
-      {session.overrideCount} step-specific {session.overrideCount === 1
-        ? "path"
-        : "paths"}{session.preview ? " replaced in this preview" : ""}
+      {t("animation_path_override_count", { count: session.overrideCount })}{session.preview ? t("animation_path_replaced_in_preview") : ""}
     </p>
   {/if}
 {/if}
@@ -198,7 +197,7 @@
     target="_blank"
     rel="noopener noreferrer"
   >
-    About motion paths <span class="sr-only">(opens in a new tab)</span>
+    {t("animation_path_about")} <span class="sr-only">{t("animation_opens_new_tab")}</span>
   </a>
 {/if}
 

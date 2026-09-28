@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { localizeLevel1Text, localizeLevel1SelectionLabel } from "../_data/localize-level1-content";
   /**
    * Gamma - γ→γ Quarter-Opp / Quarter-Same - body page 5, a faithful rebuild of
    * the proof PDF (level-1-v05.pdf, page 11) in the CURRENT renderer's language.
@@ -373,7 +374,7 @@
       <SelectionHit
         groupId={`gamma-${si}`}
         isGroupStart
-        label={`Animate the ${SEQ_WORDS[si]} sequence`}
+        label={localizeLevel1SelectionLabel(`Animate the ${SEQ_WORDS[si]} sequence`)}
         onselect={() =>
           emitSequence?.({
             strip: RESOLVED[si]!.flat().filter(
@@ -402,7 +403,7 @@
         set: (h) => (p.html = h),
       }}
     >
-      {@html p.html}
+      {@html localizeLevel1Text(p.html)}
     </p>
   {/each}
 

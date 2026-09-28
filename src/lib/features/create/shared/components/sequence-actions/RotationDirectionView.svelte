@@ -7,7 +7,7 @@
   - Save: extract rotation directions from the current sequence and save
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t, tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
   import { onMount } from "svelte";
   import * as rotationDirectionPatternManagerModule from "$lib/features/create/shared/services/rotation-direction-pattern-manager";
   import { rotationDirectionPatternState } from "../../state/rotation-direction-pattern-state.svelte.ts";
@@ -53,7 +53,11 @@
 
   const isMobile = $derived(!layoutState.isSideBySideLayout);
   const targetHandLabel = $derived(
-    targetHand === "left" ? "Left" : targetHand === "right" ? "Right" : "Both"
+    targetHand === "left"
+      ? t("shared_controls_left")
+      : targetHand === "right"
+        ? t("shared_controls_right")
+        : tDynamic("create_action_both_hands")
   );
 
   // Load saved patterns once when the view mounts (entering the drill-down).
@@ -77,7 +81,8 @@
           mode = "apply";
         } else {
           errorMessage =
-            rotationDirectionPatternState.error ?? "Failed to save pattern";
+            rotationDirectionPatternState.error ??
+            tDynamic("create_action_failed_save_pattern");
         }
       })
       .finally(() => {
@@ -98,11 +103,14 @@
       if (result.success && result.sequence) {
         onApply({ sequence: result.sequence, warnings: result.warnings });
       } else {
-        errorMessage = result.error ?? "Failed to apply pattern";
+        errorMessage =
+          result.error ?? tDynamic("create_action_failed_apply_pattern");
       }
     } catch (error) {
       errorMessage =
-        error instanceof Error ? error.message : "Failed to apply pattern";
+        error instanceof Error
+          ? error.message
+          : tDynamic("create_action_failed_apply_pattern");
     } finally {
       applyingPattern = false;
     }
@@ -140,7 +148,7 @@
       class="tab"
       class:active={mode === "apply"}
       onclick={() => (mode = "apply")}
-      aria-label={`Apply patterns to ${targetHandLabel.toLowerCase()} hand${targetHand === "both" ? "s" : ""}`}
+      aria-label={tDynamic(`create_action_apply_patterns_${targetHand}`)}
     >
       <span>{t("create_ui_apply")}</span>
       <span class="tab-target">{targetHandLabel}</span>
@@ -150,7 +158,7 @@
       class:active={mode === "save"}
       onclick={() => (mode = "save")}
     >
-      Save Current
+      {t("create_review_save_current")}
     </button>
   </div>
 
@@ -174,7 +182,7 @@
       {#if rotationDirectionPatternState.isLoading}
         <div class="loading">
           <i class="fas fa-spinner fa-spin" aria-hidden="true"></i>
-          Loading patterns...
+          {t("create_review_loading_patterns")}
         </div>
       {:else}
         {#if sequence && sequence.steps.length > 0}

@@ -18,7 +18,7 @@
     <header class="empty-navigation">
       <PanelButton onclick={onBack}>
         <i class="fas fa-arrow-left" aria-hidden="true"></i>
-        Collections
+        {t("browse_ui_collections_tab")}
       </PanelButton>
     </header>
   {/if}
@@ -27,12 +27,11 @@
     <div class="empty-content">
       <h2 id="saved-work-title">{t("browse_ui_your_saved_work")}</h2>
       <p class="empty-description">
-        Save sequences you want to come back to. Organize them into collections
-        here.
+        {t("browse_verified_library_empty_description")}
       </p>
       <div class="browse-action">
         <PanelButton variant="primary" onclick={onBrowse}>
-          Browse Gallery
+          {t("browse_verified_browse_gallery")}
         </PanelButton>
       </div>
 

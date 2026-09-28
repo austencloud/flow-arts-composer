@@ -1,5 +1,3 @@
-import { auth } from "../firebase";
-
 /**
  * Fetch wrapper for authenticated first-party endpoints.
  *
@@ -18,6 +16,9 @@ export async function authedFetch(
   input: string,
   init: RequestInit = {}
 ): Promise<Response> {
+  // Public pages import this helper through the feature-flag admin service.
+  // Loading Firebase when a request is made keeps it off their first download.
+  const { auth } = await import("../firebase");
   const currentUser = auth.currentUser;
   if (!currentUser) {
     throw new Error("Not authenticated");

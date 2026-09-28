@@ -222,8 +222,9 @@ export class ImageComposer {
       return {
         fanAppearance: overrides.fanAppearance,
         // Like the fan build, only an explicit look reaches a locked card, so a
-        // deck or print render keeps notation artwork.
+        // deck or print render keeps notation artwork. The grip rides with it.
         propLook: overrides.propLook,
+        triangleGrip: overrides.triangleGrip,
         primaryPropColors: overrides.primaryPropColors,
         showTKA: overrides.showTKA,
         showTnD: overrides.showTnD,
@@ -263,6 +264,7 @@ export class ImageComposer {
     const globalSettings: PictographVisibilityOptions = {
       fanAppearance: appSettings.fanAppearance,
       propLook: appSettings.propArtwork,
+      triangleGrip: appSettings.triangleGrip,
       primaryPropColors: appSettings.primaryPropColors,
       showTKA: visibilityManager.getGlyphVisibility("tkaGlyph"),
       showTnD: visibilityManager.getGlyphVisibility("tndGlyph"),
@@ -284,6 +286,7 @@ export class ImageComposer {
       return {
         fanAppearance: overrides.fanAppearance ?? globalSettings.fanAppearance,
         propLook: overrides.propLook ?? globalSettings.propLook,
+        triangleGrip: overrides.triangleGrip ?? globalSettings.triangleGrip,
         primaryPropColors:
           overrides.primaryPropColors !== undefined
             ? overrides.primaryPropColors
@@ -597,8 +600,10 @@ export class ImageComposer {
     const previewOptions: PreviewCellRenderOptions = {
       fanAppearance: visibilitySettings.fanAppearance,
       // The blob was drawn in this look; keying it otherwise would hand a
-      // Realistic export to a notation card cell, or the reverse.
+      // Realistic export to a notation card cell, or the reverse. Same for
+      // the triangle grip.
       propLook: visibilitySettings.propLook,
+      triangleGrip: visibilitySettings.triangleGrip,
       size: stepSize,
       leftPropType: leftProp,
       rightPropType: rightProp,
@@ -1047,6 +1052,9 @@ export class ImageComposer {
       propLook: visibilitySettings.handPathMode
         ? undefined
         : visibilitySettings.propLook,
+      triangleGrip: visibilitySettings.handPathMode
+        ? undefined
+        : visibilitySettings.triangleGrip,
       leftPropType: visibilitySettings.leftPropType,
       rightPropType: visibilitySettings.rightPropType,
       handPathMode: visibilitySettings.handPathMode ?? false,

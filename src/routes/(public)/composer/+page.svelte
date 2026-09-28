@@ -1,6 +1,11 @@
 <script lang="ts">
   import ComposerExperience from "./_components/ComposerExperience.svelte";
+  import ComposerGlide from "./_glide/ComposerGlide.svelte";
+  import { createGlideMemory } from "./_glide/glide-memory";
   import Seo from "$lib/shared/components/Seo.svelte";
+
+  const glideMemory = createGlideMemory();
+  export const snapshot = glideMemory.snapshot;
 
   const TITLE = "Flow Arts Composer | Free Flow Arts Software for Choreography";
   const DESCRIPTION =
@@ -76,4 +81,4 @@
   {@html `<script type="application/ld+json">${breadcrumbJsonLd}</script>`}
 </Seo>
 
-<ComposerExperience />
+<ComposerGlide memory={glideMemory}><ComposerExperience /></ComposerGlide>

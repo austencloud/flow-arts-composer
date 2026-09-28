@@ -53,7 +53,7 @@ Variation support:
   import { openCollectionPicker } from "$lib/features/library/state/collection-picker-state.svelte";
   import { cardHoverPreview } from "$lib/shared/browse/state/card-hover-preview-state.svelte";
   import { userPreviewState } from "$lib/shared/debug/state/user-preview-state.svelte";
-  import { tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t, tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
 
   let thumbnailRef = $state<ReturnType<typeof PropAwareThumbnail> | null>(null);
 
@@ -477,10 +477,10 @@ Variation support:
       // Drives the browse engine's onLibraryMutated listener: removes the card
       // from the reactive grid state and the loader cache immediately.
       notifyLibraryMutated(seq.id);
-      toast.success("Sequence permanently deleted");
+      toast.success(t("browse_audit_deleted_one"));
     } catch (err) {
       console.error("Permanent delete failed:", err);
-      toast.error("Sequence wasn't deleted. Try again.");
+      toast.error(t("browse_audit_delete_failed_one"));
     } finally {
       removeConfirmOpen = false;
       removeTarget = null;
@@ -552,7 +552,7 @@ Variation support:
     ) {
       items.push({ type: "separator" } as ContextMenuEntry, {
         id: "remove-from-library",
-        label: "Delete permanently",
+        label: t("browse_audit_delete_permanently"),
         icon: "fa-trash",
         danger: true,
         action() {
@@ -685,13 +685,13 @@ Variation support:
         displayedSequence.publicPerformanceCount === 1
           ? "browse_results_public_performance_one"
           : "browse_results_public_performance_many",
-        { count: displayedSequence.publicPerformanceCount }
+        { count: displayedSequence.publicPerformanceCount ?? 0 }
       )}
       title={tDynamic(
         displayedSequence.publicPerformanceCount === 1
           ? "browse_results_public_performance_one"
           : "browse_results_public_performance_many",
-        { count: displayedSequence.publicPerformanceCount }
+        { count: displayedSequence.publicPerformanceCount ?? 0 }
       )}
     >
       <i class="fas fa-play" aria-hidden="true"></i>
@@ -772,10 +772,10 @@ Variation support:
 
 <ConfirmDialog
   bind:isOpen={removeConfirmOpen}
-  title="Permanently delete this sequence?"
-  message="This removes the sequence from your library, this device, and the community gallery. It can't be undone."
-  confirmText="Delete permanently"
-  cancelText="Keep"
+  title={t("browse_audit_delete_one_title")}
+  message={t("browse_audit_delete_one_message")}
+  confirmText={t("browse_audit_delete_permanently")}
+  cancelText={t("browse_audit_keep")}
   variant="danger"
   onConfirm={performRemove}
   onCancel={() => {

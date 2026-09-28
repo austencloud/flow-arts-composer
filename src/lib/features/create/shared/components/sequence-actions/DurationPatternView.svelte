@@ -7,6 +7,7 @@
   runs the proven duration-pattern-manager.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { onMount } from "svelte";
   import PatternStripEditor from "$lib/shared/create/components/pattern-strip/PatternStripEditor.svelte";
   import type {
@@ -114,7 +115,7 @@
       onclick={applyStrip}
       disabled={!sequence}
     >
-      Apply to sequence
+      {t("create_review_apply_to_sequence")}
     </button>
   </div>
 </div>

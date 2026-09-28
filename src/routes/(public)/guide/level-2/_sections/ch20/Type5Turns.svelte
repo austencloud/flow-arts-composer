@@ -1,27 +1,28 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import GuideSection from "../../../level-1/_components/GuideSection.svelte";
 </script>
 
-<GuideSection id="type-5-turns" title="Type 5: Dual-Dash (1-Turn)">
+<GuideSection id="type-5-turns" title={t("guide_l2_type5_title")}>
   <div class="section-body">
     <p>
-      In Type 5 motions, both hands are dashing, so there are no hybrids. Since they're the same type (dash|dash), the left goes in the high slot, and the right goes in the low slot.
+      {t("guide_l2_type5_intro")}
     </p>
 
     <p>
-      This includes Φ-, Ψ-, and Λ-.
+      {t("guide_l2_type5_letters")}
     </p>
 
     <!-- TODO: add diagram - Psi-Dash-One -->
 
     <p>
-      Remember, the high/low slots do not refer to left/right. Instead, their purpose is to differentiate two motion types. In Type 5, those motion types are the same (dash|dash).
+      {t("guide_l2_type5_slots")}
     </p>
 
     <!-- TODO: add diagram - Lam-Dash-One opening (◌) / Lam-Dash-One closing (◍) -->
 
     <p>
-      As always, pause at the halfway point to drill it into your muscle memory. This will ensure proper timing.
+      {t("guide_l2_type5_practice")}
     </p>
   </div>
 </GuideSection>

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t as translate } from "$lib/shared/i18n/i18n.svelte.js";
   /**
    * Type 4 - Dash - Level 2 body page 9 (manifest `t4-dash`), faithful to old
    * p10. Type 4 hybrids combine a dash and a static motion (no shift); PADS puts
@@ -166,17 +167,15 @@
 <div class="t4-page">
   <!-- Intro. -->
   <p class="para" style="top:{65 * S}px; font-size:{16 * S}px; line-height:{19 * S}px">
-    Type 4 hybrids combine a dash with a static motion. There is no shift involved.<br />
-    According to PADS, a dash is higher than a static motion.<br />
-    We reflect that by using the high slot for dash and the low slot for static.
+    {@html translate("guide_l2_print_type4dashpage_0")}
   </p>
 
   <!-- Slot rule + big Φ (dash|static). -->
   <p class="para bold" style="top:{146 * S}px; right:{142 * S}px; font-size:{20 * S}px; line-height:{24 * S}px">
-    For Type 4,<br />high = dash and low = static.
+    {@html translate("guide_l2_print_type4dashpage_1")}
   </p>
   <p class="para" style="top:{212 * S}px; right:{142 * S}px; font-size:{16 * S}px; line-height:{19 * S}px">
-    This includes <span class="tka">Φ</span>, <span class="tka">Ψ</span>, and <span class="tka">Λ</span>.
+    {@html translate("guide_l2_print_type4dashpage_2")}
   </p>
   <div class="big-letter" style="left:{408 * S}px; top:{150 * S}px">Φ</div>
   <span class="cs hi" style="left:{452 * S}px; top:{155 * S}px">Dash</span>
@@ -184,38 +183,31 @@
   <span class="phi-cap" style="left:{418 * S}px; top:{222 * S}px">Phi</span>
 
   <p class="para" style="top:{245 * S}px; font-size:{16 * S}px; line-height:{19 * S}px">
-    First we’ll look at <span class="tka">Φ</span>.
+    {@html translate("guide_l2_print_type4dashpage_3")}
   </p>
 
   <!-- Post-Φ¹ note. -->
   <p class="para" style="top:{389 * S}px; font-size:{16 * S}px; line-height:{19 * S}px">
-    Since only one prop is rotating, there is no rotational relationship to describe.<br />
-    If we follow the same dash while rotating in the opposite direction,<br />
-    the pictograph is a mirror image and needs no disambiguation.
+    {@html translate("guide_l2_print_type4dashpage_4")}
   </p>
 
   <!-- Φ₁ lead-in. -->
   <p class="para" style="top:{481 * S}px; font-size:{16 * S}px; line-height:{19 * S}px">
-    Now let’s add 1 turn to the static hand, leaving the dash in its base form.
+    {@html translate("guide_l2_print_type4dashpage_5")}
   </p>
 
   <!-- Closing. -->
   <p class="para bold-italic" style="top:{611 * S}px; font-size:{16 * S}px; line-height:{18 * S}px">
-    Pause at the halfway point and check your position.
+    {@html translate("guide_l2_print_type4dashpage_6")}
   </p>
   <p class="para" style="top:{634 * S}px; font-size:{16 * S}px; line-height:{18 * S}px">
-    Here, there is a hand-to-end relationship with the <strong style="color:#2342c9">left</strong> hand and the <strong style="color:#c01b1b">right</strong> pinky end.<br />
-    Again, there is no rotational relationship to describe,<br />
-    so we don’t need to separate them.
+    {@html translate("guide_l2_print_type4dashpage_7")}
   </p>
 
   <!-- Footnote. -->
   <div class="rule footnote" style="left:0; top:{705.1 * S}px; width:{612 * S}px"></div>
   <p class="para italic" style="top:{708 * S}px; font-size:{14.5 * S}px; line-height:{18 * S}px">
-    When typing the words for sequences containing greek symbols,<br />
-    it’s easier to just type the word or its first three letters. E.g. “phi(0,1)”<br />
-    The corresponding symbol can easily be swapped in with a simple script.<br />
-    The short versions of the seven greek letters are “sig, del, the, om, phi, psi, lam”
+    {@html translate("guide_l2_print_type4dashpage_8")}
   </p>
 
   <!-- Group separator. -->
@@ -231,15 +223,15 @@
 
     <!-- Captions. -->
     {#if strip.captions}
-      <span class="cap" style="left:{178 * S}px; top:{(strip.y - 32) * S}px">thumbs:</span>
-      <span class="frame-cap" style="left:{START_X * S}px; top:{(strip.y - 32) * S}px; width:{SIZE * S}px">start</span>
-      <span class="frame-cap" style="left:{HALF_X * S}px; top:{(strip.y - 32) * S}px; width:{SIZE * S}px">halfway</span>
-      <span class="frame-cap" style="left:{END_X * S}px; top:{(strip.y - 32) * S}px; width:{SIZE * S}px">end</span>
-      <span class="thumb-cap" style="left:{START_X * S}px; top:{(strip.y - 16) * S}px; width:{SIZE * S}px">in</span>
-      <span class="thumb-cap" style="left:{END_X * S}px; top:{(strip.y - 16) * S}px; width:{SIZE * S}px">in</span>
+      <span class="cap" style="left:{178 * S}px; top:{(strip.y - 32) * S}px">{translate("guide_l2_print_thumbs")}</span>
+      <span class="frame-cap" style="left:{START_X * S}px; top:{(strip.y - 32) * S}px; width:{SIZE * S}px">{translate("guide_l2_frame_start")}</span>
+      <span class="frame-cap" style="left:{HALF_X * S}px; top:{(strip.y - 32) * S}px; width:{SIZE * S}px">{translate("guide_l2_frame_halfway")}</span>
+      <span class="frame-cap" style="left:{END_X * S}px; top:{(strip.y - 32) * S}px; width:{SIZE * S}px">{translate("guide_l2_frame_end")}</span>
+      <span class="thumb-cap" style="left:{START_X * S}px; top:{(strip.y - 16) * S}px; width:{SIZE * S}px">{translate("guide_l2_frame_in")}</span>
+      <span class="thumb-cap" style="left:{END_X * S}px; top:{(strip.y - 16) * S}px; width:{SIZE * S}px">{translate("guide_l2_frame_in")}</span>
     {:else}
-      <span class="thumb-cap" style="left:{START_X * S}px; top:{(strip.y - 16) * S}px; width:{SIZE * S}px">in</span>
-      <span class="thumb-cap" style="left:{END_X * S}px; top:{(strip.y - 16) * S}px; width:{SIZE * S}px">out</span>
+      <span class="thumb-cap" style="left:{START_X * S}px; top:{(strip.y - 16) * S}px; width:{SIZE * S}px">{translate("guide_l2_frame_in")}</span>
+      <span class="thumb-cap" style="left:{END_X * S}px; top:{(strip.y - 16) * S}px; width:{SIZE * S}px">{translate("guide_l2_frame_out")}</span>
     {/if}
 
     <!-- start -->

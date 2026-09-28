@@ -5,6 +5,7 @@
   Mobile: accordion list of tools (no mockup - user just built the sequence).
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte";
   import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
   import { createTutorialState } from "../../../state/create-tutorial-state.svelte";
   import { pictographDataToStepData } from "$lib/shared/pictograph/shared/domain/utils/step-pictograph-conversion";
@@ -104,8 +105,8 @@
 
 <div class="tutorial-step">
   <div class="step-header">
-    <h1 id="tutorial-step-title" class="title">Your workspace</h1>
-    <p class="subtitle">Here's where everything lives.</p>
+    <h1 id="tutorial-step-title" class="title">{t('tutorial_workspace')}</h1>
+    <p class="subtitle">{t('tutorial_workspace_intro')}</p>
   </div>
 
   <!-- Desktop: side-by-side mockup + legend -->
@@ -135,7 +136,7 @@
         <div class="tap-hint">
           <span class="badge grid-badge">{gridButton?.order}</span>
           <i class="fas fa-hand-pointer" aria-hidden="true"></i>
-          <span>Tap any step to edit it</span>
+          <span>{t('tutorial_tap_edit')}</span>
         </div>
       </div>
 
@@ -200,7 +201,7 @@
   </div>
 
   <button class="go-button" onclick={onAdvance}>
-    Start building <i class="fas fa-arrow-right" aria-hidden="true"></i>
+    {t('tutorial_start_building')} <i class="fas fa-arrow-right" aria-hidden="true"></i>
   </button>
 </div>
 

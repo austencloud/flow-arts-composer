@@ -163,7 +163,7 @@ Displays:
           tabindex={activeTab === "gallery" ? 0 : -1}
           onclick={(e) => handleTabClick("gallery", e)}
         >
-          Sequences
+          {t("tab_library_sequences")}
           <span class="count">{sequenceCount}</span>
         </button>
         <button
@@ -177,7 +177,7 @@ Displays:
           tabindex={activeTab === "collections" ? 0 : -1}
           onclick={(e) => handleTabClick("collections", e)}
         >
-          Collections
+          {t("tab_library_collections")}
           <span class="count">{collectionCount}</span>
         </button>
         <button
@@ -191,7 +191,7 @@ Displays:
           tabindex={-1}
           title={t("browse_ui_coming_soon")}
         >
-          Compositions
+          {t("browse_verified_compositions")}
           <span class="count">0</span>
         </button>
       </div>

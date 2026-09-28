@@ -26,15 +26,7 @@
  *   - On save, both Firestore and localStorage are written
  */
 
-import {
-  doc,
-  getDoc,
-  setDoc,
-  onSnapshot,
-  serverTimestamp,
-  type Unsubscribe,
-} from "firebase/firestore";
-import { auth, getFirestoreInstance } from "../firebase";
+import type { Unsubscribe } from "firebase/firestore";
 import { trackWrite } from "$lib/shared/offline/state/sync-status-state.svelte";
 import { isValidUserRole } from "../domain/models/feature-flag";
 import type { UserRole } from "../domain/models/user-role";
@@ -50,9 +42,14 @@ const LOCAL_ROLE_OVERRIDES_KEY = "tka-global-role-overrides";
 export class GlobalFeatureFlagPersister {
   private unsubscribe: Unsubscribe | null = null;
 
-  // Firestore document reference
-
+  // Public pages import this class through the feature-flag service, but
+  // flags only load after someone signs in. Loading Firebase here, on first
+  // use, keeps it off those pages' first download. The import() must name
+  // the Firebase modules themselves: the build's small-chunk merge
+  // (vite.config.ts) can fold a small wrapper module back into the page.
   private async getDocRef() {
+    const { doc } = await import("firebase/firestore");
+    const { getFirestoreInstance } = await import("../firebase");
     const firestore = await getFirestoreInstance();
     return doc(firestore, FIRESTORE_DOC_PATH);
   }
@@ -61,6 +58,7 @@ export class GlobalFeatureFlagPersister {
 
   async load(): Promise<GlobalFlagOverrides> {
     try {
+      const { getDoc } = await import("firebase/firestore");
       const docRef = await this.getDocRef();
       const snap = await getDoc(docRef);
 
@@ -114,7 +112,8 @@ export class GlobalFeatureFlagPersister {
     this.dispose();
 
     this.getDocRef()
-      .then((docRef) => {
+      .then(async (docRef) => {
+        const { onSnapshot } = await import("firebase/firestore");
         this.unsubscribe = onSnapshot(
           docRef,
           (snap) => {
@@ -154,6 +153,8 @@ export class GlobalFeatureFlagPersister {
   // ------------------------------------------------------------------
 
   private async writeToFirestore(overrides: GlobalFlagOverrides): Promise<void> {
+    const { setDoc, serverTimestamp } = await import("firebase/firestore");
+    const { auth } = await import("../firebase");
     const docRef = await this.getDocRef();
     const uid = auth.currentUser?.uid ?? "unknown";
 

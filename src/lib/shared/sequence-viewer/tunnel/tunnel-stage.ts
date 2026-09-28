@@ -1,3 +1,4 @@
+import { t } from "$lib/shared/i18n/i18n.svelte.js";
 import {
   generateCopyOps,
   imageCount,
@@ -106,20 +107,20 @@ export function describeTunnelStageArm(
   arm: number
 ): string {
   const ops = tunnelFormationArms(config)[arm] ?? [];
-  if (ops.length === 0) return "Base position";
+  if (ops.length === 0) return t("tunnel_base_position");
   return ops
     .map((op) => {
       switch (op.kind) {
         case "rotate":
-          return `Rotate ${op.amount * 45}°`;
+          return t("tunnel_rotate_degrees", { degrees: op.amount * 45 });
         case "mirror":
-          return "Mirror";
+          return t("tunnel_mirror");
         case "flip":
-          return "Flip";
+          return t("tunnel_flip");
         case "invert":
-          return "Invert";
+          return t("tunnel_invert");
         case "rewind":
-          return "Echo";
+          return t("tunnel_echo");
       }
     })
     .join(" + ");

@@ -213,10 +213,12 @@ the same usable final state immediately.
 
 A card image someone saves or shares draws the prop look they chose, Realistic
 or Pictograph, so the file matches the card and canvas they were looking at.
-Printed cards and the card a scan opens stay notation artwork. A printed card is
-one shared object: its cloud cells are rendered once, verified before a QR is
-issued, and downloaded by every scanner, so a personal look cannot enter them.
-The fan build already followed this split.
+The triangle grip follows the look: a side-grip player's cards draw the side
+grip, in either look. Printed cards and the card a scan opens stay notation
+artwork, with the triangle on its corner glyph. A printed card is one shared
+object: its cloud cells are rendered once, verified before a QR is issued, and
+downloaded by every scanner, so a personal look cannot enter them. The fan
+build already followed this split.
 
 ## Implementation ownership
 

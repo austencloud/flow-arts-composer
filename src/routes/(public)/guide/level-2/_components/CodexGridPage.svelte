@@ -15,6 +15,7 @@
    *             vertical divider down the middle (p18: Type 2 | Type 3).
    */
   import PictographContainer from "$lib/shared/pictograph/shared/components/PictographContainer.svelte";
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
   import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
   import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
@@ -80,6 +81,17 @@
     printMode: true,
     disableTransitions: true,
   } as const;
+  function headerSegment(segment: string): string {
+    switch (segment) {
+      case "Type 1 - ": return `${t("guide_l2_type1_heading")} – `;
+      case "Type 2 - ": return `${t("guide_l2_type2_heading")} – `;
+      case "Type 3 - ": return `${t("guide_l2_type3_heading")} – `;
+      case "Type 4 - ": return `${t("guide_l2_type4_heading")} – `;
+      case "Type 5 - ": return `${t("guide_l2_type5_heading")} – `;
+      case "Type 6 - ": return `${t("guide_l2_type6_heading")} – `;
+      default: return segment;
+    }
+  }
 </script>
 
 <div class="codex-page">
@@ -88,15 +100,15 @@
 
   {#if split}
     <div class="sub half" style="top:{84 * S}px; left:{MARGIN * S}px; width:{(4 * COL_PITCH) * S}px; font-size:{22 * S}px">
-      {#each leftHeader as p, i (i)}<span style={p.c ? `color:${p.c}` : ""}>{p.t}</span>{/each}
+      {#each leftHeader as p, i (i)}<span style={p.c ? `color:${p.c}` : ""}>{headerSegment(p.t)}</span>{/each}
     </div>
     <div class="sub half" style="top:{84 * S}px; left:{DIVIDER_X * S}px; width:{(4 * COL_PITCH) * S}px; font-size:{22 * S}px">
-      {#each rightHeader as p, i (i)}<span style={p.c ? `color:${p.c}` : ""}>{p.t}</span>{/each}
+      {#each rightHeader as p, i (i)}<span style={p.c ? `color:${p.c}` : ""}>{headerSegment(p.t)}</span>{/each}
     </div>
     <div class="vrule" style="left:{DIVIDER_X * S}px; top:{112 * S}px; height:{(gridBottom() - 112) * S}px"></div>
   {:else if subParts}
     <div class="sub" style="top:{84 * S}px; font-size:{24 * S}px">
-      {#each subParts as p, i (i)}<span style={p.c ? `color:${p.c}` : ""}>{p.t}</span>{/each}
+      {#each subParts as p, i (i)}<span style={p.c ? `color:${p.c}` : ""}>{headerSegment(p.t)}</span>{/each}
     </div>
   {/if}
 

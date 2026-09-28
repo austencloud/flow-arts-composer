@@ -1,4 +1,7 @@
 <script lang="ts">
+  import { localizePrintLabel } from "../_components/localize-print-label";
+  import { guideTurnDisplayWord } from "../../level-1/_data/guide-turn-display-word";
+  import { t as translate } from "$lib/shared/i18n/i18n.svelte.js";
   /**
    * 2-Turns (Shifts) - Level 2 body page (manifest `two-turns-shifts`), faithful
    * to the source artboard (level-2.pdf page 22). Two turns = a full 360° added
@@ -332,39 +335,39 @@
 
   // ── Text (pt coords, proof wording verbatim) ────────────────────────────────
   type Para = { y: number; fs: number; lh: number; html: string };
-  const PARAS: Para[] = [
+  const PARAS = $derived<Para[]>([
     {
       y: 60,
       fs: 16,
       lh: 20,
-      html: "2 turns add a 360 degree rotation to a motion.",
+      html: translate("guide_l2_print_twoturnsshiftspage_0"),
     },
     {
       y: 138,
       fs: 16,
       lh: 19,
-      html: "On a prospin with a double turn, note the 45° angle of the halfway position.",
+      html: translate("guide_l2_print_twoturnsshiftspage_1"),
     },
     {
       y: 302,
       fs: 16,
       lh: 20,
-      html: "A base prospin (ASA isolation) has 0 thumb switches, therefore<br><strong>A prospin with 2 turns has 2 thumb switch (in → out → in)</strong>",
+      html: translate("guide_l2_print_twoturnsshiftspage_2"),
     },
     {
       y: 358,
       fs: 16,
       lh: 20,
-      html: "With a double-turning antispin, it’s easier to visually conceive of the motion in thirds<br>At each third there is a staff end at the center point.",
+      html: translate("guide_l2_print_twoturnsshiftspage_3"),
     },
     {
       y: 558,
       fs: 16,
       lh: 20,
-      html: "A base antispin has 1 thumb switch. (in → out), therefore<br><strong>An antispin with 2 turns has 3 thumb switches (in → out → in → out).</strong>",
+      html: translate("guide_l2_print_twoturnsshiftspage_4"),
     },
-    { y: 608, fs: 16, lh: 20, html: "Here is the same motion broken in half:" },
-  ];
+    { y: 608, fs: 16, lh: 20, html: translate("guide_l2_print_twoturnsshiftspage_5") },
+  ]);
 
   type Run = {
     x: number;
@@ -533,7 +536,9 @@
           <SelectionHit
             groupId={animKey}
             isGroupStart
-            label={`Animate: ${ANIM[animKey].word}`}
+            label={translate("guide_l2_animate", {
+              word: guideTurnDisplayWord(ANIM[animKey].word),
+            })}
             onselect={() =>
               emitSequence?.({
                 strip: rowSteps(animKey),
@@ -634,13 +639,13 @@
     {#if r.style === "title" || (r.style === "mode" && r.x === 0)}
       <span
         class="run {r.style} centered"
-        style="top:{r.y * S}px; font-size:{r.fs * S}px">{r.t}</span
+        style="top:{r.y * S}px; font-size:{r.fs * S}px">{localizePrintLabel(r.t)}</span
       >
     {:else}
       <span
         class="run {r.style}"
         style="left:{r.x * S}px; top:{r.y * S}px; font-size:{r.fs * S}px"
-        >{r.t}</span
+        >{localizePrintLabel(r.t)}</span
       >
     {/if}
   {/each}

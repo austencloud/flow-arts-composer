@@ -5,6 +5,7 @@
   Used by DurationPatternDrawer, TurnPatternDrawer, and potentially others.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import type { Snippet } from "svelte";
 
   interface Props {
@@ -69,7 +70,7 @@
       <span class="pattern-desc">{description}</span>
     {/if}
     {#if stepCount !== undefined}
-      <span class="pattern-steps">{stepCount} steps</span>
+      <span class="pattern-steps">{t(stepCount === 1 ? "create_deep_step_count_one" : "create_deep_step_count_many", { count: stepCount })}</span>
     {/if}
   </div>
   {#if actions}

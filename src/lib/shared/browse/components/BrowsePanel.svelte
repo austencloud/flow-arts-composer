@@ -331,11 +331,11 @@
       <SelectionToolbar
         selectedCount={selection.selectedIds.size}
         totalCount={engine.sequences.length}
-        primaryLabel="Collections"
+        primaryLabel={t("browse_ui_collections_tab")}
         primaryIcon="fa-folder-plus"
         onPrimaryAction={selection.openPrimaryAction}
         dangerLabel={selection.openDangerAction
-          ? "Delete permanently"
+          ? t("browse_audit_delete_permanently")
           : undefined}
         dangerIcon={selection.openDangerAction ? "fa-trash" : undefined}
         onDangerAction={selection.openDangerAction}
@@ -409,7 +409,7 @@
             onclick={() => withResultsMorph(() => engine.clearUserFilters())}
           >
             <i class="fas fa-times" aria-hidden="true"></i>
-            Clear all filters
+            {t("browse_verified_clear_all_filters")}
           </button>
         {:else if emptyAction}
           <!-- Genuine empty library (no filters): host-supplied CTA rendered as

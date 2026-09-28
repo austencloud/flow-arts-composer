@@ -6,6 +6,7 @@
   Auto-advances to the next wizard step after the 4th step.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte";
   import {
     createTutorialState,
     REQUIRED_STEPS,
@@ -51,8 +52,8 @@
 
 <div class="tutorial-step">
   <div class="step-header">
-    <h1 id="tutorial-step-title" class="title">Add step {stepCount + 1} of {REQUIRED_STEPS}</h1>
-    <p class="subtitle">Tap a step to add it.</p>
+    <h1 id="tutorial-step-title" class="title">{t("tutorial_add_step_count", { number: stepCount + 1, total: REQUIRED_STEPS })}</h1>
+    <p class="subtitle">{t('tutorial_tap_add')}</p>
   </div>
 
   <div class="picker-container">
@@ -67,7 +68,7 @@
         />
       {/await}
     {:else}
-      <p class="loading">Loading options...</p>
+      <p class="loading">{t('create_ui_loading_options')}</p>
     {/if}
   </div>
 </div>

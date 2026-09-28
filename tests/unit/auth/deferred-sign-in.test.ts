@@ -5,13 +5,13 @@
  * in, their prop, color and grip changes stay on this device and are replaced
  * by their account's copy on their next app visit. If it signs everyone in, a
  * signed-out visitor pays for Firebase sign-in and a live feature-flag
- * listener on every visit. Shape Engine has no site header, so it starts the
- * header's deferred sign-in itself, with the stricter saved-user check; embeds
- * run inside other sites and must never start it.
+ * listener on every visit. The site header starts it, and so do Shape Engine
+ * and the sequence viewer, which have no header; all use the one saved-user
+ * check. Embeds run inside other sites and must never start it.
  */
 import "fake-indexeddb/auto";
 import { IDBFactory } from "fake-indexeddb";
-import { flushSync, mount, unmount } from "svelte";
+import { flushSync, mount, unmount, type Component } from "svelte";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { chainTo, importGraph, repoPath } from "../../helpers/import-graph";
 
@@ -30,10 +30,26 @@ vi.mock("$lib/shared/shape-matrix/app/ShapeMatrixApp.svelte", () => ({
   default: () => {},
 }));
 
-const { hasFirebaseAuthDatabase, hasSavedFirebaseUser, signInWhenIdle } =
+const { hasSavedFirebaseUser, signInWhenIdle } =
   await import("$lib/shared/auth/services/deferred-sign-in");
+const { default: SiteHeader } =
+  await import("$lib/shared/landing/components/SiteHeader.svelte");
 const { default: ShapeEnginePage } =
   await import("../../../src/routes/(public)/shape-engine/+page.svelte");
+const { default: SequenceViewerRoute } =
+  await import("../../../src/routes/sequence/[id]/+page.svelte");
+
+// The viewer route renders only its head outside a browser; these are the
+// fields that head reads.
+const VIEWER_DATA = {
+  seo: {
+    title: "ABC",
+    description: "A sequence",
+    canonical: "https://tkaflowarts.com/sequence/abc",
+    indexable: false,
+  },
+  meta: {},
+};
 
 // Firebase Auth's own storage layout (@firebase/auth, indexedDB persistence):
 // database firebaseLocalStorageDb, store firebaseLocalStorage keyed by
@@ -103,17 +119,21 @@ describe("saved-session check", () => {
     expect(await hasSavedFirebaseUser()).toBe(true);
   });
 
-  it("finds the user Firebase saved in localStorage on Safari and iOS", async () => {
+  it("finds the user Firebase saved in localStorage on Safari and iOS, where its database never exists", async () => {
+    // WebKit keeps the session in localStorage (indexeddb-persistence-policy.ts).
+    // The site header once asked only whether the database existed, and so
+    // never signed a Safari or iOS visitor in.
     localStorage.setItem(SAVED_USER_KEY, JSON.stringify({ uid: "user-1" }));
     expect(await hasSavedFirebaseUser()).toBe(true);
+    expect(await databaseNames()).not.toContain(AUTH_DATABASE);
   });
 
-  it("says no once the user has signed out, where the header's check still says yes", async () => {
+  it("says no once the user has signed out, although Firebase's database stays", async () => {
     // Signing out deletes the user record and keeps the database, and any
     // page that loads Firebase creates the database for signed-out visitors.
     await createFirebaseAuthDatabase(["__sak"]);
     expect(await hasSavedFirebaseUser()).toBe(false);
-    expect(await hasFirebaseAuthDatabase()).toBe(true);
+    expect(await databaseNames()).toContain(AUTH_DATABASE);
   });
 
   it("never creates Firebase's database for a first-time visitor", async () => {
@@ -160,20 +180,18 @@ describe("signInWhenIdle", () => {
   });
 });
 
-describe("Shape Engine page", () => {
-  // vitest-setup.ts swaps document.createElement for canvas stubs that are not
-  // DOM nodes. Mounting a component needs jsdom's own, from document's prototype.
-  const realCreateElement = Object.getPrototypeOf(document)
-    .createElement as typeof document.createElement;
-  let stubbedCreateElement: typeof document.createElement;
-  let page: ReturnType<typeof mount> | null = null;
+// vitest-setup.ts swaps document.createElement for canvas stubs that are not
+// DOM nodes. Mounting a component needs jsdom's own, from document's prototype.
+const realCreateElement = Object.getPrototypeOf(document)
+  .createElement as typeof document.createElement;
 
-  function mountPage(): void {
-    const host = realCreateElement.call(document, "div");
-    document.body.append(host);
-    page = mount(ShapeEnginePage, { target: host });
-    flushSync();
-  }
+/** Registers the hooks that mount `component` fresh in each test of a block. */
+function mountEachTest(
+  component: Component<any>,
+  props: Record<string, unknown> = {}
+): () => void {
+  let stubbedCreateElement: typeof document.createElement;
+  let mounted: ReturnType<typeof mount> | null = null;
 
   beforeEach(() => {
     stubbedCreateElement = document.createElement;
@@ -181,11 +199,62 @@ describe("Shape Engine page", () => {
   });
 
   afterEach(() => {
-    if (page) unmount(page);
-    page = null;
+    if (mounted) unmount(mounted);
+    mounted = null;
     document.body.innerHTML = "";
     document.createElement = stubbedCreateElement;
   });
+
+  return () => {
+    const host = realCreateElement.call(document, "div");
+    document.body.append(host);
+    mounted = mount(component, { target: host, props });
+    flushSync();
+  };
+}
+
+describe("site header", () => {
+  const mountHeader = mountEachTest(SiteHeader);
+  const signInButton = () =>
+    document.querySelector<HTMLButtonElement>(".desktop-nav button.signin");
+
+  it.each([
+    [
+      "in IndexedDB",
+      () => createFirebaseAuthDatabase(["__sak", SAVED_USER_KEY]),
+    ],
+    [
+      "in localStorage, as on Safari and iOS",
+      async () =>
+        localStorage.setItem(SAVED_USER_KEY, JSON.stringify({ uid: "user-1" })),
+    ],
+  ])(
+    "signs a returning visitor in at idle time, with their session %s",
+    async (_where, saveSession) => {
+      await saveSession();
+      mountHeader();
+
+      await vi.waitFor(() => expect(idleQueue).toHaveLength(1));
+      expect(auth.initialize).not.toHaveBeenCalled();
+
+      runIdleCallbacks();
+      await vi.waitFor(() => expect(auth.initialize).toHaveBeenCalledTimes(1));
+    }
+  );
+
+  it("offers a signed-out visitor Sign in at once, without loading sign-in, although Firebase's database exists", async () => {
+    await createFirebaseAuthDatabase(["__sak"]);
+    mountHeader();
+
+    // The button replaces the placeholder only once the check has answered no.
+    await vi.waitFor(() => expect(signInButton()).not.toBeNull());
+    expect(idleQueue).toEqual([]);
+    expect(auth.initialize).not.toHaveBeenCalled();
+  });
+});
+
+describe("Shape Engine page", () => {
+  const mountPage = mountEachTest(ShapeEnginePage);
 
   it("signs a returning visitor in at idle time, as the site header does", async () => {
     await createFirebaseAuthDatabase(["__sak", SAVED_USER_KEY]);
@@ -211,13 +280,39 @@ describe("Shape Engine page", () => {
   });
 });
 
+describe("sequence viewer page", () => {
+  const mountPage = mountEachTest(SequenceViewerRoute, { data: VIEWER_DATA });
+
+  it("signs a returning visitor in at idle time, as the site header does", async () => {
+    await createFirebaseAuthDatabase(["__sak", SAVED_USER_KEY]);
+    mountPage();
+
+    await vi.waitFor(() => expect(idleQueue).toHaveLength(1));
+    expect(auth.initialize).not.toHaveBeenCalled();
+
+    runIdleCallbacks();
+    await vi.waitFor(() => expect(auth.initialize).toHaveBeenCalledTimes(1));
+  });
+
+  it("leaves a signed-out visitor alone although Firebase's database exists", async () => {
+    await createFirebaseAuthDatabase(["__sak"]);
+    mountPage();
+
+    expect(await hasSavedFirebaseUser()).toBe(false);
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(idleQueue).toEqual([]);
+    expect(auth.initialize).not.toHaveBeenCalled();
+  });
+});
+
 describe("who can start the quiet sign-in", () => {
   const SIGN_IN = repoPath("src/lib/shared/auth/services/deferred-sign-in.ts");
 
-  it("is the one owner the site header and Shape Engine both use", () => {
+  it("is the one owner the site header, Shape Engine and the viewer all use", () => {
     for (const entry of [
       "src/lib/shared/landing/components/SiteHeader.svelte",
       "src/routes/(public)/shape-engine/+page.svelte",
+      "src/routes/sequence/[id]/+page.svelte",
     ]) {
       expect(importGraph([repoPath(entry)]).files, entry).toContain(SIGN_IN);
     }

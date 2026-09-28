@@ -7484,6 +7484,48 @@ index f61213bedbd0483c9f492a51e4913a48401b1654..00000000000000000000000000000000
 diff --git a/dist/lib/config/formation-presets.d.ts.map b/dist/lib/config/formation-presets.d.ts.map
 deleted file mode 100644
 index bf85b20eb38741aec6292313777e7842dfa90ba6..0000000000000000000000000000000000000000
+diff --git a/dist/lib/config/formation-presets.js b/dist/lib/config/formation-presets.js
+index bce36abe7f336d3da83da8b66ff3a6ce4660bbc4..58110b6c1df75495efb06eca3e3aeb1a45a245d2 100644
+--- a/dist/lib/config/formation-presets.js
++++ b/dist/lib/config/formation-presets.js
+@@ -97,7 +97,9 @@ function generateCircleSlots(count) {
+         const angle = (i / count) * Math.PI * 2 - Math.PI / 2;
+         const x = Math.cos(angle) * radius;
+         const z = Math.sin(angle) * radius + offset;
+-        const facingAngle = angle + Math.PI / 2;
++        // Forward is (sin(facing), cos(facing)) and the center lies along
++        // (-cos(angle), -sin(angle)), so the performer faces -angle - PI/2.
++        const facingAngle = -angle - Math.PI / 2;
+         slots.push({
+             index: i,
+             position: { x, z },
+@@ -208,20 +210,23 @@ function generateTunnelStackSlots(count) {
+     }));
+ }
+ /**
+- * Back-to-back formation - both performers at origin, facing opposite directions.
++ * Back-to-back formation - performers face opposite directions with their
++ * body centers 0.6m apart along the facing axis, so their bodies never touch,
++ * even with chests turned side-on.
+  */
+ function generateBackToBackSlots(count) {
+     if (count < 2)
+         return generateSoloSlots(count);
++    const separation = 0.6;
+     return [
+         {
+             index: 0,
+-            position: { x: 0, z: FORMATION_WALL_OFFSET },
++            position: { x: 0, z: FORMATION_WALL_OFFSET + separation / 2 },
+             facingAngle: 0,
+         },
+         {
+             index: 1,
+-            position: { x: 0, z: FORMATION_WALL_OFFSET },
++            position: { x: 0, z: FORMATION_WALL_OFFSET - separation / 2 },
+             facingAngle: Math.PI,
+         },
+     ];
 diff --git a/dist/lib/config/user-proportions.d.ts b/dist/lib/config/user-proportions.d.ts
 deleted file mode 100644
 index c094548dab2fb1defe50a6488df0dbedd08bbb47..0000000000000000000000000000000000000000
@@ -8885,10 +8927,10 @@ deleted file mode 100644
 index 8d0262d3ce741f36f066d69fc14af57691e8d939..0000000000000000000000000000000000000000
 diff --git a/dist/lib/services/geometry/BodyCollisionGeometry.js b/dist/lib/services/geometry/BodyCollisionGeometry.js
 new file mode 100644
-index 0000000000000000000000000000000000000000..889d20576124946b866af1508231ba9e2d19d0a5
+index 0000000000000000000000000000000000000000..d65c9031b30fee780a0894e8a1e70aa92721f6ce
 --- /dev/null
 +++ b/dist/lib/services/geometry/BodyCollisionGeometry.js
-@@ -0,0 +1,43 @@
+@@ -0,0 +1,96 @@
 +export const FACE_RADIUS = 0.09;
 +export const FOREARM_RADIUS = 0.04;
 +export const BODY_CLEARANCE_PADDING = 0.02;
@@ -8931,6 +8973,59 @@ index 0000000000000000000000000000000000000000..889d20576124946b866af1508231ba9e
 +    const t = Math.max(0, Math.min(1, pointOffsetScratch.dot(segmentScratch) / lengthSq));
 +    closestOut.copy(segmentStart).addScaledVector(segmentScratch, t);
 +    return point.distanceTo(closestOut);
++}
++/**
++ * Shortest distance between segments firstStart→firstEnd and
++ * secondStart→secondEnd, from their exact closest points (Ericson, Real-Time
++ * Collision Detection, 5.1.9). The three scratch vectors must be distinct from
++ * each other and from every input.
++ */
++export function segmentToSegmentDistance(firstStart, firstEnd, secondStart, secondEnd, firstDirectionScratch, secondDirectionScratch, offsetScratch) {
++    const first = firstDirectionScratch.subVectors(firstEnd, firstStart);
++    const second = secondDirectionScratch.subVectors(secondEnd, secondStart);
++    const offset = offsetScratch.subVectors(firstStart, secondStart);
++    const firstLengthSq = first.lengthSq();
++    const secondLengthSq = second.lengthSq();
++    const secondAlongOffset = second.dot(offset);
++    let s = 0;
++    let t = 0;
++    if (firstLengthSq < 1e-8 && secondLengthSq < 1e-8)
++        return offset.length();
++    if (firstLengthSq < 1e-8) {
++        t = clampUnit(secondAlongOffset / secondLengthSq);
++    }
++    else {
++        const firstAlongOffset = first.dot(offset);
++        if (secondLengthSq < 1e-8) {
++            s = clampUnit(-firstAlongOffset / firstLengthSq);
++        }
++        else {
++            const firstAlongSecond = first.dot(second);
++            const denominator = firstLengthSq * secondLengthSq - firstAlongSecond * firstAlongSecond;
++            // Parallel segments start from s = 0; the clamps below still reach the
++            // closest pair.
++            s =
++                denominator > 1e-12
++                    ? clampUnit((firstAlongSecond * secondAlongOffset -
++                        firstAlongOffset * secondLengthSq) /
++                        denominator)
++                    : 0;
++            t = (firstAlongSecond * s + secondAlongOffset) / secondLengthSq;
++            if (t < 0) {
++                t = 0;
++                s = clampUnit(-firstAlongOffset / firstLengthSq);
++            }
++            else if (t > 1) {
++                t = 1;
++                s = clampUnit((firstAlongSecond - firstAlongOffset) / firstLengthSq);
++            }
++        }
++    }
++    // (firstStart + s·first) − (secondStart + t·second)
++    return offset.addScaledVector(first, s).addScaledVector(second, -t).length();
++}
++function clampUnit(value) {
++    return Math.max(0, Math.min(1, value));
 +}
 diff --git a/dist/lib/services/geometry/CylindricalGripGeometry.js b/dist/lib/services/geometry/CylindricalGripGeometry.js
 new file mode 100644
@@ -12753,7 +12848,7 @@ diff --git a/dist/lib/services/implementations/CollisionDetector.d.ts.map b/dist
 deleted file mode 100644
 index 589730c42dd77154bad8305e67d5804bdf805018..0000000000000000000000000000000000000000
 diff --git a/dist/lib/services/implementations/CollisionDetector.js b/dist/lib/services/implementations/CollisionDetector.js
-index bdf2062fc3ee834f003879c49286b6dd7a282887..b7b227ff8a407f134d1a556ffe518ab4aa936c47 100644
+index bdf2062fc3ee834f003879c49286b6dd7a282887..415c33b9dbac4afba81cc7c71435e06ebe6cfccc 100644
 --- a/dist/lib/services/implementations/CollisionDetector.js
 +++ b/dist/lib/services/implementations/CollisionDetector.js
 @@ -18,12 +18,7 @@
@@ -12766,20 +12861,23 @@ index bdf2062fc3ee834f003879c49286b6dd7a282887..b7b227ff8a407f134d1a556ffe518ab4
 -const ARM_SEGMENT_RADIUS = 0.04;
 -// How close a prop can get before we flag it (meters)
 -const PROP_BODY_THRESHOLD = 0.02;
-+import { BODY_CLEARANCE_PADDING, FACE_RADIUS, FOREARM_FACE_CLEARANCE, FOREARM_NECK_CLEARANCE, FOREARM_RADIUS, FOREARM_TORSO_CLEARANCE, TORSO_RADIUS, pointToSegmentDistance, } from "../geometry/BodyCollisionGeometry";
++import { BODY_CLEARANCE_PADDING, FACE_RADIUS, FOREARM_FACE_CLEARANCE, FOREARM_NECK_CLEARANCE, FOREARM_RADIUS, FOREARM_TORSO_CLEARANCE, TORSO_RADIUS, pointToSegmentDistance, segmentToSegmentDistance, } from "../geometry/BodyCollisionGeometry";
  // How close two arm segments can get before we flag overlap
  const ARM_ARM_THRESHOLD = 0.06;
  // Severity thresholds (meters of penetration)
-@@ -40,6 +35,8 @@ const COOLDOWN_MS = {
+@@ -40,6 +35,11 @@ const COOLDOWN_MS = {
  const _tempA = new Vector3();
  const _tempB = new Vector3();
  const _closest = new Vector3();
++const _segmentDirectionA = new Vector3();
++const _segmentDirectionB = new Vector3();
++const _segmentOffset = new Vector3();
 +const _leftUpperBodyStart = new Vector3();
 +const _rightUpperBodyStart = new Vector3();
  // Severity badge for console
  const SEVERITY_BADGE = {
      graze: "🟡 GRAZE",
-@@ -86,7 +83,7 @@ export class CollisionDetector {
+@@ -86,7 +86,7 @@ export class CollisionDetector {
          //    the bone-based distance check stays ~14 cm away.
          for (const { label, seg } of propPairs) {
              const closest = this.pointToSegmentDistance(body.face, seg.a, seg.b);
@@ -12788,7 +12886,7 @@ index bdf2062fc3ee834f003879c49286b6dd7a282887..b7b227ff8a407f134d1a556ffe518ab4
              if (closest < threshold) {
                  const depth = threshold - closest;
                  events.push(this.makeEvent("prop-through-head", stepNumber, beatProgress, depth, `${label} staff shaft → head (${(closest * 100).toFixed(1)}cm clearance, ${(depth * 100).toFixed(1)}cm deep)`));
-@@ -122,7 +119,7 @@ export class CollisionDetector {
+@@ -122,7 +122,7 @@ export class CollisionDetector {
          for (const { label, seg } of propPairs) {
              for (const arm of armSegments) {
                  const closest = this.segmentToSegmentDistance(seg.a, seg.b, arm.a, arm.b);
@@ -12797,7 +12895,7 @@ index bdf2062fc3ee834f003879c49286b6dd7a282887..b7b227ff8a407f134d1a556ffe518ab4
                  if (closest < threshold) {
                      const depth = threshold - closest;
                      events.push(this.makeEvent("prop-through-arm", stepNumber, beatProgress, depth, `${label} staff → ${arm.name} (${(depth * 100).toFixed(1)}cm deep)`));
-@@ -134,7 +131,7 @@ export class CollisionDetector {
+@@ -134,7 +134,7 @@ export class CollisionDetector {
          //     Common collision when both hands reach across the body.
          if (blueProp && redProp) {
              const closest = this.segmentToSegmentDistance(blueProp.a, blueProp.b, redProp.a, redProp.b);
@@ -12806,7 +12904,7 @@ index bdf2062fc3ee834f003879c49286b6dd7a282887..b7b227ff8a407f134d1a556ffe518ab4
              if (closest < threshold) {
                  const depth = threshold - closest;
                  events.push(this.makeEvent("prop-through-prop", stepNumber, beatProgress, depth, `Staffs cross (${(closest * 100).toFixed(1)}cm gap, ${(depth * 100).toFixed(1)}cm overlap)`));
-@@ -144,16 +141,49 @@ export class CollisionDetector {
+@@ -144,16 +144,49 @@ export class CollisionDetector {
          //    Uses body.face so the collision zone matches where the visual
          //    face actually is, not where the Mixamo head joint sits.
          const leftArmDist = this.pointToSegmentDistance(body.face, body.leftElbow, body.leftHand);
@@ -12860,7 +12958,7 @@ index bdf2062fc3ee834f003879c49286b6dd7a282887..b7b227ff8a407f134d1a556ffe518ab4
          }
          // 4. Arms through each other - forearm segments
          const armArmDist = this.segmentToSegmentDistance(body.leftElbow, body.leftHand, body.rightElbow, body.rightHand);
-@@ -189,14 +219,7 @@ export class CollisionDetector {
+@@ -189,32 +222,16 @@ export class CollisionDetector {
          return Math.max(0, radius - dist);
      }
      pointToSegmentDistance(point, segA, segB) {
@@ -12874,8 +12972,33 @@ index bdf2062fc3ee834f003879c49286b6dd7a282887..b7b227ff8a407f134d1a556ffe518ab4
 -        return point.distanceTo(_closest);
 +        return pointToSegmentDistance(point, segA, segB, _tempA, _tempB, _closest);
      }
++    /**
++     * Exact closest distance between two segments, on scratch vectors of its
++     * own. The sampled version this replaced wrote each sample into _tempA,
++     * which pointToSegmentDistance also uses as scratch, so it measured from the
++     * wrong point and no arm or staff crossing was ever reported.
++     */
      segmentToSegmentDistance(a0, a1, b0, b1) {
-         let minDist = Infinity;
+-        let minDist = Infinity;
+-        for (let i = 0; i <= 3; i++) {
+-            const t = i / 3;
+-            _tempA.lerpVectors(a0, a1, t);
+-            const d = this.pointToSegmentDistance(_tempA, b0, b1);
+-            if (d < minDist)
+-                minDist = d;
+-        }
+-        for (let i = 0; i <= 3; i++) {
+-            const t = i / 3;
+-            _tempA.lerpVectors(b0, b1, t);
+-            const d = this.pointToSegmentDistance(_tempA, a0, a1);
+-            if (d < minDist)
+-                minDist = d;
+-        }
+-        return minDist;
++        return segmentToSegmentDistance(a0, a1, b0, b1, _segmentDirectionA, _segmentDirectionB, _segmentOffset);
+     }
+     makeEvent(zone, stepNumber, beatProgress, penetrationDepth, description) {
+         const severity = this.classifySeverity(penetrationDepth);
 diff --git a/dist/lib/services/implementations/ContactCurveCache.d.ts b/dist/lib/services/implementations/ContactCurveCache.d.ts
 deleted file mode 100644
 index 4bf92ce03aac7e9b85cbf3fd6493d189cdd8aad1..0000000000000000000000000000000000000000
@@ -28352,6 +28475,47 @@ index e3c577e94a6b79bbca1bc222fd79886eaf88962b..b3d4bd79bb2801c45c3f1636290ad38e
  export type AvatarId = (typeof AVATAR_DEFINITIONS)[number]["id"];
  
  /**
+diff --git a/src/lib/config/formation-presets.ts b/src/lib/config/formation-presets.ts
+index 2cefc525c3e2283338de01920b671e46b30173c7..e6533e314b6866fc85d1f0da30134932076aaae7 100644
+--- a/src/lib/config/formation-presets.ts
++++ b/src/lib/config/formation-presets.ts
+@@ -118,7 +118,9 @@ function generateCircleSlots(count: number): FormationSlot[] {
+     const angle = (i / count) * Math.PI * 2 - Math.PI / 2;
+     const x = Math.cos(angle) * radius;
+     const z = Math.sin(angle) * radius + offset;
+-    const facingAngle = angle + Math.PI / 2;
++    // Forward is (sin(facing), cos(facing)) and the center lies along
++    // (-cos(angle), -sin(angle)), so the performer faces -angle - PI/2.
++    const facingAngle = -angle - Math.PI / 2;
+ 
+     slots.push({
+       index: i,
+@@ -248,19 +250,22 @@ function generateTunnelStackSlots(count: number): FormationSlot[] {
+ }
+ 
+ /**
+- * Back-to-back formation - both performers at origin, facing opposite directions.
++ * Back-to-back formation - performers face opposite directions with their
++ * body centers 0.6m apart along the facing axis, so their bodies never touch,
++ * even with chests turned side-on.
+  */
+ function generateBackToBackSlots(count: number): FormationSlot[] {
+   if (count < 2) return generateSoloSlots(count);
++  const separation = 0.6;
+   return [
+     {
+       index: 0,
+-      position: { x: 0, z: FORMATION_WALL_OFFSET },
++      position: { x: 0, z: FORMATION_WALL_OFFSET + separation / 2 },
+       facingAngle: 0,
+     },
+     {
+       index: 1,
+-      position: { x: 0, z: FORMATION_WALL_OFFSET },
++      position: { x: 0, z: FORMATION_WALL_OFFSET - separation / 2 },
+       facingAngle: Math.PI,
+     },
+   ];
 diff --git a/src/lib/debug/avatar-debug-hooks.ts b/src/lib/debug/avatar-debug-hooks.ts
 index 7a39174683bca72ec068a727f5e748a7269cb528..7a4e8296c490761589c8da9bf3efe82e1fb6bd10 100644
 --- a/src/lib/debug/avatar-debug-hooks.ts
@@ -30432,10 +30596,10 @@ index f906b396cdb9f1a924c617f9a44c5978f9cfd46b..d78c415dce9399f16b6c8654b88ba70a
    /** Per-foot contact state: 0 = airborne, 1 = fully planted. */
 diff --git a/src/lib/services/geometry/BodyCollisionGeometry.ts b/src/lib/services/geometry/BodyCollisionGeometry.ts
 new file mode 100644
-index 0000000000000000000000000000000000000000..804080e43f4dc206951115861d4b871fe92f612e
+index 0000000000000000000000000000000000000000..9c0deac263a423caf52a751a50ec4c8e50a6cdab
 --- /dev/null
 +++ b/src/lib/services/geometry/BodyCollisionGeometry.ts
-@@ -0,0 +1,68 @@
+@@ -0,0 +1,133 @@
 +import { Vector3 } from "three";
 +
 +export const FACE_RADIUS = 0.09;
@@ -30503,6 +30667,71 @@ index 0000000000000000000000000000000000000000..804080e43f4dc206951115861d4b871f
 +  );
 +  closestOut.copy(segmentStart).addScaledVector(segmentScratch, t);
 +  return point.distanceTo(closestOut);
++}
++
++/**
++ * Shortest distance between segments firstStart→firstEnd and
++ * secondStart→secondEnd, from their exact closest points (Ericson, Real-Time
++ * Collision Detection, 5.1.9). The three scratch vectors must be distinct from
++ * each other and from every input.
++ */
++export function segmentToSegmentDistance(
++  firstStart: Vector3,
++  firstEnd: Vector3,
++  secondStart: Vector3,
++  secondEnd: Vector3,
++  firstDirectionScratch: Vector3,
++  secondDirectionScratch: Vector3,
++  offsetScratch: Vector3
++): number {
++  const first = firstDirectionScratch.subVectors(firstEnd, firstStart);
++  const second = secondDirectionScratch.subVectors(secondEnd, secondStart);
++  const offset = offsetScratch.subVectors(firstStart, secondStart);
++  const firstLengthSq = first.lengthSq();
++  const secondLengthSq = second.lengthSq();
++  const secondAlongOffset = second.dot(offset);
++  let s = 0;
++  let t = 0;
++
++  if (firstLengthSq < 1e-8 && secondLengthSq < 1e-8) return offset.length();
++
++  if (firstLengthSq < 1e-8) {
++    t = clampUnit(secondAlongOffset / secondLengthSq);
++  } else {
++    const firstAlongOffset = first.dot(offset);
++    if (secondLengthSq < 1e-8) {
++      s = clampUnit(-firstAlongOffset / firstLengthSq);
++    } else {
++      const firstAlongSecond = first.dot(second);
++      const denominator =
++        firstLengthSq * secondLengthSq - firstAlongSecond * firstAlongSecond;
++      // Parallel segments start from s = 0; the clamps below still reach the
++      // closest pair.
++      s =
++        denominator > 1e-12
++          ? clampUnit(
++              (firstAlongSecond * secondAlongOffset -
++                firstAlongOffset * secondLengthSq) /
++                denominator
++            )
++          : 0;
++      t = (firstAlongSecond * s + secondAlongOffset) / secondLengthSq;
++      if (t < 0) {
++        t = 0;
++        s = clampUnit(-firstAlongOffset / firstLengthSq);
++      } else if (t > 1) {
++        t = 1;
++        s = clampUnit((firstAlongSecond - firstAlongOffset) / firstLengthSq);
++      }
++    }
++  }
++
++  // (firstStart + s·first) − (secondStart + t·second)
++  return offset.addScaledVector(first, s).addScaledVector(second, -t).length();
++}
++
++function clampUnit(value: number): number {
++  return Math.max(0, Math.min(1, value));
 +}
 diff --git a/src/lib/services/geometry/CylindricalGripGeometry.ts b/src/lib/services/geometry/CylindricalGripGeometry.ts
 new file mode 100644
@@ -34929,10 +35158,10 @@ index f8a2b8ddba4717fa9c4594e099d623a2c3ac14e5..a2cde2dada0e28f612e0a683532b902b
          bestDist = dist;
          best = clip;
 diff --git a/src/lib/services/implementations/CollisionDetector.ts b/src/lib/services/implementations/CollisionDetector.ts
-index 7bcee43c7bd19f3e7aa820ab57f8902cd7e90ca9..145b22db339a0b1197cbd5228c7be949a2a9e62e 100644
+index 7bcee43c7bd19f3e7aa820ab57f8902cd7e90ca9..73ace478c7a0534d15101506a44f27ec7ff94fae 100644
 --- a/src/lib/services/implementations/CollisionDetector.ts
 +++ b/src/lib/services/implementations/CollisionDetector.ts
-@@ -27,14 +27,16 @@ import type {
+@@ -27,14 +27,17 @@ import type {
    CollisionSeverity,
    PropSegment,
  } from "../contracts/ICollisionDetector";
@@ -34953,20 +35182,24 @@ index 7bcee43c7bd19f3e7aa820ab57f8902cd7e90ca9..145b22db339a0b1197cbd5228c7be949
 +  FOREARM_TORSO_CLEARANCE,
 +  TORSO_RADIUS,
 +  pointToSegmentDistance,
++  segmentToSegmentDistance,
 +} from "../geometry/BodyCollisionGeometry";
  
  // How close two arm segments can get before we flag overlap
  const ARM_ARM_THRESHOLD = 0.06;
-@@ -55,6 +57,8 @@ const COOLDOWN_MS: Record<CollisionSeverity, number> = {
+@@ -55,6 +58,11 @@ const COOLDOWN_MS: Record<CollisionSeverity, number> = {
  const _tempA = new Vector3();
  const _tempB = new Vector3();
  const _closest = new Vector3();
++const _segmentDirectionA = new Vector3();
++const _segmentDirectionB = new Vector3();
++const _segmentOffset = new Vector3();
 +const _leftUpperBodyStart = new Vector3();
 +const _rightUpperBodyStart = new Vector3();
  
  // Severity badge for console
  const SEVERITY_BADGE: Record<CollisionSeverity, string> = {
-@@ -122,7 +126,7 @@ export class CollisionDetector implements ICollisionDetector {
+@@ -122,7 +130,7 @@ export class CollisionDetector implements ICollisionDetector {
      //    the bone-based distance check stays ~14 cm away.
      for (const { label, seg } of propPairs) {
        const closest = this.pointToSegmentDistance(body.face, seg.a, seg.b);
@@ -34975,7 +35208,7 @@ index 7bcee43c7bd19f3e7aa820ab57f8902cd7e90ca9..145b22db339a0b1197cbd5228c7be949
        if (closest < threshold) {
          const depth = threshold - closest;
          events.push(this.makeEvent("prop-through-head", stepNumber, beatProgress, depth,
-@@ -161,7 +165,7 @@ export class CollisionDetector implements ICollisionDetector {
+@@ -161,7 +169,7 @@ export class CollisionDetector implements ICollisionDetector {
      for (const { label, seg } of propPairs) {
        for (const arm of armSegments) {
          const closest = this.segmentToSegmentDistance(seg.a, seg.b, arm.a, arm.b);
@@ -34984,7 +35217,7 @@ index 7bcee43c7bd19f3e7aa820ab57f8902cd7e90ca9..145b22db339a0b1197cbd5228c7be949
          if (closest < threshold) {
            const depth = threshold - closest;
            events.push(this.makeEvent("prop-through-arm", stepNumber, beatProgress, depth,
-@@ -178,7 +182,7 @@ export class CollisionDetector implements ICollisionDetector {
+@@ -178,7 +186,7 @@ export class CollisionDetector implements ICollisionDetector {
          blueProp.a, blueProp.b,
          redProp.a,  redProp.b
        );
@@ -34993,7 +35226,7 @@ index 7bcee43c7bd19f3e7aa820ab57f8902cd7e90ca9..145b22db339a0b1197cbd5228c7be949
        if (closest < threshold) {
          const depth = threshold - closest;
          events.push(this.makeEvent("prop-through-prop", stepNumber, beatProgress, depth,
-@@ -190,18 +194,75 @@ export class CollisionDetector implements ICollisionDetector {
+@@ -190,18 +198,75 @@ export class CollisionDetector implements ICollisionDetector {
      //    Uses body.face so the collision zone matches where the visual
      //    face actually is, not where the Mixamo head joint sits.
      const leftArmDist = this.pointToSegmentDistance(body.face, body.leftElbow, body.leftHand);
@@ -35073,7 +35306,7 @@ index 7bcee43c7bd19f3e7aa820ab57f8902cd7e90ca9..145b22db339a0b1197cbd5228c7be949
      }
  
      // 4. Arms through each other - forearm segments
-@@ -251,14 +312,14 @@ export class CollisionDetector implements ICollisionDetector {
+@@ -251,31 +316,32 @@ export class CollisionDetector implements ICollisionDetector {
    }
  
    private pointToSegmentDistance(point: Vector3, segA: Vector3, segB: Vector3): number {
@@ -35095,7 +35328,39 @@ index 7bcee43c7bd19f3e7aa820ab57f8902cd7e90ca9..145b22db339a0b1197cbd5228c7be949
 +    );
    }
  
++  /**
++   * Exact closest distance between two segments, on scratch vectors of its
++   * own. The sampled version this replaced wrote each sample into _tempA,
++   * which pointToSegmentDistance also uses as scratch, so it measured from the
++   * wrong point and no arm or staff crossing was ever reported.
++   */
    private segmentToSegmentDistance(a0: Vector3, a1: Vector3, b0: Vector3, b1: Vector3): number {
+-    let minDist = Infinity;
+-    for (let i = 0; i <= 3; i++) {
+-      const t = i / 3;
+-      _tempA.lerpVectors(a0, a1, t);
+-      const d = this.pointToSegmentDistance(_tempA, b0, b1);
+-      if (d < minDist) minDist = d;
+-    }
+-    for (let i = 0; i <= 3; i++) {
+-      const t = i / 3;
+-      _tempA.lerpVectors(b0, b1, t);
+-      const d = this.pointToSegmentDistance(_tempA, a0, a1);
+-      if (d < minDist) minDist = d;
+-    }
+-    return minDist;
++    return segmentToSegmentDistance(
++      a0,
++      a1,
++      b0,
++      b1,
++      _segmentDirectionA,
++      _segmentDirectionB,
++      _segmentOffset
++    );
+   }
+ 
+   private makeEvent(
 diff --git a/src/lib/services/implementations/ContactRetargeter.ts b/src/lib/services/implementations/ContactRetargeter.ts
 new file mode 100644
 index 0000000000000000000000000000000000000000..7187a0547969aa1a7e503a53c37445efb94c774c

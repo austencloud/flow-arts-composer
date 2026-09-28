@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t as translate } from "$lib/shared/i18n/i18n.svelte.js";
   /**
    * Codex 2/1 - Type 2/3 - Level 2 body page 30 (manifest `codex-2-1-t23`), faithful
    * to old p30. p21 split-column layout with 2 turns on the high slot and 1 on the
@@ -27,8 +28,8 @@
     [...T2b.map((l) => cell(l, "opp")), ...T3b.map((l) => cell(l, "opp"))],
   ];
 
-  const leftHeader = [{ t: "Type 2 - " }, { t: "Shift", c: "#7048b6" }];
-  const rightHeader = [{ t: "Type 3 - " }, { t: "Cross", c: "#2f9e44" }, { t: "-Shift", c: "#7048b6" }];
+  const leftHeader = [{ t: translate("guide_l2_print_type_2") + " - " }, { t: "Shift", c: "#7048b6" }];
+  const rightHeader = [{ t: translate("guide_l2_print_type_3") + " - " }, { t: "Cross", c: "#2f9e44" }, { t: "-Shift", c: "#7048b6" }];
 </script>
 
 <CodexGridPage turnLabel="2 / 1" {leftHeader} {rightHeader} {rows} />
