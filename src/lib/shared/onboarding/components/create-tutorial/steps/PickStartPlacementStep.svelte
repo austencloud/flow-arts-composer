@@ -5,6 +5,7 @@
   Auto-advances when a placement is selected (no Continue button needed).
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte";
   import { onMount, onDestroy } from "svelte";
   import { createSimplifiedStartPlacementState } from "$lib/shared/create/state/start-placement-state.svelte";
   import { createTutorialState } from "../../../state/create-tutorial-state.svelte";
@@ -42,7 +43,7 @@
 
 <div class="tutorial-step">
   <div class="step-header">
-    <h1 id="tutorial-step-title" class="title">Pick a starting placement</h1>
+    <h1 id="tutorial-step-title" class="title">{t('tutorial_pick_start')}</h1>
   </div>
 
   <div class="picker-container">

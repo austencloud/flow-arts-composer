@@ -219,7 +219,7 @@ Animates forward in z-axis and expands to fill the container space
       const match = rhythmGate.reason.match(
         /^(\d+) beats can't split into (\d+) equal parts$/
       );
-      return match
+      return match?.[1] && match[2]
         ? t("create_deep_loop_cannot_split", {
             beats: match[1],
             parts: match[2],
@@ -759,9 +759,9 @@ Animates forward in z-axis and expands to fill the container space
                 onToggleComponent={handleToggle}
               />
               <p class="mobile-picker-hint">
-                Tap a LOOP to select it. Use
+                {t("create_generate_loop_select_hint_start")}
                 <FontAwesomeIcon icon="fas fa-sliders" size="0.85em" />
-                to change its settings.
+                {t("create_generate_loop_select_hint_end")}
               </p>
             </div>
           {/if}

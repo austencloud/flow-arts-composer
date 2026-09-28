@@ -5,6 +5,7 @@
    * orientations, the print artboard is the source of truth for this data.
    */
   import GuideSection from "../../../level-1/_components/GuideSection.svelte";
+  import { t as translate } from "$lib/shared/i18n/i18n.svelte.js";
   import SequenceShowcase from "../../../level-1/_components/SequenceShowcase.svelte";
   import TurnStrip, {
     type TurnStripFrame,
@@ -225,19 +226,14 @@
   });
 </script>
 
-<GuideSection id="turn-shifts" title="Shifts" subtitle="VTG: 1:3">
+<GuideSection id="turn-shifts" title={translate("guide_l2_shifts_title")} subtitle="VTG: 1:3">
   <div class="section-body">
     <p>
-      <strong>Turns:</strong> A turn is a 180° rotation that occurs during a motion.
-      Let's add a single turn to a shift.
+      <strong>{translate("guide_l2_turns_label")}:</strong> {translate("guide_l2_shifts_intro")}
     </p>
 
     <p>
-      First we'll add 1 turn to a prospin. Take note of the diagonal halfway
-      position, and pause there for a moment before continuing. These arrows
-      refer to the pinky end on the first half, then to the thumb end on the
-      second half. The full arrow depicts a half-circle, from the start
-      position's outer point.
+      {translate("guide_l2_shifts_pro_intro")}
     </p>
   </div>
 
@@ -253,23 +249,21 @@
         <TurnStrip
           frames={proFrames}
           activeT={t}
-          caption="Prospin: the staff's spin matches its arc, so the turn and the shift from east to south blend into one curl"
+          caption={translate("guide_l2_shifts_pro_caption")}
         />
       {/snippet}
     </SequenceShowcase>
   </div>
 
   <div class="section-body">
-    <p>Each turn adds a thumb switch.</p>
+    <p>{translate("guide_l2_shifts_thumb_rule")}</p>
 
     <p>
-      <strong>Pro:</strong> An isolation has 0 thumb switches, therefore a prospin
-      with a turn has 1 thumb switch (in → out)
+      <strong>Pro:</strong> {translate("guide_l2_shifts_pro_thumb")}
     </p>
 
     <p>
-      Now let's add 1 turn to an antispin. Again, take note of the diagonal
-      halfway position, and pause there before continuing.
+      {translate("guide_l2_shifts_anti_intro")}
     </p>
   </div>
 
@@ -285,7 +279,7 @@
         <TurnStrip
           frames={antiFrames}
           activeT={t}
-          caption="Antispin: the staff's spin fights its arc, curling back against the shift from east to south"
+          caption={translate("guide_l2_shifts_anti_caption")}
         />
       {/snippet}
     </SequenceShowcase>
@@ -293,8 +287,7 @@
 
   <div class="section-body">
     <p>
-      <strong>Anti:</strong> A base antispin has 1 thumb switch. (in → out), therefore
-      an antispin with a turn has 2 thumb switches (in → out → in).
+      <strong>Anti:</strong> {translate("guide_l2_shifts_anti_thumb")}
     </p>
   </div>
 </GuideSection>

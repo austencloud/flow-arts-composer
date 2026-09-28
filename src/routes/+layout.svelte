@@ -436,7 +436,7 @@
 
     // i18n is lightweight - safe for landing
     const { initI18n } = await import("$lib/shared/i18n/i18n.svelte.js");
-    initI18n();
+    await initI18n();
 
     // Landing doesn't need DI container or auth - mark ready immediately
     containerReady = true;
@@ -513,7 +513,16 @@
 
     // Load composition root - triggers all service registrations
     bootProfiler.mark("di-container");
-    await imports.di;
+    // Load the selected language alongside the container. Child components
+    // must not capture English labels while the saved locale is still loading.
+    await Promise.all([
+      imports.di,
+      imports.i18n.then(async ({ initI18n }) => {
+        bootProfiler.mark("i18n");
+        await initI18n();
+        bootProfiler.end("i18n");
+      }),
+    ]);
     bootProfiler.end("di-container");
 
     // Mark container ready so children can render immediately
@@ -646,12 +655,6 @@
         bootProfiler.end("posthog");
       }
     })();
-
-    // i18n
-    bootProfiler.mark("i18n");
-    const { initI18n } = await imports.i18n;
-    initI18n();
-    bootProfiler.end("i18n");
 
     // Modal URL state
     const { initModalUrlState, cleanupModalUrlState } =

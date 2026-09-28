@@ -5,6 +5,8 @@ import {
   EASING_PRESETS,
   adjacentKeyframeSeconds,
   boxAt,
+  channelKeyframeSeconds,
+  channelSegments,
   channelValueAt,
   channelsOf,
   clampChannelValue,
@@ -16,6 +18,7 @@ import {
   keyframeInView,
   keyframeMarkers,
   keyframeTimeOf,
+  moveKeyframe,
   moveKeyframes,
   opacityAt,
   postSecondsOfKeyframe,
@@ -449,6 +452,63 @@ describe("moveKeyframes", () => {
   it("is a no-op for a channel with no keyframe at fromS", () => {
     const t = setKeyframe(text("t", 0, 10), "opacity", 2, 0.2);
     expect(moveKeyframes(t, 5, 6)).toBe(t);
+  });
+});
+
+describe("moveKeyframe", () => {
+  it("moves only the named channel's keyframe", () => {
+    let t = text("t", 0, 10);
+    t = setKeyframe(t, "opacity", 2, 0.2);
+    t = setKeyframe(t, "box", 2, t.box);
+    const moved = moveKeyframe(t, "opacity", 2, 6);
+    expect(moved.keyframes?.opacity?.[0]?.t).toBe(6);
+    expect(moved.keyframes?.box?.[0]?.t).toBe(2);
+  });
+
+  it("keeps the moved keyframe's value and easing", () => {
+    let t = setKeyframe(text("t", 0, 10), "opacity", 2, 0.2);
+    t = setKeyframe(t, "opacity", 8, 0.8);
+    t = setSegmentEasing(t, "opacity", 2, "hold");
+    const moved = moveKeyframe(t, "opacity", 2, 4);
+    expect(moved.keyframes?.opacity?.[0]).toEqual({ t: 4, value: 0.2, easing: "hold" });
+  });
+
+  it("returns the same item when nothing moves", () => {
+    const t = setKeyframe(text("t", 0, 10), "opacity", 2, 0.2);
+    expect(moveKeyframe(t, "opacity", 2, 2)).toBe(t);
+    expect(moveKeyframe(t, "box", 2, 6)).toBe(t);
+  });
+});
+
+describe("channelKeyframeSeconds / channelSegments", () => {
+  it("lists one channel's in-view keyframes in post seconds, earliest first", () => {
+    let t = text("t", 2, 10); // spans post [2, 12]
+    t = setKeyframe(t, "opacity", 9, 0.9);
+    t = setKeyframe(t, "opacity", 3, 0.3);
+    t = setKeyframe(t, "box", 5, t.box);
+    expect(channelKeyframeSeconds(t, "opacity")).toEqual([3, 9]);
+    expect(channelKeyframeSeconds(t, "box")).toEqual([5]);
+    expect(channelKeyframeSeconds(text("u", 0, 5), "opacity")).toEqual([]);
+  });
+
+  it("leaves out a video keyframe a trim has pushed out of view", () => {
+    let v = video("v", { sourceIn: 0, sourceOut: 10, speed: 1 });
+    v = setKeyframe(v, "framing", 2);
+    v = setKeyframe(v, "framing", 8);
+    const trimmed = { ...v, sourceIn: 4, duration: 6 };
+    expect(channelKeyframeSeconds(trimmed, "framing")).toEqual([4]);
+  });
+
+  it("gives every segment with its departing easing, even partly out of view", () => {
+    let t = setKeyframe(text("t", 0, 10), "opacity", 2, 0.2);
+    t = setKeyframe(t, "opacity", 5, 0.5);
+    t = setKeyframe(t, "opacity", 8, 0.8);
+    t = setSegmentEasing(t, "opacity", 6, "hold");
+    expect(channelSegments(t, "opacity")).toEqual([
+      { fromSeconds: 2, toSeconds: 5, easing: DEFAULT_EASING, index: 0 },
+      { fromSeconds: 5, toSeconds: 8, easing: "hold", index: 1 },
+    ]);
+    expect(channelSegments(setKeyframe(text("u", 0, 5), "opacity", 1, 0.1), "opacity")).toEqual([]);
   });
 });
 

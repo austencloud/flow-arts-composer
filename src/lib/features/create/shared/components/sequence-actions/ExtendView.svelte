@@ -56,12 +56,12 @@
     if (!analysis) return "";
     const end = analysis.currentEndPlacement;
     if (analysis.extensionType !== "already_complete") {
-      return `Ends at ${end}. Choose a closing pattern.`;
+      return t("create_extend_end", { placement: end ?? "—" });
     }
     if (orientationRepeat) {
-      return `Returns to ${end} after ${orientationRepeat.count} repeats.`;
+      return t("create_extend_returns", { placement: end ?? "—", count: orientationRepeat.count });
     }
-    return "Placement and orientation both close.";
+    return t("create_ui_placement_and_orientation_both_close");
   });
 
   function handleBridgeSelect(option: CircularizationOption) {
@@ -106,11 +106,10 @@
       <p class="status-line" class:open={orientationRepeat !== null}>
         <span class="status-sizer" aria-hidden="true">
           <span
-            >Ends at {analysis.currentEndPlacement}. Choose a closing pattern.</span
+            >{t("create_extend_end", { placement: analysis.currentEndPlacement ?? "—" })}</span
           >
           <span
-            >Returns to {analysis.currentEndPlacement} after
-            {orientationRepeat?.count ?? 8} repeats.</span
+            >{t("create_extend_returns", { placement: analysis.currentEndPlacement ?? "—", count: orientationRepeat?.count ?? 8 })}</span
           >
           <span>{t("create_ui_placement_and_orientation_both_close")}</span>
         </span>

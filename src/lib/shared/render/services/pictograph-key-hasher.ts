@@ -14,6 +14,7 @@ import {
   normalizeFanAppearance,
 } from "$lib/shared/pictograph/prop/domain/fan-appearance";
 import { renderedPropLook } from "$lib/shared/pictograph/prop/domain/prop-look";
+import { renderedTriangleGrip } from "$lib/shared/pictograph/prop/domain/triangle-appearance";
 // getSettings loaded dynamically to avoid pulling $app/environment into worker bundle
 
 interface MotionKeyData {
@@ -53,6 +54,9 @@ interface PictographKeyInput {
     // Present only when a captured model sprite replaces a notation prop, so
     // every notation render keeps its established lsp11/lsp12 key.
     propLook?: "model";
+    // Present only when a triangle is drawn with the side grip, so corner-grip
+    // renders and every other prop keep their established key.
+    triangleGrip?: "side";
     primaryPropColors?: { left: string; right: string };
     primaryPropColorRevision?: string;
     showTKA: boolean;
@@ -300,6 +304,13 @@ export class PictographKeyHasher {
       resolvedRightProp,
       propLook
     );
+    // A hand path draws hands, so the grip cannot change a pixel there.
+    const triangleGrip = visibility.handPathMode
+      ? undefined
+      : renderedTriangleGrip(visibility.triangleGrip, [
+          resolvedLeftProp,
+          resolvedRightProp,
+        ]);
     const turnGlyphRevision = getTurnGlyphRevision(
       data,
       visibility.showTKA ?? true
@@ -327,6 +338,7 @@ export class PictographKeyHasher {
             ),
           }),
         ...(propLook && { propLook }),
+        ...(triangleGrip && { triangleGrip }),
         ...(visibility.primaryPropColors && {
           primaryPropColors: visibility.primaryPropColors,
           primaryPropColorRevision: "material-colors-v2",

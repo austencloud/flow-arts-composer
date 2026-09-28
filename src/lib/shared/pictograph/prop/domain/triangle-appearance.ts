@@ -22,6 +22,20 @@ export function isTrianglePropType(
 }
 
 /**
+ * The grip a render of these props is cached under: "side" only when a
+ * triangle is drawn with the side grip. Every other case returns undefined,
+ * so corner-grip cells and every other prop keep the cache keys (local and
+ * cloud) they had before pictographs followed the grip.
+ */
+export function renderedTriangleGrip(
+  triangleGrip: TriangleGrip | null | undefined,
+  propTypes: readonly (string | null | undefined)[]
+): "side" | undefined {
+  if (normalizeTriangleGrip(triangleGrip) !== "side") return undefined;
+  return propTypes.some(isTrianglePropType) ? "side" : undefined;
+}
+
+/**
  * Renderer-only identity, like `resolveFanRenderKey`: the corner grip is the
  * notation glyph, the side grip is a look on top of it. Never enters PropType,
  * choreography, or URLs.

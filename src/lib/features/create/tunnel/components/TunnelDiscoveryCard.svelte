@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import PanelSpinner from "$lib/shared/components/panel/PanelSpinner.svelte";
   import TkaLabel from "$lib/shared/components/TkaLabel.svelte";
   import type { TunnelDiscoverySummary } from "$lib/features/tunnel-collection/domain/tunnel-discovery";
@@ -27,8 +28,8 @@
 
   const detailLabel = $derived(
     summary
-      ? `${summary.authoredCount} authored performers, ${summary.renderedCount} rendered instances, ${summary.propsLabel}, ${summary.recipeLabel}, ${summary.formationLabel}, ${summary.effectLabel}, ${summary.bpm} BPM`
-      : "artifact details loading"
+      ? t("tunnel_discovery_summary", { authored: summary.authoredCount, rendered: summary.renderedCount, props: summary.propsLabel, recipe: summary.recipeLabel, formation: summary.formationLabel, effect: summary.effectLabel, bpm: summary.bpm })
+      : t("tunnel_details_loading")
   );
 </script>
 
@@ -50,17 +51,17 @@
     {#if posterState === "refreshing"}
       <span class="poster-progress" role="status">
         <PanelSpinner size={11} />
-        Building a better preview
+        {t("create_review_building_a_better_preview")}
       </span>
     {:else if posterState === "failed"}
       <span class="poster-progress poster-failed">
         <i class="fas fa-triangle-exclamation" aria-hidden="true"></i>
-        Preview kept · retry available
+        {t("create_review_preview_kept_retry_available")}
       </span>
     {:else if active}
       <span class="active-badge">
         <i class="fas fa-pen" aria-hidden="true"></i>
-        Editing
+        {t("tunnel_editing")}
       </span>
     {/if}
   </span>
@@ -75,11 +76,11 @@
 
     {#if summary}
       <span class="counts">
-        <strong>{summary.authoredCount}</strong> authored
+        <strong>{summary.authoredCount}</strong> {t("tunnel_count_authored")}
         <span aria-hidden="true">·</span>
-        <strong>{summary.renderedCount}</strong> on stage
+        <strong>{summary.renderedCount}</strong> {t("tunnel_count_on_stage")}
         <span aria-hidden="true">·</span>
-        <strong>{summary.propCount}</strong> props
+        <strong>{summary.propCount}</strong> {t("tunnel_count_props")}
       </span>
       <span class="props">{summary.propsLabel}</span>
       <span class="recipe">{summary.recipeLabel}</span>
@@ -91,7 +92,7 @@
     {:else}
       <span class="detail-placeholder" aria-hidden="true"></span>
       <span class="detail-placeholder short" aria-hidden="true"></span>
-      <span class="loading-copy">Loading props and formation…</span>
+      <span class="loading-copy">{t("create_review_loading_props_and_formation")}</span>
     {/if}
 
     <span class="saved-date">{dateLabel}</span>

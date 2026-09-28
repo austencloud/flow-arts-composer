@@ -1,7 +1,8 @@
 <script lang="ts">
-  import { tick, untrack } from "svelte";
+  import { tick, untrack, type Snippet } from "svelte";
   import type {
     PostItem,
+    PostKeyframeChannel,
     PostProject,
     PostTrack,
   } from "$lib/shared/media-composition/domain/post-project";
@@ -14,10 +15,21 @@
     itemEnd,
     mainItems,
   } from "$lib/shared/media-composition/domain/post-project";
-  import { keyframeMarkers } from "$lib/shared/media-composition/domain/post-project-keyframes";
+  import {
+    channelKeyframeSeconds,
+    channelValueAt,
+    channelsOf,
+    isAnimated,
+    keyframeIndexAt,
+    moveKeyframe,
+  } from "$lib/shared/media-composition/domain/post-project-keyframes";
   import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { growFade } from "$lib/shared/transitions/motion";
   import TimeRuler from "$lib/shared/timeline/TimeRuler.svelte";
+  import { channelValueText } from "../post-editor-labels";
   import PostTimelineItem from "./PostTimelineItem.svelte";
+  import PostTimelineKeyLane from "./PostTimelineKeyLane.svelte";
+  import PostTimelineKeyLaneHeader from "./PostTimelineKeyLaneHeader.svelte";
   import PostTimelineTrackHeader from "./PostTimelineTrackHeader.svelte";
   import PostTimelineZoomControls from "./PostTimelineZoomControls.svelte";
   import {
@@ -31,10 +43,12 @@
     placeDraggedOverlay,
     revealPlayheadScrollLeft,
     roundToFrameSeconds,
+    rowsYWithoutKeyLanes,
     rulerTickInterval,
     scrollLeftForStableAnchor,
     secondsToPixels,
     snapToTargets,
+    type KeyLanesBand,
     type OverlayRowHit,
   } from "./post-timeline-geometry";
 
@@ -74,8 +88,29 @@
       flag: "hidden" | "locked",
       value: boolean
     ) => void;
-    onMoveKeyframe: (itemId: string, fromSeconds: number, toSeconds: number) => void;
-    onDeleteKeyframesAt: (itemId: string, seconds: number) => void;
+    /**
+     * The channel the toolbar diamond and K key: its keyframe row shows under
+     * the selected clip even before it has keys. Null with no clip selected.
+     */
+    keyChannel: PostKeyframeChannel | null;
+    /**
+     * The channel the open tool edits. Its row stays up while another row is
+     * picked, so picking a row never takes one away.
+     */
+    toolChannel: PostKeyframeChannel | null;
+    onKeyChannel: (channel: PostKeyframeChannel) => void;
+    onToggleKey: (itemId: string, channel: PostKeyframeChannel, seconds: number) => void;
+    onMoveKey: (
+      itemId: string,
+      channel: PostKeyframeChannel,
+      fromSeconds: number,
+      toSeconds: number
+    ) => void;
+    onDeleteKey: (itemId: string, channel: PostKeyframeChannel, seconds: number) => void;
+    /** A curve between two keys was pressed: open its easing. */
+    onOpenCurve: (itemId: string, channel: PostKeyframeChannel, fromSeconds: number) => void;
+    /** The toolbar's left end, beside the zoom controls: the keyframe buttons. */
+    toolbarStart?: Snippet;
     onAddVideo?: () => void;
     pixelsPerSecond?: number;
   }
@@ -96,8 +131,14 @@
     onMoveMain,
     onMoveOverlay,
     onTrackFlag,
-    onMoveKeyframe,
-    onDeleteKeyframesAt,
+    keyChannel,
+    toolChannel,
+    onKeyChannel,
+    onToggleKey,
+    onMoveKey,
+    onDeleteKey,
+    onOpenCurve,
+    toolbarStart,
     onAddVideo,
     pixelsPerSecond = $bindable(POST_TIMELINE_DEFAULT_PIXELS_PER_SECOND),
   }: Props = $props();
@@ -106,6 +147,7 @@
   const OVERLAY_ROW_HEIGHT_PX = 52;
   const MAIN_ROW_HEIGHT_PX = 72;
   const RULER_HEIGHT_PX = 36; // Matches TimelineBody's ruler height for consistency.
+  const KEY_LANE_HEIGHT_PX = 44;
   const TRAILING_PADDING_PX = 64;
   const DRAG_THRESHOLD_PX = 4;
   const ZOOM_STEP_FACTOR = 1.25;
@@ -123,7 +165,7 @@
   let userScrollTimeoutId: ReturnType<typeof setTimeout> | undefined;
   let suppressNextScrollEvent = false;
   let suppressNextClickForItemId: string | null = null;
-  let suppressNextMarkerClick = false;
+  let suppressNextKeyClick = false;
   let didFitOnce = false;
   let previousHasItems: boolean | null = null;
 
@@ -187,6 +229,7 @@
   interface KeyframeDrag {
     kind: "keyframe";
     itemId: string;
+    channel: PostKeyframeChannel;
     pointerId: number;
     startClientX: number;
     startClientY: number;
@@ -195,6 +238,7 @@
     originalSeconds: number;
     itemStartSeconds: number;
     itemEndSeconds: number;
+    frozenTargets: number[];
     pendingSeconds: number;
   }
 
@@ -206,17 +250,6 @@
   const mainItemsList = $derived(mainItems(project));
   const hasItems = $derived(
     project.tracks.some((track) => track.items.length > 0)
-  );
-  const mainRowTopPx = $derived(overlayTrackCount * OVERLAY_ROW_HEIGHT_PX);
-  const contentWidthPx = $derived(
-    Math.max(
-      lanesViewportWidthPx,
-      secondsToPixels(durationSeconds, pixelsPerSecond) + TRAILING_PADDING_PX
-    )
-  );
-  const playheadXPx = $derived(secondsToPixels(playheadSeconds, pixelsPerSecond));
-  const showNewLayerZone = $derived(
-    dragState?.kind === "move-overlay" && dragState.didDrag
   );
 
   interface TimelineRow {
@@ -258,6 +291,60 @@
     }
     return list;
   });
+
+  interface KeyLanes extends KeyLanesBand {
+    item: PostItem;
+    trackIndex: number;
+    locked: boolean;
+    channels: PostKeyframeChannel[];
+  }
+
+  /**
+   * The selected clip's keyframe rows, drawn under its own row: one per
+   * animated channel, plus the channel the toolbar diamond keys, so its row
+   * is there to key into before it has any.
+   */
+  const keyLanes = $derived.by((): KeyLanes | null => {
+    if (selectedItemId === null) return null;
+    const located = findItem(project, selectedItemId);
+    if (!located) return null;
+    const { item, trackIndex } = located;
+    const channels = channelsOf(item).filter(
+      (channel) =>
+        channel === keyChannel || channel === toolChannel || isAnimated(item, channel)
+    );
+    if (channels.length === 0) return null;
+    let topPx = 0;
+    for (const row of rows) {
+      topPx += row.heightPx;
+      if (row.trackIndex === trackIndex) break;
+    }
+    return {
+      item,
+      trackIndex,
+      locked: project.tracks[trackIndex]?.locked ?? false,
+      channels,
+      topPx,
+      heightPx: channels.length * KEY_LANE_HEIGHT_PX,
+    };
+  });
+
+  // The keyframe rows sit above the main row whenever the selected clip is
+  // on an overlay track.
+  const mainRowTopPx = $derived(
+    overlayTrackCount * OVERLAY_ROW_HEIGHT_PX +
+      (keyLanes && keyLanes.trackIndex !== MAIN_TRACK_INDEX ? keyLanes.heightPx : 0)
+  );
+  const contentWidthPx = $derived(
+    Math.max(
+      lanesViewportWidthPx,
+      secondsToPixels(durationSeconds, pixelsPerSecond) + TRAILING_PADDING_PX
+    )
+  );
+  const playheadXPx = $derived(secondsToPixels(playheadSeconds, pixelsPerSecond));
+  const showNewLayerZone = $derived(
+    dragState?.kind === "move-overlay" && dragState.didDrag
+  );
 
   const ghostLabelText = $derived.by(() => {
     if (!dragState || dragState.kind === "trim") return "";
@@ -537,52 +624,66 @@
     };
   }
 
-  function beginKeyframeDrag(
+  function beginKeyDrag(
     event: PointerEvent,
-    itemId: string,
-    seconds: number,
-    itemStartSeconds: number,
-    itemEndSeconds: number
+    lanes: KeyLanes,
+    channel: PostKeyframeChannel,
+    seconds: number
   ): void {
     if (event.button !== 0) return;
     // A drag whose closing click never landed must not eat this press's click.
-    suppressNextMarkerClick = false;
+    suppressNextKeyClick = false;
     (event.currentTarget as HTMLElement).setPointerCapture(event.pointerId);
+    const { item } = lanes;
+    // A key snaps to the playhead and to the clip's other keys, so keys on
+    // different rows line up.
+    const targets = new Set<number>([playheadSeconds]);
+    for (const other of channelsOf(item)) {
+      for (const key of channelKeyframeSeconds(item, other)) {
+        if (!(other === channel && Math.abs(key - seconds) <= POST_TIME_EPSILON)) {
+          targets.add(key);
+        }
+      }
+    }
     dragState = {
       kind: "keyframe",
-      itemId,
+      itemId: item.id,
+      channel,
       pointerId: event.pointerId,
       startClientX: event.clientX,
       startClientY: event.clientY,
       didDrag: false,
       frozenPixelsPerSecond: pixelsPerSecond,
       originalSeconds: seconds,
-      itemStartSeconds,
-      itemEndSeconds,
+      itemStartSeconds: item.start,
+      itemEndSeconds: itemEnd(item),
+      frozenTargets: Array.from(targets),
       pendingSeconds: seconds,
     };
   }
 
-  function handleMarkerActivate(seconds: number): void {
-    if (suppressNextMarkerClick) {
-      suppressNextMarkerClick = false;
+  function handleKeyClick(channel: PostKeyframeChannel, seconds: number): void {
+    if (suppressNextKeyClick) {
+      suppressNextKeyClick = false;
       return;
     }
+    onKeyChannel(channel);
     onSeek(seconds);
   }
 
-  function handleMarkerKeydown(
+  function handleKeyKeydown(
     event: KeyboardEvent,
-    itemId: string,
-    seconds: number,
-    itemStartSeconds: number,
-    itemEndSeconds: number
+    lanes: KeyLanes,
+    channel: PostKeyframeChannel,
+    seconds: number
   ): void {
-    const lanes = lanesContentEl;
+    if (lanes.locked) return;
+    const content = lanesContentEl;
+    const { item } = lanes;
     if (event.key === "Delete" || event.key === "Backspace") {
       event.preventDefault();
-      onDeleteKeyframesAt(itemId, seconds);
-      void refocusMarker(lanes, itemId, seconds);
+      onDeleteKey(item.id, channel, seconds);
+      void refocusKey(content, item.id, channel, seconds);
       return;
     }
     if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
@@ -590,43 +691,81 @@
       const big = event.shiftKey ? 10 : 1;
       const direction = event.key === "ArrowLeft" ? -1 : 1;
       const next = Math.min(
-        itemEndSeconds,
-        Math.max(itemStartSeconds, seconds + direction * big * (1 / POST_FRAME_RATE))
+        itemEnd(item),
+        Math.max(item.start, seconds + direction * big * (1 / POST_FRAME_RATE))
       );
       if (Math.abs(next - seconds) > POST_TIME_EPSILON) {
-        onMoveKeyframe(itemId, seconds, next);
-        void refocusMarker(lanes, itemId, next);
+        onMoveKey(item.id, channel, seconds, next);
+        void refocusKey(content, item.id, channel, next);
       }
     }
   }
 
   /**
-   * Keeps the keyboard on the keyframe it just moved, or on the nearest one
-   * left after a delete - and on the clip once none are - so the next key
-   * press does not fall through to the editor and move the playhead or
+   * Keeps the keyboard on the key it just moved, or on the nearest one left
+   * in its row after a delete - and on the clip once none are - so the next
+   * key press does not fall through to the editor and move the playhead or
    * delete the clip.
    */
-  async function refocusMarker(
-    lanes: HTMLElement | null,
+  async function refocusKey(
+    content: HTMLElement | null,
     itemId: string,
+    channel: PostKeyframeChannel,
     seconds: number
   ): Promise<void> {
     await tick();
-    if (!lanes) return;
+    if (!content) return;
     const selector = `[data-item-id="${CSS.escape(itemId)}"]`;
     let nearest: HTMLElement | null = null;
     let nearestDistance = Infinity;
-    for (const marker of lanes.querySelectorAll<HTMLElement>(`.kf-marker${selector}`)) {
-      const distance = Math.abs(Number(marker.dataset.seconds) - seconds);
+    for (const key of content.querySelectorAll<HTMLElement>(
+      `.kf-key${selector}[data-channel="${channel}"]`
+    )) {
+      const distance = Math.abs(Number(key.dataset.seconds) - seconds);
       if (distance < nearestDistance) {
         nearestDistance = distance;
-        nearest = marker;
+        nearest = key;
       }
     }
     const target =
-      nearest ?? lanes.querySelector<HTMLElement>(`.post-timeline-item${selector}`);
+      nearest ?? content.querySelector<HTMLElement>(`.post-timeline-item${selector}`);
     if (target && document.activeElement !== target) target.focus();
   }
+
+  /** The clip a keyframe row draws: during a key drag, with that key moved. */
+  function laneItem(lanes: KeyLanes, channel: PostKeyframeChannel): PostItem {
+    const state = dragState;
+    if (
+      state?.kind !== "keyframe" ||
+      !state.didDrag ||
+      state.itemId !== lanes.item.id ||
+      state.channel !== channel
+    ) {
+      return lanes.item;
+    }
+    return moveKeyframe(lanes.item, channel, state.originalSeconds, state.pendingSeconds);
+  }
+
+  // Once a clip is picked, scroll its keyframe rows into view if they sit
+  // below the fold, without pushing the clip's own row off the top.
+  let revealedLanesFor: string | null = null;
+  $effect(() => {
+    const lanes = keyLanes;
+    const key = lanes ? `${lanes.item.id}:${lanes.channels.length}` : null;
+    if (key === revealedLanesFor) return;
+    revealedLanesFor = key;
+    if (!lanes) return;
+    const rowHeightPx =
+      lanes.trackIndex === MAIN_TRACK_INDEX ? MAIN_ROW_HEIGHT_PX : OVERLAY_ROW_HEIGHT_PX;
+    const rowTopPx = lanes.topPx - rowHeightPx;
+    const bottomPx = lanes.topPx + lanes.heightPx;
+    void tick().then(() => {
+      const scroller = untrack(() => lanesScrollEl);
+      if (!scroller) return;
+      if (bottomPx <= scroller.scrollTop + scroller.clientHeight) return;
+      scroller.scrollTop = Math.min(bottomPx - scroller.clientHeight, rowTopPx);
+    });
+  });
 
   // --- Continuing / finishing a drag ------------------------------------------
 
@@ -640,7 +779,8 @@
     if (hit.kind === "main") return mainRowTopPx;
     if (hit.kind === "new-layer") return 0;
     const rankFromTop = overlayTrackCount - hit.trackIndex;
-    return rankFromTop * OVERLAY_ROW_HEIGHT_PX;
+    const topPx = rankFromTop * OVERLAY_ROW_HEIGHT_PX;
+    return keyLanes && topPx >= keyLanes.topPx ? topPx + keyLanes.heightPx : topPx;
   }
 
   function mainInsertionXPx(state: MoveMainDrag): number {
@@ -728,9 +868,19 @@
 
     if (state.kind === "keyframe") {
       const rawSeconds = pointerContentSeconds(event.clientX, state.frozenPixelsPerSecond);
+      const snapResult = snapToTargets(
+        rawSeconds,
+        state.frozenTargets,
+        state.frozenPixelsPerSecond
+      );
       const clamped = Math.min(
         state.itemEndSeconds,
-        Math.max(state.itemStartSeconds, roundToFrameSeconds(rawSeconds))
+        Math.max(
+          state.itemStartSeconds,
+          snapResult.snappedToSeconds !== null
+            ? snapResult.seconds
+            : roundToFrameSeconds(rawSeconds)
+        )
       );
       state.pendingSeconds = clamped;
       snapGuideSeconds = clamped;
@@ -756,7 +906,9 @@
     // on top. The zone draws over the ruler, so the rows never move mid-drag.
     const lanesTopPx = lanesScrollEl?.getBoundingClientRect().top ?? 0;
     const pointerYPx =
-      event.clientY < lanesTopPx ? -1 : event.clientY - contentOrigin().top;
+      event.clientY < lanesTopPx
+        ? -1
+        : rowsYWithoutKeyLanes(event.clientY - contentOrigin().top, keyLanes);
     const hit = overlayRowAtPointerY(pointerYPx, {
       overlayTrackCount,
       overlayRowHeightPx: OVERLAY_ROW_HEIGHT_PX,
@@ -803,9 +955,9 @@
           onMoveOverlay(state.itemId, state.snappedStartSeconds, targetTrackIndex);
         }
       } else {
-        suppressNextMarkerClick = true;
+        suppressNextKeyClick = true;
         if (Math.abs(state.pendingSeconds - state.originalSeconds) > POST_TIME_EPSILON) {
-          onMoveKeyframe(state.itemId, state.originalSeconds, state.pendingSeconds);
+          onMoveKey(state.itemId, state.channel, state.originalSeconds, state.pendingSeconds);
         }
       }
     }
@@ -839,6 +991,11 @@
 
 <div class="post-timeline" role="region" aria-label={t("post_timeline_region_label")}>
   <div class="toolbar-row">
+    {#if toolbarStart}
+      <div class="toolbar-start">
+        {@render toolbarStart()}
+      </div>
+    {/if}
     <PostTimelineZoomControls
       onZoomOut={() => handleZoomButton(1 / ZOOM_STEP_FACTOR)}
       onZoomIn={() => handleZoomButton(ZOOM_STEP_FACTOR)}
@@ -860,6 +1017,32 @@
           onToggleLocked={() =>
             onTrackFlag(row.track.id, "locked", !row.track.locked)}
         />
+        {#if keyLanes && keyLanes.trackIndex === row.trackIndex}
+          {@const lanes = keyLanes}
+          {@const inSpan =
+            playheadSeconds >= lanes.item.start - POST_TIME_EPSILON &&
+            playheadSeconds <= itemEnd(lanes.item) + POST_TIME_EPSILON}
+          {#each lanes.channels as channel (channel)}
+            <div class="key-lane-slot" transition:growFade|global>
+              <PostTimelineKeyLaneHeader
+                {channel}
+                heightPx={KEY_LANE_HEIGHT_PX}
+                valueText={channelValueText(
+                  channel,
+                  channelValueAt(lanes.item, channel, playheadSeconds)
+                )}
+                focused={channel === keyChannel}
+                hasKeyHere={keyframeIndexAt(lanes.item, channel, playheadSeconds) >= 0}
+                canKey={inSpan && !lanes.locked}
+                onFocus={() => onKeyChannel(channel)}
+                onToggleKey={() => {
+                  onKeyChannel(channel);
+                  onToggleKey(lanes.item.id, channel, playheadSeconds);
+                }}
+              />
+            </div>
+          {/each}
+        {/if}
       {/each}
     </div>
 
@@ -956,15 +1139,37 @@
                     beginBodyDrag(event, item, row.trackIndex)}
                   onHandlePointerDown={(event, edge) =>
                     beginHandleDrag(event, item, edge, row.trackIndex)}
-                  markers={keyframeMarkers(item)}
-                  onMarkerSeek={handleMarkerActivate}
-                  onMarkerPointerDown={(event, seconds) =>
-                    beginKeyframeDrag(event, item.id, seconds, item.start, itemEnd(item))}
-                  onMarkerKeydown={(event, seconds) =>
-                    handleMarkerKeydown(event, item.id, seconds, item.start, itemEnd(item))}
+                  animated={channelsOf(item).some((channel) => isAnimated(item, channel))}
                 />
               {/each}
             </div>
+            {#if keyLanes && keyLanes.trackIndex === row.trackIndex}
+              {@const lanes = keyLanes}
+              {#each lanes.channels as channel (channel)}
+                <div class="key-lane-slot" transition:growFade|global>
+                  <PostTimelineKeyLane
+                    item={laneItem(lanes, channel)}
+                    {channel}
+                    heightPx={KEY_LANE_HEIGHT_PX}
+                    {pixelsPerSecond}
+                    {playheadSeconds}
+                    focused={channel === keyChannel}
+                    locked={lanes.locked}
+                    onSeek={(seconds) => {
+                      onKeyChannel(channel);
+                      onSeek(seconds);
+                    }}
+                    onKeyPointerDown={(event, seconds) =>
+                      beginKeyDrag(event, lanes, channel, seconds)}
+                    onKeyClick={(seconds) => handleKeyClick(channel, seconds)}
+                    onKeyKeydown={(event, seconds) =>
+                      handleKeyKeydown(event, lanes, channel, seconds)}
+                    onCurveClick={(fromSeconds) =>
+                      onOpenCurve(lanes.item.id, channel, fromSeconds)}
+                  />
+                </div>
+              {/each}
+            {/if}
           {/each}
 
           {#if dragState?.kind === "move-main" && dragState.didDrag}
@@ -1012,10 +1217,27 @@
   }
 
   .toolbar-row {
+    container: post-timeline-toolbar / inline-size;
     display: flex;
     flex-shrink: 0;
+    align-items: center;
     justify-content: flex-end;
+    gap: 0.5rem;
     border-bottom: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.08));
+  }
+
+  /* The keyframe buttons, left of the zoom controls. */
+  .toolbar-start {
+    display: flex;
+    flex: 1;
+    align-items: center;
+    min-width: 0;
+    padding-left: 0.5rem;
+  }
+
+  .key-lane-slot {
+    flex-shrink: 0;
+    overflow: hidden;
   }
 
   .body {

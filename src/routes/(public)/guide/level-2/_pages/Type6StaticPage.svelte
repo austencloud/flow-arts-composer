@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { localizePrintLabel } from "../_components/localize-print-label";
+  import { t as translate } from "$lib/shared/i18n/i18n.svelte.js";
   /**
    * Type 6 - Static - Level 2 body page 12 (manifest `t6-static`), faithful to old
    * p13. Type 6 letters keep both hands static; matching type means the single turn
@@ -203,35 +205,32 @@
 <div class="t6-page">
   <!-- Intro. -->
   <p class="para" style="top:{66 * S}px; font-size:{16 * S}px; line-height:{19 * S}px">
-    Finally, Type 6 letters have both hands remaining static.<br />
-    Both types are the same (static|static), so the number goes in the high slot by default.
+    {@html translate("guide_l2_print_type6staticpage_0")}
   </p>
   <p class="para" style="top:{152 * S}px; right:{200 * S}px; font-size:{16 * S}px; line-height:{19 * S}px">
-    This includes <span class="tka">α</span>, <span class="tka">β</span>, and <span class="tka">Γ</span>.
+    {@html translate("guide_l2_print_type6staticpage_1")}
   </p>
   <div class="big-letter" style="left:{350 * S}px; top:{118 * S}px"><span class="tka">α</span></div>
-  <span class="lr hi" style="left:{438 * S}px; top:{115 * S}px">Left</span>
-  <span class="lr lo" style="left:{433 * S}px; top:{163 * S}px">Right</span>
+  <span class="lr hi" style="left:{438 * S}px; top:{115 * S}px">{translate("guide_l2_print_left")}</span>
+  <span class="lr lo" style="left:{433 * S}px; top:{163 * S}px">{translate("guide_l2_print_right")}</span>
   <span class="psi-cap" style="left:{380 * S}px; top:{181 * S}px">Alpha</span>
 
   <p class="para" style="top:{221 * S}px; font-size:{16 * S}px; line-height:{19 * S}px">
-    Let’s break down <span class="tka">α</span><sup>1</sup>:
+    {@html translate("guide_l2_print_type6staticpage_2")}
   </p>
 
   <!-- α note. -->
   <p class="para" style="top:{362 * S}px; font-size:{16 * S}px; line-height:{19 * S}px">
-    Note that the arrow can follow the path of either the thumb end or pinky end.<br />
-    The optimal placement depends on context.
+    {@html translate("guide_l2_print_type6staticpage_3")}
   </p>
   <p class="para" style="top:{417 * S}px; font-size:{16 * S}px; line-height:{19 * S}px">
-    <span class="tka">Γ</span><sup>1</sup> also presents variations on <em>opening/closing.</em>
+    {@html translate("guide_l2_print_type6staticpage_4")}
   </p>
-  <div class="cont-header" style="left:{493 * S}px; top:{465 * S}px">Continuation</div>
+  <div class="cont-header" style="left:{493 * S}px; top:{465 * S}px">{translate("guide_l2_print_continuation")}</div>
 
   <!-- Closing. -->
   <p class="para" style="top:{718 * S}px; font-size:{16 * S}px; line-height:{19 * S}px">
-    These static single-turns are relatively simple.<br />
-    Next we’ll look at dual-turns, in which both props are receiving a turn.
+    {@html translate("guide_l2_print_type6staticpage_5")}
   </p>
 
   <!-- Rules. -->
@@ -252,14 +251,14 @@
     {/if}
 
     <!-- Captions. -->
-    <span class="cap" style="left:{(c.start - 18) * S}px; top:{(strip.y - 32) * S}px">thumbs:</span>
+    <span class="cap" style="left:{(c.start - 18) * S}px; top:{(strip.y - 32) * S}px">{translate("guide_l2_print_thumbs")}</span>
     {#if strip.captions}
-      <span class="frame-cap" style="left:{c.start * S}px; top:{(strip.y - 32) * S}px; width:{SIZE * S}px">start</span>
-      <span class="frame-cap" style="left:{c.half * S}px; top:{(strip.y - 32) * S}px; width:{SIZE * S}px">halfway</span>
-      <span class="frame-cap" style="left:{c.end * S}px; top:{(strip.y - 32) * S}px; width:{SIZE * S}px">end</span>
+      <span class="frame-cap" style="left:{c.start * S}px; top:{(strip.y - 32) * S}px; width:{SIZE * S}px">{translate("guide_l2_frame_start")}</span>
+      <span class="frame-cap" style="left:{c.half * S}px; top:{(strip.y - 32) * S}px; width:{SIZE * S}px">{translate("guide_l2_frame_halfway")}</span>
+      <span class="frame-cap" style="left:{c.end * S}px; top:{(strip.y - 32) * S}px; width:{SIZE * S}px">{translate("guide_l2_frame_end")}</span>
     {/if}
-    <span class="thumb-cap" style="left:{c.start * S}px; top:{(strip.y - 16) * S}px; width:{SIZE * S}px">in</span>
-    <span class="thumb-cap" style="left:{c.end * S}px; top:{(strip.y - 16) * S}px; width:{SIZE * S}px">{strip.endThumb}</span>
+    <span class="thumb-cap" style="left:{c.start * S}px; top:{(strip.y - 16) * S}px; width:{SIZE * S}px">{translate("guide_l2_frame_in")}</span>
+    <span class="thumb-cap" style="left:{c.end * S}px; top:{(strip.y - 16) * S}px; width:{SIZE * S}px">{localizePrintLabel(strip.endThumb)}</span>
     {#if strip.opcl}
       <span class="cont-opcl" style="left:{(CONT_X - 6) * S}px; top:{(strip.y - 18) * S}px; width:{(SIZE + 30) * S}px">{strip.opcl === "OPEN" ? "OPENING" : "CLOSING"}</span>
     {/if}

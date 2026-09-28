@@ -20,6 +20,7 @@
   list's offset below the toolbar/filter bar.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
   import { onMount, onDestroy, untrack } from "svelte";
   import {
@@ -635,7 +636,7 @@
             style:view-transition-name={bannerName(it.level)}
           >
             <DifficultyBadge level={it.level} size="34px" />
-            <span class="level-banner-title">Level {it.level}</span>
+            <span class="level-banner-title">{t("browse_audit_level_number", { level: it.level })}</span>
             <span class="level-banner-count">{it.levelTotal}</span>
             <div class="level-banner-divider"></div>
           </div>

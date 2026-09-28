@@ -30,6 +30,7 @@
   import { getEffectiveProp } from "$lib/shared/community/domain/get-effective-prop";
   import { getPropTypeDisplayInfo } from "$lib/shared/pictograph/prop/domain/prop-type-display-registry";
   import { formatTimeAgo } from "$lib/shared/i18n/i18n-formatters";
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import type { EnhancedUserProfile } from "$lib/shared/community/domain/models/enhanced-user-profile";
   import type { BandKey } from "../domain/creator-recency";
   import { ringToneFor } from "../domain/creator-recency";
@@ -78,7 +79,7 @@
   const activity = $derived(
     creator.lastActiveAt
       ? formatTimeAgo(creator.lastActiveAt)
-      : "never returned"
+      : t("browse_verified_never_returned")
   );
 
   const isPortrait = $derived(density === "portrait");
@@ -93,7 +94,7 @@
 -->
 <div class="cell {density}" style:--ring-tone={ringTone}>
   {#if isNew && isPortrait}
-    <span class="badge">New</span>
+    <span class="badge">{t("browse_verified_new")}</span>
   {/if}
 
   <button class="open" type="button" onclick={() => onselect(creator)}>

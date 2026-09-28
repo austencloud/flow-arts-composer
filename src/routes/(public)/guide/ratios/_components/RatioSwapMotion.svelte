@@ -20,6 +20,7 @@
   } from "$lib/shared/render-gating/render-activity-gate";
   import { reducedMotion } from "$lib/shared/transitions/motion";
   import { SHAPE_MATRIX_GUIDE_COLORS } from "$lib/shared/shape-matrix/services/shape-matrix-render";
+  import { tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
 
   let { panels }: { panels: RatioSwapPanel[] } = $props();
 
@@ -108,11 +109,11 @@
   }
 
   function times(value: number): string {
-    return value === 1 ? "once" : "twice";
+    return tDynamic(value === 1 ? "guide_ratios_once" : "guide_ratios_twice");
   }
 
   function laps(value: number): string {
-    return value === 1 ? "one lap" : "two laps";
+    return tDynamic(value === 1 ? "guide_ratios_one_lap" : "guide_ratios_two_laps");
   }
 
   const routes = $derived(
@@ -134,7 +135,7 @@
         circles,
         spins: (circles * panel.prop) / panel.hand,
         closed: clock >= panel.hand,
-        petals: `${petalCount} ${petalCount === 1 ? "petal" : "petals"}`,
+        petals: tDynamic(petalCount === 1 ? "guide_ratios_one_petal" : "guide_ratios_many_petals", { count: petalCount }),
       };
     })
   );
@@ -204,19 +205,19 @@
           />
         {/if}
       </svg>
-      <span>{playing ? "Pause" : "Play"}</span>
+      <span>{tDynamic(playing ? "guide_ratios_pause" : "guide_ratios_play")}</span>
     </button>
     <div class="spin-pick">
       <SegmentedControl
         options={[
-          { value: "pro", label: "Prospin" },
-          { value: "anti", label: "Antispin" },
+          { value: "pro", label: tDynamic("guide_ratios_prospin") },
+          { value: "anti", label: tDynamic("guide_ratios_antispin") },
         ]}
         value={spin}
         onchange={(value: Spin) => (spin = value)}
         size="sm"
         semantics="radiogroup"
-        ariaLabel="Spin direction"
+        ariaLabel={tDynamic("guide_ratios_spin_direction")}
       />
     </div>
   </div>
@@ -233,7 +234,7 @@
           class="motion-stage"
           viewBox="{-VIEW} {-VIEW} {VIEW * 2} {VIEW * 2}"
           role="img"
-          aria-label={`${view.panel.ratio} ${spin === "pro" ? "prospin" : "antispin"}: the hand circles ${times(view.panel.hand)} while the prop spins ${times(view.panel.prop)}, and the drawing closes after ${laps(view.panel.hand)} around the center`}
+          aria-label={tDynamic("guide_ratios_motion_description", { ratio: view.panel.ratio, style: tDynamic(spin === "pro" ? "guide_ratios_prospin" : "guide_ratios_antispin"), hand: times(view.panel.hand), prop: times(view.panel.prop), laps: laps(view.panel.hand) })}
           style="--ink-trail: {SHAPE_MATRIX_GUIDE_COLORS.left}"
         >
           <circle class="hand-circle" r={HAND_RADIUS} />
@@ -271,25 +272,25 @@
         </svg>
         <dl class="motion-counts">
           <div>
-            <dt>Hand circles</dt>
+            <dt>{tDynamic("guide_ratios_hand_cycles")}</dt>
             <dd>{count(view.circles, view.panel.hand)}</dd>
           </div>
           <div>
-            <dt>Prop spins</dt>
+            <dt>{tDynamic("guide_ratios_prop_rotations")}</dt>
             <dd>{count(view.spins, view.panel.prop)}</dd>
           </div>
         </dl>
         <p class="motion-status" class:closed={view.closed}>
           {view.closed
-            ? `Closed after ${laps(view.panel.hand)}`
-            : "Still drawing"}
+            ? tDynamic("guide_ratios_closed_after", { laps: laps(view.panel.hand) })
+            : tDynamic("guide_ratios_still_drawing")}
         </p>
       </li>
     {/each}
   </ul>
 
   <label class="motion-scrub">
-    <span>Hand circles</span>
+    <span>{tDynamic("guide_ratios_hand_cycles")}</span>
     <input
       type="range"
       min="0"

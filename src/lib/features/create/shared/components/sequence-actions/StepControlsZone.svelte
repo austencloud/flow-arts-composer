@@ -12,6 +12,8 @@
   handled by the top zone (StepEditorPanel).
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { handLabel } from "./control-labels";
   import Crossfade from "$lib/shared/components/Crossfade.svelte";
   import MobileHandSelector from "./MobileHandSelector.svelte";
   import PropControlPair from "./PropControlPair.svelte";
@@ -39,10 +41,10 @@
     hand: TargetHand;
     label: string;
     shortLabel: string;
-  }[] = [
-    { hand: "left", label: "Left", shortLabel: "Left" },
-    { hand: "right", label: "Right", shortLabel: "Right" },
-  ];
+  }[] = $derived([
+    { hand: "left", label: handLabel("left"), shortLabel: handLabel("left") },
+    { hand: "right", label: handLabel("right"), shortLabel: handLabel("right") },
+  ]);
 
   interface Props {
     selectionMode: "single" | "multi";
@@ -150,10 +152,10 @@
   let rightMode = $state<BatchMode>("set");
   let mobileHand = $state<TargetHand>("left");
 
-  const MODE_OPTIONS: { value: BatchMode; label: string }[] = [
-    { value: "set", label: "Set all" },
-    { value: "adjust", label: "Adjust" },
-  ];
+  const MODE_OPTIONS: { value: BatchMode; label: string }[] = $derived([
+    { value: "set", label: t("create_controls_set_all") },
+    { value: "adjust", label: t("create_controls_adjust") },
+  ]);
   const SET_OPTIONS: (number | "fl")[] = ["fl", 0, 0.5, 1, 1.5, 2, 2.5, 3];
 
   function fmt(v: number | "fl"): string {
@@ -184,7 +186,7 @@
           value={mobileHand}
           onChange={(hand) => (mobileHand = hand)}
           options={MOBILE_HAND_OPTIONS}
-          ariaLabel="Choose prop controls"
+          ariaLabel={t("create_controls_choose_prop")}
           fullWidth={true}
         />
       </div>
@@ -302,7 +304,7 @@
             class="value-chip"
             class:active={isActiveOption(agg, opt)}
             type="button"
-            aria-label="Set all {colorName} turns to {fmt(opt)}"
+            aria-label={t("create_controls_set_turns", { hand: handLabel(color), turns: fmt(opt) })}
             onclick={() => onBatchTurnsChange(color, "set", opt)}
           >
             {fmt(opt)}
@@ -315,7 +317,7 @@
         <button
           class="ctrl-btn"
           type="button"
-          aria-label="Decrease {colorName} turns"
+          aria-label={t("create_controls_less_turns", { hand: handLabel(color) })}
           onclick={() => onBatchTurnsChange(color, "adjust", -0.5)}
         >
           <i class="fas fa-minus" aria-hidden="true"></i>
@@ -326,7 +328,7 @@
         <button
           class="ctrl-btn"
           type="button"
-          aria-label="Increase {colorName} turns"
+          aria-label={t("create_controls_more_turns", { hand: handLabel(color) })}
           onclick={() => onBatchTurnsChange(color, "adjust", 0.5)}
         >
           <i class="fas fa-plus" aria-hidden="true"></i>

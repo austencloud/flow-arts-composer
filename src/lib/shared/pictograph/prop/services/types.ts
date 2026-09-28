@@ -21,6 +21,7 @@ export interface PropPlacementVisibility {
 import type { ThemeMode } from "../../../utils/svg-color-utils";
 import type { FanAppearance } from "../domain/fan-appearance";
 import type { PropLook } from "../domain/prop-look";
+import type { TriangleGrip } from "../domain/triangle-appearance";
 
 /**
  * Options for prop SVG loading
@@ -38,4 +39,9 @@ export interface PropSvgLoadOptions {
    * each hand, so the loader must preserve their authored pixels.
    */
   propLook?: PropLook;
+  /**
+   * Where the hand holds a triangle, in both looks. Omitted means the corner
+   * grip, the notation glyph. Ignored for other props.
+   */
+  triangleGrip?: TriangleGrip;
 }

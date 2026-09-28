@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte";
   import type { EmblaCarouselType } from "embla-carousel";
   import emblaCarouselSvelte from "embla-carousel-svelte";
   import { onDestroy, onMount } from "svelte";
@@ -260,7 +261,7 @@
       class="embla__button embla__button--prev"
       onclick={scrollPrev}
       disabled={!canScrollPrev}
-      aria-label="Previous slide"
+      aria-label="{t('slide_previous')}"
       bind:this={prevArrowButton}
     >
       <svg class="embla__button__svg" viewBox="0 0 532 532">
@@ -296,7 +297,7 @@
       class="embla__button embla__button--next"
       onclick={scrollNext}
       disabled={!canScrollNext}
-      aria-label="Next slide"
+      aria-label="{t('slide_next')}"
       bind:this={nextArrowButton}
     >
       <svg class="embla__button__svg" viewBox="0 0 532 532">
@@ -316,7 +317,7 @@
           class="embla__dot"
           class:embla__dot--selected={index === currentIndex}
           onclick={() => scrollTo(index)}
-          aria-label="Go to slide {index + 1}"
+          aria-label={t("slide_go_to", { number: index + 1 })}
         >
         </button>
       {/each}

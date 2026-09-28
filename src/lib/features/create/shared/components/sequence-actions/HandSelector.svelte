@@ -11,6 +11,7 @@
 -->
 <script lang="ts">
   import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
+  import { t, tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
   import type { TargetHand } from "../../state/panel-coordination-state.svelte.ts";
 
   interface Props {
@@ -24,10 +25,18 @@
   let {
     value,
     onChange,
-    sectionLabel = "Apply To",
+    sectionLabel,
     labelId = "apply-to-label",
-    labels = { left: "Left", both: "Both", right: "Right" },
+    labels,
   }: Props = $props();
+
+  const displayedLabels = $derived(
+    labels ?? {
+      left: t("shared_controls_left"),
+      both: tDynamic("create_action_both_hands"),
+      right: t("shared_controls_right"),
+    }
+  );
 
   const options = $derived.by(
     (): {
@@ -35,15 +44,17 @@
       label: string;
       tone: "blue" | "red" | "both";
     }[] => [
-      { value: "left", label: labels.left, tone: "blue" },
-      { value: "both", label: labels.both, tone: "both" },
-      { value: "right", label: labels.right, tone: "red" },
+      { value: "left", label: displayedLabels.left, tone: "blue" },
+      { value: "both", label: displayedLabels.both, tone: "both" },
+      { value: "right", label: displayedLabels.right, tone: "red" },
     ]
   );
 </script>
 
 <div class="hand-selector-section">
-  <span class="section-label" id={labelId}>{sectionLabel}</span>
+  <span class="section-label" id={labelId}
+    >{sectionLabel ?? tDynamic("create_action_apply_to")}</span
+  >
 
   <SegmentedControl
     {options}

@@ -46,13 +46,13 @@
   );
   const addTargetLabel = $derived(
     activePerformerSlots.find((slot) => slot.id === addTargetId)?.label ??
-      "performer"
+      t("tunnel_performer")
   );
   const foldOptions = $derived(
     FOLD_OPTIONS.map((fold) => ({
       value: String(fold),
       label: `${fold}`,
-      ariaLabel: `${fold} position${fold === 1 ? "" : "s"} before reflections`,
+      ariaLabel: t("tunnel_positions_before_reflection", { count: fold }),
       disabled:
         imageCount({ ...controller.config, fold }) <
         creator.renderedInstanceCount,
@@ -71,12 +71,9 @@
 <div class:dense class="stage-formation">
   <div class="stage-summary">
     <div>
-      <strong>{creator.renderedInstanceCount} on stage</strong>
+      <strong>{t("tunnel_on_stage", { count: creator.renderedInstanceCount })}</strong>
       <span>
-        {controller.formationSlotCount} available {controller.formationSlotCount ===
-        1
-          ? "position"
-          : "positions"}
+        {t("tunnel_available_positions", { count: controller.formationSlotCount })}
       </span>
     </div>
     <span class="summary-rule"
@@ -90,7 +87,7 @@
     minimumInstances={creator.renderedInstanceCount}
     showCustomCard={false}
     showCustomizeButton={false}
-    presetLabel="Choose a stage arrangement"
+    presetLabel={t("tunnel_choose_stage")}
     selectionMode="config"
     formationOnly={true}
     showUserPresets={false}
@@ -104,7 +101,7 @@
       <span>{t("create_ui_capacity_not_performer_count")}</span>
     </div>
     <div class="frame-row">
-      <span class="row-label">Positions</span>
+      <span class="row-label">{t("create_review_positions")}</span>
       <div class="frame-segments">
         <SegmentedControl
           options={foldOptions}
@@ -113,7 +110,7 @@
           color="accent"
           size="sm"
           semantics="radiogroup"
-          ariaLabel="Stage position frame"
+          ariaLabel={t("tunnel_position_frame")}
         />
       </div>
     </div>
@@ -122,7 +119,7 @@
         mode="toggle"
         emphasis="solid"
         size="sm"
-        label="Mirror positions"
+        label={t("create_review_mirror_positions")}
         icon="fas fa-arrows-left-right"
         active={controller.mirror}
         disabled={!mirrorCanToggle}
@@ -132,7 +129,7 @@
         mode="toggle"
         emphasis="solid"
         size="sm"
-        label="Flip positions"
+        label={t("create_review_flip_positions")}
         icon="fas fa-arrows-up-down"
         active={controller.flip}
         disabled={!flipCanToggle}
@@ -158,7 +155,7 @@
           out:growFade
         >
           <div class="appearance-identity">
-            <strong>Stage {index + 1}</strong>
+            <strong>{t("create_review_stage")} {index + 1}</strong>
             <span
               >{describeTunnelStageArm(controller.config, instance.arm)}</span
             >
@@ -173,17 +170,17 @@
               size="sm"
               density="tight"
               semantics="radiogroup"
-              ariaLabel={`Performer assigned to stage ${index + 1}`}
+              ariaLabel={t("tunnel_stage_assignee", { number: index + 1 })}
             />
           </div>
           <button
             class="remove-appearance"
             type="button"
             disabled={!creator.canRemoveStageInstance(instance.id)}
-            aria-label={`Remove stage ${index + 1}`}
+            aria-label={t("tunnel_remove_stage", { number: index + 1 })}
             title={creator.canRemoveStageInstance(instance.id)
-              ? `Remove stage ${index + 1}`
-              : "An authored performer must remain on stage"}
+              ? t("tunnel_remove_stage", { number: index + 1 })
+              : t("tunnel_keep_performer")}
             onclick={() => creator.removeStageInstance(instance.id)}
           >
             <i class="fas fa-minus" aria-hidden="true"></i>
@@ -196,17 +193,17 @@
       variant="secondary"
       fullWidth
       disabled={!creator.canAddStageInstance || !addTargetId}
-      ariaLabel={`Add another stage appearance for ${addTargetLabel}`}
+      ariaLabel={t("tunnel_add_appearance_aria", { name: addTargetLabel })}
       onclick={() => {
         if (addTargetId) creator.addStageInstance(addTargetId);
       }}
     >
       <i class="fas fa-person-circle-plus" aria-hidden="true"></i>
-      Add {addTargetLabel} appearance
+      {t("tunnel_add_appearance", { name: addTargetLabel })}
     </PanelButton>
     {#if !creator.canAddStageInstance}
       <p class="capacity-hint">
-        Choose an arrangement with more positions to add another appearance.
+        {t("create_review_choose_an_arrangement_with_more_positions_to_add_another_appearance")}
       </p>
     {/if}
   </section>

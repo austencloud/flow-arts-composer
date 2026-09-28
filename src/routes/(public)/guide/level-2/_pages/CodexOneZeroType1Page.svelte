@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t as translate } from "$lib/shared/i18n/i18n.svelte.js";
   /**
    * Codex 1|0 - Type 1 - Level 2 body page 17 (manifest `codex-1-0-t1`), faithful
    * to old p17. Every Type-1 letter (A–V) with a single turn on one hand: `¹` = turn
@@ -21,7 +22,7 @@
   ];
 
   const names = ["A-One", "B-One", "C-High-One", "C-Low-One"];
-  const subParts = [{ t: "Type 1 - " }, { t: "Dual", c: "#22b8cf" }, { t: "-Shift", c: "#7048b6" }];
+  const subParts = [{ t: translate("guide_l2_print_type_1") + " - " }, { t: "Dual", c: "#22b8cf" }, { t: "-Shift", c: "#7048b6" }];
 </script>
 
 <CodexGridPage turnLabel="1 | 0" {subParts} {rows} {names} />

@@ -1,3 +1,4 @@
+import { t } from "$lib/shared/i18n/i18n.svelte.js";
 import type {
   SequenceActionId,
   SequencePatternActionId,
@@ -41,62 +42,56 @@ export const actionHelpContent: ActionHelpItem[] = [
   {
     id: "mirror",
     icon: "fa-left-right",
-    name: "Mirror",
+    get name() { return t("create_action_help_mirror_name"); },
     color: "#a855f7",
-    shortDesc: "Flip left & right",
-    fullDesc:
-      "Creates a mirror image of your sequence, as if mirrored across the vertical center line. All movements that go left now go right, and vice versa. Clockwise turns become counter-clockwise. You can combine this with other transforms for unique variations.",
+    get shortDesc() { return t("create_action_help_mirror_shortdesc"); },
+    get fullDesc() { return t("create_action_help_mirror_fulldesc"); },
     category: "transform",
   },
   {
     id: "flip",
     icon: "fa-up-down",
-    name: "Flip",
+    get name() { return t("create_action_help_flip_name"); },
     color: "#6366f1",
-    shortDesc: "Flip up & down",
-    fullDesc:
-      "Flips your sequence vertically, as if mirrored across the horizontal center line. All movements that go up (north) now go down (south), and vice versa. Clockwise turns become counter-clockwise. Great for creating vertical variations of your sequences.",
+    get shortDesc() { return t("create_action_help_flip_shortdesc"); },
+    get fullDesc() { return t("create_action_help_flip_fulldesc"); },
     category: "transform",
   },
   {
     id: "invert",
     icon: "fa-repeat",
-    name: "Invert",
+    get name() { return t("create_action_help_invert_name"); },
     color: "#eab308",
-    shortDesc: "Flip rotation & motion type",
-    fullDesc:
-      "Inverts all rotation directions and motion types in your sequence. Every clockwise turn becomes counter-clockwise (and vice versa), and every PRO motion becomes ANTI (and vice versa). The movement paths stay the same, but the way you spin changes. This creates new letters since rotation direction and motion type are part of what defines each letter.",
-    warning: "This will change the letters in your sequence!",
+    get shortDesc() { return t("create_action_help_invert_shortdesc"); },
+    get fullDesc() { return t("create_action_help_invert_fulldesc"); },
+    get warning() { return t("create_action_help_invert_warning"); },
     category: "transform",
   },
   {
     id: "rotate",
     icon: "fa-rotate-right",
-    name: "Rotate",
+    get name() { return t("create_action_help_rotate_name"); },
     color: "#fb923c",
-    shortDesc: "Pivot 45° clockwise or counter-clockwise",
-    fullDesc:
-      "Rotates the entire sequence 45° as if you physically turned your body. N becomes NE (clockwise) or NW (counter-clockwise). Tap the arrows to rotate clockwise or counter-clockwise. Rotate 4 times in the same direction for a full 180°.",
+    get shortDesc() { return t("create_action_help_rotate_shortdesc"); },
+    get fullDesc() { return t("create_action_help_rotate_fulldesc"); },
     category: "transform",
   },
   {
     id: "swap",
     icon: "fa-arrows-rotate",
-    name: "Swap Hands",
+    get name() { return t("create_action_help_swap_name"); },
     color: "#22c55e",
-    shortDesc: "Switch which hand does what",
-    fullDesc:
-      "Exchanges all left-hand movements with right-hand movements. Your sequence looks the same, but the opposite hand now performs each movement. Great for creating mirror variations or practicing both sides.",
+    get shortDesc() { return t("create_action_help_swap_shortdesc"); },
+    get fullDesc() { return t("create_action_help_swap_fulldesc"); },
     category: "transform",
   },
   {
     id: "rewind",
     icon: "fa-backward",
-    name: "Rewind",
+    get name() { return t("create_action_help_rewind_name"); },
     color: "#f43f5e",
-    shortDesc: "Rewind the sequence backwards",
-    fullDesc:
-      "Like rewinding a video! Takes the end placement as your new start, then plays every step backwards. Turns flip direction (clockwise becomes counter-clockwise). Note: This will change the letters or word of your sequence!",
+    get shortDesc() { return t("create_action_help_rewind_shortdesc"); },
+    get fullDesc() { return t("create_action_help_rewind_fulldesc"); },
     category: "transform",
   },
 
@@ -104,31 +99,28 @@ export const actionHelpContent: ActionHelpItem[] = [
   {
     id: "turn-pattern",
     icon: "fa-wand-magic-sparkles",
-    name: "Turn Pattern",
+    get name() { return t("create_action_help_turn_pattern_name"); },
     color: "#14b8a6",
-    shortDesc: "Apply turn patterns",
-    fullDesc:
-      "Applies a turn pattern across your entire sequence. Turn patterns let you create consistent rhythms by setting how many turns (0, 0.5, 1, 1.5, 2, 2.5, or 3) each step has. Choose from presets like 'All Half Turns' or 'Alternating 1-2' or create your own custom pattern.",
+    get shortDesc() { return t("create_action_help_turn_pattern_shortdesc"); },
+    get fullDesc() { return t("create_action_help_turn_pattern_fulldesc"); },
     category: "pattern",
   },
   {
     id: "direction",
     icon: "fa-compass",
-    name: "Rotation Direction",
+    get name() { return t("create_action_help_direction_name"); },
     color: "#0ea5e9",
-    shortDesc: "CW/CCW patterns",
-    fullDesc:
-      "Sets the rotation direction pattern for your sequence. Control whether each step rotates clockwise (CW) or counter-clockwise (CCW). Choose from presets like 'All Clockwise', 'Alternating', or create custom direction patterns for each step.",
+    get shortDesc() { return t("create_action_help_direction_shortdesc"); },
+    get fullDesc() { return t("create_action_help_direction_fulldesc"); },
     category: "pattern",
   },
   {
     id: "duration",
     icon: "fa-stopwatch",
-    name: "Duration",
+    get name() { return t("create_action_help_duration_name"); },
     color: "#fb923c",
-    shortDesc: "Beat timing",
-    fullDesc:
-      "Controls how long each beat is held. Apply rhythmic patterns like 'Every Third Doubled' (beats 3, 6, 9 hold twice as long), 'Swing' (triplet feel), or musical meters like 'Waltz' or 'Shuffle'. Use uniform buttons to speed up (50%, 25%) or slow down (150%, 200%, 400%) your entire sequence.",
+    get shortDesc() { return t("create_action_help_duration_shortdesc"); },
+    get fullDesc() { return t("create_action_help_duration_fulldesc"); },
     category: "pattern",
   },
 
@@ -136,21 +128,19 @@ export const actionHelpContent: ActionHelpItem[] = [
   {
     id: "extend",
     icon: "fa-circle-check",
-    name: "Extend",
+    get name() { return t("create_action_help_extend_name"); },
     color: "#22c55e",
-    shortDesc: "Complete to start",
-    fullDesc:
-      "Extends your sequence back to its starting placement using a LOOP pattern. When the last step's placement matches the first step's placement group, you can choose from different LOOP types (like Mirrored, Swapped, or Rotated) to loop your sequence.",
+    get shortDesc() { return t("create_action_help_extend_shortdesc"); },
+    get fullDesc() { return t("create_action_help_extend_fulldesc"); },
     category: "tool",
   },
   {
     id: "shift-start",
     icon: "fa-forward",
-    name: "Choose Start",
+    get name() { return t("create_action_help_shift_start_name"); },
     color: "#06b6d4",
-    shortDesc: "Pick the start pose",
-    fullDesc:
-      "Changes where the sequence starts. While choosing, every tile shows only the pose it ends in. Tap the pose you want to start from and the sequence reorders to begin there. Sequences that don't loop drop the steps before it.",
+    get shortDesc() { return t("create_action_help_shift_start_shortdesc"); },
+    get fullDesc() { return t("create_action_help_shift_start_fulldesc"); },
     category: "tool",
   },
 ];

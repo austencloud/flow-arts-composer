@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { localizeLevel1Text, localizeLevel1SelectionLabel } from "../_data/localize-level1-content";
   /**
    * Type 3 - Cross-Shifts - body page 7, a faithful rebuild of the proof PDF
    * (level-1-v05.pdf, "Type 3 - Cross-Shifts") in the CURRENT renderer's language.
@@ -418,7 +419,7 @@
       <SelectionHit
         groupId={`t3-${si}`}
         isGroupStart
-        label={`Animate the ${SEQ_WORDS[si]} sequence`}
+        label={localizeLevel1SelectionLabel(`Animate the ${SEQ_WORDS[si]} sequence`)}
         onselect={() =>
           emitSequence?.({
             strip: RESOLVED[si]!.flat().filter(
@@ -459,7 +460,7 @@
         set: (h) => (p.html = h),
       }}
     >
-      {@html p.html}
+      {@html localizeLevel1Text(p.html)}
     </p>
   {/each}
 </div>

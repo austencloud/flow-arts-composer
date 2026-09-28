@@ -1,3 +1,4 @@
+import { t } from "$lib/shared/i18n/i18n.svelte.js";
 import { z } from "zod";
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
 import {
@@ -711,20 +712,20 @@ export function tunnelLayerCycleSteps(
 }
 
 export function copyOpsLabel(ops: CopyOp[]): string {
-  if (ops.length === 0) return "Copy";
+  if (ops.length === 0) return t("tunnel_copy");
   return ops
     .map((op) => {
       switch (op.kind) {
         case "rotate":
-          return `Rotate ${op.amount * 45}°`;
+          return t("tunnel_rotate_degrees", { degrees: op.amount * 45 });
         case "mirror":
-          return "Mirror";
+          return t("tunnel_mirror");
         case "flip":
-          return "Flip";
+          return t("tunnel_flip");
         case "invert":
-          return "Invert";
+          return t("tunnel_invert");
         case "rewind":
-          return "Rewind";
+          return t("tunnel_rewind");
       }
     })
     .join(" + ");

@@ -130,6 +130,7 @@ export class CellPreWarmer {
     return {
       fanAppearance: settingsService.settings.fanAppearance,
       propLook: settingsService.settings.propArtwork,
+      triangleGrip: settingsService.settings.triangleGrip,
       primaryPropColors: settingsService.settings.primaryPropColors,
       ...buildCellRenderOptions({
         cellSize: 240,
