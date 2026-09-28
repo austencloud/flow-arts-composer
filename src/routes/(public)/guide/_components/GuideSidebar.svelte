@@ -77,6 +77,7 @@
   }
   const codexActive = $derived(pathname.startsWith("/guide/codex"));
   const ratiosActive = $derived(pathname === "/guide/ratios");
+  const prospinActive = $derived(pathname === "/guide/prospin-and-inspin");
   const motionPathsActive = $derived(pathname === "/guide/motion-paths");
 
   // A level opens when the reader is inside it or on the hub; the other level
@@ -274,6 +275,18 @@
       onclick={() => onLinkClick?.()}
     >
       {tDynamic("guide_hub_ratios_title")}
+    </a>
+  </div>
+
+  <div class="chapter-group">
+    <a
+      class="chapter-title"
+      class:active={prospinActive}
+      aria-current={prospinActive ? "page" : undefined}
+      href="/guide/prospin-and-inspin"
+      onclick={() => onLinkClick?.()}
+    >
+      {tDynamic("guide_hub_prospin_title")}
     </a>
   </div>
 
