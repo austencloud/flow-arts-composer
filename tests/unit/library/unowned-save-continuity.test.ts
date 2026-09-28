@@ -90,6 +90,7 @@ vi.mock("$lib/shared/settings/state/settings-state.svelte", () => ({
 const { LibrarySaveService } =
   await import("$lib/features/library/services/library-save-service");
 const { authState } = await import("$lib/shared/auth/state/auth-state.svelte");
+const { LibraryError } = await import("$lib/shared/library/domain/library-error");
 const {
   getOwnedSequenceIdSet,
   getUnownedSequenceIds,
@@ -125,6 +126,22 @@ beforeEach(() => {
 describe("a save with no identity is parked, not orphaned", () => {
   it("records the id as unowned rather than silently dropping it", async () => {
     const service = new LibrarySaveService(null, null, makeRepository(), null);
+
+    const result = await service.saveSequence(makeSequence(), makeOptions());
+
+    expect(result.persisted).toBe(true);
+    expect(getUnownedSequenceIds()).toEqual(["seq-1"]);
+  });
+
+  it("is not stopped by the duplicate check refusing to run for nobody", async () => {
+    // The real repository throws this from hasMatchingContent() whenever no one
+    // is signed in. The mock above hides it by answering "no duplicate", which
+    // is how every save with no identity failed while these tests passed.
+    const repository = makeRepository();
+    repository.hasMatchingContent.mockRejectedValue(
+      new LibraryError("User not authenticated", "UNAUTHORIZED")
+    );
+    const service = new LibrarySaveService(null, null, repository, null);
 
     const result = await service.saveSequence(makeSequence(), makeOptions());
 

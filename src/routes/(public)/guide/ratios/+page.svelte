@@ -182,6 +182,24 @@
   }).filter((group) => group.level !== BASE_LEVEL && group.rows.length > 0);
 
   /**
+   * What spinners call the flowers that have a common name. Every name
+   * describes one end of the prop, the drawing the ladder cards show. A
+   * staff's second end doubles the flower (see One end or two), so a
+   * two-ended picture would outgrow the name. The ratio is derived from the
+   * turn value, so a name cannot point at a ratio the ladder doesn't draw.
+   */
+  const COMMON_NAMES: readonly {
+    name: string;
+    turns: number;
+    style: FlowerStyle;
+  }[] = [
+    { name: "Cat-eye", turns: 0, style: "anti" },
+    { name: "Triquetra", turns: 0.5, style: "anti" },
+    { name: "4-petal antispin flower", turns: 1, style: "anti" },
+    { name: "3-petal inspin flower", turns: 1.5, style: "pro" },
+  ];
+
+  /**
    * Level 1 shows both starts. At 1:1 starting in and starting out draw four
    * different base motions, the four shapes the original matrix gives this
    * ratio, so collapsing them to the in start would hide half of Level 1.
@@ -315,7 +333,7 @@
   const endsLevels: EndsLevel[] = [
     endsLevel(
       0,
-      "The isolation and the extension are one staff motion, and the two antispin lines make a cross.",
+      "The isolation and the extension are one staff motion, and the two cat-eyes make a cross.",
       { in: "Isolation", out: "Extension", both: "Point in a circle" }
     ),
     endsLevel(1, "Out is in turned half a petal, so each flower doubles."),
@@ -460,8 +478,8 @@
 </script>
 
 <GuideSeo
-  title="Spin ratios and Kinetic Alphabet turns · The Kinetic Alphabet Guide"
-  description="Reference table for VTG spin ratios written hands to props, the Kinetic Alphabet turn value each one names, the petals it draws, and the 1:1, 1:3, and 1:5 families behind the 144 Shape Matrix."
+  title="Spin ratios, turns, and poi flowers · The Kinetic Alphabet Guide"
+  description="Spin ratios written hands to props, the Kinetic Alphabet turns each one names, and the poi flowers they draw, from the cat-eye and triquetra to the 4-petal antispin and 3-petal inspin flowers."
   path="/guide/ratios"
   partOf={{ name: "The Kinetic Alphabet Guide", path: "/guide" }}
   breadcrumbs={[
@@ -538,6 +556,20 @@
             own while the hand circles, which is the ratio 1:0, and the Kinetic
             Alphabet names it Float instead of a number.
           </p>
+
+          <h3>Common names</h3>
+          <dl class="terms">
+            {#each COMMON_NAMES as entry (entry.name)}
+              <div>
+                <dt>{entry.name}</dt>
+                <dd>
+                  {ratioLabel(entry.turns)}
+                  {styleWord(entry.style).toLowerCase()}
+                </dd>
+              </div>
+            {/each}
+          </dl>
+          <p>Each name describes the shape one end of the prop draws.</p>
         </div>
 
         <figure class="worked">
@@ -855,7 +887,7 @@
           Level 1 shows it most plainly. Prospin started in is an isolation, the
           end held in place as a point, and started out it is an extension
           around the big circle. On a staff they are one motion. The two
-          antispin starts draw lines at right angles, and a staff draws both.
+          antispin starts draw cat-eyes at right angles, and a staff draws both.
         </p>
         <p>
           Through Level 3 every ratio takes one hand circle, and there the out
@@ -1912,6 +1944,7 @@
     padding-top: 0.5rem;
   }
 
+  .reading-copy h3,
   .swap-copy h3,
   .beyond h3 {
     margin: 0 0 0.6rem;
