@@ -15,19 +15,19 @@
  *   the same pixels.
  */
 import type {
-  MandalaHandVisibility,
-  MandalaPaths,
+	MandalaHandVisibility,
+	MandalaPaths,
 } from "../domain/mandala-types";
 import { DEFAULT_MANDALA_OVERLAY_CONFIG } from "../domain/mandala-overlay-types";
 import {
-  MandalaOverlapMasks,
-  paintMandalaGuide,
-  type MandalaGuidePaintOptions,
-  type MandalaGuidePaintTarget,
+	MandalaOverlapMasks,
+	paintMandalaGuide,
+	type MandalaGuidePaintOptions,
+	type MandalaGuidePaintTarget,
 } from "./mandala-guide-painter";
 import {
-  computeEngineAlignedMandalaScale,
-  prepareMandalaHandPaths,
+	computeEngineAlignedMandalaScale,
+	prepareMandalaHandPaths,
 } from "./mandala-path-preparer";
 import { resolveMandalaRenderExtent } from "./mandala-renderer";
 import type { PreparedMandalaPath } from "./types";
@@ -35,62 +35,56 @@ import type { PreparedMandalaPath } from "./types";
 export type MandalaGuideFit = "extent" | "engine";
 
 export interface MandalaGuideImageOptions {
-  /** Box edge in CSS pixels; the image is square. */
-  size: number;
-  /** Device pixels per CSS pixel to rasterize at (default: window DPR). */
-  dpr?: number;
-  show?: MandalaHandVisibility;
-  leftColor: string;
-  rightColor: string;
-  /**
-   * One ink per traced prop end, in path order, for a surface that shades
-   * the ends of a two-ended prop apart. A hand without an entry, or a path
-   * past the end of its list, keeps that hand's color.
-   */
-  endColors?: Partial<Record<"left" | "right", readonly string[]>>;
-  /** Stroke width in CSS pixels (default: the live overlay's). */
-  strokeWidth?: number;
-  fit: MandalaGuideFit;
-  /** Tip reach used by the `extent` fit; ignored by `engine`. */
-  tipDx?: number;
+	/** Box edge in CSS pixels; the image is square. */
+	size: number;
+	/** Device pixels per CSS pixel to rasterize at (default: window DPR). */
+	dpr?: number;
+	show?: MandalaHandVisibility;
+	leftColor: string;
+	rightColor: string;
+	/** Stroke width in CSS pixels (default: the live overlay's). */
+	strokeWidth?: number;
+	fit: MandalaGuideFit;
+	/** Tip reach used by the `extent` fit; ignored by `engine`. */
+	tipDx?: number;
 }
 
 export interface MandalaGuideImageDependencies {
-  createCanvas: () => HTMLCanvasElement | null;
-  prepare: typeof prepareMandalaHandPaths;
-  paint: typeof paintMandalaGuide;
+	createCanvas: () => HTMLCanvasElement | null;
+	prepare: typeof prepareMandalaHandPaths;
+	paint: typeof paintMandalaGuide;
 }
 
 /** Mandala units → CSS pixels for a square box of `size`, per fit. */
 export function mandalaGuideScale(
-  paths: MandalaPaths,
-  options: Pick<MandalaGuideImageOptions, "size" | "fit" | "show" | "tipDx">
+	paths: MandalaPaths,
+	options: Pick<MandalaGuideImageOptions, "size" | "fit" | "show" | "tipDx">
 ): number {
-  if (options.fit === "engine") {
-    return computeEngineAlignedMandalaScale(options.size);
-  }
-  const extent = resolveMandalaRenderExtent(paths, {
-    show: options.show ?? "both",
-    tipDx: options.tipDx,
-  });
-  return options.size / 2 / (extent * 1.05);
+	if (options.fit === "engine") {
+		return computeEngineAlignedMandalaScale(options.size);
+	}
+	const extent = resolveMandalaRenderExtent(paths, {
+		show: options.show ?? "both",
+		tipDx: options.tipDx,
+	});
+	return options.size / 2 / (extent * 1.05);
 }
 
 const masks = new MandalaOverlapMasks();
 
 function browserCanvas(): HTMLCanvasElement | null {
-  // No canvas on the server, and no Path2D in a DOM-only test environment:
-  // either way there is nothing to paint into.
-  if (typeof document === "undefined" || typeof Path2D === "undefined") {
-    return null;
-  }
-  return document.createElement("canvas");
+	// No canvas on the server, and no Path2D in a DOM-only test environment:
+	// either way there is nothing to paint into.
+	if (typeof document === "undefined" || typeof Path2D === "undefined") {
+		return null;
+	}
+	return document.createElement("canvas");
 }
 
 const DEFAULT_DEPS: MandalaGuideImageDependencies = {
-  createCanvas: browserCanvas,
-  prepare: prepareMandalaHandPaths,
-  paint: paintMandalaGuide,
+	createCanvas: browserCanvas,
+	prepare: prepareMandalaHandPaths,
+	paint: paintMandalaGuide,
 };
 
 /**
@@ -99,60 +93,50 @@ const DEFAULT_DEPS: MandalaGuideImageDependencies = {
  * no size yet; the consumer renders nothing until it has one.
  */
 export function renderMandalaGuideImage(
-  paths: MandalaPaths,
-  options: MandalaGuideImageOptions,
-  deps: MandalaGuideImageDependencies = DEFAULT_DEPS
+	paths: MandalaPaths,
+	options: MandalaGuideImageOptions,
+	deps: MandalaGuideImageDependencies = DEFAULT_DEPS
 ): string {
-  const size = Math.round(options.size);
-  if (!(size > 0)) return "";
-  const canvas = deps.createCanvas();
-  if (!canvas) return "";
-  const context = canvas.getContext("2d");
-  if (!context) return "";
+	const size = Math.round(options.size);
+	if (!(size > 0)) return "";
+	const canvas = deps.createCanvas();
+	if (!canvas) return "";
+	const context = canvas.getContext("2d");
+	if (!context) return "";
 
-  const dpr =
-    options.dpr ??
-    (typeof window !== "undefined" ? (window.devicePixelRatio ?? 1) : 1);
-  const pixelSize = Math.max(1, Math.round(size * dpr));
-  canvas.width = pixelSize;
-  canvas.height = pixelSize;
+	const dpr =
+		options.dpr ??
+		(typeof window !== "undefined" ? (window.devicePixelRatio ?? 1) : 1);
+	const pixelSize = Math.max(1, Math.round(size * dpr));
+	canvas.width = pixelSize;
+	canvas.height = pixelSize;
 
-  const show = options.show ?? "both";
-  const prepared: PreparedMandalaPath[] = [];
-  const prepareHand = (hand: "left" | "right", color: string) => {
-    const handPaths = paths[hand];
-    const endColors = options.endColors?.[hand];
-    if (!endColors) {
-      prepared.push(
-        ...deps.prepare(handPaths, color, hand, { measure: false })
-      );
-      return;
-    }
-    handPaths.forEach((path, index) => {
-      prepared.push(
-        ...deps.prepare([path], endColors[index] ?? color, hand, {
-          measure: false,
-        })
-      );
-    });
-  };
-  if (show === "left" || show === "both")
-    prepareHand("left", options.leftColor);
-  if (show === "right" || show === "both")
-    prepareHand("right", options.rightColor);
+	const show = options.show ?? "both";
+	const prepared: PreparedMandalaPath[] = [];
+	if (show === "left" || show === "both") {
+		prepared.push(
+			...deps.prepare(paths.left, options.leftColor, "left", { measure: false })
+		);
+	}
+	if (show === "right" || show === "both") {
+		prepared.push(
+			...deps.prepare(paths.right, options.rightColor, "right", {
+				measure: false,
+			})
+		);
+	}
 
-  const target: MandalaGuidePaintTarget = {
-    context,
-    pixelWidth: pixelSize,
-    pixelHeight: pixelSize,
-    dpr,
-  };
-  const paint: MandalaGuidePaintOptions = {
-    paths: prepared,
-    scale: mandalaGuideScale(paths, { ...options, show }),
-    strokeWidth:
-      options.strokeWidth ?? DEFAULT_MANDALA_OVERLAY_CONFIG.strokeWidth,
-  };
-  deps.paint(target, paint, masks);
-  return canvas.toDataURL("image/png");
+	const target: MandalaGuidePaintTarget = {
+		context,
+		pixelWidth: pixelSize,
+		pixelHeight: pixelSize,
+		dpr,
+	};
+	const paint: MandalaGuidePaintOptions = {
+		paths: prepared,
+		scale: mandalaGuideScale(paths, { ...options, show }),
+		strokeWidth: options.strokeWidth ?? DEFAULT_MANDALA_OVERLAY_CONFIG.strokeWidth,
+	};
+	deps.paint(target, paint, masks);
+	return canvas.toDataURL("image/png");
 }
