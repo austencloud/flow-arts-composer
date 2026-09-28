@@ -31,7 +31,7 @@
 -->
 <script lang="ts">
   import { t } from "$lib/shared/i18n/i18n.svelte";
-  import { onMount, onDestroy } from "svelte";
+  import { onMount, onDestroy, type Snippet } from "svelte";
   import { MediaQuery } from "svelte/reactivity";
   import { createSimplifiedStartPlacementState } from "$lib/shared/create/state/start-placement-state.svelte";
   import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
@@ -82,6 +82,7 @@
     primaryPropColors,
     active = true,
     embedded = false,
+    propControl,
   }: {
     presentationMode?: ConstructPresentationMode;
     onVisitorComposed?: (sequence: SequenceData) => void;
@@ -90,6 +91,8 @@
     primaryPropColors?: ViewerCustomColorPair | null;
     active?: boolean;
     embedded?: boolean;
+    /** The host page's prop chooser, shown at the start of the word row. */
+    propControl?: Snippet;
   } = $props();
 
   const isGuidedBuild = $derived(presentationMode === "guided-build");
@@ -445,23 +448,23 @@
       dropPlayerRefs();
     }
     compactPane = "build";
-    // Put the restored pick back in the picker. setSelectedPosition notifies
+    // Put the restored pick back in the picker. setSelectedPlacement notifies
     // with source "sync", which our listener ignores, so this cannot recurse
     // into the selection branch that wipes the steps we just restored.
-    startPlacementState.setSelectedPosition(target.startPlacement);
+    startPlacementState.setSelectedPlacement(target.startPlacement);
   }
 
   function undo() {
-    if (!canUndo) return;
     const previous = past[past.length - 1];
+    if (!previous) return;
     future = [snapshot(), ...future];
     past = past.slice(0, -1);
     applySnapshot(previous);
   }
 
   function redo() {
-    if (!canRedo) return;
     const next = future[0];
+    if (!next) return;
     past = [...past, snapshot()];
     future = future.slice(1);
     applySnapshot(next);
@@ -661,13 +664,17 @@
         <div class="workspace" class:has-sequence={!!startStepData}>
           <!-- Canonical word display: the same WordLabel the real workspace shows
            top-center (TKA glyphs, click-to-copy, letter highlighting during
-           playback). No step counter — the app doesn't count steps at you. -->
+           playback). No step counter — the app doesn't count steps at you.
+           The host's prop chooser sits at the row's start, outside the live
+           region, so changing props is not announced as a change to the word. -->
           <header
             class="demo-status word-label-area"
-            aria-live={tookOver ? "polite" : "off"}
+            class:with-prop={!!propControl}
           >
-            <span class="region-label">{t("composer_demo_your_sequence")}</span>
-            <div class="status-content">
+            {#if propControl}
+              <div class="status-prop">{@render propControl()}</div>
+            {/if}
+            <div class="status-content" aria-live={tookOver ? "polite" : "off"}>
               {#if rawWord}
                 <WordLabel
                   word={rawWord}
@@ -1402,6 +1409,22 @@
     align-items: center;
     justify-content: center;
     --text-color: var(--theme-text, #fff);
+  }
+
+  /* With the host's prop chooser the row becomes three tracks: the chooser,
+     the word, and an empty track of the same width, so the word stays on the
+     workspace's center line. */
+  .demo-status.with-prop {
+    display: grid;
+    grid-template-columns: 3rem minmax(0, 1fr) 3rem;
+    column-gap: 0.75rem;
+  }
+
+  .status-prop {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    min-width: 0;
   }
 
   .status-content {

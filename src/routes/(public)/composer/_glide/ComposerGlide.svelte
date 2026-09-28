@@ -621,8 +621,11 @@
   }
 
   /* The page becomes a fixed stage the height of the window; the track
-     around it supplies the scroll a tall section pans through. */
+     around it supplies the scroll a tall section pans through. Sections read
+     --stop-room and --stop-pad to size themselves to the room they rest in. */
   .glide:global(.staged) :global(.composer-page) {
+    --stop-room: var(--glide-room);
+    --stop-pad: 0px;
     position: sticky;
     top: 0;
     display: grid;
