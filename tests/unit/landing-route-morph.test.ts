@@ -346,10 +346,13 @@ describe("landing shared-element contract", () => {
     );
     expect(composer).toContain("latchedHeroSequence = first;");
     expect(composer).not.toContain("{#key carriedSequence?.id}");
-    // 5bf02781c1 wrapped the construct demo in ComposerPractice, which still
-    // arrives through a lazy loader.
+    // Construct and Generate are separate stops; each demo still arrives
+    // through its own lazy loader.
     expect(composer).toContain(
-      'loader={() => import("./ComposerPractice.svelte")}'
+      'loader={() => import("../_sections/ConstructSection.svelte")}'
+    );
+    expect(composer).toContain(
+      'loader={() => import("./ComposerGenerateDemo.svelte")}'
     );
     expect(composer).toContain(
       'loader={() => import("./Composer3DViewerDemo.svelte")}'
