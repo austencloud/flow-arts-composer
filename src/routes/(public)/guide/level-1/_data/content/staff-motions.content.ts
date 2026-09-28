@@ -121,7 +121,7 @@ const rowSequenceItems = (row: RowDef): PictographData[] =>
 const RENDER = { propType: PropType.STAFF, showTKA: false } as const;
 
 /**
- * The prospin and antispin shifts as standalone strips. The Prospin and inspin
+ * The prospin and antispin shifts as standalone strips. The Prospin and Inspin
  * page shows these same two motions, so it reads them from here instead of
  * building its own copies. `motion` is the one pictograph that draws the whole
  * shift, which that page shows beside the animation in place of the strip.
