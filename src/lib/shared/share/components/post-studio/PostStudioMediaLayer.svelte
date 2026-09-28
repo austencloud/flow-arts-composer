@@ -38,12 +38,8 @@
     transform: EvaluatedFrameLayer["transform"];
     /** The act's speed; the footage runs at it while the preview plays. */
     playbackRate?: number;
-    /**
-     * Draws the footage or image at its fitted size instead of cropping it
-     * to the slot, so a crop drag can show what lies past the slot's edges.
-     * The pixels inside the slot stay where they were.
-     */
-    revealOverflow?: boolean;
+    /** Told the footage's or image's own size once it has loaded. */
+    onSourceSize?: (size: { width: number; height: number }) => void;
   }
 
   let {
@@ -65,7 +61,7 @@
     clipId,
     transform,
     playbackRate = 1,
-    revealOverflow = false,
+    onSourceSize,
   }: Props = $props();
   const composition = tryGetMediaCompositionContext();
   let video = $state<HTMLVideoElement | null>(null);
@@ -98,8 +94,24 @@
       : null
   );
 
-  /** The fitted rectangle, when the whole source is being shown. */
-  const revealRect = $derived(revealOverflow ? drawRect : null);
+  /**
+   * The picture is drawn whole at its fitted size, as the export draws it,
+   * and the slot crops it. Cropping it to its own box first (object-fit)
+   * made a pan or a turn slide that cropped box across the slot, opening a
+   * gap where the export shows the footage the slot was hiding. Placed in
+   * shares of the box, so a box measured in whole pixels cannot leave a
+   * hairline. Until the size is known, object-fit stands in.
+   */
+  const fitted = $derived(
+    drawRect
+      ? {
+          left: `${(drawRect.x / boxWidth) * 100}%`,
+          top: `${(drawRect.y / boxHeight) * 100}%`,
+          width: `${(drawRect.width / boxWidth) * 100}%`,
+          height: `${(drawRect.height / boxHeight) * 100}%`,
+        }
+      : null
+  );
 
   const pan = $derived.by(() => {
     if (!drawRect) return { x: 0, y: 0 };
@@ -111,6 +123,7 @@
       scale: transform.scale,
       translateX: transform.translateX,
       translateY: transform.translateY,
+      rotationDegrees: transform.rotationDegrees,
     });
   });
 
@@ -160,6 +173,7 @@
     if (!video || !Number.isFinite(video.duration)) return;
     sourceWidth = video.videoWidth;
     sourceHeight = video.videoHeight;
+    onSourceSize?.({ width: sourceWidth, height: sourceHeight });
     composition?.setSourceDuration(binding.roleKey, video.duration);
     syncVideoTime();
     if (!playing) showPausedFrame(video);
@@ -169,6 +183,7 @@
     const image = event.currentTarget as HTMLImageElement;
     sourceWidth = image.naturalWidth;
     sourceHeight = image.naturalHeight;
+    onSourceSize?.({ width: sourceWidth, height: sourceHeight });
   }
 
   function handleContextMenu(event: MouseEvent): void {
@@ -266,12 +281,12 @@
       muted
       playsinline
       preload="auto"
-      class:revealed={revealRect !== null}
-      style:object-fit={revealRect ? "fill" : fit}
-      style:left={revealRect ? `${revealRect.x}px` : undefined}
-      style:top={revealRect ? `${revealRect.y}px` : undefined}
-      style:width={revealRect ? `${revealRect.width}px` : undefined}
-      style:height={revealRect ? `${revealRect.height}px` : undefined}
+      class:fitted={fitted !== null}
+      style:object-fit={fitted ? "fill" : fit}
+      style:left={fitted?.left}
+      style:top={fitted?.top}
+      style:width={fitted?.width}
+      style:height={fitted?.height}
       onloadedmetadata={onMetadata}
     ></video>
   {:else}
@@ -279,12 +294,12 @@
       src={binding.previewUrl ?? undefined}
       crossorigin="anonymous"
       alt=""
-      class:revealed={revealRect !== null}
-      style:object-fit={revealRect ? "fill" : fit}
-      style:left={revealRect ? `${revealRect.x}px` : undefined}
-      style:top={revealRect ? `${revealRect.y}px` : undefined}
-      style:width={revealRect ? `${revealRect.width}px` : undefined}
-      style:height={revealRect ? `${revealRect.height}px` : undefined}
+      class:fitted={fitted !== null}
+      style:object-fit={fitted ? "fill" : fit}
+      style:left={fitted?.left}
+      style:top={fitted?.top}
+      style:width={fitted?.width}
+      style:height={fitted?.height}
       onload={onImageLoad}
     />
   {/if}
@@ -311,7 +326,7 @@
     height: 100%;
   }
 
-  .revealed {
+  .fitted {
     position: absolute;
     max-width: none;
     max-height: none;

@@ -127,6 +127,19 @@ export function createPostEditorState(deps: PostEditorDeps) {
   let gestureBase: PostProject | null = null;
   /** The setting changed last and when, so a slider drag undoes as one step. */
   let lastSetting: { key: string; at: number } | null = null;
+  /**
+   * A stretch of editing that lands as one undo step, or none if cancelled:
+   * the crop screen. Undo and Redo stay inside it while it is open.
+   */
+  let session = $state.raw<{
+    base: PostProject;
+    pastAtStart: PostProject[];
+    futureAtStart: PostProject[];
+    /** Undo steps made inside the session and not undone. */
+    steps: number;
+    /** Steps undone inside the session that Redo can bring back. */
+    undone: number;
+  } | null>(null);
 
   let media = $state.raw<Record<string, TakeMedia>>({});
   let timings = $state.raw<Record<string, TakeTiming>>({});
@@ -229,10 +242,16 @@ export function createPostEditorState(deps: PostEditorDeps) {
     }
   }
 
+  /** A new undo step inside an open session; it also ends any redo. */
+  function countSessionStep(): void {
+    if (session) session = { ...session, steps: session.steps + 1, undone: 0 };
+  }
+
   function commit(next: PostProject): boolean {
     if (next === project) return false;
     past = [...past, project].slice(-HISTORY_DEPTH);
     future = [];
+    countSessionStep();
     project = next;
     lastSetting = null;
     keepSelectionValid(next);
@@ -262,6 +281,7 @@ export function createPostEditorState(deps: PostEditorDeps) {
       past.length > 0;
     if (joins) {
       future = [];
+      if (session) session = { ...session, undone: 0 };
       project = next;
       keepSelectionValid(next);
       savePostProject(next);
@@ -295,6 +315,7 @@ export function createPostEditorState(deps: PostEditorDeps) {
     if (!base || project === base) return;
     past = [...past, base].slice(-HISTORY_DEPTH);
     future = [];
+    countSessionStep();
     savePostProject(project);
   }
 
@@ -308,13 +329,16 @@ export function createPostEditorState(deps: PostEditorDeps) {
   }
 
   function undo(): void {
-    if (gestureBase) return;
+    if (gestureBase || (session && session.steps === 0)) return;
     lastSetting = null;
     const previous = past[past.length - 1];
     if (!previous) return;
     const undone = project;
     past = past.slice(0, -1);
     future = [...future, project];
+    if (session) {
+      session = { ...session, steps: session.steps - 1, undone: session.undone + 1 };
+    }
     project = previous;
     keepSelectionValid(previous);
     savePostProject(previous);
@@ -322,16 +346,74 @@ export function createPostEditorState(deps: PostEditorDeps) {
   }
 
   function redo(): void {
-    if (gestureBase) return;
+    if (gestureBase || (session && session.undone === 0)) return;
     lastSetting = null;
     const next = future[future.length - 1];
     if (!next) return;
     future = future.slice(0, -1);
     past = [...past, project];
+    if (session) {
+      session = { ...session, steps: session.steps + 1, undone: session.undone - 1 };
+    }
     project = next;
     keepSelectionValid(next);
     savePostProject(next);
     replayTiming(next, "after");
+  }
+
+  /**
+   * Opens a session: what follows lands as one undo step when it ends kept,
+   * and a slider change cannot join an edit made before it. False when one
+   * is already open.
+   */
+  function beginSession(): boolean {
+    if (session) return false;
+    if (gestureBase) endGesture();
+    session = {
+      base: project,
+      pastAtStart: past,
+      futureAtStart: future,
+      steps: 0,
+      undone: 0,
+    };
+    lastSetting = null;
+    return true;
+  }
+
+  /**
+   * Closes the session. Kept, its changes become one undo step, or none when
+   * they came back to where it began; not kept, the project and both undo
+   * lists return to how they were when it opened. A drag still running ends
+   * with it, kept or dropped the same way.
+   */
+  function endSession(keep: boolean): void {
+    const open = session;
+    if (!open) return;
+    if (gestureBase) {
+      if (keep) endGesture();
+      else cancelGesture();
+    }
+    session = null;
+    lastSetting = null;
+    if (keep && differs(open.base, project)) {
+      past = [...open.pastAtStart, open.base].slice(-HISTORY_DEPTH);
+      future = [];
+      savePostProject(project);
+      return;
+    }
+    project = open.base;
+    past = open.pastAtStart;
+    future = open.futureAtStart;
+    keepSelectionValid(open.base);
+    savePostProject(open.base);
+  }
+
+  /** Whether two projects differ in more than when they were saved. */
+  function differs(a: PostProject, b: PostProject): boolean {
+    if (a === b) return false;
+    return (
+      JSON.stringify({ ...a, updatedAt: 0 }) !== JSON.stringify({ ...b, updatedAt: 0 })
+    );
   }
 
   /**
@@ -793,13 +875,16 @@ export function createPostEditorState(deps: PostEditorDeps) {
       return selectedItem;
     },
     get canUndo() {
-      return past.length > 0;
+      return past.length > 0 && (!session || session.steps > 0);
     },
     get canRedo() {
-      return future.length > 0;
+      return future.length > 0 && (!session || session.undone > 0);
     },
     get inGesture() {
       return gestureBase !== null;
+    },
+    get inSession() {
+      return session !== null;
     },
     /** The item a split at the playhead would cut, or null. */
     get splitTarget() {
@@ -845,6 +930,8 @@ export function createPostEditorState(deps: PostEditorDeps) {
     gestureStep,
     endGesture,
     cancelGesture,
+    beginSession,
+    endSession,
     undo,
     redo,
     trimLive,
