@@ -31,6 +31,7 @@
   import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
   import { isBuugengFamilyProp } from "$lib/shared/pictograph/prop/domain/enums/prop-classification";
   import { computeViewerAlignedCamera } from "../camera/viewer-camera-framing";
+  import { largestHandDistance } from "../domain/performer-hand-distance";
   import WorkerEnvironmentRenderer from "../worker-renderer/components/WorkerEnvironmentRenderer.svelte";
   import type {
     WorkerPerformerInteractionFailure,
@@ -139,6 +140,9 @@
   const alignedCamera = computeViewerAlignedCamera({
     environmentId: viewer.environmentId,
     fov: cameraFov ?? 50,
+    handDistance: largestHandDistance(
+      viewer.performerManager.performers[0]?.handDistance
+    ),
   });
   const cameraFallback = {
     position: [

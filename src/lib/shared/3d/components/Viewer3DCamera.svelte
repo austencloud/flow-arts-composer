@@ -31,6 +31,7 @@
     isValidViewerCameraPose,
     isValidViewerCameraSnapshot,
   } from "../camera/viewer-camera-framing";
+  import { largestHandDistance } from "../domain/performer-hand-distance";
   import {
     collectEnvironmentCameraCollisionMeshes,
     keepEnvironmentReviewOrbitAboveSurface,
@@ -70,6 +71,9 @@
   const computed = computeViewerAlignedCamera({
     environmentId: viewer3DState.environmentId,
     fov,
+    handDistance: largestHandDistance(
+      viewer3DState.performerManager.performers[0]?.handDistance
+    ),
   });
   const defaultPosition = computed.position;
   const defaultTarget = computed.target;
