@@ -35,6 +35,10 @@ import {
   parseModelRenderKey,
   resolvePropRenderKey,
 } from "../domain/prop-look";
+import {
+  parseTriangleRenderKey,
+  triangleAppearanceArtwork,
+} from "../domain/triangle-appearance";
 import { orientModelSpriteToTips } from "$lib/shared/animation-engine/services/svg-generator";
 import { applyModelSpriteColor } from "../domain/prop-preview-color";
 import { getMotionColor } from "../../../utils/svg-color-utils";
@@ -126,8 +130,15 @@ export class PropSvgLoader {
       const renderKey = resolvePropRenderKey(propType, {
         fanAppearance: options?.fanAppearance,
         propLook: options?.propLook,
+        triangleGrip: options?.triangleGrip,
       });
       const modelRenderKey = parseModelRenderKey(renderKey);
+      // The triangle's side grip, drawn the way the animator draws it. Its
+      // glyph shares pictograph/triangle.svg's box, so placements hold.
+      const triangleRenderKey = parseTriangleRenderKey(renderKey);
+      const triangleArtworkPath = triangleRenderKey
+        ? triangleAppearanceArtwork(triangleRenderKey.grip)
+        : null;
 
       // Create cache key including color AND theme mode for transformed prop cache
       // Two prop SVG folders:
@@ -139,6 +150,7 @@ export class PropSvgLoader {
             color === HandSide.RIGHT ? "right" : "left"
           )
         : (fanArtworkPath ??
+          triangleArtworkPath ??
           (useGridVersion
             ? `/images/props/animated/${propType}.svg`
             : `/images/props/pictograph/${propType}.svg`));
