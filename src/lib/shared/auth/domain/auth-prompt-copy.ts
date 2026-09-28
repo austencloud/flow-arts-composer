@@ -4,7 +4,7 @@ import { AUTH_NUDGE_TEXTS, type AuthNudgeTrigger } from "./auth-nudge-trigger";
 
 // Prompt content is shared as English domain data. Resolve its visible copy
 // here so an open prompt responds to a locale change.
-const keys: Record<string, string> = {
+const keys: Partial<Record<string, TranslationKey>> = {
   "Keep saving sequences": "auth_prompt_keep_saving",
   "Save this sequence": "auth_prompt_save_sequence",
   "Eight is the guest limit.": "auth_prompt_eight_limit",
@@ -35,6 +35,20 @@ const keys: Record<string, string> = {
   "Save your settings": "auth_prompt_save_settings",
   "Sign in or create an account to customize your settings.":
     "auth_prompt_save_settings_body",
+  "Open 3D Studio": "auth_prompt_open_stage",
+  "Sign in or create an account to build and choreograph sequences in 3D.":
+    "auth_prompt_open_stage_body",
+  "Open this part of the app": "auth_prompt_open_module",
+  "Sign in or create an account to continue.": "auth_prompt_open_module_body",
+  "Use Fuse": "auth_prompt_use_fuse",
+  "A free account lets you combine two sequences into one.":
+    "auth_prompt_use_fuse_body",
+  "Use Tunnel": "auth_prompt_use_tunnel",
+  "A free account lets you arrange sequences for several performers.":
+    "auth_prompt_use_tunnel_body",
+  "Use Assemble": "auth_prompt_use_assemble",
+  "A free account lets you build a sequence by choosing grid points.":
+    "auth_prompt_use_assemble_body",
   "Edit this sequence": "auth_prompt_edit_sequence",
   "Sign in or create an account to edit and remix this sequence.":
     "auth_prompt_edit_sequence_body",
@@ -91,9 +105,50 @@ const keys: Record<string, string> = {
   "Seventeen is not sixteen.": "auth_prompt_seventeen",
 };
 
+// Every guest gate needs a real message. Constructing a key from the trigger
+// hid missing translations until visitors saw the key itself on screen.
+const nudgeKeys = {
+  save: "auth_nudge_save",
+  "save-limit": "auth_nudge_save_limit",
+  "step-cap-guest": "auth_nudge_step_cap_guest",
+  "patterns-guest": "auth_nudge_patterns_guest",
+  "extend-sequence": "auth_nudge_extend_sequence",
+  "turn-pattern": "auth_nudge_turn_pattern",
+  "rotation-direction": "auth_nudge_rotation_direction",
+  "duration-pattern": "auth_nudge_duration_pattern",
+  "choose-start": "auth_nudge_choose_start",
+  "rewind-sequence": "auth_nudge_rewind_sequence",
+  "loop-step-cap-guest": "auth_nudge_loop_step_cap_guest",
+  "setup-step-cap-guest": "auth_nudge_setup_step_cap_guest",
+  "sync-library": "auth_nudge_sync_library",
+  "community-map": "auth_nudge_community_map",
+  export: "auth_nudge_export",
+  "module:learn": "auth_nudge_module_learn",
+  "module:library": "auth_nudge_module_library",
+  "module:settings": "auth_nudge_module_settings",
+  "module:stage": "auth_nudge_module_stage",
+  "module:other": "auth_nudge_module_other",
+  "edit-community": "auth_nudge_edit_community",
+  "loop-locked-guest": "auth_nudge_loop_locked_guest",
+  "method:fuse": "auth_nudge_method_fuse",
+  "method:tunnel": "auth_nudge_method_tunnel",
+  "method:assemble": "auth_nudge_method_assemble",
+  "community-setups": "auth_nudge_community_setups",
+  "saved-setups": "auth_nudge_saved_setups",
+  "save-setup": "auth_nudge_save_setup",
+  "share-sequence": "auth_nudge_share_sequence",
+  "share-collection": "auth_nudge_share_collection",
+  "viewer-signin-publish": "auth_nudge_viewer_signin_publish",
+  "viewer-signin-download": "auth_nudge_viewer_signin_download",
+  "viewer-signin-account": "auth_nudge_viewer_signin_account",
+  "guest-first-save": "auth_nudge_guest_first_save",
+  "prop-collection": "auth_nudge_prop_collection",
+  "share-image-signin": "auth_nudge_share_image_signin",
+} satisfies Record<AuthNudgeTrigger, TranslationKey>;
+
 export function authPromptCopy(source: string): string {
   const key = keys[source];
-  if (key) return t(key as TranslationKey);
+  if (key) return t(key);
   const nudge = Object.entries(AUTH_NUDGE_TEXTS).find(
     ([, text]) => text === source
   );
@@ -101,7 +156,5 @@ export function authPromptCopy(source: string): string {
 }
 
 export function authNudgeCopy(trigger: AuthNudgeTrigger): string {
-  return t(
-    `auth_nudge_${trigger.replace(/[^a-z0-9]+/g, "_")}` as TranslationKey
-  );
+  return t(nudgeKeys[trigger]);
 }
