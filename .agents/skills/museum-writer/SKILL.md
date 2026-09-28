@@ -15,7 +15,7 @@ Writing craft skill for The Kinetic Archive. Covers character voices, document t
 
 ## Before Writing
 
-1. **Read the story bible** (`docs/museum/story-bible.md`) — know the current canon
+1. **Read the story bible** (`E:/flow-arts-private/museum/story-bible.md`, in the private repo) — know the current canon
 2. **Read the voice guide** (this skill's `voice-guide.md`) — know the characters
 3. **Check the joke ledger** below — don't repeat retired material
 4. **Know your document type** — word counts are strict

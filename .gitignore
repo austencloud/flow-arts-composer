@@ -327,7 +327,7 @@ flow-arts-transcripts/*-done.txt
 firebase-service-account.json
 .mcp.json
 
-# Private: development strategy & roadmap
+# Private: development strategy & roadmap (they live in austencloud/flow-arts-private)
 .claude/plans/
 docs/plans/
 
@@ -335,12 +335,12 @@ docs/plans/
 docs/grants/
 docs/grant-copy.md
 
-# Private: museum lore & narrative strategy
+# Private: museum lore & narrative strategy (they live in austencloud/flow-arts-private)
 docs/museum/story-bible.md
 docs/museum/real-story.md
 docs/museum/gift-shop.md
 
-# Private: humor training data
+# Private: humor training data (it lives in austencloud/flow-arts-private)
 mcp-server/src/core/humor-profile.json
 mcp-server-pkg/src/core/humor-profile.json
 

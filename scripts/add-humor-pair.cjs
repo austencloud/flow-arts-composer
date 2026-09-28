@@ -13,7 +13,10 @@
 const fs = require('fs');
 const path = require('path');
 
-const PROFILE_PATH = path.join(__dirname, '..', 'mcp-server', 'src', 'core', 'humor-profile.json');
+// The humor profile is private training data kept in the austencloud/flow-arts-private
+// clone. FLOW_ARTS_PRIVATE_DIR points at that clone when it isn't at E:/flow-arts-private.
+const PRIVATE_DIR = process.env.FLOW_ARTS_PRIVATE_DIR || 'E:/flow-arts-private';
+const PROFILE_PATH = path.join(PRIVATE_DIR, 'humor', 'humor-profile.json');
 
 function main() {
   const args = process.argv.slice(2);

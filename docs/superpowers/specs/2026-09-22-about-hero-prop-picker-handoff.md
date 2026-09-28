@@ -64,7 +64,7 @@ Related files, only if needed:
 - [ComposerInlinePropPicker.svelte](<E:/tka-about-composer-fusion/src/routes/(public)/composer/_components/ComposerInlinePropPicker.svelte>): wraps the canonical `BentoPropGrid`, supports `docked`, and owns Done.
 - [ComposerPractice.svelte](<E:/tka-about-composer-fusion/src/routes/(public)/composer/_components/ComposerPractice.svelte>): Build/Generate workspace with its own integrated prop rail. Do not dismantle it to fix the hero.
 - [ComposerTunnelDemo.svelte](<E:/tka-about-composer-fusion/src/routes/(public)/composer/_components/ComposerTunnelDemo.svelte>): separate tunnel picker host. Preserve its behavior.
-- [Verification record](E:/tka-about-composer-fusion/docs/plans/about-composer-fusion-verification.md): historical implementation evidence and unresolved gates. Its positive aesthetic assessment is superseded by Austen's rejection above.
+- [Verification record](E:/flow-arts-private/plans/about-composer-fusion-verification.md): historical implementation evidence and unresolved gates. Its positive aesthetic assessment is superseded by Austen's rejection above.
 
 ## Done: verified
 

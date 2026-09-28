@@ -11,6 +11,8 @@
 
 **`story-bible.md` is the canonical document.** Everything else is supplementary. If anything conflicts with the story bible, the story bible wins.
 
+The story bible, `gift-shop.md` and `real-story.md` are private. They live in the private repo `austencloud/flow-arts-private` under `museum/`, cloned at `E:/flow-arts-private/museum/`. Edit and commit them there, never here.
+
 The museum-dev tracker (`node scripts/museum-dev.js`) records how decisions were made. The story bible records where the lore stands now.
 
 ---
@@ -19,13 +21,13 @@ The museum-dev tracker (`node scripts/museum-dev.js`) records how decisions were
 
 | Document | Status | Description |
 |----------|--------|-------------|
-| [story-bible.md](./story-bible.md) | **Canon** | Master document. Creative principles, K's arc, factions, endings, deep lore, all locked decisions. |
+| `story-bible.md` (private) | **Canon** | Master document. Creative principles, K's arc, factions, endings, deep lore, all locked decisions. |
 | [museum-layout.md](./museum-layout.md) | Needs revision | Physical wing layout. Still uses retired Wing 1-8 numbering. Spatial reference only. |
 | [vtg-wing.md](./vtg-wing.md) | Partially superseded | Vulcan Cave elemental design. Some content folded into story bible. |
 | [story-audit-march-2026.md](./story-audit-march-2026.md) | Active | Story quality audit with predicted Steam rating and comp titles. |
 | [stanley-parable-reference.md](./stanley-parable-reference.md) | Active | Stanley Parable design lessons and source URLs. |
-| [gift-shop.md](./gift-shop.md) | Active | Fake items, digital unlocks, real merch concepts. |
-| [real-story.md](./real-story.md) | Active | Austen's actual development story (outside the fiction). |
+| `gift-shop.md` (private) | Active | Fake items, digital unlocks, real merch concepts. |
+| `real-story.md` (private) | Active | Austen's actual development story (outside the fiction). |
 | [tka-os/design.md](./tka-os/design.md) | Active | The retro Windows 93 app experience design. |
 | [plaques/lascaux-tablets.md](./plaques/lascaux-tablets.md) | Active | Sample plaque text and audio script. |
 
@@ -74,7 +76,7 @@ node scripts/museum-dev.js session "Title"         # Start brainstorm
 node scripts/museum-dev.js help                    # Full command list
 ```
 
-Staleness check: `node scripts/check-lore-staleness.cjs`
+Staleness check: `node scripts/check-lore-staleness.cjs` (reads the private story bible; `FLOW_ARTS_PRIVATE_DIR` overrides the clone location)
 
 ---
 
@@ -87,4 +89,4 @@ Staleness check: `node scripts/check-lore-staleness.cjs`
 
 ---
 
-*Last updated: 2026-03-04*
+*Last updated: 2026-09-27*

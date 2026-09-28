@@ -17,12 +17,18 @@ import {
 const readSource = (path: string): string =>
   readFileSync(resolve(process.cwd(), path), "utf-8");
 
+// 453be00df6 and b11df1a24d moved Guide and Composer copy into the message
+// catalog. The English there is still the wording these contracts guard.
+const readEnglishMessages = (): Record<string, string> =>
+  JSON.parse(readSource("messages/en.json")) as Record<string, string>;
+
 // A destination may host its morph participant in a local component rather than
 // in +page.svelte. Each entry therefore lists every file the participant is
 // allowed to live in.
 const routeSourceByPath: Record<string, string[]> = {
   // f64350ce63 moved the Composer page body, participant included, into
-  // ComposerExperience when About fused into it.
+  // ComposerExperience when About fused into it. /about renders it too, so a
+  // separate test proves /composer still does.
   "/composer": [
     "src/routes/(public)/composer/+page.svelte",
     "src/routes/(public)/composer/_components/ComposerExperience.svelte",
@@ -168,6 +174,18 @@ describe("landing shared-element contract", () => {
     }
   });
 
+  // The Composer morph participant, hero act, and demo load recovery checked
+  // in this file all live in ComposerExperience. /about renders that component
+  // too, so its source says nothing about /composer unless the route renders it.
+  it("renders the shared Composer body on /composer", () => {
+    const route = readSource("src/routes/(public)/composer/+page.svelte");
+
+    expect(route).toContain(
+      'import ComposerExperience from "./_components/ComposerExperience.svelte";'
+    );
+    expect(route).toMatch(/<ComposerExperience\b[^>]*\/>/);
+  });
+
   it("styles every named group and suppresses only the scoped root capture", () => {
     const css = readSource("src/lib/shared/transitions/view-transitions.css");
     for (const morphName of LAUNCHPAD_TILES.map((tile) => tile.morphName)) {
@@ -253,7 +271,14 @@ describe("landing shared-element contract", () => {
     expect(guideShell).toContain("{#if ownsStandaloneChrome}");
     expect(guidePage).not.toContain("joinWaitlist");
     expect(guidePage).toContain('href="/learn/concepts"');
-    expect(guidePage).toContain('tDynamic("guide_hub_start_with", {');
+    // 453be00df6 moved the start action's label into the catalog. It still
+    // names the first topic, and English still reads "Start with {topic}".
+    expect(guidePage).toMatch(
+      /tDynamic\("guide_hub_start_with",\s*\{\s*topic:\s*localizedFirstTopicLabel,?\s*\}\)/
+    );
+    expect(readEnglishMessages().guide_hub_start_with).toBe(
+      "Start with {topic}"
+    );
     expect(guideCss).toContain("html:has(.guide-layout):not(:has(.mkt-shell))");
   });
 
@@ -399,7 +424,12 @@ describe("landing shared-element contract", () => {
     expect(composer).toContain("The community gallery did not load.");
     expect(generate).toContain("classifyComposerGenerationFailure(error)");
     expect(generate).toContain('result === "no-result"');
+    // b11df1a24d moved the failure line into the catalog; English keeps the
+    // retry wording.
     expect(generate).toContain('t("composer_demo_generate_failed")');
+    expect(readEnglishMessages().composer_demo_generate_failed).toBe(
+      "The generator couldn't run. Try again."
+    );
     expect(sequenceHero).toContain("placeholder={playerPlaceholder}");
     expect(sequenceHero).toContain("onStatusChange={(status) =>");
   });

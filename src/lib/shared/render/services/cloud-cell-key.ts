@@ -22,6 +22,13 @@ export const CANONICAL_CELL_SIZE = 480;
  * SAME hash for a given card regardless of the viewer's personal visibility
  * prefs. Prop types + catDogMode are intentionally NOT here — they come from the
  * sequence's intendedProp (already canonical across scanners).
+ *
+ * Canonical cells are notation artwork. The printed card is one shared object,
+ * so the scan card and render-at-publish never carry the viewer's fan build or
+ * prop look (decided 2026-09-27, when app cards began following the look). The
+ * look is deliberately not pinned here: PictographKeyHasher keys a model render
+ * apart, so a stray Realistic render misses the cloud and renders locally
+ * instead of being served, or uploaded, under a notation hash.
  */
 export const CANONICAL_CARD_VISIBILITY = {
   showTKA: true,

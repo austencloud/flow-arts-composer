@@ -90,6 +90,8 @@ describe("PropTypeManager model look with chosen colors", () => {
       const propType = spriteType === "triangle_side" ? "triangle" : spriteType;
       const state = makeState(propType, propType);
       const props = {
+        leftProp: null,
+        rightProp: null,
         leftPropType: propType,
         rightPropType: propType,
         propLook: "model",
@@ -117,6 +119,8 @@ describe("PropTypeManager model look with chosen colors", () => {
     const { ptm, propTextureService } = makeManager();
     const state = makeState("buugeng", "buugeng");
     const props = {
+      leftProp: null,
+      rightProp: null,
       leftPropType: "buugeng",
       rightPropType: "buugeng",
       propLook: "pictograph",
@@ -142,7 +146,12 @@ describe("PropTypeManager model look with chosen colors", () => {
       } as any,
     });
     const state = makeState("buugeng", "buugeng");
-    const props = { leftPropType: "buugeng", rightPropType: "buugeng" };
+    const props = {
+      leftProp: null,
+      rightProp: null,
+      leftPropType: "buugeng",
+      rightPropType: "buugeng",
+    };
 
     ptm.handleOverrides(
       { ...props, propLook: "model" },

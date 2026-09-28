@@ -1,4 +1,5 @@
 import type { FanAppearance } from "$lib/shared/pictograph/prop/domain/fan-appearance";
+import type { PropLook } from "$lib/shared/pictograph/prop/domain/prop-look";
 /**
  * Preview Cell Renderer
  *
@@ -18,6 +19,9 @@ import type { BrowseViewMode } from "$lib/shared/browse/domain/browse-view-mode"
  */
 export interface PreviewCellRenderOptions {
   fanAppearance?: FanAppearance;
+  /** Artwork for non-fan props: the look the canvas beside the card draws.
+   *  Omitted means notation artwork, which printed and scanned cards keep. */
+  propLook?: PropLook;
   primaryPropColors?: { left: string; right: string } | null;
   /** Render size in pixels (e.g., 480 for high-res) - this is the height; width = size * widthMultiplier */
   size: number;
