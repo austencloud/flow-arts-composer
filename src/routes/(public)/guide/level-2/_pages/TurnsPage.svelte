@@ -463,7 +463,12 @@
       <SelectionHit
         groupId={row.animKey}
         isGroupStart
-        label={`Animate: ${row.word}`}
+        label={translate("guide_l2_animate", {
+          word:
+            row.word === "Prospin with a turn"
+              ? translate("guide_runtime_prospin_turn")
+              : translate("guide_runtime_antispin_turn"),
+        })}
         onselect={() =>
           emitSequence?.({
             strip: rowSteps(row),

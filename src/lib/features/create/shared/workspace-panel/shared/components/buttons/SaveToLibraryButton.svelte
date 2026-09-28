@@ -43,7 +43,7 @@
   }
 
   const tooltip = $derived(
-    isDisabled ? "Create a sequence first" : "Save to Library"
+    isDisabled ? t("create_workspace_create_sequence_first") : t("create_ui_save_to_library")
   );
 </script>
 

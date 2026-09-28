@@ -844,7 +844,7 @@
   let lastAnnouncement = $state("");
   $effect(() => {
     if (activePillLabel) {
-      lastAnnouncement = `${activePillLabel} settings`;
+      lastAnnouncement = t("viewer_ui_section_settings", { name: activePillLabel });
     }
   });
 </script>
