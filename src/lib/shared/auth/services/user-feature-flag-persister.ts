@@ -21,15 +21,7 @@
  *   allow create, update: if isAdmin() && settingId == 'featureOverrides'
  */
 
-import {
-  doc,
-  getDoc,
-  setDoc,
-  onSnapshot,
-  serverTimestamp,
-  type Unsubscribe,
-} from "firebase/firestore";
-import { auth, getFirestoreInstance } from "../firebase";
+import type { Unsubscribe } from "firebase/firestore";
 import { trackWrite } from "$lib/shared/offline/state/sync-status-state.svelte";
 import { isValidFeatureId } from "../domain/models/feature-flag";
 import type {
@@ -42,9 +34,14 @@ const LOCAL_STORAGE_PREFIX = "tka_feature_overrides_";
 export class UserFeatureFlagPersister {
   private unsubscribe: Unsubscribe | null = null;
 
-  // Firestore document reference
-
+  // Public pages import this class through the feature-flag service, but
+  // flags only load after someone signs in. Loading Firebase here, on first
+  // use, keeps it off those pages' first download. The import() must name
+  // the Firebase modules themselves: the build's small-chunk merge
+  // (vite.config.ts) can fold a small wrapper module back into the page.
   private async getDocRef(userId: string) {
+    const { doc } = await import("firebase/firestore");
+    const { getFirestoreInstance } = await import("../firebase");
     const firestore = await getFirestoreInstance();
     return doc(firestore, `users/${userId}/settings/featureOverrides`);
   }
@@ -61,6 +58,7 @@ export class UserFeatureFlagPersister {
     };
 
     try {
+      const { getDoc } = await import("firebase/firestore");
       const docRef = await this.getDocRef(userId);
       const snap = await getDoc(docRef);
 
@@ -119,7 +117,8 @@ export class UserFeatureFlagPersister {
     this.dispose();
 
     this.getDocRef(userId)
-      .then((docRef) => {
+      .then(async (docRef) => {
+        const { onSnapshot } = await import("firebase/firestore");
         this.unsubscribe = onSnapshot(
           docRef,
           (snap) => {
@@ -165,6 +164,8 @@ export class UserFeatureFlagPersister {
     userId: string,
     overrides: UserFeatureOverrides
   ): Promise<void> {
+    const { setDoc, serverTimestamp } = await import("firebase/firestore");
+    const { auth } = await import("../firebase");
     const docRef = await this.getDocRef(userId);
     const updatedBy = auth.currentUser?.uid ?? "unknown";
 
