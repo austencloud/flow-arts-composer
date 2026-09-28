@@ -27,10 +27,6 @@
   import ContextMenu from "$lib/shared/components/context-menu/ContextMenu.svelte";
   import type { ContextMenuState } from "$lib/shared/components/context-menu/context-menu-types";
   import { featureFlagService } from "$lib/shared/auth/services/post-hog-feature-flag-service.svelte";
-  import {
-    getQRCodeGenerator,
-    getUrlQRCodeGenerator,
-  } from "$lib/shared/qr/get-qr-code-generator";
   import { resolveInfoCellDisplay } from "../services/info-cell-display";
   import { createStartPlacementFromBeatStart } from "$lib/shared/create/services/sequence-transforms";
   import { getVisibilityStateManager } from "$lib/shared/pictograph/shared/state/visibility-state.svelte";
@@ -70,7 +66,10 @@
     createChoreoCardSizingState,
     getContainedCardHeight,
   } from "$lib/shared/choreo-card/state/choreo-card-sizing-state.svelte";
-  import { createChoreoCardQrState } from "$lib/shared/choreo-card/state/choreo-card-qr-state.svelte";
+  import {
+    createChoreoCardQrState,
+    lazyChoreoCardQrServices,
+  } from "$lib/shared/choreo-card/state/choreo-card-qr-state.svelte";
   import { createChoreoCardDisplayState } from "$lib/shared/choreo-card/state/choreo-card-display-state.svelte";
   import { createChoreoCardRenderLifecycle } from "$lib/shared/choreo-card/state/choreo-card-render-lifecycle.svelte";
   import { createCrossfaderState } from "$lib/shared/choreo-card/state/crossfader-state.svelte";
@@ -597,7 +596,7 @@
       browseViewMode,
       exportPresentation,
     }),
-    { getGenerator: getQRCodeGenerator, getUrlGenerator: getUrlQRCodeGenerator }
+    lazyChoreoCardQrServices
   );
   const qrDataUrl = $derived(qrState.dataUrl);
   const qrPending = $derived(qrState.pending);

@@ -350,8 +350,17 @@ null and false. Public pages import settings, feature flags and the premium
 prop check, and importing either owner there put Firebase Auth and Firestore on
 their first download. Firestore calls on those paths load it with `import()`
 that names the Firebase modules directly, because the small-chunk merge in
-`vite.config.ts` can fold a small wrapper module back into the page.
-`scripts/verify-public-firebase.mjs` checks the listed public pages in the
-built chunk graph. Searches: currentUser, signed-in user, isAdmin, public page
-Firebase, first download. Decision: extend the two owners; code a public page
-loads at startup uses these readers instead of importing either owner.
+`vite.config.ts` can fold a small wrapper module back into the page. Code that
+follows sign-in changes without loading Firebase itself waits with
+`whenAuthLoaded` in `loaded-auth.ts`. `hasSavedFirebaseUser`
+(`shared/auth/services/saved-firebase-user.ts`, re-exported by
+`deferred-sign-in.ts`) imports nothing and tells whether a saved session could
+sign anyone in; the card layout settings (`image-composition-state.svelte.ts`)
+load the bootstrap only when it does. `scripts/verify-public-firebase.mjs`
+checks the listed public pages in the built chunk graph, and
+`tests/unit/landing/home-first-visit-firebase.test.ts` follows the home page's
+LazyMount components and first-visit `import()` calls in source. Searches:
+currentUser, signed-in user, isAdmin, whenAuthLoaded, saved session, public
+page Firebase, first download, LazyMount. Decision: extend the two owners; code
+a public page loads at startup uses these readers instead of importing either
+owner.
