@@ -65,16 +65,64 @@ describe("crop session", () => {
     expect(isCovered(session.pose!)).toBe(true);
   });
 
-  it("nudges the picture with the arrow keys and stops at its edge", () => {
+  it("moves the frame with the arrow keys and stops at the picture's edge", () => {
     const { session } = openCrop();
     session.setZoom(session.pose!.zoom * 1.2);
     const start = session.pose!.offset.x;
 
+    // The frame moves right, so the picture sits further left of it.
     expect(session.nudge({ x: 1, y: 0 }, false)).toBe(true);
-    expect(session.pose!.offset.x).toBeGreaterThan(start);
+    expect(session.pose!.offset.x).toBeLessThan(start);
 
     for (let i = 0; i < 50; i += 1) session.nudge({ x: 1, y: 0 }, true);
     expect(isCovered(session.pose!)).toBe(true);
     expect(session.nudge({ x: 1, y: 0 }, true)).toBe(false);
+  });
+
+  it("drags the frame the way the pointer goes", () => {
+    const { session } = openCrop();
+    session.setZoom(session.pose!.zoom * 1.5);
+    const start = session.pose!.offset;
+
+    expect(session.startGesture(0)).toBe(true);
+    session.dragTo({ x: 10, y: -5 });
+    session.endGesture(true);
+
+    expect(session.pose!.offset.x).toBeCloseTo(start.x - 10, 6);
+    expect(session.pose!.offset.y).toBeCloseTo(start.y + 5, 6);
+  });
+
+  it("gives the clip a ratio's shape, filled, and Reset takes it off", () => {
+    const { editor, session } = openCrop();
+    const box = session.window!;
+
+    session.setShape("1:1");
+    expect(session.shapeKind).toBe("1:1");
+    expect(session.window!.width / session.window!.height).toBeCloseTo(1, 6);
+    expect(isCovered(session.pose!)).toBe(true);
+
+    session.setShape("original");
+    expect(session.window!.width / session.window!.height).toBeCloseTo(1920 / 1080, 6);
+
+    session.reset();
+    const clip = editor.project.tracks
+      .flatMap((track) => track.items)
+      .find((item): item is PostVideoItem => item.kind === "video")!;
+    expect(clip.shape).toBeUndefined();
+    expect(session.window).toEqual(box);
+  });
+
+  it("reshapes a free clip from a side, as one undo step", () => {
+    const { editor, session } = openCrop();
+    session.setShape("free");
+    const ratio = session.window!.width / session.window!.height;
+
+    expect(session.startGesture(0)).toBe(true);
+    session.handleTo("e", 0.8);
+    session.endGesture(true);
+    expect(session.window!.width / session.window!.height).toBeCloseTo(ratio * 0.8, 6);
+
+    editor.undo();
+    expect(session.window!.width / session.window!.height).toBeCloseTo(ratio, 6);
   });
 });

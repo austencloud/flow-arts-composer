@@ -55,6 +55,7 @@ export function itemIcon(item: PostItem): string {
 export const TOOL_ICON: Record<PostToolId, string> = {
   videos: "fa-photo-film",
   add: "fa-plus",
+  canvas: "fa-vector-square",
   look: "fa-palette",
   export: "fa-file-export",
   trim: "fa-arrows-left-right-to-line",
@@ -85,6 +86,8 @@ export function toolLabel(id: PostToolId): string {
       return t("post_editor_videos");
     case "add":
       return t("post_editor_add");
+    case "canvas":
+      return t("post_editor_tool_canvas");
     case "look":
       return t("post_editor_tool_look");
     case "export":
