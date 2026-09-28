@@ -16,7 +16,8 @@ objects in the frame.
 - `autumn-shadow-roles.ts` owns runtime shadow participation. Hero A meshes are
   recognized by their authored node names. The optimizer's unnamed Hero B
   instance batch is recognized by its authored material name.
-- `AutumnLighting.svelte` remains the single light and shadow-frustum owner.
+- `worlds/autumn/autumn-lighting.ts` is the single light and shadow-frustum
+  owner.
 - `src/routes/test/autumn-scene/+page.svelte` enables the renderer shadow map so
   the verification route reflects production behavior.
 

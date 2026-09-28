@@ -103,8 +103,8 @@ describe("Autumn shadow budget", () => {
       "DistantWillow_03",
       "MidDepthBirch_NW_01",
       "FarDepthGoldenSentinel",
-      // AutumnWind owns these; claiming them here too would make the winner
-      // depend on effect ordering.
+      // The wind pass in createAutumnMaterialRuntime owns these and sets them
+      // to receive-only after the shadow-role pass.
       "Autumn_Grass_Base",
       "Autumn_Grass_High",
     ]) {
