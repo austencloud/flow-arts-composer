@@ -31,7 +31,7 @@
 -->
 <script lang="ts">
   import { t } from "$lib/shared/i18n/i18n.svelte";
-  import { onMount, onDestroy, type Snippet } from "svelte";
+  import { onMount, onDestroy, tick, type Snippet } from "svelte";
   import { MediaQuery } from "svelte/reactivity";
   import { createSimplifiedStartPlacementState } from "$lib/shared/create/state/start-placement-state.svelte";
   import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
@@ -55,7 +55,11 @@
   import UndoGlyph from "$lib/features/create/shared/workspace-panel/shared/components/buttons/UndoGlyph.svelte";
   import Crossfade from "$lib/shared/components/Crossfade.svelte";
   import { DURATION } from "$lib/shared/transitions/transitions";
-  import { motionDuration } from "$lib/shared/transitions/motion";
+  import {
+    motionDuration,
+    reducedMotion,
+  } from "$lib/shared/transitions/motion";
+  import { focusFirstOrContainer } from "$lib/shared/foundation/ui/modal/helpers/focus-restore";
   import { slide } from "svelte/transition";
   import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
   import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
@@ -544,25 +548,75 @@
     startPlacementState.clearSelectedPlacement();
     compactPane = "build";
   }
+
+  // Below 1200 px the play-phase actions sit under the player, outside the
+  // action slot's crossfade, so focus crosses between them here: Play hands
+  // it to Keep building, and leaving play hands it back to the slot, as the
+  // crossfade itself does on wide screens. Either end can be off screen, so
+  // it scrolls just into view.
+  let actionSwapEl = $state<HTMLElement | null>(null);
+  let actionFade = $state<ReturnType<typeof Crossfade> | null>(null);
+  let playActionsEl = $state<HTMLElement | null>(null);
+
+  function holdsFocus(element: HTMLElement | null): boolean {
+    return !!element?.contains(document.activeElement);
+  }
+
+  function reveal(element: Element | null) {
+    element?.scrollIntoView({
+      block: "nearest",
+      behavior: reducedMotion() ? "instant" : "smooth",
+    });
+  }
+
+  function play() {
+    const carry = holdsFocus(actionSwapEl);
+    playing = true;
+    compactPane = "build";
+    if (carry) void focusPlayActions();
+  }
+
+  async function focusPlayActions() {
+    await tick();
+    if (!playActionsEl) return;
+    focusFirstOrContainer(playActionsEl, { preventScroll: true });
+    reveal(playActionsEl);
+  }
+
+  function keepBuilding() {
+    const carry = holdsFocus(playActionsEl);
+    playing = false;
+    playingStepNumber = null;
+    compactPane = "build";
+    dropPlayerRefs();
+    if (carry) void focusActionSlot();
+  }
+
+  function buildAnother() {
+    const carry = holdsFocus(playActionsEl);
+    reset();
+    if (carry) void focusActionSlot();
+  }
+
+  async function focusActionSlot() {
+    await tick();
+    reveal(actionFade?.focusShown({ preventScroll: true }) ?? null);
+  }
 </script>
 
 {#snippet playPhaseActions()}
   <div class="play-actions">
     {#if steps.length < MAX_STEPS}
-      <PanelButton
-        variant="secondary"
-        onclick={() => {
-          playing = false;
-          playingStepNumber = null;
-          compactPane = "build";
-          dropPlayerRefs();
-        }}
-      >
+      <PanelButton variant="secondary" onclick={keepBuilding}>
         <i class="fas fa-arrow-left" aria-hidden="true"></i>
         {t("composer_demo_keep_building")}
       </PanelButton>
     {/if}
-    <PanelButton variant="primary" ariaLabel="Build another" onclick={reset}>
+    <PanelButton
+      variant="primary"
+      ariaLabel="Build another"
+      onclick={buildAnother}
+    >
       <i class="fas fa-rotate-left" aria-hidden="true"></i>
       {t("composer_demo_build_another")}
     </PanelButton>
@@ -767,8 +821,13 @@
                 <ClearSequenceButton onclick={reset} />
               {/if}
             </div>
-            <div class="action-swap">
-              <Crossfade key={phase} duration={DURATION.normal} mode="swap">
+            <div class="action-swap" bind:this={actionSwapEl}>
+              <Crossfade
+                bind:this={actionFade}
+                key={phase}
+                duration={DURATION.normal}
+                mode="swap"
+              >
                 <div class="action-swap-state">
                   {#if phase === "add-step"}
                     {#if isContinuous}
@@ -793,13 +852,7 @@
                           ? "visible"
                           : "hidden"}
                       >
-                        <ViewSequenceButton
-                          purpose="play"
-                          onclick={() => {
-                            playing = true;
-                            compactPane = "build";
-                          }}
-                        />
+                        <ViewSequenceButton purpose="play" onclick={play} />
                       </span>
                     {/if}
                   {:else if phase === "play" && !isCompactDemo}
@@ -964,7 +1017,7 @@
     </div>
 
     {#if isCompactDemo && phase === "play"}
-      <div class="compact-play-actions">
+      <div class="compact-play-actions" bind:this={playActionsEl}>
         {@render playPhaseActions()}
       </div>
     {/if}
