@@ -330,18 +330,9 @@ export function registerCreateShortcuts(
         return;
       }
 
-      // Remove the beat and all subsequent steps with animation (same as trash can button)
-      sequenceState.removeStepAndSubsequentWithAnimation(
-        selectedStepIndex,
-        () => {
-          // After animation completes, select appropriate beat
-          if (selectedStepIndex > 0) {
-            sequenceState.selectStep(selectedStepIndex);
-          } else {
-            sequenceState.selectStartPlacementForEditing();
-          }
-        }
-      );
+      // The module's removal, same as the step editor's Delete button: it
+      // records the undo entry, then removes this step and every step after it.
+      ref.removeStep(selectedStepIndex);
     },
   });
 
@@ -389,16 +380,7 @@ export function registerCreateShortcuts(
         return;
       }
 
-      sequenceState.removeStepAndSubsequentWithAnimation(
-        selectedStepIndex,
-        () => {
-          if (selectedStepIndex > 0) {
-            sequenceState.selectStep(selectedStepIndex);
-          } else {
-            sequenceState.selectStartPlacementForEditing();
-          }
-        }
-      );
+      ref.removeStep(selectedStepIndex);
     },
   });
 

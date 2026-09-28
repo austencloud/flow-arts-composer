@@ -1035,7 +1035,6 @@
   .contribution {
     display: grid;
     gap: clamp(2rem, 4vw, 5rem);
-    scroll-margin-top: 6rem;
     padding: clamp(1.5rem, 3vw, 3rem);
     border: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.12));
     border-radius: var(--radius-2026-xl, 24px);

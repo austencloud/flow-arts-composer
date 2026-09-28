@@ -199,7 +199,6 @@
     width: min(100%, 96rem);
     margin-inline: auto;
     margin-top: 2rem;
-    scroll-margin-top: 6rem;
   }
 
   .lesson-link {
@@ -225,7 +224,6 @@
     grid-row: 1 / 3;
     grid-template-rows: subgrid;
     min-width: 0;
-    scroll-margin-top: 5.5rem;
   }
 
   .mode-row {
@@ -383,7 +381,6 @@
     font-size: clamp(1.25rem, 1rem + 0.4vw, 1.65rem);
     line-height: 1.25;
     font-weight: 700;
-    scroll-margin-top: 7rem;
   }
 
   .detail-heading h2 > span {

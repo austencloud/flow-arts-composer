@@ -2,6 +2,7 @@
   import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import {
     POST_BOX,
+    POST_CANVAS_RATIOS,
     POST_FRAME_RATE,
     POST_MAX_LABEL_LENGTH,
     POST_MAX_SPEED,
@@ -53,9 +54,10 @@
     joinRotation,
     quarterLeft,
     splitRotation,
-    type CropFit,
   } from "./post-crop-geometry";
-  import type { CropSession } from "./post-crop-session.svelte";
+  import type { CropSession, CropShapeKind } from "./post-crop-session.svelte";
+  import PostRatioPicker, { type RatioOption } from "./PostRatioPicker.svelte";
+  import { ratioValue } from "$lib/shared/media-composition/domain/post-canvas";
   import type { StaffTipAnalysis } from "$lib/shared/media-composition/state/staff-tip-analysis.svelte";
   import PostStaffEffectsTool from "./PostStaffEffectsTool.svelte";
 
@@ -184,10 +186,36 @@
       });
   }
 
-  function setFit(fit: CropFit): void {
-    if (crop) crop.setFit(fit);
-    else patchItem({ fit });
-  }
+  /** Fill, the footage's own shape, a free one, then the fixed ratios. */
+  const cropShapes = $derived.by((): RatioOption<CropShapeKind>[] => {
+    const off = locked || !crop;
+    return [
+      {
+        value: "fill",
+        label: t("post_crop_shape_fill"),
+        icon: "fa-expand",
+        disabled: off,
+      },
+      {
+        value: "original",
+        label: t("post_crop_shape_original"),
+        icon: "fa-film",
+        disabled: off || !crop?.pose,
+      },
+      {
+        value: "free",
+        label: t("post_crop_shape_free"),
+        icon: "fa-crop-simple",
+        disabled: off,
+      },
+      ...POST_CANVAS_RATIOS.map((name) => ({
+        value: name,
+        label: name,
+        ratio: ratioValue(name),
+        disabled: off,
+      })),
+    ];
+  });
 
   function toggleMirror(): void {
     if (crop) crop.toggleMirror();
@@ -464,6 +492,12 @@
   {:else if tool === "crop" && item.kind === "video"}
     {@const framing = framingAt(item, seconds)}
     {@const parts = crop?.parts ?? splitRotation(framing.rotation)}
+    <PostRatioPicker
+      options={cropShapes}
+      value={crop?.shapeKind ?? null}
+      onchange={(kind) => crop?.setShape(kind)}
+      ariaLabel={t("post_crop_shape")}
+    />
     <ValueSlider
       label={t("post_crop_straighten")}
       value={parts.straighten}
@@ -504,26 +538,12 @@
         disabled={locked}
         onclick={toggleMirror}
       />
-      <div class="crop-fit">
-        <SegmentedControl
-          color="accent"
-          options={[
-            {
-              value: "cover",
-              label: t("post_editor_fit_cover"),
-              disabled: locked,
-            },
-            {
-              value: "contain",
-              label: t("post_editor_fit_contain"),
-              disabled: locked,
-            },
-          ]}
-          value={item.fit}
-          onchange={setFit}
-          ariaLabel={t("post_editor_fit")}
-        />
-      </div>
+      {#if crop}
+        <PanelButton onclick={crop.reset} disabled={!crop.canReset}>
+          <i class="fa-solid fa-arrows-rotate" aria-hidden="true"></i>
+          {t("post_editor_reset_crop")}
+        </PanelButton>
+      {/if}
     </div>
     <p class="hint">{t("post_crop_hint")}</p>
   {:else if tool === "speed" && item.kind === "video"}
@@ -758,17 +778,12 @@
     gap: 0.5rem;
   }
 
-  /* Rotate, Mirror and the fit share a line when the panel has room. */
+  /* Rotate, Mirror and Reset share a line when the panel has room. */
   .crop-row {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
     gap: 0.5rem 0.75rem;
-  }
-
-  .crop-fit {
-    flex: 1 1 12rem;
-    min-width: 0;
   }
 
   .hint {

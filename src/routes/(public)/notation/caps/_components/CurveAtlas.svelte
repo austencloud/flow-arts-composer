@@ -210,10 +210,6 @@
     gap: clamp(2.25rem, 4cqi, 4.5rem);
   }
 
-  .atlas-group {
-    scroll-margin-top: 6rem;
-  }
-
   .group-heading {
     display: grid;
     grid-template-columns: minmax(0, 1.2fr) minmax(18rem, 0.8fr);

@@ -78,7 +78,6 @@
 
 <style>
   .lazy-section {
-    scroll-margin-top: 88px;
     opacity: 0;
     transform: translateY(24px);
     transition:
@@ -193,10 +192,6 @@
   }
 
   @media (max-width: 760px) {
-    .lazy-section {
-      scroll-margin-top: 72px;
-    }
-
     .how-section-skeleton {
       --sk-height: clamp(176px, 49vw, 210px);
 

@@ -337,7 +337,6 @@
   }
   .selected-reader {
     min-width: 0;
-    scroll-margin-top: calc(var(--marketing-header-h, 64px) + 1rem);
   }
   .selected-reader:focus {
     outline: none;
@@ -372,7 +371,6 @@
     border-top: 1px solid var(--theme-stroke);
     padding-top: 1.25rem;
     margin-top: 2.5rem;
-    scroll-margin-top: calc(var(--marketing-header-h, 64px) + 1rem);
   }
   .archive-about-columns {
     display: grid;
@@ -419,7 +417,6 @@
     }
     .entry-index {
       contain: none;
-      scroll-margin-top: calc(var(--marketing-header-h, 64px) + 1rem);
       position: static;
     }
     details {
