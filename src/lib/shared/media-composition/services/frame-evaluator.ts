@@ -359,6 +359,33 @@ export function evaluatePresetFrame(
   alignment?: SequenceFrameAlignment | null,
   sourceTimeOffsets: SourceTimeOffsets = {}
 ): EvaluatedFrameLayer[] {
+  return evaluatePresetLayers(
+    preset,
+    durationSeconds,
+    timeSeconds,
+    alignment,
+    sourceTimeOffsets
+  ).filter(isVisibleLayer);
+}
+
+/** A layer a fade or transition has not left fully clear. */
+export function isVisibleLayer(layer: EvaluatedFrameLayer): boolean {
+  return layer.opacity > 0.0001;
+}
+
+/**
+ * Every visual layer whose clip spans one project timestamp, including one a
+ * fade leaves fully clear, as at the first instant of a fade-in. The crop
+ * screen shows its clip through the fade; everything else draws only the
+ * visible layers of `evaluatePresetFrame`.
+ */
+export function evaluatePresetLayers(
+  preset: MediaCompositionPreset,
+  durationSeconds: number,
+  timeSeconds: number,
+  alignment?: SequenceFrameAlignment | null,
+  sourceTimeOffsets: SourceTimeOffsets = {}
+): EvaluatedFrameLayer[] {
   if (!Number.isFinite(durationSeconds) || durationSeconds <= 0) {
     throw new RangeError("durationSeconds must be a positive finite number");
   }
@@ -480,7 +507,7 @@ export function evaluatePresetFrame(
     if (incoming) incoming.opacity *= progress;
   }
 
-  return layers.filter((layer) => layer.opacity > 0.0001);
+  return layers;
 }
 
 /** True when any part of the rect lands inside the output frame. */

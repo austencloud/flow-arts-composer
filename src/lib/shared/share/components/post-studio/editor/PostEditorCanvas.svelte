@@ -127,6 +127,12 @@
   const visible = $derived(
     new Map(editor.frameLayers.map((layer) => [layer.clipId, layer]))
   );
+  /** The crop screen shows its clip even where a fade leaves it clear. */
+  const present = $derived(
+    cropping
+      ? new Map(editor.presentLayers.map((layer) => [layer.clipId, layer]))
+      : visible
+  );
 
   /**
    * One layer per role in each region. A sequence item is cut into pieces at
@@ -148,17 +154,18 @@
     for (const [regionId, clips] of byRegion) {
       const roles = [...new Set(clips.map((clip) => clip.sourceRole))];
       const list: RegionEntry[] = [];
+      const layers = regionId === cropItem?.id ? present : visible;
       for (const role of roles) {
         const roleClips = clips.filter((clip) => clip.sourceRole === role);
         // At a shared edge both pieces are live; the later one shows.
         const liveClip = [...roleClips]
           .reverse()
-          .find((clip) => visible.has(clip.id));
+          .find((clip) => layers.has(clip.id));
         if (liveClip) {
           list.push({
             role,
             clip: liveClip,
-            layer: visible.get(liveClip.id)!,
+            layer: layers.get(liveClip.id)!,
             live: true,
           });
           continue;
