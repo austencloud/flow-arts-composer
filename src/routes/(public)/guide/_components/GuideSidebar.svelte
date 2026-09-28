@@ -14,7 +14,7 @@
    *    read identically.
    *  - Level 2: `LEVEL2_SECTION_ANCHORS` (level-2 guide-manifest.ts) for the
    *    grouping/labels - the real `<GuideSection id="...">` ids, now split
-   *    across real `/guide/level-2/<slug>` topic routes (level2-topic-manifest.ts,
+   *    across real `/guide/level-2/<slug>` topic routes (level2-topic-routes.ts,
    *    `LEVEL2_ANCHOR_ROUTE_SLUG`) instead of living as in-page anchors on
    *    `/guide/level-2/turns` / `/guide/level-2/double-turns` (those two are
    *    chapter-overview hubs now, same shape as `/guide/level-1`).
@@ -40,7 +40,7 @@
     LEVEL2_SECTION_ANCHORS,
     LEVEL2_GROUP_TITLES,
   } from "../level-2/_data/guide-manifest";
-  import { LEVEL2_ANCHOR_ROUTE_SLUG } from "../level-2/_data/level2-topic-manifest";
+  import { LEVEL2_ANCHOR_ROUTE_SLUG } from "../level-2/_data/level2-topic-routes";
 
   let {
     activeSectionId = "",
