@@ -7484,6 +7484,48 @@ index f61213bedbd0483c9f492a51e4913a48401b1654..00000000000000000000000000000000
 diff --git a/dist/lib/config/formation-presets.d.ts.map b/dist/lib/config/formation-presets.d.ts.map
 deleted file mode 100644
 index bf85b20eb38741aec6292313777e7842dfa90ba6..0000000000000000000000000000000000000000
+diff --git a/dist/lib/config/formation-presets.js b/dist/lib/config/formation-presets.js
+index bce36abe7f336d3da83da8b66ff3a6ce4660bbc4..58110b6c1df75495efb06eca3e3aeb1a45a245d2 100644
+--- a/dist/lib/config/formation-presets.js
++++ b/dist/lib/config/formation-presets.js
+@@ -97,7 +97,9 @@ function generateCircleSlots(count) {
+         const angle = (i / count) * Math.PI * 2 - Math.PI / 2;
+         const x = Math.cos(angle) * radius;
+         const z = Math.sin(angle) * radius + offset;
+-        const facingAngle = angle + Math.PI / 2;
++        // Forward is (sin(facing), cos(facing)) and the center lies along
++        // (-cos(angle), -sin(angle)), so the performer faces -angle - PI/2.
++        const facingAngle = -angle - Math.PI / 2;
+         slots.push({
+             index: i,
+             position: { x, z },
+@@ -208,20 +210,23 @@ function generateTunnelStackSlots(count) {
+     }));
+ }
+ /**
+- * Back-to-back formation - both performers at origin, facing opposite directions.
++ * Back-to-back formation - performers face opposite directions with their
++ * body centers 0.6m apart along the facing axis, so their bodies never touch,
++ * even with chests turned side-on.
+  */
+ function generateBackToBackSlots(count) {
+     if (count < 2)
+         return generateSoloSlots(count);
++    const separation = 0.6;
+     return [
+         {
+             index: 0,
+-            position: { x: 0, z: FORMATION_WALL_OFFSET },
++            position: { x: 0, z: FORMATION_WALL_OFFSET + separation / 2 },
+             facingAngle: 0,
+         },
+         {
+             index: 1,
+-            position: { x: 0, z: FORMATION_WALL_OFFSET },
++            position: { x: 0, z: FORMATION_WALL_OFFSET - separation / 2 },
+             facingAngle: Math.PI,
+         },
+     ];
 diff --git a/dist/lib/config/user-proportions.d.ts b/dist/lib/config/user-proportions.d.ts
 deleted file mode 100644
 index c094548dab2fb1defe50a6488df0dbedd08bbb47..0000000000000000000000000000000000000000
@@ -28433,6 +28475,47 @@ index e3c577e94a6b79bbca1bc222fd79886eaf88962b..b3d4bd79bb2801c45c3f1636290ad38e
  export type AvatarId = (typeof AVATAR_DEFINITIONS)[number]["id"];
  
  /**
+diff --git a/src/lib/config/formation-presets.ts b/src/lib/config/formation-presets.ts
+index 2cefc525c3e2283338de01920b671e46b30173c7..e6533e314b6866fc85d1f0da30134932076aaae7 100644
+--- a/src/lib/config/formation-presets.ts
++++ b/src/lib/config/formation-presets.ts
+@@ -118,7 +118,9 @@ function generateCircleSlots(count: number): FormationSlot[] {
+     const angle = (i / count) * Math.PI * 2 - Math.PI / 2;
+     const x = Math.cos(angle) * radius;
+     const z = Math.sin(angle) * radius + offset;
+-    const facingAngle = angle + Math.PI / 2;
++    // Forward is (sin(facing), cos(facing)) and the center lies along
++    // (-cos(angle), -sin(angle)), so the performer faces -angle - PI/2.
++    const facingAngle = -angle - Math.PI / 2;
+ 
+     slots.push({
+       index: i,
+@@ -248,19 +250,22 @@ function generateTunnelStackSlots(count: number): FormationSlot[] {
+ }
+ 
+ /**
+- * Back-to-back formation - both performers at origin, facing opposite directions.
++ * Back-to-back formation - performers face opposite directions with their
++ * body centers 0.6m apart along the facing axis, so their bodies never touch,
++ * even with chests turned side-on.
+  */
+ function generateBackToBackSlots(count: number): FormationSlot[] {
+   if (count < 2) return generateSoloSlots(count);
++  const separation = 0.6;
+   return [
+     {
+       index: 0,
+-      position: { x: 0, z: FORMATION_WALL_OFFSET },
++      position: { x: 0, z: FORMATION_WALL_OFFSET + separation / 2 },
+       facingAngle: 0,
+     },
+     {
+       index: 1,
+-      position: { x: 0, z: FORMATION_WALL_OFFSET },
++      position: { x: 0, z: FORMATION_WALL_OFFSET - separation / 2 },
+       facingAngle: Math.PI,
+     },
+   ];
 diff --git a/src/lib/debug/avatar-debug-hooks.ts b/src/lib/debug/avatar-debug-hooks.ts
 index 7a39174683bca72ec068a727f5e748a7269cb528..7a4e8296c490761589c8da9bf3efe82e1fb6bd10 100644
 --- a/src/lib/debug/avatar-debug-hooks.ts
