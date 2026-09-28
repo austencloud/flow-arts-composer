@@ -41,6 +41,7 @@
   import {
     LAB_LENGTH_MAX_CM,
     LAB_LENGTH_MIN_CM,
+    type LabGridStyle,
     type LabView,
     type StaffLabState,
   } from "./lab-state.svelte";
@@ -112,6 +113,23 @@
   ]);
 
   const lengthMode = $derived(lab.propLength === "body" ? "body" : "pinned");
+
+  const gridStyleOptions: {
+    value: LabGridStyle;
+    label: string;
+    ariaLabel: string;
+  }[] = [
+    {
+      value: "fixed",
+      label: "Fixed",
+      ariaLabel: "Hands 52 cm from the grid center",
+    },
+    {
+      value: "isolation",
+      label: "Isolation",
+      ariaLabel: "Hands half a staff from the grid center",
+    },
+  ];
 
   /**
    * A model the scene does not stretch draws at its authored length and never
@@ -223,6 +241,23 @@
         <p class="note">
           {propLabel} is drawn from a model at {fixedLengthCm.toFixed(0)} cm
           and ignores this. Pick Staff to size the mesh.
+        </p>
+      {/if}
+    </div>
+
+    <div class="field">
+      <span class="field-label">Grid style</span>
+      <SegmentedControl
+        options={gridStyleOptions}
+        value={lab.gridStyle}
+        density="tight"
+        ariaLabel="Where the hands sit"
+        onchange={(style) => lab.setGridStyle(style)}
+      />
+      {#if lab.gridStyle === "isolation"}
+        <p class="note">
+          Each hand sits half the staff from the center, so a staff pointing in
+          ends on it.
         </p>
       {/if}
     </div>

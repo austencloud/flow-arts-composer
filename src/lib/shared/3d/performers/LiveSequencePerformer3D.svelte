@@ -37,6 +37,10 @@
     measurePerformerReach,
     type PerformerReachMeasurements,
   } from "$lib/shared/3d/domain/performer-reach-measurements";
+  import {
+    DEFAULT_PERFORMER_HAND_DISTANCE,
+    type PerformerHandDistance,
+  } from "$lib/shared/3d/domain/performer-hand-distance";
   import { buildTipEffectMap } from "$lib/shared/animation-engine/domain/tip-effect-map";
   import EffectOrchestrator3D from "$lib/shared/3d/effects/EffectOrchestrator3D.svelte";
 
@@ -73,6 +77,13 @@
      * so one variable can be held still while the other sweeps.
      */
     propLengthCm?: number | null;
+    /**
+     * How far each hand sits from its grid center. Omit it, as every
+     * production host does, and the performer keeps its fixed distance. A
+     * comparison surface passes it to show a grid style before a setting can
+     * switch one on (docs/architecture/performer-grid-styles.md).
+     */
+    handDistance?: PerformerHandDistance | null;
     /**
      * Scene markers drawn inside the rig's own root group, so they inherit the
      * performer's world position, ground offset, and facing instead of sitting
@@ -206,6 +217,11 @@
         performerState.setProgress(wrapped - Math.floor(wrapped));
       }
     });
+  });
+
+  $effect(() => {
+    const next = props.handDistance ?? DEFAULT_PERFORMER_HAND_DISTANCE;
+    untrack(() => performerState.setHandDistance(next));
   });
 
   $effect(() => {

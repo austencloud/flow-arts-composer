@@ -12,6 +12,7 @@
   import Grid3D from "$lib/shared/3d/components/Grid3D.svelte";
   import LiveSequencePerformer3D from "$lib/shared/3d/performers/LiveSequencePerformer3D.svelte";
   import type { StanceYawTrack } from "$lib/shared/3d/collision/stance-yaw-track";
+  import type { PerformerHandDistance } from "$lib/shared/3d/domain/performer-hand-distance";
 
   interface Props {
     id: string;
@@ -27,6 +28,18 @@
      * variable can be held still while the other sweeps.
      */
     propLengthCm?: number | null;
+    /**
+     * Where the hands sit from the grid center. Null keeps the performer's
+     * fixed distance.
+     */
+    handDistance?: PerformerHandDistance | null;
+    /**
+     * The drawn hand and outer rings in metres, for hands that sit somewhere
+     * other than the fixed distance. Undefined sizes them from the global
+     * staff length, as every other scene does.
+     */
+    handPointRadius?: number;
+    outerPointRadius?: number;
     /**
      * The grid stays centred on the performer in every pane, because that is
      * the corrected anchoring. What changes is how much of it is drawn: the
@@ -57,6 +70,9 @@
     characterId,
     propType,
     propLengthCm = null,
+    handDistance = null,
+    handPointRadius,
+    outerPointRadius,
     gridEmphasis = "reference",
     showGridLabels = true,
     onStanceTrack,
@@ -87,6 +103,7 @@
   {characterId}
   {propType}
   {propLengthCm}
+  {handDistance}
   {sequence}
   effectId="led"
   phaseOffsetSteps={phase}
@@ -105,6 +122,8 @@
         gridMode="diamond"
         planeMode={PlaneMode.WALL}
         planeOpacity={PLANE_SURFACE_OPACITY}
+        {handPointRadius}
+        {outerPointRadius}
         {showLabels}
         showOrientationHelpers={false}
       />
