@@ -77,6 +77,22 @@ function Test-SupervisorAlive {
     return $alive
 }
 
+function Get-HttpStatus {
+    param(
+        [string]$Url,
+        [bool]$SkipCertificateCheck = $false,
+        [int]$TimeoutSec = 8,
+        [string]$Accept = ""
+    )
+
+    $curlArguments = @("-g", "-s", "-o", "NUL", "-w", "%{http_code}", "--max-time", $TimeoutSec)
+    if ($SkipCertificateCheck) { $curlArguments += "-k" }
+    if ($Accept) { $curlArguments += @("-H", "Accept: $Accept") }
+    $curlArguments += $Url
+
+    return & curl.exe @curlArguments
+}
+
 function Test-Http200 {
     param(
         [string]$Url,
@@ -84,12 +100,13 @@ function Test-Http200 {
         [int]$TimeoutSec = 8
     )
 
-    $curlArguments = @("-g", "-s", "-o", "NUL", "-w", "%{http_code}", "--max-time", $TimeoutSec)
-    if ($SkipCertificateCheck) { $curlArguments += "-k" }
-    $curlArguments += $Url
+    return (Get-HttpStatus $Url $SkipCertificateCheck $TimeoutSec) -eq "200"
+}
 
-    $code = & curl.exe @curlArguments
-    return $code -eq "200"
+# Vite answers this Accept header itself with a 204 before any page renders,
+# which separates a live server that is still rendering from a dead one.
+function Test-VitePing([string]$Url) {
+    return (Get-HttpStatus $Url $true 5 "text/x-vite-ping") -eq "204"
 }
 
 function Get-TkaDevTunnelToken {
@@ -418,6 +435,7 @@ try {
     $originUrl = "https://[::1]:5173/"
     $nextHealthProbeAt = Get-Date
     $originFailureCount = 0
+    $originBusySince = $null
     $publicFailureCount = 0
     $tunnelRestartCount = 0
     while ($viteProc -and -not $viteProc.HasExited) {
@@ -438,7 +456,21 @@ try {
             $publicFailureCount = 0
             $nextHealthProbeAt = (Get-Date).AddSeconds(10)
         } elseif ((Get-Date) -ge $nextHealthProbeAt) {
-            if (-not (Test-Http200 $originUrl $true)) {
+            $originStatus = Get-HttpStatus $originUrl $true
+            if ($originStatus -eq "000" -and (Test-VitePing $originUrl)) {
+                # The page outlasted the probe, but Vite itself answered. The
+                # first render after a restart can take minutes on a loaded
+                # machine; counting it as a failure turned a slow restart into
+                # a full cold boot.
+                if (-not $originBusySince) { $originBusySince = Get-Date }
+                $originBusySeconds = [int]((Get-Date) - $originBusySince).TotalSeconds
+                $originFailureCount = 0
+                $publicFailureCount = 0
+                Write-Status "Local Vite origin is busy: Vite answers, but the page took over 8s (${originBusySeconds}s so far)."
+                if ($originBusySeconds -ge 300) {
+                    throw "Local Vite origin answered pings but served no page for five minutes. Exiting so pm2 can restart the complete dev stack."
+                }
+            } elseif ($originStatus -ne "200") {
                 $originFailureCount += 1
                 $publicFailureCount = 0
                 Write-Status "Local Vite origin probe failed ($originFailureCount/3)."
@@ -449,10 +481,11 @@ try {
                     throw "Local Vite origin remained unavailable across three probes. Exiting so pm2 can restart the complete dev stack."
                 }
             } else {
-                if ($originFailureCount -gt 0) {
+                if ($originFailureCount -gt 0 -or $originBusySince) {
                     Write-Status "Local Vite origin recovered."
                 }
                 $originFailureCount = 0
+                $originBusySince = $null
 
                 if ($tunnelProc) {
                     if (Test-Http200 "https://dev.tkaflowarts.com/") {

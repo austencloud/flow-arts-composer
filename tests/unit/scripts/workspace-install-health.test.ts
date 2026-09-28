@@ -612,6 +612,19 @@ describe("dev launcher install guard", () => {
     );
   });
 
+  it("waits out a slow render while Vite still answers its ping", () => {
+    // After a restart the first render can outlast the 8 s probe for minutes.
+    // Vite answers its ping header itself, so a timed-out page plus a ping
+    // answer means busy, not dead. Busy is capped rather than trusted forever.
+    expect(launcher).toContain(
+      'Get-HttpStatus $Url $true 5 "text/x-vite-ping"'
+    );
+    expect(launcher).toContain(
+      '$originStatus -eq "000" -and (Test-VitePing $originUrl)'
+    );
+    expect(launcher).toContain("$originBusySeconds -ge 300");
+  });
+
   it("supervises public tunnel health without restarting Vite", () => {
     expect(launcher).toContain('Test-Http200 "https://dev.tkaflowarts.com/"');
     expect(launcher).toContain("$publicFailureCount -ge 3");
