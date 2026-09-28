@@ -1,6 +1,7 @@
 import {
   MAIN_TRACK_INDEX,
   POST_BOX,
+  POST_DEFAULT_CANVAS,
   POST_DEFAULT_CARD_SECONDS,
   POST_DEFAULT_OVERLAY_SECONDS,
   POST_MAX_LABEL_LENGTH,
@@ -23,7 +24,9 @@ import {
   wrapDegrees,
   type PostAnchor,
   type PostBox,
+  type PostCanvasRatio,
   type PostCardItem,
+  type PostClipShape,
   type PostFraming,
   type PostItem,
   type PostMovesMode,
@@ -34,6 +37,10 @@ import {
   type PostVideoItem,
 } from "$lib/shared/media-composition/domain/post-project";
 import { normalizeProject } from "$lib/shared/media-composition/domain/post-project-normalize";
+import {
+  clampShapeRatio,
+  postCanvasOf,
+} from "$lib/shared/media-composition/domain/post-canvas";
 import {
   framingAt,
   isAnimated,
@@ -581,6 +588,8 @@ export interface PostItemPatch {
   /** Not for a clip, whose length comes from its span. Ends an overlay's fill. */
   duration?: number;
   fit?: "cover" | "contain";
+  /** A clip's own shape in its box; null lets it fill the box again. */
+  shape?: PostClipShape | null;
   zoom?: number;
   panX?: number;
   panY?: number;
@@ -635,6 +644,14 @@ export function updateItem(
     next.sourceIn = sourceIn;
     next.sourceOut = sourceOut;
     if (patch.fit) next.fit = patch.fit;
+    if (patch.shape !== undefined) {
+      if (patch.shape) {
+        next.shape = {
+          kind: patch.shape.kind,
+          ratio: clampShapeRatio(patch.shape.ratio),
+        };
+      } else delete next.shape;
+    }
     setNumber(next, "zoom", patch.zoom, POST_MIN_ZOOM, POST_MAX_ZOOM);
     setNumber(next, "panX", patch.panX, -0.5, 0.5);
     setNumber(next, "panY", patch.panY, -0.5, 0.5);
@@ -841,6 +858,18 @@ export function setTrackFlag(
     },
     ctx
   );
+}
+
+/** The post's shape; the default shape is stored as none. */
+export function setProjectCanvas(
+  project: PostProject,
+  canvas: PostCanvasRatio,
+  ctx: EditContext
+): PostProject {
+  if (postCanvasOf(project) === canvas) return project;
+  const next: PostProject = { ...project, canvas };
+  if (canvas === POST_DEFAULT_CANVAS) delete next.canvas;
+  return finish(next, ctx);
 }
 
 export function setProjectAudio(

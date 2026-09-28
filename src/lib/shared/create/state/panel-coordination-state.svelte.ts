@@ -265,6 +265,11 @@ export interface PanelCoordinationState {
   get targetHand(): TargetHand;
   setTargetHand(hand: TargetHand): void;
 
+  // A phone-width Assemble toolbar keeps one quiet row, so the Actions panel
+  // carries Share and Clear instead. The toolbar sets this; the panel reads it.
+  get isWorkspaceRailCompact(): boolean;
+  setWorkspaceRailCompact(value: boolean): void;
+
   // Beat Editor Panel State (non-modal - allows click-through to pictographs)
   get isStepEditorPanelOpen(): boolean;
   get mandalaViewerSelection(): MandalaViewerSelection | null;
@@ -473,6 +478,10 @@ export function createPanelCoordinationState(): PanelCoordinationState {
 
   // Target hand selection for single-hand transforms (default: both)
   let targetHand = $state<TargetHand>("both");
+
+  // Set by the compact Assemble toolbar when it hands Share and Clear to the
+  // Actions panel
+  let isWorkspaceRailCompact = $state(false);
 
   // Beat Editor panel state (non-modal - doesn't participate in closeAllPanels)
   // Persisted so a dev HMR / page refresh restores the open editor instead of
@@ -915,6 +924,14 @@ export function createPanelCoordinationState(): PanelCoordinationState {
 
     setTargetHand(hand: TargetHand) {
       targetHand = hand;
+    },
+
+    get isWorkspaceRailCompact() {
+      return isWorkspaceRailCompact;
+    },
+
+    setWorkspaceRailCompact(value: boolean) {
+      isWorkspaceRailCompact = value;
     },
 
     // Beat Editor Panel Getters (non-modal)
