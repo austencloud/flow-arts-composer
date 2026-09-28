@@ -1,7 +1,8 @@
 # Performer Grid Styles
 
 Status: design agreed with Austen on 2026-09-27, with his answers to the first
-three questions recorded below. Groundwork not started.
+three questions recorded below. Groundwork step 1 done on 2026-09-28; steps 2
+to 5 not started.
 
 ## Two ways to size the grid
 
@@ -144,16 +145,20 @@ scenes dropped the facings too. Now each performer turns to its slot's facing.
 
 Neither style exists yet, and three separate sources decide the sizes.
 
-- **Hand radius.** `GRID_RADIUS_3D` is a fixed 0.52 m in
+- **Hand distance.** Each performer holds a hand distance for each hand,
+  which may vary by direction
+  (`src/lib/shared/3d/domain/performer-hand-distance.ts`). Every performer
+  keeps the default, `GRID_RADIUS_3D`: a fixed 0.52 m in
   `src/lib/shared/3d/domain/constants/plane-transforms.ts`, set as 0.6 of a
-  34-inch staff, with a TODO to follow the user's proportions.
-  `prop-state-interpolator.ts` and `plane-coordinate-mapper.ts` place every
-  hand with it, `viewer-camera-framing.ts` keeps its own copy of the number,
-  and `CANVAS_TO_3D_SCALE` derives from it with no consumers. It matches
-  neither style: a 34-inch staff pointing in stops about 9 cm short of the
-  center, and from a square stance the far cross-body point sits 78 to 81 cm
-  from the shoulder against a 61 to 64 cm reach to the knuckle (Cause 2 in
-  the performer review).
+  34-inch staff. `prop-state-interpolator.ts` places each hand at its
+  performer's distance, and the opening camera shot and the view presets
+  frame the lead performer's largest distance. The labs, and
+  `plane-coordinate-mapper.ts`, which serves only the labs and the loop check,
+  use the fixed number; `CANVAS_TO_3D_SCALE` derives from it with no
+  consumers. The fixed number matches neither style: a 34-inch staff pointing
+  in stops about 9 cm short of the center, and from a square stance the far
+  cross-body point sits 78 to 81 cm from the shoulder against a 61 to 64 cm
+  reach to the knuckle (Cause 2 in the performer review).
 - **Drawn grid.** The scene-3d package's `calculateSceneDimensions` sizes the
   drawn rings from the global staff length only: hand ring at 0.6 of the
   staff, grid at the staff plus 25 cm. Height scales the body and puts the
@@ -175,15 +180,15 @@ Neither style exists yet, and three separate sources decide the sizes.
 
 Today's picture stays the same until step 4 turns a style on.
 
-1. **Hand distance per performer.** Hand placement in
-   `prop-state-interpolator.ts` and `plane-coordinate-mapper.ts` asks the
-   performer for the hand distance by hand and direction, defaulting to
-   today's 0.52 m everywhere. The camera framing reads the performer's largest
-   hand distance instead of its copy. Learn and lab diagrams that draw their
-   own grids keep the constant. Acceptance: the interpolator tests and the
-   contact scoreboard counts stay unchanged. This step touches hand placement
-   in every 3D scene, so it waits until no other session is changing the
-   performer.
+1. **Hand distance per performer.** Done on 2026-09-28. Hand placement in
+   `prop-state-interpolator.ts` asks the performer for the hand distance by
+   hand and direction, 0.52 m by default. The opening camera shot and the
+   view presets read the lead performer's largest hand distance in place of
+   their copies of the number. `plane-coordinate-mapper.ts` turned out to
+   serve only the labs and the loop check, so it keeps the constant with the
+   Learn and lab diagrams. The contact scoreboard reports came out
+   byte-identical for both rigs. The performer's `setHandDistance` is the seam
+   steps 3 and 4 build on, and the isolation pictures can use it first.
 2. **One staff length per performer.** Resolve it once and hand the same
    value to the drawn prop, the collision checks (through `propLength` and
    the contact length), the export worker and the scoreboard.
@@ -208,3 +213,5 @@ staff length.
 
 - The isolation staff limit, after the focused session with Austen.
 - How much chest turn the extension style's full reach may use, set in step 4.
+- What the drawn grid rings show once a hand's distance varies by direction.
+  They follow the global staff length today (see Drawn grid above).
