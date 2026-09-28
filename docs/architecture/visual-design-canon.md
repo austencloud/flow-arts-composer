@@ -215,7 +215,9 @@ non-color cue through semantics such as `aria-selected`, `aria-pressed`, or
 `aria-current`.
 
 Do not use browser-default checkboxes as product controls. Do not present values
-as fake disabled inputs when plain text is the honest form. Links go somewhere;
+as fake disabled inputs when plain text is the honest form. Links go somewhere,
+and look like it: every link is a `LinkChip` pill, never underlined text (see
+`.claude/rules/no-text-links.md`);
 buttons perform actions.
 
 ## 7. Information Hierarchy and Content
