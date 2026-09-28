@@ -25,6 +25,7 @@
   footprint so nothing shifts while those chunks arrive.
 -->
 <script lang="ts">
+  import type { Snippet } from "svelte";
   import { t } from "$lib/shared/i18n/i18n.svelte";
   import { MediaQuery } from "svelte/reactivity";
   import { activateWhenNear } from "$lib/actions/activate-when-near";
@@ -59,6 +60,7 @@
     appearance,
     active = true,
     embedded = false,
+    propControl,
   }: {
     sequence: SequenceData | null;
     onGenerated?: (sequence: SequenceData) => void;
@@ -67,6 +69,8 @@
     appearance?: ComposerPropAppearance;
     active?: boolean;
     embedded?: boolean;
+    /** The host page's prop chooser, shown at the start of the word row. */
+    propControl?: Snippet;
   } = $props();
 
   let current = $state<SequenceData | null>(null);
@@ -152,12 +156,19 @@
          grid, and the player beside it already traces that same figure. -->
 
     <div class="stage notation-stage">
-      <header class="word-slot" aria-live="polite">
-        {#if current}
-          <WordLabel word={current.word ?? ""} />
-        {:else}
-          <span aria-hidden="true"></span>
+      <!-- The prop chooser sits outside the live region, so changing props is
+           not announced as a new word. -->
+      <header class="word-slot" class:with-prop={!!propControl}>
+        {#if propControl}
+          <div class="slot-prop">{@render propControl()}</div>
         {/if}
+        <div class="slot-word" aria-live="polite">
+          {#if current}
+            <WordLabel word={current.word ?? ""} />
+          {:else}
+            <span aria-hidden="true"></span>
+          {/if}
+        </div>
       </header>
       <div class="stage-content">
         {#key current?.id}
@@ -271,6 +282,26 @@
     place-items: center;
     color: var(--theme-text, #fff);
     --text-color: var(--theme-text, #fff);
+  }
+
+  /* The chooser, the word, and an empty track as wide as the chooser, so the
+     word stays centered over the grid below it. */
+  .word-slot.with-prop {
+    grid-template-columns: 3rem minmax(0, 1fr) 3rem;
+    column-gap: 0.75rem;
+    padding-bottom: 0.5rem;
+  }
+
+  .slot-prop {
+    justify-self: start;
+    display: flex;
+  }
+
+  .slot-word {
+    width: 100%;
+    min-width: 0;
+    display: grid;
+    place-items: center;
   }
 
   .stages {

@@ -123,6 +123,20 @@ The stage keeps these limits:
 - Phones, tablets, small or zoomed-in windows, and reduced motion get the plain
   page, which must read completely on its own.
 
+Each demonstration is its own stop, in the order the app offers them:
+Construct a sequence, Generate a sequence, Put it in a tunnel, See it in 3D.
+Austen chose this on 2026-09-28. The headings name the action each stop
+demonstrates, and the stage shows one at a time, so these four are the accepted
+exception to the heading read below.
+
+- A demonstration fills the stop it rests in. The builder and the generator
+  take the whole room between the header and Next; the tunnel square and the
+  3D viewer shrink until the stop fits it.
+- The prop chooser lives inside each demonstration, beside the sequence's
+  word. There is no page-level Build and Generate switch.
+- No stop ends in a link to the part of the app it shows. The header's Open
+  Flow Arts Composer button is the way into the app on every page.
+
 ## Copy rules for this page
 
 Start with the object or action:

@@ -40,7 +40,7 @@
   const adaptiveQuality = tryGetAdaptiveQualityContext();
   const sceneFeatures = getSceneFeatureContext();
   let reducedMotionQuery: MediaQuery | null = null;
-  let world = $state<BlossomEnvironmentWorld | null>(null);
+  let world = $state.raw<BlossomEnvironmentWorld | null>(null);
   let generation = 0;
 
   function getGpuRendererName(): string {

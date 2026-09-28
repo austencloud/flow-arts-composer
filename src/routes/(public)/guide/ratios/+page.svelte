@@ -66,6 +66,7 @@
     SPIN_SCIENCE_URL,
   } from "$lib/shared/shape-matrix/app/shape-engine-identity";
   import { tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
+  import LinkChip from "$lib/shared/ui/components/LinkChip.svelte";
 
   /** The engine's own 144 band: three ratios, both styles, both starts, diamond. */
   const ORIGINAL_AXIS_FILTER = matrixFiltersForSize("large").left;
@@ -503,12 +504,9 @@
         <h1>{tDynamic("guide_ratios_title")}</h1>
         <p>{tDynamic("guide_ratios_intro")}</p>
         <p>
-          {tDynamic("guide_ratios_origins_before")} <a
-            class="external"
-            href={SPIN_SCIENCE_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            >Spin Science<span class="sr-only"> {tDynamic("guide_ratios_new_tab")}</span></a
+          {tDynamic("guide_ratios_origins_before")}
+          <LinkChip size="inline" href={SPIN_SCIENCE_URL} newTabLabel={tDynamic("guide_ratios_new_tab")}
+            >Spin Science</LinkChip
           >{tDynamic("guide_ratios_origins_after", { name: ORIGINAL_SHAPE_MATRIX_NAME })}
         </p>
         {#if loadError}
@@ -543,7 +541,7 @@
             {tDynamic("guide_ratios_petals_before")}
             <code>|P − H|</code>{tDynamic("guide_ratios_petals_between")}
             <code>P + H</code>{tDynamic("guide_ratios_petals_after")}
-            <a href="#ends-heading">{tDynamic("guide_ratios_one_or_two")}</a>{tDynamic("guide_ratios_petals_end")}
+            <LinkChip size="inline" href="#ends-heading">{tDynamic("guide_ratios_one_or_two")}</LinkChip>{tDynamic("guide_ratios_petals_end")}
           </p>
           <p>
             {tDynamic("guide_ratios_float")}
@@ -563,9 +561,9 @@
           </dl>
           <p>
             Each name describes the shape one end of the prop draws. Inspin is
-            another name for prospin; <a href="/guide/prospin-and-inspin"
-              >Prospin and inspin</a
-            > compares the two.
+            another name for prospin;
+            <LinkChip size="inline" href="/guide/prospin-and-inspin">Prospin and Inspin</LinkChip>
+            compares the two.
           </p>
         </div>
 
@@ -768,7 +766,7 @@
           </p>
           <p>
             {tDynamic("guide_ratios_swap_quarter_before")}
-            <a href="#ends-heading">{tDynamic("guide_ratios_one_or_two")}</a>{tDynamic("guide_ratios_swap_quarter_after")}
+            <LinkChip size="inline" href="#ends-heading">{tDynamic("guide_ratios_one_or_two")}</LinkChip>{tDynamic("guide_ratios_swap_quarter_after")}
           </p>
         </div>
 
@@ -792,9 +790,9 @@
                 <span class="family-turns"
                   >{tDynamic("guide_ratios_family_turns", { turns: turnWords(family.turns), level: family.level })}</span
                 >
-                <a class="family-link" href={bandHref(family.turns)}>
+                <LinkChip class="family-link" href={bandHref(family.turns)}>
                   {tDynamic("guide_ratios_open_band", { ratio: family.ratio })}
-                </a>
+                </LinkChip>
               </header>
               <ol class="family-shapes">
                 {#each family.shapes as flower (flowerKey(flower))}
@@ -928,7 +926,9 @@
         </div>
         <figcaption>
           {tDynamic("guide_ratios_pairing_caption")}
-          <a href={pairHref(anatomyLeft, anatomyRight)}>{tDynamic("guide_ratios_open_pairing")}</a>
+          <LinkChip class="pairing-link" href={pairHref(anatomyLeft, anatomyRight)}
+            >{tDynamic("guide_ratios_open_pairing")}</LinkChip
+          >
         </figcaption>
       </figure>
 
@@ -960,26 +960,17 @@
       <h2 id="sources-heading">{tDynamic("guide_ratios_sources")}</h2>
       <ul class="source-list">
         <li>
-          <a
-            class="external"
-            href={ORIGINAL_SHAPE_MATRIX_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            >{tDynamic("guide_ratios_source_label", { author: "Lorq Nichols", name: ORIGINAL_SHAPE_MATRIX_NAME })}<span
-              class="sr-only"
-            >
-              {tDynamic("guide_ratios_new_tab")}</span
-            ></a
+          <LinkChip href={ORIGINAL_SHAPE_MATRIX_URL} newTabLabel={tDynamic("guide_ratios_new_tab")}
+            >{tDynamic("guide_ratios_source_label", { author: "Lorq Nichols", name: ORIGINAL_SHAPE_MATRIX_NAME })}</LinkChip
           >
         </li>
         <li>
-          <a href="/history#archive-record-vtg">{tDynamic("guide_ratios_vtg_record")}</a
-          >
+          <LinkChip href="/history#archive-record-vtg">{tDynamic("guide_ratios_vtg_record")}</LinkChip>
         </li>
         <li>
-          <a href="/history#archive-record-lorq">{tDynamic("guide_ratios_lorq_record")}</a>
+          <LinkChip href="/history#archive-record-lorq">{tDynamic("guide_ratios_lorq_record")}</LinkChip>
         </li>
-        <li><a href="/shape-engine">{SHAPE_ENGINE_SHORT_NAME}</a></li>
+        <li><LinkChip href="/shape-engine">{SHAPE_ENGINE_SHORT_NAME}</LinkChip></li>
       </ul>
       <p class="attribution">
         {tDynamic("guide_ratios_attribution_before")}{SHAPE_ENGINE_SHORT_NAME}{tDynamic("guide_ratios_attribution_middle")}{KINETIC_SHAPE_ENGINE_AUTHOR}{tDynamic("guide_ratios_attribution_after")}
@@ -1065,28 +1056,6 @@
     font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
     font-size: 0.92em;
     white-space: nowrap;
-  }
-
-  .ratios a {
-    color: var(--accent);
-    text-decoration: underline;
-    text-underline-offset: 0.18em;
-  }
-
-  .ratios a:focus-visible {
-    outline: 2px solid var(--accent);
-    outline-offset: 3px;
-    border-radius: 3px;
-  }
-
-  /* Links that leave the site say so: a small arrow for sighted readers and
-     a hidden phrase for screen readers. */
-  .ratios a.external::after {
-    content: "\2197";
-    display: inline-block;
-    margin-left: 0.2em;
-    font-size: 0.8em;
-    text-decoration: none;
   }
 
   .page-head p:last-child {
@@ -1627,14 +1596,10 @@
     font-size: var(--font-size-min, 0.875rem);
   }
 
-  /* A full touch target without growing the header row: the hit area is
-     padded and the padding is pulled back out of the flow. */
-  .family-link {
+  /* The band's pill sits at the header's end; the header wraps it under
+     the ratio when the card is too narrow for both. */
+  .family-head :global(.family-link) {
     margin-left: auto;
-    padding-block: calc((var(--touch) - 1.4em) / 2);
-    margin-block: calc((var(--touch) - 1.4em) / -2);
-    font-size: var(--font-size-min, 0.875rem);
-    line-height: 1.4;
     white-space: nowrap;
   }
 
@@ -1851,6 +1816,12 @@
     line-height: 1.45;
   }
 
+  .anatomy figcaption :global(.pairing-link) {
+    display: flex;
+    inline-size: fit-content;
+    margin-top: 0.75rem;
+  }
+
   /* Same petals, different laps: 1:2 and 2:1 moving side by side, each in
      its own level's tray. */
   .swap {
@@ -1985,9 +1956,12 @@
     border-top: 1px solid var(--rule);
   }
 
+  /* The sources are a row of pills that wraps, so no width leaves them in a
+     narrow column beside empty space. */
   .source-list {
-    display: grid;
-    gap: 0.55rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
     margin: 0 0 1.5rem;
     padding: 0;
     list-style: none;
@@ -1997,11 +1971,6 @@
     margin: 0;
   }
 
-  .source-list a {
-    display: inline-flex;
-    align-items: center;
-    min-height: var(--touch);
-  }
 
   .attribution {
     color: var(--ink-faint);
@@ -2070,14 +2039,6 @@
     .twelve {
       grid-template-columns: minmax(0, var(--copy)) minmax(0, 1fr);
       align-items: start;
-    }
-
-    /* The sources list runs across the band instead of down a narrow
-       column with the rest of the width empty. */
-    .source-list {
-      display: flex;
-      flex-wrap: wrap;
-      column-gap: 2.5rem;
     }
   }
 
