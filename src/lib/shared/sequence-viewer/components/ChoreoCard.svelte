@@ -38,6 +38,7 @@
   import { tryGetViewerVisibilityContext } from "../context/viewer-visibility-context";
   import { getScanCardCloudProbe } from "$lib/shared/sequence-viewer/scan-card-cloud-context";
   import { CANONICAL_CARD_VISIBILITY } from "$lib/shared/render/services/cloud-cell-key";
+  import { normalizePropLook } from "$lib/shared/pictograph/prop/domain/prop-look";
   import { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
   import type { HandLabeling } from "$lib/shared/video-collaboration/domain/hand-labeling";
   import { handLegendFor } from "../services/hand-legend";
@@ -806,6 +807,16 @@
       getSettings().rightBuugengFlipped ??
       false
   );
+  // Cells draw the prop look the canvas beside the card draws. A scanned card
+  // stands for the printed one, whose shared cloud cells are notation artwork,
+  // so it drops the look exactly as it drops the fan build.
+  const cardPropLook = $derived(
+    cloudProbeEnabled
+      ? undefined
+      : normalizePropLook(
+          visibilityOverrides?.propLook ?? getSettings().propArtwork
+        )
+  );
 
   /**
    * Build render options from current component state (delegates to extracted pure function)
@@ -840,6 +851,7 @@
       fanAppearance: cloudProbeEnabled
         ? undefined
         : (visibilityOverrides?.fanAppearance ?? getSettings().fanAppearance),
+      propLook: cardPropLook,
       primaryPropColors: effectivePrimaryPropColors,
       // The compositor renders canonical blue/red cards in two layers, placing
       // grid points over props. A genuinely custom palette uses its direct
@@ -908,6 +920,7 @@
       fanAppearance: cloudProbeEnabled
         ? undefined
         : (visibilityOverrides?.fanAppearance ?? getSettings().fanAppearance),
+      propLook: cardPropLook,
       primaryPropColors: effectivePrimaryPropColors,
       sequence,
       leftPropType,

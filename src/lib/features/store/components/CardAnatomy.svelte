@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
   /**
    * Front + back of a real Choreo Card for the marketing page.
    * Front = baked print render (Firebase Storage URL from the admin cover
@@ -165,7 +166,7 @@
     shown
       ? composeMenu([
           {
-            header: "Card",
+            header: tDynamic("learn_card_anatomy_card"),
             entries: buildCardMenuSection({
               sequenceForLibrarySave: shown.sequence,
               isAdmin: featureFlagService.isAdmin,
@@ -528,7 +529,7 @@
   <div
     class="anatomy-stack preview-footprint"
     role={announce ? "status" : undefined}
-    aria-label={announce ? "Preparing card preview" : undefined}
+    aria-label={announce ? tDynamic("learn_card_anatomy_preparing") : undefined}
   >
     <div
       class="anatomy"
@@ -545,7 +546,7 @@
               className="card-preview-skeleton"
             />
           </div>
-          {#if face === "both"}<figcaption>Front</figcaption>{/if}
+          {#if face === "both"}<figcaption>{tDynamic("learn_card_anatomy_front")}</figcaption>{/if}
         </figure>
       {/if}
       {#if showBack}
@@ -558,7 +559,7 @@
               className="card-preview-skeleton"
             />
           </div>
-          {#if face === "both"}<figcaption>Back</figcaption>{/if}
+          {#if face === "both"}<figcaption>{tDynamic("learn_card_anatomy_back")}</figcaption>{/if}
         </figure>
       {/if}
     </div>
@@ -608,7 +609,7 @@
                 darkMode
                 cardAspectRatio={pokerCardAspectRatio}
                 showWord={false}
-                customTitleText={cardTitle ?? "Hand paths"}
+                customTitleText={cardTitle ?? tDynamic("learn_card_anatomy_hand_paths")}
                 showDifficultyLevel={false}
                 includeStartPlacement
                 columnCount={2}
@@ -623,20 +624,20 @@
                 }}
               />
             {:else if shown.frontUrl}
-              <img src={shown.frontUrl} alt="Front of a real Choreo Card" />
+              <img src={shown.frontUrl} alt={tDynamic("learn_card_anatomy_front_alt")} />
             {:else}
               <div
                 class="front-preview-unavailable"
                 role="img"
-                aria-label="Front of this Choreo Card is unavailable"
+                aria-label={tDynamic("learn_card_anatomy_front_unavailable_aria")}
               >
                 <i class="fas fa-image" aria-hidden="true"></i>
-                <span>Front preview unavailable</span>
+                <span>{tDynamic("learn_card_anatomy_front_unavailable")}</span>
               </div>
             {/if}
             {@render spotlight("front")}
           </div>
-          {#if face === "both"}<figcaption>Front</figcaption>{/if}
+          {#if face === "both"}<figcaption>{tDynamic("learn_card_anatomy_front")}</figcaption>{/if}
         </figure>
       {/if}
 
@@ -664,7 +665,7 @@
             />
             {@render spotlight("back")}
           </div>
-          {#if face === "both"}<figcaption>Back</figcaption>{/if}
+          {#if face === "both"}<figcaption>{tDynamic("learn_card_anatomy_back")}</figcaption>{/if}
         </figure>
       {/if}
     </div>
@@ -679,10 +680,10 @@
         >
           {#if shuffling}
             <i class="fas fa-circle-notch fa-spin" aria-hidden="true"></i>
-            <span>Dealing a card…</span>
+            <span>{tDynamic("learn_card_anatomy_dealing")}</span>
           {:else}
             <i class="fas fa-shuffle" aria-hidden="true"></i>
-            <span>Shuffle another card</span>
+            <span>{tDynamic("learn_card_anatomy_shuffle")}</span>
           {/if}
         </button>
       </div>
@@ -698,11 +699,11 @@
   <div class="preview-load-failure" role="alert">
     <div aria-hidden="true">{@render previewFootprint(false)}</div>
     <div class="preview-load-message">
-      <p>Card preview didn’t load.</p>
+      <p>{tDynamic("learn_card_anatomy_load_failed")}</p>
       <button
         class="preview-retry-btn"
         type="button"
-        onclick={retryCatalogExample}>Try again</button
+        onclick={retryCatalogExample}>{tDynamic("learn_card_anatomy_retry")}</button
       >
     </div>
   </div>

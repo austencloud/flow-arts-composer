@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { localizeLevel1Text, localizeLevel1SelectionLabel } from "../_data/localize-level1-content";
   /**
    * 8-Letter Words - body page (manifest `eight-letter-words`), faithful to
    * "1.2 - 8-Letter Words" artboard (word 2 reads CΣNZIΘUW - the U is a U, dataset-confirmed) (old p41; CAP→LOOP
@@ -262,7 +263,7 @@
     <span class="margin-word" style="left:{4 * S}px; top:{m.y * S}px; width:{118 * S}px; font-size:{13.5 * S}px"
       ><span class="tka-font">{m.word}</span></span
     >
-    <span class="margin-tag" style="left:{4 * S}px; top:{(m.y + 24) * S}px; width:{118 * S}px; font-size:{12.5 * S}px">({m.tag})</span>
+    <span class="margin-tag" style="left:{4 * S}px; top:{(m.y + 24) * S}px; width:{118 * S}px; font-size:{12.5 * S}px">({localizeLevel1Text(m.tag)})</span>
   {/each}
 
   <!-- The two words: Start + 4 rows of 4, each one clickable strip. -->
@@ -306,7 +307,7 @@
       <SelectionHit
         groupId={q.key}
         isGroupStart
-        label={`Animate ${q.word}`}
+        label={localizeLevel1SelectionLabel(`Animate ${q.word}`)}
         onselect={() => emitSequence?.({ strip: RESOLVED[q.key]!, word: q.word, key: q.key, propType: "staff" })}
       />
     </div>
@@ -322,7 +323,7 @@
       use:ptDrag={pt(`el-para-${i}`, "para", p)}
       use:editText={{ id: `el-para-${i}`, label: "para", get: () => p.html, set: (h2) => (p.html = h2) }}
     >
-      {@html p.html}
+      {@html localizeLevel1Text(p.html)}
     </p>
   {/each}
 </div>

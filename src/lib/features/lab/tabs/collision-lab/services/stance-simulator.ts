@@ -575,8 +575,13 @@ export class StanceSimulator {
     return { shortfall: 0, stretch };
   }
 
-  // Face center derivation - matches the live rig's computation so the
-  // simulator agrees with CollisionDetector on face-level collisions.
+  // Face center derivation - the same formula and 8 cm forward + 5 cm up
+  // offset as the package's computeFaceCenter. Every body this simulator
+  // gets (restPoseFromHeight, DodgeDriver's measured rig) puts the right
+  // shoulder at +X, so right x up points forward here. The shipped rigs put
+  // the left shoulder at +X, where the package's copy points backward and
+  // puts the face 8 cm behind the head (performer-contact-review.md). Do not
+  // copy the sign across.
 
   private computeFaceCenter(): void {
     const sk = this.skeleton;

@@ -67,7 +67,7 @@
 
   <div class="browser-footnote">
     <i class="fas fa-bolt" aria-hidden="true"></i>
-    One live scene at a time. Quality adjusts while it runs.
+    {t("settings_showroom_adaptive_quality")}
   </div>
 </aside>
 

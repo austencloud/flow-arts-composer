@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { getSettings } from "$lib/shared/application/state/app-state.svelte";
   import { resolveTrailColors } from "../../domain/resolve-trail-colors";
   import { settingsService } from "$lib/shared/settings/state/settings-state.svelte";
@@ -33,14 +34,14 @@
     let rightLabel: string;
 
     if (pt === "staff") {
-      leftLabel = "Pinky";
-      rightLabel = "Thumb";
+      leftLabel = t("animation_trail_pinky");
+      rightLabel = t("animation_trail_thumb");
     } else if (pt === "bigclub") {
-      leftLabel = "Knob";
-      rightLabel = "Bulb";
+      leftLabel = t("animation_trail_knob");
+      rightLabel = t("animation_trail_bulb");
     } else {
-      leftLabel = "End 1";
-      rightLabel = "End 2";
+      leftLabel = t("animation_trail_end_one");
+      rightLabel = t("animation_trail_end_two");
     }
 
     // Prop-end options track the prop's tips; Hand tracks the hand path
@@ -48,8 +49,8 @@
     return [
       { id: TrackingMode.LEFT_END, label: leftLabel, icon: "fa-minus" },
       { id: TrackingMode.RIGHT_END, label: rightLabel, icon: "fa-minus" },
-      { id: TrackingMode.BOTH_ENDS, label: "Both", icon: "fa-grip-lines" },
-      { id: TrackingMode.HAND, label: "Hand", icon: "fa-hand-back-fist" },
+      { id: TrackingMode.BOTH_ENDS, label: t("viewer_ui_both"), icon: "fa-grip-lines" },
+      { id: TrackingMode.HAND, label: t("animation_trail_hand"), icon: "fa-hand-back-fist" },
     ];
   });
 
@@ -112,11 +113,11 @@
 <div class="trails-controls">
   {#if hasBilateralProp}
     <div class="option-row">
-      <span class="option-label">Tracking</span>
+      <span class="option-label">{t("effect_deep_option_tracking")}</span>
       <div
         class="chip-group"
         role="radiogroup"
-        aria-label="Trail tracking mode"
+        aria-label={t("animation_trail_tracking_mode")}
       >
         {#each trackingOptions as option}
           <button
@@ -136,7 +137,7 @@
   {/if}
 
   <div class="slider-row">
-    <label for="ctx-trail-width">Thickness</label>
+    <label for="ctx-trail-width">{t("effect_deep_option_thickness")}</label>
     <input
       id="ctx-trail-width"
       type="range"
@@ -153,7 +154,7 @@
   </div>
 
   <div class="slider-row">
-    <label for="ctx-trail-brightness">Brightness</label>
+    <label for="ctx-trail-brightness">{t("effect_deep_option_brightness")}</label>
     <input
       id="ctx-trail-brightness"
       type="range"
@@ -170,7 +171,7 @@
   </div>
 
   <div class="slider-row">
-    <label for="ctx-trail-length">Tail length</label>
+    <label for="ctx-trail-length">{t("effect_deep_option_trail_length")}</label>
     <input
       id="ctx-trail-length"
       type="range"
@@ -187,7 +188,7 @@
   </div>
 
   <div class="color-row">
-    <span class="color-label">Colors</span>
+    <span class="color-label">{t("viewer_ui_colors")}</span>
     <div class="color-pickers">
       <label class="color-picker">
         <input
@@ -198,7 +199,7 @@
               leftColor: (e.target as HTMLInputElement).value,
             })}
         />
-        <span class="color-hand blue">Left</span>
+        <span class="color-hand blue">{t("viewer_ui_left")}</span>
       </label>
       <label class="color-picker">
         <input
@@ -209,7 +210,7 @@
               rightColor: (e.target as HTMLInputElement).value,
             })}
         />
-        <span class="color-hand red">Right</span>
+        <span class="color-hand red">{t("viewer_ui_right")}</span>
       </label>
     </div>
   </div>
@@ -220,7 +221,7 @@
     disabled={isDefault}
     onclick={resetDefaults}
   >
-    Reset
+    {t("viewer_ui_reset")}
   </button>
 </div>
 

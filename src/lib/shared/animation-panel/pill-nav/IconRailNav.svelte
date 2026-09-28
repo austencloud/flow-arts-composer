@@ -8,6 +8,7 @@
   `icon`, or an accent dot (used by Effort).
 -->
 <script lang="ts" generics="T extends string">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import RailPropGlyph from "$lib/shared/components/RailPropGlyph.svelte";
   import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
   import type { FanAppearance } from "$lib/shared/pictograph/prop/domain/fan-appearance";
@@ -100,7 +101,7 @@
   style:--rail-slots={Math.max(reservedSlots, pills.length)}
   role="tablist"
   aria-orientation="vertical"
-  aria-label="Editor sections"
+  aria-label={t("viewer_ui_editor_sections")}
   bind:this={navEl}
 >
   {#each pills as pill (pill.id)}

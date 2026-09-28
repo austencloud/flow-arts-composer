@@ -55,8 +55,8 @@ describe("translated message markup", () => {
         string
       >;
     const tagsOf = (message: string) =>
-      (message.match(/<\/?(?:strong|em)>|<br\s*\/?>/g) ?? [])
-        .map((tag) => (tag.startsWith("<br") ? "<br>" : tag))
+      (message.match(/<\/?(?:strong|em)(?:\s[^>]*)?>|<br\s*\/?>/g) ?? [])
+        .map((tag) => (tag.startsWith("<br") ? "<br>" : tag.replace(/\s[^>]*(?=>)/, "")))
         .sort();
 
     const english = readLocale("en.json");
@@ -75,7 +75,9 @@ describe("translated message markup", () => {
         }
         let strongDepth = 0;
         let emDepth = 0;
-        for (const tag of message.match(/<\/?(?:strong|em)>/g) ?? []) {
+        // Guide prose also uses class-bearing emphasis tags. Count those
+        // openings too, otherwise a valid closing tag looks unmatched.
+        for (const tag of message.match(/<\/?(?:strong|em)(?:\s[^>]*)?>/g) ?? []) {
           const step = tag.startsWith("</") ? -1 : 1;
           if (tag.includes("strong")) strongDepth += step;
           else emDepth += step;

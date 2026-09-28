@@ -21,8 +21,7 @@
   <header class="type-info-header">
     <h2>{t("create_ui_letter_types")}</h2>
     <p>
-      Shift moves a hand to an adjacent point. Dash moves it to the opposite
-      point.
+      {t("create_construct_shift_dash_explanation")}
     </p>
   </header>
 

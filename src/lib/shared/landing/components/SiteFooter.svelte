@@ -90,7 +90,6 @@
         { label: "Interactive lessons", href: "/learn/concepts" },
         { label: "Timing & Direction", href: "/timing-and-direction" },
         { label: "Trick names", href: "/tricks" },
-        { label: "Shape names", href: "/flowers" },
         { label: "Read the Guide", href: "/guide" },
         { label: "Kinetic Atlas", href: "/atlas" },
         { label: "FAQ", href: "/faq" },
@@ -453,9 +452,7 @@
      footer. */
   @media (max-width: 559px) {
     .bottom-links {
-      display: grid;
-      grid-template-columns: repeat(4, max-content);
-      justify-content: space-between;
+      /* Translated labels need to wrap at their natural width. */
       width: 100%;
     }
     .bottom-links a {
@@ -506,14 +503,6 @@
     .sitemap .col a:hover,
     .sitemap .col a:focus-visible {
       background: rgba(255, 255, 255, 0.05);
-    }
-  }
-
-  /* The labels still keep full-size touch targets on extra-narrow browsers,
-     but get two roomy rows instead of overflowing their pills. */
-  @media (max-width: 22.5rem) {
-    .bottom-links {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
     }
   }
 

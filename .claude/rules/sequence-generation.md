@@ -33,8 +33,8 @@ tagline text, declines a tagline, or indicates time pressure. See the full
 workflow in `docs/reference/sequence-generation-guide.md`.
 
 Humor-profile training is opt-in. Do not run `scripts/add-humor-pair.cjs` or
-modify `mcp-server/src/core/humor-profile.json` unless Austen explicitly asks to
-save the choice as training data.
+modify the private humor profile, `E:/flow-arts-private/humor/humor-profile.json`,
+unless Austen explicitly asks to save the choice as training data.
 
 Does NOT apply to requests by letter, level, loop type, or length.
 

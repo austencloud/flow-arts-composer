@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t as translate } from "$lib/shared/i18n/i18n.svelte.js";
   /**
    * Type 3 - Cross-Shift - Level 2 body page 8 (manifest `t3-cross-shift`),
    * faithful to old p9. Type 3 hybrids combine a shift and a dash; PADS puts
@@ -175,52 +176,49 @@
 <div class="t3-page">
   <!-- Intro. -->
   <p class="para" style="top:{54 * S}px; font-size:{16 * S}px; line-height:{19 * S}px">
-    Type 3 hybrids combine a shift with a dash.<br />
-    When we consult PADS, we find that a shift is higher than a dash, therefore:
+    {@html translate("guide_l2_print_type3crossshiftpage_0")}
   </p>
 
   <!-- Slot rule + big Z- (shift|dash). -->
   <p class="para bold" style="top:{99 * S}px; right:{142 * S}px; font-size:{20 * S}px; line-height:{24 * S}px">
-    For Type 3,<br />high = shift and low = dash.
+    {@html translate("guide_l2_print_type3crossshiftpage_1")}
   </p>
   <p class="para" style="top:{165 * S}px; right:{142 * S}px; font-size:{16 * S}px; line-height:{19 * S}px">
-    This includes W-, X-, Y-, Z-, <span class="tka">Σ</span>-, <span class="tka">Δ</span>-, <span class="tka">Θ</span>-, and <span class="tka">Ω</span>-.
+    {@html translate("guide_l2_print_type3crossshiftpage_2")}
   </p>
   <div class="big-letter" style="left:{430 * S}px; top:{112 * S}px">Z-</div>
   <span class="cs hi" style="left:{489 * S}px; top:{112 * S}px">Shift</span>
   <span class="cs lo" style="left:{489 * S}px; top:{160 * S}px">Dash</span>
 
   <p class="para" style="top:{199 * S}px; font-size:{16 * S}px; line-height:{19 * S}px">
-    First, we’ll add 1 high turn to Z-, which only affects the shift.
+    {@html translate("guide_l2_print_type3crossshiftpage_3")}
   </p>
 
   <!-- Halfway-position teaching. -->
   <p class="para bold-italic" style="top:{348 * S}px; font-size:{16 * S}px; line-height:{18 * S}px">
-    Take note of this strange position at the halfway point.
+    {@html translate("guide_l2_print_type3crossshiftpage_4")}
   </p>
   <p class="para" style="top:{370 * S}px; font-size:{16 * S}px; line-height:{18 * S}px">
-    There is a hand-to-end relationship between the <strong style="color:#2342c9">left</strong> hand and the <strong style="color:#c01b1b">right</strong> staff’s pinky end.<br />
-    It is important to pass through this position for the timing to be accurate.
+    {@html translate("guide_l2_print_type3crossshiftpage_5")}
   </p>
 
   <!-- Same/Opp lead-in. -->
   <p class="para" style="top:{428 * S}px; font-size:{16 * S}px; line-height:{18 * S}px">
-    Now let’s add 1 turn to the dash, leaving the shifting hand unmodified.<br />
-    This creates a rotational relationship, so we’ll need to use Same-dots and Opp-dots.
+    {@html translate("guide_l2_print_type3crossshiftpage_6")}
   </p>
 
   <!-- Closing. -->
   <p class="para bold-italic" style="top:{695 * S}px; font-size:{16 * S}px; line-height:{18 * S}px">
-    The halfway position holds the key for executing cross-shifts with accurate timing.
+    {@html translate("guide_l2_print_type3crossshiftpage_7")}
   </p>
   <p class="para" style="top:{717 * S}px; font-size:{16 * S}px; line-height:{18 * S}px">
-    Though unfamiliar now, these centric positions will be thoroughly deconstructed later on.
+    {@html translate("guide_l2_print_type3crossshiftpage_8")}
   </p>
 
   <!-- Footnote. -->
   <div class="rule footnote" style="left:0; top:{752.1 * S}px; width:{612 * S}px"></div>
   <p class="para italic" style="top:{758 * S}px; font-size:{14.5 * S}px; line-height:{18 * S}px">
-    When writing code, put the dash after the letter and before the parentheses. “E.g. Z-(s,0,1)”
+    {@html translate("guide_l2_print_type3crossshiftpage_9")}
   </p>
 
   <!-- Group separators. -->
@@ -244,15 +242,15 @@
 
     <!-- Captions. -->
     {#if strip.captions}
-      <span class="cap" style="left:{150 * S}px; top:{(strip.y - 32) * S}px">thumbs:</span>
-      <span class="frame-cap" style="left:{START_X * S}px; top:{(strip.y - 32) * S}px; width:{SIZE * S}px">start</span>
-      <span class="frame-cap" style="left:{HALF_X * S}px; top:{(strip.y - 32) * S}px; width:{SIZE * S}px">halfway</span>
-      <span class="frame-cap" style="left:{END_X * S}px; top:{(strip.y - 32) * S}px; width:{SIZE * S}px">end</span>
-      <span class="thumb-cap" style="left:{START_X * S}px; top:{(strip.y - 16) * S}px; width:{SIZE * S}px">in</span>
+      <span class="cap" style="left:{150 * S}px; top:{(strip.y - 32) * S}px">{translate("guide_l2_print_thumbs")}</span>
+      <span class="frame-cap" style="left:{START_X * S}px; top:{(strip.y - 32) * S}px; width:{SIZE * S}px">{translate("guide_l2_frame_start")}</span>
+      <span class="frame-cap" style="left:{HALF_X * S}px; top:{(strip.y - 32) * S}px; width:{SIZE * S}px">{translate("guide_l2_frame_halfway")}</span>
+      <span class="frame-cap" style="left:{END_X * S}px; top:{(strip.y - 32) * S}px; width:{SIZE * S}px">{translate("guide_l2_frame_end")}</span>
+      <span class="thumb-cap" style="left:{START_X * S}px; top:{(strip.y - 16) * S}px; width:{SIZE * S}px">{translate("guide_l2_frame_in")}</span>
       <span class="thumb-cap" style="left:{END_X * S}px; top:{(strip.y - 16) * S}px; width:{SIZE * S}px">mixed</span>
     {:else}
-      <span class="thumb-cap" style="left:{START_X * S}px; top:{(strip.y - 16) * S}px; width:{SIZE * S}px">in</span>
-      <span class="thumb-cap" style="left:{END_X * S}px; top:{(strip.y - 16) * S}px; width:{SIZE * S}px">out</span>
+      <span class="thumb-cap" style="left:{START_X * S}px; top:{(strip.y - 16) * S}px; width:{SIZE * S}px">{translate("guide_l2_frame_in")}</span>
+      <span class="thumb-cap" style="left:{END_X * S}px; top:{(strip.y - 16) * S}px; width:{SIZE * S}px">{translate("guide_l2_frame_out")}</span>
     {/if}
 
     <!-- start -->

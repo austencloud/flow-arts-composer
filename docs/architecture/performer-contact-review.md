@@ -91,7 +91,8 @@ In code, `MAX_REACH_LEAN` and forward pitch are 0, the hips never rotate, and
 only a small clavicle raise remains. When a reach is still too far, clearance
 retraction shortens the arm to as little as 0.6 of its length, caches that,
 recovers 4% every 12 frames, and is never reset on seek, so a short arm can
-persist about two seconds after a scrub (computed).
+persist about two seconds after a scrub (computed). Since 2026-09-27 the reach
+grows back by time instead: from 0.6 to full length in 0.3 s at any frame rate.
 
 ## Cause 3: crossed hands get pulled apart
 
@@ -297,7 +298,9 @@ Decisions and open items:
   the merge with the count capped at 75 and 34. The old 0 came from the split
   pulling the hands off their staffs. The remaining contacts are elbow against
   elbow near the midline on crossed and close pairs; a wider depth lane does
-  not close them. Step 4 takes the cap back to 0.
+  not close them. Step 4 takes the cap back to 0. The time-based recovery
+  raised the caps to 97 and 68 on 2026-09-27
+  ([Clearance fixes](#clearance-fixes-2026-09-27)).
 - **Render lock.** It still slides the staff up to 6 cm in any direction,
   against the radial-and-depth rule. A lock limited to radial and depth moves
   raised the frames over 3 cm to 2,556 and 3,154. Kept until step 7.
@@ -348,8 +351,9 @@ What changed:
 
 Staffs still pass through the chest when it turns side-on (642 / 1,271
 staff-frames as drawn, ch07 / ch18). The scoreboard holds them at those
-counts. The per-hand lanes below were the attempt to clear them; they were
-dropped.
+counts. The per-hand lanes and the 60° chest limit below were two attempts to
+clear them. Both were dropped. The real staff recheck below traces most of
+this contact to staff length.
 
 Recommended order after this: trail cleanup; reference clips from Austen
 (front and side stills he confirms) for body turns and negative space,
@@ -391,6 +395,203 @@ Commit `2dd227ba5f` and its follow-ups hold the work if elbow planning makes
 it worth another look. Judge the next attempt from pictures of the whole pose
 before the counts: a contact count can fall while the pose gets worse.
 
+### Tried and dropped: holding the chest to 60°
+
+Nothing turns the hips or feet yet, so the whole side-on turn is spine twist,
+up to 87°. This attempt capped the planned turn at 60° with one clamp in
+`planUpperBodyStanceYawTarget`, so the timing curve and the corridor both saw
+the smaller turn.
+
+Scoreboard, ch07 / ch18, staff-frames of 12,960 unless noted:
+
+| Measure                                   | Merged        | Chest held to 60° |
+| ----------------------------------------- | ------------- | ----------------- |
+| Staff through the torso, as drawn         | 642 / 1,271   | 136 / 269         |
+| Staff through the head, as drawn          | 64 / 149      | 119 / 201         |
+| Head and torso where the stance plans it  | 1,189 / 1,610 | 0 / 0             |
+| Staff through a leg                       | 20 / 21       | 0 / 0             |
+| Staff through the other hand's arm        | 628 / 637     | 1,131 / 1,332     |
+| Staff through its own upper arm           | 1,908 / 1,848 | 628 / 627         |
+| Staff along or through its own forearm    | 2,886 / 2,666 | 2,215 / 2,090     |
+| Hand-frames over 3 cm from the staff      | 1,787 / 2,362 | 2,405 / 3,423     |
+| 90th-percentile hand-to-staff gap         | 3.9 / 5.7 cm  | 4.7 / 6.8 cm      |
+| Forearm pairs under 4 cm (of 6,480)       | 75 / 34       | 430 / 380         |
+| Chest over 60° past the pelvis (of 6,480) | 2,633 / 2,614 | 2,379 / 2,282     |
+| Largest chest twist past the pelvis       | 88° / 87°     | 75° / 75°         |
+
+Two things kept the pose from following the plan. The package animator steers
+the chest from the shoulder line, so the ribcage still reached 75° while the
+plan held 60°. The corridor also opens its depth lanes only past about 70°
+(0.8 of the 87° side-on turn), so below that the together-same hands land on
+one point and the arms stack. Forearm pairs under 4 cm rose from 75 to 430 on
+ch07.
+
+Pictures of the same moments, before and after:
+
+- Better at gggg beats 1 and 2: both staffs leave the neck and chest.
+- Worse at gggg beat 4 and hhhh beat 1: the forearms cross in front of the
+  face and the hands open away from their staffs.
+- Wrong both ways at vvvv beat 4: the limited pose lays a staff across the
+  neck with the hand open. The current pose looked like it put a staff through
+  the mouth, but that piece was the notation staff's T-bar crossbar. With the
+  LED Baton the shaft stops at the lips, and the scoreboard counts no head hit
+  at that beat.
+
+Austen dropped the limit on 2026-09-27 from those pictures. It was never
+committed.
+
+### Staff builds for realism work
+
+The red and blue staff with the T-bar end is a notation marker. Its shape and
+body-fit length serve the notation, and nobody spins that prop, so it cannot
+show whether a real staff clears the body. Realism and collision work, and the
+pictures that judge it, use the Fire Staff or the LED Baton, or a day staff
+once one is modeled. The staff-grip lab opens on the LED Baton, so leave
+`prop=staff` off its URL. The pictures for both attempts above drew the
+notation staff. The scoreboard measures a straight 86.36 cm staff (the default
+34-inch length) whatever build is drawn, which matches the LED Baton's length.
+
+Judge a real build at the staff length the performer uses. The LED Baton
+always draws at 86.36 cm. Since 2026-09-27 the Fire Staff stretches to the
+length it is given, so in the lab's default body-fit mode it draws at the hug
+fit (about 67 cm on ch07). Pin `length=` in the lab URL to the length under
+test.
+
+### Real staff recheck (2026-09-27)
+
+Today's merged pose, pictured with the LED Baton at 86.36 cm and the Fire
+Staff pinned to 90 cm at the moments used above. Both builds read the same way:
+
+- gggg beat 1: the red end reaches the face and the blue end the collar.
+- gggg beat 2: the inner ends of both staffs come out at the collarbone.
+- gggg beat 4: the red staff lies across the face with its end at the neck.
+- hhhh beat 1: the red staff's top end passes just over the head.
+- vvvv beat 4: the red end stops at the lips.
+
+The lab's fit panel gives about 67 cm (67.0 to 67.7 cm across loads) as the
+longest staff ch07 can hold inside its own hug: half of it fits between the
+converged grip and the torso surface with 6 cm to spare. The test ran the
+scoreboard on today's poses at five staff lengths with nothing else changed.
+
+Scoreboard, ch07 / ch18, staff-frames of 12,960:
+
+| Staff length         | Torso, as drawn | Head, as drawn | Head and torso where the stance plans it |
+| -------------------- | --------------- | -------------- | ---------------------------------------- |
+| 61 cm                | 55 / 82         | 64 / 142       | 136 / 206                                |
+| 67.6 cm (hug fit)    | 86 / 188        | 64 / 142       | 256 / 448                                |
+| 76 cm                | 216 / 613       | 64 / 147       | 650 / 968                                |
+| 86.36 cm (LED Baton) | 642 / 1,271     | 64 / 149       | 1,189 / 1,610                            |
+| 90 cm (Fire Staff)   | 984 / 1,508     | 64 / 149       | 1,506 / 1,948                            |
+
+With the body square to the audience, no length puts a staff in the head or
+torso. At the LED Baton's length, 517 of 642 torso hits on ch07 and 1,053 of
+1,271 on ch18 fall in beats where the chest turns past 80°. At the hug-fit
+length, torso hits as drawn fall 87% on ch07 and 85% on ch18. Head hits
+barely move (64 at every length on ch07, 142 to 149 on ch18), so the staff
+meets the head within about 30 cm of the hand, not at its ends.
+
+Most of the side-on chest contact is staff length. Today's grips leave room
+for a half-length of about 34 cm in front of the turned chest, and the real
+builds reach 43 to 45 cm from the hand. Austen's answer, 2026-09-27:
+performers use smaller staffs sized to their bodies, and the grid follows
+either the staff or the body. [Performer grid styles](performer-grid-styles.md)
+holds that design.
+
+## Clearance fixes (2026-09-27)
+
+The arm-from-body clearance (cause 2) had two more defects. The slow recovery
+is fixed. The face sphere is parked until elbow planning (step 4).
+
+### Landed: the reach grows back by time
+
+A hand the clearance pulls in used to regain 4% of its reach every 12 frames.
+From 0.6 that took about 2 s at 60 fps and 4 s at 30, so a hand stayed off its
+staff long after the body was out of the way. It now grows back to full length
+in 0.3 s at any frame rate, and each longer reach must still clear the body.
+`avatar-clearance-recovery.test.ts` times the return at 30 and 120 fps.
+
+Scoreboard, ch07 / ch18:
+
+| Measure                                                    | Before         | Time-based     |
+| ---------------------------------------------------------- | -------------- | -------------- |
+| Hand-frames over 3 cm from the staff (12,960)              | 1,787 / 2,362  | 1,735 / 2,308  |
+| The same in fx-phi-psi                                     | 13 / 18        | 0 / 5          |
+| 90th-percentile hand-to-staff gap                          | 3.85 / 5.71 cm | 3.81 / 5.69 cm |
+| Forearm pairs under 4 cm (of 6,480)                        | 75 / 34        | 97 / 68        |
+| Forearm pairs under 8 cm                                   | 350 / 285      | 365 / 316      |
+| Staff through the head, as drawn                           | 64 / 149       | 64 / 149       |
+| Staff through the torso, as drawn                          | 642 / 1,271    | 644 / 1,273    |
+| Forearm within 4 cm of the head or neck (probe, of 12,960) | 726 / 775      | 750 / 816      |
+
+The arms reach the midline sooner, so the forearms meet more, mostly at
+tog-opp DJ, EK and FL step 3. Austen approved nine higher caps that day:
+forearms under 4 cm 97 and 68, under 8 cm 365 and 316, torso 644 and 1,273,
+ch07 other arm 642 and own forearm 2,912, and ch18 palms 4. The other caps
+moved down to the new counts.
+
+Pictures with the LED Baton, before and after:
+
+- fx-phi-psi beat 1.05 (ch07): before, the upper hand hovers at the forehead
+  8.0 cm off its baton, still pulled in from the beat before. After, the arm
+  reaches up and holds the baton overhead. The baton crosses the face in both.
+- Quarter-opp NQ beat 2.52 (ch07) and tog-opp DJ beat 3.25 (ch18): the same
+  pose, with each gap within 1.4 cm of before.
+- Tog-opp EK beat 3.10 (ch07): the forearms lie folded across the chest in
+  both, with the hands just below their batons. One gap falls from 6.2 to
+  3.6 cm and the other rises from 3.5 to 4.0 cm.
+
+The crossed-arm beats where the forearm count rose look as they did: the
+forearms already lay across each other there.
+
+### Parked: the face sphere
+
+The package's `computeFaceCenter` (`BodyCollisionGeometry.ts:22`) builds
+forward as (−right.z, 0, right.x), with right = right shoulder − left
+shoulder. The shipped rigs face +Z with the left shoulder at +X, so that
+vector points backward and the face sphere sits about 8 cm behind the head.
+At an 87° chest turn a probe put the package's face at (−0.075, 1.729,
+−0.001) and the real face at (0.077, 1.729, 0.037). The arm clearance in
+`AvatarAnimator.refreshFaceClearanceCenter` and `Avatar3D.svelte` pulls the
+arms back from that point. The collision lab's `stance-simulator.ts` copies
+the formula, but every body it gets puts the right shoulder at +X, so its copy
+points forward and stays as it is.
+
+The trial took forward from the Head bone's +Z, flattened, with up × (right −
+left) as the fallback. It followed the pending stance head lag, and
+`Avatar3D.svelte` used the rendered Head quaternion. The keep variant held
+full reach on the original pole when no shorter reach cleared. Scoreboard and
+probe, ch07 / ch18:
+
+| Measure                                 | Before        | Face only     | Time-based    | Face + time   | Face + time + keep |
+| --------------------------------------- | ------------- | ------------- | ------------- | ------------- | ------------------ |
+| Hand-frames over 3 cm from the staff    | 1,787 / 2,362 | 2,281 / 2,785 | 1,735 / 2,308 | 2,050 / 2,619 | 1,738 / 2,377      |
+| 90th-percentile gap (cm)                | 3.85 / 5.71   | 5.11 / 6.64   | 3.81 / 5.69   | 4.66 / 6.42   | 3.89 / 5.56        |
+| Forearm pairs under 4 cm                | 75 / 34       | 166 / 149     | 97 / 68       | 155 / 137     | 156 / 131          |
+| Forearm pairs under 8 cm                | 350 / 285     | not run       | 365 / 316     | 473 / 405     | 392 / 351          |
+| Staff through the head, as drawn        | 64 / 149      | not run       | 64 / 149      | 70 / 155      | 65 / 155           |
+| Staff through its own upper arm         | 1,908 / 1,848 | not run       | 1,905 / 1,825 | 1,992 / 1,909 | 1,954 / 1,871      |
+| Forearm within 4 cm of the head or neck | 726 / 775     | 279 / 371     | 750 / 816     | 280 / 388     | 264 / 383          |
+| Forearm inside the head or neck         | 189 / 173     | not run       | 185 / 173     | 148 / 124     | 143 / 121          |
+
+With the face in front, the arms stop passing through it. Forearm frames
+within 4 cm of the head or neck fall from 750 to 280 and 816 to 388, and the
+face contacts in split-same A, B and C and fx-aaaa go to 0 (from 55, 52, 53
+and 49 frames on ch07 and 28, 22, 34 and 38 on ch18). The clearance can only
+pull the hand in, though, and the real face sits where the hands pass.
+Without keep, the worst beats become quarter-same T, S, V and U, 21 to 24 cm
+off the staff on ch07 and 23 to 28 cm on ch18, against 17.4 and 20.6 cm
+before either fix. Keep brings the gap count back near the time-based one but
+still moves hands 4 to 8 cm off their staffs at those beats, and it raises
+forearm pairs under 4 cm to 156 and 131. Against the caps before the timing
+fix it would have needed 13 raised. The face fix also failed the Grip Lab
+checkpoint test for seek order, with a clearance of −7.5 mm.
+
+Moving hands off staffs to avoid clipping is on the stop list, and this
+clearance has no other way around the face. Elbow planning (step 4) can route
+the elbow around it instead, so the fix waits for that step. The trial's
+pictures drew the notation staff; picture any second attempt with the LED
+Baton.
+
 ## Target architecture
 
 Plan the whole sequence ahead of time, the way a pianist chooses fingering for
@@ -412,6 +613,7 @@ are useful now.
 - The 0.52 m grid radius assumes an 86 cm staff; the sequence performer draws
   about 67 cm and collision uses 86 cm. Pro 0-turn isolations cannot keep the
   inner end nearly still until this agrees.
+  [Performer grid styles](performer-grid-styles.md) plans the fix.
 - Beta staffs overlap in 3D; the 2D pictograph offsets them.
 - Turns are all spine (up to 87 to 90° with square hips); a human spine
   rotates roughly 40 to 50° (general estimate).
@@ -438,7 +640,7 @@ installed from `patches/@austencloud__scene-3d@0.1.6.patch`.
 | Un-crossing split, 7 cm minimum    | `AvatarAnimator.ts:473-510`, `:71`                                            |
 | Over/under routing                 | `ElbowPoleComputer.ts:75-102`, called at `AvatarAnimator.ts:1627`             |
 | Lean and pitch fixed at 0          | `AvatarAnimator.ts:98`, `SpineTwister.ts:53`                                  |
-| Retraction and its cache           | `AvatarAnimator.ts:102-106`, `:167-170`, `:251-254`                           |
+| Retraction and its cache           | `AvatarAnimator.ts:97-108`, `:174-175`, `:607-609`, `:2647-2830`              |
 | Wrist rate limit and smoothing     | `AvatarAnimator.ts:60`, `:2744-2752`, `:2848`                                 |
 | Render lock, 6 cm                  | `Avatar3D.svelte:529`, clamp `:652`, applied `:1663`, `:1670`, report `:1886` |
 | Orbit renderer without lock        | `worker-performer.ts:436-491`; routing `Viewer3DCanvas.svelte:346-385`        |

@@ -1,15 +1,16 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import GuideSection from "../../../level-1/_components/GuideSection.svelte";
 </script>
 
-<GuideSection id="type-4-turns" title="Type 4: Dash (1-Turn)">
+<GuideSection id="type-4-turns" title={t("guide_l2_type4_title")}>
   <div class="section-body">
     <p>
-      Type 4 hybrids combine a dash with a static motion. There is no shift involved. According to PADS, a dash is higher than a static motion.
+      {t("guide_l2_type4_intro")}
     </p>
 
     <p>
-      For Type 4, high = dash and low = static. This includes Φ, Ψ, and Λ.
+      {t("guide_l2_type4_slots")}
     </p>
 
     <!-- TODO: add diagram - Phi-High-One (only one prop rotating, no rotational relationship) -->
@@ -17,7 +18,7 @@
     <!-- TODO: add diagram - Phi-Low-One (pause at halfway, hand-to-end relationship with left hand and right pinky end) -->
 
     <p>
-      When typing the words for sequences containing greek symbols, it's easier to just type the word or its first three letters. E.g. "phi(0,1)". The corresponding symbol can easily be swapped in with a simple script. The short versions of the seven greek letters are "sig, del, the, om, phi, psi, lam"
+      {t("guide_l2_type4_code")}
     </p>
   </div>
 </GuideSection>

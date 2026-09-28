@@ -16,6 +16,7 @@
   scrim / centerpiece / panel composition is preserved exactly.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte";
   import type { Snippet } from "svelte";
   import type { ExportPhase } from "$lib/shared/compose/domain/video-export-types";
   import BaseModal from "$lib/shared/foundation/ui/modal/BaseModal.svelte";
@@ -93,7 +94,7 @@
 
   const headingId = `export-takeover-title-${Math.random().toString(36).slice(2, 9)}`;
   const dialogLabel = $derived(
-    label ?? (phase === "error" ? "Export failed" : "Exporting — the app is locked"),
+    label ?? (phase === "error" ? t('export_failed') : t('export_app_locked')),
   );
 </script>
 
@@ -122,12 +123,12 @@
       {/if}
       {#if phase === "error"}
         <p class="takeover-msg error" role="alert">
-          <i class="fas fa-triangle-exclamation" aria-hidden="true"></i> Export failed
+          <i class="fas fa-triangle-exclamation" aria-hidden="true"></i> {t('export_failed')}
         </p>
         <p class="takeover-sub">{error}</p>
         <div class="takeover-actions">
-          {#if onCancel}<button class="takeover-btn ghost" onclick={onCancel}>Close</button>{/if}
-          {#if onRetry}<button class="takeover-btn primary" onclick={onRetry}>Retry</button>{/if}
+          {#if onCancel}<button class="takeover-btn ghost" onclick={onCancel}>{t('action_close')}</button>{/if}
+          {#if onRetry}<button class="takeover-btn primary" onclick={onRetry}>{t('action_retry')}</button>{/if}
         </div>
       {:else}
         <div
@@ -137,21 +138,21 @@
           aria-valuenow={pct}
           aria-valuemin={0}
           aria-valuemax={100}
-          aria-label="Export progress"
+          aria-label="{t('viewer_ui_export_progress')}"
         >
           <div class="ring-hole">
             <span class="ring-pct">{pct}<small>%</small></span>
           </div>
         </div>
         <p class="takeover-phase" aria-live="polite" aria-atomic="true">{phaseLabel}</p>
-        <p class="takeover-msg">Please don't navigate away.</p>
+        <p class="takeover-msg">{t('export_stay_here')}</p>
         {#if phase !== "complete" && onCancel}
           <button
             class="takeover-btn ghost"
             data-testid="export-takeover-cancel"
             disabled={!canCancel}
             aria-describedby={cancelDisabledReason ? `${headingId}-cancel-note` : undefined}
-            onclick={onCancel}>Cancel</button
+            onclick={onCancel}>{t('action_cancel')}</button
           >
           {#if cancelDisabledReason}
             <p class="takeover-sub" id={`${headingId}-cancel-note`}>{cancelDisabledReason}</p>

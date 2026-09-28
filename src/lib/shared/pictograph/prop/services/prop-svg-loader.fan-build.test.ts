@@ -126,6 +126,21 @@ describe("PropSvgLoader fan builds", () => {
     expect(model.svgData!.viewBox).toEqual({ width: 262.6, height: 135.9 });
   });
 
+  it("turns the Realistic staff so its T-bar sits where the notation marks the thumb end", async () => {
+    // The capture's T-bar is on -x; the notation staff and the rotation tables
+    // put the thumb end on +x. Unturned, a staff set to "in" read as "out".
+    const loader = new StaticFileLoader();
+    const model = await loader.loadPropSvg(placement, motion("staff", HandSide.LEFT), false, {
+      themeMode: "dark",
+      propLook: "model",
+    });
+    expect(loader.fetched).toEqual([
+      expect.stringMatching(/^\/images\/props\/appearances\/model\/staff-blue\.svg\?v=/),
+    ]);
+    expect(model.svgData!.svgContent).toContain('<g transform="rotate(180 126.4 38.9)">');
+    expect(model.svgData!.center).toEqual({ x: 126.4, y: 38.9 });
+  });
+
   it("hands a light pictograph the paper palette so the choreo sheet can read the fan", async () => {
     // The sheet and its PDF prepare with themeMode "light". The rod-built fans
     // were tuned on a dark pictograph, where pale kevlar wicks anchor the

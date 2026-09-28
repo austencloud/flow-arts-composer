@@ -34,7 +34,12 @@
     </p>
   {:else}
     <div class="pattern-preview">
-      <h3>Current Pattern ({sequence.steps.length} steps)</h3>
+      <h3>{t(
+        sequence.steps.length === 1
+          ? "create_rotation_current_pattern_one_step"
+          : "create_rotation_current_pattern_steps",
+        { count: sequence.steps.length }
+      )}</h3>
       <div class="preview-grid">
         {#each sequence.steps as beat, i}
           <!-- Invisible placeholder = hand not really there: null (no-motion
@@ -106,7 +111,7 @@
         {:else}
           <i class="fas fa-save" aria-hidden="true"></i>
         {/if}
-        Save Pattern
+        {t("create_review_save_pattern")}
       </button>
     </div>
   {/if}

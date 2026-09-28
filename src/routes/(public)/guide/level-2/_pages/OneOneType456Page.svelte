@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { t as translate } from "$lib/shared/i18n/i18n.svelte.js";
+  import { localizePrintLabel } from "../_components/localize-print-label";
   /**
    * 1|1 - Type 4/5/6 - Level 2 body page 15 (manifest `one-one-t456`), faithful to
    * old p16. One-one examples for the dash-family and static types where both hands
@@ -205,9 +207,9 @@
     strip.halfway.map((h) => ({ ...halfwayPose(h.motion, h.color), fill: h.color === HandSide.LEFT ? BLUE_FILL : RED_FILL }));
 
   const HEADERS = [
-    { y: 12.2, x: 22, parts: [{ t: "Type 4 - ", c: "#231f20" }, { t: "Dash", c: "#0ea14b" }] },
-    { y: 259.5, x: 22, parts: [{ t: "Type 5 - ", c: "#231f20" }, { t: "Dual", c: "#00aeef" }, { t: "-", c: "#231f20" }, { t: "Dash", c: "#0ea14b" }] },
-    { y: 530.8, x: 24, parts: [{ t: "Type 6 - ", c: "#231f20" }, { t: "Static", c: "#f26522" }] },
+    { y: 12.2, x: 22, parts: [{ t: translate("guide_l2_print_type_4") + " - ", c: "#231f20" }, { t: "Dash", c: "#0ea14b" }] },
+    { y: 259.5, x: 22, parts: [{ t: translate("guide_l2_print_type_5") + " - ", c: "#231f20" }, { t: "Dual", c: "#00aeef" }, { t: "-", c: "#231f20" }, { t: "Dash", c: "#0ea14b" }] },
+    { y: 530.8, x: 24, parts: [{ t: translate("guide_l2_print_type_6") + " - ", c: "#231f20" }, { t: "Static", c: "#f26522" }] },
   ];
   const RULES = [
     { y: 149.5, x: 35, w: 519, heavy: false },
@@ -248,7 +250,7 @@
 
     <!-- Thumb captions over start + end columns. -->
     <span class="thumb-cap" style="left:{START_X * S}px; top:{(strip.y - 11) * S}px; width:{SIZE * S}px">{strip.startThumb}</span>
-    <span class="thumb-cap" style="left:{END_X * S}px; top:{(strip.y - 11) * S}px; width:{SIZE * S}px">{strip.endThumb}</span>
+    <span class="thumb-cap" style="left:{END_X * S}px; top:{(strip.y - 11) * S}px; width:{SIZE * S}px">{localizePrintLabel(strip.endThumb)}</span>
 
     <!-- start -->
     <div class="mini" style="left:{START_X * S}px; top:{strip.y * S}px; width:{SIZE * S}px; height:{SIZE * S}px">

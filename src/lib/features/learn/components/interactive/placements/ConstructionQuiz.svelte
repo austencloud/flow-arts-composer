@@ -4,6 +4,7 @@ by placing hands on the grid. Adaptive difficulty ramps from diamond-only to mix
 Wrong answers receive semantic feedback explaining WHAT they built vs. WHAT was requested.
 -->
 <script lang="ts">
+  import { tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
   import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
   import { onDestroy } from "svelte";
   import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
@@ -185,7 +186,7 @@ Wrong answers receive semantic feedback explaining WHAT they built vs. WHAT was 
   }
 </script>
 
-<div class="construction-quiz" role="region" aria-label="Construction Quiz">
+<div class="construction-quiz" role="region" aria-label={tDynamic("learn_placement_construction_quiz")}>
   {#if !isComplete && currentQ}
     <!-- Header: progress + streak -->
     <div class="quiz-header">
@@ -239,7 +240,7 @@ Wrong answers receive semantic feedback explaining WHAT they built vs. WHAT was 
     {#if feedbackState === "correct"}
       <div class="correct-feedback" role="status">
         <span class="correct-icon" aria-hidden="true">&#x2713;</span>
-        <span class="correct-text">Correct!</span>
+        <span class="correct-text">{tDynamic("learn_quiz_correct")}</span>
       </div>
     {/if}
   {:else}
@@ -248,10 +249,10 @@ Wrong answers receive semantic feedback explaining WHAT they built vs. WHAT was 
       <div class="complete-header">
         {#if passed}
           <span class="complete-icon pass" aria-hidden="true">&#x2713;</span>
-          <h2 class="complete-title">Quiz Passed</h2>
+          <h2 class="complete-title">{tDynamic("learn_placement_quiz_passed")}</h2>
         {:else}
           <span class="complete-icon fail" aria-hidden="true">&#x21BB;</span>
-          <h2 class="complete-title">Keep Practicing</h2>
+          <h2 class="complete-title">{tDynamic("learn_placement_keep_practicing")}</h2>
         {/if}
       </div>
 
@@ -263,27 +264,26 @@ Wrong answers receive semantic feedback explaining WHAT they built vs. WHAT was 
 
       <p class="score-description">
         {#if passed}
-          You can identify placements by placing hands on the grid.
-          Ready for speed rounds?
+          {tDynamic("learn_placement_passed_detail")}
         {:else}
-          You need 7 correct answers to pass. Review the placement types and try again.
+          {tDynamic("learn_placement_failed_detail")}
         {/if}
       </p>
 
       {#if experienceState.bestStreak > 0}
         <p class="best-streak-note">
-          Best streak: {experienceState.bestStreak}
+          {tDynamic("learn_placement_best_streak", { streak: experienceState.bestStreak })}
         </p>
       {/if}
 
       <div class="complete-actions">
         {#if passed}
           <button class="action-button primary" onclick={handleAdvanceToSpeedRounds}>
-            Speed Rounds
+            {tDynamic("learn_placement_speed_rounds")}
           </button>
         {:else}
           <button class="action-button primary" onclick={handleRetry}>
-            Try Again
+            {tDynamic("learn_quiz_try_again")}
           </button>
         {/if}
       </div>
@@ -293,13 +293,12 @@ Wrong answers receive semantic feedback explaining WHAT they built vs. WHAT was 
   <!-- Accessibility: live announcements -->
   <div class="sr-only" aria-live="polite" aria-atomic="true">
     {#if feedbackState === "correct"}
-      Correct! Moving to next question.
+      {tDynamic("learn_placement_correct_next")}
     {:else if feedbackState === "incorrect" && builtType}
-      Incorrect. You built {PLACEMENT_TYPE_INFO[builtType].label}
-      instead of {currentQ ? PLACEMENT_TYPE_INFO[currentQ.targetType].label : ""}.
+      {tDynamic("learn_placement_incorrect_aria", { built: PLACEMENT_TYPE_INFO[builtType].label, target: currentQ ? PLACEMENT_TYPE_INFO[currentQ.targetType].label : "" })}
     {:else if isComplete}
-      Quiz complete. Score: {experienceState.quizScore} out of {questions.length}.
-      {passed ? "You passed!" : "You need 7 to pass."}
+      {tDynamic("learn_placement_complete_aria", { score: experienceState.quizScore, total: questions.length })}
+      {passed ? tDynamic("learn_placement_pass_aria") : tDynamic("learn_placement_fail_aria")}
     {/if}
   </div>
 </div>

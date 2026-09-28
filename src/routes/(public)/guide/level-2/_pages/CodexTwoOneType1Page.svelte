@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t as translate } from "$lib/shared/i18n/i18n.svelte.js";
   /**
    * Codex 2|1 - Type 1 - Level 2 body page 28 (manifest `codex-2-1-t1`), faithful
    * to old p28. Same 32-cell 8×4 structure as p17, but every cell turns BOTH hands
@@ -18,7 +19,7 @@
     [hi("S"), lo("S"), hi("T"), lo("T"), hi("U"), lo("U"), hi("V"), lo("V")],
   ];
 
-  const subParts = [{ t: "Type 1 - " }, { t: "Dual", c: "#22b8cf" }, { t: "-Shift", c: "#7048b6" }];
+  const subParts = [{ t: translate("guide_l2_print_type_1") + " - " }, { t: "Dual", c: "#22b8cf" }, { t: "-Shift", c: "#7048b6" }];
 </script>
 
 <CodexGridPage turnLabel="2 | 1" {subParts} {rows} />

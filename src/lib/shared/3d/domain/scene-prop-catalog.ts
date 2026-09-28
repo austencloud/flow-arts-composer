@@ -156,13 +156,15 @@ export function findScenePropFamilyByRepresentative(
    catalog knows about one.
 
    Two of the three Double Staff builds are drawn from authored GLB models
-   rather than procedural geometry, and a model draws at the size it was
-   authored: the scene package's `Prop3D` hands `length` to every procedural
-   component and drops it on the GLTF branch. So every length control in the
-   product — the performer's own `staffLengthCm`, a pinned lab length, the
-   body-derived hug fit — reaches the plain Staff and stops at the LED Baton
-   and the Fire Staff. Anything reporting a prop's size has to say which of
-   those two it is looking at.
+   rather than procedural geometry, and the scene package's `Prop3D` sizes
+   them differently. It hands `length` to every procedural component. On its
+   GLTF branch it stretches the Fire Staff's long axis to that length,
+   dividing by the model's authored 0.9 m and keeping the grip diameter, and
+   draws every other model at the size it was authored. So every length
+   control in the product — the performer's own `staffLengthCm`, a pinned lab
+   length, the body-derived hug fit — reaches the plain Staff and the Fire
+   Staff and stops at the LED Baton. Anything reporting a prop's size has to
+   say which of those it is looking at.
 
    The numbers are each model's own `authored_length_m` node extra, written by
    scripts/build-capsule-baton-model.py (0.8636 m, "a 34\" baton, the same
@@ -173,33 +175,40 @@ export function findScenePropFamilyByRepresentative(
    The table covers the Double Staff family because that is the only family
    whose builds mix procedural and model-backed geometry, so it is the only
    one where the distinction changes a reading. Other model-backed props
-   ignore length the same way; they are absent because nothing asks them for
-   a length yet.
+   ignore length the way the LED Baton does; they are absent because nothing
+   asks them for a length yet.
    ------------------------------------------------------------------------- */
 
-const AUTHORED_MODEL_LENGTH_CM: Partial<Record<PropType, number>> = {
-  [PropType.CAPSULE_BATON]: 86.36,
-  [PropType.FIRE_DOUBLE_STAFF]: 90,
+interface ModelBuildLength {
+  authoredCm: number;
+  /**
+   * Whether `Prop3D` stretches the model to the length it is asked for. The
+   * scene package's patch decides this per prop type, so this has to follow
+   * it when it changes.
+   */
+  stretches: boolean;
+}
+
+const MODEL_BUILD_LENGTHS: Partial<Record<PropType, ModelBuildLength>> = {
+  [PropType.CAPSULE_BATON]: { authoredCm: 86.36, stretches: false },
+  [PropType.FIRE_DOUBLE_STAFF]: { authoredCm: 90, stretches: true },
 };
 
 /**
- * The authored length of a model-backed build, or null when the build is
- * procedural and therefore draws whatever length it is handed.
+ * The length a build draws whatever it is asked for, or null when it draws the
+ * length it is asked for: a procedural build, or a model the scene stretches.
  */
-export function scenePropAuthoredLengthCm(prop: PropType): number | null {
-  return AUTHORED_MODEL_LENGTH_CM[prop] ?? null;
+export function scenePropFixedLengthCm(prop: PropType): number | null {
+  const model = MODEL_BUILD_LENGTHS[prop];
+  return model && !model.stretches ? model.authoredCm : null;
 }
 
-/**
- * The length a build actually draws at, given the length it was asked for.
- * A procedural build honours the request; a model-backed one answers with its
- * authored length no matter what was asked.
- */
+/** The length a build actually draws at, given the length it was asked for. */
 export function scenePropDrawnLengthCm(
   prop: PropType,
   requestedCm: number | null
 ): number | null {
-  return scenePropAuthoredLengthCm(prop) ?? requestedCm;
+  return scenePropFixedLengthCm(prop) ?? requestedCm;
 }
 
 /* -------------------------------------------------------------------------

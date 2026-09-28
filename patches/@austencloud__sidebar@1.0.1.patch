@@ -1,0 +1,207 @@
+diff --git a/dist/Sidebar.svelte b/dist/Sidebar.svelte
+index d303e94a84a76174c4f9fed803c73ce4ea84dccf..adb162d6dcb2be67545ba47086753372a9ae3885 100644
+--- a/dist/Sidebar.svelte
++++ b/dist/Sidebar.svelte
+@@ -45,6 +45,10 @@
+     filterSection,
+     getBadgeCount,
+ 
++    navigationLabel = 'Main navigation',
++    homeLabel = 'Go to home',
++    pinLabel = 'Pin sidebar open',
++    collapseLabel = 'Collapse sidebar to rail',
+     homeHref = null,
+     brandLead,
+     brandRest,
+@@ -291,7 +295,7 @@
+   class:hover-expanded={hoverExpanded && collapsed}
+   bind:this={sidebarElement}
+   style="--sidebar-rail-width: {railWidth}px; --sidebar-expanded-width: {expandedWidth}px; --sidebar-reserved-width: {reservedWidth}px; view-transition-name: sidebar;"
+-  aria-label="Main navigation"
++  aria-label={navigationLabel}
+   onpointerenter={handleSidebarPointerEnter}
+   onpointerleave={handleSidebarPointerLeave}
+   onfocusin={handleSidebarFocusIn}
+@@ -301,6 +305,9 @@
+   <SidebarBrand
+     mode={!visuallyExpanded ? 'rail' : collapsed ? 'hover' : 'pinned'}
+     onToggleCollapse={handleTogglePin}
++    {homeLabel}
++    {pinLabel}
++    {collapseLabel}
+     {homeHref}
+     {brandLead}
+     {brandRest}
+diff --git a/dist/sidebar/SidebarBrand.svelte b/dist/sidebar/SidebarBrand.svelte
+index 60751ce4d1b0fa5569246779cfbbda7f0d41356a..5b17e0cb8ccafdb1d43f034b18b0b0a1def30273 100644
+--- a/dist/sidebar/SidebarBrand.svelte
++++ b/dist/sidebar/SidebarBrand.svelte
+@@ -10,17 +10,20 @@
+   // rail: compact lead mark (not hovered, not pinned)
+   // hover: overlay-expanded — the pin button PINS the sidebar open
+   // pinned: classic push layout — the pin button collapses back to the rail
+-  let { mode, onToggleCollapse, homeHref = null, brandLead, brandRest, brand } = $props<{
++  let { mode, onToggleCollapse, homeHref = null, homeLabel = 'Go to home', pinLabel = 'Pin sidebar open', collapseLabel = 'Collapse sidebar to rail', brandLead, brandRest, brand } = $props<{
+     mode: 'rail' | 'hover' | 'pinned';
+     onToggleCollapse: () => void;
+     homeHref?: string | null | undefined;
++    homeLabel?: string;
++    pinLabel?: string;
++    collapseLabel?: string;
+     brandLead?: Snippet | string | undefined;
+     brandRest?: Snippet | string | undefined;
+     brand?: Snippet<[expanded: boolean]> | undefined;
+   }>();
+ 
+   const expanded = $derived(mode !== 'rail');
+-  const pinLabel = $derived(mode === 'pinned' ? 'Collapse sidebar to rail' : 'Pin sidebar open');
++  const toggleLabel = $derived(mode === 'pinned' ? collapseLabel : pinLabel);
+   const isLeadString = $derived(typeof brandLead === 'string');
+   const isRestString = $derived(typeof brandRest === 'string');
+ </script>
+@@ -31,7 +34,7 @@
+     class="brand-home"
+     class:expanded
+     href={homeHref ?? undefined}
+-    aria-label={homeHref ? 'Go to home' : undefined}
++    aria-label={homeHref ? homeLabel : undefined}
+   >
+     {#if brand}
+       {@render brand(expanded)}
+@@ -49,8 +52,8 @@
+     class:visible={expanded}
+     class:pinned={mode === 'pinned'}
+     onclick={onToggleCollapse}
+-    aria-label={pinLabel}
+-    title={pinLabel}
++    aria-label={toggleLabel}
++    title={toggleLabel}
+     tabindex={expanded ? 0 : -1}
+     aria-hidden={!expanded}
+   >
+diff --git a/dist/types.d.ts b/dist/types.d.ts
+index f96c88111f75f0b866c6e803247b72faabf50ef8..09ed2fcfa868a8e6ed25b03f308703a52b895199 100644
+--- a/dist/types.d.ts
++++ b/dist/types.d.ts
+@@ -31,6 +31,11 @@ export interface ModuleDefinition {
+     disabledMessage?: string;
+ }
+ export interface SidebarProps {
++    /** Localized names for package-owned navigation controls. */
++    navigationLabel?: string;
++    homeLabel?: string;
++    pinLabel?: string;
++    collapseLabel?: string;
+     modules: ModuleDefinition[];
+     currentModule: string;
+     currentSection: string;
+diff --git a/src/Sidebar.svelte b/src/Sidebar.svelte
+index d303e94a84a76174c4f9fed803c73ce4ea84dccf..adb162d6dcb2be67545ba47086753372a9ae3885 100644
+--- a/src/Sidebar.svelte
++++ b/src/Sidebar.svelte
+@@ -45,6 +45,10 @@
+     filterSection,
+     getBadgeCount,
+ 
++    navigationLabel = 'Main navigation',
++    homeLabel = 'Go to home',
++    pinLabel = 'Pin sidebar open',
++    collapseLabel = 'Collapse sidebar to rail',
+     homeHref = null,
+     brandLead,
+     brandRest,
+@@ -291,7 +295,7 @@
+   class:hover-expanded={hoverExpanded && collapsed}
+   bind:this={sidebarElement}
+   style="--sidebar-rail-width: {railWidth}px; --sidebar-expanded-width: {expandedWidth}px; --sidebar-reserved-width: {reservedWidth}px; view-transition-name: sidebar;"
+-  aria-label="Main navigation"
++  aria-label={navigationLabel}
+   onpointerenter={handleSidebarPointerEnter}
+   onpointerleave={handleSidebarPointerLeave}
+   onfocusin={handleSidebarFocusIn}
+@@ -301,6 +305,9 @@
+   <SidebarBrand
+     mode={!visuallyExpanded ? 'rail' : collapsed ? 'hover' : 'pinned'}
+     onToggleCollapse={handleTogglePin}
++    {homeLabel}
++    {pinLabel}
++    {collapseLabel}
+     {homeHref}
+     {brandLead}
+     {brandRest}
+diff --git a/src/sidebar/SidebarBrand.svelte b/src/sidebar/SidebarBrand.svelte
+index 60751ce4d1b0fa5569246779cfbbda7f0d41356a..5b17e0cb8ccafdb1d43f034b18b0b0a1def30273 100644
+--- a/src/sidebar/SidebarBrand.svelte
++++ b/src/sidebar/SidebarBrand.svelte
+@@ -10,17 +10,20 @@
+   // rail: compact lead mark (not hovered, not pinned)
+   // hover: overlay-expanded — the pin button PINS the sidebar open
+   // pinned: classic push layout — the pin button collapses back to the rail
+-  let { mode, onToggleCollapse, homeHref = null, brandLead, brandRest, brand } = $props<{
++  let { mode, onToggleCollapse, homeHref = null, homeLabel = 'Go to home', pinLabel = 'Pin sidebar open', collapseLabel = 'Collapse sidebar to rail', brandLead, brandRest, brand } = $props<{
+     mode: 'rail' | 'hover' | 'pinned';
+     onToggleCollapse: () => void;
+     homeHref?: string | null | undefined;
++    homeLabel?: string;
++    pinLabel?: string;
++    collapseLabel?: string;
+     brandLead?: Snippet | string | undefined;
+     brandRest?: Snippet | string | undefined;
+     brand?: Snippet<[expanded: boolean]> | undefined;
+   }>();
+ 
+   const expanded = $derived(mode !== 'rail');
+-  const pinLabel = $derived(mode === 'pinned' ? 'Collapse sidebar to rail' : 'Pin sidebar open');
++  const toggleLabel = $derived(mode === 'pinned' ? collapseLabel : pinLabel);
+   const isLeadString = $derived(typeof brandLead === 'string');
+   const isRestString = $derived(typeof brandRest === 'string');
+ </script>
+@@ -31,7 +34,7 @@
+     class="brand-home"
+     class:expanded
+     href={homeHref ?? undefined}
+-    aria-label={homeHref ? 'Go to home' : undefined}
++    aria-label={homeHref ? homeLabel : undefined}
+   >
+     {#if brand}
+       {@render brand(expanded)}
+@@ -49,8 +52,8 @@
+     class:visible={expanded}
+     class:pinned={mode === 'pinned'}
+     onclick={onToggleCollapse}
+-    aria-label={pinLabel}
+-    title={pinLabel}
++    aria-label={toggleLabel}
++    title={toggleLabel}
+     tabindex={expanded ? 0 : -1}
+     aria-hidden={!expanded}
+   >
+diff --git a/src/types.ts b/src/types.ts
+index 9e5f746e62b535513b26986bb26c079a83c544b5..992922c45dfd30c9ed346ea950c9988f26b46a2d 100644
+--- a/src/types.ts
++++ b/src/types.ts
+@@ -38,6 +38,11 @@ export interface ModuleDefinition {
+ }
+ 
+ export interface SidebarProps {
++    /** Localized names for package-owned navigation controls. */
++    navigationLabel?: string;
++    homeLabel?: string;
++    pinLabel?: string;
++    collapseLabel?: string;
+ 	// Data
+ 	modules: ModuleDefinition[];
+ 	currentModule: string;
+diff --git a/dist/sidebar/SidebarBrand.svelte.d.ts b/dist/sidebar/SidebarBrand.svelte.d.ts
+--- a/dist/sidebar/SidebarBrand.svelte.d.ts
++++ b/dist/sidebar/SidebarBrand.svelte.d.ts
+@@ -3,6 +3,9 @@ type $$ComponentProps = {
+     mode: 'rail' | 'hover' | 'pinned';
+     onToggleCollapse: () => void;
+     homeHref?: string | null | undefined;
++    homeLabel?: string;
++    pinLabel?: string;
++    collapseLabel?: string;
+     brandLead?: Snippet | string | undefined;
+     brandRest?: Snippet | string | undefined;
+     brand?: Snippet<[expanded: boolean]> | undefined;

@@ -4,6 +4,7 @@
   Place this component once at the app root level.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte";
   import {
     toastQueue,
     removeToast,
@@ -63,7 +64,7 @@
         {#if toast.imageUrl}
           <img
             src={toast.imageUrl}
-            alt="Captured preview"
+            alt="{t('toast_captured_preview')}"
             class="toast-thumbnail"
           />
         {/if}
@@ -85,7 +86,7 @@
             <button
               class="toast-close accessible-touch-target"
               onclick={() => removeToast(toast.id, "dismissed")}
-              aria-label="Dismiss"
+              aria-label="{t('create_ui_dismiss')}"
             >
               <i class="fas fa-times" aria-hidden="true"></i>
             </button>

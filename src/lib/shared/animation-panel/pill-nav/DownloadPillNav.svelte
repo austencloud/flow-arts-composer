@@ -20,6 +20,7 @@
   button (e.g. for focus restoration after a mobile sheet closes).
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import type { PillId, PillSpec } from "./pill-types";
 
   interface Props {
@@ -94,7 +95,7 @@
   bind:this={navEl}
   class="pill-nav variant-{variant}"
   role="group"
-  aria-label="Download settings"
+  aria-label={t("viewer_ui_download_settings")}
   tabindex="-1"
 >
   {#each pills as pill (pill.id)}
