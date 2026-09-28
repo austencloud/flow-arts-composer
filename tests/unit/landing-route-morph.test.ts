@@ -388,8 +388,17 @@ describe("landing shared-element contract", () => {
     expect(anatomyExplainer).toContain('role="alert"');
     expect(anatomyExplainer).toContain('disabled={cardStatus !== "ready"}');
     expect(anatomyExplainer).toContain('class="card-placeholder-stack"');
-    expect(anatomyExplainer).toContain("<figcaption>Front</figcaption>");
-    expect(anatomyExplainer).toContain("<figcaption>Back</figcaption>");
+    // 09622f6cb2 moved the placeholder captions into the catalog. A missing
+    // key renders as the raw key, so English still has to read Front and Back.
+    expect(anatomyExplainer).toContain(
+      '<figcaption>{tDynamic("learn_card_anatomy_front")}</figcaption>'
+    );
+    expect(anatomyExplainer).toContain(
+      '<figcaption>{tDynamic("learn_card_anatomy_back")}</figcaption>'
+    );
+    const english = readEnglishMessages();
+    expect(english.learn_card_anatomy_front).toBe("Front");
+    expect(english.learn_card_anatomy_back).toBe("Back");
     expect(anatomyExplainer).toContain("card-placeholder-shuffle");
     expect(anatomyExplainer).toContain(".card-load-failure :global(.skeleton)");
     expect(anatomyExplainer).toContain(".legend-row:hover:not(:disabled)");
