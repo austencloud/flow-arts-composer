@@ -123,7 +123,6 @@ describe("avatar head-clearance policy", () => {
     expect(animator).toContain(
       "this.solveArmAtClearPole(chain, target, context)"
     );
-    expect(animator).toContain("ARM_CLEARANCE_RECOVERY_INTERVAL");
     expect(animator).toContain("this.rememberClearArmRoute(");
     expect(animator).toMatch(
       /!this\.armClearsBody\(leftChain, leftClearanceContext\)/

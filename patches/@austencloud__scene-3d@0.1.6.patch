@@ -5,7 +5,7 @@ diff --git a/dist/index.d.ts.map b/dist/index.d.ts.map
 deleted file mode 100644
 index d554c5bba49036758f9b3c997d025556395cf72b..0000000000000000000000000000000000000000
 diff --git a/dist/lib/components/Avatar3D.svelte b/dist/lib/components/Avatar3D.svelte
-index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..8560c7dfb67c546e271b17921398b7f8128f1fc5 100644
+index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..ab8d3561dd0de73fdcfcb6debb60aa9ad9c72a4d 100644
 --- a/dist/lib/components/Avatar3D.svelte
 +++ b/dist/lib/components/Avatar3D.svelte
 @@ -16,29 +16,51 @@
@@ -174,8 +174,8 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..8560c7dfb67c546e271b17921398b7f8
 +    pairSeparation?: boolean;
 +    /** Changes whenever the owner seeks playback (not the loop seam). Clears
 +     *  the animator's per-side contact-recovery memory (clearance reach
-+     *  ratios, recovery ticks, clearance pole vectors, wrist-init flags) so
-+     *  it doesn't carry over from wherever playback used to be. */
++     *  ratios, clearance pole vectors, wrist-init flags) so it doesn't
++     *  carry over from wherever playback used to be. */
 +    contactResetKey?: number;
 +    onContactReport?: (report: AvatarContactReport) => void;
 +    onContactGeometry?: AvatarContactGeometryCallback;
@@ -1959,7 +1959,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..8560c7dfb67c546e271b17921398b7f8
        position={[position.x, groupY, position.z]}
        rotation.y={facingAngle}
 diff --git a/dist/lib/components/Avatar3D.svelte.d.ts b/dist/lib/components/Avatar3D.svelte.d.ts
-index eaae3a65cb08e4a370b4496a2a2c738624d75610..dd07e6099da8060e8c908f9bd3eb958cdb118726 100644
+index eaae3a65cb08e4a370b4496a2a2c738624d75610..b24452c67656d96d05ed39e030360c6798afe903 100644
 --- a/dist/lib/components/Avatar3D.svelte.d.ts
 +++ b/dist/lib/components/Avatar3D.svelte.d.ts
 @@ -1,7 +1,9 @@
@@ -2037,8 +2037,8 @@ index eaae3a65cb08e4a370b4496a2a2c738624d75610..dd07e6099da8060e8c908f9bd3eb958c
 +    pairSeparation?: boolean;
 +    /** Changes whenever the owner seeks playback (not the loop seam). Clears
 +     *  the animator's per-side contact-recovery memory (clearance reach
-+     *  ratios, recovery ticks, clearance pole vectors, wrist-init flags) so
-+     *  it doesn't carry over from wherever playback used to be. */
++     *  ratios, clearance pole vectors, wrist-init flags) so it doesn't
++     *  carry over from wherever playback used to be. */
 +    contactResetKey?: number;
 +    onContactReport?: (report: AvatarContactReport) => void;
 +    onContactGeometry?: AvatarContactGeometryCallback;
@@ -8469,7 +8469,7 @@ diff --git a/dist/lib/services/contracts/IAnimationStateMachine.d.ts.map b/dist/
 deleted file mode 100644
 index 73f0876c4cafab9821e6e2daa10dafef0c71ff1f..0000000000000000000000000000000000000000
 diff --git a/dist/lib/services/contracts/IAvatarAnimator.d.ts b/dist/lib/services/contracts/IAvatarAnimator.d.ts
-index 786bf68515df88ef035b307a7029e717e056bea9..48fd6d9fa5173cf39504f441307e0f1f1f448214 100644
+index 786bf68515df88ef035b307a7029e717e056bea9..249dda5be2829b7df10a3b4329778de174acf241 100644
 --- a/dist/lib/services/contracts/IAvatarAnimator.d.ts
 +++ b/dist/lib/services/contracts/IAvatarAnimator.d.ts
 @@ -4,9 +4,10 @@
@@ -8644,9 +8644,9 @@ index 786bf68515df88ef035b307a7029e717e056bea9..48fd6d9fa5173cf39504f441307e0f1f
 +     */
 +    setPairSeparation?(enabled: boolean): void;
 +    /**
-+     * Clear per-side contact-recovery memory (clearance reach ratios, recovery
-+     * ticks, clearance pole vectors, wrist-init flags) so a seek doesn't
-+     * inherit stale state from wherever playback used to be. Optional so
++     * Clear per-side contact-recovery memory (clearance reach ratios,
++     * clearance pole vectors, wrist-init flags) so a seek doesn't inherit
++     * stale state from wherever playback used to be. Optional so
 +     * lightweight test doubles don't have to implement it.
 +     */
 +    resetContactHistory?(): void;
@@ -9475,7 +9475,7 @@ index 0000000000000000000000000000000000000000..752fdac92fe732640272cfeff9644dd9
 +    }
 +}
 diff --git a/dist/lib/services/implementations/AvatarAnimator.d.ts b/dist/lib/services/implementations/AvatarAnimator.d.ts
-index cac989e5e626274fb4d13d59e401a9a1b485760b..e08b1e5c4c2c8c6a6010d41527b30f250b1a3188 100644
+index cac989e5e626274fb4d13d59e401a9a1b485760b..e890a10d64c7f442b9ddb4a350344c81ca9e3e7c 100644
 --- a/dist/lib/services/implementations/AvatarAnimator.d.ts
 +++ b/dist/lib/services/implementations/AvatarAnimator.d.ts
 @@ -4,7 +4,8 @@
@@ -9488,7 +9488,7 @@ index cac989e5e626274fb4d13d59e401a9a1b485760b..e08b1e5c4c2c8c6a6010d41527b30f25
  import type { IIKSolver } from "../contracts/IIKSolver";
  import type { IAvatarSkeletonBuilder } from "../contracts/IAvatarSkeletonBuilder";
  import type { PropState3D } from "../../domain/models/PropState3D";
-@@ -19,6 +20,20 @@ export declare class AvatarAnimator implements IAvatarAnimator {
+@@ -19,6 +20,18 @@ export declare class AvatarAnimator implements IAvatarAnimator {
      private layers;
      private leftArmIK;
      private rightArmIK;
@@ -9504,12 +9504,10 @@ index cac989e5e626274fb4d13d59e401a9a1b485760b..e08b1e5c4c2c8c6a6010d41527b30f25
 +    private strictDiagnostics;
 +    private leftClearanceReachRatio;
 +    private rightClearanceReachRatio;
-+    private leftClearanceRecoveryTick;
-+    private rightClearanceRecoveryTick;
      private ikBlendSpeed;
      private smoothBlending;
      private smoothingFactor;
-@@ -30,6 +45,8 @@ export declare class AvatarAnimator implements IAvatarAnimator {
+@@ -30,6 +43,8 @@ export declare class AvatarAnimator implements IAvatarAnimator {
      private poleComputer;
      private leftPoleVector;
      private rightPoleVector;
@@ -9518,7 +9516,7 @@ index cac989e5e626274fb4d13d59e401a9a1b485760b..e08b1e5c4c2c8c6a6010d41527b30f25
      private _poleVectorsEnabled;
      private clavicleRaiser;
      private leftClavicleQuat;
-@@ -54,23 +71,299 @@ export declare class AvatarAnimator implements IAvatarAnimator {
+@@ -54,23 +69,299 @@ export declare class AvatarAnimator implements IAvatarAnimator {
       * on top of the twist rest pose before arm IK runs. 0 = disabled.
       */
      private externalSpinePitchRad;
@@ -9819,7 +9817,7 @@ index cac989e5e626274fb4d13d59e401a9a1b485760b..e08b1e5c4c2c8c6a6010d41527b30f25
      addLayer(layer: AnimationLayer): void;
      removeLayer(layerId: string): void;
      setLayerWeight(layerId: string, weight: number): void;
-@@ -78,8 +371,16 @@ export declare class AvatarAnimator implements IAvatarAnimator {
+@@ -78,8 +369,16 @@ export declare class AvatarAnimator implements IAvatarAnimator {
      setSmoothBlending(enabled: boolean): void;
      setSmoothingFactor(factor: number): void;
      setExternalSpinePitch(radians: number): void;
@@ -9836,7 +9834,7 @@ index cac989e5e626274fb4d13d59e401a9a1b485760b..e08b1e5c4c2c8c6a6010d41527b30f25
      /** Debug toggle: disable clavicle raise to compare old vs new shoulder behavior */
      toggleClavicleRaise(): boolean;
      /** Skip Hips counter-rotation (exhibit performers with planted feet) */
-@@ -89,4 +390,3 @@ export declare class AvatarAnimator implements IAvatarAnimator {
+@@ -89,4 +388,3 @@ export declare class AvatarAnimator implements IAvatarAnimator {
      /** Debug toggle: disable spine twist to compare old vs new torso behavior */
      toggleSpineTwist(): boolean;
  }
@@ -9846,10 +9844,10 @@ diff --git a/dist/lib/services/implementations/AvatarAnimator.d.ts.map b/dist/li
 deleted file mode 100644
 index f8e47d42167b6ea9bb4fd8f44f41273f48f1943b..0000000000000000000000000000000000000000
 diff --git a/dist/lib/services/implementations/AvatarAnimator.js b/dist/lib/services/implementations/AvatarAnimator.js
-index bdd5ae35ed47c58d29c537a7805705783f9b9066..3be5661352a94ed96d6d01b06f438dc3f456c496 100644
+index bdd5ae35ed47c58d29c537a7805705783f9b9066..1113716823d3712196476595d06a55c7eca2f433 100644
 --- a/dist/lib/services/implementations/AvatarAnimator.js
 +++ b/dist/lib/services/implementations/AvatarAnimator.js
-@@ -4,7 +4,93 @@
+@@ -4,7 +4,97 @@
   * Manages avatar pose states and smooth animation blending.
   * Bridges TKA prop states to skeleton IK targets.
   */
@@ -9902,8 +9900,12 @@ index bdd5ae35ed47c58d29c537a7805705783f9b9066..3be5661352a94ed96d6d01b06f438dc3
 +const ARM_CLEARANCE_REACH_RATIOS = [0.92, 0.84, 0.76, 0.68, 0.6];
 +const ARM_CLEARANCE_POLE_SEARCH_STEP = (10 * Math.PI) / 180;
 +const ARM_CLEARANCE_POLE_SEARCH_STEPS = 18;
-+const ARM_CLEARANCE_RECOVERY_INTERVAL = 12;
-+const ARM_CLEARANCE_RECOVERY_STEP = 0.04;
++/** Seconds for a retracted hand to grow from the shortest retry back to full
++ *  reach while each fuller reach still clears the body. Counted in time, not
++ *  frames, so the let-go lasts equally long at any frame rate. */
++const ARM_CLEARANCE_RECOVERY_SECONDS = 0.3;
++const ARM_CLEARANCE_RECOVERY_RATE = (1 - ARM_CLEARANCE_REACH_RATIOS[ARM_CLEARANCE_REACH_RATIOS.length - 1]) /
++    ARM_CLEARANCE_RECOVERY_SECONDS;
 +const UPPER_ARM_SHOULDER_EXCLUSION = 0.35;
 +/** Radians of spine lean per meter of reach deficit. */
 +const REACH_LEAN_GAIN = 1.2;
@@ -9944,7 +9946,7 @@ index bdd5ae35ed47c58d29c537a7805705783f9b9066..3be5661352a94ed96d6d01b06f438dc3
  export class AvatarAnimator {
      ikSolver;
      skeleton;
-@@ -14,6 +100,24 @@ export class AvatarAnimator {
+@@ -14,6 +104,22 @@ export class AvatarAnimator {
      // Per-arm IK blend weights: 0 = animation drives the arm, 1 = IK drives the arm
      leftArmIK = { weight: 0, targetWeight: 0 };
      rightArmIK = { weight: 0, targetWeight: 0 };
@@ -9964,12 +9966,10 @@ index bdd5ae35ed47c58d29c537a7805705783f9b9066..3be5661352a94ed96d6d01b06f438dc3
 +    strictDiagnostics = { iterations: 0, reachResidualM: 0, clearanceM: Infinity, wristSwingRad: 0 };
 +    leftClearanceReachRatio = 1;
 +    rightClearanceReachRatio = 1;
-+    leftClearanceRecoveryTick = 0;
-+    rightClearanceRecoveryTick = 0;
      ikBlendSpeed = 1 / 0.3; // ~0.3s ramp time
      smoothBlending = true;
      smoothingFactor = 0.15; // 0-1, higher = smoother but laggier
-@@ -23,8 +127,13 @@ export class AvatarAnimator {
+@@ -23,8 +129,13 @@ export class AvatarAnimator {
      transitionProgress = 0;
      transitionConfig = null;
      poleComputer;
@@ -9983,7 +9983,7 @@ index bdd5ae35ed47c58d29c537a7805705783f9b9066..3be5661352a94ed96d6d01b06f438dc3
      _poleVectorsEnabled = true;
      clavicleRaiser;
      leftClavicleQuat = new Quaternion();
-@@ -67,6 +176,135 @@ export class AvatarAnimator {
+@@ -67,6 +178,135 @@ export class AvatarAnimator {
       * on top of the twist rest pose before arm IK runs. 0 = disabled.
       */
      externalSpinePitchRad = 0;
@@ -10119,7 +10119,7 @@ index bdd5ae35ed47c58d29c537a7805705783f9b9066..3be5661352a94ed96d6d01b06f438dc3
      constructor(ikSolver, skeleton, poleComputer, clavicleRaiser, spineTwister) {
          this.ikSolver = ikSolver;
          this.skeleton = skeleton;
-@@ -140,9 +378,45 @@ export class AvatarAnimator {
+@@ -140,9 +380,45 @@ export class AvatarAnimator {
                  weight: 1,
              }
              : null;
@@ -10166,7 +10166,7 @@ index bdd5ae35ed47c58d29c537a7805705783f9b9066..3be5661352a94ed96d6d01b06f438dc3
          this.leftArmIK.targetWeight = blueProp ? 1 : 0;
          this.rightArmIK.targetWeight = redProp ? 1 : 0;
          const ox = offset?.x ?? 0;
-@@ -154,6 +428,7 @@ export class AvatarAnimator {
+@@ -154,6 +430,7 @@ export class AvatarAnimator {
          this.targetPose.leftHand = blueProp
              ? {
                  targetPosition: new Vector3(blueProp.worldPosition.x - ox, blueProp.worldPosition.y - oy, blueProp.worldPosition.z - oz),
@@ -10174,7 +10174,7 @@ index bdd5ae35ed47c58d29c537a7805705783f9b9066..3be5661352a94ed96d6d01b06f438dc3
                  staffAngle: blueProp.staffRotationAngle,
                  plane: blueProp.plane,
                  weight: 1,
-@@ -162,13 +437,150 @@ export class AvatarAnimator {
+@@ -162,13 +439,148 @@ export class AvatarAnimator {
          this.targetPose.rightHand = redProp
              ? {
                  targetPosition: new Vector3(redProp.worldPosition.x - ox, redProp.worldPosition.y - oy, redProp.worldPosition.z - oz),
@@ -10212,17 +10212,15 @@ index bdd5ae35ed47c58d29c537a7805705783f9b9066..3be5661352a94ed96d6d01b06f438dc3
 +        this.pairSeparationEnabled = enabled;
 +    }
 +    /**
-+     * Clear per-side contact-recovery memory (clearance reach ratios, recovery
-+     * ticks, clearance pole vectors, wrist-init flags) so a seek doesn't
-+     * inherit stale state from wherever playback used to be. The clearance
-+     * pole vectors reset to the current (non-clearance) pole vectors, the same
++     * Clear per-side contact-recovery memory (clearance reach ratios,
++     * clearance pole vectors, wrist-init flags) so a seek doesn't inherit
++     * stale state from wherever playback used to be. The clearance pole
++     * vectors reset to the current (non-clearance) pole vectors, the same
 +     * value they'd hold before any recovery probe ever ran.
 +     */
 +    resetContactHistory() {
 +        this.leftClearanceReachRatio = 1;
 +        this.rightClearanceReachRatio = 1;
-+        this.leftClearanceRecoveryTick = 0;
-+        this.rightClearanceRecoveryTick = 0;
 +        this.leftClearancePoleVector.copy(this.leftPoleVector);
 +        this.rightClearancePoleVector.copy(this.rightPoleVector);
 +        this.leftWristInit = false;
@@ -11133,7 +11131,7 @@ index bdd5ae35ed47c58d29c537a7805705783f9b9066..3be5661352a94ed96d6d01b06f438dc3
 +                }
 +                // Solve at full reach first. Only a measured body intersection earns
 +                // target retraction, and the retries stop at the first clear result.
-+                this.solveArmWithBodyClearance("left", leftChain, target, leftClearanceContext);
++                this.solveArmWithBodyClearance("left", leftChain, target, leftClearanceContext, deltaTime);
                  // Save IK results BEFORE blending - .copy() would overwrite them
                  const ikRootQuat = leftChain.root.quaternion.clone();
                  const ikMiddleQuat = leftChain.middle.quaternion.clone();
@@ -11217,11 +11215,11 @@ index bdd5ae35ed47c58d29c537a7805705783f9b9066..3be5661352a94ed96d6d01b06f438dc3
 +                    };
 +                    target.poleHint.copy(this.poleComputer.resolveForearmFaceClearance(target.poleHint, rightTarget, "right", rightClearanceContext));
 +                }
-+                this.solveArmWithBodyClearance("right", rightChain, target, rightClearanceContext);
++                this.solveArmWithBodyClearance("right", rightChain, target, rightClearanceContext, deltaTime);
                  // Save IK results BEFORE blending - .copy() would overwrite them
                  const ikRootQuat = rightChain.root.quaternion.clone();
                  const ikMiddleQuat = rightChain.middle.quaternion.clone();
-@@ -476,11 +1644,811 @@ export class AvatarAnimator {
+@@ -476,11 +1644,808 @@ export class AvatarAnimator {
                  rightChain.root.quaternion.copy(animRootQuat).slerp(ikRootQuat, w);
                  rightChain.middle.quaternion.copy(animMiddleQuat).slerp(ikMiddleQuat, w);
                  rightChain.effector.quaternion.copy(animEffectorQuat).slerp(ikEffectorQuat, w);
@@ -11734,7 +11732,7 @@ index bdd5ae35ed47c58d29c537a7805705783f9b9066..3be5661352a94ed96d6d01b06f438dc3
 +            clav.updateMatrixWorld(true);
 +        }
 +    }
-+    solveArmWithBodyClearance(side, chain, target, context) {
++    solveArmWithBodyClearance(side, chain, target, context, deltaTime) {
 +        if (!context || !this.poleComputer || !target.poleHint) {
 +            this.ikSolver.solveAndApply(chain, target);
 +            return;
@@ -11750,19 +11748,16 @@ index bdd5ae35ed47c58d29c537a7805705783f9b9066..3be5661352a94ed96d6d01b06f438dc3
 +        const cachedRatio = side === "left"
 +            ? this.leftClearanceReachRatio
 +            : this.rightClearanceReachRatio;
-+        const recoveryTick = side === "left"
-+            ? ++this.leftClearanceRecoveryTick
-+            : ++this.rightClearanceRecoveryTick;
-+        // Reuse the last measured-safe reach and pole on ordinary frames. Probe a
-+        // slightly fuller reach periodically so the arm naturally recovers once
-+        // the dangerous corridor has passed, without repeating a full circle
-+        // search sixty times per second.
++        // Reuse the last measured-safe reach and pole on ordinary frames, first
++        // trying the fuller reach this frame's share of the recovery allows, so
++        // the arm grows back at a fixed rate once the dangerous corridor has
++        // passed, without repeating a full circle search every frame.
 +        if (cachedRatio < 0.999) {
 +            target.poleHint.copy(side === "left"
 +                ? this.leftClearancePoleVector
 +                : this.rightClearancePoleVector);
-+            if (recoveryTick % ARM_CLEARANCE_RECOVERY_INTERVAL === 0) {
-+                const recoveryRatio = Math.min(1, cachedRatio + ARM_CLEARANCE_RECOVERY_STEP);
++            const recoveryRatio = Math.min(1, cachedRatio + ARM_CLEARANCE_RECOVERY_RATE * Math.max(0, deltaTime));
++            if (recoveryRatio > cachedRatio) {
 +                this.placeArmTargetAtRatio(target, context.shoulderPosition, reachDirection, requestedDistance, chain.totalLength, recoveryRatio);
 +                this.ikSolver.solveAndApply(chain, target);
 +                if (this.armClearsBody(chain, context)) {
@@ -12033,7 +12028,7 @@ index bdd5ae35ed47c58d29c537a7805705783f9b9066..3be5661352a94ed96d6d01b06f438dc3
      addLayer(layer) {
          this.layers.set(layer.id, layer);
      }
-@@ -521,6 +2489,12 @@ export class AvatarAnimator {
+@@ -521,6 +2486,12 @@ export class AvatarAnimator {
      setExternalSpinePitch(radians) {
          this.externalSpinePitchRad = radians;
      }
@@ -12046,7 +12041,7 @@ index bdd5ae35ed47c58d29c537a7805705783f9b9066..3be5661352a94ed96d6d01b06f438dc3
      /** Debug toggle: disable pole vectors to compare old vs new elbow behavior */
      togglePoleVectors() {
          this._poleVectorsEnabled = !this._poleVectorsEnabled;
-@@ -528,9 +2502,16 @@ export class AvatarAnimator {
+@@ -528,9 +2499,16 @@ export class AvatarAnimator {
              // Reset to default backward poles so difference is visible immediately
              this.leftPoleVector.set(0, 0, -1);
              this.rightPoleVector.set(0, 0, -1);
@@ -20350,7 +20345,7 @@ index 525808ca7068a828865a64e176f7bbd641ccc013..c7749e7724634669fccdaa615fd94ad2
    },
    "files": [
 diff --git a/src/lib/components/Avatar3D.svelte b/src/lib/components/Avatar3D.svelte
-index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..8560c7dfb67c546e271b17921398b7f8128f1fc5 100644
+index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..ab8d3561dd0de73fdcfcb6debb60aa9ad9c72a4d 100644
 --- a/src/lib/components/Avatar3D.svelte
 +++ b/src/lib/components/Avatar3D.svelte
 @@ -16,29 +16,51 @@
@@ -20519,8 +20514,8 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..8560c7dfb67c546e271b17921398b7f8
 +    pairSeparation?: boolean;
 +    /** Changes whenever the owner seeks playback (not the loop seam). Clears
 +     *  the animator's per-side contact-recovery memory (clearance reach
-+     *  ratios, recovery ticks, clearance pole vectors, wrist-init flags) so
-+     *  it doesn't carry over from wherever playback used to be. */
++     *  ratios, clearance pole vectors, wrist-init flags) so it doesn't
++     *  carry over from wherever playback used to be. */
 +    contactResetKey?: number;
 +    onContactReport?: (report: AvatarContactReport) => void;
 +    onContactGeometry?: AvatarContactGeometryCallback;
@@ -29455,7 +29450,7 @@ index 0000000000000000000000000000000000000000..98e57dea0dd008683a1a784921519a32
 +  return scratch.distanceTo(b.getWorldPosition(new Vector3()));
 +}
 diff --git a/src/lib/services/contracts/IAvatarAnimator.ts b/src/lib/services/contracts/IAvatarAnimator.ts
-index 42a46ac294719f16470ed72c27286e50c55a35f2..bb72e562c5f37b59114c8e685852b57269e7600c 100644
+index 42a46ac294719f16470ed72c27286e50c55a35f2..1f91591c69f3d36d12ba1b2d3cb3dbb413cf65f3 100644
 --- a/src/lib/services/contracts/IAvatarAnimator.ts
 +++ b/src/lib/services/contracts/IAvatarAnimator.ts
 @@ -5,9 +5,10 @@
@@ -29643,9 +29638,9 @@ index 42a46ac294719f16470ed72c27286e50c55a35f2..bb72e562c5f37b59114c8e685852b572
 +  setPairSeparation?(enabled: boolean): void;
 +
 +  /**
-+   * Clear per-side contact-recovery memory (clearance reach ratios, recovery
-+   * ticks, clearance pole vectors, wrist-init flags) so a seek doesn't
-+   * inherit stale state from wherever playback used to be. Optional so
++   * Clear per-side contact-recovery memory (clearance reach ratios,
++   * clearance pole vectors, wrist-init flags) so a seek doesn't inherit
++   * stale state from wherever playback used to be. Optional so
 +   * lightweight test doubles don't have to implement it.
 +   */
 +  resetContactHistory?(): void;
@@ -31172,10 +31167,10 @@ index 0000000000000000000000000000000000000000..1e89fc30e0d413a389a0a5be23675ba9
 +  }
 +}
 diff --git a/src/lib/services/implementations/AvatarAnimator.ts b/src/lib/services/implementations/AvatarAnimator.ts
-index c73bcabe86e07dd117e6f737532aea88ac9ec194..1fb613803345272a3a8dce7f4fb0470c37b00ebe 100644
+index c73bcabe86e07dd117e6f737532aea88ac9ec194..8808825c52dca1b033bb621ff656dffcaa2b576f 100644
 --- a/src/lib/services/implementations/AvatarAnimator.ts
 +++ b/src/lib/services/implementations/AvatarAnimator.ts
-@@ -5,21 +5,144 @@
+@@ -5,21 +5,149 @@
   * Bridges TKA prop states to skeleton IK targets.
   */
  
@@ -31277,8 +31272,13 @@ index c73bcabe86e07dd117e6f737532aea88ac9ec194..1fb613803345272a3a8dce7f4fb0470c
 +const ARM_CLEARANCE_REACH_RATIOS = [0.92, 0.84, 0.76, 0.68, 0.6] as const;
 +const ARM_CLEARANCE_POLE_SEARCH_STEP = (10 * Math.PI) / 180;
 +const ARM_CLEARANCE_POLE_SEARCH_STEPS = 18;
-+const ARM_CLEARANCE_RECOVERY_INTERVAL = 12;
-+const ARM_CLEARANCE_RECOVERY_STEP = 0.04;
++/** Seconds for a retracted hand to grow from the shortest retry back to full
++ *  reach while each fuller reach still clears the body. Counted in time, not
++ *  frames, so the let-go lasts equally long at any frame rate. */
++const ARM_CLEARANCE_RECOVERY_SECONDS = 0.3;
++const ARM_CLEARANCE_RECOVERY_RATE =
++  (1 - ARM_CLEARANCE_REACH_RATIOS[ARM_CLEARANCE_REACH_RATIOS.length - 1]) /
++  ARM_CLEARANCE_RECOVERY_SECONDS;
 +const UPPER_ARM_SHOULDER_EXCLUSION = 0.35;
 +
 +/** Radians of spine lean per meter of reach deficit. */
@@ -31324,7 +31324,7 @@ index c73bcabe86e07dd117e6f737532aea88ac9ec194..1fb613803345272a3a8dce7f4fb0470c
  
  export class AvatarAnimator implements IAvatarAnimator {
    private currentPose: BodyPose;
-@@ -29,6 +152,24 @@ export class AvatarAnimator implements IAvatarAnimator {
+@@ -29,6 +157,22 @@ export class AvatarAnimator implements IAvatarAnimator {
    // Per-arm IK blend weights: 0 = animation drives the arm, 1 = IK drives the arm
    private leftArmIK = { weight: 0, targetWeight: 0 };
    private rightArmIK = { weight: 0, targetWeight: 0 };
@@ -31344,12 +31344,10 @@ index c73bcabe86e07dd117e6f737532aea88ac9ec194..1fb613803345272a3a8dce7f4fb0470c
 +  private strictDiagnostics = { iterations: 0, reachResidualM: 0, clearanceM: Infinity, wristSwingRad: 0 };
 +  private leftClearanceReachRatio = 1;
 +  private rightClearanceReachRatio = 1;
-+  private leftClearanceRecoveryTick = 0;
-+  private rightClearanceRecoveryTick = 0;
    private ikBlendSpeed = 1 / 0.3; // ~0.3s ramp time
    private smoothBlending = true;
    private smoothingFactor = 0.15; // 0-1, higher = smoother but laggier
-@@ -38,8 +179,13 @@ export class AvatarAnimator implements IAvatarAnimator {
+@@ -38,8 +182,13 @@ export class AvatarAnimator implements IAvatarAnimator {
    private transitionProgress = 0;
    private transitionConfig: TransitionConfig | null = null;
    private poleComputer: IElbowPoleComputer | null;
@@ -31363,7 +31361,7 @@ index c73bcabe86e07dd117e6f737532aea88ac9ec194..1fb613803345272a3a8dce7f4fb0470c
    private _poleVectorsEnabled = true;
  
    private clavicleRaiser: IClavicleRaiser | null;
-@@ -85,6 +231,145 @@ export class AvatarAnimator implements IAvatarAnimator {
+@@ -85,6 +234,145 @@ export class AvatarAnimator implements IAvatarAnimator {
     */
    private externalSpinePitchRad = 0;
  
@@ -31509,7 +31507,7 @@ index c73bcabe86e07dd117e6f737532aea88ac9ec194..1fb613803345272a3a8dce7f4fb0470c
    constructor(
      private ikSolver: IIKSolver,
      private skeleton: IAvatarSkeletonBuilder,
-@@ -180,13 +465,60 @@ export class AvatarAnimator implements IAvatarAnimator {
+@@ -180,13 +468,60 @@ export class AvatarAnimator implements IAvatarAnimator {
          }
        : null;
  
@@ -31571,7 +31569,7 @@ index c73bcabe86e07dd117e6f737532aea88ac9ec194..1fb613803345272a3a8dce7f4fb0470c
    ): void {
      this.leftArmIK.targetWeight = blueProp ? 1 : 0;
      this.rightArmIK.targetWeight = redProp ? 1 : 0;
-@@ -205,6 +537,7 @@ export class AvatarAnimator implements IAvatarAnimator {
+@@ -205,6 +540,7 @@ export class AvatarAnimator implements IAvatarAnimator {
              blueProp.worldPosition.y - oy,
              blueProp.worldPosition.z - oz
            ),
@@ -31579,7 +31577,7 @@ index c73bcabe86e07dd117e6f737532aea88ac9ec194..1fb613803345272a3a8dce7f4fb0470c
            staffAngle: blueProp.staffRotationAngle,
            plane: blueProp.plane,
            weight: 1,
-@@ -218,15 +551,183 @@ export class AvatarAnimator implements IAvatarAnimator {
+@@ -218,15 +554,181 @@ export class AvatarAnimator implements IAvatarAnimator {
              redProp.worldPosition.y - oy,
              redProp.worldPosition.z - oz
            ),
@@ -31627,17 +31625,15 @@ index c73bcabe86e07dd117e6f737532aea88ac9ec194..1fb613803345272a3a8dce7f4fb0470c
 +  }
 +
 +  /**
-+   * Clear per-side contact-recovery memory (clearance reach ratios, recovery
-+   * ticks, clearance pole vectors, wrist-init flags) so a seek doesn't
-+   * inherit stale state from wherever playback used to be. The clearance
-+   * pole vectors reset to the current (non-clearance) pole vectors, the same
++   * Clear per-side contact-recovery memory (clearance reach ratios,
++   * clearance pole vectors, wrist-init flags) so a seek doesn't inherit
++   * stale state from wherever playback used to be. The clearance pole
++   * vectors reset to the current (non-clearance) pole vectors, the same
 +   * value they'd hold before any recovery probe ever ran.
 +   */
 +  resetContactHistory(): void {
 +    this.leftClearanceReachRatio = 1;
 +    this.rightClearanceReachRatio = 1;
-+    this.leftClearanceRecoveryTick = 0;
-+    this.rightClearanceRecoveryTick = 0;
 +    this.leftClearancePoleVector.copy(this.leftPoleVector);
 +    this.rightClearancePoleVector.copy(this.rightPoleVector);
 +    this.leftWristInit = false;
@@ -31763,7 +31759,7 @@ index c73bcabe86e07dd117e6f737532aea88ac9ec194..1fb613803345272a3a8dce7f4fb0470c
    setLeftHandTarget(target: HandPose): void {
      this.targetPose.leftHand = { ...target };
      this.targetPose.timestamp = Date.now();
-@@ -244,8 +745,13 @@ export class AvatarAnimator implements IAvatarAnimator {
+@@ -244,8 +746,13 @@ export class AvatarAnimator implements IAvatarAnimator {
    update(deltaTime: number): void {
      // Ramp per-arm IK blend weights (framerate-independent exponential lerp)
      const blendFactor = 1 - Math.exp(-this.ikBlendSpeed * deltaTime);
@@ -31779,7 +31775,7 @@ index c73bcabe86e07dd117e6f737532aea88ac9ec194..1fb613803345272a3a8dce7f4fb0470c
  
      if (this.transitioning) {
        this.updateTransition(deltaTime);
-@@ -259,7 +765,365 @@ export class AvatarAnimator implements IAvatarAnimator {
+@@ -259,7 +766,365 @@ export class AvatarAnimator implements IAvatarAnimator {
      const finalPose = this.computeFinalPose();
  
      // Solve IK for arms
@@ -32146,7 +32142,7 @@ index c73bcabe86e07dd117e6f737532aea88ac9ec194..1fb613803345272a3a8dce7f4fb0470c
    }
  
    private blendToTarget(_deltaTime: number): void {
-@@ -378,13 +1242,217 @@ export class AvatarAnimator implements IAvatarAnimator {
+@@ -378,13 +1243,217 @@ export class AvatarAnimator implements IAvatarAnimator {
      return result;
    }
  
@@ -32365,7 +32361,7 @@ index c73bcabe86e07dd117e6f737532aea88ac9ec194..1fb613803345272a3a8dce7f4fb0470c
      // Compute body center from Hips bone (or default to origin)
      const bodyCenter = new Vector3(0, 0, 0);
      const hipsBone = state.bones.get("Hips");
-@@ -392,6 +1460,11 @@ export class AvatarAnimator implements IAvatarAnimator {
+@@ -392,6 +1461,11 @@ export class AvatarAnimator implements IAvatarAnimator {
        hipsBone.getWorldPosition(bodyCenter);
      }
  
@@ -32377,7 +32373,7 @@ index c73bcabe86e07dd117e6f737532aea88ac9ec194..1fb613803345272a3a8dce7f4fb0470c
      // Cache shoulder rest Y positions once (before any clavicle rotation has been applied).
      // CRITICAL: Do NOT read these per-frame after clavicle is rotated - the elevated
      // position feeds back and causes oscillation.
-@@ -445,7 +1518,8 @@ export class AvatarAnimator implements IAvatarAnimator {
+@@ -445,7 +1519,8 @@ export class AvatarAnimator implements IAvatarAnimator {
          pose.leftHand?.targetPosition ?? null,
          pose.rightHand?.targetPosition ?? null,
          bodyCenter,
@@ -32387,7 +32383,7 @@ index c73bcabe86e07dd117e6f737532aea88ac9ec194..1fb613803345272a3a8dce7f4fb0470c
        );
  
        // Apply twist to each bone individually for a natural spinal curve.
-@@ -511,12 +1585,175 @@ export class AvatarAnimator implements IAvatarAnimator {
+@@ -511,12 +1586,175 @@ export class AvatarAnimator implements IAvatarAnimator {
        }
      }
  
@@ -32564,7 +32560,7 @@ index c73bcabe86e07dd117e6f737532aea88ac9ec194..1fb613803345272a3a8dce7f4fb0470c
          // Save what the locomotion animation wrote to bone quaternions
          const animRootQuat = leftChain.root.quaternion.clone();
          const animMiddleQuat = leftChain.middle.quaternion.clone();
-@@ -527,7 +1764,7 @@ export class AvatarAnimator implements IAvatarAnimator {
+@@ -527,7 +1765,7 @@ export class AvatarAnimator implements IAvatarAnimator {
            const leftShoulder = state.bones.get("LeftShoulder");
            if (leftShoulder) {
              const targetQuat = this.clavicleRaiser.computeClavicleRotation(
@@ -32573,7 +32569,7 @@ index c73bcabe86e07dd117e6f737532aea88ac9ec194..1fb613803345272a3a8dce7f4fb0470c
                "left",
                this.leftShoulderRestY,
                leftChain.totalLength
-@@ -540,6 +1777,15 @@ export class AvatarAnimator implements IAvatarAnimator {
+@@ -540,6 +1778,15 @@ export class AvatarAnimator implements IAvatarAnimator {
            }
          }
  
@@ -32589,7 +32585,7 @@ index c73bcabe86e07dd117e6f737532aea88ac9ec194..1fb613803345272a3a8dce7f4fb0470c
          // Build IK target with optional pole vector
          const target: IKTarget = {
            position: leftTarget,
-@@ -547,19 +1793,75 @@ export class AvatarAnimator implements IAvatarAnimator {
+@@ -547,19 +1794,76 @@ export class AvatarAnimator implements IAvatarAnimator {
          };
  
          if (this._poleVectorsEnabled && this.poleComputer && leftHand.plane) {
@@ -32663,12 +32659,13 @@ index c73bcabe86e07dd117e6f737532aea88ac9ec194..1fb613803345272a3a8dce7f4fb0470c
 +          "left",
 +          leftChain,
 +          target,
-+          leftClearanceContext
++          leftClearanceContext,
++          deltaTime
 +        );
  
          // Save IK results BEFORE blending - .copy() would overwrite them
          const ikRootQuat = leftChain.root.quaternion.clone();
-@@ -572,13 +1874,24 @@ export class AvatarAnimator implements IAvatarAnimator {
+@@ -572,13 +1876,24 @@ export class AvatarAnimator implements IAvatarAnimator {
          leftChain.middle.quaternion.copy(animMiddleQuat).slerp(ikMiddleQuat, w);
          leftChain.effector.quaternion.copy(animEffectorQuat).slerp(ikEffectorQuat, w);
  
@@ -32694,7 +32691,7 @@ index c73bcabe86e07dd117e6f737532aea88ac9ec194..1fb613803345272a3a8dce7f4fb0470c
          // Save what the locomotion animation wrote to bone quaternions
          const animRootQuat = rightChain.root.quaternion.clone();
          const animMiddleQuat = rightChain.middle.quaternion.clone();
-@@ -589,7 +1902,7 @@ export class AvatarAnimator implements IAvatarAnimator {
+@@ -589,7 +1904,7 @@ export class AvatarAnimator implements IAvatarAnimator {
            const rightShoulder = state.bones.get("RightShoulder");
            if (rightShoulder) {
              const targetQuat = this.clavicleRaiser.computeClavicleRotation(
@@ -32703,7 +32700,7 @@ index c73bcabe86e07dd117e6f737532aea88ac9ec194..1fb613803345272a3a8dce7f4fb0470c
                "right",
                this.rightShoulderRestY,
                rightChain.totalLength
-@@ -602,6 +1915,15 @@ export class AvatarAnimator implements IAvatarAnimator {
+@@ -602,6 +1917,15 @@ export class AvatarAnimator implements IAvatarAnimator {
            }
          }
  
@@ -32719,7 +32716,7 @@ index c73bcabe86e07dd117e6f737532aea88ac9ec194..1fb613803345272a3a8dce7f4fb0470c
          // Build IK target with optional pole vector
          const target: IKTarget = {
            position: rightTarget,
-@@ -609,19 +1931,68 @@ export class AvatarAnimator implements IAvatarAnimator {
+@@ -609,19 +1933,69 @@ export class AvatarAnimator implements IAvatarAnimator {
          };
  
          if (this._poleVectorsEnabled && this.poleComputer && rightHand.plane) {
@@ -32786,12 +32783,13 @@ index c73bcabe86e07dd117e6f737532aea88ac9ec194..1fb613803345272a3a8dce7f4fb0470c
 +          "right",
 +          rightChain,
 +          target,
-+          rightClearanceContext
++          rightClearanceContext,
++          deltaTime
 +        );
  
          // Save IK results BEFORE blending - .copy() would overwrite them
          const ikRootQuat = rightChain.root.quaternion.clone();
-@@ -634,13 +2005,1083 @@ export class AvatarAnimator implements IAvatarAnimator {
+@@ -634,13 +2008,1080 @@ export class AvatarAnimator implements IAvatarAnimator {
          rightChain.middle.quaternion.copy(animMiddleQuat).slerp(ikMiddleQuat, w);
          rightChain.effector.quaternion.copy(animEffectorQuat).slerp(ikEffectorQuat, w);
  
@@ -33435,7 +33433,8 @@ index c73bcabe86e07dd117e6f737532aea88ac9ec194..1fb613803345272a3a8dce7f4fb0470c
 +    side: "left" | "right",
 +    chain: BoneChain,
 +    target: IKTarget,
-+    context: ForearmFaceClearanceContext | null
++    context: ForearmFaceClearanceContext | null,
++    deltaTime: number
 +  ): void {
 +    if (!context || !this.poleComputer || !target.poleHint) {
 +      this.ikSolver.solveAndApply(chain, target);
@@ -33454,26 +33453,22 @@ index c73bcabe86e07dd117e6f737532aea88ac9ec194..1fb613803345272a3a8dce7f4fb0470c
 +      side === "left"
 +        ? this.leftClearanceReachRatio
 +        : this.rightClearanceReachRatio;
-+    const recoveryTick =
-+      side === "left"
-+        ? ++this.leftClearanceRecoveryTick
-+        : ++this.rightClearanceRecoveryTick;
 +
-+    // Reuse the last measured-safe reach and pole on ordinary frames. Probe a
-+    // slightly fuller reach periodically so the arm naturally recovers once
-+    // the dangerous corridor has passed, without repeating a full circle
-+    // search sixty times per second.
++    // Reuse the last measured-safe reach and pole on ordinary frames, first
++    // trying the fuller reach this frame's share of the recovery allows, so
++    // the arm grows back at a fixed rate once the dangerous corridor has
++    // passed, without repeating a full circle search every frame.
 +    if (cachedRatio < 0.999) {
 +      target.poleHint.copy(
 +        side === "left"
 +          ? this.leftClearancePoleVector
 +          : this.rightClearancePoleVector
 +      );
-+      if (recoveryTick % ARM_CLEARANCE_RECOVERY_INTERVAL === 0) {
-+        const recoveryRatio = Math.min(
-+          1,
-+          cachedRatio + ARM_CLEARANCE_RECOVERY_STEP
-+        );
++      const recoveryRatio = Math.min(
++        1,
++        cachedRatio + ARM_CLEARANCE_RECOVERY_RATE * Math.max(0, deltaTime)
++      );
++      if (recoveryRatio > cachedRatio) {
 +        this.placeArmTargetAtRatio(
 +          target,
 +          context.shoulderPosition,

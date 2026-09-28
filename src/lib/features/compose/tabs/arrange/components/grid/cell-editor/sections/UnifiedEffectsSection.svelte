@@ -13,6 +13,7 @@
     EffectType,
   } from "$lib/shared/animation-engine/domain/types/tip-effect-types";
   import { getTipPoints } from "$lib/shared/animation-engine/domain/types/prop-tip-points";
+  import { getTipLabel } from "$lib/shared/animation-engine/domain/tip-label";
   import type { CellEffect } from "$lib/shared/animation-engine/domain/compose-types";
   import { EFFECTS } from "$lib/shared/animation-engine/components/effects-panel/effect-registry";
 
@@ -108,14 +109,14 @@
         rows.push({
           key: `0-${t}`,
           color: "#3b82f6",
-          label: `Left ${getTipLabel(leftPropType, t, leftTipCount)}`,
+          label: `Left ${getTipLabel(leftPropType, t)}`,
         });
       }
       for (let t = 0; t < rightTipCount; t++) {
         rows.push({
           key: `1-${t}`,
           color: "#ef4444",
-          label: `Right ${getTipLabel(rightPropType, t, rightTipCount)}`,
+          label: `Right ${getTipLabel(rightPropType, t)}`,
         });
       }
       return rows;
@@ -148,16 +149,6 @@
         label: "None",
       }
     );
-  }
-
-  function getTipLabel(
-    propType: string,
-    tipIndex: number,
-    tipCount: number
-  ): string {
-    if (tipCount === 1) return "Tip";
-    if (tipCount === 2) return tipIndex === 0 ? "Thumb" : "Pinky";
-    return `Tip ${tipIndex + 1}`;
   }
 
   function handleGridTap(effect: EffectType) {
