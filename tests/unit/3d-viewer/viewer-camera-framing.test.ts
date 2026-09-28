@@ -92,6 +92,20 @@ describe("viewer camera framing", () => {
 
     expect(camera.position.z).toBeGreaterThan(1);
     expect(camera.position.y).not.toBe(0);
+
+    // A performer whose hands reach twice as far is framed twice as far out,
+    // so its hand ring still matches the card's.
+    const wide = computeViewerAlignedCamera({
+      environmentId: BackgroundType.OCEAN,
+      fov: 50,
+      document,
+      handDistance: 1.04,
+    });
+    expect(wide.position.z - wide.target.z).toBeCloseTo(
+      2 * (camera.position.z - camera.target.z),
+      12
+    );
+    expect(wide.position.y).toBeCloseTo(2 * camera.position.y, 12);
     expect(camera.target).toEqual({ x: 0, y: 0, z: 0.3 });
   });
 
