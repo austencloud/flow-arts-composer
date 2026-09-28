@@ -1,6 +1,8 @@
 import {
   POST_MAX_ZOOM,
   POST_MIN_ZOOM,
+  POST_SHAPE_RATIO_MAX,
+  POST_SHAPE_RATIO_MIN,
   wrapDegrees,
   type PostFraming,
 } from "$lib/shared/media-composition/domain/post-project";
@@ -12,10 +14,11 @@ import {
 } from "$lib/shared/media-composition/services/media-fit";
 
 /**
- * The crop screen's geometry: how large the slot's window shows on the stage,
- * how far the picture may move before the window shows a gap, and what
- * dragging, pinching, turning and cropping from a corner or a side do to a
- * clip's framing.
+ * The crop screen's geometry: where the stage shows the whole picture and the
+ * window over it, how far the picture may move before the window shows a
+ * gap, and what dragging, pinching, turning and cropping from a corner or a
+ * side do to a clip's framing. The picture holds still under a gesture and
+ * the frame moves over it.
  *
  * Everything is in output pixels, with the origin at the window's centre and
  * y pointing down, so a positive turn is clockwise as CSS draws it. A picture
@@ -331,27 +334,6 @@ export function zoomPoseAbout(
 }
 
 /**
- * A two-finger pinch, from where it started: the fingers' spread scales the
- * picture about their first midpoint, and the midpoint's travel moves it.
- */
-export function pinchPose(
-  start: CropPose,
-  input: { startMidpoint: CropPoint; midpoint: CropPoint; spread: number; floor?: number }
-): CropPose {
-  const spread = Number.isFinite(input.spread) && input.spread > 0 ? input.spread : 1;
-  const zoom = clampZoom(start.zoom * spread, input.floor);
-  const ratio = zoom / start.zoom;
-  return {
-    ...start,
-    zoom,
-    offset: {
-      x: input.midpoint.x - ratio * (input.startMidpoint.x - start.offset.x),
-      y: input.midpoint.y - ratio * (input.startMidpoint.y - start.offset.y),
-    },
-  };
-}
-
-/**
  * Turned about the window's centre, which keeps what is there. In Fill the
  * zoom follows the turn by `coverZoom`, so a covered window stays covered and
  * turning back restores the zoom; Show all keeps its zoom.
@@ -435,51 +417,119 @@ export function quarterLeft(quarter: number): number {
   return next < -2 ? next + 4 : next;
 }
 
-// ---- The window on the stage ------------------------------------------------
+// ---- The camera on the stage ------------------------------------------------
 
 export const CROP_STAGE_MARGIN_PX = 24;
-/** The window never shows smaller than this share of the largest it could be. */
-export const CROP_WINDOW_FLOOR = 0.6;
 
 /**
- * Screen pixels per output pixel for the crop window: as large as the stage
- * allows while the whole picture around the window still fits, but never
- * below `CROP_WINDOW_FLOOR` of the largest window the stage could hold.
+ * Screen pixels per output pixel for the largest window the stage holds,
+ * for the moment before the footage's size is known.
  */
 export function cropWindowScale(input: {
   stage: CropSize;
   window: CropSize;
-  pose?: CropPose | null;
   margin?: number;
-  floor?: number;
 }): number {
   const margin = input.margin ?? CROP_STAGE_MARGIN_PX;
-  const roomWidth = Math.max(1, input.stage.width - 2 * margin);
-  const roomHeight = Math.max(1, input.stage.height - 2 * margin);
-  const largest = Math.min(
-    roomWidth / input.window.width,
-    roomHeight / input.window.height
+  return Math.min(
+    Math.max(1, input.stage.width - 2 * margin) / input.window.width,
+    Math.max(1, input.stage.height - 2 * margin) / input.window.height
   );
-  const pose = input.pose;
-  if (!pose) return largest;
-  const extent = turnedExtent(
-    pose.draw.width * pose.zoom,
-    pose.draw.height * pose.zoom,
-    pose.rotation
-  );
-  const halfWidth = Math.max(
-    pose.window.width / 2,
-    Math.abs(pose.offset.x) + extent.width / 2
-  );
-  const halfHeight = Math.max(
-    pose.window.height / 2,
-    Math.abs(pose.offset.y) + extent.height / 2
-  );
-  const whole = Math.min(roomWidth / (2 * halfWidth), roomHeight / (2 * halfHeight));
-  return Math.min(largest, Math.max(whole, (input.floor ?? CROP_WINDOW_FLOOR) * largest));
 }
 
-// ---- Frame handles -------------------------------------------------------------
+/**
+ * How the crop stage shows the footage: the whole picture, held still, with
+ * the window moving over it. `scale` is screen pixels per footage pixel and
+ * `center` is the picture's centre on the stage.
+ */
+export interface CropCamera {
+  scale: number;
+  center: CropPoint;
+}
+
+/** Output pixels per footage pixel, as the pose draws the picture. */
+function pictureScale(pose: CropPose): number {
+  return (pose.draw.width * pose.zoom) / pose.source.width;
+}
+
+/** The turned picture and the window together, in footage pixels from the picture's centre. */
+function shownBounds(pose: CropPose) {
+  const perSource = pictureScale(pose);
+  const extent = turnedExtent(pose.source.width, pose.source.height, pose.rotation);
+  const windowX = -pose.offset.x / perSource;
+  const windowY = -pose.offset.y / perSource;
+  const halfWidth = pose.window.width / (2 * perSource);
+  const halfHeight = pose.window.height / (2 * perSource);
+  return {
+    left: Math.min(-extent.width / 2, windowX - halfWidth),
+    right: Math.max(extent.width / 2, windowX + halfWidth),
+    top: Math.min(-extent.height / 2, windowY - halfHeight),
+    bottom: Math.max(extent.height / 2, windowY + halfHeight),
+  };
+}
+
+/** Width over height of what the crop stage shows: the picture and the window. */
+export function cropViewRatio(pose: CropPose): number {
+  const { left, right, top, bottom } = shownBounds(pose);
+  return (right - left) / (bottom - top);
+}
+
+/**
+ * The camera that shows the whole turned picture and the window together,
+ * as large as the stage allows, centred on the stage.
+ */
+export function cropCamera(input: {
+  stage: CropSize;
+  pose: CropPose;
+  margin?: number;
+}): CropCamera {
+  const { stage, pose } = input;
+  const margin = input.margin ?? CROP_STAGE_MARGIN_PX;
+  const { left, right, top, bottom } = shownBounds(pose);
+  const scale = Math.min(
+    Math.max(1, stage.width - 2 * margin) / (right - left),
+    Math.max(1, stage.height - 2 * margin) / (bottom - top)
+  );
+  return {
+    scale,
+    center: {
+      x: stage.width / 2 - (scale * (left + right)) / 2,
+      y: stage.height / 2 - (scale * (top + bottom)) / 2,
+    },
+  };
+}
+
+/** Screen pixels per output pixel for the pose under the camera. */
+export function cameraDisplayScale(pose: CropPose, camera: CropCamera): number {
+  return camera.scale / pictureScale(pose);
+}
+
+/** The window's centre on the stage, in screen pixels. */
+export function cameraWindowCenter(pose: CropPose, camera: CropCamera): CropPoint {
+  const scale = cameraDisplayScale(pose, camera);
+  return {
+    x: camera.center.x - pose.offset.x * scale,
+    y: camera.center.y - pose.offset.y * scale,
+  };
+}
+
+// ---- Moving and sizing the frame --------------------------------------------
+
+/**
+ * The pose once the window becomes a frame centred at `center` and `scale`
+ * times its size (in output pixels from the window's centre): what the frame
+ * holds then fills the window. A drag, a pinch and a corner all come to this.
+ */
+export function framePose(pose: CropPose, center: CropPoint, scale: number): CropPose {
+  return {
+    ...pose,
+    zoom: clampZoom(pose.zoom / scale),
+    offset: {
+      x: (pose.offset.x - center.x) / scale,
+      y: (pose.offset.y - center.y) / scale,
+    },
+  };
+}
 
 export type CropCorner = "nw" | "ne" | "sw" | "se";
 export type CropSide = "n" | "e" | "s" | "w";
@@ -500,6 +550,11 @@ const HANDLE_SIGNS: Record<CropHandle, CropPoint> = {
   s: { x: 0, y: 1 },
   w: { x: -1, y: 0 },
 };
+
+export function isCropSide(handle: CropHandle): handle is CropSide {
+  const sign = HANDLE_SIGNS[handle];
+  return sign.x === 0 || sign.y === 0;
+}
 
 /** A frame smaller than this on screen is too small to judge a crop by. */
 export const CROP_MIN_WINDOW_PX = 48;
@@ -525,13 +580,30 @@ export function handlePoint(window: CropSize, handle: CropHandle, scale: number)
   return { x: anchor.x + scale * span.x, y: anchor.y + scale * span.y };
 }
 
-/** The frame a handle drag has made: its centre and size, in output pixels. */
+/**
+ * The frame a handle drag has made: its centre and size, in output pixels.
+ * A `free` side moves only its own edge, so the frame changes shape.
+ */
 export function handleFrame(
   window: CropSize,
   handle: CropHandle,
-  scale: number
+  scale: number,
+  free = false
 ): { center: CropPoint; width: number; height: number } {
-  const { anchor, span } = handleAxes(window, handle);
+  const { sign, anchor, span } = handleAxes(window, handle);
+  if (free && isCropSide(handle)) {
+    return sign.x !== 0
+      ? {
+          center: { x: anchor.x + (scale * span.x) / 2, y: 0 },
+          width: window.width * scale,
+          height: window.height,
+        }
+      : {
+          center: { x: 0, y: anchor.y + (scale * span.y) / 2 },
+          width: window.width,
+          height: window.height * scale,
+        };
+  }
   return {
     center: { x: anchor.x + (scale * span.x) / 2, y: anchor.y + (scale * span.y) / 2 },
     width: window.width * scale,
@@ -548,41 +620,74 @@ export function handleScaleAt(window: CropSize, handle: CropHandle, point: CropP
   );
 }
 
-/** The largest frame whose corners all stay on the picture. */
-function coverScaleLimit(pose: CropPose, handle: CropHandle): number {
-  const { anchor, span } = handleAxes(pose.window, handle);
-  const halfWidth = (pose.draw.width * pose.zoom) / 2;
-  const halfHeight = (pose.draw.height * pose.zoom) / 2;
-  const start = turn(
-    { x: anchor.x - pose.offset.x, y: anchor.y - pose.offset.y },
-    -pose.rotation
-  );
-  let limit = Number.POSITIVE_INFINITY;
-  // The frame's corners sit at anchor + scale * (span / 2 +- half the window).
+/** The frame's corners as `from + scale * by`, from the window's centre. */
+function frameCorners(
+  window: CropSize,
+  handle: CropHandle,
+  free: boolean
+): { from: CropPoint; by: CropPoint }[] {
+  const { sign, anchor, span } = handleAxes(window, handle);
+  const corners: { from: CropPoint; by: CropPoint }[] = [];
   for (const across of [-1, 1]) {
     for (const down of [-1, 1]) {
-      const corner = {
-        x: span.x / 2 + (across * pose.window.width) / 2,
-        y: span.y / 2 + (down * pose.window.height) / 2,
-      };
-      const step = turn(corner, -pose.rotation);
-      for (const [from, by, half] of [
-        [start.x, step.x, halfWidth],
-        [start.y, step.y, halfHeight],
-      ] as const) {
-        if (by > 1e-12) limit = Math.min(limit, (half - from) / by);
-        else if (by < -1e-12) limit = Math.min(limit, (half + from) / -by);
+      const halfX = (across * window.width) / 2;
+      const halfY = (down * window.height) / 2;
+      if (free && isCropSide(handle)) {
+        // The pulled edge moves; the frame keeps its other side.
+        corners.push(
+          sign.x !== 0
+            ? { from: { x: anchor.x, y: halfY }, by: { x: span.x / 2 + halfX, y: 0 } }
+            : { from: { x: halfX, y: anchor.y }, by: { x: 0, y: span.y / 2 + halfY } }
+        );
+      } else {
+        corners.push({
+          from: anchor,
+          by: { x: span.x / 2 + halfX, y: span.y / 2 + halfY },
+        });
       }
+    }
+  }
+  return corners;
+}
+
+/** The largest frame whose corners all stay on the picture. */
+function coverScaleLimit(pose: CropPose, handle: CropHandle, free: boolean): number {
+  const halfWidth = (pose.draw.width * pose.zoom) / 2;
+  const halfHeight = (pose.draw.height * pose.zoom) / 2;
+  let limit = Number.POSITIVE_INFINITY;
+  for (const { from, by } of frameCorners(pose.window, handle, free)) {
+    const start = turn(
+      { x: from.x - pose.offset.x, y: from.y - pose.offset.y },
+      -pose.rotation
+    );
+    const step = turn(by, -pose.rotation);
+    for (const [at, move, half] of [
+      [start.x, step.x, halfWidth],
+      [start.y, step.y, halfHeight],
+    ] as const) {
+      if (move > 1e-12) limit = Math.min(limit, (half - at) / move);
+      else if (move < -1e-12) limit = Math.min(limit, (half + at) / -move);
     }
   }
   return Math.max(1, limit);
 }
 
 /**
+ * How far the frame may grow along one axis before an edge leaves the stage:
+ * from its fixed edge when that axis is pulled, from its middle both ways
+ * when it is not. `middle` and `half` are the window's, in screen pixels.
+ */
+function stageRoom(size: number, middle: number, half: number, pulled: number): number {
+  if (pulled > 0) return (size - middle + half) / (2 * half);
+  if (pulled < 0) return (middle + half) / (2 * half);
+  return Math.min(middle, size - middle) / half;
+}
+
+/**
  * How small and large a handle drag may make the frame, as a share of the
  * window. Smaller crops closer and ends in more zoom, so the zoom limits
  * bound both ends; the frame stays on the stage and, under `cover`, on the
- * picture.
+ * picture. A free side also keeps the frame within the shapes a clip takes.
  */
 export function handleScaleRange(input: {
   pose: CropPose;
@@ -590,56 +695,82 @@ export function handleScaleRange(input: {
   limit: CropLimit;
   /** Screen pixels per output pixel. */
   displayScale: number;
-  /** The stage, in screen pixels, centred on the window. */
+  /** The stage, in screen pixels. */
   stage: CropSize;
+  /** The window's centre on the stage; the stage's centre when absent. */
+  center?: CropPoint;
+  /** A side moves only its own edge, changing the frame's shape. */
+  free?: boolean;
 }): { min: number; max: number } {
-  const { pose, handle, displayScale } = input;
+  const { pose, handle, displayScale, stage } = input;
   const { sign } = handleAxes(pose.window, handle);
-  const shortSide = Math.min(pose.window.width, pose.window.height) * displayScale;
-  const smallest = Math.max(pose.zoom / POST_MAX_ZOOM, CROP_MIN_WINDOW_PX / shortSide);
-  // Along a dragged axis the frame grows from one edge; along a side's
-  // other axis it grows from the middle, both ways.
-  const room = (stage: number, half: number, pulled: number) => {
-    const ratio = stage / (2 * displayScale) / half;
-    return pulled === 0 ? ratio : (ratio + 1) / 2;
-  };
-  let largest = Math.min(
-    pose.zoom / POST_MIN_ZOOM,
-    room(input.stage.width, pose.window.width / 2, sign.x),
-    room(input.stage.height, pose.window.height / 2, sign.y)
-  );
-  if (input.limit === "cover") largest = Math.min(largest, coverScaleLimit(pose, handle));
+  const free = input.free === true && isCropSide(handle);
+  const center = input.center ?? { x: stage.width / 2, y: stage.height / 2 };
+  const halfWidth = (pose.window.width * displayScale) / 2;
+  const halfHeight = (pose.window.height * displayScale) / 2;
+  const roomX = stageRoom(stage.width, center.x, halfWidth, sign.x);
+  const roomY = stageRoom(stage.height, center.y, halfHeight, sign.y);
+  let smallest: number;
+  let largest: number;
+  if (free) {
+    const alongX = sign.x !== 0;
+    const length = alongX ? pose.window.width : pose.window.height;
+    const other = alongX ? pose.window.height : pose.window.width;
+    // A frame's zoom is the picture over the frame on the axis the fit
+    // matches: the smaller share for Fill, the larger for Show all.
+    const pulledShare = ((alongX ? pose.draw.width : pose.draw.height) * pose.zoom) / length;
+    const otherShare = ((alongX ? pose.draw.height : pose.draw.width) * pose.zoom) / other;
+    const cover = pose.fit === "cover";
+    const zoomLow = cover && otherShare <= POST_MAX_ZOOM ? 0 : pulledShare / POST_MAX_ZOOM;
+    const zoomHigh =
+      !cover && otherShare >= POST_MIN_ZOOM
+        ? Number.POSITIVE_INFINITY
+        : pulledShare / POST_MIN_ZOOM;
+    // Width over height stays within the shapes a clip takes.
+    const shapeLow = alongX
+      ? (POST_SHAPE_RATIO_MIN * other) / length
+      : length / (POST_SHAPE_RATIO_MAX * other);
+    const shapeHigh = alongX
+      ? (POST_SHAPE_RATIO_MAX * other) / length
+      : length / (POST_SHAPE_RATIO_MIN * other);
+    smallest = Math.max(zoomLow, shapeLow, CROP_MIN_WINDOW_PX / (length * displayScale));
+    largest = Math.min(zoomHigh, shapeHigh, alongX ? roomX : roomY);
+  } else {
+    const shortSide = Math.min(pose.window.width, pose.window.height) * displayScale;
+    smallest = Math.max(pose.zoom / POST_MAX_ZOOM, CROP_MIN_WINDOW_PX / shortSide);
+    largest = Math.min(pose.zoom / POST_MIN_ZOOM, roomX, roomY);
+  }
+  if (input.limit === "cover") largest = Math.min(largest, coverScaleLimit(pose, handle, free));
   return { min: Math.min(1, smallest), max: Math.max(1, largest) };
 }
 
-/**
- * What a handle drag leaves when released: the frame becomes the window, and
- * the picture scales and moves so that what the frame held fills it.
- */
-export function releaseHandle(pose: CropPose, handle: CropHandle, scale: number): CropPose {
-  const { center } = handleFrame(pose.window, handle, scale);
-  return {
-    ...pose,
-    zoom: clampZoom(pose.zoom / scale),
-    offset: {
-      x: (pose.offset.x - center.x) / scale,
-      y: (pose.offset.y - center.y) / scale,
-    },
-  };
+/** A corner or side held at `scale`: the frame it has made becomes the window. */
+export function handlePose(pose: CropPose, handle: CropHandle, scale: number): CropPose {
+  return framePose(pose, handleFrame(pose.window, handle, scale).center, scale);
 }
 
 /**
- * The move and scale, about the window's centre, that draw `after` where
- * `before` was. Easing it to nothing animates one into the other.
+ * A free side held at `scale`: the window takes the frame's new shape at
+ * `window`'s size (the largest of that shape the clip's box holds), and what
+ * the frame holds fills it.
  */
-export function settleTransform(
-  before: CropPose,
-  after: CropPose
-): { scale: number; x: number; y: number } {
-  const scale = before.zoom / after.zoom;
+export function reshapePose(
+  pose: CropPose,
+  handle: CropHandle,
+  scale: number,
+  window: CropSize
+): CropPose {
+  const frame = handleFrame(pose.window, handle, scale, true);
+  const grow = window.width / frame.width;
+  const draw = fittedDraw(pose.source, window, pose.fit);
   return {
-    scale,
-    x: before.offset.x - scale * after.offset.x,
-    y: before.offset.y - scale * after.offset.y,
+    ...pose,
+    window,
+    draw,
+    zoom: clampZoom((pose.draw.width * pose.zoom * grow) / draw.width),
+    offset: {
+      x: (pose.offset.x - frame.center.x) * grow,
+      y: (pose.offset.y - frame.center.y) * grow,
+    },
   };
 }

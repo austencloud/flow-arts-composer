@@ -20,6 +20,7 @@ describe("toolRow", () => {
     expect(toolRow(POST)).toEqual([
       "videos",
       "add",
+      "canvas",
       "split",
       "tutorial",
       "look",

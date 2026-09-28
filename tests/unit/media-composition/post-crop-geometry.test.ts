@@ -1,13 +1,21 @@
 import { describe, expect, it } from "vitest";
-import type { PostFraming } from "$lib/shared/media-composition/domain/post-project";
 import {
+  POST_SHAPE_RATIO_MIN,
+  type PostFraming,
+} from "$lib/shared/media-composition/domain/post-project";
+import {
+  cameraDisplayScale,
+  cameraWindowCenter,
   clampToCoverage,
   clampToPanRange,
+  framePose,
   handleFrame,
   handlePoint,
+  handlePose,
   handleScaleAt,
   handleScaleRange,
   coverZoom,
+  cropCamera,
   cropLimitFor,
   cropPoseOf,
   cropWindowScale,
@@ -18,16 +26,15 @@ import {
   movePose,
   overflowOf,
   overshootOf,
-  pinchPose,
   quarterLeft,
-  releaseHandle,
+  reshapePose,
   rubberBand,
   sameFraming,
-  settleTransform,
   splitRotation,
   turnPose,
   withFit,
   zoomPoseAbout,
+  type CropCamera,
   type CropFit,
   type CropPoint,
   type CropPose,
@@ -260,35 +267,23 @@ describe("zoomPoseAbout", () => {
   });
 });
 
-describe("pinchPose", () => {
+describe("framePose", () => {
   const start = placed(1.5, 10, { x: 40, y: -120 });
 
-  it("moves with the fingers when they do not spread", () => {
-    const moved = pinchPose(start, {
-      startMidpoint: { x: 10, y: 20 },
-      midpoint: { x: 50, y: -5 },
-      spread: 1,
-    });
+  it("fills the window with what the frame holds", () => {
+    const center = { x: -150, y: 90 };
+    const framed = framePose(start, center, 0.5);
+    expect(framed.zoom).toBe(3);
+    for (const corner of windowCorners(WINDOW)) {
+      const inFrame = { x: center.x + corner.x * 0.5, y: center.y + corner.y * 0.5 };
+      expectPoint(pictureToStage(framed, stageToPicture(start, inFrame)), corner, 9);
+    }
+  });
+
+  it("moves the picture the other way when only the frame moves", () => {
+    const moved = framePose(start, { x: 30, y: -20 }, 1);
     expect(moved.zoom).toBe(1.5);
-    expectPoint(moved.offset, { x: 80, y: -145 }, 12);
-  });
-
-  it("scales about where the pinch began", () => {
-    const midpoint = { x: -150, y: 90 };
-    const under = stageToPicture(start, midpoint);
-    const spread = pinchPose(start, { startMidpoint: midpoint, midpoint, spread: 2 });
-    expect(spread.zoom).toBe(3);
-    expectPoint(pictureToStage(spread, under), midpoint, 9);
-  });
-
-  it("stops at a floor", () => {
-    const pinched = pinchPose(start, {
-      startMidpoint: { x: 0, y: 0 },
-      midpoint: { x: 0, y: 0 },
-      spread: 0.2,
-      floor: 1.1,
-    });
-    expect(pinched.zoom).toBe(1.1);
+    expectPoint(moved.offset, { x: 10, y: -100 }, 12);
   });
 });
 
@@ -423,32 +418,94 @@ describe("rubberBand and overshootOf", () => {
 });
 
 describe("cropWindowScale", () => {
-  it("is the largest window the stage holds when no pose is known", () => {
+  it("is the largest window the stage holds", () => {
     expect(cropWindowScale({ stage: { width: 900, height: 600 }, window: WINDOW })).toBe(
       552 / 960
     );
   });
+});
 
-  it("stays largest when the whole picture fits around it", () => {
-    const scale = cropWindowScale({
-      stage: { width: 900, height: 2000 },
-      window: WINDOW,
-      pose: poseOf(),
-    });
-    // 852 of room across for 1080; the 1920-high picture fits in 1952.
-    expect(scale).toBe(852 / 1080);
+describe("cropCamera", () => {
+  const STAGE = { width: 900, height: 1200 };
+  const MARGIN = 24;
+
+  /** A picture point on the stage, in screen pixels. */
+  function onScreen(pose: CropPose, camera: CropCamera, point: CropPoint): CropPoint {
+    const at = pictureToStage(pose, point);
+    const center = cameraWindowCenter(pose, camera);
+    const scale = cameraDisplayScale(pose, camera);
+    return { x: center.x + at.x * scale, y: center.y + at.y * scale };
+  }
+
+  /** The picture's and the window's corners on the stage. */
+  function shownCorners(pose: CropPose, camera: CropCamera): CropPoint[] {
+    const halfWidth = pose.draw.width / 2;
+    const halfHeight = pose.draw.height / 2;
+    const picture = [
+      { x: -halfWidth, y: -halfHeight },
+      { x: halfWidth, y: -halfHeight },
+      { x: halfWidth, y: halfHeight },
+      { x: -halfWidth, y: halfHeight },
+    ].map((corner) => onScreen(pose, camera, corner));
+    const center = cameraWindowCenter(pose, camera);
+    const scale = cameraDisplayScale(pose, camera);
+    const window = windowCorners(pose.window).map((corner) => ({
+      x: center.x + corner.x * scale,
+      y: center.y + corner.y * scale,
+    }));
+    return [...picture, ...window];
+  }
+
+  it("shows the whole picture, centred, when the window lies on it", () => {
+    const pose = poseOf();
+    const camera = cropCamera({ stage: STAGE, pose });
+    // The 720x1280 footage in 852x1152 of room.
+    expect(camera.scale).toBeCloseTo(1152 / 1280, 12);
+    expectPoint(camera.center, { x: 450, y: 600 }, 9);
+    // Fill draws a footage pixel 1.5 output pixels across.
+    expect(cameraDisplayScale(pose, camera)).toBeCloseTo(0.6, 12);
+    expectPoint(cameraWindowCenter(pose, camera), { x: 450, y: 600 }, 9);
+    expectPoint(onScreen(pose, camera, { x: 0, y: 0 }), camera.center, 9);
   });
 
-  it("shrinks to show the whole picture, but not below the floor", () => {
-    const stage = { width: 900, height: 1200 };
-    // The picture needs 1920 of height in 1152 of room: 0.6, and the largest
-    // window is min(852/1080, 1152/960) = 0.789.
-    expect(cropWindowScale({ stage, window: WINDOW, pose: poseOf() })).toBe(1152 / 1920);
-    const short = { width: 900, height: 600 };
-    expect(cropWindowScale({ stage: short, window: WINDOW, pose: poseOf() })).toBeCloseTo(
-      0.6 * (552 / 960),
-      12
+  it("fits the picture and the window together, as large as the stage allows", () => {
+    for (const pose of [
+      placed(1.2, 20, { x: 100, y: -200 }),
+      placed(0.6, 0, { x: 300, y: 0 }, "contain"),
+      placed(0.8, -35, { x: -250, y: 400 }),
+    ]) {
+      const corners = shownCorners(pose, cropCamera({ stage: STAGE, pose }));
+      const xs = corners.map((corner) => corner.x);
+      const ys = corners.map((corner) => corner.y);
+      const [left, right] = [Math.min(...xs), Math.max(...xs)];
+      const [top, bottom] = [Math.min(...ys), Math.max(...ys)];
+      expect(left).toBeGreaterThanOrEqual(MARGIN - 1e-6);
+      expect(right).toBeLessThanOrEqual(STAGE.width - MARGIN + 1e-6);
+      expect(top).toBeGreaterThanOrEqual(MARGIN - 1e-6);
+      expect(bottom).toBeLessThanOrEqual(STAGE.height - MARGIN + 1e-6);
+      const fillsAcross = Math.abs(right - left - (STAGE.width - 2 * MARGIN)) < 1e-6;
+      const fillsDown = Math.abs(bottom - top - (STAGE.height - 2 * MARGIN)) < 1e-6;
+      expect(fillsAcross || fillsDown).toBe(true);
+    }
+  });
+
+  it("holds the picture still while a gesture moves and sizes the frame", () => {
+    const start = placed(1.5, 10, { x: 40, y: -120 });
+    const camera = cropCamera({ stage: STAGE, pose: start });
+    const scale = cameraDisplayScale(start, camera);
+    const origin = cameraWindowCenter(start, camera);
+    const center = { x: -150, y: 90 };
+    const framed = framePose(start, center, 0.5);
+    // The window lands where the gesture drew the frame...
+    expect(cameraDisplayScale(framed, camera)).toBeCloseTo(scale * 0.5, 12);
+    expectPoint(
+      cameraWindowCenter(framed, camera),
+      { x: origin.x + center.x * scale, y: origin.y + center.y * scale },
+      9
     );
+    // ...and the picture has not moved under it.
+    const point = { x: 123, y: -45 };
+    expectPoint(onScreen(framed, camera, point), onScreen(start, camera, point), 9);
   });
 });
 
@@ -483,10 +540,10 @@ describe("frame handles", () => {
     expect(handleScaleAt(WINDOW, "s", along)).toBeCloseTo(0.8, 12);
   });
 
-  it("fills the window with what a side's frame held when released", () => {
+  it("fills the window with what a side's frame holds", () => {
     const before = placed(1.5, 15, { x: 40, y: 90 });
     const frame = handleFrame(WINDOW, "w", 0.7);
-    const after = releaseHandle(before, "w", 0.7);
+    const after = handlePose(before, "w", 0.7);
     for (const corner of windowCorners(WINDOW)) {
       const inFrame = {
         x: frame.center.x + corner.x * 0.7,
@@ -506,8 +563,8 @@ describe("frame handles", () => {
       stage: { width: 1e6, height: 1e6 },
     });
     expect(range.max).toBeGreaterThan(1);
-    expect(coversWindow(releaseHandle(pose, "s", range.max))).toBe(true);
-    expect(coversWindow(releaseHandle(pose, "s", range.max * 1.01))).toBe(false);
+    expect(coversWindow(handlePose(pose, "s", range.max))).toBe(true);
+    expect(coversWindow(handlePose(pose, "s", range.max * 1.01))).toBe(false);
   });
 
   it("keeps a side's frame on the stage, growing both ways along it", () => {
@@ -522,6 +579,63 @@ describe("frame handles", () => {
     expect(range.max).toBeCloseTo(Math.min((640 / 540 + 1) / 2, 520 / 480), 12);
   });
 
+  it("measures the stage's room from where the window sits on it", () => {
+    const range = handleScaleRange({
+      pose: placed(1, 0, { x: 0, y: 0 }),
+      handle: "e",
+      limit: "range",
+      displayScale: 0.5,
+      stage: { width: 640, height: 2000 },
+      // The window's 540 across starts 20 from the stage's left edge.
+      center: { x: 290, y: 1000 },
+    });
+    // The right side may run to the stage's edge: 620 of 540.
+    expect(range.max).toBeCloseTo(620 / 540, 12);
+  });
+
+  it("reshapes the frame when a free side moves only its own edge", () => {
+    const frame = handleFrame(WINDOW, "e", 0.5, true);
+    expect(frame.width).toBe(540);
+    expect(frame.height).toBe(960);
+    expectPoint(frame.center, { x: -270, y: 0 });
+    // A plain side keeps the frame's shape.
+    expect(handleFrame(WINDOW, "e", 0.5).height).toBe(480);
+  });
+
+  it("fills a reshaped window with what the free frame holds", () => {
+    const before = placed(1.5, 15, { x: 40, y: 90 });
+    const frame = handleFrame(WINDOW, "e", 0.5, true);
+    // The clip's box holds the frame's shape at 810x1440.
+    const window = { width: 810, height: 1440 };
+    const after = reshapePose(before, "e", 0.5, window);
+    const grow = window.width / frame.width;
+    // The same footage point, in each pose's own picture units.
+    const units = after.draw.width / before.draw.width;
+    for (const corner of windowCorners(window)) {
+      const inFrame = {
+        x: frame.center.x + corner.x / grow,
+        y: frame.center.y + corner.y / grow,
+      };
+      const under = stageToPicture(before, inFrame);
+      expectPoint(pictureToStage(after, { x: under.x * units, y: under.y * units }), corner, 9);
+    }
+  });
+
+  it("keeps a free side within the shapes a clip takes, and on the picture in Fill", () => {
+    const range = handleScaleRange({
+      pose: poseOf(),
+      handle: "e",
+      limit: "cover",
+      displayScale: 1,
+      stage: { width: 1e6, height: 1e6 },
+      free: true,
+    });
+    // Narrowest: a quarter as wide as it is high.
+    expect(range.min).toBeCloseTo((POST_SHAPE_RATIO_MIN * 960) / 1080, 12);
+    // Fill already spans the picture's width, so the side cannot widen.
+    expect(range.max).toBe(1);
+  });
+
   it("reads the scale from the pointer's place along the diagonal", () => {
     expect(handleScaleAt(WINDOW, "ne", handlePoint(WINDOW, "ne", 0.7))).toBeCloseTo(0.7, 12);
     // Off the diagonal, the pointer counts by its projection onto it.
@@ -531,10 +645,10 @@ describe("frame handles", () => {
     expect(handleScaleAt(WINDOW, "sw", off)).toBeCloseTo(0.8, 12);
   });
 
-  it("fills the window with what the frame held when released", () => {
+  it("fills the window with what the frame holds", () => {
     const before = placed(1.5, 15, { x: 40, y: 90 });
     const frame = handleFrame(WINDOW, "sw", 0.6);
-    const after = releaseHandle(before, "sw", 0.6);
+    const after = handlePose(before, "sw", 0.6);
     expect(after.zoom).toBeCloseTo(2.5, 12);
     for (const corner of windowCorners(WINDOW)) {
       const inFrame = {
@@ -544,25 +658,6 @@ describe("frame handles", () => {
       const under = stageToPicture(before, inFrame);
       expectPoint(pictureToStage(after, under), corner, 9);
     }
-  });
-
-  it("settles the released picture from where the dragged one was", () => {
-    const before = placed(1.5, 15, { x: 40, y: 90 });
-    const after = releaseHandle(before, "ne", 0.75);
-    const settle = settleTransform(before, after);
-    const frame = handleFrame(WINDOW, "ne", 0.75);
-    expect(settle.scale).toBeCloseTo(0.75, 12);
-    expectPoint(settle, frame.center, 9);
-    const point = { x: 123, y: -45 };
-    const drawnAfter = pictureToStage(after, point);
-    expectPoint(
-      {
-        x: settle.x + settle.scale * drawnAfter.x,
-        y: settle.y + settle.scale * drawnAfter.y,
-      },
-      pictureToStage(before, point),
-      9
-    );
   });
 
   const HUGE_STAGE = { width: 1e6, height: 1e6 };
@@ -590,8 +685,8 @@ describe("frame handles", () => {
     });
     expect(range.max).toBeGreaterThan(1);
     expect(range.max).toBeLessThan(pose.zoom / 0.5);
-    expect(coversWindow(releaseHandle(pose, "ne", range.max))).toBe(true);
-    expect(coversWindow(releaseHandle(pose, "ne", range.max * 1.01))).toBe(false);
+    expect(coversWindow(handlePose(pose, "ne", range.max))).toBe(true);
+    expect(coversWindow(handlePose(pose, "ne", range.max * 1.01))).toBe(false);
   });
 
   it("keeps the frame on the stage and big enough to judge", () => {
