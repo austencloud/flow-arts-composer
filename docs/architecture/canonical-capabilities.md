@@ -102,9 +102,13 @@ sequence viewer and the motion-paths guide do. Sequence cards read it through
 `PreviewCellRenderOptions.propLook` (`ChoreoCard.svelte`, then
 `resolvePreviewCellRender`), and personal card exports carry it in
 `visibilityOverrides.propLook`. `renderedPropLook` adds the look to cell and
-layer cache keys only when a captured model replaces a prop. Printed and
-scanned cards stay notation artwork: the deck profile and the scan card's
-cloud cells omit the look, as they omit the fan build (decided 2026-09-27).
+layer cache keys only when a captured model replaces a prop. The triangle grip
+(`AppSettings.triangleGrip`) takes the same path in both looks, from
+`PropSvgLoader` through `triangleGrip` on the prepare, cell and export options.
+`renderedTriangleGrip` keys it only when a triangle is drawn with the side
+grip. Printed and scanned cards stay notation artwork: the deck profile and
+the scan card's cloud cells omit the look and the grip, as they omit the fan
+build (decided 2026-09-27).
 `FanStyleOptionsCore.svelte` composes the existing
 `FanAppearancePicker.svelte` for fan builds and covers. The effect tuner and
 viewer reuse this gallery; `ScenePropPicker.svelte` adds scene-specific finish
