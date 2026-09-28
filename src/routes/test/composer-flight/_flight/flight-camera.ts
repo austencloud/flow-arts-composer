@@ -107,16 +107,17 @@ export function cameraAt(plan: StopsPlan, offset: number): CameraState {
       position = index;
       break;
     }
-    if (scroll < plan.docks[index + 1]) {
+    const nextDock = plan.docks[index + 1] ?? plan.length;
+    if (scroll < nextDock) {
       position = index + (scroll - depart) / plan.travel;
       // A smooth scroll can stop a device pixel short of a dock. That still
       // counts as arrived, so the panel lands flat instead of a hair deep.
-      if (plan.docks[index + 1] - scroll < DOCK_TOLERANCE) position = index + 1;
+      if (nextDock - scroll < DOCK_TOLERANCE) position = index + 1;
       break;
     }
   }
   const pans = plan.pans.map((pan, index) =>
-    clamp(scroll - plan.docks[index], 0, pan)
+    clamp(scroll - (plan.docks[index] ?? 0), 0, pan)
   );
   return { position, pans };
 }
@@ -141,7 +142,9 @@ export function settleOffset(
   const from = Math.floor(position);
   if (position === from) return null;
   const forward = direction > 0 || (direction === 0 && position - from >= 0.5);
-  return forward ? plan.docks[from + 1] : plan.docks[from] + plan.pans[from];
+  return forward
+    ? (plan.docks[from + 1] ?? null)
+    : (plan.docks[from] ?? 0) + (plan.pans[from] ?? 0);
 }
 
 export function stopPose(relative: number): StopPose {
