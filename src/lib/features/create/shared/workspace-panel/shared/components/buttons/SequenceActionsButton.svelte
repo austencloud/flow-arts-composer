@@ -105,6 +105,11 @@
     box-shadow: none;
   }
 
+  /* Quiet keeps the familiar green on the icon only. */
+  .sequence-actions-button.quiet i {
+    color: color-mix(in srgb, var(--semantic-success, #22c55e) 78%, white);
+  }
+
   .sequence-actions-button:active {
     transform: scale(0.95);
     transition-duration: var(--duration-instant);

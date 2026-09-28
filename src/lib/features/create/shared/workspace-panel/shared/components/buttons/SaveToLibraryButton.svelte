@@ -157,6 +157,11 @@
     box-shadow: none;
   }
 
+  /* Quiet keeps the familiar purple on the icon only. */
+  .save-button.quiet i {
+    color: color-mix(in srgb, var(--theme-accent-strong) 62%, white);
+  }
+
   .save-button:active:not(:disabled) {
     transform: scale(0.95);
     transition-duration: var(--duration-instant);

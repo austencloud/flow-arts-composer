@@ -308,6 +308,15 @@
     box-shadow: none;
   }
 
+  /* Quiet keeps the familiar icon color: green Play, blue expand. */
+  .view-sequence-button.quiet i {
+    color: color-mix(in srgb, var(--semantic-success) 78%, white);
+  }
+
+  .view-sequence-button.quiet.expand-purpose i {
+    color: color-mix(in srgb, var(--semantic-info) 72%, white);
+  }
+
   .view-sequence-button i {
     font-size: var(--font-size-lg);
   }

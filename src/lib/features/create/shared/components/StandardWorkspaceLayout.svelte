@@ -13,7 +13,6 @@
   import ButtonPanel from "../workspace-panel/shared/components/ButtonPanel.svelte";
   import UndoButton from "../workspace-panel/shared/components/buttons/UndoButton.svelte";
   import SaveToLibraryButton from "../workspace-panel/shared/components/buttons/SaveToLibraryButton.svelte";
-  import WordLabel from "../workspace-panel/sequence-display/components/WordLabel.svelte";
   import LazyMount from "$lib/shared/components/LazyMount.svelte";
   import PanelGroup from "$lib/shared/panels/PanelGroup.svelte";
   // CreationWorkspaceArea (85-file subtree) only renders once a sequence exists,
@@ -111,10 +110,11 @@
   const isWorkspacePlayback = $derived(!!panelState.workspacePlayback);
 
   // A stacked phone-width Assemble workspace spends two control rows around
-  // its step pictures. Folding the header's Undo/Redo, word and Save into the
-  // bottom rail returns that height to the pictures. Share moves to the
-  // Actions panel to make room. Below 340px the rail can't hold them, so the
-  // two-row layout returns.
+  // its step pictures. Folding the header's Undo/Redo and Save into the
+  // bottom rail, and the word into a thin strip between the corner badges,
+  // returns that height to the pictures. Share moves to the Actions panel to
+  // make room. Below 340px the rail can't hold them, so the two-row layout
+  // returns.
   const COMPACT_TOOLBAR_MIN_WIDTH = 340;
   const COMPACT_TOOLBAR_MAX_WIDTH = 600;
   const useCompactToolbar = $derived(
@@ -141,20 +141,24 @@
     return () => resizeObserver.disconnect();
   });
 
-  const activeTabAnimationState = $derived(
-    CreateModuleState.getActiveTabSequenceState().animationState
+  // The compact phone workspace spends a thin strip on the word, so it takes
+  // a slightly larger share to keep two rows of step pictures unclipped.
+  const defaultPanelSizes = $derived(
+    shouldUseSideBySideLayout
+      ? [1, 1]
+      : useCompactToolbar
+        ? [1, 2]
+        : isAssembleTab
+          ? [3, 7]
+          : [5, 4]
   );
 
   $effect(() => {
-    const layoutKey = `${shouldUseSideBySideLayout}:${isAssembleTab}`;
+    const layoutKey = `${shouldUseSideBySideLayout}:${isAssembleTab}:${useCompactToolbar}`;
     if (layoutKey === appliedPanelLayout) return;
 
     appliedPanelLayout = layoutKey;
-    panelSizes = shouldUseSideBySideLayout
-      ? [1, 1]
-      : isAssembleTab
-        ? [3, 7]
-        : [5, 4];
+    panelSizes = [...defaultPanelSizes];
   });
 
   // Fuse, Tunnel and Shape own complete workspaces inside their tool-panel surface.
@@ -261,20 +265,6 @@
   </div>
 {/snippet}
 
-{#snippet compactWordAction()}
-  <div class="word-label-slot compact-word-slot">
-    <WordLabel
-      word={currentDisplayWord}
-      scrollMode={false}
-      letterSources={currentLetterSources}
-      activeStepNumber={animatingStepNumber ?? panelState.practiceStepIndex}
-      historyTransitionEpoch={activeTabAnimationState.historyTransitionEpoch}
-      historyWordChanged={activeTabAnimationState.historyTransition
-        ?.wordChanged ?? false}
-    />
-  </div>
-{/snippet}
-
 {#snippet compactSaveAction()}
   {#if canSaveToLibrary}
     <div class="compact-save-action">
@@ -332,8 +322,16 @@
         class="workspace-history-actions"
         inert={!!panelState.workspacePlayback}
       >
-        <UndoButton {CreateModuleState} onAction={handleWorkspaceUndo} />
-        <UndoButton {CreateModuleState} direction="redo" />
+        <UndoButton
+          {CreateModuleState}
+          onAction={handleWorkspaceUndo}
+          quiet={isAssembleTab}
+        />
+        <UndoButton
+          {CreateModuleState}
+          direction="redo"
+          quiet={isAssembleTab}
+        />
       </div>
     {/if}
 
@@ -342,6 +340,7 @@
         <SaveToLibraryButton
           sequence={currentSequence}
           onclick={() => panelState.openSaveToLibraryPanel()}
+          quiet={isAssembleTab}
         />
       </div>
     {/if}
@@ -354,7 +353,6 @@
           {onViewSequence}
           compact={useCompactToolbar}
           leadingActions={compactHistoryActions}
-          titleAction={compactWordAction}
           trailingActions={compactSaveAction}
         />
       </div>
@@ -418,14 +416,14 @@
       {
         id: "create-workspace",
         content: workspacePanel,
-        defaultSize: shouldUseSideBySideLayout ? 1 : isAssembleTab ? 3 : 5,
+        defaultSize: defaultPanelSizes[0],
         fixedSize: !shouldShowWorkspace ? "0px" : undefined,
         resizable: false,
       },
       {
         id: "create-tool-panel",
         content: toolPanel,
-        defaultSize: shouldUseSideBySideLayout ? 1 : isAssembleTab ? 7 : 4,
+        defaultSize: defaultPanelSizes[1],
         fixedSize:
           isWorkspacePlayback || isAssembleComplete ? "0px" : undefined,
         resizable: false,
@@ -511,7 +509,6 @@
   /* The rail's zones let taps through to the grid; these wrappers are
      authored here, so ButtonPanel's own wrapper rule doesn't reach them. */
   .compact-history-actions,
-  .compact-word-slot,
   .compact-save-action {
     pointer-events: auto;
   }
@@ -524,16 +521,6 @@
   .compact-save-action {
     display: grid;
     place-items: center;
-  }
-
-  /* Takes the width Actions and Save leave; WordLabel measures this slot and
-     scales a long word down to fit it. */
-  .compact-word-slot {
-    display: grid;
-    place-items: center;
-    flex: 1 1 0;
-    min-width: var(--min-touch-target, 44px);
-    overflow: hidden;
   }
 
   /* Signals that the empty space around the preview closes it. */

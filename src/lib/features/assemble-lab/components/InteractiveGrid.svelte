@@ -1006,8 +1006,9 @@
   }
 
   @container tool-panel (max-width: 768px) {
+    /* Hug the dock so the turn button reads as sitting under the grid. */
     .interactive-grid {
-      place-self: center;
+      place-self: end center;
       border-radius: var(--settings-radius-md, 12px);
       border-color: var(--theme-stroke, rgba(255, 255, 255, 0.06));
       box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);

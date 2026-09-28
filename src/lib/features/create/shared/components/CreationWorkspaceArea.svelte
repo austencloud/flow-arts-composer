@@ -247,6 +247,7 @@
     word={currentDisplayWord}
     {letterSources}
     showTitle={!compactToolbar}
+    quietBadges={navigationState.activeTab === "assemble"}
     activeStepNumber={playback
       ? playbackStep
       : (animatingStepNumber ?? practiceStepIndex)}

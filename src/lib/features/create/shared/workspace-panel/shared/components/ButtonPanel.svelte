@@ -57,7 +57,6 @@
     visible = true,
     compact = false,
     leadingActions,
-    titleAction,
     trailingActions,
   }: {
     onClearSequence?: () => void;
@@ -66,7 +65,6 @@
     /** One-row rail: header actions join the panel and Share leaves it */
     compact?: boolean;
     leadingActions?: Snippet;
-    titleAction?: Snippet;
     trailingActions?: Snippet;
   } = $props();
 
@@ -84,6 +82,9 @@
     shareTarget.isMobile || !layout.shouldUseSideBySideLayout
   );
   const isAssembleTab = $derived(navigationState.activeTab === "assemble");
+  // Assemble uses plain buttons with colored icons at every size, so the
+  // pictures stay the focal point.
+  const quietRail = $derived(compact || isAssembleTab);
   const currentSequence = $derived.by(() => {
     const tabState = CreateModuleState.getActiveTabSequenceState();
     return tabState?.currentSequence ?? null;
@@ -213,7 +214,10 @@
         {#each leftButtons as btn (btn.id)}
           {#if btn.id === "clear" && canClearSequence && onClearSequence && !compact}
             <div transition:presenceTransition>
-              <ClearSequencePanelButton onclick={() => onClearSequence?.()} />
+              <ClearSequencePanelButton
+                quiet={quietRail}
+                onclick={() => onClearSequence?.()}
+              />
             </div>
           {/if}
         {/each}
@@ -240,7 +244,7 @@
                     <div class="expand-viewer-action">
                       <ViewSequenceButton
                         purpose="expand-viewer"
-                        quiet={compact}
+                        quiet={quietRail}
                         onclick={() => {
                           panelState.handoffWorkspacePlaybackToViewer();
                         }}
@@ -252,7 +256,7 @@
                     isActive={isExportPanelOpen}
                     isStopping={usesWorkspacePlayback &&
                       !!panelState.workspacePlayback}
-                    quiet={compact}
+                    quiet={quietRail}
                     playbackState={isWorkspacePlaybackPreparing
                       ? "preparing"
                       : hasWorkspacePlaybackError
@@ -269,9 +273,6 @@
 
       <!-- RIGHT ZONE: order/membership from the shared layout -->
       <div class="right-zone">
-        {#if compact && titleAction}
-          {@render titleAction()}
-        {/if}
         {#each rightButtons as btn (btn.id)}
           {#if btn.id === "sequence-actions" && showSequenceActions}
             <div
@@ -279,13 +280,17 @@
               transition:presenceTransition
             >
               <SequenceActionsButton
-                quiet={compact}
+                quiet={quietRail}
                 onclick={() =>
                   panelState.openSequenceActionsPanel("workspace_button")}
               />
             </div>
           {:else if btn.id === "share" && canShareSequence && !compact}
-            <div transition:presenceTransition>
+            <div
+              class="share-slot"
+              class:quiet={quietRail}
+              transition:presenceTransition
+            >
               <ShareButton
                 sequence={currentSequence}
                 useMobileSheet={useMobileShareSheet}
@@ -599,15 +604,24 @@
     }
   }
 
-  /* The compact rail spreads each side across its half so the word chip in
-     the right zone can take whatever width Actions and Save leave over. */
-  .button-panel.compact-rail .left-zone,
-  .button-panel.compact-rail .right-zone {
-    width: 100%;
+  /* Share renders a shared trigger, so its quiet look is applied from here:
+     plain surface, purple icon, matching the other quiet rail buttons. */
+  .share-slot.quiet :global(.share-action-trigger) {
+    border: 1px solid var(--theme-stroke);
+    background: var(--theme-card-bg);
+    box-shadow: none;
+    color: var(--theme-text);
   }
 
-  .button-panel.compact-rail .right-zone {
-    justify-content: flex-end;
+  .share-slot.quiet :global(.share-action-trigger i) {
+    color: color-mix(in srgb, var(--theme-accent) 62%, white);
+  }
+
+  @media (hover: hover) {
+    .share-slot.quiet :global(.share-action-trigger:hover:not(:disabled)) {
+      background: var(--theme-card-hover-bg);
+      box-shadow: none;
+    }
   }
 
   @container button-panel (max-width: 330px) {

@@ -313,8 +313,9 @@
       width: 100%;
     }
 
+    /* The dock under the grid takes the second row. */
     .grid-slot {
-      grid-template-rows: minmax(0, 1fr);
+      grid-template-rows: minmax(0, 1fr) auto;
     }
 
     .stage-slot {

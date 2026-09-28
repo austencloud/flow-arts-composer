@@ -241,6 +241,11 @@
     box-shadow: none;
   }
 
+  /* Quiet keeps the familiar purple on the icon only. */
+  .undo-button.quiet :global(.undo-glyph) {
+    color: color-mix(in srgb, var(--theme-accent-strong) 62%, white);
+  }
+
   .undo-button:active {
     transform: scale(0.95);
     transition-duration: var(--duration-instant);
