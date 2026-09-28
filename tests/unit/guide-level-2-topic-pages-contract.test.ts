@@ -2,7 +2,7 @@
  * Static contract test for the Level-2 per-topic crawlable routes
  * (`/guide/level-2/<slug>`, added so each Level-2 topic can rank on its own
  * instead of only existing as one section inside the long `/guide/level-2/turns`
- * / `/guide/level-2/double-turns` pages — see level2-topic-manifest.ts for the
+ * / `/guide/level-2/double-turns` pages — see level2-topic-routes.ts for the
  * section → route mapping and level-1's `guide-manifest.ts` / `[slug]` route
  * for the pattern this mirrors).
  *
@@ -19,7 +19,7 @@ import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
-import { LEVEL2_TOPIC_PAGES } from "../../src/routes/(public)/guide/level-2/_data/level2-topic-manifest";
+import { LEVEL2_TOPIC_PAGES } from "../../src/routes/(public)/guide/level-2/_data/level2-topic-routes";
 
 const repoRoot = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
@@ -37,6 +37,10 @@ const SLUG_ROUTE_SVELTE =
 const TOPIC_BODY =
   "src/routes/(public)/guide/level-2/_components/Level2TopicBody.svelte";
 const SITEMAP = "src/routes/sitemap.xml/+server.ts";
+const TOPIC_ROUTES =
+  "src/routes/(public)/guide/level-2/_data/level2-topic-routes.ts";
+const TOPIC_SECTIONS =
+  "src/routes/(public)/guide/level-2/_data/level2-topic-sections.ts";
 
 describe("LEVEL2_TOPIC_PAGES manifest", () => {
   it("has a reasonable number of substantive topics (fewer than the raw section/print-page count, more than the 3 old concatenated routes)", () => {
@@ -44,12 +48,11 @@ describe("LEVEL2_TOPIC_PAGES manifest", () => {
     expect(LEVEL2_TOPIC_PAGES.length).toBeLessThan(20);
   });
 
-  it("every entry has a non-empty h1, title, description, and at least one section", () => {
+  it("every entry has a non-empty h1, title, description, and anchor list", () => {
     for (const p of LEVEL2_TOPIC_PAGES) {
       expect(p.h1.length, `${p.slug}: h1`).toBeGreaterThan(0);
       expect(p.title.length, `${p.slug}: title`).toBeGreaterThan(0);
       expect(p.description.length, `${p.slug}: description`).toBeGreaterThan(0);
-      expect(p.sections.length, `${p.slug}: sections`).toBeGreaterThanOrEqual(1);
       expect(p.anchorIds.length, `${p.slug}: anchorIds`).toBeGreaterThanOrEqual(1);
       expect(p.chapter === "turns" || p.chapter === "double-turns", p.slug).toBe(
         true
@@ -86,6 +89,33 @@ describe("LEVEL2_TOPIC_PAGES manifest", () => {
       LEVEL2_TOPIC_PAGES.some((p) => p.chapter === "double-turns")
     ).toBe(true);
   });
+
+  // The sitemap, the sidebar on every guide page and the chapter hubs read
+  // this module. One component import here drags the animation player, app
+  // state and Firestore into all of them again.
+  it("the page data imports nothing, so metadata readers skip the section components", () => {
+    expect(read(TOPIC_ROUTES)).not.toMatch(/^import /m);
+  });
+
+  // Read from source so this test stays off the component graph. A slug
+  // without sections still prerenders and sits in the sitemap, with an
+  // empty body under its <h1>.
+  it("every topic slug renders at least one section, and every section list belongs to a topic", () => {
+    const sectionLists = new Map(
+      [
+        ...read(TOPIC_SECTIONS).matchAll(/^\s+"([a-z0-9-]+)": \[([^\]]*)\]/gm),
+      ].map(([, slug, list = ""]) => [
+        slug,
+        list.split(",").filter((name) => name.trim()),
+      ])
+    );
+    expect([...sectionLists.keys()].sort()).toEqual(
+      LEVEL2_TOPIC_PAGES.map((p) => p.slug).sort()
+    );
+    for (const [slug, components] of sectionLists) {
+      expect(components.length, `${slug}: sections`).toBeGreaterThanOrEqual(1);
+    }
+  });
 });
 
 describe("/guide/level-2/[slug] route", () => {
@@ -112,7 +142,7 @@ describe("/guide/level-2/[slug] route", () => {
   });
 
   it("renders every manifest page's sections and prev/next nav", () => {
-    expect(body).toMatch(/meta\.sections as Section/);
+    expect(body).toMatch(/LEVEL2_TOPIC_SECTIONS\[meta\.slug\].* as Section/);
     expect(body).toContain("topic-nav");
   });
 });
@@ -141,7 +171,7 @@ describe("sitemap", () => {
 
   it("imports LEVEL2_TOPIC_PAGES and lists a guide/level-2/<slug> entry per topic", () => {
     expect(sitemapSrc).toContain(
-      'import { LEVEL2_TOPIC_PAGES } from "../(public)/guide/level-2/_data/level2-topic-manifest";'
+      'import { LEVEL2_TOPIC_PAGES } from "../(public)/guide/level-2/_data/level2-topic-routes";'
     );
     expect(sitemapSrc).toMatch(/guide\/level-2\/\$\{p\.slug\}/);
     expect(sitemapSrc).toMatch(/\.\.\.guideLevel2TopicEntries/);
