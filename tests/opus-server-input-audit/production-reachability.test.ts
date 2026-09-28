@@ -1,19 +1,26 @@
 /**
  * AUDIT (read-only): which handlers still execute when `dev` is false.
  *
- * Two things decide whether a `/test/**` or `/api/dev/**` endpoint is a
+ * Three things decide whether a `/test/**` or `/api/dev/**` endpoint is a
  * production surface:
  *
  *  1. `svelte.config.js` routes.exclude does not list `/test/*`, so those
  *     endpoints are compiled into the Cloudflare Worker.
  *  2. `src/routes/test/+layout.ts` redirects away from `/test` when `!dev`,
- *     but it is a `LayoutLoad` — layout loads do not run for standalone
- *     `+server.ts` endpoints, so it guards pages only.
+ *     but it is a `LayoutLoad`. Layout loads do not run for standalone
+ *     `+server.ts` endpoints, or for the `__data.json` request that serves a
+ *     `+page.server.ts` load, so it guards page navigation only.
+ *  3. `src/hooks.server.ts` redirects every `/test` route when `!dev`, before
+ *     any of its loads or handlers run.
  *
- * That leaves the per-handler `dev` check as the only gate. These tests
- * re-import each handler with `dev: false` and record which ones stop.
+ * Outside `/test`, the per-handler `dev` check is the only gate. These tests
+ * re-import each handler with `dev: false` and record which ones stop, then
+ * run the server hook against every `/test` server file.
  */
+import { readdirSync } from "node:fs";
+import { basename, dirname, join, relative, resolve } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { INTERNAL_ROUTE_FALLBACK } from "../../src/config/build-flags";
 
 /** Re-import a handler module with `$app/environment` reporting production. */
 async function inProduction<T>(loader: () => Promise<T>): Promise<T> {
@@ -77,7 +84,10 @@ describe("dev guards that DO stop the handler in production", () => {
   });
 });
 
-describe("/test/qft-page endpoints ship without a dev guard", () => {
+// These handlers still carry no `dev` check of their own; in production the
+// server hook stops their requests first (see the last describe block). What
+// follows measures the handler bodies, as the dev server runs them.
+describe("/test/qft-page handlers carry no dev check of their own", () => {
   it("still validates and answers a request when dev is false", async () => {
     const { GET } = await inProduction(
       () => import("../../src/routes/test/qft-page/img/[file]/+server")
@@ -96,8 +106,9 @@ describe("/test/qft-page endpoints ship without a dev guard", () => {
     );
 
     // 404 (not 403) means the handler executed and the archive simply is not
-    // on disk — the private archive is not deployed, which is what keeps this
-    // from being an exposure today rather than any check in the route.
+    // on disk. Before the server hook refused /test in production, the private
+    // archive staying undeployed was all that kept this from being an
+    // exposure; nothing in the route checks it.
     await expect(
       GET({ params: { file: "nosuchimage.gif" } } as never)
     ).rejects.toMatchObject({
@@ -144,4 +155,61 @@ describe("/test/qft-page endpoints ship without a dev guard", () => {
       });
     }
   });
+});
+
+const ROUTES = resolve(__dirname, "../../src/routes");
+
+/** Every file under /test that runs on the server. */
+function testServerFiles(dir = join(ROUTES, "test")): string[] {
+  return readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
+    const path = join(dir, entry.name);
+    if (entry.isDirectory()) return testServerFiles(path);
+    return /^\+(server|page\.server|layout\.server)\.(ts|js)$/.test(entry.name)
+      ? [path]
+      : [];
+  });
+}
+
+// A server load runs on its page's __data.json request, which SvelteKit
+// routes to the page's own route id with the suffix stripped from event.url.
+const TEST_SERVER_ROUTES = testServerFiles().map((file) => ({
+  routeId: `/${relative(ROUTES, dirname(file)).replace(/\\/g, "/")}`,
+  isDataRequest: !/^\+server\.(ts|js)$/.test(basename(file)),
+}));
+
+// Several of these files carry no dev check of their own, so the hook is the
+// only thing between them and a production request.
+describe("the server hook stops every /test server file in production", () => {
+  it("finds both endpoints and server loads to check", () => {
+    const kinds = new Set(TEST_SERVER_ROUTES.map((r) => r.isDataRequest));
+    expect(kinds).toEqual(new Set([true, false]));
+  });
+
+  it.each(TEST_SERVER_ROUTES)(
+    "$routeId redirects before it runs",
+    async ({ routeId, isDataRequest }) => {
+      const { handle } = await inProduction(
+        () => import("../../src/hooks.server")
+      );
+      const request = new Request(`https://tkaflowarts.com${routeId}`);
+      const resolveRoute = vi.fn(async () => new Response("route ran"));
+
+      await expect(
+        handle({
+          event: {
+            url: new URL(request.url),
+            request,
+            route: { id: routeId },
+            params: {},
+            isDataRequest,
+          },
+          resolve: resolveRoute,
+        } as never)
+      ).rejects.toMatchObject({
+        status: 307,
+        location: INTERNAL_ROUTE_FALLBACK,
+      });
+      expect(resolveRoute).not.toHaveBeenCalled();
+    }
+  );
 });
