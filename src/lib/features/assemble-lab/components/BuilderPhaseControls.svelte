@@ -185,37 +185,24 @@
     width: 100%;
     min-width: var(--min-touch-target, 44px);
     min-height: var(--min-touch-target, 44px);
-    padding: 6px 10px;
-    border: 1px solid
-      color-mix(in srgb, var(--theme-accent, #26c6da) 50%, transparent);
+    padding: 6px 12px;
+    border: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.1));
     border-radius: var(--settings-radius-md, 12px);
-    background: color-mix(
-      in srgb,
-      var(--theme-accent, #26c6da) 15%,
-      var(--theme-card-bg, rgba(10, 22, 30, 0.92))
-    );
-    color: color-mix(in srgb, var(--theme-accent, #26c6da) 62%, white);
+    background: var(--theme-card-bg, rgba(10, 22, 30, 0.92));
+    color: var(--theme-text, #fff);
     font-size: var(--font-size-min, 14px);
-    font-weight: 800;
+    font-weight: 700;
     cursor: pointer;
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.09);
     transition:
       background var(--duration-fast, 150ms) ease,
       border-color var(--duration-fast, 150ms) ease,
       transform var(--duration-fast, 150ms) ease;
   }
 
-  .phase-trigger:hover {
-    border-color: color-mix(
-      in srgb,
-      var(--theme-accent, #26c6da) 76%,
-      transparent
-    );
-    background: color-mix(
-      in srgb,
-      var(--theme-accent, #26c6da) 24%,
-      var(--theme-card-bg, rgba(10, 22, 30, 0.92))
-    );
+  .phase-trigger:hover,
+  .phase-trigger[data-state="open"] {
+    border-color: var(--theme-stroke-strong, rgba(255, 255, 255, 0.2));
+    background: var(--theme-card-hover-bg, rgba(255, 255, 255, 0.08));
   }
 
   .phase-trigger:active {
@@ -227,8 +214,10 @@
     outline-offset: 2px;
   }
 
+  /* Plain surface, colored icon: the same quiet look as the workspace rail. */
   .phase-trigger i {
     flex: 0 0 auto;
+    color: color-mix(in srgb, var(--theme-accent, #26c6da) 70%, white);
     font-size: 12px;
     transition: transform var(--duration-fast, 150ms) ease;
   }
