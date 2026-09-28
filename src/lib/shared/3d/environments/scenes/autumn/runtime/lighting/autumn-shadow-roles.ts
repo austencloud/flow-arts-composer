@@ -12,9 +12,9 @@
  * fog horizon, so casting from them would pay large depth passes for geometry
  * that can never darken a visible performance-space pixel.
  *
- * Grass is excluded from BOTH roles here because AutumnWind owns those meshes
- * and already sets them to receive-only; claiming them twice would make the
- * winner depend on effect ordering.
+ * Grass is excluded from BOTH roles here because the wind pass in
+ * createAutumnMaterialRuntime owns those meshes and sets them to receive-only
+ * after this pass runs.
  *
  * One consequence of the asset pipeline is worth knowing: the optimizer's
  * GPU-instancing pass collapses every repeated asset (ferns, saplings, the
@@ -40,7 +40,7 @@ const NEITHER: AutumnShadowRole = { cast: false, receive: false };
 const RECEIVE_ONLY: AutumnShadowRole = { cast: false, receive: true };
 const CAST_AND_RECEIVE: AutumnShadowRole = { cast: true, receive: true };
 
-/** Owned by AutumnWind, or too far out to reach the shadow camera. */
+/** Owned by the Autumn wind pass, or too far out to reach the shadow camera. */
 const EXCLUDED_PREFIXES = [
   // Starts beyond the +/-20m shadow camera. Sampling that map on the 1,024m
   // fog apron creates false diagonal seams without receiving any real caster.

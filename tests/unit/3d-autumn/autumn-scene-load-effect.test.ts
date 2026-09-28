@@ -23,15 +23,18 @@ const stubs = vi.hoisted(() => ({
   loads: [] as PendingLoad[],
   loadAssets: vi.fn(),
   createWorld: vi.fn(),
+  frame: null as ((delta: number) => void) | null,
 }));
 
 vi.mock("@threlte/core", () => ({
   useThrelte: () => ({
-    camera: { current: null },
+    camera: { current: {} },
     renderer: { domElement: document.createElement("canvas") },
     scene: { fog: null, background: null },
   }),
-  useTask: () => undefined,
+  useTask: (task: (delta: number) => void) => {
+    stubs.frame = task;
+  },
 }));
 
 vi.mock("@austencloud/scene-3d", () => ({
@@ -101,6 +104,7 @@ describe("AutumnScene load effect", () => {
   beforeEach(() => {
     vi.spyOn(console, "debug").mockImplementation(() => {});
     stubs.loads.length = 0;
+    stubs.frame = null;
     stubs.loadAssets.mockImplementation(startLoad);
     stubs.createWorld.mockImplementation(fakeWorld);
     features = createSceneFeatureState(undefined, { isolated: true });
@@ -148,6 +152,35 @@ describe("AutumnScene load effect", () => {
     expect(world.dispose).not.toHaveBeenCalled();
     expect(features.isReady("environment")).toBe(true);
     expect(stubs.loadAssets).toHaveBeenCalledTimes(1);
+  });
+
+  // The scene clears its world slot on teardown only if the slot still holds
+  // the world that effect built. A deep $state proxy never equals the raw
+  // world, so the slot kept the disposed world and the frame loop, fog and
+  // pointer handlers went on driving it until the retried load landed.
+  it("stops driving a world once a retry disposes it", async () => {
+    flushSync();
+    const [load] = stubs.loads;
+    if (!load) throw new Error("the scene never started a load");
+    load.resolve({
+      environment: new Group(),
+      groundDetailMap: null,
+      moonTexture: null,
+    });
+    await load.settled;
+    flushSync();
+    const world = stubs.createWorld.mock.results[0]?.value as ReturnType<
+      typeof fakeWorld
+    >;
+    stubs.frame?.(1 / 60);
+    expect(world.update).toHaveBeenCalledTimes(1);
+
+    features.requestRetry("environment");
+    flushSync();
+    stubs.frame?.(1 / 60);
+
+    expect(world.dispose).toHaveBeenCalledTimes(1);
+    expect(world.update).toHaveBeenCalledTimes(1);
   });
 
   it("restarts the load once per retry request", () => {
