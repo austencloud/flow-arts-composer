@@ -270,6 +270,7 @@
     sourceHeight: number;
     fit: "cover" | "contain";
     zoom: number;
+    rotation: number;
     moved: boolean;
   }
 
@@ -340,6 +341,7 @@
         sourceHeight: size.height,
         fit: video.fit,
         zoom: framing.zoom,
+        rotation: framing.rotation,
         moved: false,
       };
       return;
@@ -403,6 +405,7 @@
         regionHeightPx: current.regionHeightPx,
         fit: current.fit,
         zoom: current.zoom,
+        rotation: current.rotation,
         startPanX: current.startPanX,
         startPanY: current.startPanY,
         deltaXPx: pixelsX,
@@ -505,6 +508,7 @@
       regionHeightPx: box.height * rect.height,
       fit: item.fit,
       zoom: framing.zoom,
+      rotation: framing.rotation,
       panX: framing.panX,
       panY: framing.panY,
       directionX: direction[0],
@@ -560,6 +564,7 @@
     sourceWidth: number;
     sourceHeight: number;
     fit: "cover" | "contain";
+    rotation: number;
     moved: boolean;
   }
 
@@ -611,6 +616,7 @@
       sourceWidth: size.width,
       sourceHeight: size.height,
       fit: item.fit,
+      rotation: framing.rotation,
       moved: false,
     };
   }
@@ -642,6 +648,7 @@
       regionHeightPx: current.regionHeightPx,
       fit: current.fit,
       zoom: current.zoom,
+      rotation: current.rotation,
       panX: current.panX,
       panY: current.panY,
       distanceRatio: current.distance > 0 ? distance / current.distance : 1,
@@ -820,7 +827,6 @@
                   clipId={entry.clip.id}
                   transform={layer.transform}
                   playbackRate={entry.clip.playbackRate}
-                  revealOverflow={revealed && entry.live}
                 />
               </div>
             {/if}
