@@ -914,7 +914,6 @@
     margin-bottom: var(--stop-gap);
     font-size: var(--stop-title-size);
     text-align: center;
-    scroll-margin-top: calc(var(--marketing-header-h, 64px) + 1rem);
   }
 
   /* The builder and the generator fill a frame of definite height: both

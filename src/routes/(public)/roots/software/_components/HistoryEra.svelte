@@ -42,7 +42,6 @@
 <style>
   .history-era {
     position: relative;
-    scroll-margin-top: 6rem;
     padding: 0 0 clamp(4rem, 3rem + 2vw, 7rem)
       clamp(2.25rem, 1.8rem + 1vw, 3.5rem);
   }

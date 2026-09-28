@@ -202,7 +202,6 @@
     width: min(calc(100% - 48px), 1480px);
     margin: 0 auto;
     padding: 64px 0 72px;
-    scroll-margin-top: 88px;
     container-type: inline-size;
   }
 
@@ -353,7 +352,6 @@
 
       width: min(calc(100% - 32px), 680px);
       padding: 48px 0 56px;
-      scroll-margin-top: 72px;
     }
 
     .section-intro {

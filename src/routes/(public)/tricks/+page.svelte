@@ -133,7 +133,6 @@
     background: oklch(0.16 0.018 270 / 0.5);
     border: 1px solid oklch(0.45 0.04 270 / 0.2);
     border-radius: 14px;
-    scroll-margin-top: 96px;
   }
 
   .trick.timed {
