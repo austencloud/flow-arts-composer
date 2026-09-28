@@ -335,3 +335,18 @@ keeps the preview.
 Discovery: `generateForSequence`, `qr-image-cache`, `prepared-scan-card`,
 `warmSequenceCells`, `pictograph-cloud-cache`. Decision: extend these owners;
 do not introduce a second QR renderer or scan-asset preparation pipeline.
+
+Sign-in reads that must not load Firebase go through
+`shared/auth/loaded-auth.ts` (`loadedAuth.currentUser`) and
+`shared/auth/state/loaded-auth-state.svelte.ts` (`loadedAuthState.isAdmin`).
+`firebase.ts` and `auth-state.svelte.ts` remain the owners and register a
+reader when they load; before that nobody can be signed in, so the answers are
+null and false. Public pages import settings, feature flags and the premium
+prop check, and importing either owner there put Firebase Auth and Firestore on
+their first download. Firestore calls on those paths load it with `import()`
+that names the Firebase modules directly, because the small-chunk merge in
+`vite.config.ts` can fold a small wrapper module back into the page.
+`scripts/verify-public-firebase.mjs` checks the listed public pages in the
+built chunk graph. Searches: currentUser, signed-in user, isAdmin, public page
+Firebase, first download. Decision: extend the two owners; code a public page
+loads at startup uses these readers instead of importing either owner.

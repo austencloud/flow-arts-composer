@@ -8,14 +8,6 @@
  * The SHA-256 hash is computed via Web Crypto API (native, zero dependencies).
  */
 
-import {
-	collection,
-	query,
-	where,
-	getDocs,
-	limit,
-} from "firebase/firestore";
-import { getFirestoreInstance } from "$lib/shared/auth/firebase";
 import { getPublicSequencesPath } from "$lib/shared/library/data/firestore-paths";
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
 import type { PublicSequenceIndex } from "$lib/shared/foundation/domain/models/public-sequence-index";
@@ -31,6 +23,16 @@ export class PublicSequenceHashMatcher {
 		sequence: SequenceData
 	): Promise<SequenceMatchResult> {
 		const hash = await this.computeEncoderHash(sequence);
+		// Firebase loads on the first lookup rather than with this module. The
+		// build can pack this module into a chunk that public pages such as the
+		// spinner load to start, and a Firebase import at the top put all of
+		// Firebase on their first download. The import() names the Firebase
+		// modules themselves: the small-chunk merge in vite.config.ts can fold a
+		// small wrapper module back into the page.
+		const { collection, getDocs, limit, query, where } = await import(
+			"firebase/firestore"
+		);
+		const { getFirestoreInstance } = await import("$lib/shared/auth/firebase");
 		const firestore = await getFirestoreInstance();
 
 		const snap = await getDocs(
