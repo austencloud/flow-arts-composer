@@ -25,6 +25,7 @@ export type PostPanelToolId =
   | "layout"
   | "position"
   | "fade"
+  | "effects"
   | "labels"
   | "shows"
   | "text"
@@ -86,6 +87,7 @@ export function toolRow(selection: PostToolSelection): PostToolId[] {
         ...(selection.hasLayout ? (["layout"] as const) : []),
         "position",
         "fade",
+        "effects",
         "beats",
         "rename",
         "duplicate",

@@ -196,7 +196,9 @@
           Damien called the elementary families rosettes and cycloids. In
           standard curve language they belong to the centered trochoid family;
           his cycloid cases are the cusp-forming epicycloids or hypocycloids.
-          The plots below use his published parameters.
+          The plots below use his published parameters. Their names say
+          inspin, the poi community's word for what the Kinetic Alphabet calls
+          <a href="/guide/prospin-and-inspin">prospin</a>.
         </p>
         <p class="atlas-credit">
           The animated reference illustrations Damien linked were by

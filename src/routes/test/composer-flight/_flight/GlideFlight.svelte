@@ -8,8 +8,9 @@
    * browser's compositor runs the glide, so a busy page cannot make it
    * stutter, and the rest of the gesture that started it is absorbed, so one
    * flick moves one section. A section taller than the stage pans with the
-   * scroll while it rests. A small window or reduced motion gets the plain
-   * page instead.
+   * scroll while it rests, and a gesture that reaches its end stops there
+   * before the next one glides on. A small window or reduced motion gets the
+   * plain page instead.
    */
   import type { Snippet } from "svelte";
   import { MediaQuery } from "svelte/reactivity";
@@ -25,6 +26,7 @@
     nearestStop,
     planStops,
     restPan,
+    restRange,
   } from "./flight-camera";
   import { harness } from "./harness.svelte";
   import { headerHeight, pageSections, sectionTitle } from "./page-sections";
@@ -106,6 +108,11 @@
     let unlockTimer = 0;
     let starFrame = 0;
     let starDepth = 0;
+    /** True from a Tab press until the focus move it causes is done. */
+    let tabbing = false;
+    let lastScroll = 0;
+    /** The resting stop's pan when the scroll gesture under way began. */
+    let gesturePan = 0;
 
     // Whole device pixels, so a resting section's text stays sharp.
     const restY = (index: number, panned: number) =>
@@ -202,6 +209,10 @@
       for (const animation of glides) animation.cancel();
       glides = [];
       depth = starDepth;
+      // A section that loaded mid-glide can have moved the stop just landed on.
+      if (Math.abs(window.scrollY - holdOffset()) > 0.5) {
+        window.scrollTo({ top: holdOffset(), behavior: "instant" });
+      }
       if (queued) {
         const next = queued;
         queued = null;
@@ -258,6 +269,10 @@
 
     const onScroll = () => {
       if (!measured) return;
+      // Scroll after a quiet moment is a new gesture; note where it began.
+      const now = performance.now();
+      if (now - lastScroll > QUIET_MS) gesturePan = pan;
+      lastScroll = now;
       if (locked) {
         const hold = holdOffset();
         if (Math.abs(window.scrollY - hold) > 0.5) {
@@ -273,6 +288,22 @@
           pan = panned;
           sections[current].style.transform = pose(current, pan, 0).transform;
         }
+        return;
+      }
+      // One gesture reads on through a tall stop or leaves it, never both, so
+      // a page-down or a long flick cannot skip the rest of a section: one
+      // that began short of the end stops there, and the next one glides. A
+      // jump of several stops, as a dragged scrollbar makes, goes straight on.
+      const edge = target > current ? (plan.pans[current] ?? 0) : 0;
+      if (
+        Math.abs(target - current) === 1 &&
+        Math.abs(gesturePan - edge) > plan.hold
+      ) {
+        pan = edge;
+        sections[current].style.transform = pose(current, pan, 0).transform;
+        lastInput = now;
+        lock();
+        releaseWhenQuiet();
         return;
       }
       // Scrolling back arrives at the end of a tall stop, where it was left.
@@ -296,12 +327,20 @@
       return (target.getBoundingClientRect().top - box.top) / scale - room / 3;
     };
 
-    // Keyboard focus landing in a section the camera is not resting on
-    // glides there, so a focused control is never left unseen.
+    // Tab marks the focus move it causes as the reader's own. The page's demos
+    // move focus by themselves as they play, and that must not pull the
+    // camera back to a section the reader has left.
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "Tab") return;
+      tabbing = true;
+      setTimeout(() => (tabbing = false));
+    };
+
+    // Tabbing into a section the camera is not resting on glides there, so a
+    // focused control is never left unseen.
     const onFocusIn = (event: FocusEvent) => {
       const target = event.target;
-      if (!(target instanceof HTMLElement) || !target.matches(":focus-visible"))
-        return;
+      if (!tabbing || !(target instanceof HTMLElement)) return;
       const index = sections.findIndex((section) => section.contains(target));
       if (index < 0 || index === current) return;
       glide(index, panToShow(index, target));
@@ -327,6 +366,8 @@
 
     const measure = () => {
       const viewport = window.innerHeight;
+      const wasAt = trackTop + (plan.docks[current] ?? 0);
+      const wasSpan = plan.pans[current] ?? 0;
       restTop = headerHeight(page) + TOP_GAP;
       room = viewport - restTop - CONTROLS_BAND;
       page.style.setProperty("--flight-room", `${room}px`);
@@ -340,20 +381,30 @@
       });
       stage.style.height = `${plan.length + viewport}px`;
       trackTop = stage.getBoundingClientRect().top + window.scrollY;
-      if (!measured) {
+      const offset = window.scrollY - trackTop;
+      const first = !measured;
+      if (first) {
         // A reload can land anywhere on the page: rest on the nearest stop.
-        const offset = window.scrollY - trackTop;
         current = nearestStop(plan, offset);
         pan = restPan(plan, current, offset);
         active = current;
         measured = true;
       }
       pan = Math.min(pan, plan.pans[current] ?? 0);
-      if (glides.length) return;
+      if (glides.length) return; // land() settles the scroll instead
       place();
-      // A section above that changed height moves every stop after it; keep
-      // the reader on the same stop instead of reading that as a scroll.
-      if (glideTarget(plan, current, window.scrollY - trackTop) !== null) {
+      // A section above that changed height moves the stop the reader rests
+      // on. Follow it, so the view stays put instead of reading the change
+      // as a scroll. Past the last stop the reader is on the footer, which
+      // scrolls as usual.
+      const moved =
+        first ||
+        Math.abs(trackTop + plan.docks[current] - wasAt) > 0.5 ||
+        plan.pans[current] !== wasSpan;
+      const last = plan.docks.length - 1;
+      const onFooter =
+        current === last && offset > restRange(plan, last).end;
+      if (moved && !onFooter && Math.abs(window.scrollY - holdOffset()) > 0.5) {
         window.scrollTo({ top: holdOffset(), behavior: "instant" });
       }
     };
@@ -366,6 +417,7 @@
     window.addEventListener("scroll", onScroll, { passive: true });
     window.addEventListener("wheel", absorb, { passive: false });
     window.addEventListener("touchmove", absorb, { passive: false });
+    window.addEventListener("keydown", onKeyDown, true);
     page.addEventListener("focusin", onFocusIn);
     page.addEventListener("click", onClick);
     measure();
@@ -379,6 +431,7 @@
       window.removeEventListener("scroll", onScroll);
       window.removeEventListener("wheel", absorb);
       window.removeEventListener("touchmove", absorb);
+      window.removeEventListener("keydown", onKeyDown, true);
       page.removeEventListener("focusin", onFocusIn);
       page.removeEventListener("click", onClick);
       page.style.removeProperty("--flight-room");
@@ -447,7 +500,8 @@
   }
 
   /* Every section shares one cell and floats in the space itself. Only one
-     rests there at a time, so none needs a backing to hide another. */
+     rests there at a time, so none needs a backing to hide another, and the
+     rules that divide neighbours on the plain page have nothing to divide. */
   .glide-flight :global(.composer-page > section) {
     grid-area: 1 / 1;
     align-self: start;
@@ -455,15 +509,24 @@
     box-sizing: border-box;
     width: min(100% - 10rem, var(--shell-w, min(1720px, 92vw)));
     margin: 0;
+    border-block: 0;
     will-change: transform, opacity;
     backface-visibility: hidden;
   }
 
-  /* The hero sizes itself to the window; on the stage it fills the room, and
-     without its scroll cue it needs no extra space below. */
+  /* The hero sizes its player to the window; on the stage it fills the room
+     between the header and Next instead, and without its scroll cue it needs
+     no extra space below. */
   .glide-flight :global(.composer-page > .opening) {
+    --hero-card-cap: min(45rem, calc(var(--flight-room, 100svh) * 0.47));
     min-height: var(--flight-room, auto);
     padding-bottom: clamp(0.75rem, 2vw, 28px);
+  }
+
+  @media (min-width: 105rem) and (min-height: 56.25rem) {
+    .glide-flight :global(.composer-page > .opening) {
+      --hero-card-cap: min(52rem, calc(var(--flight-room, 100svh) * 0.51));
+    }
   }
 
   .glide-flight :global(.composer-page .scroll-cue) {

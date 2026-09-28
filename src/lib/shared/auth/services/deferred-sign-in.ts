@@ -9,8 +9,8 @@
  * does it load the real auth state, at the browser's next idle moment.
  * Signing in that way also attaches settings sync (auth-boot-orchestrator.ts).
  *
- * The site header and the headerless Shape Engine page share this. Each picks
- * the storage check that fits it; see the two checks below.
+ * The site header and the headerless Shape Engine page share this, down to the
+ * one storage check below.
  */
 import type { authState as AuthStateInstance } from "../state/auth-state.svelte";
 
@@ -25,33 +25,11 @@ const AUTH_STORE = "firebaseLocalStorage";
 const SAVED_USER_KEY_PREFIX = "firebase:authUser:";
 
 /**
- * Has this browser ever created Firebase's sign-in database? The site
- * header's check. It stays yes after sign-out, and once any page has loaded
- * Firebase, so a signed-out visitor can still start sign-in. It never looks
- * at localStorage, where Safari and iOS keep the session.
- */
-export async function hasFirebaseAuthDatabase(): Promise<boolean> {
-  try {
-    if (typeof indexedDB === "undefined") return false;
-    // indexedDB.databases() is available in Chromium/WebKit. If unavailable,
-    // assume auth may exist and let the real init decide.
-    if (typeof indexedDB.databases !== "function") return true;
-    const databases = await indexedDB.databases();
-    return databases.some((database) => database.name === AUTH_DATABASE);
-  } catch (error) {
-    console.debug(
-      "[deferred-sign-in] Auth persistence probe unavailable:",
-      error
-    );
-    return true;
-  }
-}
-
-/**
- * Is a Firebase user saved in this browser right now? Pages that load Firebase
- * for every visitor need this stricter check: there the database exists for
- * signed-out visitors too, so only the saved user record tells them apart.
- * It reads Firebase's database without ever creating it.
+ * Is a Firebase user, signed in or guest, saved in this browser right now?
+ * Only the saved user record tells: whether Firebase's database exists does
+ * not. Safari and iOS never create it, and elsewhere it outlives sign-out and
+ * appears for signed-out visitors once any page loads Firebase. It reads the
+ * database without ever creating it.
  */
 export async function hasSavedFirebaseUser(): Promise<boolean> {
   try {

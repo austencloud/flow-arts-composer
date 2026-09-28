@@ -28,6 +28,7 @@ import {
   type PostItem,
   type PostMovesMode,
   type PostProject,
+  type PostStaffEffectId,
   type PostTextSize,
   type PostTrack,
   type PostVideoItem,
@@ -592,6 +593,8 @@ export interface PostItemPatch {
   mode?: PostMovesMode;
   text?: string;
   size?: PostTextSize;
+  /** A clip's effect on its staff ends; null removes it. */
+  staffEffect?: PostStaffEffectId | null;
 }
 
 export function updateItem(
@@ -638,6 +641,10 @@ export function updateItem(
     if (isFiniteNumber(patch.rotation)) next.rotation = wrapDegrees(patch.rotation);
     if (patch.flip !== undefined) next.flip = patch.flip;
     setNumber(next, "volume", patch.volume, 0, POST_MAX_VOLUME);
+    if (patch.staffEffect !== undefined) {
+      if (patch.staffEffect) next.staffEffect = { effect: patch.staffEffect };
+      else delete next.staffEffect;
+    }
   } else if (isFiniteNumber(patch.duration)) {
     next.duration = Math.max(POST_MIN_ITEM_SECONDS, patch.duration);
     if (trackIndex !== MAIN_TRACK_INDEX) next.fill = false;

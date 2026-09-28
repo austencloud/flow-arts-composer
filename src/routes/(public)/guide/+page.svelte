@@ -31,6 +31,10 @@
       href: "/guide/ratios",
     },
     {
+      key: "prospin",
+      href: "/guide/prospin-and-inspin",
+    },
+    {
       key: "codex",
       href: "/guide/codex",
     },
