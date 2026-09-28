@@ -538,6 +538,16 @@ describe("updateItem", () => {
     expect(clip.kind === "video" && clip.sourceOut).toBe(20);
   });
 
+  it("sets, changes and removes a clip's staff effect", () => {
+    const set = valid(updateItem(twoClips(), "v1", { staffEffect: "sparkles" }, ctx));
+    expect(item(set, "v1")).toMatchObject({ staffEffect: { effect: "sparkles" } });
+    const changed = valid(updateItem(set, "v1", { staffEffect: "trails" }, ctx));
+    expect(item(changed, "v1")).toMatchObject({ staffEffect: { effect: "trails" } });
+    const cleared = valid(updateItem(changed, "v1", { staffEffect: null }, ctx));
+    expect(item(cleared, "v1")).not.toHaveProperty("staffEffect");
+    expect(updateItem(cleared, "v1", { staffEffect: null }, ctx)).toBe(cleared);
+  });
+
   it("sets and removes a name", () => {
     const named = valid(updateItem(twoClips(), "v1", { label: "  Run  " }, ctx));
     expect(item(named, "v1").label).toBe("Run");

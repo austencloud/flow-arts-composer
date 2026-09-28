@@ -57,6 +57,8 @@
     type CropFit,
   } from "./post-crop-geometry";
   import type { CropSession } from "./post-crop-session.svelte";
+  import type { StaffTipAnalysis } from "$lib/shared/media-composition/state/staff-tip-analysis.svelte";
+  import PostStaffEffectsTool from "./PostStaffEffectsTool.svelte";
 
   /**
    * The body of one tool for the selected item. An amount is a slider, a
@@ -73,9 +75,11 @@
      * or a zoom keeps the window filled the way a drag on the stage does.
      */
     crop?: CropSession | null;
+    /** Where each take's LED staffs are, for the Effects tool. */
+    staffTips?: StaffTipAnalysis | null;
   }
 
-  let { editor, item, tool, crop = null }: Props = $props();
+  let { editor, item, tool, crop = null, staffTips = null }: Props = $props();
 
   const FRAME_SECONDS = 1 / POST_FRAME_RATE;
 
@@ -420,7 +424,9 @@
     )}
   {/if}
 
-  {#if channel !== null}
+  <!-- The timeline's toolbar carries the keyframe buttons; the crop screen
+       stows the timeline, so there they sit here instead. -->
+  {#if channel !== null && crop}
     <PostKeyframeControls {editor} {item} {channel} {locked} />
   {/if}
 
@@ -634,6 +640,16 @@
       format={fadeSeconds}
       disabled={locked}
       onchange={(value) => change("fadeOut", { fadeOut: value })}
+    />
+  {:else if tool === "effects" && item.kind === "video" && staffTips}
+    {@const take = editor.takes.find((entry) => entry.id === item.takeId)}
+    <PostStaffEffectsTool
+      {item}
+      takeKey={take?.takeKey ?? null}
+      mediaUrl={editor.mediaUrl(item.takeId)}
+      analysis={staffTips}
+      {locked}
+      onPick={(effect) => patchItem({ staffEffect: effect })}
     />
   {:else if tool === "labels" && item.kind === "animation"}
     <SegmentedControl

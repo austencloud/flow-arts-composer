@@ -15,6 +15,7 @@
   import type { PresetClip } from "$lib/shared/media-composition/domain/media-composition-preset-schema";
   import type { PostEditorState } from "$lib/shared/media-composition/state/post-editor-state.svelte";
   import { toPaintFrame } from "$lib/shared/media-composition/services/post-studio-layer-painter";
+  import { itemIdFromStaffEffectRole } from "$lib/shared/media-composition/domain/post-project-compiler";
   import {
     ANIMATION_OVERLAY_ROLE,
     STRIP_AREA,
@@ -1435,7 +1436,13 @@
           {@const isVideo = binding?.renderMode === "external-media"}
           {#if binding?.status === "ready"}
             {#if binding.renderMode === "painted" && binding.painter}
-              <div class="painted" style:opacity={layer.opacity}>
+              <!-- The crop screen shows the whole picture to frame, bare. -->
+              <div
+                class="painted"
+                class:crop-bare={cropRegion &&
+                  itemIdFromStaffEffectRole(entry.role) !== null}
+                style:opacity={layer.opacity}
+              >
                 <PostStudioPaintedLayer
                   painter={binding.painter}
                   frame={toPaintFrame(layer, editor.previewSeconds)}
@@ -1639,7 +1646,8 @@
     position: absolute;
     inset: 0;
   }
-  .layer.parked {
+  .layer.parked,
+  .painted.crop-bare {
     visibility: hidden;
   }
   .strip-guide {

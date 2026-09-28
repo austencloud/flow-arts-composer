@@ -1,4 +1,10 @@
 import { createCanvas, loadImage } from "@napi-rs/canvas/node-canvas.js";
+import {
+  BLUE_COLOR_DARK,
+  calculateHandColorKeyLayout,
+  getHandKeyGlyphPath,
+  RED_COLOR_DARK,
+} from "@tka/render-core";
 import { describe, expect, it, vi } from "vitest";
 import type { SequenceStep } from "./sequence-builder.js";
 import { renderSequenceToImage } from "./sequence-renderer.js";
@@ -52,6 +58,10 @@ const steps: SequenceStep[] = [
   },
 ];
 
+function keyGroup(svg: string): string {
+  return svg.match(/<g class="hand-color-key"[^>]*>[\s\S]*?<\/g>/)?.[0] ?? "";
+}
+
 async function changedKeyPixels(withKey: Buffer, withoutKey: Buffer): Promise<number> {
   const canvas = createCanvas(950, 950);
   const context = canvas.getContext("2d");
@@ -92,11 +102,22 @@ describe("packaged start hand colour key", () => {
       primaryPropColors: { left: "#13579b", right: "#c24680" },
     });
 
+    const layout = calculateHandColorKeyLayout(true, true);
+    const [left, right] = layout.entries;
+    const swatch = (x: number, fill: string) =>
+      `<circle cx="${x}" cy="${layout.centerY}" r="${layout.swatchRadius}" fill="${fill}"/>`;
+    const label = (text: "L" | "R", x: number) =>
+      `<path d="${getHandKeyGlyphPath(text)}" transform="translate(${x} ${layout.baselineY})"/>`;
+
     expect(defaultSvg).toContain('class="hand-color-key"');
-    expect(defaultSvg).toMatch(/<text[^>]*>L<\/text>/);
-    expect(defaultSvg).toMatch(/<text[^>]*>R<\/text>/);
-    expect(customSvg).toContain('fill="#13579b"');
-    expect(customSvg).toContain('fill="#c24680"');
+    const defaultKey = keyGroup(defaultSvg);
+    expect(defaultKey).toContain(swatch(left.swatchX, BLUE_COLOR_DARK));
+    expect(defaultKey).toContain(label("L", left.labelX));
+    expect(defaultKey).toContain(swatch(right.swatchX, RED_COLOR_DARK));
+    expect(defaultKey).toContain(label("R", right.labelX));
+    const customKey = keyGroup(customSvg);
+    expect(customKey).toContain(swatch(left.swatchX, "#13579b"));
+    expect(customKey).toContain(swatch(right.swatchX, "#c24680"));
     expect(
       await changedKeyPixels(
         await renderer.renderToPng(input, base),
