@@ -1,9 +1,10 @@
 <script lang="ts">
   import type { Snippet } from "svelte";
   import "../../../app.css";
+  import "../../../styles/tka-font.css";
 
-  // Full-screen test harnesses must bypass the app shell. Otherwise the module
-  // restorer treats /test/* as an invalid product route and rewrites the URL.
+  // Full-screen lab harness. /test pages never mount the product shell, so
+  // this layout clears app.html's boot splash itself.
   let { children } = $props<{ children: Snippet }>();
 
   $effect(() => {

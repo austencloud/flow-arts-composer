@@ -7,13 +7,23 @@ import { afterEach, describe, expect, it, vi } from "vitest";
  * getSsrEmptiedRoutePaths() (see src/config/vite-plugin-feature-gate.ts) so
  * client-only pages stay out of the Cloudflare Worker. That is safe only for a
  * page the server never renders: a page that resolves to `ssr = true` would
- * serve a blank server render. The dev server never shows this because the
- * gate only runs for `vite build`.
+ * serve a blank server render. The production client build also empties pages
+ * under getClientEmptiedRoutePaths(), which rely on a load guard to redirect
+ * before the blank component renders. The dev server never shows either
+ * because the gate only runs for `vite build`.
+ *
+ * A `+layout@` or `+page@` reset drops every layout it skips, along with the
+ * `ssr = false` and guard those layouts carry, so both checks follow the
+ * route's real node chain.
  */
 
 const REPO = resolve(__dirname, "../..");
 const ROUTES = join(REPO, "src/routes");
 const toRepoPath = (file: string) => relative(REPO, file).replace(/\\/g, "/");
+
+/** What guardInternalRoute() does, or an equivalent inline redirect. */
+const PRODUCTION_REDIRECT =
+  /\bguardInternalRoute\(\)|\bredirect\(\s*307\s*,\s*(?:INTERNAL_ROUTE_FALLBACK|["']\/browse\/gallery["'])/;
 
 async function loadProductionFeatureFlags() {
   vi.stubEnv("NODE_ENV", "production");
@@ -35,11 +45,18 @@ function listFiles(dir: string, match: RegExp): string[] {
   });
 }
 
+type RouteNode = { dir: string; kind: "page" | "layout" };
+
+/** A node's load modules, universal first, as SvelteKit prefers them. */
+function nodeModules({ dir, kind }: RouteNode): string[] {
+  return [".ts", ".js", ".server.ts", ".server.js"]
+    .map((suffix) => join(dir, `+${kind}${suffix}`))
+    .filter((file) => existsSync(file));
+}
+
 /** A node's own `ssr` export; the universal module wins, as in SvelteKit. */
-function ssrOption(dir: string, kind: "page" | "layout"): boolean | undefined {
-  for (const suffix of [".ts", ".js", ".server.ts", ".server.js"]) {
-    const file = join(dir, `+${kind}${suffix}`);
-    if (!existsSync(file)) continue;
+function ssrOption(node: RouteNode): boolean | undefined {
+  for (const file of nodeModules(node)) {
     const match = /export\s+const\s+ssr\s*=\s*(true|false)\b/.exec(
       readFileSync(file, "utf8")
     );
@@ -74,20 +91,18 @@ function ancestorNamed(start: string, segment: string): string {
   throw new Error(`No "${segment}" segment above ${toRepoPath(start)}`);
 }
 
-/** Resolve `ssr` the way SvelteKit does, following `@` layout resets. */
-function resolvedSsr(pageFile: string): boolean {
+/** The nodes SvelteKit loads for a page, root layout first, following resets. */
+function nodeChain(pageFile: string): RouteNode[] {
   const dir = dirname(pageFile);
-  const own = ssrOption(dir, "page");
-  if (own !== undefined) return own;
+  const chain: RouteNode[] = [{ dir, kind: "page" }];
   const pageReset = /^\+page@(.*)\.svelte$/.exec(basename(pageFile))?.[1];
   let layout =
     pageReset === undefined
       ? nearestLayout(dir)
       : nearestLayout(ancestorNamed(dir, pageReset));
   for (;;) {
-    const value = ssrOption(layout, "layout");
-    if (value !== undefined) return value;
-    if (layout === ROUTES) return true;
+    chain.unshift({ dir: layout, kind: "layout" });
+    if (layout === ROUTES) return chain;
     const reset = layoutIn(layout)?.reset;
     layout =
       reset === undefined
@@ -96,21 +111,36 @@ function resolvedSsr(pageFile: string): boolean {
   }
 }
 
+/** Resolve `ssr` the way SvelteKit does: the deepest node that sets it wins. */
+function resolvedSsr(pageFile: string): boolean {
+  for (const node of nodeChain(pageFile).reverse()) {
+    const value = ssrOption(node);
+    if (value !== undefined) return value;
+  }
+  return true;
+}
+
+function redirectsInProduction(pageFile: string): boolean {
+  return nodeChain(pageFile).some((node) =>
+    nodeModules(node).some((file) =>
+      PRODUCTION_REDIRECT.test(readFileSync(file, "utf8"))
+    )
+  );
+}
+
 describe("SSR-emptied routes", () => {
   it("never renders an emptied page on the server", async () => {
     const flags = await loadProductionFeatureFlags();
-    // A page the client build empties too is blank everywhere already.
-    const clientEmptied = flags.getClientEmptiedRoutePaths();
+    const serverRendered: string[] = [];
 
     for (const prefix of flags.getSsrEmptiedRoutePaths()) {
       const pages = listFiles(join(REPO, prefix), /^\+page(@.*)?\.svelte$/);
       expect(pages, `${prefix} holds no page`).not.toEqual([]);
       for (const page of pages) {
-        const path = toRepoPath(page);
-        if (clientEmptied.some((emptied) => path.startsWith(emptied))) continue;
-        expect(resolvedSsr(page), `${path} renders on the server`).toBe(false);
+        if (resolvedSsr(page)) serverRendered.push(toRepoPath(page));
       }
     }
+    expect(serverRendered).toEqual([]);
   });
 
   it("keeps emptied components out of routes that render elsewhere", async () => {
@@ -135,11 +165,25 @@ describe("SSR-emptied routes", () => {
     expect(crossImports).toEqual([]);
   });
 
-  it("resolves ssr through layout resets", () => {
-    // /test sets ssr = false, but this harness resets to the root layout.
-    expect(resolvedSsr(join(ROUTES, "test/autumn-scene/+page.svelte"))).toBe(
-      true
-    );
+  it("builds node chains through layout resets", () => {
+    const chainOf = (page: string) =>
+      nodeChain(join(ROUTES, page)).map(
+        (node) => `${toRepoPath(node.dir)}/+${node.kind}`
+      );
+    // The book page resets to (public), skipping the level-1 guide layout.
+    expect(
+      chainOf("(public)/guide/level-1/book/+page@(public).svelte")
+    ).toEqual([
+      "src/routes/+layout",
+      "src/routes/(public)/+layout",
+      "src/routes/(public)/guide/level-1/book/+page",
+    ]);
+    expect(chainOf("test/prop-viewing/+page.svelte")).toEqual([
+      "src/routes/+layout",
+      "src/routes/test/+layout",
+      "src/routes/test/prop-viewing/+layout",
+      "src/routes/test/prop-viewing/+page",
+    ]);
     expect(resolvedSsr(join(ROUTES, "test/prop-viewing/+page.svelte"))).toBe(
       false
     );
@@ -147,5 +191,30 @@ describe("SSR-emptied routes", () => {
       resolvedSsr(join(ROUTES, "(public)/shop/success/+page.svelte"))
     ).toBe(false);
     expect(resolvedSsr(join(ROUTES, "(public)/shop/+page.svelte"))).toBe(true);
+  });
+});
+
+describe("Client-emptied routes", () => {
+  it("redirect every page in production before it renders blank", async () => {
+    const flags = await loadProductionFeatureFlags();
+    const unguarded: string[] = [];
+
+    for (const prefix of flags.getClientEmptiedRoutePaths()) {
+      const pages = listFiles(join(REPO, prefix), /^\+page(@.*)?\.svelte$/);
+      expect(pages, `${prefix} holds no page`).not.toEqual([]);
+      for (const page of pages) {
+        if (!redirectsInProduction(page)) unguarded.push(toRepoPath(page));
+      }
+    }
+    expect(unguarded).toEqual([]);
+  });
+
+  it("finds a guard anywhere in the node chain", () => {
+    expect(
+      redirectsInProduction(join(ROUTES, "test/prop-viewing/+page.svelte"))
+    ).toBe(true);
+    expect(
+      redirectsInProduction(join(ROUTES, "(public)/shop/+page.svelte"))
+    ).toBe(false);
   });
 });
