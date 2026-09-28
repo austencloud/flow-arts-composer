@@ -1,5 +1,12 @@
 <script lang="ts">
+  import { tick, untrack } from "svelte";
   import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { DURATION } from "$lib/shared/transitions/transitions";
+  import {
+    motionDuration,
+    reducedMotion,
+  } from "$lib/shared/transitions/motion";
+  import { LAYOUT_MOTION_EASING } from "$lib/shared/transitions/layout-flip";
   import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
   import type { SequenceExportOptions } from "$lib/shared/render/domain/models/sequence-export-options";
   import type { HandLabeling } from "$lib/shared/video-collaboration/domain/hand-labeling";
@@ -24,7 +31,10 @@
     type PostVideoItem,
   } from "$lib/shared/media-composition/domain/post-project";
   import { updateItemAt } from "$lib/shared/media-composition/domain/post-project-edits";
-  import { boxAt, framingAt } from "$lib/shared/media-composition/domain/post-project-keyframes";
+  import {
+    boxAt,
+    framingAt,
+  } from "$lib/shared/media-composition/domain/post-project-keyframes";
   import PostStudioMediaLayer from "../PostStudioMediaLayer.svelte";
   import PostStudioPaintedLayer from "../PostStudioPaintedLayer.svelte";
   import {
@@ -42,6 +52,20 @@
     stepPicturePinch,
     zoomFromWheelDelta,
   } from "./post-picture-pan-drag";
+  import {
+    CROP_CORNERS,
+    cornerFrame,
+    cornerPoint,
+    cornerScaleAt,
+    cornerScaleRange,
+    cropWindowScale,
+    settleTransform,
+    type CropCorner,
+    type CropPoint,
+    type CropPose,
+    type CropSize,
+  } from "./post-crop-geometry";
+  import type { CropSession } from "./post-crop-session.svelte";
 
   /**
    * The post as it will render, drawn from the frame the evaluator produced
@@ -63,11 +87,14 @@
     /** Selecting and dragging boxes; off while a render or a share runs. */
     interactive?: boolean;
     /**
-     * The selected clip's Crop tool is open: a press anywhere on the frame
-     * pans its picture, no resize handles show, and a drag shows the footage
-     * past the clip's edges.
+     * The crop screen's session. While it holds a clip the canvas is the crop
+     * stage: that clip's window fitted large in the middle, the rest of its
+     * picture dimmed around it, and everything else in the post hidden but
+     * still mounted.
      */
-    cropMode?: boolean;
+    crop?: CropSession | null;
+    /** A region's footage has reported its own size. */
+    onSourceSize?: (regionId: string, size: CropSize) => void;
     root?: HTMLElement | null;
   }
 
@@ -81,7 +108,8 @@
     qrSequence,
     showStripGuide = false,
     interactive = true,
-    cropMode = false,
+    crop = null,
+    onSourceSize,
     root = $bindable(null),
   }: Props = $props();
 
@@ -137,7 +165,12 @@
         }
         const parked = roleClips[0];
         if (parked && bindingFor(role)?.renderMode === "external-media") {
-          list.push({ role, clip: parked, layer: parkedLayer(parked), live: false });
+          list.push({
+            role,
+            clip: parked,
+            layer: parkedLayer(parked),
+            live: false,
+          });
         }
       }
       out.set(regionId, list);
@@ -186,9 +219,6 @@
    */
   const OPENING_POSITION = 1;
 
-  /** Above every track's region, below the strip guide and the edit layer. */
-  const REVEALED_Z = 19000;
-
   function pct(value: number): string {
     return `${value * 100}%`;
   }
@@ -233,12 +263,12 @@
   }
 
   /**
-   * A body drag pans the picture, rather than moving the box, while Crop is
-   * open - and always for a video that already fills the frame, where moving
-   * the box would have nothing left to show for it.
+   * A body drag pans the picture, rather than moving the box, for a video
+   * that already fills the frame, where moving the box would have nothing
+   * left to show for it.
    */
   function isPictureDragTarget(item: PostItem, box: PostBox): boolean {
-    return item.kind === "video" && (cropMode || fillsFrame(box));
+    return item.kind === "video" && fillsFrame(box);
   }
 
   interface BoxDrag {
@@ -279,10 +309,6 @@
   let drag: Drag | null = null;
   let guides = $state<BoxGuides>({ vertical: false, horizontal: false });
   let dragging = $state(false);
-  /** The clip whose whole footage shows while a crop drag or pinch runs. */
-  const revealedId = $derived(
-    cropMode && dragging && selected?.kind === "video" ? selected.id : null
-  );
   /** A press this small is a tap, not a move. */
   const TAP_PIXELS = 4;
 
@@ -296,7 +322,10 @@
       itemsHere.find((item) => {
         const box = boxAt(item, seconds);
         return (
-          x >= box.x && x <= box.x + box.width && y >= box.y && y <= box.y + box.height
+          x >= box.x &&
+          x <= box.x + box.width &&
+          y >= box.y &&
+          y <= box.y + box.height
         );
       }) ?? null
     );
@@ -304,7 +333,9 @@
 
   /** The mounted video's own pixel size, or zero until it has loaded. */
   function mountedVideoSize(itemId: string): { width: number; height: number } {
-    const video = root?.querySelector<HTMLVideoElement>(`[data-clip-id="${itemId}"] video`);
+    const video = root?.querySelector<HTMLVideoElement>(
+      `[data-clip-id="${itemId}"] video`
+    );
     return { width: video?.videoWidth || 0, height: video?.videoHeight || 0 };
   }
 
@@ -362,17 +393,9 @@
     };
   }
 
-  /**
-   * A press on the frame selects what is on top there, ready to drag. While
-   * Crop is open the clip keeps the selection, and a press anywhere pans it.
-   */
+  /** A press on the frame selects what is on top there, ready to drag. */
   function pressFrame(event: PointerEvent): void {
     if (!interactive || event.button !== 0) return;
-    if (cropMode) {
-      if (selected && !trackLocked(selected.id))
-        startDrag(event, selected, "move");
-      return;
-    }
     const hit = hitTest(event);
     editor.selectedItemId = hit?.id ?? null;
     if (hit && !trackLocked(hit.id)) startDrag(event, hit, "move");
@@ -524,8 +547,24 @@
 
   // ---- Zooming the picture: ctrl/cmd + wheel, and a touch pinch ------------
 
+  let editLayer = $state<HTMLElement | null>(null);
+
+  // Svelte adds wheel handlers as passive, and a passive handler cannot stop
+  // the page zooming or scrolling under the picture.
+  $effect(() => {
+    const target = editLayer;
+    if (!target) return;
+    target.addEventListener("wheel", handleWheel, { passive: false });
+    return () => target.removeEventListener("wheel", handleWheel);
+  });
+
   function handleWheel(event: WheelEvent): void {
-    if (!interactive || !(event.ctrlKey || event.metaKey)) return;
+    if (!interactive) return;
+    if (cropping) {
+      cropWheel(event);
+      return;
+    }
+    if (!(event.ctrlKey || event.metaKey)) return;
     const item = selected;
     if (!item || item.kind !== "video" || trackLocked(item.id)) return;
     // A ctrl/cmd + wheel zoom - a trackpad pinch reports the same way - is a
@@ -534,7 +573,12 @@
     editor.pause();
     const seconds = editor.previewSeconds;
     const framing = framingAt(item, seconds);
-    const zoom = zoomFromWheelDelta(framing.zoom, event.deltaY, POST_MIN_ZOOM, POST_MAX_ZOOM);
+    const zoom = zoomFromWheelDelta(
+      framing.zoom,
+      event.deltaY,
+      POST_MIN_ZOOM,
+      POST_MAX_ZOOM
+    );
     if (zoom === framing.zoom) return;
     editor.editSetting(`${item.id}:picture-zoom`, (project, context) =>
       updateItemAt(project, item.id, { zoom }, seconds, context)
@@ -692,6 +736,11 @@
 
   function cancelOnEscape(event: KeyboardEvent): void {
     if (event.key !== "Escape") return;
+    if (cancelCropGesture()) {
+      event.preventDefault();
+      event.stopPropagation();
+      return;
+    }
     if (pinch) {
       event.preventDefault();
       event.stopPropagation();
@@ -702,6 +751,526 @@
     event.preventDefault();
     event.stopPropagation();
     cancelDrag();
+  }
+
+  // ---- The crop screen -------------------------------------------------------
+
+  /** The clip on the crop screen, while it is open. */
+  const cropItem = $derived(interactive ? (crop?.item ?? null) : null);
+  const cropping = $derived(cropItem !== null);
+
+  /** The canvas's own size: on the crop screen, the stage's. */
+  let stageWidth = $state(0);
+  let stageHeight = $state(0);
+
+  // Measured as soon as the screen opens, so the window is in place before
+  // the flight into it is measured.
+  $effect(() => {
+    if (!cropping || !root) return;
+    stageWidth = root.clientWidth;
+    stageHeight = root.clientHeight;
+  });
+
+  const cropWindowWidth = $derived(crop?.window?.width ?? 0);
+  const cropWindowHeight = $derived(crop?.window?.height ?? 0);
+  const cropPoseReady = $derived(crop?.pose != null);
+
+  /**
+   * Screen pixels per output pixel on the crop stage. Worked out when the
+   * screen opens, when the stage or the slot changes size and once the
+   * footage's size is known; never from an edit, so the window holds still
+   * under the finger.
+   */
+  const displayScale = $derived.by(() => {
+    if (!cropping || stageWidth <= 0 || stageHeight <= 0) return 0;
+    if (cropWindowWidth <= 0 || cropWindowHeight <= 0) return 0;
+    const stage = { width: stageWidth, height: stageHeight };
+    const window = { width: cropWindowWidth, height: cropWindowHeight };
+    if (!cropPoseReady) return cropWindowScale({ stage, window });
+    return cropWindowScale({
+      stage,
+      window,
+      pose: untrack(() => crop?.pose ?? null),
+    });
+  });
+
+  interface ScreenRect {
+    left: number;
+    top: number;
+    width: number;
+    height: number;
+  }
+
+  /** The window on the stage, centred, in whole screen pixels. */
+  const windowRect = $derived.by((): ScreenRect | null => {
+    if (displayScale <= 0) return null;
+    const width = Math.max(1, Math.round(cropWindowWidth * displayScale));
+    const height = Math.max(1, Math.round(cropWindowHeight * displayScale));
+    return {
+      left: Math.round((stageWidth - width) / 2),
+      top: Math.round((stageHeight - height) / 2),
+      width,
+      height,
+    };
+  });
+
+  interface CropDrag {
+    pointerId: number;
+    startX: number;
+    startY: number;
+    started: boolean;
+  }
+
+  interface CropPinch {
+    pointerA: number;
+    pointerB: number;
+    posA: PinchPoint;
+    posB: PinchPoint;
+    startDistance: number;
+    /** Output pixels from the window's centre. */
+    startMidpoint: CropPoint;
+    started: boolean;
+  }
+
+  interface CornerDrag {
+    pointerId: number;
+    corner: CropCorner;
+    /** Where on the handle it was taken, from the corner, in output pixels. */
+    grab: CropPoint;
+    range: { min: number; max: number };
+    /** The frame's size as a share of the window. */
+    scale: number;
+  }
+
+  let cropDrag: CropDrag | null = null;
+  let cropPinch: CropPinch | null = null;
+  let cornerDrag = $state<CornerDrag | null>(null);
+  /** A drag, pinch or corner is moving: the thirds show clearly. */
+  let cropActive = $state(false);
+  /** How far past its limit the picture is pulled, in screen pixels. */
+  let rubber = $state<CropPoint>({ x: 0, y: 0 });
+
+  /** The furthest a pull past the limit still shows, in screen pixels. */
+  const RUBBER_RANGE_PX = 64;
+  const SPRING_EASING = "cubic-bezier(0.2, 0.8, 0.2, 1)";
+  /** + and - zoom by this much about the window's centre. */
+  const CROP_ZOOM_STEP = 1.1;
+  /** Pixels a wheel scrolls per line, for wheels that count in lines. */
+  const WHEEL_LINE_PX = 16;
+  /** A wheel this long idle has finished, and what it left is announced. */
+  const WHEEL_SETTLE_MS = 400;
+
+  /** The frame on the stage: the window, or where a held corner has it. */
+  const frameRect = $derived.by((): ScreenRect | null => {
+    const rect = windowRect;
+    const held = cornerDrag;
+    if (!rect || !held || held.scale === 1) return rect;
+    const frame = cornerFrame(
+      { width: cropWindowWidth, height: cropWindowHeight },
+      held.corner,
+      held.scale
+    );
+    const width = rect.width * held.scale;
+    const height = rect.height * held.scale;
+    return {
+      left:
+        rect.left + rect.width / 2 + frame.center.x * displayScale - width / 2,
+      top:
+        rect.top + rect.height / 2 + frame.center.y * displayScale - height / 2,
+      width,
+      height,
+    };
+  });
+
+  // Leaving the crop screen ends whatever it was doing there; the editor's
+  // session has already kept or dropped a drag in progress.
+  $effect(() => {
+    if (cropping) return;
+    untrack(() => {
+      cropDrag = null;
+      cropPinch = null;
+      cornerDrag = null;
+      cropActive = false;
+      rubber = { x: 0, y: 0 };
+    });
+  });
+
+  /** A client point in output pixels from the window's centre. */
+  function toWindowPoint(clientX: number, clientY: number): CropPoint | null {
+    const rect = windowRect;
+    if (!root || !rect || displayScale <= 0) return null;
+    const bounds = root.getBoundingClientRect();
+    return {
+      x: (clientX - bounds.left - rect.left - rect.width / 2) / displayScale,
+      y: (clientY - bounds.top - rect.top - rect.height / 2) / displayScale,
+    };
+  }
+
+  function cropRegionElement(): HTMLElement | null {
+    return root?.querySelector<HTMLElement>("[data-crop-region]") ?? null;
+  }
+
+  function cropFrameElement(): HTMLElement | null {
+    return root?.querySelector<HTMLElement>("[data-crop-frame]") ?? null;
+  }
+
+  function rubberRange(): number {
+    return reducedMotion() || displayScale <= 0
+      ? 0
+      : RUBBER_RANGE_PX / displayScale;
+  }
+
+  /** A new gesture takes the picture from wherever a flight or settle had it. */
+  function stopCropMotion(): void {
+    for (const element of [cropRegionElement(), cropFrameElement()]) {
+      for (const animation of element?.getAnimations() ?? [])
+        animation.cancel();
+    }
+  }
+
+  /** A pull past the limit eases back to it. */
+  function springBack(): void {
+    const from = rubber;
+    if (from.x === 0 && from.y === 0) return;
+    rubber = { x: 0, y: 0 };
+    const region = cropRegionElement();
+    const duration = motionDuration(DURATION.normal);
+    if (!region || duration <= 0) return;
+    region.animate(
+      [{ translate: `${from.x}px ${from.y}px` }, { translate: "0px 0px" }],
+      {
+        duration,
+        easing: SPRING_EASING,
+      }
+    );
+  }
+
+  function isPinchPointer(
+    state: { pointerA: number; pointerB: number },
+    event: PointerEvent
+  ): boolean {
+    return (
+      event.pointerId === state.pointerA || event.pointerId === state.pointerB
+    );
+  }
+
+  /** A press anywhere on the stage takes the picture, ready to drag. */
+  function pressCropStage(event: PointerEvent): void {
+    if (!crop || event.button !== 0 || cornerDrag) return;
+    event.preventDefault();
+    releaseCropDrag(true);
+    (event.currentTarget as HTMLElement).setPointerCapture(event.pointerId);
+    cropDrag = {
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      startY: event.clientY,
+      started: false,
+    };
+  }
+
+  /** The picture follows the pointer, and past its limit, with resistance. */
+  function moveCropDrag(event: PointerEvent): void {
+    const current = cropDrag;
+    if (!current || !crop || event.pointerId !== current.pointerId) return;
+    if (displayScale <= 0) return;
+    const dx = event.clientX - current.startX;
+    const dy = event.clientY - current.startY;
+    if (!current.started) {
+      if (Math.hypot(dx, dy) < TAP_PIXELS) return;
+      stopCropMotion();
+      if (!crop.startGesture(rubberRange())) {
+        cropDrag = null;
+        return;
+      }
+      current.started = true;
+      cropActive = true;
+    }
+    const over = crop.dragTo({ x: dx / displayScale, y: dy / displayScale });
+    rubber = { x: over.x * displayScale, y: over.y * displayScale };
+  }
+
+  function releaseCropDrag(keep: boolean): void {
+    const current = cropDrag;
+    if (!current) return;
+    cropDrag = null;
+    if (!current.started) return;
+    cropActive = false;
+    crop?.endGesture(keep);
+    springBack();
+  }
+
+  /** A second finger turns the drag into a pinch about the fingers. */
+  function startCropPinch(): void {
+    const [first, second] = [...touchPoints.entries()];
+    if (!crop || touchPoints.size !== 2 || !first || !second) return;
+    // A one-finger move already made is kept as its own step; a held corner
+    // is let go without a crop.
+    releaseCropDrag(true);
+    releaseCornerDrag(false);
+    const [idA, posA] = first;
+    const [idB, posB] = second;
+    const mid = midpointOf(posA, posB);
+    const startMidpoint = toWindowPoint(mid.x, mid.y);
+    if (!startMidpoint) return;
+    cropPinch = {
+      pointerA: idA,
+      pointerB: idB,
+      posA,
+      posB,
+      startDistance: distanceBetween(posA, posB),
+      startMidpoint,
+      started: false,
+    };
+  }
+
+  function stepCropPinch(event: PointerEvent): void {
+    const current = cropPinch;
+    if (!current || !crop || !isPinchPointer(current, event)) return;
+    const point = { x: event.clientX, y: event.clientY };
+    if (event.pointerId === current.pointerA) current.posA = point;
+    else current.posB = point;
+    const mid = midpointOf(current.posA, current.posB);
+    const midpoint = toWindowPoint(mid.x, mid.y);
+    if (!midpoint) return;
+    const distance = distanceBetween(current.posA, current.posB);
+    if (!current.started) {
+      const spread = Math.abs(distance - current.startDistance);
+      const shift =
+        Math.hypot(
+          midpoint.x - current.startMidpoint.x,
+          midpoint.y - current.startMidpoint.y
+        ) * displayScale;
+      if (spread < TAP_PIXELS && shift < TAP_PIXELS) return;
+      stopCropMotion();
+      if (!crop.startGesture(rubberRange())) {
+        cropPinch = null;
+        return;
+      }
+      current.started = true;
+      cropActive = true;
+    }
+    const over = crop.pinchTo({
+      startMidpoint: current.startMidpoint,
+      midpoint,
+      spread: current.startDistance > 0 ? distance / current.startDistance : 1,
+    });
+    rubber = { x: over.x * displayScale, y: over.y * displayScale };
+  }
+
+  function releaseCropPinch(keep: boolean): void {
+    const current = cropPinch;
+    if (!current) return;
+    cropPinch = null;
+    if (!current.started) return;
+    cropActive = false;
+    crop?.endGesture(keep);
+    springBack();
+  }
+
+  /** A corner handle takes the frame; the picture holds still under it. */
+  function pressCorner(event: PointerEvent, corner: CropCorner): void {
+    const pose = crop?.pose;
+    if (
+      !crop ||
+      !pose ||
+      crop.locked ||
+      event.button !== 0 ||
+      displayScale <= 0
+    )
+      return;
+    if (touchPoints.size > 1) return;
+    const point = toWindowPoint(event.clientX, event.clientY);
+    if (!point) return;
+    event.preventDefault();
+    event.stopPropagation();
+    releaseCropDrag(true);
+    stopCropMotion();
+    editor.pause();
+    (event.currentTarget as HTMLElement).setPointerCapture(event.pointerId);
+    const at = cornerPoint(pose.window, corner, 1);
+    cornerDrag = {
+      pointerId: event.pointerId,
+      corner,
+      grab: { x: point.x - at.x, y: point.y - at.y },
+      range: cornerScaleRange({
+        pose,
+        corner,
+        limit: crop.limit,
+        displayScale,
+        stage: { width: stageWidth, height: stageHeight },
+      }),
+      scale: 1,
+    };
+    crop.holdCorner(true);
+    cropActive = true;
+  }
+
+  function moveCorner(event: PointerEvent): void {
+    const current = cornerDrag;
+    const pose = crop?.pose;
+    if (!current || !pose || event.pointerId !== current.pointerId) return;
+    const point = toWindowPoint(event.clientX, event.clientY);
+    if (!point) return;
+    const scale = cornerScaleAt(pose.window, current.corner, {
+      x: point.x - current.grab.x,
+      y: point.y - current.grab.y,
+    });
+    current.scale = Math.min(
+      current.range.max,
+      Math.max(current.range.min, scale)
+    );
+  }
+
+  /**
+   * Let go, what the frame held becomes the crop: the frame eases back to
+   * the window while the picture, already reframed, grows or shrinks to it.
+   */
+  function releaseCornerDrag(keep: boolean): void {
+    const current = cornerDrag;
+    if (!current) return;
+    const from = frameRect;
+    const { corner, scale } = current;
+    cornerDrag = null;
+    cropActive = false;
+    if (!crop) return;
+    const poses = keep ? crop.releaseCorner(corner, scale) : null;
+    if (!poses) crop.holdCorner(false);
+    void settleCrop(from, poses);
+  }
+
+  async function settleCrop(
+    from: ScreenRect | null,
+    poses: { before: CropPose; after: CropPose } | null
+  ): Promise<void> {
+    const duration = motionDuration(DURATION.emphasis);
+    await tick();
+    const to = windowRect;
+    if (duration <= 0 || !to) return;
+    const frame = cropFrameElement();
+    if (frame && from && !sameRect(from, to)) {
+      frame.animate([rectKeyframe(from), rectKeyframe(to)], {
+        duration,
+        easing: LAYOUT_MOTION_EASING,
+      });
+    }
+    const region = cropRegionElement();
+    if (region && poses) {
+      const move = settleTransform(poses.before, poses.after);
+      region.animate(
+        [
+          {
+            transform: `translate(${move.x * displayScale}px, ${move.y * displayScale}px) scale(${move.scale})`,
+          },
+          { transform: "none" },
+        ],
+        { duration, easing: LAYOUT_MOTION_EASING }
+      );
+    }
+  }
+
+  function rectKeyframe(rect: ScreenRect): Keyframe {
+    return {
+      left: `${rect.left}px`,
+      top: `${rect.top}px`,
+      width: `${rect.width}px`,
+      height: `${rect.height}px`,
+    };
+  }
+
+  function sameRect(a: ScreenRect, b: ScreenRect): boolean {
+    return (
+      Math.abs(a.left - b.left) < 0.5 &&
+      Math.abs(a.top - b.top) < 0.5 &&
+      Math.abs(a.width - b.width) < 0.5 &&
+      Math.abs(a.height - b.height) < 0.5
+    );
+  }
+
+  /** Escape during a crop gesture puts it back; true when one was running. */
+  function cancelCropGesture(): boolean {
+    if (cornerDrag) {
+      releaseCornerDrag(false);
+      return true;
+    }
+    if (cropPinch?.started) {
+      releaseCropPinch(false);
+      return true;
+    }
+    if (cropDrag?.started) {
+      releaseCropDrag(false);
+      return true;
+    }
+    return false;
+  }
+
+  let wheelSettle: ReturnType<typeof setTimeout> | undefined;
+
+  /** Ctrl or Cmd + scroll zooms about the pointer; a plain scroll moves the picture. */
+  function cropWheel(event: WheelEvent): void {
+    if (
+      !crop ||
+      displayScale <= 0 ||
+      cornerDrag ||
+      cropPinch ||
+      cropDrag?.started
+    )
+      return;
+    event.preventDefault();
+    const unit =
+      event.deltaMode === 1
+        ? WHEEL_LINE_PX
+        : event.deltaMode === 2
+          ? stageHeight
+          : 1;
+    stopCropMotion();
+    if (event.ctrlKey || event.metaKey) {
+      const pose = crop.pose;
+      if (!pose) return;
+      const zoom = zoomFromWheelDelta(
+        pose.zoom,
+        event.deltaY * unit,
+        POST_MIN_ZOOM,
+        POST_MAX_ZOOM
+      );
+      crop.zoomBy(
+        zoom / pose.zoom,
+        toWindowPoint(event.clientX, event.clientY) ?? undefined
+      );
+    } else {
+      let dx = event.deltaX * unit;
+      let dy = event.deltaY * unit;
+      // A mouse wheel with Shift held scrolls sideways.
+      if (event.shiftKey && dx === 0) [dx, dy] = [dy, 0];
+      crop.panBy({ x: -dx / displayScale, y: -dy / displayScale });
+    }
+    clearTimeout(wheelSettle);
+    wheelSettle = setTimeout(() => crop?.announce(), WHEEL_SETTLE_MS);
+  }
+
+  $effect(() => () => clearTimeout(wheelSettle));
+
+  /** On the window: arrows move the picture, + and - zoom it. */
+  function cropKey(event: KeyboardEvent): void {
+    if (!crop || event.altKey || event.ctrlKey || event.metaKey) return;
+    const direction = ARROW_DIRECTIONS[event.key];
+    if (direction) {
+      event.preventDefault();
+      event.stopPropagation();
+      stopCropMotion();
+      crop.nudge({ x: direction[0], y: direction[1] }, event.shiftKey);
+      return;
+    }
+    const factor =
+      event.key === "+" || event.key === "="
+        ? CROP_ZOOM_STEP
+        : event.key === "-" || event.key === "_"
+          ? 1 / CROP_ZOOM_STEP
+          : null;
+    if (factor === null) return;
+    event.preventDefault();
+    event.stopPropagation();
+    stopCropMotion();
+    if (crop.zoomBy(factor)) crop.announce();
   }
 
   // ---- One pointer surface for a mouse drag, a touch drag or a pinch -------
@@ -719,7 +1288,9 @@
     if (touchPoints.size < 2) return;
     event.preventDefault();
     event.stopPropagation();
-    if (touchPoints.size === 2 && !pinch) startPinch();
+    if (touchPoints.size !== 2 || pinch || cropPinch) return;
+    if (cropping) startCropPinch();
+    else startPinch();
   }
 
   function countTouchMove(event: PointerEvent): void {
@@ -733,13 +1304,29 @@
   }
 
   function onLayerPointerDown(event: PointerEvent): void {
-    if (pinch) return;
-    pressFrame(event);
+    if (pinch || cropPinch) return;
+    if (cropping) pressCropStage(event);
+    else pressFrame(event);
   }
 
   function onLayerPointerMove(event: PointerEvent): void {
+    if (cropPinch) {
+      stepCropPinch(event);
+      return;
+    }
+    if (cornerDrag) {
+      moveCorner(event);
+      return;
+    }
+    if (cropDrag) {
+      moveCropDrag(event);
+      return;
+    }
     if (pinch) {
-      if (event.pointerId === pinch.pointerA || event.pointerId === pinch.pointerB) {
+      if (
+        event.pointerId === pinch.pointerA ||
+        event.pointerId === pinch.pointerB
+      ) {
         stepPinch(event);
       }
       return;
@@ -748,8 +1335,23 @@
   }
 
   function onLayerPointerUp(event: PointerEvent): void {
+    if (cropPinch) {
+      if (isPinchPointer(cropPinch, event)) releaseCropPinch(true);
+      return;
+    }
+    if (cornerDrag) {
+      if (event.pointerId === cornerDrag.pointerId) releaseCornerDrag(true);
+      return;
+    }
+    if (cropDrag) {
+      if (event.pointerId === cropDrag.pointerId) releaseCropDrag(true);
+      return;
+    }
     if (pinch) {
-      if (event.pointerId === pinch.pointerA || event.pointerId === pinch.pointerB) {
+      if (
+        event.pointerId === pinch.pointerA ||
+        event.pointerId === pinch.pointerB
+      ) {
         endPinch();
       }
       return;
@@ -758,8 +1360,23 @@
   }
 
   function onLayerPointerCancel(event: PointerEvent): void {
+    if (cropPinch) {
+      if (isPinchPointer(cropPinch, event)) releaseCropPinch(false);
+      return;
+    }
+    if (cornerDrag) {
+      if (event.pointerId === cornerDrag.pointerId) releaseCornerDrag(false);
+      return;
+    }
+    if (cropDrag) {
+      if (event.pointerId === cropDrag.pointerId) releaseCropDrag(false);
+      return;
+    }
     if (pinch) {
-      if (event.pointerId === pinch.pointerA || event.pointerId === pinch.pointerB) {
+      if (
+        event.pointerId === pinch.pointerA ||
+        event.pointerId === pinch.pointerB
+      ) {
         cancelPinch();
       }
       return;
@@ -772,24 +1389,38 @@
 
 <div
   class="post-canvas"
+  class:cropping
   bind:this={root}
-  style:aspect-ratio={preset
-    ? `${preset.output.width} / ${preset.output.height}`
-    : "9 / 16"}
+  bind:clientWidth={stageWidth}
+  bind:clientHeight={stageHeight}
+  style:aspect-ratio={cropping
+    ? undefined
+    : preset
+      ? `${preset.output.width} / ${preset.output.height}`
+      : "9 / 16"}
   data-post-canvas
 >
   {#if preset}
     {#each preset.regions as region (region.id)}
       {@const rect = editor.regionRects.get(region.id) ?? region}
-      {@const revealed = region.id === revealedId}
+      {@const cropRegion = cropping && region.id === cropItem?.id}
+      {@const cropWindow = cropRegion ? windowRect : null}
       <div
         class="region"
-        class:revealed
-        style:left={pct(rect.x)}
-        style:top={pct(rect.y)}
-        style:width={pct(rect.width)}
-        style:height={pct(rect.height)}
-        style:z-index={revealed ? REVEALED_Z : region.zIndex}
+        class:crop-region={cropRegion}
+        class:crop-hidden={cropping && !cropRegion}
+        data-crop-region={cropRegion ? "" : undefined}
+        data-crop-flip={region.id === (cropItem?.id ?? editor.selectedItemId)
+          ? "region"
+          : undefined}
+        style:left={cropWindow ? `${cropWindow.left}px` : pct(rect.x)}
+        style:top={cropWindow ? `${cropWindow.top}px` : pct(rect.y)}
+        style:width={cropWindow ? `${cropWindow.width}px` : pct(rect.width)}
+        style:height={cropWindow ? `${cropWindow.height}px` : pct(rect.height)}
+        style:translate={cropRegion && (rubber.x !== 0 || rubber.y !== 0)
+          ? `${rubber.x}px ${rubber.y}px`
+          : undefined}
+        style:z-index={region.zIndex}
       >
         {#each entries.get(region.id) ?? [] as entry (entry.role)}
           {@const binding = bindingFor(entry.role)}
@@ -808,7 +1439,7 @@
                 <PostStudioMediaLayer
                   {binding}
                   fit={region.fit}
-                  opacity={layer.opacity}
+                  opacity={cropRegion ? 1 : layer.opacity}
                   sourceTimeSeconds={layer.sourceTimeSeconds}
                   playing={editor.isPlaying && entry.live}
                   {sequence}
@@ -827,6 +1458,7 @@
                   clipId={entry.clip.id}
                   transform={layer.transform}
                   playbackRate={entry.clip.playbackRate}
+                  onSourceSize={(size) => onSourceSize?.(region.id, size)}
                 />
               </div>
             {/if}
@@ -834,7 +1466,7 @@
         {/each}
       </div>
     {/each}
-    {#if stripGuideVisible}
+    {#if stripGuideVisible && !cropping}
       <div
         class="strip-guide"
         aria-hidden="true"
@@ -856,7 +1488,9 @@
          place items from the keyboard. -->
     <div
       class="edit-layer"
-      class:crop={cropMode && selected !== null}
+      class:crop={cropping}
+      class:grabbing={cropActive && !cornerDrag}
+      bind:this={editLayer}
       role="presentation"
       onpointerdowncapture={countTouchDown}
       onpointermovecapture={countTouchMove}
@@ -866,61 +1500,100 @@
       onpointermove={onLayerPointerMove}
       onpointerup={onLayerPointerUp}
       onpointercancel={onLayerPointerCancel}
-      onwheel={handleWheel}
     >
-      {#if guides.vertical}
-        <div class="guide vertical" aria-hidden="true"></div>
-      {/if}
-      {#if guides.horizontal}
-        <div class="guide horizontal" aria-hidden="true"></div>
-      {/if}
-      {#if selected}
-        {@const locked = trackLocked(selected.id)}
-        {@const box = boxAt(selected, editor.previewSeconds)}
-        {@const pictureMode = isPictureDragTarget(selected, box)}
-        <div
-          class="selection"
-          class:dragging
-          class:locked
-          class:picture-mode={pictureMode}
-          class:revealing={revealedId === selected.id}
-          style:left={pct(box.x)}
-          style:top={pct(box.y)}
-          style:width={pct(box.width)}
-          style:height={pct(box.height)}
-          role="group"
-          tabindex="0"
-          aria-roledescription={t("post_editor_box")}
-          aria-label={labelFor(selected)}
-          aria-describedby={hintId}
-          onkeydown={nudge}
-          onpointerdown={(event) =>
-            locked ? undefined : startDrag(event, selected, "move")}
-        >
-          {#if cropMode}
+      {#if cropping && cropItem}
+        {#if frameRect}
+          <div
+            class="crop-frame"
+            class:active={cropActive}
+            class:locked={crop?.locked}
+            data-crop-frame
+            data-crop-flip="frame"
+            style:left="{frameRect.left}px"
+            style:top="{frameRect.top}px"
+            style:width="{frameRect.width}px"
+            style:height="{frameRect.height}px"
+            role="group"
+            tabindex="0"
+            aria-roledescription={t("post_crop_frame")}
+            aria-label={labelFor(cropItem)}
+            aria-describedby={hintId}
+            onkeydown={cropKey}
+          >
             <span class="thirds" aria-hidden="true"></span>
-          {:else if !locked && !editor.isPlaying}
-            {#each BOX_CORNERS as corner (corner)}
-              <span
-                class="handle corner {corner}"
-                aria-hidden="true"
-                onpointerdown={(event) => startDrag(event, selected, corner)}
-              ></span>
-            {/each}
-            {#each BOX_SIDES as side (side)}
-              <span
-                class="handle side {side}"
-                aria-hidden="true"
-                onpointerdown={(event) => startDrag(event, selected, side)}
-              ></span>
-            {/each}
-          {/if}
-        </div>
+            {#if !crop?.locked}
+              {#each CROP_CORNERS as corner (corner)}
+                <span
+                  class="crop-corner {corner}"
+                  aria-hidden="true"
+                  onpointerdown={(event) => pressCorner(event, corner)}
+                ></span>
+              {/each}
+            {/if}
+          </div>
+        {/if}
+        <span class="sr-only" aria-live="polite"
+          >{crop?.announcement ?? ""}</span
+        >
+      {:else}
+        {#if guides.vertical}
+          <div class="guide vertical" aria-hidden="true"></div>
+        {/if}
+        {#if guides.horizontal}
+          <div class="guide horizontal" aria-hidden="true"></div>
+        {/if}
+        {#if selected}
+          {@const locked = trackLocked(selected.id)}
+          {@const box = boxAt(selected, editor.previewSeconds)}
+          {@const pictureMode = isPictureDragTarget(selected, box)}
+          <div
+            class="selection"
+            class:dragging
+            class:locked
+            class:picture-mode={pictureMode}
+            data-crop-flip="frame"
+            style:left={pct(box.x)}
+            style:top={pct(box.y)}
+            style:width={pct(box.width)}
+            style:height={pct(box.height)}
+            role="group"
+            tabindex="0"
+            aria-roledescription={t("post_editor_box")}
+            aria-label={labelFor(selected)}
+            aria-describedby={hintId}
+            onkeydown={nudge}
+            onpointerdown={(event) =>
+              locked ? undefined : startDrag(event, selected, "move")}
+          >
+            {#if !locked && !editor.isPlaying}
+              {#each BOX_CORNERS as corner (corner)}
+                <span
+                  class="handle corner {corner}"
+                  aria-hidden="true"
+                  onpointerdown={(event) => startDrag(event, selected, corner)}
+                ></span>
+              {/each}
+              {#each BOX_SIDES as side (side)}
+                <span
+                  class="handle side {side}"
+                  aria-hidden="true"
+                  onpointerdown={(event) => startDrag(event, selected, side)}
+                ></span>
+              {/each}
+            {/if}
+          </div>
+        {/if}
       {/if}
       <span id={hintId} class="sr-only">
-        {selected && isPictureDragTarget(selected, boxAt(selected, editor.previewSeconds))
-          ? t("post_editor_picture_hint")
-          : t("post_editor_box_hint")}
+        {cropping
+          ? t("post_crop_keys_hint")
+          : selected &&
+              isPictureDragTarget(
+                selected,
+                boxAt(selected, editor.previewSeconds)
+              )
+            ? t("post_editor_picture_hint")
+            : t("post_editor_box_hint")}
       </span>
     </div>
   {/if}
@@ -938,14 +1611,21 @@
     background: #08080c;
     container-type: inline-size;
   }
+  /* The crop stage fills the space the editor gives it; the window sits in
+     its middle with the clip's whole picture around it. */
+  .post-canvas.cropping {
+    height: 100%;
+    max-height: none;
+  }
   .region {
     position: absolute;
     overflow: hidden;
   }
-  /* A crop drag shows the clip's whole footage; the canvas still clips it
-     to the frame, and the selection's mask dims everything past the box. */
-  .region.revealed {
+  .region.crop-region {
     overflow: visible;
+  }
+  .region.crop-hidden {
+    visibility: hidden;
   }
   .layer,
   .painted {
@@ -970,6 +1650,93 @@
   .edit-layer.crop {
     cursor: grab;
   }
+  .edit-layer.crop.grabbing {
+    cursor: grabbing;
+  }
+  /* The window: what the slot shows. Everything past it is dimmed. */
+  .crop-frame {
+    position: absolute;
+    box-sizing: border-box;
+    border: 2px solid var(--theme-primary, #d4813a);
+    box-shadow: 0 0 0 100vmax rgb(0 0 0 / 0.55);
+  }
+  .crop-frame:focus-visible {
+    outline: 2px solid var(--theme-text, #fff);
+    outline-offset: 3px;
+  }
+  .crop-frame.locked {
+    border-style: dashed;
+  }
+  .crop-frame .thirds {
+    opacity: 0.4;
+    transition: opacity var(--duration-fast, 150ms) ease;
+  }
+  .crop-frame.active .thirds {
+    opacity: 1;
+  }
+  /* L-shaped marks on the corners, each with a 44px grab area. */
+  .crop-corner {
+    position: absolute;
+    width: 44px;
+    height: 44px;
+    transform: translate(-50%, -50%);
+  }
+  .crop-corner::before,
+  .crop-corner::after {
+    content: "";
+    position: absolute;
+    background: #fff;
+    border-radius: 1px;
+    box-shadow: 0 0 0 1px rgb(0 0 0 / 0.45);
+  }
+  .crop-corner::before {
+    width: 22px;
+    height: 4px;
+  }
+  .crop-corner::after {
+    width: 4px;
+    height: 22px;
+  }
+  .crop-corner.nw {
+    left: 0;
+    top: 0;
+    cursor: nwse-resize;
+  }
+  .crop-corner.ne {
+    left: 100%;
+    top: 0;
+    cursor: nesw-resize;
+  }
+  .crop-corner.sw {
+    left: 0;
+    top: 100%;
+    cursor: nesw-resize;
+  }
+  .crop-corner.se {
+    left: 100%;
+    top: 100%;
+    cursor: nwse-resize;
+  }
+  .crop-corner.nw::before,
+  .crop-corner.nw::after {
+    left: calc(50% - 2px);
+    top: calc(50% - 2px);
+  }
+  .crop-corner.ne::before,
+  .crop-corner.ne::after {
+    right: calc(50% - 2px);
+    top: calc(50% - 2px);
+  }
+  .crop-corner.sw::before,
+  .crop-corner.sw::after {
+    left: calc(50% - 2px);
+    bottom: calc(50% - 2px);
+  }
+  .crop-corner.se::before,
+  .crop-corner.se::after {
+    right: calc(50% - 2px);
+    bottom: calc(50% - 2px);
+  }
   .selection {
     position: absolute;
     box-sizing: border-box;
@@ -987,12 +1754,7 @@
     border-style: dashed;
     cursor: default;
   }
-  .selection.revealing {
-    box-shadow:
-      0 0 0 1px rgb(0 0 0 / 0.6),
-      0 0 0 100vmax rgb(0 0 0 / 0.55);
-  }
-  /* Rule-of-thirds lines for framing while Crop is open. */
+  /* Rule-of-thirds lines for framing on the crop screen. */
   .thirds {
     position: absolute;
     inset: 0;

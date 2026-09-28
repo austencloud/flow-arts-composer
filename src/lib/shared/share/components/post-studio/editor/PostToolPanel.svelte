@@ -18,6 +18,11 @@
     onDone?: () => void;
     /** `side` fills a sized column and scrolls inside it. */
     placement: "dock" | "side";
+    /**
+     * For a screen whose own bar already names the tool and closes it: the
+     * heading stays for assistive tech and the controls get its room.
+     */
+    bare?: boolean;
     /** The panel itself, so focus can move into it when it opens. */
     element?: HTMLElement | null;
     children: Snippet;
@@ -28,6 +33,7 @@
     subject,
     onDone,
     placement,
+    bare = false,
     element = $bindable(null),
     children,
   }: Props = $props();
@@ -37,12 +43,13 @@
 
 <section
   class="tool-panel {placement}"
+  class:bare
   tabindex="-1"
   aria-labelledby="{id}-title"
   data-tool-panel={tool}
   bind:this={element}
 >
-  <header class="head">
+  <header class="head" class:sr-only={bare}>
     <i class="fa-solid {TOOL_ICON[tool]} icon" aria-hidden="true"></i>
     <div class="titles">
       <h3 id="{id}-title" class="title">{toolLabel(tool)}</h3>
@@ -77,6 +84,12 @@
 
   .side {
     height: 100%;
+  }
+
+  .bare {
+    position: relative;
+    grid-template-rows: minmax(0, 1fr);
+    gap: 0;
   }
 
   .head {
