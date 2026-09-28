@@ -14,7 +14,7 @@
   type Category = "transform" | "patterns" | "edit";
 
   interface ActionDef {
-    id: ActionHelpId | "edit-turns" | "edit-in-construct";
+    id: ActionHelpId | "edit-turns" | "edit-in-construct" | "clear-sequence";
     icon: string;
     label: string;
     btnColor: string;
@@ -57,6 +57,9 @@
     onShiftStart?: () => void;
     onTurns: () => void;
     onEditInConstructor: () => void;
+    /** Present only when the phone workspace rail has handed Clear to this
+        panel; the Edit category then lists it last. */
+    onClear?: () => void;
   }
 
   let {
@@ -88,6 +91,7 @@
     onShiftStart,
     onTurns,
     onEditInConstructor,
+    onClear,
   }: Props = $props();
 
   // Persist active category across panel open/close cycles
@@ -252,6 +256,18 @@
             btnColor: "124, 58, 237",
             action: onEditInConstructor,
             disabled: !hasSequence,
+          },
+        ]
+      : []),
+    ...(onClear
+      ? [
+          {
+            id: "clear-sequence" as const,
+            icon: "eraser",
+            label: "Clear",
+            btnColor: "239, 68, 68",
+            action: onClear,
+            disabled: !hasSequence || isTransforming,
           },
         ]
       : []),

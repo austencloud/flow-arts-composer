@@ -202,7 +202,7 @@ describe("ButtonPanel narrow geometry", () => {
       ".option-interaction-banner"
     );
     const clear = rect("Clear sequence");
-    const actions = rect("Sequence actions");
+    const actions = rect("Sequence Actions");
     const bannerBounds = banner?.getBoundingClientRect();
 
     expect(banner).not.toBeNull();
@@ -255,7 +255,7 @@ describe("ButtonPanel narrow geometry", () => {
     const buttons = [
       rect("Clear sequence"),
       play,
-      rect("Sequence actions"),
+      rect("Sequence Actions"),
       rect("Share sequence"),
     ];
 
@@ -335,7 +335,7 @@ describe("ButtonPanel narrow geometry", () => {
     const containerBounds = screen.container.getBoundingClientRect();
     const clear = rect("Clear sequence");
     const play = rect("Play sequence");
-    const sequenceActions = rect("Sequence actions");
+    const sequenceActions = rect("Sequence Actions");
     const share = rect("Share sequence");
 
     expect(clear.width).toBeGreaterThan(44);

@@ -70,6 +70,7 @@
   let workspaceContainerRef: HTMLElement | null = $state(null);
   let layoutWrapperRef: HTMLElement | null = $state(null);
   let buttonPanelHeight = $state(0);
+  let workspaceWidth = $state(0);
   let panelSizes = $state<number[]>([]);
   let appliedPanelLayout = $state<string | null>(null);
 
@@ -108,16 +109,56 @@
   );
   const isWorkspacePlayback = $derived(!!panelState.workspacePlayback);
 
+  // A stacked phone-width Assemble workspace spends two control rows around
+  // its step pictures. Folding the header's Undo/Redo and Save into the
+  // bottom rail, and the word into a thin strip between the corner badges,
+  // returns that height to the pictures. Share moves to the Actions panel to
+  // make room. Below 340px the rail can't hold them, so the two-row layout
+  // returns.
+  const COMPACT_TOOLBAR_MIN_WIDTH = 340;
+  const COMPACT_TOOLBAR_MAX_WIDTH = 600;
+  const useCompactToolbar = $derived(
+    isAssembleTab &&
+      !shouldUseSideBySideLayout &&
+      workspaceWidth >= COMPACT_TOOLBAR_MIN_WIDTH &&
+      workspaceWidth < COMPACT_TOOLBAR_MAX_WIDTH
+  );
+
   $effect(() => {
-    const layoutKey = `${shouldUseSideBySideLayout}:${isAssembleTab}`;
+    panelState.setWorkspaceRailCompact(useCompactToolbar);
+    return () => panelState.setWorkspaceRailCompact(false);
+  });
+
+  $effect(() => {
+    const container = workspaceContainerRef;
+    if (!container) return;
+    const measure = () => {
+      workspaceWidth = container.clientWidth;
+    };
+    measure();
+    const resizeObserver = new ResizeObserver(measure);
+    resizeObserver.observe(container);
+    return () => resizeObserver.disconnect();
+  });
+
+  // The compact phone workspace spends a thin strip on the word, so it takes
+  // a slightly larger share to keep two rows of step pictures unclipped.
+  const defaultPanelSizes = $derived(
+    shouldUseSideBySideLayout
+      ? [1, 1]
+      : useCompactToolbar
+        ? [1, 2]
+        : isAssembleTab
+          ? [3, 7]
+          : [5, 4]
+  );
+
+  $effect(() => {
+    const layoutKey = `${shouldUseSideBySideLayout}:${isAssembleTab}:${useCompactToolbar}`;
     if (layoutKey === appliedPanelLayout) return;
 
     appliedPanelLayout = layoutKey;
-    panelSizes = shouldUseSideBySideLayout
-      ? [1, 1]
-      : isAssembleTab
-        ? [3, 7]
-        : [5, 4];
+    panelSizes = [...defaultPanelSizes];
   });
 
   // Fuse, Tunnel and Shape own complete workspaces inside their tool-panel surface.
@@ -217,6 +258,25 @@
   });
 </script>
 
+{#snippet compactHistoryActions()}
+  <div class="compact-history-actions" inert={isWorkspacePlayback}>
+    <UndoButton {CreateModuleState} onAction={handleWorkspaceUndo} quiet />
+    <UndoButton {CreateModuleState} direction="redo" quiet />
+  </div>
+{/snippet}
+
+{#snippet compactSaveAction()}
+  {#if canSaveToLibrary}
+    <div class="compact-save-action">
+      <SaveToLibraryButton
+        sequence={currentSequence}
+        onclick={() => panelState.openSaveToLibraryPanel()}
+        quiet
+      />
+    </div>
+  {/if}
+{/snippet}
+
 {#snippet workspacePanel()}
   <!-- Workspace Panel - Visible based on tab and content -->
   <!-- Background click is a pointer shortcut; Escape, the corner X and Stop
@@ -242,6 +302,7 @@
             animatingStepNumber,
             currentDisplayWord,
             buttonPanelHeight,
+            compactToolbar: useCompactToolbar,
             letterSources: currentLetterSources,
             ...(toolPanelRef?.getAnimationStateRef?.()
               ? { animationStateRef: toolPanelRef.getAnimationStateRef() }
@@ -256,21 +317,30 @@
       {/if}
     </div>
 
-    {#if shouldShowWorkspace}
+    {#if shouldShowWorkspace && !useCompactToolbar}
       <div
         class="workspace-history-actions"
         inert={!!panelState.workspacePlayback}
       >
-        <UndoButton {CreateModuleState} onAction={handleWorkspaceUndo} />
-        <UndoButton {CreateModuleState} direction="redo" />
+        <UndoButton
+          {CreateModuleState}
+          onAction={handleWorkspaceUndo}
+          quiet={isAssembleTab}
+        />
+        <UndoButton
+          {CreateModuleState}
+          direction="redo"
+          quiet={isAssembleTab}
+        />
       </div>
     {/if}
 
-    {#if shouldShowWorkspace && canSaveToLibrary}
+    {#if shouldShowWorkspace && canSaveToLibrary && !useCompactToolbar}
       <div class="workspace-save-action">
         <SaveToLibraryButton
           sequence={currentSequence}
           onclick={() => panelState.openSaveToLibraryPanel()}
+          quiet={isAssembleTab}
         />
       </div>
     {/if}
@@ -278,7 +348,13 @@
     <!-- Button Panel - Shows when workspace is visible -->
     {#if shouldShowWorkspace}
       <div class="button-panel-wrapper" bind:this={buttonPanelElement}>
-        <ButtonPanel {onClearSequence} {onViewSequence} />
+        <ButtonPanel
+          {onClearSequence}
+          {onViewSequence}
+          compact={useCompactToolbar}
+          leadingActions={compactHistoryActions}
+          trailingActions={compactSaveAction}
+        />
       </div>
     {/if}
 
@@ -340,14 +416,14 @@
       {
         id: "create-workspace",
         content: workspacePanel,
-        defaultSize: shouldUseSideBySideLayout ? 1 : isAssembleTab ? 3 : 5,
+        defaultSize: defaultPanelSizes[0],
         fixedSize: !shouldShowWorkspace ? "0px" : undefined,
         resizable: false,
       },
       {
         id: "create-tool-panel",
         content: toolPanel,
-        defaultSize: shouldUseSideBySideLayout ? 1 : isAssembleTab ? 7 : 4,
+        defaultSize: defaultPanelSizes[1],
         fixedSize:
           isWorkspacePlayback || isAssembleComplete ? "0px" : undefined,
         resizable: false,
@@ -425,8 +501,26 @@
     pointer-events: auto;
   }
 
-  .workspace-history-actions[inert] {
+  .workspace-history-actions[inert],
+  .compact-history-actions[inert] {
     opacity: 0.45;
+  }
+
+  /* The rail's zones let taps through to the grid; these wrappers are
+     authored here, so ButtonPanel's own wrapper rule doesn't reach them. */
+  .compact-history-actions,
+  .compact-save-action {
+    pointer-events: auto;
+  }
+
+  .compact-history-actions {
+    display: flex;
+    gap: var(--settings-workspace-action-gap, 8px);
+  }
+
+  .compact-save-action {
+    display: grid;
+    place-items: center;
   }
 
   /* Signals that the empty space around the preview closes it. */
