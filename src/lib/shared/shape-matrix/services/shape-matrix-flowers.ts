@@ -54,19 +54,12 @@ export interface ShapeMatrixLoadOptions {
   trace?: "hands" | "tips";
   /** The fixed policy that Hybrid preserves for float and other non-spin motions. */
   hybridFallback?: "arc" | "linear" | "concave";
-  /**
-   * 1 traces the tracked end alone (a staff's thumb end, the end a one-ended
-   * prop follows). 2 adds the opposite end first, so each flower's paths run
-   * [opposite end, tracked end] and its last path is the one-end drawing.
-   */
-  tipEnds?: 1 | 2;
 }
 
 interface ResolvedLoadOptions {
   pathShape: MandalaPathShape;
   trace: "hands" | "tips";
   hybridFallback: "arc" | "linear" | "concave";
-  tipEnds: 1 | 2;
   geometryKey: string;
 }
 
@@ -153,17 +146,14 @@ function resolveLoadOptions(
   const pathShape = options.pathShape ?? "arc";
   const trace = options.trace ?? "tips";
   const hybridFallback = options.hybridFallback ?? "arc";
-  const tipEnds = options.tipEnds ?? 1;
-  const shapeKey =
-    pathShape === "hybrid"
-      ? `${pathShape}:${hybridFallback}:${trace}`
-      : `${pathShape}:${trace}`;
   return {
     pathShape,
     trace,
     hybridFallback,
-    tipEnds,
-    geometryKey: tipEnds === 2 ? `${shapeKey}:ends2` : shapeKey,
+    geometryKey:
+      pathShape === "hybrid"
+        ? `${pathShape}:${hybridFallback}:${trace}`
+        : `${pathShape}:${trace}`,
   };
 }
 
@@ -236,7 +226,7 @@ async function build(
       preview?.steps ?? seq.steps,
       undefined,
       undefined,
-      getMandalaPathOptions(options.pathShape, options.tipEnds),
+      getMandalaPathOptions(options.pathShape, 1),
       tip
     );
     canonicalPaths.set(key, paths);

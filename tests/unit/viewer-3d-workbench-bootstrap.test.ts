@@ -15,7 +15,7 @@ const pageSource = readFileSync(
   "utf8"
 );
 const layoutSource = readFileSync(
-  resolve("src/routes/test/viewer-3d/+layout@.svelte"),
+  resolve("src/routes/test/viewer-3d/+layout.svelte"),
   "utf8"
 );
 const runtimeSource = readFileSync(
@@ -72,7 +72,7 @@ describe("Viewer 3D scene workbench bootstrap", () => {
     expect(appDocumentSource).toContain('p.startsWith("/test/viewer-3d")');
   });
 
-  it("resets the workbench away from the product shell", () => {
+  it("clears the boot splash from its own bare layout", () => {
     expect(layoutSource).toContain('import "../../../app.css"');
     expect(layoutSource).toContain(
       'document.getElementById("app-loading")?.remove()'

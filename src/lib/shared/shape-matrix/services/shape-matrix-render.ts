@@ -14,7 +14,6 @@ import {
   renderMandalaGuideImage,
   type MandalaGuideFit,
   type MandalaGuideImageDependencies,
-  type MandalaGuideImageOptions,
 } from "$lib/shared/mandala/services/mandala-guide-image";
 import { computeEngineAlignedMandalaScale } from "$lib/shared/mandala/services/mandala-path-preparer";
 import { HERO_TRAIL_PRESET } from "$lib/shared/landing/data/hero-trail-preset";
@@ -47,8 +46,6 @@ export interface ShapeMatrixPaintOptions {
    * curated artwork, which retains the Matrix's hero palette.
    */
   colors?: ShapeMatrixGuideColors;
-  /** Per-end inks for a two-ended trace; see `MandalaGuideImageOptions`. */
-  endColors?: MandalaGuideImageOptions["endColors"];
 }
 
 function paint(
@@ -68,7 +65,6 @@ function paint(
       show,
       leftColor: colors.left,
       rightColor: colors.right,
-      endColors: options.endColors,
       strokeWidth: SHAPE_MATRIX_GUIDE_STROKE_WIDTH,
       fit,
       tipDx,
