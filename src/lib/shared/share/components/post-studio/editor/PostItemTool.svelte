@@ -420,7 +420,9 @@
     )}
   {/if}
 
-  {#if channel !== null}
+  <!-- The timeline's toolbar carries the keyframe buttons; the crop screen
+       stows the timeline, so there they sit here instead. -->
+  {#if channel !== null && crop}
     <PostKeyframeControls {editor} {item} {channel} {locked} />
   {/if}
 

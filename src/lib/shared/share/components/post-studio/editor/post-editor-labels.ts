@@ -1,10 +1,16 @@
 import { t } from "$lib/shared/i18n/i18n.svelte.js";
 import type {
+  PostFraming,
   PostItem,
   PostItemKind,
+  PostKeyframeChannel,
   PostMovesMode,
   PostProject,
 } from "$lib/shared/media-composition/domain/post-project";
+import type {
+  PostChannelValue,
+  PostEasingPresetId,
+} from "$lib/shared/media-composition/domain/post-project-keyframes";
 import type { PostToolId } from "./post-editor-tools";
 
 /** The names and icons every part of the editor shows for an item kind. */
@@ -133,4 +139,60 @@ export function itemDisplayLabel(item: PostItem, project: PostProject): string {
     if (take) return take.label;
   }
   return itemKindLabel(item.kind, item.kind === "moves" ? item.mode : undefined);
+}
+
+/** The tool whose panel edits a channel, so a keyframe row shares its name and icon. */
+const CHANNEL_TOOL: Record<PostKeyframeChannel, PostToolId> = {
+  framing: "crop",
+  box: "position",
+  opacity: "fade",
+};
+
+export function channelLabel(channel: PostKeyframeChannel): string {
+  return toolLabel(CHANNEL_TOOL[channel]);
+}
+
+export function channelIcon(channel: PostKeyframeChannel): string {
+  return TOOL_ICON[CHANNEL_TOOL[channel]];
+}
+
+/** The one number a channel's value reads as: zoom for Crop, opacity for Fade. */
+export function channelValueMeasure<Ch extends PostKeyframeChannel>(
+  channel: Ch,
+  value: PostChannelValue[Ch]
+): number | null {
+  if (channel === "framing") return (value as PostFraming).zoom;
+  if (channel === "opacity") return value as number;
+  return null;
+}
+
+/**
+ * A channel's value as one short reading: the zoom for Crop and the opacity
+ * for Fade. Position has no single number worth showing, so it has none.
+ */
+export function channelValueText<Ch extends PostKeyframeChannel>(
+  channel: Ch,
+  value: PostChannelValue[Ch]
+): string | null {
+  const measure = channelValueMeasure(channel, value);
+  return measure === null ? null : `${Math.round(measure * 100)}%`;
+}
+
+export function easingPresetLabel(id: PostEasingPresetId): string {
+  switch (id) {
+    case "linear":
+      return t("post_curve_preset_linear");
+    case "ease-in":
+      return t("post_curve_preset_ease_in");
+    case "ease-out":
+      return t("post_curve_preset_ease_out");
+    case "ease-in-out":
+      return t("post_curve_preset_ease_in_out");
+    case "smooth":
+      return t("post_curve_preset_smooth");
+    case "overshoot":
+      return t("post_curve_preset_overshoot");
+    case "hold":
+      return t("post_curve_preset_hold");
+  }
 }
