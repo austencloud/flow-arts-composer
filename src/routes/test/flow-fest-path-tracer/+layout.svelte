@@ -2,8 +2,9 @@
   import type { Snippet } from "svelte";
   import "../../../app.css";
 
-  // This is a focused geospatial authoring surface, not a product module. The
-  // reset keeps the app shell from interpreting /test/* as a Composer route.
+  // This is a focused geospatial authoring surface, not a product module.
+  // /test pages never mount the app shell, so this layout clears the boot
+  // splash itself.
   let { children } = $props<{ children: Snippet }>();
 
   $effect(() => {
