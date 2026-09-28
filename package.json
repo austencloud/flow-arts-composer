@@ -25,6 +25,7 @@
     "verify:native-surface": "node scripts/verify-native-release-surface.mjs",
     "verify:workspace-install": "node scripts/verify-workspace-install.mjs",
     "verify:standalone-installs": "node scripts/verify-standalone-installs.mjs",
+    "verify:mcp-service": "node scripts/verify-mcp-service.mjs",
     "cap:sync": "npx cap sync",
     "cap:android": "npx cap open android",
     "cap:ios": "npx cap open ios",

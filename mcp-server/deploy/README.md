@@ -109,6 +109,13 @@ are what make the transport authenticated; they are not optional.
 
 ## Verifying end-to-end
 
+From any checkout, `npm run verify:mcp-service` checks everything below in one
+read-only pass: the service state, the local health URL, how many times NSSM
+started the server in the last hour, and whether any running cloudflared
+tunnel routes `mcp.tkaflowarts.com`. It exits 1 and says what failed, with the
+last error line from `logs\mcp-stderr.log` when the server itself is down.
+`--json` prints the same report for other tools.
+
 ```powershell
 # Service status
 Get-Service FlowArtsKnowledgeMCP, cloudflared
@@ -117,13 +124,16 @@ Get-Service FlowArtsKnowledgeMCP, cloudflared
 curl http://localhost:3333/
 
 # Public — Access answers BEFORE the tunnel, so this is a 401 challenge, not the
-# health string. A 502 here means the origin is down; a 401 means it is working.
+# health string, and it comes back even when no tunnel routes the hostname.
 curl -i https://mcp.tkaflowarts.com/mcp
 ```
 
 The public 401 must carry `WWW-Authenticate: Bearer ... resource_metadata=...`.
 `Server-Timing: cfOrigin;dur=0` confirms Access refused it at the edge without
-ever reaching the tunnel.
+ever reaching the tunnel, so a 401 proves nothing about the tunnel or the
+server. The route check in `npm run verify:mcp-service` asks each running
+cloudflared which hostnames it routes; calling a tool through the claude.ai
+connector is the only end-to-end proof.
 
 ---
 
