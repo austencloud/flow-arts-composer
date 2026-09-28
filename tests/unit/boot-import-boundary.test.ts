@@ -181,6 +181,24 @@ describe("boot import boundary", () => {
     expect([...holdGraph.packages.keys()]).toEqual([]);
   });
 
+  it("keeps the admin user preview state free of Firebase", () => {
+    // app-state checks this state on every settings lookup, and public pages
+    // such as /shape-engine and /embed/spinner import app-state. The preview's
+    // Firestore reads load Firebase with import() once an admin opens a
+    // preview; a static Firebase import anywhere under this module puts
+    // Firebase on those pages' startup download.
+    const previewGraph = staticGraph([
+      rel("src/lib/shared/debug/state/user-preview-state.svelte.ts"),
+    ]);
+    const firebaseImporters = [...previewGraph.packages.entries()]
+      .filter(([spec]) => spec === "firebase" || spec.startsWith("firebase/"))
+      .flatMap(([, files]) => [...files]);
+    expect(
+      firebaseImporters.map((file) => chainTo(previewGraph, file)),
+      "Load Firebase inside the preview reads with import() instead."
+    ).toEqual([]);
+  });
+
   it("keeps the viewer URL param names free of the compression codec", () => {
     const paramsGraph = staticGraph([
       rel("src/lib/shared/sequence-viewer/services/viewer-url-state-params.ts"),
