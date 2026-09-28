@@ -1,26 +1,26 @@
 {
   "summary": {
-    "generatedAt": "2026-09-28T19:25:25.290Z",
+    "generatedAt": "2026-09-28T19:30:35.120Z",
     "thresholds": {
       "EXTRACT_SCORE": 600,
       "LEAN_SCRIPT": 350,
       "BIG_TOTAL": 800
     },
-    "totalComponents": 2766,
+    "totalComponents": 2767,
     "bySpecies": {
       "logic": 976,
-      "style": 1490,
+      "style": 1491,
       "template": 300
     },
     "byAction": {
       "extract-script": 72,
       "review": 5,
       "ok": 1210,
-      "keeper": 1479
+      "keeper": 1480
     },
     "extractCandidates": 72,
     "splitCandidates": 0,
-    "keepers": 1479,
+    "keepers": 1480,
     "hiddenMonsters": [
       "lib/features/create/shared/components/coordinators/SequenceDrawerHost.svelte",
       "lib/shared/3d/environments/primitives/FallingParticles.svelte",
@@ -1558,16 +1558,16 @@
     },
     {
       "file": "routes/(public)/guide/ratios/+page.svelte",
-      "total": 2181,
-      "scriptLines": 484,
-      "templateLines": 507,
-      "styleLines": 1190,
+      "total": 2142,
+      "scriptLines": 485,
+      "templateLines": 497,
+      "styleLines": 1160,
       "stateCount": 2,
       "derivedCount": 5,
       "effectCount": 0,
       "functionCount": 18,
-      "childComponents": 7,
-      "diseaseScore": 558,
+      "childComponents": 8,
+      "diseaseScore": 559,
       "species": "style",
       "action": "ok",
       "reason": "below the disease-score gate",
@@ -28978,6 +28978,23 @@
       "hiddenMonster": false
     },
     {
+      "file": "routes/(public)/guide/prospin-and-inspin/+page.svelte",
+      "total": 239,
+      "scriptLines": 47,
+      "templateLines": 67,
+      "styleLines": 125,
+      "stateCount": 0,
+      "derivedCount": 0,
+      "effectCount": 0,
+      "functionCount": 0,
+      "childComponents": 4,
+      "diseaseScore": 47,
+      "species": "style",
+      "action": "keeper",
+      "reason": "presentational: CSS-dominant with a lean script",
+      "hiddenMonster": false
+    },
+    {
       "file": "lib/features/assemble-lab/components/BuilderHandPicker.svelte",
       "total": 197,
       "scriptLines": 39,
@@ -29342,23 +29359,6 @@
       "styleLines": 221,
       "stateCount": 0,
       "derivedCount": 1,
-      "effectCount": 0,
-      "functionCount": 0,
-      "childComponents": 3,
-      "diseaseScore": 46,
-      "species": "style",
-      "action": "keeper",
-      "reason": "presentational: CSS-dominant with a lean script",
-      "hiddenMonster": false
-    },
-    {
-      "file": "routes/(public)/guide/prospin-and-inspin/+page.svelte",
-      "total": 275,
-      "scriptLines": 46,
-      "templateLines": 69,
-      "styleLines": 160,
-      "stateCount": 0,
-      "derivedCount": 0,
       "effectCount": 0,
       "functionCount": 0,
       "childComponents": 3,
@@ -31576,6 +31576,23 @@
       "species": "logic",
       "action": "ok",
       "reason": "below the disease-score gate",
+      "hiddenMonster": false
+    },
+    {
+      "file": "lib/shared/ui/components/LinkChip.svelte",
+      "total": 113,
+      "scriptLines": 31,
+      "templateLines": 25,
+      "styleLines": 57,
+      "stateCount": 0,
+      "derivedCount": 2,
+      "effectCount": 0,
+      "functionCount": 0,
+      "childComponents": 1,
+      "diseaseScore": 39,
+      "species": "style",
+      "action": "keeper",
+      "reason": "presentational: CSS-dominant with a lean script",
       "hiddenMonster": false
     },
     {
