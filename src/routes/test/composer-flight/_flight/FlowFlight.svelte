@@ -24,9 +24,17 @@
 
   /** Star depth travelled per px of page scroll. */
   const STAR_DEPTH_PER_PX = 1.4;
-  /** A section becomes the current one once its top passes this line. */
+  /** While the reader scrolls, a section becomes the current one once its
+      top passes this line. */
   const READING_LINE = 0.45;
   const HEADER_GAP = 16;
+  /** Input that means the reader is scrolling by themselves again. */
+  const OWN_SCROLL_INPUT = [
+    "wheel",
+    "touchmove",
+    "keydown",
+    "pointerdown",
+  ] as const;
 
   let root: HTMLDivElement | undefined = $state();
   let stops: string[] = $state([]);
@@ -54,6 +62,10 @@
 
     let tops: number[] = [];
     let heights: number[] = [];
+    // The section Next or the rail went to stays current until the reader
+    // scrolls by themselves. Otherwise a short section there leaves the next
+    // one's top above the reading line, and that one takes the mark.
+    let chosen: number | null = null;
 
     const render = () => {
       const scrollY = window.scrollY;
@@ -80,7 +92,7 @@
         style.opacity = pose.opacity.toFixed(3);
         style.zIndex = String(1000 + Math.round(pose.z / 10));
       });
-      active = reading;
+      active = chosen ?? reading;
       if (moving) depth = scrollY * STAR_DEPTH_PER_PX;
     };
 
@@ -92,6 +104,8 @@
     };
 
     goTo = (index) => {
+      chosen = index;
+      active = index;
       const target =
         index === 0 ? 0 : tops[index] - headerHeight(page) - HEADER_GAP;
       window.scrollTo({
@@ -100,16 +114,28 @@
       });
     };
 
+    // The mark moves on at the next scroll, so a click inside a section does
+    // not move it by itself.
+    const release = () => {
+      chosen = null;
+    };
+
     const stopScroll = scroll((_progress: number, _info: unknown) => render());
     const observer = new ResizeObserver(() => measure());
     observer.observe(page);
     window.addEventListener("resize", measure);
+    for (const type of OWN_SCROLL_INPUT) {
+      window.addEventListener(type, release, { passive: true });
+    }
     measure();
 
     return () => {
       stopScroll();
       observer.disconnect();
       window.removeEventListener("resize", measure);
+      for (const type of OWN_SCROLL_INPUT) {
+        window.removeEventListener(type, release);
+      }
       for (const section of sections) {
         for (const property of [
           "transform",
