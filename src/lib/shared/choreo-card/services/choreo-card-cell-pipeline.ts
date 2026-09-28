@@ -78,7 +78,8 @@ export function getPreviewCacheKey(
     : "";
   const fanKey = opts.fanAppearance ? `-fan:${JSON.stringify(opts.fanAppearance)}` : "";
   const lookKey = opts.propLook === "model" ? "-look:model" : "";
-  return `${seq.id ?? seq.word ?? "?"}-${sequenceContentKey}-${seq.steps?.length ?? 0}-${opts.size}-${opts.showStepNumbers}-${opts.showNonRadialPoints}-${opts.showTKA}-${opts.showReversals}-${opts.handPathMode ?? false}-${resolvedLeft}-${resolvedRight}-${colCount ?? "auto"}-${isDark ? "dark" : "light"}-spl:${spl}-${sp}-d:${durationFingerprint}-vm:${vmKey}-mv:${mv}-gv:${gv}${paletteKey}${fanKey}${lookKey}`;
+  const gripKey = opts.triangleGrip === "side" ? "-grip:side" : "";
+  return `${seq.id ?? seq.word ?? "?"}-${sequenceContentKey}-${seq.steps?.length ?? 0}-${opts.size}-${opts.showStepNumbers}-${opts.showNonRadialPoints}-${opts.showTKA}-${opts.showReversals}-${opts.handPathMode ?? false}-${resolvedLeft}-${resolvedRight}-${colCount ?? "auto"}-${isDark ? "dark" : "light"}-spl:${spl}-${sp}-d:${durationFingerprint}-vm:${vmKey}-mv:${mv}-gv:${gv}${paletteKey}${fanKey}${lookKey}${gripKey}`;
 }
 
 /**

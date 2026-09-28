@@ -29,6 +29,7 @@ import type { ThemeMode } from "../../../utils/svg-color-utils";
 import type { PropType } from "../../prop/domain/enums/prop-type";
 import type { FanAppearance } from "../../prop/domain/fan-appearance";
 import type { PropLook } from "../../prop/domain/prop-look";
+import type { TriangleGrip } from "../../prop/domain/triangle-appearance";
 
 // Re-export for convenience
 export type { PreparedPictographData };
@@ -50,6 +51,11 @@ export interface PrepareOptions {
    * exporters retain their explicit rendering policy unless they opt in.
    */
   propLook?: PropLook;
+  /**
+   * Where the hand holds a triangle, in either look. Omitted means the corner
+   * grip, which printed and scanned cards keep.
+   */
+  triangleGrip?: TriangleGrip;
   /**
    * Explicit prop type for the performer's left hand.
    * When provided, this value is used directly. When omitted, falls back to global settings.

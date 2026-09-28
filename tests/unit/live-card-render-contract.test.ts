@@ -127,6 +127,35 @@ describe("shared live card / bitmap cell contract", () => {
       })
     ).toBe(deriveCacheKey(data, undefined, false, { ...base, handPathMode: true }));
   });
+  it("prepares the triangle grip the canvas beside the card draws, in both looks", () => {
+    const triangle = { ...base, leftPropType: PropType.TRIANGLE };
+    const classic = resolvePreviewCellRender(data, false, {
+      ...triangle,
+      triangleGrip: "side",
+    });
+    expect(classic.renderOptions.triangleGrip).toBe("side");
+    expect(
+      resolvePropRenderKey(PropType.TRIANGLE, classic.prepareOptions)
+    ).toBe("triangle__side");
+    expect(
+      resolvePropRenderKey(
+        PropType.TRIANGLE,
+        resolvePreviewCellRender(data, false, {
+          ...triangle,
+          triangleGrip: "side",
+          propLook: "model",
+        }).prepareOptions
+      )
+    ).toBe("triangle_side__model");
+
+    const handPath = resolvePreviewCellRender(data, false, {
+      ...triangle,
+      triangleGrip: "side",
+      handPathMode: true,
+    });
+    expect(handPath.prepareOptions.triangleGrip).toBeUndefined();
+    expect(handPath.renderOptions.triangleGrip).toBeUndefined();
+  });
   it("never serves a notation blob to a Realistic cell", () => {
     const notation = deriveCacheKey(data, undefined, false, base);
     expect(

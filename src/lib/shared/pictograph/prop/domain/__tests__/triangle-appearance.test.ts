@@ -4,6 +4,7 @@ import {
   isTrianglePropType,
   normalizeTriangleGrip,
   parseTriangleRenderKey,
+  renderedTriangleGrip,
   resolveTriangleRenderKey,
   triangleAppearanceArtwork,
   triangleSpriteKey,
@@ -69,6 +70,20 @@ describe("triangle grip appearance", () => {
     expect(resolvePropRenderKey("minihoop", { triangleGrip: "side" })).toBe(
       "minihoop"
     );
+  });
+
+  it("names a render's grip only when a triangle is drawn with the side grip", () => {
+    // Cache keys carry this, so every other render keeps its established key.
+    expect(renderedTriangleGrip("side", ["triangle", "staff"])).toBe("side");
+    expect(renderedTriangleGrip("side", ["staff", "Triangle"])).toBe("side");
+    expect(renderedTriangleGrip("side", ["staff", "minihoop"])).toBeUndefined();
+    expect(renderedTriangleGrip("side", [undefined, null])).toBeUndefined();
+    expect(
+      renderedTriangleGrip("corner", ["triangle", "triangle"])
+    ).toBeUndefined();
+    expect(
+      renderedTriangleGrip(undefined, ["triangle", "triangle"])
+    ).toBeUndefined();
   });
 
   it("maps the side grip's sprite key back to the triangle PropType", () => {
