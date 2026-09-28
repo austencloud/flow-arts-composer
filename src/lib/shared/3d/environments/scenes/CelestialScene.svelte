@@ -58,7 +58,7 @@
     // Asset-catalog and scene-review routes can render without this context.
   }
 
-  let world = $state<CelestialEnvironmentWorld | null>(null);
+  let world = $state.raw<CelestialEnvironmentWorld | null>(null);
   let elapsed = 0;
   let generation = 0;
 
