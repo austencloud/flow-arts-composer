@@ -1,8 +1,8 @@
 <script lang="ts">
   /**
-   * Stop rail and Back/Next for the fly-through prototypes. Both versions use
-   * the same controls so the comparison isolates how the camera moves. The
-   * rail names every section on hover or focus; Next names where it goes.
+   * Section rail and Back/Next for the /composer stage. The rail names every
+   * section on hover or focus and marks the one resting on the stage; Next
+   * names where it goes and, from the last section, returns to the start.
    */
   import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
 
@@ -10,13 +10,10 @@
     stops,
     active,
     onGo,
-    placement = "corner",
   }: {
     stops: readonly string[];
     active: number;
     onGo: (index: number) => void;
-    /** "stage" centres Next under a fixed stage; "corner" keeps it off the text. */
-    placement?: "stage" | "corner";
   } = $props();
 
   const back = $derived(active > 0 ? active - 1 : null);
@@ -24,7 +21,7 @@
 </script>
 
 {#if stops.length > 1}
-  <nav class="flight-rail" aria-label="Page sections">
+  <nav class="glide-rail" aria-label="Page sections">
     <ol>
       {#each stops as title, index (index)}
         <li>
@@ -42,21 +39,18 @@
     </ol>
   </nav>
 
-  <div class="flight-step" class:stage={placement === "stage"}>
-    <!-- A centred pair keeps Back so Next never shifts; in the corner, Back
-         only appears once there is somewhere to go back to. -->
-    {#if placement === "stage" || back !== null}
-      <PanelButton
-        variant="secondary"
-        disabled={back === null}
-        ariaLabel={back === null ? "Back" : `Back to ${stops[back]}`}
-        onclick={() => {
-          if (back !== null) onGo(back);
-        }}
-      >
-        <i class="fas fa-arrow-up" aria-hidden="true"></i>
-      </PanelButton>
-    {/if}
+  <!-- Back stays in place, disabled at the start, so Next never shifts. -->
+  <div class="glide-step">
+    <PanelButton
+      variant="secondary"
+      disabled={back === null}
+      ariaLabel={back === null ? "Back" : `Back to ${stops[back]}`}
+      onclick={() => {
+        if (back !== null) onGo(back);
+      }}
+    >
+      <i class="fas fa-arrow-up" aria-hidden="true"></i>
+    </PanelButton>
     <PanelButton
       variant="primary"
       ariaLabel={next === null ? "Back to the start" : `Next: ${stops[next]}`}
@@ -74,7 +68,7 @@
 {/if}
 
 <style>
-  .flight-rail {
+  .glide-rail {
     position: fixed;
     top: 50%;
     right: max(0.5rem, env(safe-area-inset-right));
@@ -82,7 +76,7 @@
     transform: translateY(-50%);
   }
 
-  .flight-rail ol {
+  .glide-rail ol {
     display: grid;
     margin: 0;
     padding: 0;
@@ -90,7 +84,7 @@
   }
 
   /* Only the dot column takes space and catches the pointer; a name hangs
-     off to its left, so the rail never covers a panel's own controls. */
+     off to its left, so the rail never covers a section's own controls. */
   .rail-stop {
     position: relative;
     display: grid;
@@ -159,46 +153,26 @@
       transform var(--transition-fast);
   }
 
-  .flight-rail:hover .rail-label,
-  .flight-rail:focus-within .rail-label {
+  .glide-rail:hover .rail-label,
+  .glide-rail:focus-within .rail-label {
     opacity: 1;
     transform: translate(0, -50%);
     pointer-events: auto;
   }
 
-  .flight-step {
-    position: fixed;
-    right: max(1rem, env(safe-area-inset-right));
+  /* The last item in the stage's column track: it sticks to the bottom of
+     the window while the stage holds it, then rides up above the footer. */
+  .glide-step {
+    position: sticky;
     bottom: max(1rem, env(safe-area-inset-bottom));
     z-index: 150;
     display: flex;
     gap: 0.5rem;
-  }
-
-  .flight-step.stage {
-    right: auto;
-    left: 50%;
-    transform: translateX(-50%);
+    align-self: center;
+    margin-block: auto max(1rem, env(safe-area-inset-bottom));
   }
 
   .step-label {
     white-space: nowrap;
-  }
-
-  /* A phone, a landscape phone or a zoomed-in window has no room for six
-     stacked targets, and a labelled Next would sit over the page's own
-     controls; the arrow alone keeps its name for assistive tech. */
-  @media (max-width: 699px), (max-height: 559px) {
-    .flight-rail,
-    .step-label {
-      display: none;
-    }
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    .rail-dot,
-    .rail-label {
-      transition: none;
-    }
   }
 </style>
