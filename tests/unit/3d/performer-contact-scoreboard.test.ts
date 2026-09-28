@@ -104,36 +104,46 @@ const EPS = 1e-9;
 // and making the two agree frame by frame raised the contacts to 95 and 56.
 // Closing the rest needs elbow and shoulder planning (step 4), not a wider
 // lane; step 4 brings this cap back to 0.
+//
+// Time-based clearance recovery, 2026-09-27: a pulled-in hand grows back to
+// full reach in 0.3 s at any frame rate, where it used to gain 4% every 12
+// frames (2 s at 60 fps). Hands leave their staffs less (gap over 3 cm 1,787
+// to 1,735 and 2,362 to 2,308; fx-phi-psi 13 to 0 and 18 to 5 frames), and
+// the arms reach the midline sooner, so forearms meet more: under 4 cm 75 to
+// 97 and 34 to 68, most of the new frames at tog-opp djdj, ekek and flfl
+// step 3. Austen approved the higher caps that day: forearms under 4 cm 97
+// and 68, under 8 cm 365 and 316, torso 644 and 1,273, ch07 other arm 642
+// and own forearm 2,912, ch18 palms 4.
 const GATES: Record<string, Gate> = {
   ch07: {
-    maxGapOver3cm: 1_787,
-    maxGapP90M: 0.0386,
-    maxForearmsUnder4cm: 75,
-    maxForearmsUnder8cm: 350,
+    maxGapOver3cm: 1_735,
+    maxGapP90M: 0.0381,
+    maxForearmsUnder4cm: 97,
+    maxForearmsUnder8cm: 365,
     maxPalmsUnder6cm: 7,
     maxRenderedHead: 64,
-    maxRenderedTorso: 642,
+    maxRenderedTorso: 644,
     maxRenderedLeg: 20,
-    maxRenderedOtherArm: 628,
-    maxRenderedOwnUpperArm: 1_908,
-    maxRenderedOwnForearm: 2_886,
+    maxRenderedOtherArm: 642,
+    maxRenderedOwnUpperArm: 1_905,
+    maxRenderedOwnForearm: 2_912,
     maxDisplacedHeadTorso: 509,
     maxPlannedHeadTorso: 1_189,
     maxTwistOver60: 2_633,
     maxRoutingLaneMismatchFrames: 460,
   },
   ch18: {
-    maxGapOver3cm: 2_362,
-    maxGapP90M: 0.0572,
-    maxForearmsUnder4cm: 34,
-    maxForearmsUnder8cm: 285,
-    maxPalmsUnder6cm: 3,
+    maxGapOver3cm: 2_308,
+    maxGapP90M: 0.0569,
+    maxForearmsUnder4cm: 68,
+    maxForearmsUnder8cm: 316,
+    maxPalmsUnder6cm: 4,
     maxRenderedHead: 149,
-    maxRenderedTorso: 1_271,
+    maxRenderedTorso: 1_273,
     maxRenderedLeg: 21,
-    maxRenderedOtherArm: 637,
-    maxRenderedOwnUpperArm: 1_848,
-    maxRenderedOwnForearm: 2_666,
+    maxRenderedOtherArm: 622,
+    maxRenderedOwnUpperArm: 1_825,
+    maxRenderedOwnForearm: 2_661,
     maxDisplacedHeadTorso: 820,
     maxPlannedHeadTorso: 1_610,
     maxTwistOver60: 2_614,
