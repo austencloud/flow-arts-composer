@@ -132,6 +132,9 @@ exception to the heading read below.
 - A demonstration fills the stop it rests in. The builder and the generator
   take the whole room between the header and Next; the tunnel square and the
   3D viewer shrink until the stop fits it.
+- The builder stops growing at the frame it gets in a 1920 x 1080 window,
+  about 1728 by 832 pixels, and sits centered in larger rooms. Its option tiles
+  and step cells have fixed caps, so a bigger frame only adds empty panel.
 - The prop chooser lives inside each demonstration, beside the sequence's
   word. There is no page-level Build and Generate switch.
 - No stop ends in a link to the part of the app it shows. The header's Open
