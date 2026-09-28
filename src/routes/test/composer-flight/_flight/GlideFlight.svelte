@@ -8,8 +8,9 @@
    * browser's compositor runs the glide, so a busy page cannot make it
    * stutter, and the rest of the gesture that started it is absorbed, so one
    * flick moves one section. A section taller than the stage pans with the
-   * scroll while it rests. A small window or reduced motion gets the plain
-   * page instead.
+   * scroll while it rests, and a gesture that reaches its end stops there
+   * before the next one glides on. A small window or reduced motion gets the
+   * plain page instead.
    */
   import type { Snippet } from "svelte";
   import { MediaQuery } from "svelte/reactivity";
@@ -109,6 +110,9 @@
     let starDepth = 0;
     /** True from a Tab press until the focus move it causes is done. */
     let tabbing = false;
+    let lastScroll = 0;
+    /** The resting stop's pan when the scroll gesture under way began. */
+    let gesturePan = 0;
 
     // Whole device pixels, so a resting section's text stays sharp.
     const restY = (index: number, panned: number) =>
@@ -265,6 +269,10 @@
 
     const onScroll = () => {
       if (!measured) return;
+      // Scroll after a quiet moment is a new gesture; note where it began.
+      const now = performance.now();
+      if (now - lastScroll > QUIET_MS) gesturePan = pan;
+      lastScroll = now;
       if (locked) {
         const hold = holdOffset();
         if (Math.abs(window.scrollY - hold) > 0.5) {
@@ -280,6 +288,22 @@
           pan = panned;
           sections[current].style.transform = pose(current, pan, 0).transform;
         }
+        return;
+      }
+      // One gesture reads on through a tall stop or leaves it, never both, so
+      // a page-down or a long flick cannot skip the rest of a section: one
+      // that began short of the end stops there, and the next one glides. A
+      // jump of several stops, as a dragged scrollbar makes, goes straight on.
+      const edge = target > current ? (plan.pans[current] ?? 0) : 0;
+      if (
+        Math.abs(target - current) === 1 &&
+        Math.abs(gesturePan - edge) > plan.hold
+      ) {
+        pan = edge;
+        sections[current].style.transform = pose(current, pan, 0).transform;
+        lastInput = now;
+        lock();
+        releaseWhenQuiet();
         return;
       }
       // Scrolling back arrives at the end of a tall stop, where it was left.
