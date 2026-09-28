@@ -8,7 +8,9 @@
 import { browser } from "$app/environment";
 import { getAnimationVisibilityManager } from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
 import { settingsService } from "$lib/shared/settings/state/settings-state.svelte";
-import { getAuthSync } from "$lib/shared/auth/firebase";
+import type { User } from "firebase/auth";
+import { loadedAuth, whenAuthLoaded } from "$lib/shared/auth/loaded-auth";
+import { hasSavedFirebaseUser } from "$lib/shared/auth/services/saved-firebase-user";
 import type { InfoCellChoice } from "$lib/shared/sequence-viewer/services/info-cell-display";
 import type { AppSettings } from "$lib/shared/settings/domain/app-settings";
 import {
@@ -211,9 +213,15 @@ class ImageCompositionStateManager {
    * Firebase can report `currentUser === null` while restoring auth. The auth
    * observer is the boundary at which a browser-global cache can safely be
    * associated with a guest or a specific account.
+   *
+   * Public pages such as the home page draw cards without loading Firebase.
+   * With no Firebase user saved in this browser, Firebase's first report would
+   * be a guest, so the guest identity is adopted without loading it. With one
+   * saved, this loads the Firebase bootstrap and waits for its observer, so a
+   * signed-in visitor never passes through a guest identity first.
    */
   private observeAuthIdentity(): void {
-    getAuthSync().onAuthStateChanged((user) =>
+    const adoptIdentity = (user: User | null) =>
       this.runOrDefer(() => {
         const owner = getColumnCountPreferenceOwner(user);
         const previousOwner = this.activeColumnPreferenceOwner;
@@ -256,8 +264,24 @@ class ImageCompositionStateManager {
           this.readScopedColumnPreference(owner) ??
           this.initialColumnPreference;
         this.applyColumnPreference(localPreference, owner);
-      })
-    );
+      });
+
+    let observing = false;
+    whenAuthLoaded((auth) => {
+      observing = true;
+      auth.onAuthStateChanged(adoptIdentity);
+    });
+    if (observing) return;
+    void hasSavedFirebaseUser().then((saved) => {
+      if (observing) return;
+      if (!saved) {
+        adoptIdentity(null);
+        return;
+      }
+      import("$lib/shared/auth/firebase").catch((error) =>
+        console.warn("[ImageComposition] Firebase failed to load:", error)
+      );
+    });
   }
 
   /**
@@ -419,7 +443,7 @@ class ImageCompositionStateManager {
   private loadSettings(): void {
     const localCopy = this.readLocalCopy();
     const accountMirror = settingsService.currentSettings.imageExport;
-    const seed = localCopy ?? (getAuthSync().currentUser ? accountMirror : null);
+    const seed = localCopy ?? (loadedAuth.currentUser ? accountMirror : null);
 
     this.initialColumnPreference = seed
       ? {
@@ -578,7 +602,7 @@ class ImageCompositionStateManager {
     }
     this.writeLocalCopy();
 
-    const user = getAuthSync().currentUser;
+    const user = loadedAuth.currentUser;
     if (!user || owner !== getColumnCountPreferenceOwner(user)) {
       return;
     }
@@ -858,7 +882,7 @@ class ImageCompositionStateManager {
   setColumnCountForStepCount(stepCount: number, value: number | null): void {
     const owner =
       this.activeColumnPreferenceOwner ??
-      getColumnCountPreferenceOwner(getAuthSync().currentUser);
+      getColumnCountPreferenceOwner(loadedAuth.currentUser);
     this.activeColumnPreferenceOwner = owner;
     this.settings.columnCountPreferenceVersion =
       COLUMN_COUNT_PREFERENCE_VERSION;
