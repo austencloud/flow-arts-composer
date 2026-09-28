@@ -17,6 +17,7 @@
   import { stripToSequence } from "../level-1/_data/guide-sequence-adapter";
   import { SHIFT_DEMOS } from "../level-1/_data/content/staff-motions.content";
   import { tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
+  import LinkChip from "$lib/shared/ui/components/LinkChip.svelte";
   import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
 
   const PATH = "/guide/prospin-and-inspin";
@@ -95,16 +96,14 @@
         <h2 id="more-heading">{tDynamic("guide_prospin_more_heading")}</h2>
         <ul>
           <li>
-            <a class="read-chip" href="/guide/level-1/staff-motions">
-              {tDynamic("guide_prospin_more_staff")}
-              <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
-            </a>
+            <LinkChip href="/guide/level-1/staff-motions"
+              >{tDynamic("guide_prospin_more_staff")}</LinkChip
+            >
           </li>
           <li>
-            <a class="read-chip" href="/guide/ratios">
-              {tDynamic("guide_prospin_more_ratios")}
-              <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
-            </a>
+            <LinkChip href="/guide/ratios"
+              >{tDynamic("guide_prospin_more_ratios")}</LinkChip
+            >
           </li>
         </ul>
       </nav>
@@ -226,41 +225,6 @@
     margin: 0;
     padding: 0;
     list-style: none;
-  }
-
-  /* Each reading link is a pill, the Guide's shape for a place to go, so it
-     reads as something to press rather than as underlined text. */
-  .read-chip {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.6rem;
-    min-height: 2.75rem;
-    padding: 0.55rem 1.15rem;
-    border: 1px solid color-mix(in oklab, var(--accent) 38%, transparent);
-    border-radius: 999px;
-    background: color-mix(in oklab, var(--accent) 12%, transparent);
-    color: var(--ink);
-    font-size: 0.95rem;
-    font-weight: 600;
-    text-decoration: none;
-    transition:
-      border-color 140ms ease,
-      background-color 140ms ease;
-  }
-
-  .read-chip i {
-    font-size: 0.8em;
-    color: var(--accent);
-  }
-
-  .read-chip:hover {
-    border-color: color-mix(in oklab, var(--accent) 70%, transparent);
-    background: color-mix(in oklab, var(--accent) 22%, transparent);
-  }
-
-  .read-chip:focus-visible {
-    outline: 2px solid var(--accent);
-    outline-offset: 3px;
   }
 
   /* Wide: the two demonstrations sit side by side for comparison, and the
