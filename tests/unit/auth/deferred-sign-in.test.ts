@@ -108,6 +108,14 @@ describe("saved-session check", () => {
     expect(await hasSavedFirebaseUser()).toBe(true);
   });
 
+  it("finds a Safari or iOS session that the header's database check misses", async () => {
+    // WebKit keeps the session in localStorage (indexeddb-persistence-policy.ts),
+    // so Firebase never creates its database there.
+    localStorage.setItem(SAVED_USER_KEY, JSON.stringify({ uid: "user-1" }));
+    expect(await hasFirebaseAuthDatabase()).toBe(false);
+    expect(await hasSavedFirebaseUser()).toBe(true);
+  });
+
   it("says no once the user has signed out, where the header's check still says yes", async () => {
     // Signing out deletes the user record and keeps the database, and any
     // page that loads Firebase creates the database for signed-out visitors.
