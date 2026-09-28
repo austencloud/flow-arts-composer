@@ -9,7 +9,8 @@
   } from "../domain/concept-place-registry";
   import { getConceptById as getLessonConceptById } from "../domain/concepts";
   import type { LearnConcept } from "../domain/types";
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t, tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
+  import { localizedConcept } from "../domain/localized-concept";
 
   let {
     selectedId,
@@ -48,6 +49,14 @@
       ? t("learn_ui_reference")
       : t("learn_ui_map_only");
   }
+
+  function placeText(id: string, field: "name" | "description"): string {
+    return tDynamic(`learn_place_${id.replaceAll(".", "_")}_${field}`);
+  }
+
+  function guideText(slug: string): string {
+    return tDynamic(`learn_place_guide_${slug.replaceAll("-", "_")}`);
+  }
 </script>
 
 <section class="level-map" aria-labelledby="level-map-title">
@@ -72,7 +81,7 @@
           >
             <span class="place-id">{place.id}</span>
             <span class="place-copy">
-              <span class="place-name">{place.concept.name}</span>
+              <span class="place-name">{placeText(place.id, "name")}</span>
               <span class="place-resource">{resourceLabel(place)}</span>
             </span>
           </button>
@@ -92,7 +101,7 @@
               >
                 <span class="place-id">{place.id}</span>
                 <span class="place-copy">
-                  <span class="place-name">{place.concept.name}</span>
+                  <span class="place-name">{placeText(place.id, "name")}</span>
                   <span class="place-resource">{resourceLabel(place)}</span>
                 </span>
               </button>
@@ -112,7 +121,7 @@
           >
             <span class="place-id">{place.id}</span>
             <span class="place-copy">
-              <span class="place-name">{place.concept.name}</span>
+              <span class="place-name">{placeText(place.id, "name")}</span>
               <span class="place-resource">{resourceLabel(place)}</span>
             </span>
           </button>
@@ -130,8 +139,8 @@
           <div class="place-heading">
             <span class="selected-id">{selectedPlace.id}</span>
             <div>
-              <h3 id="selected-place-title">{selectedPlace.concept.name}</h3>
-              <p>{selectedPlace.concept.description}</p>
+              <h3 id="selected-place-title">{placeText(selectedPlace.id, "name")}</h3>
+              <p>{placeText(selectedPlace.id, "description")}</p>
             </div>
           </div>
 
@@ -161,7 +170,7 @@
                     class="resource-action primary"
                     onclick={() => onLessonStart(lesson, selectedPlace.id)}
                   >
-                    <span>{lessonRef.label}</span>
+                    <span>{tDynamic("learn_place_lesson_named", { name: localizedConcept(lesson, "name") })}</span>
                     {#if lessonRef.coverage === "partial"}
                       <small>{t("learn_ui_part_of_concept")}</small>
                     {/if}
@@ -174,7 +183,7 @@
                   class="resource-action secondary"
                   href={selectedPlace.exploration.href}
                 >
-                  {selectedPlace.exploration.label}
+                  {tDynamic("learn_place_open_atlas")}
                 </a>
               {/if}
 
@@ -183,7 +192,7 @@
                   class="resource-action secondary"
                   href="/guide/level-1/{guide.slug}"
                 >
-                  <span>{t("learn_ui_read_named", { name: guide.label })}</span>
+                  <span>{t("learn_ui_read_named", { name: guideText(guide.slug) })}</span>
                   {#if guide.coverage === "partial"}
                     <small>{t("learn_ui_related_section")}</small>
                   {/if}
@@ -192,7 +201,7 @@
 
               {#each selectedPlace.applications as application (application.href)}
                 <a class="resource-action secondary" href={application.href}>
-                  {application.label}
+                  {tDynamic("learn_place_open_composer")}
                 </a>
               {/each}
             </div>

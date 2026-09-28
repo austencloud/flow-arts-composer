@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { localizeLevel1Text, localizeLevel1SelectionLabel } from "../_data/localize-level1-content";
   /**
    * Full-Reversal LOOPs - body page (manifest `full-reversal-loops`), faithful
    * to "1.2 - Full-Reversal Permutations" artboard (old p43; "Full-reversal
@@ -319,7 +320,7 @@
       <SelectionHit
         groupId={q.key}
         isGroupStart
-        label={`Animate ${q.word}`}
+        label={localizeLevel1SelectionLabel(`Animate ${q.word}`)}
         onselect={() => emitSequence?.({ strip: RESOLVED[q.key]!, word: q.word, key: q.key, propType: "staff" })}
       />
     </div>
@@ -335,7 +336,7 @@
       use:ptDrag={pt(`frl-para-${i}`, "para", p)}
       use:editText={{ id: `frl-para-${i}`, label: "para", get: () => p.html, set: (h2) => (p.html = h2) }}
     >
-      {@html p.html}
+      {@html localizeLevel1Text(p.html)}
     </p>
   {/each}
 </div>

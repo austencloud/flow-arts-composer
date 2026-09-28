@@ -1,54 +1,55 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import GuideSection from "../../../level-1/_components/GuideSection.svelte";
 </script>
 
-<GuideSection id="glyphs-pads" title="Glyphs / PADS">
+<GuideSection id="glyphs-pads" title={t("guide_l2_glyphs_title")}>
   <div class="section-body">
     <p>
-      A glyph is a letter combined with other characters, such as numbers or symbols.
+      {t("guide_l2_glyphs_intro")}
     </p>
 
     <p>
-      To the right of each letter, there are two slots: high and low. These slots contain numbers that indicate turns.
+      {t("guide_l2_glyphs_slots")}
     </p>
 
     <p>
-      <em>Update May 2025:</em> TKA software now handles the placement of these numbers, so it's less important that you learn this. Don't sweat it. Focus on the motions.
+      <em>{t("guide_l2_glyphs_update_label")}</em> {t("guide_l2_glyphs_update")}
     </p>
 
     <p>
-      In a hybrid, motion types are different and must be disambiguated. These rules indicate where to place numbers:
+      {t("guide_l2_glyphs_hybrid")}
     </p>
 
     <ul>
-      <li><strong>High:</strong> Pro, Anti, Dash</li>
-      <li><strong>Low:</strong> Static</li>
+      <li><strong>{t("guide_l2_high")}</strong> Pro, Anti, Dash</li>
+      <li><strong>{t("guide_l2_low")}</strong> Static</li>
     </ul>
 
     <p>
-      The motion that is higher on the list is indicated by the high slot. Remember the order with the acronym <strong>PADS</strong>, for Pro, Anti, Dash, Static.
+      {t("guide_l2_glyphs_order_before")} <strong>PADS</strong>{t("guide_l2_glyphs_order_after")}
     </p>
 
     <p>
-      The letters S and T have another factor, leading/following. In their case, leading is high and following is low.
+      {t("guide_l2_glyphs_st")}
     </p>
 
-    <p>There are five hybrids, each shown below in their corresponding high/low slots:</p>
+    <p>{t("guide_l2_glyphs_five_hybrids")}</p>
 
     <ul>
-      <li><strong class="type-dual-shift">Type 1 Dual-Shift</strong> (Pro/Anti): C, F, I, L, O, R, U, V</li>
-      <li><strong class="type-dual-shift">Type 2 Shift</strong> (Leading/Following): S, T</li>
-      <li><strong class="type-shift">Type 3 Cross-Shift</strong> (Shift/Static): W, X, Y, Z, Σ, Δ, Θ, Ω</li>
-      <li><strong class="type-cross-shift">Type 4 Dash</strong> (Shift/Dash): W-, X-, Y-, Z-, Σ-, Δ-, Θ-, Ω-</li>
-      <li><strong class="type-dash">Type 5</strong> (Dash/Static): Φ, Ψ, Λ</li>
+      <li><strong class="type-dual-shift">{t("guide_l2_type1_dual_shift")}</strong> (Pro/Anti): C, F, I, L, O, R, U, V</li>
+      <li><strong class="type-dual-shift">{t("guide_l2_type2_shift")}</strong> ({t("guide_l2_leading_following")}): S, T</li>
+      <li><strong class="type-shift">{t("guide_l2_type3_cross_shift")}</strong> (Shift/Static): W, X, Y, Z, Σ, Δ, Θ, Ω</li>
+      <li><strong class="type-cross-shift">{t("guide_l2_type4_dash")}</strong> (Shift/Dash): W-, X-, Y-, Z-, Σ-, Δ-, Θ-, Ω-</li>
+      <li><strong class="type-dash">{t("guide_l2_type5")}</strong> (Dash/Static): Φ, Ψ, Λ</li>
     </ul>
 
     <p>
-      The remaining letters have combinations of the same motion type. For these, put left in the high slot and right in the low slot.
+      {t("guide_l2_glyphs_remaining")}
     </p>
 
     <p>
-      These letters include: A, B, D, E, G, H, J, K, M, N, P, Q, S, T, Φ-, Ψ-, α, β, Γ
+      {t("guide_l2_glyphs_letters_include")} A, B, D, E, G, H, J, K, M, N, P, Q, S, T, Φ-, Ψ-, α, β, Γ
     </p>
   </div>
 </GuideSection>

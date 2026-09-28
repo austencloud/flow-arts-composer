@@ -589,7 +589,7 @@ instead of showing an empty shell.
   {#if sharedCollectionsState.loading}
     <div class="shared-shelf-state" role="status">
       <i class="fas fa-spinner fa-spin" aria-hidden="true"></i>
-      Loading shared collections…
+      {t("browse_verified_loading_shared_collections")}
     </div>
   {:else if sharedCollectionsState.error}
     <div class="shared-shelf-state warning" role="status">
@@ -608,7 +608,7 @@ instead of showing an empty shell.
     collection={allShelf}
     readonly
     selected={!!sel && sel.id === "all" && !sel.ownerId}
-    onOpen={() => openCollection("all", "Saved sequences")}
+    onOpen={() => openCollection("all", t("browse_verified_saved_sequences"))}
   />
 
   {#each collections as c (c.id)}
@@ -649,16 +649,16 @@ instead of showing an empty shell.
       </div>
     {:else}
       <CollectionAddTile
-        label="New collection"
-        hint="Choose the sequences yourself"
+        label={t("browse_verified_new_collection")}
+        hint={t("browse_verified_choose_sequences")}
         icon="fa-plus"
         onclick={() => (showInput = true)}
       />
     {/if}
 
     <CollectionAddTile
-      label="New Smart Collection"
-      hint="Build a live collection from filters"
+      label={t("browse_verified_new_smart_collection")}
+      hint={t("browse_verified_smart_collection_hint")}
       icon="fa-wand-magic-sparkles"
       onclick={() => (smartBuilderOpen = true)}
     />
@@ -738,7 +738,7 @@ instead of showing an empty shell.
         {@const ArtGallery = mod.default}
         <ArtGallery />
       {:catch}
-        <div class="art-detail-loading">Couldn't load this gallery.</div>
+        <div class="art-detail-loading">{t("browse_verified_gallery_load_failed")}</div>
       {/await}
     </div>
   </div>
@@ -909,24 +909,23 @@ instead of showing an empty shell.
           <i class="fas fa-folder-open" aria-hidden="true"></i>
         </span>
         <p class="signed-out-title">
-          Your saved sequences and collections appear here.
+          {t("browse_verified_saved_work_guest_title")}
         </p>
         <p class="signed-out-hint">
-          Browse the Gallery to find something to save. Create a free account to
-          access your collections on other devices.
+          {t("browse_verified_saved_work_guest_hint")}
         </p>
         <div class="auth-actions">
           <PanelButton
             variant="primary"
             onclick={() => navigationState.setActiveTab("explore")}
           >
-            Browse Gallery
+            {t("browse_verified_browse_gallery")}
           </PanelButton>
           <PanelButton
             variant="secondary"
             onclick={() => authDrawerState.show("signup", "sync-library")}
           >
-            Create account
+            {t("browse_ui_create_account")}
           </PanelButton>
         </div>
       </div>
@@ -952,7 +951,7 @@ instead of showing an empty shell.
         {@render artShelf(null)}
       </div>
 
-      <h3 class="shelf-heading">TKA Core</h3>
+      <h3 class="shelf-heading">{t("browse_verified_tka_core")}</h3>
       <div class="card-grid">
         {@render tkaOriginalsShelf(null)}
       </div>

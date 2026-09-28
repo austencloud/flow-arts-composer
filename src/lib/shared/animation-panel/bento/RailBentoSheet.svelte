@@ -14,6 +14,7 @@
   import { cubicOut } from "svelte/easing";
   import type { Snippet } from "svelte";
   import { onMount, tick } from "svelte";
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
 
   interface Props {
     title: string;
@@ -168,7 +169,7 @@
   <button
     type="button"
     class="bento-backdrop"
-    aria-label="Close {title}"
+    aria-label={t("viewer_ui_close_section", { name: title })}
     tabindex="-1"
     onclick={onBackdropClick}
     transition:fade={{ duration: reduceMotion ? 0 : 180 }}
@@ -191,7 +192,7 @@
         type="button"
         class="bento-sheet-close"
         onclick={onClose}
-        aria-label="Close {title}"
+        aria-label={t("viewer_ui_close_section", { name: title })}
       >
         <i class="fas fa-times" aria-hidden="true"></i>
       </button>

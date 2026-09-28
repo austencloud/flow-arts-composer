@@ -4,6 +4,7 @@ Streak 1-2: subtle glow. Streak 3-4: bounce + particles. Streak 5+: accent pulse
 Reset triggers a crack/fade animation.
 -->
 <script lang="ts">
+  import { tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
   interface Props {
     streak: number;
     bestStreak: number;
@@ -65,7 +66,7 @@ Reset triggers a crack/fade animation.
   </div>
 
   {#if bestStreak > 0}
-    <span class="best-streak">Best: {bestStreak}</span>
+    <span class="best-streak">{tDynamic("learn_placement_best", { streak: bestStreak })}</span>
   {/if}
 
   <!-- CSS pseudo-element particles are handled via the tier-bounce class -->

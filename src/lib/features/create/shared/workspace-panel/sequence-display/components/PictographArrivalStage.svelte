@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { flushSync, onDestroy, onMount } from "svelte";
   import { fade } from "svelte/transition";
   import { getSettings } from "$lib/shared/application/state/app-state.svelte";
@@ -485,7 +486,7 @@
 
 {#if !isAudition}
   <span class="sr-only" aria-live="polite" aria-atomic="true">
-    Step {request.stepIndex + 1} added
+    {t("create_step_added", { number: request.stepIndex + 1 })}
   </span>
 {/if}
 

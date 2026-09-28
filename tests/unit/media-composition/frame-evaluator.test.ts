@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { POST_STUDIO_PRESETS } from "$lib/shared/media-composition/domain/post-studio-presets";
-import { evaluatePresetFrame } from "$lib/shared/media-composition/services/frame-evaluator";
+import {
+  evaluatePresetFrame,
+  evaluatePresetLayers,
+} from "$lib/shared/media-composition/services/frame-evaluator";
 import type { SequenceTimeMap } from "$lib/shared/media-composition/domain/sequence-time-map";
 import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
 import type {
@@ -602,5 +605,28 @@ describe("evaluatePresetFrame: motion tracks", () => {
       width: 0.5,
       height: POST_MIN_BOX_SIZE,
     });
+  });
+
+  it("keeps a clip at the first instant of its fade-in among the present layers only", () => {
+    const [first] = performancePreset.clips.filter((clip) => clip.kind === "visual");
+    const preset: typeof performancePreset = {
+      ...performancePreset,
+      clips: [
+        {
+          ...first!,
+          start: { unit: "seconds" as const, value: 4 },
+          end: { unit: "seconds" as const, value: 8 },
+          fadeInSeconds: 0.25,
+          fadeOutSeconds: undefined,
+        },
+      ],
+      transitions: [],
+    };
+
+    const present = evaluatePresetLayers(preset, 10, 4);
+    expect(present).toHaveLength(1);
+    expect(present[0]!.opacity).toBe(0);
+    expect(evaluatePresetFrame(preset, 10, 4)).toHaveLength(0);
+    expect(evaluatePresetFrame(preset, 10, 4.2)).toHaveLength(1);
   });
 });

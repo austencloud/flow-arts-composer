@@ -42,8 +42,9 @@ describe("resolveFrameLayerGeometry", () => {
 
   it("resolves clip translation against the source the slot hides", () => {
     // A 1080-square source covering a 1080x1152 slot draws 1152 wide, and the
-    // 1.25 scale takes both sides to 1440: 360 hidden across, 288 down. A pan
-    // is a fraction of that, so 0.1 across is 36px and -0.25 down is -72px.
+    // 1.25 scale takes both sides to 1440. Turned 12 degrees, that square's
+    // outline is about 1708 each way: 628 hidden across, 556 down. A pan is a
+    // fraction of that, so 0.1 across is about 62.8px and -0.25 down -139px.
     const geometry = resolveFrameLayerGeometry({
       preset,
       region,
@@ -57,8 +58,8 @@ describe("resolveFrameLayerGeometry", () => {
       },
     });
 
-    expect(geometry.translateX).toBeCloseTo(36);
-    expect(geometry.translateY).toBeCloseTo(-72);
+    expect(geometry.translateX).toBeCloseTo(62.793, 3);
+    expect(geometry.translateY).toBeCloseTo(-138.981, 3);
     expect(geometry.scale).toBe(1.25);
     expect(geometry.rotationDegrees).toBe(12);
   });

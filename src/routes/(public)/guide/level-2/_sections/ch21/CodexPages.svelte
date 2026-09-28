@@ -1,11 +1,12 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import GuideSection from "../../../level-1/_components/GuideSection.svelte";
 </script>
 
-<GuideSection id="codex-pages" title="Codex Pages">
+<GuideSection id="codex-pages" title={t("guide_l2_codex_pages_title")}>
   <div class="section-body">
     <p>
-      Reference grids showing all letters at each turn combination.
+      {t("guide_l2_codex_pages_intro")}
     </p>
 
     <h3>1|0, 0|1, 1|1</h3>

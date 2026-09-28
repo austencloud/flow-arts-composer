@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t as translate } from "$lib/shared/i18n/i18n.svelte.js";
   /**
    * Codex 2/0 Type 2/3 + 2|0·0|2 Type 4/5/6 - Level 2 body page 27 (manifest
    * `codex-2-0-t23-456`), faithful to old p27. Same 4-quadrant layout as p19 but
@@ -67,15 +68,15 @@
 
 <div class="q-page">
   <!-- Top headers + big 2/0 turn label. -->
-  <div class="th" style="left:{20 * S}px; top:{96 * S}px; width:{280 * S}px">Type 2 - <span style="color:{PURPLE}">Shift</span></div>
+  <div class="th" style="left:{20 * S}px; top:{96 * S}px; width:{280 * S}px">{translate("guide_l2_print_type_2")} - <span style="color:{PURPLE}">Shift</span></div>
   <div class="turn" style="left:{246 * S}px; top:{86 * S}px; width:{120 * S}px">2 / 0</div>
-  <div class="th" style="left:{312 * S}px; top:{96 * S}px; width:{280 * S}px">Type 3 - <span style="color:{GREEN}">Cross</span><span style="color:{PURPLE}">-Shift</span></div>
+  <div class="th" style="left:{312 * S}px; top:{96 * S}px; width:{280 * S}px">{translate("guide_l2_print_type_3")} - <span style="color:{GREEN}">Cross</span><span style="color:{PURPLE}">-Shift</span></div>
 
   <!-- Bottom headers + mid 0/2 label. -->
-  <div class="th" style="left:{20 * S}px; top:{410 * S}px; width:{280 * S}px">Type 4 - <span style="color:{GREEN}">Dash</span></div>
-  <div class="th" style="left:{312 * S}px; top:{410 * S}px; width:{280 * S}px">Type 5 - <span style="color:{TEAL}">Dual</span><span style="color:{GREEN}">-Dash</span></div>
+  <div class="th" style="left:{20 * S}px; top:{410 * S}px; width:{280 * S}px">{translate("guide_l2_print_type_4")} - <span style="color:{GREEN}">Dash</span></div>
+  <div class="th" style="left:{312 * S}px; top:{410 * S}px; width:{280 * S}px">{translate("guide_l2_print_type_5")} - <span style="color:{TEAL}">Dual</span><span style="color:{GREEN}">-Dash</span></div>
   <div class="turn small" style="left:{100 * S}px; top:{560 * S}px; width:{120 * S}px">0 / 2</div>
-  <div class="th" style="left:{312 * S}px; top:{560 * S}px; width:{280 * S}px">Type 6 - <span style="color:{ORANGE}">Static</span></div>
+  <div class="th" style="left:{312 * S}px; top:{560 * S}px; width:{280 * S}px">{translate("guide_l2_print_type_6")} - <span style="color:{ORANGE}">Static</span></div>
 
   <!-- Heavy dividers. -->
   <div class="vheavy" style="left:{306 * S}px; top:{110 * S}px; height:{662 * S}px"></div>

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t, tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
   import { onMount } from "svelte";
   import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
   import { getCodexLetterMappingRepo } from "$lib/features/learn/codex/get-codex-letter-mapping-repo";
@@ -38,38 +38,38 @@
 
   const STEPS = [
     {
-      text: "A pictograph shows one step of motion.",
-      label: "Whole pictograph",
+      text: "learn_anatomy_whole_text",
+      label: "learn_anatomy_whole_label",
       region: null,
     },
     {
-      text: "Top left: the step number.",
-      label: "Step number",
+      text: "learn_anatomy_number_text",
+      label: "learn_anatomy_number_label",
       region: { x: 0, y: 0, width: 25, height: 24 },
     },
     {
-      text: "Top center: where the hands start and end.",
-      label: "Start and end",
+      text: "learn_anatomy_placements_text",
+      label: "learn_anatomy_placements_label",
       region: { x: 27, y: 0, width: 46, height: 24 },
     },
     {
-      text: "Bottom left: the TKA letter and its turns.",
-      label: "Letter and turns",
+      text: "learn_anatomy_letter_text",
+      label: "learn_anatomy_letter_label",
       region: { x: 0, y: 68, width: 38, height: 32 },
     },
     {
-      text: "Bottom right: the hands’ time and direction.",
-      label: "Hand time and direction",
+      text: "learn_anatomy_hands_text",
+      label: "learn_anatomy_hands_label",
       region: { x: 67, y: 68, width: 33, height: 32 },
     },
     {
-      text: "Top right: the props’ time and direction.",
-      label: "Prop time and direction",
+      text: "learn_anatomy_props_text",
+      label: "learn_anatomy_props_label",
       region: { x: 68, y: 0, width: 32, height: 28 },
     },
     {
-      text: "In the middle: the props and the paths your hands follow.",
-      label: "Props and hand paths",
+      text: "learn_anatomy_paths_text",
+      label: "learn_anatomy_paths_label",
       region: { x: 16, y: 18, width: 68, height: 66 },
     },
   ] as const satisfies readonly {
@@ -170,20 +170,20 @@
     <section
       class="anatomy-studio"
       aria-label={t("learn_ui_pictograph_anatomy_step", {
-        label: current.label,
+        label: tDynamic(current.label),
       })}
     >
       <div class="anatomy-step">
         <div class="instruction-rail">
           <div class="instruction-meta">
             <span>{t("learn_ui_pictograph_anatomy")}</span>
-            <span>Step {stepIndex + 1} of {STEPS.length}</span>
+            <span>{tDynamic("learn_anatomy_step_of", { step: stepIndex + 1, total: STEPS.length })}</span>
           </div>
           <div class="instruction-story" aria-live="polite">
             <Crossfade key={stepIndex} mode="swap" motion="step" {direction}>
               <div class="instruction-copy">
-                <h1>{current.label}</h1>
-                <p>{current.text}</p>
+                <h1>{tDynamic(current.label)}</h1>
+                <p>{tDynamic(current.text)}</p>
               </div>
             </Crossfade>
           </div>

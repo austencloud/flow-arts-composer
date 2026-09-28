@@ -1,15 +1,20 @@
+import { spawnSync } from "node:child_process";
 import {
   mkdirSync,
   mkdtempSync,
   readFileSync,
   rmSync,
+  symlinkSync,
   writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 
-import { inspectWorkspaceInstall } from "../../../scripts/lib/workspace-install-health.mjs";
+import {
+  inspectLockfileInstall,
+  inspectWorkspaceInstall,
+} from "../../../scripts/lib/workspace-install-health.mjs";
 import {
   isSvelteKitGeneratedStateIntact,
   REQUIRED_SVELTE_KIT_OUTPUTS,
@@ -48,6 +53,43 @@ function createProject(
     if (fixture.source !== undefined) {
       writeFileSync(path.join(packageRoot, "index.js"), fixture.source, "utf8");
     }
+  }
+
+  return projectRoot;
+}
+
+function createTemporaryDirectory(): string {
+  const directory = mkdtempSync(path.join(tmpdir(), "tka-lockfile-install-"));
+  temporaryRoots.push(directory);
+  return directory;
+}
+
+type LockfileEntries = Record<string, Record<string, unknown>>;
+
+// An npm project as an install leaves it: package-lock.json, plus a
+// package.json for each installed lockfile location.
+function createLockfileProject(
+  parent: string,
+  directory: string,
+  entries: LockfileEntries,
+  installed: Record<string, string>
+): string {
+  const projectRoot = path.join(parent, directory);
+  mkdirSync(path.join(projectRoot, "node_modules"), { recursive: true });
+  writeFileSync(
+    path.join(projectRoot, "package-lock.json"),
+    JSON.stringify({ lockfileVersion: 3, requires: true, packages: entries }),
+    "utf8"
+  );
+
+  for (const [location, version] of Object.entries(installed)) {
+    const packageRoot = path.join(projectRoot, ...location.split("/"));
+    mkdirSync(packageRoot, { recursive: true });
+    writeFileSync(
+      path.join(packageRoot, "package.json"),
+      JSON.stringify({ name: location.split("node_modules/").at(-1), version }),
+      "utf8"
+    );
   }
 
   return projectRoot;
@@ -133,6 +175,281 @@ describe("workspace install health", () => {
         kind: "unimportable-critical-module",
         packageName: "broken",
       })
+    );
+  });
+});
+
+// The shape of the 2026-09-14 change to mcp-server: canvas became
+// @napi-rs/canvas, whose native binary is one optional package per platform.
+const napiCanvasLockfile: LockfileEntries = {
+  "": { name: "mcp-server", dependencies: { "@napi-rs/canvas": "^1.0.9" } },
+  "node_modules/@napi-rs/canvas": {
+    version: "1.0.9",
+    optionalDependencies: {
+      "@napi-rs/canvas-linux-x64-gnu": "1.0.9",
+      "@napi-rs/canvas-win32-x64-msvc": "1.0.9",
+    },
+  },
+  "node_modules/@napi-rs/canvas-linux-x64-gnu": {
+    version: "1.0.9",
+    optional: true,
+    os: ["linux"],
+    cpu: ["x64"],
+    libc: ["glibc"],
+  },
+  "node_modules/@napi-rs/canvas-win32-x64-msvc": {
+    version: "1.0.9",
+    optional: true,
+    os: ["win32"],
+    cpu: ["x64"],
+  },
+};
+const windowsX64 = { platform: "win32", arch: "x64" };
+
+describe("standalone npm lockfile install health", () => {
+  it("reports the packages a merged lockfile added that were never installed", () => {
+    const projectRoot = createLockfileProject(
+      createTemporaryDirectory(),
+      "mcp-server",
+      napiCanvasLockfile,
+      { "node_modules/canvas": "3.2.1" }
+    );
+
+    const report = inspectLockfileInstall({ projectRoot, ...windowsX64 });
+
+    expect(report.healthy).toBe(false);
+    expect(
+      report.issues.map(({ kind, packageName }) => [kind, packageName])
+    ).toEqual([
+      ["missing-installed-package", "@napi-rs/canvas"],
+      ["missing-installed-package", "@napi-rs/canvas-win32-x64-msvc"],
+    ]);
+  });
+
+  it("accepts this platform's install and rejects a version the lockfile moved past", () => {
+    const parent = createTemporaryDirectory();
+    const installed = {
+      "node_modules/@napi-rs/canvas": "1.0.9",
+      "node_modules/@napi-rs/canvas-win32-x64-msvc": "1.0.9",
+    };
+    const current = createLockfileProject(
+      parent,
+      "current",
+      napiCanvasLockfile,
+      installed
+    );
+    const stale = createLockfileProject(parent, "stale", napiCanvasLockfile, {
+      ...installed,
+      "node_modules/@napi-rs/canvas": "1.0.8",
+    });
+
+    expect(
+      inspectLockfileInstall({ projectRoot: current, ...windowsX64 })
+    ).toEqual({ healthy: true, packageCount: 2, issues: [] });
+    expect(
+      inspectLockfileInstall({ projectRoot: stale, ...windowsX64 }).issues
+    ).toEqual([
+      expect.objectContaining({
+        kind: "mismatched-installed-version",
+        packageName: "@napi-rs/canvas",
+        message: "installed 1.0.8, lockfile has 1.0.9",
+      }),
+    ]);
+  });
+
+  // npm skips an optional package built for another platform together with the
+  // packages only it uses. mcp-server's rolldown WebAssembly binding and its
+  // runtime are absent on Windows for that reason, which is not drift.
+  it("skips a WebAssembly fallback with the runtime only it uses", () => {
+    const parent = createTemporaryDirectory();
+    const entries: LockfileEntries = {
+      "": { name: "mcp-server", devDependencies: { rolldown: "^1.0.0" } },
+      "node_modules/rolldown": {
+        version: "1.0.0",
+        dev: true,
+        optionalDependencies: {
+          "@rolldown/binding-wasm32-wasi": "1.0.0",
+          "@rolldown/binding-win32-x64-msvc": "1.0.0",
+        },
+      },
+      "node_modules/@rolldown/binding-wasm32-wasi": {
+        version: "1.0.0",
+        dev: true,
+        optional: true,
+        cpu: ["wasm32"],
+        dependencies: {
+          "@emnapi/core": "1.11.1",
+          "@napi-rs/wasm-runtime": "^1.1.6",
+        },
+      },
+      "node_modules/@rolldown/binding-win32-x64-msvc": {
+        version: "1.0.0",
+        dev: true,
+        optional: true,
+        os: ["win32"],
+        cpu: ["x64"],
+      },
+      "node_modules/@napi-rs/wasm-runtime": {
+        version: "1.1.6",
+        dev: true,
+        optional: true,
+        dependencies: { tslib: "^2.4.0" },
+        peerDependencies: { "@emnapi/core": "^1.7.1" },
+      },
+      "node_modules/@emnapi/core": {
+        version: "1.11.1",
+        dev: true,
+        optional: true,
+        dependencies: { tslib: "^2.4.0" },
+      },
+      "node_modules/tslib": { version: "2.8.1", dev: true, optional: true },
+    };
+    const installed = {
+      "node_modules/rolldown": "1.0.0",
+      "node_modules/@rolldown/binding-win32-x64-msvc": "1.0.0",
+    };
+    const fallbackOnly = createLockfileProject(
+      parent,
+      "fallback-only",
+      entries,
+      installed
+    );
+    // An installed package depends on tslib too, if only optionally, so npm
+    // installs it after all.
+    const shared = createLockfileProject(
+      parent,
+      "shared",
+      {
+        ...entries,
+        "": {
+          name: "shared",
+          dependencies: { "some-lib": "^1.0.0" },
+          devDependencies: { rolldown: "^1.0.0" },
+        },
+        "node_modules/some-lib": {
+          version: "1.0.0",
+          optionalDependencies: { tslib: "^2.8.0" },
+        },
+        "node_modules/tslib": { version: "2.8.1", optional: true },
+      },
+      { ...installed, "node_modules/some-lib": "1.0.0" }
+    );
+
+    expect(
+      inspectLockfileInstall({ projectRoot: fallbackOnly, ...windowsX64 })
+    ).toEqual({ healthy: true, packageCount: 2, issues: [] });
+    expect(
+      inspectLockfileInstall({ projectRoot: shared, ...windowsX64 }).issues
+    ).toEqual([
+      expect.objectContaining({
+        kind: "missing-installed-package",
+        packageName: "tslib",
+      }),
+    ]);
+  });
+
+  it("requires a file: dependency to be linked to its lockfile target", () => {
+    const parent = createTemporaryDirectory();
+    const target = path.join(parent, "packages", "domain");
+    mkdirSync(target, { recursive: true });
+    const projectRoot = createLockfileProject(
+      parent,
+      "mcp-server",
+      {
+        "": {
+          name: "mcp-server",
+          dependencies: { "@tka/domain": "file:../packages/domain" },
+        },
+        "../packages/domain": { name: "@tka/domain", version: "0.1.0" },
+        "node_modules/@tka/domain": {
+          resolved: "../packages/domain",
+          link: true,
+        },
+      },
+      {}
+    );
+
+    expect(
+      inspectLockfileInstall({ projectRoot, ...windowsX64 }).issues
+    ).toEqual([
+      expect.objectContaining({
+        kind: "missing-link",
+        packageName: "@tka/domain",
+      }),
+    ]);
+
+    mkdirSync(path.join(projectRoot, "node_modules", "@tka"));
+    symlinkSync(
+      target,
+      path.join(projectRoot, "node_modules", "@tka", "domain"),
+      "junction"
+    );
+
+    expect(inspectLockfileInstall({ projectRoot, ...windowsX64 })).toEqual({
+      healthy: true,
+      packageCount: 1,
+      issues: [],
+    });
+  });
+});
+
+describe("standalone npm install guard", () => {
+  const guardScript = path.resolve("scripts/verify-standalone-installs.mjs");
+  // No platform-specific entries, so the fixture reads the same on every OS.
+  const portableLockfile: LockfileEntries = {
+    "": { name: "fixture", dependencies: { "@napi-rs/canvas": "^1.0.9" } },
+    "node_modules/@napi-rs/canvas": { version: "1.0.9" },
+  };
+  const runGuard = (repoRoot: string) =>
+    spawnSync(process.execPath, [guardScript, repoRoot], { encoding: "utf8" });
+
+  it("fails with the scoped install for each folder that drifted", () => {
+    const repoRoot = createTemporaryDirectory();
+    const drifted = createLockfileProject(
+      repoRoot,
+      "mcp-server",
+      portableLockfile,
+      {}
+    );
+    const current = createLockfileProject(
+      repoRoot,
+      "mcp-server-pkg",
+      portableLockfile,
+      { "node_modules/@napi-rs/canvas": "1.0.9" }
+    );
+
+    const result = runGuard(repoRoot);
+
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain(
+      `npm install --no-save --ignore-scripts --prefix "${drifted}"`
+    );
+    expect(result.stderr).not.toContain(`--prefix "${current}"`);
+  });
+
+  it("passes once both folders match their lockfiles", () => {
+    const repoRoot = createTemporaryDirectory();
+    for (const directory of ["mcp-server", "mcp-server-pkg"]) {
+      createLockfileProject(repoRoot, directory, portableLockfile, {
+        "node_modules/@napi-rs/canvas": "1.0.9",
+      });
+    }
+
+    const result = runGuard(repoRoot);
+
+    expect(result.status).toBe(0);
+    expect(result.stdout).toContain("match their lockfiles");
+  });
+
+  it("runs after every successful wt:finish", () => {
+    const manifest = JSON.parse(
+      readFileSync(path.resolve("package.json"), "utf8")
+    );
+
+    // npm runs post<name> only after <name> itself exists and succeeds.
+    expect(manifest.scripts["wt:finish"]).toBeDefined();
+    expect(manifest.scripts["postwt:finish"]).toBe(
+      "node scripts/verify-standalone-installs.mjs"
     );
   });
 });

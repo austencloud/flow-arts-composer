@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from "$lib/shared/i18n/i18n.svelte.js";
 	import { getEffectsConfigContext } from "$lib/shared/effects/state/effects-config-context";
 	import { DEFAULT_EFFECTS_CONFIG } from "$lib/shared/effects/domain/defaults";
 
@@ -18,7 +19,7 @@
 
 <div class="charcoal-controls">
 	<div class="slider-row">
-		<label for="ctx-charcoal-intensity">Intensity</label>
+		<label for="ctx-charcoal-intensity">{t("effect_deep_intensity")}</label>
 		<input
 			id="ctx-charcoal-intensity"
 			type="range"
@@ -32,7 +33,7 @@
 	</div>
 
 	<div class="slider-row">
-		<label for="ctx-charcoal-spread">Spread</label>
+		<label for="ctx-charcoal-spread">{t("effect_deep_spread")}</label>
 		<input
 			id="ctx-charcoal-spread"
 			type="range"
@@ -46,7 +47,7 @@
 	</div>
 
 	<div class="slider-row">
-		<label for="ctx-charcoal-glow">Glow</label>
+		<label for="ctx-charcoal-glow">{t("effect_deep_glow")}</label>
 		<input
 			id="ctx-charcoal-glow"
 			type="range"
@@ -65,7 +66,7 @@
 		disabled={isDefault}
 		onclick={resetDefaults}
 	>
-		Reset
+		{t("viewer_ui_reset")}
 	</button>
 </div>
 

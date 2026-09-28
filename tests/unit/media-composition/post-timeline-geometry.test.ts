@@ -12,6 +12,7 @@ import {
   placeDraggedOverlay,
   revealPlayheadScrollLeft,
   roundToFrameSeconds,
+  rowsYWithoutKeyLanes,
   rulerTickInterval,
   scrollLeftForStableAnchor,
   secondsToPixels,
@@ -213,6 +214,34 @@ describe("overlayRowAtPointerY", () => {
     expect(overlayRowAtPointerY(-1, noOverlays)).toEqual({
       kind: "new-layer",
       trackIndex: 1,
+    });
+  });
+});
+
+describe("rowsYWithoutKeyLanes", () => {
+  const layout = { overlayTrackCount: 2, overlayRowHeightPx: 52, mainRowHeightPx: 72 };
+  // Keyframe rows under the top overlay row (track 2): rows 52 to 140.
+  const lanes = { topPx: 52, heightPx: 88 };
+
+  it("leaves a y above the keyframe rows alone", () => {
+    expect(rowsYWithoutKeyLanes(10, lanes)).toBe(10);
+    expect(rowsYWithoutKeyLanes(-1, lanes)).toBe(-1);
+    expect(rowsYWithoutKeyLanes(60, null)).toBe(60);
+  });
+
+  it("reads a y over the keyframe rows as the clip's own row", () => {
+    const y = rowsYWithoutKeyLanes(100, lanes);
+    expect(overlayRowAtPointerY(y, layout)).toEqual({ kind: "overlay", trackIndex: 2 });
+  });
+
+  it("shifts a y below the keyframe rows up by their height", () => {
+    expect(rowsYWithoutKeyLanes(150, lanes)).toBe(62);
+    expect(overlayRowAtPointerY(rowsYWithoutKeyLanes(150, lanes), layout)).toEqual({
+      kind: "overlay",
+      trackIndex: 1,
+    });
+    expect(overlayRowAtPointerY(rowsYWithoutKeyLanes(200, lanes), layout)).toEqual({
+      kind: "main",
     });
   });
 });

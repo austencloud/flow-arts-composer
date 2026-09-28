@@ -5,6 +5,7 @@
   Shows mappings as chips in a centered, flowing layout.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import type { TransformId } from "../../domain/transforms/transform-help-content";
 
   interface Props {
@@ -40,22 +41,32 @@
       { from: "S", to: "SW" },
       { from: "W", to: "NW" },
     ],
-    swap: [{ from: "Left", to: "Right", type: "blue" }],
+    swap: [{ from: "left", to: "right", type: "blue" }],
     rewind: [
-      { from: "Start", to: "End" },
+      { from: "start", to: "end" },
       { from: "CW", to: "CCW" },
     ],
   };
 
   const chips = $derived(mappings[transformId] ?? []);
+
+  function chipLabel(label: string): string {
+    switch (label) {
+      case "left": return t("guide_l2_print_left");
+      case "right": return t("guide_l2_print_right");
+      case "start": return t("guide_l2_frame_start");
+      case "end": return t("guide_l2_frame_end");
+      default: return label;
+    }
+  }
 </script>
 
 <div class="visual-mapping">
   {#each chips as chip}
     <div class="chip">
-      <span class="from" class:blue={chip.type === "blue"}>{chip.from}</span>
+      <span class="from" class:blue={chip.type === "blue"}>{chipLabel(chip.from)}</span>
       <span class="arrow">↔</span>
-      <span class="to" class:red={chip.type === "blue"}>{chip.to}</span>
+      <span class="to" class:red={chip.type === "blue"}>{chipLabel(chip.to)}</span>
     </div>
   {/each}
 </div>

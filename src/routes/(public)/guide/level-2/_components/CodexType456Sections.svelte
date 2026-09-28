@@ -12,6 +12,7 @@
   import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
   import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
   import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { codexRelData, codexOpenCloseData } from "../_data/codex-turns";
 
   let { turnLabel, turns }: { turnLabel: string; turns: number } = $props();
@@ -93,7 +94,7 @@
 
   {#each sections as sec, si (si)}
     <div class="th" style="left:{34 * S}px; top:{sec.hy * S}px">
-      {#each sec.header as p, i (i)}<span style={p.c ? `color:${p.c}` : ""}>{p.t}</span>{/each}
+      {#each sec.header as p, i (i)}<span style={p.c ? `color:${p.c}` : ""}>{p.t.startsWith("Type 4") ? `${t("guide_l2_type4_heading")} – ` : p.t.startsWith("Type 5") ? `${t("guide_l2_type5_heading")} – ` : p.t.startsWith("Type 6") ? `${t("guide_l2_type6_heading")} – ` : p.t}</span>{/each}
     </div>
     <div class="rule thin" style="left:{34 * S}px; top:{sec.thinY * S}px; width:{544 * S}px"></div>
     {#if sec.heavyY}

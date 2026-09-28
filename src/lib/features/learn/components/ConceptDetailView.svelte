@@ -14,7 +14,7 @@ Supports two navigation modes:
     ConceptProgress,
     ExperienceViewMode,
   } from "../domain/types";
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t, tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
   import {
     getConceptExperience,
     isConceptExperienceAvailable,
@@ -150,8 +150,8 @@ Supports two navigation modes:
           href={experience.reference?.href ??
             `/guide/level-1/${experience.guideSlug}`}
           aria-label={experience.reference
-            ? t("learn_ui_read_reference", { name: experience.reference.label })
-            : t("learn_ui_read_in_guide", { name: experience.guideLabel })}
+            ? t("learn_ui_read_reference", { name: tDynamic(`learn_reference_${concept.id.replaceAll("-", "_")}`) })
+            : t("learn_ui_read_in_guide", { name: tDynamic(`learn_reference_${concept.id.replaceAll("-", "_")}`) })}
         >
           <i class="fa-solid fa-book-open" aria-hidden="true"></i>
           <span>{t("learn_ui_read_topic")}</span>

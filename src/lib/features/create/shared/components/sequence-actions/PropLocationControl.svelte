@@ -4,6 +4,7 @@
   Location-specific labels and behavior for the shared prop cycle control.
 -->
 <script lang="ts">
+  import { tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
   import type { GridLocation } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
   import PropCycleControl from "./PropCycleControl.svelte";
 
@@ -29,29 +30,23 @@
     onChoose,
   }: Props = $props();
 
-  const locationLabels: Record<GridLocation, { short: string; full: string }> =
-    {
-      n: { short: "N", full: "north" },
-      ne: { short: "NE", full: "northeast" },
-      e: { short: "E", full: "east" },
-      se: { short: "SE", full: "southeast" },
-      s: { short: "S", full: "south" },
-      sw: { short: "SW", full: "southwest" },
-      w: { short: "W", full: "west" },
-      nw: { short: "NW", full: "northwest" },
-      c: { short: "Center", full: "center" },
-    };
-
-  const currentLabel = $derived(locationLabels[location]);
+  const accessibleHand = $derived(tDynamic(`create_action_hand_${hand}`));
 </script>
 
 <PropCycleControl
-  valueLabel={currentLabel.short}
-  previousLabel="Rotate {hand} location counterclockwise"
-  nextLabel="Rotate {hand} location clockwise"
+  valueLabel={tDynamic(`create_action_location_${location}_short`)}
+  previousLabel={tDynamic("create_action_rotate_location_counterclockwise", {
+    hand: accessibleHand,
+  })}
+  nextLabel={tDynamic("create_action_rotate_location_clockwise", {
+    hand: accessibleHand,
+  })}
   selectLabel={disabled
-    ? "Location changes are unavailable while a prop is at center"
-    : `Choose ${hand} location on the placement grid. Current location: ${currentLabel.full}`}
+    ? tDynamic("create_action_location_unavailable_at_center_control")
+    : tDynamic("create_action_choose_location", {
+        hand: accessibleHand,
+        location: tDynamic(`create_action_location_${location}_full`),
+      })}
   {active}
   {disabled}
   {compact}

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import type { Snippet } from "svelte";
   import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import type { PostEditorState } from "$lib/shared/media-composition/state/post-editor-state.svelte";
   import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
@@ -6,15 +7,18 @@
   /**
    * History on the left, Export on the right. Undo and Redo are the app's
    * Ctrl+Z and Ctrl+Y targets, so the keys and the buttons always agree.
-   * Export opens the Export panel, where the render starts.
+   * Export opens the Export panel, where the render starts. A screen that
+   * ends in its own way, as Crop ends in Cancel and Done, puts its buttons
+   * in Export's place.
    */
   interface Props {
     editor: PostEditorState;
     exporting: boolean;
     onExport: () => void;
+    trailing?: Snippet;
   }
 
-  let { editor, exporting, onExport }: Props = $props();
+  let { editor, exporting, onExport, trailing }: Props = $props();
 </script>
 
 <div class="top-bar">
@@ -44,18 +48,22 @@
       <i class="fa-solid fa-rotate-right" aria-hidden="true"></i>
     </button>
   </div>
-  <PanelButton
-    variant="primary"
-    onclick={onExport}
-    disabled={exporting}
-    ariaBusy={exporting}
-  >
-    <i
-      class="fa-solid {exporting ? 'fa-spinner fa-spin' : 'fa-file-export'}"
-      aria-hidden="true"
-    ></i>
-    {t("post_editor_export")}
-  </PanelButton>
+  {#if trailing}
+    {@render trailing()}
+  {:else}
+    <PanelButton
+      variant="primary"
+      onclick={onExport}
+      disabled={exporting}
+      ariaBusy={exporting}
+    >
+      <i
+        class="fa-solid {exporting ? 'fa-spinner fa-spin' : 'fa-file-export'}"
+        aria-hidden="true"
+      ></i>
+      {t("post_editor_export")}
+    </PanelButton>
+  {/if}
 </div>
 
 <style>

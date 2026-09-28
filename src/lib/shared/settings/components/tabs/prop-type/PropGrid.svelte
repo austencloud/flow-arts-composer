@@ -78,6 +78,7 @@
     layout = "grid",
     heading,
     actions,
+    lead,
     scrollMode = "internal",
     fill = false,
     includeBareHands = false,
@@ -120,6 +121,12 @@
     layout?: "grid" | "rail";
     heading?: Snippet;
     actions?: Snippet;
+    /**
+     * Content of the top-level grid screen above its tiles (the primary prop
+     * colours). A drill swaps it out with the tiles as one screen, and a
+     * bounded grid leaves it room.
+     */
+    lead?: Snippet;
     /**
      * Drawers own a bounded internal scroller. Embedded inspectors already
      * scroll the whole tab, so their picker contributes its natural height and
@@ -362,6 +369,8 @@
   let probeEl = $state<HTMLDivElement | null>(null);
   let tilesEl = $state<HTMLDivElement | null>(null);
   let fillHeight = $state(0);
+  let leadEl = $state<HTMLDivElement | null>(null);
+  let leadHeight = $state(0);
   let tilesBox = $state({ width: 0, height: 0 });
 
   $effect(() => {
@@ -382,6 +391,25 @@
     measure();
     return () => observer.disconnect();
   });
+
+  // The lead shares the grid screen, so a bounded grid fills what is left.
+  // Its height outlives the screen: the grid returning from a drill starts
+  // at the right size instead of overflowing for a frame.
+  $effect(() => {
+    if (!leadEl) return;
+    const el = leadEl;
+    // Rounded up, the mirror of the probe's floor, so the pair never
+    // overflows the scroller by a fraction of a pixel.
+    const measure = () =>
+      (leadHeight = Math.ceil(el.getBoundingClientRect().height));
+    const observer = new ResizeObserver(measure);
+    observer.observe(el);
+    measure();
+    return () => observer.disconnect();
+  });
+  const gridFillHeight = $derived(
+    lead && fillHeight > 0 ? Math.max(0, fillHeight - leadHeight) : fillHeight
+  );
 
   $effect(() => {
     if (!tilesEl) return;
@@ -483,7 +511,7 @@
     if (!flat || drill !== null) return null;
     const n = allBases.length;
     const width = flatWidth;
-    const height = fillHeight;
+    const height = gridFillHeight;
     if (n === 0 || width === 0 || height === 0) return null;
     let best: {
       cols: number;
@@ -623,7 +651,7 @@
     return sectionFillLayout({
       counts: sections.map((section) => section.bases.length),
       width: sectionsBox.width,
-      height: fillHeight,
+      height: gridFillHeight,
       labels: sectionsBox.labels,
     });
   });
@@ -1191,75 +1219,80 @@
             </div>
           {/if}
         </section>
-      {:else if flat}
-        <div
-          class="flat-grid"
-          role="group"
-          aria-label={t("settings_prop_choices")}
-          class:dragging={railDragging}
-          class:comfortable={tileDensity === "comfortable"}
-          class:fill={flatLayout !== null}
-          style:height={flatLayout ? `${fillHeight}px` : undefined}
-          style:--flat-cols={flatLayout?.cols}
-          style:--flat-half={flatLayout
-            ? `${flatLayout.halfTrack}px`
-            : undefined}
-          style:--flat-row={flatLayout
-            ? `${flatLayout.rowHeight}px`
-            : undefined}
-          bind:this={flatEl}
-          onpointerdown={handleRailPointerDown}
-          onpointermove={handleRailPointerMove}
-          onpointerup={endRailPointer}
-          onpointercancel={endRailPointer}
-          onclickcapture={handleRailClick}
-        >
-          {#each allBases as base, index (base)}
-            {@render familyTile(
-              base,
-              flatLayout && index === flatLayout.orphanIndex
-                ? flatLayout.orphanStart
-                : undefined
-            )}
-          {/each}
-        </div>
       {:else}
-        <div
-          class="grid-content"
-          class:fill={sectionLayout !== null}
-          style:min-height={sectionLayout ? `${fillHeight}px` : undefined}
-          style:--fill-tile={sectionLayout
-            ? `${sectionLayout.tile}px`
-            : undefined}
-          bind:this={sectionsEl}
-        >
-          {#each sections as section, i}
-            {@const fillCols = sectionLayout
-              ? balancedCount(section.bases.length, sectionLayout.cols)
-              : 0}
-            {@const orphan = sectionLayout
-              ? centeredOrphan(section.bases.length, fillCols)
-              : null}
-            <div class="prop-section" class:primary={i === 0}>
-              <div class="section-label" class:first={i === 0}>
-                {section.label}
+        {#if lead}
+          <div class="grid-lead" bind:this={leadEl}>{@render lead()}</div>
+        {/if}
+        {#if flat}
+          <div
+            class="flat-grid"
+            role="group"
+            aria-label={t("settings_prop_choices")}
+            class:dragging={railDragging}
+            class:comfortable={tileDensity === "comfortable"}
+            class:fill={flatLayout !== null}
+            style:height={flatLayout ? `${gridFillHeight}px` : undefined}
+            style:--flat-cols={flatLayout?.cols}
+            style:--flat-half={flatLayout
+              ? `${flatLayout.halfTrack}px`
+              : undefined}
+            style:--flat-row={flatLayout
+              ? `${flatLayout.rowHeight}px`
+              : undefined}
+            bind:this={flatEl}
+            onpointerdown={handleRailPointerDown}
+            onpointermove={handleRailPointerMove}
+            onpointerup={endRailPointer}
+            onpointercancel={endRailPointer}
+            onclickcapture={handleRailClick}
+          >
+            {#each allBases as base, index (base)}
+              {@render familyTile(
+                base,
+                flatLayout && index === flatLayout.orphanIndex
+                  ? flatLayout.orphanStart
+                  : undefined
+              )}
+            {/each}
+          </div>
+        {:else}
+          <div
+            class="grid-content"
+            class:fill={sectionLayout !== null}
+            style:min-height={sectionLayout ? `${gridFillHeight}px` : undefined}
+            style:--fill-tile={sectionLayout
+              ? `${sectionLayout.tile}px`
+              : undefined}
+            bind:this={sectionsEl}
+          >
+            {#each sections as section, i}
+              {@const fillCols = sectionLayout
+                ? balancedCount(section.bases.length, sectionLayout.cols)
+                : 0}
+              {@const orphan = sectionLayout
+                ? centeredOrphan(section.bases.length, fillCols)
+                : null}
+              <div class="prop-section" class:primary={i === 0}>
+                <div class="section-label" class:first={i === 0}>
+                  {section.label}
+                </div>
+                <div
+                  class="section-buttons"
+                  class:single={section.bases.length === 1}
+                  style={section.columns}
+                  style:--fill-cols={sectionLayout ? fillCols : undefined}
+                >
+                  {#each section.bases as base, index (base)}
+                    {@render familyTile(
+                      base,
+                      index === orphan?.index ? orphan.start : undefined
+                    )}
+                  {/each}
+                </div>
               </div>
-              <div
-                class="section-buttons"
-                class:single={section.bases.length === 1}
-                style={section.columns}
-                style:--fill-cols={sectionLayout ? fillCols : undefined}
-              >
-                {#each section.bases as base, index (base)}
-                  {@render familyTile(
-                    base,
-                    index === orphan?.index ? orphan.start : undefined
-                  )}
-                {/each}
-              </div>
-            </div>
-          {/each}
-        </div>
+            {/each}
+          </div>
+        {/if}
       {/if}
     </Crossfade>
   </div>
@@ -1706,6 +1739,12 @@
   .grid-content.fill .section-buttons > :global(*) {
     /* End-only, so an inline column start on the orphan keeps its span. */
     grid-column-end: span 2;
+  }
+
+  /* Spaced from the tiles by its own padding, so the measured height a
+     bounded grid gives up includes the gap. */
+  .grid-lead {
+    padding-bottom: 12px;
   }
 
   /* Reports the scroller's bounded height to script; see fillHeight. */

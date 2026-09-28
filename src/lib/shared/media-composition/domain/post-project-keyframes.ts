@@ -314,6 +314,19 @@ export function adjacentKeyframeSeconds(
   return null;
 }
 
+/** One channel's in-view keyframes, in post seconds, earliest first. */
+export function channelKeyframeSeconds(
+  item: PostItem,
+  channel: PostKeyframeChannel
+): number[] {
+  const list = rawKeyframes(item, channel);
+  if (!list) return [];
+  return list
+    .filter((kf) => keyframeInView(item, kf.t))
+    .map((kf) => postSecondsOfKeyframe(item, kf.t))
+    .sort((a, b) => a - b);
+}
+
 export interface PostKeyframeMarker {
   seconds: number;
   channels: PostKeyframeChannel[];
@@ -349,6 +362,28 @@ export interface PostKeyframeSegment {
   easing: PostEasing;
   /** The departing keyframe's index in `keyframes[channel]`. */
   index: number;
+}
+
+/**
+ * Every segment of a channel, earliest first, including ones a trim has
+ * pushed partly or wholly out of view; the caller clips them to the item.
+ */
+export function channelSegments(
+  item: PostItem,
+  channel: PostKeyframeChannel
+): PostKeyframeSegment[] {
+  const list = rawKeyframes(item, channel);
+  if (!list || list.length < 2) return [];
+  const segments: PostKeyframeSegment[] = [];
+  for (let index = 0; index < list.length - 1; index++) {
+    segments.push({
+      fromSeconds: postSecondsOfKeyframe(item, list[index]!.t),
+      toSeconds: postSecondsOfKeyframe(item, list[index + 1]!.t),
+      easing: list[index]!.easing,
+      index,
+    });
+  }
+  return segments;
 }
 
 /**
@@ -518,31 +553,39 @@ export function removeKeyframesAt(item: PostItem, s: number): PostItem {
 }
 
 /**
- * Moves every channel's keyframe at `fromS` to `toS`, clamped to the item's
- * span. One landing on another replaces it. Pure, so a drag can re-apply it
- * to the project it started from.
+ * Moves one channel's keyframe at `fromS` to `toS`, clamped to the item's
+ * span. Landing on another keyframe replaces it. Pure, so a drag can re-apply
+ * it to the project it started from.
  */
-export function moveKeyframes(item: PostItem, fromS: number, toS: number): PostItem {
+export function moveKeyframe(
+  item: PostItem,
+  channel: PostKeyframeChannel,
+  fromS: number,
+  toS: number
+): PostItem {
+  const list = rawKeyframes(item, channel);
+  if (!list) return item;
+  const fromIndex = keyframeIndexAt(item, channel, fromS);
+  if (fromIndex < 0) return item;
   const clampedTo = Math.min(itemEnd(item), Math.max(item.start, toS));
   const toT = keyframeTimeOf(item, clampedTo);
-  let next = item;
-  for (const channel of channelsOf(item)) {
-    const list = rawKeyframes(item, channel);
-    if (!list) continue;
-    const fromIndex = keyframeIndexAt(item, channel, fromS);
-    if (fromIndex < 0) continue;
-    const moving = list[fromIndex]!;
-    if (Math.abs(toT - moving.t) <= POST_TIME_EPSILON) continue;
-    const landingIndex = keyframeIndexAt(item, channel, clampedTo);
-    const relocated = { ...moving, t: toT };
-    let updated = list.filter((_, i) => i !== fromIndex);
-    if (landingIndex >= 0 && landingIndex !== fromIndex) {
-      const target = list[landingIndex]!;
-      updated = updated.filter((kf) => kf !== target);
-    }
-    updated = [...updated, relocated].sort((a, b) => a.t - b.t);
-    next = withChannel(next, channel, updated as never);
+  const moving = list[fromIndex]!;
+  if (Math.abs(toT - moving.t) <= POST_TIME_EPSILON) return item;
+  const landingIndex = keyframeIndexAt(item, channel, clampedTo);
+  const relocated = { ...moving, t: toT };
+  let updated = list.filter((_, i) => i !== fromIndex);
+  if (landingIndex >= 0 && landingIndex !== fromIndex) {
+    const target = list[landingIndex]!;
+    updated = updated.filter((kf) => kf !== target);
   }
+  updated = [...updated, relocated].sort((a, b) => a.t - b.t);
+  return withChannel(item, channel, updated as never);
+}
+
+/** Moves every channel's keyframe at `fromS` to `toS`, as `moveKeyframe` does. */
+export function moveKeyframes(item: PostItem, fromS: number, toS: number): PostItem {
+  let next = item;
+  for (const channel of channelsOf(item)) next = moveKeyframe(next, channel, fromS, toS);
   return next;
 }
 

@@ -5,6 +5,7 @@
   import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
   import type { GuideCodexVisibility } from "../../level-1/_data/guide-codex-persistence";
   import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
+  import { tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
 
   let {
     box,
@@ -61,7 +62,7 @@
       {#if box.header}<span class="box-transition"
           ><CodexTransitionGlyph text={box.header} /></span
         >{/if}
-      {#if box.mode}<span class="box-mode">{box.mode}</span>{/if}
+      {#if box.mode}<span class="box-mode">{tDynamic(box.mode === "OPEN" ? "guide_codex_open" : "guide_codex_close")}</span>{/if}
     </div>
   {/if}
   <div class="box-cells">
