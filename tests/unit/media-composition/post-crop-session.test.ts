@@ -55,6 +55,26 @@ describe("crop session", () => {
     expect(session.pose!.zoom).toBeCloseTo(before, 6);
   });
 
+  it("says how far out the zoom goes, and holds Fill there", () => {
+    const { session } = openCrop();
+    expect(session.zoomFloor).toBeCloseTo(session.pose!.zoom, 6);
+
+    session.setZoom(session.zoomFloor * 0.6);
+    expect(session.pose!.zoom).toBeCloseTo(session.zoomFloor, 6);
+    expect(isCovered(session.pose!)).toBe(true);
+
+    // Turned a quarter, the landscape take's long side runs down the tall
+    // window, so it fills it from further out.
+    const flat = session.zoomFloor;
+    session.rotateQuarter();
+    expect(session.zoomFloor).toBeLessThan(flat);
+    clock += 1_000;
+    session.setZoom(session.zoomFloor * 2);
+    session.setZoom(0.01);
+    expect(session.pose!.zoom).toBeCloseTo(session.zoomFloor, 6);
+    expect(isCovered(session.pose!)).toBe(true);
+  });
+
   it("zooms Fill up as it straightens, so no corner opens", () => {
     const { session } = openCrop();
     expect(isCovered(session.pose!)).toBe(true);

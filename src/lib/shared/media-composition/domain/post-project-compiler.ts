@@ -20,6 +20,7 @@ import {
   POST_TIME_EPSILON,
   clampBox,
   itemEnd,
+  shortestTurn,
   type PostAnimationItem,
   type PostBox,
   type PostCarouselItem,
@@ -276,16 +277,25 @@ function transformMotionKeys(
 ): MotionKey<MotionTransformValue>[] | undefined {
   const frames = item.keyframes?.framing;
   if (!frames || frames.length === 0) return undefined;
-  return frames.map((kf) => ({
-    atSeconds: postSecondsOfKeyframe(item, kf.t),
-    value: {
-      scale: kf.value.zoom,
-      rotationDegrees: kf.value.rotation,
-      translateX: kf.value.panX,
-      translateY: kf.value.panY,
-    },
-    easing: kf.easing,
-  }));
+  // Each key's turn continues from the one before it the short way round,
+  // as the editor blends them, so a turn across -180..180 does not spin.
+  let turn = 0;
+  let stored: number | null = null;
+  return frames.map((kf) => {
+    const rotation = kf.value.rotation;
+    turn = stored === null ? rotation : turn + shortestTurn(stored, rotation);
+    stored = rotation;
+    return {
+      atSeconds: postSecondsOfKeyframe(item, kf.t),
+      value: {
+        scale: kf.value.zoom,
+        rotationDegrees: turn,
+        translateX: kf.value.panX,
+        translateY: kf.value.panY,
+      },
+      easing: kf.easing,
+    };
+  });
 }
 
 function opacityMotionKeys(item: PostItem): MotionKey<number>[] | undefined {
