@@ -1,5 +1,11 @@
 # German interface audit — September 25, 2026
 
+## September 27 correction: guest account prompts
+
+The earlier verification missed dynamically constructed translation keys. A guest visiting `/feedback/submit` saw `auth_nudge_module_other`, which was absent from both English and German. The same defect affected the 3D Studio, Fuse, Tunnel, and Assemble prompts; their subsequent account-dialog titles and descriptions also lacked translations. The earlier authentication coverage must not be read as verification of every guest gate.
+
+The follow-up adds those 15 messages in both languages and replaces the unchecked key construction with an exhaustive typed mapping. A new regression suite enumerates all 36 guest triggers, both account modes, and locale switching. It failed 12 cases before the fix; all 75 cases pass after the fix. Together with the existing trigger and locale suites, 96 tests pass. A separate source review of the other finite dynamic key families found no additional missing English/German keys; that source review does not establish browser coverage or translation quality.
+
 ## Result
 
 This pass adds 1,584 German messages and corrects 46 existing translations. Each added message also has an English source entry. It covers the main creation, browsing, viewing, sharing, settings, feedback, and learning controls described below. It does not establish complete German coverage of every route or native-speaker approval of the wording.
