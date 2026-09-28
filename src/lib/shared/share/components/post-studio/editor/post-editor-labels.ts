@@ -55,7 +55,7 @@ export function itemIcon(item: PostItem): string {
 export const TOOL_ICON: Record<PostToolId, string> = {
   videos: "fa-photo-film",
   add: "fa-plus",
-  canvas: "fa-vector-square",
+  canvas: "fa-ruler-combined",
   look: "fa-palette",
   export: "fa-file-export",
   trim: "fa-arrows-left-right-to-line",
