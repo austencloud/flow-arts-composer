@@ -13,11 +13,11 @@
   } from "../domain/concept-routes";
   import Seo from "$lib/shared/components/Seo.svelte";
   import { LANDING_DOMAIN } from "../../../../config/domains";
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { getLocale, t, tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
+  import { localizedConcept } from "../domain/localized-concept";
 
-  const COURSE_NAME = "Interactive TKA Lessons";
-  const COURSE_DESCRIPTION =
-    "Learn The Kinetic Alphabet through the interactive lessons currently available in Flow Arts Composer.";
+  const courseName = $derived(tDynamic("learn_public_course_name"));
+  const courseDescription = $derived(tDynamic("learn_public_course_description"));
 
   const concept = $derived(
     page.params.conceptId ? getConceptById(page.params.conceptId) : undefined
@@ -39,12 +39,14 @@
     concept ? getConceptExperience(concept.id) : undefined
   );
   const title = $derived(
-    concept ? `${concept.name} | Interactive TKA Lesson` : COURSE_NAME
+    concept
+      ? tDynamic("learn_public_lesson_title", { name: localizedConcept(concept, "name") })
+      : courseName
   );
-  // Every lesson already carries its own author-written blurb
-  // (concepts.ts `description`) — reuse it verbatim instead of writing new
-  // per-lesson copy. The course-level description stays the existing one.
-  const description = $derived(concept?.description ?? COURSE_DESCRIPTION);
+  // Keep lesson blurbs aligned with the available concept definitions in each locale.
+  const description = $derived(
+    concept ? localizedConcept(concept, "description") : courseDescription
+  );
   // Same builder the router uses to resolve a lesson URL, so this page can
   // never advertise a canonical the app itself wouldn't route to.
   const canonicalPath = $derived(buildConceptPath(concept?.id));
@@ -53,13 +55,13 @@
   const breadcrumbNames = $derived(
     concept
       ? [
-          { name: "Home", path: "/" },
-          { name: COURSE_NAME, path: CONCEPT_LIST_PATH },
-          { name: concept.name, path: canonicalPath },
+          { name: tDynamic("learn_public_home"), path: "/" },
+          { name: courseName, path: CONCEPT_LIST_PATH },
+          { name: localizedConcept(concept, "name"), path: canonicalPath },
         ]
       : [
-          { name: "Home", path: "/" },
-          { name: COURSE_NAME, path: CONCEPT_LIST_PATH },
+          { name: tDynamic("learn_public_home"), path: "/" },
+          { name: courseName, path: CONCEPT_LIST_PATH },
         ]
   );
   const breadcrumbJsonLd = $derived(
@@ -81,30 +83,30 @@
         ? {
             "@context": "https://schema.org",
             "@type": "LearningResource",
-            name: concept.name,
-            description: concept.description,
+            name: localizedConcept(concept, "name"),
+            description: localizedConcept(concept, "description"),
             url: canonical,
-            learningResourceType: "Interactive lesson",
+            learningResourceType: tDynamic("learn_public_resource_type"),
             educationalUse: "instruction",
-            inLanguage: "en",
+            inLanguage: getLocale(),
             isPartOf: {
               "@type": "Course",
-              name: COURSE_NAME,
+              name: courseName,
               url: `${LANDING_DOMAIN}${CONCEPT_LIST_PATH}`,
             },
           }
         : {
             "@context": "https://schema.org",
             "@type": "Course",
-            name: COURSE_NAME,
-            description: COURSE_DESCRIPTION,
+            name: courseName,
+            description: courseDescription,
             url: canonical,
             provider: {
               "@type": "Organization",
               name: "The Kinetic Alphabet",
               url: `${LANDING_DOMAIN}/`,
             },
-            inLanguage: "en",
+            inLanguage: getLocale(),
           }
     ).replace(/</g, "\\u003c")
   );
@@ -122,8 +124,8 @@
     <div class="course-prerender">
       <span>{t("learn_ui_learn_by_doing")}</span>
       {#if concept && experience}
-        <h1>{concept.name}</h1>
-        <p class="lesson-description">{concept.description}</p>
+        <h1>{localizedConcept(concept, "name")}</h1>
+        <p class="lesson-description">{localizedConcept(concept, "description")}</p>
         <p>
           {t("learn_ui_estimated_minutes", {
             minutes: concept.estimatedMinutes,
@@ -135,29 +137,29 @@
               `/guide/level-1/${experience.guideSlug}`}
           >
             {t("learn_ui_read_named", {
-              name: experience.reference?.label ?? experience.guideLabel,
+              name: tDynamic(`learn_reference_${concept.id.replaceAll("-", "_")}`),
             })}
           </a>
           {#if previousLesson}
             <a href={buildConceptPath(previousLesson.id)}>
-              {t("learn_ui_previous_named", { name: previousLesson.name })}
+              {t("learn_ui_previous_named", { name: localizedConcept(previousLesson, "name") })}
             </a>
           {/if}
           {#if nextLesson}
             <a href={buildConceptPath(nextLesson.id)}>
-              {t("learn_ui_next_named", { name: nextLesson.name })}
+              {t("learn_ui_next_named", { name: localizedConcept(nextLesson, "name") })}
             </a>
           {/if}
           <a href={CONCEPT_LIST_PATH}>{t("learn_ui_all_lessons")}</a>
         </nav>
       {:else}
-        <h1>{concept?.name ?? t("learn_ui_interactive_lessons")}</h1>
+        <h1>{concept ? localizedConcept(concept, "name") : t("learn_ui_interactive_lessons")}</h1>
         <p>{t("learn_ui_public_course_intro")}</p>
         <ol class="lesson-list">
           {#each lessons as lesson (lesson.id)}
             <li>
-              <a href={buildConceptPath(lesson.id)}>{lesson.name}</a>
-              <span>{lesson.description}</span>
+              <a href={buildConceptPath(lesson.id)}>{localizedConcept(lesson, "name")}</a>
+              <span>{localizedConcept(lesson, "description")}</span>
             </li>
           {/each}
         </ol>

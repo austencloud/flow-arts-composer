@@ -32,8 +32,8 @@ const firestoreReady = vi.hoisted(() => ({
   deferred: false,
 }));
 
+vi.mock("$lib/shared/auth/loaded-auth", () => ({ loadedAuth: auth }));
 vi.mock("$lib/shared/auth/firebase", () => ({
-  auth,
   getFirestoreInstance: vi.fn(() => {
     if (!firestoreReady.deferred) return Promise.resolve({});
     return new Promise((resolve) => {
@@ -55,7 +55,12 @@ vi.mock("$lib/shared/offline/state/sync-status-state.svelte", () => ({
 import { FirebaseSettingsPersister } from "$lib/shared/settings/services/firebase-settings-persister";
 import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
 
-async function flushMicrotasks(): Promise<void> {
+// The persister loads Firestore with import(), which takes longer than a few
+// microtasks under Vitest. Wait for those loads, then for the awaits chained
+// after them. A fixed tick count let one test's unfinished save land in the
+// next test.
+async function settleAsyncWork(): Promise<void> {
+  await vi.dynamicImportSettled();
   for (let i = 0; i < 5; i += 1) await Promise.resolve();
 }
 
@@ -77,8 +82,11 @@ describe("FirebaseSettingsPersister async boundaries", () => {
     // Caller tears down while getSettingsDocRef() is still pending.
     unsubscribe();
 
+    // Let the doc-ref lookup reach the Firestore instance before it resolves.
+    await settleAsyncWork();
+    expect(firestoreReady.resolve).not.toBeNull();
     firestoreReady.resolve?.({});
-    await flushMicrotasks();
+    await settleAsyncWork();
 
     // A listener created now belongs to nobody: the handle was already used.
     expect(onSnapshot).not.toHaveBeenCalled();
@@ -94,7 +102,7 @@ describe("FirebaseSettingsPersister async boundaries", () => {
     const persister = new FirebaseSettingsPersister();
     const callback = vi.fn();
     const unsubscribe = persister.onSettingsChange(callback);
-    await flushMicrotasks();
+    await settleAsyncWork();
 
     unsubscribe();
     deliver?.({ exists: () => true, data: () => ({ reducedMotion: true }) });
@@ -111,10 +119,10 @@ describe("FirebaseSettingsPersister async boundaries", () => {
 
     const persister = new FirebaseSettingsPersister();
     const unsubscribeFirst = persister.onSettingsChange(() => {});
-    await flushMicrotasks();
+    await settleAsyncWork();
 
     const unsubscribeSecond = persister.onSettingsChange(() => {});
-    await flushMicrotasks();
+    await settleAsyncWork();
 
     // Opening the second closed the first.
     expect(firstListener).toHaveBeenCalledTimes(1);
@@ -137,7 +145,7 @@ describe("FirebaseSettingsPersister async boundaries", () => {
 
     await persister.saveSettings({ leftPropType: PropType.FAN } as never);
     // The mirror runs after the save settles.
-    await flushMicrotasks();
+    await settleAsyncWork();
 
     const mirrored = setDoc.mock.calls
       .map(([ref]) => (ref as { path?: string })?.path)
@@ -150,7 +158,7 @@ describe("FirebaseSettingsPersister async boundaries", () => {
     const persister = new FirebaseSettingsPersister();
 
     await persister.saveSettings({ leftPropType: PropType.FAN } as never);
-    await flushMicrotasks();
+    await settleAsyncWork();
 
     const paths = setDoc.mock.calls.map(
       ([ref]) => (ref as { path?: string })?.path
@@ -163,10 +171,10 @@ describe("FirebaseSettingsPersister async boundaries", () => {
     const persister = new FirebaseSettingsPersister();
 
     await persister.saveSettings({ leftPropType: PropType.FAN } as never);
-    await flushMicrotasks();
+    await settleAsyncWork();
     auth.currentUser = { uid: "user-b", isAnonymous: false };
     await persister.saveSettings({ leftPropType: PropType.FAN } as never);
-    await flushMicrotasks();
+    await settleAsyncWork();
 
     const paths = setDoc.mock.calls.map(
       ([ref]) => (ref as { path?: string })?.path
@@ -183,17 +191,17 @@ describe("FirebaseSettingsPersister async boundaries", () => {
     });
     const persister = new FirebaseSettingsPersister();
     persister.onSettingsChange(() => {});
-    await flushMicrotasks();
+    await settleAsyncWork();
 
     await persister.saveSettings({ leftPropType: PropType.FAN } as never);
-    await flushMicrotasks();
+    await settleAsyncWork();
     // Another tab picked club, which also moved the public mirror to club.
     deliver?.({
       exists: () => true,
       data: () => ({ leftPropType: PropType.CLUB }),
     });
     await persister.saveSettings({ leftPropType: PropType.FAN } as never);
-    await flushMicrotasks();
+    await settleAsyncWork();
 
     const mirrored = setDoc.mock.calls
       .filter(([ref]) => (ref as { path?: string })?.path === "users/user-a")

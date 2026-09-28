@@ -83,6 +83,7 @@ const pages: SitemapEntry[] = [
   { url: "guide/level-2/turns" },
   { url: "guide/level-2/double-turns" },
   { url: "guide/ratios" },
+  { url: "guide/prospin-and-inspin" },
   { url: "guide/motion-paths" },
   { url: "guide/codex" },
   // The interactive lesson course. The index is the course landing; each

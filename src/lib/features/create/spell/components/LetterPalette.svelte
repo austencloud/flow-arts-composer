@@ -77,7 +77,7 @@ Haptic feedback on letter selection.
               class="letter-button"
               onclick={() => handleLetterClick(letter)}
               title={letter}
-              aria-label="Insert letter {letter}"
+              aria-label={t("create_insert_letter", { letter })}
             >
               {getDisplayLabel(letter)}
             </button>

@@ -12,7 +12,6 @@
   import { shareOrCopyLink } from "$lib/shared/share/services/link-share";
   import { toast } from "$lib/shared/toast/state/toast-state.svelte";
   import { goto } from "$app/navigation";
-  import { openSequenceViewer } from "$lib/shared/sequence-viewer/services/sequence-viewer-navigator";
   import { saveSequenceRouteHandoff } from "$lib/shared/coordinators/sequence-handoff.svelte";
   import { generateSequenceRoutePath } from "$lib/shared/navigation/services/sequence-encoder";
   import type { ModeRealization } from "$lib/shared/shape-matrix/services/build-mode-realizations";
@@ -118,12 +117,18 @@
     action: "open" | "save"
   ): void {
     if (variant === "embedded") {
-      openSequenceViewer(realization.seq, {
-        source: "shape_engine",
-        returnPath: "/create/shape-engine",
-        returnLabel: t("shape_engine_name"),
-        saveOnOpen: action === "save",
-      });
+      // Only the Create module's Shape tab opens the viewer in place. Loading
+      // the navigator on this click keeps it, and the sign-in and Firebase
+      // code behind it, off the public /shape-engine page's first download.
+      void import("$lib/shared/sequence-viewer/services/sequence-viewer-navigator").then(
+        ({ openSequenceViewer }) =>
+          openSequenceViewer(realization.seq, {
+            source: "shape_engine",
+            returnPath: "/create/shape-engine",
+            returnLabel: t("shape_engine_name"),
+            saveOnOpen: action === "save",
+          })
+      );
       return;
     }
 

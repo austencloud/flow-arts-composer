@@ -13,6 +13,7 @@
   strands the last one (4k-native-layout.md).
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import WorkTile from "./WorkTile.svelte";
   import { fitColumns } from "../domain/fit-columns";
   import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
@@ -37,7 +38,7 @@
 {#if items.length > 0}
   <section class="wall" aria-labelledby="creators-wall-heading">
     <header class="wall-header">
-      <h3 class="wall-name" id="creators-wall-heading">Recent work</h3>
+      <h3 class="wall-name" id="creators-wall-heading">{t("browse_verified_recent_work")}</h3>
       <span class="rule" aria-hidden="true"></span>
       <span class="count">{items.length}</span>
     </header>

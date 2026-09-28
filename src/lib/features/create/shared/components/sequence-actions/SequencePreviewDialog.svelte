@@ -36,11 +36,21 @@
 
   // Helper to get sequence display name
   function getSequenceName(seq: SequenceData | null | undefined): string {
-    if (!seq) return "Unknown";
+    if (!seq) return t("create_sequence_preview_unknown");
     if (seq.word) return seq.word;
     if (seq.name) return seq.name;
     const count = seq.steps?.length ?? 0;
-    return count > 0 ? `${count}-step sequence` : "Empty";
+    return count > 0
+      ? t(count === 1
+          ? "create_sequence_preview_unnamed_one_step"
+          : "create_sequence_preview_unnamed_steps", { count })
+      : t("create_sequence_preview_empty");
+  }
+
+  function stepCountLabel(count: number): string {
+    return t(count === 1
+      ? "create_sequence_preview_one_step"
+      : "create_sequence_preview_steps", { count });
   }
 
   // Derive display info
@@ -95,7 +105,7 @@
       <div class="dialog-header">
         <span class="icon">⚠️</span>
         <DialogPrimitive.Title class="dialog-title">
-          Replace Construct Sequence?
+          {t("create_review_replace_construct_sequence")}
         </DialogPrimitive.Title>
       </div>
 
@@ -106,7 +116,7 @@
           <div class="panel-header">
             <span class="panel-label">{t("create_ui_will_be_replaced")}</span>
             <span class="step-count" data-testid="current-beat-count"
-              >{currentStepCount} steps</span
+              >{stepCountLabel(currentStepCount)}</span
             >
           </div>
           <div class="sequence-name" data-testid="current-sequence-name">
@@ -138,7 +148,7 @@
           <div class="panel-header">
             <span class="panel-label">{t("create_ui_new_sequence")}</span>
             <span class="step-count" data-testid="incoming-beat-count"
-              >{incomingStepCount} steps</span
+              >{stepCountLabel(incomingStepCount)}</span
             >
           </div>
           <div class="sequence-name" data-testid="incoming-sequence-name">
@@ -163,7 +173,7 @@
 
       <!-- Message -->
       <DialogPrimitive.Description class="dialog-message">
-        This will overwrite your current work in Construct.
+        {t("create_review_this_will_overwrite_your_current_work_in_construct")}
       </DialogPrimitive.Description>
 
       <!-- Actions -->
@@ -173,14 +183,14 @@
           onclick={handleCancel}
           data-testid="cancel-replace"
         >
-          Keep Current
+          {t("create_review_keep_current")}
         </button>
         <button
           class="dialog-button confirm-button"
           onclick={handleConfirm}
           data-testid="confirm-replace"
         >
-          Replace & Edit
+          {t("create_review_replace_edit")}
         </button>
       </div>
     </DialogPrimitive.Content>

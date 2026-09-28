@@ -19,6 +19,7 @@
   (fewer dots than cells when dashes are present) reads as intentional.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { onMount } from "svelte";
   import PatternStripEditor from "$lib/shared/create/components/pattern-strip/PatternStripEditor.svelte";
   import type {
@@ -168,10 +169,9 @@
         {inertMask}
       />
       <p class="reversal-note" class:emphasis={hasInert}>
-        A reversal flips a spinning prop, so dash and static steps stay put.
+        {t("create_review_a_reversal_flips_a_spinning_prop_so_dash_and_static_steps_stay_put")}
         <span class="counts"
-          >Left spins on <b>{spin.left}</b>/<b>{spin.total}</b> steps, Right on
-          <b>{spin.right}</b>/<b>{spin.total}</b>.</span
+          >{t("create_reversal_spin_counts", { left: spin.left, right: spin.right, total: spin.total })}</span
         >
       </p>
     </div>
@@ -182,7 +182,7 @@
       onclick={applyStrip}
       disabled={!sequence || applying}
     >
-      {applying ? "Applying…" : "Apply to sequence"}
+      {applying ? t("create_pattern_applying") : t("create_pattern_apply_sequence")}
     </button>
   </div>
 </div>
@@ -286,10 +286,6 @@
     font-variant-numeric: tabular-nums;
   }
 
-  .reversal-note b {
-    font-weight: 700;
-    color: var(--theme-accent, #2dd4bf);
-  }
 
   @container sequence-action-subview (max-width: 599px) and (max-height: 430px) {
     .reversal-surface {

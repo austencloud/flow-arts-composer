@@ -249,4 +249,6 @@ rim at the default staff length. Emitters and trails follow the same table.
 - Threading the grip through the static pictograph loader
   (`PropSvgLoadOptions` and its sixty call sites). The pictograph grid draws
   the corner glyph for either grip; the animator, the 3D scene, picker tiles,
-  and sprites follow the grip.
+  and sprites follow the grip. Done 2026-09-27: `PropSvgLoadOptions.triangleGrip`
+  now carries it to the Start pictograph, the Assemble grid and personal
+  cards in both looks. Printed and scanned cards keep the corner glyph.

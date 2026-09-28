@@ -1,27 +1,28 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import GuideSection from "../../../level-1/_components/GuideSection.svelte";
 </script>
 
-<GuideSection id="type-6-turns" title="Type 6: Static (1-Turn)">
+<GuideSection id="type-6-turns" title={t("guide_l2_type6_title")}>
   <div class="section-body">
     <p>
-      Finally, Type 6 letters have both hands remaining static. Both types are the same (static|static), so the number goes in the high slot by default.
+      {t("guide_l2_type6_intro")}
     </p>
 
     <p>
-      This includes α, β, and Γ.
+      {t("guide_l2_type6_letters")}
     </p>
 
     <!-- TODO: add diagram - Alpha-One -->
 
     <p>
-      Note that the arrow can follow the path of either the thumb end or pinky end. The optimal placement depends on context.
+      {t("guide_l2_type6_arrow")}
     </p>
 
     <!-- TODO: add diagram - Gamma-One opening (◌) / Gamma-One closing (◍) -->
 
     <p>
-      These static single-turns are relatively simple. Next we'll look at dual-turns, in which both props are receiving a turn.
+      {t("guide_l2_type6_next")}
     </p>
   </div>
 </GuideSection>

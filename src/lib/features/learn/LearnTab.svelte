@@ -39,6 +39,7 @@ Navigation via bottom tabs (mobile-first UX pattern)
     clearActiveConceptId,
   } from "./state/experience-persistence.svelte";
   import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { localizedConcept } from "./domain/localized-concept";
   import { setDelightOrchestrator } from "$lib/shared/delight/context/delight-context";
   import ConfettiBurst from "$lib/shared/delight/components/ConfettiBurst.svelte";
   import AchievementToast from "$lib/shared/delight/components/AchievementToast.svelte";
@@ -136,16 +137,16 @@ Navigation via bottom tabs (mobile-first UX pattern)
 
     if (activeMode === "concepts") {
       if (selectedConcept) {
-        header = selectedConcept.name || t("learn_concept_details");
+        header = localizedConcept(selectedConcept, "name") || t("learn_concept_details");
       } else {
-        header = "Interactive lessons";
+        header = t("learn_ui_interactive_lessons");
       }
     } else if (activeMode === "play") {
       header = t("learn_play");
     } else if (activeMode === "tika") {
       header = "TIKA";
     } else if (activeMode === "guide") {
-      header = "Level 1 Guide";
+      header = t("learn_ui_level_one_guide");
     }
 
     onHeaderChange(header);

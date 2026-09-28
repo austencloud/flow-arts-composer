@@ -47,6 +47,7 @@ with pre-prepared data for better performance.
     normalizeFanAppearance,
   } from "../../prop/domain/fan-appearance";
   import { normalizePropLook } from "../../prop/domain/prop-look";
+  import { normalizeTriangleGrip } from "../../prop/domain/triangle-appearance";
   import { calculatePictographMotionPositions } from "../../prop/services/pictograph-motion-positioner";
   import { GridMode, GridLocation } from "../../grid/domain/enums/grid-enums";
   import PictographRenderer from "./PictographRenderer.svelte";
@@ -465,6 +466,9 @@ with pre-prepared data for better performance.
   const effectivePropLook = $derived(
     normalizePropLook(getSettings().propArtwork)
   );
+  const effectiveTriangleGrip = $derived(
+    normalizeTriangleGrip(getSettings().triangleGrip)
+  );
 
   // Create a stable key for data preparation dependencies
   // Include effectiveDarkMode so that when it changes (via prop OR global toggle), we re-prepare with correct colors
@@ -529,6 +533,7 @@ with pre-prepared data for better performance.
         normalizeFanAppearance(fanAppearanceOverride ?? settings.fanAppearance)
       ),
       propLook: effectivePropLook,
+      triangleGrip: effectiveTriangleGrip,
       darkMode: effectiveDarkMode, // Include effective dark mode for color-correct preparation
       leftMotion: leftFingerprint,
       rightMotion: rightFingerprint,
@@ -593,6 +598,7 @@ with pre-prepared data for better performance.
             fanAppearanceOverride ?? getSettings().fanAppearance
           ),
           propLook: effectivePropLook,
+          triangleGrip: effectiveTriangleGrip,
           showLeftMotion: preparationShowLeftMotion,
           showRightMotion: preparationShowRightMotion,
         };

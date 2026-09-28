@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { localizeLevel1Text, localizeLevel1SelectionLabel } from "../_data/localize-level1-content";
   /**
    * Type 4/5/6 letters - body page (manifest `lt456-phi-psi-lambda`), faithful
    * to proof p29 / "1.1 - Type 4,5,6" artboard. ONE physical page, THREE
@@ -262,7 +263,7 @@
 <div class="t456-letters">
   {#each SECTIONS as sec (sec.key)}
     <!-- Section title (shared calligraphic face, canonical type colors). -->
-    <div class="guide-title" style="top:{sec.titleY * S}px">{@html sec.titleHtml}</div>
+    <div class="guide-title" style="top:{sec.titleY * S}px">{@html localizeLevel1Text(sec.titleHtml)}</div>
 
     <!-- Position labels above the cells. -->
     {#if sec.labels}
@@ -297,7 +298,7 @@
         <SelectionHit
           groupId={key}
           isGroupStart
-          label={`Animate ${c.name}`}
+          label={localizeLevel1SelectionLabel(`Animate ${c.name}`)}
           onselect={() => emitSequence?.({ strip: RESOLVED[key]!, word: c.name, key, propType: "staff" })}
         />
       </div>
@@ -324,7 +325,7 @@
       use:ptDrag={pt(`t456-para-${i}`, "para", p)}
       use:editText={{ id: `t456-para-${i}`, label: "para", get: () => p.html, set: (h) => (p.html = h) }}
     >
-      {@html p.html}
+      {@html localizeLevel1Text(p.html)}
     </p>
   {/each}
 </div>

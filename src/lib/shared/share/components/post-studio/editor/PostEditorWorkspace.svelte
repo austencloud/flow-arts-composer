@@ -22,7 +22,9 @@
     takeIdFromRole,
   } from "$lib/shared/media-composition/domain/post-plan-compiler";
   import {
+    itemIdFromStaffEffectRole,
     itemIdFromTextRole,
+    staffEffectRole,
     textRole,
   } from "$lib/shared/media-composition/domain/post-project-compiler";
   import {
@@ -33,11 +35,13 @@
     mainItemAt,
     type PostItem,
     type PostItemKind,
+    type PostKeyframeChannel,
     type PostVideoItem,
   } from "$lib/shared/media-composition/domain/post-project";
   import {
-    moveKeyframes,
-    removeKeyframesAt,
+    channelsOf,
+    moveKeyframe,
+    removeKeyframe,
     toggleKeyframe,
   } from "$lib/shared/media-composition/domain/post-project-keyframes";
   import {
@@ -57,6 +61,8 @@
   import { createBeatCarouselPainter } from "$lib/shared/media-composition/services/beat-carousel-painter";
   import { createSequenceStripPainter } from "$lib/shared/media-composition/services/sequence-strip-painter";
   import { createTextItemPainter } from "$lib/shared/media-composition/services/text-item-painter";
+  import { createStaffEffectPainter } from "$lib/shared/media-composition/services/staff-effect-painter";
+  import { createStaffTipAnalysis } from "$lib/shared/media-composition/state/staff-tip-analysis.svelte";
   import { loadAnimationOverlayPainter } from "$lib/shared/media-composition/services/animation-overlay-painter-registry";
   import { planProjectAudio } from "$lib/shared/media-composition/domain/post-audio-plan";
   import { buildMixedAudioTrack } from "$lib/shared/media-composition/services/post-audio-track";
@@ -68,24 +74,35 @@
   import ExportTakeover from "$lib/shared/video-export/components/ExportTakeover.svelte";
   import Crossfade from "$lib/shared/components/Crossfade.svelte";
   import { DURATION } from "$lib/shared/transitions/transitions";
+  import { motionDuration } from "$lib/shared/transitions/motion";
+  import {
+    LAYOUT_MOTION_DURATION_MS,
+    createLayoutMotion,
+  } from "$lib/shared/transitions/layout-flip";
   import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
   import type { PostStudioShareExport } from "../post-studio-share-export";
   import PostTimingStage from "../builder/PostTimingStage.svelte";
   import PostTimingPanel from "../builder/PostTimingPanel.svelte";
   import { createPostTimingSession } from "../builder/post-timing-session.svelte";
+  import { formatTakeClock } from "../builder/post-builder-format";
   import PostEditorCanvas from "./PostEditorCanvas.svelte";
   import PostEditorTopBar from "./PostEditorTopBar.svelte";
   import PostEditorTransport from "./PostEditorTransport.svelte";
+  import PostCropTimeline from "./PostCropTimeline.svelte";
   import PostToolRow from "./PostToolRow.svelte";
   import PostToolPanel from "./PostToolPanel.svelte";
   import PostItemTool from "./PostItemTool.svelte";
+  import PostKeyframeControls from "./PostKeyframeControls.svelte";
   import PostAddPanel from "./PostAddPanel.svelte";
   import PostMediaPanel from "./PostMediaPanel.svelte";
   import PostExportPanel from "./PostExportPanel.svelte";
   import PostTimeline from "./timeline/PostTimeline.svelte";
   import { clampPixelsPerSecond } from "./timeline/post-timeline-geometry";
-  import { itemDisplayLabel } from "./post-editor-labels";
+  import { channelLabel, itemDisplayLabel } from "./post-editor-labels";
   import { readVideoFile, videoFileError } from "./post-editor-files";
+  import { createCropSession } from "./post-crop-session.svelte";
+  import { adjacentStepSeconds, clipSteps, type ClipStep } from "./post-crop-steps";
+  import type { CropSize } from "./post-crop-geometry";
   import {
     availablePanels,
     isPanelTool,
@@ -250,6 +267,38 @@
     return painter;
   }
 
+  /** Where each take's LED staffs are, found once per video. */
+  const staffTips = createStaffTipAnalysis();
+  $effect(() => {
+    for (const take of editor.takes) staffTips.ensure(take.takeKey);
+  });
+
+  function videoItem(itemId: string): PostVideoItem | null {
+    const found = findItem(editor.project, itemId)?.item;
+    return found?.kind === "video" ? found : null;
+  }
+
+  /** One painter per clip, reading its effect and its take's staff ends live. */
+  const staffPainters = new Map<string, PostStudioLayerPainter>();
+  function staffPainterFor(itemId: string): PostStudioLayerPainter {
+    let painter = staffPainters.get(itemId);
+    if (!painter) {
+      painter = createStaffEffectPainter({
+        track: () => {
+          const item = videoItem(itemId);
+          const take = item
+            ? editor.takes.find((entry) => entry.id === item.takeId)
+            : null;
+          return take ? staffTips.track(take.takeKey) : null;
+        },
+        effect: () => videoItem(itemId)?.staffEffect?.effect ?? null,
+        fit: () => videoItem(itemId)?.fit ?? "cover",
+      });
+      staffPainters.set(itemId, painter);
+    }
+    return painter;
+  }
+
   let overlayVersion = 0;
   $effect(() => {
     const drawn = displaySequence;
@@ -295,6 +344,18 @@
         ...(take ? { durationSeconds: take.durationSeconds } : {}),
         status: url ? "ready" : "missing",
         missingMessage: t("share_studio_repick_local"),
+      };
+    }
+    const staffItemId = itemIdFromStaffEffectRole(role);
+    if (staffItemId) {
+      return {
+        roleKey: role,
+        kind: "image",
+        label: t("post_staff_effect"),
+        previewUrl: null,
+        renderMode: "painted",
+        painter: staffPainterFor(staffItemId),
+        status: "ready",
       };
     }
     const textItemId = itemIdFromTextRole(role);
@@ -378,6 +439,13 @@
       painters.set(textRole(text.itemId), textPainterFor(text.itemId));
     }
     if (overlayPainter) painters.set(ANIMATION_OVERLAY_ROLE, overlayPainter);
+    for (const track of editor.project.tracks) {
+      for (const item of track.items) {
+        if (item.kind === "video" && item.staffEffect) {
+          painters.set(staffEffectRole(item.id), staffPainterFor(item.id));
+        }
+      }
+    }
     return painters;
   }
 
@@ -395,6 +463,8 @@
   let dockElement = $state<HTMLElement | null>(null);
   /** The row under the timeline on a wide screen. */
   let rowSlot = $state<HTMLElement | null>(null);
+  /** The transport, or the crop screen's time bar in its place. */
+  let transportSlot = $state<HTMLElement | null>(null);
   /** The preview and its neighbors, the row that grows to fill a phone. */
   let stageRow = $state<HTMLElement | null>(null);
   /** The preview's height when a phone panel opened, held until it closes. */
@@ -499,10 +569,68 @@
   const shown = $derived(shownPanel(activeTool, selection, panelBeside));
   /** A phone shows the panel in the row's place, else the row. */
   const dockKey = $derived(shown ?? rowKey);
-  /** The selected clip's Crop is on screen, so the preview pans its picture. */
+  /**
+   * The crop screen: the selected clip's Crop is open, so the stage shows
+   * that clip alone with its window large in the middle. The share sheet, a
+   * preview lent to the viewer and the beat tapper each close it, keeping
+   * its changes, and it opens again when they are done.
+   */
   const cropMode = $derived(
-    shown === "crop" && editor.selectedItem?.kind === "video"
+    shown === "crop" &&
+      editor.selectedItem?.kind === "video" &&
+      !showTimingStage &&
+      !sharing &&
+      !previewTarget
   );
+
+  /** Each clip's footage size, as its video reports it, for the crop screen. */
+  let sourceSizes = $state<Record<string, CropSize>>({});
+  function noteSourceSize(regionId: string, size: CropSize): void {
+    const known = sourceSizes[regionId];
+    if (known?.width === size.width && known.height === size.height) return;
+    sourceSizes = { ...sourceSizes, [regionId]: size };
+  }
+
+  const crop = createCropSession({
+    editor,
+    getItemId: () => (cropMode ? editor.selectedItemId : null),
+    getSource: () => {
+      const id = editor.selectedItemId;
+      return id ? (sourceSizes[id] ?? null) : null;
+    },
+  });
+
+  /** The panel that was open before the crop screen, to go back to. */
+  let cropReturn: PostPanelToolId | null = null;
+
+  // The screen's changes are one undo step. Done and Cancel end the session
+  // themselves; leaving any other way keeps the changes, as Done would. The
+  // session ends from the effect's body, not a teardown: a teardown reads
+  // state as it was before the change that ended it, so it would save again
+  // a project that Cancel had just put back.
+  let cropSessionOpen = false;
+  $effect(() => {
+    if (cropMode) {
+      if (!cropSessionOpen) {
+        cropSessionOpen = untrack(() => editor.beginSession());
+      }
+      return;
+    }
+    if (!cropSessionOpen) return;
+    cropSessionOpen = false;
+    untrack(() => {
+      crop.abandonGesture();
+      editor.endSession(true);
+    });
+  });
+
+  // The clip's region and its frame fly between their place in the post and
+  // the crop window.
+  const cropFlight = createLayoutMotion({
+    getRoot: () => canvasRoot,
+    groups: [{ selector: "[data-crop-flip]", datasetKey: "cropFlip" }],
+    getDuration: () => motionDuration(LAYOUT_MOTION_DURATION_MS),
+  });
 
   // A phone's preview takes the height the row leaves it. A panel is taller
   // than the row, so the preview keeps its height while one is open, and the
@@ -511,8 +639,15 @@
   // dock. This measures before the panel goes in.
   const MIN_DOCK_PANEL_REM = 14;
   $effect.pre(() => {
-    const holding = layout === "phone" && !showTimingStage && shown !== null;
+    const phone = layout === "phone" && !showTimingStage;
+    const cropDock = phone && cropMode;
+    const holding = phone && !cropMode && shown !== null;
     untrack(() => {
+      // The crop screen sizes its own dock once it is on screen, below.
+      if (cropDock) {
+        heldStageHeight = null;
+        return;
+      }
       if (!holding) {
         heldStageHeight = null;
         dockPanelMax = null;
@@ -540,6 +675,45 @@
         room >= MIN_DOCK_PANEL_REM * remPixels
           ? room
           : Math.max(room, rootElement.clientHeight / 2);
+    });
+  });
+
+  // On a phone the crop screen keeps at least half the room under the top
+  // bar for its stage. Its panel fits under the timeline and scrolls inside.
+  // A short phone gives the panel less, down to a slider and a half, before
+  // the stage goes under its 12rem or the dock covers the keyframes.
+  const MIN_CROP_PANEL_REM = 10;
+  const SHORT_CROP_PANEL_REM = 6;
+  const MIN_CROP_STAGE_REM = 12;
+  $effect(() => {
+    if (!cropMode || layout !== "phone") return;
+    void editorHeight;
+    void editorWidth;
+    untrack(() => {
+      if (!rootElement || !stageRow || !dockElement || !transportSlot) return;
+      const rootTop = rootElement.getBoundingClientRect().top;
+      const stageTop =
+        stageRow.getBoundingClientRect().top - rootTop + rootElement.scrollTop;
+      const below = rootElement.clientHeight - stageTop;
+      const gap =
+        Number.parseFloat(
+          getComputedStyle(stageRow.parentElement ?? stageRow).rowGap
+        ) || 0;
+      const dock = getComputedStyle(dockElement);
+      const dockChrome =
+        Number.parseFloat(dock.paddingTop) +
+        Number.parseFloat(dock.paddingBottom) +
+        Number.parseFloat(dock.borderTopWidth);
+      const underStage = transportSlot.offsetHeight + gap * 2 + dockChrome;
+      const room = below / 2 - underStage + gap / 2;
+      const fits = below - MIN_CROP_STAGE_REM * remPixels - underStage;
+      dockPanelMax = Math.max(
+        room,
+        Math.min(
+          MIN_CROP_PANEL_REM * remPixels,
+          Math.max(fits, SHORT_CROP_PANEL_REM * remPixels)
+        )
+      );
     });
   });
 
@@ -639,11 +813,108 @@
   }
 
   function openTool(id: PostPanelToolId): void {
-    if (id === "crop") seekIntoSelected();
+    if (id === "crop") {
+      void openCrop();
+      return;
+    }
     activeTool = id;
     // Beside the preview the row works like tabs and focus stays on it. On a
     // phone the panel takes the row's place, so focus moves into it.
     if (!panelBeside) void focusAfterUpdate({ kind: "panel" });
+  }
+
+  /** Crop opens its own screen on the selected clip, from a still frame. */
+  async function openCrop(): Promise<void> {
+    if (cropMode || editor.selectedItem?.kind !== "video") return;
+    editor.pause();
+    // Crop edits the frame under the playhead, so it starts inside the clip.
+    seekInClip(editor.previewSeconds);
+    cropReturn = activeTool === "crop" ? null : activeTool;
+    cropFlight.capture();
+    activeTool = "crop";
+    await tick();
+    cropFlight.play();
+    findShown("[data-crop-frame]")?.focus({ preventScroll: true });
+  }
+
+  /**
+   * Done keeps the crop as one undo step; Cancel puts the clip back as it
+   * was. Either way the panel that was open before comes back.
+   */
+  async function closeCrop(keep: boolean): Promise<void> {
+    if (!cropMode) return;
+    cropFlight.capture();
+    crop.abandonGesture();
+    editor.endSession(keep);
+    cropSessionOpen = false;
+    activeTool = cropReturn;
+    cropReturn = null;
+    await tick();
+    cropFlight.play();
+    void focusAfterUpdate({ kind: "tool", id: "crop" });
+  }
+
+  /** Crop plays its clip round and round, from the start once it ran out. */
+  function toggleCropPlayback(): void {
+    const clip = crop.item;
+    if (!clip) return;
+    if (!editor.isPlaying) {
+      const seconds = editor.previewSeconds;
+      if (seconds < clip.start || seconds >= itemEnd(clip) - FRAME_SECONDS) {
+        editor.seek(clip.start);
+      }
+    }
+    editor.togglePlayback();
+  }
+
+  /**
+   * A seek on the crop screen stays on the clip, exactly: a playhead a hair
+   * before its start, as a slider's rounding leaves it, shows the clip no
+   * picture at all.
+   */
+  function seekInClip(seconds: number): void {
+    const clip = crop.item ?? editor.selectedItem;
+    if (!clip) return;
+    const last = Math.max(clip.start, itemEnd(clip) - FRAME_SECONDS);
+    const inside = Math.min(last, Math.max(clip.start, seconds));
+    if (inside !== editor.previewSeconds) editor.seek(inside);
+  }
+
+  /** The beats tapped for the crop clip's take, where a keyframe likely goes. */
+  const cropSteps = $derived.by((): ClipStep[] => {
+    const clip = cropMode ? crop.item : null;
+    if (!clip) return [];
+    return clipSteps(
+      clip,
+      editor.timing(clip.takeId),
+      editor.resolvedTiming(clip.takeId)
+    );
+  });
+
+  function cropStepName(step: ClipStep): string {
+    const time = formatTakeClock(step.seconds - (crop.item?.start ?? 0));
+    return step.position === 0
+      ? t("post_crop_opening_at", { time })
+      : t("post_crop_beat_at", { count: step.label, time });
+  }
+
+  function stepCropBeat(direction: "previous" | "next"): void {
+    const seconds = adjacentStepSeconds(
+      cropSteps,
+      editor.previewSeconds,
+      direction
+    );
+    editor.pause();
+    if (seconds !== null) seekInClip(seconds);
+  }
+
+  /** The crop timeline's Curve chip, apart from the stowed timeline's. */
+  let cropCurveOpen = $state(false);
+
+  function openCropCurve(fromSeconds: number): void {
+    editor.pause();
+    seekInClip(fromSeconds);
+    cropCurveOpen = true;
   }
 
   /** Done on a phone: back to the row, on the tool that opened the panel. */
@@ -674,25 +945,6 @@
     }
     activeTool = null;
     void focusAfterUpdate(panelBeside ? { kind: "panel" } : { kind: "row" });
-  }
-
-  /** Crop edits the frame under the playhead, so it starts inside the clip. */
-  function seekIntoSelected(): void {
-    const item = editor.selectedItem;
-    if (!item) return;
-    const seconds = editor.previewSeconds;
-    if (
-      seconds >= item.start - POST_TIME_EPSILON &&
-      seconds <= itemEnd(item) + POST_TIME_EPSILON
-    ) {
-      return;
-    }
-    editor.pause();
-    editor.seek(
-      seconds < item.start
-        ? item.start
-        : Math.max(item.start, itemEnd(item) - FRAME_SECONDS)
-    );
   }
 
   function pickDeviceVideo(): void {
@@ -740,6 +992,56 @@
   function seekFromTimeline(seconds: number): void {
     editor.pause();
     editor.seek(seconds);
+  }
+
+  // ---- Keyframe rows -------------------------------------------------------
+
+  /**
+   * A keyframe row picked on the timeline. It holds only while the same clip
+   * and tool stay up, so opening Fade goes back to keying Fade.
+   */
+  let pickedKeyRow = $state<{
+    itemId: string;
+    tool: PostPanelToolId | null;
+    channel: PostKeyframeChannel;
+  } | null>(null);
+  let keyCurveOpen = $state(false);
+
+  /** What the toolbar diamond and K key: the picked row, else the open tool's channel. */
+  const keyChannel = $derived.by((): PostKeyframeChannel | null => {
+    const item = editor.selectedItem;
+    if (!item) return null;
+    const picked = pickedKeyRow;
+    if (
+      picked &&
+      picked.itemId === item.id &&
+      picked.tool === shown &&
+      channelsOf(item).includes(picked.channel)
+    ) {
+      return picked.channel;
+    }
+    return keyframeChannelFor(shown, item.kind);
+  });
+
+  function pickKeyRow(channel: PostKeyframeChannel): void {
+    const item = editor.selectedItem;
+    if (item) pickedKeyRow = { itemId: item.id, tool: shown, channel };
+  }
+
+  function editKeys(itemId: string, change: (item: PostItem) => PostItem): void {
+    editor.edit((project, ctx) => editItemKeyframes(project, itemId, change, ctx));
+  }
+
+  // A curve's easing is edited from the toolbar's Curve chip, which follows
+  // the playhead, so the playhead goes to the curve's first key.
+  function openKeyCurve(
+    itemId: string,
+    channel: PostKeyframeChannel,
+    fromSeconds: number
+  ): void {
+    pickKeyRow(channel);
+    seekFromTimeline(fromSeconds);
+    keyCurveOpen = true;
   }
 
   function zoomTimeline(factor: number): void {
@@ -800,12 +1102,13 @@
       return;
     }
     if (event.ctrlKey || event.metaKey) {
-      if (event.key.toLowerCase() === "d" && !event.shiftKey) {
+      if (!cropMode && event.key.toLowerCase() === "d" && !event.shiftKey) {
         event.preventDefault();
         editor.duplicateSelected();
       }
       return;
     }
+    if (cropMode && handleCropKey(event)) return;
     switch (event.key) {
       case " ":
         if (event.repeat || isControl(event.target)) return;
@@ -832,8 +1135,9 @@
           return;
         }
         event.preventDefault();
-        // K keys what the tool on screen edits: Crop, Position or Fade.
-        const channel = keyframeChannelFor(shown, item.kind);
+        // K keys the picked keyframe row, else what the tool on screen
+        // edits: Crop, Position or Fade.
+        const channel = keyChannel ?? keyframeChannelFor(shown, item.kind);
         editor.edit((project, ctx) =>
           editItemKeyframes(
             project,
@@ -890,6 +1194,75 @@
         event.preventDefault();
         deselect();
         return;
+    }
+  }
+
+  /**
+   * The crop screen's keys, true when the key is the screen's to answer.
+   * Enter is Done and Escape is Cancel, unless a drag or a held corner is
+   * running: Escape then drops only that. Space loops the clip, the arrows,
+   * Home and End stay on it, Up and Down go to the beat before or after, and
+   * K still keys the framing. Split, Delete, Duplicate and the timeline's
+   * zoom wait until the crop is done.
+   */
+  function handleCropKey(event: KeyboardEvent): boolean {
+    switch (event.key) {
+      case " ":
+        if (event.repeat || isControl(event.target)) return true;
+        event.preventDefault();
+        toggleCropPlayback();
+        return true;
+      case "Enter":
+        if (
+          event.repeat ||
+          isControl(event.target) ||
+          ownsArrows(event.target)
+        ) {
+          return true;
+        }
+        if (crop.busy || editor.inGesture) return true;
+        event.preventDefault();
+        void closeCrop(true);
+        return true;
+      case "Escape":
+        if (crop.busy || editor.inGesture) return true;
+        event.preventDefault();
+        void closeCrop(false);
+        return true;
+      case "ArrowLeft":
+      case "ArrowRight": {
+        if (ownsArrows(event.target)) return true;
+        event.preventDefault();
+        editor.pause();
+        const step = event.shiftKey ? 1 : FRAME_SECONDS;
+        seekInClip(
+          editor.previewSeconds + (event.key === "ArrowLeft" ? -step : step)
+        );
+        return true;
+      }
+      case "ArrowUp":
+      case "ArrowDown":
+        if (ownsArrows(event.target)) return true;
+        event.preventDefault();
+        stepCropBeat(event.key === "ArrowUp" ? "previous" : "next");
+        return true;
+      case "Home":
+      case "End":
+        if (ownsArrows(event.target)) return true;
+        event.preventDefault();
+        editor.pause();
+        seekInClip(event.key === "Home" ? -Infinity : Infinity);
+        return true;
+      case "s":
+      case "S":
+      case "Delete":
+      case "Backspace":
+      case "+":
+      case "=":
+      case "-":
+        return true;
+      default:
+        return false;
     }
   }
 
@@ -1054,10 +1427,28 @@
 
   function frame(now: number): void {
     if (previousFrameTime !== null) {
-      editor.advance((now - previousFrameTime) / 1000);
+      const delta = (now - previousFrameTime) / 1000;
+      const clip = cropMode ? crop.item : null;
+      if (clip) loopClip(clip, delta);
+      else editor.advance(delta);
     }
     previousFrameTime = now;
     if (editor.isPlaying) frameRequest = requestAnimationFrame(frame);
+  }
+
+  /** On the crop screen playback wraps from the clip's end to its start. */
+  function loopClip(clip: PostVideoItem, delta: number): void {
+    const length = itemEnd(clip) - clip.start;
+    const next = editor.previewSeconds + delta;
+    if (
+      length <= FRAME_SECONDS ||
+      (next >= clip.start && next < itemEnd(clip))
+    ) {
+      editor.advance(delta);
+      return;
+    }
+    const into = (((next - clip.start) % length) + length) % length;
+    editor.seek(clip.start + into);
   }
 
   $effect(() => {
@@ -1170,13 +1561,39 @@
     if (frameRequest !== null) cancelAnimationFrame(frameRequest);
     if (exportedUrl) URL.revokeObjectURL(exportedUrl);
     editor.dispose();
+    staffTips.dispose();
   });
 </script>
 
 <svelte:window onkeydown={handleKey} />
 
+{#snippet cropActions()}
+  <div class="crop-actions">
+    <PanelButton
+      onclick={crop.reset}
+      disabled={!crop.canReset}
+      ariaLabel={t("post_editor_reset_crop")}
+    >
+      <i class="fa-solid fa-arrows-rotate" aria-hidden="true"></i>
+      <span class="crop-reset-label">{t("post_editor_reset_crop")}</span>
+    </PanelButton>
+    <PanelButton onclick={() => void closeCrop(false)}>
+      {t("common_cancel")}
+    </PanelButton>
+    <PanelButton variant="primary" onclick={() => void closeCrop(true)}>
+      <i class="fa-solid fa-check" aria-hidden="true"></i>
+      {t("share_studio_done")}
+    </PanelButton>
+  </div>
+{/snippet}
+
 {#snippet topBar()}
-  <PostEditorTopBar {editor} {exporting} onExport={openExport} />
+  <PostEditorTopBar
+    {editor}
+    {exporting}
+    onExport={openExport}
+    trailing={cropMode ? cropActions : undefined}
+  />
 {/snippet}
 
 {#snippet row()}
@@ -1234,7 +1651,13 @@
       {onSharePost}
     />
   {:else if editor.selectedItem}
-    <PostItemTool {editor} item={editor.selectedItem} {tool} />
+    <PostItemTool
+      {editor}
+      item={editor.selectedItem}
+      {tool}
+      crop={cropMode ? crop : null}
+      {staffTips}
+    />
   {/if}
 {/snippet}
 
@@ -1242,11 +1665,37 @@
   <PostToolPanel
     {tool}
     subject={editor.selectedItem ? labelFor(editor.selectedItem) : undefined}
-    onDone={placement === "dock" ? closePanel : undefined}
+    onDone={placement === "dock" && !cropMode ? closePanel : undefined}
     {placement}
+    bare={placement === "dock" && cropMode}
   >
     {@render panelBody(tool)}
   </PostToolPanel>
+{/snippet}
+
+{#snippet timelineKeys()}
+  {#if editor.selectedItem && keyChannel}
+    <PostKeyframeControls
+      {editor}
+      item={editor.selectedItem}
+      channel={keyChannel}
+      locked={editor.isLocked(editor.selectedItem.id)}
+      label={channelLabel(keyChannel)}
+      bind:curveOpen={keyCurveOpen}
+    />
+  {/if}
+{/snippet}
+
+{#snippet cropKeys()}
+  {#if crop.item}
+    <PostKeyframeControls
+      {editor}
+      item={crop.item}
+      channel="framing"
+      locked={editor.isLocked(crop.item.id)}
+      bind:curveOpen={cropCurveOpen}
+    />
+  {/if}
 {/snippet}
 
 {#snippet timingPanel()}
@@ -1273,7 +1722,7 @@
   data-edit-history-shortcut-scope
   data-layout={layout}
   data-sharing={sharing}
-  data-mode={showTimingStage ? "timing" : "edit"}
+  data-mode={showTimingStage ? "timing" : cropMode ? "crop" : "edit"}
   aria-label={t("post_editor_label", { name: sequenceName })}
   bind:this={rootElement}
   bind:offsetWidth={editorWidth}
@@ -1320,7 +1769,8 @@
                 handLabeling={labeledCard.labeling}
                 showStripGuide={editor.selectedItem?.kind === "video"}
                 interactive={!exporting && !sharing && !previewTarget}
-                {cropMode}
+                crop={cropMode ? crop : null}
+                onSourceSize={noteSourceSize}
                 bind:root={canvasRoot}
               />
             </div>
@@ -1367,14 +1817,41 @@
     </div>
 
     {#if !showTimingStage}
-      <div class="transport-slot">
-        <PostEditorTransport {editor} disabled={exporting} />
+      <div class="transport-slot" bind:this={transportSlot}>
+        {#if cropMode && crop.item}
+          {@const clip = crop.item}
+          <PostCropTimeline
+            {editor}
+            item={clip}
+            steps={cropSteps}
+            stepName={cropStepName}
+            locked={editor.isLocked(clip.id)}
+            keys={cropKeys}
+            onToggle={toggleCropPlayback}
+            onSeek={seekInClip}
+            onMoveKey={(fromSeconds, toSeconds) =>
+              editKeys(clip.id, (it) =>
+                moveKeyframe(it, "framing", fromSeconds, toSeconds)
+              )}
+            onDeleteKey={(seconds) =>
+              editKeys(clip.id, (it) => removeKeyframe(it, "framing", seconds))}
+            onOpenCurve={openCropCurve}
+          />
+        {:else}
+          <PostEditorTransport {editor} disabled={exporting} />
+        {/if}
         {#if fileError}
           <p class="file-error" role="alert">{fileError}</p>
         {/if}
       </div>
 
-      <div class="timeline-slot" inert={sharing || exporting || undefined}>
+      <!-- The crop screen stows the timeline and the row out of sight, still
+           mounted, so they come back scrolled where they were. -->
+      <div
+        class="timeline-slot"
+        class:stowed={cropMode}
+        inert={sharing || exporting || cropMode || undefined}
+      >
         <PostTimeline
           project={editor.project}
           durationSeconds={editor.durationSeconds}
@@ -1404,24 +1881,19 @@
             editor.edit((project, context) =>
               setTrackFlag(project, trackId, flag, value, context)
             )}
-          onMoveKeyframe={(itemId, fromSeconds, toSeconds) =>
-            editor.edit((project, context) =>
-              editItemKeyframes(
-                project,
-                itemId,
-                (it) => moveKeyframes(it, fromSeconds, toSeconds),
-                context
-              )
-            )}
-          onDeleteKeyframesAt={(itemId, seconds) =>
-            editor.edit((project, context) =>
-              editItemKeyframes(
-                project,
-                itemId,
-                (it) => removeKeyframesAt(it, seconds),
-                context
-              )
-            )}
+          {keyChannel}
+          toolChannel={editor.selectedItem
+            ? keyframeChannelFor(shown, editor.selectedItem.kind)
+            : null}
+          onKeyChannel={pickKeyRow}
+          onToggleKey={(itemId, channel, seconds) =>
+            editKeys(itemId, (it) => toggleKeyframe(it, channel, seconds))}
+          onMoveKey={(itemId, channel, fromSeconds, toSeconds) =>
+            editKeys(itemId, (it) => moveKeyframe(it, channel, fromSeconds, toSeconds))}
+          onDeleteKey={(itemId, channel, seconds) =>
+            editKeys(itemId, (it) => removeKeyframe(it, channel, seconds))}
+          onOpenCurve={openKeyCurve}
+          toolbarStart={timelineKeys}
           onAddVideo={pickDeviceVideo}
           bind:pixelsPerSecond
         />
@@ -1430,9 +1902,10 @@
       {#if panelBeside}
         <div
           class="row-slot"
+          class:stowed={cropMode}
           tabindex="-1"
           bind:this={rowSlot}
-          inert={sharing || undefined}
+          inert={sharing || cropMode || undefined}
         >
           <Crossfade key={rowKey} mode="swap" duration={DURATION.fast}>
             {@render row()}
@@ -1656,6 +2129,7 @@
      viewer's own side panel holds the top bar and the panel, and the rest
      stacks the same way. */
   .post-editor:is([data-layout="wide"], [data-layout="viewer"]) .layout {
+    --post-panel-width: clamp(20rem, 30cqw, 26rem);
     display: grid;
     grid-template-columns: minmax(0, 1fr);
     grid-template-rows: minmax(15rem, 1fr) auto var(--post-timeline-height) auto;
@@ -1696,9 +2170,9 @@
   }
 
   /* The preview's width comes from the row's height, so the panel sits right
-     beside the video and the two center as one group. */
+     beside the video and the two center as one group. The panel's width is
+     set on the layout and measured against this row. */
   .post-editor:is([data-layout="wide"], [data-layout="viewer"]) .stage-row {
-    --post-panel-width: clamp(20rem, 30cqw, 26rem);
     container-type: size;
     min-height: 0;
   }
@@ -1764,5 +2238,100 @@
 
   .post-editor[data-sharing="true"] .panel-host:not(.external) {
     visibility: hidden;
+  }
+
+  /* The crop screen: the stage takes the room the timeline and the row
+     leave, with the clip's own timeline under it. */
+  .post-editor[data-mode="crop"] .layout {
+    position: relative;
+  }
+
+  .post-editor[data-mode="crop"]:is(
+      [data-layout="wide"],
+      [data-layout="viewer"]
+    )
+    .layout {
+    grid-template-rows: minmax(15rem, 1fr) auto;
+    grid-template-areas: "stage" "transport";
+  }
+
+  .post-editor[data-layout="phone"][data-mode="crop"] .layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto minmax(12rem, 1fr) auto auto;
+    grid-template-areas: "top" "stage" "transport" "dock";
+  }
+
+  .post-editor[data-mode="crop"] .stage-row {
+    min-height: 0;
+  }
+
+  .post-editor[data-mode="crop"] .preview-frame {
+    flex: 1 1 0;
+    width: auto;
+  }
+
+  .post-editor[data-mode="crop"] .canvas-slot {
+    width: 100%;
+    height: 100%;
+  }
+
+  /* The panel sits beside the picture and the clip's timeline runs under
+     both, as wide as the screen. The panel keeps the width it has while
+     editing: 30% of the stage row, measured here against the editor less
+     the layout's padding. */
+  .post-editor[data-mode="crop"][data-layout="wide"] .layout {
+    --post-panel-width: clamp(
+      20rem,
+      calc((100cqw - 2 * var(--post-gap)) * 0.3),
+      26rem
+    );
+    grid-template-columns: minmax(0, 1fr) var(--post-panel-width);
+    grid-template-areas: "stage panel" "transport transport";
+    column-gap: 1rem;
+  }
+
+  .post-editor[data-mode="crop"][data-layout="wide"] .stage-row {
+    display: contents;
+  }
+
+  .post-editor[data-mode="crop"][data-layout="wide"] .preview-frame {
+    grid-area: stage;
+  }
+
+  .post-editor[data-mode="crop"][data-layout="wide"] .panel-host {
+    grid-area: panel;
+  }
+
+  .timeline-slot.stowed,
+  .row-slot.stowed {
+    position: absolute;
+    inset: 0 0 auto;
+    margin: 0;
+    visibility: hidden;
+    pointer-events: none;
+  }
+
+  /* Reset shows its words when the bar has room, else its icon alone. */
+  .top-bar-slot,
+  .side-column {
+    container: post-top-bar / inline-size;
+  }
+
+  .crop-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-width: 0;
+  }
+
+  .crop-reset-label {
+    display: none;
+  }
+
+  @container post-top-bar (min-width: 30rem) {
+    .crop-reset-label {
+      display: inline;
+    }
   }
 </style>

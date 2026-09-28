@@ -1,9 +1,19 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { Vector3 } from "three";
-import { CollisionDetector, type BodySnapshot } from "@austencloud/scene-3d";
+import {
+  CollisionDetector,
+  type BodySnapshot,
+  type PropSegment,
+} from "@austencloud/scene-3d";
+
+const STAFF_RADIUS = 0.01;
 
 function point(x: number, y: number, z = 0): Vector3 {
   return new Vector3(x, y, z);
+}
+
+function staff(from: Vector3, to: Vector3): PropSegment {
+  return { a: from, b: to, radius: STAFF_RADIUS };
 }
 
 function body(overrides: Partial<BodySnapshot> = {}): BodySnapshot {
@@ -123,5 +133,112 @@ describe("CollisionDetector arm/body coverage", () => {
           event.description.startsWith("L upper arm")
       )
     ).toBe(false);
+  });
+});
+
+describe("CollisionDetector segment crossings", () => {
+  it.each([
+    {
+      name: "forearms crossing 3 cm apart",
+      pose: {
+        leftElbow: point(-0.25, 1.2, 0.3),
+        leftHand: point(0.25, 1.4, 0.3),
+        rightElbow: point(0.25, 1.2, 0.33),
+        rightHand: point(-0.25, 1.4, 0.33),
+      },
+      description: "Forearms intersect",
+      depth: 0.03,
+    },
+    {
+      name: "a hand beside the other elbow",
+      pose: {
+        leftElbow: point(-0.3, 1.3, 0.3),
+        leftHand: point(0, 1.3, 0.3),
+        rightElbow: point(0.03, 1.33, 0.3),
+        rightHand: point(0.03, 1.6, 0.3),
+      },
+      description: "Forearms intersect",
+      depth: 0.06 - Math.hypot(0.03, 0.03),
+    },
+    {
+      name: "forearms side by side 4 cm apart",
+      pose: {
+        leftElbow: point(-0.2, 1.3, 0.3),
+        leftHand: point(0.1, 1.3, 0.3),
+        rightElbow: point(0.2, 1.3, 0.34),
+        rightHand: point(-0.1, 1.3, 0.34),
+      },
+      description: "Forearms intersect",
+      depth: 0.02,
+    },
+    {
+      name: "upper arms crossing",
+      pose: {
+        leftElbow: point(0.06, 1.35, 0.2),
+        leftHand: point(0.06, 1.6, 0.35),
+        rightElbow: point(-0.06, 1.35, 0.2),
+        rightHand: point(-0.06, 1.6, 0.35),
+      },
+      description: "Upper arms intersect",
+      depth: 0.06,
+    },
+  ])("measures $name", ({ pose, description, depth }) => {
+    detector = new CollisionDetector();
+    const event = detector
+      .detect(body(pose), null, null, 2, 0.5)
+      .find(
+        (candidate) =>
+          candidate.zone === "arms-through-each-other" &&
+          candidate.description.startsWith(description)
+      );
+
+    expect(event).toBeDefined();
+    expect(event?.penetrationDepth).toBeCloseTo(depth, 6);
+  });
+
+  it("measures a staff through the middle of the left forearm", () => {
+    detector = new CollisionDetector();
+    const event = detector
+      .detect(
+        body(),
+        staff(point(-0.5, 1.325, -0.5), point(-0.5, 1.325, 0.5)),
+        null,
+        2,
+        0.5
+      )
+      .find((candidate) => candidate.zone === "prop-through-arm");
+
+    expect(event).toBeDefined();
+    expect(event?.description).toMatch(/^Blue staff → L forearm/);
+    expect(event?.penetrationDepth).toBeCloseTo(0.05, 6);
+  });
+
+  it("measures staves crossing 3 cm apart", () => {
+    detector = new CollisionDetector();
+    const event = detector
+      .detect(
+        body(),
+        staff(point(-0.5, 0.9, 0.4), point(0.5, 1.9, 0.4)),
+        staff(point(0.5, 0.9, 0.43), point(-0.5, 1.9, 0.43)),
+        2,
+        0.5
+      )
+      .find((candidate) => candidate.zone === "prop-through-prop");
+
+    expect(event).toBeDefined();
+    expect(event?.penetrationDepth).toBeCloseTo(0.01, 6);
+  });
+
+  it("reports nothing when the arms and staves are well apart", () => {
+    detector = new CollisionDetector();
+    const events = detector.detect(
+      body(),
+      staff(point(-0.3, 0.6, 0.6), point(-0.3, 1.6, 0.6)),
+      staff(point(0.3, 0.6, 0.6), point(0.3, 1.6, 0.6)),
+      2,
+      0.5
+    );
+
+    expect(events).toEqual([]);
   });
 });

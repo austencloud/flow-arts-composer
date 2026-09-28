@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { localizeLevel1Text, localizeLevel1SelectionLabel } from "../_data/localize-level1-content";
   /**
    * Type 2 - Shifts - body page 6, a faithful rebuild of the proof PDF
    * (level-1-v05.pdf, page 12) in the CURRENT renderer's language. Same recipe
@@ -311,7 +312,7 @@
       <SelectionHit
         groupId={`t2-${si}`}
         isGroupStart
-        label={`Animate the ${SEQ_WORDS[si]} sequence`}
+        label={localizeLevel1SelectionLabel(`Animate the ${SEQ_WORDS[si]} sequence`)}
         onselect={() =>
           emitSequence?.({
             strip: RESOLVED[si]!.flat().filter(
@@ -340,7 +341,7 @@
         set: (h) => (p.html = h),
       }}
     >
-      {@html p.html}
+      {@html localizeLevel1Text(p.html)}
     </p>
   {/each}
 </div>

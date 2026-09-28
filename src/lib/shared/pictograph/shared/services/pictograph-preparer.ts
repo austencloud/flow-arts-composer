@@ -286,10 +286,12 @@ export class PictographPreparer {
       resolvePropRenderKey(effectiveLeft, {
         fanAppearance: options?.fanAppearance,
         propLook: options?.propLook,
+        triangleGrip: options?.triangleGrip,
       }),
       resolvePropRenderKey(effectiveRight, {
         fanAppearance: options?.fanAppearance,
         propLook: options?.propLook,
+        triangleGrip: options?.triangleGrip,
       }),
       pictograph.betaSwapped ? "bs" : "",
       getPictographGeometryRevision(pictograph) ?? "",
@@ -377,11 +379,15 @@ export class PictographPreparer {
               motion.propPlacementData,
               motion,
               options?.useGridVersion ?? false,
-              options?.themeMode || options?.fanAppearance || options?.propLook
+              options?.themeMode ||
+                options?.fanAppearance ||
+                options?.propLook ||
+                options?.triangleGrip
                 ? {
                     themeMode: options.themeMode,
                     fanAppearance: options.fanAppearance,
                     propLook: options.propLook,
+                    triangleGrip: options.triangleGrip,
                   }
                 : undefined
             ),

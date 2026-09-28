@@ -3,7 +3,9 @@ import {
   TEXT_ROLE_PREFIX,
   compilePostProject,
   itemIdFromClipId,
+  itemIdFromStaffEffectRole,
   itemIdFromTextRole,
+  staffEffectRole,
   textRole,
 } from "$lib/shared/media-composition/domain/post-project-compiler";
 import { MediaCompositionPresetSchema } from "$lib/shared/media-composition/domain/media-composition-preset-schema";
@@ -91,6 +93,70 @@ describe("compilePostProject", () => {
       expect(result.preset.clips).toHaveLength(1);
       // Only c1's own end counts; the skipped video's span is ignored.
       expect(result.durationSeconds).toBe(7);
+    });
+  });
+
+  describe("staff effects", () => {
+    it("adds no staff layer to a clip without an effect", () => {
+      const result = compilePostProject(project([video("v1", { sourceOut: 4 })]), ctx)!;
+      expect(result.preset.clips.map((c) => c.id)).toEqual(["v1"]);
+    });
+
+    it("lays the staff effect over its clip on the clip's own span, media time and framing", () => {
+      const result = compilePostProject(
+        project([
+          video("v1", {
+            sourceIn: 2,
+            sourceOut: 6,
+            speed: 0.5,
+            zoom: 1.5,
+            panX: 0.2,
+            rotation: 90,
+            flip: true,
+            opacity: 0.8,
+            fadeIn: 0.5,
+            staffEffect: { effect: "sparkles" },
+          }),
+        ]),
+        ctx
+      )!;
+      expect(MediaCompositionPresetSchema.safeParse(result.preset).success).toBe(true);
+      const clip = result.preset.clips.find((c) => c.id === "v1")!;
+      const staff = result.preset.clips.find((c) => c.id === "v1~staff")!;
+      expect(itemIdFromClipId(staff.id)).toBe("v1");
+      expect(staff).toMatchObject({
+        kind: "visual",
+        sourceRole: staffEffectRole("v1"),
+        useResolvedTimeMap: false,
+      });
+      for (const key of [
+        "regionId",
+        "start",
+        "end",
+        "sourceIn",
+        "sourceOut",
+        "playbackRate",
+        "opacity",
+        "fadeInSeconds",
+        "transform",
+      ] as const) {
+        expect(staff[key as keyof typeof staff]).toEqual(clip[key as keyof typeof clip]);
+      }
+      // Drawn above the footage in the same slot.
+      const order = result.preset.clips.map((c) => c.id);
+      expect(order.indexOf("v1~staff")).toBeGreaterThan(order.indexOf("v1"));
+      expect(result.preset.sourceRoles.some((r) => r.key === staffEffectRole("v1"))).toBe(
+        true
+      );
+
+      // Halfway through the slowed clip, the layer reads the same media time
+      // as the footage under it.
+      const layers = evaluatePresetFrame(result.preset, result.durationSeconds, 4);
+      const footage = layers.find((l) => l.clipId === "v1")!;
+      const effect = layers.find((l) => l.clipId === "v1~staff")!;
+      expect(effect.sourceTimeSeconds).toBeCloseTo(footage.sourceTimeSeconds, 6);
+      expect(effect.sourceTimeSeconds).toBeCloseTo(4, 6);
+      expect(effect.transform).toEqual(footage.transform);
     });
   });
 
@@ -533,6 +599,11 @@ describe("compilePostProject", () => {
       expect(role).toBe(`${TEXT_ROLE_PREFIX}t1`);
       expect(itemIdFromTextRole(role)).toBe("t1");
       expect(itemIdFromTextRole("take:a")).toBeNull();
+    });
+
+    it("round-trips a staff effect role to its item id", () => {
+      expect(itemIdFromStaffEffectRole(staffEffectRole("v1"))).toBe("v1");
+      expect(itemIdFromStaffEffectRole(textRole("v1"))).toBeNull();
     });
 
     it("recovers an item id from a plain, a piece, or an overlay piece clip id", () => {

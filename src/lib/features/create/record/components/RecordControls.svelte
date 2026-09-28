@@ -84,7 +84,7 @@ Provides play/pause, speed adjustment (BPM), reset, and metronome toggle.
   <!-- Speed control -->
   <div class="speed-control">
     <div class="speed-label">
-      <span class="label-text">Speed (BPM)</span>
+      <span class="label-text">{t("create_review_speed_bpm")}</span>
       <div class="speed-display">{localBpm}</div>
     </div>
 

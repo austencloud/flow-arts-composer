@@ -106,11 +106,16 @@
   />
 {/snippet}
 
+<!-- Above the grid, the colours are part of the grid screen: a drill fades them
+     out with the tiles as one page, with nothing resizing, and Back returns
+     them the same way. -->
+{#snippet colorLead()}
+  {@render colorSettings(false)}
+{/snippet}
+
 <!-- The block that drops the colours on a drill owns their transition. Svelte
      plays a local transition only when its own block changes, so under a nested
-     {#if} they vanished in one frame and the grid jumped into their space. They
-     leave with the tiles, on the grid's clock and drift, and close their gap as
-     they go. -->
+     {#if} they would vanish in one frame. -->
 {#snippet colorControl()}
   {#if colorsPlace === "toolbar" || colorsPlace === "compact-before"}
     {#if showColors && !drilled}{@render colorSettings(true)}{/if}
@@ -133,7 +138,6 @@
   </div>
 {/snippet}
 
-{#if colorsPlace === "before"}{@render colorControl()}{/if}
 {#if colorsPlace === "compact-before" && showColors && !drilled}
   <div class="compact-color-toolbar" transition:growFade={{ axis: "y" }}>
     {@render colorControl()}
@@ -144,6 +148,7 @@
   heading={colorsPlace === "toolbar" && showColors
     ? toolbarHeading
     : hostHeading}
+  lead={colorsPlace === "before" && showColors ? colorLead : undefined}
   onDrillChange={(next) => {
     drilled = next;
     onDrillChange?.(next);

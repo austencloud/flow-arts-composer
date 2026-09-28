@@ -241,6 +241,27 @@ export function overlayRowAtPointerY(
   return { kind: "main" };
 }
 
+/** Where the selected clip's keyframe rows sit in the rows stack. */
+export interface KeyLanesBand {
+  topPx: number;
+  heightPx: number;
+}
+
+/**
+ * A pointer's y as the track rows alone would read it, with the selected
+ * clip's keyframe rows (drawn under its own row) taken out. Over those rows
+ * reads as the clip's row just above them; below them, everything shifts up
+ * by their height.
+ */
+export function rowsYWithoutKeyLanes(
+  pointerYPx: number,
+  lanes: KeyLanesBand | null
+): number {
+  if (!lanes || lanes.heightPx <= 0 || pointerYPx < lanes.topPx) return pointerYPx;
+  if (pointerYPx < lanes.topPx + lanes.heightPx) return lanes.topPx - 1;
+  return pointerYPx - lanes.heightPx;
+}
+
 /**
  * The scroll position that brings the playhead back into a comfortable spot
  * once it has drifted past 90% of the visible width, settling it at 25%

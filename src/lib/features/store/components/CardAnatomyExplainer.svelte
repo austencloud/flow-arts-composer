@@ -15,6 +15,7 @@
   modal, whose content box is narrower than the screen.
 -->
 <script lang="ts">
+  import { tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
   import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
   import { activateWhenNear } from "$lib/actions/activate-when-near";
   import LazyMount from "$lib/shared/components/LazyMount.svelte";
@@ -103,6 +104,14 @@
   const detail = $derived(highlight ? legendById.get(highlight) : null);
   const faceLegend = $derived(face === "front" ? frontLegend : backLegend);
 
+  function legendTerm(id: string): string {
+    return tDynamic(`learn_card_anatomy_${id}_term`);
+  }
+
+  function legendText(id: string): string {
+    return tDynamic(`learn_card_anatomy_${id}_text`);
+  }
+
   // Keep the legend copy in SSR, but hold the interactive cards and their
   // Firebase-backed example data until this section is near the viewport and
   // the route morph has cleared an idle turn.
@@ -134,7 +143,7 @@
   <div
     class="card-placeholder-stack"
     role="status"
-    aria-label="Preparing card preview"
+    aria-label={tDynamic("learn_card_anatomy_preparing")}
   >
     <div class="card-placeholder-set">
       <figure class="card-placeholder-face">
@@ -146,7 +155,7 @@
             className="card-anatomy-skeleton"
           />
         </div>
-        <figcaption>Front</figcaption>
+        <figcaption>{tDynamic("learn_card_anatomy_front")}</figcaption>
       </figure>
       <figure class="card-placeholder-face">
         <div class="card-placeholder">
@@ -157,7 +166,7 @@
             className="card-anatomy-skeleton"
           />
         </div>
-        <figcaption>Back</figcaption>
+        <figcaption>{tDynamic("learn_card_anatomy_back")}</figcaption>
       </figure>
     </div>
     {#if showShuffle}
@@ -177,7 +186,7 @@
   <div
     class="card-placeholder-stack"
     role="status"
-    aria-label="Preparing card preview"
+    aria-label={tDynamic("learn_card_anatomy_preparing")}
   >
     <div class="card-placeholder-set single">
       <figure class="card-placeholder-face">
@@ -208,8 +217,8 @@
   <div class="card-load-failure" role="alert">
     <div aria-hidden="true">{@render wideCardPlaceholder()}</div>
     <div class="card-load-message">
-      <p>Card preview didn’t load.</p>
-      <button type="button" onclick={retry}>Try again</button>
+      <p>{tDynamic("learn_card_anatomy_load_failed")}</p>
+      <button type="button" onclick={retry}>{tDynamic("learn_card_anatomy_retry")}</button>
     </div>
   </div>
 {/snippet}
@@ -218,8 +227,8 @@
   <div class="card-load-failure" role="alert">
     <div aria-hidden="true">{@render narrowCardPlaceholder()}</div>
     <div class="card-load-message">
-      <p>Card preview didn’t load.</p>
-      <button type="button" onclick={retry}>Try again</button>
+      <p>{tDynamic("learn_card_anatomy_load_failed")}</p>
+      <button type="button" onclick={retry}>{tDynamic("learn_card_anatomy_retry")}</button>
     </div>
   </div>
 {/snippet}
@@ -229,7 +238,7 @@
     <!-- Wide: front labels | cards (both faces) | back labels, hover-driven. -->
     <div class="anatomy-layout" class:dimming={highlight !== null}>
       <div class="legend-col front">
-        <h3 class="legend-title">Front</h3>
+        <h3 class="legend-title">{tDynamic("learn_card_anatomy_front")}</h3>
         <div class="legend-list" role="list">
           {#each frontLegend as item}
             <button
@@ -243,8 +252,8 @@
                 e.pointerType === "mouse" && !isBeginner && setHighlight(null)}
               onclick={() => toggle(item.id)}
             >
-              <span class="legend-term">{item.term}</span>
-              <span class="legend-text">{item.text}</span>
+              <span class="legend-term">{legendTerm(item.id)}</span>
+              <span class="legend-text">{legendText(item.id)}</span>
             </button>
           {/each}
         </div>
@@ -271,7 +280,7 @@
       </div>
 
       <div class="legend-col back">
-        <h3 class="legend-title">Back</h3>
+        <h3 class="legend-title">{tDynamic("learn_card_anatomy_back")}</h3>
         <div class="legend-list" role="list">
           {#each backLegend as item}
             <button
@@ -285,8 +294,8 @@
                 e.pointerType === "mouse" && !isBeginner && setHighlight(null)}
               onclick={() => toggle(item.id)}
             >
-              <span class="legend-term">{item.term}</span>
-              <span class="legend-text">{item.text}</span>
+              <span class="legend-term">{legendTerm(item.id)}</span>
+              <span class="legend-text">{legendText(item.id)}</span>
             </button>
           {/each}
         </div>
@@ -300,8 +309,8 @@
         <div class="face-toggle">
           <SegmentedControl
             options={[
-              { value: "front", label: "Front" },
-              { value: "back", label: "Back" },
+              { value: "front", label: tDynamic("learn_card_anatomy_front") },
+              { value: "back", label: tDynamic("learn_card_anatomy_back") },
             ]}
             value={face}
             onchange={switchFace}
@@ -332,11 +341,11 @@
 
       <div class="detail-slot" aria-live="polite">
         {#if detail}
-          <span class="detail-term">{detail.term}</span>
-          <span class="detail-text">{detail.text}</span>
+          <span class="detail-term">{legendTerm(detail.id)}</span>
+          <span class="detail-text">{legendText(detail.id)}</span>
         {:else}
           <span class="detail-prompt"
-            >Tap a part of the card, or a chip below, to learn what it is.</span
+            >{tDynamic("learn_card_anatomy_tap_prompt")}</span
           >
         {/if}
       </div>
@@ -351,7 +360,7 @@
             disabled={cardStatus !== "ready"}
             onclick={() => toggle(item.id)}
           >
-            {item.term}
+            {legendTerm(item.id)}
           </button>
         {/each}
       </div>

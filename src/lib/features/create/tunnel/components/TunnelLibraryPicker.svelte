@@ -64,18 +64,18 @@
   const sourceOptions = $derived([
     {
       value: "mine" as const,
-      label: "Mine",
-      ariaLabel: `Mine, ${items.length} saved tunnels`,
+      label: t("tunnel_library_mine"),
+      ariaLabel: t("tunnel_library_mine_count", { count: items.length }),
       count: items.length,
       id: "tunnel-source-mine",
       controls: "tunnel-library-results",
     },
     {
       value: "explore" as const,
-      label: "Explore",
+      label: t("tunnel_library_explore"),
       ariaLabel: publicAttempted
-        ? `Explore, ${publicEntries.length} public tunnels`
-        : "Explore public tunnels",
+        ? t("tunnel_library_explore_count", { count: publicEntries.length })
+        : t("tunnel_library_explore_public_tunnels"),
       count: publicAttempted ? publicEntries.length : null,
       id: "tunnel-source-explore",
       controls: "tunnel-library-results",
@@ -239,7 +239,7 @@
     } catch {
       if (generation !== publicGeneration) return;
       publicEntries = [];
-      publicError = "Public tunnels could not be loaded.";
+      publicError = t("tunnel_library_public_tunnels_could_not_be_loaded");
       publicLoading = false;
     }
   }
@@ -266,8 +266,8 @@
   <PanelHeader
     title={t("create_ui_tunnels")}
     subtitle={source === "mine"
-      ? `${items.length} saved`
-      : "Published by the community"}
+      ? t("tunnel_library_saved_count", { count: items.length })
+      : t("tunnel_library_published_by_the_community")}
     {onClose}
   />
 
@@ -279,7 +279,7 @@
       color="accent"
       size="sm"
       density="compact"
-      ariaLabel="Tunnel source"
+      ariaLabel={t("tunnel_library_tunnel_source")}
       semantics="tabs"
     />
   </div>
@@ -329,7 +329,7 @@
     <PanelButton
       variant="primary"
       onclick={onNew}
-      ariaLabel="Start a new tunnel"
+      ariaLabel={t("tunnel_library_start_a_new_tunnel")}
     >
       <i class="fas fa-plus" aria-hidden="true"></i>
       <span class="new-label">{t("create_ui_new_tunnel")}</span>
@@ -375,12 +375,12 @@
                 name={tunnel.name}
                 poster={tunnel.poster}
                 summary={describeTunnelForDiscovery(tunnel)}
-                dateLabel={dateLabel("Saved", tunnelDiscoverySavedAt(tunnel))}
+                dateLabel={dateLabel(t("tunnel_library_saved"), tunnelDiscoverySavedAt(tunnel))}
                 active={tunnel.id === activeTunnelId}
                 posterState={posterStates[tunnel.id] ?? null}
                 actionLabel={tunnel.id === activeTunnelId
-                  ? "Currently editing"
-                  : "Edit"}
+                  ? t("tunnel_library_currently_editing")
+                  : t("tunnel_library_edit")}
                 onclick={() => onSelect(tunnel)}
               />
             </div>
@@ -391,7 +391,7 @@
       <div class="library-state" role="status">
         <PanelSpinner size={12} />
         <strong>{t("create_ui_finding_public_tunnels")}</strong>
-        <p>Loading the community’s current published artifacts.</p>
+        <p>{t("create_review_loading_the_community_s_current_published_artifacts")}</p>
       </div>
     {:else if publicError}
       <div class="library-state" role="alert">
@@ -400,10 +400,10 @@
         <PanelButton
           variant="secondary"
           onclick={retryPublicTunnels}
-          ariaLabel="Retry loading public tunnels"
+          ariaLabel={t("tunnel_library_retry_loading_public_tunnels")}
         >
           <i class="fas fa-arrows-rotate" aria-hidden="true"></i>
-          Retry
+          {t("create_review_retry")}
         </PanelButton>
       </div>
     {:else if publicEntries.length === 0}
@@ -428,12 +428,12 @@
               summary={entry.tunnel
                 ? describeTunnelForDiscovery(entry.tunnel)
                 : null}
-              eyebrow={`By ${entry.envelope.ownerDisplayName}`}
+              eyebrow={t("tunnel_library_by", { name: entry.envelope.ownerDisplayName })}
               dateLabel={dateLabel(
-                "Published",
+                t("tunnel_library_published"),
                 publicTimestamp(entry.envelope.updatedAt)
               )}
-              actionLabel="View public tunnel"
+              actionLabel={t("tunnel_library_view_public_tunnel")}
               onclick={() => onOpenPublic(entry.envelope)}
             />
           </div>
@@ -448,30 +448,28 @@
         <PanelButton
           variant="secondary"
           onclick={onManage}
-          ariaLabel="Manage tunnels in Browse"
+          ariaLabel={t("tunnel_library_manage_tunnels_in_browse")}
         >
           <i class="fas fa-table-cells-large" aria-hidden="true"></i>
-          Manage in Browse
+          {t("create_review_manage_in_browse")}
         </PanelButton>
         {#if failedPosterCount > 0}
           <PanelButton
             variant="secondary"
             onclick={retryFailedPosters}
-            ariaLabel={`Retry ${failedPosterCount} tunnel ${failedPosterCount === 1 ? "preview" : "previews"}`}
+            ariaLabel={t("tunnel_library_retry_count", { count: failedPosterCount })}
           >
             <i class="fas fa-arrows-rotate" aria-hidden="true"></i>
-            Retry previews
+            {t("create_review_retry_previews")}
           </PanelButton>
         {/if}
       </div>
       <p>
-        Preview upgrades change presentation only—never choreography or
-        revisions.
+        {t("create_review_preview_upgrades_change_presentation_only_never_choreography_or_revisions")}
       </p>
     {:else}
       <p>
-        Public tunnels open in Browse so the published revision and creator stay
-        explicit.
+        {t("create_review_public_tunnels_open_in_browse_so_the_published_revision_and_creator_stay_explicit")}
       </p>
     {/if}
   </footer>

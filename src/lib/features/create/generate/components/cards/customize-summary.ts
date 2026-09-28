@@ -20,7 +20,7 @@ import {
   GridMode,
   type GridPlacement,
 } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import { t } from "$lib/shared/i18n/i18n.svelte.js";
+import { t, tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
 import { Orientation } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
 import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
 import type { StartEndOptions } from "$lib/shared/create/state/panel-coordination-state.svelte";
@@ -45,10 +45,18 @@ export type DashFilter = GenerationMotionTypeFilter;
  * keeping its own copy.
  */
 export const ORIENTATION_SHORT: Record<string, string> = {
-  [Orientation.IN]: "In",
-  [Orientation.CLOCK]: "CW",
-  [Orientation.OUT]: "Out",
-  [Orientation.COUNTER]: "CCW",
+  get [Orientation.IN]() {
+    return tDynamic("create_ui_orientation_in_short");
+  },
+  get [Orientation.CLOCK]() {
+    return tDynamic("create_ui_orientation_clock_short");
+  },
+  get [Orientation.OUT]() {
+    return tDynamic("create_ui_orientation_out_short");
+  },
+  get [Orientation.COUNTER]() {
+    return tDynamic("create_ui_orientation_counter_short");
+  },
 };
 
 /** Labels mirror GenerationStylePanel's option lists — one vocabulary, two surfaces. */
@@ -117,13 +125,25 @@ export function buildCustomizeSummary(
   };
 
   if (input.constraintPreset !== baseline.constraintPreset) {
-    push(t("create_ui_summary_props", { value: t(STYLE_AXIS_LABELS[input.constraintPreset]) }));
+    push(
+      t("create_ui_summary_props", {
+        value: t(STYLE_AXIS_LABELS[input.constraintPreset]),
+      })
+    );
   }
   if (input.handPathMode !== baseline.handPathMode) {
-    push(t("create_ui_summary_hands", { value: t(STYLE_AXIS_LABELS[input.handPathMode]) }));
+    push(
+      t("create_ui_summary_hands", {
+        value: t(STYLE_AXIS_LABELS[input.handPathMode]),
+      })
+    );
   }
   if (dashKey(input.motionTypeFilter) !== dashKey(baseline.motionTypeFilter)) {
-    push(t("create_ui_summary_dashes", { value: t(DASH_LABELS[dashKey(input.motionTypeFilter)]) }));
+    push(
+      t("create_ui_summary_dashes", {
+        value: t(DASH_LABELS[dashKey(input.motionTypeFilter)]),
+      })
+    );
   }
 
   const options = input.startEndOptions;
@@ -154,7 +174,11 @@ export function buildCustomizeSummary(
     // Deprecated but still persisted, and generate-actions still feeds it to
     // the engine. A card that ignores it can call a constrained state Default.
     if (options.startPlacement) {
-      push(t("create_ui_summary_start", { value: placementLabel(options.startPlacement) }));
+      push(
+        t("create_ui_summary_start", {
+          value: placementLabel(options.startPlacement),
+        })
+      );
     }
 
     // ─── End placements ───
@@ -168,7 +192,11 @@ export function buildCustomizeSummary(
     } else if (ends.length > 1) {
       push(t("create_ui_summary_end_count", { count: ends.length }));
     } else if (options.endPlacement) {
-      push(t("create_ui_summary_end", { value: placementLabel(options.endPlacement) }));
+      push(
+        t("create_ui_summary_end", {
+          value: placementLabel(options.endPlacement),
+        })
+      );
     }
 
     // ─── Start orientation ───
@@ -176,7 +204,10 @@ export function buildCustomizeSummary(
     const rightOri = options.rightStartOrientation ?? Orientation.IN;
     if (leftOri !== Orientation.IN || rightOri !== Orientation.IN) {
       push(
-        t("create_ui_summary_orientation", { left: ORIENTATION_SHORT[leftOri] ?? leftOri, right: ORIENTATION_SHORT[rightOri] ?? rightOri })
+        t("create_ui_summary_orientation", {
+          left: ORIENTATION_SHORT[leftOri] ?? leftOri,
+          right: ORIENTATION_SHORT[rightOri] ?? rightOri,
+        })
       );
     }
 
@@ -196,7 +227,8 @@ export function buildCustomizeSummary(
   return {
     isDefault: facts.length === 0,
     facts,
-    accessibleSummary: facts.length === 0 ? t("create_ui_default") : facts.join(", "),
+    accessibleSummary:
+      facts.length === 0 ? t("create_ui_default") : facts.join(", "),
   };
 }
 
@@ -217,7 +249,10 @@ export function capSummaryFacts(
   if (facts.length <= maxRows) return [...facts];
   if (maxRows === 1) return [`${facts[0]} +${facts.length - 1}`];
   const shown = facts.slice(0, maxRows - 1);
-  return [...shown, t("create_ui_summary_more", { count: facts.length - shown.length })];
+  return [
+    ...shown,
+    t("create_ui_summary_more", { count: facts.length - shown.length }),
+  ];
 }
 
 /**

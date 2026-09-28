@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { DIFFICULTY_LEVELS, DEFAULT_DIFFICULTY_STYLE } from "$lib/shared/config/difficulty-styles";
   import { LEVEL_METADATA, type LevelNumber } from "$lib/shared/domain/curriculum/level-metadata";
 
@@ -18,7 +19,7 @@
     {@const isCurrent = level === currentLevel}
     <div class="lcard" class:current={isCurrent} class:dim={!isCurrent}>
       <div class="lnum" style={badgeStyle(level)}>{level}</div>
-      <img src={meta.image} alt="Level {level} example pictograph" />
+      <img src={meta.image} alt={t("create_level_example", { level })} />
       <div class="lname">{meta.name}</div>
     </div>
   {/each}

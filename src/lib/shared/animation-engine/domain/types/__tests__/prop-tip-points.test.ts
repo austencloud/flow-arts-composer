@@ -219,9 +219,20 @@ describe("model sprite tip points", () => {
     }
   });
 
+  it("turns the side-grip triangle capture the way it turns the corner one", () => {
+    // Both captures paint on -x; both glyphs and both tip tables reach +x.
+    // The side sprite key is not a prop type, so its table lives under its
+    // render key; unturned, a Realistic side grip was drawn mirrored against
+    // its Classic glyph and its trails.
+    expect(modelSpriteFacesAwayFromTips("triangle")).toBe(true);
+    expect(modelSpriteFacesAwayFromTips("triangle_side")).toBe(true);
+  });
+
   it("never draws a capture leaning away from its tip table", () => {
     for (const [prop, entry] of Object.entries(PROP_MODEL_SPRITES)) {
-      const points = PROP_TIP_POINTS[prop]?.points ?? [];
+      const table =
+        PROP_TIP_POINTS[prop] ?? PROP_RENDER_KEY_TIP_POINTS[`${prop}__model`];
+      const points = table?.points ?? [];
       if (!entry.bounds || points.length === 0) continue;
       const half = entry.width / 2;
       const xs = points.map((point) => point.dx);

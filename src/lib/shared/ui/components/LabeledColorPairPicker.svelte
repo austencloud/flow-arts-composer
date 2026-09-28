@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte";
   import type { Snippet } from "svelte";
   import ColorPicker from "svelte-awesome-color-picker";
   import { growFade } from "$lib/shared/transitions/motion";
@@ -23,9 +24,9 @@
   let {
     left,
     right,
-    leftLabel = "Left prop",
-    rightLabel = "Right prop",
-    groupLabel = "Prop colors",
+    leftLabel,
+    rightLabel,
+    groupLabel,
     preview,
     onchange,
     onswap,
@@ -38,8 +39,8 @@
   let rightInput = $state<HTMLInputElement>();
 
   const entries = $derived([
-    { hand: "left" as const, label: leftLabel, value: left, input: leftInput },
-    { hand: "right" as const, label: rightLabel, value: right, input: rightInput },
+    { hand: "left" as const, label: leftLabel ?? t("color_left_prop"), value: left, input: leftInput },
+    { hand: "right" as const, label: rightLabel ?? t("color_right_prop"), value: right, input: rightInput },
   ]);
 
   type EyeDropperCtor = new () => { open(): Promise<{ sRGBHex: string }> };
@@ -81,7 +82,7 @@
   }
 </script>
 
-<div class="color-pair" role="group" aria-label={groupLabel}>
+<div class="color-pair" role="group" aria-label={groupLabel ?? t("color_prop_colors")}>
   {#if preview}
     <div class="pair-preview-art">{@render preview({ left, right })}</div>
   {/if}
@@ -96,8 +97,8 @@
         <button
           type="button"
           class="swap"
-          aria-label="Swap left and right colors"
-          title="Swap"
+          aria-label="{t('color_swap_sides')}"
+          title="{t('keyboard_ui_swap')}"
           onclick={onswap}
         >
           <i class="fas fa-right-left" aria-hidden="true"></i>
@@ -107,7 +108,7 @@
         type="button"
         class="color-control"
         style:--color={entry.value}
-        aria-label={`Edit ${entry.label}, ${entry.value.toUpperCase()}`}
+        aria-label={t("color_edit_value", { label: entry.label, value: entry.value.toUpperCase() })}
         aria-expanded={editing === entry.hand}
         aria-controls={editing === entry.hand ? editorId : undefined}
         onclick={() => (editing = editing === entry.hand ? null : entry.hand)}
@@ -196,7 +197,7 @@
         />
         <div class="custom-row">
           <label class="hex-field">
-            <span>Hex color</span>
+            <span>{t('color_hex')}</span>
             <input
               aria-label={`${entry.label} hex color`}
               type="text"
@@ -218,15 +219,15 @@
             <button
               class="custom-button"
               type="button"
-              aria-label="Pick a color from the screen"
-              title="Pick from screen"
+              aria-label="{t('color_pick_screen_label')}"
+              title="{t('color_pick_screen')}"
               onclick={() => pickFromScreen(entry.hand)}
             >
               <i class="fas fa-eye-dropper" aria-hidden="true"></i>
             </button>
           {:else}
             <button class="custom-button" type="button" onclick={() => entry.input?.click()}>
-              More colors
+              {t('color_more')}
             </button>
           {/if}
         </div>
