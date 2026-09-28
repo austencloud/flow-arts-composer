@@ -88,32 +88,59 @@ describe("BentoPropGrid colours on a drill", () => {
     document.body.style.margin = "0";
   });
 
-  const colorsLayer = () => document.querySelector<HTMLElement>(".prop-colors");
-  const animationCount = (el: HTMLElement | null) =>
-    el?.isConnected ? el.getAnimations().length : -1;
+  const colorsSection = () =>
+    document.querySelector<HTMLElement>("section.primary-colors");
+  // True while an animation runs on the colours or on a box holding them.
+  const fading = (el: HTMLElement | null) =>
+    !!el &&
+    document.getAnimations().some((animation) => {
+      const target = (animation.effect as KeyframeEffect | null)?.target;
+      return target instanceof Element && target.contains(el);
+    });
 
-  // A nested {#if} once dropped the colours in one frame, so the grid jumped
-  // into their space while the tiles were still fading out.
-  it("leaves and returns through a transition instead of vanishing", async () => {
+  // The colours once vanished in one frame, then squashed upward, while the
+  // tiles below them faded. They belong to the grid's page and leave with it.
+  it("fades out with the tiles as one page, without resizing", async () => {
     render(BentoPropGrid, {
       selectedPropType: PropType.BUUGENG,
       onSelect: vi.fn(),
       allowedProps: [PropType.BUUGENG, PropType.BIGBUUGENG],
     });
 
-    const colors = colorsLayer();
-    expect(colors).not.toBeNull();
+    const colors = colorsSection();
+    const tile = document.querySelector<HTMLElement>("[data-prop-tile]");
+    if (!colors || !tile) throw new Error("picker did not render");
     // Opening the picker shows them at rest.
-    expect(animationCount(colors)).toBe(0);
+    expect(fading(colors)).toBe(false);
+    const height = colors.getBoundingClientRect().height;
+    const gap =
+      tile.getBoundingClientRect().top - colors.getBoundingClientRect().top;
 
     await page
       .getByRole("button", { name: "Select Buugeng prop type" })
       .click();
-    await expect.poll(() => animationCount(colors)).toBeGreaterThan(0);
-    await expect.poll(() => colors?.isConnected).toBe(false);
+    const leaving: { height: number; gap: number; fading: boolean }[] = [];
+    await expect
+      .poll(() => {
+        if (!colors.isConnected) return true;
+        const box = colors.getBoundingClientRect();
+        leaving.push({
+          height: box.height,
+          gap: tile.getBoundingClientRect().top - box.top,
+          fading: fading(colors),
+        });
+        return false;
+      })
+      .toBe(true);
+
+    expect(leaving.some((frame) => frame.fading)).toBe(true);
+    for (const frame of leaving) {
+      expect(frame.height).toBeCloseTo(height, 0);
+      expect(frame.gap).toBeCloseTo(gap, 0);
+    }
 
     await page.getByRole("button", { name: "Back to all props" }).click();
-    await expect.poll(() => animationCount(colorsLayer())).toBeGreaterThan(0);
+    await expect.poll(() => fading(colorsSection())).toBe(true);
   });
 });
 
