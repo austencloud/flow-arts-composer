@@ -839,6 +839,7 @@
     class:assemble-surface={activeMode === "assemble"}
     class:clearing={isClearing || displayState.isClearingForGeneration}
     data-arrival-phase={arrivalRequest?.phase}
+    data-step-focus-scope
     style:--cell-size="{cellSize}px"
     style:--grid-center-offset="{standardGridCenterOffset}px"
     style:--grid-rows={gridLayout.rows}

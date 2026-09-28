@@ -1,3 +1,18 @@
+<script lang="ts" module>
+  // Deleting the focused step removes its cell, and focus falls back to the
+  // page. The deleted cell leaves a note for its grid so the step selected in
+  // its place can take focus, and the next Delete press keeps deleting.
+  // Nothing else moves focus into the grid: playback selects the playing step
+  // on every beat, and following it would pull focus off Play, or off
+  // whatever the user is on, every beat.
+  //
+  // Create removes a step after a 200ms fade. The note expires well after
+  // that, so a delete that never removes anything cannot hand focus to a cell
+  // selected long afterwards.
+  const FOCUS_HANDOFF_WINDOW_MS = 1000;
+  let focusHandoff: { scope: Element; armedAt: number } | null = null;
+</script>
+
 <script lang="ts">
   import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
@@ -53,11 +68,10 @@
     shouldAnimate?: boolean;
     isSelected?: boolean;
     /**
-     * Whether a newly selected cell should take keyboard focus.
-     *
-     * Editing grids opt into this by default so repeated Delete presses keep
-     * working. Playback previews disable it because their selection advances
-     * automatically and must never steal focus from surrounding controls.
+     * Whether this cell takes keyboard focus when it is selected in place of a
+     * focused step the user just deleted, so repeated Delete presses keep
+     * working. Selection that moves any other way, playback included, never
+     * moves focus.
      */
     autoFocusOnSelection?: boolean;
     isPracticeStep?: boolean;
@@ -199,8 +213,31 @@
     animationState = animationManager.getState();
   }
 
-  // Auto-focus when this cell becomes selected (e.g., after deleting another step)
-  // This enables continuous Delete key presses to delete steps one by one
+  // The grid this cell belongs to. WorkspaceGrid marks it, so a delete in one
+  // grid never hands focus to a cell in another.
+  function focusScope(): Element {
+    return cellElement?.closest("[data-step-focus-scope]") ?? document.body;
+  }
+
+  function takeFocusHandoff() {
+    const handoff = focusHandoff;
+    if (!handoff || !cellElement?.isConnected) return;
+    if (performance.now() - handoff.armedAt > FOCUS_HANDOFF_WINDOW_MS) {
+      focusHandoff = null;
+      return;
+    }
+    const scope = focusScope();
+    if (handoff.scope !== scope) return;
+    // Only when focus went down with the deleted cell: it now rests on the
+    // page or on something around the grid. A deleted cell that is still
+    // focused was never removed, and a control the user moved to meanwhile
+    // keeps its focus.
+    const active = document.activeElement;
+    if (active && active.isConnected && !active.contains(scope)) return;
+    focusHandoff = null;
+    cellElement.focus({ preventScroll: true });
+  }
+
   // Use null as sentinel to detect first run and initialize to isSelected's value
   let wasSelected: boolean | null = null;
   let hasMounted = false;
@@ -221,11 +258,9 @@
       !wasSelected &&
       cellElement
     ) {
-      // Small delay to ensure DOM is settled after deletion animation
-      requestAnimationFrame(() => {
-        // Use preventScroll to avoid pulling user's viewport during animation playback
-        cellElement?.focus({ preventScroll: true });
-      });
+      // The deleted cell leaves the page in the same update that selects
+      // this one; by the next frame focus has settled wherever it fell.
+      requestAnimationFrame(takeFocusHandoff);
     }
     wasSelected = isSelected;
   });
@@ -261,6 +296,7 @@
         event.preventDefault();
         // Trigger warning haptic feedback for deletion
         hapticService?.trigger("warning");
+        focusHandoff = { scope: focusScope(), armedAt: performance.now() };
         onDelete?.();
       }
     }
