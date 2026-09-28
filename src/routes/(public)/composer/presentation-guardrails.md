@@ -107,11 +107,12 @@ entirely when its only job was to complete a feature list.
 On a window at least 1100 by 700 pixels, with a mouse or trackpad and motion
 allowed, the page is a stage. One section rests on it at a time. Scrolling past
 a section, Next, the section rail, an in-page link, or Tab starts one glide to
-the next section: the section drifts back as it fades, and the next arrives
-from just ahead. A section taller than the stage scrolls within it first, and
-one scroll gesture either finishes a section or leaves it, never both. Austen
-chose this calm glide on 2026-09-28 over a winding fly-through and a parallax
-version.
+the next section: the section drifts toward the reader as it fades, and the
+next arrives from just beyond it. A section taller than the stage scrolls
+within it first, and one scroll gesture either finishes a section or leaves it,
+never both. Back, Forward, and reload return to the section the reader left.
+Austen chose this calm glide on 2026-09-28 over a winding fly-through and a
+parallax version.
 
 The stage keeps these limits:
 

@@ -51,6 +51,12 @@ export interface GlidePose {
   readonly opacity: number;
 }
 
+/** Where the stage rests: a stop, and how far a tall one has panned. */
+export interface GlidePlace {
+  readonly stop: number;
+  readonly pan: number;
+}
+
 function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));
 }
@@ -156,6 +162,22 @@ export function restPan(
   offset: number
 ): number {
   return clamp(offset - (plan.docks[index] ?? 0), 0, plan.pans[index] ?? 0);
+}
+
+/**
+ * A place remembered from another visit, fitted to the stage as it is now: the
+ * window may have changed size since, so a stop past the last becomes the
+ * last and the pan stays within what the stop can show.
+ */
+export function fitPlace(plan: GlidePlan, place: GlidePlace): GlidePlace {
+  const last = Math.max(0, plan.docks.length - 1);
+  const stop = Number.isFinite(place.stop)
+    ? clamp(Math.round(place.stop), 0, last)
+    : 0;
+  const pan = Number.isFinite(place.pan)
+    ? clamp(place.pan, 0, plan.pans[stop] ?? 0)
+    : 0;
+  return { stop, pan };
 }
 
 /** Scroll offset that shows stop `index` panned by `pan`. */

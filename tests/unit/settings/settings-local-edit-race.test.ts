@@ -17,7 +17,7 @@ const persister = vi.hoisted(() => ({
 }));
 
 vi.mock("$app/environment", () => ({ browser: true }));
-vi.mock("$lib/shared/auth/firebase", () => ({ auth }));
+vi.mock("$lib/shared/auth/loaded-auth", () => ({ loadedAuth: auth }));
 vi.mock("$lib/shared/settings/get-settings-persister", () => ({
   getSettingsPersister: () => persister,
 }));

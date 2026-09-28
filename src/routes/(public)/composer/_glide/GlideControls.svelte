@@ -160,14 +160,16 @@
     pointer-events: auto;
   }
 
+  /* The last item in the stage's column track: it sticks to the bottom of
+     the window while the stage holds it, then rides up above the footer. */
   .glide-step {
-    position: fixed;
+    position: sticky;
     bottom: max(1rem, env(safe-area-inset-bottom));
-    left: 50%;
     z-index: 150;
     display: flex;
     gap: 0.5rem;
-    transform: translateX(-50%);
+    align-self: center;
+    margin-block: auto max(1rem, env(safe-area-inset-bottom));
   }
 
   .step-label {

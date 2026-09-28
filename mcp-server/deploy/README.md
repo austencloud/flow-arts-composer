@@ -109,6 +109,13 @@ are what make the transport authenticated; they are not optional.
 
 ## Verifying end-to-end
 
+From any checkout, `npm run verify:mcp-service` checks everything below in one
+read-only pass: the service state, the local health URL, how many times the
+server exited on its own in the last hour, and whether any running cloudflared
+tunnel routes `mcp.tkaflowarts.com`. It exits 1 and says what failed, with the
+last error line from `logs\mcp-stderr.log` when the server itself is down.
+`--json` prints the same report for other tools.
+
 ```powershell
 # Service status
 Get-Service FlowArtsKnowledgeMCP, cloudflared
@@ -117,13 +124,47 @@ Get-Service FlowArtsKnowledgeMCP, cloudflared
 curl http://localhost:3333/
 
 # Public — Access answers BEFORE the tunnel, so this is a 401 challenge, not the
-# health string. A 502 here means the origin is down; a 401 means it is working.
+# health string, and it comes back even when no tunnel routes the hostname.
 curl -i https://mcp.tkaflowarts.com/mcp
 ```
 
 The public 401 must carry `WWW-Authenticate: Bearer ... resource_metadata=...`.
 `Server-Timing: cfOrigin;dur=0` confirms Access refused it at the edge without
-ever reaching the tunnel.
+ever reaching the tunnel, so a 401 proves nothing about the tunnel or the
+server. The route check in `npm run verify:mcp-service` asks each running
+cloudflared which hostnames it routes; calling a tool through the claude.ai
+connector is the only end-to-end proof.
+
+---
+
+## Monitoring
+
+A scheduled task under your account runs that check at logon and every 15
+minutes, and shows a Windows notification when the connector stops working.
+It needs no admin rights:
+
+```powershell
+cd E:\tka-platform\mcp-server\deploy
+powershell -ExecutionPolicy Bypass -File .\install-watch-task.ps1             # install; runs once right away
+powershell -ExecutionPolicy Bypass -File .\install-watch-task.ps1 -Uninstall  # remove
+```
+
+The task runs `scripts\watch-mcp-service.mjs` from the main checkout through a
+headless console, so no window appears. A failure counts only when a second
+check a minute later agrees. You get a notification when the connector goes
+down, when the problem moves between the server and the tunnel route, every 6
+hours while it stays down, and once when it works again. Problem notifications
+stay on screen until you dismiss them. The watcher never starts, stops, or
+reconfigures the service. Its state and a line per run are in
+`%LOCALAPPDATA%\FlowArtsKnowledgeMCP\`, and
+`node scripts\watch-mcp-service.mjs --test-notification` shows a sample.
+
+**Log retention.** NSSM rotates both logs before every start and never deletes
+the old copies, so a crash loop leaves two files per attempt. Before each start,
+`run-mcp-http.cmd` runs `prune-logs.mjs`, which keeps the newest 200 rotated
+logs in `deploy\logs\` and never touches the live logs or subfolders. The
+backlog from before the cap is in `deploy\logs\archive-2026-09-28\`; delete it
+whenever you like.
 
 ---
 
