@@ -10,19 +10,21 @@
   let {
     depth,
     lift = 0,
+    trail = 7,
   }: {
     /** Camera travel into the scene, in px of depth. */
     depth: number;
     /** Camera travel down the stage, in px, for a slight vertical parallax. */
     lift?: number;
+    /** Streak length in depth per px of camera travel per frame; 0 keeps
+        every star a point. */
+    trail?: number;
   } = $props();
 
   const FIELD_DEPTH = 3200;
   const NEAR = 60;
   const FOCAL = 420;
   const STARS_PER_MEGAPIXEL = 220;
-  /** Streak length in depth per px of camera travel per frame. */
-  const STREAK = 7;
   const MAX_STREAK = 420;
   const BRIGHTNESS = 0.55;
   const LIFT_PARALLAX = 0.35;
@@ -82,7 +84,7 @@
     context.lineCap = "round";
     const cx = width / 2;
     const cy = height / 2;
-    const trail = Math.max(-MAX_STREAK, Math.min(MAX_STREAK, speed * STREAK));
+    const streak = Math.max(-MAX_STREAK, Math.min(MAX_STREAK, speed * trail));
     for (const star of stars) {
       const distance = distanceOf(star);
       const y = star.y - lift * LIFT_PARALLAX;
@@ -93,7 +95,7 @@
       const radius = 0.35 + 1.25 * nearness * nearness;
       const arrival = Math.min(1, (FIELD_DEPTH + NEAR - distance) / 500);
       context.globalAlpha = star.glow * BRIGHTNESS * arrival;
-      const behind = Math.max(NEAR, distance + trail);
+      const behind = Math.max(NEAR, distance + streak);
       const tx = cx + (star.x * FOCAL) / behind;
       const ty = cy + (y * FOCAL) / behind;
       if (Math.abs(tx - sx) + Math.abs(ty - sy) < 1) {

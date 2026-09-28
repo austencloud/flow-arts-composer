@@ -13,17 +13,17 @@
 
   let { children }: { children: Snippet } = $props();
 
-  type Version = "stops" | "flow" | "current";
+  type Version = "glide" | "stops" | "current";
 
   const VERSIONS: { value: Version; label: string }[] = [
+    { value: "glide", label: "Glide" },
     { value: "stops", label: "Stops" },
-    { value: "flow", label: "Flow" },
     { value: "current", label: "Current" },
   ];
 
   const version = $derived<Version>(
     VERSIONS.find((option) => page.url.pathname.endsWith(`/${option.value}`))
-      ?.value ?? "stops"
+      ?.value ?? "glide"
   );
 </script>
 

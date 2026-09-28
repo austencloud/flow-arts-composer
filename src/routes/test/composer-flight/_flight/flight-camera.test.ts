@@ -7,9 +7,13 @@ import {
   activeStop,
   cameraAt,
   departOffset,
-  flowPose,
+  glidePose,
+  glideTarget,
+  landingOffset,
   laneOffset,
+  nearestStop,
   planStops,
+  restPan,
   settleOffset,
   stopPose,
 } from "./flight-camera";
@@ -126,25 +130,68 @@ describe("laneOffset", () => {
   });
 });
 
-describe("flowPose", () => {
-  it("rests a section flat while it crosses the reading band", () => {
-    expect(flowPose(100, 700, 1000)).toEqual({ z: 0, opacity: 1 });
-    // A section taller than the viewport stays flat while it fills it.
-    expect(flowPose(-900, 1800, 1000)).toEqual({ z: 0, opacity: 1 });
+describe("glidePose", () => {
+  it("rests a stop flat and fully shown", () => {
+    expect(glidePose(0).z).toBeCloseTo(0);
+    expect(glidePose(0).opacity).toBe(1);
   });
 
-  it("pushes an approaching section back and fades it", () => {
-    const near = flowPose(900, 1500, 1000);
-    const far = flowPose(1300, 1900, 1000);
-    expect(near.z).toBeLessThan(0);
-    expect(far.z).toBeLessThan(near.z);
-    expect(far.opacity).toBeLessThan(near.opacity);
+  it("waits unseen just ahead and leaves unseen just behind", () => {
+    expect(glidePose(1).z).toBeLessThan(0);
+    expect(glidePose(1).opacity).toBe(0);
+    expect(glidePose(-1).z).toBeGreaterThan(0);
+    expect(glidePose(-1).z).toBeLessThan(FLIGHT_PERSPECTIVE / 4);
+    expect(glidePose(-1).opacity).toBe(0);
   });
 
-  it("flies a leaving section past without crossing the camera plane", () => {
-    const leaving = flowPose(-900, 50, 1000);
-    expect(leaving.z).toBeGreaterThan(0);
-    expect(flowPose(-5000, -4000, 1000).z).toBeLessThan(FLIGHT_PERSPECTIVE);
-    expect(flowPose(-5000, -4000, 1000).opacity).toBe(0);
+  it("never shows two stops' text at once, in either direction", () => {
+    for (let step = 0; step <= 100; step += 1) {
+      const p = step / 100;
+      const forward = Math.min(glidePose(-p).opacity, glidePose(1 - p).opacity);
+      const back = Math.min(glidePose(p).opacity, glidePose(p - 1).opacity);
+      expect(forward).toBeLessThan(0.1);
+      expect(back).toBeLessThan(0.1);
+    }
+  });
+});
+
+describe("glideTarget", () => {
+  it("stays on a stop within its hold and while it pans", () => {
+    expect(glideTarget(plan, 0, 150)).toBeNull();
+    expect(glideTarget(plan, 1, 1000)).toBeNull();
+    expect(glideTarget(plan, 1, 1500)).toBeNull();
+    expect(glideTarget(plan, 1, 1800)).toBeNull();
+  });
+
+  it("glides one stop once the scroll leaves the rest", () => {
+    expect(glideTarget(plan, 0, 201)).toBe(1);
+    expect(glideTarget(plan, 1, 1801)).toBe(2);
+    expect(glideTarget(plan, 1, 999)).toBe(0);
+  });
+
+  it("goes further when the scroll went further", () => {
+    expect(glideTarget(plan, 0, 2900)).toBe(2);
+    expect(glideTarget(plan, 2, 0)).toBe(0);
+  });
+
+  it("lets the page run on past the last stop", () => {
+    expect(glideTarget(plan, 2, 3100)).toBeNull();
+  });
+});
+
+describe("nearestStop", () => {
+  it("picks the stop whose rest is closest", () => {
+    expect(nearestStop(plan, 2000)).toBe(1);
+    expect(nearestStop(plan, 2500)).toBe(2);
+    expect(nearestStop(plan, 1300)).toBe(1);
+  });
+});
+
+describe("landing", () => {
+  it("lands on a stop at a pan it can show", () => {
+    expect(landingOffset(plan, 1, 0)).toBe(1200);
+    expect(landingOffset(plan, 1, 9999)).toBe(1600);
+    expect(restPan(plan, 1, 1450)).toBe(250);
+    expect(restPan(plan, 1, 900)).toBe(0);
   });
 });
