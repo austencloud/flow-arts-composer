@@ -1,6 +1,7 @@
 import type { ContextMenuItem } from "$lib/shared/components/context-menu/context-menu-types";
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
 import type { VisualSequenceSaveIntent } from "$lib/shared/library/services/contracts/IVisualSequenceSaveCoordinator";
+import { showToast } from "$lib/shared/toast/state/toast-state.svelte";
 
 export function buildVisualSequenceSaveMenuItem(
   sequence: SequenceData,
@@ -17,10 +18,22 @@ export function buildVisualSequenceSaveMenuItem(
         await onSaveToLibrary();
         return;
       }
-      const { getVisualSequenceSaveCoordinator } =
-        await import("$lib/shared/library/get-visual-sequence-save-coordinator");
-      const coordinator = await getVisualSequenceSaveCoordinator();
-      await coordinator.save(sequence, intent);
+      // No host callback here means no save dialog either - this call is the
+      // whole save, with nothing downstream to report a problem. The shared
+      // ContextMenu awaits this action with no catch, so a rejection would
+      // otherwise vanish instead of reaching the person.
+      try {
+        const { getVisualSequenceSaveCoordinator } =
+          await import("$lib/shared/library/get-visual-sequence-save-coordinator");
+        const coordinator = await getVisualSequenceSaveCoordinator();
+        await coordinator.save(sequence, intent);
+      } catch (error) {
+        console.error(
+          "[buildVisualSequenceSaveMenuItem] Could not reach library saving:",
+          error
+        );
+        showToast("Couldn't save this sequence right now", "error");
+      }
     },
   };
 }
