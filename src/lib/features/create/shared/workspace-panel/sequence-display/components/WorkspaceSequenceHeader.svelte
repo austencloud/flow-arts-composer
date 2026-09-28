@@ -10,11 +10,15 @@
     word,
     letterSources = null,
     activeStepNumber = null,
+    showTitle = true,
   }: {
     sequenceState: SequenceState;
     word: string;
     letterSources?: LetterSource[] | null;
     activeStepNumber?: number | null;
+    /** False when the word lives in the compact bottom rail. The badges then
+        float over the picture area's top corners instead of taking a row. */
+    showTitle?: boolean;
   } = $props();
 
   const sequence = $derived(sequenceState.currentSequence);
@@ -26,21 +30,23 @@
 </script>
 
 <!-- This header belongs to the sequence, so it survives card/player swaps. -->
-<div class="workspace-sequence-header">
-  <div class="title-row">
-    <div class="word-label-slot">
-      <WordLabel
-        {word}
-        scrollMode={false}
-        {letterSources}
-        {activeStepNumber}
-        historyTransitionEpoch={sequenceState.animationState
-          .historyTransitionEpoch}
-        historyWordChanged={sequenceState.animationState.historyTransition
-          ?.wordChanged ?? false}
-      />
+<div class="workspace-sequence-header" class:badges-only={!showTitle}>
+  {#if showTitle}
+    <div class="title-row">
+      <div class="word-label-slot">
+        <WordLabel
+          {word}
+          scrollMode={false}
+          {letterSources}
+          {activeStepNumber}
+          historyTransitionEpoch={sequenceState.animationState
+            .historyTransitionEpoch}
+          historyWordChanged={sequenceState.animationState.historyTransition
+            ?.wordChanged ?? false}
+        />
+      </div>
     </div>
-  </div>
+  {/if}
   <SequenceMetadataRail
     {sequence}
     loopType={loop?.loopType ?? null}
@@ -54,6 +60,20 @@
     container-type: inline-size;
     flex: 0 0 auto;
     padding: 8px 12px 0;
+  }
+
+  .workspace-sequence-header.badges-only {
+    position: absolute;
+    top: 6px;
+    left: 8px;
+    right: 8px;
+    z-index: 2;
+    padding: 0;
+    pointer-events: none;
+  }
+
+  .workspace-sequence-header.badges-only :global(.visible) {
+    pointer-events: auto;
   }
 
   .title-row {

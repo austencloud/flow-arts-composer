@@ -10,6 +10,11 @@
  *
  * Because both read this one array, the tutorial diagram can never drift from
  * the real panel. Move a button here and it moves in both places.
+ *
+ * One exception: a stacked phone-width Assemble workspace folds the header
+ * zones into the bottom rail (Undo/Redo lead the left zone, the word and Save
+ * join the right zone) and Share moves into the Sequence Actions panel. The
+ * tutorial diagram describes the regular two-row layout.
  */
 
 export type WorkspaceButtonId =

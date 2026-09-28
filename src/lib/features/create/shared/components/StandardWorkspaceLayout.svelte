@@ -13,6 +13,7 @@
   import ButtonPanel from "../workspace-panel/shared/components/ButtonPanel.svelte";
   import UndoButton from "../workspace-panel/shared/components/buttons/UndoButton.svelte";
   import SaveToLibraryButton from "../workspace-panel/shared/components/buttons/SaveToLibraryButton.svelte";
+  import WordLabel from "../workspace-panel/sequence-display/components/WordLabel.svelte";
   import LazyMount from "$lib/shared/components/LazyMount.svelte";
   import PanelGroup from "$lib/shared/panels/PanelGroup.svelte";
   // CreationWorkspaceArea (85-file subtree) only renders once a sequence exists,
@@ -70,6 +71,7 @@
   let workspaceContainerRef: HTMLElement | null = $state(null);
   let layoutWrapperRef: HTMLElement | null = $state(null);
   let buttonPanelHeight = $state(0);
+  let workspaceWidth = $state(0);
   let panelSizes = $state<number[]>([]);
   let appliedPanelLayout = $state<string | null>(null);
 
@@ -107,6 +109,41 @@
         "complete"
   );
   const isWorkspacePlayback = $derived(!!panelState.workspacePlayback);
+
+  // A stacked phone-width Assemble workspace spends two control rows around
+  // its step pictures. Folding the header's Undo/Redo, word and Save into the
+  // bottom rail returns that height to the pictures. Share moves to the
+  // Actions panel to make room. Below 340px the rail can't hold them, so the
+  // two-row layout returns.
+  const COMPACT_TOOLBAR_MIN_WIDTH = 340;
+  const COMPACT_TOOLBAR_MAX_WIDTH = 600;
+  const useCompactToolbar = $derived(
+    isAssembleTab &&
+      !shouldUseSideBySideLayout &&
+      workspaceWidth >= COMPACT_TOOLBAR_MIN_WIDTH &&
+      workspaceWidth < COMPACT_TOOLBAR_MAX_WIDTH
+  );
+
+  $effect(() => {
+    panelState.setShareInSequenceActions(useCompactToolbar);
+    return () => panelState.setShareInSequenceActions(false);
+  });
+
+  $effect(() => {
+    const container = workspaceContainerRef;
+    if (!container) return;
+    const measure = () => {
+      workspaceWidth = container.clientWidth;
+    };
+    measure();
+    const resizeObserver = new ResizeObserver(measure);
+    resizeObserver.observe(container);
+    return () => resizeObserver.disconnect();
+  });
+
+  const activeTabAnimationState = $derived(
+    CreateModuleState.getActiveTabSequenceState().animationState
+  );
 
   $effect(() => {
     const layoutKey = `${shouldUseSideBySideLayout}:${isAssembleTab}`;
@@ -217,6 +254,38 @@
   });
 </script>
 
+{#snippet compactHistoryActions()}
+  <div class="compact-history-actions" inert={isWorkspacePlayback}>
+    <UndoButton {CreateModuleState} onAction={handleWorkspaceUndo} />
+    <UndoButton {CreateModuleState} direction="redo" />
+  </div>
+{/snippet}
+
+{#snippet compactWordAction()}
+  <div class="word-label-slot compact-word-slot">
+    <WordLabel
+      word={currentDisplayWord}
+      scrollMode={false}
+      letterSources={currentLetterSources}
+      activeStepNumber={animatingStepNumber ?? panelState.practiceStepIndex}
+      historyTransitionEpoch={activeTabAnimationState.historyTransitionEpoch}
+      historyWordChanged={activeTabAnimationState.historyTransition
+        ?.wordChanged ?? false}
+    />
+  </div>
+{/snippet}
+
+{#snippet compactSaveAction()}
+  {#if canSaveToLibrary}
+    <div class="compact-save-action">
+      <SaveToLibraryButton
+        sequence={currentSequence}
+        onclick={() => panelState.openSaveToLibraryPanel()}
+      />
+    </div>
+  {/if}
+{/snippet}
+
 {#snippet workspacePanel()}
   <!-- Workspace Panel - Visible based on tab and content -->
   <!-- Background click is a pointer shortcut; Escape, the corner X and Stop
@@ -242,6 +311,7 @@
             animatingStepNumber,
             currentDisplayWord,
             buttonPanelHeight,
+            compactToolbar: useCompactToolbar,
             letterSources: currentLetterSources,
             ...(toolPanelRef?.getAnimationStateRef?.()
               ? { animationStateRef: toolPanelRef.getAnimationStateRef() }
@@ -256,7 +326,7 @@
       {/if}
     </div>
 
-    {#if shouldShowWorkspace}
+    {#if shouldShowWorkspace && !useCompactToolbar}
       <div
         class="workspace-history-actions"
         inert={!!panelState.workspacePlayback}
@@ -266,7 +336,7 @@
       </div>
     {/if}
 
-    {#if shouldShowWorkspace && canSaveToLibrary}
+    {#if shouldShowWorkspace && canSaveToLibrary && !useCompactToolbar}
       <div class="workspace-save-action">
         <SaveToLibraryButton
           sequence={currentSequence}
@@ -278,7 +348,14 @@
     <!-- Button Panel - Shows when workspace is visible -->
     {#if shouldShowWorkspace}
       <div class="button-panel-wrapper" bind:this={buttonPanelElement}>
-        <ButtonPanel {onClearSequence} {onViewSequence} />
+        <ButtonPanel
+          {onClearSequence}
+          {onViewSequence}
+          compact={useCompactToolbar}
+          leadingActions={compactHistoryActions}
+          titleAction={compactWordAction}
+          trailingActions={compactSaveAction}
+        />
       </div>
     {/if}
 
@@ -425,8 +502,37 @@
     pointer-events: auto;
   }
 
-  .workspace-history-actions[inert] {
+  .workspace-history-actions[inert],
+  .compact-history-actions[inert] {
     opacity: 0.45;
+  }
+
+  /* The rail's zones let taps through to the grid; these wrappers are
+     authored here, so ButtonPanel's own wrapper rule doesn't reach them. */
+  .compact-history-actions,
+  .compact-word-slot,
+  .compact-save-action {
+    pointer-events: auto;
+  }
+
+  .compact-history-actions {
+    display: flex;
+    gap: var(--settings-workspace-action-gap, 8px);
+  }
+
+  .compact-save-action {
+    display: grid;
+    place-items: center;
+  }
+
+  /* Takes the width Actions and Save leave; WordLabel measures this slot and
+     scales a long word down to fit it. */
+  .compact-word-slot {
+    display: grid;
+    place-items: center;
+    flex: 1 1 0;
+    min-width: var(--min-touch-target, 44px);
+    overflow: hidden;
   }
 
   /* Signals that the empty space around the preview closes it. */

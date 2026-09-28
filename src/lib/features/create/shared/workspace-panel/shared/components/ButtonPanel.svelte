@@ -9,6 +9,9 @@
   - CENTER ZONE: Play
   - RIGHT ZONE: Sequence Actions + Share
 
+  Compact rail (phone-width Assemble): the header's Undo/Redo, word and Save
+  arrive as snippets and join this row, and Share moves to the Actions panel.
+
   Architecture:
   - Uses CreateModuleContext for state access
   - Derives all boolean flags locally from context
@@ -17,6 +20,7 @@
   - Just composition and prop passing
 -->
 <script lang="ts">
+  import type { Snippet } from "svelte";
   import { fade } from "svelte/transition";
   import { PresenceAnimation } from "../../../../../../shared/ui-animation/animations.svelte";
   import { getCreateModuleContext } from "$lib/features/create/shared/context/create-module-context";
@@ -51,10 +55,19 @@
     onClearSequence,
     onViewSequence,
     visible = true,
+    compact = false,
+    leadingActions,
+    titleAction,
+    trailingActions,
   }: {
     onClearSequence?: () => void;
     onViewSequence?: () => void;
     visible?: boolean;
+    /** One-row rail: header actions join the panel and Share leaves it */
+    compact?: boolean;
+    leadingActions?: Snippet;
+    titleAction?: Snippet;
+    trailingActions?: Snippet;
   } = $props();
 
   // Derive computed values from context
@@ -189,10 +202,14 @@
     <div
       class="button-panel"
       class:assemble-layout={isAssembleTab}
+      class:compact-rail={compact}
       transition:fade={{ duration: 200 }}
     >
       <!-- LEFT ZONE: destructive document actions -->
       <div class="left-zone">
+        {#if compact && leadingActions}
+          {@render leadingActions()}
+        {/if}
         {#each leftButtons as btn (btn.id)}
           {#if btn.id === "clear" && canClearSequence && onClearSequence}
             <div transition:presenceTransition>
@@ -250,6 +267,9 @@
 
       <!-- RIGHT ZONE: order/membership from the shared layout -->
       <div class="right-zone">
+        {#if compact && titleAction}
+          {@render titleAction()}
+        {/if}
         {#each rightButtons as btn (btn.id)}
           {#if btn.id === "sequence-actions" && showSequenceActions}
             <div
@@ -261,7 +281,7 @@
                   panelState.openSequenceActionsPanel("workspace_button")}
               />
             </div>
-          {:else if btn.id === "share" && canShareSequence}
+          {:else if btn.id === "share" && canShareSequence && !compact}
             <div transition:presenceTransition>
               <ShareButton
                 sequence={currentSequence}
@@ -270,6 +290,9 @@
             </div>
           {/if}
         {/each}
+        {#if compact && trailingActions}
+          {@render trailingActions()}
+        {/if}
       </div>
 
       {#if shouldShowOptionInteractionBanner}
@@ -571,6 +594,17 @@
       --settings-workspace-action-gap: 4px;
       padding-inline: 4px;
     }
+  }
+
+  /* The compact rail spreads each side across its half so the word chip in
+     the right zone can take whatever width Actions and Save leave over. */
+  .button-panel.compact-rail .left-zone,
+  .button-panel.compact-rail .right-zone {
+    width: 100%;
+  }
+
+  .button-panel.compact-rail .right-zone {
+    justify-content: flex-end;
   }
 
   @container button-panel (max-width: 330px) {

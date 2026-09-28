@@ -265,6 +265,11 @@ export interface PanelCoordinationState {
   get targetHand(): TargetHand;
   setTargetHand(hand: TargetHand): void;
 
+  // A phone-width Assemble toolbar has no room for Share, so the Actions
+  // panel carries it instead. The toolbar sets this; the panel reads it.
+  get isShareInSequenceActions(): boolean;
+  setShareInSequenceActions(value: boolean): void;
+
   // Beat Editor Panel State (non-modal - allows click-through to pictographs)
   get isStepEditorPanelOpen(): boolean;
   get mandalaViewerSelection(): MandalaViewerSelection | null;
@@ -473,6 +478,9 @@ export function createPanelCoordinationState(): PanelCoordinationState {
 
   // Target hand selection for single-hand transforms (default: both)
   let targetHand = $state<TargetHand>("both");
+
+  // Set by the compact Assemble toolbar when it hands Share to the Actions panel
+  let isShareInSequenceActions = $state(false);
 
   // Beat Editor panel state (non-modal - doesn't participate in closeAllPanels)
   // Persisted so a dev HMR / page refresh restores the open editor instead of
@@ -915,6 +923,14 @@ export function createPanelCoordinationState(): PanelCoordinationState {
 
     setTargetHand(hand: TargetHand) {
       targetHand = hand;
+    },
+
+    get isShareInSequenceActions() {
+      return isShareInSequenceActions;
+    },
+
+    setShareInSequenceActions(value: boolean) {
+      isShareInSequenceActions = value;
     },
 
     // Beat Editor Panel Getters (non-modal)
