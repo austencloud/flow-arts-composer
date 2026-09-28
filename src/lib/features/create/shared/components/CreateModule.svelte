@@ -495,6 +495,8 @@
           executeSequenceAction: (action, options) =>
             sequenceTransformActions!.execute(action, options),
           requestClearSequence: () => handleClearSequence(),
+          removeStep: (stepIndex) =>
+            handlers?.handleRemoveStep(stepIndex, CreateModuleState),
         });
 
         servicesInitialized = true;

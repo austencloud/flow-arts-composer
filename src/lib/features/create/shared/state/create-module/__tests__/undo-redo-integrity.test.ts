@@ -12,11 +12,16 @@
 
 import { readFileSync } from "node:fs";
 import path from "node:path";
-import { describe, it, expect, vi } from "vitest";
+import { afterEach, describe, it, expect, vi } from "vitest";
 import { UndoManager, UndoOperationType } from "../../../services/undo-manager";
 import { createUndoController } from "../undo-controller.svelte";
 import { removeStep } from "../../../services/step-operations/step-removal-handler";
 import { createSequenceState } from "../../sequence-state-orchestrator.svelte";
+import { registerCreateShortcuts } from "$lib/shared/keyboard/registration/register-create-shortcuts";
+import type { KeyboardShortcutManager } from "$lib/shared/keyboard/services/keyboard-shortcut-manager";
+import type { ShortcutRegistrationOptions } from "$lib/shared/keyboard/domain/types/keyboard-types";
+import type { createKeyboardShortcutState } from "$lib/shared/keyboard/state/keyboard-shortcut-state.svelte";
+import { setCreateModuleStateRef } from "$lib/shared/create/state/create-module-state-ref.svelte";
 import { createSequence } from "$lib/shared/create/services/sequence-domain-manager";
 import { createStepData } from "$lib/shared/foundation/domain/factories/create-step-data";
 import { createStartPlacementData } from "$lib/shared/create/factories/create-start-placement-data";
@@ -357,6 +362,88 @@ describe("Create history: one delete is one history entry", () => {
     expect(handler).toContain("StepOperator.removeStep");
     expect(handler).not.toMatch(/pushUndoSnapshot\s*\(/);
   });
+});
+
+describe("Create history: a keyboard delete is one history entry", () => {
+  /**
+   * Delete and Backspace on a selected step reach Create's window shortcut
+   * before anything else. It used to remove the steps itself, so the Undo
+   * button never offered them back. The shortcuts run here as registered,
+   * against the real orchestrator, removal handler and history.
+   */
+  function registerDeleteShortcuts() {
+    const registered = new Map<string, ShortcutRegistrationOptions>();
+    const service = {
+      register: (options: ShortcutRegistrationOptions) => {
+        registered.set(options.id, options);
+        return () => {};
+      },
+    } as unknown as KeyboardShortcutManager;
+    const state = {
+      settings: { enableSingleKeyShortcuts: true },
+    } as unknown as ReturnType<typeof createKeyboardShortcutState>;
+    registerCreateShortcuts(service, state);
+    return registered;
+  }
+
+  afterEach(() => {
+    setCreateModuleStateRef(null);
+    vi.useRealTimers();
+  });
+
+  it.each([
+    ["Backspace", "create.delete-beat"],
+    ["Delete", "create.delete-beat-delete-key"],
+  ])(
+    "%s brings back the step and every step after it with one Undo",
+    async (key, shortcutId) => {
+      vi.useFakeTimers();
+      const sequenceState = createSequenceState({
+        tabId: "construct",
+        ReversalDetector: reversalDetector,
+      });
+      sequenceState.setCurrentSequence(makeSequence("ABCDE", 5));
+      const built = sequenceState.currentSequence;
+      const manager = new UndoManager();
+      const controller = createUndoController({
+        UndoManager: manager,
+        sequenceState: sequenceState as never,
+        getActiveSection: () => "construct",
+        setActiveSectionInternal: async () => {},
+      });
+      const createModuleState = {
+        sequenceState,
+        pushUndoSnapshot: controller.pushUndoSnapshot,
+        setActiveToolPanel: vi.fn(),
+      };
+      setCreateModuleStateRef({
+        CreateModuleState: createModuleState as never,
+        constructTabState: {} as never,
+        panelState: {} as never,
+        executeSequenceAction: vi.fn(),
+        removeStep: (stepIndex: number) =>
+          removeStep(stepIndex, createModuleState as never),
+      });
+      const shortcut = registerDeleteShortcuts().get(shortcutId);
+      if (!shortcut) throw new Error(`${shortcutId} was not registered`);
+
+      sequenceState.selectStep(3);
+      await shortcut.action(new KeyboardEvent("keydown", { key }));
+      // Past the fade the steps play before they leave.
+      await vi.advanceTimersByTimeAsync(1000);
+
+      expect(sequenceState.currentSequence?.steps).toHaveLength(2);
+      expect(manager.undoHistory).toHaveLength(1);
+      expect(manager.undoHistory[0]?.type).toBe(UndoOperationType.REMOVE_BEATS);
+      expect(manager.undoHistory[0]?.metadata?.description).toBe(
+        "Remove steps 3 to 5"
+      );
+
+      controller.undo();
+      expect(sequenceState.currentSequence?.steps).toEqual(built?.steps);
+      expect(controller.canUndo).toBe(false);
+    }
+  );
 });
 
 describe("Create history: clearing animation cannot outlive the state it clears", () => {

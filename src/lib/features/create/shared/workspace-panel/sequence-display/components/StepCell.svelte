@@ -293,10 +293,10 @@
       // Don't call onClick - let global shortcuts handle Space
       return;
     } else if (event.key === "Delete" || event.key === "Backspace") {
-      // While the step editor is open, Create's Delete shortcut sees this
-      // press first: it closes the editor, which clears the selection, and
-      // removes the step itself. So the note goes down whether or not this
-      // cell still counts as selected.
+      // Create's Delete shortcut sees this press first and removes the step
+      // itself. While the step editor is open it also closes the editor,
+      // which clears the selection. So the note goes down whether or not
+      // this cell still counts as selected.
       if (cellElement) {
         focusHandoff = {
           scope: focusScope(),
@@ -304,8 +304,10 @@
           armedAt: performance.now(),
         };
       }
-      // Allow deletion if step is selected (including start placement)
-      if (isSelected) {
+      // Allow deletion if step is selected (including start placement). The
+      // shortcut marks a press it handled; deleting here as well would remove
+      // the steps twice and leave two undo entries for one press.
+      if (isSelected && !event.defaultPrevented) {
         event.preventDefault();
         // Trigger warning haptic feedback for deletion
         hapticService?.trigger("warning");

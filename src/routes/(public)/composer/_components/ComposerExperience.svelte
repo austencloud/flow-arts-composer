@@ -930,7 +930,7 @@
   }
 
   /* The width cap keeps a very tall window (3840 x 2160) from stretching
-     the builder into a column of empty space. */
+     a demo into a column of empty space. */
   .stop-frame {
     box-sizing: border-box;
     height: clamp(34rem, var(--making-fill), 62cqw);
@@ -939,6 +939,16 @@
     border: 1px solid var(--theme-stroke, oklch(0.45 0.03 270 / 0.2));
     border-radius: var(--settings-radius-lg, 0.85rem);
     background: var(--theme-panel-bg, oklch(0.13 0.025 270 / 0.92));
+  }
+
+  /* The builder's option tiles and step cells stop growing at fixed sizes,
+     so past the frame it gets in a 1920 x 1080 window more room only reads
+     as empty panel. It stops there and sits centered. The generator scales
+     its grid and player with its width, so it keeps the whole room. */
+  .construct-frame {
+    max-width: 108rem;
+    height: clamp(34rem, min(var(--making-fill), 52rem), 62cqw);
+    margin-inline: auto;
   }
 
   /* The builder stacks its panels in a narrow stop, and in any window under
