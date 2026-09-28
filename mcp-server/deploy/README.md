@@ -137,6 +137,25 @@ Restart-Service FlowArtsKnowledgeMCP    # needs an ELEVATED shell
 
 No rebuild needed — it runs via `tsx` on source.
 
+**After a merge that changes `mcp-server\package.json` or its lockfile**,
+install in this folder before the service next restarts. The service loads
+packages from the main checkout's `mcp-server\node_modules`, which a root
+`pnpm install` never touches. The running process keeps its old code until a
+restart or reboot, then fails on the missing package. That is how it
+crash-looped from 2026-09-18 to 09-27.
+
+```powershell
+npm install --no-save --ignore-scripts --prefix "E:\tka-platform\mcp-server"
+```
+
+Never use `npm ci` here. It deletes `node_modules`, which holds the junctions
+into `packages\`. If npm fails with `EPERM` or `EBUSY`, a running process has
+one of the files open: stop the service (elevated), install, then start it.
+`npm run wt:finish` checks this folder and `mcp-server-pkg` after every merge
+and prints the install command when either drifts from its lockfile. Run the
+same check at any time with `npm run verify:standalone-installs` from the repo
+root.
+
 **If it comes back as `Paused`, it is crash-looping, not idle.** NSSM parks a
 service that keeps exiting. `Get-Service` shows `Paused`, nothing listens on
 :3333, and claude.ai reports a sign-in/registration failure rather than a
