@@ -2,10 +2,10 @@
   import type { Snippet } from "svelte";
   import "../../../app.css";
 
+  // Full-screen review harness. /test pages never mount the product shell, so
+  // this layout clears app.html's boot splash itself.
   let { children } = $props<{ children: Snippet }>();
 
-  // This reset layout skips the product shell, so it owns removal of the boot
-  // splash that the shell normally clears after initialization.
   $effect(() => {
     document.getElementById("app-loading")?.remove();
   });

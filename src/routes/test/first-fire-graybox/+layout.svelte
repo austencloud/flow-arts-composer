@@ -2,9 +2,10 @@
   import type { Snippet } from "svelte";
   import "../../../app.css";
 
+  // Full-screen test harness. /test pages never mount the app shell, so this
+  // layout clears app.html's boot splash itself.
   let { children } = $props<{ children: Snippet }>();
 
-  // This proof route owns the viewport and bypasses product auth/module startup.
   $effect(() => {
     document.getElementById("app-loading")?.remove();
   });
