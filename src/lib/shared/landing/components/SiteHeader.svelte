@@ -17,7 +17,7 @@
   import RobustAvatar from "../../components/avatar/RobustAvatar.svelte";
   import NavDropdown, { type NavDropdownItem } from "./NavDropdown.svelte";
   import {
-    hasFirebaseAuthDatabase,
+    hasSavedFirebaseUser,
     signInWhenIdle,
     startAuthState,
     type AuthStateApi,
@@ -39,11 +39,14 @@
   // (auth/firestore/db/functions) into the landing bundle via auth-state →
   // firebase top-level side effects.
   //
-  // Instead: on mount, run a cheap SDK-free probe for Firebase's auth
-  // persistence IndexedDB. No DB → first-time/signed-out visitor → show
-  // "Sign in", never load Firebase. DB present → returning signed-in user →
-  // lazily load the real authState at idle and populate the avatar. The probe
-  // and the idle start live in deferred-sign-in.ts, shared with Shape Engine.
+  // Instead: on mount, run a cheap SDK-free check for a user Firebase saved in
+  // this browser: in localStorage on Safari and iOS, in its IndexedDB database
+  // elsewhere. None → first-time or signed-out visitor → show "Sign in", never
+  // load Firebase. Found → returning visitor → lazily load the real authState
+  // at idle and populate the avatar. Asking only whether that database exists
+  // missed every Safari and iOS visitor, and loaded Firebase for signed-out
+  // ones. The check and the idle start live in deferred-sign-in.ts, shared
+  // with Shape Engine.
   let authApi = $state<AuthStateApi | null>(null);
   let probeDone = $state(false);
   let hasPersistedAuth = $state(false);
@@ -87,7 +90,7 @@
 
   onMount(() =>
     signInWhenIdle({
-      hasSession: hasFirebaseAuthDatabase,
+      hasSession: hasSavedFirebaseUser,
       onProbed: (persisted) => {
         hasPersistedAuth = persisted;
         probeDone = true;
