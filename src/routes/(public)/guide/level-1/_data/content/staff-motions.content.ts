@@ -123,16 +123,19 @@ const RENDER = { propType: PropType.STAFF, showTKA: false } as const;
 /**
  * The prospin and antispin shifts as standalone strips. The Prospin and inspin
  * page shows these same two motions, so it reads them from here instead of
- * building its own copies.
+ * building its own copies. `motion` is the one pictograph that draws the whole
+ * shift, which that page shows beside the animation in place of the strip.
  */
 export const SHIFT_DEMOS = {
   pro: {
     items: rowItems(ROWS[0]!),
+    motion: ROWS[0]!.combined as unknown as PictographData,
     sequenceItems: rowSequenceItems(ROWS[0]!),
     render: RENDER,
   },
   anti: {
     items: rowItems(ROWS[1]!),
+    motion: ROWS[1]!.combined as unknown as PictographData,
     sequenceItems: rowSequenceItems(ROWS[1]!),
     render: RENDER,
   },
