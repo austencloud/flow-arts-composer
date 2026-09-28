@@ -1,5 +1,6 @@
 <script lang="ts">
   import ComposerExperience from "./_components/ComposerExperience.svelte";
+  import ComposerGlide from "./_glide/ComposerGlide.svelte";
   import Seo from "$lib/shared/components/Seo.svelte";
 
   const TITLE = "Flow Arts Composer | Free Flow Arts Software for Choreography";
@@ -76,4 +77,4 @@
   {@html `<script type="application/ld+json">${breadcrumbJsonLd}</script>`}
 </Seo>
 
-<ComposerExperience />
+<ComposerGlide><ComposerExperience /></ComposerGlide>

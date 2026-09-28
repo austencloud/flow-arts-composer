@@ -1,41 +1,55 @@
 <script lang="ts">
   /**
-   * Glide: Stops without the ride. The same fixed stage, rail and Next, but
-   * the camera no longer rides the scroll along a winding path. Leaving a
-   * section, by scrolling past it or with Next, the rail, a link or the
-   * keyboard, starts one timed glide straight ahead: the section drifts back
-   * toward you as it fades and the next one arrives from just ahead. The
-   * browser's compositor runs the glide, so a busy page cannot make it
-   * stutter, and the rest of the gesture that started it is absorbed, so one
-   * flick moves one section. A section taller than the stage pans with the
-   * scroll while it rests, and a gesture that reaches its end stops there
-   * before the next one glides on. A small window or reduced motion gets the
-   * plain page instead.
+   * The /composer stage. On a large window with motion allowed, the page's
+   * sections rest one at a time on a fixed stage instead of scrolling past.
+   * Leaving a section, by scrolling past it or with Next, the rail, an
+   * in-page link or Tab, starts one timed glide straight ahead: the section
+   * drifts back toward you as it fades and the next one arrives from just
+   * ahead. The browser's compositor runs the glide, so a busy page cannot
+   * make it stutter, and the rest of the gesture that started it is absorbed,
+   * so one flick moves one section. A section taller than the stage pans with
+   * the scroll while it rests, and a gesture that reaches its end stops there
+   * before the next one glides on.
+   *
+   * The page prerenders and hydrates as the plain page, and the stage takes
+   * over once mounted. A smaller or zoomed-in window, a touch screen, and
+   * reduced motion keep the plain page; /about renders the same sections
+   * without this wrapper.
    */
   import type { Snippet } from "svelte";
+  import { onMount } from "svelte";
   import { MediaQuery } from "svelte/reactivity";
-  import FlightControls from "./FlightControls.svelte";
-  import FlightStars from "./FlightStars.svelte";
-  import PlainPage from "./PlainPage.svelte";
+  import { motionDuration } from "$lib/shared/transitions/motion";
+  import { DURATION } from "$lib/shared/transitions/transitions";
+  import GlideControls from "./GlideControls.svelte";
+  import GlideStars from "./GlideStars.svelte";
   import {
-    FLIGHT_PERSPECTIVE,
+    GLIDE_PERSPECTIVE,
     GLIDE_STAR_STEP,
     glidePose,
     glideTarget,
     landingOffset,
-    nearestStop,
     planStops,
     restPan,
     restRange,
-  } from "./flight-camera";
-  import { harness } from "./harness.svelte";
+  } from "./glide-plan";
   import { headerHeight, pageSections, sectionTitle } from "./page-sections";
 
   let { children }: { children: Snippet } = $props();
 
-  const roomy = new MediaQuery("(min-width: 1100px) and (min-height: 700px)");
+  // Keep in step with the stage media queries in the styles below.
+  const roomy = new MediaQuery(
+    "(min-width: 1100px) and (min-height: 700px) and (hover: hover) and (pointer: fine)"
+  );
   const calm = new MediaQuery("(prefers-reduced-motion: reduce)");
-  const staged = $derived(roomy.current && !calm.current);
+  // The server cannot know the window, so hydration always matches the plain
+  // page it prerendered. The stage also clips the sections it has parked, so
+  // a browser without overflow: clip keeps the plain page.
+  let capable = $state(false);
+  onMount(() => {
+    capable = CSS.supports("overflow", "clip");
+  });
+  const staged = $derived(capable && roomy.current && !calm.current);
 
   /** Gap under the header, and the band kept free below a section for Next. */
   const TOP_GAP = 16;
@@ -47,18 +61,19 @@
   /** Scroll, in px, a stop absorbs before a glide starts: less than one wheel
       notch or arrow press, so either moves on. */
   const HOLD = 32;
-  /** One glide. Longer than the interface duration tokens on purpose: it
-      moves the whole scene, not a control. */
-  const GLIDE_MS = 800;
   /** Input quiet for this long ends the gesture that started a glide. */
   const QUIET_MS = 200;
   /** Keyframes per glide; the compositor interpolates between them. */
   const GLIDE_SAMPLES = 24;
-  /** Parked far below the stage while out of the scene, so the page's own
-      near-viewport loading waits until a glide is one stop away. */
-  const PARKED = "translate3d(0, 400vh, 0)";
+  /** A section whose top is above this share of the window is the one being
+      read on the plain page. */
+  const READING_LINE = 0.45;
+  /** Parked to the side of the clipped stage while out of the scene. The
+      page's own near-viewport loading waits until a glide is one stop away,
+      and a parked section stays readable to assistive technology and
+      reachable by Tab without the browser scrolling toward it. */
+  const PARKED = "translate3d(400vw, 0, 0)";
   const STAGED_PROPERTIES = [
-    "visibility",
     "opacity",
     "transform",
     "z-index",
@@ -69,28 +84,35 @@
   let stops: string[] = $state([]);
   let active = $state(0);
   let depth = $state(0);
-  let glideTo: (index: number) => void = () => {};
-
-  $effect(() => {
-    harness.note = staged
-      ? ""
-      : "Glide needs a window at least 1100 by 700 with motion on, so this is the plain page.";
-    return () => {
-      harness.note = "";
-    };
-  });
+  let goTo: (index: number) => void = () => {};
 
   $effect(() => {
     if (!staged || !track) return;
     const found = pageSections(track);
-    if (!found) return;
+    if (!found || !found.sections.length) return;
     const { page, sections } = found;
     const stage = track;
     stops = sections.map(sectionTitle);
     const easing =
       getComputedStyle(document.documentElement)
         .getPropertyValue("--ease-in-out")
-        .trim() || "cubic-bezier(0.4, 0, 0.2, 1)";
+        .trim() || "ease-in-out";
+
+    // Where the reader is on the plain page decides where the stage opens:
+    // the top on a fresh visit, the section a link pointed into, or the one
+    // being read when the window grew large enough for the stage.
+    const line = window.innerHeight * READING_LINE;
+    let opening = 0;
+    sections.forEach((section, index) => {
+      if (section.getBoundingClientRect().top < line) opening = index;
+    });
+    const openingPan = Math.max(
+      0,
+      headerHeight(page) +
+        TOP_GAP -
+        sections[opening].getBoundingClientRect().top
+    );
+    stage.classList.add("staged");
 
     let plan = planStops({ heights: [], room: 1, travel: 1, hold: 0 });
     let heights: number[] = [];
@@ -130,14 +152,13 @@
     };
 
     // At rest the current stop sits in place and its neighbours wait unseen
-    // where a glide would start them, so they load early and keyboard focus
-    // can reach them; every other stop is parked.
+    // where a glide would start them, so they load early; every other stop
+    // is parked.
     const place = () => {
       sections.forEach((section, index) => {
         const style = section.style;
         const relative = index - current;
         if (Math.abs(relative) > 1) {
-          style.visibility = "hidden";
           style.opacity = "0";
           style.transform = PARKED;
           style.pointerEvents = "none";
@@ -147,7 +168,6 @@
         const panned =
           relative === 0 ? pan : relative < 0 ? plan.pans[index] : 0;
         const { transform, opacity } = pose(index, panned, relative);
-        style.visibility = "";
         style.transform = transform;
         style.opacity = opacity;
         style.pointerEvents = relative === 0 ? "" : "none";
@@ -244,7 +264,6 @@
       const leaving = sections[from];
       const arriving = sections[to];
       for (const section of [leaving, arriving]) {
-        section.style.visibility = "";
         section.style.pointerEvents = "none";
       }
       // The nearer section draws on top: the one being left going forward,
@@ -252,7 +271,9 @@
       leaving.style.zIndex = direction > 0 ? "3" : "2";
       arriving.style.zIndex = direction > 0 ? "2" : "3";
       const timing: KeyframeAnimationOptions = {
-        duration: GLIDE_MS,
+        // Longer than an interface transition on purpose: it moves the whole
+        // scene, not a control.
+        duration: motionDuration(DURATION.scene),
         easing,
         fill: "forwards",
       };
@@ -370,8 +391,6 @@
       const wasSpan = plan.pans[current] ?? 0;
       restTop = headerHeight(page) + TOP_GAP;
       room = viewport - restTop - CONTROLS_BAND;
-      page.style.setProperty("--flight-room", `${room}px`);
-      page.style.setProperty("--flight-focus-y", `${restTop + room / 2}px`);
       heights = sections.map((section) => section.offsetHeight);
       plan = planStops({
         heights,
@@ -384,9 +403,8 @@
       const offset = window.scrollY - trackTop;
       const first = !measured;
       if (first) {
-        // A reload can land anywhere on the page: rest on the nearest stop.
-        current = nearestStop(plan, offset);
-        pan = restPan(plan, current, offset);
+        current = opening;
+        pan = openingPan;
         active = current;
         measured = true;
       }
@@ -403,13 +421,13 @@
         plan.pans[current] !== wasSpan;
       const last = plan.docks.length - 1;
       const onFooter =
-        current === last && offset > restRange(plan, last).end;
+        !first && current === last && offset > restRange(plan, last).end;
       if (moved && !onFooter && Math.abs(window.scrollY - holdOffset()) > 0.5) {
         window.scrollTo({ top: holdOffset(), behavior: "instant" });
       }
     };
 
-    glideTo = (index) => glide(index, 0);
+    goTo = (index) => glide(index, 0);
 
     const observer = new ResizeObserver(() => measure());
     for (const section of sections) observer.observe(section);
@@ -434,49 +452,92 @@
       window.removeEventListener("keydown", onKeyDown, true);
       page.removeEventListener("focusin", onFocusIn);
       page.removeEventListener("click", onClick);
-      page.style.removeProperty("--flight-room");
-      page.style.removeProperty("--flight-focus-y");
+      stage.classList.remove("staged");
       stage.style.removeProperty("height");
       for (const section of sections) {
         for (const property of STAGED_PROPERTIES) {
           section.style.removeProperty(property);
         }
       }
+      // A window shrunk below the stage, or motion turned off, returns to
+      // the plain page at the section that was resting on the stage.
+      if (!staged && page.isConnected) {
+        const top =
+          current === 0
+            ? 0
+            : sections[current].getBoundingClientRect().top +
+              window.scrollY +
+              pan -
+              restTop;
+        window.scrollTo({ top: Math.max(0, top), behavior: "instant" });
+      }
     };
   });
 </script>
 
+<div
+  class="glide"
+  bind:this={track}
+  style:--glide-perspective="{GLIDE_PERSPECTIVE}px"
+  style:--glide-gap="{TOP_GAP}px"
+  style:--glide-band="{CONTROLS_BAND}px"
+>
+  {#if staged}
+    <GlideStars {depth} />
+  {/if}
+  {@render children()}
+</div>
+
 {#if staged}
-  <div
-    class="glide-flight"
-    bind:this={track}
-    style:--flight-perspective="{FLIGHT_PERSPECTIVE}px"
-    style:--flight-band="{CONTROLS_BAND}px"
-  >
-    <FlightStars {depth} trail={0} />
-    {@render children()}
-  </div>
-  <FlightControls
-    {stops}
-    {active}
-    onGo={(index) => glideTo(index)}
-    placement="stage"
-  />
-{:else}
-  <PlainPage>{@render children()}</PlainPage>
+  <GlideControls {stops} {active} onGo={(index) => goTo(index)} />
 {/if}
 
 <style>
-  .glide-flight {
+  .glide {
     position: relative;
-    /* The track's height follows the sections; the browser must not read
-       that as content moving and nudge the scroll to compensate. */
+    /* Where a resting section's top sits, and the height it can use: the
+       window below the header and a small gap, less the band kept for Next. */
+    --glide-top: calc(var(--marketing-header-h, 64px) + var(--glide-gap));
+    --glide-room: calc(100dvh - var(--glide-top) - var(--glide-band));
+  }
+
+  /* Keep these two queries in step with `roomy` and `calm` in the script.
+     Before the stage takes over, on the prerendered page or without script,
+     the plain page already places and sizes the hero as the stage will, so
+     nothing moves when it does. The hero fills the room between the header
+     and Next, and without its scroll cue, which Next replaces, it needs no
+     extra space below. */
+  @media (min-width: 1100px) and (min-height: 700px) and (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+    .glide :global(.composer-page) {
+      padding-top: var(--glide-top);
+    }
+
+    .glide :global(.composer-page > .opening) {
+      --hero-card-cap: min(45rem, calc(var(--glide-room) * 0.47));
+      min-height: var(--glide-room);
+      padding-bottom: clamp(0.75rem, 2vw, 28px);
+    }
+
+    .glide :global(.composer-page .scroll-cue) {
+      display: none;
+    }
+  }
+
+  @media (min-width: 105rem) and (min-height: 56.25rem) and (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+    .glide :global(.composer-page > .opening) {
+      --hero-card-cap: min(52rem, calc(var(--glide-room) * 0.51));
+    }
+  }
+
+  /* The track's height follows the sections; the browser must not read
+     that as content moving and nudge the scroll to compensate. */
+  .glide:global(.staged) {
     overflow-anchor: none;
   }
 
   /* The page becomes a fixed stage the height of the window; the track
      around it supplies the scroll a tall section pans through. */
-  .glide-flight :global(.composer-page) {
+  .glide:global(.staged) :global(.composer-page) {
     position: sticky;
     top: 0;
     display: grid;
@@ -487,22 +548,22 @@
     margin: 0;
     padding: 0;
     overflow: clip;
-    perspective: var(--flight-perspective);
-    perspective-origin: 50% var(--flight-focus-y, 50%);
+    perspective: var(--glide-perspective);
+    perspective-origin: 50% calc(var(--glide-top) + var(--glide-room) / 2);
     /* A section taller than the stage runs on below it; it fades out above
        Next instead of passing under the buttons, which also shows there is
        more of it to scroll through. */
     mask-image: linear-gradient(
       to bottom,
-      #000 calc(100% - var(--flight-band)),
-      transparent calc(100% - var(--flight-band) + 1.5rem)
+      #000 calc(100% - var(--glide-band)),
+      transparent calc(100% - var(--glide-band) + 1.5rem)
     );
   }
 
   /* Every section shares one cell and floats in the space itself. Only one
      rests there at a time, so none needs a backing to hide another, and the
      rules that divide neighbours on the plain page have nothing to divide. */
-  .glide-flight :global(.composer-page > section) {
+  .glide:global(.staged) :global(.composer-page > section) {
     grid-area: 1 / 1;
     align-self: start;
     justify-self: center;
@@ -512,24 +573,5 @@
     border-block: 0;
     will-change: transform, opacity;
     backface-visibility: hidden;
-  }
-
-  /* The hero sizes its player to the window; on the stage it fills the room
-     between the header and Next instead, and without its scroll cue it needs
-     no extra space below. */
-  .glide-flight :global(.composer-page > .opening) {
-    --hero-card-cap: min(45rem, calc(var(--flight-room, 100svh) * 0.47));
-    min-height: var(--flight-room, auto);
-    padding-bottom: clamp(0.75rem, 2vw, 28px);
-  }
-
-  @media (min-width: 105rem) and (min-height: 56.25rem) {
-    .glide-flight :global(.composer-page > .opening) {
-      --hero-card-cap: min(52rem, calc(var(--flight-room, 100svh) * 0.51));
-    }
-  }
-
-  .glide-flight :global(.composer-page .scroll-cue) {
-    display: none;
   }
 </style>
