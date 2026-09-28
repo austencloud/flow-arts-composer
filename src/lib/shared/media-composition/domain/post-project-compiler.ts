@@ -30,6 +30,11 @@ import {
   type PostVideoItem,
 } from "$lib/shared/media-composition/domain/post-project";
 import { postSecondsOfKeyframe } from "$lib/shared/media-composition/domain/post-project-keyframes";
+import {
+  clipBox,
+  postOutputSize,
+  type PostOutputSize,
+} from "$lib/shared/media-composition/domain/post-canvas";
 
 /**
  * Turns an edited project into the free-layout preset the evaluator, the
@@ -120,12 +125,8 @@ export interface CompiledPostProject {
   texts: CompiledTextItem[];
 }
 
-const OUTPUT = {
-  width: 1080,
-  height: 1920,
-  frameRate: 30,
-  backgroundColor: "#08080c",
-} as const;
+const OUTPUT_FRAME_RATE = 30;
+const OUTPUT_BACKGROUND = "#08080c";
 
 const IDENTITY_TRANSFORM = {
   scale: 1,
@@ -307,15 +308,21 @@ function motionFor(
   return { ...(transform ? { transform } : {}), ...(opacity ? { opacity } : {}) };
 }
 
-/** A `regionKeyframes` track for the item's own region, or undefined. */
-function regionKeyframesFor(item: PostItem): PresetRegionKeyframesTrack | null {
+/**
+ * A `regionKeyframes` track for the item's own region, or undefined. A
+ * shaped clip's region is its shape inside each keyed box.
+ */
+function regionKeyframesFor(
+  item: PostItem,
+  output: PostOutputSize
+): PresetRegionKeyframesTrack | null {
   const frames = item.keyframes?.box;
   if (!frames || frames.length === 0) return null;
   return {
     regionId: item.id,
     keyframes: frames.map((kf) => ({
       atSeconds: postSecondsOfKeyframe(item, kf.t),
-      value: kf.value,
+      value: item.kind === "video" ? clipBox(item, kf.value, output) : kf.value,
       easing: kf.easing,
     })),
   };
@@ -326,6 +333,7 @@ export function compilePostProject(
   context: CompilePostProjectContext
 ): CompiledPostProject | null {
   const takes = new Map(project.takes.map((entry) => [entry.id, entry]));
+  const output = postOutputSize(project.canvas);
   // Pieces read a main video's timing even when its own track is hidden - the
   // footage still exists, Austen just doesn't want its own picture on screen.
   const mainVideos = (project.tracks[MAIN_TRACK_INDEX]?.items ?? []).filter(
@@ -364,8 +372,10 @@ export function compilePostProject(
         if (!takes.has(item.takeId)) return false;
         useTake(item.takeId);
         const roleKey = takeRole(item.takeId);
-        regions.push(region(item.id, label, box, item.fit, zIndex));
-        const regionKeyframes = regionKeyframesFor(item);
+        regions.push(
+          region(item.id, label, clipBox(item, box, output), item.fit, zIndex)
+        );
+        const regionKeyframes = regionKeyframesFor(item, output);
         if (regionKeyframes) regionKeyframesList.push(regionKeyframes);
         const motion = motionFor(item, transformMotionKeys(item));
         const footage = {
@@ -434,7 +444,7 @@ export function compilePostProject(
         );
         regions.push(region(item.id, label, box, "contain", zIndex));
         {
-          const regionKeyframes = regionKeyframesFor(item);
+          const regionKeyframes = regionKeyframesFor(item, output);
           if (regionKeyframes) regionKeyframesList.push(regionKeyframes);
         }
         const cardMotion = motionFor(item);
@@ -473,7 +483,7 @@ export function compilePostProject(
         );
         regions.push(region(item.id, label, box, "contain", zIndex));
         {
-          const regionKeyframes = regionKeyframesFor(item);
+          const regionKeyframes = regionKeyframesFor(item, output);
           if (regionKeyframes) regionKeyframesList.push(regionKeyframes);
         }
         const sequenceMotion = motionFor(item);
@@ -555,7 +565,7 @@ export function compilePostProject(
         useRole(presetRole(roleKey, "Text", "manual", ["image"]));
         regions.push(region(item.id, label, box, "fill", zIndex));
         {
-          const regionKeyframes = regionKeyframesFor(item);
+          const regionKeyframes = regionKeyframesFor(item, output);
           if (regionKeyframes) regionKeyframesList.push(regionKeyframes);
         }
         const textMotion = motionFor(item);
@@ -607,7 +617,11 @@ export function compilePostProject(
     name: "Post",
     createdAt: context.now,
     updatedAt: context.now,
-    output: OUTPUT,
+    output: {
+      ...output,
+      frameRate: OUTPUT_FRAME_RATE,
+      backgroundColor: OUTPUT_BACKGROUND,
+    },
     duration: { mode: "fixed", seconds: maxEnd },
     layoutModel: "free",
     sourceRoles: [...roleByKey.values()],

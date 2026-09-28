@@ -186,6 +186,30 @@ export const PostStaffEffectSchema = z
 
 export type PostStaffEffect = z.infer<typeof PostStaffEffectSchema>;
 
+/** The shapes a post can be, width by height; 9:16 when a project names none. */
+export const POST_CANVAS_RATIOS = ["9:16", "4:5", "1:1", "16:9", "3:4", "4:3"] as const;
+export type PostCanvasRatio = (typeof POST_CANVAS_RATIOS)[number];
+export const POST_DEFAULT_CANVAS: PostCanvasRatio = "9:16";
+
+/**
+ * A clip's own shape inside its spot. `original` is the footage's shape and
+ * `free` one dragged by hand; either way `ratio` holds the width over height
+ * it was given, in output pixels.
+ */
+export const POST_CLIP_SHAPES = ["original", "free", ...POST_CANVAS_RATIOS] as const;
+export type PostClipShapeKind = (typeof POST_CLIP_SHAPES)[number];
+export const POST_SHAPE_RATIO_MIN = 0.25;
+export const POST_SHAPE_RATIO_MAX = 4;
+
+export const PostClipShapeSchema = z
+  .object({
+    kind: z.enum(POST_CLIP_SHAPES),
+    ratio: z.number().finite().min(POST_SHAPE_RATIO_MIN).max(POST_SHAPE_RATIO_MAX),
+  })
+  .strict();
+
+export type PostClipShape = z.infer<typeof PostClipShapeSchema>;
+
 const itemBase = {
   id: IdSchema,
   /** Austen's own name for it; the kind's name shows when absent. */
@@ -220,6 +244,11 @@ export const PostVideoItemSchema = z
     speed: z.number().finite().min(POST_MIN_SPEED).max(POST_MAX_SPEED),
     /** cover crops to fill the box; contain shows the whole picture. */
     fit: z.enum(["cover", "contain"]),
+    /**
+     * The clip's own shape, the largest of it centred in the box. Without
+     * one the clip fills the box.
+     */
+    shape: PostClipShapeSchema.optional(),
     /** Scales the picture about the box's centre. */
     zoom: z.number().finite().min(POST_MIN_ZOOM).max(POST_MAX_ZOOM),
     /**
@@ -346,6 +375,8 @@ export const PostProjectSchema = z
      * - silent: no sound, for music added in the app it is posted from.
      */
     audio: z.enum(["takes", "silent"]),
+    /** The post's shape, and so the export's size; 9:16 when absent. */
+    canvas: z.enum(POST_CANVAS_RATIOS).optional(),
     updatedAt: z.number().finite().int().nonnegative(),
   })
   .strict()

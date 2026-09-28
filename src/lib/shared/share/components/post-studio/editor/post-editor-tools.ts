@@ -15,6 +15,7 @@ import type {
 export type PostPanelToolId =
   | "videos"
   | "add"
+  | "canvas"
   | "look"
   | "export"
   | "trim"
@@ -75,7 +76,7 @@ const ITEM_TAIL: readonly PostToolId[] = [
 export function toolRow(selection: PostToolSelection): PostToolId[] {
   switch (selection.kind) {
     case null:
-      return ["videos", "add", "split", "tutorial", "look"];
+      return ["videos", "add", "canvas", "split", "tutorial", "look"];
     case "video":
       return [
         "back",
