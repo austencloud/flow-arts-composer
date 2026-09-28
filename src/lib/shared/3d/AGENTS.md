@@ -24,6 +24,11 @@ higher-level `AGENTS.md` files remain higher priority.
 - Verify changed 3D behavior in the real surface and on every affected rig.
   Measure the claimed behavior and inspect visible contact, continuity,
   interpenetration, camera composition, and reduced-motion behavior.
+- Judge performer contact, collision, and realism with a real staff build: the
+  Fire Staff, the LED Baton, or a day staff once one exists. The procedural red
+  and blue staff with the T-bar end (`?prop=staff` in the staff-grip lab) is a
+  notation marker that nobody spins. Keep it for notation and never offer it as
+  realism evidence.
 
 Use `.claude/rules/blender-first-3d-scenes.md` for scene assets and search
 `docs/architecture/canonical-capabilities.md` with `rg` for current behavior

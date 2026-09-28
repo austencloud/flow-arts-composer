@@ -399,6 +399,54 @@ describe("CellCacheKeyDeriver (lsp11/lsp12 composition)", () => {
       expect(regular).not.toBe(classic);
       expect(classic).toContain('"leftPropType":"classic_club"');
     });
+
+    it("rekeys Realistic staff cells drawn before the staff models turned", () => {
+      const data = makeStartPlacement();
+      const realistic = (overrides: Partial<PreviewCellRenderOptions>) =>
+        deriver.deriveCacheKey(
+          data,
+          undefined,
+          true,
+          makeOptions({ ...overrides, propLook: "model" })
+        );
+
+      for (const staff of [
+        PropType.STAFF,
+        PropType.SIMPLESTAFF,
+        PropType.STAFF2,
+        PropType.BIGSTAFF,
+      ]) {
+        expect(realistic({ leftPropType: staff })).toContain(
+          '"propAppearanceRevision":"staff-model-thumb-end-v2"'
+        );
+      }
+      expect(
+        realistic({
+          leftPropType: PropType.STAFF,
+          rightPropType: PropType.CLUB,
+          catDogModeEnabled: true,
+        })
+      ).toContain(
+        '"propAppearanceRevision":"club-art-v2+staff-model-thumb-end-v2"'
+      );
+
+      // Classic staff cells, and the cloud corpus drawn from them, keep
+      // their keys, and so do other Realistic props.
+      expect(
+        deriver.deriveCacheKey(
+          data,
+          undefined,
+          true,
+          makeOptions({ leftPropType: PropType.STAFF })
+        )
+      ).not.toContain("propAppearanceRevision");
+      expect(realistic({ leftPropType: PropType.BUUGENG })).not.toContain(
+        "propAppearanceRevision"
+      );
+      expect(realistic({ leftPropType: PropType.CLUB })).toContain(
+        '"propAppearanceRevision":"club-art-v2"'
+      );
+    });
   });
 
   describe("handPathMode differentiation", () => {
