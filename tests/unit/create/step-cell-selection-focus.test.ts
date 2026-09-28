@@ -52,6 +52,24 @@ function press(cell: HTMLElement, key: "Delete" | "Backspace") {
   flushSync();
 }
 
+/**
+ * A key press the way Create delivers it while the step editor is open. Its
+ * Delete shortcut listens on the window, so it sees the key before the cell:
+ * it closes the editor, which clears the selection, and removes the step
+ * itself. The browser applies that update before the cell's own handler runs.
+ */
+function pressThroughCreateShortcut(
+  grid: ReturnType<typeof row>,
+  cell: HTMLElement,
+  key: "Delete" | "Backspace"
+) {
+  window.addEventListener("keydown", () => grid.select(null), {
+    capture: true,
+    once: true,
+  });
+  press(cell, key);
+}
+
 async function clickCell(cell: HTMLElement) {
   cell.click();
   flushSync();
@@ -84,8 +102,9 @@ describe("step cell focus while the selection moves", () => {
     expect(document.activeElement).toBe(grid.cell(2));
   });
 
-  // The demo's grid deletes nothing, so the focused cell stays put. The next
-  // beat must not read the key press as permission to move focus.
+  // The demo's grid deletes nothing, so the focused cell stays put. Later
+  // beats must not read the key press as permission to move focus, even once
+  // focus has left the grid.
   it("ignores a delete press that removes nothing", async () => {
     const grid = row(4);
     await clickCell(grid.cell(2));
@@ -94,6 +113,11 @@ describe("step cell focus while the selection moves", () => {
     grid.select(3);
     await frames();
     expect(document.activeElement).toBe(grid.cell(2));
+
+    grid.cell(2).blur();
+    grid.select(4);
+    await frames();
+    expect(document.activeElement).toBe(document.body);
   });
 
   it("hands focus to the step selected after the focused step is deleted", async () => {
@@ -111,6 +135,24 @@ describe("step cell focus while the selection moves", () => {
     // So the next press keeps deleting.
     press(grid.cell(3), "Backspace");
     expect(grid.deleteRequests()).toEqual([4, 3]);
+  });
+
+  it("hands focus on when Create's shortcut deletes the focused step", async () => {
+    const grid = row(4);
+    await clickCell(grid.cell(4));
+    pressThroughCreateShortcut(grid, grid.cell(4), "Delete");
+    // The cell saw the key already deselected; the shortcut did the delete.
+    expect(grid.deleteRequests()).toEqual([]);
+
+    await new Promise((resolve) => setTimeout(resolve, DURATION.normal));
+    grid.removeFrom(4);
+    await frames();
+    expect(document.activeElement).toBe(grid.cell(3));
+
+    pressThroughCreateShortcut(grid, grid.cell(3), "Backspace");
+    grid.removeFrom(3);
+    await frames();
+    expect(document.activeElement).toBe(grid.cell(2));
   });
 
   it("leaves focus where the user went while a delete was finishing", async () => {

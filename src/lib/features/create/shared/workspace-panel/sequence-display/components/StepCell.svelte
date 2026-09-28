@@ -1,16 +1,17 @@
 <script lang="ts" module>
   // Deleting the focused step removes its cell, and focus falls back to the
-  // page. The deleted cell leaves a note for its grid so the step selected in
-  // its place can take focus, and the next Delete press keeps deleting.
-  // Nothing else moves focus into the grid: playback selects the playing step
-  // on every beat, and following it would pull focus off Play, or off
-  // whatever the user is on, every beat.
+  // page. When Delete or Backspace reaches a cell, it leaves a note for its
+  // grid. Once that cell is gone, the step selected in its place takes focus,
+  // so the next Delete press keeps deleting. Nothing else moves focus into the
+  // grid: playback selects the playing step on every beat, and following it
+  // would pull focus off Play, or off whatever the user is on, every beat.
   //
   // Create removes a step after a 200ms fade. The note expires well after
-  // that, so a delete that never removes anything cannot hand focus to a cell
-  // selected long afterwards.
+  // that, so a cell that goes later for another reason, such as a new
+  // sequence replacing the grid, cannot pull focus back in.
   const FOCUS_HANDOFF_WINDOW_MS = 1000;
-  let focusHandoff: { scope: Element; armedAt: number } | null = null;
+  let focusHandoff: { scope: Element; from: Element; armedAt: number } | null =
+    null;
 </script>
 
 <script lang="ts">
@@ -226,12 +227,13 @@
       focusHandoff = null;
       return;
     }
+    // The cell the key reached is still here, so nothing was deleted.
+    if (handoff.from.isConnected) return;
     const scope = focusScope();
     if (handoff.scope !== scope) return;
-    // Only when focus went down with the deleted cell: it now rests on the
-    // page or on something around the grid. A deleted cell that is still
-    // focused was never removed, and a control the user moved to meanwhile
-    // keeps its focus.
+    // Focus went down with the deleted cell and now rests on the page or on
+    // something around the grid. A control the user moved to meanwhile keeps
+    // its focus.
     const active = document.activeElement;
     if (active && active.isConnected && !active.contains(scope)) return;
     focusHandoff = null;
@@ -291,12 +293,22 @@
       // Don't call onClick - let global shortcuts handle Space
       return;
     } else if (event.key === "Delete" || event.key === "Backspace") {
+      // While the step editor is open, Create's Delete shortcut sees this
+      // press first: it closes the editor, which clears the selection, and
+      // removes the step itself. So the note goes down whether or not this
+      // cell still counts as selected.
+      if (cellElement) {
+        focusHandoff = {
+          scope: focusScope(),
+          from: cellElement,
+          armedAt: performance.now(),
+        };
+      }
       // Allow deletion if step is selected (including start placement)
       if (isSelected) {
         event.preventDefault();
         // Trigger warning haptic feedback for deletion
         hapticService?.trigger("warning");
-        focusHandoff = { scope: focusScope(), armedAt: performance.now() };
         onDelete?.();
       }
     }
