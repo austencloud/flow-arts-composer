@@ -1699,6 +1699,7 @@
     box-sizing: border-box;
     border: 2px solid var(--theme-primary, #d4813a);
     box-shadow: 0 0 0 100vmax rgb(0 0 0 / 0.55);
+    container-type: size;
   }
   .crop-frame:focus-visible {
     outline: 2px solid var(--theme-text, #fff);
@@ -1762,6 +1763,20 @@
   .crop-side.w::before {
     width: 4px;
     height: 28px;
+  }
+  /* A side too short to hold a bar between its corners drops the bar, and
+     the corners take that side. */
+  @container (height < 96px) {
+    .crop-side.e,
+    .crop-side.w {
+      display: none;
+    }
+  }
+  @container (width < 96px) {
+    .crop-side.n,
+    .crop-side.s {
+      display: none;
+    }
   }
   /* L-shaped marks on the corners, each with a 44px grab area. */
   .crop-corner {
