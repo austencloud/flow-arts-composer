@@ -20,6 +20,7 @@ import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence
 import { getCanonicalCardStepColumnCounts } from "$lib/shared/render/services/card-step-column-options";
 import { getImageCompositionManager } from "$lib/shared/share/state/image-composition-state.svelte";
 import { buildVisualSequenceSaveMenuItem } from "$lib/shared/library/services/visual-sequence-save-menu-item";
+import { isEmbeddedInAnotherSite } from "$lib/shared/foundation/utils/embedded-in-another-site";
 import {
   buildCardVisibilityMenuItems,
   type CardVisibilityMenuDeps,
@@ -57,7 +58,9 @@ export function buildCardMenuSection(deps: CardMenuSectionDeps): ContextMenuEntr
     });
   }
 
-  if (deps.sequenceForLibrarySave) {
+  // Inside another website's frame, a library save lands in storage the person
+  // can never open from our site, so the card leaves the entry out there.
+  if (deps.sequenceForLibrarySave && !isEmbeddedInAnotherSite()) {
     items.push(
       buildVisualSequenceSaveMenuItem(
         deps.sequenceForLibrarySave,

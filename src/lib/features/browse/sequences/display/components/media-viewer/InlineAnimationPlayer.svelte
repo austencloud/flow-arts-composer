@@ -47,8 +47,10 @@
   import { AnimationStateManager } from "$lib/shared/animation-engine/services/animation-state-manager";
   import { AnimationLoop } from "$lib/shared/animation-engine/services/animation-loop";
 
-  // Canvas-menu video download (opt-in via `videoDownload`)
-  import { getExportOrchestrator } from "$lib/shared/export-panel/get-export-orchestrator";
+  // Canvas-menu video download (opt-in via `videoDownload`). The export
+  // orchestrator loads inside downloadAnimationVideo() because the export
+  // stack imports Firebase, and the home page hero runs this player for
+  // visitors who never download anything.
   import { ensureVideoExportOrchestrator } from "$lib/shared/animation-engine/get-video-export-orchestrator";
   import {
     removeToast,
@@ -465,6 +467,8 @@
       // first (usually the export drawer). This player can be the first one
       // here, so it registers the same lazily-loaded singleton rather than
       // failing with "orchestrator not available".
+      const { getExportOrchestrator } =
+        await import("$lib/shared/export-panel/get-export-orchestrator");
       const exportOrchestrator = getExportOrchestrator();
       const videoExportOrchestrator = await ensureVideoExportOrchestrator();
       exportOrchestrator.setVideoOrchestrator(videoExportOrchestrator);

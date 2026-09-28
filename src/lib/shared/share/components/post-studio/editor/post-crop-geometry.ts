@@ -14,7 +14,8 @@ import {
 /**
  * The crop screen's geometry: how large the slot's window shows on the stage,
  * how far the picture may move before the window shows a gap, and what
- * dragging, pinching, turning and corner-cropping do to a clip's framing.
+ * dragging, pinching, turning and cropping from a corner or a side do to a
+ * clip's framing.
  *
  * Everything is in output pixels, with the origin at the window's centre and
  * y pointing down, so a positive turn is clockwise as CSS draws it. A picture
@@ -478,44 +479,59 @@ export function cropWindowScale(input: {
   return Math.min(largest, Math.max(whole, (input.floor ?? CROP_WINDOW_FLOOR) * largest));
 }
 
-// ---- Corner handles ------------------------------------------------------------
+// ---- Frame handles -------------------------------------------------------------
 
 export type CropCorner = "nw" | "ne" | "sw" | "se";
+export type CropSide = "n" | "e" | "s" | "w";
+/** A corner or a side of the frame, dragged to crop closer or wider. */
+export type CropHandle = CropCorner | CropSide;
 
 export const CROP_CORNERS: readonly CropCorner[] = ["nw", "ne", "sw", "se"];
+export const CROP_SIDES: readonly CropSide[] = ["n", "e", "s", "w"];
 
-const CORNER_SIGNS: Record<CropCorner, CropPoint> = {
+/** Which way each handle points from the frame's centre. */
+const HANDLE_SIGNS: Record<CropHandle, CropPoint> = {
   nw: { x: -1, y: -1 },
   ne: { x: 1, y: -1 },
   sw: { x: -1, y: 1 },
   se: { x: 1, y: 1 },
+  n: { x: 0, y: -1 },
+  e: { x: 1, y: 0 },
+  s: { x: 0, y: 1 },
+  w: { x: -1, y: 0 },
 };
 
 /** A frame smaller than this on screen is too small to judge a crop by. */
 export const CROP_MIN_WINDOW_PX = 48;
 
-/** The corner that stays put, and the diagonal from it to the dragged one. */
-function cornerAxes(window: CropSize, corner: CropCorner) {
-  const sign = CORNER_SIGNS[corner];
+/**
+ * The point that stays put, and the line from it to the dragged handle. A
+ * corner drags along the diagonal from the opposite corner; a side drags
+ * straight out from the middle of the opposite side, and the frame keeps
+ * its shape by growing or shrinking evenly along that side.
+ */
+function handleAxes(window: CropSize, handle: CropHandle) {
+  const sign = HANDLE_SIGNS[handle];
   return {
+    sign,
     anchor: { x: (-sign.x * window.width) / 2, y: (-sign.y * window.height) / 2 },
     span: { x: sign.x * window.width, y: sign.y * window.height },
   };
 }
 
-/** Where the dragged corner sits when the frame is `scale` times the window. */
-export function cornerPoint(window: CropSize, corner: CropCorner, scale: number): CropPoint {
-  const { anchor, span } = cornerAxes(window, corner);
+/** Where the dragged handle sits when the frame is `scale` times the window. */
+export function handlePoint(window: CropSize, handle: CropHandle, scale: number): CropPoint {
+  const { anchor, span } = handleAxes(window, handle);
   return { x: anchor.x + scale * span.x, y: anchor.y + scale * span.y };
 }
 
-/** The frame a corner drag has made: its centre and size, in output pixels. */
-export function cornerFrame(
+/** The frame a handle drag has made: its centre and size, in output pixels. */
+export function handleFrame(
   window: CropSize,
-  corner: CropCorner,
+  handle: CropHandle,
   scale: number
 ): { center: CropPoint; width: number; height: number } {
-  const { anchor, span } = cornerAxes(window, corner);
+  const { anchor, span } = handleAxes(window, handle);
   return {
     center: { x: anchor.x + (scale * span.x) / 2, y: anchor.y + (scale * span.y) / 2 },
     width: window.width * scale,
@@ -523,9 +539,9 @@ export function cornerFrame(
   };
 }
 
-/** The scale a corner handle at `point` asks for: `point` on the diagonal. */
-export function cornerScaleAt(window: CropSize, corner: CropCorner, point: CropPoint): number {
-  const { anchor, span } = cornerAxes(window, corner);
+/** The scale a handle at `point` asks for: `point` projected onto its line. */
+export function handleScaleAt(window: CropSize, handle: CropHandle, point: CropPoint): number {
+  const { anchor, span } = handleAxes(window, handle);
   return (
     ((point.x - anchor.x) * span.x + (point.y - anchor.y) * span.y) /
     (span.x * span.x + span.y * span.y)
@@ -533,8 +549,8 @@ export function cornerScaleAt(window: CropSize, corner: CropCorner, point: CropP
 }
 
 /** The largest frame whose corners all stay on the picture. */
-function coverScaleLimit(pose: CropPose, corner: CropCorner): number {
-  const { anchor, span } = cornerAxes(pose.window, corner);
+function coverScaleLimit(pose: CropPose, handle: CropHandle): number {
+  const { anchor, span } = handleAxes(pose.window, handle);
   const halfWidth = (pose.draw.width * pose.zoom) / 2;
   const halfHeight = (pose.draw.height * pose.zoom) / 2;
   const start = turn(
@@ -542,54 +558,66 @@ function coverScaleLimit(pose: CropPose, corner: CropCorner): number {
     -pose.rotation
   );
   let limit = Number.POSITIVE_INFINITY;
-  for (const edge of [{ x: span.x, y: 0 }, { x: 0, y: span.y }, span]) {
-    const step = turn(edge, -pose.rotation);
-    for (const [from, by, half] of [
-      [start.x, step.x, halfWidth],
-      [start.y, step.y, halfHeight],
-    ] as const) {
-      if (by > 1e-12) limit = Math.min(limit, (half - from) / by);
-      else if (by < -1e-12) limit = Math.min(limit, (half + from) / -by);
+  // The frame's corners sit at anchor + scale * (span / 2 +- half the window).
+  for (const across of [-1, 1]) {
+    for (const down of [-1, 1]) {
+      const corner = {
+        x: span.x / 2 + (across * pose.window.width) / 2,
+        y: span.y / 2 + (down * pose.window.height) / 2,
+      };
+      const step = turn(corner, -pose.rotation);
+      for (const [from, by, half] of [
+        [start.x, step.x, halfWidth],
+        [start.y, step.y, halfHeight],
+      ] as const) {
+        if (by > 1e-12) limit = Math.min(limit, (half - from) / by);
+        else if (by < -1e-12) limit = Math.min(limit, (half + from) / -by);
+      }
     }
   }
   return Math.max(1, limit);
 }
 
 /**
- * How small and large a corner drag may make the frame, as a share of the
+ * How small and large a handle drag may make the frame, as a share of the
  * window. Smaller crops closer and ends in more zoom, so the zoom limits
  * bound both ends; the frame stays on the stage and, under `cover`, on the
  * picture.
  */
-export function cornerScaleRange(input: {
+export function handleScaleRange(input: {
   pose: CropPose;
-  corner: CropCorner;
+  handle: CropHandle;
   limit: CropLimit;
   /** Screen pixels per output pixel. */
   displayScale: number;
   /** The stage, in screen pixels, centred on the window. */
   stage: CropSize;
 }): { min: number; max: number } {
-  const { pose, corner, displayScale } = input;
+  const { pose, handle, displayScale } = input;
+  const { sign } = handleAxes(pose.window, handle);
   const shortSide = Math.min(pose.window.width, pose.window.height) * displayScale;
   const smallest = Math.max(pose.zoom / POST_MAX_ZOOM, CROP_MIN_WINDOW_PX / shortSide);
-  const halfWidth = pose.window.width / 2;
-  const halfHeight = pose.window.height / 2;
+  // Along a dragged axis the frame grows from one edge; along a side's
+  // other axis it grows from the middle, both ways.
+  const room = (stage: number, half: number, pulled: number) => {
+    const ratio = stage / (2 * displayScale) / half;
+    return pulled === 0 ? ratio : (ratio + 1) / 2;
+  };
   let largest = Math.min(
     pose.zoom / POST_MIN_ZOOM,
-    (input.stage.width / (2 * displayScale) / halfWidth + 1) / 2,
-    (input.stage.height / (2 * displayScale) / halfHeight + 1) / 2
+    room(input.stage.width, pose.window.width / 2, sign.x),
+    room(input.stage.height, pose.window.height / 2, sign.y)
   );
-  if (input.limit === "cover") largest = Math.min(largest, coverScaleLimit(pose, corner));
+  if (input.limit === "cover") largest = Math.min(largest, coverScaleLimit(pose, handle));
   return { min: Math.min(1, smallest), max: Math.max(1, largest) };
 }
 
 /**
- * What a corner drag leaves when released: the frame becomes the window, and
+ * What a handle drag leaves when released: the frame becomes the window, and
  * the picture scales and moves so that what the frame held fills it.
  */
-export function releaseCorner(pose: CropPose, corner: CropCorner, scale: number): CropPose {
-  const { center } = cornerFrame(pose.window, corner, scale);
+export function releaseHandle(pose: CropPose, handle: CropHandle, scale: number): CropPose {
+  const { center } = handleFrame(pose.window, handle, scale);
   return {
     ...pose,
     zoom: clampZoom(pose.zoom / scale),

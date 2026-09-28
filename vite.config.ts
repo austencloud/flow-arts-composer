@@ -6,6 +6,7 @@ import {
 } from "./src/config/vite-dev-watch-policy";
 import { createViteDependencyCachePlan } from "./src/config/vite-dependency-cache";
 import { createViteDependencyRefreshPlugin } from "./src/config/vite-plugin-dependency-refresh";
+import { deployStaticCopyPlugin } from "./src/config/vite-plugin-deploy-static-copy";
 import { SSR_RESOLVE_CONDITIONS } from "./src/config/vite-ssr-conditions";
 import { featureGatePlugin } from "./src/config/vite-plugin-feature-gate";
 import { museumPlacementPlugin } from "./src/lib/features/museum/dev/museum-placement-plugin";
@@ -947,6 +948,7 @@ export default defineConfig(({ command, mode }) => ({
     // For state preservation across HMR, use `// @hmr:keep-all` comments.
     sveltekit(),
     clientOnlyChunkMergePlugin(),
+    deployStaticCopyPlugin(), // Copies static/ into the client build minus files the deploy trim deletes
     dictionaryPlugin(),
     screenshotsPlugin(), // Screenshot gallery for Lab module
     fontCorsPlugin(), // 📱 CORS headers for fonts (mobile debugging)

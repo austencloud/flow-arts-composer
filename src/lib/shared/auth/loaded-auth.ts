@@ -13,9 +13,31 @@
 import type { Auth, User } from "firebase/auth";
 
 let registered: Auth | null = null;
+let waiting: Array<(instance: Auth) => void> = [];
 
 export function registerLoadedAuth(instance: Auth): void {
   registered = instance;
+  const due = waiting;
+  waiting = [];
+  for (const callback of due) {
+    // firebase.ts calls this while it loads; a failing listener must not
+    // break the bootstrap for everyone else.
+    try {
+      callback(instance);
+    } catch (error) {
+      console.error("[loaded-auth] Auth listener failed:", error);
+    }
+  }
+}
+
+/**
+ * Run `callback` with the Auth instance once the bootstrap has loaded, at once
+ * if it already has. For code that follows sign-in changes but must not be the
+ * one to load Firebase.
+ */
+export function whenAuthLoaded(callback: (instance: Auth) => void): void {
+  if (registered) callback(registered);
+  else waiting.push(callback);
 }
 
 export const loadedAuth = {

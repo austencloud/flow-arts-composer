@@ -55,13 +55,14 @@
   } from "./post-picture-pan-drag";
   import {
     CROP_CORNERS,
-    cornerFrame,
-    cornerPoint,
-    cornerScaleAt,
-    cornerScaleRange,
+    CROP_SIDES,
+    handleFrame,
+    handlePoint,
+    handleScaleAt,
+    handleScaleRange,
     cropWindowScale,
     settleTransform,
-    type CropCorner,
+    type CropHandle,
     type CropPoint,
     type CropPose,
     type CropSize,
@@ -840,10 +841,10 @@
     started: boolean;
   }
 
-  interface CornerDrag {
+  interface HandleDrag {
     pointerId: number;
-    corner: CropCorner;
-    /** Where on the handle it was taken, from the corner, in output pixels. */
+    handle: CropHandle;
+    /** Where on the handle it was taken, from its point, in output pixels. */
     grab: CropPoint;
     range: { min: number; max: number };
     /** The frame's size as a share of the window. */
@@ -852,8 +853,8 @@
 
   let cropDrag: CropDrag | null = null;
   let cropPinch: CropPinch | null = null;
-  let cornerDrag = $state<CornerDrag | null>(null);
-  /** A drag, pinch or corner is moving: the thirds show clearly. */
+  let handleDrag = $state<HandleDrag | null>(null);
+  /** A drag, pinch or handle is moving: the thirds show clearly. */
   let cropActive = $state(false);
   /** How far past its limit the picture is pulled, in screen pixels. */
   let rubber = $state<CropPoint>({ x: 0, y: 0 });
@@ -868,14 +869,14 @@
   /** A wheel this long idle has finished, and what it left is announced. */
   const WHEEL_SETTLE_MS = 400;
 
-  /** The frame on the stage: the window, or where a held corner has it. */
+  /** The frame on the stage: the window, or where a held handle has it. */
   const frameRect = $derived.by((): ScreenRect | null => {
     const rect = windowRect;
-    const held = cornerDrag;
+    const held = handleDrag;
     if (!rect || !held || held.scale === 1) return rect;
-    const frame = cornerFrame(
+    const frame = handleFrame(
       { width: cropWindowWidth, height: cropWindowHeight },
-      held.corner,
+      held.handle,
       held.scale
     );
     const width = rect.width * held.scale;
@@ -897,7 +898,7 @@
     untrack(() => {
       cropDrag = null;
       cropPinch = null;
-      cornerDrag = null;
+      handleDrag = null;
       cropActive = false;
       rubber = { x: 0, y: 0 };
     });
@@ -964,7 +965,7 @@
 
   /** A press anywhere on the stage takes the picture, ready to drag. */
   function pressCropStage(event: PointerEvent): void {
-    if (!crop || event.button !== 0 || cornerDrag) return;
+    if (!crop || event.button !== 0 || handleDrag) return;
     event.preventDefault();
     releaseCropDrag(true);
     (event.currentTarget as HTMLElement).setPointerCapture(event.pointerId);
@@ -1012,9 +1013,9 @@
     const [first, second] = [...touchPoints.entries()];
     if (!crop || touchPoints.size !== 2 || !first || !second) return;
     // A one-finger move already made is kept as its own step; a held corner
-    // is let go without a crop.
+    // or side is let go without a crop.
     releaseCropDrag(true);
-    releaseCornerDrag(false);
+    releaseHandleDrag(false);
     const [idA, posA] = first;
     const [idB, posB] = second;
     const mid = midpointOf(posA, posB);
@@ -1075,8 +1076,8 @@
     springBack();
   }
 
-  /** A corner handle takes the frame; the picture holds still under it. */
-  function pressCorner(event: PointerEvent, corner: CropCorner): void {
+  /** A corner or side takes the frame; the picture holds still under it. */
+  function pressHandle(event: PointerEvent, handle: CropHandle): void {
     const pose = crop?.pose;
     if (
       !crop ||
@@ -1095,31 +1096,31 @@
     stopCropMotion();
     editor.pause();
     (event.currentTarget as HTMLElement).setPointerCapture(event.pointerId);
-    const at = cornerPoint(pose.window, corner, 1);
-    cornerDrag = {
+    const at = handlePoint(pose.window, handle, 1);
+    handleDrag = {
       pointerId: event.pointerId,
-      corner,
+      handle,
       grab: { x: point.x - at.x, y: point.y - at.y },
-      range: cornerScaleRange({
+      range: handleScaleRange({
         pose,
-        corner,
+        handle,
         limit: crop.limit,
         displayScale,
         stage: { width: stageWidth, height: stageHeight },
       }),
       scale: 1,
     };
-    crop.holdCorner(true);
+    crop.holdHandle(true);
     cropActive = true;
   }
 
-  function moveCorner(event: PointerEvent): void {
-    const current = cornerDrag;
+  function moveHandle(event: PointerEvent): void {
+    const current = handleDrag;
     const pose = crop?.pose;
     if (!current || !pose || event.pointerId !== current.pointerId) return;
     const point = toWindowPoint(event.clientX, event.clientY);
     if (!point) return;
-    const scale = cornerScaleAt(pose.window, current.corner, {
+    const scale = handleScaleAt(pose.window, current.handle, {
       x: point.x - current.grab.x,
       y: point.y - current.grab.y,
     });
@@ -1133,16 +1134,16 @@
    * Let go, what the frame held becomes the crop: the frame eases back to
    * the window while the picture, already reframed, grows or shrinks to it.
    */
-  function releaseCornerDrag(keep: boolean): void {
-    const current = cornerDrag;
+  function releaseHandleDrag(keep: boolean): void {
+    const current = handleDrag;
     if (!current) return;
     const from = frameRect;
-    const { corner, scale } = current;
-    cornerDrag = null;
+    const { handle, scale } = current;
+    handleDrag = null;
     cropActive = false;
     if (!crop) return;
-    const poses = keep ? crop.releaseCorner(corner, scale) : null;
-    if (!poses) crop.holdCorner(false);
+    const poses = keep ? crop.releaseHandle(handle, scale) : null;
+    if (!poses) crop.holdHandle(false);
     void settleCrop(from, poses);
   }
 
@@ -1196,8 +1197,8 @@
 
   /** Escape during a crop gesture puts it back; true when one was running. */
   function cancelCropGesture(): boolean {
-    if (cornerDrag) {
-      releaseCornerDrag(false);
+    if (handleDrag) {
+      releaseHandleDrag(false);
       return true;
     }
     if (cropPinch?.started) {
@@ -1218,7 +1219,7 @@
     if (
       !crop ||
       displayScale <= 0 ||
-      cornerDrag ||
+      handleDrag ||
       cropPinch ||
       cropDrag?.started
     )
@@ -1322,8 +1323,8 @@
       stepCropPinch(event);
       return;
     }
-    if (cornerDrag) {
-      moveCorner(event);
+    if (handleDrag) {
+      moveHandle(event);
       return;
     }
     if (cropDrag) {
@@ -1347,8 +1348,8 @@
       if (isPinchPointer(cropPinch, event)) releaseCropPinch(true);
       return;
     }
-    if (cornerDrag) {
-      if (event.pointerId === cornerDrag.pointerId) releaseCornerDrag(true);
+    if (handleDrag) {
+      if (event.pointerId === handleDrag.pointerId) releaseHandleDrag(true);
       return;
     }
     if (cropDrag) {
@@ -1372,8 +1373,8 @@
       if (isPinchPointer(cropPinch, event)) releaseCropPinch(false);
       return;
     }
-    if (cornerDrag) {
-      if (event.pointerId === cornerDrag.pointerId) releaseCornerDrag(false);
+    if (handleDrag) {
+      if (event.pointerId === handleDrag.pointerId) releaseHandleDrag(false);
       return;
     }
     if (cropDrag) {
@@ -1503,7 +1504,7 @@
     <div
       class="edit-layer"
       class:crop={cropping}
-      class:grabbing={cropActive && !cornerDrag}
+      class:grabbing={cropActive && !handleDrag}
       bind:this={editLayer}
       role="presentation"
       onpointerdowncapture={countTouchDown}
@@ -1536,11 +1537,18 @@
           >
             <span class="thirds" aria-hidden="true"></span>
             {#if !crop?.locked}
+              {#each CROP_SIDES as side (side)}
+                <span
+                  class="crop-side {side}"
+                  aria-hidden="true"
+                  onpointerdown={(event) => pressHandle(event, side)}
+                ></span>
+              {/each}
               {#each CROP_CORNERS as corner (corner)}
                 <span
                   class="crop-corner {corner}"
                   aria-hidden="true"
-                  onpointerdown={(event) => pressCorner(event, corner)}
+                  onpointerdown={(event) => pressHandle(event, corner)}
                 ></span>
               {/each}
             {/if}
@@ -1688,6 +1696,55 @@
   }
   .crop-frame.active .thirds {
     opacity: 1;
+  }
+  /* A bar in the middle of each side, with a 44px grab area that runs
+     along the side, so the frame can be taken anywhere between corners. */
+  .crop-side {
+    position: absolute;
+    display: grid;
+    place-items: center;
+  }
+  .crop-side::before {
+    content: "";
+    background: #fff;
+    border-radius: 2px;
+    box-shadow: 0 0 0 1px rgb(0 0 0 / 0.45);
+  }
+  .crop-side.n,
+  .crop-side.s {
+    left: 44px;
+    right: 44px;
+    height: 44px;
+    cursor: ns-resize;
+  }
+  .crop-side.n {
+    top: -22px;
+  }
+  .crop-side.s {
+    bottom: -22px;
+  }
+  .crop-side.n::before,
+  .crop-side.s::before {
+    width: 28px;
+    height: 4px;
+  }
+  .crop-side.e,
+  .crop-side.w {
+    top: 44px;
+    bottom: 44px;
+    width: 44px;
+    cursor: ew-resize;
+  }
+  .crop-side.e {
+    right: -22px;
+  }
+  .crop-side.w {
+    left: -22px;
+  }
+  .crop-side.e::before,
+  .crop-side.w::before {
+    width: 4px;
+    height: 28px;
   }
   /* L-shaped marks on the corners, each with a 44px grab area. */
   .crop-corner {

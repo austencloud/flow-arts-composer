@@ -67,6 +67,7 @@ Last audit: 2025-12-27
     EffectType,
   } from "../domain/types/tip-effect-types";
   import CanvasContextMenuHost from "./canvas-context-menu/CanvasContextMenuHost.svelte";
+  import { isEmbeddedInAnotherSite } from "$lib/shared/foundation/utils/embedded-in-another-site";
   import type { ContextMenuEntry } from "$lib/shared/components/context-menu/context-menu-types";
   import {
     resolveDisassemblyArrangement,
@@ -631,10 +632,13 @@ Last audit: 2025-12-27
   let contextMenuHost: CanvasContextMenuHost | undefined = $state();
 
   // Locked embeds still expose the universal library action. The lock only
-  // removes mutable display and playback settings from their menu.
+  // removes mutable display and playback settings from their menu. Inside
+  // another website's frame that action is left out too, so a locked embed
+  // there keeps the browser's own right-click menu instead of an empty one.
+  const offersLibrarySave = !isEmbeddedInAnotherSite();
   const hasContextMenu = $derived(
     !disableContextMenu ||
-      !!sequenceData?.steps?.length ||
+      (offersLibrarySave && !!sequenceData?.steps?.length) ||
       extraContextMenuItems.length > 0
   );
 

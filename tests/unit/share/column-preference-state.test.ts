@@ -53,10 +53,23 @@ const settingsMock = vi.hoisted(() => ({
   },
 }));
 
-vi.mock("$app/environment", () => ({ browser: true }));
-vi.mock("$lib/shared/auth/firebase", () => ({
-  getAuthSync: () => auth,
+const firebaseBootstrap = vi.hoisted(() => ({
+  loads: vi.fn(),
+  // Holds the load open so a test can look at the cards while Firebase loads.
+  gate: null as Promise<void> | null,
+  // Loading the real bootstrap registers its Auth instance with loaded-auth,
+  // which is how the manager hears about sign-in. The fake does the same.
+  async load() {
+    firebaseBootstrap.loads();
+    if (firebaseBootstrap.gate) await firebaseBootstrap.gate;
+    const { registerLoadedAuth } = await import("$lib/shared/auth/loaded-auth");
+    registerLoadedAuth(auth as never);
+    return {};
+  },
 }));
+
+vi.mock("$app/environment", () => ({ browser: true }));
+vi.mock("$lib/shared/auth/firebase", () => firebaseBootstrap.load());
 vi.mock("$lib/shared/settings/state/settings-state.svelte", () => ({
   settingsService: settingsMock,
 }));
@@ -78,14 +91,26 @@ type ImageCompositionManager = ReturnType<
 
 const EXPORT_OPTIONS_KEY = "tka_export_options";
 const IMAGE_COMPOSITION_KEY = "tka-image-composition-settings";
+// Firebase Auth's saved user record, in localStorage as on Safari and iOS.
+const SAVED_USER_KEY = "firebase:authUser:test-api-key:[DEFAULT]";
 
 describe("card column preferences", () => {
   let composition: ImageCompositionManager;
 
-  async function loadManager(): Promise<ImageCompositionManager> {
+  /**
+   * A fresh page. The app loads Firebase at startup; public pages such as the
+   * home page do not (`firebaseLoaded: false`).
+   */
+  async function loadManager({
+    firebaseLoaded = true,
+  } = {}): Promise<ImageCompositionManager> {
     vi.resetModules();
+    // resetModules keeps a mocked module's first result. Mock it again so
+    // this page's Firebase load registers with this page's loaded-auth.
+    vi.doMock("$lib/shared/auth/firebase", () => firebaseBootstrap.load());
     auth.listeners.clear();
     settingsMock.remoteListeners.clear();
+    if (firebaseLoaded) await import("$lib/shared/auth/firebase");
     const { getImageCompositionManager } =
       await import("$lib/shared/share/state/image-composition-state.svelte");
     return getImageCompositionManager();
@@ -95,11 +120,71 @@ describe("card column preferences", () => {
     localStorage.clear();
     auth.currentUser = null;
     auth.listeners.clear();
+    firebaseBootstrap.gate = null;
     updateSetting.mockReset();
     settingsMock.currentSettings = {};
     settingsMock.remoteListeners.clear();
     settingsMock.lastRemote = undefined;
     composition = await loadManager();
+    firebaseBootstrap.loads.mockClear();
+  });
+
+  describe("on a page that has not loaded Firebase", () => {
+    it("restores a returning guest's choice without loading Firebase", async () => {
+      composition.setColumnCountForStepCount(12, 3);
+
+      const page = await loadManager({ firebaseLoaded: false });
+
+      await vi.waitFor(() =>
+        expect(page.getColumnCountForStepCount(12)).toBe(3)
+      );
+      // A stray import() lands a few ticks later; give it time to show.
+      await new Promise((resolve) => setTimeout(resolve, 50));
+      expect(firebaseBootstrap.loads).not.toHaveBeenCalled();
+    });
+
+    it("loads Firebase for a saved account and never shows it the guest's choice", async () => {
+      composition.setColumnCountForStepCount(8, 8);
+      localStorage.setItem(SAVED_USER_KEY, "{}");
+      auth.currentUser = { uid: "user-1" };
+      let finishLoading!: () => void;
+      firebaseBootstrap.gate = new Promise((resolve) => {
+        finishLoading = resolve;
+      });
+
+      const page = await loadManager({ firebaseLoaded: false });
+
+      await vi.waitFor(() =>
+        expect(firebaseBootstrap.loads).toHaveBeenCalledTimes(1)
+      );
+      expect(page.getColumnCountForStepCount(8)).toBeNull();
+
+      finishLoading();
+      await vi.waitFor(() => expect(auth.listeners.size).toBe(1));
+      expect(page.getColumnCountForStepCount(8)).toBeNull();
+      page.setColumnCountForStepCount(16, 8);
+      expect(updateSetting).toHaveBeenCalledWith(
+        "imageExport",
+        expect.objectContaining({
+          // The guest's 8 reaches the account only as an explicit Auto.
+          columnCountOverrides: { "8": null, "16": 8 },
+          columnCountPreferenceOwner: "user:user-1",
+        })
+      );
+    });
+
+    it("follows a sign-in once something else loads Firebase", async () => {
+      const page = await loadManager({ firebaseLoaded: false });
+      page.setColumnCountForStepCount(8, 8);
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      expect(page.getColumnCountForStepCount(8)).toBe(8);
+
+      // The visitor opens sign-in, which loads the Firebase bootstrap.
+      await import("$lib/shared/auth/firebase");
+      auth.setUser({ uid: "user-1" });
+
+      expect(page.getColumnCountForStepCount(8)).toBeNull();
+    });
   });
 
   it("defaults 8- and 16-step cards to Auto for a pristine guest", () => {
