@@ -37,6 +37,7 @@ import {
   type FirebaseHMRManager,
 } from "./firebase-hmr-manager";
 import { getInAppBrowserDetector } from "./get-in-app-browser-detector";
+import { registerLoadedAuth } from "./loaded-auth";
 import { shouldAvoidIndexedDbPersistence } from "./services/indexeddb-persistence-policy";
 import type { Functions } from "firebase/functions";
 import type { Unsubscribe } from "firebase/firestore";
@@ -338,6 +339,9 @@ connectFirebaseProductToEmulator("auth", () =>
 
 // Register with HMR manager
 hmrManager.setAuth(auth);
+
+// Lets settings code ask who is signed in without importing this module.
+registerLoadedAuth(auth);
 
 // FIRESTORE (LAZY, HMR-SAFE)
 

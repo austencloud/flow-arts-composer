@@ -118,6 +118,12 @@ jobs:
       - name: Verify offline kit in build artifact
         run: pnpm run verify:offline
 
+      # Public pages are meant to start without Firebase. One static import or
+      # a chunk merge can put it back on a page's first download while the page
+      # still works, so this reads the built chunk graph.
+      - name: Verify public pages start without Firebase
+        run: pnpm run verify:public-firebase
+
       # A red run on main is also a PRODUCTION OUTAGE, and that half is silent.
       # Deploy Pages (gated) fires on workflow_run and exits `skipped` when the
       # conclusion isn't success — no failure, no notification, just an absent
