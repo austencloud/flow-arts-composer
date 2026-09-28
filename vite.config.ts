@@ -6,6 +6,7 @@ import {
 } from "./src/config/vite-dev-watch-policy";
 import { createViteDependencyCachePlan } from "./src/config/vite-dependency-cache";
 import { createViteDependencyRefreshPlugin } from "./src/config/vite-plugin-dependency-refresh";
+import { SSR_RESOLVE_CONDITIONS } from "./src/config/vite-ssr-conditions";
 import { featureGatePlugin } from "./src/config/vite-plugin-feature-gate";
 import { museumPlacementPlugin } from "./src/lib/features/museum/dev/museum-placement-plugin";
 import { composerPlacementPlugin } from "./src/lib/shared/3d/scene-composer/persistence/composer-placement-plugin";
@@ -1159,16 +1160,8 @@ export default defineConfig(({ command, mode }) => ({
       "three-perf",
       "@dimforge/rapier3d-compat",
     ],
-    // Include svelte condition for threlte packages, but node/module first for SSR
     resolve: {
-      conditions: [
-        "svelte",
-        "node",
-        "module",
-        "development|production",
-        "import",
-        "default",
-      ],
+      conditions: SSR_RESOLVE_CONDITIONS,
     },
   },
   // ============================================================================

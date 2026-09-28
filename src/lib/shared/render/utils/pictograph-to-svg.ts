@@ -1,4 +1,5 @@
 import type { FanAppearance } from "$lib/shared/pictograph/prop/domain/fan-appearance";
+import type { PropLook } from "$lib/shared/pictograph/prop/domain/prop-look";
 /**
  * Utility for rendering Pictograph component to SVG string
  *
@@ -23,6 +24,8 @@ import { mount, tick, unmount } from "svelte";
  */
 export interface PictographVisibilityOptions {
   fanAppearance?: FanAppearance;
+  /** Artwork for non-fan props. Omitted means notation artwork. */
+  propLook?: PropLook;
   primaryPropColors?: { left: string; right: string } | null;
   showTKA?: boolean; // TKA Glyph includes turn numbers
   showTnD?: boolean;

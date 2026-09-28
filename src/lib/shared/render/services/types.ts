@@ -1,4 +1,5 @@
 import type { FanAppearance } from "$lib/shared/pictograph/prop/domain/fan-appearance";
+import type { PropLook } from "$lib/shared/pictograph/prop/domain/prop-look";
 import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
 import type { SequenceData } from "../../foundation/domain/models/sequence-data";
 import type { PropType } from "../../pictograph/prop/domain/enums/prop-type";
@@ -73,6 +74,8 @@ export type LayerType = "base" | "gridPoints" | "tka" | "reversal" | "beat";
  */
 export interface LayerRenderOptions {
   fanAppearance?: FanAppearance;
+  /** Non-fan prop artwork the pictograph was prepared with. Base-layer identity. */
+  propLook?: PropLook;
   primaryPropColors?: { left: string; right: string } | null;
   size: number;
   /** Width multiplier for duration-expanded cells (1 = square, 2 = double-wide). Default: 1 */
