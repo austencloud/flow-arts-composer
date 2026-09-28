@@ -120,6 +120,24 @@ const rowSequenceItems = (row: RowDef): PictographData[] =>
 /** STAFF props, TKA letter glyph off - matching StaffMotionsPage's PICTO_FLAGS (showTKA: false). */
 const RENDER = { propType: PropType.STAFF, showTKA: false } as const;
 
+/**
+ * The prospin and antispin shifts as standalone strips. The Prospin and inspin
+ * page shows these same two motions, so it reads them from here instead of
+ * building its own copies.
+ */
+export const SHIFT_DEMOS = {
+  pro: {
+    items: rowItems(ROWS[0]!),
+    sequenceItems: rowSequenceItems(ROWS[0]!),
+    render: RENDER,
+  },
+  anti: {
+    items: rowItems(ROWS[1]!),
+    sequenceItems: rowSequenceItems(ROWS[1]!),
+    render: RENDER,
+  },
+};
+
 // Verbatim prose lifted from _pages/StaffMotionsPage.svelte (Austen's words - never AI-written).
 export const staffMotionsContent: GuideBlock[] = [
   { kind: "heading", level: 1, text: "Staff Motions" },
@@ -137,12 +155,12 @@ export const staffMotionsContent: GuideBlock[] = [
   },
   {
     kind: "pictographGroup",
-    items: rowItems(ROWS[0]!),
+    items: SHIFT_DEMOS.pro.items,
     flowCols: 3,
     layout: "strip",
     card: true,
-    sequenceItems: rowSequenceItems(ROWS[0]!),
-    render: RENDER,
+    sequenceItems: SHIFT_DEMOS.pro.sequenceItems,
+    render: SHIFT_DEMOS.pro.render,
     caption: "start · end · combined",
   },
   {
@@ -157,12 +175,12 @@ export const staffMotionsContent: GuideBlock[] = [
   },
   {
     kind: "pictographGroup",
-    items: rowItems(ROWS[1]!),
+    items: SHIFT_DEMOS.anti.items,
     flowCols: 3,
     layout: "strip",
     card: true,
-    sequenceItems: rowSequenceItems(ROWS[1]!),
-    render: RENDER,
+    sequenceItems: SHIFT_DEMOS.anti.sequenceItems,
+    render: SHIFT_DEMOS.anti.render,
     caption: "start · end · combined",
   },
   {

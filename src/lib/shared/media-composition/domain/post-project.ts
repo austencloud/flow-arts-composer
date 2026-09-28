@@ -154,6 +154,38 @@ export interface PostItemKeyframes {
   opacity?: PostKeyframe<number>[];
 }
 
+/**
+ * Effects that can follow a take's lit staff ends: trails, plus every effect
+ * the shared canvas 2D host draws (`CANVAS2D_HOSTED_EFFECTS`). A test keeps
+ * the two lists in step; the host is not imported here, since it pulls in
+ * every renderer.
+ */
+export const POST_STAFF_EFFECTS = [
+  "trails",
+  "sparkles",
+  "smoke",
+  "zap",
+  "bloom",
+  "silk",
+  "bubbles",
+  "petals",
+  "ink",
+  "goo",
+  "pulse",
+  "animal",
+] as const;
+
+export type PostStaffEffectId = (typeof POST_STAFF_EFFECTS)[number];
+
+/** What a clip draws on the lit ends of its take's staffs. */
+export const PostStaffEffectSchema = z
+  .object({
+    effect: z.enum(POST_STAFF_EFFECTS),
+  })
+  .strict();
+
+export type PostStaffEffect = z.infer<typeof PostStaffEffectSchema>;
+
 const itemBase = {
   id: IdSchema,
   /** Austen's own name for it; the kind's name shows when absent. */
@@ -201,6 +233,11 @@ export const PostVideoItemSchema = z
     flip: z.boolean(),
     /** 1 is the take as recorded; 0 is silent. */
     volume: z.number().finite().min(0).max(POST_MAX_VOLUME),
+    /**
+     * An effect drawn on the take's lit staff ends, from the staff track
+     * saved with the take. Nothing draws until the take has one.
+     */
+    staffEffect: PostStaffEffectSchema.optional(),
   })
   .strict()
   .refine((item) => item.sourceOut > item.sourceIn, {

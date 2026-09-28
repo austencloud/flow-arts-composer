@@ -9,6 +9,9 @@ export const DURATION = {
   emphasis: 280,
   /** 350ms - Major transitions (drawers, modals) */
   dramatic: 350,
+  /** 800ms - A whole scene moving, such as the /composer stage gliding
+      between sections. Never for a control or panel. */
+  scene: 800,
 } as const;
 
 export const STAGGER = {
