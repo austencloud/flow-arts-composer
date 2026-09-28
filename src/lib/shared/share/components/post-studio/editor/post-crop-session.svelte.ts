@@ -1,6 +1,7 @@
 import { t } from "$lib/shared/i18n/i18n.svelte.js";
 import {
   POST_MAX_ZOOM,
+  POST_MIN_ZOOM,
   findItem,
   type PostBox,
   type PostClipShape,
@@ -682,6 +683,10 @@ export function createCropSession(deps: CropSessionDeps) {
     },
     get limit() {
       return limit;
+    },
+    /** The least zoom there is: Fill stops where the window would show a gap. */
+    get zoomFloor() {
+      return pose ? zoomFloor(pose, limit) : POST_MIN_ZOOM;
     },
     /** The turn as quarter turns plus a straighten of -45..45 degrees. */
     get parts() {

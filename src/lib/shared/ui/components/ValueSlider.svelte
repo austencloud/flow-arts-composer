@@ -17,6 +17,8 @@
   Dense desktop tools that scrub a bare number use ScrubbableNumber instead.
 -->
 <script lang="ts">
+  import { tick } from "svelte";
+
   interface Props {
     label: string;
     value: number;
@@ -75,11 +77,18 @@
     return format ? format(mark) : String(mark);
   }
 
-  function handleInput(
+  async function handleInput(
     event: Event & { currentTarget: HTMLInputElement }
-  ): void {
-    const next = Number(event.currentTarget.value);
-    if (Number.isFinite(next)) onchange(next);
+  ): Promise<void> {
+    const input = event.currentTarget;
+    const next = Number(input.value);
+    if (!Number.isFinite(next)) return;
+    onchange(next);
+    // An owner can keep its value, at a limit it will not pass or when
+    // nothing may change. The thumb then goes back to that value rather than
+    // staying where the pointer left it.
+    await tick();
+    if (Number(input.value) !== clamped) input.value = String(clamped);
   }
 </script>
 
