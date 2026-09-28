@@ -24,8 +24,8 @@
   import { page } from "$app/state";
   import OrbitControls from "$lib/shared/3d/components/OrbitControls.svelte";
   import {
-    scenePropAuthoredLengthCm,
     scenePropDrawnLengthCm,
+    scenePropFixedLengthCm,
   } from "$lib/shared/3d/domain/scene-prop-catalog";
   import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
   import {
@@ -202,11 +202,11 @@
 
   /**
    * The length actually on screen. A procedural build draws what it is asked
-   * for; a model-backed build draws its authored length and ignores the ask,
-   * because `Prop3D` drops `length` on its GLTF branch. The catalog owns which
-   * is which.
+   * for, and so does a model `Prop3D` stretches to the length it is handed;
+   * a model it does not stretch draws its authored length and ignores the ask.
+   * The catalog owns which builds are which.
    */
-  const authoredLengthCm = $derived(scenePropAuthoredLengthCm(lab.prop));
+  const fixedLengthCm = $derived(scenePropFixedLengthCm(lab.prop));
   const drawnLengthCm = $derived(
     scenePropDrawnLengthCm(lab.prop, configuredLengthCm)
   );
@@ -418,7 +418,7 @@
   )}
   data-configured-length-cm={formatMetric(configuredLengthCm, 2)}
   data-drawn-length-cm={formatMetric(drawnLengthCm, 2)}
-  data-prop-honours-length={authoredLengthCm === null}
+  data-prop-honours-length={fixedLengthCm === null}
   data-character-height-cm={formatMetric(characterHeightCm, 2)}
   data-collision-length-cm={formatMetric(collisionLengthCm, 2)}
   data-length-divergence-cm={formatMetric(lengthDivergenceCm, 2)}
@@ -531,7 +531,7 @@
           deltaCm={fitComparison.deltaCm}
           {configuredLengthCm}
           {drawnLengthCm}
-          {authoredLengthCm}
+          {fixedLengthCm}
           {characterHeightCm}
           {collisionLengthCm}
           {lengthDivergenceCm}

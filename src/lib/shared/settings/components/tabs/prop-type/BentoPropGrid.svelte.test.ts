@@ -82,6 +82,41 @@ describe("BentoPropGrid style drill-down", () => {
   });
 });
 
+describe("BentoPropGrid colours on a drill", () => {
+  beforeEach(async () => {
+    await page.viewport(760, 800);
+    document.body.style.margin = "0";
+  });
+
+  const colorsLayer = () => document.querySelector<HTMLElement>(".prop-colors");
+  const animationCount = (el: HTMLElement | null) =>
+    el?.isConnected ? el.getAnimations().length : -1;
+
+  // A nested {#if} once dropped the colours in one frame, so the grid jumped
+  // into their space while the tiles were still fading out.
+  it("leaves and returns through a transition instead of vanishing", async () => {
+    render(BentoPropGrid, {
+      selectedPropType: PropType.BUUGENG,
+      onSelect: vi.fn(),
+      allowedProps: [PropType.BUUGENG, PropType.BIGBUUGENG],
+    });
+
+    const colors = colorsLayer();
+    expect(colors).not.toBeNull();
+    // Opening the picker shows them at rest.
+    expect(animationCount(colors)).toBe(0);
+
+    await page
+      .getByRole("button", { name: "Select Buugeng prop type" })
+      .click();
+    await expect.poll(() => animationCount(colors)).toBeGreaterThan(0);
+    await expect.poll(() => colors?.isConnected).toBe(false);
+
+    await page.getByRole("button", { name: "Back to all props" }).click();
+    await expect.poll(() => animationCount(colorsLayer())).toBeGreaterThan(0);
+  });
+});
+
 describe("BentoPropGrid prop look", () => {
   beforeEach(async () => {
     await page.viewport(760, 800);
