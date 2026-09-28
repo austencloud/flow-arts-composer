@@ -523,6 +523,14 @@ export function wrapDegrees(value: number): number {
   return ((((value + 180) % 360) + 360) % 360) - 180;
 }
 
+/**
+ * The turn from one angle to another the short way round, in degrees
+ * (-180 to 180), so a blend from -180 to 175 turns 5 degrees, not 355.
+ */
+export function shortestTurn(from: number, to: number): number {
+  return wrapDegrees(to - from);
+}
+
 /** A framing moved or turned back into its bounds, rotation wrapped. */
 export function clampFraming(framing: PostFraming): PostFraming {
   return {

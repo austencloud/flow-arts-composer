@@ -512,7 +512,7 @@
     <ValueSlider
       label={t("post_editor_zoom")}
       value={framing.zoom * 100}
-      min={POST_MIN_ZOOM * 100}
+      min={(crop?.zoomFloor ?? POST_MIN_ZOOM) * 100}
       max={POST_MAX_ZOOM * 100}
       step={1}
       origin={100}

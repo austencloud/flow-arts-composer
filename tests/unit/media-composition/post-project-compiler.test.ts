@@ -10,7 +10,11 @@ import {
 } from "$lib/shared/media-composition/domain/post-project-compiler";
 import { MediaCompositionPresetSchema } from "$lib/shared/media-composition/domain/media-composition-preset-schema";
 import { evaluatePresetFrame } from "$lib/shared/media-composition/services/frame-evaluator";
-import { clampBox, type PostEasing } from "$lib/shared/media-composition/domain/post-project";
+import {
+  clampBox,
+  wrapDegrees,
+  type PostEasing,
+} from "$lib/shared/media-composition/domain/post-project";
 import {
   EASING_PRESETS,
   boxAt,
@@ -590,6 +594,38 @@ describe("compilePostProject", () => {
         expect(rect.height).toBeCloseTo(box.height, 9);
       }
       expect(framingAt(clip, 6.4).zoom).toBe(4);
+    });
+
+    it("turns across -180..180 the short way, as the editor does", () => {
+      const at = (rotation: number) => ({ zoom: 1, panX: 0, panY: 0, rotation });
+      const clip = video("v1", {
+        sourceOut: 10,
+        keyframes: {
+          framing: [
+            { t: 0, value: at(-180), easing: LINEAR },
+            { t: 4, value: at(175), easing: LINEAR },
+            { t: 6, value: at(180), easing: LINEAR },
+            { t: 10, value: at(-90), easing: LINEAR },
+          ],
+        },
+      });
+      const result = compilePostProject(project([clip]), ctx)!;
+
+      let previous: number | null = null;
+      for (let seconds = 0; seconds <= 10; seconds += 0.5) {
+        const layer = evaluatePresetFrame(
+          result.preset,
+          result.durationSeconds,
+          seconds
+        ).find((candidate) => candidate.clipId === "v1")!;
+        const turn = layer.transform.rotationDegrees;
+        expect(wrapDegrees(turn - framingAt(clip, seconds).rotation)).toBeCloseTo(0, 6);
+        // Half a second never turns it more than the keys ask for.
+        if (previous !== null) {
+          expect(Math.abs(wrapDegrees(turn - previous))).toBeLessThanOrEqual(12);
+        }
+        previous = turn;
+      }
     });
   });
 

@@ -87,6 +87,39 @@ export function shapedBox(box: PostBox, ratio: number, output: PostOutputSize): 
   };
 }
 
+/** Room a box has past its shape, as a share of the frame, that counts. */
+const SPOT_ROOM_EPSILON = 1e-6;
+
+/**
+ * The box a clip keeps when its shape is moved or resized to `shown`. A clip
+ * with a shape keeps the room its box had beside or above and below the
+ * shape: the box runs out from `shown` along that side as far as the frame
+ * allows either way, so the shape still lands on `shown` and a later shape
+ * can grow into the room as it could before. Moved back to the middle, a box
+ * that filled the frame fills it again. A clip without a shape shows its
+ * whole box, so `shown` is its box.
+ */
+export function spotAround(
+  item: Pick<PostVideoItem, "shape">,
+  shown: PostBox,
+  before: PostBox,
+  output: PostOutputSize
+): PostBox {
+  if (!item.shape) return shown;
+  const was = shapedBox(before, item.shape.ratio, output);
+  if (before.width - was.width > SPOT_ROOM_EPSILON) {
+    const centre = shown.x + shown.width / 2;
+    const width = Math.max(shown.width, 2 * Math.min(centre, 1 - centre));
+    return { ...shown, x: centre - width / 2, width };
+  }
+  if (before.height - was.height > SPOT_ROOM_EPSILON) {
+    const centre = shown.y + shown.height / 2;
+    const height = Math.max(shown.height, 2 * Math.min(centre, 1 - centre));
+    return { ...shown, y: centre - height / 2, height };
+  }
+  return shown;
+}
+
 /** Where a clip shows in its box: the box, or its shape inside it. */
 export function clipBox(
   item: Pick<PostVideoItem, "shape">,

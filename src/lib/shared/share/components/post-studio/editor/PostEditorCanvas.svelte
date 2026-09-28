@@ -35,10 +35,12 @@
   import {
     boxAt,
     framingAt,
+    isAnimated,
   } from "$lib/shared/media-composition/domain/post-project-keyframes";
   import {
     clipBox,
     postOutputSize,
+    spotAround,
   } from "$lib/shared/media-composition/domain/post-canvas";
   import PostStudioMediaLayer from "../PostStudioMediaLayer.svelte";
   import PostStudioPaintedLayer from "../PostStudioPaintedLayer.svelte";
@@ -131,6 +133,10 @@
 
   const hintId = $props.id();
   const preset = $derived(editor.compiled?.preset ?? null);
+  /** The post's size, before anything is on it too. */
+  const outputSize = $derived(
+    preset?.output ?? postOutputSize(editor.project.canvas)
+  );
   const visible = $derived(
     new Map(editor.frameLayers.map((layer) => [layer.clipId, layer]))
   );
@@ -266,10 +272,37 @@
 
   /** Where an item shows at `seconds`: a video in its shape inside its box. */
   function shownBox(item: PostItem, seconds: number): PostBox {
+    // Between two keyed boxes the picture blends each key's shape, which is
+    // not always the shape of the blended box, so the outline takes the rect
+    // the picture is drawn in.
+    if (
+      item.kind === "video" &&
+      item.shape &&
+      isAnimated(item, "box") &&
+      seconds === editor.previewSeconds
+    ) {
+      const drawn = editor.regionRects.get(item.id);
+      if (drawn) return drawn;
+    }
     const box = boxAt(item, seconds);
     return item.kind === "video"
       ? clipBox(item, box, postOutputSize(editor.project.canvas))
       : box;
+  }
+
+  /**
+   * The box to keep for an item now shown at `shown`: a shaped clip keeps
+   * the room its box had around its shape, anything else takes `shown`.
+   */
+  function keptBox(item: PostItem, shown: PostBox, before: PostBox): PostBox {
+    return item.kind === "video"
+      ? spotAround(item, shown, before, postOutputSize(editor.project.canvas))
+      : shown;
+  }
+
+  /** A clip shaped to a set ratio keeps it, so only its corners resize it. */
+  function keepsShape(item: PostItem): boolean {
+    return item.kind === "video" && item.shape !== undefined;
   }
 
   /** A box this close to the whole frame reads as "fills the frame". */
@@ -297,8 +330,13 @@
     kind: "box";
     pointerId: number;
     itemId: string;
+    /** The item as the drag found it; its shape holds for the drag. */
+    item: PostItem;
     handle: BoxHandle;
+    /** Where it showed, which the handle moves. */
     startBox: PostBox;
+    /** Its box, which a shaped clip keeps its room from. */
+    startSpot: PostBox;
     startSeconds: number;
     startX: number;
     startY: number;
@@ -404,8 +442,10 @@
       kind: "box",
       pointerId: event.pointerId,
       itemId: item.id,
+      item,
       handle,
       startBox: box,
+      startSpot: boxAt(item, seconds),
       startSeconds: seconds,
       startX: event.clientX,
       startY: event.clientY,
@@ -475,8 +515,9 @@
       !event.altKey
     );
     guides = result.guides;
+    const box = keptBox(current.item, result.box, current.startSpot);
     editor.gestureStep((base, context) =>
-      updateItemAt(base, itemId, { box: result.box }, seconds, context)
+      updateItemAt(base, itemId, { box }, seconds, context)
     );
   }
 
@@ -523,13 +564,14 @@
       return;
     }
     const step = event.shiftKey ? BOX_NUDGE.large : BOX_NUDGE.step;
-    const box = dragBox(
+    const moved = dragBox(
       current,
       "move",
       direction[0] * step,
       direction[1] * step,
       false
     ).box;
+    const box = keptBox(item, moved, boxAt(item, seconds));
     editor.edit((project, context) =>
       updateItemAt(project, item.id, { box }, seconds, context)
     );
@@ -1424,9 +1466,7 @@
   bind:clientHeight={stageHeight}
   style:aspect-ratio={cropping
     ? undefined
-    : preset
-      ? `${preset.output.width} / ${preset.output.height}`
-      : "9 / 16"}
+    : `${outputSize.width} / ${outputSize.height}`}
   data-post-canvas
 >
   {#if preset}
@@ -1612,13 +1652,15 @@
                   onpointerdown={(event) => startDrag(event, selected, corner)}
                 ></span>
               {/each}
-              {#each BOX_SIDES as side (side)}
-                <span
-                  class="handle side {side}"
-                  aria-hidden="true"
-                  onpointerdown={(event) => startDrag(event, selected, side)}
-                ></span>
-              {/each}
+              {#if !keepsShape(selected)}
+                {#each BOX_SIDES as side (side)}
+                  <span
+                    class="handle side {side}"
+                    aria-hidden="true"
+                    onpointerdown={(event) => startDrag(event, selected, side)}
+                  ></span>
+                {/each}
+              {/if}
             {/if}
           </div>
         {/if}

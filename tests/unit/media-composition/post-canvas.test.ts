@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
+  clipBox,
   clipShapeFor,
   postOutputSize,
   shapedBox,
+  spotAround,
 } from "$lib/shared/media-composition/domain/post-canvas";
 import { compilePostProject } from "$lib/shared/media-composition/domain/post-project-compiler";
 import { EASING_PRESETS } from "$lib/shared/media-composition/domain/post-project-keyframes";
@@ -101,5 +103,59 @@ describe("post canvas", () => {
     expect(clipShapeFor("free", 0.5)).toEqual({ kind: "free", ratio: 0.5 });
     expect(clipShapeFor("free", 100)!.ratio).toBe(4);
     expect(clipShapeFor("4:5")).toEqual({ kind: "4:5", ratio: 0.8 });
+  });
+
+  describe("a moved or resized shape", () => {
+    const square = { shape: clipShapeFor("1:1")! };
+    const frame = { ...POST_BOX.full };
+    const shown = shapedBox(frame, 1, PORTRAIT);
+
+    function expectBox(actual: object, expected: object) {
+      for (const [key, value] of Object.entries(expected)) {
+        expect((actual as Record<string, number>)[key]).toBeCloseTo(value as number, 9);
+      }
+    }
+
+    it("keeps the room its box had, so the shape still lands where it was put", () => {
+      const moved = { ...shown, y: shown.y + 0.1 };
+      const spot = spotAround(square, moved, frame, PORTRAIT);
+
+      expectBox(clipBox(square, spot, PORTRAIT), moved);
+      // Room above and below, as far as the frame allows either way.
+      expectBox(spot, { x: 0, width: 1 });
+      expect(spot.height).toBeGreaterThan(moved.height);
+      expect(spot.y).toBeGreaterThanOrEqual(0);
+      expect(spot.y + spot.height).toBeLessThanOrEqual(1 + 1e-9);
+    });
+
+    it("fills the frame again once it is back in the middle", () => {
+      const nudged = spotAround(square, { ...shown, y: shown.y + 0.005 }, frame, PORTRAIT);
+      const back = spotAround(square, shown, nudged, PORTRAIT);
+
+      expectBox(back, frame);
+    });
+
+    it("keeps its width to grow into when its corners made it smaller", () => {
+      const width = shown.width / 2;
+      const smaller = {
+        x: 0.25,
+        y: 0.5 - (shown.height / 2) / 2,
+        width,
+        height: shown.height / 2,
+      };
+      const spot = spotAround(square, smaller, frame, PORTRAIT);
+
+      expectBox(spot, { x: 0.25, y: 0, width, height: 1 });
+      expectBox(clipBox(square, spot, PORTRAIT), smaller);
+      // A taller shape then grows into that height, as wide as before.
+      const tall = clipBox({ shape: clipShapeFor("9:16")! }, spot, PORTRAIT);
+      expect(tall.width).toBeCloseTo(width, 9);
+      expect(tall.height).toBeGreaterThan(smaller.height);
+    });
+
+    it("takes what is shown as the box for a clip without a shape", () => {
+      const moved = { x: 0.1, y: 0.2, width: 0.5, height: 0.3 };
+      expect(spotAround({ shape: undefined }, moved, frame, PORTRAIT)).toBe(moved);
+    });
   });
 });
