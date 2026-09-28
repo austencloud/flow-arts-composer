@@ -570,8 +570,18 @@ describe("dev launcher install guard", () => {
     expect(protocolSelections).toHaveLength(2);
   });
 
-  it("refuses to launch a competing Windows tunnel service", () => {
-    expect(launcher).toContain("Test-CompetingCloudflaredService");
+  it("refuses to launch only when the Windows tunnel service runs tka-dev", () => {
+    const guard =
+      launcher.match(
+        /function Test-CompetingCloudflaredService \{[\s\S]*?\n\}/
+      )?.[0] ?? "";
+
+    // That service carries mcp.tkaflowarts.com for the MCP server, so running
+    // alone must not block the launcher. Only the tka-dev identity check can.
+    expect(guard).toContain("Get-CimInstance Win32_Service");
+    expect(guard).toContain("Test-TkaDevTunnelCommand $service.PathName");
+    expect(guard).not.toContain("Get-Service");
+    expect(launcher).toContain("(Test-CompetingCloudflaredService $tokenFile)");
     expect(launcher).toContain("would create a second tka-dev connector");
   });
 
