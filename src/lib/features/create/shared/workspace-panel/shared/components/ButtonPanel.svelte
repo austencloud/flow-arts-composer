@@ -9,6 +9,9 @@
   - CENTER ZONE: Play
   - RIGHT ZONE: Sequence Actions + Share
 
+  Compact rail (phone-width Assemble): the header's Undo/Redo, word and Save
+  arrive as snippets and join this row, and Share moves to the Actions panel.
+
   Architecture:
   - Uses CreateModuleContext for state access
   - Derives all boolean flags locally from context
@@ -17,6 +20,7 @@
   - Just composition and prop passing
 -->
 <script lang="ts">
+  import type { Snippet } from "svelte";
   import { fade } from "svelte/transition";
   import { PresenceAnimation } from "../../../../../../shared/ui-animation/animations.svelte";
   import { getCreateModuleContext } from "$lib/features/create/shared/context/create-module-context";
@@ -51,10 +55,17 @@
     onClearSequence,
     onViewSequence,
     visible = true,
+    compact = false,
+    leadingActions,
+    trailingActions,
   }: {
     onClearSequence?: () => void;
     onViewSequence?: () => void;
     visible?: boolean;
+    /** One-row rail: header actions join the panel and Share leaves it */
+    compact?: boolean;
+    leadingActions?: Snippet;
+    trailingActions?: Snippet;
   } = $props();
 
   // Derive computed values from context
@@ -71,6 +82,9 @@
     shareTarget.isMobile || !layout.shouldUseSideBySideLayout
   );
   const isAssembleTab = $derived(navigationState.activeTab === "assemble");
+  // Assemble uses plain buttons with colored icons at every size, so the
+  // pictures stay the focal point.
+  const quietRail = $derived(compact || isAssembleTab);
   const currentSequence = $derived.by(() => {
     const tabState = CreateModuleState.getActiveTabSequenceState();
     return tabState?.currentSequence ?? null;
@@ -189,14 +203,21 @@
     <div
       class="button-panel"
       class:assemble-layout={isAssembleTab}
+      class:compact-rail={compact}
       transition:fade={{ duration: 200 }}
     >
       <!-- LEFT ZONE: destructive document actions -->
       <div class="left-zone">
+        {#if compact && leadingActions}
+          {@render leadingActions()}
+        {/if}
         {#each leftButtons as btn (btn.id)}
-          {#if btn.id === "clear" && canClearSequence && onClearSequence}
+          {#if btn.id === "clear" && canClearSequence && onClearSequence && !compact}
             <div transition:presenceTransition>
-              <ClearSequencePanelButton onclick={() => onClearSequence?.()} />
+              <ClearSequencePanelButton
+                quiet={quietRail}
+                onclick={() => onClearSequence?.()}
+              />
             </div>
           {/if}
         {/each}
@@ -223,6 +244,7 @@
                     <div class="expand-viewer-action">
                       <ViewSequenceButton
                         purpose="expand-viewer"
+                        quiet={quietRail}
                         onclick={() => {
                           panelState.handoffWorkspacePlaybackToViewer();
                         }}
@@ -234,6 +256,7 @@
                     isActive={isExportPanelOpen}
                     isStopping={usesWorkspacePlayback &&
                       !!panelState.workspacePlayback}
+                    quiet={quietRail}
                     playbackState={isWorkspacePlaybackPreparing
                       ? "preparing"
                       : hasWorkspacePlaybackError
@@ -257,12 +280,17 @@
               transition:presenceTransition
             >
               <SequenceActionsButton
+                quiet={quietRail}
                 onclick={() =>
                   panelState.openSequenceActionsPanel("workspace_button")}
               />
             </div>
-          {:else if btn.id === "share" && canShareSequence}
-            <div transition:presenceTransition>
+          {:else if btn.id === "share" && canShareSequence && !compact}
+            <div
+              class="share-slot"
+              class:quiet={quietRail}
+              transition:presenceTransition
+            >
               <ShareButton
                 sequence={currentSequence}
                 useMobileSheet={useMobileShareSheet}
@@ -270,6 +298,9 @@
             </div>
           {/if}
         {/each}
+        {#if compact && trailingActions}
+          {@render trailingActions()}
+        {/if}
       </div>
 
       {#if shouldShowOptionInteractionBanner}
@@ -570,6 +601,26 @@
     .button-panel {
       --settings-workspace-action-gap: 4px;
       padding-inline: 4px;
+    }
+  }
+
+  /* Share renders a shared trigger, so its quiet look is applied from here:
+     plain surface, purple icon, matching the other quiet rail buttons. */
+  .share-slot.quiet :global(.share-action-trigger) {
+    border: 1px solid var(--theme-stroke);
+    background: var(--theme-card-bg);
+    box-shadow: none;
+    color: var(--theme-text);
+  }
+
+  .share-slot.quiet :global(.share-action-trigger i) {
+    color: color-mix(in srgb, var(--theme-accent) 62%, white);
+  }
+
+  @media (hover: hover) {
+    .share-slot.quiet :global(.share-action-trigger:hover:not(:disabled)) {
+      background: var(--theme-card-hover-bg);
+      box-shadow: none;
     }
   }
 

@@ -14,17 +14,3 @@ export function getBuilderControlVisibility(
       phase === "placing" || phase === "building" || phase === "animating",
   };
 }
-
-export function getBuilderPhaseInstruction(phase: BuilderPhase): string {
-  switch (phase) {
-    case "idle":
-      return "Choose a starting point. Press and drag to aim.";
-    case "placing":
-      return "Set orientation and rotation, then choose a destination";
-    case "building":
-    case "animating":
-      return "Set rotation, then choose the next point";
-    case "complete":
-      return "Sequence complete";
-  }
-}
