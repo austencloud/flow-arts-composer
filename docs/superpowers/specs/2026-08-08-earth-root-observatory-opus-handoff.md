@@ -102,7 +102,7 @@ Read every file, including assets and validator source:
 - `.agents/skills/museum-scene-production/assets/scene-gates.template.json`
 - `.agents/skills/museum-scene-production/scripts/validate-scene-gates.mjs`
 
-Also load the museum tracker first, read its ten newest decisions, then read `docs/museum/story-bible.md`. Tracker decisions supersede stale design prose. Recheck G, H, and I through Flow Arts MCP rather than trusting prior descriptions.
+Also load the museum tracker first, read its ten newest decisions, then read `E:/flow-arts-private/museum/story-bible.md`. Tracker decisions supersede stale design prose. Recheck G, H, and I through Flow Arts MCP rather than trusting prior descriptions.
 
 ## Loose ends (ranked)
 

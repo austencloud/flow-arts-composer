@@ -359,8 +359,13 @@
     return common;
   }
 
+  // The SSR check is static, so the server build drops every import above.
+  // `typeof window` alone is a runtime check that Rollup keeps, which bundled
+  // the whole app shell into the Cloudflare Worker.
   let preloadedImports: ReturnType<typeof startAppImports> | null =
-    typeof window !== "undefined" && detectSiteMode() === "app"
+    !import.meta.env.SSR &&
+    typeof window !== "undefined" &&
+    detectSiteMode() === "app"
       ? startAppImports()
       : null;
 

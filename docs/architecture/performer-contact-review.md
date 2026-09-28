@@ -349,8 +349,8 @@ What changed:
 
 Staffs still pass through the chest when it turns side-on (642 / 1,271
 staff-frames as drawn, ch07 / ch18). The scoreboard holds them at those
-counts. The per-hand lanes below were the attempt to clear them; they were
-dropped.
+counts. The per-hand lanes and the 60° chest limit below were two attempts to
+clear them. Both were dropped.
 
 Recommended order after this: trail cleanup; reference clips from Austen
 (front and side stills he confirms) for body turns and negative space,
@@ -391,6 +391,65 @@ together, with one staff through the face. Austen rejected the lanes on
 Commit `2dd227ba5f` and its follow-ups hold the work if elbow planning makes
 it worth another look. Judge the next attempt from pictures of the whole pose
 before the counts: a contact count can fall while the pose gets worse.
+
+### Tried and dropped: holding the chest to 60°
+
+Nothing turns the hips or feet yet, so the whole side-on turn is spine twist,
+up to 87°. This attempt capped the planned turn at 60° with one clamp in
+`planUpperBodyStanceYawTarget`, so the timing curve and the corridor both saw
+the smaller turn.
+
+Scoreboard, ch07 / ch18, staff-frames of 12,960 unless noted:
+
+| Measure                                   | Merged        | Chest held to 60° |
+| ----------------------------------------- | ------------- | ----------------- |
+| Staff through the torso, as drawn         | 642 / 1,271   | 136 / 269         |
+| Staff through the head, as drawn          | 64 / 149      | 119 / 201         |
+| Head and torso where the stance plans it  | 1,189 / 1,610 | 0 / 0             |
+| Staff through a leg                       | 20 / 21       | 0 / 0             |
+| Staff through the other hand's arm        | 628 / 637     | 1,131 / 1,332     |
+| Staff through its own upper arm           | 1,908 / 1,848 | 628 / 627         |
+| Staff along or through its own forearm    | 2,886 / 2,666 | 2,215 / 2,090     |
+| Hand-frames over 3 cm from the staff      | 1,787 / 2,362 | 2,405 / 3,423     |
+| 90th-percentile hand-to-staff gap         | 3.9 / 5.7 cm  | 4.7 / 6.8 cm      |
+| Forearm pairs under 4 cm (of 6,480)       | 75 / 34       | 430 / 380         |
+| Chest over 60° past the pelvis (of 6,480) | 2,633 / 2,614 | 2,379 / 2,282     |
+| Largest chest twist past the pelvis       | 88° / 87°     | 75° / 75°         |
+
+Two things kept the pose from following the plan. The package animator steers
+the chest from the shoulder line, so the ribcage still reached 75° while the
+plan held 60°. The corridor also opens its depth lanes only past about 70°
+(0.8 of the 87° side-on turn), so below that the together-same hands land on
+one point and the arms stack. Forearm pairs under 4 cm rose from 75 to 430 on
+ch07.
+
+Pictures of the same moments, before and after:
+
+- Better at gggg beats 1 and 2: both staffs leave the neck and chest.
+- Worse at gggg beat 4 and hhhh beat 1: the forearms cross in front of the
+  face and the hands open away from their staffs.
+- Wrong both ways at vvvv beat 4: the current pose puts a staff through the
+  mouth, and the limited pose lays it across the neck with the hand open.
+
+Austen dropped the limit on 2026-09-27 from those pictures. It was never
+committed.
+
+### Staff builds for realism work
+
+The red and blue staff with the T-bar end is a notation marker. Its shape and
+body-fit length serve the notation, and nobody spins that prop, so it cannot
+show whether a real staff clears the body. Realism and collision work, and the
+pictures that judge it, use the Fire Staff or the LED Baton, or a day staff
+once one is modeled. The staff-grip lab opens on the LED Baton, so leave
+`prop=staff` off its URL. The pictures for both attempts above drew the
+notation staff. The scoreboard measures a straight 86.36 cm staff (the default
+34-inch length) whatever build is drawn, which matches the LED Baton's length.
+
+Untested lead: the lab's fit panel gives 67.6 cm as the longest staff ch07 can
+hold inside its own hug, bounded by how far the converged grip sits in front of
+the torso surface. The LED Baton is 86.36 cm and the Fire Staff 90 cm. If the
+rig matches that bound, part of the side-on chest contact comes from staff
+length itself. Check it with the real builds before a third attempt.
 
 ## Target architecture
 

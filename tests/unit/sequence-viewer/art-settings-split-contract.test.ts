@@ -17,6 +17,10 @@ function read(relativePath: string): string {
   return readFileSync(path.join(repoRoot, relativePath), "utf8");
 }
 
+const messagesEn: Record<string, string> = JSON.parse(
+  read("messages/en.json")
+);
+
 function settingsFile(filename: string): string {
   return read(`${COMPONENT_DIR}/${filename}`);
 }
@@ -94,7 +98,10 @@ describe("ArtSettingsPanel split contract", () => {
     expect(effects).not.toContain("<SegmentedControl");
     expect(effects).not.toContain("Tunnel colors");
     expect(look).toContain("<TunnelColorSettings");
-    expect(colors).toContain(">Tunnel colors</span>");
+    // "Tunnel colors" now lives behind an i18n key (German coverage); confirm
+    // both the key is used here AND that key still resolves to that English text.
+    expect(colors).toContain('>{t("viewer_detail_tunnel_colors")}</span>');
+    expect(messagesEn.viewer_detail_tunnel_colors).toBe("Tunnel colors");
   });
 
   it("keeps the Look coordinator separate from its two product surfaces", () => {

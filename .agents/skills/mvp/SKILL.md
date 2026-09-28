@@ -27,7 +27,7 @@ Keep development focused on shipping. This skill is the single source of truth f
 
 ## How It Works
 
-1. Read the MVP tracker file: `docs/plans/mvp-tracker.md`
+1. Read the MVP tracker file: `E:/flow-arts-private/plans/mvp-tracker.md`
 2. Execute the requested command
 3. For `status`: show completion percentage per area + overall
 4. For `scope`: display the full scope with acceptance criteria
@@ -71,7 +71,7 @@ Score each remaining item 1-5 on each factor. VQ > 1.0 stays. VQ < 1.0 gets cut 
 
 ## Tracker File
 
-Source of truth: `docs/plans/mvp-tracker.md`. Items have priority (P0 blocker / P1 must-have / P2 should-have), status (not-started / in-progress / complete), and acceptance criteria.
+Source of truth: `E:/flow-arts-private/plans/mvp-tracker.md`, in the private repo `austencloud/flow-arts-private`. Commit tracker changes there with explicit paths. Items have priority (P0 blocker / P1 must-have / P2 should-have), status (not-started / in-progress / complete), and acceptance criteria.
 
 Show progress as bar chart per area with overall percentage and days remaining.
 

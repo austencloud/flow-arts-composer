@@ -138,12 +138,13 @@ export function buildCustomizeSummary(
         push(t("create_ui_summary_classic_three"));
       } else {
         const allowed = getAllowedPlacements(blocked, gridMode);
+        const firstAllowed = allowed[0];
         // A restricted set is a real constraint at every size — reporting only
         // the single-placement case is what let "4 of 16 allowed" read as
         // "Custom" with nothing behind it.
         push(
-          allowed.length === 1
-            ? t("create_ui_summary_start", { value: allowed[0] })
+          allowed.length === 1 && firstAllowed !== undefined
+            ? t("create_ui_summary_start", { value: firstAllowed })
             : t("create_ui_summary_position_count", { count: allowed.length })
         );
       }
@@ -161,8 +162,9 @@ export function buildCustomizeSummary(
     // start-placement facts do. The legacy single endPlacement is still read for
     // any caller that has not migrated.
     const ends = options.endPlacements ?? [];
-    if (ends.length === 1) {
-      push(t("create_ui_summary_end", { value: ends[0] }));
+    const firstEnd = ends[0];
+    if (ends.length === 1 && firstEnd !== undefined) {
+      push(t("create_ui_summary_end", { value: firstEnd }));
     } else if (ends.length > 1) {
       push(t("create_ui_summary_end_count", { count: ends.length }));
     } else if (options.endPlacement) {

@@ -285,12 +285,18 @@ export function effectUiLabel(label: string): string {
 /** Localize generated preview traits without changing the preview model. */
 export function effectUiTrait(trait: string): string {
   const [head, detail] = trait.split(" · ");
-  if (!detail) return effectUiLabel(trait);
+  // `split` on a non-empty separator always yields a defined first element;
+  // this guard only satisfies noUncheckedIndexedAccess, it never actually
+  // triggers when `detail` is present.
+  if (head === undefined || !detail) return effectUiLabel(trait);
   const localizedHead = head.endsWith(" trigger")
     ? `${effectUiLabel(head.slice(0, -8))} ${effectUiLabel("trigger")}`
     : effectUiLabel(head);
   const match = detail.match(
     /^(.*) (path|intensity|spread|strikes\/s|hang|persistence|glow|motion|rise|carry|curl|splatter|crystals|flutter|movement|reach)$/
   );
-  return `${localizedHead} · ${match ? `${match[1]} ${effectUiLabel(match[2])}` : effectUiLabel(detail)}`;
+  const unit = match?.[2];
+  return `${localizedHead} · ${
+    match && unit !== undefined ? `${match[1]} ${effectUiLabel(unit)}` : effectUiLabel(detail)
+  }`;
 }

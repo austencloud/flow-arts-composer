@@ -134,8 +134,8 @@ export function createContactInspectionState() {
       ? requestedStaffCm / 100
       : DEFAULT_LAB_STAFF_LENGTH_M
   );
-  let undoKeys = $state<KeyUndoSnapshot[]>([]);
-  let redoKeys = $state<KeyUndoSnapshot[]>([]);
+  let undoKeys = $state.raw<KeyUndoSnapshot[]>([]);
+  let redoKeys = $state.raw<KeyUndoSnapshot[]>([]);
   let editInProgress = false;
   let editSnapshot = $state.raw<KeyUndoSnapshot | null>(null);
   const range = () =>

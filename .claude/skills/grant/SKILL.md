@@ -9,9 +9,15 @@ Manage grant applications from discovery through submission, with section-by-sec
 
 ## Data Files
 
-- **Tracker:** `docs/grants/grant-tracker.md` (source of truth for all grants)
-- **Knowledge base:** `docs/grants/grant-writing-knowledge.md` (read during drafting)
-- **Drafts:** `docs/grants/drafts/<id>-<section-slug>.md` (approved draft sections)
+Grant files live in the private repo `austencloud/flow-arts-private`, cloned at
+`E:/flow-arts-private`. This public repository must not hold grant material, so
+never create grant files here. If the clone is missing, run
+`gh repo clone austencloud/flow-arts-private E:/flow-arts-private`. Commit grant
+changes in that repo with explicit paths.
+
+- **Tracker:** `E:/flow-arts-private/grants/grant-tracker.md` (source of truth for all grants)
+- **Knowledge base:** `E:/flow-arts-private/grants/grant-writing-knowledge.md` (read during drafting)
+- **Drafts:** `E:/flow-arts-private/grants/drafts/<id>-<section-slug>.md` (approved draft sections)
 
 ## Commands
 
@@ -33,7 +39,7 @@ $ARGUMENTS - Command and optional grant ID or query
 
 ### For no arguments or "status":
 
-Read `docs/grants/grant-tracker.md`. Display dashboard with ID, Name, Status, Deadline, Days Left, Amount columns. Flag urgency: CRITICAL (under 7 days), URGENT (under 14), APPROACHING (under 30).
+Read `E:/flow-arts-private/grants/grant-tracker.md`. Display dashboard with ID, Name, Status, Deadline, Days Left, Amount columns. Flag urgency: CRITICAL (under 7 days), URGENT (under 14), APPROACHING (under 30).
 
 ### For "deadlines":
 

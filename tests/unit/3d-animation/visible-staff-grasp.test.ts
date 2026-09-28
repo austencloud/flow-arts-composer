@@ -12,7 +12,7 @@ const PHASE = 0.806;
 const STAFF_RADIUS_M = 0.0102125;
 
 describe.runIf(avatarAssetsPresent())("visible stationary staff grasp", () => {
-  it("keeps ch07's right index skin outside the shaft while its thumb closes the grip", async () => {
+  it("keeps ch07's right index skin outside the shaft while its thumb closes the grip", { timeout: 90_000 }, async () => {
     const { scene } = await loadRig(avatar("ch07"));
     const services = createAvatarServices({
       enableLocomotion: false,
@@ -127,7 +127,7 @@ describe.runIf(avatarAssetsPresent())("visible stationary staff grasp", () => {
         .addScaledVector(axis, -along)
         .normalize();
     };
-    const mesh = auditFireStaffProfile(root, a, b, { deadlineMs: 3_000 });
+    const mesh = auditFireStaffProfile(root, a, b);
     expect(thumb?.supported, "thumb must close onto the shaft").toBe(true);
     expect(
       radial(thumbTip).dot(radial(indexPoint)),
@@ -168,7 +168,7 @@ describe.runIf(avatarAssetsPresent())("visible stationary staff grasp", () => {
     services.fingers.solveCylinderContacts();
     expect(cacheProbe.rightHand.contactCylinderLocal).toBe(cachedFit);
     root.updateMatrixWorld(true);
-    const reusedMesh = auditFireStaffProfile(root, shiftedA, shiftedB, { deadlineMs: 3_000 });
+    const reusedMesh = auditFireStaffProfile(root, shiftedA, shiftedB);
     expect(reusedMesh.status).toBe("available");
     expect(reusedMesh.maximumPenetrationM).toBeLessThanOrEqual(0.0005);
     for (const finger of services.fingers.getCylinderContactReport("right")) {

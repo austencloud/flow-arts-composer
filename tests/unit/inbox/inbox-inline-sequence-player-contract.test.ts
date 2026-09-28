@@ -30,6 +30,9 @@ const showcase = read(
 const player = read(
   "src/lib/features/browse/sequences/display/components/media-viewer/InlineAnimationPlayer.svelte"
 );
+const messagesEn: Record<string, string> = JSON.parse(
+  read("messages/en.json")
+);
 
 describe("inbox inline sequence player contract", () => {
   it("keeps playback out of the eager inbox graph until Play is selected", () => {
@@ -90,7 +93,12 @@ describe("inbox inline sequence player contract", () => {
 
   it("keeps live playback and full-view navigation as separate controls", () => {
     expect(card).toContain("<SequenceMessagePreview");
-    expect(card).toContain("Open in Sequence Viewer");
+    // German coverage moved this behind an i18n key; confirm both the key is
+    // used here AND that key still resolves to the same English text.
+    expect(card).toContain('{t("inbox_ui_open_in_sequence_viewer")}');
+    expect(messagesEn.inbox_ui_open_in_sequence_viewer).toBe(
+      "Open in Sequence Viewer"
+    );
     expect(card).toContain(
       'import("$lib/shared/sequence-viewer/services/sequence-data-provider")'
     );

@@ -103,17 +103,19 @@ function getInitialLocale(): Locale {
     const match = document.cookie.match(
       new RegExp(`(^| )${LOCALE_COOKIE_NAME}=([^;]+)`)
     );
-    const cookieLocale = match?.[2];
-    if (cookieLocale && isLocale(cookieLocale)) {
+    const cookieLocale = toLocale(match?.[2] ?? "");
+    if (cookieLocale) {
       return cookieLocale;
     }
   }
 
   if (typeof navigator !== "undefined" && navigator.languages) {
-    // Try browser language preference
+    // Browsers name regional variants such as "pt-BR". We pick the plain
+    // language because the Language settings list offers plain languages and
+    // highlights the one in use. A saved regional choice comes from the cookie.
     for (const lang of navigator.languages) {
-      const baseTag = lang.split("-")[0]?.toLowerCase();
-      if (baseTag && isLocale(baseTag)) {
+      const baseTag = toLocale(lang.split("-")[0] ?? "");
+      if (baseTag) {
         return baseTag;
       }
     }
@@ -123,13 +125,21 @@ function getInitialLocale(): Locale {
 }
 
 /**
- * Check if a string is a valid locale (base or regional)
+ * Check if a string is a valid locale (base or regional), ignoring case
  */
-export function isLocale(value: string): value is Locale {
+export function isLocale(value: string): boolean {
+  return toLocale(value) !== undefined;
+}
+
+/**
+ * Find the supported locale a string names, spelled the way our message files
+ * are: "es-mx" and "ES-MX" both give "es-MX". Saved cookies and browsers don't
+ * agree on capitalization, and a differently spelled tag would load English.
+ */
+export function toLocale(value: string): Locale | undefined {
   const lowerValue = value.toLowerCase();
-  return (
-    locales.includes(lowerValue as BaseLocale) ||
-    regionalLocales.includes(lowerValue as RegionalLocale)
+  return [...locales, ...regionalLocales].find(
+    (locale) => locale.toLowerCase() === lowerValue
   );
 }
 
@@ -191,10 +201,11 @@ function updateHtmlLanguage(): void {
  */
 export async function setLocale(locale: Locale): Promise<void> {
   const request = ++localeRequest;
-  if (!isLocale(locale)) {
+  const canonicalLocale = toLocale(locale);
+  if (!canonicalLocale) {
     console.warn(`Invalid locale: ${locale}, falling back to ${baseLocale}`);
-    locale = baseLocale;
   }
+  locale = canonicalLocale ?? baseLocale;
 
   // For regional locales, ensure base locale is loaded first
   const base = getBaseLocale(locale);
@@ -232,6 +243,15 @@ export async function setLocale(locale: Locale): Promise<void> {
 }
 
 /**
+ * Regional override files, as a static glob. A template-literal import here
+ * breaks Vite's dependency scan whenever a module imports this file without
+ * its extension, and the browser test runner then reloads mid-run.
+ */
+const regionalMessageFiles = import.meta.glob<{ default: Messages }>(
+  "../../../../messages/*-*.json"
+);
+
+/**
  * Dynamically import locale messages
  *
  * For regional locales (e.g., es-MX), attempts to load a regional override file.
@@ -239,6 +259,11 @@ export async function setLocale(locale: Locale): Promise<void> {
  * The translation fallback chain handles missing keys.
  */
 async function loadLocaleMessages(locale: Locale): Promise<Messages> {
+  // The server renders English only; setLocale runs in the browser. Returning
+  // here drops the other locale files from the server build, which Cloudflare
+  // must fit into its 25 MiB Worker bundle limit.
+  if (import.meta.env.SSR) return enMessages as Messages;
+
   // Base locales - always have full translation files
   const asBaseLocale = locale as BaseLocale;
   if (locales.includes(asBaseLocale)) {
@@ -278,20 +303,18 @@ async function loadLocaleMessages(locale: Locale): Promise<Messages> {
     }
   }
 
-  // Regional locales - attempt to load override file, fall back to base
+  // Regional locales - load the override file if there is one, else the base
   if (regionalLocales.includes(locale as RegionalLocale)) {
     try {
-      // Try to load regional override file (e.g., messages/es-MX.json)
-      // This file only needs to contain keys that differ from the base locale
-      const regionalMessages = await import(
-        `../../../../messages/${locale}.json`
-      );
-      return regionalMessages.default as Messages;
+      // A regional override file (e.g., messages/es-MX.json) only needs the
+      // keys that differ from the base locale
+      const loadRegional =
+        regionalMessageFiles[`../../../../messages/${locale}.json`];
+      if (loadRegional) return (await loadRegional()).default;
     } catch {
-      // No regional override file - use base locale
-      const base = getBaseLocale(locale);
-      return loadLocaleMessages(base);
+      // Unreadable override file - use the base locale
     }
+    return loadLocaleMessages(getBaseLocale(locale));
   }
 
   // Unknown locale - fall back to English

@@ -19,6 +19,8 @@
   import {
     computeDisplaySummary,
     computePlaybackSummary,
+    speedRailCopy,
+    tunnelRegionLabel,
   } from "$lib/shared/animation-panel/pill-nav/pill-summaries";
   import { RAIL_CATEGORY_ACCENTS } from "$lib/shared/animation-panel/pill-nav/rail-category-accents";
   import ControlDock, {
@@ -257,12 +259,7 @@
     {
       id: "speed",
       icon: "fa-gauge-high",
-      label: stageAware
-        ? t("viewer_ui_stage_speed")
-        : t("viewer_ui_copy_speed"),
-      summary: controller.hasSpeedOverrides
-        ? t("viewer_ui_mixed_rates")
-        : t("viewer_ui_uniform"),
+      ...speedRailCopy(stageAware, controller.hasSpeedOverrides),
       accentColor: RAIL_CATEGORY_ACCENTS.speed,
     },
   ]);
@@ -465,9 +462,7 @@
       tunnelSection === "effort" || tunnelSection === "motion"}
     {exporting}
     artPanel
-    regionLabel={showTitle
-      ? t("viewer_ui_tunnel_settings")
-      : t("viewer_ui_animation_controls")}
+    regionLabel={tunnelRegionLabel(showTitle)}
   >
     {#snippet body()}{@render tunnelSectionBody(tunnelSection, false)}{/snippet}
     {#snippet footer()}

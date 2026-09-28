@@ -15,6 +15,7 @@ type SocketTargetProbe = {
   rightPalmLocal: Vector3 | null;
   leftPalmNormalLocal: Vector3 | null;
   rightPalmNormalLocal: Vector3 | null;
+  rightGripLongitudinalLocal: Vector3 | null;
   leftPalmWorldLength: number;
   rightPalmWorldLength: number;
   _bodyFrame: { lateral: Vector3 };
@@ -255,6 +256,9 @@ describe("avatar wrist-side clearance", () => {
     animator.rightGripAxisLocal = new Vector3(0, -1, 0);
     animator.rightPalmLocal = palmLocal.clone();
     animator.rightPalmNormalLocal = palmLocal.clone();
+    // The wrist solve skips a hand with no calibrated lengthwise axis.
+    // Calibration places the palm point on that axis.
+    animator.rightGripLongitudinalLocal = palmLocal.clone().normalize();
     animator._bodyFrame.lateral.set(1, 0, 0);
 
     for (let frame = 0; frame < 40; frame++) {
@@ -291,6 +295,9 @@ describe("avatar wrist-side clearance", () => {
     animator.rightGripAxisLocal = new Vector3(0, -1, 0);
     animator.rightPalmLocal = palmLocal.clone();
     animator.rightPalmNormalLocal = palmLocal.clone();
+    // The wrist solve skips a hand with no calibrated lengthwise axis.
+    // Calibration places the palm point on that axis.
+    animator.rightGripLongitudinalLocal = palmLocal.clone().normalize();
     animator._bodyFrame.lateral.set(1, 0, 0);
 
     for (let frame = 0; frame < 80; frame++) {

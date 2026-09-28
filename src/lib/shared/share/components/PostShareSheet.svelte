@@ -239,11 +239,12 @@
   const caption = $derived(shareDraft.caption);
   const captionTouched = $derived(shareDraft.captionTouched);
   const imageComposition = getImageCompositionManager();
+  /** Hosts name view-specific renders such as Mandala; the rest are Video. */
+  const resolvedVideoLabel = $derived(videoLabel ?? t("share_video"));
   const artifactOptions = $derived(
     shareDraft.availableArtifacts.map((value) => ({
       value,
-      label:
-        value === "card" ? t("share_card") : (videoLabel ?? t("share_video")),
+      label: value === "card" ? t("share_card") : resolvedVideoLabel,
     }))
   );
   let cardSettingsOpen = $state(false);
@@ -810,9 +811,9 @@
   const progressLabel = $derived.by(() => {
     if (!videoBusy) return "";
     if (isExportingVideo && exportProgress !== null) {
-      return `Rendering ${videoLabel.toLowerCase()}… ${Math.round(exportProgress * 100)}%`;
+      return `Rendering ${resolvedVideoLabel.toLowerCase()}… ${Math.round(exportProgress * 100)}%`;
     }
-    return `Rendering ${videoLabel.toLowerCase()}…`;
+    return `Rendering ${resolvedVideoLabel.toLowerCase()}…`;
   });
 
   /**

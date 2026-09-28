@@ -30,6 +30,8 @@ export class ViewportManager {
       // DevTools emulation can take multiple frames to stabilize, especially during HMR
       // Check dimensions at 0ms (immediate), 50ms, and 100ms to catch delayed updates
       const checkDimensions = () => {
+        // A queued check can outlive a browser-like test environment.
+        if (typeof window === "undefined") return;
         const newWidth = window.innerWidth;
         const newHeight = window.innerHeight;
 
@@ -73,6 +75,10 @@ export class ViewportManager {
 
       // Debounce resize events to prevent layout thrashing during device rotation
       this._resizeTimeout = window.setTimeout(() => {
+        if (typeof window === "undefined") {
+          this._resizeTimeout = null;
+          return;
+        }
         this._width = window.innerWidth;
         this._height = window.innerHeight;
 

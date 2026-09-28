@@ -1,6 +1,7 @@
 <script lang="ts">
   import LessonStageHeading from "../LessonStageHeading.svelte";
   import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import MessageMarkup from "$lib/shared/i18n/MessageMarkup.svelte";
   import type {
     GridPhase,
     PointTypePhase,
@@ -30,23 +31,23 @@
 <LessonStageHeading key={copyKey} {title}>
   <p>
     {#if step === 0}
-      {t("learn_ui_grid_intro")}
+      <MessageMarkup text={t("learn_ui_grid_intro")} />
     {:else if step === 1}
       {#if gridPhase === "split"}
-        {t("learn_ui_grid_two_modes_intro")}
+        <MessageMarkup text={t("learn_ui_grid_two_modes_intro")} />
       {:else if gridPhase === "diamond-labels"}
-        {t("learn_ui_diamond_directions")}
+        <MessageMarkup text={t("learn_ui_diamond_directions")} />
       {:else if gridPhase === "box-labels"}
-        {t("learn_ui_box_directions")}
+        <MessageMarkup text={t("learn_ui_box_directions")} />
       {:else}
-        {t("learn_ui_merged_grid_intro")}
+        <MessageMarkup text={t("learn_ui_merged_grid_intro")} />
       {/if}
     {:else if pointTypePhase === "center"}
-      {t("learn_ui_center_point_intro")}
+      <MessageMarkup text={t("learn_ui_center_point_intro")} />
     {:else if pointTypePhase === "hand"}
-      {t("learn_ui_hand_points_intro")}
+      <MessageMarkup text={t("learn_ui_hand_points_intro")} />
     {:else}
-      {t("learn_ui_outer_points_intro")}
+      <MessageMarkup text={t("learn_ui_outer_points_intro")} />
     {/if}
   </p>
 
