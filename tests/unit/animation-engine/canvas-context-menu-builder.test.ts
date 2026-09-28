@@ -119,7 +119,8 @@ describe("canvas context menu builder", () => {
     const children = visibility?.children ?? [];
 
     expect(children.every((c) => c.keepOpen)).toBe(true);
-    expect(children.map((c) => c.label)).toContain("Step Numbers");
+    // Labels come from messages/en.json in sentence case since 09622f6cb2.
+    expect(children.map((c) => c.label)).toContain("Step numbers");
     expect(children.some((c) => /beat/i.test(c.label))).toBe(false);
   });
 

@@ -93,8 +93,10 @@ describe("homepage hero notation rail contract", () => {
     expect(homeHero).toContain("showWordHeader={true}");
     expect(sequenceHero).toContain("showWordHeader,");
     expect(sequenceHero).toContain("visibilityManagerOverride: showWordHeader");
+    // d567221ccd added a presentation-only displayWord override (localized
+    // guide words) in front of the loaded sequence's own word.
     expect(inlinePlayer).toContain(
-      "word={animationState.sequenceData?.word ?? sequence.word}"
+      "word={displayWord ?? animationState.sequenceData?.word ?? sequence.word}"
     );
     expect(inlinePlayer).toContain("hideHeader={fill && !showWordHeader}");
     expect(animatorCanvas).toContain(
