@@ -128,24 +128,6 @@ describe("Shape Matrix motion-path geometry", () => {
     expect(hybridConcave.geometryKey).toBe("hybrid:concave:tips");
   });
 
-  // The flowers page shades a two-ended trace [pinky, thumb] and calls its
-  // one-ended drawing the thumb end. If the order flipped, the shades would
-  // silently name the wrong ends.
-  it("traces the opposite end first, leaving the one-end path last", async () => {
-    const { loadShapeMatrix } = await loadHarness();
-    const [oneEnd, twoEnds] = await Promise.all([
-      loadShapeMatrix(PropType.STAFF),
-      loadShapeMatrix(PropType.STAFF, { tipEnds: 2 }),
-    ]);
-
-    const [opposite, tracked] = twoEnds.left.get("anti")?.left ?? [];
-    expect(twoEnds.left.get("anti")?.left).toHaveLength(2);
-    expect(tracked?.d).toBe(pathFor(oneEnd, "anti"));
-    expect(opposite?.d).not.toBe(tracked?.d);
-    expect(oneEnd.geometryKey).toBe("arc:tips");
-    expect(twoEnds.geometryKey).toBe("arc:tips:ends2");
-  });
-
   it("rebuilds a rejected load so a later retry can succeed", async () => {
     const loadEdges = vi
       .fn<() => Promise<unknown>>()

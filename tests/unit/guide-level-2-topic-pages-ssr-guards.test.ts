@@ -1,6 +1,6 @@
 /**
  * SSR-stub guard check for the new Level-2 per-topic routes
- * (`/guide/level-2/<slug>`, see level2-topic-manifest.ts).
+ * (`/guide/level-2/<slug>`, see level2-topic-routes.ts).
  *
  * The production SSR build stubs every `.svelte` file under
  * `shared/animation-engine/`, `shared/3d/`, and every non-core feature to
