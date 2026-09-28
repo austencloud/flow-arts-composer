@@ -51,6 +51,7 @@
   import {
     flyFade,
     reducedMotion as prefersReducedMotion,
+    STEP_DRIFT_PX,
   } from "$lib/shared/transitions/motion";
   import type { Snippet } from "svelte";
 
@@ -133,9 +134,9 @@
 
   // A step should tell the eye where the next decision came from without
   // turning the modal into a carousel. The sequential swap keeps old and new
-  // copy from becoming readable at the same time; this small drift carries
-  // direction while the shared helper owns easing and reduced motion.
-  const STEP_DRIFT_PX = 12;
+  // copy from becoming readable at the same time; a small drift
+  // (STEP_DRIFT_PX) carries direction while the shared helper owns easing and
+  // reduced motion.
 
   function enterLayer(node: Element): TransitionConfig {
     return motion === "step"

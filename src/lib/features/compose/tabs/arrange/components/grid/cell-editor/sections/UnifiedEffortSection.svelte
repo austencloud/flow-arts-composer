@@ -10,6 +10,7 @@
   import type { EffortId } from "$lib/shared/effort/domain/effort-types";
   import { EFFORTS } from "$lib/shared/effort/domain/effort-types";
   import { getTipPoints } from "$lib/shared/animation-engine/domain/types/prop-tip-points";
+  import { getTipLabel } from "$lib/shared/animation-engine/domain/tip-label";
 
   type Scope = "cell" | "hand" | "tip";
 
@@ -83,28 +84,18 @@
       rows.push({
         key: `0-${t}`,
         color: "#3b82f6",
-        label: `Left ${getTipLabel(leftPropType, t, leftTipCount)}`,
+        label: `Left ${getTipLabel(leftPropType, t).toLowerCase()}`,
       });
     }
     for (let t = 0; t < rightTipCount; t++) {
       rows.push({
         key: `1-${t}`,
         color: "#ef4444",
-        label: `Right ${getTipLabel(rightPropType, t, rightTipCount)}`,
+        label: `Right ${getTipLabel(rightPropType, t).toLowerCase()}`,
       });
     }
     return rows;
   });
-
-  function getTipLabel(
-    propType: string,
-    tipIndex: number,
-    tipCount: number
-  ): string {
-    if (tipCount === 1) return "tip";
-    if (tipCount === 2) return tipIndex === 0 ? "thumb" : "pinky";
-    return `tip ${tipIndex + 1}`;
-  }
 
   function getEffortForKey(key: string): EffortId {
     return localMap[key]?.effort ?? "linear";

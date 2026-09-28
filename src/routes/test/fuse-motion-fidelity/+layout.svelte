@@ -2,10 +2,10 @@
   import type { Snippet } from "svelte";
   import "../../../app.css";
 
-  // Full-screen test harnesses must bypass the app shell. Otherwise the module
-  // restorer treats /test/* as an invalid product route and rewrites the URL.
   let { children } = $props<{ children: Snippet }>();
 
+  // This proof route owns the viewport. /test pages never mount the product
+  // shell, so this layout clears the boot splash itself.
   $effect(() => {
     document.getElementById("app-loading")?.remove();
   });

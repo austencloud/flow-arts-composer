@@ -25,7 +25,9 @@ const CANONICAL_PROP_SOURCE_HASHES = {
   // length: without a length of its own it now falls back to
   // userProportionsState.staffLength, as Staff3D does.
   // createRegistryWorkerProp applies the same stretch from options.length,
-  // which the worker snapshot resolves the same way.
+  // which the worker snapshot resolves the same way. MODEL_BUILD_LENGTHS in
+  // scene-prop-catalog.ts records which models stretch, so the staff-grip lab
+  // reports the length that is drawn; change it with the stretch.
   "Prop3D.svelte":
     "325058d080be065746d30769d98724463c32d0dd3c9c30e09e1fab2e94db5ad9",
   // Hand colors (d11b2ce06c): the component re-clones when the hand palette

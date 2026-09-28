@@ -9,7 +9,7 @@ patchedDependencies:
     hash: c3af8573dd6280639488ac6ca0725551a64d91575fbdfb9d86ff2bc3a2af7e06
     path: patches/@austencloud__backgrounds@0.7.12.patch
   '@austencloud/scene-3d@0.1.6':
-    hash: 5b8c0113017f92fcc4fe016e9d63e04b0984bfbe54da79e05b417c87c459a9f7
+    hash: 59a76cea3ce863e184db37e3ba253438710ce5ab8db332f0c5115079a6f44aac
     path: patches/@austencloud__scene-3d@0.1.6.patch
   '@austencloud/sidebar@1.0.1':
     hash: 2192b3d152a0161684740faf7c92bf7929b7ef1240c93d1dae4126925b9b2faf
@@ -63,7 +63,7 @@ importers:
         version: 0.1.0(svelte@5.49.2)
       '@austencloud/scene-3d':
         specifier: ^0.1.6
-        version: 0.1.6(patch_hash=5b8c0113017f92fcc4fe016e9d63e04b0984bfbe54da79e05b417c87c459a9f7)(@threlte/core@8.3.1(svelte@5.49.2)(three@0.182.0))(@threlte/extras@9.7.1(@types/three@0.182.0)(svelte@5.49.2)(three@0.182.0))(svelte@5.49.2)(three@0.182.0)
+        version: 0.1.6(patch_hash=59a76cea3ce863e184db37e3ba253438710ce5ab8db332f0c5115079a6f44aac)(@threlte/core@8.3.1(svelte@5.49.2)(three@0.182.0))(@threlte/extras@9.7.1(@types/three@0.182.0)(svelte@5.49.2)(three@0.182.0))(svelte@5.49.2)(three@0.182.0)
       '@austencloud/sidebar':
         specifier: ^1.0.1
         version: 1.0.1(patch_hash=2192b3d152a0161684740faf7c92bf7929b7ef1240c93d1dae4126925b9b2faf)(svelte@5.49.2)
@@ -9004,7 +9004,7 @@ snapshots:
       '@austencloud/media-tagging-types': 0.1.0
       svelte: 5.49.2
 
-  '@austencloud/scene-3d@0.1.6(patch_hash=5b8c0113017f92fcc4fe016e9d63e04b0984bfbe54da79e05b417c87c459a9f7)(@threlte/core@8.3.1(svelte@5.49.2)(three@0.182.0))(@threlte/extras@9.7.1(@types/three@0.182.0)(svelte@5.49.2)(three@0.182.0))(svelte@5.49.2)(three@0.182.0)':
+  '@austencloud/scene-3d@0.1.6(patch_hash=59a76cea3ce863e184db37e3ba253438710ce5ab8db332f0c5115079a6f44aac)(@threlte/core@8.3.1(svelte@5.49.2)(three@0.182.0))(@threlte/extras@9.7.1(@types/three@0.182.0)(svelte@5.49.2)(three@0.182.0))(svelte@5.49.2)(three@0.182.0)':
     dependencies:
       '@threlte/core': 8.3.1(svelte@5.49.2)(three@0.182.0)
       '@threlte/extras': 9.7.1(@types/three@0.182.0)(svelte@5.49.2)(three@0.182.0)

@@ -11,6 +11,7 @@
   import { parseCollectionProp } from "../domain/collection-prop";
   import { getSettings } from "$lib/shared/application/state/app-state.svelte";
   import { getVisualSequenceSaveCoordinator } from "../get-visual-sequence-save-coordinator";
+  import { showToast } from "$lib/shared/toast/state/toast-state.svelte";
 
   let value = $state<ResolvedPropConfig | null>(null);
   let finish: ((config: ResolvedPropConfig | null) => void) | null = null;
@@ -31,12 +32,23 @@
       finish = resolve;
     });
     if (!choice) return;
-    const coordinator = await getVisualSequenceSaveCoordinator();
-    await coordinator.save(sequence, {
-      ...intent,
-      ...choice,
-      catDogModeEnabled: choice.catDogMode,
-    });
+    // The caller (ContextMenu.runAction) awaits this action with no catch of
+    // its own, so a rejection here would otherwise vanish as an unhandled
+    // promise rejection - the person would see the dialog close and nothing
+    // else. getVisualSequenceSaveCoordinator() only throws/rejects for a setup
+    // problem (e.g. the lazy registration chunk failed to load); coordinator.save()
+    // already reports its own outcomes via toast and never rejects.
+    try {
+      const coordinator = await getVisualSequenceSaveCoordinator();
+      await coordinator.save(sequence, {
+        ...intent,
+        ...choice,
+        catDogModeEnabled: choice.catDogMode,
+      });
+    } catch (error) {
+      console.error("[VisualSavePrompt] Could not reach library saving:", error);
+      showToast("Couldn't save this sequence right now", "error");
+    }
   }
   function close(save: boolean) {
     finish?.(save ? value : null);

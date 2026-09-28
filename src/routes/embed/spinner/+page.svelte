@@ -12,6 +12,7 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import PlayWithItInner from "../../landing/components/PlayWithItInner.svelte";
+  import ToastContainer from "$lib/shared/toast/components/ToastContainer.svelte";
 
   onMount(() => {
     // Signal to parent iframe that embed is ready
@@ -37,6 +38,13 @@
 <div class="embed-container">
   <PlayWithItInner />
 </div>
+
+<!--
+  This embed has no header, footer, or app shell to carry a toast host, so
+  without this, "Save sequence to Library" (reachable via right-click) could
+  succeed or fail with nothing visible to the person watching the iframe.
+-->
+<ToastContainer />
 
 <style>
   .embed-container {

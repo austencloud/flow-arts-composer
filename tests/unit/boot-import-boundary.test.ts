@@ -21,112 +21,10 @@
  * because both are exactly how a heavy dependency is supposed to be reached
  * from here.
  */
-import fs from "node:fs";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
+import { chainTo, importGraph, repoPath as rel } from "../helpers/import-graph";
 
-const ROOT = path.resolve(
-  path.dirname(fileURLToPath(import.meta.url)),
-  "../.."
-);
-const SRC = path.join(ROOT, "src");
-
-const RESOLVE_SUFFIXES = [
-  "",
-  ".ts",
-  ".js",
-  ".svelte",
-  ".svelte.ts",
-  "/index.ts",
-  "/index.js",
-];
-
-/** Static `import`/`export … from` specifiers, minus `import type` and `import()`. */
-function staticSpecifiers(code: string): string[] {
-  const stripped = code
-    .replace(/\/\*[\s\S]*?\*\//g, "")
-    .replace(/(^|[^:])\/\/[^\n]*/g, "$1");
-  const specs = new Set<string>();
-  const withClause =
-    /(?:^|[\s;}])(?:import|export)\s+(?!type\s)(?:[^'"()]*?\sfrom\s*)?["']([^"']+)["']/g;
-  const bareSideEffect = /(?:^|[\s;}])import\s*["']([^"']+)["']/g;
-  for (const m of stripped.matchAll(withClause)) specs.add(m[1]);
-  for (const m of stripped.matchAll(bareSideEffect)) specs.add(m[1]);
-  return [...specs];
-}
-
-function resolveLocal(spec: string, importer: string): string | null {
-  let base: string;
-  if (spec === "$lib") base = path.join(SRC, "lib/index");
-  else if (spec.startsWith("$lib/"))
-    base = path.join(SRC, "lib", spec.slice(5));
-  else if (spec.startsWith("."))
-    base = path.resolve(path.dirname(importer), spec);
-  else return null;
-  for (const suffix of RESOLVE_SUFFIXES) {
-    const candidate = base + suffix;
-    if (fs.existsSync(candidate) && fs.statSync(candidate).isFile())
-      return candidate;
-  }
-  return null;
-}
-
-const VIRTUAL_PREFIXES = ["$app/", "$env/", "$service-worker"];
-
-interface Graph {
-  /** Every source file reachable through static imports. */
-  files: Set<string>;
-  /** Bare package specifier → the source files that import it. */
-  packages: Map<string, Set<string>>;
-  /** Child → the file that first reached it, for a readable failure. */
-  parent: Map<string, string | null>;
-}
-
-function staticGraph(entries: string[]): Graph {
-  const files = new Set<string>();
-  const packages = new Map<string, Set<string>>();
-  const parent = new Map<string, string | null>();
-  const queue = [...entries];
-  for (const entry of entries) parent.set(entry, null);
-
-  while (queue.length > 0) {
-    const file = queue.shift()!;
-    if (files.has(file)) continue;
-    let code: string;
-    try {
-      code = fs.readFileSync(file, "utf8");
-    } catch {
-      continue;
-    }
-    files.add(file);
-    for (const spec of staticSpecifiers(code)) {
-      if (VIRTUAL_PREFIXES.some((p) => spec.startsWith(p))) continue;
-      const local = resolveLocal(spec, file);
-      if (local === null) {
-        const pkg = spec.split("?")[0];
-        if (!packages.has(pkg)) packages.set(pkg, new Set());
-        packages.get(pkg)!.add(file);
-        continue;
-      }
-      if (!parent.has(local)) parent.set(local, file);
-      queue.push(local);
-    }
-  }
-  return { files, packages, parent };
-}
-
-function chainTo(graph: Graph, file: string): string {
-  const steps: string[] = [];
-  let current: string | null | undefined = file;
-  while (current) {
-    steps.push(path.relative(ROOT, current));
-    current = graph.parent.get(current) ?? null;
-  }
-  return steps.reverse().join("\n  → ");
-}
-
-const rel = (p: string) => path.join(ROOT, p);
+const staticGraph = (entries: string[]) => importGraph(entries);
 
 describe("boot import boundary", () => {
   const bootGraph = staticGraph([
@@ -179,6 +77,24 @@ describe("boot import boundary", () => {
       rel("src/lib/shared/background/shared/state/background-hold.svelte.ts"),
     ]);
     expect([...holdGraph.packages.keys()]).toEqual([]);
+  });
+
+  it("keeps the admin user preview state free of Firebase", () => {
+    // app-state checks this state on every settings lookup, and public pages
+    // such as /shape-engine and /embed/spinner import app-state. The preview's
+    // Firestore reads load Firebase with import() once an admin opens a
+    // preview; a static Firebase import anywhere under this module puts
+    // Firebase on those pages' startup download.
+    const previewGraph = staticGraph([
+      rel("src/lib/shared/debug/state/user-preview-state.svelte.ts"),
+    ]);
+    const firebaseImporters = [...previewGraph.packages.entries()]
+      .filter(([spec]) => spec === "firebase" || spec.startsWith("firebase/"))
+      .flatMap(([, files]) => [...files]);
+    expect(
+      firebaseImporters.map((file) => chainTo(previewGraph, file)),
+      "Load Firebase inside the preview reads with import() instead."
+    ).toEqual([]);
   });
 
   it("keeps the viewer URL param names free of the compression codec", () => {

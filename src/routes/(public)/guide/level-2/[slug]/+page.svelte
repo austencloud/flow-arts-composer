@@ -5,11 +5,12 @@
    * from the live ch20/ch21 GuideSection components instead of level-1's
    * block-based reflow content (level-2 has no GUIDE_CONTENT equivalent; its
    * prose already lives in real .svelte sections, so this route renders
-   * those directly — see level2-topic-manifest.ts for the mapping and why).
+   * those directly — see level2-topic-routes.ts for the mapping and why).
    */
   import GuideSeo from "../../level-1/_components/GuideSeo.svelte";
   import Level2TopicBody from "../_components/Level2TopicBody.svelte";
-  import { LEVEL2_TOPIC_PAGES, localizedLevel2Topic } from "../_data/level2-topic-manifest";
+  import { LEVEL2_TOPIC_PAGES } from "../_data/level2-topic-routes";
+  import { localizedLevel2Topic } from "../_data/localize-level2-topic";
   import { tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
   import type { PageData } from "./$types";
 

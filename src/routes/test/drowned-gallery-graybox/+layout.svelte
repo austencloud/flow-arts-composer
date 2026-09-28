@@ -2,9 +2,8 @@
   import type { Snippet } from "svelte";
   import "../../../app.css";
 
-  // The workbench owns its full viewport and needs none of the product shell.
-  // Resetting at the route boundary keeps account, module, and cloud startup
-  // out of the scene-authoring loop entirely.
+  // Full-screen test harness. /test pages never mount the app shell, so this
+  // layout clears app.html's boot splash itself.
   let { children } = $props<{ children: Snippet }>();
 
   $effect(() => {
