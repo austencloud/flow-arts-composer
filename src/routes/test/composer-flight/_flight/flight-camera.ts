@@ -1,15 +1,15 @@
 /**
  * Camera math for the Composer fly-through prototypes (dev-only test route).
  *
- * Both versions stage the real /composer sections; this module only turns a
- * scroll offset into where each section sits in depth. It never touches the
- * DOM, so the flight can be tested without a browser.
+ * Both versions stage the real /composer sections on a fixed stage; this
+ * module only turns a scroll offset into where each section sits in depth. It
+ * never touches the DOM, so the flight can be tested without a browser.
  *
- * Stops: a fixed stage. The camera rests at one section, pans through it when
- * the section is taller than the stage, then flies to the next section.
- * Flow: the page scrolls normally. A section rests flat while it crosses the
- * reading band and only travels in depth while it approaches from below or
- * leaves over the top.
+ * Stops: the camera follows the scroll. It rests at one section, pans through
+ * it when the section is taller than the stage, then flies to the next one
+ * along a winding path.
+ * Glide: the same rests and pans, but leaving a section starts one timed glide
+ * straight ahead to the next, whatever the scroll does meanwhile.
  */
 
 /** CSS perspective both versions project through, in px. */
@@ -64,11 +64,6 @@ export interface StopPose {
   readonly present: boolean;
   /** True only while the camera rests on this stop. */
   readonly docked: boolean;
-}
-
-export interface FlowPose {
-  readonly z: number;
-  readonly opacity: number;
 }
 
 function clamp(value: number, min: number, max: number): number {
@@ -184,43 +179,116 @@ export function laneOffset(
   return { x: stop.x - camera.x, y: stop.y - camera.y };
 }
 
-/** Viewport fraction below which an approaching section starts to rest. */
-export const FLOW_ENTER_LINE = 0.86;
-/** Viewport fraction above which a leaving section starts to fly past. */
-export const FLOW_LEAVE_LINE = 0.14;
-/** Depth per viewport of distance while a section approaches. */
-export const FLOW_APPROACH_DEPTH = 2400;
-/** Depth per viewport of distance while a section flies past. */
-export const FLOW_PASS_DEPTH = 1500;
-/** Viewports of approach over which a section fades in from nothing. */
-export const FLOW_APPROACH_FADE = 0.55;
-/** Viewports of departure over which a section fades out. */
-export const FLOW_PASS_FADE = 0.25;
+/** Glide: depth the next stop waits at before it arrives, in px. */
+export const GLIDE_AHEAD_DEPTH = 180;
+/** Glide: depth a stop drifts toward the camera as it is left, in px. */
+export const GLIDE_BEHIND_DEPTH = 140;
+/** Glide: an arriving stop starts to show once it is this close, in stops. */
+export const GLIDE_ARRIVE_SHOW = 0.65;
+/** Glide: an arriving stop is fully clear once it is this close. */
+export const GLIDE_ARRIVE_CLEAR = 0.1;
+/** Glide: a stop left behind has faded out after this much of a glide. */
+export const GLIDE_LEAVE_FADE = 0.5;
+/** Glide: star depth travelled per glide, in px. */
+export const GLIDE_STAR_STEP = 240;
+
+export interface GlidePose {
+  /** translateZ in px; negative is ahead of the camera. */
+  readonly z: number;
+  readonly opacity: number;
+}
+
+function smoothstep(edge0: number, edge1: number, value: number): number {
+  const t = clamp((value - edge0) / (edge1 - edge0), 0, 1);
+  return t * t * (3 - 2 * t);
+}
 
 /**
- * Depth of one section in the Flow version from where its layout box sits in
- * the viewport (`top` and `bottom` relative to the viewport top).
+ * Where a stop sits during a glide, from its place relative to the camera: 0
+ * rests in the stage plane, 1 waits one stop ahead, -1 has been left one stop
+ * behind. The leaving stop is almost gone before the arriving one shows, so
+ * two sections' text never reads at once.
  */
-export function flowPose(
-  top: number,
-  bottom: number,
-  viewport: number
-): FlowPose {
-  const enter = viewport * FLOW_ENTER_LINE;
-  const leave = viewport * FLOW_LEAVE_LINE;
-  if (top > enter) {
-    const distance = (top - enter) / viewport;
+export function glidePose(relative: number): GlidePose {
+  const place = clamp(relative, -1, 1);
+  if (place >= 0) {
     return {
-      z: -distance * FLOW_APPROACH_DEPTH,
-      opacity: clamp(1 - distance / FLOW_APPROACH_FADE, 0, 1),
+      z: -place * GLIDE_AHEAD_DEPTH,
+      opacity: 1 - smoothstep(GLIDE_ARRIVE_CLEAR, GLIDE_ARRIVE_SHOW, place),
     };
   }
-  if (bottom < leave) {
-    const distance = (leave - bottom) / viewport;
-    return {
-      z: Math.min(distance * FLOW_PASS_DEPTH, FLIGHT_PERSPECTIVE * 0.6),
-      opacity: clamp(1 - distance / FLOW_PASS_FADE, 0, 1),
-    };
+  return {
+    z: -place * GLIDE_BEHIND_DEPTH,
+    opacity: 1 - smoothstep(0, GLIDE_LEAVE_FADE, -place),
+  };
+}
+
+/** Scroll offsets that count as resting on stop `index`: its pan, with the
+    plan's hold on either side. */
+export function restRange(
+  plan: StopsPlan,
+  index: number
+): { start: number; end: number } {
+  const dock = plan.docks[index] ?? 0;
+  return {
+    start: dock - plan.hold,
+    end: dock + (plan.pans[index] ?? 0) + plan.hold,
+  };
+}
+
+/** The stop whose rest range is closest to a scroll offset. */
+export function nearestStop(plan: StopsPlan, offset: number): number {
+  let nearest = 0;
+  let nearestDistance = Infinity;
+  plan.docks.forEach((_dock, index) => {
+    const { start, end } = restRange(plan, index);
+    const distance =
+      offset < start ? start - offset : offset > end ? offset - end : 0;
+    if (distance < nearestDistance) {
+      nearest = index;
+      nearestDistance = distance;
+    }
+  });
+  return nearest;
+}
+
+/**
+ * The stop a scroll away from the current one should glide to: at least the
+ * neighbour in the direction of the scroll, further when the scroll went
+ * further, as a dragged scrollbar does. Null while the offset still rests on
+ * the current stop, and past the last stop, where the page runs on to its
+ * footer.
+ */
+export function glideTarget(
+  plan: StopsPlan,
+  current: number,
+  offset: number
+): number | null {
+  const { start, end } = restRange(plan, current);
+  const last = plan.docks.length - 1;
+  if (offset > end && current < last) {
+    return Math.max(current + 1, nearestStop(plan, offset));
   }
-  return { z: 0, opacity: 1 };
+  if (offset < start && current > 0) {
+    return Math.min(current - 1, nearestStop(plan, offset));
+  }
+  return null;
+}
+
+/** How far stop `index` has panned at a scroll offset. */
+export function restPan(
+  plan: StopsPlan,
+  index: number,
+  offset: number
+): number {
+  return clamp(offset - (plan.docks[index] ?? 0), 0, plan.pans[index] ?? 0);
+}
+
+/** Scroll offset that shows stop `index` panned by `pan`. */
+export function landingOffset(
+  plan: StopsPlan,
+  index: number,
+  pan: number
+): number {
+  return (plan.docks[index] ?? 0) + clamp(pan, 0, plan.pans[index] ?? 0);
 }

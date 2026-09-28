@@ -9,9 +9,9 @@
   import type { Snippet } from "svelte";
   import { MediaQuery } from "svelte/reactivity";
   import { scroll } from "motion";
-  import FlowFlight from "./FlowFlight.svelte";
   import FlightStars from "./FlightStars.svelte";
   import FlightControls from "./FlightControls.svelte";
+  import PlainPage from "./PlainPage.svelte";
   import {
     FLIGHT_PERSPECTIVE,
     STOP_SPACING,
@@ -246,7 +246,7 @@
     placement="stage"
   />
 {:else}
-  <FlowFlight still>{@render children()}</FlowFlight>
+  <PlainPage>{@render children()}</PlainPage>
 {/if}
 
 <style>
