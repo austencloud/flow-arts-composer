@@ -451,11 +451,11 @@ once one is modeled. The staff-grip lab opens on the LED Baton, so leave
 notation staff. The scoreboard measures a straight 86.36 cm staff (the default
 34-inch length) whatever build is drawn, which matches the LED Baton's length.
 
-Judge a real build at its real length. The LED Baton always draws at
-86.36 cm. Since 2026-09-27 the Fire Staff stretches to the length it is given,
-so in the lab's default body-fit mode it draws at the hug fit (about 67 cm on
-ch07) while the lab's readout still says 90 cm. Add `length=90` to the lab URL
-when picturing it.
+Judge a real build at the staff length the performer uses. The LED Baton
+always draws at 86.36 cm. Since 2026-09-27 the Fire Staff stretches to the
+length it is given, so in the lab's default body-fit mode it draws at the hug
+fit (about 67 cm on ch07). Pin `length=` in the lab URL to the length under
+test.
 
 ### Real staff recheck (2026-09-27)
 
@@ -492,9 +492,10 @@ meets the head within about 30 cm of the hand, not at its ends.
 
 Most of the side-on chest contact is staff length. Today's grips leave room
 for a half-length of about 34 cm in front of the turned chest, and the real
-builds reach 43 to 45 cm from the hand. How the pose makes that room is
-Austen's call, and the next attempt is judged by pictures of a real build at
-its real length.
+builds reach 43 to 45 cm from the hand. Austen's answer, 2026-09-27:
+performers use smaller staffs sized to their bodies, and the grid follows
+either the staff or the body. [Performer grid styles](performer-grid-styles.md)
+holds that design.
 
 ## Clearance fixes (2026-09-27)
 
@@ -612,6 +613,7 @@ are useful now.
 - The 0.52 m grid radius assumes an 86 cm staff; the sequence performer draws
   about 67 cm and collision uses 86 cm. Pro 0-turn isolations cannot keep the
   inner end nearly still until this agrees.
+  [Performer grid styles](performer-grid-styles.md) plans the fix.
 - Beta staffs overlap in 3D; the 2D pictograph offsets them.
 - Turns are all spine (up to 87 to 90° with square hips); a human spine
   rotates roughly 40 to 50° (general estimate).
