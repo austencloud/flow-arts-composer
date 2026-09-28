@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import Seo from "$lib/shared/components/Seo.svelte";
+  import AuthModalHost from "$lib/shared/auth/components/AuthModalHost.svelte";
   import {
     hasSavedFirebaseUser,
     signInWhenIdle,
@@ -122,6 +123,13 @@
 <div class="shape-matrix-page">
   <ShapeMatrixApp {persistence} />
 </div>
+
+<!--
+  A guest who reaches the save limit here gets the usual sign-up window. It
+  sits on the route, not in ShapeMatrixApp, because the Create module reuses
+  that component inside the app, which already shows the window.
+-->
+<AuthModalHost />
 
 <style>
   .shape-matrix-page {

@@ -12,6 +12,11 @@ vi.mock("$lib/shared/share/state/image-composition-state.svelte", () => ({
   }),
 }));
 
+const frame = vi.hoisted(() => ({ inAnotherSite: false }));
+vi.mock("$lib/shared/foundation/utils/embedded-in-another-site", () => ({
+  isEmbeddedInAnotherSite: () => frame.inAnotherSite,
+}));
+
 import { buildCardMenuSection } from "../card-menu-section";
 
 const SEQ = { name: "TEST", word: "TEST", steps: [] } as unknown as SequenceData;
@@ -20,6 +25,7 @@ const ids = (entries: ReturnType<typeof buildCardMenuSection>) =>
   entries.map((e) => ("id" in e ? e.id : e.type));
 
 beforeEach(() => {
+  frame.inAnotherSite = false;
   getColumnCountForStepCount.mockClear();
   setColumnCountForStepCount.mockClear();
 });
@@ -44,6 +50,17 @@ describe("buildCardMenuSection", () => {
       onRerender: () => {},
     });
     expect(ids(entries)).toEqual(["save-to-library", "rerender"]);
+  });
+
+  it("leaves the library action out inside another website's frame", () => {
+    // A save there lands in storage the person can never open from our site,
+    // while the toast still says it saved.
+    frame.inAnotherSite = true;
+    const entries = buildCardMenuSection({
+      sequenceForLibrarySave: SEQ,
+      onRerender: () => {},
+    });
+    expect(ids(entries)).toEqual(["rerender"]);
   });
 
   it("delegates viewer-owned saves to the host state owner", async () => {

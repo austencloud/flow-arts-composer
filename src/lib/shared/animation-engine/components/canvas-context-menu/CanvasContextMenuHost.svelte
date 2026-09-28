@@ -13,6 +13,7 @@
   } from "$lib/shared/components/context-menu/context-menu-types";
   import { composeMenu } from "$lib/shared/components/context-menu/compose-menu";
   import { buildVisualSequenceSaveMenuItem } from "$lib/shared/library/services/visual-sequence-save-menu-item";
+  import { isEmbeddedInAnotherSite } from "$lib/shared/foundation/utils/embedded-in-another-site";
   import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
   import { buildCanvasContextMenuItems } from "./canvas-context-menu-builder";
   import {
@@ -90,6 +91,11 @@
     menuState = { open: false };
   }
 
+  // Inside another website's frame (the spinner embed on someone's page), a
+  // library save lands in storage the person can never open from our site,
+  // while the toast still says it saved. So the entry is left out there.
+  const offerLibrarySave = !isEmbeddedInAnotherSite();
+
   const menuItems: ContextMenuEntry[] = $derived.by(() => {
     // Touch menuItemsVersion to re-derive when visibility settings change
     void menuItemsVersion;
@@ -97,7 +103,7 @@
     return composeMenu([
       {
         entries: [
-          ...(sequence
+          ...(sequence && offerLibrarySave
             ? [
                 buildVisualSequenceSaveMenuItem(
                   sequence,
