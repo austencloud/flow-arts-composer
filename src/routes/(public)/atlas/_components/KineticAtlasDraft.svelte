@@ -1238,7 +1238,15 @@
   }
   .term-item {
     border-bottom: 1px solid oklch(0.5 0.03 270 / 0.1);
-    scroll-margin-top: 130px; /* deep links clear the header + mobile bar */
+    /* The marketing root's scroll padding clears the site header; this adds
+       the sticky mobile bar under it, so deep links land below both. */
+    scroll-margin-top: 50px;
+  }
+  @media (min-width: 1024px) {
+    /* No mobile bar here, so the root padding alone clears the header. */
+    .term-item {
+      scroll-margin-top: 0;
+    }
   }
   .term-item:last-child {
     border-bottom: none;

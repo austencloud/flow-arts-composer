@@ -875,7 +875,6 @@
   }
 
   .making-title {
-    scroll-margin-top: calc(var(--marketing-header-h, 64px) + 1rem);
     text-align: center;
   }
 

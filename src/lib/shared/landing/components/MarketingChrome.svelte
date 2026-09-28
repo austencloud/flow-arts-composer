@@ -159,6 +159,17 @@
 </div>
 
 <style>
+  /* The fixed SiteHeader bar's height, published once so a page that wants
+     to own the first viewport can subtract it instead of guessing. It lives
+     on the root, and only while this chrome is mounted, so the root scroller
+     can read it too: hash targets, scrollIntoView and focus then stop a small
+     gap below the header on every marketing page, including a deep link the
+     browser scrolls to before hydration. App routes never match. */
+  :global(html):has(.mkt-shell) {
+    --marketing-header-h: 64px;
+    scroll-padding-top: calc(var(--marketing-header-h) + 1rem);
+  }
+
   .mkt-shell {
     position: relative;
     min-height: 100vh;
@@ -178,9 +189,6 @@
        One token each, so neither face can drift per-page. */
     --page-title-font: "Fraunces", Georgia, serif;
     --landing-heading-font: "Playfair Display", Georgia, serif;
-    /* The fixed SiteHeader bar's height, published once so a page that wants
-       to own the first viewport can subtract it instead of guessing. */
-    --marketing-header-h: 64px;
   }
 
   .mkt-bg {

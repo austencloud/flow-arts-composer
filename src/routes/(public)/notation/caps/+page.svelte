@@ -453,17 +453,6 @@
     font-variant-numeric: tabular-nums;
   }
 
-  #what-is,
-  #math,
-  #origin,
-  #credits,
-  #relationship,
-  #watch,
-  #sources,
-  #breakdown {
-    scroll-margin-top: 6rem;
-  }
-
   .definition-duo {
     align-items: stretch;
   }
