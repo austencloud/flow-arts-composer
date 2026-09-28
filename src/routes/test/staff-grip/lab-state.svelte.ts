@@ -48,7 +48,9 @@ export const LAB_PARAM = {
   view: "view",
   panel: "panel",
   labels: "labels",
-  grid: "grid",
+  // Not `grid`: the root layout strips `grid` from every URL outside the
+  // atlas (url-parameter-policy.ts), which dropped the style on each reload.
+  gridStyle: "hands",
 } as const;
 
 /** Camera layout: the four-pane rig, or one pane on its own. */
@@ -182,7 +184,7 @@ export class StaffLabState {
 
   readonly gridStyle = $derived.by(
     (): LabGridStyle =>
-      this.#url.searchParams.get(LAB_PARAM.grid) === "isolation"
+      this.#url.searchParams.get(LAB_PARAM.gridStyle) === "isolation"
         ? "isolation"
         : "fixed"
   );
@@ -303,7 +305,7 @@ export class StaffLabState {
   }
 
   setGridStyle(style: LabGridStyle): void {
-    this.#write((params) => params.set(LAB_PARAM.grid, style), "push");
+    this.#write((params) => params.set(LAB_PARAM.gridStyle, style), "push");
   }
 
   setSequence(id: string): void {
@@ -360,7 +362,7 @@ export class StaffLabState {
       LAB_PARAM.length,
       this.propLength === "body" ? "body" : this.propLength.toFixed(0)
     );
-    params.set(LAB_PARAM.grid, this.gridStyle);
+    params.set(LAB_PARAM.gridStyle, this.gridStyle);
     params.set(LAB_PARAM.sequence, this.sequenceId);
     params.set(LAB_PARAM.phase, formatPhase(this.#phase));
     params.set(LAB_PARAM.playing, this.playing ? "1" : "0");
