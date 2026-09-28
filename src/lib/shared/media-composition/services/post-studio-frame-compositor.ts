@@ -302,7 +302,7 @@ async function drawPaintedLayer(
   context.rect(pixels.x, pixels.y, pixels.width, pixels.height);
   context.clip();
   context.globalAlpha = layer.opacity;
-  applyLayerTransform(context, geometry);
+  if (!painter.ownsTransform) applyLayerTransform(context, geometry);
   painter.paint(context, geometry.drawRect, toPaintFrame(layer, timeSeconds));
   context.restore();
 }
