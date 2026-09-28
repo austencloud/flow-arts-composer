@@ -1,33 +1,24 @@
 <script lang="ts">
   /**
-   * Near star field for the Composer fly-through prototypes. The marketing
-   * background stays the distant sky; these stars sit between it and the page
-   * and stream past as the camera moves, so a scroll reads as travel. It only
-   * draws while the camera or the streaks behind the stars are still moving.
+   * Near star field behind the /composer stage. The marketing background
+   * stays the distant sky; these stars sit between it and the page and drift
+   * past while a glide moves the camera, so moving from one section to the
+   * next reads as travel. It only draws when the camera moves.
    */
   import { onMount } from "svelte";
 
   let {
     depth,
-    lift = 0,
-    trail = 7,
   }: {
     /** Camera travel into the scene, in px of depth. */
     depth: number;
-    /** Camera travel down the stage, in px, for a slight vertical parallax. */
-    lift?: number;
-    /** Streak length in depth per px of camera travel per frame; 0 keeps
-        every star a point. */
-    trail?: number;
   } = $props();
 
   const FIELD_DEPTH = 3200;
   const NEAR = 60;
   const FOCAL = 420;
   const STARS_PER_MEGAPIXEL = 220;
-  const MAX_STREAK = 420;
   const BRIGHTNESS = 0.55;
-  const LIFT_PARALLAX = 0.35;
 
   interface Star {
     readonly x: number;
@@ -44,7 +35,6 @@
   let ratio = 1;
   let color = "#fff";
   let drawnDepth = 0;
-  let speed = 0;
   let frame = 0;
 
   function seed() {
@@ -80,50 +70,34 @@
     context.setTransform(ratio, 0, 0, ratio, 0, 0);
     context.clearRect(0, 0, width, height);
     context.fillStyle = color;
-    context.strokeStyle = color;
-    context.lineCap = "round";
     const cx = width / 2;
     const cy = height / 2;
-    const streak = Math.max(-MAX_STREAK, Math.min(MAX_STREAK, speed * trail));
     for (const star of stars) {
       const distance = distanceOf(star);
-      const y = star.y - lift * LIFT_PARALLAX;
       const sx = cx + (star.x * FOCAL) / distance;
-      const sy = cy + (y * FOCAL) / distance;
+      const sy = cy + (star.y * FOCAL) / distance;
       if (sx < -40 || sx > width + 40 || sy < -40 || sy > height + 40) continue;
       const nearness = 1 - distance / (FIELD_DEPTH + NEAR);
       const radius = 0.35 + 1.25 * nearness * nearness;
+      // A star entering at the far end of the field brightens in, so the
+      // wrap from near to far never pops.
       const arrival = Math.min(1, (FIELD_DEPTH + NEAR - distance) / 500);
       context.globalAlpha = star.glow * BRIGHTNESS * arrival;
-      const behind = Math.max(NEAR, distance + streak);
-      const tx = cx + (star.x * FOCAL) / behind;
-      const ty = cy + (y * FOCAL) / behind;
-      if (Math.abs(tx - sx) + Math.abs(ty - sy) < 1) {
-        context.beginPath();
-        context.arc(sx, sy, radius, 0, Math.PI * 2);
-        context.fill();
-      } else {
-        context.lineWidth = radius * 2;
-        context.beginPath();
-        context.moveTo(tx, ty);
-        context.lineTo(sx, sy);
-        context.stroke();
-      }
+      context.beginPath();
+      context.arc(sx, sy, radius, 0, Math.PI * 2);
+      context.fill();
     }
     context.globalAlpha = 1;
   }
 
   function step() {
     frame = 0;
-    speed = speed * 0.8 + (depth - drawnDepth) * 0.2;
     drawnDepth = depth;
     draw();
-    if (Math.abs(speed) > 0.05) frame = requestAnimationFrame(step);
   }
 
   $effect(() => {
     void depth;
-    void lift;
     if (context && !frame) frame = requestAnimationFrame(step);
   });
 
@@ -139,10 +113,10 @@
   });
 </script>
 
-<canvas bind:this={canvas} class="flight-stars" aria-hidden="true"></canvas>
+<canvas bind:this={canvas} class="glide-stars" aria-hidden="true"></canvas>
 
 <style>
-  .flight-stars {
+  .glide-stars {
     position: fixed;
     inset: 0;
     width: 100%;

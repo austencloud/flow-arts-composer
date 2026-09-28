@@ -92,9 +92,36 @@ function Test-Http200 {
     return $code -eq "200"
 }
 
+function Get-TkaDevTunnelToken {
+    param([string]$TokenFile)
+
+    if (-not (Test-Path -LiteralPath $TokenFile)) { return $null }
+    return (Get-Content -LiteralPath $TokenFile -Raw).Trim()
+}
+
+# True when a cloudflared command line runs this tunnel, by name or by its
+# token. Other tunnels on this machine (dev2, dev3, tka-mcp) never match.
+function Test-TkaDevTunnelCommand {
+    param([string]$CommandLine, [string]$Token)
+
+    if (-not $CommandLine) { return $false }
+    $isNamedTunnel = $CommandLine -match '(?i)(?:^|\s)run\s+tka-dev(?:\s|$)'
+    $usesManagedToken = $Token -and $CommandLine.Contains($Token)
+    return [bool]($isNamedTunnel -or $usesManagedToken)
+}
+
+# The Windows service named Cloudflared runs the remotely managed tka-mcp
+# tunnel, which carries mcp.tkaflowarts.com to the Flow Arts Knowledge MCP
+# server (mcp-server/deploy/README.md). It must stay running. Refuse to launch
+# only when that service runs this tunnel instead. PathName holds a tunnel
+# token, so never print it.
 function Test-CompetingCloudflaredService {
-    $service = Get-Service -Name "Cloudflared" -ErrorAction SilentlyContinue
-    return $service -and $service.Status -eq "Running"
+    param([string]$TokenFile)
+
+    $service = Get-CimInstance Win32_Service -Filter "Name = 'Cloudflared'" -ErrorAction SilentlyContinue
+    if (-not $service -or $service.State -ne "Running") { return $false }
+
+    return Test-TkaDevTunnelCommand $service.PathName (Get-TkaDevTunnelToken $TokenFile)
 }
 
 # A previous launcher or an ad-hoc tunnel command can leave a connector alive
@@ -104,21 +131,9 @@ function Test-CompetingCloudflaredService {
 function Get-StaleTkaTunnelProcesses {
     param([string]$TokenFile)
 
-    $token = if (Test-Path -LiteralPath $TokenFile) {
-        (Get-Content -LiteralPath $TokenFile -Raw).Trim()
-    } else {
-        $null
-    }
-
+    $token = Get-TkaDevTunnelToken $TokenFile
     return @(Get-CimInstance Win32_Process -Filter "Name = 'cloudflared.exe'" -ErrorAction SilentlyContinue |
-        Where-Object {
-            $commandLine = $_.CommandLine
-            if (-not $commandLine) { return $false }
-
-            $isNamedTunnel = $commandLine -match '(?i)(?:^|\s)run\s+tka-dev(?:\s|$)'
-            $usesManagedToken = $token -and $commandLine.Contains($token)
-            return $isNamedTunnel -or $usesManagedToken
-        })
+        Where-Object { Test-TkaDevTunnelCommand $_.CommandLine $token })
 }
 
 function Clear-StaleTkaTunnelProcesses {
@@ -340,8 +355,8 @@ $tunnelProc = $null
 $hasTunnelCredentials = (Test-Path -LiteralPath $tokenFile) -or (Test-Path -LiteralPath $certFile)
 $manageTunnel = $cloudflared -and $hasTunnelCredentials
 
-if ($manageTunnel -and (Test-CompetingCloudflaredService)) {
-    throw "The Windows Cloudflared service is already running and would create a second tka-dev connector. Stop and disable that service before starting the Agent Hub dev server."
+if ($manageTunnel -and (Test-CompetingCloudflaredService $tokenFile)) {
+    throw "The Windows Cloudflared service runs the tka-dev tunnel and would create a second tka-dev connector. Stop and disable that service before starting the Agent Hub dev server."
 }
 if ($manageTunnel) {
     Clear-StaleTkaTunnelProcesses $tokenFile
