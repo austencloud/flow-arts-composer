@@ -462,7 +462,8 @@ describe("AvatarAnimator body routing", () => {
           shoulderPosition: Vector3;
           upperArmLength: number;
           forearmLength: number;
-        }
+        },
+        deltaTime: number
       ) => void;
     };
     const target = {
@@ -471,13 +472,19 @@ describe("AvatarAnimator body routing", () => {
     };
     const neck = new Vector3(0.06, 0.15, 0);
 
-    animator.solveArmWithBodyClearance("left", chain, target, {
-      faceCenter: new Vector3(2, 2, 2),
-      neckCenter: neck,
-      shoulderPosition: new Vector3(0, 0, 0),
-      upperArmLength: chain.upperLength,
-      forearmLength: chain.lowerLength,
-    });
+    animator.solveArmWithBodyClearance(
+      "left",
+      chain,
+      target,
+      {
+        faceCenter: new Vector3(2, 2, 2),
+        neckCenter: neck,
+        shoulderPosition: new Vector3(0, 0, 0),
+        upperArmLength: chain.upperLength,
+        forearmLength: chain.lowerLength,
+      },
+      1 / 60
+    );
 
     const elbow = chain.middle.getWorldPosition(new Vector3());
     const hand = chain.effector.getWorldPosition(new Vector3());
