@@ -756,7 +756,8 @@
   async function openCrop(): Promise<void> {
     if (cropMode || editor.selectedItem?.kind !== "video") return;
     editor.pause();
-    seekIntoSelected();
+    // Crop edits the frame under the playhead, so it starts inside the clip.
+    seekInClip(editor.previewSeconds);
     cropReturn = activeTool === "crop" ? null : activeTool;
     cropFlight.capture();
     activeTool = "crop";
@@ -788,22 +789,24 @@
     if (!clip) return;
     if (!editor.isPlaying) {
       const seconds = editor.previewSeconds;
-      if (
-        seconds < clip.start - POST_TIME_EPSILON ||
-        seconds >= itemEnd(clip) - FRAME_SECONDS
-      ) {
+      if (seconds < clip.start || seconds >= itemEnd(clip) - FRAME_SECONDS) {
         editor.seek(clip.start);
       }
     }
     editor.togglePlayback();
   }
 
-  /** A seek on the crop screen stays on the clip. */
+  /**
+   * A seek on the crop screen stays on the clip, exactly: a playhead a hair
+   * before its start, as a slider's rounding leaves it, shows the clip no
+   * picture at all.
+   */
   function seekInClip(seconds: number): void {
-    const clip = crop.item;
+    const clip = crop.item ?? editor.selectedItem;
     if (!clip) return;
     const last = Math.max(clip.start, itemEnd(clip) - FRAME_SECONDS);
-    editor.seek(Math.min(last, Math.max(clip.start, seconds)));
+    const inside = Math.min(last, Math.max(clip.start, seconds));
+    if (inside !== editor.previewSeconds) editor.seek(inside);
   }
 
   /** Done on a phone: back to the row, on the tool that opened the panel. */
@@ -834,25 +837,6 @@
     }
     activeTool = null;
     void focusAfterUpdate(panelBeside ? { kind: "panel" } : { kind: "row" });
-  }
-
-  /** Crop edits the frame under the playhead, so it starts inside the clip. */
-  function seekIntoSelected(): void {
-    const item = editor.selectedItem;
-    if (!item) return;
-    const seconds = editor.previewSeconds;
-    if (
-      seconds >= item.start - POST_TIME_EPSILON &&
-      seconds <= itemEnd(item) + POST_TIME_EPSILON
-    ) {
-      return;
-    }
-    editor.pause();
-    editor.seek(
-      seconds < item.start
-        ? item.start
-        : Math.max(item.start, itemEnd(item) - FRAME_SECONDS)
-    );
   }
 
   function pickDeviceVideo(): void {
@@ -1646,6 +1630,7 @@
             {editor}
             item={crop.item}
             onToggle={toggleCropPlayback}
+            onSeek={seekInClip}
           />
         {:else}
           <PostEditorTransport {editor} disabled={exporting} />
