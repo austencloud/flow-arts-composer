@@ -1,7 +1,9 @@
 <!--
   The crop screen's time bar, in the transport's place: play or pause, and a
-  scrubber over just the clip with a diamond at each framing keyframe. The
-  workspace loops playback on the crop screen; this bar only asks for it.
+  scrubber over just the clip with a diamond at each framing keyframe. A
+  press on a diamond goes to that keyframe exactly, so the next edit changes
+  it rather than adding one beside it. The workspace loops playback on the
+  crop screen; this bar only asks for it.
 -->
 <script lang="ts">
   import { t } from "$lib/shared/i18n/i18n.svelte.js";
@@ -14,6 +16,7 @@
   import { keyframeMarkers } from "$lib/shared/media-composition/domain/post-project-keyframes";
   import type { PostEditorState } from "$lib/shared/media-composition/state/post-editor-state.svelte";
   import { formatTakeClock } from "../builder/post-builder-format";
+  import { channelLabel } from "./post-editor-labels";
 
   interface Props {
     editor: PostEditorState;
@@ -68,6 +71,12 @@
       origin={start}
       format={(seconds) => `${formatTakeClock(seconds - start)} / ${length}`}
       {marks}
+      onmark={seek}
+      markLabel={(seconds) =>
+        t("post_timeline_channel_keyframe_at", {
+          channel: channelLabel("framing"),
+          time: formatTakeClock(seconds - start),
+        })}
       onchange={seek}
     />
   </div>
