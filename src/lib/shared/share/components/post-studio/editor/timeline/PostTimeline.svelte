@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onDestroy, tick, untrack, type Snippet } from "svelte";
+  import { flushSync, onDestroy, tick, untrack, type Snippet } from "svelte";
   import type {
     PostItem,
     PostKeyframeChannel,
@@ -458,6 +458,9 @@
     if (clamped === pixelsPerSecond) return;
     pixelsPerSecond = clamped;
     if (!lanesScrollEl) return;
+    // Grow the scrollable track before setting scrollLeft, or the browser
+    // clamps the new position to the old width and the playhead drifts.
+    flushSync();
     setLanesScrollLeft(
       scrollLeftForStableAnchor({
         anchorSeconds,
@@ -487,14 +490,8 @@
     // A ctrl/cmd+wheel zoom is a deliberate replacement for page zoom; a plain
     // wheel is left alone so normal two-finger pan scrolling still works.
     event.preventDefault();
-    const rect = lanesScrollEl.getBoundingClientRect();
-    const anchorClientXPx = event.clientX - rect.left;
-    const anchorSeconds = pixelsToSeconds(
-      lanesScrollEl.scrollLeft + anchorClientXPx,
-      pixelsPerSecond
-    );
     const factor = event.deltaY < 0 ? ZOOM_STEP_FACTOR : 1 / ZOOM_STEP_FACTOR;
-    zoomTo(pixelsPerSecond * factor, anchorSeconds, anchorClientXPx);
+    handleZoomButton(factor);
   }
 
   // --- Fit on mount, and again whenever the project goes from empty to not.
