@@ -19,25 +19,25 @@
  * reactive cache shared by every guide page + the companion, loaded once per
  * reader/print/book mount via loadOverrides().
  */
-import {
-  collection,
-  doc,
-  getDoc,
-  getDocs,
-  setDoc,
-  deleteDoc,
-  addDoc,
-  serverTimestamp,
-  query,
-  orderBy,
-  limit as fsLimit,
-} from "firebase/firestore";
-import { getFirestoreInstance } from "$lib/shared/auth/firebase";
-import {
-  getEffectiveUserId,
-  isAdmin as authIsAdmin,
-} from "$lib/shared/auth/state/auth-state.svelte";
+import { loadedAuthState } from "$lib/shared/auth/state/loaded-auth-state.svelte";
 import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
+
+// Every Level 1 chapter imports this module, so it loads Firebase on first
+// use instead of with the page, which keeps Firebase off the chapters' first
+// download. The import() calls name the Firebase modules themselves: the
+// build's small-chunk merge (vite.config.ts) can fold a small wrapper module
+// back into the page.
+async function loadFirestore() {
+  const { getFirestoreInstance } = await import("$lib/shared/auth/firebase");
+  return getFirestoreInstance();
+}
+
+async function loadEffectiveUserId(): Promise<string> {
+  const { getEffectiveUserId } = await import(
+    "$lib/shared/auth/state/auth-state.svelte"
+  );
+  return getEffectiveUserId() ?? "unknown";
+}
 
 const OVERRIDES_COLLECTION = "guideOverrides";
 const REVISIONS_SUBCOLLECTION = "revisions";
@@ -68,10 +68,12 @@ function deserializeSteps(raw: unknown): StepData[] {
   return raw as StepData[];
 }
 
-/** Admin gate for every mutating call - mirrors SequenceViewerShell's
- *  `authState.isAdmin` check (grepped: `.claude/rules` guide-overrides task). */
+/** Admin gate for every mutating call - the same flag as SequenceViewerShell's
+ *  `authState.isAdmin` check, read without importing auth-state. The companion
+ *  that offers these edits loads auth-state itself, so the flag is live by the
+ *  time an admin presses Replace, Revert or Reset. */
 export function canEditGuide(): boolean {
-  return authIsAdmin();
+  return loadedAuthState.isAdmin;
 }
 
 // ── Reads (reactive; safe to call from $derived in any page) ────────────────
@@ -103,7 +105,8 @@ export async function loadOverrides(): Promise<Map<string, StepData[]>> {
   if (state.loading) return state.map;
   state.loading = true;
   try {
-    const db = await getFirestoreInstance();
+    const { collection, getDocs } = await import("firebase/firestore");
+    const db = await loadFirestore();
     const snap = await getDocs(collection(db, OVERRIDES_COLLECTION));
     const nextMap = new Map<string, StepData[]>();
     const nextWords = new Map<string, string>();
@@ -132,7 +135,10 @@ export async function loadOverrides(): Promise<Map<string, StepData[]>> {
  *  When no override doc exists yet, snapshots the "authored" pseudo-revision
  *  (steps: null) so a first-time Replace can still be reverted back to canonical. */
 async function snapshotRevision(key: string): Promise<void> {
-  const db = await getFirestoreInstance();
+  const { addDoc, collection, doc, getDoc, serverTimestamp } = await import(
+    "firebase/firestore"
+  );
+  const db = await loadFirestore();
   const docRef = doc(db, OVERRIDES_COLLECTION, key);
   const existing = await getDoc(docRef);
   const revisionsRef = collection(db, OVERRIDES_COLLECTION, key, REVISIONS_SUBCOLLECTION);
@@ -149,7 +155,10 @@ async function snapshotRevision(key: string): Promise<void> {
 
 /** Cap ~20 revisions per strip - client-side prune, oldest first. */
 async function pruneRevisions(key: string): Promise<void> {
-  const db = await getFirestoreInstance();
+  const { collection, deleteDoc, getDocs, orderBy, query } = await import(
+    "firebase/firestore"
+  );
+  const db = await loadFirestore();
   const revisionsRef = collection(db, OVERRIDES_COLLECTION, key, REVISIONS_SUBCOLLECTION);
   const snap = await getDocs(query(revisionsRef, orderBy("savedAt", "asc")));
   const excess = snap.docs.length - REVISION_CAP;
@@ -163,7 +172,13 @@ async function pruneRevisions(key: string): Promise<void> {
 /** Refreshes (async) whether a revert target exists for `key`; cache it so the
  *  companion's Revert button can read it synchronously via hasRevisionsCached. */
 export async function refreshRevisionAvailability(key: string): Promise<boolean> {
-  const db = await getFirestoreInstance();
+  const {
+    collection,
+    getDocs,
+    limit: fsLimit,
+    query,
+  } = await import("firebase/firestore");
+  const db = await loadFirestore();
   const revisionsRef = collection(db, OVERRIDES_COLLECTION, key, REVISIONS_SUBCOLLECTION);
   const snap = await getDocs(query(revisionsRef, fsLimit(1)));
   const has = !snap.empty;
@@ -177,12 +192,13 @@ export async function saveOverride(key: string, steps: StepData[], word?: string
   if (!canEditGuide()) throw new Error("Not authorized to edit the guide.");
   await snapshotRevision(key);
 
-  const db = await getFirestoreInstance();
+  const { doc, serverTimestamp, setDoc } = await import("firebase/firestore");
+  const db = await loadFirestore();
   const docRef = doc(db, OVERRIDES_COLLECTION, key);
   const payload: Record<string, unknown> = {
     steps: serializeSteps(steps),
     updatedAt: serverTimestamp(),
-    updatedBy: getEffectiveUserId() ?? "unknown",
+    updatedBy: await loadEffectiveUserId(),
   };
   if (word !== undefined) payload.word = word;
   await setDoc(docRef, payload);
@@ -198,7 +214,18 @@ export async function saveOverride(key: string, steps: StepData[], word?: string
 export async function revertOverride(key: string): Promise<boolean> {
   if (!canEditGuide()) throw new Error("Not authorized to edit the guide.");
 
-  const db = await getFirestoreInstance();
+  const {
+    collection,
+    deleteDoc,
+    doc,
+    getDocs,
+    limit: fsLimit,
+    orderBy,
+    query,
+    serverTimestamp,
+    setDoc,
+  } = await import("firebase/firestore");
+  const db = await loadFirestore();
   const revisionsRef = collection(db, OVERRIDES_COLLECTION, key, REVISIONS_SUBCOLLECTION);
   const snap = await getDocs(query(revisionsRef, orderBy("savedAt", "desc"), fsLimit(1)));
   if (snap.empty) return false;
@@ -221,7 +248,7 @@ export async function revertOverride(key: string): Promise<boolean> {
     const payload: Record<string, unknown> = {
       steps: data.steps,
       updatedAt: serverTimestamp(),
-      updatedBy: getEffectiveUserId() ?? "unknown",
+      updatedBy: await loadEffectiveUserId(),
     };
     if (typeof data.word === "string") payload.word = data.word;
     await setDoc(docRef, payload);
@@ -240,7 +267,8 @@ export async function revertOverride(key: string): Promise<boolean> {
  *  is destroyed by it). */
 export async function resetOverride(key: string): Promise<void> {
   if (!canEditGuide()) throw new Error("Not authorized to edit the guide.");
-  const db = await getFirestoreInstance();
+  const { deleteDoc, doc } = await import("firebase/firestore");
+  const db = await loadFirestore();
   await deleteDoc(doc(db, OVERRIDES_COLLECTION, key));
   const nextMap = new Map(state.map);
   nextMap.delete(key);

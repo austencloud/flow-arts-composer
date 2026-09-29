@@ -6,6 +6,8 @@
   `size="md"` is a standalone link (reading lists, sources, "open this" beside
   a figure) with a full touch target. `size="inline"` is a mention inside a
   sentence; it keeps the line's height and reads as a small pill in the text.
+  `wrap` lets a long title or a pasted URL break across lines instead of
+  running past a phone's edge; an inline chip otherwise stays on one line.
 
   The arrow follows the destination: right for another page, down for a place
   further down this page (`#...`), and out of the box for another site, which
@@ -19,6 +21,8 @@
     href: string;
     children: Snippet;
     size?: "md" | "inline";
+    /** Let a long label or URL break across lines. */
+    wrap?: boolean;
     /** Screen-reader phrase for a link that opens a new tab. */
     newTabLabel?: string;
     class?: string;
@@ -28,6 +32,7 @@
     href,
     children,
     size = "md",
+    wrap = false,
     newTabLabel = "(opens in a new tab)",
     class: className = "",
     ...rest
@@ -46,6 +51,7 @@
 <a
   {href}
   class="link-chip {size} {className}"
+  class:wrap
   target={external ? "_blank" : undefined}
   rel={external ? "noopener noreferrer" : undefined}
   {...rest}
@@ -108,5 +114,10 @@
 
   .inline i {
     margin-left: 0.4em;
+  }
+
+  .wrap {
+    white-space: normal;
+    overflow-wrap: anywhere;
   }
 </style>

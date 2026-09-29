@@ -5,7 +5,11 @@
  * timeline operations. Persists history to localStorage.
  */
 
-import type { TimelineUndoOperationType, TimelineUndoEntry, TimelineProjectSnapshot } from "$lib/shared/animation-engine/timeline/domain/types";
+import type {
+  TimelineUndoOperationType,
+  TimelineUndoEntry,
+  TimelineProjectSnapshot,
+} from "$lib/shared/animation-engine/timeline/domain/types";
 import type { TimelineProject } from "$lib/shared/animation-engine/domain/timeline-types";
 
 const STORAGE_KEY_UNDO = "timeline-undo-history";
@@ -20,6 +24,8 @@ export class TimelineUndoManager {
 
   // Reference to get current project state (injected via init)
   private getCurrentProject: (() => TimelineProject) | null = null;
+  private getCurrentAudioUrl: (() => string | null) | null = null;
+  private ownedAudioUrls = new Set<string>();
 
   constructor() {
     this.load();
@@ -29,8 +35,16 @@ export class TimelineUndoManager {
    * Initialize with a project getter function.
    * Must be called before using capture/commit.
    */
-  init(getCurrentProject: () => TimelineProject): void {
+  init(
+    getCurrentProject: () => TimelineProject,
+    getCurrentAudioUrl: () => string | null
+  ): void {
     this.getCurrentProject = getCurrentProject;
+    this.getCurrentAudioUrl = getCurrentAudioUrl;
+  }
+
+  trackAudioUrl(url: string): void {
+    if (url.startsWith("blob:")) this.ownedAudioUrls.add(url);
   }
 
   // State Getters
@@ -77,6 +91,7 @@ export class TimelineUndoManager {
       beforeState: {
         project: this.deepCloneProject(project),
         timestamp: Date.now(),
+        audioUrl: this.getCurrentAudioUrl?.() ?? null,
       },
       description,
     };
@@ -91,7 +106,20 @@ export class TimelineUndoManager {
     this.pendingEntry.afterState = {
       project: this.deepCloneProject(project),
       timestamp: Date.now(),
+      audioUrl: this.getCurrentAudioUrl?.() ?? null,
     };
+    if (
+      projectsEqual(
+        this.pendingEntry.beforeState.project,
+        this.pendingEntry.afterState.project
+      ) &&
+      this.pendingEntry.beforeState.audioUrl ===
+        this.pendingEntry.afterState.audioUrl
+    ) {
+      this.pendingEntry = null;
+      this.releaseUnusedAudioUrls();
+      return;
+    }
 
     this.undoStack.push(this.pendingEntry);
 
@@ -104,12 +132,14 @@ export class TimelineUndoManager {
     this.redoStack = [];
 
     this.pendingEntry = null;
+    this.releaseUnusedAudioUrls();
     this.notifySubscribers();
     this.save();
   }
 
   cancelPending(): void {
     this.pendingEntry = null;
+    this.releaseUnusedAudioUrls();
   }
 
   undo(): TimelineProjectSnapshot | null {
@@ -124,7 +154,10 @@ export class TimelineUndoManager {
     this.notifySubscribers();
     this.save();
 
-    return entry.beforeState;
+    return {
+      ...entry.beforeState,
+      project: this.deepCloneProject(entry.beforeState.project),
+    };
   }
 
   redo(): TimelineProjectSnapshot | null {
@@ -139,13 +172,17 @@ export class TimelineUndoManager {
     this.notifySubscribers();
     this.save();
 
-    return entry.afterState;
+    return {
+      ...entry.afterState,
+      project: this.deepCloneProject(entry.afterState.project),
+    };
   }
 
   clear(): void {
     this.undoStack = [];
     this.redoStack = [];
     this.pendingEntry = null;
+    this.releaseUnusedAudioUrls();
     this.notifySubscribers();
     this.save();
   }
@@ -156,23 +193,23 @@ export class TimelineUndoManager {
     if (typeof window === "undefined") return;
 
     try {
-      // Only save metadata, not full project snapshots (too large)
-      const undoMeta = this.undoStack.map((e) => ({
+      // Sources are session-only; entries involving audio cannot replay after reload.
+      const undoMeta = this.undoStack.filter(isPersistableEntry).map((e) => ({
         id: e.id,
         type: e.type,
         timestamp: e.timestamp,
         description: e.description,
-        beforeState: e.beforeState,
-        afterState: e.afterState,
+        beforeState: this.persistentSnapshot(e.beforeState),
+        afterState: e.afterState && this.persistentSnapshot(e.afterState),
       }));
 
-      const redoMeta = this.redoStack.map((e) => ({
+      const redoMeta = this.redoStack.filter(isPersistableEntry).map((e) => ({
         id: e.id,
         type: e.type,
         timestamp: e.timestamp,
         description: e.description,
-        beforeState: e.beforeState,
-        afterState: e.afterState,
+        beforeState: this.persistentSnapshot(e.beforeState),
+        afterState: e.afterState && this.persistentSnapshot(e.afterState),
       }));
 
       localStorage.setItem(STORAGE_KEY_UNDO, JSON.stringify(undoMeta));
@@ -191,12 +228,12 @@ export class TimelineUndoManager {
 
       if (undoData) {
         const parsed = JSON.parse(undoData);
-        this.undoStack = this.restoreDates(parsed);
+        this.undoStack = this.restoreDates(parsed).filter(isPersistableEntry);
       }
 
       if (redoData) {
         const parsed = JSON.parse(redoData);
-        this.redoStack = this.restoreDates(parsed);
+        this.redoStack = this.restoreDates(parsed).filter(isPersistableEntry);
       }
     } catch (err) {
       console.warn("[TimelineUndoManager] Failed to load history:", err);
@@ -215,6 +252,42 @@ export class TimelineUndoManager {
   }
 
   // Private Helpers
+
+  private persistentSnapshot(
+    snapshot: TimelineProjectSnapshot
+  ): TimelineProjectSnapshot {
+    return { project: snapshot.project, timestamp: snapshot.timestamp };
+  }
+
+  private releaseUnusedAudioUrls(): void {
+    const referenced = new Set<string>();
+    const add = (url: string | null | undefined) => {
+      if (url) referenced.add(url);
+    };
+    add(this.getCurrentAudioUrl?.());
+    for (const entry of [
+      ...this.undoStack,
+      ...this.redoStack,
+      ...(this.pendingEntry ? [this.pendingEntry] : []),
+    ]) {
+      add(entry.beforeState.audioUrl);
+      add(entry.afterState?.audioUrl);
+    }
+    for (const url of this.ownedAudioUrls) {
+      if (!referenced.has(url)) {
+        URL.revokeObjectURL(url);
+        this.ownedAudioUrls.delete(url);
+      }
+    }
+  }
+
+  dispose(): void {
+    this.getCurrentAudioUrl = null;
+    this.undoStack = [];
+    this.redoStack = [];
+    this.pendingEntry = null;
+    this.releaseUnusedAudioUrls();
+  }
 
   private notifySubscribers(): void {
     for (const callback of this.subscribers) {
@@ -262,6 +335,24 @@ export class TimelineUndoManager {
   }
 }
 
+function projectsEqual(a: TimelineProject, b: TimelineProject): boolean {
+  // updatedAt records persistence activity, not a user-visible project edit.
+  const { updatedAt: _aUpdatedAt, ...aContent } = a;
+  const { updatedAt: _bUpdatedAt, ...bContent } = b;
+  return JSON.stringify(aContent) === JSON.stringify(bContent);
+}
+
+function isPersistableEntry(entry: TimelineUndoEntry): boolean {
+  return (
+    !!entry.beforeState?.project?.audio &&
+    !!entry.afterState?.project?.audio &&
+    !entry.beforeState.project.audio.hasAudio &&
+    !entry.afterState.project.audio.hasAudio &&
+    !entry.beforeState.audioUrl &&
+    !entry.afterState.audioUrl
+  );
+}
+
 // ============================================================================
 // Singleton Factory
 // ============================================================================
@@ -282,5 +373,6 @@ export function getTimelineUndoManager(): TimelineUndoManager {
  * Reset the singleton (useful for testing).
  */
 export function resetTimelineUndoManager(): void {
+  undoManagerInstance?.dispose();
   undoManagerInstance = null;
 }

@@ -20,6 +20,7 @@
   column of gaps, which is a worse empty state than the one being replaced.
 -->
 <script lang="ts">
+  import FilterChipBase from "$lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
   import { fade } from "svelte/transition";
   import { t } from "$lib/shared/i18n/i18n.svelte";
   import type { EnhancedUserProfile } from "$lib/shared/community/domain/models/enhanced-user-profile";
@@ -233,25 +234,25 @@
       {/if}
       <div class="stat">
         <dt>
-          <button
-            type="button"
-            class="stat-link"
+          <FilterChipBase
+            label={t("browse_ui_followers")}
+            icon="fas fa-users"
+            mode="action"
+            size="sm"
             onclick={() => onFollowersClick?.()}
-          >
-            {t("browse_ui_followers")}
-          </button>
+          />
         </dt>
         <dd>{userProfile.followerCount.toLocaleString()}</dd>
       </div>
       <div class="stat">
         <dt>
-          <button
-            type="button"
-            class="stat-link"
+          <FilterChipBase
+            label={t("browse_audit_following")}
+            icon="fas fa-user-check"
+            mode="action"
+            size="sm"
             onclick={() => onFollowingClick?.()}
-          >
-            {t("browse_audit_following")}
-          </button>
+          />
         </dt>
         <dd>{userProfile.followingCount.toLocaleString()}</dd>
       </div>
@@ -542,7 +543,7 @@
 
   .stat {
     display: flex;
-    align-items: baseline;
+    align-items: center;
     gap: 12px;
     min-height: 32px;
   }
@@ -558,36 +559,6 @@
     font-weight: 700;
     font-variant-numeric: tabular-nums;
     color: var(--theme-text, white);
-  }
-
-  /* A row-wide hit area rather than a bare text link: the whole point is that
-     it is obviously pressable (clickables-look-like-buttons.md). The 44px floor
-     is on the row, in px on purpose — touch targets must not scale. */
-  .stat-link {
-    display: inline-flex;
-    align-items: center;
-    min-height: 44px;
-    margin: -6px 0;
-    padding: 0;
-    background: none;
-    border: none;
-    color: inherit;
-    font: inherit;
-    cursor: pointer;
-    text-decoration: underline;
-    text-decoration-style: dotted;
-    text-underline-offset: 3px;
-    transition: color var(--duration-normal) ease;
-  }
-
-  .stat-link:hover {
-    color: var(--theme-text);
-  }
-
-  .stat-link:focus-visible {
-    outline: 2px solid var(--theme-accent);
-    outline-offset: 2px;
-    border-radius: 4px;
   }
 
   .actions {
@@ -776,8 +747,7 @@
   @media (prefers-reduced-motion: reduce) {
     .follow-button,
     .instagram-link,
-    .report-button,
-    .stat-link {
+    .report-button {
       transition: none;
     }
 

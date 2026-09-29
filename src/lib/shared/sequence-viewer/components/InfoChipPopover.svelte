@@ -1,4 +1,5 @@
 <script lang="ts">
+  import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
   import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { getViewer3DContext } from "$lib/shared/3d/context/viewer-3d-context";
   import { scale } from "svelte/transition";
@@ -43,8 +44,8 @@
       </p>
       <p class="aside">
         {t("viewer_detail_want_different_sequences_per_performer_with_timing_and_music")}
-        <button class="link" onclick={openStageStub}>{t("viewer_detail_open_in_stage")}</button>
       </p>
+      <PanelButton onclick={openStageStub}>{t("viewer_detail_open_in_stage")}</PanelButton>
     </div>
   {/if}
 </div>
@@ -100,14 +101,5 @@
     margin-top: 10px;
     padding-top: 10px;
     border-top: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.08));
-  }
-  .link {
-    background: none;
-    border: none;
-    padding: 0;
-    color: #8fc3ff;
-    text-decoration: underline;
-    cursor: pointer;
-    font: inherit;
   }
 </style>

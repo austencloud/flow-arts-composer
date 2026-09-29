@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from "svelte";
+  import LinkChip from "$lib/shared/ui/components/LinkChip.svelte";
   import PictographContainer from "$lib/shared/pictograph/shared/components/PictographContainer.svelte";
   import { getErrorHandler } from "$lib/shared/application/get-error-handler";
   import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
@@ -800,7 +801,9 @@
     {#if selectedTurns === "fl"}
       <p>Float has no turn count, so its authored state is labeled “float.”</p>
     {/if}
-    <a href="/test/arrow-placement-frame">View the five retired box outliers</a>
+    <LinkChip class="footer-link" href="/test/arrow-placement-frame"
+      >View the five retired box outliers</LinkChip
+    >
   </footer>
 </main>
 
@@ -1048,8 +1051,7 @@
   }
 
   button:focus-visible,
-  select:focus-visible,
-  a:focus-visible {
+  select:focus-visible {
     outline: 3px solid var(--lab-gold);
     outline-offset: 3px;
   }
@@ -1238,13 +1240,9 @@
     line-height: 1.45;
   }
 
-  .lab-footer a {
+  .lab-footer :global(.footer-link) {
     flex: 0 0 auto;
     margin-left: auto;
-    color: var(--lab-blue);
-    font-size: max(0.86rem, 14px);
-    font-weight: 750;
-    text-underline-offset: 0.22em;
   }
 
   @media (min-width: 2600px) {
@@ -1287,7 +1285,7 @@
       gap: 0.25rem;
     }
 
-    .lab-footer a {
+    .lab-footer :global(.footer-link) {
       margin-left: 0;
     }
   }

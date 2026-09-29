@@ -1,4 +1,5 @@
 <script lang="ts">
+  import LinkChip from "$lib/shared/ui/components/LinkChip.svelte";
   import Seo from "$lib/shared/components/Seo.svelte";
   import SequenceHeroDemo from "$lib/shared/landing/components/SequenceHeroDemo.svelte";
   import demoJson from "$lib/shared/landing/data/demo-sequence.json";
@@ -71,8 +72,9 @@
             Each staff has a thumb end and a pinky end. Hold the thumb end at
             center during an isolation and the pinky end performs an extension
             at the same time. A club has one visible end, so its isolation and
-            extension are separate moves, despite sharing the same geometry. The <a
-              href="/notation/clubs">club comparison</a
+            extension are separate moves, despite sharing the same geometry. The <LinkChip
+              size="inline"
+              href="/notation/clubs">club comparison</LinkChip
             > shows the difference. A staff also covers both the vertical-flower and
             horizontal-flower antispin variants that VTG names for one-ended props.
           </p>
@@ -103,11 +105,16 @@
         props use finger spins and grip changes, and the notation allows them.
       </p>
       <p>
-        When you're ready to learn the notation, the <a href="/guide">guide</a>
+        When you're ready to learn the notation, the <LinkChip
+          size="inline"
+          href="/guide">guide</LinkChip
+        >
         introduces every concept in order, the
-        <a href="/guide/codex">Double Staff Codex</a> collects the pictographs
-        themselves, and the <a href="/atlas">Kinetic Atlas</a> defines every term
-        used on this page.
+        <LinkChip size="inline" href="/guide/codex">Double Staff Codex</LinkChip
+        > collects the pictographs themselves, and the <LinkChip
+          size="inline"
+          href="/atlas">Kinetic Atlas</LinkChip
+        > defines every term used on this page.
       </p>
     </div>
   </section>

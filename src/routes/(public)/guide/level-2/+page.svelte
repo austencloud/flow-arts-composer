@@ -1,4 +1,5 @@
 <script lang="ts">
+  import LinkChip from "$lib/shared/ui/components/LinkChip.svelte";
   import GuideSeo from "../level-1/_components/GuideSeo.svelte";
   import { tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
 </script>
@@ -45,7 +46,9 @@
   <section class="download">
     <h2>{tDynamic("guide_level2_pdf_version")}</h2>
     <p>
-      <a href="/guides/level-2.pdf" download>{tDynamic("guide_level2_download_pdf")}</a>
+      <LinkChip href="/guides/level-2.pdf" download
+        >{tDynamic("guide_level2_download_pdf")}</LinkChip
+      >
     </p>
   </section>
 </div>
@@ -130,9 +133,5 @@
     font-size: 0.9rem;
     color: oklch(0.68 0.02 270);
     margin-top: 0.25rem;
-  }
-
-  .download a {
-    color: #4ea7e8;
   }
 </style>

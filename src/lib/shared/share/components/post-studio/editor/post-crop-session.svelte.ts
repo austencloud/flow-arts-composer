@@ -3,10 +3,13 @@ import {
   POST_MAX_ZOOM,
   POST_MIN_ZOOM,
   findItem,
+  shortestTurn,
+  wrapDegrees,
   type PostBox,
   type PostClipShape,
   type PostClipShapeKind,
   type PostFraming,
+  type PostKeyframe,
   type PostVideoItem,
 } from "$lib/shared/media-composition/domain/post-project";
 import {
@@ -16,6 +19,7 @@ import {
   type PostOutputSize,
 } from "$lib/shared/media-composition/domain/post-canvas";
 import {
+  editItemKeyframes,
   resetFraming,
   updateItem,
   updateItemAt,
@@ -24,6 +28,7 @@ import {
   boxAt,
   framingAt,
   isAnimated,
+  postSecondsOfKeyframe,
 } from "$lib/shared/media-composition/domain/post-project-keyframes";
 import type { PostEditorState } from "$lib/shared/media-composition/state/post-editor-state.svelte";
 import {
@@ -129,6 +134,31 @@ function sameShape(a: PostClipShape | null, b: PostClipShape | null): boolean {
 /** The frame moves the opposite way to the picture under it. */
 function framePull(over: CropPoint): CropPoint {
   return { x: -over.x || 0, y: -over.y || 0 };
+}
+
+/**
+ * A pose turned a quarter to `rotation`, within its limit. Given the window
+ * of a shape that turns with the footage, it moves into that window instead,
+ * as far past covering it as it was past covering its own.
+ */
+function quarterTurned(
+  current: CropPose,
+  rotation: number,
+  nextWindow: CropSize | null
+): CropPose {
+  const turned = turnPose(current, rotation);
+  if (!nextWindow) return limitPose(turned, cropLimitFor(current, turned));
+  const placeIn = (zoom: number) =>
+    cropPoseOf({
+      framing: { ...framingOfPose(turned), zoom },
+      fit: current.fit,
+      window: nextWindow,
+      source: current.source,
+    })!;
+  const resized = placeIn(
+    (coverZoom(placeIn(1)) * current.zoom) / coverZoom(current)
+  );
+  return resized.fit === "cover" ? clampToCoverage(resized) : resized;
 }
 
 function samePlacement(a: CropPose, b: CropPose): boolean {
@@ -381,7 +411,8 @@ export function createCropSession(deps: CropSessionDeps) {
 
   /**
    * A quarter turn anticlockwise, as Photos turns. A clip in its footage's
-   * own shape turns its window with it, filled the way it was.
+   * own shape turns its window with it, filled the way it was. The turn is
+   * the whole clip's: with its framing animated, every key turns.
    */
   function rotateQuarter(): void {
     const target = editable();
@@ -393,32 +424,83 @@ export function createCropSession(deps: CropSessionDeps) {
       target.shape?.kind === "original"
         ? clipShapeFor("original", 1 / target.shape.ratio)
         : null;
+    if (isAnimated(target, "framing")) {
+      turnEveryKey(target, shape, shortestTurn(framing?.rotation ?? 0, rotation));
+      announce();
+      return;
+    }
     const current = pose;
     const nextWindow = shape ? windowFor(shape) : null;
     if (!current) {
       writeShaped(target, shape, { rotation });
       return;
     }
-    const turned = turnPose(current, rotation);
-    if (!shape || !nextWindow) {
-      if (writeStep(target, limitPose(turned, cropLimitFor(current, turned))))
-        announce();
+    const next = quarterTurned(current, rotation, nextWindow);
+    if (shape && nextWindow) {
+      writeShaped(target, shape, framingOfPose(next));
+      announce();
       return;
     }
-    // As far past covering the turned window as it was past covering this one.
-    const placeIn = (zoom: number) =>
-      cropPoseOf({
-        framing: { ...framingOfPose(turned), zoom },
-        fit: current.fit,
-        window: nextWindow,
-        source: current.source,
-      })!;
-    const resized = placeIn(
-      (coverZoom(placeIn(1)) * current.zoom) / coverZoom(current)
-    );
-    const next = resized.fit === "cover" ? clampToCoverage(resized) : resized;
-    writeShaped(target, shape, framingOfPose(next));
-    announce();
+    if (writeStep(target, next)) announce();
+  }
+
+  /**
+   * A quarter turn of a clip whose framing is animated: every key turns by
+   * `delta`, each in its own window at its own time, so the picture turns
+   * all through the clip as its shape does. One undo step.
+   */
+  function turnEveryKey(
+    target: PostVideoItem,
+    shape: PostClipShape | null,
+    delta: number
+  ): void {
+    const footage = source;
+    const post = output;
+    const id = target.id;
+    const turnKey = (key: PostKeyframe<PostFraming>): PostFraming => {
+      const rotation = wrapDegrees(key.value.rotation + delta);
+      const keySpot = boxAt(target, postSecondsOfKeyframe(target, key.t));
+      const keyWindow = post ? sizeIn(clipBox(target, keySpot, post), post) : null;
+      const keyPose = keyWindow
+        ? cropPoseOf({
+            framing: key.value,
+            fit: target.fit,
+            window: keyWindow,
+            source: footage,
+          })
+        : null;
+      if (!keyPose || !post) return { ...key.value, rotation };
+      const nextWindow = shape
+        ? sizeIn(shapedBox(keySpot, shape.ratio, post), post)
+        : null;
+      return framingOfPose(quarterTurned(keyPose, rotation, nextWindow));
+    };
+    editor.pause();
+    sliderBase = null;
+    editor.edit((project, ctx) => {
+      const turned = updateItem(
+        project,
+        id,
+        { ...(shape ? { shape } : {}), rotation: target.rotation + delta },
+        ctx
+      );
+      return editItemKeyframes(
+        turned,
+        id,
+        (it) => {
+          const keys = it.kind === "video" ? it.keyframes?.framing : undefined;
+          if (it.kind !== "video" || !keys) return it;
+          return {
+            ...it,
+            keyframes: {
+              ...it.keyframes,
+              framing: keys.map((key) => ({ ...key, value: turnKey(key) })),
+            },
+          };
+        },
+        ctx
+      );
+    });
   }
 
   /**

@@ -30,6 +30,7 @@
     type StanceYawTrack,
   } from "$lib/shared/3d/collision/stance-yaw-track";
   import type { HardBeatTrack } from "$lib/shared/3d/collision/hard-beat-displacement";
+  import type { BodyClearanceTrack } from "$lib/shared/3d/collision/body-clearance";
   import { resolvePerformerContact } from "$lib/shared/3d/domain/performer-contact-displacement";
   import { performerScoreClock } from "$lib/shared/3d/domain/performer-score-clock";
   import {
@@ -103,6 +104,15 @@
      * once it exists. Its `report` lists every displaced beat in metres.
      */
     onHardBeatTrack?: (track: HardBeatTrack | null) => void;
+    /**
+     * Move the body off the point its staffs isolate around (step 5 of
+     * docs/architecture/performer-grid-styles.md): "shift" moves the hips and
+     * keeps the feet planted, "step" carries the feet along. Omit it, as every
+     * production host does, and the body stays where the clip puts it.
+     */
+    bodyClearance?: "shift" | "step" | null;
+    /** The body's planned move for the loaded sequence, once it exists. */
+    onBodyClearanceTrack?: (track: BodyClearanceTrack | null) => void;
     /** A study can author one pose directly while retaining this component's
      * production character, hand, grip, and IK ownership. */
     authoredUpperBodyStance?: AuthoredUpperBodyStance | null;
@@ -171,9 +181,15 @@
   // and in depth, and a seek clears the animator's contact history. A pose
   // authored by hand keeps the props where the score puts them.
   const contact = $derived(
-    resolvePerformerContact(performerState, { displace: !authoredStanceActive })
+    resolvePerformerContact(performerState, {
+      displace: !authoredStanceActive,
+      clearBody: props.bodyClearance != null,
+      staffLengthM: propLength ?? userProportionsState.staffLength,
+      measurements: reachMeasurements,
+    })
   );
   const hardBeatTrack = $derived(contact.track);
+  const bodyClearanceTrack = $derived(contact.bodyTrack);
   let readyReported = false;
 
   function captureReach(diagnostics: AvatarPoseDiagnostics): void {
@@ -244,6 +260,11 @@
     props.onHardBeatTrack?.(track);
   });
 
+  $effect(() => {
+    const track = bodyClearanceTrack;
+    props.onBodyClearanceTrack?.(track);
+  });
+
   onDestroy(() => performerState.destroy());
 </script>
 
@@ -276,6 +297,8 @@
   redHandDepthOffset={authoredStanceActive
     ? 0
     : upperBodyStance.rightDepthOffsetM}
+  bodyOffset={props.bodyClearance ? contact.bodyOffset : null}
+  bodyOffsetPlantFeet={props.bodyClearance !== "step"}
   showEffects={props.showEffects ?? true}
   {tipEffectMap}
   isPlaying={performerState.isPlaying}

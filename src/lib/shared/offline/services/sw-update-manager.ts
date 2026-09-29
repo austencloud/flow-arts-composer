@@ -11,7 +11,7 @@
  */
 
 export interface SwUpdateManagerDeps {
-  /** The registration returned by navigator.serviceWorker.register(). */
+  /** The app worker's registration, from getRegistration() or register(). */
   registration: ServiceWorkerRegistration;
   /** Defaults to navigator.serviceWorker. Injectable for tests. */
   serviceWorker?: ServiceWorkerContainer;
@@ -38,6 +38,20 @@ export interface StartupSwUpdateDeps {
 }
 
 export type StartupSwUpdateResult = "none" | "reloading" | "deferred";
+
+export interface SwStartupDeps {
+  /** Registers the app worker; the caller owns its script URL and options. */
+  register: () => Promise<ServiceWorkerRegistration>;
+  onUpdateReady: (apply: () => void) => void;
+  serviceWorker?: ServiceWorkerContainer;
+  /** Defaults to once the window load event has fired. Injectable for tests. */
+  afterPageLoad?: (task: () => void) => void;
+  reload?: () => void;
+  markReload?: () => void;
+  timeoutMs?: number;
+}
+
+export type SwStartupResult = "start" | "reloading";
 
 export const SW_UPDATE_RELOAD_MARKER_KEY = "tka-sw-update-reload";
 
@@ -214,4 +228,68 @@ export function createSwUpdateManager(deps: SwUpdateManagerDeps): () => void {
       document.removeEventListener("visibilitychange", onVisibility);
     }
   };
+}
+
+/**
+ * Runs in SvelteKit's client init hook, which SvelteKit waits on before it
+ * hydrates the page, so only one job belongs here: moving a returning visitor
+ * onto an update that was already waiting (applyWaitingSwUpdateBeforeStart).
+ * A local registration lookup says whether there is one.
+ *
+ * Registering waits until the page has loaded. On a first visit, register()
+ * downloads and runs the worker script before it resolves, and the install
+ * that follows downloads the app shell, its boot chunks and a few hundred
+ * pictograph SVGs, all competing with the page the visitor is waiting for.
+ */
+export async function prepareSwBeforeStart(
+  deps: SwStartupDeps
+): Promise<SwStartupResult> {
+  const container = deps.serviceWorker ?? navigator.serviceWorker;
+  const afterPageLoad = deps.afterPageLoad ?? runAfterPageLoad;
+  const watchForUpdates = (
+    registration: ServiceWorkerRegistration,
+    activationAlreadyRequested: boolean
+  ) =>
+    createSwUpdateManager({
+      registration,
+      serviceWorker: container,
+      onUpdateReady: deps.onUpdateReady,
+      reload: deps.reload,
+      markReload: deps.markReload,
+      activationAlreadyRequested,
+    });
+
+  const existing = await container.getRegistration("/");
+  if (existing) {
+    const startupUpdate = await applyWaitingSwUpdateBeforeStart({
+      registration: existing,
+      serviceWorker: container,
+      reload: deps.reload,
+      markReload: deps.markReload,
+      timeoutMs: deps.timeoutMs,
+    });
+    if (startupUpdate === "reloading") return "reloading";
+    watchForUpdates(existing, startupUpdate === "deferred");
+  }
+
+  // Returning visitors register too: it moves an older registration onto the
+  // current script and options, and does nothing when those already match.
+  afterPageLoad(() => {
+    deps.register().then(
+      (registration) => {
+        // Same registration, same object: a returning visit is already watched.
+        if (registration !== existing) watchForUpdates(registration, false);
+      },
+      (err) => console.error("[SW] Registration failed:", err)
+    );
+  });
+  return "start";
+}
+
+function runAfterPageLoad(task: () => void): void {
+  if (document.readyState === "complete") {
+    task();
+  } else {
+    window.addEventListener("load", () => task(), { once: true });
+  }
 }

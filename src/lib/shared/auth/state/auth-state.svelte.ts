@@ -244,9 +244,12 @@ export function isAdmin(): boolean {
   return _state.isAdmin;
 }
 
-// Lets the premium prop check read this answer on public pages without
-// importing this module, and Firebase with it.
-registerLoadedAuthState({ isAdmin });
+// Lets the premium prop check and the sequence thumbnails read these answers
+// on public pages without importing this module, and Firebase with it.
+registerLoadedAuthState({
+  isAdmin,
+  isAuthenticated: () => _state.user !== null,
+});
 
 /**
  * Reactive getter for role (actual user, not impersonated)

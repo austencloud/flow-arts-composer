@@ -38,7 +38,10 @@ export interface SequenceActionsOrchestratorDeps {
   getSequenceState: () => SequenceActionsSequenceState;
   getTargetHand: () => TargetHand;
   hapticService: HapticFeedback | null;
-  pushUndoSnapshot: (type: UndoOperationType) => void;
+  pushUndoSnapshot: (
+    type: UndoOperationType,
+    sourceState: SequenceActionsSequenceState
+  ) => void;
   executeTransformAction: (
     action: SequenceTransformCommandId,
     options: SequenceTransformCommandOptions
@@ -95,9 +98,14 @@ export function createSequenceActionsOrchestrator(
     nextSequence: SequenceData,
     beforeApply?: () => void
   ): void {
-    deps.pushUndoSnapshot(undoType);
+    const state = deps.getSequenceState();
+    if (nextSequence === state.currentSequence) {
+      beforeApply?.();
+      return;
+    }
+    deps.pushUndoSnapshot(undoType, state);
     beforeApply?.();
-    deps.getSequenceState().setCurrentSequence(nextSequence);
+    state.setCurrentSequence(nextSequence);
     deps.hapticService?.trigger("success");
   }
 
@@ -132,7 +140,8 @@ export function createSequenceActionsOrchestrator(
   async function appendBridge(
     bridgeLetter: Letter
   ): Promise<SequenceActionResult<BridgeAppendResult>> {
-    const sequence = deps.getSequenceState().currentSequence;
+    const state = deps.getSequenceState();
+    const sequence = state.currentSequence;
     const coordinator = deps.extensionFlowCoordinator;
     if (!sequence || !coordinator) {
       return {
@@ -144,10 +153,18 @@ export function createSequenceActionsOrchestrator(
 
     deps.hapticService?.trigger("selection");
     try {
-      deps.pushUndoSnapshot(UndoOperationType.ADD_BEAT);
       const result = await coordinator.appendBridge(sequence, bridgeLetter);
+      if (state.currentSequence !== sequence) {
+        return {
+          status: "unavailable",
+          message: "Sequence changed during extension",
+        };
+      }
       if (result.success && result.sequence) {
-        deps.getSequenceState().setCurrentSequence(result.sequence);
+        if (result.sequence !== sequence) {
+          deps.pushUndoSnapshot(UndoOperationType.ADD_BEAT, state);
+          state.setCurrentSequence(result.sequence);
+        }
         deps.hapticService?.trigger("success");
         return completedWith(result);
       }
@@ -162,7 +179,8 @@ export function createSequenceActionsOrchestrator(
   async function applyLoop(
     loopType: LOOPType
   ): Promise<SequenceActionResult<ExtensionApplyResult>> {
-    const sequence = deps.getSequenceState().currentSequence;
+    const state = deps.getSequenceState();
+    const sequence = state.currentSequence;
     const coordinator = deps.extensionFlowCoordinator;
     if (!sequence || !coordinator) {
       return {
@@ -174,10 +192,18 @@ export function createSequenceActionsOrchestrator(
 
     deps.hapticService?.trigger("selection");
     try {
-      deps.pushUndoSnapshot(UndoOperationType.EXTEND_SEQUENCE);
       const result = await coordinator.applyLoop(sequence, loopType);
+      if (state.currentSequence !== sequence) {
+        return {
+          status: "unavailable",
+          message: "Sequence changed during extension",
+        };
+      }
       if (result.success && result.sequence) {
-        deps.getSequenceState().setCurrentSequence(result.sequence);
+        if (result.sequence !== sequence) {
+          deps.pushUndoSnapshot(UndoOperationType.EXTEND_SEQUENCE, state);
+          state.setCurrentSequence(result.sequence);
+        }
         deps.hapticService?.trigger("success");
         return completedWith(result);
       }
@@ -190,7 +216,8 @@ export function createSequenceActionsOrchestrator(
   }
 
   function applyOrientationRepeat(): SequenceActionResult<ExtensionApplyResult> {
-    const sequence = deps.getSequenceState().currentSequence;
+    const state = deps.getSequenceState();
+    const sequence = state.currentSequence;
     const coordinator = deps.extensionFlowCoordinator;
     if (!sequence || !coordinator) {
       return {
@@ -202,10 +229,12 @@ export function createSequenceActionsOrchestrator(
 
     deps.hapticService?.trigger("selection");
     try {
-      deps.pushUndoSnapshot(UndoOperationType.EXTEND_SEQUENCE);
       const result = coordinator.applyOrientationRepeat(sequence);
       if (result.success && result.sequence) {
-        deps.getSequenceState().setCurrentSequence(result.sequence);
+        if (result.sequence !== sequence) {
+          deps.pushUndoSnapshot(UndoOperationType.EXTEND_SEQUENCE, state);
+          state.setCurrentSequence(result.sequence);
+        }
         deps.hapticService?.trigger("success");
         return completedWith(result);
       }

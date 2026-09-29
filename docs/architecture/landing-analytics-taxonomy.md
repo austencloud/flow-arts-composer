@@ -257,7 +257,7 @@ The composer CTA is the primary marketing conversion. Four call sites:
 | Call site | `location` |
 |---|---|
 | `SiteHeader.svelte:424` "Open Flow Arts Composer" | `"header_desktop"` *(new union member)* |
-| `SiteHeader.svelte:502` mobile composer CTA | `"header_mobile"` *(new union member)* |
+| `SiteHeader.svelte` `.compact-cta`, the bar's Composer button beside the menu at 1024px and below | `"header_mobile"` *(new union member)* |
 | `SiteFooter.svelte:94` composer CTA | `"footer"` *(already valid)* |
 | `HomeHero.svelte:59` "What is TKA?" → /about | `"hero"` *(already valid)* |
 

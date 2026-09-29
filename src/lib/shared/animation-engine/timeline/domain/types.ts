@@ -15,7 +15,6 @@ import type {
  * - Snap to playhead position
  */
 
-
 export type SnapType = "beat" | "clip-start" | "clip-end" | "grid" | "playhead";
 
 export interface SnapPoint {
@@ -57,7 +56,6 @@ export interface SnapContext {
  * for undoing/redoing timeline operations.
  */
 
-
 /**
  * Types of undoable operations in the timeline
  */
@@ -75,6 +73,7 @@ export type TimelineUndoOperationType =
   | "UPDATE_TRACK"
   | "REORDER_TRACKS"
   | "UPDATE_PROJECT"
+  | "UPDATE_AUDIO"
   | "BATCH";
 
 /**
@@ -83,6 +82,8 @@ export type TimelineUndoOperationType =
 export interface TimelineProjectSnapshot {
   project: TimelineProject;
   timestamp: number;
+  /** Session-only source; never persisted with project or history. */
+  audioUrl?: string | null;
 }
 
 /**
@@ -119,7 +120,6 @@ export interface TimelineUndoEntry {
  * and audio synchronization.
  */
 
-
 export interface ActiveClipInfo {
   clip: TimelineClip;
   /** Progress through the clip (0-1) */
@@ -129,4 +129,3 @@ export interface ActiveClipInfo {
   /** Whether this clip is looping */
   isLooping: boolean;
 }
-

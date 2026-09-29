@@ -115,8 +115,10 @@ describe("Olive Cloudbreak reusable asset catalog", () => {
       "worldYOffset={frame.environmentYOffset}"
     );
     expect(environmentSource).toContain("worldYOffset={environmentYOffset}");
-    expect(celestialSource).toContain("{worldYOffset}");
-    expect(celestialSource).toContain("{active}");
+    expect(celestialSource).toMatch(
+      /createLoadedCelestialEnvironmentWorld\(\{[^}]*\bworldYOffset,/
+    );
+    expect(celestialSource).toContain("current.setActive(active)");
     expect(cloudbreakSource).toMatch(
       /groundY \+ worldYOffset \+ CLOUDBREAK_LAYOUT\.lagoon\.surfaceY \+ 0\.035/
     );
@@ -125,18 +127,20 @@ describe("Olive Cloudbreak reusable asset catalog", () => {
     );
   });
 
-  it("reviews the same assembly that owns the integrated runtime", () => {
+  it("reviews the Cloudbreak slice while the runtime builds the shared world", () => {
     const reviewSource = readFileSync(
       "src/routes/test/celestial-asset-catalog/CloudbreakAssetCatalogScene.svelte",
       "utf8"
     );
     const runtimeSource = readFileSync(
-      "src/lib/shared/3d/environments/scenes/CelestialScene.svelte",
+      "src/lib/shared/3d/environments/worlds/celestial/celestial-environment-world.ts",
       "utf8"
     );
 
     expect(reviewSource).toContain("<OliveCloudbreakSlice");
-    expect(runtimeSource).toContain("<OliveCloudbreakSlice");
+    expect(runtimeSource).toContain(
+      "const cloudbreak = createCelestialCloudbreakWorld("
+    );
     expect(reviewSource).not.toMatch(
       /\.\/Cloudbreak(?:LagoonEdge|SpatialStudy|Waterfall)/
     );

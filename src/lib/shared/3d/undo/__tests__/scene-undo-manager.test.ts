@@ -38,6 +38,29 @@ describe("SceneUndoManager", () => {
     expect(manager.historySize).toBe(0);
   });
 
+  it("ignores unchanged snapshots without discarding a redo branch", () => {
+    manager.captureState("spatial-edit", "Move");
+    viewerState = makeViewerSnapshot({ selectedPerformerIndex: 1 });
+    manager.commitState();
+    manager.undo();
+
+    manager.captureState("spatial-edit", "No change");
+    manager.commitState();
+    expect(manager.canUndo).toBe(false);
+    expect(manager.canRedo).toBe(true);
+  });
+
+  it("keeps snapshot history isolated from mutations during restore", () => {
+    manager.captureState("spatial-edit", "Move");
+    viewerState = makeViewerSnapshot({ selectedPerformerIndex: 1 });
+    manager.commitState();
+    manager.undo();
+    viewerState.performers[0]!.position.x = 123;
+    manager.redo();
+    manager.undo();
+    expect(viewerState.performers[0]!.position.x).toBe(0);
+  });
+
   it("captures and commits a state change", () => {
     manager.captureState("spawn-performer", "Add performer");
 

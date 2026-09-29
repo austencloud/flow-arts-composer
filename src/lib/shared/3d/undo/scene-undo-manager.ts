@@ -74,6 +74,10 @@ export class SceneUndoManager {
     if (!this.pendingEntry || this.undoDisabled) return;
 
     this.pendingEntry.afterState = this.captureSnapshot(this.pendingEntry.type);
+    if (snapshotsEqual(this.pendingEntry.beforeState, this.pendingEntry.afterState)) {
+      this.pendingEntry = null;
+      return;
+    }
     this.undoStack.push(this.pendingEntry);
 
     while (this.undoStack.length > MAX_HISTORY_SIZE) {
@@ -93,12 +97,20 @@ export class SceneUndoManager {
 
     const now = Date.now();
     const lastEntry = this.undoStack[this.undoStack.length - 1];
+    const afterState = this.captureSnapshot(this.pendingEntry.type);
+    if (snapshotsEqual(this.pendingEntry.beforeState, afterState)) {
+      this.pendingEntry = null;
+      return;
+    }
 
     if (
       lastEntry?.coalescingKey === coalescingKey &&
+      lastEntry.type === this.pendingEntry.type &&
+      this.redoStack.length === 0 &&
+      !lastEntry.customRestore &&
       now - lastEntry.timestamp < windowMs
     ) {
-      lastEntry.afterState = this.captureSnapshot(this.pendingEntry.type);
+      lastEntry.afterState = afterState;
       lastEntry.description = this.pendingEntry.description;
       lastEntry.timestamp = now;
       this.pendingEntry = null;
@@ -154,6 +166,9 @@ export class SceneUndoManager {
 
     if (
       lastEntry?.coalescingKey === coalescingKey &&
+      lastEntry.type === type &&
+      this.redoStack.length === 0 &&
+      !!lastEntry.customRestore &&
       now - lastEntry.timestamp < windowMs
     ) {
       lastEntry.customRestore = {
@@ -204,7 +219,10 @@ export class SceneUndoManager {
     });
     this.notifySubscribers();
 
-    return { snapshot: entry.beforeState, description: entry.description };
+    return {
+      snapshot: structuredClone(entry.beforeState),
+      description: entry.description,
+    };
   }
 
   redo(): { snapshot: SceneUndoSnapshot; description: string } | null {
@@ -222,7 +240,7 @@ export class SceneUndoManager {
     this.notifySubscribers();
 
     return {
-      snapshot: entry.afterState ?? entry.beforeState,
+      snapshot: structuredClone(entry.afterState ?? entry.beforeState),
       description: entry.description,
     };
   }
@@ -285,7 +303,7 @@ export class SceneUndoManager {
       if (value === undefined) continue;
       const handler = this.domains.get(key);
       if (handler) {
-        handler.restore(value as never);
+        handler.restore(structuredClone(value) as never);
       }
     }
   }
@@ -299,6 +317,15 @@ export class SceneUndoManager {
       }
     }
   }
+}
+
+function snapshotsEqual(a: SceneUndoSnapshot, b: SceneUndoSnapshot): boolean {
+  const encode = (value: unknown): string => JSON.stringify(value, (_key, item: unknown) => {
+    if (item instanceof Map) return { entries: [...item.entries()] };
+    if (item instanceof Set) return { values: [...item.values()] };
+    return item;
+  });
+  return encode(a) === encode(b);
 }
 
 function domainsForOperationType(type: SceneUndoOperationType): DomainKey[] {

@@ -1,17 +1,20 @@
-import {
-  collection,
-  getDocs,
-  doc,
-  getDoc,
-  query,
-  where,
-  orderBy,
-} from "firebase/firestore";
-import { getFirestoreInstance } from "$lib/shared/auth/firebase";
 import type { Product } from "../domain/models/product";
 
+// Shop pages paint from the catalog the server renders into the page, then ask
+// for the live catalog here once they have mounted. Loading Firebase on that
+// first request keeps it off the shop's first download. The import() names the
+// Firebase modules themselves: the build's small-chunk merge (vite.config.ts)
+// can fold a small wrapper module back into the page.
+async function loadFirestore() {
+  const { getFirestoreInstance } = await import("$lib/shared/auth/firebase");
+  return getFirestoreInstance();
+}
+
 export async function loadActiveProducts(): Promise<Product[]> {
-  const firestore = await getFirestoreInstance();
+  const { collection, getDocs, query, where, orderBy } = await import(
+    "firebase/firestore"
+  );
+  const firestore = await loadFirestore();
   const productsRef = collection(firestore, "products");
   const q = query(
     productsRef,
@@ -29,7 +32,10 @@ export async function loadActiveProducts(): Promise<Product[]> {
  * Products editor list.
  */
 export async function loadAllProducts(): Promise<Product[]> {
-  const firestore = await getFirestoreInstance();
+  const { collection, getDocs, query, orderBy } = await import(
+    "firebase/firestore"
+  );
+  const firestore = await loadFirestore();
   const productsRef = collection(firestore, "products");
   const q = query(productsRef, orderBy("sortOrder", "asc"));
   const snapshot = await getDocs(q);
@@ -37,7 +43,8 @@ export async function loadAllProducts(): Promise<Product[]> {
 }
 
 export async function loadProduct(productId: string): Promise<Product | null> {
-  const firestore = await getFirestoreInstance();
+  const { doc, getDoc } = await import("firebase/firestore");
+  const firestore = await loadFirestore();
   const docRef = doc(firestore, "products", productId);
   const snapshot = await getDoc(docRef);
   if (!snapshot.exists()) return null;
