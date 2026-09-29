@@ -48,7 +48,9 @@
   import { deriveWord } from "$lib/shared/foundation/services/word-deriver";
   import TKAWordGlyph from "$lib/shared/choreo-card/components/TKAWordGlyph.svelte";
   import { getImageCompositionManager } from "$lib/shared/share/state/image-composition-state.svelte";
-  import { authState } from "$lib/shared/auth/state/auth-state.svelte";
+  // auth-state's signed-in answer without auth-state itself, which would put
+  // Firebase on the first download of every public page that shows cards.
+  import { loadedAuthState } from "$lib/shared/auth/state/loaded-auth-state.svelte";
   import { getSettings } from "$lib/shared/application/state/app-state.svelte";
   import type { ViewerCustomColorPair } from "$lib/shared/sequence-viewer/domain/viewer-custom-colors";
 
@@ -222,7 +224,7 @@
       allowQR,
       cardMode,
       compositionManager,
-      isAuthenticated: authState.isAuthenticated,
+      isAuthenticated: loadedAuthState.isAuthenticated,
     })
   );
 
@@ -371,7 +373,7 @@
     const qrPolicy = galleryQrPolicy({
       variant,
       cardMode,
-      isAuthenticated: authState.isAuthenticated,
+      isAuthenticated: loadedAuthState.isAuthenticated,
     });
     const sameImageKey = key.hash === currentKeyHash;
 

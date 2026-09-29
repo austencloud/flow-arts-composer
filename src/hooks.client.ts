@@ -6,10 +6,7 @@ import { browser, dev } from "$app/environment";
 import { Capacitor } from "@capacitor/core";
 import { isRunningAsStandalone } from "$lib/shared/mobile/services/platform-detector";
 import { showToast } from "$lib/shared/toast/state/toast-state.svelte";
-import {
-  applyWaitingSwUpdateBeforeStart,
-  createSwUpdateManager,
-} from "$lib/shared/offline/services/sw-update-manager";
+import { prepareSwBeforeStart } from "$lib/shared/offline/services/sw-update-manager";
 import {
   installViteReloadTracers,
   printReloadBreadcrumb,
@@ -345,24 +342,15 @@ export const init: ClientInit = async () => {
   }
 
   try {
-    const registration = await navigator.serviceWorker.register("/sw.js", {
-      scope: "/",
-      updateViaCache: "none",
-    });
-
-    const startupUpdate = await applyWaitingSwUpdateBeforeStart({
-      registration,
-    });
-    if (startupUpdate === "reloading") {
-      // Keep SvelteKit from hydrating the old app while navigation switches to
-      // the newly activated worker.
-      await new Promise<void>(() => {});
-      return;
-    }
-
-    createSwUpdateManager({
-      registration,
-      activationAlreadyRequested: startupUpdate === "deferred",
+    // SvelteKit waits for this hook before hydrating, so a first visit must
+    // not wait here for the worker to download and install; only an update
+    // that was already waiting holds startup.
+    const startup = await prepareSwBeforeStart({
+      register: () =>
+        navigator.serviceWorker.register("/sw.js", {
+          scope: "/",
+          updateViaCache: "none",
+        }),
       onUpdateReady: (apply) => {
         showToast({
           message: "An update is ready.",
@@ -372,6 +360,12 @@ export const init: ClientInit = async () => {
         });
       },
     });
+    if (startup === "reloading") {
+      // Keep SvelteKit from hydrating the old app while navigation switches to
+      // the newly activated worker.
+      await new Promise<void>(() => {});
+      return;
+    }
   } catch (err) {
     console.error("[SW] Registration failed:", err);
   }

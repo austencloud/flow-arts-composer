@@ -11,16 +11,7 @@
  * Maps and Sets are serialized to plain objects/arrays for Firestore compatibility.
  */
 
-import {
-  doc,
-  deleteField,
-  getDoc,
-  setDoc,
-  onSnapshot,
-  serverTimestamp,
-  type Unsubscribe,
-} from "firebase/firestore";
-import { getFirestoreInstance } from "$lib/shared/auth/firebase";
+import type { Unsubscribe } from "firebase/firestore";
 import { trackWrite } from "$lib/shared/offline/state/sync-status-state.svelte";
 import { getUserLearningProgressPath } from "../data/firestore-paths";
 import type { LearningProgress, ConceptProgress } from "../domain/types";
@@ -33,8 +24,17 @@ export class UserKnowledgeProfilePersister {
 
   /**
    * Get the Firestore document reference for a user's learning progress.
+   *
+   * The public concept pages import this persister through the progress
+   * tracker, and a visitor who never signs in never reads or writes progress.
+   * Firebase therefore loads here, on first use, instead of with those pages.
+   * Each import() names the Firebase modules themselves: the build's
+   * small-chunk merge (vite.config.ts) can fold a small wrapper module back
+   * into the page.
    */
   private async getDocRef(userId: string) {
+    const { doc } = await import("firebase/firestore");
+    const { getFirestoreInstance } = await import("$lib/shared/auth/firebase");
     const firestore = await getFirestoreInstance();
     return doc(firestore, getUserLearningProgressPath(userId));
   }
@@ -130,6 +130,9 @@ export class UserKnowledgeProfilePersister {
     progress: LearningProgress
   ): Promise<void> {
     try {
+      const { deleteField, serverTimestamp, setDoc } = await import(
+        "firebase/firestore"
+      );
       const docRef = await this.getDocRef(userId);
       const serialized = this.serialize(progress);
 
@@ -168,6 +171,7 @@ export class UserKnowledgeProfilePersister {
 
   async loadProgress(userId: string): Promise<LearningProgress | null> {
     try {
+      const { getDoc } = await import("firebase/firestore");
       const docRef = await this.getDocRef(userId);
       const docSnap = await getDoc(docRef);
 
@@ -226,9 +230,11 @@ export class UserKnowledgeProfilePersister {
     };
     this.cancelActiveSubscription = cancel;
 
-    // Start async subscription setup
+    // Start async subscription setup. The cancelled check sits after the last
+    // await, in the same tick as the registration it guards.
     this.getDocRef(userId)
-      .then((docRef) => {
+      .then(async (docRef) => {
+        const { onSnapshot } = await import("firebase/firestore");
         if (cancelled) return;
 
         unsubscribeSnapshot = onSnapshot(

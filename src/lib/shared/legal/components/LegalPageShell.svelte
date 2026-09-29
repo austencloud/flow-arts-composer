@@ -153,17 +153,6 @@
     margin: 0 0 0.75rem 0;
   }
 
-  :global(:where(.legal-container a)) {
-    color: #818cf8;
-    text-decoration: none;
-    border-bottom: 1px solid transparent;
-    transition: border-color 0.2s ease;
-  }
-
-  :global(:where(.legal-container a:hover)) {
-    border-bottom-color: #818cf8;
-  }
-
   :global(:where(.legal-container ul)) {
     color: rgba(255, 255, 255, 0.6);
     line-height: 1.7;

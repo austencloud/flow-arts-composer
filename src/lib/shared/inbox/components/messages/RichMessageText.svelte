@@ -1,5 +1,6 @@
 <script lang="ts">
   import { parseMessageText } from "../../domain/message-link-parts";
+  import LinkChip from "$lib/shared/ui/components/LinkChip.svelte";
 
   interface Props {
     content: string;
@@ -25,11 +26,8 @@
 >
   {#each parts as part, index (`${part.kind}-${index}`)}
     {#if part.kind === "link"}
-      <a
-        href={part.href}
-        target="_blank"
-        rel="noopener noreferrer"
-        data-message-link="true">{part.text}</a
+      <LinkChip size="inline" wrap href={part.href} data-message-link="true"
+        >{part.text}</LinkChip
       >
     {:else}{part.text}{/if}
   {/each}
@@ -59,32 +57,14 @@
     border-top: 1px solid var(--theme-stroke);
   }
 
-  a {
-    color: var(--theme-accent, var(--semantic-info));
-    font-weight: 600;
-    text-decoration: underline;
-    text-decoration-thickness: 1px;
-    text-underline-offset: 2px;
-    cursor: pointer;
-  }
-
-  .own a {
-    color: white;
-    text-decoration-color: rgba(255, 255, 255, 0.72);
-  }
-
-  a:hover {
-    text-decoration-thickness: 2px;
-  }
-
-  a:focus-visible {
-    outline: 2px solid currentColor;
-    outline-offset: 2px;
-    border-radius: 2px;
+  /* A link in your own bubble sits on the accent fill, so its chip is drawn
+     in white rather than in the accent it would vanish into. */
+  .message-text.own {
+    --theme-accent: white;
   }
 
   .message-text::selection,
-  .message-text *::selection {
+  .message-text :global(*::selection) {
     background: color-mix(
       in srgb,
       var(--theme-accent, var(--semantic-info)) 42%,
@@ -93,7 +73,7 @@
   }
 
   .message-text.own::selection,
-  .message-text.own *::selection {
+  .message-text.own :global(*::selection) {
     color: var(--theme-text, #111827);
     background: rgba(255, 255, 255, 0.82);
   }

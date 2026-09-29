@@ -33,10 +33,10 @@ vi.mock("$lib/shared/auth/firebase", () => ({
 
 let mockIsAdmin = true;
 vi.mock("$lib/shared/auth/state/auth-state.svelte", () => ({
-  isAdmin: () => mockIsAdmin,
   getEffectiveUserId: () => "test-uid",
 }));
 
+import { registerLoadedAuthState } from "$lib/shared/auth/state/loaded-auth-state.svelte";
 import {
   canEditGuide,
   loadOverrides,
@@ -50,6 +50,13 @@ import {
   refreshRevisionAvailability,
 } from "../../../src/routes/(public)/guide/level-1/_data/guide-overrides.svelte";
 import type { StepData } from "../../../src/lib/shared/foundation/domain/models/step-data";
+
+// The admin gate reads auth-state's flag through this registry, which
+// auth-state fills when it loads. auth-state is mocked here, so stand in for it.
+registerLoadedAuthState({
+  isAdmin: () => mockIsAdmin,
+  isAuthenticated: () => true,
+});
 
 // A minimal but representative StepData — round-tripping this through
 // JSON.parse(JSON.stringify(...)) is the serialization contract this module
