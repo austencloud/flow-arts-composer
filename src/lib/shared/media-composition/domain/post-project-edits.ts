@@ -44,7 +44,10 @@ import {
   clampShapeRatio,
   postCanvasOf,
 } from "$lib/shared/media-composition/domain/post-canvas";
-import { edgeOf, mergeEdge } from "$lib/shared/media-composition/domain/post-clip-edge";
+import {
+  edgeOf,
+  mergeEdge,
+} from "$lib/shared/media-composition/domain/post-clip-edge";
 import {
   framingAt,
   isAnimated,
@@ -76,7 +79,9 @@ export function addTake(
   take: PostTake,
   ctx: EditContext
 ): PostProject {
-  const existing = project.takes.find((entry) => entry.takeKey === take.takeKey);
+  const existing = project.takes.find(
+    (entry) => entry.takeKey === take.takeKey
+  );
   if (existing) {
     const refreshed: PostTake = {
       ...existing,
@@ -104,7 +109,10 @@ export function addTake(
   const taken = new Set(project.takes.map((entry) => entry.id));
   let id = take.id;
   for (let n = project.takes.length + 1; taken.has(id); n++) id = `take-${n}`;
-  return finish({ ...project, takes: [...project.takes, { ...take, id }] }, ctx);
+  return finish(
+    { ...project, takes: [...project.takes, { ...take, id }] },
+    ctx
+  );
 }
 
 /** Removes a take and every clip cut from it; the main track closes up. */
@@ -292,7 +300,10 @@ export function splitItemAt(
   if (!located || !Number.isFinite(seconds)) return null;
   const { item, trackIndex, itemIndex } = located;
   const cut = seconds - item.start;
-  if (!(cut > POST_MIN_ITEM_SECONDS) || !(item.duration - cut > POST_MIN_ITEM_SECONDS)) {
+  if (
+    !(cut > POST_MIN_ITEM_SECONDS) ||
+    !(item.duration - cut > POST_MIN_ITEM_SECONDS)
+  ) {
     return null;
   }
 
@@ -300,7 +311,9 @@ export function splitItemAt(
   const [first, second] = splitPieces(item, cut, nextId(item.kind));
   const isMain = trackIndex === MAIN_TRACK_INDEX;
   const firstPiece = isMain ? first : withOverlaySplitAnchor(first, item, 0);
-  const secondPiece = isMain ? second : withOverlaySplitAnchor(second, item, cut);
+  const secondPiece = isMain
+    ? second
+    : withOverlaySplitAnchor(second, item, cut);
 
   const trackItems = [...project.tracks[trackIndex]!.items];
   trackItems.splice(itemIndex, 1, firstPiece, secondPiece);
@@ -308,10 +321,10 @@ export function splitItemAt(
 
   if (isMain) {
     // The look goes on across the cut; overlays after it stay put in time.
-    for (const { item: follower, trackIndex: followerTrack } of overlaysAnchoredTo(
-      project,
-      item.id
-    )) {
+    for (const {
+      item: follower,
+      trackIndex: followerTrack,
+    } of overlaysAnchoredTo(project, item.id)) {
       if (follower.fill) {
         const tail: PostItem = {
           ...follower,
@@ -372,10 +385,10 @@ export function duplicateItem(
     const mainTrack = [...project.tracks[MAIN_TRACK_INDEX]!.items];
     mainTrack.splice(itemIndex + 1, 0, { ...item, id: newItemId });
     let next = withTrackItems(project, MAIN_TRACK_INDEX, mainTrack);
-    for (const { item: follower, trackIndex: followerTrack } of overlaysAnchoredTo(
-      project,
-      item.id
-    )) {
+    for (const {
+      item: follower,
+      trackIndex: followerTrack,
+    } of overlaysAnchoredTo(project, item.id)) {
       if (!follower.fill) continue;
       next = withTrackItems(next, followerTrack, [
         ...next.tracks[followerTrack]!.items,
@@ -423,6 +436,43 @@ export function moveMainItem(
   const [moved] = reordered.splice(from, 1);
   reordered.splice(to, 0, moved!);
   return finish(withTrackItems(project, MAIN_TRACK_INDEX, reordered), ctx);
+}
+
+/** Places a main clip at a chosen time, pushing clips it meets to the right. */
+export function placeMainItem(
+  project: PostProject,
+  itemId: string,
+  seconds: number,
+  ctx: EditContext
+): PostProject {
+  const items = project.tracks[MAIN_TRACK_INDEX]!.items;
+  const item = items.find((candidate) => candidate.id === itemId);
+  if (!item || !Number.isFinite(seconds)) return project;
+  const start = Math.max(0, seconds);
+  if (Math.abs(start - item.start) < POST_TIME_EPSILON) return project;
+
+  const before: PostItem[] = [];
+  const after: PostItem[] = [];
+  for (const candidate of items) {
+    if (candidate.id === itemId) continue;
+    (itemEnd(candidate) <= start + POST_TIME_EPSILON ? before : after).push({
+      ...candidate,
+      pinnedStart: true,
+    });
+  }
+  const moved = { ...item, start, pinnedStart: true };
+  let cursor = itemEnd(moved);
+  const pushed = after.map((candidate) => {
+    const nextStart = Math.max(cursor, candidate.start);
+    cursor = nextStart + candidate.duration;
+    return nextStart === candidate.start
+      ? candidate
+      : { ...candidate, start: nextStart };
+  });
+  return finish(
+    withTrackItems(project, MAIN_TRACK_INDEX, [...before, moved, ...pushed]),
+    ctx
+  );
 }
 
 /**
@@ -553,11 +603,18 @@ export function trimItem(
   } else {
     const end = itemEnd(item);
     const start = clamp(seconds, 0, Math.max(0, end - POST_MIN_ITEM_SECONDS));
-    trimmed = shiftKeyframes({ ...item, start, duration: end - start }, start - item.start);
+    trimmed = shiftKeyframes(
+      { ...item, start, duration: end - start },
+      start - item.start
+    );
   }
 
   if (!isMain) {
-    trimmed = { ...trimmed, fill: false, anchor: anchorAt(project, trimmed.start) };
+    trimmed = {
+      ...trimmed,
+      fill: false,
+      anchor: anchorAt(project, trimmed.start),
+    };
   }
   if (sameItem(trimmed, item)) return project;
   return finish(replaceItem(project, itemId, trimmed), ctx);
@@ -683,7 +740,8 @@ export function updateItem(
     setNumber(next, "zoom", patch.zoom, POST_MIN_ZOOM, POST_MAX_ZOOM);
     setNumber(next, "panX", patch.panX, -0.5, 0.5);
     setNumber(next, "panY", patch.panY, -0.5, 0.5);
-    if (isFiniteNumber(patch.rotation)) next.rotation = wrapDegrees(patch.rotation);
+    if (isFiniteNumber(patch.rotation))
+      next.rotation = wrapDegrees(patch.rotation);
     if (patch.flip !== undefined) next.flip = patch.flip;
     setNumber(next, "volume", patch.volume, 0, POST_MAX_VOLUME);
     if (patch.staffEffect !== undefined) {
@@ -699,7 +757,8 @@ export function updateItem(
   }
   if (item.kind === "moves" && patch.mode) next.mode = patch.mode;
   if (item.kind === "text") {
-    if (patch.text !== undefined) next.text = patch.text.slice(0, POST_MAX_TEXT_LENGTH);
+    if (patch.text !== undefined)
+      next.text = patch.text.slice(0, POST_MAX_TEXT_LENGTH);
     if (patch.size) next.size = patch.size;
   }
 
@@ -740,7 +799,8 @@ export function updateItemAt(
     isAnimated(item, "framing") &&
     FRAMING_PATCH_KEYS.some((key) => patch[key] !== undefined);
   const boxAnimated = patch.box !== undefined && isAnimated(item, "box");
-  const opacityAnimated = patch.opacity !== undefined && isAnimated(item, "opacity");
+  const opacityAnimated =
+    patch.opacity !== undefined && isAnimated(item, "opacity");
 
   if (!framingAnimated && !boxAnimated && !opacityAnimated) {
     return updateItem(project, itemId, patch, ctx);
@@ -754,7 +814,9 @@ export function updateItemAt(
   if (opacityAnimated) delete rest.opacity;
 
   let next =
-    Object.keys(rest).length > 0 ? updateItem(project, itemId, rest, ctx) : project;
+    Object.keys(rest).length > 0
+      ? updateItem(project, itemId, rest, ctx)
+      : project;
 
   if (framingAnimated) {
     const current = framingAt(findItem(next, itemId)!.item as PostVideoItem, s);
@@ -762,7 +824,10 @@ export function updateItemAt(
       zoom: patch.zoom ?? current.zoom,
       panX: patch.panX ?? current.panX,
       panY: patch.panY ?? current.panY,
-      rotation: patch.rotation !== undefined ? wrapDegrees(patch.rotation) : current.rotation,
+      rotation:
+        patch.rotation !== undefined
+          ? wrapDegrees(patch.rotation)
+          : current.rotation,
     };
     next = editItemKeyframes(
       next,
@@ -815,7 +880,10 @@ export function resetFraming(
   const item = located.item;
   const framing = item.keyframes?.framing;
   const isIdentity =
-    item.zoom === 1 && item.panX === 0 && item.panY === 0 && item.rotation === 0;
+    item.zoom === 1 &&
+    item.panX === 0 &&
+    item.panY === 0 &&
+    item.rotation === 0;
   if (isIdentity && (!framing || framing.length === 0)) return project;
   const next = { ...item, zoom: 1, panX: 0, panY: 0, rotation: 0 } as Record<
     string,
@@ -849,7 +917,8 @@ export function setItemFill(
     return project;
   }
   const { item } = located;
-  if (!fill) return finish(replaceItem(project, itemId, { ...item, fill: false }), ctx);
+  if (!fill)
+    return finish(replaceItem(project, itemId, { ...item, fill: false }), ctx);
   const under = mainItemAt(project, item.start);
   if (!under) return project;
   return finish(
@@ -906,7 +975,8 @@ export function setProjectBackground(
   background: PostBackground,
   ctx: EditContext
 ): PostProject {
-  if ((project.background ?? POST_DEFAULT_BACKGROUND) === background) return project;
+  if ((project.background ?? POST_DEFAULT_BACKGROUND) === background)
+    return project;
   const next: PostProject = { ...project, background };
   if (background === POST_DEFAULT_BACKGROUND) delete next.background;
   return finish(next, ctx);
@@ -941,7 +1011,9 @@ export function replaceItem(
       track.items.some((item) => item.id === itemId)
         ? {
             ...track,
-            items: track.items.map((item) => (item.id === itemId ? next : item)),
+            items: track.items.map((item) =>
+              item.id === itemId ? next : item
+            ),
           }
         : track
     ),
@@ -1024,7 +1096,11 @@ function anchorAt(project: PostProject, start: number): PostAnchor | null {
 
 function appendToMain(project: PostProject, item: PostItem): PostProject {
   const main = project.tracks[MAIN_TRACK_INDEX]!;
-  return withTrackItems(project, MAIN_TRACK_INDEX, [...main.items, item]);
+  const last = main.items[main.items.length - 1];
+  return withTrackItems(project, MAIN_TRACK_INDEX, [
+    ...main.items,
+    { ...item, start: last ? itemEnd(last) : 0 },
+  ]);
 }
 
 function withNewTrackOnTop(
@@ -1048,7 +1124,11 @@ function placeOnOrAbove(
   fromIndex: number,
   nextId: (prefix: string) => string
 ): PostProject {
-  for (let index = Math.max(1, fromIndex); index < project.tracks.length; index++) {
+  for (
+    let index = Math.max(1, fromIndex);
+    index < project.tracks.length;
+    index++
+  ) {
     const track = project.tracks[index]!;
     if (
       !track.hidden &&
@@ -1068,7 +1148,11 @@ function newVideoFields(
   sourceOut: number
 ): Omit<PostVideoItem, "id" | "start" | "box" | "anchor" | "fill"> {
   const length = take.durationSeconds;
-  const from = clamp(finiteOr(sourceIn, 0), 0, Math.max(0, length - POST_MIN_ITEM_SECONDS));
+  const from = clamp(
+    finiteOr(sourceIn, 0),
+    0,
+    Math.max(0, length - POST_MIN_ITEM_SECONDS)
+  );
   const to = clamp(
     Number.isNaN(sourceOut) ? length : sourceOut,
     from + POST_MIN_ITEM_SECONDS,
@@ -1137,14 +1221,18 @@ function withOverlaySplitAnchor(
     ...piece,
     fill: false,
     anchor: original.anchor
-      ? { itemId: original.anchor.itemId, offset: original.anchor.offset + shift }
+      ? {
+          itemId: original.anchor.itemId,
+          offset: original.anchor.offset + shift,
+        }
       : null,
   } as PostItem;
 }
 
 function takeLength(project: PostProject, takeId: string): number {
   return (
-    project.takes.find((take) => take.id === takeId)?.durationSeconds ?? Infinity
+    project.takes.find((take) => take.id === takeId)?.durationSeconds ??
+    Infinity
   );
 }
 
@@ -1156,7 +1244,8 @@ function sameItem(left: PostItem, right: PostItem): boolean {
     const x = a[key];
     const y = b[key];
     if (x === y) continue;
-    if (!x || !y || typeof x !== "object" || typeof y !== "object") return false;
+    if (!x || !y || typeof x !== "object" || typeof y !== "object")
+      return false;
     const xs = x as Record<string, unknown>;
     const ys = y as Record<string, unknown>;
     const inner = new Set([...Object.keys(xs), ...Object.keys(ys)]);

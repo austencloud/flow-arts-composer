@@ -5,8 +5,8 @@ import { BREAKDOWN_GEOMETRY } from "$lib/shared/media-composition/domain/post-st
 /**
  * A post as Austen edits it on the timeline: tracks of items, InShot style.
  *
- * `tracks[0]` is the main track. Its clips sit end to end, so trimming or
- * removing one closes the gap. Every later track is an overlay track drawn
+ * `tracks[0]` is the main track. Clips normally follow one another, but a
+ * dragged clip keeps its chosen start and can leave a gap. Every later track is drawn
  * above the ones before it; its items keep their own times and follow the
  * main clip they are anchored to. `normalizeProject` in
  * `post-project-normalize.ts` owns those rules; every edit ends there.
@@ -91,8 +91,16 @@ export type PostAnchor = z.infer<typeof PostAnchorSchema>;
 // Keyframes
 // ---------------------------------------------------------------------------
 
-const easingXSchema = z.number().finite().min(POST_EASING_X_MIN).max(POST_EASING_X_MAX);
-const easingYSchema = z.number().finite().min(POST_EASING_Y_MIN).max(POST_EASING_Y_MAX);
+const easingXSchema = z
+  .number()
+  .finite()
+  .min(POST_EASING_X_MIN)
+  .max(POST_EASING_X_MAX);
+const easingYSchema = z
+  .number()
+  .finite()
+  .min(POST_EASING_Y_MIN)
+  .max(POST_EASING_Y_MAX);
 
 /** A CSS `cubic-bezier(x1, y1, x2, y2)`, or a hold until the next keyframe. */
 export const PostEasingSchema = z.union([
@@ -193,7 +201,14 @@ export const PostStaffEffectSchema = z
 export type PostStaffEffect = z.infer<typeof PostStaffEffectSchema>;
 
 /** The shapes a post can be, width by height; 9:16 when a project names none. */
-export const POST_CANVAS_RATIOS = ["9:16", "4:5", "1:1", "16:9", "3:4", "4:3"] as const;
+export const POST_CANVAS_RATIOS = [
+  "9:16",
+  "4:5",
+  "1:1",
+  "16:9",
+  "3:4",
+  "4:3",
+] as const;
 export type PostCanvasRatio = (typeof POST_CANVAS_RATIOS)[number];
 export const POST_DEFAULT_CANVAS: PostCanvasRatio = "9:16";
 
@@ -210,7 +225,11 @@ export const POST_DEFAULT_BACKGROUND: PostBackground = "dark";
  * `free` one dragged by hand; either way `ratio` holds the width over height
  * it was given, in output pixels.
  */
-export const POST_CLIP_SHAPES = ["original", "free", ...POST_CANVAS_RATIOS] as const;
+export const POST_CLIP_SHAPES = [
+  "original",
+  "free",
+  ...POST_CANVAS_RATIOS,
+] as const;
 export type PostClipShapeKind = (typeof POST_CLIP_SHAPES)[number];
 export const POST_SHAPE_RATIO_MIN = 0.25;
 export const POST_SHAPE_RATIO_MAX = 4;
@@ -218,7 +237,11 @@ export const POST_SHAPE_RATIO_MAX = 4;
 export const PostClipShapeSchema = z
   .object({
     kind: z.enum(POST_CLIP_SHAPES),
-    ratio: z.number().finite().min(POST_SHAPE_RATIO_MIN).max(POST_SHAPE_RATIO_MAX),
+    ratio: z
+      .number()
+      .finite()
+      .min(POST_SHAPE_RATIO_MIN)
+      .max(POST_SHAPE_RATIO_MAX),
   })
   .strict();
 
@@ -270,8 +293,10 @@ const itemBase = {
   id: IdSchema,
   /** Austen's own name for it; the kind's name shows when absent. */
   label: z.string().trim().max(POST_MAX_LABEL_LENGTH).optional(),
-  /** Post seconds. Derived on the main track and for anchored overlays. */
+  /** Post seconds. Derived on the main track unless pinnedStart is true. */
   start: SecondsSchema,
+  /** A main clip placed by hand keeps its timeline time through normalization. */
+  pinnedStart: z.boolean().optional(),
   /** Post seconds. Derived for video, from its source span and speed. */
   duration: z.number().finite().positive(),
   box: PostBoxSchema,

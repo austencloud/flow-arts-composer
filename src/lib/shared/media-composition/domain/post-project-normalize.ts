@@ -27,8 +27,9 @@ import type { PostTake } from "$lib/shared/media-composition/domain/post-plan";
  * The timeline's rules, applied after every edit so the stored project is
  * always the one on screen:
  *
- * 1. Main clips sit end to end from zero in their order. A clip lasts its
- *    source span at its speed, cut to its take's length.
+ * 1. Main clips follow one another unless placed by hand. A placed clip
+ *    keeps its chosen start, or moves right just enough to avoid an overlap.
+ *    A clip lasts its source span at its speed, cut to its take's length.
  * 2. An anchored overlay starts at its main clip's start plus its offset;
  *    one that fills spans the clip exactly. An overlay whose clip is gone
  *    stays where it stands and follows the clip now under it.
@@ -58,9 +59,10 @@ export function normalizeProject(project: PostProject): PostProject {
       continue;
     }
     const sized = sizeItem(item, takes);
-    const laid = withChanges(sized, { start: cursor, anchor: null, fill: false });
+    const start = sized.pinnedStart ? Math.max(cursor, sized.start) : cursor;
+    const laid = withChanges(sized, { start, anchor: null, fill: false });
     laidMain.push(laid);
-    cursor += laid.duration;
+    cursor = start + laid.duration;
   }
 
   const mainById = new Map(laidMain.map((item) => [item.id, item]));
@@ -253,14 +255,19 @@ function canonicalChannel(
   const merged: PostKeyframe<unknown>[] = [];
   for (const kf of sorted) {
     const clamped = clampChannelValue(channel, kf.value as never);
-    const candidate: PostKeyframe<unknown> = sameChannelValue(channel, clamped, kf.value)
+    const candidate: PostKeyframe<unknown> = sameChannelValue(
+      channel,
+      clamped,
+      kf.value
+    )
       ? kf
       : { ...kf, value: clamped };
     const last = merged[merged.length - 1];
     if (
       last &&
       Math.abs(
-        postSecondsOfKeyframe(item, candidate.t) - postSecondsOfKeyframe(item, last.t)
+        postSecondsOfKeyframe(item, candidate.t) -
+          postSecondsOfKeyframe(item, last.t)
       ) <= POST_KEYFRAME_MERGE_SECONDS
     ) {
       merged[merged.length - 1] = candidate;
@@ -268,7 +275,10 @@ function canonicalChannel(
       merged.push(candidate);
     }
   }
-  if (merged.length === raw.length && merged.every((kf, index) => kf === raw[index])) {
+  if (
+    merged.length === raw.length &&
+    merged.every((kf, index) => kf === raw[index])
+  ) {
     return raw as PostKeyframe<unknown>[];
   }
   return merged;

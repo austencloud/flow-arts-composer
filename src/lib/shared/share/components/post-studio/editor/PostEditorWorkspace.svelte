@@ -50,7 +50,7 @@
   } from "$lib/shared/media-composition/domain/post-project-keyframes";
   import {
     editItemKeyframes,
-    moveMainItem,
+    placeMainItem,
     moveOverlayItem,
     setProjectBackground,
     setProjectCanvas,
@@ -114,7 +114,11 @@
   import { channelLabel, itemDisplayLabel } from "./post-editor-labels";
   import { readVideoFile, videoFileError } from "./post-editor-files";
   import { createCropSession } from "./post-crop-session.svelte";
-  import { adjacentStepSeconds, clipSteps, type ClipStep } from "./post-crop-steps";
+  import {
+    adjacentStepSeconds,
+    clipSteps,
+    type ClipStep,
+  } from "./post-crop-steps";
   import {
     CROP_STAGE_MARGIN_PX,
     cropStageRatio,
@@ -1082,8 +1086,13 @@
     if (item) pickedKeyRow = { itemId: item.id, tool: shown, channel };
   }
 
-  function editKeys(itemId: string, change: (item: PostItem) => PostItem): void {
-    editor.edit((project, ctx) => editItemKeyframes(project, itemId, change, ctx));
+  function editKeys(
+    itemId: string,
+    change: (item: PostItem) => PostItem
+  ): void {
+    editor.edit((project, ctx) =>
+      editItemKeyframes(project, itemId, change, ctx)
+    );
   }
 
   // A curve's easing is edited from the toolbar's Curve chip, which follows
@@ -1943,9 +1952,9 @@
           onGestureCancel={editor.cancelGesture}
           onTrim={(itemId, edge, seconds) =>
             asOneStep(() => editor.trimLive(itemId, edge, seconds))}
-          onMoveMain={(itemId, toIndex) =>
+          onMoveMain={(itemId, start) =>
             applyMove((project, context) =>
-              moveMainItem(project, itemId, toIndex, context)
+              placeMainItem(project, itemId, start, context)
             )}
           onMoveOverlay={(itemId, start, trackIndex) =>
             applyMove((project, context) =>
@@ -1963,7 +1972,9 @@
           onToggleKey={(itemId, channel, seconds) =>
             editKeys(itemId, (it) => toggleKeyframe(it, channel, seconds))}
           onMoveKey={(itemId, channel, fromSeconds, toSeconds) =>
-            editKeys(itemId, (it) => moveKeyframe(it, channel, fromSeconds, toSeconds))}
+            editKeys(itemId, (it) =>
+              moveKeyframe(it, channel, fromSeconds, toSeconds)
+            )}
           onDeleteKey={(itemId, channel, seconds) =>
             editKeys(itemId, (it) => removeKeyframe(it, channel, seconds))}
           onOpenCurve={openKeyCurve}
