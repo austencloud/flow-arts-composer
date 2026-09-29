@@ -192,6 +192,14 @@ export type PostCanvasRatio = (typeof POST_CANVAS_RATIOS)[number];
 export const POST_DEFAULT_CANVAS: PostCanvasRatio = "9:16";
 
 /**
+ * What fills the frame where no item covers it: the dark colour, or the main
+ * clip playing, filling the frame and blurred, as phone editors offer.
+ */
+export const POST_BACKGROUNDS = ["dark", "blur"] as const;
+export type PostBackground = (typeof POST_BACKGROUNDS)[number];
+export const POST_DEFAULT_BACKGROUND: PostBackground = "dark";
+
+/**
  * A clip's own shape inside its spot. `original` is the footage's shape and
  * `free` one dragged by hand; either way `ratio` holds the width over height
  * it was given, in output pixels.
@@ -377,6 +385,8 @@ export const PostProjectSchema = z
     audio: z.enum(["takes", "silent"]),
     /** The post's shape, and so the export's size; 9:16 when absent. */
     canvas: z.enum(POST_CANVAS_RATIOS).optional(),
+    /** What fills the frame where no item covers it; dark when absent. */
+    background: z.enum(POST_BACKGROUNDS).optional(),
     updatedAt: z.number().finite().int().nonnegative(),
   })
   .strict()
