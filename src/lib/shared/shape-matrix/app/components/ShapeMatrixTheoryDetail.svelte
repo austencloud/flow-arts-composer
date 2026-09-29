@@ -852,9 +852,12 @@
   }
 
   @container shape-matrix-app (max-width: 74.99rem) or (max-height: 41.99rem) {
+    /* Same second name as the Matrix drill, so the side composition below
+       and the chip rows switch on compact hosts only. */
     .theory-detail {
       border: 0;
       border-radius: 0;
+      container-name: shape-matrix-drill shape-matrix-drill-compact;
     }
   }
 
@@ -864,23 +867,21 @@
     }
   }
 
-  /* The drill's short-wide composition, for the same reason and at the same
-     breakpoint: a wide, short host is height-bound, so the element rail moves
-     beside the animation instead of eating the top third of the screen. The row
-     is already two columns wide here on its own, which is what the rail was
-     sized for. */
-  @container shape-matrix-drill (min-width: 42rem) and (max-height: 24rem) {
+  /* The drill's side composition, for the same reason and at the same
+     breakpoint: a compact host at least as wide as it is tall (the unfolded
+     Z Fold either way up, a short landscape phone) is height-bound, so the
+     element rail and the dock move beside the animation instead of eating
+     the top third of the screen. The row is already two columns wide here on
+     its own, which is what the rail was sized for. */
+  @container shape-matrix-drill-compact (min-width: 42rem) and (min-aspect-ratio: 5 / 6) {
     .detail-body {
-      grid-template-columns: clamp(13rem, 30%, 17rem) minmax(0, 1fr);
-      grid-template-rows: minmax(0, 1fr) auto;
+      grid-template-columns: clamp(15rem, 33%, 18rem) minmax(0, 1fr);
+      grid-template-rows: auto minmax(0, 1fr) auto;
       grid-template-areas:
         "modes media"
-        "modes controls";
+        ". media"
+        "controls media";
       gap: 0.8rem;
-    }
-
-    .mode-picker {
-      align-self: center;
     }
 
     /* The stage floor is the only fixed height left in the flow, so on a pane
@@ -888,6 +889,22 @@
        correctly; a boxed row sliced through the middle reads as broken. */
     .stage-window {
       min-height: 8rem;
+    }
+  }
+
+  /* A short landscape phone has no height for a stacked side column: the
+     modes keep it and the dock goes under the animation. */
+  @container shape-matrix-drill-compact (min-width: 42rem) and (max-height: 24rem) {
+    .detail-body {
+      grid-template-columns: clamp(13rem, 30%, 17rem) minmax(0, 1fr);
+      grid-template-rows: minmax(0, 1fr) auto;
+      grid-template-areas:
+        "modes media"
+        "modes controls";
+    }
+
+    .mode-picker {
+      align-self: center;
     }
   }
 </style>

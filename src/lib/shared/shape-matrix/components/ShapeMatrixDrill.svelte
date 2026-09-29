@@ -1459,7 +1459,14 @@
   {/if}
 
   {#if onselectRealization || onopenRealization || onsaveRealization || onshareRealization}
-    <div class="select-action" class:available={visibleRealization !== null}>
+    <!-- Chrome like the modes and the dock: focus mode fades it with them.
+         Left in the flow, its area is missing from the focus layout, so it
+         opened implicit tracks that pushed the canvas off the left edge. -->
+    <div
+      class="select-action"
+      class:available={visibleRealization !== null}
+      data-focus-mode-chrome
+    >
       {#if onselectRealization}
         <PanelButton
           variant="primary"
@@ -1834,39 +1841,76 @@
     }
   }
 
-  /* A short-wide host is height-bound, not width-bound. Put the element picker
-     beside the hero and let the animation take the full available height. The
-     carousel is deliberately omitted in this one composition because even a
-     compact rail would make the primary visual smaller. */
-  @container shape-matrix-drill (min-width: 42rem) and (max-height: 24rem) {
+  /* A compact host at least as wide as it is tall is height-bound, not
+     width-bound: the unfolded Z Fold either way up, or a short landscape
+     phone. Stacked, the modes, carousel, dock and actions left the animation
+     a letterbox (146 px tall on the Fold's inner screen, 23 px in landscape).
+     Here everything but the animation moves into a side column: the modes at
+     the top beside the word, the dock and the actions at the foot. The hero
+     and its carousel keep the other column's whole height. Desktop panes
+     never get here: only compact hosts answer to this container name. */
+  @container shape-matrix-drill-compact (min-width: 42rem) and (min-aspect-ratio: 5 / 6) {
     .drill {
-      display: grid;
-      grid-template-columns: minmax(14rem, 18rem) minmax(0, 1fr);
-      grid-template-rows: minmax(0, 1fr) auto;
+      grid-template-columns: clamp(15rem, 33%, 18rem) minmax(0, 1fr);
+      grid-template-rows: auto minmax(0, 1fr) auto auto;
       grid-template-areas:
         "modes media"
-        "action controls";
+        ". media"
+        "controls media"
+        "action media";
       column-gap: 0.8rem;
       row-gap: 0.55rem;
     }
 
     .mode-picker {
       grid-area: modes;
-      align-self: center;
     }
 
+    /* Open leads on its own row; Save and Share share the one under it, so
+       every button keeps its icon and a whole word in a narrow column. */
+    .select-action {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .select-action :global(.panel-btn:first-child) {
+      grid-column: 1 / -1;
+    }
+    .action-suffix {
+      display: none;
+    }
+  }
+
+  /* Short as well as wide (the Fold in landscape): even the compact carousel
+     would make the primary visual smaller. This width and height already
+     imply the side composition's aspect. */
+  @container shape-matrix-drill-compact (min-width: 42rem) and (max-height: 36rem) {
     .strip-zone {
       display: none;
     }
+  }
+
+  /* A short landscape phone has no height for a stacked side column. The
+     modes keep it; the actions go under them and the dock under the hero. */
+  @container shape-matrix-drill-compact (min-width: 42rem) and (max-height: 24rem) {
+    .drill {
+      grid-template-columns: minmax(14rem, 18rem) minmax(0, 1fr);
+      grid-template-rows: minmax(0, 1fr) auto;
+      grid-template-areas:
+        "modes media"
+        "action controls";
+    }
+
+    .mode-picker {
+      align-self: center;
+    }
 
     .select-action {
-      grid-area: action;
+      display: flex;
     }
     .select-action :global(.panel-btn) {
       padding-inline: 0.5rem;
     }
-    .select-action :global(.panel-btn i),
-    .action-suffix {
+    .select-action :global(.panel-btn i) {
       display: none;
     }
   }
