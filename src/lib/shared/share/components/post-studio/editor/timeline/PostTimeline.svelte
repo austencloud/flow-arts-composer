@@ -478,14 +478,8 @@
     // A ctrl/cmd+wheel zoom is a deliberate replacement for page zoom; a plain
     // wheel is left alone so normal two-finger pan scrolling still works.
     event.preventDefault();
-    const rect = lanesScrollEl.getBoundingClientRect();
-    const anchorClientXPx = event.clientX - rect.left;
-    const anchorSeconds = pixelsToSeconds(
-      lanesScrollEl.scrollLeft + anchorClientXPx,
-      pixelsPerSecond
-    );
     const factor = event.deltaY < 0 ? ZOOM_STEP_FACTOR : 1 / ZOOM_STEP_FACTOR;
-    zoomTo(pixelsPerSecond * factor, anchorSeconds, anchorClientXPx);
+    handleZoomButton(factor);
   }
 
   // --- Fit on mount, and again whenever the project goes from empty to not.
