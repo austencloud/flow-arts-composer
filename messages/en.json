@@ -6851,6 +6851,7 @@
   "post_editor_box": "Movable box",
   "post_editor_box_hint": "Arrow keys move it, and Shift moves it further. Drag a corner to resize. Hold Alt while dragging to stop it snapping.",
   "post_editor_picture_hint": "Drag to pan the picture inside the box. Arrow keys pan it, and Shift pans it further.",
+  "post_editor_reels_covered": "Covered in Reels",
   "post_editor_item_name": "Name",
   "post_editor_in": "In",
   "post_editor_out": "Out",

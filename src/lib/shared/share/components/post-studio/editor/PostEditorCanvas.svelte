@@ -39,7 +39,10 @@
     boxAt,
     framingAt,
   } from "$lib/shared/media-composition/domain/post-project-keyframes";
-  import { postOutputSize } from "$lib/shared/media-composition/domain/post-canvas";
+  import {
+    postOutputSize,
+    postSafeArea,
+  } from "$lib/shared/media-composition/domain/post-canvas";
   import PostStudioBackdrop from "../PostStudioBackdrop.svelte";
   import PostStudioMediaLayer from "../PostStudioMediaLayer.svelte";
   import PostStudioPaintedLayer from "../PostStudioPaintedLayer.svelte";
@@ -47,6 +50,7 @@
     BOX_CORNERS,
     BOX_NUDGE,
     BOX_SIDES,
+    NO_GUIDES,
     dragBox,
     type BoxGuides,
     type BoxHandle,
@@ -379,8 +383,11 @@
   type Drag = BoxDrag | PictureDrag;
 
   let drag: Drag | null = null;
-  let guides = $state<BoxGuides>({ vertical: false, horizontal: false });
+  let guides = $state.raw<BoxGuides>(NO_GUIDES);
+  /** A box, a picture or a pinch is moving: the grid and safe area show. */
   let dragging = $state(false);
+  /** What Instagram leaves uncovered on this post's shape, if it covers any. */
+  const safeArea = $derived(postSafeArea(editor.project.canvas));
   /** A press this small is a tap, not a move. */
   const TAP_PIXELS = 4;
 
@@ -524,7 +531,8 @@
       current.handle,
       pixelsX / current.width,
       pixelsY / current.height,
-      !event.altKey
+      !event.altKey,
+      safeArea
     );
     guides = result.guides;
     const box = keptBox(editor, current.item, result.box, current.startSpot);
@@ -539,7 +547,7 @@
     if (!current) return;
     drag = null;
     dragging = false;
-    guides = { vertical: false, horizontal: false };
+    guides = NO_GUIDES;
     if (!current.moved) return;
     if (keep) editor.endGesture();
     else editor.cancelGesture();
@@ -1641,6 +1649,30 @@
           >{crop?.announcement ?? ""}</span
         >
       {:else}
+        <div class="drag-grid" class:shown={dragging} aria-hidden="true">
+          {#if safeArea}
+            <div
+              class="safe-area"
+              style:left={pct(safeArea.x)}
+              style:top={pct(safeArea.y)}
+              style:width={pct(safeArea.width)}
+              style:height={pct(safeArea.height)}
+            >
+              {#if guides.safeX}
+                <span class="snap-line {guides.safeX}"></span>
+              {/if}
+              {#if guides.safeY}
+                <span class="snap-line {guides.safeY}"></span>
+              {/if}
+            </div>
+          {/if}
+          <span class="thirds"></span>
+          {#if safeArea}
+            <span class="covered" style:top={pct(safeArea.y + safeArea.height)}
+              >{t("post_editor_reels_covered")}</span
+            >
+          {/if}
+        </div>
         {#if guides.vertical}
           <div class="guide vertical" aria-hidden="true"></div>
         {/if}
@@ -1942,7 +1974,8 @@
     border-style: dashed;
     cursor: default;
   }
-  /* Rule-of-thirds lines for framing on the crop screen. */
+  /* Rule-of-thirds lines: on the crop frame, and over the post while
+     something on it moves. */
   .thirds {
     position: absolute;
     inset: 0;
@@ -2051,6 +2084,68 @@
     left: 0;
     right: 0;
     height: 1px;
+  }
+  /* While something moves: the thirds and, on a Reel, the part Instagram
+     leaves clear, with what its header, buttons and caption cover dimmed. */
+  .drag-grid {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity var(--transition-fast);
+  }
+  .drag-grid.shown {
+    opacity: 1;
+  }
+  .safe-area {
+    position: absolute;
+    box-sizing: border-box;
+    border: 1px dashed rgb(255 255 255 / 0.8);
+    box-shadow: 0 0 0 100vmax rgb(0 0 0 / 0.3);
+  }
+  /* A safe side a box's edge rests on, lit like the centre guides. */
+  .snap-line {
+    position: absolute;
+    background: var(--theme-primary, #d4813a);
+  }
+  .snap-line.left,
+  .snap-line.right {
+    top: -1px;
+    bottom: -1px;
+    width: 2px;
+  }
+  .snap-line.top,
+  .snap-line.bottom {
+    left: -1px;
+    right: -1px;
+    height: 2px;
+  }
+  .snap-line.left {
+    left: -1px;
+  }
+  .snap-line.right {
+    right: -1px;
+  }
+  .snap-line.top {
+    top: -1px;
+  }
+  .snap-line.bottom {
+    bottom: -1px;
+  }
+  .covered {
+    position: absolute;
+    left: 0;
+    right: 0;
+    padding: 0.25rem 0.5rem 0;
+    color: #fff;
+    font-size: 0.75rem;
+    text-align: center;
+    text-shadow: 0 1px 2px rgb(0 0 0 / 0.9);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .drag-grid {
+      transition: none;
+    }
   }
   .empty {
     position: absolute;

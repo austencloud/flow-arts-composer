@@ -8,6 +8,7 @@ import {
   POST_MIN_BOX_SIZE,
   PostBoxSchema,
 } from "$lib/shared/media-composition/domain/post-project";
+import { postSafeArea } from "$lib/shared/media-composition/domain/post-canvas";
 
 const box = { x: 0.2, y: 0.3, width: 0.4, height: 0.2 };
 
@@ -29,13 +30,58 @@ describe("dragBox", () => {
   it("snaps a moved box to the frame's centre and says so", () => {
     const nearCentre = dragBox(box, "move", 0.1 - BOX_SNAP_THRESHOLD / 2, 0);
     close(nearCentre.box.x, 0.3);
-    expect(nearCentre.guides).toEqual({ vertical: true, horizontal: false });
+    expect(nearCentre.guides).toEqual({
+      vertical: true,
+      horizontal: false,
+      safeX: null,
+      safeY: null,
+    });
     const clear = dragBox(box, "move", 0.1 - BOX_SNAP_THRESHOLD * 2, 0);
     expect(clear.guides.vertical).toBe(false);
   });
 
   it("snaps a moved box to a frame edge", () => {
     close(dragBox(box, "move", -0.19, 0).box.x, 0);
+  });
+
+  describe("on a post with a safe area", () => {
+    const safe = postSafeArea("9:16")!;
+
+    it("rests a box's edges on the safe area's sides and says which", () => {
+      // Left edge near 6%, top edge near 14%.
+      const topLeft = dragBox(box, "move", -0.13, -0.155, true, safe);
+      close(topLeft.box.x, safe.x);
+      close(topLeft.box.y, safe.y);
+      expect(topLeft.guides).toMatchObject({ safeX: "left", safeY: "top" });
+      // Right edge near 94%, bottom edge near 65%.
+      const bottomRight = dragBox(box, "move", 0.335, 0.155, true, safe);
+      close(bottomRight.box.x + bottomRight.box.width, safe.x + safe.width);
+      close(bottomRight.box.y + bottomRight.box.height, safe.y + safe.height);
+      expect(bottomRight.guides).toMatchObject({
+        safeX: "right",
+        safeY: "bottom",
+      });
+    });
+
+    it("leaves the box where it was dropped without one, or with Alt held", () => {
+      const withoutSafe = dragBox(box, "move", -0.13, 0);
+      close(withoutSafe.box.x, 0.07);
+      expect(withoutSafe.guides.safeX).toBeNull();
+      const altHeld = dragBox(box, "move", -0.13, 0, false, safe);
+      close(altHeld.box.x, 0.07);
+      expect(altHeld.guides.safeX).toBeNull();
+    });
+
+    it("takes the nearest line when several are in reach", () => {
+      // 86% wide: centred at 7%, between the safe sides' 6% and 8%.
+      const wide = { x: 0.064, y: 0.3, width: 0.86, height: 0.2 };
+      const nearLeft = dragBox(wide, "move", 0, 0, true, safe);
+      close(nearLeft.box.x, 0.06);
+      expect(nearLeft.guides).toMatchObject({ vertical: false, safeX: "left" });
+      const nearCentre = dragBox(wide, "move", 0.004, 0, true, safe);
+      close(nearCentre.box.x, 0.07);
+      expect(nearCentre.guides).toMatchObject({ vertical: true, safeX: null });
+    });
   });
 
   it("moves one edge with a side handle", () => {

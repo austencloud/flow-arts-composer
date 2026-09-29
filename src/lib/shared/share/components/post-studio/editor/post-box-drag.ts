@@ -22,6 +22,10 @@ export interface BoxGuides {
   vertical: boolean;
   /** The box is centred down the frame. */
   horizontal: boolean;
+  /** The safe area's side that the box's left or right edge rests on. */
+  safeX: "left" | "right" | null;
+  /** The safe area's side that the box's top or bottom edge rests on. */
+  safeY: "top" | "bottom" | null;
 }
 
 export interface DraggedBox {
@@ -29,7 +33,12 @@ export interface DraggedBox {
   guides: BoxGuides;
 }
 
-const NO_GUIDES: BoxGuides = { vertical: false, horizontal: false };
+export const NO_GUIDES: BoxGuides = {
+  vertical: false,
+  horizontal: false,
+  safeX: null,
+  safeY: null,
+};
 
 function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));
@@ -37,18 +46,20 @@ function clamp(value: number, min: number, max: number): number {
 
 /**
  * The box after dragging a handle by (dx, dy). A move snaps to the frame's
- * centre lines and edges; a corner scales about the opposite corner and keeps
- * the box's shape; a side moves that edge alone. The box never leaves the
- * frame or gets smaller than can be grabbed.
+ * centre lines and edges, and to the sides of `safe`, the part of the post
+ * nothing covers once it is up; a corner scales about the opposite corner
+ * and keeps the box's shape; a side moves that edge alone. The box never
+ * leaves the frame or gets smaller than can be grabbed.
  */
 export function dragBox(
   start: PostBox,
   handle: BoxHandle,
   dx: number,
   dy: number,
-  snap = true
+  snap = true,
+  safe: PostBox | null = null
 ): DraggedBox {
-  if (handle === "move") return moveBox(start, dx, dy, snap);
+  if (handle === "move") return moveBox(start, dx, dy, snap, safe);
   const box = isCorner(handle)
     ? scaleBox(start, handle, dx, dy)
     : resizeSide(start, handle, dx, dy);
@@ -59,31 +70,62 @@ function isCorner(handle: BoxHandle): handle is (typeof BOX_CORNERS)[number] {
   return (BOX_CORNERS as readonly string[]).includes(handle);
 }
 
-function moveBox(start: PostBox, dx: number, dy: number, snap: boolean): DraggedBox {
+function moveBox(
+  start: PostBox,
+  dx: number,
+  dy: number,
+  snap: boolean,
+  safe: PostBox | null
+): DraggedBox {
   const moved = clampBox({ ...start, x: start.x + dx, y: start.y + dy });
   if (!snap) return { box: moved, guides: NO_GUIDES };
-  const x = snapAxis(moved.x, moved.width);
-  const y = snapAxis(moved.y, moved.height);
+  const x = snapAxis(moved.x, moved.width, safe && [safe.x, safe.x + safe.width]);
+  const y = snapAxis(moved.y, moved.height, safe && [safe.y, safe.y + safe.height]);
   return {
     box: { ...moved, x: x.value, y: y.value },
-    guides: { vertical: x.centred, horizontal: y.centred },
+    guides: {
+      vertical: x.line === "centre",
+      horizontal: y.line === "centre",
+      safeX: x.line === "safe-start" ? "left" : x.line === "safe-end" ? "right" : null,
+      safeY: y.line === "safe-start" ? "top" : y.line === "safe-end" ? "bottom" : null,
+    },
   };
 }
 
-/** Snaps one axis to the frame's centre, then to its edges. */
+type SnapLine = "centre" | "safe-start" | "safe-end" | "edge";
+
+/**
+ * Snaps one axis to the nearest line in reach: the frame's centre, a side of
+ * the safe area, or a frame edge; the centre wins a tie. A line the box
+ * could only rest on by leaving the frame is never the nearest, since the
+ * frame's own edge is nearer.
+ */
 function snapAxis(
   position: number,
-  size: number
-): { value: number; centred: boolean } {
-  const centred = (1 - size) / 2;
-  if (Math.abs(position - centred) <= BOX_SNAP_THRESHOLD) {
-    return { value: centred, centred: true };
+  size: number,
+  safe: readonly [start: number, end: number] | null
+): { value: number; line: SnapLine | null } {
+  const targets: { value: number; line: SnapLine }[] = [
+    { value: (1 - size) / 2, line: "centre" },
+  ];
+  if (safe) {
+    targets.push(
+      { value: safe[0], line: "safe-start" },
+      { value: safe[1] - size, line: "safe-end" }
+    );
   }
-  if (Math.abs(position) <= BOX_SNAP_THRESHOLD) return { value: 0, centred: false };
-  if (Math.abs(position + size - 1) <= BOX_SNAP_THRESHOLD) {
-    return { value: 1 - size, centred: false };
+  targets.push({ value: 0, line: "edge" }, { value: 1 - size, line: "edge" });
+
+  let snapped: { value: number; line: SnapLine | null } = { value: position, line: null };
+  let nearest = Infinity;
+  for (const target of targets) {
+    const distance = Math.abs(position - target.value);
+    if (distance <= BOX_SNAP_THRESHOLD && distance < nearest) {
+      snapped = target;
+      nearest = distance;
+    }
   }
-  return { value: position, centred: false };
+  return snapped;
 }
 
 function resizeSide(

@@ -40,6 +40,24 @@ export function postOutputSize(canvas: PostCanvasRatio | undefined): PostOutputS
   return OUTPUT_SIZES[canvas ?? POST_DEFAULT_CANVAS];
 }
 
+/**
+ * The part of a Reel that Instagram's header, buttons and caption leave
+ * clear, as shares of the 9:16 frame. Meta asks for roughly 14% of the top,
+ * 35% of the bottom and 6% of each side to stay free of text, logos and other
+ * key elements:
+ * https://www.facebook.com/business/ads-guide/update/image/instagram-reels
+ */
+const REELS_SAFE_AREA: PostBox = { x: 0.06, y: 0.14, width: 0.88, height: 0.51 };
+
+/**
+ * Where the post's key content stays uncovered once it is up: a 9:16 post
+ * is a Reel. Feed posts of the other shapes show with nothing over them, so
+ * they have no safe area.
+ */
+export function postSafeArea(canvas: PostCanvasRatio | undefined): PostBox | null {
+  return (canvas ?? POST_DEFAULT_CANVAS) === "9:16" ? REELS_SAFE_AREA : null;
+}
+
 /** Width over height for a named ratio such as "4:5". */
 export function ratioValue(name: PostCanvasRatio): number {
   const [width, height] = name.split(":").map(Number) as [number, number];
