@@ -28,6 +28,7 @@ import {
   setVideoSpeed,
   splitItemAt,
   trimItem,
+  trimItemToSource,
   updateItem,
   updateItemAt,
 } from "$lib/shared/media-composition/domain/post-project-edits";
@@ -481,6 +482,39 @@ describe("trimItem", () => {
       [[text("t2", 12.4, 2, { anchor: { itemId: "v2", offset: 2.4 } })]]
     );
     expect(trimItem(base, "t2", "start", 12.4, ctx)).toBe(base);
+  });
+});
+
+describe("trimItemToSource", () => {
+  it("sets a clip's In and Out as times in its take", () => {
+    const base = twoClips();
+    const cut = valid(trimItemToSource(base, "v2", "start", 4, ctx));
+    expect(item(cut, "v2")).toMatchObject({ start: 10, sourceIn: 4, sourceOut: 8 });
+    const ended = valid(trimItemToSource(base, "v2", "end", 5, ctx));
+    expect(item(ended, "v2")).toMatchObject({ sourceIn: 2, sourceOut: 5 });
+  });
+
+  it("counts a sped-up clip's source, not its time on the post", () => {
+    const base = project([video("v1", { speed: 2, sourceOut: 12 })]);
+    const result = valid(trimItemToSource(base, "v1", "end", 6, ctx));
+    expect(item(result, "v1")).toMatchObject({ sourceIn: 0, sourceOut: 6 });
+    expect(round(item(result, "v1").duration)).toBe(3);
+  });
+
+  it("keeps a typed point inside the take", () => {
+    const base = twoClips();
+    expect(item(trimItemToSource(base, "v2", "end", 99, ctx), "v2")).toMatchObject({
+      sourceOut: 20,
+    });
+    expect(item(trimItemToSource(base, "v2", "start", -3, ctx), "v2")).toMatchObject({
+      sourceIn: 0,
+    });
+  });
+
+  it("leaves anything but a clip, or a value that is not a time, alone", () => {
+    const base = twoClips();
+    expect(trimItemToSource(base, "t1", "start", 3, ctx)).toBe(base);
+    expect(trimItemToSource(base, "v1", "start", Number.NaN, ctx)).toBe(base);
   });
 });
 

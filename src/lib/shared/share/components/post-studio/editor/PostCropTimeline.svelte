@@ -8,7 +8,8 @@
   close. Press a keyframe to go to it, then Delete removes it and the arrows
   move it a frame. Press a curve to change its easing. The bar above steps a
   frame or a beat at a time, keys the playhead and zooms. Times read from
-  the clip's start, as the crop screen shows them.
+  the clip's start, as the crop screen shows them. Press the time to type
+  one and go there.
 -->
 <script lang="ts">
   import { tick, untrack, type Snippet } from "svelte";
@@ -23,7 +24,8 @@
   } from "$lib/shared/media-composition/domain/post-project";
   import { moveKeyframe } from "$lib/shared/media-composition/domain/post-project-keyframes";
   import type { PostEditorState } from "$lib/shared/media-composition/state/post-editor-state.svelte";
-  import { formatTakeClock } from "../builder/post-builder-format";
+  import TypeableValue from "$lib/shared/ui/components/TypeableValue.svelte";
+  import { formatTakeClock, parseClock } from "../builder/post-builder-format";
   import { channelLabel } from "./post-editor-labels";
   import { adjacentStepSeconds, type ClipStep } from "./post-crop-steps";
   import PostTimelineKeyLane from "./timeline/PostTimelineKeyLane.svelte";
@@ -76,7 +78,6 @@
   }: Props = $props();
 
   const FRAME_SECONDS = 1 / POST_FRAME_RATE;
-  const RULER_HEIGHT_PX = 28;
   const STEPS_HEIGHT_PX = 36;
   const KEYS_HEIGHT_PX = 44;
   /** Room at either end, so a keyframe on the clip's first or last frame shows whole. */
@@ -411,6 +412,13 @@
   }
 
   const clock = (seconds: number) => formatTakeClock(seconds - start);
+  const now = $derived(clock(Math.min(end, Math.max(start, playhead))));
+  const total = $derived(formatTakeClock(length));
+
+  /** Goes to a typed time, counted from the clip's start. */
+  function typeTime(seconds: number): void {
+    seekTo(roundToFrameSeconds(start + seconds));
+  }
 </script>
 
 <svelte:window
@@ -483,10 +491,17 @@
         <i class="fa-solid fa-forward-fast" aria-hidden="true"></i>
       </button>
     </div>
-    <output class="clock" aria-label={t("share_studio_deep_playhead")}>
-      {clock(Math.min(end, Math.max(start, playhead)))}
-      <span class="total">/ {formatTakeClock(length)}</span>
-    </output>
+    <div class="clock">
+      <TypeableValue
+        label={t("share_studio_deep_playhead")}
+        text={now}
+        draft={now}
+        parse={parseClock}
+        sizer={total}
+        oncommit={typeTime}
+      />
+      <span class="total">/ {total}</span>
+    </div>
     <div class="keys">{@render keys()}</div>
     <div class="zoom">
       <PostTimelineZoomControls
@@ -498,16 +513,23 @@
   </div>
 
   <div class="rows">
-    <div class="heads" aria-hidden="true">
-      <span class="head" style:height="{RULER_HEIGHT_PX}px">
-        <span class="head-clock"
-          >{clock(Math.min(end, Math.max(start, playhead)))}</span
-        >
+    <div class="heads">
+      <span class="head ruler-head">
+        <span class="head-clock">
+          <TypeableValue
+            label={t("share_studio_deep_playhead")}
+            text={now}
+            draft={now}
+            parse={parseClock}
+            sizer={total}
+            oncommit={typeTime}
+          />
+        </span>
       </span>
-      <span class="head" style:height="{STEPS_HEIGHT_PX}px"
+      <span class="head" style:height="{STEPS_HEIGHT_PX}px" aria-hidden="true"
         >{t("post_editor_beats")}</span
       >
-      <span class="head" style:height="{KEYS_HEIGHT_PX}px"
+      <span class="head" style:height="{KEYS_HEIGHT_PX}px" aria-hidden="true"
         >{channelLabel("framing")}</span
       >
     </div>
@@ -525,7 +547,6 @@
       <div class="content" style:width="{trackWidthPx + 2 * EDGE_PX}px">
         <div
           class="row ruler"
-          style:height="{RULER_HEIGHT_PX}px"
           role="group"
           aria-label={t("post_timeline_ruler_label")}
           onpointerdown={handleRulerDown}
@@ -707,6 +728,11 @@
   }
 
   .clock {
+    --typeable-font-size: 0.9375rem;
+    --typeable-min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
     color: var(--theme-text, #fff);
     font-size: 0.9375rem;
     font-variant-numeric: tabular-nums;
@@ -731,24 +757,13 @@
      row stays either way, level with the ruler. */
   .head-clock {
     display: none;
-    font-weight: 500;
-    font-variant-numeric: tabular-nums;
-  }
-
-  /* Narrow: the stepping on one line, the keyframe buttons and zoom on the
-     next, and the time over the row names. */
-  @container post-timeline-toolbar (max-width: 34rem) {
-    .bar > .clock {
-      display: none;
-    }
-
-    .head-clock {
-      display: inline;
-    }
+    --typeable-font-size: var(--font-size-compact, 0.75rem);
+    --typeable-min-width: 0;
   }
 
   /* The rows: names in a column on the left, the clip scrolling beside it. */
   .rows {
+    --ruler-height: 28px;
     display: grid;
     grid-template-columns: auto minmax(0, 1fr);
     border: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.08));
@@ -774,6 +789,33 @@
     font-size: var(--font-size-compact, 0.75rem);
     font-weight: 600;
     white-space: nowrap;
+  }
+
+  .ruler-head,
+  .ruler {
+    height: var(--ruler-height);
+  }
+
+  /* Narrow: the stepping on one line, the keyframe buttons and zoom on the
+     next, and the time over the row names. The ruler's row grows to a
+     finger's height there, so the time can be pressed to type one. */
+  @container post-timeline-toolbar (max-width: 34rem) {
+    .bar > .clock {
+      display: none;
+    }
+
+    .rows {
+      --ruler-height: calc(var(--min-touch-target, 44px) + 1px);
+    }
+
+    .head-clock {
+      display: grid;
+      width: 100%;
+    }
+
+    .ruler-head {
+      padding-inline: 0.25rem;
+    }
   }
 
   .scroller {

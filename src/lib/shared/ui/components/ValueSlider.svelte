@@ -1,9 +1,10 @@
 <!--
-  One labeled amount: a track and thumb with the current value shown beside
-  its name, the way phone editors present zoom, speed or volume. The native
+  One labeled amount: a track and thumb with the current value in a box
+  beside it, the way phone editors present zoom, speed or volume. The native
   range input owns the pointer, touch and keyboard behavior (arrows, Page
   keys, Home, End) and the slider semantics; `format` supplies the value text
-  on screen and to assistive technology alike.
+  on screen and to assistive technology alike. Pressing the box types an
+  exact value (TypeableValue), kept within `min` and `max`.
 
   The fill runs from `origin` to the value, so a bipolar amount such as a
   rotation fills out from zero and a speed fills out from 1×.
@@ -18,6 +19,8 @@
 -->
 <script lang="ts">
   import { tick } from "svelte";
+  import TypeableValue from "./TypeableValue.svelte";
+  import { parseTypedNumber } from "../typed-number";
 
   interface Props {
     label: string;
@@ -35,6 +38,11 @@
     onmark?: (mark: number) => void;
     /** A mark button's name; defaults to its formatted value. */
     markLabel?: (mark: number) => string;
+    /**
+     * Turns a typed reading into the slider's value, for a track that does
+     * not run in the units it shows: speed moves in doublings but reads ×.
+     */
+    fromTyped?: (typed: number) => number;
     onchange: (value: number) => void;
   }
 
@@ -50,6 +58,7 @@
     marks = [],
     onmark,
     markLabel,
+    fromTyped,
     onchange,
   }: Props = $props();
 
@@ -57,6 +66,11 @@
 
   const clamped = $derived(Math.min(max, Math.max(min, value)));
   const text = $derived(format ? format(clamped) : String(clamped));
+  /** The longer end's reading holds the box's width. */
+  const widest = $derived.by(() => {
+    const ends = [min, max].map((end) => (format ? format(end) : String(end)));
+    return ends[0].length >= ends[1].length ? ends[0] : ends[1];
+  });
 
   function fraction(amount: number): number {
     return max > min
@@ -77,6 +91,18 @@
     return format ? format(mark) : String(mark);
   }
 
+  /** A typed reading as the slider's value, or null when it has none. */
+  function readTyped(typed: string): number | null {
+    const reading = parseTypedNumber(typed);
+    if (reading === null) return null;
+    const next = fromTyped ? fromTyped(reading) : reading;
+    return Number.isNaN(next) ? null : next;
+  }
+
+  function setTyped(next: number): void {
+    onchange(Math.min(max, Math.max(min, next)));
+  }
+
   async function handleInput(
     event: Event & { currentTarget: HTMLInputElement }
   ): Promise<void> {
@@ -93,49 +119,58 @@
 </script>
 
 <div class="value-slider" class:disabled>
-  <div class="head">
-    <span class="name" id="{id}-name">{label}</span>
-    <span class="reading" aria-hidden="true">{text}</span>
-  </div>
-  <div class="track">
-    <input
-      type="range"
-      {min}
-      {max}
-      {step}
-      value={clamped}
-      {disabled}
-      aria-labelledby="{id}-name"
-      aria-valuetext={text}
-      style:--from={Math.min(originFraction, valueFraction)}
-      style:--to={Math.max(originFraction, valueFraction)}
-      oninput={handleInput}
-    />
-    {#each marks as mark, index (index)}
-      {#if onmark}
-        <button
-          type="button"
-          class="mark"
-          class:on={isOn(mark)}
-          style:--at={fraction(mark)}
-          aria-label={nameOf(mark)}
-          aria-current={isOn(mark) || undefined}
-          {disabled}
-          onclick={() => onmark(mark)}
-        >
-          <span class="glyph" aria-hidden="true"></span>
-        </button>
-      {:else}
-        <span
-          class="mark"
-          class:on={isOn(mark)}
-          aria-hidden="true"
-          style:--at={fraction(mark)}
-        >
-          <span class="glyph"></span>
-        </span>
-      {/if}
-    {/each}
+  <span class="name" id="{id}-name">{label}</span>
+  <div class="row">
+    <div class="track">
+      <input
+        type="range"
+        {min}
+        {max}
+        {step}
+        value={clamped}
+        {disabled}
+        aria-labelledby="{id}-name"
+        aria-valuetext={text}
+        style:--from={Math.min(originFraction, valueFraction)}
+        style:--to={Math.max(originFraction, valueFraction)}
+        oninput={handleInput}
+      />
+      {#each marks as mark, index (index)}
+        {#if onmark}
+          <button
+            type="button"
+            class="mark"
+            class:on={isOn(mark)}
+            style:--at={fraction(mark)}
+            aria-label={nameOf(mark)}
+            aria-current={isOn(mark) || undefined}
+            {disabled}
+            onclick={() => onmark(mark)}
+          >
+            <span class="glyph" aria-hidden="true"></span>
+          </button>
+        {:else}
+          <span
+            class="mark"
+            class:on={isOn(mark)}
+            aria-hidden="true"
+            style:--at={fraction(mark)}
+          >
+            <span class="glyph"></span>
+          </span>
+        {/if}
+      {/each}
+    </div>
+    <span class="value">
+      <TypeableValue
+        {label}
+        {text}
+        parse={readTyped}
+        sizer={widest}
+        {disabled}
+        oncommit={setTyped}
+      />
+    </span>
   </div>
 </div>
 
@@ -148,30 +183,30 @@
     min-width: 0;
   }
 
-  .head {
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: 0.75rem;
-    min-width: 0;
-  }
-
   .name {
     color: var(--theme-text, #fff);
     font-size: 0.875rem;
     font-weight: 500;
   }
 
-  .reading {
-    color: var(--theme-text-secondary, #aaa);
-    font-size: 0.875rem;
-    font-variant-numeric: tabular-nums;
-    white-space: nowrap;
+  /* One box width for every slider, so stacked tracks end together. */
+  .row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-width: 0;
   }
 
   .track {
     position: relative;
+    flex: 1 1 auto;
     min-width: 0;
+  }
+
+  .value {
+    --typeable-min-width: 5rem;
+    display: flex;
+    flex: none;
   }
 
   /* On the thumb's path: half a thumb in from each end, as the fill is. A

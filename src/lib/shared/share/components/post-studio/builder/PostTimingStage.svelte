@@ -6,7 +6,8 @@
   import PostStudioPaintedLayer from "../PostStudioPaintedLayer.svelte";
   import TakeTimingLane from "./TakeTimingLane.svelte";
   import type { PostTimingSession } from "./post-timing-session.svelte";
-  import { formatTakeClock } from "./post-builder-format";
+  import TypeableValue from "$lib/shared/ui/components/TypeableValue.svelte";
+  import { formatTakeClock, parseClock } from "./post-builder-format";
 
   /**
    * The take being mapped, large, with the move the map says is under way
@@ -108,11 +109,21 @@
       >
         <i class="fa-solid fa-forward-step" aria-hidden="true"></i>
       </button>
-      <output class="clock">
-        {formatTakeClock(session.mediaSeconds)} / {formatTakeClock(
-          session.durationSeconds
-        )}
-      </output>
+      <div class="clock">
+        <TypeableValue
+          label={t("share_studio_deep_playhead")}
+          text={formatTakeClock(session.mediaSeconds)}
+          draft={formatTakeClock(session.mediaSeconds)}
+          parse={parseClock}
+          sizer={formatTakeClock(session.durationSeconds)}
+          disabled={!session.url}
+          oncommit={(seconds) => {
+            session.pause();
+            session.seek(seconds);
+          }}
+        />
+        <span class="total">/ {formatTakeClock(session.durationSeconds)}</span>
+      </div>
       <span class="readout">{session.readout}</span>
       <div class="picker">
         <SegmentedControl
@@ -263,10 +274,17 @@
     outline-offset: 2px;
   }
   .clock {
+    --typeable-min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
     color: var(--theme-text, #fff);
     font-size: 0.875rem;
     font-variant-numeric: tabular-nums;
     white-space: nowrap;
+  }
+  .total {
+    color: var(--theme-text-secondary, #aaa);
   }
   .readout {
     flex: 1 1 8rem;

@@ -154,3 +154,40 @@ function scaleBox(
 
 /** Arrow-key nudges: one step, or a larger one with Shift. */
 export const BOX_NUDGE = { step: 0.005, large: 0.05 } as const;
+
+/** A value typed for a box: its left or top edge, its width or its height. */
+export type BoxField = "x" | "y" | "width" | "height";
+
+/**
+ * A box with one value typed, as a share of the frame. A move keeps the
+ * size and a resize keeps the top left corner; `keepShape` holds the box's
+ * proportions, so the other side follows. The box stays in the frame and
+ * above the smallest size, shifted back inside rather than cut.
+ */
+export function typeBox(
+  start: PostBox,
+  field: BoxField,
+  value: number,
+  keepShape: boolean
+): PostBox {
+  if (!Number.isFinite(value)) return start;
+  if (field === "x") return clampBox({ ...start, x: value });
+  if (field === "y") return clampBox({ ...start, y: value });
+  if (!keepShape) {
+    return clampBox(
+      field === "width" ? { ...start, width: value } : { ...start, height: value }
+    );
+  }
+  const wanted = field === "width" ? value / start.width : value / start.height;
+  const smallest = Math.max(
+    POST_MIN_BOX_SIZE / start.width,
+    POST_MIN_BOX_SIZE / start.height
+  );
+  const largest = Math.min(1 / start.width, 1 / start.height);
+  const scale = clamp(wanted, Math.min(smallest, largest), largest);
+  return clampBox({
+    ...start,
+    width: start.width * scale,
+    height: start.height * scale,
+  });
+}

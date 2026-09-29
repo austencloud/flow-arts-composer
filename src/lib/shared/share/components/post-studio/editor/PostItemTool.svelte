@@ -29,6 +29,7 @@
     setTrackFlag,
     setVideoSpeed,
     trimItem,
+    trimItemToSource,
     updateItem,
     updateItemAt,
     type PostItemPatch,
@@ -49,13 +50,19 @@
     POST_EDGE_COLOR_HEX,
     edgeOf,
   } from "$lib/shared/media-composition/domain/post-clip-edge";
-  import type { PostEditorState } from "$lib/shared/media-composition/state/post-editor-state.svelte";
+  import type {
+    PostEdit,
+    PostEditorState,
+  } from "$lib/shared/media-composition/state/post-editor-state.svelte";
   import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
   import FilterChipBase from "$lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
   import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
+  import TypeableValue from "$lib/shared/ui/components/TypeableValue.svelte";
   import ValueSlider from "$lib/shared/ui/components/ValueSlider.svelte";
-  import { formatTakeClock } from "../builder/post-builder-format";
+  import { formatTakeClock, parseClock } from "../builder/post-builder-format";
   import { itemDisplayLabel } from "./post-editor-labels";
+  import { typeBox, type BoxField } from "./post-box-drag";
+  import { keepsShape, keptBox, shownBox } from "./post-item-rect";
   import { panelChannel, type PostPanelToolId } from "./post-editor-tools";
   import {
     STRAIGHTEN_LIMIT,
@@ -138,11 +145,28 @@
 
   /** Moves an edge to the playhead and shows the frame now at that edge. */
   function trimToPlayhead(edge: "start" | "end"): void {
+    trimTo(edge, editor.previewSeconds);
+  }
+
+  /** Moves an edge to a typed time on the timeline. */
+  function trimTo(edge: "start" | "end", seconds: number): void {
+    const id = item.id;
+    trim(edge, (project, ctx) => trimItem(project, id, edge, seconds, ctx));
+  }
+
+  /** Moves a clip's In or Out to a typed time in its take. */
+  function trimToSource(edge: "start" | "end", seconds: number): void {
+    const id = item.id;
+    trim(edge, (project, ctx) =>
+      trimItemToSource(project, id, edge, seconds, ctx)
+    );
+  }
+
+  /** Runs a trim, then shows the frame now at the edge it moved. */
+  function trim(edge: "start" | "end", run: PostEdit): void {
     if (locked) return;
     const id = item.id;
-    const changed = editor.edit((project, ctx) =>
-      trimItem(project, id, edge, editor.previewSeconds, ctx)
-    );
+    const changed = editor.edit(run);
     if (!changed) return;
     const trimmed = findItem(editor.project, id)?.item;
     if (!trimmed) return;
@@ -394,11 +418,38 @@
       ?.id ?? ""
   );
 
+  /** The post's size in pixels, which typed positions and sizes count in. */
+  const output = $derived(postOutputSize(editor.project.canvas));
+
   /** The post's shorter side, which border widths are measured against. */
-  const frameShort = $derived.by(() => {
-    const size = postOutputSize(editor.project.canvas);
-    return Math.min(size.width, size.height);
+  const frameShort = $derived(Math.min(output.width, output.height));
+
+  /** Where the item shows now, in the post's pixels. */
+  const shownPixels = $derived.by((): Record<BoxField, number> => {
+    const shown = shownBox(editor, item, seconds);
+    return {
+      x: shown.x * output.width,
+      y: shown.y * output.height,
+      width: shown.width * output.width,
+      height: shown.height * output.height,
+    };
   });
+
+  const BOX_FIELDS = $derived<{ field: BoxField; label: string }[]>([
+    { field: "x", label: t("post_editor_box_x") },
+    { field: "y", label: t("post_editor_box_y") },
+    { field: "width", label: t("post_editor_box_width") },
+    { field: "height", label: t("post_editor_box_height") },
+  ]);
+
+  /** Moves or resizes where the item shows to a typed number of pixels. */
+  function typeRect(field: BoxField, pixels: number): void {
+    const across = field === "x" || field === "width";
+    const share = pixels / (across ? output.width : output.height);
+    const shown = shownBox(editor, item, seconds);
+    const next = typeBox(shown, field, share, keepsShape(item));
+    place(keptBox(editor, item, next, boxAt(item, seconds)));
+  }
 
   type BorderPick = PostEdgeColor | "none";
 
@@ -482,12 +533,20 @@
 {#snippet readout(
   name: string,
   value: string,
+  typed: (seconds: number) => void,
   set: { icon: string; run: () => void } | null
 )}
   <div class="readout">
     <div class="readout-text">
-      <span class="readout-name">{name}</span>
-      <span class="readout-value">{value}</span>
+      <span class="readout-name" aria-hidden="true">{name}</span>
+      <TypeableValue
+        label={name}
+        text={value}
+        draft={value}
+        parse={parseClock}
+        disabled={locked}
+        oncommit={typed}
+      />
     </div>
     {#if set}
       <PanelButton
@@ -520,14 +579,24 @@
   {/if}
 
   {#if tool === "trim" && item.kind === "video"}
-    {@render readout(t("post_editor_in"), formatTakeClock(item.sourceIn), {
-      icon: "fa-arrow-right-to-bracket",
-      run: () => trimToPlayhead("start"),
-    })}
-    {@render readout(t("post_editor_out"), formatTakeClock(item.sourceOut), {
-      icon: "fa-arrow-right-from-bracket",
-      run: () => trimToPlayhead("end"),
-    })}
+    {@render readout(
+      t("post_editor_in"),
+      formatTakeClock(item.sourceIn),
+      (seconds) => trimToSource("start", seconds),
+      {
+        icon: "fa-arrow-right-to-bracket",
+        run: () => trimToPlayhead("start"),
+      }
+    )}
+    {@render readout(
+      t("post_editor_out"),
+      formatTakeClock(item.sourceOut),
+      (seconds) => trimToSource("end", seconds),
+      {
+        icon: "fa-arrow-right-from-bracket",
+        run: () => trimToPlayhead("end"),
+      }
+    )}
   {:else if tool === "timing"}
     {#if !onMain}
       <SegmentedControl
@@ -547,15 +616,25 @@
     {/if}
     {#if onMain || !item.fill}
       {#if !onMain}
-        {@render readout(t("post_editor_start"), formatTakeClock(item.start), {
-          icon: "fa-arrow-right-to-bracket",
-          run: () => trimToPlayhead("start"),
-        })}
+        {@render readout(
+          t("post_editor_start"),
+          formatTakeClock(item.start),
+          (seconds) => trimTo("start", seconds),
+          {
+            icon: "fa-arrow-right-to-bracket",
+            run: () => trimToPlayhead("start"),
+          }
+        )}
       {/if}
-      {@render readout(t("post_editor_end"), formatTakeClock(itemEnd(item)), {
-        icon: "fa-arrow-right-from-bracket",
-        run: () => trimToPlayhead("end"),
-      })}
+      {@render readout(
+        t("post_editor_end"),
+        formatTakeClock(itemEnd(item)),
+        (seconds) => trimTo("end", seconds),
+        {
+          icon: "fa-arrow-right-from-bracket",
+          run: () => trimToPlayhead("end"),
+        }
+      )}
     {/if}
   {:else if tool === "crop" && item.kind === "video"}
     {@const framing = framingAt(item, seconds)}
@@ -623,6 +702,7 @@
       step={SPEED_STEP}
       origin={0}
       format={formatSpeed}
+      fromTyped={Math.log2}
       disabled={locked}
       onchange={(stop) => setSpeed(speedFromStop(stop))}
     />
@@ -691,6 +771,17 @@
         ariaLabel={t("post_editor_placement")}
       />
     {/if}
+    <div class="rect" role="group" aria-label={t("post_editor_box_where")}>
+      {#each BOX_FIELDS as entry (entry.field)}
+        <span class="rect-name" aria-hidden="true">{entry.label}</span>
+        <TypeableValue
+          label={entry.label}
+          text={`${Math.round(shownPixels[entry.field])} px`}
+          disabled={locked || frozen}
+          oncommit={(pixels) => typeRect(entry.field, pixels)}
+        />
+      {/each}
+    </div>
   {:else if tool === "border" && item.kind === "video"}
     {@const edge = edgeOf(item)}
     <ValueSlider
@@ -871,8 +962,13 @@
     min-width: 0;
   }
 
+  /* The time sits in a box that takes a typed time. */
   .readout-text {
+    --typeable-font-size: 1rem;
+    --typeable-min-width: 6rem;
     display: grid;
+    justify-items: start;
+    gap: 0.125rem;
   }
 
   .readout-name {
@@ -880,16 +976,24 @@
     font-size: 0.8125rem;
   }
 
-  .readout-value {
-    color: var(--theme-text, #fff);
-    font-size: 1rem;
-    font-variant-numeric: tabular-nums;
-  }
-
   .actions {
     display: flex;
     flex-wrap: wrap;
     gap: 0.5rem;
+  }
+
+  /* X and Y, then width and height: each name beside a box that takes a
+     typed number of pixels. */
+  .rect {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto minmax(0, 1fr);
+    align-items: center;
+    gap: 0.5rem 0.625rem;
+  }
+
+  .rect-name {
+    color: var(--theme-text-secondary, #aaa);
+    font-size: 0.875rem;
   }
 
   .swatch {

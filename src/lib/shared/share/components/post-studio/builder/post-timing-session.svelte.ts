@@ -328,6 +328,15 @@ export function createPostTimingSession(builder: TimingHost) {
     }));
   }
 
+  /** Puts the whole grid a typed number of seconds off the taps. */
+  function setGridOffset(seconds: number): void {
+    if (!Number.isFinite(seconds)) return;
+    editCurrent((current) => ({
+      ...current,
+      offsetSeconds: Math.round(seconds * 1e6) / 1e6,
+    }));
+  }
+
   // Parts that keep one count share its end, wherever it is stored.
   function clearEnd(): void {
     if (!takeId || !section) return;
@@ -660,6 +669,7 @@ export function createPostTimingSession(builder: TimingHost) {
     firstTapWasMoveOne,
     dropLeadingTaps,
     nudgeGrid,
+    setGridOffset,
     clearEnd,
     clearTaps,
     placeLanding,
