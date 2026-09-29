@@ -22,6 +22,48 @@ function sequence(id: string, word: string, stepCount: number): SequenceData {
 }
 
 describe("stage choreography state", () => {
+  it("undoes tempo changes and leaves no history for the current tempo", () => {
+    const state = createStageChoreographyState();
+    const original = state.bpm;
+    state.setBpm(original);
+    expect(state.canUndo).toBe(false);
+
+    state.setBpm(original + 10);
+    expect(state.bpm).toBe(original + 10);
+    state.undo();
+    expect(state.bpm).toBe(original);
+    state.redo();
+    expect(state.bpm).toBe(original + 10);
+    state.destroy();
+  });
+
+  it("records one formation drag and ignores a click without movement", () => {
+    const state = createStageChoreographyState();
+    const formation = state.choreography.formations[1]!;
+    const originalBeat = formation.atBeat;
+    state.beginDrag();
+    state.endDrag();
+    expect(state.canUndo).toBe(false);
+
+    state.beginDrag();
+    state.moveFormation(formation.id, originalBeat + 4);
+    state.endDrag();
+    expect(state.choreography.formations[1]!.atBeat).toBe(originalBeat + 4);
+    state.undo();
+    expect(state.choreography.formations[1]!.atBeat).toBe(originalBeat);
+    expect(state.canUndo).toBe(false);
+    state.destroy();
+  });
+
+  it("restores a null shared sequence ID", () => {
+    const state = createStageChoreographyState();
+    state.choreography.sharedSequenceId = null;
+    state.setSharedSequence(sequence("replacement", "AB", 2));
+    state.undo();
+    expect(state.choreography.sharedSequenceId).toBeNull();
+    state.destroy();
+  });
+
   it("seeds the same versioned Stage project for a guided solo start", () => {
     const state = createStageChoreographyState();
 
@@ -602,6 +644,7 @@ describe("stage choreography state", () => {
 
     state.beginDrag();
     state.updatePerformerTravelTiming(destination.id, performer.id, 20, 30);
+    state.endDrag();
     state.setPerformerTravelStepCount(destination.id, performer.id, 8);
 
     expect(
@@ -659,11 +702,11 @@ describe("stage choreography state", () => {
     const performer = state.choreography.performers[0]!;
     const originalX = formation.spots[performer.id]!.x;
 
-    // A spot drag is one history entry: beginDrag() pushes it, and the moves
-    // that follow do not, exactly as mark dragging works.
+    // A spot drag commits its intermediate moves as one history entry.
     state.beginDrag();
     state.updateSpotPosition(formation.id, performer.id, originalX + 1, 2);
     state.updateSpotPosition(formation.id, performer.id, originalX + 1, 2);
+    state.endDrag();
     expect(state.choreography.formations[1]!.spots[performer.id]!.x).toBe(
       originalX + 1
     );
@@ -675,6 +718,46 @@ describe("stage choreography state", () => {
     state.redo();
     expect(state.choreography.formations[1]!.spots[performer.id]!.x).toBe(
       originalX + 1
+    );
+    state.destroy();
+  });
+
+  it("finishes an active spot drag before undo and records the next edit", () => {
+    const state = createStageChoreographyState();
+    const formation = state.choreography.formations[1]!;
+    const performer = state.choreography.performers[0]!;
+    const originalX = formation.spots[performer.id]!.x;
+
+    state.beginDrag();
+    state.updateSpotPosition(formation.id, performer.id, originalX + 1, 2);
+    state.undo();
+    expect(state.choreography.formations[1]!.spots[performer.id]!.x).toBe(
+      originalX
+    );
+
+    const originalBpm = state.choreography.bpm;
+    state.setBpm(originalBpm + 10);
+    state.undo();
+    expect(state.choreography.bpm).toBe(originalBpm);
+    state.destroy();
+  });
+
+  it("records direct spot and Floor timing edits outside gestures", () => {
+    const state = createStageChoreographyState();
+    const formation = state.choreography.formations[1]!;
+    const performer = state.choreography.performers[0]!;
+    const originalX = formation.spots[performer.id]!.x;
+    const originalTravel = formation.spots[performer.id]!.travel;
+
+    state.updateSpotPosition(formation.id, performer.id, originalX + 1, 2);
+    state.updatePerformerTravelTiming(formation.id, performer.id, 4, 8);
+    state.undo();
+    expect(
+      state.choreography.formations[1]!.spots[performer.id]!.travel
+    ).toEqual(originalTravel);
+    state.undo();
+    expect(state.choreography.formations[1]!.spots[performer.id]!.x).toBe(
+      originalX
     );
     state.destroy();
   });

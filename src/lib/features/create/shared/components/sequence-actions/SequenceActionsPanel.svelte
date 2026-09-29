@@ -154,7 +154,8 @@
     getSequenceState: () => activeSequenceState,
     getTargetHand: () => panelState.targetHand,
     hapticService,
-    pushUndoSnapshot: (type) => CreateModuleState.pushUndoSnapshot(type),
+    pushUndoSnapshot: (type, sourceState) =>
+      CreateModuleState.pushUndoSnapshotForSequenceState(type, sourceState),
     executeTransformAction: (action, options) => {
       const dispatcher = ctx.getSequenceTransformActions();
       return dispatcher

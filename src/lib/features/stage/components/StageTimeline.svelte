@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { tick } from "svelte";
+  import { onDestroy, tick } from "svelte";
 
   import SequencePickerModal from "$lib/shared/components/sequence-picker/SequencePickerModal.svelte";
   import Crossfade from "$lib/shared/components/Crossfade.svelte";
@@ -485,6 +485,7 @@
         );
       }
     }
+    stageState.endDrag();
     formationDrag = null;
   }
 
@@ -568,8 +569,15 @@
   }
 
   function commitFloorTravelDrag(): void {
+    stageState.endDrag();
     floorTravelDrag = null;
   }
+
+  onDestroy(() => {
+    if (drag) commitClipDrag();
+    if (formationDrag) commitFormationDrag();
+    if (floorTravelDrag) commitFloorTravelDrag();
+  });
 
   function handleFloorTravelKeydown(
     event: KeyboardEvent,
@@ -647,6 +655,7 @@
       departureBeat,
       arrivalBeat
     );
+    stageState.endDrag();
   }
 
   function adjustSelectedStepCount(delta: number): void {

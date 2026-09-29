@@ -10,12 +10,33 @@
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
 import type { TimeSignatureKey } from "$lib/shared/foundation/domain/models/time-signature";
 import type {
-  TimelineProject, TimelineTrack, TimelineClip, PlayheadState, SelectionState, ViewportState, SnapSettings, TimeSeconds, } from "../domain/timeline-types";
+  TimelineProject,
+  TimelineTrack,
+  TimelineClip,
+  PlayheadState,
+  SelectionState,
+  ViewportState,
+  SnapSettings,
+  TimeSeconds,
+} from "../domain/timeline-types";
 import {
-  createProject, createTrack, createClip, createDefaultPlayheadState, createDefaultSelectionState, createDefaultViewportState, generateClipId, getClipEndTime, calculateProjectDuration, snapTime, } from "../domain/timeline-types";
+  createProject,
+  createTrack,
+  createClip,
+  createDefaultPlayheadState,
+  createDefaultSelectionState,
+  createDefaultViewportState,
+  generateClipId,
+  getClipEndTime,
+  calculateProjectDuration,
+  snapTime,
+} from "../domain/timeline-types";
 
 import {
-  loadFromStorage, saveToStorage, TIMELINE_STORAGE_KEYS, } from "$lib/shared/animation-engine/timeline/state/timeline-storage";
+  loadFromStorage,
+  saveToStorage,
+  TIMELINE_STORAGE_KEYS,
+} from "$lib/shared/animation-engine/timeline/state/timeline-storage";
 import { getStepTimes } from "$lib/shared/animation-engine/timeline/services/step-grid-calculator";
 import { createPlayheadActions } from "$lib/shared/animation-engine/timeline/state/actions/playhead-actions";
 import { createSelectionActions } from "$lib/shared/animation-engine/timeline/state/actions/selection-actions";
@@ -77,6 +98,14 @@ function deduplicateProjectClips(proj: TimelineProject): TimelineProject {
   return { ...proj, tracks: finalTracks };
 }
 
+function withoutUnavailableAudio(proj: TimelineProject): TimelineProject {
+  if (!proj.audio?.hasAudio) return proj;
+  return {
+    ...proj,
+    audio: { hasAudio: false, fileName: null, duration: 0, bpm: null },
+  };
+}
+
 // ============================================================================
 // State Factory
 // ============================================================================
@@ -100,9 +129,13 @@ export function createTimelineState() {
 
   // Initialize state from storage
   try {
-    project = deduplicateProjectClips(
+    const storedProject = deduplicateProjectClips(
       loadFromStorage(TIMELINE_STORAGE_KEYS.PROJECT, createProject())
     );
+    project = withoutUnavailableAudio(storedProject);
+    if (storedProject.audio?.hasAudio) {
+      saveToStorage(TIMELINE_STORAGE_KEYS.PROJECT, project);
+    }
     viewport = loadFromStorage(
       TIMELINE_STORAGE_KEYS.VIEWPORT,
       createDefaultViewportState()
@@ -124,12 +157,17 @@ export function createTimelineState() {
 
   // Undo/Redo state
   const undoManager = getTimelineUndoManager();
-  undoManager.init(() => project);
+  let audioUrl = $state<string | null>(null);
+  undoManager.init(
+    () => project,
+    () => audioUrl
+  );
 
   let canUndo = $state(undoManager.canUndo);
   let canRedo = $state(undoManager.canRedo);
   let undoDescription = $state<string | null>(undoManager.undoDescription);
   let redoDescription = $state<string | null>(undoManager.redoDescription);
+  let editInProgress = false;
 
   // Subscribe to undo manager changes
   undoManager.subscribe(() => {
@@ -145,10 +183,31 @@ export function createTimelineState() {
     description: string,
     fn: () => T
   ): T {
+    if (editInProgress) return fn();
     undoManager.captureState(type, description);
-    const result = fn();
+    try {
+      const result = fn();
+      undoManager.commitState();
+      return result;
+    } catch (error) {
+      undoManager.cancelPending();
+      throw error;
+    }
+  }
+
+  function beginEdit(
+    type: TimelineUndoOperationType,
+    description: string
+  ): void {
+    if (editInProgress) return;
+    editInProgress = true;
+    undoManager.captureState(type, description);
+  }
+
+  function endEdit(): void {
+    if (!editInProgress) return;
+    editInProgress = false;
     undoManager.commitState();
-    return result;
   }
 
   // Drag state
@@ -156,9 +215,6 @@ export function createTimelineState() {
   let dragClipId = $state<string | null>(null);
   let dragStartX = $state(0);
   let dragStartTime = $state<TimeSeconds>(0);
-
-  // Audio URL (not persisted)
-  let audioUrl: string | null = null;
 
   // =========================================================================
   // Derived State
@@ -250,37 +306,60 @@ export function createTimelineState() {
   // =========================================================================
 
   function setProjectName(name: string) {
-    project = { ...project, name, updatedAt: new Date() };
-    saveProject();
+    if (name === project.name) return;
+    withUndo("UPDATE_PROJECT", "Rename project", () => {
+      project = { ...project, name, updatedAt: new Date() };
+      saveProject();
+    });
   }
 
   function setDefaultBpm(bpm: number) {
-    project = { ...project, defaultBpm: bpm, updatedAt: new Date() };
-    saveProject();
+    if (bpm === project.defaultBpm) return;
+    withUndo("UPDATE_PROJECT", "Change project tempo", () => {
+      project = { ...project, defaultBpm: bpm, updatedAt: new Date() };
+      saveProject();
+    });
   }
 
   function setTimeSignature(timeSignature: TimeSignatureKey) {
-    project = { ...project, timeSignature, updatedAt: new Date() };
-    saveProject();
+    if (timeSignature === project.timeSignature) return;
+    withUndo("UPDATE_PROJECT", "Change time signature", () => {
+      project = { ...project, timeSignature, updatedAt: new Date() };
+      saveProject();
+    });
   }
 
   function setFrameRate(frameRate: 24 | 30 | 60) {
-    project = { ...project, frameRate, updatedAt: new Date() };
-    saveProject();
+    if (frameRate === project.frameRate) return;
+    withUndo("UPDATE_PROJECT", "Change frame rate", () => {
+      project = { ...project, frameRate, updatedAt: new Date() };
+      saveProject();
+    });
   }
 
   function updateSnapSettings(settings: Partial<SnapSettings>) {
-    project = {
-      ...project,
-      snap: { ...project.snap, ...settings },
-      updatedAt: new Date(),
-    };
-    saveProject();
+    if (
+      Object.entries(settings).every(
+        ([key, value]) => project.snap[key as keyof SnapSettings] === value
+      )
+    )
+      return;
+    withUndo("UPDATE_PROJECT", "Change snap settings", () => {
+      project = {
+        ...project,
+        snap: { ...project.snap, ...settings },
+        updatedAt: new Date(),
+      };
+      saveProject();
+    });
   }
 
   function loadProject(newProject: TimelineProject) {
     // Deduplicate clips before loading to prevent render errors
-    project = deduplicateProjectClips(newProject);
+    project = withoutUnavailableAudio(deduplicateProjectClips(newProject));
+    audioUrl = null;
+    editInProgress = false;
+    undoManager.clear();
     selection = createDefaultSelectionState();
     playhead = createDefaultPlayheadState();
     saveProject();
@@ -288,6 +367,9 @@ export function createTimelineState() {
 
   function resetProject() {
     project = createProject();
+    audioUrl = null;
+    editInProgress = false;
+    undoManager.clear();
     selection = createDefaultSelectionState();
     playhead = createDefaultPlayheadState();
     saveProject();
@@ -320,7 +402,8 @@ export function createTimelineState() {
     }
 
     const track = project.tracks.find((t) => t.id === trackId);
-    const trackName = track?.name ?? "Track";
+    if (!track) return;
+    const trackName = track.name;
 
     withUndo("REMOVE_TRACK", `Remove track "${trackName}"`, () => {
       project = {
@@ -343,14 +426,24 @@ export function createTimelineState() {
   }
 
   function updateTrack(trackId: string, updates: Partial<TimelineTrack>) {
-    project = {
-      ...project,
-      tracks: project.tracks.map((t) =>
-        t.id === trackId ? { ...t, ...updates } : t
-      ),
-      updatedAt: new Date(),
-    };
-    saveProject();
+    const track = project.tracks.find((candidate) => candidate.id === trackId);
+    if (
+      !track ||
+      Object.entries(updates).every(
+        ([key, value]) => track[key as keyof TimelineTrack] === value
+      )
+    )
+      return;
+    withUndo("UPDATE_TRACK", `Update track "${track.name}"`, () => {
+      project = {
+        ...project,
+        tracks: project.tracks.map((t) =>
+          t.id === trackId ? { ...t, ...updates } : t
+        ),
+        updatedAt: new Date(),
+      };
+      saveProject();
+    });
   }
 
   function setTrackMuted(trackId: string, muted: boolean) {
@@ -358,16 +451,23 @@ export function createTimelineState() {
   }
 
   function setTrackSolo(trackId: string, solo: boolean) {
+    if (!project.tracks.some((track) => track.id === trackId)) return;
     if (solo) {
-      project = {
-        ...project,
-        tracks: project.tracks.map((t) => ({ ...t, solo: t.id === trackId })),
-        updatedAt: new Date(),
-      };
+      if (
+        project.tracks.every((track) => track.solo === (track.id === trackId))
+      )
+        return;
+      withUndo("UPDATE_TRACK", "Solo track", () => {
+        project = {
+          ...project,
+          tracks: project.tracks.map((t) => ({ ...t, solo: t.id === trackId })),
+          updatedAt: new Date(),
+        };
+        saveProject();
+      });
     } else {
       updateTrack(trackId, { solo: false });
     }
-    saveProject();
   }
 
   function reorderTracks(trackIds: string[]) {
@@ -378,8 +478,19 @@ export function createTimelineState() {
       })
       .filter((t): t is TimelineTrack => t !== null);
 
-    project = { ...project, tracks: reordered, updatedAt: new Date() };
-    saveProject();
+    if (
+      reordered.length !== project.tracks.length ||
+      reordered.every(
+        (track, index) =>
+          track.id === project.tracks[index]?.id &&
+          track.order === project.tracks[index]?.order
+      )
+    )
+      return;
+    withUndo("REORDER_TRACKS", "Reorder tracks", () => {
+      project = { ...project, tracks: reordered, updatedAt: new Date() };
+      saveProject();
+    });
   }
 
   // =========================================================================
@@ -431,6 +542,7 @@ export function createTimelineState() {
 
   function removeClip(clipId: string) {
     const clip = allClips.find((c) => c.id === clipId);
+    if (!clip) return;
     const clipName = clip?.label || clip?.sequence?.name || "clip";
 
     withUndo("REMOVE_CLIP", `Remove "${clipName}"`, () => {
@@ -480,6 +592,25 @@ export function createTimelineState() {
   }
 
   function updateClip(clipId: string, updates: Partial<TimelineClip>) {
+    const clip = allClips.find((candidate) => candidate.id === clipId);
+    if (
+      !clip ||
+      Object.entries(updates).every(
+        ([key, value]) => clip[key as keyof TimelineClip] === value
+      )
+    )
+      return;
+    withUndo(
+      "UPDATE_CLIP",
+      `Update "${clip.label || clip.sequence?.name || "clip"}"`,
+      () => updateClipWithoutUndo(clipId, updates)
+    );
+  }
+
+  function updateClipWithoutUndo(
+    clipId: string,
+    updates: Partial<TimelineClip>
+  ) {
     project = {
       ...project,
       tracks: project.tracks.map((t) => ({
@@ -515,36 +646,47 @@ export function createTimelineState() {
           playhead.position
         );
 
-    if (newTrackId) {
-      const clip = allClips.find((c) => c.id === clipId);
-      if (!clip) return;
+    const clipToMove = allClips.find((clip) => clip.id === clipId);
+    if (
+      !clipToMove ||
+      (clipToMove.startTime === finalTime &&
+        (!newTrackId || newTrackId === clipToMove.trackId))
+    )
+      return;
+    const mutate = () => {
+      if (newTrackId && newTrackId !== clipToMove.trackId) {
+        const clip = allClips.find((c) => c.id === clipId);
+        if (!clip) return;
 
-      project = {
-        ...project,
-        tracks: project.tracks.map((t) => {
-          if (t.id === clip.trackId) {
-            return { ...t, clips: t.clips.filter((c) => c.id !== clipId) };
-          } else if (t.id === newTrackId) {
-            const movedClip = {
-              ...clip,
-              trackId: newTrackId,
-              startTime: finalTime,
-            };
-            return {
-              ...t,
-              clips: [...t.clips, movedClip].sort(
-                (a, b) => a.startTime - b.startTime
-              ),
-            };
-          }
-          return t;
-        }),
-        updatedAt: new Date(),
-      };
-    } else {
-      updateClip(clipId, { startTime: finalTime });
-    }
-    saveProject();
+        project = {
+          ...project,
+          tracks: project.tracks.map((t) => {
+            if (t.id === clip.trackId) {
+              return { ...t, clips: t.clips.filter((c) => c.id !== clipId) };
+            } else if (t.id === newTrackId) {
+              const movedClip = {
+                ...clip,
+                trackId: newTrackId,
+                startTime: finalTime,
+              };
+              return {
+                ...t,
+                clips: [...t.clips, movedClip].sort(
+                  (a, b) => a.startTime - b.startTime
+                ),
+              };
+            }
+            return t;
+          }),
+          updatedAt: new Date(),
+        };
+        saveProject();
+      } else {
+        updateClipWithoutUndo(clipId, { startTime: finalTime });
+      }
+    };
+    if (editInProgress) mutate();
+    else withUndo("MOVE_CLIP", "Move clip", mutate);
   }
 
   function setClipDuration(clipId: string, duration: TimeSeconds) {
@@ -608,16 +750,21 @@ export function createTimelineState() {
   // =========================================================================
 
   function setAudioFile(fileName: string, url: string) {
-    audioUrl = url;
-    project = {
-      ...project,
-      audio: { ...project.audio, hasAudio: true, fileName },
-      updatedAt: new Date(),
-    };
-    saveProject();
+    if (audioUrl === url && project.audio.fileName === fileName) return;
+    withUndo("UPDATE_AUDIO", "Select audio", () => {
+      undoManager.trackAudioUrl(url);
+      audioUrl = url;
+      project = {
+        ...project,
+        audio: { hasAudio: true, fileName, duration: 0, bpm: null },
+        updatedAt: new Date(),
+      };
+      saveProject();
+    });
   }
 
   function setAudioDuration(duration: TimeSeconds) {
+    if (project.audio.duration === duration) return;
     project = {
       ...project,
       audio: { ...project.audio, duration },
@@ -627,25 +774,28 @@ export function createTimelineState() {
   }
 
   function setAudioBpm(bpm: number | null) {
-    project = {
-      ...project,
-      audio: { ...project.audio, bpm },
-      updatedAt: new Date(),
-    };
-    saveProject();
+    if (project.audio.bpm === bpm) return;
+    withUndo("UPDATE_AUDIO", "Change audio BPM", () => {
+      project = {
+        ...project,
+        audio: { ...project.audio, bpm },
+        updatedAt: new Date(),
+      };
+      saveProject();
+    });
   }
 
   function clearAudio() {
-    if (audioUrl) {
-      URL.revokeObjectURL(audioUrl);
+    if (!audioUrl && !project.audio.hasAudio) return;
+    withUndo("UPDATE_AUDIO", "Clear audio", () => {
       audioUrl = null;
-    }
-    project = {
-      ...project,
-      audio: { hasAudio: false, fileName: null, duration: 0, bpm: null },
-      updatedAt: new Date(),
-    };
-    saveProject();
+      project = {
+        ...project,
+        audio: { hasAudio: false, fileName: null, duration: 0, bpm: null },
+        updatedAt: new Date(),
+      };
+      saveProject();
+    });
   }
 
   function getAudioUrl(): string | null {
@@ -664,6 +814,7 @@ export function createTimelineState() {
     dragClipId = clipId;
     dragStartX = startX;
     dragStartTime = clip.startTime;
+    beginEdit("MOVE_CLIP", "Move clip");
   }
 
   function updateDrag(currentX: number) {
@@ -677,6 +828,7 @@ export function createTimelineState() {
   }
 
   function endDrag() {
+    endEdit();
     isDragging = false;
     dragClipId = null;
     saveProject();
@@ -693,17 +845,21 @@ export function createTimelineState() {
 
   // Undo/Redo operations
   function undo() {
+    endEdit();
     const snapshot = undoManager.undo();
     if (snapshot) {
       project = deduplicateProjectClips(snapshot.project);
+      audioUrl = snapshot.audioUrl ?? null;
       saveProject();
     }
   }
 
   function redo() {
+    endEdit();
     const snapshot = undoManager.redo();
     if (snapshot) {
       project = deduplicateProjectClips(snapshot.project);
+      audioUrl = snapshot.audioUrl ?? null;
       saveProject();
     }
   }
@@ -733,6 +889,8 @@ export function createTimelineState() {
     },
     undo,
     redo,
+    beginEdit,
+    endEdit,
 
     // Core state getters
     get project() {
