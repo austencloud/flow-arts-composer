@@ -32,7 +32,7 @@
     "capgo:upload": "npx @capgo/cli bundle upload",
     "build:packages": "tsc --build packages/tsconfig.build.json",
     "build:packages:force": "tsc --build packages/tsconfig.build.json --force",
-    "build": "npm run build:packages && node scripts/svelte-kit-sync-if-needed.mjs && node scripts/generate-svg-precache-manifest.cjs && cross-env NODE_OPTIONS=--max-old-space-size=8192 VITE_SOURCEMAP=true vite build --logLevel error && node scripts/inline-landing-critical-css.cjs && node scripts/upload-sourcemaps.js && node scripts/trim-deploy-assets.js",
+    "build": "npm run build:packages && node scripts/svelte-kit-sync-if-needed.mjs && node scripts/generate-svg-precache-manifest.cjs && cross-env NODE_OPTIONS=--max-old-space-size=8192 vite build --logLevel error && node scripts/inline-landing-critical-css.cjs && node scripts/upload-sourcemaps.js && node scripts/trim-deploy-assets.js",
     "build:fast": "npm run build:packages && node scripts/svelte-kit-sync-if-needed.mjs && node scripts/generate-svg-precache-manifest.cjs && cross-env NODE_OPTIONS=--max-old-space-size=8192 NODE_ENV=production vite build && node scripts/inline-landing-critical-css.cjs",
     "build:all": "npm run build:packages && node scripts/svelte-kit-sync-if-needed.mjs && node scripts/generate-svg-precache-manifest.cjs && cross-env NODE_OPTIONS=--max-old-space-size=8192 BUILD_ALL=true vite build",
     "build:analyze": "vite-bundle-visualizer",

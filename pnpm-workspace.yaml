@@ -5,6 +5,14 @@ patchedDependencies:
   '@austencloud/backgrounds@0.7.12': patches/@austencloud__backgrounds@0.7.12.patch
   '@austencloud/scene-3d@0.1.6': patches/@austencloud__scene-3d@0.1.6.patch
   '@austencloud/sidebar@1.0.1': patches/@austencloud__sidebar@1.0.1.patch
+  # Build speed only; the build output stays byte-identical. Rollup's chunk
+  # merge (experimentalMinChunkSize) tests every atom index with BigInt
+  # operations, and its path trackers use the slow Object.create(null,
+  # descriptor) form. Together they cost about a minute of every production
+  # build (measured 2026-09-28). After a Rollup upgrade pnpm stops with
+  # ERR_PNPM_UNUSED_PATCH: redo the same two edits with `pnpm patch` in a
+  # checkout that owns its node_modules, or delete this entry.
+  rollup@4.57.1: patches/rollup@4.57.1.patch
   svelte-fast-check@0.4.5: patches/svelte-fast-check@0.4.5.patch
 
 # canvas ships a native binding that only its install script provides
