@@ -14,7 +14,7 @@
   type Category = "transform" | "patterns" | "edit";
 
   interface ActionDef {
-    id: ActionHelpId | "edit-turns" | "edit-in-construct" | "clear-sequence";
+    id: ActionHelpId | "edit-turns" | "edit-in-construct";
     icon: string;
     label: string;
     btnColor: string;
@@ -57,9 +57,6 @@
     onShiftStart?: () => void;
     onTurns: () => void;
     onEditInConstructor: () => void;
-    /** Present only when the phone workspace rail has handed Clear to this
-        panel; the Edit category then lists it last. */
-    onClear?: () => void;
   }
 
   let {
@@ -91,7 +88,6 @@
     onShiftStart,
     onTurns,
     onEditInConstructor,
-    onClear,
   }: Props = $props();
 
   // Persist active category across panel open/close cycles
@@ -259,18 +255,6 @@
           },
         ]
       : []),
-    ...(onClear
-      ? [
-          {
-            id: "clear-sequence" as const,
-            icon: "eraser",
-            label: "Clear",
-            btnColor: "239, 68, 68",
-            action: onClear,
-            disabled: !hasSequence || isTransforming,
-          },
-        ]
-      : []),
   ]);
 
   const activeActions = $derived<ActionDef[]>(
@@ -338,7 +322,9 @@
     class="action-grid"
     id="panel-{activeCategory}"
     role="tabpanel"
-    aria-label={t("create_action_category_actions", { category: activeCategoryLabel })}
+    aria-label={t("create_action_category_actions", {
+      category: activeCategoryLabel,
+    })}
   >
     {#each activeActions as action (action.id + action.icon)}
       {#if action.id === "swap"}

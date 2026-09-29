@@ -76,7 +76,6 @@ export function createConstructTabState(
   sequenceValidationService?: SequenceValidator,
   createModuleState?: CreateModuleStateMinimal | null
 ) {
-
   // Create HMR backup for critical state - temporarily disabled to debug effect_orphan error
   const hmrBackup = {
     initialValue: {
@@ -139,7 +138,7 @@ export function createConstructTabState(
     ? createUndoController({
         UndoManager: undoManager,
         sequenceState,
-        getActiveSection: () => createModuleState?.activeSection || "construct",
+        getActiveSection: () => "construct",
         setActiveSectionInternal: async (_panel, _addToHistory) => {
           // Construct tab doesn't need to change active section since it's always construct
           // This is just for compatibility with the undo controller interface
@@ -451,7 +450,10 @@ export function createConstructTabState(
         sequenceState.hasStartPlacement
       );
       debug.log("sync: showStartPlacementPicker =", showStartPlacementPicker);
-      if (sequenceState.hasStartPlacement && showStartPlacementPicker === true) {
+      if (
+        sequenceState.hasStartPlacement &&
+        showStartPlacementPicker === true
+      ) {
         debug.log("sync: Sequence has start placement, hiding picker");
         setShowStartPlacementPicker(false);
       } else if (
@@ -583,7 +585,10 @@ export function createConstructTabState(
     }
 
     // When sequence state loses start placement, show the start placement picker
-    if (!sequenceState.hasStartPlacement && showStartPlacementPicker === false) {
+    if (
+      !sequenceState.hasStartPlacement &&
+      showStartPlacementPicker === false
+    ) {
       setShowStartPlacementPicker(true);
     }
 

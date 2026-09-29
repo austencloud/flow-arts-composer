@@ -93,9 +93,8 @@ describe("homepage hero notation rail contract", () => {
     expect(homeHero).toContain("showWordHeader={true}");
     expect(sequenceHero).toContain("showWordHeader,");
     expect(sequenceHero).toContain("visibilityManagerOverride: showWordHeader");
-    expect(inlinePlayer).toContain(
-      "word={animationState.sequenceData?.word ?? sequence.word}"
-    );
+    // Which word the header names is checked by mounting the hero player in
+    // tests/unit/landing/hero-word-header.test.ts, not by matching source.
     expect(inlinePlayer).toContain("hideHeader={fill && !showWordHeader}");
     expect(animatorCanvas).toContain(
       "activeStepNumber={headerActiveStepNumber}"

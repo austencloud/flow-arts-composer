@@ -24,7 +24,6 @@
   import type { IToolPanelMethods } from "../types/create-module-types";
   import { navigationState } from "$lib/shared/navigation/state/navigation-state.svelte";
   import type { LetterSource } from "$lib/shared/create/domain/spell-models";
-  import { UndoOperationType } from "../services/undo-manager";
   import { logConstructImmediateUndo } from "../../construct/services/construct-analytics";
 
   type CreateModuleState = ReturnType<typeof CreateModuleStateType>;
@@ -110,11 +109,11 @@
   const isWorkspacePlayback = $derived(!!panelState.workspacePlayback);
 
   // A stacked phone-width Assemble workspace spends two control rows around
-  // its step pictures. Folding the header's Undo/Redo and Save into the
-  // bottom rail, and the word into a thin strip between the corner badges,
-  // returns that height to the pictures. Share moves to the Actions panel to
-  // make room. Below 340px the rail can't hold them, so the two-row layout
-  // returns.
+  // its step pictures. Folding Save into the bottom rail, Undo/Redo into the
+  // grid panel's top-left corner, and the word into a thin strip between the
+  // corner badges returns that height to the pictures. Share moves to the
+  // Actions panel to make room. Below 340px the rail can't hold them, so the
+  // two-row layout returns.
   const COMPACT_TOOLBAR_MIN_WIDTH = 340;
   const COMPACT_TOOLBAR_MAX_WIDTH = 600;
   const useCompactToolbar = $derived(
@@ -172,11 +171,13 @@
   const shouldShowWorkspace = $derived(
     !isInputMode && !ownsFullWorkspace && (hasWorkspaceContent || isAssembleTab)
   );
-  const showClearRecovery = $derived(
+  const showCompactHistory = $derived(shouldShowWorkspace && useCompactToolbar);
+  const showHistoryRecovery = $derived(
     !hasWorkspaceContent &&
+      !isInputMode &&
+      !ownsFullWorkspace &&
       CreateModuleState.sequenceState.currentSequence === null &&
-      CreateModuleState.undoController?.nextUndoEntry?.type ===
-        UndoOperationType.CLEAR_SEQUENCE
+      (CreateModuleState.canUndo || CreateModuleState.canRedo)
   );
 
   // While the preview is showing, a click on anything that isn't a control or
@@ -257,13 +258,6 @@
     return () => resizeObserver.disconnect();
   });
 </script>
-
-{#snippet compactHistoryActions()}
-  <div class="compact-history-actions" inert={isWorkspacePlayback}>
-    <UndoButton {CreateModuleState} onAction={handleWorkspaceUndo} quiet />
-    <UndoButton {CreateModuleState} direction="redo" quiet />
-  </div>
-{/snippet}
 
 {#snippet compactSaveAction()}
   {#if canSaveToLibrary}
@@ -352,7 +346,6 @@
           {onClearSequence}
           {onViewSequence}
           compact={useCompactToolbar}
-          leadingActions={compactHistoryActions}
           trailingActions={compactSaveAction}
         />
       </div>
@@ -378,12 +371,26 @@
   <!-- Tool Panel -->
   <div
     class="tool-panel-container"
-    class:has-clear-recovery={showClearRecovery}
+    class:has-clear-recovery={showHistoryRecovery && !showCompactHistory}
+    style:--history-recovery-count={Number(CreateModuleState.canUndo) +
+      Number(CreateModuleState.canRedo)}
     bind:this={toolPanelElement}
   >
-    {#if showClearRecovery}
+    <!-- On phones Undo/Redo sit in the grid panel's empty top-left corner,
+         clear of every grid point; that pair also undoes a Clear. -->
+    {#if showCompactHistory}
+      <div class="compact-history-actions" inert={isWorkspacePlayback}>
+        <UndoButton {CreateModuleState} onAction={handleWorkspaceUndo} quiet />
+        <UndoButton {CreateModuleState} direction="redo" quiet />
+      </div>
+    {:else if showHistoryRecovery}
       <div class="clear-recovery-action">
-        <UndoButton {CreateModuleState} />
+        {#if CreateModuleState.canUndo}
+          <UndoButton {CreateModuleState} />
+        {/if}
+        {#if CreateModuleState.canRedo}
+          <UndoButton {CreateModuleState} direction="redo" />
+        {/if}
       </div>
     {/if}
 
@@ -506,16 +513,21 @@
     opacity: 0.45;
   }
 
-  /* The rail's zones let taps through to the grid; these wrappers are
-     authored here, so ButtonPanel's own wrapper rule doesn't reach them. */
-  .compact-history-actions,
+  /* The rail's zones let taps through to the grid; this wrapper is authored
+     here, so ButtonPanel's own wrapper rule doesn't reach it. */
   .compact-save-action {
     pointer-events: auto;
   }
 
+  /* Same corner as the clear-recovery Undo, which this pair replaces. */
   .compact-history-actions {
+    position: absolute;
+    top: clamp(6px, 1.5cqh, 14px);
+    left: clamp(6px, 1.5cqw, 18px);
+    z-index: 160;
     display: flex;
-    gap: var(--settings-workspace-action-gap, 8px);
+    gap: var(--settings-spacing-sm, 8px);
+    pointer-events: auto;
   }
 
   .compact-save-action {
@@ -614,7 +626,8 @@
 
   .tool-panel-container.has-clear-recovery {
     --picker-leading-action-offset: calc(
-      var(--min-touch-target, 48px) + var(--settings-spacing-sm, 8px)
+      var(--history-recovery-count, 1) *
+        (var(--min-touch-target, 48px) + var(--settings-spacing-sm, 8px))
     );
   }
 
@@ -641,6 +654,8 @@
   }
 
   .clear-recovery-action {
+    display: flex;
+    gap: var(--settings-spacing-sm, 8px);
     position: absolute;
     top: clamp(6px, 1.5cqh, 14px);
     left: clamp(6px, 1.5cqw, 18px);

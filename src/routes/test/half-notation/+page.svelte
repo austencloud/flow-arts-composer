@@ -458,11 +458,6 @@
     margin: 0;
   }
 
-  .intro {
-    --theme-accent: #3d44b8;
-    --theme-text: #222;
-  }
-
   section {
     margin-bottom: 56px;
   }

@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import { LOOPType } from "$lib/shared/foundation/domain/models/generation/circular-models";
 import { UndoOperationType } from "$lib/features/create/shared/services/undo-manager";
 import {
   createSequenceActionsOrchestrator,
@@ -205,19 +206,158 @@ describe("sequence actions orchestrator", () => {
     const duplicate = await harness.orchestrator.appendBridge("B");
 
     expect(duplicate).toEqual({ status: "busy" });
-    expect(harness.events).toEqual([
-      "haptic:selection",
-      `undo:${UndoOperationType.ADD_BEAT}`,
-      "append-bridge",
-    ]);
+    expect(harness.events).toEqual(["haptic:selection", "append-bridge"]);
 
     pending.resolve();
     const result = await first;
     expect(result.status).toBe("completed");
-    expect(harness.events.slice(-2)).toEqual([
+    expect(harness.events.slice(-3)).toEqual([
+      `undo:${UndoOperationType.ADD_BEAT}`,
       "set-sequence",
       "haptic:success",
     ]);
+  });
+
+  it("does not record a bridge append that fails", async () => {
+    const harness = createHarness({
+      extensionFlowCoordinator: {
+        appendBridge: vi.fn(async () => ({
+          success: false,
+          message: "No connecting bridge",
+        })),
+      } as unknown as SequenceActionsOrchestratorDeps["extensionFlowCoordinator"],
+    });
+
+    await expect(harness.orchestrator.appendBridge("A")).resolves.toMatchObject(
+      {
+        status: "failed",
+      }
+    );
+    expect(harness.deps.pushUndoSnapshot).not.toHaveBeenCalled();
+    expect(harness.sequenceState.setCurrentSequence).not.toHaveBeenCalled();
+  });
+
+  it("records a loop only after success and keeps failed attempts out of history", async () => {
+    const pending = deferred();
+    const applyLoop = vi
+      .fn()
+      .mockImplementationOnce(async () => {
+        await pending.promise;
+        return { success: false, message: "Cannot close loop" };
+      })
+      .mockResolvedValueOnce({ success: true, sequence: updatedSequence });
+    const harness = createHarness({
+      extensionFlowCoordinator: {
+        applyLoop,
+      } as unknown as SequenceActionsOrchestratorDeps["extensionFlowCoordinator"],
+    });
+
+    const failed = harness.orchestrator.applyLoop(LOOPType.ROTATED);
+    expect(harness.deps.pushUndoSnapshot).not.toHaveBeenCalled();
+    pending.resolve();
+    await expect(failed).resolves.toMatchObject({ status: "failed" });
+    expect(harness.deps.pushUndoSnapshot).not.toHaveBeenCalled();
+
+    await expect(
+      harness.orchestrator.applyLoop(LOOPType.ROTATED)
+    ).resolves.toMatchObject({
+      status: "completed",
+    });
+    expect(harness.events.slice(-3)).toEqual([
+      `undo:${UndoOperationType.EXTEND_SEQUENCE}`,
+      "set-sequence",
+      "haptic:success",
+    ]);
+  });
+
+  it("does not apply an async extension to another tab after navigation", async () => {
+    const pending = deferred();
+    const originalTab = createHarness();
+    const otherTabState = createHarness().sequenceState;
+    let activeState = originalTab.sequenceState;
+    const originalState = activeState;
+    const harness = createHarness({
+      getSequenceState: () => activeState,
+      extensionFlowCoordinator: {
+        appendBridge: vi.fn(async () => {
+          await pending.promise;
+          return { success: true, sequence: updatedSequence };
+        }),
+      } as unknown as SequenceActionsOrchestratorDeps["extensionFlowCoordinator"],
+    });
+
+    const extension = harness.orchestrator.appendBridge("A");
+    activeState = otherTabState;
+    pending.resolve();
+
+    await expect(extension).resolves.toMatchObject({ status: "completed" });
+    expect(harness.deps.pushUndoSnapshot).toHaveBeenCalledWith(
+      UndoOperationType.ADD_BEAT,
+      originalState
+    );
+    expect(originalState.setCurrentSequence).toHaveBeenCalledWith(
+      updatedSequence
+    );
+    expect(otherTabState.setCurrentSequence).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ["bridge", "clear"],
+    ["bridge", "replace"],
+    ["loop", "clear"],
+    ["loop", "replace"],
+  ] as const)(
+    "discards a completed %s extension after the source sequence is %s",
+    async (action, edit) => {
+      const pending = deferred();
+      const harness = createHarness({
+        extensionFlowCoordinator: {
+          appendBridge: vi.fn(async () => {
+            await pending.promise;
+            return { success: true, sequence: updatedSequence };
+          }),
+          applyLoop: vi.fn(async () => {
+            await pending.promise;
+            return { success: true, sequence: updatedSequence };
+          }),
+        } as unknown as SequenceActionsOrchestratorDeps["extensionFlowCoordinator"],
+      });
+
+      const extension =
+        action === "bridge"
+          ? harness.orchestrator.appendBridge("A")
+          : harness.orchestrator.applyLoop(LOOPType.ROTATED);
+      const newerSequence =
+        edit === "clear" ? null : { ...sequence, id: "newer" };
+      harness.sequenceState.currentSequence = newerSequence;
+      pending.resolve();
+
+      await expect(extension).resolves.toMatchObject({ status: "unavailable" });
+      expect(harness.deps.pushUndoSnapshot).not.toHaveBeenCalled();
+      expect(harness.sequenceState.setCurrentSequence).not.toHaveBeenCalled();
+      expect(harness.sequenceState.currentSequence).toBe(newerSequence);
+    }
+  );
+
+  it("does not record an unchanged pattern or rejected orientation repeat", () => {
+    const harness = createHarness({
+      extensionFlowCoordinator: {
+        applyOrientationRepeat: vi.fn(() => ({
+          success: false,
+          message: "Cannot repeat orientation",
+        })),
+      } as unknown as SequenceActionsOrchestratorDeps["extensionFlowCoordinator"],
+    });
+
+    harness.orchestrator.applyPattern(
+      UndoOperationType.APPLY_DURATION_PATTERN,
+      sequence
+    );
+    expect(harness.orchestrator.applyOrientationRepeat()).toMatchObject({
+      status: "failed",
+    });
+    expect(harness.deps.pushUndoSnapshot).not.toHaveBeenCalled();
+    expect(harness.sequenceState.setCurrentSequence).not.toHaveBeenCalled();
   });
 
   it("always releases the transform guard and exits shift-start mode after failure", async () => {
