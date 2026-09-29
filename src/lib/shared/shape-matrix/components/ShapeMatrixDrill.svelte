@@ -1880,6 +1880,38 @@
     }
   }
 
+  /* In the side column the dock is too narrow for its one-row labels, so
+     ControlDock drops them and leaves four bare icons, with empty column above
+     them in portrait. The column has the height for a 2x2 grid of labeled
+     buttons instead. Only this tier: the short-wide tier puts the dock under
+     the hero, and phone and desktop never answer to the compact name. The
+     root class lifts these over ControlDock's own .compact label rule. */
+  @container shape-matrix-drill-compact (min-width: 42rem) and (min-aspect-ratio: 5 / 6) and (min-height: 24.01rem) {
+    .drill .animation-controls :global(.dock .cat-bar) {
+      padding: 0;
+      background: none;
+      backdrop-filter: none;
+      border-top: none;
+    }
+    .drill .animation-controls :global(.dock .cat-scroll) {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.4rem;
+      overflow: visible;
+    }
+    .drill .animation-controls :global(.dock .dock-btn.cat) {
+      flex-direction: row;
+      justify-content: flex-start;
+      gap: 0.5rem;
+      min-height: var(--min-touch-target, 44px);
+      padding: 0 0.7rem;
+    }
+    .drill .animation-controls :global(.dock .cat-label) {
+      display: block;
+      font-size: 0.8rem;
+    }
+  }
+
   /* Short as well as wide (the Fold in landscape): even the compact carousel
      would make the primary visual smaller. This width and height already
      imply the side composition's aspect. */
