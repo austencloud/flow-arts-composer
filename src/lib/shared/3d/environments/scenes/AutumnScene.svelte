@@ -253,10 +253,4 @@
       window.removeEventListener("pointerleave", onPointerLeave);
     };
   });
-
-  /*
-   * Source-contract lineage: the shared loader now owns the former exact
-   * request, including `load: loadAutumnEnvironment` and
-   * `onDiscard: (loaded) => disposeSceneGraph(loaded.scene)`.
-   */
 </script>
