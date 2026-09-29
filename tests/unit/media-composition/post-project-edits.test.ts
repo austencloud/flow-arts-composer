@@ -23,6 +23,7 @@ import {
   resetFraming,
   setItemFill,
   setProjectAudio,
+  setProjectBackground,
   setTrackFlag,
   setVideoSpeed,
   splitItemAt,
@@ -659,6 +660,18 @@ describe("track and project flags", () => {
     const base = twoClips();
     expect(valid(setProjectAudio(base, "silent", ctx)).audio).toBe("silent");
     expect(setProjectAudio(base, "takes", ctx)).toBe(base);
+  });
+
+  it("switches the background, and stores the dark default as nothing", () => {
+    const base = twoClips();
+    expect(setProjectBackground(base, "dark", ctx)).toBe(base);
+
+    const blurred = valid(setProjectBackground(base, "blur", ctx));
+    expect(blurred.background).toBe("blur");
+    expect(setProjectBackground(blurred, "blur", ctx)).toBe(blurred);
+
+    const dark = valid(setProjectBackground(blurred, "dark", ctx));
+    expect("background" in dark).toBe(false);
   });
 });
 
