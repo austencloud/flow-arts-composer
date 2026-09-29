@@ -58,6 +58,9 @@ placement coverage alongside the added regression tests. The 3D suites emitted
 a duplicate Three.js import warning; their assertions passed.
 The final focused Timeline suite passed another **11 tests**, for **251 tests
 across 26 files** in total.
+After merging concurrent work from local main, the affected Post Studio,
+keyboard shortcut and Create integrity suites passed **75 checks across six
+files**. These include reruns of tests counted above.
 
 ## Browser checks and limits
 
