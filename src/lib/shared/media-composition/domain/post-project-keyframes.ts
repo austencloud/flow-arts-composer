@@ -7,6 +7,7 @@ import {
   clampBox,
   clampFraming,
   itemEnd,
+  shortestTurn,
   wrapDegrees,
   type PostBox,
   type PostEasing,
@@ -132,7 +133,9 @@ function lerpChannelValue<Ch extends PostKeyframeChannel>(
     zoom: lerp(a.zoom, b.zoom),
     panX: lerp(a.panX, b.panX),
     panY: lerp(a.panY, b.panY),
-    rotation: lerp(a.rotation, b.rotation),
+    // Stored turns are wrapped to -180..180, so a blend across that seam
+    // goes the short way rather than spinning nearly all the way round.
+    rotation: a.rotation + shortestTurn(a.rotation, b.rotation) * e,
   } as PostChannelValue[Ch];
 }
 

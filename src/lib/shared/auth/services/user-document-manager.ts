@@ -9,8 +9,13 @@ import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
 import { type User } from "firebase/auth";
 import { getFirestoreInstance } from "../firebase";
 import { getProviderIds } from "./profile-picture-manager";
-import { generateUniqueUsername, claimUsername } from "./username-validator";
+import {
+  generateUniqueUsername,
+  claimUsername,
+  getUsernameOwner,
+} from "./username-validator";
 import { formatUsername } from "../domain/models/username-validation";
+import { isActivityStale } from "../domain/activity-refresh";
 import { retryAuthenticatedFirestoreOperation } from "./retry-authenticated-firestore-operation";
 
 import { generateAvatarUrl } from "$lib/shared/foundation/utils/avatar-generator";
@@ -72,7 +77,7 @@ export class UserDocumentManager {
    * that can be displayed in the users browse panel.
    *
    * Creates new document with initial fields if doesn't exist.
-   * Updates existing document with latest auth data if exists.
+   * Updates an existing document only where it differs from the latest auth data.
    */
   async createOrUpdateUserDocument(user: User): Promise<void> {
     let currentStep: ProfileSyncStep = {
@@ -89,6 +94,7 @@ export class UserDocumentManager {
 
       const firestore = await getFirestoreInstance();
       const userDocRef = doc(firestore, `users/${user.uid}`);
+      const privateProfileRef = doc(firestore, "userPrivateProfiles", user.uid);
       const mergePrivateProfile = async (
         profile: Record<string, unknown>
       ): Promise<void> => {
@@ -98,9 +104,7 @@ export class UserDocumentManager {
           path: `userPrivateProfiles/${user.uid}`,
         };
         await retryAuthenticatedFirestoreOperation(user, () =>
-          setDoc(doc(firestore, "userPrivateProfiles", user.uid), profile, {
-            merge: true,
-          })
+          setDoc(privateProfileRef, profile, { merge: true })
         );
       };
 
@@ -237,96 +241,159 @@ export class UserDocumentManager {
         // rules — a non-admin can't write another user's notifications —
         // and silently failed for every signup since launch.
       } else {
-        // EXISTING USER: Preserve username, update other fields
+        // EXISTING USER: this runs on every signed-in page load, so it writes
+        // only what differs from the stored public and private profiles and
+        // never the username. Rewriting the profile each time billed a write
+        // per page view, woke the pulseUserActivity trigger, and made
+        // updatedAt mean "last page view" instead of "last profile change".
         const existingData = userDoc.data();
         const existingUsername = existingData?.username;
 
-        // Build update object - don't overwrite username
         // NOTE: Email deliberately NOT stored - user documents are publicly readable
-        const updateData: Record<string, unknown> = {
-          updatedAt: serverTimestamp(),
-          lastActivityDate: serverTimestamp(),
-          // Keep the guest flag current. onAuthStateChanged doesn't reliably
-          // fire on in-place link, so anonymous-upgrade.ts also clears this
-          // explicitly — this just keeps it correct on any later auth refresh.
-          isAnonymous: user.isAnonymous,
-        };
+        const profileChanges: Record<string, unknown> = {};
+
+        // Keep the guest flag current. onAuthStateChanged doesn't reliably
+        // fire on in-place link, so anonymous-upgrade.ts also clears this
+        // explicitly — this just keeps it correct on any later auth refresh.
+        if (existingData?.isAnonymous !== user.isAnonymous) {
+          profileChanges.isAnonymous = user.isAnonymous;
+        }
 
         // Same rule the avatar below follows: only overwrite the stored name
         // when Auth actually has one. This branch runs on EVERY sign-in, so
         // writing the email-derived fallback unconditionally re-mangled a
         // repaired name (and clobbered a name the user had set themselves) the
         // next time they logged in.
-        if (hasRealAuthName || !existingData?.displayName) {
-          updateData.displayName = displayName;
+        if (
+          (hasRealAuthName || !existingData?.displayName) &&
+          existingData?.displayName !== displayName
+        ) {
+          profileChanges.displayName = displayName;
         }
 
         // Only overwrite avatar fields when Auth provides a real URL.
         // Prevents nulling out a generated or custom avatar on re-login.
-        if (user.photoURL) {
-          updateData.photoURL = user.photoURL;
-          updateData.avatar = user.photoURL;
-        } else if (!existingData?.photoURL) {
-          const fallback = generateAvatarUrl(displayName, 256);
-          updateData.photoURL = fallback;
-          updateData.avatar = fallback;
+        const avatarUrl =
+          user.photoURL ||
+          (existingData?.photoURL ? null : generateAvatarUrl(displayName, 256));
+        if (avatarUrl && existingData?.photoURL !== avatarUrl) {
+          profileChanges.photoURL = avatarUrl;
         }
+        if (avatarUrl && existingData?.avatar !== avatarUrl) {
+          profileChanges.avatar = avatarUrl;
+        }
+
+        // Add usernameLowercase if missing (backfill for existing users)
+        if (existingUsername && !existingData?.usernameLowercase) {
+          profileChanges.usernameLowercase = formatUsername(existingUsername);
+        }
+
+        // Every users/{uid} write stamps lastActivityDate. With nothing else
+        // to write, the date alone is refreshed once it is an hour old.
+        const hasProfileChanges = Object.keys(profileChanges).length > 0;
+        const writesPublicProfile =
+          hasProfileChanges || isActivityStale(existingData?.lastActivityDate);
+
+        currentStep = {
+          action: "get-private-profile",
+          message: "Could not read the signed-in user's private profile",
+          path: `userPrivateProfiles/${user.uid}`,
+        };
+        const privateProfileDoc = await retryAuthenticatedFirestoreOperation(
+          user,
+          () => getDoc(privateProfileRef)
+        );
+        const storedPrivateProfile = privateProfileDoc.exists()
+          ? privateProfileDoc.data()
+          : undefined;
 
         // Only update googlePhotoURL if we have a fresh one from the provider.
         // Don't null it out - the provider's photoURL becomes null after the
         // user switches to a generated avatar, but we want to keep the
         // original so "Use Google Photo" always works.
-        await mergePrivateProfile({
+        const latestPrivateProfile: Record<string, unknown> = {
           email: user.email ?? null,
           googleId: providerIds.googleId || null,
           facebookId: providerIds.facebookId || null,
           ...(googlePhotoURL ? { googlePhotoURL } : {}),
-          ...(postHogSessionId
-            ? {
-                postHogSessionId,
-                postHogSessionCapturedAt: serverTimestamp(),
-              }
-            : {}),
-        });
-
-        // Add usernameLowercase if missing (backfill for existing users)
-        if (existingUsername && !existingData?.usernameLowercase) {
-          updateData.usernameLowercase = formatUsername(existingUsername);
+        };
+        const privateProfileChanges: Record<string, unknown> = {};
+        for (const [field, value] of Object.entries(latestPrivateProfile)) {
+          if ((storedPrivateProfile?.[field] ?? null) !== value) {
+            privateProfileChanges[field] = value;
+          }
         }
 
-        currentStep = {
-          action: "update-public-profile",
-          message: "Could not update the signed-in user's public profile",
-          path: `users/${user.uid}`,
-        };
-        await retryAuthenticatedFirestoreOperation(user, () =>
-          setDoc(userDocRef, updateData, { merge: true })
-        );
+        // Pulse links a session replay to its signup and "is back" alerts
+        // only when postHogSessionCapturedAt is within five minutes of
+        // lastActivityDate, and it reads this private profile as soon as the
+        // users/{uid} write below fires it. So the session is saved just
+        // before that write, and not at all when it is skipped.
+        if (writesPublicProfile && postHogSessionId) {
+          privateProfileChanges.postHogSessionId = postHogSessionId;
+          privateProfileChanges.postHogSessionCapturedAt = serverTimestamp();
+        }
+        if (Object.keys(privateProfileChanges).length > 0) {
+          await mergePrivateProfile(privateProfileChanges);
+        }
 
-        // Repair accounts whose parent profile was created while an anonymous
-        // token was still being replaced and whose first username claim was
-        // consequently denied.
-        if (existingUsername && !user.isAnonymous) {
+        if (writesPublicProfile) {
           currentStep = {
-            action: "claim-username",
-            message: "Could not claim the signed-in user's username",
-            path: `usernames/${formatUsername(existingUsername)}`,
+            action: "update-public-profile",
+            message: "Could not update the signed-in user's public profile",
+            path: `users/${user.uid}`,
           };
           await retryAuthenticatedFirestoreOperation(user, () =>
-            claimUsername(user.uid, existingUsername)
+            setDoc(
+              userDocRef,
+              {
+                ...profileChanges,
+                ...(hasProfileChanges ? { updatedAt: serverTimestamp() } : {}),
+                lastActivityDate: serverTimestamp(),
+              },
+              { merge: true }
+            )
           );
         }
 
+        // Repair accounts whose parent profile was created while an anonymous
+        // token was still being replaced and whose first username claim was
+        // consequently denied. A plain read comes first so an intact claim
+        // costs one read per page load: even a transaction that changes
+        // nothing sends a commit.
+        if (existingUsername && !user.isAnonymous) {
+          const usernameClaimPath = `usernames/${formatUsername(existingUsername)}`;
+          currentStep = {
+            action: "get-username-claim",
+            message: "Could not read the signed-in user's username claim",
+            path: usernameClaimPath,
+          };
+          const claimOwner = await retryAuthenticatedFirestoreOperation(
+            user,
+            () => getUsernameOwner(existingUsername)
+          );
+          if (claimOwner !== user.uid) {
+            currentStep = {
+              action: "claim-username",
+              message: "Could not claim the signed-in user's username",
+              path: usernameClaimPath,
+            };
+            await retryAuthenticatedFirestoreOperation(user, () =>
+              claimUsername(user.uid, existingUsername)
+            );
+          }
+        }
+
         const projectedDisplayName =
-          typeof updateData.displayName === "string"
-            ? updateData.displayName
+          typeof profileChanges.displayName === "string"
+            ? profileChanges.displayName
             : typeof existingData?.displayName === "string" &&
                 existingData.displayName.length > 0
               ? existingData.displayName
               : "Unknown";
         const projectedAvatarUrl =
-          typeof updateData.photoURL === "string"
-            ? updateData.photoURL
+          typeof profileChanges.photoURL === "string"
+            ? profileChanges.photoURL
             : typeof existingData?.photoURL === "string"
               ? existingData.photoURL
               : undefined;

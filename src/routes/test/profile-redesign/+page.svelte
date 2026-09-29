@@ -559,7 +559,7 @@
   .stat { display: flex; flex-direction: column; gap: 1px; }
   .stat-value { font-size: var(--font-size-lg); font-weight: 700; font-variant-numeric: tabular-nums; }
   .stat-label { font-size: var(--font-size-compact); color: var(--theme-text-dim); }
-  .stat.clickable .stat-label { text-decoration: underline dotted; text-underline-offset: 3px; cursor: pointer; }
+  .stat.clickable { padding: 4px 10px; border: 1px solid var(--theme-stroke); border-radius: 10px; background: var(--theme-card-bg); cursor: pointer; }
 
   .follow-btn {
     padding: 10px 28px;

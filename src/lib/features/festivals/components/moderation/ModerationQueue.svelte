@@ -1,4 +1,5 @@
 <script lang="ts">
+  import LinkChip from "$lib/shared/ui/components/LinkChip.svelte";
   import { onMount } from "svelte";
   import { getPending, approve, reject } from "../../services/festival-submission-reviewer";
   import { getFestivalContext } from "../../context/festival-context";
@@ -120,15 +121,11 @@
             <span class="submission-dates">
               {formatDate(submission.dates?.start)} – {formatDate(submission.dates?.end)}
             </span>
-            <a
-              href={submission.websiteUrl}
-              target="_blank"
-              rel="noopener noreferrer"
+            <LinkChip
               class="submission-website"
+              wrap
+              href={submission.websiteUrl}>{submission.websiteUrl}</LinkChip
             >
-              {submission.websiteUrl}
-              <i class="fas fa-arrow-up-right-from-square" aria-hidden="true"></i>
-            </a>
 
             {#if submission.seekingInstructors || submission.seekingPerformers}
               <div class="submission-flags">
@@ -337,23 +334,8 @@
     color: var(--theme-text-secondary, rgba(255, 255, 255, 0.6));
   }
 
-  .submission-website {
-    font-size: var(--font-size-compact, 12px);
-    color: var(--theme-accent, #3b82f6);
-    text-decoration: none;
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    word-break: break-all;
-  }
-
-  .submission-website:hover {
-    text-decoration: underline;
-  }
-
-  .submission-website i {
-    font-size: 10px;
-    flex-shrink: 0;
+  .submission-card :global(.submission-website) {
+    align-self: flex-start;
   }
 
   .submission-flags {

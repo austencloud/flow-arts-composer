@@ -399,7 +399,6 @@
   }
   .construction-header h3 {
     margin: 0.28rem 0 0.45rem;
-    scroll-margin-top: 5rem;
     font-size: clamp(1.65rem, 1.25rem + 1.6cqi, 3rem);
     letter-spacing: -0.035em;
     line-height: 1;

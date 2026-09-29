@@ -93,16 +93,16 @@ export function findFirstFocusable(container: HTMLElement): HTMLElement | null {
 /**
  * Focus the first focusable element or the container itself
  */
-export function focusFirstOrContainer(container: HTMLElement): void {
+export function focusFirstOrContainer(container: HTMLElement, options?: FocusOptions): void {
 	const firstFocusable = findFirstFocusable(container);
 
 	if (firstFocusable) {
-		firstFocusable.focus();
+		firstFocusable.focus(options);
 	} else {
 		// Make container focusable and focus it
 		if (!container.hasAttribute('tabindex')) {
 			container.setAttribute('tabindex', '-1');
 		}
-		container.focus();
+		container.focus(options);
 	}
 }

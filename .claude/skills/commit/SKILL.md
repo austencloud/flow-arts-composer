@@ -1,6 +1,5 @@
-<!-- managed by @austencloud/claude-skills — do not edit manually, run: npx @austencloud/claude-skills sync -->
-
 ---
+# managed by @austencloud/claude-skills - do not edit manually, run: npx @austencloud/claude-skills sync
 description: Use when committing changes that span multiple concerns or scopes
 ---
 

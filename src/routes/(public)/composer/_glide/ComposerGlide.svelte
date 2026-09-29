@@ -162,6 +162,10 @@
       };
     }
     stage.classList.add("staged");
+    // Next covers the bottom of the window, so a control the page scrolls
+    // into view, a focused one included, stops above it rather than under it.
+    const root = document.documentElement;
+    root.style.scrollPaddingBottom = `${CONTROLS_BAND}px`;
 
     let plan = planStops({ heights: [], room: 1, travel: 1, hold: 0 });
     let heights: number[] = [];
@@ -534,6 +538,7 @@
       page.removeEventListener("focusin", onFocusIn);
       page.removeEventListener("click", onClick);
       stage.classList.remove("staged");
+      root.style.removeProperty("scroll-padding-bottom");
       stage.style.removeProperty("height");
       for (const section of sections) {
         for (const property of STAGED_PROPERTIES) {
@@ -621,8 +626,11 @@
   }
 
   /* The page becomes a fixed stage the height of the window; the track
-     around it supplies the scroll a tall section pans through. */
+     around it supplies the scroll a tall section pans through. Sections read
+     --stop-room and --stop-pad to size themselves to the room they rest in. */
   .glide:global(.staged) :global(.composer-page) {
+    --stop-room: var(--glide-room);
+    --stop-pad: 0px;
     position: sticky;
     top: 0;
     display: grid;

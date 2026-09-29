@@ -10,6 +10,12 @@
  *
  * Because both read this one array, the tutorial diagram can never drift from
  * the real panel. Move a button here and it moves in both places.
+ *
+ * One exception: a stacked phone-width Assemble workspace folds the header
+ * zones into one quiet bottom rail (Undo/Redo lead the left zone, Save ends
+ * the right zone) and shows the word in a thin strip above the pictures. Share
+ * moves into the Sequence Actions header and Clear into its Edit category. The
+ * tutorial diagram describes the regular two-row layout.
  */
 import { t } from "$lib/shared/i18n/i18n.svelte.js";
 

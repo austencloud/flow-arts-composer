@@ -1,5 +1,6 @@
 <script lang="ts">
   import Seo from "$lib/shared/components/Seo.svelte";
+  import LinkChip from "$lib/shared/ui/components/LinkChip.svelte";
   import "$lib/shared/landing/styles/public-editorial.css";
   import SoftwareSubmitForm from "$lib/shared/landing/components/SoftwareSubmitForm.svelte";
   import HistoryEra from "./_components/HistoryEra.svelte";
@@ -296,7 +297,9 @@
           links to the projects that remain available.
         </p>
         <p class="article-meta">
-          By <a href="/about#austen-cloud">Austen Cloud</a>
+          By <LinkChip size="inline" href="/about#austen-cloud"
+            >Austen Cloud</LinkChip
+          >
           <span aria-hidden="true">·</span>
           Published July 16, 2026
           <span aria-hidden="true">·</span>
@@ -358,25 +361,9 @@
               into the software that follows.
             </p>
             <div class="resource-row">
-              <a
-                href={links.spinScience}
-                target="_blank"
-                rel="noopener noreferrer"
-                class="resource-chip"
-                ><span>Spin Science</span><i
-                  class="fas fa-external-link-alt ext"
-                  aria-hidden="true"
-                ></i></a
-              >
-              <a
-                href={links.sirLorq}
-                target="_blank"
-                rel="noopener noreferrer"
-                class="resource-chip"
-                ><span>Book of P.H.A.T. at Sir Lorq</span><i
-                  class="fas fa-external-link-alt ext"
-                  aria-hidden="true"
-                ></i></a
+              <LinkChip href={links.spinScience}>Spin Science</LinkChip>
+              <LinkChip href={links.sirLorq}
+                >Book of P.H.A.T. at Sir Lorq</LinkChip
               >
             </div>
           </div>
@@ -408,31 +395,15 @@
               Noel Yee, and remains available on both stores.
             </p>
             <div class="resource-row">
-              <a
-                href={links.vtgPlay}
-                target="_blank"
-                rel="noopener noreferrer"
-                class="resource-chip"
-                ><span>VTG on Google Play</span><i
-                  class="fas fa-external-link-alt ext"
-                  aria-hidden="true"
-                ></i></a
-              >
-              <a
-                href={links.vtgIos}
-                target="_blank"
-                rel="noopener noreferrer"
-                class="resource-chip"
-                ><span>VTG on the App Store</span><i
-                  class="fas fa-external-link-alt ext"
-                  aria-hidden="true"
-                ></i></a
-              >
+              <LinkChip href={links.vtgPlay}>VTG on Google Play</LinkChip>
+              <LinkChip href={links.vtgIos}>VTG on the App Store</LinkChip>
             </div>
             <p class="context-link">
-              For what VTG contributed to The Kinetic Alphabet itself, read the <a
+              For what VTG contributed to The Kinetic Alphabet itself, read the <LinkChip
+                size="inline"
+                wrap
                 href="/history#archive-record-vtg"
-                >VTG record in the history archive</a
+                >VTG record in the history archive</LinkChip
               >.
             </p>
           </div>
@@ -465,46 +436,10 @@
               old-school names. All four remain downloadable.
             </p>
             <div class="resource-row">
-              <a
-                href={links.poiLab}
-                target="_blank"
-                rel="noopener noreferrer"
-                class="resource-chip"
-                ><span>Poi LAB</span><i
-                  class="fas fa-external-link-alt ext"
-                  aria-hidden="true"
-                ></i></a
-              >
-              <a
-                href={links.doubleStaffLab}
-                target="_blank"
-                rel="noopener noreferrer"
-                class="resource-chip"
-                ><span>Double Staff LAB</span><i
-                  class="fas fa-external-link-alt ext"
-                  aria-hidden="true"
-                ></i></a
-              >
-              <a
-                href={links.hoopLab}
-                target="_blank"
-                rel="noopener noreferrer"
-                class="resource-chip"
-                ><span>Hoop Twinz LAB</span><i
-                  class="fas fa-external-link-alt ext"
-                  aria-hidden="true"
-                ></i></a
-              >
-              <a
-                href={links.tuttingLab}
-                target="_blank"
-                rel="noopener noreferrer"
-                class="resource-chip"
-                ><span>Tutting Lab</span><i
-                  class="fas fa-external-link-alt ext"
-                  aria-hidden="true"
-                ></i></a
-              >
+              <LinkChip href={links.poiLab}>Poi LAB</LinkChip>
+              <LinkChip href={links.doubleStaffLab}>Double Staff LAB</LinkChip>
+              <LinkChip href={links.hoopLab}>Hoop Twinz LAB</LinkChip>
+              <LinkChip href={links.tuttingLab}>Tutting Lab</LinkChip>
             </div>
           </div>
         {/snippet}
@@ -543,35 +478,12 @@
               collisions, or the limits of a human body.
             </p>
             <div class="resource-row">
-              <a
-                href={links.visualSpinnerDemo}
-                target="_blank"
-                rel="noopener noreferrer"
-                class="resource-chip"
-                ><span>Open the four-prop demo</span><i
-                  class="fas fa-external-link-alt ext"
-                  aria-hidden="true"
-                ></i></a
+              <LinkChip href={links.visualSpinnerDemo}
+                >Open the four-prop demo</LinkChip
               >
-              <a
-                href={links.visualSpinner}
-                target="_blank"
-                rel="noopener noreferrer"
-                class="resource-chip"
-                ><span>Project page</span><i
-                  class="fas fa-external-link-alt ext"
-                  aria-hidden="true"
-                ></i></a
-              >
-              <a
-                href={links.visualSpinnerGithub}
-                target="_blank"
-                rel="noopener noreferrer"
-                class="resource-chip"
-                ><span>Source on GitHub</span><i
-                  class="fas fa-external-link-alt ext"
-                  aria-hidden="true"
-                ></i></a
+              <LinkChip href={links.visualSpinner}>Project page</LinkChip>
+              <LinkChip href={links.visualSpinnerGithub}
+                >Source on GitHub</LinkChip
               >
             </div>
           </div>
@@ -606,26 +518,8 @@
               the concept catalogs.
             </p>
             <div class="resource-row">
-              <a
-                href={links.spiroAnim}
-                target="_blank"
-                rel="noopener noreferrer"
-                class="resource-chip"
-                ><span>Open SpiroAnim</span><i
-                  class="fas fa-external-link-alt ext"
-                  aria-hidden="true"
-                ></i></a
-              >
-              <a
-                href={links.spiroAnimGithub}
-                target="_blank"
-                rel="noopener noreferrer"
-                class="resource-chip"
-                ><span>Source on GitHub</span><i
-                  class="fas fa-external-link-alt ext"
-                  aria-hidden="true"
-                ></i></a
-              >
+              <LinkChip href={links.spiroAnim}>Open SpiroAnim</LinkChip>
+              <LinkChip href={links.spiroAnimGithub}>Source on GitHub</LinkChip>
             </div>
           </div>
         {/snippet}
@@ -655,36 +549,13 @@
               nearby, with event listings and a vendor marketplace along the way.
             </p>
             <div class="resource-row">
-              <a
-                href={links.arFlowArtsPlay}
-                target="_blank"
-                rel="noopener noreferrer"
-                class="resource-chip"
-                ><span>AR Flow Arts for Android</span><i
-                  class="fas fa-external-link-alt ext"
-                  aria-hidden="true"
-                ></i></a
+              <LinkChip href={links.arFlowArtsPlay}
+                >AR Flow Arts for Android</LinkChip
               >
-              <a
-                href={links.arFlowArtsIos}
-                target="_blank"
-                rel="noopener noreferrer"
-                class="resource-chip"
-                ><span>AR Flow Arts for iOS</span><i
-                  class="fas fa-external-link-alt ext"
-                  aria-hidden="true"
-                ></i></a
+              <LinkChip href={links.arFlowArtsIos}
+                >AR Flow Arts for iOS</LinkChip
               >
-              <a
-                href={links.fam}
-                target="_blank"
-                rel="noopener noreferrer"
-                class="resource-chip"
-                ><span>Flow Arts Meet Up</span><i
-                  class="fas fa-external-link-alt ext"
-                  aria-hidden="true"
-                ></i></a
-              >
+              <LinkChip href={links.fam}>Flow Arts Meet Up</LinkChip>
             </div>
           </div>
         {/snippet}
@@ -708,10 +579,7 @@
               simulators, effects, or community infrastructure. In 2016, Tiffany
               Fong built PoiNotation, a Scala domain-specific language for
               writing poi moves as text. The source remains on
-              <a
-                href={links.poiNotation}
-                target="_blank"
-                rel="noopener noreferrer">GitHub</a
+              <LinkChip size="inline" href={links.poiNotation}>GitHub</LinkChip
               >.
             </p>
             <p>
@@ -744,15 +612,9 @@
               that earlier tool's sequences into the same library.
             </p>
             <div class="resource-row">
-              <a href="/composer" class="resource-chip">
-                <span>About Flow Arts Composer</span>
-              </a>
-              <a href="/create" class="resource-chip">
-                <span>Open the Composer</span>
-              </a>
-              <a href="/browse" class="resource-chip">
-                <span>Browse public sequences</span>
-              </a>
+              <LinkChip href="/composer">About Flow Arts Composer</LinkChip>
+              <LinkChip href="/create">Open the Composer</LinkChip>
+              <LinkChip href="/browse">Browse public sequences</LinkChip>
             </div>
           </div>
         {/snippet}
@@ -884,13 +746,6 @@
     font-size: var(--font-size-sm, 0.875rem);
   }
 
-  .article-meta a {
-    color: color-mix(
-      in oklch,
-      var(--theme-accent, #8b6cff) 76%,
-      var(--theme-text, #fff)
-    );
-  }
   .article-meta span {
     margin-inline: 0.35rem;
   }
@@ -1035,7 +890,6 @@
   .contribution {
     display: grid;
     gap: clamp(2rem, 4vw, 5rem);
-    scroll-margin-top: 6rem;
     padding: clamp(1.5rem, 3vw, 3rem);
     border: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.12));
     border-radius: var(--radius-2026-xl, 24px);

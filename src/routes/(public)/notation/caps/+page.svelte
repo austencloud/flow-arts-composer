@@ -2,6 +2,7 @@
   import { tick } from "svelte";
   import Seo from "$lib/shared/components/Seo.svelte";
   import SourceVideoCard from "$lib/shared/components/SourceVideoCard.svelte";
+  import LinkChip from "$lib/shared/ui/components/LinkChip.svelte";
   import CapsHub from "./_components/CapsHub.svelte";
   import CapsAssembly from "./_components/CapsAssembly.svelte";
   import CurveAtlas from "./_components/CurveAtlas.svelte";
@@ -153,8 +154,9 @@
           </p>
           <p class="cap-credit">
             Damien coined the term and published the construction while posting
-            as Zaltymbunk and French_Saltimbanque on <a href={THREAD_URL}
-              >Home of Poi in 2009</a
+            as Zaltymbunk and French_Saltimbanque on <LinkChip
+              size="inline"
+              href={THREAD_URL}>Home of Poi in 2009</LinkChip
             >.
           </p>
         </div>
@@ -198,12 +200,14 @@
           his cycloid cases are the cusp-forming epicycloids or hypocycloids.
           The plots below use his published parameters. Their names say
           inspin, the poi community's word for what the Kinetic Alphabet calls
-          <a href="/guide/prospin-and-inspin">prospin</a>.
+          <LinkChip size="inline" href="/guide/prospin-and-inspin"
+            >prospin</LinkChip
+          >.
         </p>
         <p class="atlas-credit">
           The animated reference illustrations Damien linked were by
-          <a href={MATHCURVE_URL}
-            >Robert Ferréol, Encyclopédie des formes mathématiques remarquables</a
+          <LinkChip size="inline" wrap href={MATHCURVE_URL}
+            >Robert Ferréol, Encyclopédie des formes mathématiques remarquables</LinkChip
           >. Those archival GIFs are credited here and not republished.
         </p>
       </div>
@@ -281,8 +285,8 @@
           feasibility rules, and composite examples shown on this page.
         </p>
         <div class="credit-links">
-          <a href={THREAD_URL}>Origin thread</a>
-          <a href={MATH_URL}>The Math of CAPs</a>
+          <LinkChip href={THREAD_URL}>Origin thread</LinkChip>
+          <LinkChip href={MATH_URL}>The Math of CAPs</LinkChip>
         </div>
       </article>
 
@@ -300,9 +304,9 @@
             Taught CAPs to a broad learner audience in 2016 and used the
             expansion “Capped Antispin Patterns.”
           </p>
-          <a
-            href="https://playpoi.com/learn/learning-caps-capped-antispin-patterns/"
-            >PlayPoi lesson</a
+          <LinkChip
+            class="support-link"
+            href="https://playpoi.com/learn/learning-caps-capped-antispin-patterns/">PlayPoi lesson</LinkChip
           >
         </article>
         <article>
@@ -311,9 +315,9 @@
             Developed 9-Square Theory and the eight-step CAP approach credited
             in Drex's double staff lesson.
           </p>
-          <a
-            href="https://www.drexfactor.com/weirdscience/2016/09/27/tutorial_double_staff_8_step_cap_recipe"
-            >Eight-step lesson</a
+          <LinkChip
+            class="support-link"
+            href="https://www.drexfactor.com/weirdscience/2016/09/27/tutorial_double_staff_8_step_cap_recipe">Eight-step lesson</LinkChip
           >
         </article>
         <article>
@@ -322,9 +326,9 @@
             Documented CAPs across the Tech Poi Blog, tutorials, and the
             preserved copy of Damien's mathematical framework.
           </p>
-          <a
-            href="https://drexfactor.com/index.php?q=weirdscience%2F2012%2F08%2F21%2Fbasic_poi_dancing_tutorial_c_caps"
-            >C-CAP lesson</a
+          <LinkChip
+            class="support-link"
+            href="https://drexfactor.com/index.php?q=weirdscience%2F2012%2F08%2F21%2Fbasic_poi_dancing_tutorial_c_caps">C-CAP lesson</LinkChip
           >
         </article>
       </div>
@@ -378,9 +382,10 @@
       {/each}
     </div>
     <p class="media-footnote">
-      Charlie's series continues in the <a
+      Charlie's series continues in the <LinkChip
+        size="inline"
         href="https://www.youtube.com/playlist?list=PLDE05D5E593C54AED"
-        >full 9-Square Theory playlist</a
+        >full 9-Square Theory playlist</LinkChip
       >. Alien Jon's pattern playlist from the origin thread no longer resolves.
     </p>
   </section>
@@ -391,7 +396,7 @@
     <ol class="sources-grid">
       <li>
         <span>Origin discussion</span>
-        <a href={THREAD_URL}>“What are CAP's?”</a>
+        <LinkChip class="source-link" href={THREAD_URL}>“What are CAP's?”</LinkChip>
         <p>
           Home of Poi, ca. 2009. Coinage attribution, the OMCC account, Damien's
           framework, and the community debate.
@@ -399,13 +404,13 @@
       </li>
       <li>
         <span>Mathematical framework</span>
-        <a href={MATH_URL}>The Math of CAPs</a>
+        <LinkChip class="source-link" href={MATH_URL}>The Math of CAPs</LinkChip>
         <p>Damien's model and notation, preserved by DrexFactor.</p>
       </li>
       <li>
         <span>Curve references</span>
-        <a href={MATHCURVE_URL}
-          >Encyclopédie des formes mathématiques remarquables</a
+        <LinkChip class="source-link" href={MATHCURVE_URL}
+          >Encyclopédie des formes mathématiques remarquables</LinkChip
         >
         <p>
           Robert Ferréol's mathematical curve encyclopedia supplied the animated
@@ -414,17 +419,19 @@
       </li>
       <li>
         <span>C-CAP lesson</span>
-        <a
+        <LinkChip
+          class="source-link"
           href="https://drexfactor.com/index.php?q=weirdscience%2F2012%2F08%2F21%2Fbasic_poi_dancing_tutorial_c_caps"
-          >Basic Poi Dancing Tutorial: C-CAPs</a
+          >Basic Poi Dancing Tutorial: C-CAPs</LinkChip
         >
         <p>DrexFactor, 2012.</p>
       </li>
       <li>
         <span>Learner lesson</span>
-        <a
+        <LinkChip
+          class="source-link"
           href="https://playpoi.com/learn/learning-caps-capped-antispin-patterns/"
-          >Learning CAPs (Capped Antispin Patterns)</a
+          >Learning CAPs (Capped Antispin Patterns)</LinkChip
         >
         <p>Nick Woolsey, PlayPoi, 2016.</p>
       </li>
@@ -451,17 +458,6 @@
     border-radius: 0.3rem;
     background: color-mix(in srgb, currentColor 8%, transparent);
     font-variant-numeric: tabular-nums;
-  }
-
-  #what-is,
-  #math,
-  #origin,
-  #credits,
-  #relationship,
-  #watch,
-  #sources,
-  #breakdown {
-    scroll-margin-top: 6rem;
   }
 
   .definition-duo {
@@ -638,20 +634,6 @@
     margin-top: 1.25rem;
   }
 
-  .credit-links a,
-  .credit-support a {
-    color: color-mix(in srgb, var(--accent) 72%, white);
-    text-decoration: none;
-  }
-
-  .credit-links a {
-    align-items: center;
-    min-height: 44px;
-    padding: 0.45rem 0.85rem;
-    border: 1px solid rgb(255 255 255 / 0.14);
-    border-radius: 999px;
-    background: rgb(255 255 255 / 0.04);
-  }
 
   .credit-support {
     display: grid;
@@ -683,13 +665,14 @@
     font-size: clamp(0.86rem, 0.82rem + 0.12vw, 0.98rem);
   }
 
-  .credit-support a {
-    width: fit-content;
+  /* The lesson link sits at the foot of its card whatever the note's length. */
+  .credit-support :global(.support-link) {
+    align-self: flex-start;
     margin-top: auto;
-    padding-top: 0.8rem;
-    font-size: 0.82rem;
-    text-decoration: underline;
-    text-underline-offset: 0.2rem;
+  }
+
+  .credit-support p:not(:last-child) {
+    margin-bottom: 0.9rem;
   }
 
   .credit-footnote,
@@ -730,10 +713,6 @@
     margin-top: clamp(1.5rem, 2.4vw, 2.5rem);
   }
 
-  .media-footnote a {
-    color: color-mix(in srgb, var(--accent) 74%, white);
-  }
-
   .sources-grid {
     display: grid;
     grid-template-columns: 1fr;
@@ -763,7 +742,6 @@
     font-variant-numeric: tabular-nums;
   }
 
-  .sources-grid a,
   .sources-grid strong {
     display: block;
     width: fit-content;
@@ -774,9 +752,9 @@
     font-weight: 680;
   }
 
-  .sources-grid a {
-    text-decoration-color: color-mix(in srgb, var(--accent) 48%, transparent);
-    text-underline-offset: 0.22rem;
+  .sources-grid :global(.source-link) {
+    max-width: calc(100% - 2rem);
+    margin-top: 0.45rem;
   }
 
   .sources-grid p {

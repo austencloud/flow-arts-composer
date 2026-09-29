@@ -10,7 +10,11 @@ import {
 } from "$lib/shared/media-composition/domain/post-project-compiler";
 import { MediaCompositionPresetSchema } from "$lib/shared/media-composition/domain/media-composition-preset-schema";
 import { evaluatePresetFrame } from "$lib/shared/media-composition/services/frame-evaluator";
-import { clampBox, type PostEasing } from "$lib/shared/media-composition/domain/post-project";
+import {
+  clampBox,
+  wrapDegrees,
+  type PostEasing,
+} from "$lib/shared/media-composition/domain/post-project";
 import {
   EASING_PRESETS,
   boxAt,
@@ -422,6 +426,42 @@ describe("compilePostProject", () => {
     });
   });
 
+  describe("blurred background", () => {
+    const main = () => [
+      video("v1", { sourceOut: 4 }),
+      card("c1", 3, { start: 4 }),
+      video("gone", { takeId: "missing", sourceOut: 2, start: 7 }),
+      video("v2", { takeId: "b", sourceOut: 3, start: 9 }),
+    ];
+
+    it("lists the main videos the post draws, in order, only when it asks for blur", () => {
+      expect(compilePostProject(project(main()), ctx)!.preset.backdrop).toBeUndefined();
+
+      const result = compilePostProject(
+        { ...project(main()), background: "blur" },
+        ctx
+      )!;
+      // A video whose take is gone draws nothing, so it has nothing to blur.
+      expect(result.preset.backdrop).toEqual({ kind: "blur", clipIds: ["v1", "v2"] });
+      expect(MediaCompositionPresetSchema.safeParse(result.preset).success).toBe(true);
+    });
+
+    it("has nothing to blur when the main track is hidden", () => {
+      const proj = { ...project(main(), [[text("t1", 0, 2)]]), background: "blur" as const };
+      proj.tracks[0] = { ...proj.tracks[0]!, hidden: true };
+      expect(compilePostProject(proj, ctx)!.preset.backdrop).toBeUndefined();
+    });
+
+    it("is refused by the schema when it names a clip the post does not have", () => {
+      const { preset } = compilePostProject(
+        { ...project(main()), background: "blur" },
+        ctx
+      )!;
+      const broken = { ...preset, backdrop: { kind: "blur", clipIds: ["nope"] } };
+      expect(MediaCompositionPresetSchema.safeParse(broken).success).toBe(false);
+    });
+  });
+
   describe("the compiled preset", () => {
     it("validates against MediaCompositionPresetSchema", () => {
       const result = compilePostProject(
@@ -590,6 +630,38 @@ describe("compilePostProject", () => {
         expect(rect.height).toBeCloseTo(box.height, 9);
       }
       expect(framingAt(clip, 6.4).zoom).toBe(4);
+    });
+
+    it("turns across -180..180 the short way, as the editor does", () => {
+      const at = (rotation: number) => ({ zoom: 1, panX: 0, panY: 0, rotation });
+      const clip = video("v1", {
+        sourceOut: 10,
+        keyframes: {
+          framing: [
+            { t: 0, value: at(-180), easing: LINEAR },
+            { t: 4, value: at(175), easing: LINEAR },
+            { t: 6, value: at(180), easing: LINEAR },
+            { t: 10, value: at(-90), easing: LINEAR },
+          ],
+        },
+      });
+      const result = compilePostProject(project([clip]), ctx)!;
+
+      let previous: number | null = null;
+      for (let seconds = 0; seconds <= 10; seconds += 0.5) {
+        const layer = evaluatePresetFrame(
+          result.preset,
+          result.durationSeconds,
+          seconds
+        ).find((candidate) => candidate.clipId === "v1")!;
+        const turn = layer.transform.rotationDegrees;
+        expect(wrapDegrees(turn - framingAt(clip, seconds).rotation)).toBeCloseTo(0, 6);
+        // Half a second never turns it more than the keys ask for.
+        if (previous !== null) {
+          expect(Math.abs(wrapDegrees(turn - previous))).toBeLessThanOrEqual(12);
+        }
+        previous = turn;
+      }
     });
   });
 

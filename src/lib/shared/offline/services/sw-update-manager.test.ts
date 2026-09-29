@@ -4,6 +4,7 @@ import {
   consumeSwUpdateReloadMarker,
   createSwUpdateManager,
   markSwUpdateReload,
+  prepareSwBeforeStart,
   SW_UPDATE_RELOAD_MARKER_KEY,
 } from "./sw-update-manager";
 
@@ -28,6 +29,8 @@ class FakeRegistration extends EventTarget {
 
 class FakeContainer extends EventTarget {
   controller: unknown = null;
+  registration: FakeRegistration | undefined = undefined;
+  getRegistration = vi.fn(async () => this.registration);
   triggerControllerChange() {
     this.dispatchEvent(new Event("controllerchange"));
   }
@@ -389,6 +392,158 @@ describe("applyWaitingSwUpdateBeforeStart", () => {
 
       await vi.advanceTimersByTimeAsync(100);
       await expect(result).resolves.toBe("deferred");
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+});
+
+describe("prepareSwBeforeStart", () => {
+  const flush = () => new Promise<void>((resolve) => setTimeout(resolve, 0));
+  const neverSettles = () => new Promise<never>(() => {});
+
+  // Stands in for the window load event, so each test decides when the page
+  // has finished loading.
+  function pageLoadGate() {
+    const tasks: Array<() => void> = [];
+    return {
+      afterPageLoad: (task: () => void) => {
+        tasks.push(task);
+      },
+      finishLoading: () => {
+        for (const task of tasks.splice(0)) task();
+      },
+    };
+  }
+
+  it("starts a first visit without waiting for the worker to install", async () => {
+    const container = new FakeContainer();
+    const register = vi.fn(neverSettles);
+    const pageLoad = pageLoadGate();
+
+    await expect(
+      prepareSwBeforeStart({
+        serviceWorker: asAny(container),
+        register,
+        onUpdateReady: vi.fn(),
+        afterPageLoad: pageLoad.afterPageLoad,
+      })
+    ).resolves.toBe("start");
+
+    // The install downloads hundreds of files; it waits for the page itself.
+    expect(register).not.toHaveBeenCalled();
+    pageLoad.finishLoading();
+    expect(register).toHaveBeenCalledOnce();
+  });
+
+  it("watches the registration a first visit creates for later updates", async () => {
+    const container = new FakeContainer();
+    const registration = new FakeRegistration();
+    const onUpdateReady = vi.fn();
+    const pageLoad = pageLoadGate();
+
+    await prepareSwBeforeStart({
+      serviceWorker: asAny(container),
+      register: vi.fn().mockResolvedValue(registration),
+      onUpdateReady,
+      afterPageLoad: pageLoad.afterPageLoad,
+    });
+    pageLoad.finishLoading();
+    await flush();
+
+    // The first worker has claimed the page, so the next deploy is an update.
+    container.controller = {};
+    const update = new FakeWorker();
+    registration.triggerUpdateFound(update);
+    update.setState("installed");
+
+    expect(onUpdateReady).toHaveBeenCalledOnce();
+  });
+
+  it("holds startup until an update that was already waiting takes over", async () => {
+    const container = new FakeContainer();
+    container.controller = {};
+    const registration = new FakeRegistration();
+    const waiting = new FakeWorker();
+    registration.waiting = waiting;
+    container.registration = registration;
+    const reload = vi.fn();
+
+    let settled = false;
+    const startup = prepareSwBeforeStart({
+      serviceWorker: asAny(container),
+      register: vi.fn(neverSettles),
+      onUpdateReady: vi.fn(),
+      afterPageLoad: vi.fn(),
+      reload,
+      markReload: vi.fn(),
+      timeoutMs: 100,
+    }).finally(() => {
+      settled = true;
+    });
+    await flush();
+
+    expect(waiting.postMessage).toHaveBeenCalledWith({ type: "SKIP_WAITING" });
+    expect(settled).toBe(false);
+
+    container.triggerControllerChange();
+    await expect(startup).resolves.toBe("reloading");
+    expect(reload).toHaveBeenCalledOnce();
+  });
+
+  it("watches a returning visit's registration without waiting for register()", async () => {
+    const container = new FakeContainer();
+    container.controller = {};
+    const registration = new FakeRegistration();
+    container.registration = registration;
+    const register = vi.fn(neverSettles);
+    const onUpdateReady = vi.fn();
+    const pageLoad = pageLoadGate();
+
+    await expect(
+      prepareSwBeforeStart({
+        serviceWorker: asAny(container),
+        register,
+        onUpdateReady,
+        afterPageLoad: pageLoad.afterPageLoad,
+      })
+    ).resolves.toBe("start");
+
+    const update = new FakeWorker();
+    registration.triggerUpdateFound(update);
+    update.setState("installed");
+    expect(onUpdateReady).toHaveBeenCalledOnce();
+
+    // Registering again after load keeps the registration on the current
+    // worker script.
+    pageLoad.finishLoading();
+    expect(register).toHaveBeenCalledOnce();
+  });
+
+  it("reloads when a waiting update takes over after startup gave up on it", async () => {
+    vi.useFakeTimers();
+    try {
+      const container = new FakeContainer();
+      container.controller = {};
+      const registration = new FakeRegistration();
+      registration.waiting = new FakeWorker();
+      container.registration = registration;
+      const reload = vi.fn();
+
+      const startup = prepareSwBeforeStart({
+        serviceWorker: asAny(container),
+        register: vi.fn(neverSettles),
+        onUpdateReady: vi.fn(),
+        afterPageLoad: vi.fn(),
+        reload,
+        markReload: vi.fn(),
+        timeoutMs: 100,
+      });
+      await vi.advanceTimersByTimeAsync(100);
+      await expect(startup).resolves.toBe("start");
+
+      container.triggerControllerChange();
+      expect(reload).toHaveBeenCalledOnce();
     } finally {
       vi.useRealTimers();
     }

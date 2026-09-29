@@ -70,6 +70,22 @@ function pressThroughCreateShortcut(
   press(cell, key);
 }
 
+/**
+ * The same shortcut with the step editor closed, as after one delete on
+ * Construct. There is no editor to close, so the step stays selected, and the
+ * shortcut removes it and marks the key handled before the cell sees it.
+ */
+function pressHandledByCreateShortcut(
+  cell: HTMLElement,
+  key: "Delete" | "Backspace"
+) {
+  window.addEventListener("keydown", (event) => event.preventDefault(), {
+    capture: true,
+    once: true,
+  });
+  press(cell, key);
+}
+
 async function clickCell(cell: HTMLElement) {
   cell.click();
   flushSync();
@@ -153,6 +169,23 @@ describe("step cell focus while the selection moves", () => {
     grid.removeFrom(3);
     await frames();
     expect(document.activeElement).toBe(grid.cell(2));
+  });
+
+  // Deleting here as well removed the steps twice and left two undo entries
+  // for one press.
+  it("leaves a delete to Create's shortcut once it has handled the key", async () => {
+    const grid = row(4);
+    await clickCell(grid.cell(4));
+    pressHandledByCreateShortcut(grid.cell(4), "Delete");
+    expect(grid.deleteRequests()).toEqual([]);
+
+    await new Promise((resolve) => setTimeout(resolve, DURATION.normal));
+    grid.removeFrom(4);
+    await frames();
+    expect(document.activeElement).toBe(grid.cell(3));
+
+    pressHandledByCreateShortcut(grid.cell(3), "Backspace");
+    expect(grid.deleteRequests()).toEqual([]);
   });
 
   it("leaves focus where the user went while a delete was finishing", async () => {

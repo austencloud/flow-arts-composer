@@ -1,6 +1,8 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
 import type { PostVideoItem } from "$lib/shared/media-composition/domain/post-project";
+import { editItemKeyframes } from "$lib/shared/media-composition/domain/post-project-edits";
+import { setKeyframe } from "$lib/shared/media-composition/domain/post-project-keyframes";
 import { createPostEditorState } from "$lib/shared/media-composition/state/post-editor-state.svelte";
 import { isCovered } from "$lib/shared/share/components/post-studio/editor/post-crop-geometry";
 import { createCropSession } from "$lib/shared/share/components/post-studio/editor/post-crop-session.svelte";
@@ -55,6 +57,68 @@ describe("crop session", () => {
     expect(session.pose!.zoom).toBeCloseTo(before, 6);
   });
 
+  it("says how far out the zoom goes, and holds Fill there", () => {
+    const { session } = openCrop();
+    expect(session.zoomFloor).toBeCloseTo(session.pose!.zoom, 6);
+
+    session.setZoom(session.zoomFloor * 0.6);
+    expect(session.pose!.zoom).toBeCloseTo(session.zoomFloor, 6);
+    expect(isCovered(session.pose!)).toBe(true);
+
+    // Turned a quarter, the landscape take's long side runs down the tall
+    // window, so it fills it from further out.
+    const flat = session.zoomFloor;
+    session.rotateQuarter();
+    expect(session.zoomFloor).toBeLessThan(flat);
+    clock += 1_000;
+    session.setZoom(session.zoomFloor * 2);
+    session.setZoom(0.01);
+    expect(session.pose!.zoom).toBeCloseTo(session.zoomFloor, 6);
+    expect(isCovered(session.pose!)).toBe(true);
+  });
+
+  it("turns every key of an animated clip with its shape, as one undo step", () => {
+    const { editor, session } = openCrop();
+    const clip = () =>
+      editor.project.tracks
+        .flatMap((track) => track.items)
+        .find((item): item is PostVideoItem => item.kind === "video")!;
+    session.setShape("original");
+    const id = clip().id;
+    editor.edit((project, ctx) =>
+      editItemKeyframes(
+        project,
+        id,
+        (item) =>
+          setKeyframe(
+            setKeyframe(item, "framing", 0, { zoom: 1, panX: 0, panY: 0, rotation: 0 }),
+            "framing",
+            4,
+            { zoom: 1.5, panX: 0, panY: 0, rotation: 10 }
+          ),
+        ctx
+      )
+    );
+    editor.seek(0);
+
+    session.rotateQuarter();
+
+    // The key away from the playhead turns too, keeping its straighten.
+    expect(clip().keyframes!.framing!.map((key) => key.value.rotation)).toEqual([
+      -90, -80,
+    ]);
+    expect(clip().shape!.ratio).toBeCloseTo(1080 / 1920, 6);
+    editor.seek(4);
+    expect(session.pose!.rotation).toBeCloseTo(-80, 6);
+    expect(isCovered(session.pose!)).toBe(true);
+
+    editor.undo();
+    expect(clip().keyframes!.framing!.map((key) => key.value.rotation)).toEqual([
+      0, 10,
+    ]);
+    expect(clip().shape!.ratio).toBeCloseTo(1920 / 1080, 6);
+  });
+
   it("zooms Fill up as it straightens, so no corner opens", () => {
     const { session } = openCrop();
     expect(isCovered(session.pose!)).toBe(true);
@@ -65,16 +129,64 @@ describe("crop session", () => {
     expect(isCovered(session.pose!)).toBe(true);
   });
 
-  it("nudges the picture with the arrow keys and stops at its edge", () => {
+  it("moves the frame with the arrow keys and stops at the picture's edge", () => {
     const { session } = openCrop();
     session.setZoom(session.pose!.zoom * 1.2);
     const start = session.pose!.offset.x;
 
+    // The frame moves right, so the picture sits further left of it.
     expect(session.nudge({ x: 1, y: 0 }, false)).toBe(true);
-    expect(session.pose!.offset.x).toBeGreaterThan(start);
+    expect(session.pose!.offset.x).toBeLessThan(start);
 
     for (let i = 0; i < 50; i += 1) session.nudge({ x: 1, y: 0 }, true);
     expect(isCovered(session.pose!)).toBe(true);
     expect(session.nudge({ x: 1, y: 0 }, true)).toBe(false);
+  });
+
+  it("drags the frame the way the pointer goes", () => {
+    const { session } = openCrop();
+    session.setZoom(session.pose!.zoom * 1.5);
+    const start = session.pose!.offset;
+
+    expect(session.startGesture(0)).toBe(true);
+    session.dragTo({ x: 10, y: -5 });
+    session.endGesture(true);
+
+    expect(session.pose!.offset.x).toBeCloseTo(start.x - 10, 6);
+    expect(session.pose!.offset.y).toBeCloseTo(start.y + 5, 6);
+  });
+
+  it("gives the clip a ratio's shape, filled, and Reset takes it off", () => {
+    const { editor, session } = openCrop();
+    const box = session.window!;
+
+    session.setShape("1:1");
+    expect(session.shapeKind).toBe("1:1");
+    expect(session.window!.width / session.window!.height).toBeCloseTo(1, 6);
+    expect(isCovered(session.pose!)).toBe(true);
+
+    session.setShape("original");
+    expect(session.window!.width / session.window!.height).toBeCloseTo(1920 / 1080, 6);
+
+    session.reset();
+    const clip = editor.project.tracks
+      .flatMap((track) => track.items)
+      .find((item): item is PostVideoItem => item.kind === "video")!;
+    expect(clip.shape).toBeUndefined();
+    expect(session.window).toEqual(box);
+  });
+
+  it("reshapes a free clip from a side, as one undo step", () => {
+    const { editor, session } = openCrop();
+    session.setShape("free");
+    const ratio = session.window!.width / session.window!.height;
+
+    expect(session.startGesture(0)).toBe(true);
+    session.handleTo("e", 0.8);
+    session.endGesture(true);
+    expect(session.window!.width / session.window!.height).toBeCloseTo(ratio * 0.8, 6);
+
+    editor.undo();
+    expect(session.window!.width / session.window!.height).toBeCloseTo(ratio, 6);
   });
 });

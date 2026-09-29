@@ -1,4 +1,5 @@
 <script lang="ts">
+  import LinkChip from "$lib/shared/ui/components/LinkChip.svelte";
   import LegalPageShell from "$lib/shared/legal/components/LegalPageShell.svelte";
   import Seo from "$lib/shared/components/Seo.svelte";
 </script>
@@ -235,7 +236,9 @@
       <p style="padding-left: 1rem;">
         Austen Cloud<br />
         Email:
-        <a href="mailto:austencloud@gmail.com">austencloud@gmail.com</a><br />
+        <LinkChip size="inline" href="mailto:austencloud@gmail.com"
+          >austencloud@gmail.com</LinkChip
+        ><br />
         Subject line: "DMCA Takedown Notice"
       </p>
       <p>
@@ -390,7 +393,9 @@
       <h2>16. Contact</h2>
       <p>
         For questions about these Terms of Service, email
-        <a href="mailto:austencloud@gmail.com">austencloud@gmail.com</a>.
+        <LinkChip size="inline" href="mailto:austencloud@gmail.com"
+          >austencloud@gmail.com</LinkChip
+        >.
       </p>
       <p>For DMCA notices and takedown requests, see Section 9 above.</p>
     </section>

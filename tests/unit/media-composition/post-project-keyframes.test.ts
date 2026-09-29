@@ -208,6 +208,27 @@ describe("channelValueAt sampling", () => {
     expect(framingAt(v, 5).zoom).toBeCloseTo(2, 5);
   });
 
+  it("turns the short way between keys across -180..180", () => {
+    const at = (rotation: number) => ({ zoom: 1, panX: 0, panY: 0, rotation });
+    const linear = EASING_PRESETS.linear;
+    const v = video("v", {
+      sourceIn: 0,
+      sourceOut: 10,
+      keyframes: {
+        framing: [
+          { t: 0, value: at(-180), easing: linear },
+          { t: 4, value: at(175), easing: linear },
+          { t: 10, value: at(-90), easing: linear },
+        ],
+      },
+    });
+
+    // 5 degrees back, not 355 forward.
+    expect(framingAt(v, 2).rotation).toBeCloseTo(177.5, 6);
+    // From 175 on to -90 is 95 degrees forward across the seam.
+    expect(framingAt(v, 7).rotation).toBeCloseTo(-137.5, 6);
+  });
+
   it("boxAt reads any kind's box channel", () => {
     let t = setKeyframe(text("t", 0, 10), "box", 0, {
       x: 0,

@@ -28,11 +28,15 @@
     textRole,
   } from "$lib/shared/media-composition/domain/post-project-compiler";
   import {
+    POST_CANVAS_RATIOS,
+    POST_DEFAULT_BACKGROUND,
     POST_FRAME_RATE,
     POST_TIME_EPSILON,
     findItem,
     itemEnd,
     mainItemAt,
+    type PostBackground,
+    type PostCanvasRatio,
     type PostItem,
     type PostItemKind,
     type PostKeyframeChannel,
@@ -48,9 +52,16 @@
     editItemKeyframes,
     moveMainItem,
     moveOverlayItem,
+    setProjectBackground,
+    setProjectCanvas,
     setTrackFlag,
   } from "$lib/shared/media-composition/domain/post-project-edits";
   import type { StripMode } from "$lib/shared/media-composition/domain/strip-view";
+  import {
+    postCanvasOf,
+    postOutputSize,
+    ratioValue,
+  } from "$lib/shared/media-composition/domain/post-canvas";
   import type { CompositionSourceBinding } from "$lib/shared/media-composition/state/media-composition-state.svelte";
   import {
     createPostEditorState,
@@ -96,13 +107,19 @@
   import PostAddPanel from "./PostAddPanel.svelte";
   import PostMediaPanel from "./PostMediaPanel.svelte";
   import PostExportPanel from "./PostExportPanel.svelte";
+  import PostRatioPicker from "./PostRatioPicker.svelte";
+  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
   import PostTimeline from "./timeline/PostTimeline.svelte";
   import { clampPixelsPerSecond } from "./timeline/post-timeline-geometry";
   import { channelLabel, itemDisplayLabel } from "./post-editor-labels";
   import { readVideoFile, videoFileError } from "./post-editor-files";
   import { createCropSession } from "./post-crop-session.svelte";
   import { adjacentStepSeconds, clipSteps, type ClipStep } from "./post-crop-steps";
-  import type { CropSize } from "./post-crop-geometry";
+  import {
+    CROP_STAGE_MARGIN_PX,
+    cropViewRatio,
+    type CropSize,
+  } from "./post-crop-geometry";
   import {
     availablePanels,
     isPanelTool,
@@ -201,6 +218,19 @@
     hasAnimationOverlay: () => overlayPainter !== null,
   });
   const session = createPostTimingSession(editor);
+  /** The post's size in pixels, from its shape. */
+  const outputSize = $derived(postOutputSize(editor.project.canvas));
+
+  function setCanvas(canvas: PostCanvasRatio): void {
+    editor.pause();
+    editor.edit((project, ctx) => setProjectCanvas(project, canvas, ctx));
+  }
+
+  function setBackground(background: PostBackground): void {
+    editor.edit((project, ctx) =>
+      setProjectBackground(project, background, ctx)
+    );
+  }
 
   untrack(() => {
     if (audioSeed && audioSeed !== editor.project.audio) {
@@ -598,6 +628,26 @@
       const id = editor.selectedItemId;
       return id ? (sourceSizes[id] ?? null) : null;
     },
+  });
+
+  /**
+   * The shape of what the crop stage shows, the picture and the window
+   * together, so a wide screen gives the stage only the width it needs and
+   * the panel sits beside the picture. It holds while a drag runs, so the
+   * stage keeps still under the pointer.
+   */
+  let heldCropView: number | null = null;
+  const cropView = $derived.by(() => {
+    if (!cropMode) return (heldCropView = null);
+    const pose = crop.pose;
+    const window = crop.window;
+    if (crop.busy && heldCropView !== null) return heldCropView;
+    heldCropView = pose
+      ? cropViewRatio(pose)
+      : window
+        ? window.width / window.height
+        : null;
+    return heldCropView;
   });
 
   /** The panel that was open before the crop screen, to go back to. */
@@ -1569,14 +1619,6 @@
 
 {#snippet cropActions()}
   <div class="crop-actions">
-    <PanelButton
-      onclick={crop.reset}
-      disabled={!crop.canReset}
-      ariaLabel={t("post_editor_reset_crop")}
-    >
-      <i class="fa-solid fa-arrows-rotate" aria-hidden="true"></i>
-      <span class="crop-reset-label">{t("post_editor_reset_crop")}</span>
-    </PanelButton>
     <PanelButton onclick={() => void closeCrop(false)}>
       {t("common_cancel")}
     </PanelButton>
@@ -1624,6 +1666,31 @@
       onAddDeviceVideo={pickDeviceVideo}
       onAdded={itemAdded}
     />
+  {:else if tool === "canvas"}
+    <div class="canvas-tool">
+      <PostRatioPicker
+        options={POST_CANVAS_RATIOS.map((canvas) => ({
+          value: canvas,
+          label: canvas,
+          ratio: ratioValue(canvas),
+        }))}
+        value={postCanvasOf(editor.project)}
+        onchange={setCanvas}
+        ariaLabel={t("post_canvas_shape")}
+      />
+      <!-- Words, not icons: this control shows an option's icon in place of
+           its label, and a drop and a square say little on their own. -->
+      <SegmentedControl
+        color="accent"
+        options={[
+          { value: "dark", label: t("post_canvas_background_dark") },
+          { value: "blur", label: t("post_canvas_background_blur") },
+        ]}
+        value={editor.project.background ?? POST_DEFAULT_BACKGROUND}
+        onchange={setBackground}
+        ariaLabel={t("post_canvas_background")}
+      />
+    </div>
   {:else if tool === "look"}
     <AnimationPanel
       layout="sidebar"
@@ -1723,6 +1790,9 @@
   data-layout={layout}
   data-sharing={sharing}
   data-mode={showTimingStage ? "timing" : cropMode ? "crop" : "edit"}
+  style:--post-ratio={outputSize.width / outputSize.height}
+  style:--crop-view={cropView}
+  style:--crop-margin="{CROP_STAGE_MARGIN_PX}px"
   aria-label={t("post_editor_label", { name: sequenceName })}
   bind:this={rootElement}
   bind:offsetWidth={editorWidth}
@@ -1971,6 +2041,12 @@
 />
 
 <style>
+  .canvas-tool {
+    display: grid;
+    gap: 1rem;
+    min-width: 0;
+  }
+
   .post-editor:focus,
   .panel-host:focus,
   .panel-slot:focus,
@@ -1980,6 +2056,8 @@
   }
 
   .post-editor {
+    /* The post's width over its height; the canvas sets it. */
+    --post-ratio: 0.5625;
     /* The ruler, the main track and two layers. */
     --post-timeline-height: 17.5rem;
     --post-gap: 0.75rem;
@@ -2018,7 +2096,7 @@
   /* Never taller than a full-width frame needs. */
   .post-editor[data-layout="phone"][data-mode="edit"] .stage-row {
     align-self: center;
-    height: min(100%, calc((100cqw - 2 * var(--post-gap)) * 16 / 9));
+    height: min(100%, calc((100cqw - 2 * var(--post-gap)) / var(--post-ratio)));
   }
 
   .stage-row {
@@ -2036,7 +2114,7 @@
   }
 
   /* The host fills whatever holds it, here or in the share sheet, and the
-     frame inside it is the largest 9:16 that fits. */
+     frame inside it is the largest of the post's shape that fits. */
   .preview-host {
     container-type: size;
     display: grid;
@@ -2048,7 +2126,7 @@
   }
 
   .canvas-slot {
-    width: min(100cqw, calc(100cqh * 9 / 16));
+    width: min(100cqw, calc(100cqh * var(--post-ratio)));
   }
 
   .timing-stage {
@@ -2180,7 +2258,7 @@
   .post-editor[data-layout="wide"] .preview-frame {
     flex: none;
     width: min(
-      calc(100cqh * 9 / 16),
+      calc(100cqh * var(--post-ratio)),
       calc(100cqw - var(--post-panel-width) - 1rem)
     );
     height: 100%;
@@ -2188,7 +2266,7 @@
 
   .post-editor[data-layout="viewer"] .preview-frame {
     flex: none;
-    width: min(100cqw, calc(100cqh * 9 / 16));
+    width: min(100cqw, calc(100cqh * var(--post-ratio)));
     height: 100%;
   }
 
@@ -2276,31 +2354,29 @@
     height: 100%;
   }
 
-  /* The panel sits beside the picture and the clip's timeline runs under
-     both, as wide as the screen. The panel keeps the width it has while
-     editing: 30% of the stage row, measured here against the editor less
-     the layout's padding. */
+  /* The panel sits beside the picture, the two centred as one group, and
+     the clip's timeline runs under both, as wide as the screen. The stage is
+     as wide as the picture needs at the row's height, and no wider. The
+     panel keeps the width it has while editing: 30% of the stage row,
+     measured here against the editor less the layout's padding. */
   .post-editor[data-mode="crop"][data-layout="wide"] .layout {
     --post-panel-width: clamp(
       20rem,
       calc((100cqw - 2 * var(--post-gap)) * 0.3),
       26rem
     );
-    grid-template-columns: minmax(0, 1fr) var(--post-panel-width);
-    grid-template-areas: "stage panel" "transport transport";
-    column-gap: 1rem;
-  }
-
-  .post-editor[data-mode="crop"][data-layout="wide"] .stage-row {
-    display: contents;
   }
 
   .post-editor[data-mode="crop"][data-layout="wide"] .preview-frame {
-    grid-area: stage;
-  }
-
-  .post-editor[data-mode="crop"][data-layout="wide"] .panel-host {
-    grid-area: panel;
+    flex: none;
+    width: min(
+      calc(
+        (100cqh - 2 * var(--crop-margin)) * var(--crop-view, 1.7778) + 2 *
+          var(--crop-margin)
+      ),
+      calc(100cqw - var(--post-panel-width) - 1rem)
+    );
+    height: 100%;
   }
 
   .timeline-slot.stowed,
@@ -2323,15 +2399,5 @@
     align-items: center;
     gap: 0.5rem;
     min-width: 0;
-  }
-
-  .crop-reset-label {
-    display: none;
-  }
-
-  @container post-top-bar (min-width: 30rem) {
-    .crop-reset-label {
-      display: inline;
-    }
   }
 </style>

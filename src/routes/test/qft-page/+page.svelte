@@ -7,6 +7,7 @@
    * the move.
    */
   import QftUnit from "./_components/QftUnit.svelte";
+  import LinkChip from "$lib/shared/ui/components/LinkChip.svelte";
 
   const SOURCES = [
     {
@@ -123,7 +124,7 @@
     </p>
     <ul class="sources">
       {#each SOURCES as s (s.href)}
-        <li><a href={s.href} rel="noreferrer">{s.label}</a></li>
+        <li><LinkChip href={s.href}>{s.label}</LinkChip></li>
       {/each}
     </ul>
   </section>
@@ -218,10 +219,6 @@
     display: grid;
     gap: 0.4rem;
     font-size: 0.95rem;
-  }
-
-  a {
-    color: var(--theme-accent, #8b5cf6);
   }
 
   .end h2 {

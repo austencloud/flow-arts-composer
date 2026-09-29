@@ -19,6 +19,7 @@ const h = vi.hoisted(() => ({
     googleId: null,
     facebookId: null,
   })),
+  getUsernameOwner: vi.fn(async () => "user-1"),
   serverTimestamp: vi.fn(() => ({ __serverTimestamp: true })),
   setDoc: vi.fn(async () => undefined),
   reportErrorTelemetry: vi.fn(async () => undefined),
@@ -51,6 +52,7 @@ vi.mock("$lib/shared/auth/services/profile-picture-manager", () => ({
 vi.mock("$lib/shared/auth/services/username-validator", () => ({
   claimUsername: h.claimUsername,
   generateUniqueUsername: h.generateUniqueUsername,
+  getUsernameOwner: h.getUsernameOwner,
 }));
 
 vi.mock("$lib/shared/foundation/utils/avatar-generator", () => ({

@@ -4,6 +4,7 @@
   review is complete.
 -->
 <script lang="ts">
+  import LinkChip from "$lib/shared/ui/components/LinkChip.svelte";
   import "$lib/shared/landing/styles/public-editorial.css";
 
   const DESCRIPTION =
@@ -118,7 +119,7 @@
       </p>
       <p>
         That distinguishes TKA from previous prop systems, in particular from
-        <a href="/history">VTG</a>, which was built for momentum-based props
+        <LinkChip size="inline" href="/history">VTG</LinkChip>, which was built for momentum-based props
         and continuous spinning at a continuous rate. TKA says: spin at whatever
         rate we want, add reversals whenever we want, turn on a dime, hold any
         prop at any of eight orientations at any of nine points, move between
@@ -154,13 +155,15 @@
     <h2 class="section-title">Learn A, B, and C</h2>
     <div class="prose">
       <p>Your first session with TKA looks like learning A, B, and C:</p>
-      <ol>
-        <li><a href="/guide/level-1/the-grid">Positions and motions</a></li>
-        <li><a href="/guide/level-1/base-letters">Letters</a></li>
-        <li><a href="/guide/level-1/words">Your first words</a></li>
+      <ol class="next-steps">
+        <li>
+          <LinkChip href="/guide/level-1/the-grid">Positions and motions</LinkChip>
+        </li>
+        <li><LinkChip href="/guide/level-1/base-letters">Letters</LinkChip></li>
+        <li><LinkChip href="/guide/level-1/words">Your first words</LinkChip></li>
       </ol>
       <p>
-        <a href="/shop">Choreo Cards</a> make practice physical.
+        <LinkChip size="inline" href="/shop">Choreo Cards</LinkChip> make practice physical.
       </p>
     </div>
   </section>
@@ -174,3 +177,9 @@
     </a>
   </div>
 </div>
+
+<style>
+  .next-steps li + li {
+    margin-top: 0.5rem;
+  }
+</style>

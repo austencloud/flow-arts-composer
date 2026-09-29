@@ -20,6 +20,7 @@ import {
   POST_TIME_EPSILON,
   clampBox,
   itemEnd,
+  shortestTurn,
   type PostAnimationItem,
   type PostBox,
   type PostCarouselItem,
@@ -30,6 +31,11 @@ import {
   type PostVideoItem,
 } from "$lib/shared/media-composition/domain/post-project";
 import { postSecondsOfKeyframe } from "$lib/shared/media-composition/domain/post-project-keyframes";
+import {
+  clipBox,
+  postOutputSize,
+  type PostOutputSize,
+} from "$lib/shared/media-composition/domain/post-canvas";
 
 /**
  * Turns an edited project into the free-layout preset the evaluator, the
@@ -120,12 +126,8 @@ export interface CompiledPostProject {
   texts: CompiledTextItem[];
 }
 
-const OUTPUT = {
-  width: 1080,
-  height: 1920,
-  frameRate: 30,
-  backgroundColor: "#08080c",
-} as const;
+const OUTPUT_FRAME_RATE = 30;
+const OUTPUT_BACKGROUND = "#08080c";
 
 const IDENTITY_TRANSFORM = {
   scale: 1,
@@ -275,16 +277,25 @@ function transformMotionKeys(
 ): MotionKey<MotionTransformValue>[] | undefined {
   const frames = item.keyframes?.framing;
   if (!frames || frames.length === 0) return undefined;
-  return frames.map((kf) => ({
-    atSeconds: postSecondsOfKeyframe(item, kf.t),
-    value: {
-      scale: kf.value.zoom,
-      rotationDegrees: kf.value.rotation,
-      translateX: kf.value.panX,
-      translateY: kf.value.panY,
-    },
-    easing: kf.easing,
-  }));
+  // Each key's turn continues from the one before it the short way round,
+  // as the editor blends them, so a turn across -180..180 does not spin.
+  let turn = 0;
+  let stored: number | null = null;
+  return frames.map((kf) => {
+    const rotation = kf.value.rotation;
+    turn = stored === null ? rotation : turn + shortestTurn(stored, rotation);
+    stored = rotation;
+    return {
+      atSeconds: postSecondsOfKeyframe(item, kf.t),
+      value: {
+        scale: kf.value.zoom,
+        rotationDegrees: turn,
+        translateX: kf.value.panX,
+        translateY: kf.value.panY,
+      },
+      easing: kf.easing,
+    };
+  });
 }
 
 function opacityMotionKeys(item: PostItem): MotionKey<number>[] | undefined {
@@ -307,15 +318,21 @@ function motionFor(
   return { ...(transform ? { transform } : {}), ...(opacity ? { opacity } : {}) };
 }
 
-/** A `regionKeyframes` track for the item's own region, or undefined. */
-function regionKeyframesFor(item: PostItem): PresetRegionKeyframesTrack | null {
+/**
+ * A `regionKeyframes` track for the item's own region, or undefined. A
+ * shaped clip's region is its shape inside each keyed box.
+ */
+function regionKeyframesFor(
+  item: PostItem,
+  output: PostOutputSize
+): PresetRegionKeyframesTrack | null {
   const frames = item.keyframes?.box;
   if (!frames || frames.length === 0) return null;
   return {
     regionId: item.id,
     keyframes: frames.map((kf) => ({
       atSeconds: postSecondsOfKeyframe(item, kf.t),
-      value: kf.value,
+      value: item.kind === "video" ? clipBox(item, kf.value, output) : kf.value,
       easing: kf.easing,
     })),
   };
@@ -326,6 +343,7 @@ export function compilePostProject(
   context: CompilePostProjectContext
 ): CompiledPostProject | null {
   const takes = new Map(project.takes.map((entry) => [entry.id, entry]));
+  const output = postOutputSize(project.canvas);
   // Pieces read a main video's timing even when its own track is hidden - the
   // footage still exists, Austen just doesn't want its own picture on screen.
   const mainVideos = (project.tracks[MAIN_TRACK_INDEX]?.items ?? []).filter(
@@ -364,8 +382,10 @@ export function compilePostProject(
         if (!takes.has(item.takeId)) return false;
         useTake(item.takeId);
         const roleKey = takeRole(item.takeId);
-        regions.push(region(item.id, label, box, item.fit, zIndex));
-        const regionKeyframes = regionKeyframesFor(item);
+        regions.push(
+          region(item.id, label, clipBox(item, box, output), item.fit, zIndex)
+        );
+        const regionKeyframes = regionKeyframesFor(item, output);
         if (regionKeyframes) regionKeyframesList.push(regionKeyframes);
         const motion = motionFor(item, transformMotionKeys(item));
         const footage = {
@@ -434,7 +454,7 @@ export function compilePostProject(
         );
         regions.push(region(item.id, label, box, "contain", zIndex));
         {
-          const regionKeyframes = regionKeyframesFor(item);
+          const regionKeyframes = regionKeyframesFor(item, output);
           if (regionKeyframes) regionKeyframesList.push(regionKeyframes);
         }
         const cardMotion = motionFor(item);
@@ -473,7 +493,7 @@ export function compilePostProject(
         );
         regions.push(region(item.id, label, box, "contain", zIndex));
         {
-          const regionKeyframes = regionKeyframesFor(item);
+          const regionKeyframes = regionKeyframesFor(item, output);
           if (regionKeyframes) regionKeyframesList.push(regionKeyframes);
         }
         const sequenceMotion = motionFor(item);
@@ -555,7 +575,7 @@ export function compilePostProject(
         useRole(presetRole(roleKey, "Text", "manual", ["image"]));
         regions.push(region(item.id, label, box, "fill", zIndex));
         {
-          const regionKeyframes = regionKeyframesFor(item);
+          const regionKeyframes = regionKeyframesFor(item, output);
           if (regionKeyframes) regionKeyframesList.push(regionKeyframes);
         }
         const textMotion = motionFor(item);
@@ -600,6 +620,14 @@ export function compilePostProject(
 
   if (clips.length === 0 || maxEnd <= 0) return null;
 
+  // A blurred background draws the main clip on screen, so only main clips
+  // the post draws can fill it.
+  const drawn = new Set(clips.map((clip) => clip.id));
+  const backdropClipIds =
+    project.background === "blur"
+      ? mainVideos.map((item) => item.id).filter((id) => drawn.has(id))
+      : [];
+
   const preset = MediaCompositionPresetSchema.parse({
     schemaVersion: 1,
     id: `post-project:${project.sequenceId}`,
@@ -607,12 +635,19 @@ export function compilePostProject(
     name: "Post",
     createdAt: context.now,
     updatedAt: context.now,
-    output: OUTPUT,
+    output: {
+      ...output,
+      frameRate: OUTPUT_FRAME_RATE,
+      backgroundColor: OUTPUT_BACKGROUND,
+    },
     duration: { mode: "fixed", seconds: maxEnd },
     layoutModel: "free",
     sourceRoles: [...roleByKey.values()],
     regions,
     ...(regionKeyframesList.length > 0 ? { regionKeyframes: regionKeyframesList } : {}),
+    ...(backdropClipIds.length > 0
+      ? { backdrop: { kind: "blur" as const, clipIds: backdropClipIds } }
+      : {}),
     clips,
     transitions: [],
     audioMix: { masterGain: 1, tracks: [] },
