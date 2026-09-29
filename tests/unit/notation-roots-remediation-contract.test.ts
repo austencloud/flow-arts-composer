@@ -198,7 +198,8 @@ describe("notation catalog", () => {
     expect(drexCitations.map((entry) => entry.id)).toEqual(["trochoid", "qft"]);
     const trochoid = NOTATION_CATALOG.find((entry) => entry.id === "trochoid");
     expect(trochoid?.sources[0]?.label).toContain("Zaltymbunk");
-    expect(trochoid?.explore?.href).toBe("/notation/caps#math");
+    // /notation/caps is gated in production, so the row links out only.
+    expect(trochoid?.explore).toBeUndefined();
     // The TKA row points at this site because that is its creator's own
     // material — the same rule as every other row, not a funnel.
     const tka = NOTATION_CATALOG.find((entry) => entry.id === "tka");
@@ -275,12 +276,12 @@ describe("roots-to-archive route migration", () => {
     expect(softwarePage).toMatch(
       /name:\s*"Flow Arts History",\s*item:\s*"https:\/\/tkaflowarts\.com\/history"/
     );
-    // The source wraps this `<a>` across lines (f13606f440 reformatted it as
+    // The source wraps this LinkChip across lines (f13606f440 reformatted it as
     // an incidental side effect of an unrelated edit further down the file),
     // which leaves whitespace between the closing quote and `>` once this
     // raw-source check collapses runs of whitespace to one space.
     expect(softwareCopy).toMatch(
-      /href="\/history#archive-record-vtg"\s*>VTG record in the history archive<\/a\s*>/
+      /href="\/history#archive-record-vtg"\s*>VTG record in the history archive<\/LinkChip\s*>/
     );
     expect(componentManifest).not.toContain(
       '"file": "routes/(public)/roots/+page.svelte"'
