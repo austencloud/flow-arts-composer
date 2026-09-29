@@ -15,6 +15,7 @@ import {
   getUsernameOwner,
 } from "./username-validator";
 import { formatUsername } from "../domain/models/username-validation";
+import { isActivityStale } from "../domain/activity-refresh";
 import { retryAuthenticatedFirestoreOperation } from "./retry-authenticated-firestore-operation";
 
 import { generateAvatarUrl } from "$lib/shared/foundation/utils/avatar-generator";
@@ -60,25 +61,6 @@ function capitalizeName(name: string): string {
     .join(" ");
 }
 
-/**
- * How old lastActivityDate may get before a page load with nothing else to
- * save refreshes it. An active user costs one write an hour instead of one per
- * page load, and the date is never more than an hour behind their latest
- * visit, which its readers (Pulse's six-hour "is back" alerts, the admin
- * "active today" counts, the creators list's weekly bands) can absorb.
- */
-const ACTIVITY_REFRESH_MS = 60 * 60 * 1000;
-
-function isActivityStale(lastActivityDate: unknown): boolean {
-  const recordedAt = (
-    lastActivityDate as { toMillis?: () => number } | null | undefined
-  )?.toMillis?.();
-  return (
-    typeof recordedAt !== "number" ||
-    Date.now() - recordedAt >= ACTIVITY_REFRESH_MS
-  );
-}
-
 interface ProfileSyncStep {
   action: string;
   message: string;
@@ -112,6 +94,7 @@ export class UserDocumentManager {
 
       const firestore = await getFirestoreInstance();
       const userDocRef = doc(firestore, `users/${user.uid}`);
+      const privateProfileRef = doc(firestore, "userPrivateProfiles", user.uid);
       const mergePrivateProfile = async (
         profile: Record<string, unknown>
       ): Promise<void> => {
@@ -121,9 +104,7 @@ export class UserDocumentManager {
           path: `userPrivateProfiles/${user.uid}`,
         };
         await retryAuthenticatedFirestoreOperation(user, () =>
-          setDoc(doc(firestore, "userPrivateProfiles", user.uid), profile, {
-            merge: true,
-          })
+          setDoc(privateProfileRef, profile, { merge: true })
         );
       };
 
@@ -261,10 +242,10 @@ export class UserDocumentManager {
         // and silently failed for every signup since launch.
       } else {
         // EXISTING USER: this runs on every signed-in page load, so it writes
-        // only what differs from the stored profile and never the username.
-        // Rewriting the profile each time billed a write per page view, woke
-        // the pulseUserActivity trigger, and made updatedAt mean "last page
-        // view" instead of "last profile change".
+        // only what differs from the stored public and private profiles and
+        // never the username. Rewriting the profile each time billed a write
+        // per page view, woke the pulseUserActivity trigger, and made
+        // updatedAt mean "last page view" instead of "last profile change".
         const existingData = userDoc.data();
         const existingUsername = existingData?.username;
 
@@ -302,38 +283,61 @@ export class UserDocumentManager {
           profileChanges.avatar = avatarUrl;
         }
 
-        // Only update googlePhotoURL if we have a fresh one from the provider.
-        // Don't null it out - the provider's photoURL becomes null after the
-        // user switches to a generated avatar, but we want to keep the
-        // original so "Use Google Photo" always works.
-        await mergePrivateProfile({
-          email: user.email ?? null,
-          googleId: providerIds.googleId || null,
-          facebookId: providerIds.facebookId || null,
-          ...(googlePhotoURL ? { googlePhotoURL } : {}),
-          ...(postHogSessionId
-            ? {
-                postHogSessionId,
-                postHogSessionCapturedAt: serverTimestamp(),
-              }
-            : {}),
-        });
-
         // Add usernameLowercase if missing (backfill for existing users)
         if (existingUsername && !existingData?.usernameLowercase) {
           profileChanges.usernameLowercase = formatUsername(existingUsername);
         }
 
-        // Every write stamps lastActivityDate because Pulse pairs it with the
-        // PostHog session saved just above, and allows only five minutes
-        // between the two, to link the replay in its signup and return
-        // alerts. With nothing else to write, the date alone is refreshed
-        // once it is an hour old.
+        // Every users/{uid} write stamps lastActivityDate. With nothing else
+        // to write, the date alone is refreshed once it is an hour old.
         const hasProfileChanges = Object.keys(profileChanges).length > 0;
-        if (
-          hasProfileChanges ||
-          isActivityStale(existingData?.lastActivityDate)
-        ) {
+        const writesPublicProfile =
+          hasProfileChanges || isActivityStale(existingData?.lastActivityDate);
+
+        currentStep = {
+          action: "get-private-profile",
+          message: "Could not read the signed-in user's private profile",
+          path: `userPrivateProfiles/${user.uid}`,
+        };
+        const privateProfileDoc = await retryAuthenticatedFirestoreOperation(
+          user,
+          () => getDoc(privateProfileRef)
+        );
+        const storedPrivateProfile = privateProfileDoc.exists()
+          ? privateProfileDoc.data()
+          : undefined;
+
+        // Only update googlePhotoURL if we have a fresh one from the provider.
+        // Don't null it out - the provider's photoURL becomes null after the
+        // user switches to a generated avatar, but we want to keep the
+        // original so "Use Google Photo" always works.
+        const latestPrivateProfile: Record<string, unknown> = {
+          email: user.email ?? null,
+          googleId: providerIds.googleId || null,
+          facebookId: providerIds.facebookId || null,
+          ...(googlePhotoURL ? { googlePhotoURL } : {}),
+        };
+        const privateProfileChanges: Record<string, unknown> = {};
+        for (const [field, value] of Object.entries(latestPrivateProfile)) {
+          if ((storedPrivateProfile?.[field] ?? null) !== value) {
+            privateProfileChanges[field] = value;
+          }
+        }
+
+        // Pulse links a session replay to its signup and "is back" alerts
+        // only when postHogSessionCapturedAt is within five minutes of
+        // lastActivityDate, and it reads this private profile as soon as the
+        // users/{uid} write below fires it. So the session is saved just
+        // before that write, and not at all when it is skipped.
+        if (writesPublicProfile && postHogSessionId) {
+          privateProfileChanges.postHogSessionId = postHogSessionId;
+          privateProfileChanges.postHogSessionCapturedAt = serverTimestamp();
+        }
+        if (Object.keys(privateProfileChanges).length > 0) {
+          await mergePrivateProfile(privateProfileChanges);
+        }
+
+        if (writesPublicProfile) {
           currentStep = {
             action: "update-public-profile",
             message: "Could not update the signed-in user's public profile",

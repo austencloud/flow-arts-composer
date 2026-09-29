@@ -1,5 +1,4 @@
-import { collection, getDocs, query, where, limit, startAfter, orderBy, type QueryDocumentSnapshot } from "firebase/firestore";
-import { getFirestoreInstance } from "$lib/shared/auth/firebase";
+import type { QueryDocumentSnapshot } from "firebase/firestore";
 import type { Catalog } from "../domain/models/Catalog";
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
 import {
@@ -58,8 +57,19 @@ function cacheCatalogs(catalogs: Catalog[]): void {
   }
 }
 
+// Public pages (the shop's card covers, the atlas) import this module, and
+// most visitors never trigger a catalog read. Loading Firebase on the first
+// read keeps it off those pages' first download. The import() names the
+// Firebase modules themselves: the build's small-chunk merge (vite.config.ts)
+// can fold a small wrapper module back into the page.
+async function loadFirestore() {
+  const { getFirestoreInstance } = await import("$lib/shared/auth/firebase");
+  return getFirestoreInstance();
+}
+
 export async function loadCatalogs(): Promise<Catalog[]> {
-  const db = await getFirestoreInstance();
+  const { collection, getDocs } = await import("firebase/firestore");
+  const db = await loadFirestore();
   const catalogsRef = collection(db, getSystemCatalogsPath());
   const snapshot = await getDocs(catalogsRef);
   const catalogs = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }) as Catalog);
@@ -68,7 +78,8 @@ export async function loadCatalogs(): Promise<Catalog[]> {
 }
 
 export async function loadCatalogSequences(catalogId: string): Promise<SequenceData[]> {
-  const db = await getFirestoreInstance();
+  const { collection, getDocs } = await import("firebase/firestore");
+  const db = await loadFirestore();
   const seqRef = collection(db, getSystemCatalogSequencesPath(catalogId));
   const snapshot = await getDocs(seqRef);
   return snapshot.docs.map((d) => hydrateDoc(d));
@@ -77,7 +88,10 @@ export async function loadCatalogSequences(catalogId: string): Promise<SequenceD
 export async function loadSequencesByIds(catalogId: string, sequenceIds: string[]): Promise<SequenceData[]> {
   if (sequenceIds.length === 0) return [];
 
-  const db = await getFirestoreInstance();
+  const { collection, getDocs, query, where } = await import(
+    "firebase/firestore"
+  );
+  const db = await loadFirestore();
   const results: SequenceData[] = [];
 
   const BATCH_SIZE = 30;
@@ -101,7 +115,9 @@ export async function loadCatalogSequencesPage(
   pageSize: number,
   afterDoc?: QueryDocumentSnapshot,
 ): Promise<{ sequences: SequenceData[]; lastDoc: QueryDocumentSnapshot | null }> {
-  const db = await getFirestoreInstance();
+  const { collection, getDocs, query, limit, startAfter, orderBy } =
+    await import("firebase/firestore");
+  const db = await loadFirestore();
   const seqRef = collection(db, getSystemCatalogSequencesPath(catalogId));
   const q = afterDoc
     ? query(seqRef, orderBy("__name__"), startAfter(afterDoc), limit(pageSize))
