@@ -41,6 +41,7 @@
   import {
     LAB_LENGTH_MAX_CM,
     LAB_LENGTH_MIN_CM,
+    type LabBodyClearance,
     type LabGridStyle,
     type LabView,
     type StaffLabState,
@@ -128,6 +129,28 @@
       value: "isolation",
       label: "Isolation",
       ariaLabel: "Hands half a staff from the grid center",
+    },
+  ];
+
+  const bodyClearanceOptions: {
+    value: LabBodyClearance;
+    label: string;
+    ariaLabel: string;
+  }[] = [
+    {
+      value: "off",
+      label: "Stays",
+      ariaLabel: "The body stays where the clip puts it",
+    },
+    {
+      value: "shift",
+      label: "Hips",
+      ariaLabel: "The hips move off the staffs, feet planted",
+    },
+    {
+      value: "step",
+      label: "Step",
+      ariaLabel: "The whole body steps off the staffs",
     },
   ];
 
@@ -258,6 +281,23 @@
         <p class="note">
           Each hand sits half the staff from the center, so a staff pointing in
           ends on it.
+        </p>
+      {/if}
+    </div>
+
+    <div class="field">
+      <span class="field-label">Body</span>
+      <SegmentedControl
+        options={bodyClearanceOptions}
+        value={lab.bodyClearance}
+        density="tight"
+        ariaLabel="How the body gets out of the staffs' way"
+        onchange={(clearance) => lab.setBodyClearance(clearance)}
+      />
+      {#if lab.bodyClearance !== "off"}
+        <p class="note">
+          The chest moves off any staff it would pass through; the staffs stay
+          where the score puts them.
         </p>
       {/if}
     </div>

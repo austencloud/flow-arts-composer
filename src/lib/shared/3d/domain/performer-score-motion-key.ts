@@ -9,8 +9,10 @@ import type { CharacterInstanceState } from "../state/character-instance-state.s
  * Everything besides the clock that decides where the score puts the props
  * (`propStatesAtScoreTime`). A plan sampled from those props, like the torso
  * turn or the hard-beat displacement, goes stale when any of these changes:
- * the effort reshapes the timing inside each beat, and the path policy moves
- * the props between grid points for motions that do not set their own path.
+ * the effort reshapes the timing inside each beat, the path policy moves the
+ * props between grid points for motions that do not set their own path, and
+ * the hand distance (a grid style) moves each hand in or out from its grid
+ * center.
  */
 export interface ScoreMotionKey {
   /** A new array on every conversion, a new sequence included. */
@@ -22,6 +24,8 @@ export interface ScoreMotionKey {
   effortTimeline: CharacterInstanceState["effortTimeline"];
   pathShape: AnimationPathPolicy["pathShape"];
   motionAwarePaths: boolean;
+  /** Replaced whole on every change, so identity is enough. */
+  handDistance: CharacterInstanceState["handDistance"];
 }
 
 export function scoreMotionKey(
@@ -37,6 +41,7 @@ export function scoreMotionKey(
     effortTimeline: performer.effortTimeline,
     pathShape: paths.pathShape,
     motionAwarePaths: paths.motionAwarePaths,
+    handDistance: performer.handDistance,
   };
 }
 
