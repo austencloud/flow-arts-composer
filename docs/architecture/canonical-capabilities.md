@@ -297,6 +297,14 @@ shows on the frame, for the preview's handles and the typed position alike, is
 `editor/post-item-rect.ts`; `typeBox` in `editor/post-box-drag.ts` applies a
 typed side. Searches: typed value, exact value, numeric entry, type a time.
 
+While a box, the picture or a pinch moves, `PostEditorCanvas.svelte` shows a
+rule-of-thirds grid and, on a 9:16 post, the part of a Reel that Instagram's
+header, buttons and caption leave clear. `postSafeArea` in
+`media-composition/domain/post-canvas.ts` owns that area, from Meta's Reels
+guide. `dragBox` in `editor/post-box-drag.ts` snaps a moved box to the frame's
+centre and edges and to the safe area's sides. Searches: safe area, safe zone,
+Reels overlay, thirds grid, snapping guides, drag guides.
+
 A Post Studio clip's rounded corners, border and drop shadow are its `edge`
 (`media-composition/domain/post-clip-edge.ts`), compiled onto the region and
 measured by `media-composition/services/region-edge-painter.ts`, so the export

@@ -6145,6 +6145,7 @@
   "post_editor_box": "Verschiebbarer Rahmen",
   "post_editor_box_hint": "Pfeiltasten verschieben ihn, mit Umschalt weiter. Zieh an einer Ecke, um die Größe zu ändern. Halte beim Ziehen Alt, damit er nicht einrastet.",
   "post_editor_picture_hint": "Ziehen verschiebt das Bild innerhalb des Rahmens. Pfeiltasten verschieben es, mit Umschalt weiter.",
+  "post_editor_reels_covered": "In Reels verdeckt",
   "post_editor_item_name": "Name",
   "post_editor_in": "Anfang",
   "post_editor_out": "Ende",

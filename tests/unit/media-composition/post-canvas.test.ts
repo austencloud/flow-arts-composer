@@ -3,6 +3,7 @@ import {
   clipBox,
   clipShapeFor,
   postOutputSize,
+  postSafeArea,
   shapedBox,
   spotAround,
 } from "$lib/shared/media-composition/domain/post-canvas";
@@ -45,6 +46,21 @@ describe("post canvas", () => {
     });
     // Going back to the default stores nothing, as older projects have it.
     expect("canvas" in setProjectCanvas(square, "9:16", ctx)).toBe(false);
+  });
+
+  it("keeps a Reel's safe area clear of Instagram's top, bottom and sides", () => {
+    const safe = postSafeArea(undefined)!;
+    const reel = postOutputSize("9:16");
+    // Meta's figures: about 14% top, 35% bottom and 6% each side.
+    expect(safe.y * reel.height).toBeCloseTo(268.8);
+    expect((1 - safe.y - safe.height) * reel.height).toBeCloseTo(672);
+    expect(safe.x * reel.width).toBeCloseTo(64.8);
+    expect(safe.x + safe.width / 2).toBeCloseTo(0.5);
+    expect(postSafeArea("9:16")).toEqual(safe);
+    // Feed posts show with nothing over them.
+    expect(postSafeArea("4:5")).toBeNull();
+    expect(postSafeArea("1:1")).toBeNull();
+    expect(postSafeArea("16:9")).toBeNull();
   });
 
   it("fits a clip's shape as the largest of it centred in its box", () => {
