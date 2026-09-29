@@ -142,12 +142,12 @@
   });
 
   // The compact phone workspace spends a thin strip on the word, so it takes
-  // a slightly larger share to keep two rows of step pictures unclipped.
+  // a larger share to keep two rows of step pictures unclipped and readable.
   const defaultPanelSizes = $derived(
     shouldUseSideBySideLayout
       ? [1, 1]
       : useCompactToolbar
-        ? [1, 2]
+        ? [2, 3]
         : isAssembleTab
           ? [3, 7]
           : [5, 4]
@@ -521,6 +521,12 @@
   .compact-save-action {
     display: grid;
     place-items: center;
+  }
+
+  /* The step pictures sit on the theme's panel colour so a busy background
+     image doesn't compete with them, matching the grid panel below. */
+  .workspace-container.assemble-workspace {
+    background: var(--theme-panel-bg);
   }
 
   /* Signals that the empty space around the preview closes it. */
