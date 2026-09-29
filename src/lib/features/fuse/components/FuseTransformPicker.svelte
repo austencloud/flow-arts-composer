@@ -640,6 +640,7 @@
   }
   .inline .rule-field {
     display: contents;
+    container-type: normal;
   }
   .inline .field,
   .inline .timing-axis,
