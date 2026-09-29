@@ -1,5 +1,6 @@
 <script lang="ts">
   import GlossaryLetterPictographs from "./GlossaryLetterPictographs.svelte";
+  import LinkChip from "$lib/shared/ui/components/LinkChip.svelte";
 
   /**
    * The full entry for one glossary term - the "detail" half of the lexicon's
@@ -86,13 +87,9 @@
       <span class="td-section-label">Related</span>
       <div class="td-chips">
         {#each entry.related as r (r.slug)}
-          <a
-            class="td-chip"
-            href={`#${r.slug}`}
-            onclick={(e) => onrelated(r.slug, e)}
+          <LinkChip href={`#${r.slug}`} onclick={(e) => onrelated(r.slug, e)}
+            >{r.term}</LinkChip
           >
-            {r.term}
-          </a>
         {/each}
       </div>
     </div>
@@ -202,32 +199,6 @@
     flex-wrap: wrap;
     gap: 0.45rem;
   }
-  .td-chip {
-    display: inline-flex;
-    align-items: center;
-    min-height: 34px;
-    padding: 0.25rem 0.8rem;
-    font-size: 0.83rem;
-    font-weight: 550;
-    color: oklch(0.87 0.05 274);
-    text-decoration: none;
-    background: oklch(0.26 0.04 274 / 0.4);
-    border: 1px solid oklch(0.55 0.08 274 / 0.35);
-    border-radius: 999px;
-    transition:
-      border-color 140ms ease,
-      background 140ms ease,
-      color 140ms ease;
-  }
-  .td-chip:hover {
-    color: oklch(0.97 0.02 275);
-    background: oklch(0.32 0.06 275 / 0.55);
-    border-color: oklch(0.65 0.13 275 / 0.6);
-  }
-  .td-chip:focus-visible {
-    outline: 2px solid oklch(0.65 0.13 275);
-    outline-offset: 2px;
-  }
 
   /* Big-screen tier: 1680, the site-wide seam (public-editorial.css). The old
      2200 query never fired on a 4K monitor at 200% scaling (~1920px CSS). */
@@ -243,16 +214,6 @@
     }
     .td-examples li {
       font-size: 1.05rem;
-    }
-    .td-chip {
-      font-size: 0.95rem;
-      min-height: 40px;
-    }
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    .td-chip {
-      transition: none;
     }
   }
 </style>

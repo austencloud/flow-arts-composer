@@ -1,4 +1,5 @@
 <script lang="ts">
+  import LinkChip from "$lib/shared/ui/components/LinkChip.svelte";
   /**
    * GuidePageHost - ONE guide topic rendered as its own page: the crawlable,
    * prerendered SEO surface AND the interactive reader for that topic, in one
@@ -195,13 +196,12 @@
           </p>{/if}
       </div>
       {#if interactiveLesson}
-        <a
-          class="interactive-lesson-link"
-          href={buildConceptPath(interactiveLesson.conceptId)}
-        >
-          <i class="fa-solid fa-graduation-cap" aria-hidden="true"></i>
-          <span>Learn this interactively</span>
-        </a>
+        <span class="interactive-lesson">
+          <LinkChip href={buildConceptPath(interactiveLesson.conceptId)}
+            ><i class="fa-solid fa-graduation-cap" aria-hidden="true"></i>
+            Learn this interactively</LinkChip
+          >
+        </span>
       {/if}
     </header>
 
@@ -327,28 +327,11 @@
     line-height: 1.4;
     color: var(--ink-dim, #555);
   }
-  .interactive-lesson-link {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
-    min-height: 44px;
-    margin: 0;
-    padding: 0.65rem 1rem;
-    border: 1px solid color-mix(in oklab, #647ff1 58%, transparent);
-    border-radius: 999px;
-    background: color-mix(in oklab, #647ff1 12%, transparent);
-    color: color-mix(in oklab, var(--ink, #1a1a1a) 78%, #647ff1);
-    font-size: var(--font-size-min, 0.875rem);
-    font-weight: 700;
-    text-decoration: none;
-    transition:
-      background 120ms ease,
-      border-color 120ms ease;
-  }
-  .interactive-lesson-link:hover {
-    border-color: #647ff1;
-    background: color-mix(in oklab, #647ff1 20%, transparent);
+  /* This page owns a light and a dark palette, so the chip reads its colors
+     from the page's ink rather than the app's dark-canvas theme. */
+  .interactive-lesson {
+    --theme-text: var(--ink, #1a1a1a);
+    --theme-accent: #647ff1;
   }
   /* Print-friendly sheet: fit-to-width scale (up to 1.9x - see sheetShiftPx),
      its own footprint box so the scaled 816×1056 sheet doesn't leave a gap OR
@@ -443,26 +426,9 @@
     }
     .topic-title {
       display: block;
-      padding-inline: 2.75rem;
     }
-    .interactive-lesson-link {
-      position: absolute;
-      inset-block-start: 1rem;
-      inset-inline-end: 1rem;
-      width: 44px;
-      padding: 0;
-      border-radius: 50%;
-    }
-    .interactive-lesson-link span {
-      position: absolute;
-      width: 1px;
-      height: 1px;
-      padding: 0;
-      margin: -1px;
-      overflow: hidden;
-      clip: rect(0, 0, 0, 0);
-      white-space: nowrap;
-      border: 0;
+    .interactive-lesson {
+      justify-self: center;
     }
   }
 
@@ -488,11 +454,5 @@
     --ink: #ececf2;
     --ink-dim: #a8a8b4;
     --glyph-invert: 1;
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    .interactive-lesson-link {
-      transition: none;
-    }
   }
 </style>

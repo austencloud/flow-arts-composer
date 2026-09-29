@@ -7,6 +7,7 @@
 -->
 <script lang="ts">
   import LegalSheet from "../../legal/components/LegalSheet.svelte";
+  import LinkChip from "$lib/shared/ui/components/LinkChip.svelte";
   import { t } from "$lib/shared/i18n/i18n.svelte";
 
   // Local sheet state
@@ -45,12 +46,12 @@
 <footer class="auth-footer">
   <p class="auth-footer__text">
     {t("auth_footer_agree")}
-    <a href="/terms" class="auth-footer__link" onclick={handleTermsClick}
-      >{t("auth_footer_terms")}</a
+    <LinkChip size="inline" href="/terms" onclick={handleTermsClick}
+      >{t("auth_footer_terms")}</LinkChip
     >
     {t("auth_footer_and")}
-    <a href="/privacy" class="auth-footer__link" onclick={handlePrivacyClick}
-      >{t("auth_footer_privacy")}</a
+    <LinkChip size="inline" href="/privacy" onclick={handlePrivacyClick}
+      >{t("auth_footer_privacy")}</LinkChip
     >
   </p>
 </footer>
@@ -71,27 +72,6 @@
     margin: 0;
     text-align: center;
     line-height: 1.6;
-  }
-
-  .auth-footer__link {
-    background: none;
-    border: none;
-    padding: 0;
-    color: color-mix(
-      in srgb,
-      var(--theme-accent-strong, var(--theme-accent)) 90%,
-      transparent
-    );
-    font-size: inherit;
-    font-family: inherit;
-    text-decoration: none;
-    cursor: pointer;
-    transition: color var(--duration-normal) ease;
-  }
-
-  .auth-footer__link:hover {
-    color: var(--theme-accent-strong);
-    text-decoration: underline;
   }
 
   @media (max-width: 480px) {

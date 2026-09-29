@@ -1,4 +1,5 @@
 <script lang="ts">
+  import LinkChip from "$lib/shared/ui/components/LinkChip.svelte";
   import Seo from "$lib/shared/components/Seo.svelte";
   import OpenChapter from "$lib/shared/landing/components/OpenChapter.svelte";
   import SequenceHeroDemo from "$lib/shared/landing/components/SequenceHeroDemo.svelte";
@@ -57,8 +58,9 @@
             This is dual-wielded club spinning: one club in each hand, held
             throughout the move. Clubs are the base prop of the single-ended
             family and central to Vulcan Tech Gospel, the framework The Kinetic
-            Alphabet builds on. The <a href="/history">history page</a> traces that
-            lineage.
+            Alphabet builds on. The <LinkChip size="inline" href="/history"
+              >history page</LinkChip
+            > traces that lineage.
           </p>
           <p>
             To read a club pictograph, imagine the pinky end of a staff is
@@ -91,8 +93,9 @@
             extension as separate moves with the same underlying geometry. A
             club's antispin reads as a vertical or a horizontal flower depending
             on its orientation through the pattern. VTG calls these vertical
-            antispin and horizontal antispin. Both are visible at once on a <a
-              href="/notation/staves">staff</a
+            antispin and horizontal antispin. Both are visible at once on a <LinkChip
+              size="inline"
+              href="/notation/staves">staff</LinkChip
             >.
           </p>
         </div>

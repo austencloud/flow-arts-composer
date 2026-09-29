@@ -1,4 +1,5 @@
 <script lang="ts">
+  import LinkChip from "$lib/shared/ui/components/LinkChip.svelte";
   import type { CAPAssembly } from "@caps/domain";
 
   let { assembly }: { assembly: CAPAssembly | null } = $props();
@@ -52,8 +53,8 @@
         <code>{assembly.notation}</code>
         <p>{assembly.description}</p>
         <div class="source-links">
-          <a href={THREAD_URL}>Origin discussion</a>
-          <a href={MATH_URL}>The Math of CAPs</a>
+          <LinkChip href={THREAD_URL}>Origin discussion</LinkChip>
+          <LinkChip href={MATH_URL}>The Math of CAPs</LinkChip>
         </div>
       </div>
     </div>
@@ -162,23 +163,6 @@
     display: flex;
     flex-wrap: wrap;
     gap: 0.6rem;
-  }
-  .source-links a {
-    display: inline-flex;
-    align-items: center;
-    min-height: 44px;
-    padding: 0.45rem 0.85rem;
-    border: 1px solid rgb(255 255 255 / 0.14);
-    border-radius: 999px;
-    background: rgb(255 255 255 / 0.04);
-    color: rgb(255 255 255 / 0.78);
-    font-size: 0.82rem;
-    text-decoration: none;
-  }
-  .source-links a:hover,
-  .source-links a:focus-visible {
-    border-color: var(--accent, #34d399);
-    color: #fff;
   }
 
   @container (max-width: 44rem) {

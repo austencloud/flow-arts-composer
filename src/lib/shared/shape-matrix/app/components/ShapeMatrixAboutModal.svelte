@@ -2,6 +2,7 @@
   import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import BaseModal from "$lib/shared/foundation/ui/modal/BaseModal.svelte";
   import ModalHeader from "$lib/shared/foundation/ui/modal/ModalHeader.svelte";
+  import LinkChip from "$lib/shared/ui/components/LinkChip.svelte";
   import { getShapeMatrixAppContext } from "../context/shape-matrix-app-context";
   import { localizedLevelDescription } from "../../domain/shape-matrix-display";
   import { SHAPE_MATRIX_LEVELS } from "../shape-matrix-levels";
@@ -54,7 +55,7 @@
     <p>
       {t("shape_engine_about_intro_before")}
       {KINETIC_SHAPE_ENGINE_AUTHOR}. {t("shape_engine_about_intro_middle")}
-      <a href="/composer">Flow Arts Composer</a>{t(
+      <LinkChip size="inline" href="/composer">Flow Arts Composer</LinkChip>{t(
         "shape_engine_about_intro_after"
       )}
     </p>
@@ -94,8 +95,7 @@
         <h2>{t("shape_engine_source_heading")}</h2>
         <p>
           {t("shape_engine_source_before")}
-          <a href={SPIN_SCIENCE_URL} target="_blank" rel="noopener noreferrer"
-            >Spin Science</a
+          <LinkChip size="inline" href={SPIN_SCIENCE_URL}>Spin Science</LinkChip
           >{t("shape_engine_source_after")}
         </p>
         <p>
@@ -198,11 +198,6 @@
 
   p {
     margin: 0;
-  }
-
-  p a {
-    color: #f4b54c;
-    text-underline-offset: 0.2em;
   }
 
   h2 {
