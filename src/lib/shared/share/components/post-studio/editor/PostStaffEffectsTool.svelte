@@ -8,11 +8,16 @@
   import { staffTipCoverage } from "$lib/shared/media-composition/domain/staff-tip-track";
   import type { StaffTipAnalysis } from "$lib/shared/media-composition/state/staff-tip-analysis.svelte";
   import {
-    EFFECT_ICONS,
+    EFFECT_COLORS,
     EFFECT_LABELS,
   } from "$lib/shared/effects/domain/effect-meta";
+  import { DEFAULT_EFFECTS_CONFIG } from "$lib/shared/effects/domain/defaults";
+  import { fitEffectRoster } from "$lib/shared/animation-engine/domain/effect-catalog-fit";
+  import EffectSelector from "$lib/shared/animation-engine/components/effects-panel/EffectSelector.svelte";
+  import EffectPresetThumbnail from "$lib/shared/animation-engine/components/effects-panel/EffectPresetThumbnail.svelte";
+  import { createEffectLookPreview } from "$lib/shared/animation-engine/components/effects-panel/effect-look-preview";
+  import type { EffectPreset } from "$lib/shared/animation-engine/components/effects-panel/presets/types";
   import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
-  import FilterChipBase from "$lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
 
   /**
    * Effects that follow the LED staffs in a clip's own footage. Finding the
@@ -37,6 +42,38 @@
   const progress = $derived(takeKey ? analysis.progress(takeKey) : 0);
   const percent = (fraction: number) => Math.round(fraction * 100);
   const chosen = $derived(item.staffEffect?.effect ?? null);
+  let rosterWidth = $state(0);
+  const rosterFit = $derived(
+    fitEffectRoster({
+      width: rosterWidth,
+      count: POST_STAFF_EFFECTS.length,
+      columns: 2,
+    })
+  );
+
+  // Staff effects use the shared default settings. Their pictures should show
+  // those settings, rather than a named look this clip will not actually use.
+  const looks = new Map(
+    POST_STAFF_EFFECTS.map((effect) => {
+      const preset: EffectPreset = {
+        id: `${effect}-post-default`,
+        name: EFFECT_LABELS[effect] ?? effect,
+        previewColor: EFFECT_COLORS[effect] ?? "#60a5fa",
+        patch: DEFAULT_EFFECTS_CONFIG[effect],
+      };
+      return [
+        effect,
+        { preset, model: createEffectLookPreview(effect, preset) },
+      ];
+    })
+  );
+
+  function pick(effect: string): void {
+    const supported = POST_STAFF_EFFECTS.find(
+      (candidate) => candidate === effect
+    );
+    if (supported) onPick(chosen === supported ? null : supported);
+  }
 
   function find(): void {
     if (!takeKey || !mediaUrl) return;
@@ -74,7 +111,9 @@
       <div class="actions">
         <PanelButton onclick={find} disabled={!takeKey}>
           <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
-          {status === "failed" ? t("post_staff_try_again") : t("post_staff_find")}
+          {status === "failed"
+            ? t("post_staff_try_again")
+            : t("post_staff_find")}
         </PanelButton>
       </div>
     {:else}
@@ -83,35 +122,44 @@
   {/if}
 
   {#if track && status !== "finding"}
-    <div class="chips" role="group" aria-label={t("post_staff_effect")}>
-      <FilterChipBase
-        mode="toggle"
-        emphasis="solid"
-        labelScale="readable"
-        icon="fa-solid fa-ban"
-        label={t("post_staff_effect_none")}
-        active={chosen === null}
+    <div class="actions">
+      <PanelButton
+        ariaPressed={chosen === null}
         disabled={locked}
         onclick={() => onPick(null)}
-      />
-      {#each POST_STAFF_EFFECTS as effect (effect)}
-        <FilterChipBase
-          mode="toggle"
-          emphasis="solid"
-          labelScale="readable"
-          icon={`fa-solid ${EFFECT_ICONS[effect] ?? "fa-star"}`}
-          label={EFFECT_LABELS[effect] ?? effect}
-          active={chosen === effect}
-          disabled={locked}
-          onclick={() => onPick(effect)}
-        />
-      {/each}
+      >
+        <i class="fa-solid fa-ban" aria-hidden="true"></i>
+        {t("post_staff_effect_none")}
+      </PanelButton>
     </div>
+    <div class="roster" bind:clientWidth={rosterWidth}>
+      <EffectSelector
+        activeEffect={chosen ?? "none"}
+        availableEffects={POST_STAFF_EFFECTS}
+        catalog={rosterFit}
+        portrait={effectPortrait}
+        disabled={locked}
+        onSelect={pick}
+      />
+    </div>
+    {#snippet effectPortrait(effect: string)}
+      {@const look = looks.get(effect as PostStaffEffectId)}
+      {#if look}
+        <EffectPresetThumbnail
+          effectType={effect}
+          preset={look.preset}
+          legacyModel={look.model}
+          active={chosen === effect}
+        />
+      {/if}
+    {/snippet}
     <div class="found">
       <p class="hint">
         {status === "failed"
           ? t("post_staff_failed")
-          : t("post_staff_found", { percent: percent(staffTipCoverage(track)) })}
+          : t("post_staff_found", {
+              percent: percent(staffTipCoverage(track)),
+            })}
       </p>
       {#if mediaUrl}
         <PanelButton onclick={find} disabled={!takeKey}>
@@ -146,11 +194,14 @@
     font-variant-numeric: tabular-nums;
   }
 
-  .actions,
-  .chips {
+  .actions {
     display: flex;
     flex-wrap: wrap;
     gap: 0.5rem;
+  }
+
+  .roster {
+    min-width: 0;
   }
 
   .finding {

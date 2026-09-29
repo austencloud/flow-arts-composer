@@ -84,14 +84,29 @@ describe("fitEffectRoster", () => {
     expect(fitEffectRoster({ width: 273, count: COUNT })).toBe(null);
   });
 
+  it("fits two readable pictures in a narrow performance inspector", () => {
+    const fit = fitEffectRoster({ width: 273, count: 12, columns: 2 });
+    expect(fit).toMatchObject({
+      cols: 2,
+      rows: 6,
+      orientation: "stack",
+      fill: false,
+    });
+    expect(fit!.portrait).toBe(114);
+    expect(fitEffectRoster({ width: 155, count: 12, columns: 2 })).toBe(null);
+  });
+
   it("never lets a picture or a name spill out of its column", () => {
-    for (let width = 160; width <= 900; width += 7) {
-      const fit = fitEffectRoster({ width, count: COUNT });
-      if (!fit) continue;
-      const { innerW } = tile(fit, width, 0);
-      expect(fit.portrait).toBeGreaterThanOrEqual(MIN_CATALOG_PORTRAIT);
-      expect(fit.portrait).toBeLessThanOrEqual(innerW);
-      expect(CATALOG_NAME_WIDTH).toBeLessThanOrEqual(innerW);
+    for (const columns of [2, 4] as const) {
+      for (let width = 160; width <= 900; width += 7) {
+        const fit = fitEffectRoster({ width, count: COUNT, columns });
+        if (!fit) continue;
+        const { innerW } = tile(fit, width, 0);
+        expect(fit.portrait).toBeGreaterThanOrEqual(MIN_CATALOG_PORTRAIT);
+        expect(fit.portrait).toBeLessThanOrEqual(innerW);
+        expect(CATALOG_NAME_WIDTH).toBeLessThanOrEqual(innerW);
+        expect(fit.cols * fit.rows).toBeGreaterThanOrEqual(COUNT);
+      }
     }
   });
 });

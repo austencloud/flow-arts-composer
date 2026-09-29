@@ -73,13 +73,17 @@ const COLUMN_CHOICES = [2, 4];
 const ROSTER_COLUMNS = 4;
 const LIST_COLUMNS = 2;
 
-/** The roster with an effect on: four pictures across, or null for icons. */
+/** Four pictures across in the effects studio; narrow inspectors can request
+ *  two larger pictures. Null where even that arrangement cannot fit. */
 export function fitEffectRoster({
   width,
   count,
-}: Pick<EffectCatalogBox, "width" | "count">): EffectCatalogFit | null {
+  columns = ROSTER_COLUMNS,
+}: Pick<EffectCatalogBox, "width" | "count"> & {
+  columns?: 2 | 4;
+}): EffectCatalogFit | null {
   if (width <= 0 || count <= 0) return null;
-  const cols = ROSTER_COLUMNS;
+  const cols = columns;
   const innerW = (width - (cols - 1) * CATALOG_GAP) / cols - 2 * INSET;
   const portrait = Math.floor(innerW);
   if (portrait < MIN_CATALOG_PORTRAIT || innerW < CATALOG_NAME_WIDTH) {

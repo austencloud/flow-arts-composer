@@ -15,6 +15,7 @@
   interface Props {
     activeEffect: string;
     onSelect: (effect: string) => void;
+    disabled?: boolean;
     /** Hover/press intent — fires before the click commits so the canvas can warm
      *  the effect's webgl renderer ahead of activation (kills the switch freeze). */
     onPrewarm?: (effect: string) => void;
@@ -44,6 +45,7 @@
   const {
     activeEffect,
     onSelect,
+    disabled = false,
     onPrewarm,
     layout = "panel",
     activeAction = "disable",
@@ -112,6 +114,7 @@
         class:active={isActive}
         role="radio"
         aria-checked={isActive}
+        {disabled}
         aria-label={isActive && activeAction === "tune"
           ? getActiveLabel(effect)
           : effectUiLabel(effect.label)}
@@ -123,8 +126,8 @@
         data-ghost-active={isActive || undefined}
         data-ghost-label={effectUiLabel(effect.label)}
         onclick={() => onSelect(effect.id)}
-        onpointerenter={() => onPrewarm?.(effect.id)}
-        onpointerdown={() => onPrewarm?.(effect.id)}
+        onpointerenter={() => !disabled && onPrewarm?.(effect.id)}
+        onpointerdown={() => !disabled && onPrewarm?.(effect.id)}
         use:claimedViewTransitionName={morphPart("tile", effect.id)}
       >
         {#if showCatalog}
@@ -260,7 +263,12 @@
     }
   }
 
-  .effect-btn:hover:not(.active) {
+  .effect-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .effect-btn:hover:not(.active, :disabled) {
     background: color-mix(
       in srgb,
       var(--theme-text, white) 6%,
