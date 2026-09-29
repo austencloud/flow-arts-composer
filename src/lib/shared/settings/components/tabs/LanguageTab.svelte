@@ -5,6 +5,7 @@
   Uses Paraglide i18n for translations.
 -->
 <script lang="ts">
+  import LinkChip from "$lib/shared/ui/components/LinkChip.svelte";
   import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
   import { onMount } from "svelte";
   import {
@@ -138,13 +139,11 @@
       <i class="fas fa-info-circle" aria-hidden="true"></i>
       <p>
         {t("settings_translation_note")}
-        <a
+        <LinkChip
+          size="inline"
           href="https://github.com/austencloud/the-kinetic-alphabet"
-          target="_blank"
-          rel="noopener"
+          >{t("settings_help_translate")}</LinkChip
         >
-          {t("settings_help_translate")}
-        </a>
       </p>
     </div>
   </section>
@@ -320,15 +319,6 @@
     color: var(--theme-text-muted, rgba(255, 255, 255, 0.8));
     margin: 0;
     line-height: 1.5;
-  }
-
-  .info-card a {
-    color: var(--theme-accent, #0ea5e9);
-    text-decoration: none;
-  }
-
-  .info-card a:hover {
-    text-decoration: underline;
   }
 
   /* Screen reader only - visually hidden but announced */

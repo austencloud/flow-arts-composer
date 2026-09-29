@@ -14,8 +14,7 @@
  * Mirrors the proven Node reference `scripts/seed-reversal-decks.cjs`.
  */
 
-import { doc, writeBatch } from "firebase/firestore";
-import { getFirestoreInstance } from "$lib/shared/auth/firebase";
+import type { Firestore } from "firebase/firestore";
 import {
   getSystemCatalogPath,
   getSystemCatalogSequencePath,
@@ -71,6 +70,10 @@ export async function seedReversalPattern(
   }
   if (pattern.id === "continuous") return [];
 
+  // The atlas reaches this module through the transform re-exports above, and
+  // only an admin ever seeds. Loading Firebase here keeps it off the atlas's
+  // first download.
+  const { getFirestoreInstance } = await import("$lib/shared/auth/firebase");
   const db = await getFirestoreInstance();
   const edges = await loadDiamondEdges();
   const writtenIds: string[] = [];
@@ -109,11 +112,12 @@ export async function seedReversalPattern(
  * committed in batches (Firestore caps a batch at 500 writes).
  */
 async function writeCatalogWithSequences(
-  db: Awaited<ReturnType<typeof getFirestoreInstance>>,
+  db: Firestore,
   catalogId: string,
   catalog: Catalog & { reversalPattern: string },
   sequences: SequenceData[],
 ): Promise<void> {
+  const { doc, writeBatch } = await import("firebase/firestore");
   // Catalog document write (its own batch — keeps it isolated from the larger
   // sequence batches and mirrors the reference's separate deck set()).
   const catalogBatch = writeBatch(db);

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import LinkChip from "$lib/shared/ui/components/LinkChip.svelte";
   import LegalPageShell from "$lib/shared/legal/components/LegalPageShell.svelte";
   import Seo from "$lib/shared/components/Seo.svelte";
 
@@ -86,7 +87,9 @@
       <i class="fas fa-arrow-right" aria-hidden="true"></i>
     </a>
     <p class="help">
-      Need help? <a href="mailto:tkaflowarts@gmail.com">tkaflowarts@gmail.com</a>
+      Need help? <LinkChip size="inline" href="mailto:tkaflowarts@gmail.com"
+        >tkaflowarts@gmail.com</LinkChip
+      >
     </p>
   </footer>
 </LegalPageShell>
@@ -280,17 +283,6 @@
     color: rgba(255, 255, 255, 0.6);
   }
 
-  .help a {
-    color: #818cf8;
-    text-decoration: none;
-    border-bottom: 1px solid transparent;
-    transition: border-color 0.2s ease;
-  }
-
-  .help a:hover {
-    border-bottom-color: #818cf8;
-  }
-
   @media (max-width: 768px) {
     .cards {
       grid-template-columns: 1fr;
@@ -304,8 +296,7 @@
   /* Reduced motion */
   @media (prefers-reduced-motion: reduce) {
     .card,
-    .cta-button,
-    .help a {
+    .cta-button {
       transition: none;
     }
 

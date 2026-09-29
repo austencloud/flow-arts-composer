@@ -33,7 +33,7 @@ interface CreateModuleGlobalRef {
    * undo snapshot, back to the start-placement picker. Deleting the start
    * placement routes here — never through a partial setStartPlacement(null).
    */
-  requestClearSequence?: () => void;
+  requestClearSequence: () => void;
   /**
    * Module-owned step removal: records the undo entry ("Remove step N"), fades
    * out the step and every step after it, then selects the step before them.

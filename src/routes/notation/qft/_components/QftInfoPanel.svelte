@@ -3,6 +3,7 @@
   import { fade, fly } from "svelte/transition";
   import { DURATION } from "$lib/shared/transitions/transitions";
   import { SOURCES, TIMELINE } from "$lib/shared/notation/qft/qft-guide";
+  import LinkChip from "$lib/shared/ui/components/LinkChip.svelte";
   import { getQftAppContext } from "../_context/qft-app-context";
 
   const app = getQftAppContext();
@@ -61,8 +62,7 @@
   <ul>
     {#each SOURCES as source (source.href)}
       <li>
-        <a href={source.href} rel="noreferrer" target="_blank">{source.label}</a
-        >
+        <LinkChip href={source.href}>{source.label}</LinkChip>
       </li>
     {/each}
   </ul>
@@ -156,10 +156,6 @@
     display: grid;
     gap: 0.55rem;
     padding-inline-start: 1.25rem;
-  }
-
-  a {
-    color: var(--theme-accent, #a99cff);
   }
 
   .timeline li {

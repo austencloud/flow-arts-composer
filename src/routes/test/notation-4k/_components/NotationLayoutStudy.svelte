@@ -3,6 +3,7 @@
   import NotationRosetta from "./NotationRosetta.svelte";
   import NotationShapeMatrix from "./NotationShapeMatrix.svelte";
   import NotationSequenceStage from "./NotationSequenceStage.svelte";
+  import LinkChip from "$lib/shared/ui/components/LinkChip.svelte";
 
   type LayoutMode = "atlas" | "cinematic";
 
@@ -89,9 +90,7 @@
               time, same direction against opposite. It describes how two hand
               paths relate.
             </p>
-            <a href={sources.vtg} target="_blank" rel="noopener noreferrer">
-              Noel Yee on VTG <span aria-hidden="true">↗</span>
-            </a>
+            <LinkChip href={sources.vtg}>Noel Yee on VTG</LinkChip>
           </div>
         </article>
 
@@ -104,9 +103,7 @@
               Charlie Cushing mapped absolute position around a numbered circle,
               then carried the idea onto a three by three grid.
             </p>
-            <a href={sources.qft} target="_blank" rel="noopener noreferrer">
-              Beginner's guide to QFT <span aria-hidden="true">↗</span>
-            </a>
+            <LinkChip href={sources.qft}>Beginner's guide to QFT</LinkChip>
           </div>
         </article>
 
@@ -131,13 +128,8 @@
               PoiNotation treated a move as properties and a sequence as moves
               joined by operators that rendered into two poi simulators.
             </p>
-            <a
-              href={sources.poiNotation}
-              target="_blank"
-              rel="noopener noreferrer"
+            <LinkChip href={sources.poiNotation}>PoiNotation on GitHub</LinkChip
             >
-              PoiNotation on GitHub <span aria-hidden="true">↗</span>
-            </a>
           </div>
         </article>
       </div>
@@ -158,9 +150,7 @@
           It does what a simulator does: lays the space out so you can find what
           you have not tried.
         </p>
-        <a href={sources.lorq} target="_blank" rel="noopener noreferrer">
-          144 Shape Matrix, Sir Lorq <span aria-hidden="true">↗</span>
-        </a>
+        <LinkChip href={sources.lorq}>144 Shape Matrix, Sir Lorq</LinkChip>
       </div>
     </section>
 
@@ -387,16 +377,6 @@
     color: var(--theme-study-muted);
     font-size: var(--font-size-min, 0.875rem);
     line-height: 1.65;
-  }
-
-  .lineage-chapter a,
-  .matrix-copy a {
-    display: inline-flex;
-    gap: 0.4rem;
-    color: color-mix(in oklch, var(--semantic-notation-violet) 68%, white);
-    font-size: var(--font-size-min, 0.875rem);
-    font-weight: 620;
-    text-decoration: none;
   }
 
   .matrix-section {

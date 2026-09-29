@@ -11,6 +11,26 @@ const sceneSource = readFileSync(
   resolve("src/lib/shared/3d/environments/scenes/CelestialScene.svelte"),
   "utf8"
 );
+// CelestialScene loads the shared world and runs its lifecycle. These modules
+// build the geometry, sun, and landmass that the runtime contracts check.
+const worldSource = readFileSync(
+  resolve(
+    "src/lib/shared/3d/environments/worlds/celestial/celestial-environment-world.ts"
+  ),
+  "utf8"
+);
+const cloudbreakWorldSource = readFileSync(
+  resolve(
+    "src/lib/shared/3d/environments/worlds/celestial/celestial-cloudbreak-world.ts"
+  ),
+  "utf8"
+);
+const atmosphereSource = readFileSync(
+  resolve(
+    "src/lib/shared/3d/environments/worlds/celestial/celestial-atmosphere.ts"
+  ),
+  "utf8"
+);
 const sunSource = readFileSync(
   resolve(
     "src/lib/shared/3d/environments/scenes/celestial/CelestialSun.svelte"
@@ -41,7 +61,9 @@ function normalized([x, y, z]: [number, number, number]): [
 
 describe("Olive Cloudbreak production contract", () => {
   it("makes the approved Cloudbreak slice the sole celestial geometry owner", () => {
-    expect(sceneSource).toContain("<OliveCloudbreakSlice");
+    expect(worldSource).toContain(
+      "root.add(atmosphere.object, cloudbreak.object, lighting)"
+    );
     expect(sliceSource).toContain(
       "/models/celestial/olive-cloudbreak-production-slice.glb"
     );
@@ -66,8 +88,10 @@ describe("Olive Cloudbreak production contract", () => {
     expect(CLOUDBREAK_SKY_SUN.direction).toEqual(
       normalized(CLOUDBREAK_LAYOUT.sun.position)
     );
-    expect(sceneSource).toContain("<CelestialSun");
-    expect(sceneSource).toContain("direction={CLOUDBREAK_SKY_SUN.direction}");
+    expect(atmosphereSource).toContain("object.add(sun.group)");
+    expect(atmosphereSource).toContain(
+      "new Vector3(...CLOUDBREAK_SKY_SUN.direction)"
+    );
     expect(sunSource).toContain("activeCamera.position");
     expect(sunSource).toContain("angularDiameterDegrees");
     expect(sunSource).not.toContain("position = [0, 14, -115]");
@@ -75,10 +99,11 @@ describe("Olive Cloudbreak production contract", () => {
   });
 
   it("keeps the approved landmass fixed when the shared performer stage expands", () => {
-    expect(sceneSource).toContain("<OliveCloudbreakSlice");
-    expect(sceneSource).not.toMatch(
-      /<OliveCloudbreakSlice[\s\S]*?stageZOffset/
+    expect(cloudbreakWorldSource).toContain(
+      "object.add(prepareShell(assets.shell, options))"
     );
+    expect(worldSource).not.toContain("stageZOffset");
+    expect(cloudbreakWorldSource).not.toContain("stageZOffset");
     expect(sliceSource).not.toContain("position.z={stageZOffset}");
   });
 

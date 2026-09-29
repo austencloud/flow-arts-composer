@@ -1,4 +1,6 @@
 <script lang="ts">
+  import LinkChip from "$lib/shared/ui/components/LinkChip.svelte";
+
   type SheetType = "terms" | "privacy";
 
   interface Props {
@@ -65,7 +67,7 @@
             <p>
               <strong>This is a summary for quick reference.</strong> The
               full and authoritative Terms of Service are at
-              <a href="/terms">/terms</a>. In case of any difference between
+              <LinkChip size="inline" href="/terms">/terms</LinkChip>. In case of any difference between
               this summary and the full terms, the full terms control.
             </p>
           </div>
@@ -152,7 +154,8 @@
             <p>
               If you believe content on the service infringes your copyright,
               send a DMCA notice per the procedure in
-              <a href="/terms#dmca">the full terms</a>.
+              <LinkChip size="inline" href="/terms#dmca">the full terms</LinkChip
+              >.
             </p>
           </section>
 
@@ -198,10 +201,12 @@
             <h3>13. Contact</h3>
             <p>
               Questions? Email
-              <a href="mailto:austencloud@gmail.com">austencloud@gmail.com</a>.
+              <LinkChip size="inline" href="mailto:austencloud@gmail.com"
+                >austencloud@gmail.com</LinkChip
+              >.
             </p>
             <p>
-              <a href="/terms">View full Terms of Service</a>
+              <LinkChip href="/terms">View full Terms of Service</LinkChip>
             </p>
           </section>
         {:else}
@@ -461,11 +466,6 @@
     color: rgba(255, 255, 255, 0.85);
     font-size: 0.875rem;
     line-height: 1.5;
-  }
-
-  .summary-banner a {
-    color: #a5b4fc;
-    text-decoration: underline;
   }
 
   section {
