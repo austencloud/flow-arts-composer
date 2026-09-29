@@ -49,4 +49,14 @@
       display: none;
     }
   }
+
+  /* Wide panels have room above the grid: the numpad toggle joins the turn
+     chip's row instead of stacking under it, so the group stays one row high
+     and clear of the grid's top edge. */
+  @container tool-panel (min-width: 769px) {
+    .stage-actions {
+      flex-direction: row-reverse;
+      align-items: flex-start;
+    }
+  }
 </style>
