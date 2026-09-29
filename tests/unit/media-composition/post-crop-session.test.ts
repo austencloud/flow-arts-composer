@@ -1,6 +1,8 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
 import type { PostVideoItem } from "$lib/shared/media-composition/domain/post-project";
+import { editItemKeyframes } from "$lib/shared/media-composition/domain/post-project-edits";
+import { setKeyframe } from "$lib/shared/media-composition/domain/post-project-keyframes";
 import { createPostEditorState } from "$lib/shared/media-composition/state/post-editor-state.svelte";
 import { isCovered } from "$lib/shared/share/components/post-studio/editor/post-crop-geometry";
 import { createCropSession } from "$lib/shared/share/components/post-studio/editor/post-crop-session.svelte";
@@ -73,6 +75,48 @@ describe("crop session", () => {
     session.setZoom(0.01);
     expect(session.pose!.zoom).toBeCloseTo(session.zoomFloor, 6);
     expect(isCovered(session.pose!)).toBe(true);
+  });
+
+  it("turns every key of an animated clip with its shape, as one undo step", () => {
+    const { editor, session } = openCrop();
+    const clip = () =>
+      editor.project.tracks
+        .flatMap((track) => track.items)
+        .find((item): item is PostVideoItem => item.kind === "video")!;
+    session.setShape("original");
+    const id = clip().id;
+    editor.edit((project, ctx) =>
+      editItemKeyframes(
+        project,
+        id,
+        (item) =>
+          setKeyframe(
+            setKeyframe(item, "framing", 0, { zoom: 1, panX: 0, panY: 0, rotation: 0 }),
+            "framing",
+            4,
+            { zoom: 1.5, panX: 0, panY: 0, rotation: 10 }
+          ),
+        ctx
+      )
+    );
+    editor.seek(0);
+
+    session.rotateQuarter();
+
+    // The key away from the playhead turns too, keeping its straighten.
+    expect(clip().keyframes!.framing!.map((key) => key.value.rotation)).toEqual([
+      -90, -80,
+    ]);
+    expect(clip().shape!.ratio).toBeCloseTo(1080 / 1920, 6);
+    editor.seek(4);
+    expect(session.pose!.rotation).toBeCloseTo(-80, 6);
+    expect(isCovered(session.pose!)).toBe(true);
+
+    editor.undo();
+    expect(clip().keyframes!.framing!.map((key) => key.value.rotation)).toEqual([
+      0, 10,
+    ]);
+    expect(clip().shape!.ratio).toBeCloseTo(1920 / 1080, 6);
   });
 
   it("zooms Fill up as it straightens, so no corner opens", () => {

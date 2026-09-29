@@ -40,6 +40,19 @@ export function normalizeAccountSetupProgress(
   };
 }
 
+export function isSameAccountSetupProgress(
+  left: AccountSetupProgress,
+  right: AccountSetupProgress
+): boolean {
+  const sameField: Record<keyof AccountSetupProgress, boolean> = {
+    backgroundChosenAt: left.backgroundChosenAt === right.backgroundChosenAt,
+    reminderDismissals: left.reminderDismissals === right.reminderDismissals,
+    reminderSnoozedUntil:
+      left.reminderSnoozedUntil === right.reminderSnoozedUntil,
+  };
+  return Object.values(sameField).every(Boolean);
+}
+
 function latestDate(left: string | null, right: string | null): string | null {
   if (!left) return right;
   if (!right) return left;

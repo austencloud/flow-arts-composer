@@ -346,15 +346,20 @@ do not introduce a second QR renderer or scan-asset preparation pipeline.
 
 Sign-in reads that must not load Firebase go through
 `shared/auth/loaded-auth.ts` (`loadedAuth.currentUser`) and
-`shared/auth/state/loaded-auth-state.svelte.ts` (`loadedAuthState.isAdmin`).
-`firebase.ts` and `auth-state.svelte.ts` remain the owners and register a
-reader when they load; before that nobody can be signed in, so the answers are
-null and false. Public pages import settings, feature flags and the premium
-prop check, and importing either owner there put Firebase Auth and Firestore on
-their first download. Firestore calls on those paths load it with `import()`
-that names the Firebase modules directly, because the small-chunk merge in
-`vite.config.ts` can fold a small wrapper module back into the page. Code that
-follows sign-in changes without loading Firebase itself waits with
+`shared/auth/state/loaded-auth-state.svelte.ts` (`loadedAuthState.isAdmin`,
+`loadedAuthState.isAuthenticated`). `firebase.ts` and `auth-state.svelte.ts`
+remain the owners and register a reader when they load; before that nobody can
+be signed in, so the answers are null and false. Public pages import settings,
+feature flags, the premium prop check, the sequence thumbnails and the Level 1
+guide's admin gate, and importing either owner there put Firebase Auth and
+Firestore on their first download. Firebase calls on those paths (QR short
+codes, card catalogs, guide overrides, learning progress, thumbnail uploads,
+and the shop's products, cart and waitlist) load it with `import()` that names
+the Firebase modules directly, because the small-chunk merge in
+`vite.config.ts` can fold a small wrapper module back into the page. A screen
+that brings Firebase with it mounts through `LazyMount` on a public page, as
+the Learn tab's Play, TIKA and Guide screens do on the public concept course.
+Code that follows sign-in changes without loading Firebase itself waits with
 `whenAuthLoaded` in `loaded-auth.ts`. `hasSavedFirebaseUser`
 (`shared/auth/services/saved-firebase-user.ts`, re-exported by
 `deferred-sign-in.ts`) imports nothing and tells whether a saved session could
@@ -363,7 +368,7 @@ load the bootstrap only when it does. `scripts/verify-public-firebase.mjs`
 checks the listed public pages in the built chunk graph, and
 `tests/unit/landing/home-first-visit-firebase.test.ts` follows the home page's
 LazyMount components and first-visit `import()` calls in source. Searches:
-currentUser, signed-in user, isAdmin, whenAuthLoaded, saved session, public
-page Firebase, first download, LazyMount. Decision: extend the two owners; code
+currentUser, signed-in user, isAdmin, isAuthenticated, whenAuthLoaded, saved
+session, public page Firebase, first download, LazyMount. Decision: extend the two owners; code
 a public page loads at startup uses these readers instead of importing either
 owner.
