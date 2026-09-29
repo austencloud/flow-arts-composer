@@ -16,6 +16,8 @@
   import type { PostEditorState } from "$lib/shared/media-composition/state/post-editor-state.svelte";
   import { toPaintFrame } from "$lib/shared/media-composition/services/post-studio-layer-painter";
   import { backdropLayer } from "$lib/shared/media-composition/services/post-backdrop-painter";
+  import { regionEdgePixels } from "$lib/shared/media-composition/services/region-edge-painter";
+  import type { LayoutRegion } from "$lib/shared/media-composition/domain/media-layout-schema";
   import { itemIdFromStaffEffectRole } from "$lib/shared/media-composition/domain/post-project-compiler";
   import {
     ANIMATION_OVERLAY_ROLE,
@@ -214,6 +216,49 @@
       sourceTimeSeconds: sourceIn,
       projectProgress: 0,
       transform: clip.transform,
+    };
+  }
+
+  interface EdgeStyle {
+    radius: string;
+    shadow: string | undefined;
+    border: string | undefined;
+    color: string;
+    opacity: number;
+  }
+
+  /**
+   * A clip's corners, border and shadow at the stage's size, measured as the
+   * export measures them. They fade with the clip, and the crop screen shows
+   * the picture without them.
+   */
+  function edgeStyle(
+    region: LayoutRegion,
+    rect: { width: number; height: number },
+    list: readonly RegionEntry[]
+  ): EdgeStyle | null {
+    if (!region.edge || cropping || stageWidth <= 0 || stageHeight <= 0) {
+      return null;
+    }
+    const opacity = Math.max(
+      0,
+      ...list.map((entry) => (entry.live ? entry.layer.opacity : 0))
+    );
+    const pixels = regionEdgePixels(
+      region.edge,
+      { width: rect.width * stageWidth, height: rect.height * stageHeight },
+      { width: stageWidth, height: stageHeight }
+    );
+    const shadow = pixels.shadow;
+    return {
+      radius: `${pixels.radius}px`,
+      shadow:
+        shadow && opacity > 0
+          ? `0 ${shadow.drop}px ${shadow.blur}px rgb(0 0 0 / ${shadow.alpha * opacity})`
+          : undefined,
+      border: pixels.border > 0 ? `${pixels.border}px` : undefined,
+      color: pixels.color,
+      opacity,
     };
   }
 
@@ -1487,8 +1532,10 @@
       {@const rect = editor.regionRects.get(region.id) ?? region}
       {@const cropRegion = cropping && region.id === cropItem?.id}
       {@const cropWindow = cropRegion ? windowRect : null}
+      {@const edge = edgeStyle(region, rect, entries.get(region.id) ?? [])}
       <div
         class="region"
+        class:edged={edge !== null}
         class:crop-region={cropRegion}
         class:crop-hidden={cropping && !cropRegion}
         data-crop-region={cropRegion ? "" : undefined}
@@ -1500,6 +1547,11 @@
         style:width={cropWindow ? `${cropWindow.width}px` : pct(rect.width)}
         style:height={cropWindow ? `${cropWindow.height}px` : pct(rect.height)}
         style:z-index={region.zIndex}
+        style:border-radius={edge?.radius}
+        style:box-shadow={edge?.shadow}
+        style:--edge-border={edge?.border}
+        style:--edge-color={edge?.color}
+        style:--edge-opacity={edge?.opacity}
       >
         {#each entries.get(region.id) ?? [] as entry (entry.role)}
           {@const binding = bindingFor(entry.role)}
@@ -1725,6 +1777,22 @@
   .painted {
     position: absolute;
     inset: 0;
+  }
+  .region.edged > .layer,
+  .region.edged > .painted {
+    z-index: 0;
+  }
+  /* The border lies over the clip's layers, inside its rounded edge. */
+  .region.edged::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    box-sizing: border-box;
+    border: var(--edge-border, 0) solid var(--edge-color, transparent);
+    border-radius: inherit;
+    opacity: var(--edge-opacity, 1);
+    pointer-events: none;
   }
   .layer.parked,
   .painted.crop-bare {

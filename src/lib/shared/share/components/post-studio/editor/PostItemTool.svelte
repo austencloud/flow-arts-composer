@@ -8,6 +8,8 @@
     POST_MAX_SPEED,
     POST_MAX_TEXT_LENGTH,
     POST_MAX_VOLUME,
+    POST_MAX_EDGE_BORDER,
+    POST_MAX_EDGE_CORNERS,
     POST_MAX_ZOOM,
     POST_MIN_ITEM_SECONDS,
     POST_MIN_SPEED,
@@ -17,6 +19,7 @@
     itemEnd,
     textBox,
     type PostBox,
+    type PostEdgeColor,
     type PostItem,
     type PostMovesMode,
     type PostTextSize,
@@ -41,6 +44,11 @@
     isAnimated,
     opacityAt,
   } from "$lib/shared/media-composition/domain/post-project-keyframes";
+  import {
+    POST_DEFAULT_EDGE_BORDER,
+    POST_EDGE_COLOR_HEX,
+    edgeOf,
+  } from "$lib/shared/media-composition/domain/post-clip-edge";
   import type { PostEditorState } from "$lib/shared/media-composition/state/post-editor-state.svelte";
   import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
   import FilterChipBase from "$lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
@@ -57,7 +65,10 @@
   } from "./post-crop-geometry";
   import type { CropSession, CropShapeKind } from "./post-crop-session.svelte";
   import PostRatioPicker, { type RatioOption } from "./PostRatioPicker.svelte";
-  import { ratioValue } from "$lib/shared/media-composition/domain/post-canvas";
+  import {
+    postOutputSize,
+    ratioValue,
+  } from "$lib/shared/media-composition/domain/post-canvas";
   import type { StaffTipAnalysis } from "$lib/shared/media-composition/state/staff-tip-analysis.svelte";
   import PostStaffEffectsTool from "./PostStaffEffectsTool.svelte";
 
@@ -383,7 +394,52 @@
       ?.id ?? ""
   );
 
+  /** The post's shorter side, which border widths are measured against. */
+  const frameShort = $derived.by(() => {
+    const size = postOutputSize(editor.project.canvas);
+    return Math.min(size.width, size.height);
+  });
+
+  type BorderPick = PostEdgeColor | "none";
+
+  const BORDER_COLOR_NAMES: Record<PostEdgeColor, () => string> = {
+    white: () => t("color_preset_white"),
+    black: () => t("color_preset_black"),
+    red: () => t("color_preset_red"),
+    orange: () => t("color_preset_orange"),
+    gold: () => t("color_preset_gold"),
+    blue: () => t("color_preset_blue"),
+    violet: () => t("color_preset_violet"),
+  };
+
+  const BORDER_PICKS = $derived<
+    { value: BorderPick; label: string; disabled: boolean }[]
+  >([
+    { value: "none", label: t("post_editor_border_none"), disabled: locked },
+    ...(Object.keys(POST_EDGE_COLOR_HEX) as PostEdgeColor[]).map((color) => ({
+      value: color,
+      label: BORDER_COLOR_NAMES[color](),
+      disabled: locked,
+    })),
+  ]);
+
+  /** A colour gives a clip with no border the usual one; None takes it off. */
+  function pickBorder(pick: BorderPick): void {
+    if (item.kind !== "video") return;
+    if (pick === "none") {
+      patchItem({ edge: { border: 0 } });
+      return;
+    }
+    patchItem({
+      edge:
+        edgeOf(item).border > 0
+          ? { borderColor: pick }
+          : { borderColor: pick, border: POST_DEFAULT_EDGE_BORDER },
+    });
+  }
+
   const percent = (value: number) => `${Math.round(value)}%`;
+  const pixels = (value: number) => `${Math.round(value)} px`;
   const fineDegrees = (value: number) => `${Number(value.toFixed(1))}°`;
   const fadeSeconds = (value: number) => `${value.toFixed(2)} s`;
 
@@ -409,6 +465,18 @@
       {action}
     </PanelButton>
   </div>
+{/snippet}
+
+{#snippet borderSwatch(pick: BorderPick)}
+  {#if pick === "none"}
+    {t("post_editor_border_none")}
+  {:else}
+    <span
+      class="swatch"
+      style:background={POST_EDGE_COLOR_HEX[pick]}
+      aria-hidden="true"
+    ></span>
+  {/if}
 {/snippet}
 
 {#snippet readout(
@@ -623,6 +691,52 @@
         ariaLabel={t("post_editor_placement")}
       />
     {/if}
+  {:else if tool === "border" && item.kind === "video"}
+    {@const edge = edgeOf(item)}
+    <ValueSlider
+      label={t("post_editor_corners")}
+      value={(edge.corners / POST_MAX_EDGE_CORNERS) * 100}
+      min={0}
+      max={100}
+      step={1}
+      format={percent}
+      disabled={locked}
+      onchange={(value) =>
+        change("edgeCorners", {
+          edge: { corners: (value / 100) * POST_MAX_EDGE_CORNERS },
+        })}
+    />
+    <SegmentedControl
+      color="accent"
+      columns={4}
+      options={BORDER_PICKS}
+      value={edge.border > 0 ? edge.borderColor : "none"}
+      onchange={pickBorder}
+      optionContent={borderSwatch}
+      ariaLabel={t("post_editor_tool_border")}
+    />
+    <ValueSlider
+      label={t("post_editor_border_width")}
+      value={edge.border * frameShort}
+      min={0}
+      max={Math.floor(POST_MAX_EDGE_BORDER * frameShort)}
+      step={1}
+      format={pixels}
+      disabled={locked}
+      onchange={(value) =>
+        change("edgeBorder", { edge: { border: value / frameShort } })}
+    />
+    <ValueSlider
+      label={t("post_editor_shadow")}
+      value={edge.shadow * 100}
+      min={0}
+      max={100}
+      step={1}
+      format={percent}
+      disabled={locked}
+      onchange={(value) =>
+        change("edgeShadow", { edge: { shadow: value / 100 } })}
+    />
   {:else if tool === "fade"}
     <ValueSlider
       label={t("post_editor_opacity")}
@@ -776,6 +890,14 @@
     display: flex;
     flex-wrap: wrap;
     gap: 0.5rem;
+  }
+
+  .swatch {
+    display: block;
+    width: 1.5rem;
+    height: 1.5rem;
+    border: 1px solid rgb(255 255 255 / 0.35);
+    border-radius: 50%;
   }
 
   /* Rotate, Mirror and Reset share a line when the panel has room. */
