@@ -117,7 +117,7 @@
   import { adjacentStepSeconds, clipSteps, type ClipStep } from "./post-crop-steps";
   import {
     CROP_STAGE_MARGIN_PX,
-    cropViewRatio,
+    cropStageRatio,
     type CropSize,
   } from "./post-crop-geometry";
   import {
@@ -631,23 +631,27 @@
   });
 
   /**
-   * The shape of what the crop stage shows, the picture and the window
-   * together, so a wide screen gives the stage only the width it needs and
-   * the panel sits beside the picture. It holds while a drag runs, so the
-   * stage keeps still under the pointer.
+   * The crop stage's shape, so a wide screen gives the stage only the width
+   * it needs and the panel sits beside the picture. It is set once the
+   * footage's size is known and kept until the screen closes: it has room to
+   * straighten, and a quarter turn fits inside it, so the panel never moves
+   * under the pointer. Until then the window's own shape stands in.
    */
-  let heldCropView: number | null = null;
+  let cropStage: { itemId: string; ratio: number } | null = null;
   const cropView = $derived.by(() => {
-    if (!cropMode) return (heldCropView = null);
+    const itemId = cropMode ? editor.selectedItemId : null;
+    if (!itemId) {
+      cropStage = null;
+      return null;
+    }
+    if (cropStage?.itemId === itemId) return cropStage.ratio;
     const pose = crop.pose;
+    if (pose) {
+      cropStage = { itemId, ratio: cropStageRatio(pose, crop.parts.quarter) };
+      return cropStage.ratio;
+    }
     const window = crop.window;
-    if (crop.busy && heldCropView !== null) return heldCropView;
-    heldCropView = pose
-      ? cropViewRatio(pose)
-      : window
-        ? window.width / window.height
-        : null;
-    return heldCropView;
+    return window ? window.width / window.height : null;
   });
 
   /** The panel that was open before the crop screen, to go back to. */
@@ -2356,9 +2360,10 @@
 
   /* The panel sits beside the picture, the two centred as one group, and
      the clip's timeline runs under both, as wide as the screen. The stage is
-     as wide as the picture needs at the row's height, and no wider. The
-     panel keeps the width it has while editing: 30% of the stage row,
-     measured here against the editor less the layout's padding. */
+     as wide as the picture needs at the row's height, straightened any
+     amount, and it keeps that width until the screen closes. The panel
+     keeps the width it has while editing: 30% of the stage row, measured
+     here against the editor less the layout's padding. */
   .post-editor[data-mode="crop"][data-layout="wide"] .layout {
     --post-panel-width: clamp(
       20rem,
