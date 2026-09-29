@@ -31,6 +31,8 @@ const atmosphereSource = readFileSync(
   ),
   "utf8"
 );
+// Only the review page at /test/celestial-asset-catalog renders these. The
+// live scene stopped using them when it moved to the shared world.
 const sunSource = readFileSync(
   resolve(
     "src/lib/shared/3d/environments/scenes/celestial/CelestialSun.svelte"
@@ -59,17 +61,11 @@ function normalized([x, y, z]: [number, number, number]): [
   return [x / length, y / length, z / length];
 }
 
-describe("Olive Cloudbreak production contract", () => {
-  it("makes the approved Cloudbreak slice the sole celestial geometry owner", () => {
+describe("Celestial runtime Cloudbreak contract", () => {
+  it("makes the shared Cloudbreak world the sole celestial geometry owner", () => {
     expect(worldSource).toContain(
       "root.add(atmosphere.object, cloudbreak.object, lighting)"
     );
-    expect(sliceSource).toContain(
-      "/models/celestial/olive-cloudbreak-production-slice.glb"
-    );
-    expect(sliceSource).toContain("<ReflectivePool");
-    expect(sliceSource).toContain("<CloudbreakAsset");
-    expect(sliceSource).toContain("<CloudbreakWaterfall");
     expect(sceneSource).not.toContain("CelestialSanctuaries");
     expect(sceneSource).not.toContain("celestial-environment.glb");
   });
@@ -92,9 +88,6 @@ describe("Olive Cloudbreak production contract", () => {
     expect(atmosphereSource).toContain(
       "new Vector3(...CLOUDBREAK_SKY_SUN.direction)"
     );
-    expect(sunSource).toContain("activeCamera.position");
-    expect(sunSource).toContain("angularDiameterDegrees");
-    expect(sunSource).not.toContain("position = [0, 14, -115]");
     expect(sceneSource).not.toContain("<T.PointLight");
   });
 
@@ -104,6 +97,26 @@ describe("Olive Cloudbreak production contract", () => {
     );
     expect(worldSource).not.toContain("stageZOffset");
     expect(cloudbreakWorldSource).not.toContain("stageZOffset");
+  });
+});
+
+describe("Olive Cloudbreak review slice contract", () => {
+  it("assembles the olive slice from its GLB, pool, assets, and waterfalls", () => {
+    expect(sliceSource).toContain(
+      "/models/celestial/olive-cloudbreak-production-slice.glb"
+    );
+    expect(sliceSource).toContain("<ReflectivePool");
+    expect(sliceSource).toContain("<CloudbreakAsset");
+    expect(sliceSource).toContain("<CloudbreakWaterfall");
+  });
+
+  it("keeps the review sun angular and camera-relative", () => {
+    expect(sunSource).toContain("activeCamera.position");
+    expect(sunSource).toContain("angularDiameterDegrees");
+    expect(sunSource).not.toContain("position = [0, 14, -115]");
+  });
+
+  it("keeps the slice fixed when the shared performer stage expands", () => {
     expect(sliceSource).not.toContain("position.z={stageZOffset}");
   });
 
