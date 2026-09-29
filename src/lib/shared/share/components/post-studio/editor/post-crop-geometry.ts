@@ -448,7 +448,7 @@ export interface CropCamera {
 }
 
 /** Output pixels per footage pixel, as the pose draws the picture. */
-function pictureScale(pose: CropPose): number {
+export function pictureScale(pose: CropPose): number {
   return (pose.draw.width * pose.zoom) / pose.source.width;
 }
 

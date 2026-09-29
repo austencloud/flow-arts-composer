@@ -232,6 +232,8 @@ export function createCropSession(deps: CropSessionDeps) {
   let sliderBase: SliderBase | null = null;
   let gesture = $state.raw<Gesture | null>(null);
   let announcement = $state("");
+  /** Presses of Rotate, a shape or Reset; the stage glides to each. */
+  let presses = $state(0);
 
   /** Whether an edit may land now: a clip, unlocked, with no drag running. */
   function editable(): PostVideoItem | null {
@@ -417,6 +419,7 @@ export function createCropSession(deps: CropSessionDeps) {
   function rotateQuarter(): void {
     const target = editable();
     if (!target) return;
+    presses += 1;
     const quarter = quarterLeft(parts.quarter);
     const rotation = joinRotation(quarter, parts.straighten);
     quarterHint = quarter;
@@ -533,6 +536,7 @@ export function createCropSession(deps: CropSessionDeps) {
     const id = target.id;
     editor.pause();
     sliderBase = null;
+    presses += 1;
     const current = pose;
     const nextWindow = windowFor(shape);
     const filled =
@@ -571,6 +575,7 @@ export function createCropSession(deps: CropSessionDeps) {
     editor.pause();
     sliderBase = null;
     quarterHint = null;
+    presses += 1;
     editor.edit((project, ctx) =>
       resetFraming(
         updateItem(project, id, { fit: "cover", flip: false, shape: null }, ctx),
@@ -795,6 +800,10 @@ export function createCropSession(deps: CropSessionDeps) {
     /** What the last settled change left, for a polite live region. */
     get announcement() {
       return announcement;
+    },
+    /** Counts presses of Rotate, a shape and Reset, for the stage to glide to. */
+    get presses() {
+      return presses;
     },
     setZoom,
     setStraighten,
