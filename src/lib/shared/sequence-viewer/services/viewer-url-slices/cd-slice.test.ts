@@ -63,6 +63,12 @@ const visibility = vi.hoisted(() => ({
 }));
 
 vi.mock("$lib/shared/auth/firebase", () => ({ getAuthSync: () => auth }));
+// The composition store reads sign-in through the lazy loader so public pages
+// never pull Firebase; the fake auth stands in as the already-loaded instance.
+vi.mock("$lib/shared/auth/loaded-auth", () => ({
+  loadedAuth: auth,
+  whenAuthLoaded: (callback: (instance: typeof auth) => void) => callback(auth),
+}));
 vi.mock("$lib/shared/settings/state/settings-state.svelte", () => ({
   settingsService: settingsMock,
 }));

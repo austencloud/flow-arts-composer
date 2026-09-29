@@ -318,9 +318,16 @@ describe("canonical concept lesson composition", () => {
     expect(order).toEqual([...order].sort((a, b) => a - b));
     expect(anatomy).toContain("ArtifactRegionSpotlight");
     expect(anatomy).toContain("PictographContainer");
-    expect(anatomy).toContain("Top left: the step number.");
-    expect(anatomy).toContain("Bottom right: the hands’ time and direction.");
-    expect(anatomy).toContain("Top right: the props’ time and direction.");
+    // The captions are translated; the English copy lives in messages/en.json.
+    const en = JSON.parse(readSource("messages/en.json")) as Record<string, string>;
+    for (const [key, text] of [
+      ["learn_anatomy_number_text", "Top left: the step number."],
+      ["learn_anatomy_hands_text", "Bottom right: the hands’ time and direction."],
+      ["learn_anatomy_props_text", "Top right: the props’ time and direction."],
+    ]) {
+      expect(anatomy).toContain(`"${key}"`);
+      expect(en[key]).toBe(text);
+    }
   });
 
   it("walks the guide's six words step by step before a six-word recap", () => {
