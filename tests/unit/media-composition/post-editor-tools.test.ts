@@ -58,6 +58,16 @@ describe("toolRow", () => {
     }
   });
 
+  it("offers Border on a video clip only, after Position", () => {
+    for (const selection of [MAIN_CLIP, OVERLAY_CLIP]) {
+      const row = toolRow(selection);
+      expect(row.indexOf("border")).toBe(row.indexOf("position") + 1);
+    }
+    for (const kind of ["animation", "moves", "carousel", "text", "card"] as const) {
+      expect(toolRow({ kind, hasLayout: false })).not.toContain("border");
+    }
+  });
+
   it("offers each kind's own tool ahead of the shared ones", () => {
     expect(toolRow({ kind: "animation", hasLayout: false })[2]).toBe("labels");
     expect(toolRow({ kind: "moves", hasLayout: false })[2]).toBe("shows");

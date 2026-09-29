@@ -218,6 +218,48 @@ export const PostClipShapeSchema = z
 
 export type PostClipShape = z.infer<typeof PostClipShapeSchema>;
 
+/** The colours a clip's border comes in. */
+export const POST_EDGE_COLORS = [
+  "white",
+  "black",
+  "red",
+  "orange",
+  "gold",
+  "blue",
+  "violet",
+] as const;
+export type PostEdgeColor = (typeof POST_EDGE_COLORS)[number];
+/** A border this wide, as a share of the post's shorter side, is the widest. */
+export const POST_MAX_EDGE_BORDER = 0.03;
+/** A corner this round, as a share of the picture's shorter side, is a full curve. */
+export const POST_MAX_EDGE_CORNERS = 0.5;
+
+/**
+ * A clip's edges, as editors dress picture-in-picture: rounded corners, a
+ * border inside them and a drop shadow under the picture.
+ */
+export const PostClipEdgeSchema = z
+  .object({
+    /** Corner radius, as a share of the drawn picture's shorter side. */
+    corners: z.number().finite().min(0).max(POST_MAX_EDGE_CORNERS),
+    /** Border width, as a share of the post's shorter side. */
+    border: z.number().finite().min(0).max(POST_MAX_EDGE_BORDER),
+    borderColor: z.enum(POST_EDGE_COLORS),
+    /** Drop shadow strength: 0 is none, 1 the darkest. */
+    shadow: z.number().finite().min(0).max(1),
+  })
+  .strict();
+
+export type PostClipEdge = z.infer<typeof PostClipEdgeSchema>;
+
+/** Plain square edges: what a clip without `edge` shows. */
+export const POST_PLAIN_EDGE: PostClipEdge = {
+  corners: 0,
+  border: 0,
+  borderColor: "white",
+  shadow: 0,
+};
+
 const itemBase = {
   id: IdSchema,
   /** Austen's own name for it; the kind's name shows when absent. */
@@ -257,6 +299,8 @@ export const PostVideoItemSchema = z
      * one the clip fills the box.
      */
     shape: PostClipShapeSchema.optional(),
+    /** Rounded corners, a border and a shadow; square and bare when absent. */
+    edge: PostClipEdgeSchema.optional(),
     /** Scales the picture about the box's centre. */
     zoom: z.number().finite().min(POST_MIN_ZOOM).max(POST_MAX_ZOOM),
     /**

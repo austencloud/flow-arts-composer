@@ -8,7 +8,11 @@ import {
   type PresetSourceRole,
   type PresetVisualClipMotion,
 } from "$lib/shared/media-composition/domain/media-composition-preset-schema";
-import type { LayoutRegion } from "$lib/shared/media-composition/domain/media-layout-schema";
+import type {
+  LayoutRegion,
+  RegionEdge,
+} from "$lib/shared/media-composition/domain/media-layout-schema";
+import { regionEdge } from "$lib/shared/media-composition/domain/post-clip-edge";
 import {
   ANIMATION_OVERLAY_ROLE,
   stripRole,
@@ -144,7 +148,8 @@ function region(
   label: string,
   box: PostBox,
   fit: LayoutRegion["fit"],
-  zIndex: number
+  zIndex: number,
+  edge?: RegionEdge
 ): LayoutRegion {
   return {
     id,
@@ -157,6 +162,7 @@ function region(
     fit,
     clipContent: true,
     respectSafeArea: false,
+    ...(edge ? { edge } : {}),
   };
 }
 
@@ -383,7 +389,14 @@ export function compilePostProject(
         useTake(item.takeId);
         const roleKey = takeRole(item.takeId);
         regions.push(
-          region(item.id, label, clipBox(item, box, output), item.fit, zIndex)
+          region(
+            item.id,
+            label,
+            clipBox(item, box, output),
+            item.fit,
+            zIndex,
+            regionEdge(item.edge)
+          )
         );
         const regionKeyframes = regionKeyframesFor(item, output);
         if (regionKeyframes) regionKeyframesList.push(regionKeyframes);
