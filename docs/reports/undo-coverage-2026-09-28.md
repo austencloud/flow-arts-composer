@@ -18,6 +18,7 @@ offer only “undo last placement”; they do not provide a full document histor
 | --- | --- | --- |
 | Spell | The snapshot was taken after replacing the sequence. | Capture the previous sequence before replacement. |
 | Create | Async completion could record history on the newly selected tab. First generation from an empty workspace had no Undo snapshot. | Bind history to the originating sequence state and allow restoration to an empty workspace. |
+| Empty Create workspace | Undoing the first generation hid Redo with the sequence controls. | Keep available Undo and Redo actions in the empty workspace's recovery area. |
 | Create transforms and extensions | Failed or unchanged operations could consume an Undo entry; deferred capture could miss the original state. | Capture before transforming and commit only changed results, retaining recovery from partial failures. |
 | Deferred Create results | Extensions and delayed letter calculations could overwrite a newer edit or Undo. | Discard results when the source sequence or its revision has changed. |
 | Timeline | Several project, track and clip setters bypassed history. | Record those edits and group clip gestures into a single action. |
