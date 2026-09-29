@@ -19,6 +19,7 @@
   } from "$lib/shared/navigation/services/navigation-validator";
   import { openSheet } from "$lib/shared/navigation/services/sheet-router";
   import { toChangelogSegments } from "$lib/shared/versioning/domain/utils/changelog-rich-text";
+  import LinkChip from "$lib/shared/ui/components/LinkChip.svelte";
 
   let {
     text,
@@ -75,17 +76,14 @@
 
 <span class="rich-text">
   {#each segments as segment}
-    {#if segment.kind === "text"}{segment.value}{:else if segment.kind === "link"}<a
+    {#if segment.kind === "text"}{segment.value}{:else if segment.kind === "link"}<LinkChip
         class="entry-link"
+        size="inline"
+        wrap
         href={segment.href}
-        target={segment.external ? "_blank" : undefined}
-        rel={segment.external ? "noopener noreferrer" : undefined}
         onclick={(event) =>
           handleLinkClick(event, segment.href, segment.external)}
-        >{segment.label}{#if segment.external}<i
-            class="fas fa-external-link-alt external-mark"
-            aria-hidden="true"
-          ></i>{/if}</a
+        >{segment.label}</LinkChip
       >{:else}<span class="inline-icon" aria-hidden="true"
         ><i class="fas {segment.name}"></i></span
       >{/if}
@@ -95,46 +93,6 @@
 <style>
   .rich-text {
     display: inline;
-  }
-
-  /* Release-note destinations are references inside a sentence. Keeping the
-     linked phrase in place lets the note read naturally without repeating it
-     as a second action underneath. */
-  .entry-link {
-    color: color-mix(
-      in srgb,
-      var(--theme-accent, #6ea8fe) 70%,
-      var(--theme-text, #fff)
-    );
-    font-weight: 600;
-    text-decoration: underline;
-    text-decoration-color: color-mix(
-      in srgb,
-      var(--theme-accent, #6ea8fe) 42%,
-      transparent
-    );
-    text-decoration-thickness: 1px;
-    text-underline-offset: 0.18em;
-    transition:
-      color 0.15s,
-      text-decoration-color 0.15s;
-  }
-
-  .entry-link:hover {
-    color: color-mix(in srgb, var(--theme-accent, #6ea8fe) 78%, white);
-    text-decoration-color: currentColor;
-  }
-
-  .entry-link:focus-visible {
-    border-radius: 2px;
-    outline: 2px solid var(--theme-accent, #6ea8fe);
-    outline-offset: 2px;
-  }
-
-  .external-mark {
-    margin-left: 0.35em;
-    font-size: 0.7em;
-    opacity: 0.75;
   }
 
   .inline-icon {

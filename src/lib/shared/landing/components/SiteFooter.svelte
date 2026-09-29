@@ -1,4 +1,5 @@
 <script lang="ts">
+  import LinkChip from "$lib/shared/ui/components/LinkChip.svelte";
   /**
    * SiteFooter owns three compositions of the same navigation: the full
    * interior footer, the compact homepage footer, and a sitemap-only handoff
@@ -104,7 +105,7 @@
   <div class="col-content">
     <ul>
       {#each col.links as link}
-        <li><a href={link.href}>{siteCopy(link.label)}</a></li>
+        <li><LinkChip href={link.href}>{siteCopy(link.label)}</LinkChip></li>
       {/each}
     </ul>
   </div>
@@ -367,23 +368,8 @@
     padding: 0;
     display: flex;
     flex-direction: column;
-  }
-  .col a {
-    display: inline-block;
-    padding: 7px 0;
-    color: #b9b6cf;
-    text-decoration: none;
-    font-size: 0.92rem;
-    transition: color 0.2s ease;
-  }
-  .col a:hover,
-  .col a:focus-visible {
-    color: #fff;
-  }
-  .col a:focus-visible {
-    border-radius: 0.5rem;
-    outline: 2px solid rgba(184, 166, 255, 0.9);
-    outline-offset: 2px;
+    align-items: flex-start;
+    gap: 0.45rem;
   }
 
   .bottom {
@@ -490,20 +476,6 @@
     .sitemap .col ul {
       padding: 0.25rem 0.5rem 0.5rem;
     }
-    .full .col a,
-    .sitemap .col a {
-      display: flex;
-      align-items: center;
-      min-height: var(--min-touch-target, 44px);
-      padding: 0.625rem 0.5rem;
-      border-radius: 0.5rem;
-    }
-    .full .col a:hover,
-    .full .col a:focus-visible,
-    .sitemap .col a:hover,
-    .sitemap .col a:focus-visible {
-      background: rgba(255, 255, 255, 0.05);
-    }
   }
 
   /* ≥560px: the two link columns sit side by side under the brand block. */
@@ -550,7 +522,6 @@
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .col a,
     .col-toggle,
     .col-chevron,
     .bottom-links a,

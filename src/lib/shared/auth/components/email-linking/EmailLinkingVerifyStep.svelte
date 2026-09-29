@@ -5,6 +5,7 @@
   Includes resend functionality with cooldown timer.
 -->
 <script lang="ts">
+  import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
   import { t } from "$lib/shared/i18n/i18n.svelte";
   interface Props {
     email: string;
@@ -77,9 +78,7 @@
     </div>
   {/if}
 
-  <button class="skip-btn" onclick={onSkip}
-    >{t("auth_linking_verify_later")}</button
-  >
+  <PanelButton onclick={onSkip}>{t("auth_linking_verify_later")}</PanelButton>
 </div>
 
 <style>
@@ -265,25 +264,8 @@
     margin-top: 2px;
   }
 
-  .skip-btn {
-    padding: 10px 20px;
-    background: transparent;
-    border: none;
-    color: var(--theme-text-dim, var(--theme-text-dim));
-    font-size: var(--font-size-sm);
-    cursor: pointer;
-    text-decoration: underline;
-    text-underline-offset: 3px;
-    transition: color var(--duration-normal) ease;
-  }
-
-  .skip-btn:hover {
-    color: color-mix(in srgb, var(--theme-text, white) 70%, transparent);
-  }
-
   /* Focus States */
-  .resend-btn:focus-visible,
-  .skip-btn:focus-visible {
+  .resend-btn:focus-visible {
     outline: 2px solid
       color-mix(in srgb, var(--theme-accent-strong) 80%, transparent);
     outline-offset: 2px;
