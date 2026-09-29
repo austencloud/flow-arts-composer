@@ -227,9 +227,11 @@ import { getStepOperator } from "$lib/features/create/shared/get-step-operator";
 
   // The single shared drawer routes its close to the active panel's handler.
   function handleActiveClose() {
-    // Playback temporarily hides the drawer. Its external-close notification
-    // must not discard the selection that Stop will restore.
-    if (panelState.workspacePlayback) return;
+    // Playback hides the drawer from the moment Play starts loading the player
+    // until Stop. Its external-close notification must not discard the
+    // selection that Stop reopens the editor on.
+    if (panelState.workspacePlayback || panelState.workspacePlaybackPreparation)
+      return;
     if (mandalaSelection) {
       panelState.closeMandalaViewer();
     } else if (isMultiSelect) {
