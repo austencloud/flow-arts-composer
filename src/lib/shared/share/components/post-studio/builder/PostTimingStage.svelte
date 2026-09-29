@@ -2,8 +2,10 @@
   import type { PostStudioLayerPainter } from "$lib/shared/media-composition/services/post-studio-layer-painter";
   import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
   import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
+  import FilterChipBase from "$lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
   import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import PostStudioPaintedLayer from "../PostStudioPaintedLayer.svelte";
+  import { ITEM_KIND_ICON } from "../editor/post-editor-labels";
   import TakeTimingLane from "./TakeTimingLane.svelte";
   import type { PostTimingSession } from "./post-timing-session.svelte";
   import TypeableValue from "$lib/shared/ui/components/TypeableValue.svelte";
@@ -186,10 +188,15 @@
         />
       </div>
       {#if squarePainter}
-        <label class="check">
-          <input type="checkbox" bind:checked={session.showSquare} />
-          {t("share_studio_deep_show_move")}
-        </label>
+        <FilterChipBase
+          mode="toggle"
+          emphasis="solid"
+          size="sm"
+          icon={`fa-solid ${ITEM_KIND_ICON.moves}`}
+          label={t("share_studio_deep_show_move")}
+          active={session.showSquare}
+          onclick={() => (session.showSquare = !session.showSquare)}
+        />
       {/if}
       <span class="hint">{t("share_studio_deep_keyboard_hint")}</span>
     </div>
@@ -298,19 +305,5 @@
   .hint {
     color: var(--theme-text-secondary, #aaa);
     font-size: 0.75rem;
-  }
-  .check {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    min-height: 2.75rem;
-    color: var(--theme-text, #fff);
-    font-size: 0.875rem;
-    cursor: pointer;
-  }
-  .check input {
-    width: 1.125rem;
-    height: 1.125rem;
-    accent-color: var(--theme-primary, #d4813a);
   }
 </style>
