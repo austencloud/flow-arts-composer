@@ -35,7 +35,34 @@ Follow the official remote-managed path (Cloudflare's current recommended setup)
 
 1. Open [Cloudflare Zero Trust dashboard](https://one.dash.cloudflare.com/) → **Networks → Tunnels** → **Create a tunnel**.
 2. Connector type: **Cloudflared**. Name it `tka-mcp`. **Save tunnel**.
-3. Environment: **Windows**. Architecture: **64-bit**. Copy the generated install command (contains a token); run it in **an elevated PowerShell**. It installs `cloudflared` as a Windows service for you. Wait for the dashboard to show the connector as healthy, then **Next**.
+3. In the dashboard (**Networking → Tunnels → `tka-mcp`**), with Environment
+   **Windows** and Architecture **64-bit**, copy the token with the copy icon.
+   The install command on screen is masked. **Never run it.** It puts the token
+   on the service's command line, which any local user can read, and Windows
+   logs that line in plain text in System event 7045 ("A service was
+   installed"). That is how the `tka-mcp` token leaked before its 2026-09-28
+   rotation. Instead, from **an elevated PowerShell**, save the token where
+   only SYSTEM and Administrators can read it, and create the service yourself:
+
+   ```powershell
+   $dir = 'C:\ProgramData\cloudflared'
+   New-Item -ItemType Directory -Force $dir | Out-Null
+   # No inheritance: full control for SYSTEM and Administrators only
+   icacls $dir /inheritance:r /grant:r '*S-1-5-18:(OI)(CI)F' '*S-1-5-32-544:(OI)(CI)F'
+   # Writes the clipboard's last word (the token, even from a copied command) as
+   # UTF-8 without a BOM, so the token never appears on a command line
+   [IO.File]::WriteAllText("$dir\tka-mcp.token", ((Get-Clipboard -Raw).Trim() -split '\s+')[-1])
+
+   $bin = '"C:\Program Files (x86)\cloudflared\cloudflared.exe" tunnel --protocol http2 run --token-file "C:\ProgramData\cloudflared\tka-mcp.token"'
+   New-Service -Name Cloudflared -DisplayName 'Cloudflared agent' -StartupType Automatic -BinaryPathName $bin
+   sc.exe failure Cloudflared reset= 86400 actions= restart/20000   # restart 20 s after a crash
+   Start-Service Cloudflared
+   ```
+
+   Event 7045 now records only the file path. Delete the copied entry from
+   clipboard history (**Win+V**), wait for the dashboard to show the connector
+   as healthy, then **Next**.
+
 4. **Public Hostnames** tab → **Add a public hostname**:
    - Subdomain: `mcp`
    - Domain: `tkaflowarts.com`
@@ -45,6 +72,19 @@ Follow the official remote-managed path (Cloudflare's current recommended setup)
 5. In the **TLS** section of that hostname's advanced settings, leave **No TLS verify** off — the origin is plain HTTP on localhost, which Cloudflare handles correctly by default.
 
 Public URL: `https://mcp.tkaflowarts.com/mcp`
+
+**Rotating the token.** In **Networking → Tunnels → `tka-mcp`**, open
+**Overview** → **Refresh token** → **Rotate token**, then copy the new token
+with the copy icon. Again, never run the install command. From an elevated
+PowerShell, overwrite the file (it keeps the folder's ACL) and restart the
+service:
+
+```powershell
+[IO.File]::WriteAllText('C:\ProgramData\cloudflared\tka-mcp.token', ((Get-Clipboard -Raw).Trim() -split '\s+')[-1])
+Restart-Service Cloudflared
+```
+
+Then delete the copied entry from clipboard history (**Win+V**).
 
 ---
 
@@ -214,5 +254,7 @@ Get-Content .\logs\mcp-stderr.log -Tail 20
 ```powershell
 nssm stop FlowArtsKnowledgeMCP confirm
 nssm remove FlowArtsKnowledgeMCP confirm
-cloudflared service uninstall
+Stop-Service Cloudflared
+sc.exe delete Cloudflared
+Remove-Item C:\ProgramData\cloudflared\tka-mcp.token
 ```
