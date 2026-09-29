@@ -86,8 +86,19 @@
     type CropCamera,
     type CropHandle,
     type CropPoint,
+    type CropPose,
     type CropSize,
   } from "./post-crop-geometry";
+  import {
+    boxPicture,
+    frameGlideStart,
+    glideStart,
+    stagePicture,
+    transformOfStyle,
+    transformPicture,
+    type StageFrame,
+    type StageTransform,
+  } from "./post-crop-glide";
   import type { CropSession } from "./post-crop-session.svelte";
 
   /**
@@ -1209,6 +1220,168 @@
       Math.abs(a.width - b.width) < 0.5 &&
       Math.abs(a.height - b.height) < 0.5
     );
+  }
+
+  /** What the stage last drew, for a press to glide from. */
+  interface Drawn {
+    pose: CropPose;
+    mirror: boolean;
+    presses: number;
+  }
+  let drawn: Drawn | null = null;
+  /** The running glide; any other change to the framing ends it. */
+  let glide: Animation[] = [];
+
+  const STILL: StageTransform = { x: 0, y: 0, rotation: 0, scale: 1, mirror: false };
+
+  // Rotate, a shape and Reset draw their framing at once, and the picture and
+  // its frame glide there from where they were. The stage is read before it
+  // draws the press, so a press during a glide or a settle carries on from
+  // there. Any other change moves them at once: a slider or a key follows
+  // the hand.
+  $effect.pre(() => {
+    const presses = crop?.presses ?? 0;
+    const pose = cropPose;
+    untrack(() => {
+      if (drawn && pose && presses !== drawn.presses) glideFrom(drawn);
+      else stopGlide();
+    });
+  });
+
+  $effect(() => {
+    const pose = cropPose;
+    const mirror = cropItem?.flip ?? false;
+    const presses = crop?.presses ?? 0;
+    drawn = pose ? { pose, mirror, presses } : null;
+  });
+
+  function stopGlide(): void {
+    for (const animation of glide) animation.cancel();
+    glide = [];
+  }
+
+  function styleRect(style: CSSStyleDeclaration): ScreenRect {
+    return {
+      left: Number.parseFloat(style.left),
+      top: Number.parseFloat(style.top),
+      width: Number.parseFloat(style.width),
+      height: Number.parseFloat(style.height),
+    };
+  }
+
+  function rectCenter(rect: ScreenRect): CropPoint {
+    return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+  }
+
+  /** Starts a press's glide from the picture and frame as they are drawn now. */
+  function glideFrom(before: Drawn): void {
+    const region = cropRegionElement();
+    const frameElement = cropFrameElement();
+    const duration = motionDuration(DURATION.emphasis);
+    if (!region || !frameElement || duration <= 0) {
+      stopGlide();
+      return;
+    }
+    const regionStyle = getComputedStyle(region);
+    const box = styleRect(regionStyle);
+    const flight = transformOfStyle(regionStyle);
+    const picture = transformPicture(
+      boxPicture(
+        before.pose,
+        { center: rectCenter(box), width: box.width },
+        before.mirror
+      ),
+      flight,
+      rectCenter(box)
+    );
+    const frameStyle = getComputedStyle(frameElement);
+    const shownFrame = styleRect(frameStyle);
+    const frame: StageFrame = {
+      center: rectCenter(shownFrame),
+      width: shownFrame.width,
+      height: shownFrame.height,
+      rotation: transformOfStyle(frameStyle).rotation,
+    };
+    stopCropMotion();
+    glide = [];
+    void tick().then(() => {
+      const pose = cropPose;
+      const slot = windowRect;
+      const to = frameRect;
+      if (!pose || !camera || !slot || !to) return;
+      const start = glideStart(
+        picture,
+        stagePicture(pose, camera, cropItem?.flip ?? false),
+        rectCenter(slot),
+        flight.rotation
+      );
+      const frameStart = frameGlideStart(frame, to, start.rotation);
+      const frameEnd: StageFrame = {
+        center: rectCenter(to),
+        width: to.width,
+        height: to.height,
+        rotation: 0,
+      };
+      const options = { duration, easing: LAYOUT_MOTION_EASING };
+      const regionNow = cropRegionElement();
+      const frameNow = cropFrameElement();
+      if (regionNow && !isStill(start)) {
+        glide.push(
+          regionNow.animate(
+            [transformKeyframe(start), transformKeyframe(STILL)],
+            options
+          )
+        );
+      }
+      if (frameNow && !sameFrame(frameStart, frameEnd)) {
+        glide.push(
+          frameNow.animate(
+            [frameKeyframe(frameStart), frameKeyframe(frameEnd)],
+            options
+          )
+        );
+      }
+    });
+  }
+
+  function isStill(transform: StageTransform): boolean {
+    return (
+      Math.abs(transform.x) < 0.5 &&
+      Math.abs(transform.y) < 0.5 &&
+      Math.abs(transform.rotation) < 0.01 &&
+      Math.abs(transform.scale - 1) < 0.001 &&
+      !transform.mirror
+    );
+  }
+
+  function sameFrame(a: StageFrame, b: StageFrame): boolean {
+    return (
+      Math.abs(a.rotation - b.rotation) < 0.01 &&
+      sameRect(frameBox(a), frameBox(b))
+    );
+  }
+
+  function frameBox(frame: StageFrame): ScreenRect {
+    return {
+      left: frame.center.x - frame.width / 2,
+      top: frame.center.y - frame.height / 2,
+      width: frame.width,
+      height: frame.height,
+    };
+  }
+
+  /** CSS's own translate, rotate and scale, which a glide eases to none. */
+  function transformKeyframe(transform: StageTransform): Keyframe {
+    const across = transform.mirror ? -transform.scale : transform.scale;
+    return {
+      translate: `${transform.x}px ${transform.y}px`,
+      rotate: `${transform.rotation}deg`,
+      scale: `${across} ${transform.scale}`,
+    };
+  }
+
+  function frameKeyframe(frame: StageFrame): Keyframe {
+    return { ...rectKeyframe(frameBox(frame)), rotate: `${frame.rotation}deg` };
   }
 
   function isPinchPointer(
