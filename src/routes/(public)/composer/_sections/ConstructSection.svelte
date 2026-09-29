@@ -188,6 +188,7 @@
     unsubscribe = startPlacementState.onSelectedPlacementChange(
       (position, source) => {
         if (source === "user" && position) {
+          const carry = holdsFocus(pickerPaneEl);
           recordHistory();
           startPlacement = position;
           gridMode = startPlacementState.currentGridMode;
@@ -195,6 +196,7 @@
           playing = false;
           editingStepNumber = null;
           dropPlayerRefs();
+          if (carry) void focusPickerPane();
         }
       }
     );
@@ -397,8 +399,12 @@
       return;
     }
     if (steps.length >= MAX_STEPS) return;
+    const carry = holdsFocus(pickerPaneEl);
     recordHistory();
     steps = [...steps, option];
+    // The eighth step plays at once and the player replaces the options, so
+    // focus goes to the play actions, as it does from Play.
+    if (carry && phase === "play") void focusPlayControls();
   }
 
   // ── build history ────────────────────────────────────────────────────────
@@ -549,14 +555,18 @@
     compactPane = "build";
   }
 
-  // Below 1200 px the play-phase actions sit under the player, outside the
-  // action slot's crossfade, so focus crosses between them here: Play hands
-  // it to Keep building, and leaving play hands it back to the slot, as the
-  // crossfade itself does on wide screens. Either end can be off screen, so
-  // it scrolls just into view.
+  // Focus follows the build when a phase change removes the control that held
+  // it. The action slot's crossfade covers controls inside the slot; the
+  // handlers below cover the rest. Below 1200 px the play-phase actions sit
+  // under the player, outside the slot, so Play hands focus to Keep building
+  // and leaving play hands it back to the slot, as the crossfade itself does
+  // on wide screens. Either end can be off screen, so it scrolls just into
+  // view.
   let actionSwapEl = $state<HTMLElement | null>(null);
   let actionFade = $state<ReturnType<typeof Crossfade> | null>(null);
   let playActionsEl = $state<HTMLElement | null>(null);
+  let pickerPaneEl = $state<HTMLElement | null>(null);
+  let clearSideEl = $state<HTMLElement | null>(null);
 
   function holdsFocus(element: HTMLElement | null): boolean {
     return !!element?.contains(document.activeElement);
@@ -583,6 +593,19 @@
     reveal(playActionsEl);
   }
 
+  function focusPlayControls() {
+    return isCompactDemo ? focusPlayActions() : focusActionSlot();
+  }
+
+  // Picking a start swaps the start picker for the step options. They load
+  // after the swap, so focus usually lands on the pane itself, and Tab
+  // reaches the first option.
+  async function focusPickerPane() {
+    await tick();
+    if (!pickerPaneEl) return;
+    focusFirstOrContainer(pickerPaneEl, { preventScroll: true });
+  }
+
   function keepBuilding() {
     const carry = holdsFocus(playActionsEl);
     playing = false;
@@ -594,6 +617,14 @@
 
   function buildAnother() {
     const carry = holdsFocus(playActionsEl);
+    reset();
+    if (carry) void focusActionSlot();
+  }
+
+  // Clear sequence goes away with the build it clears, so focus goes to the
+  // slot beside it, as it does from Build another.
+  function clearSequence() {
+    const carry = holdsFocus(clearSideEl);
     reset();
     if (carry) void focusActionSlot();
   }
@@ -816,9 +847,9 @@
           <div class="action-slot">
             <!-- Left zone: the real app's clear button — back out of a build to
              pick a different start position. Play phase has Build another. -->
-            <div class="slot-side">
+            <div class="slot-side" bind:this={clearSideEl}>
               {#if phase === "add-step"}
-                <ClearSequenceButton onclick={reset} />
+                <ClearSequenceButton onclick={clearSequence} />
               {/if}
             </div>
             <div class="action-swap" bind:this={actionSwapEl}>
@@ -944,7 +975,7 @@
         {/if}
 
         <!-- PICKER / PLAYER: the real primitives; phase swap lives HERE only. -->
-        <div class="picker-pane">
+        <div class="picker-pane" bind:this={pickerPaneEl}>
           {#if phase === "pick-start"}
             {#await import("$lib/features/create/construct/start-placement-picker/components/StartPlacementPicker.svelte") then mod}
               <mod.default
