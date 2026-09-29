@@ -17,6 +17,12 @@ import {
   resolvePanOffset,
   type PixelRect,
 } from "$lib/shared/media-composition/services/media-fit";
+import {
+  paintEdgeBorder,
+  paintEdgeShadow,
+  regionEdgePixels,
+} from "$lib/shared/media-composition/services/region-edge-painter";
+import { traceRoundedRect } from "$lib/shared/render/utils/trace-rounded-rect";
 
 export interface FrameLayerGeometry {
   region: PixelRect;
@@ -329,7 +335,8 @@ async function drawPaintedLayer(
   region: LayoutRegion,
   layer: EvaluatedFrameLayer,
   painter: PostStudioLayerPainter,
-  timeSeconds: number | undefined
+  timeSeconds: number | undefined,
+  cornerRadius: number
 ): Promise<void> {
   const pixels = outputRegion(preset, region);
   const width = Math.round(pixels.width);
@@ -345,8 +352,7 @@ async function drawPaintedLayer(
     transform: layer.transform,
   });
   context.save();
-  context.beginPath();
-  context.rect(pixels.x, pixels.y, pixels.width, pixels.height);
+  traceRoundedRect(context, pixels, cornerRadius);
   context.clip();
   context.globalAlpha = layer.opacity;
   if (!painter.ownsTransform) applyLayerTransform(context, geometry);
@@ -391,6 +397,7 @@ export async function renderPostStudioFrame(
       (clipOrder.get(left.clipId) ?? 0) - (clipOrder.get(right.clipId) ?? 0)
   );
 
+  const drawn: DrawnLayer[] = [];
   for (const layer of orderedLayers) {
     const staticRegion = input.preset.regions.find(
       (candidate) => candidate.id === layer.regionId
@@ -403,136 +410,177 @@ export async function renderPostStudioFrame(
     // layer; the static rect is only where it rests.
     const region: LayoutRegion = { ...staticRegion, ...layer.regionRect };
     if (!regionRectIsOnFrame(region)) continue;
-
-    const regionPixels = outputRegion(input.preset, region);
-    const painter = input.painters?.get(layer.sourceRole);
-    if (painter) {
-      await drawPaintedLayer(
-        context,
-        input.preset,
-        region,
-        layer,
-        painter,
-        input.timeSeconds
-      );
-      continue;
-    }
-
-    const layerElement = layerElementForClip(input.root, layer.clipId);
-    if (!layerElement) {
-      // A visible layer with nothing mounted to read would render as an
-      // empty region, and a file that is quietly missing a layer is worse
-      // than one that fails and says why.
-      throw new Error(
-        `The ${staticRegion.label ?? layer.sourceRole} layer was not ready to render.`
-      );
-    }
-    context.save();
-    context.beginPath();
-    context.rect(
-      regionPixels.x,
-      regionPixels.y,
-      regionPixels.width,
-      regionPixels.height
-    );
-    context.clip();
-    context.globalAlpha = layer.opacity;
-
-    const renderMode = layerElement.dataset.renderMode;
-    if (renderMode === "sequence-animation") {
-      const geometry = resolveFrameLayerGeometry({
-        preset: input.preset,
-        region,
-        sourceWidth: 1,
-        sourceHeight: 1,
-        transform: layer.transform,
-      });
-      applyLayerTransform(context, geometry);
-      context.fillStyle = input.preset.output.backgroundColor;
-      context.fillRect(
-        geometry.region.x,
-        geometry.region.y,
-        geometry.region.width,
-        geometry.region.height
-      );
-      const pictographMotion = layerElement.querySelector(
-        "[data-pictograph-motion]"
-      );
-      const expectsPictograph = Boolean(
-        pictographMotion ||
-        (layer.sequencePassIndex !== undefined &&
-          layer.sequencePassIndex % 2 === 0 &&
-          (layerElement.querySelector("[data-studio-breakdown-mandala]") ||
-            !layerElement.querySelector("canvas")))
-      );
-      if (expectsPictograph) {
-        const { element, bounds } = await waitForPictographMotion(layerElement);
-        const { domToCanvas } = await import("modern-screenshot");
-        const image = await domToCanvas(element, {
-          width: bounds.width,
-          height: bounds.height,
-          scale: Math.max(1, regionPixels.width / bounds.width),
-        });
-        drawSource(context, image, geometry);
-      }
-      const canvases = [...layerElement.querySelectorAll("canvas")].sort(
-        (left, right) =>
-          Number.parseFloat(getComputedStyle(left).zIndex || "0") -
-          Number.parseFloat(getComputedStyle(right).zIndex || "0")
-      );
-      for (const canvas of canvases) {
-        drawSource(context, canvas, geometry);
-      }
-    } else if (renderMode === "choreo-card") {
-      const beat = layer.displayedBeatNumber ?? 0;
-      // The capture is cached for the whole render, so a card whose box is
-      // keyframed is captured at the frame's full width: one capture then
-      // stays sharp at every size the move reaches.
-      const boxAnimated = (input.preset.regionKeyframes ?? []).some(
-        (track) => track.regionId === layer.regionId
-      );
-      const card = await captureCardLayer(
-        layerElement,
-        boxAnimated ? input.preset.output.width : regionPixels.width,
-        `${layer.clipId}:${beat}`,
-        input.cardFrameCache
-      );
-      const geometry = resolveFrameLayerGeometry({
-        preset: input.preset,
-        region,
-        sourceWidth: card.width,
-        sourceHeight: card.height,
-        transform: layer.transform,
-      });
-      applyLayerTransform(context, geometry);
-      drawSource(context, card, geometry);
-    } else {
-      const media = mediaIn(layerElement);
-      if (!media) {
-        context.restore();
-        continue;
-      }
-      if (media instanceof HTMLVideoElement) {
-        await syncVideo(media, layer.sourceTimeSeconds);
-      } else if (!media.complete) {
-        await media.decode();
-      }
-      const dimensions = mediaDimensions(media);
-      if (dimensions.width <= 0 || dimensions.height <= 0) {
-        context.restore();
-        continue;
-      }
-      const geometry = resolveFrameLayerGeometry({
-        preset: input.preset,
-        region,
-        sourceWidth: dimensions.width,
-        sourceHeight: dimensions.height,
-        transform: layer.transform,
-      });
-      applyLayerTransform(context, geometry);
-      drawSource(context, media, geometry);
-    }
-
-    context.restore();
+    drawn.push({
+      layer,
+      staticRegion,
+      region,
+      regionPixels: outputRegion(input.preset, region),
+    });
   }
+
+  // A region's edge wraps all of its layers: the shadow goes under the
+  // first, the border over the last, at the most opaque layer's strength.
+  const regionOpacity = new Map<string, number>();
+  for (const { layer } of drawn) {
+    regionOpacity.set(
+      layer.regionId,
+      Math.max(regionOpacity.get(layer.regionId) ?? 0, layer.opacity)
+    );
+  }
+
+  for (const [index, entry] of drawn.entries()) {
+    const { layer, region, regionPixels } = entry;
+    const edge = region.edge
+      ? regionEdgePixels(region.edge, regionPixels, input.preset.output)
+      : null;
+    const edgeOpacity = regionOpacity.get(layer.regionId) ?? layer.opacity;
+    if (edge && drawn[index - 1]?.layer.regionId !== layer.regionId) {
+      paintEdgeShadow(context, regionPixels, edge, edgeOpacity);
+    }
+    await drawRegionLayer(context, input, entry, edge?.radius ?? 0);
+    if (edge && drawn[index + 1]?.layer.regionId !== layer.regionId) {
+      paintEdgeBorder(context, regionPixels, edge, edgeOpacity);
+    }
+  }
+}
+
+interface DrawnLayer {
+  layer: EvaluatedFrameLayer;
+  staticRegion: LayoutRegion;
+  /** The region where it sits at this frame. */
+  region: LayoutRegion;
+  regionPixels: PixelRect;
+}
+
+/** One layer, clipped to its region's rounded rect. */
+async function drawRegionLayer(
+  context: CanvasRenderingContext2D,
+  input: RenderPostStudioFrameInput,
+  { layer, staticRegion, region, regionPixels }: DrawnLayer,
+  cornerRadius: number
+): Promise<void> {
+  const painter = input.painters?.get(layer.sourceRole);
+  if (painter) {
+    await drawPaintedLayer(
+      context,
+      input.preset,
+      region,
+      layer,
+      painter,
+      input.timeSeconds,
+      cornerRadius
+    );
+    return;
+  }
+
+  const layerElement = layerElementForClip(input.root, layer.clipId);
+  if (!layerElement) {
+    // A visible layer with nothing mounted to read would render as an
+    // empty region, and a file that is quietly missing a layer is worse
+    // than one that fails and says why.
+    throw new Error(
+      `The ${staticRegion.label ?? layer.sourceRole} layer was not ready to render.`
+    );
+  }
+  context.save();
+  traceRoundedRect(context, regionPixels, cornerRadius);
+  context.clip();
+  context.globalAlpha = layer.opacity;
+
+  const renderMode = layerElement.dataset.renderMode;
+  if (renderMode === "sequence-animation") {
+    const geometry = resolveFrameLayerGeometry({
+      preset: input.preset,
+      region,
+      sourceWidth: 1,
+      sourceHeight: 1,
+      transform: layer.transform,
+    });
+    applyLayerTransform(context, geometry);
+    context.fillStyle = input.preset.output.backgroundColor;
+    context.fillRect(
+      geometry.region.x,
+      geometry.region.y,
+      geometry.region.width,
+      geometry.region.height
+    );
+    const pictographMotion = layerElement.querySelector(
+      "[data-pictograph-motion]"
+    );
+    const expectsPictograph = Boolean(
+      pictographMotion ||
+      (layer.sequencePassIndex !== undefined &&
+        layer.sequencePassIndex % 2 === 0 &&
+        (layerElement.querySelector("[data-studio-breakdown-mandala]") ||
+          !layerElement.querySelector("canvas")))
+    );
+    if (expectsPictograph) {
+      const { element, bounds } = await waitForPictographMotion(layerElement);
+      const { domToCanvas } = await import("modern-screenshot");
+      const image = await domToCanvas(element, {
+        width: bounds.width,
+        height: bounds.height,
+        scale: Math.max(1, regionPixels.width / bounds.width),
+      });
+      drawSource(context, image, geometry);
+    }
+    const canvases = [...layerElement.querySelectorAll("canvas")].sort(
+      (left, right) =>
+        Number.parseFloat(getComputedStyle(left).zIndex || "0") -
+        Number.parseFloat(getComputedStyle(right).zIndex || "0")
+    );
+    for (const canvas of canvases) {
+      drawSource(context, canvas, geometry);
+    }
+  } else if (renderMode === "choreo-card") {
+    const beat = layer.displayedBeatNumber ?? 0;
+    // The capture is cached for the whole render, so a card whose box is
+    // keyframed is captured at the frame's full width: one capture then
+    // stays sharp at every size the move reaches.
+    const boxAnimated = (input.preset.regionKeyframes ?? []).some(
+      (track) => track.regionId === layer.regionId
+    );
+    const card = await captureCardLayer(
+      layerElement,
+      boxAnimated ? input.preset.output.width : regionPixels.width,
+      `${layer.clipId}:${beat}`,
+      input.cardFrameCache
+    );
+    const geometry = resolveFrameLayerGeometry({
+      preset: input.preset,
+      region,
+      sourceWidth: card.width,
+      sourceHeight: card.height,
+      transform: layer.transform,
+    });
+    applyLayerTransform(context, geometry);
+    drawSource(context, card, geometry);
+  } else {
+    const media = mediaIn(layerElement);
+    if (!media) {
+      context.restore();
+      return;
+    }
+    if (media instanceof HTMLVideoElement) {
+      await syncVideo(media, layer.sourceTimeSeconds);
+    } else if (!media.complete) {
+      await media.decode();
+    }
+    const dimensions = mediaDimensions(media);
+    if (dimensions.width <= 0 || dimensions.height <= 0) {
+      context.restore();
+      return;
+    }
+    const geometry = resolveFrameLayerGeometry({
+      preset: input.preset,
+      region,
+      sourceWidth: dimensions.width,
+      sourceHeight: dimensions.height,
+      transform: layer.transform,
+    });
+    applyLayerTransform(context, geometry);
+    drawSource(context, media, geometry);
+  }
+
+  context.restore();
 }

@@ -49,12 +49,17 @@ async function press(name: string): Promise<void> {
   await userEvent.keyboard("{Enter}");
 }
 
-async function playOneStep() {
-  const screen = render(ConstructSection, { presentationMode: "guided-build" });
+/** The action slot during the start pick. It has no controls, so it takes
+ *  focus itself and needs a name for a screen reader to announce. */
+function startPrompt() {
+  return page.getByRole("group", { name: "Choose your start placement" });
+}
+
+async function playOneStep(): Promise<void> {
+  render(ConstructSection, { presentationMode: "guided-build" });
   await page.getByRole("button", { name: "Choose start" }).click();
   await page.getByRole("button", { name: "Add step" }).click();
   await press("Play sequence");
-  return screen;
 }
 
 describe("ConstructSection focus below 1200 px", () => {
@@ -82,24 +87,14 @@ describe("ConstructSection focus below 1200 px", () => {
       .toHaveFocus();
     await expect.poll(() => inView(document.activeElement)).toBe(true);
   });
-
-  it("keeps focus in the action slot after Build another", async () => {
-    const { container } = await playOneStep();
-    await press("Build another");
-
-    await expect
-      .element(page.getByRole("button", { name: "Choose start" }))
-      .toBeInTheDocument();
-    const swap = container.querySelector(".action-swap");
-    await expect.poll(() => swap?.contains(document.activeElement)).toBe(true);
-    await expect.poll(() => inView(document.activeElement)).toBe(true);
-  });
 });
 
 /**
  * The picker pane swaps its whole content between phases, and Clear sequence
  * removes itself, so each of these used to drop focus to <body> at any width.
- * The attract act stays idle (active: false) so it cannot build over the test.
+ * Clear sequence and Build another both lead back to the start pick, where
+ * focus rests on the action slot's named prompt. The attract act stays idle
+ * (active: false) so it cannot build over the test.
  */
 describe.each([
   { layout: "below 1200 px", width: 1024, height: 500 },
@@ -128,17 +123,24 @@ describe.each([
     await expect.poll(() => pane?.contains(document.activeElement)).toBe(true);
   });
 
-  it("keeps focus in the action slot after Clear sequence", async () => {
-    const { container } = renderDemo();
+  it("hands focus to the named start prompt after Clear sequence", async () => {
+    renderDemo();
     await press("Choose start");
     await press("Add step");
     await press("Clear sequence");
 
-    await expect
-      .element(page.getByRole("button", { name: "Choose start" }))
-      .toBeInTheDocument();
-    const swap = container.querySelector(".action-swap");
-    await expect.poll(() => swap?.contains(document.activeElement)).toBe(true);
+    await expect.element(startPrompt()).toHaveFocus();
+    await expect.poll(() => inView(document.activeElement)).toBe(true);
+  });
+
+  it("hands focus to the named start prompt after Build another", async () => {
+    renderDemo();
+    await press("Choose start");
+    await press("Add step");
+    await press("Play sequence");
+    await press("Build another");
+
+    await expect.element(startPrompt()).toHaveFocus();
     await expect.poll(() => inView(document.activeElement)).toBe(true);
   });
 

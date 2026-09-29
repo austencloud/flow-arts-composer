@@ -28,6 +28,7 @@ import {
   type PostBox,
   type PostCanvasRatio,
   type PostCardItem,
+  type PostClipEdge,
   type PostClipShape,
   type PostFraming,
   type PostItem,
@@ -43,6 +44,7 @@ import {
   clampShapeRatio,
   postCanvasOf,
 } from "$lib/shared/media-composition/domain/post-canvas";
+import { edgeOf, mergeEdge } from "$lib/shared/media-composition/domain/post-clip-edge";
 import {
   framingAt,
   isAnimated,
@@ -592,6 +594,8 @@ export interface PostItemPatch {
   fit?: "cover" | "contain";
   /** A clip's own shape in its box; null lets it fill the box again. */
   shape?: PostClipShape | null;
+  /** A clip's corners, border and shadow, over its own; null squares them. */
+  edge?: Partial<PostClipEdge> | null;
   zoom?: number;
   panX?: number;
   panY?: number;
@@ -653,6 +657,11 @@ export function updateItem(
           ratio: clampShapeRatio(patch.shape.ratio),
         };
       } else delete next.shape;
+    }
+    if (patch.edge !== undefined) {
+      const edge = patch.edge ? mergeEdge(edgeOf(item), patch.edge) : null;
+      if (edge) next.edge = edge;
+      else delete next.edge;
     }
     setNumber(next, "zoom", patch.zoom, POST_MIN_ZOOM, POST_MAX_ZOOM);
     setNumber(next, "panX", patch.panX, -0.5, 0.5);

@@ -390,7 +390,7 @@
     }
   }
 
-  @container shape-matrix-drill (min-width: 42rem) and (max-height: 24rem) {
+  @container shape-matrix-drill-compact (min-width: 42rem) and (min-aspect-ratio: 5 / 6) {
     .bridge-side {
       min-height: 3.1rem;
       gap: 0.35rem;

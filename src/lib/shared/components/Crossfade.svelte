@@ -44,10 +44,11 @@
   FOCUS: when the key change comes from a control inside the leaving layer
   (Play trading places with the playing controls), focus moves to the
   replacing layer's first control, or to that layer when it has none. It never
-  falls to <body>. A consumer that wants focus somewhere specific still moves
-  it after `tick()`, which runs later and wins. A consumer whose focused
-  control sat outside the keyed region and went away with the change calls
-  `focusShown()` after `tick()` for the same handoff.
+  falls to <body>. Pass `label` for a key whose layer has no controls, so a
+  screen reader announces where focus went. A consumer that wants focus
+  somewhere specific still moves it after `tick()`, which runs later and wins.
+  A consumer whose focused control sat outside the keyed region and went away
+  with the change calls `focusShown()` after `tick()` for the same handoff.
 
   Boundary + rationale: docs/architecture/crossfade-primitive.md
   Routing rule: .claude/rules/crossfade-primitive.md
@@ -76,6 +77,7 @@
     fill = false,
     animateHeight = false,
     delay = 0,
+    label,
     children,
   }: {
     /** Change this to trigger a transition. The discriminator for the content. */
@@ -99,6 +101,12 @@
     /** Deliberate in-transition stagger (ms) for `crossfade` mode. Ignored in
         `swap` mode, which computes its own delay (= out duration). */
     delay?: number;
+    /**
+     * Names the current layer as a group. A layer with no controls takes focus
+     * itself when a focused control swaps away, and without a name a screen
+     * reader announces nothing there.
+     */
+    label?: string;
     /** Content to render for the current `key`. */
     children: Snippet;
   } = $props();
@@ -425,6 +433,8 @@
   {#key key}
     <div
       class="layer"
+      role={label ? "group" : undefined}
+      aria-label={label}
       use:trackLayer
       in:enterLayer
       out:leaveLayer

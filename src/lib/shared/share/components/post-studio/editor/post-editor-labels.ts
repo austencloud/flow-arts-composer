@@ -65,6 +65,7 @@ export const TOOL_ICON: Record<PostToolId, string> = {
   volume: "fa-volume-high",
   layout: "fa-table-cells-large",
   position: "fa-up-down-left-right",
+  border: "fa-border-top-left",
   fade: "fa-circle-half-stroke",
   effects: "fa-wand-sparkles",
   labels: "fa-hashtag",
@@ -106,6 +107,8 @@ export function toolLabel(id: PostToolId): string {
       return t("post_editor_look");
     case "position":
       return t("post_editor_tool_position");
+    case "border":
+      return t("post_editor_tool_border");
     case "fade":
       return t("post_editor_tool_fade");
     case "effects":

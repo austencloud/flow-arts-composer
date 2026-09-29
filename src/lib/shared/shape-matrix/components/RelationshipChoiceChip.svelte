@@ -240,7 +240,7 @@
     }
   }
 
-  @container shape-matrix-drill (min-width: 42rem) and (max-height: 24rem) {
+  @container shape-matrix-drill-compact (min-width: 42rem) and (min-aspect-ratio: 5 / 6) {
     .relationship-choice {
       flex-direction: row;
       justify-content: start;
