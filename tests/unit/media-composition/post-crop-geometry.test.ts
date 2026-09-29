@@ -18,6 +18,7 @@ import {
   cropCamera,
   cropLimitFor,
   cropPoseOf,
+  cropStageRatio,
   cropWindowScale,
   fillPose,
   framingOfPose,
@@ -506,6 +507,34 @@ describe("cropCamera", () => {
     // ...and the picture has not moved under it.
     const point = { x: 123, y: -45 };
     expectPoint(onScreen(framed, camera, point), onScreen(start, camera, point), 9);
+  });
+});
+
+describe("cropStageRatio", () => {
+  it("gives upright portrait footage a square, so no straighten needs a wider stage", () => {
+    const pose = poseOf();
+    const ratio = cropStageRatio(pose, 0);
+    expect(ratio).toBeCloseTo(1, 12);
+    const height = 1200;
+    const margin = 24;
+    const stage = { width: (height - 2 * margin) * ratio + 2 * margin, height };
+    for (let straighten = -45; straighten <= 45; straighten += 5) {
+      const camera = cropCamera({ stage, pose: turnPose(pose, straighten) });
+      const radians = (Math.abs(straighten) * Math.PI) / 180;
+      const turnedHeight =
+        SOURCE.width * Math.sin(radians) + SOURCE.height * Math.cos(radians);
+      // The turned picture fills the stage's height at every angle.
+      expect(camera.scale * turnedHeight).toBeCloseTo(height - 2 * margin, 6);
+    }
+  });
+
+  it("is the footage's own shape once a quarter turn makes it wide", () => {
+    expect(cropStageRatio(poseOf({ rotation: 90 }), 1)).toBeCloseTo(1280 / 720, 12);
+  });
+
+  it("makes room for a Show all window wider than the picture", () => {
+    // Show all draws the take 540x960, so the window spans 1440x1280 footage pixels.
+    expect(cropStageRatio(poseOf({}, "contain"), 0)).toBeCloseTo(1440 / 1280, 12);
   });
 });
 

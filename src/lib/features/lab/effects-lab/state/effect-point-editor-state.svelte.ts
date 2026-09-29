@@ -135,10 +135,9 @@ export class EffectPointEditorState {
 	}
 
 	updatePoint(index: number, updates: Record<string, unknown>): void {
-		if (index < 0 || index >= this.points.length) return;
-		if (Object.entries(updates).every(([key, value]) =>
-			(this.points[index] as Record<string, unknown>)[key] === value,
-		)) return;
+		const current = this.points[index] as Record<string, unknown> | undefined;
+		if (!current) return;
+		if (Object.entries(updates).every(([key, value]) => current[key] === value)) return;
 		this.pushUndo("Edit point");
 		this.points = this.points.map((p, i) =>
 			i === index ? { ...p, ...updates } : p,
@@ -147,10 +146,9 @@ export class EffectPointEditorState {
 	}
 
 	movePoint(index: number, updates: Record<string, unknown>): void {
-		if (index < 0 || index >= this.points.length) return;
-		if (Object.entries(updates).every(([key, value]) =>
-			(this.points[index] as Record<string, unknown>)[key] === value,
-		)) return;
+		const current = this.points[index] as Record<string, unknown> | undefined;
+		if (!current) return;
+		if (Object.entries(updates).every(([key, value]) => current[key] === value)) return;
 		this.pushUndo("Move point");
 		this.points = this.points.map((p, i) =>
 			i === index ? { ...p, ...updates } : p,
@@ -159,8 +157,9 @@ export class EffectPointEditorState {
 	}
 
 	updatePointPosition(index: number, dx: number, dy: number): void {
-		if (index < 0 || index >= this.points.length) return;
-		if (this.points[index].dx === dx && this.points[index].dy === dy) return;
+		const current = this.points[index];
+		if (!current) return;
+		if (current.dx === dx && current.dy === dy) return;
 		if (this.isDragging && this.dragStartPoints) {
 			this.pushUndo("Move point", this.dragStartPoints);
 			this.dragUndoEntry = this.undoStack.at(-1) ?? null;
