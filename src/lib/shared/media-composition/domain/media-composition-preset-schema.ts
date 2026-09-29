@@ -74,7 +74,9 @@ export type PresetMarker = z.infer<typeof PresetMarkerSchema>;
 /**
  * A region's rect at one moment, in output fractions. Unlike a static region
  * it may sit partly or wholly outside the frame: that is how a panel slides in
- * from an edge and waits off screen until it is needed.
+ * from an edge and waits off screen until it is needed. Its turn, in degrees
+ * clockwise about its centre, is not folded into -180..180, so a blend
+ * between two keys turns as far as their values say.
  */
 export const MotionRectSchema = z
   .object({
@@ -82,6 +84,7 @@ export const MotionRectSchema = z
     y: z.number().finite(),
     width: z.number().finite().positive(),
     height: z.number().finite().positive(),
+    turn: z.number().finite().optional(),
   })
   .strict();
 

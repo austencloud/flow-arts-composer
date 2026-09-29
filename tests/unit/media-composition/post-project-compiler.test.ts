@@ -66,6 +66,29 @@ describe("compilePostProject", () => {
       });
     });
 
+    it("turns an item's region with its box, a shaped clip's too", () => {
+      const box = { x: 0.1, y: 0.2, width: 0.5, height: 0.4, turn: -30 };
+      const result = compilePostProject(
+        project(
+          [
+            video("v1", { sourceOut: 4, box }),
+            video("v2", { start: 4, sourceOut: 4, box, shape: { kind: "1:1", ratio: 1 } }),
+          ],
+          [[text("t1", 0, 2)]]
+        ),
+        ctx
+      )!;
+      const regionOf = (id: string) => result.preset.regions.find((r) => r.id === id)!;
+
+      expect(regionOf("v1")).toMatchObject(box);
+      expect(regionOf("v2").turn).toBe(-30);
+      // The square sits in the box's middle, so it turns about the same point.
+      expect(regionOf("v2").x + regionOf("v2").width / 2).toBeCloseTo(0.35, 9);
+      expect(regionOf("v2").y + regionOf("v2").height / 2).toBeCloseTo(0.4, 9);
+      expect(regionOf("t1")).not.toHaveProperty("turn");
+      expect(MediaCompositionPresetSchema.safeParse(result.preset).success).toBe(true);
+    });
+
     it("skips every item on a hidden overlay track, and its duration", () => {
       const proj = project(
         [video("v1", { sourceOut: 5 })],
@@ -662,6 +685,63 @@ describe("compilePostProject", () => {
         }
         previous = turn;
       }
+    });
+
+    it("turns a keyed box across -180..180 the short way, as the editor does", () => {
+      const at = (turn?: number) => ({
+        x: 0.2,
+        y: 0.2,
+        width: 0.5,
+        height: 0.5,
+        ...(turn === undefined ? {} : { turn }),
+      });
+      const clip = video("v1", {
+        sourceOut: 10,
+        keyframes: {
+          box: [
+            { t: 0, value: at(170), easing: LINEAR },
+            { t: 4, value: at(-170), easing: LINEAR },
+            { t: 10, value: at(), easing: LINEAR },
+          ],
+        },
+      });
+      const result = compilePostProject(project([clip]), ctx)!;
+      expect(MediaCompositionPresetSchema.safeParse(result.preset).success).toBe(true);
+
+      // Each key carries on from the one before, and a straight key is 0.
+      const track = result.preset.regionKeyframes?.find((r) => r.regionId === "v1");
+      expect(track?.keyframes.map((key) => key.value.turn)).toEqual([170, 190, 360]);
+
+      let previous: number | null = null;
+      for (let seconds = 0; seconds <= 10; seconds += 0.5) {
+        const rect = evaluatePresetFrame(result.preset, result.durationSeconds, seconds).find(
+          (candidate) => candidate.clipId === "v1"
+        )!.regionRect!;
+        const turn = rect.turn ?? 0;
+        expect(turn).toBeGreaterThanOrEqual(-180);
+        expect(turn).toBeLessThanOrEqual(180);
+        expect(wrapDegrees(turn - (boxAt(clip, seconds).turn ?? 0))).toBeCloseTo(0, 6);
+        // Half a second never turns it more than the keys ask for.
+        if (previous !== null) {
+          expect(Math.abs(wrapDegrees(turn - previous))).toBeLessThanOrEqual(15);
+        }
+        previous = turn;
+      }
+    });
+
+    it("turns a keyed box as its keys say, whatever its resting box", () => {
+      const clip = video("v1", {
+        sourceOut: 10,
+        box: { x: 0.2, y: 0.2, width: 0.5, height: 0.5, turn: 45 },
+        keyframes: {
+          box: [{ t: 0, value: { x: 0, y: 0, width: 0.5, height: 0.5 }, easing: LINEAR }],
+        },
+      });
+      const result = compilePostProject(project([clip]), ctx)!;
+      const layer = evaluatePresetFrame(result.preset, result.durationSeconds, 2).find(
+        (candidate) => candidate.clipId === "v1"
+      )!;
+      expect(layer.regionRect).toEqual({ x: 0, y: 0, width: 0.5, height: 0.5 });
     });
   });
 

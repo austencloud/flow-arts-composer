@@ -48,13 +48,19 @@ export const POST_EASING_Y_MAX = 2;
 
 export const MAIN_TRACK_INDEX = 0;
 
-/** Where an item sits in the frame, as shares of its width and height. */
+/**
+ * Where an item sits in the frame, as shares of its width and height, and
+ * how far the whole item is turned about the box's centre: degrees
+ * clockwise, left out when it sits straight. The unturned box stays inside
+ * the frame; turned, its corners may run past the edge.
+ */
 export const PostBoxSchema = z
   .object({
     x: z.number().finite().min(0).max(1),
     y: z.number().finite().min(0).max(1),
     width: z.number().finite().min(POST_MIN_BOX_SIZE).max(1),
     height: z.number().finite().min(POST_MIN_BOX_SIZE).max(1),
+    turn: z.number().finite().min(-180).max(180).optional(),
   })
   .strict()
   .refine((box) => box.x + box.width <= 1 + POST_TIME_EPSILON, {
@@ -563,11 +569,14 @@ export function defaultBoxFor(kind: PostItemKind): PostBox {
 export function clampBox(box: PostBox): PostBox {
   const width = Math.min(1, Math.max(POST_MIN_BOX_SIZE, box.width));
   const height = Math.min(1, Math.max(POST_MIN_BOX_SIZE, box.height));
+  const turn = wrapDegrees(box.turn ?? 0);
   return {
     x: Math.min(1 - width, Math.max(0, box.x)),
     y: Math.min(1 - height, Math.max(0, box.y)),
     width,
     height,
+    // A box turned back to straight drops its turn, so it reads as it did.
+    ...(turn !== 0 ? { turn } : {}),
   };
 }
 

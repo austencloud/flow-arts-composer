@@ -607,6 +607,36 @@ describe("evaluatePresetFrame: motion tracks", () => {
     });
   });
 
+  it("turns a region as its rect or its keys say, folded back into -180..180", () => {
+    const turnedCard: typeof performancePreset = {
+      ...performancePreset,
+      regions: performancePreset.regions.map((region) =>
+        region.id === "card" ? { ...region, turn: 30 } : region
+      ),
+    };
+    expect(layerOn(turnedCard, 5, "card")?.regionRect?.turn).toBe(30);
+    expect(layerOn(performancePreset, 5, "card")?.regionRect).not.toHaveProperty("turn");
+
+    const keyed = (turns: readonly (number | undefined)[]): typeof performancePreset => ({
+      ...turnedCard,
+      regionKeyframes: [
+        {
+          regionId: "card",
+          keyframes: turns.map((turn, index) => ({
+            atSeconds: index * 10,
+            value: { x: 0, y: 0, width: 1, height: 1, ...(turn === undefined ? {} : { turn }) },
+            easing: LINEAR,
+          })),
+        },
+      ],
+    });
+    // Keys hold turns past 180 so a blend never spins; a sample folds back.
+    expect(layerOn(keyed([170, 250]), 0, "card")?.regionRect?.turn).toBe(170);
+    expect(layerOn(keyed([170, 250]), 2.5, "card")?.regionRect?.turn).toBeCloseTo(-170, 5);
+    // A region in motion is turned by its keys alone.
+    expect(layerOn(keyed([undefined]), 5, "card")?.regionRect).not.toHaveProperty("turn");
+  });
+
   it("keeps a clip at the first instant of its fade-in among the present layers only", () => {
     const [first] = performancePreset.clips.filter((clip) => clip.kind === "visual");
     const preset: typeof performancePreset = {

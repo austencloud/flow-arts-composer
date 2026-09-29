@@ -85,7 +85,7 @@ export function clipShapeFor(kind: PostClipShapeKind, ratio?: number): PostClipS
 /**
  * The largest rectangle `ratio` wide per unit high, centred in `box`, as
  * shares of the frame. Pixels decide which side is short, so `output` is the
- * canvas's size.
+ * canvas's size. It shares the box's centre, so it keeps the box's turn.
  */
 export function shapedBox(box: PostBox, ratio: number, output: PostOutputSize): PostBox {
   if (!(ratio > 0) || !Number.isFinite(ratio)) return box;
@@ -98,6 +98,7 @@ export function shapedBox(box: PostBox, ratio: number, output: PostOutputSize): 
   const shareWidth = fitWidth / output.width;
   const shareHeight = fitHeight / output.height;
   return {
+    ...box,
     x: box.x + (box.width - shareWidth) / 2,
     y: box.y + (box.height - shareHeight) / 2,
     width: shareWidth,

@@ -147,14 +147,18 @@ export function clamp01(value: number): number {
   return Math.min(1, Math.max(0, value));
 }
 
-function lerpRect(from: MotionRect, to: MotionRect, progress: number) {
+function lerpRect(from: MotionRect, to: MotionRect, progress: number): MotionRect {
   const lerp = (a: number, b: number) => a + (b - a) * progress;
-  return {
+  const rect: MotionRect = {
     x: lerp(from.x, to.x),
     y: lerp(from.y, to.y),
     width: lerp(from.width, to.width),
     height: lerp(from.height, to.height),
   };
+  if (from.turn !== undefined || to.turn !== undefined) {
+    rect.turn = lerp(from.turn ?? 0, to.turn ?? 0);
+  }
+  return rect;
 }
 
 function lerpNumber(from: number, to: number, progress: number): number {
@@ -276,8 +280,10 @@ function rectAtTime(
 
 /**
  * Every region's rect at one project time: the static rect, or where its
- * motion track has carried it. The preview positions regions from this and
- * the export draws into it, so a slide cannot land differently in the file.
+ * motion track has carried it, with its turn. A rect in motion takes its
+ * turn from its keys alone, never from the static rect. The preview
+ * positions regions from this and the export draws into it, so a slide
+ * cannot land differently in the file.
  */
 export function evaluateRegionRects(
   preset: MediaCompositionPreset,
@@ -287,7 +293,13 @@ export function evaluateRegionRects(
   const rects = new Map<string, RegionRect>(
     preset.regions.map((region) => [
       region.id,
-      { x: region.x, y: region.y, width: region.width, height: region.height },
+      {
+        x: region.x,
+        y: region.y,
+        width: region.width,
+        height: region.height,
+        ...(region.turn ? { turn: region.turn } : {}),
+      },
     ])
   );
   const markers = preset.markers ?? [];

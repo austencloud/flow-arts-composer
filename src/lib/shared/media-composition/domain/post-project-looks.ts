@@ -299,12 +299,14 @@ function placeLow(
   return { project: { ...project, tracks }, trackIndex };
 }
 
+/** The same place and turn: a look's box is never turned. */
 function sameBox(left: PostBox, right: PostBox): boolean {
   return (
     Math.abs(left.x - right.x) < BOX_EPSILON &&
     Math.abs(left.y - right.y) < BOX_EPSILON &&
     Math.abs(left.width - right.width) < BOX_EPSILON &&
-    Math.abs(left.height - right.height) < BOX_EPSILON
+    Math.abs(left.height - right.height) < BOX_EPSILON &&
+    Math.abs((left.turn ?? 0) - (right.turn ?? 0)) < BOX_EPSILON
   );
 }
 

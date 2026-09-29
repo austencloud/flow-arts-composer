@@ -95,7 +95,13 @@ export function sameChannelValue(
   if (channel === "box") {
     const x = a as PostBox;
     const y = b as PostBox;
-    return x.x === y.x && x.y === y.y && x.width === y.width && x.height === y.height;
+    return (
+      x.x === y.x &&
+      x.y === y.y &&
+      x.width === y.width &&
+      x.height === y.height &&
+      (x.turn ?? 0) === (y.turn ?? 0)
+    );
   }
   const x = a as PostFraming;
   const y = b as PostFraming;
@@ -120,12 +126,18 @@ function lerpChannelValue<Ch extends PostKeyframeChannel>(
   if (channel === "box") {
     const a = from as PostBox;
     const b = to as PostBox;
-    return {
+    const box: PostBox = {
       x: lerp(a.x, b.x),
       y: lerp(a.y, b.y),
       width: lerp(a.width, b.width),
       height: lerp(a.height, b.height),
-    } as PostChannelValue[Ch];
+    };
+    // A turn blends the short way round, as a picture's own turn does.
+    if (a.turn !== undefined || b.turn !== undefined) {
+      const turn = a.turn ?? 0;
+      box.turn = turn + shortestTurn(turn, b.turn ?? 0) * e;
+    }
+    return box as PostChannelValue[Ch];
   }
   const a = from as PostFraming;
   const b = to as PostFraming;

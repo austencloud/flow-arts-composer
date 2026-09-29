@@ -291,7 +291,7 @@ row, toolbar, dock, bottom sheet, side panel, inspector, crop tool.
 
 The editor's numbers are typed in a `TypeableValue`: a `ValueSlider`'s value,
 the clocks, trim points, the beat grid's offset and the Position tool's X, Y,
-width and height. The small readings inside timeline buttons (a clip's speed,
+width, height and turn. The small readings inside timeline buttons (a clip's speed,
 a lane's zoom or opacity) stay labels, typed in their tool. Where an item
 shows on the frame, for the preview's handles and the typed position alike, is
 `editor/post-item-rect.ts`; `typeBox` in `editor/post-box-drag.ts` applies a
@@ -310,6 +310,17 @@ A Post Studio clip's rounded corners, border and drop shadow are its `edge`
 measured by `media-composition/services/region-edge-painter.ts`, so the export
 canvas and the preview's CSS draw the same edge. Searches: rounded corners,
 border, stroke, drop shadow, picture in picture, PiP frame.
+
+A whole item turns with its box's `turn` (`PostBox` in
+`media-composition/domain/post-project.ts`): degrees clockwise about the box's
+centre, edge and all, compiled onto the region's `turn` and keyed like the
+rest of the box. `turnAboutCentre` in `region-edge-painter.ts` turns the
+export's drawing, whose shadow still drops straight down the frame. The
+preview's turn handle, turned resizing, hit testing and handle cursors are
+`turnBox`, `dragBox`, `boxContains` and `handleCursor` in
+`editor/post-box-drag.ts`; the Position tool types the turn. A picture's own
+turn inside its box is its framing's `rotation`, set on the crop screen.
+Searches: turn, rotate, rotation handle, tilt, spin a clip.
 
 Canvas rounded-rectangle paths use `traceRoundedRect` in
 `shared/render/utils/trace-rounded-rect.ts`, which keeps the radius within

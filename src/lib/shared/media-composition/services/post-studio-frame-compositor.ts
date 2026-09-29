@@ -21,6 +21,7 @@ import {
   paintEdgeBorder,
   paintEdgeShadow,
   regionEdgePixels,
+  turnAboutCentre,
 } from "$lib/shared/media-composition/services/region-edge-painter";
 import { traceRoundedRect } from "$lib/shared/render/utils/trace-rounded-rect";
 
@@ -352,6 +353,7 @@ async function drawPaintedLayer(
     transform: layer.transform,
   });
   context.save();
+  turnAboutCentre(context, pixels, region.turn ?? 0);
   traceRoundedRect(context, pixels, cornerRadius);
   context.clip();
   context.globalAlpha = layer.opacity;
@@ -406,9 +408,14 @@ export async function renderPostStudioFrame(
       (candidate) => candidate.id === layer.clipId
     );
     if (!staticRegion || clip?.kind !== "visual") continue;
-    // Where the region sits NOW. A region in motion carries its rect on the
-    // layer; the static rect is only where it rests.
-    const region: LayoutRegion = { ...staticRegion, ...layer.regionRect };
+    // Where the region sits NOW, and how far it is turned. A region in
+    // motion carries its rect on the layer; the static rect is only where it
+    // rests, so its turn never leaks onto a moving one.
+    const { turn: _restingTurn, ...resting } = staticRegion;
+    const region: LayoutRegion = {
+      ...resting,
+      ...(layer.regionRect ?? staticRegion),
+    };
     if (!regionRectIsOnFrame(region)) continue;
     drawn.push({
       layer,
@@ -434,12 +441,13 @@ export async function renderPostStudioFrame(
       ? regionEdgePixels(region.edge, regionPixels, input.preset.output)
       : null;
     const edgeOpacity = regionOpacity.get(layer.regionId) ?? layer.opacity;
+    const turn = region.turn ?? 0;
     if (edge && drawn[index - 1]?.layer.regionId !== layer.regionId) {
-      paintEdgeShadow(context, regionPixels, edge, edgeOpacity);
+      paintEdgeShadow(context, regionPixels, edge, edgeOpacity, turn);
     }
     await drawRegionLayer(context, input, entry, edge?.radius ?? 0);
     if (edge && drawn[index + 1]?.layer.regionId !== layer.regionId) {
-      paintEdgeBorder(context, regionPixels, edge, edgeOpacity);
+      paintEdgeBorder(context, regionPixels, edge, edgeOpacity, turn);
     }
   }
 }
@@ -452,7 +460,7 @@ interface DrawnLayer {
   regionPixels: PixelRect;
 }
 
-/** One layer, clipped to its region's rounded rect. */
+/** One layer, turned with its region and clipped to its rounded rect. */
 async function drawRegionLayer(
   context: CanvasRenderingContext2D,
   input: RenderPostStudioFrameInput,
@@ -483,6 +491,7 @@ async function drawRegionLayer(
     );
   }
   context.save();
+  turnAboutCentre(context, regionPixels, region.turn ?? 0);
   traceRoundedRect(context, regionPixels, cornerRadius);
   context.clip();
   context.globalAlpha = layer.opacity;
