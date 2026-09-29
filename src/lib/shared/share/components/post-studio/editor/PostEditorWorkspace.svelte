@@ -29,11 +29,13 @@
   } from "$lib/shared/media-composition/domain/post-project-compiler";
   import {
     POST_CANVAS_RATIOS,
+    POST_DEFAULT_BACKGROUND,
     POST_FRAME_RATE,
     POST_TIME_EPSILON,
     findItem,
     itemEnd,
     mainItemAt,
+    type PostBackground,
     type PostCanvasRatio,
     type PostItem,
     type PostItemKind,
@@ -50,6 +52,7 @@
     editItemKeyframes,
     moveMainItem,
     moveOverlayItem,
+    setProjectBackground,
     setProjectCanvas,
     setTrackFlag,
   } from "$lib/shared/media-composition/domain/post-project-edits";
@@ -105,6 +108,7 @@
   import PostMediaPanel from "./PostMediaPanel.svelte";
   import PostExportPanel from "./PostExportPanel.svelte";
   import PostRatioPicker from "./PostRatioPicker.svelte";
+  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
   import PostTimeline from "./timeline/PostTimeline.svelte";
   import { clampPixelsPerSecond } from "./timeline/post-timeline-geometry";
   import { channelLabel, itemDisplayLabel } from "./post-editor-labels";
@@ -220,6 +224,12 @@
   function setCanvas(canvas: PostCanvasRatio): void {
     editor.pause();
     editor.edit((project, ctx) => setProjectCanvas(project, canvas, ctx));
+  }
+
+  function setBackground(background: PostBackground): void {
+    editor.edit((project, ctx) =>
+      setProjectBackground(project, background, ctx)
+    );
   }
 
   untrack(() => {
@@ -1657,16 +1667,36 @@
       onAdded={itemAdded}
     />
   {:else if tool === "canvas"}
-    <PostRatioPicker
-      options={POST_CANVAS_RATIOS.map((canvas) => ({
-        value: canvas,
-        label: canvas,
-        ratio: ratioValue(canvas),
-      }))}
-      value={postCanvasOf(editor.project)}
-      onchange={setCanvas}
-      ariaLabel={t("post_canvas_shape")}
-    />
+    <div class="canvas-tool">
+      <PostRatioPicker
+        options={POST_CANVAS_RATIOS.map((canvas) => ({
+          value: canvas,
+          label: canvas,
+          ratio: ratioValue(canvas),
+        }))}
+        value={postCanvasOf(editor.project)}
+        onchange={setCanvas}
+        ariaLabel={t("post_canvas_shape")}
+      />
+      <SegmentedControl
+        color="accent"
+        options={[
+          {
+            value: "blur",
+            label: t("post_canvas_background_blur"),
+            icon: "fa-solid fa-droplet",
+          },
+          {
+            value: "dark",
+            label: t("post_canvas_background_dark"),
+            icon: "fa-solid fa-square",
+          },
+        ]}
+        value={editor.project.background ?? POST_DEFAULT_BACKGROUND}
+        onchange={setBackground}
+        ariaLabel={t("post_canvas_background")}
+      />
+    </div>
   {:else if tool === "look"}
     <AnimationPanel
       layout="sidebar"
@@ -2017,6 +2047,12 @@
 />
 
 <style>
+  .canvas-tool {
+    display: grid;
+    gap: 1rem;
+    min-width: 0;
+  }
+
   .post-editor:focus,
   .panel-host:focus,
   .panel-slot:focus,
