@@ -42,6 +42,15 @@ The production `collision/stance-yaw-track.ts` remains the automatic anticipator
 stance owner; it does not author these user-taught poses. This lab intentionally
 eases to rest at each taught pose instead of choosing anticipation itself.
 
+Moving the body off the point its staffs isolate around lives in
+`src/lib/shared/3d/collision/body-clearance.ts` (`buildBodyClearanceTrack`,
+`sampleBodyClearanceTrack`). Searches: body clearance, body offset, chest
+clears the isolation point, hip shift, step off the staffs.
+`resolvePerformerContact` owns the opt-in (`clearBody`) beside hard-beat
+displacement, and the scene-3d `AvatarAnimator` applies it (`setBodyOffset`,
+planted feet). It moves the body, never the staff or the grid; see step 5 of
+`docs/architecture/performer-grid-styles.md`.
+
 Grip Lab's `KeyframeTimeline.svelte` presents these whole-pose keys at their
 actual phase and plots the same shared lean sampler. It extends the existing
 `contact-inspection-state.svelte.ts` owner for add, delete, retime, undo/redo,
