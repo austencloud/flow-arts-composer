@@ -1,5 +1,6 @@
 <script lang="ts">
   import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import EditHistoryShortcutBridge from "$lib/shared/keyboard/components/EditHistoryShortcutBridge.svelte";
   import { onDestroy, tick, untrack } from "svelte";
   import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
   import type { SequenceExportOptions } from "$lib/shared/render/domain/models/sequence-export-options";
@@ -9,7 +10,8 @@
   import { simplifyRepeatedWord } from "$lib/shared/foundation/utils/word-simplifier";
   import { deriveWord } from "$lib/shared/foundation/services/word-deriver";
   import { getSequenceVideosStore } from "$lib/shared/video-collaboration/state/sequence-videos-store.svelte";
-  import { createHandLabeledCard } from "$lib/shared/sequence-viewer/services/hand-labeled-card.svelte";
+  import { createPostSequenceView } from "$lib/shared/media-composition/services/post-sequence-view.svelte";
+  import { mirrorPostProject } from "$lib/shared/media-composition/domain/post-project-mirror";
   import {
     DEFAULT_HAND_LABELING,
     type HandLabeling,
@@ -40,6 +42,7 @@
     type PostItem,
     type PostItemKind,
     type PostKeyframeChannel,
+    type PostProject,
     type PostVideoItem,
   } from "$lib/shared/media-composition/domain/post-project";
   import {
@@ -93,6 +96,7 @@
   import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
   import type { PostStudioShareExport } from "../post-studio-share-export";
   import PostTimingStage from "../builder/PostTimingStage.svelte";
+  import PostTimingTimeline from "../builder/PostTimingTimeline.svelte";
   import PostTimingPanel from "../builder/PostTimingPanel.svelte";
   import { createPostTimingSession } from "../builder/post-timing-session.svelte";
   import { formatTakeClock } from "../builder/post-builder-format";
@@ -113,7 +117,18 @@
   import { clampPixelsPerSecond } from "./timeline/post-timeline-geometry";
   import { channelLabel, itemDisplayLabel } from "./post-editor-labels";
   import { readVideoFile, videoFileError } from "./post-editor-files";
+  import {
+    readInShotRecoveryPackage,
+    loadPostProjectFonts,
+  } from "$lib/shared/media-composition/services/inshot-recovery-package";
   import { createCropSession } from "./post-crop-session.svelte";
+  import { createPostDraftAutosave } from "$lib/shared/media-composition/services/post-draft-storage";
+  import {
+    parsePostStudioBackup,
+    serializePostStudioBackup,
+  } from "$lib/shared/media-composition/services/post-project-backup";
+  import { downloadBlobToDisk } from "$lib/shared/foundation/services/file-downloader";
+  import PostDraftStatus from "./PostDraftStatus.svelte";
   import {
     adjacentStepSeconds,
     clipSteps,
@@ -146,6 +161,9 @@
   interface Props {
     active: boolean;
     sequence: SequenceData;
+    initialProject?: PostProject;
+    onSaveDraft?: (project: PostProject) => Promise<void>;
+    draftLoadError?: string | null;
     cardPreviewUrl: string | null;
     animationPreviewUrl: string | null;
     animationPreviewType: "video" | "image";
@@ -169,6 +187,9 @@
   let {
     active,
     sequence,
+    initialProject,
+    onSaveDraft,
+    draftLoadError = null,
     cardPreviewUrl,
     animationPreviewUrl,
     animationPreviewType,
@@ -216,12 +237,46 @@
   let overlayPainter = $state.raw<PostStudioLayerPainter | null>(null);
 
   const editor = createPostEditorState({
+    initialProject,
     getSequence: () => sequence,
     getCatalogVideo: (videoId) =>
       catalog.find((video) => video.videoId === videoId) ?? null,
     hasAnimationOverlay: () => overlayPainter !== null,
   });
   const session = createPostTimingSession(editor);
+  let draftSaving = $state(false);
+  let draftError = $state<string | null>(draftLoadError);
+  const draftAutosave = onSaveDraft
+    ? createPostDraftAutosave(onSaveDraft, (saving, error) => {
+        draftSaving = saving;
+        draftError = error;
+      })
+    : null;
+
+  $effect(() => {
+    void editor.saveRevision;
+    if (draftAutosave) untrack(() => draftAutosave.submit(editor.snapshot));
+  });
+  onDestroy(() => draftAutosave?.dispose());
+
+  function protectUnsavedDraft(event: BeforeUnloadEvent): void {
+    if (!draftSaving && !draftError && !editor.saveError) return;
+    event.preventDefault();
+    event.returnValue = "";
+  }
+
+  async function downloadDraft(): Promise<void> {
+    const blob = new Blob([serializePostStudioBackup(editor.snapshot)], {
+      type: "application/json",
+    });
+    const result = await downloadBlobToDisk(
+      blob,
+      `${sequence.id}-mapped.post-studio.json`
+    );
+    if (!result.success)
+      draftError =
+        "Could not download the backup. Keep this editor open and try again.";
+  }
   /** The post's size in pixels, from its shape. */
   const outputSize = $derived(postOutputSize(editor.project.canvas));
 
@@ -269,9 +324,10 @@
     }
     return DEFAULT_HAND_LABELING;
   });
-  const labeledCard = createHandLabeledCard({
+  const labeledCard = createPostSequenceView({
     getSequence: () => sequence,
     getLabeling: () => handLabeling,
+    getMirrored: () => editor.project.mirrored ?? false,
   });
   const displaySequence = $derived(labeledCard.sequence);
 
@@ -334,16 +390,26 @@
   }
 
   let overlayVersion = 0;
+  let overlaySequence = $state.raw<SequenceData | null>(null);
+  let overlayError = $state<string | null>(null);
   $effect(() => {
     const drawn = displaySequence;
     const version = ++overlayVersion;
+    overlayError = null;
     void loadAnimationOverlayPainter(drawn)
       .then((painter) => {
-        if (version === overlayVersion) overlayPainter = painter;
+        if (version === overlayVersion) {
+          overlayPainter = painter;
+          overlaySequence = drawn;
+        }
       })
       .catch((error: unknown) => {
         console.error("[PostStudio] Beat overlay unavailable:", error);
-        if (version === overlayVersion) overlayPainter = null;
+        if (version === overlayVersion) {
+          overlayPainter = null;
+          overlayError =
+            "Could not prepare the animation. Reload the saved post to retry.";
+        }
       });
   });
 
@@ -364,6 +430,21 @@
   }
 
   function bindingFor(role: string): CompositionSourceBinding | null {
+    if (role.startsWith("image:")) {
+      const imageId = role.slice("image:".length);
+      const asset = editor.images.find((entry) => entry.id === imageId);
+      const url = editor.imageUrl(imageId);
+      return {
+        roleKey: role,
+        kind: "image",
+        label: asset?.label ?? "Image",
+        previewUrl: url,
+        previewType: "image",
+        renderMode: "external-media",
+        status: url ? "ready" : "missing",
+        missingMessage: "Relink this image from the recovered files.",
+      };
+    }
     const takeId = takeIdFromRole(role);
     if (takeId) {
       const take = editor.takes.find((entry) => entry.id === takeId);
@@ -506,6 +587,18 @@
   /** The tallest that phone panel may grow and still clear the preview. */
   let dockPanelMax = $state<number | null>(null);
   let fileInput = $state<HTMLInputElement | null>(null);
+  let recoveryInput = $state<HTMLInputElement | null>(null);
+
+  $effect(() => {
+    const project = editor.project;
+    if (!project.fonts?.length) return;
+    void loadPostProjectFonts(project).catch((error: unknown) => {
+      fileError =
+        error instanceof Error
+          ? error.message
+          : "Could not load the project font.";
+    });
+  });
   let readingFile = $state(false);
   let fileError = $state("");
   let pixelsPerSecond = $state(60);
@@ -547,6 +640,12 @@
     Boolean(editor.compiled) &&
       editor.durationSeconds > 0 &&
       !exporting &&
+      !labeledCard.pending &&
+      !labeledCard.error &&
+      (!editor.project.tracks.some((track) =>
+        track.items.some((item) => item.kind === "moves")
+      ) ||
+        (overlaySequence === displaySequence && !overlayError)) &&
       !sharedSurfaces?.moving
   );
 
@@ -647,6 +746,10 @@
     if (!itemId) {
       cropStage = null;
       return null;
+    }
+    if (crop.item?.sourceGeometry) {
+      const source = crop.source;
+      return source ? source.width / source.height : 1.7778;
     }
     if (cropStage?.itemId === itemId) return cropStage.ratio;
     const pose = crop.pose;
@@ -1011,6 +1114,53 @@
     fileInput?.click();
   }
 
+  async function importRecovery(event: Event): Promise<void> {
+    const input = event.currentTarget as HTMLInputElement;
+    const selected = [...(input.files ?? [])];
+    input.value = "";
+    if (!selected.length) return;
+    readingFile = true;
+    fileError = "";
+    try {
+      const backupFile = selected.find((file) =>
+        file.name.endsWith(".post-studio.json")
+      );
+      const backup = backupFile
+        ? parsePostStudioBackup(await backupFile.text(), sequence.id)
+        : null;
+      if (backup) {
+        const files = new Map(selected.map((file) => [file.name, file]));
+        await loadPostProjectFonts(backup, files);
+        editor.importProject(backup, files);
+        activeTool = null;
+        return;
+      }
+      if (!selected.some((file) => file.name.endsWith(".post-studio.json"))) {
+        const files = new Map(selected.map((file) => [file.name, file]));
+        await loadPostProjectFonts(editor.project, files);
+        if (!editor.relinkProjectFiles(files))
+          throw new Error(
+            "Select the saved post's original media files, or a .post-studio.json recovery file to import a post."
+          );
+        return;
+      }
+      const { project, files } = await readInShotRecoveryPackage(
+        selected,
+        sequence.id,
+        Date.now()
+      );
+      editor.importProject(project, files);
+      activeTool = null;
+    } catch (error) {
+      fileError =
+        error instanceof Error
+          ? error.message
+          : "Could not import the recovered post.";
+    } finally {
+      readingFile = false;
+    }
+  }
+
   async function addDeviceVideo(event: Event): Promise<void> {
     const input = event.currentTarget as HTMLInputElement;
     const file = input.files?.[0];
@@ -1078,6 +1228,12 @@
     ) {
       return picked.channel;
     }
+    if (
+      (item.kind === "video" || item.kind === "image") &&
+      item.sourceGeometry &&
+      shown !== "fade"
+    )
+      return "sourceGeometry";
     return keyframeChannelFor(shown, item.kind);
   });
 
@@ -1123,7 +1279,12 @@
     const field = target.closest("input, textarea");
     return (
       field !== null &&
-      !(field instanceof HTMLInputElement && field.type === "range")
+      !(
+        field instanceof HTMLInputElement &&
+        ["range", "checkbox", "radio", "button", "submit", "reset"].includes(
+          field.type
+        )
+      )
     );
   }
 
@@ -1145,6 +1306,40 @@
         )
       )
     );
+  }
+
+  /** Playback owns Space before focused buttons and popovers can activate. */
+  function handlePlaybackKey(event: KeyboardEvent): void {
+    if (
+      !active ||
+      exporting ||
+      event.key !== " " ||
+      event.ctrlKey ||
+      event.metaKey ||
+      event.altKey ||
+      isTyping(event.target)
+    )
+      return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    // Leave the action row so playback does not reactivate its last tool.
+    if (
+      event.target instanceof HTMLElement &&
+      event.target.closest("[data-tool]")
+    ) {
+      rootElement?.focus({ preventScroll: true });
+    }
+    if (event.repeat) return;
+    if (showTimingStage) session.togglePlay();
+    else if (cropMode) toggleCropPlayback();
+    else editor.togglePlayback();
+  }
+
+  function mirrorWholePost(): void {
+    session.pause();
+    editor.pause();
+    keyCurveOpen = false;
+    editor.edit(mirrorPostProject);
   }
 
   /**
@@ -1171,21 +1366,8 @@
       }
       return;
     }
-    // Space belongs to playback. Leave the action row so the browser does
-    // not light up the last tool's focus ring when keyboard input resumes.
-    if (
-      event.key === " " &&
-      event.target instanceof HTMLElement &&
-      event.target.closest("[data-tool]")
-    ) {
-      rootElement?.focus({ preventScroll: true });
-    }
     if (cropMode && handleCropKey(event)) return;
     switch (event.key) {
-      case " ":
-        event.preventDefault();
-        if (!event.repeat) editor.togglePlayback();
-        return;
       case "s":
       case "S":
         if (event.repeat) return;
@@ -1278,10 +1460,6 @@
    */
   function handleCropKey(event: KeyboardEvent): boolean {
     switch (event.key) {
-      case " ":
-        event.preventDefault();
-        if (!event.repeat) toggleCropPlayback();
-        return true;
       case "Enter":
         if (
           event.repeat ||
@@ -1538,7 +1716,11 @@
   }
 
   async function renderPost(): Promise<boolean> {
-    if (exporting || !editor.compiled || editor.durationSeconds <= 0) {
+    if (!canRender) {
+      exportError =
+        labeledCard.error ??
+        overlayError ??
+        "The animation is still being prepared. Try again in a moment.";
       return false;
     }
     session.pause();
@@ -1566,6 +1748,7 @@
 
     let audioUrl: string | null = null;
     try {
+      await loadPostProjectFonts(editor.project);
       const takeUrls = new Map<string, string>();
       for (const take of editor.takes) {
         const url = editor.mediaUrl(take.id);
@@ -1635,7 +1818,27 @@
   });
 </script>
 
-<svelte:window onkeydown={handleKey} />
+<svelte:window
+  onkeydowncapture={handlePlaybackKey}
+  onkeydown={handleKey}
+  onbeforeunload={protectUnsavedDraft}
+/>
+
+{#snippet draftStatus()}
+  {#if labeledCard.error}
+    <span role="alert">{labeledCard.error}</span>
+  {:else if editor.project.mirrored && labeledCard.pending}
+    <span role="status">Preparing mirrored animation and cards…</span>
+  {/if}
+  <PostDraftStatus
+    saving={draftSaving}
+    error={draftError ?? editor.saveError}
+    disk={!!onSaveDraft}
+    onBackup={() => void downloadDraft()}
+    onRestore={() => recoveryInput?.click()}
+    onRetry={() => draftAutosave?.retry()}
+  />
+{/snippet}
 
 {#snippet cropActions()}
   <div class="crop-actions">
@@ -1653,7 +1856,13 @@
   <PostEditorTopBar
     {editor}
     {exporting}
+    {draftStatus}
+    onMirror={mirrorWholePost}
+    mirrored={editor.project.mirrored ?? false}
     onExport={openExport}
+    onImport={() => {
+      if (!readingFile) recoveryInput?.click();
+    }}
     trailing={cropMode ? cropActions : undefined}
   />
 {/snippet}
@@ -1793,6 +2002,7 @@
         {t("post_editor_back_to_editing")}
       </PanelButton>
     </div>
+    {@render draftStatus()}
     <PostTimingPanel {session} />
   </div>
 {/snippet}
@@ -1818,6 +2028,14 @@
   bind:offsetWidth={editorWidth}
   bind:offsetHeight={editorHeight}
 >
+  {#if showTimingStage}
+    <EditHistoryShortcutBridge
+      onUndo={session.undo}
+      onRedo={session.redo}
+      canUndo={session.canUndo}
+      canRedo={session.canRedo}
+    />
+  {/if}
   <div
     class="layout"
     style:--post-stage-min={heldStageHeight === null
@@ -1906,6 +2124,15 @@
       {/if}
     </div>
 
+    {#if showTimingStage}
+      <div class="timing-timeline">
+        <PostTimingTimeline
+          {session}
+          squarePainter={stripPainters.get("arrows") ?? null}
+        />
+      </div>
+    {/if}
+
     {#if !showTimingStage}
       <div class="transport-slot" bind:this={transportSlot}>
         {#if cropMode && crop.item}
@@ -1932,6 +2159,16 @@
         {/if}
         {#if fileError}
           <p class="file-error" role="alert">{fileError}</p>
+        {/if}
+        {#if editor.project.importSource?.unresolved.length}
+          <details class="import-differences">
+            <summary>InShot import: rendering differences remain</summary>
+            <ul>
+              {#each editor.project.importSource.unresolved as difference}
+                <li>{difference}</li>
+              {/each}
+            </ul>
+          </details>
         {/if}
       </div>
 
@@ -1972,9 +2209,7 @@
               setTrackFlag(project, trackId, flag, value, context)
             )}
           {keyChannel}
-          toolChannel={editor.selectedItem
-            ? keyframeChannelFor(shown, editor.selectedItem.kind)
-            : null}
+          toolChannel={keyChannel}
           onKeyChannel={pickKeyRow}
           onToggleKey={(itemId, channel, seconds) =>
             editKeys(itemId, (it) => toggleKeyframe(it, channel, seconds))}
@@ -2042,6 +2277,16 @@
     type="file"
     accept="video/*"
     onchange={addDeviceVideo}
+    tabindex="-1"
+    aria-hidden="true"
+  />
+  <input
+    bind:this={recoveryInput}
+    class="file-input"
+    type="file"
+    multiple
+    accept=".json,video/*,image/*,.ttf,.otf"
+    onchange={importRecovery}
     tabindex="-1"
     aria-hidden="true"
   />
@@ -2170,6 +2415,27 @@
     text-align: center;
   }
 
+  .import-differences {
+    color: var(--theme-text-secondary, #aaa);
+    font-size: 0.8125rem;
+    line-height: 1.4;
+  }
+
+  .import-differences summary {
+    cursor: pointer;
+    padding-block: 0.375rem;
+  }
+
+  .import-differences summary:focus-visible {
+    outline: 2px solid var(--theme-accent);
+    outline-offset: 2px;
+  }
+
+  .import-differences ul {
+    margin: 0.25rem 0;
+    padding-left: 1.5rem;
+  }
+
   /* The timeline's playhead and guides stack inside it, under the dock. */
   .timeline-slot {
     min-width: 0;
@@ -2241,8 +2507,17 @@
       [data-layout="viewer"]
     )
     .layout {
-    grid-template-rows: minmax(0, 1fr);
-    grid-template-areas: "stage";
+    height: 100%;
+    grid-template-rows: minmax(22rem, 1fr) auto;
+    grid-template-areas: "stage" "timeline";
+  }
+
+  .post-editor[data-mode="timing"][data-layout="phone"] .layout {
+    display: grid;
+    height: 100%;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(15rem, 1fr) auto auto;
+    grid-template-areas: "stage" "timeline" "dock";
   }
 
   .top-bar-slot {
@@ -2292,8 +2567,20 @@
     height: 100%;
   }
 
-  .post-editor[data-mode="timing"] .timing-stage {
-    overflow-y: auto;
+  .timing-timeline {
+    grid-area: timeline;
+    min-width: 0;
+  }
+  .post-editor[data-mode="timing"] {
+    user-select: none;
+    -webkit-user-select: none;
+  }
+  .post-editor[data-mode="timing"] :global(input) {
+    user-select: text;
+    -webkit-user-select: text;
+  }
+  .post-editor[data-mode="timing"][data-layout="phone"] .timing-stage {
+    height: 100%;
   }
 
   .panel-host {

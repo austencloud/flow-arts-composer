@@ -172,6 +172,66 @@ describe("planProjectAudio", () => {
   it("plans nothing at all in silent mode", () => {
     expect(planProjectAudio(compiled, "silent")).toEqual([]);
   });
+
+  it("crossfades overlapping clips on one video track without fading a separate track", () => {
+    const videoSegments = [
+      {
+        itemId: "a",
+        takeId: "a",
+        trackIndex: 0,
+        startSeconds: 0,
+        endSeconds: 2,
+        sourceIn: 0,
+        sourceOut: 2,
+        speed: 1,
+        volume: 1,
+      },
+      {
+        itemId: "b",
+        takeId: "b",
+        trackIndex: 0,
+        startSeconds: 1,
+        endSeconds: 3,
+        sourceIn: 0,
+        sourceOut: 2,
+        speed: 1,
+        volume: 1,
+      },
+      {
+        itemId: "c",
+        takeId: "c",
+        trackIndex: 1,
+        startSeconds: 1,
+        endSeconds: 3,
+        sourceIn: 0,
+        sourceOut: 2,
+        speed: 1,
+        volume: 1,
+      },
+    ];
+    const planned = planProjectAudio({ videoSegments }, "takes");
+    expect(planned[0]).toMatchObject({ crossfadeOutSeconds: 1 });
+    expect(planned[1]).toMatchObject({ crossfadeInSeconds: 1 });
+    expect(planned[2]).not.toHaveProperty("crossfadeInSeconds");
+
+    const constant = (value: number): PostAudioSource => ({
+      sampleRate: 100,
+      channels: [new Float32Array(300).fill(value)],
+    });
+    const [mixed] = mixPostAudio({
+      segments: planned.slice(0, 2),
+      sources: new Map([
+        ["a", constant(0.4)],
+        ["b", constant(0.4)],
+      ]),
+      sampleRate: 100,
+      durationSeconds: 3,
+      fadeSeconds: 0,
+    });
+    expect(mixed[125]).toBeCloseTo(0.4, 2);
+    expect(mixed[150]).toBeCloseTo(0.4, 2);
+    expect(mixed[175]).toBeCloseTo(0.4, 2);
+  });
 });
 
 describe("mixPostAudio", () => {

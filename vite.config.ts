@@ -1,4 +1,5 @@
 import { getEnabledFeaturesDefineMap } from "./src/config/feature-flags";
+import { postStudioDraftStoragePlugin } from "./scripts/post-studio-draft-storage.mjs";
 import {
   ARROW_SPRITE_WATCH_PATH,
   createViteDevWatchIgnoredMatcher,
@@ -905,6 +906,7 @@ export default defineConfig(({ command, mode }) => ({
     ...getEnabledFeaturesDefineMap(),
   },
   plugins: [
+    postStudioDraftStoragePlugin(),
     createViteDependencyRefreshPlugin({ projectRoot: dirname }),
     featureGatePlugin(),
     // realtime-bpm-analyzer is browser-only (AudioContext) and has broken
@@ -1345,7 +1347,13 @@ export default defineConfig(({ command, mode }) => ({
       // "../../../" keeps the primary checkout's node_modules reachable when the
       // server runs from a worktree under E:/worktrees/<repo>/<name> whose
       // node_modules is a junction into the primary checkout.
-      allow: [".", "../../", "../../../", "../../../animator", "../../../desktop"],
+      allow: [
+        ".",
+        "../../",
+        "../../../",
+        "../../../animator",
+        "../../../desktop",
+      ],
       strict: true, // 2026: Security best practice
     },
     hmr: {

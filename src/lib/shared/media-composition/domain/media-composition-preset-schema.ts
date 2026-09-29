@@ -124,6 +124,18 @@ export const PresetEasingSchema = z.union([
     z.number().finite().min(0).max(1),
     z.number().finite().min(-1).max(2),
   ]),
+  z
+    .object({
+      kind: z.literal("sampled-bezier"),
+      curve: z.tuple([
+        z.number().finite().min(0).max(1),
+        z.number().finite().min(-1).max(2),
+        z.number().finite().min(0).max(1),
+        z.number().finite().min(-1).max(2),
+      ]),
+      samples: z.literal(300),
+    })
+    .strict(),
 ]);
 
 export type PresetEasing = z.infer<typeof PresetEasingSchema>;
@@ -140,7 +152,32 @@ function motionKeySchema<V extends z.ZodTypeAny>(value: V) {
     .strict();
 }
 
-export type MotionKey<V> = { atSeconds: number; value: V; easing: PresetEasing };
+export type MotionKey<V> = {
+  atSeconds: number;
+  value: V;
+  easing: PresetEasing;
+};
+
+/** Canvas-normalized media rectangle and source UV crop. The rectangle can overflow. */
+export const PresetSourceGeometrySchema = z
+  .object({
+    x: z.number().finite(),
+    y: z.number().finite(),
+    width: z.number().finite().positive(),
+    height: z.number().finite().positive(),
+    rotation: z.number().finite(),
+    crop: z
+      .object({
+        left: z.number().finite().min(0).max(1),
+        top: z.number().finite().min(0).max(1),
+        right: z.number().finite().min(0).max(1),
+        bottom: z.number().finite().min(0).max(1),
+      })
+      .strict()
+      .refine((crop) => crop.right > crop.left && crop.bottom > crop.top),
+  })
+  .strict();
+export type PresetSourceGeometry = z.infer<typeof PresetSourceGeometrySchema>;
 
 /** A clip transform's animated fields; `flipHorizontal` always stays static. */
 export const MotionTransformValueSchema = z
@@ -157,11 +194,15 @@ export type MotionTransformValue = z.infer<typeof MotionTransformValueSchema>;
 export const PresetVisualClipMotionSchema = z
   .object({
     transform: z.array(motionKeySchema(MotionTransformValueSchema)).optional(),
-    opacity: z.array(motionKeySchema(z.number().finite().min(0).max(1))).optional(),
+    opacity: z
+      .array(motionKeySchema(z.number().finite().min(0).max(1)))
+      .optional(),
   })
   .strict();
 
-export type PresetVisualClipMotion = z.infer<typeof PresetVisualClipMotionSchema>;
+export type PresetVisualClipMotion = z.infer<
+  typeof PresetVisualClipMotionSchema
+>;
 
 /**
  * A region's rect keyframed directly in post seconds, the compiled form of an
@@ -334,6 +375,19 @@ export const PresetVisualClipSchema = z
      * with the static fields, fades and transitions at evaluation time.
      */
     motion: PresetVisualClipMotionSchema.optional(),
+    sourceGeometry: PresetSourceGeometrySchema.optional(),
+    sourceGeometryKeyframes: z
+      .array(motionKeySchema(PresetSourceGeometrySchema))
+      .optional(),
+    autoAdjust: z
+      .object({
+        enabled: z.boolean(),
+        strength: z.number().finite().min(0).max(1),
+        startSeconds: SecondsSchema.optional(),
+        endSeconds: SecondsSchema.optional(),
+      })
+      .strict()
+      .optional(),
   })
   .strict()
   .superRefine((clip, context) => {
@@ -352,6 +406,11 @@ export const PresetVisualClipSchema = z
       assertStrictlyIncreasingAtSeconds(clip.motion.opacity, context, [
         "motion",
         "opacity",
+      ]);
+    }
+    if (clip.sourceGeometryKeyframes) {
+      assertStrictlyIncreasingAtSeconds(clip.sourceGeometryKeyframes, context, [
+        "sourceGeometryKeyframes",
       ]);
     }
   });
@@ -400,6 +459,7 @@ export const PresetTransitionSchema = z
     }
     validatePresetInterval(transition, context);
   });
+export type PresetTransition = z.infer<typeof PresetTransitionSchema>;
 
 export const PresetDurationPolicySchema = z.union([
   z
@@ -594,17 +654,6 @@ export const MediaCompositionPresetSchema = z
           code: "custom",
           path: ["transitions", index, "incomingClipId"],
           message: "Preset transition incoming clip must be visual",
-        });
-      }
-      if (
-        outgoing?.kind === "visual" &&
-        incoming?.kind === "visual" &&
-        outgoing.regionId !== incoming.regionId
-      ) {
-        context.addIssue({
-          code: "custom",
-          path: ["transitions", index],
-          message: "Crossfading preset clips must share a region",
         });
       }
     });

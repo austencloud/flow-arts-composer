@@ -71,6 +71,8 @@ export interface TimingHost {
   confirmTiming(takeId: string): void;
   canUndoTiming(takeId: string): boolean;
   undoTiming(takeId: string): void;
+  canRedoTiming(takeId: string): boolean;
+  redoTiming(takeId: string): void;
   /** Leave the tool: "done" after the last take checks out, "back" otherwise. */
   exitTiming(reason: "done" | "back"): void;
 }
@@ -88,6 +90,8 @@ export function createPostTimingSession(builder: TimingHost) {
   let zoom = $state<TimingZoom>("8");
   let showSquare = $state(true);
   let selected = $state<LandingRef | null>(null);
+  let adjustLandings = $state(false);
+  let adjustmentCancel = $state<(() => void) | null>(null);
   let tapCount = $state(0);
 
   const takes = $derived(builder.takes);
@@ -186,6 +190,7 @@ export function createPostTimingSession(builder: TimingHost) {
     pendingStart = null;
     playing = false;
     selected = null;
+    adjustLandings = false;
   });
 
   // A newly mounted video starts at 0; bring it to where the tool is.
@@ -350,6 +355,19 @@ export function createPostTimingSession(builder: TimingHost) {
     editCurrent((current) =>
       current.taps.length === 0 ? current : { ...current, taps: [] }
     );
+    restart();
+  }
+
+  function deselect(): void {
+    selected = null;
+  }
+
+  function restart(): void {
+    pause();
+    playing = false;
+    deselect();
+    adjustLandings = false;
+    seek(0);
   }
 
   /**
@@ -468,11 +486,21 @@ export function createPostTimingSession(builder: TimingHost) {
       return;
     }
     if (isTyping(event.target)) return;
-    if (event.key === "t" || event.key === "T") {
+    if (event.key === "Escape") {
+      if (selected || adjustLandings) {
+        event.preventDefault();
+        deselect();
+        adjustLandings = false;
+      }
+    } else if (event.key === "Home") {
+      event.preventDefault();
+      restart();
+    } else if (event.key === "t" || event.key === "T") {
       event.preventDefault();
       // A held key repeats; one press is one landing.
       if (!event.repeat) tap();
     } else if (event.key === " ") {
+      // Playback keeps Space even after a timing control has retained focus.
       event.preventDefault();
       if (!event.repeat) togglePlay();
     } else if (event.key === ",") {
@@ -518,6 +546,13 @@ export function createPostTimingSession(builder: TimingHost) {
     },
     set selected(next: LandingRef | null) {
       selected = next;
+    },
+    get adjustLandings() {
+      return adjustLandings;
+    },
+    set adjustLandings(next: boolean) {
+      adjustLandings = next;
+      if (!next) deselect();
     },
     get tapCount() {
       return tapCount;
@@ -584,7 +619,16 @@ export function createPostTimingSession(builder: TimingHost) {
       return resolvedSection?.endStored ?? false;
     },
     get canUndo() {
-      return takeId ? builder.canUndoTiming(takeId) : false;
+      return (
+        adjustmentCancel !== null ||
+        (takeId ? builder.canUndoTiming(takeId) : false)
+      );
+    },
+    get canRedo() {
+      return (
+        adjustmentCancel !== null ||
+        (takeId ? builder.canRedoTiming(takeId) : false)
+      );
     },
     /** The video element reports its own play state. */
     notePlaying(next: boolean): void {
@@ -612,6 +656,8 @@ export function createPostTimingSession(builder: TimingHost) {
     },
     exit(): void {
       pause();
+      adjustLandings = false;
+      deselect();
       builder.exitTiming("back");
     },
     seek,
@@ -655,13 +701,29 @@ export function createPostTimingSession(builder: TimingHost) {
     setGridOffset,
     clearEnd,
     clearTaps,
+    deselect,
+    restart,
     placeLanding,
     landingRange,
     releaseSelected,
     split,
     joinWithPrevious,
+    setAdjustmentCancel(cancel: (() => void) | null): void {
+      adjustmentCancel = cancel;
+    },
     undo(): void {
+      if (adjustmentCancel) {
+        adjustmentCancel();
+        return;
+      }
       if (takeId) builder.undoTiming(takeId);
+    },
+    redo(): void {
+      if (adjustmentCancel) {
+        adjustmentCancel();
+        return;
+      }
+      if (takeId) builder.redoTiming(takeId);
     },
     confirm,
     handleKey,

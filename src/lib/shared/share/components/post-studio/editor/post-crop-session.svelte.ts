@@ -428,7 +428,11 @@ export function createCropSession(deps: CropSessionDeps) {
         ? clipShapeFor("original", 1 / target.shape.ratio)
         : null;
     if (isAnimated(target, "framing")) {
-      turnEveryKey(target, shape, shortestTurn(framing?.rotation ?? 0, rotation));
+      turnEveryKey(
+        target,
+        shape,
+        shortestTurn(framing?.rotation ?? 0, rotation)
+      );
       announce();
       return;
     }
@@ -463,7 +467,9 @@ export function createCropSession(deps: CropSessionDeps) {
     const turnKey = (key: PostKeyframe<PostFraming>): PostFraming => {
       const rotation = wrapDegrees(key.value.rotation + delta);
       const keySpot = boxAt(target, postSecondsOfKeyframe(target, key.t));
-      const keyWindow = post ? sizeIn(clipBox(target, keySpot, post), post) : null;
+      const keyWindow = post
+        ? sizeIn(clipBox(target, keySpot, post), post)
+        : null;
       const keyPose = keyWindow
         ? cropPoseOf({
             framing: key.value,
@@ -522,17 +528,22 @@ export function createCropSession(deps: CropSessionDeps) {
       shape = footage
         ? clipShapeFor(
             "original",
-            turned ? footage.height / footage.width : footage.width / footage.height
+            turned
+              ? footage.height / footage.width
+              : footage.width / footage.height
           )
         : null;
       if (!shape) return;
     } else if (kind === "free") {
-      shape = window ? clipShapeFor("free", window.width / window.height) : null;
+      shape = window
+        ? clipShapeFor("free", window.width / window.height)
+        : null;
       if (!shape) return;
     } else if (kind !== "fill") {
       shape = clipShapeFor(kind);
     }
-    if (target.fit === "cover" && sameShape(target.shape ?? null, shape)) return;
+    if (target.fit === "cover" && sameShape(target.shape ?? null, shape))
+      return;
     const id = target.id;
     editor.pause();
     sliderBase = null;
@@ -578,7 +589,12 @@ export function createCropSession(deps: CropSessionDeps) {
     presses += 1;
     editor.edit((project, ctx) =>
       resetFraming(
-        updateItem(project, id, { fit: "cover", flip: false, shape: null }, ctx),
+        updateItem(
+          project,
+          id,
+          { fit: "cover", flip: false, shape: null },
+          ctx
+        ),
         id,
         ctx
       )
@@ -691,7 +707,8 @@ export function createCropSession(deps: CropSessionDeps) {
     const active = gesture;
     if (!active) return CENTER;
     const { start } = active;
-    const spread = Number.isFinite(input.spread) && input.spread > 0 ? input.spread : 1;
+    const spread =
+      Number.isFinite(input.spread) && input.spread > 0 ? input.spread : 1;
     const zoom = Math.min(
       POST_MAX_ZOOM,
       Math.max(zoomFloor(start, active.limit), start.zoom * spread)
@@ -720,7 +737,10 @@ export function createCropSession(deps: CropSessionDeps) {
     const frame = handleFrame(start.window, handle, scale, true);
     const shape = clipShapeFor("free", frame.width / frame.height);
     const next = shape
-      ? sizeIn(shapedBox(active.spot, shape.ratio, active.output), active.output)
+      ? sizeIn(
+          shapedBox(active.spot, shape.ratio, active.output),
+          active.output
+        )
       : null;
     if (!shape || !next) return;
     const value = framingOfPose(
@@ -753,6 +773,9 @@ export function createCropSession(deps: CropSessionDeps) {
   return {
     get item() {
       return item;
+    },
+    get source() {
+      return source;
     },
     get locked() {
       return locked;

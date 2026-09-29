@@ -11,6 +11,7 @@ import {
   channelsOf,
   clampChannelValue,
   clearChannel,
+  easingControlPoints,
   easingPresetOf,
   framingAt,
   isAnimated,
@@ -37,8 +38,13 @@ import {
 import { text, video } from "./post-project-fixtures";
 
 describe("channelsOf", () => {
-  it("gives video three channels and everything else two", () => {
-    expect(channelsOf(video("v"))).toEqual(["framing", "box", "opacity"]);
+  it("includes editable source geometry for videos", () => {
+    expect(channelsOf(video("v"))).toEqual([
+      "framing",
+      "sourceGeometry",
+      "box",
+      "opacity",
+    ]);
     expect(channelsOf(text("t", 0, 5))).toEqual(["box", "opacity"]);
   });
 });
@@ -198,7 +204,12 @@ describe("channelValueAt sampling", () => {
 
   it("framingAt reads a video's framing channel", () => {
     let v = video("v", { sourceIn: 0, sourceOut: 10 });
-    v = setKeyframe(v, "framing", 0, { zoom: 1, panX: 0, panY: 0, rotation: 0 });
+    v = setKeyframe(v, "framing", 0, {
+      zoom: 1,
+      panX: 0,
+      panY: 0,
+      rotation: 0,
+    });
     v = setKeyframe(v, "framing", 10, {
       zoom: 3,
       panX: 0,
@@ -288,7 +299,10 @@ describe("clampChannelValue", () => {
 
   it("wraps a box's turn and drops it when the box is straight again", () => {
     const at = { x: 0, y: 0, width: 0.5, height: 0.5 };
-    expect(clampChannelValue("box", { ...at, turn: 270 })).toEqual({ ...at, turn: -90 });
+    expect(clampChannelValue("box", { ...at, turn: 270 })).toEqual({
+      ...at,
+      turn: -90,
+    });
     expect(clampChannelValue("box", { ...at, turn: 360 })).toEqual(at);
     expect(clampChannelValue("box", { ...at, turn: 0 })).toEqual(at);
   });
@@ -316,9 +330,9 @@ describe("sameChannelValue", () => {
     expect(sameChannelValue("box", box, { ...box, turn: 0 })).toBe(true);
     const framing = { zoom: 1, panX: 0, panY: 0, rotation: 0 };
     expect(sameChannelValue("framing", framing, { ...framing })).toBe(true);
-    expect(sameChannelValue("framing", framing, { ...framing, rotation: 1 })).toBe(
-      false
-    );
+    expect(
+      sameChannelValue("framing", framing, { ...framing, rotation: 1 })
+    ).toBe(false);
   });
 });
 
@@ -341,7 +355,12 @@ describe("adjacentKeyframeSeconds", () => {
 describe("keyframeMarkers", () => {
   it("merges same-instant keyframes across channels into one marker", () => {
     let v = video("v", { sourceIn: 0, sourceOut: 10 });
-    v = setKeyframe(v, "framing", 0, { zoom: 1, panX: 0, panY: 0, rotation: 0 });
+    v = setKeyframe(v, "framing", 0, {
+      zoom: 1,
+      panX: 0,
+      panY: 0,
+      rotation: 0,
+    });
     v = setKeyframe(v, "opacity", 0, 1);
     v = setKeyframe(v, "framing", 10, {
       zoom: 2,
@@ -417,9 +436,9 @@ describe("setSegmentEasing", () => {
     let t = setKeyframe(text("t", 0, 10), "opacity", 0, 0);
     t = setKeyframe(t, "opacity", 10, 1);
     // Already DEFAULT_EASING (ease-in-out).
-    expect(setSegmentEasing(t, "opacity", 5, EASING_PRESETS["ease-in-out"])).toBe(
-      t
-    );
+    expect(
+      setSegmentEasing(t, "opacity", 5, EASING_PRESETS["ease-in-out"])
+    ).toBe(t);
   });
 });
 
@@ -466,7 +485,12 @@ describe("shiftKeyframes", () => {
 
   it("never shifts a video item's keyframes - they already ride the take's clock", () => {
     let v = video("v", { sourceIn: 0, sourceOut: 10 });
-    v = setKeyframe(v, "framing", 3, { zoom: 2, panX: 0, panY: 0, rotation: 0 });
+    v = setKeyframe(v, "framing", 3, {
+      zoom: 2,
+      panX: 0,
+      panY: 0,
+      rotation: 0,
+    });
     expect(shiftKeyframes(v, 3)).toBe(v);
   });
 
@@ -527,7 +551,11 @@ describe("moveKeyframe", () => {
     t = setKeyframe(t, "opacity", 8, 0.8);
     t = setSegmentEasing(t, "opacity", 2, "hold");
     const moved = moveKeyframe(t, "opacity", 2, 4);
-    expect(moved.keyframes?.opacity?.[0]).toEqual({ t: 4, value: 0.2, easing: "hold" });
+    expect(moved.keyframes?.opacity?.[0]).toEqual({
+      t: 4,
+      value: 0.2,
+      easing: "hold",
+    });
   });
 
   it("returns the same item when nothing moves", () => {
@@ -565,11 +593,27 @@ describe("channelKeyframeSeconds / channelSegments", () => {
       { fromSeconds: 2, toSeconds: 5, easing: DEFAULT_EASING, index: 0 },
       { fromSeconds: 5, toSeconds: 8, easing: "hold", index: 1 },
     ]);
-    expect(channelSegments(setKeyframe(text("u", 0, 5), "opacity", 1, 0.1), "opacity")).toEqual([]);
+    expect(
+      channelSegments(
+        setKeyframe(text("u", 0, 5), "opacity", 1, 0.1),
+        "opacity"
+      )
+    ).toEqual([]);
   });
 });
 
 describe("easing presets", () => {
+  it("gives the timeline and curve editor control points without changing sampled easing", () => {
+    const native = {
+      kind: "sampled-bezier" as const,
+      curve: [0.3, 0, 0.7, 1] as [number, number, number, number],
+      samples: 300 as const,
+    };
+    expect(easingControlPoints(native)).toEqual([0.3, 0, 0.7, 1]);
+    expect(easingControlPoints(EASING_PRESETS.linear)).toEqual([0, 0, 1, 1]);
+    expect(easingControlPoints("hold")).toBeNull();
+    expect(native.kind).toBe("sampled-bezier");
+  });
   it("DEFAULT_EASING is the ease-in-out preset", () => {
     expect(DEFAULT_EASING).toEqual(EASING_PRESETS["ease-in-out"]);
   });
@@ -599,8 +643,13 @@ describe("easing presets", () => {
   });
 
   it("sampleEasing: ease-in-out is symmetric about the midpoint", () => {
-    expect(sampleEasing(EASING_PRESETS["ease-in-out"], 0.5)).toBeCloseTo(0.5, 6);
-    expect(sampleEasing(EASING_PRESETS["ease-in-out"], 0.25)).toBeLessThan(0.25);
+    expect(sampleEasing(EASING_PRESETS["ease-in-out"], 0.5)).toBeCloseTo(
+      0.5,
+      6
+    );
+    expect(sampleEasing(EASING_PRESETS["ease-in-out"], 0.25)).toBeLessThan(
+      0.25
+    );
     expect(sampleEasing(EASING_PRESETS["ease-in-out"], 0.75)).toBeGreaterThan(
       0.75
     );

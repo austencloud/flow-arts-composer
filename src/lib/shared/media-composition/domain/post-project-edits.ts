@@ -6,6 +6,7 @@ import {
   POST_DEFAULT_CARD_SECONDS,
   POST_DEFAULT_OVERLAY_SECONDS,
   POST_MAX_LABEL_LENGTH,
+  POST_MIN_BOX_SIZE,
   POST_MAX_SPEED,
   POST_MAX_TEXT_LENGTH,
   POST_MAX_VOLUME,
@@ -24,6 +25,7 @@ import {
   trackHasRoom,
   wrapDegrees,
   type PostAnchor,
+  type PostAnimationItem,
   type PostBackground,
   type PostBox,
   type PostCanvasRatio,
@@ -31,6 +33,11 @@ import {
   type PostClipEdge,
   type PostClipShape,
   type PostFraming,
+  type PostSourceGeometry,
+  type PostAutoAdjust,
+  type PostTransitionOut,
+  type PostTextStyle,
+  type PostTextAnimation,
   type PostItem,
   type PostMovesMode,
   type PostProject,
@@ -50,6 +57,7 @@ import {
 } from "$lib/shared/media-composition/domain/post-clip-edge";
 import {
   framingAt,
+  channelValueAt,
   isAnimated,
   shiftKeyframes,
   writeChannelValue,
@@ -281,6 +289,116 @@ export function addOverlayItem(
   return { project: finish(next, ctx), itemId: item.id };
 }
 
+/** The live view can take a video's place when its visible area fits the editable canvas. */
+export function canReplaceOverlayVideoWithAnimation(
+  project: PostProject,
+  itemId: string
+): boolean {
+  const located = findItem(project, itemId);
+  if (
+    !located ||
+    located.trackIndex === MAIN_TRACK_INDEX ||
+    project.tracks[located.trackIndex]?.locked ||
+    located.item.kind !== "video"
+  )
+    return false;
+  const video = located.item;
+  // This operation is for the one recovered, video-only PIP, whose source is
+  // retained as a take for undo. Other video overlays may carry sound.
+  if (
+    project.importSource?.format !== "inshot-recovery" ||
+    !video.id.endsWith("-pip-1") ||
+    video.takeId !== video.id
+  )
+    return false;
+  if (video.keyframes?.sourceGeometry?.length) return false;
+  const under = mainItemAt(project, video.start);
+  if (
+    under?.kind !== "video" ||
+    itemEnd(video) > itemEnd(under) + POST_TIME_EPSILON
+  )
+    return false;
+  const geometry = video.sourceGeometry;
+  if (!geometry) return true;
+  // The recovered PIP can exceed the canvas by a few native float units.
+  // Larger overflow or a second, rotated box cannot be preserved by PostBox.
+  const box = video.box;
+  if (
+    box.x !== 0 ||
+    box.y !== 0 ||
+    box.width !== 1 ||
+    box.height !== 1 ||
+    box.turn ||
+    video.keyframes?.box?.length
+  )
+    return false;
+  const tolerance = 0.001;
+  return (
+    geometry.width >= POST_MIN_BOX_SIZE &&
+    geometry.height >= POST_MIN_BOX_SIZE &&
+    geometry.x >= -tolerance &&
+    geometry.y >= -tolerance &&
+    geometry.x + geometry.width <= 1 + tolerance &&
+    geometry.y + geometry.height <= 1 + tolerance
+  );
+}
+
+/** Swaps one PIP source for the sequence rendered from the camera take beneath it. */
+export function replaceOverlayVideoWithAnimation(
+  project: PostProject,
+  itemId: string,
+  ctx: EditContext
+): PostProject {
+  if (!canReplaceOverlayVideoWithAnimation(project, itemId)) return project;
+  const video = findItem(project, itemId)!.item as PostVideoItem;
+  const geometry = video.sourceGeometry;
+  const box = geometry
+    ? clampBox({
+        x: geometry.x,
+        y: geometry.y,
+        width: geometry.width,
+        height: geometry.height,
+        turn: geometry.rotation,
+      })
+    : video.box;
+  const animation: PostAnimationItem = {
+    id: video.id,
+    kind: "animation",
+    start: video.start,
+    duration: video.duration,
+    box,
+    opacity: video.opacity,
+    fadeIn: video.fadeIn,
+    fadeOut: video.fadeOut,
+    anchor: video.anchor,
+    fill: false,
+    overlay: false,
+    ...(video.keyframes?.box || video.keyframes?.opacity
+      ? {
+          keyframes: {
+            ...(video.keyframes.box
+              ? {
+                  box: video.keyframes.box.map((key) => ({
+                    ...key,
+                    t: (key.t - video.sourceIn) / video.speed,
+                  })),
+                }
+              : {}),
+            ...(video.keyframes.opacity
+              ? {
+                  opacity: video.keyframes.opacity.map((key) => ({
+                    ...key,
+                    t: (key.t - video.sourceIn) / video.speed,
+                  })),
+                }
+              : {}),
+          },
+        }
+      : {}),
+  };
+  return finish(replaceItem(project, itemId, animation), ctx);
+}
+
 // ---------------------------------------------------------------------------
 // Split, delete, duplicate
 // ---------------------------------------------------------------------------
@@ -383,6 +501,13 @@ export function duplicateItem(
 
   if (trackIndex === MAIN_TRACK_INDEX) {
     const mainTrack = [...project.tracks[MAIN_TRACK_INDEX]!.items];
+    if (
+      (item.kind === "video" || item.kind === "image") &&
+      item.transitionOut
+    ) {
+      const { transitionOut: _moved, ...withoutTransition } = item;
+      mainTrack[itemIndex] = withoutTransition as PostItem;
+    }
     mainTrack.splice(itemIndex + 1, 0, { ...item, id: newItemId });
     let next = withTrackItems(project, MAIN_TRACK_INDEX, mainTrack);
     for (const {
@@ -676,12 +801,17 @@ export interface PostItemPatch {
   rotation?: number;
   flip?: boolean;
   volume?: number;
+  sourceGeometry?: PostSourceGeometry | null;
+  transitionOut?: PostTransitionOut | null;
+  autoAdjust?: PostAutoAdjust | null;
   sourceIn?: number;
   sourceOut?: number;
   overlay?: boolean;
   mode?: PostMovesMode;
   text?: string;
   size?: PostTextSize;
+  style?: PostTextStyle | null;
+  animation?: PostTextAnimation | null;
   /** A clip's effect on its staff ends; null removes it. */
   staffEffect?: PostStaffEffectId | null;
 }
@@ -748,9 +878,23 @@ export function updateItem(
       if (patch.staffEffect) next.staffEffect = { effect: patch.staffEffect };
       else delete next.staffEffect;
     }
+    if (patch.autoAdjust !== undefined) {
+      if (patch.autoAdjust) next.autoAdjust = patch.autoAdjust;
+      else delete next.autoAdjust;
+    }
   } else if (isFiniteNumber(patch.duration)) {
     next.duration = Math.max(POST_MIN_ITEM_SECONDS, patch.duration);
     if (trackIndex !== MAIN_TRACK_INDEX) next.fill = false;
+  }
+  if (item.kind === "video" || item.kind === "image") {
+    if (patch.sourceGeometry !== undefined) {
+      if (patch.sourceGeometry) next.sourceGeometry = patch.sourceGeometry;
+      else delete next.sourceGeometry;
+    }
+    if (patch.transitionOut !== undefined) {
+      if (patch.transitionOut) next.transitionOut = patch.transitionOut;
+      else delete next.transitionOut;
+    }
   }
   if (item.kind === "animation" && patch.overlay !== undefined) {
     next.overlay = patch.overlay;
@@ -760,6 +904,14 @@ export function updateItem(
     if (patch.text !== undefined)
       next.text = patch.text.slice(0, POST_MAX_TEXT_LENGTH);
     if (patch.size) next.size = patch.size;
+    if (patch.style !== undefined) {
+      if (patch.style) next.style = patch.style;
+      else delete next.style;
+    }
+    if (patch.animation !== undefined) {
+      if (patch.animation) next.animation = patch.animation;
+      else delete next.animation;
+    }
   }
 
   // Fades fit inside the item's length as it will be laid out.
@@ -801,8 +953,17 @@ export function updateItemAt(
   const boxAnimated = patch.box !== undefined && isAnimated(item, "box");
   const opacityAnimated =
     patch.opacity !== undefined && isAnimated(item, "opacity");
+  const geometryAnimated =
+    patch.sourceGeometry !== undefined &&
+    patch.sourceGeometry !== null &&
+    isAnimated(item, "sourceGeometry");
 
-  if (!framingAnimated && !boxAnimated && !opacityAnimated) {
+  if (
+    !framingAnimated &&
+    !boxAnimated &&
+    !opacityAnimated &&
+    !geometryAnimated
+  ) {
     return updateItem(project, itemId, patch, ctx);
   }
 
@@ -812,6 +973,7 @@ export function updateItemAt(
   }
   if (boxAnimated) delete rest.box;
   if (opacityAnimated) delete rest.opacity;
+  if (geometryAnimated) delete rest.sourceGeometry;
 
   let next =
     Object.keys(rest).length > 0
@@ -841,6 +1003,14 @@ export function updateItemAt(
       next,
       itemId,
       (it) => writeChannelValue(it, "box", s, clampBox(patch.box!)),
+      ctx
+    );
+  }
+  if (geometryAnimated) {
+    next = editItemKeyframes(
+      next,
+      itemId,
+      (it) => writeChannelValue(it, "sourceGeometry", s, patch.sourceGeometry!),
       ctx
     );
   }
@@ -1187,7 +1357,13 @@ function splitPieces(
   if (item.kind === "video") {
     const at = item.sourceIn + cut * item.speed;
     return [
-      { ...item, sourceOut: at, duration: cut, fadeOut: 0 },
+      {
+        ...item,
+        sourceOut: at,
+        duration: cut,
+        fadeOut: 0,
+        transitionOut: undefined,
+      },
       {
         ...item,
         id: secondId,
@@ -1208,7 +1384,15 @@ function splitPieces(
     } as PostItem,
     cut
   );
-  return [{ ...item, duration: cut, fadeOut: 0 } as PostItem, second];
+  return [
+    {
+      ...item,
+      duration: cut,
+      fadeOut: 0,
+      ...(item.kind === "image" ? { transitionOut: undefined } : {}),
+    } as PostItem,
+    second,
+  ];
 }
 
 /** An overlay piece keeps following the original's clip, at its own offset. */

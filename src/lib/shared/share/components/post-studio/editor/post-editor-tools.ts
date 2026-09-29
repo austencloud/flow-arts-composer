@@ -103,6 +103,7 @@ export function toolRow(selection: PostToolSelection): PostToolId[] {
     case "text":
       return ["back", "split", "text", "timing", ...ITEM_TAIL];
     case "carousel":
+    case "image":
     case "card":
       return ["back", "split", "timing", ...ITEM_TAIL];
   }

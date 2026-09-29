@@ -16,6 +16,10 @@
   } from "$lib/shared/media-composition/services/media-fit";
   import VisualSequenceSaveContextMenuHost from "$lib/shared/library/components/VisualSequenceSaveContextMenuHost.svelte";
   import { onDestroy } from "svelte";
+  import {
+    previewPlaybackRate,
+    shouldSeekPreviewVideo,
+  } from "$lib/shared/media-composition/services/video-preview-seek";
 
   interface Props {
     binding: CompositionSourceBinding;
@@ -36,8 +40,11 @@
     displayedBeatNumber?: number;
     clipId: string;
     transform: EvaluatedFrameLayer["transform"];
+    sourceGeometry?: EvaluatedFrameLayer["sourceGeometry"];
     /** The act's speed; the footage runs at it while the preview plays. */
     playbackRate?: number;
+    /** Live preview only. Export audio is mixed separately. */
+    previewGain?: number;
     /** Told the footage's or image's own size once it has loaded. */
     onSourceSize?: (size: { width: number; height: number }) => void;
   }
@@ -60,7 +67,9 @@
     displayedBeatNumber,
     clipId,
     transform,
+    sourceGeometry,
     playbackRate = 1,
+    previewGain = 0,
     onSourceSize,
   }: Props = $props();
   const composition = tryGetMediaCompositionContext();
@@ -69,6 +78,14 @@
     null;
   let pausedFrameGeneration = 0;
   let primingVideo: HTMLVideoElement | null = null;
+  let videoWaiting = false;
+  let previousTargetTime: number | null = null;
+  let queuedJump = false;
+  let awaitingPlayingFrame = false;
+  let playingFrameRequest: { element: HTMLVideoElement; id: number } | null =
+    null;
+  let playingFrameGeneration = 0;
+  let lastCorrectionAt = -Infinity;
   let saveMenuHost: VisualSequenceSaveContextMenuHost | undefined = $state();
 
   /**
@@ -127,17 +144,126 @@
     });
   });
 
-  function syncVideoTime(): boolean {
+  const cropped = $derived(
+    sourceGeometry
+      ? {
+          left: `${(-sourceGeometry.crop.left / (sourceGeometry.crop.right - sourceGeometry.crop.left)) * 100}%`,
+          top: `${(-sourceGeometry.crop.top / (sourceGeometry.crop.bottom - sourceGeometry.crop.top)) * 100}%`,
+          width: `${100 / (sourceGeometry.crop.right - sourceGeometry.crop.left)}%`,
+          height: `${100 / (sourceGeometry.crop.bottom - sourceGeometry.crop.top)}%`,
+        }
+      : null
+  );
+
+  function syncVideoTime(discontinuity = false): boolean {
     if (!video || video.readyState < 1 || !Number.isFinite(sourceTimeSeconds))
       return false;
     const ceiling = Math.max(0, video.duration - 1 / 60);
     const target = Math.min(ceiling, Math.max(0, sourceTimeSeconds));
-    // Paused, the frame shown is the frame asked for; playing, the element
-    // runs on its own clock and is only pulled back when it drifts.
-    const tolerance = playing ? 0.12 : 1 / 30;
-    if (Math.abs(video.currentTime - target) <= tolerance) return false;
-    video.currentTime = target;
-    return true;
+    // Paused frames and timeline jumps seek exactly. During playback, small
+    // drift changes the rate briefly so footage keeps decoding smoothly.
+    const shouldSeek = shouldSeekPreviewVideo({
+      currentTime: video.currentTime,
+      targetTime: target,
+      previousTargetTime,
+      playing,
+      seeking: video.seeking,
+      waiting: videoWaiting,
+      awaitingFrame: awaitingPlayingFrame,
+      discontinuity,
+      sinceLastCorrectionMs: performance.now() - lastCorrectionAt,
+    });
+    if (shouldSeek) {
+      if (playing) {
+        cancelPlayingFrame();
+        awaitingPlayingFrame = true;
+        lastCorrectionAt = performance.now();
+      }
+      video.currentTime = target;
+    }
+    const recovering = video.seeking || videoWaiting || awaitingPlayingFrame;
+    const rate = playing
+      ? previewPlaybackRate(
+          playbackRate,
+          target - video.currentTime,
+          recovering
+        )
+      : playbackRate;
+    if (video.playbackRate !== rate) video.playbackRate = rate;
+    return shouldSeek;
+  }
+
+  function onSeeked(): void {
+    if (!video) return;
+    if (playing) {
+      if (queuedJump && syncVideoTime(true)) {
+        queuedJump = false;
+        return;
+      }
+      queuedJump = false;
+      waitForPlayingFrames(video);
+    } else if (!syncVideoTime()) {
+      showPausedFrame(video);
+    }
+  }
+
+  function cancelPlayingFrame(): void {
+    playingFrameGeneration += 1;
+    if (playingFrameRequest) {
+      playingFrameRequest.element.cancelVideoFrameCallback(
+        playingFrameRequest.id
+      );
+      playingFrameRequest = null;
+    }
+  }
+
+  function waitForPlayingFrames(element: HTMLVideoElement): void {
+    cancelPlayingFrame();
+    awaitingPlayingFrame = true;
+    const generation = playingFrameGeneration;
+    let remaining = 2;
+    let firstMediaTime: number | null = null;
+    const onFrame: VideoFrameRequestCallback = (_, metadata) => {
+      if (
+        generation !== playingFrameGeneration ||
+        video !== element ||
+        !playing
+      )
+        return;
+      playingFrameRequest = null;
+      firstMediaTime ??= metadata.mediaTime;
+      remaining -= 1;
+      if (remaining <= 0 && metadata.mediaTime - firstMediaTime >= 0.75) {
+        awaitingPlayingFrame = false;
+        videoWaiting = false;
+      } else {
+        playingFrameRequest = {
+          element,
+          id: element.requestVideoFrameCallback(onFrame),
+        };
+      }
+    };
+    playingFrameRequest = {
+      element,
+      id: element.requestVideoFrameCallback(onFrame),
+    };
+  }
+
+  function onSeeking(): void {
+    cancelPausedFrame();
+    if (playing) {
+      cancelPlayingFrame();
+      awaitingPlayingFrame = true;
+    }
+  }
+
+  function onWaiting(): void {
+    videoWaiting = true;
+    if (playing && video && !video.seeking) waitForPlayingFrames(video);
+  }
+
+  function onCanPlay(): void {
+    videoWaiting = false;
   }
 
   function cancelPausedFrame(): void {
@@ -153,6 +279,9 @@
 
   function showPausedFrame(element: HTMLVideoElement): void {
     cancelPausedFrame();
+    cancelPlayingFrame();
+    awaitingPlayingFrame = false;
+    queuedJump = false;
     const generation = pausedFrameGeneration;
     primingVideo = element;
     // A newly mounted, paused video can stay at HAVE_METADATA after a seek.
@@ -171,12 +300,15 @@
 
   function onMetadata(): void {
     if (!video || !Number.isFinite(video.duration)) return;
+    cancelPausedFrame();
+    videoWaiting = false;
+    previousTargetTime = null;
     sourceWidth = video.videoWidth;
     sourceHeight = video.videoHeight;
     onSourceSize?.({ width: sourceWidth, height: sourceHeight });
     composition?.setSourceDuration(binding.roleKey, video.duration);
     syncVideoTime();
-    if (!playing) showPausedFrame(video);
+    if (!playing && !video.seeking) showPausedFrame(video);
   }
 
   function onImageLoad(event: Event): void {
@@ -196,37 +328,74 @@
   $effect(() => {
     if (!video) return;
     video.defaultPlaybackRate = playbackRate;
-    if (video.playbackRate !== playbackRate) video.playbackRate = playbackRate;
+    video.preservesPitch = false;
+  });
+
+  $effect(() => {
+    if (!video) return;
+    const gain = Math.max(0, Math.min(1, previewGain));
+    video.volume = gain;
+    video.muted = !playing || gain === 0;
   });
 
   $effect(() => {
     sourceTimeSeconds;
     playing;
+    const jumped =
+      previousTargetTime !== null &&
+      Math.abs(sourceTimeSeconds - previousTargetTime) > 0.5;
+    if (playing && jumped) queuedJump = true;
     const seeked = syncVideoTime();
+    if (seeked || !playing) queuedJump = false;
+    previousTargetTime = sourceTimeSeconds;
     if (!video) {
       cancelPausedFrame();
       return;
     }
     if (playing) {
       cancelPausedFrame();
-      if (video.paused) void video.play().catch(() => undefined);
+      if (video.paused)
+        void video
+          .play()
+          .then(() => {
+            if (!playing && primingVideo !== video) video?.pause();
+          })
+          .catch(() => undefined);
     } else if (seeked) {
-      showPausedFrame(video);
+      cancelPlayingFrame();
+      awaitingPlayingFrame = false;
+      // The frame must arrive from the completed seek, not the old position.
+      if (!video.seeking) showPausedFrame(video);
     } else if (primingVideo !== video && !video.paused) {
+      cancelPlayingFrame();
+      awaitingPlayingFrame = false;
       video.pause();
+    } else if (!playing) {
+      cancelPlayingFrame();
+      awaitingPlayingFrame = false;
     }
   });
 
-  onDestroy(cancelPausedFrame);
+  onDestroy(() => {
+    cancelPausedFrame();
+    cancelPlayingFrame();
+  });
 </script>
 
 <!-- svelte-ignore a11y_no_static_element_interactions -->
 <div
   class="media-layer"
+  class:source-geometry={sourceGeometry !== undefined}
   bind:clientWidth={boxWidth}
   bind:clientHeight={boxHeight}
   style:opacity
-  style:transform={`translate(${pan.x}px, ${pan.y}px) rotate(${transform.rotationDegrees}deg) scale(${transform.scale}) scaleX(${transform.flipHorizontal ? -1 : 1})`}
+  style:left={sourceGeometry ? `${sourceGeometry.x * 100}%` : undefined}
+  style:top={sourceGeometry ? `${sourceGeometry.y * 100}%` : undefined}
+  style:width={sourceGeometry ? `${sourceGeometry.width * 100}%` : undefined}
+  style:height={sourceGeometry ? `${sourceGeometry.height * 100}%` : undefined}
+  style:transform={sourceGeometry
+    ? `rotate(${sourceGeometry.rotation}deg) scaleX(${transform.flipHorizontal ? -1 : 1})`
+    : `translate(${pan.x}px, ${pan.y}px) rotate(${transform.rotationDegrees}deg) scale(${transform.scale}) scaleX(${transform.flipHorizontal ? -1 : 1})`}
   data-clip-id={clipId}
   data-source-role={binding.roleKey}
   data-render-mode={binding.renderMode ?? "external-media"}
@@ -281,25 +450,30 @@
       muted
       playsinline
       preload="auto"
-      class:fitted={fitted !== null}
-      style:object-fit={fitted ? "fill" : fit}
-      style:left={fitted?.left}
-      style:top={fitted?.top}
-      style:width={fitted?.width}
-      style:height={fitted?.height}
+      class:fitted={fitted !== null || cropped !== null}
+      style:object-fit={fitted || cropped ? "fill" : fit}
+      style:left={cropped?.left ?? fitted?.left}
+      style:top={cropped?.top ?? fitted?.top}
+      style:width={cropped?.width ?? fitted?.width}
+      style:height={cropped?.height ?? fitted?.height}
       onloadedmetadata={onMetadata}
+      onseeking={onSeeking}
+      onseeked={onSeeked}
+      onwaiting={onWaiting}
+      oncanplay={onCanPlay}
+      onplaying={onCanPlay}
     ></video>
   {:else}
     <img
       src={binding.previewUrl ?? undefined}
       crossorigin="anonymous"
       alt=""
-      class:fitted={fitted !== null}
-      style:object-fit={fitted ? "fill" : fit}
-      style:left={fitted?.left}
-      style:top={fitted?.top}
-      style:width={fitted?.width}
-      style:height={fitted?.height}
+      class:fitted={fitted !== null || cropped !== null}
+      style:object-fit={fitted || cropped ? "fill" : fit}
+      style:left={cropped?.left ?? fitted?.left}
+      style:top={cropped?.top ?? fitted?.top}
+      style:width={cropped?.width ?? fitted?.width}
+      style:height={cropped?.height ?? fitted?.height}
       onload={onImageLoad}
     />
   {/if}
@@ -318,6 +492,12 @@
     position: absolute;
     inset: 0;
     transform-origin: center;
+  }
+
+  .media-layer.source-geometry {
+    right: auto;
+    bottom: auto;
+    overflow: hidden;
   }
 
   img,

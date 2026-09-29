@@ -2,6 +2,8 @@ import { beforeEach, describe, expect, it } from "vitest";
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
 import { updateItem } from "$lib/shared/media-composition/domain/post-project-edits";
 import { createPostEditorState } from "$lib/shared/media-composition/state/post-editor-state.svelte";
+import { addTakeTap } from "$lib/shared/media-composition/domain/take-timing";
+import { loadTakeTiming } from "$lib/shared/media-composition/services/take-timing-store";
 
 const LABELS = { runThrough: "Run through", slowMo: "Slow mo", card: "Card" };
 
@@ -23,6 +25,44 @@ function createEditor() {
 
 describe("post editor history", () => {
   beforeEach(() => localStorage.clear());
+
+  it("undoes, redoes, and persists take timing without reviving stale redo", () => {
+    const editor = createEditor();
+    editor.addCatalogVideo({
+      videoId: "timed-take",
+      label: "Take",
+      url: "https://example.test/take.mp4",
+      durationSeconds: 40,
+    });
+    const takeId = editor.takes[0]!.id;
+    const takeKey = editor.timing(takeId)!.takeKey;
+    const taps = () => editor.timing(takeId)!.sections[0]!.taps;
+    const savedTaps = () =>
+      loadTakeTiming(sequence().id, takeKey)!.sections[0]!.taps;
+
+    editor.editTiming(takeId, (current) =>
+      addTakeTap(current, 2, editor.moveBeats)
+    );
+    editor.editTiming(takeId, (current) =>
+      addTakeTap(current, 3, editor.moveBeats)
+    );
+    expect(taps()).toEqual([2, 3]);
+    editor.undoTiming(takeId);
+    expect(taps()).toEqual([2]);
+    expect(savedTaps()).toEqual([2]);
+    expect(editor.canRedoTiming(takeId)).toBe(true);
+    editor.redoTiming(takeId);
+    expect(taps()).toEqual([2, 3]);
+    expect(savedTaps()).toEqual([2, 3]);
+
+    editor.undoTiming(takeId);
+    editor.editTiming(takeId, (current) =>
+      addTakeTap(current, 4, editor.moveBeats)
+    );
+    expect(taps()).toEqual([2, 4]);
+    expect(savedTaps()).toEqual([2, 4]);
+    expect(editor.canRedoTiming(takeId)).toBe(false);
+  });
 
   it("undoes and redoes the Tutorial's timing split along with the post", () => {
     const editor = createEditor();
@@ -80,7 +120,9 @@ describe("post editor sessions", () => {
       return item?.kind === "video" ? item.zoom : Number.NaN;
     };
     const setZoom = (value: number) =>
-      editor.edit((project, context) => updateItem(project, clip.id, { zoom: value }, context));
+      editor.edit((project, context) =>
+        updateItem(project, clip.id, { zoom: value }, context)
+      );
     return { editor, clip, zoom, setZoom };
   }
 
@@ -111,7 +153,9 @@ describe("post editor sessions", () => {
     editor.undo();
     expect(zoom()).toBe(1);
     editor.undo();
-    expect(editor.project.tracks.flatMap((track) => track.items)).toHaveLength(0);
+    expect(editor.project.tracks.flatMap((track) => track.items)).toHaveLength(
+      0
+    );
   });
 
   it("puts the project and both undo lists back when cancelled", () => {
@@ -141,7 +185,9 @@ describe("post editor sessions", () => {
 
     expect(editor.project).toBe(before);
     editor.undo();
-    expect(editor.project.tracks.flatMap((track) => track.items)).toHaveLength(0);
+    expect(editor.project.tracks.flatMap((track) => track.items)).toHaveLength(
+      0
+    );
     expect(zoom()).toBeNaN();
   });
 

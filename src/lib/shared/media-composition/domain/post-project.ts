@@ -1,6 +1,10 @@
 import { z } from "zod";
-import { PostTakeSchema } from "$lib/shared/media-composition/domain/post-plan";
+import {
+  PostTakeRefSchema,
+  PostTakeSchema,
+} from "$lib/shared/media-composition/domain/post-plan";
 import { BREAKDOWN_GEOMETRY } from "$lib/shared/media-composition/domain/post-studio-presets";
+import { TakeTimingSchema } from "$lib/shared/media-composition/domain/take-timing";
 
 /**
  * A post as Austen edits it on the timeline: tracks of items, InShot style.
@@ -106,6 +110,18 @@ const easingYSchema = z
 export const PostEasingSchema = z.union([
   z.literal("hold"),
   z.tuple([easingXSchema, easingYSchema, easingXSchema, easingYSchema]),
+  z
+    .object({
+      kind: z.literal("sampled-bezier"),
+      curve: z.tuple([
+        easingXSchema,
+        easingYSchema,
+        easingXSchema,
+        easingYSchema,
+      ]),
+      samples: z.literal(300),
+    })
+    .strict(),
 ]);
 
 export type PostEasing = z.infer<typeof PostEasingSchema>;
@@ -137,13 +153,60 @@ function postKeyframeSchema<V extends z.ZodTypeAny>(value: V) {
 export type PostKeyframe<V> = { t: number; value: V; easing: PostEasing };
 
 /** Channels an item's `keyframes` may animate; `framing` is video only. */
-export type PostKeyframeChannel = "framing" | "box" | "opacity";
+export type PostKeyframeChannel =
+  | "framing"
+  | "sourceGeometry"
+  | "box"
+  | "opacity";
+
+/** The drawn media rectangle may pass outside the canvas. Crop coordinates are source UVs. */
+export const PostSourceGeometrySchema = z
+  .object({
+    x: z.number().finite(),
+    y: z.number().finite(),
+    width: z.number().finite().positive(),
+    height: z.number().finite().positive(),
+    rotation: z.number().finite(),
+    crop: z
+      .object({
+        left: z.number().finite().min(0).max(1),
+        top: z.number().finite().min(0).max(1),
+        right: z.number().finite().min(0).max(1),
+        bottom: z.number().finite().min(0).max(1),
+      })
+      .strict()
+      .refine((crop) => crop.right > crop.left && crop.bottom > crop.top),
+  })
+  .strict();
+export type PostSourceGeometry = z.infer<typeof PostSourceGeometrySchema>;
+
+export const PostAutoAdjustSchema = z
+  .object({
+    enabled: z.boolean(),
+    strength: z.number().finite().min(0).max(1),
+    startSeconds: SecondsSchema.optional(),
+    endSeconds: SecondsSchema.optional(),
+  })
+  .strict();
+export type PostAutoAdjust = z.infer<typeof PostAutoAdjustSchema>;
+
+export const PostTransitionOutSchema = z
+  .object({
+    duration: SecondsSchema,
+    type: z.literal("crossfade"),
+    sourceTypeCode: z.string().optional(),
+  })
+  .strict();
+export type PostTransitionOut = z.infer<typeof PostTransitionOutSchema>;
 
 const PostKeyframeBoxSchema = postKeyframeSchema(PostBoxSchema);
 const PostKeyframeOpacitySchema = postKeyframeSchema(
   z.number().finite().min(0).max(1)
 );
 const PostKeyframeFramingSchema = postKeyframeSchema(PostFramingSchema);
+const PostKeyframeSourceGeometrySchema = postKeyframeSchema(
+  PostSourceGeometrySchema
+);
 
 /** Every kind: where it sits, and how it fades in and out over its fades. */
 const PostItemKeyframesSchema = z
@@ -157,6 +220,7 @@ const PostItemKeyframesSchema = z
 const PostVideoItemKeyframesSchema = z
   .object({
     framing: z.array(PostKeyframeFramingSchema).optional(),
+    sourceGeometry: z.array(PostKeyframeSourceGeometrySchema).optional(),
     box: z.array(PostKeyframeBoxSchema).optional(),
     opacity: z.array(PostKeyframeOpacitySchema).optional(),
   })
@@ -164,6 +228,7 @@ const PostVideoItemKeyframesSchema = z
 
 export interface PostItemKeyframes {
   framing?: PostKeyframe<PostFraming>[];
+  sourceGeometry?: PostKeyframe<PostSourceGeometry>[];
   box?: PostKeyframe<PostBox>[];
   opacity?: PostKeyframe<number>[];
 }
@@ -317,6 +382,9 @@ export const PostVideoItemSchema = z
     kind: z.literal("video"),
     /** Overrides the base: video also keyframes its framing. */
     keyframes: PostVideoItemKeyframesSchema.optional(),
+    sourceGeometry: PostSourceGeometrySchema.optional(),
+    autoAdjust: PostAutoAdjustSchema.optional(),
+    transitionOut: PostTransitionOutSchema.optional(),
     takeId: IdSchema,
     /** Take media seconds. */
     sourceIn: SecondsSchema,
@@ -358,6 +426,41 @@ export const PostVideoItemSchema = z
   });
 
 export type PostVideoItem = z.infer<typeof PostVideoItemSchema>;
+
+export const PostImageItemSchema = z
+  .object({
+    ...itemBase,
+    kind: z.literal("image"),
+    imageId: IdSchema,
+    sourceGeometry: PostSourceGeometrySchema.optional(),
+    transitionOut: PostTransitionOutSchema.optional(),
+    keyframes: z
+      .object({
+        sourceGeometry: z.array(PostKeyframeSourceGeometrySchema).optional(),
+        box: z.array(PostKeyframeBoxSchema).optional(),
+        opacity: z.array(PostKeyframeOpacitySchema).optional(),
+      })
+      .strict()
+      .optional(),
+  })
+  .strict();
+export type PostImageItem = z.infer<typeof PostImageItemSchema>;
+
+export const PostImageSchema = z
+  .object({
+    id: IdSchema,
+    label: z.string().trim().min(1).max(120),
+    ref: PostTakeRefSchema,
+  })
+  .strict();
+export type PostImage = z.infer<typeof PostImageSchema>;
+export const PostFontSchema = z
+  .object({
+    family: z.string().min(1),
+    ref: PostTakeRefSchema,
+  })
+  .strict();
+export type PostFont = z.infer<typeof PostFontSchema>;
 
 export const PostCardItemSchema = z
   .object({ ...itemBase, kind: z.literal("card") })
@@ -401,12 +504,39 @@ export type PostCarouselItem = z.infer<typeof PostCarouselItemSchema>;
 export const PostTextSizeSchema = z.enum(["s", "m", "l"]);
 export type PostTextSize = z.infer<typeof PostTextSizeSchema>;
 
+export const PostTextStyleSchema = z
+  .object({
+    fontFamily: z.string().min(1),
+    fontSizeNative: z.number().finite().positive(),
+    fontScale: z.number().finite().positive().optional(),
+    sourceCanvasWidth: z.number().finite().positive().optional(),
+    letterSpacing: z.number().finite(),
+    lineSpacing: z.number().finite().positive(),
+    alignment: z.enum(["left", "center", "right"]),
+    alpha: z.number().finite().min(0).max(1),
+  })
+  .strict();
+export type PostTextStyle = z.infer<typeof PostTextStyleSchema>;
+
+export const PostTextAnimationSchema = z
+  .object({
+    kind: z.literal("letter-slide"),
+    inDurationSeconds: SecondsSchema,
+    outDurationSeconds: SecondsSchema,
+    entranceProgress: z.number().finite(),
+    exitProgress: z.number().finite(),
+  })
+  .strict();
+export type PostTextAnimation = z.infer<typeof PostTextAnimationSchema>;
+
 export const PostTextItemSchema = z
   .object({
     ...itemBase,
     kind: z.literal("text"),
     text: z.string().max(POST_MAX_TEXT_LENGTH),
     size: PostTextSizeSchema,
+    style: PostTextStyleSchema.optional(),
+    animation: PostTextAnimationSchema.optional(),
   })
   .strict();
 
@@ -414,6 +544,7 @@ export type PostTextItem = z.infer<typeof PostTextItemSchema>;
 
 export const PostItemSchema = z.discriminatedUnion("kind", [
   PostVideoItemSchema,
+  PostImageItemSchema,
   PostCardItemSchema,
   PostAnimationItemSchema,
   PostMovesItemSchema,
@@ -425,7 +556,11 @@ export type PostItem = z.infer<typeof PostItemSchema>;
 export type PostItemKind = PostItem["kind"];
 
 /** Kinds the main track holds; anything else lives on an overlay track. */
-export const MAIN_TRACK_KINDS: readonly PostItemKind[] = ["video", "card"];
+export const MAIN_TRACK_KINDS: readonly PostItemKind[] = [
+  "video",
+  "image",
+  "card",
+];
 
 /** Kinds drawn from the sequence, which read the move of the footage under them. */
 export const SEQUENCE_ITEM_KINDS: readonly PostItemKind[] = [
@@ -452,6 +587,18 @@ export const PostProjectSchema = z
     schemaVersion: z.literal(POST_PROJECT_SCHEMA_VERSION),
     sequenceId: IdSchema,
     takes: z.array(PostTakeSchema),
+    /** Maps travel with a post, keyed by the take id they were edited against. */
+    timings: z.record(z.string(), TakeTimingSchema).optional(),
+    images: z.array(PostImageSchema).optional(),
+    fonts: z.array(PostFontSchema).optional(),
+    importSource: z
+      .object({
+        format: z.literal("inshot-recovery"),
+        rawDraftText: z.string(),
+        unresolved: z.array(z.string()),
+      })
+      .strict()
+      .optional(),
     tracks: z.array(PostTrackSchema).min(1),
     /**
      * - takes: each clip carries its take's sound at its own volume.
@@ -462,6 +609,8 @@ export const PostProjectSchema = z
     canvas: z.enum(POST_CANVAS_RATIOS).optional(),
     /** What fills the frame where no item covers it; dark when absent. */
     background: z.enum(POST_BACKGROUNDS).optional(),
+    /** Reflect the post's layout and footage for a mirrored teaching view. */
+    mirrored: z.boolean().optional(),
     updatedAt: z.number().finite().int().nonnegative(),
   })
   .strict()
@@ -574,6 +723,7 @@ export function textBox(placement: PostTextPlacement): PostBox {
 export function defaultBoxFor(kind: PostItemKind): PostBox {
   switch (kind) {
     case "video":
+    case "image":
     case "card":
       return { ...POST_BOX.full };
     case "animation":

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { flushSync } from "svelte";
+  import { onDestroy, onMount, untrack } from "svelte";
   import type { LandingRef } from "./post-timing-session.svelte";
   import type {
     ResolvedTakeTiming,
@@ -7,17 +7,14 @@
   } from "$lib/shared/media-composition/domain/take-timing";
   import { MIN_MOVE_SECONDS } from "$lib/shared/media-composition/domain/take-timing";
   import { landingName } from "$lib/shared/media-composition/domain/timing-summary";
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import TimeRuler from "$lib/shared/timeline/TimeRuler.svelte";
+  import {
+    revealPlayheadScrollLeft,
+    rulerTickInterval,
+  } from "../editor/timeline/post-timeline-geometry";
   import { formatTakeClock } from "./post-builder-format";
-  import { shownLanding, shownLandings } from "./timing-lane-landings";
+  import { shownLandings } from "./timing-lane-landings";
 
-  /**
-   * The take's timing drawn against its own clock: a close-up window that
-   * follows the playhead, with every landing numbered, the taps under it and
-   * pass starts standing taller; and a strip of the whole take to jump
-   * around in. A landing can be dragged, or focused and nudged a frame at a
-   * time with the arrow keys.
-   */
   interface Props {
     timing: TakeTiming;
     resolved: ResolvedTakeTiming | null;
@@ -26,12 +23,13 @@
     movesPerPass: number;
     windowSeconds: number;
     selected: LandingRef | null;
+    editable?: boolean;
+    onGestureChange?: (cancel: (() => void) | null) => void;
     onseek: (seconds: number) => void;
-    onselect: (landing: LandingRef) => void;
+    onselect: (landing: LandingRef | null) => void;
     onplace: (landing: LandingRef, seconds: number) => void;
     dragRange: (landing: LandingRef) => { min: number; max: number } | null;
   }
-
   let {
     timing,
     resolved,
@@ -40,360 +38,319 @@
     movesPerPass,
     windowSeconds,
     selected,
+    editable = false,
+    onGestureChange,
     onseek,
     onselect,
     onplace,
     dragRange,
   }: Props = $props();
-
-  let detail = $state<HTMLDivElement | null>(null);
-  let overview = $state<HTMLDivElement | null>(null);
-  let drag = $state<{
-    landing: LandingRef;
-    seconds: number;
+  let viewport = $state<HTMLDivElement | null>(null);
+  let track = $state<HTMLDivElement | null>(null);
+  let viewportWidth = $state(0);
+  type Gesture = {
+    pointerId: number;
+    left: number;
+    scale: number;
     startX: number;
+    seconds: number;
     moved: boolean;
+    landing: LandingRef | null;
     range: { min: number; max: number };
-  } | null>(null);
-
+  };
+  let gesture = $state<Gesture | null>(null);
   const span = $derived(
     Math.max(0.5, Math.min(windowSeconds, durationSeconds || windowSeconds))
   );
-  const windowStart = $derived(
-    Math.min(
-      Math.max(0, durationSeconds - span),
-      Math.max(0, mediaSeconds - span / 2)
-    )
-  );
-  const windowEnd = $derived(windowStart + span);
-
-  function at(seconds: number): string {
-    return `${((seconds - windowStart) / span) * 100}%`;
-  }
-  function overall(seconds: number): string {
-    return durationSeconds > 0 ? `${(seconds / durationSeconds) * 100}%` : "0%";
-  }
-  function inWindow(seconds: number): boolean {
-    return seconds >= windowStart - 0.05 && seconds <= windowEnd + 0.05;
-  }
-
-  // Each landing shows once, in the part it falls in (see `shownLandings`).
-  const landings = $derived.by(() => {
-    const ends = new Map(
-      (resolved?.sections ?? []).map((section) => [
-        section.id,
-        section.endPosition,
-      ])
-    );
-    return shownLandings(timing, resolved).map((landing) => ({
+  const scale = $derived(Math.max(1, viewportWidth - 32) / span);
+  const width = $derived(Math.max(viewportWidth, durationSeconds * scale + 32));
+  const landings = $derived(
+    shownLandings(timing, resolved).map((landing) => ({
       ...landing,
       passStart:
         landing.position > 0 && (landing.position - 1) % movesPerPass === 0,
-      isEnd: ends.get(landing.sectionId) === landing.position,
       label:
         landing.position <= 0
           ? "S"
           : String(((landing.position - 1) % movesPerPass) + 1),
-    }));
-  });
-
-  // A part with no taps is fitted through its beat 1 alone, and that mark
-  // is not a tap.
-  const taps = $derived(
-    (resolved?.sections ?? []).flatMap((section) =>
-      (timing.sections.find((entry) => entry.id === section.id)?.taps.length ??
-        0) === 0
-        ? []
-        : (section.fit?.labels ?? []).map((label) => ({
-            seconds: label.seconds,
-            matched: label.position !== null,
-          }))
-    )
+    }))
   );
 
-  function isSelected(sectionId: string, position: number): boolean {
-    return selected?.sectionId === sectionId && selected.position === position;
-  }
+  // Keep the scale fixed under the pointer. Seeking must never slide the
+  // timeline away from the hand that is scrubbing it.
+  $effect(() => {
+    const seconds = mediaSeconds;
+    const pixelsPerSecond = scale;
+    if (!viewport || gesture) return;
+    untrack(() => {
+      if (!viewport) return;
+      const next = revealPlayheadScrollLeft({
+        playheadSeconds: seconds,
+        pixelsPerSecond,
+        scrollLeftPx: viewport.scrollLeft,
+        viewportWidthPx: Math.max(1, viewportWidth - 32),
+      });
+      if (next !== null) viewport.scrollLeft = next;
+    });
+  });
+  $effect(() => {
+    if (!editable && gesture?.landing) cancelGesture();
+  });
 
-  function secondsFromX(element: HTMLElement, clientX: number): number {
-    const rect = element.getBoundingClientRect();
-    const share = rect.width > 0 ? (clientX - rect.left) / rect.width : 0;
-    return windowStart + Math.min(1, Math.max(0, share)) * span;
+  function isSelected(ref: LandingRef): boolean {
+    return (
+      selected?.sectionId === ref.sectionId &&
+      selected.position === ref.position
+    );
   }
-
-  function seekFromDetail(event: PointerEvent): void {
-    if (!detail || event.target !== event.currentTarget) return;
-    onseek(secondsFromX(detail, event.clientX));
+  function begin(
+    event: PointerEvent,
+    landing: LandingRef | null = null,
+    seconds = mediaSeconds
+  ): void {
+    if (event.button !== 0 || !event.isPrimary || !track || gesture) return;
+    event.preventDefault();
+    event.stopPropagation();
+    const range = landing
+      ? dragRange(landing)
+      : { min: 0, max: durationSeconds };
+    if (!range) return;
+    track.setPointerCapture(event.pointerId);
+    track.focus({ preventScroll: true });
+    gesture = {
+      pointerId: event.pointerId,
+      left: track.getBoundingClientRect().left + 16,
+      scale,
+      startX: event.clientX,
+      seconds,
+      moved: false,
+      landing,
+      range,
+    };
+    if (landing) onGestureChange?.(cancelGesture);
+    onselect(landing);
+    if (landing) onseek(seconds);
+    else move(event);
   }
-
-  function seekFromOverview(event: PointerEvent): void {
-    if (!overview) return;
-    if (event.type === "pointerdown") {
-      overview.setPointerCapture(event.pointerId);
-    } else if (!overview.hasPointerCapture(event.pointerId)) {
+  function move(event: PointerEvent): void {
+    if (!gesture || gesture.pointerId !== event.pointerId) return;
+    event.preventDefault();
+    const moved = gesture.moved || Math.abs(event.clientX - gesture.startX) > 4;
+    const seconds = Math.min(
+      gesture.range.max,
+      Math.max(
+        gesture.range.min,
+        (event.clientX - gesture.left) / gesture.scale
+      )
+    );
+    gesture = {
+      ...gesture,
+      moved,
+      seconds: !gesture.landing || moved ? seconds : gesture.seconds,
+    };
+    if (!gesture.landing) onseek(gesture.seconds);
+  }
+  function cancelGesture(): void {
+    const pointerId = gesture?.pointerId;
+    gesture = null;
+    onGestureChange?.(null);
+    if (pointerId !== undefined && track?.hasPointerCapture(pointerId))
+      track.releasePointerCapture(pointerId);
+  }
+  function finish(event: PointerEvent): void {
+    if (!gesture || gesture.pointerId !== event.pointerId) return;
+    move(event);
+    const finished = gesture;
+    cancelGesture();
+    // Commit once on release so one undo restores the whole adjustment.
+    if (finished.landing && finished.moved)
+      onplace(finished.landing, finished.seconds);
+  }
+  function keydown(event: KeyboardEvent): void {
+    if (
+      event.defaultPrevented ||
+      event.ctrlKey ||
+      event.metaKey ||
+      event.altKey
+    )
+      return;
+    if (event.key === "Escape") {
+      cancelGesture();
+      onselect(null);
       return;
     }
-    const rect = overview.getBoundingClientRect();
-    const share = rect.width > 0 ? (event.clientX - rect.left) / rect.width : 0;
-    onseek(Math.min(1, Math.max(0, share)) * durationSeconds);
-  }
-
-  function startDrag(
-    event: PointerEvent,
-    landing: LandingRef,
-    seconds: number
-  ) {
-    const range = dragRange(landing);
-    if (!range || event.button !== 0) return;
-    (event.currentTarget as HTMLElement).setPointerCapture(event.pointerId);
-    drag = { landing, seconds, startX: event.clientX, moved: false, range };
-  }
-
-  function moveDrag(event: PointerEvent): void {
-    if (!drag || !detail) return;
-    const moved = drag.moved || Math.abs(event.clientX - drag.startX) > 3;
-    const seconds = Math.min(
-      drag.range.max,
-      Math.max(drag.range.min, secondsFromX(detail, event.clientX))
-    );
-    drag = { ...drag, moved, seconds: moved ? seconds : drag.seconds };
-  }
-
-  function endDrag(landing: LandingRef, seconds: number): void {
-    const finished = drag;
-    drag = null;
-    if (finished?.moved) {
-      onplace(finished.landing, finished.seconds);
-    } else {
-      onselect(landing);
-      onseek(seconds);
-    }
-  }
-
-  function nudge(event: KeyboardEvent, landing: LandingRef, seconds: number) {
     if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
     event.preventDefault();
     event.stopPropagation();
-    const step = event.shiftKey ? 0.1 : MIN_MOVE_SECONDS;
-    onselect(landing);
-    onplace(landing, seconds + (event.key === "ArrowLeft" ? -step : step));
-    // Nudged across a cut, the landing is drawn by the part on the other
-    // side, as a new button; the selection and the keyboard go with it.
-    const shown = shownLanding(
-      timing,
-      resolved,
-      landing.sectionId,
-      landing.position
+    onselect(null);
+    onseek(
+      Math.min(
+        durationSeconds,
+        Math.max(
+          0,
+          mediaSeconds +
+            (event.key === "ArrowLeft" ? -1 : 1) *
+              (event.shiftKey ? 1 : MIN_MOVE_SECONDS)
+        )
+      )
     );
-    if (shown && shown.sectionId !== landing.sectionId) onselect(shown);
-    flushSync();
-    const focused = document.activeElement;
-    if (!detail || (focused && detail.contains(focused))) return;
-    detail
-      .querySelector<HTMLButtonElement>('button.landing[aria-pressed="true"]')
-      ?.focus();
   }
+  function cancelOnEscape(event: KeyboardEvent): void {
+    if (event.key === "Escape") cancelGesture();
+  }
+  onMount(() => {
+    window.addEventListener("keydown", cancelOnEscape, true);
+    return () => window.removeEventListener("keydown", cancelOnEscape, true);
+  });
+  onDestroy(cancelGesture);
 </script>
 
-<div class="timing-lane">
+<svelte:window onblur={cancelGesture} />
+
+<div
+  class="timing-lane"
+  class:editing={editable}
+  bind:this={viewport}
+  bind:clientWidth={viewportWidth}
+>
   <div
-    class="detail"
-    bind:this={detail}
-    onpointerdown={seekFromDetail}
-    role="group"
-    aria-label={t("share_studio_deep_landings_near_playhead")}
+    class="track"
+    bind:this={track}
+    style:width="{width}px"
+    role="application"
+    aria-roledescription="timeline"
+    aria-label="Landing timeline. Drag to scrub. Left and right arrows step one frame."
+    tabindex="0"
+    onpointerdown={(event) => begin(event)}
+    onpointermove={move}
+    onpointerup={finish}
+    onpointercancel={cancelGesture}
+    onlostpointercapture={cancelGesture}
+    onkeydown={keydown}
+    ondragstart={(event) => event.preventDefault()}
   >
+    <div class="ruler" aria-hidden="true">
+      <TimeRuler
+        duration={durationSeconds}
+        pixelsPerSecond={scale}
+        tickInterval={rulerTickInterval(scale)}
+      />
+    </div>
     {#each timing.sections as section, index (section.id)}
-      {#if index > 0 && inWindow(section.startSeconds)}
-        <span class="section-edge" style:left={at(section.startSeconds)}>
-          <span
-            >{t("share_studio_deep_part_number", { number: index + 1 })}</span
-          >
-        </span>
-      {/if}
-    {/each}
-
-    {#each taps as tap, index (index)}
-      {#if inWindow(tap.seconds)}
-        <span
-          class="tap"
-          class:unmatched={!tap.matched}
-          style:left={at(tap.seconds)}
+      {#if index > 0}<span
+          class="section-edge"
+          style:left="{16 + section.startSeconds * scale}px"
           aria-hidden="true"
-        ></span>
-      {/if}
+        ></span>{/if}
     {/each}
-
     {#each landings as landing (`${landing.sectionId}:${landing.position}`)}
-      {@const ref = {
-        sectionId: landing.sectionId,
-        position: landing.position,
-      }}
       {@const dragging =
-        drag?.landing.sectionId === landing.sectionId &&
-        drag.landing.position === landing.position}
-      {@const seconds = dragging && drag ? drag.seconds : landing.seconds}
-      {#if inWindow(seconds)}
+        gesture?.landing?.sectionId === landing.sectionId &&
+        gesture?.landing?.position === landing.position}
+      {@const seconds = dragging && gesture ? gesture.seconds : landing.seconds}
+      {#if editable}
         <button
           type="button"
           class="landing"
           class:pass-start={landing.passStart}
           class:pinned={landing.pinned}
-          class:end={landing.isEnd}
-          class:selected={isSelected(landing.sectionId, landing.position)}
+          class:selected={isSelected(landing)}
           class:dragging
-          style:left={at(seconds)}
-          aria-label="{landingName(landing.position, movesPerPass)}{t(
-            'share_studio_deep_at_time_suffix',
-            { time: formatTakeClock(seconds) }
-          )}{landing.pinned
-            ? t('share_studio_deep_placed_by_hand_suffix')
-            : ''}{landing.isEnd
-            ? t('share_studio_deep_performance_ends_suffix')
-            : ''}"
-          aria-pressed={isSelected(landing.sectionId, landing.position)}
-          onpointerdown={(event) => startDrag(event, ref, landing.seconds)}
-          onpointermove={moveDrag}
-          onpointerup={() => endDrag(ref, landing.seconds)}
-          onpointercancel={() => (drag = null)}
-          onkeydown={(event) => nudge(event, ref, landing.seconds)}
+          style:left="{16 + seconds * scale}px"
+          aria-label="{landingName(
+            landing.position,
+            movesPerPass
+          )} at {formatTakeClock(seconds)}"
+          aria-pressed={isSelected(landing)}
+          onpointerdown={(event) =>
+            begin(
+              event,
+              { sectionId: landing.sectionId, position: landing.position },
+              landing.seconds
+            )}
           onclick={(event) => {
-            // Pointer clicks are handled on release; this is the keyboard path.
             if (event.detail === 0) {
-              onselect(ref);
+              onselect(landing);
               onseek(landing.seconds);
             }
           }}
         >
-          <span class="stem" aria-hidden="true"></span>
-          <span class="number">{landing.label}</span>
+          <span class="number">{landing.label}</span><span
+            class="stem"
+            aria-hidden="true"
+          ></span>
         </button>
+      {:else}
+        <span
+          class="landing locked"
+          class:pass-start={landing.passStart}
+          class:pinned={landing.pinned}
+          style:left="{16 + landing.seconds * scale}px"
+          aria-hidden="true"
+        >
+          <span class="number">{landing.label}</span><span class="stem"></span>
+        </span>
       {/if}
     {/each}
-
-    <span class="playhead" style:left={at(mediaSeconds)} aria-hidden="true"
-    ></span>
-  </div>
-
-  <div
-    class="overview"
-    bind:this={overview}
-    onpointerdown={seekFromOverview}
-    onpointermove={seekFromOverview}
-    role="slider"
-    tabindex="0"
-    aria-label={t("share_studio_deep_whole_take")}
-    aria-valuemin={0}
-    aria-valuemax={Math.round(durationSeconds * 100) / 100}
-    aria-valuenow={Math.round(mediaSeconds * 100) / 100}
-    aria-valuetext={formatTakeClock(mediaSeconds)}
-    onkeydown={(event) => {
-      if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
-        event.preventDefault();
-        const step = event.shiftKey ? 5 : 1;
-        onseek(mediaSeconds + (event.key === "ArrowLeft" ? -step : step));
-      }
-    }}
-  >
-    {#each timing.sections as section, index (section.id)}
-      <span
-        class="band"
-        class:alt={index % 2 === 1}
-        style:left={overall(section.startSeconds)}
-        style:width={overall(section.endSeconds - section.startSeconds)}
-        aria-hidden="true"
-      ></span>
-    {/each}
-    {#each landings as landing (`o:${landing.sectionId}:${landing.position}`)}
-      <span
-        class="mini"
-        class:pass-start={landing.passStart}
-        style:left={overall(landing.seconds)}
-        aria-hidden="true"
-      ></span>
-    {/each}
     <span
-      class="window"
-      style:left={overall(windowStart)}
-      style:width={overall(span)}
+      class="playhead"
+      style:left="{16 + mediaSeconds * scale}px"
       aria-hidden="true"
-    ></span>
-    <span class="playhead" style:left={overall(mediaSeconds)} aria-hidden="true"
     ></span>
   </div>
 </div>
 
 <style>
   .timing-lane {
-    display: grid;
-    gap: 0.5rem;
     min-width: 0;
-    user-select: none;
-  }
-  .detail {
-    position: relative;
-    height: 4.5rem;
-    overflow: hidden;
+    overflow-x: auto;
+    overflow-y: hidden;
     border: 1px solid var(--theme-stroke, #484755);
     border-radius: 0.5rem;
     background: var(--theme-card-bg);
-    touch-action: none;
-    cursor: pointer;
+    user-select: none;
+    -webkit-user-select: none;
+    scrollbar-width: thin;
   }
-  .overview {
+  .timing-lane.editing {
+    border-color: var(--theme-primary, #d4813a);
+  }
+  .track {
     position: relative;
-    height: 1.75rem;
-    border: 1px solid var(--theme-stroke, #484755);
-    border-radius: 0.375rem;
-    background: var(--theme-card-bg);
+    height: 6rem;
     touch-action: none;
-    cursor: pointer;
+    cursor: crosshair;
+    outline-offset: -3px;
   }
-  .overview:focus-visible,
+  .track:focus-visible,
   .landing:focus-visible {
     outline: 2px solid var(--theme-primary, currentColor);
-    outline-offset: 2px;
+  }
+  .ruler {
+    position: absolute;
+    top: 0;
+    right: 16px;
+    left: 16px;
+    height: 1.75rem;
+    pointer-events: none;
   }
   .section-edge {
     position: absolute;
-    top: 0;
+    top: 2rem;
     bottom: 0;
-    width: 0;
-    border-left: 2px dashed var(--theme-text-secondary, #aaa);
+    border-left: 1px dashed var(--theme-text-secondary, #aaa);
     pointer-events: none;
-  }
-  .section-edge span {
-    position: absolute;
-    top: 0.25rem;
-    left: 0.25rem;
-    color: var(--theme-text-secondary, #aaa);
-    font-size: 0.75rem;
-    white-space: nowrap;
-  }
-  .tap {
-    position: absolute;
-    bottom: 0.35rem;
-    width: 0.5rem;
-    height: 0.5rem;
-    margin-left: -0.25rem;
-    border-radius: 50%;
-    background: var(--theme-primary, #d4813a);
-    pointer-events: none;
-  }
-  .tap.unmatched {
-    border: 1.5px solid var(--theme-text-secondary, #aaa);
-    background: transparent;
   }
   .landing {
     position: absolute;
-    top: 0;
-    bottom: 1.1rem;
+    top: 2rem;
+    bottom: 0.4rem;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: flex-end;
-    width: 1.75rem;
-    margin-left: -0.875rem;
+    width: 2rem;
+    margin-left: -1rem;
     padding: 0;
     border: 0;
     color: var(--theme-text-secondary, #aaa);
@@ -402,36 +359,41 @@
     cursor: ew-resize;
     touch-action: none;
   }
-  .stem {
-    width: 2px;
-    height: 1.25rem;
-    background: currentColor;
-  }
-  .landing.pass-start .stem {
-    height: 2rem;
-  }
-  .landing.pass-start {
-    color: var(--theme-text, #fff);
+  .locked {
+    pointer-events: none;
   }
   .number {
-    order: -1;
-    font-size: 0.75rem;
+    font-size: 0.875rem;
+    line-height: 1.3;
     font-variant-numeric: tabular-nums;
-    line-height: 1.2;
   }
-  .landing.pass-start .number {
+  .stem {
+    width: 2px;
+    height: 1.1rem;
+    background: currentColor;
+  }
+  .pass-start {
+    color: var(--theme-text, #fff);
+  }
+  .pass-start .stem {
+    height: 1.6rem;
+  }
+  .pass-start .number {
     font-weight: 700;
   }
-  .landing.pinned .stem {
+  .pinned .stem {
     width: 4px;
     border-radius: 2px;
   }
-  .landing.end .number::after {
-    content: " end";
-  }
-  .landing.selected,
-  .landing.dragging {
+  .selected,
+  .dragging {
     color: var(--theme-primary, #d4813a);
+    background: color-mix(
+      in srgb,
+      var(--theme-primary, #d4813a) 15%,
+      transparent
+    );
+    border-radius: 0.25rem;
   }
   .playhead {
     position: absolute;
@@ -442,42 +404,14 @@
     background: var(--theme-text, #fff);
     pointer-events: none;
   }
-  .band {
+  .playhead::before {
+    content: "";
     position: absolute;
     top: 0;
-    bottom: 0;
-    background: color-mix(
-      in srgb,
-      var(--theme-primary, #d4813a) 10%,
-      transparent
-    );
-    pointer-events: none;
-  }
-  .band.alt {
-    background: color-mix(
-      in srgb,
-      var(--theme-primary, #d4813a) 22%,
-      transparent
-    );
-  }
-  .mini {
-    position: absolute;
-    bottom: 0;
-    width: 1px;
-    height: 35%;
-    background: var(--theme-text-secondary, #aaa);
-    pointer-events: none;
-  }
-  .mini.pass-start {
-    height: 70%;
-    background: var(--theme-text, #fff);
-  }
-  .window {
-    position: absolute;
-    top: -1px;
-    bottom: -1px;
-    border: 1.5px solid var(--theme-text, #fff);
-    border-radius: 0.25rem;
-    pointer-events: none;
+    left: -4px;
+    width: 10px;
+    height: 8px;
+    background: inherit;
+    clip-path: polygon(0 0, 100% 0, 100% 50%, 50% 100%, 0 50%);
   }
 </style>

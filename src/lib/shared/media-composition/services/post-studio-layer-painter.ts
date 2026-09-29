@@ -34,6 +34,8 @@ export interface PaintFrame {
   projectTimeSeconds?: number;
   /** The layer's framing right now, for a painter that places points itself. */
   transform?: EvaluatedFrameLayer["transform"];
+  /** The footage's manually placed box and source crop at this frame. */
+  sourceGeometry?: EvaluatedFrameLayer["sourceGeometry"];
 }
 
 /** The painter's view of one evaluated layer at one post time. */
@@ -50,6 +52,7 @@ export function toPaintFrame(
     sequenceFrame: layer.sequenceFrame,
     projectTimeSeconds,
     transform: layer.transform,
+    sourceGeometry: layer.sourceGeometry,
   };
 }
 

@@ -29,6 +29,8 @@
     setItemFill,
     setTrackFlag,
     setVideoSpeed,
+    canReplaceOverlayVideoWithAnimation,
+    replaceOverlayVideoWithAnimation,
     trimItem,
     trimItemToSource,
     updateItem,
@@ -42,6 +44,7 @@
   } from "$lib/shared/media-composition/domain/post-project-looks";
   import {
     boxAt,
+    channelValueAt,
     framingAt,
     isAnimated,
     opacityAt,
@@ -79,6 +82,8 @@
   } from "$lib/shared/media-composition/domain/post-canvas";
   import type { StaffTipAnalysis } from "$lib/shared/media-composition/state/staff-tip-analysis.svelte";
   import PostStaffEffectsTool from "./PostStaffEffectsTool.svelte";
+  import PostNativeTextTool from "./PostNativeTextTool.svelte";
+  import PostSourceGeometryTool from "./PostSourceGeometryTool.svelte";
 
   /**
    * The body of one tool for the selected item. An amount is a slider, a
@@ -121,7 +126,13 @@
     seconds - item.start > POST_MIN_ITEM_SECONDS + POST_TIME_EPSILON &&
       itemEnd(item) - seconds > POST_MIN_ITEM_SECONDS + POST_TIME_EPSILON
   );
-  const channel = $derived(panelChannel(tool));
+  const channel = $derived(
+    (tool === "crop" || tool === "position") &&
+      (item.kind === "video" || item.kind === "image") &&
+      (item.sourceGeometry || item.keyframes?.sourceGeometry?.length)
+      ? "sourceGeometry"
+      : panelChannel(tool)
+  );
   /** An animated value has no single value to show off the item. */
   const frozen = $derived(
     channel !== null && isAnimated(item, channel) && !withinSpan
@@ -181,6 +192,14 @@
   function setFill(fill: boolean): void {
     if (locked) return;
     editor.edit((project, ctx) => setItemFill(project, item.id, fill, ctx));
+  }
+
+  function replaceWithLiveAnimation(): void {
+    if (locked) return;
+    editor.pause();
+    editor.edit((project, ctx) =>
+      replaceOverlayVideoWithAnimation(project, item.id, ctx)
+    );
   }
 
   function setSpeed(speed: number): void {
@@ -290,6 +309,7 @@
     (): { id: string; label: string; box: PostBox }[] => {
       switch (item.kind) {
         case "video":
+        case "image":
           return [
             {
               id: "full",
@@ -613,6 +633,19 @@
         run: () => trimToPlayhead("end"),
       }
     )}
+    {#if !onMain && canReplaceOverlayVideoWithAnimation(editor.project, item.id)}
+      <div class="actions">
+        <PanelButton onclick={replaceWithLiveAnimation} disabled={locked}>
+          <i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i>
+          Replace with live sequence animation
+        </PanelButton>
+      </div>
+      <p class="hint">
+        Uses the camera video's beat map. Keeps this clip's timing and position.
+        The original video stays available for undo; its audio, if any, leaves
+        the mix.
+      </p>
+    {/if}
   {:else if tool === "timing"}
     {#if !onMain}
       <SegmentedControl
@@ -652,6 +685,17 @@
         }
       )}
     {/if}
+  {:else if (tool === "crop" || tool === "position") && (item.kind === "video" || item.kind === "image") && (item.sourceGeometry || item.keyframes?.sourceGeometry?.length)}
+    {@const geometry = channelValueAt(item, "sourceGeometry", seconds)}
+    <PostSourceGeometryTool
+      {geometry}
+      {output}
+      {locked}
+      {frozen}
+      mode={tool === "crop" ? "crop" : "position"}
+      onChange={(next, field) =>
+        change(`source-geometry:${field}`, { sourceGeometry: next })}
+    />
   {:else if tool === "crop" && item.kind === "video"}
     {@const framing = framingAt(item, seconds)}
     {@const parts = crop?.parts ?? splitRotation(framing.rotation)}
@@ -855,6 +899,20 @@
         change("edgeShadow", { edge: { shadow: value / 100 } })}
     />
   {:else if tool === "fade"}
+    {#if onMain && (item.kind === "video" || item.kind === "image") && item.transitionOut}
+      <TypeableValue
+        label="Crossdissolve (seconds)"
+        text={`${item.transitionOut.duration.toFixed(2)} s`}
+        disabled={locked}
+        oncommit={(value) =>
+          change("transitionOut", {
+            transitionOut: {
+              ...item.transitionOut!,
+              duration: Math.max(0, Math.min(item.duration, value)),
+            },
+          })}
+      />
+    {/if}
     <ValueSlider
       label={t("post_editor_opacity")}
       value={opacityAt(item, seconds) * 100}
@@ -885,16 +943,31 @@
       disabled={locked}
       onchange={(value) => change("fadeOut", { fadeOut: value })}
     />
-  {:else if tool === "effects" && item.kind === "video" && staffTips}
-    {@const take = editor.takes.find((entry) => entry.id === item.takeId)}
-    <PostStaffEffectsTool
-      {item}
-      takeKey={take?.takeKey ?? null}
-      mediaUrl={editor.mediaUrl(item.takeId)}
-      analysis={staffTips}
-      {locked}
-      onPick={(effect) => patchItem({ staffEffect: effect })}
-    />
+  {:else if tool === "effects" && item.kind === "video"}
+    {#if item.autoAdjust}
+      <TypeableValue
+        label="Auto adjust strength"
+        text={`${Math.round(item.autoAdjust.strength * 100)}%`}
+        disabled={true}
+        oncommit={() => undefined}
+      />
+      <p class="native-limit">
+        Auto adjust: {item.autoAdjust.enabled ? "on" : "off"}. Its original
+        color model is not yet available in this editor, so this setting is
+        shown for reference.
+      </p>
+    {/if}
+    {#if staffTips}
+      {@const take = editor.takes.find((entry) => entry.id === item.takeId)}
+      <PostStaffEffectsTool
+        {item}
+        takeKey={take?.takeKey ?? null}
+        mediaUrl={editor.mediaUrl(item.takeId)}
+        analysis={staffTips}
+        {locked}
+        onPick={(effect) => patchItem({ staffEffect: effect })}
+      />
+    {/if}
   {:else if tool === "labels" && item.kind === "animation"}
     <SegmentedControl
       color="accent"
@@ -932,13 +1005,24 @@
       disabled={locked}
       oninput={(event) => change("text", { text: event.currentTarget.value })}
     ></textarea>
-    <SegmentedControl
-      color="accent"
-      options={TEXT_SIZES}
-      value={item.size}
-      onchange={(size) => patchItem({ size })}
-      ariaLabel={t("post_editor_text_size")}
-    />
+    {#if item.style}
+      <PostNativeTextTool
+        style={item.style}
+        animation={item.animation}
+        {locked}
+        onStyle={(style, field) => change(`text-style:${field}`, { style })}
+        onAnimation={(animation, field) =>
+          change(`text-animation:${field}`, { animation })}
+      />
+    {:else}
+      <SegmentedControl
+        color="accent"
+        options={TEXT_SIZES}
+        value={item.size}
+        onchange={(size) => patchItem({ size })}
+        ariaLabel={t("post_editor_text_size")}
+      />
+    {/if}
   {:else if tool === "rename"}
     <input
       class="field"
@@ -956,6 +1040,13 @@
 </div>
 
 <style>
+  .native-limit {
+    margin: 0;
+    color: var(--text-secondary, #a3a3a3);
+    font-size: 0.8rem;
+    line-height: 1.4;
+  }
+
   .item-tool {
     display: grid;
     gap: 1rem;

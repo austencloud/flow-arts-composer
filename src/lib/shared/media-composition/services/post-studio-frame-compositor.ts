@@ -1,4 +1,7 @@
-import type { MediaCompositionPreset } from "$lib/shared/media-composition/domain/media-composition-preset-schema";
+import type {
+  MediaCompositionPreset,
+  PresetSourceGeometry,
+} from "$lib/shared/media-composition/domain/media-composition-preset-schema";
 import type { LayoutRegion } from "$lib/shared/media-composition/domain/media-layout-schema";
 import {
   regionRectIsOnFrame,
@@ -33,6 +36,7 @@ export interface FrameLayerGeometry {
   translateX: number;
   translateY: number;
   flipHorizontal: boolean;
+  sourceCrop?: PresetSourceGeometry["crop"];
 }
 
 export interface RenderPostStudioFrameInput {
@@ -70,7 +74,27 @@ export function resolveFrameLayerGeometry(input: {
   sourceWidth: number;
   sourceHeight: number;
   transform: EvaluatedFrameLayer["transform"];
+  sourceGeometry?: PresetSourceGeometry;
 }): FrameLayerGeometry {
+  if (input.sourceGeometry) {
+    const geometry = input.sourceGeometry;
+    const region = {
+      x: geometry.x * input.preset.output.width,
+      y: geometry.y * input.preset.output.height,
+      width: geometry.width * input.preset.output.width,
+      height: geometry.height * input.preset.output.height,
+    };
+    return {
+      region,
+      drawRect: region,
+      rotationDegrees: geometry.rotation,
+      scale: 1,
+      translateX: 0,
+      translateY: 0,
+      flipHorizontal: input.transform.flipHorizontal,
+      sourceCrop: geometry.crop,
+    };
+  }
   const region = outputRegion(input.preset, input.region);
   const fit = calculateMediaFit({
     sourceWidth: input.sourceWidth,
@@ -178,6 +202,31 @@ function drawSource(
   source: CanvasImageSource,
   geometry: FrameLayerGeometry
 ): void {
+  if (geometry.sourceCrop) {
+    const crop = geometry.sourceCrop;
+    const dimensions =
+      geometry.sourceCrop &&
+      (source instanceof HTMLVideoElement
+        ? { width: source.videoWidth, height: source.videoHeight }
+        : source instanceof HTMLImageElement
+          ? { width: source.naturalWidth, height: source.naturalHeight }
+          : source instanceof HTMLCanvasElement
+            ? { width: source.width, height: source.height }
+            : null);
+    if (!dimensions) return;
+    context.drawImage(
+      source,
+      crop.left * dimensions.width,
+      crop.top * dimensions.height,
+      (crop.right - crop.left) * dimensions.width,
+      (crop.bottom - crop.top) * dimensions.height,
+      geometry.drawRect.x,
+      geometry.drawRect.y,
+      geometry.drawRect.width,
+      geometry.drawRect.height
+    );
+    return;
+  }
   context.drawImage(
     source,
     geometry.drawRect.x,
@@ -416,7 +465,7 @@ export async function renderPostStudioFrame(
       ...resting,
       ...(layer.regionRect ?? staticRegion),
     };
-    if (!regionRectIsOnFrame(region)) continue;
+    if (!layer.sourceGeometry && !regionRectIsOnFrame(region)) continue;
     drawn.push({
       layer,
       staticRegion,
@@ -437,9 +486,10 @@ export async function renderPostStudioFrame(
 
   for (const [index, entry] of drawn.entries()) {
     const { layer, region, regionPixels } = entry;
-    const edge = region.edge
-      ? regionEdgePixels(region.edge, regionPixels, input.preset.output)
-      : null;
+    const edge =
+      !layer.sourceGeometry && region.edge
+        ? regionEdgePixels(region.edge, regionPixels, input.preset.output)
+        : null;
     const edgeOpacity = regionOpacity.get(layer.regionId) ?? layer.opacity;
     const turn = region.turn ?? 0;
     if (edge && drawn[index - 1]?.layer.regionId !== layer.regionId) {
@@ -489,6 +539,29 @@ async function drawRegionLayer(
     throw new Error(
       `The ${staticRegion.label ?? layer.sourceRole} layer was not ready to render.`
     );
+  }
+  if (layer.sourceGeometry) {
+    const media = mediaIn(layerElement);
+    if (!media) return;
+    if (media instanceof HTMLVideoElement)
+      await syncVideo(media, layer.sourceTimeSeconds);
+    else if (!media.complete) await media.decode();
+    const dimensions = mediaDimensions(media);
+    if (dimensions.width <= 0 || dimensions.height <= 0) return;
+    const geometry = resolveFrameLayerGeometry({
+      preset: input.preset,
+      region,
+      sourceWidth: dimensions.width,
+      sourceHeight: dimensions.height,
+      transform: layer.transform,
+      sourceGeometry: layer.sourceGeometry,
+    });
+    context.save();
+    context.globalAlpha = layer.opacity;
+    applyLayerTransform(context, geometry);
+    drawSource(context, media, geometry);
+    context.restore();
+    return;
   }
   context.save();
   turnAboutCentre(context, regionPixels, region.turn ?? 0);

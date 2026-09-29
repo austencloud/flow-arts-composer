@@ -10,6 +10,8 @@ import {
 
 /** A Timing session over one untapped take, with no video attached. */
 export function createPostTimingSessionHarness() {
+  let undoCount = 0;
+  let redoCount = 0;
   let timing = $state<TakeTiming>(
     createTakeTiming({
       sequenceId: "dck",
@@ -39,12 +41,21 @@ export function createPostTimingSessionHarness() {
         ),
       };
     },
-    editTiming: (_takeId: string, edit: (current: TakeTiming) => TakeTiming) => {
+    editTiming: (
+      _takeId: string,
+      edit: (current: TakeTiming) => TakeTiming
+    ) => {
       timing = edit(timing);
     },
     confirmTiming: () => {},
     canUndoTiming: () => false,
-    undoTiming: () => {},
+    undoTiming: () => {
+      undoCount += 1;
+    },
+    canRedoTiming: () => false,
+    redoTiming: () => {
+      redoCount += 1;
+    },
     exitTiming: () => {},
   } as unknown as TimingHost;
   let session!: ReturnType<typeof createPostTimingSession>;
@@ -54,6 +65,7 @@ export function createPostTimingSessionHarness() {
   return {
     session,
     tapCount: () => timing.sections[0]!.taps.length,
+    historyCalls: () => ({ undo: undoCount, redo: redoCount }),
     dispose,
   };
 }

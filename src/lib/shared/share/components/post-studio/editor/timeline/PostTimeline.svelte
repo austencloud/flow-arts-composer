@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { flushSync, tick, untrack, type Snippet } from "svelte";
+  import { flushSync, onDestroy, tick, untrack, type Snippet } from "svelte";
   import type {
     PostItem,
     PostKeyframeChannel,
@@ -252,6 +252,14 @@
   type DragState = TrimDrag | MoveMainDrag | MoveOverlayDrag | KeyframeDrag;
 
   let dragState = $state<DragState | null>(null);
+  let dragExtensionPx = $state(0);
+  let autoScrollFrame: number | null = null;
+  let dragClientX = 0;
+
+  onDestroy(() => {
+    if (autoScrollFrame !== null) cancelAnimationFrame(autoScrollFrame);
+    clearTimeout(userScrollTimeoutId);
+  });
 
   const overlayTrackCount = $derived(Math.max(0, project.tracks.length - 1));
   const mainItemsList = $derived(mainItems(project));
@@ -349,7 +357,8 @@
   const contentWidthPx = $derived(
     Math.max(
       lanesViewportWidthPx,
-      secondsToPixels(durationSeconds, pixelsPerSecond) + TRAILING_PADDING_PX
+      secondsToPixels(durationSeconds, pixelsPerSecond) + TRAILING_PADDING_PX,
+      dragExtensionPx
     )
   );
   const playheadXPx = $derived(
@@ -805,8 +814,66 @@
   }
 
   function finishDrag(): void {
+    if (autoScrollFrame !== null) cancelAnimationFrame(autoScrollFrame);
+    autoScrollFrame = null;
     dragState = null;
+    dragExtensionPx = 0;
     snapGuideSeconds = null;
+  }
+
+  function placeMainDrag(state: MoveMainDrag, clientX: number): void {
+    const placed = placeDraggedOverlay(
+      pointerContentSeconds(clientX, state.frozenPixelsPerSecond) -
+        state.grabOffsetSeconds,
+      state.itemDurationSeconds,
+      state.frozenTargets,
+      state.frozenPixelsPerSecond
+    );
+    state.snappedStartSeconds = placed.start;
+    state.ghostLeftPx = secondsToPixels(
+      placed.start,
+      state.frozenPixelsPerSecond
+    );
+    snapGuideSeconds = placed.guideSeconds;
+  }
+
+  function mainDragEdgeSpeed(clientX: number): number {
+    if (!lanesScrollEl) return 0;
+    const { left, right } = lanesScrollEl.getBoundingClientRect();
+    const edgePx = 48;
+    if (clientX < left + edgePx)
+      return -Math.min(14, Math.max(0, left + edgePx - clientX) / 4);
+    if (clientX > right - edgePx)
+      return Math.min(14, Math.max(0, clientX - (right - edgePx)) / 4);
+    return 0;
+  }
+
+  function scrollWhileDraggingMain(): void {
+    autoScrollFrame = null;
+    const state = dragState;
+    const scroller = lanesScrollEl;
+    if (state?.kind !== "move-main" || !state.didDrag || !scroller) return;
+    const speed = mainDragEdgeSpeed(dragClientX);
+    if (speed === 0) return;
+
+    // Keep room beyond the current end so a card can move farther right
+    // while the pointer stays at the edge of the visible timeline.
+    if (speed > 0) {
+      dragExtensionPx = Math.max(
+        dragExtensionPx,
+        scroller.scrollLeft + lanesViewportWidthPx * 2
+      );
+    }
+    const before = scroller.scrollLeft;
+    setLanesScrollLeft(Math.max(0, before + speed));
+    if (scroller.scrollLeft === before) {
+      // The wider content renders after this frame; try again once it exists.
+      if (speed > 0)
+        autoScrollFrame = requestAnimationFrame(scrollWhileDraggingMain);
+      return;
+    }
+    placeMainDrag(state, dragClientX);
+    autoScrollFrame = requestAnimationFrame(scrollWhileDraggingMain);
   }
 
   function handleWindowPointerMove(event: PointerEvent): void {
@@ -866,19 +933,10 @@
     }
 
     if (state.kind === "move-main") {
-      const placed = placeDraggedOverlay(
-        pointerContentSeconds(event.clientX, state.frozenPixelsPerSecond) -
-          state.grabOffsetSeconds,
-        state.itemDurationSeconds,
-        state.frozenTargets,
-        state.frozenPixelsPerSecond
-      );
-      state.snappedStartSeconds = placed.start;
-      state.ghostLeftPx = secondsToPixels(
-        placed.start,
-        state.frozenPixelsPerSecond
-      );
-      snapGuideSeconds = placed.guideSeconds;
+      dragClientX = event.clientX;
+      placeMainDrag(state, dragClientX);
+      if (autoScrollFrame === null && mainDragEdgeSpeed(dragClientX) !== 0)
+        autoScrollFrame = requestAnimationFrame(scrollWhileDraggingMain);
       return;
     }
 

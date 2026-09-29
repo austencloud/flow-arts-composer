@@ -28,7 +28,7 @@ import type { PostTake } from "$lib/shared/media-composition/domain/post-plan";
  * always the one on screen:
  *
  * 1. Main clips follow one another unless placed by hand. A placed clip
- *    keeps its chosen start, or moves right just enough to avoid an overlap.
+ *    keeps its chosen start, or moves right to limit overlap to its transition.
  *    A clip lasts its source span at its speed, cut to its take's length.
  * 2. An anchored overlay starts at its main clip's start plus its offset;
  *    one that fills spans the clip exactly. An overlay whose clip is gone
@@ -53,16 +53,26 @@ export function normalizeProject(project: PostProject): PostProject {
   const displaced: PostItem[] = [];
   const laidMain: PostItem[] = [];
   let cursor = 0;
+  let outgoingOverlap = 0;
   for (const item of main.items) {
     if (!MAIN_TRACK_KINDS.includes(item.kind)) {
       displaced.push(item);
       continue;
     }
     const sized = sizeItem(item, takes);
-    const start = sized.pinnedStart ? Math.max(cursor, sized.start) : cursor;
+    const earliest =
+      cursor - Math.min(outgoingOverlap, sized.duration - POST_TIME_EPSILON);
+    const start = sized.pinnedStart ? Math.max(earliest, sized.start) : earliest;
     const laid = withChanges(sized, { start, anchor: null, fill: false });
     laidMain.push(laid);
     cursor = start + laid.duration;
+    outgoingOverlap =
+      item.kind === "video" || item.kind === "image"
+        ? Math.min(
+            item.transitionOut?.duration ?? 0,
+            laid.duration - POST_TIME_EPSILON
+          )
+        : 0;
   }
 
   const mainById = new Map(laidMain.map((item) => [item.id, item]));

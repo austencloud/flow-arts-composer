@@ -71,6 +71,7 @@ const TRAIL_SETTINGS: TrailSettings = {
 };
 
 type Transform = EvaluatedFrameLayer["transform"];
+type SourceGeometry = NonNullable<EvaluatedFrameLayer["sourceGeometry"]>;
 
 const IDENTITY: Transform = {
   scale: 1,
@@ -79,6 +80,32 @@ const IDENTITY: Transform = {
   translateY: 0,
   flipHorizontal: false,
 };
+
+function placedBox(rect: PaintRect, geometry: SourceGeometry): PaintRect {
+  return {
+    x: rect.x + geometry.x * rect.width,
+    y: rect.y + geometry.y * rect.height,
+    width: geometry.width * rect.width,
+    height: geometry.height * rect.height,
+  };
+}
+
+function clipToPlacedBox(
+  context: CanvasRenderingContext2D,
+  rect: PaintRect,
+  geometry: SourceGeometry
+): void {
+  const box = placedBox(rect, geometry);
+  const centerX = box.x + box.width / 2;
+  const centerY = box.y + box.height / 2;
+  context.translate(centerX, centerY);
+  context.rotate((geometry.rotation * Math.PI) / 180);
+  context.beginPath();
+  context.rect(-box.width / 2, -box.height / 2, box.width, box.height);
+  context.clip();
+  context.rotate((-geometry.rotation * Math.PI) / 180);
+  context.translate(-centerX, -centerY);
+}
 
 /**
  * Where a point of the picture (as fractions of its width and height) lands
@@ -92,9 +119,30 @@ export function createStaffPointMapper(input: {
   sourceHeight: number;
   fit: LayoutRegion["fit"];
   transform?: Transform;
+  sourceGeometry?: EvaluatedFrameLayer["sourceGeometry"];
 }): (x: number, y: number) => { x: number; y: number } {
   const { rect } = input;
   const transform = input.transform ?? IDENTITY;
+  if (input.sourceGeometry) {
+    const geometry = input.sourceGeometry;
+    const crop = geometry.crop;
+    const box = placedBox(rect, geometry);
+    const centerX = box.x + box.width / 2;
+    const centerY = box.y + box.height / 2;
+    const { cos, sin } = turnOf(geometry.rotation);
+    const flip = transform.flipHorizontal ? -1 : 1;
+    return (x, y) => {
+      // The cropped source fills the placed box before the box turns. Staff
+      // tips outside that crop still need their mapped position for trails.
+      const dx =
+        ((x - crop.left) / (crop.right - crop.left) - 0.5) * box.width * flip;
+      const dy = ((y - crop.top) / (crop.bottom - crop.top) - 0.5) * box.height;
+      return {
+        x: centerX + dx * cos - dy * sin,
+        y: centerY + dx * sin + dy * cos,
+      };
+    };
+  }
   const fit = calculateMediaFit({
     sourceWidth: input.sourceWidth,
     sourceHeight: input.sourceHeight,
@@ -122,7 +170,8 @@ export function createStaffPointMapper(input: {
   return (x, y) => {
     // Relative to the slot's centre, flipped, scaled, turned, then panned:
     // the same order the compositor applies to the video itself.
-    const dx = (left + x * fit.drawRect.width - centerX) * flip * transform.scale;
+    const dx =
+      (left + x * fit.drawRect.width - centerX) * flip * transform.scale;
     const dy = (top + y * fit.drawRect.height - centerY) * transform.scale;
     return {
       x: centerX + pan.x + dx * cos - dy * sin,
@@ -305,19 +354,28 @@ export function createStaffEffectPainter(
         sourceHeight: track.sourceHeight,
         fit: source.fit(),
         transform: frame.transform,
+        sourceGeometry: frame.sourceGeometry,
       });
       const seconds = frame.sourceTimeSeconds;
-      if (effect === "trails") {
-        paintTrails(
-          context,
-          track,
-          seconds,
-          Math.min(rect.width, rect.height),
-          place
-        );
-        return;
+      if (frame.sourceGeometry) {
+        context.save();
+        clipToPlacedBox(context, rect, frame.sourceGeometry);
       }
-      paintParticles(context, effect, track, seconds, rect, place);
+      try {
+        if (effect === "trails") {
+          paintTrails(
+            context,
+            track,
+            seconds,
+            Math.min(rect.width, rect.height),
+            place
+          );
+        } else {
+          paintParticles(context, effect, track, seconds, rect, place);
+        }
+      } finally {
+        if (frame.sourceGeometry) context.restore();
+      }
     },
   };
 }

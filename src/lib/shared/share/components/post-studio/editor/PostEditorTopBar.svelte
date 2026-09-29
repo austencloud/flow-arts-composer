@@ -15,14 +15,39 @@
     editor: PostEditorState;
     exporting: boolean;
     onExport: () => void;
+    onImport?: () => void;
+    onMirror?: () => void;
+    mirrored?: boolean;
     trailing?: Snippet;
+    draftStatus?: Snippet;
   }
 
-  let { editor, exporting, onExport, trailing }: Props = $props();
+  let {
+    editor,
+    exporting,
+    onExport,
+    onImport,
+    onMirror,
+    mirrored = false,
+    trailing,
+    draftStatus,
+  }: Props = $props();
 </script>
 
 <div class="top-bar">
   <div class="history">
+    {#if onImport && !trailing}
+      <button
+        type="button"
+        class="icon-button"
+        disabled={exporting}
+        onclick={onImport}
+        aria-label="Import InShot project"
+        title="Import InShot project"
+      >
+        <i class="fa-solid fa-file-import" aria-hidden="true"></i>
+      </button>
+    {/if}
     <button
       type="button"
       class="icon-button"
@@ -48,27 +73,51 @@
       <i class="fa-solid fa-rotate-right" aria-hidden="true"></i>
     </button>
   </div>
+  {#if onMirror && !trailing}
+    <div
+      class="mirror-action"
+      title={mirrored ? "Mirrored post" : "Mirror whole post"}
+    >
+      <PanelButton
+        onclick={onMirror}
+        disabled={exporting}
+        ariaPressed={mirrored}
+        ariaLabel={mirrored ? "Mirrored post" : "Mirror whole post"}
+      >
+        <i class="fa-solid fa-right-left" aria-hidden="true"></i>
+        <span class="mirror-label"
+          >{mirrored ? "Mirrored post" : "Mirror whole post"}</span
+        >
+      </PanelButton>
+    </div>
+  {/if}
+  {#if draftStatus}
+    <div class="draft-save">{@render draftStatus()}</div>
+  {/if}
   {#if trailing}
     {@render trailing()}
   {:else}
-    <PanelButton
-      variant="primary"
-      onclick={onExport}
-      disabled={exporting}
-      ariaBusy={exporting}
-    >
-      <i
-        class="fa-solid {exporting ? 'fa-spinner fa-spin' : 'fa-file-export'}"
-        aria-hidden="true"
-      ></i>
-      {t("post_editor_export")}
-    </PanelButton>
+    <div class="export-action">
+      <PanelButton
+        variant="primary"
+        onclick={onExport}
+        disabled={exporting}
+        ariaBusy={exporting}
+      >
+        <i
+          class="fa-solid {exporting ? 'fa-spinner fa-spin' : 'fa-file-export'}"
+          aria-hidden="true"
+        ></i>
+        {t("post_editor_export")}
+      </PanelButton>
+    </div>
   {/if}
 </div>
 
 <style>
   .top-bar {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
     justify-content: space-between;
     gap: 0.75rem;
@@ -77,7 +126,26 @@
 
   .history {
     display: flex;
+    flex-shrink: 0;
     gap: 0.375rem;
+  }
+
+  .mirror-action,
+  .export-action {
+    flex-shrink: 0;
+    white-space: nowrap;
+  }
+
+  .draft-save {
+    flex-basis: 100%;
+    min-width: 0;
+    order: 1;
+  }
+
+  @container post-top-bar (max-width: 30rem) {
+    .mirror-label {
+      display: none;
+    }
   }
 
   .icon-button {

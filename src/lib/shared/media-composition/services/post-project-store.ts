@@ -14,6 +14,20 @@ import { loadPostPlan } from "$lib/shared/media-composition/services/post-plan-s
  */
 
 const PREFIX = "tka:post-studio:project:v2:";
+export type SaveResult = { ok: true } | { ok: false; error: string };
+
+/** Keep the previous edit recoverable across reloads when importing a draft. */
+export function backupPostProjectBeforeImport(project: PostProject): void {
+  const store = storage();
+  if (!store)
+    throw new Error(
+      "Device storage is unavailable. The current post was kept."
+    );
+  store.setItem(
+    `${PREFIX}before-import:${project.sequenceId}`,
+    JSON.stringify(project)
+  );
+}
 
 function storage(): Storage | null {
   try {
@@ -40,13 +54,35 @@ export function loadPostProject(sequenceId: string): PostProject | null {
   }
 }
 
-export function savePostProject(project: PostProject): void {
+export function savePostProject(project: PostProject): SaveResult {
   const store = storage();
-  if (!store) return;
+  if (!store) return { ok: false, error: "Device storage is unavailable." };
   try {
-    store.setItem(`${PREFIX}${project.sequenceId}`, JSON.stringify(project));
-  } catch {
-    // Quota or private browsing: the project still drives this session.
+    const key = `${PREFIX}${project.sequenceId}`;
+    const next = JSON.stringify(project);
+    const previous = store.getItem(key);
+    if (previous !== null && previous !== next) {
+      store.setItem(`${PREFIX}previous:${project.sequenceId}`, previous);
+    }
+    store.setItem(key, next);
+    if (store.getItem(key) !== next) {
+      return {
+        ok: false,
+        error: "The post could not be verified in device storage.",
+      };
+    }
+    return { ok: true };
+  } catch (cause) {
+    return {
+      ok: false,
+      error:
+        cause &&
+        typeof cause === "object" &&
+        "message" in cause &&
+        typeof cause.message === "string"
+          ? cause.message
+          : "The post could not be saved on this device.",
+    };
   }
 }
 

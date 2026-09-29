@@ -2,19 +2,14 @@
   import type { PostStudioLayerPainter } from "$lib/shared/media-composition/services/post-studio-layer-painter";
   import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
   import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
-  import FilterChipBase from "$lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
   import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import PostStudioPaintedLayer from "../PostStudioPaintedLayer.svelte";
-  import { ITEM_KIND_ICON } from "../editor/post-editor-labels";
-  import TakeTimingLane from "./TakeTimingLane.svelte";
   import type { PostTimingSession } from "./post-timing-session.svelte";
-  import TypeableValue from "$lib/shared/ui/components/TypeableValue.svelte";
-  import { formatTakeClock, parseClock } from "./post-builder-format";
 
   /**
    * The take being mapped, large, with the move the map says is under way
    * drawn in its corner. If the arrow lands when the props land, the map is
-   * right; the lanes below show where every landing sits.
+   * right; its timeline is mounted below the video and controls.
    */
   interface Props {
     session: PostTimingSession;
@@ -22,6 +17,8 @@
   }
 
   let { session, squarePainter = null }: Props = $props();
+  let sourceWidth = $state(9);
+  let sourceHeight = $state(16);
 </script>
 
 {#if !session.take || !session.timing}
@@ -47,27 +44,36 @@
     {/if}
 
     {#if session.url}
-      <div class="frame">
-        <!-- svelte-ignore a11y_media_has_caption, a11y_click_events_have_key_events, a11y_no_noninteractive_element_interactions -->
-        <video
-          bind:this={session.video}
-          src={session.url}
-          playsinline
-          preload="auto"
-          onplay={() => session.notePlaying(true)}
-          onpause={() => session.notePlaying(false)}
-          onended={() => session.notePlaying(false)}
-          onseeked={session.noteSeeked}
-          onclick={session.togglePlay}
-        ></video>
-        {#if session.showSquare && squarePainter && session.paintFrame}
-          <div class="square" aria-hidden="true">
-            <PostStudioPaintedLayer
-              painter={squarePainter}
-              frame={session.paintFrame}
-            />
-          </div>
-        {/if}
+      <div class="video-space">
+        <div
+          class="frame"
+          style:--take-ratio={sourceWidth / sourceHeight}
+        >
+          <!-- svelte-ignore a11y_media_has_caption, a11y_click_events_have_key_events, a11y_no_noninteractive_element_interactions -->
+          <video
+            bind:this={session.video}
+            src={session.url}
+            playsinline
+            preload="auto"
+            onloadedmetadata={(event) => {
+              sourceWidth = event.currentTarget.videoWidth || 9;
+              sourceHeight = event.currentTarget.videoHeight || 16;
+            }}
+            onplay={() => session.notePlaying(true)}
+            onpause={() => session.notePlaying(false)}
+            onended={() => session.notePlaying(false)}
+            onseeked={session.noteSeeked}
+            onclick={session.togglePlay}
+          ></video>
+          {#if session.showSquare && squarePainter && session.paintFrame}
+            <div class="square" aria-hidden="true">
+              <PostStudioPaintedLayer
+                painter={squarePainter}
+                frame={session.paintFrame}
+              />
+            </div>
+          {/if}
+        </div>
       </div>
     {:else}
       <div class="empty">
@@ -77,136 +83,15 @@
         >
       </div>
     {/if}
-
-    <div class="transport">
-      <button
-        type="button"
-        class="round"
-        onclick={session.togglePlay}
-        disabled={!session.url}
-        aria-label={session.playing
-          ? t("share_studio_deep_pause")
-          : t("share_studio_deep_play")}
-      >
-        <i
-          class="fa-solid {session.playing ? 'fa-pause' : 'fa-play'}"
-          aria-hidden="true"
-        ></i>
-      </button>
-      <button
-        type="button"
-        class="round"
-        onclick={() => session.stepFrame(-1)}
-        disabled={!session.url}
-        aria-label={t("share_studio_deep_back_one_frame")}
-      >
-        <i class="fa-solid fa-backward-step" aria-hidden="true"></i>
-      </button>
-      <button
-        type="button"
-        class="round"
-        onclick={() => session.stepFrame(1)}
-        disabled={!session.url}
-        aria-label={t("share_studio_deep_forward_one_frame")}
-      >
-        <i class="fa-solid fa-forward-step" aria-hidden="true"></i>
-      </button>
-      <div class="clock">
-        <TypeableValue
-          label={t("share_studio_deep_playhead")}
-          text={formatTakeClock(session.mediaSeconds)}
-          draft={formatTakeClock(session.mediaSeconds)}
-          parse={parseClock}
-          sizer={formatTakeClock(session.durationSeconds)}
-          disabled={!session.url}
-          oncommit={(seconds) => {
-            session.pause();
-            session.seek(seconds);
-          }}
-        />
-        <span class="total">/ {formatTakeClock(session.durationSeconds)}</span>
-      </div>
-      <span class="readout">{session.readout}</span>
-      <div class="picker">
-        <SegmentedControl
-          options={[
-            {
-              value: "1",
-              label: "1×",
-              ariaLabel: t("share_studio_deep_full_speed"),
-            },
-            {
-              value: "0.75",
-              label: "¾×",
-              ariaLabel: t("share_studio_deep_three_quarter_speed"),
-            },
-            {
-              value: "0.5",
-              label: "½×",
-              ariaLabel: t("share_studio_deep_half_speed"),
-            },
-          ]}
-          value={session.speed}
-          onchange={(value) => (session.speed = value)}
-          size="sm"
-          density="compact"
-          ariaLabel={t("share_studio_deep_playback_speed")}
-        />
-      </div>
-    </div>
-
-    <TakeTimingLane
-      timing={session.timing}
-      resolved={session.resolved}
-      durationSeconds={session.durationSeconds}
-      mediaSeconds={session.mediaSeconds}
-      movesPerPass={session.movesPerPass}
-      windowSeconds={Number(session.zoom)}
-      selected={session.selected}
-      onseek={(seconds) => {
-        session.pause();
-        session.seek(seconds);
-      }}
-      onselect={(landing) => (session.selected = landing)}
-      onplace={session.placeLanding}
-      dragRange={session.landingRange}
-    />
-
-    <div class="options">
-      <div class="picker">
-        <SegmentedControl
-          options={[
-            { value: "4", label: "4 s" },
-            { value: "8", label: "8 s" },
-            { value: "16", label: "16 s" },
-          ]}
-          value={session.zoom}
-          onchange={(value) => (session.zoom = value)}
-          size="sm"
-          density="compact"
-          ariaLabel={t("share_studio_deep_closeup_width")}
-        />
-      </div>
-      {#if squarePainter}
-        <FilterChipBase
-          mode="toggle"
-          emphasis="solid"
-          size="sm"
-          icon={`fa-solid ${ITEM_KIND_ICON.moves}`}
-          label={t("share_studio_deep_show_move")}
-          active={session.showSquare}
-          onclick={() => (session.showSquare = !session.showSquare)}
-        />
-      {/if}
-      <span class="hint">{t("share_studio_deep_keyboard_hint")}</span>
-    </div>
   </section>
 {/if}
 
 <style>
   .stage {
-    display: grid;
-    align-content: start;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
     gap: 0.75rem;
     min-width: 0;
   }
@@ -222,10 +107,18 @@
   .empty p {
     margin: 0;
   }
+  .video-space {
+    flex: 1;
+    min-height: 12rem;
+    container-type: size;
+    display: grid;
+    place-items: center;
+  }
   .frame {
     position: relative;
     justify-self: center;
-    width: fit-content;
+    width: min(100cqw, calc(100cqh * var(--take-ratio)));
+    aspect-ratio: var(--take-ratio);
     max-width: 100%;
     overflow: hidden;
     border-radius: 0.5rem;
@@ -233,8 +126,9 @@
   }
   video {
     display: block;
-    max-width: 100%;
-    max-height: 58vh;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
     cursor: pointer;
   }
   .square {
@@ -247,63 +141,5 @@
     border-radius: 0.375rem;
     box-shadow: 0 0.25rem 1rem rgb(0 0 0 / 0.45);
     pointer-events: none;
-  }
-  .transport,
-  .options {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 0.5rem;
-    min-width: 0;
-  }
-  /* The shared control fills its box; three short choices only need this much. */
-  .picker {
-    flex: 0 0 11rem;
-  }
-  .round {
-    display: grid;
-    place-items: center;
-    width: 2.75rem;
-    height: 2.75rem;
-    flex: none;
-    border: 1px solid var(--theme-stroke, #484755);
-    border-radius: 50%;
-    color: var(--theme-text, #fff);
-    background: var(--theme-card-bg);
-    cursor: pointer;
-  }
-  .round:disabled {
-    opacity: 0.5;
-    cursor: default;
-  }
-  .round:focus-visible {
-    outline: 2px solid var(--theme-primary, currentColor);
-    outline-offset: 2px;
-  }
-  .clock {
-    --typeable-min-width: 0;
-    display: flex;
-    align-items: center;
-    gap: 0.375rem;
-    color: var(--theme-text, #fff);
-    font-size: 0.875rem;
-    font-variant-numeric: tabular-nums;
-    white-space: nowrap;
-  }
-  .total {
-    color: var(--theme-text-secondary, #aaa);
-  }
-  .readout {
-    flex: 1 1 8rem;
-    min-width: 0;
-    overflow: hidden;
-    color: var(--theme-text-secondary, #aaa);
-    font-size: 0.875rem;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-  .hint {
-    color: var(--theme-text-secondary, #aaa);
-    font-size: 0.75rem;
   }
 </style>

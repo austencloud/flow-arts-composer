@@ -4,6 +4,7 @@
   import type { SequenceExportOptions } from "$lib/shared/render/domain/models/sequence-export-options";
   import type { ResolvedAutoLayout } from "$lib/shared/render/services/container-aware-layout";
   import type { SequenceTimeMap } from "$lib/shared/media-composition/domain/sequence-time-map";
+  import type { PostProject } from "$lib/shared/media-composition/domain/post-project";
   import {
     getEffectsConfigContext,
     setEffectsConfigContext,
@@ -36,6 +37,9 @@
     /** Retain the draft while its host is hidden, without running playback. */
     active?: boolean;
     sequence: SequenceData;
+    initialProject?: PostProject;
+    onSaveDraft?: (project: PostProject) => Promise<void>;
+    draftLoadError?: string | null;
     cardPreviewUrl: string | null;
     animationPreviewUrl: string | null;
     animationPreviewType?: "video" | "image";
@@ -65,6 +69,9 @@
   let {
     active = true,
     sequence,
+    initialProject,
+    onSaveDraft,
+    draftLoadError = null,
     cardPreviewUrl,
     animationPreviewUrl,
     animationPreviewType = "video",
@@ -170,6 +177,9 @@
   <PostEditorWorkspace
     {active}
     {sequence}
+    {initialProject}
+    {onSaveDraft}
+    {draftLoadError}
     {cardPreviewUrl}
     {animationPreviewUrl}
     {animationPreviewType}

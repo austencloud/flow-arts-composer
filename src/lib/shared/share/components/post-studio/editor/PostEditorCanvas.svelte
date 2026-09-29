@@ -1,6 +1,7 @@
 <script lang="ts">
-  import { tick, untrack } from "svelte";
+  import { onMount, tick, untrack } from "svelte";
   import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { getKeyboardShortcutManager } from "$lib/shared/keyboard/get-keyboard-shortcut-manager";
   import { DURATION } from "$lib/shared/transitions/transitions";
   import {
     motionDuration,
@@ -21,7 +22,11 @@
     shadowDropInRegion,
   } from "$lib/shared/media-composition/services/region-edge-painter";
   import type { LayoutRegion } from "$lib/shared/media-composition/domain/media-layout-schema";
-  import { itemIdFromStaffEffectRole } from "$lib/shared/media-composition/domain/post-project-compiler";
+  import {
+    itemIdFromClipId,
+    itemIdFromStaffEffectRole,
+  } from "$lib/shared/media-composition/domain/post-project-compiler";
+  import { planProjectAudio } from "$lib/shared/media-composition/domain/post-audio-plan";
   import {
     ANIMATION_OVERLAY_ROLE,
     STRIP_AREA,
@@ -35,11 +40,14 @@
     itemEnd,
     type PostBox,
     type PostItem,
+    type PostSourceGeometry,
     type PostVideoItem,
   } from "$lib/shared/media-composition/domain/post-project";
   import { updateItemAt } from "$lib/shared/media-composition/domain/post-project-edits";
+  import { dragSourceCrop, type SourceCropEdge } from "./post-source-crop";
   import {
     boxAt,
+    channelValueAt,
     framingAt,
   } from "$lib/shared/media-composition/domain/post-project-keyframes";
   import {
@@ -66,6 +74,10 @@
     type BoxHandle,
   } from "./post-box-drag";
   import { keepsShape, keptBox, shownBox } from "./post-item-rect";
+  import {
+    dragSourceGeometry,
+    scaleSourceGeometry,
+  } from "./post-source-geometry";
   import {
     PICTURE_NUDGE,
     dragPicturePan,
@@ -158,6 +170,36 @@
 
   const hintId = $props.id();
   const preset = $derived(editor.compiled?.preset ?? null);
+  const previewAudioSegments = $derived(
+    editor.compiled?.videoSegments.filter((segment) => segment.volume > 0) ?? []
+  );
+  const previewAudioPlan = $derived(
+    editor.compiled
+      ? planProjectAudio(editor.compiled, editor.project.audio)
+      : []
+  );
+
+  function previewGain(entry: RegionEntry): number {
+    if (!interactive || !editor.isPlaying || !entry.live) return 0;
+    const index = previewAudioSegments.findIndex(
+      (segment) => segment.itemId === itemIdFromClipId(entry.clip.id)
+    );
+    const segment = previewAudioPlan[index];
+    if (!segment) return 0;
+    const elapsed = editor.previewSeconds - segment.postStartSeconds;
+    if (elapsed < 0 || elapsed >= segment.durationSeconds) return 0;
+    const edgeFade = 0.008;
+    let envelope = 1;
+    const fadeIn = segment.crossfadeInSeconds ?? edgeFade;
+    const fadeOut = segment.crossfadeOutSeconds ?? edgeFade;
+    if (fadeIn > 0) envelope = Math.min(envelope, elapsed / fadeIn);
+    if (fadeOut > 0)
+      envelope = Math.min(
+        envelope,
+        (segment.durationSeconds - elapsed) / fadeOut
+      );
+    return Math.max(0, Math.min(1, envelope * (segment.gain ?? 1)));
+  }
   /** The post's size, before anything is on it too. */
   const outputSize = $derived(
     preset?.output ?? postOutputSize(editor.project.canvas)
@@ -169,6 +211,9 @@
   const backdrop = $derived(
     preset ? backdropLayer(preset, editor.frameLayers) : null
   );
+  /** The clip on the crop screen, while it is open. */
+  const cropItem = $derived(interactive ? (crop?.item ?? null) : null);
+  const cropping = $derived(cropItem !== null);
   /** The crop screen shows its clip even where a fade leaves it clear. */
   const present = $derived(
     cropping
@@ -362,7 +407,34 @@
    * left to show for it.
    */
   function isPictureDragTarget(item: PostItem, box: PostBox): boolean {
-    return item.kind === "video" && fillsFrame(box);
+    return (
+      item.kind === "video" &&
+      !sourceGeometryAt(item, editor.previewSeconds) &&
+      fillsFrame(box)
+    );
+  }
+
+  function sourceGeometryAt(
+    item: PostItem,
+    seconds: number
+  ): PostSourceGeometry | null {
+    if (item.kind !== "video" && item.kind !== "image") return null;
+    if (!item.sourceGeometry && !item.keyframes?.sourceGeometry?.length)
+      return null;
+    return channelValueAt(item, "sourceGeometry", seconds);
+  }
+
+  function shownItemBox(item: PostItem, seconds: number): PostBox {
+    const geometry = sourceGeometryAt(item, seconds);
+    return geometry
+      ? {
+          x: geometry.x,
+          y: geometry.y,
+          width: geometry.width,
+          height: geometry.height,
+          turn: geometry.rotation,
+        }
+      : shownBox(editor, item, seconds);
   }
 
   interface BoxDrag {
@@ -376,6 +448,7 @@
     startBox: PostBox;
     /** Its box, which a shaped clip keeps its room from. */
     startSpot: PostBox;
+    startGeometry?: PostSourceGeometry;
     startSeconds: number;
     startX: number;
     startY: number;
@@ -412,6 +485,7 @@
     itemId: string;
     /** Its box, which the turn keeps all but the angle of. */
     startSpot: PostBox;
+    startGeometry?: PostSourceGeometry;
     startSeconds: number;
     startX: number;
     startY: number;
@@ -450,7 +524,7 @@
     const seconds = editor.previewSeconds;
     return (
       itemsHere.find((item) =>
-        boxContains(shownBox(editor, item, seconds), x, y, rect.width / rect.height)
+        boxContains(shownItemBox(item, seconds), x, y, rect.width / rect.height)
       ) ?? null
     );
   }
@@ -482,7 +556,7 @@
     editor.pause();
     (event.currentTarget as HTMLElement).setPointerCapture(event.pointerId);
     const seconds = editor.previewSeconds;
-    const box = shownBox(editor, item, seconds);
+    const box = shownItemBox(item, seconds);
 
     if (handle === "move" && isPictureDragTarget(item, box)) {
       const video = item as PostVideoItem;
@@ -518,6 +592,7 @@
       handle,
       startBox: box,
       startSpot: boxAt(item, seconds),
+      startGeometry: sourceGeometryAt(item, seconds) ?? undefined,
       startSeconds: seconds,
       startX: event.clientX,
       startY: event.clientY,
@@ -538,7 +613,7 @@
     editor.pause();
     (event.currentTarget as HTMLElement).setPointerCapture(event.pointerId);
     const seconds = editor.previewSeconds;
-    const box = shownBox(editor, item, seconds);
+    const box = shownItemBox(item, seconds);
     const centreX = rect.left + (box.x + box.width / 2) * rect.width;
     const centreY = rect.top + (box.y + box.height / 2) * rect.height;
     drag = {
@@ -546,6 +621,7 @@
       pointerId: event.pointerId,
       itemId: item.id,
       startSpot: boxAt(item, seconds),
+      startGeometry: sourceGeometryAt(item, seconds) ?? undefined,
       startSeconds: seconds,
       startX: event.clientX,
       startY: event.clientY,
@@ -588,7 +664,11 @@
     const itemId = current.itemId;
     const seconds = current.startSeconds;
     if (current.kind === "picture") {
-      const [deltaXPx, deltaYPx] = intoTurnedBox(pixelsX, pixelsY, current.turn);
+      const [deltaXPx, deltaYPx] = intoTurnedBox(
+        pixelsX,
+        pixelsY,
+        current.turn
+      );
       const result = dragPicturePan({
         sourceWidth: current.sourceWidth,
         sourceHeight: current.sourceHeight,
@@ -616,14 +696,33 @@
     if (current.kind === "turn") {
       // Alt turns freely and Shift in steps, as a move's Alt skips its snaps.
       const turn = turnBox(
-        current.startSpot,
-        angleAbout(current.centreX, current.centreY, event) - current.startAngle,
+        current.startGeometry
+          ? { ...current.startSpot, turn: current.startGeometry.rotation }
+          : current.startSpot,
+        angleAbout(current.centreX, current.centreY, event) -
+          current.startAngle,
         event.altKey ? "free" : event.shiftKey ? "step" : "snap"
       );
       if (turning) turning = { ...turning, degrees: turn };
-      const box = { ...current.startSpot, turn };
+      const patch = current.startGeometry
+        ? { sourceGeometry: { ...current.startGeometry, rotation: turn } }
+        : { box: { ...current.startSpot, turn } };
       editor.gestureStep((base, context) =>
-        updateItemAt(base, itemId, { box }, seconds, context)
+        updateItemAt(base, itemId, patch, seconds, context)
+      );
+      return;
+    }
+    if (current.startGeometry) {
+      const sourceGeometry = dragSourceGeometry(
+        current.startGeometry,
+        current.handle,
+        pixelsX,
+        pixelsY,
+        current.width,
+        current.height
+      );
+      editor.gestureStep((base, context) =>
+        updateItemAt(base, itemId, { sourceGeometry }, seconds, context)
       );
       return;
     }
@@ -681,7 +780,20 @@
     event.preventDefault();
     event.stopPropagation();
     const seconds = editor.previewSeconds;
-    const current = shownBox(editor, item, seconds);
+    const current = shownItemBox(item, seconds);
+    const geometry = sourceGeometryAt(item, seconds);
+    if (geometry) {
+      const step = event.shiftKey ? BOX_NUDGE.large : BOX_NUDGE.step;
+      const sourceGeometry = {
+        ...geometry,
+        x: geometry.x + direction[0] * step,
+        y: geometry.y + direction[1] * step,
+      };
+      editor.editSetting(`${item.id}:source-position`, (project, context) =>
+        updateItemAt(project, item.id, { sourceGeometry }, seconds, context)
+      );
+      return;
+    }
     if (item.kind === "video" && isPictureDragTarget(item, current)) {
       nudgePicture(item, current, direction, event.shiftKey, seconds);
       return;
@@ -759,12 +871,45 @@
     }
     if (!(event.ctrlKey || event.metaKey)) return;
     const item = selected;
-    if (!item || item.kind !== "video" || trackLocked(item.id)) return;
+    if (
+      !item ||
+      (item.kind !== "video" && item.kind !== "image") ||
+      trackLocked(item.id)
+    )
+      return;
     // A ctrl/cmd + wheel zoom - a trackpad pinch reports the same way - is a
     // deliberate replacement for the page's own zoom.
     event.preventDefault();
     editor.pause();
     const seconds = editor.previewSeconds;
+    const sourceGeometry = sourceGeometryAt(item, seconds);
+    if (sourceGeometry) {
+      const rect = root?.getBoundingClientRect();
+      if (!rect) return;
+      const factor = Math.max(
+        0.5,
+        Math.min(2, Math.exp(-event.deltaY * 0.001))
+      );
+      const next = scaleSourceGeometry(
+        sourceGeometry,
+        factor,
+        0,
+        0,
+        rect.width,
+        rect.height
+      );
+      editor.editSetting(`${item.id}:source-size`, (project, context) =>
+        updateItemAt(
+          project,
+          item.id,
+          { sourceGeometry: next },
+          seconds,
+          context
+        )
+      );
+      return;
+    }
+    if (item.kind !== "video") return;
     const framing = framingAt(item, seconds);
     const zoom = zoomFromWheelDelta(
       framing.zoom,
@@ -785,6 +930,7 @@
 
   interface PinchState {
     itemId: string;
+    sourceGeometry?: PostSourceGeometry;
     pointerA: number;
     pointerB: number;
     posA: PinchPoint;
@@ -822,7 +968,15 @@
   /** A second finger landing anywhere on the frame pinches a selected video. */
   function startPinch(): void {
     const item = selected;
-    if (!root || !item || item.kind !== "video" || trackLocked(item.id)) return;
+    if (
+      !root ||
+      !item ||
+      (item.kind !== "video" && item.kind !== "image") ||
+      trackLocked(item.id)
+    )
+      return;
+    if (item.kind === "image" && !sourceGeometryAt(item, editor.previewSeconds))
+      return;
     const [first, second] = [...touchPoints.entries()];
     if (touchPoints.size !== 2 || !first || !second) return;
     const [idA, posA] = first;
@@ -832,13 +986,20 @@
     releaseDrag(true);
     const rect = root.getBoundingClientRect();
     const seconds = editor.previewSeconds;
-    const box = shownBox(editor, item, seconds);
-    const framing = framingAt(item, seconds);
-    const size = mountedVideoSize(item.id);
+    const box = shownItemBox(item, seconds);
+    const framing =
+      item.kind === "video"
+        ? framingAt(item, seconds)
+        : { zoom: 1, panX: 0, panY: 0, rotation: 0 };
+    const size =
+      item.kind === "video"
+        ? mountedVideoSize(item.id)
+        : { width: 0, height: 0 };
     editor.pause();
     const mid = midpointOf(posA, posB);
     pinch = {
       itemId: item.id,
+      sourceGeometry: sourceGeometryAt(item, seconds) ?? undefined,
       pointerA: idA,
       pointerB: idB,
       posA,
@@ -854,7 +1015,7 @@
       regionHeightPx: box.height * rect.height,
       sourceWidth: size.width,
       sourceHeight: size.height,
-      fit: item.fit,
+      fit: item.kind === "video" ? item.fit : "contain",
       rotation: framing.rotation,
       turn: boxTurn(box),
       moved: false,
@@ -880,6 +1041,33 @@
       current.moved = true;
       dragging = true;
       editor.beginGesture();
+    }
+    if (current.sourceGeometry) {
+      const rect = root?.getBoundingClientRect();
+      if (!rect) return;
+      const factor = current.distance > 0 ? distance / current.distance : 1;
+      const next = scaleSourceGeometry(
+        current.sourceGeometry,
+        factor,
+        mid.x - current.midX,
+        mid.y - current.midY,
+        rect.width,
+        rect.height
+      );
+      current.sourceGeometry = next;
+      current.distance = distance;
+      current.midX = mid.x;
+      current.midY = mid.y;
+      editor.gestureStep((base, context) =>
+        updateItemAt(
+          base,
+          current.itemId,
+          { sourceGeometry: next },
+          current.startSeconds,
+          context
+        )
+      );
+      return;
     }
     const [slideX, slideY] = intoTurnedBox(
       mid.x - current.midX,
@@ -937,6 +1125,12 @@
 
   function cancelOnEscape(event: KeyboardEvent): void {
     if (event.key !== "Escape") return;
+    if (sourceDrag) {
+      cancelSourceDrag();
+      event.preventDefault();
+      event.stopPropagation();
+      return;
+    }
     if (cancelCropGesture()) {
       event.preventDefault();
       event.stopPropagation();
@@ -956,13 +1150,194 @@
 
   // ---- The crop screen -------------------------------------------------------
 
-  /** The clip on the crop screen, while it is open. */
-  const cropItem = $derived(interactive ? (crop?.item ?? null) : null);
-  const cropping = $derived(cropItem !== null);
+  const sourceCropping = $derived(
+    cropItem !== null &&
+      sourceGeometryAt(cropItem, editor.previewSeconds) !== null
+  );
 
   /** The canvas's own size: on the crop screen, the stage's. */
   let stageWidth = $state(0);
   let stageHeight = $state(0);
+  const sourceRect = $derived.by((): ScreenRect | null => {
+    if (!sourceCropping || stageWidth <= 0 || stageHeight <= 0) return null;
+    const size = crop?.source;
+    const ratio = size ? size.width / size.height : stageWidth / stageHeight;
+    const scale = Math.min((stageWidth * 0.84) / ratio, stageHeight * 0.84);
+    const width = ratio * scale;
+    return {
+      left: (stageWidth - width) / 2,
+      top: (stageHeight - scale) / 2,
+      width,
+      height: scale,
+    };
+  });
+  const sourceFrame = $derived.by((): ScreenRect | null => {
+    const rect = sourceRect;
+    const geometry = cropItem
+      ? sourceGeometryAt(cropItem, editor.previewSeconds)
+      : null;
+    if (!rect || !geometry) return null;
+    const { left, top, right, bottom } = geometry.crop;
+    return {
+      left: rect.left + left * rect.width,
+      top: rect.top + top * rect.height,
+      width: (right - left) * rect.width,
+      height: (bottom - top) * rect.height,
+    };
+  });
+  const fullSourceGeometry: PostSourceGeometry = {
+    x: 0,
+    y: 0,
+    width: 1,
+    height: 1,
+    rotation: 0,
+    crop: { left: 0, top: 0, right: 1, bottom: 1 },
+  };
+  type SourceCropHandle =
+    | SourceCropEdge
+    | "move"
+    | "top-left"
+    | "top-right"
+    | "bottom-left"
+    | "bottom-right";
+  let sourceDrag: {
+    pointerId: number;
+    captureTarget: HTMLElement;
+    edge: SourceCropHandle;
+    x: number;
+    y: number;
+    geometry: PostSourceGeometry;
+    itemId: string;
+    seconds: number;
+  } | null = null;
+  function releaseSourceCapture(active: NonNullable<typeof sourceDrag>): void {
+    if (active.captureTarget.hasPointerCapture(active.pointerId))
+      active.captureTarget.releasePointerCapture(active.pointerId);
+  }
+  function cancelSourceDrag(): void {
+    const active = sourceDrag;
+    if (!active) return;
+    sourceDrag = null;
+    editor.cancelGesture();
+    releaseSourceCapture(active);
+  }
+  onMount(() =>
+    getKeyboardShortcutManager().addInputSuppressor(
+      (event) => sourceDrag !== null && event.key === "Escape"
+    )
+  );
+  $effect(() => {
+    const inGesture = editor.inGesture;
+    if (!inGesture && sourceDrag) {
+      const active = sourceDrag;
+      sourceDrag = null;
+      releaseSourceCapture(active);
+    }
+  });
+  $effect(() => {
+    if (!sourceCropping) untrack(cancelSourceDrag);
+  });
+  function beginSourceDrag(event: PointerEvent, edge: SourceCropHandle): void {
+    const geometry = cropItem
+      ? sourceGeometryAt(cropItem, editor.previewSeconds)
+      : null;
+    if (
+      !geometry ||
+      !cropItem ||
+      !sourceRect ||
+      crop?.locked ||
+      sourceDrag ||
+      event.button !== 0 ||
+      !event.isPrimary ||
+      editor.inGesture
+    )
+      return;
+    event.preventDefault();
+    event.stopPropagation();
+    editor.pause();
+    editor.beginGesture();
+    const captureTarget = event.currentTarget as HTMLElement;
+    sourceDrag = {
+      pointerId: event.pointerId,
+      captureTarget,
+      edge,
+      x: event.clientX,
+      y: event.clientY,
+      geometry,
+      itemId: cropItem.id,
+      seconds: editor.previewSeconds,
+    };
+    captureTarget.setPointerCapture(event.pointerId);
+  }
+  function moveSourceDrag(event: PointerEvent): void {
+    const active = sourceDrag;
+    if (!active || event.pointerId !== active.pointerId || !sourceRect) return;
+    const dx = (event.clientX - active.x) / sourceRect.width;
+    const dy = (event.clientY - active.y) / sourceRect.height;
+    const next = active.edge.includes("-")
+      ? dragSourceCrop(
+          dragSourceCrop(
+            active.geometry,
+            active.edge.endsWith("left") ? "left" : "right",
+            dx,
+            dy
+          ),
+          active.edge.startsWith("top") ? "top" : "bottom",
+          dx,
+          dy
+        )
+      : dragSourceCrop(
+          active.geometry,
+          active.edge as SourceCropEdge | "move",
+          dx,
+          dy
+        );
+    editor.gestureStep((project, context) =>
+      updateItemAt(
+        project,
+        active.itemId,
+        { sourceGeometry: next },
+        active.seconds,
+        context
+      )
+    );
+  }
+  function endSourceDrag(event: PointerEvent, keep: boolean): void {
+    const active = sourceDrag;
+    if (!active || event.pointerId !== active.pointerId) return;
+    sourceDrag = null;
+    if (keep) editor.endGesture();
+    else editor.cancelGesture();
+    releaseSourceCapture(active);
+  }
+  function sourceCropKey(event: KeyboardEvent): void {
+    if (
+      !cropItem ||
+      crop?.locked ||
+      event.altKey ||
+      event.ctrlKey ||
+      event.metaKey
+    )
+      return;
+    const direction = ARROW_DIRECTIONS[event.key];
+    const size = crop?.source;
+    const geometry = sourceGeometryAt(cropItem, editor.previewSeconds);
+    if (!direction || !size || !geometry) return;
+    event.preventDefault();
+    event.stopPropagation();
+    const count = event.shiftKey ? 10 : 1;
+    const next = dragSourceCrop(
+      geometry,
+      "move",
+      (direction[0] * count) / size.width,
+      (direction[1] * count) / size.height
+    );
+    const id = cropItem.id;
+    const seconds = editor.previewSeconds;
+    editor.editSetting(`${id}:source-crop-move`, (project, context) =>
+      updateItemAt(project, id, { sourceGeometry: next }, seconds, context)
+    );
+  }
 
   // Measured as soon as the screen opens, so the window is in place before
   // the flight into it is measured.
@@ -1128,7 +1503,11 @@
   }
 
   /** A client point in output pixels from the window's centre at `origin`. */
-  function fromOrigin(origin: GestureOrigin, clientX: number, clientY: number): CropPoint {
+  function fromOrigin(
+    origin: GestureOrigin,
+    clientX: number,
+    clientY: number
+  ): CropPoint {
     return {
       x: (clientX - origin.x) / origin.scale,
       y: (clientY - origin.y) / origin.scale,
@@ -1232,7 +1611,13 @@
   /** The running glide; any other change to the framing ends it. */
   let glide: Animation[] = [];
 
-  const STILL: StageTransform = { x: 0, y: 0, rotation: 0, scale: 1, mirror: false };
+  const STILL: StageTransform = {
+    x: 0,
+    y: 0,
+    rotation: 0,
+    scale: 1,
+    mirror: false,
+  };
 
   // Rotate, a shape and Reset draw their framing at once, and the picture and
   // its frame glide there from where they were. The stage is read before it
@@ -1577,6 +1962,7 @@
 
   /** Ctrl or Cmd + scroll zooms about the pointer; a plain scroll moves the frame. */
   function cropWheel(event: WheelEvent): void {
+    if (sourceCropping) return;
     if (
       !crop ||
       displayScale <= 0 ||
@@ -1655,6 +2041,14 @@
     // The first finger of a new touch: any finger still counted was lost.
     if (event.isPrimary) touchPoints.clear();
     touchPoints.set(event.pointerId, { x: event.clientX, y: event.clientY });
+    if (sourceCropping) {
+      if (touchPoints.size > 1) {
+        cancelSourceDrag();
+        event.preventDefault();
+        event.stopPropagation();
+      }
+      return;
+    }
     if (touchPoints.size < 2) return;
     event.preventDefault();
     event.stopPropagation();
@@ -1675,6 +2069,7 @@
 
   function onLayerPointerDown(event: PointerEvent): void {
     if (pinch || cropPinch) return;
+    if (sourceCropping) return;
     if (cropping) pressCropStage(event);
     else pressFrame(event);
   }
@@ -1755,7 +2150,7 @@
   }
 </script>
 
-<svelte:window onkeydown={cancelOnEscape} />
+<svelte:window onkeydown={cancelOnEscape} onblur={cancelSourceDrag} />
 
 <div
   class="post-canvas"
@@ -1779,7 +2174,11 @@
     {#each preset.regions as region (region.id)}
       {@const rect = editor.regionRects.get(region.id) ?? region}
       {@const cropRegion = cropping && region.id === cropItem?.id}
-      {@const cropWindow = cropRegion ? windowRect : null}
+      {@const cropWindow = cropRegion
+        ? sourceCropping
+          ? sourceRect
+          : windowRect
+        : null}
       {@const edge = edgeStyle(region, rect, entries.get(region.id) ?? [])}
       <!-- A turned clip turns whole, but the crop screen frames it straight,
            and it cuts to the crop screen rather than flying. -->
@@ -1846,7 +2245,11 @@
                     (binding.renderMode === "choreo-card" ? 0 : undefined)}
                   clipId={entry.clip.id}
                   transform={layer.transform}
+                  sourceGeometry={sourceCropping && cropRegion
+                    ? fullSourceGeometry
+                    : layer.sourceGeometry}
                   playbackRate={entry.clip.playbackRate}
+                  previewGain={previewGain(entry)}
                   onSourceSize={(size) => onSourceSize?.(region.id, size)}
                 />
               </div>
@@ -1891,7 +2294,53 @@
       onpointercancel={onLayerPointerCancel}
     >
       {#if cropping && cropItem}
-        {#if frameRect}
+        {#if sourceCropping && sourceFrame}
+          <div
+            class="crop-frame source-crop-frame"
+            class:locked={crop?.locked}
+            data-crop-frame
+            style:left="{sourceFrame.left}px"
+            style:top="{sourceFrame.top}px"
+            style:width="{sourceFrame.width}px"
+            style:height="{sourceFrame.height}px"
+            role="group"
+            tabindex="0"
+            aria-label="Source crop frame"
+            aria-describedby={hintId}
+            onkeydown={sourceCropKey}
+            onpointerdown={(event) => beginSourceDrag(event, "move")}
+            onpointermove={moveSourceDrag}
+            onpointerup={(event) => endSourceDrag(event, true)}
+            onpointercancel={(event) => endSourceDrag(event, false)}
+            onlostpointercapture={cancelSourceDrag}
+          >
+            <span class="thirds" aria-hidden="true"></span>
+            {#each ["left", "top", "right", "bottom"] as edge (edge)}
+              <span
+                class="source-crop-edge {edge}"
+                aria-hidden="true"
+                onpointerdown={(event) =>
+                  beginSourceDrag(event, edge as SourceCropEdge)}
+                onpointermove={moveSourceDrag}
+                onpointerup={(event) => endSourceDrag(event, true)}
+                onpointercancel={(event) => endSourceDrag(event, false)}
+                onlostpointercapture={cancelSourceDrag}
+              ></span>
+            {/each}
+            {#each ["top-left", "top-right", "bottom-left", "bottom-right"] as corner (corner)}
+              <span
+                class="source-crop-corner {corner}"
+                aria-hidden="true"
+                onpointerdown={(event) =>
+                  beginSourceDrag(event, corner as SourceCropHandle)}
+                onpointermove={moveSourceDrag}
+                onpointerup={(event) => endSourceDrag(event, true)}
+                onpointercancel={(event) => endSourceDrag(event, false)}
+                onlostpointercapture={cancelSourceDrag}
+              ></span>
+            {/each}
+          </div>
+        {:else if frameRect}
           <div
             class="crop-frame"
             class:active={cropActive}
@@ -1964,7 +2413,7 @@
         {/if}
         {#if selected}
           {@const locked = trackLocked(selected.id)}
-          {@const box = shownBox(editor, selected, editor.previewSeconds)}
+          {@const box = shownItemBox(selected, editor.previewSeconds)}
           {@const pictureMode = isPictureDragTarget(selected, box)}
           {@const turn = boxTurn(box)}
           {@const turnSide =
@@ -2035,15 +2484,17 @@
         {/if}
       {/if}
       <span id={hintId} class="sr-only">
-        {cropping
-          ? t("post_crop_keys_hint")
-          : selected &&
-              isPictureDragTarget(
-                selected,
-                shownBox(editor, selected, editor.previewSeconds)
-              )
-            ? t("post_editor_picture_hint")
-            : t("post_editor_box_hint")}
+        {sourceCropping
+          ? "Drag the frame, edges, or corners to adjust the crop. Use arrow keys to move it."
+          : cropping
+            ? t("post_crop_keys_hint")
+            : selected &&
+                isPictureDragTarget(
+                  selected,
+                  shownItemBox(selected, editor.previewSeconds)
+                )
+              ? t("post_editor_picture_hint")
+              : t("post_editor_box_hint")}
       </span>
     </div>
   {/if}
@@ -2127,6 +2578,90 @@
     border: 2px solid var(--theme-primary, #d4813a);
     box-shadow: 0 0 0 100vmax rgb(0 0 0 / 0.55);
     container-type: size;
+  }
+  .source-crop-frame {
+    cursor: move;
+    touch-action: none;
+  }
+  .source-crop-edge {
+    position: absolute;
+    z-index: 2;
+    touch-action: none;
+  }
+  .source-crop-edge::after {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 12px;
+    height: 12px;
+    border: 2px solid var(--theme-primary, #d4813a);
+    border-radius: 3px;
+    background: var(--theme-background, #161616);
+    box-shadow: 0 1px 5px rgb(0 0 0 / 0.6);
+    content: "";
+    transform: translate(-50%, -50%);
+  }
+  .source-crop-edge.left,
+  .source-crop-edge.right {
+    top: 0;
+    bottom: 0;
+    width: 16px;
+    cursor: ew-resize;
+  }
+  .source-crop-edge.left {
+    left: -8px;
+  }
+  .source-crop-edge.right {
+    right: -8px;
+  }
+  .source-crop-edge.top,
+  .source-crop-edge.bottom {
+    left: 0;
+    right: 0;
+    height: 16px;
+    cursor: ns-resize;
+  }
+  .source-crop-edge.top {
+    top: -8px;
+  }
+  .source-crop-edge.bottom {
+    bottom: -8px;
+  }
+  .source-crop-corner {
+    position: absolute;
+    z-index: 3;
+    width: 20px;
+    height: 20px;
+    touch-action: none;
+  }
+  .source-crop-corner::after {
+    position: absolute;
+    inset: 4px;
+    border: 2px solid var(--theme-primary, #d4813a);
+    border-radius: 2px;
+    background: var(--theme-background, #161616);
+    box-shadow: 0 1px 5px rgb(0 0 0 / 0.6);
+    content: "";
+  }
+  .source-crop-corner.top-left {
+    top: -10px;
+    left: -10px;
+    cursor: nwse-resize;
+  }
+  .source-crop-corner.top-right {
+    top: -10px;
+    right: -10px;
+    cursor: nesw-resize;
+  }
+  .source-crop-corner.bottom-left {
+    bottom: -10px;
+    left: -10px;
+    cursor: nesw-resize;
+  }
+  .source-crop-corner.bottom-right {
+    bottom: -10px;
+    right: -10px;
+    cursor: nwse-resize;
   }
   .crop-frame:focus-visible {
     outline: 2px solid var(--theme-text, #fff);
