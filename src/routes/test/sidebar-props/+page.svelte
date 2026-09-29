@@ -1,4 +1,5 @@
 <script lang="ts">
+  import LinkChip from "$lib/shared/ui/components/LinkChip.svelte";
   import PropCompositionPreview from "$lib/shared/pictograph/prop/components/PropCompositionPreview.svelte";
   import LabeledColorPairPicker from "$lib/shared/ui/components/LabeledColorPairPicker.svelte";
   import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
@@ -112,8 +113,8 @@
       />
     </div>
     <nav aria-label="Prop families">
-      {#each families as family}<a href={`#family-${family}`}
-          >{getPropTypeDisplayInfo(family).label}</a
+      {#each families as family}<LinkChip href={`#family-${family}`}
+          >{getPropTypeDisplayInfo(family).label}</LinkChip
         >{/each}
     </nav>
   </header>
@@ -192,15 +193,6 @@
     display: flex;
     gap: 8px 16px;
     flex-wrap: wrap;
-  }
-  nav a {
-    color: var(--theme-text-dim, #b8bdcc);
-    font-size: 14px;
-    min-height: 44px;
-    display: inline-flex;
-    align-items: center;
-    text-decoration: underline;
-    text-underline-offset: 4px;
   }
   section {
     margin-top: 32px;

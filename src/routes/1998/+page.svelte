@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { ERA_CONFIGS } from "$lib/features/retro/shared/domain/era-types";
+	import LinkChip from "$lib/shared/ui/components/LinkChip.svelte";
 	const era = ERA_CONFIGS.win98;
 </script>
 
@@ -11,7 +12,7 @@
 	<h1>{era.title}</h1>
 	<p>{era.subtitle}</p>
 	<p class="phase">Coming soon</p>
-	<a href="/1995">Visit TKA-OS v1.0 (Win95)</a>
+	<LinkChip class="era-link" href="/1995">Visit TKA-OS v1.0 (Win95)</LinkChip>
 </div>
 
 <style>
@@ -37,7 +38,7 @@
 		color: rgba(255, 255, 255, 0.6);
 		font-style: italic;
 	}
-	a {
-		color: #ffff00;
+	.era-placeholder :global(.era-link) {
+		--theme-accent: #ffff00;
 	}
 </style>

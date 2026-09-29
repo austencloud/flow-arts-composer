@@ -367,11 +367,24 @@
   }
 
   .nav-title-link {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
     font-weight: 700;
     font-size: 0.95rem;
     padding: 0.5rem 0.75rem;
     color: oklch(0.7 0.1 270);
-    text-decoration: none;
+    background: none;
+    border: none;
+    border-radius: 10px;
+    text-align: left;
+    transition: all 150ms ease;
+  }
+
+  .nav-title-link:hover {
+    background: oklch(0.2 0.02 270 / 0.4);
+    color: oklch(0.85 0.06 270);
   }
 
   .level-toggle {

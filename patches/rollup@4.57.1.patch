@@ -1,0 +1,188 @@
+diff --git a/dist/es/shared/node-entry.js b/dist/es/shared/node-entry.js
+index 435dc4d12e458f5a5f986116782aa5b7777e2320..ae17765d1f8c692d60c77bbab221b5bac64dd21c 100644
+--- a/dist/es/shared/node-entry.js
++++ b/dist/es/shared/node-entry.js
+@@ -2028,11 +2028,14 @@ const UNKNOWN_NON_ACCESSOR_PATH = [UnknownNonAccessorKey];
+ const UNKNOWN_INTEGER_PATH = [UnknownInteger];
+ const INSTANCEOF_PATH = [SymbolHasInstance];
+ const EntitiesKey = Symbol('Entities');
++function createEntityPathNode(entities) {
++    const node = Object.create(null);
++    node[EntitiesKey] = entities;
++    return node;
++}
+ class EntityPathTracker {
+     constructor() {
+-        this.entityPaths = Object.create(null, {
+-            [EntitiesKey]: { value: new Set() }
+-        });
++        this.entityPaths = createEntityPathNode(new Set());
+     }
+     trackEntityAtPathAndGetIfTracked(path, entity) {
+         const trackedEntities = this.getEntities(path);
+@@ -2053,9 +2056,7 @@ class EntityPathTracker {
+     getEntities(path) {
+         let currentPaths = this.entityPaths;
+         for (const pathSegment of path) {
+-            currentPaths = currentPaths[pathSegment] ||= Object.create(null, {
+-                [EntitiesKey]: { value: new Set() }
+-            });
++            currentPaths = currentPaths[pathSegment] ||= createEntityPathNode(new Set());
+         }
+         return currentPaths[EntitiesKey];
+     }
+@@ -2063,16 +2064,12 @@ class EntityPathTracker {
+ const SHARED_RECURSION_TRACKER = new EntityPathTracker();
+ class DiscriminatedPathTracker {
+     constructor() {
+-        this.entityPaths = Object.create(null, {
+-            [EntitiesKey]: { value: new Map() }
+-        });
++        this.entityPaths = createEntityPathNode(new Map());
+     }
+     trackEntityAtPathAndGetIfTracked(path, discriminator, entity) {
+         let currentPaths = this.entityPaths;
+         for (const pathSegment of path) {
+-            currentPaths = currentPaths[pathSegment] ||= Object.create(null, {
+-                [EntitiesKey]: { value: new Map() }
+-            });
++            currentPaths = currentPaths[pathSegment] ||= createEntityPathNode(new Map());
+         }
+         const trackedEntities = getOrCreate(currentPaths[EntitiesKey], discriminator, (getNewSet));
+         if (trackedEntities.has(entity))
+@@ -19983,18 +19980,32 @@ function getAdditionalSizeIfNoTransitiveDependencyOrNonCorrelatedSideEffect(depe
+     return getAtomsSizeIfBelowLimit(dependencyAtoms & ~correlatedAtoms, currentAdditionalSize, sizeByAtom);
+ }
+ function getAtomsSizeIfBelowLimit(atoms, currentAdditionalSize, sizeByAtom) {
+-    let size = 0;
+-    let atomIndex = 0;
+-    let atomSignature = 1n;
+     const { length } = sizeByAtom;
+-    for (; atomIndex < length; atomIndex++) {
+-        if ((atoms & atomSignature) === atomSignature) {
++    if (length === 0) {
++        return 0;
++    }
++    // The original compares the running size after every index, so an unset
++    // bit 0 still triggers the comparison with a size of 0.
++    if ((atoms & 1n) === 0n && 0 >= currentAdditionalSize) {
++        return Infinity;
++    }
++    let size = 0;
++    let rest = atoms;
++    for (let base = 0; base < length && rest !== 0n; base += 32) {
++        let word = Number(BigInt.asUintN(32, rest));
++        while (word !== 0) {
++            const lowest = word & -word;
++            const atomIndex = base + 31 - Math.clz32(lowest);
++            if (atomIndex >= length) {
++                return size;
++            }
+             size += sizeByAtom[atomIndex];
++            if (size >= currentAdditionalSize) {
++                return Infinity;
++            }
++            word ^= lowest;
+         }
+-        atomSignature <<= 1n;
+-        if (size >= currentAdditionalSize) {
+-            return Infinity;
+-        }
++        rest >>= 32n;
+     }
+     return size;
+ }
+diff --git a/dist/shared/rollup.js b/dist/shared/rollup.js
+index a3f4cab0938aa9748ebb9a734fb74255c9baf4dc..4b9b140062442c60568e2f9f0ea3d5d3dbf6ca03 100644
+--- a/dist/shared/rollup.js
++++ b/dist/shared/rollup.js
+@@ -5819,11 +5819,14 @@ const UNKNOWN_NON_ACCESSOR_PATH = [UnknownNonAccessorKey];
+ const UNKNOWN_INTEGER_PATH = [UnknownInteger];
+ const INSTANCEOF_PATH = [SymbolHasInstance];
+ const EntitiesKey = Symbol('Entities');
++function createEntityPathNode(entities) {
++    const node = Object.create(null);
++    node[EntitiesKey] = entities;
++    return node;
++}
+ class EntityPathTracker {
+     constructor() {
+-        this.entityPaths = Object.create(null, {
+-            [EntitiesKey]: { value: new Set() }
+-        });
++        this.entityPaths = createEntityPathNode(new Set());
+     }
+     trackEntityAtPathAndGetIfTracked(path, entity) {
+         const trackedEntities = this.getEntities(path);
+@@ -5844,9 +5847,7 @@ class EntityPathTracker {
+     getEntities(path) {
+         let currentPaths = this.entityPaths;
+         for (const pathSegment of path) {
+-            currentPaths = currentPaths[pathSegment] ||= Object.create(null, {
+-                [EntitiesKey]: { value: new Set() }
+-            });
++            currentPaths = currentPaths[pathSegment] ||= createEntityPathNode(new Set());
+         }
+         return currentPaths[EntitiesKey];
+     }
+@@ -5854,16 +5855,12 @@ class EntityPathTracker {
+ const SHARED_RECURSION_TRACKER = new EntityPathTracker();
+ class DiscriminatedPathTracker {
+     constructor() {
+-        this.entityPaths = Object.create(null, {
+-            [EntitiesKey]: { value: new Map() }
+-        });
++        this.entityPaths = createEntityPathNode(new Map());
+     }
+     trackEntityAtPathAndGetIfTracked(path, discriminator, entity) {
+         let currentPaths = this.entityPaths;
+         for (const pathSegment of path) {
+-            currentPaths = currentPaths[pathSegment] ||= Object.create(null, {
+-                [EntitiesKey]: { value: new Map() }
+-            });
++            currentPaths = currentPaths[pathSegment] ||= createEntityPathNode(new Map());
+         }
+         const trackedEntities = getOrCreate(currentPaths[EntitiesKey], discriminator, (getNewSet));
+         if (trackedEntities.has(entity))
+@@ -21477,18 +21474,32 @@ function getAdditionalSizeIfNoTransitiveDependencyOrNonCorrelatedSideEffect(depe
+     return getAtomsSizeIfBelowLimit(dependencyAtoms & ~correlatedAtoms, currentAdditionalSize, sizeByAtom);
+ }
+ function getAtomsSizeIfBelowLimit(atoms, currentAdditionalSize, sizeByAtom) {
+-    let size = 0;
+-    let atomIndex = 0;
+-    let atomSignature = 1n;
+     const { length } = sizeByAtom;
+-    for (; atomIndex < length; atomIndex++) {
+-        if ((atoms & atomSignature) === atomSignature) {
++    if (length === 0) {
++        return 0;
++    }
++    // The original compares the running size after every index, so an unset
++    // bit 0 still triggers the comparison with a size of 0.
++    if ((atoms & 1n) === 0n && 0 >= currentAdditionalSize) {
++        return Infinity;
++    }
++    let size = 0;
++    let rest = atoms;
++    for (let base = 0; base < length && rest !== 0n; base += 32) {
++        let word = Number(BigInt.asUintN(32, rest));
++        while (word !== 0) {
++            const lowest = word & -word;
++            const atomIndex = base + 31 - Math.clz32(lowest);
++            if (atomIndex >= length) {
++                return size;
++            }
+             size += sizeByAtom[atomIndex];
++            if (size >= currentAdditionalSize) {
++                return Infinity;
++            }
++            word ^= lowest;
+         }
+-        atomSignature <<= 1n;
+-        if (size >= currentAdditionalSize) {
+-            return Infinity;
+-        }
++        rest >>= 32n;
+     }
+     return size;
+ }

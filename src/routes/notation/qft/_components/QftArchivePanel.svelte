@@ -4,6 +4,7 @@
   import { DURATION } from "$lib/shared/transitions/transitions";
   import QftFrames from "$lib/shared/notation/qft/components/QftFrames.svelte";
   import { GUIDE_MOVES } from "$lib/shared/notation/qft/qft-guide";
+  import LinkChip from "$lib/shared/ui/components/LinkChip.svelte";
   import { getQftAppContext } from "../_context/qft-app-context";
 
   const app = getQftAppContext();
@@ -37,10 +38,11 @@
     <div>
       <h2 id="qft-archive-title">The 2011 diagrams</h2>
       <p>
-        From <a
+        From <LinkChip
+          size="inline"
+          wrap
           href="https://drexfactor.com/weirdscience/2011/05/18/beginners_guide_poi_qft_notation"
-          rel="noreferrer"
-          target="_blank">A Beginner's Guide to Prop QFT Notation</a
+          >A Beginner's Guide to Prop QFT Notation</LinkChip
         >. The forum copy of the same post lost every image.
       </p>
     </div>
@@ -126,10 +128,6 @@
     color: var(--theme-text-dim);
     font-size: var(--font-size-sm, 0.875rem);
     line-height: 1.45;
-  }
-
-  header a {
-    color: var(--theme-accent, #9d8cff);
   }
 
   .close {

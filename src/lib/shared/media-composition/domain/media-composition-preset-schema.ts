@@ -471,6 +471,20 @@ export const MediaCompositionPresetSchema = z
      * `regionMotion` track.
      */
     regionKeyframes: z.array(PresetRegionKeyframesTrackSchema).optional(),
+    /**
+     * What fills the frame under the regions. Absent, the output's background
+     * colour. "blur" draws the first of `clipIds` on screen at that moment,
+     * filling the frame and blurred, under everything else: a post's main
+     * clips, so a clip shown in a shape of its own sits on a soft copy of
+     * itself rather than on bars.
+     */
+    backdrop: z
+      .object({
+        kind: z.literal("blur"),
+        clipIds: z.array(NonEmptyIdSchema).min(1),
+      })
+      .strict()
+      .optional(),
     sourceRoles: z.array(PresetSourceRoleSchema).min(1),
     regions: z.array(LayoutRegionSchema),
     clips: z.array(PresetClipSchema).min(1),
@@ -686,6 +700,16 @@ export const MediaCompositionPresetSchema = z
         index,
         "keyframes",
       ]);
+    });
+
+    preset.backdrop?.clipIds.forEach((clipId, index) => {
+      if (clips.get(clipId)?.kind !== "visual") {
+        context.addIssue({
+          code: "custom",
+          path: ["backdrop", "clipIds", index],
+          message: "The backdrop draws a visual clip that does not exist",
+        });
+      }
     });
   });
 
