@@ -175,14 +175,10 @@
   .assemble-tool-panel {
     --assemble-builder-surface: color-mix(
       in srgb,
-      var(--theme-panel-bg, #10141f) 78%,
+      var(--theme-panel-bg, #10141f) 96%,
       transparent
     );
-    --assemble-builder-surface-raised: color-mix(
-      in srgb,
-      var(--theme-panel-bg, #10141f) 86%,
-      transparent
-    );
+    --assemble-builder-surface-raised: var(--theme-panel-bg, #10141f);
     --assemble-builder-stroke: color-mix(
       in srgb,
       var(--theme-stroke, rgba(255, 255, 255, 0.12)) 74%,
