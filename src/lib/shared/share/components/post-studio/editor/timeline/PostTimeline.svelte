@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { tick, untrack, type Snippet } from "svelte";
+  import { flushSync, tick, untrack, type Snippet } from "svelte";
   import type {
     PostItem,
     PostKeyframeChannel,
@@ -449,6 +449,9 @@
     if (clamped === pixelsPerSecond) return;
     pixelsPerSecond = clamped;
     if (!lanesScrollEl) return;
+    // Grow the scrollable track before setting scrollLeft, or the browser
+    // clamps the new position to the old width and the playhead drifts.
+    flushSync();
     setLanesScrollLeft(
       scrollLeftForStableAnchor({
         anchorSeconds,
