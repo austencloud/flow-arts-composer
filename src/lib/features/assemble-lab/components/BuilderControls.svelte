@@ -1,17 +1,14 @@
 <!--
   BuilderControls.svelte - Context-sensitive controls for the assemble grid.
 
-  One dock under the grid on every screen size: the turn settings (or, before
-  the first point, the grid picker) sit centered above the hand switch, with
-  Complete in a fixed slot beside it. Nothing floats over the dots. Wide
-  panels also get the numpad toggle at the end of the turn row.
+  One dock under the grid on every screen size: the hand switch, with
+  Complete in a fixed slot beside it. The grid, orientation and turn chips
+  float in the grid's top-right corner (BuilderStageActions), so the dock
+  stays one row and the grid gets the height.
 -->
 <script lang="ts">
   import type { AssembleState } from "../state/assemble-state.svelte";
-  import GridModePicker from "./GridModePicker.svelte";
   import BuilderHandPicker from "./BuilderHandPicker.svelte";
-  import BuilderPhaseControls from "./BuilderPhaseControls.svelte";
-  import BuilderKeyboardControl from "./BuilderKeyboardControl.svelte";
   import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
   import EditHistoryShortcutBridge from "$lib/shared/keyboard/components/EditHistoryShortcutBridge.svelte";
 
@@ -22,11 +19,6 @@
 
   const actionsDimmed = $derived(isAnimating);
   const handSelectionDisabled = $derived(isAnimating || isComplete);
-  // The grid is chosen before the first point; once a start point exists the
-  // row belongs to the orientation and turn settings.
-  const showGridPicker = $derived(
-    builderState.canChangeGridMode && builderState.phase === "idle"
-  );
 </script>
 
 <EditHistoryShortcutBridge
@@ -62,27 +54,7 @@
   {/if}
 {/snippet}
 
-<!-- The phase row keeps its height when empty so the grid never resizes as
-     the phase changes. -->
 <div class="dock">
-  <div class="dock-phase-row">
-    <div class="dock-phase-center">
-      {#if showGridPicker}
-        <GridModePicker
-          gridMode={builderState.gridMode}
-          showCenter={builderState.showCenter}
-          onGridModeChange={(mode) => builderState.setGridMode(mode)}
-          onCenterChange={(show) => builderState.setShowCenter(show)}
-        />
-      {:else}
-        <BuilderPhaseControls {builderState} reserveSlots={false} />
-      {/if}
-    </div>
-    <div class="dock-keyboard">
-      <BuilderKeyboardControl {builderState} />
-    </div>
-  </div>
-
   <div
     class="dock-hand-row"
     class:dimmed={actionsDimmed}
@@ -110,38 +82,9 @@
     grid-row: 2;
     flex-direction: column;
     align-items: stretch;
-    gap: 6px;
     width: 100%;
     max-width: 48rem;
     padding: 6px 8px 8px;
-  }
-
-  /* Tall enough for the grid picker, so the grid keeps its size when the
-     first point swaps the picker for the turn settings. The side columns
-     match, so the turn button stays centered under the grid. */
-  .dock-phase-row {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
-    align-items: center;
-    min-height: max(52px, var(--min-touch-target, 44px));
-  }
-
-  .dock-phase-center {
-    display: flex;
-    grid-column: 2;
-    justify-content: center;
-  }
-
-  .dock-keyboard {
-    display: flex;
-    grid-column: 3;
-    justify-content: flex-end;
-  }
-
-  @container tool-panel (max-width: 768px) {
-    .dock-keyboard {
-      display: none;
-    }
   }
 
   .dock-hand-row {
