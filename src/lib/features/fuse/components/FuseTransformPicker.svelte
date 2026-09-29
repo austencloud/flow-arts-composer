@@ -625,7 +625,7 @@
   .transform-picker.inline {
     flex: none;
     display: grid;
-    grid-template-columns: 160px minmax(360px, 1fr) 170px 200px;
+    grid-template-columns: minmax(160px, 1fr) minmax(360px, 2fr) minmax(170px, 1fr) minmax(200px, 1fr);
     align-items: start;
     gap: 8px;
   }
@@ -640,6 +640,7 @@
   }
   .inline .rule-field {
     display: contents;
+    container-type: normal;
   }
   .inline .field,
   .inline .timing-axis,
