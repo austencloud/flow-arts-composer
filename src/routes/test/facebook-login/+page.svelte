@@ -8,6 +8,7 @@
   helping reproduce an account-collision path.
 -->
 <script lang="ts">
+  import LinkChip from "$lib/shared/ui/components/LinkChip.svelte";
   import FacebookIcon from "$lib/shared/auth/components/icons/FacebookIcon.svelte";
   import ProgressRing from "$lib/shared/components/loading/ProgressRing.svelte";
   import { authState } from "$lib/shared/auth/state/auth-state.svelte";
@@ -404,9 +405,9 @@
     <footer class="portal-footer">
       <span>Flow Arts Composer tester page</span>
       <span aria-hidden="true">·</span>
-      <a href="/privacy">Privacy</a>
+      <LinkChip size="inline" href="/privacy">Privacy</LinkChip>
       <span aria-hidden="true">·</span>
-      <a href="/create">Return to the app</a>
+      <LinkChip size="inline" href="/create">Return to the app</LinkChip>
     </footer>
   </main>
 </div>
@@ -662,8 +663,7 @@
 
   .facebook-button:focus-visible,
   .secondary-action:focus-visible,
-  .tester-details summary:focus-visible,
-  .portal-footer a:focus-visible {
+  .tester-details summary:focus-visible {
     outline: 3px solid #a9c8ff;
     outline-offset: 3px;
   }
@@ -962,12 +962,6 @@
     text-align: center;
   }
 
-  .portal-footer a {
-    color: #c9dcff;
-    text-decoration: underline;
-    text-underline-offset: 0.18em;
-  }
-
   @container (max-width: 42rem) {
     .trust-list {
       grid-template-columns: 1fr;
@@ -1026,10 +1020,6 @@
     .secondary-action:hover:not(:disabled),
     .tester-details summary:hover {
       background: rgba(255, 255, 255, 0.11);
-    }
-
-    .portal-footer a:hover {
-      color: #fff;
     }
   }
 

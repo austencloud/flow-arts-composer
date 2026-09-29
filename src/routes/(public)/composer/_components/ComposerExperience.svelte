@@ -4,6 +4,7 @@
   import { activateWhenNear } from "$lib/actions/activate-when-near";
   import LazyMount from "$lib/shared/components/LazyMount.svelte";
   import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
+  import LinkChip from "$lib/shared/ui/components/LinkChip.svelte";
   import PropCompositionPreview from "$lib/shared/pictograph/prop/components/PropCompositionPreview.svelte";
   import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
   import { getPropTypeDisplayInfo } from "$lib/shared/pictograph/prop/domain/prop-type-display-registry";
@@ -394,14 +395,13 @@
 
     <!-- Absolutely positioned, so revealing it cannot move the hero content.
          It marks where the fold is; the section below starts under it. -->
-    <a
+    <LinkChip
       class="scroll-cue"
       href="#construct-title"
       aria-label="Scroll to Construct a sequence"
     >
-      <span>Scroll</span>
-      <i class="fas fa-chevron-down" aria-hidden="true"></i>
-    </a>
+      Scroll
+    </LinkChip>
   </section>
 
   <section class="notation-bridge" aria-labelledby="notation-title">
@@ -611,48 +611,11 @@
   }
 
   /* Quiet fold marker. Sits in the hero's bottom padding, out of flow. */
-  .scroll-cue {
+  .opening :global(.scroll-cue) {
     position: absolute;
     left: 50%;
     bottom: 0.65rem;
     transform: translateX(-50%);
-    display: inline-flex;
-    min-block-size: var(--min-touch-target, 44px);
-    box-sizing: border-box;
-    flex-direction: column;
-    align-items: center;
-    gap: 0.3rem;
-    padding: 0.4rem 0.75rem;
-    border-radius: var(--settings-radius-lg, 0.85rem);
-    color: oklch(0.72 0.018 270);
-    font-size: var(--font-size-min, 0.875rem);
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-    text-decoration: none;
-    transition: color 160ms ease;
-  }
-
-  .scroll-cue:hover {
-    color: oklch(0.88 0.02 270);
-  }
-
-  .scroll-cue:focus-visible {
-    outline: 2px solid var(--theme-accent, #8b8cff);
-    outline-offset: 3px;
-  }
-
-  .scroll-cue i {
-    animation: scroll-cue-drift 2.4s ease-in-out infinite;
-  }
-
-  @keyframes scroll-cue-drift {
-    0%,
-    100% {
-      transform: translateY(0);
-    }
-    50% {
-      transform: translateY(0.28rem);
-    }
   }
 
   .opening-copy {
@@ -1286,7 +1249,7 @@
       --hero-demo-max-width: min(100%, 22rem);
     }
 
-    .scroll-cue {
+    .opening :global(.scroll-cue) {
       position: static;
       transform: none;
       justify-self: center;
@@ -1393,10 +1356,6 @@
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .scroll-cue i {
-      animation: none;
-    }
-
     :global(html:has(.composer-page)) {
       scroll-behavior: auto;
     }

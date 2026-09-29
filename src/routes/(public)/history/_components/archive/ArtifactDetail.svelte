@@ -7,6 +7,7 @@
 <script lang="ts">
 	import type { CatalogEntry } from "$lib/shared/notation/notation-catalog";
 	import SourceVideoCard from "$lib/shared/components/SourceVideoCard.svelte";
+	import LinkChip from "$lib/shared/ui/components/LinkChip.svelte";
 	import ArtifactVisual from "./ArtifactVisual.svelte";
 	import { VTG_DECADE } from "./_lib/vtg-chronicle.svelte";
 
@@ -67,23 +68,12 @@
 
 		<div class="detail-sources">
 			{#if entry.explore}
-				<a class="source-btn explore-btn" href={entry.explore.href}
-					target={entry.explore.href.startsWith("/") ? undefined : "_blank"}
-					rel={entry.explore.href.startsWith("/") ? undefined : "noopener noreferrer"}>
-					<span>{entry.explore.label}</span>
-					<span class="source-arrow" aria-hidden="true">&rarr;</span>
-				</a>
+				<LinkChip class="explore-btn" href={entry.explore.href}
+					>{entry.explore.label}</LinkChip
+				>
 			{/if}
 			{#each entry.sources as source (source.href)}
-				<a
-					class="source-btn"
-					href={source.href}
-					target={source.href.startsWith("/") ? undefined : "_blank"}
-					rel={source.href.startsWith("/") ? undefined : "noopener"}
-				>
-					<span>{source.label}</span>
-					{#if !source.href.startsWith("/")}<span class="source-arrow" aria-hidden="true">&nearr;</span>{/if}
-				</a>
+				<LinkChip href={source.href}>{source.label}</LinkChip>
 			{/each}
 		</div>
 
@@ -247,46 +237,6 @@
 		margin-top: 0.3rem;
 	}
 
-	/* Same pill grammar as the rail actions: quiet uppercase, hairline
-	   border, accent only on hover — the plate stays ink. */
-	.source-btn {
-		display: inline-flex;
-		align-items: center;
-		gap: 0.5rem;
-		min-height: 44px;
-		padding: 0 1.35rem;
-		border-radius: 999px;
-		border: 1px solid oklch(1 0 0 / 0.14);
-		background: transparent;
-		color: oklch(0.88 0.02 270);
-		font-weight: 650;
-		font-size: 0.85rem;
-		letter-spacing: 0.09em;
-		text-transform: uppercase;
-		text-decoration: none;
-		transition: border-color 160ms ease;
-	}
-
-	.source-btn:hover {
-		border-color: color-mix(in oklch, var(--artifact-accent, oklch(0.65 0.1 270)) 65%, transparent);
-	}
-
-	.explore-btn {
-		border-color: transparent;
-		background: var(--artifact-accent, oklch(0.7 0.1 270));
-		color: oklch(0.13 0.01 270);
-	}
-
-	.explore-btn:hover {
-		border-color: transparent;
-		background: color-mix(in oklch, var(--artifact-accent, oklch(0.7 0.1 270)) 86%, white);
-	}
-
-	.source-arrow {
-		font-size: 1.05em;
-		translate: 0 -1px;
-	}
-
 	.detail-videos {
 		display: grid;
 		grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
@@ -303,12 +253,4 @@
 		}
 	}
 
-	@media (prefers-reduced-motion: reduce) {
-		.source-btn {
-			transition: none;
-		}
-		.source-btn:hover {
-			transform: none;
-		}
-	}
 </style>

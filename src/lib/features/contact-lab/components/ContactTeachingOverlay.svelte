@@ -1,4 +1,5 @@
 <script lang="ts">
+  import LinkChip from "$lib/shared/ui/components/LinkChip.svelte";
   import { getContactLabContext } from "../context/contact-lab-context";
 
   const labState = getContactLabContext();
@@ -30,11 +31,10 @@
       Eight palm positions. Slow movement. Open fingers. No clicks between
       spheres.
     </p>
-    <a
+    <LinkChip
       class="reference"
       href="https://www.homeofpoi.com/us/lessons/teach/Juggling/Contact-Ball-Juggling/2-Ball-Palmspin-1"
-      target="_blank"
-      rel="noreferrer">Practitioner reference</a
+      >Practitioner reference</LinkChip
     >
   </header>
 
@@ -112,19 +112,8 @@
     line-height: 1.45;
   }
 
-  .reference {
-    display: inline-block;
+  .teaching-overlay :global(.reference) {
     margin-top: 0.7rem;
-    color: #a9c5ff;
-    font-size: clamp(0.78rem, 0.52cqw, 1.05rem);
-    font-weight: 700;
-    text-decoration-thickness: 0.1em;
-    text-underline-offset: 0.2em;
-  }
-
-  .reference:hover,
-  .reference:focus-visible {
-    color: #ffffff;
   }
 
   .readout {
@@ -225,7 +214,7 @@
 
     .subtitle,
     .contract,
-    .reference {
+    .teaching-overlay :global(.reference) {
       display: none;
     }
 
@@ -246,7 +235,7 @@
     }
 
     .contract,
-    .reference {
+    .teaching-overlay :global(.reference) {
       display: none;
     }
 

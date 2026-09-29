@@ -7,6 +7,7 @@
   No em dashes. No background fill: the cosmic BackgroundHost shows through.
 -->
 <script lang="ts">
+  import LinkChip from "$lib/shared/ui/components/LinkChip.svelte";
   import LaunchpadTile from "$lib/shared/landing/components/launchpad/LaunchpadTile.svelte";
   import type { LaunchpadTileDef } from "$lib/shared/landing/components/launchpad/launchpad-tiles";
   import YutaCapLiveDemo from "./YutaCapLiveDemo.svelte";
@@ -73,7 +74,7 @@
 </script>
 
 <section class="caps-hub" aria-label="What are CAPs">
-  <a class="hub-back" href="/history">← Flow Arts History</a>
+  <LinkChip class="hub-back" href="/history">Flow Arts History</LinkChip>
 
   <header class="hub-head">
     <span class="eyebrow">Continuous Assembly Patterns</span>
@@ -116,17 +117,11 @@
     color: #f2f1fb;
   }
 
-  .hub-back {
+  .caps-hub :global(.hub-back) {
     position: absolute;
     top: clamp(0.5rem, 1.4vh, 1.2rem);
     left: clamp(1rem, 3vw, 2.5rem);
-    font-size: 0.85rem;
-    color: rgba(255, 255, 255, 0.7);
-    text-decoration: none;
     z-index: 2;
-  }
-  .hub-back:hover {
-    color: #fff;
   }
 
   .hub-head {
