@@ -1678,19 +1678,13 @@
         onchange={setCanvas}
         ariaLabel={t("post_canvas_shape")}
       />
+      <!-- Words, not icons: this control shows an option's icon in place of
+           its label, and a drop and a square say little on their own. -->
       <SegmentedControl
         color="accent"
         options={[
-          {
-            value: "blur",
-            label: t("post_canvas_background_blur"),
-            icon: "fa-solid fa-droplet",
-          },
-          {
-            value: "dark",
-            label: t("post_canvas_background_dark"),
-            icon: "fa-solid fa-square",
-          },
+          { value: "dark", label: t("post_canvas_background_dark") },
+          { value: "blur", label: t("post_canvas_background_blur") },
         ]}
         value={editor.project.background ?? POST_DEFAULT_BACKGROUND}
         onchange={setBackground}
