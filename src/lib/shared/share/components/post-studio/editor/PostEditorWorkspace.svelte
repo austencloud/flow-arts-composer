@@ -1171,6 +1171,15 @@
       }
       return;
     }
+    // Space belongs to playback. Leave the action row so the browser does
+    // not light up the last tool's focus ring when keyboard input resumes.
+    if (
+      event.key === " " &&
+      event.target instanceof HTMLElement &&
+      event.target.closest("[data-tool]")
+    ) {
+      rootElement?.focus({ preventScroll: true });
+    }
     if (cropMode && handleCropKey(event)) return;
     switch (event.key) {
       case " ":
