@@ -60,18 +60,24 @@
 
 <style>
   .key-lane-header {
+    --lane-header-bg: color-mix(in srgb, var(--theme-bg, #101018) 70%, #000);
     display: flex;
     box-sizing: border-box;
     align-items: center;
     gap: 0.15rem;
-    padding: 0 0.5rem 0 0.25rem;
+    padding: 0 0.5rem 0 0.4375rem;
     border-bottom: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.06));
-    border-left: 3px solid transparent;
-    background: color-mix(in srgb, var(--theme-bg, #101018) 70%, #000);
+    background: var(--lane-header-bg);
   }
 
+  /* The focused row's header takes the same tint as its span in the lane
+     beside it, so the whole row reads as the one the diamond keys. */
   .key-lane-header.focused {
-    border-left-color: var(--theme-accent);
+    background: color-mix(
+      in srgb,
+      var(--theme-accent) 12%,
+      var(--lane-header-bg)
+    );
   }
 
   .lane-name {

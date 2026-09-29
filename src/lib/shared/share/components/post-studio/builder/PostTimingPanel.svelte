@@ -168,13 +168,15 @@
             onclick={() => session.nudgeGrid(-1)}
             ariaLabel={t("share_studio_deep_grid_frame_earlier")}
           >
-            <i class="fa-solid fa-chevron-left" aria-hidden="true"></i> 1 frame
+            <i class="fa-solid fa-chevron-left" aria-hidden="true"></i>
+            {t("share_studio_deep_one_frame")}
           </PanelButton>
           <PanelButton
             onclick={() => session.nudgeGrid(1)}
             ariaLabel={t("share_studio_deep_grid_frame_later")}
           >
-            1 frame <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>
+            {t("share_studio_deep_one_frame")}
+            <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>
           </PanelButton>
           <TypeableValue
             label={t("share_studio_deep_whole_grid")}
@@ -187,15 +189,16 @@
             oncommit={session.setGridOffset}
           />
         </div>
-        <label class="check">
-          <input
-            type="checkbox"
-            checked={section.snap === "taps"}
-            onchange={(event) =>
-              session.setSnap(event.currentTarget.checked ? "taps" : "grid")}
-          />
-          {t("share_studio_deep_land_exactly_on_taps")}
-        </label>
+        <SegmentedControl
+          options={[
+            { value: "grid", label: t("share_studio_deep_land_on_grid") },
+            { value: "taps", label: t("share_studio_deep_land_on_taps") },
+          ]}
+          value={section.snap}
+          onchange={session.setSnap}
+          size="sm"
+          ariaLabel={t("share_studio_deep_landings")}
+        />
       </div>
 
       {#if session.selected && session.selectedLanding}
@@ -214,7 +217,8 @@
                 session.placeLanding(ref, landing.seconds - MIN_MOVE_SECONDS)}
               ariaLabel={t("share_studio_deep_landing_frame_earlier")}
             >
-              <i class="fa-solid fa-chevron-left" aria-hidden="true"></i> 1 frame
+              <i class="fa-solid fa-chevron-left" aria-hidden="true"></i>
+              {t("share_studio_deep_one_frame")}
             </PanelButton>
             <TypeableValue
               label={landingName(landing.position, session.movesPerPass)}
@@ -228,8 +232,8 @@
                 session.placeLanding(ref, landing.seconds + MIN_MOVE_SECONDS)}
               ariaLabel={t("share_studio_deep_landing_frame_later")}
             >
-              1 frame <i class="fa-solid fa-chevron-right" aria-hidden="true"
-              ></i>
+              {t("share_studio_deep_one_frame")}
+              <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>
             </PanelButton>
             {#if landing.pinned}
               <PanelButton onclick={session.releaseSelected}>
@@ -452,20 +456,6 @@
   .bpm input:focus-visible {
     outline: 2px solid var(--theme-primary, currentColor);
     outline-offset: 1px;
-  }
-  .check {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    min-height: 2.75rem;
-    color: var(--theme-text, #fff);
-    font-size: 0.875rem;
-    cursor: pointer;
-  }
-  .check input {
-    width: 1.125rem;
-    height: 1.125rem;
-    accent-color: var(--theme-primary, #d4813a);
   }
   .parts summary {
     display: flex;
