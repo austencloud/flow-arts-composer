@@ -7,6 +7,7 @@ import {
   POST_FRAME_RATE,
   POST_MIN_ITEM_SECONDS,
   POST_TIME_EPSILON,
+  PostProjectSchema,
   findItem,
   itemEnd,
   mainItemAt,
@@ -57,6 +58,7 @@ import {
 } from "$lib/shared/media-composition/services/frame-evaluator";
 import {
   openPostProject,
+  backupPostProjectBeforeImport,
   savePostProject,
 } from "$lib/shared/media-composition/services/post-project-store";
 import {
@@ -113,7 +115,10 @@ export interface PostEditorDeps {
 }
 
 /** A pure project edit; returning the same project means nothing changed. */
-export type PostEdit = (project: PostProject, context: EditContext) => PostProject;
+export type PostEdit = (
+  project: PostProject,
+  context: EditContext
+) => PostProject;
 
 export function createPostEditorState(deps: PostEditorDeps) {
   const now = deps.now ?? (() => Date.now());
@@ -143,6 +148,7 @@ export function createPostEditorState(deps: PostEditorDeps) {
   } | null>(null);
 
   let media = $state.raw<Record<string, TakeMedia>>({});
+  let imageMedia = $state.raw<Record<string, TakeMedia>>({});
   let timings = $state.raw<Record<string, TakeTiming>>({});
   let timingUndo = $state.raw<Record<string, TakeTiming[]>>({});
   /**
@@ -210,7 +216,11 @@ export function createPostEditorState(deps: PostEditorDeps) {
    *  this map, keyed by region id (an item's own id, one region each). */
   const regionRects = $derived.by((): Map<string, RegionRect> => {
     if (!compiled || compiled.durationSeconds <= 0) return new Map();
-    return evaluateRegionRects(compiled.preset, compiled.durationSeconds, previewSeconds);
+    return evaluateRegionRects(
+      compiled.preset,
+      compiled.durationSeconds,
+      previewSeconds
+    );
   });
 
   const selectedItem = $derived(
@@ -240,7 +250,8 @@ export function createPostEditorState(deps: PostEditorDeps) {
   // ---- The project and its history ---------------------------------------
 
   function keepSelectionValid(next: PostProject): void {
-    if (selectedItemId && !findItem(next, selectedItemId)) selectedItemId = null;
+    if (selectedItemId && !findItem(next, selectedItemId))
+      selectedItemId = null;
     if (previewSeconds > projectDurationSeconds(next)) {
       previewSeconds = projectDurationSeconds(next);
     }
@@ -341,7 +352,11 @@ export function createPostEditorState(deps: PostEditorDeps) {
     past = past.slice(0, -1);
     future = [...future, project];
     if (session) {
-      session = { ...session, steps: session.steps - 1, undone: session.undone + 1 };
+      session = {
+        ...session,
+        steps: session.steps - 1,
+        undone: session.undone + 1,
+      };
     }
     project = previous;
     keepSelectionValid(previous);
@@ -357,7 +372,11 @@ export function createPostEditorState(deps: PostEditorDeps) {
     future = future.slice(0, -1);
     past = [...past, project];
     if (session) {
-      session = { ...session, steps: session.steps + 1, undone: session.undone - 1 };
+      session = {
+        ...session,
+        steps: session.steps + 1,
+        undone: session.undone - 1,
+      };
     }
     project = next;
     keepSelectionValid(next);
@@ -416,7 +435,8 @@ export function createPostEditorState(deps: PostEditorDeps) {
   function differs(a: PostProject, b: PostProject): boolean {
     if (a === b) return false;
     return (
-      JSON.stringify({ ...a, updatedAt: 0 }) !== JSON.stringify({ ...b, updatedAt: 0 })
+      JSON.stringify({ ...a, updatedAt: 0 }) !==
+      JSON.stringify({ ...b, updatedAt: 0 })
     );
   }
 
@@ -482,7 +502,8 @@ export function createPostEditorState(deps: PostEditorDeps) {
     legacy?: StepMap
   ): void {
     const previous = media[take.id];
-    if (previous?.owned && previous.url !== url) URL.revokeObjectURL(previous.url);
+    if (previous?.owned && previous.url !== url)
+      URL.revokeObjectURL(previous.url);
     media = { ...media, [take.id]: { url, owned } };
     if (!timings[take.id]) {
       timings = { ...timings, [take.id]: openTiming(take, legacy) };
@@ -491,7 +512,8 @@ export function createPostEditorState(deps: PostEditorDeps) {
 
   function nextTakeId(): string {
     let index = project.takes.length + 1;
-    while (project.takes.some((take) => take.id === `take-${index}`)) index += 1;
+    while (project.takes.some((take) => take.id === `take-${index}`))
+      index += 1;
     return `take-${index}`;
   }
 
@@ -511,6 +533,56 @@ export function createPostEditorState(deps: PostEditorDeps) {
   }
   timingTakeId = takesInUse[0]?.id ?? project.takes[0]?.id ?? null;
 
+  for (const image of project.images ?? []) {
+    if (image.ref.kind === "linked") {
+      imageMedia[image.id] = { url: image.ref.url, owned: false };
+    }
+  }
+
+  /** Import through the same atomic history path as every other edit. */
+  function importProject(
+    next: PostProject,
+    files: ReadonlyMap<string, File> = new Map()
+  ): void {
+    if (gestureBase || session)
+      throw new Error("Finish the current edit before importing a post.");
+    const parsed = PostProjectSchema.parse({
+      ...next,
+      sequenceId: sequence.id,
+    });
+    for (const asset of [...parsed.takes, ...(parsed.images ?? [])]) {
+      if (asset.ref.kind === "local" && !files.has(asset.ref.name)) {
+        throw new Error(`Missing media: ${asset.ref.name}`);
+      }
+    }
+    // Preserve the old post before changing the project or its loaded media.
+    backupPostProjectBeforeImport(project);
+    for (const take of parsed.takes) {
+      if (take.ref.kind === "linked") attach(take, take.ref.url, false);
+      else if (take.ref.kind === "local") {
+        const file = files.get(take.ref.name);
+        if (!file) throw new Error(`Missing video: ${take.ref.name}`);
+        attach(take, URL.createObjectURL(file), true);
+      }
+    }
+    const nextImages = { ...imageMedia };
+    for (const image of parsed.images ?? []) {
+      if (image.ref.kind === "linked")
+        nextImages[image.id] = { url: image.ref.url, owned: false };
+      else if (image.ref.kind === "local") {
+        const file = files.get(image.ref.name);
+        if (!file) throw new Error(`Missing image: ${image.ref.name}`);
+        nextImages[image.id] = { url: URL.createObjectURL(file), owned: true };
+      }
+    }
+    playing = false;
+    imageMedia = nextImages;
+    commit(parsed);
+    previewSeconds = 0;
+    selectedItemId = null;
+    timingTakeId = parsed.takes[0]?.id ?? null;
+  }
+
   /** The catalog loads after the editor opens; saved takes get their video. */
   function attachCatalogTakes(): void {
     for (const take of project.takes) {
@@ -529,7 +601,9 @@ export function createPostEditorState(deps: PostEditorDeps) {
     if (gestureBase) return null;
     const ctx = context();
     const withTake = addTake(project, take, ctx);
-    const stored = withTake.takes.find((entry) => entry.takeKey === take.takeKey);
+    const stored = withTake.takes.find(
+      (entry) => entry.takeKey === take.takeKey
+    );
     const placed = stored ? appendVideoClip(withTake, stored.id, ctx) : null;
     if (!placed) {
       commit(withTake);
@@ -595,9 +669,48 @@ export function createPostEditorState(deps: PostEditorDeps) {
   /** Reattaches a saved local take; false when the file is a different one. */
   function relinkLocalTake(takeId: string, file: File): boolean {
     const take = project.takes.find((candidate) => candidate.id === takeId);
-    if (!take || take.takeKey !== localTakeKey(file)) return false;
+    if (
+      !take ||
+      take.ref.kind !== "local" ||
+      take.ref.name !== file.name ||
+      take.ref.size !== file.size ||
+      take.ref.lastModified !== file.lastModified
+    )
+      return false;
     attach(take, URL.createObjectURL(file), true);
     return true;
+  }
+
+  /** Restore selected source files after reload without replacing the user's edits. */
+  function relinkProjectFiles(files: ReadonlyMap<string, File>): number {
+    const matches = (ref: PostTake["ref"]): File | undefined => {
+      if (ref.kind !== "local") return undefined;
+      const file = files.get(ref.name);
+      return file &&
+        file.size === ref.size &&
+        file.lastModified === ref.lastModified
+        ? file
+        : undefined;
+    };
+    let linked = 0;
+    for (const take of project.takes) {
+      const file = matches(take.ref);
+      if (file) {
+        attach(take, URL.createObjectURL(file), true);
+        linked++;
+      }
+    }
+    const nextImages = { ...imageMedia };
+    for (const asset of project.images ?? []) {
+      const file = matches(asset.ref);
+      if (!file) continue;
+      const previous = nextImages[asset.id];
+      if (previous?.owned) URL.revokeObjectURL(previous.url);
+      nextImages[asset.id] = { url: URL.createObjectURL(file), owned: true };
+      linked++;
+    }
+    imageMedia = nextImages;
+    return linked;
   }
 
   function renameTake(takeId: string, label: string): void {
@@ -703,7 +816,11 @@ export function createPostEditorState(deps: PostEditorDeps) {
    * A trim shows the frame at the edge being dragged, as InShot does: the
    * new first frame, or the last one.
    */
-  function trimLive(itemId: string, edge: "start" | "end", seconds: number): void {
+  function trimLive(
+    itemId: string,
+    edge: "start" | "end",
+    seconds: number
+  ): void {
     if (isLocked(itemId)) return;
     gestureStep((base, ctx) => trimItem(base, itemId, edge, seconds, ctx));
     const trimmed = findItem(project, itemId)?.item;
@@ -751,7 +868,14 @@ export function createPostEditorState(deps: PostEditorDeps) {
     }
     const partId = `part-${index}`;
     editTiming(takeId, (timing) =>
-      splitTimingSection(timing, atSeconds, partId, now(), moveBeats, "restarts")
+      splitTimingSection(
+        timing,
+        atSeconds,
+        partId,
+        now(),
+        moveBeats,
+        "restarts"
+      )
     );
   }
 
@@ -761,7 +885,11 @@ export function createPostEditorState(deps: PostEditorDeps) {
 
   // ---- Timing ------------------------------------------------------------
 
-  function setTiming(takeId: string, next: TakeTiming, remember: boolean): void {
+  function setTiming(
+    takeId: string,
+    next: TakeTiming,
+    remember: boolean
+  ): void {
     const current = timings[takeId];
     if (!current || next === current) return;
     if (remember) {
@@ -817,7 +945,8 @@ export function createPostEditorState(deps: PostEditorDeps) {
   }
 
   function togglePlayback(): void {
-    if (!playing && previewSeconds >= durationSeconds - 1e-3) previewSeconds = 0;
+    if (!playing && previewSeconds >= durationSeconds - 1e-3)
+      previewSeconds = 0;
     playing = durationSeconds > 0 && !playing;
   }
 
@@ -827,6 +956,9 @@ export function createPostEditorState(deps: PostEditorDeps) {
 
   function dispose(): void {
     for (const held of Object.values(media)) {
+      if (held.owned) URL.revokeObjectURL(held.url);
+    }
+    for (const held of Object.values(imageMedia)) {
       if (held.owned) URL.revokeObjectURL(held.url);
     }
   }
@@ -844,6 +976,13 @@ export function createPostEditorState(deps: PostEditorDeps) {
     get takes() {
       return project.takes;
     },
+    get images() {
+      return project.images ?? [];
+    },
+    imageUrl(imageId: string): string | null {
+      return imageMedia[imageId]?.url ?? null;
+    },
+    importProject,
     get compiled() {
       return compiled;
     },
@@ -955,6 +1094,7 @@ export function createPostEditorState(deps: PostEditorDeps) {
     addCatalogVideo,
     appendTakeClip,
     relinkLocalTake,
+    relinkProjectFiles,
     attachCatalogTakes,
     renameTake,
     removeTake,

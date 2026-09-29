@@ -10,6 +10,7 @@
     channelKeyframeSeconds,
     channelSegments,
     channelValueAt,
+    easingControlPoints,
     easingPresetOf,
   } from "$lib/shared/media-composition/domain/post-project-keyframes";
   import { t } from "$lib/shared/i18n/i18n.svelte.js";
@@ -90,7 +91,10 @@
       const fromText = channelValueText(channel, fromValue);
       const toText = channelValueText(channel, toValue);
       const preset = easingPresetOf(segment.easing);
-      const curveName = preset === "custom" ? t("post_curve_custom") : easingPresetLabel(preset);
+      const curveName =
+        preset === "custom"
+          ? t("post_curve_custom")
+          : easingPresetLabel(preset);
       return [
         {
           index: segment.index,
@@ -100,7 +104,10 @@
           // The curve is drawn across the whole segment and clipped to what
           // shows, so a trimmed clip still shows the right part of its shape.
           shapeOffsetPx: fullLeftPx - leftPx,
-          shapeWidthPx: secondsToPixels(segment.toSeconds - segment.fromSeconds, pixelsPerSecond),
+          shapeWidthPx: secondsToPixels(
+            segment.toSeconds - segment.fromSeconds,
+            pixelsPerSecond
+          ),
           path: curvePath(
             segment.easing,
             curveDirection(
@@ -109,7 +116,9 @@
             )
           ),
           values:
-            fromText === null || toText === null || widthPx < VALUES_MIN_WIDTH_PX
+            fromText === null ||
+            toText === null ||
+            widthPx < VALUES_MIN_WIDTH_PX
               ? null
               : fromText === toText
                 ? fromText
@@ -128,7 +137,10 @@
   type CurveDirection = "up" | "down" | "flat";
 
   /** Which way the value goes; Position has no single number, so it reads as up. */
-  function curveDirection(from: number | null, to: number | null): CurveDirection {
+  function curveDirection(
+    from: number | null,
+    to: number | null
+  ): CurveDirection {
     if (from === null || to === null) return "up";
     if (Math.abs(to - from) < 1e-6) return "flat";
     return to > from ? "up" : "down";
@@ -138,9 +150,10 @@
   function curvePath(easing: PostEasing, direction: CurveDirection): string {
     if (direction === "flat") return "M0 50 H100";
     // SVG y grows downward: a rising value runs from the bottom to the top.
-    const y = (progress: number) => (direction === "up" ? 100 - progress * 100 : progress * 100);
+    const y = (progress: number) =>
+      direction === "up" ? 100 - progress * 100 : progress * 100;
     if (easing === "hold") return `M0 ${y(0)} H100 V${y(1)}`;
-    const [x1, y1, x2, y2] = easing;
+    const [x1, y1, x2, y2] = easingControlPoints(easing)!;
     return `M0 ${y(0)} C${x1 * 100} ${y(y1)} ${x2 * 100} ${y(y2)} 100 ${y(1)}`;
   }
 
@@ -150,14 +163,21 @@
   // timeline is not a tap: the browser cancels the pointer, or it travels.
   function handleRowPointerDown(event: PointerEvent): void {
     if (event.button !== 0 || event.target !== event.currentTarget) return;
-    tapStart = { x: event.clientX, y: event.clientY, pointerId: event.pointerId };
+    tapStart = {
+      x: event.clientX,
+      y: event.clientY,
+      pointerId: event.pointerId,
+    };
   }
 
   function handleRowPointerUp(event: PointerEvent): void {
     const start = tapStart;
     tapStart = null;
     if (!start || start.pointerId !== event.pointerId) return;
-    if (Math.hypot(event.clientX - start.x, event.clientY - start.y) > TAP_SLOP_PX) return;
+    if (
+      Math.hypot(event.clientX - start.x, event.clientY - start.y) > TAP_SLOP_PX
+    )
+      return;
     const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
     onSeek(Math.max(0, (event.clientX - rect.left) / pixelsPerSecond));
   }
@@ -216,7 +236,8 @@
     <button
       type="button"
       class="kf-key"
-      class:on={Math.abs(seconds - playheadSeconds) <= POST_KEYFRAME_MERGE_SECONDS}
+      class:on={Math.abs(seconds - playheadSeconds) <=
+        POST_KEYFRAME_MERGE_SECONDS}
       style="left: clamp({KEY_EDGE_INSET_PX}px, {secondsToPixels(
         seconds,
         pixelsPerSecond
@@ -256,7 +277,8 @@
     top: 0;
     bottom: 0;
     background: color-mix(in srgb, var(--theme-accent) 6%, transparent);
-    border-inline: 1px dashed color-mix(in srgb, var(--theme-accent) 30%, transparent);
+    border-inline: 1px dashed
+      color-mix(in srgb, var(--theme-accent) 30%, transparent);
     pointer-events: none;
   }
 

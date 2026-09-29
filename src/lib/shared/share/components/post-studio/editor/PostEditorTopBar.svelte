@@ -15,14 +15,27 @@
     editor: PostEditorState;
     exporting: boolean;
     onExport: () => void;
+    onImport?: () => void;
     trailing?: Snippet;
   }
 
-  let { editor, exporting, onExport, trailing }: Props = $props();
+  let { editor, exporting, onExport, onImport, trailing }: Props = $props();
 </script>
 
 <div class="top-bar">
   <div class="history">
+    {#if onImport && !trailing}
+      <button
+        type="button"
+        class="icon-button"
+        disabled={exporting}
+        onclick={onImport}
+        aria-label="Import InShot project"
+        title="Import InShot project"
+      >
+        <i class="fa-solid fa-file-import" aria-hidden="true"></i>
+      </button>
+    {/if}
     <button
       type="button"
       class="icon-button"

@@ -21,7 +21,11 @@
     shadowDropInRegion,
   } from "$lib/shared/media-composition/services/region-edge-painter";
   import type { LayoutRegion } from "$lib/shared/media-composition/domain/media-layout-schema";
-  import { itemIdFromStaffEffectRole } from "$lib/shared/media-composition/domain/post-project-compiler";
+  import {
+    itemIdFromClipId,
+    itemIdFromStaffEffectRole,
+  } from "$lib/shared/media-composition/domain/post-project-compiler";
+  import { planProjectAudio } from "$lib/shared/media-composition/domain/post-audio-plan";
   import {
     ANIMATION_OVERLAY_ROLE,
     STRIP_AREA,
@@ -35,11 +39,13 @@
     itemEnd,
     type PostBox,
     type PostItem,
+    type PostSourceGeometry,
     type PostVideoItem,
   } from "$lib/shared/media-composition/domain/post-project";
   import { updateItemAt } from "$lib/shared/media-composition/domain/post-project-edits";
   import {
     boxAt,
+    channelValueAt,
     framingAt,
   } from "$lib/shared/media-composition/domain/post-project-keyframes";
   import {
@@ -66,6 +72,10 @@
     type BoxHandle,
   } from "./post-box-drag";
   import { keepsShape, keptBox, shownBox } from "./post-item-rect";
+  import {
+    dragSourceGeometry,
+    scaleSourceGeometry,
+  } from "./post-source-geometry";
   import {
     PICTURE_NUDGE,
     dragPicturePan,
@@ -158,6 +168,36 @@
 
   const hintId = $props.id();
   const preset = $derived(editor.compiled?.preset ?? null);
+  const previewAudioSegments = $derived(
+    editor.compiled?.videoSegments.filter((segment) => segment.volume > 0) ?? []
+  );
+  const previewAudioPlan = $derived(
+    editor.compiled
+      ? planProjectAudio(editor.compiled, editor.project.audio)
+      : []
+  );
+
+  function previewGain(entry: RegionEntry): number {
+    if (!interactive || !editor.isPlaying || !entry.live) return 0;
+    const index = previewAudioSegments.findIndex(
+      (segment) => segment.itemId === itemIdFromClipId(entry.clip.id)
+    );
+    const segment = previewAudioPlan[index];
+    if (!segment) return 0;
+    const elapsed = editor.previewSeconds - segment.postStartSeconds;
+    if (elapsed < 0 || elapsed >= segment.durationSeconds) return 0;
+    const edgeFade = 0.008;
+    let envelope = 1;
+    const fadeIn = segment.crossfadeInSeconds ?? edgeFade;
+    const fadeOut = segment.crossfadeOutSeconds ?? edgeFade;
+    if (fadeIn > 0) envelope = Math.min(envelope, elapsed / fadeIn);
+    if (fadeOut > 0)
+      envelope = Math.min(
+        envelope,
+        (segment.durationSeconds - elapsed) / fadeOut
+      );
+    return Math.max(0, Math.min(1, envelope * (segment.gain ?? 1)));
+  }
   /** The post's size, before anything is on it too. */
   const outputSize = $derived(
     preset?.output ?? postOutputSize(editor.project.canvas)
@@ -362,7 +402,34 @@
    * left to show for it.
    */
   function isPictureDragTarget(item: PostItem, box: PostBox): boolean {
-    return item.kind === "video" && fillsFrame(box);
+    return (
+      item.kind === "video" &&
+      !sourceGeometryAt(item, editor.previewSeconds) &&
+      fillsFrame(box)
+    );
+  }
+
+  function sourceGeometryAt(
+    item: PostItem,
+    seconds: number
+  ): PostSourceGeometry | null {
+    if (item.kind !== "video" && item.kind !== "image") return null;
+    if (!item.sourceGeometry && !item.keyframes?.sourceGeometry?.length)
+      return null;
+    return channelValueAt(item, "sourceGeometry", seconds);
+  }
+
+  function shownItemBox(item: PostItem, seconds: number): PostBox {
+    const geometry = sourceGeometryAt(item, seconds);
+    return geometry
+      ? {
+          x: geometry.x,
+          y: geometry.y,
+          width: geometry.width,
+          height: geometry.height,
+          turn: geometry.rotation,
+        }
+      : shownBox(editor, item, seconds);
   }
 
   interface BoxDrag {
@@ -376,6 +443,7 @@
     startBox: PostBox;
     /** Its box, which a shaped clip keeps its room from. */
     startSpot: PostBox;
+    startGeometry?: PostSourceGeometry;
     startSeconds: number;
     startX: number;
     startY: number;
@@ -412,6 +480,7 @@
     itemId: string;
     /** Its box, which the turn keeps all but the angle of. */
     startSpot: PostBox;
+    startGeometry?: PostSourceGeometry;
     startSeconds: number;
     startX: number;
     startY: number;
@@ -450,7 +519,7 @@
     const seconds = editor.previewSeconds;
     return (
       itemsHere.find((item) =>
-        boxContains(shownBox(editor, item, seconds), x, y, rect.width / rect.height)
+        boxContains(shownItemBox(item, seconds), x, y, rect.width / rect.height)
       ) ?? null
     );
   }
@@ -482,7 +551,7 @@
     editor.pause();
     (event.currentTarget as HTMLElement).setPointerCapture(event.pointerId);
     const seconds = editor.previewSeconds;
-    const box = shownBox(editor, item, seconds);
+    const box = shownItemBox(item, seconds);
 
     if (handle === "move" && isPictureDragTarget(item, box)) {
       const video = item as PostVideoItem;
@@ -518,6 +587,7 @@
       handle,
       startBox: box,
       startSpot: boxAt(item, seconds),
+      startGeometry: sourceGeometryAt(item, seconds) ?? undefined,
       startSeconds: seconds,
       startX: event.clientX,
       startY: event.clientY,
@@ -538,7 +608,7 @@
     editor.pause();
     (event.currentTarget as HTMLElement).setPointerCapture(event.pointerId);
     const seconds = editor.previewSeconds;
-    const box = shownBox(editor, item, seconds);
+    const box = shownItemBox(item, seconds);
     const centreX = rect.left + (box.x + box.width / 2) * rect.width;
     const centreY = rect.top + (box.y + box.height / 2) * rect.height;
     drag = {
@@ -546,6 +616,7 @@
       pointerId: event.pointerId,
       itemId: item.id,
       startSpot: boxAt(item, seconds),
+      startGeometry: sourceGeometryAt(item, seconds) ?? undefined,
       startSeconds: seconds,
       startX: event.clientX,
       startY: event.clientY,
@@ -588,7 +659,11 @@
     const itemId = current.itemId;
     const seconds = current.startSeconds;
     if (current.kind === "picture") {
-      const [deltaXPx, deltaYPx] = intoTurnedBox(pixelsX, pixelsY, current.turn);
+      const [deltaXPx, deltaYPx] = intoTurnedBox(
+        pixelsX,
+        pixelsY,
+        current.turn
+      );
       const result = dragPicturePan({
         sourceWidth: current.sourceWidth,
         sourceHeight: current.sourceHeight,
@@ -616,14 +691,33 @@
     if (current.kind === "turn") {
       // Alt turns freely and Shift in steps, as a move's Alt skips its snaps.
       const turn = turnBox(
-        current.startSpot,
-        angleAbout(current.centreX, current.centreY, event) - current.startAngle,
+        current.startGeometry
+          ? { ...current.startSpot, turn: current.startGeometry.rotation }
+          : current.startSpot,
+        angleAbout(current.centreX, current.centreY, event) -
+          current.startAngle,
         event.altKey ? "free" : event.shiftKey ? "step" : "snap"
       );
       if (turning) turning = { ...turning, degrees: turn };
-      const box = { ...current.startSpot, turn };
+      const patch = current.startGeometry
+        ? { sourceGeometry: { ...current.startGeometry, rotation: turn } }
+        : { box: { ...current.startSpot, turn } };
       editor.gestureStep((base, context) =>
-        updateItemAt(base, itemId, { box }, seconds, context)
+        updateItemAt(base, itemId, patch, seconds, context)
+      );
+      return;
+    }
+    if (current.startGeometry) {
+      const sourceGeometry = dragSourceGeometry(
+        current.startGeometry,
+        current.handle,
+        pixelsX,
+        pixelsY,
+        current.width,
+        current.height
+      );
+      editor.gestureStep((base, context) =>
+        updateItemAt(base, itemId, { sourceGeometry }, seconds, context)
       );
       return;
     }
@@ -681,7 +775,20 @@
     event.preventDefault();
     event.stopPropagation();
     const seconds = editor.previewSeconds;
-    const current = shownBox(editor, item, seconds);
+    const current = shownItemBox(item, seconds);
+    const geometry = sourceGeometryAt(item, seconds);
+    if (geometry) {
+      const step = event.shiftKey ? BOX_NUDGE.large : BOX_NUDGE.step;
+      const sourceGeometry = {
+        ...geometry,
+        x: geometry.x + direction[0] * step,
+        y: geometry.y + direction[1] * step,
+      };
+      editor.editSetting(`${item.id}:source-position`, (project, context) =>
+        updateItemAt(project, item.id, { sourceGeometry }, seconds, context)
+      );
+      return;
+    }
     if (item.kind === "video" && isPictureDragTarget(item, current)) {
       nudgePicture(item, current, direction, event.shiftKey, seconds);
       return;
@@ -759,12 +866,45 @@
     }
     if (!(event.ctrlKey || event.metaKey)) return;
     const item = selected;
-    if (!item || item.kind !== "video" || trackLocked(item.id)) return;
+    if (
+      !item ||
+      (item.kind !== "video" && item.kind !== "image") ||
+      trackLocked(item.id)
+    )
+      return;
     // A ctrl/cmd + wheel zoom - a trackpad pinch reports the same way - is a
     // deliberate replacement for the page's own zoom.
     event.preventDefault();
     editor.pause();
     const seconds = editor.previewSeconds;
+    const sourceGeometry = sourceGeometryAt(item, seconds);
+    if (sourceGeometry) {
+      const rect = root?.getBoundingClientRect();
+      if (!rect) return;
+      const factor = Math.max(
+        0.5,
+        Math.min(2, Math.exp(-event.deltaY * 0.001))
+      );
+      const next = scaleSourceGeometry(
+        sourceGeometry,
+        factor,
+        0,
+        0,
+        rect.width,
+        rect.height
+      );
+      editor.editSetting(`${item.id}:source-size`, (project, context) =>
+        updateItemAt(
+          project,
+          item.id,
+          { sourceGeometry: next },
+          seconds,
+          context
+        )
+      );
+      return;
+    }
+    if (item.kind !== "video") return;
     const framing = framingAt(item, seconds);
     const zoom = zoomFromWheelDelta(
       framing.zoom,
@@ -785,6 +925,7 @@
 
   interface PinchState {
     itemId: string;
+    sourceGeometry?: PostSourceGeometry;
     pointerA: number;
     pointerB: number;
     posA: PinchPoint;
@@ -822,7 +963,15 @@
   /** A second finger landing anywhere on the frame pinches a selected video. */
   function startPinch(): void {
     const item = selected;
-    if (!root || !item || item.kind !== "video" || trackLocked(item.id)) return;
+    if (
+      !root ||
+      !item ||
+      (item.kind !== "video" && item.kind !== "image") ||
+      trackLocked(item.id)
+    )
+      return;
+    if (item.kind === "image" && !sourceGeometryAt(item, editor.previewSeconds))
+      return;
     const [first, second] = [...touchPoints.entries()];
     if (touchPoints.size !== 2 || !first || !second) return;
     const [idA, posA] = first;
@@ -832,13 +981,20 @@
     releaseDrag(true);
     const rect = root.getBoundingClientRect();
     const seconds = editor.previewSeconds;
-    const box = shownBox(editor, item, seconds);
-    const framing = framingAt(item, seconds);
-    const size = mountedVideoSize(item.id);
+    const box = shownItemBox(item, seconds);
+    const framing =
+      item.kind === "video"
+        ? framingAt(item, seconds)
+        : { zoom: 1, panX: 0, panY: 0, rotation: 0 };
+    const size =
+      item.kind === "video"
+        ? mountedVideoSize(item.id)
+        : { width: 0, height: 0 };
     editor.pause();
     const mid = midpointOf(posA, posB);
     pinch = {
       itemId: item.id,
+      sourceGeometry: sourceGeometryAt(item, seconds) ?? undefined,
       pointerA: idA,
       pointerB: idB,
       posA,
@@ -854,7 +1010,7 @@
       regionHeightPx: box.height * rect.height,
       sourceWidth: size.width,
       sourceHeight: size.height,
-      fit: item.fit,
+      fit: item.kind === "video" ? item.fit : "contain",
       rotation: framing.rotation,
       turn: boxTurn(box),
       moved: false,
@@ -880,6 +1036,33 @@
       current.moved = true;
       dragging = true;
       editor.beginGesture();
+    }
+    if (current.sourceGeometry) {
+      const rect = root?.getBoundingClientRect();
+      if (!rect) return;
+      const factor = current.distance > 0 ? distance / current.distance : 1;
+      const next = scaleSourceGeometry(
+        current.sourceGeometry,
+        factor,
+        mid.x - current.midX,
+        mid.y - current.midY,
+        rect.width,
+        rect.height
+      );
+      current.sourceGeometry = next;
+      current.distance = distance;
+      current.midX = mid.x;
+      current.midY = mid.y;
+      editor.gestureStep((base, context) =>
+        updateItemAt(
+          base,
+          current.itemId,
+          { sourceGeometry: next },
+          current.startSeconds,
+          context
+        )
+      );
+      return;
     }
     const [slideX, slideY] = intoTurnedBox(
       mid.x - current.midX,
@@ -1128,7 +1311,11 @@
   }
 
   /** A client point in output pixels from the window's centre at `origin`. */
-  function fromOrigin(origin: GestureOrigin, clientX: number, clientY: number): CropPoint {
+  function fromOrigin(
+    origin: GestureOrigin,
+    clientX: number,
+    clientY: number
+  ): CropPoint {
     return {
       x: (clientX - origin.x) / origin.scale,
       y: (clientY - origin.y) / origin.scale,
@@ -1232,7 +1419,13 @@
   /** The running glide; any other change to the framing ends it. */
   let glide: Animation[] = [];
 
-  const STILL: StageTransform = { x: 0, y: 0, rotation: 0, scale: 1, mirror: false };
+  const STILL: StageTransform = {
+    x: 0,
+    y: 0,
+    rotation: 0,
+    scale: 1,
+    mirror: false,
+  };
 
   // Rotate, a shape and Reset draw their framing at once, and the picture and
   // its frame glide there from where they were. The stage is read before it
@@ -1846,7 +2039,9 @@
                     (binding.renderMode === "choreo-card" ? 0 : undefined)}
                   clipId={entry.clip.id}
                   transform={layer.transform}
+                  sourceGeometry={layer.sourceGeometry}
                   playbackRate={entry.clip.playbackRate}
+                  previewGain={previewGain(entry)}
                   onSourceSize={(size) => onSourceSize?.(region.id, size)}
                 />
               </div>
@@ -1964,7 +2159,7 @@
         {/if}
         {#if selected}
           {@const locked = trackLocked(selected.id)}
-          {@const box = shownBox(editor, selected, editor.previewSeconds)}
+          {@const box = shownItemBox(selected, editor.previewSeconds)}
           {@const pictureMode = isPictureDragTarget(selected, box)}
           {@const turn = boxTurn(box)}
           {@const turnSide =
@@ -2040,7 +2235,7 @@
           : selected &&
               isPictureDragTarget(
                 selected,
-                shownBox(editor, selected, editor.previewSeconds)
+                shownItemBox(selected, editor.previewSeconds)
               )
             ? t("post_editor_picture_hint")
             : t("post_editor_box_hint")}

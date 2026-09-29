@@ -1,11 +1,12 @@
 <!--
-  Visual harness for Post Studio with the published DCKΨ- sequence and a local
-  copy of Austen's clean September 6 phone take, offered as a saved video in
+  Visual harness for Post Studio with the published ΩΛ-XJ sequence and the
+  recovered first September 6 camera cut, offered as a saved video in
   the editor's video list. The clip is gitignored, so the route also works
   without it: add a video from this device instead.
 -->
 <script lang="ts">
   import { onDestroy, onMount } from "svelte";
+  import { setLocale, toLocale } from "$lib/shared/i18n/i18n.svelte.js";
   import PostStudio from "$lib/shared/share/components/post-studio/PostStudio.svelte";
   import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
   import { hydrateSequence } from "$lib/shared/sequence-viewer/services/sequence-data-provider";
@@ -24,12 +25,12 @@
   import { registerEditHistoryShortcuts } from "$lib/shared/keyboard/registration/register-edit-history-shortcuts";
   import { keyboardShortcutState } from "$lib/shared/keyboard/state/keyboard-shortcut-state.svelte";
 
-  const SEQUENCE_WORD = "DCKΨ-DCKΨ-DCKΨ-DCKΨ-";
-  const SEQUENCE_ID = "DCKΨ-";
-  const VIDEO_URL = "/word-videos/DCK-Psi-performance.mp4";
-  /** ffprobe of the local browser copy: 22.635s, 720x1280, 30fps. */
-  const VIDEO_DURATION = 22.635;
-  const VIDEO_ID = "post-studio-dck-psi-local-example";
+  const SEQUENCE_WORD = "ΩΛ-XJΩΛ-XJΩΛ-XJΩΛ-XJ";
+  const SEQUENCE_ID = "ΩΛ-XJ";
+  const VIDEO_URL = "/word-videos/inshot-recovery/camera-cut-1.mp4";
+  /** The InShot draft's cut length; the encoded file rounds to video frames. */
+  const VIDEO_DURATION = 25.137199;
+  const VIDEO_ID = "post-studio-omlam-xj-recovered-cut";
 
   let sequence = $state<SequenceData | null>(null);
   let cardPreviewUrl = $state<string | null>(null);
@@ -47,7 +48,7 @@
     const record: CollaborativeVideo = {
       id: VIDEO_ID,
       videoUrl: VIDEO_URL,
-      storagePath: "local-example/DCK-Psi-performance.mp4",
+      storagePath: "local-example/inshot-recovery/camera-cut-1.mp4",
       duration: VIDEO_DURATION,
       fileSize: 0,
       mimeType: "video/mp4",
@@ -59,7 +60,7 @@
       collaborators: [],
       pendingInvites: [],
       visibility: "private",
-      description: "DCKΨ- clean phone take",
+      description: "ΩΛ-XJ — recovered full-speed cut",
       createdAt: now,
       updatedAt: now,
     };
@@ -75,11 +76,16 @@
   }
 
   onMount(async () => {
+    const requestedLocale = toLocale(
+      new URL(window.location.href).searchParams.get("lang") ?? ""
+    );
+    if (requestedLocale) await setLocale(requestedLocale);
     // The boot bar in app.html waits for the app layout to report 100%, and a
     // /test route never runs that layout, so without this the splash sits over
     // the harness until its 15s safety net fires.
-    (window as unknown as { __tkaLoadProgress?: (p: number) => void })
-      .__tkaLoadProgress?.(100);
+    (
+      window as unknown as { __tkaLoadProgress?: (p: number) => void }
+    ).__tkaLoadProgress?.(100);
     registerLoopDetector(loopDetector);
     try {
       const loaded = await getBrowseLoader().loadFullSequenceData(

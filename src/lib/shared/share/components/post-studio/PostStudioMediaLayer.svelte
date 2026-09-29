@@ -36,8 +36,11 @@
     displayedBeatNumber?: number;
     clipId: string;
     transform: EvaluatedFrameLayer["transform"];
+    sourceGeometry?: EvaluatedFrameLayer["sourceGeometry"];
     /** The act's speed; the footage runs at it while the preview plays. */
     playbackRate?: number;
+    /** Live preview only. Export audio is mixed separately. */
+    previewGain?: number;
     /** Told the footage's or image's own size once it has loaded. */
     onSourceSize?: (size: { width: number; height: number }) => void;
   }
@@ -60,7 +63,9 @@
     displayedBeatNumber,
     clipId,
     transform,
+    sourceGeometry,
     playbackRate = 1,
+    previewGain = 0,
     onSourceSize,
   }: Props = $props();
   const composition = tryGetMediaCompositionContext();
@@ -126,6 +131,17 @@
       rotationDegrees: transform.rotationDegrees,
     });
   });
+
+  const cropped = $derived(
+    sourceGeometry
+      ? {
+          left: `${(-sourceGeometry.crop.left / (sourceGeometry.crop.right - sourceGeometry.crop.left)) * 100}%`,
+          top: `${(-sourceGeometry.crop.top / (sourceGeometry.crop.bottom - sourceGeometry.crop.top)) * 100}%`,
+          width: `${100 / (sourceGeometry.crop.right - sourceGeometry.crop.left)}%`,
+          height: `${100 / (sourceGeometry.crop.bottom - sourceGeometry.crop.top)}%`,
+        }
+      : null
+  );
 
   function syncVideoTime(): boolean {
     if (!video || video.readyState < 1 || !Number.isFinite(sourceTimeSeconds))
@@ -197,6 +213,14 @@
     if (!video) return;
     video.defaultPlaybackRate = playbackRate;
     if (video.playbackRate !== playbackRate) video.playbackRate = playbackRate;
+    video.preservesPitch = false;
+  });
+
+  $effect(() => {
+    if (!video) return;
+    const gain = Math.max(0, Math.min(1, previewGain));
+    video.volume = gain;
+    video.muted = !playing || gain === 0;
   });
 
   $effect(() => {
@@ -223,10 +247,17 @@
 <!-- svelte-ignore a11y_no_static_element_interactions -->
 <div
   class="media-layer"
+  class:source-geometry={sourceGeometry !== undefined}
   bind:clientWidth={boxWidth}
   bind:clientHeight={boxHeight}
   style:opacity
-  style:transform={`translate(${pan.x}px, ${pan.y}px) rotate(${transform.rotationDegrees}deg) scale(${transform.scale}) scaleX(${transform.flipHorizontal ? -1 : 1})`}
+  style:left={sourceGeometry ? `${sourceGeometry.x * 100}%` : undefined}
+  style:top={sourceGeometry ? `${sourceGeometry.y * 100}%` : undefined}
+  style:width={sourceGeometry ? `${sourceGeometry.width * 100}%` : undefined}
+  style:height={sourceGeometry ? `${sourceGeometry.height * 100}%` : undefined}
+  style:transform={sourceGeometry
+    ? `rotate(${sourceGeometry.rotation}deg) scaleX(${transform.flipHorizontal ? -1 : 1})`
+    : `translate(${pan.x}px, ${pan.y}px) rotate(${transform.rotationDegrees}deg) scale(${transform.scale}) scaleX(${transform.flipHorizontal ? -1 : 1})`}
   data-clip-id={clipId}
   data-source-role={binding.roleKey}
   data-render-mode={binding.renderMode ?? "external-media"}
@@ -281,12 +312,12 @@
       muted
       playsinline
       preload="auto"
-      class:fitted={fitted !== null}
-      style:object-fit={fitted ? "fill" : fit}
-      style:left={fitted?.left}
-      style:top={fitted?.top}
-      style:width={fitted?.width}
-      style:height={fitted?.height}
+      class:fitted={fitted !== null || cropped !== null}
+      style:object-fit={fitted || cropped ? "fill" : fit}
+      style:left={cropped?.left ?? fitted?.left}
+      style:top={cropped?.top ?? fitted?.top}
+      style:width={cropped?.width ?? fitted?.width}
+      style:height={cropped?.height ?? fitted?.height}
       onloadedmetadata={onMetadata}
     ></video>
   {:else}
@@ -294,12 +325,12 @@
       src={binding.previewUrl ?? undefined}
       crossorigin="anonymous"
       alt=""
-      class:fitted={fitted !== null}
-      style:object-fit={fitted ? "fill" : fit}
-      style:left={fitted?.left}
-      style:top={fitted?.top}
-      style:width={fitted?.width}
-      style:height={fitted?.height}
+      class:fitted={fitted !== null || cropped !== null}
+      style:object-fit={fitted || cropped ? "fill" : fit}
+      style:left={cropped?.left ?? fitted?.left}
+      style:top={cropped?.top ?? fitted?.top}
+      style:width={cropped?.width ?? fitted?.width}
+      style:height={cropped?.height ?? fitted?.height}
       onload={onImageLoad}
     />
   {/if}
@@ -318,6 +349,12 @@
     position: absolute;
     inset: 0;
     transform-origin: center;
+  }
+
+  .media-layer.source-geometry {
+    right: auto;
+    bottom: auto;
+    overflow: hidden;
   }
 
   img,

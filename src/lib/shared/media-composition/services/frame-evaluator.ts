@@ -6,6 +6,7 @@ import type {
   PresetClip,
   PresetMarker,
   PresetTimeRef,
+  PresetSourceGeometry,
   RegionKeyframe,
 } from "$lib/shared/media-composition/domain/media-composition-preset-schema";
 import type { ClipTransform } from "$lib/shared/media-composition/domain/media-layout-schema";
@@ -86,6 +87,8 @@ export interface EvaluatedFrameLayer {
    * by hand; consumers fall back to the region's static rect.
    */
   regionRect?: RegionRect;
+  /** Source UV crop and its destination rectangle in output fractions. */
+  sourceGeometry?: PresetSourceGeometry;
   /** Which move is showing. Every other sequence field derives from it. */
   sequenceFrame?: SequenceFrame;
   /**
@@ -147,7 +150,11 @@ export function clamp01(value: number): number {
   return Math.min(1, Math.max(0, value));
 }
 
-function lerpRect(from: MotionRect, to: MotionRect, progress: number): MotionRect {
+function lerpRect(
+  from: MotionRect,
+  to: MotionRect,
+  progress: number
+): MotionRect {
   const lerp = (a: number, b: number) => a + (b - a) * progress;
   const rect: MotionRect = {
     x: lerp(from.x, to.x),
@@ -172,9 +179,33 @@ function lerpTransformValue(
 ): MotionTransformValue {
   return {
     scale: lerpNumber(from.scale, to.scale, progress),
-    rotationDegrees: lerpNumber(from.rotationDegrees, to.rotationDegrees, progress),
+    rotationDegrees: lerpNumber(
+      from.rotationDegrees,
+      to.rotationDegrees,
+      progress
+    ),
     translateX: lerpNumber(from.translateX, to.translateX, progress),
     translateY: lerpNumber(from.translateY, to.translateY, progress),
+  };
+}
+
+function lerpSourceGeometry(
+  from: PresetSourceGeometry,
+  to: PresetSourceGeometry,
+  progress: number
+): PresetSourceGeometry {
+  return {
+    x: lerpNumber(from.x, to.x, progress),
+    y: lerpNumber(from.y, to.y, progress),
+    width: lerpNumber(from.width, to.width, progress),
+    height: lerpNumber(from.height, to.height, progress),
+    rotation: lerpNumber(from.rotation, to.rotation, progress),
+    crop: {
+      left: lerpNumber(from.crop.left, to.crop.left, progress),
+      top: lerpNumber(from.crop.top, to.crop.top, progress),
+      right: lerpNumber(from.crop.right, to.crop.right, progress),
+      bottom: lerpNumber(from.crop.bottom, to.crop.bottom, progress),
+    },
   };
 }
 
@@ -201,8 +232,13 @@ function sampleMotionTrack<V>(
     const previous = keys[index - 1]!;
     if (previous.easing === "hold") return previous.value;
     const progress =
-      (timeSeconds - previous.atSeconds) / (next.atSeconds - previous.atSeconds);
-    return lerpValue(previous.value, next.value, sampleEasing(previous.easing, progress));
+      (timeSeconds - previous.atSeconds) /
+      (next.atSeconds - previous.atSeconds);
+    return lerpValue(
+      previous.value,
+      next.value,
+      sampleEasing(previous.easing, progress)
+    );
   }
   return last.value;
 }
@@ -224,7 +260,10 @@ function clipOpacityAt(clip: PresetVisualClip, timeSeconds: number): number {
  * way the editor's own sampler clamps a framing, so the zoom the inspector
  * shows is the zoom that plays.
  */
-function clipTransformAt(clip: PresetVisualClip, timeSeconds: number): ClipTransform {
+function clipTransformAt(
+  clip: PresetVisualClip,
+  timeSeconds: number
+): ClipTransform {
   const keys = clip.motion?.transform;
   if (!keys || keys.length === 0) return clip.transform;
   const sampled = sampleMotionTrack(keys, timeSeconds, lerpTransformValue);
@@ -452,6 +491,13 @@ export function evaluatePresetLayers(
     const sourceTimeSeconds =
       (sourceTimeOffsets[clip.sourceRole] ?? 0) + sourceSpanTime;
     const regionRect = regionRects.get(clip.regionId);
+    const sourceGeometry = clip.sourceGeometryKeyframes?.length
+      ? sampleMotionTrack(
+          clip.sourceGeometryKeyframes,
+          clampedTime,
+          lerpSourceGeometry
+        )
+      : clip.sourceGeometry;
 
     // A clip tied to a take reads that take's clock at the take's media time
     // under this clip, trim included, so a slowed act and a derived square
@@ -497,6 +543,7 @@ export function evaluatePresetLayers(
         projectProgress,
         transform: clipTransformAt(clip, clampedTime),
         ...(regionRect ? { regionRect } : {}),
+        ...(sourceGeometry ? { sourceGeometry } : {}),
         ...(sample !== null && alignment
           ? sequenceFieldsFor(sample, alignment, moveBeats, holdLandings)
           : {}),
@@ -513,9 +560,10 @@ export function evaluatePresetLayers(
     const rawProgress = clamp01((clampedTime - start) / (end - start));
     const progress =
       transition.curve === "ease-in-out" ? easeInOut(rawProgress) : rawProgress;
-    const outgoing = byId.get(transition.outgoingClipId);
     const incoming = byId.get(transition.incomingClipId);
-    if (outgoing) outgoing.opacity *= 1 - progress;
+    // Source-over compositing blends two opaque clips by keeping the older
+    // picture whole and raising the new one over it. Fading both lets the
+    // background show through at the midpoint.
     if (incoming) incoming.opacity *= progress;
   }
 

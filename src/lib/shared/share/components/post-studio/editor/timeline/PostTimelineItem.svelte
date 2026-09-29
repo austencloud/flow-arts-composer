@@ -1,5 +1,8 @@
 <script lang="ts">
-  import type { PostItem, PostItemKind } from "$lib/shared/media-composition/domain/post-project";
+  import type {
+    PostItem,
+    PostItemKind,
+  } from "$lib/shared/media-composition/domain/post-project";
   import { formatPostClock } from "../../builder/post-builder-format";
   import { t } from "$lib/shared/i18n/i18n.svelte.js";
 
@@ -40,6 +43,7 @@
 
   const KIND_ICON: Record<PostItemKind, string> = {
     video: "fa-solid fa-film",
+    image: "fa-solid fa-image",
     card: "fa-solid fa-id-card",
     animation: "fa-solid fa-wand-magic-sparkles",
     moves: "fa-solid fa-arrows-up-down-left-right",
@@ -60,7 +64,8 @@
         end: formatPostClock(item.start + item.duration),
       }),
     ];
-    if (speedLabel) parts.push(t("post_timeline_item_speed", { speed: speedLabel }));
+    if (speedLabel)
+      parts.push(t("post_timeline_item_speed", { speed: speedLabel }));
     if (isMuted) parts.push(t("post_timeline_item_muted"));
     if (item.fill) parts.push(t("post_timeline_item_linked"));
     if (animated) parts.push(t("post_timeline_item_animated"));
@@ -152,7 +157,11 @@
     overflow: hidden;
     border: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.14));
     border-radius: 0.5rem;
-    background: color-mix(in srgb, var(--kind-tint, var(--theme-accent)) 22%, var(--theme-card-bg, #1c1c26));
+    background: color-mix(
+      in srgb,
+      var(--kind-tint, var(--theme-accent)) 22%,
+      var(--theme-card-bg, #1c1c26)
+    );
     color: var(--theme-text, #fff);
     font: inherit;
     font-size: var(--font-size-compact, 0.75rem);
@@ -197,7 +206,11 @@
     flex-shrink: 0;
     padding: 0.05rem 0.3rem;
     border-radius: 999px;
-    background: color-mix(in srgb, var(--kind-tint, var(--theme-accent)) 45%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--kind-tint, var(--theme-accent)) 45%,
+      transparent
+    );
     font-size: 0.7em;
     font-weight: 700;
     font-variant-numeric: tabular-nums;
@@ -211,7 +224,11 @@
 
   @media (hover: hover) {
     .post-timeline-item:hover {
-      border-color: color-mix(in srgb, var(--kind-tint, var(--theme-accent)) 60%, var(--theme-stroke));
+      border-color: color-mix(
+        in srgb,
+        var(--kind-tint, var(--theme-accent)) 60%,
+        var(--theme-stroke)
+      );
     }
   }
 
@@ -260,7 +277,8 @@
     height: min(60%, 2rem);
     border-radius: 999px;
     background: var(--theme-accent);
-    box-shadow: 0 0 0 1px color-mix(in srgb, var(--theme-text, #fff) 40%, transparent);
+    box-shadow: 0 0 0 1px
+      color-mix(in srgb, var(--theme-text, #fff) 40%, transparent);
   }
 
   .trim-handle:focus-visible .handle-grip {

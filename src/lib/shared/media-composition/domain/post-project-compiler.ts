@@ -4,6 +4,7 @@ import {
   type MotionKey,
   type MotionTransformValue,
   type PresetClip,
+  type PresetTransition,
   type PresetRegionKeyframesTrack,
   type PresetSourceRole,
   type PresetVisualClipMotion,
@@ -29,9 +30,12 @@ import {
   type PostBox,
   type PostCarouselItem,
   type PostItem,
+  type PostImageItem,
   type PostMovesItem,
   type PostProject,
   type PostTextSize,
+  type PostTextStyle,
+  type PostTextAnimation,
   type PostVideoItem,
 } from "$lib/shared/media-composition/domain/post-project";
 import { postSecondsOfKeyframe } from "$lib/shared/media-composition/domain/post-project-keyframes";
@@ -116,6 +120,8 @@ export interface CompiledTextItem {
   role: string;
   text: string;
   size: PostTextSize;
+  style?: PostTextStyle;
+  animation?: PostTextAnimation;
   box: PostBox;
   startSeconds: number;
   endSeconds: number;
@@ -126,6 +132,7 @@ export interface CompiledPostProject {
   durationSeconds: number;
   /** Take ids the preset draws, in first-use order. */
   takeIds: string[];
+  imageIds: string[];
   videoSegments: CompiledVideoSegment[];
   texts: CompiledTextItem[];
 }
@@ -320,6 +327,30 @@ function opacityMotionKeys(item: PostItem): MotionKey<number>[] | undefined {
   }));
 }
 
+function sourceGeometryKeys(item: PostVideoItem | PostImageItem) {
+  const keys = item.keyframes?.sourceGeometry?.map((kf) => ({
+    atSeconds: postSecondsOfKeyframe(item, kf.t),
+    value: kf.value,
+    easing: kf.easing,
+  }));
+  if (!keys?.length) return undefined;
+  // The native base matrix holds until the first authored transform key.
+  if (
+    item.sourceGeometry &&
+    keys[0]!.atSeconds > item.start + POST_TIME_EPSILON
+  ) {
+    return [
+      {
+        atSeconds: item.start,
+        value: item.sourceGeometry,
+        easing: "hold" as const,
+      },
+      ...keys,
+    ];
+  }
+  return keys;
+}
+
 /** The clip's `motion`, or undefined so an unanimated clip stays as it was. */
 function motionFor(
   item: PostItem,
@@ -327,7 +358,10 @@ function motionFor(
 ): PresetVisualClipMotion | undefined {
   const opacity = opacityMotionKeys(item);
   if (!opacity && !transform) return undefined;
-  return { ...(transform ? { transform } : {}), ...(opacity ? { opacity } : {}) };
+  return {
+    ...(transform ? { transform } : {}),
+    ...(opacity ? { opacity } : {}),
+  };
 }
 
 /**
@@ -347,7 +381,8 @@ function regionKeyframesFor(
   return {
     regionId: item.id,
     keyframes: frames.map((kf, index) => {
-      const rect = item.kind === "video" ? clipBox(item, kf.value, output) : kf.value;
+      const rect =
+        item.kind === "video" ? clipBox(item, kf.value, output) : kf.value;
       return {
         atSeconds: postSecondsOfKeyframe(item, kf.t),
         value: turns ? { ...rect, turn: turns[index]! } : rect,
@@ -362,6 +397,9 @@ export function compilePostProject(
   context: CompilePostProjectContext
 ): CompiledPostProject | null {
   const takes = new Map(project.takes.map((entry) => [entry.id, entry]));
+  const images = new Map(
+    (project.images ?? []).map((entry) => [entry.id, entry])
+  );
   const output = postOutputSize(project.canvas);
   // Pieces read a main video's timing even when its own track is hidden - the
   // footage still exists, Austen just doesn't want its own picture on screen.
@@ -374,6 +412,8 @@ export function compilePostProject(
   const clips: PresetClip[] = [];
   const roleByKey = new Map<string, PresetSourceRole>();
   const takeIds: string[] = [];
+  const imageIds: string[] = [];
+  const transitions: PresetTransition[] = [];
   const videoSegments: CompiledVideoSegment[] = [];
   const texts: CompiledTextItem[] = [];
   let maxEnd = 0;
@@ -405,7 +445,9 @@ export function compilePostProject(
           region(
             item.id,
             label,
-            clipBox(item, box, output),
+            item.sourceGeometry
+              ? { x: 0, y: 0, width: 1, height: 1 }
+              : clipBox(item, box, output),
             item.fit,
             zIndex,
             regionEdge(item.edge)
@@ -432,6 +474,13 @@ export function compilePostProject(
             translateY: item.panY,
             flipHorizontal: item.flip,
           },
+          ...(item.sourceGeometry
+            ? { sourceGeometry: item.sourceGeometry }
+            : {}),
+          ...(item.autoAdjust ? { autoAdjust: item.autoAdjust } : {}),
+          ...(sourceGeometryKeys(item)
+            ? { sourceGeometryKeyframes: sourceGeometryKeys(item) }
+            : {}),
           ...(motion ? { motion } : {}),
         };
         clips.push({
@@ -465,6 +514,54 @@ export function compilePostProject(
           sourceOut: item.sourceOut,
           speed: item.speed,
           volume: item.volume,
+        });
+        return true;
+      }
+
+      case "image": {
+        if (!images.has(item.imageId)) return false;
+        if (!imageIds.includes(item.imageId)) imageIds.push(item.imageId);
+        const roleKey = `image:${item.imageId}`;
+        useRole(
+          presetRole(roleKey, images.get(item.imageId)!.label, "manual", [
+            "image",
+          ])
+        );
+        regions.push(
+          region(
+            item.id,
+            label,
+            item.sourceGeometry ? { x: 0, y: 0, width: 1, height: 1 } : box,
+            "contain",
+            zIndex
+          )
+        );
+        const regionKeyframes = regionKeyframesFor(item, output);
+        if (regionKeyframes) regionKeyframesList.push(regionKeyframes);
+        const motion = motionFor(item);
+        clips.push({
+          id: item.id,
+          kind: "visual",
+          sourceRole: roleKey,
+          regionId: item.id,
+          start: seconds(item.start),
+          end: seconds(itemEnd(item)),
+          sourceIn: seconds(0),
+          sourceOut: seconds(item.duration),
+          playbackRate: 1,
+          loop: false,
+          opacity: item.opacity,
+          ...(item.fadeIn > 0 ? { fadeInSeconds: item.fadeIn } : {}),
+          ...(item.fadeOut > 0 ? { fadeOutSeconds: item.fadeOut } : {}),
+          transform: IDENTITY_TRANSFORM,
+          useResolvedTimeMap: false,
+          ...(item.sourceGeometry
+            ? { sourceGeometry: item.sourceGeometry }
+            : {}),
+          ...(sourceGeometryKeys(item)
+            ? { sourceGeometryKeyframes: sourceGeometryKeys(item) }
+            : {}),
+          ...(motion ? { motion } : {}),
         });
         return true;
       }
@@ -526,7 +623,9 @@ export function compilePostProject(
 
         const pieces = splitIntoPieces(item, mainVideos);
         const wantsOverlay =
-          item.kind === "animation" && item.overlay && !!context.animationOverlay;
+          item.kind === "animation" &&
+          item.overlay &&
+          !!context.animationOverlay;
         if (wantsOverlay) {
           useRole(
             presetRole(ANIMATION_OVERLAY_ROLE, "Beat and letter", "manual", [
@@ -544,8 +643,10 @@ export function compilePostProject(
         const itemFinish = itemEnd(item);
         pieces.forEach((piece, index) => {
           if (piece.takeId) useTake(piece.takeId);
-          const inFadeIn = item.fadeIn > 0 && piece.start < itemStart + item.fadeIn;
-          const inFadeOut = item.fadeOut > 0 && piece.end > itemFinish - item.fadeOut;
+          const inFadeIn =
+            item.fadeIn > 0 && piece.start < itemStart + item.fadeIn;
+          const inFadeOut =
+            item.fadeOut > 0 && piece.end > itemFinish - item.fadeOut;
           const timing = {
             start: seconds(piece.start),
             end: seconds(piece.end),
@@ -628,6 +729,8 @@ export function compilePostProject(
           role: roleKey,
           text: item.text,
           size: item.size,
+          ...(item.style ? { style: item.style } : {}),
+          ...(item.animation ? { animation: item.animation } : {}),
           box,
           startSeconds: item.start,
           endSeconds: itemEnd(item),
@@ -640,9 +743,39 @@ export function compilePostProject(
   project.tracks.forEach((track, trackIndex) => {
     if (track.hidden) return;
     for (const item of track.items) {
-      if (compileItem(item, trackIndex)) maxEnd = Math.max(maxEnd, itemEnd(item));
+      if (compileItem(item, trackIndex))
+        maxEnd = Math.max(maxEnd, itemEnd(item));
     }
   });
+
+  const main = project.tracks[MAIN_TRACK_INDEX]?.items ?? [];
+  for (let index = 0; index < main.length - 1; index++) {
+    const outgoing = main[index]!;
+    const incoming = main[index + 1]!;
+    if (
+      (outgoing.kind !== "video" && outgoing.kind !== "image") ||
+      (incoming.kind !== "video" && incoming.kind !== "image") ||
+      !outgoing.transitionOut?.duration ||
+      !clips.some((clip) => clip.id === outgoing.id) ||
+      !clips.some((clip) => clip.id === incoming.id)
+    )
+      continue;
+    const start = Math.max(
+      incoming.start,
+      itemEnd(outgoing) - outgoing.transitionOut.duration
+    );
+    const end = Math.min(itemEnd(outgoing), itemEnd(incoming));
+    if (end <= start) continue;
+    transitions.push({
+      id: `transition:${outgoing.id}:${incoming.id}`,
+      kind: "crossfade",
+      outgoingClipId: outgoing.id,
+      incomingClipId: incoming.id,
+      start: seconds(start),
+      end: seconds(end),
+      curve: "linear",
+    });
+  }
 
   if (clips.length === 0 || maxEnd <= 0) return null;
 
@@ -670,17 +803,26 @@ export function compilePostProject(
     layoutModel: "free",
     sourceRoles: [...roleByKey.values()],
     regions,
-    ...(regionKeyframesList.length > 0 ? { regionKeyframes: regionKeyframesList } : {}),
+    ...(regionKeyframesList.length > 0
+      ? { regionKeyframes: regionKeyframesList }
+      : {}),
     ...(backdropClipIds.length > 0
       ? { backdrop: { kind: "blur" as const, clipIds: backdropClipIds } }
       : {}),
     clips,
-    transitions: [],
+    transitions,
     audioMix: { masterGain: 1, tracks: [] },
     targetDefaults: {
       instagram: { delivery: "handoff", coverFrameSeconds: 0 },
     },
   } satisfies MediaCompositionPreset);
 
-  return { preset, durationSeconds: maxEnd, takeIds, videoSegments, texts };
+  return {
+    preset,
+    durationSeconds: maxEnd,
+    takeIds,
+    imageIds,
+    videoSegments,
+    texts,
+  };
 }

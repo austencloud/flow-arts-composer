@@ -52,15 +52,28 @@ export function normalizeProject(project: PostProject): PostProject {
   const displaced: PostItem[] = [];
   const laidMain: PostItem[] = [];
   let cursor = 0;
+  let outgoingOverlap = 0;
   for (const item of main.items) {
     if (!MAIN_TRACK_KINDS.includes(item.kind)) {
       displaced.push(item);
       continue;
     }
     const sized = sizeItem(item, takes);
-    const laid = withChanges(sized, { start: cursor, anchor: null, fill: false });
+    cursor -= Math.min(outgoingOverlap, sized.duration - POST_TIME_EPSILON);
+    const laid = withChanges(sized, {
+      start: cursor,
+      anchor: null,
+      fill: false,
+    });
     laidMain.push(laid);
     cursor += laid.duration;
+    outgoingOverlap =
+      item.kind === "video" || item.kind === "image"
+        ? Math.min(
+            item.transitionOut?.duration ?? 0,
+            laid.duration - POST_TIME_EPSILON
+          )
+        : 0;
   }
 
   const mainById = new Map(laidMain.map((item) => [item.id, item]));
@@ -253,14 +266,19 @@ function canonicalChannel(
   const merged: PostKeyframe<unknown>[] = [];
   for (const kf of sorted) {
     const clamped = clampChannelValue(channel, kf.value as never);
-    const candidate: PostKeyframe<unknown> = sameChannelValue(channel, clamped, kf.value)
+    const candidate: PostKeyframe<unknown> = sameChannelValue(
+      channel,
+      clamped,
+      kf.value
+    )
       ? kf
       : { ...kf, value: clamped };
     const last = merged[merged.length - 1];
     if (
       last &&
       Math.abs(
-        postSecondsOfKeyframe(item, candidate.t) - postSecondsOfKeyframe(item, last.t)
+        postSecondsOfKeyframe(item, candidate.t) -
+          postSecondsOfKeyframe(item, last.t)
       ) <= POST_KEYFRAME_MERGE_SECONDS
     ) {
       merged[merged.length - 1] = candidate;
@@ -268,7 +286,10 @@ function canonicalChannel(
       merged.push(candidate);
     }
   }
-  if (merged.length === raw.length && merged.every((kf, index) => kf === raw[index])) {
+  if (
+    merged.length === raw.length &&
+    merged.every((kf, index) => kf === raw[index])
+  ) {
     return raw as PostKeyframe<unknown>[];
   }
   return merged;

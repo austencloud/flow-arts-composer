@@ -15,6 +15,19 @@ import { loadPostPlan } from "$lib/shared/media-composition/services/post-plan-s
 
 const PREFIX = "tka:post-studio:project:v2:";
 
+/** Keep the previous edit recoverable across reloads when importing a draft. */
+export function backupPostProjectBeforeImport(project: PostProject): void {
+  const store = storage();
+  if (!store)
+    throw new Error(
+      "Device storage is unavailable. The current post was kept."
+    );
+  store.setItem(
+    `${PREFIX}before-import:${project.sequenceId}`,
+    JSON.stringify(project)
+  );
+}
+
 function storage(): Storage | null {
   try {
     return typeof localStorage === "undefined" ? null : localStorage;

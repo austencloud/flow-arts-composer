@@ -84,6 +84,41 @@ describe("resolveFrameLayerGeometry", () => {
     expect(geometry.translateX).toBeCloseTo(0);
     expect(geometry.translateY).toBeCloseTo(0);
   });
+
+  it("places a native source rect against the whole output with its UV crop", () => {
+    const crop = { left: 0.1, top: 0.2, right: 0.9, bottom: 1 };
+    const geometry = resolveFrameLayerGeometry({
+      preset,
+      region,
+      sourceWidth: 1920,
+      sourceHeight: 1080,
+      transform: {
+        scale: 1.5,
+        rotationDegrees: 15,
+        translateX: 0.5,
+        translateY: -0.5,
+      },
+      sourceGeometry: {
+        x: -0.2,
+        y: 0.1,
+        width: 1.4,
+        height: 0.8,
+        rotation: 30,
+        crop,
+      },
+    });
+    expect(geometry.drawRect).toEqual({
+      x: -216,
+      y: 192,
+      width: 1512,
+      height: 1536,
+    });
+    expect(geometry.sourceCrop).toEqual(crop);
+    expect(geometry.rotationDegrees).toBe(30);
+    expect(geometry.translateX).toBe(0);
+    expect(geometry.translateY).toBe(0);
+    expect(geometry.scale).toBe(1);
+  });
 });
 
 describe("waitForPictographMotion", () => {

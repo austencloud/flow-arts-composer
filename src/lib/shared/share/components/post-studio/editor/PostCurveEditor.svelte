@@ -24,6 +24,7 @@
     type PostKeyframeChannel,
   } from "$lib/shared/media-composition/domain/post-project";
   import {
+    easingControlPoints,
     setSegmentEasing,
     type PostKeyframeSegment,
   } from "$lib/shared/media-composition/domain/post-project-keyframes";
@@ -77,8 +78,9 @@
 
   const isHold = $derived(segment.easing === "hold");
   // A hold has no control points; these only fill the hidden fields then.
-  const points = $derived.by((): readonly [number, number, number, number] =>
-    segment.easing === "hold" ? [0.42, 0, 0.58, 1] : segment.easing
+  const points = $derived.by(
+    (): readonly [number, number, number, number] =>
+      easingControlPoints(segment.easing) ?? [0.42, 0, 0.58, 1]
   );
   const x1 = $derived(points[0]);
   const y1 = $derived(points[1]);
@@ -89,8 +91,14 @@
   const p3 = { x: dataToPlotX(1, GEOMETRY), y: dataToPlotY(1, GEOMETRY) };
   // Drawn clamped to the plot: a saved project may hold a y a little beyond
   // what this editor edits, and its handle should still show, at the edge.
-  const p1 = $derived({ x: dataToPlotX(x1, GEOMETRY), y: dataToPlotY(clampY(y1), GEOMETRY) });
-  const p2 = $derived({ x: dataToPlotX(x2, GEOMETRY), y: dataToPlotY(clampY(y2), GEOMETRY) });
+  const p1 = $derived({
+    x: dataToPlotX(x1, GEOMETRY),
+    y: dataToPlotY(clampY(y1), GEOMETRY),
+  });
+  const p2 = $derived({
+    x: dataToPlotX(x2, GEOMETRY),
+    y: dataToPlotY(clampY(y2), GEOMETRY),
+  });
   const pathD = $derived(
     isHold
       ? `M ${p0.x},${p0.y} H ${p3.x} V ${p3.y}`
@@ -220,7 +228,10 @@
         aria-valuenow={clampY(y)}
         aria-valuemin={CURVE_EDITOR_Y_MIN}
         aria-valuemax={CURVE_EDITOR_Y_MAX}
-        aria-valuetext={t("post_curve_handle_value", { x: x.toFixed(2), y: y.toFixed(2) })}
+        aria-valuetext={t("post_curve_handle_value", {
+          x: x.toFixed(2),
+          y: y.toFixed(2),
+        })}
         onpointerdown={(event) => handlePointerDown(id, event)}
         onpointermove={handlePointerMove}
         onpointerup={handlePointerUp}
@@ -256,7 +267,12 @@
   <!-- The fields and the hold hint share one grid cell, sized by the taller,
        and trade places with visibility, so neither ever moves the other. -->
   <div class="readout">
-    <div class="fields" class:concealed={isHold} class:locked inert={locked || isHold}>
+    <div
+      class="fields"
+      class:concealed={isHold}
+      class:locked
+      inert={locked || isHold}
+    >
       <ScrubbableNumber
         label={t("post_curve_x1")}
         value={x1}

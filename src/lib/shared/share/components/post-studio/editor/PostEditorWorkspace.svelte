@@ -113,8 +113,16 @@
   import { clampPixelsPerSecond } from "./timeline/post-timeline-geometry";
   import { channelLabel, itemDisplayLabel } from "./post-editor-labels";
   import { readVideoFile, videoFileError } from "./post-editor-files";
+  import {
+    readInShotRecoveryPackage,
+    loadPostProjectFonts,
+  } from "$lib/shared/media-composition/services/inshot-recovery-package";
   import { createCropSession } from "./post-crop-session.svelte";
-  import { adjacentStepSeconds, clipSteps, type ClipStep } from "./post-crop-steps";
+  import {
+    adjacentStepSeconds,
+    clipSteps,
+    type ClipStep,
+  } from "./post-crop-steps";
   import {
     CROP_STAGE_MARGIN_PX,
     cropStageRatio,
@@ -360,6 +368,21 @@
   }
 
   function bindingFor(role: string): CompositionSourceBinding | null {
+    if (role.startsWith("image:")) {
+      const imageId = role.slice("image:".length);
+      const asset = editor.images.find((entry) => entry.id === imageId);
+      const url = editor.imageUrl(imageId);
+      return {
+        roleKey: role,
+        kind: "image",
+        label: asset?.label ?? "Image",
+        previewUrl: url,
+        previewType: "image",
+        renderMode: "external-media",
+        status: url ? "ready" : "missing",
+        missingMessage: "Relink this image from the recovered files.",
+      };
+    }
     const takeId = takeIdFromRole(role);
     if (takeId) {
       const take = editor.takes.find((entry) => entry.id === takeId);
@@ -502,6 +525,18 @@
   /** The tallest that phone panel may grow and still clear the preview. */
   let dockPanelMax = $state<number | null>(null);
   let fileInput = $state<HTMLInputElement | null>(null);
+  let recoveryInput = $state<HTMLInputElement | null>(null);
+
+  $effect(() => {
+    const project = editor.project;
+    if (!project.fonts?.length) return;
+    void loadPostProjectFonts(project).catch((error: unknown) => {
+      fileError =
+        error instanceof Error
+          ? error.message
+          : "Could not load the project font.";
+    });
+  });
   let readingFile = $state(false);
   let fileError = $state("");
   let pixelsPerSecond = $state(60);
@@ -608,6 +643,7 @@
   const cropMode = $derived(
     shown === "crop" &&
       editor.selectedItem?.kind === "video" &&
+      !editor.selectedItem.sourceGeometry &&
       !showTimingStage &&
       !sharing &&
       !previewTarget
@@ -867,7 +903,14 @@
   }
 
   function openTool(id: PostPanelToolId): void {
-    if (id === "crop") {
+    if (
+      id === "crop" &&
+      !(
+        editor.selectedItem &&
+        "sourceGeometry" in editor.selectedItem &&
+        editor.selectedItem.sourceGeometry
+      )
+    ) {
       void openCrop();
       return;
     }
@@ -1007,6 +1050,40 @@
     fileInput?.click();
   }
 
+  async function importRecovery(event: Event): Promise<void> {
+    const input = event.currentTarget as HTMLInputElement;
+    const selected = [...(input.files ?? [])];
+    input.value = "";
+    if (!selected.length) return;
+    readingFile = true;
+    fileError = "";
+    try {
+      if (!selected.some((file) => file.name.endsWith(".post-studio.json"))) {
+        const files = new Map(selected.map((file) => [file.name, file]));
+        await loadPostProjectFonts(editor.project, files);
+        if (!editor.relinkProjectFiles(files))
+          throw new Error(
+            "Select the saved post's original media files, or a .post-studio.json recovery file to import a post."
+          );
+        return;
+      }
+      const { project, files } = await readInShotRecoveryPackage(
+        selected,
+        sequence.id,
+        Date.now()
+      );
+      editor.importProject(project, files);
+      activeTool = null;
+    } catch (error) {
+      fileError =
+        error instanceof Error
+          ? error.message
+          : "Could not import the recovered post.";
+    } finally {
+      readingFile = false;
+    }
+  }
+
   async function addDeviceVideo(event: Event): Promise<void> {
     const input = event.currentTarget as HTMLInputElement;
     const file = input.files?.[0];
@@ -1074,6 +1151,12 @@
     ) {
       return picked.channel;
     }
+    if (
+      (item.kind === "video" || item.kind === "image") &&
+      item.sourceGeometry &&
+      shown !== "fade"
+    )
+      return "sourceGeometry";
     return keyframeChannelFor(shown, item.kind);
   });
 
@@ -1082,8 +1165,13 @@
     if (item) pickedKeyRow = { itemId: item.id, tool: shown, channel };
   }
 
-  function editKeys(itemId: string, change: (item: PostItem) => PostItem): void {
-    editor.edit((project, ctx) => editItemKeyframes(project, itemId, change, ctx));
+  function editKeys(
+    itemId: string,
+    change: (item: PostItem) => PostItem
+  ): void {
+    editor.edit((project, ctx) =>
+      editItemKeyframes(project, itemId, change, ctx)
+    );
   }
 
   // A curve's easing is edited from the toolbar's Curve chip, which follows
@@ -1550,6 +1638,7 @@
 
     let audioUrl: string | null = null;
     try {
+      await loadPostProjectFonts(editor.project);
       const takeUrls = new Map<string, string>();
       for (const take of editor.takes) {
         const url = editor.mediaUrl(take.id);
@@ -1638,6 +1727,9 @@
     {editor}
     {exporting}
     onExport={openExport}
+    onImport={() => {
+      if (!readingFile) recoveryInput?.click();
+    }}
     trailing={cropMode ? cropActions : undefined}
   />
 {/snippet}
@@ -1917,6 +2009,16 @@
         {#if fileError}
           <p class="file-error" role="alert">{fileError}</p>
         {/if}
+        {#if editor.project.importSource?.unresolved.length}
+          <details class="import-differences">
+            <summary>InShot import: rendering differences remain</summary>
+            <ul>
+              {#each editor.project.importSource.unresolved as difference}
+                <li>{difference}</li>
+              {/each}
+            </ul>
+          </details>
+        {/if}
       </div>
 
       <!-- The crop screen stows the timeline and the row out of sight, still
@@ -1956,14 +2058,14 @@
               setTrackFlag(project, trackId, flag, value, context)
             )}
           {keyChannel}
-          toolChannel={editor.selectedItem
-            ? keyframeChannelFor(shown, editor.selectedItem.kind)
-            : null}
+          toolChannel={keyChannel}
           onKeyChannel={pickKeyRow}
           onToggleKey={(itemId, channel, seconds) =>
             editKeys(itemId, (it) => toggleKeyframe(it, channel, seconds))}
           onMoveKey={(itemId, channel, fromSeconds, toSeconds) =>
-            editKeys(itemId, (it) => moveKeyframe(it, channel, fromSeconds, toSeconds))}
+            editKeys(itemId, (it) =>
+              moveKeyframe(it, channel, fromSeconds, toSeconds)
+            )}
           onDeleteKey={(itemId, channel, seconds) =>
             editKeys(itemId, (it) => removeKeyframe(it, channel, seconds))}
           onOpenCurve={openKeyCurve}
@@ -2024,6 +2126,16 @@
     type="file"
     accept="video/*"
     onchange={addDeviceVideo}
+    tabindex="-1"
+    aria-hidden="true"
+  />
+  <input
+    bind:this={recoveryInput}
+    class="file-input"
+    type="file"
+    multiple
+    accept=".json,video/*,image/*,.ttf,.otf"
+    onchange={importRecovery}
     tabindex="-1"
     aria-hidden="true"
   />
@@ -2150,6 +2262,27 @@
     color: var(--semantic-warning, #fbbf24);
     font-size: 0.875rem;
     text-align: center;
+  }
+
+  .import-differences {
+    color: var(--theme-text-secondary, #aaa);
+    font-size: 0.8125rem;
+    line-height: 1.4;
+  }
+
+  .import-differences summary {
+    cursor: pointer;
+    padding-block: 0.375rem;
+  }
+
+  .import-differences summary:focus-visible {
+    outline: 2px solid var(--theme-accent);
+    outline-offset: 2px;
+  }
+
+  .import-differences ul {
+    margin: 0.25rem 0;
+    padding-left: 1.5rem;
   }
 
   /* The timeline's playhead and guides stack inside it, under the dock. */

@@ -12,6 +12,7 @@ import {
   type PostBox,
   type PostEasing,
   type PostFraming,
+  type PostSourceGeometry,
   type PostItem,
   type PostItemKeyframes,
   type PostKeyframe,
@@ -33,16 +34,31 @@ import {
 /** The value shape each channel keyframes. */
 export interface PostChannelValue {
   framing: PostFraming;
+  sourceGeometry: PostSourceGeometry;
   box: PostBox;
   opacity: number;
 }
 
-const VIDEO_CHANNELS: readonly PostKeyframeChannel[] = ["framing", "box", "opacity"];
+const VIDEO_CHANNELS: readonly PostKeyframeChannel[] = [
+  "framing",
+  "sourceGeometry",
+  "box",
+  "opacity",
+];
+const IMAGE_CHANNELS: readonly PostKeyframeChannel[] = [
+  "sourceGeometry",
+  "box",
+  "opacity",
+];
 const OTHER_CHANNELS: readonly PostKeyframeChannel[] = ["box", "opacity"];
 
 /** The channels an item's kind can animate; only video has `framing`. */
 export function channelsOf(item: PostItem): readonly PostKeyframeChannel[] {
-  return item.kind === "video" ? VIDEO_CHANNELS : OTHER_CHANNELS;
+  return item.kind === "video"
+    ? VIDEO_CHANNELS
+    : item.kind === "image"
+      ? IMAGE_CHANNELS
+      : OTHER_CHANNELS;
 }
 
 function itemKeyframes(item: PostItem): PostItemKeyframes | undefined {
@@ -54,7 +70,9 @@ function rawKeyframes<Ch extends PostKeyframeChannel>(
   channel: Ch
 ): readonly PostKeyframe<PostChannelValue[Ch]>[] | undefined {
   const keyframes = itemKeyframes(item);
-  const list = keyframes?.[channel] as PostKeyframe<PostChannelValue[Ch]>[] | undefined;
+  const list = keyframes?.[channel] as
+    | PostKeyframe<PostChannelValue[Ch]>[]
+    | undefined;
   return list && list.length > 0 ? list : undefined;
 }
 
@@ -64,6 +82,16 @@ function staticValueOf<Ch extends PostKeyframeChannel>(
 ): PostChannelValue[Ch] {
   if (channel === "opacity") return item.opacity as PostChannelValue[Ch];
   if (channel === "box") return item.box as PostChannelValue[Ch];
+  if (channel === "sourceGeometry")
+    return ((item as Extract<PostItem, { kind: "video" | "image" }>)
+      .sourceGeometry ?? {
+      x: 0,
+      y: 0,
+      width: 1,
+      height: 1,
+      rotation: 0,
+      crop: { left: 0, top: 0, right: 1, bottom: 1 },
+    }) as PostChannelValue[Ch];
   const video = item as PostVideoItem;
   return {
     zoom: video.zoom,
@@ -80,7 +108,9 @@ export function clampChannelValue<Ch extends PostKeyframeChannel>(
   if (channel === "opacity") {
     return Math.min(1, Math.max(0, value as number)) as PostChannelValue[Ch];
   }
-  if (channel === "box") return clampBox(value as PostBox) as PostChannelValue[Ch];
+  if (channel === "box")
+    return clampBox(value as PostBox) as PostChannelValue[Ch];
+  if (channel === "sourceGeometry") return value;
   return clampFraming(value as PostFraming) as PostChannelValue[Ch];
 }
 
@@ -101,6 +131,21 @@ export function sameChannelValue(
       x.width === y.width &&
       x.height === y.height &&
       (x.turn ?? 0) === (y.turn ?? 0)
+    );
+  }
+  if (channel === "sourceGeometry") {
+    const x = a as PostSourceGeometry;
+    const y = b as PostSourceGeometry;
+    return (
+      x.x === y.x &&
+      x.y === y.y &&
+      x.width === y.width &&
+      x.height === y.height &&
+      x.rotation === y.rotation &&
+      x.crop.left === y.crop.left &&
+      x.crop.top === y.crop.top &&
+      x.crop.right === y.crop.right &&
+      x.crop.bottom === y.crop.bottom
     );
   }
   const x = a as PostFraming;
@@ -139,6 +184,23 @@ function lerpChannelValue<Ch extends PostKeyframeChannel>(
     }
     return box as PostChannelValue[Ch];
   }
+  if (channel === "sourceGeometry") {
+    const a = from as PostSourceGeometry;
+    const b = to as PostSourceGeometry;
+    return {
+      x: lerp(a.x, b.x),
+      y: lerp(a.y, b.y),
+      width: lerp(a.width, b.width),
+      height: lerp(a.height, b.height),
+      rotation: a.rotation + shortestTurn(a.rotation, b.rotation) * e,
+      crop: {
+        left: lerp(a.crop.left, b.crop.left),
+        top: lerp(a.crop.top, b.crop.top),
+        right: lerp(a.crop.right, b.crop.right),
+        bottom: lerp(a.crop.bottom, b.crop.bottom),
+      },
+    } as PostChannelValue[Ch];
+  }
   const a = from as PostFraming;
   const b = to as PostFraming;
   return {
@@ -158,12 +220,31 @@ function withStaticValue<Ch extends PostKeyframeChannel>(
 ): PostItem {
   const clamped = clampChannelValue(channel, value);
   if (channel === "opacity") {
-    return item.opacity === clamped ? item : { ...item, opacity: clamped as number };
+    return item.opacity === clamped
+      ? item
+      : { ...item, opacity: clamped as number };
   }
   if (channel === "box") {
     return sameChannelValue("box", item.box, clamped)
       ? item
       : { ...item, box: clamped as PostBox };
+  }
+  if (channel === "sourceGeometry") {
+    const visual = item as Extract<PostItem, { kind: "video" | "image" }>;
+    return sameChannelValue(
+      channel,
+      visual.sourceGeometry ?? {
+        x: 0,
+        y: 0,
+        width: 1,
+        height: 1,
+        rotation: 0,
+        crop: { left: 0, top: 0, right: 1, bottom: 1 },
+      },
+      clamped
+    )
+      ? item
+      : ({ ...item, sourceGeometry: clamped } as PostItem);
   }
   const video = item as PostVideoItem;
   const framing = clamped as PostFraming;
@@ -222,14 +303,20 @@ export function postSecondsOfKeyframe(item: PostItem, t: number): number {
 /** Whether content time `t` currently falls inside the item's visible span. */
 export function keyframeInView(item: PostItem, t: number): boolean {
   const s = postSecondsOfKeyframe(item, t);
-  return s >= item.start - POST_TIME_EPSILON && s <= itemEnd(item) + POST_TIME_EPSILON;
+  return (
+    s >= item.start - POST_TIME_EPSILON &&
+    s <= itemEnd(item) + POST_TIME_EPSILON
+  );
 }
 
 // ---------------------------------------------------------------------------
 // Reading
 // ---------------------------------------------------------------------------
 
-export function isAnimated(item: PostItem, channel: PostKeyframeChannel): boolean {
+export function isAnimated(
+  item: PostItem,
+  channel: PostKeyframeChannel
+): boolean {
   return rawKeyframes(item, channel) !== undefined;
 }
 
@@ -262,6 +349,14 @@ function sampleChannel<Ch extends PostKeyframeChannel>(
   if (!list) return staticValueOf(item, channel);
   const t = keyframeTimeOf(item, s);
   const first = list[0]!;
+  if (
+    t < first.t &&
+    channel === "sourceGeometry" &&
+    (item.kind === "video" || item.kind === "image") &&
+    item.sourceGeometry
+  ) {
+    return item.sourceGeometry as PostChannelValue[Ch];
+  }
   if (t <= first.t) return clampChannelValue(channel, first.value);
   const last = list[list.length - 1]!;
   if (t >= last.t) return clampChannelValue(channel, last.value);
@@ -362,8 +457,12 @@ export function keyframeMarkers(item: PostItem): PostKeyframeMarker[] {
   const markers: PostKeyframeMarker[] = [];
   for (const point of points) {
     const last = markers[markers.length - 1];
-    if (last && Math.abs(point.seconds - last.seconds) <= POST_KEYFRAME_MERGE_SECONDS) {
-      if (!last.channels.includes(point.channel)) last.channels.push(point.channel);
+    if (
+      last &&
+      Math.abs(point.seconds - last.seconds) <= POST_KEYFRAME_MERGE_SECONDS
+    ) {
+      if (!last.channels.includes(point.channel))
+        last.channels.push(point.channel);
     } else {
       markers.push({ seconds: point.seconds, channels: [point.channel] });
     }
@@ -457,9 +556,20 @@ export type PostEasingPresetId = keyof typeof EASING_PRESETS;
 
 export const DEFAULT_EASING: PostEasing = EASING_PRESETS["ease-in-out"];
 
+/** Control points for display; callers retain the original sampled easing until edited. */
+export function easingControlPoints(
+  easing: PostEasing
+): [number, number, number, number] | null {
+  if (easing === "hold") return null;
+  return Array.isArray(easing) ? easing : easing.curve;
+}
+
 /** The preset id a curve matches within 1e-3, else `"custom"`. */
-export function easingPresetOf(easing: PostEasing): PostEasingPresetId | "custom" {
+export function easingPresetOf(
+  easing: PostEasing
+): PostEasingPresetId | "custom" {
   if (easing === "hold") return "hold";
+  if (!Array.isArray(easing)) return "custom";
   for (const id of Object.keys(EASING_PRESETS) as PostEasingPresetId[]) {
     const preset = EASING_PRESETS[id];
     if (preset === "hold") continue;
@@ -485,6 +595,22 @@ const bezierCache = new Map<string, (p: number) => number>();
 export function sampleEasing(easing: PostEasing, p: number): number {
   const clamped = Math.min(1, Math.max(0, p));
   if (easing === "hold") return clamped >= 1 ? 1 : 0;
+  if (!Array.isArray(easing)) {
+    const [x1, y1, x2, y2] = easing.curve;
+    let bestDistance = Infinity;
+    let bestY = 0;
+    for (let i = 0; i <= easing.samples; i++) {
+      const t = i / easing.samples;
+      const u = 1 - t;
+      const x = 3 * u * u * t * x1 + 3 * u * t * t * x2 + t * t * t;
+      const distance = Math.abs(x - clamped);
+      if (distance < bestDistance) {
+        bestDistance = distance;
+        bestY = 3 * u * u * t * y1 + 3 * u * t * t * y2 + t * t * t;
+      }
+    }
+    return bestY;
+  }
   const key = easing.join(",");
   let fn = bezierCache.get(key);
   if (!fn) {
@@ -515,7 +641,10 @@ export function setKeyframe<Ch extends PostKeyframeChannel>(
   const index = keyframeIndexAt(item, channel, s);
   if (index >= 0) {
     const current = existing![index]!;
-    if (current.t === t && sameChannelValue(channel, current.value, resolvedValue)) {
+    if (
+      current.t === t &&
+      sameChannelValue(channel, current.value, resolvedValue)
+    ) {
       return item;
     }
     const next = existing!.map((kf, i) =>
@@ -544,7 +673,11 @@ export function removeKeyframe(
   const removedValue = existing[index]!.value;
   const next = existing.filter((_, i) => i !== index);
   if (next.length === 0) {
-    return withStaticValue(withChannel(item, channel, undefined), channel, removedValue);
+    return withStaticValue(
+      withChannel(item, channel, undefined),
+      channel,
+      removedValue
+    );
   }
   return withChannel(item, channel, next);
 }
@@ -563,7 +696,8 @@ export function toggleKeyframe(
 /** Removes whichever channel each has a keyframe at `s`. */
 export function removeKeyframesAt(item: PostItem, s: number): PostItem {
   let next = item;
-  for (const channel of channelsOf(item)) next = removeKeyframe(next, channel, s);
+  for (const channel of channelsOf(item))
+    next = removeKeyframe(next, channel, s);
   return next;
 }
 
@@ -598,9 +732,14 @@ export function moveKeyframe(
 }
 
 /** Moves every channel's keyframe at `fromS` to `toS`, as `moveKeyframe` does. */
-export function moveKeyframes(item: PostItem, fromS: number, toS: number): PostItem {
+export function moveKeyframes(
+  item: PostItem,
+  fromS: number,
+  toS: number
+): PostItem {
   let next = item;
-  for (const channel of channelsOf(item)) next = moveKeyframe(next, channel, fromS, toS);
+  for (const channel of channelsOf(item))
+    next = moveKeyframe(next, channel, fromS, toS);
   return next;
 }
 
@@ -616,12 +755,16 @@ export function setSegmentEasing(
   const list = rawKeyframes(item, channel)!;
   const current = list[segment.index]!;
   if (sameEasing(current.easing, easing)) return item;
-  const next = list.map((kf, i) => (i === segment.index ? { ...kf, easing } : kf));
+  const next = list.map((kf, i) =>
+    i === segment.index ? { ...kf, easing } : kf
+  );
   return withChannel(item, channel, next as never);
 }
 
 function sameEasing(a: PostEasing, b: PostEasing): boolean {
   if (a === "hold" || b === "hold") return a === b;
+  if (!Array.isArray(a) || !Array.isArray(b))
+    return JSON.stringify(a) === JSON.stringify(b);
   return a[0] === b[0] && a[1] === b[1] && a[2] === b[2] && a[3] === b[3];
 }
 
@@ -658,9 +801,10 @@ export function clearChannel(
  */
 export function shiftKeyframes(item: PostItem, headCut: number): PostItem {
   if (item.kind === "video" || headCut === 0) return item;
-  if (!isAnimated(item, "box") && !isAnimated(item, "opacity")) return item;
+  if (!channelsOf(item).some((channel) => isAnimated(item, channel)))
+    return item;
   let next: PostItem = item;
-  for (const channel of OTHER_CHANNELS) {
+  for (const channel of channelsOf(item)) {
     const list = rawKeyframes(item, channel);
     if (!list) continue;
     next = withChannel(
