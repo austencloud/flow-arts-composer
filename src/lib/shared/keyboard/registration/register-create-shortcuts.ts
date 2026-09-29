@@ -54,12 +54,16 @@ function singleKeyShortcutAllowed(
  * on the Inverted chip used to close the drawer and delete a step behind it.
  * The step editor marks its drawer as passthrough so the key stays live there.
  *
- * They also stand down while the workspace player runs, as the grid's own
- * delete does. Playback hides the grid but keeps its selection for Stop to
- * restore, so the keys used to remove a step the user could not see.
+ * They also stand down from the moment Play is pressed until Stop, as the
+ * grid's own delete does. Playback hides the grid but keeps its selection for
+ * Stop to restore, so the keys used to remove a step the user could not see.
+ * While the player loads, or shows Retry after a failed load, the card still
+ * shows that step, but the user asked to play the sequence, not to edit it.
  */
 function deleteShortcutAllowed(): boolean {
-  if (getCreateModuleRef()?.panelState.workspacePlayback) return false;
+  const panelState = getCreateModuleRef()?.panelState;
+  if (panelState?.workspacePlayback || panelState?.workspacePlaybackPreparation)
+    return false;
   if (typeof document === "undefined") return true;
   return !isLayerOwnedKeyboardTarget(document.activeElement);
 }

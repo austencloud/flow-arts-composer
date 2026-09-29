@@ -531,6 +531,20 @@ describe("Create history: a keyboard delete goes through the workspace's own rul
         );
         expect(panelState.workspacePlayback).not.toBeNull();
       },
+      /** Play pressed: the player is still loading, or failed and shows Retry. */
+      load(phase: "loading" | "showing Retry") {
+        panelState.startWorkspacePlayback(
+          sequenceState.currentSequence!,
+          1,
+          "construct"
+        );
+        if (phase === "showing Retry")
+          panelState.failWorkspacePlaybackPreparation(
+            panelState.workspacePlaybackPreparation!
+          );
+        expect(panelState.workspacePlaybackPreparation).not.toBeNull();
+        expect(panelState.workspacePlayback).toBeNull();
+      },
     };
   }
 
@@ -580,6 +594,35 @@ describe("Create history: a keyboard delete goes through the workspace's own rul
       expect(workspace.panelState.workspacePlayback).not.toBeNull();
       // Skipped outright rather than swallowed, so the manager also left any
       // open sheet beside the player where it was.
+      expect(event.defaultPrevented).toBe(false);
+    }
+  );
+
+  // The selection also survives the moment between Play and the first frame,
+  // while the card still shows. The keys wait from the moment Play is
+  // pressed until Stop, including a failed load showing Retry.
+  it.each([
+    ["Backspace", "step 3", "loading", 3],
+    ["Delete", "step 3", "loading", 3],
+    ["Backspace", "the start position", "loading", 0],
+    ["Delete", "the start position", "loading", 0],
+    ["Delete", "step 3", "showing Retry", 3],
+    ["Backspace", "the start position", "showing Retry", 0],
+  ] as const)(
+    "%s on %s does nothing while Play is %s",
+    async (key, _label, phase, stepNumber) => {
+      vi.useFakeTimers();
+      const workspace = createWorkspaceWithShortcuts();
+      workspace.sequenceState.selectStep(stepNumber);
+      workspace.load(phase);
+
+      const event = workspace.press(key);
+      await vi.advanceTimersByTimeAsync(1000);
+
+      expect(workspace.sequenceState.currentSequence?.steps).toHaveLength(5);
+      expect(workspace.manager.undoHistory).toHaveLength(0);
+      expect(workspace.requestClearSequence).not.toHaveBeenCalled();
+      expect(workspace.panelState.workspacePlaybackPreparation).not.toBeNull();
       expect(event.defaultPrevented).toBe(false);
     }
   );
