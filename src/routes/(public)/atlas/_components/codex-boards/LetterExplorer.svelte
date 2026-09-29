@@ -22,6 +22,7 @@
     UnencodableMotionError,
   } from "$lib/shared/navigation/services/sequence-encoder";
   import { buildGalleryLetterHref } from "$lib/shared/browse/navigation/gallery-letter-link";
+  import LinkChip from "$lib/shared/ui/components/LinkChip.svelte";
   import type { CodexLetterInfo } from "./codex-letters";
 
   const GRID_OPTIONS = [
@@ -74,10 +75,7 @@
     onGridChange: (gridMode: GridModeValue) => void;
     onVariationChange: (index: number) => void;
     onTurnsChange: (color: HandSide, delta: number) => void;
-    onRotationChange: (
-      color: HandSide,
-      direction: RotationDirection
-    ) => void;
+    onRotationChange: (color: HandSide, direction: RotationDirection) => void;
     onReset: () => void;
     onRetry: () => void;
     onLearningRetry: () => void;
@@ -186,8 +184,7 @@
                   rotationDirection={leftRotation}
                   showRotation={leftCanChooseRotation}
                   compact
-                  onTurnsChange={(delta) =>
-                    onTurnsChange(HandSide.LEFT, delta)}
+                  onTurnsChange={(delta) => onTurnsChange(HandSide.LEFT, delta)}
                   onRotationChange={(direction) =>
                     onRotationChange(HandSide.LEFT, direction)}
                 />
@@ -336,9 +333,9 @@
                 aria-label={`${info.label} cards in Learning Letters`}
               >
                 {#each learningLinks as { sequence, href } (sequence.id)}
-                  <a {href}>
+                  <LinkChip {href}>
                     {simplifyRepeatedWord(sequence.word || sequence.name)}
-                  </a>
+                  </LinkChip>
                 {/each}
               </div>
             {:else}
@@ -348,9 +345,11 @@
               </p>
             {/if}
             <div class="context-links">
-              <a href="/learn/concepts/words-alpha-beta">Open the lesson</a>
-              <a href="/browse/you/collections/founding_tka-1"
-                >View all 19 cards</a
+              <LinkChip href="/learn/concepts/words-alpha-beta"
+                >Open the lesson</LinkChip
+              >
+              <LinkChip href="/browse/you/collections/founding_tka-1"
+                >View all 19 cards</LinkChip
               >
             </div>
           </article>
@@ -682,9 +681,7 @@
 
   .variation-button:focus-visible,
   .action:focus-visible,
-  .gallery-link:focus-visible,
-  .context-links a:focus-visible,
-  .word-links a:focus-visible {
+  .gallery-link:focus-visible {
     outline: 2px solid var(--theme-accent);
     outline-offset: 2px;
   }
@@ -713,23 +710,6 @@
   .context-links {
     flex-wrap: wrap;
     gap: 0.5rem;
-  }
-
-  .word-links a,
-  .context-links a {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 44px;
-    min-height: 44px;
-    padding: 0.45rem 0.75rem;
-    border: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.12));
-    border-radius: 999px;
-    color: var(--theme-text, #fff);
-    background: var(--theme-card-bg, rgba(255, 255, 255, 0.04));
-    font-size: var(--font-size-sm, 0.875rem);
-    font-weight: 700;
-    text-decoration: none;
   }
 
   .gallery-link {

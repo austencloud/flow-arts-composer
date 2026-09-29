@@ -10,6 +10,7 @@
   No auth. Empty until picks are chosen; points at the picker until then.
 -->
 <script lang="ts">
+  import LinkChip from "$lib/shared/ui/components/LinkChip.svelte";
   import { onMount } from "svelte";
   import { browser } from "$app/environment";
   import LazyMount from "$lib/shared/components/LazyMount.svelte";
@@ -94,7 +95,9 @@
       </div>
     {:else}
       <div class="collection-status">
-        No picks yet. Choose them at <a href="/test/mandala-pick">/test/mandala-pick</a>.
+        No picks yet. Choose them at <LinkChip size="inline" href="/test/mandala-pick"
+          >/test/mandala-pick</LinkChip
+        >.
       </div>
     {/if}
   </div>
@@ -232,8 +235,5 @@
     text-align: center;
     font-size: 0.95rem;
     color: oklch(0.66 0.02 270);
-  }
-  .collection-status a {
-    color: oklch(0.78 0.13 275);
   }
 </style>

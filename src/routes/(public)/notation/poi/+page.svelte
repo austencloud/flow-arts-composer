@@ -1,4 +1,5 @@
 <script lang="ts">
+  import LinkChip from "$lib/shared/ui/components/LinkChip.svelte";
   import Seo from "$lib/shared/components/Seo.svelte";
   import "$lib/shared/landing/styles/public-editorial.css";
 
@@ -63,15 +64,19 @@
         the Vulcan Lofts in Oakland. VTG's four timing and direction categories
         are encoded in TKA's Type 1 letters. Poi spinners who know split-same
         and tog-opposite can already read that part of the alphabet. The sources
-        and full lineage are on the <a href="/history">history page</a>.
+        and full lineage are on the <LinkChip size="inline" href="/history"
+          >history page</LinkChip
+        >.
       </p>
       <p>
         A Poi Lab module is planned for Flow Arts Composer to identify sequences
-        a momentum-based prop can perform. It has not been built yet. The <a
-          href="/guide">guide</a
+        a momentum-based prop can perform. It has not been built yet. The <LinkChip
+          size="inline"
+          href="/guide">guide</LinkChip
         >
-        explains the notation, and the <a href="/atlas">Kinetic Atlas</a> defines
-        its terms.
+        explains the notation, and the <LinkChip size="inline" href="/atlas"
+          >Kinetic Atlas</LinkChip
+        > defines its terms.
       </p>
     </div>
   </section>

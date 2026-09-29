@@ -215,7 +215,9 @@
             {/each}
           </div>
           {#if isGuest}
-            <button class="keep" data-animate="4" onclick={signUpToKeep}>Sign up to keep your collection</button>
+            <div class="actions" data-animate="4">
+              <button onclick={signUpToKeep}>Sign up to keep your collection</button>
+            </div>
           {/if}
         </div>
       {:else}
@@ -371,14 +373,6 @@
     height: 100%;
   }
   .tile-label { font-size: 0.72rem; opacity: 0.85; }
-  .keep {
-    background: none;
-    border: none;
-    color: var(--theme-accent, #b14ddb);
-    font-size: 0.82rem;
-    cursor: pointer;
-    text-decoration: underline;
-  }
   .stage {
     flex: 1 1 auto;
     min-height: 0;

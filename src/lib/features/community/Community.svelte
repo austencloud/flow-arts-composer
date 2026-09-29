@@ -12,6 +12,7 @@
   factory owns the write.
 -->
 <script lang="ts">
+  import LinkChip from "$lib/shared/ui/components/LinkChip.svelte";
   import { onMount } from "svelte";
   import { browser } from "$app/environment";
   import { page } from "$app/state";
@@ -110,13 +111,11 @@
         </p>
         <p class="subtext">
           Get your API key from the
-          <a
+          <LinkChip
+            size="inline"
             href="https://console.cloud.google.com/google/maps-apis"
-            target="_blank"
-            rel="noopener noreferrer"
+            >Google Cloud Console</LinkChip
           >
-            Google Cloud Console
-          </a>
         </p>
       </div>
     {:else if status === "loading" || status === "idle"}
@@ -312,15 +311,6 @@
   .api-key-warning .subtext {
     font-size: var(--font-size-compact, 12px);
     margin-top: 12px;
-  }
-
-  .api-key-warning a {
-    color: var(--theme-accent, #4a9eff);
-    text-decoration: none;
-  }
-
-  .api-key-warning a:hover {
-    text-decoration: underline;
   }
 
   .loading-state i {

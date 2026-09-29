@@ -167,11 +167,3 @@
 </script>
 
 <CelestialInteraction onActivate={handleInteraction} />
-
-<!--
-  Contract lineage for source-level gate tests: the shared world above replaces
-  <OliveCloudbreakSlice {worldYOffset} {active}> and
-  <CelestialSun direction={CLOUDBREAK_SKY_SUN.direction}> with the exact same
-  graph. The review route retains those component names until its renderer-shell
-  migration.
--->

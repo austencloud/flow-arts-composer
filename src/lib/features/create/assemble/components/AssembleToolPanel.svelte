@@ -10,6 +10,7 @@
   import { settingsService } from "$lib/shared/settings/state/settings-state.svelte";
   import type { AssembleTabState } from "../../shared/state/assemble-tab-state.svelte";
   import BuilderControls from "$lib/features/assemble-lab/components/BuilderControls.svelte";
+  import BuilderStageActions from "$lib/features/assemble-lab/components/BuilderStageActions.svelte";
   import InteractiveGrid from "$lib/features/assemble-lab/components/InteractiveGrid.svelte";
   import { attachAssembleKeyboard } from "$lib/features/assemble-lab/services/assemble-keyboard-dispatcher";
   import type { SettingsState } from "$lib/shared/settings/state/settings-state.svelte";
@@ -35,7 +36,7 @@
     const duration = motionDuration(240);
     if (duration === 0) return;
     const targets = builderSurfaceRef.querySelectorAll<HTMLElement>(
-      ".dock-phase-row, .dock-hand-row"
+      ".stage-actions, .dock-hand-row"
     );
     const animations = Array.from(targets).map((target) =>
       target.animate(
@@ -151,7 +152,9 @@
 <div class="assemble-tool-panel">
   {#if props.tabState.hasError}
     <div class="restore-error" role="alert">
-      {t("create_review_couldn_t_restore_your_saved_assemble_work_you_can_keep_building_but_this_session_may_not_s")}
+      {t(
+        "create_review_couldn_t_restore_your_saved_assemble_work_you_can_keep_building_but_this_session_may_not_s"
+      )}
     </div>
   {/if}
 
@@ -164,6 +167,7 @@
       <div class="grid-slot">
         <div class="stage-slot">
           <InteractiveGrid {builderState} onStepCapExceeded={checkStepCap} />
+          <BuilderStageActions {builderState} />
         </div>
         <BuilderControls {builderState} />
       </div>
@@ -246,6 +250,7 @@
   }
 
   .stage-slot {
+    position: relative;
     grid-row: 1;
     width: 100%;
     height: 100%;

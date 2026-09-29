@@ -1,5 +1,6 @@
 <!-- ActiveUsersPanel.svelte - Admin view of all users with activity-based presence -->
 <script lang="ts">
+  import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
   import { onMount, onDestroy } from "svelte";
   import { getUserActivityTracker } from "$lib/features/admin/get-user-activity-tracker";
   import { t } from "$lib/shared/i18n/i18n.svelte.js";
@@ -220,9 +221,9 @@
       <div class="empty">
         <i class="fas fa-filter" aria-hidden="true"></i>
         <span>{t("admin_no_status_users", { status: statusFilter })}</span>
-        <button class="link-button" onclick={() => setFilter("all")}>
+        <PanelButton onclick={() => setFilter("all")}>
           {t("admin_show_all_users")}
-        </button>
+        </PanelButton>
       </div>
     {:else}
       <div class="users-grid-container themed-scrollbar">
@@ -408,25 +409,6 @@
   }
 
   .clear-filter:focus-visible {
-    outline: 2px solid var(--theme-accent);
-    outline-offset: 2px;
-  }
-
-  .link-button {
-    background: transparent;
-    border: none;
-    color: var(--theme-accent);
-    font-size: 0.875rem;
-    cursor: pointer;
-    text-decoration: underline;
-    padding: 0;
-  }
-
-  .link-button:hover {
-    color: var(--theme-accent-hover);
-  }
-
-  .link-button:focus-visible {
     outline: 2px solid var(--theme-accent);
     outline-offset: 2px;
   }

@@ -622,21 +622,27 @@
     font-style: italic;
   }
 
+  /* Opens the edit history, so it reads as a small button beside the time,
+     tinted from the bubble's own text color like the delivery actions. */
   .edited-button {
-    font-style: italic;
-    font-size: inherit;
+    padding: 2px 8px;
+    border: 1px solid color-mix(in srgb, currentColor 28%, transparent);
+    border-radius: 8px;
+    background: color-mix(in srgb, currentColor 10%, transparent);
     color: inherit;
-    background: none;
-    border: none;
-    padding: 0;
+    font: inherit;
+    font-style: italic;
     cursor: pointer;
-    text-decoration: underline;
-    text-decoration-style: dotted;
-    text-underline-offset: 2px;
   }
 
-  .edited-button:hover {
-    text-decoration-style: solid;
+  .edited-button:hover,
+  .edited-button:focus-visible {
+    background: color-mix(in srgb, currentColor 18%, transparent);
+  }
+
+  .edited-button:focus-visible {
+    outline: 2px solid currentColor;
+    outline-offset: 1px;
   }
 
   .read-receipt {

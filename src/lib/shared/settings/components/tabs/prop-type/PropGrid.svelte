@@ -14,6 +14,7 @@
     beats grouping.
 -->
 <script lang="ts">
+  import LinkChip from "$lib/shared/ui/components/LinkChip.svelte";
   import { t } from "$lib/shared/i18n/i18n.svelte";
   import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
   import {
@@ -995,21 +996,17 @@
           {#if showGrip}{@render gripControl()}{/if}
         {/if}
         {#if drill.kind === "fan-look" && fanLook?.designCredit && railCreditShortName}
-          <a
+          <LinkChip
             class="rail-credit"
             href={fanLook.designCredit.sourceUrl}
-            target="_blank"
-            rel="noreferrer"
             aria-label={t("settings_design_source", {
               name: fanLook.designCredit.originator,
             })}
-          >
-            <span class="credit-long">{fanLook.designCredit.originator}</span>
-            <span class="credit-short" aria-hidden="true"
+            ><span class="credit-long">{fanLook.designCredit.originator}</span
+            ><span class="credit-short" aria-hidden="true"
               >{railCreditShortName}</span
-            >
-            <i class="fas fa-arrow-up-right-from-square" aria-hidden="true"></i>
-          </a>
+            ></LinkChip
+          >
         {/if}
       {:else}
         <div class="rail-heading">{@render heading?.()}</div>
@@ -1389,21 +1386,10 @@
     flex: 0 0 auto;
     margin-left: auto;
   }
-  .rail-credit {
-    display: inline-flex;
+  .rail-toolbar :global(.rail-credit) {
     flex: 0 0 auto;
-    align-items: center;
-    gap: 0.3rem;
-    min-height: var(--min-touch-target, 44px);
     margin-left: 0.25rem;
-    color: var(--theme-accent, #8b6cff);
     font-size: var(--font-size-min, 14px);
-    font-weight: 650;
-    text-decoration: none;
-  }
-  .rail-credit:hover,
-  .rail-credit:focus-visible {
-    text-decoration: underline;
   }
   .credit-short {
     display: none;
@@ -1412,7 +1398,7 @@
     .rail-toolbar {
       column-gap: 0.375rem;
     }
-    .rail-credit {
+    .rail-toolbar :global(.rail-credit) {
       margin-left: 0.1rem;
     }
     .credit-long {
