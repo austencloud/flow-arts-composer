@@ -1120,14 +1120,14 @@
   function isTyping(target: EventTarget | null): boolean {
     if (!(target instanceof HTMLElement)) return false;
     if (target.isContentEditable) return true;
-    const field = target.closest("input, textarea, select");
+    const field = target.closest("input, textarea");
     return (
       field !== null &&
       !(field instanceof HTMLInputElement && field.type === "range")
     );
   }
 
-  /** Controls that answer Space themselves. */
+  /** Controls that answer Enter themselves. */
   function isControl(target: EventTarget | null): boolean {
     return (
       target instanceof HTMLElement &&
@@ -1174,9 +1174,8 @@
     if (cropMode && handleCropKey(event)) return;
     switch (event.key) {
       case " ":
-        if (event.repeat || isControl(event.target)) return;
         event.preventDefault();
-        editor.togglePlayback();
+        if (!event.repeat) editor.togglePlayback();
         return;
       case "s":
       case "S":
@@ -1271,9 +1270,8 @@
   function handleCropKey(event: KeyboardEvent): boolean {
     switch (event.key) {
       case " ":
-        if (event.repeat || isControl(event.target)) return true;
         event.preventDefault();
-        toggleCropPlayback();
+        if (!event.repeat) toggleCropPlayback();
         return true;
       case "Enter":
         if (
