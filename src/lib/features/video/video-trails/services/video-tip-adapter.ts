@@ -16,6 +16,20 @@ interface PreviousPosition {
   velocityY: number;
 }
 
+interface EndpointTrack {
+  x: number;
+  y: number;
+  frame: number;
+  velocityX: number;
+  velocityY: number;
+}
+
+export interface StabilizedEndpoints {
+  endpoints: DetectedEndpoint[];
+  /** Trails for these tips must start a new stroke after a long dropout. */
+  breaks: string[];
+}
+
 // Minimum time delta (seconds) used as the denominator in velocity calculations.
 // Prevents division by near-zero when two frames arrive at nearly the same time.
 const MIN_DT_SECONDS = 0.001;
@@ -23,6 +37,113 @@ const MIN_DT_SECONDS = 0.001;
 export class VideoTipAdapter {
   // Keyed by "propIndex-tipIndex" so each tip is tracked independently.
   private previousPositions = new Map<string, PreviousPosition>();
+  private endpointTracks = new Map<string, EndpointTrack>();
+  private previousEndpointTracks = new Map<string, EndpointTrack>();
+
+  /** Keep detector labels attached to the same physical tips across frames. */
+  stabilizeEndpoints(
+    detections: DetectedEndpoint[],
+    frame: number,
+    canvasSize: number,
+  ): StabilizedEndpoints {
+    this.previousEndpointTracks = new Map(this.endpointTracks);
+    const diagonal = Math.hypot(canvasSize, canvasSize);
+    const slots = ["0-0", "0-1", "1-0", "1-1"];
+    const assigned = new Map<number, string>();
+    const usedSlots = new Set<string>();
+    const candidates: { index: number; slot: string; distance: number }[] = [];
+
+    for (let index = 0; index < detections.length; index++) {
+      const detection = detections[index]!;
+      for (const [slot, track] of this.endpointTracks) {
+        const gap = frame - track.frame;
+        if (gap < 1 || gap > 12) continue;
+        const coast = Math.min(gap, 6);
+        const distance = Math.hypot(
+          detection.x - (track.x + track.velocityX * coast),
+          detection.y - (track.y + track.velocityY * coast),
+        );
+        const reach = diagonal * (0.06 + Math.min(gap, 9) * 0.02);
+        if (distance <= reach) candidates.push({ index, slot, distance });
+      }
+    }
+
+    // A global closest-first pass prevents one detection from occupying two tips.
+    candidates.sort((a, b) => a.distance - b.distance);
+    for (const candidate of candidates) {
+      if (assigned.has(candidate.index) || usedSlots.has(candidate.slot)) continue;
+      assigned.set(candidate.index, candidate.slot);
+      usedSlots.add(candidate.slot);
+    }
+
+    const breaks: string[] = [];
+    const endpoints: DetectedEndpoint[] = [];
+    for (let index = 0; index < detections.length; index++) {
+      const detection = detections[index]!;
+      let slot = assigned.get(index);
+      if (!slot) {
+        const preferred = `${detection.propIndex}-${detection.tipIndex}`;
+        // A fresh point cannot hijack an active tip just because the detector
+        // reused its label. Wait for another frame if all slots are occupied.
+        slot = slots.find((key) =>
+          !usedSlots.has(key) &&
+          (!this.endpointTracks.has(key) || frame - this.endpointTracks.get(key)!.frame > 12) &&
+          key === preferred,
+        ) ?? slots.find((key) =>
+          !usedSlots.has(key) &&
+          (!this.endpointTracks.has(key) || frame - this.endpointTracks.get(key)!.frame > 12),
+        );
+        if (!slot) continue;
+        usedSlots.add(slot);
+      }
+
+      const previous = this.endpointTracks.get(slot);
+      const gap = previous ? frame - previous.frame : 0;
+      if (previous && gap > 6) {
+        breaks.push(slot);
+        this.previousPositions.delete(slot);
+      }
+      const velocityX = previous && gap > 0 && gap <= 6
+        ? (detection.x - previous.x) / gap : 0;
+      const velocityY = previous && gap > 0 && gap <= 6
+        ? (detection.y - previous.y) / gap : 0;
+      this.endpointTracks.set(slot, {
+        x: detection.x,
+        y: detection.y,
+        frame,
+        velocityX,
+        velocityY,
+      });
+      const [propIndex, tipIndex] = slot.split("-").map(Number);
+      endpoints.push({
+        ...detection,
+        propIndex: propIndex as 0 | 1,
+        tipIndex: tipIndex!,
+        frameIndex: frame,
+      });
+    }
+
+    return { endpoints, breaks };
+  }
+
+  /** Corrected and occluded points must also change the next frame's prediction. */
+  reconcileCorrections(endpoints: DetectedEndpoint[], frame: number): void {
+    this.endpointTracks = new Map(this.previousEndpointTracks);
+    for (const endpoint of endpoints) {
+      const slot = `${endpoint.propIndex}-${endpoint.tipIndex}`;
+      const previous = this.endpointTracks.get(slot);
+      const gap = previous ? frame - previous.frame : 0;
+      this.endpointTracks.set(slot, {
+        x: endpoint.x,
+        y: endpoint.y,
+        frame,
+        velocityX: previous && gap > 0 && gap <= 6
+          ? (endpoint.x - previous.x) / gap : 0,
+        velocityY: previous && gap > 0 && gap <= 6
+          ? (endpoint.y - previous.y) / gap : 0,
+      });
+    }
+  }
 
   mapToFireTips(
     endpoints: DetectedEndpoint[],
@@ -114,5 +235,7 @@ export class VideoTipAdapter {
     // means the next frame will have no previous position to diff against,
     // producing zero velocity - exactly what we want after a discontinuity.
     this.previousPositions.clear();
+    this.endpointTracks.clear();
+    this.previousEndpointTracks.clear();
   }
 }
