@@ -4,6 +4,7 @@ import {
   createStaffPointMapper,
 } from "$lib/shared/media-composition/services/staff-effect-painter";
 import { POST_STAFF_EFFECTS } from "$lib/shared/media-composition/domain/post-project";
+import type { StaffTipTrack } from "$lib/shared/media-composition/domain/staff-tip-track";
 import {
   compilePostProject,
   staffEffectRole,
@@ -15,7 +16,10 @@ import type {
   PostStudioLayerPainter,
 } from "$lib/shared/media-composition/services/post-studio-layer-painter";
 import { CANVAS2D_HOSTED_EFFECTS } from "$lib/shared/effects/services/canvas2d-effect-host";
-import { EFFECT_ICONS, EFFECT_LABELS } from "$lib/shared/effects/domain/effect-meta";
+import {
+  EFFECT_ICONS,
+  EFFECT_LABELS,
+} from "$lib/shared/effects/domain/effect-meta";
 import { project, video } from "./post-project-fixtures";
 
 type Transform = NonNullable<PaintFrame["transform"]>;
@@ -53,7 +57,14 @@ function compositorPoint(
   const radians = (transform.rotationDegrees * Math.PI) / 180;
   let m: M = [1, 0, 0, 1, 0, 0];
   m = multiply(m, [1, 0, 0, 1, cx + pan.x, cy + pan.y]);
-  m = multiply(m, [Math.cos(radians), Math.sin(radians), -Math.sin(radians), Math.cos(radians), 0, 0]);
+  m = multiply(m, [
+    Math.cos(radians),
+    Math.sin(radians),
+    -Math.sin(radians),
+    Math.cos(radians),
+    0,
+    0,
+  ]);
   m = multiply(m, [transform.scale, 0, 0, transform.scale, 0, 0]);
   if (transform.flipHorizontal) m = multiply(m, [-1, 0, 0, 1, 0, 0]);
   m = multiply(m, [1, 0, 0, 1, -cx, -cy]);
@@ -99,7 +110,12 @@ describe("createStaffPointMapper", () => {
       [0.5, 0.5],
     ] as const) {
       const got = place(x, y);
-      const want = compositorPoint(rect, transform, { x: 0, y: 0 }, { x: x * 100, y: y * 100 });
+      const want = compositorPoint(
+        rect,
+        transform,
+        { x: 0, y: 0 },
+        { x: x * 100, y: y * 100 }
+      );
       expect(got.x).toBeCloseTo(want.x, 9);
       expect(got.y).toBeCloseTo(want.y, 9);
     }
@@ -115,6 +131,66 @@ describe("createStaffPointMapper", () => {
     });
     // Twice as big hides 100 px across; a hard pan right shifts by half of it.
     expect(place(0.5, 0.5)).toEqual({ x: 100, y: 50 });
+  });
+
+  it("maps a manually placed crop through its box, turn, and flip at either output size", () => {
+    const sourceGeometry = {
+      x: -32 / 1080,
+      y: 27 / 1080,
+      width: 1128 / 1080,
+      height: 940 / 1080,
+      rotation: 30,
+      crop: { left: 0, top: 0.2107, right: 0.9997, bottom: 0.6792 },
+    };
+    const transform = { ...IDENTITY, flipHorizontal: true };
+    for (const size of [1080, 540]) {
+      const rect = { x: 0, y: 0, width: size, height: size };
+      const place = createStaffPointMapper({
+        rect,
+        sourceWidth: 1920,
+        sourceHeight: 1080,
+        fit: "cover",
+        transform,
+        sourceGeometry,
+      });
+      const box = {
+        x: (-32 / 1080) * size,
+        y: (27 / 1080) * size,
+        width: (1128 / 1080) * size,
+        height: (940 / 1080) * size,
+      };
+      for (const [x, y] of [
+        [0.5, 0.2107],
+        [0.75, 0.445],
+        [0.9997, 0.6792],
+      ] as const) {
+        const local = {
+          x:
+            box.x +
+            ((x - sourceGeometry.crop.left) /
+              (sourceGeometry.crop.right - sourceGeometry.crop.left)) *
+              box.width,
+          y:
+            box.y +
+            ((y - sourceGeometry.crop.top) /
+              (sourceGeometry.crop.bottom - sourceGeometry.crop.top)) *
+              box.height,
+        };
+        const want = compositorPoint(
+          box,
+          {
+            ...IDENTITY,
+            rotationDegrees: sourceGeometry.rotation,
+            flipHorizontal: true,
+          },
+          { x: 0, y: 0 },
+          local
+        );
+        const got = place(x, y);
+        expect(got.x).toBeCloseTo(want.x, 8);
+        expect(got.y).toBeCloseTo(want.y, 8);
+      }
+    }
   });
 });
 
@@ -137,13 +213,16 @@ describe("staff effect choices", () => {
 function recordingContext(): {
   context: CanvasRenderingContext2D;
   calls: string[];
+  callArgs: unknown[][];
 } {
   const calls: string[] = [];
+  const callArgs: unknown[][] = [];
   const context = new Proxy({} as Record<string | symbol, unknown>, {
     get(target, key) {
       if (key in target) return target[key];
-      return (..._args: unknown[]) => {
+      return (...args: unknown[]) => {
         calls.push(String(key));
+        callArgs.push(args);
       };
     },
     set(target, key, value) {
@@ -151,7 +230,11 @@ function recordingContext(): {
       return true;
     },
   });
-  return { context: context as unknown as CanvasRenderingContext2D, calls };
+  return {
+    context: context as unknown as CanvasRenderingContext2D,
+    calls,
+    callArgs,
+  };
 }
 
 describe("the staff effect painter", () => {
@@ -170,6 +253,59 @@ describe("the staff effect painter", () => {
     expect(calls).toEqual([]);
   });
 
+  it("clips a manually cropped staff effect to the rotated video box", () => {
+    const track = {
+      sourceWidth: 1920,
+      sourceHeight: 1080,
+      firstSampleSeconds: 0,
+      sampleRate: 30,
+      sampleCount: 0,
+      staffs: [
+        {
+          color: "blue",
+          ends: [
+            { x: [], y: [], state: [] },
+            { x: [], y: [], state: [] },
+          ],
+        },
+        {
+          color: "red",
+          ends: [
+            { x: [], y: [], state: [] },
+            { x: [], y: [], state: [] },
+          ],
+        },
+      ],
+    } as unknown as StaffTipTrack;
+    const painter = createStaffEffectPainter({
+      track: () => track,
+      effect: () => "trails",
+      fit: () => "cover",
+    });
+    const { context, calls, callArgs } = recordingContext();
+    painter.paint(
+      context,
+      { x: 0, y: 0, width: 1080, height: 1080 },
+      {
+        projectProgress: 0,
+        sourceTimeSeconds: 0,
+        sourceGeometry: {
+          x: -32 / 1080,
+          y: 27 / 1080,
+          width: 1128 / 1080,
+          height: 940 / 1080,
+          rotation: 30,
+          crop: { left: 0, top: 0.2107, right: 0.9997, bottom: 0.6792 },
+        },
+      }
+    );
+    const clipAt = calls.indexOf("clip");
+    expect(clipAt).toBeGreaterThan(0);
+    expect(calls.slice(0, clipAt)).toContain("rotate");
+    expect(callArgs[calls.indexOf("rect")]).toEqual([-564, -470, 1128, 940]);
+    expect(calls.at(-1)).toBe("restore");
+  });
+
   it("frames its own points, so the export leaves its context unturned", async () => {
     const result = compilePostProject(
       project([
@@ -182,9 +318,11 @@ describe("the staff effect painter", () => {
       ]),
       { now: 1 }
     )!;
-    const layers = evaluatePresetFrame(result.preset, result.durationSeconds, 1).filter(
-      (layer) => layer.clipId === "v1~staff"
-    );
+    const layers = evaluatePresetFrame(
+      result.preset,
+      result.durationSeconds,
+      1
+    ).filter((layer) => layer.clipId === "v1~staff");
     expect(layers).toHaveLength(1);
 
     const frames: PaintFrame[] = [];
@@ -214,6 +352,60 @@ describe("the staff effect painter", () => {
       });
       expect(calls.includes("rotate")).toBe(!owns);
     }
-    expect(frames[0]!.transform).toMatchObject({ scale: 1.5, rotationDegrees: 90 });
+    expect(frames[0]!.transform).toMatchObject({
+      scale: 1.5,
+      rotationDegrees: 90,
+    });
+  });
+
+  it("passes evaluated source geometry through the preview and export paint frame", async () => {
+    const sourceGeometry = {
+      x: -32 / 1080,
+      y: 27 / 1080,
+      width: 1128 / 1080,
+      height: 940 / 1080,
+      rotation: 0,
+      crop: { left: 0, top: 0.2107, right: 0.9997, bottom: 0.6792 },
+    };
+    const result = compilePostProject(
+      project([
+        video("v1", {
+          sourceOut: 4,
+          staffEffect: { effect: "trails" },
+          sourceGeometry,
+        }),
+      ]),
+      { now: 1 }
+    )!;
+    const layer = evaluatePresetFrame(
+      result.preset,
+      result.durationSeconds,
+      1
+    ).find((candidate) => candidate.clipId === "v1~staff")!;
+    expect(layer.sourceGeometry).toEqual(sourceGeometry);
+    const frames: PaintFrame[] = [];
+    const painter: PostStudioLayerPainter = {
+      ownsTransform: true,
+      prepare: () => Promise.resolve(),
+      paint: (_context, _rect, frame) => {
+        frames.push(frame);
+      },
+    };
+    const { context } = recordingContext();
+    await renderPostStudioFrame({
+      canvas: {
+        width: 1080,
+        height: 1080,
+        getContext: () => context,
+      } as unknown as HTMLCanvasElement,
+      root: {} as HTMLElement,
+      preset: result.preset,
+      layers: [layer],
+      cardFrameCache: new Map(),
+      painters: new Map([[staffEffectRole("v1"), painter]]),
+      timeSeconds: 1,
+    });
+    expect(frames).toHaveLength(1);
+    expect(frames[0]!.sourceGeometry).toEqual(sourceGeometry);
   });
 });

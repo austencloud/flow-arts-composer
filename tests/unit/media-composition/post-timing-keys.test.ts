@@ -8,6 +8,29 @@ describe("Timing keys", () => {
     document.body.innerHTML = "";
   });
 
+  it("history cancels an unfinished adjustment before changing completed edits", () => {
+    const harness = createPostTimingSessionHarness();
+    dispose = harness.dispose;
+    let cancellations = 0;
+    const cancel = () => {
+      cancellations += 1;
+      harness.session.setAdjustmentCancel(null);
+    };
+    harness.session.setAdjustmentCancel(cancel);
+    expect(harness.session.canUndo).toBe(true);
+    expect(harness.session.canRedo).toBe(true);
+    harness.session.undo();
+    expect(cancellations).toBe(1);
+    expect(harness.historyCalls()).toEqual({ undo: 0, redo: 0 });
+    harness.session.setAdjustmentCancel(cancel);
+    harness.session.redo();
+    expect(cancellations).toBe(2);
+    expect(harness.historyCalls()).toEqual({ undo: 0, redo: 0 });
+    harness.session.undo();
+    harness.session.redo();
+    expect(harness.historyCalls()).toEqual({ undo: 1, redo: 1 });
+  });
+
   function press(
     target: Element,
     key: string,
@@ -56,5 +79,50 @@ describe("Timing keys", () => {
     const tap = press(summary, "t", harness.session.handleKey);
     expect(tap.defaultPrevented).toBe(true);
     expect(harness.tapCount()).toBe(1);
+  });
+
+  it("Escape leaves landing adjustment and Home restarts unless typing", () => {
+    const harness = createPostTimingSessionHarness();
+    dispose = harness.dispose;
+    document.body.innerHTML = `<button type="button">Timeline</button><input type="text" />`;
+    const button = document.body.querySelector("button")!;
+    const field = document.body.querySelector("input")!;
+
+    harness.session.adjustLandings = true;
+    harness.session.selected = { sectionId: "part-1", position: 1 };
+    harness.session.seek(12);
+    expect(
+      press(field, "Escape", harness.session.handleKey).defaultPrevented
+    ).toBe(false);
+    expect(harness.session.adjustLandings).toBe(true);
+    expect(
+      press(button, "Escape", harness.session.handleKey).defaultPrevented
+    ).toBe(true);
+    expect(harness.session.adjustLandings).toBe(false);
+    expect(harness.session.selected).toBeNull();
+
+    expect(
+      press(field, "Home", harness.session.handleKey).defaultPrevented
+    ).toBe(false);
+    expect(harness.session.mediaSeconds).toBe(12);
+    expect(
+      press(button, "Home", harness.session.handleKey).defaultPrevented
+    ).toBe(true);
+    expect(harness.session.mediaSeconds).toBe(0);
+  });
+
+  it("clearing taps resets playback position and selection", () => {
+    const harness = createPostTimingSessionHarness();
+    dispose = harness.dispose;
+    harness.session.seek(4);
+    harness.session.tap();
+    harness.session.adjustLandings = true;
+    harness.session.selected = { sectionId: "part-1", position: 1 };
+    harness.session.clearTaps();
+
+    expect(harness.tapCount()).toBe(0);
+    expect(harness.session.mediaSeconds).toBe(0);
+    expect(harness.session.selected).toBeNull();
+    expect(harness.session.adjustLandings).toBe(false);
   });
 });

@@ -130,7 +130,7 @@ export function createPostEditorState(deps: PostEditorDeps) {
   let past = $state.raw<PostProject[]>([]);
   let future = $state.raw<PostProject[]>([]);
   /** The project a drag started from; each live step re-applies to it. */
-  let gestureBase: PostProject | null = null;
+  let gestureBase = $state.raw<PostProject | null>(null);
   /** The setting changed last and when, so a slider drag undoes as one step. */
   let lastSetting: { key: string; at: number } | null = null;
   /**
@@ -151,6 +151,7 @@ export function createPostEditorState(deps: PostEditorDeps) {
   let imageMedia = $state.raw<Record<string, TakeMedia>>({});
   let timings = $state.raw<Record<string, TakeTiming>>({});
   let timingUndo = $state.raw<Record<string, TakeTiming[]>>({});
+  let timingRedo = $state.raw<Record<string, TakeTiming[]>>({});
   /**
    * Timing an edit changed along with the post, keyed by the project the
    * edit made, so undoing that edit puts the take's timing back too.
@@ -344,7 +345,11 @@ export function createPostEditorState(deps: PostEditorDeps) {
   }
 
   function undo(): void {
-    if (gestureBase || (session && session.steps === 0)) return;
+    if (gestureBase) {
+      cancelGesture();
+      return;
+    }
+    if (session && session.steps === 0) return;
     lastSetting = null;
     const previous = past[past.length - 1];
     if (!previous) return;
@@ -365,7 +370,11 @@ export function createPostEditorState(deps: PostEditorDeps) {
   }
 
   function redo(): void {
-    if (gestureBase || (session && session.undone === 0)) return;
+    if (gestureBase) {
+      cancelGesture();
+      return;
+    }
+    if (session && session.undone === 0) return;
     lastSetting = null;
     const next = future[future.length - 1];
     if (!next) return;
@@ -897,6 +906,7 @@ export function createPostEditorState(deps: PostEditorDeps) {
         -TIMING_UNDO_DEPTH
       );
       timingUndo = { ...timingUndo, [takeId]: stack };
+      timingRedo = { ...timingRedo, [takeId]: [] };
     }
     timings = { ...timings, [takeId]: next };
     saveTakeTiming(next);
@@ -918,13 +928,34 @@ export function createPostEditorState(deps: PostEditorDeps) {
     const previous = stack?.[stack.length - 1];
     if (!previous) return;
     timingUndo = { ...timingUndo, [takeId]: stack.slice(0, -1) };
+    timingRedo = {
+      ...timingRedo,
+      [takeId]: [...(timingRedo[takeId] ?? []), timings[takeId]!].slice(
+        -TIMING_UNDO_DEPTH
+      ),
+    };
     setTiming(takeId, { ...previous, updatedAt: now() }, false);
+  }
+
+  function redoTiming(takeId: string): void {
+    const stack = timingRedo[takeId];
+    const next = stack?.[stack.length - 1];
+    const current = timings[takeId];
+    if (!next || !current) return;
+    timingRedo = { ...timingRedo, [takeId]: stack.slice(0, -1) };
+    timingUndo = {
+      ...timingUndo,
+      [takeId]: [...(timingUndo[takeId] ?? []), current].slice(
+        -TIMING_UNDO_DEPTH
+      ),
+    };
+    setTiming(takeId, { ...next, updatedAt: now() }, false);
   }
 
   function confirmTiming(takeId: string): void {
     const current = timings[takeId];
     if (!current) return;
-    setTiming(takeId, confirmTakeTiming(current, moveBeats, now()), false);
+    setTiming(takeId, confirmTakeTiming(current, moveBeats, now()), true);
   }
 
   // ---- The preview clock ---------------------------------------------------
@@ -1022,10 +1053,16 @@ export function createPostEditorState(deps: PostEditorDeps) {
       return selectedItem;
     },
     get canUndo() {
-      return past.length > 0 && (!session || session.steps > 0);
+      return (
+        gestureBase !== null ||
+        (past.length > 0 && (!session || session.steps > 0))
+      );
     },
     get canRedo() {
-      return future.length > 0 && (!session || session.undone > 0);
+      return (
+        gestureBase !== null ||
+        (future.length > 0 && (!session || session.undone > 0))
+      );
     },
     get inGesture() {
       return gestureBase !== null;
@@ -1065,8 +1102,12 @@ export function createPostEditorState(deps: PostEditorDeps) {
     canUndoTiming(takeId: string): boolean {
       return (timingUndo[takeId]?.length ?? 0) > 0;
     },
+    canRedoTiming(takeId: string): boolean {
+      return (timingRedo[takeId]?.length ?? 0) > 0;
+    },
     editTiming,
     undoTiming,
+    redoTiming,
     confirmTiming,
     exitTiming(_reason: "done" | "back"): void {
       mode = "edit";

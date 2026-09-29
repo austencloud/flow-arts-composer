@@ -8,10 +8,11 @@
     output: { width: number; height: number };
     locked: boolean;
     frozen: boolean;
+    mode: "position" | "crop";
     onChange: (geometry: PostSourceGeometry, field: string) => void;
   }
 
-  let { geometry, output, locked, frozen, onChange }: Props = $props();
+  let { geometry, output, locked, frozen, mode, onChange }: Props = $props();
 
   type RectField = "x" | "y" | "width" | "height";
   type CropField = keyof PostSourceGeometry["crop"];
@@ -75,38 +76,45 @@
 </script>
 
 <div class="source-geometry-tool">
-  <div class="fields" role="group" aria-label="Media position and size">
-    {#each rectFields as entry (entry.field)}
-      <span class="name" aria-hidden="true">{entry.label}</span>
+  {#if mode === "position"}
+    <div class="fields" role="group" aria-label="Media position and size">
+      {#each rectFields as entry (entry.field)}
+        <span class="name" aria-hidden="true">{entry.label}</span>
+        <TypeableValue
+          label={entry.label}
+          text={`${Math.round(geometry[entry.field] * (entry.field === "x" || entry.field === "width" ? output.width : output.height))} px`}
+          disabled={locked || frozen}
+          oncommit={(pixels) => setRect(entry.field, pixels)}
+        />
+      {/each}
+      <span class="name" aria-hidden="true">{t("post_editor_box_turn")}</span>
       <TypeableValue
-        label={entry.label}
-        text={`${Math.round(geometry[entry.field] * (entry.field === "x" || entry.field === "width" ? output.width : output.height))} px`}
+        label={t("post_editor_box_turn")}
+        text={`${Number(geometry.rotation.toFixed(1))}°`}
+        signed
         disabled={locked || frozen}
-        oncommit={(pixels) => setRect(entry.field, pixels)}
+        oncommit={(degrees) =>
+          Number.isFinite(degrees) &&
+          onChange({ ...geometry, rotation: degrees }, "rotation")}
       />
-    {/each}
-    <span class="name" aria-hidden="true">{t("post_editor_box_turn")}</span>
-    <TypeableValue
-      label={t("post_editor_box_turn")}
-      text={`${Number(geometry.rotation.toFixed(1))}°`}
-      signed
-      disabled={locked || frozen}
-      oncommit={(degrees) =>
-        Number.isFinite(degrees) &&
-        onChange({ ...geometry, rotation: degrees }, "rotation")}
-    />
-  </div>
-  <div class="fields" role="group" aria-label="Source crop">
-    {#each cropFields as entry (entry.field)}
-      <span class="name" aria-hidden="true">{entry.label}</span>
-      <TypeableValue
-        label={entry.label}
-        text={`${Number((geometry.crop[entry.field] * 100).toFixed(2))}%`}
-        disabled={locked || frozen}
-        oncommit={(percent) => setCrop(entry.field, percent)}
-      />
-    {/each}
-  </div>
+    </div>
+  {:else}
+    <p class="hint">
+      Drag the frame on the video to adjust the visible source. Drag its edges
+      to crop precisely.
+    </p>
+    <div class="fields" role="group" aria-label="Source crop">
+      {#each cropFields as entry (entry.field)}
+        <span class="name" aria-hidden="true">{entry.label}</span>
+        <TypeableValue
+          label={entry.label}
+          text={`${Number((geometry.crop[entry.field] * 100).toFixed(2))}%`}
+          disabled={locked || frozen}
+          oncommit={(percent) => setCrop(entry.field, percent)}
+        />
+      {/each}
+    </div>
+  {/if}
 </div>
 
 <style>
@@ -121,6 +129,11 @@
     gap: 0.5rem 0.625rem;
   }
   .name {
+    color: var(--theme-text-secondary, #aaa);
+    font-size: 0.875rem;
+  }
+  .hint {
+    margin: 0;
     color: var(--theme-text-secondary, #aaa);
     font-size: 0.875rem;
   }

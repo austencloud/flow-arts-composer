@@ -692,6 +692,7 @@
       {output}
       {locked}
       {frozen}
+      mode={tool === "crop" ? "crop" : "position"}
       onChange={(next, field) =>
         change(`source-geometry:${field}`, { sourceGeometry: next })}
     />

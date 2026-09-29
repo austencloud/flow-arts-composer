@@ -1,5 +1,6 @@
 <script lang="ts">
   import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import EditHistoryShortcutBridge from "$lib/shared/keyboard/components/EditHistoryShortcutBridge.svelte";
   import { onDestroy, tick, untrack } from "svelte";
   import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
   import type { SequenceExportOptions } from "$lib/shared/render/domain/models/sequence-export-options";
@@ -93,6 +94,7 @@
   import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
   import type { PostStudioShareExport } from "../post-studio-share-export";
   import PostTimingStage from "../builder/PostTimingStage.svelte";
+  import PostTimingTimeline from "../builder/PostTimingTimeline.svelte";
   import PostTimingPanel from "../builder/PostTimingPanel.svelte";
   import { createPostTimingSession } from "../builder/post-timing-session.svelte";
   import { formatTakeClock } from "../builder/post-builder-format";
@@ -643,7 +645,6 @@
   const cropMode = $derived(
     shown === "crop" &&
       editor.selectedItem?.kind === "video" &&
-      !editor.selectedItem.sourceGeometry &&
       !showTimingStage &&
       !sharing &&
       !previewTarget
@@ -679,6 +680,10 @@
     if (!itemId) {
       cropStage = null;
       return null;
+    }
+    if (crop.item?.sourceGeometry) {
+      const source = crop.source;
+      return source ? source.width / source.height : 1.7778;
     }
     if (cropStage?.itemId === itemId) return cropStage.ratio;
     const pose = crop.pose;
@@ -903,14 +908,7 @@
   }
 
   function openTool(id: PostPanelToolId): void {
-    if (
-      id === "crop" &&
-      !(
-        editor.selectedItem &&
-        "sourceGeometry" in editor.selectedItem &&
-        editor.selectedItem.sourceGeometry
-      )
-    ) {
+    if (id === "crop") {
       void openCrop();
       return;
     }
@@ -1894,6 +1892,14 @@
   bind:offsetWidth={editorWidth}
   bind:offsetHeight={editorHeight}
 >
+  {#if showTimingStage}
+    <EditHistoryShortcutBridge
+      onUndo={session.undo}
+      onRedo={session.redo}
+      canUndo={session.canUndo}
+      canRedo={session.canRedo}
+    />
+  {/if}
   <div
     class="layout"
     style:--post-stage-min={heldStageHeight === null
@@ -1981,6 +1987,15 @@
         </aside>
       {/if}
     </div>
+
+    {#if showTimingStage}
+      <div class="timing-timeline">
+        <PostTimingTimeline
+          {session}
+          squarePainter={stripPainters.get("arrows") ?? null}
+        />
+      </div>
+    {/if}
 
     {#if !showTimingStage}
       <div class="transport-slot" bind:this={transportSlot}>
@@ -2356,8 +2371,17 @@
       [data-layout="viewer"]
     )
     .layout {
-    grid-template-rows: minmax(0, 1fr);
-    grid-template-areas: "stage";
+    height: 100%;
+    grid-template-rows: minmax(22rem, 1fr) auto;
+    grid-template-areas: "stage" "timeline";
+  }
+
+  .post-editor[data-mode="timing"][data-layout="phone"] .layout {
+    display: grid;
+    height: 100%;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(15rem, 1fr) auto auto;
+    grid-template-areas: "stage" "timeline" "dock";
   }
 
   .top-bar-slot {
@@ -2407,8 +2431,20 @@
     height: 100%;
   }
 
-  .post-editor[data-mode="timing"] .timing-stage {
-    overflow-y: auto;
+  .timing-timeline {
+    grid-area: timeline;
+    min-width: 0;
+  }
+  .post-editor[data-mode="timing"] {
+    user-select: none;
+    -webkit-user-select: none;
+  }
+  .post-editor[data-mode="timing"] :global(input) {
+    user-select: text;
+    -webkit-user-select: text;
+  }
+  .post-editor[data-mode="timing"][data-layout="phone"] .timing-stage {
+    height: 100%;
   }
 
   .panel-host {

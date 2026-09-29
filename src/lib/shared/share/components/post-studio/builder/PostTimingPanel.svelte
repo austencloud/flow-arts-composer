@@ -69,35 +69,6 @@
       <p id="post-tap-help" class="help">
         {t("share_studio_deep_tap_help")}
       </p>
-      <div class="row">
-        <label class="bpm">
-          <span>BPM</span>
-          <input
-            type="number"
-            inputmode="decimal"
-            min={TAKE_MIN_BPM}
-            max={TAKE_MAX_BPM}
-            step="0.1"
-            bind:value={bpmDraft}
-            onchange={commitBpm}
-            onkeydown={(event) => {
-              if (event.key === "Enter") commitBpm();
-            }}
-          />
-        </label>
-        {#if section}
-          <SegmentedControl
-            options={[
-              { value: "locked", label: t("share_studio_deep_hold_bpm") },
-              { value: "follow", label: t("share_studio_deep_follow_video") },
-            ]}
-            value={section.tempo}
-            onchange={session.setTempo}
-            size="sm"
-            ariaLabel={t("share_studio_deep_tempo")}
-          />
-        {/if}
-      </div>
     </div>
 
     {#if session.summary}
@@ -136,76 +107,40 @@
     {/if}
 
     <div class="group">
-      <h4>{t("share_studio_deep_move_one")}</h4>
+      <h4>Match the sequence</h4>
+      <p class="help">One move off? Shift which landing counts as move 1.</p>
       <div class="row">
         <PanelButton onclick={session.beatOneHere}
-          >{t("share_studio_deep_lands_here")}</PanelButton
+          >Move 1 lands here</PanelButton
         >
         <PanelButton
           onclick={() => session.shiftBeatOne(-1)}
           disabled={!fitted}
-          ariaLabel={t("share_studio_deep_move_one_earlier")}
+          ariaLabel="Move 1 one landing earlier"
         >
           <i class="fa-solid fa-chevron-left" aria-hidden="true"></i>
-          {t("share_studio_deep_earlier")}
+          1 move earlier
         </PanelButton>
         <PanelButton
           onclick={() => session.shiftBeatOne(1)}
           disabled={!fitted}
-          ariaLabel={t("share_studio_deep_move_one_later")}
+          ariaLabel="Move 1 one landing later"
         >
-          {t("share_studio_deep_later")}
+          1 move later
           <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>
         </PanelButton>
       </div>
     </div>
 
     {#if fitted && section}
-      <div class="group">
-        <h4>{t("share_studio_deep_whole_grid")}</h4>
-        <div class="row">
-          <PanelButton
-            onclick={() => session.nudgeGrid(-1)}
-            ariaLabel={t("share_studio_deep_grid_frame_earlier")}
-          >
-            <i class="fa-solid fa-chevron-left" aria-hidden="true"></i>
-            {t("share_studio_deep_one_frame")}
-          </PanelButton>
-          <PanelButton
-            onclick={() => session.nudgeGrid(1)}
-            ariaLabel={t("share_studio_deep_grid_frame_later")}
-          >
-            {t("share_studio_deep_one_frame")}
-            <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>
-          </PanelButton>
-          <TypeableValue
-            label={t("share_studio_deep_whole_grid")}
-            text={section.offsetSeconds !== 0
-              ? `${section.offsetSeconds > 0 ? "+" : ""}${section.offsetSeconds.toFixed(2)} s`
-              : t("share_studio_deep_on_taps")}
-            draft={section.offsetSeconds.toFixed(2)}
-            unit="s"
-            signed
-            oncommit={session.setGridOffset}
-          />
-        </div>
-        <SegmentedControl
-          options={[
-            { value: "grid", label: t("share_studio_deep_land_on_grid") },
-            { value: "taps", label: t("share_studio_deep_land_on_taps") },
-          ]}
-          value={section.snap}
-          onchange={session.setSnap}
-          size="sm"
-          ariaLabel={t("share_studio_deep_landings")}
-        />
-      </div>
-
       {#if session.selected && session.selectedLanding}
         {@const landing = session.selectedLanding}
         {@const ref = session.selected}
         <div class="group">
-          <h4>{landingName(landing.position, session.movesPerPass)}</h4>
+          <div class="head">
+            <h4>{landingName(landing.position, session.movesPerPass)}</h4>
+            <PanelButton onclick={session.deselect}>Deselect (Esc)</PanelButton>
+          </div>
           <p class="help">
             {landing.pinned
               ? `${t("share_studio_deep_placed_by_hand")} `
@@ -259,6 +194,80 @@
       </div>
     {/if}
 
+    <details class="group parts">
+      <summary>Tempo & fine timing</summary>
+      <div class="row">
+        <label class="bpm">
+          <span>BPM</span>
+          <input
+            type="number"
+            inputmode="decimal"
+            min={TAKE_MIN_BPM}
+            max={TAKE_MAX_BPM}
+            step="0.1"
+            bind:value={bpmDraft}
+            onchange={commitBpm}
+            onkeydown={(event) => {
+              if (event.key === "Enter") commitBpm();
+            }}
+          />
+        </label>
+        {#if section}
+          <SegmentedControl
+            options={[
+              { value: "locked", label: t("share_studio_deep_hold_bpm") },
+              { value: "follow", label: t("share_studio_deep_follow_video") },
+            ]}
+            value={section.tempo}
+            onchange={session.setTempo}
+            size="sm"
+            ariaLabel={t("share_studio_deep_tempo")}
+          />
+        {/if}
+      </div>
+      {#if fitted && section}
+        <div class="group">
+          <h4>{t("share_studio_deep_whole_grid")}</h4>
+          <div class="row">
+            <PanelButton
+              onclick={() => session.nudgeGrid(-1)}
+              ariaLabel={t("share_studio_deep_grid_frame_earlier")}
+            >
+              <i class="fa-solid fa-chevron-left" aria-hidden="true"></i>
+              {t("share_studio_deep_one_frame")}
+            </PanelButton>
+            <PanelButton
+              onclick={() => session.nudgeGrid(1)}
+              ariaLabel={t("share_studio_deep_grid_frame_later")}
+            >
+              {t("share_studio_deep_one_frame")}
+              <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>
+            </PanelButton>
+            <TypeableValue
+              label={t("share_studio_deep_whole_grid")}
+              text={section.offsetSeconds !== 0
+                ? `${section.offsetSeconds > 0 ? "+" : ""}${section.offsetSeconds.toFixed(2)} s`
+                : t("share_studio_deep_on_taps")}
+              draft={section.offsetSeconds.toFixed(2)}
+              unit="s"
+              signed
+              oncommit={session.setGridOffset}
+            />
+          </div>
+          <SegmentedControl
+            options={[
+              { value: "grid", label: t("share_studio_deep_land_on_grid") },
+              { value: "taps", label: t("share_studio_deep_land_on_taps") },
+            ]}
+            value={section.snap}
+            onchange={session.setSnap}
+            size="sm"
+            ariaLabel={t("share_studio_deep_landings")}
+          />
+        </div>
+      {/if}
+    </details>
+
     <details class="group parts" open={session.timing.sections.length > 1}>
       <summary>{t("share_studio_deep_split_take_summary")}</summary>
       <p class="help">
@@ -289,15 +298,13 @@
     </details>
 
     <footer class="foot">
-      <PanelButton onclick={session.undo} disabled={!session.canUndo}>
-        <i class="fa-solid fa-rotate-left" aria-hidden="true"></i>
-        {t("share_studio_deep_undo")}
-      </PanelButton>
       <PanelButton
         onclick={session.clearTaps}
         disabled={!section || section.taps.length === 0}
       >
-        {t("share_studio_deep_clear_taps")}
+        {session.timing.sections.length > 1
+          ? "Clear this part & restart"
+          : "Clear taps & restart"}
       </PanelButton>
       <PanelButton
         variant="primary"
@@ -478,6 +485,5 @@
     padding-block: 0.75rem;
     border-top: 1px solid var(--theme-stroke, #484755);
     background: var(--theme-panel-bg, #12121c);
-    backdrop-filter: blur(12px);
   }
 </style>
