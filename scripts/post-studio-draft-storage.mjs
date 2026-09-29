@@ -47,7 +47,9 @@ export function createPostStudioDraftStorage(
       return false;
     try {
       const origin = req.headers.origin;
-      if (origin && new URL(origin).host !== req.headers.host) {
+      // HTTP/2 uses :authority instead of Host on the main HTTPS dev server.
+      const authority = req.headers[":authority"] ?? req.headers.host;
+      if (origin && new URL(origin).host !== authority) {
         respond(res, 403, {
           error: "Draft backups must come from this editor.",
         });
