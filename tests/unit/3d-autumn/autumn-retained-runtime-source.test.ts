@@ -126,15 +126,15 @@ describe("Autumn retained runtime lifecycle", () => {
   });
 
   it("routes cancellation into an Autumn-owned GLTF transport", () => {
-    const scene = source(
-      "src/lib/shared/3d/environments/scenes/AutumnScene.svelte"
+    const assets = source(
+      "src/lib/shared/3d/environments/worlds/autumn/autumn-environment-assets.ts"
     );
     const transport = source(
       "src/lib/shared/3d/environments/scenes/autumn/runtime/autumn-environment-transport.ts"
     );
 
-    expect(scene).toContain("load: loadAutumnEnvironment");
-    expect(scene).toContain(
+    expect(assets).toContain("load: loadAutumnEnvironment");
+    expect(assets).toContain(
       "onDiscard: (loaded) => disposeSceneGraph(loaded.scene)"
     );
     expect(transport).toContain("new LoadingManager()");

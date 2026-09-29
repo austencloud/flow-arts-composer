@@ -1,6 +1,5 @@
-<!-- managed by @austencloud/claude-skills — do not edit manually, run: npx @austencloud/claude-skills sync -->
-
 ---
+# managed by @austencloud/claude-skills - do not edit manually, run: npx @austencloud/claude-skills sync
 description: Use when cleaning up unused code, after major refactors, or during codebase hygiene passes
 argument-hint: "[scope | --list | --claims | --stats]"
 ---
