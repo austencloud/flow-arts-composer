@@ -78,3 +78,40 @@ describe("NormalizedKeyboardEvent.shouldIgnore inside an open drawer", () => {
     expect(keydownOn(lone, "ArrowRight").shouldIgnore(true)).toBe(false);
   });
 });
+
+/**
+ * A drawer can hand its bare keys back to the application by marking a body
+ * `data-keyboard-shortcuts-passthrough`, as the step editor does so Delete
+ * and Backspace keep deleting the selected step. The opt-in covers that body
+ * only: a dialog nested inside it still owns its own keys.
+ */
+describe("NormalizedKeyboardEvent.shouldIgnore inside a passthrough drawer body", () => {
+  function mountStepEditor() {
+    document.body.innerHTML = `
+      <dialog data-drawer-id="drawer-test-2" open>
+        <div class="editor-body" data-keyboard-shortcuts-passthrough>
+          <button id="turns">Increase turns</button>
+          <div role="dialog" aria-label="Choose a prop">
+            <button id="nested">Staff</button>
+          </div>
+        </div>
+      </dialog>
+    `;
+  }
+
+  afterEach(() => {
+    document.body.innerHTML = "";
+  });
+
+  it("runs a single-key shortcut for a key pressed in the passthrough body", () => {
+    mountStepEditor();
+    const turns = document.querySelector<HTMLButtonElement>("#turns")!;
+    expect(keydownOn(turns, "Delete").shouldIgnore(true)).toBe(false);
+  });
+
+  it("still ignores a single-key shortcut from a layer nested in that body", () => {
+    mountStepEditor();
+    const nested = document.querySelector<HTMLButtonElement>("#nested")!;
+    expect(keydownOn(nested, "Delete").shouldIgnore(true)).toBe(true);
+  });
+});
