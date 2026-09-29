@@ -52,7 +52,7 @@ function singleKeyShortcutAllowed(
  * feature. They yield only inside an open dialog or drawer that is foreign to
  * the sequence. With the Customize drawer open on /create/generate, Backspace
  * on the Inverted chip used to close the drawer and delete a step behind it.
- * The step editor marks its body as passthrough so the key stays live there.
+ * The step editor marks its drawer as passthrough so the key stays live there.
  *
  * They also stand down while the workspace player runs, as the grid's own
  * delete does. Playback hides the grid but keeps its selection for Stop to
