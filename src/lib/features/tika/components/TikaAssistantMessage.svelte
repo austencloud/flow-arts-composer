@@ -11,6 +11,7 @@
   import InlineSequencePlayer from "./InlineSequencePlayer.svelte";
   import InlineStepGrid from "./InlineStepGrid.svelte";
   import InlineQuiz from "./InlineQuiz.svelte";
+  import LinkChip from "$lib/shared/ui/components/LinkChip.svelte";
   import SanitizedHtml from "$lib/shared/foundation/ui/SanitizedHtml.svelte";
   import { parseMarkdown } from "../services/tika-markdown-parser";
   import { getTextFromParts, getToolOutputFromParts, getToolsFromParts, getInlineContentFromParts } from "../services/tika-message-extractor";
@@ -152,16 +153,10 @@
         <div class="link-index">
           <span class="link-index-label">References</span>
           {#each parsed.links as link, i}
-            <a
-              href={link.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              class="link-chip"
-            >
+            <LinkChip href={link.url}>
               <span class="link-number">{i + 1}</span>
               <span class="link-text">{link.text}</span>
-              <i class="fas fa-external-link-alt" aria-hidden="true"></i>
-            </a>
+            </LinkChip>
           {/each}
         </div>
       {/if}
@@ -331,30 +326,7 @@
     font-weight: 600;
   }
 
-  .link-chip {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    min-height: var(--min-touch-target);
-    padding: 10px 16px;
-    background: var(--theme-card-bg, rgba(255, 255, 255, 0.06));
-    border: 1.5px solid var(--theme-accent, #6366f1);
-    border-radius: 24px;
-    color: var(--theme-text, rgba(255, 255, 255, 0.9));
-    text-decoration: none;
-    font-size: var(--font-size-min, 14px);
-    transition: all 0.15s ease;
-  }
-
-  .link-chip:hover {
-    background: var(--theme-accent, #6366f1);
-    border-color: var(--theme-accent, #6366f1);
-    color: white;
-    transform: translateY(-1px);
-    box-shadow: var(--shadow-accent-sm);
-  }
-
-  .link-chip .link-number {
+  .link-index :global(.link-number) {
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -367,23 +339,8 @@
     font-weight: 700;
   }
 
-  .link-chip:hover .link-number {
-    background: white;
-    color: var(--theme-accent, #6366f1);
-  }
-
-  .link-chip .link-text {
+  .link-index :global(.link-text) {
     font-weight: 500;
-  }
-
-  .link-chip i {
-    font-size: 12px;
-    opacity: 0.7;
-    transition: opacity 0.15s ease;
-  }
-
-  .link-chip:hover i {
-    opacity: 1;
   }
 
   /* Thinking indicator during tool execution */
@@ -518,14 +475,6 @@
 
     .thinking-indicator i {
       animation: none;
-    }
-
-    .link-chip {
-      transition: none;
-    }
-
-    .link-chip:hover {
-      transform: none;
     }
   }
 </style>

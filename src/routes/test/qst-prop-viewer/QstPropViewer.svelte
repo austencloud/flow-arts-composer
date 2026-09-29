@@ -1,4 +1,5 @@
 <script lang="ts">
+  import LinkChip from "$lib/shared/ui/components/LinkChip.svelte";
   import { onMount } from "svelte";
   import { T } from "@threlte/core";
   import { Plane, Prop3D, type PropState3D } from "@austencloud/scene-3d";
@@ -336,14 +337,10 @@
         <p class="attribution-note">
           {selectedSequence.metadata.attribution.note}
         </p>
-        <a
+        <LinkChip
           href={`${selectedSequence.metadata.sourceRepository}/commit/${selectedSequence.metadata.sourceCommit}`}
-          target="_blank"
-          rel="noreferrer"
+          >Open source commit</LinkChip
         >
-          Open source commit
-          <i class="fas fa-arrow-up-right-from-square" aria-hidden="true"></i>
-        </a>
       </section>
     </aside>
   </main>
@@ -555,11 +552,6 @@
 
   select:focus-visible,
   .step-strip button:focus-visible,
-  .attribution a:focus-visible {
-    outline: 2px solid var(--theme-accent, #8f7dff);
-    outline-offset: 2px;
-  }
-
   .summary-title {
     min-height: 58px;
     display: grid;
@@ -679,19 +671,6 @@
   .attribution .attribution-note {
     color: rgba(225, 231, 244, 0.6);
     font-size: 12px;
-  }
-
-  .attribution a {
-    min-height: 44px;
-    display: inline-flex;
-    align-items: center;
-    gap: 7px;
-    margin-top: 8px;
-    color: #bcb1ff;
-    font-size: 14px;
-    font-weight: 600;
-    text-decoration: underline;
-    text-underline-offset: 3px;
   }
 
   @media (max-width: 760px) {

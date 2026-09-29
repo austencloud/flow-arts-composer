@@ -1,6 +1,7 @@
 <script lang="ts">
   import Crossfade from "$lib/shared/components/Crossfade.svelte";
   import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
+  import LinkChip from "$lib/shared/ui/components/LinkChip.svelte";
   import VtgChapterStepper from "./VtgChapterStepper.svelte";
   import { vtgReleaseVisual } from "./_lib/vtg-release-visuals";
 
@@ -56,14 +57,9 @@
           </a>
           <figcaption>
             {preview.caption}
-            <a
-              class="source-link"
-              href={preview.href}
-              target="_blank"
-              rel="noopener noreferrer"
+            <LinkChip class="source-link" href={preview.href}
+              >{preview.linkLabel}</LinkChip
             >
-              {preview.linkLabel} <span aria-hidden="true">↗</span>
-            </a>
           </figcaption>
         </figure>
       </Crossfade>
@@ -112,23 +108,12 @@
     font-size: 0.875rem;
     line-height: 1.6;
   }
-  .source-link {
+  figcaption :global(.source-link) {
     display: flex;
     width: fit-content;
-    gap: 0.5rem;
-    align-items: center;
-    min-height: 44px;
-    font-size: 0.875rem;
-    font-weight: 650;
+    margin-top: 0.5rem;
   }
-  a {
-    color: var(--theme-text);
-    text-underline-offset: 0.25em;
-  }
-  a:hover {
-    color: var(--theme-accent);
-  }
-  a:focus-visible {
+  .preview:focus-visible {
     outline: 2px solid var(--theme-accent);
     outline-offset: 4px;
   }

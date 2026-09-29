@@ -1,4 +1,5 @@
 <script lang="ts">
+  import FilterChipBase from "$lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
   import { getVideoTrailsContext } from "../context/video-trails-context";
   import type { DetectedEndpoint, EndpointCorrection } from "../domain/types";
 
@@ -289,13 +290,14 @@
         <ul class="worst-frames">
           {#each worstFrames as entry}
             <li>
-              <button
-                class="frame-link"
+              <FilterChipBase
+                label="Frame {entry.frameIndex}"
+                icon="fas fa-forward-step"
+                mode="action"
+                size="sm"
+                ariaLabel="Jump to frame {entry.frameIndex}"
                 onclick={() => trailsState.setCurrentFrame(entry.frameIndex)}
-                title="Jump to frame {entry.frameIndex}"
-              >
-                Frame {entry.frameIndex}
-              </button>
+              />
               <span class="frame-drift">{entry.avgDrift.toFixed(1)} px</span>
               <span class="frame-corrections">{entry.correctionCount} corr.</span>
             </li>
@@ -468,21 +470,6 @@
     align-items: center;
     gap: 6px;
     font-size: var(--font-size-compact, 12px);
-  }
-
-  .frame-link {
-    background: none;
-    border: none;
-    padding: 0;
-    color: var(--theme-accent, #f43f5e);
-    cursor: pointer;
-    font-size: var(--font-size-compact, 12px);
-    text-decoration: underline;
-    text-underline-offset: 2px;
-  }
-
-  .frame-link:hover {
-    opacity: 0.8;
   }
 
   .frame-drift {

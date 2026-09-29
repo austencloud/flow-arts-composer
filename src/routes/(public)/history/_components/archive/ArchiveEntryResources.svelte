@@ -2,6 +2,7 @@
   import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
   import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
   import Crossfade from "$lib/shared/components/Crossfade.svelte";
+  import LinkChip from "$lib/shared/ui/components/LinkChip.svelte";
   import {
     EVIDENCE_BASIS_LABELS,
     activityLabel,
@@ -58,15 +59,7 @@
     <ul class="work-links">
       {#each section.links as link (link.href)}
         <li>
-          <a
-            href={link.href}
-            target={link.href.startsWith("/") ? undefined : "_blank"}
-            rel={link.href.startsWith("/") ? undefined : "noopener noreferrer"}
-            >{link.label}
-            <span aria-hidden="true"
-              >{link.href.startsWith("/") ? "→" : "↗"}</span
-            ></a
-          >
+          <LinkChip wrap href={link.href}>{link.label}</LinkChip>
         </li>
       {/each}
     </ul>
@@ -79,17 +72,7 @@
     <ol class="source-list">
       {#each citations as citation (citation.href)}
         <li>
-          <a
-            href={citation.href}
-            target={citation.href.startsWith("/") ? undefined : "_blank"}
-            rel={citation.href.startsWith("/")
-              ? undefined
-              : "noopener noreferrer"}
-            >{citation.label}
-            <span aria-hidden="true"
-              >{citation.href.startsWith("/") ? "→" : "↗"}</span
-            ></a
-          >
+          <LinkChip wrap href={citation.href}>{citation.label}</LinkChip>
           <p>{citation.supports}</p>
           <small>{EVIDENCE_BASIS_LABELS[citation.basis]}</small>
         </li>
@@ -227,30 +210,7 @@
   .work-links {
     margin-top: 0.65rem;
     display: grid;
-    gap: 0.25rem;
-  }
-  a {
-    color: var(--theme-text);
-    text-underline-offset: 0.25em;
-    text-decoration-thickness: 1px;
-    font-size: var(--font-size-min, 0.875rem);
-    font-weight: 600;
-    line-height: 1.5;
-    display: inline-flex;
-    align-items: center;
     gap: 0.5rem;
-    min-height: 44px;
-  }
-  a span {
-    flex-shrink: 0;
-  }
-  a:hover {
-    color: var(--theme-accent);
-  }
-  a:focus-visible {
-    outline: 2px solid var(--theme-accent);
-    outline-offset: 4px;
-    border-radius: 2px;
   }
   .source-list {
     display: grid;
