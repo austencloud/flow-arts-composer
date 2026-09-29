@@ -426,6 +426,42 @@ describe("compilePostProject", () => {
     });
   });
 
+  describe("blurred background", () => {
+    const main = () => [
+      video("v1", { sourceOut: 4 }),
+      card("c1", 3, { start: 4 }),
+      video("gone", { takeId: "missing", sourceOut: 2, start: 7 }),
+      video("v2", { takeId: "b", sourceOut: 3, start: 9 }),
+    ];
+
+    it("lists the main videos the post draws, in order, only when it asks for blur", () => {
+      expect(compilePostProject(project(main()), ctx)!.preset.backdrop).toBeUndefined();
+
+      const result = compilePostProject(
+        { ...project(main()), background: "blur" },
+        ctx
+      )!;
+      // A video whose take is gone draws nothing, so it has nothing to blur.
+      expect(result.preset.backdrop).toEqual({ kind: "blur", clipIds: ["v1", "v2"] });
+      expect(MediaCompositionPresetSchema.safeParse(result.preset).success).toBe(true);
+    });
+
+    it("has nothing to blur when the main track is hidden", () => {
+      const proj = { ...project(main(), [[text("t1", 0, 2)]]), background: "blur" as const };
+      proj.tracks[0] = { ...proj.tracks[0]!, hidden: true };
+      expect(compilePostProject(proj, ctx)!.preset.backdrop).toBeUndefined();
+    });
+
+    it("is refused by the schema when it names a clip the post does not have", () => {
+      const { preset } = compilePostProject(
+        { ...project(main()), background: "blur" },
+        ctx
+      )!;
+      const broken = { ...preset, backdrop: { kind: "blur", clipIds: ["nope"] } };
+      expect(MediaCompositionPresetSchema.safeParse(broken).success).toBe(false);
+    });
+  });
+
   describe("the compiled preset", () => {
     it("validates against MediaCompositionPresetSchema", () => {
       const result = compilePostProject(

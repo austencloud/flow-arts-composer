@@ -620,6 +620,14 @@ export function compilePostProject(
 
   if (clips.length === 0 || maxEnd <= 0) return null;
 
+  // A blurred background draws the main clip on screen, so only main clips
+  // the post draws can fill it.
+  const drawn = new Set(clips.map((clip) => clip.id));
+  const backdropClipIds =
+    project.background === "blur"
+      ? mainVideos.map((item) => item.id).filter((id) => drawn.has(id))
+      : [];
+
   const preset = MediaCompositionPresetSchema.parse({
     schemaVersion: 1,
     id: `post-project:${project.sequenceId}`,
@@ -637,6 +645,9 @@ export function compilePostProject(
     sourceRoles: [...roleByKey.values()],
     regions,
     ...(regionKeyframesList.length > 0 ? { regionKeyframes: regionKeyframesList } : {}),
+    ...(backdropClipIds.length > 0
+      ? { backdrop: { kind: "blur" as const, clipIds: backdropClipIds } }
+      : {}),
     clips,
     transitions: [],
     audioMix: { masterGain: 1, tracks: [] },

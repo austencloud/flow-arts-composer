@@ -1,6 +1,7 @@
 import {
   MAIN_TRACK_INDEX,
   POST_BOX,
+  POST_DEFAULT_BACKGROUND,
   POST_DEFAULT_CANVAS,
   POST_DEFAULT_CARD_SECONDS,
   POST_DEFAULT_OVERLAY_SECONDS,
@@ -23,6 +24,7 @@ import {
   trackHasRoom,
   wrapDegrees,
   type PostAnchor,
+  type PostBackground,
   type PostBox,
   type PostCanvasRatio,
   type PostCardItem,
@@ -869,6 +871,18 @@ export function setProjectCanvas(
   if (postCanvasOf(project) === canvas) return project;
   const next: PostProject = { ...project, canvas };
   if (canvas === POST_DEFAULT_CANVAS) delete next.canvas;
+  return finish(next, ctx);
+}
+
+/** What fills the frame behind the items; the default is stored as none. */
+export function setProjectBackground(
+  project: PostProject,
+  background: PostBackground,
+  ctx: EditContext
+): PostProject {
+  if ((project.background ?? POST_DEFAULT_BACKGROUND) === background) return project;
+  const next: PostProject = { ...project, background };
+  if (background === POST_DEFAULT_BACKGROUND) delete next.background;
   return finish(next, ctx);
 }
 

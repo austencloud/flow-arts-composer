@@ -1,6 +1,5 @@
-<!-- managed by @austencloud/claude-skills — do not edit manually, run: npx @austencloud/claude-skills sync -->
-
 ---
+# managed by @austencloud/claude-skills - do not edit manually, run: npx @austencloud/claude-skills sync
 description: Fixes cited audit issues in Flow Arts Composer. Only touches files explicitly cited in the issues list.
 allowed-tools: Bash, Read, Edit, Glob, Grep
 ---

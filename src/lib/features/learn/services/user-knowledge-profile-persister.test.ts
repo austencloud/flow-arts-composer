@@ -39,6 +39,12 @@ vi.mock("$lib/shared/offline/state/sync-status-state.svelte", () => ({
 const { UserKnowledgeProfilePersister } =
   await import("./user-knowledge-profile-persister");
 
+// The persister loads both Firebase modules with import() on first use. Load
+// the mocks here so that one-time cost doesn't land inside a test's
+// one-second waitFor.
+await import("firebase/firestore");
+await import("$lib/shared/auth/firebase");
+
 function deferred<T>() {
   let resolve!: (value: T) => void;
   const promise = new Promise<T>((res) => {

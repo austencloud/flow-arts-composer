@@ -285,7 +285,9 @@ export function createSwHarness(options: SwHarnessOptions = {}) {
 
   // --- evaluate the real worker script inside the controlled scope ---
   const code = readFileSync(resolveSwPath(), "utf8");
-  const importScripts = vi.fn(); // firebase-messaging-handler.js — out of scope
+  // Records what the worker loads (firebase-messaging-handler.js) without
+  // evaluating it; that file has its own suite (tests/unit/push/sw-push-handler.test.ts).
+  const importScripts = vi.fn();
   const run = new Function(
     "self",
     "caches",
@@ -391,6 +393,7 @@ export function createSwHarness(options: SwHarnessOptions = {}) {
 
   return {
     self,
+    importScripts,
     caches: cacheStorage,
     constants,
     route,

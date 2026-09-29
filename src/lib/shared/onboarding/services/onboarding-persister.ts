@@ -38,6 +38,7 @@ import {
 } from "../config/storage-keys";
 import {
   createDefaultAccountSetupProgress,
+  isSameAccountSetupProgress,
   mergeAccountSetupProgress,
   normalizeAccountSetupProgress,
 } from "../domain/account-setup-progress";
@@ -47,6 +48,31 @@ import {
 } from "$lib/shared/foundation/services/storage-manager";
 
 const LAST_SEEN_VERSION_KEY = "tka-last-seen-version";
+
+/**
+ * Whether two statuses hold the same progress. The record type makes a field
+ * added to OnboardingStatus fail to compile until it is compared here, because
+ * a field left out would silently stop syncing to the cloud.
+ */
+function isSameStatus(
+  left: OnboardingStatus,
+  right: OnboardingStatus
+): boolean {
+  const sameField: Record<keyof OnboardingStatus, boolean> = {
+    appCompleted: left.appCompleted === right.appCompleted,
+    appSkipped: left.appSkipped === right.appSkipped,
+    appCompletedAt: left.appCompletedAt === right.appCompletedAt,
+    lastSeenVersion: left.lastSeenVersion === right.lastSeenVersion,
+    viewer3DIntroSeen: left.viewer3DIntroSeen === right.viewer3DIntroSeen,
+    sceneStudioSetupSeen:
+      left.sceneStudioSetupSeen === right.sceneStudioSetupSeen,
+    accountSetup: isSameAccountSetupProgress(
+      left.accountSetup,
+      right.accountSetup
+    ),
+  };
+  return Object.values(sameField).every(Boolean);
+}
 
 export class OnboardingPersister {
   private cachedStatus: OnboardingStatus | null = null;
@@ -82,6 +108,22 @@ export class OnboardingPersister {
       sceneStudioSetupSeen: false,
       accountSetup: createDefaultAccountSetupProgress(),
     };
+  }
+
+  /**
+   * The status a cloud document stands for, with defaults for any field the
+   * document predates.
+   */
+  private statusFromCloud(data: Partial<OnboardingStatus>): OnboardingStatus {
+    const status = this.createDefaultStatus();
+    status.appCompleted = data.appCompleted ?? false;
+    status.appSkipped = data.appSkipped ?? false;
+    status.appCompletedAt = data.appCompletedAt ?? null;
+    status.lastSeenVersion = data.lastSeenVersion ?? null;
+    status.viewer3DIntroSeen = data.viewer3DIntroSeen ?? false;
+    status.sceneStudioSetupSeen = data.sceneStudioSetupSeen ?? false;
+    status.accountSetup = normalizeAccountSetupProgress(data.accountSetup);
+    return status;
   }
 
   /**
@@ -200,17 +242,9 @@ export class OnboardingPersister {
     try {
       const docSnap = await getDoc(docRef);
       if (docSnap.exists()) {
-        const data = docSnap.data() as OnboardingStatus;
-        // Ensure all fields are present with defaults
-        const status = this.createDefaultStatus();
-        status.appCompleted = data.appCompleted ?? false;
-        status.appSkipped = data.appSkipped ?? false;
-        status.appCompletedAt = data.appCompletedAt ?? null;
-        // Last seen version
-        status.lastSeenVersion = data.lastSeenVersion ?? null;
-        status.viewer3DIntroSeen = data.viewer3DIntroSeen ?? false;
-        status.sceneStudioSetupSeen = data.sceneStudioSetupSeen ?? false;
-        status.accountSetup = normalizeAccountSetupProgress(data.accountSetup);
+        const status = this.statusFromCloud(
+          docSnap.data() as Partial<OnboardingStatus>
+        );
 
         this.cachedStatus = status;
         // Also sync to localStorage for fast access
@@ -373,17 +407,8 @@ export class OnboardingPersister {
       docRef,
       (docSnap) => {
         if (docSnap.exists()) {
-          const data = docSnap.data() as OnboardingStatus;
-          const status = this.createDefaultStatus();
-          status.appCompleted = data.appCompleted ?? false;
-          status.appSkipped = data.appSkipped ?? false;
-          status.appCompletedAt = data.appCompletedAt ?? null;
-          // Last seen version
-          status.lastSeenVersion = data.lastSeenVersion ?? null;
-          status.viewer3DIntroSeen = data.viewer3DIntroSeen ?? false;
-          status.sceneStudioSetupSeen = data.sceneStudioSetupSeen ?? false;
-          status.accountSetup = normalizeAccountSetupProgress(
-            data.accountSetup
+          const status = this.statusFromCloud(
+            docSnap.data() as Partial<OnboardingStatus>
           );
 
           this.cachedStatus = status;
@@ -414,8 +439,12 @@ export class OnboardingPersister {
     try {
       const docSnap = await getDoc(docRef);
       if (docSnap.exists()) {
-        // Merge: keep most complete state
-        const cloudStatus = docSnap.data() as OnboardingStatus;
+        // Merge: keep most complete state. The cloud copy is read with
+        // defaults for fields it predates: a missing field would otherwise
+        // merge to undefined, which setDoc rejects outright.
+        const cloudStatus = this.statusFromCloud(
+          docSnap.data() as Partial<OnboardingStatus>
+        );
         const mergedStatus = this.createDefaultStatus();
 
         // App-wide: prefer completed/skipped
@@ -425,15 +454,10 @@ export class OnboardingPersister {
           localStatus.appSkipped || cloudStatus.appSkipped;
         mergedStatus.appCompletedAt =
           localStatus.appCompletedAt || cloudStatus.appCompletedAt || null;
-        // Coerced, not just OR-ed: a cloud document written before a flag
-        // existed has no such field, and `false || undefined` is `undefined`,
-        // which setDoc rejects outright.
-        mergedStatus.viewer3DIntroSeen = Boolean(
-          localStatus.viewer3DIntroSeen || cloudStatus.viewer3DIntroSeen
-        );
-        mergedStatus.sceneStudioSetupSeen = Boolean(
-          localStatus.sceneStudioSetupSeen || cloudStatus.sceneStudioSetupSeen
-        );
+        mergedStatus.viewer3DIntroSeen =
+          localStatus.viewer3DIntroSeen || cloudStatus.viewer3DIntroSeen;
+        mergedStatus.sceneStudioSetupSeen =
+          localStatus.sceneStudioSetupSeen || cloudStatus.sceneStudioSetupSeen;
 
         // Last seen version: keep the higher one (numeric semver compare, so
         // "0.10.0" correctly beats "0.9.0" — a plain string compare gets this
@@ -454,7 +478,15 @@ export class OnboardingPersister {
           cloudStatus.accountSetup
         );
 
-        await this.saveStatus(mergedStatus);
+        // This runs on every signed-in page load. When this browser knows
+        // nothing the cloud copy lacks, only this browser needs updating;
+        // saving anyway billed a write per visit just to move updatedAt.
+        if (isSameStatus(mergedStatus, cloudStatus)) {
+          this.saveToLocalStorage(mergedStatus);
+          this.cachedStatus = mergedStatus;
+        } else {
+          await this.saveStatus(mergedStatus);
+        }
       } else {
         // No cloud data - push local to cloud
         await this.saveStatus(localStatus);

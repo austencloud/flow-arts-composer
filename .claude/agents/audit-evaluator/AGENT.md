@@ -1,6 +1,5 @@
-<!-- managed by @austencloud/claude-skills — do not edit manually, run: npx @austencloud/claude-skills sync -->
-
 ---
+# managed by @austencloud/claude-skills - do not edit manually, run: npx @austencloud/claude-skills sync
 description: Read-only evaluator for Flow Arts Composer code quality audits. Grades evidence mechanically across 7 dimensions.
 allowed-tools: Read, Glob, Grep, Bash
 ---

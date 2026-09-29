@@ -16,8 +16,6 @@
  */
 
 import { getErrorHandler } from "$lib/shared/application/get-error-handler";
-import { getAuthInstance, getStorageInstance } from "$lib/shared/auth/firebase";
-import { ensureGuestIdentity } from "$lib/shared/auth/services/guest-identity";
 import type { ErrorHandler } from "$lib/shared/application/services/error-handler";
 import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
 import type { ThumbnailVariant } from "$lib/shared/browse/services/thumbnail-key-deriver";
@@ -479,6 +477,14 @@ export async function upload(
   // currentUser check below stays the real gate: without it every signed-out
   // cache miss would make a doomed upload request and fill the console with
   // 403s when the anonymous provider is disabled.
+  //
+  // Public pages that show cards import this module to read the shared
+  // cache, which needs no Firebase. Loading sign-in here, on the first
+  // upload, keeps Firebase off those pages' first download.
+  const [{ ensureGuestIdentity }, { getAuthInstance }] = await Promise.all([
+    import("$lib/shared/auth/services/guest-identity"),
+    import("$lib/shared/auth/firebase"),
+  ]);
   await ensureGuestIdentity("thumbnail_upload");
   const auth = await getAuthInstance();
   await auth.authStateReady();
@@ -515,6 +521,7 @@ async function performUpload(
   blob: Blob
 ): Promise<string> {
   const { ref, uploadBytes, getDownloadURL } = await import("firebase/storage");
+  const { getStorageInstance } = await import("$lib/shared/auth/firebase");
   const storage = await getStorageInstance();
   const storagePath = getStoragePath(key);
   const storageRef = ref(storage, storagePath);
@@ -643,6 +650,7 @@ export async function deleteVariant(
   onProgress?: (progress: DeleteProgress) => void
 ): Promise<number> {
   const { ref, listAll, deleteObject } = await import("firebase/storage");
+  const { getStorageInstance } = await import("$lib/shared/auth/firebase");
   const storage = await getStorageInstance();
 
   // Get reference to the variant folder

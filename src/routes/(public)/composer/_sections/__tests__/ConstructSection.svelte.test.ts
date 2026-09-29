@@ -95,3 +95,61 @@ describe("ConstructSection focus below 1200 px", () => {
     await expect.poll(() => inView(document.activeElement)).toBe(true);
   });
 });
+
+/**
+ * The picker pane swaps its whole content between phases, and Clear sequence
+ * removes itself, so each of these used to drop focus to <body> at any width.
+ * The attract act stays idle (active: false) so it cannot build over the test.
+ */
+describe.each([
+  { layout: "below 1200 px", width: 1024, height: 500 },
+  { layout: "at 1200 px and wider", width: 1400, height: 900 },
+])("ConstructSection focus across phases $layout", ({ width, height }) => {
+  beforeEach(async () => {
+    await page.viewport(width, height);
+    window.scrollTo(0, 0);
+  });
+
+  function renderDemo() {
+    return render(ConstructSection, {
+      presentationMode: "guided-build",
+      active: false,
+    });
+  }
+
+  it("keeps focus in the picker after a start position is picked", async () => {
+    const { container } = renderDemo();
+    await press("Choose start");
+
+    await expect
+      .element(page.getByRole("button", { name: "Add step" }))
+      .toBeInTheDocument();
+    const pane = container.querySelector(".picker-pane");
+    await expect.poll(() => pane?.contains(document.activeElement)).toBe(true);
+  });
+
+  it("keeps focus in the action slot after Clear sequence", async () => {
+    const { container } = renderDemo();
+    await press("Choose start");
+    await press("Add step");
+    await press("Clear sequence");
+
+    await expect
+      .element(page.getByRole("button", { name: "Choose start" }))
+      .toBeInTheDocument();
+    const swap = container.querySelector(".action-swap");
+    await expect.poll(() => swap?.contains(document.activeElement)).toBe(true);
+    await expect.poll(() => inView(document.activeElement)).toBe(true);
+  });
+
+  it("moves focus to Build another when the eighth step starts playback", async () => {
+    renderDemo();
+    await press("Choose start");
+    for (let step = 0; step < 8; step++) await press("Add step");
+
+    await expect
+      .element(page.getByRole("button", { name: "Build another" }))
+      .toHaveFocus();
+    await expect.poll(() => inView(document.activeElement)).toBe(true);
+  });
+});

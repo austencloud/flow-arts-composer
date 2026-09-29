@@ -15,6 +15,7 @@
   import type { PresetClip } from "$lib/shared/media-composition/domain/media-composition-preset-schema";
   import type { PostEditorState } from "$lib/shared/media-composition/state/post-editor-state.svelte";
   import { toPaintFrame } from "$lib/shared/media-composition/services/post-studio-layer-painter";
+  import { backdropLayer } from "$lib/shared/media-composition/services/post-backdrop-painter";
   import { itemIdFromStaffEffectRole } from "$lib/shared/media-composition/domain/post-project-compiler";
   import {
     ANIMATION_OVERLAY_ROLE,
@@ -42,6 +43,7 @@
     postOutputSize,
     spotAround,
   } from "$lib/shared/media-composition/domain/post-canvas";
+  import PostStudioBackdrop from "../PostStudioBackdrop.svelte";
   import PostStudioMediaLayer from "../PostStudioMediaLayer.svelte";
   import PostStudioPaintedLayer from "../PostStudioPaintedLayer.svelte";
   import {
@@ -139,6 +141,10 @@
   );
   const visible = $derived(
     new Map(editor.frameLayers.map((layer) => [layer.clipId, layer]))
+  );
+  /** The main clip the blurred background shows, when the post has one. */
+  const backdrop = $derived(
+    preset ? backdropLayer(preset, editor.frameLayers) : null
   );
   /** The crop screen shows its clip even where a fade leaves it clear. */
   const present = $derived(
@@ -1470,6 +1476,13 @@
   data-post-canvas
 >
   {#if preset}
+    {#if backdrop && !cropping}
+      <PostStudioBackdrop
+        {root}
+        layer={backdrop}
+        aspect={outputSize.width / outputSize.height}
+      />
+    {/if}
     {#each preset.regions as region (region.id)}
       {@const rect = editor.regionRects.get(region.id) ?? region}
       {@const cropRegion = cropping && region.id === cropItem?.id}
