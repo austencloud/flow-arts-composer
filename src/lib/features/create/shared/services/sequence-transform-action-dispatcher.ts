@@ -30,7 +30,10 @@ export interface SequenceTransformActionState {
 interface SequenceTransformActionDispatcherDependencies {
   getSequenceState: () => SequenceTransformActionState | null;
   getCreateMode: () => string;
-  pushUndoSnapshot: (type: UndoOperationType) => void;
+  beginUndoSnapshot: (
+    type: UndoOperationType,
+    sourceState: SequenceTransformActionState
+  ) => () => void;
   hapticService: HapticFeedback | null;
   setGridRotationDirection: (direction: 1 | -1) => void;
 }
@@ -154,9 +157,12 @@ export function createSequenceTransformActionDispatcher(
 
     transformInFlight = true;
     deps.hapticService?.trigger("selection");
+    let originalSequence: string | null = null;
+    let commitSnapshot: () => void = () => {};
 
     try {
-      deps.pushUndoSnapshot(UNDO_OPERATION[action]);
+      originalSequence = JSON.stringify(sequence);
+      commitSnapshot = deps.beginUndoSnapshot(UNDO_OPERATION[action], state);
       await executeTransform(
         state,
         action,
@@ -179,6 +185,12 @@ export function createSequenceTransformActionDispatcher(
       });
       return { status: "failed", message: errorMessage(error) };
     } finally {
+      if (
+        originalSequence !== null &&
+        JSON.stringify(state.currentSequence) !== originalSequence
+      ) {
+        commitSnapshot();
+      }
       transformInFlight = false;
     }
   }

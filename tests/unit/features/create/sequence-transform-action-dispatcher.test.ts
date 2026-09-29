@@ -27,26 +27,41 @@ function sequence(): SequenceData {
 }
 
 function state(): SequenceTransformActionState {
-  return {
+  const result: SequenceTransformActionState = {
     currentSequence: sequence(),
-    mirrorSequence: vi.fn().mockResolvedValue(undefined),
-    flipSequence: vi.fn().mockResolvedValue(undefined),
-    swapHands: vi.fn().mockResolvedValue(undefined),
-    invertSequence: vi.fn().mockResolvedValue(undefined),
-    rewindSequence: vi.fn().mockResolvedValue(undefined),
-    rotateSequence: vi.fn().mockResolvedValue(undefined),
-    shiftStartPlacement: vi.fn().mockResolvedValue(undefined),
+    mirrorSequence: vi.fn(),
+    flipSequence: vi.fn(),
+    swapHands: vi.fn(),
+    invertSequence: vi.fn(),
+    rewindSequence: vi.fn(),
+    rotateSequence: vi.fn(),
+    shiftStartPlacement: vi.fn(),
   };
+  for (const method of [
+    "mirrorSequence",
+    "flipSequence",
+    "swapHands",
+    "invertSequence",
+    "rewindSequence",
+    "rotateSequence",
+    "shiftStartPlacement",
+  ] as const) {
+    vi.mocked(result[method]).mockImplementation(async () => {
+      result.currentSequence = { ...result.currentSequence!, word: method };
+    });
+  }
+  return result;
 }
 
 function setup(activeState: SequenceTransformActionState | null = state()) {
-  const pushUndoSnapshot = vi.fn();
+  const commitSnapshot = vi.fn();
+  const beginUndoSnapshot = vi.fn(() => commitSnapshot);
   const setGridRotationDirection = vi.fn();
   const hapticService = { trigger: vi.fn() };
   const dispatcher = createSequenceTransformActionDispatcher({
     getSequenceState: () => activeState,
     getCreateMode: () => "construct",
-    pushUndoSnapshot,
+    beginUndoSnapshot,
     hapticService,
     setGridRotationDirection,
   });
@@ -54,7 +69,8 @@ function setup(activeState: SequenceTransformActionState | null = state()) {
   return {
     activeState,
     dispatcher,
-    pushUndoSnapshot,
+    beginUndoSnapshot,
+    commitSnapshot,
     setGridRotationDirection,
     hapticService,
   };
@@ -67,8 +83,13 @@ describe("createSequenceTransformActionDispatcher", () => {
   });
 
   it("routes a header transform through Undo, both-hand targeting, and analytics", async () => {
-    const { activeState, dispatcher, pushUndoSnapshot, hapticService } =
-      setup();
+    const {
+      activeState,
+      dispatcher,
+      beginUndoSnapshot,
+      commitSnapshot,
+      hapticService,
+    } = setup();
 
     await expect(
       dispatcher.execute("mirror", {
@@ -77,9 +98,11 @@ describe("createSequenceTransformActionDispatcher", () => {
       })
     ).resolves.toEqual({ status: "completed" });
 
-    expect(pushUndoSnapshot).toHaveBeenCalledWith(
-      UndoOperationType.MIRROR_SEQUENCE
+    expect(beginUndoSnapshot).toHaveBeenCalledWith(
+      UndoOperationType.MIRROR_SEQUENCE,
+      activeState
     );
+    expect(commitSnapshot).toHaveBeenCalledTimes(1);
     expect(activeState?.mirrorSequence).toHaveBeenCalledWith("both");
     expect(hapticService.trigger).toHaveBeenCalledWith("selection");
     expect(analytics.invoked).toHaveBeenCalledWith({
@@ -123,7 +146,8 @@ describe("createSequenceTransformActionDispatcher", () => {
     vi.mocked(activeState.mirrorSequence).mockImplementation(
       () => new Promise<void>((resolve) => (release = resolve))
     );
-    const { dispatcher, pushUndoSnapshot } = setup(activeState);
+    const { dispatcher, beginUndoSnapshot, commitSnapshot } =
+      setup(activeState);
 
     const first = dispatcher.execute("mirror", {
       source: "keyboard",
@@ -136,13 +160,14 @@ describe("createSequenceTransformActionDispatcher", () => {
     });
 
     expect(second).toEqual({ status: "busy" });
-    expect(pushUndoSnapshot).toHaveBeenCalledTimes(1);
+    expect(beginUndoSnapshot).toHaveBeenCalledTimes(1);
     expect(analytics.result).toHaveBeenCalledWith(
       expect.objectContaining({ action: "flip", outcome: "busy" })
     );
 
     release();
     await first;
+    expect(commitSnapshot).not.toHaveBeenCalled();
   });
 
   it("records a failed transform without letting analytics break the workspace", async () => {
@@ -150,7 +175,7 @@ describe("createSequenceTransformActionDispatcher", () => {
     vi.mocked(activeState.invertSequence).mockRejectedValue(
       new TypeError("bad transform")
     );
-    const { dispatcher, hapticService } = setup(activeState);
+    const { dispatcher, hapticService, commitSnapshot } = setup(activeState);
 
     await expect(
       dispatcher.execute("invert", {
@@ -160,6 +185,7 @@ describe("createSequenceTransformActionDispatcher", () => {
     ).resolves.toEqual({ status: "failed", message: "bad transform" });
 
     expect(hapticService.trigger).toHaveBeenCalledWith("error");
+    expect(commitSnapshot).not.toHaveBeenCalled();
     expect(analytics.result).toHaveBeenCalledWith(
       expect.objectContaining({
         action: "invert",
@@ -170,8 +196,88 @@ describe("createSequenceTransformActionDispatcher", () => {
     );
   });
 
+  it("leaves history untouched when a transform resolves without changing the sequence", async () => {
+    const activeState = state();
+    vi.mocked(activeState.flipSequence).mockResolvedValue(undefined);
+    const { dispatcher, commitSnapshot } = setup(activeState);
+
+    await expect(
+      dispatcher.execute("flip", {
+        source: "header",
+        targetHand: "both",
+      })
+    ).resolves.toEqual({ status: "completed" });
+
+    expect(commitSnapshot).not.toHaveBeenCalled();
+  });
+
+  it("records a partial change even if the transform later fails", async () => {
+    const activeState = state();
+    vi.mocked(activeState.flipSequence).mockImplementation(async () => {
+      activeState.currentSequence = {
+        ...activeState.currentSequence!,
+        word: "changed",
+      };
+      throw new Error("save failed");
+    });
+    const { dispatcher, commitSnapshot } = setup(activeState);
+
+    await expect(
+      dispatcher.execute("flip", {
+        source: "header",
+        targetHand: "both",
+      })
+    ).resolves.toEqual({ status: "failed", message: "save failed" });
+
+    expect(commitSnapshot).toHaveBeenCalledTimes(1);
+  });
+
+  it("commits to the initiating state after navigation changes", async () => {
+    const firstState = state();
+    const otherState = state();
+    let activeState = firstState;
+    let release!: () => void;
+    vi.mocked(firstState.mirrorSequence).mockImplementation(
+      () =>
+        new Promise<void>((resolve) => {
+          release = () => {
+            firstState.currentSequence = {
+              ...firstState.currentSequence!,
+              word: "changed",
+            };
+            resolve();
+          };
+        })
+    );
+    const commitSnapshot = vi.fn();
+    const beginUndoSnapshot = vi.fn(() => commitSnapshot);
+    const dispatcher = createSequenceTransformActionDispatcher({
+      getSequenceState: () => activeState,
+      getCreateMode: () => "construct",
+      beginUndoSnapshot,
+      hapticService: null,
+      setGridRotationDirection: vi.fn(),
+    });
+
+    const pending = dispatcher.execute("mirror", {
+      source: "header",
+      targetHand: "both",
+    });
+    activeState = otherState;
+    release();
+    await pending;
+
+    expect(beginUndoSnapshot).toHaveBeenCalledWith(
+      UndoOperationType.MIRROR_SEQUENCE,
+      firstState
+    );
+    expect(commitSnapshot).toHaveBeenCalledTimes(1);
+    expect(otherState.currentSequence?.word).toBe("AB");
+  });
+
   it("routes the Shift Start shortcut through the same Undo path", async () => {
-    const { activeState, dispatcher, pushUndoSnapshot } = setup();
+    const { activeState, dispatcher, beginUndoSnapshot, commitSnapshot } =
+      setup();
 
     await dispatcher.execute("shift_start", {
       source: "keyboard",
@@ -179,9 +285,11 @@ describe("createSequenceTransformActionDispatcher", () => {
       stepNumber: 2,
     });
 
-    expect(pushUndoSnapshot).toHaveBeenCalledWith(
-      UndoOperationType.SHIFT_START
+    expect(beginUndoSnapshot).toHaveBeenCalledWith(
+      UndoOperationType.SHIFT_START,
+      activeState
     );
+    expect(commitSnapshot).toHaveBeenCalledTimes(1);
     expect(activeState?.shiftStartPlacement).toHaveBeenCalledWith(2);
   });
 });

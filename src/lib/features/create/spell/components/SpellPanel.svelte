@@ -278,6 +278,10 @@ Same functionality, different density.
       spellState.setExpandedWord(finalExpandedWord);
       spellState.setLetterSources(finalLetterSources);
 
+      spellState.pushUndoSnapshot(UndoOperationType.SPELL_GENERATE, {
+        word: spellState.inputWord,
+      });
+
       sequenceState.setCurrentSequence({
         ...sequenceWithStart,
         name: spellState.inputWord,
@@ -301,10 +305,6 @@ Same functionality, different density.
           sequenceWithStart.startPlacement
         );
       }
-
-      spellState.pushUndoSnapshot(UndoOperationType.SPELL_GENERATE, {
-        word: spellState.inputWord,
-      });
 
       spellState.markHasGeneratedOnce();
       haptic.trigger("success");

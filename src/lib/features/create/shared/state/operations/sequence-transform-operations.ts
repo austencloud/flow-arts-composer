@@ -101,6 +101,7 @@ export function createSequenceTransformOperations(
 
         // Update state immediately - animation starts here
         coreState.setCurrentSequence(transformedSequence);
+        const transformedRevision = coreState.currentSequenceRevision;
         if (transformedSequence.startPlacement) {
           selectionState.setStartPlacement(transformedSequence.startPlacement);
         }
@@ -115,6 +116,8 @@ export function createSequenceTransformOperations(
                 await SequenceTransformer.deriveSequenceLetters(
                   transformedSequence
                 );
+              if (coreState.currentSequenceRevision !== transformedRevision)
+                return;
               coreState.setCurrentSequence(withLetters);
               await onSave?.();
             } catch (letterError) {
@@ -123,7 +126,9 @@ export function createSequenceTransformOperations(
                 letterError
               );
               // Still save the transformed sequence even if letter derivation fails
-              await onSave?.();
+              if (coreState.currentSequenceRevision === transformedRevision) {
+                await onSave?.();
+              }
             }
           });
         } else {
@@ -183,6 +188,7 @@ export function createSequenceTransformOperations(
 
         // Update state immediately - animation starts here
         coreState.setCurrentSequence(transformedSequence);
+        const transformedRevision = coreState.currentSequenceRevision;
         if (transformedSequence.startPlacement) {
           selectionState.setStartPlacement(transformedSequence.startPlacement);
         }
@@ -199,6 +205,8 @@ export function createSequenceTransformOperations(
                   await SequenceTransformer.deriveSequenceLetters(
                     transformedSequence
                   );
+                if (coreState.currentSequenceRevision !== transformedRevision)
+                  return;
                 coreState.setCurrentSequence(withLetters);
                 await onSave?.();
               } catch (letterError) {
@@ -206,7 +214,9 @@ export function createSequenceTransformOperations(
                   "Failed to derive letters after rotate:",
                   letterError
                 );
-                await onSave?.();
+                if (coreState.currentSequenceRevision === transformedRevision) {
+                  await onSave?.();
+                }
               } finally {
                 resolve();
               }
@@ -248,6 +258,7 @@ export function createSequenceTransformOperations(
 
         // Update state immediately - animation starts here
         coreState.setCurrentSequence(transformedSequence);
+        const transformedRevision = coreState.currentSequenceRevision;
         if (transformedSequence.startPlacement) {
           selectionState.setStartPlacement(transformedSequence.startPlacement);
         }
@@ -261,6 +272,8 @@ export function createSequenceTransformOperations(
                 await SequenceTransformer.deriveSequenceLetters(
                   transformedSequence
                 );
+              if (coreState.currentSequenceRevision !== transformedRevision)
+                return;
               coreState.setCurrentSequence(withLetters);
               await onSave?.();
             } catch (letterError) {
@@ -268,7 +281,9 @@ export function createSequenceTransformOperations(
                 "Failed to derive letters after rewind:",
                 letterError
               );
-              await onSave?.();
+              if (coreState.currentSequenceRevision === transformedRevision) {
+                await onSave?.();
+              }
             }
           });
         } else {
@@ -315,6 +330,7 @@ export function createSequenceTransformOperations(
 
         // Update state immediately - animation starts here
         coreState.setCurrentSequence(transformedSequence);
+        const transformedRevision = coreState.currentSequenceRevision;
         if (transformedSequence.startPlacement) {
           selectionState.setStartPlacement(transformedSequence.startPlacement);
         }
@@ -328,11 +344,15 @@ export function createSequenceTransformOperations(
                 await SequenceTransformer.deriveSequenceLetters(
                   transformedSequence
                 );
+              if (coreState.currentSequenceRevision !== transformedRevision)
+                return;
               coreState.setCurrentSequence(withLetters);
               await onSave?.();
             } catch (letterError) {
               console.warn("Failed to derive letters after flip:", letterError);
-              await onSave?.();
+              if (coreState.currentSequenceRevision === transformedRevision) {
+                await onSave?.();
+              }
             }
           });
         } else {
@@ -356,6 +376,7 @@ export function createSequenceTransformOperations(
 
         // Update state immediately - animation starts here
         coreState.setCurrentSequence(transformedSequence);
+        const transformedRevision = coreState.currentSequenceRevision;
         if (transformedSequence.startPlacement) {
           selectionState.setStartPlacement(transformedSequence.startPlacement);
         }
@@ -369,6 +390,8 @@ export function createSequenceTransformOperations(
                 await SequenceTransformer.deriveSequenceLetters(
                   transformedSequence
                 );
+              if (coreState.currentSequenceRevision !== transformedRevision)
+                return;
               coreState.setCurrentSequence(withLetters);
               await onSave?.();
             } catch (letterError) {
@@ -376,7 +399,9 @@ export function createSequenceTransformOperations(
                 "Failed to derive letters after invert:",
                 letterError
               );
-              await onSave?.();
+              if (coreState.currentSequenceRevision === transformedRevision) {
+                await onSave?.();
+              }
             }
           });
         } else {
