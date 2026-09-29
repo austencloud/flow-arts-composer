@@ -8,8 +8,9 @@
   import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
   import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
   import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import TypeableValue from "$lib/shared/ui/components/TypeableValue.svelte";
   import type { PostTimingSession } from "./post-timing-session.svelte";
-  import { formatTakeClock } from "./post-builder-format";
+  import { formatTakeClock, parseClock } from "./post-builder-format";
 
   /**
    * The Timing step's controls, top to bottom in the order they are needed:
@@ -175,11 +176,15 @@
           >
             1 frame <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>
           </PanelButton>
-          <span class="value">
-            {section.offsetSeconds !== 0
+          <TypeableValue
+            label={t("share_studio_deep_whole_grid")}
+            text={section.offsetSeconds !== 0
               ? `${section.offsetSeconds > 0 ? "+" : ""}${section.offsetSeconds.toFixed(2)} s`
               : t("share_studio_deep_on_taps")}
-          </span>
+            draft={section.offsetSeconds.toFixed(2)}
+            unit="s"
+            oncommit={session.setGridOffset}
+          />
         </div>
         <label class="check">
           <input
@@ -198,11 +203,9 @@
         <div class="group">
           <h4>{landingName(landing.position, session.movesPerPass)}</h4>
           <p class="help">
-            {t("share_studio_deep_at_time", {
-              time: formatTakeClock(landing.seconds),
-            })}{landing.pinned
-              ? t("share_studio_deep_placed_by_hand_suffix")
-              : ""}. {t("share_studio_deep_drag_or_nudge")}
+            {landing.pinned
+              ? `${t("share_studio_deep_placed_by_hand")} `
+              : ""}{t("share_studio_deep_drag_nudge_or_type")}
           </p>
           <div class="row">
             <PanelButton
@@ -212,6 +215,13 @@
             >
               <i class="fa-solid fa-chevron-left" aria-hidden="true"></i> 1 frame
             </PanelButton>
+            <TypeableValue
+              label={landingName(landing.position, session.movesPerPass)}
+              text={formatTakeClock(landing.seconds)}
+              draft={formatTakeClock(landing.seconds)}
+              parse={parseClock}
+              oncommit={(seconds) => session.placeLanding(ref, seconds)}
+            />
             <PanelButton
               onclick={() =>
                 session.placeLanding(ref, landing.seconds + MIN_MOVE_SECONDS)}
@@ -362,11 +372,6 @@
     align-items: center;
     gap: 0.5rem;
     min-width: 0;
-  }
-  .value {
-    color: var(--theme-text, #fff);
-    font-size: 0.875rem;
-    font-variant-numeric: tabular-nums;
   }
   .tap {
     position: relative;

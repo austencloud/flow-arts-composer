@@ -38,13 +38,8 @@
   import {
     boxAt,
     framingAt,
-    isAnimated,
   } from "$lib/shared/media-composition/domain/post-project-keyframes";
-  import {
-    clipBox,
-    postOutputSize,
-    spotAround,
-  } from "$lib/shared/media-composition/domain/post-canvas";
+  import { postOutputSize } from "$lib/shared/media-composition/domain/post-canvas";
   import PostStudioBackdrop from "../PostStudioBackdrop.svelte";
   import PostStudioMediaLayer from "../PostStudioMediaLayer.svelte";
   import PostStudioPaintedLayer from "../PostStudioPaintedLayer.svelte";
@@ -56,6 +51,7 @@
     type BoxGuides,
     type BoxHandle,
   } from "./post-box-drag";
+  import { keepsShape, keptBox, shownBox } from "./post-item-rect";
   import {
     PICTURE_NUDGE,
     dragPicturePan,
@@ -321,41 +317,6 @@
       : null
   );
 
-  /** Where an item shows at `seconds`: a video in its shape inside its box. */
-  function shownBox(item: PostItem, seconds: number): PostBox {
-    // Between two keyed boxes the picture blends each key's shape, which is
-    // not always the shape of the blended box, so the outline takes the rect
-    // the picture is drawn in.
-    if (
-      item.kind === "video" &&
-      item.shape &&
-      isAnimated(item, "box") &&
-      seconds === editor.previewSeconds
-    ) {
-      const drawn = editor.regionRects.get(item.id);
-      if (drawn) return drawn;
-    }
-    const box = boxAt(item, seconds);
-    return item.kind === "video"
-      ? clipBox(item, box, postOutputSize(editor.project.canvas))
-      : box;
-  }
-
-  /**
-   * The box to keep for an item now shown at `shown`: a shaped clip keeps
-   * the room its box had around its shape, anything else takes `shown`.
-   */
-  function keptBox(item: PostItem, shown: PostBox, before: PostBox): PostBox {
-    return item.kind === "video"
-      ? spotAround(item, shown, before, postOutputSize(editor.project.canvas))
-      : shown;
-  }
-
-  /** A clip shaped to a set ratio keeps it, so only its corners resize it. */
-  function keepsShape(item: PostItem): boolean {
-    return item.kind === "video" && item.shape !== undefined;
-  }
-
   /** A box this close to the whole frame reads as "fills the frame". */
   const FRAME_FILL_EPSILON = 1e-3;
 
@@ -431,7 +392,7 @@
     const seconds = editor.previewSeconds;
     return (
       itemsHere.find((item) => {
-        const box = shownBox(item, seconds);
+        const box = shownBox(editor, item, seconds);
         return (
           x >= box.x &&
           x <= box.x + box.width &&
@@ -462,7 +423,7 @@
     editor.pause();
     (event.currentTarget as HTMLElement).setPointerCapture(event.pointerId);
     const seconds = editor.previewSeconds;
-    const box = shownBox(item, seconds);
+    const box = shownBox(editor, item, seconds);
 
     if (handle === "move" && isPictureDragTarget(item, box)) {
       const video = item as PostVideoItem;
@@ -566,7 +527,7 @@
       !event.altKey
     );
     guides = result.guides;
-    const box = keptBox(current.item, result.box, current.startSpot);
+    const box = keptBox(editor, current.item, result.box, current.startSpot);
     editor.gestureStep((base, context) =>
       updateItemAt(base, itemId, { box }, seconds, context)
     );
@@ -609,7 +570,7 @@
     event.preventDefault();
     event.stopPropagation();
     const seconds = editor.previewSeconds;
-    const current = shownBox(item, seconds);
+    const current = shownBox(editor, item, seconds);
     if (item.kind === "video" && isPictureDragTarget(item, current)) {
       nudgePicture(item, current, direction, event.shiftKey, seconds);
       return;
@@ -622,7 +583,7 @@
       direction[1] * step,
       false
     ).box;
-    const box = keptBox(item, moved, boxAt(item, seconds));
+    const box = keptBox(editor, item, moved, boxAt(item, seconds));
     editor.edit((project, context) =>
       updateItemAt(project, item.id, { box }, seconds, context)
     );
@@ -752,7 +713,7 @@
     releaseDrag(true);
     const rect = root.getBoundingClientRect();
     const seconds = editor.previewSeconds;
-    const box = shownBox(item, seconds);
+    const box = shownBox(editor, item, seconds);
     const framing = framingAt(item, seconds);
     const size = mountedVideoSize(item.id);
     editor.pause();
@@ -1688,7 +1649,7 @@
         {/if}
         {#if selected}
           {@const locked = trackLocked(selected.id)}
-          {@const box = shownBox(selected, editor.previewSeconds)}
+          {@const box = shownBox(editor, selected, editor.previewSeconds)}
           {@const pictureMode = isPictureDragTarget(selected, box)}
           <div
             class="selection"
@@ -1736,7 +1697,7 @@
           : selected &&
               isPictureDragTarget(
                 selected,
-                shownBox(selected, editor.previewSeconds)
+                shownBox(editor, selected, editor.previewSeconds)
               )
             ? t("post_editor_picture_hint")
             : t("post_editor_box_hint")}

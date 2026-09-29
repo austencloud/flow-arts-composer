@@ -563,6 +563,23 @@ export function trimItem(
   return finish(replaceItem(project, itemId, trimmed), ctx);
 }
 
+/**
+ * Moves a clip's In or Out point to a time in its take: the same trim as
+ * moving that edge on the timeline, with the point named in the take's time.
+ */
+export function trimItemToSource(
+  project: PostProject,
+  itemId: string,
+  edge: "start" | "end",
+  sourceSeconds: number,
+  ctx: EditContext
+): PostProject {
+  const item = findItem(project, itemId)?.item;
+  if (item?.kind !== "video" || !Number.isFinite(sourceSeconds)) return project;
+  const seconds = item.start + (sourceSeconds - item.sourceIn) / item.speed;
+  return trimItem(project, itemId, edge, seconds, ctx);
+}
+
 /** A clip's speed; its span stays and its length follows. */
 export function setVideoSpeed(
   project: PostProject,

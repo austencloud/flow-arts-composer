@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   BOX_SNAP_THRESHOLD,
   dragBox,
+  typeBox,
 } from "$lib/shared/share/components/post-studio/editor/post-box-drag";
 import {
   POST_MIN_BOX_SIZE,
@@ -71,5 +72,43 @@ describe("dragBox", () => {
     close(tiny.height, POST_MIN_BOX_SIZE);
     close(tiny.width, POST_MIN_BOX_SIZE * 2);
     expect(PostBoxSchema.safeParse(tiny).success).toBe(true);
+  });
+});
+
+describe("typeBox", () => {
+  it("moves a box to a typed place and keeps it inside the frame", () => {
+    expect(typeBox(box, "x", 0.5, false)).toMatchObject({ x: 0.5, y: 0.3 });
+    const pushed = typeBox(box, "x", 0.9, false);
+    close(pushed.x, 0.6);
+    close(typeBox(box, "y", -1, false).y, 0);
+  });
+
+  it("sizes a box from its top-left corner", () => {
+    const wider = typeBox(box, "width", 0.5, false);
+    expect(wider).toMatchObject({ x: 0.2, y: 0.3, height: 0.2 });
+    close(wider.width, 0.5);
+    // Too wide to fit where it is: shifted back inside, not cut.
+    const widest = typeBox(box, "width", 0.9, false);
+    close(widest.x, 0.1);
+    close(widest.width, 0.9);
+    close(typeBox(box, "height", 0, false).height, POST_MIN_BOX_SIZE);
+  });
+
+  it("keeps a shaped box's proportions, within the frame", () => {
+    const doubled = typeBox(box, "width", 0.8, true);
+    close(doubled.width, 0.8);
+    close(doubled.height, 0.4);
+    // Wider than the frame allows: as large as it fits, still 2 to 1.
+    const largest = typeBox(box, "height", 0.9, true);
+    close(largest.x, 0);
+    close(largest.width, 1);
+    close(largest.height, 0.5);
+    const smallest = typeBox(box, "width", 0, true);
+    close(smallest.width, 0.1);
+    close(smallest.height, POST_MIN_BOX_SIZE);
+  });
+
+  it("ignores a value that is not a number", () => {
+    expect(typeBox(box, "x", Number.NaN, false)).toBe(box);
   });
 });
