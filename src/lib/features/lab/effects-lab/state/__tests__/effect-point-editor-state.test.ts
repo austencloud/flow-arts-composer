@@ -152,7 +152,9 @@ describe("EffectPointEditorState override visibility", () => {
   it("restores the code table after an out-and-back drag and keeps earlier history on a click", () => {
     const state = new EffectPointEditorState(provider);
     state.selectPropType("fan");
-    const original = { ...state.points[0] };
+    const first = state.points[0];
+    if (!first) throw new Error("fan has no code-table tip point");
+    const original = { ...first };
     state.beginDrag(0);
     state.updatePointPosition(0, original.dx + 1, original.dy);
     state.updatePointPosition(0, original.dx, original.dy);
