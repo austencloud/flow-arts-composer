@@ -41,10 +41,10 @@ vi.mock("$lib/shared/auth/firebase", () => ({
 
 let mockIsAdmin = true;
 vi.mock("$lib/shared/auth/state/auth-state.svelte", () => ({
-  isAdmin: () => mockIsAdmin,
   getEffectiveUserId: () => "test-uid",
 }));
 
+import { registerLoadedAuthState } from "$lib/shared/auth/state/loaded-auth-state.svelte";
 import { saveOverride } from "../../../src/routes/(public)/guide/level-1/_data/guide-overrides.svelte";
 import { sequenceToStrip } from "../../../src/routes/(public)/guide/level-1/_data/guide-sequence-adapter";
 import { handSwapSequence } from "../../../src/lib/shared/create/services/sequence-transforms";
@@ -52,6 +52,13 @@ import { rotateSequenceGeometry } from "../../../src/lib/shared/create/services/
 import type { SequenceData } from "../../../src/lib/shared/foundation/domain/models/sequence-data";
 import type { StepData } from "../../../src/lib/shared/foundation/domain/models/step-data";
 import type { StartPlacementData } from "../../../src/lib/shared/foundation/domain/models/start-placement-data";
+
+// The admin gate reads auth-state's flag through this registry, which
+// auth-state fills when it loads. auth-state is mocked here, so stand in for it.
+registerLoadedAuthState({
+  isAdmin: () => mockIsAdmin,
+  isAuthenticated: () => true,
+});
 
 function makeMotion(
   hand: "left" | "right",

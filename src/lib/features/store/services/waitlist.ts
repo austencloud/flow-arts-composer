@@ -3,13 +3,17 @@
 // which page captured it (shop vs. the guide rewrite, etc.) so one collection
 // serves multiple announce-me forms. Rule: anyone create, admin read
 // (firestore.rules) — needs a deploy before it persists.
-import { collection, addDoc, serverTimestamp } from "firebase/firestore";
-import { getFirestoreInstance } from "$lib/shared/auth/firebase";
-
+//
+// Shop pages show the form to every visitor. Firebase loads only when someone
+// submits it, which keeps it off those pages' first download.
 export async function joinWaitlist(
   email: string,
   source = "shop-coming-soon"
 ): Promise<void> {
+  const { collection, addDoc, serverTimestamp } = await import(
+    "firebase/firestore"
+  );
+  const { getFirestoreInstance } = await import("$lib/shared/auth/firebase");
   const firestore = await getFirestoreInstance();
   await addDoc(collection(firestore, "shop_waitlist"), {
     email: email.trim().toLowerCase(),
