@@ -4,6 +4,7 @@
   import LinkChip from "$lib/shared/ui/components/LinkChip.svelte";
   import { onDestroy, type Snippet } from "svelte";
   import { getAnimationVisibilityManager } from "../../state/animation-visibility-state.svelte";
+  import type { AnimationVisibilityStateManager } from "../../state/animation-visibility-state.svelte";
   import { getAnimationVisibilityContext } from "../../state/animation-visibility-context";
 
   let {
@@ -11,6 +12,7 @@
     preview,
     showHelp = true,
     fill = false,
+    visibilityManagerOverride,
   }: {
     onSettingChange?: (previousValue: string, value: string) => void;
     preview?: Snippet<["arc" | "linear" | "concave" | "hybrid", number]>;
@@ -18,9 +20,13 @@
     /** Size the preview tiles to the box the grid is given, its height as
      *  well as its width. The host must give the grid a definite height. */
     fill?: boolean;
+    visibilityManagerOverride?: AnimationVisibilityStateManager;
   } = $props();
 
-  const vm = getAnimationVisibilityContext() ?? getAnimationVisibilityManager();
+  const vm =
+    visibilityManagerOverride ??
+    getAnimationVisibilityContext() ??
+    getAnimationVisibilityManager();
   let session = $state(vm.getPathSession());
   let previewWidth = $state(0);
   let previewHeight = $state(0);
@@ -186,7 +192,9 @@
 {#if session}
   {#if session.overrideCount > 0}
     <p class="path-scope" aria-live="polite">
-      {t("animation_path_override_count", { count: session.overrideCount })}{session.preview ? t("animation_path_replaced_in_preview") : ""}
+      {t("animation_path_override_count", {
+        count: session.overrideCount,
+      })}{session.preview ? t("animation_path_replaced_in_preview") : ""}
     </p>
   {/if}
 {/if}

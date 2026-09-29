@@ -463,7 +463,27 @@ export const PostFontSchema = z
 export type PostFont = z.infer<typeof PostFontSchema>;
 
 export const PostCardItemSchema = z
-  .object({ ...itemBase, kind: z.literal("card") })
+  .object({
+    ...itemBase,
+    kind: z.literal("card"),
+    /** Overrides for this card only; absent fields retain the viewer look. */
+    cardAppearance: z
+      .object({
+        addWord: z.boolean().optional(),
+        addStepNumbers: z.boolean().optional(),
+        includeStartPlacement: z.boolean().optional(),
+        addDifficultyLevel: z.boolean().optional(),
+        showLoopGlyph: z.boolean().optional(),
+        showNotes: z.boolean().optional(),
+        showGrid: z.boolean().optional(),
+        showTKA: z.boolean().optional(),
+        showTnD: z.boolean().optional(),
+        showPlacements: z.boolean().optional(),
+        showReversals: z.boolean().optional(),
+      })
+      .strict()
+      .optional(),
+  })
   .strict();
 
 export type PostCardItem = z.infer<typeof PostCardItemSchema>;
@@ -475,6 +495,53 @@ export const PostAnimationItemSchema = z
     kind: z.literal("animation"),
     /** Paint the beat number, letter and progress over it. */
     overlay: z.boolean(),
+    /** Display flags for this live animation, independent of viewer settings. */
+    animationAppearance: z
+      .object({
+        gridMode: z.enum(["none", "8point", "auto"]).optional(),
+        props: z.boolean().optional(),
+        tkaGlyph: z.boolean().optional(),
+        elementalGlyph: z.boolean().optional(),
+        propElementalGlyph: z.boolean().optional(),
+        stepNumbers: z.boolean().optional(),
+        wordHeader: z.boolean().optional(),
+        mandala: z.boolean().optional(),
+        leftPathLines: z.boolean().optional(),
+        rightPathLines: z.boolean().optional(),
+        pathShape: z.enum(["arc", "linear", "concave"]).optional(),
+        motionAwarePaths: z.boolean().optional(),
+        effortPreset: z
+          .enum([
+            "linear",
+            "glide",
+            "dab",
+            "press",
+            "punch",
+            "elastic",
+            "bounce",
+            "anticipation",
+          ])
+          .optional(),
+        trail: z
+          .object({
+            enabled: z.boolean(),
+            trackingMode: z.enum([
+              "left_end",
+              "right_end",
+              "both_ends",
+              "hand",
+            ]),
+            thickness: z.number().finite().min(1).max(12),
+            brightness: z.number().finite().min(0.3).max(1),
+            tailLength: z.number().int().min(10).max(400),
+            leftColor: z.string().regex(/^#[0-9a-fA-F]{6}$/),
+            rightColor: z.string().regex(/^#[0-9a-fA-F]{6}$/),
+          })
+          .strict()
+          .optional(),
+      })
+      .strict()
+      .optional(),
   })
   .strict();
 

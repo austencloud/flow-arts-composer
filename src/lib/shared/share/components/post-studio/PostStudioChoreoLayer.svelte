@@ -76,6 +76,7 @@
       {qrSequence}
       {highlightedStepIndex}
       showHighlight
+      visibilityOverrides={cardRenderOptions?.visibilityOverrides}
       darkMode={cardRenderOptions?.visibilityOverrides?.darkMode ?? true}
       showWord={cardRenderOptions?.addWord ?? true}
       showStepNumbers={cardRenderOptions?.addStepNumbers ?? true}

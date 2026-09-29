@@ -25,6 +25,8 @@
     type PostMovesMode,
     type PostTextSize,
   } from "$lib/shared/media-composition/domain/post-project";
+  import type { SequenceExportOptions } from "$lib/shared/render/domain/models/sequence-export-options";
+  import { getVisibilityStateManager } from "$lib/shared/pictograph/shared/state/visibility-state.svelte";
   import {
     setItemFill,
     setTrackFlag,
@@ -84,6 +86,7 @@
   import PostStaffEffectsTool from "./PostStaffEffectsTool.svelte";
   import PostNativeTextTool from "./PostNativeTextTool.svelte";
   import PostSourceGeometryTool from "./PostSourceGeometryTool.svelte";
+  import PostAnimationAppearanceTool from "./PostAnimationAppearanceTool.svelte";
 
   /**
    * The body of one tool for the selected item. An amount is a slider, a
@@ -102,9 +105,17 @@
     crop?: CropSession | null;
     /** Where each take's LED staffs are, for the Effects tool. */
     staffTips?: StaffTipAnalysis | null;
+    cardRenderOptions?: Partial<SequenceExportOptions> | null;
   }
 
-  let { editor, item, tool, crop = null, staffTips = null }: Props = $props();
+  let {
+    editor,
+    item,
+    tool,
+    crop = null,
+    staffTips = null,
+    cardRenderOptions = null,
+  }: Props = $props();
 
   const FRAME_SECONDS = 1 / POST_FRAME_RATE;
 
@@ -148,6 +159,59 @@
   function patchItem(patch: PostItemPatch): void {
     if (locked) return;
     editor.edit((project, ctx) => updateItem(project, item.id, patch, ctx));
+  }
+
+  const cardAppearanceChoices = [
+    { key: "addWord", label: "Word" },
+    { key: "addStepNumbers", label: "Step numbers" },
+    { key: "includeStartPlacement", label: "Start placement" },
+    { key: "addDifficultyLevel", label: "Difficulty" },
+    { key: "showLoopGlyph", label: "LOOP glyph" },
+    { key: "showNotes", label: "Notes" },
+    { key: "showGrid", label: "Grid" },
+    { key: "showTKA", label: "TKA glyphs" },
+    { key: "showTnD", label: "Hand timing and direction" },
+    { key: "showPlacements", label: "Placements" },
+    { key: "showReversals", label: "Reversals" },
+  ] as const;
+  type CardAppearanceKey = (typeof cardAppearanceChoices)[number]["key"];
+  const cardVisibility = getVisibilityStateManager();
+  function cardValue(key: CardAppearanceKey): boolean {
+    if (item.kind !== "card") return false;
+    const own = item.cardAppearance?.[key];
+    if (own !== undefined) return own;
+    if (key === "showGrid")
+      return (
+        cardRenderOptions?.visibilityOverrides?.showGrid ??
+        cardVisibility.getGridVisibility()
+      );
+    if (key === "showTKA")
+      return (
+        cardRenderOptions?.visibilityOverrides?.showTKA ??
+        cardVisibility.getRawGlyphVisibility("tkaGlyph")
+      );
+    if (key === "showTnD")
+      return (
+        cardRenderOptions?.visibilityOverrides?.showTnD ??
+        cardVisibility.getRawGlyphVisibility("tndGlyph")
+      );
+    if (key === "showPlacements")
+      return (
+        cardRenderOptions?.visibilityOverrides?.showPlacements ??
+        cardVisibility.getRawGlyphVisibility("placementsGlyph")
+      );
+    if (key === "showReversals")
+      return (
+        cardRenderOptions?.visibilityOverrides?.showReversals ??
+        cardVisibility.getRawGlyphVisibility("reversalIndicators")
+      );
+    return cardRenderOptions?.[key] ?? key !== "showNotes";
+  }
+  function toggleCard(key: CardAppearanceKey): void {
+    if (item.kind !== "card" || locked) return;
+    patchItem({
+      cardAppearance: { ...item.cardAppearance, [key]: !cardValue(key) },
+    });
   }
 
   function rename(value: string): void {
@@ -968,6 +1032,32 @@
         onPick={(effect) => patchItem({ staffEffect: effect })}
       />
     {/if}
+  {:else if tool === "appearance" && item.kind === "animation"}
+    <PostAnimationAppearanceTool {editor} {item} {locked} />
+    {#if item.animationAppearance}
+      <PanelButton
+        onclick={() => patchItem({ animationAppearance: null })}
+        disabled={locked}
+      >
+        Use animation defaults
+      </PanelButton>
+    {/if}
+  {:else if tool === "appearance" && item.kind === "card"}
+    <div class="actions" role="group" aria-label="Selected card appearance">
+      {#each cardAppearanceChoices as choice (choice.key)}
+        <PanelButton
+          onclick={() => toggleCard(choice.key)}
+          ariaPressed={cardValue(choice.key)}
+          disabled={locked}
+        >
+          <i
+            class="fa-solid {cardValue(choice.key) ? 'fa-check' : 'fa-xmark'}"
+            aria-hidden="true"
+          ></i>
+          {choice.label}
+        </PanelButton>
+      {/each}
+    </div>
   {:else if tool === "labels" && item.kind === "animation"}
     <SegmentedControl
       color="accent"
@@ -1049,6 +1139,7 @@
 
   .item-tool {
     display: grid;
+    grid-template-columns: minmax(0, 1fr);
     gap: 1rem;
     min-width: 0;
   }

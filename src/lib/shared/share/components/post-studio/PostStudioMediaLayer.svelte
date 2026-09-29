@@ -6,6 +6,7 @@
   import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
   import type { HandLabeling } from "$lib/shared/video-collaboration/domain/hand-labeling";
   import type { SequenceExportOptions } from "$lib/shared/render/domain/models/sequence-export-options";
+  import type { PostAnimationItem } from "$lib/shared/media-composition/domain/post-project";
   import PostStudioSequenceAnimationLayer from "./PostStudioSequenceAnimationLayer.svelte";
   import PostStudioChoreoLayer from "./PostStudioChoreoLayer.svelte";
   import PostStudioTunnelLayer from "./PostStudioTunnelLayer.svelte";
@@ -31,6 +32,7 @@
     handLabeling?: HandLabeling | null;
     qrSequence?: SequenceData;
     cardRenderOptions?: Partial<SequenceExportOptions> | null;
+    animationAppearance?: PostAnimationItem["animationAppearance"] | null;
     sequencePosition?: number;
     sequencePassIndex?: number;
     animationTimeSeconds?: number;
@@ -59,6 +61,7 @@
     handLabeling = null,
     qrSequence,
     cardRenderOptions = null,
+    animationAppearance = null,
     sequencePosition,
     sequencePassIndex,
     animationTimeSeconds,
@@ -409,6 +412,7 @@
       {animationTimeSeconds}
       {breakdownMotion}
       {labelsPainted}
+      {animationAppearance}
       {playing}
       leftPropType={cardRenderOptions?.leftPropTypeOverride ??
         cardRenderOptions?.propTypeOverride}

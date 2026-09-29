@@ -214,6 +214,8 @@ export interface NewOverlaySpec {
   text?: string;
   size?: PostTextSize;
   overlay?: boolean;
+  animationAppearance?: PostAnimationItem["animationAppearance"] | null;
+  cardAppearance?: PostCardItem["cardAppearance"] | null;
   takeId?: string;
   sourceIn?: number;
   sourceOut?: number;
@@ -898,6 +900,15 @@ export function updateItem(
   }
   if (item.kind === "animation" && patch.overlay !== undefined) {
     next.overlay = patch.overlay;
+  }
+  if (item.kind === "animation" && patch.animationAppearance !== undefined) {
+    if (patch.animationAppearance)
+      next.animationAppearance = patch.animationAppearance;
+    else delete next.animationAppearance;
+  }
+  if (item.kind === "card" && patch.cardAppearance !== undefined) {
+    if (patch.cardAppearance) next.cardAppearance = patch.cardAppearance;
+    else delete next.cardAppearance;
   }
   if (item.kind === "moves" && patch.mode) next.mode = patch.mode;
   if (item.kind === "text") {

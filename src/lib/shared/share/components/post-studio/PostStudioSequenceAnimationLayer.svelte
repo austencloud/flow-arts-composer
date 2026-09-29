@@ -1,5 +1,15 @@
 <script lang="ts">
+  import { untrack } from "svelte";
   import AnimatorCanvas from "$lib/shared/animation-engine/components/AnimatorCanvas.svelte";
+  import {
+    AnimationVisibilityStateManager,
+    getAnimationVisibilityManager,
+  } from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
+  import { animationSettings } from "$lib/shared/animation-engine/state/animation-settings-state.svelte";
+  import { createEffectsConfigState } from "$lib/shared/effects/state/effects-config-state.svelte";
+  import { getEffectsConfigContext } from "$lib/shared/effects/state/effects-config-context";
+  import { DEFAULT_EFFECTS_CONFIG } from "$lib/shared/effects/domain/defaults";
+  import type { PostAnimationItem } from "$lib/shared/media-composition/domain/post-project";
   import { getViewerStudioSurfaces } from "$lib/shared/sequence-viewer/context/viewer-studio-surfaces-context";
   import { AnimationStateManager } from "$lib/shared/animation-engine/services/animation-state-manager";
   import { SequenceAnimationOrchestrator } from "$lib/shared/animation-engine/services/sequence-animation-orchestrator";
@@ -25,6 +35,7 @@
     playing,
     leftPropType,
     rightPropType,
+    animationAppearance = null,
   }: {
     sequence: SequenceData;
     sequencePosition: number;
@@ -39,18 +50,71 @@
     playing: boolean;
     leftPropType?: PropType;
     rightPropType?: PropType;
+    animationAppearance?: PostAnimationItem["animationAppearance"] | null;
   } = $props();
+
+  const itemVisibility = new AnimationVisibilityStateManager({
+    ephemeral: true,
+  });
+  const inheritedEffects = getEffectsConfigContext();
+  const initialEffects = inheritedEffects?.snapshot() ?? DEFAULT_EFFECTS_CONFIG;
+  const itemEffects = createEffectsConfigState(initialEffects, {
+    persist: false,
+  });
+  let itemTrailSettings = $state(animationSettings.snapshot().trail);
+  $effect(() => {
+    const appearance = animationAppearance;
+    if (!appearance) return;
+    untrack(() => {
+      itemVisibility.updateSettings(appearance);
+      const trail = appearance.trail;
+      const effectConfig = structuredClone(initialEffects);
+      if (trail) {
+        effectConfig.trails = {
+          ...effectConfig.trails,
+          trackingMode: trail.trackingMode,
+          thickness: trail.thickness,
+          brightness: trail.brightness,
+          leftColor: trail.leftColor,
+          rightColor: trail.rightColor,
+        };
+        effectConfig.activeEffect = trail.enabled ? "trails" : "none";
+        effectConfig.tipEffectMap = trail.enabled
+          ? { "*": { effect: "trails" } }
+          : {};
+        itemTrailSettings = {
+          ...animationSettings.snapshot().trail,
+          trackingMode: trail.trackingMode,
+          tailLength: trail.tailLength,
+        };
+      }
+      itemEffects.replace(effectConfig);
+    });
+  });
 
   const stateManager = new AnimationStateManager();
   const orchestrator = new SequenceAnimationOrchestrator(
     stateManager,
     getViewerAnimationPropConfig
   );
+  $effect(() => {
+    const scoped = !!animationAppearance;
+    untrack(() =>
+      orchestrator.setVisibilityManager(
+        scoped ? itemVisibility : getAnimationVisibilityManager()
+      )
+    );
+  });
   const shared = getViewerStudioSurfaces();
   const owner = {};
-  function destination(node: HTMLElement) {
-    return {
-      destroy: breakdownMotion
+  function destination(
+    node: HTMLElement,
+    appearance: PostAnimationItem["animationAppearance"] | null
+  ) {
+    const connect = (
+      current: PostAnimationItem["animationAppearance"] | null
+    ) =>
+      breakdownMotion || current
         ? undefined
         : shared?.requestCanvas(owner, node, () => ({
             sequence,
@@ -62,7 +126,16 @@
             leftPropType,
             rightPropType,
             labelsPainted,
-          })),
+          }));
+    let release = connect(appearance);
+    return {
+      update(current: PostAnimationItem["animationAppearance"] | null) {
+        release?.();
+        release = connect(current);
+      },
+      destroy() {
+        release?.();
+      },
     };
   }
   let initializedSequence = $state.raw<SequenceData | null>(null);
@@ -107,23 +180,28 @@
 
   $effect(() => {
     const target = sequence;
-    initializedSequence = orchestrator.initializeWithDomainData(target)
-      ? target
-      : null;
+    initializedSequence = untrack(() =>
+      orchestrator.initializeWithDomainData(target) ? target : null
+    );
   });
 
   $effect(() => {
     const position = sequencePosition;
+    // Recalculate prop motion when this item's effort or path settings change
+    // while the preview is paused at the same beat.
+    void animationAppearance;
     if (initializedSequence !== sequence) return;
-    orchestrator.calculateState(position);
-    leftProp = stateManager.getLeftPropState();
-    rightProp = stateManager.getRightPropState();
+    untrack(() => {
+      orchestrator.calculateState(position);
+      leftProp = stateManager.getLeftPropState();
+      rightProp = stateManager.getRightPropState();
+    });
   });
 </script>
 
 <div
   class="animation-layer"
-  use:destination
+  use:destination={animationAppearance}
   data-studio-animation-destination
   data-studio-animation-mode={showMandala ? "mandala" : "pictograph"}
   data-sequence-position={sequencePosition}
@@ -152,11 +230,11 @@
         stepNumberOverride={false}
       />
     </div>
-  {:else if !breakdownMotion && !shared?.ownsCanvas(owner)}
+  {:else if !breakdownMotion && (animationAppearance || !shared?.ownsCanvas(owner))}
     <AnimatorCanvas
       {leftProp}
       {rightProp}
-      gridVisible
+      gridVisible={animationAppearance?.gridMode !== "none"}
       gridMode={sequence.gridMode ?? null}
       letter={stepData?.letter ?? null}
       {stepData}
@@ -165,13 +243,18 @@
       isPlaying={playing}
       {leftPropType}
       {rightPropType}
-      word={null}
+      word={animationAppearance ? sequence.word : null}
       previewDarkMode
       hideProgressBar
-      hideHeader
-      hideTkaGlyph={labelsPainted}
-      hideStepNumbers={labelsPainted}
-      hideElementalGlyph={labelsPainted}
+      hideHeader={!animationAppearance}
+      hideTkaGlyph={labelsPainted && !animationAppearance}
+      hideStepNumbers={labelsPainted && !animationAppearance}
+      hideElementalGlyph={labelsPainted && !animationAppearance}
+      visibilityManagerOverride={animationAppearance
+        ? itemVisibility
+        : undefined}
+      effectsConfigState={animationAppearance ? itemEffects : undefined}
+      trailSettings={animationAppearance ? itemTrailSettings : undefined}
       fillContainer
       virtualTime={animationTimeSeconds === undefined
         ? undefined

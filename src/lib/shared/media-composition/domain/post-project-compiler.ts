@@ -625,6 +625,7 @@ export function compilePostProject(
         const wantsOverlay =
           item.kind === "animation" &&
           item.overlay &&
+          !item.animationAppearance &&
           !!context.animationOverlay;
         if (wantsOverlay) {
           useRole(

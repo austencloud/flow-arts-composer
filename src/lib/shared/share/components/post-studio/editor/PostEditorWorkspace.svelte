@@ -1953,6 +1953,7 @@
       {tool}
       crop={cropMode ? crop : null}
       {staffTips}
+      {cardRenderOptions}
     />
   {/if}
 {/snippet}
@@ -2604,6 +2605,26 @@
   .panel-slot {
     min-width: 0;
     min-height: 0;
+  }
+
+  /* A short landscape window scrolls the entire inspector so its header
+     cannot leave just a sliver of space for the selected item's controls. */
+  @media (max-height: 600px) {
+    .post-editor[data-layout="wide"] .side-column {
+      grid-template-rows: auto auto;
+      align-content: start;
+      overflow-y: auto;
+    }
+
+    .post-editor[data-layout="wide"] .panel-slot :global(.tool-panel.side) {
+      height: auto;
+    }
+
+    .post-editor[data-layout="wide"]
+      .panel-slot
+      :global(.tool-panel.side .body) {
+      overflow-y: visible;
+    }
   }
 
   .panel-host.external .side-column {

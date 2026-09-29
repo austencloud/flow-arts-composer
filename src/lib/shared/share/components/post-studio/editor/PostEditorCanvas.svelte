@@ -38,6 +38,7 @@
     POST_MIN_ZOOM,
     POST_TIME_EPSILON,
     itemEnd,
+    findItem,
     type PostBox,
     type PostItem,
     type PostSourceGeometry,
@@ -56,6 +57,10 @@
   } from "$lib/shared/media-composition/domain/post-canvas";
   import PostStudioBackdrop from "../PostStudioBackdrop.svelte";
   import PostStudioMediaLayer from "../PostStudioMediaLayer.svelte";
+  import {
+    cardOptionsForItem,
+    animationAppearanceForItem,
+  } from "../post-item-render-options";
   import PostStudioPaintedLayer from "../PostStudioPaintedLayer.svelte";
   import {
     BOX_CORNERS,
@@ -2207,6 +2212,10 @@
         {#each entries.get(region.id) ?? [] as entry (entry.role)}
           {@const binding = bindingFor(entry.role)}
           {@const layer = entry.layer}
+          {@const sourceItem = findItem(
+            editor.project,
+            itemIdFromClipId(entry.clip.id)
+          )?.item}
           {@const isVideo = binding?.renderMode === "external-media"}
           {#if binding?.status === "ready"}
             {#if binding.renderMode === "painted" && binding.painter}
@@ -2231,7 +2240,13 @@
                   sourceTimeSeconds={layer.sourceTimeSeconds}
                   playing={editor.isPlaying && entry.live}
                   {sequence}
-                  {cardRenderOptions}
+                  cardRenderOptions={cardOptionsForItem(
+                    cardRenderOptions,
+                    sourceItem?.kind === "card" ? sourceItem : null
+                  )}
+                  animationAppearance={animationAppearanceForItem(
+                    sourceItem?.kind === "animation" ? sourceItem : null
+                  )}
                   {handLabeling}
                   {qrSequence}
                   sequencePosition={layer.sequencePosition ??

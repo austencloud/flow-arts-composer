@@ -3,9 +3,11 @@
   import { onDestroy, onMount } from "svelte";
   import DisplayTilePreview from "./DisplayTilePreview.svelte";
   import { getAnimationVisibilityManager } from "../../state/animation-visibility-state.svelte";
+  import type { AnimationVisibilityStateManager } from "../../state/animation-visibility-state.svelte";
   import { getAnimationVisibilityContext } from "../../state/animation-visibility-context";
   import { getAnimationScopeContext } from "../../state/animation-scope-context";
   import { animationSettings } from "../../state/animation-settings-state.svelte";
+  import type { AnimationSettingsState } from "../../state/animation-settings-state.svelte";
   import {
     resolveEffectivePropsVisibility,
     toggleEffectivePropsVisibility,
@@ -52,6 +54,8 @@
      *  Word tile out rather than offering a toggle that changes nothing. */
     showWordToggle = true,
     onSettingChange,
+    visibilityManagerOverride,
+    animationSettingsOverride,
   }: {
     showMotionVisibility?: boolean;
     sequence?: {
@@ -64,14 +68,18 @@
     showSequenceMarks?: boolean;
     showWordToggle?: boolean;
     onSettingChange?: ViewerControlSink;
+    visibilityManagerOverride?: AnimationVisibilityStateManager;
+    animationSettingsOverride?: AnimationSettingsState;
   } = $props();
 
   const animationScope = getAnimationScopeContext();
   const vm =
+    visibilityManagerOverride ??
     animationScope?.visibility ??
     getAnimationVisibilityContext() ??
     getAnimationVisibilityManager();
-  const trailOnlyState = animationScope?.settings ?? animationSettings;
+  const trailOnlyState =
+    animationSettingsOverride ?? animationScope?.settings ?? animationSettings;
   const viewerVis = tryGetViewerVisibilityContext();
   const showPropChips = $derived(showMotionVisibility && viewerVis !== null);
 
@@ -123,8 +131,7 @@
   // visibility — that lives in PathShapePanel.
   function togglePathLines(): void {
     const next = !pathLines;
-    vm.setVisibility("leftPathLines", next);
-    vm.setVisibility("rightPathLines", next);
+    vm.updateSettings({ leftPathLines: next, rightPathLines: next });
   }
 
   vm.registerObserver(handleVisibilityChange);

@@ -373,6 +373,35 @@ describe("compilePostProject", () => {
   });
 
   describe("animation overlay clips", () => {
+    it("lets a customized animation draw its own glyphs without a second painted label", () => {
+      const customized = project(
+        [card("c1", 5)],
+        [
+          [
+            overlay("ov", "animation", {
+              start: 0,
+              duration: 5,
+              overlay: true,
+              animationAppearance: { tkaGlyph: false },
+            }),
+          ],
+        ]
+      );
+      const result = compilePostProject(customized, {
+        ...ctx,
+        animationOverlay: true,
+      })!;
+      expect(
+        result.preset.clips.some((clip) => clip.id.endsWith(":overlay"))
+      ).toBe(false);
+      expect(result.preset.clips.some((clip) => clip.id === "ov~0")).toBe(true);
+    });
+    const proj = () =>
+      project(
+        [video("v1", { sourceOut: 5 })],
+        [[overlay("ov", "animation", { start: 0, duration: 5, overlay: true })]]
+      );
+
     const proj = () =>
       project(
         [video("v1", { sourceOut: 5 })],
