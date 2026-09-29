@@ -23,6 +23,7 @@ describe("importing into an existing post", () => {
       durationSeconds: 10,
     });
     const previous = JSON.parse(JSON.stringify(state.project));
+    const previousSnapshot = JSON.parse(JSON.stringify(state.snapshot));
     const imported = {
       ...previous,
       takes: [
@@ -52,7 +53,7 @@ describe("importing into an existing post", () => {
           "tka:post-studio:project:v2:before-import:import-history"
         )!
       )
-    ).toEqual(previous);
+    ).toEqual(previousSnapshot);
     state.undo();
     expect(state.project).toEqual(previous);
     expect(state.mediaUrl(previous.takes[0].id)).toBe("/before.mp4");
@@ -74,5 +75,66 @@ describe("importing into an existing post", () => {
     expect(state.project).toBe(previous);
     expect(state.canUndo).toBe(false);
     state.dispose();
+  });
+
+  it("carries a map into a same-media reimport with a new take id and key", () => {
+    const state = editor();
+    state.addCatalogVideo({
+      videoId: "same-media",
+      label: "Old label",
+      url: "/same.mp4",
+      durationSeconds: 10,
+    });
+    const previous = state.takes[0]!;
+    state.editTiming(previous.id, (timing) => ({
+      ...timing,
+      sections: [{ ...timing.sections[0]!, taps: [2, 4] }],
+    }));
+    const imported = {
+      ...state.project,
+      takes: [
+        {
+          ...previous,
+          id: "new-id",
+          takeKey: "new-stable-key",
+          label: "New label",
+        },
+      ],
+      tracks: state.project.tracks.map((track) => ({
+        ...track,
+        items: track.items.map((item) =>
+          item.kind === "video" ? { ...item, takeId: "new-id" } : item
+        ),
+      })),
+    };
+    state.importProject(imported);
+    expect(state.timing("new-id")?.takeKey).toBe("new-stable-key");
+    expect(state.timing("new-id")?.sections[0]?.taps).toEqual([2, 4]);
+    expect(state.snapshot.timings?.["new-id"]?.sections[0]?.taps).toEqual([
+      2, 4,
+    ]);
+  });
+
+  it("takes a newer embedded backup map over the same id's older local map", () => {
+    const state = editor();
+    state.addCatalogVideo({
+      videoId: "same-id",
+      label: "Take",
+      url: "/same.mp4",
+      durationSeconds: 10,
+    });
+    const take = state.takes[0]!;
+    const local = state.timing(take.id)!;
+    const backupTiming = {
+      ...local,
+      updatedAt: local.updatedAt + 100,
+      sections: [{ ...local.sections[0]!, taps: [3, 6] }],
+    };
+    state.importProject({
+      ...state.project,
+      timings: { [take.id]: backupTiming },
+      updatedAt: state.project.updatedAt + 100,
+    });
+    expect(state.timing(take.id)?.sections[0]?.taps).toEqual([3, 6]);
   });
 });

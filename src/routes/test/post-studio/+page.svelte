@@ -24,6 +24,11 @@
   import { ShortcutRegistry } from "$lib/shared/keyboard/services/shortcut-registry";
   import { registerEditHistoryShortcuts } from "$lib/shared/keyboard/registration/register-edit-history-shortcuts";
   import { keyboardShortcutState } from "$lib/shared/keyboard/state/keyboard-shortcut-state.svelte";
+  import type { PostProject } from "$lib/shared/media-composition/domain/post-project";
+  import {
+    loadPostDraft,
+    savePostDraft,
+  } from "$lib/shared/media-composition/services/post-draft-storage";
 
   const SEQUENCE_WORD = "ΩΛ-XJΩΛ-XJΩΛ-XJΩΛ-XJ";
   const SEQUENCE_ID = "ΩΛ-XJ";
@@ -33,6 +38,9 @@
   const VIDEO_ID = "post-studio-omlam-xj-recovered-cut";
 
   let sequence = $state<SequenceData | null>(null);
+  let initialProject = $state<PostProject | undefined>(undefined);
+  let diskDrafts = $state(false);
+  let draftLoadError = $state<string | null>(null);
   let cardPreviewUrl = $state<string | null>(null);
   let animationPreviewUrl = $state<string | null>(null);
   let animationPreviewType = $state<"video" | "image">("video");
@@ -88,10 +96,13 @@
     ).__tkaLoadProgress?.(100);
     registerLoopDetector(loopDetector);
     try {
-      const loaded = await getBrowseLoader().loadFullSequenceData(
-        SEQUENCE_WORD,
-        SEQUENCE_ID
-      );
+      const [loaded, draft] = await Promise.all([
+        getBrowseLoader().loadFullSequenceData(SEQUENCE_WORD, SEQUENCE_ID),
+        loadPostDraft(SEQUENCE_ID),
+      ]);
+      initialProject = draft.project ?? undefined;
+      diskDrafts = draft.diskAvailable;
+      draftLoadError = draft.error;
       if (!loaded)
         throw new Error("The visual fixture is no longer published.");
       const hydrated = await hydrateSequence(loaded);
@@ -153,6 +164,9 @@
   {:else}
     <PostStudio
       {sequence}
+      {initialProject}
+      onSaveDraft={diskDrafts ? savePostDraft : undefined}
+      {draftLoadError}
       {cardPreviewUrl}
       {animationPreviewUrl}
       {animationPreviewType}

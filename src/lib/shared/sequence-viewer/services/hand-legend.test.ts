@@ -7,7 +7,7 @@ describe("hand legend", () => {
       lead: "Mirror me.",
       swatch: "#ED1C24",
       rest: "is your right hand.",
-      spoken: "Mirror me. The color on your right is your right hand.",
+      spoken: "Mirror me. This color represents your right hand.",
     });
   });
 

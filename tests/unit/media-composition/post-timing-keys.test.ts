@@ -46,7 +46,7 @@ describe("Timing keys", () => {
     return event;
   }
 
-  it("taps on T with a checkbox focused and leaves it Space", () => {
+  it("taps on T and plays on Space with a checkbox focused", () => {
     const harness = createPostTimingSessionHarness();
     dispose = harness.dispose;
     // The test setup stubs document.createElement; parsed markup is real.
@@ -57,9 +57,9 @@ describe("Timing keys", () => {
     const tap = press(box!, "t", harness.session.handleKey);
     expect(tap.defaultPrevented).toBe(true);
     expect(harness.tapCount()).toBe(1);
-    // Space still toggles it from the keyboard.
+    // Space controls playback rather than toggling the retained checkbox.
     const space = press(box!, " ", harness.session.handleKey);
-    expect(space.defaultPrevented).toBe(false);
+    expect(space.defaultPrevented).toBe(true);
 
     // A text field keeps its keys.
     const typed = press(field!, "t", harness.session.handleKey);
@@ -67,14 +67,14 @@ describe("Timing keys", () => {
     expect(harness.tapCount()).toBe(1);
   });
 
-  it("leaves Space to a focused disclosure so it opens", () => {
+  it("plays on Space with a disclosure focused", () => {
     const harness = createPostTimingSessionHarness();
     dispose = harness.dispose;
     document.body.innerHTML = `<details><summary>Keys</summary><p>T taps</p></details>`;
     const summary = document.body.querySelector("summary")!;
 
     const space = press(summary, " ", harness.session.handleKey);
-    expect(space.defaultPrevented).toBe(false);
+    expect(space.defaultPrevented).toBe(true);
     // T still taps from there.
     const tap = press(summary, "t", harness.session.handleKey);
     expect(tap.defaultPrevented).toBe(true);

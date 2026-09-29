@@ -4,6 +4,7 @@ import {
   PostTakeSchema,
 } from "$lib/shared/media-composition/domain/post-plan";
 import { BREAKDOWN_GEOMETRY } from "$lib/shared/media-composition/domain/post-studio-presets";
+import { TakeTimingSchema } from "$lib/shared/media-composition/domain/take-timing";
 
 /**
  * A post as Austen edits it on the timeline: tracks of items, InShot style.
@@ -584,6 +585,8 @@ export const PostProjectSchema = z
     schemaVersion: z.literal(POST_PROJECT_SCHEMA_VERSION),
     sequenceId: IdSchema,
     takes: z.array(PostTakeSchema),
+    /** Maps travel with a post, keyed by the take id they were edited against. */
+    timings: z.record(z.string(), TakeTimingSchema).optional(),
     images: z.array(PostImageSchema).optional(),
     fonts: z.array(PostFontSchema).optional(),
     importSource: z
@@ -604,6 +607,8 @@ export const PostProjectSchema = z
     canvas: z.enum(POST_CANVAS_RATIOS).optional(),
     /** What fills the frame where no item covers it; dark when absent. */
     background: z.enum(POST_BACKGROUNDS).optional(),
+    /** Reflect the post's layout and footage for a mirrored teaching view. */
+    mirrored: z.boolean().optional(),
     updatedAt: z.number().finite().int().nonnegative(),
   })
   .strict()

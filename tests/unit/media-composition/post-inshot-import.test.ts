@@ -144,6 +144,30 @@ function fixture() {
 }
 
 describe("recovered InShot import", () => {
+  it("gives prepared cuts stable media keys across reimports", () => {
+    const options = fixture();
+    const first = importRecoveredInShotDraft(options);
+    const again = importRecoveredInShotDraft({
+      ...options,
+      now: options.now + 500,
+    });
+    expect(again.takes.map((take) => take.takeKey)).toEqual(
+      first.takes.map((take) => take.takeKey)
+    );
+    expect(first.takes[0]?.takeKey).not.toBe(first.takes[1]?.takeKey);
+    const changed = importRecoveredInShotDraft({
+      ...options,
+      bindings: {
+        ...options.bindings,
+        "main-2": {
+          ...options.bindings["main-2"]!,
+          durationSeconds: 49.1,
+        },
+      },
+    });
+    expect(changed.takes[1]?.takeKey).not.toBe(first.takes[1]?.takeKey);
+    expect(changed.takes[0]?.takeKey).toBe(first.takes[0]?.takeKey);
+  });
   it.skipIf(!process.env.INSHOT_RECOVERY_DIR)(
     "accepts the recovered draft when locally available",
     () => {

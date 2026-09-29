@@ -100,6 +100,13 @@ function requireAsset(
     throw new Error(`InShot source asset is absent from manifest: ${path}`);
 }
 
+function preparedTakeKey(
+  asset: InShotAssetManifestEntry,
+  binding: InShotMediaBinding
+): string {
+  return `inshot:v2:${asset.sha256.toLowerCase()}:${binding.sourceOffsetSeconds}:${binding.durationSeconds}`;
+}
+
 function bindingFor(
   id: string,
   bindings: ImportRecoveredInShotOptions["bindings"]
@@ -329,7 +336,7 @@ export function importRecoveredInShotDraft(
       id,
       label: binding.label,
       ref: binding.ref,
-      takeKey: `inshot:${id}`,
+      takeKey: preparedTakeKey(assets.get(path)!, binding),
       durationSeconds: binding.durationSeconds,
     });
     main.push({
@@ -372,7 +379,7 @@ export function importRecoveredInShotDraft(
     id: scopedId("pip-1"),
     label: pipBinding.label,
     ref: pipBinding.ref,
-    takeKey: scopedId("pip-1"),
+    takeKey: preparedTakeKey(assets.get(pipPath)!, pipBinding),
     durationSeconds: pipBinding.durationSeconds,
   });
   const pip: PostVideoItem = {

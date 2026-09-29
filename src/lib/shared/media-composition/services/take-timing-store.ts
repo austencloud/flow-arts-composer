@@ -4,6 +4,7 @@ import {
   takeTimingFromLegacyMarks,
   type TakeTiming,
 } from "$lib/shared/media-composition/domain/take-timing";
+import type { SaveResult } from "$lib/shared/media-composition/services/post-project-store";
 
 /**
  * Saves each take's timing on this device, keyed by sequence and take.
@@ -75,16 +76,35 @@ export function loadTakeTiming(
   return parsed.data;
 }
 
-export function saveTakeTiming(timing: TakeTiming): void {
+export function saveTakeTiming(timing: TakeTiming): SaveResult {
   const store = storage();
-  if (!store) return;
+  if (!store) return { ok: false, error: "Device storage is unavailable." };
   try {
-    store.setItem(
-      storageKey(timing.sequenceId, timing.takeKey),
-      JSON.stringify(timing)
-    );
-  } catch {
-    // Quota or private browsing: the timing still drives this session.
+    const key = storageKey(timing.sequenceId, timing.takeKey);
+    const next = JSON.stringify(timing);
+    const previous = store.getItem(key);
+    if (previous !== null && previous !== next) {
+      store.setItem(`${key}:previous`, previous);
+    }
+    store.setItem(key, next);
+    if (store.getItem(key) !== next) {
+      return {
+        ok: false,
+        error: "The take timing could not be verified in device storage.",
+      };
+    }
+    return { ok: true };
+  } catch (cause) {
+    return {
+      ok: false,
+      error:
+        cause &&
+        typeof cause === "object" &&
+        "message" in cause &&
+        typeof cause.message === "string"
+          ? cause.message
+          : "The take timing could not be saved on this device.",
+    };
   }
 }
 

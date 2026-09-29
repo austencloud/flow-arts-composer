@@ -504,19 +504,7 @@ export function createPostTimingSession(builder: TimingHost) {
       // A held key repeats; one press is one landing.
       if (!event.repeat) tap();
     } else if (event.key === " ") {
-      // Space presses a focused button, toggles a focused checkbox and opens
-      // a focused disclosure, so the keyboard can still work them - except
-      // Tap, which Austen clicks mid-take and would otherwise tap a second
-      // time.
-      const target = event.target;
-      if (
-        (target instanceof HTMLButtonElement &&
-          !target.hasAttribute("data-space-plays")) ||
-        target instanceof HTMLInputElement ||
-        (target instanceof HTMLElement && target.localName === "summary")
-      ) {
-        return;
-      }
+      // Playback keeps Space even after a timing control has retained focus.
       event.preventDefault();
       if (!event.repeat) togglePlay();
     } else if (event.key === ",") {

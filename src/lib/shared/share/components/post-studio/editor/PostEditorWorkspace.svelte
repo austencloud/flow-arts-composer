@@ -10,7 +10,8 @@
   import { simplifyRepeatedWord } from "$lib/shared/foundation/utils/word-simplifier";
   import { deriveWord } from "$lib/shared/foundation/services/word-deriver";
   import { getSequenceVideosStore } from "$lib/shared/video-collaboration/state/sequence-videos-store.svelte";
-  import { createHandLabeledCard } from "$lib/shared/sequence-viewer/services/hand-labeled-card.svelte";
+  import { createPostSequenceView } from "$lib/shared/media-composition/services/post-sequence-view.svelte";
+  import { mirrorPostProject } from "$lib/shared/media-composition/domain/post-project-mirror";
   import {
     DEFAULT_HAND_LABELING,
     type HandLabeling,
@@ -41,6 +42,7 @@
     type PostItem,
     type PostItemKind,
     type PostKeyframeChannel,
+    type PostProject,
     type PostVideoItem,
   } from "$lib/shared/media-composition/domain/post-project";
   import {
@@ -120,6 +122,13 @@
     loadPostProjectFonts,
   } from "$lib/shared/media-composition/services/inshot-recovery-package";
   import { createCropSession } from "./post-crop-session.svelte";
+  import { createPostDraftAutosave } from "$lib/shared/media-composition/services/post-draft-storage";
+  import {
+    parsePostStudioBackup,
+    serializePostStudioBackup,
+  } from "$lib/shared/media-composition/services/post-project-backup";
+  import { downloadBlobToDisk } from "$lib/shared/foundation/services/file-downloader";
+  import PostDraftStatus from "./PostDraftStatus.svelte";
   import {
     adjacentStepSeconds,
     clipSteps,
@@ -152,6 +161,9 @@
   interface Props {
     active: boolean;
     sequence: SequenceData;
+    initialProject?: PostProject;
+    onSaveDraft?: (project: PostProject) => Promise<void>;
+    draftLoadError?: string | null;
     cardPreviewUrl: string | null;
     animationPreviewUrl: string | null;
     animationPreviewType: "video" | "image";
@@ -175,6 +187,9 @@
   let {
     active,
     sequence,
+    initialProject,
+    onSaveDraft,
+    draftLoadError = null,
     cardPreviewUrl,
     animationPreviewUrl,
     animationPreviewType,
@@ -222,12 +237,46 @@
   let overlayPainter = $state.raw<PostStudioLayerPainter | null>(null);
 
   const editor = createPostEditorState({
+    initialProject,
     getSequence: () => sequence,
     getCatalogVideo: (videoId) =>
       catalog.find((video) => video.videoId === videoId) ?? null,
     hasAnimationOverlay: () => overlayPainter !== null,
   });
   const session = createPostTimingSession(editor);
+  let draftSaving = $state(false);
+  let draftError = $state<string | null>(draftLoadError);
+  const draftAutosave = onSaveDraft
+    ? createPostDraftAutosave(onSaveDraft, (saving, error) => {
+        draftSaving = saving;
+        draftError = error;
+      })
+    : null;
+
+  $effect(() => {
+    void editor.saveRevision;
+    if (draftAutosave) untrack(() => draftAutosave.submit(editor.snapshot));
+  });
+  onDestroy(() => draftAutosave?.dispose());
+
+  function protectUnsavedDraft(event: BeforeUnloadEvent): void {
+    if (!draftSaving && !draftError && !editor.saveError) return;
+    event.preventDefault();
+    event.returnValue = "";
+  }
+
+  async function downloadDraft(): Promise<void> {
+    const blob = new Blob([serializePostStudioBackup(editor.snapshot)], {
+      type: "application/json",
+    });
+    const result = await downloadBlobToDisk(
+      blob,
+      `${sequence.id}-mapped.post-studio.json`
+    );
+    if (!result.success)
+      draftError =
+        "Could not download the backup. Keep this editor open and try again.";
+  }
   /** The post's size in pixels, from its shape. */
   const outputSize = $derived(postOutputSize(editor.project.canvas));
 
@@ -275,9 +324,10 @@
     }
     return DEFAULT_HAND_LABELING;
   });
-  const labeledCard = createHandLabeledCard({
+  const labeledCard = createPostSequenceView({
     getSequence: () => sequence,
     getLabeling: () => handLabeling,
+    getMirrored: () => editor.project.mirrored ?? false,
   });
   const displaySequence = $derived(labeledCard.sequence);
 
@@ -340,16 +390,26 @@
   }
 
   let overlayVersion = 0;
+  let overlaySequence = $state.raw<SequenceData | null>(null);
+  let overlayError = $state<string | null>(null);
   $effect(() => {
     const drawn = displaySequence;
     const version = ++overlayVersion;
+    overlayError = null;
     void loadAnimationOverlayPainter(drawn)
       .then((painter) => {
-        if (version === overlayVersion) overlayPainter = painter;
+        if (version === overlayVersion) {
+          overlayPainter = painter;
+          overlaySequence = drawn;
+        }
       })
       .catch((error: unknown) => {
         console.error("[PostStudio] Beat overlay unavailable:", error);
-        if (version === overlayVersion) overlayPainter = null;
+        if (version === overlayVersion) {
+          overlayPainter = null;
+          overlayError =
+            "Could not prepare the animation. Reload the saved post to retry.";
+        }
       });
   });
 
@@ -580,6 +640,12 @@
     Boolean(editor.compiled) &&
       editor.durationSeconds > 0 &&
       !exporting &&
+      !labeledCard.pending &&
+      !labeledCard.error &&
+      (!editor.project.tracks.some((track) =>
+        track.items.some((item) => item.kind === "moves")
+      ) ||
+        (overlaySequence === displaySequence && !overlayError)) &&
       !sharedSurfaces?.moving
   );
 
@@ -1056,6 +1122,19 @@
     readingFile = true;
     fileError = "";
     try {
+      const backupFile = selected.find((file) =>
+        file.name.endsWith(".post-studio.json")
+      );
+      const backup = backupFile
+        ? parsePostStudioBackup(await backupFile.text(), sequence.id)
+        : null;
+      if (backup) {
+        const files = new Map(selected.map((file) => [file.name, file]));
+        await loadPostProjectFonts(backup, files);
+        editor.importProject(backup, files);
+        activeTool = null;
+        return;
+      }
       if (!selected.some((file) => file.name.endsWith(".post-studio.json"))) {
         const files = new Map(selected.map((file) => [file.name, file]));
         await loadPostProjectFonts(editor.project, files);
@@ -1200,7 +1279,12 @@
     const field = target.closest("input, textarea, select");
     return (
       field !== null &&
-      !(field instanceof HTMLInputElement && field.type === "range")
+      !(
+        field instanceof HTMLInputElement &&
+        ["range", "checkbox", "radio", "button", "submit", "reset"].includes(
+          field.type
+        )
+      )
     );
   }
 
@@ -1222,6 +1306,33 @@
         )
       )
     );
+  }
+
+  /** Playback owns Space before focused buttons and popovers can activate. */
+  function handlePlaybackKey(event: KeyboardEvent): void {
+    if (
+      !active ||
+      exporting ||
+      event.key !== " " ||
+      event.ctrlKey ||
+      event.metaKey ||
+      event.altKey ||
+      isTyping(event.target)
+    )
+      return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    if (event.repeat) return;
+    if (showTimingStage) session.togglePlay();
+    else if (cropMode) toggleCropPlayback();
+    else editor.togglePlayback();
+  }
+
+  function mirrorWholePost(): void {
+    session.pause();
+    editor.pause();
+    keyCurveOpen = false;
+    editor.edit(mirrorPostProject);
   }
 
   /**
@@ -1250,11 +1361,6 @@
     }
     if (cropMode && handleCropKey(event)) return;
     switch (event.key) {
-      case " ":
-        if (event.repeat || isControl(event.target)) return;
-        event.preventDefault();
-        editor.togglePlayback();
-        return;
       case "s":
       case "S":
         if (event.repeat) return;
@@ -1347,11 +1453,6 @@
    */
   function handleCropKey(event: KeyboardEvent): boolean {
     switch (event.key) {
-      case " ":
-        if (event.repeat || isControl(event.target)) return true;
-        event.preventDefault();
-        toggleCropPlayback();
-        return true;
       case "Enter":
         if (
           event.repeat ||
@@ -1608,7 +1709,11 @@
   }
 
   async function renderPost(): Promise<boolean> {
-    if (exporting || !editor.compiled || editor.durationSeconds <= 0) {
+    if (!canRender) {
+      exportError =
+        labeledCard.error ??
+        overlayError ??
+        "The animation is still being prepared. Try again in a moment.";
       return false;
     }
     session.pause();
@@ -1706,7 +1811,27 @@
   });
 </script>
 
-<svelte:window onkeydown={handleKey} />
+<svelte:window
+  onkeydowncapture={handlePlaybackKey}
+  onkeydown={handleKey}
+  onbeforeunload={protectUnsavedDraft}
+/>
+
+{#snippet draftStatus()}
+  {#if labeledCard.error}
+    <span role="alert">{labeledCard.error}</span>
+  {:else if editor.project.mirrored && labeledCard.pending}
+    <span role="status">Preparing mirrored animation and cards…</span>
+  {/if}
+  <PostDraftStatus
+    saving={draftSaving}
+    error={draftError ?? editor.saveError}
+    disk={!!onSaveDraft}
+    onBackup={() => void downloadDraft()}
+    onRestore={() => recoveryInput?.click()}
+    onRetry={() => draftAutosave?.retry()}
+  />
+{/snippet}
 
 {#snippet cropActions()}
   <div class="crop-actions">
@@ -1724,6 +1849,9 @@
   <PostEditorTopBar
     {editor}
     {exporting}
+    {draftStatus}
+    onMirror={mirrorWholePost}
+    mirrored={editor.project.mirrored ?? false}
     onExport={openExport}
     onImport={() => {
       if (!readingFile) recoveryInput?.click();
@@ -1867,6 +1995,7 @@
         {t("post_editor_back_to_editing")}
       </PanelButton>
     </div>
+    {@render draftStatus()}
     <PostTimingPanel {session} />
   </div>
 {/snippet}

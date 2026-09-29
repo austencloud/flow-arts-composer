@@ -43,21 +43,44 @@ describe("loadPostProject / savePostProject", () => {
   });
 
   it("rejects a saved payload whose own sequenceId does not match the key", () => {
-    const mismatched = createEmptyPostProject({ sequenceId: "seq-a", now: NOW });
+    const mismatched = createEmptyPostProject({
+      sequenceId: "seq-a",
+      now: NOW,
+    });
     localStorage.setItem(`${PREFIX}seq-b`, JSON.stringify(mismatched));
     expect(loadPostProject("seq-b")).toBeNull();
   });
 
-  it("swallows a storage error when saving", () => {
+  it("reports a storage error without replacing the recoverable project", () => {
+    const saved = createEmptyPostProject({ sequenceId: "seq", now: NOW });
+    expect(savePostProject(saved)).toEqual({ ok: true });
     const setItem = vi
       .spyOn(Storage.prototype, "setItem")
       .mockImplementation(() => {
         throw new Error("Quota exceeded");
       });
-    expect(() =>
-      savePostProject(createEmptyPostProject({ sequenceId: "seq", now: NOW }))
-    ).not.toThrow();
+    expect(savePostProject({ ...saved, updatedAt: NOW + 1 })).toEqual({
+      ok: false,
+      error: "Quota exceeded",
+    });
     setItem.mockRestore();
+    expect(loadPostProject("seq")).toEqual(saved);
+  });
+
+  it("keeps the previous version and checks what storage actually returned", () => {
+    const saved = createEmptyPostProject({ sequenceId: "seq", now: NOW });
+    expect(savePostProject(saved).ok).toBe(true);
+    expect(savePostProject({ ...saved, updatedAt: NOW + 1 }).ok).toBe(true);
+    expect(JSON.parse(localStorage.getItem(`${PREFIX}previous:seq`)!)).toEqual(
+      saved
+    );
+    const getItem = vi
+      .spyOn(Storage.prototype, "getItem")
+      .mockImplementation(() => null);
+    expect(savePostProject({ ...saved, updatedAt: NOW + 2 })).toMatchObject({
+      ok: false,
+    });
+    getItem.mockRestore();
   });
 });
 
