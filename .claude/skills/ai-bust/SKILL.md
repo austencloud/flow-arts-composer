@@ -1,6 +1,5 @@
-<!-- managed by @austencloud/claude-skills — do not edit manually, run: npx @austencloud/claude-skills sync -->
-
 ---
+# managed by @austencloud/claude-skills - do not edit manually, run: npx @austencloud/claude-skills sync
 description: Use while writing or reviewing user-facing text to catch AI writing patterns, including structural repetition across pages
 ---
 
