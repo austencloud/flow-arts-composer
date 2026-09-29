@@ -24,7 +24,6 @@
   import type { IToolPanelMethods } from "../types/create-module-types";
   import { navigationState } from "$lib/shared/navigation/state/navigation-state.svelte";
   import type { LetterSource } from "$lib/shared/create/domain/spell-models";
-  import { UndoOperationType } from "../services/undo-manager";
   import { logConstructImmediateUndo } from "../../construct/services/construct-analytics";
 
   type CreateModuleState = ReturnType<typeof CreateModuleStateType>;
@@ -173,11 +172,12 @@
     !isInputMode && !ownsFullWorkspace && (hasWorkspaceContent || isAssembleTab)
   );
   const showCompactHistory = $derived(shouldShowWorkspace && useCompactToolbar);
-  const showClearRecovery = $derived(
+  const showHistoryRecovery = $derived(
     !hasWorkspaceContent &&
+      !isInputMode &&
+      !ownsFullWorkspace &&
       CreateModuleState.sequenceState.currentSequence === null &&
-      CreateModuleState.undoController?.nextUndoEntry?.type ===
-        UndoOperationType.CLEAR_SEQUENCE
+      (CreateModuleState.canUndo || CreateModuleState.canRedo)
   );
 
   // While the preview is showing, a click on anything that isn't a control or
@@ -371,7 +371,9 @@
   <!-- Tool Panel -->
   <div
     class="tool-panel-container"
-    class:has-clear-recovery={showClearRecovery && !showCompactHistory}
+    class:has-clear-recovery={showHistoryRecovery && !showCompactHistory}
+    style:--history-recovery-count={Number(CreateModuleState.canUndo) +
+      Number(CreateModuleState.canRedo)}
     bind:this={toolPanelElement}
   >
     <!-- On phones Undo/Redo sit in the grid panel's empty top-left corner,
@@ -381,9 +383,14 @@
         <UndoButton {CreateModuleState} onAction={handleWorkspaceUndo} quiet />
         <UndoButton {CreateModuleState} direction="redo" quiet />
       </div>
-    {:else if showClearRecovery}
+    {:else if showHistoryRecovery}
       <div class="clear-recovery-action">
-        <UndoButton {CreateModuleState} />
+        {#if CreateModuleState.canUndo}
+          <UndoButton {CreateModuleState} />
+        {/if}
+        {#if CreateModuleState.canRedo}
+          <UndoButton {CreateModuleState} direction="redo" />
+        {/if}
       </div>
     {/if}
 
@@ -619,7 +626,8 @@
 
   .tool-panel-container.has-clear-recovery {
     --picker-leading-action-offset: calc(
-      var(--min-touch-target, 48px) + var(--settings-spacing-sm, 8px)
+      var(--history-recovery-count, 1) *
+        (var(--min-touch-target, 48px) + var(--settings-spacing-sm, 8px))
     );
   }
 
@@ -646,6 +654,8 @@
   }
 
   .clear-recovery-action {
+    display: flex;
+    gap: var(--settings-spacing-sm, 8px);
     position: absolute;
     top: clamp(6px, 1.5cqh, 14px);
     left: clamp(6px, 1.5cqw, 18px);
