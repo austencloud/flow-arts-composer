@@ -42,6 +42,7 @@ const keys: Record<string, string> = {
   Terms: "site_terms",
   Privacy: "site_privacy",
   "Open Flow Arts Composer": "site_open_composer",
+  "Open Composer": "site_open_composer_short",
   "What is TKA?": "site_what_is_tka",
   "Notation for flow arts": "site_notation_for_flow_arts",
   "Notation for flow arts.": "site_notation_for_flow_arts_period",
