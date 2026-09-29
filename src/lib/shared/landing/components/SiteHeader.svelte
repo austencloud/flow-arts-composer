@@ -178,12 +178,6 @@
           icon: "fa-diagram-project",
           desc: "Generate exact flowers from level and ratio matrices",
         },
-        {
-          label: "CAPs",
-          href: "/notation/caps",
-          icon: "fa-circle-nodes",
-          desc: "The poi community's parallel discovery, 2009",
-        },
       ],
     },
     { label: "Composer", href: "/composer", icon: "fa-wand-magic-sparkles" },
