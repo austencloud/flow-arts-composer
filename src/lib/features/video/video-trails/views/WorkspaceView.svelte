@@ -4,6 +4,7 @@
   import { getVideoTrailsExporter } from "$lib/features/video/video-trails/get-video-trails-exporter";
   import { getLedThresholdDetector } from "$lib/features/video/video-trails/get-led-threshold-detector";
   import { getColorEndpointDetector } from "$lib/features/video/video-trails/get-color-endpoint-detector";
+  import { getDetectionCorrector } from "$lib/features/video/video-trails/get-detection-corrector";
   import { onMount, onDestroy } from "svelte";
   import { getVideoTrailsContext } from "../context/video-trails-context";
   import { DETECTOR_REGISTRY } from "../domain/types";
@@ -28,6 +29,7 @@
 
   const configMapper = getEffectConfigMapper() as typeof EffectConfigMapperModule;
   const tipAdapter = getVideoTipAdapter() as VideoTipAdapter;
+  const corrector = getDetectionCorrector();
 
   let canvasStack: EffectCanvasStack | undefined = $state(undefined);
 
@@ -39,6 +41,7 @@
   let canvasHeight = $state(360);
 
   let detectionFrameCounter = 0;
+  let lastProcessedFrame = -1;
   const DETECTION_EVERY_N_FRAMES = 3;
 
   let fireRenderer: WebGLFireRenderer | null = null;
@@ -113,6 +116,7 @@
 
   function handleVideoMetadata() {
     if (!videoEl) return;
+    resetTracking();
     canvasWidth = videoEl.videoWidth;
     canvasHeight = videoEl.videoHeight;
     trailsState.updateSourceMetadata({
@@ -218,6 +222,15 @@
     return (detectorMap[key] ?? getLedThresholdDetector)();
   }
 
+  function resetTracking(): void {
+    tipAdapter.reset();
+    lastProcessedFrame = -1;
+    leftTrailPoints = [];
+    rightTrailPoints = [];
+    const canvas = canvasStack?.getTrailCanvas();
+    canvas?.getContext("2d")?.clearRect(0, 0, canvas.width, canvas.height);
+  }
+
   function processCurrentFrame(): void {
     if (!videoEl || videoEl.readyState < 2) return;
 
@@ -231,13 +244,30 @@
     detectionFrameCounter++;
     if (detectionFrameCounter % DETECTION_EVERY_N_FRAMES !== 0) return;
 
+    if (frameIndex === lastProcessedFrame) return;
+    if (lastProcessedFrame >= 0 &&
+      (frameIndex < lastProcessedFrame || frameIndex - lastProcessedFrame > 15)) {
+      resetTracking();
+    }
+    lastProcessedFrame = frameIndex;
+
     if (!offscreenCtx || !offscreenCanvas) return;
 
     offscreenCtx.drawImage(videoEl, 0, 0, canvasWidth, canvasHeight);
     const frameData = offscreenCtx.getImageData(0, 0, canvasWidth, canvasHeight);
     const detector = getDetector();
-    const endpoints = detector.detect(frameData, trailsState.detectionConfig);
-    trailsState.storeFrameDetection(frameIndex, endpoints);
+    const tracked = tipAdapter.stabilizeEndpoints(
+      detector.detect(frameData, trailsState.detectionConfig),
+      frameIndex,
+      Math.max(canvasWidth, canvasHeight),
+    );
+    trailsState.storeFrameDetection(frameIndex, tracked.endpoints);
+    const endpoints = corrector.applyCorrections(
+      frameIndex, tracked.endpoints, trailsState.corrections,
+    );
+    if (trailsState.corrections[frameIndex]?.length) {
+      tipAdapter.reconcileCorrections(endpoints, frameIndex);
+    }
 
     const currentTime = performance.now();
     const effects = trailsState.effectConfig;
@@ -248,6 +278,15 @@
     if (effects.trails.enabled) {
       const trailSettings = configMapper.toTrailSettings(effects.trails);
       const maxPoints = trailSettings.maxPoints;
+
+      for (const key of tracked.breaks) {
+        const [propIndex, tipIndex] = key.split("-").map(Number);
+        if (propIndex === 0) {
+          leftTrailPoints = leftTrailPoints.filter((point) => point.tipIndex !== tipIndex);
+        } else {
+          rightTrailPoints = rightTrailPoints.filter((point) => point.tipIndex !== tipIndex);
+        }
+      }
 
       for (const pt of trailPoints) {
         if (pt.propIndex === 0) {
