@@ -36,6 +36,8 @@ export type ArrangeUndoOperationType =
  */
 export interface ArrangeGridSnapshot {
   cells: GridCell[];
+  gridRows: number;
+  gridCols: number;
 }
 
 /**

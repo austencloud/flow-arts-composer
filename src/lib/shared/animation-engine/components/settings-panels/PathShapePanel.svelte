@@ -1,6 +1,7 @@
 <script lang="ts">
   import { PATH_SHAPE_COLORS } from "$lib/shared/animation-engine/domain/path-shape-colors";
   import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import LinkChip from "$lib/shared/ui/components/LinkChip.svelte";
   import { onDestroy, type Snippet } from "svelte";
   import { getAnimationVisibilityManager } from "../../state/animation-visibility-state.svelte";
   import { getAnimationVisibilityContext } from "../../state/animation-visibility-context";
@@ -191,29 +192,17 @@
 {/if}
 
 {#if showHelp}
-  <a
-    class="path-help"
+  <LinkChip
     href="/guide/motion-paths"
     target="_blank"
     rel="noopener noreferrer"
   >
-    {t("animation_path_about")} <span class="sr-only">{t("animation_opens_new_tab")}</span>
-  </a>
+    {t("animation_path_about")}
+    <span class="sr-only">{t("animation_opens_new_tab")}</span>
+  </LinkChip>
 {/if}
 
 <style>
-  .path-help {
-    display: inline-flex;
-    align-items: center;
-    min-height: var(--min-touch-target, 44px);
-    color: var(--theme-accent);
-    font-size: var(--font-size-sm, 14px);
-    text-underline-offset: 3px;
-  }
-  .path-help:focus-visible {
-    outline: 2px solid var(--theme-accent);
-    outline-offset: 2px;
-  }
   .path-shape-grid.with-preview {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: var(--spacing-sm, 8px);

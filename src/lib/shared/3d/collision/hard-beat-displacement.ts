@@ -447,16 +447,18 @@ function holdPairRouting(
  * w_i = max_j raw_j·(1 - smoothstep(|t_i - t_j| / RAMP)). The result is at
  * least the raw value everywhere, never above the raw maximum, and its slope is
  * bounded by the kernel's, whatever the raw curve does. Distance wraps at the
- * loop seam when the sequence loops.
+ * loop seam when the sequence loops. `rampSteps` is RAMP; the staffs use
+ * HARD_BEAT_RAMP_STEPS, and the body clearance (`body-clearance.ts`) its own.
  */
-function widen(
+export function widen(
   raw: Float64Array,
   samplesPerStep: number,
-  loop: boolean
+  loop: boolean,
+  rampSteps: number = HARD_BEAT_RAMP_STEPS
 ): Float64Array {
   const n = raw.length;
   const out = new Float64Array(n);
-  const radius = Math.ceil(HARD_BEAT_RAMP_STEPS * samplesPerStep);
+  const radius = Math.ceil(rampSteps * samplesPerStep);
   for (let j = 0; j < n; j++) {
     const value = raw[j]!;
     if (value <= 0) continue;
@@ -464,8 +466,7 @@ function widen(
       let i = j + k;
       if (loop) i = ((i % n) + n) % n;
       else if (i < 0 || i >= n) continue;
-      const weight =
-        1 - smoothstep01(Math.abs(k) / samplesPerStep / HARD_BEAT_RAMP_STEPS);
+      const weight = 1 - smoothstep01(Math.abs(k) / samplesPerStep / rampSteps);
       const candidate = value * weight;
       if (candidate > out[i]!) out[i] = candidate;
     }
@@ -914,28 +915,56 @@ function appliedDepth(prop: HardBeatProp, depthM: number): number {
   return prop.plane === Plane.WALL ? depthM : 0;
 }
 
-interface Neighbours {
+/** How a dense score-time curve is sampled: sample i sits at score time
+ *  i / samplesPerStep. A looping score has stepCount * samplesPerStep samples;
+ *  one that plays once also has its closing pose. */
+export interface DenseScoreTiming {
+  readonly stepCount: number;
+  readonly loop: boolean;
+  readonly samplesPerStep: number;
+}
+
+/** The two dense samples around a score time, and the weight of the second. */
+export interface DenseSampleNeighbours {
   i0: number;
   i1: number;
   w: number;
 }
 
-function locate(track: HardBeatTrack, scoreTime: number): Neighbours {
-  const n = track.downstage.length;
+/** Wraps at the seam of a looping score; clamps to the ends of one that plays
+ *  once. */
+export function locateDenseSample(
+  timing: DenseScoreTiming,
+  sampleCount: number,
+  scoreTime: number
+): DenseSampleNeighbours {
+  const n = sampleCount;
   const time = Number.isFinite(scoreTime) ? scoreTime : 0;
-  if (track.loop) {
-    const x = wrapTime(time, track.stepCount) * track.samplesPerStep;
+  if (timing.loop) {
+    const x = wrapTime(time, timing.stepCount) * timing.samplesPerStep;
     const i0 = Math.min(n - 1, Math.floor(x));
     return { i0, i1: (i0 + 1) % n, w: clamp(x - i0, 0, 1) };
   }
-  const x = clamp(time, 0, track.stepCount) * track.samplesPerStep;
+  const x = clamp(time, 0, timing.stepCount) * timing.samplesPerStep;
   const i0 = Math.min(n - 1, Math.floor(x));
   return { i0, i1: Math.min(n - 1, i0 + 1), w: clamp(x - i0, 0, 1) };
 }
 
-function lerpAt(values: Float64Array, at: Neighbours): number {
+export function lerpDenseSample(
+  values: ArrayLike<number>,
+  at: DenseSampleNeighbours
+): number {
   return values[at.i0]! + (values[at.i1]! - values[at.i0]!) * at.w;
 }
+
+function locate(
+  track: HardBeatTrack,
+  scoreTime: number
+): DenseSampleNeighbours {
+  return locateDenseSample(track, track.downstage.length, scoreTime);
+}
+
+const lerpAt = lerpDenseSample;
 
 /**
  * The displacement at a score time: linear between dense samples, so it stays

@@ -26,6 +26,7 @@
   import type { Component } from "svelte";
   import { onMount } from "svelte";
   import LazyMount from "$lib/shared/components/LazyMount.svelte";
+  import LinkChip from "$lib/shared/ui/components/LinkChip.svelte";
   import SequenceHeroDemo from "$lib/shared/landing/components/SequenceHeroDemo.svelte";
   import FanSkeleton from "../../(public)/composer/_components/FanSkeleton.svelte";
   import PlayWithItSkeleton from "../../landing/components/PlayWithItSkeleton.svelte";
@@ -182,8 +183,9 @@
       <header class="editorial-header">
         <h1 class="page-title">Flow Arts Composer</h1>
         <p class="page-subtitle">
-          Free flow arts software for choreography, built on <a href="/notation"
-            >The Kinetic Alphabet</a
+          Free flow arts software for choreography, built on <LinkChip
+            size="inline"
+            href="/notation">The Kinetic Alphabet</LinkChip
           >
         </p>
       </header>
@@ -414,8 +416,8 @@
         real viewer, running live.
       </p>
       <div class="resource-row">
-        <a href="/create" class="resource-chip" data-sveltekit-reload
-          >Open a sequence in 3D</a
+        <LinkChip href="/create" data-sveltekit-reload
+          >Open a sequence in 3D</LinkChip
         >
       </div>
     </section>
@@ -604,8 +606,8 @@
         </p>
       </div>
       <div class="resource-row">
-        <a href="/notation" class="resource-chip">Read about the notation</a>
-        <a href="/about" class="resource-chip">About the project</a>
+        <LinkChip href="/notation">Read about the notation</LinkChip>
+        <LinkChip href="/about">About the project</LinkChip>
       </div>
     </section>
 

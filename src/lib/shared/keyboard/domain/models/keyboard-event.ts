@@ -10,7 +10,10 @@ import type {
   KeyModifier,
   KeyboardEventDetails,
 } from "../types/keyboard-types";
-import { isEditableKeyboardTarget } from "../shortcut-target-resolution";
+import {
+  isEditableKeyboardTarget,
+  isLayerOwnedKeyboardTarget,
+} from "../shortcut-target-resolution";
 
 export class NormalizedKeyboardEvent implements KeyboardEventDetails {
   key: string;
@@ -166,7 +169,19 @@ export class NormalizedKeyboardEvent implements KeyboardEventDetails {
     // OUTSIDE an open drawer must keep its existing dismiss-then-execute
     // behaviour. Both are preserved because this only matches when the event
     // target is itself within the drawer.
-    if (isSingleKeyShortcut && this.isInsideOpenDrawer()) return true;
+    //
+    // A drawer hands its bare keys back to the application by marking a body
+    // `data-keyboard-shortcuts-passthrough`; the step editor does this so
+    // Delete and Backspace keep deleting the selected step. The layer check
+    // honours that marker only inside the nearest open layer, so a dialog
+    // nested within the body still keeps its keys.
+    if (
+      isSingleKeyShortcut &&
+      this.isInsideOpenDrawer() &&
+      isLayerOwnedKeyboardTarget(this.target)
+    ) {
+      return true;
+    }
 
     // Shift-only shortcuts in input fields should be treated as typing.
     // Shift+1 = !, Shift+2 = @, Shift+A = A, etc.

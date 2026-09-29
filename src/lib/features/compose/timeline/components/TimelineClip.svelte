@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { onDestroy } from "svelte";
   /**
    * TimelineClip - A single clip on the timeline
    *
@@ -60,7 +61,7 @@
   const isResizing = $derived(dragMode === "resize");
 
   // Initialize interaction handlers
-  const { handleMoveStart } = createClipMove(
+  const { handleMoveStart, dispose: disposeMove } = createClipMove(
     () => clip,
     () => pixelsPerSecond,
     {
@@ -85,18 +86,18 @@
     onDragStart: () => (dragMode = "trim-right"),
     onDragEnd: () => (dragMode = null),
   };
-  const { handleTrimLeftStart } = createClipTrim(
+  const { handleTrimLeftStart, dispose: disposeTrimLeft } = createClipTrim(
     () => clip,
     () => width,
     trimLeftCallbacks
   );
-  const { handleTrimRightStart } = createClipTrim(
+  const { handleTrimRightStart, dispose: disposeTrimRight } = createClipTrim(
     () => clip,
     () => width,
     trimRightCallbacks
   );
 
-  const { handleResizeStart } = createClipResize(
+  const { handleResizeStart, dispose: disposeResize } = createClipResize(
     () => clip,
     () => pixelsPerSecond,
     {
@@ -105,13 +106,24 @@
     }
   );
 
+  onDestroy(() => {
+    // A cross-track move remounts this component while its window listener
+    // continues the same gesture until mouseup or window blur.
+    if (!isChangingTrack) disposeMove();
+    disposeTrimLeft();
+    disposeTrimRight();
+    disposeResize();
+  });
+
   // Event handlers
   function handleClick(e: MouseEvent) {
     e.stopPropagation();
     if (!isDragging) {
       getState().selectClip(clip.id, e.shiftKey || e.ctrlKey || e.metaKey);
       // Focus the parent timeline panel so keyboard shortcuts work
-      const panel = (e.currentTarget as HTMLElement).closest('.timeline-panel') as HTMLElement;
+      const panel = (e.currentTarget as HTMLElement).closest(
+        ".timeline-panel"
+      ) as HTMLElement;
       panel?.focus();
     }
   }
@@ -168,12 +180,9 @@
       case "ArrowRight":
         e.preventDefault();
         e.stopPropagation();
-        getState().moveClip(
-          clip.id,
-          clip.startTime + nudgeAmount,
-          undefined,
-          { skipSnap: true }
-        );
+        getState().moveClip(clip.id, clip.startTime + nudgeAmount, undefined, {
+          skipSnap: true,
+        });
         break;
       case "ArrowUp":
         e.preventDefault();
@@ -375,7 +384,8 @@
     outline: 2px solid var(--feature-edit, #cc5de8);
     outline-offset: -2px;
     box-shadow:
-      0 6px 20px color-mix(in srgb, var(--feature-edit, #cc5de8) 50%, transparent),
+      0 6px 20px
+        color-mix(in srgb, var(--feature-edit, #cc5de8) 50%, transparent),
       0 0 16px color-mix(in srgb, var(--feature-edit, #cc5de8) 40%, transparent);
     opacity: 0.85;
   }

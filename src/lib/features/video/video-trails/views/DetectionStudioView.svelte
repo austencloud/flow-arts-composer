@@ -1,6 +1,12 @@
 <script lang="ts">
-  import { onDestroy } from "svelte";
+  import { onDestroy, untrack } from "svelte";
   import { getVideoTrailsContext } from "../context/video-trails-context";
+  import {
+    historyForSource,
+    recordGuidedPlacement,
+    undoGuidedPlacement,
+    type GuidedPlacementUndoEntry,
+  } from "./guided-placement-undo";
   import EndpointEditor from "../components/EndpointEditor.svelte";
   import EndpointSidebar from "../components/EndpointSidebar.svelte";
   import FrameStepper from "../components/FrameStepper.svelte";
@@ -45,29 +51,28 @@
     toolMode === "guided" ? (GUIDED_SEQUENCE[guidedStepIdx] ?? null) : null,
   );
 
-  // Undo stack: tracks recent placements so they can be reversed
-  interface UndoEntry {
-    frame: number;
-    propIndex: 0 | 1;
-    tipIndex: number;
-    previousGuidedStepIdx: number;
-    previousFrame: number;
-  }
-  let undoStack = $state<UndoEntry[]>([]);
-  const MAX_UNDO = 50;
+  let undoStack = $state<GuidedPlacementUndoEntry[]>([]);
+  let historySourceUrl = trailsState.source?.url;
+
+  $effect(() => {
+    const sourceUrl = trailsState.source?.url;
+    if (sourceUrl === historySourceUrl) return;
+    historySourceUrl = sourceUrl;
+    undoStack = untrack(() => historyForSource(undoStack, sourceUrl ?? null));
+    guidedStepIdx = 0;
+  });
 
   function handleGuidedPlacement(x: number, y: number): void {
     const step = GUIDED_SEQUENCE[guidedStepIdx];
     if (!step) return;
-
-    // Push to undo stack before making changes
-    undoStack = [...undoStack.slice(-(MAX_UNDO - 1)), {
+    undoStack = recordGuidedPlacement(undoStack, trailsState, {
+      sourceUrl: trailsState.source?.url ?? null,
       frame: trailsState.currentFrame,
       propIndex: step.propIndex,
       tipIndex: step.tipIndex,
       previousGuidedStepIdx: guidedStepIdx,
       previousFrame: trailsState.currentFrame,
-    }];
+    });
 
     trailsState.correctEndpoint(trailsState.currentFrame, {
       propIndex: step.propIndex,
@@ -92,30 +97,10 @@
   }
 
   function undo(): void {
-    if (undoStack.length === 0) return;
-    const entry = undoStack[undoStack.length - 1]!;
-    undoStack = undoStack.slice(0, -1);
-
-    // Remove the correction that was placed
-    const frameCorrectionList = trailsState.corrections[entry.frame] ?? [];
-    const filtered = frameCorrectionList.filter(
-      (c) => !(c.propIndex === entry.propIndex && c.tipIndex === entry.tipIndex),
-    );
-
-    // We can't directly set corrections[frame] through the state factory,
-    // so we overwrite the entry with an "accepted" status (effectively removing it).
-    // But actually, the cleanest approach: place a correction that nullifies it.
-    // Since there's no "delete correction" method, we correct back to detected=null, corrected=null.
-    // Actually, we need to remove it. Let's use correctEndpoint to set status to "accepted" with
-    // no corrected position - the corrector will pass through the detected value (which is null).
-    // This effectively removes the point from currentEndpoints.
-    trailsState.correctEndpoint(entry.frame, {
-      propIndex: entry.propIndex,
-      tipIndex: entry.tipIndex,
-      detected: null,
-      corrected: null,
-      status: "accepted",
-    });
+    const result = undoGuidedPlacement(undoStack, trailsState, trailsState.source?.url ?? null);
+    undoStack = result.stack;
+    const entry = result.entry;
+    if (!entry) return;
 
     // Restore guided step and frame
     guidedStepIdx = entry.previousGuidedStepIdx;

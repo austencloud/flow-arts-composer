@@ -62,7 +62,9 @@ export class FCMTokenManager {
         // see hooks.client.ts), which made push impossible on the dev
         // origin. Register the dedicated FCM-only worker instead: it has
         // no fetch handler and caches nothing, so it can't break HMR.
-        // In production this branch never runs (/sw.js registers at boot).
+        // In production /sw.js registers once the page has loaded. A signed-in
+        // visitor who gets here first gets this worker for now; /sw.js then
+        // takes over the same registration, which keeps the push subscription.
         try {
           swRegistration = await navigator.serviceWorker.register(
             "/firebase-messaging-sw.js",

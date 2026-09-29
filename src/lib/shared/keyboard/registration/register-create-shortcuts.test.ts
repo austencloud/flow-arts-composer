@@ -1,9 +1,16 @@
 // @vitest-environment jsdom
-import { describe, it, expect, afterEach } from "vitest";
+import { describe, it, expect, afterEach, vi } from "vitest";
 import { registerCreateShortcuts } from "./register-create-shortcuts";
-import type { KeyboardShortcutManager } from "../services/keyboard-shortcut-manager";
+import { KeyboardShortcutManager } from "../services/keyboard-shortcut-manager";
+import { ShortcutRegistry } from "../services/shortcut-registry";
+import { setCreateModuleStateRef } from "$lib/shared/create/state/create-module-state-ref.svelte";
 import type { ShortcutRegistrationOptions } from "../domain/types/keyboard-types";
 import type { createKeyboardShortcutState } from "../state/keyboard-shortcut-state.svelte";
+
+vi.mock("$lib/shared/keyboard/keyboard-shortcut-analytics", () => ({
+  logKeyboardShortcutExecuted: vi.fn(),
+  logKeyboardShortcutFailed: vi.fn(),
+}));
 
 /**
  * The manager dismisses the top drawer and cancels the browser default for
@@ -254,5 +261,138 @@ describe("create delete shortcuts yield to a foreign open layer", () => {
     for (const id of DELETE_SHORTCUT_IDS) {
       expect(conditionOf(registered, id), id).toBe(false);
     }
+  });
+});
+
+/**
+ * The condition is one of two gates. KeyboardShortcutManager also asks
+ * NormalizedKeyboardEvent.shouldIgnore, which drops bare keys pressed inside a
+ * Drawer's `data-drawer-id` dialog, and the step editor is a Drawer. These
+ * cases press the key through the real manager so both gates have to agree.
+ */
+describe("create delete shortcuts through the shortcut manager", () => {
+  const removeStep = vi.fn();
+  let manager: KeyboardShortcutManager | null = null;
+
+  function startCreateShortcuts() {
+    manager = new KeyboardShortcutManager(new ShortcutRegistry());
+    registerCreateShortcuts(manager, {
+      settings: { enableSingleKeyShortcuts: true },
+    } as unknown as ReturnType<typeof createKeyboardShortcutState>);
+    manager.setContext("create");
+    manager.initialize();
+    // Step 3 is selected; the module's removal takes its array index. The
+    // registry evaluates every create condition on each key, so the transform
+    // shortcuts' sequence check needs an answer too.
+    const sequenceState = {
+      selectedStepData: { stepNumber: 3 },
+      getSelectedStepIndex: () => 2,
+      hasSequence: () => true,
+    };
+    setCreateModuleStateRef({
+      CreateModuleState: {
+        sequenceState,
+        getActiveTabSequenceState: () => sequenceState,
+      },
+      constructTabState: {},
+      panelState: {},
+      removeStep,
+    } as unknown as Parameters<typeof setCreateModuleStateRef>[0]);
+  }
+
+  function press(target: HTMLElement, key: "Delete" | "Backspace") {
+    target.focus();
+    const event = new KeyboardEvent("keydown", {
+      key,
+      bubbles: true,
+      cancelable: true,
+    });
+    target.dispatchEvent(event);
+    return event;
+  }
+
+  // Drawer.svelte stamps these attributes on its open <dialog>.
+  function mountDrawer(label: string, body: string): HTMLElement {
+    return mount(`
+      <dialog class="drawer-content" data-drawer-id="drawer-test" data-state="open"
+        open tabindex="-1" aria-modal="true" aria-label="${label}">
+        ${body}
+      </dialog>
+    `);
+  }
+
+  afterEach(() => {
+    manager?.dispose();
+    manager = null;
+    setCreateModuleStateRef(null);
+    removeStep.mockReset();
+    document.body.innerHTML = "";
+  });
+
+  it("remove the selected step from a control inside the step editor drawer", () => {
+    startCreateShortcuts();
+    const host = mountDrawer(
+      "Step editor panel",
+      `<div class="editor-body" data-keyboard-shortcuts-passthrough>
+        <button type="button" aria-label="Increase turns: Left">+</button>
+      </div>`
+    );
+    const control = host.querySelector("button")!;
+
+    for (const key of ["Delete", "Backspace"] as const) {
+      removeStep.mockReset();
+      const event = press(control, key);
+      expect(removeStep, key).toHaveBeenCalledExactlyOnceWith(2);
+      expect(event.defaultPrevented, key).toBe(true);
+    }
+  });
+
+  it("leave a control inside another drawer alone", () => {
+    startCreateShortcuts();
+    const host = mountDrawer(
+      "Customize",
+      `<button type="button" aria-pressed="false">Inverted</button>`
+    );
+    const chip = host.querySelector("button")!;
+
+    for (const key of ["Delete", "Backspace"] as const) {
+      const event = press(chip, key);
+      expect(removeStep, key).not.toHaveBeenCalled();
+      expect(event.defaultPrevented, key).toBe(false);
+    }
+  });
+
+  it("leave a layer nested inside the step editor alone", () => {
+    startCreateShortcuts();
+    const host = mountDrawer(
+      "Step editor panel",
+      `<div class="editor-body" data-keyboard-shortcuts-passthrough>
+        <div role="dialog" aria-label="Choose a prop">
+          <button type="button">Staff</button>
+        </div>
+      </div>`
+    );
+    const option = host.querySelector("button")!;
+
+    for (const key of ["Delete", "Backspace"] as const) {
+      const event = press(option, key);
+      expect(removeStep, key).not.toHaveBeenCalled();
+      expect(event.defaultPrevented, key).toBe(false);
+    }
+  });
+
+  it("leave Backspace to a text field inside the step editor", () => {
+    startCreateShortcuts();
+    const host = mountDrawer(
+      "Step editor panel",
+      `<div class="editor-body" data-keyboard-shortcuts-passthrough>
+        <input type="text" aria-label="Step note" value="left" />
+      </div>`
+    );
+    const field = host.querySelector("input")!;
+
+    const event = press(field, "Backspace");
+    expect(removeStep).not.toHaveBeenCalled();
+    expect(event.defaultPrevented).toBe(false);
   });
 });

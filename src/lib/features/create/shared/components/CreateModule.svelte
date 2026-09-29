@@ -482,7 +482,11 @@
           getSequenceState: () =>
             CreateModuleState?.getActiveTabSequenceState() ?? null,
           getCreateMode: () => navigationState.activeTab,
-          pushUndoSnapshot: (type) => CreateModuleState?.pushUndoSnapshot(type),
+          beginUndoSnapshot: (type, sourceState) =>
+            CreateModuleState?.beginUndoSnapshotForSequenceState(
+              type,
+              sourceState
+            ) ?? (() => {}),
           hapticService: getHapticFeedback(),
           setGridRotationDirection,
         });

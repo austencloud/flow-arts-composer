@@ -9,6 +9,10 @@ import {
   type PostStudioLayerPainter,
 } from "$lib/shared/media-composition/services/post-studio-layer-painter";
 import {
+  backdropLayer,
+  paintBlurredBackdrop,
+} from "$lib/shared/media-composition/services/post-backdrop-painter";
+import {
   calculateMediaFit,
   resolvePanOffset,
   type PixelRect,
@@ -176,7 +180,7 @@ function drawSource(
   );
 }
 
-function mediaDimensions(
+export function mediaDimensions(
   source: HTMLVideoElement | HTMLImageElement | HTMLCanvasElement
 ): { width: number; height: number } {
   if (source instanceof HTMLVideoElement) {
@@ -221,6 +225,49 @@ function layerElementForClip(
   return root.querySelector<HTMLElement>(
     `.media-layer[data-clip-id="${CSS.escape(clipId)}"]`
   );
+}
+
+function mediaIn(
+  layerElement: HTMLElement
+): HTMLVideoElement | HTMLImageElement | null {
+  return (
+    layerElement.querySelector<HTMLVideoElement>("video") ??
+    layerElement.querySelector<HTMLImageElement>("img")
+  );
+}
+
+/** The video or picture a clip shows, where the preview mounted it. */
+export function mediaForClip(
+  root: HTMLElement,
+  clipId: string
+): HTMLVideoElement | HTMLImageElement | null {
+  const layerElement = layerElementForClip(root, clipId);
+  return layerElement ? mediaIn(layerElement) : null;
+}
+
+/**
+ * The blurred background, under every layer: the main clip on screen, read
+ * from the same element its own layer draws.
+ */
+async function drawBackdrop(
+  context: CanvasRenderingContext2D,
+  input: RenderPostStudioFrameInput
+): Promise<void> {
+  const layer = backdropLayer(input.preset, input.layers);
+  const media = layer ? mediaForClip(input.root, layer.clipId) : null;
+  if (!layer || !media) return;
+  if (media instanceof HTMLVideoElement) {
+    await syncVideo(media, layer.sourceTimeSeconds);
+  } else if (!media.complete) {
+    await media.decode();
+  }
+  paintBlurredBackdrop(context, {
+    source: media,
+    sourceSize: mediaDimensions(media),
+    frame: { width: input.canvas.width, height: input.canvas.height },
+    transform: layer.transform,
+    opacity: layer.opacity,
+  });
 }
 
 /** Wait for the current pictograph's preparation, grid, and layout to commit. */
@@ -327,6 +374,7 @@ export async function renderPostStudioFrame(
   context.fillStyle = input.preset.output.backgroundColor;
   context.fillRect(0, 0, input.canvas.width, input.canvas.height);
   context.restore();
+  await drawBackdrop(context, input);
 
   const regionOrder = new Map(
     [...input.preset.regions]
@@ -459,9 +507,7 @@ export async function renderPostStudioFrame(
       applyLayerTransform(context, geometry);
       drawSource(context, card, geometry);
     } else {
-      const media =
-        layerElement.querySelector<HTMLVideoElement>("video") ??
-        layerElement.querySelector<HTMLImageElement>("img");
+      const media = mediaIn(layerElement);
       if (!media) {
         context.restore();
         continue;

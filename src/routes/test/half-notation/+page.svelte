@@ -22,6 +22,7 @@
 -->
 <script lang="ts">
   import TurnsColumn from "$lib/shared/pictograph/tka-glyph/components/TurnsColumn.svelte";
+  import LinkChip from "$lib/shared/ui/components/LinkChip.svelte";
 
   // Same swatch as TurnsColumn.svelte's STATIC_COLORS.light — the values
   // Austen actually looks at on a light background.
@@ -268,7 +269,7 @@
     <h1>Half-notation drawn mark — A/B</h1>
     <p class="intro">
       Pick the canonical drawn mark for halved motions — spec:
-      <a href="/docs/superpowers/specs/2026-07-16-half-notation-canon-design.md">2026-07-16-half-notation-canon-design.md</a>
+      <LinkChip size="inline" wrap href="/docs/superpowers/specs/2026-07-16-half-notation-canon-design.md">2026-07-16-half-notation-canon-design.md</LinkChip>
     </p>
   </header>
 
@@ -455,10 +456,6 @@
     font-size: 15px;
     color: #555;
     margin: 0;
-  }
-
-  .intro a {
-    color: #3d44b8;
   }
 
   section {

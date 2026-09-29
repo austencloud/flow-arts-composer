@@ -123,12 +123,12 @@ to be empty space, because the staff's end occupies it. A performer who turns
 side-on cannot stand in that point, so the chest moves away from it and the
 point the audience sees the isolation around stays open for the staff.
 
-The performer cannot do this yet. The chest only turns, and hard-beat
-displacement moves the staff and hand together, never the body. The reach
-lean in the scene-3d `AvatarAnimator` leans toward an arm target, and
+Before step 5 the performer could not do this. The chest only turned, and
+hard-beat displacement moves the staff and hand together, never the body. The
+reach lean in the scene-3d `AvatarAnimator` leans toward an arm target, and
 `avatar-head-clearance-policy.test.ts` holds it at 0 so unreachable targets
-cannot pull the spine into their path; the move needed here goes the other
-way, away from the point. Step 5 below adds it.
+cannot pull the spine into their path; this move goes the other way, away
+from the point. Step 5 below describes it.
 
 ## Formation spacing
 
@@ -243,13 +243,40 @@ Today's picture stays the same until step 4 turns a style on.
    direction, with the chest turn that pictures approve. The scoreboard runs
    both styles so neither regresses. The LED Baton gets a length scale like
    the Fire Staff's, which is a scene-3d patch change.
-5. **The body clears the isolation point.** When the chest would cover the
-   point a staff isolates around, the performer moves the chest off it
-   instead of moving the staff. Pictures settle which way the chest goes
-   (back, aside or a lean) and how the hips and feet follow; this joins the
-   hips-and-feet turn the performer review left for later. The check is the
-   together moves: their torso frames fall toward today's without hands
-   leaving the staff.
+5. **The body clears the isolation point.** Built on 2026-09-28 and turned
+   on only in the staff-grip lab (`clear=shift` or `clear=step`). Every other
+   host leaves it off, so their picture holds. `buildBodyClearanceTrack` in
+   `src/lib/shared/3d/collision/body-clearance.ts` plans the move in score
+   time. It samples the staffs at the performer's own length against
+   ellipses for the chest, waist and pelvis, then picks one of 24 directions
+   per sample. A turn penalty keeps the direction steady, and each move is
+   widened over half a step and capped at 30 cm. The head stays out of the
+   plan because it has its own dodge. `resolvePerformerContact` returns the
+   track and the current offset when asked with `clearBody`, and
+   `LiveSequencePerformer3D` hands it to `PerformerRig` through its
+   `bodyClearance` prop. On the scene-3d side, a patch change, `Avatar3D`
+   carries the offset from the grid frame into the world. `AvatarAnimator`
+   then moves the hips before the spine, arms and head solve. With `shift`
+   the feet stay planted and the legs bend back to them; with `step` the feet
+   travel with the body. The move holds only while the performer stands
+   still in legacy contact.
+
+   The contact scoreboard at the hug fit (67 cm), ch07 / ch18: torso frames
+   fell from 1,002 / 1,360 to 81 / 148, and head frames went from 16 / 130
+   to 14 / 131. Hands sat more than 3 cm off the staff on 1,089 / 1,615
+   frames, against 1,068 / 1,624 without the move. The planted feet drift at
+   most 1.2 cm. The biggest move is 17 cm, almost always sideways: six corpus
+   sequences move 12 to 17 cm, four more move 4 to 8 cm, and the rest stay
+   put. The lab's own collision readout cannot judge this, because it
+   measures the global 86.36 cm staff whatever length is drawn.
+
+   Austen, 2026-09-28, after whole-pose pictures of both modes: full stepping
+   is the long-term goal. Today's `step` slides the feet with the body. A real
+   step, where the foot lifts, lands and takes the weight, is future work. He
+   kept the head dodge as it is. Where the move leaves the staff tips in
+   front of the face (I, together-same), the dodge was already at its 24°
+   limit and now tips the head back instead of forward.
+
 6. **Spacing from reach.** Formations space each pair of neighbors by the sum
    of their reaches along the line between them, using their planes, in place
    of the fixed preset distances. This is also a scene-3d patch change.
@@ -260,7 +287,8 @@ staff length.
 
 ## Still open
 
-- Which way the chest moves to clear the isolation point, set in step 5.
+- Real stepping for step 5's `step` mode, and which hosts turn the body move
+  on, with which mode, until real steps exist.
 - How much chest turn the extension style's full reach may use, set in step 4.
 - What the drawn grid rings show once a hand's distance varies by direction.
   They follow the global staff length today (see Drawn grid above).

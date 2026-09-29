@@ -5,6 +5,7 @@
   import VtgReleaseVisual from "./VtgReleaseVisual.svelte";
   import ArchiveEntryResources from "./ArchiveEntryResources.svelte";
   import ArchiveRecordVisual from "./ArchiveRecordVisual.svelte";
+  import LinkChip from "$lib/shared/ui/components/LinkChip.svelte";
 
   let { entry }: { entry: ArchiveEntry } = $props();
   const artifact = $derived(archiveArtifact(entry));
@@ -55,19 +56,9 @@
           <p class="source-caution">{entry.evidenceNote}</p>
         {/if}
         {#if explore && entry.id !== "vtg"}
-          <a
-            class="explore-link"
-            href={explore.href}
-            target={explore.href.startsWith("/") ? undefined : "_blank"}
-            rel={explore.href.startsWith("/")
-              ? undefined
-              : "noopener noreferrer"}
+          <LinkChip class="explore-link" href={explore.href}
+            >{explore.label}</LinkChip
           >
-            {explore.label}
-            <span aria-hidden="true"
-              >{explore.kind === "original" ? "↗" : "→"}</span
-            >
-          </a>
           {#if explore.kind === "tool"}<p class="link-context">
               An interactive viewer built for this archive.
             </p>{/if}
@@ -182,27 +173,8 @@
     line-height: 1.75;
     margin: 0;
   }
-  a {
-    color: var(--theme-text);
-    text-underline-offset: 0.25em;
-    text-decoration-thickness: 1px;
-  }
-  a:hover {
-    color: var(--theme-accent);
-  }
-  a:focus-visible {
-    outline: 2px solid var(--theme-accent);
-    outline-offset: 4px;
-    border-radius: 2px;
-  }
-  .explore-link {
-    display: inline-flex;
-    gap: 0.6rem;
-    align-items: center;
-    min-height: 44px;
+  .entry-copy :global(.explore-link) {
     margin-top: 0.8rem;
-    font-size: var(--font-size-min, 0.875rem);
-    font-weight: 650;
   }
   .link-context {
     margin: 0;
