@@ -10,6 +10,7 @@ import {
   ScoreSeekDetector,
   resolvePerformerContact,
 } from "$lib/shared/3d/domain/performer-contact-displacement";
+import { fixedHandDistance } from "$lib/shared/3d/domain/performer-hand-distance";
 import { getAnimationVisibilityManager } from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
 import { propContinuityCorpus } from "../../tools/prop-continuity-corpus";
 
@@ -163,7 +164,7 @@ describe("performer contact", () => {
     expect(at().resetKey).toBe(lastBeat.resetKey);
   });
 
-  it("replans when the effort or the path shape moves the props", () => {
+  it("replans when the effort, the path shape or the hand distance moves the props", () => {
     const performer = performerFor("tnd-tog-opp-ekek");
     seek(performer, 1.3);
     const at = () => resolvePerformerContact(performer, { heightCm: 190.5 });
@@ -186,5 +187,61 @@ describe("performer contact", () => {
     } finally {
       paths.setPathPolicy(policy);
     }
+
+    // A grid style moves the hands in or out; the same distances again do not.
+    const restored = at();
+    const narrow = fixedHandDistance(0.35);
+    performer.setHandDistance({ left: narrow, right: narrow });
+    const narrowed = at();
+    expect(narrowed.track).not.toBe(restored.track);
+    expect(narrowed.resetKey).toBe(restored.resetKey + 1);
+    expect(at().track).toBe(narrowed.track);
+  });
+
+  it("steps the body back off its staffs only when a host asks", () => {
+    const performer = performerFor("tnd-tog-same-hhhh");
+    // Isolation at Jade's hug fit: every tip reaches its grid center.
+    const STAFF_M = 0.67;
+    const hand = fixedHandDistance(STAFF_M / 2);
+    performer.setHandDistance({ left: hand, right: hand });
+    seek(performer, 0.5);
+    const today = resolvePerformerContact(performer, { heightCm: 190.5 });
+    expect(today.bodyTrack).toBeNull();
+    expect(today.bodyOffset).toEqual({ x: 0, z: 0 });
+    const authored = resolvePerformerContact(performer, {
+      heightCm: 190.5,
+      displace: false,
+      clearBody: true,
+      staffLengthM: STAFF_M,
+    });
+    expect(authored.bodyTrack).toBeNull();
+    expect(authored.bodyOffset).toEqual({ x: 0, z: 0 });
+
+    const clear = (staffLengthM = STAFF_M) =>
+      resolvePerformerContact(performer, {
+        heightCm: 190.5,
+        clearBody: true,
+        staffLengthM,
+      });
+    const track = clear().bodyTrack!;
+    expect(track).not.toBeNull();
+    let peak = 0;
+    for (let i = 1; i < track.clearance.length; i++) {
+      if (track.clearance[i]! > track.clearance[peak]!) peak = i;
+    }
+    expect(track.clearance[peak]).toBeGreaterThan(0.05);
+    seek(performer, peak / track.samplesPerStep);
+    const deepest = clear();
+    expect(deepest.bodyTrack).toBe(track);
+    expect(Math.hypot(deepest.bodyOffset.x, deepest.bodyOffset.z)).toBeCloseTo(
+      track.clearance[peak]!,
+      9
+    );
+
+    // The same staff keeps the plan; another staff replans and resets.
+    expect(clear().resetKey).toBe(deepest.resetKey);
+    const shorter = clear(0.6);
+    expect(shorter.bodyTrack).not.toBe(track);
+    expect(shorter.resetKey).toBe(deepest.resetKey + 1);
   });
 });

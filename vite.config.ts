@@ -1062,14 +1062,19 @@ export default defineConfig(({ command, mode }) => ({
   // BUILD (Production optimization)
   // ============================================================================
   build: {
-    // Sourcemaps are generated only when BOTH are true: `build` asked for them
-    // (VITE_SOURCEMAP=true — `build:fast` never sets it), AND this build can
-    // actually upload them. That second condition matters because `npm run
-    // build` is shared: web-ci.yml's validate job, the three native pipelines
-    // (android/ios/capgo), and anyone's local machine all run it, and none of
-    // them have PostHog credentials. Generating ~1000 .map files for a build
-    // that can only throw them away is pure cost, so those builds skip the
-    // pass entirely.
+    // Sourcemaps are generated only when BOTH are true: the build environment
+    // asks for them (VITE_SOURCEMAP=true), AND this build can actually upload
+    // them. No package script sets VITE_SOURCEMAP. `build` set it until
+    // 2026-09-28, when maps cost the Cloudflare production build ~40 s and
+    // ~1 GB of memory while the upload failed anyway (the key lacks PostHog's
+    // error-tracking scope), so nothing reached PostHog. To symbolicate stack
+    // traces again, give the build a key with that scope and set
+    // VITE_SOURCEMAP=true in the Cloudflare Pages production environment.
+    // The second condition matters because `npm run build` is shared:
+    // web-ci.yml's validate job, the three native pipelines (android/ios/
+    // capgo), and anyone's local machine all run it, and none of them have
+    // PostHog credentials. Generating ~1000 .map files for a build that can
+    // only throw them away is pure cost, so those builds skip the pass.
     //
     // The security posture ("never ship original source") holds by belt and
     // braces: this gate means an uncredentialed build produces no maps at all,
