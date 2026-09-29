@@ -66,11 +66,13 @@
 
   const clamped = $derived(Math.min(max, Math.max(min, value)));
   const text = $derived(format ? format(clamped) : String(clamped));
+  const ends = $derived(
+    [min, max].map((end) => (format ? format(end) : String(end)))
+  );
   /** The longer end's reading holds the box's width. */
-  const widest = $derived.by(() => {
-    const ends = [min, max].map((end) => (format ? format(end) : String(end)));
-    return ends[0].length >= ends[1].length ? ends[0] : ends[1];
-  });
+  const widest = $derived(ends[0].length >= ends[1].length ? ends[0] : ends[1]);
+  /** A track that reads below zero is typed with a minus. */
+  const signed = $derived(/^\s*[-−]/.test(ends[0]));
 
   function fraction(amount: number): number {
     return max > min
@@ -167,6 +169,7 @@
         {text}
         parse={readTyped}
         sizer={widest}
+        {signed}
         {disabled}
         oncommit={setTyped}
       />

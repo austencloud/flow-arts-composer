@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
   mountHeldSlider,
   mountSpeedSlider,
+  mountTurnSlider,
 } from "./value-slider-harness.svelte";
 
 // vitest-setup.ts swaps document.createElement for canvas stubs that are not
@@ -177,6 +178,8 @@ describe("ValueSlider typed values", () => {
     flushSync();
     expect(fieldOf(target)!.value).toBe("1");
     expect(target.querySelector(".typeable .unit")?.textContent).toBe("×");
+    // The track runs below zero, but every speed reads above it.
+    expect(fieldOf(target)!.getAttribute("inputmode")).toBe("decimal");
 
     await press(typeInto(target, "2"), "Enter");
     expect(slider.value).toBe(1);
@@ -187,5 +190,20 @@ describe("ValueSlider typed values", () => {
     await press(field, "Enter");
     expect(field.getAttribute("aria-invalid")).toBe("true");
     expect(slider.value).toBe(1);
+  });
+
+  it("types a turn below zero on a keyboard that has a minus", async () => {
+    const target = host();
+    const slider = mountTurnSlider(target);
+    mounted = slider;
+
+    readingOf(target).click();
+    flushSync();
+    // A phone's number pad has no minus key.
+    expect(fieldOf(target)!.getAttribute("inputmode")).toBe("text");
+
+    await press(typeInto(target, "-4,5"), "Enter");
+    expect(slider.value).toBe(-4.5);
+    expect(readingOf(target).textContent).toBe("-4.5°");
   });
 });
