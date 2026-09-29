@@ -858,6 +858,9 @@
                 key={phase}
                 duration={DURATION.normal}
                 mode="swap"
+                label={phase === "pick-start"
+                  ? t("create_ui_choose_your_start_placement")
+                  : undefined}
               >
                 <div class="action-swap-state">
                   {#if phase === "add-step"}

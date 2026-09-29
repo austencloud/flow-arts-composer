@@ -164,7 +164,12 @@
      playing controls. -->
 <output data-testid="focus-after-swap">{focusAfterSwap}</output>
 <div data-testid="focus-stage">
-  <Crossfade key={focusKey} duration={80} mode="swap">
+  <Crossfade
+    key={focusKey}
+    duration={80}
+    mode="swap"
+    label={focusKey === "finished" ? "Playback finished" : undefined}
+  >
     {#if focusKey === "idle"}
       <button type="button" onclick={play}>Play</button>
     {:else if focusKey === "playing"}

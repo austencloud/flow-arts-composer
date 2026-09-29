@@ -498,6 +498,12 @@ import { getStepOperator } from "$lib/features/create/shared/get-step-operator";
   The outer crossfade morphs viewer ↔ editor; the editor's inner crossfade
   handles single ↔ multi. Blue/red turn controls stay mounted across editor
   modes, and the drawer close routes to whichever panel is active.
+
+  In editor mode Backspace and Delete keep deleting the selected step from
+  anywhere in this non-modal drawer, the drawer itself included: a click on
+  empty space such as the pictograph leaves focus on its <dialog>. Every other
+  open drawer or dialog, and any layer nested in this one, swallows them; see
+  isLayerOwnedKeyboardTarget in the keyboard domain.
 -->
 <CreatePanelDrawer
   {isOpen}
@@ -507,6 +513,7 @@ import { getStepOperator } from "$lib/features/create/shared/get-step-operator";
   closeOnBackdrop={false}
   focusTrap={false}
   autoFocus={false}
+  keyboardShortcutsPassthrough={drawerMode === "editor"}
   ariaLabel={mandalaSelection ? "Mandala viewer panel" : "Step editor panel"}
   onClose={handleActiveClose}
 >
@@ -523,12 +530,7 @@ import { getStepOperator } from "$lib/features/create/shared/get-step-operator";
           onClose={handleActiveClose}
         />
       {:else}
-        <!--
-          Backspace and Delete keep deleting the selected step from inside
-          this non-modal editor. Every other open drawer or dialog swallows
-          them; see isLayerOwnedKeyboardTarget in the keyboard domain.
-        -->
-        <div class="editor-body" data-keyboard-shortcuts-passthrough>
+        <div class="editor-body">
           <div class="top-zone">
             <Crossfade key={selectionMode} fill duration={DURATION.fast}>
               {#if isMultiSelect}

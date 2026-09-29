@@ -170,11 +170,13 @@ export class NormalizedKeyboardEvent implements KeyboardEventDetails {
     // behaviour. Both are preserved because this only matches when the event
     // target is itself within the drawer.
     //
-    // A drawer hands its bare keys back to the application by marking a body
-    // `data-keyboard-shortcuts-passthrough`; the step editor does this so
-    // Delete and Backspace keep deleting the selected step. The layer check
-    // honours that marker only inside the nearest open layer, so a dialog
-    // nested within the body still keeps its keys.
+    // A drawer hands its bare keys back to the application by carrying
+    // `data-keyboard-shortcuts-passthrough` (Drawer's
+    // `keyboardShortcutsPassthrough`); the step editor does this so Delete and
+    // Backspace keep deleting the selected step, even with focus on the drawer
+    // itself after a click on empty space. The layer check honours that marker
+    // only inside the nearest open layer, so a dialog nested within the drawer
+    // still keeps its keys.
     if (
       isSingleKeyShortcut &&
       this.isInsideOpenDrawer() &&

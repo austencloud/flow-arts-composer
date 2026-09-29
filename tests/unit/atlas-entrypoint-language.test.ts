@@ -35,7 +35,7 @@ describe("Kinetic Atlas public entry points", () => {
       readSource("src/routes/(public)/notation/poi/+page.svelte"),
     ];
     for (const source of contextualLinks) {
-      expect(source).toContain('<a href="/atlas">Kinetic Atlas</a>');
+      expect(source).toMatch(/href="\/atlas"\s*>Kinetic Atlas<\/LinkChip/);
     }
 
     const atlas = readSource(
