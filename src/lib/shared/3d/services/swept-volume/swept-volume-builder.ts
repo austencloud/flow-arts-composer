@@ -42,10 +42,13 @@ export function buildSweptVolume(
 /**
  * Convert a renderer-owned prop state to the rigid staff segment used by the
  * offline collision model. Consumers with score-time states use this instead
- * of recreating the avatar-frame translation or staff orientation.
+ * of recreating the avatar-frame translation or staff orientation. The
+ * half-length defaults to the canonical staff; a consumer planning for a staff
+ * sized to its performer passes that staff's.
  */
 export function propStateToStaffTarget(
-  state: PropState3D
+  state: Pick<PropState3D, "worldPosition" | "worldRotation">,
+  halfLengthM: number = STAFF_HALF_LENGTH
 ): SweptVolume["samples"][number] {
   const grip = new Vector3(
     state.worldPosition.x,
@@ -55,7 +58,7 @@ export function propStateToStaffTarget(
   const axis = UP.clone()
     .applyQuaternion(STAFF_HORIZONTAL_QUAT)
     .applyQuaternion(state.worldRotation)
-    .multiplyScalar(STAFF_HALF_LENGTH);
+    .multiplyScalar(halfLengthM);
   return {
     gripWorld: grip,
     tipAWorld: grip.clone().add(axis),
