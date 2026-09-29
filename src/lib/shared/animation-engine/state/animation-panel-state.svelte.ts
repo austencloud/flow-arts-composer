@@ -134,9 +134,9 @@ const DEFAULT_PROP_STATE: PropState = {
 /**
  * @param options.ephemeral When true, the instance ignores the shared
  *   localStorage prefs (speed/loop/playbackMode/step/exportLoopCount): it starts
- *   from defaults and never auto-saves. Use for scoped surfaces (e.g. the landing
- *   "Watch it move" card) that must run at a fixed 60 BPM without inheriting — or
- *   clobbering — the user's global playback settings.
+ *   from defaults and never auto-saves. Use for scoped surfaces (e.g. the Fuse
+ *   animation preview) that must not inherit — or clobber — the user's global
+ *   playback settings.
  */
 export function createAnimationPanelState(
   options?: { ephemeral?: boolean }
