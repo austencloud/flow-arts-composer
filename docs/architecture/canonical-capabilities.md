@@ -289,6 +289,20 @@ sits beside the preview. A tool takes a `ValueSlider` for an amount, a
 `SegmentedControl` for a pick and a `PanelButton` for an action. Searches: tool
 row, toolbar, dock, bottom sheet, side panel, inspector, crop tool.
 
+A Post Studio clip's rounded corners, border and drop shadow are its `edge`
+(`media-composition/domain/post-clip-edge.ts`), compiled onto the region and
+measured by `media-composition/services/region-edge-painter.ts`, so the export
+canvas and the preview's CSS draw the same edge. Searches: rounded corners,
+border, stroke, drop shadow, picture in picture, PiP frame.
+
+Canvas rounded-rectangle paths use `traceRoundedRect` in
+`shared/render/utils/trace-rounded-rect.ts`, which keeps the radius within
+half of each side and falls back to arcs without `roundRect`. Searches: round
+rect, rounded clip, pill path, corner radius. The choreo card's older
+`roundRect` in `info-card-canvas-renderer.ts` and `roundRectPath` in
+`card-back-bitmaps-percard.ts` predate it; move them to it rather than adding
+another.
+
 | Search vocabulary                                                                                                                   | Canonical owner                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
 | ----------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | scene boot, scene switch, persistent worker renderer, poster handoff, shader warmup, GLB prefetch                                   | `shared/3d/worker-renderer/` owns the persistent production worker for all ten environments; `shared/3d/scene-boot/` owns legacy main-thread boot (Record Scene); `shared/3d/rendering/viewer-lighting-rig.ts` owns viewer lighting; environment worlds under `shared/3d/environments/worlds/` stay renderer-neutral with thin Svelte and worker adapters                                                                                                                                                                                                                                                                  |

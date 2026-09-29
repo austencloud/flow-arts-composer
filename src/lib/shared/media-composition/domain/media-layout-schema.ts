@@ -15,6 +15,22 @@ export const OutputFormatSchema = z
 
 export type OutputFormat = z.infer<typeof OutputFormatSchema>;
 
+/** Rounded corners, a border inside them and a drop shadow under a region. */
+export const RegionEdgeSchema = z
+  .object({
+    /** Corner radius, as a share of the region's shorter side in pixels. */
+    cornerRadius: z.number().finite().min(0).max(0.5),
+    /** Border width, as a share of the output's shorter side. */
+    borderWidth: z.number().finite().min(0).max(1),
+    /** A CSS colour. */
+    borderColor: z.string().trim().min(1),
+    /** Drop shadow strength: 0 is none, 1 the darkest. */
+    shadow: z.number().finite().min(0).max(1),
+  })
+  .strict();
+
+export type RegionEdge = z.infer<typeof RegionEdgeSchema>;
+
 export const LayoutRegionSchema = z
   .object({
     id: NonEmptyIdSchema,
@@ -27,6 +43,8 @@ export const LayoutRegionSchema = z
     fit: z.enum(["cover", "contain", "fill"]),
     clipContent: z.boolean(),
     respectSafeArea: z.boolean(),
+    /** Square and bare when absent. */
+    edge: RegionEdgeSchema.optional(),
   })
   .strict()
   .superRefine((region, context) => {

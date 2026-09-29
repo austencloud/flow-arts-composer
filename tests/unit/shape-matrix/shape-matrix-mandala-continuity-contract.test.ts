@@ -424,6 +424,12 @@ describe("shape matrix mandala continuity", () => {
     expect(drill).toContain("data-focus-mode-chrome");
     expect(drill).not.toContain("compact-settings");
     expect(drill).not.toContain('aria-label="Close settings"');
+    // Open, Save and Share are chrome too. Their grid area is missing from the
+    // focus layout, so in flow they opened implicit tracks that pushed the
+    // canvas off the left edge on every compact host.
+    expect(drill).toMatch(
+      /class="select-action"[^>]*data-focus-mode-chrome/
+    );
     // And the shell is the single owner of what marked chrome does, so a row
     // cannot opt out and stand while the rest step aside.
     expect(shell).toMatch(
