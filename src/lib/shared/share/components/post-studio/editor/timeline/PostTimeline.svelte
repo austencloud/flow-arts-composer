@@ -37,7 +37,6 @@
     autoScrollForPlayhead,
     clampPixelsPerSecond,
     fitPixelsPerSecond,
-    mainTrackDropIndex,
     overlayRowAtPointerY,
     pixelsToSeconds,
     placeDraggedOverlay,
@@ -53,11 +52,11 @@
   } from "./post-timeline-geometry";
 
   /**
-   * The Post Studio timeline strip: a ruler above a magnetic main track, with
+   * The Post Studio timeline strip: a ruler above a main track, with
    * any number of overlay tracks stacked above that. Purely a controlled view
    * - it never edits `project` itself, only reports what the user did (seek,
    * select, trim, move, flag a track) and trusts the caller to apply the edit
-   * and hand back the next `project`. That is what lets a magnetic main clip
+   * and hand back the next `project`. That is what lets a main clip
    * "shorten from the left without the left edge moving" when its start is
    * trimmed: this component just reports the dragged edge's new timeline
    * second, and whatever the caller's edit-and-normalize step decides that
@@ -77,12 +76,8 @@
     /** Puts back what the gesture changed, leaving no undo step. */
     onGestureCancel: () => void;
     onTrim: (itemId: string, edge: "start" | "end", seconds: number) => void;
-    onMoveMain: (itemId: string, toIndex: number) => void;
-    onMoveOverlay: (
-      itemId: string,
-      start: number,
-      trackIndex: number
-    ) => void;
+    onMoveMain: (itemId: string, start: number) => void;
+    onMoveOverlay: (itemId: string, start: number, trackIndex: number) => void;
     onTrackFlag: (
       trackId: string,
       flag: "hidden" | "locked",
@@ -99,16 +94,28 @@
      */
     toolChannel: PostKeyframeChannel | null;
     onKeyChannel: (channel: PostKeyframeChannel) => void;
-    onToggleKey: (itemId: string, channel: PostKeyframeChannel, seconds: number) => void;
+    onToggleKey: (
+      itemId: string,
+      channel: PostKeyframeChannel,
+      seconds: number
+    ) => void;
     onMoveKey: (
       itemId: string,
       channel: PostKeyframeChannel,
       fromSeconds: number,
       toSeconds: number
     ) => void;
-    onDeleteKey: (itemId: string, channel: PostKeyframeChannel, seconds: number) => void;
+    onDeleteKey: (
+      itemId: string,
+      channel: PostKeyframeChannel,
+      seconds: number
+    ) => void;
     /** A curve between two keys was pressed: open its easing. */
-    onOpenCurve: (itemId: string, channel: PostKeyframeChannel, fromSeconds: number) => void;
+    onOpenCurve: (
+      itemId: string,
+      channel: PostKeyframeChannel,
+      fromSeconds: number
+    ) => void;
     /** The toolbar's left end, beside the zoom controls: the keyframe buttons. */
     toolbarStart?: Snippet;
     onAddVideo?: () => void;
@@ -198,13 +205,13 @@
     startClientX: number;
     startClientY: number;
     didDrag: boolean;
-    originalIndex: number;
-    others: { id: string; start: number; duration: number }[];
+    originalStart: number;
+    grabOffsetSeconds: number;
     frozenPixelsPerSecond: number;
+    frozenTargets: number[];
     itemDurationSeconds: number;
-    originalLeftPx: number;
     ghostLeftPx: number;
-    dropIndex: number;
+    snappedStartSeconds: number;
   }
 
   interface MoveOverlayDrag {
@@ -311,7 +318,9 @@
     const { item, trackIndex } = located;
     const channels = channelsOf(item).filter(
       (channel) =>
-        channel === keyChannel || channel === toolChannel || isAnimated(item, channel)
+        channel === keyChannel ||
+        channel === toolChannel ||
+        isAnimated(item, channel)
     );
     if (channels.length === 0) return null;
     let topPx = 0;
@@ -333,7 +342,9 @@
   // on an overlay track.
   const mainRowTopPx = $derived(
     overlayTrackCount * OVERLAY_ROW_HEIGHT_PX +
-      (keyLanes && keyLanes.trackIndex !== MAIN_TRACK_INDEX ? keyLanes.heightPx : 0)
+      (keyLanes && keyLanes.trackIndex !== MAIN_TRACK_INDEX
+        ? keyLanes.heightPx
+        : 0)
   );
   const contentWidthPx = $derived(
     Math.max(
@@ -341,7 +352,9 @@
       secondsToPixels(durationSeconds, pixelsPerSecond) + TRAILING_PADDING_PX
     )
   );
-  const playheadXPx = $derived(secondsToPixels(playheadSeconds, pixelsPerSecond));
+  const playheadXPx = $derived(
+    secondsToPixels(playheadSeconds, pixelsPerSecond)
+  );
   const showNewLayerZone = $derived(
     dragState?.kind === "move-overlay" && dragState.didDrag
   );
@@ -453,7 +466,10 @@
   }
 
   function handleFit(): void {
-    pixelsPerSecond = fitPixelsPerSecond(durationSeconds, lanesViewportWidthPx || 1);
+    pixelsPerSecond = fitPixelsPerSecond(
+      durationSeconds,
+      lanesViewportWidthPx || 1
+    );
     setLanesScrollLeft(0);
   }
 
@@ -547,16 +563,6 @@
     (event.currentTarget as HTMLElement).setPointerCapture(event.pointerId);
     const originalLeftPx = secondsToPixels(item.start, pixelsPerSecond);
     if (trackIndex === MAIN_TRACK_INDEX) {
-      const originalIndex = mainItemsList.findIndex(
-        (candidate) => candidate.id === item.id
-      );
-      const others = mainItemsList
-        .filter((candidate) => candidate.id !== item.id)
-        .map((candidate) => ({
-          id: candidate.id,
-          start: candidate.start,
-          duration: candidate.duration,
-        }));
       dragState = {
         kind: "move-main",
         itemId: item.id,
@@ -564,13 +570,17 @@
         startClientX: event.clientX,
         startClientY: event.clientY,
         didDrag: false,
-        originalIndex,
-        others,
+        originalStart: item.start,
+        grabOffsetSeconds:
+          pixelsToSeconds(
+            event.clientX - contentOrigin().left,
+            pixelsPerSecond
+          ) - item.start,
         frozenPixelsPerSecond: pixelsPerSecond,
+        frozenTargets: collectSnapTargets(item.id),
         itemDurationSeconds: item.duration,
-        originalLeftPx,
         ghostLeftPx: originalLeftPx,
-        dropIndex: originalIndex,
+        snappedStartSeconds: item.start,
       };
     } else {
       dragState = {
@@ -582,8 +592,10 @@
         didDrag: false,
         originalStart: item.start,
         grabOffsetSeconds:
-          pixelsToSeconds(event.clientX - contentOrigin().left, pixelsPerSecond) -
-          item.start,
+          pixelsToSeconds(
+            event.clientX - contentOrigin().left,
+            pixelsPerSecond
+          ) - item.start,
         originalTrackIndex: trackIndex,
         itemDurationSeconds: item.duration,
         frozenPixelsPerSecond: pixelsPerSecond,
@@ -640,7 +652,9 @@
     const targets = new Set<number>([playheadSeconds]);
     for (const other of channelsOf(item)) {
       for (const key of channelKeyframeSeconds(item, other)) {
-        if (!(other === channel && Math.abs(key - seconds) <= POST_TIME_EPSILON)) {
+        if (
+          !(other === channel && Math.abs(key - seconds) <= POST_TIME_EPSILON)
+        ) {
           targets.add(key);
         }
       }
@@ -728,7 +742,8 @@
       }
     }
     const target =
-      nearest ?? content.querySelector<HTMLElement>(`.post-timeline-item${selector}`);
+      nearest ??
+      content.querySelector<HTMLElement>(`.post-timeline-item${selector}`);
     if (target && document.activeElement !== target) target.focus();
   }
 
@@ -743,7 +758,12 @@
     ) {
       return lanes.item;
     }
-    return moveKeyframe(lanes.item, channel, state.originalSeconds, state.pendingSeconds);
+    return moveKeyframe(
+      lanes.item,
+      channel,
+      state.originalSeconds,
+      state.pendingSeconds
+    );
   }
 
   // Once a clip is picked, scroll its keyframe rows into view if they sit
@@ -756,7 +776,9 @@
     revealedLanesFor = key;
     if (!lanes) return;
     const rowHeightPx =
-      lanes.trackIndex === MAIN_TRACK_INDEX ? MAIN_ROW_HEIGHT_PX : OVERLAY_ROW_HEIGHT_PX;
+      lanes.trackIndex === MAIN_TRACK_INDEX
+        ? MAIN_ROW_HEIGHT_PX
+        : OVERLAY_ROW_HEIGHT_PX;
     const rowTopPx = lanes.topPx - rowHeightPx;
     const bottomPx = lanes.topPx + lanes.heightPx;
     void tick().then(() => {
@@ -780,20 +802,9 @@
     if (hit.kind === "new-layer") return 0;
     const rankFromTop = overlayTrackCount - hit.trackIndex;
     const topPx = rankFromTop * OVERLAY_ROW_HEIGHT_PX;
-    return keyLanes && topPx >= keyLanes.topPx ? topPx + keyLanes.heightPx : topPx;
-  }
-
-  function mainInsertionXPx(state: MoveMainDrag): number {
-    const { others, dropIndex, frozenPixelsPerSecond } = state;
-    if (others.length === 0) return 0;
-    if (dropIndex <= 0) {
-      return secondsToPixels(others[0]!.start, frozenPixelsPerSecond);
-    }
-    if (dropIndex >= others.length) {
-      const last = others[others.length - 1]!;
-      return secondsToPixels(last.start + last.duration, frozenPixelsPerSecond);
-    }
-    return secondsToPixels(others[dropIndex]!.start, frozenPixelsPerSecond);
+    return keyLanes && topPx >= keyLanes.topPx
+      ? topPx + keyLanes.heightPx
+      : topPx;
   }
 
   function finishDrag(): void {
@@ -843,7 +854,8 @@
         state.rafScheduled = true;
         requestAnimationFrame(() => {
           state.rafScheduled = false;
-          if (dragState === state) onTrim(state.itemId, state.edge, state.pendingSeconds);
+          if (dragState === state)
+            onTrim(state.itemId, state.edge, state.pendingSeconds);
         });
       }
       return;
@@ -857,17 +869,27 @@
     }
 
     if (state.kind === "move-main") {
-      state.ghostLeftPx = state.originalLeftPx + deltaXPx;
-      const pointerSeconds = pointerContentSeconds(
-        event.clientX,
+      const placed = placeDraggedOverlay(
+        pointerContentSeconds(event.clientX, state.frozenPixelsPerSecond) -
+          state.grabOffsetSeconds,
+        state.itemDurationSeconds,
+        state.frozenTargets,
         state.frozenPixelsPerSecond
       );
-      state.dropIndex = mainTrackDropIndex(pointerSeconds, state.others);
+      state.snappedStartSeconds = placed.start;
+      state.ghostLeftPx = secondsToPixels(
+        placed.start,
+        state.frozenPixelsPerSecond
+      );
+      snapGuideSeconds = placed.guideSeconds;
       return;
     }
 
     if (state.kind === "keyframe") {
-      const rawSeconds = pointerContentSeconds(event.clientX, state.frozenPixelsPerSecond);
+      const rawSeconds = pointerContentSeconds(
+        event.clientX,
+        state.frozenPixelsPerSecond
+      );
       const snapResult = snapToTargets(
         rawSeconds,
         state.frozenTargets,
@@ -899,7 +921,10 @@
       state.frozenPixelsPerSecond
     );
     state.snappedStartSeconds = placed.start;
-    state.ghostLeftPx = secondsToPixels(placed.start, state.frozenPixelsPerSecond);
+    state.ghostLeftPx = secondsToPixels(
+      placed.start,
+      state.frozenPixelsPerSecond
+    );
     snapGuideSeconds = placed.guideSeconds;
 
     // Above the visible rows, over the ruler, is the drop zone for a new layer
@@ -925,7 +950,10 @@
 
     if (state.kind === "trim") {
       // A tap on a handle, or a drag back to where it began, changes nothing.
-      if (Math.abs(state.pendingSeconds - state.originalSeconds) < POST_TIME_EPSILON) {
+      if (
+        Math.abs(state.pendingSeconds - state.originalSeconds) <
+        POST_TIME_EPSILON
+      ) {
         onGestureCancel();
       } else {
         onTrim(state.itemId, state.edge, state.pendingSeconds);
@@ -938,8 +966,11 @@
     if (state.didDrag) {
       if (state.kind === "move-main") {
         suppressNextClickForItemId = state.itemId;
-        if (state.dropIndex !== state.originalIndex) {
-          onMoveMain(state.itemId, state.dropIndex);
+        if (
+          Math.abs(state.snappedStartSeconds - state.originalStart) >
+          POST_TIME_EPSILON
+        ) {
+          onMoveMain(state.itemId, state.snappedStartSeconds);
         }
       } else if (state.kind === "move-overlay") {
         suppressNextClickForItemId = state.itemId;
@@ -952,12 +983,24 @@
           Math.abs(state.snappedStartSeconds - state.originalStart) <
             POST_TIME_EPSILON;
         if (!unchanged) {
-          onMoveOverlay(state.itemId, state.snappedStartSeconds, targetTrackIndex);
+          onMoveOverlay(
+            state.itemId,
+            state.snappedStartSeconds,
+            targetTrackIndex
+          );
         }
       } else {
         suppressNextKeyClick = true;
-        if (Math.abs(state.pendingSeconds - state.originalSeconds) > POST_TIME_EPSILON) {
-          onMoveKey(state.itemId, state.channel, state.originalSeconds, state.pendingSeconds);
+        if (
+          Math.abs(state.pendingSeconds - state.originalSeconds) >
+          POST_TIME_EPSILON
+        ) {
+          onMoveKey(
+            state.itemId,
+            state.channel,
+            state.originalSeconds,
+            state.pendingSeconds
+          );
         }
       }
     }
@@ -989,7 +1032,11 @@
   onkeydowncapture={handleWindowKeydown}
 />
 
-<div class="post-timeline" role="region" aria-label={t("post_timeline_region_label")}>
+<div
+  class="post-timeline"
+  role="region"
+  aria-label={t("post_timeline_region_label")}
+>
   <div class="toolbar-row">
     {#if toolbarStart}
       <div class="toolbar-start">
@@ -1032,7 +1079,11 @@
                   channelValueAt(lanes.item, channel, playheadSeconds)
                 )}
                 focused={channel === keyChannel}
-                hasKeyHere={keyframeIndexAt(lanes.item, channel, playheadSeconds) >= 0}
+                hasKeyHere={keyframeIndexAt(
+                  lanes.item,
+                  channel,
+                  playheadSeconds
+                ) >= 0}
                 canKey={inSpan && !lanes.locked}
                 onFocus={() => onKeyChannel(channel)}
                 onToggleKey={() => {
@@ -1078,7 +1129,11 @@
             {pixelsPerSecond}
             tickInterval={rulerTickInterval(pixelsPerSecond)}
           />
-          <div class="playhead-line" style="left: {playheadXPx}px" aria-hidden="true"></div>
+          <div
+            class="playhead-line"
+            style="left: {playheadXPx}px"
+            aria-hidden="true"
+          ></div>
         </div>
       </div>
 
@@ -1096,11 +1151,18 @@
           bind:this={lanesContentEl}
           style="width: {contentWidthPx}px"
         >
-          <div class="playhead-line" style="left: {playheadXPx}px" aria-hidden="true"></div>
+          <div
+            class="playhead-line"
+            style="left: {playheadXPx}px"
+            aria-hidden="true"
+          ></div>
           {#if snapGuideSeconds !== null}
             <div
               class="snap-guide"
-              style="left: {secondsToPixels(snapGuideSeconds, pixelsPerSecond)}px"
+              style="left: {secondsToPixels(
+                snapGuideSeconds,
+                pixelsPerSecond
+              )}px"
               aria-hidden="true"
             ></div>
           {/if}
@@ -1118,7 +1180,11 @@
                 <div class="empty-hint">
                   <span>{t("post_timeline_empty_hint")}</span>
                   {#if onAddVideo}
-                    <button type="button" class="add-video-btn" onclick={onAddVideo}>
+                    <button
+                      type="button"
+                      class="add-video-btn"
+                      onclick={onAddVideo}
+                    >
                       <i class="fa-solid fa-plus" aria-hidden="true"></i>
                       {t("post_timeline_add_video")}
                     </button>
@@ -1139,7 +1205,9 @@
                     beginBodyDrag(event, item, row.trackIndex)}
                   onHandlePointerDown={(event, edge) =>
                     beginHandleDrag(event, item, edge, row.trackIndex)}
-                  animated={channelsOf(item).some((channel) => isAnimated(item, channel))}
+                  animated={channelsOf(item).some((channel) =>
+                    isAnimated(item, channel)
+                  )}
                 />
               {/each}
             </div>
@@ -1177,23 +1245,26 @@
               class="ghost-block"
               aria-hidden="true"
               style="left: {dragState.ghostLeftPx}px; top: {mainRowTopPx}px;
-                width: {secondsToPixels(dragState.itemDurationSeconds, dragState.frozenPixelsPerSecond)}px;
+                width: {secondsToPixels(
+                dragState.itemDurationSeconds,
+                dragState.frozenPixelsPerSecond
+              )}px;
                 height: {MAIN_ROW_HEIGHT_PX}px"
             >
               <span>{ghostLabelText}</span>
             </div>
-            <div
-              class="insertion-marker"
-              aria-hidden="true"
-              style="left: {mainInsertionXPx(dragState)}px; top: {mainRowTopPx}px; height: {MAIN_ROW_HEIGHT_PX}px"
-            ></div>
           {/if}
           {#if showNewLayerZone && dragState?.kind === "move-overlay" && dragState.rowHit.kind !== "new-layer"}
             <div
               class="ghost-block"
               aria-hidden="true"
-              style="left: {dragState.ghostLeftPx}px; top: {overlayGhostTopPx(dragState.rowHit)}px;
-                width: {secondsToPixels(dragState.itemDurationSeconds, dragState.frozenPixelsPerSecond)}px;
+              style="left: {dragState.ghostLeftPx}px; top: {overlayGhostTopPx(
+                dragState.rowHit
+              )}px;
+                width: {secondsToPixels(
+                dragState.itemDurationSeconds,
+                dragState.frozenPixelsPerSecond
+              )}px;
                 height: {OVERLAY_ROW_HEIGHT_PX}px"
             >
               <span>{ghostLabelText}</span>
@@ -1305,7 +1376,11 @@
   }
 
   .lane-row.main-row {
-    background: color-mix(in srgb, var(--theme-card-bg, #1c1c26) 60%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--theme-card-bg, #1c1c26) 60%,
+      transparent
+    );
   }
 
   .playhead-line {
@@ -1357,8 +1432,7 @@
     color: var(--theme-text);
   }
 
-  .ghost-block,
-  .insertion-marker {
+  .ghost-block {
     position: absolute;
     z-index: 5;
     pointer-events: none;
@@ -1372,16 +1446,15 @@
     padding: 0 0.5rem;
     border: 1px solid var(--theme-accent);
     border-radius: 0.5rem;
-    background: color-mix(in srgb, var(--theme-accent) 30%, var(--theme-card-bg, #1c1c26));
+    background: color-mix(
+      in srgb,
+      var(--theme-accent) 30%,
+      var(--theme-card-bg, #1c1c26)
+    );
     color: var(--theme-text);
     font-size: var(--font-size-compact, 0.75rem);
     white-space: nowrap;
     opacity: 0.85;
-  }
-
-  .insertion-marker {
-    width: 2px;
-    background: var(--theme-accent);
   }
 
   .empty-hint {

@@ -19,6 +19,7 @@ import {
   editItemKeyframes,
   moveMainItem,
   moveOverlayItem,
+  placeMainItem,
   removeTake,
   resetFraming,
   setItemFill,
@@ -163,7 +164,10 @@ describe("appending", () => {
   });
 
   it("appends a card after the clips", () => {
-    const result = appendCardClip(twoClips(), ctx, { label: " Card ", fadeIn: 0.25 });
+    const result = appendCardClip(twoClips(), ctx, {
+      label: " Card ",
+      fadeIn: 0.25,
+    });
     valid(result.project);
     expect(item(result.project, result.itemId)).toMatchObject({
       kind: "card",
@@ -199,8 +203,18 @@ describe("splitItemAt", () => {
     valid(result.project);
     const first = item(result.project, "v1");
     const second = item(result.project, result.newItemId);
-    expect(first).toMatchObject({ sourceIn: 0, sourceOut: 4, fadeIn: 1, fadeOut: 0 });
-    expect(second).toMatchObject({ sourceIn: 4, sourceOut: 10, fadeIn: 0, fadeOut: 1 });
+    expect(first).toMatchObject({
+      sourceIn: 0,
+      sourceOut: 4,
+      fadeIn: 1,
+      fadeOut: 0,
+    });
+    expect(second).toMatchObject({
+      sourceIn: 4,
+      sourceOut: 10,
+      fadeIn: 0,
+      fadeOut: 1,
+    });
     expect(spans(result.project, 0)).toEqual([
       ["v1", 0, 4],
       [result.newItemId, 4, 6],
@@ -209,7 +223,14 @@ describe("splitItemAt", () => {
 
     // The look is copied onto the second piece, both still filling.
     const looks = result.project.tracks[1]!.items;
-    expect(looks.map((entry) => [entry.fill, entry.anchor?.itemId, round(entry.start), round(entry.duration)])).toEqual([
+    expect(
+      looks.map((entry) => [
+        entry.fill,
+        entry.anchor?.itemId,
+        round(entry.start),
+        round(entry.duration),
+      ])
+    ).toEqual([
       [true, "v1", 0, 4],
       [true, result.newItemId, 4, 6],
     ]);
@@ -232,7 +253,9 @@ describe("splitItemAt", () => {
     const base = project([video("v1", { sourceOut: 10, speed: 0.5 })]);
     const result = splitItemAt(base, "v1", 4, ctx)!;
     expect(item(result.project, "v1")).toMatchObject({ sourceOut: 2 });
-    expect(item(result.project, result.newItemId)).toMatchObject({ sourceIn: 2 });
+    expect(item(result.project, result.newItemId)).toMatchObject({
+      sourceIn: 2,
+    });
     expect(spans(result.project, 0)).toEqual([
       ["v1", 0, 4],
       [result.newItemId, 4, 16],
@@ -242,7 +265,15 @@ describe("splitItemAt", () => {
   it("splits an overlay into two pieces that keep their times", () => {
     const base = project(
       [video("v1")],
-      [[overlay("anim", "animation", { fill: true, anchor: { itemId: "v1", offset: 0 }, duration: 10 })]]
+      [
+        [
+          overlay("anim", "animation", {
+            fill: true,
+            anchor: { itemId: "v1", offset: 0 },
+            duration: 10,
+          }),
+        ],
+      ]
     );
     const result = splitItemAt(base, "anim", 3, ctx)!;
     valid(result.project);
@@ -259,7 +290,9 @@ describe("splitItemAt", () => {
   it("refuses a cut too close to an edge", () => {
     const base = twoClips();
     expect(splitItemAt(base, "v1", POST_MIN_ITEM_SECONDS / 2, ctx)).toBeNull();
-    expect(splitItemAt(base, "v1", 10 - POST_MIN_ITEM_SECONDS / 2, ctx)).toBeNull();
+    expect(
+      splitItemAt(base, "v1", 10 - POST_MIN_ITEM_SECONDS / 2, ctx)
+    ).toBeNull();
     expect(splitItemAt(base, "nope", 5, ctx)).toBeNull();
   });
 });
@@ -269,7 +302,13 @@ describe("deleteItem", () => {
     const base = project(
       [video("v1"), video("v2", { sourceOut: 6 })],
       [
-        [overlay("anim", "animation", { fill: true, anchor: { itemId: "v1", offset: 0 }, duration: 10 })],
+        [
+          overlay("anim", "animation", {
+            fill: true,
+            anchor: { itemId: "v1", offset: 0 },
+            duration: 10,
+          }),
+        ],
         [text("t1", 4, 2, { anchor: { itemId: "v1", offset: 4 } })],
       ]
     );
@@ -310,7 +349,12 @@ describe("duplicateItem", () => {
       .flatMap((track) => track.items)
       .filter((entry) => entry.anchor?.itemId === result.newItemId);
     expect(copies).toHaveLength(1);
-    expect(copies[0]).toMatchObject({ kind: "animation", fill: true, start: 10, duration: 10 });
+    expect(copies[0]).toMatchObject({
+      kind: "animation",
+      fill: true,
+      start: 10,
+      duration: 10,
+    });
     // The text keeps following the second clip, now later.
     expect(item(result.project, "t1").start).toBe(22);
   });
@@ -353,6 +397,41 @@ describe("moveMainItem", () => {
   });
 });
 
+describe("placeMainItem", () => {
+  it("moves a video within its row and pushes an overlapping clip right", () => {
+    const result = valid(placeMainItem(twoClips(), "v1", 2, ctx));
+    expect(spans(result, 0)).toEqual([
+      ["v1", 2, 10],
+      ["v2", 12, 6],
+    ]);
+    expect(spans(result, 1)).toEqual([["anim", 2, 10]]);
+    expect(spans(result, 2)).toEqual([["t1", 14, 2]]);
+    expect(
+      PostProjectSchema.parse(JSON.parse(JSON.stringify(result))).tracks[0]!
+        .items[0]!.start
+    ).toBe(2);
+  });
+
+  it("moves a later video left and keeps the dropped time", () => {
+    const result = valid(placeMainItem(twoClips(), "v2", 2, ctx));
+    expect(spans(result, 0)).toEqual([
+      ["v2", 2, 6],
+      ["v1", 8, 10],
+    ]);
+    expect(spans(result, 1)).toEqual([["anim", 8, 10]]);
+  });
+
+  it("leaves earlier clips in place when dropped beyond their end", () => {
+    const result = valid(placeMainItem(twoClips(), "v1", 20, ctx));
+    expect(spans(result, 0)).toEqual([
+      ["v2", 10, 6],
+      ["v1", 20, 10],
+    ]);
+    expect(placeMainItem(result, "v1", 20, ctx)).toBe(result);
+    expect(placeMainItem(result, "anim", 2, ctx)).toBe(result);
+  });
+});
+
 describe("moveOverlayItem", () => {
   const base = () =>
     project(
@@ -361,7 +440,9 @@ describe("moveOverlayItem", () => {
     );
 
   it("moves an overlay and anchors it to the clip under its start", () => {
-    const result = valid(moveOverlayItem(base(), "t1", { start: 12, trackIndex: 1 }, ctx));
+    const result = valid(
+      moveOverlayItem(base(), "t1", { start: 12, trackIndex: 1 }, ctx)
+    );
     expect(item(result, "t1")).toMatchObject({
       start: 12,
       anchor: { itemId: "v2", offset: 2 },
@@ -370,32 +451,52 @@ describe("moveOverlayItem", () => {
   });
 
   it("goes to the nearest track above with room when the target is busy", () => {
-    const result = valid(moveOverlayItem(base(), "t1", { start: 5.5, trackIndex: 2 }, ctx));
+    const result = valid(
+      moveOverlayItem(base(), "t1", { start: 5.5, trackIndex: 2 }, ctx)
+    );
     expect(spans(result, 1)).toEqual([["t2", 5, 2]]);
     expect(spans(result, 2)).toEqual([["t1", 5.5, 2]]);
   });
 
   it("makes a new top track when asked", () => {
     const start = base();
-    const result = valid(moveOverlayItem(start, "t1", { start: 0, trackIndex: 3 }, ctx));
+    const result = valid(
+      moveOverlayItem(start, "t1", { start: 0, trackIndex: 3 }, ctx)
+    );
     expect(result.tracks).toHaveLength(3);
     expect(spans(result, 2)).toEqual([["t1", 0, 2]]);
   });
 
   it("clamps the start and leaves main clips alone", () => {
     const start = base();
-    expect(item(moveOverlayItem(start, "t2", { start: -4, trackIndex: 2 }, ctx), "t2").start).toBe(0);
-    expect(moveOverlayItem(start, "v1", { start: 3, trackIndex: 1 }, ctx)).toBe(start);
+    expect(
+      item(
+        moveOverlayItem(start, "t2", { start: -4, trackIndex: 2 }, ctx),
+        "t2"
+      ).start
+    ).toBe(0);
+    expect(moveOverlayItem(start, "v1", { start: 3, trackIndex: 1 }, ctx)).toBe(
+      start
+    );
   });
 
   it("returns the same project when nothing changes", () => {
-    const moved = moveOverlayItem(base(), "t1", { start: 1, trackIndex: 1 }, ctx);
-    expect(moveOverlayItem(moved, "t1", { start: 1, trackIndex: 1 }, ctx)).toBe(moved);
+    const moved = moveOverlayItem(
+      base(),
+      "t1",
+      { start: 1, trackIndex: 1 },
+      ctx
+    );
+    expect(moveOverlayItem(moved, "t1", { start: 1, trackIndex: 1 }, ctx)).toBe(
+      moved
+    );
   });
 
   it("skips a locked track and lands above it even when the locked track has room", () => {
     const locked = setTrackFlag(base(), "track-1", "locked", true, ctx);
-    const result = valid(moveOverlayItem(locked, "t2", { start: 5, trackIndex: 1 }, ctx));
+    const result = valid(
+      moveOverlayItem(locked, "t2", { start: 5, trackIndex: 1 }, ctx)
+    );
     expect(findItem(result, "t2")?.trackIndex).toBe(2);
     expect(spans(result, 1)).toEqual([["t1", 0, 2]]);
     expect(spans(result, 2)).toEqual([["t2", 5, 2]]);
@@ -403,9 +504,13 @@ describe("moveOverlayItem", () => {
 
   it("lets an item slide along its own hidden track, but nothing else lands there", () => {
     const hidden = setTrackFlag(base(), "track-1", "hidden", true, ctx);
-    const along = valid(moveOverlayItem(hidden, "t1", { start: 3, trackIndex: 1 }, ctx));
+    const along = valid(
+      moveOverlayItem(hidden, "t1", { start: 3, trackIndex: 1 }, ctx)
+    );
     expect(spans(along, 1)).toEqual([["t1", 3, 2]]);
-    const onto = valid(moveOverlayItem(hidden, "t2", { start: 5, trackIndex: 1 }, ctx));
+    const onto = valid(
+      moveOverlayItem(hidden, "t2", { start: 5, trackIndex: 1 }, ctx)
+    );
     expect(spans(onto, 1)).toEqual([["t1", 0, 2]]);
   });
 });
@@ -414,7 +519,11 @@ describe("trimItem", () => {
   it("cuts a main clip's head and keeps its place", () => {
     const base = twoClips();
     const result = valid(trimItem(base, "v1", "start", 3, ctx));
-    expect(item(result, "v1")).toMatchObject({ sourceIn: 3, start: 0, duration: 7 });
+    expect(item(result, "v1")).toMatchObject({
+      sourceIn: 3,
+      start: 0,
+      duration: 7,
+    });
     expect(spans(result, 0)[1]).toEqual(["v2", 7, 6]);
     expect(spans(result, 1)).toEqual([["anim", 0, 7]]);
     expect(spans(result, 2)).toEqual([["t1", 9, 2]]);
@@ -430,16 +539,24 @@ describe("trimItem", () => {
 
   it("keeps a clip inside its take and at least the shortest length", () => {
     const base = twoClips();
-    expect(item(trimItem(base, "v2", "end", 99, ctx), "v2")).toMatchObject({ sourceOut: 20 });
-    expect(item(trimItem(base, "v2", "start", -5, ctx), "v2")).toMatchObject({ sourceIn: 0 });
+    expect(item(trimItem(base, "v2", "end", 99, ctx), "v2")).toMatchObject({
+      sourceOut: 20,
+    });
+    expect(item(trimItem(base, "v2", "start", -5, ctx), "v2")).toMatchObject({
+      sourceIn: 0,
+    });
     const shortest = item(trimItem(base, "v1", "start", 99, ctx), "v1");
     expect(round(shortest.duration)).toBe(POST_MIN_ITEM_SECONDS);
   });
 
   it("trims a card's length from either edge", () => {
     const base = project([video("v1"), card("c1", 5)]);
-    expect(round(item(trimItem(base, "c1", "start", 11, ctx), "c1").duration)).toBe(4);
-    expect(round(item(trimItem(base, "c1", "end", 17, ctx), "c1").duration)).toBe(7);
+    expect(
+      round(item(trimItem(base, "c1", "start", 11, ctx), "c1").duration)
+    ).toBe(4);
+    expect(
+      round(item(trimItem(base, "c1", "end", 17, ctx), "c1").duration)
+    ).toBe(7);
   });
 
   it("moves an overlay's start with its end fixed and ends its fill", () => {
@@ -461,7 +578,11 @@ describe("trimItem", () => {
       [[video("pip", { takeId: "b", sourceIn: 4, sourceOut: 8, start: 5 })]]
     );
     const result = valid(trimItem(base, "pip", "start", 6, ctx));
-    expect(item(result, "pip")).toMatchObject({ start: 6, sourceIn: 5, sourceOut: 8 });
+    expect(item(result, "pip")).toMatchObject({
+      start: 6,
+      sourceIn: 5,
+      sourceOut: 8,
+    });
   });
 
   it("returns the same project when the edge does not move", () => {
@@ -489,7 +610,11 @@ describe("trimItemToSource", () => {
   it("sets a clip's In and Out as times in its take", () => {
     const base = twoClips();
     const cut = valid(trimItemToSource(base, "v2", "start", 4, ctx));
-    expect(item(cut, "v2")).toMatchObject({ start: 10, sourceIn: 4, sourceOut: 8 });
+    expect(item(cut, "v2")).toMatchObject({
+      start: 10,
+      sourceIn: 4,
+      sourceOut: 8,
+    });
     const ended = valid(trimItemToSource(base, "v2", "end", 5, ctx));
     expect(item(ended, "v2")).toMatchObject({ sourceIn: 2, sourceOut: 5 });
   });
@@ -503,10 +628,14 @@ describe("trimItemToSource", () => {
 
   it("keeps a typed point inside the take", () => {
     const base = twoClips();
-    expect(item(trimItemToSource(base, "v2", "end", 99, ctx), "v2")).toMatchObject({
+    expect(
+      item(trimItemToSource(base, "v2", "end", 99, ctx), "v2")
+    ).toMatchObject({
       sourceOut: 20,
     });
-    expect(item(trimItemToSource(base, "v2", "start", -3, ctx), "v2")).toMatchObject({
+    expect(
+      item(trimItemToSource(base, "v2", "start", -3, ctx), "v2")
+    ).toMatchObject({
       sourceIn: 0,
     });
   });
@@ -521,7 +650,11 @@ describe("trimItemToSource", () => {
 describe("setVideoSpeed", () => {
   it("clamps the speed and ripples the clips after it", () => {
     const result = valid(setVideoSpeed(twoClips(), "v1", 99, ctx));
-    expect(item(result, "v1")).toMatchObject({ speed: POST_MAX_SPEED, sourceIn: 0, sourceOut: 10 });
+    expect(item(result, "v1")).toMatchObject({
+      speed: POST_MAX_SPEED,
+      sourceIn: 0,
+      sourceOut: 10,
+    });
     expect(spans(result, 0)).toEqual([
       ["v1", 0, 2.5],
       ["v2", 2.5, 6],
@@ -539,7 +672,12 @@ describe("updateItem", () => {
   it("applies only the fields the item's kind owns", () => {
     const base = twoClips();
     const result = valid(
-      updateItem(base, "t1", { text: "Hi", size: "l", zoom: 3, mode: "mandala" }, ctx)
+      updateItem(
+        base,
+        "t1",
+        { text: "Hi", size: "l", zoom: 3, mode: "mandala" },
+        ctx
+      )
     );
     const updated = item(result, "t1");
     expect(updated).toMatchObject({ text: "Hi", size: "l" });
@@ -552,7 +690,14 @@ describe("updateItem", () => {
       updateItem(
         twoClips(),
         "v1",
-        { zoom: 99, panX: -3, volume: 5, opacity: 2, rotation: 190, fadeIn: 50 },
+        {
+          zoom: 99,
+          panX: -3,
+          volume: 5,
+          opacity: 2,
+          rotation: 190,
+          fadeIn: 50,
+        },
         ctx
       )
     );
@@ -567,24 +712,38 @@ describe("updateItem", () => {
   });
 
   it("keeps a clip's span inside its take", () => {
-    const result = valid(updateItem(twoClips(), "v2", { sourceIn: 30, sourceOut: 1 }, ctx));
+    const result = valid(
+      updateItem(twoClips(), "v2", { sourceIn: 30, sourceOut: 1 }, ctx)
+    );
     const clip = item(result, "v2");
     expect(clip.kind === "video" && round(clip.sourceIn)).toBe(19.9);
     expect(clip.kind === "video" && clip.sourceOut).toBe(20);
   });
 
   it("sets, changes and removes a clip's staff effect", () => {
-    const set = valid(updateItem(twoClips(), "v1", { staffEffect: "sparkles" }, ctx));
-    expect(item(set, "v1")).toMatchObject({ staffEffect: { effect: "sparkles" } });
-    const changed = valid(updateItem(set, "v1", { staffEffect: "trails" }, ctx));
-    expect(item(changed, "v1")).toMatchObject({ staffEffect: { effect: "trails" } });
-    const cleared = valid(updateItem(changed, "v1", { staffEffect: null }, ctx));
+    const set = valid(
+      updateItem(twoClips(), "v1", { staffEffect: "sparkles" }, ctx)
+    );
+    expect(item(set, "v1")).toMatchObject({
+      staffEffect: { effect: "sparkles" },
+    });
+    const changed = valid(
+      updateItem(set, "v1", { staffEffect: "trails" }, ctx)
+    );
+    expect(item(changed, "v1")).toMatchObject({
+      staffEffect: { effect: "trails" },
+    });
+    const cleared = valid(
+      updateItem(changed, "v1", { staffEffect: null }, ctx)
+    );
     expect(item(cleared, "v1")).not.toHaveProperty("staffEffect");
     expect(updateItem(cleared, "v1", { staffEffect: null }, ctx)).toBe(cleared);
   });
 
   it("sets and removes a name", () => {
-    const named = valid(updateItem(twoClips(), "v1", { label: "  Run  " }, ctx));
+    const named = valid(
+      updateItem(twoClips(), "v1", { label: "  Run  " }, ctx)
+    );
     expect(item(named, "v1").label).toBe("Run");
     const cleared = valid(updateItem(named, "v1", { label: "  " }, ctx));
     expect(item(cleared, "v1")).not.toHaveProperty("label");
@@ -597,9 +756,19 @@ describe("updateItem", () => {
 
   it("keeps a moved box inside the frame", () => {
     const result = valid(
-      updateItem(twoClips(), "t1", { box: { x: 0.9, y: -1, width: 0.5, height: 0.01 } }, ctx)
+      updateItem(
+        twoClips(),
+        "t1",
+        { box: { x: 0.9, y: -1, width: 0.5, height: 0.01 } },
+        ctx
+      )
     );
-    expect(item(result, "t1").box).toEqual({ x: 0.5, y: 0, width: 0.5, height: 0.05 });
+    expect(item(result, "t1").box).toEqual({
+      x: 0.5,
+      y: 0,
+      width: 0.5,
+      height: 0.05,
+    });
   });
 
   it("returns the same project when nothing changes", () => {
@@ -626,14 +795,24 @@ describe("addOverlayItem", () => {
   });
 
   it("opens a new track on top when the top one is busy", () => {
-    const result = addOverlayItem(twoClips(), { kind: "moves", at: 12.5 }, ctx)!;
+    const result = addOverlayItem(
+      twoClips(),
+      { kind: "moves", at: 12.5 },
+      ctx
+    )!;
     valid(result.project);
     expect(findItem(result.project, result.itemId)?.trackIndex).toBe(3);
-    expect(item(result.project, result.itemId)).toMatchObject({ mode: "arrows" });
+    expect(item(result.project, result.itemId)).toMatchObject({
+      mode: "arrows",
+    });
   });
 
   it("fills the clip under it when asked", () => {
-    const result = addOverlayItem(twoClips(), { kind: "carousel", at: 12, fill: true }, ctx)!;
+    const result = addOverlayItem(
+      twoClips(),
+      { kind: "carousel", at: 12, fill: true },
+      ctx
+    )!;
     valid(result.project);
     expect(item(result.project, result.itemId)).toMatchObject({
       start: 10,
@@ -644,35 +823,63 @@ describe("addOverlayItem", () => {
   });
 
   it("adds an overlay clip of a take, or nothing for an unknown one", () => {
-    const result = addOverlayItem(twoClips(), { kind: "video", at: 1, takeId: "b", sourceOut: 3 }, ctx)!;
+    const result = addOverlayItem(
+      twoClips(),
+      { kind: "video", at: 1, takeId: "b", sourceOut: 3 },
+      ctx
+    )!;
     valid(result.project);
-    expect(item(result.project, result.itemId)).toMatchObject({ sourceIn: 0, sourceOut: 3, duration: 3 });
-    expect(addOverlayItem(twoClips(), { kind: "video", at: 1, takeId: "nope" }, ctx)).toBeNull();
+    expect(item(result.project, result.itemId)).toMatchObject({
+      sourceIn: 0,
+      sourceOut: 3,
+      duration: 3,
+    });
+    expect(
+      addOverlayItem(twoClips(), { kind: "video", at: 1, takeId: "nope" }, ctx)
+    ).toBeNull();
   });
 
   it("opens a new track on top when the top one is hidden, even with room", () => {
-    const hidden = valid(setTrackFlag(twoClips(), "track-2", "hidden", true, ctx));
+    const hidden = valid(
+      setTrackFlag(twoClips(), "track-2", "hidden", true, ctx)
+    );
     const result = addOverlayItem(hidden, { kind: "text", at: 3 }, ctx)!;
     valid(result.project);
     expect(findItem(result.project, result.itemId)?.trackIndex).toBe(3);
-    expect(result.project.tracks[3]).toMatchObject({ hidden: false, locked: false });
+    expect(result.project.tracks[3]).toMatchObject({
+      hidden: false,
+      locked: false,
+    });
   });
 
   it("opens a new track on top when the top one is locked, even with room", () => {
-    const locked = valid(setTrackFlag(twoClips(), "track-2", "locked", true, ctx));
+    const locked = valid(
+      setTrackFlag(twoClips(), "track-2", "locked", true, ctx)
+    );
     const result = addOverlayItem(locked, { kind: "text", at: 3 }, ctx)!;
     valid(result.project);
     expect(findItem(result.project, result.itemId)?.trackIndex).toBe(3);
-    expect(result.project.tracks[3]).toMatchObject({ hidden: false, locked: false });
+    expect(result.project.tracks[3]).toMatchObject({
+      hidden: false,
+      locked: false,
+    });
   });
 });
 
 describe("setItemFill", () => {
   it("spans the clip under the overlay, and lets it go again", () => {
     const filled = valid(setItemFill(twoClips(), "t1", true, ctx));
-    expect(item(filled, "t1")).toMatchObject({ start: 10, duration: 6, fill: true });
+    expect(item(filled, "t1")).toMatchObject({
+      start: 10,
+      duration: 6,
+      fill: true,
+    });
     const released = valid(setItemFill(filled, "t1", false, ctx));
-    expect(item(released, "t1")).toMatchObject({ start: 10, duration: 6, fill: false });
+    expect(item(released, "t1")).toMatchObject({
+      start: 10,
+      duration: 6,
+      fill: false,
+    });
   });
 
   it("leaves clips and unchanged items alone", () => {
@@ -684,7 +891,9 @@ describe("setItemFill", () => {
 
 describe("track and project flags", () => {
   it("hides and locks tracks", () => {
-    const hidden = valid(setTrackFlag(twoClips(), "track-1", "hidden", true, ctx));
+    const hidden = valid(
+      setTrackFlag(twoClips(), "track-1", "hidden", true, ctx)
+    );
     expect(hidden.tracks[1]).toMatchObject({ hidden: true, locked: false });
     expect(setTrackFlag(hidden, "track-1", "hidden", true, ctx)).toBe(hidden);
     expect(setTrackFlag(hidden, "nope", "locked", true, ctx)).toBe(hidden);
@@ -713,7 +922,12 @@ describe("editItemKeyframes", () => {
   it("applies an item-level keyframe edit and finishes the project", () => {
     const base = project([video("v1", { sourceOut: 10 })]);
     const next = valid(
-      editItemKeyframes(base, "v1", (it) => setKeyframe(it, "opacity", 5, 0.4), ctx)
+      editItemKeyframes(
+        base,
+        "v1",
+        (it) => setKeyframe(it, "opacity", 5, 0.4),
+        ctx
+      )
     );
     expect(isAnimated(item(next, "v1"), "opacity")).toBe(true);
     expect(next.updatedAt).toBe(ctx.now);
@@ -727,7 +941,12 @@ describe("editItemKeyframes", () => {
   it("is a no-op for an item that doesn't exist", () => {
     const base = project([video("v1", { sourceOut: 10 })]);
     expect(
-      editItemKeyframes(base, "nope", (it) => setKeyframe(it, "opacity", 5, 0.4), ctx)
+      editItemKeyframes(
+        base,
+        "nope",
+        (it) => setKeyframe(it, "opacity", 5, 0.4),
+        ctx
+      )
     ).toBe(base);
   });
 });
@@ -738,7 +957,13 @@ describe("updateItemAt", () => {
     const withKeyframe = editItemKeyframes(
       base,
       "v1",
-      (it) => setKeyframe(it, "framing", 0, { zoom: 1, panX: 0, panY: 0, rotation: 0 }),
+      (it) =>
+        setKeyframe(it, "framing", 0, {
+          zoom: 1,
+          panX: 0,
+          panY: 0,
+          rotation: 0,
+        }),
       ctx
     );
     const next = valid(updateItemAt(withKeyframe, "v1", { zoom: 3 }, 5, ctx));
@@ -761,7 +986,13 @@ describe("updateItemAt", () => {
     const withKeyframe = editItemKeyframes(
       base,
       "v1",
-      (it) => setKeyframe(it, "framing", 0, { zoom: 1, panX: 0, panY: 0, rotation: 0 }),
+      (it) =>
+        setKeyframe(it, "framing", 0, {
+          zoom: 1,
+          panX: 0,
+          panY: 0,
+          rotation: 0,
+        }),
       ctx
     );
     const next = valid(
@@ -776,7 +1007,13 @@ describe("updateItemAt", () => {
 describe("resetFraming", () => {
   it("resets zoom, pan and rotation to identity and drops framing keyframes only", () => {
     const base = project([
-      video("v1", { sourceOut: 10, zoom: 2, panX: 0.1, panY: -0.1, rotation: 30 }),
+      video("v1", {
+        sourceOut: 10,
+        zoom: 2,
+        panX: 0.1,
+        panY: -0.1,
+        rotation: 30,
+      }),
     ]);
     let withKeyframes = editItemKeyframes(
       base,
@@ -854,7 +1091,13 @@ describe("shiftKeyframes wiring in trim and split", () => {
     const withKeyframe = editItemKeyframes(
       base,
       "v1",
-      (it) => setKeyframe(it, "framing", 2, { zoom: 2, panX: 0, panY: 0, rotation: 0 }),
+      (it) =>
+        setKeyframe(it, "framing", 2, {
+          zoom: 2,
+          panX: 0,
+          panY: 0,
+          rotation: 0,
+        }),
       ctx
     );
     const trimmed = valid(trimItem(withKeyframe, "v1", "end", 8, ctx));
@@ -871,7 +1114,13 @@ describe("shiftKeyframes wiring in trim and split", () => {
     const withKeyframe = editItemKeyframes(
       base,
       "v1",
-      (it) => setKeyframe(it, "framing", 2, { zoom: 2, panX: 0, panY: 0, rotation: 0 }),
+      (it) =>
+        setKeyframe(it, "framing", 2, {
+          zoom: 2,
+          panX: 0,
+          panY: 0,
+          rotation: 0,
+        }),
       ctx
     );
     const result = splitItemAt(withKeyframe, "v1", 4, ctx)!;
@@ -887,7 +1136,13 @@ describe("shiftKeyframes wiring in trim and split", () => {
     const withKeyframe = editItemKeyframes(
       base,
       "v1",
-      (it) => setKeyframe(it, "framing", 10, { zoom: 2, panX: 0, panY: 0, rotation: 0 }),
+      (it) =>
+        setKeyframe(it, "framing", 10, {
+          zoom: 2,
+          panX: 0,
+          panY: 0,
+          rotation: 0,
+        }),
       ctx
     );
     const sped = valid(setVideoSpeed(withKeyframe, "v1", 2, ctx));
