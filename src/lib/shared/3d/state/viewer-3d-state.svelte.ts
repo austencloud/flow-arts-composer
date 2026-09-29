@@ -1090,35 +1090,27 @@ function buildViewer3DState(
   }
 
   function resetAllPerformersProp(): void {
-    sceneUndo.captureState("reset-all-overrides", "Reset all prop overrides");
-    sceneUndo.withoutUndo(() => {
-      for (const p of performerManager.performers) p.resetProp();
-    });
-    sceneUndo.commitState();
+    resetPerformerOverrides("prop", "Reset all prop overrides", (p) =>
+      p.resetProp()
+    );
   }
 
   function resetAllPerformersEffort(): void {
-    sceneUndo.captureState("reset-all-overrides", "Reset all effort overrides");
-    sceneUndo.withoutUndo(() => {
-      for (const p of performerManager.performers) p.resetEffort();
-    });
-    sceneUndo.commitState();
+    resetPerformerOverrides("effort", "Reset all effort overrides", (p) =>
+      p.resetEffort()
+    );
   }
 
   function resetAllPerformersEffects(): void {
-    sceneUndo.captureState("reset-all-overrides", "Reset all effect overrides");
-    sceneUndo.withoutUndo(() => {
-      for (const p of performerManager.performers) p.resetEffects();
-    });
-    sceneUndo.commitState();
+    resetPerformerOverrides("effects", "Reset all effect overrides", (p) =>
+      p.resetEffects()
+    );
   }
 
   function resetAllPerformersPlanes(): void {
-    sceneUndo.captureState("reset-all-overrides", "Reset all plane overrides");
-    sceneUndo.withoutUndo(() => {
-      for (const p of performerManager.performers) p.resetPlanes();
-    });
-    sceneUndo.commitState();
+    resetPerformerOverrides("planes", "Reset all plane overrides", (p) =>
+      p.resetPlanes()
+    );
   }
 
   type ScopedPerformerSnapshot = {
@@ -1142,6 +1134,26 @@ function buildViewer3DState(
       for (const { performer, snapshot } of snapshots) {
         performer.restoreEditingSnapshot(snapshot);
       }
+    });
+  }
+
+  function resetPerformerOverrides(
+    category: CascadeCategory,
+    description: string,
+    reset: (performer: CharacterInstanceState) => void
+  ): void {
+    const targets = performerManager.performers.filter(
+      (performer) => performer.hasOverride[category]
+    );
+    if (targets.length === 0) return;
+    const before = captureScopedEditingSnapshots(targets);
+    sceneUndo.withoutUndo(() => {
+      for (const performer of targets) reset(performer);
+    });
+    const after = captureScopedEditingSnapshots(targets);
+    sceneUndo.pushSelfRestoringEntry("reset-all-overrides", description, {
+      undo: () => restoreScopedEditingSnapshots(before),
+      redo: () => restoreScopedEditingSnapshots(after),
     });
   }
 

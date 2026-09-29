@@ -13,6 +13,7 @@ import { getTimelineSnapper } from "../../services/timeline-snap-service";
 
 export interface ClipMoveHandlers {
   handleMoveStart: (e: MouseEvent) => void;
+  dispose: () => void;
 }
 
 export interface ClipMoveCallbacks {
@@ -126,6 +127,8 @@ export function createClipMove(
   }
 
   function handleMoveEnd() {
+    if (!dragClipId) return;
+    getState().endEdit();
     // Clean up snap service state
     getSnapService().endDrag();
 
@@ -135,6 +138,7 @@ export function createClipMove(
     callbacks.onDragEnd();
     window.removeEventListener("mousemove", handleMoveUpdate);
     window.removeEventListener("mouseup", handleMoveEnd);
+    window.removeEventListener("blur", handleMoveEnd);
   }
 
   function handleMoveStart(e: MouseEvent) {
@@ -152,13 +156,15 @@ export function createClipMove(
 
     // Initialize snap service for this drag operation
     getSnapService().startDrag([clip.id]);
+    getState().beginEdit("MOVE_CLIP", "Move clip");
 
     callbacks.onDragStart();
     getState().selectClip(clip.id);
 
     window.addEventListener("mousemove", handleMoveUpdate);
     window.addEventListener("mouseup", handleMoveEnd);
+    window.addEventListener("blur", handleMoveEnd);
   }
 
-  return { handleMoveStart };
+  return { handleMoveStart, dispose: handleMoveEnd };
 }

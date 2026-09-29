@@ -65,6 +65,10 @@ export class ArrangeUndoManager {
     if (!this.pendingEntry || !this.getSnapshot) return;
 
     this.pendingEntry.afterState = this.getSnapshot();
+    if (JSON.stringify(this.pendingEntry.beforeState) === JSON.stringify(this.pendingEntry.afterState)) {
+      this.pendingEntry = null;
+      return;
+    }
 
     this.undoStack.push(this.pendingEntry);
 
@@ -88,14 +92,21 @@ export class ArrangeUndoManager {
 
     const now = Date.now();
     const lastEntry = this.undoStack[this.undoStack.length - 1];
+    const afterState = this.getSnapshot();
+    if (JSON.stringify(this.pendingEntry.beforeState) === JSON.stringify(afterState)) {
+      this.pendingEntry = null;
+      return;
+    }
 
     // Coalesce if the previous entry has the same key within the time window
     if (
       lastEntry?.coalescingKey === coalescingKey &&
+      lastEntry.type === this.pendingEntry.type &&
+      this.redoStack.length === 0 &&
       now - lastEntry.timestamp < windowMs
     ) {
       // Update existing entry's afterState and description, discard pending
-      lastEntry.afterState = this.getSnapshot();
+      lastEntry.afterState = afterState;
       lastEntry.description = this.pendingEntry.description;
       lastEntry.timestamp = now;
       this.pendingEntry = null;
@@ -121,7 +132,7 @@ export class ArrangeUndoManager {
     this.redoStack.push(entry);
     this.notifySubscribers();
 
-    return { snapshot: entry.beforeState, description: entry.description };
+    return { snapshot: structuredClone(entry.beforeState), description: entry.description };
   }
 
   redo(): UndoResult | null {
@@ -131,7 +142,7 @@ export class ArrangeUndoManager {
     this.undoStack.push(entry);
     this.notifySubscribers();
 
-    return { snapshot: entry.afterState, description: entry.description };
+    return { snapshot: structuredClone(entry.afterState), description: entry.description };
   }
 
   clear(): void {
