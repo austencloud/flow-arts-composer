@@ -10,6 +10,7 @@ import { getTimelineState } from "$lib/shared/animation-engine/state/timeline-st
 
 export interface ClipResizeHandlers {
   handleResizeStart: (e: MouseEvent) => void;
+  dispose: () => void;
 }
 
 export interface ClipResizeCallbacks {
@@ -25,6 +26,7 @@ export function createClipResize(
   let dragStartX = 0;
   let dragStartValue = 0;
   let initialRate = 1;
+  let active = false;
 
   function getState() {
     return getTimelineState();
@@ -51,9 +53,13 @@ export function createClipResize(
   }
 
   function handleResizeEnd() {
+    if (!active) return;
+    active = false;
+    getState().endEdit();
     callbacks.onDragEnd();
     window.removeEventListener("mousemove", handleResizeUpdate);
     window.removeEventListener("mouseup", handleResizeEnd);
+    window.removeEventListener("blur", handleResizeEnd);
   }
 
   function handleResizeStart(e: MouseEvent) {
@@ -66,12 +72,15 @@ export function createClipResize(
     dragStartX = e.clientX;
     dragStartValue = clip.duration;
     initialRate = clip.playbackRate;
+    active = true;
+    getState().beginEdit("RESIZE_CLIP", "Resize clip");
 
     callbacks.onDragStart();
 
     window.addEventListener("mousemove", handleResizeUpdate);
     window.addEventListener("mouseup", handleResizeEnd);
+    window.addEventListener("blur", handleResizeEnd);
   }
 
-  return { handleResizeStart };
+  return { handleResizeStart, dispose: handleResizeEnd };
 }

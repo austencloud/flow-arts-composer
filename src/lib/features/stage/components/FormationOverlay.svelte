@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { onDestroy } from "svelte";
   import { getStageChoreographyContext } from "../context/stage-choreography-context";
   import type { StageEditMode } from "../state/stage-edit-mode.svelte";
   import type { Formation } from "../domain/stage-types";
@@ -126,9 +127,14 @@
   }
 
   function handlePointerUp() {
+    stageState.endDrag();
     draggingPerformerId = null;
     editMode.isDragging = false;
   }
+
+  onDestroy(() => {
+    if (draggingPerformerId) handlePointerUp();
+  });
 
   // Keyboard equivalent of dragging: nudge the selected spot a quarter metre.
   const NUDGE_METRES = 0.25;
@@ -156,6 +162,7 @@
       spot.x + dx,
       spot.z + dz
     );
+    stageState.endDrag();
   }
 
   // A performer occupies about the same footprint whatever the chart's scale, so
@@ -173,9 +180,7 @@
   const spotFontSize = $derived(
     Math.max(10, Math.round(spotRadius * (labelFitsInside ? 0.68 : 1.1)))
   );
-  const edgeLabelSize = $derived(
-    Math.max(11, Math.min(pxPerMetre * 0.13, 20))
-  );
+  const edgeLabelSize = $derived(Math.max(11, Math.min(pxPerMetre * 0.13, 20)));
   // Stop the arrow at the chip edges so it reads as travel between two spots
   // rather than a line buried under them.
   const ARROW_CLEARANCE = 4;

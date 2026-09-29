@@ -127,6 +127,7 @@ export interface StageChoreographyState extends UnifiedPlaybackContext {
     atBeat?: number
   ): void;
   beginDrag(): void;
+  endDrag(): void;
   addSequenceClip(
     performerId: string,
     sequence: SequenceData,
@@ -310,6 +311,7 @@ export function createStageChoreographyState(
   let undoStack = $state<string[]>([]);
   let redoStack = $state<string[]>([]);
   let historyRevision = $state(0);
+  let dragBefore: string | null = null;
 
   function snapshotHistory(): string {
     return JSON.stringify({
@@ -336,6 +338,7 @@ export function createStageChoreographyState(
   }
 
   function pushUndo() {
+    if (dragBefore !== null) return;
     historyRevision++;
     undoStack.push(snapshotHistory());
     if (undoStack.length > MAX_UNDO_STACK) undoStack.shift();
@@ -359,7 +362,9 @@ export function createStageChoreographyState(
       Math.min(180, restored.bpm ?? choreography.bpm)
     );
     choreography.sharedSequenceId =
-      restored.sharedSequenceId ?? choreography.sharedSequenceId;
+      restored.sharedSequenceId === undefined
+        ? choreography.sharedSequenceId
+        : restored.sharedSequenceId;
     choreography.performers = restored.performers;
     choreography.formations = normalizeFormations(
       restored.formations,
@@ -370,6 +375,7 @@ export function createStageChoreographyState(
   }
 
   function undo() {
+    endDrag();
     if (undoStack.length === 0) return;
     historyRevision++;
     redoStack.push(snapshotHistory());
@@ -378,6 +384,7 @@ export function createStageChoreographyState(
   }
 
   function redo() {
+    endDrag();
     if (redoStack.length === 0) return;
     historyRevision++;
     undoStack.push(snapshotHistory());
@@ -716,8 +723,13 @@ export function createStageChoreographyState(
   ) {
     const spot = findFormation(formationId)?.spots[performerId];
     if (!spot) return;
-    // Pointer drags call this continuously. beginDrag() owns the one history
-    // entry, matching the formation overlay's position-drag contract.
+    if (
+      spot.travel?.departureBeat === departureBeat &&
+      spot.travel?.arrivalBeat === arrivalBeat
+    )
+      return;
+    // Pointer drags group their updates through beginDrag/endDrag.
+    if (dragBefore === null) pushUndo();
     spot.travel = {
       departureBeat,
       arrivalBeat,
@@ -784,9 +796,9 @@ export function createStageChoreographyState(
     const formation = findFormation(formationId);
     const spot = formation?.spots[performerId];
     if (!formation || !spot) return;
-    // Dragging calls this on every pointermove, so history is pushed once by
-    // beginDrag(). Pushing here would
-    // spend the whole undo stack on one drag.
+    if (spot.x === x && spot.z === z) return;
+    // Pointer drags group their updates through beginDrag/endDrag.
+    if (dragBefore === null) pushUndo();
     spot.x = x;
     spot.z = z;
     formation.presetId = "custom";
@@ -1036,7 +1048,18 @@ export function createStageChoreographyState(
   }
 
   function beginDrag() {
-    pushUndo();
+    if (dragBefore === null) dragBefore = snapshotHistory();
+  }
+
+  function endDrag() {
+    if (dragBefore === null) return;
+    const before = dragBefore;
+    dragBefore = null;
+    if (before === snapshotHistory()) return;
+    historyRevision++;
+    undoStack.push(before);
+    if (undoStack.length > MAX_UNDO_STACK) undoStack.shift();
+    redoStack = [];
   }
 
   function addSequenceClip(
@@ -1167,7 +1190,10 @@ export function createStageChoreographyState(
   }
 
   function setBpm(bpm: number) {
-    choreography.bpm = Math.max(15, Math.min(180, bpm));
+    const nextBpm = Math.max(15, Math.min(180, bpm));
+    if (nextBpm === choreography.bpm) return;
+    pushUndo();
+    choreography.bpm = nextBpm;
   }
 
   /**
@@ -1340,6 +1366,7 @@ export function createStageChoreographyState(
     applyFormationTransition,
     assertFormationTransitionAllowed,
     beginDrag,
+    endDrag,
     addSequenceClip,
     removeSequenceClip,
     assignPerformerSequences,
