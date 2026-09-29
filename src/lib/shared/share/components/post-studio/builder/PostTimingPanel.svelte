@@ -183,6 +183,7 @@
               : t("share_studio_deep_on_taps")}
             draft={section.offsetSeconds.toFixed(2)}
             unit="s"
+            signed
             oncommit={session.setGridOffset}
           />
         </div>

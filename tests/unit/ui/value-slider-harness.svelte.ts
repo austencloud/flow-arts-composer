@@ -31,6 +31,29 @@ export function mountHeldSlider(target: HTMLElement, floor: number) {
   };
 }
 
+/** A straighten-like slider that turns either way from 0°. */
+export function mountTurnSlider(target: HTMLElement) {
+  const props = $state({
+    label: "Straighten",
+    value: 0,
+    min: -45,
+    max: 45,
+    step: 0.5,
+    format: (value: number) => `${value}°`,
+    onchange: (next: number) => {
+      props.value = next;
+    },
+  });
+  const component = mount(ValueSlider, { target, props });
+  flushSync();
+  return {
+    component,
+    get value() {
+      return props.value;
+    },
+  };
+}
+
 /** A speed-like slider: its track moves in doublings and reads in ×. */
 export function mountSpeedSlider(target: HTMLElement) {
   const props = $state({

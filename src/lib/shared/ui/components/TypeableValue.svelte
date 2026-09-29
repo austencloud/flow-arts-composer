@@ -31,6 +31,11 @@
     parse?: (typed: string) => number | null;
     /** The widest reading, so the box keeps one width as the value changes. */
     sizer?: string;
+    /**
+     * The value can be below zero. A phone's number pad has no minus key, so
+     * the field opens the full keyboard instead.
+     */
+    signed?: boolean;
     disabled?: boolean;
     oncommit: (value: number) => void;
   }
@@ -42,6 +47,7 @@
     unit,
     parse,
     sizer,
+    signed = false,
     disabled = false,
     oncommit,
   }: Props = $props();
@@ -120,9 +126,11 @@
         bind:this={field}
         bind:value={typed}
         type="text"
-        inputmode="decimal"
+        inputmode={signed ? "text" : "decimal"}
         enterkeyhint="done"
         autocomplete="off"
+        autocapitalize="off"
+        autocorrect="off"
         spellcheck="false"
         size="1"
         aria-label={reading.unit ? `${label}, ${reading.unit}` : label}
