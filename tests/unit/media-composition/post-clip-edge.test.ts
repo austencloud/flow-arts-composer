@@ -78,6 +78,69 @@ function recordingContext(canvas = { width: 1080, height: 1920 }): {
   return { context: context as unknown as CanvasRenderingContext2D, calls };
 }
 
+type Matrix = readonly [a: number, b: number, c: number, d: number, e: number, f: number];
+
+const IDENTITY: Matrix = [1, 0, 0, 1, 0, 0];
+
+function times(m: Matrix, n: Matrix): Matrix {
+  return [
+    m[0] * n[0] + m[2] * n[1],
+    m[1] * n[0] + m[3] * n[1],
+    m[0] * n[2] + m[2] * n[3],
+    m[1] * n[2] + m[3] * n[3],
+    m[0] * n[4] + m[2] * n[5] + m[4],
+    m[1] * n[4] + m[3] * n[5] + m[5],
+  ];
+}
+
+/** The transform in force as each recorded call was made. */
+function transformsOf(calls: Call[]): Matrix[] {
+  let current = IDENTITY;
+  const saved: Matrix[] = [];
+  return calls.map(({ name, args }) => {
+    const at = current;
+    const numbers = args as number[];
+    const [first = 0, second = 0] = numbers;
+    if (name === "save") saved.push(current);
+    else if (name === "restore") current = saved.pop() ?? IDENTITY;
+    else if (name === "translate") current = times(current, [1, 0, 0, 1, first, second]);
+    else if (name === "scale") current = times(current, [first, 0, 0, second, 0, 0]);
+    else if (name === "rotate") {
+      const [cos, sin] = [Math.cos(first), Math.sin(first)];
+      current = times(current, [cos, sin, -sin, cos, 0, 0]);
+    } else if (name === "transform") current = times(current, numbers as unknown as Matrix);
+    else if (name === "setTransform") current = numbers as unknown as Matrix;
+    else if (name === "resetTransform") current = IDENTITY;
+    return at;
+  });
+}
+
+/** Where a point drawn under `m` lands on the canvas. */
+function place(m: Matrix, x: number, y: number): [number, number] {
+  return [m[0] * x + m[2] * y + m[4], m[1] * x + m[3] * y + m[5]];
+}
+
+/** A point of `rect` turned `degrees` clockwise about the rect's centre. */
+function turnedAbout(
+  rect: { x: number; y: number; width: number; height: number },
+  x: number,
+  y: number,
+  degrees: number
+): [number, number] {
+  const centreX = rect.x + rect.width / 2;
+  const centreY = rect.y + rect.height / 2;
+  const radians = (degrees * Math.PI) / 180;
+  return [
+    centreX + (x - centreX) * Math.cos(radians) - (y - centreY) * Math.sin(radians),
+    centreY + (x - centreX) * Math.sin(radians) + (y - centreY) * Math.cos(radians),
+  ];
+}
+
+function expectPoint(actual: [number, number], expected: [number, number]) {
+  expect(actual[0]).toBeCloseTo(expected[0], 6);
+  expect(actual[1]).toBeCloseTo(expected[1], 6);
+}
+
 describe("a clip's edge", () => {
   it("keeps each amount in range and stores nothing when plain", () => {
     expect(
@@ -206,6 +269,47 @@ describe("the edge painter", () => {
     const stroke = calls.find((call) => call.name === "stroke")!;
     expect(stroke.state).toMatchObject({ lineWidth: 10, strokeStyle: "#ff0000", globalAlpha: 1 });
   });
+
+  it("turns a turned clip's shadow shape with it and still drops it straight down", () => {
+    const { context, calls } = recordingContext();
+    const pixels = regionEdgePixels(
+      { cornerRadius: 0, borderWidth: 0, borderColor: "#fff", shadow: 1 },
+      rect,
+      { width: 1080, height: 1920 }
+    );
+    paintEdgeShadow(context, rect, pixels, 1, 90);
+    const tracedAt = calls.findIndex((call) => call.name === "rect");
+    const under = transformsOf(calls)[tracedAt]!;
+    const fill = calls.find((call) => call.name === "fill")!;
+    const cast = (x: number, y: number): [number, number] => {
+      const [landX, landY] = place(under, x, y);
+      return [
+        landX + (fill.state.shadowOffsetX as number),
+        landY + (fill.state.shadowOffsetY as number),
+      ];
+    };
+    const drop = pixels.shadow!.drop;
+    // A quarter turn about (300, 350) takes the top left corner to (450, 150)
+    // and the bottom right to (150, 550); each shadow falls straight below.
+    expectPoint(cast(100, 200), [450, 150 + drop]);
+    expectPoint(cast(500, 500), [150, 550 + drop]);
+  });
+
+  it("turns a turned clip's border about its centre", () => {
+    const { context, calls } = recordingContext();
+    paintEdgeBorder(
+      context,
+      rect,
+      { radius: 30, border: 10, color: "#ff0000", shadow: null },
+      1,
+      30
+    );
+    const tracedAt = calls.findIndex((call) => call.name === "roundRect");
+    expect(calls[tracedAt]!.args).toEqual([105, 205, 390, 290, 25]);
+    const under = transformsOf(calls)[tracedAt]!;
+    expectPoint(place(under, 300, 350), [300, 350]);
+    expectPoint(place(under, 500, 350), turnedAbout(rect, 500, 350, 30));
+  });
 });
 
 describe("the export", () => {
@@ -261,5 +365,86 @@ describe("the export", () => {
     expect(calls[pathAt + 1]?.name).toBe("roundRect");
     expect(calls[pathAt + 1]?.args[4]).toBeGreaterThan(0);
     expect(calls[strokeAt]!.state.strokeStyle).toBe(POST_EDGE_COLOR_HEX.red);
+  });
+
+  it("turns a turned clip's layers, shadow and border about the clip's centre", async () => {
+    const edge = { corners: 0.2, border: 0.01, borderColor: "red", shadow: 0.6 } as const;
+    const box = { x: 0.1, y: 0.1, width: 0.5, height: 0.4, turn: 30 };
+    const result = compilePostProject(
+      project([video("v1", { box, edge: { ...edge }, staffEffect: { effect: "trails" } })]),
+      ctx
+    )!;
+    const layers = evaluatePresetFrame(result.preset, result.durationSeconds, 1).filter(
+      (layer) => layer.clipId === "v1~staff"
+    );
+    expect(layers).toHaveLength(1);
+    expect(layers[0]!.regionRect?.turn).toBe(30);
+
+    const output = result.preset.output;
+    const { context, calls } = recordingContext({ width: output.width, height: output.height });
+    const painter: PostStudioLayerPainter = {
+      prepare: () => Promise.resolve(),
+      paint: (target) => {
+        (target as unknown as { paint: () => void }).paint();
+      },
+    };
+    await renderPostStudioFrame({
+      canvas: {
+        width: output.width,
+        height: output.height,
+        getContext: () => context,
+      } as unknown as HTMLCanvasElement,
+      root: {} as HTMLElement,
+      preset: result.preset,
+      layers,
+      cardFrameCache: new Map(),
+      painters: new Map([[staffEffectRole("v1"), painter]]),
+      timeSeconds: 1,
+    });
+
+    const names = calls.map((call) => call.name);
+    const under = transformsOf(calls);
+    const picture = {
+      x: box.x * output.width,
+      y: box.y * output.height,
+      width: box.width * output.width,
+      height: box.height * output.height,
+    };
+    const right = picture.x + picture.width;
+    const bottom = picture.y + picture.height;
+    /** The rounded rect traced at `at`, and where its bottom right lands. */
+    const tracedCorner = (at: number): [number, number] => {
+      const [x, y, width, height] = calls[at]!.args as number[];
+      return place(under[at]!, x! + width!, y! + height!);
+    };
+
+    // The layer is clipped to the picture, turned.
+    const clipAt = names.indexOf("clip");
+    const clipPath = names.lastIndexOf("roundRect", clipAt);
+    expectPoint(tracedCorner(clipPath), turnedAbout(picture, right, bottom, 30));
+
+    // Its shadow falls straight down from the turned picture.
+    const shadowAt = names.findIndex(
+      (name, index) => name === "fill" && (calls[index]!.state.shadowBlur as number) > 0
+    );
+    const region = result.preset.regions.find((entry) => entry.id === "v1")!;
+    const drop = regionEdgePixels(region.edge!, picture, output).shadow!.drop;
+    const [landX, landY] = tracedCorner(names.lastIndexOf("roundRect", shadowAt));
+    const [turnedX, turnedY] = turnedAbout(picture, right, bottom, 30);
+    expect(landX + (calls[shadowAt]!.state.shadowOffsetX as number)).toBeCloseTo(turnedX, 6);
+    expect(landY + (calls[shadowAt]!.state.shadowOffsetY as number)).toBeCloseTo(
+      turnedY + drop,
+      6
+    );
+
+    // The border is drawn inside the edge, turned about the same centre.
+    const strokeAt = names.indexOf("stroke");
+    const borderAt = names.lastIndexOf("roundRect", strokeAt);
+    const [x, y, width, height] = calls[borderAt]!.args as number[];
+    const inner = { x: x!, y: y!, width: width!, height: height! };
+    expectPoint(
+      place(under[borderAt]!, inner.x, inner.y),
+      turnedAbout(picture, inner.x, inner.y, 30)
+    );
   });
 });

@@ -45,6 +45,11 @@ export const LayoutRegionSchema = z
     respectSafeArea: z.boolean(),
     /** Square and bare when absent. */
     edge: RegionEdgeSchema.optional(),
+    /**
+     * Degrees clockwise the whole region turns about its centre, edge and
+     * all; straight when absent. The unturned rect is what stays inside.
+     */
+    turn: z.number().finite().min(-180).max(180).optional(),
   })
   .strict()
   .superRefine((region, context) => {

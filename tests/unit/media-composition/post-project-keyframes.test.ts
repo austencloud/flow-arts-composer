@@ -229,6 +229,33 @@ describe("channelValueAt sampling", () => {
     expect(framingAt(v, 7).rotation).toBeCloseTo(-137.5, 6);
   });
 
+  it("turns a box the short way between keys and drops the turn once straight", () => {
+    const at = (turn?: number) => ({
+      x: 0.2,
+      y: 0.2,
+      width: 0.4,
+      height: 0.4,
+      ...(turn === undefined ? {} : { turn }),
+    });
+    const linear = EASING_PRESETS.linear;
+    const t = text("t", 0, 10, {
+      keyframes: {
+        box: [
+          { t: 0, value: at(170), easing: linear },
+          { t: 4, value: at(-170), easing: linear },
+          { t: 10, value: at(), easing: linear },
+        ],
+      },
+    });
+
+    // 20 degrees on through 180, not 340 back.
+    expect(boxAt(t, 1).turn).toBeCloseTo(175, 6);
+    expect(boxAt(t, 3).turn).toBeCloseTo(-175, 6);
+    // A key with no turn is straight, so the blend runs to 0.
+    expect(boxAt(t, 7).turn).toBeCloseTo(-85, 6);
+    expect(boxAt(t, 10)).not.toHaveProperty("turn");
+  });
+
   it("boxAt reads any kind's box channel", () => {
     let t = setKeyframe(text("t", 0, 10), "box", 0, {
       x: 0,
@@ -259,6 +286,13 @@ describe("clampChannelValue", () => {
     ).toEqual({ x: 0.5, y: 0, width: 0.5, height: 0.5 });
   });
 
+  it("wraps a box's turn and drops it when the box is straight again", () => {
+    const at = { x: 0, y: 0, width: 0.5, height: 0.5 };
+    expect(clampChannelValue("box", { ...at, turn: 270 })).toEqual({ ...at, turn: -90 });
+    expect(clampChannelValue("box", { ...at, turn: 360 })).toEqual(at);
+    expect(clampChannelValue("box", { ...at, turn: 0 })).toEqual(at);
+  });
+
   it("clamps a framing's zoom and wraps its rotation", () => {
     const framing = clampChannelValue("framing", {
       zoom: 10,
@@ -278,6 +312,8 @@ describe("sameChannelValue", () => {
     const box = { x: 0, y: 0, width: 1, height: 1 };
     expect(sameChannelValue("box", box, { ...box })).toBe(true);
     expect(sameChannelValue("box", box, { ...box, x: 0.1 })).toBe(false);
+    expect(sameChannelValue("box", box, { ...box, turn: 10 })).toBe(false);
+    expect(sameChannelValue("box", box, { ...box, turn: 0 })).toBe(true);
     const framing = { zoom: 1, panX: 0, panY: 0, rotation: 0 };
     expect(sameChannelValue("framing", framing, { ...framing })).toBe(true);
     expect(sameChannelValue("framing", framing, { ...framing, rotation: 1 })).toBe(

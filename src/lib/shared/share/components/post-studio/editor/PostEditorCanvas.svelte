@@ -16,7 +16,10 @@
   import type { PostEditorState } from "$lib/shared/media-composition/state/post-editor-state.svelte";
   import { toPaintFrame } from "$lib/shared/media-composition/services/post-studio-layer-painter";
   import { backdropLayer } from "$lib/shared/media-composition/services/post-backdrop-painter";
-  import { regionEdgePixels } from "$lib/shared/media-composition/services/region-edge-painter";
+  import {
+    regionEdgePixels,
+    shadowDropInRegion,
+  } from "$lib/shared/media-composition/services/region-edge-painter";
   import type { LayoutRegion } from "$lib/shared/media-composition/domain/media-layout-schema";
   import { itemIdFromStaffEffectRole } from "$lib/shared/media-composition/domain/post-project-compiler";
   import {
@@ -51,7 +54,14 @@
     BOX_NUDGE,
     BOX_SIDES,
     NO_GUIDES,
+    TURN_HANDLE_GAP,
+    boxContains,
+    boxTurn,
     dragBox,
+    handleCursor,
+    intoTurnedBox,
+    turnBox,
+    turnHandleSide,
     type BoxGuides,
     type BoxHandle,
   } from "./post-box-drag";
@@ -230,11 +240,12 @@
   /**
    * A clip's corners, border and shadow at the stage's size, measured as the
    * export measures them. They fade with the clip, and the crop screen shows
-   * the picture without them.
+   * the picture without them. A turned clip's shadow still drops straight
+   * down the frame.
    */
   function edgeStyle(
     region: LayoutRegion,
-    rect: { width: number; height: number },
+    rect: { width: number; height: number; turn?: number },
     list: readonly RegionEntry[]
   ): EdgeStyle | null {
     if (!region.edge || cropping || stageWidth <= 0 || stageHeight <= 0) {
@@ -250,11 +261,12 @@
       { width: stageWidth, height: stageHeight }
     );
     const shadow = pixels.shadow;
+    const drop = shadow && shadowDropInRegion(shadow.drop, rect.turn ?? 0);
     return {
       radius: `${pixels.radius}px`,
       shadow:
-        shadow && opacity > 0
-          ? `0 ${shadow.drop}px ${shadow.blur}px rgb(0 0 0 / ${shadow.alpha * opacity})`
+        shadow && drop && opacity > 0
+          ? `${drop.x}px ${drop.y}px ${shadow.blur}px rgb(0 0 0 / ${shadow.alpha * opacity})`
           : undefined,
       border: pixels.border > 0 ? `${pixels.border}px` : undefined,
       color: pixels.color,
@@ -377,15 +389,43 @@
     fit: "cover" | "contain";
     zoom: number;
     rotation: number;
+    /** The box's own turn, which the drag is turned back out of. */
+    turn: number;
     moved: boolean;
   }
 
-  type Drag = BoxDrag | PictureDrag;
+  /** The turn handle swinging the whole box about its centre. */
+  interface TurnDrag {
+    kind: "turn";
+    pointerId: number;
+    itemId: string;
+    /** Its box, which the turn keeps all but the angle of. */
+    startSpot: PostBox;
+    startSeconds: number;
+    startX: number;
+    startY: number;
+    /** The box's centre, in client pixels. */
+    centreX: number;
+    centreY: number;
+    /** The pointer's angle about the centre as the drag began, in degrees. */
+    startAngle: number;
+    moved: boolean;
+  }
+
+  type Drag = BoxDrag | PictureDrag | TurnDrag;
 
   let drag: Drag | null = null;
   let guides = $state.raw<BoxGuides>(NO_GUIDES);
   /** A box, a picture or a pinch is moving: the grid and safe area show. */
   let dragging = $state(false);
+  /**
+   * A turn in progress: the side its handle keeps until the drag ends, so
+   * it never jumps under the pointer, and the angle so far.
+   */
+  let turning = $state.raw<{
+    side: "above" | "below" | "inside";
+    degrees: number;
+  } | null>(null);
   /** What Instagram leaves uncovered on this post's shape, if it covers any. */
   const safeArea = $derived(postSafeArea(editor.project.canvas));
   /** A press this small is a tap, not a move. */
@@ -398,17 +438,18 @@
     const y = (event.clientY - rect.top) / rect.height;
     const seconds = editor.previewSeconds;
     return (
-      itemsHere.find((item) => {
-        const box = shownBox(editor, item, seconds);
-        return (
-          x >= box.x &&
-          x <= box.x + box.width &&
-          y >= box.y &&
-          y <= box.y + box.height
-        );
-      }) ?? null
+      itemsHere.find((item) =>
+        boxContains(shownBox(editor, item, seconds), x, y, rect.width / rect.height)
+      ) ?? null
     );
   }
+
+  /** The pointer's angle about a point, in degrees clockwise from east. */
+  function angleAbout(x: number, y: number, event: PointerEvent): number {
+    return (Math.atan2(event.clientY - y, event.clientX - x) * 180) / Math.PI;
+  }
+
+  const degreesLabel = (value: number) => `${Number(value.toFixed(1))}°`;
 
   /** The mounted video's own pixel size, or zero until it has loaded. */
   function mountedVideoSize(itemId: string): { width: number; height: number } {
@@ -452,6 +493,7 @@
         fit: video.fit,
         zoom: framing.zoom,
         rotation: framing.rotation,
+        turn: boxTurn(box),
         moved: false,
       };
       return;
@@ -471,6 +513,39 @@
       width: rect.width,
       height: rect.height,
       moved: false,
+    };
+  }
+
+  /** The turn handle, pressed: the box turns about its centre as it goes. */
+  function startTurn(event: PointerEvent, item: PostItem): void {
+    if (!root || event.button !== 0) return;
+    const rect = root.getBoundingClientRect();
+    if (rect.width <= 0 || rect.height <= 0) return;
+    event.preventDefault();
+    event.stopPropagation();
+    releaseDrag(true);
+    editor.pause();
+    (event.currentTarget as HTMLElement).setPointerCapture(event.pointerId);
+    const seconds = editor.previewSeconds;
+    const box = shownBox(editor, item, seconds);
+    const centreX = rect.left + (box.x + box.width / 2) * rect.width;
+    const centreY = rect.top + (box.y + box.height / 2) * rect.height;
+    drag = {
+      kind: "turn",
+      pointerId: event.pointerId,
+      itemId: item.id,
+      startSpot: boxAt(item, seconds),
+      startSeconds: seconds,
+      startX: event.clientX,
+      startY: event.clientY,
+      centreX,
+      centreY,
+      startAngle: angleAbout(centreX, centreY, event),
+      moved: false,
+    };
+    turning = {
+      side: turnHandleSide(box, { width: rect.width, height: rect.height }),
+      degrees: boxTurn(box),
     };
   }
 
@@ -502,6 +577,7 @@
     const itemId = current.itemId;
     const seconds = current.startSeconds;
     if (current.kind === "picture") {
+      const [deltaXPx, deltaYPx] = intoTurnedBox(pixelsX, pixelsY, current.turn);
       const result = dragPicturePan({
         sourceWidth: current.sourceWidth,
         sourceHeight: current.sourceHeight,
@@ -512,8 +588,8 @@
         rotation: current.rotation,
         startPanX: current.startPanX,
         startPanY: current.startPanY,
-        deltaXPx: pixelsX,
-        deltaYPx: pixelsY,
+        deltaXPx,
+        deltaYPx,
       });
       editor.gestureStep((base, context) =>
         updateItemAt(
@@ -526,13 +602,28 @@
       );
       return;
     }
+    if (current.kind === "turn") {
+      // Alt turns freely and Shift in steps, as a move's Alt skips its snaps.
+      const turn = turnBox(
+        current.startSpot,
+        angleAbout(current.centreX, current.centreY, event) - current.startAngle,
+        event.altKey ? "free" : event.shiftKey ? "step" : "snap"
+      );
+      if (turning) turning = { ...turning, degrees: turn };
+      const box = { ...current.startSpot, turn };
+      editor.gestureStep((base, context) =>
+        updateItemAt(base, itemId, { box }, seconds, context)
+      );
+      return;
+    }
     const result = dragBox(
       current.startBox,
       current.handle,
       pixelsX / current.width,
       pixelsY / current.height,
       !event.altKey,
-      safeArea
+      safeArea,
+      current.width / current.height
     );
     guides = result.guides;
     const box = keptBox(editor, current.item, result.box, current.startSpot);
@@ -548,6 +639,7 @@
     drag = null;
     dragging = false;
     guides = NO_GUIDES;
+    turning = null;
     if (!current.moved) return;
     if (keep) editor.endGesture();
     else editor.cancelGesture();
@@ -608,6 +700,12 @@
     const rect = root.getBoundingClientRect();
     const framing = framingAt(item, seconds);
     const size = mountedVideoSize(item.id);
+    // The picture moves the way the key points on screen, turned box or not.
+    const [directionX, directionY] = intoTurnedBox(
+      direction[0],
+      direction[1],
+      boxTurn(box)
+    );
     const pan = nudgePicturePan({
       sourceWidth: size.width,
       sourceHeight: size.height,
@@ -618,8 +716,8 @@
       rotation: framing.rotation,
       panX: framing.panX,
       panY: framing.panY,
-      directionX: direction[0],
-      directionY: direction[1],
+      directionX,
+      directionY,
       step: large ? PICTURE_NUDGE.large : PICTURE_NUDGE.step,
     });
     if (pan.panX === framing.panX && pan.panY === framing.panY) return;
@@ -693,6 +791,8 @@
     sourceHeight: number;
     fit: "cover" | "contain";
     rotation: number;
+    /** The box's own turn, which the fingers' slide is turned back out of. */
+    turn: number;
     moved: boolean;
   }
 
@@ -745,6 +845,7 @@
       sourceHeight: size.height,
       fit: item.fit,
       rotation: framing.rotation,
+      turn: boxTurn(box),
       moved: false,
     };
   }
@@ -769,6 +870,11 @@
       dragging = true;
       editor.beginGesture();
     }
+    const [slideX, slideY] = intoTurnedBox(
+      mid.x - current.midX,
+      mid.y - current.midY,
+      current.turn
+    );
     const step = stepPicturePinch({
       sourceWidth: current.sourceWidth,
       sourceHeight: current.sourceHeight,
@@ -780,8 +886,8 @@
       panX: current.panX,
       panY: current.panY,
       distanceRatio: current.distance > 0 ? distance / current.distance : 1,
-      midpointDeltaXPx: mid.x - current.midX,
-      midpointDeltaYPx: mid.y - current.midY,
+      midpointDeltaXPx: slideX,
+      midpointDeltaYPx: slideY,
       minZoom: POST_MIN_ZOOM,
       maxZoom: POST_MAX_ZOOM,
     });
@@ -1502,19 +1608,23 @@
       {@const cropRegion = cropping && region.id === cropItem?.id}
       {@const cropWindow = cropRegion ? windowRect : null}
       {@const edge = edgeStyle(region, rect, entries.get(region.id) ?? [])}
+      <!-- A turned clip turns whole, but the crop screen frames it straight,
+           and it cuts to the crop screen rather than flying. -->
       <div
         class="region"
         class:edged={edge !== null}
         class:crop-region={cropRegion}
         class:crop-hidden={cropping && !cropRegion}
         data-crop-region={cropRegion ? "" : undefined}
-        data-crop-flip={region.id === (cropItem?.id ?? editor.selectedItemId)
+        data-crop-flip={region.id === (cropItem?.id ?? editor.selectedItemId) &&
+        !rect.turn
           ? "region"
           : undefined}
         style:left={cropWindow ? `${cropWindow.left}px` : pct(rect.x)}
         style:top={cropWindow ? `${cropWindow.top}px` : pct(rect.y)}
         style:width={cropWindow ? `${cropWindow.width}px` : pct(rect.width)}
         style:height={cropWindow ? `${cropWindow.height}px` : pct(rect.height)}
+        style:rotate={!cropRegion && rect.turn ? `${rect.turn}deg` : undefined}
         style:z-index={region.zIndex}
         style:border-radius={edge?.radius}
         style:box-shadow={edge?.shadow}
@@ -1683,16 +1793,21 @@
           {@const locked = trackLocked(selected.id)}
           {@const box = shownBox(editor, selected, editor.previewSeconds)}
           {@const pictureMode = isPictureDragTarget(selected, box)}
+          {@const turn = boxTurn(box)}
+          {@const turnSide =
+            turning?.side ??
+            turnHandleSide(box, { width: stageWidth, height: stageHeight })}
           <div
             class="selection"
             class:dragging
             class:locked
             class:picture-mode={pictureMode}
-            data-crop-flip="frame"
+            data-crop-flip={turn ? undefined : "frame"}
             style:left={pct(box.x)}
             style:top={pct(box.y)}
             style:width={pct(box.width)}
             style:height={pct(box.height)}
+            style:rotate={turn ? `${turn}deg` : undefined}
             role="group"
             tabindex="0"
             aria-roledescription={t("post_editor_box")}
@@ -1707,6 +1822,7 @@
                 <span
                   class="handle corner {corner}"
                   aria-hidden="true"
+                  style:cursor={turn ? handleCursor(corner, turn) : undefined}
                   onpointerdown={(event) => startDrag(event, selected, corner)}
                 ></span>
               {/each}
@@ -1715,12 +1831,34 @@
                   <span
                     class="handle side {side}"
                     aria-hidden="true"
+                    style:cursor={turn ? handleCursor(side, turn) : undefined}
                     onpointerdown={(event) => startDrag(event, selected, side)}
                   ></span>
                 {/each}
               {/if}
+              <span
+                class="turn-handle"
+                aria-hidden="true"
+                style:top={turnSide === "above"
+                  ? `${-TURN_HANDLE_GAP}px`
+                  : turnSide === "below"
+                    ? `calc(100% + ${TURN_HANDLE_GAP}px)`
+                    : `${TURN_HANDLE_GAP}px`}
+                onpointerdown={(event) => startTurn(event, selected)}
+              >
+                <i class="fa-solid fa-rotate" aria-hidden="true"></i>
+              </span>
             {/if}
           </div>
+          {#if dragging && turning}
+            <span
+              class="turn-readout"
+              aria-hidden="true"
+              style:left={pct(box.x + box.width / 2)}
+              style:top={pct(box.y + box.height / 2)}
+              >{degreesLabel(turning.degrees)}</span
+            >
+          {/if}
         {/if}
       {/if}
       <span id={hintId} class="sr-only">
@@ -2067,6 +2205,46 @@
     left: 0;
     top: 50%;
     cursor: ew-resize;
+  }
+  /* A round grip past the box's edge, with a 44px grab area, that turns the
+     whole box as the pointer goes round it. */
+  .turn-handle {
+    position: absolute;
+    left: 50%;
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    transform: translate(-50%, -50%);
+    cursor: grab;
+  }
+  .selection.dragging .turn-handle {
+    cursor: grabbing;
+  }
+  .turn-handle i {
+    display: grid;
+    place-items: center;
+    width: 1.75rem;
+    height: 1.75rem;
+    border: 2px solid var(--theme-primary, #d4813a);
+    border-radius: 50%;
+    background: #fff;
+    color: #08080c;
+    font-size: 0.75rem;
+    box-shadow: 0 0 0 1px rgb(0 0 0 / 0.45);
+  }
+  /* The angle so far, upright over the box's centre while it turns. */
+  .turn-readout {
+    position: absolute;
+    transform: translate(-50%, -50%);
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.375rem;
+    background: rgb(0 0 0 / 0.75);
+    color: #fff;
+    font-size: 0.8125rem;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    pointer-events: none;
   }
   .guide {
     position: absolute;

@@ -18,6 +18,7 @@
     findItem,
     itemEnd,
     textBox,
+    wrapDegrees,
     type PostBox,
     type PostEdgeColor,
     type PostItem,
@@ -61,7 +62,7 @@
   import ValueSlider from "$lib/shared/ui/components/ValueSlider.svelte";
   import { formatTakeClock, parseClock } from "../builder/post-builder-format";
   import { itemDisplayLabel } from "./post-editor-labels";
-  import { typeBox, type BoxField } from "./post-box-drag";
+  import { boxTurn, typeBox, type BoxField } from "./post-box-drag";
   import { keepsShape, keptBox, shownBox } from "./post-item-rect";
   import { panelChannel, type PostPanelToolId } from "./post-editor-tools";
   import {
@@ -451,6 +452,21 @@
     place(keptBox(editor, item, next, boxAt(item, seconds)));
   }
 
+  /** How far the whole item is turned now, in degrees clockwise. */
+  const shownTurn = $derived(boxTurn(shownBox(editor, item, seconds)));
+
+  /** Turns the whole item to a typed angle, where it stands. */
+  function typeTurn(degrees: number): void {
+    if (!Number.isFinite(degrees)) return;
+    place({ ...boxAt(item, seconds), turn: wrapDegrees(degrees) });
+  }
+
+  /** A placement moves the item and keeps it turned as it was. */
+  function placeAt(box: PostBox): void {
+    const turn = boxTurn(boxAt(item, seconds));
+    place(turn ? { ...box, turn } : box);
+  }
+
   type BorderPick = PostEdgeColor | "none";
 
   const BORDER_COLOR_NAMES: Record<PostEdgeColor, () => string> = {
@@ -748,7 +764,7 @@
       {@const only = onlyPlacement}
       <div class="actions">
         <PanelButton
-          onclick={() => place(only.box)}
+          onclick={() => placeAt(only.box)}
           disabled={locked || frozen || placementNow === only.id}
         >
           <i class="fa-solid fa-expand" aria-hidden="true"></i>
@@ -766,7 +782,7 @@
         value={placementNow}
         onchange={(id) => {
           const option = placements.find((entry) => entry.id === id);
-          if (option) place(option.box);
+          if (option) placeAt(option.box);
         }}
         ariaLabel={t("post_editor_placement")}
       />
@@ -781,6 +797,16 @@
           oncommit={(pixels) => typeRect(entry.field, pixels)}
         />
       {/each}
+      <span class="rect-name" aria-hidden="true"
+        >{t("post_editor_box_turn")}</span
+      >
+      <TypeableValue
+        label={t("post_editor_box_turn")}
+        text={fineDegrees(shownTurn)}
+        signed
+        disabled={locked || frozen}
+        oncommit={typeTurn}
+      />
     </div>
   {:else if tool === "border" && item.kind === "video"}
     {@const edge = edgeOf(item)}

@@ -163,6 +163,7 @@ function region(
     clipContent: true,
     respectSafeArea: false,
     ...(edge ? { edge } : {}),
+    ...(box.turn ? { turn: box.turn } : {}),
   };
 }
 
@@ -278,30 +279,35 @@ function splitIntoPieces(
   return pieces;
 }
 
+/**
+ * Keyed turns as the compiled track plays them: each continues from the one
+ * before it the short way round, as the editor blends them, so a turn
+ * across -180..180 does not spin.
+ */
+function continuousTurns(stored: readonly number[]): number[] {
+  let turn = 0;
+  return stored.map((value, index) => {
+    turn = index === 0 ? value : turn + shortestTurn(stored[index - 1]!, value);
+    return turn;
+  });
+}
+
 function transformMotionKeys(
   item: PostVideoItem
 ): MotionKey<MotionTransformValue>[] | undefined {
   const frames = item.keyframes?.framing;
   if (!frames || frames.length === 0) return undefined;
-  // Each key's turn continues from the one before it the short way round,
-  // as the editor blends them, so a turn across -180..180 does not spin.
-  let turn = 0;
-  let stored: number | null = null;
-  return frames.map((kf) => {
-    const rotation = kf.value.rotation;
-    turn = stored === null ? rotation : turn + shortestTurn(stored, rotation);
-    stored = rotation;
-    return {
-      atSeconds: postSecondsOfKeyframe(item, kf.t),
-      value: {
-        scale: kf.value.zoom,
-        rotationDegrees: turn,
-        translateX: kf.value.panX,
-        translateY: kf.value.panY,
-      },
-      easing: kf.easing,
-    };
-  });
+  const turns = continuousTurns(frames.map((kf) => kf.value.rotation));
+  return frames.map((kf, index) => ({
+    atSeconds: postSecondsOfKeyframe(item, kf.t),
+    value: {
+      scale: kf.value.zoom,
+      rotationDegrees: turns[index]!,
+      translateX: kf.value.panX,
+      translateY: kf.value.panY,
+    },
+    easing: kf.easing,
+  }));
 }
 
 function opacityMotionKeys(item: PostItem): MotionKey<number>[] | undefined {
@@ -326,7 +332,8 @@ function motionFor(
 
 /**
  * A `regionKeyframes` track for the item's own region, or undefined. A
- * shaped clip's region is its shape inside each keyed box.
+ * shaped clip's region is its shape inside each keyed box. When any key is
+ * turned, every key carries its turn, a straight one as 0.
  */
 function regionKeyframesFor(
   item: PostItem,
@@ -334,13 +341,19 @@ function regionKeyframesFor(
 ): PresetRegionKeyframesTrack | null {
   const frames = item.keyframes?.box;
   if (!frames || frames.length === 0) return null;
+  const turns = frames.some((kf) => kf.value.turn !== undefined)
+    ? continuousTurns(frames.map((kf) => kf.value.turn ?? 0))
+    : null;
   return {
     regionId: item.id,
-    keyframes: frames.map((kf) => ({
-      atSeconds: postSecondsOfKeyframe(item, kf.t),
-      value: item.kind === "video" ? clipBox(item, kf.value, output) : kf.value,
-      easing: kf.easing,
-    })),
+    keyframes: frames.map((kf, index) => {
+      const rect = item.kind === "video" ? clipBox(item, kf.value, output) : kf.value;
+      return {
+        atSeconds: postSecondsOfKeyframe(item, kf.t),
+        value: turns ? { ...rect, turn: turns[index]! } : rect,
+        easing: kf.easing,
+      };
+    }),
   };
 }
 

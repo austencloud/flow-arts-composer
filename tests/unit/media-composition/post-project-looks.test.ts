@@ -110,6 +110,16 @@ describe("looks", () => {
     expect(applyLook(withCard, "c1", "dual", ctx)).toBe(withCard);
   });
 
+  it("calls a turned clip custom, and a look sets it straight again", () => {
+    const turned = valid(
+      updateItem(project([video("v1")]), "v1", { box: { ...POST_BOX.full, turn: 10 } }, ctx)
+    );
+    expect(lookOf(turned, "v1")).toBe("custom");
+    const full = valid(applyLook(turned, "v1", "full", ctx));
+    expect(lookOf(full, "v1")).toBe("full");
+    expect(findItem(full, "v1")!.item.box).toEqual(POST_BOX.full);
+  });
+
   it("returns the same project when the clip already has the look", () => {
     const dual = applyLook(project([video("v1")]), "v1", "dual", ctx);
     expect(applyLook(dual, "v1", "dual", ctx)).toBe(dual);
