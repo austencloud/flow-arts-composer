@@ -9,6 +9,7 @@ const readSource = (path: string): string =>
 const withdrawnHrefs = {
   "staff choreography": "/learn/staff-spinning-choreography",
   "the LOOP algebra": "/notation/loops",
+  "the CAPs page": "/notation/caps",
 } as const;
 
 const publicLinkSources = [
@@ -17,8 +18,7 @@ const publicLinkSources = [
   "src/lib/shared/landing/components/SiteFooter.svelte",
   "src/routes/(public)/guide/+page.svelte",
   "src/routes/(public)/notation/staves/+page.svelte",
-  "src/routes/(public)/notation/caps/+page.svelte",
-  "src/routes/(public)/notation/caps/_components/CapsHub.svelte",
+  "src/lib/shared/notation/notation-catalog.ts",
   "src/routes/(public)/about/+page.svelte",
   "src/routes/(public)/composer/+page.svelte",
 ];
@@ -26,6 +26,7 @@ const publicLinkSources = [
 const gatedRoutes = [
   "src/routes/(public)/learn/staff-spinning-choreography/+page.server.ts",
   "src/routes/(public)/notation/loops/+page.server.ts",
+  "src/routes/(public)/notation/caps/+page.server.ts",
 ];
 
 describe("withdrawn public pages", () => {
@@ -68,5 +69,8 @@ describe("withdrawn public pages", () => {
     expect(
       readSource("src/routes/(public)/notation/loops/+page.svelte")
     ).toContain("The LOOP Algebra");
+    expect(
+      readSource("src/routes/(public)/notation/caps/+page.svelte")
+    ).toContain("Continuous Assembly Patterns");
   });
 });

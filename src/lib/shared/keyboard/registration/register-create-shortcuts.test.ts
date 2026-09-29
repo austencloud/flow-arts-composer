@@ -156,7 +156,8 @@ describe("create arrow shortcuts yield to a focused widget", () => {
  * open dialog or drawer layer that has nothing to do with the sequence, such as
  * the Customize drawer on /create/generate. The step editor is a drawer on
  * every viewport, so it opts back in with `data-keyboard-shortcuts-passthrough`
- * on its body: deleting the selected step is exactly what Backspace means there.
+ * on the drawer itself: deleting the selected step is exactly what Backspace
+ * means there.
  */
 const DELETE_SHORTCUT_IDS = [
   "create.delete-beat",
@@ -232,8 +233,9 @@ describe("create delete shortcuts yield to a foreign open layer", () => {
   it("run while a control inside the step editor drawer has focus", () => {
     const registered = registerAll();
     const host = mount(`
-      <dialog open aria-modal="true" tabindex="-1" aria-label="Step editor panel">
-        <div class="editor-body" data-keyboard-shortcuts-passthrough>
+      <dialog open aria-modal="true" tabindex="-1" aria-label="Step editor panel"
+        data-keyboard-shortcuts-passthrough>
+        <div class="editor-body">
           <button type="button" aria-label="Add blue turn">+</button>
         </div>
       </dialog>
@@ -248,8 +250,9 @@ describe("create delete shortcuts yield to a foreign open layer", () => {
   it("skip while a layer nested inside the step editor has focus", () => {
     const registered = registerAll();
     const host = mount(`
-      <dialog open aria-modal="true" tabindex="-1" aria-label="Step editor panel">
-        <div class="editor-body" data-keyboard-shortcuts-passthrough>
+      <dialog open aria-modal="true" tabindex="-1" aria-label="Step editor panel"
+        data-keyboard-shortcuts-passthrough>
+        <div class="editor-body">
           <div role="dialog" aria-label="Choose a prop">
             <button type="button">Staff</button>
           </div>
@@ -312,13 +315,32 @@ describe("create delete shortcuts through the shortcut manager", () => {
   }
 
   // Drawer.svelte stamps these attributes on its open <dialog>.
-  function mountDrawer(label: string, body: string): HTMLElement {
-    return mount(`
-      <dialog class="drawer-content" data-drawer-id="drawer-test" data-state="open"
-        open tabindex="-1" aria-modal="true" aria-label="${label}">
+  function drawer(
+    id: string,
+    label: string,
+    body: string,
+    attributes = ""
+  ): string {
+    return `
+      <dialog class="drawer-content" data-drawer-id="${id}" data-state="open"
+        open tabindex="-1" aria-modal="true" aria-label="${label}" ${attributes}>
         ${body}
       </dialog>
-    `);
+    `;
+  }
+
+  function mountDrawer(label: string, body: string): HTMLElement {
+    return mount(drawer("drawer-test", label, body));
+  }
+
+  // The step editor drawer as StepEditorCoordinator renders it.
+  function stepEditor(body: string): string {
+    return drawer(
+      "drawer-step-editor",
+      "Step editor panel",
+      `<div class="editor-body">${body}</div>`,
+      "data-keyboard-shortcuts-passthrough"
+    );
   }
 
   afterEach(() => {
@@ -331,11 +353,10 @@ describe("create delete shortcuts through the shortcut manager", () => {
 
   it("remove the selected step from a control inside the step editor drawer", () => {
     startCreateShortcuts();
-    const host = mountDrawer(
-      "Step editor panel",
-      `<div class="editor-body" data-keyboard-shortcuts-passthrough>
-        <button type="button" aria-label="Increase turns: Left">+</button>
-      </div>`
+    const host = mount(
+      stepEditor(
+        `<button type="button" aria-label="Increase turns: Left">+</button>`
+      )
     );
     const control = host.querySelector("button")!;
 
@@ -344,6 +365,48 @@ describe("create delete shortcuts through the shortcut manager", () => {
       const event = press(control, key);
       expect(removeStep, key).toHaveBeenCalledExactlyOnceWith(2);
       expect(event.defaultPrevented, key).toBe(true);
+    }
+  });
+
+  // Clicking empty space in the editor, such as the step's pictograph, gives
+  // focus to the nearest focusable ancestor: the Drawer's own tabindex="-1"
+  // <dialog>, not anything inside the editor body.
+  it("remove the selected step when the step editor drawer itself holds focus", () => {
+    startCreateShortcuts();
+    const host = mount(stepEditor(`<div class="step-pictograph"></div>`));
+    const dialog = host.querySelector("dialog")!;
+
+    for (const key of ["Delete", "Backspace"] as const) {
+      removeStep.mockReset();
+      const event = press(dialog, key);
+      expect(removeStep, key).toHaveBeenCalledExactlyOnceWith(2);
+      expect(event.defaultPrevented, key).toBe(true);
+    }
+  });
+
+  it("leave the prop picker opened from the step editor alone", () => {
+    startCreateShortcuts();
+    const host = mount(
+      stepEditor(`<div class="step-pictograph"></div>`) +
+        drawer(
+          "drawer-prop-picker",
+          "Select Left Prop",
+          `<button type="button">Staff</button>`
+        )
+    );
+    const picker = host.querySelector<HTMLElement>(
+      '[aria-label="Select Left Prop"]'
+    )!;
+    const option = picker.querySelector("button")!;
+
+    for (const target of [picker, option]) {
+      for (const key of ["Delete", "Backspace"] as const) {
+        const event = press(target, key);
+        expect(removeStep, `${key} on ${target.tagName}`).not.toHaveBeenCalled();
+        expect(event.defaultPrevented, `${key} on ${target.tagName}`).toBe(
+          false
+        );
+      }
     }
   });
 
@@ -364,13 +427,12 @@ describe("create delete shortcuts through the shortcut manager", () => {
 
   it("leave a layer nested inside the step editor alone", () => {
     startCreateShortcuts();
-    const host = mountDrawer(
-      "Step editor panel",
-      `<div class="editor-body" data-keyboard-shortcuts-passthrough>
-        <div role="dialog" aria-label="Choose a prop">
+    const host = mount(
+      stepEditor(
+        `<div role="dialog" aria-label="Choose a prop">
           <button type="button">Staff</button>
-        </div>
-      </div>`
+        </div>`
+      )
     );
     const option = host.querySelector("button")!;
 
@@ -383,11 +445,8 @@ describe("create delete shortcuts through the shortcut manager", () => {
 
   it("leave Backspace to a text field inside the step editor", () => {
     startCreateShortcuts();
-    const host = mountDrawer(
-      "Step editor panel",
-      `<div class="editor-body" data-keyboard-shortcuts-passthrough>
-        <input type="text" aria-label="Step note" value="left" />
-      </div>`
+    const host = mount(
+      stepEditor(`<input type="text" aria-label="Step note" value="left" />`)
     );
     const field = host.querySelector("input")!;
 

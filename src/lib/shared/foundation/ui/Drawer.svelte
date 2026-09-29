@@ -64,6 +64,7 @@
     keepMounted = false,
     // Focus behavior
     autoFocus = true,
+    keyboardShortcutsPassthrough = false,
     onclose,
     onOpenChange,
     onbackdropclick,
@@ -128,6 +129,14 @@
     keepMounted?: boolean;
     /** Auto-focus the drawer when it opens. Set to false to keep focus on triggering element. Default: true */
     autoFocus?: boolean;
+    /**
+     * Let the application's bare-key shortcuts run while focus is anywhere in
+     * this drawer, the drawer itself included: a click on empty space inside
+     * lands focus on the <dialog>. Only for a drawer that belongs to those
+     * shortcuts' own surface, such as the create step editor. A layer nested
+     * inside stays foreign; see isLayerOwnedKeyboardTarget. Default: false
+     */
+    keyboardShortcutsPassthrough?: boolean;
     onclose?: (event: CustomEvent<{ reason: CloseReason }>) => void;
     onOpenChange?: (open: boolean) => void;
     onbackdropclick?: (event: MouseEvent) => boolean;
@@ -658,6 +667,9 @@
     data-state={dataState}
     data-snap-index={currentSnapIndex}
     data-drawer-id={drawerId}
+    data-keyboard-shortcuts-passthrough={keyboardShortcutsPassthrough
+      ? ""
+      : undefined}
     tabindex="-1"
     aria-modal="true"
     aria-labelledby={labelledBy}

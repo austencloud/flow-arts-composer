@@ -252,6 +252,19 @@ describe("Crossfade focus", () => {
     expect(document.activeElement).toBe(settled[0]);
   });
 
+  it("names a layer without controls when it takes focus", async () => {
+    render(CrossfadeTestHarness);
+    await settle();
+    await pressFromKeyboard("Play");
+
+    await pressFromKeyboard("Finish");
+
+    // A screen reader announces where focus went, not an unnamed box.
+    await expect
+      .element(page.getByRole("group", { name: "Playback finished" }))
+      .toHaveFocus();
+  });
+
   it("moves focus before hiding the leaving layer when motion is reduced", async () => {
     // Without a fade, the leaving layer is hidden and removed in the same
     // commit that shows its replacement.
