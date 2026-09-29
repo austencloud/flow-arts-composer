@@ -472,11 +472,7 @@ export function createPostTimingSession(builder: TimingHost) {
     if (target instanceof HTMLInputElement) {
       return !NOT_TEXT_ENTRY.has(target.type);
     }
-    return (
-      target.isContentEditable ||
-      target instanceof HTMLTextAreaElement ||
-      target instanceof HTMLSelectElement
-    );
+    return target.isContentEditable || target instanceof HTMLTextAreaElement;
   }
 
   /** T taps, Space plays, comma and period step a frame. */

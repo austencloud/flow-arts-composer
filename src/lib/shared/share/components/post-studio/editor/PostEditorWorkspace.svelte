@@ -53,7 +53,7 @@
   } from "$lib/shared/media-composition/domain/post-project-keyframes";
   import {
     editItemKeyframes,
-    moveMainItem,
+    placeMainItem,
     moveOverlayItem,
     setProjectBackground,
     setProjectCanvas,
@@ -1276,7 +1276,7 @@
   function isTyping(target: EventTarget | null): boolean {
     if (!(target instanceof HTMLElement)) return false;
     if (target.isContentEditable) return true;
-    const field = target.closest("input, textarea, select");
+    const field = target.closest("input, textarea");
     return (
       field !== null &&
       !(
@@ -1288,7 +1288,7 @@
     );
   }
 
-  /** Controls that answer Space themselves. */
+  /** Controls that answer Enter themselves. */
   function isControl(target: EventTarget | null): boolean {
     return (
       target instanceof HTMLElement &&
@@ -1322,6 +1322,13 @@
       return;
     event.preventDefault();
     event.stopImmediatePropagation();
+    // Leave the action row so playback does not reactivate its last tool.
+    if (
+      event.target instanceof HTMLElement &&
+      event.target.closest("[data-tool]")
+    ) {
+      rootElement?.focus({ preventScroll: true });
+    }
     if (event.repeat) return;
     if (showTimingStage) session.togglePlay();
     else if (cropMode) toggleCropPlayback();
@@ -2189,9 +2196,9 @@
           onGestureCancel={editor.cancelGesture}
           onTrim={(itemId, edge, seconds) =>
             asOneStep(() => editor.trimLive(itemId, edge, seconds))}
-          onMoveMain={(itemId, toIndex) =>
+          onMoveMain={(itemId, start) =>
             applyMove((project, context) =>
-              moveMainItem(project, itemId, toIndex, context)
+              placeMainItem(project, itemId, start, context)
             )}
           onMoveOverlay={(itemId, start, trackIndex) =>
             applyMove((project, context) =>

@@ -9,8 +9,8 @@ import { TakeTimingSchema } from "$lib/shared/media-composition/domain/take-timi
 /**
  * A post as Austen edits it on the timeline: tracks of items, InShot style.
  *
- * `tracks[0]` is the main track. Its clips sit end to end, so trimming or
- * removing one closes the gap. Every later track is an overlay track drawn
+ * `tracks[0]` is the main track. Clips normally follow one another, but a
+ * dragged clip keeps its chosen start and can leave a gap. Every later track is drawn
  * above the ones before it; its items keep their own times and follow the
  * main clip they are anchored to. `normalizeProject` in
  * `post-project-normalize.ts` owns those rules; every edit ends there.
@@ -358,8 +358,10 @@ const itemBase = {
   id: IdSchema,
   /** Austen's own name for it; the kind's name shows when absent. */
   label: z.string().trim().max(POST_MAX_LABEL_LENGTH).optional(),
-  /** Post seconds. Derived on the main track and for anchored overlays. */
+  /** Post seconds. Derived on the main track unless pinnedStart is true. */
   start: SecondsSchema,
+  /** A main clip placed by hand keeps its timeline time through normalization. */
+  pinnedStart: z.boolean().optional(),
   /** Post seconds. Derived for video, from its source span and speed. */
   duration: z.number().finite().positive(),
   box: PostBoxSchema,

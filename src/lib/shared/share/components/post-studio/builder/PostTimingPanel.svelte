@@ -56,7 +56,6 @@
       <button
         type="button"
         class="tap"
-        data-space-plays
         onclick={session.tap}
         disabled={!session.url}
         aria-describedby="post-tap-help"

@@ -563,6 +563,43 @@ export function moveMainItem(
   return finish(withTrackItems(project, MAIN_TRACK_INDEX, reordered), ctx);
 }
 
+/** Places a main clip at a chosen time, pushing clips it meets to the right. */
+export function placeMainItem(
+  project: PostProject,
+  itemId: string,
+  seconds: number,
+  ctx: EditContext
+): PostProject {
+  const items = project.tracks[MAIN_TRACK_INDEX]!.items;
+  const item = items.find((candidate) => candidate.id === itemId);
+  if (!item || !Number.isFinite(seconds)) return project;
+  const start = Math.max(0, seconds);
+  if (Math.abs(start - item.start) < POST_TIME_EPSILON) return project;
+
+  const before: PostItem[] = [];
+  const after: PostItem[] = [];
+  for (const candidate of items) {
+    if (candidate.id === itemId) continue;
+    (itemEnd(candidate) <= start + POST_TIME_EPSILON ? before : after).push({
+      ...candidate,
+      pinnedStart: true,
+    });
+  }
+  const moved = { ...item, start, pinnedStart: true };
+  let cursor = itemEnd(moved);
+  const pushed = after.map((candidate) => {
+    const nextStart = Math.max(cursor, candidate.start);
+    cursor = nextStart + candidate.duration;
+    return nextStart === candidate.start
+      ? candidate
+      : { ...candidate, start: nextStart };
+  });
+  return finish(
+    withTrackItems(project, MAIN_TRACK_INDEX, [...before, moved, ...pushed]),
+    ctx
+  );
+}
+
 /**
  * Moves an overlay in time and between tracks. `trackIndex` equal to the
  * number of tracks asks for a new track on top. A busy target track sends
@@ -1229,7 +1266,11 @@ function anchorAt(project: PostProject, start: number): PostAnchor | null {
 
 function appendToMain(project: PostProject, item: PostItem): PostProject {
   const main = project.tracks[MAIN_TRACK_INDEX]!;
-  return withTrackItems(project, MAIN_TRACK_INDEX, [...main.items, item]);
+  const last = main.items[main.items.length - 1];
+  return withTrackItems(project, MAIN_TRACK_INDEX, [
+    ...main.items,
+    { ...item, start: last ? itemEnd(last) : 0 },
+  ]);
 }
 
 function withNewTrackOnTop(
