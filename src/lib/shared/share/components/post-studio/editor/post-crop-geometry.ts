@@ -469,9 +469,24 @@ function shownBounds(pose: CropPose) {
 }
 
 /** Width over height of what the crop stage shows: the picture and the window. */
-export function cropViewRatio(pose: CropPose): number {
+function shownRatio(pose: CropPose): number {
   const { left, right, top, bottom } = shownBounds(pose);
   return (right - left) / (bottom - top);
+}
+
+/**
+ * Width over height of a crop stage with room for the pose straightened any
+ * amount, so the crop screen can keep one stage while it is open and nothing
+ * beside it moves. A turned picture is widest for its height either upright
+ * or at the straighten limit. Another quarter turn is left out: the camera
+ * fits it inside the stage.
+ */
+export function cropStageRatio(pose: CropPose, quarter: number): number {
+  return Math.max(
+    shownRatio(pose),
+    shownRatio({ ...pose, rotation: joinRotation(quarter, 0) }),
+    shownRatio({ ...pose, rotation: joinRotation(quarter, STRAIGHTEN_LIMIT) })
+  );
 }
 
 /**
