@@ -14,7 +14,6 @@ import type { IPropTextureLoader } from "$lib/shared/animation-engine/services/I
 import type { IAnimationRenderer as AnimationRenderer } from "$lib/shared/animation-engine/services/IAnimationRenderer";
 import type { ISVGGenerator as SVGGenerator } from "$lib/shared/animation-engine/services/ISVGGenerator";
 import type { SettingsState } from "$lib/shared/settings/state/settings-state.svelte";
-import type { TurnsTupleGenerator } from "$lib/shared/pictograph/arrow/positioning/placement/services/turns-tuple-generator";
 import type { SequenceAnimationOrchestrator } from "./sequence-animation-orchestrator";
 import type { AnimationVisibilityStateManager } from "../state/animation-visibility-state.svelte";
 import type { EffectsConfigState } from "$lib/shared/effects/state/effects-config-state.svelte";
@@ -108,7 +107,6 @@ export class CanvasLifecycleManager {
   private _svgGenerator: SVGGenerator | null = null;
   private _settingsService: SettingsState | null = null;
   private _orchestrator: SequenceAnimationOrchestrator | null = null;
-  private _turnsTupleGenerator: TurnsTupleGenerator | null = null;
 
   // ── Public getters — the engine reads these instead of its own fields ───────
   get renderLoop(): IAnimationRenderLoop | null { return this._renderLoop; }
@@ -126,7 +124,6 @@ export class CanvasLifecycleManager {
   get svgGenerator(): SVGGenerator | null { return this._svgGenerator; }
   get settingsService(): SettingsState | null { return this._settingsService; }
   get orchestrator(): SequenceAnimationOrchestrator | null { return this._orchestrator; }
-  get turnsTupleGenerator(): TurnsTupleGenerator | null { return this._turnsTupleGenerator; }
 
   /**
    * Wire the canvasInitializer and effectManager before calling initialize().
@@ -311,7 +308,6 @@ export class CanvasLifecycleManager {
       this._orchestrator.setVisibilityManager(visibilityManagerOverride);
     }
     this._trailCapturer = new TrailCapturerImpl();
-    this._turnsTupleGenerator = services.turnsTupleGenerator;
     state.setServicesReady(true);
     return true;
   }

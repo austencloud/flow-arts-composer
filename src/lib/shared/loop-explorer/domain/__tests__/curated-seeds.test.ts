@@ -6,7 +6,6 @@ import teaserSeedJson from "../notation-loop-teaser-seed.json";
 import { getCuratedSeed } from "../curated-seeds";
 import { NOTATION_LOOP_TEASER_SEQUENCE } from "../notation-loop-teaser";
 import { LOOPType } from "$lib/shared/foundation/domain/models/generation/circular-models";
-import { FrameBuilder } from "$lib/shared/animation-engine/services/frame-builder";
 import type { LoopSlice } from "../legality";
 
 const sequences = await Promise.all(
@@ -68,16 +67,6 @@ describe("curated LOOP seed hydration", () => {
     expect(teaserSeedJson).toEqual(curatedSeedsJson.rotated.quartered[0]);
     expect(NOTATION_LOOP_TEASER_SEQUENCE).toEqual(
       await getCuratedSeed(LOOPType.ROTATED, "quartered")
-    );
-  });
-});
-
-describe("FrameBuilder runtime boundary", () => {
-  it("falls back safely when untrusted data supplies a string step pose", () => {
-    const builder = new FrameBuilder();
-
-    expect(builder.calculateTurnsTuple("gamma3" as never, null)).toBe(
-      "(s, 0, 0)"
     );
   });
 });

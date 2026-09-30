@@ -63,17 +63,13 @@ describe("GlyphOverlay step labels", () => {
   });
 });
 
-// A skewed-frame beat (one hand cardinal, the other intercardinal) wears
-// braces around its letter on the pictograph and in the hidden GlyphRenderer
-// that feeds exports. The on-screen overlay is a separate Svelte tree, and it
-// mounted only the letter and turns, so a rotate-45 fuse played without the
-// braces the header and the pictographs were showing.
-describe("GlyphOverlay skewed-frame braces", () => {
-  // The component test server does not serve the static letter images, and
-  // the braces lay themselves out against the letter's measured size, so the
-  // letter fetch answers with a small SVG that carries a real viewBox.
-  const LETTER_SVG =
-    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 100"><rect width="80" height="100"/></svg>';
+// The component test server does not serve the static letter images, and the
+// glyph lays its turns and braces out against the letter's measured size, so
+// the letter fetch answers with a small SVG that carries a real viewBox.
+const LETTER_SVG =
+  '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 100"><rect width="80" height="100"/></svg>';
+
+function stubLetterFetch() {
   let realFetch: typeof fetch;
 
   beforeEach(() => {
@@ -98,6 +94,70 @@ describe("GlyphOverlay skewed-frame braces", () => {
   afterEach(() => {
     vi.restoreAllMocks();
   });
+}
+
+// The overlay used to read its turns from the engine, which reports them one
+// update after the player opens. For that first frame the glyph carried a
+// placeholder "(s, 0, 0)", so when the real turns arrived the overlay took the
+// same letter for a new glyph and cross-faded it into itself. Both copies sat
+// near half opacity mid-fade, and the glyph visibly dimmed on first play only.
+describe("GlyphOverlay turns", () => {
+  stubLetterFetch();
+
+  const turningStep = {
+    letter: "S",
+    motions: {
+      left: {
+        hand: "left",
+        motionType: "pro",
+        startLocation: "n",
+        endLocation: "e",
+        startOrientation: "in",
+        endOrientation: "in",
+        propRotationDirection: "cw",
+        turns: 1,
+        isVisible: true,
+      },
+      right: {
+        hand: "right",
+        motionType: "pro",
+        startLocation: "s",
+        endLocation: "w",
+        startOrientation: "in",
+        endOrientation: "in",
+        propRotationDirection: "cw",
+        turns: 0,
+        isVisible: true,
+      },
+    },
+  };
+
+  // Turn numbers are drawn as number images, one file per value.
+  const turnNumbers = (container: HTMLElement) =>
+    [...container.querySelectorAll(".glyph-group .turn-number image")].map(
+      (el) => el.getAttribute("href")
+    );
+
+  it("shows the step's own turns from its first frame", async () => {
+    const screen = render(GlyphOverlay, {
+      letter: "S" as never,
+      stepData: turningStep as never,
+      tkaGlyphVisible: true,
+    });
+    await vi.waitFor(() =>
+      expect(turnNumbers(screen.container)).toContain("/images/numbers/1.svg")
+    );
+    expect(screen.container.querySelectorAll(".glyph-group")).toHaveLength(1);
+  });
+});
+
+// A skewed-frame beat (one hand cardinal, the other intercardinal) wears
+// braces around its letter on the pictograph and in the hidden GlyphRenderer
+// that feeds exports. The on-screen overlay is a separate Svelte tree, and it
+// mounted only the letter and turns, so a rotate-45 fuse played without the
+// braces the header and the pictographs were showing.
+describe("GlyphOverlay skewed-frame braces", () => {
+  stubLetterFetch();
 
   const skewedStep = {
     letter: "S",

@@ -8,7 +8,6 @@ describe("AnimatorState", () => {
 
     expect(a.isInitialized).toBe(false);
     expect(a.currentLeftPropType).toBe("staff");
-    expect(a.displayedTurnsTuple).toBe("(s, 0, 0)");
     expect(a.visibilityState.mandala).toBe(true);
 
     a.setInitialized(true);
