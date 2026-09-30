@@ -751,14 +751,14 @@
         }
       )}
     {/if}
-  {:else if (tool === "crop" || tool === "position") && (item.kind === "video" || item.kind === "image") && (item.sourceGeometry || item.keyframes?.sourceGeometry?.length)}
+  {:else if tool === "position" && (item.kind === "video" || item.kind === "image") && (item.sourceGeometry || item.keyframes?.sourceGeometry?.length)}
     {@const geometry = channelValueAt(item, "sourceGeometry", seconds)}
     <PostSourceGeometryTool
       {geometry}
       {output}
       {locked}
       {frozen}
-      mode={tool === "crop" ? "crop" : "position"}
+      mode="position"
       onChange={(next, field) =>
         change(`source-geometry:${field}`, { sourceGeometry: next })}
     />
@@ -819,6 +819,29 @@
       {/if}
     </div>
     <p class="hint">{t("post_crop_hint")}</p>
+    {#if item.sourceGeometry || item.keyframes?.sourceGeometry?.length}
+      {@const geometry = channelValueAt(item, "sourceGeometry", seconds)}
+      <PostSourceGeometryTool
+        {geometry}
+        {output}
+        {locked}
+        {frozen}
+        mode="crop"
+        onChange={(next, field) =>
+          change(`source-geometry:${field}`, { sourceGeometry: next })}
+      />
+    {/if}
+  {:else if tool === "crop" && item.kind === "image" && (item.sourceGeometry || item.keyframes?.sourceGeometry?.length)}
+    {@const geometry = channelValueAt(item, "sourceGeometry", seconds)}
+    <PostSourceGeometryTool
+      {geometry}
+      {output}
+      {locked}
+      {frozen}
+      mode="crop"
+      onChange={(next, field) =>
+        change(`source-geometry:${field}`, { sourceGeometry: next })}
+    />
   {:else if tool === "speed" && item.kind === "video"}
     <ValueSlider
       label={t("post_editor_speed")}

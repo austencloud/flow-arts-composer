@@ -985,6 +985,15 @@
   }
 
   function pickTool(id: PostToolId): void {
+    if (cropMode && id !== "crop") {
+      cropFlight.capture();
+      crop.abandonGesture();
+      editor.endSession(true);
+      cropSessionOpen = false;
+      cropReturn = null;
+      activeTool = null;
+      void tick().then(() => cropFlight.play());
+    }
     if (isPanelTool(id)) {
       openTool(id);
       return;
@@ -2234,9 +2243,7 @@
         {/if}
       </div>
 
-      <!-- The crop screen stows the timeline and the row out of sight, still
-           mounted, so they come back scrolled where they were. -->
-      {#if panelBeside && !showTimingStage && !cropMode}
+      {#if panelBeside && !showTimingStage}
         <div class="timeline-resizer">
           <ResizeHandle
             direction="vertical"
@@ -2256,8 +2263,7 @@
       {/if}
       <div
         class="timeline-slot"
-        class:stowed={cropMode}
-        inert={sharing || exporting || cropMode || undefined}
+        inert={sharing || exporting || undefined}
       >
         <PostTimeline
           project={editor.project}
@@ -2309,10 +2315,9 @@
       {#if panelBeside}
         <div
           class="row-slot"
-          class:stowed={cropMode}
           tabindex="-1"
           bind:this={rowSlot}
-          inert={sharing || cropMode || undefined}
+          inert={sharing || undefined}
         >
           <Crossfade key={rowKey} mode="swap" duration={DURATION.fast}>
             {@render row()}
@@ -2346,6 +2351,9 @@
               {@render row()}
             {/if}
           </Crossfade>
+          {#if cropMode}
+            {@render row()}
+          {/if}
         {/if}
       </div>
     {/if}
@@ -2741,8 +2749,7 @@
     visibility: hidden;
   }
 
-  /* The crop screen: the stage takes the room the timeline and the row
-     leave, with the clip's own timeline under it. */
+  /* Crop keeps the post timeline and tools below its own clip transport. */
   .post-editor[data-mode="crop"] .layout {
     position: relative;
   }
@@ -2752,15 +2759,15 @@
       [data-layout="viewer"]
     )
     .layout {
-    grid-template-rows: minmax(15rem, 1fr) auto;
-    grid-template-areas: "stage" "transport";
+    grid-template-rows: minmax(15rem, 1fr) auto 12px var(--post-timeline-height) auto;
+    grid-template-areas: "stage" "transport" "resize" "timeline" "row";
   }
 
   .post-editor[data-layout="phone"][data-mode="crop"] .layout {
     display: grid;
     grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: auto minmax(12rem, 1fr) auto auto;
-    grid-template-areas: "top" "stage" "transport" "dock";
+    grid-template-rows: auto minmax(12rem, 1fr) auto auto auto;
+    grid-template-areas: "top" "stage" "transport" "timeline" "dock";
   }
 
   .post-editor[data-mode="crop"] .stage-row {
@@ -2801,15 +2808,6 @@
       calc(100cqw - var(--post-panel-width) - 1rem)
     );
     height: 100%;
-  }
-
-  .timeline-slot.stowed,
-  .row-slot.stowed {
-    position: absolute;
-    inset: 0 0 auto;
-    margin: 0;
-    visibility: hidden;
-    pointer-events: none;
   }
 
   /* Reset shows its words when the bar has room, else its icon alone. */
