@@ -17,6 +17,7 @@ import {
 } from "$lib/shared/media-composition/services/post-backdrop-painter";
 import {
   calculateMediaFit,
+  calculateSourceCropFit,
   resolvePanOffset,
   type PixelRect,
 } from "$lib/shared/media-composition/services/media-fit";
@@ -85,9 +86,16 @@ export function resolveFrameLayerGeometry(input: {
       width: geometry.width * input.preset.output.width,
       height: geometry.height * input.preset.output.height,
     };
+    const fitted = calculateSourceCropFit({
+      sourceWidth: input.sourceWidth,
+      sourceHeight: input.sourceHeight,
+      crop: geometry.crop,
+      regionWidth: region.width,
+      regionHeight: region.height,
+    });
     const pan = resolvePanOffset({
-      drawWidth: region.width,
-      drawHeight: region.height,
+      drawWidth: fitted.width,
+      drawHeight: fitted.height,
       regionWidth: region.width,
       regionHeight: region.height,
       scale: input.transform.scale,
@@ -97,7 +105,12 @@ export function resolveFrameLayerGeometry(input: {
     });
     return {
       region,
-      drawRect: region,
+      drawRect: {
+        x: region.x + fitted.x,
+        y: region.y + fitted.y,
+        width: fitted.width,
+        height: fitted.height,
+      },
       rotationDegrees: geometry.rotation + input.transform.rotationDegrees,
       scale: input.transform.scale,
       translateX: pan.x,

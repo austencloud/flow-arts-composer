@@ -107,17 +107,45 @@ describe("resolveFrameLayerGeometry", () => {
         crop,
       },
     });
-    expect(geometry.drawRect).toEqual({
-      x: -216,
-      y: 192,
-      width: 1512,
-      height: 1536,
-    });
+    expect(geometry.drawRect.x).toBe(-216);
+    expect(geometry.drawRect.y).toBeCloseTo(534.75);
+    expect(geometry.drawRect.width).toBe(1512);
+    expect(geometry.drawRect.height).toBeCloseTo(850.5);
     expect(geometry.sourceCrop).toEqual(crop);
     expect(geometry.rotationDegrees).toBe(45);
     expect(geometry.translateX).toBeGreaterThan(0);
     expect(geometry.translateY).toBeLessThan(0);
     expect(geometry.scale).toBe(1.5);
+  });
+
+  it("keeps an imported crop proportional after the canvas ratio changes", () => {
+    const sourceGeometry = {
+      x: 0,
+      y: 0,
+      width: 1,
+      height: 0.5,
+      rotation: 0,
+      crop: { left: 0, top: 0, right: 1, bottom: 1 },
+    };
+    const transform = {
+      scale: 1,
+      rotationDegrees: 0,
+      translateX: 0,
+      translateY: 0,
+    };
+    const square = resolveFrameLayerGeometry({
+      preset: { ...preset, output: { width: 1080, height: 1080 } },
+      region,
+      sourceWidth: 1080,
+      sourceHeight: 1920,
+      transform,
+      sourceGeometry,
+    });
+    expect(square.drawRect.width / square.drawRect.height).toBeCloseTo(
+      1080 / 1920
+    );
+    expect(square.drawRect.width).toBeCloseTo(303.75);
+    expect(square.drawRect.height).toBeCloseTo(540);
   });
 });
 
