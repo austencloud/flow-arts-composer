@@ -1,10 +1,11 @@
 # Halloween Tutorial Videos — Handoff (2026-09-30)
 
 Living document. Updated at every milestone by whichever agent holds the work.
-Last update: 2026-09-30 12:50 CDT (Claude Opus 5.5 session, third pass).
-Work branch: `codex/tutorial-videos-fixes`, worktree
-`E:/worktrees/tka-platform/tutorial-videos-fixes` (node_modules is a junction
-into the primary checkout; `wt:finish` unlinks it).
+Last update: 2026-09-30 13:25 CDT (Claude Opus 5.5 session, fourth pass).
+Work branch: `codex/auto-colour`, worktree
+`E:/worktrees/tka-platform/auto-colour` (node_modules is a junction into the
+primary checkout; `wt:finish` unlinks it). The earlier branch
+`codex/tutorial-videos-fixes` is merged and removed.
 
 ## Mission
 
@@ -18,7 +19,7 @@ Background: memory `project_halloween_tutorial_videos.md`; Codex ledger
 `C:/Users/Austen/Downloads/InShot-recovery-2026-09-29/POST-STUDIO-STATUS.md`
 (its last entry is 2026-09-30 03:41 CDT).
 
-## Where each video stands (2026-09-30 12:50 CDT)
+## Where each video stands (2026-09-30 13:25 CDT)
 
 All three have a Post Studio project in the disk archive
 `~/.tka/post-studio-drafts` (key `tka:post-studio:project:v2:<id>`). Open any
@@ -27,10 +28,10 @@ static files in the primary checkout, gitignored via `.git/info/exclude`:
 `static/word-videos/inshot-recovery/` (camera-cut-1/2, pictograph, woods-cut-1/2,
 dck-cut-1/2, ending-card, dck-original-end-card, PermanentMarker.ttf).
 
-| Video | Newest project | State |
-| --- | --- | --- |
-| ΩΛ-XJ | updatedAt 07:15:39Z. 9 items, 77.69 s. | **The template.** Austen removed its mandala at 07:09Z and raised contrast/saturation with sliders at 07:15Z (run 1.17/1.12, slow 1.25/1.09). A tab keeps re-saving it unchanged (last 11:51Z); don't edit it. |
-| Δ-ΛRZ | updatedAt 17:35:34.865Z (archive file `1790789867792-…json`). 9 items, 71.75 s. | Ready to export. Mandala removed. Speed 0.7 on both clips (Austen's call). Both takes' timing confirmed by Austen. |
+| Video | Newest project                                                                   | State                                                                                                                                                                                                                                     |
+| ----- | -------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| ΩΛ-XJ | updatedAt 07:15:39Z. 9 items, 77.69 s.                                           | **The template.** Austen removed its mandala at 07:09Z and raised contrast/saturation with sliders at 07:15Z (run 1.17/1.12, slow 1.25/1.09). A tab keeps re-saving it unchanged (last 11:51Z); don't edit it.                            |
+| Δ-ΛRZ | updatedAt 17:35:34.865Z (archive file `1790789867792-…json`). 9 items, 71.75 s.  | Ready to export. Mandala removed. Speed 0.7 on both clips (Austen's call). Both takes' timing confirmed by Austen.                                                                                                                        |
 | DCKΨ- | updatedAt 17:42:22.875Z (archive file `1790790167854-…json`). 11 items, 82.67 s. | Ready to export once Austen checks timing. 9:16, no mandala, its own six captions, run-through beats derived (32 taps, 86.96 BPM), video framing re-derived from InShot. Both takes show "Timing not checked"; that doesn't block export. |
 
 No full export of any of the three exists yet.
@@ -82,18 +83,44 @@ No full export of any of the three exists yet.
   widths and x offsets divide by 9/16 (same as `post-inshot-import.ts`
   `geometry`/`keyGeometry`), and clip 1 has crop rows 0.2056–0.7081. Easing
   code 5 is `[0.47,0,0,1]`, not linear. Key times stay in source seconds.
+- **Template action follows the template's canvas and mandala** (commit
+  `c0b4fee4ee`, merged to local main `3765fb61aa`, not pushed). It copies the
+  template's canvas shape and adds a mandala only when the template has one.
+  Evidence: `tests/unit/media-composition/post-project-looks.test.ts` 17 passed;
+  svelte-check 0 errors in the `wt:finish` gate.
+- **Auto colour audit** (2026-09-30 12:50–13:10 CDT). Scripts are in
+  `docs/superpowers/specs/tutorial-videos-scripts/colour/`: `audit_inshot.py`
+  compares grades with Austen's InShot export of ΩΛ-XJ
+  (`C:/Users/Austen/Downloads/InShot-recovery-2026-09-29/reference-export.mp4`,
+  InShot Auto Adjust at 40%), `grades.py` holds Python twins of the grades,
+  and `sheet.py` renders the side-by-side sheet (sent to Austen). The paths
+  point at the session scratchpad. Colour distance from InShot's export (CIE76 ΔE,
+  median over 7 aligned frames): no grade 4.18; the old Auto 3.89 (it returned
+  contrast 1.01 and nothing else; identity on dark stages); his sliders
+  (contrast 1.17, saturation 1.12) 4.41; best possible per-channel curves 1.17;
+  new Auto 1.57. InShot sinks a hazy black floor (about 0.065 to black), keeps the
+  midtones (it even lowers mean luma slightly), and adds saturation; a
+  warming white balance scored worse, so the new Auto has none. The existing
+  brightness/contrast/saturation sliders can express this almost as well as
+  curves (1.57 against 1.64), so no renderer change is needed.
 
 ## In flight
 
-1. Template action: follow the template's canvas and add a mandala only when
-   the template has one. Focused test in
-   `tests/unit/media-composition/post-project-looks.test.ts`. Branch
-   `codex/tutorial-videos-fixes`.
-2. Auto colour audit (Austen 2026-09-30: "I want something CapCut or InShot
-   tier"). Owner code: `domain/post-video-color-grade.ts`,
-   `PostItemTool.svelte` `autoAdjustColor()`. Note: his InShot DCKΨ- run-through
-   used InShot's AI Auto Adjust at 40% (`FP_31.AAP_1 0.4`, LUT model
-   `AutoAdjustModel_V1.0.0_20230912_big`).
+1. **New Auto colour** on `codex/auto-colour`: `analyzeVideoColor` in
+   `src/lib/shared/media-composition/domain/post-video-color-grade.ts` is
+   rewritten (brightness then contrast as a line through two anchors: the black
+   point at about half the darkest 0.5% goes to black, and the median lands 5%
+   brighter, 12% on dim footage, lower on overexposed footage; guards stop a dim median
+   getting darker and limit highlight clipping; vibrance up to 1.15). Tests in
+   `tests/unit/post-video-color-grade.test.ts` rewritten, 7 passed. On
+   160×90 samples of the real clips (ffmpeg, same fractions as the button) it
+   returns: ΩΛ-XJ run 1.11/1.14/1.11, slow 1.11/1.11/1.11; DCKΨ- both
+   1.12/1.00/1.11; woods run 1.08/1.09/1.09, slow 1.09/1.10/1.09
+   (brightness/contrast/saturation). Full-resolution check: newly clipped luma
+   0.05–1.35% except woods 3.4–3.6% (sky between leaves, looked fine by eye).
+   Next: `wt:finish -- codex/auto-colour --route /post`.
+2. Press Auto on all six video clips (ΩΛ-XJ, DCKΨ-, Δ-ΛRZ; Austen approved
+   all three, colour only) and confirm the saved values.
 3. Full exports of all three, tab visible.
 4. Austen: open DCKΨ- and press "Tap beats" → check on both takes (the derived
    run-through beats and the other agent's slow-take beats).
@@ -108,7 +135,10 @@ No full export of any of the three exists yet.
   7.798), "You got this! " (+47.924, 5.295), "Now repeat 100x" (+49.903, 3.0).
   Offsets are from InShot slow-clip start 21.904918 s.
 - 2026-09-30 (Austen): colour — audit Auto colour first instead of copying
-  ΩΛ-XJ's slider values.
+  ΩΛ-XJ's slider values. After the audit sheet (13:10 CDT) he chose "A:
+  sliders version" (no renderer change) and "All three" (ΩΛ-XJ too, colour
+  only). A curves version (per-channel tone curves in preview and export) is
+  the parked upgrade.
 - 2026-09-30 (Austen): DCKΨ- source = his InShot draft; Δ-ΛRZ keeps speed
   0.7; template captions land on the same beat numbers.
 - Never slow a clip to fake slow motion (memory, 2026-09-26); the woods 0.7
@@ -136,3 +166,9 @@ No full export of any of the three exists yet.
 - Primary checkout has another task's uncommitted edits (worktree-automerge,
   worktree-workflow rule, elemental glyph files, sounds). Leave them alone.
 - Treat InShot `.profile` files as the authority; never modify them.
+- The "Use ΩΛ-XJ template" button replaces the destination's captions with the
+  template's. Re-applying it to DCKΨ- would swap its six captions for ΩΛ-XJ's
+  four. Don't press it on DCKΨ- again.
+- InShot's Auto Adjust is an AI LUT model (`lut0-2.bin`, `pallet.model` in the
+  app). Don't commit or use those proprietary files; the new Auto only
+  imitates its measured result.
