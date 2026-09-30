@@ -2249,7 +2249,8 @@
                     sourceItem?.kind === "card" ? sourceItem : null
                   )}
                   animationAppearance={animationAppearanceForItem(
-                    sourceItem?.kind === "animation" ? sourceItem : null
+                    sourceItem?.kind === "animation" || sourceItem?.kind === "moves"
+                      ? sourceItem : null
                   )}
                   {handLabeling}
                   {qrSequence}

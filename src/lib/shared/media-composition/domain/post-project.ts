@@ -6,6 +6,8 @@ import {
 } from "$lib/shared/media-composition/domain/post-plan";
 import { BREAKDOWN_GEOMETRY } from "$lib/shared/media-composition/domain/post-studio-presets";
 import { TakeTimingSchema } from "$lib/shared/media-composition/domain/take-timing";
+import type { EffectsConfig } from "$lib/shared/effects/domain/effects-config";
+import { TrackingMode } from "$lib/shared/animation-engine/domain/types/trail-types";
 
 /**
  * A post as Austen edits it on the timeline: tracks of items, InShot style.
@@ -543,15 +545,18 @@ export const PostAnimationItemSchema = z
             "anticipation",
           ])
           .optional(),
+        darkMode: z.boolean().optional(),
+        /** Full canonical effects snapshot, scoped to this timeline item. */
+        effects: z.custom<EffectsConfig>((value) =>
+          value !== null && typeof value === "object" &&
+          typeof (value as EffectsConfig).version === "number" &&
+          typeof (value as EffectsConfig).activeEffect === "string" &&
+          typeof (value as EffectsConfig).tipEffectMap === "object"
+        ).optional(),
         trail: z
           .object({
             enabled: z.boolean(),
-            trackingMode: z.enum([
-              "left_end",
-              "right_end",
-              "both_ends",
-              "hand",
-            ]),
+          trackingMode: z.nativeEnum(TrackingMode),
             thickness: z.number().finite().min(1).max(12),
             brightness: z.number().finite().min(0.3).max(1),
             tailLength: z.number().int().min(10).max(400),
@@ -577,6 +582,8 @@ export const PostMovesItemSchema = z
     ...itemBase,
     kind: z.literal("moves"),
     mode: PostMovesModeSchema,
+    /** PiP uses the same scoped canvas appearance as an animation item. */
+    animationAppearance: PostAnimationItemSchema.shape.animationAppearance,
   })
   .strict();
 

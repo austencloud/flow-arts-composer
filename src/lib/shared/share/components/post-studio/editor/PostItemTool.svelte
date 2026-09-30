@@ -1148,7 +1148,7 @@
         onPick={(effect) => patchItem({ staffEffect: effect })}
       />
     {/if}
-  {:else if tool === "appearance" && item.kind === "animation"}
+  {:else if tool === "appearance" && (item.kind === "animation" || item.kind === "moves")}
     <PostAnimationAppearanceTool
       {editor}
       {item}

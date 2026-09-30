@@ -9,11 +9,13 @@
     sequencePosition,
     leftPropType,
     rightPropType,
+    darkMode = true,
   }: {
     sequence: SequenceData;
     sequencePosition: number;
     leftPropType?: PropType;
     rightPropType?: PropType;
+    darkMode?: boolean;
   } = $props();
 
   let canvas = $state<HTMLCanvasElement>();
@@ -38,7 +40,7 @@
     }
 
     context.setTransform(1, 0, 0, 1, 0, 0);
-    context.fillStyle = "#08080c";
+    context.fillStyle = darkMode ? "#08080c" : "#ffffff";
     context.fillRect(0, 0, width, height);
 
     const prepared = preparer.prepare(
@@ -89,6 +91,7 @@
 
 <canvas
   class="breakdown-mandala"
+  class:light={!darkMode}
   bind:this={canvas}
   bind:clientWidth
   bind:clientHeight
@@ -103,4 +106,5 @@
     height: 100%;
     background: #08080c;
   }
+  .breakdown-mandala.light { background: #ffffff; }
 </style>

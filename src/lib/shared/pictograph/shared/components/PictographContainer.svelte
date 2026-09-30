@@ -89,6 +89,7 @@ with pre-prepared data for better performance.
     // Renderable option: hide arrows entirely (props + grid still render).
     // Default true = zero behavior change for existing callers.
     showArrow = true,
+    showProps = true,
     // Enable prop selection for variant cycling
     propsClickable = false,
     // Currently selected prop hand (for visual feedback)
@@ -174,6 +175,7 @@ with pre-prepared data for better performance.
     arrowsClickable?: boolean;
     /** Renderable option: hide arrows entirely (props + grid still render). Default true. */
     showArrow?: boolean;
+    showProps?: boolean;
     propsClickable?: boolean;
     selectedPropHand?: HandSide | null;
     onPropClick?: (hand: HandSide) => void;
@@ -758,6 +760,7 @@ with pre-prepared data for better performance.
         {visibleHand}
         {arrowsClickable}
         {showArrow}
+        {showProps}
         darkMode={effectiveDarkMode}
         {printMode}
         {transparentBackground}
@@ -812,6 +815,7 @@ with pre-prepared data for better performance.
             {visibleHand}
             {arrowsClickable}
             {showArrow}
+            {showProps}
             darkMode={effectiveDarkMode}
             {printMode}
             {transparentBackground}

@@ -1,5 +1,6 @@
 import type {
   PostAnimationItem,
+  PostMovesItem,
   PostCardItem,
 } from "$lib/shared/media-composition/domain/post-project";
 import type { SequenceExportOptions } from "$lib/shared/render/domain/models/sequence-export-options";
@@ -40,7 +41,7 @@ export function cardOptionsForItem(
 }
 
 export function animationAppearanceForItem(
-  item: PostAnimationItem | null | undefined
+  item: PostAnimationItem | PostMovesItem | null | undefined
 ) {
   return item?.animationAppearance ?? null;
 }

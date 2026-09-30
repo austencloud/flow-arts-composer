@@ -70,8 +70,8 @@
     untrack(() => {
       itemVisibility.updateSettings(appearance);
       const trail = appearance.trail;
-      const effectConfig = structuredClone(initialEffects);
-      if (trail) {
+      const effectConfig = structuredClone(appearance.effects ?? initialEffects);
+      if (trail && !appearance.effects) {
         effectConfig.trails = {
           ...effectConfig.trails,
           trackingMode: trail.trackingMode,
@@ -84,6 +84,8 @@
         effectConfig.tipEffectMap = trail.enabled
           ? { "*": { effect: "trails" } }
           : {};
+      }
+      if (trail) {
         itemTrailSettings = {
           ...animationSettings.snapshot().trail,
           trackingMode: trail.trackingMode,
@@ -222,6 +224,7 @@
 
 <div
   class="animation-layer"
+  class:light={animationAppearance?.darkMode === false}
   use:destination={animationAppearance}
   data-studio-animation-destination
   data-studio-animation-mode={showMandala ? "mandala" : "pictograph"}
@@ -232,24 +235,61 @@
     <PostStudioBreakdownMandala
       {sequence}
       {sequencePosition}
-      {leftPropType}
-      {rightPropType}
+      leftPropType={animationAppearance?.propType ?? leftPropType}
+      rightPropType={animationAppearance?.propType ?? rightPropType}
+      darkMode={animationAppearance?.darkMode ?? true}
     />
   {:else if breakdownMotion && stepData}
     <div class="pictograph-motion" data-pictograph-motion>
+      {#if animationAppearance}
+        <AnimatorCanvas
+          {leftProp}
+          {rightProp}
+          gridVisible={animationAppearance.gridMode !== "none"}
+          gridMode={sequence.gridMode ?? null}
+          letter={stepData.letter ?? null}
+          {stepData}
+          sequenceData={sequence}
+          currentStep={sequencePosition}
+          isPlaying={playing}
+          leftPropType={animationAppearance.propType ?? leftPropType}
+          rightPropType={animationAppearance.propType ?? rightPropType}
+          word={sequence.word}
+          previewDarkMode={animationAppearance.darkMode ?? true}
+          hideProgressBar
+          visibilityManagerOverride={itemVisibility}
+          effectsConfigState={itemEffects}
+          trailSettings={itemTrailSettings}
+          fillContainer
+          virtualTime={animationTimeSeconds === undefined
+            ? undefined
+            : animationTimeSeconds * 1000}
+        />
+      {/if}
+      <div class:arrow-overlay={!!animationAppearance}>
       <PictographContainer
         pictographData={stepData}
         motionStartData={startData}
         {motionProgress}
         {arrowOpacity}
-        leftPropTypeOverride={leftPropType}
-        rightPropTypeOverride={rightPropType}
+        leftPropTypeOverride={animationAppearance?.propType ?? leftPropType}
+        rightPropTypeOverride={animationAppearance?.propType ?? rightPropType}
         disableTransitions
-        darkMode
+        darkMode={animationAppearance?.darkMode ?? true}
+        transparentBackground={!!animationAppearance}
+        showProps={!animationAppearance}
+        showGrid={!animationAppearance}
         showTKA={false}
+        showTnD={false}
+        showPropTnD={false}
+        showPlacements={false}
+        showHandColorKey={false}
+        showReversals={false}
+        showNonRadialPoints={false}
         showHandPoints={false}
         stepNumberOverride={false}
       />
+      </div>
     </div>
   {:else if !breakdownMotion && (animationAppearance || !shared?.ownsCanvas(owner))}
     <!-- Prop crossfades use clip time, which stands still while paused. A new
@@ -268,7 +308,7 @@
         leftPropType={animationAppearance?.propType ?? leftPropType}
         rightPropType={animationAppearance?.propType ?? rightPropType}
         word={animationAppearance ? sequence.word : null}
-        previewDarkMode
+        previewDarkMode={animationAppearance?.darkMode ?? true}
         hideProgressBar
         hideHeader={!animationAppearance}
         hideTkaGlyph={labelsPainted && !animationAppearance}
@@ -295,7 +335,21 @@
     overflow: hidden;
     background: #08080c;
   }
+
+  .animation-layer.light {
+    background: #fff;
+  }
   .pictograph-motion {
+    width: 100%;
+    height: 100%;
+    position: relative;
+  }
+  .arrow-overlay {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
+  .pictograph-motion > div:not(.arrow-overlay) {
     width: 100%;
     height: 100%;
   }

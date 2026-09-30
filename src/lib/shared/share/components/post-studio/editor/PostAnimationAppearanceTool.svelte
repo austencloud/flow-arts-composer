@@ -3,7 +3,7 @@
   import DisplayPanel from "$lib/shared/animation-engine/components/settings-panels/DisplayPanel.svelte";
   import PathShapePanel from "$lib/shared/animation-engine/components/settings-panels/PathShapePanel.svelte";
   import EffortPanel from "$lib/shared/animation-engine/components/settings-panels/EffortPanel.svelte";
-  import TrailsPanel from "$lib/shared/animation-engine/components/settings-panels/TrailsPanel.svelte";
+  import PostScopedEffectsPanel from "./PostScopedEffectsPanel.svelte";
   import BentoPropGrid from "$lib/shared/settings/components/tabs/prop-type/BentoPropGrid.svelte";
   import IconRailNav from "$lib/shared/animation-panel/pill-nav/IconRailNav.svelte";
   import { RAIL_CATEGORY_ACCENTS } from "$lib/shared/animation-panel/pill-nav/rail-category-accents";
@@ -24,8 +24,7 @@
   import { createEffectsConfigState } from "$lib/shared/effects/state/effects-config-state.svelte";
   import { DEFAULT_EFFECTS_CONFIG } from "$lib/shared/effects/domain/defaults";
   import { getEffectsConfigContext } from "$lib/shared/effects/state/effects-config-context";
-  import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
-  import type { PostAnimationItem } from "$lib/shared/media-composition/domain/post-project";
+  import type { PostAnimationItem, PostMovesItem } from "$lib/shared/media-composition/domain/post-project";
   import { updateItem } from "$lib/shared/media-composition/domain/post-project-edits";
   import type { PostEditorState } from "$lib/shared/media-composition/state/post-editor-state.svelte";
 
@@ -36,7 +35,7 @@
     defaultPropType = PropType.STAFF,
   }: {
     editor: PostEditorState;
-    item: PostAnimationItem;
+    item: PostAnimationItem | PostMovesItem;
     locked: boolean;
     defaultPropType?: PropType;
   } = $props();
@@ -102,9 +101,10 @@
     "pathShape",
     "motionAwarePaths",
     "effortPreset",
+    "darkMode",
   ] as const;
   let syncing = false;
-  let trailWasEdited = false;
+  let effectsWereEdited = false;
 
   $effect(() => {
     const appearance = item.animationAppearance;
@@ -119,7 +119,7 @@
         );
         const trail = appearance?.trail;
         pickedPropType = appearance?.propType;
-        trailWasEdited = !!trail;
+        effectsWereEdited = !!appearance?.effects || !!trail;
         trailSettings.updateSettings({
           trail: {
             ...initialTrail,
@@ -127,8 +127,8 @@
             tailLength: trail?.tailLength ?? initialTrail.tailLength,
           },
         });
-        const nextEffects = structuredClone(initialEffects);
-        if (trail) {
+        const nextEffects = structuredClone(appearance?.effects ?? initialEffects);
+        if (trail && !appearance?.effects) {
           nextEffects.trails = {
             ...nextEffects.trails,
             trackingMode: trail.trackingMode,
@@ -156,7 +156,8 @@
       keys.map((key) => [key, settings[key]])
     ) as NonNullable<PostAnimationItem["animationAppearance"]>;
     if (pickedPropType) appearance.propType = pickedPropType;
-    if (trailWasEdited) {
+    if (effectsWereEdited) {
+      appearance.effects = trailEffects.snapshot();
       const trails = trailEffects.trails;
       appearance.trail = {
         enabled: trailEffects.activeEffect === "trails",
@@ -173,14 +174,14 @@
       ctx: Parameters<typeof updateItem>[3]
     ) => updateItem(project, item.id, { animationAppearance: appearance }, ctx);
     if (settingKey)
-      editor.editSetting(`${item.id}:trail:${settingKey}`, change);
+      editor.editSetting(`${item.id}:effects:${settingKey}`, change);
     else editor.edit(change);
   }
   visibility.registerObserver(save);
   onDestroy(() => visibility.unregisterObserver(save));
 
-  function saveTrail(settingKey: string): void {
-    trailWasEdited = true;
+  function saveEffects(settingKey: string): void {
+    effectsWereEdited = true;
     save(settingKey);
   }
 </script>
@@ -221,24 +222,11 @@
         tileDensity="comfortable"
       />
     {:else if activeSection === "effects"}
-      <div class="trail-section">
-        <PanelButton
-          ariaPressed={trailEffects.activeEffect === "trails"}
-          onclick={() => {
-            trailEffects.setActiveEffect(
-              trailEffects.activeEffect === "trails" ? "none" : "trails"
-            );
-            saveTrail("enabled");
-          }}>Show trails</PanelButton
-        >
-        {#if trailEffects.activeEffect === "trails"}
-          <TrailsPanel
-            animationSettingsState={trailSettings}
-            effectsConfigState={trailEffects}
-            onSettingChange={saveTrail}
-          />
-        {/if}
-      </div>
+      <PostScopedEffectsPanel
+        effects={trailEffects}
+        animationSettingsState={trailSettings}
+        onSettingChange={saveEffects}
+      />
     {:else if activeSection === "efforts"}
       <PathShapePanel visibilityManagerOverride={visibility} showHelp={false} />
       <div class="effort-section">
@@ -274,11 +262,6 @@
   .section-content:focus-visible {
     outline: 2px solid var(--theme-accent, #8b6cff);
     outline-offset: -2px;
-  }
-  .trail-section {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr);
-    gap: 8px;
   }
   .effort-section {
     display: grid;

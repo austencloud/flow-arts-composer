@@ -112,6 +112,7 @@ Usage:
     // Renderable option: hide arrows entirely (props + grid still render).
     // Threaded from PictographContainer; default true = zero behavior change.
     showArrow = true,
+    showProps = true,
     // Enable prop selection for beat editing
     propsClickable = false,
     selectedPropHand = null,
@@ -201,6 +202,7 @@ Usage:
     arrowsClickable?: boolean;
     /** Renderable option: hide arrows entirely (props + grid still render). Default true. */
     showArrow?: boolean;
+    showProps?: boolean;
     propsClickable?: boolean;
     selectedPropHand?: HandSideValue | null;
     onPropClick?: (hand: HandSideValue) => void;
@@ -466,6 +468,7 @@ Usage:
     if (cachedDims.width !== 100 || cachedDims.height !== 100) {
       // Already cached - use immediately
       loadedLetterDimensions = cachedDims;
+      return;
     } else {
       // Not cached yet - drop the previous (now-stale) letter's resolved
       // size before the load starts, so it can't leak into this cold
@@ -596,7 +599,7 @@ Usage:
       {/if}
 
       <!-- Props -->
-      {#each renderedProps as { hand, data, opacity, asset, position } (hand)}
+      {#each (showProps ? renderedProps : []) as { hand, data, opacity, asset, position } (hand)}
         <g {opacity} transition:fade={{ duration: contentDuration() }}>
           <PropSvg
             motionData={data}

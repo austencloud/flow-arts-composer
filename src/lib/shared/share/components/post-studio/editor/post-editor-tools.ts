@@ -100,7 +100,7 @@ export function toolRow(selection: PostToolSelection): PostToolId[] {
     case "animation":
       return ["back", "split", "appearance", "timing", ...ITEM_TAIL];
     case "moves":
-      return ["back", "split", "shows", "timing", ...ITEM_TAIL];
+      return ["back", "split", "shows", "appearance", "timing", ...ITEM_TAIL];
     case "text":
       return ["back", "split", "text", "timing", ...ITEM_TAIL];
     case "carousel":

@@ -85,6 +85,7 @@ describe("toolRow", () => {
       "appearance"
     );
     expect(toolRow({ kind: "moves", hasLayout: false })[2]).toBe("shows");
+    expect(toolRow({ kind: "moves", hasLayout: false })[3]).toBe("appearance");
     expect(toolRow(TEXT)[2]).toBe("text");
     expect(toolRow(CARD)[2]).toBe("appearance");
   });

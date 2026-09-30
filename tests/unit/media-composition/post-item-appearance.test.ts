@@ -1,16 +1,49 @@
 import { describe, expect, it } from "vitest";
 import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+import { DEFAULT_EFFECTS_CONFIG } from "$lib/shared/effects/domain/defaults";
 import {
   PostProjectSchema,
   findItem,
 } from "$lib/shared/media-composition/domain/post-project";
 import { updateItem } from "$lib/shared/media-composition/domain/post-project-edits";
-import { cardOptionsForItem } from "$lib/shared/share/components/post-studio/post-item-render-options";
+import { animationAppearanceForItem, cardOptionsForItem } from "$lib/shared/share/components/post-studio/post-item-render-options";
 import { card, overlay, project } from "./post-project-fixtures";
 
 const ctx = { now: 1_700_000_000_001 };
 
 describe("selected media appearance", () => {
+  it("keeps PiP appearance and effects scoped through draft serialization", () => {
+    const original = project(
+      [card("end")],
+      [[overlay("moves-a", "moves"), overlay("moves-b", "moves", { start: 4 })]]
+    );
+    const effects = {
+      ...DEFAULT_EFFECTS_CONFIG,
+      activeEffect: "fire" as const,
+      tipEffectMap: { "*": { effect: "fire" as const } },
+    };
+    const edited = updateItem(original, "moves-a", {
+      animationAppearance: {
+        propType: PropType.CLUB,
+        darkMode: false,
+        pathShape: "concave",
+        effortPreset: "glide",
+        effects,
+      },
+    }, ctx);
+    const selected = findItem(edited, "moves-a")?.item;
+    const neighbor = findItem(edited, "moves-b")?.item;
+    expect(selected?.kind).toBe("moves");
+    expect(selected?.kind === "moves" && selected.mode).toBe("alternate");
+    expect(animationAppearanceForItem(selected?.kind === "moves" ? selected : null))
+      .toMatchObject({ darkMode: false, effortPreset: "glide", effects });
+    expect(animationAppearanceForItem(neighbor?.kind === "moves" ? neighbor : null))
+      .toBeNull();
+    expect(selected?.start).toBe(findItem(original, "moves-a")?.item.start);
+    expect(selected?.duration).toBe(findItem(original, "moves-a")?.item.duration);
+    expect(PostProjectSchema.parse(JSON.parse(JSON.stringify(edited)))).toEqual(edited);
+  });
+
   it("changes one animation without touching its neighbor or its timing", () => {
     const original = project(
       [card("end")],

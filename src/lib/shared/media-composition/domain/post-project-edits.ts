@@ -908,7 +908,7 @@ export function updateItem(
   if (item.kind === "animation" && patch.overlay !== undefined) {
     next.overlay = patch.overlay;
   }
-  if (item.kind === "animation" && patch.animationAppearance !== undefined) {
+  if ((item.kind === "animation" || item.kind === "moves") && patch.animationAppearance !== undefined) {
     if (patch.animationAppearance)
       next.animationAppearance = patch.animationAppearance;
     else delete next.animationAppearance;
