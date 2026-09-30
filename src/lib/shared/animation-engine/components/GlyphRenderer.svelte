@@ -34,7 +34,7 @@ canvas rendering. This ensures the entire glyph fades as a unified unit.
   import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
   import type { StartPlacementData } from "$lib/shared/foundation/domain/models/start-placement-data";
   import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-  import { turnsTupleGenerator } from "$lib/shared/pictograph/arrow/positioning/placement/services/turns-tuple-generator";
+  import { glyphTurnsTuple } from "$lib/shared/animation-engine/domain/glyph-turns-tuple";
   import { isVisibleMotion } from "$lib/shared/pictograph/shared/domain/models/motion-data";
   import { isSkewedFrameBeat } from "$lib/shared/foundation/services/skewed-frame";
   import { parseTurnsTuple } from "$lib/shared/pictograph/tka-glyph/utils/turn-tuple-parser";
@@ -60,16 +60,7 @@ canvas rendering. This ensures the entire glyph fades as a unified unit.
   }>();
 
   // Generate turns tuple from step data
-  const turnsTuple = $derived.by(() => {
-    if (
-      !stepData ||
-      !isVisibleMotion(stepData.motions?.left) ||
-      !isVisibleMotion(stepData.motions?.right)
-    ) {
-      return "(s, 0, 0)";
-    }
-    return turnsTupleGenerator.generateTurnsTuple(stepData);
-  });
+  const turnsTuple = $derived(glyphTurnsTuple(stepData));
 
   // A beat that starts or ends in a zeta/eta position wears braces around its
   // letter - matches PictographRenderer.svelte's own skewedFrame gate, so the
