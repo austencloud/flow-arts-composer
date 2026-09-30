@@ -14,6 +14,32 @@ export interface PaintRect {
   height: number;
 }
 
+export interface PaintInsets {
+  top: number;
+  right: number;
+  bottom: number;
+  left: number;
+}
+
+/** Extra drawing room leaves the item's authored box and font scale intact. */
+export function paintSurfaceGeometry(
+  painter: PostStudioLayerPainter,
+  target: { width: number; height: number }
+): { width: number; height: number; rect: PaintRect } {
+  const overflow = painter.paintOverflow?.(target);
+  const inset = (value: number | undefined) =>
+    value !== undefined && Number.isFinite(value)
+      ? Math.max(0, Math.ceil(value))
+      : 0;
+  const left = inset(overflow?.left);
+  const top = inset(overflow?.top);
+  return {
+    width: target.width + left + inset(overflow?.right),
+    height: target.height + top + inset(overflow?.bottom),
+    rect: { x: left, y: top, ...target },
+  };
+}
+
 /** The slice of an evaluated frame layer a painter may read. */
 export interface PaintFrame {
   /**
@@ -110,6 +136,8 @@ export interface PostStudioLayerPainter {
    * points with the footage's framing but keep sparks and smoke upright.
    */
   readonly ownsTransform?: boolean;
+  /** Animated ink may leave its final text box while staying inside the post. */
+  paintOverflow?(target: { width: number; height: number }): PaintInsets;
   /** Draws synchronously into `rect` of `context`, in that context's pixels. */
   paint(
     context: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D,

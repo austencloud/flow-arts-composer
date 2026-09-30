@@ -11,6 +11,7 @@ import {
 } from "$lib/shared/media-composition/domain/caption-layout";
 import type {
   PaintFrame,
+  PaintInsets,
   PaintRect,
   PostStudioLayerPainter,
 } from "$lib/shared/media-composition/services/post-studio-layer-painter";
@@ -83,6 +84,24 @@ class TextItemPainter implements PostStudioLayerPainter {
   private fontReady = false;
 
   constructor(private readonly getText: () => CompiledTextItem | null) {}
+
+  paintOverflow(target: { width: number; height: number }): PaintInsets {
+    const compiled = this.getText();
+    if (!compiled?.style || !compiled.animation)
+      return { top: 0, right: 0, bottom: 0, left: 0 };
+    const frameWidth = target.width / compiled.box.width;
+    const fontPx =
+      (compiled.style.fontSizeNative *
+        (compiled.style.fontScale ?? 1) *
+        frameWidth) /
+      (compiled.style.sourceCanvasWidth ?? 1080);
+    return {
+      top: (300 * frameWidth) / 1080 + fontPx,
+      right: fontPx,
+      bottom: fontPx,
+      left: fontPx,
+    };
+  }
 
   async prepare(): Promise<void> {
     if (typeof document === "undefined" || !document.fonts) {
