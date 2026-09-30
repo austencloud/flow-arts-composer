@@ -40,12 +40,12 @@ CSS class .dark-mode triggers styling, with fallback to :global(:root.dark).
     calculateGlyphOverlayFrame,
     type GlyphOverlayFrameMode,
   } from "$lib/shared/animation-engine/domain/glyph-overlay-frame";
+  import { glyphTurnsTuple } from "$lib/shared/animation-engine/domain/glyph-turns-tuple";
 
   let {
     // Current glyph state
     letter = null,
     displayedLetter = null,
-    displayedTurnsTuple = "(s, 0, 0)",
     displayedStepNumber = null,
     displayedMusicalPosition = undefined,
     // Step data for turn color interpretation (determines blue/red assignment)
@@ -71,7 +71,6 @@ CSS class .dark-mode triggers styling, with fallback to :global(:root.dark).
   }: {
     letter?: Letter | null;
     displayedLetter?: Letter | null;
-    displayedTurnsTuple?: string;
     displayedStepNumber?: number | null;
     displayedMusicalPosition?: string | null;
     stepData?: PictographData | null;
@@ -159,21 +158,22 @@ CSS class .dark-mode triggers styling, with fallback to :global(:root.dark).
       isSkewedFrameBeat(stepData.motions.left, stepData.motions.right)
   );
 
+  // The turns come from the same step as the letter. The engine reports its
+  // own copy one update after the player opens, and keying on that lagging
+  // copy made the first glyph cross-fade into itself (dimming) on first play.
+  const turnsTuple = $derived(glyphTurnsTuple(stepData));
+
   // Width the turn numbers occupy to the right of the letter, so the closing
   // brace clears them instead of painting under them.
   const braceRightExtent = $derived(
-    skewedFrame
-      ? getTurnsColumnRightExtent(parseTurnsTuple(displayedTurnsTuple))
-      : 0
+    skewedFrame ? getTurnsColumnRightExtent(parseTurnsTuple(turnsTuple)) : 0
   );
 
   // Create a composite key for glyph changes to trigger cross-fade
   // Includes letter, turns tuple, and skew so changing any of them triggers a
   // transition (the same letter can appear in and out of the skewed frame).
   const glyphKey = $derived(
-    letter
-      ? `${letter}-${displayedTurnsTuple}-${skewedFrame ? "skew" : "plain"}`
-      : null
+    letter ? `${letter}-${turnsTuple}-${skewedFrame ? "skew" : "plain"}` : null
   );
 
   const elementalInfo = $derived(deriveTnDFromPictograph(stepData));
@@ -292,7 +292,7 @@ CSS class .dark-mode triggers styling, with fallback to :global(:root.dark).
             {darkMode}
           />
           <TurnsColumn
-            turnsTuple={displayedTurnsTuple}
+            {turnsTuple}
             {letter}
             {letterDimensions}
             pictographData={stepData}

@@ -375,9 +375,6 @@ captureEffectDiagnostics to the context menu.
   const displayedLetter = $derived(
     engineInstance.animatorState.displayedLetter
   );
-  const displayedTurnsTuple = $derived(
-    engineInstance.animatorState.displayedTurnsTuple
-  );
   const displayedStepNumber = $derived(
     engineInstance.animatorState.displayedStepNumber
   );
@@ -589,7 +586,6 @@ captureEffectDiagnostics to the context menu.
     <GlyphOverlay
       {letter}
       {displayedLetter}
-      {displayedTurnsTuple}
       {displayedStepNumber}
       {displayedMusicalPosition}
       {stepData}
