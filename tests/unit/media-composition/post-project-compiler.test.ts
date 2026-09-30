@@ -28,15 +28,7 @@ import {
   takeRole,
 } from "$lib/shared/media-composition/domain/post-plan-compiler";
 import { POST_STUDIO_ROLE } from "$lib/shared/media-composition/domain/post-studio-presets";
-import {
-  NOW,
-  card,
-  overlay,
-  project,
-  take,
-  text,
-  video,
-} from "./post-project-fixtures";
+import { NOW, card, overlay, project, take, text, video } from "./post-project-fixtures";
 
 const ctx = { now: NOW };
 
@@ -82,19 +74,13 @@ describe("compilePostProject", () => {
         project(
           [
             video("v1", { sourceOut: 4, box }),
-            video("v2", {
-              start: 4,
-              sourceOut: 4,
-              box,
-              shape: { kind: "1:1", ratio: 1 },
-            }),
+            video("v2", { start: 4, sourceOut: 4, box, shape: { kind: "1:1", ratio: 1 } }),
           ],
           [[text("t1", 0, 2)]]
         ),
         ctx
       )!;
-      const regionOf = (id: string) =>
-        result.preset.regions.find((r) => r.id === id)!;
+      const regionOf = (id: string) => result.preset.regions.find((r) => r.id === id)!;
 
       expect(regionOf("v1")).toMatchObject(box);
       expect(regionOf("v2").turn).toBe(-30);
@@ -102,9 +88,7 @@ describe("compilePostProject", () => {
       expect(regionOf("v2").x + regionOf("v2").width / 2).toBeCloseTo(0.35, 9);
       expect(regionOf("v2").y + regionOf("v2").height / 2).toBeCloseTo(0.4, 9);
       expect(regionOf("t1")).not.toHaveProperty("turn");
-      expect(
-        MediaCompositionPresetSchema.safeParse(result.preset).success
-      ).toBe(true);
+      expect(MediaCompositionPresetSchema.safeParse(result.preset).success).toBe(true);
     });
 
     it("skips every item on a hidden overlay track, and its duration", () => {
@@ -124,22 +108,12 @@ describe("compilePostProject", () => {
 
   describe("video items", () => {
     it("keeps color correction through edits, saved schema, and the export preset", () => {
-      const original = project([
-        video("v1", {
-          sourceOut: 4,
-          autoAdjust: { enabled: true, strength: 0.7 },
-        }),
-      ]);
+      const original = project([video("v1", { sourceOut: 4, autoAdjust: { enabled: true, strength: 0.7 } })]);
       const colorGrade = { brightness: 1.2, contrast: 0.65, saturation: 1.06 };
       const changed = updateItem(original, "v1", { colorGrade }, ctx);
       const parsed = PostProjectSchema.parse(changed);
-      expect(parsed.tracks[0]?.items[0]).toMatchObject({
-        autoAdjust: { strength: 0.7 },
-        colorGrade,
-      });
-      expect(compilePostProject(parsed, ctx)?.preset.clips[0]).toMatchObject({
-        colorGrade,
-      });
+      expect(parsed.tracks[0]?.items[0]).toMatchObject({ autoAdjust: { strength: 0.7 }, colorGrade });
+      expect(compilePostProject(parsed, ctx)?.preset.clips[0]).toMatchObject({ colorGrade });
       const restored = updateItem(parsed, "v1", { colorGrade: null }, ctx);
       expect(restored.tracks[0]?.items[0]).not.toHaveProperty("colorGrade");
       expect(restored.tracks[0]?.items[0]).toHaveProperty("autoAdjust");
@@ -164,10 +138,7 @@ describe("compilePostProject", () => {
 
   describe("staff effects", () => {
     it("adds no staff layer to a clip without an effect", () => {
-      const result = compilePostProject(
-        project([video("v1", { sourceOut: 4 })]),
-        ctx
-      )!;
+      const result = compilePostProject(project([video("v1", { sourceOut: 4 })]), ctx)!;
       expect(result.preset.clips.map((c) => c.id)).toEqual(["v1"]);
     });
 
@@ -189,9 +160,7 @@ describe("compilePostProject", () => {
         ]),
         ctx
       )!;
-      expect(
-        MediaCompositionPresetSchema.safeParse(result.preset).success
-      ).toBe(true);
+      expect(MediaCompositionPresetSchema.safeParse(result.preset).success).toBe(true);
       const clip = result.preset.clips.find((c) => c.id === "v1")!;
       const staff = result.preset.clips.find((c) => c.id === "v1~staff")!;
       expect(itemIdFromClipId(staff.id)).toBe("v1");
@@ -211,30 +180,21 @@ describe("compilePostProject", () => {
         "fadeInSeconds",
         "transform",
       ] as const) {
-        expect(staff[key as keyof typeof staff]).toEqual(
-          clip[key as keyof typeof clip]
-        );
+        expect(staff[key as keyof typeof staff]).toEqual(clip[key as keyof typeof clip]);
       }
       // Drawn above the footage in the same slot.
       const order = result.preset.clips.map((c) => c.id);
       expect(order.indexOf("v1~staff")).toBeGreaterThan(order.indexOf("v1"));
-      expect(
-        result.preset.sourceRoles.some((r) => r.key === staffEffectRole("v1"))
-      ).toBe(true);
+      expect(result.preset.sourceRoles.some((r) => r.key === staffEffectRole("v1"))).toBe(
+        true
+      );
 
       // Halfway through the slowed clip, the layer reads the same media time
       // as the footage under it.
-      const layers = evaluatePresetFrame(
-        result.preset,
-        result.durationSeconds,
-        4
-      );
+      const layers = evaluatePresetFrame(result.preset, result.durationSeconds, 4);
       const footage = layers.find((l) => l.clipId === "v1")!;
       const effect = layers.find((l) => l.clipId === "v1~staff")!;
-      expect(effect.sourceTimeSeconds).toBeCloseTo(
-        footage.sourceTimeSeconds,
-        6
-      );
+      expect(effect.sourceTimeSeconds).toBeCloseTo(footage.sourceTimeSeconds, 6);
       expect(effect.sourceTimeSeconds).toBeCloseTo(4, 6);
       expect(effect.transform).toEqual(footage.transform);
     });
@@ -242,12 +202,7 @@ describe("compilePostProject", () => {
 
   describe("sequence layers split at main-track video edges", () => {
     it("maps each piece to the take, source span and rate of the main clip covering it", () => {
-      const v1 = video("v1", {
-        takeId: "a",
-        sourceIn: 0,
-        sourceOut: 4,
-        speed: 1,
-      });
+      const v1 = video("v1", { takeId: "a", sourceIn: 0, sourceOut: 4, speed: 1 });
       const v2 = video("v2", {
         takeId: "b",
         sourceIn: 10,
@@ -290,9 +245,7 @@ describe("compilePostProject", () => {
       });
 
       // One region for the whole layer, not one per piece.
-      expect(result.preset.regions.filter((r) => r.id === "ov")).toHaveLength(
-        1
-      );
+      expect(result.preset.regions.filter((r) => r.id === "ov")).toHaveLength(1);
       expect(result.durationSeconds).toBe(7);
       expect(result.takeIds).toEqual(["a", "b"]);
       expect(result.videoSegments).toEqual([
@@ -362,21 +315,15 @@ describe("compilePostProject", () => {
       const v2 = video("v2", { start: 10, sourceOut: 13 }); // [10, 13)
       // Whole item spans [9.5, 13) with a 1s fade-in; the cut at 10 falls
       // inside that fade, so both pieces must share one continuous ramp.
-      const anim = overlay("ov", "animation", {
-        start: 9.5,
-        duration: 3.5,
-        fadeIn: 1,
-      });
+      const anim = overlay("ov", "animation", { start: 9.5, duration: 3.5, fadeIn: 1 });
 
       const result = compilePostProject(project([v1, v2], [[anim]]), ctx)!;
       expect(result).not.toBeNull();
 
       const layerAt = (seconds: number, clipId: string) =>
-        evaluatePresetFrame(
-          result.preset,
-          result.durationSeconds,
-          seconds
-        ).find((layer) => layer.clipId === clipId);
+        evaluatePresetFrame(result.preset, result.durationSeconds, seconds).find(
+          (layer) => layer.clipId === clipId
+        );
 
       const beforeCut = layerAt(9.99, "ov~0")!;
       const afterCut = layerAt(10.01, "ov~1")!;
@@ -387,10 +334,7 @@ describe("compilePostProject", () => {
     });
 
     it("still uses a hidden or unknown-take main video's own timing to split pieces", () => {
-      const proj = project(
-        [],
-        [[overlay("ov", "animation", { start: 0, duration: 4 })]]
-      );
+      const proj = project([], [[overlay("ov", "animation", { start: 0, duration: 4 })]]);
       proj.tracks[0] = {
         ...proj.tracks[0]!,
         items: [video("v1", { sourceOut: 4, takeId: "ghost" })],
@@ -418,13 +362,7 @@ describe("compilePostProject", () => {
         project(
           [video("v1", { sourceOut: 5 })],
           [
-            [
-              overlay("moves1", "moves", {
-                start: 0,
-                duration: 5,
-                mode: "mandala",
-              }),
-            ],
+            [overlay("moves1", "moves", { start: 0, duration: 5, mode: "mandala" })],
             [overlay("car1", "carousel", { start: 0, duration: 5 })],
           ]
         ),
@@ -485,23 +423,16 @@ describe("compilePostProject", () => {
 
     it("are left out unless the host asks for them", () => {
       const result = compilePostProject(proj(), ctx)!;
-      expect(result.preset.clips.some((c) => c.id.endsWith(":overlay"))).toBe(
-        false
-      );
+      expect(result.preset.clips.some((c) => c.id.endsWith(":overlay"))).toBe(false);
       expect(
         result.preset.sourceRoles.some((r) => r.key === ANIMATION_OVERLAY_ROLE)
       ).toBe(false);
     });
 
     it("add one overlay clip per piece, sharing the piece's region and timing", () => {
-      const result = compilePostProject(proj(), {
-        ...ctx,
-        animationOverlay: true,
-      })!;
+      const result = compilePostProject(proj(), { ...ctx, animationOverlay: true })!;
       const base = result.preset.clips.find((c) => c.id === "ov~0")!;
-      const overlayClip = result.preset.clips.find(
-        (c) => c.id === "ov~0:overlay"
-      )!;
+      const overlayClip = result.preset.clips.find((c) => c.id === "ov~0:overlay")!;
       expect(overlayClip).toMatchObject({
         sourceRole: ANIMATION_OVERLAY_ROLE,
         regionId: "ov",
@@ -517,10 +448,7 @@ describe("compilePostProject", () => {
   describe("text items", () => {
     it("produces a clip, a region and a CompiledTextItem for drawn text", () => {
       const result = compilePostProject(
-        project(
-          [card("c1", 5)],
-          [[text("t1", 1, 2, { text: "Hello", size: "l" })]]
-        ),
+        project([card("c1", 5)], [[text("t1", 1, 2, { text: "Hello", size: "l" })]]),
         ctx
       )!;
       expect(result.texts).toEqual([
@@ -572,29 +500,19 @@ describe("compilePostProject", () => {
     ];
 
     it("lists the main videos the post draws, in order, only when it asks for blur", () => {
-      expect(
-        compilePostProject(project(main()), ctx)!.preset.backdrop
-      ).toBeUndefined();
+      expect(compilePostProject(project(main()), ctx)!.preset.backdrop).toBeUndefined();
 
       const result = compilePostProject(
         { ...project(main()), background: "blur" },
         ctx
       )!;
       // A video whose take is gone draws nothing, so it has nothing to blur.
-      expect(result.preset.backdrop).toEqual({
-        kind: "blur",
-        clipIds: ["v1", "v2"],
-      });
-      expect(
-        MediaCompositionPresetSchema.safeParse(result.preset).success
-      ).toBe(true);
+      expect(result.preset.backdrop).toEqual({ kind: "blur", clipIds: ["v1", "v2"] });
+      expect(MediaCompositionPresetSchema.safeParse(result.preset).success).toBe(true);
     });
 
     it("has nothing to blur when the main track is hidden", () => {
-      const proj = {
-        ...project(main(), [[text("t1", 0, 2)]]),
-        background: "blur" as const,
-      };
+      const proj = { ...project(main(), [[text("t1", 0, 2)]]), background: "blur" as const };
       proj.tracks[0] = { ...proj.tracks[0]!, hidden: true };
       expect(compilePostProject(proj, ctx)!.preset.backdrop).toBeUndefined();
     });
@@ -604,13 +522,8 @@ describe("compilePostProject", () => {
         { ...project(main()), background: "blur" },
         ctx
       )!;
-      const broken = {
-        ...preset,
-        backdrop: { kind: "blur", clipIds: ["nope"] },
-      };
-      expect(MediaCompositionPresetSchema.safeParse(broken).success).toBe(
-        false
-      );
+      const broken = { ...preset, backdrop: { kind: "blur", clipIds: ["nope"] } };
+      expect(MediaCompositionPresetSchema.safeParse(broken).success).toBe(false);
     });
   });
 
@@ -626,9 +539,7 @@ describe("compilePostProject", () => {
         ),
         { ...ctx, animationOverlay: true }
       )!;
-      expect(
-        MediaCompositionPresetSchema.safeParse(result.preset).success
-      ).toBe(true);
+      expect(MediaCompositionPresetSchema.safeParse(result.preset).success).toBe(true);
     });
   });
 
@@ -651,16 +562,8 @@ describe("compilePostProject", () => {
             sourceOut: 10,
             keyframes: {
               framing: [
-                {
-                  t: 0,
-                  value: { zoom: 1, panX: 0, panY: 0, rotation: 0 },
-                  easing: "hold",
-                },
-                {
-                  t: 5,
-                  value: { zoom: 2, panX: 0.1, panY: -0.1, rotation: 90 },
-                  easing: LINEAR,
-                },
+                { t: 0, value: { zoom: 1, panX: 0, panY: 0, rotation: 0 }, easing: "hold" },
+                { t: 5, value: { zoom: 2, panX: 0.1, panY: -0.1, rotation: 90 }, easing: LINEAR },
               ],
               opacity: [
                 { t: 0, value: 0, easing: "hold" },
@@ -676,22 +579,12 @@ describe("compilePostProject", () => {
         transform: [
           {
             atSeconds: 0,
-            value: {
-              scale: 1,
-              rotationDegrees: 0,
-              translateX: 0,
-              translateY: 0,
-            },
+            value: { scale: 1, rotationDegrees: 0, translateX: 0, translateY: 0 },
             easing: "hold",
           },
           {
             atSeconds: 5,
-            value: {
-              scale: 2,
-              rotationDegrees: 90,
-              translateX: 0.1,
-              translateY: -0.1,
-            },
+            value: { scale: 2, rotationDegrees: 90, translateX: 0.1, translateY: -0.1 },
             easing: LINEAR,
           },
         ],
@@ -709,11 +602,7 @@ describe("compilePostProject", () => {
             sourceOut: 10,
             keyframes: {
               box: [
-                {
-                  t: 1,
-                  value: { x: 0, y: 0, width: 0.5, height: 0.5 },
-                  easing: "hold",
-                },
+                { t: 1, value: { x: 0, y: 0, width: 0.5, height: 0.5 }, easing: "hold" },
               ],
             },
           }),
@@ -721,9 +610,7 @@ describe("compilePostProject", () => {
         ctx
       )!;
 
-      const track = result.preset.regionKeyframes?.find(
-        (r) => r.regionId === "v1"
-      );
+      const track = result.preset.regionKeyframes?.find((r) => r.regionId === "v1");
       expect(track).toEqual({
         regionId: "v1",
         keyframes: [
@@ -764,7 +651,10 @@ describe("compilePostProject", () => {
     });
 
     it("adds no motion and no regionKeyframes entry for an unanimated item", () => {
-      const result = compilePostProject(project([card("c1", 5)]), ctx)!;
+      const result = compilePostProject(
+        project([card("c1", 5)]),
+        ctx
+      )!;
 
       expect(motionOf(result, "c1")).toBeUndefined();
       expect(result.preset.regionKeyframes).toBeUndefined();
@@ -776,28 +666,12 @@ describe("compilePostProject", () => {
         sourceOut: 10,
         keyframes: {
           framing: [
-            {
-              t: 0,
-              value: { zoom: 1, panX: 0, panY: 0, rotation: 0 },
-              easing: overshoot,
-            },
-            {
-              t: 10,
-              value: { zoom: 4, panX: 0.5, panY: 0, rotation: 0 },
-              easing: LINEAR,
-            },
+            { t: 0, value: { zoom: 1, panX: 0, panY: 0, rotation: 0 }, easing: overshoot },
+            { t: 10, value: { zoom: 4, panX: 0.5, panY: 0, rotation: 0 }, easing: LINEAR },
           ],
           box: [
-            {
-              t: 0,
-              value: { x: 0, y: 0, width: 0.5, height: 0.5 },
-              easing: overshoot,
-            },
-            {
-              t: 10,
-              value: { x: 0.5, y: 0.5, width: 0.5, height: 0.5 },
-              easing: LINEAR,
-            },
+            { t: 0, value: { x: 0, y: 0, width: 0.5, height: 0.5 }, easing: overshoot },
+            { t: 10, value: { x: 0.5, y: 0.5, width: 0.5, height: 0.5 }, easing: LINEAR },
           ],
         },
       });
@@ -824,12 +698,7 @@ describe("compilePostProject", () => {
     });
 
     it("turns across -180..180 the short way, as the editor does", () => {
-      const at = (rotation: number) => ({
-        zoom: 1,
-        panX: 0,
-        panY: 0,
-        rotation,
-      });
+      const at = (rotation: number) => ({ zoom: 1, panX: 0, panY: 0, rotation });
       const clip = video("v1", {
         sourceOut: 10,
         keyframes: {
@@ -851,14 +720,10 @@ describe("compilePostProject", () => {
           seconds
         ).find((candidate) => candidate.clipId === "v1")!;
         const turn = layer.transform.rotationDegrees;
-        expect(
-          wrapDegrees(turn - framingAt(clip, seconds).rotation)
-        ).toBeCloseTo(0, 6);
+        expect(wrapDegrees(turn - framingAt(clip, seconds).rotation)).toBeCloseTo(0, 6);
         // Half a second never turns it more than the keys ask for.
         if (previous !== null) {
-          expect(Math.abs(wrapDegrees(turn - previous))).toBeLessThanOrEqual(
-            12
-          );
+          expect(Math.abs(wrapDegrees(turn - previous))).toBeLessThanOrEqual(12);
         }
         previous = turn;
       }
@@ -883,36 +748,24 @@ describe("compilePostProject", () => {
         },
       });
       const result = compilePostProject(project([clip]), ctx)!;
-      expect(
-        MediaCompositionPresetSchema.safeParse(result.preset).success
-      ).toBe(true);
+      expect(MediaCompositionPresetSchema.safeParse(result.preset).success).toBe(true);
 
       // Each key carries on from the one before, and a straight key is 0.
-      const track = result.preset.regionKeyframes?.find(
-        (r) => r.regionId === "v1"
-      );
-      expect(track?.keyframes.map((key) => key.value.turn)).toEqual([
-        170, 190, 360,
-      ]);
+      const track = result.preset.regionKeyframes?.find((r) => r.regionId === "v1");
+      expect(track?.keyframes.map((key) => key.value.turn)).toEqual([170, 190, 360]);
 
       let previous: number | null = null;
       for (let seconds = 0; seconds <= 10; seconds += 0.5) {
-        const rect = evaluatePresetFrame(
-          result.preset,
-          result.durationSeconds,
-          seconds
-        ).find((candidate) => candidate.clipId === "v1")!.regionRect!;
+        const rect = evaluatePresetFrame(result.preset, result.durationSeconds, seconds).find(
+          (candidate) => candidate.clipId === "v1"
+        )!.regionRect!;
         const turn = rect.turn ?? 0;
         expect(turn).toBeGreaterThanOrEqual(-180);
         expect(turn).toBeLessThanOrEqual(180);
-        expect(
-          wrapDegrees(turn - (boxAt(clip, seconds).turn ?? 0))
-        ).toBeCloseTo(0, 6);
+        expect(wrapDegrees(turn - (boxAt(clip, seconds).turn ?? 0))).toBeCloseTo(0, 6);
         // Half a second never turns it more than the keys ask for.
         if (previous !== null) {
-          expect(Math.abs(wrapDegrees(turn - previous))).toBeLessThanOrEqual(
-            15
-          );
+          expect(Math.abs(wrapDegrees(turn - previous))).toBeLessThanOrEqual(15);
         }
         previous = turn;
       }
@@ -923,21 +776,13 @@ describe("compilePostProject", () => {
         sourceOut: 10,
         box: { x: 0.2, y: 0.2, width: 0.5, height: 0.5, turn: 45 },
         keyframes: {
-          box: [
-            {
-              t: 0,
-              value: { x: 0, y: 0, width: 0.5, height: 0.5 },
-              easing: LINEAR,
-            },
-          ],
+          box: [{ t: 0, value: { x: 0, y: 0, width: 0.5, height: 0.5 }, easing: LINEAR }],
         },
       });
       const result = compilePostProject(project([clip]), ctx)!;
-      const layer = evaluatePresetFrame(
-        result.preset,
-        result.durationSeconds,
-        2
-      ).find((candidate) => candidate.clipId === "v1")!;
+      const layer = evaluatePresetFrame(result.preset, result.durationSeconds, 2).find(
+        (candidate) => candidate.clipId === "v1"
+      )!;
       expect(layer.regionRect).toEqual({ x: 0, y: 0, width: 0.5, height: 0.5 });
     });
   });
