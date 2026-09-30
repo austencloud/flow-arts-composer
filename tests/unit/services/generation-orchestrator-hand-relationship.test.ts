@@ -147,6 +147,62 @@ describe("GenerationOrchestrator timing and direction", () => {
     });
   });
 
+  it("uses the other QO reflection when the requested LOOP axis has no allowed start", async () => {
+    await makeOrchestrator().generateSequence(
+      circular({
+        length: 12,
+        handRelationship: "QO",
+        propRelationship: "SO",
+        blockedStartPlacements: [
+          "alpha3",
+          "alpha5",
+          "alpha7",
+          "beta1",
+          "beta3",
+          "beta7",
+          "gamma1",
+          "gamma3",
+          "gamma5",
+          "gamma7",
+          "gamma9",
+          "gamma13",
+          "gamma15",
+        ] as never,
+        loopRhythm: {
+          rotationInterval: 2,
+          inversionInterval: 2,
+          inversionMode: "expand",
+          reflectionAxis: "northeast-southwest",
+        } as never,
+      })
+    );
+    expect(constraintsOf().handRelationship).toEqual({
+      map: "reflect-northwest-southeast",
+      inverted: false,
+    });
+  });
+
+  it("explains when every possible start is blocked", async () => {
+    const blockedStartPlacements = [
+      ...new Set(
+        loadDiamondVariations().map((variation) => variation.startPlacement)
+      ),
+    ];
+    await expect(
+      makeOrchestrator().generateSequence(
+        baseOptions({
+          handRelationship: "QO",
+          propRelationship: "SO",
+          blockedStartPlacements: blockedStartPlacements as never,
+        })
+      )
+    ).rejects.toMatchObject({
+      name: "GenerationRequestError",
+      message: expect.stringContaining("Allow more starting placements"),
+    });
+    expect(buildMock).not.toHaveBeenCalled();
+  });
+
   it("rolls a quarter sense when nothing pins it", async () => {
     vi.spyOn(Math, "random").mockReturnValue(0.99);
     await makeOrchestrator().generateSequence(
