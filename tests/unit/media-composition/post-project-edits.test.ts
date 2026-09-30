@@ -17,6 +17,7 @@ import {
   deleteItem,
   duplicateItem,
   editItemKeyframes,
+  clearProjectKeyframes,
   moveMainItem,
   moveOverlayItem,
   placeMainItem,
@@ -53,6 +54,37 @@ import {
 } from "./post-project-fixtures";
 
 const ctx = { now: NOW + 1 };
+
+describe("clearProjectKeyframes", () => {
+  it("clears the requested scope atomically, skipping locked tracks and no-ops", () => {
+    const first = setKeyframe(
+      setKeyframe(card("first"), "opacity", 0, 0.2),
+      "opacity",
+      5,
+      0.8
+    );
+    const second = setKeyframe(card("second"), "opacity", 0, 0.4);
+    const locked = setKeyframe(text("locked", 0, 5), "opacity", 0, 0.3);
+    const base = project([first, second], [[locked]]);
+    const input = {
+      ...base,
+      tracks: base.tracks.map((track, index) =>
+        index === 1 ? { ...track, locked: true } : track
+      ),
+    };
+    const scoped = clearProjectKeyframes(input, 2.5, ctx, "first");
+    expect(findItem(scoped, "first")?.item.keyframes).toBeUndefined();
+    expect(findItem(scoped, "second")?.item.keyframes).toBeDefined();
+    expect(findItem(scoped, "locked")?.item.keyframes).toBeDefined();
+    expect(clearProjectKeyframes(scoped, 2.5, ctx, "first")).toBe(scoped);
+    const all = clearProjectKeyframes(input, 2.5, ctx);
+    expect(findItem(all, "first")?.item.keyframes).toBeUndefined();
+    expect(findItem(all, "second")?.item.keyframes).toBeUndefined();
+    expect(findItem(all, "locked")?.item.keyframes).toBeDefined();
+    expect(clearProjectKeyframes(input, 2.5, ctx, "locked")).toBe(input);
+    expect(input.tracks[0]?.items[0]?.keyframes).toBeDefined();
+  });
+});
 
 /** Projects as the editor holds them: laid out by the timeline's rules. */
 const project = (...args: Parameters<typeof rawProject>) =>

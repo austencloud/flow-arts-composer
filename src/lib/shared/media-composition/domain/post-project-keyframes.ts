@@ -790,8 +790,28 @@ export function clearChannel(
   s: number
 ): PostItem {
   if (!isAnimated(item, channel)) return item;
-  const value = channelValueAt(item, channel, s);
+  const visibleSecond = Math.max(item.start, Math.min(itemEnd(item), s));
+  const value = channelValueAt(item, channel, visibleSecond);
   return withStaticValue(withChannel(item, channel, undefined), channel, value);
+}
+
+/** Number of stored keys across the channels this item can animate. */
+export function keyframeCount(
+  item: PostItem,
+  channel?: PostKeyframeChannel
+): number {
+  const keyframes = itemKeyframes(item);
+  return (channel ? [channel] : channelsOf(item)).reduce(
+    (total, current) => total + (keyframes?.[current]?.length ?? 0),
+    0
+  );
+}
+
+/** Freeze every animated channel at the same post second. */
+export function clearItemKeyframes(item: PostItem, s: number): PostItem {
+  let next = item;
+  for (const channel of channelsOf(item)) next = clearChannel(next, channel, s);
+  return next;
 }
 
 /**

@@ -49,6 +49,7 @@
   import SequenceViewerShell from "$lib/shared/sequence-viewer/components/SequenceViewerShell.svelte";
   import { authDrawerState } from "$lib/shared/auth/state/auth-drawer-state.svelte";
   import { inboxState } from "$lib/shared/inbox/state/inbox-state.svelte";
+  import { collectionPickerState } from "$lib/features/library/state/collection-picker-state.svelte";
   import { initialViewerModeForUrl } from "$lib/shared/sequence-viewer/services/viewer-modes";
 
   import {
@@ -200,6 +201,13 @@
   let inboxHostMounted = $state(false);
   $effect(() => {
     if (inboxState.isOpen || inboxState.hostRequested) inboxHostMounted = true;
+  });
+  // The viewer's "Add to collection" opens the app-level collections picker,
+  // which MainApplication hosts and this route never mounts. Same on-first-open
+  // mount as the inbox above.
+  let collectionPickerHostMounted = $state(false);
+  $effect(() => {
+    if (collectionPickerState.isOpen) collectionPickerHostMounted = true;
   });
   let isLoading = $state(true);
   let loadError = $state<string | null>(null);
@@ -427,7 +435,9 @@
   function seeInGuide(): void {
     if (!sequence) return;
     const label =
-      sequence.steps?.length === 1 ? stripWordNotation(sequence.word).trim() : "";
+      sequence.steps?.length === 1
+        ? stripWordNotation(sequence.word).trim()
+        : "";
     const target = label ? guideTargetForLetter(label) : null;
     if (target?.cellKey) {
       setGuideScanIntent({ slug: target.slug, cellKey: target.cellKey });
@@ -856,6 +866,15 @@
     <mod.default />
   {/await}
   {#await import("$lib/shared/inbox/components/InboxDrawer.svelte") then mod}
+    <mod.default />
+  {/await}
+{/if}
+
+<!-- Same gap for "Add to collection": the picker sheet lives in a host that
+     MainApplication mounts, so without this a signed-in owner's tap opened
+     nothing on this route. -->
+{#if collectionPickerHostMounted}
+  {#await import("$lib/features/library/components/collection-picker/CollectionPickerHost.svelte") then mod}
     <mod.default />
   {/await}
 {/if}

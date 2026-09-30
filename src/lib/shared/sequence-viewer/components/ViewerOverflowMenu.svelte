@@ -44,6 +44,7 @@
     isSaved?: boolean;
     isSaving?: boolean;
     onSave?: () => void;
+    onAddToCollection?: () => void;
     onRemix?: () => void;
     onSendTo?: () => void;
     remixLabel?: string;
@@ -93,6 +94,7 @@
     isSaved = true,
     isSaving = false,
     onSave,
+    onAddToCollection,
     onRemix,
     onSendTo,
     remixLabel,
@@ -152,6 +154,13 @@
         action: onSave,
         className: isSaving ? "saving" : undefined,
         disabled: isSaving,
+      });
+    }
+    if (onAddToCollection) {
+      items.push({
+        label: t("browse_audit_add_to_collection"),
+        icon: "fa-folder-plus",
+        action: onAddToCollection,
       });
     }
     if (onRemix) {

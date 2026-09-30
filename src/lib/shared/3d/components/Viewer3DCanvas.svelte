@@ -3,6 +3,7 @@
   // and the background hold is refcounted per key — so each instance needs one
   // of its own or the first release would unfreeze the backdrop under the other.
   let viewer3DInstanceCount = 0;
+  let activeCopyPasteViewerId: number | null = null;
   function nextViewer3DInstanceId(): number {
     viewer3DInstanceCount += 1;
     return viewer3DInstanceCount;
@@ -24,7 +25,7 @@
    * so the workspace exists before choreography is chosen.
    */
 
-  import { onDestroy, type Snippet } from "svelte";
+  import { onDestroy, onMount, type Snippet } from "svelte";
   import { Canvas } from "@threlte/core";
   import { WebGLRenderer } from "three";
 
@@ -39,6 +40,7 @@
   import GaitOverlay from "../diagnostics/gait/GaitOverlay.svelte";
   import { gaitProbeState } from "../diagnostics/gait/gait-probe-state.svelte";
   import { getViewer3DContext } from "../context/viewer-3d-context";
+  import { handlePerformerCopyShortcut } from "../domain/performer-copy-shortcuts";
   import { createSceneFeatureState } from "../scene-features/state/scene-feature-state.svelte";
   import {
     setSceneFeatureContext,
@@ -331,6 +333,24 @@
   const characterState = $derived(
     viewer3DState.performerManager.performers[0] ?? null
   );
+  const copyPasteViewerId = nextViewer3DInstanceId();
+  onMount(() => {
+    activeCopyPasteViewerId ??= copyPasteViewerId;
+    function onKeydown(event: KeyboardEvent): void {
+      if (activeCopyPasteViewerId !== copyPasteViewerId) return;
+      handlePerformerCopyShortcut(
+        event,
+        () => viewer3DState.copySelectedPerformer(),
+        () => viewer3DState.pasteSelectedPerformer()
+      );
+    }
+    window.addEventListener("keydown", onKeydown);
+    return () => {
+      window.removeEventListener("keydown", onKeydown);
+      if (activeCopyPasteViewerId === copyPasteViewerId)
+        activeCopyPasteViewerId = null;
+    };
+  });
   const canRenderScene = $derived(
     renderEmptyScene || Boolean(characterState && sequenceData)
   );
@@ -645,7 +665,7 @@
   // Switching scenes runs the same pipeline again behind the same veil, and the
   // backdrop was painting through every frame of it — so the transition holds
   // too, from the moment it starts until it settles.
-  const backgroundHoldKey = `viewer3d-boot:${nextViewer3DInstanceId()}`;
+  const backgroundHoldKey = `viewer3d-boot:${copyPasteViewerId}`;
   $effect(() => {
     const shouldHold = !sceneReady || !environmentSettled || fullScreen;
     if (shouldHold) holdBackground(backgroundHoldKey);
@@ -713,6 +733,7 @@
   class="viewer-3d-canvas"
   data-swipe-block
   data-renderer-backend={workerHostExact ? "worker" : "legacy"}
+  onpointerdown={() => (activeCopyPasteViewerId = copyPasteViewerId)}
 >
   {#if canRenderScene}
     <!-- The transport is a layout sibling of the stage, not an overlay: it

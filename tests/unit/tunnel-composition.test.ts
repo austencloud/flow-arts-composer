@@ -22,6 +22,7 @@ import {
   GridMode,
 } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
 import { buildTunnelCompositionLayers } from "$lib/shared/sequence-viewer/tunnel/tunnel-layer-builder";
+import { resolveTunnelPerformerDisplays } from "$lib/features/create/tunnel/domain/tunnel-performer-displays";
 
 function sequence(id: string, steps: number): SequenceData {
   return createSequenceData({
@@ -220,6 +221,47 @@ describe("tunnel composition", () => {
     expect(pairedBlue.startLocation).toBe(GridLocation.NORTHEAST);
     expect(pairedBlue.arrowLocation).toBe(GridLocation.NORTHEAST);
     expect(placedBlue.startLocation).toBe(GridLocation.SOUTHWEST);
+  });
+
+  it("shows the rotated and mirrored stage sequences on partner cards", async () => {
+    const lead = createIndependentTunnelPerformer(geometricSequence("lead"), 0);
+    const rotated = createDerivedTunnelPerformer(lead.id, 1, [
+      { kind: "rotate", amount: 1 },
+    ]);
+    const mirrored = createIndependentTunnelPerformer(
+      geometricSequence("mirrored"),
+      2
+    );
+    const layers = await buildTunnelCompositionLayers(
+      createTunnelComposition([lead, rotated, mirrored]),
+      {
+        fold: 2,
+        mirror: true,
+        flip: false,
+        invert: false,
+        echo: false,
+        staggerSteps: 2,
+        speedOverrides: {},
+      }
+    );
+    const displays = resolveTunnelPerformerDisplays(layers);
+    const rotatedLayer = layers.find(
+      (layer) => layer.performerId === rotated.id
+    )!;
+    const mirroredLayer = layers.find(
+      (layer) => layer.performerId === mirrored.id
+    )!;
+
+    expect(rotatedLayer.formationOps).toEqual([{ kind: "rotate", amount: 4 }]);
+    expect(mirroredLayer.formationOps).toContainEqual({ kind: "mirror" });
+    for (const layer of [rotatedLayer, mirroredLayer]) {
+      expect(displays[layer.performerId]?.sequence).toBe(layer.sequence);
+      expect(
+        displays[layer.performerId]?.sequence?.steps[0]?.motions
+      ).not.toEqual(layer.performerSequence.steps[0]?.motions);
+      expect(displays[layer.performerId]?.stageArms).toEqual([layer.arm]);
+      expect(layer.stepOffset).toBeGreaterThan(0);
+    }
   });
 
   it("rejects relationship cycles before rendering", () => {

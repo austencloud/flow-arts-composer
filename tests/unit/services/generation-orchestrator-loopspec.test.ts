@@ -39,7 +39,9 @@ function baseOptions(overrides: Partial<GenerationOptions>): GenerationOptions {
   };
 }
 
-function makeOrchestrator(sequenceResult: unknown = { sequence: [], loop: {} }) {
+function makeOrchestrator(
+  sequenceResult: unknown = { sequence: [], loop: {} }
+) {
   const stubVariationProvider = {
     initialize: vi.fn().mockResolvedValue(undefined),
     getAllVariationsForGrid: vi.fn(async () => loadDiamondVariations()),
@@ -47,7 +49,9 @@ function makeOrchestrator(sequenceResult: unknown = { sequence: [], loop: {} }) 
   const stubTransformer = {
     convertToSequenceData: vi.fn().mockResolvedValue({ id: "stub" }),
   };
-  const stubMetadataManager = { mapDifficultyToLevel: vi.fn().mockReturnValue(1) };
+  const stubMetadataManager = {
+    mapDifficultyToLevel: vi.fn().mockReturnValue(1),
+  };
 
   buildMock.mockReturnValue(sequenceResult);
 
@@ -66,13 +70,21 @@ describe("GenerationOrchestrator — loopSpecWire seed solver + pass-through", (
 
   it("solves seed length from expanderMultiplier and passes the runtime loopSpec nested at loop.loopSpec", async () => {
     const wire = buildLoopSpec(
-      new Set([LOOPComponent.ROTATED, LOOPComponent.MIRRORED, LOOPComponent.INVERTED]),
+      new Set([
+        LOOPComponent.ROTATED,
+        LOOPComponent.MIRRORED,
+        LOOPComponent.INVERTED,
+      ]),
       { rotationInterval: 2, inversionInterval: 4, inversionMode: "overlay" }
     )!;
     // expanderMultiplier(wire) === 4 (rot x2 * mir x2; overlay inversion x1)
 
     const { orchestrator } = makeOrchestrator();
-    const options = baseOptions({ length: 16, loopSpecWire: wire, loopType: "mirrored_rotated" as never });
+    const options = baseOptions({
+      length: 16,
+      loopSpecWire: wire,
+      loopType: "mirrored_rotated" as never,
+    });
 
     await orchestrator.generateSequence(options);
 
@@ -83,21 +95,32 @@ describe("GenerationOrchestrator — loopSpecWire seed solver + pass-through", (
     expect(callArg.loop.requestedTotalLength).toBe(16);
   });
 
-  it("throws a /divisible/ error when length is not divisible by the expander multiplier", async () => {
+  it("explains when length cannot be divided by the expander multiplier", async () => {
     const wire = buildLoopSpec(
-      new Set([LOOPComponent.ROTATED, LOOPComponent.MIRRORED, LOOPComponent.INVERTED]),
+      new Set([
+        LOOPComponent.ROTATED,
+        LOOPComponent.MIRRORED,
+        LOOPComponent.INVERTED,
+      ]),
       { rotationInterval: 2, inversionInterval: 4, inversionMode: "overlay" }
     )!;
     // multiplier === 4; 18 is not divisible by 4
 
     const { orchestrator } = makeOrchestrator();
-    const options = baseOptions({ length: 18, loopSpecWire: wire, loopType: "mirrored_rotated" as never });
+    const options = baseOptions({
+      length: 18,
+      loopSpecWire: wire,
+      loopType: "mirrored_rotated" as never,
+    });
 
-    await expect(orchestrator.generateSequence(options)).rejects.toThrow(/divisible/);
+    await expect(orchestrator.generateSequence(options)).rejects.toMatchObject({
+      name: "GenerationRequestError",
+      message: expect.stringContaining("multiple of 4"),
+    });
     expect(buildMock).not.toHaveBeenCalled();
   });
 
-  it("throws a /too short/ error when the solved seed length is 1 and an expand-mode inversion is active", async () => {
+  it("explains the minimum length for an expand-mode inversion", async () => {
     // rot:2 + inv:2 (expand, default mode): the engine's fused-stage rule
     // absorbs rotation into the invert-only fused group at the same period,
     // so expanderMultiplier === 2 (Task 6 finding). length 2 -> seedLength 1,
@@ -109,15 +132,26 @@ describe("GenerationOrchestrator — loopSpecWire seed solver + pass-through", (
     )!;
 
     const { orchestrator } = makeOrchestrator();
-    const options = baseOptions({ length: 2, loopSpecWire: wire, loopType: "rotated_inverted" as never });
+    const options = baseOptions({
+      length: 2,
+      loopSpecWire: wire,
+      loopType: "rotated_inverted" as never,
+    });
 
-    await expect(orchestrator.generateSequence(options)).rejects.toThrow(/too short/);
+    await expect(orchestrator.generateSequence(options)).rejects.toMatchObject({
+      name: "GenerationRequestError",
+      message: expect.stringContaining("at least 4 steps"),
+    });
     expect(buildMock).not.toHaveBeenCalled();
   });
 
   it("legacy path (no loopSpecWire) is untouched: divides by 2/4 from period, no loop.loopSpec key", async () => {
     const { orchestrator } = makeOrchestrator();
-    const options = baseOptions({ length: 16, period: "quartered" as never, loopType: "rotated" as never });
+    const options = baseOptions({
+      length: 16,
+      period: "quartered" as never,
+      loopType: "rotated" as never,
+    });
 
     await orchestrator.generateSequence(options);
 

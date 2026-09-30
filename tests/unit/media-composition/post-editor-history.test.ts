@@ -1,6 +1,14 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { updateItem } from "$lib/shared/media-composition/domain/post-project-edits";
+import {
+  clearProjectKeyframes,
+  updateItem,
+} from "$lib/shared/media-composition/domain/post-project-edits";
+import {
+  setKeyframe,
+  keyframeCount,
+} from "$lib/shared/media-composition/domain/post-project-keyframes";
+import { card, project as rawProject } from "./post-project-fixtures";
 import { createPostEditorState } from "$lib/shared/media-composition/state/post-editor-state.svelte";
 import { addTakeTap } from "$lib/shared/media-composition/domain/take-timing";
 import { loadTakeTiming } from "$lib/shared/media-composition/services/take-timing-store";
@@ -25,6 +33,28 @@ function createEditor() {
 
 describe("post editor history", () => {
   beforeEach(() => localStorage.clear());
+
+  it("undoes a whole-post clear of multiple clips in one step", () => {
+    const editor = createEditor();
+    const first = setKeyframe(card("first"), "opacity", 0, 0.2);
+    const second = setKeyframe(card("second"), "opacity", 0, 0.4);
+    editor.edit(() => rawProject([first, second]));
+    const before = editor.project;
+    expect(
+      editor.edit((project, ctx) => clearProjectKeyframes(project, 0, ctx))
+    ).toBe(true);
+    expect(
+      editor.project.tracks[0]!.items.map((item) => keyframeCount(item))
+    ).toEqual([0, 0]);
+    expect(
+      editor.edit((project, ctx) => clearProjectKeyframes(project, 0, ctx))
+    ).toBe(false);
+    editor.undo();
+    expect(editor.project).toBe(before);
+    expect(
+      editor.project.tracks[0]!.items.map((item) => keyframeCount(item))
+    ).toEqual([1, 1]);
+  });
 
   it("undoes, redoes, and persists take timing without reviving stale redo", () => {
     const editor = createEditor();

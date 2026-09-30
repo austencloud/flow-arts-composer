@@ -20,6 +20,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 const SERVER_TS = { __serverTimestamp: true } as const;
 
 const mocks = vi.hoisted(() => ({
+  showUserError: vi.fn(),
   getDoc: vi.fn(),
   getDocs: vi.fn(),
   setDoc: vi.fn(),
@@ -64,7 +65,7 @@ vi.mock("$lib/shared/auth/firebase", () => ({
   getFirestoreInstance: vi.fn(async () => ({})),
 }));
 vi.mock("$lib/shared/application/get-error-handler", () => ({
-  getErrorHandler: vi.fn(() => ({ showUserError: vi.fn() })),
+  getErrorHandler: vi.fn(() => ({ showUserError: mocks.showUserError })),
 }));
 vi.mock("$lib/shared/sequence-viewer/get-public-sequence-hash-matcher", () => ({
   getPublicSequenceHashMatcher: vi.fn(() => ({
@@ -325,6 +326,7 @@ describe("syncToPublicIndex — first publication", () => {
     // The transaction commits nothing on a duplicate.
     expect(mocks.setDoc).not.toHaveBeenCalled();
     expect(mocks.updateDoc).not.toHaveBeenCalled();
+    expect(mocks.showUserError).not.toHaveBeenCalled();
   });
 
   it("republishing the SAME sequence over its own claim is not a duplicate", async () => {
@@ -382,6 +384,9 @@ describe("syncToPublicIndex — resync over an existing document", () => {
 
     // Nothing written: a failed read is never treated as a first publication.
     expect(mocks.setDoc).not.toHaveBeenCalled();
+    expect(mocks.showUserError).toHaveBeenCalledWith(
+      expect.objectContaining({ message: "Couldn't publish your sequence" })
+    );
   });
 });
 
