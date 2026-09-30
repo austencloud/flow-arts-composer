@@ -85,7 +85,7 @@
   import PostStaffEffectsTool from "./PostStaffEffectsTool.svelte";
   import PostNativeTextTool from "./PostNativeTextTool.svelte";
   import PostSourceGeometryTool from "./PostSourceGeometryTool.svelte";
-  import { sourceCropAtRatio } from "./post-source-crop";
+  import { sourceCropAtRatio, sourceFillBox } from "./post-source-crop";
   import PostAnimationAppearanceTool from "./PostAnimationAppearanceTool.svelte";
   import PostCardAppearanceTool from "./PostCardAppearanceTool.svelte";
   import PostVideoColorTool from "./PostVideoColorTool.svelte";
@@ -373,12 +373,15 @@
       chosenSourceShape = kind;
       return;
     }
-    const ratio = kind === "original"
-      ? source.width / source.height
-      : kind === "fill"
-        ? output.width / output.height
-        : ratioValue(kind);
-    const next = sourceCropAtRatio(geometry, source, output, ratio, kind === "original");
+    const next = kind === "fill"
+      ? sourceFillBox(geometry, source, output, channelValueAt(item, "box", seconds))
+      : sourceCropAtRatio(
+          geometry,
+          source,
+          output,
+          kind === "original" ? source.width / source.height : ratioValue(kind),
+          kind === "original"
+        );
     onCropSourceControl?.();
     editor.pause();
     editor.edit((project, ctx) =>
