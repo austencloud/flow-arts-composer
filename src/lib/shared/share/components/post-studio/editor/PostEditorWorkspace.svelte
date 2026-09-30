@@ -129,6 +129,7 @@
   } from "$lib/shared/media-composition/services/post-project-backup";
   import { downloadBlobToDisk } from "$lib/shared/foundation/services/file-downloader";
   import PostDraftStatus from "./PostDraftStatus.svelte";
+  import ResizeHandle from "$lib/shared/panels/ResizeHandle.svelte";
   import {
     adjacentStepSeconds,
     clipSteps,
@@ -601,9 +602,52 @@
   });
   let readingFile = $state(false);
   let fileError = $state("");
+  let showImportDifferences = $state(false);
   let pixelsPerSecond = $state(60);
   let editorWidth = $state(0);
   let editorHeight = $state(0);
+  const DEFAULT_TIMELINE_HEIGHT_PX = 280;
+  const MIN_TIMELINE_HEIGHT_PX = 160;
+  let timelineHeightPx = $state(DEFAULT_TIMELINE_HEIGHT_PX);
+  let timelineResizeStartPx = DEFAULT_TIMELINE_HEIGHT_PX;
+  const maxTimelineHeightPx = $derived(
+    Math.max(MIN_TIMELINE_HEIGHT_PX, Math.min(520, editorHeight - 360))
+  );
+  const shownTimelineHeightPx = $derived(
+    Math.min(timelineHeightPx, maxTimelineHeightPx)
+  );
+
+  function resizeTimeline(delta: number): void {
+    timelineHeightPx = Math.max(
+      MIN_TIMELINE_HEIGHT_PX,
+      Math.min(maxTimelineHeightPx, timelineResizeStartPx - delta)
+    );
+  }
+
+  function resizeTimelineWithKeys(event: KeyboardEvent): void {
+    let nextHeight: number;
+    switch (event.key) {
+      case "ArrowUp":
+        nextHeight = shownTimelineHeightPx + 20;
+        break;
+      case "ArrowDown":
+        nextHeight = shownTimelineHeightPx - 20;
+        break;
+      case "Home":
+        nextHeight = MIN_TIMELINE_HEIGHT_PX;
+        break;
+      case "End":
+        nextHeight = maxTimelineHeightPx;
+        break;
+      default:
+        return;
+    }
+    event.preventDefault();
+    timelineHeightPx = Math.max(
+      MIN_TIMELINE_HEIGHT_PX,
+      Math.min(maxTimelineHeightPx, nextHeight)
+    );
+  }
   let remPixels = $state(16);
   /** The panel last asked for. A wide screen falls back to a default. */
   let activeTool = $state<PostPanelToolId | null>(null);
@@ -1866,6 +1910,9 @@
     onImport={() => {
       if (!readingFile) recoveryInput?.click();
     }}
+    onImportDifferences={editor.project.importSource?.unresolved.length
+      ? () => (showImportDifferences = true)
+      : undefined}
     trailing={cropMode ? cropActions : undefined}
   />
 {/snippet}
@@ -2045,6 +2092,7 @@
   {/if}
   <div
     class="layout"
+    style:--post-timeline-height="{shownTimelineHeightPx}px"
     style:--post-stage-min={heldStageHeight === null
       ? null
       : `${heldStageHeight}px`}
@@ -2167,8 +2215,14 @@
         {#if fileError}
           <p class="file-error" role="alert">{fileError}</p>
         {/if}
-        {#if editor.project.importSource?.unresolved.length}
-          <details class="import-differences">
+        {#if showImportDifferences && editor.project.importSource?.unresolved.length}
+          <details
+            class="import-differences"
+            open
+            ontoggle={(event) => {
+              if (!event.currentTarget.open) showImportDifferences = false;
+            }}
+          >
             <summary>InShot import: rendering differences remain</summary>
             <ul>
               {#each editor.project.importSource.unresolved as difference}
@@ -2181,6 +2235,24 @@
 
       <!-- The crop screen stows the timeline and the row out of sight, still
            mounted, so they come back scrolled where they were. -->
+      {#if panelBeside && !showTimingStage && !cropMode}
+        <div class="timeline-resizer">
+          <ResizeHandle
+            direction="vertical"
+            size={12}
+            ariaLabel="Resize preview and timeline"
+            ariaValueNow={editorHeight > 0
+              ? (100 * (editorHeight - shownTimelineHeightPx)) / editorHeight
+              : 50}
+            disabled={maxTimelineHeightPx <= MIN_TIMELINE_HEIGHT_PX}
+            onDragStart={() => (timelineResizeStartPx = shownTimelineHeightPx)}
+            onDrag={resizeTimeline}
+            onKeydown={resizeTimelineWithKeys}
+            onDoubleClick={() =>
+              (timelineHeightPx = DEFAULT_TIMELINE_HEIGHT_PX)}
+          />
+        </div>
+      {/if}
       <div
         class="timeline-slot"
         class:stowed={cropMode}
@@ -2505,8 +2577,10 @@
     --post-panel-width: clamp(20rem, 30cqw, 26rem);
     display: grid;
     grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: minmax(15rem, 1fr) auto var(--post-timeline-height) auto;
-    grid-template-areas: "stage" "transport" "timeline" "row";
+    grid-template-rows: minmax(15rem, 1fr) auto 12px var(
+        --post-timeline-height
+      ) auto;
+    grid-template-areas: "stage" "transport" "resize" "timeline" "row";
   }
 
   .post-editor[data-mode="timing"]:is(
@@ -2544,6 +2618,11 @@
 
   .transport-slot {
     grid-area: transport;
+  }
+
+  .timeline-resizer {
+    grid-area: resize;
+    min-width: 0;
   }
 
   .timeline-slot {

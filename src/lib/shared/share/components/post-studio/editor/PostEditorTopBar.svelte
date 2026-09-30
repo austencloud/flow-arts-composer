@@ -17,6 +17,7 @@
     exporting: boolean;
     onExport: () => void;
     onImport?: () => void;
+    onImportDifferences?: () => void;
     onMirror?: () => void;
     mirrored?: boolean;
     onBackup: () => void;
@@ -32,6 +33,7 @@
     exporting,
     onExport,
     onImport,
+    onImportDifferences,
     onMirror,
     mirrored = false,
     onBackup,
@@ -50,6 +52,15 @@
             icon: "fa-solid fa-file-import",
             action: onImport,
             disabled: exporting,
+          },
+        ]
+      : []),
+    ...(onImportDifferences
+      ? [
+          {
+            label: "View InShot differences",
+            icon: "fa-solid fa-triangle-exclamation",
+            action: onImportDifferences,
           },
         ]
       : []),

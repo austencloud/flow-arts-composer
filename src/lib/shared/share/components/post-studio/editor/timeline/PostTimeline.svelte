@@ -154,6 +154,9 @@
   const OVERLAY_ROW_HEIGHT_PX = 52;
   const MAIN_ROW_HEIGHT_PX = 72;
   const RULER_HEIGHT_PX = 36; // Matches TimelineBody's ruler height for consistency.
+  // The ruler viewport is narrower than the lanes by the zoom controls.
+  // Extra trailing space lets both surfaces reach the same horizontal offset.
+  const RULER_TRAILING_SPACE_PX = 160;
   const KEY_LANE_HEIGHT_PX = 44;
   const TRAILING_PADDING_PX = 64;
   const DRAG_THRESHOLD_PX = 4;
@@ -414,8 +417,8 @@
     seekFromRulerEvent(event);
   }
 
-  // --- Scroll sync: the ruler and header column never scroll on their own,
-  // they only mirror the one real scroll surface, `.lanes-scroll`.
+  // --- Scroll sync: the lanes own horizontal scrolling; either vertical
+  // surface can be scrolled while keeping its matching row in view.
 
   function markUserScrolling(): void {
     userScrolling = true;
@@ -445,6 +448,13 @@
     if (headerColumnEl && lanesScrollEl) {
       headerColumnEl.scrollTop = lanesScrollEl.scrollTop;
     }
+  }
+
+  function handleHeaderScroll(): void {
+    if (!headerColumnEl || !lanesScrollEl) return;
+    if (lanesScrollEl.scrollTop === headerColumnEl.scrollTop) return;
+    lanesScrollEl.scrollTop = headerColumnEl.scrollTop;
+    headerColumnEl.scrollTop = lanesScrollEl.scrollTop;
   }
 
   // --- Zoom --------------------------------------------------------------
@@ -1098,6 +1108,31 @@
         {@render toolbarStart()}
       </div>
     {/if}
+    <div
+      class="ruler-scroll"
+      bind:this={rulerScrollEl}
+      style="height: {RULER_HEIGHT_PX}px"
+    >
+      <div
+        class="ruler-row"
+        style="width: {contentWidthPx + RULER_TRAILING_SPACE_PX}px"
+        role="group"
+        aria-label={t("post_timeline_ruler_label")}
+        onpointerdown={handleRulerPointerDown}
+        onpointermove={handleRulerPointerMove}
+      >
+        <TimeRuler
+          duration={durationSeconds}
+          {pixelsPerSecond}
+          tickInterval={rulerTickInterval(pixelsPerSecond)}
+        />
+        <div
+          class="playhead-line"
+          style="left: {playheadXPx}px"
+          aria-hidden="true"
+        ></div>
+      </div>
+    </div>
     <PostTimelineZoomControls
       onZoomOut={() => handleZoomButton(1 / ZOOM_STEP_FACTOR)}
       onZoomIn={() => handleZoomButton(ZOOM_STEP_FACTOR)}
@@ -1106,50 +1141,55 @@
   </div>
 
   <div class="body">
-    <div class="header-column" bind:this={headerColumnEl}>
-      <div class="header-spacer" style="height: {RULER_HEIGHT_PX}px"></div>
-      {#each rows as row (row.trackIndex)}
-        <PostTimelineTrackHeader
-          name={row.displayName}
-          hidden={row.track.hidden}
-          locked={row.track.locked}
-          heightPx={row.heightPx}
-          onToggleHidden={() =>
-            onTrackFlag(row.track.id, "hidden", !row.track.hidden)}
-          onToggleLocked={() =>
-            onTrackFlag(row.track.id, "locked", !row.track.locked)}
-        />
-        {#if keyLanes && keyLanes.trackIndex === row.trackIndex}
-          {@const lanes = keyLanes}
-          {@const inSpan =
-            playheadSeconds >= lanes.item.start - POST_TIME_EPSILON &&
-            playheadSeconds <= itemEnd(lanes.item) + POST_TIME_EPSILON}
-          {#each lanes.channels as channel (channel)}
-            <div class="key-lane-slot" transition:growFade|global>
-              <PostTimelineKeyLaneHeader
-                {channel}
-                heightPx={KEY_LANE_HEIGHT_PX}
-                valueText={channelValueText(
-                  channel,
-                  channelValueAt(lanes.item, channel, playheadSeconds)
-                )}
-                focused={channel === keyChannel}
-                hasKeyHere={keyframeIndexAt(
-                  lanes.item,
-                  channel,
-                  playheadSeconds
-                ) >= 0}
-                canKey={inSpan && !lanes.locked}
-                onFocus={() => onKeyChannel(channel)}
-                onToggleKey={() => {
-                  onKeyChannel(channel);
-                  onToggleKey(lanes.item.id, channel, playheadSeconds);
-                }}
-              />
-            </div>
-          {/each}
-        {/if}
-      {/each}
+    <div class="header-column">
+      <div
+        class="header-rows"
+        bind:this={headerColumnEl}
+        onscroll={handleHeaderScroll}
+      >
+        {#each rows as row (row.trackIndex)}
+          <PostTimelineTrackHeader
+            name={row.displayName}
+            hidden={row.track.hidden}
+            locked={row.track.locked}
+            heightPx={row.heightPx}
+            onToggleHidden={() =>
+              onTrackFlag(row.track.id, "hidden", !row.track.hidden)}
+            onToggleLocked={() =>
+              onTrackFlag(row.track.id, "locked", !row.track.locked)}
+          />
+          {#if keyLanes && keyLanes.trackIndex === row.trackIndex}
+            {@const lanes = keyLanes}
+            {@const inSpan =
+              playheadSeconds >= lanes.item.start - POST_TIME_EPSILON &&
+              playheadSeconds <= itemEnd(lanes.item) + POST_TIME_EPSILON}
+            {#each lanes.channels as channel (channel)}
+              <div class="key-lane-slot" transition:growFade|global>
+                <PostTimelineKeyLaneHeader
+                  {channel}
+                  heightPx={KEY_LANE_HEIGHT_PX}
+                  valueText={channelValueText(
+                    channel,
+                    channelValueAt(lanes.item, channel, playheadSeconds)
+                  )}
+                  focused={channel === keyChannel}
+                  hasKeyHere={keyframeIndexAt(
+                    lanes.item,
+                    channel,
+                    playheadSeconds
+                  ) >= 0}
+                  canKey={inSpan && !lanes.locked}
+                  onFocus={() => onKeyChannel(channel)}
+                  onToggleKey={() => {
+                    onKeyChannel(channel);
+                    onToggleKey(lanes.item.id, channel, playheadSeconds);
+                  }}
+                />
+              </div>
+            {/each}
+          {/if}
+        {/each}
+      </div>
     </div>
 
     <div class="scroll-column">
@@ -1166,32 +1206,6 @@
           {/if}
         </div>
       {/if}
-      <div
-        class="ruler-scroll"
-        bind:this={rulerScrollEl}
-        style="height: {RULER_HEIGHT_PX}px"
-      >
-        <div
-          class="ruler-row"
-          style="width: {contentWidthPx}px"
-          role="group"
-          aria-label={t("post_timeline_ruler_label")}
-          onpointerdown={handleRulerPointerDown}
-          onpointermove={handleRulerPointerMove}
-        >
-          <TimeRuler
-            duration={durationSeconds}
-            {pixelsPerSecond}
-            tickInterval={rulerTickInterval(pixelsPerSecond)}
-          />
-          <div
-            class="playhead-line"
-            style="left: {playheadXPx}px"
-            aria-hidden="true"
-          ></div>
-        </div>
-      </div>
-
       <div
         class="lanes-scroll"
         bind:this={lanesScrollEl}
@@ -1347,18 +1361,21 @@
     display: flex;
     flex-shrink: 0;
     align-items: center;
-    justify-content: flex-end;
-    gap: 0.5rem;
     border-bottom: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.08));
   }
 
   /* The keyframe buttons, left of the zoom controls. */
   .toolbar-start {
     display: flex;
-    flex: 1;
+    flex: 0 0 16rem;
     align-items: center;
     min-width: 0;
     padding-left: 0.5rem;
+    box-sizing: border-box;
+  }
+
+  .toolbar-start :global(.kf-label) {
+    display: none;
   }
 
   .key-lane-slot {
@@ -1376,15 +1393,23 @@
     display: flex;
     flex-shrink: 0;
     flex-direction: column;
-    width: 11.5rem;
+    width: 16rem;
     overflow: hidden;
     border-right: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.08));
     container-type: inline-size;
     container-name: post-timeline-header;
   }
 
-  .header-spacer {
-    flex-shrink: 0;
+  .header-rows {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    padding-bottom: 1rem;
+    scrollbar-width: none;
+  }
+
+  .header-rows::-webkit-scrollbar {
+    display: none;
   }
 
   .scroll-column {
@@ -1396,9 +1421,10 @@
   }
 
   .ruler-scroll {
+    flex: 1;
+    min-width: 0;
     flex-shrink: 0;
     overflow: hidden;
-    border-bottom: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.08));
   }
 
   .ruler-row {
@@ -1553,6 +1579,19 @@
   }
 
   @container post-timeline (max-width: 30rem) {
+    .toolbar-row {
+      flex-wrap: wrap;
+    }
+
+    .toolbar-start {
+      flex: 1;
+    }
+
+    .ruler-scroll {
+      flex: 0 0 calc(100% - 7rem);
+      margin-left: 7rem;
+    }
+
     .header-column {
       width: 7rem;
     }
