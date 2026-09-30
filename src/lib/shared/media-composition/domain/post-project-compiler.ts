@@ -69,6 +69,16 @@ export function itemIdFromTextRole(role: string): string | null {
     : null;
 }
 
+/** Scoped Moves use the animation renderer, with appearance owned by the item. */
+export function movesAnimationRole(itemId: string): string {
+  return `moves-animation:${itemId}`;
+}
+
+export function itemIdFromMovesAnimationRole(role: string): string | null {
+  const prefix = "moves-animation:";
+  return role.startsWith(prefix) ? role.slice(prefix.length) : null;
+}
+
 export const STAFF_EFFECT_ROLE_PREFIX = "staff:";
 
 /** The painted layer that draws a video clip's staff effect. */
@@ -201,7 +211,9 @@ function sequenceRoleFor(item: SequenceItem): {
       };
     case "moves":
       return {
-        key: stripRole(item.mode),
+        key: item.animationAppearance
+          ? movesAnimationRole(item.id)
+          : stripRole(item.mode),
         label: "Strip",
         resolution: "linked-sequence-derived",
         acceptedKinds: ["sequence-animation"],

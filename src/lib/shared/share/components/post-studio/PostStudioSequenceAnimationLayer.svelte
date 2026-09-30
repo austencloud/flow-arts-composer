@@ -9,7 +9,7 @@
   import { createEffectsConfigState } from "$lib/shared/effects/state/effects-config-state.svelte";
   import { getEffectsConfigContext } from "$lib/shared/effects/state/effects-config-context";
   import { DEFAULT_EFFECTS_CONFIG } from "$lib/shared/effects/domain/defaults";
-  import type { PostAnimationItem } from "$lib/shared/media-composition/domain/post-project";
+  import type { PostAnimationItem, PostMovesMode } from "$lib/shared/media-composition/domain/post-project";
   import { getViewerStudioSurfaces } from "$lib/shared/sequence-viewer/context/viewer-studio-surfaces-context";
   import { AnimationStateManager } from "$lib/shared/animation-engine/services/animation-state-manager";
   import { SequenceAnimationOrchestrator } from "$lib/shared/animation-engine/services/sequence-animation-orchestrator";
@@ -32,6 +32,7 @@
     sequencePassIndex = 0,
     animationTimeSeconds,
     breakdownMotion = false,
+    breakdownMode = "alternate",
     labelsPainted = false,
     playing,
     leftPropType,
@@ -44,6 +45,7 @@
     sequencePassIndex?: number;
     animationTimeSeconds?: number;
     breakdownMotion?: boolean;
+    breakdownMode?: PostMovesMode;
     /**
      * The post paints the beat number, letter and element icon over this
      * layer, so the animator's own copies would show twice.
@@ -157,7 +159,11 @@
   let leftProp = $state<PropState | null>(null);
   let rightProp = $state<PropState | null>(null);
 
-  const showMandala = $derived(breakdownMotion && sequencePassIndex % 2 === 1);
+  const showMandala = $derived(
+    breakdownMotion &&
+      (breakdownMode === "mandala" ||
+        (breakdownMode === "alternate" && sequencePassIndex % 2 === 1))
+  );
   const beatNumber = $derived(
     clampDisplayedBeatNumber(
       mappedBeatNumber ?? displayedBeatNumber(sequencePosition, false),
@@ -242,6 +248,7 @@
   {:else if breakdownMotion && stepData}
     <div class="pictograph-motion" data-pictograph-motion>
       {#if animationAppearance}
+        {#key animationAppearance.propType}
         <AnimatorCanvas
           {leftProp}
           {rightProp}
@@ -265,6 +272,7 @@
             ? undefined
             : animationTimeSeconds * 1000}
         />
+        {/key}
       {/if}
       <div class:arrow-overlay={!!animationAppearance}>
       <PictographContainer

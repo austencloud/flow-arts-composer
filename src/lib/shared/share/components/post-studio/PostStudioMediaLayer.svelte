@@ -6,7 +6,7 @@
   import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
   import type { HandLabeling } from "$lib/shared/video-collaboration/domain/hand-labeling";
   import type { SequenceExportOptions } from "$lib/shared/render/domain/models/sequence-export-options";
-  import type { PostAnimationItem } from "$lib/shared/media-composition/domain/post-project";
+  import type { PostAnimationItem, PostMovesMode } from "$lib/shared/media-composition/domain/post-project";
   import PostStudioSequenceAnimationLayer from "./PostStudioSequenceAnimationLayer.svelte";
   import PostStudioChoreoLayer from "./PostStudioChoreoLayer.svelte";
   import PostStudioTunnelLayer from "./PostStudioTunnelLayer.svelte";
@@ -42,6 +42,7 @@
     sequencePassIndex?: number;
     animationTimeSeconds?: number;
     breakdownMotion?: boolean;
+    breakdownMode?: PostMovesMode;
     /** The post paints the animation's labels; see the animation layer. */
     labelsPainted?: boolean;
     displayedBeatNumber?: number;
@@ -72,6 +73,7 @@
     sequencePassIndex,
     animationTimeSeconds,
     breakdownMotion,
+    breakdownMode,
     labelsPainted = false,
     displayedBeatNumber,
     clipId,
@@ -447,6 +449,7 @@
       {sequencePassIndex}
       {animationTimeSeconds}
       {breakdownMotion}
+      {breakdownMode}
       {labelsPainted}
       {animationAppearance}
       {playing}

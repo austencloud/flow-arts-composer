@@ -3,8 +3,15 @@ import { describe, expect, it, vi } from "vitest";
 import { POST_STUDIO_PRESETS } from "$lib/shared/media-composition/domain/post-studio-presets";
 import {
   resolveFrameLayerGeometry,
+  renderPostStudioFrame,
   waitForPictographMotion,
 } from "$lib/shared/media-composition/services/post-studio-frame-compositor";
+import { compilePostProject } from "$lib/shared/media-composition/domain/post-project-compiler";
+import { evaluatePresetFrame } from "$lib/shared/media-composition/services/frame-evaluator";
+import { NOW, card, overlay, project } from "./post-project-fixtures";
+
+const { captureMotion } = vi.hoisted(() => ({ captureMotion: vi.fn() }));
+vi.mock("modern-screenshot", () => ({ domToCanvas: captureMotion }));
 
 const preset = POST_STUDIO_PRESETS.find(
   (candidate) => candidate.id === "performance-breakdown"
@@ -187,4 +194,61 @@ describe("waitForPictographMotion", () => {
       "The pictograph motion layer was not ready to render."
     );
   });
+});
+
+describe("scoped Moves export", () => {
+  it.each(["arrows", "mandala"] as const)(
+    "exports %s without repainting effect canvases over the captured arrows",
+    async (mode) => {
+      const createElement = <T extends HTMLElement>(tag: string) =>
+        document.createElementNS("http://www.w3.org/1999/xhtml", tag) as T;
+      const compiled = compilePostProject(project([card("base", 5)], [[
+        overlay("moves", "moves", {
+          start: 0, duration: 5, mode,
+          animationAppearance: { darkMode: true },
+        }),
+      ]]), { now: NOW })!;
+      const layers = evaluatePresetFrame(compiled.preset, 5, 1)
+        .filter((entry) => entry.regionId === "moves");
+      const root = createElement<HTMLDivElement>("div");
+      const media = createElement<HTMLDivElement>("div");
+      media.className = "media-layer";
+      media.dataset.clipId = layers[0]!.clipId;
+      media.dataset.renderMode = "sequence-animation";
+      const animation = createElement<HTMLDivElement>("div");
+      animation.dataset.studioAnimationMode = mode === "arrows" ? "pictograph" : "mandala";
+      const effects = createElement<HTMLCanvasElement>("canvas");
+      effects.width = effects.height = 200;
+      animation.append(effects);
+      if (mode === "arrows") {
+        animation.dataset.pictographMotion = "";
+        const arrows = createElement<HTMLDivElement>("div");
+        arrows.dataset.pictographRenderReady = "true";
+        animation.append(arrows);
+        vi.spyOn(animation, "getBoundingClientRect").mockReturnValue({
+          width: 200, height: 200,
+        } as DOMRect);
+      }
+      media.append(animation);
+      root.append(media);
+      const captured = createElement<HTMLCanvasElement>("canvas");
+      captured.width = captured.height = 200;
+      captureMotion.mockReset().mockResolvedValue(captured);
+      const drawImage = vi.fn();
+      const context = new Proxy({ drawImage }, {
+        get(target, key) { return Reflect.get(target, key) ?? vi.fn(); },
+      });
+      const output = createElement<HTMLCanvasElement>("canvas");
+      vi.spyOn(output, "getContext").mockReturnValue(context as unknown as CanvasRenderingContext2D);
+
+      await renderPostStudioFrame({
+        canvas: output, root, preset: compiled.preset, layers,
+        cardFrameCache: new Map(),
+      });
+
+      expect(drawImage).toHaveBeenCalledTimes(1);
+      expect(drawImage.mock.calls[0]![0]).toBe(mode === "arrows" ? captured : effects);
+      expect(captureMotion).toHaveBeenCalledTimes(mode === "arrows" ? 1 : 0);
+    }
+  );
 });
