@@ -1,8 +1,6 @@
 <script lang="ts">
   import type { PostStudioLayerPainter } from "$lib/shared/media-composition/services/post-studio-layer-painter";
   import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
-  import FilterChipBase from "$lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
   import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { ITEM_KIND_ICON } from "../editor/post-editor-labels";
   import TakeTimingLane from "./TakeTimingLane.svelte";
@@ -23,24 +21,27 @@
 {#if session.take && session.timing}
   <div class="timing-controls">
     <div class="transport">
-      <PanelButton
+      <button
+        type="button"
+        class="round"
         onclick={session.restart}
         disabled={!session.url}
-        ariaLabel="Back to start (Home)"
+        aria-label="Back to start (Home)"
+        title="Back to start"
       >
-        <i class="fa-solid fa-backward-fast" aria-hidden="true"></i> Start
-      </PanelButton>
+        <i class="fa-solid fa-backward-fast" aria-hidden="true"></i>
+      </button>
       <button
         type="button"
         class="round"
         onclick={session.togglePlay}
         disabled={!session.url}
-        aria-label={session.playing
+        aria-label={session.reviewPlaying
           ? t("share_studio_deep_pause")
           : t("share_studio_deep_play")}
       >
         <i
-          class="fa-solid {session.playing ? 'fa-pause' : 'fa-play'}"
+          class="fa-solid {session.reviewPlaying ? 'fa-pause' : 'fa-play'}"
           aria-hidden="true"
         ></i>
       </button>
@@ -78,95 +79,79 @@
         <span class="total">/ {formatTakeClock(session.durationSeconds)}</span>
       </div>
       <span class="readout">{session.readout}</span>
-      <div class="picker">
-        <SegmentedControl
-          options={[
-            {
-              value: "1",
-              label: "1×",
-              ariaLabel: t("share_studio_deep_full_speed"),
-            },
-            {
-              value: "0.75",
-              label: "¾×",
-              ariaLabel: t("share_studio_deep_three_quarter_speed"),
-            },
-            {
-              value: "0.5",
-              label: "½×",
-              ariaLabel: t("share_studio_deep_half_speed"),
-            },
-          ]}
-          value={session.speed}
-          onchange={(value) => (session.speed = value)}
-          size="sm"
-          density="compact"
-          ariaLabel={t("share_studio_deep_playback_speed")}
-        />
-      </div>
     </div>
 
-    <div class="lane-heading">
-      <span
-        >{session.adjustLandings
-          ? "Adjust landings · drag a marker to move it"
-          : "Landings · drag anywhere to scrub"}</span
-      >
-      <PanelButton
-        onclick={() => {
-          session.adjustLandings = !session.adjustLandings;
+    <div class="landing-lane">
+      <TakeTimingLane
+        timing={session.timing}
+        resolved={session.resolved}
+        durationSeconds={session.durationSeconds}
+        mediaSeconds={session.mediaSeconds}
+        movesPerPass={session.movesPerPass}
+        windowSeconds={fit ? session.durationSeconds : Number(session.zoom)}
+        editable={session.adjustLandings}
+        onGestureChange={session.setAdjustmentCancel}
+        selected={session.selected}
+        onseek={(seconds) => {
+          session.pause();
+          session.seek(seconds);
         }}
-      >
-        {session.adjustLandings ? "Done adjusting (Esc)" : "Adjust landings"}
-      </PanelButton>
+        onselect={(landing) => (session.selected = landing)}
+        onplace={session.placeLanding}
+        dragRange={session.landingRange}
+      />
     </div>
-    <TakeTimingLane
-      timing={session.timing}
-      resolved={session.resolved}
-      durationSeconds={session.durationSeconds}
-      mediaSeconds={session.mediaSeconds}
-      movesPerPass={session.movesPerPass}
-      windowSeconds={fit ? session.durationSeconds : Number(session.zoom)}
-      editable={session.adjustLandings}
-      onGestureChange={session.setAdjustmentCancel}
-      selected={session.selected}
-      onseek={(seconds) => {
-        session.pause();
-        session.seek(seconds);
-      }}
-      onselect={(landing) => (session.selected = landing)}
-      onplace={session.placeLanding}
-      dragRange={session.landingRange}
-    />
 
     <div class="options">
-      <div class="picker">
-        <SegmentedControl
-          options={[
-            { value: "fit", label: "Fit" },
-            { value: "8", label: "8 s" },
-            { value: "16", label: "16 s" },
-          ]}
+      <label class="picker"
+        ><span class="sr-only">Playback speed</span>
+        <select
+          aria-label="Playback speed"
+          value={session.speed}
+          onchange={(event) => (session.speed = event.currentTarget.value)}
+        >
+          <option value="1">1×</option><option value="0.75">¾×</option><option
+            value="0.5">½×</option
+          >
+        </select>
+      </label>
+      <label class="picker"
+        ><span class="sr-only">Timeline view</span>
+        <select
+          aria-label="Timeline view"
           value={fit ? "fit" : session.zoom}
-          onchange={(value) => {
+          onchange={(event) => {
+            const value = event.currentTarget.value;
             fit = value === "fit";
-            if (value !== "fit") session.zoom = value;
+            if (!fit) session.zoom = value;
           }}
-          size="sm"
-          density="compact"
-          ariaLabel={t("share_studio_deep_closeup_width")}
-        />
-      </div>
+        >
+          <option value="fit">Fit</option><option value="8">8 s</option><option
+            value="16">16 s</option
+          >
+        </select>
+      </label>
+      <PanelButton
+        onclick={() => (session.adjustLandings = !session.adjustLandings)}
+        ariaPressed={session.adjustLandings}
+        ariaLabel={session.adjustLandings
+          ? "Done adjusting landings"
+          : "Adjust landings"}
+      >
+        <i class="fa-solid fa-pen-to-square" aria-hidden="true"></i>
+        <span class="option-label"
+          >{session.adjustLandings ? "Done adjusting" : "Adjust landings"}</span
+        >
+      </PanelButton>
       {#if squarePainter}
-        <FilterChipBase
-          mode="toggle"
-          emphasis="solid"
-          size="sm"
-          icon={`fa-solid ${ITEM_KIND_ICON.moves}`}
-          label={t("share_studio_deep_show_move")}
-          active={session.showSquare}
+        <PanelButton
+          ariaPressed={session.showSquare}
+          ariaLabel="Show move"
           onclick={() => (session.showSquare = !session.showSquare)}
-        />
+        >
+          <i class="fa-solid {ITEM_KIND_ICON.moves}" aria-hidden="true"
+          ></i><span class="option-label">Show move</span>
+        </PanelButton>
       {/if}
       <span class="hint"
         >T tap · Space play/pause · ← → frame · Ctrl Z undo · Ctrl Y redo</span
@@ -183,13 +168,8 @@
     user-select: none;
     -webkit-user-select: none;
   }
-  .lane-heading {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 0.5rem;
-    font-size: 0.875rem;
-    color: var(--theme-text-secondary, #aaa);
+  .landing-lane {
+    min-width: 0;
   }
   .transport,
   .options {
@@ -199,9 +179,30 @@
     gap: 0.5rem;
     min-width: 0;
   }
-  /* The shared control fills its box; three short choices only need this much. */
   .picker {
-    flex: 0 0 11rem;
+    flex: none;
+  }
+  .picker select {
+    min-height: 2.75rem;
+    padding: 0.5rem;
+    border: 1px solid var(--theme-stroke);
+    border-radius: 0.5rem;
+    background: var(--theme-card-bg);
+    color: var(--theme-text);
+    font: inherit;
+    font-size: var(--mapping-text-size, 0.875rem);
+  }
+  .picker select:focus-visible {
+    outline: 2px solid var(--theme-accent);
+    outline-offset: 2px;
+  }
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
   }
   .round {
     display: grid;
@@ -229,7 +230,7 @@
     align-items: center;
     gap: 0.375rem;
     color: var(--theme-text, #fff);
-    font-size: 0.875rem;
+    font-size: var(--mapping-text-size, 0.875rem);
     font-variant-numeric: tabular-nums;
     white-space: nowrap;
   }
@@ -241,12 +242,41 @@
     min-width: 0;
     overflow: hidden;
     color: var(--theme-text-secondary, #aaa);
-    font-size: 0.875rem;
+    font-size: var(--mapping-text-size, 0.875rem);
     text-overflow: ellipsis;
     white-space: nowrap;
   }
   .hint {
     color: var(--theme-text-secondary, #aaa);
-    font-size: 0.75rem;
+    font-size: var(--mapping-meta-size, 0.75rem);
+  }
+  @media (max-width: 600px) {
+    .timing-controls {
+      gap: 0.375rem;
+    }
+    .transport {
+      gap: 0.25rem;
+      flex-wrap: nowrap;
+    }
+    .readout,
+    .total,
+    .hint,
+    .option-label {
+      display: none;
+    }
+    .clock {
+      margin-left: auto;
+    }
+    .options {
+      gap: 0.375rem;
+    }
+  }
+  @media (max-height: 500px) {
+    .hint,
+    .readout,
+    .total,
+    .option-label {
+      display: none;
+    }
   }
 </style>

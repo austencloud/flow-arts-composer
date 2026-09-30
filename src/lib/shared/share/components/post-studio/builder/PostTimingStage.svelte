@@ -1,9 +1,7 @@
 <script lang="ts">
-  import type { PostStudioLayerPainter } from "$lib/shared/media-composition/services/post-studio-layer-painter";
+  import type { Snippet } from "svelte";
   import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
   import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import PostStudioPaintedLayer from "../PostStudioPaintedLayer.svelte";
   import type { PostTimingSession } from "./post-timing-session.svelte";
 
   /**
@@ -13,10 +11,17 @@
    */
   interface Props {
     session: PostTimingSession;
-    squarePainter?: PostStudioLayerPainter | null;
+    ratio?: number;
+    preview: Snippet;
+    onOpenAnimation: () => void;
   }
 
-  let { session, squarePainter = null }: Props = $props();
+  let {
+    session,
+    preview,
+    onOpenAnimation,
+    ratio = $bindable(9 / 16),
+  }: Props = $props();
   let sourceWidth = $state(9);
   let sourceHeight = $state(16);
 </script>
@@ -30,25 +35,9 @@
   </div>
 {:else}
   <section class="stage" aria-label={t("share_studio_deep_take_to_map")}>
-    {#if session.takes.length > 1}
-      <SegmentedControl
-        options={session.takes.map((entry) => ({
-          value: entry.id,
-          label: entry.label,
-        }))}
-        value={session.take.id}
-        onchange={session.selectTake}
-        size="sm"
-        ariaLabel={t("share_studio_deep_take_to_map")}
-      />
-    {/if}
-
     {#if session.url}
       <div class="video-space">
-        <div
-          class="frame"
-          style:--take-ratio={sourceWidth / sourceHeight}
-        >
+        <div class="frame" style:--take-ratio={sourceWidth / sourceHeight}>
           <!-- svelte-ignore a11y_media_has_caption, a11y_click_events_have_key_events, a11y_no_noninteractive_element_interactions -->
           <video
             bind:this={session.video}
@@ -58,6 +47,7 @@
             onloadedmetadata={(event) => {
               sourceWidth = event.currentTarget.videoWidth || 9;
               sourceHeight = event.currentTarget.videoHeight || 16;
+              ratio = sourceWidth / sourceHeight;
             }}
             onplay={() => session.notePlaying(true)}
             onpause={() => session.notePlaying(false)}
@@ -65,13 +55,19 @@
             onseeked={session.noteSeeked}
             onclick={session.togglePlay}
           ></video>
-          {#if session.showSquare && squarePainter && session.paintFrame}
-            <div class="square" aria-hidden="true">
-              <PostStudioPaintedLayer
-                painter={squarePainter}
-                frame={session.paintFrame}
-              />
-            </div>
+          {#if session.showSquare && session.paintFrame}
+            <button
+              type="button"
+              class="square"
+              onclick={onOpenAnimation}
+              aria-label="Animation settings"
+              title="Animation settings"
+            >
+              {@render preview()}
+              <span class="settings-mark" aria-hidden="true"
+                ><i class="fa-solid fa-sliders"></i></span
+              >
+            </button>
           {/if}
         </div>
       </div>
@@ -109,7 +105,7 @@
   }
   .video-space {
     flex: 1;
-    min-height: 12rem;
+    min-height: 0;
     container-type: size;
     display: grid;
     place-items: center;
@@ -140,6 +136,28 @@
     overflow: hidden;
     border-radius: 0.375rem;
     box-shadow: 0 0.25rem 1rem rgb(0 0 0 / 0.45);
-    pointer-events: none;
+    min-width: 2.75rem;
+    min-height: 2.75rem;
+    border: 0;
+    padding: 0;
+    background: var(--theme-card-bg);
+    cursor: pointer;
+  }
+  .square:focus-visible {
+    outline: 3px solid var(--theme-accent);
+    outline-offset: -3px;
+  }
+  .settings-mark {
+    position: absolute;
+    right: 0.25rem;
+    top: 0.25rem;
+    display: grid;
+    place-items: center;
+    width: 1.5rem;
+    height: 1.5rem;
+    border-radius: 0.25rem;
+    background: var(--theme-panel-bg);
+    color: var(--theme-text);
+    font-size: 0.875rem;
   }
 </style>

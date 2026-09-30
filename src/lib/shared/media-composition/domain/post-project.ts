@@ -547,16 +547,20 @@ export const PostAnimationItemSchema = z
           .optional(),
         darkMode: z.boolean().optional(),
         /** Full canonical effects snapshot, scoped to this timeline item. */
-        effects: z.custom<EffectsConfig>((value) =>
-          value !== null && typeof value === "object" &&
-          typeof (value as EffectsConfig).version === "number" &&
-          typeof (value as EffectsConfig).activeEffect === "string" &&
-          typeof (value as EffectsConfig).tipEffectMap === "object"
-        ).optional(),
+        effects: z
+          .custom<EffectsConfig>(
+            (value) =>
+              value !== null &&
+              typeof value === "object" &&
+              typeof (value as EffectsConfig).version === "number" &&
+              typeof (value as EffectsConfig).activeEffect === "string" &&
+              typeof (value as EffectsConfig).tipEffectMap === "object"
+          )
+          .optional(),
         trail: z
           .object({
             enabled: z.boolean(),
-          trackingMode: z.nativeEnum(TrackingMode),
+            trackingMode: z.nativeEnum(TrackingMode),
             thickness: z.number().finite().min(1).max(12),
             brightness: z.number().finite().min(0.3).max(1),
             tailLength: z.number().int().min(10).max(400),
@@ -684,6 +688,13 @@ export const PostProjectSchema = z
     takes: z.array(PostTakeSchema),
     /** Maps travel with a post, keyed by the take id they were edited against. */
     timings: z.record(z.string(), TakeTimingSchema).optional(),
+    /** Scoped appearance for each take's timing preview, independent of timeline layers. */
+    mappingPreviewAppearances: z
+      .record(
+        z.string(),
+        PostAnimationItemSchema.shape.animationAppearance.unwrap()
+      )
+      .optional(),
     images: z.array(PostImageSchema).optional(),
     fonts: z.array(PostFontSchema).optional(),
     importSource: z

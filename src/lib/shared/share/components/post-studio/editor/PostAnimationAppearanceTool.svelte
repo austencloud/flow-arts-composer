@@ -25,18 +25,31 @@
   import { createEffectsConfigState } from "$lib/shared/effects/state/effects-config-state.svelte";
   import { DEFAULT_EFFECTS_CONFIG } from "$lib/shared/effects/domain/defaults";
   import { getEffectsConfigContext } from "$lib/shared/effects/state/effects-config-context";
-  import type { PostAnimationItem, PostMovesItem } from "$lib/shared/media-composition/domain/post-project";
+  import type {
+    PostAnimationItem,
+    PostMovesItem,
+  } from "$lib/shared/media-composition/domain/post-project";
   import { updateItem } from "$lib/shared/media-composition/domain/post-project-edits";
   import type { PostEditorState } from "$lib/shared/media-composition/state/post-editor-state.svelte";
+  import { copyPostAnimationEffects } from "../post-animation-effects.svelte";
 
   let {
     editor,
-    item,
+    item = null,
+    appearanceOverride,
+    onAppearanceChange,
+    appearanceKey,
     locked,
     defaultPropType = PropType.STAFF,
   }: {
     editor: PostEditorState;
-    item: PostAnimationItem | PostMovesItem;
+    item?: PostAnimationItem | PostMovesItem | null;
+    appearanceOverride?: PostAnimationItem["animationAppearance"] | null;
+    onAppearanceChange?: (
+      appearance: NonNullable<PostAnimationItem["animationAppearance"]>,
+      settingKey?: string
+    ) => void;
+    appearanceKey?: string;
     locked: boolean;
     defaultPropType?: PropType;
   } = $props();
@@ -78,7 +91,7 @@
         EFFORTS.find(
           (effort) =>
             effort.id ===
-            (item.animationAppearance?.effortPreset ??
+            ((item?.animationAppearance ?? appearanceOverride)?.effortPreset ??
               getAnimationVisibilityManager().getSettings().effortPreset)
         )?.color ?? EFFORTS[0]!.color,
     },
@@ -109,18 +122,16 @@
   let effectsWereEdited = false;
 
   $effect(() => {
-    const appearance = item.animationAppearance;
+    const appearance = item?.animationAppearance ?? appearanceOverride;
     untrack(() => {
       syncing = true;
       try {
-        visibility.updateSettings(
-          {
-            ...getAnimationVisibilityManager().getSettings(),
-            wordHeader: false,
-            ...appearance,
-            darkMode: appearance?.darkMode ?? true,
-          }
-        );
+        visibility.updateSettings({
+          ...getAnimationVisibilityManager().getSettings(),
+          wordHeader: false,
+          ...appearance,
+          darkMode: appearance?.darkMode ?? true,
+        });
         darkMode = visibility.isDarkMode();
         const trail = appearance?.trail;
         pickedPropType = appearance?.propType;
@@ -132,7 +143,9 @@
             tailLength: trail?.tailLength ?? initialTrail.tailLength,
           },
         });
-        const nextEffects = structuredClone(appearance?.effects ?? initialEffects);
+        const nextEffects = copyPostAnimationEffects(
+          appearance?.effects ?? initialEffects
+        );
         if (trail && !appearance?.effects) {
           nextEffects.trails = {
             ...nextEffects.trails,
@@ -174,12 +187,21 @@
         rightColor: trails.rightColor,
       };
     }
+    if (onAppearanceChange) {
+      onAppearanceChange(appearance, settingKey);
+      return;
+    }
+    if (!item) return;
+    const itemId = item.id;
     const change = (
       project: Parameters<typeof updateItem>[0],
       ctx: Parameters<typeof updateItem>[3]
-    ) => updateItem(project, item.id, { animationAppearance: appearance }, ctx);
+    ) => updateItem(project, itemId, { animationAppearance: appearance }, ctx);
     if (settingKey)
-      editor.editSetting(`${item.id}:effects:${settingKey}`, change);
+      editor.editSetting(
+        `${appearanceKey ?? itemId}:effects:${settingKey}`,
+        change
+      );
     else editor.edit(change);
   }
   visibility.registerObserver(save);

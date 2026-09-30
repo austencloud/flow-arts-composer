@@ -13,6 +13,7 @@ import {
   itemEnd,
   mainItemAt,
   projectDurationSeconds,
+  type PostAnimationItem,
   type PostItem,
   type PostProject,
 } from "$lib/shared/media-composition/domain/post-project";
@@ -24,6 +25,7 @@ import {
   appendVideoClip,
   deleteItem,
   duplicateItem,
+  finish,
   removeTake as removeProjectTake,
   setProjectAudio,
   splitItemAt,
@@ -113,6 +115,11 @@ const TIMING_UNDO_DEPTH = 50;
 const SETTING_JOIN_MS = 800;
 const FRAME_SECONDS = 1 / POST_FRAME_RATE;
 
+type MappingAppearance = NonNullable<PostAnimationItem["animationAppearance"]>;
+type TakeHistoryEntry =
+  | { kind: "timing"; timing: TakeTiming }
+  | { kind: "appearance"; appearance: MappingAppearance | undefined };
+
 export interface PostEditorDeps {
   getSequence: () => SequenceData;
   /** A recovered full draft to open in place of this browser's saved copy. */
@@ -165,8 +172,9 @@ export function createPostEditorState(deps: PostEditorDeps) {
   let media = $state.raw<Record<string, TakeMedia>>({});
   let imageMedia = $state.raw<Record<string, TakeMedia>>({});
   let timings = $state.raw<Record<string, TakeTiming>>({});
-  let timingUndo = $state.raw<Record<string, TakeTiming[]>>({});
-  let timingRedo = $state.raw<Record<string, TakeTiming[]>>({});
+  let timingUndo = $state.raw<Record<string, TakeHistoryEntry[]>>({});
+  let timingRedo = $state.raw<Record<string, TakeHistoryEntry[]>>({});
+  let lastMappingSetting: Record<string, { key: string; at: number }> = {};
   let saveError = $state<string | null>(null);
   let saveRevision = $state(0);
   /**
@@ -1031,10 +1039,12 @@ export function createPostEditorState(deps: PostEditorDeps) {
   ): void {
     const current = timings[takeId];
     if (!current || next === current) return;
+    delete lastMappingSetting[takeId];
     if (remember) {
-      const stack = [...(timingUndo[takeId] ?? []), current].slice(
-        -TIMING_UNDO_DEPTH
-      );
+      const stack = [
+        ...(timingUndo[takeId] ?? []),
+        { kind: "timing" as const, timing: current },
+      ].slice(-TIMING_UNDO_DEPTH);
       timingUndo = { ...timingUndo, [takeId]: stack };
       timingRedo = { ...timingRedo, [takeId]: [] };
     }
@@ -1054,25 +1064,105 @@ export function createPostEditorState(deps: PostEditorDeps) {
     setTiming(takeId, { ...next, confirmedAt: null, updatedAt: now() }, true);
   }
 
+  /** Mapping appearance shares the take's undo order without touching tracks. */
+  function writeMappingAppearance(
+    takeId: string,
+    appearance: MappingAppearance | undefined
+  ): void {
+    const appearances = { ...project.mappingPreviewAppearances };
+    if (appearance) appearances[takeId] = appearance;
+    else delete appearances[takeId];
+    project = finish(
+      {
+        ...project,
+        mappingPreviewAppearances: Object.keys(appearances).length
+          ? appearances
+          : undefined,
+      },
+      context()
+    );
+    persistProject();
+  }
+
+  function editMappingPreviewAppearance(
+    takeId: string,
+    appearance: MappingAppearance,
+    settingKey?: string
+  ): boolean {
+    if (!timings[takeId] || !project.takes.some((take) => take.id === takeId))
+      return false;
+    const current = project.mappingPreviewAppearances?.[takeId];
+    if (JSON.stringify(current) === JSON.stringify(appearance)) return false;
+    const at = now();
+    const last = lastMappingSetting[takeId];
+    const previous = timingUndo[takeId]?.at(-1);
+    const joins =
+      !!settingKey &&
+      last?.key === settingKey &&
+      at - last.at < SETTING_JOIN_MS &&
+      previous?.kind === "appearance";
+    if (!joins) {
+      timingUndo = {
+        ...timingUndo,
+        [takeId]: [
+          ...(timingUndo[takeId] ?? []),
+          { kind: "appearance", appearance: current },
+        ].slice(-TIMING_UNDO_DEPTH),
+      };
+    }
+    timingRedo = { ...timingRedo, [takeId]: [] };
+    if (settingKey) lastMappingSetting[takeId] = { key: settingKey, at };
+    else delete lastMappingSetting[takeId];
+    writeMappingAppearance(takeId, appearance);
+    return true;
+  }
+
+  function currentTakeHistoryEntry(
+    takeId: string,
+    kind: TakeHistoryEntry["kind"]
+  ): TakeHistoryEntry | null {
+    if (kind === "appearance")
+      return {
+        kind,
+        appearance: project.mappingPreviewAppearances?.[takeId],
+      };
+    const timing = timings[takeId];
+    return timing ? { kind, timing } : null;
+  }
+
+  function applyTakeHistoryEntry(
+    takeId: string,
+    entry: TakeHistoryEntry
+  ): void {
+    if (entry.kind === "appearance")
+      writeMappingAppearance(takeId, entry.appearance);
+    else setTiming(takeId, { ...entry.timing, updatedAt: now() }, false);
+  }
+
   function undoTiming(takeId: string): void {
     const stack = timingUndo[takeId];
     const previous = stack?.[stack.length - 1];
     if (!previous) return;
+    const current = currentTakeHistoryEntry(takeId, previous.kind);
+    if (!current) return;
+    delete lastMappingSetting[takeId];
     timingUndo = { ...timingUndo, [takeId]: stack.slice(0, -1) };
     timingRedo = {
       ...timingRedo,
-      [takeId]: [...(timingRedo[takeId] ?? []), timings[takeId]!].slice(
+      [takeId]: [...(timingRedo[takeId] ?? []), current].slice(
         -TIMING_UNDO_DEPTH
       ),
     };
-    setTiming(takeId, { ...previous, updatedAt: now() }, false);
+    applyTakeHistoryEntry(takeId, previous);
   }
 
   function redoTiming(takeId: string): void {
     const stack = timingRedo[takeId];
     const next = stack?.[stack.length - 1];
-    const current = timings[takeId];
-    if (!next || !current) return;
+    if (!next) return;
+    const current = currentTakeHistoryEntry(takeId, next.kind);
+    if (!current) return;
+    delete lastMappingSetting[takeId];
     timingRedo = { ...timingRedo, [takeId]: stack.slice(0, -1) };
     timingUndo = {
       ...timingUndo,
@@ -1080,7 +1170,7 @@ export function createPostEditorState(deps: PostEditorDeps) {
         -TIMING_UNDO_DEPTH
       ),
     };
-    setTiming(takeId, { ...next, updatedAt: now() }, false);
+    applyTakeHistoryEntry(takeId, next);
   }
 
   function confirmTiming(takeId: string): void {
@@ -1249,6 +1339,7 @@ export function createPostEditorState(deps: PostEditorDeps) {
       return (timingRedo[takeId]?.length ?? 0) > 0;
     },
     editTiming,
+    editMappingPreviewAppearance,
     undoTiming,
     redoTiming,
     confirmTiming,
