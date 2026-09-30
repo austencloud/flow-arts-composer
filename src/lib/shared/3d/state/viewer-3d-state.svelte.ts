@@ -1542,6 +1542,7 @@ function buildViewer3DState(
   function pasteSelectedPerformer(): boolean {
     if (!performerClipboard) return false;
     const clipboard = structuredClone(performerClipboard);
+    const before = captureViewerSnapshot();
     const placement = {
       position: {
         x: clipboard.position.x + 0.75,
@@ -1561,6 +1562,18 @@ function buildViewer3DState(
     });
     markFormationCustom();
     replacePerformerSelection(index);
+    const after = captureViewerSnapshot();
+    sceneUndo.pushSelfRestoringEntry("spawn-performer", "Paste performer", {
+      undo: () => restoreViewerSnapshot(before),
+      redo: () => {
+        restoreViewerSnapshot(after);
+        const restored = performerManager.performers[index];
+        if (!restored) return;
+        restored.restoreEditingSnapshot(structuredClone(clipboard.performer));
+        restored.goToStep(clipboard.step);
+        restored.setProgress(clipboard.progress);
+      },
+    });
     return true;
   }
 

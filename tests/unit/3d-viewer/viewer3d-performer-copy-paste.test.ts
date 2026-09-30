@@ -59,6 +59,46 @@ describe("3D performer copy and paste", () => {
     expect(source.settings.prop).toBe(PropType.STAFF);
   });
 
+  it("undoes a paste and redoes the copied state after the source and clipboard change", () => {
+    const viewer = makeViewer();
+    const source = viewer.performerManager.performers[0]!;
+    source.loadSequence(FALG);
+    source.setProp(PropType.FAN);
+    source.setHandPlane("left", Plane.WHEEL);
+    source.setStepHandPlane(2, "right", Plane.FLOOR);
+    source.position.x = 2;
+    source.snapFacingAngle(1.25);
+    source.goToStep(3);
+    source.setProgress(0.4);
+    viewer.replacePerformerSelection(0);
+
+    expect(viewer.copySelectedPerformer()).toBe(true);
+    expect(viewer.pasteSelectedPerformer()).toBe(true);
+    const copy = viewer.performerManager.performers[1]!;
+    viewer.sceneUndo.withoutUndo(() => {
+      copy.setProp(PropType.POI);
+      source.setProp(PropType.STAFF);
+    });
+    viewer.replacePerformerSelection(0);
+    expect(viewer.copySelectedPerformer()).toBe(true);
+
+    expect(viewer.undo()).toBe("Paste performer");
+    expect(viewer.performerManager.performers).toHaveLength(1);
+    expect(viewer.selectedPerformerIndices).toEqual([0]);
+
+    expect(viewer.redo()).toBe("Paste performer");
+    const restored = viewer.performerManager.performers[1]!;
+    expect(restored.loadedSequence).toEqual(FALG);
+    expect(restored.settings.prop).toBe(PropType.FAN);
+    expect(restored.customLeftPlane).toBe(Plane.WHEEL);
+    expect(restored.beatPlaneOverrides.get(2)?.right).toBe(Plane.FLOOR);
+    expect(restored.position).toMatchObject({ x: 2.75, z: 0.75 });
+    expect(restored.facingAngle).toBeCloseTo(1.25);
+    expect(restored.currentStepIndex).toBe(3);
+    expect(restored.progress).toBeCloseTo(0.4);
+    expect(viewer.selectedPerformerIndices).toEqual([1]);
+  });
+
   it("does not paste without a copy and respects the cast limit", () => {
     const viewer = makeViewer();
     expect(viewer.pasteSelectedPerformer()).toBe(false);
