@@ -8,6 +8,7 @@ import {
   type EvaluatedFrameLayer,
 } from "$lib/shared/media-composition/services/frame-evaluator";
 import {
+  paintSurfaceGeometry,
   toPaintFrame,
   type PostStudioLayerPainter,
 } from "$lib/shared/media-composition/services/post-studio-layer-painter";
@@ -417,6 +418,7 @@ async function drawPaintedLayer(
   const height = Math.round(pixels.height);
   if (width <= 0 || height <= 0) return;
   await painter.prepare({ width, height });
+  const surface = paintSurfaceGeometry(painter, { width, height });
 
   const geometry = resolveFrameLayerGeometry({
     preset,
@@ -427,7 +429,16 @@ async function drawPaintedLayer(
   });
   context.save();
   turnAboutCentre(context, pixels, region.turn ?? 0);
-  traceRoundedRect(context, pixels, cornerRadius);
+  traceRoundedRect(
+    context,
+    {
+      x: pixels.x - surface.rect.x,
+      y: pixels.y - surface.rect.y,
+      width: pixels.width + surface.width - width,
+      height: pixels.height + surface.height - height,
+    },
+    cornerRadius
+  );
   context.clip();
   context.globalAlpha = layer.opacity;
   if (!painter.ownsTransform) applyLayerTransform(context, geometry);
