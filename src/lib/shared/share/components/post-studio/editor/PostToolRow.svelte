@@ -40,6 +40,8 @@
         return t("post_editor_beats_hint");
       case "tutorial":
         return t("post_editor_tutorial_hint");
+      case "template":
+        return t("post_editor_use_omega_template_hint");
       default:
         return toolLabel(id);
     }

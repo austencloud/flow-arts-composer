@@ -126,7 +126,10 @@
     loadPostProjectFonts,
   } from "$lib/shared/media-composition/services/inshot-recovery-package";
   import { createCropSession } from "./post-crop-session.svelte";
-  import { createPostDraftAutosave } from "$lib/shared/media-composition/services/post-draft-storage";
+  import {
+    createPostDraftAutosave,
+    loadPostDraft,
+  } from "$lib/shared/media-composition/services/post-draft-storage";
   import {
     parsePostStudioBackup,
     serializePostStudioBackup,
@@ -259,6 +262,8 @@
 
   let draftSaving = $state(false);
   let draftError = $state<string | null>(draftLoadError);
+  let templateError = $state<string | null>(null);
+  let loadingTemplate = $state(false);
   const draftAutosave = onSaveDraft
     ? createPostDraftAutosave(onSaveDraft, (saving, error) => {
         draftSaving = saving;
@@ -814,7 +819,11 @@
       cropStage = null;
       return null;
     }
-    if (cropSourceView && (crop.item?.sourceGeometry || crop.item?.keyframes?.sourceGeometry?.length)) {
+    if (
+      cropSourceView &&
+      (crop.item?.sourceGeometry ||
+        crop.item?.keyframes?.sourceGeometry?.length)
+    ) {
       const source = crop.source;
       return source ? source.width / source.height : 1.7778;
     }
@@ -965,6 +974,14 @@
         return !canTapBeats;
       case "tutorial":
         return editor.takes.length === 0;
+      case "template":
+        return (
+          editor.project.tracks[0]?.items.filter(
+            (item) => item.kind === "video"
+          ).length < 2 ||
+          editor.project.sequenceId === "ΩΛ-XJ" ||
+          loadingTemplate
+        );
       default:
         return false;
     }
@@ -1007,6 +1024,29 @@
     });
   }
 
+  async function useOmegaTemplate(): Promise<void> {
+    loadingTemplate = true;
+    templateError = null;
+    try {
+      const saved = await loadPostDraft("ΩΛ-XJ");
+      if (!saved.project)
+        throw new Error(saved.error ?? "The ΩΛ-XJ draft could not be found.");
+      editor.pause();
+      if (!editor.applyTemplate(saved.project)) {
+        throw new Error(
+          "Add at least two video clips before using the template."
+        );
+      }
+    } catch (error) {
+      templateError =
+        error instanceof Error
+          ? error.message
+          : "The template could not be applied.";
+    } finally {
+      loadingTemplate = false;
+    }
+  }
+
   function pickTool(id: PostToolId): void {
     if (cropMode && id !== "crop") {
       cropFlight.capture();
@@ -1034,6 +1074,9 @@
         return;
       case "tutorial":
         applyTutorial();
+        return;
+      case "template":
+        void useOmegaTemplate();
         return;
       case "beats":
         tapBeatsHere();
@@ -1902,6 +1945,9 @@
 />
 
 {#snippet draftStatus()}
+  {#if templateError}
+    <span class="draft-notice" role="alert">{templateError}</span>
+  {/if}
   {#if labeledCard.error}
     <span class="draft-notice" role="alert">{labeledCard.error}</span>
   {:else if editor.project.mirrored && labeledCard.pending}
@@ -2035,7 +2081,7 @@
       item={editor.selectedItem}
       {tool}
       crop={cropMode ? crop : null}
-      cropSourceView={cropSourceView}
+      {cropSourceView}
       onCropFramingControl={() => (cropSourceView = false)}
       onCropSourceControl={() => (cropSourceView = true)}
       {staffTips}
@@ -2296,10 +2342,7 @@
           />
         </div>
       {/if}
-      <div
-        class="timeline-slot"
-        inert={sharing || exporting || undefined}
-      >
+      <div class="timeline-slot" inert={sharing || exporting || undefined}>
         <PostTimeline
           project={editor.project}
           durationSeconds={editor.durationSeconds}
@@ -2621,9 +2664,9 @@
     --post-panel-width: clamp(20rem, 30cqw, 26rem);
     display: grid;
     grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: minmax(15rem, 1fr) auto 12px var(
-        --post-timeline-height
-      ) auto;
+    grid-template-rows:
+      minmax(15rem, 1fr) auto 12px var(--post-timeline-height)
+      auto;
     grid-template-areas: "stage" "transport" "resize" "timeline" "row";
   }
 
@@ -2794,7 +2837,9 @@
       [data-layout="viewer"]
     )
     .layout {
-    grid-template-rows: minmax(15rem, 1fr) auto 12px var(--post-timeline-height) auto;
+    grid-template-rows: minmax(15rem, 1fr) auto 12px var(
+        --post-timeline-height
+      ) auto;
     grid-template-areas: "stage" "transport" "resize" "timeline" "row";
   }
 

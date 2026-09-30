@@ -39,6 +39,7 @@ export type PostActionToolId =
   | "back"
   | "split"
   | "tutorial"
+  | "template"
   | "beats"
   | "duplicate"
   | "delete";
@@ -57,6 +58,7 @@ const ACTION_TOOLS = new Set<PostToolId>([
   "back",
   "split",
   "tutorial",
+  "template",
   "beats",
   "duplicate",
   "delete",
@@ -78,7 +80,15 @@ const ITEM_TAIL: readonly PostToolId[] = [
 export function toolRow(selection: PostToolSelection): PostToolId[] {
   switch (selection.kind) {
     case null:
-      return ["videos", "add", "canvas", "split", "tutorial", "look"];
+      return [
+        "videos",
+        "add",
+        "canvas",
+        "split",
+        "tutorial",
+        "template",
+        "look",
+      ];
     case "video":
       return [
         "back",
