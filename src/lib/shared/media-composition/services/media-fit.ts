@@ -22,6 +22,23 @@ export interface MediaFitResult {
   visibleSourceRect: PixelRect;
 }
 
+/** Keep a selected part of a source proportional inside its placed box. */
+export function calculateSourceCropFit(input: {
+  sourceWidth: number;
+  sourceHeight: number;
+  crop: { left: number; top: number; right: number; bottom: number };
+  regionWidth: number;
+  regionHeight: number;
+}): PixelRect {
+  return calculateMediaFit({
+    sourceWidth: input.sourceWidth * (input.crop.right - input.crop.left),
+    sourceHeight: input.sourceHeight * (input.crop.bottom - input.crop.top),
+    regionWidth: input.regionWidth,
+    regionHeight: input.regionHeight,
+    fit: "contain",
+  }).drawRect;
+}
+
 function assertPositive(label: string, value: number): void {
   if (!Number.isFinite(value) || value <= 0) {
     throw new RangeError(`${label} must be a positive finite number`);

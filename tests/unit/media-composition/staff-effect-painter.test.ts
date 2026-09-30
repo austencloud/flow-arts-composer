@@ -159,6 +159,11 @@ describe("createStaffPointMapper", () => {
         width: (1128 / 1080) * size,
         height: (940 / 1080) * size,
       };
+      const cropAspect =
+        (1920 * (sourceGeometry.crop.right - sourceGeometry.crop.left)) /
+        (1080 * (sourceGeometry.crop.bottom - sourceGeometry.crop.top));
+      const fittedWidth = Math.min(box.width, box.height * cropAspect);
+      const fittedHeight = fittedWidth / cropAspect;
       for (const [x, y] of [
         [0.5, 0.2107],
         [0.75, 0.445],
@@ -167,14 +172,16 @@ describe("createStaffPointMapper", () => {
         const local = {
           x:
             box.x +
+            (box.width - fittedWidth) / 2 +
             ((x - sourceGeometry.crop.left) /
               (sourceGeometry.crop.right - sourceGeometry.crop.left)) *
-              box.width,
+              fittedWidth,
           y:
             box.y +
+            (box.height - fittedHeight) / 2 +
             ((y - sourceGeometry.crop.top) /
               (sourceGeometry.crop.bottom - sourceGeometry.crop.top)) *
-              box.height,
+              fittedHeight,
         };
         const want = compositorPoint(
           box,

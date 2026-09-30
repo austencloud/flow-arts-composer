@@ -9,6 +9,7 @@ import {
 import type { EvaluatedFrameLayer } from "$lib/shared/media-composition/services/frame-evaluator";
 import {
   calculateMediaFit,
+  calculateSourceCropFit,
   resolvePanOffset,
   turnOf,
 } from "$lib/shared/media-composition/services/media-fit";
@@ -127,16 +128,26 @@ export function createStaffPointMapper(input: {
     const geometry = input.sourceGeometry;
     const crop = geometry.crop;
     const box = placedBox(rect, geometry);
+    const fitted = calculateSourceCropFit({
+      sourceWidth: input.sourceWidth,
+      sourceHeight: input.sourceHeight,
+      crop,
+      regionWidth: box.width,
+      regionHeight: box.height,
+    });
     const centerX = box.x + box.width / 2;
     const centerY = box.y + box.height / 2;
     const { cos, sin } = turnOf(geometry.rotation);
     const flip = transform.flipHorizontal ? -1 : 1;
     return (x, y) => {
-      // The cropped source fills the placed box before the box turns. Staff
-      // tips outside that crop still need their mapped position for trails.
+      // Staff tips follow the proportional picture, including after a canvas
+      // resize. Tips outside the crop still need positions for trails.
       const dx =
-        ((x - crop.left) / (crop.right - crop.left) - 0.5) * box.width * flip;
-      const dy = ((y - crop.top) / (crop.bottom - crop.top) - 0.5) * box.height;
+        ((x - crop.left) / (crop.right - crop.left) - 0.5) *
+        fitted.width *
+        flip;
+      const dy =
+        ((y - crop.top) / (crop.bottom - crop.top) - 0.5) * fitted.height;
       return {
         x: centerX + dx * cos - dy * sin,
         y: centerY + dx * sin + dy * cos,

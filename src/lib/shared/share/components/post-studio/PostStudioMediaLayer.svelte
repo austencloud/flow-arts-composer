@@ -12,6 +12,7 @@
   import PostStudioMandalaLayer from "./PostStudioMandalaLayer.svelte";
   import {
     calculateMediaFit,
+    calculateSourceCropFit,
     resolvePanOffset,
   } from "$lib/shared/media-composition/services/media-fit";
   import VisualSequenceSaveContextMenuHost from "$lib/shared/library/components/VisualSequenceSaveContextMenuHost.svelte";
@@ -144,16 +145,32 @@
     });
   });
 
-  const cropped = $derived(
-    sourceGeometry
-      ? {
-          left: `${(-sourceGeometry.crop.left / (sourceGeometry.crop.right - sourceGeometry.crop.left)) * 100}%`,
-          top: `${(-sourceGeometry.crop.top / (sourceGeometry.crop.bottom - sourceGeometry.crop.top)) * 100}%`,
-          width: `${100 / (sourceGeometry.crop.right - sourceGeometry.crop.left)}%`,
-          height: `${100 / (sourceGeometry.crop.bottom - sourceGeometry.crop.top)}%`,
-        }
-      : null
-  );
+  const cropped = $derived.by(() => {
+    if (
+      !sourceGeometry ||
+      sourceWidth <= 0 ||
+      sourceHeight <= 0 ||
+      boxWidth <= 0 ||
+      boxHeight <= 0
+    )
+      return null;
+    const crop = sourceGeometry.crop;
+    const fitted = calculateSourceCropFit({
+      sourceWidth,
+      sourceHeight,
+      crop,
+      regionWidth: boxWidth,
+      regionHeight: boxHeight,
+    });
+    const fullWidth = fitted.width / (crop.right - crop.left);
+    const fullHeight = fitted.height / (crop.bottom - crop.top);
+    return {
+      left: `${((fitted.x - crop.left * fullWidth) / boxWidth) * 100}%`,
+      top: `${((fitted.y - crop.top * fullHeight) / boxHeight) * 100}%`,
+      width: `${(fullWidth / boxWidth) * 100}%`,
+      height: `${(fullHeight / boxHeight) * 100}%`,
+    };
+  });
 
   function syncVideoTime(discontinuity = false): boolean {
     if (!video || video.readyState < 1 || !Number.isFinite(sourceTimeSeconds))
@@ -451,7 +468,13 @@
       playsinline
       preload="auto"
       class:fitted={fitted !== null || cropped !== null}
-      style:object-fit={fitted || cropped ? "fill" : fit}
+      style:object-fit={cropped
+        ? "fill"
+        : sourceGeometry
+          ? "contain"
+          : fitted
+            ? "fill"
+            : fit}
       style:left={cropped?.left ?? fitted?.left}
       style:top={cropped?.top ?? fitted?.top}
       style:width={cropped?.width ?? fitted?.width}
@@ -469,7 +492,13 @@
       crossorigin="anonymous"
       alt=""
       class:fitted={fitted !== null || cropped !== null}
-      style:object-fit={fitted || cropped ? "fill" : fit}
+      style:object-fit={cropped
+        ? "fill"
+        : sourceGeometry
+          ? "contain"
+          : fitted
+            ? "fill"
+            : fit}
       style:left={cropped?.left ?? fitted?.left}
       style:top={cropped?.top ?? fitted?.top}
       style:width={cropped?.width ?? fitted?.width}
