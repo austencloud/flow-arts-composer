@@ -13,6 +13,7 @@
   import WordHeader from "$lib/shared/animation-engine/components/layers/WordHeader.svelte";
   import WordActionMenu from "$lib/shared/choreo-card/components/WordActionMenu.svelte";
   import ShareActionMenu from "$lib/shared/share/components/ShareActionMenu.svelte";
+  import { resolveSequenceIdentityTitle } from "../services/viewer-title";
   import MotionVisibilityToggle from "./MotionVisibilityToggle.svelte";
   import ViewerOverflowMenu from "./ViewerOverflowMenu.svelte";
   import PropViewingControl from "$lib/shared/browse/components/PropViewingControl.svelte";
@@ -157,10 +158,7 @@
     !!onOpenApp && !(hasAccountEntry && authState.isFullAccount)
   );
   const identityWord = $derived(
-    sequence.word ||
-      sequence.displayName ||
-      sequence.name ||
-      t("viewer_header_sequence")
+    resolveSequenceIdentityTitle(sequence) || t("viewer_header_sequence")
   );
   const trimmedTitleOverride = $derived(titleOverride?.trim() || "");
   /** Plain-text title actually shown in the slot: the override when present,
