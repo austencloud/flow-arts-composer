@@ -134,7 +134,7 @@
             ? null
             : playback.highlightedStepIndex}
         showHighlight={studioCard
-          ? true
+          ? studioCard.highlightedStepIndex !== null
           : side === "right" && layout.focusedPane === "image"
             ? false
             : playback.isPlaying || playback.highlightedStepIndex !== null}

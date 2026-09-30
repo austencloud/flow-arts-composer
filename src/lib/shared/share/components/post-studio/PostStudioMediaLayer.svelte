@@ -426,7 +426,7 @@
       rightPropType={cardRenderOptions?.rightPropTypeOverride ??
         cardRenderOptions?.propTypeOverride}
     />
-  {:else if binding.renderMode === "choreo-card" && displayedBeatNumber !== undefined}
+  {:else if binding.renderMode === "choreo-card"}
     <PostStudioChoreoLayer
       {sequence}
       {displayedBeatNumber}

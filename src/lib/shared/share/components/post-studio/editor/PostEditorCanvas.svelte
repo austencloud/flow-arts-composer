@@ -2256,8 +2256,7 @@
                     (isVideo ? undefined : 0)}
                   breakdownMotion={stripModeFromRole(entry.role) !== null}
                   labelsPainted={paintedLabelRegions.has(region.id)}
-                  displayedBeatNumber={layer.displayedBeatNumber ??
-                    (binding.renderMode === "choreo-card" ? 0 : undefined)}
+                  displayedBeatNumber={layer.displayedBeatNumber}
                   clipId={entry.clip.id}
                   colorGrade={entry.clip.colorGrade}
                   transform={layer.transform}
