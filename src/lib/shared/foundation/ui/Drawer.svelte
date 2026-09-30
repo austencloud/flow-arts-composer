@@ -379,6 +379,8 @@
 
       // When opening, add to DOM in closed state, then animate open
       if (isOpen) {
+        // Capture before rendering or native show() can move focus inside.
+        const returnFocusTarget = document.activeElement as HTMLElement | null;
         // CRITICAL: Cancel any pending timeouts to prevent race conditions
         if (closeTimeoutId !== null) {
           clearTimeout(closeTimeoutId);
@@ -416,7 +418,7 @@
           isAnimatedOpen = true; // Trigger open animation (or instant show if reduced motion)
           // Activate focus trap after element is in DOM
           if (trapFocus && drawerElement && focusTrap) {
-            focusTrap.activate(drawerElement);
+            focusTrap.activate(drawerElement, returnFocusTarget);
           } else if (autoFocus && drawerElement) {
             // Focus the drawer for proper interaction (unless autoFocus is disabled)
             drawerElement.focus();

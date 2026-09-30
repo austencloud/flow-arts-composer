@@ -9,7 +9,10 @@
   import { createEffectsConfigState } from "$lib/shared/effects/state/effects-config-state.svelte";
   import { getEffectsConfigContext } from "$lib/shared/effects/state/effects-config-context";
   import { DEFAULT_EFFECTS_CONFIG } from "$lib/shared/effects/domain/defaults";
-  import type { PostAnimationItem, PostMovesMode } from "$lib/shared/media-composition/domain/post-project";
+  import type {
+    PostAnimationItem,
+    PostMovesMode,
+  } from "$lib/shared/media-composition/domain/post-project";
   import { getViewerStudioSurfaces } from "$lib/shared/sequence-viewer/context/viewer-studio-surfaces-context";
   import { AnimationStateManager } from "$lib/shared/animation-engine/services/animation-state-manager";
   import { SequenceAnimationOrchestrator } from "$lib/shared/animation-engine/services/sequence-animation-orchestrator";
@@ -24,6 +27,7 @@
     displayedBeatNumber,
   } from "$lib/shared/animation-engine/services/step-calculator";
   import { createStartPlacementFromBeatStart } from "$lib/shared/create/services/sequence-transforms";
+  import { copyPostAnimationEffects } from "./post-animation-effects.svelte";
 
   let {
     sequence,
@@ -72,7 +76,9 @@
     untrack(() => {
       itemVisibility.updateSettings(appearance);
       const trail = appearance.trail;
-      const effectConfig = structuredClone(appearance.effects ?? initialEffects);
+      const effectConfig = copyPostAnimationEffects(
+        appearance.effects ?? initialEffects
+      );
       if (trail && !appearance.effects) {
         effectConfig.trails = {
           ...effectConfig.trails,
@@ -249,54 +255,54 @@
     <div class="pictograph-motion" data-pictograph-motion>
       {#if animationAppearance}
         {#key animationAppearance.propType}
-        <AnimatorCanvas
-          {leftProp}
-          {rightProp}
-          gridVisible={animationAppearance.gridMode !== "none"}
-          gridMode={sequence.gridMode ?? null}
-          letter={stepData.letter ?? null}
-          {stepData}
-          sequenceData={sequence}
-          currentStep={sequencePosition}
-          isPlaying={playing}
-          leftPropType={animationAppearance.propType ?? leftPropType}
-          rightPropType={animationAppearance.propType ?? rightPropType}
-          word={sequence.word}
-          previewDarkMode={animationAppearance.darkMode ?? true}
-          hideProgressBar
-          visibilityManagerOverride={itemVisibility}
-          effectsConfigState={itemEffects}
-          trailSettings={itemTrailSettings}
-          fillContainer
-          virtualTime={animationTimeSeconds === undefined
-            ? undefined
-            : animationTimeSeconds * 1000}
-        />
+          <AnimatorCanvas
+            {leftProp}
+            {rightProp}
+            gridVisible={animationAppearance.gridMode !== "none"}
+            gridMode={sequence.gridMode ?? null}
+            letter={stepData.letter ?? null}
+            {stepData}
+            sequenceData={sequence}
+            currentStep={sequencePosition}
+            isPlaying={playing}
+            leftPropType={animationAppearance.propType ?? leftPropType}
+            rightPropType={animationAppearance.propType ?? rightPropType}
+            word={sequence.word}
+            previewDarkMode={animationAppearance.darkMode ?? true}
+            hideProgressBar
+            visibilityManagerOverride={itemVisibility}
+            effectsConfigState={itemEffects}
+            trailSettings={itemTrailSettings}
+            fillContainer
+            virtualTime={animationTimeSeconds === undefined
+              ? undefined
+              : animationTimeSeconds * 1000}
+          />
         {/key}
       {/if}
       <div class:arrow-overlay={!!animationAppearance}>
-      <PictographContainer
-        pictographData={stepData}
-        motionStartData={startData}
-        {motionProgress}
-        {arrowOpacity}
-        leftPropTypeOverride={animationAppearance?.propType ?? leftPropType}
-        rightPropTypeOverride={animationAppearance?.propType ?? rightPropType}
-        disableTransitions
-        darkMode={animationAppearance?.darkMode ?? true}
-        transparentBackground={!!animationAppearance}
-        showProps={!animationAppearance}
-        showGrid={!animationAppearance}
-        showTKA={false}
-        showTnD={false}
-        showPropTnD={false}
-        showPlacements={false}
-        showHandColorKey={false}
-        showReversals={false}
-        showNonRadialPoints={false}
-        showHandPoints={false}
-        stepNumberOverride={false}
-      />
+        <PictographContainer
+          pictographData={stepData}
+          motionStartData={startData}
+          {motionProgress}
+          {arrowOpacity}
+          leftPropTypeOverride={animationAppearance?.propType ?? leftPropType}
+          rightPropTypeOverride={animationAppearance?.propType ?? rightPropType}
+          disableTransitions
+          darkMode={animationAppearance?.darkMode ?? true}
+          transparentBackground={!!animationAppearance}
+          showProps={!animationAppearance}
+          showGrid={!animationAppearance}
+          showTKA={false}
+          showTnD={false}
+          showPropTnD={false}
+          showPlacements={false}
+          showHandColorKey={false}
+          showReversals={false}
+          showNonRadialPoints={false}
+          showHandPoints={false}
+          stepNumberOverride={false}
+        />
       </div>
     </div>
   {:else if !breakdownMotion && (animationAppearance || !shared?.ownsCanvas(owner))}

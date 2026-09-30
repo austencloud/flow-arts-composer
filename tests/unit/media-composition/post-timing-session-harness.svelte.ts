@@ -1,6 +1,7 @@
 import {
   createTakeTiming,
   type TakeTiming,
+  type ResolvedTakeTiming,
   type TimingSection,
 } from "$lib/shared/media-composition/domain/take-timing";
 import {
@@ -9,7 +10,9 @@ import {
 } from "$lib/shared/share/components/post-studio/builder/post-timing-session.svelte";
 
 /** A Timing session over one untapped take, with no video attached. */
-export function createPostTimingSessionHarness() {
+export function createPostTimingSessionHarness(
+  resolved: ResolvedTakeTiming | null = null
+) {
   let undoCount = 0;
   let redoCount = 0;
   let timing = $state<TakeTiming>(
@@ -27,7 +30,7 @@ export function createPostTimingSessionHarness() {
     takesInUse: [],
     mediaUrl: () => null,
     timing: () => timing,
-    resolvedTiming: () => null,
+    resolvedTiming: () => resolved,
     timingStatus: () => "untapped",
     editSection: (
       _takeId: string,

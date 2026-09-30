@@ -12,6 +12,7 @@ import { card, project as rawProject } from "./post-project-fixtures";
 import { createPostEditorState } from "$lib/shared/media-composition/state/post-editor-state.svelte";
 import { addTakeTap } from "$lib/shared/media-composition/domain/take-timing";
 import { loadTakeTiming } from "$lib/shared/media-composition/services/take-timing-store";
+import { DEFAULT_MAPPING_PREVIEW_APPEARANCE } from "$lib/shared/share/components/post-studio/builder/post-timing-animation";
 
 const LABELS = { runThrough: "Run through", slowMo: "Slow mo", card: "Card" };
 
@@ -92,6 +93,96 @@ describe("post editor history", () => {
     expect(taps()).toEqual([2, 4]);
     expect(savedTaps()).toEqual([2, 4]);
     expect(editor.canRedoTiming(takeId)).toBe(false);
+  });
+
+  it("undoes interleaved mapping appearance and taps per take without reverting timeline edits", () => {
+    const editor = createEditor();
+    for (const videoId of ["take-a", "take-b"])
+      editor.addCatalogVideo({
+        videoId,
+        label: videoId,
+        url: `https://example.test/${videoId}.mp4`,
+        durationSeconds: 40,
+      });
+    const [first, second] = editor.takes.map((take) => take.id);
+    const firstAppearance = {
+      ...DEFAULT_MAPPING_PREVIEW_APPEARANCE,
+      props: false,
+    };
+    const secondAppearance = {
+      ...DEFAULT_MAPPING_PREVIEW_APPEARANCE,
+      darkMode: false,
+    };
+    editor.editTiming(first!, (timing) =>
+      addTakeTap(timing, 2, editor.moveBeats)
+    );
+    expect(editor.editMappingPreviewAppearance(first!, firstAppearance)).toBe(
+      true
+    );
+    expect(editor.canUndoTiming(first!)).toBe(true);
+    editor.edit((project) => ({
+      ...project,
+      tracks: rawProject([card("unrelated")]).tracks,
+    }));
+    const timeline = editor.project.tracks;
+    editor.editTiming(first!, (timing) =>
+      addTakeTap(timing, 3, editor.moveBeats)
+    );
+    editor.editMappingPreviewAppearance(first!, secondAppearance);
+    editor.editMappingPreviewAppearance(second!, firstAppearance);
+
+    editor.undoTiming(first!);
+    expect(editor.project.mappingPreviewAppearances?.[first!]).toEqual(
+      firstAppearance
+    );
+    expect(editor.project.tracks).toEqual(timeline);
+    expect(editor.project.mappingPreviewAppearances?.[second!]).toEqual(
+      firstAppearance
+    );
+    editor.undoTiming(first!);
+    expect(editor.timing(first!)!.sections[0]!.taps).toEqual([2]);
+    editor.undoTiming(first!);
+    expect(editor.project.mappingPreviewAppearances?.[first!]).toBeUndefined();
+    expect(editor.project.mappingPreviewAppearances?.[second!]).toEqual(
+      firstAppearance
+    );
+    expect(editor.project.tracks).toEqual(timeline);
+    editor.redoTiming(first!);
+    editor.redoTiming(first!);
+    editor.redoTiming(first!);
+    expect(editor.project.mappingPreviewAppearances?.[first!]).toEqual(
+      secondAppearance
+    );
+    expect(editor.timing(first!)!.sections[0]!.taps).toEqual([2, 3]);
+    expect(editor.project.tracks).toEqual(timeline);
+  });
+
+  it("joins rapid edits to one mapping control into one take undo step", () => {
+    const editor = createEditor();
+    editor.addCatalogVideo({
+      videoId: "take-effects",
+      label: "Take",
+      url: "https://example.test/take-effects.mp4",
+      durationSeconds: 40,
+    });
+    const takeId = editor.takes[0]!.id;
+    editor.editMappingPreviewAppearance(
+      takeId,
+      { ...DEFAULT_MAPPING_PREVIEW_APPEARANCE, props: false },
+      "effort"
+    );
+    editor.editMappingPreviewAppearance(
+      takeId,
+      { ...DEFAULT_MAPPING_PREVIEW_APPEARANCE, darkMode: false },
+      "effort"
+    );
+    editor.undoTiming(takeId);
+    expect(editor.project.mappingPreviewAppearances?.[takeId]).toBeUndefined();
+    expect(editor.canUndoTiming(takeId)).toBe(false);
+    editor.redoTiming(takeId);
+    expect(editor.project.mappingPreviewAppearances?.[takeId]?.darkMode).toBe(
+      false
+    );
   });
 
   it("undoes and redoes the Tutorial's timing split along with the post", () => {

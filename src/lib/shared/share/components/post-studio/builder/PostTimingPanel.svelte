@@ -1,4 +1,7 @@
 <script lang="ts">
+  import type { Snippet } from "svelte";
+  import PostTimingDisclosure from "./PostTimingDisclosure.svelte";
+  import PostTimingTap from "./PostTimingTap.svelte";
   import {
     MIN_MOVE_SECONDS,
     TAKE_MAX_BPM,
@@ -17,7 +20,17 @@
    * tap along at a typed tempo, read the verdict, fix what it points at,
    * and say the map looks right.
    */
-  let { session }: { session: PostTimingSession } = $props();
+  let {
+    session,
+    animation,
+    animationOpen = $bindable(false),
+    showPrimary = true,
+  }: {
+    session: PostTimingSession;
+    animation?: Snippet;
+    animationOpen?: boolean;
+    showPrimary?: boolean;
+  } = $props();
 
   let bpmDraft = $state("");
   // A part cut from a fitted grid keeps that grid's exact tempo; the field
@@ -46,29 +59,18 @@
   {@const fitted = Boolean(session.resolvedSection?.fit)}
   <div class="timing-panel">
     <header class="head">
-      <h3>{t("share_studio_deep_map_take", { take: session.take.label })}</h3>
+      <h3>Map landings</h3>
       <span class="status status-{session.status}">
         {STATUS_TEXT[session.status]}
       </span>
     </header>
 
-    <div class="group">
-      <button
-        type="button"
-        class="tap"
-        onclick={session.tap}
-        disabled={!session.url}
-        aria-describedby="post-tap-help"
-      >
-        {#key session.tapCount}<span class="flash" aria-hidden="true"
-          ></span>{/key}
-        {t("share_studio_deep_tap_landing")}
-        <kbd>T</kbd>
-      </button>
-      <p id="post-tap-help" class="help">
-        {t("share_studio_deep_tap_help")}
-      </p>
-    </div>
+    {#if showPrimary}
+      <div class="primary-action">
+        <PostTimingTap {session} />
+        <p class="help">Play the take and tap when the props land.</p>
+      </div>
+    {/if}
 
     {#if session.summary}
       {@const summary = session.summary}
@@ -105,31 +107,47 @@
       </div>
     {/if}
 
-    <div class="group">
-      <h4>Match the sequence</h4>
-      <p class="help">One move off? Shift which landing counts as move 1.</p>
+    <PostTimingDisclosure
+      title="Align sequence"
+      description="Choose where move 1 lands"
+    >
+      <p class="help">
+        At the first landing, set move 1. Shift it if the sequence is one move
+        off.
+      </p>
       <div class="row">
         <PanelButton onclick={session.beatOneHere}
           >Move 1 lands here</PanelButton
         >
+      </div>
+      <div class="paired">
         <PanelButton
           onclick={() => session.shiftBeatOne(-1)}
           disabled={!fitted}
           ariaLabel="Move 1 one landing earlier"
         >
-          <i class="fa-solid fa-chevron-left" aria-hidden="true"></i>
-          1 move earlier
+          <i class="fa-solid fa-chevron-left" aria-hidden="true"></i> Earlier
         </PanelButton>
+        <span class="step-unit">1 move</span>
         <PanelButton
           onclick={() => session.shiftBeatOne(1)}
           disabled={!fitted}
           ariaLabel="Move 1 one landing later"
         >
-          1 move later
-          <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>
+          Later <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>
         </PanelButton>
       </div>
-    </div>
+    </PostTimingDisclosure>
+
+    {#if animation}
+      <PostTimingDisclosure
+        title="Animation"
+        description="Effort, playback, effects & display"
+        bind:open={animationOpen}
+      >
+        {@render animation()}
+      </PostTimingDisclosure>
+    {/if}
 
     {#if fitted && section}
       {#if session.selected && session.selectedLanding}
@@ -145,7 +163,7 @@
               ? `${t("share_studio_deep_placed_by_hand")} `
               : ""}{t("share_studio_deep_drag_nudge_or_type")}
           </p>
-          <div class="row">
+          <div class="paired">
             <PanelButton
               onclick={() =>
                 session.placeLanding(ref, landing.seconds - MIN_MOVE_SECONDS)}
@@ -169,32 +187,22 @@
               {t("share_studio_deep_one_frame")}
               <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>
             </PanelButton>
-            {#if landing.pinned}
-              <PanelButton onclick={session.releaseSelected}>
-                {t("share_studio_deep_back_on_grid")}
-              </PanelButton>
-            {/if}
           </div>
-        </div>
-      {/if}
-
-      <div class="group">
-        <h4>{t("share_studio_deep_end")}</h4>
-        <div class="row">
-          <PanelButton onclick={session.endHere}
-            >{t("share_studio_deep_performance_ends_here")}</PanelButton
-          >
-          {#if session.endClearable}
-            <PanelButton onclick={session.clearEnd}
-              >{t("share_studio_deep_clear_end")}</PanelButton
-            >
+          {#if landing.pinned}
+            <PanelButton onclick={session.releaseSelected}>
+              {t("share_studio_deep_back_on_grid")}
+            </PanelButton>
           {/if}
         </div>
-      </div>
+      {/if}
     {/if}
 
-    <details class="group parts">
-      <summary>Tempo & fine timing</summary>
+    <PostTimingDisclosure
+      title="Tempo & fine timing"
+      description={section
+        ? `${shownBpm(section.bpm)} BPM · ${section.tempo === "follow" ? "Follow video" : "Hold BPM"}`
+        : "Set a tempo or shift the grid"}
+    >
       <div class="row">
         <label class="bpm">
           <span>BPM</span>
@@ -219,7 +227,7 @@
             ]}
             value={section.tempo}
             onchange={session.setTempo}
-            size="sm"
+            size="md"
             ariaLabel={t("share_studio_deep_tempo")}
           />
         {/if}
@@ -227,20 +235,13 @@
       {#if fitted && section}
         <div class="group">
           <h4>{t("share_studio_deep_whole_grid")}</h4>
-          <div class="row">
+          <div class="paired">
             <PanelButton
               onclick={() => session.nudgeGrid(-1)}
               ariaLabel={t("share_studio_deep_grid_frame_earlier")}
             >
               <i class="fa-solid fa-chevron-left" aria-hidden="true"></i>
               {t("share_studio_deep_one_frame")}
-            </PanelButton>
-            <PanelButton
-              onclick={() => session.nudgeGrid(1)}
-              ariaLabel={t("share_studio_deep_grid_frame_later")}
-            >
-              {t("share_studio_deep_one_frame")}
-              <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>
             </PanelButton>
             <TypeableValue
               label={t("share_studio_deep_whole_grid")}
@@ -252,6 +253,13 @@
               signed
               oncommit={session.setGridOffset}
             />
+            <PanelButton
+              onclick={() => session.nudgeGrid(1)}
+              ariaLabel={t("share_studio_deep_grid_frame_later")}
+            >
+              {t("share_studio_deep_one_frame")}
+              <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>
+            </PanelButton>
           </div>
           <SegmentedControl
             options={[
@@ -260,15 +268,32 @@
             ]}
             value={section.snap}
             onchange={session.setSnap}
-            size="sm"
+            size="md"
             ariaLabel={t("share_studio_deep_landings")}
           />
         </div>
       {/if}
-    </details>
+    </PostTimingDisclosure>
 
-    <details class="group parts" open={session.timing.sections.length > 1}>
-      <summary>{t("share_studio_deep_split_take_summary")}</summary>
+    <PostTimingDisclosure
+      title="Parts & end"
+      description="Split an edited take or mark its ending"
+    >
+      {#if fitted && section}
+        <div class="group">
+          <h4>{t("share_studio_deep_end")}</h4>
+          <div class="row">
+            <PanelButton onclick={session.endHere}
+              >{t("share_studio_deep_performance_ends_here")}</PanelButton
+            >
+            {#if session.endClearable}
+              <PanelButton onclick={session.clearEnd}
+                >{t("share_studio_deep_clear_end")}</PanelButton
+              >
+            {/if}
+          </div>
+        </div>
+      {/if}
       <p class="help">
         {t("share_studio_deep_split_take_help")}
       </p>
@@ -294,9 +319,6 @@
       {#if session.canSplit && !session.canKeepCounting}
         <p class="help">{t("share_studio_deep_tap_to_here_first")}</p>
       {/if}
-    </details>
-
-    <footer class="foot">
       <PanelButton
         onclick={session.clearTaps}
         disabled={!section || section.taps.length === 0}
@@ -305,8 +327,10 @@
           ? "Clear this part & restart"
           : "Clear taps & restart"}
       </PanelButton>
+    </PostTimingDisclosure>
+
+    <footer class="foot">
       <PanelButton
-        variant="primary"
         onclick={session.confirm}
         disabled={session.status === "untapped" ||
           session.status === "confirmed"}
@@ -328,9 +352,10 @@
     min-width: 0;
   }
   .timing-panel {
-    gap: 1rem;
+    gap: 0;
   }
   .head {
+    padding-bottom: 0.75rem;
     display: flex;
     flex-wrap: wrap;
     align-items: baseline;
@@ -343,14 +368,14 @@
     color: var(--theme-text, #fff);
   }
   h3 {
-    font-size: 1rem;
+    font-size: var(--mapping-heading-size, 1rem);
   }
   h4 {
-    font-size: 0.9375rem;
+    font-size: var(--mapping-text-size, 0.9375rem);
   }
   .status {
-    color: var(--theme-text-secondary, #aaa);
-    font-size: 0.8125rem;
+    color: var(--theme-text-dim, #aaa);
+    font-size: var(--mapping-meta-size, 0.8125rem);
   }
   .status-confirmed {
     color: var(--semantic-success, #4ade80);
@@ -360,14 +385,14 @@
   }
   .help {
     margin: 0;
-    color: var(--theme-text-secondary, #aaa);
-    font-size: 0.875rem;
+    color: var(--theme-text-dim, #aaa);
+    font-size: var(--mapping-text-size, 0.875rem);
     line-height: 1.4;
   }
   .verdict-text {
     margin: 0;
     color: var(--theme-text, #fff);
-    font-size: 0.9375rem;
+    font-size: var(--mapping-text-size, 0.9375rem);
     line-height: 1.4;
   }
   .tone-good .verdict-text {
@@ -377,6 +402,26 @@
   .tone-tempo .verdict-text {
     color: var(--semantic-warning, #fbbf24);
   }
+  .primary-action {
+    display: grid;
+    justify-items: start;
+    gap: 0.75rem;
+    padding-block: 0.25rem 1rem;
+  }
+  .verdict {
+    padding-bottom: 1rem;
+  }
+  .paired {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .step-unit {
+    font-size: var(--mapping-text-size, 0.875rem);
+    color: var(--theme-text-dim, #aaa);
+    text-align: center;
+  }
   .row {
     display: flex;
     flex-wrap: wrap;
@@ -384,69 +429,12 @@
     gap: 0.5rem;
     min-width: 0;
   }
-  .tap {
-    position: relative;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.75rem;
-    min-height: 3.5rem;
-    overflow: hidden;
-    border: 1px solid var(--theme-primary, #d4813a);
-    border-radius: 0.75rem;
-    color: var(--theme-text, #fff);
-    background: color-mix(
-      in srgb,
-      var(--theme-primary, #d4813a) 22%,
-      transparent
-    );
-    font: inherit;
-    font-size: 1rem;
-    font-weight: 600;
-    cursor: pointer;
-    touch-action: manipulation;
-  }
-  .tap:disabled {
-    opacity: 0.5;
-    cursor: default;
-  }
-  .tap:focus-visible {
-    outline: 2px solid var(--theme-primary, currentColor);
-    outline-offset: 2px;
-  }
-  .tap kbd {
-    padding: 0.1rem 0.4rem;
-    border: 1px solid currentColor;
-    border-radius: 0.25rem;
-    font-size: 0.75rem;
-  }
-  .flash {
-    position: absolute;
-    inset: 0;
-    background: var(--theme-primary, #d4813a);
-    opacity: 0;
-    animation: tap-flash 220ms ease-out;
-    pointer-events: none;
-  }
-  @keyframes tap-flash {
-    from {
-      opacity: 0.5;
-    }
-    to {
-      opacity: 0;
-    }
-  }
-  @media (prefers-reduced-motion: reduce) {
-    .flash {
-      animation: none;
-    }
-  }
   .bpm {
     display: inline-flex;
     align-items: center;
     gap: 0.5rem;
     color: var(--theme-text, #fff);
-    font-size: 0.875rem;
+    font-size: var(--mapping-text-size, 0.875rem);
   }
   .bpm input {
     width: 5.5rem;
@@ -463,21 +451,7 @@
     outline: 2px solid var(--theme-primary, currentColor);
     outline-offset: 1px;
   }
-  .parts summary {
-    display: flex;
-    align-items: center;
-    min-height: 2.75rem;
-    color: var(--theme-text, #fff);
-    font-size: 0.875rem;
-    cursor: pointer;
-  }
-  /* "Looks right" is the step's way out, so it stays in view while the
-     controls above it scroll. The wash is translucent on dark themes; the
-     blur keeps what scrolls under it from reading through. */
   .foot {
-    position: sticky;
-    bottom: 0;
-    z-index: 1;
     display: flex;
     flex-wrap: wrap;
     gap: 0.5rem;

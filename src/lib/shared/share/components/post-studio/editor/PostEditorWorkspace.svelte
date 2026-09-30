@@ -101,6 +101,11 @@
   } from "$lib/shared/transitions/layout-flip";
   import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
   import type { PostStudioShareExport } from "../post-studio-share-export";
+  import Drawer from "$lib/shared/foundation/ui/Drawer.svelte";
+  import DrawerHeader from "$lib/shared/foundation/ui/DrawerHeader.svelte";
+  import PostTimingTap from "../builder/PostTimingTap.svelte";
+  import PostTimingAnimationPreview from "../builder/PostTimingAnimationPreview.svelte";
+  import PostTimingAnimationSettings from "../builder/PostTimingAnimationSettings.svelte";
   import PostTimingStage from "../builder/PostTimingStage.svelte";
   import PostTimingTimeline from "../builder/PostTimingTimeline.svelte";
   import PostTimingPanel from "../builder/PostTimingPanel.svelte";
@@ -754,17 +759,42 @@
       16;
   });
 
+  const shortMappingLayout = $derived(
+    showTimingStage &&
+      !externalInspector &&
+      editorHeight < 28 * remPixels &&
+      editorWidth >= LANDSCAPE_WIDE_REM * remPixels &&
+      editorWidth > editorHeight
+  );
   const layout = $derived<"phone" | "wide" | "viewer">(
     externalInspector
       ? "viewer"
-      : editorWidth >= WIDE_REM * remPixels ||
-          (editorWidth > editorHeight &&
-            editorWidth >= LANDSCAPE_WIDE_REM * remPixels)
+      : !shortMappingLayout &&
+          (editorWidth >= WIDE_REM * remPixels ||
+            (editorWidth > editorHeight &&
+              editorWidth >= LANDSCAPE_WIDE_REM * remPixels))
         ? "wide"
         : "phone"
   );
   /** A panel always shows beside the preview or in the viewer's side panel. */
   const panelBeside = $derived(layout !== "phone");
+  let timingSettingsOpen = $state(false);
+  let timingAnimationOpen = $state(false);
+  let timingRatio = $state(9 / 16);
+  let timingAnimationSection: HTMLDivElement | undefined = $state();
+  async function openTimingAnimation(): Promise<void> {
+    timingAnimationOpen = true;
+    if (!panelBeside) {
+      timingSettingsOpen = true;
+      return;
+    }
+    await tick();
+    timingAnimationSection?.scrollIntoView({ block: "nearest" });
+    timingAnimationSection?.focus({ preventScroll: true });
+  }
+  $effect(() => {
+    if (!showTimingStage || panelBeside) timingSettingsOpen = false;
+  });
 
   const selection = $derived.by((): PostToolSelection => {
     const item = editor.selectedItem;
@@ -2226,14 +2256,21 @@
 
 {#snippet timingPanel()}
   <div class="timing-panel">
-    <div class="timing-back">
-      <PanelButton onclick={session.exit}>
-        <i class="fa-solid fa-arrow-left" aria-hidden="true"></i>
-        {t("post_editor_back_to_editing")}
-      </PanelButton>
-    </div>
-    {@render draftStatus()}
-    <PostTimingPanel {session} />
+    <PostTimingPanel
+      {session}
+      showPrimary={panelBeside}
+      bind:animationOpen={timingAnimationOpen}
+    >
+      {#snippet animation()}
+        <div
+          class="timing-animation"
+          tabindex="-1"
+          bind:this={timingAnimationSection}
+        >
+          <PostTimingAnimationSettings {editor} {session} />
+        </div>
+      {/snippet}
+    </PostTimingPanel>
   </div>
 {/snippet}
 
@@ -2248,6 +2285,7 @@
   data-viewer-keys-ignore
   data-edit-history-shortcut-scope
   data-layout={layout}
+  data-short-mapping={shortMappingLayout}
   data-sharing={sharing}
   data-mode={showTimingStage ? "timing" : cropMode ? "crop" : "edit"}
   style:--post-ratio={outputSize.width / outputSize.height}
@@ -2283,6 +2321,29 @@
       ? null
       : `${dockPanelMax}px`}
   >
+    {#if showTimingStage}
+      <div class="timing-toolbar">
+        <PanelButton onclick={session.exit} ariaLabel="Back to editing">
+          <i class="fa-solid fa-arrow-left" aria-hidden="true"></i>
+          <span class="back-label">Back to editing</span><span
+            class="back-short">Back</span
+          >
+        </PanelButton>
+        <label class="take-picker">
+          <span>Take</span>
+          <select
+            aria-label="Take to map"
+            value={session.take?.id ?? ""}
+            onchange={(event) => session.selectTake(event.currentTarget.value)}
+          >
+            {#each session.takes as take (take.id)}<option value={take.id}
+                >{take.label}</option
+              >{/each}
+          </select>
+        </label>
+        <div class="timing-save">{@render draftStatus()}</div>
+      </div>
+    {/if}
     {#if !showTimingStage && !panelBeside}
       <div class="top-bar-slot" inert={sharing || undefined}>
         {@render topBar()}
@@ -2291,11 +2352,18 @@
 
     <div class="stage-row" bind:this={stageRow}>
       {#if showTimingStage}
-        <div class="timing-stage">
+        <div class="timing-stage" style:--take-ratio={timingRatio}>
           <PostTimingStage
             {session}
-            squarePainter={stripPainters.get("arrows") ?? null}
-          />
+            bind:ratio={timingRatio}
+            onOpenAnimation={openTimingAnimation}
+          >
+            {#snippet preview()}<PostTimingAnimationPreview
+                {editor}
+                {session}
+                sequence={displaySequence}
+              />{/snippet}
+          </PostTimingStage>
         </div>
       {:else}
         <div class="preview-frame">
@@ -2510,7 +2578,15 @@
         inert={sharing || undefined}
       >
         {#if showTimingStage}
-          {@render timingPanel()}
+          <div class="timing-mobile-actions">
+            <PostTimingTap {session} />
+            <PanelButton
+              onclick={() => (timingSettingsOpen = true)}
+              ariaExpanded={timingSettingsOpen}
+            >
+              <i class="fa-solid fa-sliders" aria-hidden="true"></i> Settings
+            </PanelButton>
+          </div>
         {:else}
           <Crossfade
             key={dockKey}
@@ -2581,6 +2657,34 @@
   onCancel={cancelExport}
   label={t("share_studio_rendering_post")}
 />
+
+{#if showTimingStage && !panelBeside}
+  <Drawer
+    bind:isOpen={timingSettingsOpen}
+    title="Mapping settings"
+    placement="bottom"
+    initialFocusElement={timingAnimationOpen ? timingAnimationSection : null}
+  >
+    <DrawerHeader
+      title="Mapping settings"
+      onClose={() => (timingSettingsOpen = false)}
+    />
+    <div
+      class="timing-drawer-content"
+      data-edit-history-shortcut-scope
+      data-viewer-keys-ignore
+    >
+      <EditHistoryShortcutBridge
+        onUndo={session.undo}
+        onRedo={session.redo}
+        canUndo={session.canUndo}
+        canRedo={session.canRedo}
+      />
+      {@render draftStatus()}
+      {@render timingPanel()}
+    </div>
+  </Drawer>
+{/if}
 
 <style>
   .canvas-tool {
@@ -2754,8 +2858,87 @@
     min-width: 0;
   }
 
-  .timing-back {
+  .timing-toolbar {
+    grid-area: top;
     display: flex;
+    align-items: center;
+    gap: 1rem;
+    min-width: 0;
+  }
+  .take-picker {
+    display: flex;
+    align-items: center;
+    gap: 0.625rem;
+    min-width: 0;
+    color: var(--theme-text-dim, #aaa);
+    font-size: var(--mapping-text-size, 0.875rem);
+  }
+  .take-picker select {
+    min-width: 0;
+    width: 18rem;
+    max-width: 100%;
+    min-height: 2.75rem;
+    padding: 0.5rem 2rem 0.5rem 0.75rem;
+    border: 1px solid var(--theme-stroke);
+    border-radius: 0.5rem;
+    color: var(--theme-text);
+    background: var(--theme-panel-bg);
+    font: inherit;
+    text-overflow: ellipsis;
+  }
+  .take-picker select:focus-visible {
+    outline: 2px solid var(--theme-accent);
+    outline-offset: 2px;
+  }
+  .timing-save {
+    margin-left: auto;
+  }
+  .back-short {
+    display: none;
+  }
+  .timing-mobile-actions {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 0.5rem;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  .timing-drawer-content {
+    padding: 0 1rem 1rem;
+    overflow-y: auto;
+    max-height: 75dvh;
+  }
+  .timing-animation {
+    min-width: 0;
+  }
+  .post-editor[data-mode="timing"][data-layout="wide"] .timing-stage {
+    flex: none;
+    width: min(
+      calc(100cqh * var(--take-ratio)),
+      calc(100cqw - var(--post-panel-width) - 1rem)
+    );
+  }
+  .post-editor[data-mode="timing"][data-layout="wide"] .panel-host {
+    padding: 0.5rem 1rem;
+    background: var(--theme-panel-bg);
+    border: 1px solid var(--theme-stroke);
+    border-radius: 0.75rem;
+  }
+  .post-editor[data-mode="timing"][data-layout="phone"] .timing-toolbar {
+    gap: 0.5rem;
+  }
+  .post-editor[data-mode="timing"][data-layout="phone"] .take-picker {
+    flex: 1;
+  }
+  .post-editor[data-mode="timing"][data-layout="phone"] .take-picker select {
+    width: 100%;
+  }
+  .post-editor[data-mode="timing"][data-layout="phone"] .take-picker > span,
+  .post-editor[data-mode="timing"][data-layout="phone"] .timing-save,
+  .post-editor[data-mode="timing"][data-layout="phone"] .back-label {
+    display: none;
+  }
+  .post-editor[data-mode="timing"][data-layout="phone"] .back-short {
+    display: inline;
   }
 
   .file-input {
@@ -2785,16 +2968,31 @@
     )
     .layout {
     height: 100%;
-    grid-template-rows: minmax(22rem, 1fr) auto;
-    grid-template-areas: "stage" "timeline";
+    grid-template-rows: auto minmax(10rem, 1fr) auto;
+    grid-template-areas: "top" "stage" "timeline";
   }
 
   .post-editor[data-mode="timing"][data-layout="phone"] .layout {
     display: grid;
     height: 100%;
     grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: minmax(15rem, 1fr) auto auto;
-    grid-template-areas: "stage" "timeline" "dock";
+    grid-template-rows: auto minmax(8rem, 1fr) auto auto;
+    grid-template-areas: "top" "stage" "timeline" "dock";
+  }
+
+  /* A landscape phone gives the video the full available height. Timing
+     controls sit beside it; adjustments use the same sheet as portrait. */
+  .post-editor[data-mode="timing"][data-short-mapping="true"] .layout {
+    --post-gap: 0.5rem;
+    grid-template-columns: minmax(10rem, 0.8fr) minmax(21rem, 1fr);
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    grid-template-areas: "top top" "stage timeline" "stage dock";
+  }
+  .post-editor[data-short-mapping="true"] .timing-timeline {
+    align-self: center;
+  }
+  .post-editor[data-short-mapping="true"] .take-picker {
+    max-width: 26rem;
   }
 
   .top-bar-slot {
@@ -2870,6 +3068,25 @@
   }
   .post-editor[data-mode="timing"][data-layout="phone"] .timing-stage {
     height: 100%;
+  }
+
+  @media (max-height: 500px) and (min-width: 601px) {
+    .post-editor[data-mode="timing"][data-layout="wide"] .layout {
+      gap: 0.5rem;
+      grid-template-rows: auto minmax(8rem, 1fr) auto;
+    }
+  }
+
+  @container post-editor (min-width: 2400px) {
+    .post-editor[data-mode="timing"] .layout {
+      --mapping-text-size: 1.125rem;
+      --mapping-heading-size: 1.25rem;
+      --mapping-meta-size: 1rem;
+      --font-size-sm: 1.125rem;
+      --font-size-compact: 1rem;
+      --min-touch-target: 3rem;
+      --post-panel-width: 28rem;
+    }
   }
 
   .panel-host {

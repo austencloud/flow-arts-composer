@@ -30,6 +30,7 @@
     loadPostDraft,
     savePostDraft,
   } from "$lib/shared/media-composition/services/post-draft-storage";
+  import { mappingFixture } from "./mapping-fixture";
   import { keyframeClearFixture } from "./keyframe-clear-fixture";
 
   const SEQUENCE_WORD = "ΩΛ-XJΩΛ-XJΩΛ-XJΩΛ-XJ";
@@ -87,12 +88,15 @@
 
   onMount(async () => {
     const fixture = new URL(window.location.href).searchParams.get("fixture");
+    const mapping = fixture === "mapping";
     const isolatedKeyframes = fixture === "keyframe-clear";
     // Exercise the real save/reload path without writing to the creator's post.
     const storageFixture = fixture === "draft-storage";
-    const draftSequenceId = storageFixture
-      ? "post-draft-storage-fixture"
-      : SEQUENCE_ID;
+    const draftSequenceId = mapping
+      ? "post-mapping-fixture"
+      : storageFixture
+        ? "post-draft-storage-fixture"
+        : SEQUENCE_ID;
     const requestedLocale = toLocale(
       new URL(window.location.href).searchParams.get("lang") ?? ""
     );
@@ -106,7 +110,10 @@
     registerLoopDetector(loopDetector);
     try {
       const [loaded, draft] = await Promise.all([
-        getBrowseLoader().loadFullSequenceData(SEQUENCE_WORD, SEQUENCE_ID),
+        getBrowseLoader().loadFullSequenceData(
+          mapping ? "Δ-ΛRZΔ-ΛRZΔ-ΛRZΔ-ΛRZ" : SEQUENCE_WORD,
+          mapping ? "Δ-ΛRZ" : SEQUENCE_ID
+        ),
         isolatedKeyframes
           ? Promise.resolve({
               project: null,
@@ -116,24 +123,27 @@
           : loadPostDraft(draftSequenceId),
       ]);
       initialProject = draft.project ?? undefined;
-      diskDrafts = draft.diskAvailable;
+      diskDrafts = !mapping && draft.diskAvailable;
       draftLoadError = draft.error;
       if (!loaded)
         throw new Error("The visual fixture is no longer published.");
       const hydrated = await hydrateSequence(loaded);
-      const editorSequenceId = isolatedKeyframes
-        ? "post-keyframe-clear-fixture"
-        : storageFixture
-          ? draftSequenceId
-          : hydrated.id;
-      seedPerformance(editorSequenceId);
+      const editorSequenceId = mapping
+        ? "post-mapping-fixture"
+        : isolatedKeyframes
+          ? "post-keyframe-clear-fixture"
+          : storageFixture
+            ? draftSequenceId
+            : hydrated.id;
+      if (!mapping) seedPerformance(editorSequenceId);
       sequence = {
         ...hydrated,
         id: editorSequenceId,
-        performanceVideoUrl: VIDEO_URL,
+        performanceVideoUrl: mapping ? undefined : VIDEO_URL,
       };
       if (isolatedKeyframes || (storageFixture && !initialProject))
         initialProject = keyframeClearFixture(editorSequenceId);
+      if (mapping && !initialProject) initialProject = mappingFixture();
       cardRenderOptions = buildCardRenderOptions(sequence, { darkMode: true });
 
       const blob = await getSharer().getCardImageBlob(sequence, {
