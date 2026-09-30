@@ -96,8 +96,19 @@ describe("fitEffectRoster", () => {
     expect(fitEffectRoster({ width: 155, count: 12, columns: 2 })).toBe(null);
   });
 
+  it("fits a compact three-column video roster without losing the pictures", () => {
+    const fit = fitEffectRoster({ width: 400, count: 12, columns: 3 });
+    expect(fit).toMatchObject({
+      cols: 3,
+      rows: 4,
+      orientation: "stack",
+      fill: false,
+    });
+    expect(fit!.portrait).toBeGreaterThanOrEqual(MIN_CATALOG_PORTRAIT);
+  });
+
   it("never lets a picture or a name spill out of its column", () => {
-    for (const columns of [2, 4] as const) {
+    for (const columns of [2, 3, 4] as const) {
       for (let width = 160; width <= 900; width += 7) {
         const fit = fitEffectRoster({ width, count: COUNT, columns });
         if (!fit) continue;

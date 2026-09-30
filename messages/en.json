@@ -6896,7 +6896,7 @@
   "post_staff_find": "Find my staffs",
   "post_staff_finding": "Finding your staffs: {percent}%",
   "post_staff_stop": "Stop",
-  "post_staff_found": "Found the staff ends in {percent}% of this video.",
+  "post_staff_found": "Staff-end tracking: {percent}% of sampled positions detected or filled across this video.",
   "post_staff_find_again": "Find again",
   "post_staff_failed": "Could not find the staffs in this video.",
   "post_staff_try_again": "Try again",

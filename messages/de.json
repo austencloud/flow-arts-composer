@@ -6190,7 +6190,7 @@
   "post_staff_find": "Meine Stäbe finden",
   "post_staff_finding": "Stäbe werden gesucht: {percent} %",
   "post_staff_stop": "Stoppen",
-  "post_staff_found": "Stabenden in {percent} % dieses Videos gefunden.",
+  "post_staff_found": "Stabenden-Tracking: {percent} % der abgetasteten Positionen im Video erkannt oder ergänzt.",
   "post_staff_find_again": "Erneut suchen",
   "post_staff_failed": "Die Stäbe wurden in diesem Video nicht gefunden.",
   "post_staff_try_again": "Erneut versuchen",

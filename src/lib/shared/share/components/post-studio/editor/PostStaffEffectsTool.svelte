@@ -47,7 +47,7 @@
     fitEffectRoster({
       width: rosterWidth,
       count: POST_STAFF_EFFECTS.length,
-      columns: 2,
+      columns: 3,
     })
   );
 
