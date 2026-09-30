@@ -20,14 +20,23 @@
   } from "$lib/shared/auth/services/anonymous-upgrade";
   import { promptAnonymousImport } from "$lib/shared/auth/state/anonymous-import-prompt.svelte";
   import { recordAuthSubmission } from "$lib/shared/auth/services/auth-analytics-bridge";
+  import { recordLastAuthMethod } from "$lib/shared/auth/services/last-auth-method.svelte";
   import { trackAuthProviderResult } from "$lib/shared/analytics/auth-events";
 
   let {
     mode = $bindable("signin" as "signin" | "signup"),
+    email = $bindable(""),
     showModeSwitch = true,
+    onUseCode,
+  }: {
+    mode?: "signin" | "signup";
+    email?: string;
+    showModeSwitch?: boolean;
+    // Offered under the sign-in form. A code signs in any email account, so it
+    // covers a forgotten password and an account that never had one.
+    onUseCode?: () => void;
   } = $props();
 
-  let email = $state("");
   let password = $state("");
   let name = $state("");
   let showPassword = $state(false);
@@ -132,6 +141,7 @@
             email,
             password
           );
+          recordLastAuthMethod("password");
           if (name.trim()) {
             await updateProfile(result.user, { displayName: name.trim() });
           }
@@ -156,6 +166,9 @@
           email,
           password
         );
+        // Without this the next visit opens on the code tab again and the
+        // person clicks through to their password every time.
+        recordLastAuthMethod("password");
         resetAttempts();
         if (drafts.length > 0) {
           // The account this sign-in actually landed on, taken from the auth
@@ -303,6 +316,17 @@
         {mode === "signin" ? t("auth_sign_in") : t("auth_sign_up")}
       {/if}
     </button>
+
+    {#if mode === "signin" && onUseCode}
+      <button
+        class="switch"
+        type="button"
+        onclick={onUseCode}
+        disabled={loading}
+      >
+        {t("auth_forgot_password_use_code")}
+      </button>
+    {/if}
 
     {#if showModeSwitch}
       <button

@@ -10,6 +10,7 @@
   import { growFade } from "$lib/shared/transitions/motion";
   import { t } from "$lib/shared/i18n/i18n.svelte";
   import { authPromptCopy } from "../domain/auth-prompt-copy";
+  import { tick, untrack } from "svelte";
 
   interface Props {
     content: AuthPromptContent;
@@ -41,27 +42,53 @@
 
   let showEmailAuth = $state(false);
   let showOtherProviders = $state(false);
-  const lastMethod = getLastAuthMethod();
-  const compact = $derived(content.key === "step-cap-guest");
+  let emailFlow = $state<HTMLElement>();
+  const lastMethod = $derived(getLastAuthMethod());
+  // The copy object is rebuilt on every mode switch; only opening or a new key
+  // is a new encounter, so the reset below watches these derived values, which
+  // wake it only when they actually change.
+  const isOpen = $derived(active);
+  const contentKey = $derived(content.key);
+  const compact = $derived(contentKey === "step-cap-guest");
   const lastUsedEmail = $derived(
     lastMethod === "magic-link" || lastMethod === "password"
   );
 
   // Every opening and every action context starts as a fresh encounter. A
   // previous email form should never leak into the next thing the user tries.
+  // Someone who signed in by email on this device last time skips the choice
+  // and lands on the form; "Other sign-in options" is one press away.
   $effect(() => {
-    if (!active) return;
-    content.key;
-    showEmailAuth = false;
+    if (!isOpen) return;
+    contentKey;
+    showEmailAuth = untrack(() => lastUsedEmail);
     showOtherProviders = false;
   });
 
   const titleId = $derived(`${idPrefix}-title`);
   const descriptionId = $derived(`${idPrefix}-description`);
 
+  // Switching between signing in and creating an account keeps the email form
+  // open. Sending the person back to the method choice cost two more presses.
   function toggleMode() {
     mode = mode === "signup" ? "signin" : "signup";
-    showEmailAuth = false;
+  }
+
+  /** Puts the cursor in the email form's first empty box, if the form shows. */
+  export function focusFirstField() {
+    if (!showEmailAuth || !emailFlow) return;
+    const inputs = [
+      ...emailFlow.querySelectorAll<HTMLInputElement>("input:not([disabled])"),
+    ];
+    (inputs.find((input) => !input.value) ?? inputs[0])?.focus();
+  }
+
+  // The pressed button leaves the page with the choice it offered, so focus
+  // moves into the form instead of falling to the page body.
+  async function openEmailAuth() {
+    showEmailAuth = true;
+    await tick();
+    focusFirstField();
   }
 </script>
 
@@ -133,7 +160,7 @@
         <div class="email-divider">
           <span>{t("auth_continue_by_email")}</span>
         </div>
-        <EmailAuthTabs bind:mode {compact} />
+        <EmailAuthTabs bind:mode {compact} showModeSwitch={false} />
       </div>
 
       <p class="provider-warning">
@@ -141,7 +168,7 @@
       </p>
       <SocialAuthCompact {mode} {onFacebookAuth} />
     {:else if showEmailAuth}
-      <div class="email-flow">
+      <div class="email-flow" bind:this={emailFlow}>
         <button
           class="email-back"
           type="button"
@@ -150,7 +177,7 @@
           <i class="fas fa-arrow-left" aria-hidden="true"></i>
           {t("auth_other_sign_in_options")}
         </button>
-        <EmailAuthTabs bind:mode {compact} />
+        <EmailAuthTabs bind:mode {compact} showModeSwitch={false} />
       </div>
     {:else}
       <div class="method-grid">
@@ -162,7 +189,7 @@
           <button
             class="email-method"
             type="button"
-            onclick={() => (showEmailAuth = true)}
+            onclick={openEmailAuth}
             aria-label={lastUsedEmail
               ? t("auth_continue_email_last_used")
               : t("auth_continue_email")}

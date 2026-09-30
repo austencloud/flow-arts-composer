@@ -1468,6 +1468,7 @@
   "auth_continue_email": "Mit E-Mail fortfahren",
   "auth_already_have_account": "Du hast schon ein Konto?",
   "auth_new_here": "Neu hier?",
+  "auth_forgot_password_use_code": "Passwort vergessen? Code per E-Mail anfordern",
   "auth_continue_google": "Mit Google fortfahren",
   "auth_continue_google_last_used": "Mit Google fortfahren, zuletzt auf diesem Gerät verwendet",
   "auth_continue_facebook": "Mit Facebook fortfahren",

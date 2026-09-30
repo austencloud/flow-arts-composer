@@ -14,7 +14,7 @@
 
   import { httpsCallable } from "firebase/functions";
   import { signInWithCustomToken } from "firebase/auth";
-  import { onMount } from "svelte";
+  import { onMount, tick } from "svelte";
   import { page } from "$app/state";
   import {
     auth,
@@ -33,10 +33,23 @@
   import { captureWhenReady } from "$lib/shared/analytics/services/posthog";
   import { firstRunState } from "$lib/shared/onboarding/state/first-run-state.svelte";
   import { isRunningAsStandalone } from "$lib/shared/mobile/services/platform-detector";
+  import {
+    clearPendingEmailCode,
+    persistPendingEmailCode,
+    readPendingEmailCode,
+  } from "$lib/shared/auth/services/pending-email-code";
 
-  let { compact = false }: { compact?: boolean } = $props();
+  let {
+    compact = false,
+    email = $bindable(""),
+    sendOnOpen = false,
+  }: {
+    compact?: boolean;
+    email?: string;
+    /** Opened by "Email me a code": send to the address already typed. */
+    sendOnOpen?: boolean;
+  } = $props();
 
-  let email = $state("");
   let loading = $state(false);
   let error = $state<string | null>(null);
   let success = $state<string | null>(null);
@@ -48,57 +61,30 @@
   let codeCompleted = $state(false);
   let installedApp = $state(false);
   let emailInput: HTMLInputElement;
+  let codeInput = $state<HTMLInputElement>();
 
-  const PENDING_REQUEST_KEY = "pendingMagicLinkCode";
-  const PENDING_REQUEST_LIFETIME_MS = 30 * 60 * 1000;
-  const REQUEST_ID_PATTERN =
-    /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-
-  function clearPendingRequest() {
-    window.localStorage.removeItem(PENDING_REQUEST_KEY);
-  }
-
-  function persistPendingRequest(requestId: string, recipient: string) {
-    window.localStorage.setItem(
-      PENDING_REQUEST_KEY,
-      JSON.stringify({
-        requestId,
-        email: recipient,
-        expiresAt: Date.now() + PENDING_REQUEST_LIFETIME_MS,
-      })
-    );
+  // The code box is the only thing left to do once a code is on its way.
+  function focusCodeInput() {
+    void tick().then(() => codeInput?.focus());
   }
 
   onMount(() => {
     installedApp = isRunningAsStandalone();
-    const raw = window.localStorage.getItem(PENDING_REQUEST_KEY);
-    if (!raw) return;
-
-    try {
-      const pending = JSON.parse(raw) as {
-        requestId?: unknown;
-        email?: unknown;
-        expiresAt?: unknown;
-      };
-      if (
-        typeof pending.requestId !== "string" ||
-        !REQUEST_ID_PATTERN.test(pending.requestId) ||
-        typeof pending.email !== "string" ||
-        !pending.email ||
-        typeof pending.expiresAt !== "number" ||
-        pending.expiresAt <= Date.now()
-      ) {
-        clearPendingRequest();
-        return;
-      }
-
+    const typed = email.trim();
+    const pending = readPendingEmailCode();
+    // A pending code for some other address loses to the one just typed.
+    if (pending && !(sendOnOpen && typed && typed !== pending.email)) {
       acceptedRequestId = pending.requestId;
       email = pending.email;
       submittedEmail = pending.email;
       success = t("auth_email_sent_to", { email: pending.email });
-    } catch {
-      clearPendingRequest();
+      if (sendOnOpen) focusCodeInput();
+      return;
     }
+
+    if (!sendOnOpen) return;
+    if (emailInput.checkValidity()) void sendEmailLink();
+    else emailInput.focus();
   });
 
   // Inside an in-app webview this form is not just one option among several —
@@ -193,8 +179,9 @@
         // Save the email locally so we can complete sign-in on the same device
         window.localStorage.setItem("emailForSignIn", recipient);
         acceptedRequestId = result.data.requestId || requestId;
-        persistPendingRequest(acceptedRequestId, recipient);
+        persistPendingEmailCode(acceptedRequestId, recipient);
         success = `Email sent to ${recipient}.`;
+        focusCodeInput();
         captureWhenReady("magic_link_provider_accepted", {
           request_id: acceptedRequestId,
           auth_host: window.location.hostname,
@@ -273,13 +260,23 @@
     signInCode = "";
     codeError = null;
     codeCompleted = false;
-    clearPendingRequest();
+    clearPendingEmailCode();
     requestAnimationFrame(() => emailInput.focus());
   }
 
   function updateSignInCode(event: Event) {
     const input = event.currentTarget as HTMLInputElement;
     signInCode = input.value.replace(/\D/g, "").slice(0, 6);
+    // Six digits is the whole answer, typed, pasted or filled from the inbox.
+    if (signInCode.length === 6) void redeemSignInCode();
+  }
+
+  // The code box sits inside the send form, so a plain Enter would mail a
+  // fresh code and orphan the one being typed. Enter redeems instead.
+  function handleCodeKeydown(event: KeyboardEvent) {
+    if (event.key !== "Enter") return;
+    event.preventDefault();
+    void redeemSignInCode();
   }
 
   async function redeemSignInCode() {
@@ -304,7 +301,7 @@
       await configureAuthPersistence(auth);
       await signInWithCustomToken(auth, result.data.customToken);
       window.localStorage.removeItem("emailForSignIn");
-      clearPendingRequest();
+      clearPendingEmailCode();
 
       recordLastAuthMethod("magic-link");
       trackAuthProviderResult("magic_link", "completed");
@@ -438,15 +435,17 @@
       <div class="code-row">
         <input
           id="email-sign-in-code"
+          bind:this={codeInput}
           class="code-input"
           type="text"
           inputmode="numeric"
-          enterkeyhint="done"
+          enterkeyhint="go"
           autocomplete="one-time-code"
           maxlength="6"
           pattern="[0-9]{6}"
           value={signInCode}
           oninput={updateSignInCode}
+          onkeydown={handleCodeKeydown}
           disabled={codeLoading}
           aria-describedby={codeError ? "email-sign-in-code-error" : undefined}
         />
