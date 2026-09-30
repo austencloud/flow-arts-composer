@@ -3,6 +3,7 @@
   import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import type { PostEditorState } from "$lib/shared/media-composition/state/post-editor-state.svelte";
   import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
+  import OverflowMenu from "$lib/shared/ui/components/OverflowMenu.svelte";
 
   /**
    * History on the left, Export on the right. Undo and Redo are the app's
@@ -18,6 +19,10 @@
     onImport?: () => void;
     onMirror?: () => void;
     mirrored?: boolean;
+    onBackup: () => void;
+    onRestore: () => void;
+    onRetry?: () => void;
+    canRetry?: boolean;
     trailing?: Snippet;
     draftStatus?: Snippet;
   }
@@ -29,25 +34,45 @@
     onImport,
     onMirror,
     mirrored = false,
+    onBackup,
+    onRestore,
+    onRetry,
+    canRetry = false,
     trailing,
     draftStatus,
   }: Props = $props();
+
+  const moreActions = $derived([
+    ...(!trailing && onImport
+      ? [
+          {
+            label: "Import InShot project",
+            icon: "fa-solid fa-file-import",
+            action: onImport,
+            disabled: exporting,
+          },
+        ]
+      : []),
+    ...(!trailing && onMirror
+      ? [
+          {
+            label: mirrored ? "Unmirror post" : "Mirror whole post",
+            icon: "fa-solid fa-right-left",
+            action: onMirror,
+            disabled: exporting,
+          },
+        ]
+      : []),
+    ...(canRetry && onRetry
+      ? [{ label: "Retry save", icon: "fa-solid fa-rotate", action: onRetry }]
+      : []),
+    { label: "Save backup", icon: "fa-solid fa-download", action: onBackup },
+    { label: "Restore backup", icon: "fa-solid fa-upload", action: onRestore },
+  ]);
 </script>
 
 <div class="top-bar">
   <div class="history">
-    {#if onImport && !trailing}
-      <button
-        type="button"
-        class="icon-button"
-        disabled={exporting}
-        onclick={onImport}
-        aria-label="Import InShot project"
-        title="Import InShot project"
-      >
-        <i class="fa-solid fa-file-import" aria-hidden="true"></i>
-      </button>
-    {/if}
     <button
       type="button"
       class="icon-button"
@@ -73,31 +98,18 @@
       <i class="fa-solid fa-rotate-right" aria-hidden="true"></i>
     </button>
   </div>
-  {#if onMirror && !trailing}
-    <div
-      class="mirror-action"
-      title={mirrored ? "Mirrored post" : "Mirror whole post"}
-    >
-      <PanelButton
-        onclick={onMirror}
-        disabled={exporting}
-        ariaPressed={mirrored}
-        ariaLabel={mirrored ? "Mirrored post" : "Mirror whole post"}
-      >
-        <i class="fa-solid fa-right-left" aria-hidden="true"></i>
-        <span class="mirror-label"
-          >{mirrored ? "Mirrored post" : "Mirror whole post"}</span
-        >
-      </PanelButton>
-    </div>
-  {/if}
   {#if draftStatus}
     <div class="draft-save">{@render draftStatus()}</div>
   {/if}
-  {#if trailing}
-    {@render trailing()}
-  {:else}
-    <div class="export-action">
+  <div class="end-actions">
+    <OverflowMenu
+      items={moreActions}
+      placement="bottom"
+      ariaLabel="More post actions"
+    />
+    {#if trailing}
+      {@render trailing()}
+    {:else}
       <PanelButton
         variant="primary"
         onclick={onExport}
@@ -110,17 +122,15 @@
         ></i>
         {t("post_editor_export")}
       </PanelButton>
-    </div>
-  {/if}
+    {/if}
+  </div>
 </div>
 
 <style>
   .top-bar {
     display: flex;
-    flex-wrap: wrap;
     align-items: center;
-    justify-content: space-between;
-    gap: 0.75rem;
+    gap: 0.5rem;
     min-width: 0;
   }
 
@@ -130,21 +140,33 @@
     gap: 0.375rem;
   }
 
-  .mirror-action,
-  .export-action {
+  .end-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
     flex-shrink: 0;
     white-space: nowrap;
   }
 
   .draft-save {
-    flex-basis: 100%;
+    display: flex;
+    flex-wrap: wrap;
+    flex: 1 1 auto;
     min-width: 0;
-    order: 1;
   }
 
-  @container post-top-bar (max-width: 30rem) {
-    .mirror-label {
-      display: none;
+  @container post-top-bar (max-width: 28rem) {
+    .top-bar {
+      flex-wrap: wrap;
+    }
+
+    .draft-save {
+      order: 1;
+      flex-basis: 100%;
+    }
+
+    .end-actions {
+      margin-left: auto;
     }
   }
 

@@ -1826,17 +1826,16 @@
 
 {#snippet draftStatus()}
   {#if labeledCard.error}
-    <span role="alert">{labeledCard.error}</span>
+    <span class="draft-notice" role="alert">{labeledCard.error}</span>
   {:else if editor.project.mirrored && labeledCard.pending}
-    <span role="status">Preparing mirrored animation and cards…</span>
+    <span class="draft-notice" role="status"
+      >Preparing mirrored animation and cards…</span
+    >
   {/if}
   <PostDraftStatus
     saving={draftSaving}
     error={draftError ?? editor.saveError}
     disk={!!onSaveDraft}
-    onBackup={() => void downloadDraft()}
-    onRestore={() => recoveryInput?.click()}
-    onRetry={() => draftAutosave?.retry()}
   />
 {/snippet}
 
@@ -1859,6 +1858,10 @@
     {draftStatus}
     onMirror={mirrorWholePost}
     mirrored={editor.project.mirrored ?? false}
+    onBackup={() => void downloadDraft()}
+    onRestore={() => recoveryInput?.click()}
+    onRetry={() => draftAutosave?.retry()}
+    canRetry={!!onSaveDraft && !!(draftError ?? editor.saveError)}
     onExport={openExport}
     onImport={() => {
       if (!readingFile) recoveryInput?.click();
@@ -1964,7 +1967,10 @@
     subject={editor.selectedItem ? labelFor(editor.selectedItem) : undefined}
     onDone={placement === "dock" && !cropMode ? closePanel : undefined}
     {placement}
-    bare={placement === "dock" && cropMode}
+    bare={(placement === "dock" && cropMode) ||
+      (placement === "side" &&
+        tool === "appearance" &&
+        editor.selectedItem?.kind === "animation")}
   >
     {@render panelBody(tool)}
   </PostToolPanel>
@@ -2523,6 +2529,13 @@
 
   .top-bar-slot {
     grid-area: top;
+  }
+
+  .draft-notice {
+    flex-basis: 100%;
+    min-width: 0;
+    color: var(--semantic-warning, #fbbf24);
+    font-size: var(--font-size-compact, 0.75rem);
   }
 
   .stage-row {
