@@ -123,14 +123,25 @@ export async function loadPostDraft(sequenceId: string): Promise<{
 
 export async function savePostDraft(project: PostProject): Promise<void> {
   const body = JSON.stringify({ records: [projectDraftRecord(project)] });
-  const response = await fetch(ENDPOINT, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body,
-    // The browser caps keepalive requests at 64 KiB. Large posts remain in
-    // browser storage while the normal request completes.
-    keepalive: new TextEncoder().encode(body).length < 60_000,
-  });
+  const post = (keepalive: boolean) =>
+    fetch(ENDPOINT, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body,
+      keepalive,
+    });
+  // Keepalive lets a save finish after the tab closes, but the browser caps
+  // the keepalive bytes a page has in flight at 64 KiB. Large posts, and a
+  // keepalive post turned away because an earlier one is still out, go as
+  // a normal request while the draft stays in browser storage.
+  const keepalive = new TextEncoder().encode(body).length < 60_000;
+  let response: Response;
+  try {
+    response = await post(keepalive);
+  } catch (cause) {
+    if (!keepalive) throw cause;
+    response = await post(false);
+  }
   if (!response.ok)
     throw new Error(
       "The disk backup failed. Keep this editor open and download a backup."

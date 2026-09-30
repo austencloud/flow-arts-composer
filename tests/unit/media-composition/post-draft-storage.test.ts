@@ -226,4 +226,17 @@ describe("draft autosave", () => {
       "tka:post-studio:project:v2:draft"
     );
   });
+
+  it("sends a normal request when the browser turns away a keepalive save", async () => {
+    const fetch = vi
+      .fn()
+      .mockRejectedValueOnce(new TypeError("Failed to fetch"))
+      .mockResolvedValueOnce(new Response("{}", { status: 200 }));
+    vi.stubGlobal("fetch", fetch);
+    await expect(savePostDraft(draft(9))).resolves.toBeUndefined();
+    expect(fetch.mock.calls.map((call) => call[1].keepalive)).toEqual([
+      true,
+      false,
+    ]);
+  });
 });
