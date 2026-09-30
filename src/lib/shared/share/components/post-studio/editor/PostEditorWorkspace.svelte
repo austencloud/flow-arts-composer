@@ -2148,6 +2148,7 @@
     <OverflowMenu
       triggerPresentation="labelled"
       ariaLabel={t("post_keyframe_clip_actions")}
+      placement="bottom"
       items={[
         {
           label: t("post_keyframe_remove_all_clip"),
@@ -2433,7 +2434,9 @@
           onDeleteKey={(itemId, channel, seconds) =>
             editKeys(itemId, (it) => removeKeyframe(it, channel, seconds))}
           onOpenCurve={openKeyCurve}
-          toolbarStart={timelineKeys}
+          toolbarStart={editor.selectedItem && keyChannel
+            ? timelineKeys
+            : undefined}
           onAddVideo={pickDeviceVideo}
           bind:pixelsPerSecond
         />
