@@ -15,12 +15,16 @@ export function handlePerformerCopyShortcut(
     return false;
 
   const target = event.target;
-  if (
-    target instanceof Element &&
-    (target.closest("input, textarea, select, [contenteditable]") ||
-      isLayerOwnedKeyboardTarget(target))
-  ) {
-    return false;
+  if (target instanceof Element) {
+    if (target.closest("input, textarea, select, [contenteditable]"))
+      return false;
+    if (isLayerOwnedKeyboardTarget(target)) {
+      const layer = target.closest(
+        'dialog[open], [role="dialog"], [role="alertdialog"]'
+      );
+      const viewerShell = target.closest("[data-sequence-viewer-shell]");
+      if (!viewerShell || !layer?.contains(viewerShell)) return false;
+    }
   }
 
   const key = event.key.toLowerCase();
