@@ -478,6 +478,7 @@ export function compilePostProject(
             ? { sourceGeometry: item.sourceGeometry }
             : {}),
           ...(item.autoAdjust ? { autoAdjust: item.autoAdjust } : {}),
+          ...(item.colorGrade ? { colorGrade: item.colorGrade } : {}),
           ...(sourceGeometryKeys(item)
             ? { sourceGeometryKeyframes: sourceGeometryKeys(item) }
             : {}),

@@ -27,6 +27,7 @@ import {
   turnAboutCentre,
 } from "$lib/shared/media-composition/services/region-edge-painter";
 import { traceRoundedRect } from "$lib/shared/render/utils/trace-rounded-rect";
+import { videoColorFilter } from "$lib/shared/media-composition/domain/post-video-color-grade";
 
 export interface FrameLayerGeometry {
   region: PixelRect;
@@ -540,6 +541,9 @@ async function drawRegionLayer(
       `The ${staticRegion.label ?? layer.sourceRole} layer was not ready to render.`
     );
   }
+  const colorGrade = input.preset.clips.find(
+    (clip) => clip.kind === "visual" && clip.id === layer.clipId
+  );
   if (layer.sourceGeometry) {
     const media = mediaIn(layerElement);
     if (!media) return;
@@ -559,6 +563,9 @@ async function drawRegionLayer(
     context.save();
     context.globalAlpha = layer.opacity;
     applyLayerTransform(context, geometry);
+    context.filter = videoColorFilter(
+      colorGrade?.kind === "visual" ? colorGrade.colorGrade : null
+    );
     drawSource(context, media, geometry);
     context.restore();
     return;
@@ -661,6 +668,9 @@ async function drawRegionLayer(
       transform: layer.transform,
     });
     applyLayerTransform(context, geometry);
+    context.filter = videoColorFilter(
+      colorGrade?.kind === "visual" ? colorGrade.colorGrade : null
+    );
     drawSource(context, media, geometry);
   }
 

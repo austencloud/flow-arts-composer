@@ -87,6 +87,7 @@
   import PostNativeTextTool from "./PostNativeTextTool.svelte";
   import PostSourceGeometryTool from "./PostSourceGeometryTool.svelte";
   import PostAnimationAppearanceTool from "./PostAnimationAppearanceTool.svelte";
+  import { autoGradeVideo } from "$lib/shared/media-composition/domain/post-video-color-grade";
 
   /**
    * The body of one tool for the selected item. An amount is a slider, a
@@ -116,6 +117,8 @@
     staffTips = null,
     cardRenderOptions = null,
   }: Props = $props();
+  let grading = $state(false);
+  let gradeError = $state("");
 
   const FRAME_SECONDS = 1 / POST_FRAME_RATE;
 
@@ -212,6 +215,30 @@
     patchItem({
       cardAppearance: { ...item.cardAppearance, [key]: !cardValue(key) },
     });
+  }
+
+  async function autoAdjustColor(): Promise<void> {
+    if (item.kind !== "video" || grading || locked) return;
+    const url = editor.mediaUrl(item.takeId);
+    if (!url) {
+      gradeError = "The video is not ready to analyze.";
+      return;
+    }
+    grading = true;
+    gradeError = "";
+    try {
+      const colorGrade = await autoGradeVideo(
+        url,
+        item.sourceIn,
+        item.sourceOut
+      );
+      patchItem({ colorGrade });
+    } catch {
+      gradeError =
+        "Could not analyze this video. The original remains unchanged.";
+    } finally {
+      grading = false;
+    }
   }
 
   function rename(value: string): void {
@@ -1008,6 +1035,28 @@
       onchange={(value) => change("fadeOut", { fadeOut: value })}
     />
   {:else if tool === "effects" && item.kind === "video"}
+    <div class="actions">
+      <PanelButton
+        onclick={() => void autoAdjustColor()}
+        disabled={locked || grading}
+      >
+        <i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i>
+        {grading ? "Analyzing video…" : "Auto adjust color"}
+      </PanelButton>
+      {#if item.colorGrade}
+        <PanelButton
+          onclick={() => patchItem({ colorGrade: null })}
+          disabled={locked}
+        >
+          Original color
+        </PanelButton>
+      {/if}
+    </div>
+    {#if gradeError}<p class="native-limit" role="status">{gradeError}</p>{/if}
+    {#if item.colorGrade}<p class="native-limit">
+        One color adjustment applies across the clip. Original color removes it;
+        Undo restores it.
+      </p>{/if}
     {#if item.autoAdjust}
       <TypeableValue
         label="Auto adjust strength"

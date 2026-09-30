@@ -385,6 +385,14 @@ export const PostVideoItemSchema = z
     keyframes: PostVideoItemKeyframesSchema.optional(),
     sourceGeometry: PostSourceGeometrySchema.optional(),
     autoAdjust: PostAutoAdjustSchema.optional(),
+    colorGrade: z
+      .object({
+        brightness: z.number().finite().min(0.8).max(1.25),
+        contrast: z.number().finite().min(0.6).max(1.1),
+        saturation: z.number().finite().min(1).max(1.1),
+      })
+      .strict()
+      .optional(),
     transitionOut: PostTransitionOutSchema.optional(),
     takeId: IdSchema,
     /** Take media seconds. */

@@ -2259,6 +2259,7 @@
                   displayedBeatNumber={layer.displayedBeatNumber ??
                     (binding.renderMode === "choreo-card" ? 0 : undefined)}
                   clipId={entry.clip.id}
+                  colorGrade={entry.clip.colorGrade}
                   transform={layer.transform}
                   sourceGeometry={sourceCropping && cropRegion
                     ? fullSourceGeometry

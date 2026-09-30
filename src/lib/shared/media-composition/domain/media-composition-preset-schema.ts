@@ -388,6 +388,14 @@ export const PresetVisualClipSchema = z
       })
       .strict()
       .optional(),
+    colorGrade: z
+      .object({
+        brightness: z.number().finite().min(0.8).max(1.25),
+        contrast: z.number().finite().min(0.6).max(1.1),
+        saturation: z.number().finite().min(1).max(1.1),
+      })
+      .strict()
+      .optional(),
   })
   .strict()
   .superRefine((clip, context) => {

@@ -21,6 +21,10 @@
     previewPlaybackRate,
     shouldSeekPreviewVideo,
   } from "$lib/shared/media-composition/services/video-preview-seek";
+  import {
+    videoColorFilter,
+    type PostVideoColorGrade,
+  } from "$lib/shared/media-composition/domain/post-video-color-grade";
 
   interface Props {
     binding: CompositionSourceBinding;
@@ -41,6 +45,7 @@
     labelsPainted?: boolean;
     displayedBeatNumber?: number;
     clipId: string;
+    colorGrade?: PostVideoColorGrade;
     transform: EvaluatedFrameLayer["transform"];
     sourceGeometry?: EvaluatedFrameLayer["sourceGeometry"];
     /** The act's speed; the footage runs at it while the preview plays. */
@@ -69,6 +74,7 @@
     labelsPainted = false,
     displayedBeatNumber,
     clipId,
+    colorGrade,
     transform,
     sourceGeometry,
     playbackRate = 1,
@@ -456,6 +462,7 @@
       preload="auto"
       class:fitted={fitted !== null || cropped !== null}
       style:object-fit={fitted || cropped ? "fill" : fit}
+      style:filter={videoColorFilter(colorGrade)}
       style:left={cropped?.left ?? fitted?.left}
       style:top={cropped?.top ?? fitted?.top}
       style:width={cropped?.width ?? fitted?.width}

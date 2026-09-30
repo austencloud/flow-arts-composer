@@ -806,6 +806,7 @@ export interface PostItemPatch {
   sourceGeometry?: PostSourceGeometry | null;
   transitionOut?: PostTransitionOut | null;
   autoAdjust?: PostAutoAdjust | null;
+  colorGrade?: PostVideoItem["colorGrade"] | null;
   sourceIn?: number;
   sourceOut?: number;
   overlay?: boolean;
@@ -883,6 +884,10 @@ export function updateItem(
     if (patch.autoAdjust !== undefined) {
       if (patch.autoAdjust) next.autoAdjust = patch.autoAdjust;
       else delete next.autoAdjust;
+    }
+    if (patch.colorGrade !== undefined) {
+      if (patch.colorGrade) next.colorGrade = patch.colorGrade;
+      else delete next.colorGrade;
     }
   } else if (isFiniteNumber(patch.duration)) {
     next.duration = Math.max(POST_MIN_ITEM_SECONDS, patch.duration);
