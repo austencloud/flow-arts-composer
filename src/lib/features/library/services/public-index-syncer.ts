@@ -29,6 +29,7 @@ import {
 import type { ProjectionSourceSequence } from "$lib/shared/library/services/public-sequence-projection";
 import {
   publishPublicSequence,
+  PublicDuplicateError,
   unpublishPublicSequence,
   updatePublicThumbnails,
 } from "$lib/shared/library/services/public-sequence-persister";
@@ -241,12 +242,17 @@ export class PublicIndexSyncer {
         this.browseLoader.addToCache(cachedEntry);
       }
     } catch (error) {
-      console.error(
-        "[PublicIndexSyncer] Failed to sync to public index:",
-        error
-      );
+      if (!(error instanceof PublicDuplicateError)) {
+        console.error(
+          "[PublicIndexSyncer] Failed to sync to public index:",
+          error
+        );
+      }
       // Don't show a generic error modal for moderation failures - those have their own UI
-      if (!(error instanceof ContentModerationError)) {
+      if (
+        !(error instanceof ContentModerationError) &&
+        !(error instanceof PublicDuplicateError)
+      ) {
         const errorHandler = getErrorHandler() as ErrorHandler;
         errorHandler.showUserError({
           message: "Couldn't publish your sequence",
