@@ -372,10 +372,22 @@ export function waitForPictographMotion(
       const element = layerElement.querySelector<HTMLElement>(
         "[data-pictograph-motion]"
       );
-      const ready = element?.querySelector<HTMLElement>(
-        '[data-pictograph-render-ready="true"]'
+      const requiredContainers = [
+        ...(element?.querySelectorAll<HTMLElement>(
+          "[data-pictograph-render-ready]"
+        ) ?? []),
+      ].filter(
+        (container) =>
+          !container.closest('[data-pictograph-capture-required="false"]')
       );
-      if (!element || !ready) return;
+      if (
+        !element ||
+        requiredContainers.length === 0 ||
+        requiredContainers.some(
+          (container) => container.dataset.pictographRenderReady !== "true"
+        )
+      )
+        return;
       const bounds = element.getBoundingClientRect();
       if (bounds.width <= 0 || bounds.height <= 0) return;
       cleanup();
@@ -389,7 +401,10 @@ export function waitForPictographMotion(
       childList: true,
       subtree: true,
       attributes: true,
-      attributeFilter: ["data-pictograph-render-ready"],
+      attributeFilter: [
+        "data-pictograph-render-ready",
+        "data-pictograph-capture-required",
+      ],
     });
     timer = window.setTimeout(() => {
       cleanup();

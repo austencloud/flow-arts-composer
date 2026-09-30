@@ -1,10 +1,64 @@
 import { describe, expect, it } from "vitest";
 import {
   arrowOpacity,
+  sequenceArrowLayers,
   sequenceFrameAt,
 } from "$lib/shared/media-composition/domain/sequence-frame";
 
 const DCK = [1, 1, 2, 1, 1, 1, 1, 1];
+
+describe("sequenceArrowLayers", () => {
+  it("never borrows the final arrow for the opening pose or first move", () => {
+    for (const arrival of [0, 0.001, 0.025, 0.5]) {
+      expect(
+        sequenceArrowLayers(sequenceFrameAt(arrival, DCK), DCK.length)
+      ).toMatchObject({ previousMove: null, previousOpacity: 0 });
+    }
+  });
+
+  it("keeps the completed arrow at the landing and fades it briefly as the next move starts", () => {
+    expect(
+      sequenceArrowLayers(sequenceFrameAt(1, DCK), DCK.length)
+    ).toMatchObject({ currentOpacity: 1, previousOpacity: 0 });
+    const justStarted = sequenceArrowLayers(
+      sequenceFrameAt(1.001, DCK),
+      DCK.length
+    );
+    expect(justStarted.previousMove).toBe(1);
+    expect(justStarted.previousOpacity).toBeCloseTo(0.98);
+    const middle = sequenceArrowLayers(sequenceFrameAt(1.025, DCK), DCK.length);
+    expect(middle.currentOpacity).toBeCloseTo(0.025);
+    expect(middle.previousOpacity).toBeCloseTo(0.5);
+    expect(
+      sequenceArrowLayers(sequenceFrameAt(1.05, DCK), DCK.length)
+        .previousOpacity
+    ).toBeCloseTo(0);
+    expect(
+      sequenceArrowLayers(sequenceFrameAt(1.5, DCK), DCK.length).currentOpacity
+    ).toBe(0.5);
+  });
+
+  it("uses the actual final move at a repeated pass boundary", () => {
+    const layers = sequenceArrowLayers(sequenceFrameAt(8.025, DCK), DCK.length);
+    expect(layers.previousMove).toBe(8);
+    expect(layers.previousOpacity).toBeCloseTo(0.5);
+    expect(layers.currentOpacity).toBeCloseTo(0.025);
+  });
+
+  it("reproduces the same arrows when seeking backward and holds the final arrow", () => {
+    const sample = () =>
+      sequenceArrowLayers(sequenceFrameAt(2.025, DCK), DCK.length);
+    const before = sample();
+    sequenceArrowLayers(sequenceFrameAt(8.025, DCK), DCK.length);
+    expect(sample()).toEqual(before);
+    expect(
+      sequenceArrowLayers(
+        sequenceFrameAt(2.025, DCK, { endArrival: 2.025 }),
+        DCK.length
+      )
+    ).toMatchObject({ currentOpacity: 1, previousOpacity: 0 });
+  });
+});
 
 describe("sequenceFrameAt", () => {
   it("shows the opening pose before anything moves", () => {
