@@ -55,6 +55,12 @@
 
   interface Props {
     exportOptions: ExportOptionsStateManager;
+    /** A host may supply draft-scoped settings instead of the viewer's persisted managers. */
+    imageCompositionOverride?: ReturnType<typeof getImageCompositionManager>;
+    visibilityManagerOverride?: ReturnType<typeof getVisibilityStateManager>;
+    /** Draft hosts can save section toggles as one undoable edit. */
+    onHeaderAllChange?: (value: boolean) => void;
+    onPictographAllChange?: (value: boolean) => void;
     layout?: PanelLayout;
     stepCount: number;
     /** Measured winner from the live card preview. */
@@ -77,6 +83,10 @@
 
   let {
     exportOptions,
+    imageCompositionOverride,
+    visibilityManagerOverride,
+    onHeaderAllChange,
+    onPictographAllChange,
     layout = "bottom",
     stepCount,
     resolvedAutoLayout = null,
@@ -121,7 +131,7 @@
 
   // Include chips read/write the global visibility settings so the Visibility tab,
   // the side-by-side preview, and the download view all stay in sync.
-  const imageComposition = getImageCompositionManager();
+  const imageComposition = imageCompositionOverride ?? getImageCompositionManager();
   let compositionVersion = $state(0);
   function onCompositionChanged(): void {
     compositionVersion++;
@@ -132,6 +142,10 @@
   const showWord = $derived.by(() => {
     void compositionVersion;
     return imageComposition.addWord;
+  });
+  const showStepNumbers = $derived.by(() => {
+    void compositionVersion;
+    return imageComposition.addStepNumbers;
   });
   const showDifficulty = $derived.by(() => {
     void compositionVersion;
@@ -257,7 +271,7 @@
 
   // Pictograph visibility - sourced from VisibilityManager so this panel
   // stays in sync with the Visibility tab, context menus, and voice control.
-  const vm = getVisibilityStateManager();
+  const vm = visibilityManagerOverride ?? getVisibilityStateManager();
   let vmVersion = $state(0);
   function onVmChanged(): void {
     vmVersion++;
@@ -293,6 +307,10 @@
     void vmVersion;
     return vm.getRawGlyphVisibility("propTndGlyph");
   });
+  const reversalIndicators = $derived.by(() => {
+    void vmVersion;
+    return vm.getRawGlyphVisibility("reversalIndicators");
+  });
 
   // Master toggles: clicking a section label flips all its children.
   // If any child is on, master is "on" and a click turns everything off;
@@ -310,22 +328,28 @@
 
   function toggleHeader(): void {
     const target = !headerAnyOn;
-    imageComposition.setAddWord(target);
-    imageComposition.setAddDifficultyLevel(target);
-    imageComposition.setShowLoopGlyph(target);
+    if (onHeaderAllChange) onHeaderAllChange(target);
+    else {
+      imageComposition.setAddWord(target);
+      imageComposition.setAddDifficultyLevel(target);
+      imageComposition.setShowLoopGlyph(target);
+    }
     reportSetting("header_all", headerAnyOn, target);
   }
 
   function togglePictograph(): void {
     const target = !pictographAnyOn;
-    vm.setGridVisibility(target);
-    vm.setGlyphVisibility("tkaGlyph", target);
-    vm.setGlyphVisibility("tndGlyph", target);
-    vm.setGlyphVisibility("elementalGlyph", target);
-    vm.setGlyphVisibility("propTndGlyph", target);
-    vm.setGlyphVisibility("placementsGlyph", target);
-    vm.setGlyphVisibility("handColorKey", target);
-    vm.setNonRadialVisibility(target);
+    if (onPictographAllChange) onPictographAllChange(target);
+    else {
+      vm.setGridVisibility(target);
+      vm.setGlyphVisibility("tkaGlyph", target);
+      vm.setGlyphVisibility("tndGlyph", target);
+      vm.setGlyphVisibility("elementalGlyph", target);
+      vm.setGlyphVisibility("propTndGlyph", target);
+      vm.setGlyphVisibility("placementsGlyph", target);
+      vm.setGlyphVisibility("handColorKey", target);
+      vm.setNonRadialVisibility(target);
+    }
     reportSetting("pictograph_all", pictographAnyOn, target);
   }
 
@@ -450,6 +474,8 @@
                       imageComposition.setAddWord.bind(imageComposition)
                     )}>{t("viewer_ui_word")}</button
                 >
+                <button type="button" class="rt-chip" aria-pressed={showStepNumbers}
+                  onclick={() => toggleCompositionSetting("step_numbers", showStepNumbers, imageComposition.setAddBeatNumbers.bind(imageComposition))}>Steps</button>
                 <button
                   type="button"
                   class="rt-chip"
@@ -561,6 +587,8 @@
                       vm.setNonRadialVisibility.bind(vm)
                     )}>{t("viewer_ui_non_radial")}</button
                 >
+                <button type="button" class="rt-chip" aria-pressed={reversalIndicators}
+                  onclick={() => togglePictographSetting("reversals", reversalIndicators, (value) => vm.setGlyphVisibility("reversalIndicators", value))}>Reversals</button>
               </div>
             </div>
             {#if hasInfoCell}
@@ -761,6 +789,9 @@
                 )}
               aria-pressed={showWord}>{t("viewer_ui_word")}</button
             >
+            <button type="button" class="chip" class:active={showStepNumbers}
+              aria-pressed={showStepNumbers}
+              onclick={() => toggleCompositionSetting("step_numbers", showStepNumbers, imageComposition.setAddBeatNumbers.bind(imageComposition))}>Steps</button>
             <button
               type="button"
               class="chip"
@@ -892,6 +923,9 @@
                 )}
               aria-pressed={nonRadial}>{t("viewer_ui_non_radial")}</button
             >
+            <button type="button" class="chip" class:active={reversalIndicators}
+              aria-pressed={reversalIndicators}
+              onclick={() => togglePictographSetting("reversals", reversalIndicators, (value) => vm.setGlyphVisibility("reversalIndicators", value))}>Reversals</button>
           </div>
         </div>
 

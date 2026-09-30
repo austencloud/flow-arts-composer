@@ -112,10 +112,10 @@ describe("resolveFrameLayerGeometry", () => {
     expect(geometry.drawRect.width).toBe(1512);
     expect(geometry.drawRect.height).toBeCloseTo(850.5);
     expect(geometry.sourceCrop).toEqual(crop);
-    expect(geometry.rotationDegrees).toBe(30);
-    expect(geometry.translateX).toBe(0);
-    expect(geometry.translateY).toBe(0);
-    expect(geometry.scale).toBe(1);
+    expect(geometry.rotationDegrees).toBe(45);
+    expect(geometry.translateX).toBeGreaterThan(0);
+    expect(geometry.translateY).toBeLessThan(0);
+    expect(geometry.scale).toBe(1.5);
   });
 
   it("keeps an imported crop proportional after the canvas ratio changes", () => {

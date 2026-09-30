@@ -1,10 +1,13 @@
 import { z } from "zod";
+import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
 import {
   PostTakeRefSchema,
   PostTakeSchema,
 } from "$lib/shared/media-composition/domain/post-plan";
 import { BREAKDOWN_GEOMETRY } from "$lib/shared/media-composition/domain/post-studio-presets";
 import { TakeTimingSchema } from "$lib/shared/media-composition/domain/take-timing";
+import type { EffectsConfig } from "$lib/shared/effects/domain/effects-config";
+import { TrackingMode } from "$lib/shared/animation-engine/domain/types/trail-types";
 
 /**
  * A post as Austen edits it on the timeline: tracks of items, InShot style.
@@ -384,6 +387,15 @@ export const PostVideoItemSchema = z
     keyframes: PostVideoItemKeyframesSchema.optional(),
     sourceGeometry: PostSourceGeometrySchema.optional(),
     autoAdjust: PostAutoAdjustSchema.optional(),
+    colorGrade: z
+      .object({
+        brightness: z.number().finite().min(0.5).max(1.5),
+        contrast: z.number().finite().min(0.5).max(1.5),
+        saturation: z.number().finite().min(0).max(2),
+        hue: z.number().finite().min(-180).max(180).optional(),
+      })
+      .strict()
+      .optional(),
     transitionOut: PostTransitionOutSchema.optional(),
     takeId: IdSchema,
     /** Take media seconds. */
@@ -463,7 +475,37 @@ export const PostFontSchema = z
 export type PostFont = z.infer<typeof PostFontSchema>;
 
 export const PostCardItemSchema = z
-  .object({ ...itemBase, kind: z.literal("card") })
+  .object({
+    ...itemBase,
+    kind: z.literal("card"),
+    /** Overrides for this card only; absent fields retain the viewer look. */
+    cardAppearance: z
+      .object({
+        addWord: z.boolean().optional(),
+        addStepNumbers: z.boolean().optional(),
+        includeStartPlacement: z.boolean().optional(),
+        addDifficultyLevel: z.boolean().optional(),
+        showLoopGlyph: z.boolean().optional(),
+        showNotes: z.boolean().optional(),
+        showGrid: z.boolean().optional(),
+        showTKA: z.boolean().optional(),
+        showTnD: z.boolean().optional(),
+        showPlacements: z.boolean().optional(),
+        showReversals: z.boolean().optional(),
+        showPropTnD: z.boolean().optional(),
+        showHandColorKey: z.boolean().optional(),
+        showNonRadialPoints: z.boolean().optional(),
+        showQRCode: z.boolean().optional(),
+        showMandala: z.boolean().optional(),
+        infoCellChoice: z.enum(["qr", "mandala", "none"]).optional(),
+        startPlacementLayout: z.enum(["row", "column"]).optional(),
+        columnCount: z.number().int().positive().nullable().optional(),
+        darkMode: z.boolean().optional(),
+        customNotesText: z.string().max(120).optional(),
+      })
+      .strict()
+      .optional(),
+  })
   .strict();
 
 export type PostCardItem = z.infer<typeof PostCardItemSchema>;
@@ -475,6 +517,57 @@ export const PostAnimationItemSchema = z
     kind: z.literal("animation"),
     /** Paint the beat number, letter and progress over it. */
     overlay: z.boolean(),
+    /** Display flags for this live animation, independent of viewer settings. */
+    animationAppearance: z
+      .object({
+        propType: z.nativeEnum(PropType).optional(),
+        gridMode: z.enum(["none", "8point", "auto"]).optional(),
+        props: z.boolean().optional(),
+        tkaGlyph: z.boolean().optional(),
+        elementalGlyph: z.boolean().optional(),
+        propElementalGlyph: z.boolean().optional(),
+        stepNumbers: z.boolean().optional(),
+        wordHeader: z.boolean().optional(),
+        mandala: z.boolean().optional(),
+        leftPathLines: z.boolean().optional(),
+        rightPathLines: z.boolean().optional(),
+        pathShape: z.enum(["arc", "linear", "concave"]).optional(),
+        motionAwarePaths: z.boolean().optional(),
+        effortPreset: z
+          .enum([
+            "linear",
+            "glide",
+            "dab",
+            "press",
+            "punch",
+            "elastic",
+            "bounce",
+            "anticipation",
+          ])
+          .optional(),
+        darkMode: z.boolean().optional(),
+        /** Full canonical effects snapshot, scoped to this timeline item. */
+        effects: z.custom<EffectsConfig>((value) =>
+          value !== null && typeof value === "object" &&
+          typeof (value as EffectsConfig).version === "number" &&
+          typeof (value as EffectsConfig).activeEffect === "string" &&
+          typeof (value as EffectsConfig).tipEffectMap === "object"
+        ).optional(),
+        trail: z
+          .object({
+            enabled: z.boolean(),
+          trackingMode: z.nativeEnum(TrackingMode),
+            thickness: z.number().finite().min(1).max(12),
+            brightness: z.number().finite().min(0.3).max(1),
+            tailLength: z.number().int().min(10).max(400),
+            leftColor: z.string().regex(/^#[0-9a-fA-F]{6}$/),
+            rightColor: z.string().regex(/^#[0-9a-fA-F]{6}$/),
+          })
+          .strict()
+          .optional(),
+      })
+      .strict()
+      .optional(),
   })
   .strict();
 
@@ -489,6 +582,8 @@ export const PostMovesItemSchema = z
     ...itemBase,
     kind: z.literal("moves"),
     mode: PostMovesModeSchema,
+    /** PiP uses the same scoped canvas appearance as an animation item. */
+    animationAppearance: PostAnimationItemSchema.shape.animationAppearance,
   })
   .strict();
 

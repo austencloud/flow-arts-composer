@@ -6,6 +6,7 @@
   import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
   import type { HandLabeling } from "$lib/shared/video-collaboration/domain/hand-labeling";
   import type { SequenceExportOptions } from "$lib/shared/render/domain/models/sequence-export-options";
+  import type { PostAnimationItem } from "$lib/shared/media-composition/domain/post-project";
   import PostStudioSequenceAnimationLayer from "./PostStudioSequenceAnimationLayer.svelte";
   import PostStudioChoreoLayer from "./PostStudioChoreoLayer.svelte";
   import PostStudioTunnelLayer from "./PostStudioTunnelLayer.svelte";
@@ -21,6 +22,10 @@
     previewPlaybackRate,
     shouldSeekPreviewVideo,
   } from "$lib/shared/media-composition/services/video-preview-seek";
+  import {
+    videoColorFilter,
+    type PostVideoColorGrade,
+  } from "$lib/shared/media-composition/domain/post-video-color-grade";
 
   interface Props {
     binding: CompositionSourceBinding;
@@ -32,6 +37,7 @@
     handLabeling?: HandLabeling | null;
     qrSequence?: SequenceData;
     cardRenderOptions?: Partial<SequenceExportOptions> | null;
+    animationAppearance?: PostAnimationItem["animationAppearance"] | null;
     sequencePosition?: number;
     sequencePassIndex?: number;
     animationTimeSeconds?: number;
@@ -40,6 +46,7 @@
     labelsPainted?: boolean;
     displayedBeatNumber?: number;
     clipId: string;
+    colorGrade?: PostVideoColorGrade;
     transform: EvaluatedFrameLayer["transform"];
     sourceGeometry?: EvaluatedFrameLayer["sourceGeometry"];
     /** The act's speed; the footage runs at it while the preview plays. */
@@ -60,6 +67,7 @@
     handLabeling = null,
     qrSequence,
     cardRenderOptions = null,
+    animationAppearance = null,
     sequencePosition,
     sequencePassIndex,
     animationTimeSeconds,
@@ -67,6 +75,7 @@
     labelsPainted = false,
     displayedBeatNumber,
     clipId,
+    colorGrade,
     transform,
     sourceGeometry,
     playbackRate = 1,
@@ -144,6 +153,18 @@
       rotationDegrees: transform.rotationDegrees,
     });
   });
+  const sourcePan = $derived.by(() =>
+    resolvePanOffset({
+      drawWidth: boxWidth,
+      drawHeight: boxHeight,
+      regionWidth: boxWidth,
+      regionHeight: boxHeight,
+      scale: transform.scale,
+      translateX: transform.translateX,
+      translateY: transform.translateY,
+      rotationDegrees: (sourceGeometry?.rotation ?? 0) + transform.rotationDegrees,
+    })
+  );
 
   const cropped = $derived.by(() => {
     if (
@@ -411,7 +432,7 @@
   style:width={sourceGeometry ? `${sourceGeometry.width * 100}%` : undefined}
   style:height={sourceGeometry ? `${sourceGeometry.height * 100}%` : undefined}
   style:transform={sourceGeometry
-    ? `rotate(${sourceGeometry.rotation}deg) scaleX(${transform.flipHorizontal ? -1 : 1})`
+    ? `translate(${sourcePan.x}px, ${sourcePan.y}px) rotate(${sourceGeometry.rotation + transform.rotationDegrees}deg) scale(${transform.scale}) scaleX(${transform.flipHorizontal ? -1 : 1})`
     : `translate(${pan.x}px, ${pan.y}px) rotate(${transform.rotationDegrees}deg) scale(${transform.scale}) scaleX(${transform.flipHorizontal ? -1 : 1})`}
   data-clip-id={clipId}
   data-source-role={binding.roleKey}
@@ -422,17 +443,19 @@
     <PostStudioSequenceAnimationLayer
       {sequence}
       {sequencePosition}
+      {displayedBeatNumber}
       {sequencePassIndex}
       {animationTimeSeconds}
       {breakdownMotion}
       {labelsPainted}
+      {animationAppearance}
       {playing}
       leftPropType={cardRenderOptions?.leftPropTypeOverride ??
         cardRenderOptions?.propTypeOverride}
       rightPropType={cardRenderOptions?.rightPropTypeOverride ??
         cardRenderOptions?.propTypeOverride}
     />
-  {:else if binding.renderMode === "choreo-card" && displayedBeatNumber !== undefined}
+  {:else if binding.renderMode === "choreo-card"}
     <PostStudioChoreoLayer
       {sequence}
       {displayedBeatNumber}
@@ -468,6 +491,7 @@
       playsinline
       preload="auto"
       class:fitted={fitted !== null || cropped !== null}
+      style:filter={videoColorFilter(colorGrade)}
       style:object-fit={cropped
         ? "fill"
         : sourceGeometry

@@ -28,6 +28,7 @@ import {
   turnAboutCentre,
 } from "$lib/shared/media-composition/services/region-edge-painter";
 import { traceRoundedRect } from "$lib/shared/render/utils/trace-rounded-rect";
+import { videoColorFilter } from "$lib/shared/media-composition/domain/post-video-color-grade";
 
 export interface FrameLayerGeometry {
   region: PixelRect;
@@ -92,6 +93,16 @@ export function resolveFrameLayerGeometry(input: {
       regionWidth: region.width,
       regionHeight: region.height,
     });
+    const pan = resolvePanOffset({
+      drawWidth: fitted.width,
+      drawHeight: fitted.height,
+      regionWidth: region.width,
+      regionHeight: region.height,
+      scale: input.transform.scale,
+      translateX: input.transform.translateX,
+      translateY: input.transform.translateY,
+      rotationDegrees: geometry.rotation + input.transform.rotationDegrees,
+    });
     return {
       region,
       drawRect: {
@@ -100,10 +111,10 @@ export function resolveFrameLayerGeometry(input: {
         width: fitted.width,
         height: fitted.height,
       },
-      rotationDegrees: geometry.rotation,
-      scale: 1,
-      translateX: 0,
-      translateY: 0,
+      rotationDegrees: geometry.rotation + input.transform.rotationDegrees,
+      scale: input.transform.scale,
+      translateX: pan.x,
+      translateY: pan.y,
       flipHorizontal: input.transform.flipHorizontal,
       sourceCrop: geometry.crop,
     };
@@ -553,6 +564,9 @@ async function drawRegionLayer(
       `The ${staticRegion.label ?? layer.sourceRole} layer was not ready to render.`
     );
   }
+  const colorGrade = input.preset.clips.find(
+    (clip) => clip.kind === "visual" && clip.id === layer.clipId
+  );
   if (layer.sourceGeometry) {
     const media = mediaIn(layerElement);
     if (!media) return;
@@ -572,6 +586,9 @@ async function drawRegionLayer(
     context.save();
     context.globalAlpha = layer.opacity;
     applyLayerTransform(context, geometry);
+    context.filter = videoColorFilter(
+      colorGrade?.kind === "visual" ? colorGrade.colorGrade : null
+    );
     drawSource(context, media, geometry);
     context.restore();
     return;
@@ -674,6 +691,9 @@ async function drawRegionLayer(
       transform: layer.transform,
     });
     applyLayerTransform(context, geometry);
+    context.filter = videoColorFilter(
+      colorGrade?.kind === "visual" ? colorGrade.colorGrade : null
+    );
     drawSource(context, media, geometry);
   }
 

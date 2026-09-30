@@ -40,6 +40,7 @@
 <script lang="ts">
   import { onDestroy } from "svelte";
   import { getAnimationVisibilityManager } from "../../state/animation-visibility-state.svelte";
+  import type { AnimationVisibilityStateManager } from "../../state/animation-visibility-state.svelte";
   import { getAnimationVisibilityContext } from "../../state/animation-visibility-context";
 
   let {
@@ -47,15 +48,20 @@
     showSubtitles = false,
     fill = false,
     onSettingChange,
+    visibilityManagerOverride,
   }: {
     columns?: 2 | 4;
     showSubtitles?: boolean;
     /** Use responsive curve cards in a settings page. Docks keep compact tiles. */
     fill?: boolean;
     onSettingChange?: (previousValue: string, value: string) => void;
+    visibilityManagerOverride?: AnimationVisibilityStateManager;
   } = $props();
 
-  const vm = getAnimationVisibilityContext() ?? getAnimationVisibilityManager();
+  const vm =
+    visibilityManagerOverride ??
+    getAnimationVisibilityContext() ??
+    getAnimationVisibilityManager();
 
   let effortPreset = $state(vm.getEffortPreset());
 

@@ -7,6 +7,7 @@
   import { isCardLayoutAutomatic } from "$lib/shared/share/services/card-render-options";
   import { getImageCompositionManager } from "$lib/shared/share/state/image-composition-state.svelte";
   import { getViewerStudioSurfaces } from "$lib/shared/sequence-viewer/context/viewer-studio-surfaces-context";
+  import { postCardHighlightedStepIndex } from "./post-card-highlight";
 
   let {
     sequence,
@@ -16,7 +17,7 @@
     qrSequence = sequence,
   }: {
     sequence: SequenceData;
-    displayedBeatNumber: number;
+    displayedBeatNumber?: number;
     cardRenderOptions?: Partial<SequenceExportOptions> | null;
     handLabeling?: HandLabeling | null;
     /** The source behind a labeled `sequence`; what a scan of the card opens. */
@@ -24,7 +25,7 @@
   } = $props();
 
   const highlightedStepIndex = $derived(
-    displayedBeatNumber < 1 ? -1 : displayedBeatNumber - 1
+    postCardHighlightedStepIndex(displayedBeatNumber)
   );
 
   // The composition manager publishes through observers rather than runes, so
@@ -43,14 +44,14 @@
    */
   const automatic = $derived.by(() => {
     void compositionVersion;
-    return isCardLayoutAutomatic(sequence.steps?.length ?? 0);
+    return isCardLayoutAutomatic(sequence.steps?.length ?? 0) &&
+      cardRenderOptions?.columnCount == null &&
+      !cardRenderOptions?.startPlacementLayout;
   });
 
-  const columnCount = $derived(
-    automatic ? null : (cardRenderOptions?.columnCount ?? null)
-  );
+  const columnCount = $derived(cardRenderOptions?.columnCount ?? null);
   const startPlacementLayoutOverride = $derived(
-    automatic ? null : (cardRenderOptions?.startPlacementLayout ?? null)
+    cardRenderOptions?.startPlacementLayout ?? null
   );
   const shared = getViewerStudioSurfaces();
   const owner = {};
@@ -75,13 +76,15 @@
       {handLabeling}
       {qrSequence}
       {highlightedStepIndex}
-      showHighlight
+      showHighlight={highlightedStepIndex !== null}
+      visibilityOverrides={cardRenderOptions?.visibilityOverrides}
       darkMode={cardRenderOptions?.visibilityOverrides?.darkMode ?? true}
       showWord={cardRenderOptions?.addWord ?? true}
       showStepNumbers={cardRenderOptions?.addStepNumbers ?? true}
       showDifficultyLevel={cardRenderOptions?.addDifficultyLevel ?? true}
       includeStartPlacement={cardRenderOptions?.includeStartPlacement ?? true}
       showNotes={cardRenderOptions?.showNotes ?? false}
+      customNotesText={cardRenderOptions?.customNotesText}
       showLoopGlyph={cardRenderOptions?.showLoopGlyph ?? true}
       showQRCode={cardRenderOptions?.visibilityOverrides?.showQRCode ?? false}
       showMandala={cardRenderOptions?.visibilityOverrides?.showMandala ?? false}

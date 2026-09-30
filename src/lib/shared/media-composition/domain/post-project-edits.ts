@@ -214,6 +214,8 @@ export interface NewOverlaySpec {
   text?: string;
   size?: PostTextSize;
   overlay?: boolean;
+  animationAppearance?: PostAnimationItem["animationAppearance"] | null;
+  cardAppearance?: PostCardItem["cardAppearance"] | null;
   takeId?: string;
   sourceIn?: number;
   sourceOut?: number;
@@ -804,6 +806,7 @@ export interface PostItemPatch {
   sourceGeometry?: PostSourceGeometry | null;
   transitionOut?: PostTransitionOut | null;
   autoAdjust?: PostAutoAdjust | null;
+  colorGrade?: PostVideoItem["colorGrade"] | null;
   sourceIn?: number;
   sourceOut?: number;
   overlay?: boolean;
@@ -814,6 +817,8 @@ export interface PostItemPatch {
   animation?: PostTextAnimation | null;
   /** A clip's effect on its staff ends; null removes it. */
   staffEffect?: PostStaffEffectId | null;
+  animationAppearance?: PostAnimationItem["animationAppearance"] | null;
+  cardAppearance?: PostCardItem["cardAppearance"] | null;
 }
 
 export function updateItem(
@@ -882,6 +887,10 @@ export function updateItem(
       if (patch.autoAdjust) next.autoAdjust = patch.autoAdjust;
       else delete next.autoAdjust;
     }
+    if (patch.colorGrade !== undefined) {
+      if (patch.colorGrade) next.colorGrade = patch.colorGrade;
+      else delete next.colorGrade;
+    }
   } else if (isFiniteNumber(patch.duration)) {
     next.duration = Math.max(POST_MIN_ITEM_SECONDS, patch.duration);
     if (trackIndex !== MAIN_TRACK_INDEX) next.fill = false;
@@ -898,6 +907,15 @@ export function updateItem(
   }
   if (item.kind === "animation" && patch.overlay !== undefined) {
     next.overlay = patch.overlay;
+  }
+  if ((item.kind === "animation" || item.kind === "moves") && patch.animationAppearance !== undefined) {
+    if (patch.animationAppearance)
+      next.animationAppearance = patch.animationAppearance;
+    else delete next.animationAppearance;
+  }
+  if (item.kind === "card" && patch.cardAppearance !== undefined) {
+    if (patch.cardAppearance) next.cardAppearance = patch.cardAppearance;
+    else delete next.cardAppearance;
   }
   if (item.kind === "moves" && patch.mode) next.mode = patch.mode;
   if (item.kind === "text") {

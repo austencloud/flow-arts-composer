@@ -29,6 +29,7 @@ export type PostPanelToolId =
   | "fade"
   | "effects"
   | "labels"
+  | "appearance"
   | "shows"
   | "text"
   | "rename";
@@ -97,15 +98,16 @@ export function toolRow(selection: PostToolSelection): PostToolId[] {
         "delete",
       ];
     case "animation":
-      return ["back", "split", "labels", "timing", ...ITEM_TAIL];
+      return ["back", "split", "appearance", "timing", ...ITEM_TAIL];
     case "moves":
-      return ["back", "split", "shows", "timing", ...ITEM_TAIL];
+      return ["back", "split", "appearance", "shows", "timing", ...ITEM_TAIL];
     case "text":
       return ["back", "split", "text", "timing", ...ITEM_TAIL];
     case "carousel":
     case "image":
-    case "card":
       return ["back", "split", "timing", ...ITEM_TAIL];
+    case "card":
+      return ["back", "split", "appearance", "timing", ...ITEM_TAIL];
   }
 }
 

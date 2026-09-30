@@ -75,6 +75,7 @@ export const TOOL_ICON: Record<PostToolId, string> = {
   fade: "fa-circle-half-stroke",
   effects: "fa-wand-sparkles",
   labels: "fa-hashtag",
+  appearance: "fa-sliders",
   shows: "fa-shapes",
   text: "fa-font",
   rename: "fa-pen",
@@ -96,7 +97,7 @@ export function toolLabel(id: PostToolId): string {
     case "canvas":
       return t("post_editor_tool_canvas");
     case "look":
-      return t("post_editor_tool_look");
+      return "Animation defaults";
     case "export":
       return t("post_editor_export");
     case "trim":
@@ -121,6 +122,8 @@ export function toolLabel(id: PostToolId): string {
       return t("post_editor_tool_effects");
     case "labels":
       return t("post_editor_tool_labels");
+    case "appearance":
+      return "Appearance";
     case "shows":
       return t("post_editor_moves_show");
     case "text":

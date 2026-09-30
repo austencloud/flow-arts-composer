@@ -134,7 +134,7 @@
             ? null
             : playback.highlightedStepIndex}
         showHighlight={studioCard
-          ? true
+          ? studioCard.highlightedStepIndex !== null
           : side === "right" && layout.focusedPane === "image"
             ? false
             : playback.isPlaying || playback.highlightedStepIndex !== null}
@@ -152,9 +152,9 @@
         showNotes={studioCard
           ? (studioCard.options?.showNotes ?? false)
           : sequence.sequenceKind === "hand-path" || imageComposition.showNotes}
-        customNotesText={sequence.sequenceKind === "hand-path"
+        customNotesText={studioCard?.options?.customNotesText ?? (sequence.sequenceKind === "hand-path"
           ? sequence.notes
-          : imageComposition.customNotesText}
+          : imageComposition.customNotesText)}
         showQRCode={studioCard?.options?.visibilityOverrides?.showQRCode ??
           imageComposition.showQRCode}
         showMandala={studioCard?.options?.visibilityOverrides?.showMandala ??

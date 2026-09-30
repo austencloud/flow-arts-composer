@@ -10,11 +10,14 @@ import {
 } from "$lib/shared/media-composition/domain/post-project-compiler";
 import { MediaCompositionPresetSchema } from "$lib/shared/media-composition/domain/media-composition-preset-schema";
 import { evaluatePresetFrame } from "$lib/shared/media-composition/services/frame-evaluator";
+import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
 import {
   clampBox,
+  PostProjectSchema,
   wrapDegrees,
   type PostEasing,
 } from "$lib/shared/media-composition/domain/post-project";
+import { updateItem } from "$lib/shared/media-composition/domain/post-project-edits";
 import {
   EASING_PRESETS,
   boxAt,
@@ -105,6 +108,30 @@ describe("compilePostProject", () => {
   });
 
   describe("video items", () => {
+    it("keeps color correction through edits, saved schema, and the export preset", () => {
+      const original = project([video("v1", { sourceOut: 4, autoAdjust: { enabled: true, strength: 0.7 } })]);
+      const colorGrade = { brightness: 0.75, contrast: 1.25, saturation: 0.5, hue: -90 };
+      const changed = updateItem(original, "v1", { colorGrade }, ctx);
+      const parsed = PostProjectSchema.parse(changed);
+      expect(parsed.tracks[0]?.items[0]).toMatchObject({ autoAdjust: { strength: 0.7 }, colorGrade });
+      expect(compilePostProject(parsed, ctx)?.preset.clips[0]).toMatchObject({ colorGrade });
+      expect(MediaCompositionPresetSchema.safeParse(compilePostProject(parsed, ctx)?.preset).success).toBe(true);
+      const restored = updateItem(parsed, "v1", { colorGrade: null }, ctx);
+      expect(restored.tracks[0]?.items[0]).not.toHaveProperty("colorGrade");
+      expect(restored.tracks[0]?.items[0]).toHaveProperty("autoAdjust");
+    });
+    it("loads color grades saved before hue controls were available", () => {
+      const legacy = project([video("v1", {
+        sourceOut: 4,
+        colorGrade: { brightness: 1.2, contrast: 0.65, saturation: 1.06 },
+      })]);
+      const parsed = PostProjectSchema.parse(legacy);
+      const preset = compilePostProject(parsed, ctx)?.preset;
+      expect(preset?.clips[0]).toMatchObject({
+        colorGrade: { brightness: 1.2, contrast: 0.65, saturation: 1.06 },
+      });
+      expect(MediaCompositionPresetSchema.safeParse(preset).success).toBe(true);
+    });
     it("skips a video whose take id is unknown, without disturbing the rest of the project", () => {
       const result = compilePostProject(
         project([
@@ -188,6 +215,75 @@ describe("compilePostProject", () => {
   });
 
   describe("sequence layers split at main-track video edges", () => {
+    it("starts the incoming take at its own opening pose throughout a crossfade", () => {
+      const outgoing = video("outgoing", {
+        takeId: "a",
+        sourceOut: 25,
+      });
+      const incoming = video("incoming", {
+        takeId: "b",
+        start: 24,
+        sourceIn: 2,
+        sourceOut: 10,
+      });
+      const animation = overlay("animation", "animation", {
+        start: 23,
+        duration: 5,
+      });
+      const result = compilePostProject(
+        project([outgoing, incoming], [[animation]]),
+        ctx
+      )!;
+      const pieces = result.preset.clips.filter((clip) =>
+        clip.id.startsWith("animation~")
+      );
+      expect(pieces.map((piece) => piece.timeMapRole)).toEqual([
+        takeRole("a"),
+        takeRole("b"),
+        takeRole("b"),
+      ]);
+      expect(pieces[1]).toMatchObject({
+        start: { unit: "seconds", value: 24 },
+        sourceIn: { unit: "seconds", value: 2 },
+      });
+
+      const steps = Array.from({ length: 16 }, () => ({
+        duration: 1,
+      })) as StepData[];
+      const at = (seconds: number) =>
+        evaluatePresetFrame(result.preset, result.durationSeconds, seconds, {
+          steps,
+          startPlacementDuration: 1,
+          clocks: {
+            [takeRole("a")]: {
+              sampleAt: () => ({ arrival: 16, endArrival: 16 }),
+            },
+            [takeRole("b")]: {
+              sampleAt: (media) => ({
+                arrival: Math.max(0, (media - 3) / 2),
+                endArrival: 16,
+              }),
+            },
+          },
+        }).find((layer) => layer.sourceRole === POST_STUDIO_ROLE.animation)!;
+
+      expect(at(23.9).sequenceFrame).toMatchObject({
+        move: 16,
+        phase: "holding",
+      });
+      expect(at(24.5).sequenceFrame).toMatchObject({
+        arrival: 0,
+        move: 0,
+        phase: "opening",
+      });
+      expect(at(24.5).displayedBeatNumber).toBe(0);
+      expect(at(26).sequenceFrame).toMatchObject({
+        move: 1,
+        moveProgress: 0.5,
+      });
+      expect(at(27).sequenceFrame).toMatchObject({ move: 1, moveProgress: 1 });
+    });
+
     it("maps each piece to the take, source span and rate of the main clip covering it", () => {
       const v1 = video("v1", { takeId: "a", sourceIn: 0, sourceOut: 4, speed: 1 });
       const v2 = video("v2", {
@@ -373,6 +469,29 @@ describe("compilePostProject", () => {
   });
 
   describe("animation overlay clips", () => {
+    it("lets a customized animation draw its own glyphs without a second painted label", () => {
+      const customized = project(
+        [card("c1", 5)],
+        [
+          [
+            overlay("ov", "animation", {
+              start: 0,
+              duration: 5,
+              overlay: true,
+              animationAppearance: { tkaGlyph: false },
+            }),
+          ],
+        ]
+      );
+      const result = compilePostProject(customized, {
+        ...ctx,
+        animationOverlay: true,
+      })!;
+      expect(
+        result.preset.clips.some((clip) => clip.id.endsWith(":overlay"))
+      ).toBe(false);
+      expect(result.preset.clips.some((clip) => clip.id === "ov~0")).toBe(true);
+    });
     const proj = () =>
       project(
         [video("v1", { sourceOut: 5 })],

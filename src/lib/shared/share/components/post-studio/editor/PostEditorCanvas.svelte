@@ -38,6 +38,7 @@
     POST_MIN_ZOOM,
     POST_TIME_EPSILON,
     itemEnd,
+    findItem,
     type PostBox,
     type PostItem,
     type PostSourceGeometry,
@@ -56,6 +57,10 @@
   } from "$lib/shared/media-composition/domain/post-canvas";
   import PostStudioBackdrop from "../PostStudioBackdrop.svelte";
   import PostStudioMediaLayer from "../PostStudioMediaLayer.svelte";
+  import {
+    cardOptionsForItem,
+    animationAppearanceForItem,
+  } from "../post-item-render-options";
   import PostStudioPaintedLayer from "../PostStudioPaintedLayer.svelte";
   import {
     BOX_CORNERS,
@@ -139,6 +144,8 @@
      * still mounted.
      */
     crop?: CropSession | null;
+    /** Imported footage opens at its precise source edges; framing controls show the composed clip. */
+    cropSourceView?: boolean;
     /** A region's footage has reported its own size. */
     onSourceSize?: (regionId: string, size: CropSize) => void;
     root?: HTMLElement | null;
@@ -155,6 +162,7 @@
     showStripGuide = false,
     interactive = true,
     crop = null,
+    cropSourceView = true,
     onSourceSize,
     root = $bindable(null),
   }: Props = $props();
@@ -1151,7 +1159,8 @@
   // ---- The crop screen -------------------------------------------------------
 
   const sourceCropping = $derived(
-    cropItem !== null &&
+    cropSourceView &&
+      cropItem !== null &&
       sourceGeometryAt(cropItem, editor.previewSeconds) !== null
   );
 
@@ -2207,6 +2216,10 @@
         {#each entries.get(region.id) ?? [] as entry (entry.role)}
           {@const binding = bindingFor(entry.role)}
           {@const layer = entry.layer}
+          {@const sourceItem = findItem(
+            editor.project,
+            itemIdFromClipId(entry.clip.id)
+          )?.item}
           {@const isVideo = binding?.renderMode === "external-media"}
           {#if binding?.status === "ready"}
             {#if binding.renderMode === "painted" && binding.painter}
@@ -2231,7 +2244,14 @@
                   sourceTimeSeconds={layer.sourceTimeSeconds}
                   playing={editor.isPlaying && entry.live}
                   {sequence}
-                  {cardRenderOptions}
+                  cardRenderOptions={cardOptionsForItem(
+                    cardRenderOptions,
+                    sourceItem?.kind === "card" ? sourceItem : null
+                  )}
+                  animationAppearance={animationAppearanceForItem(
+                    sourceItem?.kind === "animation" || sourceItem?.kind === "moves"
+                      ? sourceItem : null
+                  )}
                   {handLabeling}
                   {qrSequence}
                   sequencePosition={layer.sequencePosition ??
@@ -2241,10 +2261,19 @@
                     (isVideo ? undefined : 0)}
                   breakdownMotion={stripModeFromRole(entry.role) !== null}
                   labelsPainted={paintedLabelRegions.has(region.id)}
-                  displayedBeatNumber={layer.displayedBeatNumber ??
-                    (binding.renderMode === "choreo-card" ? 0 : undefined)}
+                  displayedBeatNumber={layer.displayedBeatNumber}
                   clipId={entry.clip.id}
-                  transform={layer.transform}
+                  colorGrade={entry.clip.colorGrade}
+                  transform={sourceCropping && cropRegion
+                    ? {
+                        ...layer.transform,
+                        scale: 1,
+                        rotationDegrees: 0,
+                        translateX: 0,
+                        translateY: 0,
+                        flipHorizontal: false,
+                      }
+                    : layer.transform}
                   sourceGeometry={sourceCropping && cropRegion
                     ? fullSourceGeometry
                     : layer.sourceGeometry}

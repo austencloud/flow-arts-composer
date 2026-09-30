@@ -25,6 +25,7 @@
     type PostMovesMode,
     type PostTextSize,
   } from "$lib/shared/media-composition/domain/post-project";
+  import type { SequenceExportOptions } from "$lib/shared/render/domain/models/sequence-export-options";
   import {
     setItemFill,
     setTrackFlag,
@@ -84,6 +85,14 @@
   import PostStaffEffectsTool from "./PostStaffEffectsTool.svelte";
   import PostNativeTextTool from "./PostNativeTextTool.svelte";
   import PostSourceGeometryTool from "./PostSourceGeometryTool.svelte";
+  import { sourceCropAtRatio } from "./post-source-crop";
+  import PostAnimationAppearanceTool from "./PostAnimationAppearanceTool.svelte";
+  import PostCardAppearanceTool from "./PostCardAppearanceTool.svelte";
+  import PostVideoColorTool from "./PostVideoColorTool.svelte";
+  import {
+    autoGradeVideo,
+    type PostVideoColorGrade,
+  } from "$lib/shared/media-composition/domain/post-video-color-grade";
 
   /**
    * The body of one tool for the selected item. An amount is a slider, a
@@ -100,11 +109,30 @@
      * or a zoom keeps the window filled the way a drag on the stage does.
      */
     crop?: CropSession | null;
+    cropSourceView?: boolean;
+    onCropFramingControl?: () => void;
+    onCropSourceControl?: () => void;
     /** Where each take's LED staffs are, for the Effects tool. */
     staffTips?: StaffTipAnalysis | null;
+    cardRenderOptions?: Partial<SequenceExportOptions> | null;
+    stepCount?: number;
   }
 
-  let { editor, item, tool, crop = null, staffTips = null }: Props = $props();
+  let {
+    editor,
+    item,
+    tool,
+    crop = null,
+    cropSourceView = true,
+    onCropFramingControl,
+    onCropSourceControl,
+    staffTips = null,
+    cardRenderOptions = null,
+    stepCount = 0,
+  }: Props = $props();
+  let grading = $state(false);
+  let gradeError = $state("");
+  let chosenSourceShape = $state<CropShapeKind | null>(null);
 
   const FRAME_SECONDS = 1 / POST_FRAME_RATE;
 
@@ -148,6 +176,52 @@
   function patchItem(patch: PostItemPatch): void {
     if (locked) return;
     editor.edit((project, ctx) => updateItem(project, item.id, patch, ctx));
+  }
+
+  async function autoAdjustColor(): Promise<void> {
+    if (item.kind !== "video" || grading || locked) return;
+    const target = item;
+    const url = editor.mediaUrl(target.takeId);
+    if (!url) {
+      gradeError = "The video is not ready to analyze.";
+      return;
+    }
+    grading = true;
+    gradeError = "";
+    try {
+      const colorGrade = await autoGradeVideo(
+        url,
+        target.sourceIn,
+        target.sourceOut
+      );
+      if (!findItem(editor.project, target.id) || editor.isLocked(target.id))
+        return;
+      editor.edit((project, ctx) =>
+        updateItem(project, target.id, { colorGrade }, ctx)
+      );
+    } catch {
+      gradeError =
+        "Could not analyze this video. The original remains unchanged.";
+    } finally {
+      grading = false;
+    }
+  }
+
+  function setVideoColor(
+    field: keyof PostVideoColorGrade,
+    value: number
+  ): void {
+    if (item.kind !== "video" || locked || grading) return;
+    const colorGrade = {
+      brightness: item.colorGrade?.brightness ?? 1,
+      contrast: item.colorGrade?.contrast ?? 1,
+      saturation: item.colorGrade?.saturation ?? 1,
+      hue: item.colorGrade?.hue ?? 0,
+      [field]: value,
+    };
+    editor.editSetting(`${item.id}:color:${field}`, (project, ctx) =>
+      updateItem(project, item.id, { colorGrade }, ctx)
+    );
   }
 
   function rename(value: string): void {
@@ -224,16 +298,19 @@
   // ---- Crop: through the crop screen's session when there is one ----------
 
   function setCropZoom(zoom: number): void {
-    if (crop) crop.setZoom(zoom);
+    onCropFramingControl?.();
+    if (crop) crop.setZoom(item.kind === "video" && (item.sourceGeometry || item.keyframes?.sourceGeometry?.length) ? Math.max(1, zoom) : zoom);
     else change("zoom", { zoom });
   }
 
   function straighten(value: number, quarter: number): void {
+    onCropFramingControl?.();
     if (crop) crop.setStraighten(value);
     else change("rotation", { rotation: joinRotation(quarter, value) });
   }
 
   function rotateLeft(quarter: number, value: number): void {
+    onCropFramingControl?.();
     if (crop) crop.rotateQuarter();
     else
       change("rotation", {
@@ -273,8 +350,66 @@
   });
 
   function toggleMirror(): void {
+    onCropFramingControl?.();
     if (crop) crop.toggleMirror();
     else if (item.kind === "video") patchItem({ flip: !item.flip });
+  }
+
+  function setCropShape(kind: CropShapeKind): void {
+    const geometry =
+      item.kind === "video" &&
+      (item.sourceGeometry || item.keyframes?.sourceGeometry?.length)
+        ? channelValueAt(item, "sourceGeometry", seconds)
+        : null;
+    if (!geometry) {
+      onCropFramingControl?.();
+      crop?.setShape(kind);
+      return;
+    }
+    const source = crop?.source;
+    if (!source || locked || frozen) return;
+    if (kind === "free") {
+      onCropSourceControl?.();
+      chosenSourceShape = kind;
+      return;
+    }
+    const ratio = kind === "original"
+      ? source.width / source.height
+      : kind === "fill"
+        ? output.width / output.height
+        : ratioValue(kind);
+    const next = sourceCropAtRatio(geometry, source, output, ratio, kind === "original");
+    onCropSourceControl?.();
+    editor.pause();
+    editor.edit((project, ctx) =>
+      updateItemAt(project, item.id, { sourceGeometry: next }, seconds, ctx)
+    );
+    chosenSourceShape = kind;
+  }
+
+  function resetCrop(): void {
+    const geometry =
+      item.kind === "video" &&
+      (item.sourceGeometry || item.keyframes?.sourceGeometry?.length)
+        ? channelValueAt(item, "sourceGeometry", seconds)
+        : null;
+    const source = crop?.source;
+    if (geometry && source && !locked && !frozen) {
+      const next = sourceCropAtRatio(
+        geometry,
+        source,
+        output,
+        source.width / source.height,
+        true
+      );
+      onCropSourceControl?.();
+      editor.pause();
+      editor.edit((project, ctx) =>
+        updateItemAt(project, item.id, { sourceGeometry: next }, seconds, ctx)
+      );
+      chosenSourceShape = "original";
+    } else onCropFramingControl?.();
+    if (crop?.canReset) crop.reset();
   }
 
   function unlock(): void {
@@ -685,14 +820,14 @@
         }
       )}
     {/if}
-  {:else if (tool === "crop" || tool === "position") && (item.kind === "video" || item.kind === "image") && (item.sourceGeometry || item.keyframes?.sourceGeometry?.length)}
+  {:else if tool === "position" && (item.kind === "video" || item.kind === "image") && (item.sourceGeometry || item.keyframes?.sourceGeometry?.length)}
     {@const geometry = channelValueAt(item, "sourceGeometry", seconds)}
     <PostSourceGeometryTool
       {geometry}
       {output}
       {locked}
       {frozen}
-      mode={tool === "crop" ? "crop" : "position"}
+      mode="position"
       onChange={(next, field) =>
         change(`source-geometry:${field}`, { sourceGeometry: next })}
     />
@@ -701,8 +836,10 @@
     {@const parts = crop?.parts ?? splitRotation(framing.rotation)}
     <PostRatioPicker
       options={cropShapes}
-      value={crop?.shapeKind ?? null}
-      onchange={(kind) => crop?.setShape(kind)}
+      value={item.sourceGeometry || item.keyframes?.sourceGeometry?.length
+        ? chosenSourceShape
+        : (crop?.shapeKind ?? null)}
+      onchange={setCropShape}
       ariaLabel={t("post_crop_shape")}
     />
     <ValueSlider
@@ -719,7 +856,9 @@
     <ValueSlider
       label={t("post_editor_zoom")}
       value={framing.zoom * 100}
-      min={(crop?.zoomFloor ?? POST_MIN_ZOOM) * 100}
+      min={(item.sourceGeometry || item.keyframes?.sourceGeometry?.length
+        ? Math.max(1, crop?.zoomFloor ?? POST_MIN_ZOOM)
+        : (crop?.zoomFloor ?? POST_MIN_ZOOM)) * 100}
       max={POST_MAX_ZOOM * 100}
       step={1}
       origin={100}
@@ -746,13 +885,44 @@
         onclick={toggleMirror}
       />
       {#if crop}
-        <PanelButton onclick={crop.reset} disabled={!crop.canReset}>
+        <PanelButton onclick={resetCrop} disabled={locked || frozen || (!crop.canReset && !(item.sourceGeometry || item.keyframes?.sourceGeometry?.length))}>
           <i class="fa-solid fa-arrows-rotate" aria-hidden="true"></i>
           {t("post_editor_reset_crop")}
         </PanelButton>
       {/if}
     </div>
     <p class="hint">{t("post_crop_hint")}</p>
+    {#if item.sourceGeometry || item.keyframes?.sourceGeometry?.length}
+      {@const geometry = channelValueAt(item, "sourceGeometry", seconds)}
+      {#if !cropSourceView}
+        <PanelButton onclick={() => onCropSourceControl?.()}>
+          Edit source crop
+        </PanelButton>
+      {/if}
+      <PostSourceGeometryTool
+        {geometry}
+        {output}
+        {locked}
+        {frozen}
+        mode="crop"
+        onChange={(next, field) => {
+          onCropSourceControl?.();
+          chosenSourceShape = null;
+          change(`source-geometry:${field}`, { sourceGeometry: next });
+        }}
+      />
+    {/if}
+  {:else if tool === "crop" && item.kind === "image" && (item.sourceGeometry || item.keyframes?.sourceGeometry?.length)}
+    {@const geometry = channelValueAt(item, "sourceGeometry", seconds)}
+    <PostSourceGeometryTool
+      {geometry}
+      {output}
+      {locked}
+      {frozen}
+      mode="crop"
+      onChange={(next, field) =>
+        change(`source-geometry:${field}`, { sourceGeometry: next })}
+    />
   {:else if tool === "speed" && item.kind === "video"}
     <ValueSlider
       label={t("post_editor_speed")}
@@ -944,18 +1114,28 @@
       onchange={(value) => change("fadeOut", { fadeOut: value })}
     />
   {:else if tool === "effects" && item.kind === "video"}
+    <PostVideoColorTool
+      grade={item.colorGrade}
+      {locked}
+      {grading}
+      error={gradeError}
+      onAuto={() => void autoAdjustColor()}
+      onReset={() => patchItem({ colorGrade: null })}
+      onChange={setVideoColor}
+    />
     {#if item.autoAdjust}
-      <TypeableValue
-        label="Auto adjust strength"
-        text={`${Math.round(item.autoAdjust.strength * 100)}%`}
-        disabled={true}
-        oncommit={() => undefined}
-      />
-      <p class="native-limit">
-        Auto adjust: {item.autoAdjust.enabled ? "on" : "off"}. Its original
-        color model is not yet available in this editor, so this setting is
-        shown for reference.
-      </p>
+      <details class="import-adjustment">
+        <summary>
+          Original InShot adjustment: {Math.round(
+            item.autoAdjust.strength * 100
+          )}% (reference only)
+        </summary>
+        <p>
+          InShot AutoAdjust was {item.autoAdjust.enabled ? "on" : "off"}. Post
+          Studio cannot reproduce its original color model, so this value does
+          not change the video here.
+        </p>
+      </details>
     {/if}
     {#if staffTips}
       {@const take = editor.takes.find((entry) => entry.id === item.takeId)}
@@ -968,6 +1148,29 @@
         onPick={(effect) => patchItem({ staffEffect: effect })}
       />
     {/if}
+  {:else if tool === "appearance" && (item.kind === "animation" || item.kind === "moves")}
+    <PostAnimationAppearanceTool
+      {editor}
+      {item}
+      {locked}
+      defaultPropType={cardRenderOptions?.propTypeOverride}
+    />
+    {#if item.animationAppearance}
+      <PanelButton
+        onclick={() => patchItem({ animationAppearance: null })}
+        disabled={locked}
+      >
+        Use animation defaults
+      </PanelButton>
+    {/if}
+  {:else if tool === "appearance" && item.kind === "card"}
+    <PostCardAppearanceTool
+      {item}
+      options={cardRenderOptions}
+      {stepCount}
+      {locked}
+      onchange={(value) => patchItem({ cardAppearance: value })}
+    />
   {:else if tool === "labels" && item.kind === "animation"}
     <SegmentedControl
       color="accent"
@@ -1047,8 +1250,29 @@
     line-height: 1.4;
   }
 
+  .import-adjustment {
+    color: var(--text-secondary, #a3a3a3);
+    font-size: 0.8rem;
+    line-height: 1.4;
+  }
+
+  .import-adjustment summary {
+    cursor: pointer;
+    padding-block: 0.375rem;
+  }
+
+  .import-adjustment summary:focus-visible {
+    outline: 2px solid var(--theme-accent, currentColor);
+    outline-offset: 2px;
+  }
+
+  .import-adjustment p {
+    margin: 0.5rem 0 0;
+  }
+
   .item-tool {
     display: grid;
+    grid-template-columns: minmax(0, 1fr);
     gap: 1rem;
     min-width: 0;
   }

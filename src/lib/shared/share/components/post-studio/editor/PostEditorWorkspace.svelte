@@ -132,6 +132,7 @@
   } from "$lib/shared/media-composition/services/post-project-backup";
   import { downloadBlobToDisk } from "$lib/shared/foundation/services/file-downloader";
   import PostDraftStatus from "./PostDraftStatus.svelte";
+  import ResizeHandle from "$lib/shared/panels/ResizeHandle.svelte";
   import {
     adjacentStepSeconds,
     clipSteps,
@@ -612,9 +613,52 @@
   });
   let readingFile = $state(false);
   let fileError = $state("");
+  let showImportDifferences = $state(false);
   let pixelsPerSecond = $state(60);
   let editorWidth = $state(0);
   let editorHeight = $state(0);
+  const DEFAULT_TIMELINE_HEIGHT_PX = 280;
+  const MIN_TIMELINE_HEIGHT_PX = 160;
+  let timelineHeightPx = $state(DEFAULT_TIMELINE_HEIGHT_PX);
+  let timelineResizeStartPx = DEFAULT_TIMELINE_HEIGHT_PX;
+  const maxTimelineHeightPx = $derived(
+    Math.max(MIN_TIMELINE_HEIGHT_PX, Math.min(520, editorHeight - 360))
+  );
+  const shownTimelineHeightPx = $derived(
+    Math.min(timelineHeightPx, maxTimelineHeightPx)
+  );
+
+  function resizeTimeline(delta: number): void {
+    timelineHeightPx = Math.max(
+      MIN_TIMELINE_HEIGHT_PX,
+      Math.min(maxTimelineHeightPx, timelineResizeStartPx - delta)
+    );
+  }
+
+  function resizeTimelineWithKeys(event: KeyboardEvent): void {
+    let nextHeight: number;
+    switch (event.key) {
+      case "ArrowUp":
+        nextHeight = shownTimelineHeightPx + 20;
+        break;
+      case "ArrowDown":
+        nextHeight = shownTimelineHeightPx - 20;
+        break;
+      case "Home":
+        nextHeight = MIN_TIMELINE_HEIGHT_PX;
+        break;
+      case "End":
+        nextHeight = maxTimelineHeightPx;
+        break;
+      default:
+        return;
+    }
+    event.preventDefault();
+    timelineHeightPx = Math.max(
+      MIN_TIMELINE_HEIGHT_PX,
+      Math.min(maxTimelineHeightPx, nextHeight)
+    );
+  }
   let remPixels = $state(16);
   /** The panel last asked for. A wide screen falls back to a default. */
   let activeTool = $state<PostPanelToolId | null>(null);
@@ -743,6 +787,7 @@
       return id ? (sourceSizes[id] ?? null) : null;
     },
   });
+  let cropSourceView = $state(true);
 
   /**
    * The crop stage's shape, so a wide screen gives the stage only the width
@@ -758,7 +803,7 @@
       cropStage = null;
       return null;
     }
-    if (crop.item?.sourceGeometry) {
+    if (cropSourceView && (crop.item?.sourceGeometry || crop.item?.keyframes?.sourceGeometry?.length)) {
       const source = crop.source;
       return source ? source.width / source.height : 1.7778;
     }
@@ -952,6 +997,15 @@
   }
 
   function pickTool(id: PostToolId): void {
+    if (cropMode && id !== "crop") {
+      cropFlight.capture();
+      crop.abandonGesture();
+      editor.endSession(true);
+      cropSessionOpen = false;
+      cropReturn = null;
+      activeTool = null;
+      void tick().then(() => cropFlight.play());
+    }
     if (isPanelTool(id)) {
       openTool(id);
       return;
@@ -1002,6 +1056,7 @@
     // Crop edits the frame under the playhead, so it starts inside the clip.
     seekInClip(editor.previewSeconds);
     cropReturn = activeTool === "crop" ? null : activeTool;
+    cropSourceView = true;
     cropFlight.capture();
     activeTool = "crop";
     await tick();
@@ -1837,17 +1892,16 @@
 
 {#snippet draftStatus()}
   {#if labeledCard.error}
-    <span role="alert">{labeledCard.error}</span>
+    <span class="draft-notice" role="alert">{labeledCard.error}</span>
   {:else if editor.project.mirrored && labeledCard.pending}
-    <span role="status">Preparing mirrored animation and cards…</span>
+    <span class="draft-notice" role="status"
+      >Preparing mirrored animation and cards…</span
+    >
   {/if}
   <PostDraftStatus
     saving={draftSaving}
     error={draftError ?? editor.saveError}
     disk={!!onSaveDraft}
-    onBackup={() => void downloadDraft()}
-    onRestore={() => recoveryInput?.click()}
-    onRetry={() => draftAutosave?.retry()}
   />
 {/snippet}
 
@@ -1870,10 +1924,17 @@
     {draftStatus}
     onMirror={mirrorWholePost}
     mirrored={editor.project.mirrored ?? false}
+    onBackup={() => void downloadDraft()}
+    onRestore={() => recoveryInput?.click()}
+    onRetry={() => draftAutosave?.retry()}
+    canRetry={!!onSaveDraft && !!(draftError ?? editor.saveError)}
     onExport={openExport}
     onImport={() => {
       if (!readingFile) recoveryInput?.click();
     }}
+    onImportDifferences={editor.project.importSource?.unresolved.length
+      ? () => (showImportDifferences = true)
+      : undefined}
     trailing={cropMode ? cropActions : undefined}
   />
 {/snippet}
@@ -1963,7 +2024,12 @@
       item={editor.selectedItem}
       {tool}
       crop={cropMode ? crop : null}
+      cropSourceView={cropSourceView}
+      onCropFramingControl={() => (cropSourceView = false)}
+      onCropSourceControl={() => (cropSourceView = true)}
       {staffTips}
+      {cardRenderOptions}
+      stepCount={displaySequence.steps?.length ?? 0}
     />
   {/if}
 {/snippet}
@@ -1974,7 +2040,10 @@
     subject={editor.selectedItem ? labelFor(editor.selectedItem) : undefined}
     onDone={placement === "dock" && !cropMode ? closePanel : undefined}
     {placement}
-    bare={placement === "dock" && cropMode}
+    bare={(placement === "dock" && cropMode) ||
+      (placement === "side" &&
+        tool === "appearance" &&
+        editor.selectedItem?.kind === "animation")}
   >
     {@render panelBody(tool)}
   </PostToolPanel>
@@ -2056,6 +2125,7 @@
   {/if}
   <div
     class="layout"
+    style:--post-timeline-height="{shownTimelineHeightPx}px"
     style:--post-stage-min={heldStageHeight === null
       ? null
       : `${heldStageHeight}px`}
@@ -2096,6 +2166,7 @@
                 showStripGuide={editor.selectedItem?.kind === "video"}
                 interactive={!exporting && !sharing && !previewTarget}
                 crop={cropMode ? crop : null}
+                {cropSourceView}
                 onSourceSize={noteSourceSize}
                 bind:root={canvasRoot}
               />
@@ -2178,8 +2249,14 @@
         {#if fileError}
           <p class="file-error" role="alert">{fileError}</p>
         {/if}
-        {#if editor.project.importSource?.unresolved.length}
-          <details class="import-differences">
+        {#if showImportDifferences && editor.project.importSource?.unresolved.length}
+          <details
+            class="import-differences"
+            open
+            ontoggle={(event) => {
+              if (!event.currentTarget.open) showImportDifferences = false;
+            }}
+          >
             <summary>InShot import: rendering differences remain</summary>
             <ul>
               {#each editor.project.importSource.unresolved as difference}
@@ -2190,12 +2267,27 @@
         {/if}
       </div>
 
-      <!-- The crop screen stows the timeline and the row out of sight, still
-           mounted, so they come back scrolled where they were. -->
+      {#if panelBeside && !showTimingStage}
+        <div class="timeline-resizer">
+          <ResizeHandle
+            direction="vertical"
+            size={12}
+            ariaLabel="Resize preview and timeline"
+            ariaValueNow={editorHeight > 0
+              ? (100 * (editorHeight - shownTimelineHeightPx)) / editorHeight
+              : 50}
+            disabled={maxTimelineHeightPx <= MIN_TIMELINE_HEIGHT_PX}
+            onDragStart={() => (timelineResizeStartPx = shownTimelineHeightPx)}
+            onDrag={resizeTimeline}
+            onKeydown={resizeTimelineWithKeys}
+            onDoubleClick={() =>
+              (timelineHeightPx = DEFAULT_TIMELINE_HEIGHT_PX)}
+          />
+        </div>
+      {/if}
       <div
         class="timeline-slot"
-        class:stowed={cropMode}
-        inert={sharing || exporting || cropMode || undefined}
+        inert={sharing || exporting || undefined}
       >
         <PostTimeline
           project={editor.project}
@@ -2247,10 +2339,9 @@
       {#if panelBeside}
         <div
           class="row-slot"
-          class:stowed={cropMode}
           tabindex="-1"
           bind:this={rowSlot}
-          inert={sharing || cropMode || undefined}
+          inert={sharing || undefined}
         >
           <Crossfade key={rowKey} mode="swap" duration={DURATION.fast}>
             {@render row()}
@@ -2284,6 +2375,9 @@
               {@render row()}
             {/if}
           </Crossfade>
+          {#if cropMode}
+            {@render row()}
+          {/if}
         {/if}
       </div>
     {/if}
@@ -2516,8 +2610,10 @@
     --post-panel-width: clamp(20rem, 30cqw, 26rem);
     display: grid;
     grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: minmax(15rem, 1fr) auto var(--post-timeline-height) auto;
-    grid-template-areas: "stage" "transport" "timeline" "row";
+    grid-template-rows: minmax(15rem, 1fr) auto 12px var(
+        --post-timeline-height
+      ) auto;
+    grid-template-areas: "stage" "transport" "resize" "timeline" "row";
   }
 
   .post-editor[data-mode="timing"]:is(
@@ -2542,12 +2638,24 @@
     grid-area: top;
   }
 
+  .draft-notice {
+    flex-basis: 100%;
+    min-width: 0;
+    color: var(--semantic-warning, #fbbf24);
+    font-size: var(--font-size-compact, 0.75rem);
+  }
+
   .stage-row {
     grid-area: stage;
   }
 
   .transport-slot {
     grid-area: transport;
+  }
+
+  .timeline-resizer {
+    grid-area: resize;
+    min-width: 0;
   }
 
   .timeline-slot {
@@ -2624,6 +2732,26 @@
     min-height: 0;
   }
 
+  /* A short landscape window scrolls the entire inspector so its header
+     cannot leave just a sliver of space for the selected item's controls. */
+  @media (max-height: 600px) {
+    .post-editor[data-layout="wide"] .side-column {
+      grid-template-rows: auto auto;
+      align-content: start;
+      overflow-y: auto;
+    }
+
+    .post-editor[data-layout="wide"] .panel-slot :global(.tool-panel.side) {
+      height: auto;
+    }
+
+    .post-editor[data-layout="wide"]
+      .panel-slot
+      :global(.tool-panel.side .body) {
+      overflow-y: visible;
+    }
+  }
+
   .panel-host.external .side-column {
     grid-template-rows: auto auto;
     height: auto;
@@ -2645,8 +2773,7 @@
     visibility: hidden;
   }
 
-  /* The crop screen: the stage takes the room the timeline and the row
-     leave, with the clip's own timeline under it. */
+  /* Crop keeps the post timeline and tools below its own clip transport. */
   .post-editor[data-mode="crop"] .layout {
     position: relative;
   }
@@ -2656,15 +2783,15 @@
       [data-layout="viewer"]
     )
     .layout {
-    grid-template-rows: minmax(15rem, 1fr) auto;
-    grid-template-areas: "stage" "transport";
+    grid-template-rows: minmax(15rem, 1fr) auto 12px var(--post-timeline-height) auto;
+    grid-template-areas: "stage" "transport" "resize" "timeline" "row";
   }
 
   .post-editor[data-layout="phone"][data-mode="crop"] .layout {
     display: grid;
     grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: auto minmax(12rem, 1fr) auto auto;
-    grid-template-areas: "top" "stage" "transport" "dock";
+    grid-template-rows: auto minmax(12rem, 1fr) auto auto auto;
+    grid-template-areas: "top" "stage" "transport" "timeline" "dock";
   }
 
   .post-editor[data-mode="crop"] .stage-row {
@@ -2705,15 +2832,6 @@
       calc(100cqw - var(--post-panel-width) - 1rem)
     );
     height: 100%;
-  }
-
-  .timeline-slot.stowed,
-  .row-slot.stowed {
-    position: absolute;
-    inset: 0 0 auto;
-    margin: 0;
-    visibility: hidden;
-    pointer-events: none;
   }
 
   /* Reset shows its words when the bar has room, else its icon alone. */

@@ -256,11 +256,18 @@ function splitIntoPieces(
     const b = sorted[index + 1]!;
     if (b - a < POST_TIME_EPSILON) continue;
 
-    const covering = mainVideos.find(
-      (video) =>
+    // During a crossfade both videos cover the overlap. The incoming video
+    // owns the picture on top, so its source clock must own linked layers too.
+    let covering: PostVideoItem | undefined;
+    for (const video of mainVideos) {
+      if (
         a >= video.start - POST_TIME_EPSILON &&
-        b <= itemEnd(video) + POST_TIME_EPSILON
-    );
+        b <= itemEnd(video) + POST_TIME_EPSILON &&
+        (!covering || video.start >= covering.start)
+      ) {
+        covering = video;
+      }
+    }
     if (covering) {
       pieces.push({
         start: a,
@@ -478,6 +485,7 @@ export function compilePostProject(
             ? { sourceGeometry: item.sourceGeometry }
             : {}),
           ...(item.autoAdjust ? { autoAdjust: item.autoAdjust } : {}),
+          ...(item.colorGrade ? { colorGrade: item.colorGrade } : {}),
           ...(sourceGeometryKeys(item)
             ? { sourceGeometryKeyframes: sourceGeometryKeys(item) }
             : {}),
@@ -625,6 +633,7 @@ export function compilePostProject(
         const wantsOverlay =
           item.kind === "animation" &&
           item.overlay &&
+          !item.animationAppearance &&
           !!context.animationOverlay;
         if (wantsOverlay) {
           useRole(
