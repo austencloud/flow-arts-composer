@@ -5,6 +5,7 @@ import {
 } from "./post-project-backup";
 
 const ENDPOINT = "/_local/post-studio-drafts";
+const LOAD_DEADLINE_MS = 10_000;
 const PREFIXES = [
   "tka:post-studio:project:v2:",
   "tka:post-studio:take-timing:v1:",
@@ -13,6 +14,19 @@ const PREFIXES = [
 export interface PostDraftRecord {
   key: string;
   value: string;
+}
+
+function recordsForSequence(
+  sequenceId: string,
+  records: readonly PostDraftRecord[]
+): PostDraftRecord[] {
+  return records.filter(
+    (record) =>
+      typeof record.key === "string" &&
+      typeof record.value === "string" &&
+      (record.key === `${PREFIXES[0]}${sequenceId}` ||
+        record.key.startsWith(`${PREFIXES[1]}${sequenceId}:`))
+  );
 }
 
 /** Read only this editor's drafts; unrelated browser data never enters a backup. */
@@ -35,43 +49,75 @@ export async function loadPostDraft(sequenceId: string): Promise<{
 }> {
   let records: PostDraftRecord[] = [];
   let error: string | null = null;
+  const browserRecords = (): PostDraftRecord[] => {
+    try {
+      records = recordsForSequence(sequenceId, readPostDraftRecords());
+    } catch {
+      error =
+        "Browser storage is unavailable. Keep this editor open until a backup is saved.";
+    }
+    return records;
+  };
+  browserRecords();
+  const controller = new AbortController();
+  let deadline: ReturnType<typeof setTimeout> | undefined;
   try {
-    records = readPostDraftRecords();
-  } catch {
-    error =
-      "Browser storage is unavailable. Keep this editor open until a backup is saved.";
-  }
-  try {
-    const response = await fetch(ENDPOINT, { cache: "no-store" });
+    const archive = (async () => {
+      const query = new URLSearchParams({ sequenceId });
+      const response = await fetch(`${ENDPOINT}?${query}`, {
+        cache: "no-store",
+        signal: controller.signal,
+      });
+      if (response.status === 404) return { response, saved: null };
+      if (!response.ok)
+        throw new Error("Could not read saved drafts from this computer.");
+      const saved: unknown = await response.json();
+      if (
+        !saved ||
+        typeof saved !== "object" ||
+        !("records" in saved) ||
+        !Array.isArray(saved.records)
+      )
+        throw new Error("The draft archive returned an invalid response.");
+      return { response, saved };
+    })();
+    const { response, saved } = await Promise.race([
+      archive,
+      new Promise<never>((_resolve, reject) => {
+        deadline = setTimeout(() => {
+          controller.abort();
+          reject(
+            new Error("Reading the draft archive timed out after 10 seconds.")
+          );
+        }, LOAD_DEADLINE_MS);
+      }),
+    ]);
     if (response.status === 404) {
       return {
-        project: resolvePostStudioDraft(sequenceId, records),
+        project: resolvePostStudioDraft(sequenceId, browserRecords()),
         diskAvailable: false,
         error,
       };
     }
-    if (!response.ok)
-      throw new Error("Could not read saved drafts from this computer.");
-    const saved = await response.json();
-    if (!Array.isArray(saved.records))
-      throw new Error("The draft archive returned an invalid response.");
     return {
       project: resolvePostStudioDraft(sequenceId, [
-        ...records,
-        ...saved.records,
+        ...browserRecords(),
+        ...recordsForSequence(sequenceId, saved!.records),
       ]),
       diskAvailable: true,
       error,
     };
   } catch (cause) {
     return {
-      project: resolvePostStudioDraft(sequenceId, records),
+      project: resolvePostStudioDraft(sequenceId, browserRecords()),
       diskAvailable: true,
       error:
         cause instanceof Error
           ? cause.message
           : "Could not read the draft archive.",
     };
+  } finally {
+    clearTimeout(deadline);
   }
 }
 
