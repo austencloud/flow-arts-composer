@@ -92,10 +92,21 @@
     });
   });
 
+  const propConfig = $derived.by(() => {
+    const inherited = getViewerAnimationPropConfig();
+    return {
+      leftPropType:
+        animationAppearance?.propType ?? leftPropType ?? inherited.leftPropType,
+      rightPropType:
+        animationAppearance?.propType ??
+        rightPropType ??
+        inherited.rightPropType,
+    };
+  });
   const stateManager = new AnimationStateManager();
   const orchestrator = new SequenceAnimationOrchestrator(
     stateManager,
-    getViewerAnimationPropConfig
+    () => propConfig
   );
   $effect(() => {
     const scoped = !!animationAppearance;
@@ -186,6 +197,17 @@
   });
 
   $effect(() => {
+    const config = propConfig;
+    if (initializedSequence !== sequence) return;
+    untrack(() => {
+      orchestrator.updatePropTypes(config.leftPropType, config.rightPropType);
+      orchestrator.calculateState(sequencePosition);
+      leftProp = stateManager.getLeftPropState();
+      rightProp = stateManager.getRightPropState();
+    });
+  });
+
+  $effect(() => {
     const position = sequencePosition;
     // Recalculate prop motion when this item's effort or path settings change
     // while the preview is paused at the same beat.
@@ -231,35 +253,39 @@
       />
     </div>
   {:else if !breakdownMotion && (animationAppearance || !shared?.ownsCanvas(owner))}
-    <AnimatorCanvas
-      {leftProp}
-      {rightProp}
-      gridVisible={animationAppearance?.gridMode !== "none"}
-      gridMode={sequence.gridMode ?? null}
-      letter={stepData?.letter ?? null}
-      {stepData}
-      sequenceData={sequence}
-      currentStep={sequencePosition}
-      isPlaying={playing}
-      {leftPropType}
-      {rightPropType}
-      word={animationAppearance ? sequence.word : null}
-      previewDarkMode
-      hideProgressBar
-      hideHeader={!animationAppearance}
-      hideTkaGlyph={labelsPainted && !animationAppearance}
-      hideStepNumbers={labelsPainted && !animationAppearance}
-      hideElementalGlyph={labelsPainted && !animationAppearance}
-      visibilityManagerOverride={animationAppearance
-        ? itemVisibility
-        : undefined}
-      effectsConfigState={animationAppearance ? itemEffects : undefined}
-      trailSettings={animationAppearance ? itemTrailSettings : undefined}
-      fillContainer
-      virtualTime={animationTimeSeconds === undefined
-        ? undefined
-        : animationTimeSeconds * 1000}
-    />
+    <!-- Prop crossfades use clip time, which stands still while paused. A new
+         prop starts with its final artwork without advancing the post. -->
+    {#key animationAppearance?.propType}
+      <AnimatorCanvas
+        {leftProp}
+        {rightProp}
+        gridVisible={animationAppearance?.gridMode !== "none"}
+        gridMode={sequence.gridMode ?? null}
+        letter={stepData?.letter ?? null}
+        {stepData}
+        sequenceData={sequence}
+        currentStep={sequencePosition}
+        isPlaying={playing}
+        leftPropType={animationAppearance?.propType ?? leftPropType}
+        rightPropType={animationAppearance?.propType ?? rightPropType}
+        word={animationAppearance ? sequence.word : null}
+        previewDarkMode
+        hideProgressBar
+        hideHeader={!animationAppearance}
+        hideTkaGlyph={labelsPainted && !animationAppearance}
+        hideStepNumbers={labelsPainted && !animationAppearance}
+        hideElementalGlyph={labelsPainted && !animationAppearance}
+        visibilityManagerOverride={animationAppearance
+          ? itemVisibility
+          : undefined}
+        effectsConfigState={animationAppearance ? itemEffects : undefined}
+        trailSettings={animationAppearance ? itemTrailSettings : undefined}
+        fillContainer
+        virtualTime={animationTimeSeconds === undefined
+          ? undefined
+          : animationTimeSeconds * 1000}
+      />
+    {/key}
   {/if}
 </div>
 

@@ -1033,7 +1033,12 @@
       />
     {/if}
   {:else if tool === "appearance" && item.kind === "animation"}
-    <PostAnimationAppearanceTool {editor} {item} {locked} />
+    <PostAnimationAppearanceTool
+      {editor}
+      {item}
+      {locked}
+      defaultPropType={cardRenderOptions?.propTypeOverride}
+    />
     {#if item.animationAppearance}
       <PanelButton
         onclick={() => patchItem({ animationAppearance: null })}

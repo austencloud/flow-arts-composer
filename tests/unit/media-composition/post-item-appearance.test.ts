@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
 import {
   PostProjectSchema,
   findItem,
@@ -20,6 +21,7 @@ describe("selected media appearance", () => {
       "a",
       {
         animationAppearance: {
+          propType: PropType.CLUB,
           gridMode: "none",
           props: false,
           stepNumbers: true,
@@ -42,6 +44,7 @@ describe("selected media appearance", () => {
     const a = findItem(edited, "a")?.item;
     const b = findItem(edited, "b")?.item;
     expect(a?.kind === "animation" && a.animationAppearance).toEqual({
+      propType: PropType.CLUB,
       gridMode: "none",
       props: false,
       stepNumbers: true,

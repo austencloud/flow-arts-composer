@@ -4,6 +4,15 @@
   import PathShapePanel from "$lib/shared/animation-engine/components/settings-panels/PathShapePanel.svelte";
   import EffortPanel from "$lib/shared/animation-engine/components/settings-panels/EffortPanel.svelte";
   import TrailsPanel from "$lib/shared/animation-engine/components/settings-panels/TrailsPanel.svelte";
+  import BentoPropGrid from "$lib/shared/settings/components/tabs/prop-type/BentoPropGrid.svelte";
+  import IconRailNav from "$lib/shared/animation-panel/pill-nav/IconRailNav.svelte";
+  import { RAIL_CATEGORY_ACCENTS } from "$lib/shared/animation-panel/pill-nav/rail-category-accents";
+  import { EFFORTS } from "$lib/shared/effort/domain/effort-types";
+  import {
+    EFFECT_COLORS,
+    effectNavIcon,
+  } from "$lib/shared/animation-engine/components/effects-panel/effect-registry";
+  import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
   import {
     AnimationVisibilityStateManager,
     getAnimationVisibilityManager,
@@ -24,11 +33,18 @@
     editor,
     item,
     locked,
+    defaultPropType = PropType.STAFF,
   }: {
     editor: PostEditorState;
     item: PostAnimationItem;
     locked: boolean;
+    defaultPropType?: PropType;
   } = $props();
+
+  type Section = "props" | "effects" | "efforts" | "display";
+  const id = $props.id();
+  let activeSection = $state<Section>("display");
+  let pickedPropType = $state<PropType | undefined>();
 
   const visibility = new AnimationVisibilityStateManager({ ephemeral: true });
   const sourceEffects = getEffectsConfigContext();
@@ -39,6 +55,39 @@
     persist: false,
   });
   trailSettings.replaceAll(animationSettings.snapshot());
+  const sections = $derived([
+    {
+      id: "props" as const,
+      label: "Props",
+      propType: pickedPropType ?? defaultPropType,
+      accentColor: RAIL_CATEGORY_ACCENTS.props,
+    },
+    {
+      id: "effects" as const,
+      label: "Effects",
+      icon: effectNavIcon(trailEffects.activeEffect),
+      accentColor:
+        EFFECT_COLORS[trailEffects.activeEffect] ??
+        RAIL_CATEGORY_ACCENTS.effects,
+    },
+    {
+      id: "efforts" as const,
+      label: "Efforts",
+      accentColor:
+        EFFORTS.find(
+          (effort) =>
+            effort.id ===
+            (item.animationAppearance?.effortPreset ??
+              getAnimationVisibilityManager().getSettings().effortPreset)
+        )?.color ?? EFFORTS[0]!.color,
+    },
+    {
+      id: "display" as const,
+      label: "Display",
+      icon: "fa-eye",
+      accentColor: RAIL_CATEGORY_ACCENTS.display,
+    },
+  ]);
   const keys = [
     "gridMode",
     "props",
@@ -69,6 +118,7 @@
           }
         );
         const trail = appearance?.trail;
+        pickedPropType = appearance?.propType;
         trailWasEdited = !!trail;
         trailSettings.updateSettings({
           trail: {
@@ -105,6 +155,7 @@
     const appearance = Object.fromEntries(
       keys.map((key) => [key, settings[key]])
     ) as NonNullable<PostAnimationItem["animationAppearance"]>;
+    if (pickedPropType) appearance.propType = pickedPropType;
     if (trailWasEdited) {
       const trails = trailEffects.trails;
       appearance.trail = {
@@ -137,38 +188,92 @@
 {#if locked}
   <p>Unlock this layer to change its appearance.</p>
 {:else}
-  <DisplayPanel
-    sequence={editor.sequence}
-    visibilityManagerOverride={visibility}
-    animationSettingsOverride={trailSettings}
-  />
-  <PathShapePanel visibilityManagerOverride={visibility} showHelp={false} />
-  <div class="effort-section">
-    <h3>Movement style</h3>
-    <EffortPanel visibilityManagerOverride={visibility} columns={2} />
+  <div class="section-navigation">
+    <IconRailNav
+      pills={sections}
+      activeId={activeSection}
+      onSelect={(section) => (activeSection = section)}
+      orientation="horizontal"
+      panelIdPrefix={id}
+      ariaLabel="Animation appearance"
+    />
   </div>
-  <div class="trail-section">
-    <h3>Trails</h3>
-    <PanelButton
-      ariaPressed={trailEffects.activeEffect === "trails"}
-      onclick={() => {
-        trailEffects.setActiveEffect(
-          trailEffects.activeEffect === "trails" ? "none" : "trails"
-        );
-        saveTrail("enabled");
-      }}>Show trails</PanelButton
-    >
-    {#if trailEffects.activeEffect === "trails"}
-      <TrailsPanel
-        animationSettingsState={trailSettings}
-        effectsConfigState={trailEffects}
-        onSettingChange={saveTrail}
+  <div
+    class="section-content"
+    id="{id}-{activeSection}-panel"
+    role="tabpanel"
+    aria-labelledby="{id}-{activeSection}-tab"
+    tabindex="0"
+  >
+    {#if activeSection === "props"}
+      <BentoPropGrid
+        selectedPropType={pickedPropType ?? defaultPropType}
+        onSelect={(propType) => {
+          pickedPropType = propType;
+          save();
+        }}
+        showColors={false}
+        showPropLook={false}
+        showAppearance={false}
+        scrollMode="host"
+        variant="inline"
+        flat
+      />
+    {:else if activeSection === "effects"}
+      <div class="trail-section">
+        <PanelButton
+          ariaPressed={trailEffects.activeEffect === "trails"}
+          onclick={() => {
+            trailEffects.setActiveEffect(
+              trailEffects.activeEffect === "trails" ? "none" : "trails"
+            );
+            saveTrail("enabled");
+          }}>Show trails</PanelButton
+        >
+        {#if trailEffects.activeEffect === "trails"}
+          <TrailsPanel
+            animationSettingsState={trailSettings}
+            effectsConfigState={trailEffects}
+            onSettingChange={saveTrail}
+          />
+        {/if}
+      </div>
+    {:else if activeSection === "efforts"}
+      <PathShapePanel visibilityManagerOverride={visibility} showHelp={false} />
+      <div class="effort-section">
+        <h3>Movement style</h3>
+        <EffortPanel visibilityManagerOverride={visibility} columns={2} />
+      </div>
+    {:else}
+      <DisplayPanel
+        sequence={editor.sequence}
+        propType={pickedPropType ?? defaultPropType}
+        visibilityManagerOverride={visibility}
+        animationSettingsOverride={trailSettings}
       />
     {/if}
   </div>
 {/if}
 
 <style>
+  .section-navigation {
+    position: sticky;
+    top: -0.25rem;
+    z-index: 2;
+    padding: 0.25rem 0 0.75rem;
+    background: var(--theme-panel-bg, #08080c);
+  }
+  .section-content {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1rem;
+    min-width: 0;
+    padding-bottom: 1rem;
+  }
+  .section-content:focus-visible {
+    outline: 2px solid var(--theme-accent, #8b6cff);
+    outline-offset: -2px;
+  }
   .trail-section {
     display: grid;
     grid-template-columns: minmax(0, 1fr);
