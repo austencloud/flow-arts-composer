@@ -218,6 +218,7 @@
         scrollMode="host"
         variant="inline"
         flat
+        tileDensity="comfortable"
       />
     {:else if activeSection === "effects"}
       <div class="trail-section">
