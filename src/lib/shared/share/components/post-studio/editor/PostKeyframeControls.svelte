@@ -411,16 +411,6 @@
     gap: 0.125rem;
   }
 
-  /* A narrow timeline's toolbar, the editor's or the crop screen's, keeps
-     the diamond and the Curve chip on one line. Its keyframe row already
-     names the channel, and tapping a key there goes to it. */
-  @container post-timeline-toolbar (max-width: 34rem) {
-    .kf-label,
-    .kf-step {
-      display: none;
-    }
-  }
-
   @media (prefers-reduced-motion: reduce) {
     .kf-btn {
       transition: none;
