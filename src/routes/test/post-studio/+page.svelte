@@ -8,6 +8,7 @@
   import { onDestroy, onMount } from "svelte";
   import { setLocale, toLocale } from "$lib/shared/i18n/i18n.svelte.js";
   import PostStudio from "$lib/shared/share/components/post-studio/PostStudio.svelte";
+  import ToastContainer from "$lib/shared/toast/components/ToastContainer.svelte";
   import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
   import { hydrateSequence } from "$lib/shared/sequence-viewer/services/sequence-data-provider";
   import { getBrowseLoader } from "$lib/shared/browse/get-browse-loader";
@@ -197,6 +198,8 @@
     />
   {/if}
 </main>
+
+<ToastContainer />
 
 <style>
   :global(body) {
