@@ -55,3 +55,48 @@ export function dragSourceCrop(
     },
   };
 }
+
+/** Fit a ratio inside the current source selection and its output rectangle. */
+export function sourceCropAtRatio(
+  geometry: PostSourceGeometry,
+  source: { width: number; height: number },
+  output: { width: number; height: number },
+  ratio: number,
+  original = false
+): PostSourceGeometry {
+  if (
+    !Number.isFinite(ratio) || ratio <= 0 ||
+    source.width <= 0 || source.height <= 0 ||
+    output.width <= 0 || output.height <= 0
+  ) return geometry;
+  const crop = original
+    ? { left: 0, top: 0, right: 1, bottom: 1 }
+    : geometry.crop;
+  const centerX = (crop.left + crop.right) / 2;
+  const centerY = (crop.top + crop.bottom) / 2;
+  let width = crop.right - crop.left;
+  let height = crop.bottom - crop.top;
+  if (width * source.width / (height * source.height) > ratio)
+    width = height * source.height * ratio / source.width;
+  else height = width * source.width / (ratio * source.height);
+  const boxCenterX = geometry.x + geometry.width / 2;
+  const boxCenterY = geometry.y + geometry.height / 2;
+  let boxWidth = geometry.width;
+  let boxHeight = geometry.height;
+  if (boxWidth * output.width / (boxHeight * output.height) > ratio)
+    boxWidth = boxHeight * output.height * ratio / output.width;
+  else boxHeight = boxWidth * output.width / (ratio * output.height);
+  return {
+    ...geometry,
+    x: boxCenterX - boxWidth / 2,
+    y: boxCenterY - boxHeight / 2,
+    width: boxWidth,
+    height: boxHeight,
+    crop: {
+      left: centerX - width / 2,
+      right: centerX + width / 2,
+      top: centerY - height / 2,
+      bottom: centerY + height / 2,
+    },
+  };
+}

@@ -152,6 +152,18 @@
       rotationDegrees: transform.rotationDegrees,
     });
   });
+  const sourcePan = $derived.by(() =>
+    resolvePanOffset({
+      drawWidth: boxWidth,
+      drawHeight: boxHeight,
+      regionWidth: boxWidth,
+      regionHeight: boxHeight,
+      scale: transform.scale,
+      translateX: transform.translateX,
+      translateY: transform.translateY,
+      rotationDegrees: (sourceGeometry?.rotation ?? 0) + transform.rotationDegrees,
+    })
+  );
 
   const cropped = $derived(
     sourceGeometry
@@ -403,7 +415,7 @@
   style:width={sourceGeometry ? `${sourceGeometry.width * 100}%` : undefined}
   style:height={sourceGeometry ? `${sourceGeometry.height * 100}%` : undefined}
   style:transform={sourceGeometry
-    ? `rotate(${sourceGeometry.rotation}deg) scaleX(${transform.flipHorizontal ? -1 : 1})`
+    ? `translate(${sourcePan.x}px, ${sourcePan.y}px) rotate(${sourceGeometry.rotation + transform.rotationDegrees}deg) scale(${transform.scale}) scaleX(${transform.flipHorizontal ? -1 : 1})`
     : `translate(${pan.x}px, ${pan.y}px) rotate(${transform.rotationDegrees}deg) scale(${transform.scale}) scaleX(${transform.flipHorizontal ? -1 : 1})`}
   data-clip-id={clipId}
   data-source-role={binding.roleKey}

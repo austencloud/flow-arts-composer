@@ -85,13 +85,23 @@ export function resolveFrameLayerGeometry(input: {
       width: geometry.width * input.preset.output.width,
       height: geometry.height * input.preset.output.height,
     };
+    const pan = resolvePanOffset({
+      drawWidth: region.width,
+      drawHeight: region.height,
+      regionWidth: region.width,
+      regionHeight: region.height,
+      scale: input.transform.scale,
+      translateX: input.transform.translateX,
+      translateY: input.transform.translateY,
+      rotationDegrees: geometry.rotation + input.transform.rotationDegrees,
+    });
     return {
       region,
       drawRect: region,
-      rotationDegrees: geometry.rotation,
-      scale: 1,
-      translateX: 0,
-      translateY: 0,
+      rotationDegrees: geometry.rotation + input.transform.rotationDegrees,
+      scale: input.transform.scale,
+      translateX: pan.x,
+      translateY: pan.y,
       flipHorizontal: input.transform.flipHorizontal,
       sourceCrop: geometry.crop,
     };

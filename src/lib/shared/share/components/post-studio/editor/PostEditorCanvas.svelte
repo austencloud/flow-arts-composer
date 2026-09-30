@@ -144,6 +144,8 @@
      * still mounted.
      */
     crop?: CropSession | null;
+    /** Imported footage opens at its precise source edges; framing controls show the composed clip. */
+    cropSourceView?: boolean;
     /** A region's footage has reported its own size. */
     onSourceSize?: (regionId: string, size: CropSize) => void;
     root?: HTMLElement | null;
@@ -160,6 +162,7 @@
     showStripGuide = false,
     interactive = true,
     crop = null,
+    cropSourceView = true,
     onSourceSize,
     root = $bindable(null),
   }: Props = $props();
@@ -1156,7 +1159,8 @@
   // ---- The crop screen -------------------------------------------------------
 
   const sourceCropping = $derived(
-    cropItem !== null &&
+    cropSourceView &&
+      cropItem !== null &&
       sourceGeometryAt(cropItem, editor.previewSeconds) !== null
   );
 
@@ -2259,7 +2263,16 @@
                   displayedBeatNumber={layer.displayedBeatNumber}
                   clipId={entry.clip.id}
                   colorGrade={entry.clip.colorGrade}
-                  transform={layer.transform}
+                  transform={sourceCropping && cropRegion
+                    ? {
+                        ...layer.transform,
+                        scale: 1,
+                        rotationDegrees: 0,
+                        translateX: 0,
+                        translateY: 0,
+                        flipHorizontal: false,
+                      }
+                    : layer.transform}
                   sourceGeometry={sourceCropping && cropRegion
                     ? fullSourceGeometry
                     : layer.sourceGeometry}

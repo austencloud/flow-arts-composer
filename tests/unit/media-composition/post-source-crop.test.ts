@@ -3,6 +3,7 @@ import type { PostSourceGeometry } from "$lib/shared/media-composition/domain/po
 import {
   dragSourceCrop,
   setSourceCropEdge,
+  sourceCropAtRatio,
 } from "$lib/shared/share/components/post-studio/editor/post-source-crop";
 
 const geometry: PostSourceGeometry = {
@@ -41,5 +42,31 @@ describe("source crop geometry", () => {
     expect(moved.crop.bottom).toBeCloseTo(0.7);
     expect(moved.width).toBe(geometry.width);
     expect(moved.rotation).toBe(geometry.rotation);
+  });
+
+  it("sets a preset ratio without changing the imported turn or crop center", () => {
+    const changed = sourceCropAtRatio(
+      geometry,
+      { width: 1920, height: 1080 },
+      { width: 1080, height: 1920 },
+      1
+    );
+    expect(changed.rotation).toBe(17);
+    expect((changed.crop.left + changed.crop.right) / 2).toBeCloseTo(0.55);
+    expect((changed.crop.top + changed.crop.bottom) / 2).toBeCloseTo(0.45);
+    expect((changed.crop.right - changed.crop.left) * 1920 /
+      ((changed.crop.bottom - changed.crop.top) * 1080)).toBeCloseTo(1);
+    expect(changed.width * 1080 / (changed.height * 1920)).toBeCloseTo(1);
+  });
+
+  it("restores full source bounds for Original", () => {
+    const changed = sourceCropAtRatio(
+      geometry,
+      { width: 1920, height: 1080 },
+      { width: 1080, height: 1920 },
+      1920 / 1080,
+      true
+    );
+    expect(changed.crop).toEqual({ left: 0, top: 0, right: 1, bottom: 1 });
   });
 });

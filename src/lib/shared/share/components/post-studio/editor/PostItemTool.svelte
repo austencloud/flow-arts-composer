@@ -85,6 +85,7 @@
   import PostStaffEffectsTool from "./PostStaffEffectsTool.svelte";
   import PostNativeTextTool from "./PostNativeTextTool.svelte";
   import PostSourceGeometryTool from "./PostSourceGeometryTool.svelte";
+  import { sourceCropAtRatio } from "./post-source-crop";
   import PostAnimationAppearanceTool from "./PostAnimationAppearanceTool.svelte";
   import PostCardAppearanceTool from "./PostCardAppearanceTool.svelte";
   import PostVideoColorTool from "./PostVideoColorTool.svelte";
@@ -108,6 +109,9 @@
      * or a zoom keeps the window filled the way a drag on the stage does.
      */
     crop?: CropSession | null;
+    cropSourceView?: boolean;
+    onCropFramingControl?: () => void;
+    onCropSourceControl?: () => void;
     /** Where each take's LED staffs are, for the Effects tool. */
     staffTips?: StaffTipAnalysis | null;
     cardRenderOptions?: Partial<SequenceExportOptions> | null;
@@ -119,12 +123,16 @@
     item,
     tool,
     crop = null,
+    cropSourceView = true,
+    onCropFramingControl,
+    onCropSourceControl,
     staffTips = null,
     cardRenderOptions = null,
     stepCount = 0,
   }: Props = $props();
   let grading = $state(false);
   let gradeError = $state("");
+  let chosenSourceShape = $state<CropShapeKind | null>(null);
 
   const FRAME_SECONDS = 1 / POST_FRAME_RATE;
 
@@ -290,16 +298,19 @@
   // ---- Crop: through the crop screen's session when there is one ----------
 
   function setCropZoom(zoom: number): void {
-    if (crop) crop.setZoom(zoom);
+    onCropFramingControl?.();
+    if (crop) crop.setZoom(item.kind === "video" && (item.sourceGeometry || item.keyframes?.sourceGeometry?.length) ? Math.max(1, zoom) : zoom);
     else change("zoom", { zoom });
   }
 
   function straighten(value: number, quarter: number): void {
+    onCropFramingControl?.();
     if (crop) crop.setStraighten(value);
     else change("rotation", { rotation: joinRotation(quarter, value) });
   }
 
   function rotateLeft(quarter: number, value: number): void {
+    onCropFramingControl?.();
     if (crop) crop.rotateQuarter();
     else
       change("rotation", {
@@ -339,8 +350,66 @@
   });
 
   function toggleMirror(): void {
+    onCropFramingControl?.();
     if (crop) crop.toggleMirror();
     else if (item.kind === "video") patchItem({ flip: !item.flip });
+  }
+
+  function setCropShape(kind: CropShapeKind): void {
+    const geometry =
+      item.kind === "video" &&
+      (item.sourceGeometry || item.keyframes?.sourceGeometry?.length)
+        ? channelValueAt(item, "sourceGeometry", seconds)
+        : null;
+    if (!geometry) {
+      onCropFramingControl?.();
+      crop?.setShape(kind);
+      return;
+    }
+    const source = crop?.source;
+    if (!source || locked || frozen) return;
+    if (kind === "free") {
+      onCropSourceControl?.();
+      chosenSourceShape = kind;
+      return;
+    }
+    const ratio = kind === "original"
+      ? source.width / source.height
+      : kind === "fill"
+        ? output.width / output.height
+        : ratioValue(kind);
+    const next = sourceCropAtRatio(geometry, source, output, ratio, kind === "original");
+    onCropSourceControl?.();
+    editor.pause();
+    editor.edit((project, ctx) =>
+      updateItemAt(project, item.id, { sourceGeometry: next }, seconds, ctx)
+    );
+    chosenSourceShape = kind;
+  }
+
+  function resetCrop(): void {
+    const geometry =
+      item.kind === "video" &&
+      (item.sourceGeometry || item.keyframes?.sourceGeometry?.length)
+        ? channelValueAt(item, "sourceGeometry", seconds)
+        : null;
+    const source = crop?.source;
+    if (geometry && source && !locked && !frozen) {
+      const next = sourceCropAtRatio(
+        geometry,
+        source,
+        output,
+        source.width / source.height,
+        true
+      );
+      onCropSourceControl?.();
+      editor.pause();
+      editor.edit((project, ctx) =>
+        updateItemAt(project, item.id, { sourceGeometry: next }, seconds, ctx)
+      );
+      chosenSourceShape = "original";
+    } else onCropFramingControl?.();
+    if (crop?.canReset) crop.reset();
   }
 
   function unlock(): void {
@@ -767,8 +836,10 @@
     {@const parts = crop?.parts ?? splitRotation(framing.rotation)}
     <PostRatioPicker
       options={cropShapes}
-      value={crop?.shapeKind ?? null}
-      onchange={(kind) => crop?.setShape(kind)}
+      value={item.sourceGeometry || item.keyframes?.sourceGeometry?.length
+        ? chosenSourceShape
+        : (crop?.shapeKind ?? null)}
+      onchange={setCropShape}
       ariaLabel={t("post_crop_shape")}
     />
     <ValueSlider
@@ -785,7 +856,9 @@
     <ValueSlider
       label={t("post_editor_zoom")}
       value={framing.zoom * 100}
-      min={(crop?.zoomFloor ?? POST_MIN_ZOOM) * 100}
+      min={(item.sourceGeometry || item.keyframes?.sourceGeometry?.length
+        ? Math.max(1, crop?.zoomFloor ?? POST_MIN_ZOOM)
+        : (crop?.zoomFloor ?? POST_MIN_ZOOM)) * 100}
       max={POST_MAX_ZOOM * 100}
       step={1}
       origin={100}
@@ -812,7 +885,7 @@
         onclick={toggleMirror}
       />
       {#if crop}
-        <PanelButton onclick={crop.reset} disabled={!crop.canReset}>
+        <PanelButton onclick={resetCrop} disabled={locked || frozen || (!crop.canReset && !(item.sourceGeometry || item.keyframes?.sourceGeometry?.length))}>
           <i class="fa-solid fa-arrows-rotate" aria-hidden="true"></i>
           {t("post_editor_reset_crop")}
         </PanelButton>
@@ -821,14 +894,22 @@
     <p class="hint">{t("post_crop_hint")}</p>
     {#if item.sourceGeometry || item.keyframes?.sourceGeometry?.length}
       {@const geometry = channelValueAt(item, "sourceGeometry", seconds)}
+      {#if !cropSourceView}
+        <PanelButton onclick={() => onCropSourceControl?.()}>
+          Edit source crop
+        </PanelButton>
+      {/if}
       <PostSourceGeometryTool
         {geometry}
         {output}
         {locked}
         {frozen}
         mode="crop"
-        onChange={(next, field) =>
-          change(`source-geometry:${field}`, { sourceGeometry: next })}
+        onChange={(next, field) => {
+          onCropSourceControl?.();
+          chosenSourceShape = null;
+          change(`source-geometry:${field}`, { sourceGeometry: next });
+        }}
       />
     {/if}
   {:else if tool === "crop" && item.kind === "image" && (item.sourceGeometry || item.keyframes?.sourceGeometry?.length)}

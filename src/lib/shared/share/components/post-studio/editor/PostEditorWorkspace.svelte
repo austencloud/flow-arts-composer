@@ -776,6 +776,7 @@
       return id ? (sourceSizes[id] ?? null) : null;
     },
   });
+  let cropSourceView = $state(true);
 
   /**
    * The crop stage's shape, so a wide screen gives the stage only the width
@@ -791,7 +792,7 @@
       cropStage = null;
       return null;
     }
-    if (crop.item?.sourceGeometry) {
+    if (cropSourceView && (crop.item?.sourceGeometry || crop.item?.keyframes?.sourceGeometry?.length)) {
       const source = crop.source;
       return source ? source.width / source.height : 1.7778;
     }
@@ -1044,6 +1045,7 @@
     // Crop edits the frame under the playhead, so it starts inside the clip.
     seekInClip(editor.previewSeconds);
     cropReturn = activeTool === "crop" ? null : activeTool;
+    cropSourceView = true;
     cropFlight.capture();
     activeTool = "crop";
     await tick();
@@ -2011,6 +2013,9 @@
       item={editor.selectedItem}
       {tool}
       crop={cropMode ? crop : null}
+      cropSourceView={cropSourceView}
+      onCropFramingControl={() => (cropSourceView = false)}
+      onCropSourceControl={() => (cropSourceView = true)}
       {staffTips}
       {cardRenderOptions}
       stepCount={displaySequence.steps?.length ?? 0}
@@ -2143,6 +2148,7 @@
                 showStripGuide={editor.selectedItem?.kind === "video"}
                 interactive={!exporting && !sharing && !previewTarget}
                 crop={cropMode ? crop : null}
+                {cropSourceView}
                 onSourceSize={noteSourceSize}
                 bind:root={canvasRoot}
               />
