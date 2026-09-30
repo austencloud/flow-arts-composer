@@ -25,6 +25,7 @@
     previewPlaybackRate,
     shouldSeekPreviewVideo,
   } from "$lib/shared/media-composition/services/video-preview-seek";
+  import type { PreviewVideoController } from "$lib/shared/media-composition/services/post-preview-clock";
   import {
     videoColorFilter,
     type PostVideoColorGrade,
@@ -59,6 +60,7 @@
     previewGain?: number;
     /** Told the footage's or image's own size once it has loaded. */
     onSourceSize?: (size: { width: number; height: number }) => void;
+    onPlaybackVideo?: (controller: PreviewVideoController | null) => void;
   }
 
   let {
@@ -86,6 +88,7 @@
     playbackRate = 1,
     previewGain = 0,
     onSourceSize,
+    onPlaybackVideo,
   }: Props = $props();
   const composition = tryGetMediaCompositionContext();
   let video = $state<HTMLVideoElement | null>(null);
@@ -94,6 +97,10 @@
   let pausedFrameGeneration = 0;
   let primingVideo: HTMLVideoElement | null = null;
   let videoWaiting = false;
+  let playbackHeld = false;
+  let playRequest: HTMLVideoElement | null = null;
+  let previousClipId: string | null = null;
+  let previousPlaybackRate: number | null = null;
   let previousTargetTime: number | null = null;
   let queuedJump = false;
   let awaitingPlayingFrame = false;
@@ -212,6 +219,7 @@
     let visible =
       playing &&
       !video.paused &&
+      !playbackHeld &&
       opacity > 0 &&
       document.visibilityState === "visible";
     let frameAge = lastFrameProgressAt === null ? 0 : now - lastFrameProgressAt;
@@ -244,8 +252,8 @@
         break;
       }
     }
-    // Paused frames and timeline jumps seek exactly. During playback, small
-    // drift changes the rate briefly so footage keeps decoding smoothly.
+    // The post follows native playback. Only scrubs, cuts, and a stalled
+    // decoder need a seek; the authored speed always stays steady.
     const shouldSeek = shouldSeekPreviewVideo({
       currentTime: video.currentTime,
       targetTime: target,
@@ -272,14 +280,7 @@
       }
       video.currentTime = target;
     }
-    const recovering = video.seeking || videoWaiting || awaitingPlayingFrame;
-    const rate = playing
-      ? previewPlaybackRate(
-          playbackRate,
-          target - video.currentTime,
-          recovering
-        )
-      : playbackRate;
+    const rate = previewPlaybackRate(playbackRate);
     if (video.playbackRate !== rate) video.playbackRate = rate;
     return shouldSeek;
   }
@@ -340,7 +341,7 @@
       if (
         awaitingPlayingFrame &&
         remaining <= 0 &&
-        metadata.mediaTime - firstMediaTime >= 0.75
+        metadata.mediaTime > firstMediaTime
       ) {
         awaitingPlayingFrame = false;
         videoWaiting = false;
@@ -420,10 +421,13 @@
     recoveryStartedAt = null;
     videoWaiting = false;
     previousTargetTime = null;
-    sourceWidth = video.videoWidth;
-    sourceHeight = video.videoHeight;
+    sourceWidth = binding.sourceWidth ?? video.videoWidth;
+    sourceHeight = binding.sourceHeight ?? video.videoHeight;
     onSourceSize?.({ width: sourceWidth, height: sourceHeight });
-    composition?.setSourceDuration(binding.roleKey, video.duration);
+    composition?.setSourceDuration(
+      binding.roleKey,
+      binding.durationSeconds ?? video.duration
+    );
     syncVideoTime();
     if (!playing && !video.seeking) showPausedFrame(video);
   }
@@ -440,6 +444,53 @@
     event.preventDefault();
     saveMenuHost?.openContextMenu(event.clientX, event.clientY);
   }
+
+  function startPlayback(element: HTMLVideoElement): void {
+    if (!playing || playbackHeld || !element.paused || playRequest === element)
+      return;
+    playRequest = element;
+    void element
+      .play()
+      .then(() => {
+        if (video === element && (!playing || playbackHeld)) element.pause();
+      })
+      .catch(() => undefined)
+      .finally(() => {
+        if (playRequest === element) playRequest = null;
+      });
+  }
+
+  $effect(() => {
+    const element = video;
+    const register = onPlaybackVideo;
+    if (!element || !register) return;
+    const controller: PreviewVideoController = {
+      read: () => {
+        // Read while the playhead is held too, so recovery never needs the
+        // composition to advance before the decoder can resume.
+        syncVideoTime();
+        return {
+          currentTime: element.currentTime,
+          ready:
+            !element.seeking &&
+            (element.readyState >= 3 ||
+              (element.ended && element.readyState >= 2)),
+          ended: element.ended,
+        };
+      },
+      align: () => {
+        if (element.seeking) queuedJump = true;
+        else syncVideoTime(true);
+      },
+      hold: (held) => {
+        playbackHeld = held;
+        if (held) element.pause();
+        else startPlayback(element);
+      },
+    };
+    register(controller);
+    return () => register(null);
+  });
 
   // A new src resets the rate to the default, so the default carries it too.
   $effect(() => {
@@ -461,8 +512,13 @@
     const jumped =
       previousTargetTime !== null &&
       Math.abs(sourceTimeSeconds - previousTargetTime) > 0.5;
-    if (playing && jumped) queuedJump = true;
-    const seeked = syncVideoTime();
+    const changedClip = previousClipId !== null && previousClipId !== clipId;
+    const changedSpeed =
+      previousPlaybackRate !== null && previousPlaybackRate !== playbackRate;
+    previousClipId = clipId;
+    previousPlaybackRate = playbackRate;
+    if (playing && (jumped || changedClip || changedSpeed)) queuedJump = true;
+    const seeked = syncVideoTime(changedClip || changedSpeed);
     if (seeked || !playing) queuedJump = false;
     previousTargetTime = sourceTimeSeconds;
     if (!video) {
@@ -472,13 +528,7 @@
     if (playing) {
       cancelPausedFrame();
       if (!playingFrameRequest && !video.seeking) watchPlayingFrames(video);
-      if (video.paused)
-        void video
-          .play()
-          .then(() => {
-            if (!playing && primingVideo !== video) video?.pause();
-          })
-          .catch(() => undefined);
+      startPlayback(video);
     } else if (seeked) {
       cancelPlayingFrame();
       awaitingPlayingFrame = false;
@@ -588,6 +638,7 @@
       style:width={cropped?.width ?? fitted?.width}
       style:height={cropped?.height ?? fitted?.height}
       onloadedmetadata={onMetadata}
+      onerror={() => binding.onPreviewError?.()}
       onseeking={onSeeking}
       onseeked={onSeeked}
       onwaiting={onWaiting}

@@ -112,6 +112,7 @@
   import { createPostTimingSession } from "../builder/post-timing-session.svelte";
   import { formatTakeClock } from "../builder/post-builder-format";
   import PostEditorCanvas from "./PostEditorCanvas.svelte";
+  import { createPostVideoPreviews } from "$lib/shared/media-composition/state/post-video-previews.svelte";
   import PostEditorTopBar from "./PostEditorTopBar.svelte";
   import PostEditorTransport from "./PostEditorTransport.svelte";
   import PostCropTimeline from "./PostCropTimeline.svelte";
@@ -264,6 +265,15 @@
       catalog.find((video) => video.videoId === videoId) ?? null,
     hasAnimationOverlay: () => overlayPainter !== null,
   });
+  const videoPreviews = createPostVideoPreviews(
+    () =>
+      editor.takes.map((take) => ({
+        id: take.id,
+        url: editor.mediaUrl(take.id),
+        assetKey: take.takeKey,
+      })),
+    () => editor.isPlaying
+  );
   const session = createPostTimingSession(editor);
   onMount(() => {
     // Standalone sequence pages have no app shortcut coordinator. Reuse its
@@ -480,11 +490,15 @@
     if (takeId) {
       const take = editor.takes.find((entry) => entry.id === takeId);
       const url = editor.mediaUrl(takeId);
+      const preview = videoPreviews.resolve(takeId, url);
       return {
         roleKey: role,
         kind: "video",
         label: take?.label ?? t("share_studio_deep_take"),
-        previewUrl: url,
+        previewUrl: preview.url,
+        sourceWidth: preview.sourceWidth,
+        sourceHeight: preview.sourceHeight,
+        onPreviewError: () => videoPreviews.reportPlaybackError(takeId),
         previewType: "video",
         renderMode: "external-media",
         ...(take ? { durationSeconds: take.durationSeconds } : {}),
@@ -611,6 +625,7 @@
 
   let rootElement = $state<HTMLElement | null>(null);
   let canvasRoot = $state<HTMLElement | null>(null);
+  let playbackCanvas: PostEditorCanvas | undefined = $state();
   /** The side column beside the preview, or in the viewer's side panel. */
   let panelHost = $state<HTMLElement | null>(null);
   /** The panel's own slot in that column, under the top bar. */
@@ -1894,15 +1909,27 @@
 
   let frameRequest: number | null = null;
   let previousFrameTime: number | null = null;
+  let previousPreviewSeconds: number | null = null;
+  let playbackNeedsAlign = false;
 
   function frame(now: number): void {
     if (previousFrameTime !== null) {
-      const delta = (now - previousFrameTime) / 1000;
+      if (
+        playbackNeedsAlign ||
+        (previousPreviewSeconds !== null &&
+          editor.previewSeconds !== previousPreviewSeconds)
+      ) {
+        playbackCanvas?.alignPlayback();
+        playbackNeedsAlign = false;
+      }
+      const delta =
+        playbackCanvas?.playbackStep((now - previousFrameTime) / 1000) ?? 0;
       const clip = cropMode ? crop.item : null;
       if (clip) loopClip(clip, delta);
       else editor.advance(delta);
     }
     previousFrameTime = now;
+    previousPreviewSeconds = editor.previewSeconds;
     if (editor.isPlaying) frameRequest = requestAnimationFrame(frame);
   }
 
@@ -1919,6 +1946,7 @@
     }
     const into = (((next - clip.start) % length) + length) % length;
     editor.seek(clip.start + into);
+    playbackNeedsAlign = true;
   }
 
   $effect(() => {
@@ -1928,6 +1956,8 @@
       if (frameRequest !== null) cancelAnimationFrame(frameRequest);
       frameRequest = null;
       previousFrameTime = null;
+      previousPreviewSeconds = null;
+      playbackNeedsAlign = false;
     };
   });
 
@@ -2374,6 +2404,7 @@
           >
             <div class="canvas-slot">
               <PostEditorCanvas
+                bind:this={playbackCanvas}
                 {editor}
                 sequence={displaySequence}
                 qrSequence={sequence}

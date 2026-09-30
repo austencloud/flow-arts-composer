@@ -21,8 +21,8 @@ export function shouldSeekPreviewVideo(state: PreviewSeekState): boolean {
     (state.previousTargetTime !== null &&
       Math.abs(state.targetTime - state.previousTargetTime) > 0.5);
   // Repeated seeks can leave footage displaying the same frame while the
-  // playhead moves. Continuous drift gets rate correction instead.
-  const tolerance = state.playing ? (jumped ? 0.12 : 2) : 1 / 30;
+  // playhead moves. The composition follows the native media clock instead.
+  const tolerance = state.playing ? (jumped ? 1 / 30 : 2) : 1 / 30;
   if (state.seeking) return false;
   // The native clock can keep advancing after the picture stops. Give a
   // visible, buffered clip one retry even when that clock is on time.
@@ -48,12 +48,6 @@ export function shouldSeekPreviewVideo(state: PreviewSeekState): boolean {
   );
 }
 
-export function previewPlaybackRate(
-  authoredRate: number,
-  driftSeconds: number,
-  recovering: boolean
-): number {
-  if (recovering || Math.abs(driftSeconds) < 0.05) return authoredRate;
-  const correction = Math.max(-0.15, Math.min(0.15, driftSeconds * 0.4));
-  return authoredRate * (1 + correction);
+export function previewPlaybackRate(authoredRate: number): number {
+  return authoredRate;
 }

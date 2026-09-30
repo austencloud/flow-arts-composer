@@ -16,17 +16,11 @@ const playingState = {
 };
 
 describe("video preview synchronization", () => {
-  it("corrects normal playback drift with rate, without restarting decoding", () => {
+  it("keeps playback at the authored speed without seeking ordinary drift", () => {
     expect(shouldSeekPreviewVideo(playingState)).toBe(false);
-    expect(previewPlaybackRate(1, 0.2, false)).toBeCloseTo(1.08);
-    expect(previewPlaybackRate(1, -0.2, false)).toBeCloseTo(0.92);
-    expect(previewPlaybackRate(1, 0.01, false)).toBe(1);
-  });
-
-  it("bounds correction around the authored speed and rests while recovering", () => {
-    expect(previewPlaybackRate(0.5, 1, false)).toBeCloseTo(0.575);
-    expect(previewPlaybackRate(2, -1, false)).toBeCloseTo(1.7);
-    expect(previewPlaybackRate(1, 1, true)).toBe(1);
+    for (const authoredRate of [0.25, 0.5, 1, 2, 4]) {
+      expect(previewPlaybackRate(authoredRate)).toBe(authoredRate);
+    }
   });
 
   it("waits for presented progress and a cooldown before a large drift seek", () => {
@@ -92,6 +86,13 @@ describe("video preview synchronization", () => {
     expect(shouldSeekPreviewVideo(paused)).toBe(true);
     expect(shouldSeekPreviewVideo({ ...paused, seeking: true })).toBe(false);
     expect(shouldSeekPreviewVideo({ ...paused, targetTime: 3.02 })).toBe(false);
+    expect(
+      shouldSeekPreviewVideo({
+        ...playingState,
+        targetTime: 3.05,
+        discontinuity: true,
+      })
+    ).toBe(true);
   });
 
   it("recovers missing presented frames even when the native clock keeps up", () => {
