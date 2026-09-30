@@ -779,7 +779,10 @@ with pre-prepared data for better performance.
         propPositionOverrides={motionPropPositionOverrides}
         {directPropPositioning}
         animateContent={animateContent && liveAnimateVisibility}
-        {arrowOpacity}
+        arrowOpacity={disableTransitions && appliedPrepareKey !== prepareKey
+          ? 0
+          : arrowOpacity}
+        {disableTransitions}
         onGridReady={handleGridReady}
       />
     {:else}
@@ -834,7 +837,10 @@ with pre-prepared data for better performance.
             propPositionOverrides={motionPropPositionOverrides}
             {directPropPositioning}
             animateContent={animateContent && liveAnimateVisibility}
-            {arrowOpacity}
+            arrowOpacity={disableTransitions && appliedPrepareKey !== prepareKey
+              ? 0
+              : arrowOpacity}
+            {disableTransitions}
             onGridReady={handleGridReady}
           />
         </div>

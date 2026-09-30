@@ -28,6 +28,7 @@
   } from "$lib/shared/animation-engine/services/step-calculator";
   import { createStartPlacementFromBeatStart } from "$lib/shared/create/services/sequence-transforms";
   import { copyPostAnimationEffects } from "./post-animation-effects.svelte";
+  import { sequenceArrowLayers } from "$lib/shared/media-composition/domain/sequence-frame";
 
   let {
     sequence,
@@ -199,8 +200,22 @@
       ? null
       : Math.max(0, Math.min(1, sequencePosition - beatNumber))
   );
-  // The arrow fades in as the move is made, as in the Construct audition.
-  const arrowOpacity = $derived(motionProgress ?? 0);
+  const arrowLayers = $derived(
+    sequenceArrowLayers(
+      {
+        phase: beatNumber < 1 ? "opening" : "moving",
+        move: beatNumber,
+        moveProgress: motionProgress ?? 0,
+        pass: sequencePassIndex,
+      },
+      sequence.steps.length
+    )
+  );
+  const previousArrowData = $derived(
+    arrowLayers.previousMove === null
+      ? null
+      : (sequence.steps[arrowLayers.previousMove - 1] ?? null)
+  );
 
   $effect(() => {
     const target = sequence;
@@ -285,7 +300,7 @@
           pictographData={stepData}
           motionStartData={startData}
           {motionProgress}
-          {arrowOpacity}
+          arrowOpacity={arrowLayers.currentOpacity}
           leftPropTypeOverride={animationAppearance?.propType ?? leftPropType}
           rightPropTypeOverride={animationAppearance?.propType ?? rightPropType}
           disableTransitions
@@ -295,6 +310,33 @@
           showGrid={!animationAppearance}
           showTKA={false}
           showTnD={false}
+          showPropTnD={false}
+          showPlacements={false}
+          showHandColorKey={false}
+          showReversals={false}
+          showNonRadialPoints={false}
+          showHandPoints={false}
+          stepNumberOverride={false}
+        />
+      </div>
+      <div
+        class="outgoing-arrows"
+        style:opacity={arrowLayers.previousOpacity}
+        data-pictograph-capture-required={arrowLayers.previousOpacity > 0}
+        aria-hidden="true"
+      >
+        <PictographContainer
+          pictographData={previousArrowData}
+          leftPropTypeOverride={animationAppearance?.propType ?? leftPropType}
+          rightPropTypeOverride={animationAppearance?.propType ?? rightPropType}
+          disableTransitions
+          darkMode={animationAppearance?.darkMode ?? true}
+          transparentBackground
+          showProps={false}
+          showGrid={false}
+          showTKA={false}
+          showTnD={false}
+          showElemental={false}
           showPropTnD={false}
           showPlacements={false}
           showHandColorKey={false}
@@ -358,17 +400,28 @@
     height: 100%;
     position: relative;
   }
-  .arrow-overlay {
+  .arrow-overlay,
+  .outgoing-arrows {
     position: absolute;
     inset: 0;
     pointer-events: none;
   }
-  .pictograph-motion > div:not(.arrow-overlay) {
+  .pictograph-motion > div:not(.arrow-overlay):not(.outgoing-arrows) {
     width: 100%;
     height: 100%;
   }
   .pictograph-motion :global(.pictograph-container) {
     width: 100%;
     height: 100%;
+  }
+
+  :global(html[data-motion-preference="reduce"]) .outgoing-arrows {
+    display: none;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .outgoing-arrows {
+      display: none;
+    }
   }
 </style>

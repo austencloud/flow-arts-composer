@@ -238,3 +238,34 @@ describe("strip painter sizes", () => {
     expect(paintAt(painter, 200, 200)).toEqual([img, img]);
   });
 });
+
+describe("strip arrow handoff", () => {
+  it("paints independent cached arrows at the frame opacities, including after a backward seek", async () => {
+    const painter = createSequenceStripPainter({ sequence, mode: "arrows" });
+    await painter.prepare({ width: 500, height: 500 });
+    const paint = (arrival: number) => {
+      const { context, marks } = recordingContext(0.5);
+      painter.paint(
+        context,
+        { x: 0, y: 0, width: 500, height: 500 },
+        {
+          ...frame,
+          sequenceFrame: sequenceFrameAt(arrival, BEATS),
+        }
+      );
+      expect(context.globalAlpha).toBe(0.5);
+      return marks.map((mark) => mark.alpha);
+    };
+    const boundary = paint(1.025);
+    expect(boundary).toHaveLength(3);
+    expect(boundary[0]).toBe(0.5);
+    expect(boundary[1]).toBeCloseTo(0.0125);
+    expect(boundary[2]).toBeCloseTo(0.25);
+    paint(3.5);
+    expect(paint(1.025)).toEqual(boundary);
+    // First move has no outgoing arrow; after the handoff only the new arrow remains.
+    expect(paint(0.025)).toHaveLength(2);
+    expect(paint(1.1)).toHaveLength(2);
+    expect(paint(2.025)[2]).toBeCloseTo(0.25);
+  });
+});

@@ -20,7 +20,7 @@ import type { PreparedMandalaPath } from "$lib/shared/mandala/services/types";
 import { BASE_SAMPLES_PER_BEAT } from "$lib/shared/mandala/domain/mandala-constants";
 import { DEFAULT_TRAIL_SETTINGS } from "$lib/shared/animation-engine/domain/types/trail-types";
 import {
-  arrowOpacity,
+  sequenceArrowLayers,
   type SequenceFrame,
 } from "$lib/shared/media-composition/domain/sequence-frame";
 import {
@@ -318,7 +318,8 @@ class SequenceStripPainter implements PostStudioLayerPainter {
     const nearestSize = this.sizeCaches.has(size)
       ? size
       : nearestCachedSize(this.sizeCaches.keys(), size);
-    const cache = nearestSize !== null ? this.sizeCaches.get(nearestSize) : undefined;
+    const cache =
+      nearestSize !== null ? this.sizeCaches.get(nearestSize) : undefined;
     const preparedCells = this.preparedCells;
     if (!cache || !preparedCells) return; // Not ready yet - background only.
 
@@ -374,11 +375,23 @@ class SequenceStripPainter implements PostStudioLayerPainter {
       this.drawInterpolatedProps(context, side, endCell.sprites, positions);
     }
 
+    const arrowLayers = sequenceArrowLayers(sequenceFrame, this.moveCount);
     const arrowsImage = cache.arrows.get(moveIndex);
     if (arrowsImage) {
       context.save();
-      context.globalAlpha *= arrowOpacity(sequenceFrame);
+      context.globalAlpha *= arrowLayers.currentOpacity;
       context.drawImage(arrowsImage, 0, 0, side, side);
+      context.restore();
+    }
+
+    const previousArrowsImage =
+      arrowLayers.previousMove === null
+        ? undefined
+        : cache.arrows.get(arrowLayers.previousMove);
+    if (previousArrowsImage && arrowLayers.previousOpacity > 0) {
+      context.save();
+      context.globalAlpha *= arrowLayers.previousOpacity;
+      context.drawImage(previousArrowsImage, 0, 0, side, side);
       context.restore();
     }
 

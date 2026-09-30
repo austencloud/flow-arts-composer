@@ -253,6 +253,56 @@ describe("resolveFrameLayerGeometry", () => {
 });
 
 describe("waitForPictographMotion", () => {
+  it("waits for both arrow geometries during a handoff and ignores inactive outgoing layers", async () => {
+    const createDiv = () =>
+      document.createElementNS(
+        "http://www.w3.org/1999/xhtml",
+        "div"
+      ) as HTMLElement;
+    const layer = createDiv();
+    const motion = createDiv();
+    motion.dataset.pictographMotion = "";
+    vi.spyOn(motion, "getBoundingClientRect").mockReturnValue({
+      width: 200,
+      height: 200,
+    } as DOMRect);
+    const current = createDiv();
+    current.dataset.pictographRenderReady = "true";
+    const outgoing = createDiv();
+    outgoing.dataset.pictographCaptureRequired = "true";
+    const previous = createDiv();
+    previous.dataset.pictographRenderReady = "false";
+    outgoing.append(previous);
+    motion.append(current, outgoing);
+    layer.append(motion);
+    let resolved = false;
+    const pending = waitForPictographMotion(layer, 1_000);
+    void pending.then(() => {
+      resolved = true;
+    });
+    await Promise.resolve();
+    expect(resolved).toBe(false);
+    previous.dataset.pictographRenderReady = "true";
+    await expect(pending).resolves.toMatchObject({ element: motion });
+    previous.dataset.pictographRenderReady = "false";
+    outgoing.dataset.pictographCaptureRequired = "false";
+    await expect(waitForPictographMotion(layer, 1_000)).resolves.toMatchObject({
+      element: motion,
+    });
+    current.dataset.pictographRenderReady = "false";
+    outgoing.dataset.pictographCaptureRequired = "true";
+    previous.dataset.pictographRenderReady = "true";
+    let wrongSourceResolved = false;
+    const currentPending = waitForPictographMotion(layer, 1_000);
+    void currentPending.then(() => {
+      wrongSourceResolved = true;
+    });
+    await Promise.resolve();
+    expect(wrongSourceResolved).toBe(false);
+    current.dataset.pictographRenderReady = "true";
+    await currentPending;
+  });
+
   it("waits through a remount and ignores a stale, unready pictograph", async () => {
     const createDiv = () =>
       document.createElementNS(

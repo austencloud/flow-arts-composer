@@ -57,6 +57,7 @@ even when Svelte recreates the component instance.
     // Cell index for position caching (enables smooth transitions on regeneration)
     cellIndex = null,
     transitionKey = null,
+    disableTransitions = false,
     // Dark mode override - when provided, takes precedence over global state.
     // This lets containers like PictographTimeline force dark mode even when
     // the user's global setting is light mode.
@@ -76,6 +77,8 @@ even when Svelte recreates the component instance.
     cellIndex?: number | null;
     /** Stable editor identity used instead of the mutable grid index when available. */
     transitionKey?: string | null;
+    /** Timeline playback supplies fixed geometry and its own frame opacity. */
+    disableTransitions?: boolean;
     /** Dark mode override. When set, overrides global AnimationVisibilityStateManager detection. */
     darkMode?: boolean;
     renderPart?: "shaft" | "tip";
@@ -204,6 +207,7 @@ even when Svelte recreates the component instance.
    */
   function initialPosition(): { x: number; y: number } {
     const target = { x: safePosition.x, y: safePosition.y };
+    if (disableTransitions) return target;
     const cacheIdentity = transitionKey ?? cellIndex;
     if (cacheIdentity === null) return target;
     return arrowPositionCache.get(`${cacheIdentity}-${color}`) ?? target;
@@ -239,7 +243,7 @@ even when Svelte recreates the component instance.
     // No cell index means we're not in a grid context (option picker, etc.)
     // Set position immediately without caching
     const cacheIdentity = transitionKey ?? cellIndex;
-    if (cacheIdentity === null) {
+    if (disableTransitions || cacheIdentity === null) {
       displayedX = targetX;
       displayedY = targetY;
       return;
@@ -291,7 +295,11 @@ even when Svelte recreates the component instance.
       rotationDirection: motionData?.rotationDirection,
     };
 
-    if (previousSnapshot === null || previousRotation === null) {
+    if (
+      disableTransitions ||
+      previousSnapshot === null ||
+      previousRotation === null
+    ) {
       // First render - no transition
       displayedRotation = targetRotation;
     } else {
@@ -499,7 +507,7 @@ even when Svelte recreates the component instance.
     class:mirrored={shouldMirror}
     class:clickable={isClickable}
     class:selected={isSelected}
-    class:no-transition={isTransforming}
+    class:no-transition={isTransforming || disableTransitions}
     onclick={isClickable ? handleArrowClick : undefined}
     onkeydown={isClickable
       ? (e) => (e.key === "Enter" || e.key === " ") && handleArrowClick(e)
@@ -510,8 +518,12 @@ even when Svelte recreates the component instance.
       ? `${color} arrow - ${motionData.motionType} ${motionData.turns}`
       : undefined}
     style="
-      transform: translate({displayedX}px, {displayedY}px)
-                 rotate({displayedRotation}deg)
+      transform: translate({disableTransitions
+      ? safePosition.x
+      : displayedX}px, {disableTransitions ? safePosition.y : displayedY}px)
+                 rotate({disableTransitions
+      ? (arrowPosition?.rotation ?? 0)
+      : displayedRotation}deg)
                  {shouldMirror
       ? motionData.segment
         ? 'scale(1, -1)'
