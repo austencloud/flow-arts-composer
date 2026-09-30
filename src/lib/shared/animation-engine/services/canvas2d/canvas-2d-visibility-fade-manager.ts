@@ -38,7 +38,15 @@ export class Canvas2DVisibilityFadeManager {
   /**
    * Update visibility state and trigger transition if needed
    */
-  setVisible(visible: boolean): void {
+  setVisible(visible: boolean, instant = false): void {
+    if (instant) {
+      this.targetVisible = visible;
+      this.previousVisible = visible;
+      this.currentAlpha = visible ? 1 : 0;
+      this.isTransitioning = false;
+      this.transitionStartTime = null;
+      return;
+    }
     if (visible !== this.previousVisible) {
       this.targetVisible = visible;
       this.isTransitioning = true;

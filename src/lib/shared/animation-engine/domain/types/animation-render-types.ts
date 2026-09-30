@@ -47,6 +47,8 @@ export interface RenderSceneParams {
   additionalLayers?: AdditionalLayerRenderData[];
   trailSettings: TrailSettings;
   currentTime: number;
+  /** Virtual-time frames can stay paused indefinitely; apply visibility without a fade. */
+  instantVisibility?: boolean;
   visibility: AnimationVisibilitySettings;
   leftPropFlipped?: boolean;
   rightPropFlipped?: boolean;
