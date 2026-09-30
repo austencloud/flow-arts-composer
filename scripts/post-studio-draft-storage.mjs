@@ -16,7 +16,7 @@ export function createPostStudioDraftStorage(
 ) {
   let pending = Promise.resolve();
 
-  async function readRecords() {
+  async function readRecords(sequenceId) {
     await fs.mkdir(directory, { recursive: true });
     const files = (await fs.readdir(directory))
       .filter((name) => name.endsWith(".json"))
@@ -26,7 +26,16 @@ export function createPostStudioDraftStorage(
       const saved = JSON.parse(
         await fs.readFile(path.join(directory, name), "utf8")
       );
-      if (Array.isArray(saved.records)) records.push(...saved.records);
+      if (Array.isArray(saved.records)) {
+        records.push(
+          ...saved.records.filter(
+            (record) =>
+              sequenceId === null ||
+              record.key === `${PREFIXES[0]}${sequenceId}` ||
+              record.key.startsWith(`${PREFIXES[1]}${sequenceId}:`)
+          )
+        );
+      }
     }
     return records;
   }
@@ -40,11 +49,8 @@ export function createPostStudioDraftStorage(
   }
 
   return async function handle(req, res) {
-    if (
-      new URL(req.url ?? "/", "http://localhost").pathname !==
-      POST_STUDIO_DRAFT_PATH
-    )
-      return false;
+    const url = new URL(req.url ?? "/", "http://localhost");
+    if (url.pathname !== POST_STUDIO_DRAFT_PATH) return false;
     try {
       const origin = req.headers.origin;
       // HTTP/2 uses :authority instead of Host on the main HTTPS dev server.
@@ -57,7 +63,9 @@ export function createPostStudioDraftStorage(
       }
       if (req.method === "GET") {
         await pending.catch(() => {});
-        respond(res, 200, { records: await readRecords() });
+        respond(res, 200, {
+          records: await readRecords(url.searchParams.get("sequenceId")),
+        });
         return true;
       }
       if (req.method !== "POST") {
