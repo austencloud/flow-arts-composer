@@ -93,4 +93,36 @@ describe("video preview synchronization", () => {
     expect(shouldSeekPreviewVideo({ ...paused, seeking: true })).toBe(false);
     expect(shouldSeekPreviewVideo({ ...paused, targetTime: 3.02 })).toBe(false);
   });
+
+  it("recovers missing presented frames even when the native clock keeps up", () => {
+    const stalled = {
+      ...playingState,
+      currentTime: 8,
+      targetTime: 8,
+      previousTargetTime: 7.98,
+      presentedTime: 4,
+      sinceLastPresentedFrameMs: 3000,
+      targetBuffered: true,
+      visible: true,
+    };
+    expect(shouldSeekPreviewVideo(stalled)).toBe(true);
+    expect(shouldSeekPreviewVideo({ ...stalled, presentedTime: null })).toBe(
+      true
+    );
+    expect(
+      shouldSeekPreviewVideo({ ...stalled, sinceLastPresentedFrameMs: 2999 })
+    ).toBe(false);
+    expect(shouldSeekPreviewVideo({ ...stalled, presentedTime: 7.99 })).toBe(
+      false
+    );
+    expect(shouldSeekPreviewVideo({ ...stalled, targetBuffered: false })).toBe(
+      false
+    );
+    expect(shouldSeekPreviewVideo({ ...stalled, visible: false })).toBe(false);
+    expect(shouldSeekPreviewVideo({ ...stalled, playing: false })).toBe(false);
+    expect(shouldSeekPreviewVideo({ ...stalled, seeking: true })).toBe(false);
+    expect(
+      shouldSeekPreviewVideo({ ...stalled, sinceLastCorrectionMs: 2999 })
+    ).toBe(false);
+  });
 });
