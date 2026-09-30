@@ -611,6 +611,7 @@
 
   let rootElement = $state<HTMLElement | null>(null);
   let canvasRoot = $state<HTMLElement | null>(null);
+  let playbackCanvas: PostEditorCanvas | undefined = $state();
   /** The side column beside the preview, or in the viewer's side panel. */
   let panelHost = $state<HTMLElement | null>(null);
   /** The panel's own slot in that column, under the top bar. */
@@ -1894,15 +1895,27 @@
 
   let frameRequest: number | null = null;
   let previousFrameTime: number | null = null;
+  let previousPreviewSeconds: number | null = null;
+  let playbackNeedsAlign = false;
 
   function frame(now: number): void {
     if (previousFrameTime !== null) {
-      const delta = (now - previousFrameTime) / 1000;
+      if (
+        playbackNeedsAlign ||
+        (previousPreviewSeconds !== null &&
+          editor.previewSeconds !== previousPreviewSeconds)
+      ) {
+        playbackCanvas?.alignPlayback();
+        playbackNeedsAlign = false;
+      }
+      const delta =
+        playbackCanvas?.playbackStep((now - previousFrameTime) / 1000) ?? 0;
       const clip = cropMode ? crop.item : null;
       if (clip) loopClip(clip, delta);
       else editor.advance(delta);
     }
     previousFrameTime = now;
+    previousPreviewSeconds = editor.previewSeconds;
     if (editor.isPlaying) frameRequest = requestAnimationFrame(frame);
   }
 
@@ -1919,6 +1932,7 @@
     }
     const into = (((next - clip.start) % length) + length) % length;
     editor.seek(clip.start + into);
+    playbackNeedsAlign = true;
   }
 
   $effect(() => {
@@ -1928,6 +1942,8 @@
       if (frameRequest !== null) cancelAnimationFrame(frameRequest);
       frameRequest = null;
       previousFrameTime = null;
+      previousPreviewSeconds = null;
+      playbackNeedsAlign = false;
     };
   });
 
@@ -2374,6 +2390,7 @@
           >
             <div class="canvas-slot">
               <PostEditorCanvas
+                bind:this={playbackCanvas}
                 {editor}
                 sequence={displaySequence}
                 qrSequence={sequence}

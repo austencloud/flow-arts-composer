@@ -12,7 +12,14 @@
   import type { SequenceExportOptions } from "$lib/shared/render/domain/models/sequence-export-options";
   import type { HandLabeling } from "$lib/shared/video-collaboration/domain/hand-labeling";
   import type { CompositionSourceBinding } from "$lib/shared/media-composition/state/media-composition-state.svelte";
-  import type { EvaluatedFrameLayer } from "$lib/shared/media-composition/services/frame-evaluator";
+  import {
+    resolvePresetTimePoint,
+    type EvaluatedFrameLayer,
+  } from "$lib/shared/media-composition/services/frame-evaluator";
+  import {
+    previewClockStep,
+    type PreviewVideoController,
+  } from "$lib/shared/media-composition/services/post-preview-clock";
   import type { PresetClip } from "$lib/shared/media-composition/domain/media-composition-preset-schema";
   import type { PostEditorState } from "$lib/shared/media-composition/state/post-editor-state.svelte";
   import {
@@ -282,6 +289,84 @@
     }
     return out;
   });
+
+  const playbackVideos = new Map<string, PreviewVideoController>();
+  let masterVideoKey: string | null = null;
+
+  function registerPlaybackVideo(
+    regionId: string,
+    role: string,
+    controller: PreviewVideoController | null
+  ): void {
+    const key = `${regionId}:${role}`;
+    if (controller) playbackVideos.set(key, controller);
+    else playbackVideos.delete(key);
+  }
+
+  function requiredPlaybackVideos() {
+    return [...entries].flatMap(([regionId, layers]) =>
+      layers.flatMap((entry) => {
+        const binding = bindingFor(entry.role);
+        const video =
+          binding?.previewType === "video" || binding?.kind === "video";
+        if (!entry.live || !video || binding?.renderMode !== "external-media")
+          return [];
+        if (cropping && regionId !== cropItem?.id) return [];
+        const key = `${regionId}:${entry.role}`;
+        return [{ entry, key, controller: playbackVideos.get(key) }];
+      })
+    );
+  }
+
+  export function alignPlayback(): void {
+    for (const { controller } of requiredPlaybackVideos()) controller?.align();
+  }
+
+  export function playbackStep(wallDeltaSeconds: number): number {
+    const required = requiredPlaybackVideos();
+    // Audible footage sets the clock during an overlap. Both clips still
+    // have to be ready before either may run.
+    if (!required.some(({ key }) => key === masterVideoKey)) {
+      required.sort((a, b) => previewGain(b.entry) - previewGain(a.entry));
+      masterVideoKey = required[0]?.key ?? null;
+    }
+    required.sort(
+      (a, b) =>
+        Number(b.key === masterVideoKey) - Number(a.key === masterVideoKey)
+    );
+    const media = required.map(({ entry, controller }) => ({
+      ...(controller?.read() ?? { currentTime: 0, ready: false, ended: false }),
+      targetTime: entry.layer.sourceTimeSeconds,
+      playbackRate: entry.clip.playbackRate ?? 1,
+    }));
+    let nextBoundary = Infinity;
+    if (preset) {
+      for (const clip of preset.clips) {
+        if (clip.kind !== "visual") continue;
+        for (const point of [clip.start, clip.end]) {
+          const seconds = resolvePresetTimePoint(
+            point,
+            editor.durationSeconds,
+            preset.markers
+          );
+          if (seconds > editor.previewSeconds + 1e-7)
+            nextBoundary = Math.min(nextBoundary, seconds);
+        }
+      }
+    }
+    const step = previewClockStep(
+      editor.previewSeconds,
+      wallDeltaSeconds,
+      media,
+      nextBoundary
+    );
+    const requiredControllers = new Set(
+      required.map(({ controller }) => controller)
+    );
+    for (const controller of playbackVideos.values())
+      controller.hold(step.waiting || !requiredControllers.has(controller));
+    return step.deltaSeconds;
+  }
 
   function parkedLayer(clip: VisualClip): EvaluatedFrameLayer {
     const sourceIn = clip.sourceIn.unit === "seconds" ? clip.sourceIn.value : 0;
@@ -2261,8 +2346,10 @@
                     sourceItem?.kind === "card" ? sourceItem : null
                   )}
                   animationAppearance={animationAppearanceForItem(
-                    sourceItem?.kind === "animation" || sourceItem?.kind === "moves"
-                      ? sourceItem : null
+                    sourceItem?.kind === "animation" ||
+                      sourceItem?.kind === "moves"
+                      ? sourceItem
+                      : null
                   )}
                   {handLabeling}
                   {qrSequence}
@@ -2296,6 +2383,8 @@
                   playbackRate={entry.clip.playbackRate}
                   previewGain={previewGain(entry)}
                   onSourceSize={(size) => onSourceSize?.(region.id, size)}
+                  onPlaybackVideo={(controller) =>
+                    registerPlaybackVideo(region.id, entry.role, controller)}
                 />
               </div>
             {/if}
