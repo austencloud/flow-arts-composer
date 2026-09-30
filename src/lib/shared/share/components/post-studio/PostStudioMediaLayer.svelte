@@ -421,10 +421,13 @@
     recoveryStartedAt = null;
     videoWaiting = false;
     previousTargetTime = null;
-    sourceWidth = video.videoWidth;
-    sourceHeight = video.videoHeight;
+    sourceWidth = binding.sourceWidth ?? video.videoWidth;
+    sourceHeight = binding.sourceHeight ?? video.videoHeight;
     onSourceSize?.({ width: sourceWidth, height: sourceHeight });
-    composition?.setSourceDuration(binding.roleKey, video.duration);
+    composition?.setSourceDuration(
+      binding.roleKey,
+      binding.durationSeconds ?? video.duration
+    );
     syncVideoTime();
     if (!playing && !video.seeking) showPausedFrame(video);
   }
@@ -635,6 +638,7 @@
       style:width={cropped?.width ?? fitted?.width}
       style:height={cropped?.height ?? fitted?.height}
       onloadedmetadata={onMetadata}
+      onerror={() => binding.onPreviewError?.()}
       onseeking={onSeeking}
       onseeked={onSeeked}
       onwaiting={onWaiting}

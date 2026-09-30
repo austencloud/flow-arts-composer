@@ -112,6 +112,7 @@
   import { createPostTimingSession } from "../builder/post-timing-session.svelte";
   import { formatTakeClock } from "../builder/post-builder-format";
   import PostEditorCanvas from "./PostEditorCanvas.svelte";
+  import { createPostVideoPreviews } from "$lib/shared/media-composition/state/post-video-previews.svelte";
   import PostEditorTopBar from "./PostEditorTopBar.svelte";
   import PostEditorTransport from "./PostEditorTransport.svelte";
   import PostCropTimeline from "./PostCropTimeline.svelte";
@@ -264,6 +265,15 @@
       catalog.find((video) => video.videoId === videoId) ?? null,
     hasAnimationOverlay: () => overlayPainter !== null,
   });
+  const videoPreviews = createPostVideoPreviews(
+    () =>
+      editor.takes.map((take) => ({
+        id: take.id,
+        url: editor.mediaUrl(take.id),
+        assetKey: take.takeKey,
+      })),
+    () => editor.isPlaying
+  );
   const session = createPostTimingSession(editor);
   onMount(() => {
     // Standalone sequence pages have no app shortcut coordinator. Reuse its
@@ -480,11 +490,15 @@
     if (takeId) {
       const take = editor.takes.find((entry) => entry.id === takeId);
       const url = editor.mediaUrl(takeId);
+      const preview = videoPreviews.resolve(takeId, url);
       return {
         roleKey: role,
         kind: "video",
         label: take?.label ?? t("share_studio_deep_take"),
-        previewUrl: url,
+        previewUrl: preview.url,
+        sourceWidth: preview.sourceWidth,
+        sourceHeight: preview.sourceHeight,
+        onPreviewError: () => videoPreviews.reportPlaybackError(takeId),
         previewType: "video",
         renderMode: "external-media",
         ...(take ? { durationSeconds: take.durationSeconds } : {}),
