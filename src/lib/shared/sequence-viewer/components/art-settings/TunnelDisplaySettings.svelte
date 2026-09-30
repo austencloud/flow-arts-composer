@@ -16,7 +16,7 @@
   let { sequence, propType, dense, onArtSettingChange }: Props = $props();
 </script>
 
-<div class="display-rows">
+<div class="display-rows" class:dense>
   <div
     class="rt-section"
     role="region"
@@ -47,5 +47,15 @@
     flex: 1 1 0;
     min-height: 0;
     flex-direction: column;
+  }
+
+  /* The sidebar hands these rows a height to divide, so they fill it. The dock
+     tray is the other way round: it takes its height FROM the content, and a
+     `flex: 1 1 0` child reports zero. The tray then opened at zero height, the
+     mode bar ducked away, and no Display tiles showed. Same rule as the 2D
+     Animation panel's dock. */
+  .display-rows.dense,
+  .display-rows.dense .rt-section {
+    flex: 0 0 auto;
   }
 </style>
