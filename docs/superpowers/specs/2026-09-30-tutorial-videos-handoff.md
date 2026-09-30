@@ -1,9 +1,9 @@
 # Halloween Tutorial Videos — Handoff (2026-09-30)
 
 Living document. Updated at every milestone by whichever agent holds the work.
-Last update: 2026-09-30 13:25 CDT (Claude Opus 5.5 session, fourth pass).
-Work branch: `codex/auto-colour`, worktree
-`E:/worktrees/tka-platform/auto-colour` (node_modules is a junction into the
+Last update: 2026-09-30 13:35 CDT (Claude Opus 5.5 session, fifth pass).
+Work branch: `codex/auto-colour-sky`, worktree
+`E:/worktrees/tka-platform/auto-colour-sky` (node_modules is a junction into the
 primary checkout; `wt:finish` unlinks it). The earlier branch
 `codex/tutorial-videos-fixes` is merged and removed.
 
@@ -106,21 +106,24 @@ No full export of any of the three exists yet.
 
 ## In flight
 
-1. **New Auto colour** on `codex/auto-colour`: `analyzeVideoColor` in
-   `src/lib/shared/media-composition/domain/post-video-color-grade.ts` is
-   rewritten (brightness then contrast as a line through two anchors: the black
-   point at about half the darkest 0.5% goes to black, and the median lands 5%
-   brighter, 12% on dim footage, lower on overexposed footage; guards stop a dim median
-   getting darker and limit highlight clipping; vibrance up to 1.15). Tests in
-   `tests/unit/post-video-color-grade.test.ts` rewritten, 7 passed. On
-   160×90 samples of the real clips (ffmpeg, same fractions as the button) it
-   returns: ΩΛ-XJ run 1.11/1.14/1.11, slow 1.11/1.11/1.11; DCKΨ- both
-   1.12/1.00/1.11; woods run 1.08/1.09/1.09, slow 1.09/1.10/1.09
-   (brightness/contrast/saturation). Full-resolution check: newly clipped luma
-   0.05–1.35% except woods 3.4–3.6% (sky between leaves, looked fine by eye).
-   Next: `wt:finish -- codex/auto-colour --route /post`.
+1. **New Auto colour** is on local main (merge `0a21f03cee`, svelte-check 0
+   errors). `analyzeVideoColor` in
+   `src/lib/shared/media-composition/domain/post-video-color-grade.ts` draws
+   brightness then contrast as a line through two anchors. The black point (about
+   half the darkest 0.5%) goes to black. The median lands 5% brighter, 12% on
+   dim footage, and lower on overexposed footage. Guards stop a dim median from
+   getting darker and limit newly clipped highlights. Vibrance tops out at 1.15.
+   Follow-up on `codex/auto-colour-sky`: the highlight guard now ignores pixels
+   that are already white. The woods sky is 1.6% pure white in the browser's
+   sample, and the first version switched the whole grade off. On the browser's
+   own 160×90 samples, saved as `scratchpad/colour/browser-samples.json`, it
+   returns (brightness/contrast/saturation):
+   ΩΛ-XJ run 1.09/1.15/1.10, slow 1.13/1.15/1.11; DCKΨ- both 1.20/1.03/1.12;
+   woods run 1.04/1.03/1.09, slow 1.05/1.04/1.09. Tests: 8 passed.
 2. Press Auto on all six video clips (ΩΛ-XJ, DCKΨ-, Δ-ΛRZ; Austen approved
-   all three, colour only) and confirm the saved values.
+   all three, colour only) and confirm the saved values. DCKΨ- is done
+   (archive `1790792470489-…json`, updatedAt 18:21:10Z, both clips
+   1.2/1.03/1.12, six captions intact). Woods and ΩΛ-XJ wait for the sky fix.
 3. Full exports of all three, tab visible.
 4. Austen: open DCKΨ- and press "Tap beats" → check on both takes (the derived
    run-through beats and the other agent's slow-take beats).
