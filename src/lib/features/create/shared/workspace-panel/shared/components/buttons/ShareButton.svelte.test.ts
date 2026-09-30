@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import demo from "$lib/shared/landing/data/demo-sequence.json";
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
 import ShareButton from "./ShareButton.svelte";
+import WorkspaceShareSheet from "./WorkspaceShareSheet.svelte";
 
 const shareButtonMocks = vi.hoisted(() => ({
   showToast: vi.fn(),
@@ -32,6 +33,7 @@ const workspaceVideoMocks = vi.hoisted(() => ({
   },
   panelState: {
     reset: vi.fn(),
+    setSpeed: vi.fn(),
     dispose: vi.fn(),
   },
   downloadArtifact: vi.fn(),
@@ -233,6 +235,7 @@ beforeEach(() => {
   workspaceVideoMocks.controller.initialize.mockClear();
   workspaceVideoMocks.controller.dispose.mockClear();
   workspaceVideoMocks.panelState.reset.mockClear();
+  workspaceVideoMocks.panelState.setSpeed.mockClear();
   workspaceVideoMocks.panelState.dispose.mockClear();
   workspaceVideoMocks.downloadArtifact.mockReset();
   workspaceVideoMocks.downloadArtifact.mockResolvedValue({ status: "done" });
@@ -311,6 +314,8 @@ describe("ShareButton", () => {
       sequence,
       workspaceVideoMocks.panelState
     );
+    // The workspace has no tempo of its own: it renders at the panel's 1x.
+    expect(workspaceVideoMocks.panelState.setSpeed).not.toHaveBeenCalled();
 
     await vi.waitFor(() =>
       expect(workspaceVideoMocks.downloadArtifact).toHaveBeenCalledTimes(1)
@@ -338,5 +343,25 @@ describe("ShareButton", () => {
     await expect
       .element(page.getByRole("group", { name: "File type" }))
       .toBeInTheDocument();
+  });
+});
+
+describe("WorkspaceShareSheet", () => {
+  it("renders the video at the host's tempo, not the 60 BPM default", async () => {
+    render(WorkspaceShareSheet, {
+      sequence,
+      isOpen: true,
+      onClose: vi.fn(),
+      bpm: 90,
+    });
+
+    await page.getByRole("button", { name: /Download a file/ }).click();
+    await page.getByRole("button", { name: "Video", exact: true }).click();
+    await page.getByRole("button", { name: "Download video" }).click();
+
+    await vi.waitFor(() =>
+      expect(workspaceVideoMocks.executeExport).toHaveBeenCalledTimes(1)
+    );
+    expect(workspaceVideoMocks.panelState.setSpeed).toHaveBeenCalledWith(1.5);
   });
 });

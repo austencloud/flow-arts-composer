@@ -30,6 +30,7 @@ import {
   type NewOverlaySpec,
 } from "$lib/shared/media-composition/domain/post-project-edits";
 import {
+  applyTutorialTemplate,
   applyTutorialPreset,
   type TutorialLabels,
 } from "$lib/shared/media-composition/domain/post-project-looks";
@@ -976,6 +977,11 @@ export function createPostEditorState(deps: PostEditorDeps) {
     return true;
   }
 
+  function applyTemplate(template: PostProject): boolean {
+    if (gestureBase) return false;
+    return commit(applyTutorialTemplate(project, template, context()));
+  }
+
   /** Starts a new timing part at a media time unless one already starts near it. */
   function splitTakeTimingAt(takeId: string, atSeconds: number): void {
     const current = timings[takeId];
@@ -1248,6 +1254,7 @@ export function createPostEditorState(deps: PostEditorDeps) {
     addOverlay,
     addCard,
     applyTutorial,
+    applyTemplate,
     setAudio,
     seedAudio,
     addLocalVideo,

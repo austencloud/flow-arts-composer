@@ -3,6 +3,19 @@ import { logSessionStart } from "../../analytics/services/posthog-activity-logge
 import { getPresenceTracker } from "../../presence/get-presence-tracker";
 import { ensureSystemCollections } from "$lib/shared/library/services/collection-manager";
 
+/** Keep an earlier auth boot from repointing saved mandala writes after a user change. */
+export async function initializeMandalaCollection(
+  user: User,
+  getUserFromState: () => User | null
+): Promise<void> {
+  const { mandalaCollectionState } =
+    await import("$lib/features/mandala/tabs/collection/state/mandala-collection-state.svelte");
+  const { getFirestoreInstance } = await import("$lib/shared/auth/firebase");
+  await getFirestoreInstance();
+  if (getUserFromState()?.uid !== user.uid) return;
+  await mandalaCollectionState.init(user.uid);
+}
+
 export async function initializeChildServices(
   user: User,
   getUserFromState: () => User | null
@@ -154,16 +167,9 @@ export async function initializeChildServices(
     });
 
   // Initialize mandala collection Firebase sync (non-blocking)
-  import("$lib/features/mandala/tabs/collection/state/mandala-collection-state.svelte")
-    .then(async ({ mandalaCollectionState }) => {
-      const { getFirestoreInstance } =
-        await import("$lib/shared/auth/firebase");
-      await getFirestoreInstance();
-      await mandalaCollectionState.init(user.uid);
-    })
-    .catch((error) => {
-      console.warn("⚠️ [authState] Mandala collection sync failed:", error);
-    });
+  void initializeMandalaCollection(user, getUserFromState).catch((error) => {
+    console.warn("⚠️ [authState] Mandala collection sync failed:", error);
+  });
 
   // Initialize tunnel collection Firebase sync (non-blocking)
   import("$lib/features/tunnel-collection/state/tunnel-collection-state.svelte")

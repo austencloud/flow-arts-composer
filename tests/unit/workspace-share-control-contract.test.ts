@@ -9,6 +9,13 @@ const shareButtonSource = readFileSync(
   ),
   "utf8"
 );
+const shareSheetSource = readFileSync(
+  resolve(
+    process.cwd(),
+    "src/lib/features/create/shared/workspace-panel/shared/components/buttons/WorkspaceShareSheet.svelte"
+  ),
+  "utf8"
+);
 const shareControlSource = readFileSync(
   resolve(
     process.cwd(),
@@ -65,7 +72,9 @@ describe("Create workspace share control contract", () => {
     expect(download).toBeGreaterThan(copy);
     expect(shareControlSource).toContain('t("inbox_ui_preparing_card")');
     expect(shareControlSource).toContain('t("create_workspace_share_card")');
-    expect(shareControlSource).toContain('t("create_workspace_share_card_unavailable")');
+    expect(shareControlSource).toContain(
+      't("create_workspace_share_card_unavailable")'
+    );
     expect(shareControlSource).toContain('t("create_workspace_retry_card")');
     expect(shareControlSource).toContain(
       "getWorkspaceCardMenuAction(cardPhase, canShareCard)"
@@ -105,8 +114,9 @@ describe("Create workspace share control contract", () => {
     );
     expect(shareControlSource).toContain("canOpen={true}");
     expect(shareButtonSource).toContain("onDirectOpen={openPostSheet}");
-    expect(shareButtonSource).toContain("canCreateLink={hasFullAccount}");
-    expect(shareButtonSource).toContain(
+    expect(shareButtonSource).toContain("<WorkspaceShareSheet");
+    expect(shareSheetSource).toContain("canCreateLink={hasFullAccount}");
+    expect(shareSheetSource).toContain(
       "onSendInTka={hasFullAccount ? sendSequenceToInbox : undefined}"
     );
   });

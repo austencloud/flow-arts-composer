@@ -82,6 +82,7 @@ export const TOOL_ICON: Record<PostToolId, string> = {
   back: "fa-arrow-left",
   split: "fa-scissors",
   tutorial: "fa-wand-magic-sparkles",
+  template: "fa-copy",
   beats: "fa-drum",
   duplicate: "fa-clone",
   delete: "fa-trash-can",
@@ -136,6 +137,8 @@ export function toolLabel(id: PostToolId): string {
       return t("post_editor_split");
     case "tutorial":
       return t("post_editor_tutorial");
+    case "template":
+      return t("post_editor_use_omega_template");
     case "beats":
       return t("post_editor_beats");
     case "duplicate":

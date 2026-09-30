@@ -17,6 +17,7 @@ import { GenerationMode } from "../shared/domain/models/generate-models";
 import type { GenerationOrchestrator } from "$lib/shared/create/services/generation-orchestrator";
 import { generationOrchestrator } from "$lib/shared/create/services/generation-orchestrator";
 import { captureGenerationErrorContext } from "$lib/shared/create/utils/generation-error-context";
+import { GenerationRequestError } from "$lib/shared/create/domain/generation-request-error";
 import {
   levelToDifficulty,
   uiConfigToGenerationOptions,
@@ -107,6 +108,17 @@ function reportPropShortfall(report: ConstraintReport | undefined): void {
   if (prop && prop.score < 1) {
     toast.info(PROP_CONSTRAINT_SHORTFALL_TEXT, 6000);
   }
+}
+
+/**
+ * Settings that cannot make a sequence are not bugs. Their message already
+ * says what to change, so show it as a notice and keep the bug-report dialog
+ * for real failures. Returns false for anything else.
+ */
+function noticeForImpossibleRequest(error: unknown): boolean {
+  if (!(error instanceof GenerationRequestError)) return false;
+  toast.info(error.message, 8000);
+  return true;
 }
 
 export function createGenerationActionsState(
@@ -278,6 +290,7 @@ export function createGenerationActionsState(
         // Silently fail - activity logging is non-critical
       }
     } catch (error) {
+      if (noticeForImpossibleRequest(error)) return;
       generationError =
         error instanceof Error ? error.message : "Unknown generation error";
 
@@ -570,6 +583,7 @@ export function createGenerationActionsState(
         // Silently fail - activity logging is non-critical
       }
     } catch (error) {
+      if (noticeForImpossibleRequest(error)) return;
       generationError =
         error instanceof Error ? error.message : "Spell generation failed";
       spellState.setError(generationError);
