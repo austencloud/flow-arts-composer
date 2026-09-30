@@ -89,6 +89,11 @@
   import { VIDEO_UPLOAD_ENABLED } from "../config/viewer-feature-flags";
   import { uploadRenderedFilm } from "$lib/shared/video-collaboration/services/upload-rendered-film";
   import { canAccessPostStudio } from "../services/post-studio-access";
+  import { getPostWorkspaceNavigator } from "$lib/features/post/services/get-post-workspace-navigator";
+  import {
+    closeSequenceOverlay,
+    isSequenceOverlayOpen,
+  } from "../state/sequence-viewer-overlay-state.svelte";
   import ChoreoCardContextMenuHost from "./choreo-card-context-menu/ChoreoCardContextMenuHost.svelte";
   import { createSequenceSendSession } from "$lib/shared/inbox/state/send-sequence-state.svelte";
   import { inboxState } from "$lib/shared/inbox/state/inbox-state.svelte";
@@ -545,6 +550,23 @@
    */
   let postStudioVideoUrl = $state<string | null>(null);
   let postStudioSharePreviewTarget = $state<HTMLElement | null>(null);
+  let openingPost = false;
+  async function openInPost(): Promise<void> {
+    if (openingPost) return;
+    openingPost = true;
+    try {
+      await getPostWorkspaceNavigator().openSequence(
+        ctx.effectiveSequence ?? sequence
+      );
+      if (isSequenceOverlayOpen()) closeSequenceOverlay();
+    } catch (error) {
+      console.error("[SequenceViewer] Could not open Post", error);
+      toast.error("Could not open Post. Please try again.");
+    } finally {
+      openingPost = false;
+    }
+  }
+
   let postStudioShareExport: PostStudioShareExport | null = null;
   function adoptPostStudioRender(blob: Blob): void {
     if (postStudioVideoUrl) URL.revokeObjectURL(postStudioVideoUrl);
@@ -1233,6 +1255,7 @@
                   : undefined}
                 onSelectSplit={() => layout.selectSplitMode()}
                 onSelectMode={(mode) => layout.selectViewerMode(mode)}
+                onOpenPost={embedded ? undefined : openInPost}
               />
             </div>
           {/if}
@@ -1740,6 +1763,7 @@
             webgl2Available={ctx.viewer3DState.webgl2Available}
             onSelectSplit={() => layout.selectSplitMode()}
             onSelectMode={(mode) => layout.selectViewerMode(mode)}
+            onOpenPost={embedded ? undefined : openInPost}
           />
         </div>
       </div>
@@ -1863,7 +1887,9 @@
     needsAccountForFiles={!authState.isFullAccount}
     onRequestAccount={() => authDrawerState.show("signup", "export")}
     onOpenPostStudio={canAccessPostStudio()
-      ? () => layout.selectViewerMode("post-studio")
+      ? embedded
+        ? () => layout.selectViewerMode("post-studio")
+        : openInPost
       : undefined}
     onClose={() => share.setPostSheetOpen(false)}
   />
