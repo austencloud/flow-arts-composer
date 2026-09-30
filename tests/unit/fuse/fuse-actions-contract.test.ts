@@ -9,6 +9,22 @@ function read(relativePath: string): string {
 }
 
 describe("Fuse sequence actions contract", () => {
+  it("opens Share on the fused result without navigating through the sequence viewer", () => {
+    const layout = read("src/lib/features/fuse/components/FuseLayout.svelte");
+    const shareHandler = layout.slice(
+      layout.indexOf("async function handleShare()"),
+      layout.indexOf("function closeShare()")
+    );
+
+    expect(shareHandler).toContain("fuseState.buildFusedSequence()");
+    expect(shareHandler).toContain("shareSequence = sequence");
+    expect(shareHandler).toContain("shareOpen = true");
+    expect(shareHandler).not.toContain("openSequenceViewer");
+    expect(layout).toContain("<WorkspaceShareSheet");
+    expect(layout).toContain("sequence={shareSequence}");
+    expect(layout).toContain("onClose={closeShare}");
+  });
+
   it("composes the canonical transform grid instead of owning another action list", () => {
     const popover = read(
       "src/lib/features/fuse/components/FuseSourceActionPopover.svelte"
