@@ -219,7 +219,8 @@
 
   async function autoAdjustColor(): Promise<void> {
     if (item.kind !== "video" || grading || locked) return;
-    const url = editor.mediaUrl(item.takeId);
+    const target = item;
+    const url = editor.mediaUrl(target.takeId);
     if (!url) {
       gradeError = "The video is not ready to analyze.";
       return;
@@ -229,10 +230,14 @@
     try {
       const colorGrade = await autoGradeVideo(
         url,
-        item.sourceIn,
-        item.sourceOut
+        target.sourceIn,
+        target.sourceOut
       );
-      patchItem({ colorGrade });
+      if (!findItem(editor.project, target.id) || editor.isLocked(target.id))
+        return;
+      editor.edit((project, ctx) =>
+        updateItem(project, target.id, { colorGrade }, ctx)
+      );
     } catch {
       gradeError =
         "Could not analyze this video. The original remains unchanged.";
