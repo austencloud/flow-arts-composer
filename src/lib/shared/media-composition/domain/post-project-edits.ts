@@ -817,6 +817,8 @@ export interface PostItemPatch {
   animation?: PostTextAnimation | null;
   /** A clip's effect on its staff ends; null removes it. */
   staffEffect?: PostStaffEffectId | null;
+  animationAppearance?: PostAnimationItem["animationAppearance"] | null;
+  cardAppearance?: PostCardItem["cardAppearance"] | null;
 }
 
 export function updateItem(

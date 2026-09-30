@@ -44,14 +44,14 @@
    */
   const automatic = $derived.by(() => {
     void compositionVersion;
-    return isCardLayoutAutomatic(sequence.steps?.length ?? 0);
+    return isCardLayoutAutomatic(sequence.steps?.length ?? 0) &&
+      cardRenderOptions?.columnCount == null &&
+      !cardRenderOptions?.startPlacementLayout;
   });
 
-  const columnCount = $derived(
-    automatic ? null : (cardRenderOptions?.columnCount ?? null)
-  );
+  const columnCount = $derived(cardRenderOptions?.columnCount ?? null);
   const startPlacementLayoutOverride = $derived(
-    automatic ? null : (cardRenderOptions?.startPlacementLayout ?? null)
+    cardRenderOptions?.startPlacementLayout ?? null
   );
   const shared = getViewerStudioSurfaces();
   const owner = {};
@@ -84,6 +84,7 @@
       showDifficultyLevel={cardRenderOptions?.addDifficultyLevel ?? true}
       includeStartPlacement={cardRenderOptions?.includeStartPlacement ?? true}
       showNotes={cardRenderOptions?.showNotes ?? false}
+      customNotesText={cardRenderOptions?.customNotesText}
       showLoopGlyph={cardRenderOptions?.showLoopGlyph ?? true}
       showQRCode={cardRenderOptions?.visibilityOverrides?.showQRCode ?? false}
       showMandala={cardRenderOptions?.visibilityOverrides?.showMandala ?? false}

@@ -2004,6 +2004,7 @@
       crop={cropMode ? crop : null}
       {staffTips}
       {cardRenderOptions}
+      stepCount={displaySequence.steps?.length ?? 0}
     />
   {/if}
 {/snippet}

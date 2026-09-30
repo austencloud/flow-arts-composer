@@ -99,4 +99,44 @@ describe("selected media appearance", () => {
       edited
     );
   });
+
+  it("persists the viewer card controls and resolves the one-cell choice per card", () => {
+    const original = project([card("one"), card("two")]);
+    const edited = updateItem(original, "one", {
+      cardAppearance: {
+        showNotes: true,
+        customNotesText: "Practice this turn",
+        infoCellChoice: "mandala",
+        columnCount: 3,
+        startPlacementLayout: "column",
+        showPropTnD: false,
+        showHandColorKey: false,
+        showNonRadialPoints: false,
+        darkMode: false,
+      },
+    }, ctx);
+    const one = findItem(edited, "one")?.item;
+    const two = findItem(edited, "two")?.item;
+    const base = {
+      showNotes: false,
+      visibilityOverrides: { showQRCode: true, showMandala: false, darkMode: true },
+    };
+    const rendered = cardOptionsForItem(base, one?.kind === "card" ? one : null);
+    expect(rendered).toMatchObject({
+      showNotes: true,
+      customNotesText: "Practice this turn",
+      columnCount: 3,
+      startPlacementLayout: "column",
+      visibilityOverrides: {
+        showQRCode: false,
+        showMandala: true,
+        showPropTnD: false,
+        showHandColorKey: false,
+        showNonRadialPoints: false,
+        darkMode: false,
+      },
+    });
+    expect(cardOptionsForItem(base, two?.kind === "card" ? two : null)).toBe(base);
+    expect(PostProjectSchema.parse(JSON.parse(JSON.stringify(edited)))).toEqual(edited);
+  });
 });

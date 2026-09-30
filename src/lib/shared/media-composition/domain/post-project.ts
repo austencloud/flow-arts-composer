@@ -489,6 +489,16 @@ export const PostCardItemSchema = z
         showTnD: z.boolean().optional(),
         showPlacements: z.boolean().optional(),
         showReversals: z.boolean().optional(),
+        showPropTnD: z.boolean().optional(),
+        showHandColorKey: z.boolean().optional(),
+        showNonRadialPoints: z.boolean().optional(),
+        showQRCode: z.boolean().optional(),
+        showMandala: z.boolean().optional(),
+        infoCellChoice: z.enum(["qr", "mandala", "none"]).optional(),
+        startPlacementLayout: z.enum(["row", "column"]).optional(),
+        columnCount: z.number().int().positive().nullable().optional(),
+        darkMode: z.boolean().optional(),
+        customNotesText: z.string().max(120).optional(),
       })
       .strict()
       .optional(),

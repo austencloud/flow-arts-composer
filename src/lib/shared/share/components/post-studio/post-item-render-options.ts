@@ -10,8 +10,14 @@ export function cardOptionsForItem(
   item: PostCardItem | null | undefined
 ): Partial<SequenceExportOptions> | null {
   if (!item?.cardAppearance) return options ?? null;
-  const { showGrid, showTKA, showTnD, showPlacements, showReversals, ...card } =
+  const { showGrid, showTKA, showTnD, showPlacements, showReversals,
+    showPropTnD, showHandColorKey, showNonRadialPoints, showQRCode,
+    showMandala, darkMode, infoCellChoice, ...card } =
     item.cardAppearance;
+  const infoCell = infoCellChoice === undefined ? {} : {
+    showQRCode: infoCellChoice === "qr",
+    showMandala: infoCellChoice === "mandala",
+  };
   return {
     ...options,
     ...card,
@@ -22,6 +28,13 @@ export function cardOptionsForItem(
       ...(showTnD === undefined ? {} : { showTnD }),
       ...(showPlacements === undefined ? {} : { showPlacements }),
       ...(showReversals === undefined ? {} : { showReversals }),
+      ...(showPropTnD === undefined ? {} : { showPropTnD }),
+      ...(showHandColorKey === undefined ? {} : { showHandColorKey }),
+      ...(showNonRadialPoints === undefined ? {} : { showNonRadialPoints }),
+      ...(showQRCode === undefined ? {} : { showQRCode }),
+      ...(showMandala === undefined ? {} : { showMandala }),
+      ...infoCell,
+      ...(darkMode === undefined ? {} : { darkMode }),
     },
   };
 }
