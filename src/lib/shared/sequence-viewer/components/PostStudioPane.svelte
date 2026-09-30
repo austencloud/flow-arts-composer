@@ -5,6 +5,11 @@
   import { createCardPreviewState } from "$lib/shared/share/state/card-preview-state.svelte";
   import PostStudio from "$lib/shared/share/components/post-studio/PostStudio.svelte";
   import type { PostStudioShareExport } from "$lib/shared/share/components/post-studio/post-studio-share-export";
+  import type { PostProject } from "$lib/shared/media-composition/domain/post-project";
+  import {
+    loadPostDraft,
+    savePostDraft,
+  } from "$lib/shared/media-composition/services/post-draft-storage";
 
   /**
    * Post Studio as a sequence-viewer surface.
@@ -50,25 +55,50 @@
     getDarkMode: () => exportOptions.imageDarkMode,
     getResolvedAutoLayout: () => resolvedCardAutoLayout,
   });
+
+  let draft = $state<{
+    sequenceId: string;
+    project: PostProject | null;
+    diskAvailable: boolean;
+    error: string | null;
+  } | null>(null);
+
+  $effect(() => {
+    const sequenceId = sequence.id;
+    let current = true;
+    void loadPostDraft(sequenceId).then((loaded) => {
+      if (current) draft = { sequenceId, ...loaded };
+    });
+    return () => {
+      current = false;
+    };
+  });
 </script>
 
 <div class="post-studio-pane">
-  <PostStudio
-    {active}
-    {sequence}
-    cardPreviewUrl={cardPreview.url}
-    cardRenderOptions={cardPreview.renderOptions}
-    {resolvedCardAutoLayout}
-    animationPreviewUrl={null}
-    isPreparingCard={cardPreview.isPreparing}
-    isPreparingAnimation={false}
-    onRequestAnimation={() => undefined}
-    {onExported}
-    {onSharePost}
-    {previewTarget}
-    {onRegisterShareExport}
-    {sharing}
-  />
+  {#if draft?.sequenceId === sequence.id}
+    <PostStudio
+      {active}
+      {sequence}
+      initialProject={draft.project ?? undefined}
+      onSaveDraft={draft.diskAvailable ? savePostDraft : undefined}
+      draftLoadError={draft.error}
+      cardPreviewUrl={cardPreview.url}
+      cardRenderOptions={cardPreview.renderOptions}
+      {resolvedCardAutoLayout}
+      animationPreviewUrl={null}
+      isPreparingCard={cardPreview.isPreparing}
+      isPreparingAnimation={false}
+      onRequestAnimation={() => undefined}
+      {onExported}
+      {onSharePost}
+      {previewTarget}
+      {onRegisterShareExport}
+      {sharing}
+    />
+  {:else}
+    <div class="draft-loading" role="status">Loading saved post…</div>
+  {/if}
 </div>
 
 <style>
@@ -79,5 +109,13 @@
     min-width: 0;
     min-height: 0;
     overflow: hidden;
+  }
+
+  .draft-loading {
+    display: flex;
+    flex: 1;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-secondary, #a3a3a3);
   }
 </style>
