@@ -247,6 +247,7 @@ describe("saved tutorial template", () => {
     });
     source.timings = { b: timing("key-b", [2, 3, 4]) };
     destination.timings = { b: timing("key-b", [4, 5, 6]) };
+    destination.canvas = "1:1";
 
     const result = valid(applyTutorialTemplate(destination, source, ctx));
     const slow = findItem(result, "target-slow")!.item;
@@ -259,13 +260,47 @@ describe("saved tutorial template", () => {
         .flatMap((track) => track.items)
         .filter((item) => item.kind === "moves")
         .map((item) => item.mode)
-        .sort()
-    ).toEqual(["alternate", "mandala"]);
+    ).toEqual(["alternate"]);
+    expect(result.canvas).toBeUndefined();
     const caption = result.tracks
       .flatMap((track) => track.items)
       .find((item) => item.kind === "text")!;
     expect(caption.start).toBeCloseTo(slow.start + 4 / 0.7 - 1);
     expect(mainItems(result).at(-1)?.kind).toBe("card");
+  });
+
+  it("carries the template's mandala and canvas shape when it has them", () => {
+    const source = project(
+      [video("source-run"), video("source-slow", { takeId: "b", start: 9 })],
+      [
+        [
+          overlay("source-mandala", "moves", {
+            mode: "mandala",
+            start: 9,
+            duration: 4,
+            box: { x: 0, y: 0.7, width: 0.4, height: 0.3 },
+            anchor: { itemId: "source-slow", offset: 0 },
+          }),
+        ],
+      ]
+    );
+    source.canvas = "4:5";
+    const destination = project([
+      video("target-run"),
+      video("target-slow", { takeId: "b", start: 9 }),
+    ]);
+
+    const result = valid(applyTutorialTemplate(destination, source, ctx));
+    expect(result.canvas).toBe("4:5");
+    const mandalas = result.tracks
+      .flatMap((track) => track.items)
+      .filter((item) => item.kind === "moves" && item.mode === "mandala");
+    expect(mandalas).toHaveLength(1);
+    expect(mandalas[0]).toMatchObject({
+      duration: 4,
+      box: { x: 0, y: 0.7, width: 0.4, height: 0.3 },
+      anchor: { itemId: "target-slow", offset: 0 },
+    });
   });
 });
 
