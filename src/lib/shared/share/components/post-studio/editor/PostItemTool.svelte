@@ -1063,17 +1063,18 @@
         Undo restores it.
       </p>{/if}
     {#if item.autoAdjust}
-      <TypeableValue
-        label="Auto adjust strength"
-        text={`${Math.round(item.autoAdjust.strength * 100)}%`}
-        disabled={true}
-        oncommit={() => undefined}
-      />
-      <p class="native-limit">
-        Auto adjust: {item.autoAdjust.enabled ? "on" : "off"}. Its original
-        color model is not yet available in this editor, so this setting is
-        shown for reference.
-      </p>
+      <details class="import-adjustment">
+        <summary>
+          Original InShot adjustment: {Math.round(
+            item.autoAdjust.strength * 100
+          )}% (reference only)
+        </summary>
+        <p>
+          InShot AutoAdjust was {item.autoAdjust.enabled ? "on" : "off"}. Post
+          Studio cannot reproduce its original color model, so this value does
+          not change the video here.
+        </p>
+      </details>
     {/if}
     {#if staffTips}
       {@const take = editor.takes.find((entry) => entry.id === item.takeId)}
@@ -1194,6 +1195,26 @@
     color: var(--text-secondary, #a3a3a3);
     font-size: 0.8rem;
     line-height: 1.4;
+  }
+
+  .import-adjustment {
+    color: var(--text-secondary, #a3a3a3);
+    font-size: 0.8rem;
+    line-height: 1.4;
+  }
+
+  .import-adjustment summary {
+    cursor: pointer;
+    padding-block: 0.375rem;
+  }
+
+  .import-adjustment summary:focus-visible {
+    outline: 2px solid var(--theme-accent, currentColor);
+    outline-offset: 2px;
+  }
+
+  .import-adjustment p {
+    margin: 0.5rem 0 0;
   }
 
   .item-tool {
