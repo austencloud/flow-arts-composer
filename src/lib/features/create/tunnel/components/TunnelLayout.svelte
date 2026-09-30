@@ -11,14 +11,10 @@
   import type { SetupSnapshot } from "$lib/features/create/generate/domain/setup-snapshot";
   import type { GenerationAnimationTarget } from "$lib/features/create/generate/state/generate-actions.svelte";
   import { createSequenceState } from "$lib/features/create/shared/state/sequence-state-orchestrator.svelte";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
   import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
   import TunnelArtSettings from "$lib/shared/sequence-viewer/components/art-settings/TunnelArtSettings.svelte";
   import TunnelArtView from "$lib/shared/sequence-viewer/tunnel/TunnelArtView.svelte";
-  import {
-    copyOpsLabel,
-    type GeneratorTunnelSourceProvenance,
-  } from "$lib/shared/sequence-viewer/tunnel/tunnel-composition";
+  import type { GeneratorTunnelSourceProvenance } from "$lib/shared/sequence-viewer/tunnel/tunnel-composition";
   import { FOLD_OPTIONS } from "$lib/shared/sequence-viewer/tunnel/tunnel-config";
   import { TunnelViewController } from "$lib/shared/sequence-viewer/tunnel/tunnel-view-controller.svelte";
   import TkaLabel from "$lib/shared/components/TkaLabel.svelte";
@@ -29,6 +25,10 @@
   import ShapeMatrixTunnelSourcePicker from "./ShapeMatrixTunnelSourcePicker.svelte";
   import type { ModeRealization } from "$lib/shared/shape-matrix/services/build-mode-realizations";
   import type { SequenceSource } from "$lib/shared/browse/engine/types";
+  import {
+    resolveTunnelPerformerDisplays,
+    type TunnelPerformerDisplay,
+  } from "../domain/tunnel-performer-displays";
   import {
     canInlineTunnelInspector,
     resolveTunnelWorkspaceMode,
@@ -83,38 +83,14 @@
       );
     },
   });
-  let performerDisplays = $state<
-    Record<
-      string,
-      {
-        sequence: SequenceData | null;
-        stageTransformLabel: string | null;
-        generatedInstanceCount: number;
-        stageArms: number[];
-      }
-    >
-  >({});
+  let performerDisplays = $state<Record<string, TunnelPerformerDisplay>>({});
   let activePerformerStepIndices = $state<Record<string, number>>({});
   const controller = new TunnelViewController({
     getSequence: () => creator.leadSequence,
     getComposition: () =>
       creator.previewCompositionWithFormation(creator.initialFormation),
     onLayersChange: (layers) => {
-      const next: typeof performerDisplays = {};
-      for (const layer of layers) {
-        const current = next[layer.performerId];
-        next[layer.performerId] = {
-          sequence: current?.sequence ?? layer.performerSequence,
-          stageTransformLabel:
-            current?.stageTransformLabel ??
-            (layer.formationOps.length
-              ? copyOpsLabel(layer.formationOps)
-              : null),
-          generatedInstanceCount: (current?.generatedInstanceCount ?? 0) + 1,
-          stageArms: [...(current?.stageArms ?? []), layer.arm],
-        };
-      }
-      performerDisplays = next;
+      performerDisplays = resolveTunnelPerformerDisplays(layers);
     },
     visibilityManager: creator.presentation.visibility,
     persistViewState: false,
