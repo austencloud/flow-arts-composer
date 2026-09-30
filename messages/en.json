@@ -2225,6 +2225,7 @@
   "auth_continue_email": "Continue with email",
   "auth_already_have_account": "Already have an account?",
   "auth_new_here": "New here?",
+  "auth_forgot_password_use_code": "Forgot password? Email me a code",
   "auth_continue_google": "Continue with Google",
   "auth_continue_google_last_used": "Continue with Google, last used on this device",
   "auth_continue_facebook": "Continue with Facebook",

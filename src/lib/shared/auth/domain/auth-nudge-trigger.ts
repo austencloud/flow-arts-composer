@@ -351,14 +351,17 @@ export function createMethodNudgeTrigger(methodId: string): AuthNudgeTrigger {
   return CREATE_METHOD_NUDGE_TRIGGERS[methodId] ?? "module:other";
 }
 
+// One key for both modes: the key marks a new encounter, and switching between
+// signing in and creating an account is the same encounter. A per-mode key
+// reset the open email form every time someone pressed the switch.
 const GENERIC_AUTH_PROMPTS: Record<AuthMode, AuthPromptContent> = {
   signup: {
-    key: "generic-signup",
+    key: "generic",
     title: "Create your account",
     body: "Save your sequences and open them on any device.",
   },
   signin: {
-    key: "generic-signin",
+    key: "generic",
     title: "Welcome back",
     body: "Sign in to open your saved work.",
   },
