@@ -6,6 +6,7 @@
   import PostScopedEffectsPanel from "./PostScopedEffectsPanel.svelte";
   import BentoPropGrid from "$lib/shared/settings/components/tabs/prop-type/BentoPropGrid.svelte";
   import IconRailNav from "$lib/shared/animation-panel/pill-nav/IconRailNav.svelte";
+  import LightsToggleButton from "$lib/shared/ui/components/LightsToggleButton.svelte";
   import { RAIL_CATEGORY_ACCENTS } from "$lib/shared/animation-panel/pill-nav/rail-category-accents";
   import { EFFORTS } from "$lib/shared/effort/domain/effort-types";
   import {
@@ -46,6 +47,7 @@
   let pickedPropType = $state<PropType | undefined>();
 
   const visibility = new AnimationVisibilityStateManager({ ephemeral: true });
+  let darkMode = $state(visibility.isDarkMode());
   const sourceEffects = getEffectsConfigContext();
   const initialEffects = sourceEffects?.snapshot() ?? DEFAULT_EFFECTS_CONFIG;
   const initialTrail = animationSettings.snapshot().trail;
@@ -112,11 +114,14 @@
       syncing = true;
       try {
         visibility.updateSettings(
-          appearance ?? {
+          {
             ...getAnimationVisibilityManager().getSettings(),
             wordHeader: false,
+            ...appearance,
+            darkMode: appearance?.darkMode ?? true,
           }
         );
+        darkMode = visibility.isDarkMode();
         const trail = appearance?.trail;
         pickedPropType = appearance?.propType;
         effectsWereEdited = !!appearance?.effects || !!trail;
@@ -234,6 +239,17 @@
         <EffortPanel visibilityManagerOverride={visibility} columns={2} />
       </div>
     {:else}
+      <div class="canvas-theme">
+        <span>Canvas theme</span>
+        <LightsToggleButton
+          lightsOn={!darkMode}
+          onToggle={() => {
+            visibility.setDarkMode(!darkMode);
+            darkMode = visibility.isDarkMode();
+          }}
+          showLabel
+        />
+      </div>
       <DisplayPanel
         sequence={editor.sequence}
         propType={pickedPropType ?? defaultPropType}
@@ -245,6 +261,12 @@
 {/if}
 
 <style>
+  .canvas-theme {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+  }
   .section-navigation {
     position: sticky;
     top: -0.25rem;
