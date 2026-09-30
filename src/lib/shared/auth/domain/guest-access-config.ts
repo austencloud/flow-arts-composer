@@ -20,6 +20,7 @@ const GUEST_MODULE_ACCESS: Record<string, string[]> = {
   // to guests with a Free account label that opens sign-up.
   create: ["construct", "generate", "shape-engine"],
   browse: ["explore", "you"],
+  post: [],
   creators: [],
   // Language is a device preference and must remain available before sign-in.
   settings: ["language"],

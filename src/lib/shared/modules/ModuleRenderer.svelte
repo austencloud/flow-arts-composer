@@ -83,7 +83,7 @@
   //   + engine), forcing every thumbnail back through the async cache tiers on
   //   return — the placeholder→pop-in "everything re-renders" flash. Kept alive,
   //   the DOM + already-resolved thumbnail URLs persist, so revisits are instant.
-  const KEEP_ALIVE_MODULES = ["museum", "personal-museum", "browse"];
+  const KEEP_ALIVE_MODULES = ["museum", "personal-museum", "browse", "post"];
 
   // Reactive tick: bumped by the controller's onChange so derived reads re-run.
   let keepAliveVersion = $state(0);
@@ -175,6 +175,7 @@
       import("../../features/train/prop-tracking-lab/components/PropTrackingLabModule.svelte"),
     // compose module
     compose: () => import("../../features/compose/ComposeModule.svelte"),
+    post: () => import("../../features/post/PostModule.svelte"),
     // arena module - community pairwise ranking
     arena: () => import("../../features/arena/ArenaModule.svelte"),
     // connect graduated to Social module (Mar 2026)
@@ -385,14 +386,14 @@
   <div class="transition-container">
     {#if moduleErrors.has(activeModule)}
       <div class="module-error" role="alert">
-        <p>{t('module_load_failed')}</p>
+        <p>{t("module_load_failed")}</p>
         <p class="error-details">{t("connection_retry_body")}</p>
         <button
           class="reload-button"
           onclick={() => retryKeepAliveModule(activeModule)}
           type="button"
         >
-          {t('landing_spinner_try_again')}
+          {t("landing_spinner_try_again")}
         </button>
       </div>
     {:else if !moduleCache.has(activeModule)}
@@ -459,20 +460,20 @@
                 onclick={() => window.location.reload()}
                 type="button"
               >
-                {t('action_reload_page')}
+                {t("action_reload_page")}
               </button>
             </div>
           {/if}
         {:catch error}
           <div class="module-error" role="alert">
-            <p>{t('module_load_failed')}</p>
+            <p>{t("module_load_failed")}</p>
             <p class="error-details">{t("connection_retry_body")}</p>
             <button
               class="reload-button"
               onclick={() => window.location.reload()}
               type="button"
             >
-              {t('action_reload_page')}
+              {t("action_reload_page")}
             </button>
           </div>
         {/await}
