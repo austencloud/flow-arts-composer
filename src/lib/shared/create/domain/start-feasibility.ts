@@ -37,12 +37,15 @@ export interface StartFeasibilityResult {
   reason?: string;
 }
 
-function allowedStarts(input: StartFeasibilityInput): readonly PictographData[] {
+function allowedStarts(
+  input: StartFeasibilityInput
+): readonly PictographData[] {
   const blocked = new Set(input.blockedStartPlacements ?? []);
   return input.variations.filter(
     (variation) =>
       !blocked.has(variation.startPlacement) &&
-      (!input.startPlacement || variation.startPlacement === input.startPlacement)
+      (!input.startPlacement ||
+        variation.startPlacement === input.startPlacement)
   );
 }
 
@@ -51,13 +54,37 @@ function satisfies(
   hand: HandRelationshipOptions | undefined,
   prop: PropRelationshipOptions | undefined
 ): readonly PictographData[] {
-  const handConstraint = hand ? new HandRelationshipConstraint(hand) : undefined;
-  const propConstraint = prop ? new PropRelationshipConstraint(prop) : undefined;
+  const handConstraint = hand
+    ? new HandRelationshipConstraint(hand)
+    : undefined;
+  const propConstraint = prop
+    ? new PropRelationshipConstraint(prop)
+    : undefined;
   return variations.filter(
     (variation) =>
       (!handConstraint || handConstraint.couldSatisfy(variation)) &&
       (!propConstraint || propConstraint.couldSatisfy(variation))
   );
+}
+
+function firstSteps(
+  starts: readonly PictographData[],
+  options: readonly (HandRelationshipOptions | undefined)[],
+  prop: PropRelationshipOptions | undefined
+) {
+  const viable = options.map((option) => ({
+    option,
+    variations: satisfies(starts, option, prop),
+  }));
+  return {
+    viableOptions: viable
+      .filter((entry) => entry.variations.length > 0)
+      .map((entry) => entry.option)
+      .filter(
+        (option): option is HandRelationshipOptions => option !== undefined
+      ),
+    surviving: viable.flatMap((entry) => entry.variations),
+  };
 }
 
 /**
@@ -72,24 +99,36 @@ export function assessStartFeasibility(
   const starts = allowedStarts(input);
   const hand = input.handRelationship ?? "free";
   const prop = input.propRelationship ?? "free";
-  const handOptions = handModeOptionsForContext(hand, {
-    prop,
-    loopAxis: input.loopAxis,
-    startLocations: input.startLocations,
-  });
   const propOption = propModeToEngine(prop);
-  const options = hand === "free" ? [undefined] : handOptions;
+  const context = { prop, startLocations: input.startLocations };
 
-  const viable = options.map((option) => ({
-    option,
-    variations: satisfies(starts, option, propOption),
-  }));
-  const viableOptions = viable
-    .filter((entry) => entry.variations.length > 0)
-    .map((entry) => entry.option)
-    .filter((option): option is HandRelationshipOptions => option !== undefined);
-  const surviving = viable.flatMap((entry) => entry.variations);
-  const placements = [...new Set(surviving.map((variation) => variation.startPlacement))];
+  let { viableOptions, surviving } = firstSteps(
+    starts,
+    hand === "free"
+      ? [undefined]
+      : handModeOptionsForContext(hand, {
+          ...context,
+          loopAxis: input.loopAxis,
+        }),
+    propOption
+  );
+
+  // A diagonal mirror or flip only decides which of Quarter Opposite's two
+  // reflections to try first. Both diagonal reflections survive either
+  // diagonal LOOP, so when every start that suits the LOOP's own diagonal is
+  // blocked, the other diagonal still builds the LOOP the user asked for.
+  // Refusing here used to disable Generate for a request that can be made.
+  if (surviving.length === 0 && input.loopAxis && hand !== "free") {
+    ({ viableOptions, surviving } = firstSteps(
+      starts,
+      handModeOptionsForContext(hand, context),
+      propOption
+    ));
+  }
+
+  const placements = [
+    ...new Set(surviving.map((variation) => variation.startPlacement)),
+  ];
 
   if (surviving.length > 0) {
     return {
@@ -107,6 +146,7 @@ export function assessStartFeasibility(
     candidateVariationCount: 0,
     viableHandRelationships: [],
     reason:
-      "No allowed starting placement can satisfy the selected hand and prop timing/direction.",
+      "No allowed starting placement fits this timing and direction. " +
+      "Allow more starting placements in Customize, or choose a different timing and direction.",
   };
 }

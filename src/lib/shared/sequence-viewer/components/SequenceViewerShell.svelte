@@ -56,6 +56,7 @@
   import PostStudioPane from "./PostStudioPane.svelte";
   import type { PostStudioShareExport } from "$lib/shared/share/components/post-studio/post-studio-share-export";
   import { POST_STUDIO_STAGE_MIN_WIDTH } from "../services/viewer-shell-model";
+  import { resolveSequenceIdentityTitle } from "../services/viewer-title";
   import { createPaneKeepAlive } from "./pane-keep-alive.svelte";
   import PracticeSetupBar from "./PracticeSetupBar.svelte";
   import ViewerSharePanel from "./ViewerSharePanel.svelte";
@@ -858,10 +859,9 @@
     toExportTakeoverPhase(interactions.videoProgress, interactions.videoBusy)
   );
   const takeoverLabel = $derived(
-    ctx.effectiveSequence?.word ||
-      ctx.effectiveSequence?.displayName ||
-      ctx.effectiveSequence?.name ||
-      ""
+    ctx.effectiveSequence
+      ? resolveSequenceIdentityTitle(ctx.effectiveSequence)
+      : ""
   );
   const takeoverWord = $derived(simplifyRepeatedWord(takeoverLabel));
 
@@ -1119,6 +1119,9 @@
     isSaving={interactions.headerActions.isSaving}
     onSave={interactions.headerActions.onSave && !embedded
       ? interactions.handleSave
+      : undefined}
+    onAddToCollection={interactions.headerActions.onAddToCollection && !embedded
+      ? interactions.handleAddToCollection
       : undefined}
     onRemix={(onRemix ?? interactions.headerActions.onRemix) && !embedded
       ? interactions.handleRemix

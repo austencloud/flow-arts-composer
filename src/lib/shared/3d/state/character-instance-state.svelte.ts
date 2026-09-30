@@ -977,6 +977,9 @@ export function createCharacterInstanceState(
     else clearSequence();
     beatPlaneOverrides = new Map(snap.planes.beatPlaneOverrides);
     reconvertWithConfig(getEffectiveModeConfig(effectivePlaneMode));
+    // The overrides live in the Map but the step configs only carry them once
+    // patched in; without this a restored performer forgets its per-beat planes.
+    if (beatPlaneOverrides.size > 0) applyBeatPlaneOverrides();
   }
 
   // Performer undo uses pushSelfRestoringEntry so each performer's closures

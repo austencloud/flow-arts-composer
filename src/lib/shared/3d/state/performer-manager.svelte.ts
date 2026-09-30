@@ -560,9 +560,14 @@ function buildPerformerManager(deps: PerformerManagerDeps) {
   }
 
   /**
-   * Add a new performer
+   * Add a new performer. Without a placement the whole cast glides into the
+   * formation's slots for the new count. With one, the newcomer enters exactly
+   * where asked and everyone else stays put - a pasted copy belongs beside its
+   * original, not in a re-laid-out cast.
    */
-  function addPerformer(): PerformerLayoutSnapshot[] | null {
+  function addPerformer(
+    placement?: PerformerLayoutSnapshot
+  ): PerformerLayoutSnapshot[] | null {
     if (performerStates.length >= maxPerformers) return null;
 
     const nowMs = performance.now();
@@ -571,11 +576,20 @@ function buildPerformerManager(deps: PerformerManagerDeps) {
     const previousLayout = captureLayout();
     const newPerformer = createPerformer(performerStates.length);
     performerStates = [...performerStates, newPerformer];
-    const layoutTargets = transitionAfterCountChange(
-      previousLayout,
-      carriedVelocities,
-      nowMs
-    );
+
+    let layoutTargets: PerformerLayoutSnapshot[];
+    if (placement) {
+      newPerformer.position.x = placement.position.x;
+      newPerformer.position.z = placement.position.z;
+      newPerformer.snapFacingAngle(placement.facingAngle);
+      layoutTargets = [...captureLayout().values()];
+    } else {
+      layoutTargets = transitionAfterCountChange(
+        previousLayout,
+        carriedVelocities,
+        nowMs
+      );
+    }
     beginCharacterEntry(newPerformer, performerStates.length - 1, nowMs);
 
     // Create sync state when we have exactly 2 performers
