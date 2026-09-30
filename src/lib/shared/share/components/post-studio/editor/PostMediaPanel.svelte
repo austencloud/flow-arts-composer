@@ -103,10 +103,11 @@
         {@const status = editor.timingStatus(take.id)}
         {@const loaded = Boolean(editor.mediaUrl(take.id))}
         {@const clips = clipCount(take.id)}
+        {@const name = editor.takeDisplayLabel(take.id)}
         <li class="take">
           <input
             class="name"
-            value={take.label}
+            value={name}
             maxlength="120"
             aria-label={t("share_studio_take_name")}
             onchange={(event) =>
@@ -141,7 +142,7 @@
               </PanelButton>
               <PanelButton
                 onclick={() => editor.appendTakeClip(take.id)}
-                ariaLabel={t("post_editor_add_clip_of", { take: take.label })}
+                ariaLabel={t("post_editor_add_clip_of", { take: name })}
               >
                 <i class="fa-solid fa-plus" aria-hidden="true"></i>
                 {t("post_editor_add_clip")}
@@ -153,7 +154,7 @@
             {/if}
             <PanelButton
               onclick={() => editor.removeTake(take.id)}
-              ariaLabel={`${t("share_studio_remove")} ${take.label}`}
+              ariaLabel={`${t("share_studio_remove")} ${name}`}
             >
               {t("share_studio_remove")}
             </PanelButton>
