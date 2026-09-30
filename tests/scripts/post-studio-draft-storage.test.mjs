@@ -74,6 +74,57 @@ test("draft versions survive server restart and retain earlier mappings", async 
   }
 });
 
+test("scoped reads keep all Unicode sequence history and previous timings", async () => {
+  const directory = await fs.mkdtemp(
+    path.join(os.tmpdir(), "post-studio-drafts-scoped-test-")
+  );
+  const projectKey = "tka:post-studio:project:v2:ΩΛ-XJ";
+  const timingKey = "tka:post-studio:take-timing:v1:ΩΛ-XJ:take";
+  const records = [
+    { key: projectKey, value: "old project" },
+    { key: timingKey, value: "old timing" },
+    { key: `${timingKey}:previous`, value: "previous timing" },
+    { key: "tka:post-studio:project:v2:ΩΛ-XJ-other", value: "other project" },
+    {
+      key: "tka:post-studio:take-timing:v1:ΩΛ-XJ-other:take",
+      value: "other timing",
+    },
+    { key: projectKey, value: "new project" },
+  ];
+  try {
+    await serverFor(directory, async (base) => {
+      for (const record of records) {
+        const response = await fetch(`${base}/_local/post-studio-drafts`, {
+          method: "POST",
+          body: JSON.stringify({ records: [record] }),
+        });
+        assert.equal(response.status, 200);
+      }
+      const scoped = await (
+        await fetch(
+          `${base}/_local/post-studio-drafts?sequenceId=%CE%A9%CE%9B-XJ`
+        )
+      ).json();
+      assert.deepEqual(scoped.records, [
+        records[0],
+        records[1],
+        records[2],
+        records[5],
+      ]);
+      const unscoped = await (
+        await fetch(`${base}/_local/post-studio-drafts`)
+      ).json();
+      assert.deepEqual(unscoped.records, records);
+      assert.equal((await fs.readdir(directory)).length, records.length);
+    });
+  } finally {
+    assert.ok(
+      path.resolve(directory).startsWith(path.resolve(os.tmpdir()) + path.sep)
+    );
+    await fs.rm(directory, { recursive: true });
+  }
+});
+
 test("HTTP/2 saves accept the editor authority and reject other origins", async () => {
   const directory = await fs.mkdtemp(
     path.join(os.tmpdir(), "post-studio-drafts-http2-test-")
