@@ -44,6 +44,7 @@
     animationAppearance?: PostAnimationItem["animationAppearance"] | null;
     sequencePosition?: number;
     sequencePassIndex?: number;
+    sequenceProgress?: number;
     animationTimeSeconds?: number;
     breakdownMotion?: boolean;
     breakdownMode?: PostMovesMode;
@@ -76,6 +77,7 @@
     animationAppearance = null,
     sequencePosition,
     sequencePassIndex,
+    sequenceProgress,
     animationTimeSeconds,
     breakdownMotion,
     breakdownMode,
@@ -578,6 +580,7 @@
       {sequencePosition}
       {displayedBeatNumber}
       {sequencePassIndex}
+      {sequenceProgress}
       {animationTimeSeconds}
       {breakdownMotion}
       {breakdownMode}

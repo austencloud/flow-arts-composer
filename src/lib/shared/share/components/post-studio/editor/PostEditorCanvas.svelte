@@ -2356,6 +2356,7 @@
                   sequencePosition={layer.sequencePosition ??
                     (isVideo ? undefined : OPENING_POSITION)}
                   sequencePassIndex={layer.sequencePassIndex}
+                  sequenceProgress={layer.sequenceFrame?.passBeatProgress}
                   animationTimeSeconds={layer.animationTimeSeconds ??
                     (isVideo ? undefined : 0)}
                   breakdownMotion={sourceItem?.kind === "moves" ||

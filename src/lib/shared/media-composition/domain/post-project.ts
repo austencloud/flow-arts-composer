@@ -527,6 +527,7 @@ export const PostAnimationItemSchema = z
         elementalGlyph: z.boolean().optional(),
         propElementalGlyph: z.boolean().optional(),
         stepNumbers: z.boolean().optional(),
+        progressBar: z.boolean().optional(),
         wordHeader: z.boolean().optional(),
         mandala: z.boolean().optional(),
         leftPathLines: z.boolean().optional(),

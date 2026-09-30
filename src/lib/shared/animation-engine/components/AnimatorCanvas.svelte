@@ -962,6 +962,7 @@ Last audit: 2025-12-27
         <SequenceProgressBar
           {currentStep}
           totalSteps={sequenceData?.steps?.length ?? 0}
+          stepDurations={sequenceData?.steps?.map((step) => step.duration ?? 1)}
           visible={(progressBarVisible || !!onProgressBarSeek) &&
             !hideProgressBar}
           darkMode={darkModeEnabled}
@@ -977,6 +978,13 @@ Last audit: 2025-12-27
             : null}
         />
       {:else}
+        <SequenceProgressBar
+          {currentStep}
+          totalSteps={sequenceData?.steps?.length ?? 0}
+          stepDurations={sequenceData?.steps?.map((step) => step.duration ?? 1)}
+          visible={progressBarVisible && !hideProgressBar}
+          darkMode={darkModeEnabled}
+        />
         <!-- The transport is the canonical playback surface: play, tempo,
              scrubber, and continuous-vs-step all live here and nowhere else.
              It used to be gated on the `progressBar` visibility flag, which

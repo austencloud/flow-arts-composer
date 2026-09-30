@@ -80,6 +80,7 @@
   import type { PostStudioLayerPainter } from "$lib/shared/media-composition/services/post-studio-layer-painter";
   import { createBeatCarouselPainter } from "$lib/shared/media-composition/services/beat-carousel-painter";
   import { createSequenceStripPainter } from "$lib/shared/media-composition/services/sequence-strip-painter";
+  import { getAnimationVisibilityManager } from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
   import { createTextItemPainter } from "$lib/shared/media-composition/services/text-item-painter";
   import { createStaffEffectPainter } from "$lib/shared/media-composition/services/staff-effect-painter";
   import { createStaffTipAnalysis } from "$lib/shared/media-composition/state/staff-tip-analysis.svelte";
@@ -375,11 +376,26 @@
   // ---- What each layer draws -----------------------------------------------
 
   const carouselPainter = $derived(createBeatCarouselPainter(displaySequence));
+  const animationVisibility = getAnimationVisibilityManager();
+  let progressBarVisible = $state(
+    animationVisibility.getVisibility("progressBar")
+  );
+  function syncProgressBarVisibility(): void {
+    progressBarVisible = animationVisibility.getVisibility("progressBar");
+  }
+  animationVisibility.registerObserver(syncProgressBarVisibility);
+  onDestroy(() =>
+    animationVisibility.unregisterObserver(syncProgressBarVisibility)
+  );
   const stripPainters = $derived(
     new Map<StripMode, PostStudioLayerPainter>(
       (["arrows", "mandala", "alternate"] as const).map((mode) => [
         mode,
-        createSequenceStripPainter({ sequence: displaySequence, mode }),
+        createSequenceStripPainter({
+          sequence: displaySequence,
+          mode,
+          showProgressBar: () => progressBarVisible,
+        }),
       ])
     )
   );

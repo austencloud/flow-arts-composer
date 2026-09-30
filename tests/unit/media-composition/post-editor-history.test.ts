@@ -8,7 +8,7 @@ import {
   setKeyframe,
   keyframeCount,
 } from "$lib/shared/media-composition/domain/post-project-keyframes";
-import { card, project as rawProject } from "./post-project-fixtures";
+import { card, overlay, project as rawProject } from "./post-project-fixtures";
 import { createPostEditorState } from "$lib/shared/media-composition/state/post-editor-state.svelte";
 import { addTakeTap } from "$lib/shared/media-composition/domain/take-timing";
 import { loadTakeTiming } from "$lib/shared/media-composition/services/take-timing-store";
@@ -34,6 +34,39 @@ function createEditor() {
 
 describe("post editor history", () => {
   beforeEach(() => localStorage.clear());
+
+  it("undoes a PiP Progress edit without changing neighboring appearance, timing or keyframes", () => {
+    const editor = createEditor();
+    const moves = setKeyframe(overlay("moves", "moves"), "opacity", 0.5, 0.6);
+    editor.edit(() =>
+      rawProject(
+        [card("base")],
+        [[moves, overlay("neighbor", "moves", { start: 4 })]]
+      )
+    );
+    const before = editor.project;
+    editor.edit((project, ctx) =>
+      updateItem(
+        project,
+        "moves",
+        {
+          animationAppearance: { progressBar: false },
+        },
+        ctx
+      )
+    );
+    const after = editor.project;
+    const items = after.tracks[1]!.items;
+    expect(items[0]).toEqual({
+      ...moves,
+      animationAppearance: { progressBar: false },
+    });
+    expect(items[1]).toEqual(before.tracks[1]!.items[1]);
+    editor.undo();
+    expect(editor.project).toEqual(before);
+    editor.redo();
+    expect(editor.project).toEqual(after);
+  });
 
   it("undoes a whole-post clear of multiple clips in one step", () => {
     const editor = createEditor();

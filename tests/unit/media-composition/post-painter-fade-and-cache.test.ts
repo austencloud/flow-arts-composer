@@ -116,7 +116,7 @@ function recordingContext(alpha = 1) {
     moveTo() {},
     lineTo() {},
     setLineDash() {},
-    fillRect() {},
+    fillRect: vi.fn(),
     createLinearGradient: () => ({ addColorStop() {} }),
     stroke() {
       marks.push({ mark: "stroke", alpha: this.globalAlpha });
@@ -161,8 +161,6 @@ describe("painters in a fading layer", () => {
       { mark: "text 2", alpha: 0.5 },
       { mark: "letter", alpha: 0.5 },
       { mark: "element", alpha: 0.5 },
-      // The progress bar.
-      { mark: "stroke", alpha: 0.5 },
     ]);
   });
 
@@ -176,7 +174,56 @@ describe("painters in a fading layer", () => {
     strip.paint(context, { x: 0, y: 0, width: 500, height: 500 }, frame);
     overlay.paint(context, { x: 0, y: 0, width: 960, height: 960 }, frame);
 
-    expect(marks.map((entry) => entry.alpha)).toEqual([0.25, 1, 1, 1, 1, 1]);
+    expect(marks.map((entry) => entry.alpha)).toEqual([0.25, 1, 1, 1, 1]);
+  });
+});
+
+describe("legacy Moves progress", () => {
+  it("tracks duration-weighted sequence progress through seeking, loops and ending holds", async () => {
+    const painter = createSequenceStripPainter({ sequence, mode: "arrows" });
+    await painter.prepare({ width: 500, height: 500 });
+    const { context } = recordingContext();
+    const fillRect = vi.mocked(context.fillRect);
+    for (const [arrival, expected] of [
+      [0, 0],
+      [1.5, 0.7],
+      [2, 1],
+      [0.5, 0.2],
+      [2.5, 0.2],
+      [4, 1],
+    ]) {
+      fillRect.mockClear();
+      painter.paint(
+        context,
+        { x: 0, y: 0, width: 500, height: 500 },
+        {
+          ...frame,
+          projectProgress: 0.99,
+          sequenceFrame: sequenceFrameAt(arrival!, [2, 3], { endArrival: 4 }),
+        }
+      );
+      const barMarks = fillRect.mock.calls.filter((call) => call[3] === 7);
+      // First mark is the empty track. A filled bar exists only past opening.
+      expect(barMarks).toHaveLength(expected! > 0 ? 2 : 1);
+      if (expected! > 0) expect(barMarks[1]![2]).toBeCloseTo(500 * expected!);
+    }
+  });
+
+  it("reads the visibility preference at paint time, including while paused", async () => {
+    let visible = true;
+    const painter = createSequenceStripPainter({
+      sequence,
+      mode: "arrows",
+      showProgressBar: () => visible,
+    });
+    await painter.prepare({ width: 500, height: 500 });
+    const { context } = recordingContext();
+    painter.paint(context, { x: 0, y: 0, width: 500, height: 500 }, frame);
+    expect(context.fillRect).toHaveBeenCalledTimes(4);
+    visible = false;
+    vi.mocked(context.fillRect).mockClear();
+    painter.paint(context, { x: 0, y: 0, width: 500, height: 500 }, frame);
+    expect(context.fillRect).toHaveBeenCalledTimes(1);
   });
 });
 

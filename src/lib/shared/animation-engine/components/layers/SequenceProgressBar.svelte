@@ -26,10 +26,13 @@ Design:
   import { DURATION } from "$lib/shared/transitions/transitions";
   import TransportControls from "../controls/TransportControls.svelte";
   import { tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
+  import { sequenceFrameAt } from "$lib/shared/media-composition/domain/sequence-frame";
 
   let {
     currentStep = 0,
     totalSteps = 0,
+    stepDurations = [],
+    normalizedProgress,
     visible = true,
     darkMode = false,
     onSeek = null,
@@ -43,6 +46,9 @@ Design:
     currentStep?: number;
     /** Total number of steps in the sequence */
     totalSteps?: number;
+    stepDurations?: readonly number[];
+    /** Mapped pass progress, including a final landing or hold at 1. */
+    normalizedProgress?: number;
     /** Whether the progress bar should be visible */
     visible?: boolean;
     /** Dark mode override (matches WordHeader pattern) */
@@ -75,16 +81,20 @@ Design:
    * - currentStep = 0 or 1: at/before beat 1 start = 0% progress
    * - currentStep = 2.0: beat 2 just starting (33% for 3-step sequence)
    *
-   * Formula: (currentStep - 1) / totalSteps converts to 0-based progress
+   * The shared frame mapper weights durations and preserves the final landing.
    */
   const progress = $derived.by(() => {
+    if (normalizedProgress !== undefined)
+      return Number.isFinite(normalizedProgress)
+        ? Math.max(0, Math.min(1, normalizedProgress))
+        : 0;
     if (totalSteps <= 0) return 0;
-    // Convert 1-based beat number to 0-based progress before modulo
-    // currentStep 0.0-0.99 = start position hold (no progress yet)
-    const zeroBasedStep = currentStep < 1 ? 0 : currentStep - 1;
-    // Use modulo to wrap progress on loop
-    const normalizedStep = zeroBasedStep % totalSteps;
-    return Math.max(0, Math.min(1, normalizedStep / totalSteps));
+    const durations = Array.from({ length: totalSteps }, (_, index) => {
+      const duration = stepDurations[index] ?? 1;
+      return Number.isFinite(duration) && duration > 0 ? duration : 1;
+    });
+    return sequenceFrameAt(Math.max(0, currentStep - 1), durations)
+      .passBeatProgress;
   });
 
   // While scrubbing, show the dragged ratio immediately so the fill/knob track
@@ -106,7 +116,8 @@ Design:
     if (totalSteps <= 0) return tDynamic("guide_runtime_progress_empty");
     // Convert to 0-based, modulo for looping, then back to 1-based for display
     const zeroBasedStep = currentStep < 1 ? 0 : currentStep - 1;
-    const step = Math.floor(zeroBasedStep % totalSteps) + 1;
+    const step =
+      progress === 1 ? totalSteps : Math.floor(zeroBasedStep % totalSteps) + 1;
     return tDynamic("guide_runtime_progress_step", { step, total: totalSteps });
   });
 
