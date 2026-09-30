@@ -72,18 +72,30 @@ export function analyzeVideoColor(
   const median = percentile(histogram, count, 0.5);
   const shadow = percentile(histogram, count, 0.1);
   const highlight = percentile(peakHistogram, count, 0.99);
-  // A mostly black stage is intentional. Lift it gently and compress highlights
-  // when colored LEDs would otherwise clip after the brightness adjustment.
-  const desired = Math.min(1.25, Math.max(0.88, 0.4 / Math.max(median, 0.16)));
-  const brightness = Math.round(desired * 100) / 100;
-  const peakAfterLift = brightness * highlight;
+  // CSS contrast below one adds a positive offset even to pure black. A dark
+  // stage with bright LEDs is intentional, so never use its median to lift the
+  // background or compress its highlights into gray.
+  const darkStage = median < 0.24 && shadow < 0.2;
+  const brightness =
+    !darkStage && median > 0.65
+      ? Math.round(Math.max(0.9, 1 - (median - 0.65) * 0.25) * 100) / 100
+      : 1;
+  // Improve a washed-out range only when its shadows are already raised and
+  // there is room below the top end. Keep the 99th-percentile channel under
+  // 0.98 so skin and colored lights do not clip just to deepen the shadows.
+  const peakAfterBrightness = brightness * highlight;
   const safeContrast =
-    peakAfterLift > 0.5 ? 0.48 / (peakAfterLift - 0.5) : 1.06;
+    peakAfterBrightness > 0.5 ? 0.48 / (peakAfterBrightness - 0.5) : 1.12;
   const contrast =
-    Math.round(
-      Math.max(0.62, Math.min(shadow < 0.08 ? 1 : 1.06, safeContrast)) * 100
-    ) / 100;
-  const saturation = chromaCount && chroma / chromaCount < 0.12 ? 1.06 : 1;
+    !darkStage && shadow > 0.14 && highlight - shadow > 0.2
+      ? Math.round(
+          Math.max(1, Math.min(1.12, 1 + (shadow - 0.14) * 0.7, safeContrast)) *
+            100
+        ) / 100
+      : 1;
+  const averageChroma = chromaCount ? chroma / chromaCount : 0;
+  const saturation =
+    !darkStage && averageChroma > 0.03 && averageChroma < 0.12 ? 1.04 : 1;
   return { brightness, contrast, saturation };
 }
 
