@@ -1,3 +1,5 @@
+import { isLayerOwnedKeyboardTarget } from "$lib/shared/keyboard/domain/shortcut-target-resolution";
+
 export function handlePerformerCopyShortcut(
   event: KeyboardEvent,
   copy: () => boolean,
@@ -15,7 +17,8 @@ export function handlePerformerCopyShortcut(
   const target = event.target;
   if (
     target instanceof Element &&
-    target.closest("input, textarea, select, [contenteditable]")
+    (target.closest("input, textarea, select, [contenteditable]") ||
+      isLayerOwnedKeyboardTarget(target))
   ) {
     return false;
   }

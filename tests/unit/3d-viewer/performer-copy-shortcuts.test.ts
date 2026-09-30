@@ -43,4 +43,24 @@ describe("performer copy shortcuts", () => {
     });
     expect(handlePerformerCopyShortcut(shifted, copy, copy)).toBe(false);
   });
+
+  it("defers to an open modal", () => {
+    const copy = vi.fn(() => true);
+    const dialog = document.createElement("dialog");
+    dialog.setAttribute("open", "");
+    const button = document.createElement("button");
+    dialog.appendChild(button);
+    const event = new KeyboardEvent("keydown", {
+      key: "c",
+      ctrlKey: true,
+      bubbles: true,
+      cancelable: true,
+    });
+    button.addEventListener("keydown", (e) =>
+      handlePerformerCopyShortcut(e, copy, copy)
+    );
+    button.dispatchEvent(event);
+    expect(copy).not.toHaveBeenCalled();
+    expect(event.defaultPrevented).toBe(false);
+  });
 });
