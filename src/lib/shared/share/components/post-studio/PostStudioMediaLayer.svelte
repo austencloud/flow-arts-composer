@@ -102,6 +102,9 @@
   let playingFrameGeneration = 0;
   let lastCorrectionAt = -Infinity;
   let recoveryStartedAt: number | null = null;
+  let lastPresentedTime: number | null = null;
+  let lastFrameProgressAt: number | null = null;
+  let frameVisibilityBlocked = false;
   let saveMenuHost: VisualSequenceSaveContextMenuHost | undefined = $state();
 
   /**
@@ -206,6 +209,31 @@
     const ceiling = Math.max(0, video.duration - 1 / 60);
     const target = Math.min(ceiling, Math.max(0, sourceTimeSeconds));
     const now = performance.now();
+    let visible =
+      playing &&
+      !video.paused &&
+      opacity > 0 &&
+      document.visibilityState === "visible";
+    let frameAge = lastFrameProgressAt === null ? 0 : now - lastFrameProgressAt;
+    if (visible && (frameAge >= 3000 || frameVisibilityBlocked)) {
+      const rect = video.getBoundingClientRect();
+      visible =
+        getComputedStyle(video).visibility === "visible" &&
+        rect.width > 0 &&
+        rect.height > 0 &&
+        rect.bottom > 0 &&
+        rect.right > 0 &&
+        rect.top < window.innerHeight &&
+        rect.left < window.innerWidth;
+    }
+    if (visible && frameVisibilityBlocked) {
+      lastFrameProgressAt = now;
+      frameAge = 0;
+    }
+    frameVisibilityBlocked = !visible;
+    // Browsers may stop presenting hidden footage; it gets a fresh grace
+    // period when it comes back into view.
+    if (!visible && lastFrameProgressAt !== null) lastFrameProgressAt = now;
     let targetBuffered = false;
     for (let index = 0; index < video.buffered.length; index += 1) {
       if (
@@ -231,6 +259,9 @@
       recoveryElapsedMs:
         recoveryStartedAt === null ? 0 : now - recoveryStartedAt,
       targetBuffered,
+      presentedTime: lastPresentedTime,
+      sinceLastPresentedFrameMs: frameAge,
+      visible,
     });
     if (shouldSeek) {
       if (playing) {
@@ -261,7 +292,7 @@
         return;
       }
       queuedJump = false;
-      waitForPlayingFrames(video);
+      watchPlayingFrames(video, true);
     } else if (!syncVideoTime()) {
       showPausedFrame(video);
     }
@@ -269,6 +300,8 @@
 
   function cancelPlayingFrame(): void {
     playingFrameGeneration += 1;
+    lastPresentedTime = null;
+    lastFrameProgressAt = null;
     if (playingFrameRequest) {
       playingFrameRequest.element.cancelVideoFrameCallback(
         playingFrameRequest.id
@@ -277,10 +310,16 @@
     }
   }
 
-  function waitForPlayingFrames(element: HTMLVideoElement): void {
+  function watchPlayingFrames(
+    element: HTMLVideoElement,
+    recovering = false
+  ): void {
     cancelPlayingFrame();
-    awaitingPlayingFrame = true;
-    recoveryStartedAt ??= performance.now();
+    lastFrameProgressAt = performance.now();
+    if (recovering) {
+      awaitingPlayingFrame = true;
+      recoveryStartedAt ??= lastFrameProgressAt;
+    }
     const generation = playingFrameGeneration;
     let remaining = 2;
     let firstMediaTime: number | null = null;
@@ -292,18 +331,27 @@
       )
         return;
       playingFrameRequest = null;
+      if (lastPresentedTime !== metadata.mediaTime) {
+        lastPresentedTime = metadata.mediaTime;
+        lastFrameProgressAt = performance.now();
+      }
       firstMediaTime ??= metadata.mediaTime;
       remaining -= 1;
-      if (remaining <= 0 && metadata.mediaTime - firstMediaTime >= 0.75) {
+      if (
+        awaitingPlayingFrame &&
+        remaining <= 0 &&
+        metadata.mediaTime - firstMediaTime >= 0.75
+      ) {
         awaitingPlayingFrame = false;
         videoWaiting = false;
         recoveryStartedAt = null;
-      } else {
-        playingFrameRequest = {
-          element,
-          id: element.requestVideoFrameCallback(onFrame),
-        };
       }
+      // Keep watching after recovery: a running clock does not prove that
+      // the camera is still showing new frames.
+      playingFrameRequest = {
+        element,
+        id: element.requestVideoFrameCallback(onFrame),
+      };
     };
     playingFrameRequest = {
       element,
@@ -323,7 +371,7 @@
   function onWaiting(): void {
     videoWaiting = true;
     if (playing) recoveryStartedAt ??= performance.now();
-    if (playing && video && !video.seeking) waitForPlayingFrames(video);
+    if (playing && video && !video.seeking) watchPlayingFrames(video, true);
   }
 
   function onCanPlay(): void {
@@ -367,6 +415,8 @@
   function onMetadata(): void {
     if (!video || !Number.isFinite(video.duration)) return;
     cancelPausedFrame();
+    cancelPlayingFrame();
+    awaitingPlayingFrame = false;
     recoveryStartedAt = null;
     videoWaiting = false;
     previousTargetTime = null;
@@ -421,6 +471,7 @@
     }
     if (playing) {
       cancelPausedFrame();
+      if (!playingFrameRequest && !video.seeking) watchPlayingFrames(video);
       if (video.paused)
         void video
           .play()

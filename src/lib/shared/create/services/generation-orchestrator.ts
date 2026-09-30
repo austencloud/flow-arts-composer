@@ -49,6 +49,7 @@ import {
   assessStartFeasibility,
   type StartFeasibilityResult,
 } from "$lib/shared/create/domain/start-feasibility";
+import { GenerationRequestError } from "$lib/shared/create/domain/generation-request-error";
 import { LOOPComponent } from "$lib/shared/foundation/domain/models/generation/generate-models";
 import { getGridLocationsFromPlacement } from "$lib/shared/pictograph/grid/services/grid-placement-deriver";
 import type { GridPlacement } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
@@ -289,8 +290,9 @@ export class GenerationOrchestrator {
         : 2;
 
     if (!options.word && wire && options.length % multiplier !== 0) {
-      throw new Error(
-        `A ${options.length}-step sequence is not divisible by this combo's expansion (${multiplier}).`
+      throw new GenerationRequestError(
+        `A ${options.length}-step sequence can't be split evenly into this LOOP's ${multiplier} repeats. ` +
+          `Choose a length that is a multiple of ${multiplier}.`
       );
     }
 
@@ -302,8 +304,10 @@ export class GenerationOrchestrator {
       specHasExpandInversion(wire) &&
       seedLength < 2
     ) {
-      throw new Error(
-        "Seed too short for an inversion combo. One-step half seeds are dash-only, so inversion would be invisible."
+      // A one-step seed is dash-only, so its inversion would be invisible.
+      throw new GenerationRequestError(
+        `This inverted LOOP needs at least ${multiplier * 2} steps for the inversion to show. ` +
+          "Choose a longer length."
       );
     }
 
@@ -398,14 +402,13 @@ export class GenerationOrchestrator {
     if (propRelationship) {
       result.propRelationship = propRelationship;
     }
-    const handRelationship = resolvedHandRelationship ?? handModeToEngine(
-      options.handRelationship ?? "free",
-      {
+    const handRelationship =
+      resolvedHandRelationship ??
+      handModeToEngine(options.handRelationship ?? "free", {
         prop,
         loopAxis: loopReflectionAxis(options),
         startLocations: startLocations(options),
-      }
-    );
+      });
     if (handRelationship) {
       result.handRelationship = handRelationship;
     }
@@ -414,7 +417,7 @@ export class GenerationOrchestrator {
   }
 
   private throwIfStartImpossible(result: StartFeasibilityResult): void {
-    if (!result.feasible) throw new Error(result.reason);
+    if (!result.feasible) throw new GenerationRequestError(result.reason!);
   }
 
   private chooseViableHandRelationship(
