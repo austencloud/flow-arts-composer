@@ -1,7 +1,10 @@
 <script lang="ts">
   import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import EditHistoryShortcutBridge from "$lib/shared/keyboard/components/EditHistoryShortcutBridge.svelte";
-  import { onDestroy, tick, untrack } from "svelte";
+  import { getKeyboardShortcutManager } from "$lib/shared/keyboard/get-keyboard-shortcut-manager";
+  import { registerEditHistoryShortcuts } from "$lib/shared/keyboard/registration/register-edit-history-shortcuts";
+  import { keyboardShortcutState } from "$lib/shared/keyboard/state/keyboard-shortcut-state.svelte";
+  import { onDestroy, onMount, tick, untrack } from "svelte";
   import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
   import type { SequenceExportOptions } from "$lib/shared/render/domain/models/sequence-export-options";
   import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
@@ -245,6 +248,14 @@
     hasAnimationOverlay: () => overlayPainter !== null,
   });
   const session = createPostTimingSession(editor);
+  onMount(() => {
+    // Standalone sequence pages have no app shortcut coordinator. Reuse its
+    // manager and history bindings; both are safe to initialize again in-app.
+    const manager = getKeyboardShortcutManager();
+    manager.initialize();
+    registerEditHistoryShortcuts(manager, keyboardShortcutState.isMac);
+  });
+
   let draftSaving = $state(false);
   let draftError = $state<string | null>(draftLoadError);
   const draftAutosave = onSaveDraft
@@ -2079,8 +2090,8 @@
 <!-- The editor owns Space, S, K, the arrows and Delete, so the viewer's own
      handlers skip it (the app's shortcuts, Shift+P, Ctrl+Z and the rest,
      still reach it); tabindex keeps a click inside it from sending focus back
-     to the page. Undo and Redo on its top bar answer the app's history keys
-     while focus is inside it. -->
+     to the page. Keep a history target inside this scope because the viewer
+     moves the visible top bar into its external inspector. -->
 <section
   class="post-editor"
   tabindex="-1"
@@ -2103,6 +2114,13 @@
       onRedo={session.redo}
       canUndo={session.canUndo}
       canRedo={session.canRedo}
+    />
+  {:else}
+    <EditHistoryShortcutBridge
+      onUndo={editor.undo}
+      onRedo={editor.redo}
+      canUndo={editor.canUndo}
+      canRedo={editor.canRedo}
     />
   {/if}
   <div
