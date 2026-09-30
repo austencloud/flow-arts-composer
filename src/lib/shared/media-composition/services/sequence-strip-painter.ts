@@ -1,4 +1,8 @@
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import {
+  getProgressBarHeight,
+  renderProgressBarToCanvas,
+} from "$lib/shared/animation-engine/services/sequence-progress-renderer";
 import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
 import type { PreparedPictographData } from "$lib/shared/pictograph/shared/domain/models/prepared-pictograph-data";
 import type { PropPosition } from "$lib/shared/pictograph/prop/domain/models/prop-position";
@@ -136,7 +140,8 @@ class SequenceStripPainter implements PostStudioLayerPainter {
 
   constructor(
     private readonly sequence: SequenceData,
-    private readonly mode: StripMode
+    private readonly mode: StripMode,
+    private readonly showProgressBar: () => boolean
   ) {
     this.cells = buildNotationCells(sequence);
     this.moveCount = Math.max(0, this.cells.length - 1);
@@ -306,6 +311,25 @@ class SequenceStripPainter implements PostStudioLayerPainter {
     } else {
       this.paintMandala(context, rect, sequenceFrame);
     }
+    if (this.showProgressBar()) {
+      const side = Math.min(rect.width, rect.height);
+      context.save();
+      context.translate(
+        rect.x + (rect.width - side) / 2,
+        rect.y + (rect.height - side) / 2
+      );
+      renderProgressBarToCanvas(
+        context as CanvasRenderingContext2D,
+        side,
+        side - getProgressBarHeight(side),
+        1,
+        0,
+        [1],
+        true,
+        sequenceFrame.passBeatProgress
+      );
+      context.restore();
+    }
     context.restore();
   }
 
@@ -474,6 +498,11 @@ class SequenceStripPainter implements PostStudioLayerPainter {
 export function createSequenceStripPainter(input: {
   sequence: SequenceData;
   mode: StripMode;
+  showProgressBar?: () => boolean;
 }): PostStudioLayerPainter {
-  return new SequenceStripPainter(input.sequence, input.mode);
+  return new SequenceStripPainter(
+    input.sequence,
+    input.mode,
+    input.showProgressBar ?? (() => true)
+  );
 }

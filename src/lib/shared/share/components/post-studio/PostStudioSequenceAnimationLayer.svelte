@@ -1,6 +1,7 @@
 <script lang="ts">
-  import { untrack } from "svelte";
+  import { onDestroy, untrack } from "svelte";
   import AnimatorCanvas from "$lib/shared/animation-engine/components/AnimatorCanvas.svelte";
+  import SequenceProgressBar from "$lib/shared/animation-engine/components/layers/SequenceProgressBar.svelte";
   import {
     AnimationVisibilityStateManager,
     getAnimationVisibilityManager,
@@ -35,6 +36,7 @@
     sequencePosition,
     displayedBeatNumber: mappedBeatNumber,
     sequencePassIndex = 0,
+    sequenceProgress,
     animationTimeSeconds,
     breakdownMotion = false,
     breakdownMode = "alternate",
@@ -48,6 +50,7 @@
     sequencePosition: number;
     displayedBeatNumber?: number;
     sequencePassIndex?: number;
+    sequenceProgress?: number;
     animationTimeSeconds?: number;
     breakdownMotion?: boolean;
     breakdownMode?: PostMovesMode;
@@ -62,6 +65,21 @@
     animationAppearance?: PostAnimationItem["animationAppearance"] | null;
   } = $props();
 
+  const inheritedVisibility = getAnimationVisibilityManager();
+  let inheritedProgressBar = $state(
+    inheritedVisibility.getVisibility("progressBar")
+  );
+  function syncProgressVisibility(): void {
+    inheritedProgressBar = inheritedVisibility.getVisibility("progressBar");
+  }
+  inheritedVisibility.registerObserver(syncProgressVisibility);
+  onDestroy(() =>
+    inheritedVisibility.unregisterObserver(syncProgressVisibility)
+  );
+  const progressVisible = $derived(
+    animationAppearance?.progressBar ?? inheritedProgressBar
+  );
+
   const itemVisibility = new AnimationVisibilityStateManager({
     ephemeral: true,
   });
@@ -75,7 +93,12 @@
     const appearance = animationAppearance;
     if (!appearance) return;
     untrack(() => {
-      itemVisibility.updateSettings(appearance);
+      itemVisibility.updateSettings({
+        ...inheritedVisibility.getSettings(),
+        wordHeader: false,
+        darkMode: true,
+        ...appearance,
+      });
       const trail = appearance.trail;
       const effectConfig = copyPostAnimationEffects(
         appearance.effects ?? initialEffects
@@ -257,6 +280,8 @@
   data-studio-animation-mode={showMandala ? "mandala" : "pictograph"}
   data-sequence-position={sequencePosition}
   data-sequence-pass-index={sequencePassIndex}
+  data-sequence-progress-visible={progressVisible}
+  data-sequence-progress-dark={animationAppearance?.darkMode ?? true}
 >
   {#if showMandala}
     <PostStudioBreakdownMandala
@@ -382,14 +407,35 @@
       />
     {/key}
   {/if}
+  <div class="sequence-progress">
+    <SequenceProgressBar
+      currentStep={sequencePosition}
+      totalSteps={sequence.steps.length}
+      stepDurations={sequence.steps.map((step) => step.duration ?? 1)}
+      normalizedProgress={sequenceProgress}
+      visible={progressVisible}
+      darkMode={animationAppearance?.darkMode ?? true}
+    />
+  </div>
 </div>
 
 <style>
   .animation-layer {
+    position: relative;
+    container-type: size;
     width: 100%;
     height: 100%;
     overflow: hidden;
     background: #08080c;
+  }
+  .sequence-progress {
+    position: absolute;
+    z-index: 2;
+    bottom: max(0px, (100cqh - 100cqw) / 2);
+    left: 50%;
+    transform: translateX(-50%);
+    width: min(100cqw, 100cqh);
+    pointer-events: none;
   }
 
   .animation-layer.light {

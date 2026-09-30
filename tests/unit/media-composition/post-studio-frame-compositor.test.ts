@@ -8,6 +8,7 @@ import {
 } from "$lib/shared/media-composition/services/post-studio-frame-compositor";
 import { compilePostProject } from "$lib/shared/media-composition/domain/post-project-compiler";
 import { evaluatePresetFrame } from "$lib/shared/media-composition/services/frame-evaluator";
+import { sequenceFrameAt } from "$lib/shared/media-composition/domain/sequence-frame";
 import { NOW, card, overlay, project, text } from "./post-project-fixtures";
 import { createTextItemPainter } from "$lib/shared/media-composition/services/text-item-painter";
 
@@ -343,26 +344,49 @@ describe("waitForPictographMotion", () => {
 });
 
 describe("scoped Moves export", () => {
-  it.each(["arrows", "mandala"] as const)(
-    "exports %s without repainting effect canvases over the captured arrows",
-    async (mode) => {
+  it.each(
+    (["arrows", "mandala"] as const).flatMap((mode) =>
+      [true, false].flatMap((visible) =>
+        [0, 1.5, 4].map((arrival) => ({ mode, visible, arrival }))
+      )
+    )
+  )(
+    "exports $mode with Progress=$visible at arrival $arrival without duplicating effects",
+    async ({ mode, visible, arrival }) => {
       const createElement = <T extends HTMLElement>(tag: string) =>
         document.createElementNS("http://www.w3.org/1999/xhtml", tag) as T;
-      const compiled = compilePostProject(project([card("base", 5)], [[
-        overlay("moves", "moves", {
-          start: 0, duration: 5, mode,
-          animationAppearance: { darkMode: true },
-        }),
-      ]]), { now: NOW })!;
-      const layers = evaluatePresetFrame(compiled.preset, 5, 1)
-        .filter((entry) => entry.regionId === "moves");
+      const compiled = compilePostProject(
+        project(
+          [card("base", 5)],
+          [
+            [
+              overlay("moves", "moves", {
+                start: 0,
+                duration: 5,
+                mode,
+                animationAppearance: { darkMode: true },
+              }),
+            ],
+          ]
+        ),
+        { now: NOW }
+      )!;
+      const layers = evaluatePresetFrame(compiled.preset, 5, 1).filter(
+        (entry) => entry.regionId === "moves"
+      );
+      // Project time is unchanged; only the mapped sequence position varies.
+      const sequenceFrame = sequenceFrameAt(arrival, [2, 3], { endArrival: 4 });
+      layers[0]!.sequenceFrame = sequenceFrame;
       const root = createElement<HTMLDivElement>("div");
       const media = createElement<HTMLDivElement>("div");
       media.className = "media-layer";
       media.dataset.clipId = layers[0]!.clipId;
       media.dataset.renderMode = "sequence-animation";
       const animation = createElement<HTMLDivElement>("div");
-      animation.dataset.studioAnimationMode = mode === "arrows" ? "pictograph" : "mandala";
+      animation.dataset.sequenceProgressVisible = String(visible);
+      animation.dataset.sequenceProgressDark = "true";
+      animation.dataset.studioAnimationMode =
+        mode === "arrows" ? "pictograph" : "mandala";
       const effects = createElement<HTMLCanvasElement>("canvas");
       effects.width = effects.height = 200;
       animation.append(effects);
@@ -372,7 +396,8 @@ describe("scoped Moves export", () => {
         arrows.dataset.pictographRenderReady = "true";
         animation.append(arrows);
         vi.spyOn(animation, "getBoundingClientRect").mockReturnValue({
-          width: 200, height: 200,
+          width: 200,
+          height: 200,
         } as DOMRect);
       }
       media.append(animation);
@@ -381,20 +406,45 @@ describe("scoped Moves export", () => {
       captured.width = captured.height = 200;
       captureMotion.mockReset().mockResolvedValue(captured);
       const drawImage = vi.fn();
-      const context = new Proxy({ drawImage }, {
-        get(target, key) { return Reflect.get(target, key) ?? vi.fn(); },
-      });
+      const fillRect = vi.fn();
+      const context = new Proxy(
+        {
+          drawImage,
+          fillRect,
+          createLinearGradient: () => ({ addColorStop() {} }),
+        },
+        {
+          get(target, key) {
+            return Reflect.get(target, key) ?? vi.fn();
+          },
+        }
+      );
       const output = createElement<HTMLCanvasElement>("canvas");
-      vi.spyOn(output, "getContext").mockReturnValue(context as unknown as CanvasRenderingContext2D);
+      vi.spyOn(output, "getContext").mockReturnValue(
+        context as unknown as CanvasRenderingContext2D
+      );
 
       await renderPostStudioFrame({
-        canvas: output, root, preset: compiled.preset, layers,
+        canvas: output,
+        root,
+        preset: compiled.preset,
+        layers,
         cardFrameCache: new Map(),
       });
 
       expect(drawImage).toHaveBeenCalledTimes(1);
-      expect(drawImage.mock.calls[0]![0]).toBe(mode === "arrows" ? captured : effects);
+      expect(drawImage.mock.calls[0]![0]).toBe(
+        mode === "arrows" ? captured : effects
+      );
       expect(captureMotion).toHaveBeenCalledTimes(mode === "arrows" ? 1 : 0);
+      expect(fillRect).toHaveBeenCalledTimes(
+        visible ? (arrival > 0 ? 5 : 4) : 2
+      );
+      if (visible && arrival > 0) {
+        const track = fillRect.mock.calls.at(-2)!;
+        const fill = fillRect.mock.calls.at(-1)!;
+        expect(fill[2]).toBeCloseTo(track[2] * sequenceFrame.passBeatProgress);
+      }
     }
   );
 });

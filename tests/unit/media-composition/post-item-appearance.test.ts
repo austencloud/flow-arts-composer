@@ -26,6 +26,7 @@ describe("selected media appearance", () => {
       animationAppearance: {
         propType: PropType.CLUB,
         darkMode: false,
+        progressBar: false,
         pathShape: "concave",
         effortPreset: "glide",
         effects,
@@ -36,7 +37,7 @@ describe("selected media appearance", () => {
     expect(selected?.kind).toBe("moves");
     expect(selected?.kind === "moves" && selected.mode).toBe("alternate");
     expect(animationAppearanceForItem(selected?.kind === "moves" ? selected : null))
-      .toMatchObject({ darkMode: false, effortPreset: "glide", effects });
+      .toMatchObject({ darkMode: false, progressBar: false, effortPreset: "glide", effects });
     expect(animationAppearanceForItem(neighbor?.kind === "moves" ? neighbor : null))
       .toBeNull();
     expect(selected?.start).toBe(findItem(original, "moves-a")?.item.start);
@@ -58,6 +59,7 @@ describe("selected media appearance", () => {
           gridMode: "none",
           props: false,
           stepNumbers: true,
+          progressBar: true,
           pathShape: "concave",
           motionAwarePaths: false,
           effortPreset: "glide",
@@ -81,6 +83,7 @@ describe("selected media appearance", () => {
       gridMode: "none",
       props: false,
       stepNumbers: true,
+      progressBar: true,
       pathShape: "concave",
       motionAwarePaths: false,
       effortPreset: "glide",

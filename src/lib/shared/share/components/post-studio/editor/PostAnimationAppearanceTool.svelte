@@ -109,6 +109,7 @@
     "elementalGlyph",
     "propElementalGlyph",
     "stepNumbers",
+    "progressBar",
     "wordHeader",
     "mandala",
     "leftPathLines",

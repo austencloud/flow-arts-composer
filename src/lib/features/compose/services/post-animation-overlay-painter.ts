@@ -1,24 +1,5 @@
-/**
- * Post Studio Animation Overlay Painter
- *
- * Draws the overlays the AnimatorCanvas canvas itself does NOT paint when
- * mounted with hideHeader+hideProgressBar (as PostStudioSequenceAnimationLayer
- * does): the beat number, the letter (TKA) glyph, the element icon, and a
- * progress bar. Those four live in AnimatorCanvas's DOM siblings today -
- * WordHeader's step number and GlyphOverlay's TKA/elemental glyphs sit beside
- * the <canvas> in CanvasSurface.svelte, and the transport/progress bar is a
- * DOM slot in AnimatorCanvas.svelte's progress-slot - so post-studio-frame-
- * compositor's canvas-only capture (renderMode "sequence-animation" only
- * copies <canvas> elements) silently drops all four from the exported MP4.
- * Trails, props and the grid ARE drawn on AnimatorCanvas's own canvas, so
- * this painter does not touch them.
- *
- * Reuses the Animate/compose export's own drawing helpers so the baked-in
- * look matches exactly: ExportGlyphPrerenderer builds the same composite TKA
- * glyph (letter + dash + skew braces + turns) and elemental-icon image the
- * real video export bakes in, and canvas-renderer.ts's step-number/progress-
- * bar drawing is reused unchanged.
- */
+/** Paint the beat number and notation glyphs omitted by canvas capture.
+ * Progress belongs to the shared animation layer and frame compositor. */
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
 import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
 import type { SequenceFrame } from "$lib/shared/media-composition/domain/sequence-frame";
@@ -29,11 +10,7 @@ import type {
 } from "$lib/shared/media-composition/services/post-studio-layer-painter";
 import { ExportGlyphPrerenderer } from "$lib/shared/animation-engine/services/export-glyph-prerenderer";
 import { getSvgImageConverter } from "$lib/shared/foundation/get-svg-image-converter";
-import {
-  getProgressBarHeight,
-  renderProgressBarToCanvas,
-  renderStepNumberToCanvas,
-} from "./canvas-renderer";
+import { renderStepNumberToCanvas } from "./canvas-renderer";
 import {
   drawElementalGlyphToCanvas,
   drawPrerenderedGlyphToCanvas,
@@ -73,14 +50,12 @@ export function resolveOverlayStep(
 
 export class PostAnimationOverlayPainter implements PostStudioLayerPainter {
   private readonly steps: readonly StepData[];
-  private readonly stepDurations: number[];
   private prerenderer: ExportGlyphPrerenderer | null = null;
   private preparing: Promise<void> | null = null;
   private ready = false;
 
   constructor(sequence: SequenceData) {
     this.steps = sequence.steps ?? [];
-    this.stepDurations = this.steps.map((step) => step.duration ?? 1);
   }
 
   /**
@@ -149,25 +124,6 @@ export class PostAnimationOverlayPainter implements PostStudioLayerPainter {
       if (elemental) {
         drawElementalGlyphToCanvas(ctx, canvasSize, elemental, alpha);
       }
-    }
-
-    if (this.steps.length > 0) {
-      // sequenceFrame.passArrival (0-based step position within the pass) is
-      // exactly the `currentStep` renderProgressBarToCanvas expects, and it
-      // weights progress by the same per-step stepDurations this painter
-      // already carries - so this reproduces sequenceFrame.passBeatProgress
-      // (the field the painter conceptually reads) without duplicating that
-      // duration-weighted math here.
-      const barHeight = getProgressBarHeight(canvasSize);
-      renderProgressBarToCanvas(
-        ctx,
-        canvasSize,
-        canvasSize - barHeight,
-        this.steps.length,
-        sequenceFrame.passArrival,
-        this.stepDurations,
-        IS_DARK_MODE
-      );
     }
 
     ctx.restore();

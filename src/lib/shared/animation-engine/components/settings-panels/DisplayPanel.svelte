@@ -88,6 +88,7 @@
   let elementalGlyph = $state(vm.getVisibility("elementalGlyph"));
   let propElementalGlyph = $state(vm.getVisibility("propElementalGlyph"));
   let stepNumbers = $state(vm.getVisibility("stepNumbers"));
+  let progressBar = $state(vm.getVisibility("progressBar"));
   let propsVisibilityEnabled = $state(vm.getVisibility("props"));
   const propsVisible = $derived(
     resolveEffectivePropsVisibility(
@@ -113,6 +114,7 @@
     elementalGlyph = vm.getVisibility("elementalGlyph");
     propElementalGlyph = vm.getVisibility("propElementalGlyph");
     stepNumbers = vm.getVisibility("stepNumbers");
+    progressBar = vm.getVisibility("progressBar");
     propsVisibilityEnabled = vm.getVisibility("props");
     wordHeader = vm.getVisibility("wordHeader");
     mandala = vm.getVisibility("mandala");
@@ -156,6 +158,7 @@
       | "tkaGlyph"
       | "element"
       | "stepNumber"
+      | "progress"
       | "word";
     accent?: string;
     tone?: "blue" | "red";
@@ -261,13 +264,15 @@
       active: () => wordHeader,
       toggle: () => vm.toggleVisibility("wordHeader"),
     },
+    {
+      id: "progressBar",
+      label: t("animation_menu_progress_bar"),
+      preview: "progress",
+      active: () => progressBar,
+      toggle: () => vm.toggleVisibility("progressBar"),
+    },
   ];
 
-  // Progress used to sit here. On screen that one key gated the ENTIRE
-  // transport — play, tempo, scrubber, mode — so switching it off removed the
-  // canonical playback surface rather than a progress bar. The transport is now
-  // unconditional; whether a progress bar burns into the exported video is an
-  // export question and lives on the Export page.
   const chips: Chip[] = $derived([
     ...(showPropChips ? propChips : [masterPropsChip]),
     ...fieldChips,

@@ -109,7 +109,7 @@ describe("PostAnimationOverlayPainter.paint", () => {
     expect(ctx.fillText).not.toHaveBeenCalled();
   });
 
-  it("hides the beat number during the opening pose but still draws the (empty) progress bar", () => {
+  it("hides the opening beat and leaves progress to the animation layer", () => {
     const painter = new PostAnimationOverlayPainter(buildSequence());
     const ctx = createFakeContext();
 
@@ -120,9 +120,7 @@ describe("PostAnimationOverlayPainter.paint", () => {
     );
 
     expect(ctx.fillText).not.toHaveBeenCalled();
-    // Background + track are unconditional in drawProgressBar; only the
-    // progress fill itself is skipped at 0%.
-    expect(ctx.fillRect).toHaveBeenCalled();
+    expect(ctx.fillRect).not.toHaveBeenCalled();
   });
 
   it("draws the beat number for the move in flight", () => {

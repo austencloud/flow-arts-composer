@@ -30,6 +30,10 @@ import {
 } from "$lib/shared/media-composition/services/region-edge-painter";
 import { traceRoundedRect } from "$lib/shared/render/utils/trace-rounded-rect";
 import { videoColorFilter } from "$lib/shared/media-composition/domain/post-video-color-grade";
+import {
+  getProgressBarHeight,
+  renderProgressBarToCanvas,
+} from "$lib/shared/animation-engine/services/sequence-progress-renderer";
 
 export interface FrameLayerGeometry {
   region: PixelRect;
@@ -677,6 +681,30 @@ async function drawRegionLayer(
     );
     for (const canvas of canvases) {
       drawSource(context, canvas, geometry);
+    }
+    // Canvas capture omits the shared DOM progress line. Paint its mapped
+    // sequence pass here so seeking and ending holds match the preview.
+    const animation = layerElement.querySelector<HTMLElement>(
+      "[data-sequence-progress-visible]"
+    );
+    if (
+      animation?.dataset.sequenceProgressVisible === "true" &&
+      layer.sequenceFrame
+    ) {
+      const side = geometry.drawRect.width;
+      context.save();
+      context.translate(geometry.drawRect.x, geometry.drawRect.y);
+      renderProgressBarToCanvas(
+        context,
+        side,
+        side - getProgressBarHeight(side),
+        1,
+        0,
+        [1],
+        animation.dataset.sequenceProgressDark !== "false",
+        layer.sequenceFrame.passBeatProgress
+      );
+      context.restore();
     }
   } else if (renderMode === "choreo-card") {
     const beat = layer.displayedBeatNumber ?? 0;
