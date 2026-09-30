@@ -159,6 +159,9 @@ export async function initializeChildServices(
       const { getFirestoreInstance } =
         await import("$lib/shared/auth/firebase");
       await getFirestoreInstance();
+      // An earlier sign-in can finish this import after a different account
+      // took over. CollectionState.init also selects the target for writes.
+      if (getUserFromState()?.uid !== user.uid) return;
       await mandalaCollectionState.init(user.uid);
     })
     .catch((error) => {
