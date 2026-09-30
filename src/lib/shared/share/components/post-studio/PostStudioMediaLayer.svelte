@@ -414,6 +414,7 @@
     <PostStudioSequenceAnimationLayer
       {sequence}
       {sequencePosition}
+      {displayedBeatNumber}
       {sequencePassIndex}
       {animationTimeSeconds}
       {breakdownMotion}

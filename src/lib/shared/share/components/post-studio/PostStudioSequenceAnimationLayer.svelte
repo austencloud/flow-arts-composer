@@ -28,6 +28,7 @@
   let {
     sequence,
     sequencePosition,
+    displayedBeatNumber: mappedBeatNumber,
     sequencePassIndex = 0,
     animationTimeSeconds,
     breakdownMotion = false,
@@ -39,6 +40,7 @@
   }: {
     sequence: SequenceData;
     sequencePosition: number;
+    displayedBeatNumber?: number;
     sequencePassIndex?: number;
     animationTimeSeconds?: number;
     breakdownMotion?: boolean;
@@ -156,7 +158,7 @@
   const showMandala = $derived(breakdownMotion && sequencePassIndex % 2 === 1);
   const beatNumber = $derived(
     clampDisplayedBeatNumber(
-      displayedBeatNumber(sequencePosition, false),
+      mappedBeatNumber ?? displayedBeatNumber(sequencePosition, false),
       sequence.steps.length
     )
   );
@@ -181,10 +183,7 @@
   const motionProgress = $derived(
     beatNumber < 1
       ? null
-      : Math.max(
-          0,
-          Math.min(1, sequencePosition - Math.floor(sequencePosition))
-        )
+      : Math.max(0, Math.min(1, sequencePosition - beatNumber))
   );
   // The arrow fades in as the move is made, as in the Construct audition.
   const arrowOpacity = $derived(motionProgress ?? 0);

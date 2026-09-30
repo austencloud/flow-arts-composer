@@ -10,6 +10,7 @@ import {
 } from "$lib/shared/media-composition/domain/post-project-compiler";
 import { MediaCompositionPresetSchema } from "$lib/shared/media-composition/domain/media-composition-preset-schema";
 import { evaluatePresetFrame } from "$lib/shared/media-composition/services/frame-evaluator";
+import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
 import {
   clampBox,
   PostProjectSchema,
@@ -201,6 +202,75 @@ describe("compilePostProject", () => {
   });
 
   describe("sequence layers split at main-track video edges", () => {
+    it("starts the incoming take at its own opening pose throughout a crossfade", () => {
+      const outgoing = video("outgoing", {
+        takeId: "a",
+        sourceOut: 25,
+      });
+      const incoming = video("incoming", {
+        takeId: "b",
+        start: 24,
+        sourceIn: 2,
+        sourceOut: 10,
+      });
+      const animation = overlay("animation", "animation", {
+        start: 23,
+        duration: 5,
+      });
+      const result = compilePostProject(
+        project([outgoing, incoming], [[animation]]),
+        ctx
+      )!;
+      const pieces = result.preset.clips.filter((clip) =>
+        clip.id.startsWith("animation~")
+      );
+      expect(pieces.map((piece) => piece.timeMapRole)).toEqual([
+        takeRole("a"),
+        takeRole("b"),
+        takeRole("b"),
+      ]);
+      expect(pieces[1]).toMatchObject({
+        start: { unit: "seconds", value: 24 },
+        sourceIn: { unit: "seconds", value: 2 },
+      });
+
+      const steps = Array.from({ length: 16 }, () => ({
+        duration: 1,
+      })) as StepData[];
+      const at = (seconds: number) =>
+        evaluatePresetFrame(result.preset, result.durationSeconds, seconds, {
+          steps,
+          startPlacementDuration: 1,
+          clocks: {
+            [takeRole("a")]: {
+              sampleAt: () => ({ arrival: 16, endArrival: 16 }),
+            },
+            [takeRole("b")]: {
+              sampleAt: (media) => ({
+                arrival: Math.max(0, (media - 3) / 2),
+                endArrival: 16,
+              }),
+            },
+          },
+        }).find((layer) => layer.sourceRole === POST_STUDIO_ROLE.animation)!;
+
+      expect(at(23.9).sequenceFrame).toMatchObject({
+        move: 16,
+        phase: "holding",
+      });
+      expect(at(24.5).sequenceFrame).toMatchObject({
+        arrival: 0,
+        move: 0,
+        phase: "opening",
+      });
+      expect(at(24.5).displayedBeatNumber).toBe(0);
+      expect(at(26).sequenceFrame).toMatchObject({
+        move: 1,
+        moveProgress: 0.5,
+      });
+      expect(at(27).sequenceFrame).toMatchObject({ move: 1, moveProgress: 1 });
+    });
+
     it("maps each piece to the take, source span and rate of the main clip covering it", () => {
       const v1 = video("v1", { takeId: "a", sourceIn: 0, sourceOut: 4, speed: 1 });
       const v2 = video("v2", {
@@ -409,12 +479,6 @@ describe("compilePostProject", () => {
       ).toBe(false);
       expect(result.preset.clips.some((clip) => clip.id === "ov~0")).toBe(true);
     });
-    const proj = () =>
-      project(
-        [video("v1", { sourceOut: 5 })],
-        [[overlay("ov", "animation", { start: 0, duration: 5, overlay: true })]]
-      );
-
     const proj = () =>
       project(
         [video("v1", { sourceOut: 5 })],
