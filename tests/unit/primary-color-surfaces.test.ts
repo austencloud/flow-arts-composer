@@ -5,6 +5,8 @@ import {
 } from "$lib/shared/mandala/domain/mandala-palette";
 import { resolveTrailColors } from "$lib/shared/animation-engine/domain/resolve-trail-colors";
 import { DEFAULT_TRAIL_SETTINGS } from "$lib/shared/animation-engine/domain/types/trail-types";
+import { FrameParameterBuilder } from "$lib/shared/animation-engine/services/frame-parameter-builder";
+import type { AnimatorState } from "$lib/shared/animation-engine/state/animator-state.svelte";
 
 const colors = { left: "#00ff88", right: "#ff8800" };
 const base = {
@@ -48,5 +50,37 @@ describe("primary colors on related surfaces", () => {
     expect(result.rightColor).toBe(colors.right);
     const customBoth = { ...customLeft, rightColor: "#ffffff" };
     expect(resolveTrailColors(customBoth, colors)).toBe(customBoth);
+  });
+
+  it("updates frame trail colors when the saved primary pair changes", () => {
+    const builder = new FrameParameterBuilder();
+    const state = {
+      trailSettings: { ...DEFAULT_TRAIL_SETTINGS },
+      currentLeftPropType: "staff",
+      currentRightPropType: "staff",
+    } as AnimatorState;
+
+    const first = builder["getEffectiveTrailSettings"](state, false, colors);
+    expect(first).toMatchObject({
+      leftColor: colors.left,
+      rightColor: colors.right,
+    });
+
+    const changed = { left: "#44ddff", right: "#ff44aa" };
+    const second = builder["getEffectiveTrailSettings"](state, false, changed);
+    expect(second).toMatchObject({
+      leftColor: changed.left,
+      rightColor: changed.right,
+    });
+    state.trailSettings = { ...state.trailSettings, leftColor: "#aa66ff" };
+    const custom = builder["getEffectiveTrailSettings"](state, false, changed);
+    expect(custom).toMatchObject({
+      leftColor: "#aa66ff",
+      rightColor: changed.right,
+    });
+    expect(state.trailSettings.leftColor).toBe("#aa66ff");
+    expect(state.trailSettings.rightColor).toBe(
+      DEFAULT_TRAIL_SETTINGS.rightColor
+    );
   });
 });
