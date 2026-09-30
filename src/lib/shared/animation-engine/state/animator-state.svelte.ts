@@ -34,11 +34,9 @@ export interface AnimatorState {
   readonly preRenderProgress: PreRenderProgress | null;
   readonly preRenderedFramesReady: boolean;
   readonly displayedLetter: Letter | null;
-  readonly displayedTurnsTuple: string;
   readonly displayedStepNumber: number | null;
   readonly displayedMusicalPosition: string | null;
   readonly fadingOutLetter: Letter | null;
-  readonly fadingOutTurnsTuple: string | null;
   readonly fadingOutStepNumber: number | null;
   readonly isNewLetter: boolean;
   readonly trailSettings: TrailSettings;
@@ -61,11 +59,9 @@ export interface AnimatorState {
   setPreRenderedFramesReady(v: boolean): void;
   setGlyphState(v: {
     displayedLetter: Letter | null;
-    displayedTurnsTuple: string;
     displayedStepNumber: number | null;
     displayedMusicalPosition: string | null;
     fadingOutLetter: Letter | null;
-    fadingOutTurnsTuple: string | null;
     fadingOutStepNumber: number | null;
     isNewLetter: boolean;
   }): void;
@@ -102,11 +98,9 @@ export function createAnimatorState(): AnimatorState {
     preRenderProgress: null as PreRenderProgress | null,
     preRenderedFramesReady: false,
     displayedLetter: null as Letter | null,
-    displayedTurnsTuple: "(s, 0, 0)",
     displayedStepNumber: null as number | null,
     displayedMusicalPosition: null as string | null,
     fadingOutLetter: null as Letter | null,
-    fadingOutTurnsTuple: null as string | null,
     fadingOutStepNumber: null as number | null,
     isNewLetter: false,
     trailSettings: loadTrailSettings(),
@@ -130,11 +124,9 @@ export function createAnimatorState(): AnimatorState {
     get preRenderProgress() { return state.preRenderProgress; },
     get preRenderedFramesReady() { return state.preRenderedFramesReady; },
     get displayedLetter() { return state.displayedLetter; },
-    get displayedTurnsTuple() { return state.displayedTurnsTuple; },
     get displayedStepNumber() { return state.displayedStepNumber; },
     get displayedMusicalPosition() { return state.displayedMusicalPosition; },
     get fadingOutLetter() { return state.fadingOutLetter; },
-    get fadingOutTurnsTuple() { return state.fadingOutTurnsTuple; },
     get fadingOutStepNumber() { return state.fadingOutStepNumber; },
     get isNewLetter() { return state.isNewLetter; },
     get trailSettings() { return state.trailSettings; },
@@ -157,11 +149,9 @@ export function createAnimatorState(): AnimatorState {
     setPreRenderedFramesReady(v) { state.preRenderedFramesReady = v; },
     setGlyphState(v) {
       state.displayedLetter = v.displayedLetter;
-      state.displayedTurnsTuple = v.displayedTurnsTuple;
       state.displayedStepNumber = v.displayedStepNumber;
       state.displayedMusicalPosition = v.displayedMusicalPosition;
       state.fadingOutLetter = v.fadingOutLetter;
-      state.fadingOutTurnsTuple = v.fadingOutTurnsTuple;
       state.fadingOutStepNumber = v.fadingOutStepNumber;
       state.isNewLetter = v.isNewLetter;
     },

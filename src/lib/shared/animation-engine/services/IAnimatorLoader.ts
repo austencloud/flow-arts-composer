@@ -9,7 +9,6 @@ import type { IAnimationRenderer } from "$lib/shared/animation-engine/services/I
 import type { ISVGGenerator } from "$lib/shared/animation-engine/services/ISVGGenerator";
 import type { ITrailCapturer } from "$lib/shared/animation-engine/services/ITrailCapturer";
 import type { SequenceAnimationOrchestrator } from "$lib/shared/animation-engine/services/sequence-animation-orchestrator";
-import type { TurnsTupleGenerator } from "../../pictograph/arrow/positioning/placement/services/turns-tuple-generator";
 import type { SettingsState } from "$lib/shared/settings/state/settings-state.svelte";
 
 /**
@@ -20,7 +19,6 @@ export interface AnimatorServices {
   settingsService: SettingsState;
   orchestrator: SequenceAnimationOrchestrator;
   TrailCapturer: ITrailCapturer;
-  turnsTupleGenerator: TurnsTupleGenerator;
 }
 
 /**
