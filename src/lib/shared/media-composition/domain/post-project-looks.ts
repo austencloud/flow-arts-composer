@@ -261,17 +261,12 @@ export function applyTutorialPreset(
 }
 
 const TEMPLATE_CAPTION_BEATS = [1, 5, 9, 15] as const;
-const TEMPLATE_MANDALA_BOX: PostBox = {
-  x: 0,
-  y: 0.74,
-  width: 0.463,
-  height: 0.26,
-};
 
 /**
  * Dress another sequence with the saved ΩΛ-XJ edit. Its footage, timing,
  * speed, and zoom keys stay with the destination; the template supplies the
- * presentation around them.
+ * presentation around them, including its canvas shape, and a mandala only
+ * when the template has one.
  */
 export function applyTutorialTemplate(
   project: PostProject,
@@ -334,8 +329,10 @@ export function applyTutorialTemplate(
   };
   const cardStart = itemEnd(styledSlow);
   const nextId = createIdAllocator(project);
+  const { canvas: _destinationCanvas, ...destination } = project;
   const fresh: PostProject = {
-    ...project,
+    ...destination,
+    ...(template.canvas ? { canvas: template.canvas } : {}),
     fonts: template.fonts,
     background: template.background,
     mirrored: template.mirrored,
@@ -391,38 +388,21 @@ export function applyTutorialTemplate(
       nextId
     ).project;
   }
-  const mandalaDuration = Math.min(
-    templateMandala?.duration ?? 5,
-    styledSlow.duration
-  );
-  next = placeLow(
-    next,
-    {
-      ...(templateMandala ??
-        templatePip ?? {
-          id: "",
-          kind: "moves" as const,
-          start: 0,
-          duration: 5,
-          box: TEMPLATE_MANDALA_BOX,
-          opacity: 1,
-          fadeIn: 0,
-          fadeOut: 0,
-          anchor: null,
-          fill: false,
-          mode: "mandala" as const,
-        }),
-      id: nextId("moves"),
-      mode: "mandala",
-      start: slowStart,
-      duration: mandalaDuration,
-      box: { ...(templateMandala?.box ?? TEMPLATE_MANDALA_BOX) },
-      fadeOut: templateMandala?.fadeOut ?? 0,
-      anchor: { itemId: styledSlow.id, offset: 0 },
-    },
-    MAIN_TRACK_INDEX + 1,
-    nextId
-  ).project;
+  if (templateMandala) {
+    next = placeLow(
+      next,
+      {
+        ...templateMandala,
+        id: nextId("moves"),
+        start: slowStart,
+        duration: Math.min(templateMandala.duration, styledSlow.duration),
+        box: { ...templateMandala.box },
+        anchor: { itemId: styledSlow.id, offset: 0 },
+      },
+      MAIN_TRACK_INDEX + 1,
+      nextId
+    ).project;
+  }
   for (const [index, caption] of captions.entries()) {
     const offset = templateCaptionOffset(
       caption.start - templateSlow.start,
