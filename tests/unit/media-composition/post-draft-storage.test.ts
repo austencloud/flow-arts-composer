@@ -87,6 +87,35 @@ describe("draft autosave", () => {
     expect(result.error).toBe("Offline");
   });
 
+  it("opens the newer browser draft instead of replacing it with an older disk copy", async () => {
+    localStorage.setItem(
+      "tka:post-studio:project:v2:draft",
+      JSON.stringify(draft(20))
+    );
+    const fetch = vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          records: [
+            {
+              key: "tka:post-studio:project:v2:draft",
+              value: JSON.stringify(draft(10)),
+            },
+          ],
+        })
+      )
+    );
+    vi.stubGlobal("fetch", fetch);
+
+    const result = await loadPostDraft("draft");
+
+    expect(result.project?.updatedAt).toBe(20);
+    expect(localStorage.getItem("tka:post-studio:project:v2:draft")).toBe(
+      JSON.stringify(draft(20))
+    );
+    expect(fetch).toHaveBeenCalledTimes(1);
+    expect(fetch.mock.calls[0]?.[1]).toEqual({ cache: "no-store" });
+  });
+
   it("backs up only Post Studio records and rejects a failed disk save", async () => {
     localStorage.setItem("unrelated", "private data");
     localStorage.setItem(
