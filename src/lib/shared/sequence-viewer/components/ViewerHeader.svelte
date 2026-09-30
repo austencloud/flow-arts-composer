@@ -78,6 +78,7 @@
     isSaved: boolean;
     isSaving: boolean;
     onSave?: () => void;
+    onAddToCollection?: () => void;
     onRemix?: () => void;
     onPracticeToggle?: () => void;
     /**
@@ -120,6 +121,7 @@
     isSaved,
     isSaving,
     onSave,
+    onAddToCollection,
     onRemix,
     onPracticeToggle,
     sharePanelOpen = false,
@@ -177,6 +179,7 @@
   const hasDirectVisibilityAction = $derived(!!onPublish || !!onUnpublish);
   const hasContextActions = $derived(
     canToggleMotionVisibility ||
+      !!onAddToCollection ||
       hasDirectVisibilityAction ||
       !!onVideoUpload ||
       showOpenAppAction ||
@@ -354,6 +357,18 @@
             />
           {/if}
 
+          {#if onAddToCollection}
+            <button
+              type="button"
+              class="viewer-action context-action collection-action"
+              onclick={onAddToCollection}
+              aria-label={t("browse_audit_add_to_collection")}
+              title={t("browse_audit_add_to_collection")}
+            >
+              <i class="fas fa-folder-plus" aria-hidden="true"></i>
+            </button>
+          {/if}
+
           {#if hasDirectVisibilityAction}
             <button
               type="button"
@@ -426,6 +441,7 @@
           {isSaved}
           {isSaving}
           {onSave}
+          {onAddToCollection}
           {onRemix}
           {onVideoUpload}
           {isPublished}
