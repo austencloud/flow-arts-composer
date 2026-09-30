@@ -6,7 +6,10 @@
   import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
   import type { HandLabeling } from "$lib/shared/video-collaboration/domain/hand-labeling";
   import type { SequenceExportOptions } from "$lib/shared/render/domain/models/sequence-export-options";
-  import type { PostAnimationItem, PostMovesMode } from "$lib/shared/media-composition/domain/post-project";
+  import type {
+    PostAnimationItem,
+    PostMovesMode,
+  } from "$lib/shared/media-composition/domain/post-project";
   import PostStudioSequenceAnimationLayer from "./PostStudioSequenceAnimationLayer.svelte";
   import PostStudioChoreoLayer from "./PostStudioChoreoLayer.svelte";
   import PostStudioTunnelLayer from "./PostStudioTunnelLayer.svelte";
@@ -98,6 +101,7 @@
     null;
   let playingFrameGeneration = 0;
   let lastCorrectionAt = -Infinity;
+  let recoveryStartedAt: number | null = null;
   let saveMenuHost: VisualSequenceSaveContextMenuHost | undefined = $state();
 
   /**
@@ -164,7 +168,8 @@
       scale: transform.scale,
       translateX: transform.translateX,
       translateY: transform.translateY,
-      rotationDegrees: (sourceGeometry?.rotation ?? 0) + transform.rotationDegrees,
+      rotationDegrees:
+        (sourceGeometry?.rotation ?? 0) + transform.rotationDegrees,
     })
   );
 
@@ -200,6 +205,17 @@
       return false;
     const ceiling = Math.max(0, video.duration - 1 / 60);
     const target = Math.min(ceiling, Math.max(0, sourceTimeSeconds));
+    const now = performance.now();
+    let targetBuffered = false;
+    for (let index = 0; index < video.buffered.length; index += 1) {
+      if (
+        target >= video.buffered.start(index) &&
+        target < video.buffered.end(index)
+      ) {
+        targetBuffered = true;
+        break;
+      }
+    }
     // Paused frames and timeline jumps seek exactly. During playback, small
     // drift changes the rate briefly so footage keeps decoding smoothly.
     const shouldSeek = shouldSeekPreviewVideo({
@@ -211,13 +227,17 @@
       waiting: videoWaiting,
       awaitingFrame: awaitingPlayingFrame,
       discontinuity,
-      sinceLastCorrectionMs: performance.now() - lastCorrectionAt,
+      sinceLastCorrectionMs: now - lastCorrectionAt,
+      recoveryElapsedMs:
+        recoveryStartedAt === null ? 0 : now - recoveryStartedAt,
+      targetBuffered,
     });
     if (shouldSeek) {
       if (playing) {
         cancelPlayingFrame();
         awaitingPlayingFrame = true;
-        lastCorrectionAt = performance.now();
+        lastCorrectionAt = now;
+        recoveryStartedAt = now;
       }
       video.currentTime = target;
     }
@@ -260,6 +280,7 @@
   function waitForPlayingFrames(element: HTMLVideoElement): void {
     cancelPlayingFrame();
     awaitingPlayingFrame = true;
+    recoveryStartedAt ??= performance.now();
     const generation = playingFrameGeneration;
     let remaining = 2;
     let firstMediaTime: number | null = null;
@@ -276,6 +297,7 @@
       if (remaining <= 0 && metadata.mediaTime - firstMediaTime >= 0.75) {
         awaitingPlayingFrame = false;
         videoWaiting = false;
+        recoveryStartedAt = null;
       } else {
         playingFrameRequest = {
           element,
@@ -294,16 +316,19 @@
     if (playing) {
       cancelPlayingFrame();
       awaitingPlayingFrame = true;
+      recoveryStartedAt ??= performance.now();
     }
   }
 
   function onWaiting(): void {
     videoWaiting = true;
+    if (playing) recoveryStartedAt ??= performance.now();
     if (playing && video && !video.seeking) waitForPlayingFrames(video);
   }
 
   function onCanPlay(): void {
     videoWaiting = false;
+    if (!awaitingPlayingFrame) recoveryStartedAt = null;
   }
 
   function cancelPausedFrame(): void {
@@ -321,6 +346,7 @@
     cancelPausedFrame();
     cancelPlayingFrame();
     awaitingPlayingFrame = false;
+    recoveryStartedAt = null;
     queuedJump = false;
     const generation = pausedFrameGeneration;
     primingVideo = element;
@@ -341,6 +367,7 @@
   function onMetadata(): void {
     if (!video || !Number.isFinite(video.duration)) return;
     cancelPausedFrame();
+    recoveryStartedAt = null;
     videoWaiting = false;
     previousTargetTime = null;
     sourceWidth = video.videoWidth;
@@ -404,15 +431,18 @@
     } else if (seeked) {
       cancelPlayingFrame();
       awaitingPlayingFrame = false;
+      recoveryStartedAt = null;
       // The frame must arrive from the completed seek, not the old position.
       if (!video.seeking) showPausedFrame(video);
     } else if (primingVideo !== video && !video.paused) {
       cancelPlayingFrame();
       awaitingPlayingFrame = false;
+      recoveryStartedAt = null;
       video.pause();
     } else if (!playing) {
       cancelPlayingFrame();
       awaitingPlayingFrame = false;
+      recoveryStartedAt = null;
     }
   });
 

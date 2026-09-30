@@ -8,6 +8,8 @@ interface PreviewSeekState {
   awaitingFrame: boolean;
   discontinuity?: boolean;
   sinceLastCorrectionMs: number;
+  recoveryElapsedMs?: number;
+  targetBuffered?: boolean;
 }
 
 export function shouldSeekPreviewVideo(state: PreviewSeekState): boolean {
@@ -21,10 +23,13 @@ export function shouldSeekPreviewVideo(state: PreviewSeekState): boolean {
   if (Math.abs(state.currentTime - state.targetTime) <= tolerance) return false;
   if (state.seeking) return false;
   if (!state.playing) return true;
+  // A decoder that stops presenting frames cannot clear its own recovery
+  // gate. Retry a buffered position after giving the current attempt time.
+  const recoveryStalled =
+    (state.recoveryElapsedMs ?? 0) >= 3000 && state.targetBuffered === true;
   return (
     jumped ||
-    (!state.waiting &&
-      !state.awaitingFrame &&
+    (((!state.waiting && !state.awaitingFrame) || recoveryStalled) &&
       state.sinceLastCorrectionMs >= 3000)
   );
 }

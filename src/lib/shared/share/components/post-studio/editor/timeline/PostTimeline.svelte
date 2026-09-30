@@ -116,7 +116,7 @@
       channel: PostKeyframeChannel,
       fromSeconds: number
     ) => void;
-    /** The toolbar's left end, beside the zoom controls: the keyframe buttons. */
+    /** Selected clip controls, shown in their own row above the ruler. */
     toolbarStart?: Snippet;
     onAddVideo?: () => void;
     pixelsPerSecond?: number;
@@ -1102,12 +1102,13 @@
   role="region"
   aria-label={t("post_timeline_region_label")}
 >
+  {#if toolbarStart}
+    <div class="keyframe-toolbar" transition:growFade|global>
+      {@render toolbarStart()}
+    </div>
+  {/if}
   <div class="toolbar-row">
-    {#if toolbarStart}
-      <div class="toolbar-start">
-        {@render toolbarStart()}
-      </div>
-    {/if}
+    <div class="ruler-spacer" aria-hidden="true"></div>
     <div
       class="ruler-scroll"
       bind:this={rulerScrollEl}
@@ -1357,25 +1358,32 @@
   }
 
   .toolbar-row {
-    container: post-timeline-toolbar / inline-size;
     display: flex;
     flex-shrink: 0;
     align-items: center;
     border-bottom: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.08));
   }
 
-  /* The keyframe buttons, left of the zoom controls. */
-  .toolbar-start {
-    display: flex;
-    flex: 0 0 16rem;
-    align-items: center;
-    min-width: 0;
-    padding-left: 0.5rem;
-    box-sizing: border-box;
+  .keyframe-toolbar {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: start;
+    gap: 0.5rem;
+    flex-shrink: 0;
+    padding: 0.375rem 0.5rem;
+    border-bottom: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.08));
   }
 
-  .toolbar-start :global(.kf-label) {
-    display: none;
+  .keyframe-toolbar :global(.keyframe-controls) {
+    min-width: 0;
+  }
+
+  .keyframe-toolbar :global(.overflow-trigger) {
+    white-space: nowrap;
+  }
+
+  .ruler-spacer {
+    flex: 0 0 16rem;
   }
 
   .key-lane-slot {
@@ -1579,17 +1587,8 @@
   }
 
   @container post-timeline (max-width: 30rem) {
-    .toolbar-row {
-      flex-wrap: wrap;
-    }
-
-    .toolbar-start {
-      flex: 1;
-    }
-
-    .ruler-scroll {
-      flex: 0 0 calc(100% - 7rem);
-      margin-left: 7rem;
+    .ruler-spacer {
+      flex-basis: 7rem;
     }
 
     .header-column {

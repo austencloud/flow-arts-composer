@@ -51,11 +51,13 @@
   } from "$lib/shared/media-composition/domain/post-project";
   import {
     channelsOf,
+    keyframeCount,
     moveKeyframe,
     removeKeyframe,
     toggleKeyframe,
   } from "$lib/shared/media-composition/domain/post-project-keyframes";
   import {
+    clearProjectKeyframes,
     editItemKeyframes,
     placeMainItem,
     moveOverlayItem,
@@ -112,6 +114,12 @@
   import PostToolPanel from "./PostToolPanel.svelte";
   import PostItemTool from "./PostItemTool.svelte";
   import PostKeyframeControls from "./PostKeyframeControls.svelte";
+  import ConfirmDialog from "$lib/shared/foundation/ui/ConfirmDialog.svelte";
+  import OverflowMenu from "$lib/shared/ui/components/OverflowMenu.svelte";
+  import {
+    showToast,
+    removeToast,
+  } from "$lib/shared/toast/state/toast-state.svelte";
   import PostAddPanel from "./PostAddPanel.svelte";
   import PostMediaPanel from "./PostMediaPanel.svelte";
   import PostExportPanel from "./PostExportPanel.svelte";
@@ -1328,6 +1336,70 @@
     );
   }
 
+  const clearablePostKeys = $derived(
+    editor.project.tracks.reduce(
+      (total, track) =>
+        total +
+        (track.locked
+          ? 0
+          : track.items.reduce((sum, item) => sum + keyframeCount(item), 0)),
+      0
+    )
+  );
+  const lockedPostKeys = $derived(
+    editor.project.tracks.reduce(
+      (total, track) =>
+        total +
+        (!track.locked
+          ? 0
+          : track.items.reduce((sum, item) => sum + keyframeCount(item), 0)),
+      0
+    )
+  );
+  let confirmClearPost = $state(false);
+  let clearToast: { id: string; project: PostProject } | null = null;
+
+  $effect(() => {
+    const current = editor.project;
+    if (clearToast && current !== clearToast.project) {
+      removeToast(clearToast.id);
+      clearToast = null;
+    }
+  });
+
+  function reportCleared(count: number, edit: PostEdit): void {
+    if (!count || !editor.edit(edit)) return;
+    const clearedProject = editor.project;
+    if (clearToast) removeToast(clearToast.id);
+    const id = showToast({
+      message: t("post_keyframe_cleared", { count }),
+      type: "success",
+      action: {
+        label: t("post_editor_undo"),
+        onClick: () => {
+          if (editor.project === clearedProject) editor.undo();
+        },
+      },
+    });
+    clearToast = { id, project: clearedProject };
+  }
+
+  function clearClipKeys(itemId: string): void {
+    const located = findItem(editor.project, itemId);
+    if (!located || editor.project.tracks[located.trackIndex]?.locked) return;
+    const count = keyframeCount(located.item);
+    reportCleared(count, (project, ctx) =>
+      clearProjectKeyframes(project, editor.previewSeconds, ctx, itemId)
+    );
+  }
+
+  function clearPostKeys(): void {
+    confirmClearPost = false;
+    reportCleared(clearablePostKeys, (project, ctx) =>
+      clearProjectKeyframes(project, editor.previewSeconds, ctx)
+    );
+  }
+
   // A curve's easing is edited from the toolbar's Curve chip, which follows
   // the playhead, so the playhead goes to the curve's first key.
   function openKeyCurve(
@@ -1933,6 +2005,8 @@
     {editor}
     {exporting}
     {draftStatus}
+    onClearPostKeyframes={() => (confirmClearPost = true)}
+    clearableKeyframes={clearablePostKeys}
     onMirror={mirrorWholePost}
     mirrored={editor.project.mirrored ?? false}
     onBackup={() => void downloadDraft()}
@@ -2069,7 +2143,25 @@
       locked={editor.isLocked(editor.selectedItem.id)}
       label={channelLabel(keyChannel)}
       bind:curveOpen={keyCurveOpen}
+      onCleared={reportCleared}
     />
+    <OverflowMenu
+      triggerPresentation="labelled"
+      ariaLabel={t("post_keyframe_clip_actions")}
+      placement="bottom"
+      items={[
+        {
+          label: t("post_keyframe_remove_all_clip"),
+          icon: "fa-solid fa-diamond",
+          disabled:
+            editor.isLocked(editor.selectedItem.id) ||
+            keyframeCount(editor.selectedItem) === 0,
+          action: () => clearClipKeys(editor.selectedItem!.id),
+        },
+      ]}
+    >
+      {#snippet trigger()}{t("post_keyframe_clip_actions")}{/snippet}
+    </OverflowMenu>
   {/if}
 {/snippet}
 
@@ -2081,6 +2173,7 @@
       channel="framing"
       locked={editor.isLocked(crop.item.id)}
       bind:curveOpen={cropCurveOpen}
+      onCleared={reportCleared}
     />
   {/if}
 {/snippet}
@@ -2341,7 +2434,9 @@
           onDeleteKey={(itemId, channel, seconds) =>
             editKeys(itemId, (it) => removeKeyframe(it, channel, seconds))}
           onOpenCurve={openKeyCurve}
-          toolbarStart={timelineKeys}
+          toolbarStart={editor.selectedItem && keyChannel
+            ? timelineKeys
+            : undefined}
           onAddVideo={pickDeviceVideo}
           bind:pixelsPerSecond
         />
@@ -2414,6 +2509,20 @@
     aria-hidden="true"
   />
 </section>
+
+<ConfirmDialog
+  bind:isOpen={confirmClearPost}
+  title={t("post_keyframe_clear_post_title")}
+  message={t("post_keyframe_clear_post_message", {
+    count: clearablePostKeys,
+  }) +
+    (lockedPostKeys > 0
+      ? ` ${t("post_keyframe_clear_post_locked", { count: lockedPostKeys })}`
+      : "")}
+  confirmText={t("post_keyframe_remove_all_post_confirm")}
+  onConfirm={clearPostKeys}
+  onCancel={() => (confirmClearPost = false)}
+/>
 
 <!-- The render reads the live canvas frame by frame. Any edit made while it
      runs lands in the middle of the output, so the app is locked until it
@@ -2621,9 +2730,9 @@
     --post-panel-width: clamp(20rem, 30cqw, 26rem);
     display: grid;
     grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: minmax(15rem, 1fr) auto 12px var(
-        --post-timeline-height
-      ) auto;
+    grid-template-rows:
+      minmax(15rem, 1fr) auto 12px var(--post-timeline-height)
+      auto;
     grid-template-areas: "stage" "transport" "resize" "timeline" "row";
   }
 
@@ -2794,7 +2903,9 @@
       [data-layout="viewer"]
     )
     .layout {
-    grid-template-rows: minmax(15rem, 1fr) auto 12px var(--post-timeline-height) auto;
+    grid-template-rows:
+      minmax(15rem, 1fr) auto 12px var(--post-timeline-height)
+      auto;
     grid-template-areas: "stage" "transport" "resize" "timeline" "row";
   }
 

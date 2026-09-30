@@ -58,6 +58,8 @@ import {
 import {
   framingAt,
   channelValueAt,
+  clearItemKeyframes,
+  keyframeCount,
   isAnimated,
   shiftKeyframes,
   writeChannelValue,
@@ -908,7 +910,10 @@ export function updateItem(
   if (item.kind === "animation" && patch.overlay !== undefined) {
     next.overlay = patch.overlay;
   }
-  if ((item.kind === "animation" || item.kind === "moves") && patch.animationAppearance !== undefined) {
+  if (
+    (item.kind === "animation" || item.kind === "moves") &&
+    patch.animationAppearance !== undefined
+  ) {
     if (patch.animationAppearance)
       next.animationAppearance = patch.animationAppearance;
     else delete next.animationAppearance;
@@ -1055,6 +1060,30 @@ export function editItemKeyframes(
   const next = edit(located.item);
   if (next === located.item) return project;
   return finish(replaceItem(project, itemId, next), ctx);
+}
+
+/** Clear one clip or the whole post in a single normalized project edit. */
+export function clearProjectKeyframes(
+  project: PostProject,
+  s: number,
+  ctx: EditContext,
+  itemId?: string
+): PostProject {
+  let changed = false;
+  const tracks = project.tracks.map((track) => {
+    if (track.locked) return track;
+    const items = track.items.map((item) => {
+      if ((itemId && item.id !== itemId) || keyframeCount(item) === 0)
+        return item;
+      const next = clearItemKeyframes(item, s);
+      changed ||= next !== item;
+      return next;
+    });
+    return items.some((item, index) => item !== track.items[index])
+      ? { ...track, items }
+      : track;
+  });
+  return changed ? finish({ ...project, tracks }, ctx) : project;
 }
 
 /** Zoom, pan and turn back to identity, and framing keyframes dropped. */

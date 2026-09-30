@@ -22,6 +22,8 @@
     mirrored?: boolean;
     onBackup: () => void;
     onRestore: () => void;
+    onClearPostKeyframes?: () => void;
+    clearableKeyframes?: number;
     onRetry?: () => void;
     canRetry?: boolean;
     trailing?: Snippet;
@@ -38,6 +40,8 @@
     mirrored = false,
     onBackup,
     onRestore,
+    onClearPostKeyframes,
+    clearableKeyframes = 0,
     onRetry,
     canRetry = false,
     trailing,
@@ -45,6 +49,16 @@
   }: Props = $props();
 
   const moreActions = $derived([
+    ...(onClearPostKeyframes
+      ? [
+          {
+            label: t("post_keyframe_remove_all_post"),
+            icon: "fa-solid fa-diamond",
+            action: onClearPostKeyframes,
+            disabled: clearableKeyframes === 0,
+          },
+        ]
+      : []),
     ...(!trailing && onImport
       ? [
           {

@@ -58,6 +58,30 @@ describe("video preview synchronization", () => {
     ).toBe(true);
   });
 
+  it("retries a stalled recovery once its new position is buffered", () => {
+    const stalled = {
+      ...playingState,
+      currentTime: 3,
+      targetTime: 8,
+      previousTargetTime: 7.98,
+      awaitingFrame: true,
+      waiting: true,
+      recoveryElapsedMs: 5000,
+      targetBuffered: true,
+    };
+    expect(shouldSeekPreviewVideo(stalled)).toBe(true);
+    expect(
+      shouldSeekPreviewVideo({ ...stalled, recoveryElapsedMs: 2999 })
+    ).toBe(false);
+    expect(shouldSeekPreviewVideo({ ...stalled, targetBuffered: false })).toBe(
+      false
+    );
+    expect(
+      shouldSeekPreviewVideo({ ...stalled, sinceLastCorrectionMs: 2999 })
+    ).toBe(false);
+    expect(shouldSeekPreviewVideo({ ...stalled, seeking: true })).toBe(false);
+  });
+
   it("keeps paused scrubs exact but waits for an outstanding seek", () => {
     const paused = {
       ...playingState,

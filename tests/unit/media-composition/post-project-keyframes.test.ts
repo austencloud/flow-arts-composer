@@ -11,6 +11,8 @@ import {
   channelsOf,
   clampChannelValue,
   clearChannel,
+  clearItemKeyframes,
+  keyframeCount,
   easingControlPoints,
   easingPresetOf,
   framingAt,
@@ -472,6 +474,51 @@ describe("clearChannel", () => {
   it("is a no-op when the channel is not animated", () => {
     const t = text("t", 0, 10);
     expect(clearChannel(t, "opacity", 5)).toBe(t);
+  });
+
+  it("freezes at the visible edge when trimmed media has hidden source keys", () => {
+    const v = video("v", {
+      start: 4,
+      sourceIn: 4,
+      sourceOut: 8,
+      speed: 2,
+      keyframes: {
+        opacity: [
+          { t: 0, value: 0, easing: EASING_PRESETS.linear },
+          { t: 4, value: 0.4, easing: EASING_PRESETS.linear },
+          { t: 8, value: 0.8, easing: EASING_PRESETS.linear },
+          { t: 12, value: 1, easing: EASING_PRESETS.linear },
+        ],
+      },
+    });
+    expect(clearChannel(v, "opacity", 0).opacity).toBeCloseTo(0.4);
+    expect(clearChannel(v, "opacity", 20).opacity).toBeCloseTo(0.8);
+    expect(clearChannel(v, "opacity", 5).opacity).toBeCloseTo(0.6);
+  });
+
+  it("clears all channels while preserving non-keyframe timing fields", () => {
+    let v = video("v", { sourceIn: 2, sourceOut: 12, speed: 2 });
+    v = setKeyframe(v, "opacity", 0, 0.2);
+    v = setKeyframe(v, "opacity", 5, 0.8);
+    v = setKeyframe(v, "framing", 0, {
+      zoom: 1,
+      panX: 0,
+      panY: 0,
+      rotation: 0,
+    });
+    v = setKeyframe(v, "framing", 5, {
+      zoom: 2,
+      panX: 0,
+      panY: 0,
+      rotation: 0,
+    });
+    expect(keyframeCount(v)).toBe(4);
+    const next = clearItemKeyframes(v, 2.5);
+    expect(keyframeCount(next)).toBe(0);
+    expect(next.opacity).toBeCloseTo(0.5);
+    expect(next.kind === "video" && next.zoom).toBeCloseTo(1.5);
+    expect(next.kind === "video" && next.speed).toBe(2);
+    expect(clearItemKeyframes(next, 2.5)).toBe(next);
   });
 });
 
