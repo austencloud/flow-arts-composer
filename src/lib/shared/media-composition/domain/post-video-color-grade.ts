@@ -108,10 +108,20 @@ export function analyzeVideoColor(
   if (median * brightness < 0.5 && target >= median)
     contrast = Math.min(contrast, (0.5 - median) / (0.5 - median * brightness));
   contrast = Math.max(1, contrast);
-  // Shrink the whole move until at most 1.5% of the sampled luma clips, judged
-  // on the rounded values the sliders will hold. Fine detail such as sky
-  // between leaves averages out in the small sample and can clip a little more.
-  const highlight = percentile(histogram, count, 0.985);
+  // Shrink the whole move until at most 1.5% of the sampled picture newly
+  // clips, judged on the rounded values the sliders will hold. Pixels already
+  // at white (a blown-out sky) cannot clip any further, so they do not count.
+  // Fine detail such as sky between leaves averages out in the small sample
+  // and can clip a little more at full size.
+  let allowance = count * 0.015;
+  let highlight = 253 / 255;
+  for (let index = 253; index >= 0; index -= 1) {
+    allowance -= histogram[index] ?? 0;
+    if (allowance < 0) {
+      highlight = index / 255;
+      break;
+    }
+  }
   const clips = () =>
     (highlight * round2(brightness) - 0.5) * round2(contrast) + 0.5 > 1;
   for (let step = 0; step < 40 && clips(); step += 1) {

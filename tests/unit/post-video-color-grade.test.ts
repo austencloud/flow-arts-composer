@@ -89,6 +89,19 @@ describe("video auto color", () => {
     expect(clipped.length / pixels.length).toBeLessThanOrEqual(0.02);
   });
 
+  it("still grades a daylight scene whose sky is already white", () => {
+    const pixels = [
+      ...ramp(20, 240, 2000),
+      ...Array.from({ length: 48 }, () => [255, 255, 255] as const),
+    ];
+    const grade = analyzeVideoColor([frame(pixels)]);
+    expect(grade.contrast).toBeGreaterThan(1);
+    const newlyClipped = pixels.filter(
+      ([v]) => v < 254 && outputLevel(v, grade.brightness, grade.contrast) > 1
+    );
+    expect(newlyClipped.length / pixels.length).toBeLessThanOrEqual(0.02);
+  });
+
   it("adds colour to dull footage and leaves vivid footage alone", () => {
     const dull = analyzeVideoColor([
       frame(
