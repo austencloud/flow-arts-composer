@@ -1120,6 +1120,9 @@
     onSave={interactions.headerActions.onSave && !embedded
       ? interactions.handleSave
       : undefined}
+    onAddToCollection={interactions.headerActions.onAddToCollection && !embedded
+      ? interactions.handleAddToCollection
+      : undefined}
     onRemix={(onRemix ?? interactions.headerActions.onRemix) && !embedded
       ? interactions.handleRemix
       : undefined}
