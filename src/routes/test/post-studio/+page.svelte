@@ -86,9 +86,13 @@
   }
 
   onMount(async () => {
-    const isolatedKeyframes =
-      new URL(window.location.href).searchParams.get("fixture") ===
-      "keyframe-clear";
+    const fixture = new URL(window.location.href).searchParams.get("fixture");
+    const isolatedKeyframes = fixture === "keyframe-clear";
+    // Exercise the real save/reload path without writing to the creator's post.
+    const storageFixture = fixture === "draft-storage";
+    const draftSequenceId = storageFixture
+      ? "post-draft-storage-fixture"
+      : SEQUENCE_ID;
     const requestedLocale = toLocale(
       new URL(window.location.href).searchParams.get("lang") ?? ""
     );
@@ -109,7 +113,7 @@
               diskAvailable: false,
               error: null,
             })
-          : loadPostDraft(SEQUENCE_ID),
+          : loadPostDraft(draftSequenceId),
       ]);
       initialProject = draft.project ?? undefined;
       diskDrafts = draft.diskAvailable;
@@ -119,14 +123,16 @@
       const hydrated = await hydrateSequence(loaded);
       const editorSequenceId = isolatedKeyframes
         ? "post-keyframe-clear-fixture"
-        : hydrated.id;
+        : storageFixture
+          ? draftSequenceId
+          : hydrated.id;
       seedPerformance(editorSequenceId);
       sequence = {
         ...hydrated,
         id: editorSequenceId,
         performanceVideoUrl: VIDEO_URL,
       };
-      if (isolatedKeyframes)
+      if (isolatedKeyframes || (storageFixture && !initialProject))
         initialProject = keyframeClearFixture(editorSequenceId);
       cardRenderOptions = buildCardRenderOptions(sequence, { darkMode: true });
 
