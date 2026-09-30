@@ -2,17 +2,28 @@ export interface PostVideoColorGrade {
   brightness: number;
   contrast: number;
   saturation: number;
+  /** Older saved clips have no hue value; zero keeps their original hues. */
+  hue?: number;
 }
 
 const IDENTITY: PostVideoColorGrade = {
   brightness: 1,
   contrast: 1,
   saturation: 1,
+  hue: 0,
 };
 
 export function videoColorFilter(grade?: PostVideoColorGrade | null): string {
   if (!grade) return "none";
-  return `brightness(${grade.brightness}) contrast(${grade.contrast}) saturate(${grade.saturation})`;
+  const hue = grade.hue ?? 0;
+  if (
+    grade.brightness === 1 &&
+    grade.contrast === 1 &&
+    grade.saturation === 1 &&
+    hue === 0
+  )
+    return "none";
+  return `brightness(${grade.brightness}) contrast(${grade.contrast}) saturate(${grade.saturation}) hue-rotate(${hue}deg)`;
 }
 
 function percentile(

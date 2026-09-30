@@ -48,13 +48,25 @@ describe("video auto color", () => {
       brightness: 1,
       contrast: 1,
       saturation: 1,
+      hue: 0,
     });
     expect(videoColorFilter(null)).toBe("none");
+    expect(
+      videoColorFilter({ brightness: 1, contrast: 1, saturation: 1 })
+    ).toBe("none");
   });
 
   it("uses the same filter expression for preview and export", () => {
     expect(
+      videoColorFilter({
+        brightness: 0.75,
+        contrast: 1.25,
+        saturation: 0.5,
+        hue: -90,
+      })
+    ).toBe("brightness(0.75) contrast(1.25) saturate(0.5) hue-rotate(-90deg)");
+    expect(
       videoColorFilter({ brightness: 1.2, contrast: 1.06, saturation: 1 })
-    ).toBe("brightness(1.2) contrast(1.06) saturate(1)");
+    ).toBe("brightness(1.2) contrast(1.06) saturate(1) hue-rotate(0deg)");
   });
 });

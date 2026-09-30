@@ -390,9 +390,10 @@ export const PresetVisualClipSchema = z
       .optional(),
     colorGrade: z
       .object({
-        brightness: z.number().finite().min(0.8).max(1.25),
-        contrast: z.number().finite().min(0.6).max(1.1),
-        saturation: z.number().finite().min(1).max(1.1),
+        brightness: z.number().finite().min(0.5).max(1.5),
+        contrast: z.number().finite().min(0.5).max(1.5),
+        saturation: z.number().finite().min(0).max(2),
+        hue: z.number().finite().min(-180).max(180).optional(),
       })
       .strict()
       .optional(),

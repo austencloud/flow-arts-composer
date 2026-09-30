@@ -87,7 +87,11 @@
   import PostSourceGeometryTool from "./PostSourceGeometryTool.svelte";
   import PostAnimationAppearanceTool from "./PostAnimationAppearanceTool.svelte";
   import PostCardAppearanceTool from "./PostCardAppearanceTool.svelte";
-  import { autoGradeVideo } from "$lib/shared/media-composition/domain/post-video-color-grade";
+  import PostVideoColorTool from "./PostVideoColorTool.svelte";
+  import {
+    autoGradeVideo,
+    type PostVideoColorGrade,
+  } from "$lib/shared/media-composition/domain/post-video-color-grade";
 
   /**
    * The body of one tool for the selected item. An amount is a slider, a
@@ -193,6 +197,23 @@
     } finally {
       grading = false;
     }
+  }
+
+  function setVideoColor(
+    field: keyof PostVideoColorGrade,
+    value: number
+  ): void {
+    if (item.kind !== "video" || locked || grading) return;
+    const colorGrade = {
+      brightness: item.colorGrade?.brightness ?? 1,
+      contrast: item.colorGrade?.contrast ?? 1,
+      saturation: item.colorGrade?.saturation ?? 1,
+      hue: item.colorGrade?.hue ?? 0,
+      [field]: value,
+    };
+    editor.editSetting(`${item.id}:color:${field}`, (project, ctx) =>
+      updateItem(project, item.id, { colorGrade }, ctx)
+    );
   }
 
   function rename(value: string): void {
@@ -989,28 +1010,15 @@
       onchange={(value) => change("fadeOut", { fadeOut: value })}
     />
   {:else if tool === "effects" && item.kind === "video"}
-    <div class="actions">
-      <PanelButton
-        onclick={() => void autoAdjustColor()}
-        disabled={locked || grading}
-      >
-        <i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i>
-        {grading ? "Analyzing video…" : "Auto adjust color"}
-      </PanelButton>
-      {#if item.colorGrade}
-        <PanelButton
-          onclick={() => patchItem({ colorGrade: null })}
-          disabled={locked}
-        >
-          Original color
-        </PanelButton>
-      {/if}
-    </div>
-    {#if gradeError}<p class="native-limit" role="status">{gradeError}</p>{/if}
-    {#if item.colorGrade}<p class="native-limit">
-        One color adjustment applies across the clip. Original color removes it;
-        Undo restores it.
-      </p>{/if}
+    <PostVideoColorTool
+      grade={item.colorGrade}
+      {locked}
+      {grading}
+      error={gradeError}
+      onAuto={() => void autoAdjustColor()}
+      onReset={() => patchItem({ colorGrade: null })}
+      onChange={setVideoColor}
+    />
     {#if item.autoAdjust}
       <details class="import-adjustment">
         <summary>

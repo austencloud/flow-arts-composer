@@ -110,14 +110,27 @@ describe("compilePostProject", () => {
   describe("video items", () => {
     it("keeps color correction through edits, saved schema, and the export preset", () => {
       const original = project([video("v1", { sourceOut: 4, autoAdjust: { enabled: true, strength: 0.7 } })]);
-      const colorGrade = { brightness: 1.2, contrast: 0.65, saturation: 1.06 };
+      const colorGrade = { brightness: 0.75, contrast: 1.25, saturation: 0.5, hue: -90 };
       const changed = updateItem(original, "v1", { colorGrade }, ctx);
       const parsed = PostProjectSchema.parse(changed);
       expect(parsed.tracks[0]?.items[0]).toMatchObject({ autoAdjust: { strength: 0.7 }, colorGrade });
       expect(compilePostProject(parsed, ctx)?.preset.clips[0]).toMatchObject({ colorGrade });
+      expect(MediaCompositionPresetSchema.safeParse(compilePostProject(parsed, ctx)?.preset).success).toBe(true);
       const restored = updateItem(parsed, "v1", { colorGrade: null }, ctx);
       expect(restored.tracks[0]?.items[0]).not.toHaveProperty("colorGrade");
       expect(restored.tracks[0]?.items[0]).toHaveProperty("autoAdjust");
+    });
+    it("loads color grades saved before hue controls were available", () => {
+      const legacy = project([video("v1", {
+        sourceOut: 4,
+        colorGrade: { brightness: 1.2, contrast: 0.65, saturation: 1.06 },
+      })]);
+      const parsed = PostProjectSchema.parse(legacy);
+      const preset = compilePostProject(parsed, ctx)?.preset;
+      expect(preset?.clips[0]).toMatchObject({
+        colorGrade: { brightness: 1.2, contrast: 0.65, saturation: 1.06 },
+      });
+      expect(MediaCompositionPresetSchema.safeParse(preset).success).toBe(true);
     });
     it("skips a video whose take id is unknown, without disturbing the rest of the project", () => {
       const result = compilePostProject(
