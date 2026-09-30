@@ -1,7 +1,7 @@
 # Halloween Tutorial Videos — Handoff (2026-09-30)
 
 Living document. Updated at every milestone by whichever agent holds the work.
-Last update: 2026-09-30 07:15 CDT (Claude Opus 5.5 session, second pass).
+Last update: 2026-09-30 12:50 CDT (Claude Opus 5.5 session, third pass).
 Work branch: `codex/tutorial-videos-fixes`, worktree
 `E:/worktrees/tka-platform/tutorial-videos-fixes` (node_modules is a junction
 into the primary checkout; `wt:finish` unlinks it).
@@ -18,7 +18,7 @@ Background: memory `project_halloween_tutorial_videos.md`; Codex ledger
 `C:/Users/Austen/Downloads/InShot-recovery-2026-09-29/POST-STUDIO-STATUS.md`
 (its last entry is 2026-09-30 03:41 CDT).
 
-## Where each video stands (2026-09-30 07:15 CDT)
+## Where each video stands (2026-09-30 12:50 CDT)
 
 All three have a Post Studio project in the disk archive
 `~/.tka/post-studio-drafts` (key `tka:post-studio:project:v2:<id>`). Open any
@@ -30,8 +30,8 @@ dck-cut-1/2, ending-card, dck-original-end-card, PermanentMarker.ttf).
 | Video | Newest project | State |
 | --- | --- | --- |
 | ΩΛ-XJ | updatedAt 07:15:39Z. 9 items, 77.69 s. | **The template.** Austen removed its mandala at 07:09Z and raised contrast/saturation with sliders at 07:15Z (run 1.17/1.12, slow 1.25/1.09). A tab keeps re-saving it unchanged (last 11:51Z); don't edit it. |
-| Δ-ΛRZ | updatedAt 08:08:54Z. 10 items, 71.75 s. | Template applied by another agent. Speed 0.7 on both clips (Austen's call). Still has a mandala → remove. |
-| DCKΨ- | updatedAt 08:22:31Z. 10 items, 82.67 s. | Template applied by another agent. **Wrong:** canvas 1:1 (source is 2160×3840 portrait; his InShot export was 1080×1920); run-through take has 0 taps; has a mandala; has ΩΛ-XJ's 4 captions instead of its own 6. Slow clip speed 0.8 comes from his InShot draft; keep. |
+| Δ-ΛRZ | updatedAt 17:35:34.865Z (archive file `1790789867792-…json`). 9 items, 71.75 s. | Ready to export. Mandala removed. Speed 0.7 on both clips (Austen's call). Both takes' timing confirmed by Austen. |
+| DCKΨ- | updatedAt 17:42:22.875Z (archive file `1790790167854-…json`). 11 items, 82.67 s. | Ready to export once Austen checks timing. 9:16, no mandala, its own six captions, run-through beats derived (32 taps, 86.96 BPM), video framing re-derived from InShot. Both takes show "Timing not checked"; that doesn't block export. |
 
 No full export of any of the three exists yet.
 
@@ -63,18 +63,40 @@ No full export of any of the three exists yet.
   31 changes from 0.717 s every 0.690 s (86.96 BPM) + extrapolated 32nd at
   22.107 s (clip is 22.412 s).
 
+- **DCKΨ- and Δ-ΛRZ corrected projects installed** (2026-09-30 12:35–12:42
+  CDT) as new archive files; nothing old was edited or removed. Scripts are in
+  `docs/superpowers/specs/tutorial-videos-scripts/` (`build-fixed-projects.cjs`,
+  `fix-dck-geometry.cjs`, `install-fixed-projects.cjs`; paths point at the
+  session scratchpad, so adjust `OUT` before reuse). Evidence: a scratch vitest
+  (not committed) parsed both with `PostProjectSchema` and resolved them with
+  `resolvePostStudioDraft` over the whole archive: DCKΨ- canvas default (9:16),
+  11 items, six captions, dck-take-1 32 taps at 86.956522 BPM; Δ-ΛRZ 9 items;
+  no mandala in either. Browser check (DevTools, agent profile, 12:43 CDT):
+  DCKΨ- at 0:00 shows the cropped run-through strip over the animation, at 0:23
+  the full-frame slow part with "Practice with me!" on top and the moves box
+  bottom right, at 1:12.5 "You got this!" stacked over "Now repeat 100x";
+  Δ-ΛRZ timeline has no mandala and both takes read "Timing checked".
+- **DCKΨ- framing bug fixed.** The other agent's `build-project.py` read
+  InShot's transform as square-canvas units and ignored the run-through crop,
+  which is why it chose a 1:1 canvas. InShot's horizontal axis spans ±9/16, so
+  widths and x offsets divide by 9/16 (same as `post-inshot-import.ts`
+  `geometry`/`keyGeometry`), and clip 1 has crop rows 0.2056–0.7081. Easing
+  code 5 is `[0.47,0,0,1]`, not linear. Key times stay in source seconds.
+
 ## In flight
 
-1. Write corrected DCKΨ- and Δ-ΛRZ projects as new archive records (see
-   decisions). Validate with the real schema and `resolvePostStudioDraft`
-   before writing.
-2. Template action: follow the template's canvas and add a mandala only when
+1. Template action: follow the template's canvas and add a mandala only when
    the template has one. Focused test in
-   `tests/unit/media-composition/post-project-looks.test.ts`.
-3. Auto colour audit (Austen 2026-09-30: "I want something CapCut or InShot
+   `tests/unit/media-composition/post-project-looks.test.ts`. Branch
+   `codex/tutorial-videos-fixes`.
+2. Auto colour audit (Austen 2026-09-30: "I want something CapCut or InShot
    tier"). Owner code: `domain/post-video-color-grade.ts`,
-   `PostItemTool.svelte` `autoAdjustColor()`.
-4. Full exports of all three, tab visible.
+   `PostItemTool.svelte` `autoAdjustColor()`. Note: his InShot DCKΨ- run-through
+   used InShot's AI Auto Adjust at 40% (`FP_31.AAP_1 0.4`, LUT model
+   `AutoAdjustModel_V1.0.0_20230912_big`).
+3. Full exports of all three, tab visible.
+4. Austen: open DCKΨ- and press "Tap beats" → check on both takes (the derived
+   run-through beats and the other agent's slow-take beats).
 
 ## Decisions already made
 
