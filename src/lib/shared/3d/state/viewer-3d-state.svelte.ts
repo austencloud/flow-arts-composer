@@ -1515,6 +1515,68 @@ function buildViewer3DState(
     sceneUndo.commitState();
   }
 
+  type PerformerClipboard = {
+    performer: PerformerDomainSnapshot;
+    position: { x: number; z: number };
+    facingAngle: number;
+    step: number;
+    progress: number;
+  };
+  let performerClipboard: PerformerClipboard | null = null;
+
+  function copySelectedPerformer(): boolean {
+    if (selectedPerformerIndices().length !== 1) return false;
+    const index = primaryPerformerIndex();
+    const source = index === null ? null : performerManager.performers[index];
+    if (!source) return false;
+    performerClipboard = {
+      performer: source.captureEditingSnapshot(),
+      position: { x: source.position.x, z: source.position.z },
+      facingAngle: source.facingAngle,
+      step: source.currentStepIndex,
+      progress: source.progress,
+    };
+    return true;
+  }
+
+  function pasteSelectedPerformer(): boolean {
+    if (!performerClipboard) return false;
+    const clipboard = structuredClone(performerClipboard);
+    const before = captureViewerSnapshot();
+    const placement = {
+      position: {
+        x: clipboard.position.x + 0.75,
+        z: clipboard.position.z + 0.75,
+      },
+      facingAngle: clipboard.facingAngle,
+    };
+    const targets = performerManager.addPerformer(placement);
+    if (!targets) return false;
+    const index = performerManager.performers.length - 1;
+    const pasted = performerManager.performers[index];
+    if (!pasted) return false;
+    sceneUndo.withoutUndo(() => {
+      pasted.restoreEditingSnapshot(clipboard.performer);
+      pasted.goToStep(clipboard.step);
+      pasted.setProgress(clipboard.progress);
+    });
+    markFormationCustom();
+    replacePerformerSelection(index);
+    const after = captureViewerSnapshot();
+    sceneUndo.pushSelfRestoringEntry("spawn-performer", "Paste performer", {
+      undo: () => restoreViewerSnapshot(before),
+      redo: () => {
+        restoreViewerSnapshot(after);
+        const restored = performerManager.performers[index];
+        if (!restored) return;
+        restored.restoreEditingSnapshot(structuredClone(clipboard.performer));
+        restored.goToStep(clipboard.step);
+        restored.setProgress(clipboard.progress);
+      },
+    });
+    return true;
+  }
+
   function removePerformerAtIndexWithoutUndo(index: number): boolean {
     if (performerManager.performers.length <= 1) return false;
     const layoutTargets = performerManager.removePerformer(index);
@@ -2453,6 +2515,8 @@ function buildViewer3DState(
       return activeFormation;
     },
     spawnPerformerFromUI,
+    copySelectedPerformer,
+    pasteSelectedPerformer,
     removePerformerFromUI,
     setPerformerCountFromUI,
     applyFormationFromUI,

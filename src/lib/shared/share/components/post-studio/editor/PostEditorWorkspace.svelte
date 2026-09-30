@@ -51,11 +51,13 @@
   } from "$lib/shared/media-composition/domain/post-project";
   import {
     channelsOf,
+    keyframeCount,
     moveKeyframe,
     removeKeyframe,
     toggleKeyframe,
   } from "$lib/shared/media-composition/domain/post-project-keyframes";
   import {
+    clearProjectKeyframes,
     editItemKeyframes,
     placeMainItem,
     moveOverlayItem,
@@ -112,6 +114,12 @@
   import PostToolPanel from "./PostToolPanel.svelte";
   import PostItemTool from "./PostItemTool.svelte";
   import PostKeyframeControls from "./PostKeyframeControls.svelte";
+  import ConfirmDialog from "$lib/shared/foundation/ui/ConfirmDialog.svelte";
+  import OverflowMenu from "$lib/shared/ui/components/OverflowMenu.svelte";
+  import {
+    showToast,
+    removeToast,
+  } from "$lib/shared/toast/state/toast-state.svelte";
   import PostAddPanel from "./PostAddPanel.svelte";
   import PostMediaPanel from "./PostMediaPanel.svelte";
   import PostExportPanel from "./PostExportPanel.svelte";
@@ -126,7 +134,10 @@
     loadPostProjectFonts,
   } from "$lib/shared/media-composition/services/inshot-recovery-package";
   import { createCropSession } from "./post-crop-session.svelte";
-  import { createPostDraftAutosave } from "$lib/shared/media-composition/services/post-draft-storage";
+  import {
+    createPostDraftAutosave,
+    loadPostDraft,
+  } from "$lib/shared/media-composition/services/post-draft-storage";
   import {
     parsePostStudioBackup,
     serializePostStudioBackup,
@@ -259,6 +270,8 @@
 
   let draftSaving = $state(false);
   let draftError = $state<string | null>(draftLoadError);
+  let templateError = $state<string | null>(null);
+  let loadingTemplate = $state(false);
   const draftAutosave = onSaveDraft
     ? createPostDraftAutosave(onSaveDraft, (saving, error) => {
         draftSaving = saving;
@@ -814,7 +827,11 @@
       cropStage = null;
       return null;
     }
-    if (cropSourceView && (crop.item?.sourceGeometry || crop.item?.keyframes?.sourceGeometry?.length)) {
+    if (
+      cropSourceView &&
+      (crop.item?.sourceGeometry ||
+        crop.item?.keyframes?.sourceGeometry?.length)
+    ) {
       const source = crop.source;
       return source ? source.width / source.height : 1.7778;
     }
@@ -965,6 +982,14 @@
         return !canTapBeats;
       case "tutorial":
         return editor.takes.length === 0;
+      case "template":
+        return (
+          editor.project.tracks[0]?.items.filter(
+            (item) => item.kind === "video"
+          ).length < 2 ||
+          editor.project.sequenceId === "ΩΛ-XJ" ||
+          loadingTemplate
+        );
       default:
         return false;
     }
@@ -1007,6 +1032,29 @@
     });
   }
 
+  async function useOmegaTemplate(): Promise<void> {
+    loadingTemplate = true;
+    templateError = null;
+    try {
+      const saved = await loadPostDraft("ΩΛ-XJ");
+      if (!saved.project)
+        throw new Error(saved.error ?? "The ΩΛ-XJ draft could not be found.");
+      editor.pause();
+      if (!editor.applyTemplate(saved.project)) {
+        throw new Error(
+          "Add at least two video clips before using the template."
+        );
+      }
+    } catch (error) {
+      templateError =
+        error instanceof Error
+          ? error.message
+          : "The template could not be applied.";
+    } finally {
+      loadingTemplate = false;
+    }
+  }
+
   function pickTool(id: PostToolId): void {
     if (cropMode && id !== "crop") {
       cropFlight.capture();
@@ -1034,6 +1082,9 @@
         return;
       case "tutorial":
         applyTutorial();
+        return;
+      case "template":
+        void useOmegaTemplate();
         return;
       case "beats":
         tapBeatsHere();
@@ -1325,6 +1376,70 @@
   ): void {
     editor.edit((project, ctx) =>
       editItemKeyframes(project, itemId, change, ctx)
+    );
+  }
+
+  const clearablePostKeys = $derived(
+    editor.project.tracks.reduce(
+      (total, track) =>
+        total +
+        (track.locked
+          ? 0
+          : track.items.reduce((sum, item) => sum + keyframeCount(item), 0)),
+      0
+    )
+  );
+  const lockedPostKeys = $derived(
+    editor.project.tracks.reduce(
+      (total, track) =>
+        total +
+        (!track.locked
+          ? 0
+          : track.items.reduce((sum, item) => sum + keyframeCount(item), 0)),
+      0
+    )
+  );
+  let confirmClearPost = $state(false);
+  let clearToast: { id: string; project: PostProject } | null = null;
+
+  $effect(() => {
+    const current = editor.project;
+    if (clearToast && current !== clearToast.project) {
+      removeToast(clearToast.id);
+      clearToast = null;
+    }
+  });
+
+  function reportCleared(count: number, edit: PostEdit): void {
+    if (!count || !editor.edit(edit)) return;
+    const clearedProject = editor.project;
+    if (clearToast) removeToast(clearToast.id);
+    const id = showToast({
+      message: t("post_keyframe_cleared", { count }),
+      type: "success",
+      action: {
+        label: t("post_editor_undo"),
+        onClick: () => {
+          if (editor.project === clearedProject) editor.undo();
+        },
+      },
+    });
+    clearToast = { id, project: clearedProject };
+  }
+
+  function clearClipKeys(itemId: string): void {
+    const located = findItem(editor.project, itemId);
+    if (!located || editor.project.tracks[located.trackIndex]?.locked) return;
+    const count = keyframeCount(located.item);
+    reportCleared(count, (project, ctx) =>
+      clearProjectKeyframes(project, editor.previewSeconds, ctx, itemId)
+    );
+  }
+
+  function clearPostKeys(): void {
+    confirmClearPost = false;
+    reportCleared(clearablePostKeys, (project, ctx) =>
+      clearProjectKeyframes(project, editor.previewSeconds, ctx)
     );
   }
 
@@ -1902,6 +2017,9 @@
 />
 
 {#snippet draftStatus()}
+  {#if templateError}
+    <span class="draft-notice" role="alert">{templateError}</span>
+  {/if}
   {#if labeledCard.error}
     <span class="draft-notice" role="alert">{labeledCard.error}</span>
   {:else if editor.project.mirrored && labeledCard.pending}
@@ -1933,6 +2051,8 @@
     {editor}
     {exporting}
     {draftStatus}
+    onClearPostKeyframes={() => (confirmClearPost = true)}
+    clearableKeyframes={clearablePostKeys}
     onMirror={mirrorWholePost}
     mirrored={editor.project.mirrored ?? false}
     onBackup={() => void downloadDraft()}
@@ -2035,7 +2155,7 @@
       item={editor.selectedItem}
       {tool}
       crop={cropMode ? crop : null}
-      cropSourceView={cropSourceView}
+      {cropSourceView}
       onCropFramingControl={() => (cropSourceView = false)}
       onCropSourceControl={() => (cropSourceView = true)}
       {staffTips}
@@ -2069,7 +2189,25 @@
       locked={editor.isLocked(editor.selectedItem.id)}
       label={channelLabel(keyChannel)}
       bind:curveOpen={keyCurveOpen}
+      onCleared={reportCleared}
     />
+    <OverflowMenu
+      triggerPresentation="labelled"
+      ariaLabel={t("post_keyframe_clip_actions")}
+      placement="bottom"
+      items={[
+        {
+          label: t("post_keyframe_remove_all_clip"),
+          icon: "fa-solid fa-diamond",
+          disabled:
+            editor.isLocked(editor.selectedItem.id) ||
+            keyframeCount(editor.selectedItem) === 0,
+          action: () => clearClipKeys(editor.selectedItem!.id),
+        },
+      ]}
+    >
+      {#snippet trigger()}{t("post_keyframe_clip_actions")}{/snippet}
+    </OverflowMenu>
   {/if}
 {/snippet}
 
@@ -2081,6 +2219,7 @@
       channel="framing"
       locked={editor.isLocked(crop.item.id)}
       bind:curveOpen={cropCurveOpen}
+      onCleared={reportCleared}
     />
   {/if}
 {/snippet}
@@ -2296,10 +2435,7 @@
           />
         </div>
       {/if}
-      <div
-        class="timeline-slot"
-        inert={sharing || exporting || undefined}
-      >
+      <div class="timeline-slot" inert={sharing || exporting || undefined}>
         <PostTimeline
           project={editor.project}
           durationSeconds={editor.durationSeconds}
@@ -2341,7 +2477,9 @@
           onDeleteKey={(itemId, channel, seconds) =>
             editKeys(itemId, (it) => removeKeyframe(it, channel, seconds))}
           onOpenCurve={openKeyCurve}
-          toolbarStart={timelineKeys}
+          toolbarStart={editor.selectedItem && keyChannel
+            ? timelineKeys
+            : undefined}
           onAddVideo={pickDeviceVideo}
           bind:pixelsPerSecond
         />
@@ -2414,6 +2552,20 @@
     aria-hidden="true"
   />
 </section>
+
+<ConfirmDialog
+  bind:isOpen={confirmClearPost}
+  title={t("post_keyframe_clear_post_title")}
+  message={t("post_keyframe_clear_post_message", {
+    count: clearablePostKeys,
+  }) +
+    (lockedPostKeys > 0
+      ? ` ${t("post_keyframe_clear_post_locked", { count: lockedPostKeys })}`
+      : "")}
+  confirmText={t("post_keyframe_remove_all_post_confirm")}
+  onConfirm={clearPostKeys}
+  onCancel={() => (confirmClearPost = false)}
+/>
 
 <!-- The render reads the live canvas frame by frame. Any edit made while it
      runs lands in the middle of the output, so the app is locked until it
@@ -2621,9 +2773,9 @@
     --post-panel-width: clamp(20rem, 30cqw, 26rem);
     display: grid;
     grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: minmax(15rem, 1fr) auto 12px var(
-        --post-timeline-height
-      ) auto;
+    grid-template-rows:
+      minmax(15rem, 1fr) auto 12px var(--post-timeline-height)
+      auto;
     grid-template-areas: "stage" "transport" "resize" "timeline" "row";
   }
 
@@ -2794,7 +2946,9 @@
       [data-layout="viewer"]
     )
     .layout {
-    grid-template-rows: minmax(15rem, 1fr) auto 12px var(--post-timeline-height) auto;
+    grid-template-rows:
+      minmax(15rem, 1fr) auto 12px var(--post-timeline-height)
+      auto;
     grid-template-areas: "stage" "transport" "resize" "timeline" "row";
   }
 

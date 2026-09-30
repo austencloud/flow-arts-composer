@@ -15,7 +15,10 @@
   import type { EvaluatedFrameLayer } from "$lib/shared/media-composition/services/frame-evaluator";
   import type { PresetClip } from "$lib/shared/media-composition/domain/media-composition-preset-schema";
   import type { PostEditorState } from "$lib/shared/media-composition/state/post-editor-state.svelte";
-  import { toPaintFrame } from "$lib/shared/media-composition/services/post-studio-layer-painter";
+  import {
+    paintSurfaceGeometry,
+    toPaintFrame,
+  } from "$lib/shared/media-composition/services/post-studio-layer-painter";
   import { backdropLayer } from "$lib/shared/media-composition/services/post-backdrop-painter";
   import {
     regionEdgePixels,
@@ -2193,6 +2196,15 @@
            and it cuts to the crop screen rather than flying. -->
       <div
         class="region"
+        class:paint-overflow={(entries.get(region.id) ?? []).some((entry) => {
+          const painter = bindingFor(entry.role)?.painter;
+          if (!painter) return false;
+          const surface = paintSurfaceGeometry(painter, {
+            width: 1,
+            height: 1,
+          });
+          return surface.width > 1 || surface.height > 1;
+        })}
         class:edged={edge !== null}
         class:crop-region={cropRegion}
         class:crop-hidden={cropping && !cropRegion}
@@ -2555,7 +2567,8 @@
     position: absolute;
     overflow: hidden;
   }
-  .region.crop-region {
+  .region.crop-region,
+  .region.paint-overflow {
     overflow: visible;
   }
   .region.crop-hidden {

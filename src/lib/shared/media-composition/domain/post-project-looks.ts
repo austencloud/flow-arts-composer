@@ -68,9 +68,15 @@ export function lookOf(
   ) {
     return null;
   }
-  const kinds = new Set(lookOverlays(project, mainItemId).map(({ item }) => item.kind));
+  const kinds = new Set(
+    lookOverlays(project, mainItemId).map(({ item }) => item.kind)
+  );
   const box = located.item.box;
-  if (sameBox(box, POST_BOX.top) && kinds.size === 1 && kinds.has("animation")) {
+  if (
+    sameBox(box, POST_BOX.top) &&
+    kinds.size === 1 &&
+    kinds.has("animation")
+  ) {
     return "dual";
   }
   if (sameBox(box, POST_BOX.full)) {
@@ -101,7 +107,9 @@ export function applyLook(
     return project;
   }
   const clip = located.item;
-  const owned = new Set(lookOverlays(project, mainItemId).map(({ item }) => item.id));
+  const owned = new Set(
+    lookOverlays(project, mainItemId).map(({ item }) => item.id)
+  );
   let next = withoutItems(project, owned);
   // The look's own box replaces whatever box (and box animation) the clip
   // had; its framing and opacity keyframes are the clip's own and stay.
@@ -125,11 +133,27 @@ export function applyLook(
   });
   const added: PostItem[] =
     look === "dual"
-      ? [{ ...base(POST_BOX.bottom), id: nextId("animation"), kind: "animation", overlay: true }]
+      ? [
+          {
+            ...base(POST_BOX.bottom),
+            id: nextId("animation"),
+            kind: "animation",
+            overlay: true,
+          },
+        ]
       : look === "breakdown"
         ? [
-            { ...base(POST_BOX.stripSquare), id: nextId("moves"), kind: "moves", mode: "alternate" },
-            { ...base(POST_BOX.stripCarousel), id: nextId("carousel"), kind: "carousel" },
+            {
+              ...base(POST_BOX.stripSquare),
+              id: nextId("moves"),
+              kind: "moves",
+              mode: "alternate",
+            },
+            {
+              ...base(POST_BOX.stripCarousel),
+              id: nextId("carousel"),
+              kind: "carousel",
+            },
           ]
         : [];
 
@@ -182,7 +206,9 @@ export function applyTutorialPreset(
   let guessedCut = false;
   if (only.length === 1) {
     const clip = only[0]!;
-    next = splitItemAt(next, clip.id, clip.start + clip.duration / 2, ctx)?.project ?? next;
+    next =
+      splitItemAt(next, clip.id, clip.start + clip.duration / 2, ctx)
+        ?.project ?? next;
     guessedCut = true;
   }
 
@@ -204,13 +230,22 @@ export function applyTutorialPreset(
   next = withoutItems(next, cards);
   next = withTrackItems(next, MAIN_TRACK_INDEX, [
     ...videos,
-    ...next.tracks[MAIN_TRACK_INDEX]!.items.filter((item) => item.kind !== "video"),
+    ...next.tracks[MAIN_TRACK_INDEX]!.items.filter(
+      (item) => item.kind !== "video"
+    ),
   ]);
   next = finish(next, ctx);
 
   next = styleClip(next, runThrough.id, labels.runThrough, 0, "dual", ctx);
   if (slowMo) {
-    next = styleClip(next, slowMo.id, labels.slowMo, TUTORIAL_FADE_SECONDS, "breakdown", ctx);
+    next = styleClip(
+      next,
+      slowMo.id,
+      labels.slowMo,
+      TUTORIAL_FADE_SECONDS,
+      "breakdown",
+      ctx
+    );
   }
   next = appendCardClip(next, ctx, {
     label: labels.card,
@@ -223,6 +258,205 @@ export function applyTutorialPreset(
       : null;
   if (sameContent(next, project)) return { project, timingSplit };
   return { project: next, timingSplit };
+}
+
+const TEMPLATE_CAPTION_BEATS = [1, 5, 9, 15] as const;
+
+/**
+ * Dress another sequence with the saved ΩΛ-XJ edit. Its footage, timing,
+ * speed, and zoom keys stay with the destination; the template supplies the
+ * presentation around them, including its canvas shape, and a mandala only
+ * when the template has one.
+ */
+export function applyTutorialTemplate(
+  project: PostProject,
+  template: PostProject,
+  ctx: EditContext
+): PostProject {
+  const videos = mainVideos(project);
+  const templateVideos = mainVideos(template);
+  if (videos.length < 2 || templateVideos.length < 2) return project;
+  const run = videos.slice(0, -1);
+  const slow = videos[videos.length - 1]!;
+  const templateRun = templateVideos[0]!;
+  const templateSlow = templateVideos[1]!;
+  const templateCard = mainItems(template).find((item) => item.kind === "card");
+  const templateAnimation = template.tracks
+    .flatMap((track) => track.items)
+    .find((item) => item.kind === "animation");
+  const templatePip = template.tracks
+    .flatMap((track) => track.items)
+    .find((item) => item.kind === "moves" && item.mode === "alternate");
+  const templateMandala = template.tracks
+    .flatMap((track) => track.items)
+    .find((item) => item.kind === "moves" && item.mode === "mandala");
+  const captions = template.tracks
+    .flatMap((track) => track.items)
+    .filter(
+      (item): item is Extract<PostItem, { kind: "text" }> =>
+        item.kind === "text"
+    )
+    .sort((a, b) => a.start - b.start);
+
+  const lastRun = run[run.length - 1]!;
+  const crossfade = templateRun.transitionOut?.duration ?? 1;
+  const slowStart = Math.max(
+    0,
+    itemEnd(lastRun) - Math.min(crossfade, slow.duration)
+  );
+  const styledRun = run.map((clip, index) => ({
+    ...clip,
+    box: { ...templateRun.box },
+    autoAdjust: templateRun.autoAdjust,
+    colorGrade: templateRun.colorGrade,
+    keyframes: clip.keyframes
+      ? { ...clip.keyframes, box: undefined }
+      : undefined,
+    transitionOut:
+      index === run.length - 1 ? templateRun.transitionOut : undefined,
+  }));
+  const styledSlow: PostVideoItem = {
+    ...slow,
+    start: slowStart,
+    box: { ...templateSlow.box },
+    autoAdjust: templateSlow.autoAdjust,
+    colorGrade: templateSlow.colorGrade,
+    keyframes: slow.keyframes
+      ? { ...slow.keyframes, box: undefined }
+      : undefined,
+    fadeOut: templateSlow.fadeOut,
+    transitionOut: templateSlow.transitionOut,
+  };
+  const cardStart = itemEnd(styledSlow);
+  const nextId = createIdAllocator(project);
+  const { canvas: _destinationCanvas, ...destination } = project;
+  const fresh: PostProject = {
+    ...destination,
+    ...(template.canvas ? { canvas: template.canvas } : {}),
+    fonts: template.fonts,
+    background: template.background,
+    mirrored: template.mirrored,
+    tracks: [
+      {
+        ...project.tracks[MAIN_TRACK_INDEX]!,
+        items: [
+          ...styledRun,
+          styledSlow,
+          ...(templateCard
+            ? [
+                {
+                  ...templateCard,
+                  id: nextId("card"),
+                  start: cardStart,
+                },
+              ]
+            : []),
+        ],
+      },
+    ],
+  };
+  let next = fresh;
+  for (const clip of styledRun) {
+    const source = templateAnimation;
+    if (!source) break;
+    next = placeLow(
+      next,
+      {
+        ...source,
+        id: nextId("animation"),
+        start: clip.start,
+        duration: clip.duration,
+        anchor: { itemId: clip.id, offset: 0 },
+        box: { ...source.box },
+        fadeOut: clip.id === lastRun.id ? source.fadeOut : 0,
+      },
+      MAIN_TRACK_INDEX + 1,
+      nextId
+    ).project;
+  }
+  if (templatePip) {
+    next = placeLow(
+      next,
+      {
+        ...templatePip,
+        id: nextId("moves"),
+        start: slowStart,
+        duration: styledSlow.duration,
+        anchor: { itemId: styledSlow.id, offset: 0 },
+      },
+      MAIN_TRACK_INDEX + 1,
+      nextId
+    ).project;
+  }
+  if (templateMandala) {
+    next = placeLow(
+      next,
+      {
+        ...templateMandala,
+        id: nextId("moves"),
+        start: slowStart,
+        duration: Math.min(templateMandala.duration, styledSlow.duration),
+        box: { ...templateMandala.box },
+        anchor: { itemId: styledSlow.id, offset: 0 },
+      },
+      MAIN_TRACK_INDEX + 1,
+      nextId
+    ).project;
+  }
+  for (const [index, caption] of captions.entries()) {
+    const offset = templateCaptionOffset(
+      caption.start - templateSlow.start,
+      TEMPLATE_CAPTION_BEATS[index],
+      templateSlow,
+      styledSlow,
+      template,
+      project
+    );
+    const duration = Math.min(
+      caption.duration,
+      Math.max(0, styledSlow.duration - offset)
+    );
+    if (duration < 0.05) continue;
+    next = placeLow(
+      next,
+      {
+        ...caption,
+        id: nextId("text"),
+        start: slowStart + offset,
+        duration,
+        anchor: { itemId: styledSlow.id, offset },
+      },
+      MAIN_TRACK_INDEX + 1,
+      nextId
+    ).project;
+  }
+  return finish(next, ctx);
+}
+
+function templateCaptionOffset(
+  sourceOffset: number,
+  beat: number | undefined,
+  sourceClip: PostVideoItem,
+  targetClip: PostVideoItem,
+  sourceProject: PostProject,
+  targetProject: PostProject
+): number {
+  const sourceTaps =
+    sourceProject.timings?.[sourceClip.takeId]?.sections.flatMap(
+      (section) => section.taps
+    ) ?? [];
+  const targetTaps =
+    targetProject.timings?.[targetClip.takeId]?.sections.flatMap(
+      (section) => section.taps
+    ) ?? [];
+  const sourceTap = beat ? sourceTaps[beat - 1] : undefined;
+  const targetTap = beat ? targetTaps[beat - 1] : undefined;
+  const offset =
+    sourceTap !== undefined && targetTap !== undefined
+      ? (targetTap - targetClip.sourceIn) / targetClip.speed +
+        (sourceOffset - (sourceTap - sourceClip.sourceIn) / sourceClip.speed)
+      : (sourceOffset * targetClip.duration) / sourceClip.duration;
+  return Math.max(0, Math.min(targetClip.duration - 0.05, offset));
 }
 
 function mainVideos(project: PostProject): PostVideoItem[] {

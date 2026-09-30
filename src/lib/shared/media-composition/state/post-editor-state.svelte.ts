@@ -3,6 +3,7 @@ import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence
 import type { StepMap } from "$lib/shared/video-collaboration/domain/collaborative-video";
 import type { PostTake } from "$lib/shared/media-composition/domain/post-plan";
 import { takeRole } from "$lib/shared/media-composition/domain/post-plan-compiler";
+import { takeDisplayLabel } from "$lib/shared/media-composition/domain/post-take-labels";
 import {
   POST_FRAME_RATE,
   POST_MIN_ITEM_SECONDS,
@@ -18,6 +19,7 @@ import {
 import {
   addOverlayItem,
   addTake,
+  cleanLabel,
   appendCardClip,
   appendVideoClip,
   deleteItem,
@@ -30,6 +32,7 @@ import {
   type NewOverlaySpec,
 } from "$lib/shared/media-composition/domain/post-project-edits";
 import {
+  applyTutorialTemplate,
   applyTutorialPreset,
   type TutorialLabels,
 } from "$lib/shared/media-composition/domain/post-project-looks";
@@ -832,16 +835,29 @@ export function createPostEditorState(deps: PostEditorDeps) {
   }
 
   function renameTake(takeId: string, label: string): void {
-    const name = label.trim().slice(0, 120);
+    const name = cleanLabel(label);
     if (!name) return;
     edit((current, ctx) => {
       const take = current.takes.find((entry) => entry.id === takeId);
-      if (!take || take.label === name) return current;
+      if (!take) return current;
+      const previousName = takeDisplayLabel(current, takeId);
+      const tracks = current.tracks.map((track) => ({
+        ...track,
+        items: track.items.map((item) =>
+          item.kind === "video" &&
+          item.takeId === takeId &&
+          item.label === previousName
+            ? { ...item, label: name }
+            : item
+        ),
+      }));
+      if (take.label === name && previousName === name) return current;
       return {
         ...current,
         takes: current.takes.map((entry) =>
           entry.id === takeId ? { ...entry, label: name } : entry
         ),
+        tracks,
         updatedAt: ctx.now,
       };
     });
@@ -974,6 +990,11 @@ export function createPostEditorState(deps: PostEditorDeps) {
     selectedItemId = null;
     previewSeconds = 0;
     return true;
+  }
+
+  function applyTemplate(template: PostProject): boolean {
+    if (gestureBase) return false;
+    return commit(applyTutorialTemplate(project, template, context()));
   }
 
   /** Starts a new timing part at a media time unless one already starts near it. */
@@ -1126,6 +1147,9 @@ export function createPostEditorState(deps: PostEditorDeps) {
     get takes() {
       return project.takes;
     },
+    takeDisplayLabel(takeId: string): string {
+      return takeDisplayLabel(project, takeId);
+    },
     get images() {
       return project.images ?? [];
     },
@@ -1248,6 +1272,7 @@ export function createPostEditorState(deps: PostEditorDeps) {
     addOverlay,
     addCard,
     applyTutorial,
+    applyTemplate,
     setAudio,
     seedAudio,
     addLocalVideo,

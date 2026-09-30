@@ -25,6 +25,8 @@
     onSelectMode: (mode: SelectableViewerMode) => void;
     onSelectSplit: () => void;
     onPracticeToggle?: () => void;
+    /** Open the full Post workspace instead of the legacy viewer pane. */
+    onOpenPost?: () => void;
   }
 
   let {
@@ -36,6 +38,7 @@
     onSelectMode,
     onSelectSplit,
     onPracticeToggle,
+    onOpenPost,
   }: Props = $props();
 
   const modes = $derived(
@@ -45,11 +48,17 @@
       canAccessPostStudio() || (import.meta.env.DEV && reviewPostStudio)
     )
       .filter((m) => allowSplit || m.id !== "split")
-      .map((m) => ({ ...m, label: viewerModeLabel(m.id) }))
+      .map((m) => ({
+        ...m,
+        label: m.id === "post-studio" && onOpenPost
+          ? t("viewer_ui_edit_in_post")
+          : viewerModeLabel(m.id),
+      }))
   );
 
   function selectMode(id: ViewerMode) {
     if (id === "split") onSelectSplit();
+    else if (id === "post-studio" && onOpenPost) onOpenPost();
     else onSelectMode(id as SelectableViewerMode);
   }
 </script>

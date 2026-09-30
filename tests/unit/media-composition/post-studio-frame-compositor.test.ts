@@ -8,7 +8,8 @@ import {
 } from "$lib/shared/media-composition/services/post-studio-frame-compositor";
 import { compilePostProject } from "$lib/shared/media-composition/domain/post-project-compiler";
 import { evaluatePresetFrame } from "$lib/shared/media-composition/services/frame-evaluator";
-import { NOW, card, overlay, project } from "./post-project-fixtures";
+import { NOW, card, overlay, project, text } from "./post-project-fixtures";
+import { createTextItemPainter } from "$lib/shared/media-composition/services/text-item-painter";
 
 const { captureMotion } = vi.hoisted(() => ({ captureMotion: vi.fn() }));
 vi.mock("modern-screenshot", () => ({ domToCanvas: captureMotion }));
@@ -20,6 +21,101 @@ const region = preset.regions.find(
   (candidate) => candidate.id === "performance"
 )!;
 
+describe("painted title overflow", () => {
+  it.each([true, false])(
+    "keeps the recovered entrance ink inside the export clip (animated=%s)",
+    async (animated) => {
+      const compiled = compilePostProject(
+        project(
+          [card("main", 6)],
+          [
+            [
+              text("title", 0, 5.8, {
+                text: "Take it slow",
+                box: {
+                  x: 159.88077 / 738,
+                  y: 174.11273 / 1313,
+                  width: 418.23843 / 738,
+                  height: 94.76527 / 1313,
+                },
+                style: {
+                  fontFamily: "PermanentMarker.ttf",
+                  fontSizeNative: 84,
+                  fontScale: 0.790714,
+                  sourceCanvasWidth: 738,
+                  letterSpacing: 0,
+                  lineSpacing: 1,
+                  alignment: "center",
+                  alpha: 1,
+                },
+                ...(animated
+                  ? {
+                      animation: {
+                        kind: "letter-slide",
+                        inDurationSeconds: 0.953127,
+                        outDurationSeconds: 0.953127,
+                        entranceProgress: 0.983333,
+                        exitProgress: 0,
+                      },
+                    }
+                  : {}),
+              }),
+            ],
+          ]
+        ),
+        { now: NOW }
+      )!;
+      const seconds = 0.0324;
+      const layers = evaluatePresetFrame(compiled.preset, 6, seconds).filter(
+        (entry) => entry.regionId === "title"
+      );
+      const title = compiled.texts[0]!;
+      const painter = createTextItemPainter(() => title);
+      const clips: number[][] = [];
+      const ink: number[] = [];
+      const context = new Proxy(
+        {
+          globalAlpha: 1,
+          rect: (...values: number[]) => clips.push(values),
+          measureText: () => ({ width: 50 }),
+          fillText: (_text: string, _x: number, y: number) => ink.push(y),
+        },
+        {
+          get(target, key) {
+            return Reflect.get(target, key) ?? vi.fn();
+          },
+        }
+      );
+      const canvas = document.createElement("canvas");
+      vi.spyOn(canvas, "getContext").mockImplementation(((kind: string) =>
+        kind === "2d" ? context : null) as HTMLCanvasElement["getContext"]);
+      await renderPostStudioFrame({
+        canvas,
+        root: document.createElement("div"),
+        preset: compiled.preset,
+        layers,
+        cardFrameCache: new Map(),
+        painters: new Map([[title.role, painter]]),
+        timeSeconds: seconds,
+      });
+
+      expect(ink.length).toBeGreaterThan(0);
+      const clip = clips[0]!;
+      expect(Math.min(...ink)).toBeGreaterThanOrEqual(clip[1]!);
+      expect(Math.max(...ink)).toBeLessThanOrEqual(clip[1]! + clip[3]!);
+      if (!animated) {
+        // Ordinary text keeps its authored crop; enlarging all layers would
+        // silently change composition and edge effects in unrelated posts.
+        expect(clip[1]).toBeCloseTo(
+          title.box.y * compiled.preset.output.height
+        );
+        expect(clip[3]).toBeCloseTo(
+          title.box.height * compiled.preset.output.height
+        );
+      }
+    }
+  );
+});
 describe("resolveFrameLayerGeometry", () => {
   it("resolves the performance crop in output pixels", () => {
     const geometry = resolveFrameLayerGeometry({

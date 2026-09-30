@@ -8,6 +8,7 @@
   import { onDestroy, onMount } from "svelte";
   import { setLocale, toLocale } from "$lib/shared/i18n/i18n.svelte.js";
   import PostStudio from "$lib/shared/share/components/post-studio/PostStudio.svelte";
+  import ToastContainer from "$lib/shared/toast/components/ToastContainer.svelte";
   import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
   import { hydrateSequence } from "$lib/shared/sequence-viewer/services/sequence-data-provider";
   import { getBrowseLoader } from "$lib/shared/browse/get-browse-loader";
@@ -29,6 +30,7 @@
     loadPostDraft,
     savePostDraft,
   } from "$lib/shared/media-composition/services/post-draft-storage";
+  import { keyframeClearFixture } from "./keyframe-clear-fixture";
 
   const SEQUENCE_WORD = "ΩΛ-XJΩΛ-XJΩΛ-XJΩΛ-XJ";
   const SEQUENCE_ID = "ΩΛ-XJ";
@@ -84,6 +86,13 @@
   }
 
   onMount(async () => {
+    const fixture = new URL(window.location.href).searchParams.get("fixture");
+    const isolatedKeyframes = fixture === "keyframe-clear";
+    // Exercise the real save/reload path without writing to the creator's post.
+    const storageFixture = fixture === "draft-storage";
+    const draftSequenceId = storageFixture
+      ? "post-draft-storage-fixture"
+      : SEQUENCE_ID;
     const requestedLocale = toLocale(
       new URL(window.location.href).searchParams.get("lang") ?? ""
     );
@@ -98,7 +107,13 @@
     try {
       const [loaded, draft] = await Promise.all([
         getBrowseLoader().loadFullSequenceData(SEQUENCE_WORD, SEQUENCE_ID),
-        loadPostDraft(SEQUENCE_ID),
+        isolatedKeyframes
+          ? Promise.resolve({
+              project: null,
+              diskAvailable: false,
+              error: null,
+            })
+          : loadPostDraft(draftSequenceId),
       ]);
       initialProject = draft.project ?? undefined;
       diskDrafts = draft.diskAvailable;
@@ -106,8 +121,19 @@
       if (!loaded)
         throw new Error("The visual fixture is no longer published.");
       const hydrated = await hydrateSequence(loaded);
-      seedPerformance(hydrated.id);
-      sequence = { ...hydrated, performanceVideoUrl: VIDEO_URL };
+      const editorSequenceId = isolatedKeyframes
+        ? "post-keyframe-clear-fixture"
+        : storageFixture
+          ? draftSequenceId
+          : hydrated.id;
+      seedPerformance(editorSequenceId);
+      sequence = {
+        ...hydrated,
+        id: editorSequenceId,
+        performanceVideoUrl: VIDEO_URL,
+      };
+      if (isolatedKeyframes || (storageFixture && !initialProject))
+        initialProject = keyframeClearFixture(editorSequenceId);
       cardRenderOptions = buildCardRenderOptions(sequence, { darkMode: true });
 
       const blob = await getSharer().getCardImageBlob(sequence, {
@@ -178,6 +204,8 @@
     />
   {/if}
 </main>
+
+<ToastContainer />
 
 <style>
   :global(body) {

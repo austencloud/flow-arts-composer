@@ -225,6 +225,11 @@ export function createViewerShellInteractionState(
     ctx.invokeGatedAction("save", ctx.handleSave);
   }
 
+  function handleAddToCollection(): void {
+    dependencies.captureScanAction("add_to_collection");
+    headerActions.onAddToCollection?.();
+  }
+
   function handleHeaderVideoUpload(): void {
     dependencies.captureScanAction("video_upload");
     void headerActions.onVideoUpload?.();
@@ -754,6 +759,7 @@ export function createViewerShellInteractionState(
     handleClose,
     handleFavoriteToggle,
     handleSave,
+    handleAddToCollection,
     handleHeaderVideoUpload,
     handleGalleryVideoUpload,
     handleVideoWorkOpenChange,

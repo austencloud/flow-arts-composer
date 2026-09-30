@@ -40,13 +40,30 @@ function percentile(
   return 1;
 }
 
-/** One restrained correction for the whole clip. Dark stage pixels and bright LEDs
- * cannot each make a moving auto exposure chase the other from frame to frame. */
+const round2 = (value: number) => Math.round(value * 100) / 100;
+const clamp = (value: number, low: number, high: number) =>
+  Math.min(high, Math.max(low, value));
+
+/** Where the clip's median luma should land: dark footage lifts up to 12%,
+ * ordinary footage 5%, and overexposed footage comes down. */
+function targetMedian(median: number): number {
+  if (median > 0.6) return 0.63 + (median - 0.6) * 0.55;
+  const lift = 1.12 - clamp((median - 0.15) / 0.1, 0, 1) * 0.07;
+  return median * lift;
+}
+
+/** One grade for the whole clip, measured on a few frames so it never pumps.
+ *
+ * Tuned against InShot's Auto Adjust on Austen's footage: sink a lifted black
+ * floor to black, keep the midtones where they were (slightly brighter), and
+ * give dull colour a little more life. Brightness then contrast is a straight
+ * line through two anchors: the black point goes to black and the median goes
+ * to its target. Guards keep the median from ever getting darker on dim
+ * footage and keep highlight clipping to a sliver. */
 export function analyzeVideoColor(
   frames: readonly ImageData[]
 ): PostVideoColorGrade {
   const histogram = new Uint32Array(256);
-  const peakHistogram = new Uint32Array(256);
   let count = 0;
   let chroma = 0;
   let chromaCount = 0;
@@ -59,10 +76,8 @@ export function analyzeVideoColor(
       const b = pixels[i + 2] ?? 0;
       const y = Math.round(0.2126 * r + 0.7152 * g + 0.0722 * b);
       histogram[y] = (histogram[y] ?? 0) + 1;
-      const peak = Math.max(r, g, b);
-      peakHistogram[peak] = (peakHistogram[peak] ?? 0) + 1;
       count += 1;
-      if (y >= 16 && y <= 220) {
+      if (y >= 16 && y <= 230) {
         chroma += (Math.max(r, g, b) - Math.min(r, g, b)) / 255;
         chromaCount += 1;
       }
@@ -70,33 +85,57 @@ export function analyzeVideoColor(
   }
   if (count < 64) return { ...IDENTITY };
   const median = percentile(histogram, count, 0.5);
-  const shadow = percentile(histogram, count, 0.1);
-  const highlight = percentile(peakHistogram, count, 0.99);
-  // CSS contrast below one adds a positive offset even to pure black. A dark
-  // stage with bright LEDs is intentional, so never use its median to lift the
-  // background or compress its highlights into gray.
-  const darkStage = median < 0.24 && shadow < 0.2;
-  const brightness =
-    !darkStage && median > 0.65
-      ? Math.round(Math.max(0.9, 1 - (median - 0.65) * 0.25) * 100) / 100
-      : 1;
-  // Improve a washed-out range only when its shadows are already raised and
-  // there is room below the top end. Keep the 99th-percentile channel under
-  // 0.98 so skin and colored lights do not clip just to deepen the shadows.
-  const peakAfterBrightness = brightness * highlight;
-  const safeContrast =
-    peakAfterBrightness > 0.5 ? 0.48 / (peakAfterBrightness - 0.5) : 1.12;
-  const contrast =
-    !darkStage && shadow > 0.14 && highlight - shadow > 0.2
-      ? Math.round(
-          Math.max(1, Math.min(1.12, 1 + (shadow - 0.14) * 0.7, safeContrast)) *
-            100
-        ) / 100
-      : 1;
+  // About half of the darkest 0.5% goes to black, never more than 0.08 and
+  // never close enough to the median to flatten a dim scene.
+  const black = Math.min(
+    0.08,
+    0.55 * percentile(histogram, count, 0.005),
+    0.35 * median
+  );
+  const target = targetMedian(median);
+  let brightness = target / Math.max(median, 1 / 255);
+  let contrast = 1;
+  if (black >= 0.005) {
+    contrast = 1 + (2 * target * black) / (median - black);
+    brightness = (0.5 * (1 - 1 / contrast)) / black;
+  }
+  brightness = clamp(brightness, 0.9, 1.2);
+  contrast = clamp(contrast, 1, 1.3);
+  // After clamping, keep the black point at or above black...
+  if (2 * brightness * black < 1)
+    contrast = Math.min(contrast, 1 / (1 - 2 * brightness * black));
+  // ...and a dim median from getting darker than it started.
+  if (median * brightness < 0.5 && target >= median)
+    contrast = Math.min(contrast, (0.5 - median) / (0.5 - median * brightness));
+  contrast = Math.max(1, contrast);
+  // Shrink the whole move until at most 1.5% of the sampled picture newly
+  // clips, judged on the rounded values the sliders will hold. Pixels already
+  // at white (a blown-out sky) cannot clip any further, so they do not count.
+  // Fine detail such as sky between leaves averages out in the small sample
+  // and can clip a little more at full size.
+  let allowance = count * 0.015;
+  let highlight = 253 / 255;
+  for (let index = 253; index >= 0; index -= 1) {
+    allowance -= histogram[index] ?? 0;
+    if (allowance < 0) {
+      highlight = index / 255;
+      break;
+    }
+  }
+  const clips = () =>
+    (highlight * round2(brightness) - 0.5) * round2(contrast) + 0.5 > 1;
+  for (let step = 0; step < 40 && clips(); step += 1) {
+    if (brightness > 1) brightness = 1 + (brightness - 1) * 0.9;
+    contrast = 1 + (contrast - 1) * 0.9;
+  }
+  // Vibrance: dull colour gains up to 15%, already vivid colour stays put.
   const averageChroma = chromaCount ? chroma / chromaCount : 0;
-  const saturation =
-    !darkStage && averageChroma > 0.03 && averageChroma < 0.12 ? 1.04 : 1;
-  return { brightness, contrast, saturation };
+  const saturation = clamp(1 + (0.26 - averageChroma) * 0.9, 1, 1.15);
+  return {
+    brightness: round2(brightness),
+    contrast: round2(contrast),
+    saturation: round2(saturation),
+  };
 }
 
 /** Analyze a few small frames from the source span, without seeking the live preview. */
