@@ -29,6 +29,7 @@
     loadPostDraft,
     savePostDraft,
   } from "$lib/shared/media-composition/services/post-draft-storage";
+  import { keyframeClearFixture } from "./keyframe-clear-fixture";
 
   const SEQUENCE_WORD = "ΩΛ-XJΩΛ-XJΩΛ-XJΩΛ-XJ";
   const SEQUENCE_ID = "ΩΛ-XJ";
@@ -84,6 +85,9 @@
   }
 
   onMount(async () => {
+    const isolatedKeyframes =
+      new URL(window.location.href).searchParams.get("fixture") ===
+      "keyframe-clear";
     const requestedLocale = toLocale(
       new URL(window.location.href).searchParams.get("lang") ?? ""
     );
@@ -98,7 +102,13 @@
     try {
       const [loaded, draft] = await Promise.all([
         getBrowseLoader().loadFullSequenceData(SEQUENCE_WORD, SEQUENCE_ID),
-        loadPostDraft(SEQUENCE_ID),
+        isolatedKeyframes
+          ? Promise.resolve({
+              project: null,
+              diskAvailable: false,
+              error: null,
+            })
+          : loadPostDraft(SEQUENCE_ID),
       ]);
       initialProject = draft.project ?? undefined;
       diskDrafts = draft.diskAvailable;
@@ -106,8 +116,17 @@
       if (!loaded)
         throw new Error("The visual fixture is no longer published.");
       const hydrated = await hydrateSequence(loaded);
-      seedPerformance(hydrated.id);
-      sequence = { ...hydrated, performanceVideoUrl: VIDEO_URL };
+      const editorSequenceId = isolatedKeyframes
+        ? "post-keyframe-clear-fixture"
+        : hydrated.id;
+      seedPerformance(editorSequenceId);
+      sequence = {
+        ...hydrated,
+        id: editorSequenceId,
+        performanceVideoUrl: VIDEO_URL,
+      };
+      if (isolatedKeyframes)
+        initialProject = keyframeClearFixture(editorSequenceId);
       cardRenderOptions = buildCardRenderOptions(sequence, { darkMode: true });
 
       const blob = await getSharer().getCardImageBlob(sequence, {
