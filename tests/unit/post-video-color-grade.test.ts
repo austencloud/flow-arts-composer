@@ -17,40 +17,59 @@ function frame(colors: readonly [number, number, number][]): ImageData {
   } as ImageData;
 }
 
-/** CSS brightness then contrast, in the same order as videoColorFilter. */
+type Rgb = readonly [number, number, number];
+
+/** Evenly spaced grays from `from` to `to`, inclusive. */
+function ramp(from: number, to: number, length: number): Rgb[] {
+  return Array.from({ length }, (_, index) => {
+    const value = Math.round(from + ((to - from) * index) / (length - 1));
+    return [value, value, value] as const;
+  });
+}
+
+/** CSS brightness then contrast, in the same order as videoColorFilter,
+ * before the browser clamps to the displayable range. */
+function outputLevel(input: number, brightness: number, contrast: number) {
+  return ((input / 255) * brightness - 0.5) * contrast + 0.5;
+}
+
 function outputChannel(input: number, brightness: number, contrast: number) {
   return Math.round(
-    Math.min(
-      255,
-      Math.max(0, ((input / 255) * brightness - 0.5) * contrast + 0.5) * 255
-    )
+    Math.min(255, Math.max(0, outputLevel(input, brightness, contrast))) * 255
   );
 }
 
 describe("video auto color", () => {
-  it("keeps black and a gray curtain dark under bright LED pixels", () => {
-    const pixels: [number, number, number][] = Array.from(
-      { length: 300 },
-      () => [35, 32, 31]
-    );
-    pixels.push(
-      ...Array.from(
-        { length: 20 },
-        () => [255, 40, 15] as [number, number, number]
-      )
-    );
-    const grade = analyzeVideoColor([frame(pixels)]);
+  it("sinks a hazy black floor to black and keeps the midtones where they were", () => {
+    const grade = analyzeVideoColor([
+      frame([...ramp(31, 85, 1000), ...ramp(85, 200, 1000)]),
+    ]);
+    expect(grade.contrast).toBeGreaterThan(1.1);
     expect(outputChannel(0, grade.brightness, grade.contrast)).toBe(0);
-    expect(
-      outputChannel(35, grade.brightness, grade.contrast)
-    ).toBeLessThanOrEqual(35);
-    expect(
-      outputChannel(40, grade.brightness, grade.contrast)
-    ).toBeLessThanOrEqual(40);
-    expect(grade.saturation).toBe(1);
+    expect(outputChannel(31, grade.brightness, grade.contrast)).toBeLessThan(
+      22
+    );
+    const mid = outputChannel(85, grade.brightness, grade.contrast);
+    expect(mid).toBeGreaterThanOrEqual(86);
+    expect(mid).toBeLessThanOrEqual(92);
   });
 
-  it("darkens a clipped bright stage without turning black gray", () => {
+  it("lifts a dim stage without turning its black gray", () => {
+    const grade = analyzeVideoColor([
+      frame([
+        ...ramp(0, 34, 800),
+        ...ramp(34, 120, 800),
+        ...Array.from({ length: 40 }, () => [255, 40, 15] as const),
+      ]),
+    ]);
+    expect(grade.brightness).toBeLessThanOrEqual(1.2);
+    expect(outputChannel(0, grade.brightness, grade.contrast)).toBe(0);
+    expect(
+      outputChannel(34, grade.brightness, grade.contrast)
+    ).toBeGreaterThanOrEqual(37);
+  });
+
+  it("brings an overexposed stage down without graying black", () => {
     const grade = analyzeVideoColor([
       frame(Array.from({ length: 400 }, () => [250, 245, 240])),
     ]);
@@ -60,29 +79,27 @@ describe("video auto color", () => {
     expect(outputChannel(0, grade.brightness, grade.contrast)).toBe(0);
   });
 
-  it("deepens the shadows of a washed-out scene while retaining its highlights", () => {
-    const grade = analyzeVideoColor([
-      frame([
-        ...Array.from({ length: 200 }, () => [65, 65, 65] as const),
-        ...Array.from({ length: 200 }, () => [180, 180, 180] as const),
-      ]),
-    ]);
-    const low = outputChannel(65, grade.brightness, grade.contrast);
-    const high = outputChannel(180, grade.brightness, grade.contrast);
-    expect(low).toBeLessThan(65);
-    expect(high).toBeGreaterThanOrEqual(180);
-    expect(high).toBeLessThan(250);
+  it("never clips more than a sliver of a bright scene", () => {
+    const pixels = ramp(20, 250, 2000);
+    const grade = analyzeVideoColor([frame(pixels)]);
+    expect(grade.contrast).toBeGreaterThan(1);
+    const clipped = pixels.filter(
+      ([v]) => outputLevel(v, grade.brightness, grade.contrast) > 1
+    );
+    expect(clipped.length / pixels.length).toBeLessThanOrEqual(0.02);
   });
 
-  it("leaves a scene with a full tonal range neutral", () => {
-    const grade = analyzeVideoColor([
-      frame([
-        ...Array.from({ length: 100 }, () => [0, 0, 0] as const),
-        ...Array.from({ length: 200 }, () => [128, 128, 128] as const),
-        ...Array.from({ length: 100 }, () => [240, 240, 240] as const),
-      ]),
+  it("adds colour to dull footage and leaves vivid footage alone", () => {
+    const dull = analyzeVideoColor([
+      frame(
+        ramp(40, 200, 400).map(([v]) => [v, v, Math.min(255, v + 13)] as const)
+      ),
     ]);
-    expect(grade).toEqual({ brightness: 1, contrast: 1, saturation: 1 });
+    const vivid = analyzeVideoColor([
+      frame(Array.from({ length: 400 }, () => [200, 60, 40] as const)),
+    ]);
+    expect(dull.saturation).toBe(1.15);
+    expect(vivid.saturation).toBe(1);
   });
 
   it("returns neutral settings when frames cannot be measured", () => {
