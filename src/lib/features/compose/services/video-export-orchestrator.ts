@@ -164,6 +164,7 @@ export class VideoExportOrchestrator implements IVideoExportOrchestrator {
     // Zero-dimension guard only applies to the live-canvas path — an override
     // supplies its own valid square size, so skip the throw.
     if (!hasSourceOverride && (sourceWidth === 0 || sourceHeight === 0)) {
+      this._isExporting = false;
       throw new Error(
         `Cannot export: canvas has zero dimensions (${canvas.width}x${canvas.height}). ` +
         "Wait for the animation to load before exporting."
@@ -256,20 +257,36 @@ export class VideoExportOrchestrator implements IVideoExportOrchestrator {
         });
       };
 
-      await this.backgroundEncoder.initialize({
-        width: outputWidth,
-        height: outputHeight,
-        fps,
-        bitrate,
-        totalFrames: totalFramesEstimate,
-        // Default to platform-aware H.264 (the codec hardware-encoders
-        // accelerate on essentially every device of the last decade). AV1
-        // remains available via an explicit codec:"av1" option but is no
-        // longer the default — 10-bit AV1 encode is unsupported on most
-        // mobile/Safari, where configure() could stall and hang the export.
-        codec: options.codec ?? "h264",
-        fragmented: options.fragmented,
-      });
+      try {
+        await this.backgroundEncoder.initialize({
+          width: outputWidth,
+          height: outputHeight,
+          fps,
+          bitrate,
+          totalFrames: totalFramesEstimate,
+          // Default to platform-aware H.264 (the codec hardware-encoders
+          // accelerate on essentially every device of the last decade). AV1
+          // remains available via an explicit codec:"av1" option but is no
+          // longer the default — 10-bit AV1 encode is unsupported on most
+          // mobile/Safari, where configure() could stall and hang the export.
+          codec: options.codec ?? "h264",
+          fragmented: options.fragmented,
+        });
+      } catch (error) {
+        // Initialization runs before the capture try/finally. A rejected codec
+        // setup must release the export flag so the user can retry.
+        this.backgroundEncoder.onProgress = null;
+        this._isExporting = false;
+        this.shouldCancel = false;
+        throw error;
+      }
+      if (this.shouldCancel) {
+        this.backgroundEncoder.cancel();
+        this.backgroundEncoder.onProgress = null;
+        this._isExporting = false;
+        this.shouldCancel = false;
+        throw new Error("Export cancelled");
+      }
     } else {
       // Legacy inline exporter for WebM
       inlineExporter = await this.VideoExporter.createManualExporter(
