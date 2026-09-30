@@ -2259,7 +2259,11 @@
                   sequencePassIndex={layer.sequencePassIndex}
                   animationTimeSeconds={layer.animationTimeSeconds ??
                     (isVideo ? undefined : 0)}
-                  breakdownMotion={stripModeFromRole(entry.role) !== null}
+                  breakdownMotion={sourceItem?.kind === "moves" ||
+                    stripModeFromRole(entry.role) !== null}
+                  breakdownMode={sourceItem?.kind === "moves"
+                    ? sourceItem.mode
+                    : undefined}
                   labelsPainted={paintedLabelRegions.has(region.id)}
                   displayedBeatNumber={layer.displayedBeatNumber}
                   clipId={entry.clip.id}

@@ -3,8 +3,10 @@ import {
   TEXT_ROLE_PREFIX,
   compilePostProject,
   itemIdFromClipId,
+  itemIdFromMovesAnimationRole,
   itemIdFromStaffEffectRole,
   itemIdFromTextRole,
+  movesAnimationRole,
   staffEffectRole,
   textRole,
 } from "$lib/shared/media-composition/domain/post-project-compiler";
@@ -465,6 +467,34 @@ describe("compilePostProject", () => {
         (r) => r.key === POST_STUDIO_ROLE.carousel
       )!;
       expect(carouselRole.acceptedKinds).toEqual(["beat-carousel"]);
+    });
+
+    it("gives customized Moves distinct animation roles while retaining video timing", () => {
+      const result = compilePostProject(
+        project([video("v1", { sourceOut: 5 })], [
+          [overlay("dark", "moves", {
+            start: 0, duration: 5, mode: "arrows",
+            animationAppearance: { darkMode: true },
+          })],
+          [overlay("light", "moves", {
+            start: 0, duration: 5, mode: "arrows",
+            animationAppearance: { darkMode: false },
+          })],
+        ]), ctx
+      )!;
+
+      for (const id of ["dark", "light"]) {
+        const clip = result.preset.clips.find((entry) => entry.id === `${id}~0`)!;
+        expect(clip.sourceRole).toBe(movesAnimationRole(id));
+        expect(itemIdFromMovesAnimationRole(clip.sourceRole)).toBe(id);
+        expect(clip).toMatchObject({
+          timeMapRole: takeRole("a"),
+          useResolvedTimeMap: true,
+        });
+        expect(result.preset.sourceRoles.find((role) => role.key === clip.sourceRole))
+          .toMatchObject({ acceptedKinds: ["sequence-animation"] });
+      }
+      expect(itemIdFromMovesAnimationRole(stripRole("arrows"))).toBeNull();
     });
   });
 

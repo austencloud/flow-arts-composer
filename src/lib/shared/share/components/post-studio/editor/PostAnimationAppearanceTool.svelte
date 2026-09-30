@@ -268,9 +268,6 @@
     gap: 0.75rem;
   }
   .section-navigation {
-    position: sticky;
-    top: -0.25rem;
-    z-index: 2;
     padding: 0.25rem 0 0.75rem;
     background: var(--theme-panel-bg, #08080c);
   }

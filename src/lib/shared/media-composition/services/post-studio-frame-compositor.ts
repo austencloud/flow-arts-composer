@@ -619,9 +619,13 @@ async function drawRegionLayer(
     const pictographMotion = layerElement.querySelector(
       "[data-pictograph-motion]"
     );
+    const animationMode = layerElement.querySelector<HTMLElement>(
+      "[data-studio-animation-mode]"
+    )?.dataset.studioAnimationMode;
     const expectsPictograph = Boolean(
       pictographMotion ||
-      (layer.sequencePassIndex !== undefined &&
+      (!animationMode &&
+        layer.sequencePassIndex !== undefined &&
         layer.sequencePassIndex % 2 === 0 &&
         (layerElement.querySelector("[data-studio-breakdown-mandala]") ||
           !layerElement.querySelector("canvas")))
@@ -636,7 +640,11 @@ async function drawRegionLayer(
       });
       drawSource(context, image, geometry);
     }
-    const canvases = [...layerElement.querySelectorAll("canvas")].sort(
+    // The captured motion subtree already includes the animation/effect
+    // canvases. Drawing them again would cover its transparent SVG arrows.
+    const canvases = (
+      expectsPictograph ? [] : [...layerElement.querySelectorAll("canvas")]
+    ).sort(
       (left, right) =>
         Number.parseFloat(getComputedStyle(left).zIndex || "0") -
         Number.parseFloat(getComputedStyle(right).zIndex || "0")

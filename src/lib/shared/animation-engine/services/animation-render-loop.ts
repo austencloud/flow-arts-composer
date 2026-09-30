@@ -1742,6 +1742,7 @@ export class AnimationRenderLoop {
       trailSettings,
       skipTrailRendering: this.renderers.has("trails"),
       currentTime,
+      instantVisibility: params.virtualTime !== undefined,
       visibility: {
         gridVisible: effectiveGridVisible,
         propsVisible: effectivePropsVisible,

@@ -27,6 +27,7 @@
     takeIdFromRole,
   } from "$lib/shared/media-composition/domain/post-plan-compiler";
   import {
+    itemIdFromMovesAnimationRole,
     itemIdFromStaffEffectRole,
     itemIdFromTextRole,
     staffEffectRole,
@@ -495,6 +496,16 @@
         renderMode: "painted",
         painter: textPainterFor(textItemId),
         status: "ready",
+      };
+    }
+    if (itemIdFromMovesAnimationRole(role)) {
+      return {
+        roleKey: role,
+        kind: "sequence-animation",
+        label: t("share_studio_deep_moves"),
+        previewUrl: null,
+        renderMode: "sequence-animation",
+        status: sequence.steps.length > 0 ? "ready" : "missing",
       };
     }
     const strip = stripModeFromRole(role);
