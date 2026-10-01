@@ -21,6 +21,23 @@ describe("BentoPropGrid style drill-down", () => {
     document.body.style.margin = "0";
   });
 
+  it("keeps artwork editing out of a metadata-only picker", async () => {
+    render(BentoPropGrid, {
+      selectedPropType: PropType.CLUB,
+      onSelect: vi.fn(),
+      allowedProps: CLUB_PICKER_PROPS,
+      showAppearance: false,
+      showColors: false,
+    });
+    await page.getByRole("button", { name: "Choose Club style" }).click();
+    await expect.element(page.getByRole("button", {
+      name: "Select Club prop type", exact: true,
+    })).toBeVisible();
+    await expect.element(page.getByRole("button", {
+      name: "Select Club 3D prop type", exact: true,
+    })).not.toBeInTheDocument();
+  });
+
   it("replaces the grid with the family's styles and selects only the chosen one", async () => {
     const onSelect = vi.fn();
 
@@ -47,7 +64,7 @@ describe("BentoPropGrid style drill-down", () => {
     await torchOption.click();
 
     expect(onSelect).toHaveBeenCalledTimes(1);
-    expect(onSelect).toHaveBeenCalledWith(PropType.TORCH);
+    expect(onSelect).toHaveBeenCalledWith(PropType.TORCH, "pictograph");
 
     // Picking stays one level down so styles can be compared; Back returns
     // to the full grid with the family tile closed.
@@ -110,7 +127,7 @@ describe("BentoPropGrid style settings", () => {
     await page
       .getByRole("button", { name: "Select Triad 3D prop type", exact: true })
       .click();
-    expect(onSelect).toHaveBeenLastCalledWith(PropType.TRIAD);
+    expect(onSelect).toHaveBeenLastCalledWith(PropType.TRIAD, "model");
     // Past the page swap a details page would take.
     await new Promise((resolve) => setTimeout(resolve, 600));
     expect(openSection("Triad details")).toBeNull();
@@ -130,7 +147,7 @@ describe("BentoPropGrid style settings", () => {
       .element(styles.getByRole("button", { name: "Big", exact: true }))
       .toHaveAttribute("aria-pressed", "true");
     await bigModel.click();
-    expect(onSelect).toHaveBeenLastCalledWith(PropType.BIGTRIAD);
+    expect(onSelect).toHaveBeenLastCalledWith(PropType.BIGTRIAD, "model");
   });
 
   it("keeps a buugeng style's chirality on the same page", async () => {
