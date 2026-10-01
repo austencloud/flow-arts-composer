@@ -294,7 +294,7 @@
     gap: 0.75rem;
   }
   .section-navigation {
-    padding: 0.25rem 0 0.5rem;
+    padding: 0;
     background: var(--theme-panel-bg, #08080c);
   }
   .section-content {
@@ -308,7 +308,7 @@
      in a panel that can be under 300px tall, so its rows sit closer. */
   .section-content.display {
     gap: 0.5rem;
-    padding-bottom: 0.25rem;
+    padding-bottom: 0;
   }
   .section-content:focus-visible {
     outline: 2px solid var(--theme-accent, #8b6cff);

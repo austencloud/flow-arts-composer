@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import DisplayPanel from "$lib/shared/animation-engine/components/settings-panels/DisplayPanel.svelte";
+  import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
   import PostAnimationAppearanceTool from "$lib/shared/share/components/post-studio/editor/PostAnimationAppearanceTool.svelte";
   import type { PostEditorState } from "$lib/shared/media-composition/state/post-editor-state.svelte";
   import { getBrowseLoader } from "$lib/shared/browse/get-browse-loader";
@@ -146,13 +147,14 @@
           data-post-box={box.label}
           style="width: {box.px}px; height: {box.h}px"
         >
-          <div class="item-tool">
+          <div class="item-tool snug">
             <PostAnimationAppearanceTool
               editor={postEditor}
               locked={false}
               appearanceOverride={null}
               onAppearanceChange={() => {}}
             />
+            <PanelButton>Use animation defaults</PanelButton>
           </div>
         </div>
       </section>
@@ -233,7 +235,8 @@
 
   /* PostToolPanel's body and PostItemTool's wrapper, reproduced: the body
      scrolls with a quarter-rem of padding, and the tool lays its pieces out in
-     one grid column with a rem between them. */
+     one grid column, half a rem apart once it holds an animation's appearance
+     panel (the `snug` modifier). */
   .panel.post-body {
     padding: 0.25rem;
   }
@@ -243,6 +246,10 @@
     grid-template-columns: minmax(0, 1fr);
     gap: 1rem;
     min-width: 0;
+  }
+
+  .item-tool.snug {
+    gap: 0.5rem;
   }
 
   .panel {

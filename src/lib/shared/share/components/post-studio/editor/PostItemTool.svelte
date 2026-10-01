@@ -739,7 +739,13 @@
   </div>
 {/snippet}
 
-<div class="item-tool">
+<!-- An animation's appearance panel shares the tool column with its reset
+     button; a rem between the pieces would push Display past the panel. -->
+<div
+  class="item-tool"
+  class:snug={tool === "appearance" &&
+    (item.kind === "animation" || item.kind === "moves")}
+>
   {#if locked}
     {@render status(
       t("post_editor_layer_locked"),
@@ -1284,6 +1290,10 @@
     grid-template-columns: minmax(0, 1fr);
     gap: 1rem;
     min-width: 0;
+  }
+
+  .item-tool.snug {
+    gap: 0.5rem;
   }
 
   .status {

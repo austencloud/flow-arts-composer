@@ -122,7 +122,7 @@ export function fitDisplayGrid(box: DisplayGridBox): DisplayGridFit | null {
  * that still reads as one.
  */
 /** Smallest picture a compact tile keeps; below it the host scrolls instead. */
-export const COMPACT_MIN_ART = 32;
+export const COMPACT_MIN_ART = 28;
 /** Largest picture a compact tile draws, however much room the host has. */
 export const COMPACT_MAX_ART = 64;
 /** Narrowest compact tile, so a two-word label still fits in two lines. */

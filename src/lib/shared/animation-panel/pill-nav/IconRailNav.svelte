@@ -47,7 +47,7 @@
     /** Reserve mode-specific slots without moving the common section buttons. */
     reservedSlots?: number;
     orientation?: "vertical" | "horizontal";
-    /** Horizontal only: shorter pills (56px instead of 72px) for a host short
+    /** Horizontal only: shorter pills (50px instead of 72px) for a host short
      *  on height. The icon still sits above its name. */
     compact?: boolean;
     ariaLabel?: string;
@@ -310,10 +310,14 @@
     max-width: 100%;
   }
 
+  .icon-rail.horizontal.compact {
+    padding: 2px 4px;
+  }
+
   .horizontal.compact .rail-btn {
-    height: 56px;
+    height: 50px;
     gap: 2px;
-    padding: 4px 2px;
+    padding: 2px;
   }
 
   .horizontal .rail-label {

@@ -647,7 +647,7 @@
   .vis-grid.compact .rt-chip {
     --tile-art: var(--compact-art, 4rem);
     gap: 3px;
-    padding: 4px 3px;
+    padding: 3px;
   }
 
   .vis-grid.compact .chip-label {
