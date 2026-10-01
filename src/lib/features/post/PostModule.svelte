@@ -17,6 +17,7 @@
     resolvePostSequence,
   } from "./services/post-workspace-projects";
   import { canAccessPostStudio } from "$lib/shared/sequence-viewer/services/post-studio-access";
+  import { providePostEditorHeader } from "$lib/shared/share/components/post-studio/editor/post-editor-header.svelte";
 
   interface Props {
     visible?: boolean;
@@ -28,6 +29,8 @@
     loadDraft: loadPostDraft,
   });
   setPostModuleContext(state);
+  /** The editor puts Save, more actions and Export in this header row. */
+  const editorHeader = providePostEditorHeader();
   const exportOptions = getExportOptionsState();
   const cardPreview = createCardPreviewState({
     getSequence: () => state.sequence,
@@ -113,21 +116,23 @@
     </div>
     <div class="editor-host" hidden={state.showingProjects}>
       <div class="project-toolbar">
-        <button
-          type="button"
-          onclick={showProjects}
-          aria-label="Back to projects"
-          ><i class="fas fa-folder-open" aria-hidden="true"></i><span
-            >Projects</span
-          ></button
-        ><span class="current-name"
-          >{simplifyRepeatedWord(
-            state.sequence?.displayName ||
-              state.sequence?.name ||
-              state.selectedId ||
-              ""
-          )}</span
-        >
+        <div class="toolbar-row">
+          <button
+            type="button"
+            onclick={showProjects}
+            aria-label="Back to projects"
+            ><i class="fas fa-folder-open" aria-hidden="true"></i><span
+              class="projects-label">Projects</span
+            ></button
+          ><span class="current-name"
+            >{simplifyRepeatedWord(
+              state.sequence?.displayName ||
+                state.sequence?.name ||
+                state.selectedId ||
+                ""
+            )}</span
+          >{#if editorHeader.actions && !state.loadingProject && state.sequence}{@render editorHeader.actions()}{/if}
+        </div>
       </div>
       {#if state.loadingProject}<div class="editor-status" role="status">
           Opening post…
@@ -273,12 +278,15 @@
     min-height: 0;
   }
   .project-toolbar {
+    container: post-editor-header / inline-size;
+    border-bottom: 1px solid var(--theme-stroke);
+  }
+  .toolbar-row {
     display: flex;
     align-items: center;
     gap: 16px;
     min-height: 48px;
     padding: 2px 12px;
-    border-bottom: 1px solid var(--theme-stroke);
   }
   .project-toolbar button {
     min-height: 44px;
@@ -297,12 +305,25 @@
     margin-right: 7px;
   }
   .current-name {
+    flex: 1 1 auto;
     min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
     color: var(--theme-text-secondary);
     font-size: 12px;
+  }
+  /* A narrow header keeps the folder; its name stays in the label. */
+  @container post-editor-header (max-width: 30rem) {
+    .toolbar-row {
+      gap: 8px;
+    }
+    .project-toolbar button i {
+      margin-right: 0;
+    }
+    .projects-label {
+      display: none;
+    }
   }
   .editor-status {
     display: grid;

@@ -116,6 +116,9 @@
   import PostEditorCanvas from "./PostEditorCanvas.svelte";
   import { createPostVideoPreviews } from "$lib/shared/media-composition/state/post-video-previews.svelte";
   import PostEditorTopBar from "./PostEditorTopBar.svelte";
+  import PostEditorActions from "./PostEditorActions.svelte";
+  import PostSaveButton from "./PostSaveButton.svelte";
+  import { getPostEditorHeader } from "./post-editor-header.svelte";
   import PostEditorTransport from "./PostEditorTransport.svelte";
   import PostCropTimeline from "./PostCropTimeline.svelte";
   import PostToolRow from "./PostToolRow.svelte";
@@ -141,7 +144,10 @@
     readInShotRecoveryPackage,
     loadPostProjectFonts,
   } from "$lib/shared/media-composition/services/inshot-recovery-package";
-  import { createCropSession, type CropShapeKind } from "./post-crop-session.svelte";
+  import {
+    createCropSession,
+    type CropShapeKind,
+  } from "./post-crop-session.svelte";
   import {
     createPostDraftAutosave,
     loadPostDraft,
@@ -302,18 +308,70 @@
   let draftError = $state<string | null>(draftLoadError);
   let templateError = $state<string | null>(null);
   let loadingTemplate = $state(false);
+  /** When the last save finished, for the header's saved time. */
+  let savedAt = $state<number | null>(null);
+  /** The Save button was pressed and its save has not landed yet. */
+  let saveRequested = $state(false);
+  let saveFlash = $state(false);
+  let saveFlashTimer: ReturnType<typeof setTimeout> | undefined;
   const draftAutosave = onSaveDraft
     ? createPostDraftAutosave(onSaveDraft, (saving, error) => {
         draftSaving = saving;
         draftError = error;
+        if (saving) return;
+        if (!error) savedAt = Date.now();
+        if (saveRequested) settleSave();
       })
     : null;
 
   $effect(() => {
-    void editor.saveRevision;
+    const revision = editor.saveRevision;
     if (draftAutosave) untrack(() => draftAutosave.submit(editor.snapshot));
+    else if (revision > 0)
+      untrack(() => {
+        if (!editor.saveError) savedAt = Date.now();
+        if (saveRequested) settleSave();
+      });
   });
-  onDestroy(() => draftAutosave?.dispose());
+  onDestroy(() => {
+    draftAutosave?.dispose();
+    clearTimeout(saveFlashTimer);
+  });
+
+  /** The page's header row, when it gives one, holds Save and Export. */
+  const header = getPostEditorHeader();
+  $effect(() => {
+    if (!header) return;
+    header.actions = headerActions;
+    return () => {
+      if (header.actions === headerActions) header.actions = undefined;
+    };
+  });
+
+  const saveFailure = $derived(draftError ?? editor.saveError);
+  const saveStatus = $derived(
+    saveFailure
+      ? "failed"
+      : saveRequested
+        ? "saving"
+        : saveFlash
+          ? "saved"
+          : "idle"
+  );
+
+  function saveNow(): void {
+    clearTimeout(saveFlashTimer);
+    saveFlash = false;
+    saveRequested = true;
+    editor.saveNow();
+  }
+
+  function settleSave(): void {
+    saveRequested = false;
+    if (draftError ?? editor.saveError) return;
+    saveFlash = true;
+    saveFlashTimer = setTimeout(() => (saveFlash = false), 1600);
+  }
 
   function protectUnsavedDraft(event: BeforeUnloadEvent): void {
     if (!draftSaving && !draftError && !editor.saveError) return;
@@ -387,6 +445,13 @@
     getActions: () => editor.project.sequenceActions ?? [],
   });
   const displaySequence = $derived(labeledCard.sequence);
+  /** A notice the top bar shows beside Undo and Redo. */
+  const draftNotice = $derived(
+    !!templateError ||
+      !!labeledCard.error ||
+      (!!(editor.project.mirrored || editor.project.sequenceActions?.length) &&
+        labeledCard.pending)
+  );
 
   // ---- What each layer draws -----------------------------------------------
 
@@ -2126,11 +2191,50 @@
       >Preparing the changed animation and cards…</span
     >
   {/if}
-  <PostDraftStatus
-    saving={draftSaving}
-    error={draftError ?? editor.saveError}
-    disk={!!onSaveDraft}
+  {#if !header}
+    <PostDraftStatus
+      saving={draftSaving}
+      error={draftError ?? editor.saveError}
+      disk={!!onSaveDraft}
+    />
+  {/if}
+{/snippet}
+
+{#snippet editorActions()}
+  <PostEditorActions
+    {exporting}
+    locked={showTimingStage}
+    onClearPostKeyframes={() => (confirmClearPost = true)}
+    clearableKeyframes={clearablePostKeys}
+    onMirror={mirrorWholePost}
+    mirrored={editor.project.mirrored ?? false}
+    onBackup={() => void downloadDraft()}
+    onRestore={() => recoveryInput?.click()}
+    onRetry={() => draftAutosave?.retry()}
+    canRetry={!!onSaveDraft && !!(draftError ?? editor.saveError)}
+    onExport={openExport}
+    onImport={() => {
+      if (!readingFile) recoveryInput?.click();
+    }}
+    onImportDifferences={editor.project.importSource?.unresolved.length
+      ? () => (showImportDifferences = true)
+      : undefined}
+    trailing={cropMode ? cropActions : undefined}
   />
+{/snippet}
+
+{#snippet headerActions()}
+  <div class="header-actions" inert={sharing || undefined}>
+    <PostDraftStatus
+      saving={draftSaving}
+      error={saveFailure}
+      disk={!!onSaveDraft}
+      {savedAt}
+      header
+    />
+    <PostSaveButton status={saveStatus} onSave={saveNow} disabled={exporting} />
+    {@render editorActions()}
+  </div>
 {/snippet}
 
 {#snippet cropActions()}
@@ -2149,23 +2253,8 @@
   <PostEditorTopBar
     {editor}
     {exporting}
-    {draftStatus}
-    onClearPostKeyframes={() => (confirmClearPost = true)}
-    clearableKeyframes={clearablePostKeys}
-    onMirror={mirrorWholePost}
-    mirrored={editor.project.mirrored ?? false}
-    onBackup={() => void downloadDraft()}
-    onRestore={() => recoveryInput?.click()}
-    onRetry={() => draftAutosave?.retry()}
-    canRetry={!!onSaveDraft && !!(draftError ?? editor.saveError)}
-    onExport={openExport}
-    onImport={() => {
-      if (!readingFile) recoveryInput?.click();
-    }}
-    onImportDifferences={editor.project.importSource?.unresolved.length
-      ? () => (showImportDifferences = true)
-      : undefined}
-    trailing={cropMode ? cropActions : undefined}
+    draftStatus={header && !draftNotice ? undefined : draftStatus}
+    actions={header ? undefined : editorActions}
   />
 {/snippet}
 
@@ -3088,6 +3177,14 @@
 
   .top-bar-slot {
     grid-area: top;
+  }
+
+  .header-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex: none;
+    margin-left: auto;
   }
 
   .draft-notice {

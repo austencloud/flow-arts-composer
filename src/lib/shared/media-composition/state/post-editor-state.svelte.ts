@@ -524,6 +524,23 @@ export function createPostEditorState(deps: PostEditorDeps) {
     persistProject();
   }
 
+  /**
+   * Saves the post now, as the Save button asks. Edits already save
+   * themselves; this stamps the time so this copy is the newest wherever
+   * it is saved, and it adds no undo step.
+   */
+  function saveNow(): void {
+    if (gestureBase) return;
+    const next = {
+      ...project,
+      updatedAt: Math.max(now(), project.updatedAt + 1),
+    };
+    const effect = timingEffects.get(project);
+    if (effect) timingEffects.set(next, effect);
+    project = next;
+    persistProject();
+  }
+
   // ---- Takes and their media -----------------------------------------------
 
   function openTiming(
@@ -1234,6 +1251,7 @@ export function createPostEditorState(deps: PostEditorDeps) {
     get saveRevision() {
       return saveRevision;
     },
+    saveNow,
     get takes() {
       return project.takes;
     },
