@@ -1169,7 +1169,7 @@
 
   .wide-effects-workspace {
     display: grid;
-    grid-template-columns: clamp(19rem, 35%, 31rem) minmax(0, 1fr);
+    grid-template-columns: clamp(22rem, 40%, 33rem) minmax(0, 1fr);
     min-width: 0;
     align-items: start;
   }
