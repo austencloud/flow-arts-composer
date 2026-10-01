@@ -32,7 +32,7 @@
     onPrimaryPropColorsChange,
     showColors = true,
     compactColors = false,
-    showPropLook = true,
+    showPropLook,
     onDrillChange,
     heading: hostHeading,
     ...props
@@ -160,7 +160,7 @@
   premiumVisible={isPremiumCosmeticVisible()}
   premiumAllowed={checkPremiumCosmeticAccess().allowed}
   propLook={propLook ?? settings.propArtwork}
-  onPropLookChange={showPropLook
+  onPropLookChange={(showPropLook ?? props.showAppearance !== false)
     ? (onPropLookChange ??
       ((propArtwork) => void updateSettings({ propArtwork })))
     : undefined}

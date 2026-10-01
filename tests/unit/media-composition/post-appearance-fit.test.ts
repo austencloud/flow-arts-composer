@@ -19,10 +19,29 @@ describe("Post appearance chooser space", () => {
     expect(appearanceControlsFit(440, 500, 19, 96, 112, 36, 44)).toBe(false);
   });
 
+  it("keeps a partially visible prop catalog inline and scrolls the remaining rows", () => {
+    const fitsProps = (width: number, height: number) =>
+      appearanceControlsFit(width, height, 19, 96, 108, 24, 16, undefined, {
+        minColumns: 2,
+        visibleRows: 1.5,
+      });
+    expect(fitsProps(408, 214)).toBe(true);
+    expect(fitsProps(224, 186)).toBe(true);
+    expect(fitsProps(223, 600)).toBe(false);
+    expect(fitsProps(500, 185)).toBe(false);
+    expect(fitsProps(800, 214)).toBe(true);
+  });
+
   it("allows room for balanced effort rows instead of assuming a ragged three-column grid", () => {
-    expect(appearanceControlsFit(439, 427, 8, 104, 88, 0, 140, [1, 2, 4])).toBe(false);
-    expect(appearanceControlsFit(439, 516, 8, 104, 88, 0, 140, [1, 2, 4])).toBe(true);
-    expect(appearanceControlsFit(440, 324, 8, 104, 88, 0, 140, [1, 2, 4])).toBe(true);
+    expect(appearanceControlsFit(439, 427, 8, 104, 88, 0, 140, [1, 2, 4])).toBe(
+      false
+    );
+    expect(appearanceControlsFit(439, 516, 8, 104, 88, 0, 140, [1, 2, 4])).toBe(
+      true
+    );
+    expect(appearanceControlsFit(440, 324, 8, 104, 88, 0, 140, [1, 2, 4])).toBe(
+      true
+    );
   });
 
   it("waits for measurement and handles intrinsic accordions without shrinking controls", () => {

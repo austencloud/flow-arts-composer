@@ -1,10 +1,14 @@
 <script lang="ts">
   import { onMount, type Snippet } from "svelte";
+  import { portal } from "$lib/features/create/generate/components/modals/portal";
   import Drawer from "$lib/shared/foundation/ui/Drawer.svelte";
   import DrawerHeader from "$lib/shared/foundation/ui/DrawerHeader.svelte";
   import SettingsDrillRow from "$lib/shared/ui/components/settings-drill/SettingsDrillRow.svelte";
   import { responsiveLayoutManager } from "$lib/shared/create/services/responsive-layout-manager";
-  import { appearanceControlsFit } from "./post-appearance-fit";
+  import {
+    appearanceControlsFit,
+    type AppearanceScrollViewport,
+  } from "./post-appearance-fit";
 
   let {
     title,
@@ -16,6 +20,7 @@
     insetX = 0,
     chromeHeight = 0,
     columnChoices,
+    scrollViewport,
     children,
   }: {
     title: string;
@@ -27,6 +32,7 @@
     insetX?: number;
     chromeHeight?: number;
     columnChoices?: readonly number[];
+    scrollViewport?: AppearanceScrollViewport;
     children: Snippet<[boolean]>;
   } = $props();
 
@@ -43,7 +49,8 @@
       tileHeight,
       insetX,
       chromeHeight,
-      columnChoices
+      columnChoices,
+      scrollViewport
     )
   );
 
@@ -68,22 +75,26 @@
   {/if}
 </div>
 
-<Drawer
-  bind:isOpen={open}
-  placement={sideBySide ? "right" : "bottom"}
-  ariaLabel={title}
-  class="post-appearance-drawer"
-  showHandle={!sideBySide}
->
-  <div class="appearance-sheet">
-    <DrawerHeader
-      {title}
-      onBack={() => (open = false)}
-      onClose={() => (open = false)}
-    />
-    <div class="drawer-controls">{@render children(true)}</div>
-  </div>
-</Drawer>
+<!-- Reuse the modal portal so the editor's scrolling and stacking contexts
+     cannot clip the drawer or place the phone navigation over its controls. -->
+<div use:portal>
+  <Drawer
+    bind:isOpen={open}
+    placement={sideBySide ? "right" : "bottom"}
+    ariaLabel={title}
+    class="post-appearance-drawer"
+    showHandle={!sideBySide}
+  >
+    <div class="appearance-sheet">
+      <DrawerHeader
+        {title}
+        onBack={() => (open = false)}
+        onClose={() => (open = false)}
+      />
+      <div class="drawer-controls">{@render children(true)}</div>
+    </div>
+  </Drawer>
+</div>
 
 <style>
   .chooser,

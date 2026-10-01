@@ -2057,6 +2057,7 @@
         originalAudioStartSeconds: 0,
         onProgress: (progress) => (exportProgress = progress),
         shouldCancel: () => exportCancelled,
+        signal: exportAbort.signal,
       });
       if (exportedUrl) URL.revokeObjectURL(exportedUrl);
       exportedUrl = URL.createObjectURL(blob);

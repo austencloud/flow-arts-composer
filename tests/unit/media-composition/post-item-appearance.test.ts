@@ -25,6 +25,7 @@ describe("selected media appearance", () => {
     const edited = updateItem(original, "moves-a", {
       animationAppearance: {
         propType: PropType.CLUB,
+        propLook: "pictograph",
         darkMode: false,
         progressBar: false,
         pathShape: "concave",
@@ -37,7 +38,7 @@ describe("selected media appearance", () => {
     expect(selected?.kind).toBe("moves");
     expect(selected?.kind === "moves" && selected.mode).toBe("alternate");
     expect(animationAppearanceForItem(selected?.kind === "moves" ? selected : null))
-      .toMatchObject({ darkMode: false, progressBar: false, effortPreset: "glide", effects });
+      .toMatchObject({ propLook: "pictograph", darkMode: false, progressBar: false, effortPreset: "glide", effects });
     expect(animationAppearanceForItem(neighbor?.kind === "moves" ? neighbor : null))
       .toBeNull();
     expect(selected?.start).toBe(findItem(original, "moves-a")?.item.start);
@@ -56,6 +57,7 @@ describe("selected media appearance", () => {
       {
         animationAppearance: {
           propType: PropType.CLUB,
+          propLook: "model",
           gridMode: "none",
           props: false,
           stepNumbers: true,
@@ -80,6 +82,7 @@ describe("selected media appearance", () => {
     const b = findItem(edited, "b")?.item;
     expect(a?.kind === "animation" && a.animationAppearance).toEqual({
       propType: PropType.CLUB,
+      propLook: "model",
       gridMode: "none",
       props: false,
       stepNumbers: true,

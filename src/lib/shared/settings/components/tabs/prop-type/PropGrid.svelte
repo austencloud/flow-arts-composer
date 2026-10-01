@@ -109,7 +109,7 @@
     selectedPropType: PropType | null;
     color?: "blue" | "red" | (string & {});
     title?: string;
-    onSelect: (propType: PropType) => void;
+    onSelect: (propType: PropType, look?: PropLook) => void;
     variant?: "panel" | "inline";
     /**
      * Flat mode: drop the section labels and pack every prop into one dense
@@ -118,8 +118,8 @@
      * scrollbar beats grouping.
      */
     flat?: boolean;
-    /** Larger scrolling cards when the live preview shares the screen. */
-    tileDensity?: "compact" | "comfortable";
+    /** Inspector keeps small artwork and readable labels in a scrolling grid. */
+    tileDensity?: "compact" | "comfortable" | "inspector";
     /** A bounded, sideways-scrolling catalogue beneath a compact toolbar. */
     layout?: "grid" | "rail";
     heading?: Snippet;
@@ -166,7 +166,7 @@
     accessMode?: "standard" | "educational";
     /** Let a roomy host use all available width for each family row. */
     fluidSections?: boolean;
-    /** Collection metadata chooses a type without editing account appearance. */
+    /** Show build, grip and other appearance controls beyond the style tiles. */
     showAppearance?: boolean;
     fanAppearance: FanAppearance;
     onFanAppearanceChange: (appearance: FanAppearance) => void;
@@ -176,7 +176,7 @@
     premiumBadge?: Snippet;
     premiumNudge?: Snippet<[{ dismiss: () => void }]>;
     propLook?: PropLook;
-    /** Persists the global artwork preference owned by the app settings seam. */
+    /** Enables artwork choices; the host owns their persistence. */
     onPropLookChange?: (look: PropLook) => void;
     recipeOverrides?: Partial<Record<PropType, CompositionRecipe>>;
     colors?: ViewerCustomColorPair | null;
@@ -551,7 +551,7 @@
   /**
    * A family's styles, each in every look it has: a style with a captured 3D
    * sprite gets a pictograph tile and a 3D tile, so one view holds every
-   * variation and a pick sets the prop and the (global) look together.
+   * variation and a pick sets the prop and look together.
    * Pictographs come first so the 3D row reads as the same set again.
    */
   type FamilyTile = { style: PropType; prop: PropType; look?: PropLook };
@@ -562,7 +562,7 @@
       prop: sizedStyle(style),
     }));
     const withLooks =
-      showAppearance && onPropLookChange !== undefined
+      onPropLookChange !== undefined
         ? choices.filter((choice) => hasModelSprite(choice.prop))
         : [];
     if (withLooks.length === 0) return choices;
@@ -809,7 +809,9 @@
   }
 
   function selectProp(prop: PropType, look?: PropLook): void {
-    onSelect(prop);
+    // Scoped hosts can save the type and artwork as one undoable choice.
+    if (look === undefined) onSelect(prop);
+    else onSelect(prop, look);
     if (look !== undefined) onPropLookChange?.(look);
     if (drill?.kind === "family" && familyPageHolds(prop)) return;
     if (!opensDetails(prop, look !== undefined)) return;
@@ -878,6 +880,7 @@
   class:inline={variant === "inline"}
   class:flat
   class:rail={layout === "rail"}
+  class:inspector={tileDensity === "inspector"}
   class:host-scroll={scrollMode === "host"}
   class:fluid-sections={fluidSections}
   data-swipe-block={layout === "rail" ? "" : undefined}
@@ -1258,6 +1261,7 @@
               style={balancedColumns(familyTiles.length)}
               style:--family-count={familyChoices(drill.base).length}
               class:comfortable={tileDensity === "comfortable"}
+              class:inspector={tileDensity === "inspector"}
               class:fill={drillLayout !== null}
               class:flat-grid={flat && drillLayout === null}
               class:section-buttons={!flat && drillLayout === null}
@@ -1295,6 +1299,7 @@
             aria-label={t("settings_prop_choices")}
             class:dragging={railDragging}
             class:comfortable={tileDensity === "comfortable"}
+            class:inspector={tileDensity === "inspector"}
             class:fill={flatLayout !== null}
             style:height={flatLayout ? `${gridFillHeight}px` : undefined}
             style:--flat-cols={flatLayout?.cols}
@@ -1724,6 +1729,42 @@
   }
   .flat-grid.comfortable :global(.prop-label) {
     font-size: var(--font-size-min, 0.875rem);
+    white-space: normal;
+  }
+
+  /* An editor needs the catalog beside its canvas even when only a few rows
+     fit. Keep artwork compact, let names wrap, and scroll this region alone. */
+  .prop-grid-root.inspector .grid-scroll {
+    padding: 8px 4px;
+    scrollbar-gutter: stable;
+    overscroll-behavior-y: contain;
+  }
+  .flat-grid.inspector {
+    grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+    grid-auto-rows: 108px;
+    gap: 8px;
+    align-content: start;
+  }
+  .flat-grid.inspector :global(.prop-button) {
+    height: 100%;
+    min-height: 44px;
+    aspect-ratio: auto;
+    padding: 6px;
+    gap: 2px;
+    justify-content: center;
+  }
+  .flat-grid.inspector :global(.prop-image-container) {
+    flex: none;
+    height: 56px;
+  }
+  .flat-grid.inspector
+    :global(.prop-image-container .prop-composition-preview) {
+    width: 56px;
+    height: 56px;
+    max-height: 100%;
+  }
+  .flat-grid.inspector :global(.prop-label) {
+    font-size: var(--font-size-min, 14px);
     white-space: normal;
   }
 

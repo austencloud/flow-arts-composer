@@ -1852,10 +1852,9 @@
   @container shape-matrix-drill-compact (min-width: 42rem) and (min-aspect-ratio: 5 / 6) {
     .drill {
       grid-template-columns: clamp(15rem, 33%, 18rem) minmax(0, 1fr);
-      grid-template-rows: auto minmax(0, 1fr) auto auto;
+      grid-template-rows: minmax(0, 1fr) auto auto;
       grid-template-areas:
         "modes media"
-        ". media"
         "controls media"
         "action media";
       column-gap: 0.8rem;
@@ -1864,6 +1863,7 @@
 
     .mode-picker {
       grid-area: modes;
+      grid-template-rows: minmax(0, 1fr) auto;
     }
 
     /* Open leads on its own row; Save and Share share the one under it, so
@@ -1886,7 +1886,7 @@
      buttons instead. Only this tier: the short-wide tier puts the dock under
      the hero, and phone and desktop never answer to the compact name. The
      root class lifts these over ControlDock's own .compact label rule. */
-  @container shape-matrix-drill-compact (min-width: 42rem) and (min-aspect-ratio: 5 / 6) and (min-height: 24.01rem) {
+  @container shape-matrix-drill-compact (min-width: 42rem) and (min-aspect-ratio: 5 / 6) and (min-height: 26.01rem) {
     .drill .animation-controls :global(.dock .cat-bar) {
       padding: 0;
       background: none;
@@ -1923,7 +1923,7 @@
 
   /* A short landscape phone has no height for a stacked side column. The
      modes keep it; the actions go under them and the dock under the hero. */
-  @container shape-matrix-drill-compact (min-width: 42rem) and (max-height: 24rem) {
+  @container shape-matrix-drill-compact (min-width: 42rem) and (max-height: 26rem) {
     .drill {
       grid-template-columns: minmax(14rem, 18rem) minmax(0, 1fr);
       grid-template-rows: minmax(0, 1fr) auto;
@@ -1934,6 +1934,7 @@
 
     .mode-picker {
       align-self: center;
+      grid-template-rows: auto auto;
     }
 
     .select-action {
