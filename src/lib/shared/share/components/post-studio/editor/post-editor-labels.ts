@@ -77,6 +77,7 @@ export const TOOL_ICON: Record<PostToolId, string> = {
   labels: "fa-hashtag",
   appearance: "fa-sliders",
   shows: "fa-shapes",
+  sequence: "fa-shuffle",
   text: "fa-font",
   rename: "fa-pen",
   back: "fa-arrow-left",
@@ -127,6 +128,8 @@ export function toolLabel(id: PostToolId): string {
       return "Appearance";
     case "shows":
       return t("post_editor_moves_show");
+    case "sequence":
+      return "Sequence";
     case "text":
       return t("post_editor_kind_text");
     case "rename":

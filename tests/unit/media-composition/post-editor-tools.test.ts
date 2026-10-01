@@ -23,6 +23,7 @@ describe("toolRow", () => {
       "canvas",
       "split",
       "tutorial",
+      "template",
       "look",
     ]);
   });
@@ -88,6 +89,18 @@ describe("toolRow", () => {
     expect(toolRow({ kind: "moves", hasLayout: false })[3]).toBe("shows");
     expect(toolRow(TEXT)[2]).toBe("text");
     expect(toolRow(CARD)[2]).toBe("appearance");
+  });
+
+  it("offers Sequence after the look tools for every notation item", () => {
+    expect(toolRow({ kind: "animation", hasLayout: false })[3]).toBe(
+      "sequence"
+    );
+    expect(toolRow({ kind: "moves", hasLayout: false })[4]).toBe("sequence");
+    expect(toolRow(CARD)[3]).toBe("sequence");
+    for (const kind of ["video", "text", "image", "carousel"] as const) {
+      expect(toolRow({ kind, hasLayout: false })).not.toContain("sequence");
+    }
+    expect(toolRow(POST)).not.toContain("sequence");
   });
 });
 

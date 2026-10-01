@@ -289,6 +289,20 @@ export type PostBackground = (typeof POST_BACKGROUNDS)[number];
 export const POST_DEFAULT_BACKGROUND: PostBackground = "dark";
 
 /**
+ * Whole-sequence changes a post makes to its notation, in press order. See
+ * `post-sequence-actions.ts`.
+ */
+export const POST_SEQUENCE_ACTIONS = [
+  "mirror",
+  "flip",
+  "rotate-left",
+  "rotate-right",
+  "swap",
+] as const;
+export type PostSequenceAction = (typeof POST_SEQUENCE_ACTIONS)[number];
+export const POST_MAX_SEQUENCE_ACTIONS = 64;
+
+/**
  * A clip's own shape inside its spot. `original` is the footage's shape and
  * `free` one dragged by hand; either way `ratio` holds the width over height
  * it was given, in output pixels.
@@ -718,6 +732,11 @@ export const PostProjectSchema = z
     background: z.enum(POST_BACKGROUNDS).optional(),
     /** Reflect the post's layout and footage for a mirrored teaching view. */
     mirrored: z.boolean().optional(),
+    /** Mirror, flip, turn or swap the notation alone; the footage keeps its own. */
+    sequenceActions: z
+      .array(z.enum(POST_SEQUENCE_ACTIONS))
+      .max(POST_MAX_SEQUENCE_ACTIONS)
+      .optional(),
     updatedAt: z.number().finite().int().nonnegative(),
   })
   .strict()

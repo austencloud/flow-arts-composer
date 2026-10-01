@@ -31,6 +31,7 @@ export type PostPanelToolId =
   | "labels"
   | "appearance"
   | "shows"
+  | "sequence"
   | "text"
   | "rename";
 
@@ -108,16 +109,38 @@ export function toolRow(selection: PostToolSelection): PostToolId[] {
         "delete",
       ];
     case "animation":
-      return ["back", "split", "appearance", "timing", ...ITEM_TAIL];
+      return [
+        "back",
+        "split",
+        "appearance",
+        "sequence",
+        "timing",
+        ...ITEM_TAIL,
+      ];
     case "moves":
-      return ["back", "split", "appearance", "shows", "timing", ...ITEM_TAIL];
+      return [
+        "back",
+        "split",
+        "appearance",
+        "shows",
+        "sequence",
+        "timing",
+        ...ITEM_TAIL,
+      ];
     case "text":
       return ["back", "split", "text", "timing", ...ITEM_TAIL];
     case "carousel":
     case "image":
       return ["back", "split", "timing", ...ITEM_TAIL];
     case "card":
-      return ["back", "split", "appearance", "timing", ...ITEM_TAIL];
+      return [
+        "back",
+        "split",
+        "appearance",
+        "sequence",
+        "timing",
+        ...ITEM_TAIL,
+      ];
   }
 }
 
