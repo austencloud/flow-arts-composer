@@ -686,6 +686,7 @@ export function setTrackCutCrossfade(
     if (
       restored.duration < POST_MIN_ITEM_SECONDS - POST_TIME_EPSILON ||
       (outgoing.kind === "video" &&
+        restored.kind === "video" &&
         restored.sourceOut - outgoing.sourceIn <
           POST_MIN_ITEM_SECONDS * outgoing.speed - POST_TIME_EPSILON)
     )
