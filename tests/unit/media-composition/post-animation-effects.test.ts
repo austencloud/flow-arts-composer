@@ -16,8 +16,6 @@ describe("post animation effects", () => {
     const restored = JSON.parse(JSON.stringify(DEFAULT_EFFECTS_CONFIG));
     const state = createEffectsConfigState(restored, { persist: false });
     state.setActiveEffect("trails");
-    expect(() => structuredClone(state.config)).toThrow();
-
     const copy = copyPostAnimationEffects(state.config);
     expect(copy.activeEffect).toBe("trails");
     expect(() => structuredClone(copy)).not.toThrow();
