@@ -1,12 +1,12 @@
 import type {
   PostAnimationItem,
   PostProject,
-  PostVideoItem,
 } from "$lib/shared/media-composition/domain/post-project";
 import {
   itemEnd,
   mainItems,
   POST_TIME_EPSILON,
+  timingVideoAt,
 } from "$lib/shared/media-composition/domain/post-project";
 import type { ResolvedTakeTiming } from "$lib/shared/media-composition/domain/take-timing";
 import type { TakeTiming } from "$lib/shared/media-composition/domain/take-timing";
@@ -25,7 +25,8 @@ export interface LayerTimingPart {
 /** Timing actually heard by a layer across its full post timeline span. */
 export function layerTimingParts(
   project: PostProject,
-  item: Pick<PostAnimationItem, "start" | "duration">,
+  item: Pick<PostAnimationItem, "start" | "duration"> &
+    Partial<Pick<PostAnimationItem, "anchor">>,
   timingForTake: (takeId: string) => TakeTiming | null
 ): LayerTimingPart[] {
   const start = item.start;
@@ -57,7 +58,11 @@ export function layerTimingParts(
     const from = sorted[index]!;
     const to = sorted[index + 1]!;
     if (to - from <= POST_TIME_EPSILON) continue;
-    const clip = timingVideoAt(project, (from + to) / 2);
+    const clip = timingVideoAt(
+      mainItems(project),
+      (from + to) / 2,
+      item.anchor?.itemId
+    );
     if (!clip) continue;
     const timing = timingForTake(clip.takeId);
     if (!timing) continue;
@@ -122,25 +127,6 @@ export function mappingPreviewAppearance(
     (takeId && project.mappingPreviewAppearances?.[takeId]) ||
     DEFAULT_MAPPING_PREVIEW_APPEARANCE
   );
-}
-
-/** The incoming main clip supplies motion timing while two clips crossfade. */
-export function timingVideoAt(
-  project: PostProject,
-  seconds: number
-): PostVideoItem | null {
-  let covering: PostVideoItem | null = null;
-  for (const item of mainItems(project)) {
-    if (
-      item.kind === "video" &&
-      seconds >= item.start - POST_TIME_EPSILON &&
-      seconds < itemEnd(item) - POST_TIME_EPSILON &&
-      (!covering || item.start >= covering.start)
-    ) {
-      covering = item;
-    }
-  }
-  return covering;
 }
 
 /** The next actual landing in media time, across timing sections. */

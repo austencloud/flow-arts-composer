@@ -8,8 +8,11 @@ import {
   layerTimingParts,
   mappingPreviewAppearance,
   nextMappedLanding,
-  timingVideoAt,
 } from "$lib/shared/share/components/post-studio/builder/post-timing-animation";
+import {
+  mainItems,
+  timingVideoAt,
+} from "$lib/shared/media-composition/domain/post-project";
 import { overlay, project, video } from "./post-project-fixtures";
 
 function mappedTiming(hold: number, split?: number) {
@@ -56,9 +59,33 @@ describe("take mapping animation", () => {
       video("outgoing", { start: 0, duration: 10, sourceOut: 10, takeId: "a" }),
       video("incoming", { start: 8, duration: 10, sourceOut: 10, takeId: "b" }),
     ]);
-    expect(timingVideoAt(original, 7)?.takeId).toBe("a");
-    expect(timingVideoAt(original, 9)?.takeId).toBe("b");
-    expect(timingVideoAt(original, 18)).toBeNull();
+    expect(timingVideoAt(mainItems(original), 7)?.takeId).toBe("a");
+    expect(timingVideoAt(mainItems(original), 9)?.takeId).toBe("b");
+    expect(timingVideoAt(mainItems(original), 18)).toBeNull();
+  });
+
+  it("keeps an outgoing linked layer's effort controls on its own take during the fade", () => {
+    const original = project([
+      video("outgoing", { sourceOut: 10, takeId: "a" }),
+      video("incoming", { start: 8, sourceOut: 10, takeId: "b" }),
+    ]);
+    const timings = { a: mappedTiming(0), b: mappedTiming(0.27) };
+    const parts = layerTimingParts(
+      original,
+      { start: 7, duration: 4, anchor: { itemId: "outgoing", offset: 7 } },
+      (id) => timings[id as "a" | "b"]
+    );
+    expect(
+      parts.map((part) => [
+        part.takeId,
+        part.start,
+        part.end,
+        part.landingHoldRatio,
+      ])
+    ).toEqual([
+      ["a", 7, 10, 0],
+      ["b", 10, 11, 0.27],
+    ]);
   });
 
   it("summarizes all takes and sections under a layer, including later custom timing", () => {

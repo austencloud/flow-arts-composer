@@ -279,6 +279,21 @@
     hasAnimationOverlay: () => overlayPainter !== null,
   });
 
+  onMount(() => {
+    if (!import.meta.env.DEV) return;
+    let disposed = false;
+    let stop: (() => void) | undefined;
+    void import("$lib/shared/media-composition/services/post-project-dev-client")
+      .then(({ startPostProjectDevBridge }) => {
+        if (!disposed) stop = startPostProjectDevBridge(editor);
+      })
+      .catch(() => {});
+    return () => {
+      disposed = true;
+      stop?.();
+    };
+  });
+
   $effect(() => onProjectPropChange(editor.project.propType));
 
   function choosePropType(propType: PropType): void {
@@ -736,7 +751,7 @@
   let panelSlot = $state<HTMLElement | null>(null);
   /** A phone's bottom dock: the row, or the panel open in its place. */
   let dockElement = $state<HTMLElement | null>(null);
-  /** The row under the timeline on a wide screen. */
+  /** The row over the timeline on a wide screen. */
   let rowSlot = $state<HTMLElement | null>(null);
   /** The transport, or the crop screen's time bar in its place. */
   let transportSlot = $state<HTMLElement | null>(null);
@@ -2614,7 +2629,6 @@
                 bind:this={playbackCanvas}
                 {editor}
                 sequence={displaySequence}
-                qrSequence={sequence}
                 {bindingFor}
                 {labelFor}
                 {cardRenderOptions}
@@ -2733,7 +2747,11 @@
         {/if}
       </div>
 
-      {#if panelBeside && !showTimingStage}
+      <!-- The crop screen takes the editor over: it stows the post's timeline
+           and the tool row out of sight, still mounted, so they come back
+           scrolled where they were. Its own clip timeline stands in for
+           them, and Done or Cancel brings them back. -->
+      {#if panelBeside && !showTimingStage && !cropMode}
         <div class="timeline-resizer">
           <ResizeHandle
             direction="vertical"
@@ -2751,7 +2769,24 @@
           />
         </div>
       {/if}
-      <div class="timeline-slot" inert={sharing || exporting || undefined}>
+      {#if panelBeside}
+        <div
+          class="row-slot"
+          class:stowed={cropMode}
+          tabindex="-1"
+          bind:this={rowSlot}
+          inert={sharing || cropMode || undefined}
+        >
+          <Crossfade key={rowKey} mode="swap" duration={DURATION.fast}>
+            {@render row()}
+          </Crossfade>
+        </div>
+      {/if}
+      <div
+        class="timeline-slot"
+        class:stowed={cropMode}
+        inert={sharing || exporting || cropMode || undefined}
+      >
         <PostTimeline
           project={editor.project}
           durationSeconds={editor.durationSeconds}
@@ -2812,19 +2847,6 @@
           bind:pixelsPerSecond
         />
       </div>
-
-      {#if panelBeside}
-        <div
-          class="row-slot"
-          tabindex="-1"
-          bind:this={rowSlot}
-          inert={sharing || undefined}
-        >
-          <Crossfade key={rowKey} mode="swap" duration={DURATION.fast}>
-            {@render row()}
-          </Crossfade>
-        </div>
-      {/if}
     {/if}
 
     {#if !panelBeside}
@@ -2860,9 +2882,6 @@
               {@render row()}
             {/if}
           </Crossfade>
-          {#if cropMode}
-            {@render row()}
-          {/if}
         {/if}
       </div>
     {/if}
@@ -3133,11 +3152,9 @@
     min-width: 0;
   }
 
-  /* The tools stay at the bottom of the screen on every layout: a phone's
-     dock, which an open panel takes over, and the row beside a wide
-     preview. A short window scrolls the post under them. */
-  .dock,
-  .row-slot {
+  /* A phone's tools stay at the bottom of the screen, in a dock an open
+     panel takes over. A short window scrolls the post under it. */
+  .dock {
     position: sticky;
     bottom: 0;
     z-index: 1;
@@ -3255,20 +3272,20 @@
   }
 
   /* On a wide screen the post fills the height: the preview with the top
-     bar and the panel right beside it, then the transport, the timeline and
-     the tool row. A short window scrolls under the row rather than shrinking
-     the preview and its panel below 15rem. The timeline keeps one height, so
-     a new layer scrolls inside it instead of shrinking the preview. The
-     viewer's own side panel holds the top bar and the panel, and the rest
-     stacks the same way. */
+     bar and the panel right beside it, then the transport, and under the
+     resize handle the tool row over the timeline it acts on. A short window
+     scrolls rather than shrinking the preview and its panel below 15rem.
+     The timeline keeps one height, so a new layer scrolls inside it instead
+     of shrinking the preview. The viewer's own side panel holds the top bar
+     and the panel, and the rest stacks the same way. */
   .post-editor:is([data-layout="wide"], [data-layout="viewer"]) .layout {
     --post-panel-width: clamp(20rem, 30cqw, 26rem);
     display: grid;
     grid-template-columns: minmax(0, 1fr);
     grid-template-rows:
-      minmax(15rem, 1fr) auto 12px var(--post-timeline-height)
-      auto;
-    grid-template-areas: "stage" "transport" "resize" "timeline" "row";
+      minmax(15rem, 1fr) auto 12px auto
+      var(--post-timeline-height);
+    grid-template-areas: "stage" "transport" "resize" "row" "timeline";
   }
 
   .post-editor[data-mode="edit"][data-layout="wide"] .layout {
@@ -3487,7 +3504,8 @@
     visibility: hidden;
   }
 
-  /* Crop keeps the post timeline and tools below its own clip transport. */
+  /* The crop screen: the stage takes the room the timeline and the row
+     leave, with the clip's own timeline under it. */
   .post-editor[data-mode="crop"] .layout {
     position: relative;
   }
@@ -3497,17 +3515,24 @@
       [data-layout="viewer"]
     )
     .layout {
-    grid-template-rows:
-      minmax(15rem, 1fr) auto 12px var(--post-timeline-height)
-      auto;
-    grid-template-areas: "stage" "transport" "resize" "timeline" "row";
+    grid-template-rows: minmax(15rem, 1fr) auto;
+    grid-template-areas: "stage" "transport";
   }
 
   .post-editor[data-layout="phone"][data-mode="crop"] .layout {
     display: grid;
     grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: auto minmax(12rem, 1fr) auto auto auto;
-    grid-template-areas: "top" "stage" "transport" "timeline" "dock";
+    grid-template-rows: auto minmax(12rem, 1fr) auto auto;
+    grid-template-areas: "top" "stage" "transport" "dock";
+  }
+
+  .timeline-slot.stowed,
+  .row-slot.stowed {
+    position: absolute;
+    inset: 0 0 auto;
+    margin: 0;
+    visibility: hidden;
+    pointer-events: none;
   }
 
   .post-editor[data-mode="crop"] .stage-row {

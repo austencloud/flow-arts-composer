@@ -71,6 +71,7 @@ import {
   projectDraftRecord,
   resolvePostStudioDraft,
 } from "$lib/shared/media-composition/services/post-project-backup";
+import { normalizeProject } from "$lib/shared/media-composition/domain/post-project-normalize";
 import {
   catalogTakeKey,
   loadTakeTiming,
@@ -729,6 +730,68 @@ export function createPostEditorState(deps: PostEditorDeps) {
     timingTakeId = parsed.takes[0]?.id ?? null;
   }
 
+  /** Apply a local dev manifest edit without replacing loaded footage or the playhead. */
+  function replaceManifestFromDev(
+    candidate: unknown,
+    expectedSnapshot: PostProject
+  ): { ok: true } | { ok: false; error: string } {
+    if (gestureBase || session)
+      return { ok: false, error: "Finish the current edit first." };
+    const current = PostProjectSchema.parse(snapshotFor(project));
+    if (
+      JSON.stringify(current) !==
+      JSON.stringify(PostProjectSchema.parse(expectedSnapshot))
+    )
+      return {
+        ok: false,
+        error: "The editor changed since this manifest was read.",
+      };
+    const parsed = PostProjectSchema.safeParse(candidate);
+    if (!parsed.success)
+      return {
+        ok: false,
+        error: "The replacement is not a valid Post Studio project.",
+      };
+    const next = parsed.data;
+    if (next.sequenceId !== project.sequenceId)
+      return {
+        ok: false,
+        error: "The replacement belongs to another sequence.",
+      };
+    for (const key of [
+      "takes",
+      "images",
+      "timings",
+      "mappingPreviewAppearances",
+      "fonts",
+      "importSource",
+    ] as const) {
+      if (
+        JSON.stringify(next[key] ?? null) !==
+        JSON.stringify(current[key] ?? null)
+      )
+        return {
+          ok: false,
+          error: `${key} cannot be changed through the manifest bridge.`,
+        };
+    }
+    const normalized = normalizeProject(next);
+    const withoutTimestamp = (value: PostProject) => ({
+      ...value,
+      updatedAt: 0,
+    });
+    if (
+      JSON.stringify(withoutTimestamp(normalized)) ===
+      JSON.stringify(withoutTimestamp(project))
+    )
+      return { ok: true };
+    commit({
+      ...normalized,
+      updatedAt: Math.max(now(), project.updatedAt + 1, normalized.updatedAt),
+    });
+    return { ok: true };
+  }
+
   /** The catalog loads after the editor opens; saved takes get their video. */
   function attachCatalogTakes(): void {
     for (const take of project.takes) {
@@ -1265,6 +1328,7 @@ export function createPostEditorState(deps: PostEditorDeps) {
       return imageMedia[imageId]?.url ?? null;
     },
     importProject,
+    replaceManifestFromDev,
     get compiled() {
       return compiled;
     },

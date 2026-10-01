@@ -26,6 +26,7 @@ import {
   clampBox,
   itemEnd,
   shortestTurn,
+  timingVideoAt,
   type PostAnimationItem,
   type PostBox,
   type PostCarouselItem,
@@ -279,18 +280,12 @@ function splitIntoPieces(
     const b = sorted[index + 1]!;
     if (b - a < POST_TIME_EPSILON) continue;
 
-    // During a crossfade both videos cover the overlap. The incoming video
-    // owns the picture on top, so its source clock must own linked layers too.
-    let covering: PostVideoItem | undefined;
-    for (const video of mainVideos) {
-      if (
-        a >= video.start - POST_TIME_EPSILON &&
-        b <= itemEnd(video) + POST_TIME_EPSILON &&
-        (!covering || video.start >= covering.start)
-      ) {
-        covering = video;
-      }
-    }
+    // The outgoing linked layer must finish its own motion as it fades.
+    const covering = timingVideoAt(
+      mainVideos,
+      (a + b) / 2,
+      item.anchor?.itemId
+    );
     if (covering) {
       pieces.push({
         start: a,
