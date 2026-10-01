@@ -36,7 +36,9 @@
   function localizedLanguageName(locale: string): string {
     try {
       return (
-        new Intl.DisplayNames([currentLocale], { type: "language" }).of(locale) ??
+        new Intl.DisplayNames([currentLocale], { type: "language" }).of(
+          locale
+        ) ??
         languageNames[locale] ??
         locale
       );
@@ -151,17 +153,23 @@
   <!-- Screen reader announcement for locale changes -->
   <div role="status" aria-live="polite" class="sr-only">
     {#if localeChanged}
-      {t("settings_language_changed_to")} {languageNames[currentLocale] ?? currentLocale}
+      {t("settings_language_changed_to")}
+      {languageNames[currentLocale] ?? currentLocale}
     {/if}
   </div>
 </div>
 
 <style>
   .language-tab {
+    width: 100%;
+    max-width: 1080px;
+    min-height: 100%;
+    margin: 0 auto;
     display: flex;
     flex-direction: column;
-    gap: var(--spacing-lg, 24px);
-    padding: var(--spacing-lg, 24px);
+    justify-content: safe center;
+    gap: clamp(20px, 2vw, 32px);
+    padding: clamp(16px, 2vw, 32px);
     opacity: 0;
     transform: translateY(10px);
     transition:
@@ -233,8 +241,8 @@
   /* Language Grid */
   .language-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-    gap: var(--spacing-sm, 8px);
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: clamp(8px, 1vw, 14px);
   }
 
   .language-card {
@@ -244,7 +252,8 @@
     align-items: center;
     justify-content: center;
     gap: 4px;
-    padding: var(--spacing-md, 16px) var(--spacing-sm, 8px);
+    min-height: 96px;
+    padding: 20px 12px;
     background: var(--theme-card-bg, rgba(255, 255, 255, 0.04));
     border: 1.5px solid var(--theme-stroke, rgba(255, 255, 255, 0.1));
     border-radius: 12px;
@@ -255,6 +264,11 @@
   .language-card:hover {
     border-color: var(--theme-stroke-strong, rgba(255, 255, 255, 0.2));
     transform: translateY(-2px);
+  }
+
+  .language-card:focus-visible {
+    outline: 2px solid var(--theme-accent, #0ea5e9);
+    outline-offset: 3px;
   }
 
   .language-card.selected {
@@ -285,7 +299,7 @@
     position: absolute;
     bottom: 4px;
     right: 4px;
-    font-size: 10px;
+    font-size: var(--font-size-compact, 12px);
     padding: 2px 6px;
     background: var(--theme-accent, #0ea5e9);
     color: white;
@@ -296,7 +310,23 @@
 
   /* Info Section */
   .info-section {
-    margin-top: var(--spacing-md, 16px);
+    margin-top: 0;
+  }
+
+  @media (max-width: 800px) {
+    .language-grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+
+  @media (max-width: 560px) {
+    .language-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .language-card {
+      min-height: 84px;
+    }
   }
 
   .info-card {
