@@ -30,6 +30,8 @@
     PostAnimationItem,
     PostMovesItem,
   } from "$lib/shared/media-composition/domain/post-project";
+  import { layerTimingParts } from "../builder/post-timing-animation";
+  import { itemDisplayLabel } from "./post-editor-labels";
   import { updateItem } from "$lib/shared/media-composition/domain/post-project-edits";
   import type { PostEditorState } from "$lib/shared/media-composition/state/post-editor-state.svelte";
   import { copyPostAnimationEffects } from "../post-animation-effects.svelte";
@@ -85,9 +87,54 @@
   );
   const appliedScope = $derived(
     scopeLabel ??
-      (item?.kind === "moves"
-        ? "Selected moves layer"
-        : "Selected animation layer")
+      (item
+        ? (item.label ?? itemDisplayLabel(item, editor.project))
+        : "Timing preview")
+  );
+  const timingParts = $derived(
+    item
+      ? layerTimingParts(editor.project, item, (takeId) =>
+          editor.timing(takeId)
+        )
+      : []
+  );
+  const customParts = $derived(
+    timingParts.filter(
+      (part) => part.landingHoldRatio > 0 || part.movedLandings > 0
+    )
+  );
+  const otherCustomLayer = $derived.by(() => {
+    if (!item) return null;
+    const candidates = editor.project.tracks
+      .flatMap((track) => track.items)
+      .filter(
+        (candidate): candidate is PostAnimationItem | PostMovesItem =>
+          candidate.id !== item.id &&
+          (candidate.kind === "animation" || candidate.kind === "moves")
+      )
+      .sort((a, b) => Number(b.kind === "moves") - Number(a.kind === "moves"));
+    for (const candidate of candidates) {
+      const parts = layerTimingParts(editor.project, candidate, (takeId) =>
+        editor.timing(takeId)
+      );
+      const custom = parts.find(
+        (part) => part.landingHoldRatio > 0 || part.movedLandings > 0
+      );
+      if (custom) return { item: candidate, part: custom };
+    }
+    return null;
+  });
+  const otherEffortLabel = $derived(
+    otherCustomLayer
+      ? (EFFORTS.find(
+          (effort) =>
+            effort.id ===
+            (otherCustomLayer.item.animationAppearance?.effortPreset ??
+              inheritedEffort)
+        )?.label ??
+          otherCustomLayer.item.animationAppearance?.effortPreset ??
+          inheritedEffort)
+      : ""
   );
 
   const visibility = new AnimationVisibilityStateManager({ ephemeral: true });
@@ -288,33 +335,69 @@
           onSettingChange={saveEffects}
         />
       {:else if activeSection === "efforts"}
+        <div class="movement-summary" aria-live="polite">
+          <div class="movement-heading">
+            <strong>{item ? `Selected: ${appliedScope}` : appliedScope}</strong>
+            {#if customParts.length > 0}<span class="custom-badge"
+                >Custom timing</span
+              >{/if}
+          </div>
+          <p>
+            {customParts.length > 0 ? "Base movement" : "Movement"}: {appliedEffortLabel}
+          </p>
+          {#if !item && timingSection}
+            <p class="preview-detail">
+              {timingSectionLabel ?? "Selected section"}
+              {#if (timingSection.landingHoldRatio ?? 0) > 0}
+                · {Math.round((timingSection.landingHoldRatio ?? 0) * 100)}%
+                landing hold
+              {/if}
+              {#if timingSection.overrides.length > 0}
+                · {timingSection.overrides.length}
+                {timingSection.overrides.length === 1 ? "landing" : "landings"} moved
+                by hand
+              {/if}
+            </p>
+          {/if}
+          {#if customParts.length > 0}
+            <ul>
+              {#each timingParts as part (`${part.takeId}:${part.sectionIndex}:${part.start}`)}
+                <li>
+                  {#if timingParts.length > 1}
+                    {editor.takes.find((take) => take.id === part.takeId)
+                      ?.label ?? "Take"}
+                    · {part.start.toFixed(1)}–{part.end.toFixed(1)}s:
+                  {/if}
+                  {part.landingHoldRatio > 0
+                    ? `${Math.round(part.landingHoldRatio * 100)}% landing hold`
+                    : "No landing hold"}{part.movedLandings > 0
+                    ? ` · ${part.movedLandings} ${part.movedLandings === 1 ? "landing" : "landings"} moved by hand`
+                    : ""}
+                </li>
+              {/each}
+            </ul>
+          {/if}
+          {#if otherCustomLayer}
+            <button
+              class="other-layer"
+              type="button"
+              onclick={() =>
+                (editor.selectedItemId = otherCustomLayer!.item.id)}
+            >
+              View {otherCustomLayer.item.label ??
+                itemDisplayLabel(otherCustomLayer.item, editor.project)}
+              · {otherEffortLabel}{otherCustomLayer.part.landingHoldRatio > 0
+                ? ` + ${Math.round(otherCustomLayer.part.landingHoldRatio * 100)}% hold`
+                : " + custom timing"}
+            </button>
+          {/if}
+        </div>
         <PathShapePanel
           visibilityManagerOverride={visibility}
           showHelp={false}
         />
         <div class="effort-section">
-          <h3>Movement style</h3>
-          <div class="movement-status" aria-live="polite">
-            <span
-              >{appliedScope}{timingSectionLabel
-                ? ` · ${timingSectionLabel}`
-                : ""}</span
-            >
-            <strong>{appliedEffortLabel}</strong>
-            {#if timingSection && (timingSection.landingHoldRatio ?? 0) > 0}
-              <span
-                >{Math.round((timingSection.landingHoldRatio ?? 0) * 100)}% hold
-                after landing</span
-              >
-            {/if}
-            {#if timingSection && timingSection.overrides.length > 0}
-              <span
-                >{timingSection.overrides.length}
-                {timingSection.overrides.length === 1 ? "landing" : "landings"} moved
-                by hand</span
-              >
-            {/if}
-          </div>
+          <h3>{customParts.length > 0 ? "Base movement" : "Movement style"}</h3>
           <EffortPanel visibilityManagerOverride={visibility} columns={2} />
         </div>
       {:else}
@@ -392,17 +475,61 @@
     grid-template-columns: minmax(0, 1fr);
     gap: 8px;
   }
-  .movement-status {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: baseline;
-    gap: 0.25rem 0.6rem;
-    color: var(--theme-text-dim, #aaa);
+  .movement-summary {
+    display: grid;
+    gap: 0.375rem;
+    min-width: 0;
+    padding: 0.75rem;
+    border: 1px solid var(--theme-stroke, #484755);
+    border-radius: 0.625rem;
+    background: var(--theme-card-bg, #181820);
+    color: var(--theme-text, #fff);
     font-size: var(--font-size-sm, 0.875rem);
   }
-  .movement-status strong {
-    color: var(--theme-text, #fff);
+  .movement-heading {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.375rem 0.625rem;
+  }
+  .movement-heading strong {
+    font-size: 1rem;
+  }
+  .custom-badge {
+    padding: 0.125rem 0.5rem;
+    border: 1px solid var(--theme-stroke, #484755);
+    border-radius: 999px;
     font-weight: 600;
+  }
+  .movement-summary p {
+    margin: 0;
+  }
+  .preview-detail {
+    color: var(--theme-text-secondary, #aaa);
+  }
+  .movement-summary ul {
+    display: grid;
+    gap: 0.25rem;
+    margin: 0;
+    padding-left: 1.25rem;
+    color: var(--theme-text-secondary, #aaa);
+    font-size: var(--font-size-compact, 0.75rem);
+  }
+  .other-layer {
+    width: 100%;
+    min-height: var(--min-touch-target, 44px);
+    padding: 0.5rem;
+    border: 1px solid var(--theme-stroke, #484755);
+    border-radius: 0.5rem;
+    background: var(--theme-panel-bg, #08080c);
+    color: var(--theme-text, #fff);
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+  }
+  .other-layer:focus-visible {
+    outline: 2px solid var(--theme-accent, currentColor);
+    outline-offset: 2px;
   }
   h3 {
     margin: 0;
