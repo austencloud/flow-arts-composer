@@ -103,6 +103,51 @@ describe("fitDisplayGrid", () => {
   );
 });
 
+describe("Post Display box fitting", () => {
+  // Compact chrome with a readable two-line label, including button borders.
+  const metrics = { padX: 8, chromeY: 42, gapX: 8, gapY: 8, count: 10 };
+
+  it.each([
+    { width: 408, height: 172, cols: 5 },
+    { width: 350, height: 306, cols: 4 },
+    { width: 472, height: 964, cols: 2 },
+  ])("uses the available $width x $height box", ({ width, height, cols }) => {
+    const fit = fitDisplayGrid({
+      ...metrics,
+      width,
+      height,
+      grow: true,
+      groupBoundary: null,
+      minArt: COMPACT_MIN_ART,
+      allowPartialRows: true,
+    });
+    expect(fit).not.toBeNull();
+    expect(fit!.cols).toBe(cols);
+    const rows = Math.ceil(metrics.count / fit!.cols);
+    expect(
+      fit!.cols * fit!.tile + (fit!.cols - 1) * metrics.gapX
+    ).toBeLessThanOrEqual(width);
+    expect(rows * fit!.tile + (rows - 1) * metrics.gapY).toBeLessThanOrEqual(
+      height
+    );
+    expect(fit!.art).toBeGreaterThanOrEqual(COMPACT_MIN_ART);
+    if (height > 900) expect(fit!.art).toBeGreaterThan(COMPACT_MAX_ART);
+  });
+
+  it("preserves readable pictures by falling back in an impossibly short box", () => {
+    expect(
+      fitDisplayGrid({
+        ...metrics,
+        width: 350,
+        height: 90,
+        grow: true,
+        groupBoundary: null,
+        minArt: COMPACT_MIN_ART,
+      })
+    ).toBeNull();
+  });
+});
+
 describe("compactDisplayColumns", () => {
   it("lays ten tiles in two rows of five wherever five columns fit", () => {
     expect(compactDisplayColumns({ width: 403, count: 10, gap: 6 })).toBe(5);
