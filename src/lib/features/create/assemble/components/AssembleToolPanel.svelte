@@ -243,17 +243,19 @@
     width: 100%;
     max-width: none;
     height: 100%;
-    display: grid;
-    /* The dock under the grid takes the second row. */
-    grid-template-rows: minmax(0, 1fr) auto;
-    justify-items: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
   }
 
   .stage-slot {
     position: relative;
-    grid-row: 1;
+    /* Keep the grid and dock together at the top. Shrink the square only
+       when both would otherwise exceed the panel's available height. */
+    flex: 0 1 auto;
     width: 100%;
-    height: 100%;
+    height: auto;
+    aspect-ratio: 1;
     min-width: 0;
     min-height: 0;
     display: grid;
