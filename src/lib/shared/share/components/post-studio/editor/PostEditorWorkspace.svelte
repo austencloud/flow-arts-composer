@@ -279,6 +279,21 @@
     hasAnimationOverlay: () => overlayPainter !== null,
   });
 
+  onMount(() => {
+    if (!import.meta.env.DEV) return;
+    let disposed = false;
+    let stop: (() => void) | undefined;
+    void import("$lib/shared/media-composition/services/post-project-dev-client")
+      .then(({ startPostProjectDevBridge }) => {
+        if (!disposed) stop = startPostProjectDevBridge(editor);
+      })
+      .catch(() => {});
+    return () => {
+      disposed = true;
+      stop?.();
+    };
+  });
+
   $effect(() => onProjectPropChange(editor.project.propType));
 
   function choosePropType(propType: PropType): void {

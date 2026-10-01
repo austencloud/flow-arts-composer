@@ -217,6 +217,76 @@ describe("compilePostProject", () => {
   });
 
   describe("sequence layers split at main-track video edges", () => {
+    it("keeps each linked animation on its own take through a crossfade", () => {
+      const result = compilePostProject(
+        project(
+          [
+            video("outgoing", {
+              takeId: "a",
+              sourceOut: 10,
+              transitionOut: { type: "crossfade", duration: 1 },
+            }),
+            video("incoming", {
+              takeId: "b",
+              start: 9,
+              sourceIn: 2,
+              sourceOut: 10,
+            }),
+          ],
+          [
+            [
+              overlay("large", "animation", {
+                duration: 10,
+                fadeOut: 1,
+                anchor: { itemId: "outgoing", offset: 0 },
+              }),
+            ],
+            [
+              overlay("small", "moves", {
+                start: 9,
+                duration: 8,
+                fadeIn: 1,
+                anchor: { itemId: "incoming", offset: 0 },
+              }),
+            ],
+          ]
+        ),
+        ctx
+      )!;
+      const layers = evaluatePresetFrame(
+        result.preset,
+        result.durationSeconds,
+        9.5,
+        {
+          steps: Array.from({ length: 16 }, () => ({
+            duration: 1,
+          })) as StepData[],
+          startPlacementDuration: 1,
+          clocks: {
+            [takeRole("a")]: {
+              sampleAt: () => ({ arrival: 16, endArrival: 16 }),
+            },
+            [takeRole("b")]: {
+              sampleAt: () => ({ arrival: 0, endArrival: 16 }),
+            },
+          },
+        }
+      );
+      const large = layers.find((layer) => layer.regionId === "large")!;
+      const small = layers.find((layer) => layer.regionId === "small")!;
+      expect(large.sequenceFrame).toMatchObject({ move: 16, phase: "holding" });
+      expect(small.sequenceFrame).toMatchObject({ move: 0, phase: "opening" });
+      expect(large.sourceTimeSeconds).toBeCloseTo(9.5);
+      expect(small.sourceTimeSeconds).toBeCloseTo(2.5);
+      expect(large.opacity).toBeCloseTo(0.5);
+      expect(small.opacity).toBeCloseTo(0.5);
+      const outgoing = layers.find((layer) => layer.clipId === "outgoing")!;
+      const incoming = layers.find((layer) => layer.clipId === "incoming")!;
+      expect(outgoing.opacity * (1 - incoming.opacity) + incoming.opacity).toBe(
+        1
+      );
+    });
+
     it("starts the incoming take at its own opening pose throughout a crossfade", () => {
       const outgoing = video("outgoing", {
         takeId: "a",
