@@ -20,6 +20,7 @@ import {
   clearProjectKeyframes,
   moveMainItem,
   moveOverlayItem,
+  moveSelectedItems,
   placeMainItem,
   removeTake,
   replaceTakeMedia,
@@ -555,6 +556,58 @@ describe("moveOverlayItem", () => {
       moveOverlayItem(hidden, "t2", { start: 5, trackIndex: 1 }, ctx)
     );
     expect(spans(onto, 1)).toEqual([["t1", 0, 2]]);
+  });
+});
+
+describe("moveSelectedItems", () => {
+  it("moves selected main clips together and carries their anchored overlays", () => {
+    const result = valid(
+      moveSelectedItems(twoClips(), ["v1", "v2"], "v1", 3, null, ctx)
+    );
+    expect(spans(result, 0)).toEqual([
+      ["v1", 3, 10],
+      ["v2", 13, 6],
+    ]);
+    expect(spans(result, 1)).toEqual([["anim", 3, 10]]);
+  });
+
+  it("moves selected overlays with the same time and layer offsets", () => {
+    const base = project(
+      [video("v1"), video("v2")],
+      [[text("t1", 0, 2), text("t2", 5, 2)], [text("t3", 8, 2)]]
+    );
+    const result = valid(
+      moveSelectedItems(base, ["t1", "t3"], "t1", 3, 2, ctx)
+    );
+    expect(item(result, "t1").start).toBe(3);
+    expect(item(result, "t3").start).toBe(11);
+    expect(
+      findItem(result, "t3")!.trackIndex - findItem(result, "t1")!.trackIndex
+    ).toBe(1);
+    expect(item(result, "t2").start).toBe(5);
+  });
+
+  it("moves a mixed main and overlay selection by the same delta", () => {
+    const base = project([video("v1"), video("v2")], [[text("t1", 4, 2)]]);
+    const result = valid(
+      moveSelectedItems(base, ["v1", "t1"], "t1", 7, 1, ctx)
+    );
+    expect(item(result, "v1").start).toBe(3);
+    expect(item(result, "t1").start).toBe(7);
+  });
+
+  it("excludes locked clips and clamps the group before zero", () => {
+    const base = project(
+      [video("v1")],
+      [[text("t1", 2, 2), text("t2", 6, 2)], [text("locked", 4, 2)]]
+    );
+    const locked = setTrackFlag(base, base.tracks[2]!.id, "locked", true, ctx);
+    const result = valid(
+      moveSelectedItems(locked, ["t1", "t2", "locked"], "t2", 0, null, ctx)
+    );
+    expect(item(result, "t1").start).toBe(0);
+    expect(item(result, "t2").start).toBe(4);
+    expect(item(result, "locked").start).toBe(4);
   });
 });
 

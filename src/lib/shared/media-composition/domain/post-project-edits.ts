@@ -698,6 +698,106 @@ export function placeMainItem(
   );
 }
 
+/** Moves a timeline selection as one edit, keeping its spacing and layer offsets. */
+export function moveSelectedItems(
+  project: PostProject,
+  itemIds: readonly string[],
+  draggedItemId: string,
+  targetStart: number,
+  targetTrackIndex: number | null,
+  ctx: EditContext
+): PostProject {
+  const dragged = findItem(project, draggedItemId);
+  if (!dragged || !Number.isFinite(targetStart)) return project;
+  const selected = new Set(itemIds);
+  selected.add(draggedItemId);
+  const movable = project.tracks.flatMap((track, trackIndex) =>
+    track.locked
+      ? []
+      : track.items
+          .filter((item) => selected.has(item.id))
+          .map((item) => ({ item, trackIndex }))
+  );
+  if (!movable.some(({ item }) => item.id === draggedItemId)) return project;
+  const delta = Math.max(
+    -Math.min(...movable.map(({ item }) => item.start)),
+    targetStart - dragged.item.start
+  );
+  const layerDelta =
+    dragged.trackIndex > MAIN_TRACK_INDEX && targetTrackIndex !== null
+      ? Math.round(targetTrackIndex) - dragged.trackIndex
+      : 0;
+  if (Math.abs(delta) < POST_TIME_EPSILON && layerDelta === 0) return project;
+
+  let next = project;
+  const mainMoved = movable
+    .filter(({ trackIndex }) => trackIndex === MAIN_TRACK_INDEX)
+    .map(({ item }) => ({
+      ...item,
+      start: item.start + delta,
+      pinnedStart: true,
+    }));
+  if (mainMoved.length && Math.abs(delta) >= POST_TIME_EPSILON) {
+    const movedIds = new Set(mainMoved.map((item) => item.id));
+    const main = project.tracks[MAIN_TRACK_INDEX]!.items;
+    const firstStart = Math.min(...mainMoved.map((item) => item.start));
+    const before: PostItem[] = [];
+    const after: PostItem[] = [];
+    for (const item of main) {
+      if (movedIds.has(item.id)) continue;
+      (itemEnd(item) <= firstStart + POST_TIME_EPSILON ? before : after).push({
+        ...item,
+        pinnedStart: true,
+      });
+    }
+    let cursor = Math.max(...mainMoved.map(itemEnd));
+    const pushed = after.map((item) => {
+      const start = Math.max(cursor, item.start);
+      cursor = start + item.duration;
+      return { ...item, start };
+    });
+    next = withTrackItems(next, MAIN_TRACK_INDEX, [
+      ...before,
+      ...mainMoved,
+      ...pushed,
+    ]);
+    next = normalizeProject(next);
+  }
+
+  const overlays = movable.filter(
+    ({ trackIndex }) => trackIndex > MAIN_TRACK_INDEX
+  );
+  if (overlays.length) {
+    const ids = new Set(overlays.map(({ item }) => item.id));
+    const tracks = next.tracks.map((track) => ({
+      ...track,
+      items: track.items.filter((item) => !ids.has(item.id)),
+    }));
+    const nextId = createIdAllocator(next);
+    for (const { item, trackIndex } of overlays) {
+      let destination = Math.max(MAIN_TRACK_INDEX + 1, trackIndex + layerDelta);
+      while (destination < tracks.length && tracks[destination]!.locked)
+        destination++;
+      while (destination >= tracks.length)
+        tracks.push({
+          id: nextId("track"),
+          hidden: false,
+          locked: false,
+          items: [],
+        });
+      const start = item.start + delta;
+      tracks[destination]!.items.push({
+        ...item,
+        start,
+        fill: false,
+        anchor: anchorAt(next, start),
+      });
+    }
+    next = { ...next, tracks };
+  }
+  return finish(next, ctx);
+}
+
 /**
  * Moves an overlay in time and between tracks. `trackIndex` equal to the
  * number of tracks asks for a new track on top. A busy target track sends
