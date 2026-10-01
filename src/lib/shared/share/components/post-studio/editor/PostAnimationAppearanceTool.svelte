@@ -442,6 +442,8 @@
           tileWidth={96}
           tileHeight={72}
           chromeHeight={52}
+          selectedDetail={trailEffects.activeEffect !== "none"}
+          minSelectedHeight={trailEffects.activeEffect === "led" ? 350 : 220}
         >
           {#snippet children(bounded)}
             <PostScopedEffectsPanel

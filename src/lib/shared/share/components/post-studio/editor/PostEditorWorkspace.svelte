@@ -2473,6 +2473,8 @@
         <aside
           class="panel-host"
           class:external={layout === "viewer"}
+          class:appearance={shown === "appearance" &&
+            editor.selectedItem?.kind === "animation"}
           tabindex="-1"
           data-viewer-keys-ignore
           bind:this={panelHost}
@@ -2491,8 +2493,15 @@
                     key={shown}
                     mode="swap"
                     duration={DURATION.fast}
-                    fill={layout === "wide"}
-                    animateHeight={layout === "viewer"}
+                    fill={layout === "wide" ||
+                      (layout === "viewer" &&
+                        shown === "appearance" &&
+                        editor.selectedItem?.kind === "animation")}
+                    animateHeight={layout === "viewer" &&
+                      !(
+                        shown === "appearance" &&
+                        editor.selectedItem?.kind === "animation"
+                      )}
                   >
                     {@render panel(shown, "side")}
                   </Crossfade>
@@ -3037,6 +3046,10 @@
     grid-template-areas: "stage" "transport" "resize" "timeline" "row";
   }
 
+  .post-editor[data-mode="edit"][data-layout="wide"] .layout {
+    --post-panel-width: clamp(20rem, 54cqw, 75rem);
+  }
+
   .post-editor[data-mode="timing"]:is(
       [data-layout="wide"],
       [data-layout="viewer"]
@@ -3123,6 +3136,10 @@
     height: 100%;
   }
 
+  .post-editor[data-mode="edit"][data-layout="wide"] .preview-frame {
+    width: calc(100cqw - var(--post-panel-width) - 1rem);
+  }
+
   .post-editor[data-layout="viewer"] .preview-frame {
     flex: none;
     width: min(100cqw, calc(100cqh * var(--post-ratio)));
@@ -3173,6 +3190,10 @@
     flex: 0 0 var(--post-panel-width);
   }
 
+  .post-editor[data-mode="edit"][data-layout="wide"] .panel-host {
+    flex: 1 1 20rem;
+  }
+
   .side-column {
     display: grid;
     grid-template-rows: auto minmax(0, 1fr);
@@ -3210,6 +3231,11 @@
   .panel-host.external .side-column {
     grid-template-rows: auto auto;
     height: auto;
+  }
+
+  .panel-host.external.appearance .side-column {
+    grid-template-rows: auto minmax(0, 1fr);
+    height: 100%;
   }
 
   .post-editor[data-mode="timing"][data-layout="wide"] .panel-host {

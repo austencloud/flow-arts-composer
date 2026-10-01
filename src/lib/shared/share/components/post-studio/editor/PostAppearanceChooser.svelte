@@ -21,6 +21,8 @@
     chromeHeight = 0,
     columnChoices,
     scrollViewport,
+    selectedDetail = false,
+    minSelectedHeight = 220,
     children,
   }: {
     title: string;
@@ -33,6 +35,8 @@
     chromeHeight?: number;
     columnChoices?: readonly number[];
     scrollViewport?: AppearanceScrollViewport;
+    selectedDetail?: boolean;
+    minSelectedHeight?: number;
     children: Snippet<[boolean]>;
   } = $props();
 
@@ -53,6 +57,9 @@
       scrollViewport
     )
   );
+  const inlineDetail = $derived(
+    selectedDetail && width >= 560 && (!fill || height >= minSelectedHeight)
+  );
 
   onMount(() => {
     const update = () =>
@@ -68,7 +75,7 @@
   bind:clientWidth={width}
   bind:clientHeight={height}
 >
-  {#if !fits || open}
+  {#if (!fits && !inlineDetail) || open}
     <SettingsDrillRow label={title} {value} onclick={() => (open = true)} />
   {:else}
     {@render children(fill)}
