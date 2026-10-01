@@ -4,7 +4,6 @@
   import type { EvaluatedFrameLayer } from "$lib/shared/media-composition/services/frame-evaluator";
   import { tryGetMediaCompositionContext } from "$lib/shared/media-composition/state/media-composition-context";
   import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import type { HandLabeling } from "$lib/shared/video-collaboration/domain/hand-labeling";
   import type { SequenceExportOptions } from "$lib/shared/render/domain/models/sequence-export-options";
   import type {
     PostAnimationItem,
@@ -40,7 +39,6 @@
     playing: boolean;
     exporting?: boolean;
     sequence: SequenceData;
-    handLabeling?: HandLabeling | null;
     qrSequence?: SequenceData;
     cardRenderOptions?: Partial<SequenceExportOptions> | null;
     animationAppearance?: PostAnimationItem["animationAppearance"] | null;
@@ -74,7 +72,6 @@
     playing,
     exporting = false,
     sequence,
-    handLabeling = null,
     qrSequence,
     cardRenderOptions = null,
     animationAppearance = null,
@@ -634,7 +631,6 @@
       {sequence}
       {displayedBeatNumber}
       {cardRenderOptions}
-      {handLabeling}
       {qrSequence}
     />
   {:else if binding.renderMode === "tunnel"}

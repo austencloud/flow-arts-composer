@@ -1299,7 +1299,6 @@
             stageMinSize={layout.showPostStudio
               ? POST_STUDIO_STAGE_MIN_WIDTH
               : undefined}
-            wideStudio={studioUsesSideInspector}
             takeover={workspaceTakeover}
             takeoverActive={workspaceTakeoverActive}
           >
@@ -2079,14 +2078,6 @@
      shared. */
   .viewer-and-export.share-inspector {
     --active-inspector-width: var(--share-sidebar-width);
-  }
-
-  /* Post Studio's effects gallery, looks, and tuning are a workspace rather
-     than a narrow settings list. Give them the room left beside a legible
-     portrait stage without changing the widths of other inspectors. */
-  .viewer-and-export.desktop.studio-stage:not(.share-inspector) {
-    --studio-sidebar-width: clamp(36rem, 54vw, 150rem);
-    --active-inspector-width: var(--studio-sidebar-width);
   }
 
   .viewer-stage-container {

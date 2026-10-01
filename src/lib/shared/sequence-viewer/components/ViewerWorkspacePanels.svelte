@@ -25,7 +25,6 @@
     stackedInspectorSize?: string;
     /** The stage's drag floor; Post Studio's 9:16 frame needs far less. */
     stageMinSize?: number;
-    wideStudio?: boolean;
   }
 
   let {
@@ -39,7 +38,6 @@
     takeoverActive = false,
     stackedInspectorSize = "auto",
     stageMinSize = VIEWER_STAGE_MIN_WIDTH,
-    wideStudio = false,
   }: Props = $props();
 
   // With one panel the axis is visually irrelevant, so retain the last axis
@@ -52,9 +50,7 @@
   });
 
   const inspectorConstraints = $derived(
-    wideStudio
-      ? { minWidth: 520, maxWidth: 2400 }
-      : viewerInspectorConstraints(inspectorProfile)
+    viewerInspectorConstraints(inspectorProfile)
   );
   const inspectorResizable = $derived(
     direction === "horizontal" && inspectorActive && !inspectorCollapsed
@@ -65,15 +61,13 @@
   // then measured the previous profile's width: opening share on a 707px
   // Fold grew the column toward 560px and then snapped it back to 360px.
   const inspectorWidthToken = $derived(
-    wideStudio
-      ? "var(--studio-sidebar-width)"
-      : inspectorProfile === "card"
-        ? "var(--card-sidebar-width)"
-        : inspectorProfile === "performance"
-          ? "var(--performance-sidebar-width)"
-          : inspectorProfile === "share"
-            ? "var(--share-sidebar-width)"
-            : "var(--export-sidebar-width)"
+    inspectorProfile === "card"
+      ? "var(--card-sidebar-width)"
+      : inspectorProfile === "performance"
+        ? "var(--performance-sidebar-width)"
+        : inspectorProfile === "share"
+          ? "var(--share-sidebar-width)"
+          : "var(--export-sidebar-width)"
   );
 
   const panels = $derived.by(() => {
