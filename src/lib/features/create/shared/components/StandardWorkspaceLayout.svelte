@@ -68,6 +68,8 @@
 
   let workspaceContainerRef: HTMLElement | null = $state(null);
   let layoutWrapperRef: HTMLElement | null = $state(null);
+  let layoutWidth = $state(0);
+  let layoutHeight = $state(0);
   let buttonPanelHeight = $state(0);
   let workspaceWidth = $state(0);
   let panelSizes = $state<number[]>([]);
@@ -95,6 +97,15 @@
 
   const isGeneratorTab = $derived(navigationState.activeTab === "generate");
   const isAssembleTab = $derived(navigationState.activeTab === "assemble");
+  // A tall Assemble stage needs the sequence above the grid so both can use
+  // the full width. Other Create tabs keep their existing desktop layout.
+  const useSideBySidePanels = $derived(
+    shouldUseSideBySideLayout &&
+      (!isAssembleTab ||
+        layoutWidth === 0 ||
+        layoutHeight === 0 ||
+        layoutWidth / layoutHeight >= 1.4)
+  );
   const currentSequence = $derived(
     CreateModuleState.sequenceState.currentSequence
   );
@@ -118,7 +129,7 @@
   const COMPACT_TOOLBAR_MAX_WIDTH = 600;
   const useCompactToolbar = $derived(
     isAssembleTab &&
-      !shouldUseSideBySideLayout &&
+      !useSideBySidePanels &&
       workspaceWidth >= COMPACT_TOOLBAR_MIN_WIDTH &&
       workspaceWidth < COMPACT_TOOLBAR_MAX_WIDTH
   );
@@ -126,6 +137,19 @@
   $effect(() => {
     panelState.setWorkspaceRailCompact(useCompactToolbar);
     return () => panelState.setWorkspaceRailCompact(false);
+  });
+
+  $effect(() => {
+    const wrapper = layoutWrapperRef;
+    if (!wrapper) return;
+    const measure = () => {
+      layoutWidth = wrapper.clientWidth;
+      layoutHeight = wrapper.clientHeight;
+    };
+    measure();
+    const resizeObserver = new ResizeObserver(measure);
+    resizeObserver.observe(wrapper);
+    return () => resizeObserver.disconnect();
   });
 
   $effect(() => {
@@ -143,7 +167,7 @@
   // The compact phone workspace spends a thin strip on the word, so it takes
   // a larger share to keep two rows of step pictures unclipped and readable.
   const defaultPanelSizes = $derived(
-    shouldUseSideBySideLayout
+    useSideBySidePanels
       ? [1, 1]
       : useCompactToolbar
         ? [2, 3]
@@ -153,7 +177,7 @@
   );
 
   $effect(() => {
-    const layoutKey = `${shouldUseSideBySideLayout}:${isAssembleTab}:${useCompactToolbar}`;
+    const layoutKey = `${useSideBySidePanels}:${isAssembleTab}:${useCompactToolbar}`;
     if (layoutKey === appliedPanelLayout) return;
 
     appliedPanelLayout = layoutKey;
@@ -416,7 +440,7 @@
 
 <div bind:this={layoutWrapperRef} class="layout-wrapper">
   <PanelGroup
-    direction={shouldUseSideBySideLayout ? "horizontal" : "vertical"}
+    direction={useSideBySidePanels ? "horizontal" : "vertical"}
     bind:sizes={panelSizes}
     gap={0}
     panels={[
