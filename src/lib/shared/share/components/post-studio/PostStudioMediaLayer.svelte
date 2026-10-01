@@ -25,6 +25,7 @@
     previewPlaybackRate,
     shouldSeekPreviewVideo,
   } from "$lib/shared/media-composition/services/video-preview-seek";
+  import { videoMirror } from "$lib/shared/media-composition/services/video-mirror";
   import type { PreviewVideoController } from "$lib/shared/media-composition/services/post-preview-clock";
   import {
     videoColorFilter,
@@ -211,6 +212,10 @@
       height: `${(fullHeight / boxHeight) * 100}%`,
     };
   });
+
+  const objectFit = $derived<LayoutRegion["fit"]>(
+    cropped ? "fill" : sourceGeometry ? "contain" : fitted ? "fill" : fit
+  );
 
   function syncVideoTime(discontinuity = false): boolean {
     if (!video || video.readyState < 1 || !Number.isFinite(sourceTimeSeconds))
@@ -629,13 +634,7 @@
       preload="auto"
       class:fitted={fitted !== null || cropped !== null}
       style:filter={videoColorFilter(colorGrade)}
-      style:object-fit={cropped
-        ? "fill"
-        : sourceGeometry
-          ? "contain"
-          : fitted
-            ? "fill"
-            : fit}
+      style:object-fit={objectFit}
       style:left={cropped?.left ?? fitted?.left}
       style:top={cropped?.top ?? fitted?.top}
       style:width={cropped?.width ?? fitted?.width}
@@ -648,19 +647,26 @@
       oncanplay={onCanPlay}
       onplaying={onCanPlay}
     ></video>
+    <!-- Drawn over the video, so the footage stays visible if the browser
+         stops drawing the video's own layer. -->
+    <canvas
+      class="video-copy"
+      class:fitted={fitted !== null || cropped !== null}
+      aria-hidden="true"
+      style:filter={videoColorFilter(colorGrade)}
+      style:left={cropped?.left ?? fitted?.left}
+      style:top={cropped?.top ?? fitted?.top}
+      style:width={cropped?.width ?? fitted?.width}
+      style:height={cropped?.height ?? fitted?.height}
+      {@attach videoMirror(video, objectFit)}
+    ></canvas>
   {:else}
     <img
       src={binding.previewUrl ?? undefined}
       crossorigin="anonymous"
       alt=""
       class:fitted={fitted !== null || cropped !== null}
-      style:object-fit={cropped
-        ? "fill"
-        : sourceGeometry
-          ? "contain"
-          : fitted
-            ? "fill"
-            : fit}
+      style:object-fit={objectFit}
       style:left={cropped?.left ?? fitted?.left}
       style:top={cropped?.top ?? fitted?.top}
       style:width={cropped?.width ?? fitted?.width}
@@ -692,9 +698,17 @@
   }
 
   img,
-  video {
+  video,
+  .video-copy {
     width: 100%;
     height: 100%;
+  }
+
+  .video-copy {
+    position: absolute;
+    left: 0;
+    top: 0;
+    pointer-events: none;
   }
 
   .fitted {
