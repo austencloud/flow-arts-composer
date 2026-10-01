@@ -33,6 +33,7 @@
     currentDisplayWord,
     buttonPanelHeight = 0,
     compactToolbar = false,
+    isSideBySideLayout,
     letterSources = null,
   }: {
     animatingStepNumber?: number | null;
@@ -41,6 +42,8 @@
     buttonPanelHeight?: number;
     /** The word sits in the bottom rail, so the header keeps only its badges */
     compactToolbar?: boolean;
+    /** Use the actual panel direction when choosing pictograph columns. */
+    isSideBySideLayout: boolean;
     /** Letter sources for spell tab - enables original vs bridge letter styling */
     letterSources?: LetterSource[] | null;
   } = $props();
@@ -48,7 +51,6 @@
   // Derive values from context
   const practiceStepIndex = $derived(panelState.practiceStepIndex);
   const shouldOrbitAroundCenter = $derived(panelState.shouldOrbitAroundCenter);
-  const isSideBySideLayout = $derived(layout.shouldUseSideBySideLayout);
   const isMobilePortrait = $derived(layout.isMobilePortrait());
 
   const optionAudition = $derived(panelState.optionAudition);

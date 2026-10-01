@@ -321,6 +321,7 @@
             currentDisplayWord,
             buttonPanelHeight,
             compactToolbar: useCompactToolbar,
+            isSideBySideLayout: useSideBySidePanels,
             letterSources: currentLetterSources,
             ...(toolPanelRef?.getAnimationStateRef?.()
               ? { animationStateRef: toolPanelRef.getAnimationStateRef() }
