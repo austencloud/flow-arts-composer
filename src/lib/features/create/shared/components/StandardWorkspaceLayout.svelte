@@ -106,14 +106,6 @@
         layoutHeight === 0 ||
         layoutWidth / layoutHeight >= 1.4)
   );
-  // A 50/50 split can make the square grid narrower than its stage is tall.
-  // Reserve enough width to fill the stage's height; the dock leaves a small
-  // horizontal margin, while the sequence uses the remaining column width.
-  const assembleToolPanelWidth = $derived(
-    isAssembleTab && useSideBySidePanels && layoutWidth > 0 && layoutHeight > 0
-      ? `${Math.max(layoutWidth / 2, layoutHeight)}px`
-      : undefined
-  );
   const currentSequence = $derived(
     CreateModuleState.sequenceState.currentSequence
   );
@@ -297,7 +289,6 @@
       <SaveToLibraryButton
         sequence={currentSequence}
         onclick={() => panelState.openSaveToLibraryPanel()}
-        quiet
       />
     </div>
   {/if}
@@ -352,12 +343,10 @@
         <UndoButton
           {CreateModuleState}
           onAction={handleWorkspaceUndo}
-          quiet={isAssembleTab}
         />
         <UndoButton
           {CreateModuleState}
           direction="redo"
-          quiet={isAssembleTab}
         />
       </div>
     {/if}
@@ -367,7 +356,6 @@
         <SaveToLibraryButton
           sequence={currentSequence}
           onclick={() => panelState.openSaveToLibraryPanel()}
-          quiet={isAssembleTab}
         />
       </div>
     {/if}
@@ -464,10 +452,7 @@
         id: "create-tool-panel",
         content: toolPanel,
         defaultSize: defaultPanelSizes[1],
-        fixedSize:
-          isWorkspacePlayback || isAssembleComplete
-            ? "0px"
-            : assembleToolPanelWidth,
+        fixedSize: isWorkspacePlayback || isAssembleComplete ? "0px" : undefined,
         resizable: false,
       },
     ]}

@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import DisplayPanel from "$lib/shared/animation-engine/components/settings-panels/DisplayPanel.svelte";
-  import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
+  import PostToolPanel from "$lib/shared/share/components/post-studio/editor/PostToolPanel.svelte";
   import PostAnimationAppearanceTool from "$lib/shared/share/components/post-studio/editor/PostAnimationAppearanceTool.svelte";
   import type { PostEditorState } from "$lib/shared/media-composition/state/post-editor-state.svelte";
   import { getBrowseLoader } from "$lib/shared/browse/get-browse-loader";
@@ -49,6 +49,10 @@
     { label: "Post panel @ 1922x995", px: 416, h: 380 },
     { label: "Post panel on a phone", px: 358, h: 422 },
     { label: "Post panel, too short", px: 403, h: 200 },
+  ];
+  const POST_BOXES = [
+    ...COMPACT_BOXES,
+    { label: "Tall Post inspector", px: 480, h: 1080 },
   ];
 
   // Enough for the word, glyph and step tiles to draw real content when the
@@ -139,23 +143,25 @@
     Post Studio's appearance tool, as its tool panel hosts it
   </h2>
   <div class="columns">
-    {#each COMPACT_BOXES as box (box.label)}
+    {#each POST_BOXES as box (box.label)}
       <section>
         <h2>{box.label} <span>{box.px} x {box.h}</span></h2>
         <div
-          class="panel scroller post-body"
+          class="panel post-body"
           data-post-box={box.label}
           style="width: {box.px}px; height: {box.h}px"
         >
-          <div class="item-tool snug">
-            <PostAnimationAppearanceTool
-              editor={postEditor}
-              locked={false}
-              appearanceOverride={null}
-              onAppearanceChange={() => {}}
-            />
-            <PanelButton>Use animation defaults</PanelButton>
-          </div>
+          <PostToolPanel tool="appearance" placement="side" bare fitContent>
+            <div class="item-tool">
+              <PostAnimationAppearanceTool
+                fill
+                editor={postEditor}
+                locked={false}
+                appearanceOverride={null}
+                onAppearanceChange={() => {}}
+              />
+            </div>
+          </PostToolPanel>
         </div>
       </section>
     {/each}
@@ -233,23 +239,17 @@
     box-sizing: border-box;
   }
 
-  /* PostToolPanel's body and PostItemTool's wrapper, reproduced: the body
-     scrolls with a quarter-rem of padding, and the tool lays its pieces out in
-     one grid column, half a rem apart once it holds an animation's appearance
-     panel (the `snug` modifier). */
+  /* Match PostItemTool's bounded appearance wrapper inside the real panel. */
   .panel.post-body {
     padding: 0.25rem;
   }
 
   .item-tool {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr);
-    gap: 1rem;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
     min-width: 0;
-  }
-
-  .item-tool.snug {
-    gap: 0.5rem;
   }
 
   .panel {

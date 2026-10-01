@@ -782,11 +782,9 @@
   </div>
 {/snippet}
 
-<!-- An animation's appearance panel shares the tool column with its reset
-     button; a rem between the pieces would push Display past the panel. -->
 <div
   class="item-tool"
-  class:snug={tool === "appearance" &&
+  class:animation-appearance={tool === "appearance" &&
     (item.kind === "animation" || item.kind === "moves")}
 >
   {#if locked}
@@ -1206,6 +1204,7 @@
     {/if}
   {:else if tool === "appearance" && (item.kind === "animation" || item.kind === "moves")}
     <PostAnimationAppearanceTool
+      fill
       {editor}
       {item}
       {locked}
@@ -1216,14 +1215,6 @@
         : undefined}
       defaultPropType={cardRenderOptions?.propTypeOverride}
     />
-    {#if item.animationAppearance}
-      <PanelButton
-        onclick={() => patchItem({ animationAppearance: null })}
-        disabled={locked}
-      >
-        Use animation defaults
-      </PanelButton>
-    {/if}
   {:else if tool === "appearance" && item.kind === "card"}
     <PostCardAppearanceTool
       {item}
@@ -1340,8 +1331,11 @@
     min-width: 0;
   }
 
-  .item-tool.snug {
-    gap: 0.5rem;
+  .item-tool.animation-appearance {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
   }
 
   .status {
