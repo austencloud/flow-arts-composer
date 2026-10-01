@@ -915,12 +915,10 @@
 <style>
   .interactive-grid {
     position: relative;
-    width: min(100cqi, 100cqb);
-    height: auto;
-    max-width: 100%;
-    max-height: 100%;
-    aspect-ratio: 1;
-    place-self: start center;
+    width: 100%;
+    height: 100%;
+    min-width: 0;
+    min-height: 0;
     box-sizing: border-box;
     border-radius: var(--settings-radius-md, 12px);
     overflow: hidden;
