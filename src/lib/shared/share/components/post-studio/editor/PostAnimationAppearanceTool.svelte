@@ -1,8 +1,8 @@
 <script lang="ts">
-  import { onDestroy, onMount, untrack } from "svelte";
-  import Drawer from "$lib/shared/foundation/ui/Drawer.svelte";
-  import DrawerHeader from "$lib/shared/foundation/ui/DrawerHeader.svelte";
-  import { responsiveLayoutManager } from "$lib/shared/create/services/responsive-layout-manager";
+  import { onDestroy, untrack } from "svelte";
+  import { Popover } from "bits-ui";
+  import { flyFade } from "$lib/shared/transitions/motion";
+  import { DURATION } from "$lib/shared/transitions/transitions";
   import DisplayPanel from "$lib/shared/animation-engine/components/settings-panels/DisplayPanel.svelte";
   import PathShapePanel from "$lib/shared/animation-engine/components/settings-panels/PathShapePanel.svelte";
   import EffortPanel from "$lib/shared/animation-engine/components/settings-panels/EffortPanel.svelte";
@@ -125,13 +125,6 @@
             timingSection.overrides.length > 0)
   );
   let timingDetailsOpen = $state(false);
-  let sideBySide = $state(false);
-  onMount(() => {
-    const update = () =>
-      (sideBySide = responsiveLayoutManager.shouldUseSideBySideLayout());
-    update();
-    return responsiveLayoutManager.onLayoutChange(update);
-  });
   const timingSummary = $derived.by(() => {
     const parts = item
       ? customParts
@@ -187,19 +180,6 @@
     }
     return null;
   });
-  const otherEffortLabel = $derived(
-    otherCustomLayer
-      ? (EFFORTS.find(
-          (effort) =>
-            effort.id ===
-            (otherCustomLayer.item.animationAppearance?.effortPreset ??
-              inheritedEffort)
-        )?.label ??
-          otherCustomLayer.item.animationAppearance?.effortPreset ??
-          inheritedEffort)
-      : ""
-  );
-
   const visibility = new AnimationVisibilityStateManager({ ephemeral: true });
   let darkMode = $state(visibility.isDarkMode());
   let effortPreset = $state(visibility.getEffortPreset());
@@ -456,26 +436,52 @@
           {/snippet}
         </PostAppearanceChooser>
       {:else if activeSection === "efforts"}
-        <button
-          class="movement-overview"
-          type="button"
-          aria-haspopup="dialog"
-          onclick={() => (timingDetailsOpen = true)}
-        >
-          <span class="movement-heading"
-            ><strong
-              >{hasCustomTiming
-                ? "Custom timing"
-                : "Movement: " + appliedEffortLabel}</strong
-            ><span aria-hidden="true">›</span></span
-          >
-          <span
-            >{appliedScope}{hasCustomTiming
-              ? " · Base: " + appliedEffortLabel
-              : ""}</span
-          >
-          {#if hasCustomTiming}<span>{timingSummary}</span>{/if}
-        </button>
+        <Popover.Root bind:open={timingDetailsOpen}>
+          <Popover.Trigger>
+            {#snippet child({ props })}
+              <button {...props} class="movement-overview" type="button">
+                <span class="movement-heading"
+                  ><strong
+                    >{hasCustomTiming
+                      ? "Custom timing"
+                      : "Movement: " + appliedEffortLabel}</strong
+                  ><span aria-hidden="true">›</span></span
+                >
+                <span
+                  >{appliedScope}{hasCustomTiming
+                    ? " · Base: " + appliedEffortLabel
+                    : ""}</span
+                >
+                {#if hasCustomTiming}<span>{timingSummary}</span>{/if}
+              </button>
+            {/snippet}
+          </Popover.Trigger>
+          <Popover.Portal>
+            <Popover.Content
+              side="bottom"
+              align="end"
+              sideOffset={8}
+              collisionPadding={12}
+              forceMount
+            >
+              {#snippet child({ open, wrapperProps, props })}
+                <div {...wrapperProps}>
+                  {#if open}
+                    <div
+                      {...props}
+                      class="timing-popover themed-scrollbar"
+                      role="dialog"
+                      aria-label="Movement timing"
+                      transition:flyFade={{ y: -4, duration: DURATION.fast }}
+                    >
+                      {@render timingDetails()}
+                    </div>
+                  {/if}
+                </div>
+              {/snippet}
+            </Popover.Content>
+          </Popover.Portal>
+        </Popover.Root>
         <PostAppearanceChooser
           title={hasCustomTiming
             ? "Base movement and paths"
@@ -530,78 +536,76 @@
   {/if}
 </div>
 
-<Drawer
-  bind:isOpen={timingDetailsOpen}
-  placement={sideBySide ? "right" : "bottom"}
-  ariaLabel="Movement timing"
-  showHandle={!sideBySide}
->
-  <DrawerHeader
-    title="Movement timing"
-    onBack={() => (timingDetailsOpen = false)}
-    onClose={() => (timingDetailsOpen = false)}
-  />
-  <div class="timing-details">
-    <div class="movement-summary" aria-live="polite">
-      <div class="movement-heading">
-        <strong>{item ? `Selected: ${appliedScope}` : appliedScope}</strong>
-        {#if hasCustomTiming}<span class="custom-badge">Custom timing</span
-          >{/if}
-      </div>
+{#snippet timingDetails()}
+  <div class="timing-header">
+    <div>
+      <h3>{hasCustomTiming ? "Custom timing" : "Movement timing"}</h3>
       <p>
-        {hasCustomTiming ? "Base movement" : "Movement"}: {appliedEffortLabel}
+        {appliedScope} · {hasCustomTiming ? "Base: " : ""}{appliedEffortLabel}
       </p>
-      {#if !item && timingSection}
-        <p class="preview-detail">
-          {timingSectionLabel ?? "Selected section"}
-          {#if (timingSection.landingHoldRatio ?? 0) > 0}
-            · {Math.round((timingSection.landingHoldRatio ?? 0) * 100)}% landing
-            hold
-          {/if}
-          {#if timingSection.overrides.length > 0}
-            · {timingSection.overrides.length}
-            {timingSection.overrides.length === 1 ? "landing" : "landings"} moved
-            by hand
-          {/if}
-        </p>
+    </div>
+    <button
+      class="timing-close"
+      type="button"
+      aria-label="Close movement timing"
+      onclick={() => (timingDetailsOpen = false)}
+    >
+      <i class="fas fa-xmark" aria-hidden="true"></i>
+    </button>
+  </div>
+  {#if !item && timingSection}
+    <p class="preview-detail">
+      {timingSectionLabel ?? "Selected section"}
+      {#if (timingSection.landingHoldRatio ?? 0) > 0}
+        · {Math.round((timingSection.landingHoldRatio ?? 0) * 100)}% landing
+        hold
       {/if}
-      {#if customParts.length > 0}
-        <ul>
-          {#each timingParts as part (`${part.takeId}:${part.sectionIndex}:${part.start}`)}
-            <li>
-              {#if timingParts.length > 1}
-                {editor.takes.find((take) => take.id === part.takeId)?.label ??
-                  "Take"}
-                · {part.start.toFixed(1)}–{part.end.toFixed(1)}s:
-              {/if}
+      {#if timingSection.overrides.length > 0}
+        · {timingSection.overrides.length}
+        {timingSection.overrides.length === 1 ? "landing" : "landings"} moved by hand
+      {/if}
+    </p>
+  {/if}
+  {#if customParts.length > 0}
+    <ul class="timing-parts">
+      {#each timingParts as part (`${part.takeId}:${part.sectionIndex}:${part.start}`)}
+        <li>
+          <span class="take-label"
+            >{editor.takes.find((take) => take.id === part.takeId)?.label ??
+              "Take"}</span
+          >
+          <div class="timing-part-detail">
+            <span class="time-range"
+              >{part.start.toFixed(1)}–{part.end.toFixed(1)}s</span
+            >
+            <span>
               {part.landingHoldRatio > 0
                 ? `${Math.round(part.landingHoldRatio * 100)}% landing hold`
                 : "No landing hold"}{part.movedLandings > 0
                 ? ` · ${part.movedLandings} ${part.movedLandings === 1 ? "landing" : "landings"} moved by hand`
                 : ""}
-            </li>
-          {/each}
-        </ul>
-      {/if}
-      {#if otherCustomLayer}
-        <button
-          class="other-layer"
-          type="button"
-          onclick={() => {
-            editor.selectedItemId = otherCustomLayer!.item.id;
-            timingDetailsOpen = false;
-          }}
-        >
-          View {otherCustomLayer.item.label ??
-            itemDisplayLabel(otherCustomLayer.item, editor.project)}
-          · {otherEffortLabel}{otherCustomLayer.part.landingHoldRatio > 0
-            ? ` + ${Math.round(otherCustomLayer.part.landingHoldRatio * 100)}% hold`
-            : " + custom timing"}
-        </button>
-      {/if}
-    </div>
-  </div>
-</Drawer>
+            </span>
+          </div>
+        </li>
+      {/each}
+    </ul>
+  {/if}
+  {#if otherCustomLayer}
+    <button
+      class="other-layer"
+      type="button"
+      onclick={() => {
+        editor.selectedItemId = otherCustomLayer!.item.id;
+        timingDetailsOpen = false;
+      }}
+    >
+      <span
+        >View {otherCustomLayer.item.label ??
+          itemDisplayLabel(otherCustomLayer.item, editor.project)}
+      </span><span aria-hidden="true">›</span>
+    </button>
+  {/if}
+{/snippet}
 
 <style>
   .movement-overview {
@@ -626,8 +630,87 @@
     outline: 2px solid var(--theme-accent, currentColor);
     outline-offset: 2px;
   }
-  .timing-details {
-    padding: 0 1rem 1rem;
+  .timing-popover {
+    box-sizing: border-box;
+    width: min(22rem, calc(100vw - 24px));
+    max-width: var(--bits-popover-content-available-width);
+    max-height: var(--bits-popover-content-available-height);
+    padding: 0.75rem;
+    border: 1px solid var(--theme-stroke-strong, #484755);
+    border-radius: 0.75rem;
+    background-color: var(--theme-bg-deep, #08080c);
+    background-image: linear-gradient(
+      var(--theme-panel-bg, #101014),
+      var(--theme-panel-bg, #101014)
+    );
+    box-shadow: 0 8px 24px var(--theme-shadow, rgb(0 0 0 / 0.35));
+    color: var(--theme-text, #fff);
+    font-size: var(--font-size-min, 14px);
+    line-height: 1.45;
+    overflow: auto;
+    overscroll-behavior: contain;
+    z-index: var(--z-dropdown, 1000);
+    outline: none;
+    transform-origin: var(--bits-popover-content-transform-origin);
+  }
+  .timing-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: start;
+    gap: 0.5rem;
+  }
+  .timing-header h3 {
+    font-size: 1rem;
+  }
+  .timing-header p,
+  .preview-detail {
+    margin: 0.25rem 0 0;
+    color: var(--theme-text-secondary, #aaa);
+  }
+  .timing-close {
+    flex: none;
+    display: grid;
+    place-items: center;
+    width: var(--min-touch-target, 44px);
+    height: var(--min-touch-target, 44px);
+    margin: -0.375rem -0.375rem 0 0;
+    border: 0;
+    border-radius: 0.5rem;
+    background: transparent;
+    color: var(--theme-text-secondary, #aaa);
+    cursor: pointer;
+  }
+  .timing-close:hover,
+  .other-layer:hover {
+    background: var(--theme-card-bg, #181820);
+    color: var(--theme-text, #fff);
+  }
+  .timing-close:focus-visible {
+    outline: 2px solid var(--theme-accent, currentColor);
+    outline-offset: -2px;
+  }
+  .timing-parts {
+    list-style: none;
+    margin: 0.75rem 0;
+    padding: 0;
+  }
+  .timing-parts li {
+    padding: 0.625rem 0;
+    border-top: 1px solid var(--theme-stroke, #484755);
+  }
+  .take-label {
+    font-weight: 600;
+  }
+  .timing-part-detail {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 0.25rem 0.75rem;
+    margin-top: 0.25rem;
+  }
+  .time-range {
+    color: var(--theme-text-secondary, #aaa);
+    font-variant-numeric: tabular-nums;
   }
 
   .appearance-tool {
@@ -692,19 +775,6 @@
     flex: 1;
     min-height: 0;
   }
-  .movement-summary {
-    flex: none;
-    display: grid;
-    gap: 0.375rem;
-    min-width: 0;
-    padding: 0.75rem;
-    border: 1px solid var(--theme-stroke, #484755);
-    border-radius: 0.625rem;
-    background: var(--theme-card-bg, #181820);
-    color: var(--theme-text, #fff);
-
-    font-size: var(--font-size-sm, 0.875rem);
-  }
   .movement-heading {
     display: flex;
     flex-wrap: wrap;
@@ -714,33 +784,17 @@
   .movement-heading strong {
     font-size: 1rem;
   }
-  .custom-badge {
-    padding: 0.125rem 0.5rem;
-    border: 1px solid var(--theme-stroke, #484755);
-    border-radius: 999px;
-    font-weight: 600;
-  }
-  .movement-summary p {
-    margin: 0;
-  }
-  .preview-detail {
-    color: var(--theme-text-secondary, #aaa);
-  }
-  .movement-summary ul {
-    display: grid;
-    gap: 0.25rem;
-    margin: 0;
-    padding-left: 1.25rem;
-    color: var(--theme-text-secondary, #aaa);
-    font-size: var(--font-size-compact, 0.75rem);
-  }
   .other-layer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
     width: 100%;
     min-height: var(--min-touch-target, 44px);
     padding: 0.5rem;
     border: 1px solid var(--theme-stroke, #484755);
     border-radius: 0.5rem;
-    background: var(--theme-panel-bg, #08080c);
+    background: transparent;
     color: var(--theme-text, #fff);
     font: inherit;
     text-align: left;
