@@ -72,6 +72,9 @@
     fill?: boolean;
     /** Post Studio can show the roster beside looks and tuning when its panel is wide. */
     wideWorkspace?: boolean;
+    /** Post Studio opens an already chosen effect's looks and tuning first. */
+    preferSelectedDetail?: boolean;
+    pagedRichDetail?: boolean;
     /** Restrict the roster to what the host can draw. Omit for everything. */
     availableEffects?: readonly string[];
     animationSettingsState?: AnimationSettingsState;
@@ -100,6 +103,8 @@
     showHeading = true,
     fill = false,
     wideWorkspace = false,
+    preferSelectedDetail = false,
+    pagedRichDetail = false,
     availableEffects,
     animationSettingsState = animationSettings,
     children,
@@ -120,7 +125,7 @@
   // previous session. The inspector is somewhere you choose to go, never where
   // the panel drops you - landing in it is the same trap as navigating on
   // select, just triggered by boot instead of a click.
-  let sidebarDetailOpen = $state(false);
+  let sidebarDetailOpen = $state(preferSelectedDetail);
 
   // ── Catalog and roster (fill hosts) ────────────────────────────────────────
   // In a card wide enough for four pictures across, every tile shows a picture
@@ -514,6 +519,7 @@
       customizeOpen = false;
       CustomizeComponent = null;
       effectsConfigState.setActiveEffect(effectId);
+      if (preferSelectedDetail) sidebarDetailOpen = true;
     };
     if (previous === "none") morphRoster(apply);
     else apply();
@@ -539,7 +545,7 @@
   // already-active tile drills into its detail screen (looks + primary slider +
   // More tuning). An explicit Off tile replaces the old tap-again-to-disable
   // toggle, which the drill gesture now owns.
-  let detailOpen = $state(false);
+  let detailOpen = $state(preferSelectedDetail);
 
   const stripView = $derived<"picker" | "detail" | "customize">(
     customizeOpen && CustomizeComponent
@@ -557,6 +563,7 @@
     if (isEffectId(effectId)) {
       const previous = activeEffect;
       effectsConfigState.setActiveEffect(effectId);
+      if (preferSelectedDetail) detailOpen = true;
       reportSetting("active_effect", previous, effectId);
     }
   }
@@ -738,6 +745,7 @@
     class:fill
     class:detail-view={sidebarView.startsWith("detail-")}
     class:wide-workspace={wideWorkspace}
+    class:post-detail={preferSelectedDetail}
     bind:contentRect={panelRect}
   >
     {#if showPlayback}
@@ -807,6 +815,9 @@
               propType={animationSettingsState.currentPropType}
               overrides={tuneOverrides}
               showBack={false}
+              {pagedRichDetail}
+              compactPresets={preferSelectedDetail}
+              boundedFine={preferSelectedDetail}
               onBack={() => (sidebarDetailOpen = false)}
               onDisable={handleSidebarDisable}
               onSelectPreset={handlePresetSelect}
@@ -880,7 +891,7 @@
               morphName={rosterMorphName}
             />
 
-            {#if sidebarView === "browser"}
+            {#if sidebarView === "browser" && !preferSelectedDetail}
               <div
                 class="sb-dock"
                 use:claimedViewTransitionName={{
@@ -910,6 +921,9 @@
             propType={animationSettingsState.currentPropType}
             overrides={tuneOverrides}
             onBack={() => (sidebarDetailOpen = false)}
+            {pagedRichDetail}
+            compactPresets={preferSelectedDetail}
+            boundedFine={preferSelectedDetail}
             onDisable={handleSidebarDisable}
             onSelectPreset={handlePresetSelect}
             onSettingChange={(setting, previousValue, value, coalesce) =>
@@ -1006,7 +1020,11 @@
               <!-- LED and anything else whose controls are structured config
                    rather than flat fields: the strip has nothing to show, so
                    the hand-built panel takes the view. -->
-              <CustomizeComponent onBack={handleCustomizeClose} embedded />
+              <CustomizeComponent
+                onBack={handleCustomizeClose}
+                embedded
+                paged={pagedRichDetail && activeEffect === "led"}
+              />
             {:else}
               <EffectTuneStrip
                 effectId={activeEffect}
@@ -1043,7 +1061,7 @@
 
           {@render effectDock(
             handleCustomizeOpen,
-            t("effect_deep_more"),
+            t("effect_deep_tune"),
             "rail"
           )}
         </div>
@@ -1134,7 +1152,11 @@
         {availableEffects}
       />
 
-      {@render effectDock(handleCustomizeOpen, t("effect_deep_more"), "rail")}
+      {@render effectDock(
+        handleCustomizeOpen,
+        t(preferSelectedDetail ? "effect_deep_tune" : "effect_deep_more"),
+        "rail"
+      )}
     {/if}
   </div>
 {/if}
@@ -1291,6 +1313,10 @@
     border-bottom: none;
   }
 
+  .post-detail .sb-footer {
+    padding-block: 6px;
+  }
+
   .reset-all-btn {
     width: 100%;
     display: inline-flex;
@@ -1393,7 +1419,16 @@
     height: 100%;
     min-height: 0;
     overflow-y: auto;
+    scrollbar-color: var(--theme-stroke-strong, #484755) transparent;
+    scrollbar-width: thin;
     gap: 8px;
+  }
+  .strip-layout.fill .drill-view::-webkit-scrollbar {
+    width: 8px;
+  }
+  .strip-layout.fill .drill-view::-webkit-scrollbar-thumb {
+    border-radius: 8px;
+    background: var(--theme-stroke-strong, #484755);
   }
   .strip-layout.fill .picker-bar {
     flex: none;

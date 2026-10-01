@@ -691,7 +691,7 @@
   let pixelsPerSecond = $state(60);
   let editorWidth = $state(0);
   let editorHeight = $state(0);
-  const DEFAULT_TIMELINE_HEIGHT_PX = 200;
+  const DEFAULT_TIMELINE_HEIGHT_PX = 280;
   const MIN_TIMELINE_HEIGHT_PX = 160;
   let timelineHeightPx = $state(DEFAULT_TIMELINE_HEIGHT_PX);
   let timelineResizeStartPx = DEFAULT_TIMELINE_HEIGHT_PX;
@@ -2466,7 +2466,8 @@
         <aside
           class="panel-host"
           class:external={layout === "viewer"}
-          class:appearance={shown === "appearance" && editor.selectedItem?.kind === "animation"}
+          class:appearance={shown === "appearance" &&
+            editor.selectedItem?.kind === "animation"}
           tabindex="-1"
           data-viewer-keys-ignore
           bind:this={panelHost}
@@ -2485,8 +2486,15 @@
                     key={shown}
                     mode="swap"
                     duration={DURATION.fast}
-                    fill={layout === "wide" || (layout === "viewer" && shown === "appearance" && editor.selectedItem?.kind === "animation")}
-                    animateHeight={layout === "viewer" && !(shown === "appearance" && editor.selectedItem?.kind === "animation")}
+                    fill={layout === "wide" ||
+                      (layout === "viewer" &&
+                        shown === "appearance" &&
+                        editor.selectedItem?.kind === "animation")}
+                    animateHeight={layout === "viewer" &&
+                      !(
+                        shown === "appearance" &&
+                        editor.selectedItem?.kind === "animation"
+                      )}
                   >
                     {@render panel(shown, "side")}
                   </Crossfade>
@@ -3032,10 +3040,7 @@
   }
 
   .post-editor[data-mode="edit"][data-layout="wide"] .layout {
-    --post-panel-width: max(
-      20rem,
-      calc(100cqw - 100cqh * var(--post-ratio) - 1rem)
-    );
+    --post-panel-width: clamp(20rem, 54cqw, 75rem);
   }
 
   .post-editor[data-mode="timing"]:is(
@@ -3122,6 +3127,10 @@
       calc(100cqw - var(--post-panel-width) - 1rem)
     );
     height: 100%;
+  }
+
+  .post-editor[data-mode="edit"][data-layout="wide"] .preview-frame {
+    width: calc(100cqw - var(--post-panel-width) - 1rem);
   }
 
   .post-editor[data-layout="viewer"] .preview-frame {
