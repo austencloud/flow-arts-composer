@@ -264,9 +264,10 @@ const TEMPLATE_CAPTION_BEATS = [1, 5, 9, 15] as const;
 
 /**
  * Dress another sequence with the saved ΩΛ-XJ edit. Its footage, timing,
- * speed, and zoom keys stay with the destination; the template supplies the
- * presentation around them, including its canvas shape, and a mandala only
- * when the template has one.
+ * speed, zoom keys, mirror switch, and sequence presses stay with the
+ * destination, since they must agree with its own footage; the template
+ * supplies the presentation around them, including its canvas shape, and a
+ * mandala only when the template has one.
  */
 export function applyTutorialTemplate(
   project: PostProject,
@@ -335,7 +336,6 @@ export function applyTutorialTemplate(
     ...(template.canvas ? { canvas: template.canvas } : {}),
     fonts: template.fonts,
     background: template.background,
-    mirrored: template.mirrored,
     tracks: [
       {
         ...project.tracks[MAIN_TRACK_INDEX]!,

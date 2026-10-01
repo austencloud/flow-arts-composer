@@ -9,6 +9,7 @@ import {
   RotationDirection,
 } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
 import { mirrorSequence } from "$lib/shared/create/services/sequence-transformer";
+import type { PostSequenceTransforms } from "$lib/shared/media-composition/domain/post-sequence-actions";
 import { createPostSequenceViewHarness } from "./post-sequence-view-harness.svelte";
 
 function sequence(id: string): SequenceData {
@@ -151,5 +152,80 @@ describe("post sequence view", () => {
       previous.mockRestore();
       harness.dispose();
     }
+  });
+
+  it("runs the post's presses after the hand labeling and before the whole-post mirror", async () => {
+    const tag = (name: string) => async (source: SequenceData) =>
+      sequence(`${source.id}>${name}`);
+    const transforms: PostSequenceTransforms = {
+      mirror: tag("mirror"),
+      flip: tag("flip"),
+      rotate: async (source, quarterTurns) =>
+        sequence(`${source.id}>r${quarterTurns}`),
+      swap: (source) => sequence(`${source.id}>swap`),
+    };
+    const harness = createPostSequenceViewHarness(
+      sequence("s"),
+      tag("labeled"),
+      tag("post-mirror"),
+      transforms
+    );
+    flushSync();
+    await settle();
+    expect(harness.view.sequence.id).toBe("s>labeled");
+
+    harness.setActions(["swap", "rotate-right"]);
+    flushSync();
+    expect(harness.view.pending).toBe(true);
+    await settle();
+    expect(harness.view.sequence.id).toBe("s>labeled>swap>r1");
+    expect(harness.view.pending).toBe(false);
+
+    harness.setMirrored(true);
+    flushSync();
+    await settle();
+    expect(harness.view.sequence.id).toBe("s>labeled>swap>r1>post-mirror");
+
+    harness.setMirrored(false);
+    harness.setActions([]);
+    flushSync();
+    expect(harness.view.sequence.id).toBe("s>labeled");
+    expect(harness.view.pending).toBe(false);
+    harness.dispose();
+  });
+
+  it("keeps the previous drawing up while a new press is prepared", async () => {
+    let release!: (value: SequenceData) => void;
+    const flipped = new Promise<SequenceData>((resolve) => {
+      release = resolve;
+    });
+    const transforms: PostSequenceTransforms = {
+      mirror: async (source) => sequence(`${source.id}>mirror`),
+      flip: () => flipped,
+      rotate: async (source) => source,
+      swap: (source) => source,
+    };
+    const harness = createPostSequenceViewHarness(
+      sequence("s"),
+      async (source) => source,
+      async (source) => source,
+      transforms
+    );
+    harness.setActions(["mirror"]);
+    flushSync();
+    await settle();
+    expect(harness.view.sequence.id).toBe("s>mirror");
+
+    harness.setActions(["mirror", "flip"]);
+    flushSync();
+    await settle();
+    expect(harness.view.pending).toBe(true);
+    expect(harness.view.sequence.id).toBe("s>mirror");
+
+    release(sequence("s>mirror>flip"));
+    await settle();
+    expect(harness.view.pending).toBe(false);
+    expect(harness.view.sequence.id).toBe("s>mirror>flip");
+    harness.dispose();
   });
 });

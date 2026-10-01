@@ -302,6 +302,28 @@ describe("saved tutorial template", () => {
       anchor: { itemId: "target-slow", offset: 0 },
     });
   });
+
+  it("keeps the destination's own mirror switch and sequence presses", () => {
+    const source = project([
+      video("source-run"),
+      video("source-slow", { takeId: "b", start: 9 }),
+    ]);
+    source.mirrored = true;
+    source.sequenceActions = ["flip"];
+    const destination = project([
+      video("target-run"),
+      video("target-slow", { takeId: "b", start: 9 }),
+    ]);
+    const plain = valid(applyTutorialTemplate(destination, source, ctx));
+    expect(plain.mirrored).toBeUndefined();
+    expect(plain.sequenceActions).toBeUndefined();
+
+    destination.mirrored = true;
+    destination.sequenceActions = ["swap"];
+    const kept = valid(applyTutorialTemplate(destination, source, ctx));
+    expect(kept.mirrored).toBe(true);
+    expect(kept.sequenceActions).toEqual(["swap"]);
+  });
 });
 
 describe("applyTutorialPreset", () => {

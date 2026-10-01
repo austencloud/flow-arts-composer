@@ -370,6 +370,7 @@
     getSequence: () => sequence,
     getLabeling: () => handLabeling,
     getMirrored: () => editor.project.mirrored ?? false,
+    getActions: () => editor.project.sequenceActions ?? [],
   });
   const displaySequence = $derived(labeledCard.sequence);
 
@@ -2098,9 +2099,9 @@
   {/if}
   {#if labeledCard.error}
     <span class="draft-notice" role="alert">{labeledCard.error}</span>
-  {:else if editor.project.mirrored && labeledCard.pending}
+  {:else if (editor.project.mirrored || editor.project.sequenceActions?.length) && labeledCard.pending}
     <span class="draft-notice" role="status"
-      >Preparing mirrored animation and cards…</span
+      >Preparing the changed animation and cards…</span
     >
   {/if}
   <PostDraftStatus
@@ -2237,6 +2238,7 @@
       {staffTips}
       {cardRenderOptions}
       stepCount={displaySequence.steps?.length ?? 0}
+      sequenceBusy={labeledCard.pending}
     />
   {/if}
 {/snippet}
