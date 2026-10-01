@@ -495,7 +495,21 @@ export async function renderPostStudioFrame(
   const clipOrder = new Map(
     input.preset.clips.map((clip, index) => [clip.id, index])
   );
-  const orderedLayers = [...input.layers].sort(
+  // The preview mounts one surface per role in each region. Split pieces can
+  // both include their shared edge; the later piece owns that instant.
+  const mountedLayers = new Map<string, EvaluatedFrameLayer>();
+  for (const layer of input.layers) {
+    const slot = JSON.stringify([layer.regionId, layer.sourceRole]);
+    const previous = mountedLayers.get(slot);
+    if (
+      !previous ||
+      (clipOrder.get(layer.clipId) ?? -1) >
+        (clipOrder.get(previous.clipId) ?? -1)
+    ) {
+      mountedLayers.set(slot, layer);
+    }
+  }
+  const orderedLayers = [...mountedLayers.values()].sort(
     (left, right) =>
       (regionOrder.get(left.regionId) ?? 0) -
         (regionOrder.get(right.regionId) ?? 0) ||
