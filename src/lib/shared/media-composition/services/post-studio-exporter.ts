@@ -5,6 +5,7 @@ import type { MediaCompositionPreset } from "$lib/shared/media-composition/domai
 import { renderPostStudioFrame } from "$lib/shared/media-composition/services/post-studio-frame-compositor";
 import { CanvasFrameCapturer } from "$lib/shared/video-export/services/canvas-frame-capturer";
 import type { PostStudioLayerPainter } from "$lib/shared/media-composition/services/post-studio-layer-painter";
+import { PostStudioExportVideoFrames } from "$lib/shared/media-composition/services/post-studio-export-video-frames";
 
 export interface PostStudioExportProgress {
   completedFrames: number;
@@ -20,6 +21,8 @@ export interface ExportPostStudioVideoInput {
   seek: (seconds: number) => void;
   /** Painted sources by role; they draw at output resolution. */
   painters?: ReadonlyMap<string, PostStudioLayerPainter>;
+  /** Original video URLs by source role, at full source resolution. */
+  videoSources?: ReadonlyMap<string, string>;
   originalAudioUrl?: string | null;
   /**
    * Where the kept span starts inside the audio's own file. The picture already
@@ -64,6 +67,10 @@ export async function exportPostStudioVideo(
   const encoder = new BackgroundVideoEncoder();
   const capturer = new CanvasFrameCapturer();
   const cardFrameCache = new Map<string, HTMLCanvasElement>();
+  const videoFrames = new PostStudioExportVideoFrames(
+    input.videoSources ?? new Map(),
+    input.signal
+  );
   let captureComplete = false;
   let encodedFrames = 0;
 
@@ -112,6 +119,7 @@ export async function exportPostStudioVideo(
         layers: input.getLayers(),
         cardFrameCache,
         painters: input.painters,
+        videoFrames,
         timeSeconds,
       });
 
@@ -146,5 +154,7 @@ export async function exportPostStudioVideo(
   } catch (error) {
     encoder.cancel();
     throw error;
+  } finally {
+    videoFrames.dispose();
   }
 }

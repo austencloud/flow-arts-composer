@@ -31,9 +31,10 @@ import {
 import { traceRoundedRect } from "$lib/shared/render/utils/trace-rounded-rect";
 import { videoColorFilter } from "$lib/shared/media-composition/domain/post-video-color-grade";
 import {
-  getProgressBarHeight,
-  renderProgressBarToCanvas,
+  getSequenceProgressStripHeight,
+  paintSequenceProgressStrip,
 } from "$lib/shared/animation-engine/services/sequence-progress-renderer";
+import type { PostStudioExportVideoFrames } from "$lib/shared/media-composition/services/post-studio-export-video-frames";
 
 export interface FrameLayerGeometry {
   region: PixelRect;
@@ -54,6 +55,7 @@ export interface RenderPostStudioFrameInput {
   cardFrameCache: Map<string, HTMLCanvasElement>;
   /** Painted sources by role. A painted layer never reads the DOM. */
   painters?: ReadonlyMap<string, PostStudioLayerPainter>;
+  videoFrames?: PostStudioExportVideoFrames;
   /** The post time these layers were evaluated at. */
   timeSeconds?: number;
 }
@@ -339,11 +341,18 @@ async function drawBackdrop(
   input: RenderPostStudioFrameInput
 ): Promise<void> {
   const layer = backdropLayer(input.preset, input.layers);
-  const media = layer ? mediaForClip(input.root, layer.clipId) : null;
+  const media = layer
+    ? input.videoFrames?.has(layer.sourceRole)
+      ? await input.videoFrames.frameFor(
+          layer.sourceRole,
+          layer.sourceTimeSeconds
+        )
+      : mediaForClip(input.root, layer.clipId)
+    : null;
   if (!layer || !media) return;
   if (media instanceof HTMLVideoElement) {
     await syncVideo(media, layer.sourceTimeSeconds);
-  } else if (!media.complete) {
+  } else if (media instanceof HTMLImageElement && !media.complete) {
     await media.decode();
   }
   paintBlurredBackdrop(context, {
@@ -495,7 +504,21 @@ export async function renderPostStudioFrame(
   const clipOrder = new Map(
     input.preset.clips.map((clip, index) => [clip.id, index])
   );
-  const orderedLayers = [...input.layers].sort(
+  // The preview mounts one surface per role in each region. Split pieces can
+  // both include their shared edge; the later piece owns that instant.
+  const mountedLayers = new Map<string, EvaluatedFrameLayer>();
+  for (const layer of input.layers) {
+    const slot = JSON.stringify([layer.regionId, layer.sourceRole]);
+    const previous = mountedLayers.get(slot);
+    if (
+      !previous ||
+      (clipOrder.get(layer.clipId) ?? -1) >
+        (clipOrder.get(previous.clipId) ?? -1)
+    ) {
+      mountedLayers.set(slot, layer);
+    }
+  }
+  const orderedLayers = [...mountedLayers.values()].sort(
     (left, right) =>
       (regionOrder.get(left.regionId) ?? 0) -
         (regionOrder.get(right.regionId) ?? 0) ||
@@ -598,11 +621,17 @@ async function drawRegionLayer(
     (clip) => clip.kind === "visual" && clip.id === layer.clipId
   );
   if (layer.sourceGeometry) {
-    const media = mediaIn(layerElement);
+    const media = input.videoFrames?.has(layer.sourceRole)
+      ? await input.videoFrames.frameFor(
+          layer.sourceRole,
+          layer.sourceTimeSeconds
+        )
+      : mediaIn(layerElement);
     if (!media) return;
     if (media instanceof HTMLVideoElement)
       await syncVideo(media, layer.sourceTimeSeconds);
-    else if (!media.complete) await media.decode();
+    else if (media instanceof HTMLImageElement && !media.complete)
+      await media.decode();
     const dimensions = mediaDimensions(media);
     if (dimensions.width <= 0 || dimensions.height <= 0) return;
     const geometry = resolveFrameLayerGeometry({
@@ -646,6 +675,24 @@ async function drawRegionLayer(
       geometry.region.width,
       geometry.region.height
     );
+    const animation = layerElement.querySelector<HTMLElement>(
+      "[data-sequence-progress-visible]"
+    );
+    const showProgress =
+      animation?.dataset.sequenceProgressVisible === "true" &&
+      !!layer.sequenceFrame;
+    const stripHeight = showProgress
+      ? getSequenceProgressStripHeight(
+          Math.min(geometry.drawRect.width, geometry.drawRect.height)
+        )
+      : 0;
+    const stageGeometry = {
+      ...geometry,
+      drawRect: {
+        ...geometry.drawRect,
+        height: geometry.drawRect.height - stripHeight,
+      },
+    };
     const pictographMotion = layerElement.querySelector(
       "[data-pictograph-motion]"
     );
@@ -668,7 +715,7 @@ async function drawRegionLayer(
         height: bounds.height,
         scale: Math.max(1, regionPixels.width / bounds.width),
       });
-      drawSource(context, image, geometry);
+      drawSource(context, image, stageGeometry);
     }
     // The captured motion subtree already includes the animation/effect
     // canvases. Drawing them again would cover its transparent SVG arrows.
@@ -680,31 +727,18 @@ async function drawRegionLayer(
         Number.parseFloat(getComputedStyle(right).zIndex || "0")
     );
     for (const canvas of canvases) {
-      drawSource(context, canvas, geometry);
+      drawSource(context, canvas, stageGeometry);
     }
-    // Canvas capture omits the shared DOM progress line. Paint its mapped
-    // sequence pass here so seeking and ending holds match the preview.
-    const animation = layerElement.querySelector<HTMLElement>(
-      "[data-sequence-progress-visible]"
-    );
-    if (
-      animation?.dataset.sequenceProgressVisible === "true" &&
-      layer.sequenceFrame
-    ) {
-      const side = geometry.drawRect.width;
-      context.save();
-      context.translate(geometry.drawRect.x, geometry.drawRect.y);
-      renderProgressBarToCanvas(
+    // Canvas capture omits the shared DOM progress strip. Paint its mapped
+    // sequence pass along the bottom edge of the drawn canvases so seeking
+    // and ending holds match the preview.
+    if (showProgress && layer.sequenceFrame) {
+      paintSequenceProgressStrip(
         context,
-        side,
-        side - getProgressBarHeight(side),
-        1,
-        0,
-        [1],
-        animation.dataset.sequenceProgressDark !== "false",
-        layer.sequenceFrame.passBeatProgress
+        geometry.drawRect,
+        layer.sequenceFrame.passBeatProgress,
+        animation?.dataset.sequenceProgressDark !== "false"
       );
-      context.restore();
     }
   } else if (renderMode === "choreo-card") {
     const beat = layer.displayedBeatNumber ?? 0;
@@ -730,14 +764,19 @@ async function drawRegionLayer(
     applyLayerTransform(context, geometry);
     drawSource(context, card, geometry);
   } else {
-    const media = mediaIn(layerElement);
+    const media = input.videoFrames?.has(layer.sourceRole)
+      ? await input.videoFrames.frameFor(
+          layer.sourceRole,
+          layer.sourceTimeSeconds
+        )
+      : mediaIn(layerElement);
     if (!media) {
       context.restore();
       return;
     }
     if (media instanceof HTMLVideoElement) {
       await syncVideo(media, layer.sourceTimeSeconds);
-    } else if (!media.complete) {
+    } else if (media instanceof HTMLImageElement && !media.complete) {
       await media.decode();
     }
     const dimensions = mediaDimensions(media);

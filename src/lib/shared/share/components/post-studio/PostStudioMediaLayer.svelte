@@ -38,6 +38,7 @@
     opacity: number;
     sourceTimeSeconds: number;
     playing: boolean;
+    exporting?: boolean;
     sequence: SequenceData;
     handLabeling?: HandLabeling | null;
     qrSequence?: SequenceData;
@@ -71,6 +72,7 @@
     opacity,
     sourceTimeSeconds,
     playing,
+    exporting = false,
     sequence,
     handLabeling = null,
     qrSequence,
@@ -215,6 +217,7 @@
   });
 
   function syncVideoTime(discontinuity = false): boolean {
+    if (exporting) return false;
     if (!video || video.readyState < 1 || !Number.isFinite(sourceTimeSeconds))
       return false;
     const ceiling = Math.max(0, video.duration - 1 / 60);
@@ -448,6 +451,7 @@
     const element = video;
     const canvas = retainedCanvas;
     const source = videoSource;
+    if (exporting) return;
     hasRetainedFrame = false;
     if (!element || !canvas) return;
     return untrack(() => {
@@ -487,6 +491,7 @@
   $effect(() => {
     playing;
     sourceTimeSeconds;
+    if (exporting) return;
     frameRecovery?.update();
   });
 
@@ -539,6 +544,10 @@
   $effect(() => {
     sourceTimeSeconds;
     playing;
+    if (exporting) {
+      video?.pause();
+      return;
+    }
     const jumped =
       previousTargetTime !== null &&
       Math.abs(sourceTimeSeconds - previousTargetTime) > 0.5;

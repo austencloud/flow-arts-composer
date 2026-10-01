@@ -276,7 +276,6 @@
 <div
   class="animation-layer"
   class:light={animationAppearance?.darkMode === false}
-  use:destination={animationAppearance}
   data-studio-animation-destination
   data-studio-animation-mode={showMandala ? "mandala" : "pictograph"}
   data-sequence-position={sequencePosition}
@@ -284,132 +283,136 @@
   data-sequence-progress-visible={progressVisible}
   data-sequence-progress-dark={animationAppearance?.darkMode ?? true}
 >
-  {#if showMandala}
-    <PostStudioBreakdownMandala
-      {sequence}
-      {sequencePosition}
-      leftPropType={animationAppearance?.propType ?? leftPropType}
-      rightPropType={animationAppearance?.propType ?? rightPropType}
-      darkMode={animationAppearance?.darkMode ?? true}
-    />
-  {:else if breakdownMotion && stepData}
-    <div class="pictograph-motion" data-pictograph-motion>
-      {#if animationAppearance}
-        {#key `${animationAppearance.propType}:${animationAppearance.propLook}`}
-          <AnimatorCanvas
-            {leftProp}
-            {rightProp}
-            gridVisible={animationAppearance.gridMode !== "none"}
-            gridMode={sequence.gridMode ?? null}
-            letter={stepData.letter ?? null}
-            {stepData}
-            sequenceData={sequence}
-            currentStep={sequencePosition}
-            isPlaying={playing}
-            leftPropType={animationAppearance.propType ?? leftPropType}
-            rightPropType={animationAppearance.propType ?? rightPropType}
-            propLook={animationAppearance.propLook}
-            word={sequence.word}
-            previewDarkMode={animationAppearance.darkMode ?? true}
-            hideProgressBar
-            visibilityManagerOverride={itemVisibility}
-            effectsConfigState={itemEffects}
-            trailSettings={itemTrailSettings}
-            fillContainer
-            virtualTime={animationTimeSeconds === undefined
-              ? undefined
-              : animationTimeSeconds * 1000}
-          />
-        {/key}
-      {/if}
-      <div class:arrow-overlay={!!animationAppearance}>
-        <PictographContainer
-          pictographData={stepData}
-          motionStartData={startData}
-          {motionProgress}
-          arrowOpacity={arrowLayers.currentOpacity}
-          leftPropTypeOverride={animationAppearance?.propType ?? leftPropType}
-          rightPropTypeOverride={animationAppearance?.propType ?? rightPropType}
-          disableTransitions
-          darkMode={animationAppearance?.darkMode ?? true}
-          transparentBackground={!!animationAppearance}
-          showProps={!animationAppearance}
-          showGrid={!animationAppearance}
-          showTKA={false}
-          showTnD={false}
-          showPropTnD={false}
-          showPlacements={false}
-          showHandColorKey={false}
-          showReversals={false}
-          showNonRadialPoints={false}
-          showHandPoints={false}
-          stepNumberOverride={false}
-        />
-      </div>
-      <div
-        class="outgoing-arrows"
-        style:opacity={arrowLayers.previousOpacity}
-        data-pictograph-capture-required={arrowLayers.previousOpacity > 0}
-        aria-hidden="true"
-      >
-        <PictographContainer
-          pictographData={previousArrowData}
-          leftPropTypeOverride={animationAppearance?.propType ?? leftPropType}
-          rightPropTypeOverride={animationAppearance?.propType ?? rightPropType}
-          disableTransitions
-          darkMode={animationAppearance?.darkMode ?? true}
-          transparentBackground
-          showProps={false}
-          showGrid={false}
-          showTKA={false}
-          showTnD={false}
-          showElemental={false}
-          showPropTnD={false}
-          showPlacements={false}
-          showHandColorKey={false}
-          showReversals={false}
-          showNonRadialPoints={false}
-          showHandPoints={false}
-          stepNumberOverride={false}
-        />
-      </div>
-    </div>
-  {:else if !breakdownMotion && (animationAppearance || !shared?.ownsCanvas(owner))}
-    <!-- Prop crossfades use clip time, which stands still while paused. A new
-         prop starts with its final artwork without advancing the post. -->
-    {#key `${animationAppearance?.propType}:${animationAppearance?.propLook}`}
-      <AnimatorCanvas
-        {leftProp}
-        {rightProp}
-        gridVisible={animationAppearance?.gridMode !== "none"}
-        gridMode={sequence.gridMode ?? null}
-        letter={stepData?.letter ?? null}
-        {stepData}
-        sequenceData={sequence}
-        currentStep={sequencePosition}
-        isPlaying={playing}
+  <div class="animation-stage" use:destination={animationAppearance}>
+    {#if showMandala}
+      <PostStudioBreakdownMandala
+        {sequence}
+        {sequencePosition}
         leftPropType={animationAppearance?.propType ?? leftPropType}
         rightPropType={animationAppearance?.propType ?? rightPropType}
-        propLook={animationAppearance?.propLook}
-        word={animationAppearance ? sequence.word : null}
-        previewDarkMode={animationAppearance?.darkMode ?? true}
-        hideProgressBar
-        hideHeader={!animationAppearance}
-        hideTkaGlyph={labelsPainted && !animationAppearance}
-        hideStepNumbers={labelsPainted && !animationAppearance}
-        hideElementalGlyph={labelsPainted && !animationAppearance}
-        visibilityManagerOverride={animationAppearance
-          ? itemVisibility
-          : undefined}
-        effectsConfigState={animationAppearance ? itemEffects : undefined}
-        trailSettings={animationAppearance ? itemTrailSettings : undefined}
-        fillContainer
-        virtualTime={animationTimeSeconds === undefined
-          ? undefined
-          : animationTimeSeconds * 1000}
+        darkMode={animationAppearance?.darkMode ?? true}
       />
-    {/key}
-  {/if}
+    {:else if breakdownMotion && stepData}
+      <div class="pictograph-motion" data-pictograph-motion>
+        {#if animationAppearance}
+          {#key `${animationAppearance.propType}:${animationAppearance.propLook}`}
+            <AnimatorCanvas
+              {leftProp}
+              {rightProp}
+              gridVisible={animationAppearance.gridMode !== "none"}
+              gridMode={sequence.gridMode ?? null}
+              letter={stepData.letter ?? null}
+              {stepData}
+              sequenceData={sequence}
+              currentStep={sequencePosition}
+              isPlaying={playing}
+              leftPropType={animationAppearance.propType ?? leftPropType}
+              rightPropType={animationAppearance.propType ?? rightPropType}
+              propLook={animationAppearance.propLook}
+              word={sequence.word}
+              previewDarkMode={animationAppearance.darkMode ?? true}
+              hideProgressBar
+              visibilityManagerOverride={itemVisibility}
+              effectsConfigState={itemEffects}
+              trailSettings={itemTrailSettings}
+              fillContainer
+              virtualTime={animationTimeSeconds === undefined
+                ? undefined
+                : animationTimeSeconds * 1000}
+            />
+          {/key}
+        {/if}
+        <div class:arrow-overlay={!!animationAppearance}>
+          <PictographContainer
+            pictographData={stepData}
+            motionStartData={startData}
+            {motionProgress}
+            arrowOpacity={arrowLayers.currentOpacity}
+            leftPropTypeOverride={animationAppearance?.propType ?? leftPropType}
+            rightPropTypeOverride={animationAppearance?.propType ??
+              rightPropType}
+            disableTransitions
+            darkMode={animationAppearance?.darkMode ?? true}
+            transparentBackground={!!animationAppearance}
+            showProps={!animationAppearance}
+            showGrid={!animationAppearance}
+            showTKA={false}
+            showTnD={false}
+            showPropTnD={false}
+            showPlacements={false}
+            showHandColorKey={false}
+            showReversals={false}
+            showNonRadialPoints={false}
+            showHandPoints={false}
+            stepNumberOverride={false}
+          />
+        </div>
+        <div
+          class="outgoing-arrows"
+          style:opacity={arrowLayers.previousOpacity}
+          data-pictograph-capture-required={arrowLayers.previousOpacity > 0}
+          aria-hidden="true"
+        >
+          <PictographContainer
+            pictographData={previousArrowData}
+            leftPropTypeOverride={animationAppearance?.propType ?? leftPropType}
+            rightPropTypeOverride={animationAppearance?.propType ??
+              rightPropType}
+            disableTransitions
+            darkMode={animationAppearance?.darkMode ?? true}
+            transparentBackground
+            showProps={false}
+            showGrid={false}
+            showTKA={false}
+            showTnD={false}
+            showElemental={false}
+            showPropTnD={false}
+            showPlacements={false}
+            showHandColorKey={false}
+            showReversals={false}
+            showNonRadialPoints={false}
+            showHandPoints={false}
+            stepNumberOverride={false}
+          />
+        </div>
+      </div>
+    {:else if !breakdownMotion && (animationAppearance || !shared?.ownsCanvas(owner))}
+      <!-- Prop crossfades use clip time, which stands still while paused. A new
+         prop starts with its final artwork without advancing the post. -->
+      {#key `${animationAppearance?.propType}:${animationAppearance?.propLook}`}
+        <AnimatorCanvas
+          {leftProp}
+          {rightProp}
+          gridVisible={animationAppearance?.gridMode !== "none"}
+          gridMode={sequence.gridMode ?? null}
+          letter={stepData?.letter ?? null}
+          {stepData}
+          sequenceData={sequence}
+          currentStep={sequencePosition}
+          isPlaying={playing}
+          leftPropType={animationAppearance?.propType ?? leftPropType}
+          rightPropType={animationAppearance?.propType ?? rightPropType}
+          propLook={animationAppearance?.propLook}
+          word={animationAppearance ? sequence.word : null}
+          previewDarkMode={animationAppearance?.darkMode ?? true}
+          hideProgressBar
+          hideHeader={!animationAppearance}
+          hideTkaGlyph={labelsPainted && !animationAppearance}
+          hideStepNumbers={labelsPainted && !animationAppearance}
+          hideElementalGlyph={labelsPainted && !animationAppearance}
+          visibilityManagerOverride={animationAppearance
+            ? itemVisibility
+            : undefined}
+          effectsConfigState={animationAppearance ? itemEffects : undefined}
+          trailSettings={animationAppearance ? itemTrailSettings : undefined}
+          fillContainer
+          virtualTime={animationTimeSeconds === undefined
+            ? undefined
+            : animationTimeSeconds * 1000}
+        />
+      {/key}
+    {/if}
+  </div>
   <div class="sequence-progress">
     <SequenceProgressBar
       currentStep={sequencePosition}
@@ -418,6 +421,7 @@
       normalizedProgress={sequenceProgress}
       visible={progressVisible}
       darkMode={animationAppearance?.darkMode ?? true}
+      strip
     />
   </div>
 </div>
@@ -426,18 +430,25 @@
   .animation-layer {
     position: relative;
     container-type: size;
+    display: flex;
+    flex-direction: column;
     width: 100%;
     height: 100%;
     overflow: hidden;
     background: #08080c;
   }
+  .animation-stage {
+    position: relative;
+    flex: 1;
+    min-height: 0;
+    width: 100%;
+  }
+  /* The strip owns a full-width row beneath the animation. The stage above
+     contracts by exactly its height, keeping notation clear at every size. */
   .sequence-progress {
-    position: absolute;
+    flex: none;
+    width: 100%;
     z-index: 2;
-    bottom: max(0px, (100cqh - 100cqw) / 2);
-    left: 50%;
-    transform: translateX(-50%);
-    width: min(100cqw, 100cqh);
     pointer-events: none;
   }
 
