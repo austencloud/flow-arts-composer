@@ -38,6 +38,11 @@ import {
   type AnyRec,
   type PayloadDerivation,
 } from "./lib/shortcode-derivation";
+import {
+  isCurrentShortcodeClass,
+  isWordPayloadKind,
+  validateHandPathRecord,
+} from "./lib/shortcode-payload-kinds";
 import { decodeSequenceFromQR } from "../../src/lib/shared/navigation/services/sequence-encoder";
 import {
   getSequenceMotionProfile,
@@ -61,6 +66,10 @@ const LIMIT = (() => {
 type LabelClass =
   | "LABELS_CURRENT"
   | "SOLO_CURRENT"
+  | "HAND_PATH_CURRENT"
+  /** A payloadKind with no rule in shortcode-payload-kinds.ts. Never
+   *  derived as a word, never written. */
+  | "UNKNOWN_PAYLOAD_KIND"
   | "STALE_MUTABLE_LABELS"
   | "LEGACY_PAYLOAD_VERSION"
   | "PAYLOAD_INCOMPLETE"
@@ -220,6 +229,28 @@ async function main(): Promise<void> {
       );
       continue;
     }
+    if (data.payloadKind === "hand-path") {
+      const detail = await validateHandPathRecord(code, data);
+      results.push(
+        detail
+          ? {
+              code,
+              cls: "DERIVATION_FAILED",
+              storedLabel: String(data.payloadTitle ?? ""),
+              detail,
+            }
+          : { code, cls: "HAND_PATH_CURRENT" }
+      );
+      continue;
+    }
+    if (!isWordPayloadKind(data.payloadKind)) {
+      results.push({
+        code,
+        cls: "UNKNOWN_PAYLOAD_KIND",
+        detail: `payloadKind ${JSON.stringify(data.payloadKind)} has no audit rule (scripts/migrations/lib/shortcode-payload-kinds.ts)`,
+      });
+      continue;
+    }
 
     const storedLabel = String(
       data.payloadWord ?? data.sequenceName ?? data.sequence ?? ""
@@ -372,8 +403,9 @@ async function main(): Promise<void> {
   const PRINT_CAP_PER_CLASS = 40;
   const printed: Record<string, number> = {};
   for (const r of results) {
-    if (r.cls === "LABELS_CURRENT" || r.cls === "SOLO_CURRENT") continue;
+    if (isCurrentShortcodeClass(r.cls)) continue;
     const isProblem =
+      r.cls === "UNKNOWN_PAYLOAD_KIND" ||
       r.cls === "PAYLOAD_INCOMPLETE" ||
       r.cls === "PAYLOAD_MISSING" ||
       r.cls === "PAYLOAD_SOURCES_CONFLICT" ||
