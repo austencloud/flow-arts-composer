@@ -7,7 +7,6 @@ import {
   POST_TIME_EPSILON,
   createIdAllocator,
   itemEnd,
-  trackHasRoom,
   type PostItem,
   type PostItemKeyframes,
   type PostKeyframe,
@@ -62,17 +61,16 @@ export function normalizeProject(project: PostProject): PostProject {
     const sized = sizeItem(item, takes);
     const earliest =
       cursor - Math.min(outgoingOverlap, sized.duration - POST_TIME_EPSILON);
-    const start = sized.pinnedStart ? Math.max(earliest, sized.start) : earliest;
+    const start = sized.pinnedStart
+      ? Math.max(earliest, sized.start)
+      : earliest;
     const laid = withChanges(sized, { start, anchor: null, fill: false });
     laidMain.push(laid);
     cursor = start + laid.duration;
-    outgoingOverlap =
-      item.kind === "video" || item.kind === "image"
-        ? Math.min(
-            item.transitionOut?.duration ?? 0,
-            laid.duration - POST_TIME_EPSILON
-          )
-        : 0;
+    outgoingOverlap = Math.min(
+      item.transitionOut?.duration ?? 0,
+      laid.duration - POST_TIME_EPSILON
+    );
   }
 
   const mainById = new Map(laidMain.map((item) => [item.id, item]));
@@ -313,11 +311,35 @@ function fittedFades(
 }
 
 function fitsAmong(items: readonly PostItem[], item: PostItem): boolean {
-  return trackHasRoom(
-    { id: "", hidden: false, locked: false, items: [...items] },
-    item.start,
-    itemEnd(item),
-    item.id
+  return items.every((previous, index) => {
+    if (
+      previous.id === item.id ||
+      itemEnd(item) <= previous.start + POST_TIME_EPSILON ||
+      item.start >= itemEnd(previous) - POST_TIME_EPSILON
+    )
+      return true;
+    // An intentional transition is the sole overlap allowed on one overlay
+    // lane. Only the immediately preceding visual item can own that overlap.
+    return (
+      index === items.length - 1 &&
+      isTransitionVisual(previous) &&
+      isTransitionVisual(item) &&
+      !!previous.transitionOut &&
+      previous.start <= item.start &&
+      item.start >=
+        itemEnd(previous) - previous.transitionOut.duration - POST_TIME_EPSILON
+    );
+  });
+}
+
+function isTransitionVisual(item: PostItem): boolean {
+  return (
+    item.kind === "video" ||
+    item.kind === "image" ||
+    item.kind === "animation" ||
+    item.kind === "moves" ||
+    item.kind === "carousel" ||
+    item.kind === "card"
   );
 }
 
