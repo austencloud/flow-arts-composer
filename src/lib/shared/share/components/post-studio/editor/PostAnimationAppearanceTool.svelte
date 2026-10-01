@@ -4,13 +4,25 @@
   import PathShapePanel from "$lib/shared/animation-engine/components/settings-panels/PathShapePanel.svelte";
   import EffortPanel from "$lib/shared/animation-engine/components/settings-panels/EffortPanel.svelte";
   import PostScopedEffectsPanel from "./PostScopedEffectsPanel.svelte";
+  import PostAppearanceChooser from "./PostAppearanceChooser.svelte";
+  import { localizedPropName } from "$lib/shared/settings/components/tabs/prop-type/localized-prop-name";
+  import {
+    PROP_PICKER_SECTIONS,
+    getBasePropType,
+    isPropActive,
+    isPremiumCosmeticProp,
+  } from "$lib/shared/pictograph/prop/domain/prop-type-display-registry";
+  import { isPremiumCosmeticVisible } from "$lib/shared/subscription/domain/premium-prop-access";
   import BentoPropGrid from "$lib/shared/settings/components/tabs/prop-type/BentoPropGrid.svelte";
   import IconRailNav from "$lib/shared/animation-panel/pill-nav/IconRailNav.svelte";
   import LightsToggleButton from "$lib/shared/ui/components/LightsToggleButton.svelte";
   import { RAIL_CATEGORY_ACCENTS } from "$lib/shared/animation-panel/pill-nav/rail-category-accents";
   import { EFFORTS } from "$lib/shared/effort/domain/effort-types";
+  import type { TimingSection } from "$lib/shared/media-composition/domain/take-timing";
   import {
     EFFECT_COLORS,
+    EFFECTS,
+    EFFECT_LABELS,
     effectNavIcon,
   } from "$lib/shared/animation-engine/components/effects-panel/effect-registry";
   import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
@@ -39,6 +51,9 @@
     appearanceOverride,
     onAppearanceChange,
     appearanceKey,
+    scopeLabel,
+    timingSection = null,
+    timingSectionLabel,
     locked,
     fill = false,
     defaultPropType = PropType.STAFF,
@@ -51,6 +66,9 @@
       settingKey?: string
     ) => void;
     appearanceKey?: string;
+    scopeLabel?: string;
+    timingSection?: TimingSection | null;
+    timingSectionLabel?: string;
     locked: boolean;
     /** Fit the editor's bounded tool area; mapping accordions stay intrinsic. */
     fill?: boolean;
@@ -61,9 +79,61 @@
   const id = $props.id();
   let activeSection = $state<Section>("display");
   let pickedPropType = $state<PropType | undefined>();
+  const inheritedVisibility = getAnimationVisibilityManager();
+  let inheritedEffort = $state(inheritedVisibility.getEffortPreset());
+  const syncInheritedEffort = () => {
+    inheritedEffort = inheritedVisibility.getEffortPreset();
+  };
+  inheritedVisibility.registerObserver(syncInheritedEffort);
+  onDestroy(() => inheritedVisibility.unregisterObserver(syncInheritedEffort));
+  const appliedEffort = $derived(
+    (item?.animationAppearance ?? appearanceOverride)?.effortPreset ??
+      inheritedEffort
+  );
+  const appliedEffortLabel = $derived(
+    EFFORTS.find((effort) => effort.id === appliedEffort)?.label ??
+      appliedEffort
+  );
+  const appliedScope = $derived(
+    scopeLabel ??
+      (item?.kind === "moves"
+        ? "Selected moves layer"
+        : "Selected animation layer")
+  );
 
   const visibility = new AnimationVisibilityStateManager({ ephemeral: true });
   let darkMode = $state(visibility.isDarkMode());
+  let effortPreset = $state(visibility.getEffortPreset());
+  let pathShape = $state(visibility.getPathShape());
+  let motionAware = $state(visibility.getMotionAwarePaths());
+  const propCount = $derived(
+    PROP_PICKER_SECTIONS.flatMap((section) => section.props).filter(
+      (prop) =>
+        (prop === getBasePropType(prop) || isPremiumCosmeticProp(prop)) &&
+        (isPremiumCosmeticProp(prop)
+          ? isPremiumCosmeticVisible()
+          : isPropActive(prop))
+    ).length
+  );
+  const effortLabel = $derived(
+    EFFORTS.find((effort) => effort.id === effortPreset)?.label ?? "Linear"
+  );
+  const pathLabel = $derived(
+    motionAware
+      ? "Hybrid"
+      : pathShape === "linear"
+        ? "Linear"
+        : pathShape === "concave"
+          ? "Concave"
+          : "Arc"
+  );
+  function updateSummary(): void {
+    effortPreset = visibility.getEffortPreset();
+    pathShape = visibility.getPathShape();
+    motionAware = visibility.getMotionAwarePaths();
+  }
+  visibility.registerObserver(updateSummary);
+  onDestroy(() => visibility.unregisterObserver(updateSummary));
   const sourceEffects = getEffectsConfigContext();
   const initialEffects = sourceEffects?.snapshot() ?? DEFAULT_EFFECTS_CONFIG;
   const initialTrail = animationSettings.snapshot().trail;
@@ -91,12 +161,8 @@
       id: "efforts" as const,
       label: "Efforts",
       accentColor:
-        EFFORTS.find(
-          (effort) =>
-            effort.id ===
-            ((item?.animationAppearance ?? appearanceOverride)?.effortPreset ??
-              getAnimationVisibilityManager().getSettings().effortPreset)
-        )?.color ?? EFFORTS[0]!.color,
+        EFFORTS.find((effort) => effort.id === appliedEffort)?.color ??
+        EFFORTS[0]!.color,
     },
     {
       id: "display" as const,
@@ -127,6 +193,7 @@
 
   $effect(() => {
     const appearance = item?.animationAppearance ?? appearanceOverride;
+    const effortPreset = appearance?.effortPreset ?? inheritedEffort;
     untrack(() => {
       syncing = true;
       try {
@@ -134,6 +201,7 @@
           ...getAnimationVisibilityManager().getSettings(),
           wordHeader: false,
           ...appearance,
+          effortPreset,
           darkMode: appearance?.darkMode ?? true,
         });
         darkMode = visibility.isDarkMode();
@@ -241,35 +309,102 @@
       tabindex="0"
     >
       {#if activeSection === "props"}
-        <BentoPropGrid
-          selectedPropType={pickedPropType ?? defaultPropType}
-          onSelect={(propType) => {
-            pickedPropType = propType;
-            save();
-          }}
-          showColors={false}
-          showPropLook={false}
-          showAppearance={false}
-          scrollMode="host"
-          variant="inline"
-          flat
-          tileDensity="comfortable"
-        />
+        <PostAppearanceChooser
+          title="Props"
+          value={localizedPropName(pickedPropType ?? defaultPropType)}
+          {fill}
+          count={propCount}
+          tileWidth={96}
+          tileHeight={112}
+          insetX={36}
+          chromeHeight={44}
+        >
+          {#snippet children(bounded)}
+            <BentoPropGrid
+              selectedPropType={pickedPropType ?? defaultPropType}
+              onSelect={(propType) => {
+                pickedPropType = propType;
+                save();
+              }}
+              showColors={false}
+              showPropLook={false}
+              showAppearance={false}
+              scrollMode={bounded ? "internal" : "host"}
+              fill={bounded}
+              minTileSize={88}
+              variant="inline"
+              flat
+              tileDensity="comfortable"
+            />
+          {/snippet}
+        </PostAppearanceChooser>
       {:else if activeSection === "effects"}
-        <PostScopedEffectsPanel
-          effects={trailEffects}
-          animationSettingsState={trailSettings}
-          onSettingChange={saveEffects}
-        />
+        <PostAppearanceChooser
+          title="Effects"
+          value={EFFECT_LABELS[trailEffects.activeEffect] ?? "Off"}
+          {fill}
+          count={EFFECTS.length}
+          tileWidth={96}
+          tileHeight={72}
+          chromeHeight={52}
+        >
+          {#snippet children(bounded)}
+            <PostScopedEffectsPanel
+              fill={bounded}
+              effects={trailEffects}
+              animationSettingsState={trailSettings}
+              onSettingChange={saveEffects}
+            />
+          {/snippet}
+        </PostAppearanceChooser>
       {:else if activeSection === "efforts"}
-        <PathShapePanel
-          visibilityManagerOverride={visibility}
-          showHelp={false}
-        />
-        <div class="effort-section">
-          <h3>Movement style</h3>
-          <EffortPanel visibilityManagerOverride={visibility} columns={2} />
+        <div class="movement-status" aria-live="polite">
+          <span
+            >{appliedScope}{timingSectionLabel
+              ? ` · ${timingSectionLabel}`
+              : ""}</span
+          >
+          <strong>{appliedEffortLabel}</strong>
+          {#if timingSection && (timingSection.landingHoldRatio ?? 0) > 0}
+            <span
+              >{Math.round((timingSection.landingHoldRatio ?? 0) * 100)}% hold
+              after landing</span
+            >
+          {/if}
+          {#if timingSection && timingSection.overrides.length > 0}
+            <span
+              >{timingSection.overrides.length}
+              {timingSection.overrides.length === 1 ? "landing" : "landings"} moved
+              by hand</span
+            >
+          {/if}
         </div>
+        <PostAppearanceChooser
+          title="Efforts"
+          value={`${effortLabel} · ${pathLabel} paths`}
+          {fill}
+          count={EFFORTS.length}
+          tileWidth={104}
+          tileHeight={88}
+          chromeHeight={140}
+          columnChoices={[1, 2, 4]}
+        >
+          {#snippet children(bounded)}
+            <div class="efforts-controls" class:bounded>
+              <PathShapePanel
+                visibilityManagerOverride={visibility}
+                showHelp={false}
+              />
+              <div class="effort-section">
+                <h3>Movement style</h3>
+                <EffortPanel
+                  visibilityManagerOverride={visibility}
+                  fit={bounded}
+                />
+              </div>
+            </div>
+          {/snippet}
+        </PostAppearanceChooser>
       {:else}
         <div class="canvas-theme">
           <span>Canvas theme</span>
@@ -320,11 +455,11 @@
     background: var(--theme-panel-bg, #08080c);
   }
   .section-content {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr);
-    gap: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
     min-width: 0;
-    padding-bottom: 1rem;
+    padding-bottom: 0;
   }
   .section-content.display {
     display: flex;
@@ -332,7 +467,7 @@
     gap: 0.5rem;
     padding-bottom: 0;
   }
-  .fill .section-content.display {
+  .fill .section-content {
     flex: 1;
     min-height: 0;
   }
@@ -341,13 +476,40 @@
     outline-offset: -2px;
   }
   .effort-section {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr);
+    display: flex;
+    flex-direction: column;
     gap: 8px;
+  }
+  .efforts-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    min-width: 0;
+  }
+  .efforts-controls.bounded {
+    flex: 1;
+    min-height: 0;
+  }
+  .bounded .effort-section {
+    flex: 1;
+    min-height: 0;
+  }
+  .movement-status {
+    flex: none;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.25rem 0.6rem;
+    color: var(--theme-text-dim, #aaa);
+    font-size: var(--font-size-sm, 0.875rem);
+  }
+  .movement-status strong {
+    color: var(--theme-text, #fff);
+    font-weight: 600;
   }
   h3 {
     margin: 0;
     color: var(--theme-text, #fff);
-    font-size: 0.82rem;
+    font-size: var(--font-size-min, 14px);
   }
 </style>

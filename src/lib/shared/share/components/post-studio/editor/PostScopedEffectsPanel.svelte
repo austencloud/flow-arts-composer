@@ -8,10 +8,12 @@
     effects,
     animationSettingsState,
     onSettingChange,
+    fill = false,
   }: {
     effects: EffectsConfigState;
     animationSettingsState: AnimationSettingsState;
     onSettingChange: (setting: string) => void;
+    fill?: boolean;
   } = $props();
 
   setEffectsConfigContext(effects);
@@ -28,8 +30,9 @@
     showTransport={false}
     showExportControls={false}
     showHeading={false}
-    layout={panelWidth < 640 ? "strip" : "sidebar"}
-    wideWorkspace={panelWidth >= 860}
+    layout={panelWidth >= 1000 ? "sidebar" : "strip"}
+    wideWorkspace={panelWidth >= 1000}
+    {fill}
     {animationSettingsState}
     onSettingChange={(setting) => onSettingChange(setting)}
   />

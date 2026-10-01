@@ -83,6 +83,7 @@
     lead,
     scrollMode = "internal",
     fill = false,
+    minTileSize = 52,
     includeBareHands = false,
     chirality,
     allowedProps,
@@ -144,6 +145,8 @@
      * measurement would feed back into the content it measures.
      */
     fill?: boolean;
+    /** Host readability floor for the measured flat grid. */
+    minTileSize?: number;
     /** Adds the scene-only no-prop choice using the same canonical card. */
     includeBareHands?: boolean;
     /**
@@ -498,9 +501,6 @@
   });
 
   const FLAT_GAP = 8;
-  /* Below this the dense grid and its scrollbar read better than tiles
-     squeezed to fit a short host. */
-  const FLAT_MIN_TILE = 52;
   /**
    * Tile grid for the flat picker in a bounded host: the column count that
    * makes the largest tile once the rows must share the height, so the grid
@@ -536,7 +536,7 @@
         best = { cols, colWidth, rowHeight, size };
       }
     }
-    if (best === null || best.size < FLAT_MIN_TILE) return null;
+    if (best === null || best.size < minTileSize) return null;
     const orphans = n % best.cols;
     return {
       cols: best.cols,
@@ -1711,7 +1711,10 @@
   /* A fill grid already sizes its tiles to the host; comfortable only sets
      the unbounded grid's track floor and tile shape. */
   .flat-grid.comfortable:not(.fill) {
-    grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr));
+    grid-template-columns: repeat(
+      auto-fit,
+      minmax(var(--prop-comfortable-min, 8rem), 1fr)
+    );
     gap: 0.6rem;
   }
   .flat-grid.comfortable:not(.fill) :global(.prop-button) {
