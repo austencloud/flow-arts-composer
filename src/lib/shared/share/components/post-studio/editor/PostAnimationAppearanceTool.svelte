@@ -471,6 +471,7 @@
                     <div
                       {...props}
                       class="timing-popover themed-scrollbar"
+                      role="dialog"
                       aria-label="Movement timing"
                       transition:flyFade={{ y: -4, duration: DURATION.fast }}
                     >
