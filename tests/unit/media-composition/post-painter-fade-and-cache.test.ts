@@ -60,6 +60,7 @@ vi.mock("$lib/shared/foundation/get-svg-image-converter", () => ({
 }));
 
 import { sequenceFrameAt } from "$lib/shared/media-composition/domain/sequence-frame";
+import { getSequenceProgressStripHeight } from "$lib/shared/animation-engine/services/sequence-progress-renderer";
 import { createSequenceStripPainter } from "$lib/shared/media-composition/services/sequence-strip-painter";
 import {
   paintSizeBucket,
@@ -202,7 +203,8 @@ describe("legacy Moves progress", () => {
           sequenceFrame: sequenceFrameAt(arrival!, [2, 3], { endArrival: 4 }),
         }
       );
-      const barMarks = fillRect.mock.calls.filter((call) => call[3] === 7);
+      const barHeight = getSequenceProgressStripHeight(500);
+      const barMarks = fillRect.mock.calls.filter((call) => call[3] === barHeight);
       // First mark is the empty track. A filled bar exists only past opening.
       expect(barMarks).toHaveLength(expected! > 0 ? 2 : 1);
       if (expected! > 0) expect(barMarks[1]![2]).toBeCloseTo(500 * expected!);
@@ -219,7 +221,7 @@ describe("legacy Moves progress", () => {
     await painter.prepare({ width: 500, height: 500 });
     const { context } = recordingContext();
     painter.paint(context, { x: 0, y: 0, width: 500, height: 500 }, frame);
-    expect(context.fillRect).toHaveBeenCalledTimes(4);
+    expect(context.fillRect).toHaveBeenCalledTimes(3);
     visible = false;
     vi.mocked(context.fillRect).mockClear();
     painter.paint(context, { x: 0, y: 0, width: 500, height: 500 }, frame);

@@ -31,24 +31,27 @@ function variation(
 }
 
 describe("assessStartFeasibility", () => {
-  it("reproduces the reported dead start against production diamond rows", () => {
+  it("finds the alternate diagonal against production diamond rows", () => {
     const input = {
       variations: loadDiamondVariations(),
       handRelationship: "QO" as const,
       propRelationship: "SO" as const,
       loopAxis: "northeast-southwest" as const,
     };
-    const restricted = assessStartFeasibility({
-      ...input,
-      blockedStartPlacements: [
-        "alpha3", "alpha5", "alpha7", "beta1", "beta3", "beta7",
-        "gamma1", "gamma3", "gamma5", "gamma7", "gamma9",
-        "gamma13", "gamma15",
-      ],
-    });
+    const blockedStartPlacements = [
+      "alpha3", "alpha5", "alpha7", "beta1", "beta3", "beta7",
+      "gamma1", "gamma3", "gamma5", "gamma7", "gamma9",
+      "gamma13", "gamma15",
+    ];
+    const restricted = assessStartFeasibility({ ...input, blockedStartPlacements });
     const unrestricted = assessStartFeasibility(input);
 
-    expect(restricted.feasible).toBe(false);
+    // The alternate diagonal remains viable when the preferred one is blocked.
+    expect(restricted.feasible).toBe(true);
+    expect(restricted.candidateVariationCount).toBeGreaterThan(0);
+    for (const placement of restricted.candidateStartPlacements) {
+      expect(blockedStartPlacements).not.toContain(placement);
+    }
     expect(unrestricted.feasible).toBe(true);
   });
 
