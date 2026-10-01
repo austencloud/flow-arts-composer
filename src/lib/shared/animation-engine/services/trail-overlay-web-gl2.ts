@@ -1024,6 +1024,10 @@ export class TrailOverlayWebGL2 implements ITrailOverlayCanvas {
     this.freshAccumulators();
   }
 
+  refreshStyle(): void {
+    this.freshAccumulators();
+  }
+
   private resetRingsAndTails(): void {
     this.leftLeftRing = [];
     this.leftRightRing = [];

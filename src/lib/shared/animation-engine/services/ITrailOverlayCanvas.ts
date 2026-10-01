@@ -84,6 +84,8 @@ export interface ITrailOverlayCanvas {
   renderFrame(params: TrailOverlayRenderParams): void;
   clear(): void;
   clearBuffers(): void;
+  /** Discard painted pixels while retaining captured tip paths for a style edit. */
+  refreshStyle(): void;
   setVisible(visible: boolean): void;
   setCanvasZIndex(z: number): void;
   dispose(): void;
