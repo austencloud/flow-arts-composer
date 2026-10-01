@@ -147,6 +147,7 @@
     showStripGuide?: boolean;
     /** Selecting and dragging boxes; off while a render or a share runs. */
     interactive?: boolean;
+    exporting?: boolean;
     /**
      * The crop screen's session. While it holds a clip the canvas is the crop
      * stage: that clip's window fitted large in the middle, the rest of its
@@ -171,6 +172,7 @@
     qrSequence,
     showStripGuide = false,
     interactive = true,
+    exporting = false,
     crop = null,
     cropSourceView = true,
     onSourceSize,
@@ -2340,6 +2342,7 @@
                   opacity={cropRegion ? 1 : layer.opacity}
                   sourceTimeSeconds={layer.sourceTimeSeconds}
                   playing={editor.isPlaying && entry.live}
+                  {exporting}
                   {sequence}
                   cardRenderOptions={cardOptionsForItem(
                     cardRenderOptions,

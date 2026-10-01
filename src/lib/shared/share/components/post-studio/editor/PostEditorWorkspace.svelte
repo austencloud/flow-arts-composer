@@ -25,6 +25,7 @@
     stripModeFromRole,
     stripRole,
     takeIdFromRole,
+    takeRole,
   } from "$lib/shared/media-composition/domain/post-plan-compiler";
   import {
     itemIdFromMovesAnimationRole,
@@ -2032,9 +2033,13 @@
     try {
       await loadPostProjectFonts(editor.project);
       const takeUrls = new Map<string, string>();
+      const videoSources = new Map<string, string>();
       for (const take of editor.takes) {
         const url = editor.mediaUrl(take.id);
-        if (url) takeUrls.set(take.id, url);
+        if (url) {
+          takeUrls.set(take.id, url);
+          videoSources.set(takeRole(take.id), url);
+        }
       }
       const audio = await buildMixedAudioTrack({
         segments: planProjectAudio(compiled, editor.project.audio),
@@ -2053,6 +2058,7 @@
         getLayers: () => editor.frameLayers,
         seek: editor.seek,
         painters: exportPainters(),
+        videoSources,
         originalAudioUrl: audioUrl,
         originalAudioStartSeconds: 0,
         onProgress: (progress) => (exportProgress = progress),
@@ -2449,6 +2455,7 @@
                 handLabeling={labeledCard.labeling}
                 showStripGuide={editor.selectedItem?.kind === "video"}
                 interactive={!exporting && !sharing && !previewTarget}
+                {exporting}
                 crop={cropMode ? crop : null}
                 {cropSourceView}
                 onSourceSize={noteSourceSize}

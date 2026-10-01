@@ -34,6 +34,7 @@ import {
   getSequenceProgressStripHeight,
   paintSequenceProgressStrip,
 } from "$lib/shared/animation-engine/services/sequence-progress-renderer";
+import type { PostStudioExportVideoFrames } from "$lib/shared/media-composition/services/post-studio-export-video-frames";
 
 export interface FrameLayerGeometry {
   region: PixelRect;
@@ -54,6 +55,7 @@ export interface RenderPostStudioFrameInput {
   cardFrameCache: Map<string, HTMLCanvasElement>;
   /** Painted sources by role. A painted layer never reads the DOM. */
   painters?: ReadonlyMap<string, PostStudioLayerPainter>;
+  videoFrames?: PostStudioExportVideoFrames;
   /** The post time these layers were evaluated at. */
   timeSeconds?: number;
 }
@@ -339,7 +341,14 @@ async function drawBackdrop(
   input: RenderPostStudioFrameInput
 ): Promise<void> {
   const layer = backdropLayer(input.preset, input.layers);
-  const media = layer ? mediaForClip(input.root, layer.clipId) : null;
+  const media = layer
+    ? input.videoFrames?.has(layer.sourceRole)
+      ? await input.videoFrames.frameFor(
+          layer.sourceRole,
+          layer.sourceTimeSeconds
+        )
+      : mediaForClip(input.root, layer.clipId)
+    : null;
   if (!layer || !media) return;
   if (media instanceof HTMLVideoElement) {
     await syncVideo(media, layer.sourceTimeSeconds);
@@ -612,7 +621,12 @@ async function drawRegionLayer(
     (clip) => clip.kind === "visual" && clip.id === layer.clipId
   );
   if (layer.sourceGeometry) {
-    const media = mediaIn(layerElement);
+    const media = input.videoFrames?.has(layer.sourceRole)
+      ? await input.videoFrames.frameFor(
+          layer.sourceRole,
+          layer.sourceTimeSeconds
+        )
+      : mediaIn(layerElement);
     if (!media) return;
     if (media instanceof HTMLVideoElement)
       await syncVideo(media, layer.sourceTimeSeconds);
@@ -749,7 +763,12 @@ async function drawRegionLayer(
     applyLayerTransform(context, geometry);
     drawSource(context, card, geometry);
   } else {
-    const media = mediaIn(layerElement);
+    const media = input.videoFrames?.has(layer.sourceRole)
+      ? await input.videoFrames.frameFor(
+          layer.sourceRole,
+          layer.sourceTimeSeconds
+        )
+      : mediaIn(layerElement);
     if (!media) {
       context.restore();
       return;
