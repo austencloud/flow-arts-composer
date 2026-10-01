@@ -1748,16 +1748,17 @@
     min-height: 44px;
     aspect-ratio: auto;
     padding: 6px;
-    gap: 4px;
-    justify-content: flex-start;
+    gap: 2px;
+    justify-content: center;
   }
   .flat-grid.inspector :global(.prop-image-container) {
     flex: none;
-    height: 40px;
+    height: 56px;
   }
-  .flat-grid.inspector :global(.prop-composition-preview) {
-    width: 40px;
-    height: 40px;
+  .flat-grid.inspector
+    :global(.prop-image-container .prop-composition-preview) {
+    width: 56px;
+    height: 56px;
     max-height: 100%;
   }
   .flat-grid.inspector :global(.prop-label) {
