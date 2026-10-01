@@ -868,13 +868,14 @@
   <!-- Mobile drill-down: picker grid (all 16 + Off, no h-scroll) ⇄ per-effect
        detail screen ⇄ deep tuning. Tap a tile = apply live + stay; tap the
        active tile = drill into its detail. -->
-  <div class="mep strip-layout">
+  <div class="mep strip-layout" class:fill>
     <!-- Same reason as the sidebar, and it matters more here: the tray sits at
          the bottom of a phone screen, so a step in its height shoves the canvas
          above it. -->
     <Crossfade
       key={stripView}
-      animateHeight
+      {fill}
+      animateHeight={!fill}
       mode="swap"
       duration={DURATION.fast}
     >
@@ -1002,6 +1003,7 @@
             onSelect={handleTileTap}
             onPrewarm={handleEffectPrewarm}
             layout="tray"
+            fit={fill}
             activeAction="tune"
             {availableEffects}
           />
@@ -1292,6 +1294,27 @@
   .mep.strip-layout,
   .drill-view {
     gap: 6px;
+  }
+
+  .mep.strip-layout.fill {
+    flex: 1;
+    min-height: 0;
+  }
+  .strip-layout.fill .drill-view {
+    height: 100%;
+    min-height: 0;
+    overflow-y: auto;
+    gap: 8px;
+  }
+  .strip-layout.fill .picker-bar {
+    flex: none;
+  }
+  .strip-layout.fill .off-chip {
+    min-height: 44px;
+    font-size: var(--font-size-min, 14px);
+  }
+  .strip-layout.fill .detail-name {
+    font-size: var(--font-size-min, 14px);
   }
 
   .drill-view {

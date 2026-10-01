@@ -8,10 +8,12 @@
     effects,
     animationSettingsState,
     onSettingChange,
+    fill = false,
   }: {
     effects: EffectsConfigState;
     animationSettingsState: AnimationSettingsState;
     onSettingChange: (setting: string) => void;
+    fill?: boolean;
   } = $props();
 
   setEffectsConfigContext(effects);
@@ -26,7 +28,8 @@
   showTransport={false}
   showExportControls={false}
   showHeading={false}
-  layout="sidebar"
+  layout="strip"
+  {fill}
   {animationSettingsState}
   onSettingChange={(setting) => onSettingChange(setting)}
 />
