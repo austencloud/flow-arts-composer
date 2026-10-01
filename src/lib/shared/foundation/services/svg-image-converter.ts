@@ -1,3 +1,21 @@
+/**
+ * Gives the root `<svg>` the requested size so the HTMLImageElement is
+ * created at it. Only the root tag changes: an inner element's width and
+ * height are its geometry. Stripping them everywhere erased the `<rect>` that
+ * draws the glyph composite's dash, so every dash letter (Ψ-, Φ-, Λ-, W-...)
+ * rendered without its dash in painted labels and video exports.
+ */
+export function withRootSvgSize(
+  svgString: string,
+  width: number,
+  height: number
+): string {
+  return svgString.replace(/<svg\b[^>]*>/, (tag) =>
+    tag
+      .replace(/\s+(?:width|height)="[^"]*"/g, "")
+      .replace(/^<svg/, `<svg width="${width}" height="${height}"`)
+  );
+}
 
 export class SvgImageConverter {
   private activeBlobUrls = new Set<string>();
@@ -29,17 +47,7 @@ export class SvgImageConverter {
       };
 
       try {
-        let modifiedSvg = svgString;
-
-        if (modifiedSvg.includes("<svg")) {
-          modifiedSvg = modifiedSvg.replace(/\s+width="[^"]*"/g, "");
-          modifiedSvg = modifiedSvg.replace(/\s+height="[^"]*"/g, "");
-
-          modifiedSvg = modifiedSvg.replace(
-            /<svg/,
-            `<svg width="${width}" height="${height}"`
-          );
-        }
+        const modifiedSvg = withRootSvgSize(svgString, width, height);
 
         const blob = new Blob([modifiedSvg], { type: "image/svg+xml" });
         blobUrl = URL.createObjectURL(blob);

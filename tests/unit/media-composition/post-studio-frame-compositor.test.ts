@@ -438,8 +438,14 @@ describe("scoped Moves export", () => {
       );
       expect(captureMotion).toHaveBeenCalledTimes(mode === "arrows" ? 1 : 0);
       expect(fillRect).toHaveBeenCalledTimes(
-        visible ? (arrival > 0 ? 5 : 4) : 2
+        visible ? (arrival > 0 ? 4 : 3) : 2
       );
+      if (visible) {
+        const track = fillRect.mock.calls.at(arrival > 0 ? -2 : -1)!;
+        const paintedStage = drawImage.mock.calls[0]!;
+        expect(paintedStage[2] + paintedStage[4]).toBeCloseTo(track[1]);
+        expect(paintedStage[3]).toBeCloseTo(track[2]);
+      }
       if (visible && arrival > 0) {
         const track = fillRect.mock.calls.at(-2)!;
         const fill = fillRect.mock.calls.at(-1)!;

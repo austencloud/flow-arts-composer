@@ -5,7 +5,10 @@ Linear progress indicator for animation sequences.
 Shows current position within the sequence and resets on loop.
 
 Two modes (chosen by whether `onSeek` is provided):
-- Display-only (default): a thin progress LINE. role="progressbar".
+- Display-only (default): a thin progress LINE. role="progressbar". With
+  `strip`, the line drops its panel band and inset and becomes a flush strip
+  across the full width of the surface it sits on, as thick as the shared
+  strip renderer paints it in exports.
 - Seekable: pass `onSeek` and it becomes a thin scrubber — click/drag to seek,
   keyboard arrows, a knob on hover/scrub. role="slider". The visible track stays
   3px; the hit area grows so it's easy to grab. Pointer behaviour mirrors
@@ -27,6 +30,9 @@ Design:
   import TransportControls from "../controls/TransportControls.svelte";
   import { tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
   import { sequenceFrameAt } from "$lib/shared/media-composition/domain/sequence-frame";
+  import { sequenceProgressStripHeightCss } from "$lib/shared/animation-engine/services/sequence-progress-renderer";
+
+  const stripHeight = sequenceProgressStripHeightCss();
 
   let {
     currentStep = 0,
@@ -41,6 +47,7 @@ Design:
     showPlaybackControl = false,
     isPlaying = false,
     onPlaybackToggle = null,
+    strip = false,
   }: {
     /** Current beat/step number (can exceed totalSteps for looping sequences) */
     currentStep?: number;
@@ -64,6 +71,9 @@ Design:
     showPlaybackControl?: boolean;
     isPlaying?: boolean;
     onPlaybackToggle?: (() => void) | null;
+    /** Display-only: a flush full-width strip along the surface's bottom
+     *  edge, sized from the nearest size container's shorter side. */
+    strip?: boolean;
   } = $props();
 
   const interactive = $derived(!!onSeek);
@@ -232,6 +242,8 @@ Design:
       <div
         class="progress-bar-container"
         class:dark-mode={darkMode}
+        class:strip
+        style:height={strip ? stripHeight : undefined}
         transition:fade={fadeParams}
         role="progressbar"
         aria-label={ariaLabel}
@@ -310,6 +322,30 @@ Design:
 
   .dark-mode .progress-track {
     background: var(--theme-stroke, rgba(255, 255, 255, 0.08));
+  }
+
+  /* Strip: the line is the whole element, flush with the surface's bottom
+     edge and as wide as it. No band behind it, no inset, square ends, and no
+     glow reaching up over the notation. */
+  .progress-bar-container.strip,
+  .progress-bar-container.strip.dark-mode,
+  :global(:root.dark) .progress-bar-container.strip:not(.dark-mode) {
+    padding: 0;
+    background: transparent;
+  }
+
+  .strip .progress-track {
+    height: 100%;
+    border-radius: 0;
+  }
+
+  .strip .progress-fill,
+  .strip.dark-mode .progress-fill,
+  :global(:root.dark)
+    .progress-bar-container.strip:not(.dark-mode)
+    .progress-fill {
+    border-radius: 0;
+    box-shadow: none;
   }
 
   :global(:root.dark) .progress-bar-container:not(.dark-mode) .progress-track {
