@@ -103,6 +103,7 @@
         <ul>
           {#each state.projects as project (project.sequenceId)}
             {@const projectWord = project.word || project.sequenceId}
+            {@const showProjectWord = projectWord !== project.title}
             <li>
               <button
                 type="button"
@@ -118,14 +119,20 @@
                   {:else}
                     <strong>{project.title}</strong>
                   {/if}
-                  <div class="project-details">
-                    {#if isTkaWord(projectWord)}
-                      <TKAWordGlyph word={projectWord} height={14} darkMode />
-                    {:else}
-                      <span>{projectWord}</span>
-                    {/if}
-                    {#if project.hasDraft}<span>· Saved draft</span>{/if}
-                  </div>
+                  {#if showProjectWord || project.hasDraft}
+                    <div class="project-details">
+                      {#if showProjectWord}
+                        {#if isTkaWord(projectWord)}
+                          <TKAWordGlyph word={projectWord} height={14} darkMode />
+                        {:else}
+                          <span>{projectWord}</span>
+                        {/if}
+                      {/if}
+                      {#if project.hasDraft}
+                        <span>{showProjectWord ? "· " : ""}Saved draft</span>
+                      {/if}
+                    </div>
+                  {/if}
                 </div>
                 <span class="project-date"
                   >{new Date(project.updatedAt).toLocaleDateString()}</span
