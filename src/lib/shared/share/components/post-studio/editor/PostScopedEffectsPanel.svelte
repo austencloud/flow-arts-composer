@@ -20,7 +20,7 @@
   let panelWidth = $state(0);
 </script>
 
-<div class="post-effects" bind:clientWidth={panelWidth}>
+<div class="post-effects" class:fill bind:clientWidth={panelWidth}>
   <EffectsPanel
     bpm={60}
     onBpmChange={() => {}}
@@ -40,7 +40,14 @@
 
 <style>
   .post-effects {
+    display: flex;
+    flex-direction: column;
     width: 100%;
     min-width: 0;
+    min-height: 0;
+  }
+
+  .post-effects.fill {
+    flex: 1 1 0;
   }
 </style>
