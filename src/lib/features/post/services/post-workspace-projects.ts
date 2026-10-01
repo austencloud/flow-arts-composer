@@ -1,4 +1,5 @@
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import { simplifyRepeatedWord } from "$lib/shared/foundation/utils/word-simplifier";
 import { PostProjectSchema } from "$lib/shared/media-composition/domain/post-project";
 import { PostPlanSchema } from "$lib/shared/media-composition/domain/post-plan";
 import {
@@ -299,7 +300,13 @@ export async function listPostProjects(): Promise<{
     choice.word = sequence.word || "";
   }
   return {
-    projects: [...choices.values()].sort((a, b) => b.updatedAt - a.updatedAt),
+    projects: [...choices.values()]
+      .map((choice) => ({
+        ...choice,
+        title: simplifyRepeatedWord(choice.title),
+        word: simplifyRepeatedWord(choice.word),
+      }))
+      .sort((a, b) => b.updatedAt - a.updatedAt),
     error,
   };
 }

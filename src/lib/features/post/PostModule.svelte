@@ -2,6 +2,7 @@
   import { onMount } from "svelte";
   import { goto } from "$app/navigation";
   import { page } from "$app/state";
+  import { simplifyRepeatedWord } from "$lib/shared/foundation/utils/word-simplifier";
   import { getExportOptionsState } from "$lib/shared/animation-panel/state/export-options-state.svelte";
   import { createCardPreviewState } from "$lib/shared/share/state/card-preview-state.svelte";
   import PostStudio from "$lib/shared/share/components/post-studio/PostStudio.svelte";
@@ -120,9 +121,12 @@
             >Projects</span
           ></button
         ><span class="current-name"
-          >{state.sequence?.displayName ||
-            state.sequence?.name ||
-            state.selectedId}</span
+          >{simplifyRepeatedWord(
+            state.sequence?.displayName ||
+              state.sequence?.name ||
+              state.selectedId ||
+              ""
+          )}</span
         >
       </div>
       {#if state.loadingProject}<div class="editor-status" role="status">
