@@ -166,7 +166,11 @@
     <div class="main-area">
       <div class="grid-slot">
         <div class="stage-slot">
-          <InteractiveGrid {builderState} onStepCapExceeded={checkStepCap} />
+          <InteractiveGrid
+            {builderState}
+            onStepCapExceeded={checkStepCap}
+            fillPanel
+          />
           <BuilderStageActions {builderState} />
         </div>
         <BuilderControls {builderState} />

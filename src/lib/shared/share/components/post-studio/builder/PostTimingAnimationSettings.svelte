@@ -56,6 +56,13 @@
   {defaultPropType}
   appearanceOverride={appearance}
   appearanceKey={session.takeId ?? "mapping"}
+  scopeLabel={session.take
+    ? `Timing preview · ${session.take.label}`
+    : "Timing preview"}
+  timingSection={session.section}
+  timingSectionLabel={session.timing && session.timing.sections.length > 1
+    ? `Part ${session.sectionIndex + 1} of ${session.timing.sections.length}`
+    : undefined}
   onAppearanceChange={saveAppearance}
 />
 
