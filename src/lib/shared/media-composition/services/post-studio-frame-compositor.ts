@@ -35,6 +35,7 @@ import {
   paintSequenceProgressStrip,
 } from "$lib/shared/animation-engine/services/sequence-progress-renderer";
 import type { PostStudioExportVideoFrames } from "$lib/shared/media-composition/services/post-studio-export-video-frames";
+import type { PostStudioPictographCapture } from "$lib/shared/media-composition/services/post-studio-pictograph-capture";
 
 export interface FrameLayerGeometry {
   region: PixelRect;
@@ -53,6 +54,7 @@ export interface RenderPostStudioFrameInput {
   preset: MediaCompositionPreset;
   layers: readonly EvaluatedFrameLayer[];
   cardFrameCache: Map<string, HTMLCanvasElement>;
+  pictographCapture?: PostStudioPictographCapture;
   /** Painted sources by role. A painted layer never reads the DOM. */
   painters?: ReadonlyMap<string, PostStudioLayerPainter>;
   videoFrames?: PostStudioExportVideoFrames;
@@ -709,12 +711,21 @@ async function drawRegionLayer(
     );
     if (expectsPictograph) {
       const { element, bounds } = await waitForPictographMotion(layerElement);
-      const { domToCanvas } = await import("modern-screenshot");
-      const image = await domToCanvas(element, {
-        width: bounds.width,
-        height: bounds.height,
-        scale: Math.max(1, regionPixels.width / bounds.width),
-      });
+      const scale = Math.max(1, regionPixels.width / bounds.width);
+      const image = input.pictographCapture
+        ? await input.pictographCapture.capture(
+            element,
+            bounds.width,
+            bounds.height,
+            scale
+          )
+        : await (
+            await import("modern-screenshot")
+          ).domToCanvas(element, {
+            width: bounds.width,
+            height: bounds.height,
+            scale,
+          });
       drawSource(context, image, stageGeometry);
     }
     // The captured motion subtree already includes the animation/effect
