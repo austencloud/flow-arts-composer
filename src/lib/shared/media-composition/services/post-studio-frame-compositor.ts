@@ -30,10 +30,6 @@ import {
 } from "$lib/shared/media-composition/services/region-edge-painter";
 import { traceRoundedRect } from "$lib/shared/render/utils/trace-rounded-rect";
 import { videoColorFilter } from "$lib/shared/media-composition/domain/post-video-color-grade";
-import {
-  getSequenceProgressStripHeight,
-  paintSequenceProgressStrip,
-} from "$lib/shared/animation-engine/services/sequence-progress-renderer";
 import type { PostStudioExportVideoFrames } from "$lib/shared/media-composition/services/post-studio-export-video-frames";
 import type { PostStudioPictographCapture } from "$lib/shared/media-composition/services/post-studio-pictograph-capture";
 
@@ -680,77 +676,34 @@ async function drawRegionLayer(
     const animation = layerElement.querySelector<HTMLElement>(
       "[data-sequence-progress-visible]"
     );
-    const showProgress =
-      animation?.dataset.sequenceProgressVisible === "true" &&
-      !!layer.sequenceFrame;
-    const stripHeight = showProgress
-      ? getSequenceProgressStripHeight(
-          Math.min(geometry.drawRect.width, geometry.drawRect.height)
+    if (!animation) {
+      throw new Error("Sequence animation export surface is missing");
+    }
+    if (animation.querySelector("[data-pictograph-motion]")) {
+      await waitForPictographMotion(layerElement);
+    }
+    const bounds = animation.getBoundingClientRect();
+    if (bounds.width <= 0 || bounds.height <= 0) {
+      throw new Error("Sequence animation export surface has no size");
+    }
+    // The preview owns the label, path, header, effects, and progress layout.
+    // Capturing its visible surface keeps every enabled layer in its real order.
+    const scale = Math.max(1, regionPixels.width / bounds.width);
+    const image = input.pictographCapture
+      ? await input.pictographCapture.capture(
+          animation,
+          bounds.width,
+          bounds.height,
+          scale
         )
-      : 0;
-    const stageGeometry = {
-      ...geometry,
-      drawRect: {
-        ...geometry.drawRect,
-        height: geometry.drawRect.height - stripHeight,
-      },
-    };
-    const pictographMotion = layerElement.querySelector(
-      "[data-pictograph-motion]"
-    );
-    const animationMode = layerElement.querySelector<HTMLElement>(
-      "[data-studio-animation-mode]"
-    )?.dataset.studioAnimationMode;
-    const expectsPictograph = Boolean(
-      pictographMotion ||
-      (!animationMode &&
-        layer.sequencePassIndex !== undefined &&
-        layer.sequencePassIndex % 2 === 0 &&
-        (layerElement.querySelector("[data-studio-breakdown-mandala]") ||
-          !layerElement.querySelector("canvas")))
-    );
-    if (expectsPictograph) {
-      const { element, bounds } = await waitForPictographMotion(layerElement);
-      const scale = Math.max(1, regionPixels.width / bounds.width);
-      const image = input.pictographCapture
-        ? await input.pictographCapture.capture(
-            element,
-            bounds.width,
-            bounds.height,
-            scale
-          )
-        : await (
-            await import("modern-screenshot")
-          ).domToCanvas(element, {
-            width: bounds.width,
-            height: bounds.height,
-            scale,
-          });
-      drawSource(context, image, stageGeometry);
-    }
-    // The captured motion subtree already includes the animation/effect
-    // canvases. Drawing them again would cover its transparent SVG arrows.
-    const canvases = (
-      expectsPictograph ? [] : [...layerElement.querySelectorAll("canvas")]
-    ).sort(
-      (left, right) =>
-        Number.parseFloat(getComputedStyle(left).zIndex || "0") -
-        Number.parseFloat(getComputedStyle(right).zIndex || "0")
-    );
-    for (const canvas of canvases) {
-      drawSource(context, canvas, stageGeometry);
-    }
-    // Canvas capture omits the shared DOM progress strip. Paint its mapped
-    // sequence pass along the bottom edge of the drawn canvases so seeking
-    // and ending holds match the preview.
-    if (showProgress && layer.sequenceFrame) {
-      paintSequenceProgressStrip(
-        context,
-        geometry.drawRect,
-        layer.sequenceFrame.passBeatProgress,
-        animation?.dataset.sequenceProgressDark !== "false"
-      );
-    }
+      : await (
+          await import("modern-screenshot")
+        ).domToCanvas(animation, {
+          width: bounds.width,
+          height: bounds.height,
+          scale,
+        });
+    drawSource(context, image, geometry);
   } else if (renderMode === "choreo-card") {
     const beat = layer.displayedBeatNumber ?? 0;
     // The capture is cached for the whole render, so a card whose box is
