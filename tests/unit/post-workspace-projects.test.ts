@@ -29,6 +29,38 @@ const sequence = (id: string, word: string) => ({
 });
 
 describe("Post project selection", () => {
+  it("simplifies displayed words without changing saved sequence or project data", async () => {
+    const id = "Δ-ΛRZ";
+    const word = id.repeat(4);
+    const original = { ...sequence(id, word), name: word, displayName: word };
+    const project = createEmptyPostProject({ sequenceId: id, now: 100 });
+    const projectKey = `tka:post-studio:project:v2:${id}`;
+    localStorage.setItem(projectKey, JSON.stringify(project));
+    rememberPostSequence(original as never);
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({ records: [] }),
+      })
+    );
+
+    const { projects } = await listPostProjects();
+    expect(projects).toEqual([
+      expect.objectContaining({
+        sequenceId: id,
+        title: id,
+        word: id,
+        hasDraft: true,
+      }),
+    ]);
+    expect(await resolvePostSequence(id)).toEqual(original);
+    expect(localStorage.getItem(projectKey)).toBe(JSON.stringify(project));
+    expect(
+      JSON.parse(localStorage.getItem(`tka:post:sequence:v1:${id}`)!).word
+    ).toBe(word);
+  });
+
   it("uses the exact sequence ID and preserves the existing draft", async () => {
     const project = createEmptyPostProject({ sequenceId: "Δ-ΛRZ", now: 100 });
     const key = "tka:post-studio:project:v2:Δ-ΛRZ";
@@ -110,12 +142,10 @@ describe("Post project selection", () => {
     );
     vi.stubGlobal(
       "fetch",
-      vi
-        .fn()
-        .mockResolvedValue({
-          ok: true,
-          json: () => new Promise(() => undefined),
-        })
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: () => new Promise(() => undefined),
+      })
     );
     const listing = listPostProjects();
     await vi.advanceTimersByTimeAsync(10_000);
