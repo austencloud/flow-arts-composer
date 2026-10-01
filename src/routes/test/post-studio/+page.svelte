@@ -32,6 +32,7 @@
   } from "$lib/shared/media-composition/services/post-draft-storage";
   import { mappingFixture } from "./mapping-fixture";
   import { keyframeClearFixture } from "./keyframe-clear-fixture";
+  import { textAlignmentFixture } from "./text-alignment-fixture";
 
   const SEQUENCE_WORD = "ΩΛ-XJΩΛ-XJΩΛ-XJΩΛ-XJ";
   const SEQUENCE_ID = "ΩΛ-XJ";
@@ -90,6 +91,7 @@
     const fixture = new URL(window.location.href).searchParams.get("fixture");
     const mapping = fixture === "mapping";
     const isolatedKeyframes = fixture === "keyframe-clear";
+    const isolatedTextAlignment = fixture === "text-alignment";
     // Exercise the real save/reload path without writing to the creator's post.
     const storageFixture = fixture === "draft-storage";
     const draftSequenceId = mapping
@@ -114,7 +116,7 @@
           mapping ? "Δ-ΛRZΔ-ΛRZΔ-ΛRZΔ-ΛRZ" : SEQUENCE_WORD,
           mapping ? "Δ-ΛRZ" : SEQUENCE_ID
         ),
-        isolatedKeyframes
+        isolatedKeyframes || isolatedTextAlignment
           ? Promise.resolve({
               project: null,
               diskAvailable: false,
@@ -132,9 +134,11 @@
         ? "post-mapping-fixture"
         : isolatedKeyframes
           ? "post-keyframe-clear-fixture"
-          : storageFixture
-            ? draftSequenceId
-            : hydrated.id;
+          : isolatedTextAlignment
+            ? "post-text-alignment-fixture"
+            : storageFixture
+              ? draftSequenceId
+              : hydrated.id;
       if (!mapping) seedPerformance(editorSequenceId);
       sequence = {
         ...hydrated,
@@ -143,6 +147,8 @@
       };
       if (isolatedKeyframes || (storageFixture && !initialProject))
         initialProject = keyframeClearFixture(editorSequenceId);
+      if (isolatedTextAlignment)
+        initialProject = textAlignmentFixture(editorSequenceId);
       if (mapping && !initialProject) initialProject = mappingFixture();
       cardRenderOptions = buildCardRenderOptions(sequence, { darkMode: true });
 

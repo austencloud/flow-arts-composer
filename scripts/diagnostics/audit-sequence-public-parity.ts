@@ -11,7 +11,8 @@
  * Actionable drift =
  *   - ANY reconcile classification other than IN_SYNC (the corpus converged
  *     466/466 on 2026-07-27; there is no acceptable non-IN_SYNC state), or
- *   - a shortcode classified anything but LABELS_CURRENT or SOLO_CURRENT
+ *   - a shortcode classified anything but a current class
+ *     (CURRENT_SHORTCODE_CLASSES in scripts/migrations/lib/shortcode-payload-kinds.ts)
  *     that is NOT in the baseline, or whose class CHANGED from its baselined
  *     class.
  *
@@ -44,6 +45,7 @@ import {
   parityAuditFingerprint,
   toParityAuditViolation,
 } from "./parity-audit-alert";
+import { isCurrentShortcodeClass } from "../migrations/lib/shortcode-payload-kinds";
 import type { ParityAuditViolation } from "../../src/lib/shared/feedback/domain/models/notification-models";
 
 type AnyRec = Record<string, unknown>;
@@ -201,15 +203,13 @@ async function main(): Promise<void> {
   );
   const shortcodeActionable = shortcodes.results.filter((r) => {
     const cls = r.cls ?? r.classification ?? "";
-    if (cls === "LABELS_CURRENT" || cls === "SOLO_CURRENT") return false;
+    if (isCurrentShortcodeClass(cls)) return false;
     const code = r.code ?? "";
     return baseline.quarantined[code] !== cls;
   });
   const improved = Object.keys(baseline.quarantined).filter((code) =>
     shortcodes.results.some(
-      (r) =>
-        r.code === code &&
-        ((r.cls ?? "") === "LABELS_CURRENT" || (r.cls ?? "") === "SOLO_CURRENT")
+      (r) => r.code === code && isCurrentShortcodeClass(r.cls ?? "")
     )
   );
 
