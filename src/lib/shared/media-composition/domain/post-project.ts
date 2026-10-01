@@ -948,6 +948,26 @@ export function mainItems(project: PostProject): readonly PostItem[] {
   return project.tracks[MAIN_TRACK_INDEX]?.items ?? [];
 }
 
+/** Keep linked motion on its own take during an overlap; free layers follow the incoming take. */
+export function timingVideoAt(
+  items: readonly PostItem[],
+  seconds: number,
+  anchorItemId?: string
+): PostVideoItem | null {
+  let covering: PostVideoItem | null = null;
+  for (const item of items) {
+    if (
+      item.kind !== "video" ||
+      seconds < item.start - POST_TIME_EPSILON ||
+      seconds >= itemEnd(item) - POST_TIME_EPSILON
+    )
+      continue;
+    if (item.id === anchorItemId) return item;
+    if (!covering || item.start >= covering.start) covering = item;
+  }
+  return covering;
+}
+
 /** The main clip playing at a post time; the later one at a shared edge. */
 export function mainItemAt(
   project: PostProject,

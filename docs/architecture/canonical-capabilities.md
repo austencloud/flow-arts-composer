@@ -259,10 +259,20 @@ video-only looks plus the Tutorial preset. Looks are ordinary overlay items, so
 each part stays movable. `state/post-editor-state.svelte.ts` owns selection,
 drag gestures and undo steps over those operations. `post-project-compiler.ts`
 feeds the renderer, and `post-project-migration.ts` converts saved v1 act
-plans. The timeline UI is `share/components/post-studio/editor/timeline/`, and
+plans. `post-project.ts` `timingVideoAt` owns overlap clock selection: anchored
+layers keep their own take while it covers them; unanchored layers follow the
+incoming take. The compiler and effort timing summary share it. The timeline
+UI is `share/components/post-studio/editor/timeline/`, and
 its ruler is the shared `shared/timeline/TimeRuler.svelte`. Ctrl+Z and Ctrl+Y
 reach the editor through `data-edit-history-shortcut-scope` and
 `registerEditHistoryShortcuts`; do not bind them locally.
+
+Local development manifest edits use `state/post-editor-state.svelte.ts` for
+schema validation, normalization, undo and persistence. The dev-only
+`server/post-project-dev-bridge.ts` queues exact-session replacements and
+archives the previous snapshot; `services/post-project-dev-client.ts` polls
+from the open editor. `scripts/post-project.mjs` is the local CLI. See
+`docs/development/post-studio-manifest-bridge.md` for the command contract.
 
 Post Studio keyframes live on the item: `post-project-keyframes.ts` owns
 content time, sampling, the auto-key rule, easing presets and every keyframe
