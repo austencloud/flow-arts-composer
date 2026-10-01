@@ -102,7 +102,7 @@
   }
 
   /* A narrow header keeps the icon; the words stay for screen readers. */
-  @container post-editor-header (max-width: 52rem) {
+  @container post-editor-header (max-width: 46rem) {
     .header .label {
       position: absolute;
       width: 1px;
