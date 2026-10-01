@@ -2,98 +2,20 @@
   import type { Snippet } from "svelte";
   import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import type { PostEditorState } from "$lib/shared/media-composition/state/post-editor-state.svelte";
-  import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
-  import OverflowMenu from "$lib/shared/ui/components/OverflowMenu.svelte";
 
   /**
-   * History on the left, Export on the right. Undo and Redo are the app's
-   * Ctrl+Z and Ctrl+Y targets, so the keys and the buttons always agree.
-   * Export opens the Export panel, where the render starts. A screen that
-   * ends in its own way, as Crop ends in Cancel and Done, puts its buttons
-   * in Export's place.
+   * History on the left, the post's actions on the right. Undo and Redo are
+   * the app's Ctrl+Z and Ctrl+Y targets, so the keys and the buttons always
+   * agree. The actions are absent when the page shows them in its own header.
    */
   interface Props {
     editor: PostEditorState;
     exporting: boolean;
-    onExport: () => void;
-    onImport?: () => void;
-    onImportDifferences?: () => void;
-    onMirror?: () => void;
-    mirrored?: boolean;
-    onBackup: () => void;
-    onRestore: () => void;
-    onClearPostKeyframes?: () => void;
-    clearableKeyframes?: number;
-    onRetry?: () => void;
-    canRetry?: boolean;
-    trailing?: Snippet;
+    actions?: Snippet;
     draftStatus?: Snippet;
   }
 
-  let {
-    editor,
-    exporting,
-    onExport,
-    onImport,
-    onImportDifferences,
-    onMirror,
-    mirrored = false,
-    onBackup,
-    onRestore,
-    onClearPostKeyframes,
-    clearableKeyframes = 0,
-    onRetry,
-    canRetry = false,
-    trailing,
-    draftStatus,
-  }: Props = $props();
-
-  const moreActions = $derived([
-    ...(onClearPostKeyframes
-      ? [
-          {
-            label: t("post_keyframe_remove_all_post"),
-            icon: "fa-solid fa-diamond",
-            action: onClearPostKeyframes,
-            disabled: clearableKeyframes === 0,
-          },
-        ]
-      : []),
-    ...(!trailing && onImport
-      ? [
-          {
-            label: "Import InShot project",
-            icon: "fa-solid fa-file-import",
-            action: onImport,
-            disabled: exporting,
-          },
-        ]
-      : []),
-    ...(onImportDifferences
-      ? [
-          {
-            label: "View InShot differences",
-            icon: "fa-solid fa-triangle-exclamation",
-            action: onImportDifferences,
-          },
-        ]
-      : []),
-    ...(!trailing && onMirror
-      ? [
-          {
-            label: mirrored ? "Unmirror post" : "Mirror whole post",
-            icon: "fa-solid fa-right-left",
-            action: onMirror,
-            disabled: exporting,
-          },
-        ]
-      : []),
-    ...(canRetry && onRetry
-      ? [{ label: "Retry save", icon: "fa-solid fa-rotate", action: onRetry }]
-      : []),
-    { label: "Save backup", icon: "fa-solid fa-download", action: onBackup },
-    { label: "Restore backup", icon: "fa-solid fa-upload", action: onRestore },
-  ]);
+  let { editor, exporting, actions, draftStatus }: Props = $props();
 </script>
 
 <div class="top-bar">
@@ -126,29 +48,9 @@
   {#if draftStatus}
     <div class="draft-save">{@render draftStatus()}</div>
   {/if}
-  <div class="end-actions">
-    <OverflowMenu
-      items={moreActions}
-      placement="bottom"
-      ariaLabel="More post actions"
-    />
-    {#if trailing}
-      {@render trailing()}
-    {:else}
-      <PanelButton
-        variant="primary"
-        onclick={onExport}
-        disabled={exporting}
-        ariaBusy={exporting}
-      >
-        <i
-          class="fa-solid {exporting ? 'fa-spinner fa-spin' : 'fa-file-export'}"
-          aria-hidden="true"
-        ></i>
-        {t("post_editor_export")}
-      </PanelButton>
-    {/if}
-  </div>
+  {#if actions}
+    <div class="end-actions">{@render actions()}</div>
+  {/if}
 </div>
 
 <style>
@@ -167,10 +69,8 @@
 
   .end-actions {
     display: flex;
-    align-items: center;
-    gap: 0.5rem;
     flex-shrink: 0;
-    white-space: nowrap;
+    margin-left: auto;
   }
 
   .draft-save {
@@ -238,10 +138,6 @@
   @media (prefers-reduced-motion: reduce) {
     .icon-button {
       transition: none;
-    }
-
-    .fa-spin {
-      animation: none;
     }
   }
 </style>

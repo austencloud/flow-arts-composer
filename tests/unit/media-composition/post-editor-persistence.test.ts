@@ -125,3 +125,25 @@ describe("post timing persistence", () => {
     expect(state.snapshot.timings?.[id]?.takeKey).toBe("catalog:second");
   });
 });
+
+describe("saving now", () => {
+  it("stamps the post newer, saves it and adds no undo step", () => {
+    let clock = 1_000;
+    const state = createPostEditorState({
+      getSequence: sequence,
+      now: () => clock,
+    });
+    const before = state.project.updatedAt;
+    const revision = state.saveRevision;
+    clock = 5_000;
+    state.saveNow();
+    expect(state.project.updatedAt).toBe(5_000);
+    expect(state.saveRevision).toBe(revision + 1);
+    expect(loadPostProject(sequence().id)?.updatedAt).toBe(5_000);
+    expect(state.canUndo).toBe(false);
+
+    clock = before;
+    state.saveNow();
+    expect(state.project.updatedAt).toBe(5_001);
+  });
+});
