@@ -39,6 +39,7 @@ import {
   type PostTextStyle,
   type PostTextAnimation,
   type PostItem,
+  type PostKeyframe,
   type PostMovesMode,
   type PostProject,
   type PostStaffEffectId,
@@ -65,6 +66,7 @@ import {
   writeChannelValue,
 } from "$lib/shared/media-composition/domain/post-project-keyframes";
 import type { PostTake } from "$lib/shared/media-composition/domain/post-plan";
+import { shiftTakeTiming } from "$lib/shared/media-composition/domain/take-timing";
 
 /**
  * The timeline's edits. Each one is pure: it takes the project and returns
@@ -143,6 +145,93 @@ export function removeTake(
     {
       ...withoutItems(project, gone),
       takes: project.takes.filter((take) => take.id !== takeId),
+    },
+    ctx
+  );
+}
+
+/** A longer copy of a take's video, holding the old one `offsetSeconds` in. */
+export interface TakeReplacement {
+  ref: PostTake["ref"];
+  takeKey: string;
+  durationSeconds: number;
+  offsetSeconds: number;
+}
+
+/**
+ * Points a take at a longer copy of its video, such as the whole recording a
+ * clip was cut from. Every clip, key and landing timed against the take moves
+ * with the footage, so the post plays exactly as before and each clip's edges
+ * can then open out into the footage around it. A copy that doesn't hold
+ * every clip changes nothing.
+ */
+export function replaceTakeMedia(
+  project: PostProject,
+  takeId: string,
+  replacement: TakeReplacement,
+  ctx: EditContext
+): PostProject {
+  const take = project.takes.find((entry) => entry.id === takeId);
+  const { offsetSeconds: offset, durationSeconds } = replacement;
+  if (
+    !take ||
+    !Number.isFinite(offset) ||
+    offset < 0 ||
+    !Number.isFinite(durationSeconds) ||
+    offset + take.durationSeconds > durationSeconds + POST_TIME_EPSILON
+  )
+    return project;
+  const shiftKeys = <T>(keys: PostKeyframe<T>[] | undefined) =>
+    keys?.map((key) => ({ ...key, t: key.t + offset }));
+  const move = (item: PostVideoItem): PostVideoItem => {
+    const keyframes = item.keyframes && {
+      ...item.keyframes,
+      ...(item.keyframes.framing
+        ? { framing: shiftKeys(item.keyframes.framing) }
+        : {}),
+      ...(item.keyframes.sourceGeometry
+        ? { sourceGeometry: shiftKeys(item.keyframes.sourceGeometry) }
+        : {}),
+      ...(item.keyframes.box ? { box: shiftKeys(item.keyframes.box) } : {}),
+      ...(item.keyframes.opacity
+        ? { opacity: shiftKeys(item.keyframes.opacity) }
+        : {}),
+    };
+    return {
+      ...item,
+      sourceIn: item.sourceIn + offset,
+      sourceOut: item.sourceOut + offset,
+      ...(keyframes ? { keyframes } : {}),
+    };
+  };
+  const timing = project.timings?.[takeId];
+  return finish(
+    {
+      ...project,
+      takes: project.takes.map((entry) =>
+        entry === take
+          ? {
+              ...take,
+              ref: replacement.ref,
+              takeKey: replacement.takeKey,
+              durationSeconds,
+            }
+          : entry
+      ),
+      tracks: project.tracks.map((track) => ({
+        ...track,
+        items: track.items.map((item) =>
+          item.kind === "video" && item.takeId === takeId ? move(item) : item
+        ),
+      })),
+      ...(timing
+        ? {
+            timings: {
+              ...project.timings,
+              [takeId]: shiftTakeTiming(timing, offset, replacement.takeKey),
+            },
+          }
+        : {}),
     },
     ctx
   );

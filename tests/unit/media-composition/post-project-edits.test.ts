@@ -22,6 +22,7 @@ import {
   moveOverlayItem,
   placeMainItem,
   removeTake,
+  replaceTakeMedia,
   resetFraming,
   setItemFill,
   setProjectAudio,
@@ -35,6 +36,7 @@ import {
   updateItemAt,
 } from "$lib/shared/media-composition/domain/post-project-edits";
 import { normalizeProject } from "$lib/shared/media-composition/domain/post-project-normalize";
+import { createTakeTiming } from "$lib/shared/media-composition/domain/take-timing";
 import {
   framingAt,
   isAnimated,
@@ -544,6 +546,118 @@ describe("moveOverlayItem", () => {
       moveOverlayItem(hidden, "t2", { start: 5, trackIndex: 1 }, ctx)
     );
     expect(spans(onto, 1)).toEqual([["t1", 0, 2]]);
+  });
+});
+
+describe("replaceTakeMedia", () => {
+  const linear = [0, 0, 1, 1] as [number, number, number, number];
+  const whole = {
+    ref: { kind: "linked" as const, url: "https://example.test/whole.mp4" },
+    takeKey: "key-a-whole",
+    durationSeconds: 120,
+    offsetSeconds: 50,
+  };
+
+  function cutFromRecording(): PostProject {
+    const timing = createTakeTiming({
+      sequenceId: "seq",
+      takeKey: "key-a",
+      durationSeconds: 20,
+      now: NOW,
+    });
+    const base = project(
+      [
+        video("v1", {
+          sourceIn: 2,
+          sourceOut: 8,
+          keyframes: {
+            opacity: [
+              { t: 3, value: 0.2, easing: linear },
+              { t: 7, value: 1, easing: linear },
+            ],
+          },
+        }),
+        video("v2", { takeId: "b", sourceIn: 1, sourceOut: 4 }),
+      ],
+      [[video("pip", { start: 1, sourceIn: 10, sourceOut: 12 })]]
+    );
+    return {
+      ...base,
+      timings: {
+        a: {
+          ...timing,
+          sections: [
+            {
+              ...timing.sections[0]!,
+              snap: "taps",
+              taps: [3, 4, 5],
+              beatOneSeconds: 3,
+              offsetSeconds: 0.1,
+              overrides: [{ position: 2, seconds: 4.5 }],
+            },
+          ],
+        },
+      },
+    };
+  }
+
+  it("moves every clip, key and landing on the take with its footage", () => {
+    const base = cutFromRecording();
+    const result = valid(replaceTakeMedia(base, "a", whole, ctx));
+    expect(result.takes[0]).toMatchObject({
+      id: "a",
+      ref: whole.ref,
+      takeKey: "key-a-whole",
+      durationSeconds: 120,
+    });
+    expect(item(result, "v1")).toMatchObject({
+      start: 0,
+      duration: 6,
+      sourceIn: 52,
+      sourceOut: 58,
+    });
+    expect(item(result, "pip")).toMatchObject({ sourceIn: 60, sourceOut: 62 });
+    expect(item(result, "v2")).toEqual(item(base, "v2"));
+    for (const seconds of [0, 1, 2.5, 5]) {
+      expect(opacityAt(item(result, "v1"), seconds)).toBeCloseTo(
+        opacityAt(item(base, "v1"), seconds)
+      );
+    }
+    const section = result.timings!.a!.sections[0]!;
+    expect(result.timings!.a!.takeKey).toBe("key-a-whole");
+    expect(section).toMatchObject({
+      startSeconds: 50,
+      endSeconds: 70,
+      taps: [53, 54, 55],
+      beatOneSeconds: 53,
+      offsetSeconds: 0.1,
+      overrides: [{ position: 2, seconds: 54.5 }],
+    });
+  });
+
+  it("lets a clip's head open out into the footage before its old first frame", () => {
+    const base = cutFromRecording();
+    expect(item(trimItem(base, "v1", "start", -5, ctx), "v1")).toMatchObject({
+      sourceIn: 0,
+    });
+    const replaced = replaceTakeMedia(base, "a", whole, ctx);
+    const opened = valid(trimItem(replaced, "v1", "start", -5, ctx));
+    expect(item(opened, "v1")).toMatchObject({
+      start: 0,
+      sourceIn: 47,
+      duration: 11,
+    });
+  });
+
+  it("changes nothing for a copy that does not hold the whole take", () => {
+    const base = cutFromRecording();
+    expect(
+      replaceTakeMedia(base, "a", { ...whole, durationSeconds: 60 }, ctx)
+    ).toBe(base);
+    expect(
+      replaceTakeMedia(base, "a", { ...whole, offsetSeconds: -1 }, ctx)
+    ).toBe(base);
+    expect(replaceTakeMedia(base, "missing", whole, ctx)).toBe(base);
   });
 });
 
