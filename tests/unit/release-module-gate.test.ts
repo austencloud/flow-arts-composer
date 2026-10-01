@@ -25,6 +25,7 @@ export const PRODUCTION_MODULES: Record<ModuleId, boolean> = {
   learn: false, // Unreleased
   mandala: false, // unreleased
   shop: true, // link-out
+  settings: true,
   "hand-paths": false, // graduated from Lab
 };
 `;
@@ -33,6 +34,7 @@ const GUEST_ACCESS_SOURCE = `
 const GUEST_MODULE_ACCESS: Record<string, string[]> = {
   create: ["assemble", "construct", "generate"],
   browse: ["gallery", "library"],
+  settings: ["language"],
 };
 `;
 
@@ -48,6 +50,10 @@ export const BROWSE_TABS: Section[] = [
   { id: "library", label: "Library" },
   { id: "collections", label: "Collections" },
 ];
+export const SETTINGS_TABS: Section[] = [
+  { id: "language", label: "Language" },
+  { id: "profile", label: "Profile" },
+];
 `;
 
 describe("parseProductionModules", () => {
@@ -59,6 +65,7 @@ describe("parseProductionModules", () => {
       learn: false,
       mandala: false,
       shop: true,
+      settings: true,
       "hand-paths": false,
     });
   });
@@ -73,6 +80,7 @@ describe("parseGuestModuleAccess", () => {
     expect(parseGuestModuleAccess(GUEST_ACCESS_SOURCE)).toEqual({
       create: ["assemble", "construct", "generate"],
       browse: ["gallery", "library"],
+      settings: ["language"],
     });
   });
 
@@ -82,10 +90,11 @@ describe("parseGuestModuleAccess", () => {
 });
 
 describe("parseModuleTabs", () => {
-  it("extracts registered Create and Browse tab ids", () => {
+  it("extracts registered Create, Browse, and Settings tab ids", () => {
     expect(parseModuleTabs(TAB_DEFINITIONS_SOURCE)).toEqual({
       create: ["assemble", "construct", "generate", "fuse"],
       browse: ["gallery", "library", "collections"],
+      settings: ["language", "profile"],
     });
   });
 
@@ -376,6 +385,22 @@ describe("auditChangelogEntries", () => {
           text: "Sequence-building controls stay available on narrow screens.",
           audience: "guest",
           surface: { module: "create", tab: "construct" },
+        },
+      ],
+      ctx
+    );
+    expect(result.errors).toEqual([]);
+    expect(result.guestCount).toBe(1);
+  });
+
+  it("accepts guest language notes using the default tab registry", () => {
+    const result = auditChangelogEntries(
+      [
+        {
+          category: "fixed",
+          text: "Regional language choices no longer fall back to English.",
+          audience: "guest",
+          surface: { module: "settings", tab: "language" },
         },
       ],
       ctx

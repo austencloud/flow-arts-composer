@@ -127,6 +127,7 @@ export const PRODUCTION_MODULES: Record<ModuleId, boolean> = {
   learn: false,
   tika: false, // Tika AI tutor (admin-only for now)
   compose: false,
+  post: false,
   train: false,
   admin: true, // Production tool; runtime admin-role checks still control access
   settings: true, // Settings always available
