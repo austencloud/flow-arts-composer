@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+import { PROP_LOOKS } from "$lib/shared/pictograph/prop/domain/prop-look";
 import {
   PostTakeRefSchema,
   PostTakeSchema,
@@ -535,6 +536,7 @@ export const PostAnimationItemSchema = z
     animationAppearance: z
       .object({
         propType: z.nativeEnum(PropType).optional(),
+        propLook: z.enum(PROP_LOOKS).optional(),
         gridMode: z.enum(["none", "8point", "auto"]).optional(),
         props: z.boolean().optional(),
         tkaGlyph: z.boolean().optional(),

@@ -109,7 +109,7 @@
     selectedPropType: PropType | null;
     color?: "blue" | "red" | (string & {});
     title?: string;
-    onSelect: (propType: PropType) => void;
+    onSelect: (propType: PropType, look?: PropLook) => void;
     variant?: "panel" | "inline";
     /**
      * Flat mode: drop the section labels and pack every prop into one dense
@@ -166,7 +166,7 @@
     accessMode?: "standard" | "educational";
     /** Let a roomy host use all available width for each family row. */
     fluidSections?: boolean;
-    /** Collection metadata chooses a type without editing account appearance. */
+    /** Show build, grip and other appearance controls beyond the style tiles. */
     showAppearance?: boolean;
     fanAppearance: FanAppearance;
     onFanAppearanceChange: (appearance: FanAppearance) => void;
@@ -176,7 +176,7 @@
     premiumBadge?: Snippet;
     premiumNudge?: Snippet<[{ dismiss: () => void }]>;
     propLook?: PropLook;
-    /** Persists the global artwork preference owned by the app settings seam. */
+    /** Enables artwork choices; the host owns their persistence. */
     onPropLookChange?: (look: PropLook) => void;
     recipeOverrides?: Partial<Record<PropType, CompositionRecipe>>;
     colors?: ViewerCustomColorPair | null;
@@ -551,7 +551,7 @@
   /**
    * A family's styles, each in every look it has: a style with a captured 3D
    * sprite gets a pictograph tile and a 3D tile, so one view holds every
-   * variation and a pick sets the prop and the (global) look together.
+   * variation and a pick sets the prop and look together.
    * Pictographs come first so the 3D row reads as the same set again.
    */
   type FamilyTile = { style: PropType; prop: PropType; look?: PropLook };
@@ -562,7 +562,7 @@
       prop: sizedStyle(style),
     }));
     const withLooks =
-      showAppearance && onPropLookChange !== undefined
+      onPropLookChange !== undefined
         ? choices.filter((choice) => hasModelSprite(choice.prop))
         : [];
     if (withLooks.length === 0) return choices;
@@ -809,7 +809,9 @@
   }
 
   function selectProp(prop: PropType, look?: PropLook): void {
-    onSelect(prop);
+    // Scoped hosts can save the type and artwork as one undoable choice.
+    if (look === undefined) onSelect(prop);
+    else onSelect(prop, look);
     if (look !== undefined) onPropLookChange?.(look);
     if (drill?.kind === "family" && familyPageHolds(prop)) return;
     if (!opensDetails(prop, look !== undefined)) return;

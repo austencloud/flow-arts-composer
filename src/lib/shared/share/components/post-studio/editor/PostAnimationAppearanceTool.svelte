@@ -30,6 +30,11 @@
   } from "$lib/shared/animation-engine/components/effects-panel/effect-registry";
   import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
   import {
+    normalizePropLook,
+    type PropLook,
+  } from "$lib/shared/pictograph/prop/domain/prop-look";
+  import { getSettings } from "$lib/shared/application/state/app-state.svelte";
+  import {
     AnimationVisibilityStateManager,
     getAnimationVisibilityManager,
   } from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
@@ -84,6 +89,7 @@
   const id = $props.id();
   let activeSection = $state<Section>("display");
   let pickedPropType = $state<PropType | undefined>();
+  let pickedPropLook = $state<PropLook>("pictograph");
   const inheritedVisibility = getAnimationVisibilityManager();
   let inheritedEffort = $state(inheritedVisibility.getEffortPreset());
   const syncInheritedEffort = () => {
@@ -286,6 +292,9 @@
         darkMode = visibility.isDarkMode();
         const trail = appearance?.trail;
         pickedPropType = appearance?.propType;
+        pickedPropLook = normalizePropLook(
+          appearance?.propLook ?? getSettings().propArtwork
+        );
         effectsWereEdited = !!appearance?.effects || !!trail;
         trailSettings.updateSettings({
           trail: {
@@ -325,6 +334,7 @@
       keys.map((key) => [key, settings[key]])
     ) as NonNullable<PostAnimationItem["animationAppearance"]>;
     if (pickedPropType) appearance.propType = pickedPropType;
+    appearance.propLook = pickedPropLook;
     if (effectsWereEdited) {
       appearance.effects = trailEffects.snapshot();
       const trails = trailEffects.trails;
@@ -402,12 +412,19 @@
           {#snippet children(bounded)}
             <BentoPropGrid
               selectedPropType={pickedPropType ?? defaultPropType}
-              onSelect={(propType) => {
+              onSelect={(propType, look) => {
                 pickedPropType = propType;
+                if (look !== undefined) pickedPropLook = look;
+                save();
+              }}
+              propLook={pickedPropLook}
+              onPropLookChange={(look) => {
+                if (pickedPropLook === look) return;
+                pickedPropLook = look;
                 save();
               }}
               showColors={false}
-              showPropLook={false}
+              showPropLook
               showAppearance={false}
               scrollMode={bounded ? "internal" : "host"}
               variant="inline"
