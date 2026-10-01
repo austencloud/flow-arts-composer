@@ -1,20 +1,10 @@
 /**
  * Compile the .svelte files a branch changed, the way the build does.
  *
- * WHY THIS EXISTS
- *
- * `npm run check` has not looked at a single component since 2026-08-01.
- * svelte-check gives the TypeScript language service a 20 MB budget for
- * non-TypeScript files. That day the project's .svelte files outgrew it, the
- * service fell back to "reduced mode" and dropped every project file, and
- * svelte-check has reported "0 errors" over declaration files alone ever
- * since. Its only notice is a log line svelte-check mutes. fe6ae060d1 merged a
- * component that `svelte/compiler` rejects (an HTML comment closed early by
- * "-->") through that gate, and every route that loaded it broke.
- *
- * This gate runs the project's own preprocessors (svelte.config.js) and
- * compiler on each component the branch added or modified. A compile or
- * preprocess error fails it; warnings are printed but do not.
+ * Run the project's preprocessors and compiler explicitly so template and
+ * preprocessing errors cannot pass integration when the type-checker's
+ * project coverage is limited. A compile or preprocess error fails this
+ * gate; warnings are printed but do not.
  *
  * Positions are mapped back to the file on disk. Stripping TypeScript from a
  * <script> block shortens it, so the compiler's line numbers for everything
