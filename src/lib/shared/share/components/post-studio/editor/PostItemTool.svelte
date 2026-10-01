@@ -105,6 +105,8 @@
     editor: PostEditorState;
     item: PostItem;
     tool: PostPanelToolId;
+    /** The side inspector fills its column; the bottom drawer fits its controls. */
+    appearanceFill?: boolean;
     /**
      * The crop screen's session. Crop's controls go through it, so a turn
      * or a zoom keeps the window filled the way a drag on the stage does.
@@ -126,6 +128,7 @@
     editor,
     item,
     tool,
+    appearanceFill = true,
     crop = null,
     cropSourceView = true,
     chosenSourceShape = $bindable(null),
@@ -756,7 +759,7 @@
 
 <div
   class="item-tool"
-  class:animation-appearance={tool === "appearance" &&
+  class:animation-appearance={appearanceFill && tool === "appearance" &&
     (item.kind === "animation" || item.kind === "moves")}
 >
   {#if locked}
@@ -1182,7 +1185,7 @@
     {/if}
   {:else if tool === "appearance" && (item.kind === "animation" || item.kind === "moves")}
     <PostAnimationAppearanceTool
-      fill
+      fill={appearanceFill}
       {editor}
       {item}
       {locked}

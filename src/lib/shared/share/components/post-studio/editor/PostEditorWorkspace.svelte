@@ -2296,7 +2296,7 @@
   />
 {/snippet}
 
-{#snippet panelBody(tool: PostPanelToolId)}
+{#snippet panelBody(tool: PostPanelToolId, placement: "dock" | "side")}
   {#if tool === "videos"}
     <PostMediaPanel
       {editor}
@@ -2371,6 +2371,7 @@
       {editor}
       item={editor.selectedItem}
       {tool}
+      appearanceFill={placement === "side"}
       crop={cropMode ? crop : null}
       {cropSourceView}
       bind:chosenSourceShape={cropSourceShape}
@@ -2395,7 +2396,7 @@
         tool === "appearance" &&
         editor.selectedItem?.kind === "animation")}
   >
-    {@render panelBody(tool)}
+    {@render panelBody(tool, placement)}
   </PostToolPanel>
 {/snippet}
 
