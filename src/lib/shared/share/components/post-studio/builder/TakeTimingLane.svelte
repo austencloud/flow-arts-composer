@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onDestroy, onMount, untrack } from "svelte";
+  import { flushSync, onDestroy, onMount, untrack } from "svelte";
   import type { LandingRef } from "./post-timing-session.svelte";
   import type {
     ResolvedTakeTiming,
@@ -9,8 +9,10 @@
   import { landingName } from "$lib/shared/media-composition/domain/timing-summary";
   import TimeRuler from "$lib/shared/timeline/TimeRuler.svelte";
   import {
+    POST_TIMELINE_MAX_PIXELS_PER_SECOND,
     revealPlayheadScrollLeft,
     rulerTickInterval,
+    scrollLeftForStableAnchor,
   } from "../editor/timeline/post-timeline-geometry";
   import { formatTakeClock } from "./post-builder-format";
   import { shownLandings } from "./timing-lane-landings";
@@ -28,6 +30,7 @@
     onseek: (seconds: number) => void;
     onselect: (landing: LandingRef | null) => void;
     onplace: (landing: LandingRef, seconds: number) => void;
+    onzoom?: (windowSeconds: number) => void;
     dragRange: (landing: LandingRef) => { min: number; max: number } | null;
   }
   let {
@@ -43,6 +46,7 @@
     onseek,
     onselect,
     onplace,
+    onzoom,
     dragRange,
   }: Props = $props();
   let viewport = $state<HTMLDivElement | null>(null);
@@ -64,6 +68,7 @@
   );
   const scale = $derived(Math.max(1, viewportWidth - 32) / span);
   const width = $derived(Math.max(viewportWidth, durationSeconds * scale + 32));
+  const ZOOM_STEP_FACTOR = 1.25;
   const landings = $derived(
     shownLandings(timing, resolved).map((landing) => ({
       ...landing,
@@ -102,6 +107,42 @@
       selected?.sectionId === ref.sectionId &&
       selected.position === ref.position
     );
+  }
+
+  function wheelZoom(event: WheelEvent): void {
+    if (!(event.ctrlKey || event.metaKey) || !viewport || !onzoom || gesture)
+      return;
+    event.preventDefault();
+    if (event.deltaY === 0) return;
+    const minimumSpan = Math.min(
+      span,
+      Math.max(
+        0.5,
+        Math.max(1, viewportWidth - 32) / POST_TIMELINE_MAX_PIXELS_PER_SECOND
+      )
+    );
+    const nextSpan = Math.min(
+      Math.max(0.5, durationSeconds),
+      Math.max(
+        minimumSpan,
+        span * (event.deltaY < 0 ? 1 / ZOOM_STEP_FACTOR : ZOOM_STEP_FACTOR)
+      )
+    );
+    if (nextSpan === span) return;
+
+    const cursorX = event.clientX - viewport.getBoundingClientRect().left;
+    const anchorSeconds = Math.max(
+      0,
+      Math.min(durationSeconds, (viewport.scrollLeft + cursorX - 16) / scale)
+    );
+    onzoom(nextSpan);
+    // Make the wider track scrollable before positioning it under the cursor.
+    flushSync();
+    viewport.scrollLeft = scrollLeftForStableAnchor({
+      anchorSeconds,
+      anchorClientXPx: cursorX - 16,
+      newPixelsPerSecond: Math.max(1, viewportWidth - 32) / nextSpan,
+    });
   }
   function begin(
     event: PointerEvent,
@@ -212,6 +253,7 @@
   class:editing={editable}
   bind:this={viewport}
   bind:clientWidth={viewportWidth}
+  onwheel={wheelZoom}
 >
   <div
     class="track"
