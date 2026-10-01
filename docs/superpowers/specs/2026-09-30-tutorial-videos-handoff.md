@@ -1,11 +1,57 @@
 # Halloween Tutorial Videos — Handoff (2026-09-30)
 
 Living document. Updated at every milestone by whichever agent holds the work.
-Last update: 2026-10-01 12:50 CDT (Claude Opus 5.5 session, eighth pass).
+Last update: 2026-10-01 13:55 CDT (Claude Opus 5.5 session, ninth pass).
 No work branch is open. `codex/tutorial-videos-fixes`, `codex/auto-colour`,
 `codex/auto-colour-sky`, `codex/fill-box-save`,
-`codex/post-sequence-actions` and `codex/whole-recording-timing` are merged to
-local main and removed. Nothing is pushed.
+`codex/post-sequence-actions`, `codex/whole-recording-timing`,
+`codex/post-header-save`, `codex/post-header-save-narrow` and
+`codex/post-header-status-width` are merged to local main and removed.
+Nothing is pushed.
+
+## Update 2026-10-01 13:55 CDT: notation verified, Save in the header
+
+**Notation matches the footage on all three**, in both the animation and the
+picture-in-picture moves strip. Method: open each post on the whole recording
+in the agent-profile DevTools tab, pause on each beat landing, screenshot, and
+lay the frames side by side (scripts `sheet.py` / `slowsheet.py`, sheets
+`omega-sheet`, `dck-sheet`, `dckslow-sheet`, `woods-sheet`, `woodsslow-sheet`,
+`woods-hands` in the session scratchpad `notation/`; all sent to Austen
+2026-10-01). ΩΛ-XJ, DCKΨ- (six run-through and six slow landings) and woods
+(six run-through landings plus the slow section) all match. Woods uses plain
+staffs; its prop colours follow the viewer mirror (they mark the viewer's
+left/right, not the performer's real hands). Left as is and offered to Austen.
+
+Newest saves after the Save presses (local CDT; disk archive):
+
+| Video | Saved             | Mirror setup                                                                | Colour                                 |
+| ----- | ----------------- | --------------------------------------------------------------------------- | -------------------------------------- |
+| Δ-ΛRZ | 13:46:06, 2 takes | `mirrored: true`, clips `flip: false`, `sequenceActions: ["mirror"]`        | Auto (1.04/1.03/1.09, 1.05/1.04/1.09)  |
+| DCKΨ- | 13:48:39, 2 takes | `mirrored: true`, clips `flip: false`, `sequenceActions: ["mirror","swap"]` | Auto (1.20/1.03/1.12 both)             |
+| ΩΛ-XJ | 13:49:24, 3 takes | `mirrored: true`, clips `flip: true`, no sequence actions                   | His sliders (1/1.17/1.12, 1/1.25/1.09) |
+
+Each Save was pressed only after checking that the page had loaded the
+archive's newest copy (same `updatedAt` in localStorage and on disk), so no
+press rolled anything back. Each press moved the newest archive copy forward
+(DCKΨ- 12:27:55 → 13:48:39, ΩΛ-XJ 12:41:42 → 13:49:24; woods 13:28 → 13:40
+on the Save press, and its newest copy is now 13:46).
+
+**Save, ⋮ and Export now sit in the Post page's top row**, beside Projects and
+the post's name (three merges, local main 2026-10-01, not pushed). Save
+stamps a fresh `updatedAt` and writes at once (`editor.saveNow()` in
+`post-editor-state.svelte.ts`; no undo step), shows Saving… → Saved with a
+check, keeps its width, and answers Ctrl+S. Beside it: "Saved to this
+computer · 1:49 PM" (icon only below 46rem of row width; hidden below 30rem,
+where Projects and Export drop to icons). The editor bar keeps Undo/Redo, and
+in crop mode Cancel/Done. Without the Post header (other hosts) the editor
+bar still shows ⋮ and Export as before. Evidence: the new "saving now" unit
+test in `post-editor-persistence.test.ts`; `wt:finish` svelte-check 0 errors
+on each merge; measured with no overflow at 375, 750, 820, 960×412, 1440,
+1920, 2560, 3840 and 720×450 (200% zoom), screenshots in the scratchpad
+`header/`.
+
+Not checked: crop mode in the header at phone width, and the timing stage
+(⋮ and Export are disabled there by `locked`).
 
 ## Update 2026-10-01 12:50 CDT: whole recordings
 
@@ -57,6 +103,8 @@ Background: memory `project_halloween_tutorial_videos.md`; Codex ledger
 (its last entry is 2026-09-30 03:41 CDT).
 
 ## Where each video stands (2026-09-30 19:58 CDT)
+
+History only: the current state is the table in the 2026-10-01 13:55 update.
 
 All three have a Post Studio project in the disk archive
 `~/.tka/post-studio-drafts` (key `tka:post-studio:project:v2:<id>`). Open any
@@ -192,23 +240,18 @@ No full export of any of the three exists yet.
 
 ## Believed done — unverified
 
-- A Mirror press un-reflects a real post's notation. Unit tests prove the
-  order with fake transforms, and the transforms are the Composer's own, but
-  nobody has pressed it on woods yet because Austen was editing woods. Check:
-  after the press, the animation's props sit on the same side as the
-  performer's hands in the footage.
+- Nothing open. The Mirror presses on woods and DCKΨ- are now checked frame
+  by frame against the footage (see the 13:55 update).
 
 ## In flight
 
-1. Woods: select the Animation clip → Sequence → Mirror, then compare the
-   animation with the footage by eye. Austen does it in his own window, or an
-   agent does it once he says woods is free. It saves as
-   `sequenceActions: ["mirror"]`.
-2. DCKΨ-: the same check, probably the same press.
-3. ΩΛ-XJ: Auto adjust color on both clips (Austen). Expected from the
-   browser's own samples: run 1.09/1.15/1.10, slow 1.13/1.15/1.11.
-4. Full exports of all three, tab visible.
-5. Austen: open DCKΨ- and press "Tap beats" → check on both takes (the derived
+1. Austen double-checks the notation and the new header Save on all three.
+2. Auto colour: woods and DCKΨ- already have Auto; ΩΛ-XJ still has his
+   sliders. Expected Auto from the browser's own samples: run
+   1.09/1.15/1.10, slow 1.13/1.15/1.11. Austen: "then we can work on perhaps
+   auto coloring all three", so wait for his go.
+3. Full exports of all three, tab visible.
+4. Austen: open DCKΨ- and press "Tap beats" → check on both takes (the derived
    run-through beats and the other agent's slow-take beats).
 
 ## Decisions already made
@@ -265,11 +308,23 @@ No full export of any of the three exists yet.
   `~/.tka/post-studio-drafts`; the newest `updatedAt` wins. A test fixture key
   `post-draft-storage-fixture` was written there by another agent; harmless.
 - Never start, restart or kill port 5173, 5195, 5197 or 5198.
-- The agent-profile Chrome tab (DevTools page 2,
-  `https://localhost:5173/post?project=Δ-ΛRZ`) still runs the old save code
-  and holds an older woods copy (updatedAt 18:27:51Z, with a bad canvas-shaped
-  Fill on the run clip). Don't edit or reload it; its copy is older, so it
-  never wins on load.
+- Use `https://localhost:5173/...` for every browser tab and link (Austen,
+  2026-10-01: "[::1] is a poor choice, use localhost"). `[::1]` is a separate
+  site with its own sign-in and its own saved drafts (signed out there, so
+  Post shows "early access"); keep it for the curl probe only.
+- Before testing Post on localhost in the agent-profile Chrome, compare its
+  localStorage drafts with the disk archive: it once held stale DCKΨ- and
+  woods copies that loaded the wrong version. The agent DevTools tab is now
+  parked on `about:blank`.
+- A new port is a new site, so it is signed out and Post shows "early access".
+  Header and editor checks that need sign-in happen on 5173 after merging.
+- During the notation check the DCKΨ- slow-section video once kept playing
+  after seeks while the preview was paused. It did not happen again after a
+  fresh load. Watch for it; the seek path is the playback `$effect` in
+  `PostStudioMediaLayer.svelte`.
+- Right after a merge the dev server restarts; for a few seconds saves fail
+  ("Save failed", connection refused) and the page may raise a leave-page
+  dialog. It settles by itself; don't restart anything.
 - Two windows on one project fight: each save is a new archive file, and on
   load the newest `updatedAt` wins. Check which window Austen is using before
   pressing anything, and don't click while he is clicking.
