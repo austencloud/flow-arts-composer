@@ -65,12 +65,18 @@ export type PropId = "left" | "right";
  */
 export interface TipPositionData3D {
   /**
-   * Effect-assignment slot this tip owns: 0 = pinky/left end, 1 = thumb/right
-   * end. Read this instead of the array index — a single-ended prop (club,
-   * sword, fan…) publishes ONE tip and it sits on slot 1, so position in the
-   * array no longer implies the slot.
+   * Logical end this tip owns: 0 = LEFT_END, 1 = RIGHT_END. Read this instead
+   * of the array index — a single-ended prop (club, sword, fan…) publishes ONE
+   * tip and it sits on slot 1, so position in the array no longer implies the
+   * slot.
    */
   tipIndex: 0 | 1;
+  /**
+   * The 2D tip index its per-tip effect key names — `PropTipAnchor3D`
+   * `effectKeyIndex`. Resolve effects with this, never with `tipIndex`: a
+   * club's one tip is slot 1 but key 0.
+   */
+  effectKeyIndex: number;
   position: { x: number; y: number; z: number };
   velocity: { x: number; y: number; z: number };
   jerk: { x: number; y: number; z: number };

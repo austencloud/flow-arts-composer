@@ -237,10 +237,11 @@ export class WorkerImperativeEffectFrameBuilder {
         tipFrame.tips,
         center
       )) {
-        if (
-          effectAt(input.intent, propIndex, source.effectTipIndex) !== "trails"
-        )
-          continue;
+        const effect =
+          source.sourceId === "hand"
+            ? input.intent.handTrailEffects[propIndex]
+            : effectAt(input.intent, propIndex, source.effectTipIndex);
+        if (effect !== "trails") continue;
         imperative.push({
           renderer: "trail",
           sourceId: `${input.performerId}:${propIndex}:${source.sourceId}`,

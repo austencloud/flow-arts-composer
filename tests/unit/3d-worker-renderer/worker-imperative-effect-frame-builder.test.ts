@@ -56,6 +56,7 @@ function input(
         { propIndex: 0, tipIndex: 0, effect },
         { propIndex: 0, tipIndex: 1, effect },
       ],
+      handTrailEffects: [effect, "none"],
       trails: resolveTrails3D(DEFAULT_EFFECTS_CONFIG.trails),
       led: resolveLed3D({
         ...DEFAULT_EFFECTS_CONFIG.led,

@@ -276,6 +276,7 @@ describe("resolveTrailSources3D", () => {
 	const tips: TipPositionData3D[] = [
 		{
 			tipIndex: 0,
+			effectKeyIndex: 0,
 			position: { x: 1, y: 2, z: 3 },
 			velocity: stationary,
 			jerk: stationary,
@@ -283,6 +284,7 @@ describe("resolveTrailSources3D", () => {
 		},
 		{
 			tipIndex: 1,
+			effectKeyIndex: 1,
 			position: { x: -1, y: -2, z: -3 },
 			velocity: stationary,
 			jerk: stationary,
@@ -298,6 +300,7 @@ describe("resolveTrailSources3D", () => {
 				{
 					sourceId: "left-end",
 					effectTipIndex: 0,
+					effectKeyIndex: 0,
 					position: tips[0].position,
 				},
 			],
@@ -308,6 +311,7 @@ describe("resolveTrailSources3D", () => {
 				{
 					sourceId: "right-end",
 					effectTipIndex: 1,
+					effectKeyIndex: 1,
 					position: tips[1].position,
 				},
 			],
@@ -318,11 +322,13 @@ describe("resolveTrailSources3D", () => {
 				{
 					sourceId: "left-end",
 					effectTipIndex: 0,
+					effectKeyIndex: 0,
 					position: tips[0].position,
 				},
 				{
 					sourceId: "right-end",
 					effectTipIndex: 1,
+					effectKeyIndex: 1,
 					position: tips[1].position,
 				},
 			],
@@ -333,6 +339,7 @@ describe("resolveTrailSources3D", () => {
 				{
 					sourceId: "hand",
 					effectTipIndex: 1,
+					effectKeyIndex: 1,
 					position: propCenter,
 				},
 			],
@@ -345,6 +352,7 @@ describe("resolveTrailSources3D", () => {
 		const singleTip: TipPositionData3D[] = [
 			{
 				tipIndex: 1,
+				effectKeyIndex: 0,
 				position: { x: 0.5, y: 0, z: 0 },
 				velocity: stationary,
 				jerk: stationary,
@@ -361,6 +369,7 @@ describe("resolveTrailSources3D", () => {
 				{
 					sourceId: "right-end",
 					effectTipIndex: 1,
+					effectKeyIndex: 0,
 					position: singleTip[0].position,
 				},
 			]);
@@ -374,8 +383,16 @@ describe("resolvePropTipAnchors3D", () => {
 
 	it("keeps both ends for the staff family", () => {
 		expect(resolvePropTipAnchors3D(PropType.STAFF, halfLength, build)).toEqual([
-			{ effectTipIndex: 0, offset: { x: 0, y: -halfLength, z: 0 } },
-			{ effectTipIndex: 1, offset: { x: 0, y: halfLength, z: 0 } },
+			{
+				effectTipIndex: 0,
+				effectKeyIndex: 0,
+				offset: { x: 0, y: -halfLength, z: 0 },
+			},
+			{
+				effectTipIndex: 1,
+				effectKeyIndex: 1,
+				offset: { x: 0, y: halfLength, z: 0 },
+			},
 		]);
 	});
 
@@ -405,7 +422,7 @@ describe("resolvePropTipAnchors3D", () => {
 
 	it("places the ukulele tip at its authored headstock-tip grip", () => {
 		expect(resolvePropTipAnchors3D(PropType.UKULELE, halfLength, build)).toEqual([
-			{ effectTipIndex: 1, offset: { x: 0, y: 0.015, z: 0 } },
+			{ effectTipIndex: 1, effectKeyIndex: 0, offset: { x: 0, y: 0.015, z: 0 } },
 		]);
 	});
 
@@ -413,7 +430,7 @@ describe("resolvePropTipAnchors3D", () => {
 		for (const propType of [PropType.CONTACTBALL, PropType.HAND]) {
 			const anchors = resolvePropTipAnchors3D(propType, halfLength, build);
 			expect(anchors).toEqual([
-				{ effectTipIndex: 1, offset: { x: 0, y: 0, z: 0 } },
+				{ effectTipIndex: 1, effectKeyIndex: 0, offset: { x: 0, y: 0, z: 0 } },
 			]);
 		}
 	});
