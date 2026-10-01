@@ -10,7 +10,6 @@
   import { LAYOUT_MOTION_EASING } from "$lib/shared/transitions/layout-flip";
   import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
   import type { SequenceExportOptions } from "$lib/shared/render/domain/models/sequence-export-options";
-  import type { HandLabeling } from "$lib/shared/video-collaboration/domain/hand-labeling";
   import type { CompositionSourceBinding } from "$lib/shared/media-composition/state/media-composition-state.svelte";
   import {
     resolvePresetTimePoint,
@@ -140,7 +139,6 @@
     bindingFor: (role: string) => CompositionSourceBinding | null;
     labelFor: (item: PostItem) => string;
     cardRenderOptions?: Partial<SequenceExportOptions> | null;
-    handLabeling?: HandLabeling | null;
     /** The record a scan of the card opens: the source, not a labeled copy. */
     qrSequence?: SequenceData;
     /** Outline the strip so prop ends can be framed clear of it. */
@@ -168,7 +166,6 @@
     bindingFor,
     labelFor,
     cardRenderOptions = null,
-    handLabeling = null,
     qrSequence,
     showStripGuide = false,
     interactive = true,
@@ -2354,7 +2351,6 @@
                       ? sourceItem
                       : null
                   )}
-                  {handLabeling}
                   {qrSequence}
                   sequencePosition={layer.sequencePosition ??
                     (isVideo ? undefined : OPENING_POSITION)}
