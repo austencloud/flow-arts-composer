@@ -543,8 +543,6 @@
           />
         </div>
         <DisplayPanel
-          {fill}
-          grow={fill}
           compact
           sequence={editor.sequence}
           propType={pickedPropType ?? defaultPropType}
