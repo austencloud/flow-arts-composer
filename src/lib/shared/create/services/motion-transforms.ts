@@ -9,7 +9,10 @@ import type { MotionData } from "$lib/shared/pictograph/shared/domain/models/mot
 import { createMotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
 import type { GridLocation } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
 import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import type { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+import {
+  HandPath,
+  type HandSide,
+} from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
 import {
   VERTICAL_MIRROR_LOCATION_MAP,
   HORIZONTAL_MIRROR_LOCATION_MAP,
@@ -21,6 +24,14 @@ import {
   getToggledGridMode,
 } from "$lib/shared/create/services/rotation-helpers";
 
+function reverseHandPath(
+  path: HandPath | null | undefined
+): HandPath | null | undefined {
+  if (path === HandPath.CLOCKWISE) return HandPath.COUNTER_CLOCKWISE;
+  if (path === HandPath.COUNTER_CLOCKWISE) return HandPath.CLOCKWISE;
+  return path;
+}
+
 export function mirrorMotion(motion: MotionData): MotionData {
   return createMotionData({
     ...motion,
@@ -28,6 +39,7 @@ export function mirrorMotion(motion: MotionData): MotionData {
     endLocation: VERTICAL_MIRROR_LOCATION_MAP[motion.endLocation],
     arrowLocation: VERTICAL_MIRROR_LOCATION_MAP[motion.arrowLocation],
     rotationDirection: reverseRotationDirection(motion.rotationDirection),
+    handPath: reverseHandPath(motion.handPath),
   });
 }
 
@@ -38,6 +50,7 @@ export function flipMotion(motion: MotionData): MotionData {
     endLocation: HORIZONTAL_MIRROR_LOCATION_MAP[motion.endLocation],
     arrowLocation: HORIZONTAL_MIRROR_LOCATION_MAP[motion.arrowLocation],
     rotationDirection: reverseRotationDirection(motion.rotationDirection),
+    handPath: reverseHandPath(motion.handPath),
   });
 }
 
