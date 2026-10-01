@@ -16,6 +16,7 @@
     squarePainter?: PostStudioLayerPainter | null;
   } = $props();
   let fit = $state(true);
+  let wheelWindowSeconds = $state<number | null>(null);
 </script>
 
 {#if session.take && session.timing}
@@ -88,7 +89,9 @@
         durationSeconds={session.durationSeconds}
         mediaSeconds={session.mediaSeconds}
         movesPerPass={session.movesPerPass}
-        windowSeconds={fit ? session.durationSeconds : Number(session.zoom)}
+        windowSeconds={fit
+          ? session.durationSeconds
+          : (wheelWindowSeconds ?? Number(session.zoom))}
         editable={session.adjustLandings}
         onGestureChange={session.setAdjustmentCancel}
         selected={session.selected}
@@ -98,6 +101,10 @@
         }}
         onselect={(landing) => (session.selected = landing)}
         onplace={session.placeLanding}
+        onzoom={(seconds) => {
+          fit = false;
+          wheelWindowSeconds = seconds;
+        }}
         dragRange={session.landingRange}
       />
     </div>
@@ -119,16 +126,24 @@
         ><span class="sr-only">Timeline view</span>
         <select
           aria-label="Timeline view"
-          value={fit ? "fit" : session.zoom}
+          value={fit
+            ? "fit"
+            : wheelWindowSeconds !== null
+              ? "custom"
+              : session.zoom}
           onchange={(event) => {
             const value = event.currentTarget.value;
             fit = value === "fit";
-            if (!fit) session.zoom = value;
+            wheelWindowSeconds = null;
+            if (value === "8" || value === "16") session.zoom = value;
           }}
         >
           <option value="fit">Fit</option><option value="8">8 s</option><option
             value="16">16 s</option
           >
+          {#if wheelWindowSeconds !== null}<option value="custom"
+              >{Math.round(wheelWindowSeconds * 10) / 10} s</option
+            >{/if}
         </select>
       </label>
       <PanelButton
@@ -154,7 +169,8 @@
         </PanelButton>
       {/if}
       <span class="hint"
-        >T tap · Space play/pause · ← → frame · Ctrl Z undo · Ctrl Y redo</span
+        >T tap · Space play/pause · ← → frame · Ctrl + wheel zoom · Ctrl Z undo
+        · Ctrl Y redo</span
       >
     </div>
   </div>

@@ -39,9 +39,8 @@ let stubbed: typeof document.createElement;
 const lanes: Array<{ destroy: () => void }> = [];
 beforeEach(() => {
   stubbed = document.createElement;
-  document.createElement = Object.getPrototypeOf(document).createElement.bind(
-    document
-  );
+  document.createElement =
+    Object.getPrototypeOf(document).createElement.bind(document);
   vi.stubGlobal(
     "ResizeObserver",
     class {
@@ -54,18 +53,26 @@ beforeEach(() => {
 afterEach(() => {
   for (const lane of lanes.splice(0)) lane.destroy();
   document.createElement = stubbed;
+  vi.restoreAllMocks();
   vi.unstubAllGlobals();
 });
 
-function lane(timing: TakeTiming, mediaSeconds: number) {
-  const mounted = mountTimingLane(timing, mediaSeconds, EIGHT);
+function lane(timing: TakeTiming, mediaSeconds: number, windowSeconds = 8) {
+  const mounted = mountTimingLane(timing, mediaSeconds, EIGHT, windowSeconds);
   lanes.push(mounted);
   return mounted;
 }
 
 describe("timing lane across a cut", () => {
   it("still draws a landing dragged across a start-over cut", () => {
-    const split = splitTimingSection(tapped(), 8.5, "part-2", 2, EIGHT, "restarts");
+    const split = splitTimingSection(
+      tapped(),
+      8.5,
+      "part-2",
+      2,
+      EIGHT,
+      "restarts"
+    );
     // Part 2's move 1 (9 s) dragged a little earlier, past the cut.
     const placed = placeTakeLanding(split, "part-2", 1, 8.3, EIGHT);
     expect(lane(placed, 8.5).pinnedLabels()).toEqual([
@@ -76,7 +83,14 @@ describe("timing lane across a cut", () => {
   it("draws the landing at a keep-counting cut once when a part is nudged", () => {
     // Cut just before move 9 (9 s), then part 2 nudged earlier so it draws
     // move 9 before the cut.
-    const split = splitTimingSection(tapped(), 8.95, "part-2", 2, EIGHT, "continues");
+    const split = splitTimingSection(
+      tapped(),
+      8.95,
+      "part-2",
+      2,
+      EIGHT,
+      "continues"
+    );
     const nudged = editTakeSection(split, "part-2", EIGHT, (section) => ({
       ...section,
       offsetSeconds: -0.1,
@@ -88,7 +102,14 @@ describe("timing lane across a cut", () => {
   });
 
   it("moves the selection with a landing dragged across a keep-counting cut", () => {
-    const split = splitTimingSection(tapped(), 8.5, "part-2", 2, EIGHT, "continues");
+    const split = splitTimingSection(
+      tapped(),
+      8.5,
+      "part-2",
+      2,
+      EIGHT,
+      "continues"
+    );
     const harness = createPostTimingSessionHarness(null, split);
     try {
       // Move 9 (part 2, at 9 s) dragged to 8.4 s, before the cut at 8.5 s,
@@ -108,5 +129,51 @@ describe("timing lane across a cut", () => {
     } finally {
       harness.dispose();
     }
+  });
+});
+
+describe("timing lane zoom", () => {
+  it("keeps the time under the cursor while Ctrl + wheel zooms from Fit", () => {
+    vi.spyOn(HTMLElement.prototype, "clientWidth", "get").mockReturnValue(800);
+    const mounted = lane(tapped(), 0, 60);
+    const viewport = mounted.viewport();
+    vi.spyOn(viewport, "getBoundingClientRect").mockReturnValue({
+      left: 0,
+      width: 800,
+    } as DOMRect);
+
+    const plainWheel = new WheelEvent("wheel", {
+      bubbles: true,
+      cancelable: true,
+      clientX: 400,
+      deltaY: -100,
+    });
+    viewport.dispatchEvent(plainWheel);
+    expect(plainWheel.defaultPrevented).toBe(false);
+    expect(mounted.windowSeconds()).toBe(60);
+
+    const zoomIn = new WheelEvent("wheel", {
+      bubbles: true,
+      cancelable: true,
+      ctrlKey: true,
+      clientX: 400,
+      deltaY: -100,
+    });
+    viewport.dispatchEvent(zoomIn);
+    expect(zoomIn.defaultPrevented).toBe(true);
+    expect(mounted.windowSeconds()).toBe(48);
+    expect(viewport.scrollLeft).toBeCloseTo(96);
+
+    viewport.dispatchEvent(
+      new WheelEvent("wheel", {
+        bubbles: true,
+        cancelable: true,
+        ctrlKey: true,
+        clientX: 400,
+        deltaY: 100,
+      })
+    );
+    expect(mounted.windowSeconds()).toBe(60);
+    expect(viewport.scrollLeft).toBeCloseTo(0);
   });
 });
