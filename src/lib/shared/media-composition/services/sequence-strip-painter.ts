@@ -1,8 +1,5 @@
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import {
-  getProgressBarHeight,
-  renderProgressBarToCanvas,
-} from "$lib/shared/animation-engine/services/sequence-progress-renderer";
+import { paintSequenceProgressStrip } from "$lib/shared/animation-engine/services/sequence-progress-renderer";
 import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
 import type { PreparedPictographData } from "$lib/shared/pictograph/shared/domain/models/prepared-pictograph-data";
 import type { PropPosition } from "$lib/shared/pictograph/prop/domain/models/prop-position";
@@ -312,23 +309,12 @@ class SequenceStripPainter implements PostStudioLayerPainter {
       this.paintMandala(context, rect, sequenceFrame);
     }
     if (this.showProgressBar()) {
-      const side = Math.min(rect.width, rect.height);
-      context.save();
-      context.translate(
-        rect.x + (rect.width - side) / 2,
-        rect.y + (rect.height - side) / 2
+      paintSequenceProgressStrip(
+        context,
+        rect,
+        sequenceFrame.passBeatProgress,
+        true
       );
-      renderProgressBarToCanvas(
-        context as CanvasRenderingContext2D,
-        side,
-        side - getProgressBarHeight(side),
-        1,
-        0,
-        [1],
-        true,
-        sequenceFrame.passBeatProgress
-      );
-      context.restore();
     }
     context.restore();
   }
