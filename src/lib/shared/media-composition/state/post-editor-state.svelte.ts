@@ -1123,7 +1123,7 @@ export function createPostEditorState(deps: PostEditorDeps) {
         ...timingUndo,
         [takeId]: [
           ...(timingUndo[takeId] ?? []),
-          { kind: "appearance", appearance: current },
+          { kind: "appearance" as const, appearance: current },
         ].slice(-TIMING_UNDO_DEPTH),
       };
     }
