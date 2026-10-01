@@ -352,7 +352,7 @@ async function drawBackdrop(
   if (!layer || !media) return;
   if (media instanceof HTMLVideoElement) {
     await syncVideo(media, layer.sourceTimeSeconds);
-  } else if (!media.complete) {
+  } else if (media instanceof HTMLImageElement && !media.complete) {
     await media.decode();
   }
   paintBlurredBackdrop(context, {
@@ -630,7 +630,8 @@ async function drawRegionLayer(
     if (!media) return;
     if (media instanceof HTMLVideoElement)
       await syncVideo(media, layer.sourceTimeSeconds);
-    else if (!media.complete) await media.decode();
+    else if (media instanceof HTMLImageElement && !media.complete)
+      await media.decode();
     const dimensions = mediaDimensions(media);
     if (dimensions.width <= 0 || dimensions.height <= 0) return;
     const geometry = resolveFrameLayerGeometry({
@@ -775,7 +776,7 @@ async function drawRegionLayer(
     }
     if (media instanceof HTMLVideoElement) {
       await syncVideo(media, layer.sourceTimeSeconds);
-    } else if (!media.complete) {
+    } else if (media instanceof HTMLImageElement && !media.complete) {
       await media.decode();
     }
     const dimensions = mediaDimensions(media);

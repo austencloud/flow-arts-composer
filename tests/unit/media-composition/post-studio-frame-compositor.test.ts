@@ -5,6 +5,7 @@ import {
   resolveFrameLayerGeometry,
   renderPostStudioFrame,
   waitForPictographMotion,
+  type RenderPostStudioFrameInput,
 } from "$lib/shared/media-composition/services/post-studio-frame-compositor";
 import { compilePostProject } from "$lib/shared/media-composition/domain/post-project-compiler";
 import { evaluatePresetFrame } from "$lib/shared/media-composition/services/frame-evaluator";
@@ -28,6 +29,90 @@ const preset = POST_STUDIO_PRESETS.find(
 const region = preset.regions.find(
   (candidate) => candidate.id === "performance"
 )!;
+
+describe("decoded video export surfaces", () => {
+  it.each(["region", "source crop", "blurred backdrop"])(
+    "draws a decoded canvas through the %s path without trying to decode it again",
+    async (path) => {
+      const draft = project([
+        video("footage", {
+          ...(path === "source crop"
+            ? {
+                sourceGeometry: {
+                  x: 0,
+                  y: 0,
+                  width: 1,
+                  height: 1,
+                  rotation: 0,
+                  crop: { left: 0.1, top: 0, right: 0.9, bottom: 1 },
+                },
+              }
+            : {}),
+        }),
+      ]);
+      if (path === "blurred backdrop") draft.background = "blur";
+      const compiled = compilePostProject(draft, { now: NOW })!;
+      const layers = evaluatePresetFrame(
+        compiled.preset,
+        compiled.durationSeconds,
+        1
+      );
+      const create = <K extends keyof HTMLElementTagNameMap>(tag: K) =>
+        document.createElementNS(
+          "http://www.w3.org/1999/xhtml",
+          tag
+        ) as HTMLElementTagNameMap[K];
+      const root = create("div");
+      const mounted = create("div");
+      mounted.className = "media-layer";
+      mounted.dataset.clipId = "footage";
+      root.append(mounted);
+      const frame = create("canvas");
+      frame.width = 1920;
+      frame.height = 1080;
+      const drawImage = vi.fn();
+      const context = new Proxy(
+        { drawImage },
+        {
+          get(target, key) {
+            return Reflect.get(target, key) ?? vi.fn();
+          },
+        }
+      );
+      const canvas = create("canvas");
+      canvas.width = 1080;
+      canvas.height = 1920;
+      vi.spyOn(canvas, "getContext").mockReturnValue(
+        context as unknown as CanvasRenderingContext2D
+      );
+      if (path === "blurred backdrop") {
+        const sample = create("canvas");
+        vi.spyOn(sample, "getContext").mockReturnValue(
+          context as unknown as CanvasRenderingContext2D
+        );
+        vi.spyOn(document, "createElement").mockReturnValueOnce(sample);
+      }
+      const frameFor = vi.fn().mockResolvedValue(frame);
+      await renderPostStudioFrame({
+        canvas,
+        root,
+        preset: compiled.preset,
+        layers,
+        cardFrameCache: new Map(),
+        videoFrames: {
+          has: () => true,
+          frameFor,
+        } as unknown as RenderPostStudioFrameInput["videoFrames"],
+      });
+      expect(frameFor).toHaveBeenCalledTimes(
+        path === "blurred backdrop" ? 2 : 1
+      );
+      expect(drawImage.mock.calls.some(([source]) => source === frame)).toBe(
+        true
+      );
+    }
+  );
+});
 
 describe("split animation export", () => {
   it("draws the later piece at a shared take edge from the preview's mounted surface", async () => {
