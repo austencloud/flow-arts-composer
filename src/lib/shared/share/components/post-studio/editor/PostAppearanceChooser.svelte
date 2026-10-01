@@ -15,6 +15,7 @@
     tileHeight,
     insetX = 0,
     chromeHeight = 0,
+    columnChoices,
     children,
   }: {
     title: string;
@@ -25,6 +26,7 @@
     tileHeight: number;
     insetX?: number;
     chromeHeight?: number;
+    columnChoices?: readonly number[];
     children: Snippet<[boolean]>;
   } = $props();
 
@@ -40,7 +42,8 @@
       tileWidth,
       tileHeight,
       insetX,
-      chromeHeight
+      chromeHeight,
+      columnChoices
     )
   );
 

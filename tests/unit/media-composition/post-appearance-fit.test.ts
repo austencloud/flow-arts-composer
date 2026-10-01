@@ -19,6 +19,12 @@ describe("Post appearance chooser space", () => {
     expect(appearanceControlsFit(440, 500, 19, 96, 112, 36, 44)).toBe(false);
   });
 
+  it("allows room for balanced effort rows instead of assuming a ragged three-column grid", () => {
+    expect(appearanceControlsFit(439, 427, 8, 104, 88, 0, 140, [1, 2, 4])).toBe(false);
+    expect(appearanceControlsFit(439, 516, 8, 104, 88, 0, 140, [1, 2, 4])).toBe(true);
+    expect(appearanceControlsFit(440, 324, 8, 104, 88, 0, 140, [1, 2, 4])).toBe(true);
+  });
+
   it("waits for measurement and handles intrinsic accordions without shrinking controls", () => {
     expect(appearanceControlsFit(0, 0, 8, 104, 88)).toBe(false);
     expect(appearanceControlsFit(90, Infinity, 8, 104, 88)).toBe(false);
