@@ -5,6 +5,7 @@ import {
   loadPostDraft,
   readPostDraftRecords,
   savePostDraft,
+  shouldSubmitPostDraft,
 } from "$lib/shared/media-composition/services/post-draft-storage";
 
 afterEach(() => {
@@ -18,6 +19,26 @@ function draft(now: number) {
 }
 
 describe("draft autosave", () => {
+  it("skips only an empty mount, while keeping projects with takes or items", () => {
+    const empty = draft(1);
+    expect(shouldSubmitPostDraft(empty, 0)).toBe(false);
+    expect(shouldSubmitPostDraft(empty, 1)).toBe(true);
+    expect(
+      shouldSubmitPostDraft(
+        { ...empty, takes: [{ id: "take" }] } as typeof empty,
+        0
+      )
+    ).toBe(true);
+    expect(
+      shouldSubmitPostDraft(
+        {
+          ...empty,
+          tracks: [{ ...empty.tracks[0]!, items: [{ id: "item" }] }],
+        } as typeof empty,
+        0
+      )
+    ).toBe(true);
+  });
   it("serializes edits and never reports saved while a newer edit is waiting", async () => {
     const releases: Array<() => void> = [];
     const save = vi.fn(

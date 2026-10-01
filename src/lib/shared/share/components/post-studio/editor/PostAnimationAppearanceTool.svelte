@@ -265,6 +265,7 @@
     "stepNumbers",
     "progressBar",
     "wordHeader",
+    "wordHeaderHighlight",
     "mandala",
     "leftPathLines",
     "rightPathLines",

@@ -545,6 +545,7 @@ export const PostAnimationItemSchema = z
         stepNumbers: z.boolean().optional(),
         progressBar: z.boolean().optional(),
         wordHeader: z.boolean().optional(),
+        wordHeaderHighlight: z.enum(["arrival", "travel"]).optional(),
         mandala: z.boolean().optional(),
         leftPathLines: z.boolean().optional(),
         rightPathLines: z.boolean().optional(),

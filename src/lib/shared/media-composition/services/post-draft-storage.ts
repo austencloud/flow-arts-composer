@@ -16,6 +16,21 @@ export interface PostDraftRecord {
   value: string;
 }
 
+/** A new post has no media to protect until it contains a take or an item. */
+export function isEmptyPostProject(project: PostProject): boolean {
+  return (
+    project.takes.length === 0 &&
+    project.tracks.every((track) => track.items.length === 0)
+  );
+}
+
+export function shouldSubmitPostDraft(
+  project: PostProject,
+  revision: number
+): boolean {
+  return revision > 0 || !isEmptyPostProject(project);
+}
+
 function recordsForSequence(
   sequenceId: string,
   records: readonly PostDraftRecord[]
