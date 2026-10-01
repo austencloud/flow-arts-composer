@@ -3,6 +3,86 @@ export function getProgressBarHeight(canvasSize: number): number {
 }
 
 /**
+ * The sequence progress strip: a thin line flush with the bottom edge of an
+ * animation surface, across its full width. Its thickness is measured in the
+ * 950-unit notation square (the surface's shorter side), where the letter
+ * glyph, turn numbers and element icon all end by 910. Capping the strip at 24
+ * units keeps it inside that clear margin at every size, so it can never cover
+ * anything the notation draws at the bottom.
+ */
+const NOTATION_UNITS = 950;
+const STRIP_UNITS = 10;
+const STRIP_MAX_UNITS = 24;
+const STRIP_MIN_PX = 3;
+
+export function getSequenceProgressStripHeight(squareSide: number): number {
+  if (!(squareSide > 0)) return 0;
+  const preferred = Math.max(
+    STRIP_MIN_PX,
+    (squareSide * STRIP_UNITS) / NOTATION_UNITS
+  );
+  return Math.min(preferred, (squareSide * STRIP_MAX_UNITS) / NOTATION_UNITS);
+}
+
+/**
+ * The same thickness as a CSS length, measured against the nearest size
+ * container's shorter side, so the live strip and the painted one agree.
+ */
+export function sequenceProgressStripHeightCss(): string {
+  return (
+    `min(max(${STRIP_MIN_PX}px, calc(100cqmin * ${STRIP_UNITS} / ${NOTATION_UNITS})), ` +
+    `calc(100cqmin * ${STRIP_MAX_UNITS} / ${NOTATION_UNITS}))`
+  );
+}
+
+interface StripRect {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+/**
+ * Paints the progress strip along the bottom edge of `rect`, edge to edge.
+ * There is no backing band: only the faint track and the filled share.
+ */
+export function paintSequenceProgressStrip(
+  ctx: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D,
+  rect: StripRect,
+  progress: number,
+  darkMode: boolean
+): void {
+  const height = getSequenceProgressStripHeight(
+    Math.min(rect.width, rect.height)
+  );
+  if (height <= 0) return;
+  const y = rect.y + rect.height - height;
+  const share = Number.isFinite(progress)
+    ? Math.max(0, Math.min(1, progress))
+    : 0;
+
+  ctx.save();
+  ctx.fillStyle = darkMode
+    ? "rgba(255, 255, 255, 0.08)"
+    : "rgba(0, 0, 0, 0.08)";
+  ctx.fillRect(rect.x, y, rect.width, height);
+
+  const fillWidth = rect.width * share;
+  if (fillWidth > 0) {
+    const gradient = ctx.createLinearGradient(rect.x, y, rect.x + fillWidth, y);
+    const [edge, middle] = darkMode
+      ? ["#00b8b8", "#00e5e5"]
+      : ["#3b82f6", "#60a5fa"];
+    gradient.addColorStop(0, edge);
+    gradient.addColorStop(0.5, middle);
+    gradient.addColorStop(1, edge);
+    ctx.fillStyle = gradient;
+    ctx.fillRect(rect.x, y, fillWidth, height);
+  }
+  ctx.restore();
+}
+
+/**
  * Draw a segmented progress bar.
  * Ports the "minimal" variant from SegmentedSequenceProgressBar.svelte.
  */

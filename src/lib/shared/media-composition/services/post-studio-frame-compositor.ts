@@ -31,8 +31,8 @@ import {
 import { traceRoundedRect } from "$lib/shared/render/utils/trace-rounded-rect";
 import { videoColorFilter } from "$lib/shared/media-composition/domain/post-video-color-grade";
 import {
-  getProgressBarHeight,
-  renderProgressBarToCanvas,
+  getSequenceProgressStripHeight,
+  paintSequenceProgressStrip,
 } from "$lib/shared/animation-engine/services/sequence-progress-renderer";
 import type { PostStudioExportVideoFrames } from "$lib/shared/media-composition/services/post-studio-export-video-frames";
 
@@ -674,6 +674,24 @@ async function drawRegionLayer(
       geometry.region.width,
       geometry.region.height
     );
+    const animation = layerElement.querySelector<HTMLElement>(
+      "[data-sequence-progress-visible]"
+    );
+    const showProgress =
+      animation?.dataset.sequenceProgressVisible === "true" &&
+      !!layer.sequenceFrame;
+    const stripHeight = showProgress
+      ? getSequenceProgressStripHeight(
+          Math.min(geometry.drawRect.width, geometry.drawRect.height)
+        )
+      : 0;
+    const stageGeometry = {
+      ...geometry,
+      drawRect: {
+        ...geometry.drawRect,
+        height: geometry.drawRect.height - stripHeight,
+      },
+    };
     const pictographMotion = layerElement.querySelector(
       "[data-pictograph-motion]"
     );
@@ -696,7 +714,7 @@ async function drawRegionLayer(
         height: bounds.height,
         scale: Math.max(1, regionPixels.width / bounds.width),
       });
-      drawSource(context, image, geometry);
+      drawSource(context, image, stageGeometry);
     }
     // The captured motion subtree already includes the animation/effect
     // canvases. Drawing them again would cover its transparent SVG arrows.
@@ -708,31 +726,18 @@ async function drawRegionLayer(
         Number.parseFloat(getComputedStyle(right).zIndex || "0")
     );
     for (const canvas of canvases) {
-      drawSource(context, canvas, geometry);
+      drawSource(context, canvas, stageGeometry);
     }
-    // Canvas capture omits the shared DOM progress line. Paint its mapped
-    // sequence pass here so seeking and ending holds match the preview.
-    const animation = layerElement.querySelector<HTMLElement>(
-      "[data-sequence-progress-visible]"
-    );
-    if (
-      animation?.dataset.sequenceProgressVisible === "true" &&
-      layer.sequenceFrame
-    ) {
-      const side = geometry.drawRect.width;
-      context.save();
-      context.translate(geometry.drawRect.x, geometry.drawRect.y);
-      renderProgressBarToCanvas(
+    // Canvas capture omits the shared DOM progress strip. Paint its mapped
+    // sequence pass along the bottom edge of the drawn canvases so seeking
+    // and ending holds match the preview.
+    if (showProgress && layer.sequenceFrame) {
+      paintSequenceProgressStrip(
         context,
-        side,
-        side - getProgressBarHeight(side),
-        1,
-        0,
-        [1],
-        animation.dataset.sequenceProgressDark !== "false",
-        layer.sequenceFrame.passBeatProgress
+        geometry.drawRect,
+        layer.sequenceFrame.passBeatProgress,
+        animation?.dataset.sequenceProgressDark !== "false"
       );
-      context.restore();
     }
   } else if (renderMode === "choreo-card") {
     const beat = layer.displayedBeatNumber ?? 0;
