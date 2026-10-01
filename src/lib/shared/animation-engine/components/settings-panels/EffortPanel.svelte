@@ -133,8 +133,10 @@
   }
   .fit .effort-grid {
     flex: 1;
-    grid-template-columns: repeat(auto-fit, minmax(min(104px, 100%), 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
     grid-auto-rows: minmax(88px, 1fr);
+    max-height: 328px;
+    align-content: start;
     gap: 8px;
   }
   .fit .effort-btn {
@@ -146,6 +148,18 @@
     aspect-ratio: auto;
     max-height: 120px;
     min-height: 28px;
+  }
+  @container effort-panel (width < 440px) {
+    .fit .effort-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      max-height: 664px;
+    }
+  }
+  @container effort-panel (width < 216px) {
+    .fit .effort-grid {
+      grid-template-columns: minmax(0, 1fr);
+      max-height: 1336px;
+    }
   }
   .effort-panel {
     container: effort-panel / inline-size;
