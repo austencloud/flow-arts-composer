@@ -94,7 +94,7 @@ export async function loadPostDraft(sequenceId: string): Promise<{
         !Array.isArray(saved.records)
       )
         throw new Error("The draft archive returned an invalid response.");
-      return { response, saved };
+      return { response, saved: { records: saved.records } };
     })();
     const { response, saved } = await Promise.race([
       archive,

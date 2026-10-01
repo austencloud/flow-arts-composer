@@ -35,7 +35,8 @@ describe("worktree finish lifecycle", () => {
     git(repo, "config", "user.email", "worktree-test@example.com");
     git(repo, "config", "user.name", "Worktree Test");
     git(repo, "config", "core.autocrlf", "false");
-    writeFileSync(join(repo, ".gitignore"), "node_modules/\n");
+    // Directory-only patterns do not ignore a symlink on Linux.
+    writeFileSync(join(repo, ".gitignore"), "node_modules\n");
     writeFileSync(join(repo, "shared.txt"), "base\n");
     git(repo, "add", ".gitignore", "shared.txt");
     git(repo, "commit", "-m", "base");
