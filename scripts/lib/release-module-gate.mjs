@@ -224,7 +224,7 @@ export function parseGuestModuleAccess(source) {
  * @param {string[]} [moduleIds]
  * @returns {Record<string, string[]>}
  */
-export function parseModuleTabs(source, moduleIds = ["create", "browse"]) {
+export function parseModuleTabs(source, moduleIds = ["create", "browse", "settings"]) {
   const result = {};
   for (const moduleId of moduleIds) {
     const constant = `${moduleId.toUpperCase().replaceAll("-", "_")}_TABS`;
