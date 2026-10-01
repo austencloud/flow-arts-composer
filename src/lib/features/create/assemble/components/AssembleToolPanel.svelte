@@ -250,12 +250,10 @@
 
   .stage-slot {
     position: relative;
-    /* Keep the grid and dock together at the top. Shrink the square only
-       when both would otherwise exceed the panel's available height. */
-    flex: 0 1 auto;
+    /* The canvas fills the space above the dock. Its SVG preserves the
+       grid's proportions within this rectangular viewport. */
+    flex: 1 1 0;
     width: 100%;
-    height: auto;
-    aspect-ratio: 1;
     min-width: 0;
     min-height: 0;
     display: grid;
