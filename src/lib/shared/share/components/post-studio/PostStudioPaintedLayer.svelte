@@ -89,6 +89,8 @@
   }
   canvas {
     position: absolute;
+    /* Animated ink needs the overflow width beyond its authored text box. */
+    max-width: none;
     pointer-events: none;
   }
 </style>
