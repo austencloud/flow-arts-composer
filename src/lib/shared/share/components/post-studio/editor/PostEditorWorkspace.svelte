@@ -62,6 +62,7 @@
     editItemKeyframes,
     placeMainItem,
     moveOverlayItem,
+    moveSelectedItems,
     setProjectBackground,
     setProjectCanvas,
     setTrackFlag,
@@ -2729,6 +2730,17 @@
           onMoveOverlay={(itemId, start, trackIndex) =>
             applyMove((project, context) =>
               moveOverlayItem(project, itemId, { start, trackIndex }, context)
+            )}
+          onMoveSelection={(itemIds, draggedItemId, start, trackIndex) =>
+            applyMove((project, context) =>
+              moveSelectedItems(
+                project,
+                itemIds,
+                draggedItemId,
+                start,
+                trackIndex,
+                context
+              )
             )}
           onTrackFlag={(trackId, flag, value) =>
             editor.edit((project, context) =>
