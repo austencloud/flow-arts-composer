@@ -6100,6 +6100,8 @@
   "post_timeline_item_linked": "Mit Clip verknüpft",
   "post_timeline_trim_start": "Anfang von {label} trimmen",
   "post_timeline_trim_end": "Ende von {label} trimmen",
+  "post_timeline_add_crossfade": "Überblendung hinzufügen",
+  "post_timeline_remove_crossfade": "Überblendung entfernen",
   "post_timeline_new_layer_zone": "Lege hier ab, um eine neue Ebene hinzuzufügen",
   "post_timeline_empty_hint": "Füge ein Video hinzu, um zu beginnen",
   "post_timeline_add_video": "Video hinzufügen",

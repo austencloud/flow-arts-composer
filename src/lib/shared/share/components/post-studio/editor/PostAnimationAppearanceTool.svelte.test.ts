@@ -5,6 +5,7 @@ import { getSettings } from "$lib/shared/application/state/app-state.svelte";
 import { createEmptyPostProject } from "$lib/shared/media-composition/domain/post-project";
 import type { PostEditorState } from "$lib/shared/media-composition/state/post-editor-state.svelte";
 import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+import { DEFAULT_EFFECTS_CONFIG } from "$lib/shared/effects/domain/defaults";
 import PostAnimationAppearanceTool from "./PostAnimationAppearanceTool.svelte";
 
 it("saves a plain staff in one edit without changing the account's props or artwork", async () => {
@@ -59,4 +60,37 @@ it("saves a plain staff in one edit without changing the account's props or artw
     right: getSettings().rightPropType,
     look: getSettings().propArtwork,
   }).toEqual(account);
+});
+
+it("saves an LED look change from the selected effect inspector", async () => {
+  await page.viewport(1200, 900);
+  const onAppearanceChange = vi.fn();
+  const effects = structuredClone(DEFAULT_EFFECTS_CONFIG);
+  effects.activeEffect = "led";
+  effects.tipEffectMap = { "*": { effect: "led" } };
+  const { rerender } = render(PostAnimationAppearanceTool, {
+    editor: {
+      project: createEmptyPostProject({ sequenceId: "led-test", now: 1 }),
+    } as PostEditorState,
+    appearanceOverride: { effects },
+    onAppearanceChange,
+    locked: false,
+  });
+
+  await page.getByRole("tab", { name: "Effects", exact: true }).click();
+  await page.getByRole("button", { name: "Tune", exact: true }).click();
+  await page.getByRole("button", { name: "Look", exact: true }).click();
+  await page.getByRole("radio", { name: "5", exact: true }).click();
+  await vi.waitFor(() => {
+    expect(onAppearanceChange).toHaveBeenCalledTimes(1);
+    expect(
+      onAppearanceChange.mock.calls.at(-1)![0].effects.led.look.brightness
+    ).toBe(5);
+  });
+  await rerender({
+    appearanceOverride: onAppearanceChange.mock.calls[0]![0],
+  });
+  await expect
+    .element(page.getByRole("radio", { name: "5", exact: true }))
+    .toHaveAttribute("aria-checked", "true");
 });

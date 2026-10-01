@@ -386,6 +386,7 @@ const itemBase = {
   opacity: z.number().finite().min(0).max(1),
   fadeIn: SecondsSchema,
   fadeOut: SecondsSchema,
+  transitionOut: PostTransitionOutSchema.optional(),
   /** Overlays only; always null on the main track. */
   anchor: PostAnchorSchema.nullable(),
   /** Overlays only: span exactly the anchored main clip. */
@@ -411,7 +412,6 @@ export const PostVideoItemSchema = z
       })
       .strict()
       .optional(),
-    transitionOut: PostTransitionOutSchema.optional(),
     takeId: IdSchema,
     /** Take media seconds. */
     sourceIn: SecondsSchema,
@@ -460,7 +460,6 @@ export const PostImageItemSchema = z
     kind: z.literal("image"),
     imageId: IdSchema,
     sourceGeometry: PostSourceGeometrySchema.optional(),
-    transitionOut: PostTransitionOutSchema.optional(),
     keyframes: z
       .object({
         sourceGeometry: z.array(PostKeyframeSourceGeometrySchema).optional(),

@@ -61,6 +61,7 @@
     clearProjectKeyframes,
     editItemKeyframes,
     placeMainItem,
+    setTrackCutCrossfade,
     moveOverlayItem,
     moveSelectedItems,
     setProjectBackground,
@@ -1513,6 +1514,37 @@
     editor.seek(seconds);
   }
 
+  function toggleCrossfade(
+    outgoingId: string,
+    incomingId: string,
+    enabled: boolean
+  ): void {
+    editor.pause();
+    const trackIndex = findItem(editor.project, outgoingId)?.trackIndex;
+    if (trackIndex === undefined) return;
+    if (
+      !editor.edit((project, context) =>
+        setTrackCutCrossfade(
+          project,
+          trackIndex,
+          outgoingId,
+          incomingId,
+          enabled,
+          context
+        )
+      )
+    )
+      return;
+    editor.selectedItemId = outgoingId;
+    const outgoing = findItem(editor.project, outgoingId)?.item;
+    const incoming = findItem(editor.project, incomingId)?.item;
+    if (outgoing && incoming) {
+      editor.seek(
+        enabled ? (incoming.start + itemEnd(outgoing)) / 2 : itemEnd(outgoing)
+      );
+    }
+  }
+
   // ---- Keyframe rows -------------------------------------------------------
 
   /**
@@ -2745,6 +2777,7 @@
             applyMove((project, context) =>
               moveOverlayItem(project, itemId, { start, trackIndex }, context)
             )}
+          onToggleCrossfade={toggleCrossfade}
           onMoveSelection={(itemIds, draggedItemId, start, trackIndex) =>
             applyMove((project, context) =>
               moveSelectedItems(

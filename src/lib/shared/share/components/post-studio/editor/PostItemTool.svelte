@@ -759,7 +759,8 @@
 
 <div
   class="item-tool"
-  class:animation-appearance={appearanceFill && tool === "appearance" &&
+  class:animation-appearance={appearanceFill &&
+    tool === "appearance" &&
     (item.kind === "animation" || item.kind === "moves")}
 >
   {#if locked}
@@ -1104,9 +1105,9 @@
         change("edgeShadow", { edge: { shadow: value / 100 } })}
     />
   {:else if tool === "fade"}
-    {#if onMain && (item.kind === "video" || item.kind === "image") && item.transitionOut}
+    {#if item.transitionOut}
       <TypeableValue
-        label="Crossdissolve (seconds)"
+        label="Crossfade (seconds)"
         text={`${item.transitionOut.duration.toFixed(2)} s`}
         disabled={locked}
         oncommit={(value) =>

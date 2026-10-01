@@ -83,6 +83,11 @@
     onTrim: (itemId: string, edge: "start" | "end", seconds: number) => void;
     onMoveMain: (itemId: string, start: number) => void;
     onMoveOverlay: (itemId: string, start: number, trackIndex: number) => void;
+    onToggleCrossfade: (
+      outgoingId: string,
+      incomingId: string,
+      enabled: boolean
+    ) => void;
     onMoveSelection: (
       itemIds: string[],
       draggedItemId: string,
@@ -148,6 +153,7 @@
     onTrim,
     onMoveMain,
     onMoveOverlay,
+    onToggleCrossfade,
     onMoveSelection,
     onTrackFlag,
     keyChannel,
@@ -298,6 +304,52 @@
 
   const overlayTrackCount = $derived(Math.max(0, project.tracks.length - 1));
   const mainItemsList = $derived(mainItems(project));
+  const crossfadeKinds = new Set<PostItem["kind"]>([
+    "video",
+    "image",
+    "card",
+    "animation",
+    "moves",
+    "carousel",
+  ]);
+
+  function cutsFor(track: PostTrack): {
+    outgoing: PostItem;
+    incoming: PostItem;
+    center: number;
+    active: boolean;
+  }[] {
+    if (track.locked || track.hidden) return [];
+    const cuts: ReturnType<typeof cutsFor> = [];
+    for (let index = 0; index < track.items.length - 1; index++) {
+      const outgoing = track.items[index]!;
+      const incoming = track.items[index + 1]!;
+      if (
+        !crossfadeKinds.has(outgoing.kind) ||
+        !crossfadeKinds.has(incoming.kind)
+      )
+        continue;
+      const gap = incoming.start - itemEnd(outgoing);
+      const active = Boolean(outgoing.transitionOut);
+      if (
+        active
+          ? gap > POST_TIME_EPSILON ||
+            gap < -Math.min(outgoing.duration, incoming.duration)
+          : Math.abs(gap) > POST_TIME_EPSILON
+      )
+        continue;
+      cuts.push({
+        outgoing,
+        incoming,
+        center:
+          gap < 0
+            ? (incoming.start + itemEnd(outgoing)) / 2
+            : itemEnd(outgoing),
+        active,
+      });
+    }
+    return cuts;
+  }
   const hasItems = $derived(
     project.tracks.some((track) => track.items.length > 0)
   );
@@ -1381,6 +1433,38 @@
                   )}
                 />
               {/each}
+              {#each cutsFor(row.track) as cut (`${cut.outgoing.id}:${cut.incoming.id}`)}
+                <button
+                  type="button"
+                  class="cut-crossfade"
+                  class:active={cut.active}
+                  style:left="{secondsToPixels(cut.center, pixelsPerSecond)}px"
+                  aria-label={t(
+                    cut.active
+                      ? "post_timeline_remove_crossfade"
+                      : "post_timeline_add_crossfade"
+                  )}
+                  title={t(
+                    cut.active
+                      ? "post_timeline_remove_crossfade"
+                      : "post_timeline_add_crossfade"
+                  )}
+                  onpointerdown={(event) => event.stopPropagation()}
+                  onclick={() =>
+                    onToggleCrossfade(
+                      cut.outgoing.id,
+                      cut.incoming.id,
+                      !cut.active
+                    )}
+                >
+                  <i
+                    class={cut.active
+                      ? "fa-solid fa-right-left"
+                      : "fa-solid fa-plus"}
+                    aria-hidden="true"
+                  ></i>
+                </button>
+              {/each}
             </div>
             {#if keyLanes && keyLanes.trackIndex === row.trackIndex}
               {@const lanes = keyLanes}
@@ -1564,6 +1648,35 @@
       var(--theme-card-bg, #1c1c26) 60%,
       transparent
     );
+  }
+
+  .cut-crossfade {
+    position: absolute;
+    z-index: 6;
+    top: 50%;
+    display: grid;
+    place-items: center;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    transform: translate(-50%, -50%);
+    border: 1px solid var(--theme-accent);
+    border-radius: 50%;
+    background: var(--theme-panel-elevated-bg, #1c1c26);
+    color: var(--theme-text, #fff);
+    cursor: pointer;
+    font: inherit;
+    font-size: 0.75rem;
+  }
+
+  .cut-crossfade.active {
+    background: var(--theme-accent);
+    color: var(--theme-bg, #101018);
+  }
+
+  .cut-crossfade:focus-visible {
+    outline: 2px solid var(--theme-text, #fff);
+    outline-offset: 2px;
   }
 
   .playhead-line {
