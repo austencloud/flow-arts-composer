@@ -33,16 +33,24 @@
   } = $props();
 
   let bpmDraft = $state("");
+  let holdDraft = $state(0);
   // A part cut from a fitted grid keeps that grid's exact tempo; the field
   // shows it to the tenth it is typed at.
   const shownBpm = (bpm: number) => String(Math.round(bpm * 10) / 10);
   $effect(() => {
     bpmDraft = session.section ? shownBpm(session.section.bpm) : "";
+    holdDraft = Math.round((session.section?.landingHoldRatio ?? 0) * 100);
   });
 
   function commitBpm(): void {
     if (!session.setBpm(Number(bpmDraft))) {
       bpmDraft = session.section ? shownBpm(session.section.bpm) : "";
+    }
+  }
+
+  function commitHold(): void {
+    if (!session.setLandingHoldPercent(holdDraft)) {
+      holdDraft = Math.round((session.section?.landingHoldRatio ?? 0) * 100);
     }
   }
 
@@ -232,6 +240,27 @@
           />
         {/if}
       </div>
+      {#if section}
+        <div class="group">
+          <label class="bpm">
+            <span>Hold after landing</span>
+            <input
+              type="number"
+              inputmode="numeric"
+              min="0"
+              max="90"
+              step="1"
+              bind:value={holdDraft}
+              onchange={commitHold}
+            />
+            <span>%</span>
+          </label>
+          <p class="help">
+            Keep each landed pose for this part of the next move interval, then
+            catch up by the next landing.
+          </p>
+        </div>
+      {/if}
       {#if fitted && section}
         <div class="group">
           <h4>{t("share_studio_deep_whole_grid")}</h4>

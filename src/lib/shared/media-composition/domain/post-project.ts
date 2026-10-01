@@ -700,6 +700,8 @@ export const PostProjectSchema = z
   .object({
     schemaVersion: z.literal(POST_PROJECT_SCHEMA_VERSION),
     sequenceId: IdSchema,
+    /** Prop used by this post's card and animation when an item has no override. */
+    propType: z.nativeEnum(PropType).optional(),
     takes: z.array(PostTakeSchema),
     /** Maps travel with a post, keyed by the take id they were edited against. */
     timings: z.record(z.string(), TakeTimingSchema).optional(),

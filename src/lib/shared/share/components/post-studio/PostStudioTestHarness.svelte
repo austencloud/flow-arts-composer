@@ -5,6 +5,7 @@
 -->
 <script lang="ts">
   import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+  import type { PostProject } from "$lib/shared/media-composition/domain/post-project";
   import { setViewerStudioSurfaces } from "$lib/shared/sequence-viewer/context/viewer-studio-surfaces-context";
   import {
     setViewerUrlSessionContext,
@@ -15,11 +16,12 @@
 
   interface Props {
     sequence: SequenceData;
+    initialProject?: PostProject;
     session: ViewerUrlSession;
     surfaces: ViewerStudioSurfaces;
   }
 
-  let { sequence, session, surfaces }: Props = $props();
+  let { sequence, initialProject, session, surfaces }: Props = $props();
 
   setViewerUrlSessionContext(session);
   setViewerStudioSurfaces(surfaces);
@@ -27,6 +29,7 @@
 
 <PostStudio
   {sequence}
+  {initialProject}
   cardPreviewUrl={null}
   animationPreviewUrl={null}
   onRequestAnimation={() => undefined}
