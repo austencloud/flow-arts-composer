@@ -1,5 +1,18 @@
 # Tutorial Videos, Part 2 — Handoff (2026-10-01, 14:35)
 
+## Completion update (2026-10-01, 14:46 CDT)
+Both code changes and the final draft edits below are complete on local main.
+The empty mount-save guard and the arrival/travel title highlight switch landed
+together. Focused tests passed (17); `npm run check` had zero errors/warnings.
+Fresh, schema-valid DCKΨ- and ΩΛ-XJ archive files were appended at 14:46; a
+rerun found them and woods unchanged. Woods already had the requested credit.
+The exact files and timing edits are recorded in the earlier handoff. An
+isolated browser opened `https://localhost:5173/post` but sign-in blocked
+saved-project inspection. **Austen must reload every open Post tab before
+clicking, then export all three videos himself.** Nothing was pushed.
+
+The "In flight" and "Loose ends" sections below are historical as of 14:35.
+
 ## Mission
 Three vertical tutorial videos (DCKΨ-, ΩΛ-XJ, Δ-ΛRZ "woods") built in Post Studio on the ΩΛ-XJ template, due the night of 2026-10-01. Austen exports them himself. Earlier context: `docs/superpowers/specs/2026-09-30-tutorial-videos-handoff.md` on local main.
 
