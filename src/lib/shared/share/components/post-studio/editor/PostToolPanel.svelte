@@ -23,8 +23,6 @@
      * heading stays for assistive tech and the controls get its room.
      */
     bare?: boolean;
-    /** A measured control grid needs a bounded height in the phone tray too. */
-    fitContent?: boolean;
     /** The panel itself, so focus can move into it when it opens. */
     element?: HTMLElement | null;
     children: Snippet;
@@ -36,7 +34,6 @@
     onDone,
     placement,
     bare = false,
-    fitContent = false,
     element = $bindable(null),
     children,
   }: Props = $props();
@@ -67,7 +64,7 @@
       </PanelButton>
     {/if}
   </header>
-  <div class="body" class:fit-content={fitContent}>
+  <div class="body">
     {@render children()}
   </div>
 </section>
@@ -158,8 +155,5 @@
 
   .dock .body {
     max-height: 50dvh;
-  }
-  .dock .body.fit-content {
-    height: 50dvh;
   }
 </style>

@@ -37,6 +37,8 @@
     closeOnBackdrop = true,
     closeOnEscape = true,
     dismissible = true,
+    modal = true,
+    dragHandleOnly = false,
     labelledBy,
     ariaLabel,
     title,
@@ -57,6 +59,7 @@
     snapPoints = null,
     activeSnapPoint = $bindable<number | null>(null),
     closeOnSnapToZero = true,
+    resizeWithSnapPoints = false,
     // Animation options
     springAnimation = false,
     scaleBackground = false,
@@ -76,6 +79,10 @@
     closeOnBackdrop?: boolean;
     closeOnEscape?: boolean;
     dismissible?: boolean;
+    /** Keep the editor behind a tool drawer interactive. Default: true. */
+    modal?: boolean;
+    /** Only start drag gestures on the drawer handle. */
+    dragHandleOnly?: boolean;
     labelledBy?: string;
     ariaLabel?: string;
     /**
@@ -119,6 +126,8 @@
     activeSnapPoint?: number | null;
     /** Close drawer when snapping to index 0. Default: true */
     closeOnSnapToZero?: boolean;
+    /** Size a bottom drawer to its visible snap point instead of translating a full-height sheet. */
+    resizeWithSnapPoints?: boolean;
     /** Use spring physics animation (slight bounce). Default: false */
     springAnimation?: boolean;
     /** Scale background content when drawer opens (iOS-like depth effect). Default: false */
@@ -202,6 +211,11 @@
   const effectiveShowHandle = $derived(
     showHandle ?? (dismissible && effectivePlacement === "bottom")
   );
+  const heightSnaps = $derived(
+    resizeWithSnapPoints &&
+      effectivePlacement === "bottom" &&
+      !!snapPoints?.length
+  );
 
   // Internal drag change handler that updates local state AND calls parent callback
   function handleInternalDragChange(
@@ -271,6 +285,8 @@
     swipeToDismiss = new SwipeToDismiss({
       placement: effectivePlacement,
       dismissible,
+      allowReverseDrag: heightSnaps && (snapPoints?.length ?? 0) > 1,
+      dragHandleOnly,
       drawerId,
       onDismiss: () => {
         isOpen = false;
@@ -300,6 +316,8 @@
     swipeToDismiss = new SwipeToDismiss({
       placement: effectivePlacement,
       dismissible,
+      allowReverseDrag: heightSnaps && (snapPoints?.length ?? 0) > 1,
+      dragHandleOnly,
       drawerId,
       onDismiss: () => {
         isOpen = false;
@@ -316,7 +334,8 @@
       snapPointsInstance = new SnapPoints({
         placement: effectivePlacement,
         snapPoints,
-        defaultSnapPoint: snapPoints.length - 1, // Start fully open
+        defaultSnapPoint:
+          untrack(() => activeSnapPoint) ?? snapPoints.length - 1,
         onSnapPointChange: (index, valuePx) => {
           currentSnapIndex = index;
           activeSnapPoint = index;
@@ -328,6 +347,11 @@
           }
         },
       });
+      currentSnapIndex = snapPointsInstance.getCurrentIndex();
+      if (drawerElement && isAnimatedOpen) {
+        snapPointsInstance.initialize(window.innerWidth, window.innerHeight);
+        snapPointOffset = snapPointsInstance.getTransformOffset();
+      }
     } else {
       snapPointsInstance = null;
       snapPointOffset = 0;
@@ -573,6 +597,7 @@
 
   // Compute transform including drag offset and snap point offset
   const computedTransform = $derived.by(() => {
+    if (heightSnaps) return "";
     // During drag, show drag offset
     if (isDragging && (dragOffsetY !== 0 || dragOffsetX !== 0)) {
       const isHorizontal =
@@ -597,6 +622,20 @@
 
     return "";
   });
+  const snapHeight = $derived(
+    heightSnaps && isAnimatedOpen && snapPointsInstance
+      ? `${Math.max(0, window.innerHeight - snapPointOffset - (isDragging ? dragOffsetY : 0))}px`
+      : undefined
+  );
+
+  function toggleHeightSnap() {
+    if (!snapPointsInstance || !heightSnaps) return;
+    const lastIndex = snapPointsInstance.getCount() - 1;
+    snapPointsInstance.setSnapPoint(
+      currentSnapIndex === lastIndex ? Math.max(1, lastIndex - 1) : lastIndex
+    );
+    snapPointOffset = snapPointsInstance.getTransformOffset();
+  }
 
   // Update focus trap options when props change (only if initialized)
   $effect(() => {
@@ -664,6 +703,7 @@
     class={contentClasses}
     class:dragging={isDragging}
     class:has-snap-points={snapPoints && snapPoints.length > 0}
+    class:height-snap-points={heightSnaps}
     class:spring-animation={springAnimation}
     data-placement={effectivePlacement}
     data-state={dataState}
@@ -673,17 +713,29 @@
       ? ""
       : undefined}
     tabindex="-1"
-    aria-modal="true"
+    aria-modal={modal ? "true" : undefined}
     aria-labelledby={labelledBy}
     aria-label={resolvedAriaLabel}
     aria-describedby={describedBy}
     oncancel={handleDialogCancel}
     style:z-index={stackZIndex}
     style:transform={computedTransform || undefined}
+    style:height={snapHeight}
     style:transition={isDragging ? "none" : ""}
   >
     {#if effectiveShowHandle}
-      <div class="drawer-handle" aria-hidden="true"></div>
+      {#if heightSnaps}
+        <button
+          type="button"
+          class="drawer-handle"
+          aria-label={currentSnapIndex === (snapPoints?.length ?? 0) - 1
+            ? "Collapse drawer"
+            : "Expand drawer"}
+          onclick={toggleHeightSnap}
+        ></button>
+      {:else}
+        <div class="drawer-handle" aria-hidden="true"></div>
+      {/if}
     {/if}
     <div class="drawer-inner">
       {@render children?.()}

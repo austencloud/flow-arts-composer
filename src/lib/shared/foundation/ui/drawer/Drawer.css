@@ -241,6 +241,13 @@ dialog.drawer-content {
   height: 100dvh; /* Modern: accounts for browser chrome */
 }
 
+.drawer-content[data-placement="bottom"].height-snap-points {
+  height: auto;
+  transition:
+    height var(--duration-normal, 250ms) var(--ease-out, ease-out),
+    transform var(--duration-dramatic, 350ms) var(--ease-out, ease-out);
+}
+
 .drawer-content[data-placement="bottom"][data-state="closed"] {
   transform: translate3d(0, 100%, 0);
 }
@@ -423,6 +430,35 @@ dialog.drawer-content {
      only; keep it thin like an iOS/Material grabber. */
   min-height: 0;
   margin: 10px auto 8px;
+}
+
+.drawer-content[data-placement="bottom"].height-snap-points .drawer-handle {
+  width: 100%;
+  height: 32px;
+  min-height: 32px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  touch-action: none;
+  cursor: ns-resize;
+}
+
+.drawer-content.height-snap-points .drawer-handle::before {
+  content: "";
+  display: block;
+  width: 44px;
+  height: 5px;
+  margin: 12px auto;
+  border-radius: 999px;
+  background: var(--drawer-handle-color, rgba(255, 255, 255, 0.45));
+  pointer-events: none;
+}
+
+.drawer-content.height-snap-points .drawer-handle:focus-visible {
+  outline: 2px solid var(--theme-accent, #d4813a);
+  outline-offset: -3px;
 }
 
 /* Side-panel handle gutter: reserve space on the handle edge ONLY when a handle
