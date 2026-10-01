@@ -70,6 +70,11 @@
      * pictures that fills the card. Sidebar layout only.
      */
     fill?: boolean;
+    /** Post Studio can show the roster beside looks and tuning when its panel is wide. */
+    wideWorkspace?: boolean;
+    /** Post Studio opens an already chosen effect's looks and tuning first. */
+    preferSelectedDetail?: boolean;
+    pagedRichDetail?: boolean;
     /** Restrict the roster to what the host can draw. Omit for everything. */
     availableEffects?: readonly string[];
     animationSettingsState?: AnimationSettingsState;
@@ -97,6 +102,9 @@
     layout = "sidebar",
     showHeading = true,
     fill = false,
+    wideWorkspace = false,
+    preferSelectedDetail = false,
+    pagedRichDetail = false,
     availableEffects,
     animationSettingsState = animationSettings,
     children,
@@ -117,7 +125,7 @@
   // previous session. The inspector is somewhere you choose to go, never where
   // the panel drops you - landing in it is the same trap as navigating on
   // select, just triggered by boot instead of a click.
-  let sidebarDetailOpen = $state(false);
+  let sidebarDetailOpen = $state(preferSelectedDetail);
 
   // ── Catalog and roster (fill hosts) ────────────────────────────────────────
   // In a card wide enough for four pictures across, every tile shows a picture
@@ -133,6 +141,7 @@
   // clientHeight of 737, and a catalog sized from that overflows by half a
   // pixel and puts a scrollbar on the host.
   let panelRect = $state<DOMRectReadOnly>();
+  let wideRosterRect = $state<DOMRectReadOnly>();
   let footerBox = $state<ResizeObserverSize[]>();
   /** .sb-section padding, the row holding the Off button, and the gap under
    *  it. The catalog grid gets what is left of the section. */
@@ -155,7 +164,9 @@
   // bounded page can size the inactive catalog against the remaining height.
   const pictureHost = $derived(!showPlayback && !children);
   const rosterWidth = $derived(
-    Math.floor(panelRect?.width ?? 0) - CATALOG_CHROME_X
+    Math.floor(
+      wideWorkspace ? (wideRosterRect?.width ?? 0) : (panelRect?.width ?? 0)
+    ) - CATALOG_CHROME_X
   );
   /** The arrangement the roster takes whenever nothing is on. */
   const restingCatalogFit = $derived(
@@ -218,7 +229,10 @@
   });
 
   const sidebarView = $derived(
-    sidebarDetailOpen && activeEffect !== "none" && registration
+    !wideWorkspace &&
+      sidebarDetailOpen &&
+      activeEffect !== "none" &&
+      registration
       ? `detail-${activeEffect}`
       : catalogFit
         ? "catalog"
@@ -505,6 +519,7 @@
       customizeOpen = false;
       CustomizeComponent = null;
       effectsConfigState.setActiveEffect(effectId);
+      if (preferSelectedDetail) sidebarDetailOpen = true;
     };
     if (previous === "none") morphRoster(apply);
     else apply();
@@ -530,7 +545,7 @@
   // already-active tile drills into its detail screen (looks + primary slider +
   // More tuning). An explicit Off tile replaces the old tap-again-to-disable
   // toggle, which the drill gesture now owns.
-  let detailOpen = $state(false);
+  let detailOpen = $state(preferSelectedDetail);
 
   const stripView = $derived<"picker" | "detail" | "customize">(
     customizeOpen && CustomizeComponent
@@ -548,6 +563,7 @@
     if (isEffectId(effectId)) {
       const previous = activeEffect;
       effectsConfigState.setActiveEffect(effectId);
+      if (preferSelectedDetail) detailOpen = true;
       reportSetting("active_effect", previous, effectId);
     }
   }
@@ -728,6 +744,8 @@
     class="effects-panel"
     class:fill
     class:detail-view={sidebarView.startsWith("detail-")}
+    class:wide-workspace={wideWorkspace}
+    class:post-detail={preferSelectedDetail}
     bind:contentRect={panelRect}
   >
     {#if showPlayback}
@@ -751,34 +769,16 @@
          Swapped rather than overlapped for the same reason as the dock: a
          4x4 tile grid dissolving through an inspector's stacked rows is two
          unrelated layouts printed on top of each other. -->
-    <Crossfade
-      key={sidebarKey}
-      animateHeight
-      mode="swap"
-      duration={DURATION.fast}
-    >
-      {#if sidebarView === "browser" || sidebarView === "catalog"}
+    {#if wideWorkspace}
+      <div class="wide-effects-workspace">
         <div
-          class="sb-section sb-browser"
-          class:catalog={sidebarView === "catalog"}
-          style:height={sidebarView === "catalog"
-            ? `${catalogRoom}px`
-            : undefined}
-          use:claimedViewTransitionName={{
-            name: `${rosterMorphName}-section`,
-            enabled: !!rosterMorphName,
-          }}
+          class="sb-section sb-browser wide-roster"
+          bind:contentRect={wideRosterRect}
         >
-          <div
-            class="sb-browser-head"
-            use:claimedViewTransitionName={{
-              name: `${rosterMorphName}-head`,
-              enabled: !!rosterMorphName,
-            }}
-          >
-            {#if showHeading}
-              <span class="sb-label">{t("effect_deep_effects")}</span>
-            {/if}
+          <div class="sb-browser-head">
+            {#if showHeading}<span class="sb-label"
+                >{t("effect_deep_effects")}</span
+              >{/if}
             <button
               type="button"
               class="sb-off-btn"
@@ -787,15 +787,7 @@
               onclick={handleSidebarDisable}
             >
               <i class="fas fa-power-off" aria-hidden="true"></i>
-              <span>
-                {activeEffect === "none"
-                  ? t("effect_deep_effects_off")
-                  : t("effect_deep_turn_off", {
-                      effect: effectUiLabel(
-                        EFFECT_LABELS[activeEffect] ?? "effect"
-                      ),
-                    })}
-              </span>
+              <span>{t("effect_deep_off")}</span>
             </button>
           </div>
           <EffectSelector
@@ -804,53 +796,147 @@
             onPrewarm={handleEffectPrewarm}
             activeAction="tune"
             {availableEffects}
-            catalog={sidebarView === "catalog" ? catalogFit : rosterFit}
+            catalog={rosterFit}
             portrait={catalogPortrait}
-            morphName={rosterMorphName}
           />
-
-          {#if sidebarView === "browser"}
+        </div>
+        <div class="wide-inspector">
+          {#if activeEffect !== "none" && registration}
+            <EffectsInspector
+              effect={activeEffect}
+              {registration}
+              config={effectsConfigState}
+              {activePresetId}
+              defaultChipId={DEFAULT_CHIP_ID}
+              customChipId={CUSTOM_CHIP_ID}
+              {customDisabled}
+              {customColors}
+              summary={currentSummary}
+              propType={animationSettingsState.currentPropType}
+              overrides={tuneOverrides}
+              showBack={false}
+              {pagedRichDetail}
+              compactPresets={preferSelectedDetail}
+              boundedFine={preferSelectedDetail}
+              onBack={() => (sidebarDetailOpen = false)}
+              onDisable={handleSidebarDisable}
+              onSelectPreset={handlePresetSelect}
+              onSettingChange={(setting, previousValue, value, coalesce) =>
+                reportSetting(
+                  `tuning_${activeEffect}_${setting}`,
+                  previousValue,
+                  value,
+                  coalesce
+                )}
+            />
+          {/if}
+        </div>
+      </div>
+    {:else}
+      <Crossfade
+        key={sidebarKey}
+        animateHeight
+        mode="swap"
+        duration={DURATION.fast}
+      >
+        {#if sidebarView === "browser" || sidebarView === "catalog"}
+          <div
+            class="sb-section sb-browser"
+            class:catalog={sidebarView === "catalog"}
+            style:height={sidebarView === "catalog"
+              ? `${catalogRoom}px`
+              : undefined}
+            use:claimedViewTransitionName={{
+              name: `${rosterMorphName}-section`,
+              enabled: !!rosterMorphName,
+            }}
+          >
             <div
-              class="sb-dock"
+              class="sb-browser-head"
               use:claimedViewTransitionName={{
-                name: `${rosterMorphName}-dock`,
+                name: `${rosterMorphName}-head`,
                 enabled: !!rosterMorphName,
               }}
             >
-              {@render effectDock(
-                () => (sidebarDetailOpen = true),
-                t("effect_deep_tune"),
-                "tiles"
-              )}
+              {#if showHeading}
+                <span class="sb-label">{t("effect_deep_effects")}</span>
+              {/if}
+              <button
+                type="button"
+                class="sb-off-btn"
+                class:active={activeEffect === "none"}
+                aria-pressed={activeEffect === "none"}
+                onclick={handleSidebarDisable}
+              >
+                <i class="fas fa-power-off" aria-hidden="true"></i>
+                <span>
+                  {activeEffect === "none"
+                    ? t("effect_deep_effects_off")
+                    : t("effect_deep_turn_off", {
+                        effect: effectUiLabel(
+                          EFFECT_LABELS[activeEffect] ?? "effect"
+                        ),
+                      })}
+                </span>
+              </button>
             </div>
-          {/if}
-        </div>
-      {:else if activeEffect !== "none" && registration}
-        <EffectsInspector
-          effect={activeEffect}
-          {registration}
-          config={effectsConfigState}
-          {activePresetId}
-          defaultChipId={DEFAULT_CHIP_ID}
-          customChipId={CUSTOM_CHIP_ID}
-          {customDisabled}
-          {customColors}
-          summary={currentSummary}
-          propType={animationSettingsState.currentPropType}
-          overrides={tuneOverrides}
-          onBack={() => (sidebarDetailOpen = false)}
-          onDisable={handleSidebarDisable}
-          onSelectPreset={handlePresetSelect}
-          onSettingChange={(setting, previousValue, value, coalesce) =>
-            reportSetting(
-              `tuning_${activeEffect}_${setting}`,
-              previousValue,
-              value,
-              coalesce
-            )}
-        />
-      {/if}
-    </Crossfade>
+            <EffectSelector
+              {activeEffect}
+              onSelect={handleSidebarEffectSelect}
+              onPrewarm={handleEffectPrewarm}
+              activeAction="tune"
+              {availableEffects}
+              catalog={sidebarView === "catalog" ? catalogFit : rosterFit}
+              portrait={catalogPortrait}
+              morphName={rosterMorphName}
+            />
+
+            {#if sidebarView === "browser" && !preferSelectedDetail}
+              <div
+                class="sb-dock"
+                use:claimedViewTransitionName={{
+                  name: `${rosterMorphName}-dock`,
+                  enabled: !!rosterMorphName,
+                }}
+              >
+                {@render effectDock(
+                  () => (sidebarDetailOpen = true),
+                  t("effect_deep_tune"),
+                  "tiles"
+                )}
+              </div>
+            {/if}
+          </div>
+        {:else if activeEffect !== "none" && registration}
+          <EffectsInspector
+            effect={activeEffect}
+            {registration}
+            config={effectsConfigState}
+            {activePresetId}
+            defaultChipId={DEFAULT_CHIP_ID}
+            customChipId={CUSTOM_CHIP_ID}
+            {customDisabled}
+            {customColors}
+            summary={currentSummary}
+            propType={animationSettingsState.currentPropType}
+            overrides={tuneOverrides}
+            onBack={() => (sidebarDetailOpen = false)}
+            {pagedRichDetail}
+            compactPresets={preferSelectedDetail}
+            boundedFine={preferSelectedDetail}
+            onDisable={handleSidebarDisable}
+            onSelectPreset={handlePresetSelect}
+            onSettingChange={(setting, previousValue, value, coalesce) =>
+              reportSetting(
+                `tuning_${activeEffect}_${setting}`,
+                previousValue,
+                value,
+                coalesce
+              )}
+          />
+        {/if}
+      </Crossfade>
+    {/if}
 
     {#if children}{@render children()}{/if}
 
@@ -868,13 +954,14 @@
   <!-- Mobile drill-down: picker grid (all 16 + Off, no h-scroll) ⇄ per-effect
        detail screen ⇄ deep tuning. Tap a tile = apply live + stay; tap the
        active tile = drill into its detail. -->
-  <div class="mep strip-layout">
+  <div class="mep strip-layout" class:fill>
     <!-- Same reason as the sidebar, and it matters more here: the tray sits at
          the bottom of a phone screen, so a step in its height shoves the canvas
          above it. -->
     <Crossfade
       key={stripView}
-      animateHeight
+      {fill}
+      animateHeight={!fill}
       mode="swap"
       duration={DURATION.fast}
     >
@@ -933,7 +1020,11 @@
               <!-- LED and anything else whose controls are structured config
                    rather than flat fields: the strip has nothing to show, so
                    the hand-built panel takes the view. -->
-              <CustomizeComponent onBack={handleCustomizeClose} embedded />
+              <CustomizeComponent
+                onBack={handleCustomizeClose}
+                embedded
+                paged={pagedRichDetail && activeEffect === "led"}
+              />
             {:else}
               <EffectTuneStrip
                 effectId={activeEffect}
@@ -970,7 +1061,7 @@
 
           {@render effectDock(
             handleCustomizeOpen,
-            t("effect_deep_more"),
+            t("effect_deep_tune"),
             "rail"
           )}
         </div>
@@ -1002,6 +1093,7 @@
             onSelect={handleTileTap}
             onPrewarm={handleEffectPrewarm}
             layout="tray"
+            fit={fill}
             activeAction="tune"
             {availableEffects}
           />
@@ -1060,7 +1152,11 @@
         {availableEffects}
       />
 
-      {@render effectDock(handleCustomizeOpen, t("effect_deep_more"), "rail")}
+      {@render effectDock(
+        handleCustomizeOpen,
+        t(preferSelectedDetail ? "effect_deep_tune" : "effect_deep_more"),
+        "rail"
+      )}
     {/if}
   </div>
 {/if}
@@ -1090,6 +1186,23 @@
   .effects-panel {
     display: flex;
     flex-direction: column;
+    container: effects-panel / inline-size;
+  }
+
+  .wide-effects-workspace {
+    display: grid;
+    grid-template-columns: clamp(22rem, 40%, 33rem) minmax(0, 1fr);
+    min-width: 0;
+    align-items: start;
+  }
+
+  .wide-roster {
+    border-right: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.07));
+    border-bottom: none;
+  }
+
+  .wide-inspector {
+    min-width: 0;
     container: effects-panel / inline-size;
   }
 
@@ -1200,6 +1313,10 @@
     border-bottom: none;
   }
 
+  .post-detail .sb-footer {
+    padding-block: 6px;
+  }
+
   .reset-all-btn {
     width: 100%;
     display: inline-flex;
@@ -1292,6 +1409,36 @@
   .mep.strip-layout,
   .drill-view {
     gap: 6px;
+  }
+
+  .mep.strip-layout.fill {
+    flex: 1;
+    min-height: 0;
+  }
+  .strip-layout.fill .drill-view {
+    height: 100%;
+    min-height: 0;
+    overflow-y: auto;
+    scrollbar-color: var(--theme-stroke-strong, #484755) transparent;
+    scrollbar-width: thin;
+    gap: 8px;
+  }
+  .strip-layout.fill .drill-view::-webkit-scrollbar {
+    width: 8px;
+  }
+  .strip-layout.fill .drill-view::-webkit-scrollbar-thumb {
+    border-radius: 8px;
+    background: var(--theme-stroke-strong, #484755);
+  }
+  .strip-layout.fill .picker-bar {
+    flex: none;
+  }
+  .strip-layout.fill .off-chip {
+    min-height: 44px;
+    font-size: var(--font-size-min, 14px);
+  }
+  .strip-layout.fill .detail-name {
+    font-size: var(--font-size-min, 14px);
   }
 
   .drill-view {

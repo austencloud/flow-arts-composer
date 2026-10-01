@@ -4,7 +4,6 @@
   import type { EvaluatedFrameLayer } from "$lib/shared/media-composition/services/frame-evaluator";
   import { tryGetMediaCompositionContext } from "$lib/shared/media-composition/state/media-composition-context";
   import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import type { HandLabeling } from "$lib/shared/video-collaboration/domain/hand-labeling";
   import type { SequenceExportOptions } from "$lib/shared/render/domain/models/sequence-export-options";
   import type {
     PostAnimationItem,
@@ -20,13 +19,13 @@
     resolvePanOffset,
   } from "$lib/shared/media-composition/services/media-fit";
   import VisualSequenceSaveContextMenuHost from "$lib/shared/library/components/VisualSequenceSaveContextMenuHost.svelte";
-  import { onDestroy } from "svelte";
+  import { onDestroy, untrack } from "svelte";
   import {
     previewPlaybackRate,
     shouldSeekPreviewVideo,
   } from "$lib/shared/media-composition/services/video-preview-seek";
-  import { videoMirror } from "$lib/shared/media-composition/services/video-mirror";
   import type { PreviewVideoController } from "$lib/shared/media-composition/services/post-preview-clock";
+  import { PreviewVideoFrameRecovery } from "$lib/shared/media-composition/services/preview-video-frame-recovery";
   import {
     videoColorFilter,
     type PostVideoColorGrade,
@@ -38,8 +37,8 @@
     opacity: number;
     sourceTimeSeconds: number;
     playing: boolean;
+    exporting?: boolean;
     sequence: SequenceData;
-    handLabeling?: HandLabeling | null;
     qrSequence?: SequenceData;
     cardRenderOptions?: Partial<SequenceExportOptions> | null;
     animationAppearance?: PostAnimationItem["animationAppearance"] | null;
@@ -71,8 +70,8 @@
     opacity,
     sourceTimeSeconds,
     playing,
+    exporting = false,
     sequence,
-    handLabeling = null,
     qrSequence,
     cardRenderOptions = null,
     animationAppearance = null,
@@ -94,11 +93,12 @@
     onPlaybackVideo,
   }: Props = $props();
   const composition = tryGetMediaCompositionContext();
+  // The footage stays alive when the editor refreshes its binding each frame.
+  const videoSource = $derived(binding.previewUrl ?? "");
   let video = $state<HTMLVideoElement | null>(null);
-  let pausedFrameRequest: { element: HTMLVideoElement; id: number } | null =
-    null;
-  let pausedFrameGeneration = 0;
-  let primingVideo: HTMLVideoElement | null = null;
+  let retainedCanvas = $state<HTMLCanvasElement | null>(null);
+  let hasRetainedFrame = $state(false);
+  let frameRecovery: PreviewVideoFrameRecovery | null = null;
   let videoWaiting = false;
   let playbackHeld = false;
   let playRequest: HTMLVideoElement | null = null;
@@ -213,11 +213,8 @@
     };
   });
 
-  const objectFit = $derived<LayoutRegion["fit"]>(
-    cropped ? "fill" : sourceGeometry ? "contain" : fitted ? "fill" : fit
-  );
-
   function syncVideoTime(discontinuity = false): boolean {
+    if (exporting) return false;
     if (!video || video.readyState < 1 || !Number.isFinite(sourceTimeSeconds))
       return false;
     const ceiling = Math.max(0, video.duration - 1 / 60);
@@ -323,6 +320,7 @@
     recovering = false
   ): void {
     cancelPlayingFrame();
+    if (typeof element.requestVideoFrameCallback !== "function") return;
     lastFrameProgressAt = performance.now();
     if (recovering) {
       awaitingPlayingFrame = true;
@@ -368,7 +366,6 @@
   }
 
   function onSeeking(): void {
-    cancelPausedFrame();
     if (playing) {
       cancelPlayingFrame();
       awaitingPlayingFrame = true;
@@ -388,36 +385,15 @@
   }
 
   function cancelPausedFrame(): void {
-    pausedFrameGeneration += 1;
-    if (pausedFrameRequest) {
-      pausedFrameRequest.element.cancelVideoFrameCallback(
-        pausedFrameRequest.id
-      );
-      pausedFrameRequest = null;
-    }
-    primingVideo = null;
+    frameRecovery?.cancel();
   }
 
   function showPausedFrame(element: HTMLVideoElement): void {
-    cancelPausedFrame();
     cancelPlayingFrame();
     awaitingPlayingFrame = false;
     recoveryStartedAt = null;
     queuedJump = false;
-    const generation = pausedFrameGeneration;
-    primingVideo = element;
-    // A newly mounted, paused video can stay at HAVE_METADATA after a seek.
-    // Let it decode one frame, then return it to the paused preview state.
-    const id = element.requestVideoFrameCallback(() => {
-      if (generation !== pausedFrameGeneration) return;
-      pausedFrameRequest = null;
-      primingVideo = null;
-      if (video === element && !playing) element.pause();
-    });
-    pausedFrameRequest = { element, id };
-    void element.play().catch(() => {
-      if (generation === pausedFrameGeneration) cancelPausedFrame();
-    });
+    if (video === element) frameRecovery?.presentPausedFrame();
   }
 
   function onMetadata(): void {
@@ -437,6 +413,7 @@
     );
     syncVideoTime();
     if (!playing && !video.seeking) showPausedFrame(video);
+    frameRecovery?.update();
   }
 
   function onImageLoad(event: Event): void {
@@ -466,6 +443,54 @@
         if (playRequest === element) playRequest = null;
       });
   }
+
+  $effect(() => {
+    const element = video;
+    const canvas = retainedCanvas;
+    const source = videoSource;
+    if (exporting) return;
+    hasRetainedFrame = false;
+    if (!element || !canvas) return;
+    return untrack(() => {
+      const recovery = new PreviewVideoFrameRecovery({
+        video: element,
+        canvas,
+        readState: () => ({
+          playing,
+          targetTime: sourceTimeSeconds,
+          source: videoSource,
+        }),
+        isCurrent: () => video === element && videoSource === source,
+        onFrame: () => {
+          hasRetainedFrame = true;
+        },
+        onRestore: () => {
+          videoWaiting = false;
+          syncVideoTime(true);
+          if (playing) {
+            watchPlayingFrames(element, true);
+            startPlayback(element);
+          }
+        },
+      });
+      frameRecovery = recovery;
+      recovery.update();
+      if (!playing && element.readyState >= 1)
+        recovery.presentPausedFrame(true);
+      return () => {
+        recovery.destroy();
+        cancelPlayingFrame();
+        if (frameRecovery === recovery) frameRecovery = null;
+      };
+    });
+  });
+
+  $effect(() => {
+    playing;
+    sourceTimeSeconds;
+    if (exporting) return;
+    frameRecovery?.update();
+  });
 
   $effect(() => {
     const element = video;
@@ -516,6 +541,10 @@
   $effect(() => {
     sourceTimeSeconds;
     playing;
+    if (exporting) {
+      video?.pause();
+      return;
+    }
     const jumped =
       previousTargetTime !== null &&
       Math.abs(sourceTimeSeconds - previousTargetTime) > 0.5;
@@ -533,7 +562,6 @@
       return;
     }
     if (playing) {
-      cancelPausedFrame();
       if (!playingFrameRequest && !video.seeking) watchPlayingFrames(video);
       startPlayback(video);
     } else if (seeked) {
@@ -542,7 +570,7 @@
       recoveryStartedAt = null;
       // The frame must arrive from the completed seek, not the old position.
       if (!video.seeking) showPausedFrame(video);
-    } else if (primingVideo !== video && !video.paused) {
+    } else if (!frameRecovery?.isPriming && !video.paused) {
       cancelPlayingFrame();
       awaitingPlayingFrame = false;
       recoveryStartedAt = null;
@@ -557,6 +585,7 @@
   onDestroy(() => {
     cancelPausedFrame();
     cancelPlayingFrame();
+    frameRecovery?.destroy();
   });
 </script>
 
@@ -602,7 +631,6 @@
       {sequence}
       {displayedBeatNumber}
       {cardRenderOptions}
-      {handLabeling}
       {qrSequence}
     />
   {:else if binding.renderMode === "tunnel"}
@@ -627,14 +655,20 @@
     <!-- svelte-ignore a11y_media_has_caption -->
     <video
       bind:this={video}
-      src={binding.previewUrl ?? undefined}
+      src={videoSource || undefined}
       crossorigin="anonymous"
       muted
       playsinline
       preload="auto"
       class:fitted={fitted !== null || cropped !== null}
       style:filter={videoColorFilter(colorGrade)}
-      style:object-fit={objectFit}
+      style:object-fit={cropped
+        ? "fill"
+        : sourceGeometry
+          ? "contain"
+          : fitted
+            ? "fill"
+            : fit}
       style:left={cropped?.left ?? fitted?.left}
       style:top={cropped?.top ?? fitted?.top}
       style:width={cropped?.width ?? fitted?.width}
@@ -647,18 +681,26 @@
       oncanplay={onCanPlay}
       onplaying={onCanPlay}
     ></video>
-    <!-- Drawn over the video, so the footage stays visible if the browser
-         stops drawing the video's own layer. -->
+    <!-- Keep the decoded picture visible while the browser restores its video surface.
+         Export still reads the original video element and its source dimensions. -->
     <canvas
-      class="video-copy"
+      bind:this={retainedCanvas}
+      class="retained-frame"
       class:fitted={fitted !== null || cropped !== null}
-      aria-hidden="true"
+      style:visibility={hasRetainedFrame ? "visible" : "hidden"}
       style:filter={videoColorFilter(colorGrade)}
+      style:object-fit={cropped
+        ? "fill"
+        : sourceGeometry
+          ? "contain"
+          : fitted
+            ? "fill"
+            : fit}
       style:left={cropped?.left ?? fitted?.left}
       style:top={cropped?.top ?? fitted?.top}
       style:width={cropped?.width ?? fitted?.width}
       style:height={cropped?.height ?? fitted?.height}
-      {@attach videoMirror(video, objectFit)}
+      aria-hidden="true"
     ></canvas>
   {:else}
     <img
@@ -666,7 +708,13 @@
       crossorigin="anonymous"
       alt=""
       class:fitted={fitted !== null || cropped !== null}
-      style:object-fit={objectFit}
+      style:object-fit={cropped
+        ? "fill"
+        : sourceGeometry
+          ? "contain"
+          : fitted
+            ? "fill"
+            : fit}
       style:left={cropped?.left ?? fitted?.left}
       style:top={cropped?.top ?? fitted?.top}
       style:width={cropped?.width ?? fitted?.width}
@@ -698,16 +746,16 @@
   }
 
   img,
-  video,
-  .video-copy {
+  video {
     width: 100%;
     height: 100%;
   }
 
-  .video-copy {
+  .retained-frame {
     position: absolute;
-    left: 0;
-    top: 0;
+    inset: 0;
+    width: 100%;
+    height: 100%;
     pointer-events: none;
   }
 

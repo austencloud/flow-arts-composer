@@ -303,7 +303,13 @@
 
   function setCropZoom(zoom: number): void {
     onCropFramingControl?.();
-    if (crop) crop.setZoom(item.kind === "video" && (item.sourceGeometry || item.keyframes?.sourceGeometry?.length) ? Math.max(1, zoom) : zoom);
+    if (crop)
+      crop.setZoom(
+        item.kind === "video" &&
+          (item.sourceGeometry || item.keyframes?.sourceGeometry?.length)
+          ? Math.max(1, zoom)
+          : zoom
+      );
     else change("zoom", { zoom });
   }
 
@@ -377,15 +383,23 @@
       chosenSourceShape = kind;
       return;
     }
-    const next = kind === "fill"
-      ? sourceFillBox(geometry, source, output, channelValueAt(item, "box", seconds))
-      : sourceCropAtRatio(
-          geometry,
-          source,
-          output,
-          kind === "original" ? source.width / source.height : ratioValue(kind),
-          kind === "original"
-        );
+    const next =
+      kind === "fill"
+        ? sourceFillBox(
+            geometry,
+            source,
+            output,
+            channelValueAt(item, "box", seconds)
+          )
+        : sourceCropAtRatio(
+            geometry,
+            source,
+            output,
+            kind === "original"
+              ? source.width / source.height
+              : ratioValue(kind),
+            kind === "original"
+          );
     onCropSourceControl?.();
     editor.pause();
     editor.edit((project, ctx) =>
@@ -739,11 +753,9 @@
   </div>
 {/snippet}
 
-<!-- An animation's appearance panel shares the tool column with its reset
-     button; a rem between the pieces would push Display past the panel. -->
 <div
   class="item-tool"
-  class:snug={tool === "appearance" &&
+  class:animation-appearance={tool === "appearance" &&
     (item.kind === "animation" || item.kind === "moves")}
 >
   {#if locked}
@@ -898,7 +910,13 @@
         onclick={toggleMirror}
       />
       {#if crop}
-        <PanelButton onclick={resetCrop} disabled={locked || frozen || (!crop.canReset && !(item.sourceGeometry || item.keyframes?.sourceGeometry?.length))}>
+        <PanelButton
+          onclick={resetCrop}
+          disabled={locked ||
+            frozen ||
+            (!crop.canReset &&
+              !(item.sourceGeometry || item.keyframes?.sourceGeometry?.length))}
+        >
           <i class="fa-solid fa-arrows-rotate" aria-hidden="true"></i>
           {t("post_editor_reset_crop")}
         </PanelButton>
@@ -1163,19 +1181,12 @@
     {/if}
   {:else if tool === "appearance" && (item.kind === "animation" || item.kind === "moves")}
     <PostAnimationAppearanceTool
+      fill
       {editor}
       {item}
       {locked}
       defaultPropType={cardRenderOptions?.propTypeOverride}
     />
-    {#if item.animationAppearance}
-      <PanelButton
-        onclick={() => patchItem({ animationAppearance: null })}
-        disabled={locked}
-      >
-        Use animation defaults
-      </PanelButton>
-    {/if}
   {:else if tool === "appearance" && item.kind === "card"}
     <PostCardAppearanceTool
       {item}
@@ -1292,8 +1303,11 @@
     min-width: 0;
   }
 
-  .item-tool.snug {
-    gap: 0.5rem;
+  .item-tool.animation-appearance {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
   }
 
   .status {

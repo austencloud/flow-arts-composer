@@ -5,11 +5,19 @@ import {
   resolveFrameLayerGeometry,
   renderPostStudioFrame,
   waitForPictographMotion,
+  type RenderPostStudioFrameInput,
 } from "$lib/shared/media-composition/services/post-studio-frame-compositor";
 import { compilePostProject } from "$lib/shared/media-composition/domain/post-project-compiler";
 import { evaluatePresetFrame } from "$lib/shared/media-composition/services/frame-evaluator";
 import { sequenceFrameAt } from "$lib/shared/media-composition/domain/sequence-frame";
-import { NOW, card, overlay, project, text } from "./post-project-fixtures";
+import {
+  NOW,
+  card,
+  overlay,
+  project,
+  text,
+  video,
+} from "./post-project-fixtures";
 import { createTextItemPainter } from "$lib/shared/media-composition/services/text-item-painter";
 
 const { captureMotion } = vi.hoisted(() => ({ captureMotion: vi.fn() }));
@@ -21,6 +29,152 @@ const preset = POST_STUDIO_PRESETS.find(
 const region = preset.regions.find(
   (candidate) => candidate.id === "performance"
 )!;
+
+describe("decoded video export surfaces", () => {
+  it.each(["region", "source crop", "blurred backdrop"])(
+    "draws a decoded canvas through the %s path without trying to decode it again",
+    async (path) => {
+      const draft = project([
+        video("footage", {
+          ...(path === "source crop"
+            ? {
+                sourceGeometry: {
+                  x: 0,
+                  y: 0,
+                  width: 1,
+                  height: 1,
+                  rotation: 0,
+                  crop: { left: 0.1, top: 0, right: 0.9, bottom: 1 },
+                },
+              }
+            : {}),
+        }),
+      ]);
+      if (path === "blurred backdrop") draft.background = "blur";
+      const compiled = compilePostProject(draft, { now: NOW })!;
+      const layers = evaluatePresetFrame(
+        compiled.preset,
+        compiled.durationSeconds,
+        1
+      );
+      const create = <K extends keyof HTMLElementTagNameMap>(tag: K) =>
+        document.createElementNS(
+          "http://www.w3.org/1999/xhtml",
+          tag
+        ) as HTMLElementTagNameMap[K];
+      const root = create("div");
+      const mounted = create("div");
+      mounted.className = "media-layer";
+      mounted.dataset.clipId = "footage";
+      root.append(mounted);
+      const frame = create("canvas");
+      frame.width = 1920;
+      frame.height = 1080;
+      const drawImage = vi.fn();
+      const context = new Proxy(
+        { drawImage },
+        {
+          get(target, key) {
+            return Reflect.get(target, key) ?? vi.fn();
+          },
+        }
+      );
+      const canvas = create("canvas");
+      canvas.width = 1080;
+      canvas.height = 1920;
+      vi.spyOn(canvas, "getContext").mockReturnValue(
+        context as unknown as CanvasRenderingContext2D
+      );
+      if (path === "blurred backdrop") {
+        const sample = create("canvas");
+        vi.spyOn(sample, "getContext").mockReturnValue(
+          context as unknown as CanvasRenderingContext2D
+        );
+        vi.spyOn(document, "createElement").mockReturnValueOnce(sample);
+      }
+      const frameFor = vi.fn().mockResolvedValue(frame);
+      await renderPostStudioFrame({
+        canvas,
+        root,
+        preset: compiled.preset,
+        layers,
+        cardFrameCache: new Map(),
+        videoFrames: {
+          has: () => true,
+          frameFor,
+        } as unknown as RenderPostStudioFrameInput["videoFrames"],
+      });
+      expect(frameFor).toHaveBeenCalledTimes(
+        path === "blurred backdrop" ? 2 : 1
+      );
+      expect(drawImage.mock.calls.some(([source]) => source === frame)).toBe(
+        true
+      );
+    }
+  );
+});
+
+describe("split animation export", () => {
+  it("draws the later piece at a shared take edge from the preview's mounted surface", async () => {
+    const compiled = compilePostProject(
+      project(
+        [
+          video("first", { takeId: "a", sourceOut: 4 }),
+          video("second", { takeId: "b", start: 4, sourceOut: 3 }),
+        ],
+        [[overlay("motion", "animation", { start: 0, duration: 7 })]]
+      ),
+      { now: NOW }
+    )!;
+    const layers = evaluatePresetFrame(
+      compiled.preset,
+      compiled.durationSeconds,
+      4
+    ).filter((layer) => layer.regionId === "motion");
+    expect(layers.map((layer) => layer.clipId)).toEqual([
+      "motion~0",
+      "motion~1",
+    ]);
+
+    const root = document.createElementNS(
+      "http://www.w3.org/1999/xhtml",
+      "div"
+    );
+    const mounted = document.createElementNS(
+      "http://www.w3.org/1999/xhtml",
+      "div"
+    );
+    mounted.className = "media-layer";
+    mounted.dataset.clipId = "motion~1";
+    mounted.dataset.renderMode = "sequence-animation";
+    root.append(mounted);
+    const fillRect = vi.fn();
+    const context = new Proxy(
+      { fillRect },
+      {
+        get(target, key) {
+          return Reflect.get(target, key) ?? vi.fn();
+        },
+      }
+    );
+    const canvas = document.createElementNS(
+      "http://www.w3.org/1999/xhtml",
+      "canvas"
+    ) as HTMLCanvasElement;
+    vi.spyOn(canvas, "getContext").mockReturnValue(
+      context as unknown as CanvasRenderingContext2D
+    );
+
+    await renderPostStudioFrame({
+      canvas,
+      root,
+      preset: compiled.preset,
+      layers,
+      cardFrameCache: new Map(),
+    });
+    expect(fillRect).toHaveBeenCalledTimes(2);
+  });
+});
 
 describe("painted title overflow", () => {
   it.each([true, false])(
@@ -438,8 +592,14 @@ describe("scoped Moves export", () => {
       );
       expect(captureMotion).toHaveBeenCalledTimes(mode === "arrows" ? 1 : 0);
       expect(fillRect).toHaveBeenCalledTimes(
-        visible ? (arrival > 0 ? 5 : 4) : 2
+        visible ? (arrival > 0 ? 4 : 3) : 2
       );
+      if (visible) {
+        const track = fillRect.mock.calls.at(arrival > 0 ? -2 : -1)!;
+        const paintedStage = drawImage.mock.calls[0]!;
+        expect(paintedStage[2] + paintedStage[4]).toBeCloseTo(track[1]);
+        expect(paintedStage[3]).toBeCloseTo(track[2]);
+      }
       if (visible && arrival > 0) {
         const track = fillRect.mock.calls.at(-2)!;
         const fill = fillRect.mock.calls.at(-1)!;

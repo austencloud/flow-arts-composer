@@ -25,6 +25,7 @@
     stripModeFromRole,
     stripRole,
     takeIdFromRole,
+    takeRole,
   } from "$lib/shared/media-composition/domain/post-plan-compiler";
   import {
     itemIdFromMovesAnimationRole,
@@ -199,6 +200,7 @@
     sharing: boolean;
     selectedPropType: PropType;
     onPropChange: (propType: PropType) => void;
+    onProjectPropChange: (propType: PropType | undefined) => void;
     /** Sound a shared link asked for, applied once on open. */
     audioSeed: "takes" | "silent" | null;
     /** `chosen` is false for the sound a saved project opens with. */
@@ -225,6 +227,7 @@
     sharing,
     selectedPropType,
     onPropChange,
+    onProjectPropChange,
     audioSeed,
     onAudioChange,
     registerExport,
@@ -266,6 +269,17 @@
       catalog.find((video) => video.videoId === videoId) ?? null,
     hasAnimationOverlay: () => overlayPainter !== null,
   });
+
+  $effect(() => onProjectPropChange(editor.project.propType));
+
+  function choosePropType(propType: PropType): void {
+    editor.edit((project, context) =>
+      project.propType === propType
+        ? project
+        : { ...project, propType, updatedAt: context.now }
+    );
+    onPropChange(propType);
+  }
   const videoPreviews = createPostVideoPreviews(
     () =>
       editor.takes.map((take) => ({
@@ -1782,7 +1796,7 @@
       propType: selectedPropType,
       toggle: editor.togglePlayback,
       setBpm: () => undefined,
-      setProp: onPropChange,
+      setProp: choosePropType,
     }))
   );
 
@@ -2019,9 +2033,13 @@
     try {
       await loadPostProjectFonts(editor.project);
       const takeUrls = new Map<string, string>();
+      const videoSources = new Map<string, string>();
       for (const take of editor.takes) {
         const url = editor.mediaUrl(take.id);
-        if (url) takeUrls.set(take.id, url);
+        if (url) {
+          takeUrls.set(take.id, url);
+          videoSources.set(takeRole(take.id), url);
+        }
       }
       const audio = await buildMixedAudioTrack({
         segments: planProjectAudio(compiled, editor.project.audio),
@@ -2040,10 +2058,12 @@
         getLayers: () => editor.frameLayers,
         seek: editor.seek,
         painters: exportPainters(),
+        videoSources,
         originalAudioUrl: audioUrl,
         originalAudioStartSeconds: 0,
         onProgress: (progress) => (exportProgress = progress),
         shouldCancel: () => exportCancelled,
+        signal: exportAbort.signal,
       });
       if (exportedUrl) URL.revokeObjectURL(exportedUrl);
       exportedUrl = URL.createObjectURL(blob);
@@ -2209,7 +2229,7 @@
       showTempoControls={false}
       showEffectsPlayback={false}
       {selectedPropType}
-      {onPropChange}
+      onPropChange={choosePropType}
       sequence={displaySequence}
     />
   {:else if tool === "export"}
@@ -2246,6 +2266,9 @@
 {#snippet panel(tool: PostPanelToolId, placement: "dock" | "side")}
   <PostToolPanel
     {tool}
+    fitContent={tool === "appearance" &&
+      (editor.selectedItem?.kind === "animation" ||
+        editor.selectedItem?.kind === "moves")}
     subject={editor.selectedItem ? labelFor(editor.selectedItem) : undefined}
     onDone={placement === "dock" && !cropMode ? closePanel : undefined}
     {placement}
@@ -2429,9 +2452,9 @@
                 {bindingFor}
                 {labelFor}
                 {cardRenderOptions}
-                handLabeling={labeledCard.labeling}
                 showStripGuide={editor.selectedItem?.kind === "video"}
                 interactive={!exporting && !sharing && !previewTarget}
+                {exporting}
                 crop={cropMode ? crop : null}
                 {cropSourceView}
                 onSourceSize={noteSourceSize}
@@ -2449,6 +2472,8 @@
         <aside
           class="panel-host"
           class:external={layout === "viewer"}
+          class:appearance={shown === "appearance" &&
+            editor.selectedItem?.kind === "animation"}
           tabindex="-1"
           data-viewer-keys-ignore
           bind:this={panelHost}
@@ -2467,8 +2492,15 @@
                     key={shown}
                     mode="swap"
                     duration={DURATION.fast}
-                    fill={layout === "wide"}
-                    animateHeight={layout === "viewer"}
+                    fill={layout === "wide" ||
+                      (layout === "viewer" &&
+                        shown === "appearance" &&
+                        editor.selectedItem?.kind === "animation")}
+                    animateHeight={layout === "viewer" &&
+                      !(
+                        shown === "appearance" &&
+                        editor.selectedItem?.kind === "animation"
+                      )}
                   >
                     {@render panel(shown, "side")}
                   </Crossfade>
@@ -2888,7 +2920,9 @@
       max(0.5rem, env(safe-area-inset-bottom, 0px));
     border-top: 1px solid var(--theme-stroke, #484755);
     background: var(--theme-panel-bg, rgba(10, 12, 18, 0.92));
-    backdrop-filter: blur(12px);
+    /* A filter would anchor the appearance drawers to this dock, clipping
+       their headers on phones instead of positioning them in the viewport. */
+    backdrop-filter: none;
   }
 
   .dock.timing {
@@ -3011,6 +3045,10 @@
     grid-template-areas: "stage" "transport" "resize" "timeline" "row";
   }
 
+  .post-editor[data-mode="edit"][data-layout="wide"] .layout {
+    --post-panel-width: clamp(20rem, 54cqw, 75rem);
+  }
+
   .post-editor[data-mode="timing"]:is(
       [data-layout="wide"],
       [data-layout="viewer"]
@@ -3097,6 +3135,10 @@
     height: 100%;
   }
 
+  .post-editor[data-mode="edit"][data-layout="wide"] .preview-frame {
+    width: calc(100cqw - var(--post-panel-width) - 1rem);
+  }
+
   .post-editor[data-layout="viewer"] .preview-frame {
     flex: none;
     width: min(100cqw, calc(100cqh * var(--post-ratio)));
@@ -3147,6 +3189,10 @@
     flex: 0 0 var(--post-panel-width);
   }
 
+  .post-editor[data-mode="edit"][data-layout="wide"] .panel-host {
+    flex: 1 1 20rem;
+  }
+
   .side-column {
     display: grid;
     grid-template-rows: auto minmax(0, 1fr);
@@ -3184,6 +3230,11 @@
   .panel-host.external .side-column {
     grid-template-rows: auto auto;
     height: auto;
+  }
+
+  .panel-host.external.appearance .side-column {
+    grid-template-rows: auto minmax(0, 1fr);
+    height: 100%;
   }
 
   .post-editor[data-mode="timing"][data-layout="wide"] .panel-host {

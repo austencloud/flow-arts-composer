@@ -984,6 +984,7 @@ Last audit: 2025-12-27
           stepDurations={sequenceData?.steps?.map((step) => step.duration ?? 1)}
           visible={progressBarVisible && !hideProgressBar}
           darkMode={darkModeEnabled}
+          strip
         />
         <!-- The transport is the canonical playback surface: play, tempo,
              scrubber, and continuous-vs-step all live here and nowhere else.

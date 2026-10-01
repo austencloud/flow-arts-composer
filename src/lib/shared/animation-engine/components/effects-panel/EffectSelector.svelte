@@ -21,6 +21,8 @@
     onPrewarm?: (effect: string) => void;
     /** Trays recompose from 4 to 8 columns when their own width allows it. */
     layout?: "panel" | "tray";
+    /** Share a bounded chooser's space without compressing labels. */
+    fit?: boolean;
     /** In the tray, tapping the selected effect opens its tuning screen. */
     activeAction?: "disable" | "tune";
     /** Restrict the roster to the effects this host can actually draw. A host
@@ -48,6 +50,7 @@
     disabled = false,
     onPrewarm,
     layout = "panel",
+    fit = false,
     activeAction = "disable",
     availableEffects,
     catalog = null,
@@ -82,6 +85,7 @@
 
 <div
   class="effect-selector-shell"
+  class:fit
   class:catalog={showCatalog}
   class:fill={catalog?.fill}
 >
@@ -181,6 +185,25 @@
 </div>
 
 <style>
+  .effect-selector-shell.fit {
+    display: flex;
+    flex: 1;
+    min-height: 0;
+  }
+  .fit .effect-selector.tray {
+    flex: 1;
+    grid-template-columns: repeat(auto-fit, minmax(min(96px, 100%), 1fr));
+    grid-auto-rows: minmax(72px, 1fr);
+    gap: 8px;
+  }
+  .fit .effect-label {
+    font-size: var(--font-size-min, 14px);
+    line-height: 1.25;
+    white-space: normal;
+  }
+  .fit .effect-btn i {
+    font-size: 24px;
+  }
   .effect-selector-shell {
     container: effect-selector / inline-size;
   }

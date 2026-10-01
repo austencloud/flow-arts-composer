@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+import { PROP_LOOKS } from "$lib/shared/pictograph/prop/domain/prop-look";
 import {
   PostTakeRefSchema,
   PostTakeSchema,
@@ -535,6 +536,7 @@ export const PostAnimationItemSchema = z
     animationAppearance: z
       .object({
         propType: z.nativeEnum(PropType).optional(),
+        propLook: z.enum(PROP_LOOKS).optional(),
         gridMode: z.enum(["none", "8point", "auto"]).optional(),
         props: z.boolean().optional(),
         tkaGlyph: z.boolean().optional(),
@@ -700,6 +702,8 @@ export const PostProjectSchema = z
   .object({
     schemaVersion: z.literal(POST_PROJECT_SCHEMA_VERSION),
     sequenceId: IdSchema,
+    /** Prop used by this post's card and animation when an item has no override. */
+    propType: z.nativeEnum(PropType).optional(),
     takes: z.array(PostTakeSchema),
     /** Maps travel with a post, keyed by the take id they were edited against. */
     timings: z.record(z.string(), TakeTimingSchema).optional(),

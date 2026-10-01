@@ -852,6 +852,12 @@ export class TrailOverlayCanvas implements ITrailOverlayCanvas {
     this.warmupFramesRemaining = TrailOverlayCanvas.WARMUP_FRAMES;
   }
 
+  refreshStyle(): void {
+    this.leftAccumCtx?.clearRect(0, 0, this.width, this.height);
+    this.rightAccumCtx?.clearRect(0, 0, this.width, this.height);
+    this.ctx?.clearRect(0, 0, this.width, this.height);
+  }
+
   setVisible(visible: boolean): void {
     if (!this.canvas) return;
     this.canvas.style.display = visible ? "" : "none";

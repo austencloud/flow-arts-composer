@@ -10,7 +10,6 @@
   import { LAYOUT_MOTION_EASING } from "$lib/shared/transitions/layout-flip";
   import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
   import type { SequenceExportOptions } from "$lib/shared/render/domain/models/sequence-export-options";
-  import type { HandLabeling } from "$lib/shared/video-collaboration/domain/hand-labeling";
   import type { CompositionSourceBinding } from "$lib/shared/media-composition/state/media-composition-state.svelte";
   import {
     resolvePresetTimePoint,
@@ -140,13 +139,13 @@
     bindingFor: (role: string) => CompositionSourceBinding | null;
     labelFor: (item: PostItem) => string;
     cardRenderOptions?: Partial<SequenceExportOptions> | null;
-    handLabeling?: HandLabeling | null;
     /** The record a scan of the card opens: the source, not a labeled copy. */
     qrSequence?: SequenceData;
     /** Outline the strip so prop ends can be framed clear of it. */
     showStripGuide?: boolean;
     /** Selecting and dragging boxes; off while a render or a share runs. */
     interactive?: boolean;
+    exporting?: boolean;
     /**
      * The crop screen's session. While it holds a clip the canvas is the crop
      * stage: that clip's window fitted large in the middle, the rest of its
@@ -167,10 +166,10 @@
     bindingFor,
     labelFor,
     cardRenderOptions = null,
-    handLabeling = null,
     qrSequence,
     showStripGuide = false,
     interactive = true,
+    exporting = false,
     crop = null,
     cropSourceView = true,
     onSourceSize,
@@ -2340,6 +2339,7 @@
                   opacity={cropRegion ? 1 : layer.opacity}
                   sourceTimeSeconds={layer.sourceTimeSeconds}
                   playing={editor.isPlaying && entry.live}
+                  {exporting}
                   {sequence}
                   cardRenderOptions={cardOptionsForItem(
                     cardRenderOptions,
@@ -2351,7 +2351,6 @@
                       ? sourceItem
                       : null
                   )}
-                  {handLabeling}
                   {qrSequence}
                   sequencePosition={layer.sequencePosition ??
                     (isVideo ? undefined : OPENING_POSITION)}

@@ -14,6 +14,11 @@ import { calculateMediaFit } from "$lib/shared/media-composition/services/media-
  * separate video surface, so this copy stays on screen when the video's
  * layer drops out. The video stays mounted underneath: a canvas that cannot
  * draw is left clear and shows it.
+ *
+ * The editor's media layer keeps its own retained frame,
+ * `PreviewVideoFrameRecovery`, which also primes and re-seeks the decoder.
+ * This copy only watches. The timing screen reads the video's play and pause
+ * events as the creator's own, so nothing here may start, pause or seek it.
  */
 
 export type VideoMirrorFit = LayoutRegion["fit"];

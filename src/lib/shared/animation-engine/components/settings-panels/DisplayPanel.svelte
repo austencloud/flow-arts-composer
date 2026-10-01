@@ -17,6 +17,7 @@
   import { reportViewerControlChange } from "$lib/shared/sequence-viewer/domain/viewer-control-analytics";
   import {
     COMPACT_MAX_ART,
+    COMPACT_MIN_ART,
     compactDisplayArt,
     compactDisplayColumns,
     fitDisplayGrid,
@@ -54,8 +55,9 @@
      *  The tiles become short, in two rows where the width allows, and the
      *  picture size is chosen so that everything the scroller holds fits its
      *  visible height. Where it cannot (a very short window) the pictures stop
-     *  at a size that still reads and the host scrolls. Ignored with `fill` or
-     *  the per-hand chips. */
+     *  at a size that still reads and the host scrolls. With `fill`, keeps the
+     *  compact padding but fits the arrangement to both dimensions. Ignored
+     *  with the per-hand chips. */
     compact = false,
     /** The four edge marks (TKA glyph, element, step number, word) describe a
      *  realized sequence. A host animating something that has no letter and no
@@ -314,7 +316,10 @@
 
     const chipStyle = getComputedStyle(chip);
     const padX =
-      parseFloat(chipStyle.paddingLeft) + parseFloat(chipStyle.paddingRight);
+      parseFloat(chipStyle.paddingLeft) +
+      parseFloat(chipStyle.paddingRight) +
+      parseFloat(chipStyle.borderLeftWidth) +
+      parseFloat(chipStyle.borderRightWidth);
     const labelH = Math.max(
       ...Array.from(
         gridEl.children,
@@ -326,6 +331,8 @@
     const chromeY =
       parseFloat(chipStyle.paddingTop) +
       parseFloat(chipStyle.paddingBottom) +
+      parseFloat(chipStyle.borderTopWidth) +
+      parseFloat(chipStyle.borderBottomWidth) +
       (parseFloat(chipStyle.rowGap) || 0) +
       labelH;
     const gridStyle = getComputedStyle(gridEl);
@@ -341,7 +348,9 @@
       gapY,
       count: chips.length,
       grow,
-      groupBoundary: showPropChips ? null : 4,
+      minArt: compact ? COMPACT_MIN_ART : undefined,
+      allowPartialRows: compact,
+      groupBoundary: showPropChips || compact ? null : 4,
     });
     fitCols = fit?.cols ?? 0;
     fitArt = fit?.art ?? 0;
@@ -353,6 +362,11 @@
     measureFit();
     const observer = new ResizeObserver(() => measureFit());
     if (shellEl) observer.observe(shellEl);
+    // Changing columns can wrap a label without resizing the outer box.
+    // Refit after that wrap so the picture still leaves room for the text.
+    gridEl
+      ?.querySelectorAll(".chip-label")
+      .forEach((label) => observer.observe(label));
     return () => observer.disconnect();
   });
 
@@ -452,7 +466,7 @@
     class:motion-grid={showPropChips}
     class:ten-tiles={showPropChips && chips.length === 10}
     class:fitted
-    class:compact={compactMode}
+    class:compact={compact && !showPropChips}
     class="vis-grid"
     bind:this={gridEl}
     style={fitted
@@ -463,18 +477,25 @@
       <button
         class="rt-chip"
         class:group-row={!showPropChips &&
+          !compact &&
           fitted &&
           fitCols < chips.length &&
           index >= 4 &&
           index < 4 + fitCols}
         class:group-inline={!showPropChips &&
+          !compact &&
           fitted &&
           fitCols >= chips.length &&
           index === 4}
         type="button"
         aria-pressed={chip.active()}
         data-tone={chip.tone}
-        style={chip.accent ? `--rail-accent: ${chip.accent};` : undefined}
+        style:--rail-accent={chip.accent}
+        style:grid-column-start={compact &&
+        fitted &&
+        index === chips.length - (chips.length % fitCols)
+          ? Math.floor((fitCols - (chips.length % fitCols)) / 2) + 1
+          : undefined}
         onclick={() => toggleChip(chip)}
       >
         {#if chip.preview}
@@ -639,19 +660,21 @@
      has run, and where the host has no scroller they are the whole story. The
      columns stay 1fr, so a wider host spreads the tiles instead of stretching
      the pictures (the picture is capped, square, and centred in its tile). */
-  .vis-grid.compact {
+  .vis-grid.compact:not(.fitted) {
     grid-template-columns: repeat(var(--vis-cols, 5), minmax(0, 1fr));
     gap: 6px;
   }
 
   .vis-grid.compact .rt-chip {
-    --tile-art: var(--compact-art, 4rem);
     gap: 3px;
     padding: 3px;
   }
+  .vis-grid.compact:not(.fitted) .rt-chip {
+    --tile-art: var(--compact-art, 4rem);
+  }
 
   .vis-grid.compact .chip-label {
-    font-size: 11px;
+    font-size: var(--font-size-sm, 0.875rem);
     text-wrap: balance;
   }
 
