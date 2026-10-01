@@ -146,6 +146,24 @@ describe("wrapCaptionText", () => {
     expect(wrapCaptionText("  a    b  ", measure, 1000)).toEqual(["a b"]);
     expect(wrapCaptionText("   ", measure, 1000)).toEqual([]);
   });
+
+  it("keeps typed line breaks while wrapping long lines", () => {
+    expect(wrapCaptionText("Created with\nFlow Arts Composer", measure, 1000)).toEqual([
+      "Created with",
+      "Flow Arts Composer",
+    ]);
+    expect(wrapCaptionText("one two three\nfour five", measure, 80)).toEqual([
+      "one two",
+      "three",
+      "four",
+      "five",
+    ]);
+    expect(wrapCaptionText("first\r\n\r\nlast", measure, 1000)).toEqual([
+      "first",
+      "",
+      "last",
+    ]);
+  });
 });
 
 describe("captionLineYPositions", () => {

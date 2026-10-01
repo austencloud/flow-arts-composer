@@ -146,6 +146,20 @@ describe("createTextItemPainter", () => {
     expect(fill[0]!.y).toBeCloseTo(rect.y + rect.height / 2, 5);
   });
 
+  it("paints typed lines separately even when both fit the text box", async () => {
+    const rect: PaintRect = { x: 0, y: 0, width: 600, height: 300 };
+    const marks = await paint(
+      () => makeText({ text: "Created with\nFlow Arts Composer" }),
+      rect
+    );
+    const fill = marks.filter((mark) => mark.type === "fill");
+    expect(fill.map((mark) => mark.text)).toEqual([
+      "Created with",
+      "Flow Arts Composer",
+    ]);
+    expect(fill[0]!.y).toBeLessThan(fill[1]!.y);
+  });
+
   it("shrinks the font until the wrapped text fits the rect, down to an 8px floor", async () => {
     const longText =
       "The quick brown fox jumps over the lazy dog again and again";
