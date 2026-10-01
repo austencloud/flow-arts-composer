@@ -920,8 +920,7 @@
     max-width: 100%;
     max-height: 100%;
     aspect-ratio: 1;
-    /* Hug the dock so the turn button reads as sitting under the grid. */
-    place-self: end center;
+    place-self: start center;
     box-sizing: border-box;
     border-radius: var(--settings-radius-md, 12px);
     overflow: hidden;

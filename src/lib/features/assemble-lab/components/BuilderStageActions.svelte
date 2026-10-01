@@ -24,12 +24,11 @@
 
 <style>
   .stage-actions {
-    /* The grid is a bottom-aligned, centered square of this size. */
+    /* Keep the controls beside the square when there is room. */
     --grid-size: min(100cqi, 100cqb);
     --grid-side-room: calc((100cqi - var(--grid-size)) / 2);
     position: absolute;
-    /* Follow the square's top edge when a tall stage leaves space above it. */
-    top: calc(100cqb - var(--grid-size) + 6px);
+    top: 6px;
     /* Hug the grid's right edge when the stage has room beside it; otherwise
        pin to the stage edge and let the chips cover the grid's empty corner. */
     right: max(6px, calc(var(--grid-side-room) - 7rem));

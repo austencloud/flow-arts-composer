@@ -79,7 +79,7 @@
 <style>
   .dock {
     display: flex;
-    grid-row: 2;
+    flex: 0 0 auto;
     flex-direction: column;
     align-items: stretch;
     width: 100%;
