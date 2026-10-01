@@ -1,11 +1,48 @@
 # Halloween Tutorial Videos — Handoff (2026-09-30)
 
 Living document. Updated at every milestone by whichever agent holds the work.
-Last update: 2026-09-30 20:00 CDT (Claude Opus 5.5 session, seventh pass).
+Last update: 2026-10-01 12:50 CDT (Claude Opus 5.5 session, eighth pass).
 No work branch is open. `codex/tutorial-videos-fixes`, `codex/auto-colour`,
-`codex/auto-colour-sky`, `codex/fill-box-save` and
-`codex/post-sequence-actions` are merged to local main and removed. Nothing is
-pushed.
+`codex/auto-colour-sky`, `codex/fill-box-save`,
+`codex/post-sequence-actions` and `codex/whole-recording-timing` are merged to
+local main and removed. Nothing is pushed.
+
+## Update 2026-10-01 12:50 CDT: whole recordings
+
+Austen could not drag the DCKΨ- slow breakdown's left edge to show the start
+position: every post was built on pre-cut clips, so no footage existed before
+the cut. The fix is to point each take at the whole recording it was cut from
+(`replaceTakeMedia`, script
+`docs/superpowers/specs/tutorial-videos-scripts/use-whole-recording.ts`), after
+which every clip edge can be dragged out. Recovered posts must link whole
+recordings from now on.
+
+All three posts now link their whole recordings (all files in
+`static/word-videos/inshot-recovery/`). Each import landed as one undoable
+step in the built-in browser tab, was built from the newest save (confirmed by
+the `before-import` record), reached the disk archive, and moved no item:
+
+| Video | Imported project (UTC)                      | What changed                                                                                                                                                                                                 |
+| ----- | ------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| DCKΨ- | 17:27:55.961Z, 11 items                     | Both takes on `dck-full.mp4` (358.933 s). The slow breakdown also starts 3.9 s earlier (22.412–71.315, sourceIn 185.123), filling the gap before it with the start position; the moves strip starts with it. |
+| Δ-ΛRZ | 17:36:06.662Z, 9 items (from 17:15:55.598Z) | Both takes on `woods-full.mp4` (178.216667 s). Its slow part already opened on about 3 s of start position, so no extension. Checked on screen at 0:08 (run, beat 11) and 0:30 (slow, moves inset).          |
+| ΩΛ-XJ | 17:41:42.144Z, 9 items (from 17:35:10.156Z) | Both takes on `omega-full.mp4` (204.337467 s). The spare catalog take (`take-3`, not on the timeline, "could not be loaded" before and after) is untouched. Checked at 0:10 (run, beat 14) and 0:40 (slow).  |
+
+Austen authorized each import and the large file moves in chat on
+2026-10-01 ("can you do it" for DCKΨ-; "Yes, load it now" for woods; ΩΛ-XJ
+after he stopped editing it).
+
+Plans (offset = where the old clip starts inside the whole recording; all four
+were confirmed frame-exact by comparing frames at several times):
+
+- Woods: `woods-take-1` 22.293625, `woods-take-2` 45.246964; duration
+  178.216667; take key `inshot:woods:<sha256>:<takeId>` with sha256
+  `b88ddecc4a3c434c49253dc11d3fd5ecd3d3a26bea461f2f353c4f807580add2`.
+- ΩΛ-XJ: camera-cut-1 at 70.512272, camera-cut-2 at 142.642444; duration
+  204.337467; sha256
+  `d3cfdff38a4dbfd65a0143141c5aecdabc2397dce688a30860fad9b788cefc69`.
+- Whole copies come from the raw phone recordings, re-encoded with
+  `-map_metadata -1` (no location data).
 
 ## Mission
 
@@ -141,6 +178,18 @@ No full export of any of the three exists yet.
   `https://localhost:5173/post?project=Δ-ΛRZ` with the animation selected
   ("Nothing applied.").
 
+- **Whole recordings keep their beats** (branch `codex/whole-recording-timing`,
+  merged to local main 2026-10-01, not pushed). Two import bugs found while
+  relinking DCKΨ-: shifted timings failed the "sections cover the whole take"
+  check and were dropped (`shiftTakeTiming` now pins the first section to 0 and
+  the last to the new duration, and stamps `updatedAt`); and two takes sharing
+  one video got each other's beats (`resolvePostStudioDraft` now prefers a
+  take's own map). Evidence: 174 focused media-composition tests passed,
+  including new cases in `post-project-edits.test.ts` and
+  `post-project-backup.test.ts`. In the browser, DCKΨ- at 0:10 shows the run
+  with its pictograph inset (beat 15), at 0:23.5 the start position, at 0:29
+  the first move under "Practice with me!"; the post survived a reload.
+
 ## Believed done — unverified
 
 - A Mirror press un-reflects a real post's notation. Unit tests prove the
@@ -189,6 +238,17 @@ No full export of any of the three exists yet.
   after the deadline. Codex workers: GPT-6.1 Sol, High effort or above.
 
 ## Gotchas
+
+- A clip cut to its own file can't be dragged longer: the editor only reveals
+  footage the take's file holds. Relink to the whole recording first.
+- Opening or importing one of Austen's posts needs his OK for that post; an
+  OK for one does not carry to the others (the permission check refused woods
+  on 2026-10-01). Moving or copying the large media files was refused as
+  irreversible too; ask first.
+- Import route used for DCKΨ-: put the `.post-studio.json` in the gitignored
+  media folder, then in the post's tab set it on the file input whose accept
+  is `.json,video/*,image/*,.ttf,.otf` and fire `change`. It lands as one
+  undoable step.
 
 - Phone pull recipe: adb `C:/Users/Austen/AppData/Local/Android/Sdk/platform-tools/adb.exe`,
   wireless serial currently `192.168.12.208:37163` (rediscover with
