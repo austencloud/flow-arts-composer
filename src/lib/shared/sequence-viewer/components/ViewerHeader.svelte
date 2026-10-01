@@ -160,7 +160,7 @@
     !!onOpenApp && !(hasAccountEntry && authState.isFullAccount)
   );
   const identityWord = $derived(
-    resolveSequenceIdentityTitle(sequence) || t("viewer_header_sequence")
+    resolveSequenceIdentityTitle(sequence)
   );
   const trimmedTitleOverride = $derived(titleOverride?.trim() || "");
   /** Plain-text title actually shown in the slot: the override when present,
@@ -518,12 +518,14 @@
       {/if}
     {/snippet}
 
-    <WordActionMenu
-      word={isWordTitle ? identityWord : ""}
-      enabled={isWordTitle}
-      errorContext={{ module: "sequence-viewer" }}
-      trigger={wordTrigger}
-    />
+    {#if displayTitle}
+      <WordActionMenu
+        word={isWordTitle ? identityWord : ""}
+        enabled={isWordTitle}
+        errorContext={{ module: "sequence-viewer" }}
+        trigger={wordTrigger}
+      />
+    {/if}
   </div>
 
   <div class="header-side header-right">
