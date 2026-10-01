@@ -2452,7 +2452,6 @@
                 {bindingFor}
                 {labelFor}
                 {cardRenderOptions}
-                handLabeling={labeledCard.labeling}
                 showStripGuide={editor.selectedItem?.kind === "video"}
                 interactive={!exporting && !sharing && !previewTarget}
                 {exporting}
