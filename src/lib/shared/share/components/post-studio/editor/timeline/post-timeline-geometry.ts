@@ -17,13 +17,21 @@ export const POST_TIMELINE_DEFAULT_PIXELS_PER_SECOND = 60;
 /** How close (in px) a drag has to land on a target to snap to it. */
 export const POST_TIMELINE_SNAP_THRESHOLD_PX = 8;
 
-export function clampPixelsPerSecond(pixelsPerSecond: number): number {
+export function clampPixelsPerSecond(
+  pixelsPerSecond: number,
+  fitZoom = POST_TIMELINE_MIN_PIXELS_PER_SECOND
+): number {
   if (!Number.isFinite(pixelsPerSecond)) {
     return POST_TIMELINE_DEFAULT_PIXELS_PER_SECOND;
   }
+  // A long post can need less than the usual minimum to remain fully visible.
+  const minimum =
+    Number.isFinite(fitZoom) && fitZoom > 0
+      ? Math.min(POST_TIMELINE_MIN_PIXELS_PER_SECOND, fitZoom)
+      : POST_TIMELINE_MIN_PIXELS_PER_SECOND;
   return Math.min(
     POST_TIMELINE_MAX_PIXELS_PER_SECOND,
-    Math.max(POST_TIMELINE_MIN_PIXELS_PER_SECOND, pixelsPerSecond)
+    Math.max(minimum, pixelsPerSecond)
   );
 }
 
@@ -54,16 +62,24 @@ export function roundToFrameSeconds(
 /**
  * The pixel width available to fit a post of `durationSeconds` into
  * `viewportWidthPx`. Falls back to the default zoom for an empty project (no
- * duration to fit), and otherwise always returns a clamped, finite value.
+ * duration to fit). Fitting may zoom out farther than the normal zoom limit.
  */
 export function fitPixelsPerSecond(
   durationSeconds: number,
   viewportWidthPx: number
 ): number {
-  if (!(durationSeconds > 0) || !(viewportWidthPx > 0)) {
+  if (
+    !Number.isFinite(durationSeconds) ||
+    !Number.isFinite(viewportWidthPx) ||
+    !(durationSeconds > 0) ||
+    !(viewportWidthPx > 0)
+  ) {
     return POST_TIMELINE_DEFAULT_PIXELS_PER_SECOND;
   }
-  return clampPixelsPerSecond(viewportWidthPx / durationSeconds);
+  return Math.min(
+    POST_TIMELINE_MAX_PIXELS_PER_SECOND,
+    viewportWidthPx / durationSeconds
+  );
 }
 
 /**

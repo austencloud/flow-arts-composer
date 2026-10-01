@@ -154,16 +154,12 @@
   const OVERLAY_ROW_HEIGHT_PX = 52;
   const MAIN_ROW_HEIGHT_PX = 72;
   const RULER_HEIGHT_PX = 36; // Matches TimelineBody's ruler height for consistency.
-  // The ruler viewport is narrower than the lanes by the zoom controls.
-  // Extra trailing space lets both surfaces reach the same horizontal offset.
-  const RULER_TRAILING_SPACE_PX = 160;
   const KEY_LANE_HEIGHT_PX = 44;
   const TRAILING_PADDING_PX = 64;
   const DRAG_THRESHOLD_PX = 4;
   const ZOOM_STEP_FACTOR = 1.25;
 
   let lanesScrollEl = $state<HTMLDivElement | null>(null);
-  let rulerScrollEl = $state<HTMLDivElement | null>(null);
   let headerColumnEl = $state<HTMLDivElement | null>(null);
   let lanesContentEl = $state<HTMLDivElement | null>(null);
   let lanesViewportWidthPx = $state(0);
@@ -433,7 +429,6 @@
     // that echo would look like the user scrolling and pause auto-scroll.
     suppressNextScrollEvent = true;
     if (lanesScrollEl) lanesScrollEl.scrollLeft = px;
-    if (rulerScrollEl) rulerScrollEl.scrollLeft = px;
   }
 
   function handleLanesScroll(): void {
@@ -441,9 +436,6 @@
       suppressNextScrollEvent = false;
     } else {
       markUserScrolling();
-    }
-    if (rulerScrollEl && lanesScrollEl) {
-      rulerScrollEl.scrollLeft = lanesScrollEl.scrollLeft;
     }
     if (headerColumnEl && lanesScrollEl) {
       headerColumnEl.scrollTop = lanesScrollEl.scrollTop;
@@ -464,7 +456,13 @@
     anchorSeconds: number,
     anchorClientXPx: number
   ): void {
-    const clamped = clampPixelsPerSecond(requestedPixelsPerSecond);
+    const clamped = clampPixelsPerSecond(
+      requestedPixelsPerSecond,
+      fitPixelsPerSecond(
+        durationSeconds,
+        lanesViewportWidthPx - TRAILING_PADDING_PX
+      )
+    );
     if (clamped === pixelsPerSecond) return;
     pixelsPerSecond = clamped;
     if (!lanesScrollEl) return;
@@ -490,8 +488,9 @@
   function handleFit(): void {
     pixelsPerSecond = fitPixelsPerSecond(
       durationSeconds,
-      lanesViewportWidthPx || 1
+      Math.max(1, lanesViewportWidthPx - TRAILING_PADDING_PX)
     );
+    flushSync();
     setLanesScrollLeft(0);
   }
 
@@ -513,7 +512,10 @@
     if (width <= 0) return;
     const becameNonEmpty = previousHasItems === false && currentHasItems;
     if (!didFitOnce || becameNonEmpty) {
-      pixelsPerSecond = fitPixelsPerSecond(duration, width);
+      pixelsPerSecond = fitPixelsPerSecond(
+        duration,
+        Math.max(1, width - TRAILING_PADDING_PX)
+      );
       setLanesScrollLeft(0);
       didFitOnce = true;
     }
@@ -1102,38 +1104,12 @@
   role="region"
   aria-label={t("post_timeline_region_label")}
 >
-  {#if toolbarStart}
-    <div class="keyframe-toolbar" transition:growFade|global>
-      {@render toolbarStart()}
-    </div>
-  {/if}
   <div class="toolbar-row">
-    <div class="ruler-spacer" aria-hidden="true"></div>
-    <div
-      class="ruler-scroll"
-      bind:this={rulerScrollEl}
-      style="height: {RULER_HEIGHT_PX}px"
-    >
-      <div
-        class="ruler-row"
-        style="width: {contentWidthPx + RULER_TRAILING_SPACE_PX}px"
-        role="group"
-        aria-label={t("post_timeline_ruler_label")}
-        onpointerdown={handleRulerPointerDown}
-        onpointermove={handleRulerPointerMove}
-      >
-        <TimeRuler
-          duration={durationSeconds}
-          {pixelsPerSecond}
-          tickInterval={rulerTickInterval(pixelsPerSecond)}
-        />
-        <div
-          class="playhead-line"
-          style="left: {playheadXPx}px"
-          aria-hidden="true"
-        ></div>
+    {#if toolbarStart}
+      <div class="keyframe-toolbar" transition:growFade|global>
+        {@render toolbarStart()}
       </div>
-    </div>
+    {/if}
     <PostTimelineZoomControls
       onZoomOut={() => handleZoomButton(1 / ZOOM_STEP_FACTOR)}
       onZoomIn={() => handleZoomButton(ZOOM_STEP_FACTOR)}
@@ -1143,6 +1119,11 @@
 
   <div class="body">
     <div class="header-column">
+      <div
+        class="ruler-spacer"
+        style="height: {RULER_HEIGHT_PX}px"
+        aria-hidden="true"
+      ></div>
       <div
         class="header-rows"
         bind:this={headerColumnEl}
@@ -1216,6 +1197,26 @@
         role="group"
         aria-label={t("post_timeline_lanes_label")}
       >
+        <!-- The ruler and tracks share one scroller, so their times cannot drift apart. -->
+        <div
+          class="ruler-row"
+          style="width: {contentWidthPx}px; height: {RULER_HEIGHT_PX}px"
+          role="group"
+          aria-label={t("post_timeline_ruler_label")}
+          onpointerdown={handleRulerPointerDown}
+          onpointermove={handleRulerPointerMove}
+        >
+          <TimeRuler
+            duration={durationSeconds}
+            {pixelsPerSecond}
+            tickInterval={rulerTickInterval(pixelsPerSecond)}
+          />
+          <div
+            class="playhead-line"
+            style="left: {playheadXPx}px"
+            aria-hidden="true"
+          ></div>
+        </div>
         <div
           class="lanes-content"
           bind:this={lanesContentEl}
@@ -1360,18 +1361,19 @@
   .toolbar-row {
     display: flex;
     flex-shrink: 0;
+    flex-wrap: wrap;
     align-items: center;
+    justify-content: flex-end;
     border-bottom: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.08));
   }
 
   .keyframe-toolbar {
     display: grid;
+    flex: 1 1 18rem;
     grid-template-columns: minmax(0, 1fr) auto;
     align-items: start;
     gap: 0.5rem;
-    flex-shrink: 0;
     padding: 0.375rem 0.5rem;
-    border-bottom: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.08));
   }
 
   .keyframe-toolbar :global(.keyframe-controls) {
@@ -1383,7 +1385,7 @@
   }
 
   .ruler-spacer {
-    flex: 0 0 16rem;
+    flex-shrink: 0;
   }
 
   .key-lane-slot {
@@ -1428,17 +1430,13 @@
     flex-direction: column;
   }
 
-  .ruler-scroll {
-    flex: 1;
-    min-width: 0;
-    flex-shrink: 0;
-    overflow: hidden;
-  }
-
   .ruler-row {
-    position: relative;
-    height: 100%;
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    background: var(--theme-bg, #101018);
     touch-action: none;
+    user-select: none;
   }
 
   /* Each label starts just after its tick, so the 0:00 label stays in view. */
@@ -1587,10 +1585,6 @@
   }
 
   @container post-timeline (max-width: 30rem) {
-    .ruler-spacer {
-      flex-basis: 7rem;
-    }
-
     .header-column {
       width: 7rem;
     }
