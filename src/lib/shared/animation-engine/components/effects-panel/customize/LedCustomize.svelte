@@ -1,6 +1,12 @@
 <script lang="ts">
+  import { getContext } from "svelte";
   import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { effectUiLabel } from "../effect-ui-label";
+  import {
+    LED_CUSTOMIZE_PAGE_CONTEXT,
+    type LedCustomizePage,
+    type LedCustomizePageState,
+  } from "../led-customize-page-context";
   import { getEffectsConfigContext } from "$lib/shared/effects/state/effects-config-context";
   import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
   import {
@@ -35,7 +41,14 @@
   }
 
   const { onBack, embedded = false, paged = false }: Props = $props();
-  let page = $state<"prop" | "pattern" | "color" | "look">("pattern");
+  const sharedPage = getContext<LedCustomizePageState | undefined>(
+    LED_CUSTOMIZE_PAGE_CONTEXT
+  );
+  let page = $state<LedCustomizePage>(sharedPage?.current ?? "pattern");
+  function selectPage(next: LedCustomizePage): void {
+    page = next;
+    if (sharedPage) sharedPage.current = next;
+  }
   const effectsState = getEffectsConfigContext();
 
   const led = $derived(effectsState?.led ?? null);
@@ -290,7 +303,7 @@
             type="button"
             aria-pressed={page === option.id}
             class:active={page === option.id}
-            onclick={() => (page = option.id as typeof page)}
+            onclick={() => selectPage(option.id as LedCustomizePage)}
             >{option.label}</button
           >
         {/each}

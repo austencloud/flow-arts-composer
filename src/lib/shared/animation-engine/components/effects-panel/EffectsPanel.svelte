@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { flushSync, type Snippet, type Component } from "svelte";
+  import { flushSync, setContext, type Snippet, type Component } from "svelte";
   import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { effectUiLabel } from "./effect-ui-label";
   import { getEffectsConfigContext } from "$lib/shared/effects/state/effects-config-context";
@@ -41,6 +41,10 @@
     type AnimationSettingsState,
   } from "$lib/shared/animation-engine/state/animation-settings-state.svelte";
   import EffectsPlaybackBar from "./EffectsPlaybackBar.svelte";
+  import {
+    LED_CUSTOMIZE_PAGE_CONTEXT,
+    type LedCustomizePageState,
+  } from "./led-customize-page-context";
 
   /** Synthetic chip id for the factory default look (not a named preset). */
   const DEFAULT_CHIP_ID = "__default__";
@@ -112,12 +116,19 @@
   }: Props = $props();
 
   const effectsConfigState = getEffectsConfigContext()!;
+  const ledCustomizePage = $state<LedCustomizePageState>({
+    current: "pattern",
+  });
+  setContext(LED_CUSTOMIZE_PAGE_CONTEXT, ledCustomizePage);
 
   let customizeOpen = $state(false);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let CustomizeComponent = $state<Component<any> | null>(null);
 
   const activeEffect = $derived(effectsConfigState.activeEffect);
+  $effect(() => {
+    if (activeEffect !== "led") ledCustomizePage.current = "pattern";
+  });
   const registration = $derived<EffectRegistration | undefined>(
     activeEffect !== "none" ? getRegistration(activeEffect) : undefined
   );

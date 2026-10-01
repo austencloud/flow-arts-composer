@@ -87,10 +87,25 @@ it("saves an LED look change from the selected effect inspector", async () => {
       onAppearanceChange.mock.calls.at(-1)![0].effects.led.look.brightness
     ).toBe(5);
   });
+  await expect
+    .element(page.getByRole("button", { name: "Look", exact: true }))
+    .toHaveAttribute("aria-pressed", "true");
   await rerender({
     appearanceOverride: onAppearanceChange.mock.calls[0]![0],
   });
   await expect
     .element(page.getByRole("radio", { name: "5", exact: true }))
     .toHaveAttribute("aria-checked", "true");
+  const persistence = page.getByRole("slider", { name: "Persistence" });
+  await expect.element(persistence).toBeVisible();
+  await persistence.press("ArrowRight");
+  await vi.waitFor(() => {
+    expect(
+      onAppearanceChange.mock.calls.at(-1)![0].effects.led.look.shutter
+        .timeConstantSeconds
+    ).toBeGreaterThan(0.12);
+  });
+  await expect
+    .element(page.getByRole("button", { name: "Look", exact: true }))
+    .toHaveAttribute("aria-pressed", "true");
 });
