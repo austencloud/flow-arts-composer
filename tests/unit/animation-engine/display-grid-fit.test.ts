@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
+  COMPACT_MAX_ART,
+  COMPACT_MIN_ART,
+  COMPACT_MIN_TILE_WIDTH,
+  compactDisplayArt,
+  compactDisplayColumns,
   DISPLAY_GROUP_GAP,
   fitDisplayGrid,
   MIN_FIT_ART,
@@ -96,4 +101,53 @@ describe("fitDisplayGrid", () => {
       );
     }
   );
+});
+
+describe("compactDisplayColumns", () => {
+  it("lays ten tiles in two rows of five wherever five columns fit", () => {
+    expect(compactDisplayColumns({ width: 403, count: 10, gap: 6 })).toBe(5);
+    expect(compactDisplayColumns({ width: 358, count: 10, gap: 6 })).toBe(5);
+  });
+
+  it("adds rows rather than letting a tile fall under its minimum width", () => {
+    const gap = 6;
+    for (const width of [300, 250, 200, 130]) {
+      const cols = compactDisplayColumns({ width, count: 10, gap });
+      const tile = (width - gap * (cols - 1)) / cols;
+      expect(tile).toBeGreaterThanOrEqual(COMPACT_MIN_TILE_WIDTH);
+    }
+    expect(compactDisplayColumns({ width: 250, count: 10, gap })).toBeLessThan(
+      5
+    );
+  });
+
+  it("never returns an empty row or an impossible column count", () => {
+    expect(compactDisplayColumns({ width: 10, count: 10, gap: 6 })).toBe(1);
+    expect(compactDisplayColumns({ width: 400, count: 1, gap: 6 })).toBe(1);
+    expect(compactDisplayColumns({ width: 400, count: 0, gap: 6 })).toBe(1);
+  });
+});
+
+describe("compactDisplayArt", () => {
+  it("keeps the largest picture when the content already fits", () => {
+    expect(compactDisplayArt({ probeArt: 64, rows: 2, overflow: 0 })).toBe(
+      COMPACT_MAX_ART
+    );
+    expect(compactDisplayArt({ probeArt: 64, rows: 2, overflow: -40 })).toBe(
+      COMPACT_MAX_ART
+    );
+  });
+
+  it("shrinks every row by the share of the overflow it has to absorb", () => {
+    // 20px over with two rows: each row gives up 10px of picture.
+    expect(compactDisplayArt({ probeArt: 64, rows: 2, overflow: 20 })).toBe(54);
+    // An odd overflow rounds the shrink up, so the content never stays over.
+    expect(compactDisplayArt({ probeArt: 64, rows: 2, overflow: 21 })).toBe(53);
+  });
+
+  it("stops at the readable minimum when the box is too short", () => {
+    expect(compactDisplayArt({ probeArt: 64, rows: 2, overflow: 400 })).toBe(
+      COMPACT_MIN_ART
+    );
+  });
 });
