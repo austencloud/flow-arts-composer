@@ -959,8 +959,11 @@ export function moveSelectedItems(
     targetStart - dragged.item.start
   );
   const layerDelta =
-    dragged.trackIndex > MAIN_TRACK_INDEX && targetTrackIndex !== null
-      ? Math.round(targetTrackIndex) - dragged.trackIndex
+    dragged.trackIndex > MAIN_TRACK_INDEX &&
+    targetTrackIndex !== null &&
+    Number.isFinite(targetTrackIndex)
+      ? clamp(Math.round(targetTrackIndex), 1, project.tracks.length) -
+        dragged.trackIndex
       : 0;
   if (Math.abs(delta) < POST_TIME_EPSILON && layerDelta === 0) return project;
 
@@ -975,44 +978,101 @@ export function moveSelectedItems(
   if (mainMoved.length && Math.abs(delta) >= POST_TIME_EPSILON) {
     const movedIds = new Set(mainMoved.map((item) => item.id));
     const main = project.tracks[MAIN_TRACK_INDEX]!.items;
-    const firstStart = Math.min(...mainMoved.map((item) => item.start));
-    const before: PostItem[] = [];
-    const after: PostItem[] = [];
+    const stationary: PostItem[] = [];
+    let cursor = 0;
+    let outgoingOverlap = 0;
     for (const item of main) {
       if (movedIds.has(item.id)) continue;
-      (itemEnd(item) <= firstStart + POST_TIME_EPSILON ? before : after).push({
+      let start = Math.max(
+        item.start,
+        cursor - Math.min(outgoingOverlap, item.duration - POST_TIME_EPSILON)
+      );
+      // Gaps between selected clips still belong to the clips already there.
+      // Push only actual collisions, stopping at the first gap that fits.
+      for (const moved of mainMoved) {
+        if (start + item.duration <= moved.start + POST_TIME_EPSILON) break;
+        if (start < itemEnd(moved) - POST_TIME_EPSILON) start = itemEnd(moved);
+      }
+      stationary.push({
         ...item,
+        start,
         pinnedStart: true,
       });
-    }
-    let cursor = Math.max(...mainMoved.map(itemEnd));
-    const pushed = after.map((item) => {
-      const start = Math.max(cursor, item.start);
       cursor = start + item.duration;
-      return { ...item, start };
-    });
-    next = withTrackItems(next, MAIN_TRACK_INDEX, [
-      ...before,
-      ...mainMoved,
-      ...pushed,
-    ]);
-    next = normalizeProject(next);
+      outgoingOverlap = Math.min(
+        item.transitionOut?.duration ?? 0,
+        item.duration - POST_TIME_EPSILON
+      );
+    }
+    next = withTrackItems(
+      next,
+      MAIN_TRACK_INDEX,
+      [...mainMoved, ...stationary].sort((a, b) => a.start - b.start)
+    );
   }
 
   const overlays = movable.filter(
     ({ trackIndex }) => trackIndex > MAIN_TRACK_INDEX
   );
   if (overlays.length) {
-    const ids = new Set(overlays.map(({ item }) => item.id));
-    const tracks = next.tracks.map((track) => ({
-      ...track,
-      items: track.items.filter((item) => !ids.has(item.id)),
+    // Resolve the remaining anchors before checking room. Selected overlays
+    // must be absent here so they cannot bump an unrelated clip while moving.
+    const withoutSelected = withoutItems(
+      next,
+      new Set(overlays.map(({ item }) => item.id))
+    );
+    const resolved = normalizeProject(withoutSelected);
+    const resolvedTracks = new Map(
+      resolved.tracks.map((track) => [track.id, track])
+    );
+    const originalTrackIds = new Set(next.tracks.map((track) => track.id));
+    // Keep the original layer slots until the whole group has landed.
+    const tracks = withoutSelected.tracks.map((track) => {
+      const held = resolvedTracks.get(track.id);
+      return { ...(held ?? track), items: [...(held?.items ?? [])] };
+    });
+    tracks.push(
+      ...resolved.tracks
+        .filter((track) => !originalTrackIds.has(track.id))
+        .map((track) => ({ ...track, items: [...track.items] }))
+    );
+    const movedOverlays = overlays.map(({ item, trackIndex }) => ({
+      trackIndex,
+      item: {
+        ...item,
+        start: item.start + delta,
+        fill: false,
+        anchor: anchorAt(resolved, item.start + delta),
+      },
     }));
-    const nextId = createIdAllocator(next);
-    for (const { item, trackIndex } of overlays) {
-      let destination = Math.max(MAIN_TRACK_INDEX + 1, trackIndex + layerDelta);
-      while (destination < tracks.length && tracks[destination]!.locked)
-        destination++;
+    let landingDelta = Math.max(
+      layerDelta,
+      MAIN_TRACK_INDEX +
+        1 -
+        Math.min(...overlays.map(({ trackIndex }) => trackIndex))
+    );
+    // A blocked destination moves the whole group upward together. Existing
+    // clips keep their layers, and a visible clip never lands on a hidden one.
+    while (
+      !movedOverlays.every(({ item, trackIndex }) => {
+        const destination = trackIndex + landingDelta;
+        const track = tracks[destination];
+        return (
+          !track ||
+          (!track.locked &&
+            (!track.hidden || destination === trackIndex) &&
+            trackHasRoom(track, item.start, itemEnd(item)))
+        );
+      })
+    )
+      landingDelta++;
+
+    const nextId = createIdAllocator({
+      ...next,
+      tracks: [...next.tracks, ...resolved.tracks],
+    });
+    for (const { item, trackIndex } of movedOverlays) {
+      const destination = trackIndex + landingDelta;
       while (destination >= tracks.length)
         tracks.push({
           id: nextId("track"),
@@ -1020,13 +1080,7 @@ export function moveSelectedItems(
           locked: false,
           items: [],
         });
-      const start = item.start + delta;
-      tracks[destination]!.items.push({
-        ...item,
-        start,
-        fill: false,
-        anchor: anchorAt(next, start),
-      });
+      tracks[destination]!.items.push(item);
     }
     next = { ...next, tracks };
   }

@@ -822,6 +822,130 @@ describe("moveOverlayItem", () => {
 });
 
 describe("moveSelectedItems", () => {
+  it("leaves an unselected main clip in the gap between selected clips", () => {
+    const base = project([
+      video("v1", { sourceOut: 2, start: 0, pinnedStart: true }),
+      video("middle", { sourceOut: 2, start: 5, pinnedStart: true }),
+      video("v2", { sourceOut: 2, start: 10, pinnedStart: true }),
+    ]);
+    const result = valid(
+      moveSelectedItems(base, ["v1", "v2"], "v1", 1, null, ctx)
+    );
+    expect(spans(result, 0)).toEqual([
+      ["v1", 1, 2],
+      ["middle", 5, 2],
+      ["v2", 11, 2],
+    ]);
+  });
+
+  it("pushes a colliding main clip only as far as the next available gap", () => {
+    const base = project([
+      video("v1", { sourceOut: 2 }),
+      video("middle", { sourceOut: 2 }),
+      video("v2", { sourceOut: 2, start: 6, pinnedStart: true }),
+    ]);
+    const result = valid(
+      moveSelectedItems(base, ["v1", "v2"], "v1", 1, null, ctx)
+    );
+    expect(spans(result, 0)).toEqual([
+      ["v1", 1, 2],
+      ["middle", 3, 2],
+      ["v2", 7, 2],
+    ]);
+  });
+
+  it.each(["video", "card"] as const)(
+    "preserves an existing %s crossfade between unselected main clips",
+    (kind) => {
+      const outgoing =
+        kind === "video"
+          ? video("fade-out", { sourceOut: 3 })
+          : card("fade-out", 3);
+      const base = project([
+        video("v1", { sourceOut: 2 }),
+        {
+          ...outgoing,
+          start: 5,
+          pinnedStart: true,
+          transitionOut: { type: "crossfade", duration: 1 },
+        },
+        video("fade-in", { sourceOut: 3 }),
+        video("v2", { sourceOut: 2, start: 12, pinnedStart: true }),
+      ]);
+      const result = valid(
+        moveSelectedItems(base, ["v1", "v2"], "v1", 1, null, ctx)
+      );
+      expect(spans(result, 0)).toEqual([
+        ["v1", 1, 2],
+        ["fade-out", 5, 3],
+        ["fade-in", 7, 3],
+        ["v2", 13, 2],
+      ]);
+    }
+  );
+
+  it.each([3, 5])(
+    "keeps occupied overlays in place when the group lands at %s seconds",
+    (start) => {
+      const base = project(
+        [video("v1")],
+        [[text("t1", 0, 2), text("resident", 4, 2), text("t2", 8, 2)]]
+      );
+      const result = valid(
+        moveSelectedItems(base, ["t1", "t2"], "t1", start, 1, ctx)
+      );
+      expect(spans(result, 1)).toEqual([["resident", 4, 2]]);
+      expect(result.tracks[1]!.id).toBe(base.tracks[1]!.id);
+      expect(spans(result, 2)).toEqual([
+        ["t1", start, 2],
+        ["t2", start + 8, 2],
+      ]);
+    }
+  );
+
+  it.each(["hidden", "locked"] as const)(
+    "keeps the group's layer spacing when one destination is %s",
+    (flag) => {
+      const base = project(
+        [video("v1")],
+        [[text("t1", 0, 2)], [text("t2", 4, 2)], [text("resident", 8, 2)]]
+      );
+      const blocked = setTrackFlag(base, base.tracks[3]!.id, flag, true, ctx);
+      const result = valid(
+        moveSelectedItems(blocked, ["t1", "t2"], "t1", 1, 2, ctx)
+      );
+      const first = findItem(result, "t1")!;
+      const second = findItem(result, "t2")!;
+      expect(second.trackIndex - first.trackIndex).toBe(1);
+      for (const { trackIndex } of [first, second]) {
+        expect(result.tracks[trackIndex]!.hidden).toBe(false);
+        expect(result.tracks[trackIndex]!.locked).toBe(false);
+      }
+      const resident = findItem(result, "resident")!;
+      expect(resident.item.start).toBe(8);
+      expect(result.tracks[resident.trackIndex]!.id).toBe(base.tracks[3]!.id);
+    }
+  );
+
+  it("checks collisions after a selected main clip moves its anchored overlay", () => {
+    const base = project(
+      [video("v1")],
+      [
+        [
+          text("t1", 0, 2, { anchor: { itemId: "v1", offset: 0 } }),
+          text("resident", 4, 2),
+        ],
+      ]
+    );
+    const result = valid(
+      moveSelectedItems(base, ["v1", "t1"], "v1", 3, null, ctx)
+    );
+    expect(spans(result, 1)).toEqual([["resident", 4, 2]]);
+    expect(result.tracks[1]!.id).toBe(base.tracks[1]!.id);
+    expect(spans(result, 2)).toEqual([["t1", 3, 2]]);
+    expect(item(result, "t1").anchor).toEqual({ itemId: "v1", offset: 0 });
+  });
+
   it("moves selected main clips together and carries their anchored overlays", () => {
     const result = valid(
       moveSelectedItems(twoClips(), ["v1", "v2"], "v1", 3, null, ctx)
