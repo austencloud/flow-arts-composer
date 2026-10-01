@@ -2614,7 +2614,6 @@
                 bind:this={playbackCanvas}
                 {editor}
                 sequence={displaySequence}
-                qrSequence={sequence}
                 {bindingFor}
                 {labelFor}
                 {cardRenderOptions}
