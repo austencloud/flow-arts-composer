@@ -691,7 +691,7 @@
   let pixelsPerSecond = $state(60);
   let editorWidth = $state(0);
   let editorHeight = $state(0);
-  const DEFAULT_TIMELINE_HEIGHT_PX = 280;
+  const DEFAULT_TIMELINE_HEIGHT_PX = 200;
   const MIN_TIMELINE_HEIGHT_PX = 160;
   let timelineHeightPx = $state(DEFAULT_TIMELINE_HEIGHT_PX);
   let timelineResizeStartPx = DEFAULT_TIMELINE_HEIGHT_PX;
@@ -2465,6 +2465,7 @@
         <aside
           class="panel-host"
           class:external={layout === "viewer"}
+          class:appearance={shown === "appearance" && editor.selectedItem?.kind === "animation"}
           tabindex="-1"
           data-viewer-keys-ignore
           bind:this={panelHost}
@@ -2483,8 +2484,8 @@
                     key={shown}
                     mode="swap"
                     duration={DURATION.fast}
-                    fill={layout === "wide"}
-                    animateHeight={layout === "viewer"}
+                    fill={layout === "wide" || (layout === "viewer" && shown === "appearance" && editor.selectedItem?.kind === "animation")}
+                    animateHeight={layout === "viewer" && !(shown === "appearance" && editor.selectedItem?.kind === "animation")}
                   >
                     {@render panel(shown, "side")}
                   </Crossfade>
@@ -3213,6 +3214,11 @@
   .panel-host.external .side-column {
     grid-template-rows: auto auto;
     height: auto;
+  }
+
+  .panel-host.external.appearance .side-column {
+    grid-template-rows: auto minmax(0, 1fr);
+    height: 100%;
   }
 
   .post-editor[data-mode="timing"][data-layout="wide"] .panel-host {

@@ -18,9 +18,11 @@
 
   setEffectsConfigContext(effects);
   let panelWidth = $state(0);
+  let panelHeight = $state(0);
+  const wideWorkspace = $derived(panelWidth >= 1000 && panelHeight >= 680);
 </script>
 
-<div class="post-effects" class:fill bind:clientWidth={panelWidth}>
+<div class="post-effects" class:fill bind:clientWidth={panelWidth} bind:clientHeight={panelHeight}>
   <EffectsPanel
     bpm={60}
     onBpmChange={() => {}}
@@ -30,8 +32,8 @@
     showTransport={false}
     showExportControls={false}
     showHeading={false}
-    layout={panelWidth >= 1000 ? "sidebar" : "strip"}
-    wideWorkspace={panelWidth >= 1000}
+    layout={wideWorkspace ? "sidebar" : "strip"}
+    {wideWorkspace}
     {fill}
     {animationSettingsState}
     onSettingChange={(setting) => onSettingChange(setting)}
