@@ -153,7 +153,7 @@
   // Items sit 3px inside a row with a 1px border, so an overlay stays 44px tall.
   const OVERLAY_ROW_HEIGHT_PX = 52;
   const MAIN_ROW_HEIGHT_PX = 72;
-  const RULER_HEIGHT_PX = 36; // Matches TimelineBody's ruler height for consistency.
+  const RULER_HEIGHT_PX = 52; // Fits the zoom controls beside the ruler.
   const KEY_LANE_HEIGHT_PX = 44;
   const TRAILING_PADDING_PX = 64;
   const DRAG_THRESHOLD_PX = 4;
@@ -1104,26 +1104,24 @@
   role="region"
   aria-label={t("post_timeline_region_label")}
 >
-  <div class="toolbar-row">
-    {#if toolbarStart}
+  {#if toolbarStart}
+    <div class="toolbar-row">
       <div class="keyframe-toolbar" transition:growFade|global>
         {@render toolbarStart()}
       </div>
-    {/if}
-    <PostTimelineZoomControls
-      onZoomOut={() => handleZoomButton(1 / ZOOM_STEP_FACTOR)}
-      onZoomIn={() => handleZoomButton(ZOOM_STEP_FACTOR)}
-      onFit={handleFit}
-    />
-  </div>
+    </div>
+  {/if}
 
   <div class="body">
     <div class="header-column">
-      <div
-        class="ruler-spacer"
-        style="height: {RULER_HEIGHT_PX}px"
-        aria-hidden="true"
-      ></div>
+      <div class="ruler-controls" style="height: {RULER_HEIGHT_PX}px">
+        <PostTimelineZoomControls
+          collapseWhenNarrow
+          onZoomOut={() => handleZoomButton(1 / ZOOM_STEP_FACTOR)}
+          onZoomIn={() => handleZoomButton(ZOOM_STEP_FACTOR)}
+          onFit={handleFit}
+        />
+      </div>
       <div
         class="header-rows"
         bind:this={headerColumnEl}
@@ -1384,8 +1382,11 @@
     white-space: nowrap;
   }
 
-  .ruler-spacer {
+  .ruler-controls {
+    display: flex;
     flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
   }
 
   .key-lane-slot {
