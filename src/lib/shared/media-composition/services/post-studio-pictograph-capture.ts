@@ -1,5 +1,15 @@
 import type * as ModernScreenshot from "modern-screenshot";
 
+function resolvedStyleProperties(element: HTMLElement): string[] {
+  const computed = getComputedStyle(element);
+  const properties: string[] = [];
+  for (let index = 0; index < computed.length; index++) {
+    const name = computed.item(index);
+    if (name && !name.startsWith("--")) properties.push(name);
+  }
+  return properties;
+}
+
 /** Reuses screenshot setup while cloning the current motion DOM for every frame. */
 export class PostStudioPictographCapture {
   private context: ModernScreenshot.Context<HTMLElement> | null = null;
@@ -30,6 +40,10 @@ export class PostStudioPictographCapture {
           width,
           height,
           scale,
+          // Computed standard properties already contain resolved var() values.
+          // Copying inherited custom tokens into every cloned child dominates
+          // capture time without changing those painted values.
+          includeStyleProperties: resolvedStyleProperties(element),
         });
       }
       return await screenshot.domToCanvas(this.context);

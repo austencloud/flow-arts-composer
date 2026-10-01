@@ -13,6 +13,13 @@ vi.mock("modern-screenshot", () => ({
   domToCanvas,
 }));
 
+function createMotion(): HTMLElement {
+  return document.createElementNS(
+    "http://www.w3.org/1999/xhtml",
+    "div"
+  ) as HTMLElement;
+}
+
 beforeEach(() => {
   createContext
     .mockReset()
@@ -28,9 +35,31 @@ beforeEach(() => {
 });
 
 describe("Post Studio pictograph capture", () => {
+  it("includes computed paint properties without inherited custom tokens", async () => {
+    const capture = new PostStudioPictographCapture();
+    const motion = createMotion();
+    motion.style.setProperty("--motion-accent", "#f00");
+    motion.style.setProperty("color", "rgb(255, 0, 0)");
+    motion.style.setProperty("fill", "rgb(0, 0, 255)");
+
+    await capture.capture(motion, 200, 100, 2);
+
+    const options = createContext.mock.calls[0]![1];
+    const computed = getComputedStyle(motion);
+    const standardProperties = Array.from(
+      { length: computed.length },
+      (_, index) => computed.item(index)
+    ).filter((name) => !name.startsWith("--"));
+    expect(options.includeStyleProperties).toEqual(standardProperties);
+    expect(options.includeStyleProperties).toContain("color");
+    expect(options.includeStyleProperties).toContain("fill");
+    expect(options.includeStyleProperties).not.toContain("--motion-accent");
+    capture.dispose();
+  });
+
   it("reuses one context but captures the live motion element each frame", async () => {
     const capture = new PostStudioPictographCapture();
-    const motion = document.createElement("div");
+    const motion = createMotion();
     motion.textContent = "first frame";
     const capturedText: string[] = [];
     domToCanvas.mockImplementation((context) => {
@@ -52,8 +81,8 @@ describe("Post Studio pictograph capture", () => {
 
   it("recreates context when the element, dimensions, or scale changes", async () => {
     const capture = new PostStudioPictographCapture();
-    const first = document.createElement("div");
-    const remount = document.createElement("div");
+    const first = createMotion();
+    const remount = createMotion();
 
     await capture.capture(first, 200, 100, 2);
     await capture.capture(remount, 200, 100, 2);
@@ -70,7 +99,7 @@ describe("Post Studio pictograph capture", () => {
   it("disposes a failed capture before rethrowing", async () => {
     const capture = new PostStudioPictographCapture();
     domToCanvas.mockRejectedValueOnce(new Error("capture failed"));
-    const motion = document.createElement("div");
+    const motion = createMotion();
 
     await expect(capture.capture(motion, 200, 100, 2)).rejects.toThrow(
       "capture failed"
