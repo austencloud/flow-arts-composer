@@ -271,8 +271,8 @@
     }
 
     .choice-icon {
-      width: 2.1rem;
-      height: 2.1rem;
+      width: var(--choice-icon-size, 2.1rem);
+      height: var(--choice-icon-size, 2.1rem);
     }
 
     .choice-copy {
@@ -281,7 +281,25 @@
     }
 
     .choice-copy strong {
-      font-size: var(--font-size-compact, 0.75rem);
+      font-size: var(--choice-copy-size, var(--font-size-compact, 0.75rem));
+    }
+  }
+
+  @container element-chip-row (min-height: 24rem) {
+    .relationship-choice {
+      flex-direction: column;
+      justify-content: center;
+      gap: 0.65rem;
+      text-align: center;
+    }
+
+    .choice-icon {
+      width: clamp(3rem, 28cqw, 5rem);
+      height: clamp(3rem, 28cqw, 5rem);
+    }
+
+    .choice-copy {
+      width: 100%;
     }
   }
 

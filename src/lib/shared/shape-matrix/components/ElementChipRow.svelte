@@ -107,4 +107,19 @@
       grid-template-columns: repeat(2, minmax(0, 1fr));
     }
   }
+  @container shape-matrix-drill-compact (min-width: 42rem) and (min-aspect-ratio: 5 / 6) and (min-height: 24.01rem) {
+    .chip-row {
+      grid-auto-rows: minmax(0, 1fr);
+      height: 100%;
+      min-height: 0;
+      container-type: size;
+      container-name: element-chip-row;
+      --choice-icon-size: clamp(2.1rem, min(12cqh, 22cqw), 4rem);
+      --choice-copy-size: clamp(
+        var(--font-size-compact, 0.75rem),
+        3cqh,
+        1.1rem
+      );
+    }
+  }
 </style>
