@@ -18,6 +18,7 @@
   import LightsToggleButton from "$lib/shared/ui/components/LightsToggleButton.svelte";
   import { RAIL_CATEGORY_ACCENTS } from "$lib/shared/animation-panel/pill-nav/rail-category-accents";
   import { EFFORTS } from "$lib/shared/effort/domain/effort-types";
+  import type { TimingSection } from "$lib/shared/media-composition/domain/take-timing";
   import {
     EFFECT_COLORS,
     EFFECTS,
@@ -50,6 +51,9 @@
     appearanceOverride,
     onAppearanceChange,
     appearanceKey,
+    scopeLabel,
+    timingSection = null,
+    timingSectionLabel,
     locked,
     fill = false,
     defaultPropType = PropType.STAFF,
@@ -62,6 +66,9 @@
       settingKey?: string
     ) => void;
     appearanceKey?: string;
+    scopeLabel?: string;
+    timingSection?: TimingSection | null;
+    timingSectionLabel?: string;
     locked: boolean;
     /** Fit the editor's bounded tool area; mapping accordions stay intrinsic. */
     fill?: boolean;
@@ -72,6 +79,27 @@
   const id = $props.id();
   let activeSection = $state<Section>("display");
   let pickedPropType = $state<PropType | undefined>();
+  const inheritedVisibility = getAnimationVisibilityManager();
+  let inheritedEffort = $state(inheritedVisibility.getEffortPreset());
+  const syncInheritedEffort = () => {
+    inheritedEffort = inheritedVisibility.getEffortPreset();
+  };
+  inheritedVisibility.registerObserver(syncInheritedEffort);
+  onDestroy(() => inheritedVisibility.unregisterObserver(syncInheritedEffort));
+  const appliedEffort = $derived(
+    (item?.animationAppearance ?? appearanceOverride)?.effortPreset ??
+      inheritedEffort
+  );
+  const appliedEffortLabel = $derived(
+    EFFORTS.find((effort) => effort.id === appliedEffort)?.label ??
+      appliedEffort
+  );
+  const appliedScope = $derived(
+    scopeLabel ??
+      (item?.kind === "moves"
+        ? "Selected moves layer"
+        : "Selected animation layer")
+  );
 
   const visibility = new AnimationVisibilityStateManager({ ephemeral: true });
   let darkMode = $state(visibility.isDarkMode());
@@ -133,12 +161,8 @@
       id: "efforts" as const,
       label: "Efforts",
       accentColor:
-        EFFORTS.find(
-          (effort) =>
-            effort.id ===
-            ((item?.animationAppearance ?? appearanceOverride)?.effortPreset ??
-              getAnimationVisibilityManager().getSettings().effortPreset)
-        )?.color ?? EFFORTS[0]!.color,
+        EFFORTS.find((effort) => effort.id === appliedEffort)?.color ??
+        EFFORTS[0]!.color,
     },
     {
       id: "display" as const,
@@ -169,6 +193,7 @@
 
   $effect(() => {
     const appearance = item?.animationAppearance ?? appearanceOverride;
+    const effortPreset = appearance?.effortPreset ?? inheritedEffort;
     untrack(() => {
       syncing = true;
       try {
@@ -176,6 +201,7 @@
           ...getAnimationVisibilityManager().getSettings(),
           wordHeader: false,
           ...appearance,
+          effortPreset,
           darkMode: appearance?.darkMode ?? true,
         });
         darkMode = visibility.isDarkMode();
@@ -332,6 +358,7 @@
           {/snippet}
         </PostAppearanceChooser>
       {:else if activeSection === "efforts"}
+<<<<<<< HEAD
         <PostAppearanceChooser
           title="Efforts"
           value={`${effortLabel} · ${pathLabel} paths`}
@@ -357,6 +384,37 @@
             </div>
           {/snippet}
         </PostAppearanceChooser>
+=======
+        <PathShapePanel
+          visibilityManagerOverride={visibility}
+          showHelp={false}
+        />
+        <div class="effort-section">
+          <h3>Movement style</h3>
+          <div class="movement-status" aria-live="polite">
+            <span
+              >{appliedScope}{timingSectionLabel
+                ? ` · ${timingSectionLabel}`
+                : ""}</span
+            >
+            <strong>{appliedEffortLabel}</strong>
+            {#if timingSection && (timingSection.landingHoldRatio ?? 0) > 0}
+              <span
+                >{Math.round((timingSection.landingHoldRatio ?? 0) * 100)}% hold
+                after landing</span
+              >
+            {/if}
+            {#if timingSection && timingSection.overrides.length > 0}
+              <span
+                >{timingSection.overrides.length}
+                {timingSection.overrides.length === 1 ? "landing" : "landings"} moved
+                by hand</span
+              >
+            {/if}
+          </div>
+          <EffortPanel visibilityManagerOverride={visibility} columns={2} />
+        </div>
+>>>>>>> main
       {:else}
         <div class="canvas-theme">
           <span>Canvas theme</span>
@@ -432,6 +490,7 @@
     flex-direction: column;
     gap: 8px;
   }
+<<<<<<< HEAD
   .efforts-controls {
     display: flex;
     flex-direction: column;
@@ -445,6 +504,19 @@
   .bounded .effort-section {
     flex: 1;
     min-height: 0;
+=======
+  .movement-status {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.25rem 0.6rem;
+    color: var(--theme-text-dim, #aaa);
+    font-size: var(--font-size-sm, 0.875rem);
+  }
+  .movement-status strong {
+    color: var(--theme-text, #fff);
+    font-weight: 600;
+>>>>>>> main
   }
   h3 {
     margin: 0;

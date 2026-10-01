@@ -53,12 +53,15 @@
     builderState,
     onStepCapExceeded,
     startAimEnabled = true,
+    fillPanel = false,
   }: {
     builderState: AssembleState;
     /** Called when the user tries to add a motion. Return true to block the action and show the nudge. */
     onStepCapExceeded?: () => boolean;
     /** Fuse uses an explicit, level-filtered orientation control instead. */
     startAimEnabled?: boolean;
+    /** Assemble fills the panel above its dock; dialogs retain a square canvas. */
+    fillPanel?: boolean;
   } = $props();
 
   // Services
@@ -629,6 +632,7 @@
 <div
   bind:this={interactiveGridRef}
   class="interactive-grid"
+  class:fill-panel={fillPanel}
   data-history-direction={builderState.historyTransition?.direction}
   data-history-label={builderState.historyTransition?.label}
   role="application"
@@ -921,6 +925,8 @@
     max-height: 100%;
     aspect-ratio: 1;
     place-self: start center;
+    min-width: 0;
+    min-height: 0;
     box-sizing: border-box;
     border-radius: var(--settings-radius-md, 12px);
     overflow: hidden;
@@ -931,6 +937,13 @@
       );
     background: transparent;
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  }
+
+  .interactive-grid.fill-panel {
+    width: 100%;
+    height: 100%;
+    aspect-ratio: auto;
+    place-self: stretch;
   }
 
   @container tool-panel (max-width: 768px) {

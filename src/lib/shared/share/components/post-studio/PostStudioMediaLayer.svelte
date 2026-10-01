@@ -94,6 +94,8 @@
     onPlaybackVideo,
   }: Props = $props();
   const composition = tryGetMediaCompositionContext();
+  // The footage stays alive when the editor refreshes its binding each frame.
+  const videoSource = $derived(binding.previewUrl ?? "");
   let video = $state<HTMLVideoElement | null>(null);
   let retainedCanvas = $state<HTMLCanvasElement | null>(null);
   let hasRetainedFrame = $state(false);
@@ -445,7 +447,7 @@
   $effect(() => {
     const element = video;
     const canvas = retainedCanvas;
-    const source = binding.previewUrl ?? "";
+    const source = videoSource;
     hasRetainedFrame = false;
     if (!element || !canvas) return;
     return untrack(() => {
@@ -455,10 +457,9 @@
         readState: () => ({
           playing,
           targetTime: sourceTimeSeconds,
-          source: binding.previewUrl ?? "",
+          source: videoSource,
         }),
-        isCurrent: () =>
-          video === element && (binding.previewUrl ?? "") === source,
+        isCurrent: () => video === element && videoSource === source,
         onFrame: () => {
           hasRetainedFrame = true;
         },
@@ -649,7 +650,7 @@
     <!-- svelte-ignore a11y_media_has_caption -->
     <video
       bind:this={video}
-      src={binding.previewUrl ?? undefined}
+      src={videoSource || undefined}
       crossorigin="anonymous"
       muted
       playsinline
