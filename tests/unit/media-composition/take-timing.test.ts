@@ -78,6 +78,59 @@ function expectSameMotion(
 }
 
 describe("resolveTakeTiming", () => {
+  it("accepts saved hold ratios only from 0 through 0.9", () => {
+    expect(TakeTimingSchema.safeParse(timing([{ landingHoldRatio: 0 }])).success).toBe(true);
+    expect(TakeTimingSchema.safeParse(timing([{ landingHoldRatio: 0.9 }])).success).toBe(true);
+    expect(TakeTimingSchema.safeParse(timing([{ landingHoldRatio: 0.91 }])).success).toBe(false);
+  });
+
+  it("holds a landed pose, catches up by the next landing, and preserves the old default", () => {
+    const plain = timing([{ taps: tapsOn(1, 5), tempo: "locked" }]);
+    const held = resolveTakeTiming(
+      { ...plain, sections: [{ ...plain.sections[0]!, landingHoldRatio: 0.4 }] },
+      EIGHT
+    );
+    const original = resolveTakeTiming(plain, EIGHT);
+    expect(takePositionAt(original, at(3.25))).toBeCloseTo(3.25, 6);
+    expect(takePositionAt(held, at(3))).toBeCloseTo(3, 6);
+    expect(takePositionAt(held, at(3.25))).toBeCloseTo(3, 6);
+    expect(takePositionAt(held, at(3.7))).toBeCloseTo(3.5, 6);
+    expect(takePositionAt(held, at(4))).toBeCloseTo(4, 6);
+    expect(takePositionAt(held, at(5.2))).toBeCloseTo(5, 6);
+  });
+
+  it("uses each move's actual interval and keeps the setting through a continued split", () => {
+    const beats = [1, 2, 1, 2];
+    const clock = createBeatClock(beats);
+    const landing = (position: number) => 1 + SPB * clock.beatsBefore(position);
+    const source = timing([{
+      taps: [1, 2, 3, 4, 5, 6].map(landing),
+      tempo: "locked",
+      landingHoldRatio: 0.5,
+    }]);
+    const split = splitTimingSection(source, (landing(3) + landing(4)) / 2, "later", 2, beats, "continues");
+    expect(split.sections[1]!.landingHoldRatio).toBe(0.5);
+    const resolved = resolveTakeTiming(split, beats);
+    const halfwayLongMove = landing(1) + (landing(2) - landing(1)) * 0.75;
+    expect(takePositionAt(resolved, halfwayLongMove)).toBeCloseTo(1.5, 5);
+    const halfwayRightMove = landing(4) + (landing(5) - landing(4)) * 0.75;
+    expect(takePositionAt(resolved, halfwayRightMove)).toBeCloseTo(4.5, 5);
+    expect(takePositionAt(resolved, landing(5))).toBeCloseTo(5, 5);
+  });
+
+  it("holds the prior landing when the opening move began before the video", () => {
+    const source = timing([{
+      taps: [0.2, 0.2 + SPB, 0.2 + SPB * 2],
+      beatOneSeconds: 0.2,
+      beatOnePosition: 2,
+      tempo: "locked",
+      landingHoldRatio: 0.8,
+    }]);
+    const resolved = resolveTakeTiming(source, EIGHT);
+    expect(takePositionAt(resolved, 0)).toBeCloseTo(1, 5);
+    expect(takePositionAt(resolved, 0.2)).toBeCloseTo(2, 5);
+  });
+
   it("leaves a section without taps unmapped", () => {
     const resolved = resolveTakeTiming(timing([{}]), EIGHT);
     expect(resolved.sections[0]!.map).toBeNull();

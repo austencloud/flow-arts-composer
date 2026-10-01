@@ -68,6 +68,8 @@ export const TimingSectionSchema = z
     tempo: z.enum(["locked", "follow"]),
     /** "grid": even landings. "taps": each matched tap is its landing. */
     snap: z.enum(["grid", "taps"]),
+    /** Fraction of each move interval spent holding its previous landing. */
+    landingHoldRatio: z.number().finite().min(0).max(0.9).optional(),
     taps: z.array(MediaSecondsSchema),
     /**
      * The position the earliest matched tap marks. 1 is move 1's landing.
@@ -378,6 +380,9 @@ export function splitTimingSection(
     }),
     tempo: section.tempo,
     snap: section.snap,
+    ...(section.landingHoldRatio !== undefined
+      ? { landingHoldRatio: section.landingHoldRatio }
+      : {}),
     taps: rightTaps,
     offsetSeconds: section.offsetSeconds,
     ...(section.continuesIntoNext ? { continuesIntoNext: true as const } : {}),
@@ -596,6 +601,7 @@ export interface ResolvedTimingSection {
   id: string;
   startSeconds: number;
   endSeconds: number;
+  landingHoldRatio: number;
   /** Arrival map covering the section; null until it has a tap. */
   map: SequenceTimeMap | null;
   fit: TapFitResult | null;
@@ -1180,6 +1186,7 @@ function resolveSection(
     id: section.id,
     startSeconds: section.startSeconds,
     endSeconds: section.endSeconds,
+    landingHoldRatio: section.landingHoldRatio ?? 0,
     map: null,
     fit: null,
     landings: [],
@@ -1303,9 +1310,21 @@ export function takeSampleAt(
     Math.max(chosen.startSeconds, mediaSeconds)
   );
   return {
-    arrival: mediaTimeToSequencePosition(chosen.map!, clamped),
+    arrival: holdAfterLanding(
+      mediaTimeToSequencePosition(chosen.map!, clamped),
+      chosen.landingHoldRatio
+    ),
     endArrival: chosen.endPosition,
   };
+}
+
+/** Hold the previous complete arrival, then use the rest of the interval to reach the next. */
+function holdAfterLanding(arrival: number, ratio: number): number {
+  if (ratio === 0 || !Number.isFinite(arrival)) return arrival;
+  const previous = Math.floor(arrival);
+  const progress = arrival - previous;
+  if (progress <= ratio) return previous;
+  return previous + (progress - ratio) / (1 - ratio);
 }
 
 export function takePositionAt(
