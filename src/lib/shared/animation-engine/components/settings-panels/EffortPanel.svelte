@@ -47,6 +47,7 @@
     columns = 4,
     showSubtitles = false,
     fill = false,
+    fit = false,
     onSettingChange,
     visibilityManagerOverride,
   }: {
@@ -54,6 +55,8 @@
     showSubtitles?: boolean;
     /** Use responsive curve cards in a settings page. Docks keep compact tiles. */
     fill?: boolean;
+    /** Fit a bounded inspector; retain readable controls if its drawer scrolls. */
+    fit?: boolean;
     onSettingChange?: (previousValue: string, value: string) => void;
     visibilityManagerOverride?: AnimationVisibilityStateManager;
   } = $props();
@@ -79,7 +82,7 @@
   onDestroy(() => vm.unregisterObserver(handleVisibilityChange));
 </script>
 
-<div class="effort-panel" class:fill>
+<div class="effort-panel" class:fill class:fit>
   <div class="effort-grid" class:fill style:--effort-cols={columns}>
     {#each EFFORTS as effort}
       <button
@@ -123,6 +126,27 @@
 </div>
 
 <style>
+  .effort-panel.fit {
+    display: flex;
+    flex: 1;
+    min-height: 0;
+  }
+  .fit .effort-grid {
+    flex: 1;
+    grid-template-columns: repeat(auto-fit, minmax(min(104px, 100%), 1fr));
+    grid-auto-rows: minmax(88px, 1fr);
+    gap: 8px;
+  }
+  .fit .effort-btn {
+    font-size: var(--font-size-min, 14px);
+  }
+  .fit .effort-curve {
+    flex: 1 1 0;
+    height: 0;
+    aspect-ratio: auto;
+    max-height: 120px;
+    min-height: 28px;
+  }
   .effort-panel {
     container: effort-panel / inline-size;
     min-width: 0;
