@@ -358,7 +358,27 @@
           {/snippet}
         </PostAppearanceChooser>
       {:else if activeSection === "efforts"}
-<<<<<<< HEAD
+        <div class="movement-status" aria-live="polite">
+          <span
+            >{appliedScope}{timingSectionLabel
+              ? ` · ${timingSectionLabel}`
+              : ""}</span
+          >
+          <strong>{appliedEffortLabel}</strong>
+          {#if timingSection && (timingSection.landingHoldRatio ?? 0) > 0}
+            <span
+              >{Math.round((timingSection.landingHoldRatio ?? 0) * 100)}% hold
+              after landing</span
+            >
+          {/if}
+          {#if timingSection && timingSection.overrides.length > 0}
+            <span
+              >{timingSection.overrides.length}
+              {timingSection.overrides.length === 1 ? "landing" : "landings"} moved
+              by hand</span
+            >
+          {/if}
+        </div>
         <PostAppearanceChooser
           title="Efforts"
           value={`${effortLabel} · ${pathLabel} paths`}
@@ -384,37 +404,6 @@
             </div>
           {/snippet}
         </PostAppearanceChooser>
-=======
-        <PathShapePanel
-          visibilityManagerOverride={visibility}
-          showHelp={false}
-        />
-        <div class="effort-section">
-          <h3>Movement style</h3>
-          <div class="movement-status" aria-live="polite">
-            <span
-              >{appliedScope}{timingSectionLabel
-                ? ` · ${timingSectionLabel}`
-                : ""}</span
-            >
-            <strong>{appliedEffortLabel}</strong>
-            {#if timingSection && (timingSection.landingHoldRatio ?? 0) > 0}
-              <span
-                >{Math.round((timingSection.landingHoldRatio ?? 0) * 100)}% hold
-                after landing</span
-              >
-            {/if}
-            {#if timingSection && timingSection.overrides.length > 0}
-              <span
-                >{timingSection.overrides.length}
-                {timingSection.overrides.length === 1 ? "landing" : "landings"} moved
-                by hand</span
-              >
-            {/if}
-          </div>
-          <EffortPanel visibilityManagerOverride={visibility} columns={2} />
-        </div>
->>>>>>> main
       {:else}
         <div class="canvas-theme">
           <span>Canvas theme</span>
@@ -490,7 +479,6 @@
     flex-direction: column;
     gap: 8px;
   }
-<<<<<<< HEAD
   .efforts-controls {
     display: flex;
     flex-direction: column;
@@ -504,8 +492,9 @@
   .bounded .effort-section {
     flex: 1;
     min-height: 0;
-=======
+  }
   .movement-status {
+    flex: none;
     display: flex;
     flex-wrap: wrap;
     align-items: baseline;
@@ -516,7 +505,6 @@
   .movement-status strong {
     color: var(--theme-text, #fff);
     font-weight: 600;
->>>>>>> main
   }
   h3 {
     margin: 0;
