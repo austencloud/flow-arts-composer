@@ -4,7 +4,7 @@
   panels.
 
   Render it inside the grid's stage (a size container). It sits at the
-  stage's top-right edge, beside the grid when there is side room and over
+  grid's top-right edge, beside the grid when there is side room and over
   the grid's empty corner when there isn't, well clear of every tap point.
 -->
 <script lang="ts">
@@ -28,7 +28,8 @@
     --grid-size: min(100cqi, 100cqb);
     --grid-side-room: calc((100cqi - var(--grid-size)) / 2);
     position: absolute;
-    top: 6px;
+    /* Follow the square's top edge when a tall stage leaves space above it. */
+    top: calc(100cqb - var(--grid-size) + 6px);
     /* Hug the grid's right edge when the stage has room beside it; otherwise
        pin to the stage edge and let the chips cover the grid's empty corner. */
     right: max(6px, calc(var(--grid-side-room) - 7rem));
