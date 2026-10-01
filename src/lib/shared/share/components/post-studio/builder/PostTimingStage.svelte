@@ -2,6 +2,7 @@
   import type { Snippet } from "svelte";
   import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
   import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { videoMirror } from "$lib/shared/media-composition/services/video-mirror";
   import type { PostTimingSession } from "./post-timing-session.svelte";
 
   /**
@@ -55,6 +56,13 @@
             onseeked={session.noteSeeked}
             onclick={session.togglePlay}
           ></video>
+          <!-- Drawn over the video, so the take stays visible if the browser
+               stops drawing the video's own layer. -->
+          <canvas
+            class="video-copy"
+            aria-hidden="true"
+            {@attach videoMirror(session.video, "contain")}
+          ></canvas>
           {#if session.showSquare && session.paintFrame}
             <button
               type="button"
@@ -126,6 +134,13 @@
     height: 100%;
     object-fit: contain;
     cursor: pointer;
+  }
+  .video-copy {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
   }
   .square {
     position: absolute;

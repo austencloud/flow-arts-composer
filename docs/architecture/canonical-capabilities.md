@@ -311,6 +311,17 @@ measured by `media-composition/services/region-edge-painter.ts`, so the export
 canvas and the preview's CSS draw the same edge. Searches: rounded corners,
 border, stroke, drop shadow, picture in picture, PiP frame.
 
+A Post Studio preview video keeps a canvas copy of its picture over it, so a
+browser that stops drawing the video's own layer (seen 2026-09-30: decoder
+healthy, slot black) still shows footage. The editor's media layer uses
+`PreviewVideoFrameRecovery` in
+`media-composition/services/preview-video-frame-recovery.ts`, which also primes
+and re-seeks the decoder. The timing screen uses `videoMirror` in
+`media-composition/services/video-mirror.ts`, kept separate on purpose: it only
+watches, because the timing session reads the video's play and pause events
+as the creator's own. Searches: black video, blackout, retained frame, video
+surface, video to canvas, frame copy.
+
 A whole item turns with its box's `turn` (`PostBox` in
 `media-composition/domain/post-project.ts`): degrees clockwise about the box's
 centre, edge and all, compiled onto the region's `turn` and keyed like the
