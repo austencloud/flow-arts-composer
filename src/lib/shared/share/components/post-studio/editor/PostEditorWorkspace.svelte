@@ -751,7 +751,7 @@
   let panelSlot = $state<HTMLElement | null>(null);
   /** A phone's bottom dock: the row, or the panel open in its place. */
   let dockElement = $state<HTMLElement | null>(null);
-  /** The row under the timeline on a wide screen. */
+  /** The row over the timeline on a wide screen. */
   let rowSlot = $state<HTMLElement | null>(null);
   /** The transport, or the crop screen's time bar in its place. */
   let transportSlot = $state<HTMLElement | null>(null);
@@ -2769,6 +2769,19 @@
           />
         </div>
       {/if}
+      {#if panelBeside}
+        <div
+          class="row-slot"
+          class:stowed={cropMode}
+          tabindex="-1"
+          bind:this={rowSlot}
+          inert={sharing || cropMode || undefined}
+        >
+          <Crossfade key={rowKey} mode="swap" duration={DURATION.fast}>
+            {@render row()}
+          </Crossfade>
+        </div>
+      {/if}
       <div
         class="timeline-slot"
         class:stowed={cropMode}
@@ -2834,20 +2847,6 @@
           bind:pixelsPerSecond
         />
       </div>
-
-      {#if panelBeside}
-        <div
-          class="row-slot"
-          class:stowed={cropMode}
-          tabindex="-1"
-          bind:this={rowSlot}
-          inert={sharing || cropMode || undefined}
-        >
-          <Crossfade key={rowKey} mode="swap" duration={DURATION.fast}>
-            {@render row()}
-          </Crossfade>
-        </div>
-      {/if}
     {/if}
 
     {#if !panelBeside}
@@ -3153,11 +3152,9 @@
     min-width: 0;
   }
 
-  /* The tools stay at the bottom of the screen on every layout: a phone's
-     dock, which an open panel takes over, and the row beside a wide
-     preview. A short window scrolls the post under them. */
-  .dock,
-  .row-slot {
+  /* A phone's tools stay at the bottom of the screen, in a dock an open
+     panel takes over. A short window scrolls the post under it. */
+  .dock {
     position: sticky;
     bottom: 0;
     z-index: 1;
@@ -3275,20 +3272,20 @@
   }
 
   /* On a wide screen the post fills the height: the preview with the top
-     bar and the panel right beside it, then the transport, the timeline and
-     the tool row. A short window scrolls under the row rather than shrinking
-     the preview and its panel below 15rem. The timeline keeps one height, so
-     a new layer scrolls inside it instead of shrinking the preview. The
-     viewer's own side panel holds the top bar and the panel, and the rest
-     stacks the same way. */
+     bar and the panel right beside it, then the transport, and under the
+     resize handle the tool row over the timeline it acts on. A short window
+     scrolls rather than shrinking the preview and its panel below 15rem.
+     The timeline keeps one height, so a new layer scrolls inside it instead
+     of shrinking the preview. The viewer's own side panel holds the top bar
+     and the panel, and the rest stacks the same way. */
   .post-editor:is([data-layout="wide"], [data-layout="viewer"]) .layout {
     --post-panel-width: clamp(20rem, 30cqw, 26rem);
     display: grid;
     grid-template-columns: minmax(0, 1fr);
     grid-template-rows:
-      minmax(15rem, 1fr) auto 12px var(--post-timeline-height)
-      auto;
-    grid-template-areas: "stage" "transport" "resize" "timeline" "row";
+      minmax(15rem, 1fr) auto 12px auto
+      var(--post-timeline-height);
+    grid-template-areas: "stage" "transport" "resize" "row" "timeline";
   }
 
   .post-editor[data-mode="edit"][data-layout="wide"] .layout {
