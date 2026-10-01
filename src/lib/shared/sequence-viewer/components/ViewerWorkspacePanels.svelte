@@ -53,7 +53,7 @@
 
   const inspectorConstraints = $derived(
     wideStudio
-      ? { minWidth: 520, maxWidth: 1800 }
+      ? { minWidth: 520, maxWidth: 2400 }
       : viewerInspectorConstraints(inspectorProfile)
   );
   const inspectorResizable = $derived(

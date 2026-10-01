@@ -2085,7 +2085,7 @@
      than a narrow settings list. Give them the room left beside a legible
      portrait stage without changing the widths of other inspectors. */
   .viewer-and-export.desktop.studio-stage:not(.share-inspector) {
-    --studio-sidebar-width: clamp(36rem, 54vw, 112rem);
+    --studio-sidebar-width: clamp(36rem, 54vw, 150rem);
     --active-inspector-width: var(--studio-sidebar-width);
   }
 
