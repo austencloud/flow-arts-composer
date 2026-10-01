@@ -2,7 +2,8 @@
   /**
    * Where the post last saved itself, and when. In a header row the text
    * keeps the width of its longest wording so the buttons beside it never
-   * move, and a narrow header keeps only the icon.
+   * move. A narrow header keeps only the icon, and a phone-width one
+   * leaves the state to the Save button.
    */
   let {
     saving,
@@ -103,6 +104,17 @@
   /* A narrow header keeps the icon; the words stay for screen readers. */
   @container post-editor-header (max-width: 52rem) {
     .header .label {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip-path: inset(50%);
+    }
+  }
+
+  /* At phone width the Save button shows the state on its own. */
+  @container post-editor-header (max-width: 30rem) {
+    .header {
       position: absolute;
       width: 1px;
       height: 1px;
