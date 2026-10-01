@@ -88,6 +88,7 @@
   import { sourceCropAtRatio, sourceFillBox } from "./post-source-crop";
   import PostAnimationAppearanceTool from "./PostAnimationAppearanceTool.svelte";
   import PostCardAppearanceTool from "./PostCardAppearanceTool.svelte";
+  import PostSequenceActionsTool from "./PostSequenceActionsTool.svelte";
   import PostVideoColorTool from "./PostVideoColorTool.svelte";
   import {
     autoGradeVideo,
@@ -116,6 +117,8 @@
     staffTips?: StaffTipAnalysis | null;
     cardRenderOptions?: Partial<SequenceExportOptions> | null;
     stepCount?: number;
+    /** The post's changed notation is still being prepared. */
+    sequenceBusy?: boolean;
   }
 
   let {
@@ -129,6 +132,7 @@
     staffTips = null,
     cardRenderOptions = null,
     stepCount = 0,
+    sequenceBusy = false,
   }: Props = $props();
   let grading = $state(false);
   let gradeError = $state("");
@@ -1174,6 +1178,8 @@
       {locked}
       onchange={(value) => patchItem({ cardAppearance: value })}
     />
+  {:else if tool === "sequence" && (item.kind === "animation" || item.kind === "moves" || item.kind === "card")}
+    <PostSequenceActionsTool {editor} {locked} busy={sequenceBusy} />
   {:else if tool === "labels" && item.kind === "animation"}
     <SegmentedControl
       color="accent"
