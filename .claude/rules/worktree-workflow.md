@@ -42,6 +42,26 @@ Stop with branch and worktree intact when a gate fails or integration is unsafe;
 report the exact blocker. Never delete a dirty worktree, another task's branch,
 or a `node_modules` path that may be a junction into the primary checkout.
 
+## Removing a Worktree by Hand
+
+`git worktree remove` follows a `node_modules` junction and deletes the files
+in `E:/tka-platform/node_modules` (verified 2026-09-15 on git 2.50.1; it
+emptied `.bin`, `.modules.yaml`, and hundreds of `.pnpm` packages).
+`wt:finish` unlinks the junction and aborts if any link remains. Do the same
+when removing one manually:
+
+```powershell
+cmd /c rmdir <worktree>\node_modules
+cmd /c dir /AL /S <worktree>
+git worktree remove <worktree>
+```
+
+`rmdir` on a junction removes only the link. The `dir /AL /S` listing must
+show no remaining links before the remove. Never `rm -rf` a worktree that
+still contains a junction; that recurses into the primary checkout too. If the
+primary `node_modules` does get gutted, `pnpm install --frozen-lockfile
+--force` rebuilds it from the local store in about 30 seconds.
+
 `wt:status` and `wt:automerge` are diagnostic only. Do not use retired batch
 apply/prune workflows. If the task depends on uncommitted primary-checkout state,
 use Handoff or a working-tree starting state instead of copying files manually.
