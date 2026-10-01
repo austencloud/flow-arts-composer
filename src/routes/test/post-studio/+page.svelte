@@ -33,6 +33,7 @@
   import { mappingFixture } from "./mapping-fixture";
   import { keyframeClearFixture } from "./keyframe-clear-fixture";
   import { textAlignmentFixture } from "./text-alignment-fixture";
+  import { groupMoveFixture } from "./group-move-fixture";
 
   const SEQUENCE_WORD = "ΩΛ-XJΩΛ-XJΩΛ-XJΩΛ-XJ";
   const SEQUENCE_ID = "ΩΛ-XJ";
@@ -92,6 +93,7 @@
     const mapping = fixture === "mapping";
     const isolatedKeyframes = fixture === "keyframe-clear";
     const isolatedTextAlignment = fixture === "text-alignment";
+    const isolatedGroupMove = fixture === "group-move";
     // Exercise the real save/reload path without writing to the creator's post.
     const storageFixture = fixture === "draft-storage";
     const draftSequenceId = mapping
@@ -116,7 +118,7 @@
           mapping ? "Δ-ΛRZΔ-ΛRZΔ-ΛRZΔ-ΛRZ" : SEQUENCE_WORD,
           mapping ? "Δ-ΛRZ" : SEQUENCE_ID
         ),
-        isolatedKeyframes || isolatedTextAlignment
+        isolatedKeyframes || isolatedTextAlignment || isolatedGroupMove
           ? Promise.resolve({
               project: null,
               diskAvailable: false,
@@ -136,9 +138,11 @@
           ? "post-keyframe-clear-fixture"
           : isolatedTextAlignment
             ? "post-text-alignment-fixture"
-            : storageFixture
-              ? draftSequenceId
-              : hydrated.id;
+            : isolatedGroupMove
+              ? "post-group-move-fixture"
+              : storageFixture
+                ? draftSequenceId
+                : hydrated.id;
       if (!mapping) seedPerformance(editorSequenceId);
       sequence = {
         ...hydrated,
@@ -149,6 +153,8 @@
         initialProject = keyframeClearFixture(editorSequenceId);
       if (isolatedTextAlignment)
         initialProject = textAlignmentFixture(editorSequenceId);
+      if (isolatedGroupMove)
+        initialProject = groupMoveFixture(editorSequenceId);
       if (mapping && !initialProject) initialProject = mappingFixture();
       cardRenderOptions = buildCardRenderOptions(sequence, { darkMode: true });
 

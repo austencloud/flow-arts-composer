@@ -61,7 +61,9 @@
     clearProjectKeyframes,
     editItemKeyframes,
     placeMainItem,
+    setTrackCutCrossfade,
     moveOverlayItem,
+    moveSelectedItems,
     setProjectBackground,
     setProjectCanvas,
     setTrackFlag,
@@ -740,8 +742,9 @@
   let transportSlot = $state<HTMLElement | null>(null);
   /** The preview and its neighbors, the row that grows to fill a phone. */
   let stageRow = $state<HTMLElement | null>(null);
-  /** The preview's height when a phone panel opened, held until it closes. */
+  /** The preview's height before a phone panel opened, kept across tool swaps. */
   let heldStageHeight = $state<number | null>(null);
+  let heldStageEditorSize: { width: number; height: number } | null = null;
   /** The tallest that phone panel may grow and still clear the preview. */
   let dockPanelMax = $state<number | null>(null);
   let appearancePanelHeight = $state(0);
@@ -1048,24 +1051,34 @@
   // than the row, so the preview keeps its height while one is open, and the
   // panel fits the room under it and scrolls inside. When that room is too
   // small to use it may take half the editor, which then scrolls under the
-  // dock. This measures before the panel goes in.
+  // dock. Keep the preview's minimum height while the panel closes: the dock
+  // crossfade retains its tall outgoing layer for a beat before easing down.
+  // Releasing the minimum on Escape would squeeze the preview for that beat.
   const MIN_DOCK_PANEL_REM = 14;
   $effect.pre(() => {
     const phone = layout === "phone" && !showTimingStage;
     const cropDock = phone && cropMode;
     const holding = phone && !cropMode && shown !== null && !appearanceDockOpen;
+    const size = { width: editorWidth, height: editorHeight };
     untrack(() => {
+      if (
+        !phone ||
+        cropDock ||
+        (heldStageEditorSize &&
+          (heldStageEditorSize.width !== size.width ||
+            heldStageEditorSize.height !== size.height))
+      ) {
+        heldStageHeight = null;
+        heldStageEditorSize = null;
+      }
       // The crop screen sizes its own dock once it is on screen, below.
       if (cropDock) {
-        heldStageHeight = null;
         return;
       }
       if (!holding) {
-        heldStageHeight = null;
         dockPanelMax = null;
         return;
       }
-      if (heldStageHeight !== null) return;
       if (!stageRow || !rootElement || !dockElement) return;
       const stage = stageRow.getBoundingClientRect();
       const stageBottom =
@@ -1082,7 +1095,10 @@
       // The dock's edge lands mid-gap, so it hides the transport completely.
       const room =
         rootElement.clientHeight - stageBottom - gap / 2 - dockChrome;
-      heldStageHeight = stage.height;
+      if (heldStageHeight === null) {
+        heldStageHeight = stage.height;
+        heldStageEditorSize = size;
+      }
       dockPanelMax =
         room >= MIN_DOCK_PANEL_REM * remPixels
           ? room
@@ -1496,6 +1512,37 @@
   function seekFromTimeline(seconds: number): void {
     editor.pause();
     editor.seek(seconds);
+  }
+
+  function toggleCrossfade(
+    outgoingId: string,
+    incomingId: string,
+    enabled: boolean
+  ): void {
+    editor.pause();
+    const trackIndex = findItem(editor.project, outgoingId)?.trackIndex;
+    if (trackIndex === undefined) return;
+    if (
+      !editor.edit((project, context) =>
+        setTrackCutCrossfade(
+          project,
+          trackIndex,
+          outgoingId,
+          incomingId,
+          enabled,
+          context
+        )
+      )
+    )
+      return;
+    editor.selectedItemId = outgoingId;
+    const outgoing = findItem(editor.project, outgoingId)?.item;
+    const incoming = findItem(editor.project, incomingId)?.item;
+    if (outgoing && incoming) {
+      editor.seek(
+        enabled ? (incoming.start + itemEnd(outgoing)) / 2 : itemEnd(outgoing)
+      );
+    }
   }
 
   // ---- Keyframe rows -------------------------------------------------------
@@ -2729,6 +2776,18 @@
           onMoveOverlay={(itemId, start, trackIndex) =>
             applyMove((project, context) =>
               moveOverlayItem(project, itemId, { start, trackIndex }, context)
+            )}
+          onToggleCrossfade={toggleCrossfade}
+          onMoveSelection={(itemIds, draggedItemId, start, trackIndex) =>
+            applyMove((project, context) =>
+              moveSelectedItems(
+                project,
+                itemIds,
+                draggedItemId,
+                start,
+                trackIndex,
+                context
+              )
             )}
           onTrackFlag={(trackId, flag, value) =>
             editor.edit((project, context) =>

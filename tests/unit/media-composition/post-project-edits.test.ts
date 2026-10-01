@@ -20,10 +20,13 @@ import {
   clearProjectKeyframes,
   moveMainItem,
   moveOverlayItem,
+  moveSelectedItems,
   placeMainItem,
   removeTake,
   replaceTakeMedia,
   resetFraming,
+  setMainCutCrossfade,
+  setTrackCutCrossfade,
   setItemFill,
   setProjectAudio,
   setProjectBackground,
@@ -36,6 +39,7 @@ import {
   updateItemAt,
 } from "$lib/shared/media-composition/domain/post-project-edits";
 import { normalizeProject } from "$lib/shared/media-composition/domain/post-project-normalize";
+import { compilePostProject } from "$lib/shared/media-composition/domain/post-project-compiler";
 import {
   createTakeTiming,
   resolveTakeTiming,
@@ -131,6 +135,265 @@ function twoClips(): PostProject {
     ]
   );
 }
+
+describe("setMainCutCrossfade", () => {
+  it("extends the outgoing video into its handle while keeping later cuts fixed", () => {
+    const base = project([
+      video("v1"),
+      video("v2", { takeId: "b", sourceOut: 6 }),
+      video("v3", { takeId: "b", sourceOut: 4 }),
+    ]);
+    const crossed = valid(setMainCutCrossfade(base, "v1", "v2", true, ctx));
+    expect(item(crossed, "v1")).toMatchObject({
+      sourceOut: 11,
+      duration: 11,
+      transitionOut: { type: "crossfade", duration: 1 },
+    });
+    expect(spans(crossed, 0)).toEqual([
+      ["v1", 0, 11],
+      ["v2", 10, 6],
+      ["v3", 16, 4],
+    ]);
+    expect(compilePostProject(crossed, ctx)?.preset.transitions).toEqual([
+      expect.objectContaining({
+        kind: "crossfade",
+        outgoingClipId: "v1",
+        incomingClipId: "v2",
+        start: { unit: "seconds", value: 10 },
+        end: { unit: "seconds", value: 11 },
+      }),
+    ]);
+    expect(setMainCutCrossfade(crossed, "v1", "v2", true, ctx)).toBe(crossed);
+    const restored = valid(
+      setMainCutCrossfade(crossed, "v1", "v2", false, ctx)
+    );
+    expect(item(restored, "v1")).not.toHaveProperty("transitionOut");
+    expect(item(restored, "v1")).toMatchObject({ sourceOut: 10, duration: 10 });
+    expect(spans(restored, 0)).toEqual(spans(base, 0));
+  });
+
+  it("overlaps full-length videos by rippling later clips and anchored overlays", () => {
+    const base = project(
+      [
+        video("v1"),
+        video("v2", { takeId: "b", sourceOut: 6 }),
+        video("v3", { sourceOut: 4 }),
+      ],
+      [[text("caption", 12, 2, { anchor: { itemId: "v2", offset: 2 } })]],
+      [take("a", 10), take("b", 6)]
+    );
+    const crossed = valid(setMainCutCrossfade(base, "v1", "v2", true, ctx));
+    expect(spans(crossed, 0)).toEqual([
+      ["v1", 0, 10],
+      ["v2", 9, 6],
+      ["v3", 15, 4],
+    ]);
+    expect(item(crossed, "v1")).toMatchObject({
+      sourceOut: 10,
+      transitionOut: { type: "crossfade", duration: 1 },
+    });
+    expect(item(crossed, "caption").start).toBe(11);
+    const restored = valid(
+      setMainCutCrossfade(crossed, "v1", "v2", false, ctx)
+    );
+    expect(spans(restored, 0)).toEqual(spans(base, 0));
+    expect(item(restored, "caption").start).toBe(12);
+  });
+
+  it("rejects a gap, a nonadjacent pair, and a pinned incoming clip without a handle", () => {
+    const base = project([
+      video("v1"),
+      video("v2", { takeId: "b" }),
+      video("v3"),
+    ]);
+    expect(setMainCutCrossfade(base, "v1", "v3", true, ctx)).toBe(base);
+    const gap = project([
+      video("v1"),
+      video("v2", { takeId: "b", start: 12, pinnedStart: true }),
+    ]);
+    expect(setMainCutCrossfade(gap, "v1", "v2", true, ctx)).toBe(gap);
+    const pinned = project(
+      [video("v1"), video("v2", { takeId: "b", start: 10, pinnedStart: true })],
+      [],
+      [take("a", 10), take("b")]
+    );
+    expect(setMainCutCrossfade(pinned, "v1", "v2", true, ctx)).toBe(pinned);
+  });
+
+  it("keeps the transition shorter than either very short clip", () => {
+    const base = project([
+      video("v1", { sourceOut: 0.3 }),
+      video("v2", { takeId: "b", sourceOut: 0.4 }),
+    ]);
+    const crossed = valid(setMainCutCrossfade(base, "v1", "v2", true, ctx));
+    const outgoing = item(crossed, "v1") as PostVideoItem;
+    const incoming = item(crossed, "v2") as PostVideoItem;
+    expect(outgoing.transitionOut!.duration).toBeLessThan(incoming.duration);
+    expect(outgoing.transitionOut!.duration).toBeLessThan(outgoing.duration);
+    expect(incoming.start).toBeCloseTo(0.3, 6);
+  });
+
+  it("crossfades an animation into picture-in-picture on the same overlay lane", () => {
+    const base = project(
+      [video("main")],
+      [
+        [
+          overlay("anim", "animation", {
+            start: 0,
+            duration: 5,
+            anchor: { itemId: "main", offset: 0 },
+          }),
+          video("pip", {
+            takeId: "b",
+            start: 5,
+            sourceOut: 5,
+            anchor: { itemId: "main", offset: 5 },
+          }),
+        ],
+      ]
+    );
+    const crossed = valid(
+      setTrackCutCrossfade(base, 1, "anim", "pip", true, ctx)
+    );
+    expect(crossed.tracks).toHaveLength(base.tracks.length);
+    expect(spans(crossed, 1)).toEqual([
+      ["anim", 0, 5],
+      ["pip", 4, 5],
+    ]);
+    expect(item(crossed, "pip").anchor).toEqual({ itemId: "main", offset: 4 });
+    expect(item(crossed, "anim").transitionOut).toMatchObject({ duration: 1 });
+    expect(compilePostProject(crossed, ctx)?.preset.transitions).toEqual([
+      expect.objectContaining({
+        kind: "crossfade",
+        outgoingClipId: "anim~0",
+        incomingClipId: "pip",
+        start: { unit: "seconds", value: 4 },
+        end: { unit: "seconds", value: 5 },
+      }),
+    ]);
+    const restored = valid(
+      setTrackCutCrossfade(crossed, 1, "anim", "pip", false, ctx)
+    );
+    expect(spans(restored, 1)).toEqual(spans(base, 1));
+    expect(item(restored, "pip").anchor).toEqual({ itemId: "main", offset: 5 });
+  });
+
+  it("crossfades into both animation picture and overlay clips", () => {
+    const base = project(
+      [video("main")],
+      [
+        [
+          video("pip", { start: 0, sourceOut: 5 }),
+          overlay("anim", "animation", {
+            start: 5,
+            duration: 5,
+            overlay: true,
+          }),
+        ],
+      ]
+    );
+    const crossed = valid(
+      setTrackCutCrossfade(base, 1, "pip", "anim", true, ctx)
+    );
+    const compiled = compilePostProject(crossed, {
+      ...ctx,
+      animationOverlay: true,
+    })!;
+    expect(
+      compiled.preset.transitions.map((transition) => transition.incomingClipId)
+    ).toEqual(["anim~0", "anim~0:overlay"]);
+    expect(
+      compiled.preset.transitions.every(
+        (transition) =>
+          transition.start.value === 4 && transition.end.value === 5
+      )
+    ).toBe(true);
+  });
+
+  it("resizes an overlay transition and restores the butt cut", () => {
+    const base = project(
+      [video("main")],
+      [
+        [
+          overlay("anim", "animation", { start: 0, duration: 5 }),
+          card("still", 4, { start: 5 }),
+        ],
+      ]
+    );
+    const crossed = setTrackCutCrossfade(base, 1, "anim", "still", true, ctx);
+    const resized = valid(
+      updateItem(
+        crossed,
+        "anim",
+        {
+          transitionOut: { type: "crossfade", duration: 0.5 },
+        },
+        ctx
+      )
+    );
+    expect(item(resized, "anim").transitionOut?.duration).toBe(0.5);
+    expect(item(resized, "still").start).toBe(4.5);
+    expect(compilePostProject(resized, ctx)?.preset.transitions).toEqual([
+      expect.objectContaining({
+        outgoingClipId: "anim~0",
+        incomingClipId: "still",
+        start: { unit: "seconds", value: 4.5 },
+        end: { unit: "seconds", value: 5 },
+      }),
+    ]);
+    const restored = valid(
+      updateItem(resized, "anim", { transitionOut: null }, ctx)
+    );
+    expect(spans(restored, 1)).toEqual(spans(base, 1));
+  });
+
+  it("resizes an extended main clip within its source and restores its original out point", () => {
+    const base = project([
+      video("v1"),
+      video("v2", { takeId: "b", sourceOut: 5 }),
+    ]);
+    const crossed = setMainCutCrossfade(base, "v1", "v2", true, ctx);
+    const resized = valid(
+      updateItem(
+        crossed,
+        "v1",
+        {
+          transitionOut: { type: "crossfade", duration: 0.5 },
+        },
+        ctx
+      )
+    );
+    expect(item(resized, "v1")).toMatchObject({
+      sourceOut: 10.5,
+      duration: 10.5,
+    });
+    expect(item(resized, "v2").start).toBe(10);
+    const restored = valid(
+      setMainCutCrossfade(resized, "v1", "v2", false, ctx)
+    );
+    expect(spans(restored, 0)).toEqual(spans(base, 0));
+    expect(item(restored, "v1")).toMatchObject({ sourceOut: 10 });
+  });
+
+  it("crossfades a main-track card into video", () => {
+    const base = project([card("intro", 3), video("v1")]);
+    const crossed = valid(setMainCutCrossfade(base, "intro", "v1", true, ctx));
+    expect(spans(crossed, 0)).toEqual([
+      ["intro", 0, 4],
+      ["v1", 3, 10],
+    ]);
+    expect(compilePostProject(crossed, ctx)?.preset.transitions).toEqual([
+      expect.objectContaining({
+        outgoingClipId: "intro",
+        incomingClipId: "v1",
+      }),
+    ]);
+    const restored = valid(
+      setMainCutCrossfade(crossed, "intro", "v1", false, ctx)
+    );
+    expect(spans(restored, 0)).toEqual(spans(base, 0));
+  });
+});
 
 describe("takes", () => {
   it("adds a take once per file and refreshes it in place", () => {
@@ -555,6 +818,182 @@ describe("moveOverlayItem", () => {
       moveOverlayItem(hidden, "t2", { start: 5, trackIndex: 1 }, ctx)
     );
     expect(spans(onto, 1)).toEqual([["t1", 0, 2]]);
+  });
+});
+
+describe("moveSelectedItems", () => {
+  it("leaves an unselected main clip in the gap between selected clips", () => {
+    const base = project([
+      video("v1", { sourceOut: 2, start: 0, pinnedStart: true }),
+      video("middle", { sourceOut: 2, start: 5, pinnedStart: true }),
+      video("v2", { sourceOut: 2, start: 10, pinnedStart: true }),
+    ]);
+    const result = valid(
+      moveSelectedItems(base, ["v1", "v2"], "v1", 1, null, ctx)
+    );
+    expect(spans(result, 0)).toEqual([
+      ["v1", 1, 2],
+      ["middle", 5, 2],
+      ["v2", 11, 2],
+    ]);
+  });
+
+  it("pushes a colliding main clip only as far as the next available gap", () => {
+    const base = project([
+      video("v1", { sourceOut: 2 }),
+      video("middle", { sourceOut: 2 }),
+      video("v2", { sourceOut: 2, start: 6, pinnedStart: true }),
+    ]);
+    const result = valid(
+      moveSelectedItems(base, ["v1", "v2"], "v1", 1, null, ctx)
+    );
+    expect(spans(result, 0)).toEqual([
+      ["v1", 1, 2],
+      ["middle", 3, 2],
+      ["v2", 7, 2],
+    ]);
+  });
+
+  it.each(["video", "card"] as const)(
+    "preserves an existing %s crossfade between unselected main clips",
+    (kind) => {
+      const outgoing =
+        kind === "video"
+          ? video("fade-out", { sourceOut: 3 })
+          : card("fade-out", 3);
+      const base = project([
+        video("v1", { sourceOut: 2 }),
+        {
+          ...outgoing,
+          start: 5,
+          pinnedStart: true,
+          transitionOut: { type: "crossfade", duration: 1 },
+        },
+        video("fade-in", { sourceOut: 3 }),
+        video("v2", { sourceOut: 2, start: 12, pinnedStart: true }),
+      ]);
+      const result = valid(
+        moveSelectedItems(base, ["v1", "v2"], "v1", 1, null, ctx)
+      );
+      expect(spans(result, 0)).toEqual([
+        ["v1", 1, 2],
+        ["fade-out", 5, 3],
+        ["fade-in", 7, 3],
+        ["v2", 13, 2],
+      ]);
+    }
+  );
+
+  it.each([3, 5])(
+    "keeps occupied overlays in place when the group lands at %s seconds",
+    (start) => {
+      const base = project(
+        [video("v1")],
+        [[text("t1", 0, 2), text("resident", 4, 2), text("t2", 8, 2)]]
+      );
+      const result = valid(
+        moveSelectedItems(base, ["t1", "t2"], "t1", start, 1, ctx)
+      );
+      expect(spans(result, 1)).toEqual([["resident", 4, 2]]);
+      expect(result.tracks[1]!.id).toBe(base.tracks[1]!.id);
+      expect(spans(result, 2)).toEqual([
+        ["t1", start, 2],
+        ["t2", start + 8, 2],
+      ]);
+    }
+  );
+
+  it.each(["hidden", "locked"] as const)(
+    "keeps the group's layer spacing when one destination is %s",
+    (flag) => {
+      const base = project(
+        [video("v1")],
+        [[text("t1", 0, 2)], [text("t2", 4, 2)], [text("resident", 8, 2)]]
+      );
+      const blocked = setTrackFlag(base, base.tracks[3]!.id, flag, true, ctx);
+      const result = valid(
+        moveSelectedItems(blocked, ["t1", "t2"], "t1", 1, 2, ctx)
+      );
+      const first = findItem(result, "t1")!;
+      const second = findItem(result, "t2")!;
+      expect(second.trackIndex - first.trackIndex).toBe(1);
+      for (const { trackIndex } of [first, second]) {
+        expect(result.tracks[trackIndex]!.hidden).toBe(false);
+        expect(result.tracks[trackIndex]!.locked).toBe(false);
+      }
+      const resident = findItem(result, "resident")!;
+      expect(resident.item.start).toBe(8);
+      expect(result.tracks[resident.trackIndex]!.id).toBe(base.tracks[3]!.id);
+    }
+  );
+
+  it("checks collisions after a selected main clip moves its anchored overlay", () => {
+    const base = project(
+      [video("v1")],
+      [
+        [
+          text("t1", 0, 2, { anchor: { itemId: "v1", offset: 0 } }),
+          text("resident", 4, 2),
+        ],
+      ]
+    );
+    const result = valid(
+      moveSelectedItems(base, ["v1", "t1"], "v1", 3, null, ctx)
+    );
+    expect(spans(result, 1)).toEqual([["resident", 4, 2]]);
+    expect(result.tracks[1]!.id).toBe(base.tracks[1]!.id);
+    expect(spans(result, 2)).toEqual([["t1", 3, 2]]);
+    expect(item(result, "t1").anchor).toEqual({ itemId: "v1", offset: 0 });
+  });
+
+  it("moves selected main clips together and carries their anchored overlays", () => {
+    const result = valid(
+      moveSelectedItems(twoClips(), ["v1", "v2"], "v1", 3, null, ctx)
+    );
+    expect(spans(result, 0)).toEqual([
+      ["v1", 3, 10],
+      ["v2", 13, 6],
+    ]);
+    expect(spans(result, 1)).toEqual([["anim", 3, 10]]);
+  });
+
+  it("moves selected overlays with the same time and layer offsets", () => {
+    const base = project(
+      [video("v1"), video("v2")],
+      [[text("t1", 0, 2), text("t2", 5, 2)], [text("t3", 8, 2)]]
+    );
+    const result = valid(
+      moveSelectedItems(base, ["t1", "t3"], "t1", 3, 2, ctx)
+    );
+    expect(item(result, "t1").start).toBe(3);
+    expect(item(result, "t3").start).toBe(11);
+    expect(
+      findItem(result, "t3")!.trackIndex - findItem(result, "t1")!.trackIndex
+    ).toBe(1);
+    expect(item(result, "t2").start).toBe(5);
+  });
+
+  it("moves a mixed main and overlay selection by the same delta", () => {
+    const base = project([video("v1"), video("v2")], [[text("t1", 4, 2)]]);
+    const result = valid(
+      moveSelectedItems(base, ["v1", "t1"], "t1", 7, 1, ctx)
+    );
+    expect(item(result, "v1").start).toBe(3);
+    expect(item(result, "t1").start).toBe(7);
+  });
+
+  it("excludes locked clips and clamps the group before zero", () => {
+    const base = project(
+      [video("v1")],
+      [[text("t1", 2, 2), text("t2", 6, 2)], [text("locked", 4, 2)]]
+    );
+    const locked = setTrackFlag(base, base.tracks[2]!.id, "locked", true, ctx);
+    const result = valid(
+      moveSelectedItems(locked, ["t1", "t2", "locked"], "t2", 0, null, ctx)
+    );
+    expect(item(result, "t1").start).toBe(0);
+    expect(item(result, "t2").start).toBe(4);
+    expect(item(result, "locked").start).toBe(4);
   });
 });
 

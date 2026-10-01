@@ -59,6 +59,17 @@ import {
 
 export const TEXT_ROLE_PREFIX = "text:";
 
+function isTransitionVisual(item: PostItem): boolean {
+  return (
+    item.kind === "video" ||
+    item.kind === "image" ||
+    item.kind === "animation" ||
+    item.kind === "moves" ||
+    item.kind === "carousel" ||
+    item.kind === "card"
+  );
+}
+
 export function textRole(itemId: string): string {
   return `${TEXT_ROLE_PREFIX}${itemId}`;
 }
@@ -769,33 +780,47 @@ export function compilePostProject(
     }
   });
 
-  const main = project.tracks[MAIN_TRACK_INDEX]?.items ?? [];
-  for (let index = 0; index < main.length - 1; index++) {
-    const outgoing = main[index]!;
-    const incoming = main[index + 1]!;
-    if (
-      (outgoing.kind !== "video" && outgoing.kind !== "image") ||
-      (incoming.kind !== "video" && incoming.kind !== "image") ||
-      !outgoing.transitionOut?.duration ||
-      !clips.some((clip) => clip.id === outgoing.id) ||
-      !clips.some((clip) => clip.id === incoming.id)
-    )
-      continue;
-    const start = Math.max(
-      incoming.start,
-      itemEnd(outgoing) - outgoing.transitionOut.duration
-    );
-    const end = Math.min(itemEnd(outgoing), itemEnd(incoming));
-    if (end <= start) continue;
-    transitions.push({
-      id: `transition:${outgoing.id}:${incoming.id}`,
-      kind: "crossfade",
-      outgoingClipId: outgoing.id,
-      incomingClipId: incoming.id,
-      start: seconds(start),
-      end: seconds(end),
-      curve: "linear",
-    });
+  for (const track of project.tracks) {
+    for (let index = 0; index < track.items.length - 1; index++) {
+      const outgoing = track.items[index]!;
+      const incoming = track.items[index + 1]!;
+      if (
+        !outgoing.transitionOut?.duration ||
+        !isTransitionVisual(outgoing) ||
+        !isTransitionVisual(incoming)
+      )
+        continue;
+      const start = Math.max(
+        incoming.start,
+        itemEnd(outgoing) - outgoing.transitionOut.duration
+      );
+      const end = Math.min(itemEnd(outgoing), itemEnd(incoming));
+      if (end <= start) continue;
+      const outgoingClip = clips.find(
+        (clip) =>
+          clip.kind === "visual" &&
+          clip.regionId === outgoing.id &&
+          !clip.id.endsWith(":overlay")
+      );
+      if (!outgoingClip) continue;
+      const incomingClips = clips.filter(
+        (clip) => clip.kind === "visual" && clip.regionId === incoming.id
+      );
+      for (const clip of incomingClips) {
+        transitions.push({
+          id:
+            incomingClips.length === 1
+              ? `transition:${outgoing.id}:${incoming.id}`
+              : `transition:${outgoing.id}:${incoming.id}:${clip.id}`,
+          kind: "crossfade",
+          outgoingClipId: outgoingClip.id,
+          incomingClipId: clip.id,
+          start: seconds(start),
+          end: seconds(end),
+          curve: "linear",
+        });
+      }
+    }
   }
 
   if (clips.length === 0 || maxEnd <= 0) return null;

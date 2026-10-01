@@ -20,7 +20,7 @@
     selected: boolean;
     locked: boolean;
     dimmed: boolean;
-    onActivate: (itemId: string) => void;
+    onActivate: (itemId: string, event: MouseEvent) => void;
     onBodyPointerDown: (event: PointerEvent) => void;
     onHandlePointerDown: (event: PointerEvent, edge: "start" | "end") => void;
     /** Whether any channel has keyframes; the keys themselves show in rows under a selected clip. */
@@ -102,7 +102,7 @@
   aria-pressed={selected}
   aria-label={accessibleName}
   onpointerdown={handleBodyPointerDown}
-  onclick={() => onActivate(item.id)}
+  onclick={(event) => onActivate(item.id, event)}
 >
   <i class={KIND_ICON[item.kind]} aria-hidden="true"></i>
   <span class="item-label">{labelText}</span>
