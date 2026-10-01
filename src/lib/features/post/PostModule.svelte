@@ -2,7 +2,7 @@
   import { onMount } from "svelte";
   import { goto } from "$app/navigation";
   import { page } from "$app/state";
-  import { simplifyRepeatedWord } from "$lib/shared/foundation/utils/word-simplifier";
+  import { isTkaWord, simplifyRepeatedWord } from "$lib/shared/foundation/utils/word-simplifier";
   import TKAWordGlyph from "$lib/shared/choreo-card/components/TKAWordGlyph.svelte";
   import { getExportOptionsState } from "$lib/shared/animation-panel/state/export-options-state.svelte";
   import { createCardPreviewState } from "$lib/shared/share/state/card-preview-state.svelte";
@@ -102,6 +102,7 @@
       {:else}
         <ul>
           {#each state.projects as project (project.sequenceId)}
+            {@const projectWord = project.word || project.sequenceId}
             <li>
               <button
                 type="button"
@@ -112,16 +113,16 @@
                   ><i class="fas fa-clapperboard" aria-hidden="true"></i></span
                 >
                 <div class="project-info">
-                  {#if project.word && project.title === project.word}
-                    <TKAWordGlyph word={project.word} height={24} darkMode />
+                  {#if isTkaWord(project.title)}
+                    <TKAWordGlyph word={project.title} height={24} darkMode />
                   {:else}
                     <strong>{project.title}</strong>
                   {/if}
                   <div class="project-details">
-                    {#if project.word}
-                      <TKAWordGlyph word={project.word} height={14} darkMode />
+                    {#if isTkaWord(projectWord)}
+                      <TKAWordGlyph word={projectWord} height={14} darkMode />
                     {:else}
-                      <span>{project.sequenceId}</span>
+                      <span>{projectWord}</span>
                     {/if}
                     {#if project.hasDraft}<span>· Saved draft</span>{/if}
                   </div>
@@ -148,8 +149,8 @@
             ></button
           >
           <div class="current-name" aria-label={currentTitle}>
-            {#if currentWord && currentTitle === currentWord}
-              <TKAWordGlyph word={currentWord} height={20} darkMode />
+            {#if isTkaWord(currentTitle)}
+              <TKAWordGlyph word={currentTitle} height={20} darkMode />
             {:else}
               {currentTitle}
             {/if}
