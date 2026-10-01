@@ -29,9 +29,7 @@ export function isAutoSequenceName(name: string | null | undefined): boolean {
 /**
  * The text that identifies a sequence in the viewer: its word when it has
  * letters, otherwise a name the user chose. A letterless sequence with only an
- * auto-generated name resolves to "" so the caller can show its neutral label
- * instead of leaking the placeholder (a narrow header clips "Assemble Sequence"
- * to "Ass…").
+ * auto-generated name resolves to "" so the viewer leaves its title empty.
  */
 export function resolveSequenceIdentityTitle(
   sequence: Pick<SequenceData, "word" | "displayName" | "name">
