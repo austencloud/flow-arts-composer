@@ -2629,7 +2629,6 @@
                 bind:this={playbackCanvas}
                 {editor}
                 sequence={displaySequence}
-                qrSequence={sequence}
                 {bindingFor}
                 {labelFor}
                 {cardRenderOptions}
@@ -2748,7 +2747,11 @@
         {/if}
       </div>
 
-      {#if panelBeside && !showTimingStage}
+      <!-- The crop screen takes the editor over: it stows the post's timeline
+           and the tool row out of sight, still mounted, so they come back
+           scrolled where they were. Its own clip timeline stands in for
+           them, and Done or Cancel brings them back. -->
+      {#if panelBeside && !showTimingStage && !cropMode}
         <div class="timeline-resizer">
           <ResizeHandle
             direction="vertical"
@@ -2766,7 +2769,11 @@
           />
         </div>
       {/if}
-      <div class="timeline-slot" inert={sharing || exporting || undefined}>
+      <div
+        class="timeline-slot"
+        class:stowed={cropMode}
+        inert={sharing || exporting || cropMode || undefined}
+      >
         <PostTimeline
           project={editor.project}
           durationSeconds={editor.durationSeconds}
@@ -2831,9 +2838,10 @@
       {#if panelBeside}
         <div
           class="row-slot"
+          class:stowed={cropMode}
           tabindex="-1"
           bind:this={rowSlot}
-          inert={sharing || undefined}
+          inert={sharing || cropMode || undefined}
         >
           <Crossfade key={rowKey} mode="swap" duration={DURATION.fast}>
             {@render row()}
@@ -2875,9 +2883,6 @@
               {@render row()}
             {/if}
           </Crossfade>
-          {#if cropMode}
-            {@render row()}
-          {/if}
         {/if}
       </div>
     {/if}
@@ -3502,7 +3507,8 @@
     visibility: hidden;
   }
 
-  /* Crop keeps the post timeline and tools below its own clip transport. */
+  /* The crop screen: the stage takes the room the timeline and the row
+     leave, with the clip's own timeline under it. */
   .post-editor[data-mode="crop"] .layout {
     position: relative;
   }
@@ -3512,17 +3518,24 @@
       [data-layout="viewer"]
     )
     .layout {
-    grid-template-rows:
-      minmax(15rem, 1fr) auto 12px var(--post-timeline-height)
-      auto;
-    grid-template-areas: "stage" "transport" "resize" "timeline" "row";
+    grid-template-rows: minmax(15rem, 1fr) auto;
+    grid-template-areas: "stage" "transport";
   }
 
   .post-editor[data-layout="phone"][data-mode="crop"] .layout {
     display: grid;
     grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: auto minmax(12rem, 1fr) auto auto auto;
-    grid-template-areas: "top" "stage" "transport" "timeline" "dock";
+    grid-template-rows: auto minmax(12rem, 1fr) auto auto;
+    grid-template-areas: "top" "stage" "transport" "dock";
+  }
+
+  .timeline-slot.stowed,
+  .row-slot.stowed {
+    position: absolute;
+    inset: 0 0 auto;
+    margin: 0;
+    visibility: hidden;
+    pointer-events: none;
   }
 
   .post-editor[data-mode="crop"] .stage-row {
