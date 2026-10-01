@@ -153,34 +153,34 @@ export function captionCenterY(
   return rect.y + rect.height * CAPTION_POSITION_FRACTION[position];
 }
 
-/**
- * Greedy word wrap: adds words to the current line while `measureWidth` says
- * it still fits `maxWidth`, otherwise starts a new line. A single word wider
- * than `maxWidth` still gets its own line rather than being split - a post
- * caption is short enough that this never runs away.
- */
+/** Wrap each typed line to fit, keeping the line breaks entered in the editor. */
 export function wrapCaptionText(
   text: string,
   measureWidth: (line: string) => number,
   maxWidth: number
 ): string[] {
-  const words = text.trim().split(/\s+/).filter(Boolean);
-  if (words.length === 0) return [];
-
   const lines: string[] = [];
-  let current = words[0]!;
-  for (let index = 1; index < words.length; index++) {
-    const word = words[index]!;
-    const attempt = `${current} ${word}`;
-    if (measureWidth(attempt) <= maxWidth) {
-      current = attempt;
-    } else {
-      lines.push(current);
-      current = word;
+  for (const paragraph of text.trim().replace(/\r\n?/g, "\n").split("\n")) {
+    const words = paragraph.trim().split(/\s+/).filter(Boolean);
+    if (words.length === 0) {
+      lines.push("");
+      continue;
     }
+
+    let current = words[0]!;
+    for (let index = 1; index < words.length; index++) {
+      const word = words[index]!;
+      const attempt = `${current} ${word}`;
+      if (measureWidth(attempt) <= maxWidth) {
+        current = attempt;
+      } else {
+        lines.push(current);
+        current = word;
+      }
+    }
+    lines.push(current);
   }
-  lines.push(current);
-  return lines;
+  return lines.length === 1 && lines[0] === "" ? [] : lines;
 }
 
 /** The baseline y of each wrapped line, centered on the caption's anchor. */
