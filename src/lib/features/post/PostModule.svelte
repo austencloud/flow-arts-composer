@@ -3,6 +3,7 @@
   import { goto } from "$app/navigation";
   import { page } from "$app/state";
   import { simplifyRepeatedWord } from "$lib/shared/foundation/utils/word-simplifier";
+  import TKAWordGlyph from "$lib/shared/choreo-card/components/TKAWordGlyph.svelte";
   import { getExportOptionsState } from "$lib/shared/animation-panel/state/export-options-state.svelte";
   import { createCardPreviewState } from "$lib/shared/share/state/card-preview-state.svelte";
   import PostStudio from "$lib/shared/share/components/post-studio/PostStudio.svelte";
@@ -40,6 +41,18 @@
   });
   let previousParam: string | null = null;
   let initialVisit = true;
+  const currentWord = $derived(
+    simplifyRepeatedWord(state.sequence?.word || "")
+  );
+  const currentTitle = $derived(
+    simplifyRepeatedWord(
+      state.sequence?.displayName ||
+        state.sequence?.name ||
+        currentWord ||
+        state.selectedId ||
+        ""
+    )
+  );
 
   onMount(() => {
     void state.refreshProjects();
@@ -92,18 +105,27 @@
             <li>
               <button
                 type="button"
+                aria-label={`Open ${project.title}`}
                 onclick={() => openProject(project.sequenceId)}
               >
                 <span class="project-mark"
                   ><i class="fas fa-clapperboard" aria-hidden="true"></i></span
                 >
-                <span class="project-info"
-                  ><strong>{project.title}</strong><small
-                    >{project.word || project.sequenceId}{project.hasDraft
-                      ? " · Saved draft"
-                      : ""}</small
-                  ></span
-                >
+                <div class="project-info">
+                  {#if project.word && project.title === project.word}
+                    <TKAWordGlyph word={project.word} height={24} darkMode />
+                  {:else}
+                    <strong>{project.title}</strong>
+                  {/if}
+                  <div class="project-details">
+                    {#if project.word}
+                      <TKAWordGlyph word={project.word} height={14} darkMode />
+                    {:else}
+                      <span>{project.sequenceId}</span>
+                    {/if}
+                    {#if project.hasDraft}<span>· Saved draft</span>{/if}
+                  </div>
+                </div>
                 <span class="project-date"
                   >{new Date(project.updatedAt).toLocaleDateString()}</span
                 >
@@ -124,14 +146,15 @@
             ><i class="fas fa-folder-open" aria-hidden="true"></i><span
               class="projects-label">Projects</span
             ></button
-          ><span class="current-name"
-            >{simplifyRepeatedWord(
-              state.sequence?.displayName ||
-                state.sequence?.name ||
-                state.selectedId ||
-                ""
-            )}</span
-          >{#if editorHeader.actions && !state.loadingProject && state.sequence}{@render editorHeader.actions()}{/if}
+          >
+          <div class="current-name" aria-label={currentTitle}>
+            {#if currentWord && currentTitle === currentWord}
+              <TKAWordGlyph word={currentWord} height={20} darkMode />
+            {:else}
+              {currentTitle}
+            {/if}
+          </div>
+          {#if editorHeader.actions && !state.loadingProject && state.sequence}{@render editorHeader.actions()}{/if}
         </div>
       </div>
       {#if state.loadingProject}<div class="editor-status" role="status">
@@ -258,15 +281,23 @@
     flex: 1;
   }
   .project-info strong,
-  .project-info small {
+  .project-details {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
   }
-  .project-info small,
+  .project-details,
   .project-date {
     color: var(--theme-text-secondary);
     font-size: 12px;
+  }
+  .project-details {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .project-details > span {
+    flex-shrink: 0;
   }
   .project-date {
     white-space: nowrap;
