@@ -647,7 +647,7 @@
     selection = selectTimelineItem(
       selection,
       itemId,
-      timelineItemOrder(project),
+      timelineItemOrder(project, itemId),
       event.shiftKey
         ? "range"
         : event.ctrlKey || event.metaKey

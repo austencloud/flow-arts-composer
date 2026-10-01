@@ -6,19 +6,17 @@ export interface TimelineSelection {
   focusId: string | null;
 }
 
-/** Timeline order is chronological, with lower layers first at equal times. */
-export function timelineItemOrder(project: PostProject): string[] {
-  return project.tracks
-    .flatMap((track, trackIndex) =>
-      track.items.map((item, itemIndex) => ({ item, trackIndex, itemIndex }))
-    )
-    .sort(
-      (a, b) =>
-        a.item.start - b.item.start ||
-        a.trackIndex - b.trackIndex ||
-        a.itemIndex - b.itemIndex
-    )
-    .map(({ item }) => item.id);
+/** Shift-click ranges stay on the clicked clip's track, in time order. */
+export function timelineItemOrder(
+  project: PostProject,
+  itemId: string
+): string[] {
+  const track = project.tracks.find((track) =>
+    track.items.some((item) => item.id === itemId)
+  );
+  return [...(track?.items ?? [])]
+    .sort((a, b) => a.start - b.start)
+    .map((item) => item.id);
 }
 
 export function selectTimelineItem(
