@@ -394,9 +394,10 @@
           {fill}
           count={propCount}
           tileWidth={96}
-          tileHeight={112}
-          insetX={36}
-          chromeHeight={44}
+          tileHeight={108}
+          insetX={24}
+          chromeHeight={16}
+          scrollViewport={{ minColumns: 2, visibleRows: 1.5 }}
         >
           {#snippet children(bounded)}
             <BentoPropGrid
@@ -409,11 +410,9 @@
               showPropLook={false}
               showAppearance={false}
               scrollMode={bounded ? "internal" : "host"}
-              fill={bounded}
-              minTileSize={88}
               variant="inline"
               flat
-              tileDensity="comfortable"
+              tileDensity="inspector"
             />
           {/snippet}
         </PostAppearanceChooser>

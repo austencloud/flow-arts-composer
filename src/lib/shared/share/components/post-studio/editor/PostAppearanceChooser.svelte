@@ -5,7 +5,10 @@
   import DrawerHeader from "$lib/shared/foundation/ui/DrawerHeader.svelte";
   import SettingsDrillRow from "$lib/shared/ui/components/settings-drill/SettingsDrillRow.svelte";
   import { responsiveLayoutManager } from "$lib/shared/create/services/responsive-layout-manager";
-  import { appearanceControlsFit } from "./post-appearance-fit";
+  import {
+    appearanceControlsFit,
+    type AppearanceScrollViewport,
+  } from "./post-appearance-fit";
 
   let {
     title,
@@ -17,6 +20,7 @@
     insetX = 0,
     chromeHeight = 0,
     columnChoices,
+    scrollViewport,
     children,
   }: {
     title: string;
@@ -28,6 +32,7 @@
     insetX?: number;
     chromeHeight?: number;
     columnChoices?: readonly number[];
+    scrollViewport?: AppearanceScrollViewport;
     children: Snippet<[boolean]>;
   } = $props();
 
@@ -44,7 +49,8 @@
       tileHeight,
       insetX,
       chromeHeight,
-      columnChoices
+      columnChoices,
+      scrollViewport
     )
   );
 

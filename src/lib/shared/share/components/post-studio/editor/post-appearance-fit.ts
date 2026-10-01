@@ -1,6 +1,10 @@
-/** Minimum room for the complete chooser, including its own headings/insets.
- * A smaller inspector opens the same controls in a drawer instead of shrinking
- * labels or hiding the last rows behind the timeline. */
+/** A scrollable catalog needs a useful window onto its choices, not room for
+ * every choice at once. Other choosers still require their complete layout. */
+export interface AppearanceScrollViewport {
+  minColumns: number;
+  visibleRows: number;
+}
+
 export function appearanceControlsFit(
   width: number,
   height: number,
@@ -9,13 +13,17 @@ export function appearanceControlsFit(
   tileHeight: number,
   insetX = 0,
   chromeHeight = 0,
-  columnChoices?: readonly number[]
+  columnChoices?: readonly number[],
+  scrollViewport?: AppearanceScrollViewport
 ): boolean {
   const capacity = Math.floor((width - insetX + 8) / (tileWidth + 8));
   const columns = columnChoices
     ? Math.max(0, ...columnChoices.filter((value) => value <= capacity))
     : capacity;
-  if (columns < 1 || count < 1) return false;
-  const rows = Math.ceil(count / columns);
-  return rows * tileHeight + (rows - 1) * 8 + chromeHeight <= height;
+  if (columns < (scrollViewport?.minColumns ?? 1) || count < 1) return false;
+  const rows = Math.min(
+    Math.ceil(count / columns),
+    scrollViewport?.visibleRows ?? Infinity
+  );
+  return rows * tileHeight + (Math.ceil(rows) - 1) * 8 + chromeHeight <= height;
 }
