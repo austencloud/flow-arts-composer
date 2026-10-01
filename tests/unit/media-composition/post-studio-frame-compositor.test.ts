@@ -9,7 +9,6 @@ import {
 } from "$lib/shared/media-composition/services/post-studio-frame-compositor";
 import { compilePostProject } from "$lib/shared/media-composition/domain/post-project-compiler";
 import { evaluatePresetFrame } from "$lib/shared/media-composition/services/frame-evaluator";
-import { sequenceFrameAt } from "$lib/shared/media-composition/domain/sequence-frame";
 import {
   NOW,
   card,
@@ -147,6 +146,19 @@ describe("split animation export", () => {
     mounted.className = "media-layer";
     mounted.dataset.clipId = "motion~1";
     mounted.dataset.renderMode = "sequence-animation";
+    const animation = document.createElementNS(
+      "http://www.w3.org/1999/xhtml",
+      "div"
+    ) as HTMLElement;
+    animation.dataset.sequenceProgressVisible = "false";
+    vi.spyOn(animation, "getBoundingClientRect").mockReturnValue({
+      width: 200,
+      height: 200,
+    } as DOMRect);
+    mounted.append(animation);
+    captureMotion
+      .mockReset()
+      .mockResolvedValue(document.createElement("canvas"));
     root.append(mounted);
     const fillRect = vi.fn();
     const context = new Proxy(
@@ -498,15 +510,9 @@ describe("waitForPictographMotion", () => {
 });
 
 describe("scoped Moves export", () => {
-  it.each(
-    (["arrows", "mandala"] as const).flatMap((mode) =>
-      [true, false].flatMap((visible) =>
-        [0, 1.5, 4].map((arrival) => ({ mode, visible, arrival }))
-      )
-    )
-  )(
-    "exports $mode with Progress=$visible at arrival $arrival without duplicating effects",
-    async ({ mode, visible, arrival }) => {
+  it.each(["arrows", "mandala"] as const)(
+    "captures the complete %s preview once, including its visible overlays",
+    async (mode) => {
       const createElement = <T extends HTMLElement>(tag: string) =>
         document.createElementNS("http://www.w3.org/1999/xhtml", tag) as T;
       const compiled = compilePostProject(
@@ -528,32 +534,45 @@ describe("scoped Moves export", () => {
       const layers = evaluatePresetFrame(compiled.preset, 5, 1).filter(
         (entry) => entry.regionId === "moves"
       );
-      // Project time is unchanged; only the mapped sequence position varies.
-      const sequenceFrame = sequenceFrameAt(arrival, [2, 3], { endArrival: 4 });
-      layers[0]!.sequenceFrame = sequenceFrame;
       const root = createElement<HTMLDivElement>("div");
       const media = createElement<HTMLDivElement>("div");
       media.className = "media-layer";
       media.dataset.clipId = layers[0]!.clipId;
       media.dataset.renderMode = "sequence-animation";
       const animation = createElement<HTMLDivElement>("div");
-      animation.dataset.sequenceProgressVisible = String(visible);
+      animation.dataset.sequenceProgressVisible = "true";
       animation.dataset.sequenceProgressDark = "true";
       animation.dataset.studioAnimationMode =
         mode === "arrows" ? "pictograph" : "mandala";
+      const stage = createElement<HTMLDivElement>("div");
+      const labels = createElement<HTMLDivElement>("div");
+      labels.textContent = "Step 2 Λ1";
+      const paths = document.createElementNS(
+        "http://www.w3.org/2000/svg",
+        "svg"
+      );
+      const header = createElement<HTMLDivElement>("div");
+      header.textContent = "WORD";
+      const progress = createElement<HTMLDivElement>("div");
+      progress.textContent = "Progress";
       const effects = createElement<HTMLCanvasElement>("canvas");
       effects.width = effects.height = 200;
-      animation.append(effects);
+      stage.append(header, effects, paths, labels);
+      animation.append(stage, progress);
       if (mode === "arrows") {
-        animation.dataset.pictographMotion = "";
+        stage.dataset.pictographMotion = "";
         const arrows = createElement<HTMLDivElement>("div");
         arrows.dataset.pictographRenderReady = "true";
-        animation.append(arrows);
-        vi.spyOn(animation, "getBoundingClientRect").mockReturnValue({
+        stage.append(arrows);
+        vi.spyOn(stage, "getBoundingClientRect").mockReturnValue({
           width: 200,
           height: 200,
         } as DOMRect);
       }
+      vi.spyOn(animation, "getBoundingClientRect").mockReturnValue({
+        width: 200,
+        height: 250,
+      } as DOMRect);
       media.append(animation);
       root.append(media);
       const captured = createElement<HTMLCanvasElement>("canvas");
@@ -587,24 +606,18 @@ describe("scoped Moves export", () => {
       });
 
       expect(drawImage).toHaveBeenCalledTimes(1);
-      expect(drawImage.mock.calls[0]![0]).toBe(
-        mode === "arrows" ? captured : effects
-      );
-      expect(captureMotion).toHaveBeenCalledTimes(mode === "arrows" ? 1 : 0);
-      expect(fillRect).toHaveBeenCalledTimes(
-        visible ? (arrival > 0 ? 4 : 3) : 2
-      );
-      if (visible) {
-        const track = fillRect.mock.calls.at(arrival > 0 ? -2 : -1)!;
-        const paintedStage = drawImage.mock.calls[0]!;
-        expect(paintedStage[2] + paintedStage[4]).toBeCloseTo(track[1]);
-        expect(paintedStage[3]).toBeCloseTo(track[2]);
-      }
-      if (visible && arrival > 0) {
-        const track = fillRect.mock.calls.at(-2)!;
-        const fill = fillRect.mock.calls.at(-1)!;
-        expect(fill[2]).toBeCloseTo(track[2] * sequenceFrame.passBeatProgress);
-      }
+      expect(drawImage.mock.calls[0]![0]).toBe(captured);
+      expect(captureMotion).toHaveBeenCalledTimes(1);
+      expect(captureMotion.mock.calls[0]![0]).toBe(animation);
+      expect(captureMotion.mock.calls[0]![1]).toMatchObject({
+        width: 200,
+        height: 250,
+      });
+      expect(animation.contains(labels)).toBe(true);
+      expect(animation.contains(paths)).toBe(true);
+      expect(animation.contains(header)).toBe(true);
+      expect(animation.contains(progress)).toBe(true);
+      expect(fillRect).toHaveBeenCalledTimes(2);
     }
   );
 });
