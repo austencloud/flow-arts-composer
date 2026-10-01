@@ -1,13 +1,41 @@
 # Halloween Tutorial Videos — Handoff (2026-09-30)
 
 Living document. Updated at every milestone by whichever agent holds the work.
-Last update: 2026-10-01 13:55 CDT (Claude Opus 5.5 session, ninth pass).
+Last update: 2026-10-01 14:46 CDT (final Post code and draft pass).
 No work branch is open. `codex/tutorial-videos-fixes`, `codex/auto-colour`,
 `codex/auto-colour-sky`, `codex/fill-box-save`,
 `codex/post-sequence-actions`, `codex/whole-recording-timing`,
 `codex/post-header-save`, `codex/post-header-save-narrow` and
 `codex/post-header-status-width` are merged to local main and removed.
 Nothing is pushed.
+
+## Update 2026-10-01 14:46 CDT: final Post fixes and saved drafts
+
+The blank-project incident's mechanism was confirmed: mount-time autosave could
+write an empty project (no takes or track items) as the newest archive copy.
+The trigger was inferred from the timing of a Post code merge and reload. Local
+main now skips that empty mount save while retaining saves of real projects.
+The title highlight defaults to **On arrival**, with **During travel** as a
+Display switch. Both the live animation and export compositor use the setting.
+Focused tests passed (17 tests); `npm run check` reported zero errors and
+warnings during integration. The isolated browser loaded
+`https://localhost:5173/post` but required sign-in to inspect a saved project.
+
+New schema-validated archive files were appended from the newest valid copies:
+DCKΨ- `1790884017339-f81e2b26-c8eb-41b6-a110-26d90a39c09f.json` and
+ΩΛ-XJ `1790884017345-ba37b7ac-0531-4b3e-a66f-3d49f5504423.json`.
+The older files remain. DCKΨ- now has a 1 s run/slow overlap (run fadeOut 0;
+slow starts 21.411648), anchored overlays follow the slow clip, the card still
+starts at 79.277886, and the last captions finish before the card. Both DCKΨ-
+and ΩΛ-XJ have the `Created with\nFlow Arts Composer` credit anchored 2 s into
+their cards. Woods already had that credit and needed no new archive file.
+A second scan found all three latest copies unchanged and valid. The guarded
+edit script is `docs/superpowers/specs/tutorial-videos-scripts/apply-final-post-edits.ts`.
+
+**Before clicking anything in any open Post tab, reload every Post tab.** A hot
+remount can keep a stale in-memory draft, and the next edit can save it over the
+newer archive. Austen exports the three videos himself tonight. This work is on
+local main and has not been pushed.
 
 ## Update 2026-10-01 13:55 CDT: notation verified, Save in the header
 
