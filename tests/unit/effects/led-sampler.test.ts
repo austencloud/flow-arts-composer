@@ -133,6 +133,58 @@ describe("LedSampler device handling", () => {
 });
 
 describe("LedSampler color", () => {
+  it("colors both ends of each hand from its own Prop Colors slot", () => {
+    const leds = warmedSampler().update(
+      prop(0),
+      prop(Math.PI),
+      SAMPLER_CONFIG,
+      0,
+      DEFAULT_LED_CONFIG
+    );
+
+    expect(
+      leds.map(({ r, g, b }) => [r, g, b].map((v) => Math.round(v * 255)))
+    ).toEqual([
+      [33, 150, 243],
+      [33, 150, 243],
+      [244, 67, 54],
+      [244, 67, 54],
+    ]);
+  });
+
+  it("uses chosen prop colors for both ends of their respective hands", () => {
+    const leds = warmedSampler().update(
+      prop(0),
+      prop(Math.PI),
+      { ...SAMPLER_CONFIG, primaryPropColors: { left: "#12ab34", right: "#ef5678" } },
+      0,
+      DEFAULT_LED_CONFIG
+    );
+
+    expect(
+      leds.map(({ r, g, b }) => [r, g, b].map((v) => Math.round(v * 255)))
+    ).toEqual([
+      [18, 171, 52],
+      [18, 171, 52],
+      [239, 86, 120],
+      [239, 86, 120],
+    ]);
+  });
+
+  it("keeps an entire pixel staff in its hand's chosen color", () => {
+    const leds = warmedSampler().update(
+      prop(0),
+      prop(Math.PI),
+      { ...SAMPLER_CONFIG, primaryPropColors: { left: "#00ff00", right: "#ff00ff" } },
+      0,
+      config({ device: { kind: "pixel-staff", ledCount: 32 } })
+    );
+
+    expect(leds).toHaveLength(64);
+    expect(leds.slice(0, 32).every(({ r, g, b }) => r === 0 && g === 1 && b === 0)).toBe(true);
+    expect(leds.slice(32).every(({ r, g, b }) => r === 1 && g === 0 && b === 1)).toBe(true);
+  });
+
   it("emits the pattern color unscaled, whatever the brightness level", () => {
     // Brightness is a flux term the renderer applies once, to prop flux. The
     // sampler applying it too squared it, so a level-5 strip came out 25x.
