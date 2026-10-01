@@ -6,6 +6,7 @@ import { renderPostStudioFrame } from "$lib/shared/media-composition/services/po
 import { CanvasFrameCapturer } from "$lib/shared/video-export/services/canvas-frame-capturer";
 import type { PostStudioLayerPainter } from "$lib/shared/media-composition/services/post-studio-layer-painter";
 import { PostStudioExportVideoFrames } from "$lib/shared/media-composition/services/post-studio-export-video-frames";
+import { PostStudioPictographCapture } from "$lib/shared/media-composition/services/post-studio-pictograph-capture";
 
 export interface PostStudioExportProgress {
   completedFrames: number;
@@ -67,6 +68,7 @@ export async function exportPostStudioVideo(
   const encoder = new BackgroundVideoEncoder();
   const capturer = new CanvasFrameCapturer();
   const cardFrameCache = new Map<string, HTMLCanvasElement>();
+  const pictographCapture = new PostStudioPictographCapture();
   const videoFrames = new PostStudioExportVideoFrames(
     input.videoSources ?? new Map(),
     input.signal
@@ -118,6 +120,7 @@ export async function exportPostStudioVideo(
         preset: input.preset,
         layers: input.getLayers(),
         cardFrameCache,
+        pictographCapture,
         painters: input.painters,
         videoFrames,
         timeSeconds,
@@ -155,6 +158,7 @@ export async function exportPostStudioVideo(
     encoder.cancel();
     throw error;
   } finally {
+    pictographCapture.dispose();
     videoFrames.dispose();
   }
 }
