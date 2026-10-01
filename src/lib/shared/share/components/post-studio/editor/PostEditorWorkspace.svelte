@@ -199,6 +199,7 @@
     sharing: boolean;
     selectedPropType: PropType;
     onPropChange: (propType: PropType) => void;
+    onProjectPropChange: (propType: PropType | undefined) => void;
     /** Sound a shared link asked for, applied once on open. */
     audioSeed: "takes" | "silent" | null;
     /** `chosen` is false for the sound a saved project opens with. */
@@ -225,6 +226,7 @@
     sharing,
     selectedPropType,
     onPropChange,
+    onProjectPropChange,
     audioSeed,
     onAudioChange,
     registerExport,
@@ -266,6 +268,17 @@
       catalog.find((video) => video.videoId === videoId) ?? null,
     hasAnimationOverlay: () => overlayPainter !== null,
   });
+
+  $effect(() => onProjectPropChange(editor.project.propType));
+
+  function choosePropType(propType: PropType): void {
+    editor.edit((project, context) =>
+      project.propType === propType
+        ? project
+        : { ...project, propType, updatedAt: context.now }
+    );
+    onPropChange(propType);
+  }
   const videoPreviews = createPostVideoPreviews(
     () =>
       editor.takes.map((take) => ({
@@ -1782,7 +1795,7 @@
       propType: selectedPropType,
       toggle: editor.togglePlayback,
       setBpm: () => undefined,
-      setProp: onPropChange,
+      setProp: choosePropType,
     }))
   );
 
@@ -2044,6 +2057,7 @@
         originalAudioStartSeconds: 0,
         onProgress: (progress) => (exportProgress = progress),
         shouldCancel: () => exportCancelled,
+        signal: exportAbort.signal,
       });
       if (exportedUrl) URL.revokeObjectURL(exportedUrl);
       exportedUrl = URL.createObjectURL(blob);
@@ -2209,7 +2223,7 @@
       showTempoControls={false}
       showEffectsPlayback={false}
       {selectedPropType}
-      {onPropChange}
+      onPropChange={choosePropType}
       sequence={displaySequence}
     />
   {:else if tool === "export"}
@@ -2246,6 +2260,9 @@
 {#snippet panel(tool: PostPanelToolId, placement: "dock" | "side")}
   <PostToolPanel
     {tool}
+    fitContent={tool === "appearance" &&
+      (editor.selectedItem?.kind === "animation" ||
+        editor.selectedItem?.kind === "moves")}
     subject={editor.selectedItem ? labelFor(editor.selectedItem) : undefined}
     onDone={placement === "dock" && !cropMode ? closePanel : undefined}
     {placement}
@@ -2888,7 +2905,9 @@
       max(0.5rem, env(safe-area-inset-bottom, 0px));
     border-top: 1px solid var(--theme-stroke, #484755);
     background: var(--theme-panel-bg, rgba(10, 12, 18, 0.92));
-    backdrop-filter: blur(12px);
+    /* A filter would anchor the appearance drawers to this dock, clipping
+       their headers on phones instead of positioning them in the viewport. */
+    backdrop-filter: none;
   }
 
   .dock.timing {

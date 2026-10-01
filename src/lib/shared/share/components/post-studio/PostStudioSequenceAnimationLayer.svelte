@@ -294,7 +294,7 @@
     {:else if breakdownMotion && stepData}
       <div class="pictograph-motion" data-pictograph-motion>
         {#if animationAppearance}
-          {#key animationAppearance.propType}
+          {#key `${animationAppearance.propType}:${animationAppearance.propLook}`}
             <AnimatorCanvas
               {leftProp}
               {rightProp}
@@ -307,6 +307,7 @@
               isPlaying={playing}
               leftPropType={animationAppearance.propType ?? leftPropType}
               rightPropType={animationAppearance.propType ?? rightPropType}
+              propLook={animationAppearance.propLook}
               word={sequence.word}
               previewDarkMode={animationAppearance.darkMode ?? true}
               hideProgressBar
@@ -377,7 +378,7 @@
     {:else if !breakdownMotion && (animationAppearance || !shared?.ownsCanvas(owner))}
       <!-- Prop crossfades use clip time, which stands still while paused. A new
          prop starts with its final artwork without advancing the post. -->
-      {#key animationAppearance?.propType}
+      {#key `${animationAppearance?.propType}:${animationAppearance?.propLook}`}
         <AnimatorCanvas
           {leftProp}
           {rightProp}
@@ -390,6 +391,7 @@
           isPlaying={playing}
           leftPropType={animationAppearance?.propType ?? leftPropType}
           rightPropType={animationAppearance?.propType ?? rightPropType}
+          propLook={animationAppearance?.propLook}
           word={animationAppearance ? sequence.word : null}
           previewDarkMode={animationAppearance?.darkMode ?? true}
           hideProgressBar

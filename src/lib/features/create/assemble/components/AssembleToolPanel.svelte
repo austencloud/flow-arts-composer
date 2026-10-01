@@ -166,7 +166,11 @@
     <div class="main-area">
       <div class="grid-slot">
         <div class="stage-slot">
-          <InteractiveGrid {builderState} onStepCapExceeded={checkStepCap} />
+          <InteractiveGrid
+            {builderState}
+            onStepCapExceeded={checkStepCap}
+            fillPanel
+          />
           <BuilderStageActions {builderState} />
         </div>
         <BuilderControls {builderState} />
@@ -243,17 +247,17 @@
     width: 100%;
     max-width: none;
     height: 100%;
-    display: grid;
-    /* The dock under the grid takes the second row. */
-    grid-template-rows: minmax(0, 1fr) auto;
-    justify-items: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
   }
 
   .stage-slot {
     position: relative;
-    grid-row: 1;
+    /* The canvas fills the space above the dock. Its SVG preserves the
+       grid's proportions within this rectangular viewport. */
+    flex: 1 1 0;
     width: 100%;
-    height: 100%;
     min-width: 0;
     min-height: 0;
     display: grid;

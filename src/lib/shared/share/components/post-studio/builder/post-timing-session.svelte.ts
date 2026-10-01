@@ -811,6 +811,21 @@ export function createPostTimingSession(builder: TimingHost) {
         current.snap === snap ? current : { ...current, snap }
       );
     },
+    setLandingHoldPercent(percent: number): boolean {
+      if (!Number.isFinite(percent) || percent < 0 || percent > 90) return false;
+      const landingHoldRatio = Math.round(percent) / 100;
+      editCurrent((current) =>
+        (current.landingHoldRatio ?? 0) === landingHoldRatio
+          ? current
+          : {
+              ...current,
+              ...(landingHoldRatio === 0
+                ? { landingHoldRatio: undefined }
+                : { landingHoldRatio }),
+            }
+      );
+      return true;
+    },
     beatOneHere(): void {
       const at = mediaSeconds;
       recountCurrent((current, id) =>

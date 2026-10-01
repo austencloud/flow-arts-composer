@@ -33,6 +33,7 @@ interface Mark {
   y: number;
   fontPx: number;
   alpha: number;
+  align: string;
 }
 
 /**
@@ -80,6 +81,7 @@ class FakeContext {
       y,
       fontPx: this.fontPx,
       alpha: this.globalAlpha,
+      align: this.textAlign,
     });
   }
   fillText(text: string, x: number, y: number): void {
@@ -90,6 +92,7 @@ class FakeContext {
       y,
       fontPx: this.fontPx,
       alpha: this.globalAlpha,
+      align: this.textAlign,
     });
   }
 }
@@ -306,6 +309,80 @@ describe("createTextItemPainter", () => {
       marks.filter((mark) => mark.type === "fill").map((mark) => mark.text)
     ).toEqual(["Don't give up! ", "Again"]);
     expect(marks[0]!.fontPx).toBeCloseTo((84 * 0.790714 * 1080) / 738);
+  });
+
+  it("moves native text across the same box for every alignment with letter animation on or off", async () => {
+    const rect = { x: 37, y: 0, width: 540, height: 200 };
+    const base = makeText({
+      text: "AB",
+      box: { x: 0, y: 0, width: 0.5, height: 0.2 },
+      startSeconds: 0,
+      endSeconds: 4,
+      style: {
+        fontFamily: "PermanentMarker.ttf",
+        fontSizeNative: 84,
+        fontScale: 0.790714,
+        sourceCanvasWidth: 738,
+        letterSpacing: 0,
+        lineSpacing: 1,
+        alignment: "left",
+        alpha: 1,
+      },
+    });
+    const animation = {
+      kind: "letter-slide" as const,
+      inDurationSeconds: 1,
+      outDurationSeconds: 1,
+      entranceProgress: 0.983333,
+      exitProgress: 0,
+    };
+    const expectedLeft = (alignment: "left" | "center" | "right") => {
+      const fontPx = (84 * 0.790714 * rect.width) / (0.5 * 738);
+      const lineWidth = 2 * fontPx * 0.6;
+      const anchor =
+        alignment === "left"
+          ? rect.x
+          : alignment === "right"
+            ? rect.x + rect.width
+            : rect.x + rect.width / 2;
+      return (
+        anchor -
+        (alignment === "left"
+          ? 0
+          : alignment === "right"
+            ? lineWidth
+            : lineWidth / 2)
+      );
+    };
+
+    for (const animated of [false, true]) {
+      for (const alignment of ["left", "center", "right"] as const) {
+        const marks = (
+          await paint(
+            () => ({
+              ...base,
+              style: { ...base.style!, alignment },
+              animation: animated ? animation : undefined,
+            }),
+            rect,
+            { ...FRAME, projectTimeSeconds: 2 }
+          )
+        ).filter((mark) => mark.type === "fill");
+        const first = marks[0]!;
+        const leftEdge = animated
+          ? first.x - (first.fontPx * 0.6) / 2
+          : first.x -
+            (first.align === "left"
+              ? 0
+              : first.align === "right"
+                ? 2 * first.fontPx * 0.6
+                : first.fontPx * 0.6);
+        expect(leftEdge).toBeCloseTo(expectedLeft(alignment), 5);
+        expect(marks.map((mark) => mark.text)).toEqual(
+          animated ? ["A", "B"] : ["AB"]
+        );
+      }
+    }
   });
 
   it("excludes spaces from the recovered letter selector's stagger", async () => {

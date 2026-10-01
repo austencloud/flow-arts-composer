@@ -9,7 +9,14 @@ import {
 import { compilePostProject } from "$lib/shared/media-composition/domain/post-project-compiler";
 import { evaluatePresetFrame } from "$lib/shared/media-composition/services/frame-evaluator";
 import { sequenceFrameAt } from "$lib/shared/media-composition/domain/sequence-frame";
-import { NOW, card, overlay, project, text } from "./post-project-fixtures";
+import {
+  NOW,
+  card,
+  overlay,
+  project,
+  text,
+  video,
+} from "./post-project-fixtures";
 import { createTextItemPainter } from "$lib/shared/media-composition/services/text-item-painter";
 
 const { captureMotion } = vi.hoisted(() => ({ captureMotion: vi.fn() }));
@@ -21,6 +28,68 @@ const preset = POST_STUDIO_PRESETS.find(
 const region = preset.regions.find(
   (candidate) => candidate.id === "performance"
 )!;
+
+describe("split animation export", () => {
+  it("draws the later piece at a shared take edge from the preview's mounted surface", async () => {
+    const compiled = compilePostProject(
+      project(
+        [
+          video("first", { takeId: "a", sourceOut: 4 }),
+          video("second", { takeId: "b", start: 4, sourceOut: 3 }),
+        ],
+        [[overlay("motion", "animation", { start: 0, duration: 7 })]]
+      ),
+      { now: NOW }
+    )!;
+    const layers = evaluatePresetFrame(
+      compiled.preset,
+      compiled.durationSeconds,
+      4
+    ).filter((layer) => layer.regionId === "motion");
+    expect(layers.map((layer) => layer.clipId)).toEqual([
+      "motion~0",
+      "motion~1",
+    ]);
+
+    const root = document.createElementNS(
+      "http://www.w3.org/1999/xhtml",
+      "div"
+    );
+    const mounted = document.createElementNS(
+      "http://www.w3.org/1999/xhtml",
+      "div"
+    );
+    mounted.className = "media-layer";
+    mounted.dataset.clipId = "motion~1";
+    mounted.dataset.renderMode = "sequence-animation";
+    root.append(mounted);
+    const fillRect = vi.fn();
+    const context = new Proxy(
+      { fillRect },
+      {
+        get(target, key) {
+          return Reflect.get(target, key) ?? vi.fn();
+        },
+      }
+    );
+    const canvas = document.createElementNS(
+      "http://www.w3.org/1999/xhtml",
+      "canvas"
+    ) as HTMLCanvasElement;
+    vi.spyOn(canvas, "getContext").mockReturnValue(
+      context as unknown as CanvasRenderingContext2D
+    );
+
+    await renderPostStudioFrame({
+      canvas,
+      root,
+      preset: compiled.preset,
+      layers,
+      cardFrameCache: new Map(),
+    });
+    expect(fillRect).toHaveBeenCalledTimes(2);
+  });
+});
 
 describe("painted title overflow", () => {
   it.each([true, false])(
