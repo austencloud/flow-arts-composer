@@ -199,6 +199,7 @@
     sharing: boolean;
     selectedPropType: PropType;
     onPropChange: (propType: PropType) => void;
+    onProjectPropChange: (propType: PropType | undefined) => void;
     /** Sound a shared link asked for, applied once on open. */
     audioSeed: "takes" | "silent" | null;
     /** `chosen` is false for the sound a saved project opens with. */
@@ -225,6 +226,7 @@
     sharing,
     selectedPropType,
     onPropChange,
+    onProjectPropChange,
     audioSeed,
     onAudioChange,
     registerExport,
@@ -266,6 +268,17 @@
       catalog.find((video) => video.videoId === videoId) ?? null,
     hasAnimationOverlay: () => overlayPainter !== null,
   });
+
+  $effect(() => onProjectPropChange(editor.project.propType));
+
+  function choosePropType(propType: PropType): void {
+    editor.edit((project, context) =>
+      project.propType === propType
+        ? project
+        : { ...project, propType, updatedAt: context.now }
+    );
+    onPropChange(propType);
+  }
   const videoPreviews = createPostVideoPreviews(
     () =>
       editor.takes.map((take) => ({
@@ -1782,7 +1795,7 @@
       propType: selectedPropType,
       toggle: editor.togglePlayback,
       setBpm: () => undefined,
-      setProp: onPropChange,
+      setProp: choosePropType,
     }))
   );
 
@@ -2209,7 +2222,7 @@
       showTempoControls={false}
       showEffectsPlayback={false}
       {selectedPropType}
-      {onPropChange}
+      onPropChange={choosePropType}
       sequence={displaySequence}
     />
   {:else if tool === "export"}
