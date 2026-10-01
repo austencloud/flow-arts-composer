@@ -1852,10 +1852,9 @@
   @container shape-matrix-drill-compact (min-width: 42rem) and (min-aspect-ratio: 5 / 6) {
     .drill {
       grid-template-columns: clamp(15rem, 33%, 18rem) minmax(0, 1fr);
-      grid-template-rows: auto minmax(0, 1fr) auto auto;
+      grid-template-rows: minmax(0, 1fr) auto auto;
       grid-template-areas:
         "modes media"
-        ". media"
         "controls media"
         "action media";
       column-gap: 0.8rem;
@@ -1864,6 +1863,7 @@
 
     .mode-picker {
       grid-area: modes;
+      grid-template-rows: minmax(0, 1fr) auto;
     }
 
     /* Open leads on its own row; Save and Share share the one under it, so
@@ -1934,6 +1934,7 @@
 
     .mode-picker {
       align-self: center;
+      grid-template-rows: auto auto;
     }
 
     .select-action {
