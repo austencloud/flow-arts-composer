@@ -4,6 +4,15 @@
   import PathShapePanel from "$lib/shared/animation-engine/components/settings-panels/PathShapePanel.svelte";
   import EffortPanel from "$lib/shared/animation-engine/components/settings-panels/EffortPanel.svelte";
   import PostScopedEffectsPanel from "./PostScopedEffectsPanel.svelte";
+  import PostAppearanceChooser from "./PostAppearanceChooser.svelte";
+  import { localizedPropName } from "$lib/shared/settings/components/tabs/prop-type/localized-prop-name";
+  import {
+    PROP_PICKER_SECTIONS,
+    getBasePropType,
+    isPropActive,
+    isPremiumCosmeticProp,
+  } from "$lib/shared/pictograph/prop/domain/prop-type-display-registry";
+  import { isPremiumCosmeticVisible } from "$lib/shared/subscription/domain/premium-prop-access";
   import BentoPropGrid from "$lib/shared/settings/components/tabs/prop-type/BentoPropGrid.svelte";
   import IconRailNav from "$lib/shared/animation-panel/pill-nav/IconRailNav.svelte";
   import LightsToggleButton from "$lib/shared/ui/components/LightsToggleButton.svelte";
@@ -11,6 +20,8 @@
   import { EFFORTS } from "$lib/shared/effort/domain/effort-types";
   import {
     EFFECT_COLORS,
+    EFFECTS,
+    EFFECT_LABELS,
     effectNavIcon,
   } from "$lib/shared/animation-engine/components/effects-panel/effect-registry";
   import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
@@ -64,6 +75,37 @@
 
   const visibility = new AnimationVisibilityStateManager({ ephemeral: true });
   let darkMode = $state(visibility.isDarkMode());
+  let effortPreset = $state(visibility.getEffortPreset());
+  let pathShape = $state(visibility.getPathShape());
+  let motionAware = $state(visibility.getMotionAwarePaths());
+  const propCount = $derived(
+    PROP_PICKER_SECTIONS.flatMap((section) => section.props).filter(
+      (prop) =>
+        (prop === getBasePropType(prop) || isPremiumCosmeticProp(prop)) &&
+        (isPremiumCosmeticProp(prop)
+          ? isPremiumCosmeticVisible()
+          : isPropActive(prop))
+    ).length
+  );
+  const effortLabel = $derived(
+    EFFORTS.find((effort) => effort.id === effortPreset)?.label ?? "Linear"
+  );
+  const pathLabel = $derived(
+    motionAware
+      ? "Hybrid"
+      : pathShape === "linear"
+        ? "Linear"
+        : pathShape === "concave"
+          ? "Concave"
+          : "Arc"
+  );
+  function updateSummary(): void {
+    effortPreset = visibility.getEffortPreset();
+    pathShape = visibility.getPathShape();
+    motionAware = visibility.getMotionAwarePaths();
+  }
+  visibility.registerObserver(updateSummary);
+  onDestroy(() => visibility.unregisterObserver(updateSummary));
   const sourceEffects = getEffectsConfigContext();
   const initialEffects = sourceEffects?.snapshot() ?? DEFAULT_EFFECTS_CONFIG;
   const initialTrail = animationSettings.snapshot().trail;
@@ -241,35 +283,80 @@
       tabindex="0"
     >
       {#if activeSection === "props"}
-        <BentoPropGrid
-          selectedPropType={pickedPropType ?? defaultPropType}
-          onSelect={(propType) => {
-            pickedPropType = propType;
-            save();
-          }}
-          showColors={false}
-          showPropLook={false}
-          showAppearance={false}
-          scrollMode="host"
-          variant="inline"
-          flat
-          tileDensity="comfortable"
-        />
+        <PostAppearanceChooser
+          title="Props"
+          value={localizedPropName(pickedPropType ?? defaultPropType)}
+          {fill}
+          count={propCount}
+          tileWidth={96}
+          tileHeight={112}
+          insetX={36}
+          chromeHeight={44}
+        >
+          {#snippet children(bounded)}
+            <BentoPropGrid
+              selectedPropType={pickedPropType ?? defaultPropType}
+              onSelect={(propType) => {
+                pickedPropType = propType;
+                save();
+              }}
+              showColors={false}
+              showPropLook={false}
+              showAppearance={false}
+              scrollMode={bounded ? "internal" : "host"}
+              fill={bounded}
+              minTileSize={88}
+              variant="inline"
+              flat
+              tileDensity="comfortable"
+            />
+          {/snippet}
+        </PostAppearanceChooser>
       {:else if activeSection === "effects"}
-        <PostScopedEffectsPanel
-          effects={trailEffects}
-          animationSettingsState={trailSettings}
-          onSettingChange={saveEffects}
-        />
+        <PostAppearanceChooser
+          title="Effects"
+          value={EFFECT_LABELS[trailEffects.activeEffect] ?? "Off"}
+          {fill}
+          count={EFFECTS.length}
+          tileWidth={96}
+          tileHeight={72}
+          chromeHeight={52}
+        >
+          {#snippet children(bounded)}
+            <PostScopedEffectsPanel
+              fill={bounded}
+              effects={trailEffects}
+              animationSettingsState={trailSettings}
+              onSettingChange={saveEffects}
+            />
+          {/snippet}
+        </PostAppearanceChooser>
       {:else if activeSection === "efforts"}
-        <PathShapePanel
-          visibilityManagerOverride={visibility}
-          showHelp={false}
-        />
-        <div class="effort-section">
-          <h3>Movement style</h3>
-          <EffortPanel visibilityManagerOverride={visibility} columns={2} />
-        </div>
+        <PostAppearanceChooser
+          title="Efforts"
+          value={`${effortLabel} · ${pathLabel} paths`}
+          {fill}
+          count={EFFORTS.length}
+          tileWidth={104}
+          tileHeight={88}
+          chromeHeight={140}
+        >
+          {#snippet children(bounded)}
+            <div class="efforts-controls" class:bounded>
+              <PathShapePanel
+                visibilityManagerOverride={visibility}
+                showHelp={false}
+              />
+              <div class="effort-section">
+                <h3>Movement style</h3>
+                <EffortPanel
+                  visibilityManagerOverride={visibility}
+                  fit={bounded}
+                />
+              </div>
+            </div>
+          {/snippet}
+        </PostAppearanceChooser>
       {:else}
         <div class="canvas-theme">
           <span>Canvas theme</span>
@@ -320,11 +407,11 @@
     background: var(--theme-panel-bg, #08080c);
   }
   .section-content {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr);
-    gap: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
     min-width: 0;
-    padding-bottom: 1rem;
+    padding-bottom: 0;
   }
   .section-content.display {
     display: flex;
@@ -332,7 +419,7 @@
     gap: 0.5rem;
     padding-bottom: 0;
   }
-  .fill .section-content.display {
+  .fill .section-content {
     flex: 1;
     min-height: 0;
   }
@@ -341,13 +428,27 @@
     outline-offset: -2px;
   }
   .effort-section {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr);
+    display: flex;
+    flex-direction: column;
     gap: 8px;
+  }
+  .efforts-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    min-width: 0;
+  }
+  .efforts-controls.bounded {
+    flex: 1;
+    min-height: 0;
+  }
+  .bounded .effort-section {
+    flex: 1;
+    min-height: 0;
   }
   h3 {
     margin: 0;
     color: var(--theme-text, #fff);
-    font-size: 0.82rem;
+    font-size: var(--font-size-min, 14px);
   }
 </style>

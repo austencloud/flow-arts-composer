@@ -112,6 +112,26 @@
   </header>
 
   <div class="columns">
+    <section class="responsive-post">
+      <h2>Responsive Post appearance</h2>
+      <div
+        class="panel post-body"
+        data-post-box="Responsive Post appearance"
+        style="width: 100%; height: min(70dvh, 1000px)"
+      >
+        <PostToolPanel tool="appearance" placement="side" bare fitContent>
+          <div class="item-tool">
+            <PostAnimationAppearanceTool
+              fill
+              editor={postEditor}
+              locked={false}
+              appearanceOverride={null}
+              onAppearanceChange={() => {}}
+            />
+          </div>
+        </PostToolPanel>
+      </div>
+    </section>
     {#each WIDTHS as w (w.px)}
       <section>
         <h2>{w.label} <span>{w.px} x {w.h}</span></h2>
@@ -169,6 +189,9 @@
 </div>
 
 <style>
+  .responsive-post {
+    width: min(100%, 480px);
+  }
   .harness {
     padding: 24px;
     min-height: 100vh;
