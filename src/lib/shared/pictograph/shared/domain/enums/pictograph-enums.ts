@@ -155,18 +155,21 @@ export enum ElementalType {
 }
 
 const ELEMENT_IMAGE_FILE: Record<ElementalType, string> = {
-  [ElementalType.WATER]: "water-v2",
-  [ElementalType.FIRE]: "fire-v2",
-  [ElementalType.EARTH]: "earth-v2",
-  [ElementalType.AIR]: "air-v2",
-  [ElementalType.SUN]: "sun-v4",
-  [ElementalType.MOON]: "moon-v2",
+  [ElementalType.WATER]: "norm/water",
+  [ElementalType.FIRE]: "norm/fire",
+  [ElementalType.EARTH]: "norm/earth",
+  [ElementalType.AIR]: "norm/air",
+  [ElementalType.SUN]: "norm/sun",
+  [ElementalType.MOON]: "norm/moon",
 };
 
-// Live render path serves the WebP variants (~30-44 KB each vs 0.5-1.3 MB
-// PNGs) — they're SW-precached for offline, so weight matters. The print/card
-// pipeline (choreo-card/domain/tnd-element.ts) intentionally keeps the
-// lossless PNGs. Renaming a file here means updating ELEMENT_FILES in
+// The normalized set (trimmed, perceptually sized, centered in a square with
+// the family code baked into the art) is the one source for every surface;
+// the shape matrix's TND_ELEMENTS points at the same art. Live render serves
+// the WebP variants (~28-60 KB each vs 270-450 KB PNGs) because they are
+// SW-precached for offline. The print/card pipeline
+// (choreo-card/domain/tnd-element.ts) intentionally keeps the lossless PNGs.
+// Renaming a file here means updating ELEMENT_FILES in
 // scripts/generate-svg-precache-manifest.cjs too.
 export function getElementImagePath(element: ElementalType | string): string {
   const filename = ELEMENT_IMAGE_FILE[element as ElementalType] ?? element;

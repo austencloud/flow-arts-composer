@@ -1,13 +1,13 @@
 # Halloween Tutorial Videos — Handoff (2026-09-30)
 
 Living document. Updated at every milestone by whichever agent holds the work.
-Last update: 2026-10-01 12:45 CDT (Claude Opus 5.5 session, eighth pass).
+Last update: 2026-10-01 12:50 CDT (Claude Opus 5.5 session, eighth pass).
 No work branch is open. `codex/tutorial-videos-fixes`, `codex/auto-colour`,
 `codex/auto-colour-sky`, `codex/fill-box-save`,
 `codex/post-sequence-actions` and `codex/whole-recording-timing` are merged to
 local main and removed. Nothing is pushed.
 
-## Update 2026-10-01 12:45 CDT: whole recordings
+## Update 2026-10-01 12:50 CDT: whole recordings
 
 Austen could not drag the DCKΨ- slow breakdown's left edge to show the start
 position: every post was built on pre-cut clips, so no footage existed before
@@ -17,11 +17,20 @@ the cut. The fix is to point each take at the whole recording it was cut from
 which every clip edge can be dragged out. Recovered posts must link whole
 recordings from now on.
 
-| Video | Newest save (UTC)                                                | Whole recording                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
-| ----- | ---------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| DCKΨ- | 17:27:55.961Z, 11 items                                          | **Done.** Both takes on `dck-full.mp4` (358.933 s). The slow breakdown now starts 3.9 s earlier on the post (22.412–71.315, sourceIn 185.123), filling the gap before it with the start position; the moves strip starts with it; captions, card and all other items are unchanged. Imported in the built-in browser tab after Austen's "can you do it"; one Undo there removes the extension.                                                                             |
-| Δ-ΛRZ | 17:15:55.598Z, 9 items, both clips speed 0.7                     | **Built, not imported.** The relinked post was built from that save and checked (only source times, take keys and timing changed; no item moved). `woods-full.mp4` (178.216667 s) is in `static/word-videos/inshot-recovery/`, with the import file staged beside it as `tmp-woods.post-studio.json` (gitignored). Importing was refused by the permission check because Austen's OK covered DCKΨ- only. If woods was edited after 17:15:55Z, rebuild from the newer save. |
-| ΩΛ-XJ | 17:34:14Z and still moving; Austen editing it in another browser | **Not built.** He is editing it, and an import would lose to his next save. `omega-full.mp4` (204.337467 s) was encoded but is still in the session scratchpad (moving it was refused as irreversible). The post has a third take with no linked URL; read its takes before planning.                                                                                                                                                                                      |
+All three posts now link their whole recordings (all files in
+`static/word-videos/inshot-recovery/`). Each import landed as one undoable
+step in the built-in browser tab, was built from the newest save (confirmed by
+the `before-import` record), reached the disk archive, and moved no item:
+
+| Video | Imported project (UTC)                      | What changed                                                                                                                                                                                                 |
+| ----- | ------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| DCKΨ- | 17:27:55.961Z, 11 items                     | Both takes on `dck-full.mp4` (358.933 s). The slow breakdown also starts 3.9 s earlier (22.412–71.315, sourceIn 185.123), filling the gap before it with the start position; the moves strip starts with it. |
+| Δ-ΛRZ | 17:36:06.662Z, 9 items (from 17:15:55.598Z) | Both takes on `woods-full.mp4` (178.216667 s). Its slow part already opened on about 3 s of start position, so no extension. Checked on screen at 0:08 (run, beat 11) and 0:30 (slow, moves inset).          |
+| ΩΛ-XJ | 17:41:42.144Z, 9 items (from 17:35:10.156Z) | Both takes on `omega-full.mp4` (204.337467 s). The spare catalog take (`take-3`, not on the timeline, "could not be loaded" before and after) is untouched. Checked at 0:10 (run, beat 14) and 0:40 (slow).  |
+
+Austen authorized each import and the large file moves in chat on
+2026-10-01 ("can you do it" for DCKΨ-; "Yes, load it now" for woods; ΩΛ-XJ
+after he stopped editing it).
 
 Plans (offset = where the old clip starts inside the whole recording; all four
 were confirmed frame-exact by comparing frames at several times):
@@ -191,8 +200,6 @@ No full export of any of the three exists yet.
 
 ## In flight
 
-0. Woods and ΩΛ-XJ whole recordings, each only after Austen says that post
-   is free and OKs the import (see the update at the top).
 1. Woods: select the Animation clip → Sequence → Mirror, then compare the
    animation with the footage by eye. Austen does it in his own window, or an
    agent does it once he says woods is free. It saves as

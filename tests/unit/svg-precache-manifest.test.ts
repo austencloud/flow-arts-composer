@@ -55,12 +55,12 @@ describe("svg precache manifest generator", () => {
     // Mirrors ELEMENT_IMAGE_FILE in pictograph-enums.ts — these exact variants
     // are what getElementImagePath() fetches at runtime. The lossless PNGs stay
     // on disk for the print/card pipeline and must NOT be precached (4.4 MB).
-    expect(assets).toContain("/images/elements/water-v2.webp");
-    expect(assets).toContain("/images/elements/fire-v2.webp");
-    expect(assets).toContain("/images/elements/earth-v2.webp");
-    expect(assets).toContain("/images/elements/air-v2.webp");
-    expect(assets).toContain("/images/elements/sun-v4.webp");
-    expect(assets).toContain("/images/elements/moon-v2.webp");
+    expect(assets).toContain("/images/elements/norm/water.webp");
+    expect(assets).toContain("/images/elements/norm/fire.webp");
+    expect(assets).toContain("/images/elements/norm/earth.webp");
+    expect(assets).toContain("/images/elements/norm/air.webp");
+    expect(assets).toContain("/images/elements/norm/sun.webp");
+    expect(assets).toContain("/images/elements/norm/moon.webp");
     expect(assets).not.toContain("/images/elements/water-v2.png");
     expect(assets).not.toContain("/images/elements/sun-v4.png");
   });
