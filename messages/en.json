@@ -6910,7 +6910,7 @@
   "post_staff_effect_none": "None",
   "post_editor_tool_labels": "Labels",
   "post_editor_tool_rename": "Rename",
-  "post_editor_tool_back": "Back",
+  "post_editor_tool_back": "Deselect",
   "post_editor_set_to_playhead": "Set to playhead",
   "post_editor_match_clip": "Match clip",
   "post_editor_own_time": "Own time",
