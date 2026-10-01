@@ -70,6 +70,8 @@
      * pictures that fills the card. Sidebar layout only.
      */
     fill?: boolean;
+    /** Post Studio can show the roster beside looks and tuning when its panel is wide. */
+    wideWorkspace?: boolean;
     /** Restrict the roster to what the host can draw. Omit for everything. */
     availableEffects?: readonly string[];
     animationSettingsState?: AnimationSettingsState;
@@ -97,6 +99,7 @@
     layout = "sidebar",
     showHeading = true,
     fill = false,
+    wideWorkspace = false,
     availableEffects,
     animationSettingsState = animationSettings,
     children,
@@ -133,6 +136,7 @@
   // clientHeight of 737, and a catalog sized from that overflows by half a
   // pixel and puts a scrollbar on the host.
   let panelRect = $state<DOMRectReadOnly>();
+  let wideRosterRect = $state<DOMRectReadOnly>();
   let footerBox = $state<ResizeObserverSize[]>();
   /** .sb-section padding, the row holding the Off button, and the gap under
    *  it. The catalog grid gets what is left of the section. */
@@ -155,7 +159,9 @@
   // bounded page can size the inactive catalog against the remaining height.
   const pictureHost = $derived(!showPlayback && !children);
   const rosterWidth = $derived(
-    Math.floor(panelRect?.width ?? 0) - CATALOG_CHROME_X
+    Math.floor(
+      wideWorkspace ? (wideRosterRect?.width ?? 0) : (panelRect?.width ?? 0)
+    ) - CATALOG_CHROME_X
   );
   /** The arrangement the roster takes whenever nothing is on. */
   const restingCatalogFit = $derived(
@@ -218,7 +224,10 @@
   });
 
   const sidebarView = $derived(
-    sidebarDetailOpen && activeEffect !== "none" && registration
+    !wideWorkspace &&
+      sidebarDetailOpen &&
+      activeEffect !== "none" &&
+      registration
       ? `detail-${activeEffect}`
       : catalogFit
         ? "catalog"
@@ -728,6 +737,7 @@
     class="effects-panel"
     class:fill
     class:detail-view={sidebarView.startsWith("detail-")}
+    class:wide-workspace={wideWorkspace}
     bind:contentRect={panelRect}
   >
     {#if showPlayback}
@@ -751,34 +761,16 @@
          Swapped rather than overlapped for the same reason as the dock: a
          4x4 tile grid dissolving through an inspector's stacked rows is two
          unrelated layouts printed on top of each other. -->
-    <Crossfade
-      key={sidebarKey}
-      animateHeight
-      mode="swap"
-      duration={DURATION.fast}
-    >
-      {#if sidebarView === "browser" || sidebarView === "catalog"}
+    {#if wideWorkspace}
+      <div class="wide-effects-workspace">
         <div
-          class="sb-section sb-browser"
-          class:catalog={sidebarView === "catalog"}
-          style:height={sidebarView === "catalog"
-            ? `${catalogRoom}px`
-            : undefined}
-          use:claimedViewTransitionName={{
-            name: `${rosterMorphName}-section`,
-            enabled: !!rosterMorphName,
-          }}
+          class="sb-section sb-browser wide-roster"
+          bind:contentRect={wideRosterRect}
         >
-          <div
-            class="sb-browser-head"
-            use:claimedViewTransitionName={{
-              name: `${rosterMorphName}-head`,
-              enabled: !!rosterMorphName,
-            }}
-          >
-            {#if showHeading}
-              <span class="sb-label">{t("effect_deep_effects")}</span>
-            {/if}
+          <div class="sb-browser-head">
+            {#if showHeading}<span class="sb-label"
+                >{t("effect_deep_effects")}</span
+              >{/if}
             <button
               type="button"
               class="sb-off-btn"
@@ -787,15 +779,7 @@
               onclick={handleSidebarDisable}
             >
               <i class="fas fa-power-off" aria-hidden="true"></i>
-              <span>
-                {activeEffect === "none"
-                  ? t("effect_deep_effects_off")
-                  : t("effect_deep_turn_off", {
-                      effect: effectUiLabel(
-                        EFFECT_LABELS[activeEffect] ?? "effect"
-                      ),
-                    })}
-              </span>
+              <span>{t("effect_deep_off")}</span>
             </button>
           </div>
           <EffectSelector
@@ -804,53 +788,141 @@
             onPrewarm={handleEffectPrewarm}
             activeAction="tune"
             {availableEffects}
-            catalog={sidebarView === "catalog" ? catalogFit : rosterFit}
+            catalog={rosterFit}
             portrait={catalogPortrait}
-            morphName={rosterMorphName}
           />
-
-          {#if sidebarView === "browser"}
+        </div>
+        <div class="wide-inspector">
+          {#if activeEffect !== "none" && registration}
+            <EffectsInspector
+              effect={activeEffect}
+              {registration}
+              config={effectsConfigState}
+              {activePresetId}
+              defaultChipId={DEFAULT_CHIP_ID}
+              customChipId={CUSTOM_CHIP_ID}
+              {customDisabled}
+              {customColors}
+              summary={currentSummary}
+              propType={animationSettingsState.currentPropType}
+              overrides={tuneOverrides}
+              showBack={false}
+              onBack={() => (sidebarDetailOpen = false)}
+              onDisable={handleSidebarDisable}
+              onSelectPreset={handlePresetSelect}
+              onSettingChange={(setting, previousValue, value, coalesce) =>
+                reportSetting(
+                  `tuning_${activeEffect}_${setting}`,
+                  previousValue,
+                  value,
+                  coalesce
+                )}
+            />
+          {/if}
+        </div>
+      </div>
+    {:else}
+      <Crossfade
+        key={sidebarKey}
+        animateHeight
+        mode="swap"
+        duration={DURATION.fast}
+      >
+        {#if sidebarView === "browser" || sidebarView === "catalog"}
+          <div
+            class="sb-section sb-browser"
+            class:catalog={sidebarView === "catalog"}
+            style:height={sidebarView === "catalog"
+              ? `${catalogRoom}px`
+              : undefined}
+            use:claimedViewTransitionName={{
+              name: `${rosterMorphName}-section`,
+              enabled: !!rosterMorphName,
+            }}
+          >
             <div
-              class="sb-dock"
+              class="sb-browser-head"
               use:claimedViewTransitionName={{
-                name: `${rosterMorphName}-dock`,
+                name: `${rosterMorphName}-head`,
                 enabled: !!rosterMorphName,
               }}
             >
-              {@render effectDock(
-                () => (sidebarDetailOpen = true),
-                t("effect_deep_tune"),
-                "tiles"
-              )}
+              {#if showHeading}
+                <span class="sb-label">{t("effect_deep_effects")}</span>
+              {/if}
+              <button
+                type="button"
+                class="sb-off-btn"
+                class:active={activeEffect === "none"}
+                aria-pressed={activeEffect === "none"}
+                onclick={handleSidebarDisable}
+              >
+                <i class="fas fa-power-off" aria-hidden="true"></i>
+                <span>
+                  {activeEffect === "none"
+                    ? t("effect_deep_effects_off")
+                    : t("effect_deep_turn_off", {
+                        effect: effectUiLabel(
+                          EFFECT_LABELS[activeEffect] ?? "effect"
+                        ),
+                      })}
+                </span>
+              </button>
             </div>
-          {/if}
-        </div>
-      {:else if activeEffect !== "none" && registration}
-        <EffectsInspector
-          effect={activeEffect}
-          {registration}
-          config={effectsConfigState}
-          {activePresetId}
-          defaultChipId={DEFAULT_CHIP_ID}
-          customChipId={CUSTOM_CHIP_ID}
-          {customDisabled}
-          {customColors}
-          summary={currentSummary}
-          propType={animationSettingsState.currentPropType}
-          overrides={tuneOverrides}
-          onBack={() => (sidebarDetailOpen = false)}
-          onDisable={handleSidebarDisable}
-          onSelectPreset={handlePresetSelect}
-          onSettingChange={(setting, previousValue, value, coalesce) =>
-            reportSetting(
-              `tuning_${activeEffect}_${setting}`,
-              previousValue,
-              value,
-              coalesce
-            )}
-        />
-      {/if}
-    </Crossfade>
+            <EffectSelector
+              {activeEffect}
+              onSelect={handleSidebarEffectSelect}
+              onPrewarm={handleEffectPrewarm}
+              activeAction="tune"
+              {availableEffects}
+              catalog={sidebarView === "catalog" ? catalogFit : rosterFit}
+              portrait={catalogPortrait}
+              morphName={rosterMorphName}
+            />
+
+            {#if sidebarView === "browser"}
+              <div
+                class="sb-dock"
+                use:claimedViewTransitionName={{
+                  name: `${rosterMorphName}-dock`,
+                  enabled: !!rosterMorphName,
+                }}
+              >
+                {@render effectDock(
+                  () => (sidebarDetailOpen = true),
+                  t("effect_deep_tune"),
+                  "tiles"
+                )}
+              </div>
+            {/if}
+          </div>
+        {:else if activeEffect !== "none" && registration}
+          <EffectsInspector
+            effect={activeEffect}
+            {registration}
+            config={effectsConfigState}
+            {activePresetId}
+            defaultChipId={DEFAULT_CHIP_ID}
+            customChipId={CUSTOM_CHIP_ID}
+            {customDisabled}
+            {customColors}
+            summary={currentSummary}
+            propType={animationSettingsState.currentPropType}
+            overrides={tuneOverrides}
+            onBack={() => (sidebarDetailOpen = false)}
+            onDisable={handleSidebarDisable}
+            onSelectPreset={handlePresetSelect}
+            onSettingChange={(setting, previousValue, value, coalesce) =>
+              reportSetting(
+                `tuning_${activeEffect}_${setting}`,
+                previousValue,
+                value,
+                coalesce
+              )}
+          />
+        {/if}
+      </Crossfade>
+    {/if}
 
     {#if children}{@render children()}{/if}
 
@@ -1090,6 +1162,23 @@
   .effects-panel {
     display: flex;
     flex-direction: column;
+    container: effects-panel / inline-size;
+  }
+
+  .wide-effects-workspace {
+    display: grid;
+    grid-template-columns: clamp(19rem, 35%, 31rem) minmax(0, 1fr);
+    min-width: 0;
+    align-items: start;
+  }
+
+  .wide-roster {
+    border-right: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.07));
+    border-bottom: none;
+  }
+
+  .wide-inspector {
+    min-width: 0;
     container: effects-panel / inline-size;
   }
 

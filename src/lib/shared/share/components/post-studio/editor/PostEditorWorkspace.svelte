@@ -3018,7 +3018,10 @@
      viewer's own side panel holds the top bar and the panel, and the rest
      stacks the same way. */
   .post-editor:is([data-layout="wide"], [data-layout="viewer"]) .layout {
-    --post-panel-width: clamp(20rem, 30cqw, 26rem);
+    --post-panel-width: max(
+      20rem,
+      calc(100cqw - 100cqh * var(--post-ratio) - 1rem)
+    );
     display: grid;
     grid-template-columns: minmax(0, 1fr);
     grid-template-rows:
@@ -3160,7 +3163,7 @@
   }
 
   .post-editor[data-layout="wide"] .panel-host {
-    flex: 0 0 var(--post-panel-width);
+    flex: 1 1 20rem;
   }
 
   .side-column {

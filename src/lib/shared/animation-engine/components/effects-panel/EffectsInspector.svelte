@@ -29,6 +29,7 @@
     propType?: string | null;
     overrides?: EffectControlOverrides;
     onBack: () => void;
+    showBack?: boolean;
     onDisable: () => void;
     onSelectPreset: (presetId: string) => void;
     onSettingChange?: (
@@ -52,6 +53,7 @@
     propType = null,
     overrides,
     onBack,
+    showBack = true,
     onDisable,
     onSelectPreset,
     onSettingChange,
@@ -84,13 +86,13 @@
   style:--effect-accent={registration.meta.color}
   style:--effect-accent-soft={`${registration.meta.color}22`}
 >
-  <header class="inspector-header">
-    <button class="back-action" type="button" onclick={onBack}>
-      <span class="back-arrow" aria-hidden="true">
-        <i class="fas fa-arrow-left"></i>
-      </span>
-      <span>{t("effect_deep_all_effects")}</span>
-    </button>
+  <header class="inspector-header" class:without-back={!showBack}>
+    {#if showBack}<button class="back-action" type="button" onclick={onBack}>
+        <span class="back-arrow" aria-hidden="true">
+          <i class="fas fa-arrow-left"></i>
+        </span>
+        <span>{t("effect_deep_all_effects")}</span>
+      </button>{/if}
 
     <span class="effect-identity">
       <span class="effect-icon" aria-hidden="true">
@@ -215,6 +217,10 @@
     gap: 8px;
     padding: 12px 16px;
     border-bottom: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.07));
+  }
+
+  .inspector-header.without-back {
+    grid-template-areas: "identity off";
   }
 
   .back-action,
