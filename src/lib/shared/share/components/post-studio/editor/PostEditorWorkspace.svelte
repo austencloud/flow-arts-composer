@@ -738,6 +738,9 @@
   let heldStageHeight = $state<number | null>(null);
   /** The tallest that phone panel may grow and still clear the preview. */
   let dockPanelMax = $state<number | null>(null);
+  let appearancePanelHeight = $state(0);
+  let appearanceDrawerOpen = $state(false);
+  let appearanceSnapPoint = $state<number | null>(1);
   let fileInput = $state<HTMLInputElement | null>(null);
   let recoveryInput = $state<HTMLInputElement | null>(null);
 
@@ -920,8 +923,24 @@
   const tools = $derived(toolRow(selection));
   const rowKey = $derived(`row:${tools.join(" ")}`);
   const shown = $derived(shownPanel(activeTool, selection, panelBeside));
+  const appearanceDockOpen = $derived(
+    layout === "phone" &&
+      !cropMode &&
+      !showTimingStage &&
+      shown === "appearance"
+  );
+  $effect(() => {
+    appearanceDrawerOpen = appearanceDockOpen;
+    if (appearanceDockOpen) appearanceSnapPoint = 1;
+  });
+  const appearanceSnapPoints = $derived.by(() => {
+    if (!appearancePanelHeight || !editorHeight) return null;
+    const maximum = Math.min(editorHeight * 0.88, 760);
+    const compact = Math.min(appearancePanelHeight + 32, maximum * 0.8);
+    return [0, compact, maximum];
+  });
   /** A phone shows the panel in the row's place, else the row. */
-  const dockKey = $derived(shown ?? rowKey);
+  const dockKey = $derived(appearanceDockOpen ? rowKey : (shown ?? rowKey));
   /**
    * The crop screen: the selected clip's Crop is open, so the stage shows
    * that clip alone with its window large in the middle. The share sheet, a
@@ -1028,7 +1047,7 @@
   $effect.pre(() => {
     const phone = layout === "phone" && !showTimingStage;
     const cropDock = phone && cropMode;
-    const holding = phone && !cropMode && shown !== null;
+    const holding = phone && !cropMode && shown !== null && !appearanceDockOpen;
     untrack(() => {
       // The crop screen sizes its own dock once it is on screen, below.
       if (cropDock) {
@@ -2362,9 +2381,6 @@
 {#snippet panel(tool: PostPanelToolId, placement: "dock" | "side")}
   <PostToolPanel
     {tool}
-    fitContent={tool === "appearance" &&
-      (editor.selectedItem?.kind === "animation" ||
-        editor.selectedItem?.kind === "moves")}
     subject={editor.selectedItem ? labelFor(editor.selectedItem) : undefined}
     onDone={placement === "dock" && !cropMode ? closePanel : undefined}
     {placement}
@@ -2772,7 +2788,7 @@
             duration={DURATION.fast}
             animateHeight
           >
-            {#if shown}
+            {#if shown && !appearanceDockOpen}
               {@render panel(shown, "dock")}
             {:else}
               {@render row()}
@@ -2806,6 +2822,38 @@
     aria-hidden="true"
   />
 </section>
+
+<Drawer
+  bind:isOpen={appearanceDrawerOpen}
+  bind:activeSnapPoint={appearanceSnapPoint}
+  title="Appearance"
+  placement="bottom"
+  class="post-appearance-main-drawer"
+  backdropClass="edit-panel-backdrop"
+  snapPoints={appearanceSnapPoints}
+  resizeWithSnapPoints
+  dragHandleOnly
+  closeOnSnapToZero
+  closeOnBackdrop={false}
+  modal={false}
+  trapFocus={false}
+  autoFocus={false}
+  setInertOnSiblings={false}
+  preventScroll={false}
+  keyboardShortcutsPassthrough
+  onOpenChange={(open) => {
+    if (!open && shown === "appearance") closePanel();
+  }}
+>
+  <div
+    class="appearance-drawer-panel"
+    bind:offsetHeight={appearancePanelHeight}
+    data-edit-history-shortcut-scope
+    data-viewer-keys-ignore
+  >
+    {@render panel("appearance", "dock")}
+  </div>
+</Drawer>
 
 <ConfirmDialog
   bind:isOpen={confirmClearPost}
@@ -2865,6 +2913,21 @@
 {/if}
 
 <style>
+  .appearance-drawer-panel {
+    padding: 0.5rem var(--post-gap, 0.75rem)
+      max(0.5rem, env(safe-area-inset-bottom, 0px));
+  }
+  :global(.post-appearance-main-drawer) {
+    --sheet-min-height: 0;
+    --sheet-max-height: min(88dvh, 760px);
+    --sheet-bg:
+      linear-gradient(
+        var(--theme-panel-bg, #0f0f14),
+        var(--theme-panel-bg, #0f0f14)
+      ),
+      var(--sheet-bg-solid, #0f0f14);
+    --sheet-filter: none;
+  }
   .canvas-tool {
     display: grid;
     gap: 1rem;

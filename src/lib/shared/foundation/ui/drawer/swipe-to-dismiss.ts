@@ -53,6 +53,10 @@ export type SwipePlacement = "bottom" | "top" | "right" | "left";
 export interface SwipeToDismissOptions {
   placement: SwipePlacement;
   dismissible: boolean;
+  /** Allow dragging toward a larger snap point as well as dismissal. */
+  allowReverseDrag?: boolean;
+  /** Reserve drawer gestures for the handle when content owns its own gestures. */
+  dragHandleOnly?: boolean;
   onDismiss: () => void;
   /** Called during drag with current state. isDragging=true on start/move, false on end */
   onDragChange?: (
@@ -258,7 +262,7 @@ export class SwipeToDismiss {
     const delta = this.damp(this.currentY - this.startY);
 
     if (this.options.placement === "bottom") {
-      return Math.max(0, delta); // Only allow downward
+      return this.options.allowReverseDrag ? delta : Math.max(0, delta);
     } else if (this.options.placement === "top") {
       return Math.min(0, delta); // Only allow upward
     }
@@ -341,7 +345,12 @@ export class SwipeToDismiss {
     // Bail out entirely for range sliders - dragging a slider thumb must never
     // be interpreted as a swipe-to-dismiss gesture
     const target = event.target as HTMLElement;
-    const rangeInput = target.closest('input[type="range"]') as HTMLInputElement | null;
+    if (this.options.dragHandleOnly && !target.closest(".drawer-handle")) {
+      return;
+    }
+    const rangeInput = target.closest(
+      'input[type="range"]'
+    ) as HTMLInputElement | null;
     if (rangeInput) {
       return;
     }
@@ -438,7 +447,10 @@ export class SwipeToDismiss {
       if (event instanceof MouseEvent) {
         const deltaX = Math.abs(event.clientX - this.startX);
         const deltaY = Math.abs(event.clientY - this.startY);
-        if (deltaX > DISMISS_THRESHOLDS.MOVEMENT_THRESHOLD || deltaY > DISMISS_THRESHOLDS.MOVEMENT_THRESHOLD) {
+        if (
+          deltaX > DISMISS_THRESHOLDS.MOVEMENT_THRESHOLD ||
+          deltaY > DISMISS_THRESHOLDS.MOVEMENT_THRESHOLD
+        ) {
           // Movement is intentional - promote to real drag
           this.isDragging = true;
           this.pendingMouseDrag = false;
@@ -463,7 +475,10 @@ export class SwipeToDismiss {
     if (this.delegatingToTopDrawer) {
       const deltaY = this.currentY - this.startY;
       const deltaX = this.currentX - this.startX;
-      if (Math.abs(deltaY) > DISMISS_THRESHOLDS.MOVEMENT_THRESHOLD || Math.abs(deltaX) > DISMISS_THRESHOLDS.MOVEMENT_THRESHOLD) {
+      if (
+        Math.abs(deltaY) > DISMISS_THRESHOLDS.MOVEMENT_THRESHOLD ||
+        Math.abs(deltaX) > DISMISS_THRESHOLDS.MOVEMENT_THRESHOLD
+      ) {
         this.hasMoved = true;
       }
       return;
@@ -477,7 +492,8 @@ export class SwipeToDismiss {
     // A vertical scroll can drift toward a side drawer's dismiss edge. Hand
     // that gesture back before horizontal drift cancels native scrolling.
     if (
-      (this.options.placement === "left" || this.options.placement === "right") &&
+      (this.options.placement === "left" ||
+        this.options.placement === "right") &&
       absDeltaY > absDeltaX &&
       absDeltaY > DISMISS_THRESHOLDS.MOVEMENT_THRESHOLD
     ) {
@@ -506,7 +522,9 @@ export class SwipeToDismiss {
     // since the detection can fail in complex flex layouts.
     if (
       isSwipingInScrollDirection &&
-      (absDeltaY > DISMISS_THRESHOLDS.MOVEMENT_THRESHOLD || absDeltaX > DISMISS_THRESHOLDS.MOVEMENT_THRESHOLD)
+      !this.options.allowReverseDrag &&
+      (absDeltaY > DISMISS_THRESHOLDS.MOVEMENT_THRESHOLD ||
+        absDeltaX > DISMISS_THRESHOLDS.MOVEMENT_THRESHOLD)
     ) {
       this.isDragging = false;
       this.options.onDragChange?.(0, 1, false);
@@ -518,7 +536,7 @@ export class SwipeToDismiss {
     if (
       this.scrollableContainer &&
       !this.scrollAtBoundary &&
-      isSwipingInDismissDirection
+      (isSwipingInDismissDirection || this.options.allowReverseDrag)
     ) {
       // Re-check boundary in case user scrolled to top during this gesture
       this.scrollAtBoundary = this.isScrollAtDismissBoundary(
@@ -544,10 +562,12 @@ export class SwipeToDismiss {
     // Gestures that began on a control only forfeit their click once they clear
     // real tap slop on the dismiss axis (see TAP_SLOP). Everything else keeps
     // the original 5px drag threshold.
-    const forfeitsTap =
-      dismissAxisTravel > DISMISS_THRESHOLDS.TAP_SLOP;
+    const forfeitsTap = dismissAxisTravel > DISMISS_THRESHOLDS.TAP_SLOP;
 
-    if (absDeltaY > DISMISS_THRESHOLDS.MOVEMENT_THRESHOLD || absDeltaX > DISMISS_THRESHOLDS.MOVEMENT_THRESHOLD) {
+    if (
+      absDeltaY > DISMISS_THRESHOLDS.MOVEMENT_THRESHOLD ||
+      absDeltaX > DISMISS_THRESHOLDS.MOVEMENT_THRESHOLD
+    ) {
       if (!this.startedOnInteractive || forfeitsTap) {
         this.hasMoved = true;
       }
@@ -556,11 +576,10 @@ export class SwipeToDismiss {
       }
     }
 
-    // Prevent default for valid drag directions (only if scroll is at boundary OR no scrollable container)
-    // AND only when swiping in dismiss direction
+    // Prevent native panning while the handle controls either snap direction.
     if (
       (this.scrollAtBoundary || !this.scrollableContainer) &&
-      isSwipingInDismissDirection
+      (isSwipingInDismissDirection || this.options.allowReverseDrag)
     ) {
       event.preventDefault();
     }
@@ -633,7 +652,11 @@ export class SwipeToDismiss {
     }
 
     // Check dismissal threshold based on placement
-    const wasAboveThreshold = this.isAboveDismissThreshold(deltaX, deltaY, duration);
+    const wasAboveThreshold = this.isAboveDismissThreshold(
+      deltaX,
+      deltaY,
+      duration
+    );
 
     // Debug logging
     debug.log(
@@ -658,7 +681,7 @@ export class SwipeToDismiss {
   private getDragOffsetYInternal(delta: number): number {
     const damped = this.damp(delta);
     if (this.options.placement === "bottom") {
-      return Math.max(0, damped);
+      return this.options.allowReverseDrag ? damped : Math.max(0, damped);
     } else if (this.options.placement === "top") {
       return Math.min(0, damped);
     }
@@ -715,13 +738,21 @@ export class SwipeToDismiss {
 
     switch (this.options.placement) {
       case "bottom":
-        return deltaY > DISTANCE_SLOW || (deltaY > DISTANCE_FAST && isFastSwipe);
+        return (
+          deltaY > DISTANCE_SLOW || (deltaY > DISTANCE_FAST && isFastSwipe)
+        );
       case "top":
-        return deltaY < -DISTANCE_SLOW || (deltaY < -DISTANCE_FAST && isFastSwipe);
+        return (
+          deltaY < -DISTANCE_SLOW || (deltaY < -DISTANCE_FAST && isFastSwipe)
+        );
       case "right":
-        return deltaX > DISTANCE_SLOW || (deltaX > DISTANCE_FAST && isFastSwipe);
+        return (
+          deltaX > DISTANCE_SLOW || (deltaX > DISTANCE_FAST && isFastSwipe)
+        );
       case "left":
-        return deltaX < -DISTANCE_SLOW || (deltaX < -DISTANCE_FAST && isFastSwipe);
+        return (
+          deltaX < -DISTANCE_SLOW || (deltaX < -DISTANCE_FAST && isFastSwipe)
+        );
       default:
         return false;
     }
