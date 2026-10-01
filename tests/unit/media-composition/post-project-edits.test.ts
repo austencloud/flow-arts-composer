@@ -854,28 +854,35 @@ describe("moveSelectedItems", () => {
     ]);
   });
 
-  it("preserves an existing crossfade between unselected main clips", () => {
-    const base = project([
-      video("v1", { sourceOut: 2 }),
-      video("fade-out", {
-        sourceOut: 3,
-        start: 5,
-        pinnedStart: true,
-        transitionOut: { type: "crossfade", duration: 1 },
-      }),
-      video("fade-in", { sourceOut: 3 }),
-      video("v2", { sourceOut: 2, start: 12, pinnedStart: true }),
-    ]);
-    const result = valid(
-      moveSelectedItems(base, ["v1", "v2"], "v1", 1, null, ctx)
-    );
-    expect(spans(result, 0)).toEqual([
-      ["v1", 1, 2],
-      ["fade-out", 5, 3],
-      ["fade-in", 7, 3],
-      ["v2", 13, 2],
-    ]);
-  });
+  it.each(["video", "card"] as const)(
+    "preserves an existing %s crossfade between unselected main clips",
+    (kind) => {
+      const outgoing =
+        kind === "video"
+          ? video("fade-out", { sourceOut: 3 })
+          : card("fade-out", 3);
+      const base = project([
+        video("v1", { sourceOut: 2 }),
+        {
+          ...outgoing,
+          start: 5,
+          pinnedStart: true,
+          transitionOut: { type: "crossfade", duration: 1 },
+        },
+        video("fade-in", { sourceOut: 3 }),
+        video("v2", { sourceOut: 2, start: 12, pinnedStart: true }),
+      ]);
+      const result = valid(
+        moveSelectedItems(base, ["v1", "v2"], "v1", 1, null, ctx)
+      );
+      expect(spans(result, 0)).toEqual([
+        ["v1", 1, 2],
+        ["fade-out", 5, 3],
+        ["fade-in", 7, 3],
+        ["v2", 13, 2],
+      ]);
+    }
+  );
 
   it.each([3, 5])(
     "keeps occupied overlays in place when the group lands at %s seconds",

@@ -999,13 +999,10 @@ export function moveSelectedItems(
         pinnedStart: true,
       });
       cursor = start + item.duration;
-      outgoingOverlap =
-        item.kind === "video" || item.kind === "image"
-          ? Math.min(
-              item.transitionOut?.duration ?? 0,
-              item.duration - POST_TIME_EPSILON
-            )
-          : 0;
+      outgoingOverlap = Math.min(
+        item.transitionOut?.duration ?? 0,
+        item.duration - POST_TIME_EPSILON
+      );
     }
     next = withTrackItems(
       next,
