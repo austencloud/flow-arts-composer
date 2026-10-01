@@ -8,9 +8,13 @@ export function appearanceControlsFit(
   tileWidth: number,
   tileHeight: number,
   insetX = 0,
-  chromeHeight = 0
+  chromeHeight = 0,
+  columnChoices?: readonly number[]
 ): boolean {
-  const columns = Math.floor((width - insetX + 8) / (tileWidth + 8));
+  const capacity = Math.floor((width - insetX + 8) / (tileWidth + 8));
+  const columns = columnChoices
+    ? Math.max(0, ...columnChoices.filter((value) => value <= capacity))
+    : capacity;
   if (columns < 1 || count < 1) return false;
   const rows = Math.ceil(count / columns);
   return rows * tileHeight + (rows - 1) * 8 + chromeHeight <= height;

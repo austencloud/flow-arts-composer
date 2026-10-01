@@ -478,6 +478,7 @@
           tileWidth={104}
           tileHeight={88}
           chromeHeight={140}
+          columnChoices={[1, 2, 4]}
         >
           {#snippet children(bounded)}
             <div class="efforts-controls" class:bounded>
