@@ -144,8 +144,11 @@ export function resolvePostStudioDraft(
         hadMapping: Boolean(group?.hadMapping) || hasMapping(timing),
       });
     }
+    // A take's own map wins, as does a deliberate clear of it. Another key's
+    // map on the same media only fills in for a take that never had one:
+    // two takes can share a video, like clips cut from one recording.
     const ownKey = byKey.get(take.takeKey);
-    if (ownKey?.hadMapping && !hasMapping(ownKey.latest)) {
+    if (ownKey?.hadMapping) {
       timings[take.id] = ownKey.latest;
       continue;
     }

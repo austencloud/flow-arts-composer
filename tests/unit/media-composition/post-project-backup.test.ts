@@ -83,6 +83,31 @@ describe("Post Studio draft recovery", () => {
     ]);
   });
 
+  it("keeps each take's own map when two takes share one video", () => {
+    const fast = makeTake("fast", "whole:fast", "/prepared/whole.mp4", 120);
+    const slow = makeTake("slow", "whole:slow", "/prepared/whole.mp4", 120);
+    const slowMap = timing(slow, 100, []);
+    const post = {
+      ...createEmptyPostProject({ sequenceId: SEQUENCE, now: 200 }),
+      takes: [fast, slow],
+      timings: {
+        fast: timing(fast, 100, [10, 11, 12]),
+        slow: {
+          ...slowMap,
+          sections: [{ ...slowMap.sections[0]!, beatOneSeconds: 80 }],
+        },
+      },
+    };
+    const resolved = resolvePostStudioDraft(SEQUENCE, [
+      projectDraftRecord(post),
+    ]);
+    expect(resolved?.timings?.fast?.sections[0]?.taps).toEqual([10, 11, 12]);
+    expect(resolved?.timings?.slow?.sections[0]).toMatchObject({
+      taps: [],
+      beatOneSeconds: 80,
+    });
+  });
+
   it("rejects maps for different media, clip duration, sequence, or key", () => {
     const oldTake = makeTake("old", "old-key");
     const selectedTake = makeTake("new", "new-key", "/prepared/other.mp4");
