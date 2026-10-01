@@ -516,6 +516,25 @@ describe("buildPublicSequenceProjection — digest", () => {
     expect(late.publicProjectionDigest).toBe(early.publicProjectionDigest);
   });
 
+  it("holds the pinned digest of a fixed sequence (stored-corpus gate)", async () => {
+    // Every stored publicSequences document carries the digest its writer
+    // computed. Any change to what this builder emits (a renamed key, a new
+    // field, a changed value or content hash) changes the expected digest of
+    // every stored document, and the scheduled parity audit then reports the
+    // whole corpus as SAFE_REPROJECT. The 2026-09-15 startPosition ->
+    // startPlacement rename flagged 607 records until a reconcile on
+    // 2026-09-30.
+    //
+    // When this pin fails because the projection changed on purpose: update
+    // the pin, and once the change is deployed run
+    // scripts/migrations/reconcile-sequence-public-projections.ts (dry run,
+    // review the manifest, then --apply) so stored documents match it.
+    const projection = await project();
+    expect(projection.publicProjectionDigest).toBe(
+      "c5852fdc3727f0aba55737037e03a09df35e2ea6f03f99681f3c4a5b9cfe7830"
+    );
+  });
+
   it("excludes exactly the documented buckets, and nothing else", async () => {
     // A field added to the projection is digested automatically; the only way
     // out is an explicit entry here. This pins the escape hatch shut.

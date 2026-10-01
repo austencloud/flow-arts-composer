@@ -223,12 +223,14 @@
       activeId={activeSection}
       onSelect={(section) => (activeSection = section)}
       orientation="horizontal"
+      compact
       panelIdPrefix={id}
       ariaLabel="Animation appearance"
     />
   </div>
   <div
     class="section-content"
+    class:display={activeSection === "display"}
     id="{id}-{activeSection}-panel"
     role="tabpanel"
     aria-labelledby="{id}-{activeSection}-tab"
@@ -274,6 +276,7 @@
         />
       </div>
       <DisplayPanel
+        compact
         sequence={editor.sequence}
         propType={pickedPropType ?? defaultPropType}
         visibilityManagerOverride={visibility}
@@ -291,7 +294,7 @@
     gap: 0.75rem;
   }
   .section-navigation {
-    padding: 0.25rem 0 0.75rem;
+    padding: 0;
     background: var(--theme-panel-bg, #08080c);
   }
   .section-content {
@@ -300,6 +303,12 @@
     gap: 1rem;
     min-width: 0;
     padding-bottom: 1rem;
+  }
+  /* Display is the one section that has to fit the panel without scrolling,
+     in a panel that can be under 300px tall, so its rows sit closer. */
+  .section-content.display {
+    gap: 0.5rem;
+    padding-bottom: 0;
   }
   .section-content:focus-visible {
     outline: 2px solid var(--theme-accent, #8b6cff);

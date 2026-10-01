@@ -15,7 +15,12 @@
   import { tryGetViewerVisibilityContext } from "$lib/shared/sequence-viewer/context/viewer-visibility-context";
   import type { ViewerControlSink } from "$lib/shared/sequence-viewer/domain/viewer-control-analytics";
   import { reportViewerControlChange } from "$lib/shared/sequence-viewer/domain/viewer-control-analytics";
-  import { fitDisplayGrid } from "../../domain/display-grid-fit";
+  import {
+    COMPACT_MAX_ART,
+    compactDisplayArt,
+    compactDisplayColumns,
+    fitDisplayGrid,
+  } from "../../domain/display-grid-fit";
 
   let {
     /** Show per-color prop (Left/Right) chips. Only surfaces without a header
@@ -44,6 +49,14 @@
      *  toggles modest, so the grid spends the card rather than sitting in
      *  the middle of it. */
     grow = false,
+    /** The host scrolls this panel inside a box it does not size (Post
+     *  Studio's tool panel body), so there is no definite height to fit to.
+     *  The tiles become short, in two rows where the width allows, and the
+     *  picture size is chosen so that everything the scroller holds fits its
+     *  visible height. Where it cannot (a very short window) the pictures stop
+     *  at a size that still reads and the host scrolls. Ignored with `fill` or
+     *  the per-hand chips. */
+    compact = false,
     /** The four edge marks (TKA glyph, element, step number, word) describe a
      *  realized sequence. A host animating something that has no letter and no
      *  steps — the shape-matrix theory stage traces a bare spin ratio — turns
@@ -65,6 +78,7 @@
     propType?: string;
     fill?: boolean;
     grow?: boolean;
+    compact?: boolean;
     showSequenceMarks?: boolean;
     showWordToggle?: boolean;
     onSettingChange?: ViewerControlSink;
@@ -352,6 +366,74 @@
     measureFit();
   });
 
+  // The compact layout is written straight to the grid's custom properties
+  // rather than through state: fitting it takes two layouts in one pass (draw
+  // at the largest picture, see how far the scroller overflows, then shrink),
+  // and the second needs the first's result before anything paints.
+  const compactMode = $derived(compact && !fill && !showPropChips);
+
+  function scrollerOf(el: HTMLElement): HTMLElement | null {
+    for (let node = el.parentElement; node; node = node.parentElement) {
+      const { overflowY } = getComputedStyle(node);
+      if (overflowY === "auto" || overflowY === "scroll") return node;
+    }
+    return null;
+  }
+
+  function fitCompact(): void {
+    if (!compactMode || !shellEl || !gridEl) return;
+    const width = shellEl.clientWidth;
+    if (width <= 0) return;
+
+    const cols = compactDisplayColumns({
+      width,
+      count: chips.length,
+      gap: parseFloat(getComputedStyle(gridEl).columnGap) || 0,
+    });
+    gridEl.style.setProperty("--vis-cols", String(cols));
+    gridEl.style.setProperty("--compact-art", `${COMPACT_MAX_ART}px`);
+
+    const scroller = scrollerOf(shellEl);
+    if (!scroller) return;
+    const probeArt =
+      (gridEl.querySelector(".art") as HTMLElement | null)?.offsetHeight ??
+      COMPACT_MAX_ART;
+    const art = compactDisplayArt({
+      probeArt,
+      rows: Math.ceil(chips.length / cols),
+      overflow: scroller.scrollHeight - scroller.clientHeight,
+    });
+    gridEl.style.setProperty("--compact-art", `${art}px`);
+  }
+
+  // Everything from the grid up to its scroller can change size without the
+  // scroller's own box moving (a button appearing under the panel pushes the
+  // content, not the viewport), so each of them is watched. One frame's
+  // notifications are coalesced into one fit.
+  $effect(() => {
+    if (!compactMode || !shellEl) return;
+    fitCompact();
+    let frame = 0;
+    const observer = new ResizeObserver(() => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(fitCompact);
+    });
+    observer.observe(shellEl);
+    const scroller = scrollerOf(shellEl);
+    for (
+      let node: HTMLElement | null = shellEl.parentElement;
+      node;
+      node = node.parentElement
+    ) {
+      observer.observe(node);
+      if (node === scroller) break;
+    }
+    return () => {
+      cancelAnimationFrame(frame);
+      observer.disconnect();
+    };
+  });
+
   function toggleChip(chip: Chip): void {
     const previous = chip.active();
     chip.toggle();
@@ -370,6 +452,7 @@
     class:motion-grid={showPropChips}
     class:ten-tiles={showPropChips && chips.length === 10}
     class:fitted
+    class:compact={compactMode}
     class="vis-grid"
     bind:this={gridEl}
     style={fitted
@@ -477,7 +560,7 @@
   /* A breath between the layers that live in the square and the marks drawn at
      its edges, so the grouping is visible without a heading for each. Skipped
      on the landing variant, where the group boundary falls mid-row. */
-  .vis-grid:not(.motion-grid):not(.fitted) > :nth-child(n + 5) {
+  .vis-grid:not(.motion-grid):not(.fitted):not(.compact) > :nth-child(n + 5) {
     margin-top: 10px;
   }
 
@@ -528,7 +611,7 @@
   /* The width-only ladder. It is the whole story where the host gives no
      height, and is skipped entirely once the measured fit sets --tile-art on
      the grid — a cap declared on the chip would win over the inherited one. */
-  .vis-grid:not(.fitted) .rt-chip {
+  .vis-grid:not(.fitted):not(.compact) .rt-chip {
     --tile-art: 6rem;
   }
 
@@ -538,16 +621,38 @@
      the picture takes 7rem, which spends the tile on the picture instead of on
      padding, and below it the column itself is the binding constraint. */
   @container (min-width: 24rem) {
-    .vis-grid:not(.fitted) .rt-chip {
+    .vis-grid:not(.fitted):not(.compact) .rt-chip {
       --tile-art: 7rem;
     }
   }
 
   /* The 3840 inspector again: 195px tiles were still carrying a 7rem picture. */
   @container (min-width: 46rem) {
-    .vis-grid:not(.fitted) .rt-chip {
+    .vis-grid:not(.fitted):not(.compact) .rt-chip {
       --tile-art: 8.5rem;
     }
+  }
+
+  /* The compact layout. Short tiles, picture over label, in as few rows as the
+     width allows. The column count and the picture cap are set by fitCompact
+     from the scroller the panel sits in; the values here only hold until it
+     has run, and where the host has no scroller they are the whole story. The
+     columns stay 1fr, so a wider host spreads the tiles instead of stretching
+     the pictures (the picture is capped, square, and centred in its tile). */
+  .vis-grid.compact {
+    grid-template-columns: repeat(var(--vis-cols, 5), minmax(0, 1fr));
+    gap: 6px;
+  }
+
+  .vis-grid.compact .rt-chip {
+    --tile-art: var(--compact-art, 4rem);
+    gap: 3px;
+    padding: 3px;
+  }
+
+  .vis-grid.compact .chip-label {
+    font-size: 11px;
+    text-wrap: balance;
   }
 
   /* The picture carries recognition; the label names it. Dimming the inactive
