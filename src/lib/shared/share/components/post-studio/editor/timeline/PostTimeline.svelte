@@ -33,6 +33,11 @@
   import PostTimelineTrackHeader from "./PostTimelineTrackHeader.svelte";
   import PostTimelineZoomControls from "./PostTimelineZoomControls.svelte";
   import {
+    selectTimelineItem,
+    timelineItemOrder,
+    type TimelineSelection,
+  } from "./post-timeline-selection";
+  import {
     POST_TIMELINE_DEFAULT_PIXELS_PER_SECOND,
     autoScrollForPlayhead,
     clampPixelsPerSecond,
@@ -78,6 +83,17 @@
     onTrim: (itemId: string, edge: "start" | "end", seconds: number) => void;
     onMoveMain: (itemId: string, start: number) => void;
     onMoveOverlay: (itemId: string, start: number, trackIndex: number) => void;
+    onToggleCrossfade: (
+      outgoingId: string,
+      incomingId: string,
+      enabled: boolean
+    ) => void;
+    onMoveSelection: (
+      itemIds: string[],
+      draggedItemId: string,
+      start: number,
+      trackIndex: number | null
+    ) => void;
     onTrackFlag: (
       trackId: string,
       flag: "hidden" | "locked",
@@ -137,6 +153,8 @@
     onTrim,
     onMoveMain,
     onMoveOverlay,
+    onToggleCrossfade,
+    onMoveSelection,
     onTrackFlag,
     keyChannel,
     toolChannel,
@@ -174,6 +192,30 @@
   let suppressNextKeyClick = false;
   let didFitOnce = false;
   let previousHasItems: boolean | null = null;
+  let selection = $state<TimelineSelection>({
+    ids: [],
+    anchorId: null,
+    focusId: null,
+  });
+
+  $effect(() => {
+    if (selectedItemId !== selection.focusId)
+      selection = selectedItemId
+        ? {
+            ids: [selectedItemId],
+            anchorId: selectedItemId,
+            focusId: selectedItemId,
+          }
+        : { ids: [], anchorId: null, focusId: null };
+  });
+
+  interface DragMember {
+    id: string;
+    start: number;
+    duration: number;
+    trackIndex: number;
+    label: string;
+  }
 
   interface TrimDrag {
     kind: "trim";
@@ -209,8 +251,8 @@
     frozenPixelsPerSecond: number;
     frozenTargets: number[];
     itemDurationSeconds: number;
-    ghostLeftPx: number;
     snappedStartSeconds: number;
+    members: DragMember[];
   }
 
   interface MoveOverlayDrag {
@@ -227,9 +269,9 @@
     itemDurationSeconds: number;
     frozenPixelsPerSecond: number;
     frozenTargets: number[];
-    ghostLeftPx: number;
     snappedStartSeconds: number;
     rowHit: OverlayRowHit;
+    members: DragMember[];
   }
 
   interface KeyframeDrag {
@@ -262,6 +304,52 @@
 
   const overlayTrackCount = $derived(Math.max(0, project.tracks.length - 1));
   const mainItemsList = $derived(mainItems(project));
+  const crossfadeKinds = new Set<PostItem["kind"]>([
+    "video",
+    "image",
+    "card",
+    "animation",
+    "moves",
+    "carousel",
+  ]);
+
+  function cutsFor(track: PostTrack): {
+    outgoing: PostItem;
+    incoming: PostItem;
+    center: number;
+    active: boolean;
+  }[] {
+    if (track.locked || track.hidden) return [];
+    const cuts: ReturnType<typeof cutsFor> = [];
+    for (let index = 0; index < track.items.length - 1; index++) {
+      const outgoing = track.items[index]!;
+      const incoming = track.items[index + 1]!;
+      if (
+        !crossfadeKinds.has(outgoing.kind) ||
+        !crossfadeKinds.has(incoming.kind)
+      )
+        continue;
+      const gap = incoming.start - itemEnd(outgoing);
+      const active = Boolean(outgoing.transitionOut);
+      if (
+        active
+          ? gap > POST_TIME_EPSILON ||
+            gap < -Math.min(outgoing.duration, incoming.duration)
+          : Math.abs(gap) > POST_TIME_EPSILON
+      )
+        continue;
+      cuts.push({
+        outgoing,
+        incoming,
+        center:
+          gap < 0
+            ? (incoming.start + itemEnd(outgoing)) / 2
+            : itemEnd(outgoing),
+        active,
+      });
+    }
+    return cuts;
+  }
   const hasItems = $derived(
     project.tracks.some((track) => track.items.length > 0)
   );
@@ -367,17 +455,11 @@
     dragState?.kind === "move-overlay" && dragState.didDrag
   );
 
-  const ghostLabelText = $derived.by(() => {
-    if (!dragState || dragState.kind === "trim") return "";
-    const located = findItem(project, dragState.itemId);
-    return located ? labelFor(located.item) : "";
-  });
-
-  function collectSnapTargets(excludeItemId: string): number[] {
+  function collectSnapTargets(excludeItemIds: ReadonlySet<string>): number[] {
     const targets = new Set<number>([0, playheadSeconds]);
     for (const track of project.tracks) {
       for (const item of track.items) {
-        if (item.id === excludeItemId) continue;
+        if (excludeItemIds.has(item.id)) continue;
         targets.add(item.start);
         targets.add(itemEnd(item));
       }
@@ -554,7 +636,7 @@
 
   // --- Selection -----------------------------------------------------------
 
-  function handleItemActivate(itemId: string): void {
+  function handleItemActivate(itemId: string, event: MouseEvent): void {
     // The click that follows a real drag's pointerup would otherwise also
     // select, since the same button fires both. A finished-drag pointerup
     // marks the id here so the click right after it is a no-op.
@@ -562,10 +644,21 @@
       suppressNextClickForItemId = null;
       return;
     }
-    onSelect(itemId);
+    selection = selectTimelineItem(
+      selection,
+      itemId,
+      timelineItemOrder(project, itemId),
+      event.shiftKey
+        ? "range"
+        : event.ctrlKey || event.metaKey
+          ? "toggle"
+          : "plain"
+    );
+    onSelect(selection.focusId);
   }
 
   function handleLaneBackgroundPointerDown(): void {
+    selection = { ids: [], anchorId: null, focusId: null };
     onSelect(null);
   }
 
@@ -577,9 +670,24 @@
     trackIndex: number
   ): void {
     if (event.button !== 0) return;
+    if (event.shiftKey || event.ctrlKey || event.metaKey) return;
     event.preventDefault();
     (event.currentTarget as HTMLElement).setPointerCapture(event.pointerId);
-    const originalLeftPx = secondsToPixels(item.start, pixelsPerSecond);
+    const ids = selection.ids.includes(item.id) ? selection.ids : [item.id];
+    const selected = new Set(ids);
+    const members = project.tracks.flatMap((track, index) =>
+      track.locked
+        ? []
+        : track.items
+            .filter((candidate) => selected.has(candidate.id))
+            .map((candidate) => ({
+              id: candidate.id,
+              start: candidate.start,
+              duration: candidate.duration,
+              trackIndex: index,
+              label: labelFor(candidate),
+            }))
+    );
     if (trackIndex === MAIN_TRACK_INDEX) {
       dragState = {
         kind: "move-main",
@@ -595,10 +703,12 @@
             pixelsPerSecond
           ) - item.start,
         frozenPixelsPerSecond: pixelsPerSecond,
-        frozenTargets: collectSnapTargets(item.id),
+        frozenTargets: collectSnapTargets(
+          new Set(members.map((member) => member.id))
+        ),
         itemDurationSeconds: item.duration,
-        ghostLeftPx: originalLeftPx,
         snappedStartSeconds: item.start,
+        members,
       };
     } else {
       dragState = {
@@ -617,10 +727,12 @@
         originalTrackIndex: trackIndex,
         itemDurationSeconds: item.duration,
         frozenPixelsPerSecond: pixelsPerSecond,
-        frozenTargets: collectSnapTargets(item.id),
-        ghostLeftPx: originalLeftPx,
+        frozenTargets: collectSnapTargets(
+          new Set(members.map((member) => member.id))
+        ),
         snappedStartSeconds: item.start,
         rowHit: { kind: "overlay", trackIndex },
+        members,
       };
     }
   }
@@ -641,7 +753,7 @@
       edge,
       pointerId: event.pointerId,
       frozenPixelsPerSecond: pixelsPerSecond,
-      frozenTargets: collectSnapTargets(item.id),
+      frozenTargets: collectSnapTargets(new Set([item.id])),
       originalSeconds,
       originalStart: item.start,
       originalEnd: itemEnd(item),
@@ -825,6 +937,22 @@
       : topPx;
   }
 
+  function memberGhostTopPx(
+    state: MoveMainDrag | MoveOverlayDrag,
+    member: DragMember
+  ): number {
+    if (member.trackIndex === MAIN_TRACK_INDEX) return mainRowTopPx;
+    const layerDelta =
+      state.kind === "move-overlay"
+        ? trackIndexForRowHit(state.rowHit, state.originalTrackIndex) -
+          state.originalTrackIndex
+        : 0;
+    const target = Math.max(1, member.trackIndex + layerDelta);
+    return target > overlayTrackCount
+      ? 0
+      : overlayGhostTopPx({ kind: "overlay", trackIndex: target });
+  }
+
   function finishDrag(): void {
     if (autoScrollFrame !== null) cancelAnimationFrame(autoScrollFrame);
     autoScrollFrame = null;
@@ -841,10 +969,10 @@
       state.frozenTargets,
       state.frozenPixelsPerSecond
     );
-    state.snappedStartSeconds = placed.start;
-    state.ghostLeftPx = secondsToPixels(
-      placed.start,
-      state.frozenPixelsPerSecond
+    state.snappedStartSeconds = Math.max(
+      state.originalStart -
+        Math.min(...state.members.map((member) => member.start)),
+      placed.start
     );
     snapGuideSeconds = placed.guideSeconds;
   }
@@ -942,6 +1070,17 @@
     if (!state.didDrag) {
       if (Math.hypot(deltaXPx, deltaYPx) < DRAG_THRESHOLD_PX) return;
       state.didDrag = true;
+      if (
+        (state.kind === "move-main" || state.kind === "move-overlay") &&
+        !selection.ids.includes(state.itemId)
+      ) {
+        selection = {
+          ids: [state.itemId],
+          anchorId: state.itemId,
+          focusId: state.itemId,
+        };
+        onSelect(state.itemId);
+      }
     }
 
     if (state.kind === "move-main") {
@@ -987,10 +1126,10 @@
       state.frozenTargets,
       state.frozenPixelsPerSecond
     );
-    state.snappedStartSeconds = placed.start;
-    state.ghostLeftPx = secondsToPixels(
-      placed.start,
-      state.frozenPixelsPerSecond
+    state.snappedStartSeconds = Math.max(
+      state.originalStart -
+        Math.min(...state.members.map((member) => member.start)),
+      placed.start
     );
     snapGuideSeconds = placed.guideSeconds;
 
@@ -1037,7 +1176,14 @@
           Math.abs(state.snappedStartSeconds - state.originalStart) >
           POST_TIME_EPSILON
         ) {
-          onMoveMain(state.itemId, state.snappedStartSeconds);
+          if (state.members.length > 1)
+            onMoveSelection(
+              state.members.map((member) => member.id),
+              state.itemId,
+              state.snappedStartSeconds,
+              null
+            );
+          else onMoveMain(state.itemId, state.snappedStartSeconds);
         }
       } else if (state.kind === "move-overlay") {
         suppressNextClickForItemId = state.itemId;
@@ -1050,11 +1196,19 @@
           Math.abs(state.snappedStartSeconds - state.originalStart) <
             POST_TIME_EPSILON;
         if (!unchanged) {
-          onMoveOverlay(
-            state.itemId,
-            state.snappedStartSeconds,
-            targetTrackIndex
-          );
+          if (state.members.length > 1)
+            onMoveSelection(
+              state.members.map((member) => member.id),
+              state.itemId,
+              state.snappedStartSeconds,
+              targetTrackIndex
+            );
+          else
+            onMoveOverlay(
+              state.itemId,
+              state.snappedStartSeconds,
+              targetTrackIndex
+            );
         }
       } else {
         suppressNextKeyClick = true;
@@ -1266,7 +1420,7 @@
                   leftPx={secondsToPixels(item.start, pixelsPerSecond)}
                   widthPx={secondsToPixels(item.duration, pixelsPerSecond)}
                   labelText={labelFor(item)}
-                  selected={selectedItemId === item.id}
+                  selected={selection.ids.includes(item.id)}
                   locked={row.track.locked}
                   dimmed={row.track.hidden}
                   onActivate={handleItemActivate}
@@ -1278,6 +1432,38 @@
                     isAnimated(item, channel)
                   )}
                 />
+              {/each}
+              {#each cutsFor(row.track) as cut (`${cut.outgoing.id}:${cut.incoming.id}`)}
+                <button
+                  type="button"
+                  class="cut-crossfade"
+                  class:active={cut.active}
+                  style:left="{secondsToPixels(cut.center, pixelsPerSecond)}px"
+                  aria-label={t(
+                    cut.active
+                      ? "post_timeline_remove_crossfade"
+                      : "post_timeline_add_crossfade"
+                  )}
+                  title={t(
+                    cut.active
+                      ? "post_timeline_remove_crossfade"
+                      : "post_timeline_add_crossfade"
+                  )}
+                  onpointerdown={(event) => event.stopPropagation()}
+                  onclick={() =>
+                    onToggleCrossfade(
+                      cut.outgoing.id,
+                      cut.incoming.id,
+                      !cut.active
+                    )}
+                >
+                  <i
+                    class={cut.active
+                      ? "fa-solid fa-right-left"
+                      : "fa-solid fa-plus"}
+                    aria-hidden="true"
+                  ></i>
+                </button>
               {/each}
             </div>
             {#if keyLanes && keyLanes.trackIndex === row.trackIndex}
@@ -1309,35 +1495,28 @@
             {/if}
           {/each}
 
-          {#if dragState?.kind === "move-main" && dragState.didDrag}
-            <div
-              class="ghost-block"
-              aria-hidden="true"
-              style="left: {dragState.ghostLeftPx}px; top: {mainRowTopPx}px;
-                width: {secondsToPixels(
-                dragState.itemDurationSeconds,
-                dragState.frozenPixelsPerSecond
-              )}px;
-                height: {MAIN_ROW_HEIGHT_PX}px"
-            >
-              <span>{ghostLabelText}</span>
-            </div>
-          {/if}
-          {#if showNewLayerZone && dragState?.kind === "move-overlay" && dragState.rowHit.kind !== "new-layer"}
-            <div
-              class="ghost-block"
-              aria-hidden="true"
-              style="left: {dragState.ghostLeftPx}px; top: {overlayGhostTopPx(
-                dragState.rowHit
-              )}px;
-                width: {secondsToPixels(
-                dragState.itemDurationSeconds,
-                dragState.frozenPixelsPerSecond
-              )}px;
-                height: {OVERLAY_ROW_HEIGHT_PX}px"
-            >
-              <span>{ghostLabelText}</span>
-            </div>
+          {#if (dragState?.kind === "move-main" || dragState?.kind === "move-overlay") && dragState.didDrag}
+            {#each dragState.members as member (member.id)}
+              <div
+                class="ghost-block"
+                aria-hidden="true"
+                style="left: {secondsToPixels(
+                  member.start +
+                    dragState.snappedStartSeconds -
+                    dragState.originalStart,
+                  dragState.frozenPixelsPerSecond
+                )}px; top: {memberGhostTopPx(dragState, member)}px;
+                  width: {secondsToPixels(
+                  member.duration,
+                  dragState.frozenPixelsPerSecond
+                )}px;
+                  height: {member.trackIndex === MAIN_TRACK_INDEX
+                  ? MAIN_ROW_HEIGHT_PX
+                  : OVERLAY_ROW_HEIGHT_PX}px"
+              >
+                <span>{member.label}</span>
+              </div>
+            {/each}
           {/if}
         </div>
       </div>
@@ -1469,6 +1648,35 @@
       var(--theme-card-bg, #1c1c26) 60%,
       transparent
     );
+  }
+
+  .cut-crossfade {
+    position: absolute;
+    z-index: 6;
+    top: 50%;
+    display: grid;
+    place-items: center;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    transform: translate(-50%, -50%);
+    border: 1px solid var(--theme-accent);
+    border-radius: 50%;
+    background: var(--theme-panel-elevated-bg, #1c1c26);
+    color: var(--theme-text, #fff);
+    cursor: pointer;
+    font: inherit;
+    font-size: 0.75rem;
+  }
+
+  .cut-crossfade.active {
+    background: var(--theme-accent);
+    color: var(--theme-bg, #101018);
+  }
+
+  .cut-crossfade:focus-visible {
+    outline: 2px solid var(--theme-text, #fff);
+    outline-offset: 2px;
   }
 
   .playhead-line {

@@ -6809,6 +6809,8 @@
   "post_timeline_item_linked": "Linked to clip",
   "post_timeline_trim_start": "Trim the start of {label}",
   "post_timeline_trim_end": "Trim the end of {label}",
+  "post_timeline_add_crossfade": "Add crossfade",
+  "post_timeline_remove_crossfade": "Remove crossfade",
   "post_timeline_new_layer_zone": "Drop here to add a new layer",
   "post_timeline_empty_hint": "Add a video to get started",
   "post_timeline_add_video": "Add video",

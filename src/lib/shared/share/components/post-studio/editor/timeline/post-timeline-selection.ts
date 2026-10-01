@@ -1,0 +1,59 @@
+import type { PostProject } from "$lib/shared/media-composition/domain/post-project";
+
+export interface TimelineSelection {
+  ids: string[];
+  anchorId: string | null;
+  focusId: string | null;
+}
+
+/** Shift-click ranges stay on the clicked clip's track, in time order. */
+export function timelineItemOrder(
+  project: PostProject,
+  itemId: string
+): string[] {
+  const track = project.tracks.find((track) =>
+    track.items.some((item) => item.id === itemId)
+  );
+  return [...(track?.items ?? [])]
+    .sort((a, b) => a.start - b.start)
+    .map((item) => item.id);
+}
+
+export function selectTimelineItem(
+  current: TimelineSelection,
+  itemId: string,
+  order: readonly string[],
+  modifier: "plain" | "range" | "toggle"
+): TimelineSelection {
+  if (modifier === "plain")
+    return { ids: [itemId], anchorId: itemId, focusId: itemId };
+  if (modifier === "toggle") {
+    const ids = current.ids.includes(itemId)
+      ? current.ids.filter((id) => id !== itemId)
+      : [...current.ids, itemId];
+    return {
+      ids,
+      anchorId: ids.includes(itemId)
+        ? itemId
+        : current.anchorId && ids.includes(current.anchorId)
+          ? current.anchorId
+          : (ids.at(-1) ?? null),
+      focusId: ids.includes(itemId) ? itemId : (ids.at(-1) ?? null),
+    };
+  }
+  const anchorId =
+    current.anchorId && order.includes(current.anchorId)
+      ? current.anchorId
+      : current.focusId && order.includes(current.focusId)
+        ? current.focusId
+        : itemId;
+  const from = order.indexOf(anchorId);
+  const to = order.indexOf(itemId);
+  if (from < 0 || to < 0)
+    return { ids: [itemId], anchorId: itemId, focusId: itemId };
+  return {
+    ids: order.slice(Math.min(from, to), Math.max(from, to) + 1),
+    anchorId,
+    focusId: itemId,
+  };
+}

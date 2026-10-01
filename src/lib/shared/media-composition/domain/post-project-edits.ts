@@ -599,10 +599,7 @@ export function duplicateItem(
 
   if (trackIndex === MAIN_TRACK_INDEX) {
     const mainTrack = [...project.tracks[MAIN_TRACK_INDEX]!.items];
-    if (
-      (item.kind === "video" || item.kind === "image") &&
-      item.transitionOut
-    ) {
+    if (item.transitionOut) {
       const { transitionOut: _moved, ...withoutTransition } = item;
       mainTrack[itemIndex] = withoutTransition as PostItem;
     }
@@ -632,6 +629,7 @@ export function duplicateItem(
     start,
     fill: false,
     anchor: anchorAt(project, start),
+    transitionOut: undefined,
   } as PostItem;
   return {
     project: finish(placeOnOrAbove(project, copy, trackIndex, nextId), ctx),
@@ -642,6 +640,244 @@ export function duplicateItem(
 // ---------------------------------------------------------------------------
 // Moving and trimming
 // ---------------------------------------------------------------------------
+
+const EDITOR_CROSSFADE_SOURCE = "editor-crossfade";
+const EDITOR_CROSSFADE_RIPPLE = "editor-crossfade-ripple";
+
+/** Adds or removes a crossfade at an adjacent visual cut on one track. */
+export function setTrackCutCrossfade(
+  project: PostProject,
+  trackIndex: number,
+  outgoingId: string,
+  incomingId: string,
+  enabled: boolean,
+  ctx: EditContext
+): PostProject {
+  const items = project.tracks[trackIndex]?.items ?? [];
+  const index = items.findIndex((item) => item.id === outgoingId);
+  const outgoing = items[index];
+  const incoming = items[index + 1];
+  if (
+    !outgoing ||
+    incoming?.id !== incomingId ||
+    !isCrossfadeVisual(outgoing) ||
+    !isCrossfadeVisual(incoming)
+  )
+    return project;
+
+  if (!enabled) {
+    const transition = outgoing.transitionOut;
+    if (!transition) return project;
+    // This edit extended the outgoing clip to make room for the transition.
+    // Imported transitions may use footage already present, so leave that
+    // footage intact when clearing them.
+    const added =
+      transition.sourceTypeCode === EDITOR_CROSSFADE_SOURCE
+        ? transition.duration
+        : 0;
+    const { transitionOut: _transition, ...withoutTransition } = outgoing;
+    const restored =
+      outgoing.kind === "video"
+        ? {
+            ...withoutTransition,
+            sourceOut: outgoing.sourceOut - added * outgoing.speed,
+          }
+        : { ...withoutTransition, duration: outgoing.duration - added };
+    if (
+      restored.duration < POST_MIN_ITEM_SECONDS - POST_TIME_EPSILON ||
+      (outgoing.kind === "video" &&
+        restored.kind === "video" &&
+        restored.sourceOut - outgoing.sourceIn <
+          POST_MIN_ITEM_SECONDS * outgoing.speed - POST_TIME_EPSILON)
+    )
+      return project;
+    let next = replaceItem(project, outgoingId, restored as PostItem);
+    if (trackIndex !== MAIN_TRACK_INDEX) {
+      const overlap = Math.max(0, itemEnd(outgoing) - incoming.start);
+      const moved = {
+        ...incoming,
+        start: incoming.start + overlap,
+        ...(incoming.anchor
+          ? {
+              anchor: {
+                ...incoming.anchor,
+                offset: incoming.anchor.offset + overlap,
+              },
+            }
+          : {}),
+      };
+      next = replaceItem(next, incomingId, moved);
+    }
+    return finish(next, ctx);
+  }
+
+  if (
+    outgoing.transitionOut ||
+    Math.abs(itemEnd(outgoing) - incoming.start) > POST_TIME_EPSILON
+  )
+    return project;
+
+  const handle =
+    outgoing.kind === "video"
+      ? Math.max(
+          0,
+          (takeLength(project, outgoing.takeId) - outgoing.sourceOut) /
+            outgoing.speed
+        )
+      : Infinity;
+  const extend =
+    trackIndex === MAIN_TRACK_INDEX && handle >= POST_MIN_ITEM_SECONDS;
+  // With no unused media at the outgoing tail, start the incoming clip
+  // earlier instead. A pinned incoming start cannot make that overlap.
+  if (trackIndex === MAIN_TRACK_INDEX && !extend && incoming.pinnedStart)
+    return project;
+  const duration = Math.min(
+    1,
+    extend ? handle : Infinity,
+    outgoing.duration - POST_TIME_EPSILON,
+    incoming.duration - POST_TIME_EPSILON
+  );
+  if (!Number.isFinite(duration) || duration < POST_MIN_ITEM_SECONDS)
+    return project;
+
+  const transitionOut: PostTransitionOut = {
+    type: "crossfade",
+    duration,
+    sourceTypeCode: extend ? EDITOR_CROSSFADE_SOURCE : EDITOR_CROSSFADE_RIPPLE,
+  };
+  const extended: PostItem = !extend
+    ? { ...outgoing, transitionOut }
+    : outgoing.kind === "video"
+      ? {
+          ...outgoing,
+          sourceOut: outgoing.sourceOut + duration * outgoing.speed,
+          duration: outgoing.duration + duration,
+          transitionOut,
+        }
+      : { ...outgoing, duration: outgoing.duration + duration, transitionOut };
+  let next = replaceItem(project, outgoingId, extended);
+  if (trackIndex !== MAIN_TRACK_INDEX) {
+    const moved = {
+      ...incoming,
+      start: incoming.start - duration,
+      ...(incoming.anchor
+        ? {
+            anchor: {
+              ...incoming.anchor,
+              offset: incoming.anchor.offset - duration,
+            },
+          }
+        : {}),
+    };
+    next = replaceItem(next, incomingId, moved);
+  }
+  return finish(next, ctx);
+}
+
+/** Convenience entry point for the main track. */
+export function setMainCutCrossfade(
+  project: PostProject,
+  outgoingId: string,
+  incomingId: string,
+  enabled: boolean,
+  ctx: EditContext
+): PostProject {
+  return setTrackCutCrossfade(
+    project,
+    MAIN_TRACK_INDEX,
+    outgoingId,
+    incomingId,
+    enabled,
+    ctx
+  );
+}
+
+function resizeTrackCutCrossfade(
+  project: PostProject,
+  trackIndex: number,
+  outgoingId: string,
+  incomingId: string,
+  seconds: number,
+  ctx: EditContext
+): PostProject {
+  const items = project.tracks[trackIndex]?.items ?? [];
+  const index = items.findIndex((item) => item.id === outgoingId);
+  const outgoing = items[index];
+  const incoming = items[index + 1];
+  if (
+    !outgoing ||
+    incoming?.id !== incomingId ||
+    !isCrossfadeVisual(outgoing) ||
+    !isCrossfadeVisual(incoming) ||
+    !outgoing.transitionOut ||
+    !Number.isFinite(seconds)
+  )
+    return project;
+  const oldDuration = outgoing.transitionOut.duration;
+  const isExtended =
+    outgoing.transitionOut.sourceTypeCode === EDITOR_CROSSFADE_SOURCE;
+  const sourceRoom =
+    isExtended && outgoing.kind === "video"
+      ? oldDuration +
+        Math.max(
+          0,
+          (takeLength(project, outgoing.takeId) - outgoing.sourceOut) /
+            outgoing.speed
+        )
+      : Infinity;
+  const maxDuration = Math.min(
+    sourceRoom,
+    incoming.duration - POST_TIME_EPSILON,
+    isExtended ? Infinity : outgoing.duration - POST_TIME_EPSILON
+  );
+  if (maxDuration < POST_MIN_ITEM_SECONDS) return project;
+  const duration = clamp(seconds, POST_MIN_ITEM_SECONDS, maxDuration);
+  if (Math.abs(duration - oldDuration) <= POST_TIME_EPSILON) return project;
+  const difference = duration - oldDuration;
+  const transitionOut = { ...outgoing.transitionOut, duration };
+  const resized: PostItem =
+    isExtended && outgoing.kind === "video"
+      ? {
+          ...outgoing,
+          sourceOut: outgoing.sourceOut + difference * outgoing.speed,
+          duration: outgoing.duration + difference,
+          transitionOut,
+        }
+      : isExtended
+        ? {
+            ...outgoing,
+            duration: outgoing.duration + difference,
+            transitionOut,
+          }
+        : { ...outgoing, transitionOut };
+  let next = replaceItem(project, outgoingId, resized);
+  if (trackIndex !== MAIN_TRACK_INDEX) {
+    next = replaceItem(next, incomingId, {
+      ...incoming,
+      start: incoming.start - difference,
+      ...(incoming.anchor
+        ? {
+            anchor: {
+              ...incoming.anchor,
+              offset: incoming.anchor.offset - difference,
+            },
+          }
+        : {}),
+    });
+  }
+  return finish(next, ctx);
+}
+
+function isCrossfadeVisual(item: PostItem): boolean {
+  return (
+    item.kind === "video" ||
+    item.kind === "image" ||
+    item.kind === "animation" ||
+    item.kind === "moves" ||
+    item.kind === "carousel" ||
+    item.kind === "card"
+  );
+}
 
 /** Reorders the main track; `toIndex` is the clip's place in the result. */
 export function moveMainItem(
@@ -696,6 +932,160 @@ export function placeMainItem(
     withTrackItems(project, MAIN_TRACK_INDEX, [...before, moved, ...pushed]),
     ctx
   );
+}
+
+/** Moves a timeline selection as one edit, keeping its spacing and layer offsets. */
+export function moveSelectedItems(
+  project: PostProject,
+  itemIds: readonly string[],
+  draggedItemId: string,
+  targetStart: number,
+  targetTrackIndex: number | null,
+  ctx: EditContext
+): PostProject {
+  const dragged = findItem(project, draggedItemId);
+  if (!dragged || !Number.isFinite(targetStart)) return project;
+  const selected = new Set(itemIds);
+  selected.add(draggedItemId);
+  const movable = project.tracks.flatMap((track, trackIndex) =>
+    track.locked
+      ? []
+      : track.items
+          .filter((item) => selected.has(item.id))
+          .map((item) => ({ item, trackIndex }))
+  );
+  if (!movable.some(({ item }) => item.id === draggedItemId)) return project;
+  const delta = Math.max(
+    -Math.min(...movable.map(({ item }) => item.start)),
+    targetStart - dragged.item.start
+  );
+  const layerDelta =
+    dragged.trackIndex > MAIN_TRACK_INDEX &&
+    targetTrackIndex !== null &&
+    Number.isFinite(targetTrackIndex)
+      ? clamp(Math.round(targetTrackIndex), 1, project.tracks.length) -
+        dragged.trackIndex
+      : 0;
+  if (Math.abs(delta) < POST_TIME_EPSILON && layerDelta === 0) return project;
+
+  let next = project;
+  const mainMoved = movable
+    .filter(({ trackIndex }) => trackIndex === MAIN_TRACK_INDEX)
+    .map(({ item }) => ({
+      ...item,
+      start: item.start + delta,
+      pinnedStart: true,
+    }));
+  if (mainMoved.length && Math.abs(delta) >= POST_TIME_EPSILON) {
+    const movedIds = new Set(mainMoved.map((item) => item.id));
+    const main = project.tracks[MAIN_TRACK_INDEX]!.items;
+    const stationary: PostItem[] = [];
+    let cursor = 0;
+    let outgoingOverlap = 0;
+    for (const item of main) {
+      if (movedIds.has(item.id)) continue;
+      let start = Math.max(
+        item.start,
+        cursor - Math.min(outgoingOverlap, item.duration - POST_TIME_EPSILON)
+      );
+      // Gaps between selected clips still belong to the clips already there.
+      // Push only actual collisions, stopping at the first gap that fits.
+      for (const moved of mainMoved) {
+        if (start + item.duration <= moved.start + POST_TIME_EPSILON) break;
+        if (start < itemEnd(moved) - POST_TIME_EPSILON) start = itemEnd(moved);
+      }
+      stationary.push({
+        ...item,
+        start,
+        pinnedStart: true,
+      });
+      cursor = start + item.duration;
+      outgoingOverlap = Math.min(
+        item.transitionOut?.duration ?? 0,
+        item.duration - POST_TIME_EPSILON
+      );
+    }
+    next = withTrackItems(
+      next,
+      MAIN_TRACK_INDEX,
+      [...mainMoved, ...stationary].sort((a, b) => a.start - b.start)
+    );
+  }
+
+  const overlays = movable.filter(
+    ({ trackIndex }) => trackIndex > MAIN_TRACK_INDEX
+  );
+  if (overlays.length) {
+    // Resolve the remaining anchors before checking room. Selected overlays
+    // must be absent here so they cannot bump an unrelated clip while moving.
+    const withoutSelected = withoutItems(
+      next,
+      new Set(overlays.map(({ item }) => item.id))
+    );
+    const resolved = normalizeProject(withoutSelected);
+    const resolvedTracks = new Map(
+      resolved.tracks.map((track) => [track.id, track])
+    );
+    const originalTrackIds = new Set(next.tracks.map((track) => track.id));
+    // Keep the original layer slots until the whole group has landed.
+    const tracks = withoutSelected.tracks.map((track) => {
+      const held = resolvedTracks.get(track.id);
+      return { ...(held ?? track), items: [...(held?.items ?? [])] };
+    });
+    tracks.push(
+      ...resolved.tracks
+        .filter((track) => !originalTrackIds.has(track.id))
+        .map((track) => ({ ...track, items: [...track.items] }))
+    );
+    const movedOverlays = overlays.map(({ item, trackIndex }) => ({
+      trackIndex,
+      item: {
+        ...item,
+        start: item.start + delta,
+        fill: false,
+        anchor: anchorAt(resolved, item.start + delta),
+      },
+    }));
+    let landingDelta = Math.max(
+      layerDelta,
+      MAIN_TRACK_INDEX +
+        1 -
+        Math.min(...overlays.map(({ trackIndex }) => trackIndex))
+    );
+    // A blocked destination moves the whole group upward together. Existing
+    // clips keep their layers, and a visible clip never lands on a hidden one.
+    while (
+      !movedOverlays.every(({ item, trackIndex }) => {
+        const destination = trackIndex + landingDelta;
+        const track = tracks[destination];
+        return (
+          !track ||
+          (!track.locked &&
+            (!track.hidden || destination === trackIndex) &&
+            trackHasRoom(track, item.start, itemEnd(item)))
+        );
+      })
+    )
+      landingDelta++;
+
+    const nextId = createIdAllocator({
+      ...next,
+      tracks: [...next.tracks, ...resolved.tracks],
+    });
+    for (const { item, trackIndex } of movedOverlays) {
+      const destination = trackIndex + landingDelta;
+      while (destination >= tracks.length)
+        tracks.push({
+          id: nextId("track"),
+          hidden: false,
+          locked: false,
+          items: [],
+        });
+      tracks[destination]!.items.push(item);
+    }
+    next = { ...next, tracks };
+  }
+  return finish(next, ctx);
 }
 
 /**
@@ -926,6 +1316,54 @@ export function updateItem(
   const located = findItem(project, itemId);
   if (!located) return project;
   const { item, trackIndex } = located;
+  if (patch.transitionOut !== undefined && isCrossfadeVisual(item)) {
+    const { transitionOut, ...otherChanges } = patch;
+    const incoming = project.tracks[trackIndex]?.items[located.itemIndex + 1];
+    let transitioned = project;
+    if (incoming && isCrossfadeVisual(incoming)) {
+      if (!transitionOut) {
+        transitioned = setTrackCutCrossfade(
+          project,
+          trackIndex,
+          itemId,
+          incoming.id,
+          false,
+          ctx
+        );
+      } else {
+        transitioned = item.transitionOut
+          ? resizeTrackCutCrossfade(
+              project,
+              trackIndex,
+              itemId,
+              incoming.id,
+              transitionOut.duration,
+              ctx
+            )
+          : setTrackCutCrossfade(
+              project,
+              trackIndex,
+              itemId,
+              incoming.id,
+              true,
+              ctx
+            );
+        if (!item.transitionOut && transitioned !== project) {
+          transitioned = resizeTrackCutCrossfade(
+            transitioned,
+            trackIndex,
+            itemId,
+            incoming.id,
+            transitionOut.duration,
+            ctx
+          );
+        }
+      }
+    }
+    return Object.keys(otherChanges).length
+      ? updateItem(transitioned, itemId, otherChanges, ctx)
+      : transitioned;
+  }
   const next = { ...item } as Record<string, unknown>;
 
   if (patch.label !== undefined) {
@@ -995,10 +1433,6 @@ export function updateItem(
     if (patch.sourceGeometry !== undefined) {
       if (patch.sourceGeometry) next.sourceGeometry = patch.sourceGeometry;
       else delete next.sourceGeometry;
-    }
-    if (patch.transitionOut !== undefined) {
-      if (patch.transitionOut) next.transitionOut = patch.transitionOut;
-      else delete next.transitionOut;
     }
   }
   if (item.kind === "animation" && patch.overlay !== undefined) {
@@ -1530,7 +1964,7 @@ function splitPieces(
       ...item,
       duration: cut,
       fadeOut: 0,
-      ...(item.kind === "image" ? { transitionOut: undefined } : {}),
+      transitionOut: undefined,
     } as PostItem,
     second,
   ];
