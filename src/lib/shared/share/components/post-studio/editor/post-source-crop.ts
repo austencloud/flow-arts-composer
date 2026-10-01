@@ -1,6 +1,13 @@
 import type { PostSourceGeometry } from "$lib/shared/media-composition/domain/post-project";
 
 export type SourceCropEdge = keyof PostSourceGeometry["crop"];
+export type SourceCropHandle =
+  | SourceCropEdge
+  | "move"
+  | "top-left"
+  | "top-right"
+  | "bottom-left"
+  | "bottom-right";
 
 const MIN_SPAN = 0.0001;
 
@@ -31,18 +38,97 @@ export function setSourceCropEdge(
 
 export function dragSourceCrop(
   geometry: PostSourceGeometry,
-  edge: SourceCropEdge | "move",
+  edge: SourceCropHandle,
   dx: number,
-  dy: number
+  dy: number,
+  keepRatio = false
 ): PostSourceGeometry {
   if (!Number.isFinite(dx) || !Number.isFinite(dy)) return geometry;
-  if (edge !== "move")
-    return setSourceCropEdge(
-      geometry,
-      edge,
-      geometry.crop[edge] + (edge === "left" || edge === "right" ? dx : dy)
-    );
   const crop = geometry.crop;
+  if (edge !== "move") {
+    const horizontal = edge.includes("left")
+      ? "left"
+      : edge.includes("right")
+        ? "right"
+        : null;
+    const vertical = edge.includes("top")
+      ? "top"
+      : edge.includes("bottom")
+        ? "bottom"
+        : null;
+    if (!keepRatio) {
+      let changed = geometry;
+      if (horizontal)
+        changed = setSourceCropEdge(changed, horizontal, crop[horizontal] + dx);
+      if (vertical)
+        changed = setSourceCropEdge(changed, vertical, crop[vertical] + dy);
+      return changed;
+    }
+
+    const width = crop.right - crop.left;
+    const height = crop.bottom - crop.top;
+    if (width <= 0 || height <= 0) return geometry;
+    const horizontalChange = horizontal
+      ? (horizontal === "right" ? dx : -dx) / width
+      : 0;
+    const verticalChange = vertical
+      ? (vertical === "bottom" ? dy : -dy) / height
+      : 0;
+    // A corner follows whichever pointer axis changes its span more, proportionally.
+    const change =
+      Math.abs(horizontalChange) >= Math.abs(verticalChange)
+        ? horizontalChange
+        : verticalChange;
+    const centerX = (crop.left + crop.right) / 2;
+    const centerY = (crop.top + crop.bottom) / 2;
+    const maxWidth =
+      horizontal === "left"
+        ? crop.right
+        : horizontal === "right"
+          ? 1 - crop.left
+          : 2 * Math.min(centerX, 1 - centerX);
+    const maxHeight =
+      vertical === "top"
+        ? crop.bottom
+        : vertical === "bottom"
+          ? 1 - crop.top
+          : 2 * Math.min(centerY, 1 - centerY);
+    const scale = Math.max(
+      Math.max(MIN_SPAN / width, MIN_SPAN / height),
+      Math.min(Math.min(maxWidth / width, maxHeight / height), 1 + change)
+    );
+    const nextWidth = width * scale;
+    const nextHeight = height * scale;
+    return {
+      ...geometry,
+      crop: {
+        left:
+          horizontal === "left"
+            ? crop.right - nextWidth
+            : horizontal === "right"
+              ? crop.left
+              : centerX - nextWidth / 2,
+        right:
+          horizontal === "right"
+            ? crop.left + nextWidth
+            : horizontal === "left"
+              ? crop.right
+              : centerX + nextWidth / 2,
+        top:
+          vertical === "top"
+            ? crop.bottom - nextHeight
+            : vertical === "bottom"
+              ? crop.top
+              : centerY - nextHeight / 2,
+        bottom:
+          vertical === "bottom"
+            ? crop.top + nextHeight
+            : vertical === "top"
+              ? crop.bottom
+              : centerY + nextHeight / 2,
+      },
+    };
+  }
   const x = Math.max(-crop.left, Math.min(1 - crop.right, dx));
   const y = Math.max(-crop.top, Math.min(1 - crop.bottom, dy));
   return {

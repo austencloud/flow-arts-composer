@@ -111,6 +111,7 @@
      */
     crop?: CropSession | null;
     cropSourceView?: boolean;
+    chosenSourceShape?: CropShapeKind | null;
     onCropFramingControl?: () => void;
     onCropSourceControl?: () => void;
     /** Where each take's LED staffs are, for the Effects tool. */
@@ -127,6 +128,7 @@
     tool,
     crop = null,
     cropSourceView = true,
+    chosenSourceShape = $bindable(null),
     onCropFramingControl,
     onCropSourceControl,
     staffTips = null,
@@ -136,7 +138,6 @@
   }: Props = $props();
   let grading = $state(false);
   let gradeError = $state("");
-  let chosenSourceShape = $state<CropShapeKind | null>(null);
 
   const FRAME_SECONDS = 1 / POST_FRAME_RATE;
 
@@ -938,7 +939,7 @@
         mode="crop"
         onChange={(next, field) => {
           onCropSourceControl?.();
-          chosenSourceShape = null;
+          chosenSourceShape = "free";
           change(`source-geometry:${field}`, { sourceGeometry: next });
         }}
       />

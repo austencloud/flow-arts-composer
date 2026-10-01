@@ -45,6 +45,120 @@ describe("source crop geometry", () => {
     expect(moved.rotation).toBe(geometry.rotation);
   });
 
+  it("preserves a Fill half-slot's pixel aspect through side and corner drags", () => {
+    const filled = sourceFillBox(
+      geometry,
+      { width: 1080, height: 1920 },
+      { width: 1080, height: 1920 },
+      { x: 0, y: 0, width: 1, height: 0.5 }
+    );
+    const pixelAspect = (item: PostSourceGeometry) =>
+      ((item.crop.right - item.crop.left) * 1080) /
+      ((item.crop.bottom - item.crop.top) * 1920);
+    const handles = [
+      "left",
+      "right",
+      "top",
+      "bottom",
+      "top-left",
+      "top-right",
+      "bottom-left",
+      "bottom-right",
+    ] as const;
+    for (const handle of handles) {
+      const dx = handle.includes("left") ? 0.12 : -0.12;
+      const dy = handle.includes("top") ? 0.07 : -0.07;
+      const changed = dragSourceCrop(filled, handle, dx, dy, true);
+      expect(pixelAspect(changed), handle).toBeCloseTo(pixelAspect(filled));
+      expect(changed).toMatchObject({
+        x: filled.x,
+        y: filled.y,
+        width: filled.width,
+        height: filled.height,
+        rotation: filled.rotation,
+      });
+      expect(changed.crop).not.toEqual(filled.crop);
+    }
+    // A purely vertical corner drag still changes both spans.
+    const vertical = dragSourceCrop(filled, "bottom-right", 0, -0.05, true);
+    expect(vertical.crop.right).toBeLessThan(filled.crop.right);
+    expect(pixelAspect(vertical)).toBeCloseTo(pixelAspect(filled));
+  });
+
+  it("anchors opposite sides or corners and clamps uniform resizing to the source", () => {
+    const crop = geometry.crop;
+    const left = dragSourceCrop(geometry, "left", -10, 0, true).crop;
+    expect(left.right).toBe(crop.right);
+    expect((left.top + left.bottom) / 2).toBeCloseTo(
+      (crop.top + crop.bottom) / 2
+    );
+    expect(left.left).toBeGreaterThanOrEqual(0);
+    const corner = dragSourceCrop(geometry, "top-left", -10, -10, true).crop;
+    expect(corner.right).toBe(crop.right);
+    expect(corner.bottom).toBe(crop.bottom);
+    expect(corner.left).toBeGreaterThanOrEqual(0);
+    expect(corner.top).toBeGreaterThanOrEqual(0);
+    expect(
+      (corner.right - corner.left) / (corner.bottom - corner.top)
+    ).toBeCloseTo((crop.right - crop.left) / (crop.bottom - crop.top));
+    for (const handle of [
+      "left",
+      "right",
+      "top",
+      "bottom",
+      "top-left",
+      "top-right",
+      "bottom-left",
+      "bottom-right",
+    ] as const) {
+      const contracted = dragSourceCrop(geometry, handle, 10, 10, true).crop;
+      expect(contracted.right - contracted.left).toBeGreaterThanOrEqual(
+        0.0001 - 1e-12
+      );
+      expect(contracted.bottom - contracted.top).toBeGreaterThanOrEqual(
+        0.0001 - 1e-12
+      );
+      expect(contracted.left).toBeGreaterThanOrEqual(0);
+      expect(contracted.right).toBeLessThanOrEqual(1);
+      expect(contracted.top).toBeGreaterThanOrEqual(0);
+      expect(contracted.bottom).toBeLessThanOrEqual(1);
+    }
+  });
+
+  it("lets Free corners resize each edge independently", () => {
+    const changed = dragSourceCrop(geometry, "bottom-right", -0.1, 0.05);
+    expect(changed.crop.right).toBeCloseTo(0.8);
+    expect(changed.crop.bottom).toBeCloseTo(0.85);
+    expect(changed.crop.left).toBe(geometry.crop.left);
+    expect(changed.crop.top).toBe(geometry.crop.top);
+    expect(
+      (changed.crop.right - changed.crop.left) /
+        (changed.crop.bottom - changed.crop.top)
+    ).not.toBeCloseTo(
+      (geometry.crop.right - geometry.crop.left) /
+        (geometry.crop.bottom - geometry.crop.top)
+    );
+  });
+
+  it("keeps a fixed preset crop ratio during a later drag", () => {
+    const preset = sourceCropAtRatio(
+      geometry,
+      { width: 1920, height: 1080 },
+      { width: 1080, height: 1920 },
+      1
+    );
+    const changed = dragSourceCrop(preset, "top-right", 0.04, 0.2, true);
+    expect(
+      ((changed.crop.right - changed.crop.left) * 1920) /
+        ((changed.crop.bottom - changed.crop.top) * 1080)
+    ).toBeCloseTo(1);
+    expect(changed.rotation).toBe(preset.rotation);
+    expect(changed.x).toBe(preset.x);
+    expect(changed.y).toBe(preset.y);
+    expect(changed.width).toBe(preset.width);
+    expect(changed.height).toBe(preset.height);
+  });
+
   it("sets a preset ratio without changing the imported turn or crop center", () => {
     const changed = sourceCropAtRatio(
       geometry,
