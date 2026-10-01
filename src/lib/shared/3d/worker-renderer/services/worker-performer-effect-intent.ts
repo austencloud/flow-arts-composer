@@ -73,16 +73,23 @@ export function createWorkerPerformerEffectIntent(
     propType: string | undefined
   ): WorkerTipEffectDecision[] =>
     resolvePropTipAnchors3D(propType, input.staffHalfLength, propBuild).map(
-      ({ effectTipIndex }) => ({
+      ({ effectTipIndex, effectKeyIndex }) => ({
         propIndex,
         tipIndex: effectTipIndex,
         effect: resolveEffect(
           propIndex,
-          effectTipIndex,
+          effectKeyIndex,
           input.tipEffectMap,
           input.globalTipEffectMap ?? {}
         ),
       })
+    );
+  const handTrailEffect = (propIndex: 0 | 1) =>
+    resolveEffect(
+      propIndex,
+      1,
+      input.tipEffectMap,
+      input.globalTipEffectMap ?? {}
     );
 
   // Preserve anchor order and duplicates. Multi-prong props intentionally map
@@ -140,6 +147,7 @@ export function createWorkerPerformerEffectIntent(
     qualityTier: input.qualityTier,
     propBuild,
     tips,
+    handTrailEffects: [handTrailEffect(0), handTrailEffect(1)],
     trails: resolveTrails3D(
       resolveTrailColors(input.effectsConfig.trails, input.handColors),
       { trackingMode: input.trailTrackingMode }
