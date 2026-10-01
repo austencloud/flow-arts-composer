@@ -69,7 +69,7 @@ describe("ExportGlyphPrerenderer elemental assets", () => {
 
     expect(imageCacheMocks.getImageFromUrl).toHaveBeenCalledOnce();
     expect(imageCacheMocks.getImageFromUrl).toHaveBeenCalledWith(
-      "/images/elements/water-v2.webp"
+      "/images/elements/norm/water.webp"
     );
     expect(prerenderer.getElementalGlyphForStep(0)).toMatchObject({
       sourceWidth: 200,
