@@ -108,12 +108,13 @@
       onclick={onExport}
       disabled={exporting || locked}
       ariaBusy={exporting}
+      ariaLabel={t("post_editor_export")}
     >
       <i
         class="fa-solid {exporting ? 'fa-spinner fa-spin' : 'fa-file-export'}"
         aria-hidden="true"
       ></i>
-      {t("post_editor_export")}
+      <span class="export-label">{t("post_editor_export")}</span>
     </PanelButton>
   {/if}
 </div>
@@ -125,6 +126,13 @@
     gap: 0.5rem;
     flex-shrink: 0;
     white-space: nowrap;
+  }
+
+  /* A phone-width header keeps Export's icon; its name stays on the button. */
+  @container post-editor-header (max-width: 30rem) {
+    .export-label {
+      display: none;
+    }
   }
 
   @media (prefers-reduced-motion: reduce) {

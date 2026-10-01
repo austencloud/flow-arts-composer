@@ -2200,10 +2200,10 @@
   {/if}
 {/snippet}
 
-{#snippet editorActions()}
+{#snippet postActions(inHeader: boolean)}
   <PostEditorActions
     {exporting}
-    locked={showTimingStage}
+    locked={showTimingStage || (inHeader && cropMode)}
     onClearPostKeyframes={() => (confirmClearPost = true)}
     clearableKeyframes={clearablePostKeys}
     onMirror={mirrorWholePost}
@@ -2219,8 +2219,12 @@
     onImportDifferences={editor.project.importSource?.unresolved.length
       ? () => (showImportDifferences = true)
       : undefined}
-    trailing={cropMode ? cropActions : undefined}
+    trailing={cropMode && !inHeader ? cropActions : undefined}
   />
+{/snippet}
+
+{#snippet editorActions()}
+  {@render postActions(false)}
 {/snippet}
 
 {#snippet headerActions()}
@@ -2233,7 +2237,7 @@
       header
     />
     <PostSaveButton status={saveStatus} onSave={saveNow} disabled={exporting} />
-    {@render editorActions()}
+    {@render postActions(true)}
   </div>
 {/snippet}
 
@@ -2254,7 +2258,7 @@
     {editor}
     {exporting}
     draftStatus={header && !draftNotice ? undefined : draftStatus}
-    actions={header ? undefined : editorActions}
+    actions={header ? (cropMode ? cropActions : undefined) : editorActions}
   />
 {/snippet}
 
