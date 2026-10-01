@@ -3148,8 +3148,15 @@
     isolation: isolate;
   }
 
+  /* A wide screen's row sits over the timeline. In a window too short to
+     show it there, it holds the bottom edge until a scroll brings its place
+     into view, so the tools never leave reach. */
   .row-slot {
+    position: sticky;
+    bottom: 0;
+    z-index: 1;
     min-width: 0;
+    background: var(--theme-panel-bg, rgba(10, 12, 18, 0.92));
   }
 
   /* A phone's tools stay at the bottom of the screen, in a dock an open
