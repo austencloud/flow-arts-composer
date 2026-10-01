@@ -2904,7 +2904,9 @@
       max(0.5rem, env(safe-area-inset-bottom, 0px));
     border-top: 1px solid var(--theme-stroke, #484755);
     background: var(--theme-panel-bg, rgba(10, 12, 18, 0.92));
-    backdrop-filter: blur(12px);
+    /* A filter would anchor the appearance drawers to this dock, clipping
+       their headers on phones instead of positioning them in the viewport. */
+    backdrop-filter: none;
   }
 
   .dock.timing {
