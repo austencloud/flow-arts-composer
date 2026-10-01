@@ -510,16 +510,6 @@ export const SETTINGS_TABS: Section[] = [
     color: "#a855f7",
     gradient: "linear-gradient(135deg, #c084fc 0%, #9333ea 100%)",
   },
-  {
-    id: "language",
-    labelKey: "tab_settings_language",
-    descKey: "tab_desc_settings_language",
-    label: "Language",
-    icon: '<i class="fas fa-globe" aria-hidden="true"></i>',
-    description: "App language and translations",
-    color: "#0ea5e9",
-    gradient: "linear-gradient(135deg, #38bdf8 0%, #0ea5e9 100%)",
-  },
 ];
 
 // Feedback tabs configuration

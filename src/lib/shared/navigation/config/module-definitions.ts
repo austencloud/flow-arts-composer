@@ -96,6 +96,9 @@ export function normalizeModuleId(rawModuleId: string): ModuleId | undefined {
 const SECTION_ID_MIGRATIONS: Readonly<
   Record<string, Readonly<Record<string, string>>>
 > = {
+  settings: {
+    language: "preferences",
+  },
   choreo_card: {
     "scan-activity": CHOREO_CARD_SCAN_ATLAS_TAB_ID,
   },

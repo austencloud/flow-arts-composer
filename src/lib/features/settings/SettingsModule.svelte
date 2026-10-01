@@ -31,6 +31,7 @@
 
   // Navigation state - use global activeTab
   import { navigationState } from "$lib/shared/navigation/state/navigation-state.svelte";
+  import { authState } from "$lib/shared/auth/state/auth-state.svelte";
 
   // Import all tab components directly
   import ProfileTab from "$lib/shared/settings/components/tabs/ProfileTab.svelte";
@@ -38,7 +39,7 @@
   import PropTypeTab from "$lib/shared/settings/components/tabs/PropTypeTab.svelte";
   import BackgroundTab from "$lib/shared/settings/components/tabs/background/BackgroundTab.svelte";
   import PreferencesTab from "$lib/shared/settings/components/tabs/PreferencesTab.svelte";
-  import LanguageTab from "$lib/shared/settings/components/tabs/LanguageTab.svelte";
+  import LanguagePreference from "$lib/shared/settings/components/tabs/preferences/LanguagePreference.svelte";
   import ShortcutCenter from "$lib/shared/keyboard/components/ShortcutCenter.svelte";
   import NotificationPreferencesPanel from "$lib/features/feedback/components/NotificationPreferencesPanel.svelte";
 
@@ -240,8 +241,11 @@
     </div>
   </div>
 
-  {#if !isSettingsLoaded && activeTab !== "language"}
+  {#if !isSettingsLoaded}
     <div class="loading-state">
+      {#if activeTab === "preferences"}
+        <LanguagePreference />
+      {/if}
       <IOSSkeletonLoader variant="toggle" count={8} />
     </div>
   {:else}
@@ -270,11 +274,10 @@
           <PreferencesTab
             currentSettings={settings}
             onSettingUpdate={handleSettingUpdate}
+            guestOnly={!authState.isFullAccount}
           />
         {:else if activeTab === "keyboard"}
           <ShortcutCenter />
-        {:else if activeTab === "language"}
-          <LanguageTab />
         {:else}
           <!-- Fallback to account if unknown tab -->
           <ProfileTab

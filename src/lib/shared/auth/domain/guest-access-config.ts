@@ -22,8 +22,9 @@ const GUEST_MODULE_ACCESS: Record<string, string[]> = {
   browse: ["explore", "you"],
   post: [],
   creators: [],
-  // Language is a device preference and must remain available before sign-in.
-  settings: ["language"],
+  // Preferences holds the device language control. Its other settings remain
+  // hidden inside the page until the visitor has a full account.
+  settings: ["preferences"],
 };
 
 export function isModuleAccessible(
