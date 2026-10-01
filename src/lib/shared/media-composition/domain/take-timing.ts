@@ -207,6 +207,36 @@ export function createTakeTiming(input: {
 }
 
 /**
+ * The same timing for a copy of its video that holds the old one
+ * `offsetSeconds` in, such as the whole recording a clip was cut from. Every
+ * media time moves with the footage; the nudge is relative and stays.
+ */
+export function shiftTakeTiming(
+  timing: TakeTiming,
+  offsetSeconds: number,
+  takeKey: string
+): TakeTiming {
+  const at = (seconds: number) => seconds + offsetSeconds;
+  return {
+    ...timing,
+    takeKey,
+    sections: timing.sections.map((section) => ({
+      ...section,
+      startSeconds: at(section.startSeconds),
+      endSeconds: at(section.endSeconds),
+      taps: section.taps.map(at),
+      ...(section.beatOneSeconds !== undefined
+        ? { beatOneSeconds: at(section.beatOneSeconds) }
+        : {}),
+      overrides: section.overrides.map((override) => ({
+        ...override,
+        seconds: at(override.seconds),
+      })),
+    })),
+  };
+}
+
+/**
  * What the performance does at a split:
  * - `continues`: it carries on through (the performer changed tempo), so the
  *   right-hand side keeps counting from the left's labels.

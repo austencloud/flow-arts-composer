@@ -322,6 +322,17 @@ watches, because the timing session reads the video's play and pause events
 as the creator's own. Searches: black video, blackout, retained frame, video
 surface, video to canvas, frame copy.
 
+A Post Studio clip opens out only over footage its take's file holds:
+`trimItem` stops at the file's first and last frames, so a clip linked to a
+pre-cut file has nothing to reveal. `replaceTakeMedia` in
+`post-project-edits.ts` points a take at a longer copy of its video, such as the
+whole recording the clip was cut from, and moves every clip's source points,
+its keyframes and the take's timing (`shiftTakeTiming` in `take-timing.ts`) by
+the offset, so the post plays the same and each edge can then be dragged out.
+`docs/superpowers/specs/tutorial-videos-scripts/use-whole-recording.ts` applies
+it to a saved post. Searches: whole recording, replace media, relink, pre-cut
+clip, extend clip, trim won't extend, reveal hidden footage.
+
 A whole item turns with its box's `turn` (`PostBox` in
 `media-composition/domain/post-project.ts`): degrees clockwise about the box's
 centre, edge and all, compiled onto the region's `turn` and keyed like the
