@@ -28,7 +28,10 @@
     displayedBeatNumber,
   } from "$lib/shared/animation-engine/services/step-calculator";
   import { createStartPlacementFromBeatStart } from "$lib/shared/create/services/sequence-transforms";
-  import { copyPostAnimationEffects } from "./post-animation-effects.svelte";
+  import {
+    copyPostAnimationEffects,
+    postAnimationTrailSettings,
+  } from "./post-animation-effects.svelte";
   import { sequenceArrowLayers } from "$lib/shared/media-composition/domain/sequence-frame";
 
   let {
@@ -117,13 +120,11 @@
           ? { "*": { effect: "trails" } }
           : {};
       }
-      if (trail) {
-        itemTrailSettings = {
-          ...animationSettings.snapshot().trail,
-          trackingMode: trail.trackingMode,
-          tailLength: trail.tailLength,
-        };
-      }
+      itemTrailSettings = postAnimationTrailSettings(
+        animationSettings.snapshot().trail,
+        effectConfig,
+        trail
+      );
       itemEffects.replace(effectConfig);
     });
   });
