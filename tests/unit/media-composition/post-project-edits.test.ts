@@ -36,7 +36,16 @@ import {
   updateItemAt,
 } from "$lib/shared/media-composition/domain/post-project-edits";
 import { normalizeProject } from "$lib/shared/media-composition/domain/post-project-normalize";
-import { createTakeTiming } from "$lib/shared/media-composition/domain/take-timing";
+import {
+  createTakeTiming,
+  resolveTakeTiming,
+  takePositionAt,
+  type TakeTiming,
+} from "$lib/shared/media-composition/domain/take-timing";
+import {
+  projectDraftRecord,
+  resolvePostStudioDraft,
+} from "$lib/shared/media-composition/services/post-project-backup";
 import {
   framingAt,
   isAnimated,
@@ -624,15 +633,73 @@ describe("replaceTakeMedia", () => {
       );
     }
     const section = result.timings!.a!.sections[0]!;
-    expect(result.timings!.a!.takeKey).toBe("key-a-whole");
+    expect(result.timings!.a).toMatchObject({
+      takeKey: "key-a-whole",
+      updatedAt: ctx.now,
+    });
     expect(section).toMatchObject({
-      startSeconds: 50,
-      endSeconds: 70,
+      startSeconds: 0,
+      endSeconds: 120,
       taps: [53, 54, 55],
       beatOneSeconds: 53,
       offsetSeconds: 0.1,
       overrides: [{ position: 2, seconds: 54.5 }],
     });
+  });
+
+  it("keeps every landing on the same moment of the footage", () => {
+    const base = cutFromRecording();
+    const tapped = base.timings!.a!;
+    const untapped: TakeTiming = {
+      ...tapped,
+      sections: [
+        {
+          ...tapped.sections[0]!,
+          snap: "grid",
+          taps: [],
+          overrides: [],
+          beatOneSeconds: 3,
+        },
+      ],
+    };
+    const beats = [1, 1, 1, 1, 1, 1, 1, 1];
+    for (const timing of [tapped, untapped]) {
+      const before = resolveTakeTiming(timing, beats);
+      const replaced = replaceTakeMedia(
+        { ...base, timings: { a: timing } },
+        "a",
+        whole,
+        ctx
+      );
+      const after = resolveTakeTiming(replaced.timings!.a!, beats);
+      for (let seconds = 0; seconds <= 20; seconds += 0.25) {
+        expect(takePositionAt(after, seconds + 50)).toBeCloseTo(
+          takePositionAt(before, seconds)!
+        );
+      }
+      // The footage before the old file holds the opening pose.
+      expect(takePositionAt(after, 10)).toBeCloseTo(takePositionAt(before, 0)!);
+    }
+  });
+
+  it("keeps its landings through the editor's import", () => {
+    const replaced = valid(
+      replaceTakeMedia(cutFromRecording(), "a", whole, { now: NOW + 2 })
+    );
+    // The editor can open a blank timing for the new video before the moved
+    // one arrives; the move is the later edit, so its landings outrank it.
+    const blank = createTakeTiming({
+      sequenceId: "seq",
+      takeKey: "key-a-whole",
+      durationSeconds: 120,
+      now: NOW + 1,
+    });
+    const opened = { ...replaced, timings: { ...replaced.timings, a: blank } };
+    const imported = resolvePostStudioDraft("seq", [
+      projectDraftRecord({ ...replaced, updatedAt: replaced.updatedAt + 1 }),
+      { key: "before-import", value: JSON.stringify(opened) },
+    ]);
+    expect(imported?.timings?.a?.sections[0]?.taps).toEqual([53, 54, 55]);
   });
 
   it("lets a clip's head open out into the footage before its old first frame", () => {

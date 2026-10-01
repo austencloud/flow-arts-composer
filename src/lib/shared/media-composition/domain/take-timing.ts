@@ -209,21 +209,28 @@ export function createTakeTiming(input: {
 /**
  * The same timing for a copy of its video that holds the old one
  * `offsetSeconds` in, such as the whole recording a clip was cut from. Every
- * media time moves with the footage; the nudge is relative and stays.
+ * media time moves with the footage; the nudge is relative and stays. The
+ * sections still cover the whole video, so the first opens at its start and
+ * the last runs to its end. It counts as an edit made `now`, so it outranks
+ * a timing the editor opened for the copy before it arrived.
  */
 export function shiftTakeTiming(
   timing: TakeTiming,
   offsetSeconds: number,
-  takeKey: string
+  take: { takeKey: string; durationSeconds: number },
+  now: number
 ): TakeTiming {
   const at = (seconds: number) => seconds + offsetSeconds;
+  const last = timing.sections.length - 1;
   return {
     ...timing,
-    takeKey,
-    sections: timing.sections.map((section) => ({
+    takeKey: take.takeKey,
+    updatedAt: now,
+    sections: timing.sections.map((section, index) => ({
       ...section,
-      startSeconds: at(section.startSeconds),
-      endSeconds: at(section.endSeconds),
+      startSeconds: index === 0 ? 0 : at(section.startSeconds),
+      endSeconds:
+        index === last ? take.durationSeconds : at(section.endSeconds),
       taps: section.taps.map(at),
       ...(section.beatOneSeconds !== undefined
         ? { beatOneSeconds: at(section.beatOneSeconds) }

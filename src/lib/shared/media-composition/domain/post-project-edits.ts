@@ -228,7 +228,12 @@ export function replaceTakeMedia(
         ? {
             timings: {
               ...project.timings,
-              [takeId]: shiftTakeTiming(timing, offset, replacement.takeKey),
+              [takeId]: shiftTakeTiming(
+                timing,
+                offset,
+                { takeKey: replacement.takeKey, durationSeconds },
+                ctx.now
+              ),
             },
           }
         : {}),
