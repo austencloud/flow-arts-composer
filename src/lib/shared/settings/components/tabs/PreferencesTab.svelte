@@ -18,11 +18,17 @@
   import { generateTourState } from "$lib/shared/onboarding/state/generate-tour-state.svelte";
   import { handleModuleChange } from "$lib/shared/navigation-coordinator/navigation-coordinator.svelte";
   import OfflineLocalDataSection from "./preferences/OfflineLocalDataSection.svelte";
+  import LanguagePreference from "./preferences/LanguagePreference.svelte";
   import { Collapsible } from "bits-ui";
 
-  let { currentSettings, onSettingUpdate } = $props<{
+  let {
+    currentSettings,
+    onSettingUpdate,
+    guestOnly = false,
+  } = $props<{
     currentSettings: AppSettings;
     onSettingUpdate?: (event: { key: string; value: unknown }) => void;
+    guestOnly?: boolean;
   }>();
 
   // Services
@@ -87,102 +93,111 @@
     </div>
     <div class="header-content">
       <h1>{t("settings_preferences")}</h1>
-      <p>{t("settings_customize_behavior")}</p>
+      {#if !guestOnly}<p>{t("settings_customize_behavior")}</p>{/if}
     </div>
   </header>
 
-  <!-- Confirmation Dialogs Section -->
-  <section class="section">
-    <h2 class="section-title">
-      <i class="fas fa-message-question" aria-hidden="true"></i>
-      {t("settings_confirmation_dialogs")}
-    </h2>
+  <LanguagePreference />
 
-    <div class="toggle-list">
-      <!-- Clear Sequence Confirmation -->
-      <button
-        type="button"
-        class="toggle-row"
-        onclick={handleToggleClearConfirmation}
-        aria-pressed={showClearConfirmation}
-      >
-        <div class="toggle-info">
-          <span class="toggle-label">{t("settings_ask_before_clearing")}</span>
-        </div>
-        <div class="toggle-switch" class:active={showClearConfirmation}>
-          <div class="toggle-knob"></div>
-        </div>
-      </button>
+  {#if !guestOnly}
+    <!-- Confirmation Dialogs Section -->
+    <section class="section">
+      <h2 class="section-title">
+        <i class="fas fa-message-question" aria-hidden="true"></i>
+        {t("settings_confirmation_dialogs")}
+      </h2>
 
-      <!-- LOOP Auto-Complete Confirmation -->
-      <button
-        type="button"
-        class="toggle-row"
-        onclick={handleToggleLoopConfirmation}
-        aria-pressed={showLoopConfirmation}
-      >
-        <div class="toggle-info">
-          <span class="toggle-label">{t("settings_ask_before_loop")}</span>
-        </div>
-        <div class="toggle-switch" class:active={showLoopConfirmation}>
-          <div class="toggle-knob"></div>
-        </div>
-      </button>
-    </div>
-  </section>
+      <div class="toggle-list">
+        <!-- Clear Sequence Confirmation -->
+        <button
+          type="button"
+          class="toggle-row"
+          onclick={handleToggleClearConfirmation}
+          aria-pressed={showClearConfirmation}
+        >
+          <div class="toggle-info">
+            <span class="toggle-label">{t("settings_ask_before_clearing")}</span
+            >
+          </div>
+          <div class="toggle-switch" class:active={showClearConfirmation}>
+            <div class="toggle-knob"></div>
+          </div>
+        </button>
 
-  <!-- Guides Section -->
-  <section class="section">
-    <h2 class="section-title">
-      <i class="fas fa-compass" aria-hidden="true"></i>
-      {t("settings_guides")}
-    </h2>
+        <!-- LOOP Auto-Complete Confirmation -->
+        <button
+          type="button"
+          class="toggle-row"
+          onclick={handleToggleLoopConfirmation}
+          aria-pressed={showLoopConfirmation}
+        >
+          <div class="toggle-info">
+            <span class="toggle-label">{t("settings_ask_before_loop")}</span>
+          </div>
+          <div class="toggle-switch" class:active={showLoopConfirmation}>
+            <div class="toggle-knob"></div>
+          </div>
+        </button>
+      </div>
+    </section>
 
-    <div class="guide-buttons">
-      <button type="button" class="guide-button" onclick={handleReplayTutorial}>
-        <i class="fas fa-wand-magic-sparkles" aria-hidden="true"></i>
-        <span>{t("settings_replay_construct_guide")}</span>
-      </button>
+    <!-- Guides Section -->
+    <section class="section">
+      <h2 class="section-title">
+        <i class="fas fa-compass" aria-hidden="true"></i>
+        {t("settings_guides")}
+      </h2>
 
-      <button
-        type="button"
-        class="guide-button"
-        onclick={handleReplayGenerateTour}
-      >
-        <i class="fas fa-circle-question" aria-hidden="true"></i>
-        <span>{t("settings_replay_generate_tour")}</span>
-      </button>
-    </div>
-  </section>
+      <div class="guide-buttons">
+        <button
+          type="button"
+          class="guide-button"
+          onclick={handleReplayTutorial}
+        >
+          <i class="fas fa-wand-magic-sparkles" aria-hidden="true"></i>
+          <span>{t("settings_replay_construct_guide")}</span>
+        </button>
 
-  <section class="section advanced-section">
-    <Collapsible.Root bind:open={advancedOpen}>
-      <Collapsible.Trigger class="advanced-trigger">
-        <span class="advanced-trigger-icon">
-          <i class="fas fa-database" aria-hidden="true"></i>
-        </span>
-        <span class="advanced-trigger-copy">
-          <strong>{t("settings_advanced")}</strong>
-          <small>{t("settings_advanced_desc")}</small>
-        </span>
-        <i
-          class="fas fa-chevron-down advanced-chevron"
-          class:open={advancedOpen}
-          aria-hidden="true"
-        ></i>
-      </Collapsible.Trigger>
+        <button
+          type="button"
+          class="guide-button"
+          onclick={handleReplayGenerateTour}
+        >
+          <i class="fas fa-circle-question" aria-hidden="true"></i>
+          <span>{t("settings_replay_generate_tour")}</span>
+        </button>
+      </div>
+    </section>
 
-      <Collapsible.Content class="advanced-content">
-        <div class="advanced-content-inner">
-          <header class="advanced-content-header">
-            <h3>{t("settings_offline_local_data")}</h3>
-            <p>{t("settings_offline_local_data_desc")}</p>
-          </header>
-          <OfflineLocalDataSection />
-        </div>
-      </Collapsible.Content>
-    </Collapsible.Root>
-  </section>
+    <section class="section advanced-section">
+      <Collapsible.Root bind:open={advancedOpen}>
+        <Collapsible.Trigger class="advanced-trigger">
+          <span class="advanced-trigger-icon">
+            <i class="fas fa-database" aria-hidden="true"></i>
+          </span>
+          <span class="advanced-trigger-copy">
+            <strong>{t("settings_advanced")}</strong>
+            <small>{t("settings_advanced_desc")}</small>
+          </span>
+          <i
+            class="fas fa-chevron-down advanced-chevron"
+            class:open={advancedOpen}
+            aria-hidden="true"
+          ></i>
+        </Collapsible.Trigger>
+
+        <Collapsible.Content class="advanced-content">
+          <div class="advanced-content-inner">
+            <header class="advanced-content-header">
+              <h3>{t("settings_offline_local_data")}</h3>
+              <p>{t("settings_offline_local_data_desc")}</p>
+            </header>
+            <OfflineLocalDataSection />
+          </div>
+        </Collapsible.Content>
+      </Collapsible.Root>
+    </section>
+  {/if}
 </div>
 
 <style>

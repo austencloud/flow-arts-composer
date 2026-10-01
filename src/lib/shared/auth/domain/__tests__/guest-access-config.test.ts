@@ -6,17 +6,17 @@ import {
 } from "../guest-access-config";
 
 describe("guest Settings access", () => {
-  it("allows the language tab before sign-in", () => {
+  it("allows the Preferences language control before sign-in", () => {
     expect(isModuleAccessible("settings", "guest")).toBe(true);
-    expect(isTabAccessible("settings", "language", "guest")).toBe(true);
-    expect(getAccessibleTabs("settings", "guest")).toEqual(["language"]);
+    expect(isTabAccessible("settings", "preferences", "guest")).toBe(true);
+    expect(isTabAccessible("settings", "language", "guest")).toBe(false);
+    expect(getAccessibleTabs("settings", "guest")).toEqual(["preferences"]);
   });
 
   it.each([
     "profile",
     "props",
     "theme",
-    "preferences",
     "notifications",
     "keyboard",
     "release-notes",
@@ -26,7 +26,7 @@ describe("guest Settings access", () => {
 
   it("allows account holders to open their Settings tabs", () => {
     expect(isTabAccessible("settings", "profile", "user")).toBe(true);
-    expect(isTabAccessible("settings", "language", "user")).toBe(true);
+    expect(isTabAccessible("settings", "preferences", "user")).toBe(true);
   });
 });
 

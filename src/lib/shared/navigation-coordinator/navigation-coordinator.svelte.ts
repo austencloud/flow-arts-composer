@@ -451,7 +451,6 @@ const TAB_ORDERS: Record<string, string[]> = {
     "theme",
     "preferences",
     "keyboard",
-    "language",
   ],
 };
 
