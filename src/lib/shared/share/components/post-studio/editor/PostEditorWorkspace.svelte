@@ -150,6 +150,7 @@
   } from "./post-crop-session.svelte";
   import {
     createPostDraftAutosave,
+    shouldSubmitPostDraft,
     loadPostDraft,
   } from "$lib/shared/media-composition/services/post-draft-storage";
   import {
@@ -326,7 +327,12 @@
 
   $effect(() => {
     const revision = editor.saveRevision;
-    if (draftAutosave) untrack(() => draftAutosave.submit(editor.snapshot));
+    if (draftAutosave)
+      untrack(() => {
+        const snapshot = editor.snapshot;
+        if (shouldSubmitPostDraft(snapshot, revision))
+          draftAutosave.submit(snapshot);
+      });
     else if (revision > 0)
       untrack(() => {
         if (!editor.saveError) savedAt = Date.now();
