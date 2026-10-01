@@ -29,6 +29,10 @@ export interface DisplayGridBox {
   gapY: number;
   count: number;
   grow?: boolean;
+  /** Compact hosts retain their smaller artwork floor when fitting a box. */
+  minArt?: number;
+  /** Compact grids may center a shorter final row, but never leave one tile. */
+  allowPartialRows?: boolean;
   /** Tile index where the second visual group starts; null for one group. */
   groupBoundary?: number | null;
 }
@@ -56,7 +60,8 @@ export function fitDisplayGrid(box: DisplayGridBox): DisplayGridFit | null {
   const columnChoices = grouped
     ? [2, 4, 8].filter((cols) => cols <= count)
     : Array.from({ length: count - 1 }, (_, i) => i + 2).filter(
-        (cols) => count % cols === 0
+        (cols) =>
+          count % cols === 0 || (box.allowPartialRows && count % cols > 1)
       );
 
   const cap = box.grow
@@ -105,7 +110,7 @@ export function fitDisplayGrid(box: DisplayGridBox): DisplayGridFit | null {
     }
   }
 
-  if (!best.cols || best.art < MIN_FIT_ART) return null;
+  if (!best.cols || best.art < (box.minArt ?? MIN_FIT_ART)) return null;
   return {
     cols: best.cols,
     art: Math.floor(best.art),

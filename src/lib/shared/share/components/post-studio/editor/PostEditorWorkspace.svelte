@@ -2259,6 +2259,9 @@
 {#snippet panel(tool: PostPanelToolId, placement: "dock" | "side")}
   <PostToolPanel
     {tool}
+    fitContent={tool === "appearance" &&
+      (editor.selectedItem?.kind === "animation" ||
+        editor.selectedItem?.kind === "moves")}
     subject={editor.selectedItem ? labelFor(editor.selectedItem) : undefined}
     onDone={placement === "dock" && !cropMode ? closePanel : undefined}
     {placement}
