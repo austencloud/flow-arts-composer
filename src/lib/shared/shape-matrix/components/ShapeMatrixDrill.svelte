@@ -1886,7 +1886,7 @@
      buttons instead. Only this tier: the short-wide tier puts the dock under
      the hero, and phone and desktop never answer to the compact name. The
      root class lifts these over ControlDock's own .compact label rule. */
-  @container shape-matrix-drill-compact (min-width: 42rem) and (min-aspect-ratio: 5 / 6) and (min-height: 24.01rem) {
+  @container shape-matrix-drill-compact (min-width: 42rem) and (min-aspect-ratio: 5 / 6) and (min-height: 26.01rem) {
     .drill .animation-controls :global(.dock .cat-bar) {
       padding: 0;
       background: none;
@@ -1923,7 +1923,7 @@
 
   /* A short landscape phone has no height for a stacked side column. The
      modes keep it; the actions go under them and the dock under the hero. */
-  @container shape-matrix-drill-compact (min-width: 42rem) and (max-height: 24rem) {
+  @container shape-matrix-drill-compact (min-width: 42rem) and (max-height: 26rem) {
     .drill {
       grid-template-columns: minmax(14rem, 18rem) minmax(0, 1fr);
       grid-template-rows: minmax(0, 1fr) auto;
