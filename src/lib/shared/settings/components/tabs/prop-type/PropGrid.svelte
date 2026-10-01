@@ -118,8 +118,8 @@
      * scrollbar beats grouping.
      */
     flat?: boolean;
-    /** Larger scrolling cards when the live preview shares the screen. */
-    tileDensity?: "compact" | "comfortable";
+    /** Inspector keeps small artwork and readable labels in a scrolling grid. */
+    tileDensity?: "compact" | "comfortable" | "inspector";
     /** A bounded, sideways-scrolling catalogue beneath a compact toolbar. */
     layout?: "grid" | "rail";
     heading?: Snippet;
@@ -878,6 +878,7 @@
   class:inline={variant === "inline"}
   class:flat
   class:rail={layout === "rail"}
+  class:inspector={tileDensity === "inspector"}
   class:host-scroll={scrollMode === "host"}
   class:fluid-sections={fluidSections}
   data-swipe-block={layout === "rail" ? "" : undefined}
@@ -1258,6 +1259,7 @@
               style={balancedColumns(familyTiles.length)}
               style:--family-count={familyChoices(drill.base).length}
               class:comfortable={tileDensity === "comfortable"}
+              class:inspector={tileDensity === "inspector"}
               class:fill={drillLayout !== null}
               class:flat-grid={flat && drillLayout === null}
               class:section-buttons={!flat && drillLayout === null}
@@ -1295,6 +1297,7 @@
             aria-label={t("settings_prop_choices")}
             class:dragging={railDragging}
             class:comfortable={tileDensity === "comfortable"}
+            class:inspector={tileDensity === "inspector"}
             class:fill={flatLayout !== null}
             style:height={flatLayout ? `${gridFillHeight}px` : undefined}
             style:--flat-cols={flatLayout?.cols}
@@ -1724,6 +1727,41 @@
   }
   .flat-grid.comfortable :global(.prop-label) {
     font-size: var(--font-size-min, 0.875rem);
+    white-space: normal;
+  }
+
+  /* An editor needs the catalog beside its canvas even when only a few rows
+     fit. Keep artwork compact, let names wrap, and scroll this region alone. */
+  .prop-grid-root.inspector .grid-scroll {
+    padding: 8px 4px;
+    scrollbar-gutter: stable;
+    overscroll-behavior-y: contain;
+  }
+  .flat-grid.inspector {
+    grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+    grid-auto-rows: 108px;
+    gap: 8px;
+    align-content: start;
+  }
+  .flat-grid.inspector :global(.prop-button) {
+    height: 100%;
+    min-height: 44px;
+    aspect-ratio: auto;
+    padding: 6px;
+    gap: 4px;
+    justify-content: flex-start;
+  }
+  .flat-grid.inspector :global(.prop-image-container) {
+    flex: none;
+    height: 40px;
+  }
+  .flat-grid.inspector :global(.prop-composition-preview) {
+    width: 40px;
+    height: 40px;
+    max-height: 100%;
+  }
+  .flat-grid.inspector :global(.prop-label) {
+    font-size: var(--font-size-min, 14px);
     white-space: normal;
   }
 
