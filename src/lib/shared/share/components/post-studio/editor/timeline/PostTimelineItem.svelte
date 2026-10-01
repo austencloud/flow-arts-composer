@@ -1,6 +1,8 @@
 <script lang="ts">
-  import type { PostItem, PostItemKind } from "$lib/shared/media-composition/domain/post-project";
-  import type { PostKeyframeMarker } from "$lib/shared/media-composition/domain/post-project-keyframes";
+  import type {
+    PostItem,
+    PostItemKind,
+  } from "$lib/shared/media-composition/domain/post-project";
   import { formatPostClock } from "../../builder/post-builder-format";
   import { t } from "$lib/shared/i18n/i18n.svelte.js";
 
@@ -21,10 +23,8 @@
     onActivate: (itemId: string) => void;
     onBodyPointerDown: (event: PointerEvent) => void;
     onHandlePointerDown: (event: PointerEvent, edge: "start" | "end") => void;
-    markers: PostKeyframeMarker[];
-    onMarkerSeek: (seconds: number) => void;
-    onMarkerPointerDown: (event: PointerEvent, seconds: number) => void;
-    onMarkerKeydown: (event: KeyboardEvent, seconds: number) => void;
+    /** Whether any channel has keyframes; the keys themselves show in rows under a selected clip. */
+    animated: boolean;
   }
 
   let {
@@ -38,14 +38,12 @@
     onActivate,
     onBodyPointerDown,
     onHandlePointerDown,
-    markers,
-    onMarkerSeek,
-    onMarkerPointerDown,
-    onMarkerKeydown,
+    animated,
   }: Props = $props();
 
   const KIND_ICON: Record<PostItemKind, string> = {
     video: "fa-solid fa-film",
+    image: "fa-solid fa-image",
     card: "fa-solid fa-id-card",
     animation: "fa-solid fa-wand-magic-sparkles",
     moves: "fa-solid fa-arrows-up-down-left-right",
@@ -57,8 +55,6 @@
     item.kind === "video" && item.speed !== 1 ? `${item.speed}×` : null
   );
   const isMuted = $derived(item.kind === "video" && item.volume === 0);
-  const pxPerSecond = $derived(item.duration > 0 ? widthPx / item.duration : 0);
-  const hasKeyframes = $derived(markers.length > 0);
 
   const accessibleName = $derived.by(() => {
     const parts = [
@@ -68,10 +64,11 @@
         end: formatPostClock(item.start + item.duration),
       }),
     ];
-    if (speedLabel) parts.push(t("post_timeline_item_speed", { speed: speedLabel }));
+    if (speedLabel)
+      parts.push(t("post_timeline_item_speed", { speed: speedLabel }));
     if (isMuted) parts.push(t("post_timeline_item_muted"));
     if (item.fill) parts.push(t("post_timeline_item_linked"));
-    if (hasKeyframes) parts.push(t("post_timeline_item_animated"));
+    if (animated) parts.push(t("post_timeline_item_animated"));
     return parts.join(", ");
   });
 
@@ -92,23 +89,6 @@
     event.preventDefault();
     event.stopPropagation();
     onHandlePointerDown(event, edge);
-  }
-
-  function handleMarkerPointerDown(event: PointerEvent, seconds: number): void {
-    event.preventDefault();
-    event.stopPropagation();
-    if (locked) return;
-    onMarkerPointerDown(event, seconds);
-  }
-
-  function handleMarkerClick(event: MouseEvent, seconds: number): void {
-    event.stopPropagation();
-    onMarkerSeek(seconds);
-  }
-
-  function handleMarkerKeydown(event: KeyboardEvent, seconds: number): void {
-    event.stopPropagation();
-    onMarkerKeydown(event, seconds);
   }
 </script>
 
@@ -135,7 +115,7 @@
   {#if item.fill}
     <i class="fa-solid fa-link item-glyph" aria-hidden="true"></i>
   {/if}
-  {#if !selected && hasKeyframes}
+  {#if animated}
     <i class="fa-solid fa-diamond item-glyph" aria-hidden="true"></i>
   {/if}
   {#if locked}
@@ -162,23 +142,6 @@
   >
     <span class="handle-grip" aria-hidden="true"></span>
   </button>
-  <!-- Keyed by place, not time: retiming a keyframe keeps its button, and
-       with it the keyboard focus and the click that ends a drag. -->
-  {#each markers as marker, index (index)}
-    <button
-      type="button"
-      class="kf-marker"
-      style="left: {leftPx + (marker.seconds - item.start) * pxPerSecond}px"
-      data-item-id={item.id}
-      data-seconds={marker.seconds}
-      aria-label={t("post_timeline_keyframe_at", { time: formatPostClock(marker.seconds) })}
-      onpointerdown={(event) => handleMarkerPointerDown(event, marker.seconds)}
-      onclick={(event) => handleMarkerClick(event, marker.seconds)}
-      onkeydown={(event) => handleMarkerKeydown(event, marker.seconds)}
-    >
-      <span class="kf-marker-glyph" aria-hidden="true"></span>
-    </button>
-  {/each}
 {/if}
 
 <style>
@@ -194,7 +157,11 @@
     overflow: hidden;
     border: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.14));
     border-radius: 0.5rem;
-    background: color-mix(in srgb, var(--kind-tint, var(--theme-accent)) 22%, var(--theme-card-bg, #1c1c26));
+    background: color-mix(
+      in srgb,
+      var(--kind-tint, var(--theme-accent)) 22%,
+      var(--theme-card-bg, #1c1c26)
+    );
     color: var(--theme-text, #fff);
     font: inherit;
     font-size: var(--font-size-compact, 0.75rem);
@@ -239,7 +206,11 @@
     flex-shrink: 0;
     padding: 0.05rem 0.3rem;
     border-radius: 999px;
-    background: color-mix(in srgb, var(--kind-tint, var(--theme-accent)) 45%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--kind-tint, var(--theme-accent)) 45%,
+      transparent
+    );
     font-size: 0.7em;
     font-weight: 700;
     font-variant-numeric: tabular-nums;
@@ -253,7 +224,11 @@
 
   @media (hover: hover) {
     .post-timeline-item:hover {
-      border-color: color-mix(in srgb, var(--kind-tint, var(--theme-accent)) 60%, var(--theme-stroke));
+      border-color: color-mix(
+        in srgb,
+        var(--kind-tint, var(--theme-accent)) 60%,
+        var(--theme-stroke)
+      );
     }
   }
 
@@ -302,7 +277,8 @@
     height: min(60%, 2rem);
     border-radius: 999px;
     background: var(--theme-accent);
-    box-shadow: 0 0 0 1px color-mix(in srgb, var(--theme-text, #fff) 40%, transparent);
+    box-shadow: 0 0 0 1px
+      color-mix(in srgb, var(--theme-text, #fff) 40%, transparent);
   }
 
   .trim-handle:focus-visible .handle-grip {
@@ -310,56 +286,8 @@
     outline-offset: 2px;
   }
 
-  /* Keyframe marker: a rotated-square diamond centered on its time, with the
-     same 44px hit width as .trim-handle so it stays reachable on touch even
-     though the visible glyph is much smaller. It sits under the trim handles:
-     a keyframe on a clip's first or last frame is common, and the press at
-     that edge trims. The glyph rides the block's bottom edge, clear of the
-     label, in near-white with a dark outline so it reads on every kind's
-     tint - an accent-colored glyph vanished into the video block's own
-     accent tint. */
-  .kf-marker {
-    position: absolute;
-    top: 3px;
-    bottom: 3px;
-    z-index: 1;
-    display: flex;
-    align-items: flex-end;
-    justify-content: center;
-    width: 44px;
-    padding: 0 0 6px;
-    transform: translateX(-50%);
-    border: 0;
-    background: transparent;
-    cursor: pointer;
-    touch-action: none;
-  }
-
-  .kf-marker-glyph {
-    box-sizing: border-box;
-    width: 10px;
-    height: 10px;
-    border: 1.5px solid var(--theme-bg, #101018);
-    border-radius: 2px;
-    background: var(--theme-text, #fff);
-    transform: rotate(45deg);
-    transition: background-color var(--transition-fast);
-  }
-
-  .kf-marker:focus-visible .kf-marker-glyph {
-    outline: 2px solid var(--theme-accent);
-    outline-offset: 2px;
-  }
-
-  @media (hover: hover) {
-    .kf-marker:hover .kf-marker-glyph {
-      background: var(--theme-accent, #d4813a);
-    }
-  }
-
   @media (prefers-reduced-motion: reduce) {
-    .post-timeline-item,
-    .kf-marker-glyph {
+    .post-timeline-item {
       transition: none;
     }
   }

@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect } from "vitest";
 import { FrameBuilder } from "$lib/shared/animation-engine/services/frame-builder";
 
 describe("FrameBuilder", () => {
@@ -21,25 +21,6 @@ describe("FrameBuilder", () => {
     const sequenceData = { steps: [step1] } as any;
     const svc = new FrameBuilder();
     expect(svc.calculateBeatNumber(sequenceData, orphan as any)).toBe(0);
-  });
-
-  it("calculateTurnsTuple returns default when no motions", () => {
-    const svc = new FrameBuilder();
-    expect(svc.calculateTurnsTuple(null, null)).toBe("(s, 0, 0)");
-  });
-
-  it("calculateTurnsTuple delegates to generator when available", () => {
-    const generator = { generateTurnsTuple: vi.fn().mockReturnValue("(+, 1, 1)") };
-    const stepData = { motions: { left: {}, right: {} } } as any;
-    const svc = new FrameBuilder();
-    expect(svc.calculateTurnsTuple(stepData, generator as any)).toBe("(+, 1, 1)");
-  });
-
-  it("calculateTurnsTuple returns default when generator returns null", () => {
-    const generator = { generateTurnsTuple: vi.fn().mockReturnValue(null) };
-    const stepData = { motions: { left: {}, right: {} } } as any;
-    const svc = new FrameBuilder();
-    expect(svc.calculateTurnsTuple(stepData, generator as any)).toBe("(s, 0, 0)");
   });
 
   it("calculateMusicalPosition returns continuous position from orchestrator", () => {

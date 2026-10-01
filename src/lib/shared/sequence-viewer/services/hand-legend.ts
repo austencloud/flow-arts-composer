@@ -24,7 +24,7 @@ export function handLegendFor(
       lead: "Mirror me.",
       swatch: rightHandColor,
       rest: "is your right hand.",
-      spoken: "Mirror me. The color on your right is your right hand.",
+      spoken: "Mirror me. This color represents your right hand.",
     };
   }
   return {

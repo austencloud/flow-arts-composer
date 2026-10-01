@@ -1976,6 +1976,41 @@ After the graft, a scoped `startScanCellWarm` over the 60 restored codes
 completed 60/60 with 0 failures, and /q/0KUH renders all 16 cells with the
 mint-truth Z- (screenshot-verified, before/after).
 
+## Incident 2026-09-30: 615 audit violations, none of them corrupt data
+
+The 2026-09-30 alert reported 607 SAFE_REPROJECT sequences and 8 shortcodes.
+Each class came from an intentional code change that did not bring the audit
+or the stored corpus along with it.
+
+- **607 sequences, 2026-09-16 onward.** `48050b5010` renamed the projected
+  `startPosition` key to `startPlacement`, with read-side normalization and
+  no migration. The digest covers key names, so every stored document's
+  expected digest changed. An offline check against the backup found all 607
+  start values identical under the new key. The 11 `creatorIntent` entries
+  in `changedKeys` were map key order only. One record
+  (`994596ea…`) had been published on 2026-09-05 by a pre-v3 client with a
+  hash-v2 claim. Repair: snapshot
+  `pre-reconcile-snapshot-2026-10-01T00-58-45-951Z.json`, dry run, then
+  `--apply` wrote 607 with 0 failures; the follow-up dry run was 613/613
+  IN_SYNC.
+- **6 hand-path codes, 2026-09-05 onward.** `fdb2b8d13b` added the
+  `hand-path` payload kind (schema 4). The label engine had no rule for it
+  and derived TKA words from the hand paths (4 LEGACY_PAYLOAD_VERSION, 2
+  PAYLOAD_INCOMPLETE). An `--apply` would have stamped a word and schema 2
+  onto them. `scripts/migrations/lib/shortcode-payload-kinds.ts` now
+  validates hand-path records through `hydrateSelfContainedShortCodePayload`
+  (HAND_PATH_CURRENT), and any payload kind without a rule is reported as
+  UNKNOWN_PAYLOAD_KIND, never derived as a word.
+- **JBGM, PWZI, 2026-09-24 onward.** Minted 2026-09-22; the 2026-09-23
+  landmark lettering rule (`1ab0c1c1fd`) renamed their skewed beats K→Q and
+  E→N in the dataframe. Both payload channels carry identical motions. After
+  Austen's review they stay as minted and are baselined.
+
+Prevention: `public-sequence-projection.test.ts` pins the digest of a fixed
+sequence. Any projection change (renamed key, new field, hash change) fails
+that pin, whose comment requires a reconcile dry run and apply once the change
+deploys.
+
 ## Primary references
 
 - [Firestore transactions and batched writes](https://firebase.google.com/docs/firestore/manage-data/transactions)

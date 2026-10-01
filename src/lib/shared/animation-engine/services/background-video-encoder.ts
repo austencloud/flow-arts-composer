@@ -44,11 +44,14 @@ export class BackgroundVideoEncoder {
   private worker: Worker | null = null;
   private totalFrames = 0;
   private submittedFrames = 0;
+  private dequeuedFrames = 0;
   private encodedFrames = 0;
   private drainWaiters = new Set<{
     maxPendingFrames: number;
     resolve: () => void;
     reject: (error: Error) => void;
+    signal?: AbortSignal;
+    onAbort?: () => void;
   }>();
 
   /**
@@ -99,6 +102,7 @@ export class BackgroundVideoEncoder {
 
     this.totalFrames = config.totalFrames;
     this.submittedFrames = 0;
+    this.dequeuedFrames = 0;
     this.encodedFrames = 0;
     this.firstError = null;
 
@@ -226,18 +230,35 @@ export class BackgroundVideoEncoder {
    * bounding that queue prevents a fast compositor from freezing the tab while
    * hundreds of full-resolution frames wait behind the codec.
    */
-  async waitForFrameQueue(maxPendingFrames = 8): Promise<void> {
+  async waitForFrameQueue(
+    maxPendingFrames = 8,
+    signal?: AbortSignal
+  ): Promise<void> {
     if (!Number.isInteger(maxPendingFrames) || maxPendingFrames < 0) {
       throw new RangeError(
         "Pending frame limit must be a non-negative integer"
       );
     }
     if (this.firstError) throw this.firstError;
+    if (signal?.aborted) throw new Error("Export cancelled");
     if (!this.worker) throw new Error("Export cancelled");
-    if (this.submittedFrames - this.encodedFrames <= maxPendingFrames) return;
+    if (this.submittedFrames - this.dequeuedFrames <= maxPendingFrames) return;
 
     await new Promise<void>((resolve, reject) => {
-      this.drainWaiters.add({ maxPendingFrames, resolve, reject });
+      const waiter = {
+        maxPendingFrames,
+        resolve,
+        reject,
+        signal,
+        onAbort: undefined as (() => void) | undefined,
+      };
+      waiter.onAbort = () => {
+        this.drainWaiters.delete(waiter);
+        reject(new Error("Export cancelled"));
+      };
+      this.drainWaiters.add(waiter);
+      signal?.addEventListener("abort", waiter.onAbort, { once: true });
+      if (signal?.aborted) waiter.onAbort();
     });
   }
 
@@ -308,14 +329,22 @@ export class BackgroundVideoEncoder {
           this.encodedFrames,
           response.frameIndex + 1
         );
-        this.resolveDrainWaiters();
         this.onProgress?.(response.frameIndex, this.totalFrames);
+        break;
+
+      case "dequeued":
+        this.dequeuedFrames = Math.max(
+          this.dequeuedFrames,
+          response.frameCount
+        );
+        this.resolveDrainWaiters();
         break;
 
       case "complete": {
         const blob = new Blob([response.buffer], { type: "video/mp4" });
 
         this.encodedFrames = this.submittedFrames;
+        this.dequeuedFrames = this.submittedFrames;
         this.resolveDrainWaiters();
 
         this.finishResolve?.(blob);
@@ -387,17 +416,23 @@ export class BackgroundVideoEncoder {
   }
 
   private resolveDrainWaiters(): void {
-    const pendingFrames = this.submittedFrames - this.encodedFrames;
+    const pendingFrames = this.submittedFrames - this.dequeuedFrames;
     for (const waiter of this.drainWaiters) {
       if (pendingFrames <= waiter.maxPendingFrames) {
         this.drainWaiters.delete(waiter);
+        if (waiter.onAbort)
+          waiter.signal?.removeEventListener("abort", waiter.onAbort);
         waiter.resolve();
       }
     }
   }
 
   private rejectDrainWaiters(error: Error): void {
-    for (const waiter of this.drainWaiters) waiter.reject(error);
+    for (const waiter of this.drainWaiters) {
+      if (waiter.onAbort)
+        waiter.signal?.removeEventListener("abort", waiter.onAbort);
+      waiter.reject(error);
+    }
     this.drainWaiters.clear();
   }
 

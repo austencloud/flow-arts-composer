@@ -7,13 +7,11 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock("./EmailLinkAuth.svelte", async () => ({
-  default: (await import("./__test-stubs__/EmailAuthMethodStub.svelte"))
-    .default,
+  default: (await import("./__test-stubs__/EmailAuthFormStub.svelte")).default,
 }));
 
 vi.mock("./EmailPasswordAuth.svelte", async () => ({
-  default: (await import("./__test-stubs__/EmailAuthMethodStub.svelte"))
-    .default,
+  default: (await import("./__test-stubs__/EmailAuthFormStub.svelte")).default,
 }));
 
 vi.mock("$lib/shared/components/LastUsedBadge.svelte", async () => ({
@@ -21,38 +19,55 @@ vi.mock("$lib/shared/components/LastUsedBadge.svelte", async () => ({
     .default,
 }));
 
-vi.mock("$lib/shared/i18n/i18n.svelte", () => ({
-  t: (key: string) => (key === "auth_password" ? "Password" : key),
-}));
+vi.mock("$lib/shared/i18n/i18n.svelte", () => {
+  const english: Record<string, string> = {
+    auth_email_code: "Email code",
+    auth_email_code_last_used: "Email code, last used",
+    auth_password: "Password",
+    auth_password_last_used: "Password, last used",
+  };
+  return { t: (key: string) => english[key] ?? key };
+});
 
 vi.mock("$lib/shared/auth/services/last-auth-method.svelte", () => ({
   getLastAuthMethod: () => mocks.lastMethod,
 }));
 
+import { persistPendingEmailCode } from "$lib/shared/auth/services/pending-email-code";
 import EmailAuthTabs from "./EmailAuthTabs.svelte";
+
+const codeTab = () => page.getByRole("tab", { name: /^Email code/ });
+const passwordTab = () => page.getByRole("tab", { name: /^Password/ });
 
 describe("EmailAuthTabs", () => {
   beforeEach(() => {
     mocks.lastMethod = null;
+    localStorage.clear();
   });
 
-  it("starts new users on the email-code path", async () => {
-    render(EmailAuthTabs);
+  it("starts account creation on the email-code path", async () => {
+    render(EmailAuthTabs, { mode: "signup" });
 
+    await expect.element(codeTab()).toHaveAttribute("aria-selected", "true");
     await expect
-      .element(page.getByRole("tab", { name: "Email code" }))
-      .toHaveAttribute("aria-selected", "true");
-    await expect
-      .element(page.getByRole("tab", { name: "Password" }))
+      .element(passwordTab())
       .toHaveAttribute("aria-selected", "false");
   });
 
-  it("remembers a returning password user's method", async () => {
-    mocks.lastMethod = "password";
-    render(EmailAuthTabs);
+  it("starts signing in on the password box", async () => {
+    render(EmailAuthTabs, { mode: "signin" });
 
     await expect
-      .element(page.getByRole("tab", { name: /Password, last used/ }))
+      .element(passwordTab())
+      .toHaveAttribute("aria-selected", "true");
+  });
+
+  it("remembers a returning password user's method even on account creation", async () => {
+    mocks.lastMethod = "password";
+    render(EmailAuthTabs, { mode: "signup" });
+
+    await expect
+      .element(page.getByRole("tab", { name: "Password, last used" }))
       .toHaveAttribute("aria-selected", "true");
   });
 
@@ -60,11 +75,35 @@ describe("EmailAuthTabs", () => {
     mocks.lastMethod = "password";
     render(EmailAuthTabs, { compact: true, showMethods: true });
 
+    await expect.element(codeTab()).toHaveAttribute("aria-selected", "true");
     await expect
-      .element(page.getByRole("tab", { name: "Email code" }))
-      .toHaveAttribute("aria-selected", "true");
-    await expect
-      .element(page.getByRole("tab", { name: /Password, last used/ }))
+      .element(passwordTab())
       .toHaveAttribute("aria-selected", "false");
+  });
+
+  it("opens on the code box while a mailed code is still waiting", async () => {
+    mocks.lastMethod = "password";
+    persistPendingEmailCode(
+      "8f14e45f-ceea-467a-9575-8a1f0c3d2b61",
+      "spinner@example.com"
+    );
+    render(EmailAuthTabs, { mode: "signin" });
+
+    await expect.element(codeTab()).toHaveAttribute("aria-selected", "true");
+  });
+
+  it("hands the typed address to the code form and mails a code straight away", async () => {
+    render(EmailAuthTabs, { mode: "signin" });
+
+    await page.getByLabelText("Stub email").fill("spinner@example.com");
+    await page.getByRole("button", { name: "Use code" }).click();
+
+    await expect.element(codeTab()).toHaveAttribute("aria-selected", "true");
+    await expect
+      .element(page.getByTestId("email-form"))
+      .toHaveAttribute("data-send-on-open", "true");
+    await expect
+      .element(page.getByLabelText("Stub email"))
+      .toHaveValue("spinner@example.com");
   });
 });

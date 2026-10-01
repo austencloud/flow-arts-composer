@@ -78,29 +78,29 @@
   let cardRef = $state<CardRef>();
   let pendingPerformerId = $state<string | null>(null);
   let selectionRequest = 0;
-  const workflowOptions = [
+  const workflowOptions = $derived([
     {
       value: "custom" as TunnelWorkflowMode,
-      label: "Separate",
-      shortLabel: "Separate",
+      label: t("tunnel_separate"),
+      shortLabel: t("tunnel_separate"),
       ariaLabel:
-        "Separate sequences. Every performer has their own choreography.",
+        t("tunnel_separate_sequences_every_performer_has_their_own_choreography_"),
     },
     {
       value: "seeded" as TunnelWorkflowMode,
-      label: "Linked",
-      shortLabel: "Linked",
+      label: t("tunnel_linked"),
+      shortLabel: t("tunnel_linked"),
       ariaLabel:
-        "Linked sequences. Performer 1 creates choreography for the remaining cast.",
+        t("tunnel_linked_sequences_performer_creates_choreography_for_the_remaining_cast"),
     },
-  ];
+  ]);
   const canGrowCast = $derived(
     creator.performerSlots.length < MAX_INTERACTIVE_TUNNEL_PERFORMERS
   );
   const workflowDescription = $derived(
     creator.workflow === "seeded"
-      ? "Performer 1 drives the linked cast."
-      : "Each performer has their own sequence."
+      ? t("tunnel_performer_drives_the_linked_cast_")
+      : t("tunnel_each_performer_has_their_own_sequence_")
   );
   const selectedIndex = $derived.by(() => {
     const index = creator.performerSlots.findIndex(
@@ -120,7 +120,7 @@
     const sourcePerformerId = performer.source.performerId;
     return (
       creator.performerSlots.find((slot) => slot.id === sourcePerformerId)
-        ?.label ?? "an earlier performer"
+        ?.label ?? t("tunnel_earlier_performer")
     );
   }
 
@@ -210,11 +210,11 @@
 
   function removeReason(performerId: string): string | null {
     if (creator.performerSlots.length <= 1) {
-      return "A tunnel needs at least one performer card.";
+      return t("tunnel_a_tunnel_needs_at_least_one_performer_card_");
     }
     const dependants = creator.dependantLabels(performerId);
     if (dependants.length > 0) {
-      return `Reassign ${dependants.join(", ")} before removing this source.`;
+      return t("tunnel_reassign_before_remove", { names: dependants.join(", ") });
     }
     return null;
   }
@@ -268,12 +268,10 @@
 >
   <header class="roster-heading">
     <div class="roster-identity">
-      <span>Cast</span>
-      <h3 id="performer-roster-title">Choreography</h3>
+      <span>{t("create_review_cast")}</span>
+      <h3 id="performer-roster-title">{t("create_review_choreography")}</h3>
       <p class="roster-summary">
-        {creator.performerSlots.length}
-        {creator.performerSlots.length === 1 ? "performer" : "performers"} · {creator.authoredPerformerCount}
-        ready · {workflowDescription}
+        {t("tunnel_cast_ready", { count: creator.performerSlots.length, ready: creator.authoredPerformerCount })} · {workflowDescription}
       </p>
     </div>
     <div class="roster-heading-actions">
@@ -315,7 +313,7 @@
           <PanelButton
             variant="secondary"
             onclick={add}
-            ariaLabel="Add another performer"
+            ariaLabel={t("tunnel_add_performer")}
           >
             <i class="fas fa-user-plus" aria-hidden="true"></i>
             <span class="compact-add-count">

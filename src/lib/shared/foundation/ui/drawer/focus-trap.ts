@@ -83,7 +83,10 @@ export class FocusTrap {
   /**
    * Activate focus trap on the given container
    */
-  activate(container: HTMLElement) {
+  activate(
+    container: HTMLElement,
+    returnFocusTarget = document.activeElement as HTMLElement | null
+  ) {
     if (this.isActive) {
       this.deactivate();
     }
@@ -92,7 +95,7 @@ export class FocusTrap {
     this.isActive = true;
 
     // Store currently focused element for later restoration
-    this.previouslyFocused = document.activeElement as HTMLElement | null;
+    this.previouslyFocused = returnFocusTarget;
 
     // Set up keydown handler
     this.handleKeydownBound = this.handleKeydown.bind(this);

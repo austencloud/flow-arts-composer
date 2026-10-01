@@ -1,6 +1,9 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import DisplayPanel from "$lib/shared/animation-engine/components/settings-panels/DisplayPanel.svelte";
+  import PostToolPanel from "$lib/shared/share/components/post-studio/editor/PostToolPanel.svelte";
+  import PostAnimationAppearanceTool from "$lib/shared/share/components/post-studio/editor/PostAnimationAppearanceTool.svelte";
+  import type { PostEditorState } from "$lib/shared/media-composition/state/post-editor-state.svelte";
   import { getBrowseLoader } from "$lib/shared/browse/get-browse-loader";
   import { hydrateSequence } from "$lib/shared/sequence-viewer/services/sequence-data-provider";
   import { loopDetector } from "$lib/features/create/generate/circular/services/loop-detector";
@@ -35,6 +38,23 @@
     { label: "Viewer sidebar @ 3840", px: 830, h: 1400, fill: true },
   ];
 
+  // Post Studio's tool panel body scrolls the panel inside a box nothing sizes
+  // for it, under the section nav and the canvas-theme row (96px of nav, 44px of
+  // theme, 16px gaps). The compact layout fits what the scroller holds to the
+  // scroller's visible height, so each box here is one height that host gets:
+  // the editor at 1440x900 and at 1922x995, the phone dock's half-screen tray,
+  // and a window too short to fit.
+  const COMPACT_BOXES = [
+    { label: "Post panel @ 1440x900", px: 403, h: 285 },
+    { label: "Post panel @ 1922x995", px: 416, h: 380 },
+    { label: "Post panel on a phone", px: 358, h: 422 },
+    { label: "Post panel, too short", px: 403, h: 200 },
+  ];
+  const POST_BOXES = [
+    ...COMPACT_BOXES,
+    { label: "Tall Post inspector", px: 480, h: 1080 },
+  ];
+
   // Enough for the word, glyph and step tiles to draw real content when the
   // gallery is unreachable (a signed-out session cannot read Firestore). The
   // mandala tile draws its own fallback in that case.
@@ -44,6 +64,10 @@
   } as unknown as SequenceData;
 
   let sequence = $state<SequenceData | null>(null);
+  // The appearance tool reads only the sequence from its editor; with
+  // `onAppearanceChange` given it never edits it, so a toggle here changes
+  // nothing saved.
+  const postEditor = $derived({ sequence } as unknown as PostEditorState);
   let loadError = $state<string | null>(null);
 
   onMount(async () => {
@@ -51,9 +75,8 @@
     // The panel reads --theme-* from :root, which only the app shell sets. Run
     // the same pipeline the standalone /q page runs so the tiles are judged on
     // the chrome they actually ship on, not on unstyled defaults.
-    const { applyThemeForBackground } = await import(
-      "$lib/shared/settings/utils/background-theme-calculator"
-    );
+    const { applyThemeForBackground } =
+      await import("$lib/shared/settings/utils/background-theme-calculator");
     const { BackgroundType } = await import("@austencloud/backgrounds");
     applyThemeForBackground(BackgroundType.OCEAN);
     try {
@@ -89,6 +112,26 @@
   </header>
 
   <div class="columns">
+    <section class="responsive-post">
+      <h2>Responsive Post appearance</h2>
+      <div
+        class="panel post-body"
+        data-post-box="Responsive Post appearance"
+        style="width: 100%; height: min(70dvh, 1000px)"
+      >
+        <PostToolPanel tool="appearance" placement="side" bare fitContent>
+          <div class="item-tool">
+            <PostAnimationAppearanceTool
+              fill
+              editor={postEditor}
+              locked={false}
+              appearanceOverride={null}
+              onAppearanceChange={() => {}}
+            />
+          </div>
+        </PostToolPanel>
+      </div>
+    </section>
     {#each WIDTHS as w (w.px)}
       <section>
         <h2>{w.label} <span>{w.px} x {w.h}</span></h2>
@@ -98,9 +141,57 @@
       </section>
     {/each}
   </div>
+
+  <h2 class="group">Compact, scrolled by its host</h2>
+  <div class="columns">
+    {#each COMPACT_BOXES as box (box.label)}
+      <section>
+        <h2>{box.label} <span>{box.px} x {box.h}</span></h2>
+        <div
+          class="panel scroller"
+          data-compact-box={box.label}
+          style="width: {box.px}px; height: {box.h}px"
+        >
+          <div class="chrome" aria-hidden="true">Section nav, canvas theme</div>
+          <DisplayPanel compact {sequence} propType={PropType.STAFF} />
+        </div>
+      </section>
+    {/each}
+  </div>
+
+  <h2 class="group">
+    Post Studio's appearance tool, as its tool panel hosts it
+  </h2>
+  <div class="columns">
+    {#each POST_BOXES as box (box.label)}
+      <section>
+        <h2>{box.label} <span>{box.px} x {box.h}</span></h2>
+        <div
+          class="panel post-body"
+          data-post-box={box.label}
+          style="width: {box.px}px; height: {box.h}px"
+        >
+          <PostToolPanel tool="appearance" placement="side" bare fitContent>
+            <div class="item-tool">
+              <PostAnimationAppearanceTool
+                fill
+                editor={postEditor}
+                locked={false}
+                appearanceOverride={null}
+                onAppearanceChange={() => {}}
+              />
+            </div>
+          </PostToolPanel>
+        </div>
+      </section>
+    {/each}
+  </div>
 </div>
 
 <style>
+  .responsive-post {
+    width: min(100%, 480px);
+  }
   .harness {
     padding: 24px;
     min-height: 100vh;
@@ -146,6 +237,42 @@
     opacity: 0.6;
     text-transform: none;
     letter-spacing: 0;
+  }
+
+  .group {
+    margin: 28px 0 8px;
+  }
+
+  .panel.scroller {
+    display: block;
+    padding: 4px;
+  }
+
+  /* Stands in for the section nav (96px), its gap, the canvas-theme row (44px)
+     and its gap, so the panel starts where it does in Post Studio. */
+  .chrome {
+    height: 172px;
+    margin-bottom: 0;
+    border: 1px dashed var(--theme-stroke, #30363d);
+    border-radius: 10px;
+    opacity: 0.5;
+    font-size: 0.75rem;
+    display: grid;
+    place-items: center;
+    box-sizing: border-box;
+  }
+
+  /* Match PostItemTool's bounded appearance wrapper inside the real panel. */
+  .panel.post-body {
+    padding: 0.25rem;
+  }
+
+  .item-tool {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
+    min-width: 0;
   }
 
   .panel {

@@ -90,6 +90,7 @@
   import { resolveAccessTier } from "$lib/shared/auth/domain/access-tier";
   import { isPremiumOrAbove } from "$lib/shared/auth/domain/models/user-role";
   import { isTabAccessible } from "$lib/shared/auth/domain/guest-access-config";
+  import { createMethodNudgeTrigger } from "$lib/shared/auth/domain/auth-nudge-trigger";
   import { createPanelHeightTracker } from "../state/managers/panel-height-tracker.svelte";
   import type { SettingsState } from "$lib/shared/settings/state/settings-state.svelte";
   import type { LetterSource } from "$lib/shared/create/domain/spell-models";
@@ -159,16 +160,28 @@
       isPremiumOrAbove(authState.role)
     )
   );
-  const availableCreateMethods = $derived.by(() => {
+  const releasedCreateMethods = $derived.by(() => {
     // Establish the same reactive flag dependency as the navigation surfaces.
     void featureFlagState.flagsVersion;
     return CREATE_TABS.filter(
       (tab) =>
         tab.metadata?.isCreationMethod === true &&
-        featureFlagService.canAccessTab("create", tab.id) &&
-        isTabAccessible("create", tab.id, accessTier)
+        featureFlagService.canAccessTab("create", tab.id)
     );
   });
+  // Guests see the account-only methods too, as locked cards that open the
+  // sign-up screen. The board keeps one shape for everyone, and a guest can
+  // see what a free account adds.
+  const lockedCreateMethodIds = $derived(
+    new Set(
+      releasedCreateMethods
+        .filter((tab) => !isTabAccessible("create", tab.id, accessTier))
+        .map((tab) => tab.id)
+    )
+  );
+  function handleLockedCreateMethod(methodId: string): void {
+    authDrawerState.show("signup", createMethodNudgeTrigger(methodId));
+  }
   const lastUsedCreateMode = $derived(
     navigationState.hasRememberedCreateMode
       ? navigationState.currentCreateMode
@@ -469,7 +482,11 @@
           getSequenceState: () =>
             CreateModuleState?.getActiveTabSequenceState() ?? null,
           getCreateMode: () => navigationState.activeTab,
-          pushUndoSnapshot: (type) => CreateModuleState?.pushUndoSnapshot(type),
+          beginUndoSnapshot: (type, sourceState) =>
+            CreateModuleState?.beginUndoSnapshotForSequenceState(
+              type,
+              sourceState
+            ) ?? (() => {}),
           hapticService: getHapticFeedback(),
           setGridRotationDirection,
         });
@@ -482,6 +499,8 @@
           executeSequenceAction: (action, options) =>
             sequenceTransformActions!.execute(action, options),
           requestClearSequence: () => handleClearSequence(),
+          removeStep: (stepIndex) =>
+            handlers?.handleRemoveStep(stepIndex, CreateModuleState),
         });
 
         servicesInitialized = true;
@@ -955,11 +974,13 @@
 
 {#snippet frontDoorSurface()}
   <CreateFrontDoor
-    methods={availableCreateMethods}
+    methods={releasedCreateMethods}
+    lockedMethodIds={lockedCreateMethodIds}
     active={navigationState.isCreateFrontDoorOpen}
     source={navigationState.createFrontDoorSource}
     lastUsedMode={lastUsedCreateMode}
     onSelect={handleCreateMethodSelected}
+    onLockedSelect={handleLockedCreateMethod}
   />
 {/snippet}
 

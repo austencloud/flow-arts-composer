@@ -1,6 +1,6 @@
-import { page } from "vitest/browser";
+import { page, userEvent } from "vitest/browser";
 import { render } from "vitest-browser-svelte";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import CrossfadeTestHarness from "./CrossfadeTestHarness.svelte";
 
 /**
@@ -26,6 +26,58 @@ function stepLayers(container: HTMLElement): HTMLElement[] {
       '[data-testid="step-stage"] .crossfade > .layer'
     ),
   ];
+}
+
+function focusLayers(container: HTMLElement): HTMLElement[] {
+  return [
+    ...container.querySelectorAll<HTMLElement>(
+      '[data-testid="focus-stage"] .crossfade > .layer'
+    ),
+  ];
+}
+
+/**
+ * Presses a control from the keyboard and watches the swap it starts: whether
+ * focus ever fell to <body>, and whether a layer was aria-hidden while it
+ * still held focus (Chrome blocks that and logs a warning).
+ */
+async function pressFromKeyboard(
+  name: string
+): Promise<{ fellToBody: boolean; hidFocusedLayer: boolean }> {
+  const setAttribute = Element.prototype.setAttribute;
+  let hidFocusedLayer = false;
+  const spy = vi
+    .spyOn(Element.prototype, "setAttribute")
+    .mockImplementation(function (this: Element, attr, value) {
+      if (
+        attr === "aria-hidden" &&
+        value === "true" &&
+        this.classList.contains("layer") &&
+        this.contains(document.activeElement)
+      ) {
+        hidFocusedLayer = true;
+      }
+      setAttribute.call(this, attr, value);
+    });
+  let fellToBody = false;
+  let watching = true;
+  const watch = () => {
+    fellToBody ||= document.activeElement === document.body;
+    if (watching) requestAnimationFrame(watch);
+  };
+  try {
+    (
+      page.getByRole("button", { name, exact: true }).element() as HTMLElement
+    ).focus();
+    await userEvent.keyboard("{Enter}");
+    watch();
+    await settle();
+  } finally {
+    watching = false;
+    spy.mockRestore();
+  }
+  fellToBody ||= document.activeElement === document.body;
+  return { fellToBody, hidFocusedLayer };
 }
 
 describe("Crossfade interruption", () => {
@@ -165,5 +217,90 @@ describe("Crossfade interruption", () => {
     ).toBeGreaterThan(0);
 
     expect(stepLayers(container)[0]?.textContent).toContain("first decision");
+  });
+});
+
+describe("Crossfade focus", () => {
+  it("hands focus to the replacing controls when a focused control swaps itself out", async () => {
+    const { container } = render(CrossfadeTestHarness);
+    await settle();
+
+    const watched = await pressFromKeyboard("Play");
+
+    expect(watched).toEqual({ fellToBody: false, hidFocusedLayer: false });
+    // Already moved when the swap committed, not a frame later.
+    expect(page.getByTestId("focus-after-swap").element().textContent).toBe(
+      "Keep building"
+    );
+    expect(document.activeElement?.textContent).toBe("Keep building");
+    const settled = focusLayers(container);
+    expect(settled).toHaveLength(1);
+    expect(settled[0]?.contains(document.activeElement)).toBe(true);
+  });
+
+  it("holds focus on the replacing layer when it has no controls", async () => {
+    const { container } = render(CrossfadeTestHarness);
+    await settle();
+    await pressFromKeyboard("Play");
+
+    const watched = await pressFromKeyboard("Finish");
+
+    expect(watched).toEqual({ fellToBody: false, hidFocusedLayer: false });
+    const settled = focusLayers(container);
+    expect(settled).toHaveLength(1);
+    expect(settled[0]?.textContent).toContain("Finished");
+    expect(document.activeElement).toBe(settled[0]);
+  });
+
+  it("names a layer without controls when it takes focus", async () => {
+    render(CrossfadeTestHarness);
+    await settle();
+    await pressFromKeyboard("Play");
+
+    await pressFromKeyboard("Finish");
+
+    // A screen reader announces where focus went, not an unnamed box.
+    await expect
+      .element(page.getByRole("group", { name: "Playback finished" }))
+      .toHaveFocus();
+  });
+
+  it("moves focus before hiding the leaving layer when motion is reduced", async () => {
+    // Without a fade, the leaving layer is hidden and removed in the same
+    // commit that shows its replacement.
+    document.documentElement.dataset.motionPreference = "reduce";
+    try {
+      const { container } = render(CrossfadeTestHarness);
+      await settle();
+
+      const watched = await pressFromKeyboard("Play");
+
+      expect(watched).toEqual({ fellToBody: false, hidFocusedLayer: false });
+      expect(document.activeElement?.textContent).toBe("Keep building");
+      expect(focusLayers(container)).toHaveLength(1);
+    } finally {
+      delete document.documentElement.dataset.motionPreference;
+    }
+  });
+
+  it("focusShown reaches a layer the key returns to mid-fade", async () => {
+    const { container } = render(CrossfadeTestHarness);
+    await settle();
+    const outsideLayers = () => [
+      ...container.querySelectorAll<HTMLElement>(
+        '[data-testid="outside-stage"] .crossfade > .layer'
+      ),
+    ];
+    const [idleLayer] = outsideLayers();
+
+    await page
+      .getByRole("button", { name: "Play and stop from outside" })
+      .click();
+    await settle();
+
+    // The same layer, resumed rather than remounted, and focus inside it.
+    expect(outsideLayers()).toEqual([idleLayer]);
+    expect(document.activeElement?.textContent).toBe("Idle action");
+    expect(idleLayer?.contains(document.activeElement)).toBe(true);
   });
 });

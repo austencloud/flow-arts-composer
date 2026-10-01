@@ -31,6 +31,8 @@
     onSelectMode: (mode: SelectableViewerMode) => void;
     onSelectSplit: () => void;
     onPracticeToggle?: () => void;
+    /** Open the full Post workspace instead of the legacy viewer pane. */
+    onOpenPost?: () => void;
     /** Optional contextual action pinned to the rail's bottom. */
     footerAction?: RailFooterAction;
   }
@@ -44,6 +46,7 @@
     onSelectMode,
     onSelectSplit,
     onPracticeToggle,
+    onOpenPost,
     footerAction,
   }: Props = $props();
 
@@ -55,7 +58,9 @@
     ).map((m) => ({
       id: m.id,
       icon: m.icon,
-      label: viewerModeLabel(m.id),
+      label: m.id === "post-studio" && onOpenPost
+        ? t("viewer_ui_edit_in_post")
+        : viewerModeLabel(m.id),
     })),
     // Practice is only listed when a toggle handler is wired (feature not ready — entry point withheld).
     ...(onPracticeToggle
@@ -81,6 +86,7 @@
    * `cameraGranted` in the attract sensors.
    */
   const ghostKindFor = (id: string): "practice" | "curio" | undefined => {
+    if (id === "post-studio" && onOpenPost) return undefined;
     if (id === "practice") return practiceActive ? undefined : "practice";
     return activeMode === id ? undefined : "curio";
   };
@@ -218,6 +224,7 @@
         onclick={() => {
           if (mode.id === "split") onSelectSplit();
           else if (mode.id === "practice") onPracticeToggle?.();
+          else if (mode.id === "post-studio" && onOpenPost) onOpenPost();
           else onSelectMode(mode.id as SelectableViewerMode);
         }}
         onkeydown={(e) => handleKeydown(e, i)}

@@ -20,8 +20,10 @@ describe("toolRow", () => {
     expect(toolRow(POST)).toEqual([
       "videos",
       "add",
+      "canvas",
       "split",
       "tutorial",
+      "template",
       "look",
     ]);
   });
@@ -49,11 +51,56 @@ describe("toolRow", () => {
     }
   });
 
+  it("offers staff Effects on a video clip only, after Fade", () => {
+    const row = toolRow(MAIN_CLIP);
+    expect(row.indexOf("effects")).toBe(row.indexOf("fade") + 1);
+    for (const kind of [
+      "animation",
+      "moves",
+      "carousel",
+      "text",
+      "card",
+    ] as const) {
+      expect(toolRow({ kind, hasLayout: false })).not.toContain("effects");
+    }
+  });
+
+  it("offers Border on a video clip only, after Position", () => {
+    for (const selection of [MAIN_CLIP, OVERLAY_CLIP]) {
+      const row = toolRow(selection);
+      expect(row.indexOf("border")).toBe(row.indexOf("position") + 1);
+    }
+    for (const kind of [
+      "animation",
+      "moves",
+      "carousel",
+      "text",
+      "card",
+    ] as const) {
+      expect(toolRow({ kind, hasLayout: false })).not.toContain("border");
+    }
+  });
+
   it("offers each kind's own tool ahead of the shared ones", () => {
-    expect(toolRow({ kind: "animation", hasLayout: false })[2]).toBe("labels");
-    expect(toolRow({ kind: "moves", hasLayout: false })[2]).toBe("shows");
+    expect(toolRow({ kind: "animation", hasLayout: false })[2]).toBe(
+      "appearance"
+    );
+    expect(toolRow({ kind: "moves", hasLayout: false })[2]).toBe("appearance");
+    expect(toolRow({ kind: "moves", hasLayout: false })[3]).toBe("shows");
     expect(toolRow(TEXT)[2]).toBe("text");
-    expect(toolRow(CARD)[2]).toBe("timing");
+    expect(toolRow(CARD)[2]).toBe("appearance");
+  });
+
+  it("offers Sequence after the look tools for every notation item", () => {
+    expect(toolRow({ kind: "animation", hasLayout: false })[3]).toBe(
+      "sequence"
+    );
+    expect(toolRow({ kind: "moves", hasLayout: false })[4]).toBe("sequence");
+    expect(toolRow(CARD)[3]).toBe("sequence");
+    for (const kind of ["video", "text", "image", "carousel"] as const) {
+      expect(toolRow({ kind, hasLayout: false })).not.toContain("sequence");
+    }
+    expect(toolRow(POST)).not.toContain("sequence");
   });
 });
 
@@ -73,7 +120,8 @@ describe("panels", () => {
     expect(defaultPanel(POST)).toBe("videos");
     expect(defaultPanel(MAIN_CLIP)).toBe("trim");
     expect(defaultPanel(TEXT)).toBe("text");
-    expect(defaultPanel(CARD)).toBe("timing");
+    expect(defaultPanel(CARD)).toBe("appearance");
+    expect(defaultPanel({ kind: "moves", hasLayout: false })).toBe("appearance");
   });
 
   it("keeps the chosen panel while the selection has it", () => {

@@ -148,15 +148,31 @@ describe("model sprite tip points", () => {
   });
 
   it("pulls axial tips in to a sprite that paints short of the notation reach", () => {
+    // The big staff capture is drawn turned (T-bar on the thumb end), so its
+    // painted left reach lands on +x and its right reach on -x.
     const entry = PROP_MODEL_SPRITES.bigstaff!;
     const bounds = entry.bounds!;
     const half = entry.width / 2;
     const points = getTipPoints("bigstaff__model").points;
     closeTo(points, [
-      [-(half - bounds.x), 0],
-      [bounds.x + bounds.width - half, 0],
+      [-(bounds.x + bounds.width - half), 0],
+      [half - bounds.x, 0],
     ]);
     expect(Math.abs(points[0]!.dx)).toBeLessThan(300);
+  });
+
+  it("turns every staff model so its T-bar sits on the thumb end", () => {
+    // Staff3D puts the T-bar on the thumb end, and each capture shot it on -x.
+    // The notation staff marks the thumb end at +x, the end the rotation
+    // tables point at the centre for "in". Drawn as captured, a Realistic
+    // staff set to "in" showed its T-bar on the outside.
+    for (const prop of ["staff", "simple_staff", "staff_v2", "bigstaff"]) {
+      expect(modelSpriteFacesAwayFromTips(prop), prop).toBe(true);
+    }
+    // Symmetric captures with no thumb marker stay as captured.
+    for (const prop of ["capsule_baton", "fire_double_staff"]) {
+      expect(modelSpriteFacesAwayFromTips(prop), prop).toBe(false);
+    }
   });
 
   it("turns a one-sided capture of a two-ended prop and keeps only its painted end", () => {
@@ -198,15 +214,25 @@ describe("model sprite tip points", () => {
       "bigchicken",
       "guitar",
       "ukulele",
-      "staff",
     ]) {
       expect(modelSpriteFacesAwayFromTips(prop), prop).toBe(false);
     }
   });
 
+  it("turns the side-grip triangle capture the way it turns the corner one", () => {
+    // Both captures paint on -x; both glyphs and both tip tables reach +x.
+    // The side sprite key is not a prop type, so its table lives under its
+    // render key; unturned, a Realistic side grip was drawn mirrored against
+    // its Classic glyph and its trails.
+    expect(modelSpriteFacesAwayFromTips("triangle")).toBe(true);
+    expect(modelSpriteFacesAwayFromTips("triangle_side")).toBe(true);
+  });
+
   it("never draws a capture leaning away from its tip table", () => {
     for (const [prop, entry] of Object.entries(PROP_MODEL_SPRITES)) {
-      const points = PROP_TIP_POINTS[prop]?.points ?? [];
+      const table =
+        PROP_TIP_POINTS[prop] ?? PROP_RENDER_KEY_TIP_POINTS[`${prop}__model`];
+      const points = table?.points ?? [];
       if (!entry.bounds || points.length === 0) continue;
       const half = entry.width / 2;
       const xs = points.map((point) => point.dx);

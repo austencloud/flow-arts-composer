@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { localizeLevel1Text, localizeLevel1SelectionLabel } from "../_data/localize-level1-content";
   /**
    * Hand Motions - body page 3, a faithful reproduction of the proof PDF
    * (level-1-v05.pdf, page 9). Text runs sit at the PDF's own coordinates
@@ -593,7 +594,7 @@
         <SelectionHit
           groupId={key}
           isGroupStart
-          label={`Animate a ${box.word.toLowerCase()}`}
+          label={localizeLevel1SelectionLabel(`Animate a ${box.word.toLowerCase()}`)}
           onselect={() =>
             emitSequence?.({
               strip: demoSteps(key),
@@ -622,7 +623,7 @@
       <SelectionHit
         groupId={key}
         isGroupStart
-        label={`Animate the ${d.word} combination`}
+        label={localizeLevel1SelectionLabel(`Animate the ${d.word} combination`)}
         onselect={() =>
           emitSequence?.({
             strip: comboSteps(ci, d),
@@ -684,7 +685,7 @@
         set: (h) => (p.html = h),
       }}
     >
-      {@html p.html}
+      {@html localizeLevel1Text(p.html)}
     </p>
   {/each}
 

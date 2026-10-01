@@ -17,9 +17,7 @@ Navigation via bottom tabs (mobile-first UX pattern)
   import { cubicOut } from "svelte/easing";
   import ConceptPathView from "./components/ConceptPathView.svelte";
   import ConceptDetailView from "./components/ConceptDetailView.svelte";
-  import PlayHub from "./play/components/PlayHub.svelte";
-  import TikaTab from "$lib/features/tika/TikaModule.svelte";
-  import GuideTab from "./guide/GuideTab.svelte";
+  import LazyMount from "$lib/shared/components/LazyMount.svelte";
   import type { LearnConcept } from "./domain/types";
   import { getConceptById } from "./domain/concepts";
   import { isConceptExperienceAvailable } from "./domain/concept-experience-registry";
@@ -39,6 +37,7 @@ Navigation via bottom tabs (mobile-first UX pattern)
     clearActiveConceptId,
   } from "./state/experience-persistence.svelte";
   import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { localizedConcept } from "./domain/localized-concept";
   import { setDelightOrchestrator } from "$lib/shared/delight/context/delight-context";
   import ConfettiBurst from "$lib/shared/delight/components/ConfettiBurst.svelte";
   import AchievementToast from "$lib/shared/delight/components/AchievementToast.svelte";
@@ -136,16 +135,16 @@ Navigation via bottom tabs (mobile-first UX pattern)
 
     if (activeMode === "concepts") {
       if (selectedConcept) {
-        header = selectedConcept.name || t("learn_concept_details");
+        header = localizedConcept(selectedConcept, "name") || t("learn_concept_details");
       } else {
-        header = "Interactive lessons";
+        header = t("learn_ui_interactive_lessons");
       }
     } else if (activeMode === "play") {
       header = t("learn_play");
     } else if (activeMode === "tika") {
       header = "TIKA";
     } else if (activeMode === "guide") {
-      header = "Level 1 Guide";
+      header = t("learn_ui_level_one_guide");
     }
 
     onHeaderChange(header);
@@ -265,6 +264,15 @@ Navigation via bottom tabs (mobile-first UX pattern)
   function isModeActive(mode: LearnMode): boolean {
     return activeMode === mode;
   }
+
+  // Play, TIKA and the Guide each bring Firebase with them. The public concept
+  // course renders this tab too, so those screens load when a reader opens
+  // them, which keeps Firebase off the course pages' first download. Inside
+  // the app Firebase is already loaded, so they warm during idle instead and
+  // the first switch stays instant.
+  const loadPlayHub = () => import("./play/components/PlayHub.svelte");
+  const loadTika = () => import("$lib/features/tika/TikaModule.svelte");
+  const loadGuide = () => import("./guide/GuideTab.svelte");
 </script>
 
 <div
@@ -275,6 +283,13 @@ Navigation via bottom tabs (mobile-first UX pattern)
   <!-- Delight components (confetti and toasts) -->
   <ConfettiBurst orchestrator={delightOrchestrator} />
   <AchievementToast orchestrator={delightOrchestrator} />
+
+  {#if !publicCourse}
+    <!-- Warm the other screens without mounting them (see the loaders above). -->
+    <LazyMount loader={loadPlayHub} prefetch debugName="PlayHub" />
+    <LazyMount loader={loadTika} prefetch debugName="TikaModule" />
+    <LazyMount loader={loadGuide} prefetch debugName="GuideTab" />
+  {/if}
 
   <!-- Content area - tab switching with slide transitions -->
   <div class="content-container">
@@ -306,11 +321,11 @@ Navigation via bottom tabs (mobile-first UX pattern)
             <ConceptPathView onConceptClick={handleConceptClick} />
           {/if}
         {:else if isModeActive("play")}
-          <PlayHub />
+          <LazyMount loader={loadPlayHub} active debugName="PlayHub" />
         {:else if isModeActive("tika")}
-          <TikaTab />
+          <LazyMount loader={loadTika} active debugName="TikaModule" />
         {:else if isModeActive("guide")}
-          <GuideTab />
+          <LazyMount loader={loadGuide} active debugName="GuideTab" />
         {/if}
       </div>
     {/key}

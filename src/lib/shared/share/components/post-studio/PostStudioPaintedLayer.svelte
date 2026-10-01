@@ -3,6 +3,7 @@
     PaintFrame,
     PostStudioLayerPainter,
   } from "$lib/shared/media-composition/services/post-studio-layer-painter";
+  import { paintSurfaceGeometry } from "$lib/shared/media-composition/services/post-studio-layer-painter";
 
   let {
     painter,
@@ -17,18 +18,24 @@
   let width = $state(0);
   let height = $state(0);
   let preparedVersion = $state(0);
+  let pixelScale = $state(1);
+  const target = $derived({
+    width: Math.max(1, Math.round(width * pixelScale)),
+    height: Math.max(1, Math.round(height * pixelScale)),
+  });
+  const surface = $derived(paintSurfaceGeometry(painter, target));
 
   $effect(() => {
     if (!canvas || width <= 0 || height <= 0) return;
-    const target = canvas;
-    const scale = window.devicePixelRatio || 1;
-    const pixelWidth = Math.max(1, Math.round(width * scale));
-    const pixelHeight = Math.max(1, Math.round(height * scale));
-    if (target.width !== pixelWidth) target.width = pixelWidth;
-    if (target.height !== pixelHeight) target.height = pixelHeight;
+    const targetCanvas = canvas;
+    pixelScale = window.devicePixelRatio || 1;
+    if (targetCanvas.width !== surface.width)
+      targetCanvas.width = surface.width;
+    if (targetCanvas.height !== surface.height)
+      targetCanvas.height = surface.height;
     let active = true;
     void painter
-      .prepare({ width: pixelWidth, height: pixelHeight })
+      .prepare(surface.rect)
       .then(() => {
         if (active) preparedVersion += 1;
       })
@@ -44,11 +51,7 @@
     const context = canvas.getContext("2d");
     if (!context) return;
     context.clearRect(0, 0, canvas.width, canvas.height);
-    painter.paint(
-      context,
-      { x: 0, y: 0, width: canvas.width, height: canvas.height },
-      frame
-    );
+    painter.paint(context, surface.rect, frame);
   });
 </script>
 
@@ -58,7 +61,18 @@
   bind:clientWidth={width}
   bind:clientHeight={height}
 >
-  <canvas bind:this={canvas} aria-hidden="true"></canvas>
+  <canvas
+    bind:this={canvas}
+    aria-hidden="true"
+    style:left={`${-surface.rect.x / pixelScale}px`}
+    style:top={`${-surface.rect.y / pixelScale}px`}
+    style:width={surface.width === target.width
+      ? "100%"
+      : `${surface.width / pixelScale}px`}
+    style:height={surface.height === target.height
+      ? "100%"
+      : `${surface.height / pixelScale}px`}
+  ></canvas>
 </div>
 
 <style>
@@ -69,7 +83,14 @@
     height: 100%;
   }
   .painted-layer {
+    position: relative;
     min-width: 0;
     min-height: 0;
+  }
+  canvas {
+    position: absolute;
+    /* Animated ink needs the overflow width beyond its authored text box. */
+    max-width: none;
+    pointer-events: none;
   }
 </style>

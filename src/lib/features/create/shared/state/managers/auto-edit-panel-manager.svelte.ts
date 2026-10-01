@@ -47,23 +47,36 @@ export function createAutoEditPanelEffect(
 ): () => void {
   const { CreateModuleState, panelState } = config;
 
+  // The selection the step editor last showed. Playback hides the editor but
+  // keeps its selection for Stop to reopen it on. Opening the batch panel for
+  // that same selection would cancel the playback, so only a changed
+  // selection opens it.
+  let shownSelectionKey: string | null = null;
+
   return $effect.root(() => {
     $effect(() => {
       const sequenceState = CreateModuleState.getActiveTabSequenceState();
       const selectedStepNumbers = sequenceState.selectedStepNumbers;
       const selectedCount = selectedStepNumbers.size ?? 0;
       const shouldAutoOpen = config.shouldAutoOpen?.() ?? true;
+      const stepNumbersArray = Array.from(selectedStepNumbers).sort(
+        (a, b) => a - b
+      );
+      const selectionKey = stepNumbersArray.join(",");
+
+      if (panelState.isStepEditorPanelOpen) {
+        shownSelectionKey = selectionKey;
+        return;
+      }
+      if (selectionKey === shownSelectionKey) return;
+      shownSelectionKey = null;
 
       if (
         sequenceHasStepEditorContent(sequenceState.currentSequence) &&
         shouldAutoOpen &&
-        selectedCount > 1 &&
-        !panelState.isStepEditorPanelOpen
+        selectedCount > 1
       ) {
         // Map beat numbers to step data
-        const stepNumbersArray = Array.from(selectedStepNumbers).sort(
-          (a, b) => a - b
-        );
         const stepsData = stepNumbersArray
           .map((stepNumber) => {
             if (stepNumber === START_PLACEMENT_BEAT_NUMBER) {

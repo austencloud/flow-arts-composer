@@ -399,6 +399,114 @@ describe("CellCacheKeyDeriver (lsp11/lsp12 composition)", () => {
       expect(regular).not.toBe(classic);
       expect(classic).toContain('"leftPropType":"classic_club"');
     });
+
+    it("rekeys Realistic staff cells drawn before the staff models turned", () => {
+      const data = makeStartPlacement();
+      const realistic = (overrides: Partial<PreviewCellRenderOptions>) =>
+        deriver.deriveCacheKey(
+          data,
+          undefined,
+          true,
+          makeOptions({ ...overrides, propLook: "model" })
+        );
+
+      for (const staff of [
+        PropType.STAFF,
+        PropType.SIMPLESTAFF,
+        PropType.STAFF2,
+        PropType.BIGSTAFF,
+      ]) {
+        expect(realistic({ leftPropType: staff })).toContain(
+          '"propAppearanceRevision":"staff-model-thumb-end-v2"'
+        );
+      }
+      expect(
+        realistic({
+          leftPropType: PropType.STAFF,
+          rightPropType: PropType.CLUB,
+          catDogModeEnabled: true,
+        })
+      ).toContain(
+        '"propAppearanceRevision":"club-art-v2+staff-model-thumb-end-v2"'
+      );
+
+      // Classic staff cells, and the cloud corpus drawn from them, keep
+      // their keys, and so do other Realistic props.
+      expect(
+        deriver.deriveCacheKey(
+          data,
+          undefined,
+          true,
+          makeOptions({ leftPropType: PropType.STAFF })
+        )
+      ).not.toContain("propAppearanceRevision");
+      expect(realistic({ leftPropType: PropType.BUUGENG })).not.toContain(
+        "propAppearanceRevision"
+      );
+      expect(realistic({ leftPropType: PropType.CLUB })).toContain(
+        '"propAppearanceRevision":"club-art-v2"'
+      );
+    });
+  });
+
+  describe("triangle grip", () => {
+    const keyFor = (overrides: Partial<PreviewCellRenderOptions>) =>
+      deriver.deriveCacheKey(
+        makeStartPlacement(),
+        undefined,
+        true,
+        makeOptions(overrides)
+      );
+    const triangle = { leftPropType: PropType.TRIANGLE };
+
+    it("keys a side-grip triangle apart from the corner glyph, in both looks", () => {
+      for (const propLook of ["pictograph", "model"] as const) {
+        const corner = keyFor({ ...triangle, propLook });
+        const side = keyFor({ ...triangle, propLook, triangleGrip: "side" });
+        expect(side).not.toBe(corner);
+        expect(side).toContain('"triangleGrip":"side"');
+        expect(side).toMatch(/^lsp11-/);
+      }
+      // A mixed pair with one triangle draws the side grip too.
+      expect(
+        keyFor({
+          leftPropType: PropType.STAFF,
+          rightPropType: PropType.TRIANGLE,
+          catDogModeEnabled: true,
+          triangleGrip: "side",
+        })
+      ).toContain('"triangleGrip":"side"');
+    });
+
+    it("keeps corner-grip and non-triangle keys byte-identical", () => {
+      expect(keyFor({ ...triangle, triangleGrip: "corner" })).toBe(
+        keyFor(triangle)
+      );
+      for (const prop of [PropType.STAFF, PropType.MINIHOOP, PropType.FAN]) {
+        for (const propLook of [undefined, "model"] as const) {
+          expect(
+            keyFor({ leftPropType: prop, propLook, triangleGrip: "side" })
+          ).toBe(keyFor({ leftPropType: prop, propLook }));
+        }
+      }
+    });
+
+    it("drops the grip where the cell draws hands", () => {
+      for (const view of [
+        { handPathMode: true },
+        {
+          browseViewMode: {
+            subject: "hands",
+            granularity: "combined",
+            hand: "left",
+          },
+        },
+      ] as Partial<PreviewCellRenderOptions>[]) {
+        expect(keyFor({ ...triangle, ...view, triangleGrip: "side" })).toBe(
+          keyFor({ ...triangle, ...view })
+        );
+      }
+    });
   });
 
   describe("handPathMode differentiation", () => {

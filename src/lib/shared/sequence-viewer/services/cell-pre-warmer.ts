@@ -129,6 +129,8 @@ export class CellPreWarmer {
     // baked grid:true into the pre-warm key and never hit.)
     return {
       fanAppearance: settingsService.settings.fanAppearance,
+      propLook: settingsService.settings.propArtwork,
+      triangleGrip: settingsService.settings.triangleGrip,
       primaryPropColors: settingsService.settings.primaryPropColors,
       ...buildCellRenderOptions({
         cellSize: 240,

@@ -1,3 +1,4 @@
+import { normalizeTyped } from "$lib/shared/ui/typed-number";
 
 /** m:ss.s, the clock the transport and the act fields read in. */
 export function formatPostClock(seconds: number): string {
@@ -18,11 +19,12 @@ export function formatTakeClock(seconds: number): string {
 }
 
 /**
- * Reads "1:23.45", "83.45" or "83" as seconds. Null when it is not a time.
+ * Reads "1:23.45", "83.45", "83", "1:23,45" or "83 s" as seconds. Null when
+ * it is not a time.
  */
 export function parseClock(text: string): number | null {
-  const trimmed = text.trim();
-  const match = /^(?:(\d+):)?(\d+(?:\.\d*)?)$/.exec(trimmed);
+  const trimmed = normalizeTyped(text).replace(/\s*s$/i, "");
+  const match = /^(?:(\d+):)?(\d+(?:\.\d*)?|\.\d+)$/.exec(trimmed);
   if (!match) return null;
   const minutes = match[1] ? Number(match[1]) : 0;
   const seconds = Number(match[2]);

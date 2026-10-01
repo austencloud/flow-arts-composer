@@ -43,9 +43,9 @@
     if (isFullAccount) {
       onclick?.();
     } else {
-      // Guests get the auth sheet straight away (Sign up / Log in tabs),
-      // not the account menu popover.
-      authDrawerState.show("signup");
+      // Guests get the sign-in window straight away, not the account menu
+      // popover. The row says "Sign in", so it opens on signing in.
+      authDrawerState.show("signin");
     }
   }
 </script>
@@ -96,7 +96,7 @@
         // Close the containing drawer (e.g. mobile nav) before the auth drawer
         // opens, so we never stack two full-height sheets on top of each other.
         onclick?.();
-        authDrawerState.show("signup");
+        authDrawerState.show("signin");
       }}
       aria-label={t("nav_ui_sign_in")}
     >

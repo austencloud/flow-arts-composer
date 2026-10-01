@@ -199,9 +199,10 @@ describe("createMediaCompositionState", () => {
     state.seek(6);
     flushSync();
 
+    // The outgoing clip stays whole while the incoming one rises over it.
     expect(
       state.frameLayers.find((layer) => layer.clipId === "performance")?.opacity
-    ).toBeCloseTo(0.5);
+    ).toBeCloseTo(1);
     expect(
       state.frameLayers.find(
         (layer) => layer.clipId === "performance-animation"

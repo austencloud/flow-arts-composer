@@ -5,7 +5,7 @@
  * Extracted from CreateModule to reduce complexity and improve testability.
  *
  * Workflow:
- * 1. Push undo snapshot
+ * 1. Push undo snapshot (Assemble's builder records its own entry in step 3)
  * 2. Wait for fade/layout animations (300ms)
  * 3. Clear ONLY the active tab's sequence data and UI state
  * 4. Close related panels
@@ -48,11 +48,19 @@ export async function executeClearSequenceWorkflow(
     // Capture a reference to the active tab's sequence state BEFORE the delay
     // This prevents race conditions if the user switches tabs during the 300ms animation delay
     const activeTabSequenceState = CreateModuleState.sequenceState;
+    const assembleBuilder =
+      activeTab === "assemble"
+        ? (CreateModuleState.assembleTabState?.assembleBuilderState ?? null)
+        : null;
 
-    // 1. Push undo snapshot
-    CreateModuleState.pushUndoSnapshot(UndoOperationType.CLEAR_SEQUENCE, {
-      description: "Clear sequence",
-    });
+    // 1. Push undo snapshot. Assemble's builder owns its history: reset()
+    // records one "Clear sequence" entry holding both hands and the document,
+    // so a generic snapshot here would leave a second, dead entry behind.
+    if (!assembleBuilder) {
+      CreateModuleState.pushUndoSnapshot(UndoOperationType.CLEAR_SEQUENCE, {
+        description: "Clear sequence",
+      });
+    }
 
     // Clear persistence FIRST, before animations, to prevent auto-save during the animation delay
     if (activeTabSequenceState) {
@@ -74,20 +82,18 @@ export async function executeClearSequenceWorkflow(
       constructTabState.clearError();
     }
 
-    // Clear Assemble tab's visual builder state (must happen BEFORE clearing
-    // sequence state, otherwise the builder's $effect will immediately re-sync
-    // its steps back into the sequence)
-    if (activeTab === "assemble") {
-      const assembleBuilder =
-        CreateModuleState.assembleTabState?.assembleBuilderState;
-      if (assembleBuilder) {
-        assembleBuilder.reset();
-      }
-    }
+    // Assemble's reset() clears both hands and publishes the empty document
+    // to its sequence state itself.
+    assembleBuilder?.reset();
 
-    // Clear the active tab's sequence state using the captured reference
+    // Clear the active tab's sequence state using the captured reference.
+    // Only clear a sequence that is still there: on Assemble, setting null
+    // again reads as a newly loaded document and wipes the builder's history,
+    // including the clear that was just recorded.
     if (activeTabSequenceState) {
-      activeTabSequenceState.setCurrentSequence(null);
+      if (activeTabSequenceState.currentSequence !== null) {
+        activeTabSequenceState.setCurrentSequence(null);
+      }
       activeTabSequenceState.clearSelection();
       activeTabSequenceState.clearError();
     }

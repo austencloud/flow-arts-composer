@@ -18,7 +18,6 @@ const mocks = vi.hoisted(() => {
       preRenderProgress: 0,
       preRenderedFramesReady: false,
       displayedLetter: null,
-      displayedTurnsTuple: "(s, 0, 0)",
       displayedStepNumber: null,
       displayedMusicalPosition: null,
     },

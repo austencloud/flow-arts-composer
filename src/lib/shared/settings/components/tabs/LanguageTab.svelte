@@ -5,14 +5,18 @@
   Uses Paraglide i18n for translations.
 -->
 <script lang="ts">
+  import LinkChip from "$lib/shared/ui/components/LinkChip.svelte";
   import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
   import { onMount } from "svelte";
-  import { t, locales, baseLocale } from "$lib/shared/i18n/i18n.svelte.js";
-  import type { HapticFeedback } from "../../../application/services/haptic-feedback";
   import {
-    getReactiveLocale,
-    switchLocale,
-  } from "$lib/shared/i18n/locale-state.svelte";
+    t,
+    locales,
+    baseLocale,
+    getBaseLocale,
+    getLocale,
+  } from "$lib/shared/i18n/i18n.svelte.js";
+  import type { HapticFeedback } from "../../../application/services/haptic-feedback";
+  import { switchLocale } from "$lib/shared/i18n/locale-state.svelte";
 
   // Language display names (native)
   const languageNames: Record<string, string> = {
@@ -46,7 +50,10 @@
 
   // State
   let isVisible = $state(false);
-  let currentLocale = $derived(getReactiveLocale());
+  let currentLocale = $derived(getLocale());
+  // This list offers plain languages, so a regional choice such as Mexican
+  // Spanish ("es-MX") is shown on its language's card (Español).
+  let currentLanguage = $derived(getBaseLocale(currentLocale));
   let previousLocale = $state<string>("");
   let localeChanged = $state(false);
 
@@ -73,11 +80,14 @@
 
   function handleLanguageSelect(locale: string) {
     hapticService?.trigger("selection");
+    // Tapping the language already in use keeps its regional variant, so
+    // Mexican Spanish keeps its 12-hour clock instead of becoming plain Spanish.
+    if (isCurrentLocale(locale)) return;
     switchLocale(locale);
   }
 
   function isCurrentLocale(locale: string): boolean {
-    return currentLocale === locale;
+    return currentLanguage === locale;
   }
 </script>
 
@@ -129,13 +139,11 @@
       <i class="fas fa-info-circle" aria-hidden="true"></i>
       <p>
         {t("settings_translation_note")}
-        <a
+        <LinkChip
+          size="inline"
           href="https://github.com/austencloud/the-kinetic-alphabet"
-          target="_blank"
-          rel="noopener"
+          >{t("settings_help_translate")}</LinkChip
         >
-          {t("settings_help_translate")}
-        </a>
       </p>
     </div>
   </section>
@@ -311,15 +319,6 @@
     color: var(--theme-text-muted, rgba(255, 255, 255, 0.8));
     margin: 0;
     line-height: 1.5;
-  }
-
-  .info-card a {
-    color: var(--theme-accent, #0ea5e9);
-    text-decoration: none;
-  }
-
-  .info-card a:hover {
-    text-decoration: underline;
   }
 
   /* Screen reader only - visually hidden but announced */

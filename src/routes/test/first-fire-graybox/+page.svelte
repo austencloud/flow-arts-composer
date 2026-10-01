@@ -57,7 +57,7 @@
   let captureNoteTimer: ReturnType<typeof setTimeout> | null = null;
 
   /**
-   * The HUD affordance for the global P shortcut. P itself is handled at the
+   * The HUD affordance for the global U shortcut. U itself is handled at the
    * root layout; this button exists because a keystroke alone is not
    * discoverable.
    */
@@ -196,7 +196,7 @@
       >Review shortcut: advance one authored state at a time.</span
     >
     <span class="review-shortcut"
-      >Press P (or Copy view) to copy this exact view for Claude.</span
+      >Press U (or Copy view) to copy this exact view for Claude.</span
     >
     {#if captureNote}
       <span class="capture-note" role="status" aria-live="polite"

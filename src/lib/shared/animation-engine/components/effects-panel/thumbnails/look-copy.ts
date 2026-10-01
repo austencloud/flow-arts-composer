@@ -35,7 +35,7 @@ const LOOK_DESCRIPTIONS: Readonly<Record<string, string>> = {
   "charcoal-ash": "Faint grey drift",
 
   // LED
-  "led-capsule-classic": "Blue and red shaft ends",
+  "led-capsule-classic": "One color per hand",
   "led-capsule-pulse": "Breathing green tips",
   "led-rainbow-pov": "Full-spectrum light disc",
   "led-comet": "One point, drawn long",

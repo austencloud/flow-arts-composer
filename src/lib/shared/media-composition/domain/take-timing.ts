@@ -68,6 +68,8 @@ export const TimingSectionSchema = z
     tempo: z.enum(["locked", "follow"]),
     /** "grid": even landings. "taps": each matched tap is its landing. */
     snap: z.enum(["grid", "taps"]),
+    /** Fraction of each move interval spent holding its previous landing. */
+    landingHoldRatio: z.number().finite().min(0).max(0.9).optional(),
     taps: z.array(MediaSecondsSchema),
     /**
      * The position the earliest matched tap marks. 1 is move 1's landing.
@@ -201,6 +203,43 @@ export function createTakeTiming(input: {
       }),
     ],
     updatedAt: input.now,
+  };
+}
+
+/**
+ * The same timing for a copy of its video that holds the old one
+ * `offsetSeconds` in, such as the whole recording a clip was cut from. Every
+ * media time moves with the footage; the nudge is relative and stays. The
+ * sections still cover the whole video, so the first opens at its start and
+ * the last runs to its end. It counts as an edit made `now`, so it outranks
+ * a timing the editor opened for the copy before it arrived.
+ */
+export function shiftTakeTiming(
+  timing: TakeTiming,
+  offsetSeconds: number,
+  take: { takeKey: string; durationSeconds: number },
+  now: number
+): TakeTiming {
+  const at = (seconds: number) => seconds + offsetSeconds;
+  const last = timing.sections.length - 1;
+  return {
+    ...timing,
+    takeKey: take.takeKey,
+    updatedAt: now,
+    sections: timing.sections.map((section, index) => ({
+      ...section,
+      startSeconds: index === 0 ? 0 : at(section.startSeconds),
+      endSeconds:
+        index === last ? take.durationSeconds : at(section.endSeconds),
+      taps: section.taps.map(at),
+      ...(section.beatOneSeconds !== undefined
+        ? { beatOneSeconds: at(section.beatOneSeconds) }
+        : {}),
+      overrides: section.overrides.map((override) => ({
+        ...override,
+        seconds: at(override.seconds),
+      })),
+    })),
   };
 }
 
@@ -378,6 +417,9 @@ export function splitTimingSection(
     }),
     tempo: section.tempo,
     snap: section.snap,
+    ...(section.landingHoldRatio !== undefined
+      ? { landingHoldRatio: section.landingHoldRatio }
+      : {}),
     taps: rightTaps,
     offsetSeconds: section.offsetSeconds,
     ...(section.continuesIntoNext ? { continuesIntoNext: true as const } : {}),
@@ -596,6 +638,7 @@ export interface ResolvedTimingSection {
   id: string;
   startSeconds: number;
   endSeconds: number;
+  landingHoldRatio: number;
   /** Arrival map covering the section; null until it has a tap. */
   map: SequenceTimeMap | null;
   fit: TapFitResult | null;
@@ -1180,6 +1223,7 @@ function resolveSection(
     id: section.id,
     startSeconds: section.startSeconds,
     endSeconds: section.endSeconds,
+    landingHoldRatio: section.landingHoldRatio ?? 0,
     map: null,
     fit: null,
     landings: [],
@@ -1303,9 +1347,21 @@ export function takeSampleAt(
     Math.max(chosen.startSeconds, mediaSeconds)
   );
   return {
-    arrival: mediaTimeToSequencePosition(chosen.map!, clamped),
+    arrival: holdAfterLanding(
+      mediaTimeToSequencePosition(chosen.map!, clamped),
+      chosen.landingHoldRatio
+    ),
     endArrival: chosen.endPosition,
   };
+}
+
+/** Hold the previous complete arrival, then use the rest of the interval to reach the next. */
+function holdAfterLanding(arrival: number, ratio: number): number {
+  if (ratio === 0 || !Number.isFinite(arrival)) return arrival;
+  const previous = Math.floor(arrival);
+  const progress = arrival - previous;
+  if (progress <= ratio) return previous;
+  return previous + (progress - ratio) / (1 - ratio);
 }
 
 export function takePositionAt(

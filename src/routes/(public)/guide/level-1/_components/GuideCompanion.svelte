@@ -42,6 +42,7 @@
    * wrong tool for a full sub-panel replacement anyway).
    */
   import { Popover } from "bits-ui";
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { goto } from "$app/navigation";
   import InlineAnimationPlayer from "$lib/features/browse/sequences/display/components/media-viewer/InlineAnimationPlayer.svelte";
   import BpmChips from "$lib/shared/animation-engine/components/controls/BpmChips.svelte";
@@ -77,6 +78,7 @@
   import OptionPicker from "$lib/features/create/construct/option-picker/components/OptionPicker.svelte";
   import PictographContainer from "$lib/shared/pictograph/shared/components/PictographContainer.svelte";
   import GuideCodexControls from "./GuideCodexControls.svelte";
+  import { guideTurnDisplayWord } from "../_data/guide-turn-display-word";
   import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
   import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
   import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
@@ -177,10 +179,10 @@
     try {
       const strip = sequenceToStrip(picked);
       await saveOverride(stripKey, strip, picked.word);
-      toast.success("Guide sequence replaced.");
+      toast.success(t("guide_companion_replaced"));
     } catch (err) {
       console.error("[GuideCompanion] Replace failed:", err);
-      toast.error("Failed to save the replacement.");
+      toast.error(t("guide_companion_replace_failed"));
     }
   }
 
@@ -189,11 +191,11 @@
     try {
       const ok = await revertOverride(stripKey);
       toast[ok ? "success" : "error"](
-        ok ? "Reverted to the previous save." : "Nothing to revert."
+        ok ? t("guide_companion_reverted") : t("guide_companion_nothing_to_revert")
       );
     } catch (err) {
       console.error("[GuideCompanion] Revert failed:", err);
-      toast.error("Failed to revert.");
+      toast.error(t("guide_companion_revert_failed"));
     }
   }
 
@@ -201,10 +203,10 @@
     if (!stripKey) return;
     try {
       await resetOverride(stripKey);
-      toast.success("Reset to the original guide sequence.");
+      toast.success(t("guide_companion_reset_done"));
     } catch (err) {
       console.error("[GuideCompanion] Reset failed:", err);
-      toast.error("Failed to reset.");
+      toast.error(t("guide_companion_reset_failed"));
     }
   }
 
@@ -232,10 +234,10 @@
       }
       const strip = sequenceToStrip(result);
       await saveOverride(stripKey, strip, result.word);
-      toast.success("Transform applied.");
+      toast.success(t("guide_companion_transform_done"));
     } catch (err) {
       console.error("[GuideCompanion] Transform failed:", err);
-      toast.error("Failed to apply the transform.");
+      toast.error(t("guide_companion_transform_failed"));
     } finally {
       transformBusy = false;
       transformOpen = false;
@@ -286,12 +288,12 @@
     try {
       const word = deriveWordFromStrip(stagedStrip);
       await saveOverride(stripKey, stagedStrip, word || undefined);
-      toast.success("Guide sequence updated.");
+      toast.success(t("guide_companion_updated"));
       editing = false;
       stagedStrip = null;
     } catch (err) {
       console.error("[GuideCompanion] Save edit failed:", err);
-      toast.error("Failed to save the edited sequence.");
+      toast.error(t("guide_companion_edit_failed"));
     } finally {
       editSaving = false;
     }
@@ -303,7 +305,7 @@
     <div
       class="edit-strip"
       role="group"
-      aria-label="Staged steps: tap a step to rebuild from there"
+      aria-label={t("guide_companion_staged_steps")}
     >
       {#each stagedStrip ?? [] as box, i (box.id ?? i)}
         {@const stepNumber = box.stepNumber ?? 0}
@@ -313,8 +315,8 @@
           class:is-start={stepNumber === 0}
           onclick={() => handleTruncateAt(stepNumber)}
           aria-label={stepNumber === 0
-            ? "Start placement"
-            : `Step ${stepNumber}: tap to rebuild from here`}
+            ? t("guide_companion_start_placement")
+            : t("guide_companion_rebuild_step", { step: stepNumber })}
         >
           <PictographContainer
             pictographData={box}
@@ -337,7 +339,7 @@
       />
     </div>
 
-    <div class="edit-actions" role="group" aria-label="Save or cancel editing">
+    <div class="edit-actions" role="group" aria-label={t("guide_companion_edit_actions")}>
       <button
         class="admin-btn"
         type="button"
@@ -345,7 +347,7 @@
         disabled={editSaving}
       >
         <i class="fas fa-xmark" aria-hidden="true"></i>
-        <span>Cancel</span>
+        <span>{t("common_cancel")}</span>
       </button>
       <button
         data-save-shortcut
@@ -355,7 +357,7 @@
         disabled={editSaving}
       >
         <i class="fas fa-check" aria-hidden="true"></i>
-        <span>{editSaving ? "Saving…" : "Save"}</span>
+        <span>{editSaving ? t("guide_companion_saving") : t("guide_companion_save")}</span>
       </button>
     </div>
   </div>
@@ -373,14 +375,14 @@
       class="admin-row"
       class:stacked
       role="group"
-      aria-label="Edit this guide sequence"
+      aria-label={t("guide_companion_admin_actions")}
     >
       {#if includeCopyForAI}
         <CopyForAIButton
           variant="icon-text"
           size="md"
           fullWidth={true}
-          ariaLabel="Copy sequence for AI"
+          ariaLabel={t("guide_companion_copy_for_ai")}
           getData={copyForAIData}
           disabled={!sequence}
           class="admin-copy-btn"
@@ -392,7 +394,7 @@
         onclick={() => (pickerOpen = true)}
       >
         <i class="fas fa-right-left" aria-hidden="true"></i>
-        <span>Replace</span>
+        <span>{t("guide_companion_replace")}</span>
       </button>
       <button
         class="admin-btn"
@@ -401,7 +403,7 @@
         onclick={handleRevert}
       >
         <i class="fas fa-rotate-left" aria-hidden="true"></i>
-        <span>Revert</span>
+        <span>{t("guide_companion_revert")}</span>
       </button>
       <button
         class="admin-btn"
@@ -410,7 +412,7 @@
         onclick={handleReset}
       >
         <i class="fas fa-arrow-rotate-right" aria-hidden="true"></i>
-        <span>Reset</span>
+        <span>{t("guide_companion_reset")}</span>
       </button>
       <Popover.Root bind:open={transformOpen}>
         <Popover.Trigger>
@@ -422,7 +424,7 @@
               disabled={!sequence || transformBusy}
             >
               <i class="fas fa-shuffle" aria-hidden="true"></i>
-              <span>Transform</span>
+              <span>{t("guide_companion_transform")}</span>
             </button>
           {/snippet}
         </Popover.Trigger>
@@ -443,7 +445,7 @@
                 onclick={() => runTransform("mirror")}
               >
                 <i class="fas fa-left-right" aria-hidden="true"></i>
-                <span>Mirror</span>
+                <span>{t("guide_companion_mirror")}</span>
               </button>
               <button
                 type="button"
@@ -453,7 +455,7 @@
                 onclick={() => runTransform("handSwap")}
               >
                 <i class="fas fa-palette" aria-hidden="true"></i>
-                <span>Hand Swap</span>
+                <span>{t("guide_companion_hand_swap")}</span>
               </button>
               <button
                 type="button"
@@ -463,7 +465,7 @@
                 onclick={() => runTransform("rotateCw")}
               >
                 <i class="fas fa-rotate-right" aria-hidden="true"></i>
-                <span>Rotate 90° CW</span>
+                <span>{t("guide_companion_rotate_cw")}</span>
               </button>
               <button
                 type="button"
@@ -473,7 +475,7 @@
                 onclick={() => runTransform("rotateCcw")}
               >
                 <i class="fas fa-rotate-left" aria-hidden="true"></i>
-                <span>Rotate 90° CCW</span>
+                <span>{t("guide_companion_rotate_ccw")}</span>
               </button>
             </div>
           </Popover.Content>
@@ -486,7 +488,7 @@
         onclick={handleRemix}
       >
         <i class="fas fa-pen-to-square" aria-hidden="true"></i>
-        <span>Remix</span>
+        <span>{t("guide_companion_remix")}</span>
       </button>
       <button
         class="admin-btn"
@@ -495,7 +497,7 @@
         onclick={startEdit}
       >
         <i class="fas fa-pen" aria-hidden="true"></i>
-        <span>Edit steps</span>
+        <span>{t("guide_companion_edit_steps")}</span>
       </button>
     </div>
   {/if}
@@ -506,6 +508,7 @@
     {#key sequence.id}
       <InlineAnimationPlayer
         {sequence}
+        displayWord={sequence.word ? guideTurnDisplayWord(sequence.word) : null}
         autoPlay={!prefersReducedMotion}
         chrome="minimal"
         fill={true}
@@ -517,7 +520,7 @@
       />
     {/key}
   {:else}
-    <p class="hint">Click a sequence on the page to animate it.</p>
+    <p class="hint">{t("guide_companion_empty_hint")}</p>
   {/if}
 {/snippet}
 
@@ -528,7 +531,7 @@
         class="grab-handle"
         type="button"
         onclick={onClose}
-        aria-label="Close animation"
+        aria-label={t("guide_companion_close")}
       ></button>
       {#if !(editing && stagedStrip)}
         <button
@@ -537,8 +540,8 @@
           onclick={() => (overflowOpen = !overflowOpen)}
           aria-expanded={overflowOpen}
           aria-label={overflowOpen
-            ? "Hide animation controls"
-            : "Show animation controls"}
+            ? t("guide_companion_hide_controls")
+            : t("guide_companion_show_controls")}
         >
           <i class="fas fa-ellipsis" aria-hidden="true"></i>
         </button>
@@ -568,19 +571,19 @@
     {/if}
   {:else}
     <div class="head">
-      <span class="ttl">{isCodexMode && !sequence ? "Codex" : "Animation"}</span
+      <span class="ttl">{isCodexMode && !sequence ? "Codex" : t("guide_paths_animation")}</span
       >
       <div class="head-actions">
         {#if authState.isAdmin}
           <CopyForAIButton
             variant="icon-only"
             size="sm"
-            ariaLabel="Copy sequence for AI"
+            ariaLabel={t("guide_companion_copy_for_ai")}
             getData={copyForAIData}
             disabled={!sequence}
           />
         {/if}
-        <button class="close" onclick={onClose} aria-label="Close animation"
+        <button class="close" onclick={onClose} aria-label={t("guide_companion_close")}
           >✕</button
         >
       </div>

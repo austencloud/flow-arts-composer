@@ -5,6 +5,8 @@ import type { MediaCompositionPreset } from "$lib/shared/media-composition/domai
 import { renderPostStudioFrame } from "$lib/shared/media-composition/services/post-studio-frame-compositor";
 import { CanvasFrameCapturer } from "$lib/shared/video-export/services/canvas-frame-capturer";
 import type { PostStudioLayerPainter } from "$lib/shared/media-composition/services/post-studio-layer-painter";
+import { PostStudioExportVideoFrames } from "$lib/shared/media-composition/services/post-studio-export-video-frames";
+import { PostStudioPictographCapture } from "$lib/shared/media-composition/services/post-studio-pictograph-capture";
 
 export interface PostStudioExportProgress {
   completedFrames: number;
@@ -20,6 +22,8 @@ export interface ExportPostStudioVideoInput {
   seek: (seconds: number) => void;
   /** Painted sources by role; they draw at output resolution. */
   painters?: ReadonlyMap<string, PostStudioLayerPainter>;
+  /** Original video URLs by source role, at full source resolution. */
+  videoSources?: ReadonlyMap<string, string>;
   originalAudioUrl?: string | null;
   /**
    * Where the kept span starts inside the audio's own file. The picture already
@@ -31,6 +35,7 @@ export interface ExportPostStudioVideoInput {
   originalAudioStartSeconds?: number;
   onProgress?: (progress: PostStudioExportProgress) => void;
   shouldCancel?: () => boolean;
+  signal?: AbortSignal;
 }
 
 function nextPaint(): Promise<void> {
@@ -63,6 +68,11 @@ export async function exportPostStudioVideo(
   const encoder = new BackgroundVideoEncoder();
   const capturer = new CanvasFrameCapturer();
   const cardFrameCache = new Map<string, HTMLCanvasElement>();
+  const pictographCapture = new PostStudioPictographCapture();
+  const videoFrames = new PostStudioExportVideoFrames(
+    input.videoSources ?? new Map(),
+    input.signal
+  );
   let captureComplete = false;
   let encodedFrames = 0;
 
@@ -95,7 +105,8 @@ export async function exportPostStudioVideo(
     });
 
     for (let frameIndex = 0; frameIndex < totalFrames; frameIndex++) {
-      if (input.shouldCancel?.()) throw new Error("Export cancelled");
+      if (input.signal?.aborted || input.shouldCancel?.())
+        throw new Error("Export cancelled");
       const timeSeconds = Math.min(
         input.durationSeconds,
         frameIndex / frameRate
@@ -109,7 +120,9 @@ export async function exportPostStudioVideo(
         preset: input.preset,
         layers: input.getLayers(),
         cardFrameCache,
+        pictographCapture,
         painters: input.painters,
+        videoFrames,
         timeSeconds,
       });
 
@@ -119,7 +132,7 @@ export async function exportPostStudioVideo(
         frameIndex,
         frameIndex % Math.max(1, Math.round(frameRate * 2)) === 0
       );
-      await encoder.waitForFrameQueue(6);
+      await encoder.waitForFrameQueue(6, input.signal);
       input.onProgress?.({
         completedFrames: frameIndex + 1,
         totalFrames,
@@ -144,5 +157,8 @@ export async function exportPostStudioVideo(
   } catch (error) {
     encoder.cancel();
     throw error;
+  } finally {
+    pictographCapture.dispose();
+    videoFrames.dispose();
   }
 }

@@ -6,11 +6,8 @@
 
   Follows TunnelDetailPreview's per-instance seam (the proven pattern for
   mounting the tunnel outside the sequence viewer): local TunnelViewController,
-  local effects-config context with persist:false, stub playback. Unlike the
-  collection preview we apply only defaults to the controller, so the global
-  visibility/trail singletons are left untouched — but the controller DOES
-  persist its view state to localStorage on config change, so that key is
-  captured on mount and restored on destroy.
+  local effects-config context with persist:false, stub playback. The public
+  band's view state is seeded locally and never touches saved viewer state.
 
   This component statically imports the heavy tunnel stack — the page must
   mount it through LazyMount so none of it lands in the eager graph.
@@ -18,20 +15,25 @@
 <script lang="ts">
   import { t } from "$lib/shared/i18n/i18n.svelte";
   import { MediaQuery } from "svelte/reactivity";
-  import { onDestroy, type Snippet } from "svelte";
+  import { onDestroy, onMount, type Snippet } from "svelte";
   import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
+  import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
   import TunnelArtView from "$lib/shared/sequence-viewer/tunnel/TunnelArtView.svelte";
+  import TunnelPresetBrowser from "$lib/shared/sequence-viewer/components/art-settings/TunnelPresetBrowser.svelte";
   import type { ComposerPropAppearance } from "./composer-prop-appearance";
   import { TunnelViewController } from "$lib/shared/sequence-viewer/tunnel/tunnel-view-controller.svelte";
   import {
+    DEFAULT_TUNNEL_VIEW_STATE,
     loadTunnelViewState,
     saveTunnelViewState,
   } from "$lib/shared/sequence-viewer/tunnel/tunnel-view-state";
   import {
     MAX_IMAGES,
     MAX_IMAGES_RM,
+    TUNNEL_PRESETS,
     imageCount,
   } from "$lib/shared/sequence-viewer/tunnel/tunnel-config";
+  import { builtInTunnelPresetRecipe } from "$lib/shared/sequence-viewer/tunnel/tunnel-preset-recipe";
   import { createEffectsConfigState } from "$lib/shared/effects/state/effects-config-state.svelte";
   import { setEffectsConfigContext } from "$lib/shared/effects/state/effects-config-context";
   import {
@@ -66,64 +68,17 @@
 
   const reduceMotion = new MediaQuery("(prefers-reduced-motion: reduce)");
   let playing = $state(!reduceMotion.current);
-  let fold = $state(layout === "band" ? 8 : 4);
+  let fold = $state(4);
 
-  /** Band-only arrangement — three points in the shipped TunnelConfig space. */
-  type Arrangement = "ring" | "mirrored" | "canon";
-  const ARRANGEMENTS: {
-    value: Arrangement;
-    label: string;
-    mirror: boolean;
-    staggerSteps: number;
-  }[] = [
-    { value: "ring", label: "Ring", mirror: false, staggerSteps: 0 },
-    { value: "mirrored", label: "Mirrored", mirror: true, staggerSteps: 0 },
-    { value: "canon", label: "Canon", mirror: false, staggerSteps: 1 },
-  ];
-  let arrangement = $state<Arrangement>("ring");
-  const current = $derived(
-    ARRANGEMENTS.find((a) => a.value === arrangement) ?? ARRANGEMENTS[0]!
-  );
-
-  $effect(() => {
-    if (reduceMotion.current) playing = false;
-  });
-
-  /** The controller's live image budget (reduced motion tightens it). A combo
-   *  that would exceed it is disabled, never silently clamped. */
-  const budget = $derived(reduceMotion.current ? MAX_IMAGES_RM : MAX_IMAGES);
-  const fits = (f: number, mirror: boolean) =>
-    imageCount({
-      fold: f,
-      mirror,
-      flip: false,
-      invert: false,
-      echo: false,
-      staggerSteps: 0,
-      speedOverrides: {},
-    }) <= budget;
-
-  const foldOptions = $derived(
-    [2, 4, 8].map((f) => ({
-      value: String(f),
-      label: String(f),
-      disabled: layout === "band" ? !fits(f, current.mirror) : false,
-    }))
-  );
-  const arrangementOptions = $derived(
-    ARRANGEMENTS.map((a) => ({
-      value: a.value,
-      label:
-        a.value === "ring"
-          ? t("composer_demo_ring")
-          : a.value === "mirrored"
-            ? t("composer_demo_mirrored")
-            : t("composer_demo_canon"),
-      disabled: !fits(fold, a.mirror),
-    }))
-  );
-
-  const prevTunnelViewState = loadTunnelViewState();
+  const foldOptions = [2, 4, 8].map((f) => ({
+    value: String(f),
+    label: String(f),
+  }));
+  const initialPreset = TUNNEL_PRESETS.find(
+    (preset) => preset.id === (reduceMotion.current ? "radial" : "pinwheel")
+  )!;
+  const prevTunnelViewState =
+    layout === "square" ? loadTunnelViewState() : null;
 
   const effects = createEffectsConfigState(undefined, { persist: false });
   setEffectsConfigContext(effects);
@@ -141,19 +96,46 @@
     })
   );
 
-  const controller = new TunnelViewController({ getSequence: () => sequence });
+  const controller = new TunnelViewController({
+    getSequence: () => sequence,
+    ...(layout === "band"
+      ? {
+          initialViewState: {
+            ...DEFAULT_TUNNEL_VIEW_STATE,
+            config: initialPreset.config,
+            presetRecipe: builtInTunnelPresetRecipe(initialPreset.id),
+          },
+          persistViewState: false,
+        }
+      : {}),
+  });
   controller.active = true;
 
+  onMount(() => {
+    const preference = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const handleChange = (event: MediaQueryListEvent) => {
+      if (!event.matches) return;
+      playing = false;
+      if (layout === "band" && imageCount(controller.config) > MAX_IMAGES_RM) {
+        controller.applyPreset("radial");
+      }
+    };
+    preference.addEventListener("change", handleChange);
+    return () => preference.removeEventListener("change", handleChange);
+  });
+
   $effect(() => {
-    controller.applyConfig({
-      fold,
-      mirror: layout === "band" ? current.mirror : false,
-      flip: false,
-      invert: false,
-      echo: false,
-      staggerSteps: layout === "band" ? current.staggerSteps : 0,
-      speedOverrides: {},
-    });
+    if (layout === "square") {
+      controller.applyConfig({
+        fold,
+        mirror: false,
+        flip: false,
+        invert: false,
+        echo: false,
+        staggerSteps: 0,
+        speedOverrides: {},
+      });
+    }
   });
 
   const playback = {
@@ -161,7 +143,7 @@
   } as unknown as ViewerPlaybackState;
 
   onDestroy(() => {
-    saveTunnelViewState(prevTunnelViewState);
+    if (prevTunnelViewState) saveTunnelViewState(prevTunnelViewState);
   });
 </script>
 
@@ -172,9 +154,9 @@
       role="img"
       aria-label="Live tunnel performance of {simplifyRepeatedWord(
         sequence.word
-      )}, multiplied across {fold} copies{layout === 'band'
-        ? `, ${current.label.toLowerCase()} arrangement`
-        : ''}"
+      )}, {layout === 'band'
+        ? `${controller.presetRecipe?.name ?? 'custom'} preset with ${controller.performerCount} performers`
+        : `${fold} performers`}"
     >
       <TunnelArtView
         {sequence}
@@ -187,14 +169,17 @@
         bind:playing
       />
     </div>
-    <button
-      type="button"
-      class="pause-toggle"
-      aria-label={playing ? "Pause preview" : "Play preview"}
-      onclick={() => (playing = !playing)}
-    >
-      <i class="fas {playing ? 'fa-pause' : 'fa-play'}" aria-hidden="true"></i>
-    </button>
+    {#if layout === "square"}
+      <button
+        type="button"
+        class="pause-toggle"
+        aria-label={playing ? "Pause preview" : "Play preview"}
+        onclick={() => (playing = !playing)}
+      >
+        <i class="fas {playing ? 'fa-pause' : 'fa-play'}" aria-hidden="true"
+        ></i>
+      </button>
+    {/if}
   </div>
 {/snippet}
 
@@ -213,26 +198,42 @@
   <div class="tunnel-demo band">
     <div class="band-stage">
       {@render stage()}
+      <div
+        class="stage-toolbar"
+        role="group"
+        aria-label="Tunnel preview controls"
+      >
+        <PanelButton
+          ariaLabel={playing ? "Pause preview" : "Play preview"}
+          ariaPressed={playing}
+          onclick={() => (playing = !playing)}
+        >
+          <i class="fas {playing ? 'fa-pause' : 'fa-play'}" aria-hidden="true"
+          ></i>
+        </PanelButton>
+        <PanelButton
+          ariaLabel="Toggle tunnel grid"
+          ariaPressed={controller.gridVisible}
+          onclick={() => (controller.gridVisible = !controller.gridVisible)}
+        >
+          <i class="fas fa-border-all" aria-hidden="true"></i>
+        </PanelButton>
+        <div class="band-prop-control">{@render propControl?.()}</div>
+      </div>
     </div>
     <div class="band-controls">
-      <h3 class="band-title">Tunnel</h3>
-      <p class="band-caption">{t("composer_demo_tunnel_caption")}</p>
-      <div class="band-prop-control">{@render propControl?.()}</div>
-      <div class="control-row">
-        <span class="control-label">{t("composer_demo_performers")}</span>
-        {@render performers()}
-      </div>
-      <div class="control-row">
-        <span class="control-label">{t("composer_demo_arrangement")}</span>
-        <SegmentedControl
-          options={arrangementOptions}
-          value={arrangement}
-          onchange={(v) => (arrangement = v as Arrangement)}
-          ariaLabel={t("composer_demo_tunnel_arrangement")}
-          color="accent"
-          size="md"
-        />
-      </div>
+      <h3 class="preset-heading">Choose a tunnel</h3>
+      <TunnelPresetBrowser
+        {controller}
+        dense={true}
+        showcase={true}
+        showGridControl={false}
+        showUserPresets={false}
+        showCustomCard={false}
+        showCustomizeButton={false}
+        maximumInstances={reduceMotion.current ? MAX_IMAGES_RM : MAX_IMAGES}
+        selectionMode="config"
+      />
     </div>
   </div>
 {:else}
@@ -317,18 +318,21 @@
     color: oklch(0.74 0.018 270);
   }
 
-  .fold-row :global(.segment),
-  .control-row :global(.segment) {
+  .fold-row :global(.segment) {
     min-height: max(var(--min-touch-target, 48px), 48px);
   }
 
   /* Band: square stage left, control column right. The renderer is square-only,
-     so the stage keeps aspect-ratio 1 and is height-keyed. */
+     so the stage keeps aspect-ratio 1 and is height-keyed. A host that knows
+     the height it has, such as a stop on the /composer stage, sets
+     --tunnel-stage-size. */
   .tunnel-demo.band {
     display: grid;
     /* The stage track is sized here, not on .band-stage: a percentage width
        inside an `auto` track is cyclic and resolves to zero. */
-    grid-template-columns: minmax(0, min(46rem, 62vh)) minmax(16rem, 30rem);
+    grid-template-columns:
+      minmax(0, var(--tunnel-stage-size, min(46rem, 62vh)))
+      minmax(16rem, 30rem);
     gap: clamp(1.5rem, 4vw, 3rem);
     align-items: center;
     justify-content: center;
@@ -337,33 +341,34 @@
     width: 100%;
     min-width: 0;
   }
+  .stage-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.65rem;
+    min-height: 3rem;
+    margin-top: 0.75rem;
+  }
+  .stage-toolbar :global(.panel-btn) {
+    width: 3rem;
+    height: 3rem;
+    min-height: 3rem;
+    padding: 0;
+  }
   .tunnel-demo.band .stage {
     max-width: 100%;
   }
   .band-controls {
     display: flex;
     flex-direction: column;
-    gap: 0.75rem;
+    gap: 0.8rem;
     max-width: 30rem;
     width: 100%;
   }
-  .band-prop-control {
-    align-self: flex-start;
-  }
-  .band-title {
+  .preset-heading {
     margin: 0;
     font-size: var(--font-size-lg, 1.25rem);
-    font-weight: 700;
-    letter-spacing: 0.01em;
-  }
-  /* Deterministic footprint: fixed label column and fixed row height, so the
-     row never moves when the selected value changes (no-layout-shift). */
-  .control-row {
-    display: grid;
-    grid-template-columns: 7.5rem minmax(0, 1fr);
-    align-items: center;
-    gap: 0.75rem;
-    min-height: max(var(--min-touch-target, 48px), 48px);
+    font-weight: 650;
   }
 
   @media (max-width: 959.98px) {
@@ -371,32 +376,11 @@
       grid-template-columns: minmax(0, 1fr);
     }
     .band-stage {
-      width: min(46rem, 62vh, 100%);
+      width: min(var(--tunnel-stage-size, min(46rem, 62vh)), 100%);
       margin-inline: auto;
     }
     .band-controls {
-      align-items: center;
-      text-align: center;
       margin-inline: auto;
-    }
-    .band-prop-control {
-      align-self: center;
-    }
-    /* Stacked: the control keeps a real track, not its intrinsic width,
-       so three short labels never collapse into 29px segments. */
-    .control-row {
-      grid-template-columns: 7.5rem minmax(14rem, 22rem);
-      justify-content: center;
-    }
-  }
-
-  /* Phone width: the label sits above its control so three segments never
-     press against the frame edge. */
-  @media (max-width: 30rem) {
-    .control-row {
-      grid-template-columns: 1fr;
-      justify-items: center;
-      row-gap: 0.4rem;
     }
   }
 </style>

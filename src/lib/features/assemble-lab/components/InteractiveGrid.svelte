@@ -38,6 +38,9 @@
   // or external input, so it is a trusted, non-XSS surface — no sanitization pass.
   import { propSvgLoader } from "$lib/shared/pictograph/prop/services/prop-svg-loader";
   import { applyHandColorOverride } from "$lib/shared/pictograph/prop/domain/prop-preview-color";
+  import { normalizePropLook } from "$lib/shared/pictograph/prop/domain/prop-look";
+  import { normalizeFanAppearance } from "$lib/shared/pictograph/prop/domain/fan-appearance";
+  import { normalizeTriangleGrip } from "$lib/shared/pictograph/prop/domain/triangle-appearance";
   import { createMotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
   import { PropRotAngleManager } from "$lib/shared/pictograph/prop/services/prop-rot-angle-manager";
   import { LOCATION_ANGLES } from "$lib/shared/foundation/domain/math-constants";
@@ -50,12 +53,15 @@
     builderState,
     onStepCapExceeded,
     startAimEnabled = true,
+    fillPanel = false,
   }: {
     builderState: AssembleState;
     /** Called when the user tries to add a motion. Return true to block the action and show the nudge. */
     onStepCapExceeded?: () => boolean;
     /** Fuse uses an explicit, level-filtered orientation control instead. */
     startAimEnabled?: boolean;
+    /** Assemble fills the panel above its dock; dialogs retain a square canvas. */
+    fillPanel?: boolean;
   } = $props();
 
   // Services
@@ -126,25 +132,6 @@
       }
     }
 
-    if (plan.affectsControls) {
-      const badge =
-        interactiveGridRef.querySelector<HTMLElement>(".step-badge");
-      if (badge) {
-        animations.push(
-          badge.animate(
-            [
-              { opacity: 0.55, transform: "translateY(-4px) scale(0.94)" },
-              { opacity: 1, transform: "translateY(0) scale(1)" },
-            ],
-            {
-              duration: motionDuration(220),
-              easing: "cubic-bezier(0.16, 1, 0.3, 1)",
-            }
-          )
-        );
-      }
-    }
-
     return () => animations.forEach((animation) => animation.cancel());
   });
 
@@ -179,13 +166,20 @@
     };
   }
 
-  // Load prop SVGs reactively when prop type or hand color changes in settings
+  // Load prop SVGs reactively when prop type, look or hand color changes in settings
   $effect(() => {
     const settings = getSettings();
     const leftPropType = settings.leftPropType ?? PropType.STAFF;
     const rightPropType = settings.rightPropType ?? PropType.STAFF;
     const leftColor = settings.primaryPropColors?.left;
     const rightColor = settings.primaryPropColors?.right;
+    // Draw the look the pictographs draw (PictographContainer passes the
+    // same options), so the stage and the Start pictograph show one prop.
+    const appearance = {
+      propLook: normalizePropLook(settings.propArtwork),
+      fanAppearance: normalizeFanAppearance(settings.fanAppearance),
+      triangleGrip: normalizeTriangleGrip(settings.triangleGrip),
+    };
 
     // Load left-hand prop SVG
     const leftMotion = createMotionData({
@@ -196,7 +190,8 @@
       .loadPropSvg(
         { positionX: 0, positionY: 0, rotationAngle: 0 },
         leftMotion,
-        false
+        false,
+        appearance
       )
       .then((data) => {
         leftPropData = withUserColor(
@@ -219,7 +214,8 @@
       .loadPropSvg(
         { positionX: 0, positionY: 0, rotationAngle: 0 },
         rightMotion,
-        false
+        false,
+        appearance
       )
       .then((data) => {
         rightPropData = withUserColor(
@@ -539,12 +535,6 @@
   });
 
   const activePhaseHand = $derived(builderState.activeHand);
-  const currentStepNumber = $derived(
-    (builderState.activeHand === HandSide.LEFT
-      ? builderState.leftSteps.length
-      : builderState.rightSteps.length) +
-      (builderState.phase === "complete" ? 0 : 1)
-  );
   const targetsDisabled = $derived(
     builderState.phase === "animating" || builderState.phase === "complete"
   );
@@ -642,20 +632,12 @@
 <div
   bind:this={interactiveGridRef}
   class="interactive-grid"
+  class:fill-panel={fillPanel}
   data-history-direction={builderState.historyTransition?.direction}
   data-history-label={builderState.historyTransition?.label}
   role="application"
   aria-label="Visual sequence builder grid"
 >
-  <div
-    class="step-badge"
-    class:blue={builderState.activeHand === HandSide.LEFT}
-    class:red={builderState.activeHand === HandSide.RIGHT}
-    aria-label="Building step {currentStepNumber}"
-  >
-    <span>Step</span>
-    <strong>{currentStepNumber}</strong>
-  </div>
   <svg
     viewBox="0 0 950 950"
     xmlns="http://www.w3.org/2000/svg"
@@ -943,6 +925,8 @@
     max-height: 100%;
     aspect-ratio: 1;
     place-self: start center;
+    min-width: 0;
+    min-height: 0;
     box-sizing: border-box;
     border-radius: var(--settings-radius-md, 12px);
     overflow: hidden;
@@ -955,56 +939,17 @@
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
   }
 
-  .step-badge {
-    --step-color: var(--theme-accent, #8b6cff);
-    position: absolute;
-    top: 14px;
-    left: 14px;
-    z-index: 3;
-    display: inline-flex;
-    align-items: baseline;
-    gap: 6px;
-    min-height: 36px;
-    padding: 7px 11px;
-    pointer-events: none;
-    border: 1px solid color-mix(in srgb, var(--step-color) 52%, transparent);
-    border-radius: 999px;
-    background: color-mix(in srgb, var(--step-color) 14%, black);
-    color: var(--theme-text, #fff);
-    box-shadow: var(--theme-shadow, 0 8px 22px rgba(0, 0, 0, 0.3));
-  }
-
-  .step-badge.blue {
-    --step-color: var(--prop-blue, #2e8bf0);
-  }
-
-  .step-badge.red {
-    --step-color: var(--prop-red, #ed1c24);
-  }
-
-  .step-badge span {
-    color: color-mix(in srgb, var(--step-color) 40%, white);
-    font-size: var(--font-size-compact, 12px);
-    font-weight: 800;
-  }
-
-  .step-badge strong {
-    font-size: var(--assemble-step-badge-size, 18px);
-    font-weight: 900;
-    font-variant-numeric: tabular-nums;
-    line-height: 1;
+  .interactive-grid.fill-panel {
+    width: 100%;
+    height: 100%;
+    aspect-ratio: auto;
+    place-self: stretch;
   }
 
   @container tool-panel (max-width: 768px) {
     .interactive-grid {
-      place-self: center;
-      border-radius: var(--settings-radius-md, 12px);
       border-color: var(--theme-stroke, rgba(255, 255, 255, 0.06));
       box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
-    }
-
-    .step-badge {
-      display: none;
     }
   }
 

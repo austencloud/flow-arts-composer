@@ -7,36 +7,35 @@ function source(relativePath: string): string {
 }
 
 describe("Autumn retained runtime lifecycle", () => {
-  it("does not remount the whole runtime when quality changes", () => {
+  it("does not remount the Autumn world when quality changes", () => {
     const scene = source(
       "src/lib/shared/3d/environments/scenes/AutumnScene.svelte"
     );
-    const runtime = source(
-      "src/lib/shared/3d/environments/scenes/autumn/runtime/AutumnRuntimeSystems.svelte"
-    );
 
     expect(scene).not.toMatch(/\{#key\s+tier\}/);
-    expect(runtime).not.toMatch(/\{#key\s+tier\}/);
-    expect(runtime).toMatch(/\{#key\s+quality\.wispCount\}/);
+    expect(scene).toContain("tier: untrack(() => tier)");
+    expect(scene).toContain("$effect(() => world?.setTier(tier));");
   });
 
-  it("gates every per-frame Autumn owner behind a stopped task", () => {
-    const taskOwners = [
-      "src/lib/shared/3d/environments/primitives/FallingParticles.svelte",
-      "src/lib/shared/3d/environments/scenes/autumn/runtime/interaction/AutumnInteraction.svelte",
-      "src/lib/shared/3d/environments/scenes/autumn/runtime/lighting/AutumnLanternFlicker.svelte",
-      "src/lib/shared/3d/environments/scenes/autumn/runtime/water/AutumnPond.svelte",
-      "src/lib/shared/3d/environments/scenes/autumn/runtime/wind/AutumnWind.svelte",
-      "src/lib/shared/3d/environments/scenes/autumn/runtime/wisps/WillOWisps.svelte",
-    ];
+  it("stops the shared particle task while inactive", () => {
+    const particles = source(
+      "src/lib/shared/3d/environments/primitives/FallingParticles.svelte"
+    );
 
-    for (const path of taskOwners) {
-      const component = source(path);
-      expect(component, path).toMatch(/autoStart:\s*false/);
-      expect(component, path).toMatch(
-        /\$effect\(\(\) => \{[\s\S]*?\bactive\b[\s\S]*?\.stop\(\)/
-      );
-    }
+    expect(particles).toMatch(/autoStart:\s*false/);
+    expect(particles).toMatch(
+      /\$effect\(\(\) => \{[\s\S]*?\bactive\b[\s\S]*?\.stop\(\)/
+    );
+  });
+
+  it("skips the Autumn world update while the scene is inactive", () => {
+    const scene = source(
+      "src/lib/shared/3d/environments/scenes/AutumnScene.svelte"
+    );
+
+    expect(scene).toMatch(
+      /useTask\(\(delta\) => \{[^}]*?!active\) return;[^}]*?current\.update\(/
+    );
   });
 
   it("uploads one reduced-motion particle pose before stopping", () => {
@@ -50,17 +49,20 @@ describe("Autumn retained runtime lifecycle", () => {
   });
 
   it("registers pointer listeners only inside the active interaction effect", () => {
-    const interaction = source(
-      "src/lib/shared/3d/environments/scenes/autumn/runtime/interaction/AutumnInteraction.svelte"
+    const scene = source(
+      "src/lib/shared/3d/environments/scenes/AutumnScene.svelte"
     );
-    const activeGuard = interaction.indexOf("if (!active)");
-    const listener = interaction.indexOf(
+    const listener = scene.indexOf(
       'window.addEventListener("pointermove", onPointerMove)'
     );
+    const effect = scene.lastIndexOf("$effect(() => {", listener);
+    const activeGuard = scene.indexOf("if (!active)", effect);
 
-    expect(activeGuard).toBeGreaterThan(-1);
-    expect(listener).toBeGreaterThan(activeGuard);
-    expect(interaction).toContain(
+    expect(listener).toBeGreaterThan(-1);
+    expect(effect).toBeGreaterThan(-1);
+    expect(activeGuard).toBeGreaterThan(effect);
+    expect(activeGuard).toBeLessThan(listener);
+    expect(scene).toContain(
       'window.removeEventListener("pointermove", onPointerMove)'
     );
   });
@@ -124,15 +126,15 @@ describe("Autumn retained runtime lifecycle", () => {
   });
 
   it("routes cancellation into an Autumn-owned GLTF transport", () => {
-    const scene = source(
-      "src/lib/shared/3d/environments/scenes/AutumnScene.svelte"
+    const assets = source(
+      "src/lib/shared/3d/environments/worlds/autumn/autumn-environment-assets.ts"
     );
     const transport = source(
       "src/lib/shared/3d/environments/scenes/autumn/runtime/autumn-environment-transport.ts"
     );
 
-    expect(scene).toContain("load: loadAutumnEnvironment");
-    expect(scene).toContain(
+    expect(assets).toContain("load: loadAutumnEnvironment");
+    expect(assets).toContain(
       "onDiscard: (loaded) => disposeSceneGraph(loaded.scene)"
     );
     expect(transport).toContain("new LoadingManager()");

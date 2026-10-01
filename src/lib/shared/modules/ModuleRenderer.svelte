@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte";
   /**
    * ModuleRenderer
    * Domain: Module Content Rendering
@@ -82,7 +83,7 @@
   //   + engine), forcing every thumbnail back through the async cache tiers on
   //   return — the placeholder→pop-in "everything re-renders" flash. Kept alive,
   //   the DOM + already-resolved thumbnail URLs persist, so revisits are instant.
-  const KEEP_ALIVE_MODULES = ["museum", "personal-museum", "browse"];
+  const KEEP_ALIVE_MODULES = ["museum", "personal-museum", "browse", "post"];
 
   // Reactive tick: bumped by the controller's onChange so derived reads re-run.
   let keepAliveVersion = $state(0);
@@ -174,6 +175,7 @@
       import("../../features/train/prop-tracking-lab/components/PropTrackingLabModule.svelte"),
     // compose module
     compose: () => import("../../features/compose/ComposeModule.svelte"),
+    post: () => import("../../features/post/PostModule.svelte"),
     // arena module - community pairwise ranking
     arena: () => import("../../features/arena/ArenaModule.svelte"),
     // connect graduated to Social module (Mar 2026)
@@ -318,11 +320,6 @@
     void loadModule(moduleName, moduleName === activeModule).catch(() => {});
   }
 
-  function moduleErrorMessage(moduleName: string): string {
-    const error = moduleErrors.get(moduleName);
-    return error instanceof Error ? error.message : "Unknown error";
-  }
-
   // Reactive module loading based on activeModule
   let modulePromise = $derived(
     activeModule ? loadModule(activeModule, true) : Promise.resolve(null)
@@ -389,14 +386,14 @@
   <div class="transition-container">
     {#if moduleErrors.has(activeModule)}
       <div class="module-error" role="alert">
-        <p>Failed to load module</p>
-        <p class="error-details">{moduleErrorMessage(activeModule)}</p>
+        <p>{t("module_load_failed")}</p>
+        <p class="error-details">{t("connection_retry_body")}</p>
         <button
           class="reload-button"
           onclick={() => retryKeepAliveModule(activeModule)}
           type="button"
         >
-          Try Again
+          {t("landing_spinner_try_again")}
         </button>
       </div>
     {:else if !moduleCache.has(activeModule)}
@@ -457,26 +454,26 @@
           {:else if activeModule}
             <!-- Module name is set but component didn't load - show error with retry -->
             <div class="module-error" role="alert">
-              <p>Module "{activeModule}" failed to load</p>
+              <p>{t("module_load_failed")}</p>
               <button
                 class="reload-button"
                 onclick={() => window.location.reload()}
                 type="button"
               >
-                Reload Page
+                {t("action_reload_page")}
               </button>
             </div>
           {/if}
         {:catch error}
           <div class="module-error" role="alert">
-            <p>Failed to load module</p>
-            <p class="error-details">{error?.message || "Unknown error"}</p>
+            <p>{t("module_load_failed")}</p>
+            <p class="error-details">{t("connection_retry_body")}</p>
             <button
               class="reload-button"
               onclick={() => window.location.reload()}
               type="button"
             >
-              Reload Page
+              {t("action_reload_page")}
             </button>
           </div>
         {/await}

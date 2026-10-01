@@ -12,6 +12,7 @@ import {
   placeDraggedOverlay,
   revealPlayheadScrollLeft,
   roundToFrameSeconds,
+  rowsYWithoutKeyLanes,
   rulerTickInterval,
   scrollLeftForStableAnchor,
   secondsToPixels,
@@ -36,6 +37,17 @@ describe("clampPixelsPerSecond", () => {
     );
     expect(clampPixelsPerSecond(Number.POSITIVE_INFINITY)).toBe(
       POST_TIMELINE_DEFAULT_PIXELS_PER_SECOND
+    );
+  });
+
+  it("zooms smoothly from a fitted long timeline without jumping to the usual minimum", () => {
+    const fitZoom = fitPixelsPerSecond(77.69, 220);
+    expect(clampPixelsPerSecond(fitZoom * 1.25, fitZoom)).toBeCloseTo(
+      fitZoom * 1.25
+    );
+    expect(clampPixelsPerSecond(fitZoom / 1.25, fitZoom)).toBe(fitZoom);
+    expect(clampPixelsPerSecond(1, 100)).toBe(
+      POST_TIMELINE_MIN_PIXELS_PER_SECOND
     );
   });
 });
@@ -75,18 +87,29 @@ describe("fitPixelsPerSecond", () => {
     );
   });
 
-  it("clamps a fit that would zoom out past the minimum", () => {
-    // A 10,000-second post in a 500px viewport would ask for 0.05px/s.
-    expect(fitPixelsPerSecond(10_000, 500)).toBe(
-      POST_TIMELINE_MIN_PIXELS_PER_SECOND
-    );
-  });
+  it.each([
+    [77.69, 220],
+    [10_000, 500],
+  ])(
+    "fits the entire %s-second post in %s pixels even below the usual minimum",
+    (duration, width) => {
+      const zoom = fitPixelsPerSecond(duration, width);
+      expect(zoom).toBeLessThan(POST_TIMELINE_MIN_PIXELS_PER_SECOND);
+      expect(secondsToPixels(duration, zoom)).toBeCloseTo(width);
+    }
+  );
 
   it("falls back to the default when there is nothing to fit yet", () => {
     expect(fitPixelsPerSecond(0, 1000)).toBe(
       POST_TIMELINE_DEFAULT_PIXELS_PER_SECOND
     );
     expect(fitPixelsPerSecond(10, 0)).toBe(
+      POST_TIMELINE_DEFAULT_PIXELS_PER_SECOND
+    );
+    expect(fitPixelsPerSecond(Infinity, 500)).toBe(
+      POST_TIMELINE_DEFAULT_PIXELS_PER_SECOND
+    );
+    expect(fitPixelsPerSecond(10, Infinity)).toBe(
       POST_TIMELINE_DEFAULT_PIXELS_PER_SECOND
     );
   });
@@ -213,6 +236,34 @@ describe("overlayRowAtPointerY", () => {
     expect(overlayRowAtPointerY(-1, noOverlays)).toEqual({
       kind: "new-layer",
       trackIndex: 1,
+    });
+  });
+});
+
+describe("rowsYWithoutKeyLanes", () => {
+  const layout = { overlayTrackCount: 2, overlayRowHeightPx: 52, mainRowHeightPx: 72 };
+  // Keyframe rows under the top overlay row (track 2): rows 52 to 140.
+  const lanes = { topPx: 52, heightPx: 88 };
+
+  it("leaves a y above the keyframe rows alone", () => {
+    expect(rowsYWithoutKeyLanes(10, lanes)).toBe(10);
+    expect(rowsYWithoutKeyLanes(-1, lanes)).toBe(-1);
+    expect(rowsYWithoutKeyLanes(60, null)).toBe(60);
+  });
+
+  it("reads a y over the keyframe rows as the clip's own row", () => {
+    const y = rowsYWithoutKeyLanes(100, lanes);
+    expect(overlayRowAtPointerY(y, layout)).toEqual({ kind: "overlay", trackIndex: 2 });
+  });
+
+  it("shifts a y below the keyframe rows up by their height", () => {
+    expect(rowsYWithoutKeyLanes(150, lanes)).toBe(62);
+    expect(overlayRowAtPointerY(rowsYWithoutKeyLanes(150, lanes), layout)).toEqual({
+      kind: "overlay",
+      trackIndex: 1,
+    });
+    expect(overlayRowAtPointerY(rowsYWithoutKeyLanes(200, lanes), layout)).toEqual({
+      kind: "main",
     });
   });
 });

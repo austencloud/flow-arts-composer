@@ -1,14 +1,16 @@
 <!--
   AssembleToolPanel - Tool panel content for the Assemble tab.
 
-  The grid stays anchored while phase-specific controls update in reserved slots.
+  The grid stays anchored above one dock of controls, the same on every screen
+  size, while phase-specific controls update in reserved slots.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { untrack } from "svelte";
   import { settingsService } from "$lib/shared/settings/state/settings-state.svelte";
   import type { AssembleTabState } from "../../shared/state/assemble-tab-state.svelte";
-  import BuilderInstructionHeader from "$lib/features/assemble-lab/components/BuilderInstructionHeader.svelte";
   import BuilderControls from "$lib/features/assemble-lab/components/BuilderControls.svelte";
+  import BuilderStageActions from "$lib/features/assemble-lab/components/BuilderStageActions.svelte";
   import InteractiveGrid from "$lib/features/assemble-lab/components/InteractiveGrid.svelte";
   import { attachAssembleKeyboard } from "$lib/features/assemble-lab/services/assemble-keyboard-dispatcher";
   import type { SettingsState } from "$lib/shared/settings/state/settings-state.svelte";
@@ -34,7 +36,7 @@
     const duration = motionDuration(240);
     if (duration === 0) return;
     const targets = builderSurfaceRef.querySelectorAll<HTMLElement>(
-      ".header-section, .builder-controls-overlay, .action-row"
+      ".stage-actions, .dock-hand-row"
     );
     const animations = Array.from(targets).map((target) =>
       target.animate(
@@ -150,8 +152,9 @@
 <div class="assemble-tool-panel">
   {#if props.tabState.hasError}
     <div class="restore-error" role="alert">
-      Couldn't restore your saved Assemble work. You can keep building, but this
-      session may not save.
+      {t(
+        "create_review_couldn_t_restore_your_saved_assemble_work_you_can_keep_building_but_this_session_may_not_s"
+      )}
     </div>
   {/if}
 
@@ -160,14 +163,15 @@
     class="builder-surface"
     data-history-direction={builderState.historyTransition?.direction}
   >
-    <div class="header-section">
-      <BuilderInstructionHeader {builderState} />
-    </div>
-
     <div class="main-area">
       <div class="grid-slot">
         <div class="stage-slot">
-          <InteractiveGrid {builderState} onStepCapExceeded={checkStepCap} />
+          <InteractiveGrid
+            {builderState}
+            onStepCapExceeded={checkStepCap}
+            fillPanel
+          />
+          <BuilderStageActions {builderState} />
         </div>
         <BuilderControls {builderState} />
       </div>
@@ -179,14 +183,10 @@
   .assemble-tool-panel {
     --assemble-builder-surface: color-mix(
       in srgb,
-      var(--theme-panel-bg, #10141f) 78%,
+      var(--theme-panel-bg, #10141f) 96%,
       transparent
     );
-    --assemble-builder-surface-raised: color-mix(
-      in srgb,
-      var(--theme-panel-bg, #10141f) 86%,
-      transparent
-    );
+    --assemble-builder-surface-raised: var(--theme-panel-bg, #10141f);
     --assemble-builder-stroke: color-mix(
       in srgb,
       var(--theme-stroke, rgba(255, 255, 255, 0.12)) 74%,
@@ -230,11 +230,6 @@
     box-shadow: none;
   }
 
-  .header-section {
-    width: 100%;
-    flex-shrink: 0;
-  }
-
   .main-area {
     flex: 1;
     min-height: 0;
@@ -252,19 +247,21 @@
     width: 100%;
     max-width: none;
     height: 100%;
-    display: grid;
-    grid-template-rows: auto minmax(0, 1fr);
-    justify-items: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
   }
 
   .stage-slot {
-    grid-row: 2;
+    position: relative;
+    /* The canvas fills the space above the dock. Its SVG preserves the
+       grid's proportions within this rectangular viewport. */
+    flex: 1 1 0;
     width: 100%;
-    height: 100%;
     min-width: 0;
     min-height: 0;
     display: grid;
-    place-items: start center;
+    place-items: center;
     container-type: size;
     container-name: assemble-stage;
   }
@@ -312,22 +309,6 @@
     .grid-slot {
       width: 100%;
     }
-
-    .grid-slot {
-      grid-template-rows: minmax(0, 1fr);
-    }
-
-    .stage-slot {
-      grid-row: 1;
-    }
-
-    .stage-slot {
-      place-items: center;
-    }
-
-    .header-section {
-      display: none;
-    }
   }
 
   /* Native 4K/TV viewports do not receive Windows display scaling. Raise the
@@ -338,11 +319,8 @@
       --font-size-compact: 16px;
       --font-size-min: 18px;
       --min-touch-target: 58px;
-      --assemble-instruction-size: 22px;
-      --assemble-hand-heading-size: 20px;
       --assemble-hand-label-size: 21px;
       --assemble-action-size: 19px;
-      --assemble-step-badge-size: 22px;
     }
   }
 

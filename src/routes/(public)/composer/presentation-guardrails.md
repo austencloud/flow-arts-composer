@@ -2,7 +2,7 @@
 
 **Status:** Governs the public `/composer` presentation
 
-**Updated:** 2026-08-27
+**Updated:** 2026-09-28
 
 **Scope:** Public Composer presentation copy, page structure, demonstrations, and route-local styling
 **Feature truth:** [feature-truth-matrix.md](./feature-truth-matrix.md)
@@ -74,7 +74,7 @@ copy.
 | Empty authority         | “Artists love,” “experts say,” invented usage counts, or fictional social proof            | Name a verifiable source or remove the claim. Do not invent creators, followers, testimonials, or activity.                                                        |
 | Relentless positivity   | Constraints disappear so every capability sounds complete                                  | State account, device, viewport, browser, and support boundaries where they affect the decision to try a feature.                                                  |
 | Superficial analysis    | A fact is followed by an abstract claim about its significance                             | Let a concrete example carry the meaning. Delete sentences that only announce why the previous sentence was important.                                             |
-| Repeated reveal motion  | Every block fades and rises on scroll                                                      | Motion belongs to movement, playback, state change, and transitions that explain the product. Static information can remain still.                                 |
+| Repeated reveal motion  | Every block fades and rises on scroll                                                      | Motion belongs to movement, playback, state change, and transitions that explain the product. Static information stays still. The stage moves whole sections only. |
 | Ultrawide phone strip   | Text and cards stay in a narrow centered column on a 4K display                            | Keep prose readable while allowing demonstrations and compositions to claim the available width. Do not enlarge everything to fill space.                          |
 | Mobile afterthought     | The opening consumes the viewport before the action or proof appears                       | At 375px and 960 x 412, the first screen should identify the product and expose a useful next action. Heavy or unsupported demos must step aside cleanly.          |
 
@@ -101,6 +101,44 @@ The page should have deliberate quiet spots. A full-width demonstration may be
 followed by one sentence. A compact capability may share space with the next
 one. One section can be dense if the interaction earns it. Another can disappear
 entirely when its only job was to complete a feature list.
+
+## The stage on large windows
+
+On a window at least 1100 by 700 pixels, with a mouse or trackpad and motion
+allowed, the page is a stage. One section rests on it at a time. Scrolling past
+a section, Next, the section rail, an in-page link, or Tab starts one glide to
+the next section: the section drifts toward the reader as it fades, and the
+next arrives from just beyond it. A section taller than the stage scrolls
+within it first, and one scroll gesture either finishes a section or leaves it,
+never both. Back, Forward, and reload return to the section the reader left.
+Austen chose this calm glide on 2026-09-28 over a winding fly-through and a
+parallax version.
+
+The stage keeps these limits:
+
+- It moves whole sections. Nothing inside a section fades or rises on scroll.
+- Only the reader moves it. A demonstration that moves focus by itself never
+  starts a glide.
+- Sections off the stage stay in the page for screen readers and Tab.
+- Phones, tablets, small or zoomed-in windows, and reduced motion get the plain
+  page, which must read completely on its own.
+
+Each demonstration is its own stop, in the order the app offers them:
+Construct a sequence, Generate a sequence, Put it in a tunnel, See it in 3D.
+Austen chose this on 2026-09-28. The headings name the action each stop
+demonstrates, and the stage shows one at a time, so these four are the accepted
+exception to the heading read below.
+
+- A demonstration fills the stop it rests in. The builder and the generator
+  take the whole room between the header and Next; the tunnel square and the
+  3D viewer shrink until the stop fits it.
+- The builder stops growing at the frame it gets in a 1920 x 1080 window,
+  about 1728 by 832 pixels, and sits centered in larger rooms. Its option tiles
+  and step cells have fixed caps, so a bigger frame only adds empty panel.
+- The prop chooser lives inside each demonstration, beside the sequence's
+  word. There is no page-level Build and Generate switch.
+- No stop ends in a link to the part of the app it shows. The header's Open
+  Flow Arts Composer button is the way into the app on every page.
 
 ## Copy rules for this page
 
@@ -185,8 +223,10 @@ artist.
 **Viewport read**  
 Inspect 375, 960 x 412, tablet, 1440, 1920, 2560, and 3840 widths. Check the
 opening, the transitions between unlike section shapes, the end of the page,
-and every interactive state. Random screenshots are unnecessary when these
-known pressure points are covered deliberately.
+and every interactive state. From 1440 up, also check the stage: every way into
+a glide, a tall section's pan, and the hand-off to the footer. Random
+screenshots are unnecessary when these known pressure points are covered
+deliberately.
 
 **Final AI-bust read**  
 Scan the finished public copy for the repository patterns, then do a human read

@@ -14,6 +14,32 @@ export interface PaintRect {
   height: number;
 }
 
+export interface PaintInsets {
+  top: number;
+  right: number;
+  bottom: number;
+  left: number;
+}
+
+/** Extra drawing room leaves the item's authored box and font scale intact. */
+export function paintSurfaceGeometry(
+  painter: PostStudioLayerPainter,
+  target: { width: number; height: number }
+): { width: number; height: number; rect: PaintRect } {
+  const overflow = painter.paintOverflow?.(target);
+  const inset = (value: number | undefined) =>
+    value !== undefined && Number.isFinite(value)
+      ? Math.max(0, Math.ceil(value))
+      : 0;
+  const left = inset(overflow?.left);
+  const top = inset(overflow?.top);
+  return {
+    width: target.width + left + inset(overflow?.right),
+    height: target.height + top + inset(overflow?.bottom),
+    rect: { x: left, y: top, ...target },
+  };
+}
+
 /** The slice of an evaluated frame layer a painter may read. */
 export interface PaintFrame {
   /**
@@ -32,6 +58,10 @@ export interface PaintFrame {
   sequenceFrame?: SequenceFrame;
   /** The post's own clock, for overlays timed against the whole post. */
   projectTimeSeconds?: number;
+  /** The layer's framing right now, for a painter that places points itself. */
+  transform?: EvaluatedFrameLayer["transform"];
+  /** The footage's manually placed box and source crop at this frame. */
+  sourceGeometry?: EvaluatedFrameLayer["sourceGeometry"];
 }
 
 /** The painter's view of one evaluated layer at one post time. */
@@ -47,6 +77,8 @@ export function toPaintFrame(
     sourceTimeSeconds: layer.sourceTimeSeconds,
     sequenceFrame: layer.sequenceFrame,
     projectTimeSeconds,
+    transform: layer.transform,
+    sourceGeometry: layer.sourceGeometry,
   };
 }
 
@@ -98,6 +130,14 @@ export interface PostStudioLayerPainter {
    * (typically the background) rather than throwing.
    */
   prepare(target: { width: number; height: number }): Promise<void>;
+  /**
+   * A painter that frames its own drawing from `PaintFrame.transform`, so the
+   * export must not also turn and scale the context. The staff effects move
+   * points with the footage's framing but keep sparks and smoke upright.
+   */
+  readonly ownsTransform?: boolean;
+  /** Animated ink may leave its final text box while staying inside the post. */
+  paintOverflow?(target: { width: number; height: number }): PaintInsets;
   /** Draws synchronously into `rect` of `context`, in that context's pixels. */
   paint(
     context: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D,

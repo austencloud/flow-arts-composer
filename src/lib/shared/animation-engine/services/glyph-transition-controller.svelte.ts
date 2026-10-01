@@ -14,14 +14,12 @@ import type { Letter } from "$lib/shared/foundation/domain/models/letter";
 export interface GlyphTransitionState {
   // Currently displayed values
   displayedLetter: Letter | null;
-  displayedTurnsTuple: string;
   displayedStepNumber: number | null;
   /** Musical position display (e.g., "2, 3" for a beat spanning positions 2-3) */
   displayedMusicalPosition: string | null;
 
   // Fading out values (during transition)
   fadingOutLetter: Letter | null;
-  fadingOutTurnsTuple: string | null;
   fadingOutStepNumber: number | null;
 
   // Transition flags
@@ -37,11 +35,9 @@ export class GlyphTransitionController {
   // Reactive state - owned by service
   state = $state<GlyphTransitionState>({
     displayedLetter: null,
-    displayedTurnsTuple: "(s, 0, 0)",
     displayedStepNumber: null,
     displayedMusicalPosition: null,
     fadingOutLetter: null,
-    fadingOutTurnsTuple: null,
     fadingOutStepNumber: null,
     isNewLetter: false,
   });
@@ -51,24 +47,21 @@ export class GlyphTransitionController {
 
   updateTarget(
     letter: Letter | null,
-    turnsTuple: string,
     stepNumber: number | null,
     musicalPosition?: string | null
   ): void {
     const hasLetterChanged = letter !== this.state.displayedLetter;
-    const hasTurnsChanged = turnsTuple !== this.state.displayedTurnsTuple;
     const hasStepChanged = stepNumber !== this.state.displayedStepNumber;
     const hasPositionChanged = musicalPosition !== this.state.displayedMusicalPosition;
 
-    if (!hasLetterChanged && !hasTurnsChanged && !hasStepChanged && !hasPositionChanged) {
+    if (!hasLetterChanged && !hasStepChanged && !hasPositionChanged) {
       return; // No change at all
     }
 
     // Only trigger fade animation if the LETTER actually changed
-    // If just beat number or turns changed but letter is same, skip the fade
+    // If just the beat number changed but letter is same, skip the fade
     if (hasLetterChanged && this.state.displayedLetter !== null) {
       this.state.fadingOutLetter = this.state.displayedLetter;
-      this.state.fadingOutTurnsTuple = this.state.displayedTurnsTuple;
       this.state.fadingOutStepNumber = this.state.displayedStepNumber;
       this.state.isNewLetter = true;
 
@@ -83,7 +76,6 @@ export class GlyphTransitionController {
       // Remove fading-out values after transition completes
       this.fadeOutTimeoutId = setTimeout(() => {
         this.state.fadingOutLetter = null;
-        this.state.fadingOutTurnsTuple = null;
         this.state.fadingOutStepNumber = null;
       }, GLYPH_TRANSITION_DURATION_MS);
 
@@ -95,7 +87,6 @@ export class GlyphTransitionController {
 
     // Always update displayed values (silently if letter didn't change)
     this.state.displayedLetter = letter;
-    this.state.displayedTurnsTuple = turnsTuple;
     this.state.displayedStepNumber = stepNumber;
     this.state.displayedMusicalPosition = musicalPosition ?? null;
   }
@@ -114,11 +105,9 @@ export class GlyphTransitionController {
       this.newLetterTimeoutId = null;
     }
     this.state.displayedLetter = null;
-    this.state.displayedTurnsTuple = "(s, 0, 0)";
     this.state.displayedStepNumber = null;
     this.state.displayedMusicalPosition = null;
     this.state.fadingOutLetter = null;
-    this.state.fadingOutTurnsTuple = null;
     this.state.fadingOutStepNumber = null;
     this.state.isNewLetter = false;
   }

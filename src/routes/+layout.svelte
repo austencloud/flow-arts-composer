@@ -3,6 +3,7 @@
   import { onMount } from "svelte";
   import { afterNavigate, onNavigate, replaceState } from "$app/navigation";
   import { page } from "$app/state";
+  import { dev } from "$app/environment";
   import MarketingChrome from "$lib/shared/landing/components/MarketingChrome.svelte";
   import ViewCaptureListener from "$lib/shared/review/ViewCaptureListener.svelte";
   import { detectSiteMode, type SiteMode } from "../config/domains";
@@ -357,8 +358,13 @@
     return common;
   }
 
+  // The SSR check is static, so the server build drops every import above.
+  // `typeof window` alone is a runtime check that Rollup keeps, which bundled
+  // the whole app shell into the Cloudflare Worker.
   let preloadedImports: ReturnType<typeof startAppImports> | null =
-    typeof window !== "undefined" && detectSiteMode() === "app"
+    !import.meta.env.SSR &&
+    typeof window !== "undefined" &&
+    detectSiteMode() === "app"
       ? startAppImports()
       : null;
 
@@ -430,7 +436,7 @@
 
     // i18n is lightweight - safe for landing
     const { initI18n } = await import("$lib/shared/i18n/i18n.svelte.js");
-    initI18n();
+    await initI18n();
 
     // Landing doesn't need DI container or auth - mark ready immediately
     containerReady = true;
@@ -507,7 +513,16 @@
 
     // Load composition root - triggers all service registrations
     bootProfiler.mark("di-container");
-    await imports.di;
+    // Load the selected language alongside the container. Child components
+    // must not capture English labels while the saved locale is still loading.
+    await Promise.all([
+      imports.di,
+      imports.i18n.then(async ({ initI18n }) => {
+        bootProfiler.mark("i18n");
+        await initI18n();
+        bootProfiler.end("i18n");
+      }),
+    ]);
     bootProfiler.end("di-container");
 
     // Mark container ready so children can render immediately
@@ -640,12 +655,6 @@
         bootProfiler.end("posthog");
       }
     })();
-
-    // i18n
-    bootProfiler.mark("i18n");
-    const { initI18n } = await imports.i18n;
-    initI18n();
-    bootProfiler.end("i18n");
 
     // Modal URL state
     const { initModalUrlState, cleanupModalUrlState } =
@@ -872,10 +881,14 @@
   <meta charset="utf-8" />
 </svelte:head>
 
-<!-- P copies the current view - camera pose and frame in a 3D room, URL and
-     the element under the cursor everywhere else. Mounted at the root because
-     "when I see something in the app" means any route, not one dev page. -->
-<ViewCaptureListener />
+<!-- Bare U copies the current view: camera pose and frame in a 3D room, URL
+     and the element under the cursor everywhere else. Mounted at the root
+     because "when I see something in the app" means any route, not one dev
+     page. It is a debug tool, so dev builds only: `dev` is fixed at build
+     time and production never mounts the listener. -->
+{#if dev}
+  <ViewCaptureListener />
+{/if}
 
 {#if containerError}
   <div class="error-screen">

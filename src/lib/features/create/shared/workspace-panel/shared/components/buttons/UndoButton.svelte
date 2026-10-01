@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { getLocale, t } from "$lib/shared/i18n/i18n.svelte.js";
   import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
   import { UndoOperationType } from "../../../../services/undo-manager";
   import type { createCreateModuleState } from "$lib/features/create/shared/state/create-module-state.svelte";
@@ -18,10 +19,13 @@
     CreateModuleState,
     direction = "undo",
     onAction = () => {},
+    quiet = false,
   }: {
     CreateModuleState: CreateModuleState;
     direction?: "undo" | "redo";
     onAction?: () => void;
+    /** Plain surface for the phone Assemble rail, where the pictures lead. */
+    quiet?: boolean;
   } = $props();
 
   // Resolve haptic feedback service
@@ -30,29 +34,29 @@
   const isAssembleTab = $derived(navigationState.activeTab === "assemble");
 
   // Type descriptions for all operation types
-  const typeDescriptions: Record<UndoOperationType, string> = {
-    [UndoOperationType.ADD_BEAT]: "Add Step",
-    [UndoOperationType.REMOVE_BEATS]: "Remove Steps",
-    [UndoOperationType.CLEAR_SEQUENCE]: "Clear Sequence",
-    [UndoOperationType.SELECT_START_PLACEMENT]: "Select Start Placement",
-    [UndoOperationType.UPDATE_BEAT]: "Update Step",
-    [UndoOperationType.INSERT_BEAT]: "Insert Step",
-    [UndoOperationType.BATCH_EDIT]: "Batch Edit",
-    [UndoOperationType.MIRROR_SEQUENCE]: "Mirror",
-    [UndoOperationType.FLIP_SEQUENCE]: "Flip",
-    [UndoOperationType.ROTATE_SEQUENCE]: "Rotate",
-    [UndoOperationType.SWAP_HANDS]: "Swap Hands",
-    [UndoOperationType.INVERT_SEQUENCE]: "Invert",
-    [UndoOperationType.REWIND_SEQUENCE]: "Rewind",
-    [UndoOperationType.SHIFT_START]: "Shift Start",
-    [UndoOperationType.APPLY_TURN_PATTERN]: "Turn Pattern",
-    [UndoOperationType.APPLY_ROTATION_PATTERN]: "Rotation Pattern",
-    [UndoOperationType.APPLY_DURATION_PATTERN]: "Duration Pattern",
-    [UndoOperationType.EXTEND_SEQUENCE]: "Extend",
-    [UndoOperationType.MODIFY_BEAT_PROPERTIES]: "Edit Step",
-    [UndoOperationType.GENERATE_SEQUENCE]: "Generate Sequence",
-    [UndoOperationType.SPELL_GENERATE]: "Spell Generate",
-    [UndoOperationType.SPELL_APPLY_LOOP]: "Apply Spell Loop",
+  const typeDescriptions: Record<UndoOperationType, () => string> = {
+    [UndoOperationType.ADD_BEAT]: () => t("create_workspace_history_add_step"),
+    [UndoOperationType.REMOVE_BEATS]: () => t("create_workspace_history_remove_steps"),
+    [UndoOperationType.CLEAR_SEQUENCE]: () => t("create_workspace_clear_sequence"),
+    [UndoOperationType.SELECT_START_PLACEMENT]: () => t("create_workspace_history_select_start"),
+    [UndoOperationType.UPDATE_BEAT]: () => t("create_workspace_history_update_step"),
+    [UndoOperationType.INSERT_BEAT]: () => t("create_workspace_history_insert_step"),
+    [UndoOperationType.BATCH_EDIT]: () => t("create_workspace_history_batch_edit"),
+    [UndoOperationType.MIRROR_SEQUENCE]: () => t("create_workspace_history_mirror"),
+    [UndoOperationType.FLIP_SEQUENCE]: () => t("create_workspace_history_flip"),
+    [UndoOperationType.ROTATE_SEQUENCE]: () => t("create_workspace_history_rotate"),
+    [UndoOperationType.SWAP_HANDS]: () => t("create_workspace_history_swap_hands"),
+    [UndoOperationType.INVERT_SEQUENCE]: () => t("create_workspace_history_invert"),
+    [UndoOperationType.REWIND_SEQUENCE]: () => t("create_workspace_history_rewind"),
+    [UndoOperationType.SHIFT_START]: () => t("create_workspace_history_shift_start"),
+    [UndoOperationType.APPLY_TURN_PATTERN]: () => t("create_workspace_history_turn_pattern"),
+    [UndoOperationType.APPLY_ROTATION_PATTERN]: () => t("create_workspace_history_rotation_pattern"),
+    [UndoOperationType.APPLY_DURATION_PATTERN]: () => t("create_workspace_history_duration_pattern"),
+    [UndoOperationType.EXTEND_SEQUENCE]: () => t("create_workspace_history_extend"),
+    [UndoOperationType.MODIFY_BEAT_PROPERTIES]: () => t("create_workspace_history_edit_step"),
+    [UndoOperationType.GENERATE_SEQUENCE]: () => t("create_ui_generate_sequence"),
+    [UndoOperationType.SPELL_GENERATE]: () => t("create_workspace_history_spell_generate"),
+    [UndoOperationType.SPELL_APPLY_LOOP]: () => t("create_workspace_history_spell_loop"),
   };
 
   // Derived state for button text/tooltip
@@ -60,51 +64,35 @@
     direction === "undo" ? CreateModuleState.canUndo : CreateModuleState.canRedo
   );
 
-  const historyButtonText = $derived(() => {
-    if (!canAct)
-      return direction === "undo" ? "Nothing to Undo" : "Nothing to Redo";
-
+  const historyAction = $derived.by(() => {
     if (isAssembleTab) {
       const builder = CreateModuleState.assembleTabState?.assembleBuilderState;
-      const label =
-        direction === "undo" ? builder?.undoLabel : builder?.redoLabel;
-      return `${direction === "undo" ? "Undo" : "Redo"} ${label ?? "Last Action"}`;
+      const label = direction === "undo" ? builder?.undoLabel : builder?.redoLabel;
+      return getLocale() === "en" && label ? label : t("create_workspace_history_last_action");
     }
 
-    const lastEntry =
-      direction === "undo"
-        ? (CreateModuleState.undoController?.nextUndoEntry ?? null)
-        : (CreateModuleState.undoController?.nextRedoEntry ?? null);
-    if (lastEntry?.metadata?.description) {
-      return `${direction === "undo" ? "Undo" : "Redo"} ${lastEntry.metadata.description}`;
+    const entry = direction === "undo"
+      ? CreateModuleState.undoController?.nextUndoEntry
+      : CreateModuleState.undoController?.nextRedoEntry;
+    const type = entry?.type as UndoOperationType | undefined;
+    if (getLocale() === "en" && entry?.metadata?.description) {
+      return entry.metadata.description;
     }
-
-    const lastType = lastEntry?.type as UndoOperationType | undefined;
-    return `${direction === "undo" ? "Undo" : "Redo"} ${lastType ? typeDescriptions[lastType] : "Last Action"}`;
+    return type && typeDescriptions[type]
+      ? typeDescriptions[type]()
+      : t("create_workspace_history_last_action");
   });
 
-  const historyTooltip = $derived(() => {
-    if (!canAct) {
-      return direction === "undo" ? "No actions to undo" : "No actions to redo";
-    }
-
-    if (isAssembleTab) {
-      const builder = CreateModuleState.assembleTabState?.assembleBuilderState;
-      const label =
-        direction === "undo" ? builder?.undoLabel : builder?.redoLabel;
-      return `${direction === "undo" ? "Undo" : "Redo"}: ${label ?? "last action"}`;
-    }
-
-    const lastEntry =
-      direction === "undo"
-        ? (CreateModuleState.undoController?.nextUndoEntry ?? null)
-        : (CreateModuleState.undoController?.nextRedoEntry ?? null);
-    if (lastEntry?.metadata?.description) {
-      return `${direction === "undo" ? "Undo" : "Redo"}: ${lastEntry.metadata.description}`;
-    }
-
-    return `${direction === "undo" ? "Undo" : "Redo"} last action (${lastEntry?.type || "Unknown"})`;
-  });
+  const historyButtonText = $derived(
+    !canAct
+      ? t(direction === "undo" ? "create_workspace_nothing_to_undo" : "create_workspace_nothing_to_redo")
+      : t(direction === "undo" ? "create_workspace_undo_named" : "create_workspace_redo_named", { action: historyAction })
+  );
+  const historyTooltip = $derived(
+    !canAct
+      ? t(direction === "undo" ? "create_workspace_no_actions_to_undo" : "create_workspace_no_actions_to_redo")
+      : historyButtonText
+  );
 
   // Simple click handler
   function handleAction() {
@@ -124,20 +112,21 @@
   data-undo-shortcut={direction === "undo" ? "" : undefined}
   data-redo-shortcut={direction === "redo" ? "" : undefined}
   data-undo-shortcut-label={direction === "undo"
-    ? historyButtonText().replace(/^Undo\s+/i, "")
+    ? historyAction
     : undefined}
   data-redo-shortcut-label={direction === "redo"
-    ? historyButtonText().replace(/^Redo\s+/i, "")
+    ? historyAction
     : undefined}
   class="undo-button"
+  class:quiet
   class:disabled={!canAct}
   onclick={handleAction}
   disabled={!canAct}
-  title={historyTooltip()}
-  aria-label={historyButtonText()}
+  title={historyTooltip}
+  aria-label={historyButtonText}
   data-ghost={direction === "undo" && canAct ? "safe" : undefined}
   data-ghost-kind={direction === "undo" ? "undo" : undefined}
-  data-ghost-label={direction === "undo" ? "Undo" : undefined}
+  data-ghost-label={direction === "undo" ? t("create_workspace_undo") : undefined}
 >
   <UndoGlyph size={20} {direction} />
   <span class="workspace-action-label" aria-hidden="true">
@@ -224,6 +213,22 @@
     );
     box-shadow: 0 6px 16px
       color-mix(in srgb, var(--theme-accent-strong) 60%, transparent);
+  }
+
+  .undo-button.quiet {
+    background: var(--theme-card-bg);
+    border: 1px solid var(--theme-stroke);
+    box-shadow: none;
+  }
+
+  .undo-button.quiet:hover:not(:disabled) {
+    background: var(--theme-card-hover-bg);
+    box-shadow: none;
+  }
+
+  /* Quiet keeps the familiar purple on the icon only. */
+  .undo-button.quiet :global(.undo-glyph) {
+    color: color-mix(in srgb, var(--theme-accent-strong) 62%, white);
   }
 
   .undo-button:active {

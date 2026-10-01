@@ -29,6 +29,10 @@ export interface DisplayGridBox {
   gapY: number;
   count: number;
   grow?: boolean;
+  /** Compact hosts retain their smaller artwork floor when fitting a box. */
+  minArt?: number;
+  /** Compact grids may center a shorter final row, but never leave one tile. */
+  allowPartialRows?: boolean;
   /** Tile index where the second visual group starts; null for one group. */
   groupBoundary?: number | null;
 }
@@ -56,7 +60,8 @@ export function fitDisplayGrid(box: DisplayGridBox): DisplayGridFit | null {
   const columnChoices = grouped
     ? [2, 4, 8].filter((cols) => cols <= count)
     : Array.from({ length: count - 1 }, (_, i) => i + 2).filter(
-        (cols) => count % cols === 0
+        (cols) =>
+          count % cols === 0 || (box.allowPartialRows && count % cols > 1)
       );
 
   const cap = box.grow
@@ -105,10 +110,67 @@ export function fitDisplayGrid(box: DisplayGridBox): DisplayGridFit | null {
     }
   }
 
-  if (!best.cols || best.art < MIN_FIT_ART) return null;
+  if (!best.cols || best.art < (box.minArt ?? MIN_FIT_ART)) return null;
   return {
     cols: best.cols,
     art: Math.floor(best.art),
     tile: Math.floor(best.art + chrome),
   };
+}
+
+/**
+ * The compact layout, for a host that scrolls the panel inside a box it does
+ * not size (Post Studio's tool panel). There is no definite height to fit the
+ * tiles to, so the arrangement is fixed (as few, wide rows as the width allows)
+ * and only the picture size is chosen: the largest one for which everything the
+ * scroller holds still fits its visible height, never smaller than a picture
+ * that still reads as one.
+ */
+/** Smallest picture a compact tile keeps; below it the host scrolls instead. */
+export const COMPACT_MIN_ART = 28;
+/** Largest picture a compact tile draws, however much room the host has. */
+export const COMPACT_MAX_ART = 64;
+/** Narrowest compact tile, so a two-word label still fits in two lines. */
+export const COMPACT_MIN_TILE_WIDTH = 60;
+
+/**
+ * Columns for `count` tiles: the fewest rows (two or more) whose columns are
+ * each at least COMPACT_MIN_TILE_WIDTH wide. Ten tiles are two rows of five
+ * wherever five columns fit; a narrower box gets more rows.
+ */
+export function compactDisplayColumns(box: {
+  width: number;
+  count: number;
+  gap: number;
+}): number {
+  const { width, count, gap } = box;
+  if (count <= 1) return Math.max(count, 1);
+  for (let rows = 2; rows <= count; rows += 1) {
+    const cols = Math.ceil(count / rows);
+    const tile = (width - gap * (cols - 1)) / cols;
+    if (tile >= COMPACT_MIN_TILE_WIDTH) return cols;
+  }
+  return 1;
+}
+
+/**
+ * The picture cap that makes the scroller's content fit its visible height.
+ *
+ * `probeArt` is the picture size actually drawn when the cap was
+ * COMPACT_MAX_ART, `overflow` is how far the scroller's content then ran past
+ * its visible height (zero or less when it fit), and every row shrinks by the
+ * same amount the picture does, so the content shortens by rows x shrink.
+ */
+export function compactDisplayArt(probe: {
+  probeArt: number;
+  rows: number;
+  overflow: number;
+}): number {
+  const { probeArt, rows, overflow } = probe;
+  if (overflow <= 0) return COMPACT_MAX_ART;
+  const shrink = Math.ceil(overflow / Math.max(rows, 1));
+  return Math.min(
+    COMPACT_MAX_ART,
+    Math.max(COMPACT_MIN_ART, Math.floor(probeArt - shrink))
+  );
 }

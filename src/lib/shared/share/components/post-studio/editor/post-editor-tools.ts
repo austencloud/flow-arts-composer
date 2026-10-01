@@ -15,6 +15,7 @@ import type {
 export type PostPanelToolId =
   | "videos"
   | "add"
+  | "canvas"
   | "look"
   | "export"
   | "trim"
@@ -24,9 +25,13 @@ export type PostPanelToolId =
   | "volume"
   | "layout"
   | "position"
+  | "border"
   | "fade"
+  | "effects"
   | "labels"
+  | "appearance"
   | "shows"
+  | "sequence"
   | "text"
   | "rename";
 
@@ -35,6 +40,7 @@ export type PostActionToolId =
   | "back"
   | "split"
   | "tutorial"
+  | "template"
   | "beats"
   | "duplicate"
   | "delete";
@@ -53,6 +59,7 @@ const ACTION_TOOLS = new Set<PostToolId>([
   "back",
   "split",
   "tutorial",
+  "template",
   "beats",
   "duplicate",
   "delete",
@@ -74,7 +81,15 @@ const ITEM_TAIL: readonly PostToolId[] = [
 export function toolRow(selection: PostToolSelection): PostToolId[] {
   switch (selection.kind) {
     case null:
-      return ["videos", "add", "split", "tutorial", "look"];
+      return [
+        "videos",
+        "add",
+        "canvas",
+        "split",
+        "tutorial",
+        "template",
+        "look",
+      ];
     case "video":
       return [
         "back",
@@ -85,21 +100,47 @@ export function toolRow(selection: PostToolSelection): PostToolId[] {
         "volume",
         ...(selection.hasLayout ? (["layout"] as const) : []),
         "position",
+        "border",
         "fade",
+        "effects",
         "beats",
         "rename",
         "duplicate",
         "delete",
       ];
     case "animation":
-      return ["back", "split", "labels", "timing", ...ITEM_TAIL];
+      return [
+        "back",
+        "split",
+        "appearance",
+        "sequence",
+        "timing",
+        ...ITEM_TAIL,
+      ];
     case "moves":
-      return ["back", "split", "shows", "timing", ...ITEM_TAIL];
+      return [
+        "back",
+        "split",
+        "appearance",
+        "shows",
+        "sequence",
+        "timing",
+        ...ITEM_TAIL,
+      ];
     case "text":
       return ["back", "split", "text", "timing", ...ITEM_TAIL];
     case "carousel":
-    case "card":
+    case "image":
       return ["back", "split", "timing", ...ITEM_TAIL];
+    case "card":
+      return [
+        "back",
+        "split",
+        "appearance",
+        "sequence",
+        "timing",
+        ...ITEM_TAIL,
+      ];
   }
 }
 

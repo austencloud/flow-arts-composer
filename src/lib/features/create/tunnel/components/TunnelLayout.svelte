@@ -11,14 +11,10 @@
   import type { SetupSnapshot } from "$lib/features/create/generate/domain/setup-snapshot";
   import type { GenerationAnimationTarget } from "$lib/features/create/generate/state/generate-actions.svelte";
   import { createSequenceState } from "$lib/features/create/shared/state/sequence-state-orchestrator.svelte";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
   import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
   import TunnelArtSettings from "$lib/shared/sequence-viewer/components/art-settings/TunnelArtSettings.svelte";
   import TunnelArtView from "$lib/shared/sequence-viewer/tunnel/TunnelArtView.svelte";
-  import {
-    copyOpsLabel,
-    type GeneratorTunnelSourceProvenance,
-  } from "$lib/shared/sequence-viewer/tunnel/tunnel-composition";
+  import type { GeneratorTunnelSourceProvenance } from "$lib/shared/sequence-viewer/tunnel/tunnel-composition";
   import { FOLD_OPTIONS } from "$lib/shared/sequence-viewer/tunnel/tunnel-config";
   import { TunnelViewController } from "$lib/shared/sequence-viewer/tunnel/tunnel-view-controller.svelte";
   import TkaLabel from "$lib/shared/components/TkaLabel.svelte";
@@ -29,6 +25,10 @@
   import ShapeMatrixTunnelSourcePicker from "./ShapeMatrixTunnelSourcePicker.svelte";
   import type { ModeRealization } from "$lib/shared/shape-matrix/services/build-mode-realizations";
   import type { SequenceSource } from "$lib/shared/browse/engine/types";
+  import {
+    resolveTunnelPerformerDisplays,
+    type TunnelPerformerDisplay,
+  } from "../domain/tunnel-performer-displays";
   import {
     canInlineTunnelInspector,
     resolveTunnelWorkspaceMode,
@@ -83,38 +83,14 @@
       );
     },
   });
-  let performerDisplays = $state<
-    Record<
-      string,
-      {
-        sequence: SequenceData | null;
-        stageTransformLabel: string | null;
-        generatedInstanceCount: number;
-        stageArms: number[];
-      }
-    >
-  >({});
+  let performerDisplays = $state<Record<string, TunnelPerformerDisplay>>({});
   let activePerformerStepIndices = $state<Record<string, number>>({});
   const controller = new TunnelViewController({
     getSequence: () => creator.leadSequence,
     getComposition: () =>
       creator.previewCompositionWithFormation(creator.initialFormation),
     onLayersChange: (layers) => {
-      const next: typeof performerDisplays = {};
-      for (const layer of layers) {
-        const current = next[layer.performerId];
-        next[layer.performerId] = {
-          sequence: current?.sequence ?? layer.performerSequence,
-          stageTransformLabel:
-            current?.stageTransformLabel ??
-            (layer.formationOps.length
-              ? copyOpsLabel(layer.formationOps)
-              : null),
-          generatedInstanceCount: (current?.generatedInstanceCount ?? 0) + 1,
-          stageArms: [...(current?.stageArms ?? []), layer.arm],
-        };
-      }
-      performerDisplays = next;
+      performerDisplays = resolveTunnelPerformerDisplays(layers);
     },
     visibilityManager: creator.presentation.visibility,
     persistViewState: false,
@@ -357,7 +333,7 @@
 {#snippet pairingPanel(isMobile: boolean)}
   <div class="drawer-panel pairing-panel">
     <PanelHeader
-      title={`${creator.pairingTarget?.label ?? "Performer"} source`}
+      title={t("tunnel_source_label", { name: creator.pairingTarget?.label ?? t("tunnel_performer") })}
       subtitle={t(
         "create_ui_independent_choreography_or_a_derived_relationship"
       )}
@@ -371,7 +347,7 @@
 {#snippet generationPanel(isMobile: boolean)}
   <div class="drawer-panel generation-panel">
     <PanelHeader
-      title={`Generate ${generationTargetLabel}`}
+      title={t("tunnel_generate_for", { name: generationTargetLabel })}
       subtitle={t("create_ui_choose_the_complete_two_prop_recipe")}
       {isMobile}
       onClose={creator.closeWorkspacePanel}
@@ -432,7 +408,7 @@
         <div class="title-block">
           <h2>{t("create_ui_build_a_tunnel")}</h2>
           <p>
-            Give each performer choreography, then arrange the cast on stage.
+            {t("create_review_give_each_performer_choreography_then_arrange_the_cast_on_stage")}
           </p>
         </div>
       {/if}
@@ -486,9 +462,7 @@
         </div>
         <div class="preview-summary">
           <p>
-            {controller.performerCount}
-            {controller.performerCount === 1 ? "performer" : "performers"} · {controller.propCount}
-            props
+            {t("tunnel_preview_counts", { people: controller.performerCount, props: controller.propCount })}
           </p>
         </div>
       </header>
@@ -516,7 +490,7 @@
               <i class="fas fa-person-circle-plus" aria-hidden="true"></i>
               <span>
                 <strong>{t("create_ui_previewing_the_completed_cards")}</strong>
-                Finish every empty performer card before opening the viewer.
+                {t("create_review_finish_every_empty_performer_card_before_opening_the_viewer")}
               </span>
             </div>
           {/if}
@@ -524,7 +498,7 @@
           <PanelState
             type="empty"
             title={t("create_ui_your_tunnel_will_appear_here")}
-            message="Choose a sequence in the first performer card to start the preview."
+            message={t("create_review_choose_a_sequence_in_the_first_performer_card_to_start_the_preview")}
             icon="fa-people-arrows-left-right"
           />
         {/if}
@@ -534,13 +508,13 @@
         <div class="result-meta">
           <strong>{creator.presentation.bpm} BPM</strong>
           <span>
-            · {controller.loopSteps}-step loop
+            · {t("tunnel_loop_steps", { count: controller.loopSteps })}
           </span>
         </div>
         <div class="result-actions">
           <PanelButton variant="secondary" onclick={openSettings}>
             <i class="fas fa-sliders" aria-hidden="true"></i>
-            Stage settings
+            {t("create_review_stage_settings")}
           </PanelButton>
           <PanelButton
             variant="primary"
@@ -597,7 +571,7 @@
     panelName="tunnel-settings"
     fullHeightOnMobile={true}
     closeOnBackdrop={false}
-    ariaLabel="Stage settings"
+    ariaLabel={t("create_review_stage_settings")}
     onClose={creator.closeWorkspacePanel}
   >
     {@render settingsPanel(compact, compact ? "bottom" : "sidebar")}
@@ -631,7 +605,7 @@
   open={creator.pickerTarget !== null}
   onClose={creator.closePicker}
   onSelect={selectPickedSequence}
-  title={`Choose ${creator.performerSlots.find((slot) => slot.id === creator.pickerTarget)?.label ?? "Performer 1"} Sequence`}
+  title={t("tunnel_choose_sequence_for", { name: creator.performerSlots.find((slot) => slot.id === creator.pickerTarget)?.label ?? t("tunnel_performer") })}
 />
 
 {#if shapeMatrixTarget}

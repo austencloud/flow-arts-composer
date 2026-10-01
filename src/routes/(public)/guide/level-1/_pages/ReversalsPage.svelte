@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { localizeLevel1Text, localizeLevel1SelectionLabel } from "../_data/localize-level1-content";
   /**
    * Reversals - body page (manifest `reversals`), faithful to proof p33 /
    * "1.2 - Reversals" artboard.
@@ -388,7 +389,7 @@
       <SelectionHit
         groupId={s.key}
         isGroupStart
-        label={`Animate the ${s.label} ${s.hand} reversal`}
+        label={localizeLevel1SelectionLabel(`Animate the ${s.label} ${s.hand} reversal`)}
         onselect={() =>
           emitSequence?.({
             strip: RESOLVED[s.key]!,
@@ -418,7 +419,7 @@
         set: (h) => (p.html = h),
       }}
     >
-      {@html p.html}
+      {@html localizeLevel1Text(p.html)}
     </p>
   {/each}
 </div>

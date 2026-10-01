@@ -4,11 +4,16 @@ import {
   type MotionKey,
   type MotionTransformValue,
   type PresetClip,
+  type PresetTransition,
   type PresetRegionKeyframesTrack,
   type PresetSourceRole,
   type PresetVisualClipMotion,
 } from "$lib/shared/media-composition/domain/media-composition-preset-schema";
-import type { LayoutRegion } from "$lib/shared/media-composition/domain/media-layout-schema";
+import type {
+  LayoutRegion,
+  RegionEdge,
+} from "$lib/shared/media-composition/domain/media-layout-schema";
+import { regionEdge } from "$lib/shared/media-composition/domain/post-clip-edge";
 import {
   ANIMATION_OVERLAY_ROLE,
   stripRole,
@@ -20,16 +25,25 @@ import {
   POST_TIME_EPSILON,
   clampBox,
   itemEnd,
+  shortestTurn,
   type PostAnimationItem,
   type PostBox,
   type PostCarouselItem,
   type PostItem,
+  type PostImageItem,
   type PostMovesItem,
   type PostProject,
   type PostTextSize,
+  type PostTextStyle,
+  type PostTextAnimation,
   type PostVideoItem,
 } from "$lib/shared/media-composition/domain/post-project";
 import { postSecondsOfKeyframe } from "$lib/shared/media-composition/domain/post-project-keyframes";
+import {
+  clipBox,
+  postOutputSize,
+  type PostOutputSize,
+} from "$lib/shared/media-composition/domain/post-canvas";
 
 /**
  * Turns an edited project into the free-layout preset the evaluator, the
@@ -55,10 +69,34 @@ export function itemIdFromTextRole(role: string): string | null {
     : null;
 }
 
+/** Scoped Moves use the animation renderer, with appearance owned by the item. */
+export function movesAnimationRole(itemId: string): string {
+  return `moves-animation:${itemId}`;
+}
+
+export function itemIdFromMovesAnimationRole(role: string): string | null {
+  const prefix = "moves-animation:";
+  return role.startsWith(prefix) ? role.slice(prefix.length) : null;
+}
+
+export const STAFF_EFFECT_ROLE_PREFIX = "staff:";
+
+/** The painted layer that draws a video clip's staff effect. */
+export function staffEffectRole(itemId: string): string {
+  return `${STAFF_EFFECT_ROLE_PREFIX}${itemId}`;
+}
+
+export function itemIdFromStaffEffectRole(role: string): string | null {
+  return role.startsWith(STAFF_EFFECT_ROLE_PREFIX)
+    ? role.slice(STAFF_EFFECT_ROLE_PREFIX.length)
+    : null;
+}
+
 /**
  * A piece clip's id is `<itemId>~<k>` and its overlay clip
  * `<itemId>~<k>:overlay`; a plain (unsplit) item's clip id is its own item
- * id. Either way the item it belongs to is the text up to the first `~`.
+ * id and its staff effect clip `<itemId>~staff`. Either way the item it
+ * belongs to is the text up to the first `~`.
  */
 export function itemIdFromClipId(clipId: string): string {
   const split = clipId.indexOf("~");
@@ -92,6 +130,8 @@ export interface CompiledTextItem {
   role: string;
   text: string;
   size: PostTextSize;
+  style?: PostTextStyle;
+  animation?: PostTextAnimation;
   box: PostBox;
   startSeconds: number;
   endSeconds: number;
@@ -102,16 +142,13 @@ export interface CompiledPostProject {
   durationSeconds: number;
   /** Take ids the preset draws, in first-use order. */
   takeIds: string[];
+  imageIds: string[];
   videoSegments: CompiledVideoSegment[];
   texts: CompiledTextItem[];
 }
 
-const OUTPUT = {
-  width: 1080,
-  height: 1920,
-  frameRate: 30,
-  backgroundColor: "#08080c",
-} as const;
+const OUTPUT_FRAME_RATE = 30;
+const OUTPUT_BACKGROUND = "#08080c";
 
 const IDENTITY_TRANSFORM = {
   scale: 1,
@@ -128,7 +165,8 @@ function region(
   label: string,
   box: PostBox,
   fit: LayoutRegion["fit"],
-  zIndex: number
+  zIndex: number,
+  edge?: RegionEdge
 ): LayoutRegion {
   return {
     id,
@@ -141,6 +179,8 @@ function region(
     fit,
     clipContent: true,
     respectSafeArea: false,
+    ...(edge ? { edge } : {}),
+    ...(box.turn ? { turn: box.turn } : {}),
   };
 }
 
@@ -171,7 +211,9 @@ function sequenceRoleFor(item: SequenceItem): {
       };
     case "moves":
       return {
-        key: stripRole(item.mode),
+        key: item.animationAppearance
+          ? movesAnimationRole(item.id)
+          : stripRole(item.mode),
         label: "Strip",
         resolution: "linked-sequence-derived",
         acceptedKinds: ["sequence-animation"],
@@ -226,11 +268,18 @@ function splitIntoPieces(
     const b = sorted[index + 1]!;
     if (b - a < POST_TIME_EPSILON) continue;
 
-    const covering = mainVideos.find(
-      (video) =>
+    // During a crossfade both videos cover the overlap. The incoming video
+    // owns the picture on top, so its source clock must own linked layers too.
+    let covering: PostVideoItem | undefined;
+    for (const video of mainVideos) {
+      if (
         a >= video.start - POST_TIME_EPSILON &&
-        b <= itemEnd(video) + POST_TIME_EPSILON
-    );
+        b <= itemEnd(video) + POST_TIME_EPSILON &&
+        (!covering || video.start >= covering.start)
+      ) {
+        covering = video;
+      }
+    }
     if (covering) {
       pieces.push({
         start: a,
@@ -256,16 +305,30 @@ function splitIntoPieces(
   return pieces;
 }
 
+/**
+ * Keyed turns as the compiled track plays them: each continues from the one
+ * before it the short way round, as the editor blends them, so a turn
+ * across -180..180 does not spin.
+ */
+function continuousTurns(stored: readonly number[]): number[] {
+  let turn = 0;
+  return stored.map((value, index) => {
+    turn = index === 0 ? value : turn + shortestTurn(stored[index - 1]!, value);
+    return turn;
+  });
+}
+
 function transformMotionKeys(
   item: PostVideoItem
 ): MotionKey<MotionTransformValue>[] | undefined {
   const frames = item.keyframes?.framing;
   if (!frames || frames.length === 0) return undefined;
-  return frames.map((kf) => ({
+  const turns = continuousTurns(frames.map((kf) => kf.value.rotation));
+  return frames.map((kf, index) => ({
     atSeconds: postSecondsOfKeyframe(item, kf.t),
     value: {
       scale: kf.value.zoom,
-      rotationDegrees: kf.value.rotation,
+      rotationDegrees: turns[index]!,
       translateX: kf.value.panX,
       translateY: kf.value.panY,
     },
@@ -283,6 +346,30 @@ function opacityMotionKeys(item: PostItem): MotionKey<number>[] | undefined {
   }));
 }
 
+function sourceGeometryKeys(item: PostVideoItem | PostImageItem) {
+  const keys = item.keyframes?.sourceGeometry?.map((kf) => ({
+    atSeconds: postSecondsOfKeyframe(item, kf.t),
+    value: kf.value,
+    easing: kf.easing,
+  }));
+  if (!keys?.length) return undefined;
+  // The native base matrix holds until the first authored transform key.
+  if (
+    item.sourceGeometry &&
+    keys[0]!.atSeconds > item.start + POST_TIME_EPSILON
+  ) {
+    return [
+      {
+        atSeconds: item.start,
+        value: item.sourceGeometry,
+        easing: "hold" as const,
+      },
+      ...keys,
+    ];
+  }
+  return keys;
+}
+
 /** The clip's `motion`, or undefined so an unanimated clip stays as it was. */
 function motionFor(
   item: PostItem,
@@ -290,20 +377,37 @@ function motionFor(
 ): PresetVisualClipMotion | undefined {
   const opacity = opacityMotionKeys(item);
   if (!opacity && !transform) return undefined;
-  return { ...(transform ? { transform } : {}), ...(opacity ? { opacity } : {}) };
+  return {
+    ...(transform ? { transform } : {}),
+    ...(opacity ? { opacity } : {}),
+  };
 }
 
-/** A `regionKeyframes` track for the item's own region, or undefined. */
-function regionKeyframesFor(item: PostItem): PresetRegionKeyframesTrack | null {
+/**
+ * A `regionKeyframes` track for the item's own region, or undefined. A
+ * shaped clip's region is its shape inside each keyed box. When any key is
+ * turned, every key carries its turn, a straight one as 0.
+ */
+function regionKeyframesFor(
+  item: PostItem,
+  output: PostOutputSize
+): PresetRegionKeyframesTrack | null {
   const frames = item.keyframes?.box;
   if (!frames || frames.length === 0) return null;
+  const turns = frames.some((kf) => kf.value.turn !== undefined)
+    ? continuousTurns(frames.map((kf) => kf.value.turn ?? 0))
+    : null;
   return {
     regionId: item.id,
-    keyframes: frames.map((kf) => ({
-      atSeconds: postSecondsOfKeyframe(item, kf.t),
-      value: kf.value,
-      easing: kf.easing,
-    })),
+    keyframes: frames.map((kf, index) => {
+      const rect =
+        item.kind === "video" ? clipBox(item, kf.value, output) : kf.value;
+      return {
+        atSeconds: postSecondsOfKeyframe(item, kf.t),
+        value: turns ? { ...rect, turn: turns[index]! } : rect,
+        easing: kf.easing,
+      };
+    }),
   };
 }
 
@@ -312,6 +416,10 @@ export function compilePostProject(
   context: CompilePostProjectContext
 ): CompiledPostProject | null {
   const takes = new Map(project.takes.map((entry) => [entry.id, entry]));
+  const images = new Map(
+    (project.images ?? []).map((entry) => [entry.id, entry])
+  );
+  const output = postOutputSize(project.canvas);
   // Pieces read a main video's timing even when its own track is hidden - the
   // footage still exists, Austen just doesn't want its own picture on screen.
   const mainVideos = (project.tracks[MAIN_TRACK_INDEX]?.items ?? []).filter(
@@ -323,6 +431,8 @@ export function compilePostProject(
   const clips: PresetClip[] = [];
   const roleByKey = new Map<string, PresetSourceRole>();
   const takeIds: string[] = [];
+  const imageIds: string[] = [];
+  const transitions: PresetTransition[] = [];
   const videoSegments: CompiledVideoSegment[] = [];
   const texts: CompiledTextItem[] = [];
   let maxEnd = 0;
@@ -350,21 +460,29 @@ export function compilePostProject(
         if (!takes.has(item.takeId)) return false;
         useTake(item.takeId);
         const roleKey = takeRole(item.takeId);
-        regions.push(region(item.id, label, box, item.fit, zIndex));
-        const regionKeyframes = regionKeyframesFor(item);
+        regions.push(
+          region(
+            item.id,
+            label,
+            item.sourceGeometry
+              ? { x: 0, y: 0, width: 1, height: 1 }
+              : clipBox(item, box, output),
+            item.fit,
+            zIndex,
+            regionEdge(item.edge)
+          )
+        );
+        const regionKeyframes = regionKeyframesFor(item, output);
         if (regionKeyframes) regionKeyframesList.push(regionKeyframes);
         const motion = motionFor(item, transformMotionKeys(item));
-        clips.push({
-          id: item.id,
-          kind: "visual",
-          sourceRole: roleKey,
+        const footage = {
           regionId: item.id,
           start: seconds(item.start),
           end: seconds(itemEnd(item)),
           sourceIn: seconds(item.sourceIn),
           sourceOut: seconds(item.sourceOut),
           playbackRate: item.speed,
-          loop: false,
+          loop: false as const,
           opacity: item.opacity,
           ...(item.fadeIn > 0 ? { fadeInSeconds: item.fadeIn } : {}),
           ...(item.fadeOut > 0 ? { fadeOutSeconds: item.fadeOut } : {}),
@@ -375,10 +493,37 @@ export function compilePostProject(
             translateY: item.panY,
             flipHorizontal: item.flip,
           },
+          ...(item.sourceGeometry
+            ? { sourceGeometry: item.sourceGeometry }
+            : {}),
+          ...(item.autoAdjust ? { autoAdjust: item.autoAdjust } : {}),
+          ...(item.colorGrade ? { colorGrade: item.colorGrade } : {}),
+          ...(sourceGeometryKeys(item)
+            ? { sourceGeometryKeyframes: sourceGeometryKeys(item) }
+            : {}),
+          ...(motion ? { motion } : {}),
+        };
+        clips.push({
+          id: item.id,
+          kind: "visual",
+          sourceRole: roleKey,
+          ...footage,
           useResolvedTimeMap: true,
           timeMapRole: roleKey,
-          ...(motion ? { motion } : {}),
         });
+        // The staff effect rides the footage: same span, media time, framing
+        // and fades, so its painter lands on the picture's own staff ends.
+        if (item.staffEffect) {
+          const staffRole = staffEffectRole(item.id);
+          useRole(presetRole(staffRole, "Staff effect", "manual", ["image"]));
+          clips.push({
+            id: `${item.id}~staff`,
+            kind: "visual",
+            sourceRole: staffRole,
+            ...footage,
+            useResolvedTimeMap: false,
+          });
+        }
         videoSegments.push({
           itemId: item.id,
           takeId: item.takeId,
@@ -389,6 +534,54 @@ export function compilePostProject(
           sourceOut: item.sourceOut,
           speed: item.speed,
           volume: item.volume,
+        });
+        return true;
+      }
+
+      case "image": {
+        if (!images.has(item.imageId)) return false;
+        if (!imageIds.includes(item.imageId)) imageIds.push(item.imageId);
+        const roleKey = `image:${item.imageId}`;
+        useRole(
+          presetRole(roleKey, images.get(item.imageId)!.label, "manual", [
+            "image",
+          ])
+        );
+        regions.push(
+          region(
+            item.id,
+            label,
+            item.sourceGeometry ? { x: 0, y: 0, width: 1, height: 1 } : box,
+            "contain",
+            zIndex
+          )
+        );
+        const regionKeyframes = regionKeyframesFor(item, output);
+        if (regionKeyframes) regionKeyframesList.push(regionKeyframes);
+        const motion = motionFor(item);
+        clips.push({
+          id: item.id,
+          kind: "visual",
+          sourceRole: roleKey,
+          regionId: item.id,
+          start: seconds(item.start),
+          end: seconds(itemEnd(item)),
+          sourceIn: seconds(0),
+          sourceOut: seconds(item.duration),
+          playbackRate: 1,
+          loop: false,
+          opacity: item.opacity,
+          ...(item.fadeIn > 0 ? { fadeInSeconds: item.fadeIn } : {}),
+          ...(item.fadeOut > 0 ? { fadeOutSeconds: item.fadeOut } : {}),
+          transform: IDENTITY_TRANSFORM,
+          useResolvedTimeMap: false,
+          ...(item.sourceGeometry
+            ? { sourceGeometry: item.sourceGeometry }
+            : {}),
+          ...(sourceGeometryKeys(item)
+            ? { sourceGeometryKeyframes: sourceGeometryKeys(item) }
+            : {}),
+          ...(motion ? { motion } : {}),
         });
         return true;
       }
@@ -404,7 +597,7 @@ export function compilePostProject(
         );
         regions.push(region(item.id, label, box, "contain", zIndex));
         {
-          const regionKeyframes = regionKeyframesFor(item);
+          const regionKeyframes = regionKeyframesFor(item, output);
           if (regionKeyframes) regionKeyframesList.push(regionKeyframes);
         }
         const cardMotion = motionFor(item);
@@ -443,14 +636,17 @@ export function compilePostProject(
         );
         regions.push(region(item.id, label, box, "contain", zIndex));
         {
-          const regionKeyframes = regionKeyframesFor(item);
+          const regionKeyframes = regionKeyframesFor(item, output);
           if (regionKeyframes) regionKeyframesList.push(regionKeyframes);
         }
         const sequenceMotion = motionFor(item);
 
         const pieces = splitIntoPieces(item, mainVideos);
         const wantsOverlay =
-          item.kind === "animation" && item.overlay && !!context.animationOverlay;
+          item.kind === "animation" &&
+          item.overlay &&
+          !item.animationAppearance &&
+          !!context.animationOverlay;
         if (wantsOverlay) {
           useRole(
             presetRole(ANIMATION_OVERLAY_ROLE, "Beat and letter", "manual", [
@@ -468,8 +664,10 @@ export function compilePostProject(
         const itemFinish = itemEnd(item);
         pieces.forEach((piece, index) => {
           if (piece.takeId) useTake(piece.takeId);
-          const inFadeIn = item.fadeIn > 0 && piece.start < itemStart + item.fadeIn;
-          const inFadeOut = item.fadeOut > 0 && piece.end > itemFinish - item.fadeOut;
+          const inFadeIn =
+            item.fadeIn > 0 && piece.start < itemStart + item.fadeIn;
+          const inFadeOut =
+            item.fadeOut > 0 && piece.end > itemFinish - item.fadeOut;
           const timing = {
             start: seconds(piece.start),
             end: seconds(piece.end),
@@ -525,7 +723,7 @@ export function compilePostProject(
         useRole(presetRole(roleKey, "Text", "manual", ["image"]));
         regions.push(region(item.id, label, box, "fill", zIndex));
         {
-          const regionKeyframes = regionKeyframesFor(item);
+          const regionKeyframes = regionKeyframesFor(item, output);
           if (regionKeyframes) regionKeyframesList.push(regionKeyframes);
         }
         const textMotion = motionFor(item);
@@ -552,6 +750,8 @@ export function compilePostProject(
           role: roleKey,
           text: item.text,
           size: item.size,
+          ...(item.style ? { style: item.style } : {}),
+          ...(item.animation ? { animation: item.animation } : {}),
           box,
           startSeconds: item.start,
           endSeconds: itemEnd(item),
@@ -564,11 +764,49 @@ export function compilePostProject(
   project.tracks.forEach((track, trackIndex) => {
     if (track.hidden) return;
     for (const item of track.items) {
-      if (compileItem(item, trackIndex)) maxEnd = Math.max(maxEnd, itemEnd(item));
+      if (compileItem(item, trackIndex))
+        maxEnd = Math.max(maxEnd, itemEnd(item));
     }
   });
 
+  const main = project.tracks[MAIN_TRACK_INDEX]?.items ?? [];
+  for (let index = 0; index < main.length - 1; index++) {
+    const outgoing = main[index]!;
+    const incoming = main[index + 1]!;
+    if (
+      (outgoing.kind !== "video" && outgoing.kind !== "image") ||
+      (incoming.kind !== "video" && incoming.kind !== "image") ||
+      !outgoing.transitionOut?.duration ||
+      !clips.some((clip) => clip.id === outgoing.id) ||
+      !clips.some((clip) => clip.id === incoming.id)
+    )
+      continue;
+    const start = Math.max(
+      incoming.start,
+      itemEnd(outgoing) - outgoing.transitionOut.duration
+    );
+    const end = Math.min(itemEnd(outgoing), itemEnd(incoming));
+    if (end <= start) continue;
+    transitions.push({
+      id: `transition:${outgoing.id}:${incoming.id}`,
+      kind: "crossfade",
+      outgoingClipId: outgoing.id,
+      incomingClipId: incoming.id,
+      start: seconds(start),
+      end: seconds(end),
+      curve: "linear",
+    });
+  }
+
   if (clips.length === 0 || maxEnd <= 0) return null;
+
+  // A blurred background draws the main clip on screen, so only main clips
+  // the post draws can fill it.
+  const drawn = new Set(clips.map((clip) => clip.id));
+  const backdropClipIds =
+    project.background === "blur"
+      ? mainVideos.map((item) => item.id).filter((id) => drawn.has(id))
+      : [];
 
   const preset = MediaCompositionPresetSchema.parse({
     schemaVersion: 1,
@@ -577,19 +815,35 @@ export function compilePostProject(
     name: "Post",
     createdAt: context.now,
     updatedAt: context.now,
-    output: OUTPUT,
+    output: {
+      ...output,
+      frameRate: OUTPUT_FRAME_RATE,
+      backgroundColor: OUTPUT_BACKGROUND,
+    },
     duration: { mode: "fixed", seconds: maxEnd },
     layoutModel: "free",
     sourceRoles: [...roleByKey.values()],
     regions,
-    ...(regionKeyframesList.length > 0 ? { regionKeyframes: regionKeyframesList } : {}),
+    ...(regionKeyframesList.length > 0
+      ? { regionKeyframes: regionKeyframesList }
+      : {}),
+    ...(backdropClipIds.length > 0
+      ? { backdrop: { kind: "blur" as const, clipIds: backdropClipIds } }
+      : {}),
     clips,
-    transitions: [],
+    transitions,
     audioMix: { masterGain: 1, tracks: [] },
     targetDefaults: {
       instagram: { delivery: "handoff", coverFrameSeconds: 0 },
     },
   } satisfies MediaCompositionPreset);
 
-  return { preset, durationSeconds: maxEnd, takeIds, videoSegments, texts };
+  return {
+    preset,
+    durationSeconds: maxEnd,
+    takeIds,
+    imageIds,
+    videoSegments,
+    texts,
+  };
 }

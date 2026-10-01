@@ -6,6 +6,7 @@
    * data).
    */
   import GuideSection from "../../../level-1/_components/GuideSection.svelte";
+  import { t as translate } from "$lib/shared/i18n/i18n.svelte.js";
   import SequenceShowcase from "../../../level-1/_components/SequenceShowcase.svelte";
   import TurnStrip, {
     type TurnStripFrame,
@@ -174,11 +175,10 @@
   });
 </script>
 
-<GuideSection id="double-turn-static" title="Static">
+<GuideSection id="double-turn-static" title={translate("guide_l2_static_title")}>
   <div class="section-body">
     <p>
-      A static motion with 2 turns is simply a 360° turn in place. It's
-      necessary to use negative space or a turn to achieve this.
+      {translate("guide_l2_double_static_intro")}
     </p>
   </div>
 
@@ -194,7 +194,7 @@
         <TurnStrip
           frames={staticFrames}
           activeT={t}
-          caption="The staff completes a full extra rotation in place at east before settling back to out"
+          caption={translate("guide_l2_double_static_caption")}
         />
       {/snippet}
     </SequenceShowcase>
@@ -202,8 +202,7 @@
 
   <div class="section-body">
     <p>
-      A static motion has 0 thumb switches, therefore a static motion with 2
-      turns has 2 thumb switches (in → out → in)
+      {translate("guide_l2_double_static_thumb")}
     </p>
   </div>
 </GuideSection>

@@ -22,10 +22,60 @@ export interface MediaFitResult {
   visibleSourceRect: PixelRect;
 }
 
+/** Keep a selected part of a source proportional inside its placed box. */
+export function calculateSourceCropFit(input: {
+  sourceWidth: number;
+  sourceHeight: number;
+  crop: { left: number; top: number; right: number; bottom: number };
+  regionWidth: number;
+  regionHeight: number;
+}): PixelRect {
+  return calculateMediaFit({
+    sourceWidth: input.sourceWidth * (input.crop.right - input.crop.left),
+    sourceHeight: input.sourceHeight * (input.crop.bottom - input.crop.top),
+    regionWidth: input.regionWidth,
+    regionHeight: input.regionHeight,
+    fit: "contain",
+  }).drawRect;
+}
+
 function assertPositive(label: string, value: number): void {
   if (!Number.isFinite(value) || value <= 0) {
     throw new RangeError(`${label} must be a positive finite number`);
   }
+}
+
+const QUARTER_TURNS = [
+  { cos: 1, sin: 0 },
+  { cos: 0, sin: 1 },
+  { cos: -1, sin: 0 },
+  { cos: 0, sin: -1 },
+] as const;
+
+/**
+ * The cosine and sine of a turn in degrees, exact at quarter turns.
+ * `Math.cos(Math.PI / 2)` is 6e-17 rather than zero, and that remainder would
+ * read as a sliver of picture past the slot's edge.
+ */
+export function turnOf(degrees: number): { cos: number; sin: number } {
+  const quarter = degrees / 90;
+  if (Number.isInteger(quarter)) {
+    return QUARTER_TURNS[((quarter % 4) + 4) % 4]!;
+  }
+  const radians = (degrees * Math.PI) / 180;
+  return { cos: Math.cos(radians), sin: Math.sin(radians) };
+}
+
+/** The width and height of the box a turned rectangle takes up. */
+export function turnedExtent(
+  width: number,
+  height: number,
+  degrees: number
+): { width: number; height: number } {
+  const { cos, sin } = turnOf(degrees);
+  const c = Math.abs(cos);
+  const s = Math.abs(sin);
+  return { width: width * c + height * s, height: width * s + height * c };
 }
 
 /**
@@ -37,6 +87,10 @@ function assertPositive(label: string, value: number): void {
  * footage that already matches the slot's aspect hides nothing, so the pan
  * resolves to zero and the frame cannot open a gap beside the picture. Scale
  * the layer up and the same -0.5..0.5 reaches the new edges.
+ *
+ * A turned picture hides what its turned outline covers past the slot, so
+ * the overflow is measured on that outline. After a quarter turn the picture's
+ * long side runs the other way, and so does the pan.
  */
 export function resolvePanOffset(input: {
   drawWidth: number;
@@ -46,12 +100,15 @@ export function resolvePanOffset(input: {
   scale: number;
   translateX: number;
   translateY: number;
+  rotationDegrees?: number;
 }): { x: number; y: number } {
-  const overscanX = Math.max(0, input.drawWidth * input.scale - input.regionWidth);
-  const overscanY = Math.max(
-    0,
-    input.drawHeight * input.scale - input.regionHeight
+  const extent = turnedExtent(
+    input.drawWidth * input.scale,
+    input.drawHeight * input.scale,
+    input.rotationDegrees ?? 0
   );
+  const overscanX = Math.max(0, extent.width - input.regionWidth);
+  const overscanY = Math.max(0, extent.height - input.regionHeight);
   const clamp = (value: number) => Math.min(0.5, Math.max(-0.5, value));
   return {
     x: clamp(input.translateX) * overscanX,

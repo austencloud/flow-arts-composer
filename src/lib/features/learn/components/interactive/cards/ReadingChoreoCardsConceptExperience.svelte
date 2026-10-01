@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t, tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
   import { tick } from "svelte";
   import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
   import { getHandPathReferenceCards } from "$lib/features/choreo-card/domain/hand-path-reference-cards";
@@ -25,26 +25,30 @@
   const cards = getHandPathReferenceCards();
   let cardId = $state(cards[0]!.id);
   const card = $derived(cards.find((candidate) => candidate.id === cardId)!);
-  const cardOptions = cards.map((candidate) => ({
+  const cardOptions = $derived(cards.map((candidate) => ({
     value: candidate.id,
     label: candidate.name,
-    ariaLabel: `${candidate.name}, ${candidate.timing} time, ${candidate.direction.toLowerCase()} direction`,
-  }));
+    ariaLabel: tDynamic("learn_cards_option_aria", {
+      name: candidate.name,
+      timing: tDynamic(`learn_timing_intro_option_${candidate.timing.toLowerCase()}`),
+      direction: tDynamic(`learn_timing_intro_option_${candidate.direction.toLowerCase()}`),
+    }),
+  })));
   const steps = [
     {
       region: "start",
-      title: "Start with the start placement",
-      text: "This first cell shows where both hands begin. The sequence returns here after its last step.",
+      title: "learn_cards_start_title",
+      text: "learn_cards_start_text",
     },
     {
       region: "steps",
-      title: "Read the steps in order",
-      text: "Each numbered picture is one hand-path step. Follow them from 1 to 4.",
+      title: "learn_cards_steps_title",
+      text: "learn_cards_steps_text",
     },
     {
       region: "qr",
-      title: "Scan to watch it move",
-      text: "The QR code opens this hand path in the player.",
+      title: "learn_cards_scan_title",
+      text: "learn_cards_scan_text",
     },
   ] as const;
 
@@ -160,10 +164,10 @@
       <div bind:this={headingElement}>
         <LessonStageHeading
           key={current.region}
-          title={current.title}
-          eyebrow="Reading a Choreo Card"
+          title={tDynamic(current.title)}
+          eyebrow={tDynamic("learn_concept_reading_choreo_cards_name")}
         >
-          <p>{current.text}</p>
+          <p>{tDynamic(current.text)}</p>
         </LessonStageHeading>
       </div>
     {/snippet}
@@ -178,7 +182,7 @@
             options={cardOptions}
             value={cardId}
             onchange={selectCard}
-            ariaLabel="Choose a hand-path reference card"
+            ariaLabel={tDynamic("learn_cards_choose_reference")}
             color="accent"
             columns={2}
             semantics="radiogroup"
@@ -210,7 +214,7 @@
         onPrevious={handleBack}
         previousDisabled={stepIndex === 0}
         actionIcon={stepIndex === steps.length - 1 ? "check" : "arrow"}
-        curriculumLabel="Level 1 · Reading a Choreo Card"
+        curriculumLabel={tDynamic("learn_cards_curriculum_label")}
       />
     {/snippet}
   </LessonStageFrame>

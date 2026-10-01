@@ -53,6 +53,12 @@
  * - Canonical hand-arrow revision: the prefix remains lsp11/lsp12, while
  *   PictographKeyHasher rekeys visible-motion renders so arrowless blobs made
  *   by the legacy blue/red compositor cannot survive locally or in the cloud.
+ * - Model prop look: the prefix stays; PictographKeyHasher adds the look only
+ *   when a captured sprite replaces a notation prop, so a Realistic card never
+ *   hits a notation blob and notation keys stay byte-identical.
+ * - Triangle grip: the prefix stays; PictographKeyHasher adds the grip only
+ *   when a triangle is drawn with the side grip, so corner-grip and every
+ *   other prop's keys stay byte-identical.
  */
 
 import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
@@ -122,6 +128,8 @@ function mapToVisibility(
 
   return {
     fanAppearance: handsView ? undefined : options.fanAppearance,
+    propLook: handsView ? undefined : options.propLook,
+    triangleGrip: handsView ? undefined : options.triangleGrip,
     primaryPropColors: options.primaryPropColors,
     showTKA: options.showTKA ?? true,
     showTnD: options.showTnD ?? false,

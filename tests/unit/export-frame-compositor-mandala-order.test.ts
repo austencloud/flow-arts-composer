@@ -115,7 +115,12 @@ describe("ExportFrameCompositor elemental glyph", () => {
       0
     );
 
-    expect(drawImage).toHaveBeenCalledWith(elementalImage, 814, 830, 96, 48);
+    const [image, x, y, width, height] = drawImage.mock.calls[0]!;
+    expect(image).toBe(elementalImage);
+    expect(x).toBeCloseTo(798);
+    expect(y).toBeCloseTo(826);
+    expect(width).toBeCloseTo(112);
+    expect(height).toBeCloseTo(56);
   });
 
   it("crossfades elemental glyphs between animation steps", () => {

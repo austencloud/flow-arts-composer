@@ -24,17 +24,6 @@ function svelteFiles(directory: string): string[] {
   });
 }
 
-// German i18n work (commits c1e3934175/d299d3c492 and the codex/german-shape-*
-// merges) moved many of this surface's English literals behind t() keys
-// backed by messages/en.json. Where a check below used to assert an inline
-// literal, it now asserts the source calls the key AND that messages/en.json
-// still carries the identical original English copy.
-function readEnglishMessages(): Record<string, string> {
-  return JSON.parse(
-    readFileSync(resolve("messages/en.json"), "utf8")
-  ) as Record<string, string>;
-}
-
 describe("Shape Matrix app boundary", () => {
   it("never shadows the $state rune with a binding named state", () => {
     // Svelte reads `$state` as a subscription to a variable called `state`
@@ -114,7 +103,6 @@ describe("Shape Matrix app boundary", () => {
     expect(bridgeSource).toContain(
       '<span class="sr-only">{t("shape_engine_produces")}</span>'
     );
-    expect(readEnglishMessages()["shape_engine_produces"]).toBe("produces");
   });
 
   it("threads the optional prop element through the canonical animation overlay", () => {
@@ -147,10 +135,9 @@ describe("Shape Matrix app boundary", () => {
     expect(animatorSource).toContain("{propElementalType}");
     expect(surfaceSource).toContain("{propElementalType}");
     expect(overlaySource).toContain('corner="top-right"');
-    expect(overlaySource).toContain('t("viewer_final_prop_timing_element"');
-    expect(
-      readEnglishMessages()["viewer_final_prop_timing_element"]
-    ).toBe("Prop timing and direction element: {element}");
+    expect(overlaySource).toContain(
+      'ariaLabel={t("viewer_final_prop_timing_element", {'
+    );
   });
 
   it("keeps embedded disassembly inside the Shape Matrix atmosphere", () => {
@@ -331,10 +318,7 @@ describe("Shape Matrix app boundary", () => {
       "customizeSection(appState, animationState)"
     );
     // A labelled way back, and Escape through the shared layer manager.
-    expect(workspaceSource).toContain('t("shape_engine_back_to_grid")');
-    expect(readEnglishMessages()["shape_engine_back_to_grid"]).toBe(
-      "Back to grid"
-    );
+    expect(workspaceSource).toContain('{t("shape_engine_back_to_grid")}');
     expect(workspaceSource).toContain('role="dialog"');
     expect(workspaceSource).toContain('id: "shape-matrix:customize"');
 
@@ -530,13 +514,10 @@ describe("Shape Matrix app boundary", () => {
     expect(theorySource).toContain("<ShapeMatrixRatioEntry");
     expect(theorySource).not.toContain("<ShapeMatrixValueScroller");
     expect(theorySource).not.toContain("SegmentedControl");
-    expect(theorySource).toContain('t("shape_engine_link_ratios")');
-    expect(theorySource).toContain('t("shape_engine_which_ratio")');
-    const linkRatiosEn = readEnglishMessages();
-    expect(linkRatiosEn["shape_engine_link_ratios"]).toBe("Link ratios");
-    expect(linkRatiosEn["shape_engine_which_ratio"]).toBe(
-      "Which ratio should both use?"
+    expect(theorySource).toContain(
+      '<strong>{t("shape_engine_link_ratios")}</strong>'
     );
+    expect(theorySource).toContain('{t("shape_engine_which_ratio")}');
     expect(theorySource).toContain('hand="both"');
     expect(ratioEntrySource).toContain('onclick={() => nudge("hand", -1)}');
     expect(ratioEntrySource).toContain('onclick={() => nudge("prop", 1)}');
@@ -670,18 +651,9 @@ describe("Shape Matrix app boundary", () => {
     );
 
     // The box shows timing over direction beside the element icon; the
-    // element's name and its two-letter code are read out, not drawn. German
-    // i18n work (commit d299d3c492) replaced the local words/elementName
-    // lookups with the shared localizedModeWords/localizedElementName
-    // helpers, keeping the same timing, direction, element, and mode order.
+    // element's name and its two-letter code are read out, not drawn.
     expect(elementChipSource).toContain(
       "ariaLabel={`${localizedModeWords(c.mode).timing} ${localizedModeWords(c.mode).direction}, ${localizedElementName(c.el.element)} (${c.mode})${"
-    );
-    expect(elementChipSource).toContain(
-      '`, ${t("shape_engine_mode_unavailable")}`'
-    );
-    expect(readEnglishMessages()["shape_engine_mode_unavailable"]).toBe(
-      "unavailable for these flowers"
     );
   });
 

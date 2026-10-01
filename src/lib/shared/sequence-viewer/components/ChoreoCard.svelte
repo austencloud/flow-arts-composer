@@ -27,10 +27,6 @@
   import ContextMenu from "$lib/shared/components/context-menu/ContextMenu.svelte";
   import type { ContextMenuState } from "$lib/shared/components/context-menu/context-menu-types";
   import { featureFlagService } from "$lib/shared/auth/services/post-hog-feature-flag-service.svelte";
-  import {
-    getQRCodeGenerator,
-    getUrlQRCodeGenerator,
-  } from "$lib/shared/qr/get-qr-code-generator";
   import { resolveInfoCellDisplay } from "../services/info-cell-display";
   import { createStartPlacementFromBeatStart } from "$lib/shared/create/services/sequence-transforms";
   import { getVisibilityStateManager } from "$lib/shared/pictograph/shared/state/visibility-state.svelte";
@@ -38,6 +34,8 @@
   import { tryGetViewerVisibilityContext } from "../context/viewer-visibility-context";
   import { getScanCardCloudProbe } from "$lib/shared/sequence-viewer/scan-card-cloud-context";
   import { CANONICAL_CARD_VISIBILITY } from "$lib/shared/render/services/cloud-cell-key";
+  import { normalizePropLook } from "$lib/shared/pictograph/prop/domain/prop-look";
+  import { normalizeTriangleGrip } from "$lib/shared/pictograph/prop/domain/triangle-appearance";
   import { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
   import type { HandLabeling } from "$lib/shared/video-collaboration/domain/hand-labeling";
   import { handLegendFor } from "../services/hand-legend";
@@ -68,7 +66,10 @@
     createChoreoCardSizingState,
     getContainedCardHeight,
   } from "$lib/shared/choreo-card/state/choreo-card-sizing-state.svelte";
-  import { createChoreoCardQrState } from "$lib/shared/choreo-card/state/choreo-card-qr-state.svelte";
+  import {
+    createChoreoCardQrState,
+    lazyChoreoCardQrServices,
+  } from "$lib/shared/choreo-card/state/choreo-card-qr-state.svelte";
   import { createChoreoCardDisplayState } from "$lib/shared/choreo-card/state/choreo-card-display-state.svelte";
   import { createChoreoCardRenderLifecycle } from "$lib/shared/choreo-card/state/choreo-card-render-lifecycle.svelte";
   import { createCrossfaderState } from "$lib/shared/choreo-card/state/crossfader-state.svelte";
@@ -595,7 +596,7 @@
       browseViewMode,
       exportPresentation,
     }),
-    { getGenerator: getQRCodeGenerator, getUrlGenerator: getUrlQRCodeGenerator }
+    lazyChoreoCardQrServices
   );
   const qrDataUrl = $derived(qrState.dataUrl);
   const qrPending = $derived(qrState.pending);
@@ -806,6 +807,25 @@
       getSettings().rightBuugengFlipped ??
       false
   );
+  // Cells draw the prop look the canvas beside the card draws. A scanned card
+  // stands for the printed one, whose shared cloud cells are notation artwork,
+  // so it drops the look exactly as it drops the fan build.
+  const cardPropLook = $derived(
+    cloudProbeEnabled
+      ? undefined
+      : normalizePropLook(
+          visibilityOverrides?.propLook ?? getSettings().propArtwork
+        )
+  );
+  // The triangle grip follows the look: cells draw the grip the canvas draws,
+  // and a scanned card keeps the printed card's corner glyph.
+  const cardTriangleGrip = $derived(
+    cloudProbeEnabled
+      ? undefined
+      : normalizeTriangleGrip(
+          visibilityOverrides?.triangleGrip ?? getSettings().triangleGrip
+        )
+  );
 
   /**
    * Build render options from current component state (delegates to extracted pure function)
@@ -840,6 +860,8 @@
       fanAppearance: cloudProbeEnabled
         ? undefined
         : (visibilityOverrides?.fanAppearance ?? getSettings().fanAppearance),
+      propLook: cardPropLook,
+      triangleGrip: cardTriangleGrip,
       primaryPropColors: effectivePrimaryPropColors,
       // The compositor renders canonical blue/red cards in two layers, placing
       // grid points over props. A genuinely custom palette uses its direct
@@ -908,6 +930,8 @@
       fanAppearance: cloudProbeEnabled
         ? undefined
         : (visibilityOverrides?.fanAppearance ?? getSettings().fanAppearance),
+      propLook: cardPropLook,
+      triangleGrip: cardTriangleGrip,
       primaryPropColors: effectivePrimaryPropColors,
       sequence,
       leftPropType,

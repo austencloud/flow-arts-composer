@@ -1,9 +1,12 @@
 import {
   MAIN_TRACK_INDEX,
   POST_BOX,
+  POST_DEFAULT_BACKGROUND,
+  POST_DEFAULT_CANVAS,
   POST_DEFAULT_CARD_SECONDS,
   POST_DEFAULT_OVERLAY_SECONDS,
   POST_MAX_LABEL_LENGTH,
+  POST_MIN_BOX_SIZE,
   POST_MAX_SPEED,
   POST_MAX_TEXT_LENGTH,
   POST_MAX_VOLUME,
@@ -22,24 +25,48 @@ import {
   trackHasRoom,
   wrapDegrees,
   type PostAnchor,
+  type PostAnimationItem,
+  type PostBackground,
   type PostBox,
+  type PostCanvasRatio,
   type PostCardItem,
+  type PostClipEdge,
+  type PostClipShape,
   type PostFraming,
+  type PostSourceGeometry,
+  type PostAutoAdjust,
+  type PostTransitionOut,
+  type PostTextStyle,
+  type PostTextAnimation,
   type PostItem,
+  type PostKeyframe,
   type PostMovesMode,
   type PostProject,
+  type PostStaffEffectId,
   type PostTextSize,
   type PostTrack,
   type PostVideoItem,
 } from "$lib/shared/media-composition/domain/post-project";
 import { normalizeProject } from "$lib/shared/media-composition/domain/post-project-normalize";
 import {
+  clampShapeRatio,
+  postCanvasOf,
+} from "$lib/shared/media-composition/domain/post-canvas";
+import {
+  edgeOf,
+  mergeEdge,
+} from "$lib/shared/media-composition/domain/post-clip-edge";
+import {
   framingAt,
+  channelValueAt,
+  clearItemKeyframes,
+  keyframeCount,
   isAnimated,
   shiftKeyframes,
   writeChannelValue,
 } from "$lib/shared/media-composition/domain/post-project-keyframes";
 import type { PostTake } from "$lib/shared/media-composition/domain/post-plan";
+import { shiftTakeTiming } from "$lib/shared/media-composition/domain/take-timing";
 
 /**
  * The timeline's edits. Each one is pure: it takes the project and returns
@@ -64,7 +91,9 @@ export function addTake(
   take: PostTake,
   ctx: EditContext
 ): PostProject {
-  const existing = project.takes.find((entry) => entry.takeKey === take.takeKey);
+  const existing = project.takes.find(
+    (entry) => entry.takeKey === take.takeKey
+  );
   if (existing) {
     const refreshed: PostTake = {
       ...existing,
@@ -92,7 +121,10 @@ export function addTake(
   const taken = new Set(project.takes.map((entry) => entry.id));
   let id = take.id;
   for (let n = project.takes.length + 1; taken.has(id); n++) id = `take-${n}`;
-  return finish({ ...project, takes: [...project.takes, { ...take, id }] }, ctx);
+  return finish(
+    { ...project, takes: [...project.takes, { ...take, id }] },
+    ctx
+  );
 }
 
 /** Removes a take and every clip cut from it; the main track closes up. */
@@ -113,6 +145,98 @@ export function removeTake(
     {
       ...withoutItems(project, gone),
       takes: project.takes.filter((take) => take.id !== takeId),
+    },
+    ctx
+  );
+}
+
+/** A longer copy of a take's video, holding the old one `offsetSeconds` in. */
+export interface TakeReplacement {
+  ref: PostTake["ref"];
+  takeKey: string;
+  durationSeconds: number;
+  offsetSeconds: number;
+}
+
+/**
+ * Points a take at a longer copy of its video, such as the whole recording a
+ * clip was cut from. Every clip, key and landing timed against the take moves
+ * with the footage, so the post plays exactly as before and each clip's edges
+ * can then open out into the footage around it. A copy that doesn't hold
+ * every clip changes nothing.
+ */
+export function replaceTakeMedia(
+  project: PostProject,
+  takeId: string,
+  replacement: TakeReplacement,
+  ctx: EditContext
+): PostProject {
+  const take = project.takes.find((entry) => entry.id === takeId);
+  const { offsetSeconds: offset, durationSeconds } = replacement;
+  if (
+    !take ||
+    !Number.isFinite(offset) ||
+    offset < 0 ||
+    !Number.isFinite(durationSeconds) ||
+    offset + take.durationSeconds > durationSeconds + POST_TIME_EPSILON
+  )
+    return project;
+  const shiftKeys = <T>(keys: PostKeyframe<T>[] | undefined) =>
+    keys?.map((key) => ({ ...key, t: key.t + offset }));
+  const move = (item: PostVideoItem): PostVideoItem => {
+    const keyframes = item.keyframes && {
+      ...item.keyframes,
+      ...(item.keyframes.framing
+        ? { framing: shiftKeys(item.keyframes.framing) }
+        : {}),
+      ...(item.keyframes.sourceGeometry
+        ? { sourceGeometry: shiftKeys(item.keyframes.sourceGeometry) }
+        : {}),
+      ...(item.keyframes.box ? { box: shiftKeys(item.keyframes.box) } : {}),
+      ...(item.keyframes.opacity
+        ? { opacity: shiftKeys(item.keyframes.opacity) }
+        : {}),
+    };
+    return {
+      ...item,
+      sourceIn: item.sourceIn + offset,
+      sourceOut: item.sourceOut + offset,
+      ...(keyframes ? { keyframes } : {}),
+    };
+  };
+  const timing = project.timings?.[takeId];
+  return finish(
+    {
+      ...project,
+      takes: project.takes.map((entry) =>
+        entry === take
+          ? {
+              ...take,
+              ref: replacement.ref,
+              takeKey: replacement.takeKey,
+              durationSeconds,
+            }
+          : entry
+      ),
+      tracks: project.tracks.map((track) => ({
+        ...track,
+        items: track.items.map((item) =>
+          item.kind === "video" && item.takeId === takeId ? move(item) : item
+        ),
+      })),
+      ...(timing
+        ? {
+            timings: {
+              ...project.timings,
+              [takeId]: shiftTakeTiming(
+                timing,
+                offset,
+                { takeKey: replacement.takeKey, durationSeconds },
+                ctx.now
+              ),
+            },
+          }
+        : {}),
     },
     ctx
   );
@@ -186,6 +310,8 @@ export interface NewOverlaySpec {
   text?: string;
   size?: PostTextSize;
   overlay?: boolean;
+  animationAppearance?: PostAnimationItem["animationAppearance"] | null;
+  cardAppearance?: PostCardItem["cardAppearance"] | null;
   takeId?: string;
   sourceIn?: number;
   sourceOut?: number;
@@ -261,6 +387,116 @@ export function addOverlayItem(
   return { project: finish(next, ctx), itemId: item.id };
 }
 
+/** The live view can take a video's place when its visible area fits the editable canvas. */
+export function canReplaceOverlayVideoWithAnimation(
+  project: PostProject,
+  itemId: string
+): boolean {
+  const located = findItem(project, itemId);
+  if (
+    !located ||
+    located.trackIndex === MAIN_TRACK_INDEX ||
+    project.tracks[located.trackIndex]?.locked ||
+    located.item.kind !== "video"
+  )
+    return false;
+  const video = located.item;
+  // This operation is for the one recovered, video-only PIP, whose source is
+  // retained as a take for undo. Other video overlays may carry sound.
+  if (
+    project.importSource?.format !== "inshot-recovery" ||
+    !video.id.endsWith("-pip-1") ||
+    video.takeId !== video.id
+  )
+    return false;
+  if (video.keyframes?.sourceGeometry?.length) return false;
+  const under = mainItemAt(project, video.start);
+  if (
+    under?.kind !== "video" ||
+    itemEnd(video) > itemEnd(under) + POST_TIME_EPSILON
+  )
+    return false;
+  const geometry = video.sourceGeometry;
+  if (!geometry) return true;
+  // The recovered PIP can exceed the canvas by a few native float units.
+  // Larger overflow or a second, rotated box cannot be preserved by PostBox.
+  const box = video.box;
+  if (
+    box.x !== 0 ||
+    box.y !== 0 ||
+    box.width !== 1 ||
+    box.height !== 1 ||
+    box.turn ||
+    video.keyframes?.box?.length
+  )
+    return false;
+  const tolerance = 0.001;
+  return (
+    geometry.width >= POST_MIN_BOX_SIZE &&
+    geometry.height >= POST_MIN_BOX_SIZE &&
+    geometry.x >= -tolerance &&
+    geometry.y >= -tolerance &&
+    geometry.x + geometry.width <= 1 + tolerance &&
+    geometry.y + geometry.height <= 1 + tolerance
+  );
+}
+
+/** Swaps one PIP source for the sequence rendered from the camera take beneath it. */
+export function replaceOverlayVideoWithAnimation(
+  project: PostProject,
+  itemId: string,
+  ctx: EditContext
+): PostProject {
+  if (!canReplaceOverlayVideoWithAnimation(project, itemId)) return project;
+  const video = findItem(project, itemId)!.item as PostVideoItem;
+  const geometry = video.sourceGeometry;
+  const box = geometry
+    ? clampBox({
+        x: geometry.x,
+        y: geometry.y,
+        width: geometry.width,
+        height: geometry.height,
+        turn: geometry.rotation,
+      })
+    : video.box;
+  const animation: PostAnimationItem = {
+    id: video.id,
+    kind: "animation",
+    start: video.start,
+    duration: video.duration,
+    box,
+    opacity: video.opacity,
+    fadeIn: video.fadeIn,
+    fadeOut: video.fadeOut,
+    anchor: video.anchor,
+    fill: false,
+    overlay: false,
+    ...(video.keyframes?.box || video.keyframes?.opacity
+      ? {
+          keyframes: {
+            ...(video.keyframes.box
+              ? {
+                  box: video.keyframes.box.map((key) => ({
+                    ...key,
+                    t: (key.t - video.sourceIn) / video.speed,
+                  })),
+                }
+              : {}),
+            ...(video.keyframes.opacity
+              ? {
+                  opacity: video.keyframes.opacity.map((key) => ({
+                    ...key,
+                    t: (key.t - video.sourceIn) / video.speed,
+                  })),
+                }
+              : {}),
+          },
+        }
+      : {}),
+  };
+  return finish(replaceItem(project, itemId, animation), ctx);
+}
+
 // ---------------------------------------------------------------------------
 // Split, delete, duplicate
 // ---------------------------------------------------------------------------
@@ -280,7 +516,10 @@ export function splitItemAt(
   if (!located || !Number.isFinite(seconds)) return null;
   const { item, trackIndex, itemIndex } = located;
   const cut = seconds - item.start;
-  if (!(cut > POST_MIN_ITEM_SECONDS) || !(item.duration - cut > POST_MIN_ITEM_SECONDS)) {
+  if (
+    !(cut > POST_MIN_ITEM_SECONDS) ||
+    !(item.duration - cut > POST_MIN_ITEM_SECONDS)
+  ) {
     return null;
   }
 
@@ -288,7 +527,9 @@ export function splitItemAt(
   const [first, second] = splitPieces(item, cut, nextId(item.kind));
   const isMain = trackIndex === MAIN_TRACK_INDEX;
   const firstPiece = isMain ? first : withOverlaySplitAnchor(first, item, 0);
-  const secondPiece = isMain ? second : withOverlaySplitAnchor(second, item, cut);
+  const secondPiece = isMain
+    ? second
+    : withOverlaySplitAnchor(second, item, cut);
 
   const trackItems = [...project.tracks[trackIndex]!.items];
   trackItems.splice(itemIndex, 1, firstPiece, secondPiece);
@@ -296,10 +537,10 @@ export function splitItemAt(
 
   if (isMain) {
     // The look goes on across the cut; overlays after it stay put in time.
-    for (const { item: follower, trackIndex: followerTrack } of overlaysAnchoredTo(
-      project,
-      item.id
-    )) {
+    for (const {
+      item: follower,
+      trackIndex: followerTrack,
+    } of overlaysAnchoredTo(project, item.id)) {
       if (follower.fill) {
         const tail: PostItem = {
           ...follower,
@@ -358,12 +599,19 @@ export function duplicateItem(
 
   if (trackIndex === MAIN_TRACK_INDEX) {
     const mainTrack = [...project.tracks[MAIN_TRACK_INDEX]!.items];
+    if (
+      (item.kind === "video" || item.kind === "image") &&
+      item.transitionOut
+    ) {
+      const { transitionOut: _moved, ...withoutTransition } = item;
+      mainTrack[itemIndex] = withoutTransition as PostItem;
+    }
     mainTrack.splice(itemIndex + 1, 0, { ...item, id: newItemId });
     let next = withTrackItems(project, MAIN_TRACK_INDEX, mainTrack);
-    for (const { item: follower, trackIndex: followerTrack } of overlaysAnchoredTo(
-      project,
-      item.id
-    )) {
+    for (const {
+      item: follower,
+      trackIndex: followerTrack,
+    } of overlaysAnchoredTo(project, item.id)) {
       if (!follower.fill) continue;
       next = withTrackItems(next, followerTrack, [
         ...next.tracks[followerTrack]!.items,
@@ -411,6 +659,43 @@ export function moveMainItem(
   const [moved] = reordered.splice(from, 1);
   reordered.splice(to, 0, moved!);
   return finish(withTrackItems(project, MAIN_TRACK_INDEX, reordered), ctx);
+}
+
+/** Places a main clip at a chosen time, pushing clips it meets to the right. */
+export function placeMainItem(
+  project: PostProject,
+  itemId: string,
+  seconds: number,
+  ctx: EditContext
+): PostProject {
+  const items = project.tracks[MAIN_TRACK_INDEX]!.items;
+  const item = items.find((candidate) => candidate.id === itemId);
+  if (!item || !Number.isFinite(seconds)) return project;
+  const start = Math.max(0, seconds);
+  if (Math.abs(start - item.start) < POST_TIME_EPSILON) return project;
+
+  const before: PostItem[] = [];
+  const after: PostItem[] = [];
+  for (const candidate of items) {
+    if (candidate.id === itemId) continue;
+    (itemEnd(candidate) <= start + POST_TIME_EPSILON ? before : after).push({
+      ...candidate,
+      pinnedStart: true,
+    });
+  }
+  const moved = { ...item, start, pinnedStart: true };
+  let cursor = itemEnd(moved);
+  const pushed = after.map((candidate) => {
+    const nextStart = Math.max(cursor, candidate.start);
+    cursor = nextStart + candidate.duration;
+    return nextStart === candidate.start
+      ? candidate
+      : { ...candidate, start: nextStart };
+  });
+  return finish(
+    withTrackItems(project, MAIN_TRACK_INDEX, [...before, moved, ...pushed]),
+    ctx
+  );
 }
 
 /**
@@ -541,14 +826,38 @@ export function trimItem(
   } else {
     const end = itemEnd(item);
     const start = clamp(seconds, 0, Math.max(0, end - POST_MIN_ITEM_SECONDS));
-    trimmed = shiftKeyframes({ ...item, start, duration: end - start }, start - item.start);
+    trimmed = shiftKeyframes(
+      { ...item, start, duration: end - start },
+      start - item.start
+    );
   }
 
   if (!isMain) {
-    trimmed = { ...trimmed, fill: false, anchor: anchorAt(project, trimmed.start) };
+    trimmed = {
+      ...trimmed,
+      fill: false,
+      anchor: anchorAt(project, trimmed.start),
+    };
   }
   if (sameItem(trimmed, item)) return project;
   return finish(replaceItem(project, itemId, trimmed), ctx);
+}
+
+/**
+ * Moves a clip's In or Out point to a time in its take: the same trim as
+ * moving that edge on the timeline, with the point named in the take's time.
+ */
+export function trimItemToSource(
+  project: PostProject,
+  itemId: string,
+  edge: "start" | "end",
+  sourceSeconds: number,
+  ctx: EditContext
+): PostProject {
+  const item = findItem(project, itemId)?.item;
+  if (item?.kind !== "video" || !Number.isFinite(sourceSeconds)) return project;
+  const seconds = item.start + (sourceSeconds - item.sourceIn) / item.speed;
+  return trimItem(project, itemId, edge, seconds, ctx);
 }
 
 /** A clip's speed; its span stays and its length follows. */
@@ -580,18 +889,32 @@ export interface PostItemPatch {
   /** Not for a clip, whose length comes from its span. Ends an overlay's fill. */
   duration?: number;
   fit?: "cover" | "contain";
+  /** A clip's own shape in its box; null lets it fill the box again. */
+  shape?: PostClipShape | null;
+  /** A clip's corners, border and shadow, over its own; null squares them. */
+  edge?: Partial<PostClipEdge> | null;
   zoom?: number;
   panX?: number;
   panY?: number;
   rotation?: number;
   flip?: boolean;
   volume?: number;
+  sourceGeometry?: PostSourceGeometry | null;
+  transitionOut?: PostTransitionOut | null;
+  autoAdjust?: PostAutoAdjust | null;
+  colorGrade?: PostVideoItem["colorGrade"] | null;
   sourceIn?: number;
   sourceOut?: number;
   overlay?: boolean;
   mode?: PostMovesMode;
   text?: string;
   size?: PostTextSize;
+  style?: PostTextStyle | null;
+  animation?: PostTextAnimation | null;
+  /** A clip's effect on its staff ends; null removes it. */
+  staffEffect?: PostStaffEffectId | null;
+  animationAppearance?: PostAnimationItem["animationAppearance"] | null;
+  cardAppearance?: PostCardItem["cardAppearance"] | null;
 }
 
 export function updateItem(
@@ -632,23 +955,80 @@ export function updateItem(
     next.sourceIn = sourceIn;
     next.sourceOut = sourceOut;
     if (patch.fit) next.fit = patch.fit;
+    if (patch.shape !== undefined) {
+      if (patch.shape) {
+        next.shape = {
+          kind: patch.shape.kind,
+          ratio: clampShapeRatio(patch.shape.ratio),
+        };
+      } else delete next.shape;
+    }
+    if (patch.edge !== undefined) {
+      const edge = patch.edge ? mergeEdge(edgeOf(item), patch.edge) : null;
+      if (edge) next.edge = edge;
+      else delete next.edge;
+    }
     setNumber(next, "zoom", patch.zoom, POST_MIN_ZOOM, POST_MAX_ZOOM);
     setNumber(next, "panX", patch.panX, -0.5, 0.5);
     setNumber(next, "panY", patch.panY, -0.5, 0.5);
-    if (isFiniteNumber(patch.rotation)) next.rotation = wrapDegrees(patch.rotation);
+    if (isFiniteNumber(patch.rotation))
+      next.rotation = wrapDegrees(patch.rotation);
     if (patch.flip !== undefined) next.flip = patch.flip;
     setNumber(next, "volume", patch.volume, 0, POST_MAX_VOLUME);
+    if (patch.staffEffect !== undefined) {
+      if (patch.staffEffect) next.staffEffect = { effect: patch.staffEffect };
+      else delete next.staffEffect;
+    }
+    if (patch.autoAdjust !== undefined) {
+      if (patch.autoAdjust) next.autoAdjust = patch.autoAdjust;
+      else delete next.autoAdjust;
+    }
+    if (patch.colorGrade !== undefined) {
+      if (patch.colorGrade) next.colorGrade = patch.colorGrade;
+      else delete next.colorGrade;
+    }
   } else if (isFiniteNumber(patch.duration)) {
     next.duration = Math.max(POST_MIN_ITEM_SECONDS, patch.duration);
     if (trackIndex !== MAIN_TRACK_INDEX) next.fill = false;
   }
+  if (item.kind === "video" || item.kind === "image") {
+    if (patch.sourceGeometry !== undefined) {
+      if (patch.sourceGeometry) next.sourceGeometry = patch.sourceGeometry;
+      else delete next.sourceGeometry;
+    }
+    if (patch.transitionOut !== undefined) {
+      if (patch.transitionOut) next.transitionOut = patch.transitionOut;
+      else delete next.transitionOut;
+    }
+  }
   if (item.kind === "animation" && patch.overlay !== undefined) {
     next.overlay = patch.overlay;
   }
+  if (
+    (item.kind === "animation" || item.kind === "moves") &&
+    patch.animationAppearance !== undefined
+  ) {
+    if (patch.animationAppearance)
+      next.animationAppearance = patch.animationAppearance;
+    else delete next.animationAppearance;
+  }
+  if (item.kind === "card" && patch.cardAppearance !== undefined) {
+    if (patch.cardAppearance) next.cardAppearance = patch.cardAppearance;
+    else delete next.cardAppearance;
+  }
   if (item.kind === "moves" && patch.mode) next.mode = patch.mode;
   if (item.kind === "text") {
-    if (patch.text !== undefined) next.text = patch.text.slice(0, POST_MAX_TEXT_LENGTH);
+    if (patch.text !== undefined)
+      next.text = patch.text.slice(0, POST_MAX_TEXT_LENGTH);
     if (patch.size) next.size = patch.size;
+    if (patch.style !== undefined) {
+      if (patch.style) next.style = patch.style;
+      else delete next.style;
+    }
+    if (patch.animation !== undefined) {
+      if (patch.animation) next.animation = patch.animation;
+      else delete next.animation;
+    }
   }
 
   // Fades fit inside the item's length as it will be laid out.
@@ -688,9 +1068,19 @@ export function updateItemAt(
     isAnimated(item, "framing") &&
     FRAMING_PATCH_KEYS.some((key) => patch[key] !== undefined);
   const boxAnimated = patch.box !== undefined && isAnimated(item, "box");
-  const opacityAnimated = patch.opacity !== undefined && isAnimated(item, "opacity");
+  const opacityAnimated =
+    patch.opacity !== undefined && isAnimated(item, "opacity");
+  const geometryAnimated =
+    patch.sourceGeometry !== undefined &&
+    patch.sourceGeometry !== null &&
+    isAnimated(item, "sourceGeometry");
 
-  if (!framingAnimated && !boxAnimated && !opacityAnimated) {
+  if (
+    !framingAnimated &&
+    !boxAnimated &&
+    !opacityAnimated &&
+    !geometryAnimated
+  ) {
     return updateItem(project, itemId, patch, ctx);
   }
 
@@ -700,9 +1090,12 @@ export function updateItemAt(
   }
   if (boxAnimated) delete rest.box;
   if (opacityAnimated) delete rest.opacity;
+  if (geometryAnimated) delete rest.sourceGeometry;
 
   let next =
-    Object.keys(rest).length > 0 ? updateItem(project, itemId, rest, ctx) : project;
+    Object.keys(rest).length > 0
+      ? updateItem(project, itemId, rest, ctx)
+      : project;
 
   if (framingAnimated) {
     const current = framingAt(findItem(next, itemId)!.item as PostVideoItem, s);
@@ -710,7 +1103,10 @@ export function updateItemAt(
       zoom: patch.zoom ?? current.zoom,
       panX: patch.panX ?? current.panX,
       panY: patch.panY ?? current.panY,
-      rotation: patch.rotation !== undefined ? wrapDegrees(patch.rotation) : current.rotation,
+      rotation:
+        patch.rotation !== undefined
+          ? wrapDegrees(patch.rotation)
+          : current.rotation,
     };
     next = editItemKeyframes(
       next,
@@ -724,6 +1120,14 @@ export function updateItemAt(
       next,
       itemId,
       (it) => writeChannelValue(it, "box", s, clampBox(patch.box!)),
+      ctx
+    );
+  }
+  if (geometryAnimated) {
+    next = editItemKeyframes(
+      next,
+      itemId,
+      (it) => writeChannelValue(it, "sourceGeometry", s, patch.sourceGeometry!),
       ctx
     );
   }
@@ -752,6 +1156,30 @@ export function editItemKeyframes(
   return finish(replaceItem(project, itemId, next), ctx);
 }
 
+/** Clear one clip or the whole post in a single normalized project edit. */
+export function clearProjectKeyframes(
+  project: PostProject,
+  s: number,
+  ctx: EditContext,
+  itemId?: string
+): PostProject {
+  let changed = false;
+  const tracks = project.tracks.map((track) => {
+    if (track.locked) return track;
+    const items = track.items.map((item) => {
+      if ((itemId && item.id !== itemId) || keyframeCount(item) === 0)
+        return item;
+      const next = clearItemKeyframes(item, s);
+      changed ||= next !== item;
+      return next;
+    });
+    return items.some((item, index) => item !== track.items[index])
+      ? { ...track, items }
+      : track;
+  });
+  return changed ? finish({ ...project, tracks }, ctx) : project;
+}
+
 /** Zoom, pan and turn back to identity, and framing keyframes dropped. */
 export function resetFraming(
   project: PostProject,
@@ -763,7 +1191,10 @@ export function resetFraming(
   const item = located.item;
   const framing = item.keyframes?.framing;
   const isIdentity =
-    item.zoom === 1 && item.panX === 0 && item.panY === 0 && item.rotation === 0;
+    item.zoom === 1 &&
+    item.panX === 0 &&
+    item.panY === 0 &&
+    item.rotation === 0;
   if (isIdentity && (!framing || framing.length === 0)) return project;
   const next = { ...item, zoom: 1, panX: 0, panY: 0, rotation: 0 } as Record<
     string,
@@ -797,7 +1228,8 @@ export function setItemFill(
     return project;
   }
   const { item } = located;
-  if (!fill) return finish(replaceItem(project, itemId, { ...item, fill: false }), ctx);
+  if (!fill)
+    return finish(replaceItem(project, itemId, { ...item, fill: false }), ctx);
   const under = mainItemAt(project, item.start);
   if (!under) return project;
   return finish(
@@ -836,6 +1268,31 @@ export function setTrackFlag(
   );
 }
 
+/** The post's shape; the default shape is stored as none. */
+export function setProjectCanvas(
+  project: PostProject,
+  canvas: PostCanvasRatio,
+  ctx: EditContext
+): PostProject {
+  if (postCanvasOf(project) === canvas) return project;
+  const next: PostProject = { ...project, canvas };
+  if (canvas === POST_DEFAULT_CANVAS) delete next.canvas;
+  return finish(next, ctx);
+}
+
+/** What fills the frame behind the items; the default is stored as none. */
+export function setProjectBackground(
+  project: PostProject,
+  background: PostBackground,
+  ctx: EditContext
+): PostProject {
+  if ((project.background ?? POST_DEFAULT_BACKGROUND) === background)
+    return project;
+  const next: PostProject = { ...project, background };
+  if (background === POST_DEFAULT_BACKGROUND) delete next.background;
+  return finish(next, ctx);
+}
+
 export function setProjectAudio(
   project: PostProject,
   audio: PostProject["audio"],
@@ -865,7 +1322,9 @@ export function replaceItem(
       track.items.some((item) => item.id === itemId)
         ? {
             ...track,
-            items: track.items.map((item) => (item.id === itemId ? next : item)),
+            items: track.items.map((item) =>
+              item.id === itemId ? next : item
+            ),
           }
         : track
     ),
@@ -948,7 +1407,11 @@ function anchorAt(project: PostProject, start: number): PostAnchor | null {
 
 function appendToMain(project: PostProject, item: PostItem): PostProject {
   const main = project.tracks[MAIN_TRACK_INDEX]!;
-  return withTrackItems(project, MAIN_TRACK_INDEX, [...main.items, item]);
+  const last = main.items[main.items.length - 1];
+  return withTrackItems(project, MAIN_TRACK_INDEX, [
+    ...main.items,
+    { ...item, start: last ? itemEnd(last) : 0 },
+  ]);
 }
 
 function withNewTrackOnTop(
@@ -972,7 +1435,11 @@ function placeOnOrAbove(
   fromIndex: number,
   nextId: (prefix: string) => string
 ): PostProject {
-  for (let index = Math.max(1, fromIndex); index < project.tracks.length; index++) {
+  for (
+    let index = Math.max(1, fromIndex);
+    index < project.tracks.length;
+    index++
+  ) {
     const track = project.tracks[index]!;
     if (
       !track.hidden &&
@@ -992,7 +1459,11 @@ function newVideoFields(
   sourceOut: number
 ): Omit<PostVideoItem, "id" | "start" | "box" | "anchor" | "fill"> {
   const length = take.durationSeconds;
-  const from = clamp(finiteOr(sourceIn, 0), 0, Math.max(0, length - POST_MIN_ITEM_SECONDS));
+  const from = clamp(
+    finiteOr(sourceIn, 0),
+    0,
+    Math.max(0, length - POST_MIN_ITEM_SECONDS)
+  );
   const to = clamp(
     Number.isNaN(sourceOut) ? length : sourceOut,
     from + POST_MIN_ITEM_SECONDS,
@@ -1027,7 +1498,13 @@ function splitPieces(
   if (item.kind === "video") {
     const at = item.sourceIn + cut * item.speed;
     return [
-      { ...item, sourceOut: at, duration: cut, fadeOut: 0 },
+      {
+        ...item,
+        sourceOut: at,
+        duration: cut,
+        fadeOut: 0,
+        transitionOut: undefined,
+      },
       {
         ...item,
         id: secondId,
@@ -1048,7 +1525,15 @@ function splitPieces(
     } as PostItem,
     cut
   );
-  return [{ ...item, duration: cut, fadeOut: 0 } as PostItem, second];
+  return [
+    {
+      ...item,
+      duration: cut,
+      fadeOut: 0,
+      ...(item.kind === "image" ? { transitionOut: undefined } : {}),
+    } as PostItem,
+    second,
+  ];
 }
 
 /** An overlay piece keeps following the original's clip, at its own offset. */
@@ -1061,14 +1546,18 @@ function withOverlaySplitAnchor(
     ...piece,
     fill: false,
     anchor: original.anchor
-      ? { itemId: original.anchor.itemId, offset: original.anchor.offset + shift }
+      ? {
+          itemId: original.anchor.itemId,
+          offset: original.anchor.offset + shift,
+        }
       : null,
   } as PostItem;
 }
 
 function takeLength(project: PostProject, takeId: string): number {
   return (
-    project.takes.find((take) => take.id === takeId)?.durationSeconds ?? Infinity
+    project.takes.find((take) => take.id === takeId)?.durationSeconds ??
+    Infinity
   );
 }
 
@@ -1080,7 +1569,8 @@ function sameItem(left: PostItem, right: PostItem): boolean {
     const x = a[key];
     const y = b[key];
     if (x === y) continue;
-    if (!x || !y || typeof x !== "object" || typeof y !== "object") return false;
+    if (!x || !y || typeof x !== "object" || typeof y !== "object")
+      return false;
     const xs = x as Record<string, unknown>;
     const ys = y as Record<string, unknown>;
     const inner = new Set([...Object.keys(xs), ...Object.keys(ys)]);

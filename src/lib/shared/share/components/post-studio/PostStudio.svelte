@@ -4,6 +4,7 @@
   import type { SequenceExportOptions } from "$lib/shared/render/domain/models/sequence-export-options";
   import type { ResolvedAutoLayout } from "$lib/shared/render/services/container-aware-layout";
   import type { SequenceTimeMap } from "$lib/shared/media-composition/domain/sequence-time-map";
+  import type { PostProject } from "$lib/shared/media-composition/domain/post-project";
   import {
     getEffectsConfigContext,
     setEffectsConfigContext,
@@ -36,6 +37,9 @@
     /** Retain the draft while its host is hidden, without running playback. */
     active?: boolean;
     sequence: SequenceData;
+    initialProject?: PostProject;
+    onSaveDraft?: (project: PostProject) => Promise<void>;
+    draftLoadError?: string | null;
     cardPreviewUrl: string | null;
     animationPreviewUrl: string | null;
     animationPreviewType?: "video" | "image";
@@ -65,6 +69,9 @@
   let {
     active = true,
     sequence,
+    initialProject,
+    onSaveDraft,
+    draftLoadError = null,
     cardPreviewUrl,
     animationPreviewUrl,
     animationPreviewType = "video",
@@ -96,14 +103,24 @@
       ? seedFromPsSlice(psSeedPayload)
       : null;
 
-  // Until a prop is picked in the studio, the studio shows the live settings
-  // prop, so a settings change (Shift+P, another tab or device) reaches it. A
-  // pick, or a URL seed, holds from then on. See `ps-slice.ts`, "Touched-flag
-  // diffing".
-  let pickedPropType = $state<PropType | undefined>(psSeed?.propType);
-  const propTypeTouched = $derived(pickedPropType !== undefined);
+  // A post keeps its own prop. For older projects, use the first visible
+  // sequence motion before falling back to the viewer's current prop.
+  let urlPropType = $state<PropType | undefined>(psSeed?.propType);
+  let projectPropType = $state<PropType | undefined>(initialProject?.propType);
+  const sequencePropType = $derived(
+    sequence.steps
+      .flatMap((step) => [step.motions.left, step.motions.right])
+      .find((motion) => motion.isVisible)?.propType
+  );
+  const propTypeTouched = $derived(
+    urlPropType !== undefined || projectPropType !== undefined
+  );
   const selectedPropType = $derived(
-    pickedPropType ?? settingsService.settings.leftPropType ?? PropType.STAFF
+    urlPropType ??
+      projectPropType ??
+      sequencePropType ??
+      settingsService.settings.leftPropType ??
+      PropType.STAFF
   );
   const synchronizedCardRenderOptions = $derived(
     withPostStudioPropType(cardRenderOptions, selectedPropType)
@@ -170,6 +187,9 @@
   <PostEditorWorkspace
     {active}
     {sequence}
+    {initialProject}
+    {onSaveDraft}
+    {draftLoadError}
     {cardPreviewUrl}
     {animationPreviewUrl}
     {animationPreviewType}
@@ -181,7 +201,11 @@
     {previewTarget}
     {sharing}
     {selectedPropType}
-    onPropChange={(propType) => (pickedPropType = propType)}
+    onPropChange={(propType) => {
+      urlPropType = undefined;
+      projectPropType = propType;
+    }}
+    onProjectPropChange={(propType) => (projectPropType = propType)}
     {audioSeed}
     onAudioChange={setAudio}
     {registerExport}

@@ -2,11 +2,14 @@
   import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import {
     POST_BOX,
+    POST_CANVAS_RATIOS,
     POST_FRAME_RATE,
     POST_MAX_LABEL_LENGTH,
     POST_MAX_SPEED,
     POST_MAX_TEXT_LENGTH,
     POST_MAX_VOLUME,
+    POST_MAX_EDGE_BORDER,
+    POST_MAX_EDGE_CORNERS,
     POST_MAX_ZOOM,
     POST_MIN_ITEM_SECONDS,
     POST_MIN_SPEED,
@@ -15,17 +18,22 @@
     findItem,
     itemEnd,
     textBox,
+    wrapDegrees,
     type PostBox,
+    type PostEdgeColor,
     type PostItem,
     type PostMovesMode,
     type PostTextSize,
   } from "$lib/shared/media-composition/domain/post-project";
+  import type { SequenceExportOptions } from "$lib/shared/render/domain/models/sequence-export-options";
   import {
-    resetFraming,
     setItemFill,
     setTrackFlag,
     setVideoSpeed,
+    canReplaceOverlayVideoWithAnimation,
+    replaceOverlayVideoWithAnimation,
     trimItem,
+    trimItemToSource,
     updateItem,
     updateItemAt,
     type PostItemPatch,
@@ -37,18 +45,55 @@
   } from "$lib/shared/media-composition/domain/post-project-looks";
   import {
     boxAt,
+    channelValueAt,
     framingAt,
     isAnimated,
     opacityAt,
   } from "$lib/shared/media-composition/domain/post-project-keyframes";
-  import type { PostEditorState } from "$lib/shared/media-composition/state/post-editor-state.svelte";
+  import {
+    POST_DEFAULT_EDGE_BORDER,
+    POST_EDGE_COLOR_HEX,
+    edgeOf,
+  } from "$lib/shared/media-composition/domain/post-clip-edge";
+  import type {
+    PostEdit,
+    PostEditorState,
+  } from "$lib/shared/media-composition/state/post-editor-state.svelte";
   import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
+  import FilterChipBase from "$lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
   import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
+  import TypeableValue from "$lib/shared/ui/components/TypeableValue.svelte";
   import ValueSlider from "$lib/shared/ui/components/ValueSlider.svelte";
-  import PostKeyframeControls from "./PostKeyframeControls.svelte";
-  import { formatTakeClock } from "../builder/post-builder-format";
+  import { formatTakeClock, parseClock } from "../builder/post-builder-format";
   import { itemDisplayLabel } from "./post-editor-labels";
+  import { boxTurn, typeBox, type BoxField } from "./post-box-drag";
+  import { keepsShape, keptBox, shownBox } from "./post-item-rect";
   import { panelChannel, type PostPanelToolId } from "./post-editor-tools";
+  import {
+    STRAIGHTEN_LIMIT,
+    joinRotation,
+    quarterLeft,
+    splitRotation,
+  } from "./post-crop-geometry";
+  import type { CropSession, CropShapeKind } from "./post-crop-session.svelte";
+  import PostRatioPicker, { type RatioOption } from "./PostRatioPicker.svelte";
+  import {
+    postOutputSize,
+    ratioValue,
+  } from "$lib/shared/media-composition/domain/post-canvas";
+  import type { StaffTipAnalysis } from "$lib/shared/media-composition/state/staff-tip-analysis.svelte";
+  import PostStaffEffectsTool from "./PostStaffEffectsTool.svelte";
+  import PostNativeTextTool from "./PostNativeTextTool.svelte";
+  import PostSourceGeometryTool from "./PostSourceGeometryTool.svelte";
+  import { sourceCropAtRatio, sourceFillBox } from "./post-source-crop";
+  import PostAnimationAppearanceTool from "./PostAnimationAppearanceTool.svelte";
+  import PostCardAppearanceTool from "./PostCardAppearanceTool.svelte";
+  import PostSequenceActionsTool from "./PostSequenceActionsTool.svelte";
+  import PostVideoColorTool from "./PostVideoColorTool.svelte";
+  import {
+    autoGradeVideo,
+    type PostVideoColorGrade,
+  } from "$lib/shared/media-composition/domain/post-video-color-grade";
 
   /**
    * The body of one tool for the selected item. An amount is a slider, a
@@ -60,9 +105,42 @@
     editor: PostEditorState;
     item: PostItem;
     tool: PostPanelToolId;
+    /** The side inspector fills its column; the bottom drawer fits its controls. */
+    appearanceFill?: boolean;
+    /**
+     * The crop screen's session. Crop's controls go through it, so a turn
+     * or a zoom keeps the window filled the way a drag on the stage does.
+     */
+    crop?: CropSession | null;
+    cropSourceView?: boolean;
+    chosenSourceShape?: CropShapeKind | null;
+    onCropFramingControl?: () => void;
+    onCropSourceControl?: () => void;
+    /** Where each take's LED staffs are, for the Effects tool. */
+    staffTips?: StaffTipAnalysis | null;
+    cardRenderOptions?: Partial<SequenceExportOptions> | null;
+    stepCount?: number;
+    /** The post's changed notation is still being prepared. */
+    sequenceBusy?: boolean;
   }
 
-  let { editor, item, tool }: Props = $props();
+  let {
+    editor,
+    item,
+    tool,
+    appearanceFill = true,
+    crop = null,
+    cropSourceView = true,
+    chosenSourceShape = $bindable(null),
+    onCropFramingControl,
+    onCropSourceControl,
+    staffTips = null,
+    cardRenderOptions = null,
+    stepCount = 0,
+    sequenceBusy = false,
+  }: Props = $props();
+  let grading = $state(false);
+  let gradeError = $state("");
 
   const FRAME_SECONDS = 1 / POST_FRAME_RATE;
 
@@ -84,7 +162,13 @@
     seconds - item.start > POST_MIN_ITEM_SECONDS + POST_TIME_EPSILON &&
       itemEnd(item) - seconds > POST_MIN_ITEM_SECONDS + POST_TIME_EPSILON
   );
-  const channel = $derived(panelChannel(tool));
+  const channel = $derived(
+    (tool === "crop" || tool === "position") &&
+      (item.kind === "video" || item.kind === "image") &&
+      (item.sourceGeometry || item.keyframes?.sourceGeometry?.length)
+      ? "sourceGeometry"
+      : panelChannel(tool)
+  );
   /** An animated value has no single value to show off the item. */
   const frozen = $derived(
     channel !== null && isAnimated(item, channel) && !withinSpan
@@ -102,6 +186,52 @@
     editor.edit((project, ctx) => updateItem(project, item.id, patch, ctx));
   }
 
+  async function autoAdjustColor(): Promise<void> {
+    if (item.kind !== "video" || grading || locked) return;
+    const target = item;
+    const url = editor.mediaUrl(target.takeId);
+    if (!url) {
+      gradeError = "The video is not ready to analyze.";
+      return;
+    }
+    grading = true;
+    gradeError = "";
+    try {
+      const colorGrade = await autoGradeVideo(
+        url,
+        target.sourceIn,
+        target.sourceOut
+      );
+      if (!findItem(editor.project, target.id) || editor.isLocked(target.id))
+        return;
+      editor.edit((project, ctx) =>
+        updateItem(project, target.id, { colorGrade }, ctx)
+      );
+    } catch {
+      gradeError =
+        "Could not analyze this video. The original remains unchanged.";
+    } finally {
+      grading = false;
+    }
+  }
+
+  function setVideoColor(
+    field: keyof PostVideoColorGrade,
+    value: number
+  ): void {
+    if (item.kind !== "video" || locked || grading) return;
+    const colorGrade = {
+      brightness: item.colorGrade?.brightness ?? 1,
+      contrast: item.colorGrade?.contrast ?? 1,
+      saturation: item.colorGrade?.saturation ?? 1,
+      hue: item.colorGrade?.hue ?? 0,
+      [field]: value,
+    };
+    editor.editSetting(`${item.id}:color:${field}`, (project, ctx) =>
+      updateItem(project, item.id, { colorGrade }, ctx)
+    );
+  }
+
   function rename(value: string): void {
     const label = value.trim();
     patchItem({ label: label || null });
@@ -109,11 +239,28 @@
 
   /** Moves an edge to the playhead and shows the frame now at that edge. */
   function trimToPlayhead(edge: "start" | "end"): void {
+    trimTo(edge, editor.previewSeconds);
+  }
+
+  /** Moves an edge to a typed time on the timeline. */
+  function trimTo(edge: "start" | "end", seconds: number): void {
+    const id = item.id;
+    trim(edge, (project, ctx) => trimItem(project, id, edge, seconds, ctx));
+  }
+
+  /** Moves a clip's In or Out to a typed time in its take. */
+  function trimToSource(edge: "start" | "end", seconds: number): void {
+    const id = item.id;
+    trim(edge, (project, ctx) =>
+      trimItemToSource(project, id, edge, seconds, ctx)
+    );
+  }
+
+  /** Runs a trim, then shows the frame now at the edge it moved. */
+  function trim(edge: "start" | "end", run: PostEdit): void {
     if (locked) return;
     const id = item.id;
-    const changed = editor.edit((project, ctx) =>
-      trimItem(project, id, edge, editor.previewSeconds, ctx)
-    );
+    const changed = editor.edit(run);
     if (!changed) return;
     const trimmed = findItem(editor.project, id)?.item;
     if (!trimmed) return;
@@ -127,6 +274,14 @@
   function setFill(fill: boolean): void {
     if (locked) return;
     editor.edit((project, ctx) => setItemFill(project, item.id, fill, ctx));
+  }
+
+  function replaceWithLiveAnimation(): void {
+    if (locked) return;
+    editor.pause();
+    editor.edit((project, ctx) =>
+      replaceOverlayVideoWithAnimation(project, item.id, ctx)
+    );
   }
 
   function setSpeed(speed: number): void {
@@ -148,15 +303,138 @@
     );
   }
 
-  function resetCrop(): void {
-    if (locked) return;
+  // ---- Crop: through the crop screen's session when there is one ----------
+
+  function setCropZoom(zoom: number): void {
+    onCropFramingControl?.();
+    if (crop)
+      crop.setZoom(
+        item.kind === "video" &&
+          (item.sourceGeometry || item.keyframes?.sourceGeometry?.length)
+          ? Math.max(1, zoom)
+          : zoom
+      );
+    else change("zoom", { zoom });
+  }
+
+  function straighten(value: number, quarter: number): void {
+    onCropFramingControl?.();
+    if (crop) crop.setStraighten(value);
+    else change("rotation", { rotation: joinRotation(quarter, value) });
+  }
+
+  function rotateLeft(quarter: number, value: number): void {
+    onCropFramingControl?.();
+    if (crop) crop.rotateQuarter();
+    else
+      change("rotation", {
+        rotation: joinRotation(quarterLeft(quarter), value),
+      });
+  }
+
+  /** Fill, the footage's own shape, a free one, then the fixed ratios. */
+  const cropShapes = $derived.by((): RatioOption<CropShapeKind>[] => {
+    const off = locked || !crop;
+    return [
+      {
+        value: "fill",
+        label: t("post_crop_shape_fill"),
+        icon: "fa-expand",
+        disabled: off,
+      },
+      {
+        value: "original",
+        label: t("post_crop_shape_original"),
+        icon: "fa-film",
+        disabled: off || !crop?.pose,
+      },
+      {
+        value: "free",
+        label: t("post_crop_shape_free"),
+        icon: "fa-crop-simple",
+        disabled: off,
+      },
+      ...POST_CANVAS_RATIOS.map((name) => ({
+        value: name,
+        label: name,
+        ratio: ratioValue(name),
+        disabled: off,
+      })),
+    ];
+  });
+
+  function toggleMirror(): void {
+    onCropFramingControl?.();
+    if (crop) crop.toggleMirror();
+    else if (item.kind === "video") patchItem({ flip: !item.flip });
+  }
+
+  function setCropShape(kind: CropShapeKind): void {
+    const geometry =
+      item.kind === "video" &&
+      (item.sourceGeometry || item.keyframes?.sourceGeometry?.length)
+        ? channelValueAt(item, "sourceGeometry", seconds)
+        : null;
+    if (!geometry) {
+      onCropFramingControl?.();
+      crop?.setShape(kind);
+      return;
+    }
+    const source = crop?.source;
+    if (!source || locked || frozen) return;
+    if (kind === "free") {
+      onCropSourceControl?.();
+      chosenSourceShape = kind;
+      return;
+    }
+    const next =
+      kind === "fill"
+        ? sourceFillBox(
+            geometry,
+            source,
+            output,
+            channelValueAt(item, "box", seconds)
+          )
+        : sourceCropAtRatio(
+            geometry,
+            source,
+            output,
+            kind === "original"
+              ? source.width / source.height
+              : ratioValue(kind),
+            kind === "original"
+          );
+    onCropSourceControl?.();
+    editor.pause();
     editor.edit((project, ctx) =>
-      resetFraming(
-        updateItem(project, item.id, { fit: "cover", flip: false }, ctx),
-        item.id,
-        ctx
-      )
+      updateItemAt(project, item.id, { sourceGeometry: next }, seconds, ctx)
     );
+    chosenSourceShape = kind;
+  }
+
+  function resetCrop(): void {
+    const geometry =
+      item.kind === "video" &&
+      (item.sourceGeometry || item.keyframes?.sourceGeometry?.length)
+        ? channelValueAt(item, "sourceGeometry", seconds)
+        : null;
+    const source = crop?.source;
+    if (geometry && source && !locked && !frozen) {
+      const next = sourceCropAtRatio(
+        geometry,
+        source,
+        output,
+        source.width / source.height,
+        true
+      );
+      onCropSourceControl?.();
+      editor.pause();
+      editor.edit((project, ctx) =>
+        updateItemAt(project, item.id, { sourceGeometry: next }, seconds, ctx)
+      );
+      chosenSourceShape = "original";
+    } else onCropFramingControl?.();
+    if (crop?.canReset) crop.reset();
   }
 
   function unlock(): void {
@@ -191,6 +469,7 @@
     (): { id: string; label: string; box: PostBox }[] => {
       switch (item.kind) {
         case "video":
+        case "image":
           return [
             {
               id: "full",
@@ -320,8 +599,95 @@
       ?.id ?? ""
   );
 
+  /** The post's size in pixels, which typed positions and sizes count in. */
+  const output = $derived(postOutputSize(editor.project.canvas));
+
+  /** The post's shorter side, which border widths are measured against. */
+  const frameShort = $derived(Math.min(output.width, output.height));
+
+  /** Where the item shows now, in the post's pixels. */
+  const shownPixels = $derived.by((): Record<BoxField, number> => {
+    const shown = shownBox(editor, item, seconds);
+    return {
+      x: shown.x * output.width,
+      y: shown.y * output.height,
+      width: shown.width * output.width,
+      height: shown.height * output.height,
+    };
+  });
+
+  const BOX_FIELDS = $derived<{ field: BoxField; label: string }[]>([
+    { field: "x", label: t("post_editor_box_x") },
+    { field: "y", label: t("post_editor_box_y") },
+    { field: "width", label: t("post_editor_box_width") },
+    { field: "height", label: t("post_editor_box_height") },
+  ]);
+
+  /** Moves or resizes where the item shows to a typed number of pixels. */
+  function typeRect(field: BoxField, pixels: number): void {
+    const across = field === "x" || field === "width";
+    const share = pixels / (across ? output.width : output.height);
+    const shown = shownBox(editor, item, seconds);
+    const next = typeBox(shown, field, share, keepsShape(item));
+    place(keptBox(editor, item, next, boxAt(item, seconds)));
+  }
+
+  /** How far the whole item is turned now, in degrees clockwise. */
+  const shownTurn = $derived(boxTurn(shownBox(editor, item, seconds)));
+
+  /** Turns the whole item to a typed angle, where it stands. */
+  function typeTurn(degrees: number): void {
+    if (!Number.isFinite(degrees)) return;
+    place({ ...boxAt(item, seconds), turn: wrapDegrees(degrees) });
+  }
+
+  /** A placement moves the item and keeps it turned as it was. */
+  function placeAt(box: PostBox): void {
+    const turn = boxTurn(boxAt(item, seconds));
+    place(turn ? { ...box, turn } : box);
+  }
+
+  type BorderPick = PostEdgeColor | "none";
+
+  const BORDER_COLOR_NAMES: Record<PostEdgeColor, () => string> = {
+    white: () => t("color_preset_white"),
+    black: () => t("color_preset_black"),
+    red: () => t("color_preset_red"),
+    orange: () => t("color_preset_orange"),
+    gold: () => t("color_preset_gold"),
+    blue: () => t("color_preset_blue"),
+    violet: () => t("color_preset_violet"),
+  };
+
+  const BORDER_PICKS = $derived<
+    { value: BorderPick; label: string; disabled: boolean }[]
+  >([
+    { value: "none", label: t("post_editor_border_none"), disabled: locked },
+    ...(Object.keys(POST_EDGE_COLOR_HEX) as PostEdgeColor[]).map((color) => ({
+      value: color,
+      label: BORDER_COLOR_NAMES[color](),
+      disabled: locked,
+    })),
+  ]);
+
+  /** A colour gives a clip with no border the usual one; None takes it off. */
+  function pickBorder(pick: BorderPick): void {
+    if (item.kind !== "video") return;
+    if (pick === "none") {
+      patchItem({ edge: { border: 0 } });
+      return;
+    }
+    patchItem({
+      edge:
+        edgeOf(item).border > 0
+          ? { borderColor: pick }
+          : { borderColor: pick, border: POST_DEFAULT_EDGE_BORDER },
+    });
+  }
+
   const percent = (value: number) => `${Math.round(value)}%`;
-  const degrees = (value: number) => `${Math.round(value)}°`;
+  const pixels = (value: number) => `${Math.round(value)} px`;
+  const fineDegrees = (value: number) => `${Number(value.toFixed(1))}°`;
   const fadeSeconds = (value: number) => `${value.toFixed(2)} s`;
 
   /**
@@ -348,15 +714,35 @@
   </div>
 {/snippet}
 
+{#snippet borderSwatch(pick: BorderPick)}
+  {#if pick === "none"}
+    {t("post_editor_border_none")}
+  {:else}
+    <span
+      class="swatch"
+      style:background={POST_EDGE_COLOR_HEX[pick]}
+      aria-hidden="true"
+    ></span>
+  {/if}
+{/snippet}
+
 {#snippet readout(
   name: string,
   value: string,
+  typed: (seconds: number) => void,
   set: { icon: string; run: () => void } | null
 )}
   <div class="readout">
     <div class="readout-text">
-      <span class="readout-name">{name}</span>
-      <span class="readout-value">{value}</span>
+      <span class="readout-name" aria-hidden="true">{name}</span>
+      <TypeableValue
+        label={name}
+        text={value}
+        draft={value}
+        parse={parseClock}
+        disabled={locked}
+        oncommit={typed}
+      />
     </div>
     {#if set}
       <PanelButton
@@ -371,7 +757,11 @@
   </div>
 {/snippet}
 
-<div class="item-tool">
+<div
+  class="item-tool"
+  class:animation-appearance={appearanceFill && tool === "appearance" &&
+    (item.kind === "animation" || item.kind === "moves")}
+>
   {#if locked}
     {@render status(
       t("post_editor_layer_locked"),
@@ -388,19 +778,38 @@
     )}
   {/if}
 
-  {#if channel !== null}
-    <PostKeyframeControls {editor} {item} {channel} {locked} />
-  {/if}
-
   {#if tool === "trim" && item.kind === "video"}
-    {@render readout(t("post_editor_in"), formatTakeClock(item.sourceIn), {
-      icon: "fa-arrow-right-to-bracket",
-      run: () => trimToPlayhead("start"),
-    })}
-    {@render readout(t("post_editor_out"), formatTakeClock(item.sourceOut), {
-      icon: "fa-arrow-right-from-bracket",
-      run: () => trimToPlayhead("end"),
-    })}
+    {@render readout(
+      t("post_editor_in"),
+      formatTakeClock(item.sourceIn),
+      (seconds) => trimToSource("start", seconds),
+      {
+        icon: "fa-arrow-right-to-bracket",
+        run: () => trimToPlayhead("start"),
+      }
+    )}
+    {@render readout(
+      t("post_editor_out"),
+      formatTakeClock(item.sourceOut),
+      (seconds) => trimToSource("end", seconds),
+      {
+        icon: "fa-arrow-right-from-bracket",
+        run: () => trimToPlayhead("end"),
+      }
+    )}
+    {#if !onMain && canReplaceOverlayVideoWithAnimation(editor.project, item.id)}
+      <div class="actions">
+        <PanelButton onclick={replaceWithLiveAnimation} disabled={locked}>
+          <i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i>
+          Replace with live sequence animation
+        </PanelButton>
+      </div>
+      <p class="hint">
+        Uses the camera video's beat map. Keeps this clip's timing and position.
+        The original video stays available for undo; its audio, if any, leaves
+        the mix.
+      </p>
+    {/if}
   {:else if tool === "timing"}
     {#if !onMain}
       <SegmentedControl
@@ -420,94 +829,135 @@
     {/if}
     {#if onMain || !item.fill}
       {#if !onMain}
-        {@render readout(t("post_editor_start"), formatTakeClock(item.start), {
-          icon: "fa-arrow-right-to-bracket",
-          run: () => trimToPlayhead("start"),
-        })}
+        {@render readout(
+          t("post_editor_start"),
+          formatTakeClock(item.start),
+          (seconds) => trimTo("start", seconds),
+          {
+            icon: "fa-arrow-right-to-bracket",
+            run: () => trimToPlayhead("start"),
+          }
+        )}
       {/if}
-      {@render readout(t("post_editor_end"), formatTakeClock(itemEnd(item)), {
-        icon: "fa-arrow-right-from-bracket",
-        run: () => trimToPlayhead("end"),
-      })}
+      {@render readout(
+        t("post_editor_end"),
+        formatTakeClock(itemEnd(item)),
+        (seconds) => trimTo("end", seconds),
+        {
+          icon: "fa-arrow-right-from-bracket",
+          run: () => trimToPlayhead("end"),
+        }
+      )}
     {/if}
+  {:else if tool === "position" && (item.kind === "video" || item.kind === "image") && (item.sourceGeometry || item.keyframes?.sourceGeometry?.length)}
+    {@const geometry = channelValueAt(item, "sourceGeometry", seconds)}
+    <PostSourceGeometryTool
+      {geometry}
+      {output}
+      {locked}
+      {frozen}
+      mode="position"
+      onChange={(next, field) =>
+        change(`source-geometry:${field}`, { sourceGeometry: next })}
+    />
   {:else if tool === "crop" && item.kind === "video"}
     {@const framing = framingAt(item, seconds)}
+    {@const parts = crop?.parts ?? splitRotation(framing.rotation)}
+    <PostRatioPicker
+      options={cropShapes}
+      value={item.sourceGeometry || item.keyframes?.sourceGeometry?.length
+        ? chosenSourceShape
+        : (crop?.shapeKind ?? null)}
+      onchange={setCropShape}
+      ariaLabel={t("post_crop_shape")}
+    />
+    <ValueSlider
+      label={t("post_crop_straighten")}
+      value={parts.straighten}
+      min={-STRAIGHTEN_LIMIT}
+      max={STRAIGHTEN_LIMIT}
+      step={0.5}
+      origin={0}
+      format={fineDegrees}
+      disabled={locked || frozen}
+      onchange={(value) => straighten(value, parts.quarter)}
+    />
     <ValueSlider
       label={t("post_editor_zoom")}
       value={framing.zoom * 100}
-      min={POST_MIN_ZOOM * 100}
+      min={(item.sourceGeometry || item.keyframes?.sourceGeometry?.length
+        ? Math.max(1, crop?.zoomFloor ?? POST_MIN_ZOOM)
+        : (crop?.zoomFloor ?? POST_MIN_ZOOM)) * 100}
       max={POST_MAX_ZOOM * 100}
       step={1}
       origin={100}
       format={percent}
       disabled={locked || frozen}
-      onchange={(value) => change("zoom", { zoom: value / 100 })}
+      onchange={(value) => setCropZoom(value / 100)}
     />
-    <ValueSlider
-      label={t("post_editor_rotation")}
-      value={framing.rotation}
-      min={-180}
-      max={180}
-      step={1}
-      origin={0}
-      format={degrees}
-      disabled={locked || frozen}
-      onchange={(value) => change("rotation", { rotation: value })}
-    />
-    <div class="pair">
-      <SegmentedControl
-        color="accent"
-        options={[
-          {
-            value: "cover",
-            label: t("post_editor_fit_cover"),
-            disabled: locked,
-          },
-          {
-            value: "contain",
-            label: t("post_editor_fit_contain"),
-            disabled: locked,
-          },
-        ]}
-        value={item.fit}
-        onchange={(fit) => patchItem({ fit })}
-        ariaLabel={t("post_editor_fit")}
-      />
-      <SegmentedControl
-        color="accent"
-        options={[
-          {
-            value: "normal",
-            label: t("post_editor_normal"),
-            disabled: locked,
-          },
-          {
-            value: "mirrored",
-            label: t("post_editor_mirrored"),
-            disabled: locked,
-          },
-        ]}
-        value={item.flip ? "mirrored" : "normal"}
-        onchange={(value) => patchItem({ flip: value === "mirrored" })}
-        ariaLabel={t("post_editor_flip")}
-      />
-    </div>
-    <div class="actions">
+    <div class="crop-row">
       <PanelButton
-        onclick={resetCrop}
-        disabled={locked ||
-          (item.fit === "cover" &&
-            item.zoom === 1 &&
-            item.panX === 0 &&
-            item.panY === 0 &&
-            item.rotation === 0 &&
-            !item.flip &&
-            !isAnimated(item, "framing"))}
+        onclick={() => rotateLeft(parts.quarter, parts.straighten)}
+        disabled={locked || frozen}
+        ariaLabel={t("post_crop_rotate_left")}
       >
-        <i class="fa-solid fa-arrows-rotate" aria-hidden="true"></i>
-        {t("post_editor_reset_crop")}
+        <i class="fa-solid fa-rotate-left" aria-hidden="true"></i>
+        {t("post_crop_rotate")}
       </PanelButton>
+      <FilterChipBase
+        mode="toggle"
+        emphasis="solid"
+        icon="fa-solid fa-left-right"
+        label={t("post_editor_flip")}
+        active={item.flip}
+        disabled={locked}
+        onclick={toggleMirror}
+      />
+      {#if crop}
+        <PanelButton
+          onclick={resetCrop}
+          disabled={locked ||
+            frozen ||
+            (!crop.canReset &&
+              !(item.sourceGeometry || item.keyframes?.sourceGeometry?.length))}
+        >
+          <i class="fa-solid fa-arrows-rotate" aria-hidden="true"></i>
+          {t("post_editor_reset_crop")}
+        </PanelButton>
+      {/if}
     </div>
+    <p class="hint">{t("post_crop_hint")}</p>
+    {#if item.sourceGeometry || item.keyframes?.sourceGeometry?.length}
+      {@const geometry = channelValueAt(item, "sourceGeometry", seconds)}
+      {#if !cropSourceView}
+        <PanelButton onclick={() => onCropSourceControl?.()}>
+          Edit source crop
+        </PanelButton>
+      {/if}
+      <PostSourceGeometryTool
+        {geometry}
+        {output}
+        {locked}
+        {frozen}
+        mode="crop"
+        onChange={(next, field) => {
+          onCropSourceControl?.();
+          chosenSourceShape = "free";
+          change(`source-geometry:${field}`, { sourceGeometry: next });
+        }}
+      />
+    {/if}
+  {:else if tool === "crop" && item.kind === "image" && (item.sourceGeometry || item.keyframes?.sourceGeometry?.length)}
+    {@const geometry = channelValueAt(item, "sourceGeometry", seconds)}
+    <PostSourceGeometryTool
+      {geometry}
+      {output}
+      {locked}
+      {frozen}
+      mode="crop"
+      onChange={(next, field) =>
+        change(`source-geometry:${field}`, { sourceGeometry: next })}
+    />
   {:else if tool === "speed" && item.kind === "video"}
     <ValueSlider
       label={t("post_editor_speed")}
@@ -517,6 +967,7 @@
       step={SPEED_STEP}
       origin={0}
       format={formatSpeed}
+      fromTyped={Math.log2}
       disabled={locked}
       onchange={(stop) => setSpeed(speedFromStop(stop))}
     />
@@ -562,7 +1013,7 @@
       {@const only = onlyPlacement}
       <div class="actions">
         <PanelButton
-          onclick={() => place(only.box)}
+          onclick={() => placeAt(only.box)}
           disabled={locked || frozen || placementNow === only.id}
         >
           <i class="fa-solid fa-expand" aria-hidden="true"></i>
@@ -580,12 +1031,93 @@
         value={placementNow}
         onchange={(id) => {
           const option = placements.find((entry) => entry.id === id);
-          if (option) place(option.box);
+          if (option) placeAt(option.box);
         }}
         ariaLabel={t("post_editor_placement")}
       />
     {/if}
+    <div class="rect" role="group" aria-label={t("post_editor_box_where")}>
+      {#each BOX_FIELDS as entry (entry.field)}
+        <span class="rect-name" aria-hidden="true">{entry.label}</span>
+        <TypeableValue
+          label={entry.label}
+          text={`${Math.round(shownPixels[entry.field])} px`}
+          disabled={locked || frozen}
+          oncommit={(pixels) => typeRect(entry.field, pixels)}
+        />
+      {/each}
+      <span class="rect-name" aria-hidden="true"
+        >{t("post_editor_box_turn")}</span
+      >
+      <TypeableValue
+        label={t("post_editor_box_turn")}
+        text={fineDegrees(shownTurn)}
+        signed
+        disabled={locked || frozen}
+        oncommit={typeTurn}
+      />
+    </div>
+  {:else if tool === "border" && item.kind === "video"}
+    {@const edge = edgeOf(item)}
+    <ValueSlider
+      label={t("post_editor_corners")}
+      value={(edge.corners / POST_MAX_EDGE_CORNERS) * 100}
+      min={0}
+      max={100}
+      step={1}
+      format={percent}
+      disabled={locked}
+      onchange={(value) =>
+        change("edgeCorners", {
+          edge: { corners: (value / 100) * POST_MAX_EDGE_CORNERS },
+        })}
+    />
+    <SegmentedControl
+      color="accent"
+      columns={4}
+      options={BORDER_PICKS}
+      value={edge.border > 0 ? edge.borderColor : "none"}
+      onchange={pickBorder}
+      optionContent={borderSwatch}
+      ariaLabel={t("post_editor_tool_border")}
+    />
+    <ValueSlider
+      label={t("post_editor_border_width")}
+      value={edge.border * frameShort}
+      min={0}
+      max={Math.floor(POST_MAX_EDGE_BORDER * frameShort)}
+      step={1}
+      format={pixels}
+      disabled={locked}
+      onchange={(value) =>
+        change("edgeBorder", { edge: { border: value / frameShort } })}
+    />
+    <ValueSlider
+      label={t("post_editor_shadow")}
+      value={edge.shadow * 100}
+      min={0}
+      max={100}
+      step={1}
+      format={percent}
+      disabled={locked}
+      onchange={(value) =>
+        change("edgeShadow", { edge: { shadow: value / 100 } })}
+    />
   {:else if tool === "fade"}
+    {#if onMain && (item.kind === "video" || item.kind === "image") && item.transitionOut}
+      <TypeableValue
+        label="Crossdissolve (seconds)"
+        text={`${item.transitionOut.duration.toFixed(2)} s`}
+        disabled={locked}
+        oncommit={(value) =>
+          change("transitionOut", {
+            transitionOut: {
+              ...item.transitionOut!,
+              duration: Math.max(0, Math.min(item.duration, value)),
+            },
+          })}
+      />
+    {/if}
     <ValueSlider
       label={t("post_editor_opacity")}
       value={opacityAt(item, seconds) * 100}
@@ -616,6 +1148,59 @@
       disabled={locked}
       onchange={(value) => change("fadeOut", { fadeOut: value })}
     />
+  {:else if tool === "effects" && item.kind === "video"}
+    <PostVideoColorTool
+      grade={item.colorGrade}
+      {locked}
+      {grading}
+      error={gradeError}
+      onAuto={() => void autoAdjustColor()}
+      onReset={() => patchItem({ colorGrade: null })}
+      onChange={setVideoColor}
+    />
+    {#if item.autoAdjust}
+      <details class="import-adjustment">
+        <summary>
+          Original InShot adjustment: {Math.round(
+            item.autoAdjust.strength * 100
+          )}% (reference only)
+        </summary>
+        <p>
+          InShot AutoAdjust was {item.autoAdjust.enabled ? "on" : "off"}. Post
+          Studio cannot reproduce its original color model, so this value does
+          not change the video here.
+        </p>
+      </details>
+    {/if}
+    {#if staffTips}
+      {@const take = editor.takes.find((entry) => entry.id === item.takeId)}
+      <PostStaffEffectsTool
+        {item}
+        takeKey={take?.takeKey ?? null}
+        mediaUrl={editor.mediaUrl(item.takeId)}
+        analysis={staffTips}
+        {locked}
+        onPick={(effect) => patchItem({ staffEffect: effect })}
+      />
+    {/if}
+  {:else if tool === "appearance" && (item.kind === "animation" || item.kind === "moves")}
+    <PostAnimationAppearanceTool
+      fill={appearanceFill}
+      {editor}
+      {item}
+      {locked}
+      defaultPropType={cardRenderOptions?.propTypeOverride}
+    />
+  {:else if tool === "appearance" && item.kind === "card"}
+    <PostCardAppearanceTool
+      {item}
+      options={cardRenderOptions}
+      {stepCount}
+      {locked}
+      onchange={(value) => patchItem({ cardAppearance: value })}
+    />
+  {:else if tool === "sequence" && (item.kind === "animation" || item.kind === "moves" || item.kind === "card")}
+    <PostSequenceActionsTool {editor} {locked} busy={sequenceBusy} />
   {:else if tool === "labels" && item.kind === "animation"}
     <SegmentedControl
       color="accent"
@@ -653,13 +1238,24 @@
       disabled={locked}
       oninput={(event) => change("text", { text: event.currentTarget.value })}
     ></textarea>
-    <SegmentedControl
-      color="accent"
-      options={TEXT_SIZES}
-      value={item.size}
-      onchange={(size) => patchItem({ size })}
-      ariaLabel={t("post_editor_text_size")}
-    />
+    {#if item.style}
+      <PostNativeTextTool
+        style={item.style}
+        animation={item.animation}
+        {locked}
+        onStyle={(style, field) => change(`text-style:${field}`, { style })}
+        onAnimation={(animation, field) =>
+          change(`text-animation:${field}`, { animation })}
+      />
+    {:else}
+      <SegmentedControl
+        color="accent"
+        options={TEXT_SIZES}
+        value={item.size}
+        onchange={(size) => patchItem({ size })}
+        ariaLabel={t("post_editor_text_size")}
+      />
+    {/if}
   {:else if tool === "rename"}
     <input
       class="field"
@@ -677,10 +1273,45 @@
 </div>
 
 <style>
+  .native-limit {
+    margin: 0;
+    color: var(--text-secondary, #a3a3a3);
+    font-size: 0.8rem;
+    line-height: 1.4;
+  }
+
+  .import-adjustment {
+    color: var(--text-secondary, #a3a3a3);
+    font-size: 0.8rem;
+    line-height: 1.4;
+  }
+
+  .import-adjustment summary {
+    cursor: pointer;
+    padding-block: 0.375rem;
+  }
+
+  .import-adjustment summary:focus-visible {
+    outline: 2px solid var(--theme-accent, currentColor);
+    outline-offset: 2px;
+  }
+
+  .import-adjustment p {
+    margin: 0.5rem 0 0;
+  }
+
   .item-tool {
     display: grid;
+    grid-template-columns: minmax(0, 1fr);
     gap: 1rem;
     min-width: 0;
+  }
+
+  .item-tool.animation-appearance {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
   }
 
   .status {
@@ -709,19 +1340,18 @@
     min-width: 0;
   }
 
+  /* The time sits in a box that takes a typed time. */
   .readout-text {
+    --typeable-font-size: 1rem;
+    --typeable-min-width: 6rem;
     display: grid;
+    justify-items: start;
+    gap: 0.125rem;
   }
 
   .readout-name {
     color: var(--theme-text-secondary, #aaa);
     font-size: 0.8125rem;
-  }
-
-  .readout-value {
-    color: var(--theme-text, #fff);
-    font-size: 1rem;
-    font-variant-numeric: tabular-nums;
   }
 
   .actions {
@@ -730,16 +1360,41 @@
     gap: 0.5rem;
   }
 
-  /* Two short picks share a line when the panel has room for both. */
-  .pair {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 1rem;
+  /* X and Y, then width and height: each name beside a box that takes a
+     typed number of pixels. */
+  .rect {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto minmax(0, 1fr);
+    align-items: center;
+    gap: 0.5rem 0.625rem;
   }
 
-  .pair > :global(*) {
-    flex: 1 1 11rem;
-    min-width: 0;
+  .rect-name {
+    color: var(--theme-text-secondary, #aaa);
+    font-size: 0.875rem;
+  }
+
+  .swatch {
+    display: block;
+    width: 1.5rem;
+    height: 1.5rem;
+    border: 1px solid rgb(255 255 255 / 0.35);
+    border-radius: 50%;
+  }
+
+  /* Rotate, Mirror and Reset share a line when the panel has room. */
+  .crop-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem 0.75rem;
+  }
+
+  .hint {
+    margin: 0;
+    color: var(--theme-text-secondary, #aaa);
+    font-size: 0.875rem;
+    line-height: 1.4;
   }
 
   .field {

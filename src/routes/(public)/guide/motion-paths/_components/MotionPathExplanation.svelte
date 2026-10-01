@@ -21,6 +21,7 @@
   import { DARK_MOTION_BLUE_STROKE } from "$lib/shared/mandala/domain/mandala-constants";
   import GridSvg from "$lib/shared/pictograph/grid/components/GridSvg.svelte";
   import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+  import { tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
   import {
     INTRO_CENTER,
     INTRO_PATHS,
@@ -37,42 +38,41 @@
     path?: IntroPath;
   }
 
-  const STAGES: readonly StageCopy[] = [
-    { title: "Your hand", caption: "This is your hand." },
+  const STAGES: readonly StageCopy[] = $derived([
+    { title: tDynamic("guide_paths_stage_hand"), caption: tDynamic("guide_paths_stage_hand_caption") },
     {
-      title: "Your grid",
-      caption: "The grid has a center.",
+      title: tDynamic("guide_paths_stage_grid"),
+      caption: tDynamic("guide_paths_stage_grid_caption"),
     },
     // Level 1 already taught the shift. Arc names it once for readers who
     // arrive from the animation settings without that page, then the three
     // paths share those two endpoints.
     {
-      title: "Arc",
-      caption: "One shift. Follow the circle around the center.",
+      title: tDynamic("guide_paths_arc"),
+      caption: tDynamic("guide_paths_stage_arc_caption"),
       path: "arc",
     },
     {
-      title: "Linear",
-      caption: "Take a straight path between the points.",
+      title: tDynamic("guide_paths_linear"),
+      caption: tDynamic("guide_paths_stage_linear_caption"),
       path: "linear",
     },
     {
-      title: "Concave",
-      caption: "Curve inward toward the center.",
+      title: tDynamic("guide_paths_concave"),
+      caption: tDynamic("guide_paths_stage_concave_caption"),
       path: "concave",
     },
     {
-      title: "Three paths",
-      caption:
-        "All three start and end at the same points. Only the path changes.",
+      title: tDynamic("guide_paths_stage_three"),
+      caption: tDynamic("guide_paths_stage_three_caption"),
     },
-  ];
+  ]);
   const COMPARISON_PATHS: readonly IntroPath[] = ["arc", "linear", "concave"];
-  const LEGEND: readonly { path: IntroPath; x: number; label: string }[] = [
-    { path: "arc", x: -118, label: "Arc" },
-    { path: "linear", x: -30, label: "Linear" },
-    { path: "concave", x: 66, label: "Concave" },
-  ];
+  const LEGEND: readonly { path: IntroPath; x: number; label: string }[] = $derived([
+    { path: "arc", x: -118, label: tDynamic("guide_paths_arc") },
+    { path: "linear", x: -30, label: tDynamic("guide_paths_linear") },
+    { path: "concave", x: 66, label: tDynamic("guide_paths_concave") },
+  ]);
   const TRAVERSE_DURATION = DURATION.dramatic * 4;
   const ARRIVAL_DURATION = DURATION.dramatic * 2;
   // Starting a path over, the hand lifts off where it is and sets down at the
@@ -390,7 +390,7 @@
               r={INTRO_RADIUS}
             />
             <text class="center-label" x="-12" y="-14" text-anchor="end"
-              >Center</text
+              >{tDynamic("guide_paths_center")}</text
             >
           </g>
         {/if}

@@ -499,6 +499,8 @@ export class LayerCompositor {
         baseGridOnly: true,
         showGrid: options.showGrid,
         fanAppearance: options.fanAppearance,
+        propLook: options.propLook,
+        triangleGrip: options.triangleGrip,
         leftPropType: options.leftPropType,
         rightPropType: options.rightPropType,
         leftBuugengFlipped: options.leftBuugengFlipped,

@@ -30,6 +30,7 @@ Last audit: 2025-12-27
   import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
   import type { PropState } from "$lib/shared/foundation/domain/types/prop-state";
   import type { TrailSettings } from "../domain/types/trail-types";
+  import { activeWordHeaderStep } from "../domain/word-header-highlight";
   import type { AdditionalLayerProps } from "$lib/shared/animation-engine/domain/types/trail-capture-types";
   import type { TunnelPropColorPair } from "$lib/shared/sequence-viewer/tunnel/tunnel-prop-colors";
   import CanvasSurface from "./CanvasSurface.svelte";
@@ -67,6 +68,7 @@ Last audit: 2025-12-27
     EffectType,
   } from "../domain/types/tip-effect-types";
   import CanvasContextMenuHost from "./canvas-context-menu/CanvasContextMenuHost.svelte";
+  import { isEmbeddedInAnotherSite } from "$lib/shared/foundation/utils/embedded-in-another-site";
   import type { ContextMenuEntry } from "$lib/shared/components/context-menu/context-menu-types";
   import {
     resolveDisassemblyArrangement,
@@ -631,10 +633,13 @@ Last audit: 2025-12-27
   let contextMenuHost: CanvasContextMenuHost | undefined = $state();
 
   // Locked embeds still expose the universal library action. The lock only
-  // removes mutable display and playback settings from their menu.
+  // removes mutable display and playback settings from their menu. Inside
+  // another website's frame that action is left out too, so a locked embed
+  // there keeps the browser's own right-click menu instead of an empty one.
+  const offersLibrarySave = !isEmbeddedInAnotherSite();
   const hasContextMenu = $derived(
     !disableContextMenu ||
-      !!sequenceData?.steps?.length ||
+      (offersLibrarySave && !!sequenceData?.steps?.length) ||
       extraContextMenuItems.length > 0
   );
 
@@ -664,6 +669,7 @@ Last audit: 2025-12-27
   let stepNumbersVisible = $state(false);
   let globalDarkMode = $state(false);
   let wordHeaderVisible = $state(false);
+  let wordHeaderHighlight = $state<"arrival" | "travel">("arrival");
   let progressBarVisible = $state(false);
   let leftPathLinesVisible = $state(false);
   let rightPathLinesVisible = $state(false);
@@ -675,6 +681,7 @@ Last audit: 2025-12-27
     stepNumbersVisible = visibilityManager.getVisibility("stepNumbers");
     globalDarkMode = visibilityManager.isDarkMode();
     wordHeaderVisible = visibilityManager.getVisibility("wordHeader");
+    wordHeaderHighlight = visibilityManager.getSettings().wordHeaderHighlight;
     progressBarVisible = visibilityManager.getVisibility("progressBar");
     leftPathLinesVisible = visibilityManager.getVisibility("leftPathLines");
     rightPathLinesVisible = visibilityManager.getVisibility("rightPathLines");
@@ -716,6 +723,7 @@ Last audit: 2025-12-27
     stepNumbersVisible = visibilityManager.getVisibility("stepNumbers");
     globalDarkMode = visibilityManager.isDarkMode();
     wordHeaderVisible = visibilityManager.getVisibility("wordHeader");
+    wordHeaderHighlight = visibilityManager.getSettings().wordHeaderHighlight;
     progressBarVisible = visibilityManager.getVisibility("progressBar");
     leftPathLinesVisible = visibilityManager.getVisibility("leftPathLines");
     rightPathLinesVisible = visibilityManager.getVisibility("rightPathLines");
@@ -762,27 +770,13 @@ Last audit: 2025-12-27
   const computedReflectionAxis = $derived(loopDisplay.reflectionAxis);
   const computedOverlayComponents = $derived(loopDisplay.overlayComponents);
 
-  // Word-header underline follows the parent's stepData attribution (identity
-  // lookup) so it always agrees with the glyph letter — including step-playback
-  // dwells, where the parent attributes the integer boundary to the COMPLETED
-  // beat, not the upcoming one. Falls back to positional floor when stepData
-  // isn't one of sequenceData's step refs (cloned/preview data).
-  const headerActiveStepNumber = $derived.by(() => {
-    const steps = sequenceData?.steps;
-    if (!steps?.length) return null;
-    if (stepData) {
-      const idx = steps.indexOf(stepData as (typeof steps)[number]);
-      if (idx >= 0) return idx + 1;
-      if (
-        sequenceData?.startPlacement &&
-        stepData === sequenceData.startPlacement
-      )
-        return null;
-    }
-    return currentStep >= 1 && currentStep < steps.length + 0.99
-      ? Math.floor(currentStep)
-      : null;
-  });
+  const headerActiveStepNumber = $derived(
+    activeWordHeaderStep(
+      currentStep,
+      sequenceData?.steps.length ?? 0,
+      wordHeaderHighlight
+    )
+  );
 
   function handleContextMenu(e: MouseEvent) {
     if (!hasContextMenu) return;
@@ -958,6 +952,7 @@ Last audit: 2025-12-27
         <SequenceProgressBar
           {currentStep}
           totalSteps={sequenceData?.steps?.length ?? 0}
+          stepDurations={sequenceData?.steps?.map((step) => step.duration ?? 1)}
           visible={(progressBarVisible || !!onProgressBarSeek) &&
             !hideProgressBar}
           darkMode={darkModeEnabled}
@@ -973,6 +968,14 @@ Last audit: 2025-12-27
             : null}
         />
       {:else}
+        <SequenceProgressBar
+          {currentStep}
+          totalSteps={sequenceData?.steps?.length ?? 0}
+          stepDurations={sequenceData?.steps?.map((step) => step.duration ?? 1)}
+          visible={progressBarVisible && !hideProgressBar}
+          darkMode={darkModeEnabled}
+          strip
+        />
         <!-- The transport is the canonical playback surface: play, tempo,
              scrubber, and continuous-vs-step all live here and nowhere else.
              It used to be gated on the `progressBar` visibility flag, which

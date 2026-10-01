@@ -24,8 +24,9 @@ import {
 /**
  * How the 2D animation canvas draws a prop.
  *
- * - `model`: a flat capture of the same 3D model the viewer's 3D mode renders,
- *   pre-lit in the blue and red motion colors.
+ * - `model` ("Realistic" to viewers, since it is drawn flat): a capture of the
+ *   same 3D model the viewer's 3D mode renders, pre-lit in the blue and red
+ *   motion colors.
  * - `pictograph`: the flat notation artwork, recolored per hand at runtime.
  *
  * Fan keeps its own richer appearance contract (build, frame, cover); this
@@ -100,6 +101,27 @@ export function parseModelRenderKey(value: string): ModelRenderKey | null {
   const match = /^([a-z0-9_-]+)__model$/.exec(value.toLowerCase());
   if (!match) return null;
   return { propType: match[1]! };
+}
+
+/**
+ * The look a render of these props is cached under: "model" only when it swaps
+ * a captured sprite in for at least one of them. Every other case returns
+ * undefined, so notation cells, fans and hands keep the cache keys (local and
+ * cloud) they had before cards followed the look.
+ */
+export function renderedPropLook(
+  propLook: PropLook | null | undefined,
+  propTypes: readonly (string | null | undefined)[]
+): "model" | undefined {
+  if (normalizePropLook(propLook) !== "model") return undefined;
+  return propTypes.some(
+    (propType) =>
+      !!propType &&
+      parseModelRenderKey(resolvePropRenderKey(propType, { propLook })) !==
+        null
+  )
+    ? "model"
+    : undefined;
 }
 
 /** The notation prop behind any render key (fan build, model, or plain). */
@@ -437,7 +459,7 @@ export function propLookOptions(propType: string): readonly PropLookOption[] {
   return [
     {
       id: "model",
-      label: "3D model",
+      label: "Realistic",
       image: modelSpriteArtwork(normalized, "left"),
       crop: sprite ? modelSpriteCrop(sprite) : undefined,
     },

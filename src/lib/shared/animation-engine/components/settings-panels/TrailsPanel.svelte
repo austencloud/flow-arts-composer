@@ -1,9 +1,12 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { getSettings } from "$lib/shared/application/state/app-state.svelte";
   import { resolveTrailColors } from "../../domain/resolve-trail-colors";
   import { settingsService } from "$lib/shared/settings/state/settings-state.svelte";
   import { animationSettings } from "../../state/animation-settings-state.svelte";
+  import type { AnimationSettingsState } from "../../state/animation-settings-state.svelte";
   import { getEffectsConfigContext } from "$lib/shared/effects/state/effects-config-context";
+  import type { EffectsConfigState } from "$lib/shared/effects/state/effects-config-state.svelte";
   import { DEFAULT_EFFECTS_CONFIG } from "$lib/shared/effects/domain/defaults";
   import {
     TrackingMode,
@@ -15,32 +18,47 @@
   import { getMotionColor } from "$lib/shared/utils/svg-color-utils";
   import { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
 
+  let {
+    animationSettingsState = animationSettings,
+    effectsConfigState,
+    propTypeOverride,
+    onSettingChange,
+  }: {
+    animationSettingsState?: AnimationSettingsState;
+    effectsConfigState?: EffectsConfigState;
+    propTypeOverride?: string | null;
+    onSettingChange?: (setting: string) => void;
+  } = $props();
+
   const settingsState = settingsService;
-  const effectsConfig = getEffectsConfigContext();
+  const effectsConfig = effectsConfigState ?? getEffectsConfigContext();
 
   const hasBilateralProp = $derived.by(() => {
-    const left = settingsState.settings.leftPropType;
-    const right = settingsState.settings.rightPropType;
+    const left = propTypeOverride ?? settingsState.settings.leftPropType;
+    const right = propTypeOverride ?? settingsState.settings.rightPropType;
     const leftIsBilateral = left != null && isBilateralProp(left);
     const rightIsBilateral = right != null && isBilateralProp(right);
     return leftIsBilateral || rightIsBilateral;
   });
 
   const trackingOptions = $derived.by(() => {
-    const pt = animationSettings.currentPropType?.toLowerCase() ?? "staff";
+    const pt =
+      (
+        propTypeOverride ?? animationSettingsState.currentPropType
+      )?.toLowerCase() ?? "staff";
 
     let leftLabel: string;
     let rightLabel: string;
 
     if (pt === "staff") {
-      leftLabel = "Pinky";
-      rightLabel = "Thumb";
+      leftLabel = t("animation_trail_pinky");
+      rightLabel = t("animation_trail_thumb");
     } else if (pt === "bigclub") {
-      leftLabel = "Knob";
-      rightLabel = "Bulb";
+      leftLabel = t("animation_trail_knob");
+      rightLabel = t("animation_trail_bulb");
     } else {
-      leftLabel = "End 1";
-      rightLabel = "End 2";
+      leftLabel = t("animation_trail_end_one");
+      rightLabel = t("animation_trail_end_two");
     }
 
     // Prop-end options track the prop's tips; Hand tracks the hand path
@@ -48,12 +66,20 @@
     return [
       { id: TrackingMode.LEFT_END, label: leftLabel, icon: "fa-minus" },
       { id: TrackingMode.RIGHT_END, label: rightLabel, icon: "fa-minus" },
-      { id: TrackingMode.BOTH_ENDS, label: "Both", icon: "fa-grip-lines" },
-      { id: TrackingMode.HAND, label: "Hand", icon: "fa-hand-back-fist" },
+      {
+        id: TrackingMode.BOTH_ENDS,
+        label: t("viewer_ui_both"),
+        icon: "fa-grip-lines",
+      },
+      {
+        id: TrackingMode.HAND,
+        label: t("animation_trail_hand"),
+        icon: "fa-hand-back-fist",
+      },
     ];
   });
 
-  let storedTrackingMode = $derived(animationSettings.trail.trackingMode);
+  let storedTrackingMode = $derived(animationSettingsState.trail.trackingMode);
 
   let trackingMode = $derived(
     hasBilateralProp ? storedTrackingMode : TrackingMode.RIGHT_END
@@ -66,16 +92,25 @@
   const maxOpacity = $derived(
     effectsConfig?.trails.brightness ?? DEFAULT_EFFECTS_CONFIG.trails.brightness
   );
-  const displayColors = $derived(resolveTrailColors({
-    ...DEFAULT_TRAIL_SETTINGS,
-    leftColor: effectsConfig?.trails.leftColor ?? DEFAULT_EFFECTS_CONFIG.trails.leftColor,
-    rightColor: effectsConfig?.trails.rightColor ?? DEFAULT_EFFECTS_CONFIG.trails.rightColor,
-  }, getSettings().primaryPropColors));
+  const displayColors = $derived(
+    resolveTrailColors(
+      {
+        ...DEFAULT_TRAIL_SETTINGS,
+        leftColor:
+          effectsConfig?.trails.leftColor ??
+          DEFAULT_EFFECTS_CONFIG.trails.leftColor,
+        rightColor:
+          effectsConfig?.trails.rightColor ??
+          DEFAULT_EFFECTS_CONFIG.trails.rightColor,
+      },
+      getSettings().primaryPropColors
+    )
+  );
   const leftColor = $derived(displayColors.leftColor);
   const rightColor = $derived(displayColors.rightColor);
 
   // Rendering params — stay in animationSettings
-  const tailLength = $derived(animationSettings.trail.tailLength);
+  const tailLength = $derived(animationSettingsState.trail.tailLength);
 
   const defaultLeft = getMotionColor(HandSide.LEFT, "dark");
   const defaultRight = getMotionColor(HandSide.RIGHT, "dark");
@@ -104,19 +139,20 @@
       leftColor: defaultLeft,
       rightColor: defaultRight,
     });
-    animationSettings.setTailLength(DEFAULT_TRAIL_SETTINGS.tailLength);
-    animationSettings.setTrackingMode(DEFAULT_TRAIL_SETTINGS.trackingMode);
+    animationSettingsState.setTailLength(DEFAULT_TRAIL_SETTINGS.tailLength);
+    animationSettingsState.setTrackingMode(DEFAULT_TRAIL_SETTINGS.trackingMode);
+    onSettingChange?.("reset");
   }
 </script>
 
 <div class="trails-controls">
   {#if hasBilateralProp}
     <div class="option-row">
-      <span class="option-label">Tracking</span>
+      <span class="option-label">{t("effect_deep_option_tracking")}</span>
       <div
         class="chip-group"
         role="radiogroup"
-        aria-label="Trail tracking mode"
+        aria-label={t("animation_trail_tracking_mode")}
       >
         {#each trackingOptions as option}
           <button
@@ -125,7 +161,10 @@
             type="button"
             role="radio"
             aria-checked={trackingMode === option.id}
-            onclick={() => animationSettings.setTrackingMode(option.id)}
+            onclick={() => {
+              animationSettingsState.setTrackingMode(option.id);
+              onSettingChange?.("trackingMode");
+            }}
           >
             <i class="fas {option.icon}" aria-hidden="true"></i>
             {option.label}
@@ -136,7 +175,7 @@
   {/if}
 
   <div class="slider-row">
-    <label for="ctx-trail-width">Thickness</label>
+    <label for="ctx-trail-width">{t("effect_deep_option_thickness")}</label>
     <input
       id="ctx-trail-width"
       type="range"
@@ -144,16 +183,20 @@
       max="12"
       step="0.5"
       value={lineWidth}
-      oninput={(e) =>
+      oninput={(e) => {
         effectsConfig?.updateEffect("trails", {
           thickness: Number((e.target as HTMLInputElement).value),
-        })}
+        });
+        onSettingChange?.("thickness");
+      }}
     />
     <span class="slider-value">{formatWidth(lineWidth)}</span>
   </div>
 
   <div class="slider-row">
-    <label for="ctx-trail-brightness">Brightness</label>
+    <label for="ctx-trail-brightness"
+      >{t("effect_deep_option_brightness")}</label
+    >
     <input
       id="ctx-trail-brightness"
       type="range"
@@ -164,13 +207,14 @@
       oninput={(e) => {
         const v = Number((e.target as HTMLInputElement).value);
         effectsConfig?.updateEffect("trails", { brightness: v });
+        onSettingChange?.("brightness");
       }}
     />
     <span class="slider-value">{formatBrightness(maxOpacity)}</span>
   </div>
 
   <div class="slider-row">
-    <label for="ctx-trail-length">Tail length</label>
+    <label for="ctx-trail-length">{t("effect_deep_option_trail_length")}</label>
     <input
       id="ctx-trail-length"
       type="range"
@@ -178,38 +222,44 @@
       max={TAIL_LENGTH_MAX}
       step="5"
       value={tailLength}
-      oninput={(e) =>
-        animationSettings.setTailLength(
+      oninput={(e) => {
+        animationSettingsState.setTailLength(
           Number((e.target as HTMLInputElement).value)
-        )}
+        );
+        onSettingChange?.("tailLength");
+      }}
     />
     <span class="slider-value">{tailLength}</span>
   </div>
 
   <div class="color-row">
-    <span class="color-label">Colors</span>
+    <span class="color-label">{t("viewer_ui_colors")}</span>
     <div class="color-pickers">
       <label class="color-picker">
         <input
           type="color"
           value={leftColor}
-          oninput={(e) =>
+          oninput={(e) => {
             effectsConfig?.updateEffect("trails", {
               leftColor: (e.target as HTMLInputElement).value,
-            })}
+            });
+            onSettingChange?.("leftColor");
+          }}
         />
-        <span class="color-hand blue">Left</span>
+        <span class="color-hand blue">{t("viewer_ui_left")}</span>
       </label>
       <label class="color-picker">
         <input
           type="color"
           value={rightColor}
-          oninput={(e) =>
+          oninput={(e) => {
             effectsConfig?.updateEffect("trails", {
               rightColor: (e.target as HTMLInputElement).value,
-            })}
+            });
+            onSettingChange?.("rightColor");
+          }}
         />
-        <span class="color-hand red">Right</span>
+        <span class="color-hand red">{t("viewer_ui_right")}</span>
       </label>
     </div>
   </div>
@@ -220,13 +270,14 @@
     disabled={isDefault}
     onclick={resetDefaults}
   >
-    Reset
+    {t("viewer_ui_reset")}
   </button>
 </div>
 
 <style>
   .trails-controls {
     display: flex;
+    container: trails-controls / inline-size;
     flex-direction: column;
     gap: 8px;
   }
@@ -308,6 +359,7 @@
 
   .slider-row input[type="range"] {
     flex: 1;
+    min-width: 0;
     accent-color: var(--theme-accent, #8b5cf6);
   }
 
@@ -334,8 +386,24 @@
 
   .color-pickers {
     display: flex;
+    flex-wrap: wrap;
     gap: 12px;
     flex: 1;
+  }
+
+  @container trails-controls (max-width: 22rem) {
+    .option-row {
+      flex-wrap: wrap;
+    }
+
+    .chip-group {
+      flex-basis: 100%;
+      flex-wrap: wrap;
+    }
+
+    .chip {
+      flex-basis: calc(50% - 3px);
+    }
   }
 
   .color-picker {

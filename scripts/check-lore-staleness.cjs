@@ -31,7 +31,10 @@ const COLLECTION = "museumDev";
 
 // Story bible date extraction
 
-const STORY_BIBLE_PATH = path.resolve(__dirname, "..", "docs", "museum", "story-bible.md");
+// The story bible is private and lives in the austencloud/flow-arts-private clone.
+// FLOW_ARTS_PRIVATE_DIR points at that clone when it isn't at E:/flow-arts-private.
+const PRIVATE_DIR = process.env.FLOW_ARTS_PRIVATE_DIR || "E:/flow-arts-private";
+const STORY_BIBLE_PATH = path.resolve(PRIVATE_DIR, "museum", "story-bible.md");
 
 function readStoryBibleDate() {
   if (!existsSync(STORY_BIBLE_PATH)) {
@@ -167,9 +170,7 @@ async function main() {
   const hasIssues = newerItems.length > 0 || deprecatedDocs.length > 0;
 
   if (!hasIssues) {
-    console.log("
-  UP TO DATE
-");
+    console.log("\n  UP TO DATE\n");
     process.exit(0);
   } else {
     const parts = [];

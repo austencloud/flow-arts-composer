@@ -280,7 +280,8 @@ captureEffectDiagnostics to the context menu.
     engineInstance.setEffectsConfigState(ecs);
     // Wire to the global VM singleton so the fallback getActiveEffect/setActiveEffect
     // delegates work in UI contexts that don't use the effects-config-context provider.
-    getAnimationVisibilityManager().effectsConfigState = ecs;
+    if (!visibilityManagerOverride)
+      getAnimationVisibilityManager().effectsConfigState = ecs;
   });
 
   // Re-sync the engine whenever effects config changes (fire sliders, presets, etc.).
@@ -373,9 +374,6 @@ captureEffectDiagnostics to the context menu.
   );
   const displayedLetter = $derived(
     engineInstance.animatorState.displayedLetter
-  );
-  const displayedTurnsTuple = $derived(
-    engineInstance.animatorState.displayedTurnsTuple
   );
   const displayedStepNumber = $derived(
     engineInstance.animatorState.displayedStepNumber
@@ -588,7 +586,6 @@ captureEffectDiagnostics to the context menu.
     <GlyphOverlay
       {letter}
       {displayedLetter}
-      {displayedTurnsTuple}
       {displayedStepNumber}
       {displayedMusicalPosition}
       {stepData}

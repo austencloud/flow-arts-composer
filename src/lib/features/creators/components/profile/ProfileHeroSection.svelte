@@ -20,7 +20,9 @@
   column of gaps, which is a worse empty state than the one being replaced.
 -->
 <script lang="ts">
+  import FilterChipBase from "$lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
   import { fade } from "svelte/transition";
+  import { t } from "$lib/shared/i18n/i18n.svelte";
   import type { EnhancedUserProfile } from "$lib/shared/community/domain/models/enhanced-user-profile";
   import AvatarImage from "$lib/shared/browse/components/AvatarImage.svelte";
   import { reportModalState } from "$lib/features/moderation/state/report-modal-state.svelte";
@@ -145,19 +147,19 @@
     <ul class="facts">
       <li class="fact">
         <i class="fas fa-calendar" aria-hidden="true"></i>
-        <span>Joined {joined}</span>
+        <span>{t("browse_verified_joined", { date: joined })}</span>
       </li>
       {#if active}
         <li class="fact">
           <i class="fas fa-circle-dot" aria-hidden="true"></i>
-          <span>Active {active}</span>
+          <span>{t("browse_verified_active_time", { time: active })}</span>
         </li>
       {/if}
     </ul>
 
     {#if shownProps.length > 0 || catdog}
       <div class="props-block">
-        <span class="block-label">Spins with</span>
+        <span class="block-label">{t("browse_verified_spins_with")}</span>
         <div class="props-row">
           {#each shownProps as prop (prop)}
             <div
@@ -170,7 +172,7 @@
                 alt={getPropTypeDisplayInfo(prop).label}
               />
               {#if prop === featuredProp}
-                <span class="favorite-star" aria-label="Profile prop"
+                <span class="favorite-star" aria-label={t("browse_verified_profile_prop")}
                   >&#9733;</span
                 >
               {/if}
@@ -182,8 +184,10 @@
                  single paired glyph rather than two more icons in the row. -->
             <div
               class="catdog"
-              title="Catdog: {getPropTypeDisplayInfo(catdog.leftPropType)
-                .label} + {getPropTypeDisplayInfo(catdog.rightPropType).label}"
+              title={t("browse_verified_catdog_props", {
+                left: getPropTypeDisplayInfo(catdog.leftPropType).label,
+                right: getPropTypeDisplayInfo(catdog.rightPropType).label,
+              })}
             >
               <img
                 class="catdog-blue"
@@ -207,7 +211,7 @@
         target="_blank"
         rel="noopener noreferrer"
         class="instagram-link"
-        aria-label="View {userProfile.displayName}'s Instagram profile"
+        aria-label={t("browse_verified_view_instagram", { name: userProfile.displayName })}
       >
         <i class="fab fa-instagram" aria-hidden="true"></i>
         <span>@{userProfile.instagramUsername}</span>
@@ -219,36 +223,36 @@
          changing value never jitters its row (no-layout-shift.md). -->
     <dl class="stats">
       <div class="stat">
-        <dt>Sequences</dt>
+        <dt>{t("tab_library_sequences")}</dt>
         <dd>{userProfile.sequenceCount.toLocaleString()}</dd>
       </div>
       {#if collectionsCount !== undefined}
         <div class="stat">
-          <dt>Collections</dt>
+          <dt>{t("tab_library_collections")}</dt>
           <dd>{collectionsCount.toLocaleString()}</dd>
         </div>
       {/if}
       <div class="stat">
         <dt>
-          <button
-            type="button"
-            class="stat-link"
+          <FilterChipBase
+            label={t("browse_ui_followers")}
+            icon="fas fa-users"
+            mode="action"
+            size="sm"
             onclick={() => onFollowersClick?.()}
-          >
-            Followers
-          </button>
+          />
         </dt>
         <dd>{userProfile.followerCount.toLocaleString()}</dd>
       </div>
       <div class="stat">
         <dt>
-          <button
-            type="button"
-            class="stat-link"
+          <FilterChipBase
+            label={t("browse_audit_following")}
+            icon="fas fa-user-check"
+            mode="action"
+            size="sm"
             onclick={() => onFollowingClick?.()}
-          >
-            Following
-          </button>
+          />
         </dt>
         <dd>{userProfile.followingCount.toLocaleString()}</dd>
       </div>
@@ -263,21 +267,21 @@
           disabled={followInProgress}
           onclick={onFollowToggle}
           aria-label={userProfile.isFollowing
-            ? `Unfollow ${userProfile.displayName}`
-            : `Follow ${userProfile.displayName}`}
+            ? t("browse_verified_unfollow_person", { name: userProfile.displayName })
+            : t("browse_verified_follow_person", { name: userProfile.displayName })}
         >
           {#if followInProgress}
             <i class="fas fa-spinner fa-spin" aria-hidden="true"></i>
           {:else}
-            {userProfile.isFollowing ? "Following" : "Follow"}
+            {userProfile.isFollowing ? t("browse_audit_following") : t("browse_audit_follow")}
           {/if}
         </button>
 
         <button
           class="report-button"
           onclick={handleReportUser}
-          aria-label="Report {userProfile.displayName}"
-          title="Report user"
+          aria-label={t("browse_verified_report_person", { name: userProfile.displayName })}
+          title={t("browse_verified_report_user")}
         >
           <i class="fas fa-flag" aria-hidden="true"></i>
         </button>
@@ -539,7 +543,7 @@
 
   .stat {
     display: flex;
-    align-items: baseline;
+    align-items: center;
     gap: 12px;
     min-height: 32px;
   }
@@ -555,36 +559,6 @@
     font-weight: 700;
     font-variant-numeric: tabular-nums;
     color: var(--theme-text, white);
-  }
-
-  /* A row-wide hit area rather than a bare text link: the whole point is that
-     it is obviously pressable (clickables-look-like-buttons.md). The 44px floor
-     is on the row, in px on purpose — touch targets must not scale. */
-  .stat-link {
-    display: inline-flex;
-    align-items: center;
-    min-height: 44px;
-    margin: -6px 0;
-    padding: 0;
-    background: none;
-    border: none;
-    color: inherit;
-    font: inherit;
-    cursor: pointer;
-    text-decoration: underline;
-    text-decoration-style: dotted;
-    text-underline-offset: 3px;
-    transition: color var(--duration-normal) ease;
-  }
-
-  .stat-link:hover {
-    color: var(--theme-text);
-  }
-
-  .stat-link:focus-visible {
-    outline: 2px solid var(--theme-accent);
-    outline-offset: 2px;
-    border-radius: 4px;
   }
 
   .actions {
@@ -773,8 +747,7 @@
   @media (prefers-reduced-motion: reduce) {
     .follow-button,
     .instagram-link,
-    .report-button,
-    .stat-link {
+    .report-button {
       transition: none;
     }
 

@@ -9,18 +9,21 @@ import TakeTimingLane from "$lib/shared/share/components/post-studio/builder/Tak
 import type { LandingRef } from "$lib/shared/share/components/post-studio/builder/post-timing-session.svelte";
 
 /**
- * The timing lane on `initial` at `mediaSeconds`, wired as the session wires
- * it: a click selects a landing, and a drag or a nudge places it on the take.
- * Needs a real `document.createElement`.
+ * The timing lane on `initial` at `mediaSeconds` in Adjust landings mode,
+ * wired as the session wires it: a click selects a landing, and a drag
+ * places it on the take. Needs a real `document.createElement` and a
+ * `ResizeObserver` for the lane to measure its width with.
  */
 export function mountTimingLane(
   initial: TakeTiming,
   mediaSeconds: number,
-  moveBeats: readonly number[]
+  moveBeats: readonly number[],
+  initialWindowSeconds = 8
 ) {
   let timing = $state.raw(initial);
   let resolved = $state.raw(resolveTakeTiming(initial, moveBeats));
   let selected = $state.raw<LandingRef | null>(null);
+  let windowSeconds = $state(initialWindowSeconds);
   const target = document.body.appendChild(document.createElement("div"));
   const lane = mount(TakeTimingLane, {
     target,
@@ -31,15 +34,19 @@ export function mountTimingLane(
       get resolved() {
         return resolved;
       },
-      durationSeconds: initial.sections[initial.sections.length - 1]!.endSeconds,
+      durationSeconds:
+        initial.sections[initial.sections.length - 1]!.endSeconds,
       mediaSeconds,
       movesPerPass: moveBeats.length,
-      windowSeconds: 8,
+      get windowSeconds() {
+        return windowSeconds;
+      },
+      editable: true,
       get selected() {
         return selected;
       },
       onseek: () => {},
-      onselect: (landing: LandingRef) => {
+      onselect: (landing: LandingRef | null) => {
         selected = landing;
       },
       onplace: (landing: LandingRef, seconds: number) => {
@@ -52,6 +59,9 @@ export function mountTimingLane(
         );
         resolved = resolveTakeTiming(timing, moveBeats);
       },
+      onzoom: (seconds: number) => {
+        windowSeconds = seconds;
+      },
       dragRange: (landing: LandingRef) =>
         takeLandingDragRange(
           timing,
@@ -62,14 +72,17 @@ export function mountTimingLane(
     },
   });
   flushSync();
+  const labelsOf = (selector: string) =>
+    [...target.querySelectorAll(selector)].map(
+      (button) => button.getAttribute("aria-label") ?? ""
+    );
   return {
-    target,
-    selected: () => selected,
     /** Every landing button's accessible name, in lane order. */
-    labels: () =>
-      [...target.querySelectorAll("button.landing")].map(
-        (button) => button.getAttribute("aria-label") ?? ""
-      ),
+    labels: () => labelsOf("button.landing"),
+    /** The accessible names of the landings placed by hand. */
+    pinnedLabels: () => labelsOf("button.landing.pinned"),
+    viewport: () => target.querySelector<HTMLDivElement>(".timing-lane")!,
+    windowSeconds: () => windowSeconds,
     destroy: () => {
       unmount(lane);
       target.remove();

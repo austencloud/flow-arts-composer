@@ -49,7 +49,7 @@ $ARGUMENTS - Command and arguments (see help for full list)
 
 1. Run `node scripts/museum-dev.js list` to see all items
 2. Read the 10 most recent decisions (sort by date, newest first)
-3. Read `docs/museum/story-bible.md` (canonical source of truth), then other docs as needed
+3. Read `E:/flow-arts-private/museum/story-bible.md` (canonical source of truth, kept in the private repo), then other docs in `docs/museum/` as needed
 4. Check for supersession chains — recent decisions often replace older ones
 
 **Why this order matters:** The docs in `docs/museum/` are original designs. The tracker is where those designs get revised. A concept praised in `vtg-wing.md` may have been scrapped three sessions ago. Read the tracker first.

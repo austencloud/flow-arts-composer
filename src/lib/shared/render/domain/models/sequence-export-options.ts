@@ -1,4 +1,6 @@
 import type { FanAppearance } from "$lib/shared/pictograph/prop/domain/fan-appearance";
+import type { PropLook } from "$lib/shared/pictograph/prop/domain/prop-look";
+import type { TriangleGrip } from "$lib/shared/pictograph/prop/domain/triangle-appearance";
 import type { LOOPType } from "$lib/shared/foundation/domain/models/generation/circular-models";
 import type { PropType } from "../../../pictograph/prop/domain/enums/prop-type";
 import type { MandalaPathShape } from "$lib/shared/mandala/domain/mandala-types";
@@ -64,6 +66,16 @@ export interface SequenceExportOptions {
 
   visibilityOverrides?: {
     fanAppearance?: FanAppearance;
+    /**
+     * Artwork for non-fan props. Personal card exports pass the viewer's look;
+     * deck and print renders leave it unset and draw notation artwork.
+     */
+    propLook?: PropLook;
+    /**
+     * Where the hand holds a triangle. Follows the look: personal card exports
+     * pass the viewer's grip; deck and print renders leave it unset (corner).
+     */
+    triangleGrip?: TriangleGrip;
     primaryPropColors?: { left: string; right: string } | null;
     showTKA?: boolean;
     showTnD?: boolean;

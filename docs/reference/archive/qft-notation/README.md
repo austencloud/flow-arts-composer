@@ -7,8 +7,8 @@ Reference material for the notation catalog
 **This is a private sourcing archive, not publishable content.** The prose and
 video lectures belong to Charlie Cushing and Ben "DrexFactor" Drexler. Nothing
 here goes into `static/` or onto a public page. If any of it becomes
-public-facing, ask them first — Charlie: charlicopter@gmail.com, Drex:
-drex@drexfactor.com. Both addresses are published in the source article.
+public-facing, ask them first. Their contact details are published in the
+source article.
 
 ## Why this exists
 

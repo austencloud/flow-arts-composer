@@ -9,6 +9,8 @@
   Compact mode: icon-only prop button (mobile). Full mode: labeled button.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { handLabel } from "./control-labels";
   import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
   import { isBuugengFamilyProp } from "$lib/shared/pictograph/prop/domain/enums/prop-classification";
   import { getPropTypeDisplayInfo } from "$lib/shared/settings/components/tabs/prop-type/prop-type-registry";
@@ -56,7 +58,7 @@
     <button
       class="prop-icon-btn"
       onclick={() => onOpenPropSheet?.(hand)}
-      aria-label="Change {hand} prop type: {displayInfo.label}"
+      aria-label={t("create_controls_change_prop", { hand: handLabel(hand), prop: displayInfo.label })}
     >
       <span
         role="img"
@@ -70,7 +72,7 @@
     <button
       class="prop-type-btn"
       onclick={() => onOpenPropSheet?.(hand)}
-      aria-label="Change {hand} prop type"
+      aria-label={t("create_controls_change_prop", { hand: handLabel(hand), prop: displayInfo.label })}
     >
       <span role="img" aria-label={displayInfo.label} class="prop-icon"
         style:mask-image={`url("${displayInfo.image}")`}></span>
@@ -91,7 +93,7 @@
       class:compact
       class:flipped
       onclick={toggleChirality}
-      aria-label="{hand} buugeng chirality: {flipped ? 'B' : 'A'}"
+      aria-label={t("create_controls_chirality", { hand: handLabel(hand), variant: flipped ? 'B' : 'A' })}
       aria-pressed={flipped}
     >
       <i class="fas fa-arrows-left-right" aria-hidden="true"></i>

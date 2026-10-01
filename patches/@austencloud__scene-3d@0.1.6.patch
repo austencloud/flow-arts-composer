@@ -5,7 +5,7 @@ diff --git a/dist/index.d.ts.map b/dist/index.d.ts.map
 deleted file mode 100644
 index d554c5bba49036758f9b3c997d025556395cf72b..0000000000000000000000000000000000000000
 diff --git a/dist/lib/components/Avatar3D.svelte b/dist/lib/components/Avatar3D.svelte
-index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..8560c7dfb67c546e271b17921398b7f8128f1fc5 100644
+index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..09e68d79d9dccea769814beac7063a251edc5303 100644
 --- a/dist/lib/components/Avatar3D.svelte
 +++ b/dist/lib/components/Avatar3D.svelte
 @@ -16,29 +16,51 @@
@@ -116,7 +116,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..8560c7dfb67c546e271b17921398b7f8
      /** Enable idle/walk locomotion animation. False for exhibit performers
       *  that should only use IK (no idle animation fighting the pose). */
      enableLocomotion?: boolean;
-@@ -115,11 +162,78 @@
+@@ -115,11 +162,86 @@
      enableRootMotion?: boolean;
      /** Called each frame with the world-space XZ delta from root motion.
       *  The parent applies this to physics for collision-aware movement. */
@@ -174,8 +174,8 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..8560c7dfb67c546e271b17921398b7f8
 +    pairSeparation?: boolean;
 +    /** Changes whenever the owner seeks playback (not the loop seam). Clears
 +     *  the animator's per-side contact-recovery memory (clearance reach
-+     *  ratios, recovery ticks, clearance pole vectors, wrist-init flags) so
-+     *  it doesn't carry over from wherever playback used to be. */
++     *  ratios, clearance pole vectors, wrist-init flags) so it doesn't
++     *  carry over from wherever playback used to be. */
 +    contactResetKey?: number;
 +    onContactReport?: (report: AvatarContactReport) => void;
 +    onContactGeometry?: AvatarContactGeometryCallback;
@@ -193,10 +193,18 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..8560c7dfb67c546e271b17921398b7f8
 +        spine2Rad: number;
 +        headLagRad: number;
 +    } | null;
++    /** Move the whole body within its grid frame (x to the performer's left,
++     *  z toward the audience): the host's step off its staffs. Held only
++     *  while the performer stands still in legacy contact; null leaves the
++     *  body where the clip puts it. */
++    bodyOffset?: { x: number; z: number } | null;
++    /** Keep the feet where the clip put them and bend the legs to reach
++     *  them (default), or let the feet travel with the body. */
++    bodyOffsetPlantFeet?: boolean;
      /** Disable spine twist (dual-wheel: wide lateral targets twist the torso/feet) */
      disableSpineTwist?: boolean;
      /** Current beat index for collision detection logging */
-@@ -128,7 +242,11 @@
+@@ -128,7 +250,11 @@
      beatProgress?: number;
      /** Optional callback invoked each frame with the collision detector's events.
       *  Lets parent components surface collision state without duplicating detection. */
@@ -209,7 +217,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..8560c7dfb67c546e271b17921398b7f8
      /** Extra forward pitch (radians) applied to Spine1 before arm IK runs.
       *  Positive values lean the torso forward. Used by the collision lab's
       *  lean-forward stance variant. 0 = no external pitch. */
-@@ -166,6 +284,7 @@
+@@ -166,6 +292,7 @@
      isMoving = false,
      moveSpeed = 1,
      moveDirection = { x: 0, z: 1 },
@@ -217,7 +225,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..8560c7dfb67c546e271b17921398b7f8
      enableLocomotion = false,
      isGrounded = true,
      verticalVelocity = 0,
-@@ -173,8 +292,27 @@
+@@ -173,8 +300,29 @@
      isJumpRequested = false,
      enableRootMotion = false,
      onRootMotion,
@@ -242,10 +250,12 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..8560c7dfb67c546e271b17921398b7f8
 +    headDodge = false,
 +    stanceYaw = 0,
 +    stanceSegments = null,
++    bodyOffset = null,
++    bodyOffsetPlantFeet = true,
      disableSpineTwist = false,
      stepNumber = 0,
      beatProgress = 0,
-@@ -195,8 +333,23 @@
+@@ -195,8 +343,25 @@
    // Services (manually instantiated to ensure shared skeleton instance)
    let skeletonService: IAvatarSkeletonBuilder | null = $state(null);
    let ikSolver: IIKSolver | null = $state(null);
@@ -256,6 +266,8 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..8560c7dfb67c546e271b17921398b7f8
 +  // for the foot planter.
 +  const footTravelQuat = new Quaternion();
 +  const footTravelVec = new Vector3();
++  const _bodyOffsetWorld = new Vector3();
++  const _bodyOffsetOrigin = new Vector3();
 +  /** Sole offset already pushed to the planter, so an avatar swap re-measures
 +   *  and an unchanged rig does not reconfigure every frame. */
 +  let appliedSoleOffset = 0;
@@ -270,7 +282,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..8560c7dfb67c546e271b17921398b7f8
    let stateMachine: IAnimationStateMachine | null = null;
    let rootMotionExtractor: IRootMotionExtractor | null = null;
    let footPlanter: IFootPlanter | null = null;
-@@ -210,21 +363,43 @@
+@@ -210,21 +375,43 @@
    // Collision detection - logs when props/arms clip through the avatar body
    const collisionDetector = new CollisionDetector();
    const _boneVecs = {
@@ -326,7 +338,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..8560c7dfb67c546e271b17921398b7f8
  
    /**
     * Base rotation from the staff's local-Y axis to the "horizontal" axis
-@@ -236,61 +411,324 @@
+@@ -236,61 +423,324 @@
    const STAFF_HORIZONTAL_QUAT = new Quaternion().setFromEuler(
      new Euler(0, 0, Math.PI / 2)
    );
@@ -484,7 +496,11 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..8560c7dfb67c546e271b17921398b7f8
 +
 +  function composeStaffWorldQuat(
 +    anchorRef: import("three").Group | undefined,
-+    worldRotation: Quaternion,
+     worldRotation: Quaternion,
+-    avatarFacingAngle: number,
+-    halfLength: number,
+-    outA: Vector3,
+-    outB: Vector3
 +    out: Quaternion
 +  ): Quaternion {
 +    if (anchorRef) {
@@ -505,11 +521,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..8560c7dfb67c546e271b17921398b7f8
 +    correctionRef: import("three").Group | undefined,
 +    anchorRef: import("three").Group | undefined,
 +    fallbackGrip: Vector3,
-     worldRotation: Quaternion,
--    avatarFacingAngle: number,
--    halfLength: number,
--    outA: Vector3,
--    outB: Vector3
++    worldRotation: Quaternion,
 +    outGrip: Vector3,
 +    outQuaternion: Quaternion
    ): void {
@@ -680,7 +692,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..8560c7dfb67c546e271b17921398b7f8
    // Derived values from user proportions
    // avatarHeight is the target height in scene units (cm * CM_TO_UNITS)
    const avatarHeight = $derived(cmToUnits(userProportionsState.heightCm));
-@@ -300,16 +738,74 @@
+@@ -300,16 +750,74 @@
    // If position.y is provided (e.g., from terrain/physics), use it directly
    // Otherwise, use groundY from user proportions (for flat stage mode)
    // feetOffset adjusts so feet touch the ground (it's negative)
@@ -757,7 +769,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..8560c7dfb67c546e271b17921398b7f8
    // Load a GLTF model for a specific avatar
    // Uses hot-swap pattern: keeps old avatar visible until new one is ready
    async function loadAvatar(targetAvatarId: string) {
-@@ -319,12 +815,23 @@
+@@ -319,12 +827,23 @@
      if (currentLoadedAvatarId === targetAvatarId) return;
  
      const url = getAvatarModelPath(targetAvatarId);
@@ -782,7 +794,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..8560c7dfb67c546e271b17921398b7f8
  
        // Scale model to match user's height
        // setHeight() calculates proper scale and stores feet offset
-@@ -333,19 +840,43 @@
+@@ -333,19 +852,43 @@
        // Get the feet offset for positioning (negative value)
        feetOffset = skeletonService.getFeetOffset();
  
@@ -835,7 +847,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..8560c7dfb67c546e271b17921398b7f8
        currentLoadedAvatarId = targetAvatarId;
        modelLoaded = true;
        useProceduralFallback = false;
-@@ -354,22 +885,7 @@
+@@ -354,22 +897,7 @@
        // can fade the avatar back in). Fires on initial load and on every swap.
        onModelSwapped?.(targetAvatarId);
  
@@ -859,7 +871,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..8560c7dfb67c546e271b17921398b7f8
  
        // Verify arm chains are ready
        const leftChain = skeletonService.getLeftArmChain();
-@@ -388,17 +904,21 @@
+@@ -388,17 +916,21 @@
        // use IK only and don't need idle/walk animations.
        if (enableLocomotion && locomotionAnimator && cachedRoot) {
          // Configure before initialize so clips are prepared correctly
@@ -886,7 +898,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..8560c7dfb67c546e271b17921398b7f8
            const hipsBone = locomotionAnimator.getHipsBone();
            if (hipsBone) {
              rootMotionExtractor.initialize(hipsBone);
-@@ -416,12 +936,54 @@
+@@ -416,12 +948,54 @@
              idle: `${animBase}idle${rmSuffix}.glb`,
              forward: `${animBase}walk-forward${rmSuffix}.glb`,
              backward: `${animBase}walk-backward${rmSuffix}.glb`,
@@ -944,7 +956,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..8560c7dfb67c546e271b17921398b7f8
            })
            .catch((err) => {
              console.warn(
-@@ -444,18 +1006,39 @@
+@@ -444,18 +1018,39 @@
          const turnsBase = "/animations/turns/";
          const probeUrl = `${turnsBase}turn-left-90.glb`;
          const rootForTurns = cachedRoot;
@@ -993,7 +1005,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..8560c7dfb67c546e271b17921398b7f8
                ])
                .then(() => {
                  // Register turn clip contact curves so FootPlanter can query them
-@@ -476,7 +1059,13 @@
+@@ -476,7 +1071,13 @@
        // ikSolver, which is still used by arm IK elsewhere in this file).
        // Gated on enableFootPlanting - off by default so the museum FPS player
        // (which wants responsive code-driven movement) isn't affected.
@@ -1008,7 +1020,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..8560c7dfb67c546e271b17921398b7f8
          footPlanter.initialize(skeletonService, legIKSolver, contactCurveCache);
        }
  
-@@ -484,9 +1073,10 @@
+@@ -484,9 +1085,10 @@
        if (fingerAnimator) {
          const skeletonState = skeletonService.getState();
          if (skeletonState.fingerChains) {
@@ -1020,7 +1032,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..8560c7dfb67c546e271b17921398b7f8
      } catch (err) {
        console.warn(
          "[Avatar3D] Failed to load avatar model, using procedural fallback:",
-@@ -502,6 +1092,16 @@
+@@ -502,6 +1104,16 @@
        }
      } finally {
        isLoading = false;
@@ -1037,7 +1049,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..8560c7dfb67c546e271b17921398b7f8
      }
    }
  
-@@ -560,6 +1160,15 @@
+@@ -560,6 +1172,15 @@
      }
    });
  
@@ -1053,7 +1065,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..8560c7dfb67c546e271b17921398b7f8
    // React to height changes - update avatar scale
    $effect(() => {
      if (!skeletonService || !modelLoaded || useProceduralFallback) return;
-@@ -570,8 +1179,14 @@
+@@ -570,13 +1191,22 @@
  
      // Update feetOffset for positioning (use untrack to prevent re-triggering)
      const newFeetOffset = skeletonService.getFeetOffset();
@@ -1068,7 +1080,15 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..8560c7dfb67c546e271b17921398b7f8
      });
    });
  
-@@ -584,28 +1199,38 @@
+   // Update animation each frame
+   useTask((delta) => {
++    // Take back last frame's body offset before anything poses the legs.
++    animationService?.releaseBodyOffset?.();
++
+     // Update mocap mixer if playing (runs independently of IK)
+     const mixer = mocapHandle?.getMixer();
+     if (mixer) {
+@@ -584,28 +1214,38 @@
      }
  
      if (!servicesReady || !animationService || useProceduralFallback) return;
@@ -1118,7 +1138,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..8560c7dfb67c546e271b17921398b7f8
  
          // Feed state to LocomotionAnimator for clip selection
          locomotionAnimator.setActiveState?.(stateOutput.state);
-@@ -614,6 +1239,7 @@
+@@ -614,6 +1254,7 @@
            speed: stateOutput.animationSpeed,
            facingAngle: stateOutput.facingAngle,
            moveDirection: stateOutput.moveDirection,
@@ -1126,7 +1146,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..8560c7dfb67c546e271b17921398b7f8
          });
          // Track state for FootPlanter (airborne states skip foot planting)
          currentLocomotionState = stateOutput.state;
-@@ -624,9 +1250,19 @@
+@@ -624,9 +1265,19 @@
            speed: moveSpeed,
            facingAngle,
            moveDirection,
@@ -1146,7 +1166,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..8560c7dfb67c546e271b17921398b7f8
  
        // Turn clip overlay - when a turn is active, overwrite lower-body
        // and spine bones with the turn clip's authored pose at the current
-@@ -639,20 +1275,52 @@
+@@ -639,20 +1290,52 @@
        if (turnRequestProp && turnAnimator?.isReady() && skeletonService) {
          const sample = turnAnimator.sample(turnRequestProp);
          const bones = skeletonService.getState().bones;
@@ -1210,7 +1230,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..8560c7dfb67c546e271b17921398b7f8
            }
          }
  
-@@ -681,7 +1349,11 @@
+@@ -681,7 +1364,11 @@
        // displacement needs the same conversion.
        if (rootMotionExtractor?.isReady() && onRootMotion) {
          const localDelta = rootMotionExtractor.extract();
@@ -1223,7 +1243,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..8560c7dfb67c546e271b17921398b7f8
            // Convert Mixamo centimeters to scene units.
            // Our avatar is scaled to ~avatarHeight scene units for ~170cm Mixamo model.
            // So 1 Mixamo cm ≈ avatarHeight/170 scene units.
-@@ -708,28 +1380,100 @@
+@@ -708,28 +1395,100 @@
        // clips without authored curves. Gated on enableFootPlanting so the
        // museum FPS player stays fully code-driven.
        if (enableFootPlanting && footPlanter?.isReady()) {
@@ -1329,7 +1349,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..8560c7dfb67c546e271b17921398b7f8
      }
  
      if (redPropAnchorRef && redPropState) {
-@@ -737,6 +1481,10 @@
+@@ -737,6 +1496,10 @@
        redPropAnchorRef.getWorldPosition(redIKTarget);
      } else if (redPropState) {
        redIKTarget.copy(redPropState.worldPosition);
@@ -1340,7 +1360,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..8560c7dfb67c546e271b17921398b7f8
      }
  
      const blueWorldProp = bluePropState
-@@ -746,15 +1494,211 @@
+@@ -746,15 +1509,234 @@
        ? { ...redPropState, worldPosition: redIKTarget }
        : null;
  
@@ -1458,6 +1478,29 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..8560c7dfb67c546e271b17921398b7f8
 +      fingerAnimator.setContactRelaxation("right", redPropState ? relaxation : 0, tilt);
 +      fingerAnimator.update(delta);
 +    }
++    // The host's step off its staffs, carried from the grid frame into the
++    // world. A walk, a turn or strict contact owns the body instead.
++    if (
++      bodyOffset &&
++      gridFrameRef &&
++      contactMode !== "prop-authoritative" &&
++      !isMoving &&
++      !turnRequestProp
++    ) {
++      gridFrameRef.updateWorldMatrix(true, false);
++      _bodyOffsetOrigin.setFromMatrixPosition(gridFrameRef.matrixWorld);
++      _bodyOffsetWorld
++        .set(bodyOffset.x, 0, bodyOffset.z)
++        .applyMatrix4(gridFrameRef.matrixWorld)
++        .sub(_bodyOffsetOrigin);
++      animationService.setBodyOffset?.(
++        _bodyOffsetWorld.x,
++        _bodyOffsetWorld.z,
++        bodyOffsetPlantFeet
++      );
++    } else {
++      animationService.setBodyOffset?.(0, 0, bodyOffsetPlantFeet);
++    }
      animationService.update(delta);
  
 +    // The hand inherits the finished arm pose. In strict mode its fingers now
@@ -1552,7 +1595,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..8560c7dfb67c546e271b17921398b7f8
      // 2b. Collision detection - run after IK so bones are at final positions
      if (collisionDetector.enabled && skeletonService) {
        const state = skeletonService.getState();
-@@ -768,56 +1712,55 @@
+@@ -768,56 +1750,55 @@
        bones.get("Spine2")?.getWorldPosition(_boneVecs.spine2);
        bones.get("Spine1")?.getWorldPosition(_boneVecs.spine1);
        bones.get("Hips")?.getWorldPosition(_boneVecs.hips);
@@ -1639,7 +1682,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..8560c7dfb67c546e271b17921398b7f8
            halfStaffLength,
            _redSegA,
            _redSegB
-@@ -825,23 +1768,228 @@
+@@ -825,23 +1806,228 @@
          redSegOrNull = redSeg;
        }
  
@@ -1882,7 +1925,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..8560c7dfb67c546e271b17921398b7f8
    });
  
    // Note: Visibility is handled via the {#if visible} in the template
-@@ -867,20 +2015,15 @@
+@@ -867,20 +2053,15 @@
    // transparent with depth-write off so the fade blends correctly.
    $effect(() => {
      if (!cachedRoot) return;
@@ -1909,7 +1952,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..8560c7dfb67c546e271b17921398b7f8
      // Dispose locomotion animator, state machine, and foot planter
      if (locomotionAnimator) {
        locomotionAnimator.dispose();
-@@ -913,13 +2056,19 @@
+@@ -913,13 +2094,19 @@
  </script>
  
  {#if visible}
@@ -1936,7 +1979,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..8560c7dfb67c546e271b17921398b7f8
      <T.Group
        name={`PERFORMER_${id}`}
        position={[position.x, position.y ?? 0, position.z]}
-@@ -940,9 +2089,10 @@
+@@ -940,9 +2127,10 @@
        - rotation.y: facingAngle (avatar faces movement direction)
  
        groupY calculation:
@@ -1950,7 +1993,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..8560c7dfb67c546e271b17921398b7f8
        - This positions feet at the correct ground level
  
        Using cachedRoot instead of skeletonService.getRoot() ensures
-@@ -950,6 +2100,7 @@
+@@ -950,6 +2138,7 @@
        preventing visual glitches during avatar swap.
      -->
      <T.Group
@@ -1959,7 +2002,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..8560c7dfb67c546e271b17921398b7f8
        position={[position.x, groupY, position.z]}
        rotation.y={facingAngle}
 diff --git a/dist/lib/components/Avatar3D.svelte.d.ts b/dist/lib/components/Avatar3D.svelte.d.ts
-index eaae3a65cb08e4a370b4496a2a2c738624d75610..dd07e6099da8060e8c908f9bd3eb958cdb118726 100644
+index eaae3a65cb08e4a370b4496a2a2c738624d75610..c9fa0f8c71646e59a7998e18979d3db7c4ae8967 100644
 --- a/dist/lib/components/Avatar3D.svelte.d.ts
 +++ b/dist/lib/components/Avatar3D.svelte.d.ts
 @@ -1,7 +1,9 @@
@@ -1982,7 +2025,7 @@ index eaae3a65cb08e4a370b4496a2a2c738624d75610..dd07e6099da8060e8c908f9bd3eb958c
      /** Enable idle/walk locomotion animation. False for exhibit performers
       *  that should only use IK (no idle animation fighting the pose). */
      enableLocomotion?: boolean;
-@@ -48,10 +52,76 @@ interface Props {
+@@ -48,10 +52,87 @@ interface Props {
          z: number;
          yawDelta: number;
      }) => void;
@@ -2037,8 +2080,8 @@ index eaae3a65cb08e4a370b4496a2a2c738624d75610..dd07e6099da8060e8c908f9bd3eb958c
 +    pairSeparation?: boolean;
 +    /** Changes whenever the owner seeks playback (not the loop seam). Clears
 +     *  the animator's per-side contact-recovery memory (clearance reach
-+     *  ratios, recovery ticks, clearance pole vectors, wrist-init flags) so
-+     *  it doesn't carry over from wherever playback used to be. */
++     *  ratios, clearance pole vectors, wrist-init flags) so it doesn't
++     *  carry over from wherever playback used to be. */
 +    contactResetKey?: number;
 +    onContactReport?: (report: AvatarContactReport) => void;
 +    onContactGeometry?: AvatarContactGeometryCallback;
@@ -2056,10 +2099,21 @@ index eaae3a65cb08e4a370b4496a2a2c738624d75610..dd07e6099da8060e8c908f9bd3eb958c
 +        spine2Rad: number;
 +        headLagRad: number;
 +    } | null;
++    /** Move the whole body within its grid frame (x to the performer's left,
++     *  z toward the audience): the host's step off its staffs. Held only
++     *  while the performer stands still in legacy contact; null leaves the
++     *  body where the clip puts it. */
++    bodyOffset?: {
++        x: number;
++        z: number;
++    } | null;
++    /** Keep the feet where the clip put them and bend the legs to reach
++     *  them (default), or let the feet travel with the body. */
++    bodyOffsetPlantFeet?: boolean;
      /** Disable spine twist (dual-wheel: wide lateral targets twist the torso/feet) */
      disableSpineTwist?: boolean;
      /** Current beat index for collision detection logging */
-@@ -60,7 +130,7 @@ interface Props {
+@@ -60,7 +141,7 @@ interface Props {
      beatProgress?: number;
      /** Optional callback invoked each frame with the collision detector's events.
       *  Lets parent components surface collision state without duplicating detection. */
@@ -2068,7 +2122,7 @@ index eaae3a65cb08e4a370b4496a2a2c738624d75610..dd07e6099da8060e8c908f9bd3eb958c
      /** Extra forward pitch (radians) applied to Spine1 before arm IK runs.
       *  Positive values lean the torso forward. Used by the collision lab's
       *  lean-forward stance variant. 0 = no external pitch. */
-@@ -85,4 +155,3 @@ interface Props {
+@@ -85,4 +166,3 @@ interface Props {
  declare const Avatar3D: import("svelte").Component<Props, {}, "">;
  type Avatar3D = ReturnType<typeof Avatar3D>;
  export default Avatar3D;
@@ -2096,7 +2150,7 @@ diff --git a/dist/lib/components/LimbSegment.svelte.d.ts.map b/dist/lib/componen
 deleted file mode 100644
 index cde3408aa49f552ba186378457fee937ba0d21ec..0000000000000000000000000000000000000000
 diff --git a/dist/lib/components/PerformerRig.svelte b/dist/lib/components/PerformerRig.svelte
-index 99a40cd26b35183a5e71c93105e0704084dbf9e9..5737579c11614a10669fa7396f5a9d807675078e 100644
+index 99a40cd26b35183a5e71c93105e0704084dbf9e9..9613fb529e537b0a12f4d7a4a94d897c39a24bb2 100644
 --- a/dist/lib/components/PerformerRig.svelte
 +++ b/dist/lib/components/PerformerRig.svelte
 @@ -16,11 +16,12 @@
@@ -2190,7 +2244,7 @@ index 99a40cd26b35183a5e71c93105e0704084dbf9e9..5737579c11614a10669fa7396f5a9d80
      /** Enable idle/walk locomotion animation on the avatar.
       *  When true, the avatar breathes/sways while standing. */
      enableRootMotion?: boolean;
-@@ -119,23 +156,72 @@
+@@ -119,23 +156,76 @@
       * effect orchestrator can place tip-tracking effects (trails, LED, etc.)
       * in the correct rig-root-local frame without duplicating rig internals.
       */
@@ -2233,6 +2287,10 @@ index 99a40cd26b35183a5e71c93105e0704084dbf9e9..5737579c11614a10669fa7396f5a9d80
 +        spine2Rad: number;
 +        headLagRad: number;
 +    } | null;
++    /** The body's step within the grid frame, forwarded to Avatar3D. */
++    bodyOffset?: { x: number; z: number } | null;
++    /** Keep the feet planted under a body offset (default) or move them. */
++    bodyOffsetPlantFeet?: boolean;
 +    /** Planner-selected forward shoulder carry, forwarded to Avatar3D. */
 +    spinePitchOffset?: number;
 +    /** Hidden depth routing for audience-overlaid same-side grips. */
@@ -2274,7 +2332,7 @@ index 99a40cd26b35183a5e71c93105e0704084dbf9e9..5737579c11614a10669fa7396f5a9d80
    }
  
    let {
-@@ -149,44 +235,71 @@
+@@ -149,44 +239,73 @@
      showEffects = true,
      visiblePlanes = new Set([Plane.WALL, Plane.WHEEL, Plane.FLOOR]),
      gridMode = "diamond" as GridMode,
@@ -2307,6 +2365,8 @@ index 99a40cd26b35183a5e71c93105e0704084dbf9e9..5737579c11614a10669fa7396f5a9d80
      turnRequestOverride,
 +    stanceYaw = 0,
 +    stanceSegments = null,
++    bodyOffset = null,
++    bodyOffsetPlantFeet = true,
 +    spinePitchOffset = 0,
 +    blueHandDepthOffset = 0,
 +    redHandDepthOffset = 0,
@@ -2356,7 +2416,7 @@ index 99a40cd26b35183a5e71c93105e0704084dbf9e9..5737579c11614a10669fa7396f5a9d80
  
    // Derive mode config and grid offset from the current plane mode
    const modeConfig = $derived(PLANE_MODE_CONFIGS[planeMode]);
-@@ -247,7 +360,23 @@
+@@ -247,7 +366,23 @@
  
    // When a turn is active, enable animation-driven yaw so the rig
    // rotates from the turn clip's root motion rather than snapping.
@@ -2381,7 +2441,7 @@ index 99a40cd26b35183a5e71c93105e0704084dbf9e9..5737579c11614a10669fa7396f5a9d80
  
    // Turn completion snap: when turnRequest goes null after being active,
    // snap avatarState to the post-turn heading so the sync effect below
-@@ -259,6 +388,8 @@
+@@ -259,6 +394,8 @@
        // Turn just completed - snap avatarState to post-turn heading
        avatarState.snapFacingAngle(turnTargetHeading);
        turnTargetHeading = null;
@@ -2390,7 +2450,7 @@ index 99a40cd26b35183a5e71c93105e0704084dbf9e9..5737579c11614a10669fa7396f5a9d80
      }
    });
  
-@@ -280,56 +411,127 @@
+@@ -280,56 +417,129 @@
    const dualWheelOffset = $derived(staffHalfLength);
    const blueHandPos = $derived({
      x: isDualWheel ? dualWheelOffset : modeConfig.blueLateralOffset,
@@ -2507,6 +2567,8 @@ index 99a40cd26b35183a5e71c93105e0704084dbf9e9..5737579c11614a10669fa7396f5a9d80
 +      {redPropCorrectionRef}
 +      {stanceYaw}
 +      {stanceSegments}
++      {bodyOffset}
++      {bodyOffsetPlantFeet}
 +      {spinePitchOffset}
 +      {weldGrip}
 +      {contactMode}
@@ -2529,7 +2591,7 @@ index 99a40cd26b35183a5e71c93105e0704084dbf9e9..5737579c11614a10669fa7396f5a9d80
                accumulatedYaw += delta.yawDelta;
                onYawIntegrated?.(accumulatedYaw);
              }
-@@ -339,15 +541,12 @@
+@@ -339,15 +549,12 @@
    {/if}
  
    <!-- Grid (consumer-provided via gridSlot) -->
@@ -2547,7 +2609,7 @@ index 99a40cd26b35183a5e71c93105e0704084dbf9e9..5737579c11614a10669fa7396f5a9d80
      {#if bluePropState && blueVisible}
        <T.Group
          bind:ref={bluePropAnchorRef}
-@@ -355,23 +554,23 @@
+@@ -355,23 +562,23 @@
          position.y={bluePropState.worldPosition.y}
          position.z={bluePropState.worldPosition.z}
        >
@@ -2583,7 +2645,7 @@ index 99a40cd26b35183a5e71c93105e0704084dbf9e9..5737579c11614a10669fa7396f5a9d80
      {#if redPropState && redVisible}
        <T.Group
          bind:ref={redPropAnchorRef}
-@@ -379,20 +578,23 @@
+@@ -379,20 +586,23 @@
          position.y={redPropState.worldPosition.y}
          position.z={redPropState.worldPosition.z}
        >
@@ -2617,7 +2679,7 @@ index 99a40cd26b35183a5e71c93105e0704084dbf9e9..5737579c11614a10669fa7396f5a9d80
        {@render effectsSlot({
          bluePropState,
 diff --git a/dist/lib/components/PerformerRig.svelte.d.ts b/dist/lib/components/PerformerRig.svelte.d.ts
-index 8caa93994d4c204b5d45daeae8b06c191c822e4f..ff101edc1a86aa760c05541008849c136a31586a 100644
+index 8caa93994d4c204b5d45daeae8b06c191c822e4f..3097393f7ab094ff0891fc6ceef065143ec91cb9 100644
 --- a/dist/lib/components/PerformerRig.svelte.d.ts
 +++ b/dist/lib/components/PerformerRig.svelte.d.ts
 @@ -1,5 +1,6 @@
@@ -2684,7 +2746,7 @@ index 8caa93994d4c204b5d45daeae8b06c191c822e4f..ff101edc1a86aa760c05541008849c13
      /** Enable idle/walk locomotion animation on the avatar.
       *  When true, the avatar breathes/sways while standing. */
      enableRootMotion?: boolean;
-@@ -84,14 +109,54 @@ interface Props {
+@@ -84,14 +109,61 @@ interface Props {
              effectsParentRef: Group | undefined;
          }
      ]>;
@@ -2701,6 +2763,13 @@ index 8caa93994d4c204b5d45daeae8b06c191c822e4f..ff101edc1a86aa760c05541008849c13
 +        spine2Rad: number;
 +        headLagRad: number;
 +    } | null;
++    /** The body's step within the grid frame, forwarded to Avatar3D. */
++    bodyOffset?: {
++        x: number;
++        z: number;
++    } | null;
++    /** Keep the feet planted under a body offset (default) or move them. */
++    bodyOffsetPlantFeet?: boolean;
 +    /** Planner-selected forward shoulder carry, forwarded to Avatar3D. */
 +    spinePitchOffset?: number;
 +    /** Hidden depth routing for audience-overlaid same-side grips. */
@@ -4438,19 +4507,20 @@ diff --git a/dist/lib/components/props/Poi3D.svelte.d.ts.map b/dist/lib/componen
 deleted file mode 100644
 index 4c2d4a9b12da3596bfed1803e1a6d6649fa0dfd9..0000000000000000000000000000000000000000
 diff --git a/dist/lib/components/props/Prop3D.svelte b/dist/lib/components/props/Prop3D.svelte
-index 8f023f7b8a3dc4f441fc086719b929b5b56e9c74..4a01bc0a021307069357967d775947b122462bfd 100644
+index 8f023f7b8a3dc4f441fc086719b929b5b56e9c74..d4857a5a4c25784d0d7ccd1cebc8d8fd41a0b711 100644
 --- a/dist/lib/components/props/Prop3D.svelte
 +++ b/dist/lib/components/props/Prop3D.svelte
-@@ -13,6 +13,8 @@
+@@ -13,6 +13,9 @@
    import { PropType } from "../../domain/enums/PropType";
    import type { PropState3D } from "../../domain/models/PropState3D";
    import { resolvePropModel } from "./prop-model-registry";
 +  import { propFinishState } from "../../state/prop-finish-state.svelte";
 +  import type { PropBuild } from "../../state/prop-finish-state.svelte";
++  import { userProportionsState } from "../../state/user-proportions-state.svelte";
    import GltfProp3D from "./GltfProp3D.svelte";
  
    // Procedural fallback geometry components
-@@ -25,6 +27,7 @@
+@@ -25,6 +28,7 @@
    import Sword3D from "./Sword3D.svelte";
    import Buugeng3D from "./Buugeng3D.svelte";
    import Triad3D from "./Triad3D.svelte";
@@ -4458,7 +4528,7 @@ index 8f023f7b8a3dc4f441fc086719b929b5b56e9c74..4a01bc0a021307069357967d775947b1
    import Doublestar3D from "./Doublestar3D.svelte";
    import Chicken3D from "./Chicken3D.svelte";
    import Guitar3D from "./Guitar3D.svelte";
-@@ -39,6 +42,7 @@
+@@ -39,6 +43,7 @@
      visible?: boolean;
      isActivePlayer?: boolean;
      length?: number;
@@ -4466,7 +4536,7 @@ index 8f023f7b8a3dc4f441fc086719b929b5b56e9c74..4a01bc0a021307069357967d775947b1
    }
  
    let {
-@@ -48,8 +52,11 @@
+@@ -48,8 +53,11 @@
      visible = true,
      isActivePlayer = false,
      length,
@@ -4478,7 +4548,7 @@ index 8f023f7b8a3dc4f441fc086719b929b5b56e9c74..4a01bc0a021307069357967d775947b1
    // "Big" variants use a 1.4x scale on the base prop.
    const BIG_SCALE = 1.4;
  
-@@ -61,14 +68,19 @@
+@@ -61,14 +69,19 @@
  {#if visible}
    <!-- Tier 1: GLTF model (when available in registry) -->
    {#if gltfResolution}
@@ -4500,13 +4570,13 @@ index 8f023f7b8a3dc4f441fc086719b929b5b56e9c74..4a01bc0a021307069357967d775947b1
 +        {visible}
 +        {isActivePlayer}
 +        extraScale={gltfResolution.scale}
-+        lengthScaleY={propType === PropType.FIRE_DOUBLE_STAFF && length != null ? length / 0.9 : 1}
++        lengthScaleY={propType === PropType.FIRE_DOUBLE_STAFF ? (length ?? userProportionsState.staffLength) / 0.9 : 1}
 +      />
 +    {/key}
  
    <!-- Tier 2: Procedural fallback geometry -->
    {:else if propType === PropType.STAFF || propType === PropType.SIMPLESTAFF || propType === PropType.STAFF2}
-@@ -82,14 +94,22 @@
+@@ -82,14 +95,22 @@
      <Club3D {propState} {color} {visible} {isActivePlayer} {length} scale={BIG_SCALE} />
  
    {:else if propType === PropType.FAN}
@@ -4533,7 +4603,7 @@ index 8f023f7b8a3dc4f441fc086719b929b5b56e9c74..4a01bc0a021307069357967d775947b1
  
    {:else if propType === PropType.MINIHOOP}
      <Hoop3D {propState} {color} {visible} {isActivePlayer} {length} />
-@@ -102,10 +122,19 @@
+@@ -102,10 +123,19 @@
      <Buugeng3D {propState} {color} {visible} {isActivePlayer} {length} scale={BIG_SCALE} />
  
    {:else if propType === PropType.TRIGENG}
@@ -4555,7 +4625,7 @@ index 8f023f7b8a3dc4f441fc086719b929b5b56e9c74..4a01bc0a021307069357967d775947b1
  
    {:else if propType === PropType.SWORD}
      <Sword3D {propState} {color} {visible} {isActivePlayer} {length} />
-@@ -140,7 +169,15 @@
+@@ -140,7 +170,15 @@
      <Ball3D {propState} {color} {visible} {isActivePlayer} {length} scale={BIG_SCALE} />
  
    {:else if propType === PropType.QUIAD}
@@ -7483,6 +7553,48 @@ index f61213bedbd0483c9f492a51e4913a48401b1654..00000000000000000000000000000000
 diff --git a/dist/lib/config/formation-presets.d.ts.map b/dist/lib/config/formation-presets.d.ts.map
 deleted file mode 100644
 index bf85b20eb38741aec6292313777e7842dfa90ba6..0000000000000000000000000000000000000000
+diff --git a/dist/lib/config/formation-presets.js b/dist/lib/config/formation-presets.js
+index bce36abe7f336d3da83da8b66ff3a6ce4660bbc4..58110b6c1df75495efb06eca3e3aeb1a45a245d2 100644
+--- a/dist/lib/config/formation-presets.js
++++ b/dist/lib/config/formation-presets.js
+@@ -97,7 +97,9 @@ function generateCircleSlots(count) {
+         const angle = (i / count) * Math.PI * 2 - Math.PI / 2;
+         const x = Math.cos(angle) * radius;
+         const z = Math.sin(angle) * radius + offset;
+-        const facingAngle = angle + Math.PI / 2;
++        // Forward is (sin(facing), cos(facing)) and the center lies along
++        // (-cos(angle), -sin(angle)), so the performer faces -angle - PI/2.
++        const facingAngle = -angle - Math.PI / 2;
+         slots.push({
+             index: i,
+             position: { x, z },
+@@ -208,20 +210,23 @@ function generateTunnelStackSlots(count) {
+     }));
+ }
+ /**
+- * Back-to-back formation - both performers at origin, facing opposite directions.
++ * Back-to-back formation - performers face opposite directions with their
++ * body centers 0.6m apart along the facing axis, so their bodies never touch,
++ * even with chests turned side-on.
+  */
+ function generateBackToBackSlots(count) {
+     if (count < 2)
+         return generateSoloSlots(count);
++    const separation = 0.6;
+     return [
+         {
+             index: 0,
+-            position: { x: 0, z: FORMATION_WALL_OFFSET },
++            position: { x: 0, z: FORMATION_WALL_OFFSET + separation / 2 },
+             facingAngle: 0,
+         },
+         {
+             index: 1,
+-            position: { x: 0, z: FORMATION_WALL_OFFSET },
++            position: { x: 0, z: FORMATION_WALL_OFFSET - separation / 2 },
+             facingAngle: Math.PI,
+         },
+     ];
 diff --git a/dist/lib/config/user-proportions.d.ts b/dist/lib/config/user-proportions.d.ts
 deleted file mode 100644
 index c094548dab2fb1defe50a6488df0dbedd08bbb47..0000000000000000000000000000000000000000
@@ -8468,7 +8580,7 @@ diff --git a/dist/lib/services/contracts/IAnimationStateMachine.d.ts.map b/dist/
 deleted file mode 100644
 index 73f0876c4cafab9821e6e2daa10dafef0c71ff1f..0000000000000000000000000000000000000000
 diff --git a/dist/lib/services/contracts/IAvatarAnimator.d.ts b/dist/lib/services/contracts/IAvatarAnimator.d.ts
-index 786bf68515df88ef035b307a7029e717e056bea9..48fd6d9fa5173cf39504f441307e0f1f1f448214 100644
+index 786bf68515df88ef035b307a7029e717e056bea9..a8a07f7ff253efd2213e763f1b3552640e6e4cd9 100644
 --- a/dist/lib/services/contracts/IAvatarAnimator.d.ts
 +++ b/dist/lib/services/contracts/IAvatarAnimator.d.ts
 @@ -4,9 +4,10 @@
@@ -8623,7 +8735,7 @@ index 786bf68515df88ef035b307a7029e717e056bea9..48fd6d9fa5173cf39504f441307e0f1f
  export interface IAvatarAnimator {
      /**
       * Set the hand targets from prop states
-@@ -120,8 +254,73 @@ export interface IAvatarAnimator {
+@@ -120,8 +254,81 @@ export interface IAvatarAnimator {
       * Set prop states and compute per-arm IK blend weights.
       * Arms with props ramp toward IK (weight 1).
       * Arms without props ramp toward animation (weight 0).
@@ -8643,9 +8755,9 @@ index 786bf68515df88ef035b307a7029e717e056bea9..48fd6d9fa5173cf39504f441307e0f1f
 +     */
 +    setPairSeparation?(enabled: boolean): void;
 +    /**
-+     * Clear per-side contact-recovery memory (clearance reach ratios, recovery
-+     * ticks, clearance pole vectors, wrist-init flags) so a seek doesn't
-+     * inherit stale state from wherever playback used to be. Optional so
++     * Clear per-side contact-recovery memory (clearance reach ratios,
++     * clearance pole vectors, wrist-init flags) so a seek doesn't inherit
++     * stale state from wherever playback used to be. Optional so
 +     * lightweight test doubles don't have to implement it.
 +     */
 +    resetContactHistory?(): void;
@@ -8658,6 +8770,14 @@ index 786bf68515df88ef035b307a7029e717e056bea9..48fd6d9fa5173cf39504f441307e0f1f
 +     * Optional so lightweight test doubles don't have to implement it.
 +     */
 +    setStanceYaw?(radians: number): void;
++    /**
++     * Move the whole body by a world-space offset this frame, the feet planted
++     * unless `plantFeet` is false. Zero leaves the pose alone. Optional so
++     * lightweight test doubles don't have to implement it.
++     */
++    setBodyOffset?(worldX: number, worldZ: number, plantFeet?: boolean): void;
++    /** Take back last frame's body offset, before the legs are posed again. */
++    releaseBodyOffset?(): void;
 +    setContactMode?(mode: ContactMode): void;
 +    /** Opt-in authored body pose for prop-authoritative contact. Null restores
 +     * the existing target-following body solve. */
@@ -8698,7 +8818,7 @@ index 786bf68515df88ef035b307a7029e717e056bea9..48fd6d9fa5173cf39504f441307e0f1f
      /**
       * Enable/disable smooth blending between poses
       */
-@@ -140,4 +339,3 @@ export interface IAvatarAnimator {
+@@ -140,4 +347,3 @@ export interface IAvatarAnimator {
       */
      setExternalSpinePitch(radians: number): void;
  }
@@ -8884,10 +9004,10 @@ deleted file mode 100644
 index 8d0262d3ce741f36f066d69fc14af57691e8d939..0000000000000000000000000000000000000000
 diff --git a/dist/lib/services/geometry/BodyCollisionGeometry.js b/dist/lib/services/geometry/BodyCollisionGeometry.js
 new file mode 100644
-index 0000000000000000000000000000000000000000..889d20576124946b866af1508231ba9e2d19d0a5
+index 0000000000000000000000000000000000000000..d65c9031b30fee780a0894e8a1e70aa92721f6ce
 --- /dev/null
 +++ b/dist/lib/services/geometry/BodyCollisionGeometry.js
-@@ -0,0 +1,43 @@
+@@ -0,0 +1,96 @@
 +export const FACE_RADIUS = 0.09;
 +export const FOREARM_RADIUS = 0.04;
 +export const BODY_CLEARANCE_PADDING = 0.02;
@@ -8930,6 +9050,59 @@ index 0000000000000000000000000000000000000000..889d20576124946b866af1508231ba9e
 +    const t = Math.max(0, Math.min(1, pointOffsetScratch.dot(segmentScratch) / lengthSq));
 +    closestOut.copy(segmentStart).addScaledVector(segmentScratch, t);
 +    return point.distanceTo(closestOut);
++}
++/**
++ * Shortest distance between segments firstStart→firstEnd and
++ * secondStart→secondEnd, from their exact closest points (Ericson, Real-Time
++ * Collision Detection, 5.1.9). The three scratch vectors must be distinct from
++ * each other and from every input.
++ */
++export function segmentToSegmentDistance(firstStart, firstEnd, secondStart, secondEnd, firstDirectionScratch, secondDirectionScratch, offsetScratch) {
++    const first = firstDirectionScratch.subVectors(firstEnd, firstStart);
++    const second = secondDirectionScratch.subVectors(secondEnd, secondStart);
++    const offset = offsetScratch.subVectors(firstStart, secondStart);
++    const firstLengthSq = first.lengthSq();
++    const secondLengthSq = second.lengthSq();
++    const secondAlongOffset = second.dot(offset);
++    let s = 0;
++    let t = 0;
++    if (firstLengthSq < 1e-8 && secondLengthSq < 1e-8)
++        return offset.length();
++    if (firstLengthSq < 1e-8) {
++        t = clampUnit(secondAlongOffset / secondLengthSq);
++    }
++    else {
++        const firstAlongOffset = first.dot(offset);
++        if (secondLengthSq < 1e-8) {
++            s = clampUnit(-firstAlongOffset / firstLengthSq);
++        }
++        else {
++            const firstAlongSecond = first.dot(second);
++            const denominator = firstLengthSq * secondLengthSq - firstAlongSecond * firstAlongSecond;
++            // Parallel segments start from s = 0; the clamps below still reach the
++            // closest pair.
++            s =
++                denominator > 1e-12
++                    ? clampUnit((firstAlongSecond * secondAlongOffset -
++                        firstAlongOffset * secondLengthSq) /
++                        denominator)
++                    : 0;
++            t = (firstAlongSecond * s + secondAlongOffset) / secondLengthSq;
++            if (t < 0) {
++                t = 0;
++                s = clampUnit(-firstAlongOffset / firstLengthSq);
++            }
++            else if (t > 1) {
++                t = 1;
++                s = clampUnit((firstAlongSecond - firstAlongOffset) / firstLengthSq);
++            }
++        }
++    }
++    // (firstStart + s·first) − (secondStart + t·second)
++    return offset.addScaledVector(first, s).addScaledVector(second, -t).length();
++}
++function clampUnit(value) {
++    return Math.max(0, Math.min(1, value));
 +}
 diff --git a/dist/lib/services/geometry/CylindricalGripGeometry.js b/dist/lib/services/geometry/CylindricalGripGeometry.js
 new file mode 100644
@@ -9474,7 +9647,7 @@ index 0000000000000000000000000000000000000000..752fdac92fe732640272cfeff9644dd9
 +    }
 +}
 diff --git a/dist/lib/services/implementations/AvatarAnimator.d.ts b/dist/lib/services/implementations/AvatarAnimator.d.ts
-index cac989e5e626274fb4d13d59e401a9a1b485760b..e08b1e5c4c2c8c6a6010d41527b30f250b1a3188 100644
+index cac989e5e626274fb4d13d59e401a9a1b485760b..e69adb122d7ca4e3060bdea4d8a73f0968c93bde 100644
 --- a/dist/lib/services/implementations/AvatarAnimator.d.ts
 +++ b/dist/lib/services/implementations/AvatarAnimator.d.ts
 @@ -4,7 +4,8 @@
@@ -9487,7 +9660,7 @@ index cac989e5e626274fb4d13d59e401a9a1b485760b..e08b1e5c4c2c8c6a6010d41527b30f25
  import type { IIKSolver } from "../contracts/IIKSolver";
  import type { IAvatarSkeletonBuilder } from "../contracts/IAvatarSkeletonBuilder";
  import type { PropState3D } from "../../domain/models/PropState3D";
-@@ -19,6 +20,20 @@ export declare class AvatarAnimator implements IAvatarAnimator {
+@@ -19,6 +20,24 @@ export declare class AvatarAnimator implements IAvatarAnimator {
      private layers;
      private leftArmIK;
      private rightArmIK;
@@ -9501,14 +9674,18 @@ index cac989e5e626274fb4d13d59e401a9a1b485760b..e08b1e5c4c2c8c6a6010d41527b30f25
 +    private strictLegSolver;
 +    private strictKneeAxes;
 +    private strictDiagnostics;
++    private bodyOffsetWorld;
++    private bodyOffsetPlantFeet;
++    private bodyOffsetApplied;
++    private bodyOffsetFeet;
++    private bodyOffsetKneeRoot;
++    private bodyOffsetKneeAxes;
 +    private leftClearanceReachRatio;
 +    private rightClearanceReachRatio;
-+    private leftClearanceRecoveryTick;
-+    private rightClearanceRecoveryTick;
      private ikBlendSpeed;
      private smoothBlending;
      private smoothingFactor;
-@@ -30,6 +45,8 @@ export declare class AvatarAnimator implements IAvatarAnimator {
+@@ -30,6 +49,8 @@ export declare class AvatarAnimator implements IAvatarAnimator {
      private poleComputer;
      private leftPoleVector;
      private rightPoleVector;
@@ -9517,7 +9694,7 @@ index cac989e5e626274fb4d13d59e401a9a1b485760b..e08b1e5c4c2c8c6a6010d41527b30f25
      private _poleVectorsEnabled;
      private clavicleRaiser;
      private leftClavicleQuat;
-@@ -54,23 +71,299 @@ export declare class AvatarAnimator implements IAvatarAnimator {
+@@ -54,23 +75,326 @@ export declare class AvatarAnimator implements IAvatarAnimator {
       * on top of the twist rest pose before arm IK runs. 0 = disabled.
       */
      private externalSpinePitchRad;
@@ -9628,6 +9805,18 @@ index cac989e5e626274fb4d13d59e401a9a1b485760b..e08b1e5c4c2c8c6a6010d41527b30f25
 +    private separateAdjacentGripTargets;
 +    setPropsAndBlend(blueProp: PropState3D | null, redProp: PropState3D | null, offset?: PositionOffset, orientations?: PropOrientations): void;
 +    setStanceYaw(radians: number): void;
++    /**
++     * Move the whole body by a world-space offset this frame. With `plantFeet`
++     * the feet stay where the clip put them and the legs reach back to them;
++     * without it they travel with the body. Zero leaves the pose alone.
++     */
++    setBodyOffset(worldX: number, worldZ: number, plantFeet?: boolean): void;
++    /**
++     * Take back last frame's body offset before the clip and the foot planter
++     * pose the legs again. The mixer never writes the Hips position, so nothing
++     * else would. A bone something else has rewritten since is left alone.
++     */
++    releaseBodyOffset(): void;
 +    setContactMode(mode: import("../contracts/IAvatarAnimator").ContactMode): void;
 +    setPairSeparation(enabled: boolean): void;
 +    resetContactHistory(): void;
@@ -9664,6 +9853,21 @@ index cac989e5e626274fb4d13d59e401a9a1b485760b..e08b1e5c4c2c8c6a6010d41527b30f25
      update(deltaTime: number): void;
 +    getContactSolveDiagnostics(): Readonly<typeof this.strictDiagnostics>;
 +    private applyStrictContact;
++    /** Solve a leg back to a planted foot: position and rotation. */
++    private plantLeg;
++    /**
++     * Move the body by the host's offset before anything measures it, so the
++     * spine, the arms and the head all solve against where it now stands. With
++     * the feet planted the pelvis drops only as far as a leg needs to reach its
++     * foot; plantBodyOffsetFeet then bends each leg back to where the clip put
++     * that foot.
++     */
++    private applyBodyOffset;
++    /**
++     * Bend each leg back to its planted foot once the upper body has solved and
++     * the hips hold their final turn, so nothing after this moves the feet.
++     */
++    private plantBodyOffsetFeet;
 +    private setStrictHandRotation;
 +    private solveStrictArm;
      private blendToTarget;
@@ -9818,7 +10022,7 @@ index cac989e5e626274fb4d13d59e401a9a1b485760b..e08b1e5c4c2c8c6a6010d41527b30f25
      addLayer(layer: AnimationLayer): void;
      removeLayer(layerId: string): void;
      setLayerWeight(layerId: string, weight: number): void;
-@@ -78,8 +371,16 @@ export declare class AvatarAnimator implements IAvatarAnimator {
+@@ -78,8 +402,16 @@ export declare class AvatarAnimator implements IAvatarAnimator {
      setSmoothBlending(enabled: boolean): void;
      setSmoothingFactor(factor: number): void;
      setExternalSpinePitch(radians: number): void;
@@ -9835,7 +10039,7 @@ index cac989e5e626274fb4d13d59e401a9a1b485760b..e08b1e5c4c2c8c6a6010d41527b30f25
      /** Debug toggle: disable clavicle raise to compare old vs new shoulder behavior */
      toggleClavicleRaise(): boolean;
      /** Skip Hips counter-rotation (exhibit performers with planted feet) */
-@@ -89,4 +390,3 @@ export declare class AvatarAnimator implements IAvatarAnimator {
+@@ -89,4 +421,3 @@ export declare class AvatarAnimator implements IAvatarAnimator {
      /** Debug toggle: disable spine twist to compare old vs new torso behavior */
      toggleSpineTwist(): boolean;
  }
@@ -9845,10 +10049,10 @@ diff --git a/dist/lib/services/implementations/AvatarAnimator.d.ts.map b/dist/li
 deleted file mode 100644
 index f8e47d42167b6ea9bb4fd8f44f41273f48f1943b..0000000000000000000000000000000000000000
 diff --git a/dist/lib/services/implementations/AvatarAnimator.js b/dist/lib/services/implementations/AvatarAnimator.js
-index bdd5ae35ed47c58d29c537a7805705783f9b9066..3be5661352a94ed96d6d01b06f438dc3f456c496 100644
+index bdd5ae35ed47c58d29c537a7805705783f9b9066..c098d0fa04fed686f70cfc0c5c419fc35a9e754d 100644
 --- a/dist/lib/services/implementations/AvatarAnimator.js
 +++ b/dist/lib/services/implementations/AvatarAnimator.js
-@@ -4,7 +4,93 @@
+@@ -4,7 +4,101 @@
   * Manages avatar pose states and smooth animation blending.
   * Bridges TKA prop states to skeleton IK targets.
   */
@@ -9901,8 +10105,12 @@ index bdd5ae35ed47c58d29c537a7805705783f9b9066..3be5661352a94ed96d6d01b06f438dc3
 +const ARM_CLEARANCE_REACH_RATIOS = [0.92, 0.84, 0.76, 0.68, 0.6];
 +const ARM_CLEARANCE_POLE_SEARCH_STEP = (10 * Math.PI) / 180;
 +const ARM_CLEARANCE_POLE_SEARCH_STEPS = 18;
-+const ARM_CLEARANCE_RECOVERY_INTERVAL = 12;
-+const ARM_CLEARANCE_RECOVERY_STEP = 0.04;
++/** Seconds for a retracted hand to grow from the shortest retry back to full
++ *  reach while each fuller reach still clears the body. Counted in time, not
++ *  frames, so the let-go lasts equally long at any frame rate. */
++const ARM_CLEARANCE_RECOVERY_SECONDS = 0.3;
++const ARM_CLEARANCE_RECOVERY_RATE = (1 - ARM_CLEARANCE_REACH_RATIOS[ARM_CLEARANCE_REACH_RATIOS.length - 1]) /
++    ARM_CLEARANCE_RECOVERY_SECONDS;
 +const UPPER_ARM_SHOULDER_EXCLUSION = 0.35;
 +/** Radians of spine lean per meter of reach deficit. */
 +const REACH_LEAN_GAIN = 1.2;
@@ -9923,6 +10131,10 @@ index bdd5ae35ed47c58d29c537a7805705783f9b9066..3be5661352a94ed96d6d01b06f438dc3
 +/** Ceiling on how far the head may trail the shoulder line. */
 +const MAX_STANCE_HEAD_LAG = (34 * Math.PI) / 180;
 +const MAX_AUTHORED_PELVIS_XZ = 0.5;
++/** The furthest a host may move the body off its feet, in metres. */
++const MAX_BODY_OFFSET = 0.5;
++/** A planted leg reaches no further than this share of its length. */
++const MAX_PLANTED_LEG_USE = 0.98;
 +const MAX_AUTHORED_PELVIS_Y = 0.35;
 +const MAX_AUTHORED_TORSO_YAW = Math.PI / 2;
 +const MAX_AUTHORED_TORSO_TILT = 0.6;
@@ -9943,7 +10155,7 @@ index bdd5ae35ed47c58d29c537a7805705783f9b9066..3be5661352a94ed96d6d01b06f438dc3
  export class AvatarAnimator {
      ikSolver;
      skeleton;
-@@ -14,6 +100,24 @@ export class AvatarAnimator {
+@@ -14,6 +108,36 @@ export class AvatarAnimator {
      // Per-arm IK blend weights: 0 = animation drives the arm, 1 = IK drives the arm
      leftArmIK = { weight: 0, targetWeight: 0 };
      rightArmIK = { weight: 0, targetWeight: 0 };
@@ -9961,14 +10173,26 @@ index bdd5ae35ed47c58d29c537a7805705783f9b9066..3be5661352a94ed96d6d01b06f438dc3
 +    strictLegSolver = new HingeConstrainedLegIKSolver();
 +    strictKneeAxes = new Map();
 +    strictDiagnostics = { iterations: 0, reachResidualM: 0, clearanceM: Infinity, wristSwingRad: 0 };
++    // The host's move of the whole body, world space, and whether the feet stay
++    // where the clip put them. Applied after the legs are posed, so it is taken
++    // back each frame (releaseBodyOffset) before anything poses them again.
++    bodyOffsetWorld = new Vector3();
++    bodyOffsetPlantFeet = true;
++    bodyOffsetApplied = {
++        active: false,
++        hipsDelta: new Vector3(),
++        hipsAfter: new Vector3(),
++        legs: [],
++    };
++    bodyOffsetFeet = [];
++    bodyOffsetKneeRoot = null;
++    bodyOffsetKneeAxes = new Map();
 +    leftClearanceReachRatio = 1;
 +    rightClearanceReachRatio = 1;
-+    leftClearanceRecoveryTick = 0;
-+    rightClearanceRecoveryTick = 0;
      ikBlendSpeed = 1 / 0.3; // ~0.3s ramp time
      smoothBlending = true;
      smoothingFactor = 0.15; // 0-1, higher = smoother but laggier
-@@ -23,8 +127,13 @@ export class AvatarAnimator {
+@@ -23,8 +147,13 @@ export class AvatarAnimator {
      transitionProgress = 0;
      transitionConfig = null;
      poleComputer;
@@ -9982,7 +10206,7 @@ index bdd5ae35ed47c58d29c537a7805705783f9b9066..3be5661352a94ed96d6d01b06f438dc3
      _poleVectorsEnabled = true;
      clavicleRaiser;
      leftClavicleQuat = new Quaternion();
-@@ -67,6 +176,135 @@ export class AvatarAnimator {
+@@ -67,6 +196,135 @@ export class AvatarAnimator {
       * on top of the twist rest pose before arm IK runs. 0 = disabled.
       */
      externalSpinePitchRad = 0;
@@ -10118,7 +10342,7 @@ index bdd5ae35ed47c58d29c537a7805705783f9b9066..3be5661352a94ed96d6d01b06f438dc3
      constructor(ikSolver, skeleton, poleComputer, clavicleRaiser, spineTwister) {
          this.ikSolver = ikSolver;
          this.skeleton = skeleton;
-@@ -140,9 +378,45 @@ export class AvatarAnimator {
+@@ -140,9 +398,45 @@ export class AvatarAnimator {
                  weight: 1,
              }
              : null;
@@ -10165,7 +10389,7 @@ index bdd5ae35ed47c58d29c537a7805705783f9b9066..3be5661352a94ed96d6d01b06f438dc3
          this.leftArmIK.targetWeight = blueProp ? 1 : 0;
          this.rightArmIK.targetWeight = redProp ? 1 : 0;
          const ox = offset?.x ?? 0;
-@@ -154,6 +428,7 @@ export class AvatarAnimator {
+@@ -154,6 +448,7 @@ export class AvatarAnimator {
          this.targetPose.leftHand = blueProp
              ? {
                  targetPosition: new Vector3(blueProp.worldPosition.x - ox, blueProp.worldPosition.y - oy, blueProp.worldPosition.z - oz),
@@ -10173,7 +10397,7 @@ index bdd5ae35ed47c58d29c537a7805705783f9b9066..3be5661352a94ed96d6d01b06f438dc3
                  staffAngle: blueProp.staffRotationAngle,
                  plane: blueProp.plane,
                  weight: 1,
-@@ -162,13 +437,150 @@ export class AvatarAnimator {
+@@ -162,13 +457,181 @@ export class AvatarAnimator {
          this.targetPose.rightHand = redProp
              ? {
                  targetPosition: new Vector3(redProp.worldPosition.x - ox, redProp.worldPosition.y - oy, redProp.worldPosition.z - oz),
@@ -10197,6 +10421,39 @@ index bdd5ae35ed47c58d29c537a7805705783f9b9066..3be5661352a94ed96d6d01b06f438dc3
 +    setStanceYaw(radians) {
 +        this.stanceYawTargetRad = Math.max(-MAX_STANCE_YAW, Math.min(MAX_STANCE_YAW, radians));
 +    }
++    /**
++     * Move the whole body by a world-space offset this frame. With `plantFeet`
++     * the feet stay where the clip put them and the legs reach back to them;
++     * without it they travel with the body. Zero leaves the pose alone.
++     */
++    setBodyOffset(worldX, worldZ, plantFeet = true) {
++        const bounded = (value) => Number.isFinite(value)
++            ? Math.max(-MAX_BODY_OFFSET, Math.min(MAX_BODY_OFFSET, value))
++            : 0;
++        this.bodyOffsetWorld.set(bounded(worldX), 0, bounded(worldZ));
++        this.bodyOffsetPlantFeet = plantFeet;
++    }
++    /**
++     * Take back last frame's body offset before the clip and the foot planter
++     * pose the legs again. The mixer never writes the Hips position, so nothing
++     * else would. A bone something else has rewritten since is left alone.
++     */
++    releaseBodyOffset() {
++        const applied = this.bodyOffsetApplied;
++        if (!applied.active)
++            return;
++        applied.active = false;
++        for (const leg of applied.legs) {
++            if (leg.bone.quaternion.equals(leg.after))
++                leg.bone.quaternion.copy(leg.before);
++        }
++        applied.legs = [];
++        const hips = this.skeleton.getBone("Hips");
++        if (hips && hips.position.equals(applied.hipsAfter)) {
++            hips.position.sub(applied.hipsDelta);
++            hips.updateMatrixWorld(true);
++        }
++    }
 +    setContactMode(mode) {
 +        this.contactMode = mode;
 +    }
@@ -10211,17 +10468,15 @@ index bdd5ae35ed47c58d29c537a7805705783f9b9066..3be5661352a94ed96d6d01b06f438dc3
 +        this.pairSeparationEnabled = enabled;
 +    }
 +    /**
-+     * Clear per-side contact-recovery memory (clearance reach ratios, recovery
-+     * ticks, clearance pole vectors, wrist-init flags) so a seek doesn't
-+     * inherit stale state from wherever playback used to be. The clearance
-+     * pole vectors reset to the current (non-clearance) pole vectors, the same
++     * Clear per-side contact-recovery memory (clearance reach ratios,
++     * clearance pole vectors, wrist-init flags) so a seek doesn't inherit
++     * stale state from wherever playback used to be. The clearance pole
++     * vectors reset to the current (non-clearance) pole vectors, the same
 +     * value they'd hold before any recovery probe ever ran.
 +     */
 +    resetContactHistory() {
 +        this.leftClearanceReachRatio = 1;
 +        this.rightClearanceReachRatio = 1;
-+        this.leftClearanceRecoveryTick = 0;
-+        this.rightClearanceRecoveryTick = 0;
 +        this.leftClearancePoleVector.copy(this.leftPoleVector);
 +        this.rightClearancePoleVector.copy(this.rightPoleVector);
 +        this.leftWristInit = false;
@@ -10324,7 +10579,7 @@ index bdd5ae35ed47c58d29c537a7805705783f9b9066..3be5661352a94ed96d6d01b06f438dc3
      setLeftHandTarget(target) {
          this.targetPose.leftHand = { ...target };
          this.targetPose.timestamp = Date.now();
-@@ -183,8 +595,14 @@ export class AvatarAnimator {
+@@ -183,8 +646,14 @@ export class AvatarAnimator {
      update(deltaTime) {
          // Ramp per-arm IK blend weights (framerate-independent exponential lerp)
          const blendFactor = 1 - Math.exp(-this.ikBlendSpeed * deltaTime);
@@ -10341,15 +10596,17 @@ index bdd5ae35ed47c58d29c537a7805705783f9b9066..3be5661352a94ed96d6d01b06f438dc3
          if (this.transitioning) {
              this.updateTransition(deltaTime);
          }
-@@ -197,7 +615,379 @@ export class AvatarAnimator {
+@@ -197,7 +666,461 @@ export class AvatarAnimator {
          // Apply combined layers
          const finalPose = this.computeFinalPose();
          // Solve IK for arms
 -        this.applyIKToSkeleton(finalPose);
 +        if (this.contactMode === "prop-authoritative")
 +            this.applyStrictContact(finalPose);
-+        else
++        else {
 +            this.applyIKToSkeleton(finalPose, deltaTime);
++            this.plantBodyOffsetFeet();
++        }
 +    }
 +    getContactSolveDiagnostics() {
 +        return this.strictDiagnostics;
@@ -10527,25 +10784,7 @@ index bdd5ae35ed47c58d29c537a7805705783f9b9066..3be5661352a94ed96d6d01b06f438dc3
 +        for (const chain of [state.leftLegChain, state.rightLegChain]) {
 +            if (!chain)
 +                continue;
-+            const foot = this.strictFeet.get(chain.effector);
-+            this.strictLegSolver.solve({ chain, footTarget: foot.position, kneeHingeAxis: this.strictKneeAxes.get(chain.root), poleDirection: new Vector3(0, 0, 1), weight: 1 });
-+            const hipRotation = chain.root.quaternion.clone();
-+            const kneeRotation = chain.middle.quaternion.clone();
-+            this.ikSolver.solveAndApply(chain, { position: foot.position, poleHint: new Vector3(0, 0, 1), weight: 1 });
-+            const kneePosition = chain.middle.getWorldPosition(new Vector3());
-+            chain.root.quaternion.copy(hipRotation);
-+            chain.middle.quaternion.copy(kneeRotation);
-+            chain.root.updateWorldMatrix(true, true);
-+            // Preserve the hinge solver's twist while removing bind-pose offsets
-+            // from its position result. Only joint rotations change.
-+            for (const [joint, end, target] of [[chain.root, chain.middle, kneePosition], [chain.middle, chain.effector, foot.position]]) {
-+                const origin = joint.getWorldPosition(new Vector3());
-+                const from = end.getWorldPosition(new Vector3()).sub(origin).normalize();
-+                const to = target.clone().sub(origin).normalize();
-+                const world = joint.getWorldQuaternion(new Quaternion()).premultiply(new Quaternion().setFromUnitVectors(from, to));
-+                this.setStrictHandRotation(joint, world);
-+            }
-+            this.setStrictHandRotation(chain.effector, foot.rotation);
++            this.plantLeg(chain, this.strictFeet.get(chain.effector), this.strictKneeAxes.get(chain.root), new Vector3(0, 0, 1));
 +        }
 +        this.refreshBodyFrame(state, state.leftArmChain, state.rightArmChain);
 +        this.refreshFaceClearanceCenter(state, state.leftArmChain, state.rightArmChain);
@@ -10564,6 +10803,104 @@ index bdd5ae35ed47c58d29c537a7805705783f9b9066..3be5661352a94ed96d6d01b06f438dc3
 +            this.ikSolver.solveAndApply(chain, { position: restingHand, poleHint: this._bodyFrame.forward.clone().negate(), weight: 1 });
 +        }
 +        state.root.updateWorldMatrix(true, true);
++    }
++    /** Solve a leg back to a planted foot: position and rotation. */
++    plantLeg(chain, foot, kneeHingeAxis, pole) {
++        this.strictLegSolver.solve({ chain, footTarget: foot.position, kneeHingeAxis, poleDirection: pole, weight: 1 });
++        const hipRotation = chain.root.quaternion.clone();
++        const kneeRotation = chain.middle.quaternion.clone();
++        this.ikSolver.solveAndApply(chain, { position: foot.position, poleHint: pole, weight: 1 });
++        const kneePosition = chain.middle.getWorldPosition(new Vector3());
++        chain.root.quaternion.copy(hipRotation);
++        chain.middle.quaternion.copy(kneeRotation);
++        chain.root.updateWorldMatrix(true, true);
++        // Preserve the hinge solver's twist while removing bind-pose offsets
++        // from its position result. Only joint rotations change.
++        for (const [joint, end, target] of [[chain.root, chain.middle, kneePosition], [chain.middle, chain.effector, foot.position]]) {
++            const origin = joint.getWorldPosition(new Vector3());
++            const from = end.getWorldPosition(new Vector3()).sub(origin).normalize();
++            const to = target.clone().sub(origin).normalize();
++            const world = joint.getWorldQuaternion(new Quaternion()).premultiply(new Quaternion().setFromUnitVectors(from, to));
++            this.setStrictHandRotation(joint, world);
++        }
++        this.setStrictHandRotation(chain.effector, foot.rotation);
++    }
++    /**
++     * Move the body by the host's offset before anything measures it, so the
++     * spine, the arms and the head all solve against where it now stands. With
++     * the feet planted the pelvis drops only as far as a leg needs to reach its
++     * foot; plantBodyOffsetFeet then bends each leg back to where the clip put
++     * that foot.
++     */
++    applyBodyOffset(state) {
++        this.bodyOffsetFeet = [];
++        const offset = this.bodyOffsetWorld;
++        if (offset.lengthSq() < 1e-10)
++            return;
++        const hips = state.bones.get("Hips");
++        if (!hips?.parent)
++            return;
++        const legs = this.bodyOffsetPlantFeet && state.leftLegChain && state.rightLegChain
++            ? [state.leftLegChain, state.rightLegChain]
++            : [];
++        if (legs.length && this.bodyOffsetKneeRoot !== state.root) {
++            this.bodyOffsetKneeRoot = state.root;
++            this.bodyOffsetKneeAxes.clear();
++            const reference = kneeHingeReferenceAxis(legs[0].root, legs[1].root);
++            for (const chain of legs) {
++                this.bodyOffsetKneeAxes.set(chain.root, new KneeHingeAxisCalibrator().compute(chain, reference));
++            }
++        }
++        this.bodyOffsetFeet = legs.map((chain) => ({
++            chain,
++            position: chain.effector.getWorldPosition(new Vector3()),
++            rotation: chain.effector.getWorldQuaternion(new Quaternion()),
++        }));
++        const start = hips.position.clone();
++        const moved = hips.getWorldPosition(new Vector3()).add(offset);
++        let lower = 0;
++        hips.position.copy(hips.parent.worldToLocal(moved.clone()));
++        hips.updateWorldMatrix(true, true);
++        for (const { chain, position } of this.bodyOffsetFeet) {
++            const leg = chain.root.getWorldPosition(new Vector3()).sub(position);
++            const vertical = Math.sqrt(Math.max(0, (chain.totalLength * MAX_PLANTED_LEG_USE) ** 2 - leg.x ** 2 - leg.z ** 2));
++            lower = Math.max(lower, leg.y - vertical);
++        }
++        if (lower > 0) {
++            moved.y -= lower;
++            hips.position.copy(hips.parent.worldToLocal(moved));
++            hips.updateWorldMatrix(true, true);
++        }
++        const applied = this.bodyOffsetApplied;
++        applied.active = true;
++        applied.legs = [];
++        applied.hipsDelta.copy(hips.position).sub(start);
++        applied.hipsAfter.copy(hips.position);
++    }
++    /**
++     * Bend each leg back to its planted foot once the upper body has solved and
++     * the hips hold their final turn, so nothing after this moves the feet.
++     */
++    plantBodyOffsetFeet() {
++        const feet = this.bodyOffsetFeet;
++        if (!feet.length)
++            return;
++        this.bodyOffsetFeet = [];
++        const hips = this.skeleton.getBone("Hips");
++        if (!hips)
++            return;
++        // Knees bend the way the hips face, whatever the performer's heading.
++        const pole = new Vector3(0, 0, 1).applyQuaternion(hips.getWorldQuaternion(new Quaternion()));
++        pole.y = 0;
++        if (pole.lengthSq() < 1e-6)
++            pole.set(0, 0, 1);
++        pole.normalize();
++        for (const { chain, position, rotation } of feet) {
++            const bones = [chain.root, chain.middle, chain.effector];
++            const before = bones.map((bone) => bone.quaternion.clone());
++            this.plantLeg(chain, { position, rotation }, this.bodyOffsetKneeAxes.get(chain.root), pole);
++            bones.forEach((bone, i) => this.bodyOffsetApplied.legs.push({ bone, before: before[i], after: bone.quaternion.clone() }));
++        }
 +    }
 +    setStrictHandRotation(hand, world) {
 +        const parent = hand.parent?.getWorldQuaternion(new Quaternion()) ?? new Quaternion();
@@ -10722,7 +11059,7 @@ index bdd5ae35ed47c58d29c537a7805705783f9b9066..3be5661352a94ed96d6d01b06f438dc3
      }
      blendToTarget(_deltaTime) {
          // Hands snap directly to prop positions - no lerp.
-@@ -273,18 +1063,184 @@ export class AvatarAnimator {
+@@ -273,18 +1196,185 @@ export class AvatarAnimator {
          }
          return result;
      }
@@ -10884,6 +11221,7 @@ index bdd5ae35ed47c58d29c537a7805705783f9b9066..3be5661352a94ed96d6d01b06f438dc3
          const state = this.skeleton.getState();
          if (!state.isLoaded)
              return;
++        this.applyBodyOffset(state);
          const leftChain = this.skeleton.getLeftArmChain();
          const rightChain = this.skeleton.getRightArmChain();
 +        // Reach deficits accumulate here during the arm solves, then fold
@@ -10908,7 +11246,7 @@ index bdd5ae35ed47c58d29c537a7805705783f9b9066..3be5661352a94ed96d6d01b06f438dc3
          // Cache shoulder rest Y positions once (before any clavicle rotation has been applied).
          // CRITICAL: Do NOT read these per-frame after clavicle is rotated - the elevated
          // position feeds back and causes oscillation.
-@@ -335,7 +1291,7 @@ export class AvatarAnimator {
+@@ -335,7 +1425,7 @@ export class AvatarAnimator {
              // Nullable hands are first-class: SpineTwister handles the
              // single-hand-gaze branch and the no-hand identity branch
              // internally, so we pass pose hands through as-is.
@@ -10917,7 +11255,7 @@ index bdd5ae35ed47c58d29c537a7805705783f9b9066..3be5661352a94ed96d6d01b06f438dc3
              // Apply twist to each bone individually for a natural spinal curve.
              // Each bone gets its own weighted quaternion from SpineTwister.
              const applySpineTwist = (boneName, key, twistQuat) => {
-@@ -389,11 +1345,148 @@ export class AvatarAnimator {
+@@ -389,11 +1479,148 @@ export class AvatarAnimator {
                      hipsBoneForUpdate.updateMatrixWorld(true);
              }
          }
@@ -11067,7 +11405,7 @@ index bdd5ae35ed47c58d29c537a7805705783f9b9066..3be5661352a94ed96d6d01b06f438dc3
                  // Save what the locomotion animation wrote to bone quaternions
                  const animRootQuat = leftChain.root.quaternion.clone();
                  const animMiddleQuat = leftChain.middle.quaternion.clone();
-@@ -402,7 +1495,7 @@ export class AvatarAnimator {
+@@ -402,7 +1629,7 @@ export class AvatarAnimator {
                  if (this._clavicleRaiseEnabled && this.clavicleRaiser && this.shoulderRestCached) {
                      const leftShoulder = state.bones.get("LeftShoulder");
                      if (leftShoulder) {
@@ -11076,7 +11414,7 @@ index bdd5ae35ed47c58d29c537a7805705783f9b9066..3be5661352a94ed96d6d01b06f438dc3
                          this.leftClavicleQuat.slerp(targetQuat, this.smoothingFactor);
                          leftShoulder.quaternion
                              .copy(this.leftClavicleRestQuat)
-@@ -410,19 +1503,56 @@ export class AvatarAnimator {
+@@ -410,19 +1637,56 @@ export class AvatarAnimator {
                          leftShoulder.updateMatrixWorld(true);
                      }
                  }
@@ -11132,11 +11470,11 @@ index bdd5ae35ed47c58d29c537a7805705783f9b9066..3be5661352a94ed96d6d01b06f438dc3
 +                }
 +                // Solve at full reach first. Only a measured body intersection earns
 +                // target retraction, and the retries stop at the first clear result.
-+                this.solveArmWithBodyClearance("left", leftChain, target, leftClearanceContext);
++                this.solveArmWithBodyClearance("left", leftChain, target, leftClearanceContext, deltaTime);
                  // Save IK results BEFORE blending - .copy() would overwrite them
                  const ikRootQuat = leftChain.root.quaternion.clone();
                  const ikMiddleQuat = leftChain.middle.quaternion.clone();
-@@ -432,12 +1562,20 @@ export class AvatarAnimator {
+@@ -432,12 +1696,20 @@ export class AvatarAnimator {
                  leftChain.root.quaternion.copy(animRootQuat).slerp(ikRootQuat, w);
                  leftChain.middle.quaternion.copy(animMiddleQuat).slerp(ikMiddleQuat, w);
                  leftChain.effector.quaternion.copy(animEffectorQuat).slerp(ikEffectorQuat, w);
@@ -11158,7 +11496,7 @@ index bdd5ae35ed47c58d29c537a7805705783f9b9066..3be5661352a94ed96d6d01b06f438dc3
                  // Save what the locomotion animation wrote to bone quaternions
                  const animRootQuat = rightChain.root.quaternion.clone();
                  const animMiddleQuat = rightChain.middle.quaternion.clone();
-@@ -446,7 +1584,7 @@ export class AvatarAnimator {
+@@ -446,7 +1718,7 @@ export class AvatarAnimator {
                  if (this._clavicleRaiseEnabled && this.clavicleRaiser && this.shoulderRestCached) {
                      const rightShoulder = state.bones.get("RightShoulder");
                      if (rightShoulder) {
@@ -11167,7 +11505,7 @@ index bdd5ae35ed47c58d29c537a7805705783f9b9066..3be5661352a94ed96d6d01b06f438dc3
                          this.rightClavicleQuat.slerp(targetQuat, this.smoothingFactor);
                          rightShoulder.quaternion
                              .copy(this.rightClavicleRestQuat)
-@@ -454,19 +1592,49 @@ export class AvatarAnimator {
+@@ -454,19 +1726,49 @@ export class AvatarAnimator {
                          rightShoulder.updateMatrixWorld(true);
                      }
                  }
@@ -11216,11 +11554,11 @@ index bdd5ae35ed47c58d29c537a7805705783f9b9066..3be5661352a94ed96d6d01b06f438dc3
 +                    };
 +                    target.poleHint.copy(this.poleComputer.resolveForearmFaceClearance(target.poleHint, rightTarget, "right", rightClearanceContext));
 +                }
-+                this.solveArmWithBodyClearance("right", rightChain, target, rightClearanceContext);
++                this.solveArmWithBodyClearance("right", rightChain, target, rightClearanceContext, deltaTime);
                  // Save IK results BEFORE blending - .copy() would overwrite them
                  const ikRootQuat = rightChain.root.quaternion.clone();
                  const ikMiddleQuat = rightChain.middle.quaternion.clone();
-@@ -476,11 +1644,811 @@ export class AvatarAnimator {
+@@ -476,11 +1778,808 @@ export class AvatarAnimator {
                  rightChain.root.quaternion.copy(animRootQuat).slerp(ikRootQuat, w);
                  rightChain.middle.quaternion.copy(animMiddleQuat).slerp(ikMiddleQuat, w);
                  rightChain.effector.quaternion.copy(animEffectorQuat).slerp(ikEffectorQuat, w);
@@ -11733,7 +12071,7 @@ index bdd5ae35ed47c58d29c537a7805705783f9b9066..3be5661352a94ed96d6d01b06f438dc3
 +            clav.updateMatrixWorld(true);
 +        }
 +    }
-+    solveArmWithBodyClearance(side, chain, target, context) {
++    solveArmWithBodyClearance(side, chain, target, context, deltaTime) {
 +        if (!context || !this.poleComputer || !target.poleHint) {
 +            this.ikSolver.solveAndApply(chain, target);
 +            return;
@@ -11749,19 +12087,16 @@ index bdd5ae35ed47c58d29c537a7805705783f9b9066..3be5661352a94ed96d6d01b06f438dc3
 +        const cachedRatio = side === "left"
 +            ? this.leftClearanceReachRatio
 +            : this.rightClearanceReachRatio;
-+        const recoveryTick = side === "left"
-+            ? ++this.leftClearanceRecoveryTick
-+            : ++this.rightClearanceRecoveryTick;
-+        // Reuse the last measured-safe reach and pole on ordinary frames. Probe a
-+        // slightly fuller reach periodically so the arm naturally recovers once
-+        // the dangerous corridor has passed, without repeating a full circle
-+        // search sixty times per second.
++        // Reuse the last measured-safe reach and pole on ordinary frames, first
++        // trying the fuller reach this frame's share of the recovery allows, so
++        // the arm grows back at a fixed rate once the dangerous corridor has
++        // passed, without repeating a full circle search every frame.
 +        if (cachedRatio < 0.999) {
 +            target.poleHint.copy(side === "left"
 +                ? this.leftClearancePoleVector
 +                : this.rightClearancePoleVector);
-+            if (recoveryTick % ARM_CLEARANCE_RECOVERY_INTERVAL === 0) {
-+                const recoveryRatio = Math.min(1, cachedRatio + ARM_CLEARANCE_RECOVERY_STEP);
++            const recoveryRatio = Math.min(1, cachedRatio + ARM_CLEARANCE_RECOVERY_RATE * Math.max(0, deltaTime));
++            if (recoveryRatio > cachedRatio) {
 +                this.placeArmTargetAtRatio(target, context.shoulderPosition, reachDirection, requestedDistance, chain.totalLength, recoveryRatio);
 +                this.ikSolver.solveAndApply(chain, target);
 +                if (this.armClearsBody(chain, context)) {
@@ -12032,7 +12367,7 @@ index bdd5ae35ed47c58d29c537a7805705783f9b9066..3be5661352a94ed96d6d01b06f438dc3
      addLayer(layer) {
          this.layers.set(layer.id, layer);
      }
-@@ -521,6 +2489,12 @@ export class AvatarAnimator {
+@@ -521,6 +2620,12 @@ export class AvatarAnimator {
      setExternalSpinePitch(radians) {
          this.externalSpinePitchRad = radians;
      }
@@ -12045,7 +12380,7 @@ index bdd5ae35ed47c58d29c537a7805705783f9b9066..3be5661352a94ed96d6d01b06f438dc3
      /** Debug toggle: disable pole vectors to compare old vs new elbow behavior */
      togglePoleVectors() {
          this._poleVectorsEnabled = !this._poleVectorsEnabled;
-@@ -528,9 +2502,16 @@ export class AvatarAnimator {
+@@ -528,9 +2633,16 @@ export class AvatarAnimator {
              // Reset to default backward poles so difference is visible immediately
              this.leftPoleVector.set(0, 0, -1);
              this.rightPoleVector.set(0, 0, -1);
@@ -12757,7 +13092,7 @@ diff --git a/dist/lib/services/implementations/CollisionDetector.d.ts.map b/dist
 deleted file mode 100644
 index 589730c42dd77154bad8305e67d5804bdf805018..0000000000000000000000000000000000000000
 diff --git a/dist/lib/services/implementations/CollisionDetector.js b/dist/lib/services/implementations/CollisionDetector.js
-index bdf2062fc3ee834f003879c49286b6dd7a282887..b7b227ff8a407f134d1a556ffe518ab4aa936c47 100644
+index bdf2062fc3ee834f003879c49286b6dd7a282887..415c33b9dbac4afba81cc7c71435e06ebe6cfccc 100644
 --- a/dist/lib/services/implementations/CollisionDetector.js
 +++ b/dist/lib/services/implementations/CollisionDetector.js
 @@ -18,12 +18,7 @@
@@ -12770,20 +13105,23 @@ index bdf2062fc3ee834f003879c49286b6dd7a282887..b7b227ff8a407f134d1a556ffe518ab4
 -const ARM_SEGMENT_RADIUS = 0.04;
 -// How close a prop can get before we flag it (meters)
 -const PROP_BODY_THRESHOLD = 0.02;
-+import { BODY_CLEARANCE_PADDING, FACE_RADIUS, FOREARM_FACE_CLEARANCE, FOREARM_NECK_CLEARANCE, FOREARM_RADIUS, FOREARM_TORSO_CLEARANCE, TORSO_RADIUS, pointToSegmentDistance, } from "../geometry/BodyCollisionGeometry";
++import { BODY_CLEARANCE_PADDING, FACE_RADIUS, FOREARM_FACE_CLEARANCE, FOREARM_NECK_CLEARANCE, FOREARM_RADIUS, FOREARM_TORSO_CLEARANCE, TORSO_RADIUS, pointToSegmentDistance, segmentToSegmentDistance, } from "../geometry/BodyCollisionGeometry";
  // How close two arm segments can get before we flag overlap
  const ARM_ARM_THRESHOLD = 0.06;
  // Severity thresholds (meters of penetration)
-@@ -40,6 +35,8 @@ const COOLDOWN_MS = {
+@@ -40,6 +35,11 @@ const COOLDOWN_MS = {
  const _tempA = new Vector3();
  const _tempB = new Vector3();
  const _closest = new Vector3();
++const _segmentDirectionA = new Vector3();
++const _segmentDirectionB = new Vector3();
++const _segmentOffset = new Vector3();
 +const _leftUpperBodyStart = new Vector3();
 +const _rightUpperBodyStart = new Vector3();
  // Severity badge for console
  const SEVERITY_BADGE = {
      graze: "🟡 GRAZE",
-@@ -86,7 +83,7 @@ export class CollisionDetector {
+@@ -86,7 +86,7 @@ export class CollisionDetector {
          //    the bone-based distance check stays ~14 cm away.
          for (const { label, seg } of propPairs) {
              const closest = this.pointToSegmentDistance(body.face, seg.a, seg.b);
@@ -12792,7 +13130,7 @@ index bdf2062fc3ee834f003879c49286b6dd7a282887..b7b227ff8a407f134d1a556ffe518ab4
              if (closest < threshold) {
                  const depth = threshold - closest;
                  events.push(this.makeEvent("prop-through-head", stepNumber, beatProgress, depth, `${label} staff shaft → head (${(closest * 100).toFixed(1)}cm clearance, ${(depth * 100).toFixed(1)}cm deep)`));
-@@ -122,7 +119,7 @@ export class CollisionDetector {
+@@ -122,7 +122,7 @@ export class CollisionDetector {
          for (const { label, seg } of propPairs) {
              for (const arm of armSegments) {
                  const closest = this.segmentToSegmentDistance(seg.a, seg.b, arm.a, arm.b);
@@ -12801,7 +13139,7 @@ index bdf2062fc3ee834f003879c49286b6dd7a282887..b7b227ff8a407f134d1a556ffe518ab4
                  if (closest < threshold) {
                      const depth = threshold - closest;
                      events.push(this.makeEvent("prop-through-arm", stepNumber, beatProgress, depth, `${label} staff → ${arm.name} (${(depth * 100).toFixed(1)}cm deep)`));
-@@ -134,7 +131,7 @@ export class CollisionDetector {
+@@ -134,7 +134,7 @@ export class CollisionDetector {
          //     Common collision when both hands reach across the body.
          if (blueProp && redProp) {
              const closest = this.segmentToSegmentDistance(blueProp.a, blueProp.b, redProp.a, redProp.b);
@@ -12810,7 +13148,7 @@ index bdf2062fc3ee834f003879c49286b6dd7a282887..b7b227ff8a407f134d1a556ffe518ab4
              if (closest < threshold) {
                  const depth = threshold - closest;
                  events.push(this.makeEvent("prop-through-prop", stepNumber, beatProgress, depth, `Staffs cross (${(closest * 100).toFixed(1)}cm gap, ${(depth * 100).toFixed(1)}cm overlap)`));
-@@ -144,16 +141,49 @@ export class CollisionDetector {
+@@ -144,16 +144,49 @@ export class CollisionDetector {
          //    Uses body.face so the collision zone matches where the visual
          //    face actually is, not where the Mixamo head joint sits.
          const leftArmDist = this.pointToSegmentDistance(body.face, body.leftElbow, body.leftHand);
@@ -12864,7 +13202,7 @@ index bdf2062fc3ee834f003879c49286b6dd7a282887..b7b227ff8a407f134d1a556ffe518ab4
          }
          // 4. Arms through each other - forearm segments
          const armArmDist = this.segmentToSegmentDistance(body.leftElbow, body.leftHand, body.rightElbow, body.rightHand);
-@@ -189,14 +219,7 @@ export class CollisionDetector {
+@@ -189,32 +222,16 @@ export class CollisionDetector {
          return Math.max(0, radius - dist);
      }
      pointToSegmentDistance(point, segA, segB) {
@@ -12878,8 +13216,33 @@ index bdf2062fc3ee834f003879c49286b6dd7a282887..b7b227ff8a407f134d1a556ffe518ab4
 -        return point.distanceTo(_closest);
 +        return pointToSegmentDistance(point, segA, segB, _tempA, _tempB, _closest);
      }
++    /**
++     * Exact closest distance between two segments, on scratch vectors of its
++     * own. The sampled version this replaced wrote each sample into _tempA,
++     * which pointToSegmentDistance also uses as scratch, so it measured from the
++     * wrong point and no arm or staff crossing was ever reported.
++     */
      segmentToSegmentDistance(a0, a1, b0, b1) {
-         let minDist = Infinity;
+-        let minDist = Infinity;
+-        for (let i = 0; i <= 3; i++) {
+-            const t = i / 3;
+-            _tempA.lerpVectors(a0, a1, t);
+-            const d = this.pointToSegmentDistance(_tempA, b0, b1);
+-            if (d < minDist)
+-                minDist = d;
+-        }
+-        for (let i = 0; i <= 3; i++) {
+-            const t = i / 3;
+-            _tempA.lerpVectors(b0, b1, t);
+-            const d = this.pointToSegmentDistance(_tempA, a0, a1);
+-            if (d < minDist)
+-                minDist = d;
+-        }
+-        return minDist;
++        return segmentToSegmentDistance(a0, a1, b0, b1, _segmentDirectionA, _segmentDirectionB, _segmentOffset);
+     }
+     makeEvent(zone, stepNumber, beatProgress, penetrationDepth, description) {
+         const severity = this.classifySeverity(penetrationDepth);
 diff --git a/dist/lib/services/implementations/ContactCurveCache.d.ts b/dist/lib/services/implementations/ContactCurveCache.d.ts
 deleted file mode 100644
 index 4bf92ce03aac7e9b85cbf3fd6493d189cdd8aad1..0000000000000000000000000000000000000000
@@ -20349,7 +20712,7 @@ index 525808ca7068a828865a64e176f7bbd641ccc013..c7749e7724634669fccdaa615fd94ad2
    },
    "files": [
 diff --git a/src/lib/components/Avatar3D.svelte b/src/lib/components/Avatar3D.svelte
-index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..8560c7dfb67c546e271b17921398b7f8128f1fc5 100644
+index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..09e68d79d9dccea769814beac7063a251edc5303 100644
 --- a/src/lib/components/Avatar3D.svelte
 +++ b/src/lib/components/Avatar3D.svelte
 @@ -16,29 +16,51 @@
@@ -20460,7 +20823,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..8560c7dfb67c546e271b17921398b7f8
      /** Enable idle/walk locomotion animation. False for exhibit performers
       *  that should only use IK (no idle animation fighting the pose). */
      enableLocomotion?: boolean;
-@@ -115,11 +162,78 @@
+@@ -115,11 +162,86 @@
      enableRootMotion?: boolean;
      /** Called each frame with the world-space XZ delta from root motion.
       *  The parent applies this to physics for collision-aware movement. */
@@ -20518,8 +20881,8 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..8560c7dfb67c546e271b17921398b7f8
 +    pairSeparation?: boolean;
 +    /** Changes whenever the owner seeks playback (not the loop seam). Clears
 +     *  the animator's per-side contact-recovery memory (clearance reach
-+     *  ratios, recovery ticks, clearance pole vectors, wrist-init flags) so
-+     *  it doesn't carry over from wherever playback used to be. */
++     *  ratios, clearance pole vectors, wrist-init flags) so it doesn't
++     *  carry over from wherever playback used to be. */
 +    contactResetKey?: number;
 +    onContactReport?: (report: AvatarContactReport) => void;
 +    onContactGeometry?: AvatarContactGeometryCallback;
@@ -20537,10 +20900,18 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..8560c7dfb67c546e271b17921398b7f8
 +        spine2Rad: number;
 +        headLagRad: number;
 +    } | null;
++    /** Move the whole body within its grid frame (x to the performer's left,
++     *  z toward the audience): the host's step off its staffs. Held only
++     *  while the performer stands still in legacy contact; null leaves the
++     *  body where the clip puts it. */
++    bodyOffset?: { x: number; z: number } | null;
++    /** Keep the feet where the clip put them and bend the legs to reach
++     *  them (default), or let the feet travel with the body. */
++    bodyOffsetPlantFeet?: boolean;
      /** Disable spine twist (dual-wheel: wide lateral targets twist the torso/feet) */
      disableSpineTwist?: boolean;
      /** Current beat index for collision detection logging */
-@@ -128,7 +242,11 @@
+@@ -128,7 +250,11 @@
      beatProgress?: number;
      /** Optional callback invoked each frame with the collision detector's events.
       *  Lets parent components surface collision state without duplicating detection. */
@@ -20553,7 +20924,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..8560c7dfb67c546e271b17921398b7f8
      /** Extra forward pitch (radians) applied to Spine1 before arm IK runs.
       *  Positive values lean the torso forward. Used by the collision lab's
       *  lean-forward stance variant. 0 = no external pitch. */
-@@ -166,6 +284,7 @@
+@@ -166,6 +292,7 @@
      isMoving = false,
      moveSpeed = 1,
      moveDirection = { x: 0, z: 1 },
@@ -20561,7 +20932,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..8560c7dfb67c546e271b17921398b7f8
      enableLocomotion = false,
      isGrounded = true,
      verticalVelocity = 0,
-@@ -173,8 +292,27 @@
+@@ -173,8 +300,29 @@
      isJumpRequested = false,
      enableRootMotion = false,
      onRootMotion,
@@ -20586,10 +20957,12 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..8560c7dfb67c546e271b17921398b7f8
 +    headDodge = false,
 +    stanceYaw = 0,
 +    stanceSegments = null,
++    bodyOffset = null,
++    bodyOffsetPlantFeet = true,
      disableSpineTwist = false,
      stepNumber = 0,
      beatProgress = 0,
-@@ -195,8 +333,23 @@
+@@ -195,8 +343,25 @@
    // Services (manually instantiated to ensure shared skeleton instance)
    let skeletonService: IAvatarSkeletonBuilder | null = $state(null);
    let ikSolver: IIKSolver | null = $state(null);
@@ -20600,6 +20973,8 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..8560c7dfb67c546e271b17921398b7f8
 +  // for the foot planter.
 +  const footTravelQuat = new Quaternion();
 +  const footTravelVec = new Vector3();
++  const _bodyOffsetWorld = new Vector3();
++  const _bodyOffsetOrigin = new Vector3();
 +  /** Sole offset already pushed to the planter, so an avatar swap re-measures
 +   *  and an unchanged rig does not reconfigure every frame. */
 +  let appliedSoleOffset = 0;
@@ -20614,7 +20989,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..8560c7dfb67c546e271b17921398b7f8
    let stateMachine: IAnimationStateMachine | null = null;
    let rootMotionExtractor: IRootMotionExtractor | null = null;
    let footPlanter: IFootPlanter | null = null;
-@@ -210,21 +363,43 @@
+@@ -210,21 +375,43 @@
    // Collision detection - logs when props/arms clip through the avatar body
    const collisionDetector = new CollisionDetector();
    const _boneVecs = {
@@ -20670,7 +21045,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..8560c7dfb67c546e271b17921398b7f8
  
    /**
     * Base rotation from the staff's local-Y axis to the "horizontal" axis
-@@ -236,61 +411,324 @@
+@@ -236,61 +423,324 @@
    const STAFF_HORIZONTAL_QUAT = new Quaternion().setFromEuler(
      new Euler(0, 0, Math.PI / 2)
    );
@@ -20828,7 +21203,11 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..8560c7dfb67c546e271b17921398b7f8
 +
 +  function composeStaffWorldQuat(
 +    anchorRef: import("three").Group | undefined,
-+    worldRotation: Quaternion,
+     worldRotation: Quaternion,
+-    avatarFacingAngle: number,
+-    halfLength: number,
+-    outA: Vector3,
+-    outB: Vector3
 +    out: Quaternion
 +  ): Quaternion {
 +    if (anchorRef) {
@@ -20849,11 +21228,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..8560c7dfb67c546e271b17921398b7f8
 +    correctionRef: import("three").Group | undefined,
 +    anchorRef: import("three").Group | undefined,
 +    fallbackGrip: Vector3,
-     worldRotation: Quaternion,
--    avatarFacingAngle: number,
--    halfLength: number,
--    outA: Vector3,
--    outB: Vector3
++    worldRotation: Quaternion,
 +    outGrip: Vector3,
 +    outQuaternion: Quaternion
    ): void {
@@ -21024,7 +21399,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..8560c7dfb67c546e271b17921398b7f8
    // Derived values from user proportions
    // avatarHeight is the target height in scene units (cm * CM_TO_UNITS)
    const avatarHeight = $derived(cmToUnits(userProportionsState.heightCm));
-@@ -300,16 +738,74 @@
+@@ -300,16 +750,74 @@
    // If position.y is provided (e.g., from terrain/physics), use it directly
    // Otherwise, use groundY from user proportions (for flat stage mode)
    // feetOffset adjusts so feet touch the ground (it's negative)
@@ -21101,7 +21476,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..8560c7dfb67c546e271b17921398b7f8
    // Load a GLTF model for a specific avatar
    // Uses hot-swap pattern: keeps old avatar visible until new one is ready
    async function loadAvatar(targetAvatarId: string) {
-@@ -319,12 +815,23 @@
+@@ -319,12 +827,23 @@
      if (currentLoadedAvatarId === targetAvatarId) return;
  
      const url = getAvatarModelPath(targetAvatarId);
@@ -21126,7 +21501,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..8560c7dfb67c546e271b17921398b7f8
  
        // Scale model to match user's height
        // setHeight() calculates proper scale and stores feet offset
-@@ -333,19 +840,43 @@
+@@ -333,19 +852,43 @@
        // Get the feet offset for positioning (negative value)
        feetOffset = skeletonService.getFeetOffset();
  
@@ -21179,7 +21554,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..8560c7dfb67c546e271b17921398b7f8
        currentLoadedAvatarId = targetAvatarId;
        modelLoaded = true;
        useProceduralFallback = false;
-@@ -354,22 +885,7 @@
+@@ -354,22 +897,7 @@
        // can fade the avatar back in). Fires on initial load and on every swap.
        onModelSwapped?.(targetAvatarId);
  
@@ -21203,7 +21578,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..8560c7dfb67c546e271b17921398b7f8
  
        // Verify arm chains are ready
        const leftChain = skeletonService.getLeftArmChain();
-@@ -388,17 +904,21 @@
+@@ -388,17 +916,21 @@
        // use IK only and don't need idle/walk animations.
        if (enableLocomotion && locomotionAnimator && cachedRoot) {
          // Configure before initialize so clips are prepared correctly
@@ -21230,7 +21605,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..8560c7dfb67c546e271b17921398b7f8
            const hipsBone = locomotionAnimator.getHipsBone();
            if (hipsBone) {
              rootMotionExtractor.initialize(hipsBone);
-@@ -416,12 +936,54 @@
+@@ -416,12 +948,54 @@
              idle: `${animBase}idle${rmSuffix}.glb`,
              forward: `${animBase}walk-forward${rmSuffix}.glb`,
              backward: `${animBase}walk-backward${rmSuffix}.glb`,
@@ -21288,7 +21663,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..8560c7dfb67c546e271b17921398b7f8
            })
            .catch((err) => {
              console.warn(
-@@ -444,18 +1006,39 @@
+@@ -444,18 +1018,39 @@
          const turnsBase = "/animations/turns/";
          const probeUrl = `${turnsBase}turn-left-90.glb`;
          const rootForTurns = cachedRoot;
@@ -21337,7 +21712,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..8560c7dfb67c546e271b17921398b7f8
                ])
                .then(() => {
                  // Register turn clip contact curves so FootPlanter can query them
-@@ -476,7 +1059,13 @@
+@@ -476,7 +1071,13 @@
        // ikSolver, which is still used by arm IK elsewhere in this file).
        // Gated on enableFootPlanting - off by default so the museum FPS player
        // (which wants responsive code-driven movement) isn't affected.
@@ -21352,7 +21727,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..8560c7dfb67c546e271b17921398b7f8
          footPlanter.initialize(skeletonService, legIKSolver, contactCurveCache);
        }
  
-@@ -484,9 +1073,10 @@
+@@ -484,9 +1085,10 @@
        if (fingerAnimator) {
          const skeletonState = skeletonService.getState();
          if (skeletonState.fingerChains) {
@@ -21364,7 +21739,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..8560c7dfb67c546e271b17921398b7f8
      } catch (err) {
        console.warn(
          "[Avatar3D] Failed to load avatar model, using procedural fallback:",
-@@ -502,6 +1092,16 @@
+@@ -502,6 +1104,16 @@
        }
      } finally {
        isLoading = false;
@@ -21381,7 +21756,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..8560c7dfb67c546e271b17921398b7f8
      }
    }
  
-@@ -560,6 +1160,15 @@
+@@ -560,6 +1172,15 @@
      }
    });
  
@@ -21397,7 +21772,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..8560c7dfb67c546e271b17921398b7f8
    // React to height changes - update avatar scale
    $effect(() => {
      if (!skeletonService || !modelLoaded || useProceduralFallback) return;
-@@ -570,8 +1179,14 @@
+@@ -570,13 +1191,22 @@
  
      // Update feetOffset for positioning (use untrack to prevent re-triggering)
      const newFeetOffset = skeletonService.getFeetOffset();
@@ -21412,7 +21787,15 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..8560c7dfb67c546e271b17921398b7f8
      });
    });
  
-@@ -584,28 +1199,38 @@
+   // Update animation each frame
+   useTask((delta) => {
++    // Take back last frame's body offset before anything poses the legs.
++    animationService?.releaseBodyOffset?.();
++
+     // Update mocap mixer if playing (runs independently of IK)
+     const mixer = mocapHandle?.getMixer();
+     if (mixer) {
+@@ -584,28 +1214,38 @@
      }
  
      if (!servicesReady || !animationService || useProceduralFallback) return;
@@ -21462,7 +21845,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..8560c7dfb67c546e271b17921398b7f8
  
          // Feed state to LocomotionAnimator for clip selection
          locomotionAnimator.setActiveState?.(stateOutput.state);
-@@ -614,6 +1239,7 @@
+@@ -614,6 +1254,7 @@
            speed: stateOutput.animationSpeed,
            facingAngle: stateOutput.facingAngle,
            moveDirection: stateOutput.moveDirection,
@@ -21470,7 +21853,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..8560c7dfb67c546e271b17921398b7f8
          });
          // Track state for FootPlanter (airborne states skip foot planting)
          currentLocomotionState = stateOutput.state;
-@@ -624,9 +1250,19 @@
+@@ -624,9 +1265,19 @@
            speed: moveSpeed,
            facingAngle,
            moveDirection,
@@ -21490,7 +21873,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..8560c7dfb67c546e271b17921398b7f8
  
        // Turn clip overlay - when a turn is active, overwrite lower-body
        // and spine bones with the turn clip's authored pose at the current
-@@ -639,20 +1275,52 @@
+@@ -639,20 +1290,52 @@
        if (turnRequestProp && turnAnimator?.isReady() && skeletonService) {
          const sample = turnAnimator.sample(turnRequestProp);
          const bones = skeletonService.getState().bones;
@@ -21554,7 +21937,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..8560c7dfb67c546e271b17921398b7f8
            }
          }
  
-@@ -681,7 +1349,11 @@
+@@ -681,7 +1364,11 @@
        // displacement needs the same conversion.
        if (rootMotionExtractor?.isReady() && onRootMotion) {
          const localDelta = rootMotionExtractor.extract();
@@ -21567,7 +21950,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..8560c7dfb67c546e271b17921398b7f8
            // Convert Mixamo centimeters to scene units.
            // Our avatar is scaled to ~avatarHeight scene units for ~170cm Mixamo model.
            // So 1 Mixamo cm ≈ avatarHeight/170 scene units.
-@@ -708,28 +1380,100 @@
+@@ -708,28 +1395,100 @@
        // clips without authored curves. Gated on enableFootPlanting so the
        // museum FPS player stays fully code-driven.
        if (enableFootPlanting && footPlanter?.isReady()) {
@@ -21673,7 +22056,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..8560c7dfb67c546e271b17921398b7f8
      }
  
      if (redPropAnchorRef && redPropState) {
-@@ -737,6 +1481,10 @@
+@@ -737,6 +1496,10 @@
        redPropAnchorRef.getWorldPosition(redIKTarget);
      } else if (redPropState) {
        redIKTarget.copy(redPropState.worldPosition);
@@ -21684,7 +22067,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..8560c7dfb67c546e271b17921398b7f8
      }
  
      const blueWorldProp = bluePropState
-@@ -746,15 +1494,211 @@
+@@ -746,15 +1509,234 @@
        ? { ...redPropState, worldPosition: redIKTarget }
        : null;
  
@@ -21802,6 +22185,29 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..8560c7dfb67c546e271b17921398b7f8
 +      fingerAnimator.setContactRelaxation("right", redPropState ? relaxation : 0, tilt);
 +      fingerAnimator.update(delta);
 +    }
++    // The host's step off its staffs, carried from the grid frame into the
++    // world. A walk, a turn or strict contact owns the body instead.
++    if (
++      bodyOffset &&
++      gridFrameRef &&
++      contactMode !== "prop-authoritative" &&
++      !isMoving &&
++      !turnRequestProp
++    ) {
++      gridFrameRef.updateWorldMatrix(true, false);
++      _bodyOffsetOrigin.setFromMatrixPosition(gridFrameRef.matrixWorld);
++      _bodyOffsetWorld
++        .set(bodyOffset.x, 0, bodyOffset.z)
++        .applyMatrix4(gridFrameRef.matrixWorld)
++        .sub(_bodyOffsetOrigin);
++      animationService.setBodyOffset?.(
++        _bodyOffsetWorld.x,
++        _bodyOffsetWorld.z,
++        bodyOffsetPlantFeet
++      );
++    } else {
++      animationService.setBodyOffset?.(0, 0, bodyOffsetPlantFeet);
++    }
      animationService.update(delta);
  
 +    // The hand inherits the finished arm pose. In strict mode its fingers now
@@ -21896,7 +22302,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..8560c7dfb67c546e271b17921398b7f8
      // 2b. Collision detection - run after IK so bones are at final positions
      if (collisionDetector.enabled && skeletonService) {
        const state = skeletonService.getState();
-@@ -768,56 +1712,55 @@
+@@ -768,56 +1750,55 @@
        bones.get("Spine2")?.getWorldPosition(_boneVecs.spine2);
        bones.get("Spine1")?.getWorldPosition(_boneVecs.spine1);
        bones.get("Hips")?.getWorldPosition(_boneVecs.hips);
@@ -21983,7 +22389,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..8560c7dfb67c546e271b17921398b7f8
            halfStaffLength,
            _redSegA,
            _redSegB
-@@ -825,23 +1768,228 @@
+@@ -825,23 +1806,228 @@
          redSegOrNull = redSeg;
        }
  
@@ -22226,7 +22632,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..8560c7dfb67c546e271b17921398b7f8
    });
  
    // Note: Visibility is handled via the {#if visible} in the template
-@@ -867,20 +2015,15 @@
+@@ -867,20 +2053,15 @@
    // transparent with depth-write off so the fade blends correctly.
    $effect(() => {
      if (!cachedRoot) return;
@@ -22253,7 +22659,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..8560c7dfb67c546e271b17921398b7f8
      // Dispose locomotion animator, state machine, and foot planter
      if (locomotionAnimator) {
        locomotionAnimator.dispose();
-@@ -913,13 +2056,19 @@
+@@ -913,13 +2094,19 @@
  </script>
  
  {#if visible}
@@ -22280,7 +22686,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..8560c7dfb67c546e271b17921398b7f8
      <T.Group
        name={`PERFORMER_${id}`}
        position={[position.x, position.y ?? 0, position.z]}
-@@ -940,9 +2089,10 @@
+@@ -940,9 +2127,10 @@
        - rotation.y: facingAngle (avatar faces movement direction)
  
        groupY calculation:
@@ -22294,7 +22700,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..8560c7dfb67c546e271b17921398b7f8
        - This positions feet at the correct ground level
  
        Using cachedRoot instead of skeletonService.getRoot() ensures
-@@ -950,6 +2100,7 @@
+@@ -950,6 +2138,7 @@
        preventing visual glitches during avatar swap.
      -->
      <T.Group
@@ -22303,7 +22709,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..8560c7dfb67c546e271b17921398b7f8
        position={[position.x, groupY, position.z]}
        rotation.y={facingAngle}
 diff --git a/src/lib/components/PerformerRig.svelte b/src/lib/components/PerformerRig.svelte
-index 99a40cd26b35183a5e71c93105e0704084dbf9e9..5737579c11614a10669fa7396f5a9d807675078e 100644
+index 99a40cd26b35183a5e71c93105e0704084dbf9e9..9613fb529e537b0a12f4d7a4a94d897c39a24bb2 100644
 --- a/src/lib/components/PerformerRig.svelte
 +++ b/src/lib/components/PerformerRig.svelte
 @@ -16,11 +16,12 @@
@@ -22397,7 +22803,7 @@ index 99a40cd26b35183a5e71c93105e0704084dbf9e9..5737579c11614a10669fa7396f5a9d80
      /** Enable idle/walk locomotion animation on the avatar.
       *  When true, the avatar breathes/sways while standing. */
      enableRootMotion?: boolean;
-@@ -119,23 +156,72 @@
+@@ -119,23 +156,76 @@
       * effect orchestrator can place tip-tracking effects (trails, LED, etc.)
       * in the correct rig-root-local frame without duplicating rig internals.
       */
@@ -22440,6 +22846,10 @@ index 99a40cd26b35183a5e71c93105e0704084dbf9e9..5737579c11614a10669fa7396f5a9d80
 +        spine2Rad: number;
 +        headLagRad: number;
 +    } | null;
++    /** The body's step within the grid frame, forwarded to Avatar3D. */
++    bodyOffset?: { x: number; z: number } | null;
++    /** Keep the feet planted under a body offset (default) or move them. */
++    bodyOffsetPlantFeet?: boolean;
 +    /** Planner-selected forward shoulder carry, forwarded to Avatar3D. */
 +    spinePitchOffset?: number;
 +    /** Hidden depth routing for audience-overlaid same-side grips. */
@@ -22481,7 +22891,7 @@ index 99a40cd26b35183a5e71c93105e0704084dbf9e9..5737579c11614a10669fa7396f5a9d80
    }
  
    let {
-@@ -149,44 +235,71 @@
+@@ -149,44 +239,73 @@
      showEffects = true,
      visiblePlanes = new Set([Plane.WALL, Plane.WHEEL, Plane.FLOOR]),
      gridMode = "diamond" as GridMode,
@@ -22514,6 +22924,8 @@ index 99a40cd26b35183a5e71c93105e0704084dbf9e9..5737579c11614a10669fa7396f5a9d80
      turnRequestOverride,
 +    stanceYaw = 0,
 +    stanceSegments = null,
++    bodyOffset = null,
++    bodyOffsetPlantFeet = true,
 +    spinePitchOffset = 0,
 +    blueHandDepthOffset = 0,
 +    redHandDepthOffset = 0,
@@ -22563,7 +22975,7 @@ index 99a40cd26b35183a5e71c93105e0704084dbf9e9..5737579c11614a10669fa7396f5a9d80
  
    // Derive mode config and grid offset from the current plane mode
    const modeConfig = $derived(PLANE_MODE_CONFIGS[planeMode]);
-@@ -247,7 +360,23 @@
+@@ -247,7 +366,23 @@
  
    // When a turn is active, enable animation-driven yaw so the rig
    // rotates from the turn clip's root motion rather than snapping.
@@ -22588,7 +23000,7 @@ index 99a40cd26b35183a5e71c93105e0704084dbf9e9..5737579c11614a10669fa7396f5a9d80
  
    // Turn completion snap: when turnRequest goes null after being active,
    // snap avatarState to the post-turn heading so the sync effect below
-@@ -259,6 +388,8 @@
+@@ -259,6 +394,8 @@
        // Turn just completed - snap avatarState to post-turn heading
        avatarState.snapFacingAngle(turnTargetHeading);
        turnTargetHeading = null;
@@ -22597,7 +23009,7 @@ index 99a40cd26b35183a5e71c93105e0704084dbf9e9..5737579c11614a10669fa7396f5a9d80
      }
    });
  
-@@ -280,56 +411,127 @@
+@@ -280,56 +417,129 @@
    const dualWheelOffset = $derived(staffHalfLength);
    const blueHandPos = $derived({
      x: isDualWheel ? dualWheelOffset : modeConfig.blueLateralOffset,
@@ -22714,6 +23126,8 @@ index 99a40cd26b35183a5e71c93105e0704084dbf9e9..5737579c11614a10669fa7396f5a9d80
 +      {redPropCorrectionRef}
 +      {stanceYaw}
 +      {stanceSegments}
++      {bodyOffset}
++      {bodyOffsetPlantFeet}
 +      {spinePitchOffset}
 +      {weldGrip}
 +      {contactMode}
@@ -22736,7 +23150,7 @@ index 99a40cd26b35183a5e71c93105e0704084dbf9e9..5737579c11614a10669fa7396f5a9d80
                accumulatedYaw += delta.yawDelta;
                onYawIntegrated?.(accumulatedYaw);
              }
-@@ -339,15 +541,12 @@
+@@ -339,15 +549,12 @@
    {/if}
  
    <!-- Grid (consumer-provided via gridSlot) -->
@@ -22754,7 +23168,7 @@ index 99a40cd26b35183a5e71c93105e0704084dbf9e9..5737579c11614a10669fa7396f5a9d80
      {#if bluePropState && blueVisible}
        <T.Group
          bind:ref={bluePropAnchorRef}
-@@ -355,23 +554,23 @@
+@@ -355,23 +562,23 @@
          position.y={bluePropState.worldPosition.y}
          position.z={bluePropState.worldPosition.z}
        >
@@ -22790,7 +23204,7 @@ index 99a40cd26b35183a5e71c93105e0704084dbf9e9..5737579c11614a10669fa7396f5a9d80
      {#if redPropState && redVisible}
        <T.Group
          bind:ref={redPropAnchorRef}
-@@ -379,20 +578,23 @@
+@@ -379,20 +586,23 @@
          position.y={redPropState.worldPosition.y}
          position.z={redPropState.worldPosition.z}
        >
@@ -24507,19 +24921,20 @@ index 8a455aeebd6a4c8f408c732ac0c1bb2c177c2ab3..7cb29372ae34f587e0d58225dc3a5659
    const rotation = $derived(computePropRotation(propState));
  
 diff --git a/src/lib/components/props/Prop3D.svelte b/src/lib/components/props/Prop3D.svelte
-index 8f023f7b8a3dc4f441fc086719b929b5b56e9c74..3f466d80b00558ddc642a947c2ead65e54742c20 100644
+index 8f023f7b8a3dc4f441fc086719b929b5b56e9c74..b85756fd81323b0c09a2308874bae6e12662258e 100644
 --- a/src/lib/components/props/Prop3D.svelte
 +++ b/src/lib/components/props/Prop3D.svelte
-@@ -13,6 +13,8 @@
+@@ -13,6 +13,9 @@
    import { PropType } from "../../domain/enums/PropType";
    import type { PropState3D } from "../../domain/models/PropState3D";
    import { resolvePropModel } from "./prop-model-registry";
 +  import { propFinishState } from "../../state/prop-finish-state.svelte";
 +  import type { PropBuild } from "../../state/prop-finish-state.svelte";
++  import { userProportionsState } from "../../state/user-proportions-state.svelte";
    import GltfProp3D from "./GltfProp3D.svelte";
  
    // Procedural fallback geometry components
-@@ -20,11 +22,13 @@
+@@ -20,11 +23,13 @@
    import Club3D from "./Club3D.svelte";
    import Fan3D from "./Fan3D.svelte";
    import Hoop3D from "./Hoop3D.svelte";
@@ -24533,7 +24948,7 @@ index 8f023f7b8a3dc4f441fc086719b929b5b56e9c74..3f466d80b00558ddc642a947c2ead65e
    import Doublestar3D from "./Doublestar3D.svelte";
    import Chicken3D from "./Chicken3D.svelte";
    import Guitar3D from "./Guitar3D.svelte";
-@@ -39,6 +43,7 @@
+@@ -39,6 +44,7 @@
      visible?: boolean;
      isActivePlayer?: boolean;
      length?: number;
@@ -24541,7 +24956,7 @@ index 8f023f7b8a3dc4f441fc086719b929b5b56e9c74..3f466d80b00558ddc642a947c2ead65e
    }
  
    let {
-@@ -48,8 +53,11 @@
+@@ -48,8 +54,11 @@
      visible = true,
      isActivePlayer = false,
      length,
@@ -24553,7 +24968,7 @@ index 8f023f7b8a3dc4f441fc086719b929b5b56e9c74..3f466d80b00558ddc642a947c2ead65e
    // "Big" variants use a 1.4x scale on the base prop.
    const BIG_SCALE = 1.4;
  
-@@ -61,14 +69,19 @@
+@@ -61,14 +70,19 @@
  {#if visible}
    <!-- Tier 1: GLTF model (when available in registry) -->
    {#if gltfResolution}
@@ -24575,13 +24990,13 @@ index 8f023f7b8a3dc4f441fc086719b929b5b56e9c74..3f466d80b00558ddc642a947c2ead65e
 +        {visible}
 +        {isActivePlayer}
 +        extraScale={gltfResolution.scale}
-+        lengthScaleY={propType === PropType.FIRE_DOUBLE_STAFF && length != null ? length / 0.9 : 1}
++        lengthScaleY={propType === PropType.FIRE_DOUBLE_STAFF ? (length ?? userProportionsState.staffLength) / 0.9 : 1}
 +      />
 +    {/key}
  
    <!-- Tier 2: Procedural fallback geometry -->
    {:else if propType === PropType.STAFF || propType === PropType.SIMPLESTAFF || propType === PropType.STAFF2}
-@@ -82,19 +95,29 @@
+@@ -82,19 +96,29 @@
      <Club3D {propState} {color} {visible} {isActivePlayer} {length} scale={BIG_SCALE} />
  
    {:else if propType === PropType.FAN}
@@ -24615,7 +25030,7 @@ index 8f023f7b8a3dc4f441fc086719b929b5b56e9c74..3f466d80b00558ddc642a947c2ead65e
  
    {:else if propType === PropType.BUUGENG || propType === PropType.FRACTALGENG}
      <Buugeng3D {propState} {color} {visible} {isActivePlayer} {length} />
-@@ -102,10 +125,19 @@
+@@ -102,10 +126,19 @@
      <Buugeng3D {propState} {color} {visible} {isActivePlayer} {length} scale={BIG_SCALE} />
  
    {:else if propType === PropType.TRIGENG}
@@ -24637,7 +25052,7 @@ index 8f023f7b8a3dc4f441fc086719b929b5b56e9c74..3f466d80b00558ddc642a947c2ead65e
  
    {:else if propType === PropType.SWORD}
      <Sword3D {propState} {color} {visible} {isActivePlayer} {length} />
-@@ -140,7 +172,15 @@
+@@ -140,7 +173,15 @@
      <Ball3D {propState} {color} {visible} {isActivePlayer} {length} scale={BIG_SCALE} />
  
    {:else if propType === PropType.QUIAD}
@@ -28355,6 +28770,47 @@ index e3c577e94a6b79bbca1bc222fd79886eaf88962b..b3d4bd79bb2801c45c3f1636290ad38e
  export type AvatarId = (typeof AVATAR_DEFINITIONS)[number]["id"];
  
  /**
+diff --git a/src/lib/config/formation-presets.ts b/src/lib/config/formation-presets.ts
+index 2cefc525c3e2283338de01920b671e46b30173c7..e6533e314b6866fc85d1f0da30134932076aaae7 100644
+--- a/src/lib/config/formation-presets.ts
++++ b/src/lib/config/formation-presets.ts
+@@ -118,7 +118,9 @@ function generateCircleSlots(count: number): FormationSlot[] {
+     const angle = (i / count) * Math.PI * 2 - Math.PI / 2;
+     const x = Math.cos(angle) * radius;
+     const z = Math.sin(angle) * radius + offset;
+-    const facingAngle = angle + Math.PI / 2;
++    // Forward is (sin(facing), cos(facing)) and the center lies along
++    // (-cos(angle), -sin(angle)), so the performer faces -angle - PI/2.
++    const facingAngle = -angle - Math.PI / 2;
+ 
+     slots.push({
+       index: i,
+@@ -248,19 +250,22 @@ function generateTunnelStackSlots(count: number): FormationSlot[] {
+ }
+ 
+ /**
+- * Back-to-back formation - both performers at origin, facing opposite directions.
++ * Back-to-back formation - performers face opposite directions with their
++ * body centers 0.6m apart along the facing axis, so their bodies never touch,
++ * even with chests turned side-on.
+  */
+ function generateBackToBackSlots(count: number): FormationSlot[] {
+   if (count < 2) return generateSoloSlots(count);
++  const separation = 0.6;
+   return [
+     {
+       index: 0,
+-      position: { x: 0, z: FORMATION_WALL_OFFSET },
++      position: { x: 0, z: FORMATION_WALL_OFFSET + separation / 2 },
+       facingAngle: 0,
+     },
+     {
+       index: 1,
+-      position: { x: 0, z: FORMATION_WALL_OFFSET },
++      position: { x: 0, z: FORMATION_WALL_OFFSET - separation / 2 },
+       facingAngle: Math.PI,
+     },
+   ];
 diff --git a/src/lib/debug/avatar-debug-hooks.ts b/src/lib/debug/avatar-debug-hooks.ts
 index 7a39174683bca72ec068a727f5e748a7269cb528..7a4e8296c490761589c8da9bf3efe82e1fb6bd10 100644
 --- a/src/lib/debug/avatar-debug-hooks.ts
@@ -29453,7 +29909,7 @@ index 0000000000000000000000000000000000000000..98e57dea0dd008683a1a784921519a32
 +  return scratch.distanceTo(b.getWorldPosition(new Vector3()));
 +}
 diff --git a/src/lib/services/contracts/IAvatarAnimator.ts b/src/lib/services/contracts/IAvatarAnimator.ts
-index 42a46ac294719f16470ed72c27286e50c55a35f2..bb72e562c5f37b59114c8e685852b57269e7600c 100644
+index 42a46ac294719f16470ed72c27286e50c55a35f2..d12df9e375cd819ebaebc6d63b4219d4138f86ab 100644
 --- a/src/lib/services/contracts/IAvatarAnimator.ts
 +++ b/src/lib/services/contracts/IAvatarAnimator.ts
 @@ -5,9 +5,10 @@
@@ -29613,7 +30069,7 @@ index 42a46ac294719f16470ed72c27286e50c55a35f2..bb72e562c5f37b59114c8e685852b572
  export interface IAvatarAnimator {
    /**
     * Set the hand targets from prop states
-@@ -140,13 +279,88 @@ export interface IAvatarAnimator {
+@@ -140,13 +279,96 @@ export interface IAvatarAnimator {
     * Set prop states and compute per-arm IK blend weights.
     * Arms with props ramp toward IK (weight 1).
     * Arms without props ramp toward animation (weight 0).
@@ -29628,8 +30084,8 @@ index 42a46ac294719f16470ed72c27286e50c55a35f2..bb72e562c5f37b59114c8e685852b572
 -    offset?: PositionOffset
 +    offset?: PositionOffset,
 +    orientations?: PropOrientations
-   ): void;
- 
++  ): void;
++
 +  /**
 +   * Toggle the legacy symmetric split of adjacent grip targets. Hosts that
 +   * deliver already-displaced props (radial + depth, computed upstream) turn
@@ -29641,9 +30097,9 @@ index 42a46ac294719f16470ed72c27286e50c55a35f2..bb72e562c5f37b59114c8e685852b572
 +  setPairSeparation?(enabled: boolean): void;
 +
 +  /**
-+   * Clear per-side contact-recovery memory (clearance reach ratios, recovery
-+   * ticks, clearance pole vectors, wrist-init flags) so a seek doesn't
-+   * inherit stale state from wherever playback used to be. Optional so
++   * Clear per-side contact-recovery memory (clearance reach ratios,
++   * clearance pole vectors, wrist-init flags) so a seek doesn't inherit
++   * stale state from wherever playback used to be. Optional so
 +   * lightweight test doubles don't have to implement it.
 +   */
 +  resetContactHistory?(): void;
@@ -29657,6 +30113,14 @@ index 42a46ac294719f16470ed72c27286e50c55a35f2..bb72e562c5f37b59114c8e685852b572
 +   * Optional so lightweight test doubles don't have to implement it.
 +   */
 +  setStanceYaw?(radians: number): void;
++  /**
++   * Move the whole body by a world-space offset this frame, the feet planted
++   * unless `plantFeet` is false. Zero leaves the pose alone. Optional so
++   * lightweight test doubles don't have to implement it.
++   */
++  setBodyOffset?(worldX: number, worldZ: number, plantFeet?: boolean): void;
++  /** Take back last frame's body offset, before the legs are posed again. */
++  releaseBodyOffset?(): void;
 +  setContactMode?(mode: ContactMode): void;
 +  /** Opt-in authored body pose for prop-authoritative contact. Null restores
 +   * the existing target-following body solve. */
@@ -29680,8 +30144,8 @@ index 42a46ac294719f16470ed72c27286e50c55a35f2..bb72e562c5f37b59114c8e685852b572
 +      spine2Rad: number;
 +      headLagRad: number;
 +    } | null
-+  ): void;
-+
+   ): void;
+ 
 +  /** Returns the current smoothed posture contributions without allocating. */
 +  getPostureDiagnostics?(): Readonly<AvatarAnimatorDiagnostics>;
 +
@@ -30435,10 +30899,10 @@ index f906b396cdb9f1a924c617f9a44c5978f9cfd46b..d78c415dce9399f16b6c8654b88ba70a
    /** Per-foot contact state: 0 = airborne, 1 = fully planted. */
 diff --git a/src/lib/services/geometry/BodyCollisionGeometry.ts b/src/lib/services/geometry/BodyCollisionGeometry.ts
 new file mode 100644
-index 0000000000000000000000000000000000000000..804080e43f4dc206951115861d4b871fe92f612e
+index 0000000000000000000000000000000000000000..9c0deac263a423caf52a751a50ec4c8e50a6cdab
 --- /dev/null
 +++ b/src/lib/services/geometry/BodyCollisionGeometry.ts
-@@ -0,0 +1,68 @@
+@@ -0,0 +1,133 @@
 +import { Vector3 } from "three";
 +
 +export const FACE_RADIUS = 0.09;
@@ -30506,6 +30970,71 @@ index 0000000000000000000000000000000000000000..804080e43f4dc206951115861d4b871f
 +  );
 +  closestOut.copy(segmentStart).addScaledVector(segmentScratch, t);
 +  return point.distanceTo(closestOut);
++}
++
++/**
++ * Shortest distance between segments firstStart→firstEnd and
++ * secondStart→secondEnd, from their exact closest points (Ericson, Real-Time
++ * Collision Detection, 5.1.9). The three scratch vectors must be distinct from
++ * each other and from every input.
++ */
++export function segmentToSegmentDistance(
++  firstStart: Vector3,
++  firstEnd: Vector3,
++  secondStart: Vector3,
++  secondEnd: Vector3,
++  firstDirectionScratch: Vector3,
++  secondDirectionScratch: Vector3,
++  offsetScratch: Vector3
++): number {
++  const first = firstDirectionScratch.subVectors(firstEnd, firstStart);
++  const second = secondDirectionScratch.subVectors(secondEnd, secondStart);
++  const offset = offsetScratch.subVectors(firstStart, secondStart);
++  const firstLengthSq = first.lengthSq();
++  const secondLengthSq = second.lengthSq();
++  const secondAlongOffset = second.dot(offset);
++  let s = 0;
++  let t = 0;
++
++  if (firstLengthSq < 1e-8 && secondLengthSq < 1e-8) return offset.length();
++
++  if (firstLengthSq < 1e-8) {
++    t = clampUnit(secondAlongOffset / secondLengthSq);
++  } else {
++    const firstAlongOffset = first.dot(offset);
++    if (secondLengthSq < 1e-8) {
++      s = clampUnit(-firstAlongOffset / firstLengthSq);
++    } else {
++      const firstAlongSecond = first.dot(second);
++      const denominator =
++        firstLengthSq * secondLengthSq - firstAlongSecond * firstAlongSecond;
++      // Parallel segments start from s = 0; the clamps below still reach the
++      // closest pair.
++      s =
++        denominator > 1e-12
++          ? clampUnit(
++              (firstAlongSecond * secondAlongOffset -
++                firstAlongOffset * secondLengthSq) /
++                denominator
++            )
++          : 0;
++      t = (firstAlongSecond * s + secondAlongOffset) / secondLengthSq;
++      if (t < 0) {
++        t = 0;
++        s = clampUnit(-firstAlongOffset / firstLengthSq);
++      } else if (t > 1) {
++        t = 1;
++        s = clampUnit((firstAlongSecond - firstAlongOffset) / firstLengthSq);
++      }
++    }
++  }
++
++  // (firstStart + s·first) − (secondStart + t·second)
++  return offset.addScaledVector(first, s).addScaledVector(second, -t).length();
++}
++
++function clampUnit(value: number): number {
++  return Math.max(0, Math.min(1, value));
 +}
 diff --git a/src/lib/services/geometry/CylindricalGripGeometry.ts b/src/lib/services/geometry/CylindricalGripGeometry.ts
 new file mode 100644
@@ -31170,10 +31699,10 @@ index 0000000000000000000000000000000000000000..1e89fc30e0d413a389a0a5be23675ba9
 +  }
 +}
 diff --git a/src/lib/services/implementations/AvatarAnimator.ts b/src/lib/services/implementations/AvatarAnimator.ts
-index c73bcabe86e07dd117e6f737532aea88ac9ec194..1fb613803345272a3a8dce7f4fb0470c37b00ebe 100644
+index c73bcabe86e07dd117e6f737532aea88ac9ec194..dc745d109d9a98f9f3b8298a487210995af3c02a 100644
 --- a/src/lib/services/implementations/AvatarAnimator.ts
 +++ b/src/lib/services/implementations/AvatarAnimator.ts
-@@ -5,21 +5,144 @@
+@@ -5,21 +5,153 @@
   * Bridges TKA prop states to skeleton IK targets.
   */
  
@@ -31275,8 +31804,13 @@ index c73bcabe86e07dd117e6f737532aea88ac9ec194..1fb613803345272a3a8dce7f4fb0470c
 +const ARM_CLEARANCE_REACH_RATIOS = [0.92, 0.84, 0.76, 0.68, 0.6] as const;
 +const ARM_CLEARANCE_POLE_SEARCH_STEP = (10 * Math.PI) / 180;
 +const ARM_CLEARANCE_POLE_SEARCH_STEPS = 18;
-+const ARM_CLEARANCE_RECOVERY_INTERVAL = 12;
-+const ARM_CLEARANCE_RECOVERY_STEP = 0.04;
++/** Seconds for a retracted hand to grow from the shortest retry back to full
++ *  reach while each fuller reach still clears the body. Counted in time, not
++ *  frames, so the let-go lasts equally long at any frame rate. */
++const ARM_CLEARANCE_RECOVERY_SECONDS = 0.3;
++const ARM_CLEARANCE_RECOVERY_RATE =
++  (1 - ARM_CLEARANCE_REACH_RATIOS[ARM_CLEARANCE_REACH_RATIOS.length - 1]) /
++  ARM_CLEARANCE_RECOVERY_SECONDS;
 +const UPPER_ARM_SHOULDER_EXCLUSION = 0.35;
 +
 +/** Radians of spine lean per meter of reach deficit. */
@@ -31299,6 +31833,10 @@ index c73bcabe86e07dd117e6f737532aea88ac9ec194..1fb613803345272a3a8dce7f4fb0470c
 +/** Ceiling on how far the head may trail the shoulder line. */
 +const MAX_STANCE_HEAD_LAG = (34 * Math.PI) / 180;
 +const MAX_AUTHORED_PELVIS_XZ = 0.5;
++/** The furthest a host may move the body off its feet, in metres. */
++const MAX_BODY_OFFSET = 0.5;
++/** A planted leg reaches no further than this share of its length. */
++const MAX_PLANTED_LEG_USE = 0.98;
 +const MAX_AUTHORED_PELVIS_Y = 0.35;
 +const MAX_AUTHORED_TORSO_YAW = Math.PI / 2;
 +const MAX_AUTHORED_TORSO_TILT = 0.6;
@@ -31322,7 +31860,7 @@ index c73bcabe86e07dd117e6f737532aea88ac9ec194..1fb613803345272a3a8dce7f4fb0470c
  
  export class AvatarAnimator implements IAvatarAnimator {
    private currentPose: BodyPose;
-@@ -29,6 +152,24 @@ export class AvatarAnimator implements IAvatarAnimator {
+@@ -29,6 +161,36 @@ export class AvatarAnimator implements IAvatarAnimator {
    // Per-arm IK blend weights: 0 = animation drives the arm, 1 = IK drives the arm
    private leftArmIK = { weight: 0, targetWeight: 0 };
    private rightArmIK = { weight: 0, targetWeight: 0 };
@@ -31340,14 +31878,26 @@ index c73bcabe86e07dd117e6f737532aea88ac9ec194..1fb613803345272a3a8dce7f4fb0470c
 +  private strictLegSolver = new HingeConstrainedLegIKSolver();
 +  private strictKneeAxes = new Map<Bone, Vector3>();
 +  private strictDiagnostics = { iterations: 0, reachResidualM: 0, clearanceM: Infinity, wristSwingRad: 0 };
++  // The host's move of the whole body, world space, and whether the feet stay
++  // where the clip put them. Applied after the legs are posed, so it is taken
++  // back each frame (releaseBodyOffset) before anything poses them again.
++  private bodyOffsetWorld = new Vector3();
++  private bodyOffsetPlantFeet = true;
++  private bodyOffsetApplied = {
++    active: false,
++    hipsDelta: new Vector3(),
++    hipsAfter: new Vector3(),
++    legs: [] as { bone: Bone; before: Quaternion; after: Quaternion }[],
++  };
++  private bodyOffsetFeet: { chain: BoneChain; position: Vector3; rotation: Quaternion }[] = [];
++  private bodyOffsetKneeRoot: Object3D | null = null;
++  private bodyOffsetKneeAxes = new Map<Bone, Vector3>();
 +  private leftClearanceReachRatio = 1;
 +  private rightClearanceReachRatio = 1;
-+  private leftClearanceRecoveryTick = 0;
-+  private rightClearanceRecoveryTick = 0;
    private ikBlendSpeed = 1 / 0.3; // ~0.3s ramp time
    private smoothBlending = true;
    private smoothingFactor = 0.15; // 0-1, higher = smoother but laggier
-@@ -38,8 +179,13 @@ export class AvatarAnimator implements IAvatarAnimator {
+@@ -38,8 +200,13 @@ export class AvatarAnimator implements IAvatarAnimator {
    private transitionProgress = 0;
    private transitionConfig: TransitionConfig | null = null;
    private poleComputer: IElbowPoleComputer | null;
@@ -31361,7 +31911,7 @@ index c73bcabe86e07dd117e6f737532aea88ac9ec194..1fb613803345272a3a8dce7f4fb0470c
    private _poleVectorsEnabled = true;
  
    private clavicleRaiser: IClavicleRaiser | null;
-@@ -85,6 +231,145 @@ export class AvatarAnimator implements IAvatarAnimator {
+@@ -85,6 +252,145 @@ export class AvatarAnimator implements IAvatarAnimator {
     */
    private externalSpinePitchRad = 0;
  
@@ -31507,7 +32057,7 @@ index c73bcabe86e07dd117e6f737532aea88ac9ec194..1fb613803345272a3a8dce7f4fb0470c
    constructor(
      private ikSolver: IIKSolver,
      private skeleton: IAvatarSkeletonBuilder,
-@@ -180,13 +465,60 @@ export class AvatarAnimator implements IAvatarAnimator {
+@@ -180,13 +486,60 @@ export class AvatarAnimator implements IAvatarAnimator {
          }
        : null;
  
@@ -31569,7 +32119,7 @@ index c73bcabe86e07dd117e6f737532aea88ac9ec194..1fb613803345272a3a8dce7f4fb0470c
    ): void {
      this.leftArmIK.targetWeight = blueProp ? 1 : 0;
      this.rightArmIK.targetWeight = redProp ? 1 : 0;
-@@ -205,6 +537,7 @@ export class AvatarAnimator implements IAvatarAnimator {
+@@ -205,6 +558,7 @@ export class AvatarAnimator implements IAvatarAnimator {
              blueProp.worldPosition.y - oy,
              blueProp.worldPosition.z - oz
            ),
@@ -31577,7 +32127,7 @@ index c73bcabe86e07dd117e6f737532aea88ac9ec194..1fb613803345272a3a8dce7f4fb0470c
            staffAngle: blueProp.staffRotationAngle,
            plane: blueProp.plane,
            weight: 1,
-@@ -218,15 +551,183 @@ export class AvatarAnimator implements IAvatarAnimator {
+@@ -218,15 +572,215 @@ export class AvatarAnimator implements IAvatarAnimator {
              redProp.worldPosition.y - oy,
              redProp.worldPosition.z - oz
            ),
@@ -31609,6 +32159,40 @@ index c73bcabe86e07dd117e6f737532aea88ac9ec194..1fb613803345272a3a8dce7f4fb0470c
 +    );
 +  }
 +
++  /**
++   * Move the whole body by a world-space offset this frame. With `plantFeet`
++   * the feet stay where the clip put them and the legs reach back to them;
++   * without it they travel with the body. Zero leaves the pose alone.
++   */
++  setBodyOffset(worldX: number, worldZ: number, plantFeet = true): void {
++    const bounded = (value: number) =>
++      Number.isFinite(value)
++        ? Math.max(-MAX_BODY_OFFSET, Math.min(MAX_BODY_OFFSET, value))
++        : 0;
++    this.bodyOffsetWorld.set(bounded(worldX), 0, bounded(worldZ));
++    this.bodyOffsetPlantFeet = plantFeet;
++  }
++
++  /**
++   * Take back last frame's body offset before the clip and the foot planter
++   * pose the legs again. The mixer never writes the Hips position, so nothing
++   * else would. A bone something else has rewritten since is left alone.
++   */
++  releaseBodyOffset(): void {
++    const applied = this.bodyOffsetApplied;
++    if (!applied.active) return;
++    applied.active = false;
++    for (const leg of applied.legs) {
++      if (leg.bone.quaternion.equals(leg.after)) leg.bone.quaternion.copy(leg.before);
++    }
++    applied.legs = [];
++    const hips = this.skeleton.getBone("Hips");
++    if (hips && hips.position.equals(applied.hipsAfter)) {
++      hips.position.sub(applied.hipsDelta);
++      hips.updateMatrixWorld(true);
++    }
++  }
++
 +  setContactMode(mode: import("../contracts/IAvatarAnimator").ContactMode): void {
 +    this.contactMode = mode;
 +  }
@@ -31625,17 +32209,15 @@ index c73bcabe86e07dd117e6f737532aea88ac9ec194..1fb613803345272a3a8dce7f4fb0470c
 +  }
 +
 +  /**
-+   * Clear per-side contact-recovery memory (clearance reach ratios, recovery
-+   * ticks, clearance pole vectors, wrist-init flags) so a seek doesn't
-+   * inherit stale state from wherever playback used to be. The clearance
-+   * pole vectors reset to the current (non-clearance) pole vectors, the same
++   * Clear per-side contact-recovery memory (clearance reach ratios,
++   * clearance pole vectors, wrist-init flags) so a seek doesn't inherit
++   * stale state from wherever playback used to be. The clearance pole
++   * vectors reset to the current (non-clearance) pole vectors, the same
 +   * value they'd hold before any recovery probe ever ran.
 +   */
 +  resetContactHistory(): void {
 +    this.leftClearanceReachRatio = 1;
 +    this.rightClearanceReachRatio = 1;
-+    this.leftClearanceRecoveryTick = 0;
-+    this.rightClearanceRecoveryTick = 0;
 +    this.leftClearancePoleVector.copy(this.leftPoleVector);
 +    this.rightClearancePoleVector.copy(this.rightPoleVector);
 +    this.leftWristInit = false;
@@ -31761,7 +32343,7 @@ index c73bcabe86e07dd117e6f737532aea88ac9ec194..1fb613803345272a3a8dce7f4fb0470c
    setLeftHandTarget(target: HandPose): void {
      this.targetPose.leftHand = { ...target };
      this.targetPose.timestamp = Date.now();
-@@ -244,8 +745,13 @@ export class AvatarAnimator implements IAvatarAnimator {
+@@ -244,8 +798,13 @@ export class AvatarAnimator implements IAvatarAnimator {
    update(deltaTime: number): void {
      // Ramp per-arm IK blend weights (framerate-independent exponential lerp)
      const blendFactor = 1 - Math.exp(-this.ikBlendSpeed * deltaTime);
@@ -31777,13 +32359,16 @@ index c73bcabe86e07dd117e6f737532aea88ac9ec194..1fb613803345272a3a8dce7f4fb0470c
  
      if (this.transitioning) {
        this.updateTransition(deltaTime);
-@@ -259,7 +765,365 @@ export class AvatarAnimator implements IAvatarAnimator {
+@@ -259,7 +818,454 @@ export class AvatarAnimator implements IAvatarAnimator {
      const finalPose = this.computeFinalPose();
  
      // Solve IK for arms
 -    this.applyIKToSkeleton(finalPose);
 +    if (this.contactMode === "prop-authoritative") this.applyStrictContact(finalPose);
-+    else this.applyIKToSkeleton(finalPose, deltaTime);
++    else {
++      this.applyIKToSkeleton(finalPose, deltaTime);
++      this.plantBodyOffsetFeet();
++    }
 +  }
 +
 +  getContactSolveDiagnostics(): Readonly<typeof this.strictDiagnostics> {
@@ -31958,25 +32543,7 @@ index c73bcabe86e07dd117e6f737532aea88ac9ec194..1fb613803345272a3a8dce7f4fb0470c
 +    }
 +    for (const chain of [state.leftLegChain, state.rightLegChain]) {
 +      if (!chain) continue;
-+      const foot = this.strictFeet.get(chain.effector)!;
-+      this.strictLegSolver.solve({ chain, footTarget: foot.position, kneeHingeAxis: this.strictKneeAxes.get(chain.root)!, poleDirection: new Vector3(0, 0, 1), weight: 1 });
-+      const hipRotation = chain.root.quaternion.clone();
-+      const kneeRotation = chain.middle.quaternion.clone();
-+      this.ikSolver.solveAndApply(chain, { position: foot.position, poleHint: new Vector3(0, 0, 1), weight: 1 });
-+      const kneePosition = chain.middle.getWorldPosition(new Vector3());
-+      chain.root.quaternion.copy(hipRotation);
-+      chain.middle.quaternion.copy(kneeRotation);
-+      chain.root.updateWorldMatrix(true, true);
-+      // Preserve the hinge solver's twist while removing bind-pose offsets
-+      // from its position result. Only joint rotations change.
-+      for (const [joint, end, target] of [[chain.root, chain.middle, kneePosition], [chain.middle, chain.effector, foot.position]] as const) {
-+        const origin = joint.getWorldPosition(new Vector3());
-+        const from = end.getWorldPosition(new Vector3()).sub(origin).normalize();
-+        const to = target.clone().sub(origin).normalize();
-+        const world = joint.getWorldQuaternion(new Quaternion()).premultiply(new Quaternion().setFromUnitVectors(from, to));
-+        this.setStrictHandRotation(joint, world);
-+      }
-+      this.setStrictHandRotation(chain.effector, foot.rotation);
++      this.plantLeg(chain, this.strictFeet.get(chain.effector)!, this.strictKneeAxes.get(chain.root)!, new Vector3(0, 0, 1));
 +    }
 +    this.refreshBodyFrame(state, state.leftArmChain, state.rightArmChain);
 +    this.refreshFaceClearanceCenter(state, state.leftArmChain, state.rightArmChain);
@@ -31993,6 +32560,110 @@ index c73bcabe86e07dd117e6f737532aea88ac9ec194..1fb613803345272a3a8dce7f4fb0470c
 +      this.ikSolver.solveAndApply(chain, { position: restingHand, poleHint: this._bodyFrame.forward.clone().negate(), weight: 1 });
 +    }
 +    state.root.updateWorldMatrix(true, true);
++  }
++
++  /** Solve a leg back to a planted foot: position and rotation. */
++  private plantLeg(
++    chain: BoneChain,
++    foot: { position: Vector3; rotation: Quaternion },
++    kneeHingeAxis: Vector3,
++    pole: Vector3
++  ): void {
++    this.strictLegSolver.solve({ chain, footTarget: foot.position, kneeHingeAxis, poleDirection: pole, weight: 1 });
++    const hipRotation = chain.root.quaternion.clone();
++    const kneeRotation = chain.middle.quaternion.clone();
++    this.ikSolver.solveAndApply(chain, { position: foot.position, poleHint: pole, weight: 1 });
++    const kneePosition = chain.middle.getWorldPosition(new Vector3());
++    chain.root.quaternion.copy(hipRotation);
++    chain.middle.quaternion.copy(kneeRotation);
++    chain.root.updateWorldMatrix(true, true);
++    // Preserve the hinge solver's twist while removing bind-pose offsets
++    // from its position result. Only joint rotations change.
++    for (const [joint, end, target] of [[chain.root, chain.middle, kneePosition], [chain.middle, chain.effector, foot.position]] as const) {
++      const origin = joint.getWorldPosition(new Vector3());
++      const from = end.getWorldPosition(new Vector3()).sub(origin).normalize();
++      const to = target.clone().sub(origin).normalize();
++      const world = joint.getWorldQuaternion(new Quaternion()).premultiply(new Quaternion().setFromUnitVectors(from, to));
++      this.setStrictHandRotation(joint, world);
++    }
++    this.setStrictHandRotation(chain.effector, foot.rotation);
++  }
++
++  /**
++   * Move the body by the host's offset before anything measures it, so the
++   * spine, the arms and the head all solve against where it now stands. With
++   * the feet planted the pelvis drops only as far as a leg needs to reach its
++   * foot; plantBodyOffsetFeet then bends each leg back to where the clip put
++   * that foot.
++   */
++  private applyBodyOffset(state: SkeletonState): void {
++    this.bodyOffsetFeet = [];
++    const offset = this.bodyOffsetWorld;
++    if (offset.lengthSq() < 1e-10) return;
++    const hips = state.bones.get("Hips");
++    if (!hips?.parent) return;
++    const legs: BoneChain[] =
++      this.bodyOffsetPlantFeet && state.leftLegChain && state.rightLegChain
++        ? [state.leftLegChain, state.rightLegChain]
++        : [];
++    if (legs.length && this.bodyOffsetKneeRoot !== state.root) {
++      this.bodyOffsetKneeRoot = state.root;
++      this.bodyOffsetKneeAxes.clear();
++      const reference = kneeHingeReferenceAxis(legs[0]!.root, legs[1]!.root);
++      for (const chain of legs) {
++        this.bodyOffsetKneeAxes.set(chain.root, new KneeHingeAxisCalibrator().compute(chain, reference));
++      }
++    }
++    this.bodyOffsetFeet = legs.map((chain) => ({
++      chain,
++      position: chain.effector.getWorldPosition(new Vector3()),
++      rotation: chain.effector.getWorldQuaternion(new Quaternion()),
++    }));
++    const start = hips.position.clone();
++    const moved = hips.getWorldPosition(new Vector3()).add(offset);
++    let lower = 0;
++    hips.position.copy(hips.parent.worldToLocal(moved.clone()));
++    hips.updateWorldMatrix(true, true);
++    for (const { chain, position } of this.bodyOffsetFeet) {
++      const leg = chain.root.getWorldPosition(new Vector3()).sub(position);
++      const vertical = Math.sqrt(Math.max(0, (chain.totalLength * MAX_PLANTED_LEG_USE) ** 2 - leg.x ** 2 - leg.z ** 2));
++      lower = Math.max(lower, leg.y - vertical);
++    }
++    if (lower > 0) {
++      moved.y -= lower;
++      hips.position.copy(hips.parent.worldToLocal(moved));
++      hips.updateWorldMatrix(true, true);
++    }
++    const applied = this.bodyOffsetApplied;
++    applied.active = true;
++    applied.legs = [];
++    applied.hipsDelta.copy(hips.position).sub(start);
++    applied.hipsAfter.copy(hips.position);
++  }
++
++  /**
++   * Bend each leg back to its planted foot once the upper body has solved and
++   * the hips hold their final turn, so nothing after this moves the feet.
++   */
++  private plantBodyOffsetFeet(): void {
++    const feet = this.bodyOffsetFeet;
++    if (!feet.length) return;
++    this.bodyOffsetFeet = [];
++    const hips = this.skeleton.getBone("Hips");
++    if (!hips) return;
++    // Knees bend the way the hips face, whatever the performer's heading.
++    const pole = new Vector3(0, 0, 1).applyQuaternion(hips.getWorldQuaternion(new Quaternion()));
++    pole.y = 0;
++    if (pole.lengthSq() < 1e-6) pole.set(0, 0, 1);
++    pole.normalize();
++    for (const { chain, position, rotation } of feet) {
++      const bones = [chain.root, chain.middle, chain.effector];
++      const before = bones.map((bone) => bone.quaternion.clone());
++      this.plantLeg(chain, { position, rotation }, this.bodyOffsetKneeAxes.get(chain.root)!, pole);
++      bones.forEach((bone, i) =>
++        this.bodyOffsetApplied.legs.push({ bone, before: before[i]!, after: bone.quaternion.clone() })
++      );
++    }
 +  }
 +
 +  private setStrictHandRotation(hand: Bone, world: Quaternion): void {
@@ -32144,7 +32815,7 @@ index c73bcabe86e07dd117e6f737532aea88ac9ec194..1fb613803345272a3a8dce7f4fb0470c
    }
  
    private blendToTarget(_deltaTime: number): void {
-@@ -378,13 +1242,217 @@ export class AvatarAnimator implements IAvatarAnimator {
+@@ -378,13 +1384,218 @@ export class AvatarAnimator implements IAvatarAnimator {
      return result;
    }
  
@@ -32345,6 +33016,7 @@ index c73bcabe86e07dd117e6f737532aea88ac9ec194..1fb613803345272a3a8dce7f4fb0470c
 +  private applyIKToSkeleton(pose: BodyPose, deltaTime: number): void {
      const state = this.skeleton.getState();
      if (!state.isLoaded) return;
++    this.applyBodyOffset(state);
  
      const leftChain = this.skeleton.getLeftArmChain();
      const rightChain = this.skeleton.getRightArmChain();
@@ -32363,7 +33035,7 @@ index c73bcabe86e07dd117e6f737532aea88ac9ec194..1fb613803345272a3a8dce7f4fb0470c
      // Compute body center from Hips bone (or default to origin)
      const bodyCenter = new Vector3(0, 0, 0);
      const hipsBone = state.bones.get("Hips");
-@@ -392,6 +1460,11 @@ export class AvatarAnimator implements IAvatarAnimator {
+@@ -392,6 +1603,11 @@ export class AvatarAnimator implements IAvatarAnimator {
        hipsBone.getWorldPosition(bodyCenter);
      }
  
@@ -32375,7 +33047,7 @@ index c73bcabe86e07dd117e6f737532aea88ac9ec194..1fb613803345272a3a8dce7f4fb0470c
      // Cache shoulder rest Y positions once (before any clavicle rotation has been applied).
      // CRITICAL: Do NOT read these per-frame after clavicle is rotated - the elevated
      // position feeds back and causes oscillation.
-@@ -445,7 +1518,8 @@ export class AvatarAnimator implements IAvatarAnimator {
+@@ -445,7 +1661,8 @@ export class AvatarAnimator implements IAvatarAnimator {
          pose.leftHand?.targetPosition ?? null,
          pose.rightHand?.targetPosition ?? null,
          bodyCenter,
@@ -32385,7 +33057,7 @@ index c73bcabe86e07dd117e6f737532aea88ac9ec194..1fb613803345272a3a8dce7f4fb0470c
        );
  
        // Apply twist to each bone individually for a natural spinal curve.
-@@ -511,12 +1585,175 @@ export class AvatarAnimator implements IAvatarAnimator {
+@@ -511,12 +1728,175 @@ export class AvatarAnimator implements IAvatarAnimator {
        }
      }
  
@@ -32562,7 +33234,7 @@ index c73bcabe86e07dd117e6f737532aea88ac9ec194..1fb613803345272a3a8dce7f4fb0470c
          // Save what the locomotion animation wrote to bone quaternions
          const animRootQuat = leftChain.root.quaternion.clone();
          const animMiddleQuat = leftChain.middle.quaternion.clone();
-@@ -527,7 +1764,7 @@ export class AvatarAnimator implements IAvatarAnimator {
+@@ -527,7 +1907,7 @@ export class AvatarAnimator implements IAvatarAnimator {
            const leftShoulder = state.bones.get("LeftShoulder");
            if (leftShoulder) {
              const targetQuat = this.clavicleRaiser.computeClavicleRotation(
@@ -32571,7 +33243,7 @@ index c73bcabe86e07dd117e6f737532aea88ac9ec194..1fb613803345272a3a8dce7f4fb0470c
                "left",
                this.leftShoulderRestY,
                leftChain.totalLength
-@@ -540,6 +1777,15 @@ export class AvatarAnimator implements IAvatarAnimator {
+@@ -540,6 +1920,15 @@ export class AvatarAnimator implements IAvatarAnimator {
            }
          }
  
@@ -32587,7 +33259,7 @@ index c73bcabe86e07dd117e6f737532aea88ac9ec194..1fb613803345272a3a8dce7f4fb0470c
          // Build IK target with optional pole vector
          const target: IKTarget = {
            position: leftTarget,
-@@ -547,19 +1793,75 @@ export class AvatarAnimator implements IAvatarAnimator {
+@@ -547,19 +1936,76 @@ export class AvatarAnimator implements IAvatarAnimator {
          };
  
          if (this._poleVectorsEnabled && this.poleComputer && leftHand.plane) {
@@ -32661,12 +33333,13 @@ index c73bcabe86e07dd117e6f737532aea88ac9ec194..1fb613803345272a3a8dce7f4fb0470c
 +          "left",
 +          leftChain,
 +          target,
-+          leftClearanceContext
++          leftClearanceContext,
++          deltaTime
 +        );
  
          // Save IK results BEFORE blending - .copy() would overwrite them
          const ikRootQuat = leftChain.root.quaternion.clone();
-@@ -572,13 +1874,24 @@ export class AvatarAnimator implements IAvatarAnimator {
+@@ -572,13 +2018,24 @@ export class AvatarAnimator implements IAvatarAnimator {
          leftChain.middle.quaternion.copy(animMiddleQuat).slerp(ikMiddleQuat, w);
          leftChain.effector.quaternion.copy(animEffectorQuat).slerp(ikEffectorQuat, w);
  
@@ -32692,7 +33365,7 @@ index c73bcabe86e07dd117e6f737532aea88ac9ec194..1fb613803345272a3a8dce7f4fb0470c
          // Save what the locomotion animation wrote to bone quaternions
          const animRootQuat = rightChain.root.quaternion.clone();
          const animMiddleQuat = rightChain.middle.quaternion.clone();
-@@ -589,7 +1902,7 @@ export class AvatarAnimator implements IAvatarAnimator {
+@@ -589,7 +2046,7 @@ export class AvatarAnimator implements IAvatarAnimator {
            const rightShoulder = state.bones.get("RightShoulder");
            if (rightShoulder) {
              const targetQuat = this.clavicleRaiser.computeClavicleRotation(
@@ -32701,7 +33374,7 @@ index c73bcabe86e07dd117e6f737532aea88ac9ec194..1fb613803345272a3a8dce7f4fb0470c
                "right",
                this.rightShoulderRestY,
                rightChain.totalLength
-@@ -602,6 +1915,15 @@ export class AvatarAnimator implements IAvatarAnimator {
+@@ -602,6 +2059,15 @@ export class AvatarAnimator implements IAvatarAnimator {
            }
          }
  
@@ -32717,7 +33390,7 @@ index c73bcabe86e07dd117e6f737532aea88ac9ec194..1fb613803345272a3a8dce7f4fb0470c
          // Build IK target with optional pole vector
          const target: IKTarget = {
            position: rightTarget,
-@@ -609,19 +1931,68 @@ export class AvatarAnimator implements IAvatarAnimator {
+@@ -609,19 +2075,69 @@ export class AvatarAnimator implements IAvatarAnimator {
          };
  
          if (this._poleVectorsEnabled && this.poleComputer && rightHand.plane) {
@@ -32784,12 +33457,13 @@ index c73bcabe86e07dd117e6f737532aea88ac9ec194..1fb613803345272a3a8dce7f4fb0470c
 +          "right",
 +          rightChain,
 +          target,
-+          rightClearanceContext
++          rightClearanceContext,
++          deltaTime
 +        );
  
          // Save IK results BEFORE blending - .copy() would overwrite them
          const ikRootQuat = rightChain.root.quaternion.clone();
-@@ -634,13 +2005,1083 @@ export class AvatarAnimator implements IAvatarAnimator {
+@@ -634,13 +2150,1080 @@ export class AvatarAnimator implements IAvatarAnimator {
          rightChain.middle.quaternion.copy(animMiddleQuat).slerp(ikMiddleQuat, w);
          rightChain.effector.quaternion.copy(animEffectorQuat).slerp(ikEffectorQuat, w);
  
@@ -33433,7 +34107,8 @@ index c73bcabe86e07dd117e6f737532aea88ac9ec194..1fb613803345272a3a8dce7f4fb0470c
 +    side: "left" | "right",
 +    chain: BoneChain,
 +    target: IKTarget,
-+    context: ForearmFaceClearanceContext | null
++    context: ForearmFaceClearanceContext | null,
++    deltaTime: number
 +  ): void {
 +    if (!context || !this.poleComputer || !target.poleHint) {
 +      this.ikSolver.solveAndApply(chain, target);
@@ -33452,26 +34127,22 @@ index c73bcabe86e07dd117e6f737532aea88ac9ec194..1fb613803345272a3a8dce7f4fb0470c
 +      side === "left"
 +        ? this.leftClearanceReachRatio
 +        : this.rightClearanceReachRatio;
-+    const recoveryTick =
-+      side === "left"
-+        ? ++this.leftClearanceRecoveryTick
-+        : ++this.rightClearanceRecoveryTick;
 +
-+    // Reuse the last measured-safe reach and pole on ordinary frames. Probe a
-+    // slightly fuller reach periodically so the arm naturally recovers once
-+    // the dangerous corridor has passed, without repeating a full circle
-+    // search sixty times per second.
++    // Reuse the last measured-safe reach and pole on ordinary frames, first
++    // trying the fuller reach this frame's share of the recovery allows, so
++    // the arm grows back at a fixed rate once the dangerous corridor has
++    // passed, without repeating a full circle search every frame.
 +    if (cachedRatio < 0.999) {
 +      target.poleHint.copy(
 +        side === "left"
 +          ? this.leftClearancePoleVector
 +          : this.rightClearancePoleVector
 +      );
-+      if (recoveryTick % ARM_CLEARANCE_RECOVERY_INTERVAL === 0) {
-+        const recoveryRatio = Math.min(
-+          1,
-+          cachedRatio + ARM_CLEARANCE_RECOVERY_STEP
-+        );
++      const recoveryRatio = Math.min(
++        1,
++        cachedRatio + ARM_CLEARANCE_RECOVERY_RATE * Math.max(0, deltaTime)
++      );
++      if (recoveryRatio > cachedRatio) {
 +        this.placeArmTargetAtRatio(
 +          target,
 +          context.shoulderPosition,
@@ -33873,7 +34544,7 @@ index c73bcabe86e07dd117e6f737532aea88ac9ec194..1fb613803345272a3a8dce7f4fb0470c
  
    addLayer(layer: AnimationLayer): void {
      this.layers.set(layer.id, layer);
-@@ -689,6 +3130,20 @@ export class AvatarAnimator implements IAvatarAnimator {
+@@ -689,6 +3272,20 @@ export class AvatarAnimator implements IAvatarAnimator {
      this.externalSpinePitchRad = radians;
    }
  
@@ -33894,7 +34565,7 @@ index c73bcabe86e07dd117e6f737532aea88ac9ec194..1fb613803345272a3a8dce7f4fb0470c
    /** Debug toggle: disable pole vectors to compare old vs new elbow behavior */
    togglePoleVectors(): boolean {
      this._poleVectorsEnabled = !this._poleVectorsEnabled;
-@@ -696,10 +3151,18 @@ export class AvatarAnimator implements IAvatarAnimator {
+@@ -696,10 +3293,18 @@ export class AvatarAnimator implements IAvatarAnimator {
        // Reset to default backward poles so difference is visible immediately
        this.leftPoleVector.set(0, 0, -1);
        this.rightPoleVector.set(0, 0, -1);
@@ -34932,10 +35603,10 @@ index f8a2b8ddba4717fa9c4594e099d623a2c3ac14e5..a2cde2dada0e28f612e0a683532b902b
          bestDist = dist;
          best = clip;
 diff --git a/src/lib/services/implementations/CollisionDetector.ts b/src/lib/services/implementations/CollisionDetector.ts
-index 7bcee43c7bd19f3e7aa820ab57f8902cd7e90ca9..145b22db339a0b1197cbd5228c7be949a2a9e62e 100644
+index 7bcee43c7bd19f3e7aa820ab57f8902cd7e90ca9..73ace478c7a0534d15101506a44f27ec7ff94fae 100644
 --- a/src/lib/services/implementations/CollisionDetector.ts
 +++ b/src/lib/services/implementations/CollisionDetector.ts
-@@ -27,14 +27,16 @@ import type {
+@@ -27,14 +27,17 @@ import type {
    CollisionSeverity,
    PropSegment,
  } from "../contracts/ICollisionDetector";
@@ -34956,20 +35627,24 @@ index 7bcee43c7bd19f3e7aa820ab57f8902cd7e90ca9..145b22db339a0b1197cbd5228c7be949
 +  FOREARM_TORSO_CLEARANCE,
 +  TORSO_RADIUS,
 +  pointToSegmentDistance,
++  segmentToSegmentDistance,
 +} from "../geometry/BodyCollisionGeometry";
  
  // How close two arm segments can get before we flag overlap
  const ARM_ARM_THRESHOLD = 0.06;
-@@ -55,6 +57,8 @@ const COOLDOWN_MS: Record<CollisionSeverity, number> = {
+@@ -55,6 +58,11 @@ const COOLDOWN_MS: Record<CollisionSeverity, number> = {
  const _tempA = new Vector3();
  const _tempB = new Vector3();
  const _closest = new Vector3();
++const _segmentDirectionA = new Vector3();
++const _segmentDirectionB = new Vector3();
++const _segmentOffset = new Vector3();
 +const _leftUpperBodyStart = new Vector3();
 +const _rightUpperBodyStart = new Vector3();
  
  // Severity badge for console
  const SEVERITY_BADGE: Record<CollisionSeverity, string> = {
-@@ -122,7 +126,7 @@ export class CollisionDetector implements ICollisionDetector {
+@@ -122,7 +130,7 @@ export class CollisionDetector implements ICollisionDetector {
      //    the bone-based distance check stays ~14 cm away.
      for (const { label, seg } of propPairs) {
        const closest = this.pointToSegmentDistance(body.face, seg.a, seg.b);
@@ -34978,7 +35653,7 @@ index 7bcee43c7bd19f3e7aa820ab57f8902cd7e90ca9..145b22db339a0b1197cbd5228c7be949
        if (closest < threshold) {
          const depth = threshold - closest;
          events.push(this.makeEvent("prop-through-head", stepNumber, beatProgress, depth,
-@@ -161,7 +165,7 @@ export class CollisionDetector implements ICollisionDetector {
+@@ -161,7 +169,7 @@ export class CollisionDetector implements ICollisionDetector {
      for (const { label, seg } of propPairs) {
        for (const arm of armSegments) {
          const closest = this.segmentToSegmentDistance(seg.a, seg.b, arm.a, arm.b);
@@ -34987,7 +35662,7 @@ index 7bcee43c7bd19f3e7aa820ab57f8902cd7e90ca9..145b22db339a0b1197cbd5228c7be949
          if (closest < threshold) {
            const depth = threshold - closest;
            events.push(this.makeEvent("prop-through-arm", stepNumber, beatProgress, depth,
-@@ -178,7 +182,7 @@ export class CollisionDetector implements ICollisionDetector {
+@@ -178,7 +186,7 @@ export class CollisionDetector implements ICollisionDetector {
          blueProp.a, blueProp.b,
          redProp.a,  redProp.b
        );
@@ -34996,7 +35671,7 @@ index 7bcee43c7bd19f3e7aa820ab57f8902cd7e90ca9..145b22db339a0b1197cbd5228c7be949
        if (closest < threshold) {
          const depth = threshold - closest;
          events.push(this.makeEvent("prop-through-prop", stepNumber, beatProgress, depth,
-@@ -190,18 +194,75 @@ export class CollisionDetector implements ICollisionDetector {
+@@ -190,18 +198,75 @@ export class CollisionDetector implements ICollisionDetector {
      //    Uses body.face so the collision zone matches where the visual
      //    face actually is, not where the Mixamo head joint sits.
      const leftArmDist = this.pointToSegmentDistance(body.face, body.leftElbow, body.leftHand);
@@ -35076,7 +35751,7 @@ index 7bcee43c7bd19f3e7aa820ab57f8902cd7e90ca9..145b22db339a0b1197cbd5228c7be949
      }
  
      // 4. Arms through each other - forearm segments
-@@ -251,14 +312,14 @@ export class CollisionDetector implements ICollisionDetector {
+@@ -251,31 +316,32 @@ export class CollisionDetector implements ICollisionDetector {
    }
  
    private pointToSegmentDistance(point: Vector3, segA: Vector3, segB: Vector3): number {
@@ -35098,7 +35773,39 @@ index 7bcee43c7bd19f3e7aa820ab57f8902cd7e90ca9..145b22db339a0b1197cbd5228c7be949
 +    );
    }
  
++  /**
++   * Exact closest distance between two segments, on scratch vectors of its
++   * own. The sampled version this replaced wrote each sample into _tempA,
++   * which pointToSegmentDistance also uses as scratch, so it measured from the
++   * wrong point and no arm or staff crossing was ever reported.
++   */
    private segmentToSegmentDistance(a0: Vector3, a1: Vector3, b0: Vector3, b1: Vector3): number {
+-    let minDist = Infinity;
+-    for (let i = 0; i <= 3; i++) {
+-      const t = i / 3;
+-      _tempA.lerpVectors(a0, a1, t);
+-      const d = this.pointToSegmentDistance(_tempA, b0, b1);
+-      if (d < minDist) minDist = d;
+-    }
+-    for (let i = 0; i <= 3; i++) {
+-      const t = i / 3;
+-      _tempA.lerpVectors(b0, b1, t);
+-      const d = this.pointToSegmentDistance(_tempA, a0, a1);
+-      if (d < minDist) minDist = d;
+-    }
+-    return minDist;
++    return segmentToSegmentDistance(
++      a0,
++      a1,
++      b0,
++      b1,
++      _segmentDirectionA,
++      _segmentDirectionB,
++      _segmentOffset
++    );
+   }
+ 
+   private makeEvent(
 diff --git a/src/lib/services/implementations/ContactRetargeter.ts b/src/lib/services/implementations/ContactRetargeter.ts
 new file mode 100644
 index 0000000000000000000000000000000000000000..7187a0547969aa1a7e503a53c37445efb94c774c

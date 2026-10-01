@@ -461,11 +461,13 @@ describe("MediaCompositionPresetSchema", () => {
     expect(MediaCompositionPresetSchema.safeParse(preset).success).toBe(false);
   });
 
-  it("rejects crossfades between different layout regions", () => {
+  // A compiled post gives every item its own region and crossfades one main
+  // clip into the next, so a crossfade always spans two regions there.
+  it("accepts crossfades between clips in different regions", () => {
     const preset = referencePreset();
     const incoming = preset.clips[1]!;
     if (incoming.kind === "visual") incoming.regionId = "bottom";
 
-    expect(MediaCompositionPresetSchema.safeParse(preset).success).toBe(false);
+    expect(MediaCompositionPresetSchema.safeParse(preset).success).toBe(true);
   });
 });

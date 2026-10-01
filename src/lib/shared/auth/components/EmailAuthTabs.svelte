@@ -12,28 +12,57 @@
   import LastUsedBadge from "$lib/shared/components/LastUsedBadge.svelte";
   import { t } from "$lib/shared/i18n/i18n.svelte";
   import { getLastAuthMethod } from "$lib/shared/auth/services/last-auth-method.svelte";
+  import { readPendingEmailCode } from "$lib/shared/auth/services/pending-email-code";
   import { growFade } from "$lib/shared/transitions/motion";
+
+  type Tab = "magic" | "password";
 
   interface Props {
     mode?: "signin" | "signup";
     compact?: boolean;
     showMethods?: boolean;
+    /** Off when the host already offers its own sign-in/sign-up switch. */
+    showModeSwitch?: boolean;
   }
 
   let {
     mode = $bindable("signin"),
     compact = false,
     showMethods = false,
+    showModeSwitch = true,
   }: Props = $props();
 
-  const lastMethod = getLastAuthMethod();
+  const lastMethod = $derived(getLastAuthMethod());
+  // A code already on its way stays in front, so coming back from the inbox
+  // lands on the box that takes it.
+  const codePending = readPendingEmailCode() !== null;
 
-  // A code asks the least of someone who does not know how their account was
-  // created. Returning password users resume where they left off; everyone
-  // else starts on the no-password path.
-  let activeTab = $state<"magic" | "password">(
-    !compact && lastMethod === "password" ? "password" : "magic"
-  );
+  // Both forms edit the same address, so switching tabs never retypes it.
+  let email = $state("");
+  let chosenTab = $state<Tab | null>(null);
+  let sendCodeOnOpen = $state(false);
+
+  // Someone signing in expects a password box. Someone creating an account
+  // gets the code, which needs no password invented. What this device last
+  // used beats both, and a tab the person picked beats everything.
+  function defaultTab(): Tab {
+    if (compact || codePending) return "magic";
+    if (lastMethod === "password") return "password";
+    if (lastMethod === "magic-link") return "magic";
+    return mode === "signin" ? "password" : "magic";
+  }
+
+  const activeTab = $derived(chosenTab ?? defaultTab());
+
+  function chooseTab(tab: Tab) {
+    chosenTab = tab;
+    sendCodeOnOpen = false;
+  }
+
+  function useCodeInstead() {
+    chosenTab = "magic";
+    sendCodeOnOpen = true;
+  }
 </script>
 
 <div class="email-auth-tabs">
@@ -45,7 +74,7 @@
         aria-selected={activeTab === "magic"}
         class="tab"
         class:active={activeTab === "magic"}
-        onclick={() => (activeTab = "magic")}
+        onclick={() => chooseTab("magic")}
         aria-label={lastMethod === "magic-link"
           ? t("auth_email_code_last_used")
           : undefined}
@@ -62,7 +91,7 @@
         aria-selected={activeTab === "password"}
         class="tab"
         class:active={activeTab === "password"}
-        onclick={() => (activeTab = "password")}
+        onclick={() => chooseTab("password")}
         aria-label={lastMethod === "password"
           ? t("auth_password_last_used")
           : undefined}
@@ -81,9 +110,14 @@
     role={!compact || showMethods ? "tabpanel" : undefined}
   >
     {#if activeTab === "magic"}
-      <EmailLinkAuth {compact} />
+      <EmailLinkAuth {compact} bind:email sendOnOpen={sendCodeOnOpen} />
     {:else}
-      <EmailPasswordAuth bind:mode showModeSwitch={!compact} />
+      <EmailPasswordAuth
+        bind:mode
+        bind:email
+        showModeSwitch={showModeSwitch && !compact}
+        onUseCode={useCodeInstead}
+      />
     {/if}
   </div>
 </div>

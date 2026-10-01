@@ -12,6 +12,7 @@
   import { entryFromArchiveHash } from "./_lib/archive-presentation";
   import ArchiveChronologicalIndex from "./ArchiveChronologicalIndex.svelte";
   import ArchiveEntryDetail from "./ArchiveEntryDetail.svelte";
+  import LinkChip from "$lib/shared/ui/components/LinkChip.svelte";
 
   const defaultEntry = ARCHIVE_ENTRIES[0]!;
   let activeEntry = $state(defaultEntry);
@@ -105,7 +106,7 @@
       <span
         >{ARCHIVE_ENTRIES.length} selected records, {ARCHIVE_START_YEAR}–{ARCHIVE_END_YEAR}</span
       >
-      <a href="#about-this-archive">About this archive</a>
+      <LinkChip href="#about-this-archive">About this archive</LinkChip>
     </div>
   </header>
 
@@ -161,7 +162,8 @@
         aria-label="Previous and next entries by date"
       >
         {#if previous}
-          <a
+          <LinkChip
+            wrap
             href={`#archive-record-${previous.id}`}
             onclick={(event) => {
               if (
@@ -174,13 +176,15 @@
               event.preventDefault();
               void selectEntry(previous);
             }}
-            ><span>Earlier entry</span><strong>← {previous.shortTitle}</strong
-            ></a
+            ><span>Earlier entry</span><strong
+              >← {previous.shortTitle}</strong
+            ></LinkChip
           >
         {:else}<span></span>{/if}
         {#if next}
-          <a
+          <LinkChip
             class="next-entry"
+            wrap
             href={`#archive-record-${next.id}`}
             onclick={(event) => {
               if (
@@ -192,7 +196,10 @@
                 return;
               event.preventDefault();
               void selectEntry(next);
-            }}><span>Later entry</span><strong>{next.shortTitle} →</strong></a
+            }}
+            ><span>Later entry</span><strong
+              >{next.shortTitle} →</strong
+            ></LinkChip
           >
         {/if}
       </nav>
@@ -220,9 +227,9 @@
           Curated by Austen Cloud, creator of The Kinetic Alphabet and Flow Arts
           Composer.
         </p>
-        <a
+        <LinkChip
           href="mailto:support@tkaflowarts.com?subject=Flow%20arts%20history%20correction"
-          >Suggest an addition or correction</a
+          >Suggest an addition or correction</LinkChip
         >
         <small
           >Send the entry name, your suggested change, and a source link.</small
@@ -281,14 +288,6 @@
     font-size: var(--font-size-min, 0.875rem);
     color: var(--theme-text-dim);
   }
-  a {
-    color: var(--theme-text);
-    text-underline-offset: 0.25em;
-  }
-  a:hover {
-    color: var(--theme-accent);
-  }
-  a:focus-visible,
   summary:focus-visible {
     outline: 2px solid var(--theme-accent);
     outline-offset: 4px;
@@ -337,7 +336,6 @@
   }
   .selected-reader {
     min-width: 0;
-    scroll-margin-top: calc(var(--marketing-header-h, 64px) + 1rem);
   }
   .selected-reader:focus {
     outline: none;
@@ -350,12 +348,11 @@
     padding-top: 1.25rem;
     margin-top: 2.5rem;
   }
-  .entry-neighbors a {
-    display: grid;
-    gap: 0.3rem;
-    padding-block: 0.5rem;
-    text-decoration: none;
+  .entry-neighbors :global(.link-chip) {
     overflow-wrap: anywhere;
+  }
+  .entry-neighbors :global(.next-entry) {
+    justify-self: end;
   }
   .entry-neighbors span {
     font-size: var(--font-size-compact, 0.75rem);
@@ -365,14 +362,10 @@
     font-size: var(--font-size-min, 0.875rem);
     font-weight: 600;
   }
-  .next-entry {
-    text-align: right;
-  }
   .archive-about {
     border-top: 1px solid var(--theme-stroke);
     padding-top: 1.25rem;
     margin-top: 2.5rem;
-    scroll-margin-top: calc(var(--marketing-header-h, 64px) + 1rem);
   }
   .archive-about-columns {
     display: grid;
@@ -391,13 +384,6 @@
     line-height: 1.5;
     color: var(--theme-text-dim);
     margin: 0;
-  }
-  .archive-about a {
-    display: flex;
-    align-items: center;
-    min-height: 44px;
-    width: fit-content;
-    font-size: var(--font-size-min, 0.875rem);
   }
   .archive-about small {
     display: block;
@@ -419,7 +405,6 @@
     }
     .entry-index {
       contain: none;
-      scroll-margin-top: calc(var(--marketing-header-h, 64px) + 1rem);
       position: static;
     }
     details {

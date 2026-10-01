@@ -20,6 +20,8 @@ import {
 } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
 import { getPathPoints } from "$lib/features/hand-paths/hand-path-builder/services/hand-path-animator";
 import { getAnimationVisibilityManager } from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
+import { activeWordHeaderStep } from "$lib/shared/animation-engine/domain/word-header-highlight";
+import type { WordHeaderHighlight } from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
 import { getMotionColor } from "$lib/shared/utils/svg-color-utils";
 import type { MotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
 import {
@@ -40,6 +42,7 @@ export interface FrameCompositorConfig {
   showElementalGlyph: boolean;
   showStepNumbers: boolean;
   showWordHeader: boolean;
+  wordHeaderHighlight?: WordHeaderHighlight;
   showProgressBar: boolean;
   isDarkMode: boolean;
   isCompositeMode: boolean;
@@ -322,7 +325,11 @@ export class ExportFrameCompositor {
         actualCanvasSize,
         sequenceWord,
         isDarkMode,
-        stepNumber,
+        activeWordHeaderStep(
+          playbackPosition,
+          steps.length,
+          this.config.wordHeaderHighlight ?? "arrival"
+        ),
         difficultyLevel,
         loopComponents,
         rotationPeriod,

@@ -14,6 +14,7 @@
     beats grouping.
 -->
 <script lang="ts">
+  import LinkChip from "$lib/shared/ui/components/LinkChip.svelte";
   import { t } from "$lib/shared/i18n/i18n.svelte";
   import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
   import {
@@ -29,6 +30,7 @@
   } from "$lib/shared/pictograph/prop/domain/prop-type-display-registry";
   import { tick } from "svelte";
   import Crossfade from "$lib/shared/components/Crossfade.svelte";
+  import { growFade } from "$lib/shared/transitions/motion";
   import PropGridButton from "./PropGridButton.svelte";
   import {
     FILL_MAX_TILE,
@@ -78,8 +80,10 @@
     layout = "grid",
     heading,
     actions,
+    lead,
     scrollMode = "internal",
     fill = false,
+    minTileSize = 52,
     includeBareHands = false,
     chirality,
     allowedProps,
@@ -105,7 +109,7 @@
     selectedPropType: PropType | null;
     color?: "blue" | "red" | (string & {});
     title?: string;
-    onSelect: (propType: PropType) => void;
+    onSelect: (propType: PropType, look?: PropLook) => void;
     variant?: "panel" | "inline";
     /**
      * Flat mode: drop the section labels and pack every prop into one dense
@@ -114,12 +118,18 @@
      * scrollbar beats grouping.
      */
     flat?: boolean;
-    /** Larger scrolling cards when the live preview shares the screen. */
-    tileDensity?: "compact" | "comfortable";
+    /** Inspector keeps small artwork and readable labels in a scrolling grid. */
+    tileDensity?: "compact" | "comfortable" | "inspector";
     /** A bounded, sideways-scrolling catalogue beneath a compact toolbar. */
     layout?: "grid" | "rail";
     heading?: Snippet;
     actions?: Snippet;
+    /**
+     * Content of the top-level grid screen above its tiles (the primary prop
+     * colours). A drill swaps it out with the tiles as one screen, and a
+     * bounded grid leaves it room.
+     */
+    lead?: Snippet;
     /**
      * Drawers own a bounded internal scroller. Embedded inspectors already
      * scroll the whole tab, so their picker contributes its natural height and
@@ -135,6 +145,8 @@
      * measurement would feed back into the content it measures.
      */
     fill?: boolean;
+    /** Host readability floor for the measured flat grid. */
+    minTileSize?: number;
     /** Adds the scene-only no-prop choice using the same canonical card. */
     includeBareHands?: boolean;
     /**
@@ -154,7 +166,7 @@
     accessMode?: "standard" | "educational";
     /** Let a roomy host use all available width for each family row. */
     fluidSections?: boolean;
-    /** Collection metadata chooses a type without editing account appearance. */
+    /** Show build, grip and other appearance controls beyond the style tiles. */
     showAppearance?: boolean;
     fanAppearance: FanAppearance;
     onFanAppearanceChange: (appearance: FanAppearance) => void;
@@ -164,7 +176,7 @@
     premiumBadge?: Snippet;
     premiumNudge?: Snippet<[{ dismiss: () => void }]>;
     propLook?: PropLook;
-    /** Persists the global artwork preference owned by the app settings seam. */
+    /** Enables artwork choices; the host owns their persistence. */
     onPropLookChange?: (look: PropLook) => void;
     recipeOverrides?: Partial<Record<PropType, CompositionRecipe>>;
     colors?: ViewerCustomColorPair | null;
@@ -362,6 +374,8 @@
   let probeEl = $state<HTMLDivElement | null>(null);
   let tilesEl = $state<HTMLDivElement | null>(null);
   let fillHeight = $state(0);
+  let leadEl = $state<HTMLDivElement | null>(null);
+  let leadHeight = $state(0);
   let tilesBox = $state({ width: 0, height: 0 });
 
   $effect(() => {
@@ -382,6 +396,25 @@
     measure();
     return () => observer.disconnect();
   });
+
+  // The lead shares the grid screen, so a bounded grid fills what is left.
+  // Its height outlives the screen: the grid returning from a drill starts
+  // at the right size instead of overflowing for a frame.
+  $effect(() => {
+    if (!leadEl) return;
+    const el = leadEl;
+    // Rounded up, the mirror of the probe's floor, so the pair never
+    // overflows the scroller by a fraction of a pixel.
+    const measure = () =>
+      (leadHeight = Math.ceil(el.getBoundingClientRect().height));
+    const observer = new ResizeObserver(measure);
+    observer.observe(el);
+    measure();
+    return () => observer.disconnect();
+  });
+  const gridFillHeight = $derived(
+    lead && fillHeight > 0 ? Math.max(0, fillHeight - leadHeight) : fillHeight
+  );
 
   $effect(() => {
     if (!tilesEl) return;
@@ -468,9 +501,6 @@
   });
 
   const FLAT_GAP = 8;
-  /* Below this the dense grid and its scrollbar read better than tiles
-     squeezed to fit a short host. */
-  const FLAT_MIN_TILE = 52;
   /**
    * Tile grid for the flat picker in a bounded host: the column count that
    * makes the largest tile once the rows must share the height, so the grid
@@ -483,7 +513,7 @@
     if (!flat || drill !== null) return null;
     const n = allBases.length;
     const width = flatWidth;
-    const height = fillHeight;
+    const height = gridFillHeight;
     if (n === 0 || width === 0 || height === 0) return null;
     let best: {
       cols: number;
@@ -506,7 +536,7 @@
         best = { cols, colWidth, rowHeight, size };
       }
     }
-    if (best === null || best.size < FLAT_MIN_TILE) return null;
+    if (best === null || best.size < minTileSize) return null;
     const orphans = n % best.cols;
     return {
       cols: best.cols,
@@ -521,27 +551,46 @@
   /**
    * A family's styles, each in every look it has: a style with a captured 3D
    * sprite gets a pictograph tile and a 3D tile, so one view holds every
-   * variation and a pick sets the prop and the (global) look together.
+   * variation and a pick sets the prop and look together.
    * Pictographs come first so the 3D row reads as the same set again.
    */
-  type FamilyTile = { prop: PropType; look?: PropLook };
+  type FamilyTile = { style: PropType; prop: PropType; look?: PropLook };
   const familyTiles = $derived.by((): FamilyTile[] => {
     if (drill?.kind !== "family") return [];
-    const choices = familyChoices(drill.base);
+    const choices = familyChoices(drill.base).map((style) => ({
+      style,
+      prop: sizedStyle(style),
+    }));
     const withLooks =
-      showAppearance && onPropLookChange !== undefined
-        ? choices.filter((prop) => hasModelSprite(prop))
+      onPropLookChange !== undefined
+        ? choices.filter((choice) => hasModelSprite(choice.prop))
         : [];
-    if (withLooks.length === 0) return choices.map((prop) => ({ prop }));
+    if (withLooks.length === 0) return choices;
     return [
-      ...choices.map((prop) =>
-        withLooks.includes(prop)
-          ? { prop, look: "pictograph" as const }
-          : { prop }
+      ...choices.map((choice) =>
+        withLooks.includes(choice)
+          ? { ...choice, look: "pictograph" as const }
+          : choice
       ),
-      ...withLooks.map((prop) => ({ prop, look: "model" as const })),
+      ...withLooks.map((choice) => ({ ...choice, look: "model" as const })),
     ];
   });
+
+  // The picked style when it belongs to the open family. The family's page
+  // carries that style's settings above its tiles, so a pick stays there.
+  const familyMember = $derived(
+    drill?.kind === "family" &&
+      selectedPropType !== null &&
+      getBasePropType(selectedPropType) === drill.base
+      ? selectedPropType
+      : null
+  );
+  // The tiles wear the picked size, so they preview it and a pick keeps it.
+  function sizedStyle(style: PropType): PropType {
+    if (familyMember === null || !isBigVariant(familyMember)) return style;
+    const big = toggleBigVariant(style);
+    return big !== style && selectablePropSet.has(big) ? big : style;
+  }
   const drillTileCount = $derived(familyTiles.length);
   /**
    * Tile grid for a drilled family in a bounded host: the column count that
@@ -623,7 +672,7 @@
     return sectionFillLayout({
       counts: sections.map((section) => section.bases.length),
       width: sectionsBox.width,
-      height: fillHeight,
+      height: gridFillHeight,
       labels: sectionsBox.labels,
     });
   });
@@ -683,7 +732,8 @@
   );
 
   // The triangle's grip is a look on top of the tile, like the fan build. It
-  // shows as a two-pill row in the triangle's details and on the rail.
+  // shows as a two-pill row on the hoop styles page, in the triangle's
+  // details and on the rail.
   const showGrip = $derived(
     showAppearance && detailProp !== null && isTrianglePropType(detailProp)
   );
@@ -745,9 +795,25 @@
     );
   }
 
+  // What a family's page can hold for a picked style: its size and grip,
+  // and its chirality everywhere but the rail, which has no room for it.
+  function familyPageHolds(prop: PropType): boolean {
+    return (
+      !isFanPropType(prop) &&
+      !(
+        layout === "rail" &&
+        chirality !== undefined &&
+        isBuugengFamilyProp(prop)
+      )
+    );
+  }
+
   function selectProp(prop: PropType, look?: PropLook): void {
-    onSelect(prop);
+    // Scoped hosts can save the type and artwork as one undoable choice.
+    if (look === undefined) onSelect(prop);
+    else onSelect(prop, look);
     if (look !== undefined) onPropLookChange?.(look);
+    if (drill?.kind === "family" && familyPageHolds(prop)) return;
     if (!opensDetails(prop, look !== undefined)) return;
     void openDrill(
       isFanPropType(prop)
@@ -814,6 +880,7 @@
   class:inline={variant === "inline"}
   class:flat
   class:rail={layout === "rail"}
+  class:inspector={tileDensity === "inspector"}
   class:host-scroll={scrollMode === "host"}
   class:fluid-sections={fluidSections}
   data-swipe-block={layout === "rail" ? "" : undefined}
@@ -927,22 +994,22 @@
         <div class="rail-heading">
           <strong class="drill-title">{drillTitle}</strong>
         </div>
+        {#if familyMember !== null}
+          {#if showSize}{@render sizeControl()}{/if}
+          {#if showGrip}{@render gripControl()}{/if}
+        {/if}
         {#if drill.kind === "fan-look" && fanLook?.designCredit && railCreditShortName}
-          <a
+          <LinkChip
             class="rail-credit"
             href={fanLook.designCredit.sourceUrl}
-            target="_blank"
-            rel="noreferrer"
             aria-label={t("settings_design_source", {
               name: fanLook.designCredit.originator,
             })}
-          >
-            <span class="credit-long">{fanLook.designCredit.originator}</span>
-            <span class="credit-short" aria-hidden="true"
+            ><span class="credit-long">{fanLook.designCredit.originator}</span
+            ><span class="credit-short" aria-hidden="true"
               >{railCreditShortName}</span
-            >
-            <i class="fas fa-arrow-up-right-from-square" aria-hidden="true"></i>
-          </a>
+            ></LinkChip
+          >
         {/if}
       {:else}
         <div class="rail-heading">{@render heading?.()}</div>
@@ -1157,6 +1224,35 @@
               fill={fillHeight > 0}
             />
           {:else}
+            {#if layout !== "rail"}
+              <!-- The picked style's settings, above the tiles that pick it.
+                   Each grows in and out on its own as the pick changes. -->
+              <div class="family-settings">
+                {#if familyMember !== null && showSize}
+                  <div class="detail-row" transition:growFade={{ axis: "y" }}>
+                    <span class="look-label">{t("settings_size")}</span>
+                    {@render sizeControl()}
+                  </div>
+                {/if}
+                {#if familyMember !== null && showGrip}
+                  <div class="detail-row" transition:growFade={{ axis: "y" }}>
+                    <span class="look-label">{t("settings_grip")}</span>
+                    {@render gripControl()}
+                  </div>
+                {/if}
+                {#if familyMember !== null && chirality && isBuugengFamilyProp(familyMember)}
+                  <div transition:growFade={{ axis: "y" }}>
+                    <PropChiralityRow
+                      propType={familyMember}
+                      hands={chirality.hands}
+                      {colors}
+                      {propLook}
+                      onChange={chirality.onChange}
+                    />
+                  </div>
+                {/if}
+              </div>
+            {/if}
             <div
               class="drill-tiles"
               role="group"
@@ -1165,6 +1261,7 @@
               style={balancedColumns(familyTiles.length)}
               style:--family-count={familyChoices(drill.base).length}
               class:comfortable={tileDensity === "comfortable"}
+              class:inspector={tileDensity === "inspector"}
               class:fill={drillLayout !== null}
               class:flat-grid={flat && drillLayout === null}
               class:section-buttons={!flat && drillLayout === null}
@@ -1179,7 +1276,7 @@
               onpointercancel={endRailPointer}
               onclickcapture={handleRailClick}
             >
-              {#each familyTiles as entry, index (`${entry.prop}:${entry.look ?? ""}`)}
+              {#each familyTiles as entry, index (`${entry.style}:${entry.look ?? ""}`)}
                 {@render tile(
                   entry.prop,
                   drillLayout && index === drillLayout.orphanIndex
@@ -1191,75 +1288,81 @@
             </div>
           {/if}
         </section>
-      {:else if flat}
-        <div
-          class="flat-grid"
-          role="group"
-          aria-label={t("settings_prop_choices")}
-          class:dragging={railDragging}
-          class:comfortable={tileDensity === "comfortable"}
-          class:fill={flatLayout !== null}
-          style:height={flatLayout ? `${fillHeight}px` : undefined}
-          style:--flat-cols={flatLayout?.cols}
-          style:--flat-half={flatLayout
-            ? `${flatLayout.halfTrack}px`
-            : undefined}
-          style:--flat-row={flatLayout
-            ? `${flatLayout.rowHeight}px`
-            : undefined}
-          bind:this={flatEl}
-          onpointerdown={handleRailPointerDown}
-          onpointermove={handleRailPointerMove}
-          onpointerup={endRailPointer}
-          onpointercancel={endRailPointer}
-          onclickcapture={handleRailClick}
-        >
-          {#each allBases as base, index (base)}
-            {@render familyTile(
-              base,
-              flatLayout && index === flatLayout.orphanIndex
-                ? flatLayout.orphanStart
-                : undefined
-            )}
-          {/each}
-        </div>
       {:else}
-        <div
-          class="grid-content"
-          class:fill={sectionLayout !== null}
-          style:min-height={sectionLayout ? `${fillHeight}px` : undefined}
-          style:--fill-tile={sectionLayout
-            ? `${sectionLayout.tile}px`
-            : undefined}
-          bind:this={sectionsEl}
-        >
-          {#each sections as section, i}
-            {@const fillCols = sectionLayout
-              ? balancedCount(section.bases.length, sectionLayout.cols)
-              : 0}
-            {@const orphan = sectionLayout
-              ? centeredOrphan(section.bases.length, fillCols)
-              : null}
-            <div class="prop-section" class:primary={i === 0}>
-              <div class="section-label" class:first={i === 0}>
-                {section.label}
+        {#if lead}
+          <div class="grid-lead" bind:this={leadEl}>{@render lead()}</div>
+        {/if}
+        {#if flat}
+          <div
+            class="flat-grid"
+            role="group"
+            aria-label={t("settings_prop_choices")}
+            class:dragging={railDragging}
+            class:comfortable={tileDensity === "comfortable"}
+            class:inspector={tileDensity === "inspector"}
+            class:fill={flatLayout !== null}
+            style:height={flatLayout ? `${gridFillHeight}px` : undefined}
+            style:--flat-cols={flatLayout?.cols}
+            style:--flat-half={flatLayout
+              ? `${flatLayout.halfTrack}px`
+              : undefined}
+            style:--flat-row={flatLayout
+              ? `${flatLayout.rowHeight}px`
+              : undefined}
+            bind:this={flatEl}
+            onpointerdown={handleRailPointerDown}
+            onpointermove={handleRailPointerMove}
+            onpointerup={endRailPointer}
+            onpointercancel={endRailPointer}
+            onclickcapture={handleRailClick}
+          >
+            {#each allBases as base, index (base)}
+              {@render familyTile(
+                base,
+                flatLayout && index === flatLayout.orphanIndex
+                  ? flatLayout.orphanStart
+                  : undefined
+              )}
+            {/each}
+          </div>
+        {:else}
+          <div
+            class="grid-content"
+            class:fill={sectionLayout !== null}
+            style:min-height={sectionLayout ? `${gridFillHeight}px` : undefined}
+            style:--fill-tile={sectionLayout
+              ? `${sectionLayout.tile}px`
+              : undefined}
+            bind:this={sectionsEl}
+          >
+            {#each sections as section, i}
+              {@const fillCols = sectionLayout
+                ? balancedCount(section.bases.length, sectionLayout.cols)
+                : 0}
+              {@const orphan = sectionLayout
+                ? centeredOrphan(section.bases.length, fillCols)
+                : null}
+              <div class="prop-section" class:primary={i === 0}>
+                <div class="section-label" class:first={i === 0}>
+                  {section.label}
+                </div>
+                <div
+                  class="section-buttons"
+                  class:single={section.bases.length === 1}
+                  style={section.columns}
+                  style:--fill-cols={sectionLayout ? fillCols : undefined}
+                >
+                  {#each section.bases as base, index (base)}
+                    {@render familyTile(
+                      base,
+                      index === orphan?.index ? orphan.start : undefined
+                    )}
+                  {/each}
+                </div>
               </div>
-              <div
-                class="section-buttons"
-                class:single={section.bases.length === 1}
-                style={section.columns}
-                style:--fill-cols={sectionLayout ? fillCols : undefined}
-              >
-                {#each section.bases as base, index (base)}
-                  {@render familyTile(
-                    base,
-                    index === orphan?.index ? orphan.start : undefined
-                  )}
-                {/each}
-              </div>
-            </div>
-          {/each}
-        </div>
+            {/each}
+          </div>
+        {/if}
       {/if}
     </Crossfade>
   </div>
@@ -1288,21 +1391,10 @@
     flex: 0 0 auto;
     margin-left: auto;
   }
-  .rail-credit {
-    display: inline-flex;
+  .rail-toolbar :global(.rail-credit) {
     flex: 0 0 auto;
-    align-items: center;
-    gap: 0.3rem;
-    min-height: var(--min-touch-target, 44px);
     margin-left: 0.25rem;
-    color: var(--theme-accent, #8b6cff);
     font-size: var(--font-size-min, 14px);
-    font-weight: 650;
-    text-decoration: none;
-  }
-  .rail-credit:hover,
-  .rail-credit:focus-visible {
-    text-decoration: underline;
   }
   .credit-short {
     display: none;
@@ -1311,7 +1403,7 @@
     .rail-toolbar {
       column-gap: 0.375rem;
     }
-    .rail-credit {
+    .rail-toolbar :global(.rail-credit) {
       margin-left: 0.1rem;
     }
     .credit-long {
@@ -1624,7 +1716,10 @@
   /* A fill grid already sizes its tiles to the host; comfortable only sets
      the unbounded grid's track floor and tile shape. */
   .flat-grid.comfortable:not(.fill) {
-    grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr));
+    grid-template-columns: repeat(
+      auto-fit,
+      minmax(var(--prop-comfortable-min, 8rem), 1fr)
+    );
     gap: 0.6rem;
   }
   .flat-grid.comfortable:not(.fill) :global(.prop-button) {
@@ -1634,6 +1729,42 @@
   }
   .flat-grid.comfortable :global(.prop-label) {
     font-size: var(--font-size-min, 0.875rem);
+    white-space: normal;
+  }
+
+  /* An editor needs the catalog beside its canvas even when only a few rows
+     fit. Keep artwork compact, let names wrap, and scroll this region alone. */
+  .prop-grid-root.inspector .grid-scroll {
+    padding: 8px 4px;
+    scrollbar-gutter: stable;
+    overscroll-behavior-y: contain;
+  }
+  .flat-grid.inspector {
+    grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+    grid-auto-rows: 108px;
+    gap: 8px;
+    align-content: start;
+  }
+  .flat-grid.inspector :global(.prop-button) {
+    height: 100%;
+    min-height: 44px;
+    aspect-ratio: auto;
+    padding: 6px;
+    gap: 2px;
+    justify-content: center;
+  }
+  .flat-grid.inspector :global(.prop-image-container) {
+    flex: none;
+    height: 56px;
+  }
+  .flat-grid.inspector
+    :global(.prop-image-container .prop-composition-preview) {
+    width: 56px;
+    height: 56px;
+    max-height: 100%;
+  }
+  .flat-grid.inspector :global(.prop-label) {
+    font-size: var(--font-size-min, 14px);
     white-space: normal;
   }
 
@@ -1706,6 +1837,12 @@
   .grid-content.fill .section-buttons > :global(*) {
     /* End-only, so an inline column start on the orphan keeps its span. */
     grid-column-end: span 2;
+  }
+
+  /* Spaced from the tiles by its own padding, so the measured height a
+     bounded grid gives up includes the gap. */
+  .grid-lead {
+    padding-bottom: 12px;
   }
 
   /* Reports the scroller's bounded height to script; see fillHeight. */
@@ -1781,6 +1918,23 @@
   .detail-options.fill > :global(.fan-style-options) {
     flex: 1;
     min-height: 0;
+  }
+
+  /* Its rows carry their own top margin so each can grow from nothing; the
+     negative margin takes back the view's gap while none is showing. */
+  .family-settings {
+    display: flex;
+    flex: 0 0 auto;
+    flex-direction: column;
+    margin-top: -12px;
+  }
+
+  .family-settings > * {
+    margin-top: 12px;
+  }
+
+  .family-settings :global(.chirality-row) {
+    margin: 0;
   }
 
   .detail-row {

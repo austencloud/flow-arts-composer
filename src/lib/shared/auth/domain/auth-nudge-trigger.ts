@@ -23,6 +23,9 @@ export type AuthNudgeTrigger =
   | "module:other"
   | "edit-community"
   | "loop-locked-guest"
+  | "method:fuse"
+  | "method:tunnel"
+  | "method:assemble"
   | "community-setups"
   | "saved-setups"
   | "save-setup"
@@ -91,6 +94,12 @@ export const AUTH_NUDGE_TEXTS: Record<AuthNudgeTrigger, string> = {
   // what stays free meanwhile.
   "loop-locked-guest":
     "Create a free account to use every LOOP type. Rotated LOOPs stay free without one.",
+  // Account-only Create methods a guest sees as locked cards on the front door.
+  "method:fuse": "Create a free account to combine two sequences into one.",
+  "method:tunnel":
+    "Create a free account to arrange sequences for several performers.",
+  "method:assemble":
+    "Create a free account to build a sequence by choosing grid points.",
   "community-setups":
     "Create a free account to use community setups and build sequences up to 64 steps.",
   "saved-setups": "Create a free account to keep setups across sessions.",
@@ -244,6 +253,21 @@ const AUTH_PROMPT_CONTENTS: Record<AuthNudgeTrigger, AuthPromptContent> = {
     title: "Try every LOOP type",
     body: "A free account lets you use every LOOP type.",
   },
+  "method:fuse": {
+    key: "method:fuse",
+    title: "Use Fuse",
+    body: "A free account lets you combine two sequences into one.",
+  },
+  "method:tunnel": {
+    key: "method:tunnel",
+    title: "Use Tunnel",
+    body: "A free account lets you arrange sequences for several performers.",
+  },
+  "method:assemble": {
+    key: "method:assemble",
+    title: "Use Assemble",
+    body: "A free account lets you build a sequence by choosing grid points.",
+  },
   "community-setups": {
     key: "community-setups",
     title: "Use this setup",
@@ -314,14 +338,30 @@ export function moduleNudgeTrigger(moduleId: string): AuthNudgeTrigger {
   return MODULE_NUDGE_TRIGGERS[moduleId] ?? "module:other";
 }
 
+// The prompt a guest sees after tapping a locked method on the Create front
+// door. It names the method so the ask reads as a next step, not a wall.
+const CREATE_METHOD_NUDGE_TRIGGERS: Partial<Record<string, AuthNudgeTrigger>> =
+  {
+    fuse: "method:fuse",
+    tunnel: "method:tunnel",
+    assemble: "method:assemble",
+  };
+
+export function createMethodNudgeTrigger(methodId: string): AuthNudgeTrigger {
+  return CREATE_METHOD_NUDGE_TRIGGERS[methodId] ?? "module:other";
+}
+
+// One key for both modes: the key marks a new encounter, and switching between
+// signing in and creating an account is the same encounter. A per-mode key
+// reset the open email form every time someone pressed the switch.
 const GENERIC_AUTH_PROMPTS: Record<AuthMode, AuthPromptContent> = {
   signup: {
-    key: "generic-signup",
+    key: "generic",
     title: "Create your account",
     body: "Save your sequences and open them on any device.",
   },
   signin: {
-    key: "generic-signin",
+    key: "generic",
     title: "Welcome back",
     body: "Sign in to open your saved work.",
   },

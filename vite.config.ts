@@ -1,4 +1,5 @@
 import { getEnabledFeaturesDefineMap } from "./src/config/feature-flags";
+import { postStudioDraftStoragePlugin } from "./scripts/post-studio-draft-storage.mjs";
 import {
   ARROW_SPRITE_WATCH_PATH,
   createViteDevWatchIgnoredMatcher,
@@ -6,6 +7,8 @@ import {
 } from "./src/config/vite-dev-watch-policy";
 import { createViteDependencyCachePlan } from "./src/config/vite-dependency-cache";
 import { createViteDependencyRefreshPlugin } from "./src/config/vite-plugin-dependency-refresh";
+import { deployStaticCopyPlugin } from "./src/config/vite-plugin-deploy-static-copy";
+import { SSR_RESOLVE_CONDITIONS } from "./src/config/vite-ssr-conditions";
 import { featureGatePlugin } from "./src/config/vite-plugin-feature-gate";
 import { museumPlacementPlugin } from "./src/lib/features/museum/dev/museum-placement-plugin";
 import { composerPlacementPlugin } from "./src/lib/shared/3d/scene-composer/persistence/composer-placement-plugin";
@@ -903,6 +906,7 @@ export default defineConfig(({ command, mode }) => ({
     ...getEnabledFeaturesDefineMap(),
   },
   plugins: [
+    postStudioDraftStoragePlugin(),
     createViteDependencyRefreshPlugin({ projectRoot: dirname }),
     featureGatePlugin(),
     // realtime-bpm-analyzer is browser-only (AudioContext) and has broken
@@ -946,6 +950,7 @@ export default defineConfig(({ command, mode }) => ({
     // For state preservation across HMR, use `// @hmr:keep-all` comments.
     sveltekit(),
     clientOnlyChunkMergePlugin(),
+    deployStaticCopyPlugin(), // Copies static/ into the client build minus files the deploy trim deletes
     dictionaryPlugin(),
     screenshotsPlugin(), // Screenshot gallery for Lab module
     fontCorsPlugin(), // 📱 CORS headers for fonts (mobile debugging)
@@ -1059,14 +1064,19 @@ export default defineConfig(({ command, mode }) => ({
   // BUILD (Production optimization)
   // ============================================================================
   build: {
-    // Sourcemaps are generated only when BOTH are true: `build` asked for them
-    // (VITE_SOURCEMAP=true — `build:fast` never sets it), AND this build can
-    // actually upload them. That second condition matters because `npm run
-    // build` is shared: web-ci.yml's validate job, the three native pipelines
-    // (android/ios/capgo), and anyone's local machine all run it, and none of
-    // them have PostHog credentials. Generating ~1000 .map files for a build
-    // that can only throw them away is pure cost, so those builds skip the
-    // pass entirely.
+    // Sourcemaps are generated only when BOTH are true: the build environment
+    // asks for them (VITE_SOURCEMAP=true), AND this build can actually upload
+    // them. No package script sets VITE_SOURCEMAP. `build` set it until
+    // 2026-09-28, when maps cost the Cloudflare production build ~40 s and
+    // ~1 GB of memory while the upload failed anyway (the key lacks PostHog's
+    // error-tracking scope), so nothing reached PostHog. To symbolicate stack
+    // traces again, give the build a key with that scope and set
+    // VITE_SOURCEMAP=true in the Cloudflare Pages production environment.
+    // The second condition matters because `npm run build` is shared:
+    // web-ci.yml's validate job, the three native pipelines (android/ios/
+    // capgo), and anyone's local machine all run it, and none of them have
+    // PostHog credentials. Generating ~1000 .map files for a build that can
+    // only throw them away is pure cost, so those builds skip the pass.
     //
     // The security posture ("never ship original source") holds by belt and
     // braces: this gate means an uncredentialed build produces no maps at all,
@@ -1159,16 +1169,8 @@ export default defineConfig(({ command, mode }) => ({
       "three-perf",
       "@dimforge/rapier3d-compat",
     ],
-    // Include svelte condition for threlte packages, but node/module first for SSR
     resolve: {
-      conditions: [
-        "svelte",
-        "node",
-        "module",
-        "development|production",
-        "import",
-        "default",
-      ],
+      conditions: SSR_RESOLVE_CONDITIONS,
     },
   },
   // ============================================================================
@@ -1286,6 +1288,29 @@ export default defineConfig(({ command, mode }) => ({
       "dompurify",
       "three/examples/jsm/loaders/KTX2Loader.js",
       "three/examples/jsm/environments/RoomEnvironment.js",
+
+      // Discovered at runtime on :5173 in the week to 2026-09-28: 39 full
+      // page reloads, most of these found again after every restart. Inbox
+      // links, QR scanning, the desktop (Tauri) bridge, theme and sidebar,
+      // push, thumbnail metrics, card export, the raster fallback, the grip
+      // lab, and the CAPs notation page.
+      "linkifyjs",
+      "barcode-detector/ponyfill",
+      "@tauri-apps/api/core",
+      "@tauri-apps/api/path",
+      "@tauri-apps/plugin-fs",
+      "@tauri-apps/plugin-updater",
+      "svelte-awesome-color-picker",
+      "@austencloud/theme",
+      "@austencloud/sidebar",
+      "@capacitor/push-notifications",
+      "@datadog/sketches-js",
+      "modern-screenshot",
+      "pdf-lib",
+      "jszip",
+      "canvas",
+      "three/examples/jsm/controls/TransformControls.js",
+      "motion",
     ],
     exclude: [
       "pdfjs-dist",
@@ -1322,7 +1347,13 @@ export default defineConfig(({ command, mode }) => ({
       // "../../../" keeps the primary checkout's node_modules reachable when the
       // server runs from a worktree under E:/worktrees/<repo>/<name> whose
       // node_modules is a junction into the primary checkout.
-      allow: [".", "../../", "../../../", "../../../animator", "../../../desktop"],
+      allow: [
+        ".",
+        "../../",
+        "../../../",
+        "../../../animator",
+        "../../../desktop",
+      ],
       strict: true, // 2026: Security best practice
     },
     hmr: {

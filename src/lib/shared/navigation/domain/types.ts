@@ -77,6 +77,7 @@ export type ModuleId =
   | "tika" // Tika AI tutor (TKA Intelligent Knowledge Assistant)
   | "premium"
   | "compose"
+  | "post"
   | "train"
   | "choreo_card" // Choreography reference cards (printable)
   | "word_card" // Legacy alias for choreo_card

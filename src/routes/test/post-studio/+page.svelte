@@ -1,12 +1,14 @@
 <!--
-  Visual harness for Post Studio with the published DCKΨ- sequence and a local
-  copy of Austen's clean September 6 phone take, offered as a saved video in
+  Visual harness for Post Studio with the published ΩΛ-XJ sequence and the
+  recovered first September 6 camera cut, offered as a saved video in
   the editor's video list. The clip is gitignored, so the route also works
   without it: add a video from this device instead.
 -->
 <script lang="ts">
   import { onDestroy, onMount } from "svelte";
+  import { setLocale, toLocale } from "$lib/shared/i18n/i18n.svelte.js";
   import PostStudio from "$lib/shared/share/components/post-studio/PostStudio.svelte";
+  import ToastContainer from "$lib/shared/toast/components/ToastContainer.svelte";
   import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
   import { hydrateSequence } from "$lib/shared/sequence-viewer/services/sequence-data-provider";
   import { getBrowseLoader } from "$lib/shared/browse/get-browse-loader";
@@ -23,15 +25,26 @@
   import { ShortcutRegistry } from "$lib/shared/keyboard/services/shortcut-registry";
   import { registerEditHistoryShortcuts } from "$lib/shared/keyboard/registration/register-edit-history-shortcuts";
   import { keyboardShortcutState } from "$lib/shared/keyboard/state/keyboard-shortcut-state.svelte";
+  import type { PostProject } from "$lib/shared/media-composition/domain/post-project";
+  import {
+    loadPostDraft,
+    savePostDraft,
+  } from "$lib/shared/media-composition/services/post-draft-storage";
+  import { mappingFixture } from "./mapping-fixture";
+  import { keyframeClearFixture } from "./keyframe-clear-fixture";
+  import { textAlignmentFixture } from "./text-alignment-fixture";
 
-  const SEQUENCE_WORD = "DCKΨ-DCKΨ-DCKΨ-DCKΨ-";
-  const SEQUENCE_ID = "DCKΨ-";
-  const VIDEO_URL = "/word-videos/DCK-Psi-performance.mp4";
-  /** ffprobe of the local browser copy: 22.635s, 720x1280, 30fps. */
-  const VIDEO_DURATION = 22.635;
-  const VIDEO_ID = "post-studio-dck-psi-local-example";
+  const SEQUENCE_WORD = "ΩΛ-XJΩΛ-XJΩΛ-XJΩΛ-XJ";
+  const SEQUENCE_ID = "ΩΛ-XJ";
+  const VIDEO_URL = "/word-videos/inshot-recovery/camera-cut-1.mp4";
+  /** The InShot draft's cut length; the encoded file rounds to video frames. */
+  const VIDEO_DURATION = 25.137199;
+  const VIDEO_ID = "post-studio-omlam-xj-recovered-cut";
 
   let sequence = $state<SequenceData | null>(null);
+  let initialProject = $state<PostProject | undefined>(undefined);
+  let diskDrafts = $state(false);
+  let draftLoadError = $state<string | null>(null);
   let cardPreviewUrl = $state<string | null>(null);
   let animationPreviewUrl = $state<string | null>(null);
   let animationPreviewType = $state<"video" | "image">("video");
@@ -47,7 +60,7 @@
     const record: CollaborativeVideo = {
       id: VIDEO_ID,
       videoUrl: VIDEO_URL,
-      storagePath: "local-example/DCK-Psi-performance.mp4",
+      storagePath: "local-example/inshot-recovery/camera-cut-1.mp4",
       duration: VIDEO_DURATION,
       fileSize: 0,
       mimeType: "video/mp4",
@@ -59,7 +72,7 @@
       collaborators: [],
       pendingInvites: [],
       visibility: "private",
-      description: "DCKΨ- clean phone take",
+      description: "ΩΛ-XJ — recovered full-speed cut",
       createdAt: now,
       updatedAt: now,
     };
@@ -75,22 +88,68 @@
   }
 
   onMount(async () => {
+    const fixture = new URL(window.location.href).searchParams.get("fixture");
+    const mapping = fixture === "mapping";
+    const isolatedKeyframes = fixture === "keyframe-clear";
+    const isolatedTextAlignment = fixture === "text-alignment";
+    // Exercise the real save/reload path without writing to the creator's post.
+    const storageFixture = fixture === "draft-storage";
+    const draftSequenceId = mapping
+      ? "post-mapping-fixture"
+      : storageFixture
+        ? "post-draft-storage-fixture"
+        : SEQUENCE_ID;
+    const requestedLocale = toLocale(
+      new URL(window.location.href).searchParams.get("lang") ?? ""
+    );
+    if (requestedLocale) await setLocale(requestedLocale);
     // The boot bar in app.html waits for the app layout to report 100%, and a
     // /test route never runs that layout, so without this the splash sits over
     // the harness until its 15s safety net fires.
-    (window as unknown as { __tkaLoadProgress?: (p: number) => void })
-      .__tkaLoadProgress?.(100);
+    (
+      window as unknown as { __tkaLoadProgress?: (p: number) => void }
+    ).__tkaLoadProgress?.(100);
     registerLoopDetector(loopDetector);
     try {
-      const loaded = await getBrowseLoader().loadFullSequenceData(
-        SEQUENCE_WORD,
-        SEQUENCE_ID
-      );
+      const [loaded, draft] = await Promise.all([
+        getBrowseLoader().loadFullSequenceData(
+          mapping ? "Δ-ΛRZΔ-ΛRZΔ-ΛRZΔ-ΛRZ" : SEQUENCE_WORD,
+          mapping ? "Δ-ΛRZ" : SEQUENCE_ID
+        ),
+        isolatedKeyframes || isolatedTextAlignment
+          ? Promise.resolve({
+              project: null,
+              diskAvailable: false,
+              error: null,
+            })
+          : loadPostDraft(draftSequenceId),
+      ]);
+      initialProject = draft.project ?? undefined;
+      diskDrafts = !mapping && draft.diskAvailable;
+      draftLoadError = draft.error;
       if (!loaded)
         throw new Error("The visual fixture is no longer published.");
       const hydrated = await hydrateSequence(loaded);
-      seedPerformance(hydrated.id);
-      sequence = { ...hydrated, performanceVideoUrl: VIDEO_URL };
+      const editorSequenceId = mapping
+        ? "post-mapping-fixture"
+        : isolatedKeyframes
+          ? "post-keyframe-clear-fixture"
+          : isolatedTextAlignment
+            ? "post-text-alignment-fixture"
+            : storageFixture
+              ? draftSequenceId
+              : hydrated.id;
+      if (!mapping) seedPerformance(editorSequenceId);
+      sequence = {
+        ...hydrated,
+        id: editorSequenceId,
+        performanceVideoUrl: mapping ? undefined : VIDEO_URL,
+      };
+      if (isolatedKeyframes || (storageFixture && !initialProject))
+        initialProject = keyframeClearFixture(editorSequenceId);
+      if (isolatedTextAlignment)
+        initialProject = textAlignmentFixture(editorSequenceId);
+      if (mapping && !initialProject) initialProject = mappingFixture();
       cardRenderOptions = buildCardRenderOptions(sequence, { darkMode: true });
 
       const blob = await getSharer().getCardImageBlob(sequence, {
@@ -147,6 +206,9 @@
   {:else}
     <PostStudio
       {sequence}
+      {initialProject}
+      onSaveDraft={diskDrafts ? savePostDraft : undefined}
+      {draftLoadError}
       {cardPreviewUrl}
       {animationPreviewUrl}
       {animationPreviewType}
@@ -158,6 +220,8 @@
     />
   {/if}
 </main>
+
+<ToastContainer />
 
 <style>
   :global(body) {

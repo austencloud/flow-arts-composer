@@ -1,7 +1,9 @@
 export const ELEMENTAL_GLYPH_VIEWBOX_SIZE = 950;
 
+// The normalized element icons (/images/elements/norm) are square, so the
+// slot is square too: the art keeps the height the old portrait icons had.
 export const ELEMENTAL_GLYPH_LAYOUT = {
-  width: 96,
+  width: 112,
   height: 112,
   inset: 40,
 } as const;

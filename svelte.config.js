@@ -1,5 +1,12 @@
-import adapter from "@sveltejs/adapter-cloudflare";
+import cloudflareAdapter from "@sveltejs/adapter-cloudflare";
 import { vitePreprocess } from "@sveltejs/vite-plugin-svelte";
+import { shareCloudflareDevPlatform } from "./src/config/cloudflare-dev-platform.js";
+
+// One Cloudflare platform emulator per dev process, shared by the burst of
+// requests after a Vite restart and kept across restarts.
+/** @param {import("@sveltejs/adapter-cloudflare").AdapterOptions} options */
+const adapter = (options) =>
+  shareCloudflareDevPlatform(cloudflareAdapter(options));
 
 /** @type {import('@sveltejs/kit').Config} */
 const config = {

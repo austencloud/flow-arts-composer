@@ -74,9 +74,7 @@ export function sequenceFrameAt(
     Number.isFinite(options.endArrival)
       ? Math.max(0, options.endArrival)
       : null;
-  let raw = Number.isFinite(arrivalPosition)
-    ? Math.max(0, arrivalPosition)
-    : 0;
+  let raw = Number.isFinite(arrivalPosition) ? Math.max(0, arrivalPosition) : 0;
   const holding = endArrival !== null && raw >= endArrival - 1e-9;
   if (holding) raw = endArrival;
   const arrival = options.holdLandings ? Math.floor(raw + 1e-9) : raw;
@@ -133,4 +131,32 @@ export function arrowOpacity(
   if (frame.phase === "opening") return 0;
   if (frame.phase === "holding") return 1;
   return Math.min(1, Math.max(0, frame.moveProgress));
+}
+
+// A short portion of the next move lets the completed arrow disappear in place.
+// Move progress keeps this fade aligned when a take is slowed or scrubbed.
+const ARROW_HANDOFF_PROGRESS = 0.05;
+
+export function sequenceArrowLayers(
+  frame: Pick<SequenceFrame, "phase" | "move" | "moveProgress" | "pass">,
+  movesPerPass: number
+): {
+  currentOpacity: number;
+  previousMove: number | null;
+  previousOpacity: number;
+} {
+  const currentOpacity = arrowOpacity(frame);
+  const previousMove =
+    frame.phase === "opening" || movesPerPass < 1
+      ? null
+      : frame.move > 1
+        ? frame.move - 1
+        : frame.pass > 0
+          ? movesPerPass
+          : null;
+  const previousOpacity =
+    previousMove === null || frame.phase === "holding"
+      ? 0
+      : Math.max(0, 1 - currentOpacity / ARROW_HANDOFF_PROGRESS);
+  return { currentOpacity, previousMove, previousOpacity };
 }

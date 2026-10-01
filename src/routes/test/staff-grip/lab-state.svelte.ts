@@ -48,6 +48,10 @@ export const LAB_PARAM = {
   view: "view",
   panel: "panel",
   labels: "labels",
+  // Not `grid`: the root layout strips `grid` from every URL outside the
+  // atlas (url-parameter-policy.ts), which dropped the style on each reload.
+  gridStyle: "hands",
+  bodyClearance: "clear",
 } as const;
 
 /** Camera layout: the four-pane rig, or one pane on its own. */
@@ -69,6 +73,24 @@ export type LabPanel = (typeof LAB_PANELS)[number];
  * the second is how you hold one variable still while sweeping the other.
  */
 export type LabPropLength = "body" | number;
+
+/**
+ * Where the hands sit. `fixed` keeps the performer's 0.52 m. `isolation`
+ * puts each hand half the staff from the grid center, so a staff pointing in
+ * ends on the center point. Extension waits on its reach rule
+ * (docs/architecture/performer-grid-styles.md, step 4).
+ */
+export const LAB_GRID_STYLES = ["fixed", "isolation"] as const;
+export type LabGridStyle = (typeof LAB_GRID_STYLES)[number];
+
+/**
+ * Whether the body moves off the point its staffs isolate around, and how
+ * (docs/architecture/performer-grid-styles.md, step 5). `off` is today's
+ * performer; `shift` moves the hips with the feet planted; `step` carries the
+ * feet along.
+ */
+export const LAB_BODY_CLEARANCES = ["off", "shift", "step"] as const;
+export type LabBodyClearance = (typeof LAB_BODY_CLEARANCES)[number];
 
 export const DEFAULT_LAB_PHASE = 7.99;
 
@@ -168,6 +190,18 @@ export class StaffLabState {
     const cm = Number(raw);
     if (!Number.isFinite(cm)) return "body";
     return Math.min(LAB_LENGTH_MAX_CM, Math.max(LAB_LENGTH_MIN_CM, cm));
+  });
+
+  readonly gridStyle = $derived.by(
+    (): LabGridStyle =>
+      this.#url.searchParams.get(LAB_PARAM.gridStyle) === "isolation"
+        ? "isolation"
+        : "fixed"
+  );
+
+  readonly bodyClearance = $derived.by((): LabBodyClearance => {
+    const raw = this.#url.searchParams.get(LAB_PARAM.bodyClearance);
+    return raw === "shift" || raw === "step" ? raw : "off";
   });
 
   readonly sequenceId = $derived(
@@ -285,6 +319,17 @@ export class StaffLabState {
     );
   }
 
+  setGridStyle(style: LabGridStyle): void {
+    this.#write((params) => params.set(LAB_PARAM.gridStyle, style), "push");
+  }
+
+  setBodyClearance(clearance: LabBodyClearance): void {
+    this.#write(
+      (params) => params.set(LAB_PARAM.bodyClearance, clearance),
+      "push"
+    );
+  }
+
   setSequence(id: string): void {
     // A different sequence has a different length, so the frame we were on no
     // longer names the same moment. Start it at the top.
@@ -339,6 +384,8 @@ export class StaffLabState {
       LAB_PARAM.length,
       this.propLength === "body" ? "body" : this.propLength.toFixed(0)
     );
+    params.set(LAB_PARAM.gridStyle, this.gridStyle);
+    params.set(LAB_PARAM.bodyClearance, this.bodyClearance);
     params.set(LAB_PARAM.sequence, this.sequenceId);
     params.set(LAB_PARAM.phase, formatPhase(this.#phase));
     params.set(LAB_PARAM.playing, this.playing ? "1" : "0");

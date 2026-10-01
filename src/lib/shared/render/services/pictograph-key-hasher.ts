@@ -13,6 +13,8 @@ import {
   fanAppearanceSignature,
   normalizeFanAppearance,
 } from "$lib/shared/pictograph/prop/domain/fan-appearance";
+import { renderedPropLook } from "$lib/shared/pictograph/prop/domain/prop-look";
+import { renderedTriangleGrip } from "$lib/shared/pictograph/prop/domain/triangle-appearance";
 // getSettings loaded dynamically to avoid pulling $app/environment into worker bundle
 
 interface MotionKeyData {
@@ -49,6 +51,12 @@ interface PictographKeyInput {
   turnGlyphRevision?: string;
   visibility: {
     fanAppearance?: string;
+    // Present only when a captured model sprite replaces a notation prop, so
+    // every notation render keeps its established lsp11/lsp12 key.
+    propLook?: "model";
+    // Present only when a triangle is drawn with the side grip, so corner-grip
+    // renders and every other prop keep their established key.
+    triangleGrip?: "side";
     primaryPropColors?: { left: string; right: string };
     primaryPropColorRevision?: string;
     showTKA: boolean;
@@ -92,6 +100,15 @@ const PROP_APPEARANCE_REVISIONS: Readonly<Record<string, string>> = {
   // now baked into the loaded artwork, so cells cached before that must miss.
   torch: "torch-contrast-v2",
   bigtorch: "torch-contrast-v2",
+};
+const MODEL_LOOK_APPEARANCE_REVISIONS: Readonly<Record<string, string>> = {
+  // The Realistic staff captures used to draw with their T-bar (the thumb
+  // end) where the notation puts the far end, so "in" read as "out". They now
+  // turn to the thumb end, so Realistic cells cached before that must miss.
+  staff: "staff-model-thumb-end-v2",
+  simple_staff: "staff-model-thumb-end-v2",
+  staff_v2: "staff-model-thumb-end-v2",
+  bigstaff: "staff-model-thumb-end-v2",
 };
 const NON_RADIAL_ORIENTATIONS = new Set(["clock", "counter"]);
 const SHIFT_MOTION_TYPES = new Set(["pro", "anti", "float"]);
@@ -222,14 +239,23 @@ export function getTurnGlyphRevision(
  * Prop types are already part of the cache identity. This extra seam covers a
  * different case: the SVG behind an existing prop type changes while its enum
  * value stays stable. Keeping the revision prop-scoped avoids throwing away
- * the established cloud corpus for every unrelated prop.
+ * the established cloud corpus for every unrelated prop. Model-look revisions
+ * apply only to cells that draw the Realistic look, so notation keys (and the
+ * cloud corpus) stay as they were.
  */
 export function getPropAppearanceRevision(
   leftPropType: string,
-  rightPropType: string
+  rightPropType: string,
+  propLook?: "model"
 ): string | undefined {
   const revisions = [leftPropType, rightPropType]
-    .map((propType) => PROP_APPEARANCE_REVISIONS[propType.toLowerCase()])
+    .flatMap((propType) => {
+      const key = propType.toLowerCase();
+      return [
+        PROP_APPEARANCE_REVISIONS[key],
+        propLook === "model" ? MODEL_LOOK_APPEARANCE_REVISIONS[key] : undefined,
+      ];
+    })
     .filter((revision): revision is string => Boolean(revision));
 
   const uniqueRevisions = [...new Set(revisions)].sort();
@@ -269,10 +295,22 @@ export class PictographKeyHasher {
     const reversalsVisible = visibility.showReversals ?? true;
     const step = data as Partial<StepData>;
     const propGeometryRevision = getPictographGeometryRevision(data);
+    const propLook = renderedPropLook(visibility.propLook, [
+      resolvedLeftProp,
+      resolvedRightProp,
+    ]);
     const propAppearanceRevision = getPropAppearanceRevision(
       resolvedLeftProp,
-      resolvedRightProp
+      resolvedRightProp,
+      propLook
     );
+    // A hand path draws hands, so the grip cannot change a pixel there.
+    const triangleGrip = visibility.handPathMode
+      ? undefined
+      : renderedTriangleGrip(visibility.triangleGrip, [
+          resolvedLeftProp,
+          resolvedRightProp,
+        ]);
     const turnGlyphRevision = getTurnGlyphRevision(
       data,
       visibility.showTKA ?? true
@@ -299,6 +337,8 @@ export class PictographKeyHasher {
               normalizeFanAppearance(visibility.fanAppearance)
             ),
           }),
+        ...(propLook && { propLook }),
+        ...(triangleGrip && { triangleGrip }),
         ...(visibility.primaryPropColors && {
           primaryPropColors: visibility.primaryPropColors,
           primaryPropColorRevision: "material-colors-v2",

@@ -1,5 +1,6 @@
 <script lang="ts">
   import { t, tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
+  import MessageMarkup from "$lib/shared/i18n/MessageMarkup.svelte";
   import { onMount } from "svelte";
   import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
   import { loadFoundingCollectionSequences } from "$lib/features/browse/collections/config/founding-collections";
@@ -243,8 +244,10 @@
                 <h1 id="learning-letters-title">
                   {t("learn_ui_learning_letters")}
                 </h1>
+                <!-- Guide prose, verbatim from AlphaBetaWordsPage.svelte,
+                     including its line break and emphasis. -->
                 <p class="guide-prose">
-                  {t("learn_ui_first_words_instruction")}
+                  <MessageMarkup text={t("learn_ui_first_words_instruction")} />
                 </p>
               </div>
 
@@ -483,8 +486,10 @@
     line-height: 1.55;
   }
 
-  .guide-prose strong,
-  .guide-prose em {
+  /* The intro's emphasis is rendered by MessageMarkup, out of this
+     component's CSS scope. */
+  .guide-prose :global(strong),
+  .guide-prose :global(em) {
     color: var(--theme-text);
   }
 

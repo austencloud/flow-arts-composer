@@ -15,6 +15,7 @@
    * a section matters for the prose-column confinement rule).
    */
   import { browser } from "$app/environment";
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import type { Snippet } from "svelte";
   import {
     setGuideSequenceClick,
@@ -77,7 +78,7 @@
 
 {#if browser && companionOpen}
   {#await import("../level-1/_components/GuideCompanion.svelte") then Comp}
-    <div class="companion-drawer" role="dialog" aria-label="Animation companion">
+    <div class="companion-drawer" role="dialog" aria-label={t("guide_companion_dialog")}>
       <Comp.default
         sequence={clicked}
         propType={clickedPropType}

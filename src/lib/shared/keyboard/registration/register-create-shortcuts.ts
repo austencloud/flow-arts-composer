@@ -13,7 +13,6 @@ import type { KeyboardShortcutManager } from "$lib/shared/keyboard/services/keyb
 import type { createKeyboardShortcutState } from "../state/keyboard-shortcut-state.svelte";
 import { getCreateModuleRef } from "$lib/shared/create/state/create-module-state-ref.svelte";
 import { getAnimationPlaybackRef } from "$lib/shared/coordinators/animation-playback-ref.svelte";
-import { executeClearSequenceWorkflow } from "$lib/shared/create/utils/clear-sequence-workflow";
 import { createComponentLogger } from "$lib/shared/utils/debug-logger";
 import {
   getSettings,
@@ -53,11 +52,46 @@ function singleKeyShortcutAllowed(
  * feature. They yield only inside an open dialog or drawer that is foreign to
  * the sequence. With the Customize drawer open on /create/generate, Backspace
  * on the Inverted chip used to close the drawer and delete a step behind it.
- * The step editor marks its body as passthrough so the key stays live there.
+ * The step editor marks its drawer as passthrough so the key stays live there.
+ *
+ * They also stand down from the moment Play is pressed until Stop, as the
+ * grid's own delete does. Playback hides the grid but keeps its selection for
+ * Stop to restore, so the keys used to remove a step the user could not see.
+ * While the player loads, or shows Retry after a failed load, the card still
+ * shows that step, but the user asked to play the sequence, not to edit it.
  */
 function deleteShortcutAllowed(): boolean {
+  const panelState = getCreateModuleRef()?.panelState;
+  if (panelState?.workspacePlayback || panelState?.workspacePlaybackPreparation)
+    return false;
   if (typeof document === "undefined") return true;
   return !isLayerOwnedKeyboardTarget(document.activeElement);
+}
+
+/**
+ * Backspace and Delete both do what the grid's own delete does. The start
+ * position asks CreateModule to clear the sequence, which shows the
+ * confirmation dialog unless the user turned it off. Any other step goes
+ * through the module's removal, same as the step editor's Delete button: it
+ * records the undo entry, then removes this step and every step after it.
+ */
+function deleteSelectedStep(): void {
+  const ref = getCreateModuleRef();
+  if (!ref) return;
+
+  const sequenceState = ref.CreateModuleState.sequenceState;
+  if (sequenceState.selectedStepData?.stepNumber === 0) {
+    ref.requestClearSequence();
+    return;
+  }
+
+  const selectedStepIndex = sequenceState.getSelectedStepIndex();
+  if (selectedStepIndex === null) {
+    debug.log("Delete - No step selected");
+    return;
+  }
+
+  ref.removeStep(selectedStepIndex);
 }
 
 async function executeSequenceShortcut(
@@ -281,68 +315,7 @@ export function registerCreateShortcuts(
     scope: "sequence-management",
     priority: "medium",
     condition: () => deleteShortcutAllowed(),
-    action: async () => {
-      debug.log("Backspace key pressed!");
-
-      const ref = getCreateModuleRef();
-      debug.log("Create module ref:", ref ? "Available" : "Not available");
-
-      if (!ref) {
-        debug.log("Create module reference not available");
-        return;
-      }
-
-      const { CreateModuleState, constructTabState, panelState } = ref;
-      const sequenceState = CreateModuleState.sequenceState;
-
-      // Check if start position (beat 0) is selected
-      const selectedStepData = sequenceState.selectedStepData;
-
-      if (selectedStepData?.stepNumber === 0) {
-        // Start position is selected — clearing it clears the whole sequence.
-        // Prefer the module-owned flow (confirmation dialog + undo + picker);
-        // fall back to the raw workflow if the ref predates it.
-        if (ref.requestClearSequence) {
-          ref.requestClearSequence();
-          return;
-        }
-        try {
-          await executeClearSequenceWorkflow({
-            CreateModuleState,
-            constructTabState,
-            panelState,
-          });
-
-          // Close step editor panel if it's open
-          if (panelState.isStepEditorPanelOpen) {
-            panelState.closeStepEditorPanel();
-          }
-        } catch (err) {
-          console.error("Failed to clear sequence:", err);
-        }
-        return;
-      }
-
-      const selectedStepIndex = sequenceState.getSelectedStepIndex();
-
-      if (selectedStepIndex === null) {
-        debug.log("Backspace - No beat selected");
-        return;
-      }
-
-      // Remove the beat and all subsequent steps with animation (same as trash can button)
-      sequenceState.removeStepAndSubsequentWithAnimation(
-        selectedStepIndex,
-        () => {
-          // After animation completes, select appropriate beat
-          if (selectedStepIndex > 0) {
-            sequenceState.selectStep(selectedStepIndex);
-          } else {
-            sequenceState.selectStartPlacementForEditing();
-          }
-        }
-      );
-    },
+    action: deleteSelectedStep,
   });
 
   // Delete - Delete selected beat (same as Backspace)
@@ -356,50 +329,7 @@ export function registerCreateShortcuts(
     scope: "sequence-management",
     priority: "medium",
     condition: () => deleteShortcutAllowed(),
-    action: async () => {
-      const ref = getCreateModuleRef();
-      if (!ref) return;
-
-      const { CreateModuleState, constructTabState, panelState } = ref;
-      const sequenceState = CreateModuleState.sequenceState;
-
-      const selectedStepData = sequenceState.selectedStepData;
-
-      if (selectedStepData?.stepNumber === 0) {
-        try {
-          await executeClearSequenceWorkflow({
-            CreateModuleState,
-            constructTabState,
-            panelState,
-          });
-
-          if (panelState.isStepEditorPanelOpen) {
-            panelState.closeStepEditorPanel();
-          }
-        } catch (err) {
-          console.error("Failed to clear sequence:", err);
-        }
-        return;
-      }
-
-      const selectedStepIndex = sequenceState.getSelectedStepIndex();
-
-      if (selectedStepIndex === null) {
-        debug.log("Delete - No beat selected");
-        return;
-      }
-
-      sequenceState.removeStepAndSubsequentWithAnimation(
-        selectedStepIndex,
-        () => {
-          if (selectedStepIndex > 0) {
-            sequenceState.selectStep(selectedStepIndex);
-          } else {
-            sequenceState.selectStartPlacementForEditing();
-          }
-        }
-      );
-    },
+    action: deleteSelectedStep,
   });
 
   // ==================== Sequence Transforms ====================

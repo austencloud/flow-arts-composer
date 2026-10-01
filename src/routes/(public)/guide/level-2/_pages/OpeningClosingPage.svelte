@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { localizePrintLabel } from "../_components/localize-print-label";
+  import { t as translate } from "$lib/shared/i18n/i18n.svelte.js";
   /**
    * Opening/Closing - Level 2 body page 10 (manifest `opening-closing`), faithful
    * to old p11. Λ (Lam) is a Type 4 (dash+static) at gamma. Because gamma's
@@ -206,36 +208,30 @@
 <div class="lam-page">
   <!-- Intro. -->
   <p class="para" style="top:{57 * S}px; font-size:{16 * S}px; line-height:{16.8 * S}px">
-    Because of Gamma’s asymmetry, <span class="tka">Λ</span> (Lam) presents an extra variation when adding a turn.<br />
-    We can’t use rotational relationship to tell them apart, because there isn’t one to describe.<br />
-    Instead, we can disambiguate them with opening and closing.<br />
-    This refers to the appearance of the 90° angle if we continue the rotation into a pro-shift.
+    {@html translate("guide_l2_print_openingclosingpage_0")}
   </p>
   <p class="para" style="top:{142 * S}px; font-size:{16 * S}px; line-height:{18 * S}px">
-    Take a look at the sequences below and their hypothetical continuation. Note the difference.
+    {@html translate("guide_l2_print_openingclosingpage_1")}
   </p>
-  <div class="cont-header" style="left:{499 * S}px; top:{165 * S}px">Continuation</div>
+  <div class="cont-header" style="left:{499 * S}px; top:{165 * S}px">{translate("guide_l2_print_continuation")}</div>
 
   <!-- Λ₁ lead-in. -->
   <p class="para" style="top:{399 * S}px; font-size:{16 * S}px; line-height:{18 * S}px">
-    Now let’s add 1 turn to the static hand, leaving the dash in its base form.
+    {@html translate("guide_l2_print_openingclosingpage_2")}
   </p>
   <p class="para" style="top:{433 * S}px; font-size:{16 * S}px; line-height:{18 * S}px">
-    Since the dashing prop is not rotating, there is no rotational relationship to describe.<br />
-    However the rotating static prop can still be identified as <em>opening</em> or <em>closing</em>.
+    {@html translate("guide_l2_print_openingclosingpage_3")}
   </p>
 
   <!-- Closing. -->
   <p class="para" style="top:{685 * S}px; font-size:{16 * S}px; line-height:{18 * S}px">
-    It’s not necessary to speak all of the glyph modifications when talking about a letter.<br />
-    It would be cumbersome if you were required to say <em>“Lam-Low-One-Closing”</em>.<br />
-    In the context of a word or sequence, you can just refer to the base letter <em>“Lam”</em> instead.
+    {@html translate("guide_l2_print_openingclosingpage_4")}
   </p>
 
   <!-- Footnote. -->
   <div class="rule footnote" style="left:0; top:{750.1 * S}px; width:{612 * S}px"></div>
   <p class="para italic" style="top:{755 * S}px; font-size:{14.5 * S}px; line-height:{18 * S}px">
-    To shorten this for code, include “op” or “cl” as a final parameter. E.g. “<span class="tka">Λ</span>(0,1,op)” or “<span class="tka">Λ</span>(0,1,cl)”
+    {@html translate("guide_l2_print_openingclosingpage_5")}
   </p>
 
   <!-- Within-group separators + continuation dividers. -->
@@ -255,13 +251,13 @@
 
     <!-- Captions. -->
     {#if strip.captions}
-      <span class="cap" style="left:{80 * S}px; top:{(strip.y - 32) * S}px">thumbs:</span>
-      <span class="frame-cap" style="left:{START_X * S}px; top:{(strip.y - 32) * S}px; width:{SIZE * S}px">start</span>
-      <span class="frame-cap" style="left:{HALF_X * S}px; top:{(strip.y - 32) * S}px; width:{SIZE * S}px">halfway</span>
-      <span class="frame-cap" style="left:{END_X * S}px; top:{(strip.y - 32) * S}px; width:{SIZE * S}px">end</span>
+      <span class="cap" style="left:{80 * S}px; top:{(strip.y - 32) * S}px">{translate("guide_l2_print_thumbs")}</span>
+      <span class="frame-cap" style="left:{START_X * S}px; top:{(strip.y - 32) * S}px; width:{SIZE * S}px">{translate("guide_l2_frame_start")}</span>
+      <span class="frame-cap" style="left:{HALF_X * S}px; top:{(strip.y - 32) * S}px; width:{SIZE * S}px">{translate("guide_l2_frame_halfway")}</span>
+      <span class="frame-cap" style="left:{END_X * S}px; top:{(strip.y - 32) * S}px; width:{SIZE * S}px">{translate("guide_l2_frame_end")}</span>
     {/if}
-    <span class="thumb-cap" style="left:{START_X * S}px; top:{(strip.y - 16) * S}px; width:{SIZE * S}px">in</span>
-    <span class="thumb-cap" style="left:{END_X * S}px; top:{(strip.y - 16) * S}px; width:{SIZE * S}px">{strip.endThumb}</span>
+    <span class="thumb-cap" style="left:{START_X * S}px; top:{(strip.y - 16) * S}px; width:{SIZE * S}px">{translate("guide_l2_frame_in")}</span>
+    <span class="thumb-cap" style="left:{END_X * S}px; top:{(strip.y - 16) * S}px; width:{SIZE * S}px">{localizePrintLabel(strip.endThumb)}</span>
     <span class="cont-opcl" style="left:{(CONT_X - 6) * S}px; top:{(strip.y - 18) * S}px; width:{(SIZE + 30) * S}px">{strip.opcl}</span>
 
     <!-- start -->

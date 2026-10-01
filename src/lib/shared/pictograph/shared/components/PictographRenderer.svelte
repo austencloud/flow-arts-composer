@@ -112,6 +112,7 @@ Usage:
     // Renderable option: hide arrows entirely (props + grid still render).
     // Threaded from PictographContainer; default true = zero behavior change.
     showArrow = true,
+    showProps = true,
     // Enable prop selection for beat editing
     propsClickable = false,
     selectedPropHand = null,
@@ -144,6 +145,7 @@ Usage:
     // The arrow layer stays mounted so a completed motion can reveal it without
     // swapping renderers or rebuilding arrow assets.
     arrowOpacity = 1,
+    disableTransitions = false,
     // Duration multiplier for the step (1 = default, shown when != 1)
     duration = 1,
     showDuration = true,
@@ -201,6 +203,7 @@ Usage:
     arrowsClickable?: boolean;
     /** Renderable option: hide arrows entirely (props + grid still render). Default true. */
     showArrow?: boolean;
+    showProps?: boolean;
     propsClickable?: boolean;
     selectedPropHand?: HandSideValue | null;
     onPropClick?: (hand: HandSideValue) => void;
@@ -229,6 +232,8 @@ Usage:
     directPropPositioning?: boolean;
     /** Opacity applied to the complete arrow layer. */
     arrowOpacity?: number;
+    /** Use exact frame geometry and opacity during timeline playback. */
+    disableTransitions?: boolean;
     /** Duration multiplier for the step (1 = default one beat, shown when != 1) */
     duration?: number;
     /** Card annotations are composed by the card's existing overlay layer. */
@@ -466,6 +471,7 @@ Usage:
     if (cachedDims.width !== 100 || cachedDims.height !== 100) {
       // Already cached - use immediately
       loadedLetterDimensions = cachedDims;
+      return;
     } else {
       // Not cached yet - drop the previous (now-stale) letter's resolved
       // size before the load starts, so it can't leak into this cold
@@ -596,7 +602,7 @@ Usage:
       {/if}
 
       <!-- Props -->
-      {#each renderedProps as { hand, data, opacity, asset, position } (hand)}
+      {#each showProps ? renderedProps : [] as { hand, data, opacity, asset, position } (hand)}
         <g {opacity} transition:fade={{ duration: contentDuration() }}>
           <PropSvg
             motionData={data}
@@ -620,7 +626,11 @@ Usage:
       {/each}
 
       <!-- Arrows -->
-      <g class="pictograph-arrows" opacity={effectiveArrowOpacity}>
+      <g
+        class="pictograph-arrows"
+        class:no-transition={disableTransitions}
+        opacity={effectiveArrowOpacity}
+      >
         {#if tipPromotionNeeded}
           <!-- Split rendering: shafts first, then tips on top -->
           {#each motions as { hand, data, opacity } (hand + "-shaft")}
@@ -639,6 +649,7 @@ Usage:
                   {transitionKey}
                   {darkMode}
                   renderPart="shaft"
+                  {disableTransitions}
                   colorOverride={hand === HandSide.LEFT
                     ? effectiveLeftColor
                     : effectiveRightColor}
@@ -662,6 +673,7 @@ Usage:
                   {transitionKey}
                   {darkMode}
                   renderPart="tip"
+                  {disableTransitions}
                   colorOverride={hand === HandSide.LEFT
                     ? effectiveLeftColor
                     : effectiveRightColor}
@@ -686,6 +698,7 @@ Usage:
                   {cellIndex}
                   {transitionKey}
                   {darkMode}
+                  {disableTransitions}
                   colorOverride={hand === HandSide.LEFT
                     ? effectiveLeftColor
                     : effectiveRightColor}
@@ -941,6 +954,10 @@ Usage:
 
   .beat-layer.pose-only {
     opacity: 0;
+  }
+
+  .pictograph-arrows.no-transition {
+    transition: none;
   }
 
   /* Hand colour key: same fade as the other glyph overlays. Hidden by

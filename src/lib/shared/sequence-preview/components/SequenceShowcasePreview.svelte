@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte";
   import { onMount, untrack } from "svelte";
   import type { Snippet } from "svelte";
   import { activateWhenNear } from "$lib/actions/activate-when-near";
@@ -326,7 +327,7 @@
   use:activatePreviewWhenNear
   use:trackPreviewVisibility
   role="group"
-  aria-label="{word} Choreo Card and animation preview"
+  aria-label="{word} {t('preview_card_animation')}"
 >
   <div
     class="live-presentation"
@@ -392,8 +393,8 @@
         >
           {#snippet error(_caught, retry)}
             <div class="preview-error" role="alert">
-              <span>The player could not load.</span>
-              <button type="button" onclick={retry}>Try again</button>
+              <span>{t('preview_player_failed')}</span>
+              <button type="button" onclick={retry}>{t('browse_ui_try_again')}</button>
             </div>
           {/snippet}
         </LazyMount>
@@ -480,8 +481,8 @@
 
       {#if showCardLayer && resolutionState === "unavailable" && activation === "manual"}
         <div class="preview-error" role="alert">
-          <span>Preview unavailable</span>
-          <button type="button" onclick={retrySequence}>Try again</button>
+          <span>{t('preview_unavailable')}</span>
+          <button type="button" onclick={retrySequence}>{t('browse_ui_try_again')}</button>
         </div>
       {:else if showCardLayer && activation === "manual"}
         <button
@@ -490,7 +491,7 @@
           onclick={requestPlayback}
           disabled={loadingRequestedPlayer}
           aria-busy={loadingRequestedPlayer || undefined}
-          aria-label="Play {word} preview"
+          aria-label={t("preview_play_word", { word })}
         >
           {#if loadingRequestedPlayer}
             <span class="spinner" aria-hidden="true"></span>

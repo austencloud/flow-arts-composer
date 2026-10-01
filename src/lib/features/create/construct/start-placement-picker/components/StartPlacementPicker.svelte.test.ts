@@ -5,7 +5,8 @@ import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
 import { Orientation } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
 
 vi.mock("./PictographGrid.svelte", async () => ({
-  default: (await import("./StartPlacementPickerPresetTestStub.svelte")).default,
+  default: (await import("./StartPlacementPickerPresetTestStub.svelte"))
+    .default,
 }));
 
 vi.mock("./BuildStartPlacement.svelte", async () => ({
@@ -57,6 +58,25 @@ describe("StartPlacementPicker paths", () => {
     await expect
       .element(page.getByRole("button", { name: "Build" }))
       .toHaveAttribute("aria-pressed", "true");
+  });
+
+  it("stays on presets and leaves saved choices alone when locked", async () => {
+    const saved = JSON.stringify({ pickerPath: "build", showAdvanced: true });
+    localStorage.setItem("tka-start-placement-picker-prefs", saved);
+    render(StartPlacementPicker, {
+      startPlacementState: pickerState() as never,
+      embedded: true,
+      lockedPath: "presets",
+      rememberPreferences: false,
+    });
+
+    await expect.element(page.getByTestId("preset-path")).toBeInTheDocument();
+    await expect
+      .element(page.getByRole("button", { name: "Build" }))
+      .not.toBeInTheDocument();
+    expect(localStorage.getItem("tka-start-placement-picker-prefs")).toBe(
+      saved
+    );
   });
 
   it("restores literal blue/red orientation preferences", async () => {

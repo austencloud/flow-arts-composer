@@ -1,13 +1,14 @@
 <!--
   IconRailNav.svelte
 
-  Generic vertical icon-bar tablist. The pill id type `T` is a free string
+  Generic icon-bar tablist with vertical and horizontal layouts. The pill id type `T` is a free string
   union supplied by the consumer (AnimationPanel passes PillId; the Art panel
   passes its own tunnel/mandala id unions), so this rail is reusable beyond the
   Download-Animation panel. Each pill renders live prop artwork, a FontAwesome
   `icon`, or an accent dot (used by Effort).
 -->
 <script lang="ts" generics="T extends string">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import RailPropGlyph from "$lib/shared/components/RailPropGlyph.svelte";
   import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
   import type { FanAppearance } from "$lib/shared/pictograph/prop/domain/fan-appearance";
@@ -33,6 +34,10 @@
     onNavMount,
     alignment = "center",
     reservedSlots = 0,
+    orientation = "vertical",
+    compact = false,
+    ariaLabel,
+    panelIdPrefix,
   }: {
     pills: RailPill[];
     activeId: T | null;
@@ -41,6 +46,13 @@
     alignment?: "start" | "center";
     /** Reserve mode-specific slots without moving the common section buttons. */
     reservedSlots?: number;
+    orientation?: "vertical" | "horizontal";
+    /** Horizontal only: shorter pills (50px instead of 72px) for a host short
+     *  on height. The icon still sits above its name. */
+    compact?: boolean;
+    ariaLabel?: string;
+    /** Connect a consumer-owned tab panel to its section button. */
+    panelIdPrefix?: string;
   } = $props();
 
   let navEl: HTMLElement | undefined = $state();
@@ -66,11 +78,11 @@
     if (currentIndex === -1) return;
 
     switch (e.key) {
-      case "ArrowDown":
+      case orientation === "horizontal" ? "ArrowRight" : "ArrowDown":
         e.preventDefault();
         focusPillAt(currentIndex + 1);
         break;
-      case "ArrowUp":
+      case orientation === "horizontal" ? "ArrowLeft" : "ArrowUp":
         e.preventDefault();
         focusPillAt(currentIndex - 1);
         break;
@@ -95,12 +107,14 @@
 
 <div
   class="icon-rail"
+  class:horizontal={orientation === "horizontal"}
+  class:compact={compact && orientation === "horizontal"}
   class:align-start={alignment === "start"}
   class:reserved-slots={reservedSlots > 0}
   style:--rail-slots={Math.max(reservedSlots, pills.length)}
   role="tablist"
-  aria-orientation="vertical"
-  aria-label="Editor sections"
+  aria-orientation={orientation}
+  aria-label={ariaLabel ?? t("viewer_ui_editor_sections")}
   bind:this={navEl}
 >
   {#each pills as pill (pill.id)}
@@ -109,6 +123,15 @@
       role="tab"
       class="rail-btn"
       data-pill-id={pill.id}
+      id={panelIdPrefix ? `${panelIdPrefix}-${pill.id}-tab` : undefined}
+      aria-controls={panelIdPrefix
+        ? `${panelIdPrefix}-${pill.id}-panel`
+        : undefined}
+      tabindex={orientation === "horizontal"
+        ? activeId === pill.id || (activeId === null && pill === pills[0])
+          ? 0
+          : -1
+        : undefined}
       aria-selected={activeId === pill.id}
       aria-label={pill.label}
       title="{pill.label}{pill.summary ? `: ${pill.summary}` : ''}"
@@ -261,16 +284,60 @@
     font-weight: 500;
   }
 
+  .icon-rail.horizontal {
+    display: grid;
+    grid-template-columns: repeat(var(--rail-slots), minmax(0, 1fr));
+    grid-template-rows: auto;
+    width: 100%;
+    min-width: 0;
+    padding: 4px;
+    box-sizing: border-box;
+    gap: 8px;
+  }
+
+  .horizontal .rail-btn {
+    width: 100%;
+    min-width: 0;
+    height: 72px;
+    flex-direction: column;
+    gap: 5px;
+    padding: 6px 2px;
+    backdrop-filter: none;
+  }
+
+  .horizontal .rail-copy {
+    display: block;
+    max-width: 100%;
+  }
+
+  .icon-rail.horizontal.compact {
+    padding: 2px 4px;
+  }
+
+  .horizontal.compact .rail-btn {
+    height: 50px;
+    gap: 2px;
+    padding: 2px;
+  }
+
+  .horizontal .rail-label {
+    font-size: var(--font-size-min, 14px);
+  }
+
+  .horizontal .rail-summary {
+    display: none;
+  }
+
   /* The wide effects sidebar has room to name its sections. Keeping the
      compact rail icon-only preserves canvas width on small workspaces. */
   @container animation-sidebar (min-width: 40rem) {
-    .icon-rail {
+    .icon-rail:not(.horizontal) {
       width: 8.5rem;
       align-items: stretch;
       padding-inline: 6px;
     }
 
-    .rail-btn {
+    .icon-rail:not(.horizontal) .rail-btn {
       width: 100%;
       justify-content: flex-start;
       gap: 9px;
@@ -282,7 +349,7 @@
       flex: 0 0 auto;
     }
 
-    .rail-copy {
+    .icon-rail:not(.horizontal) .rail-copy {
       display: grid;
       min-width: 0;
       gap: 1px;

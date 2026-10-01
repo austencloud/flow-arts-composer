@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
+  COMPACT_MAX_ART,
+  COMPACT_MIN_ART,
+  COMPACT_MIN_TILE_WIDTH,
+  compactDisplayArt,
+  compactDisplayColumns,
   DISPLAY_GROUP_GAP,
   fitDisplayGrid,
   MIN_FIT_ART,
@@ -96,4 +101,98 @@ describe("fitDisplayGrid", () => {
       );
     }
   );
+});
+
+describe("Post Display box fitting", () => {
+  // Compact chrome with a readable two-line label, including button borders.
+  const metrics = { padX: 8, chromeY: 42, gapX: 8, gapY: 8, count: 10 };
+
+  it.each([
+    { width: 408, height: 172, cols: 5 },
+    { width: 350, height: 306, cols: 4 },
+    { width: 472, height: 964, cols: 2 },
+  ])("uses the available $width x $height box", ({ width, height, cols }) => {
+    const fit = fitDisplayGrid({
+      ...metrics,
+      width,
+      height,
+      grow: true,
+      groupBoundary: null,
+      minArt: COMPACT_MIN_ART,
+      allowPartialRows: true,
+    });
+    expect(fit).not.toBeNull();
+    expect(fit!.cols).toBe(cols);
+    const rows = Math.ceil(metrics.count / fit!.cols);
+    expect(
+      fit!.cols * fit!.tile + (fit!.cols - 1) * metrics.gapX
+    ).toBeLessThanOrEqual(width);
+    expect(rows * fit!.tile + (rows - 1) * metrics.gapY).toBeLessThanOrEqual(
+      height
+    );
+    expect(fit!.art).toBeGreaterThanOrEqual(COMPACT_MIN_ART);
+    if (height > 900) expect(fit!.art).toBeGreaterThan(COMPACT_MAX_ART);
+  });
+
+  it("preserves readable pictures by falling back in an impossibly short box", () => {
+    expect(
+      fitDisplayGrid({
+        ...metrics,
+        width: 350,
+        height: 90,
+        grow: true,
+        groupBoundary: null,
+        minArt: COMPACT_MIN_ART,
+      })
+    ).toBeNull();
+  });
+});
+
+describe("compactDisplayColumns", () => {
+  it("lays ten tiles in two rows of five wherever five columns fit", () => {
+    expect(compactDisplayColumns({ width: 403, count: 10, gap: 6 })).toBe(5);
+    expect(compactDisplayColumns({ width: 358, count: 10, gap: 6 })).toBe(5);
+  });
+
+  it("adds rows rather than letting a tile fall under its minimum width", () => {
+    const gap = 6;
+    for (const width of [300, 250, 200, 130]) {
+      const cols = compactDisplayColumns({ width, count: 10, gap });
+      const tile = (width - gap * (cols - 1)) / cols;
+      expect(tile).toBeGreaterThanOrEqual(COMPACT_MIN_TILE_WIDTH);
+    }
+    expect(compactDisplayColumns({ width: 250, count: 10, gap })).toBeLessThan(
+      5
+    );
+  });
+
+  it("never returns an empty row or an impossible column count", () => {
+    expect(compactDisplayColumns({ width: 10, count: 10, gap: 6 })).toBe(1);
+    expect(compactDisplayColumns({ width: 400, count: 1, gap: 6 })).toBe(1);
+    expect(compactDisplayColumns({ width: 400, count: 0, gap: 6 })).toBe(1);
+  });
+});
+
+describe("compactDisplayArt", () => {
+  it("keeps the largest picture when the content already fits", () => {
+    expect(compactDisplayArt({ probeArt: 64, rows: 2, overflow: 0 })).toBe(
+      COMPACT_MAX_ART
+    );
+    expect(compactDisplayArt({ probeArt: 64, rows: 2, overflow: -40 })).toBe(
+      COMPACT_MAX_ART
+    );
+  });
+
+  it("shrinks every row by the share of the overflow it has to absorb", () => {
+    // 20px over with two rows: each row gives up 10px of picture.
+    expect(compactDisplayArt({ probeArt: 64, rows: 2, overflow: 20 })).toBe(54);
+    // An odd overflow rounds the shrink up, so the content never stays over.
+    expect(compactDisplayArt({ probeArt: 64, rows: 2, overflow: 21 })).toBe(53);
+  });
+
+  it("stops at the readable minimum when the box is too short", () => {
+    expect(compactDisplayArt({ probeArt: 64, rows: 2, overflow: 400 })).toBe(
+      COMPACT_MIN_ART
+    );
+  });
 });

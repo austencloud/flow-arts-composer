@@ -89,6 +89,17 @@ describe("ArtSettingsPanel split contract", () => {
     }
   });
 
+  it("lets the Tunnel dock tray size itself around the Display rows", () => {
+    // The dock tray takes its height from its content. Display rows left at
+    // `flex: 1 1 0` there report zero: the tray opens empty, the viewer's mode
+    // bar ducks away, and the phone shows no Display options.
+    const display = settingsFile("TunnelDisplaySettings.svelte");
+    expect(display).toContain('class="display-rows" class:dense');
+    expect(display).toMatch(
+      /\.display-rows\.dense,\s*\.display-rows\.dense \.rt-section \{\s*flex: 0 0 auto;/
+    );
+  });
+
   it("keeps Tunnel Effects identical and moves copy colors to Formation", () => {
     const effects = settingsFile("TunnelEffectsSettings.svelte");
     const look = settingsFile("TunnelLookSettings.svelte");

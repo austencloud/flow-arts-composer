@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { resolvePreviewCellRender } from "$lib/shared/sequence-viewer/services/preview-cell-render-contract";
+import { deriveCacheKey } from "$lib/shared/sequence-viewer/services/cell-cache-key-deriver";
 import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+import { resolvePropRenderKey } from "$lib/shared/pictograph/prop/domain/prop-look";
 import { TRANSITION_REVIEW_SEQUENCE } from "../../src/routes/test/sequence-viewer-transitions/transition-review-fixture";
 
 const data = TRANSITION_REVIEW_SEQUENCE.steps[0]!;
@@ -93,5 +95,82 @@ describe("shared live card / bitmap cell contract", () => {
     });
     expect(after.prepareOptions).toEqual(before.prepareOptions);
     expect(after.renderOptions.widthMultiplier).toBe(2);
+  });
+  it("prepares the Realistic look the canvas beside the card draws", () => {
+    const { prepareOptions } = resolvePreviewCellRender(data, false, {
+      ...base,
+      propLook: "model",
+    });
+    // The prop loader picks its artwork from this render key.
+    expect(
+      resolvePropRenderKey(prepareOptions.leftPropType!, prepareOptions)
+    ).toBe("staff__model");
+    expect(
+      resolvePropRenderKey(
+        PropType.STAFF,
+        resolvePreviewCellRender(data, false, base).prepareOptions
+      )
+    ).toBe("staff");
+  });
+  it("keeps hand paths on hand artwork under the Realistic look", () => {
+    const result = resolvePreviewCellRender(data, false, {
+      ...base,
+      handPathMode: true,
+      propLook: "model",
+    });
+    expect(result.prepareOptions.propLook).toBeUndefined();
+    expect(
+      deriveCacheKey(data, undefined, false, {
+        ...base,
+        handPathMode: true,
+        propLook: "model",
+      })
+    ).toBe(deriveCacheKey(data, undefined, false, { ...base, handPathMode: true }));
+  });
+  it("prepares the triangle grip the canvas beside the card draws, in both looks", () => {
+    const triangle = { ...base, leftPropType: PropType.TRIANGLE };
+    const classic = resolvePreviewCellRender(data, false, {
+      ...triangle,
+      triangleGrip: "side",
+    });
+    expect(classic.renderOptions.triangleGrip).toBe("side");
+    expect(
+      resolvePropRenderKey(PropType.TRIANGLE, classic.prepareOptions)
+    ).toBe("triangle__side");
+    expect(
+      resolvePropRenderKey(
+        PropType.TRIANGLE,
+        resolvePreviewCellRender(data, false, {
+          ...triangle,
+          triangleGrip: "side",
+          propLook: "model",
+        }).prepareOptions
+      )
+    ).toBe("triangle_side__model");
+
+    const handPath = resolvePreviewCellRender(data, false, {
+      ...triangle,
+      triangleGrip: "side",
+      handPathMode: true,
+    });
+    expect(handPath.prepareOptions.triangleGrip).toBeUndefined();
+    expect(handPath.renderOptions.triangleGrip).toBeUndefined();
+  });
+  it("never serves a notation blob to a Realistic cell", () => {
+    const notation = deriveCacheKey(data, undefined, false, base);
+    expect(
+      deriveCacheKey(data, undefined, false, { ...base, propLook: "model" })
+    ).not.toBe(notation);
+    // Notation keys, and so the shared cloud corpus, stay byte-identical.
+    expect(
+      deriveCacheKey(data, undefined, false, {
+        ...base,
+        propLook: "pictograph",
+      })
+    ).toBe(notation);
+    const fan = { ...base, leftPropType: PropType.FAN };
+    expect(
+      deriveCacheKey(data, undefined, false, { ...fan, propLook: "model" })
+    ).toBe(deriveCacheKey(data, undefined, false, fan));
   });
 });

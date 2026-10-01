@@ -51,6 +51,13 @@ import {
 } from "@tka/sequence-engine/loop";
 
 /**
+ * The humor profile is private training data in the austencloud/flow-arts-private
+ * clone. FLOW_ARTS_PRIVATE_DIR points at that clone when it isn't at
+ * E:/flow-arts-private.
+ */
+const HUMOR_PROFILE_PATH = `${process.env.FLOW_ARTS_PRIVATE_DIR || "E:/flow-arts-private"}/humor/humor-profile.json`;
+
+/**
  * Convert detected LOOP component IDs to renderer enum values.
  */
 function convertLOOPComponentsToEnum(
@@ -1033,7 +1040,7 @@ export function registerSequenceTools(server: McpServer): void {
                 `You MUST present 4 tagline options to the user BEFORE generating.`,
                 ``,
                 `Workflow:`,
-                `1. Read humor profile: mcp-server/src/core/humor-profile.json`,
+                `1. Read humor profile: ${HUMOR_PROFILE_PATH}`,
                 `2. Present 4 tagline options spanning different humor lenses`,
                 `3. Wait for user to pick one (or provide their own)`,
                 `4. Call generate_sequence again with notes="<chosen tagline>"`,

@@ -214,7 +214,7 @@ describe("Construct animation rendering", () => {
       "utf8"
     );
 
-    expect(constructSource).toContain('<div class="action-swap">');
+    expect(constructSource).toContain('<div class="action-swap" bind:this={actionSwapEl}>');
     expect(constructSource).toContain('mode="swap"');
     expect(constructSource).toContain('class="action-swap-state"');
     expect(constructSource).toContain("place-items: center");

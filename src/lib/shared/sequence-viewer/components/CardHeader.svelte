@@ -19,6 +19,7 @@
   import { cubicOut } from "svelte/easing";
   import DifficultyBadge from "$lib/shared/components/DifficultyBadge.svelte";
   import LOOPIconStrip from "$lib/shared/components/LOOPIconStrip.svelte";
+  import { loopComponentLabel } from "$lib/features/create/generate/components/loop-component-presentation";
   import { LOOPComponent } from "$lib/shared/foundation/domain/models/generation/generate-models";
   import { Period } from "$lib/shared/foundation/domain/models/generation/circular-models";
   import { simplifyRepeatedWord } from "$lib/shared/foundation/utils/word-simplifier";
@@ -109,9 +110,9 @@
   const exportHeaderLabel = $derived.by(() => {
     const title = customTitleText?.trim() || (wordVisible ? sequence.word : "");
     const parts = title ? [title] : [];
-    if (showDifficultyLevel) parts.push(`Level ${difficultyLevel}`);
+    if (showDifficultyLevel) parts.push(t("create_difficulty_level", { level: difficultyLevel }));
     if (showLoopGlyph && loopComponents?.size) {
-      parts.push(`LOOP ${[...loopComponents].join(", ")}`);
+      parts.push(`LOOP ${[...loopComponents].map(loopComponentLabel).join(", ")}`);
     }
     return parts.join(". ") || t("viewer_detail_card_header");
   });

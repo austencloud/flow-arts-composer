@@ -88,7 +88,9 @@ jobs:
       # svelte-check is not a substitute for the compiler: it goes through the
       # Svelte language service and has been observed finishing in ~2 s with
       # "0 errors" on this repo in CI, which is not a program it actually
-      # checked. A plain tsc pass over the same tsconfig costs about a minute
+      # checked. (Past 20 MB of .svelte files the language service drops every
+      # project file; see the svelte-check-full job below.)
+      # A plain tsc pass over the same tsconfig costs about a minute
       # and is what keeps the type backlog in src/ and tests/ from regrowing.
       # The gate reports every diagnostic and fails only on files this
       # tsconfig owns; dependencies and sibling workspace packages resolve to
@@ -116,6 +118,12 @@ jobs:
       - name: Verify offline kit in build artifact
         run: pnpm run verify:offline
 
+      # Public pages are meant to start without Firebase. One static import or
+      # a chunk merge can put it back on a page's first download while the page
+      # still works, so this reads the built chunk graph.
+      - name: Verify public pages start without Firebase
+        run: pnpm run verify:public-firebase
+
       # A red run on main is also a PRODUCTION OUTAGE, and that half is silent.
       # Deploy Pages (gated) fires on workflow_run and exits `skipped` when the
       # conclusion isn't success — no failure, no notification, just an absent
@@ -140,6 +148,68 @@ jobs:
             echo "since then is stranded, not just this one."
             echo
             echo "Fix this run and push; the deploy triggers itself once \`main\` is green."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  # Advisory: shows the type backlog `pnpm run check` cannot see. svelte-check
+  # gives TypeScript a 20 MB budget for non-TypeScript files; the components
+  # passed it on 2026-08-01, and past it the language service drops every
+  # project file. `check:full` lifts the cap (tsconfig.check-full.json).
+  #
+  # Nothing in this job may fail the run, because the deploy is gated on it:
+  # keep both continue-on-error flags, and keep the step timeout below the
+  # job's (a job that times out is cancelled, which continue-on-error does not
+  # cover). The check held 6.3 GB of heap on 2026-09-27, hence check:full's
+  # 12 GB cap; ubuntu-latest has 16 GB for public repos, 8 GB for private.
+  # Once the count reaches zero, give `check` this config and cap, and delete
+  # this job.
+  svelte-check-full:
+    name: Full svelte-check (advisory)
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    continue-on-error: true
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: "pnpm"
+
+      # Before install, for the same `$env/static/public` reason as validate.
+      - name: Create .env from .env.example
+        run: cp .env.example .env
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build workspace packages
+        run: pnpm run build:packages
+
+      - name: Type check (full svelte-check, size cap lifted)
+        continue-on-error: true
+        timeout-minutes: 15
+        shell: bash
+        run: pnpm run check:full 2>&1 | tee svelte-check-full.log
+
+      - name: Report the backlog
+        if: always()
+        shell: bash
+        run: |
+          {
+            echo "## Full svelte-check (advisory)"
+            echo
+            # CI turns on svelte-check's colors; -o keeps the codes out.
+            grep -Eo "svelte-check found [0-9]+ errors? and [0-9]+ warnings?( in [0-9]+ files?)?" svelte-check-full.log ||
+              echo "svelte-check did not finish; see the step log."
+            echo
+            echo "\`pnpm run check\` cannot see these: it stops at TypeScript's"
+            echo "20 MB cap on .svelte files. Run \`pnpm run check:full\` locally."
           } >> "$GITHUB_STEP_SUMMARY"
 
   component-tests:

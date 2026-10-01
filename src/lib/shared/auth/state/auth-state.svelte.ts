@@ -34,6 +34,7 @@ import { getPresenceTracker } from "../../presence/get-presence-tracker";
 
 import { auth } from "../firebase";
 import { userPreviewState } from "../../debug/state/user-preview-state.svelte";
+import { registerLoadedAuthState } from "./loaded-auth-state.svelte";
 
 import { featureFlagService } from "../services/post-hog-feature-flag-service.svelte";
 import type { UserRole } from "../domain/models/user-role";
@@ -242,6 +243,13 @@ export function isInitialized(): boolean {
 export function isAdmin(): boolean {
   return _state.isAdmin;
 }
+
+// Lets the premium prop check and the sequence thumbnails read these answers
+// on public pages without importing this module, and Firebase with it.
+registerLoadedAuthState({
+  isAdmin,
+  isAuthenticated: () => _state.user !== null,
+});
 
 /**
  * Reactive getter for role (actual user, not impersonated)

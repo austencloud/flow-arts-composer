@@ -119,7 +119,7 @@ describe("canvas context menu builder", () => {
     const children = visibility?.children ?? [];
 
     expect(children.every((c) => c.keepOpen)).toBe(true);
-    expect(children.map((c) => c.label)).toContain("Step Numbers");
+    expect(children.map((c) => c.label)).toContain("Step numbers");
     expect(children.some((c) => /beat/i.test(c.label))).toBe(false);
   });
 

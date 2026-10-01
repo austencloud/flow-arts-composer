@@ -24,7 +24,7 @@
  * grants nor denies them.
  */
 
-import { isAdmin } from "$lib/shared/auth/state/auth-state.svelte";
+import { loadedAuthState } from "$lib/shared/auth/state/loaded-auth-state.svelte";
 import { isPremiumCosmeticProp } from "$lib/shared/pictograph/prop/domain/prop-type-display-registry";
 import { checkPremiumGate } from "../services/premium-gate-checker";
 import { CAPABILITY_NUDGES } from "./capability-nudges";
@@ -77,7 +77,7 @@ function readEnvironment(): PremiumCosmeticEnvironment {
     premiumTierShipped:
       typeof __FEATURE_PREMIUM__ !== "undefined" && __FEATURE_PREMIUM__,
     isDev: import.meta.env.DEV,
-    isAdminUser: isAdmin(),
+    isAdminUser: loadedAuthState.isAdmin,
     checkGate: checkPremiumGate,
   };
 }

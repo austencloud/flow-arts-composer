@@ -48,6 +48,8 @@ export interface LedSamplerConfig {
   /** Chirality flip as drawn; LED positions mirror with the sprite. */
   leftPropFlipped?: boolean;
   rightPropFlipped?: boolean;
+  /** Chosen colors of the base left and right props, when customized. */
+  primaryPropColors?: TunnelPropColorPair | null;
   /**
    * Overlaid tunnel layers. When present, LEDs are also emitted for each
    * layer's left/right props (propIndex >= 2) so the LED effect covers the whole
@@ -123,6 +125,21 @@ export class LedSampler {
     // (PROP_REFERENCE_FLUX x level). Applying it here too would square it.
     // This gain only normalizes pattern bytes to [0,1].
     const gain = 1 / 255;
+    // Prop Colors names the hands, not the two ends of each strip. Use the
+    // pattern's color slots when no prop colors have been chosen.
+    const handColors =
+      ledConfig.pattern.source === "generator" &&
+      ledConfig.pattern.generatorId === "prop-colors" &&
+      pattern
+        ? {
+            left: config.primaryPropColors
+              ? tunnelColorFromHex(config.primaryPropColors.left).rgb01
+              : scale(getPixel(pattern, frameIndex, 0), gain),
+            right: config.primaryPropColors
+              ? tunnelColorFromHex(config.primaryPropColors.right).rgb01
+              : scale(getPixel(pattern, frameIndex, pattern.ledCount - 1), gain),
+          }
+        : null;
 
     let count = 0;
     if (leftProp) {
@@ -139,7 +156,7 @@ export class LedSampler {
         gain,
         config.tunnelPropColors
           ? tunnelColorFromHex(config.tunnelPropColors.left).rgb01
-          : null,
+          : handColors?.left ?? null,
         count
       );
     }
@@ -157,7 +174,7 @@ export class LedSampler {
         gain,
         config.tunnelPropColors
           ? tunnelColorFromHex(config.tunnelPropColors.right).rgb01
-          : null,
+          : handColors?.right ?? null,
         count
       );
     }
@@ -194,7 +211,7 @@ export class LedSampler {
               ? tunnelColorFromHex(exact.left).rgb01
               : spectrum
                 ? tunnelPropColor(propIndex, layers.length).rgb01
-                : null,
+                : handColors?.left ?? null,
             count,
             layer.opacity ?? 1
           );
@@ -216,7 +233,7 @@ export class LedSampler {
               ? tunnelColorFromHex(exact.right).rgb01
               : spectrum
                 ? tunnelPropColor(propIndex, layers.length).rgb01
-                : null,
+                : handColors?.right ?? null,
             count,
             layer.opacity ?? 1
           );

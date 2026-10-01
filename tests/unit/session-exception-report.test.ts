@@ -99,8 +99,8 @@ describe("session exception reports", () => {
       user: {
         id: "user-1",
         displayName: "Sky Guys Quest",
-        username: "@sgarrard911",
-        email: "sgarrard911@gmail.com",
+        username: "@tester",
+        email: "tester@example.com",
       },
       session,
       events: [
@@ -138,9 +138,9 @@ describe("session exception reports", () => {
     expect(report).toContain("# TKA session exception report");
     expect(report).toContain("PostHog access is not required");
     expect(report).toContain("- Name: Sky Guys Quest");
-    expect(report).toContain("- Username: @sgarrard911");
+    expect(report).toContain("- Username: @tester");
     expect(report).toContain("- User ID: user-1");
-    expect(report).toContain("- Email: sgarrard911@gmail.com");
+    expect(report).toContain("- Email: tester@example.com");
     expect(report).toContain("- Started: 2026-07-31T12:00:00.000Z");
     expect(report).toContain("- Duration: 4m 0s");
     expect(report).toContain("- Route: /browse -> /create");

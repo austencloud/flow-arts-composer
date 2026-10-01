@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { localizeLevel1Text, localizeLevel1SelectionLabel } from "../_data/localize-level1-content";
   /**
    * Words - body page (manifest `words`), faithful to proof p31 / "1.2 - Words"
    * artboard. The 1.2 chapter opener.
@@ -248,7 +249,7 @@
 
 <div class="words-page">
   <!-- "Thumbs" heading + per-row colored orientation labels. -->
-  <span class="thumbs-head" style="left:{10 * S}px; top:{225.3 * S}px; width:{62 * S}px; font-size:{14 * S}px">Thumbs</span>
+  <span class="thumbs-head" style="left:{10 * S}px; top:{225.3 * S}px; width:{62 * S}px; font-size:{14 * S}px">{localizeLevel1Text("Thumbs")}</span>
   {#each ROWS as r (r.key)}
     <span class="thumbs-label" style="left:{4 * S}px; top:{(r.y + 43) * S}px; width:{78 * S}px; font-size:{14 * S}px">
       <span class="cB">{r.label.split(" | ")[0]}</span>&nbsp;|&nbsp;<span class="cR">{r.label.split(" | ")[1]}</span>
@@ -282,7 +283,7 @@
       <SelectionHit
         groupId={r.key}
         isGroupStart
-        label={`Animate AABB starting thumbs ${r.label}`}
+        label={localizeLevel1SelectionLabel(`Animate AABB starting thumbs ${r.label}`)}
         onselect={() => emitSequence?.({ strip: RESOLVED[r.key]!, word: `AABB (${r.label})`, key: r.key, propType: "staff" })}
       />
     </div>
@@ -298,7 +299,7 @@
       use:ptDrag={pt(`w-para-${i}`, "para", p)}
       use:editText={{ id: `w-para-${i}`, label: "para", get: () => p.html, set: (h) => (p.html = h) }}
     >
-      {@html p.html}
+      {@html localizeLevel1Text(p.html)}
     </p>
   {/each}
 </div>

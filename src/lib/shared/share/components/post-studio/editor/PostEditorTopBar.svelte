@@ -1,20 +1,21 @@
 <script lang="ts">
+  import type { Snippet } from "svelte";
   import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import type { PostEditorState } from "$lib/shared/media-composition/state/post-editor-state.svelte";
-  import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
 
   /**
-   * History on the left, Export on the right. Undo and Redo are the app's
-   * Ctrl+Z and Ctrl+Y targets, so the keys and the buttons always agree.
-   * Export opens the Export panel, where the render starts.
+   * History on the left, the post's actions on the right. Undo and Redo are
+   * the app's Ctrl+Z and Ctrl+Y targets, so the keys and the buttons always
+   * agree. The actions are absent when the page shows them in its own header.
    */
   interface Props {
     editor: PostEditorState;
     exporting: boolean;
-    onExport: () => void;
+    actions?: Snippet;
+    draftStatus?: Snippet;
   }
 
-  let { editor, exporting, onExport }: Props = $props();
+  let { editor, exporting, actions, draftStatus }: Props = $props();
 </script>
 
 <div class="top-bar">
@@ -44,32 +45,54 @@
       <i class="fa-solid fa-rotate-right" aria-hidden="true"></i>
     </button>
   </div>
-  <PanelButton
-    variant="primary"
-    onclick={onExport}
-    disabled={exporting}
-    ariaBusy={exporting}
-  >
-    <i
-      class="fa-solid {exporting ? 'fa-spinner fa-spin' : 'fa-file-export'}"
-      aria-hidden="true"
-    ></i>
-    {t("post_editor_export")}
-  </PanelButton>
+  {#if draftStatus}
+    <div class="draft-save">{@render draftStatus()}</div>
+  {/if}
+  {#if actions}
+    <div class="end-actions">{@render actions()}</div>
+  {/if}
 </div>
 
 <style>
   .top-bar {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    gap: 0.75rem;
+    gap: 0.5rem;
     min-width: 0;
   }
 
   .history {
     display: flex;
+    flex-shrink: 0;
     gap: 0.375rem;
+  }
+
+  .end-actions {
+    display: flex;
+    flex-shrink: 0;
+    margin-left: auto;
+  }
+
+  .draft-save {
+    display: flex;
+    flex-wrap: wrap;
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  @container post-top-bar (max-width: 28rem) {
+    .top-bar {
+      flex-wrap: wrap;
+    }
+
+    .draft-save {
+      order: 1;
+      flex-basis: 100%;
+    }
+
+    .end-actions {
+      margin-left: auto;
+    }
   }
 
   .icon-button {
@@ -115,10 +138,6 @@
   @media (prefers-reduced-motion: reduce) {
     .icon-button {
       transition: none;
-    }
-
-    .fa-spin {
-      animation: none;
     }
   }
 </style>

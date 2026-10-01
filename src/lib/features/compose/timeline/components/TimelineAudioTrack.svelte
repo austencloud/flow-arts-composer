@@ -72,7 +72,7 @@
 
   // Sync playback position to wavesurfer
   $effect(() => {
-    if (!wavesurfer || !isReady) return;
+    if (!isReady || !wavesurfer) return;
 
     // Don't sync if wavesurfer is the source
     const wsTime = wavesurfer.getCurrentTime();
@@ -85,7 +85,7 @@
 
   // Sync play state
   $effect(() => {
-    if (!wavesurfer || !isReady) return;
+    if (!isReady || !wavesurfer) return;
 
     if (isPlaying && !wavesurfer.isPlaying()) {
       wavesurfer.play();
@@ -96,76 +96,13 @@
 
   // Apply zoom changes to wavesurfer
   $effect(() => {
-    if (!wavesurfer || !isReady) return;
+    if (!isReady || !wavesurfer) return;
     wavesurfer.zoom(pixelsPerSecond);
   });
 
-  async function loadAudio(file: File) {
-    if (!waveformContainer) return;
+  let sourceGeneration = 0;
 
-    isLoadingAudio = true;
-
-    try {
-      const audioUrl = URL.createObjectURL(file);
-
-      // Initialize wavesurfer if not already
-      if (!wavesurfer) {
-        wavesurfer = WaveSurfer.create({
-          container: waveformContainer,
-          waveColor: "rgba(74, 158, 255, 0.4)",
-          progressColor: "rgba(74, 158, 255, 0.7)",
-          cursorColor: "transparent", // We use our own playhead
-          cursorWidth: 0,
-          barWidth: 2,
-          barGap: 1,
-          barRadius: 1,
-          height: 48,
-          normalize: true,
-          backend: "WebAudio",
-          minPxPerSec: pixelsPerSecond,
-          fillParent: false,
-          autoScroll: false,
-          hideScrollbar: true,
-        });
-
-        // Wire up events
-        wavesurfer.on("ready", () => {
-          isReady = true;
-          const duration = wavesurfer?.getDuration() ?? 0;
-          getState().setAudioDuration(duration);
-
-          // Get the audio element for playback sync
-          audioElement = wavesurfer?.getMediaElement() ?? null;
-          if (audioElement) {
-            getPlayback().connectAudio(audioElement);
-          }
-        });
-
-        wavesurfer.on("audioprocess", (time: number) => {
-          // Only update if wavesurfer is the master (playing forward)
-          if (wavesurfer?.isPlaying() && getPlayback().direction === 1) {
-            getState().setPlayheadPosition(time);
-          }
-        });
-
-        wavesurfer.on("seeking", (progress: number) => {
-          const time = progress * (audioDuration || 0);
-          getPlayback().seek(time);
-        });
-      }
-
-      await wavesurfer.load(audioUrl);
-
-      // Update project state
-      getState().setAudioFile(file.name, audioUrl);
-    } catch (error) {
-      console.error("Failed to load audio:", error);
-    } finally {
-      isLoadingAudio = false;
-    }
-  }
-
-  function removeAudio() {
+  function disconnectSource() {
     if (wavesurfer) {
       wavesurfer.destroy();
       wavesurfer = null;
@@ -175,6 +112,71 @@
       audioElement = null;
     }
     isReady = false;
+  }
+
+  $effect(() => {
+    const url = getState().getAudioUrl();
+    const container = waveformContainer;
+    if (url && !container) return;
+    const generation = ++sourceGeneration;
+    disconnectSource();
+    isLoadingAudio = !!url;
+    if (!url || !container) return;
+
+    const source = WaveSurfer.create({
+      container,
+      waveColor: "rgba(74, 158, 255, 0.4)",
+      progressColor: "rgba(74, 158, 255, 0.7)",
+      cursorColor: "transparent",
+      cursorWidth: 0,
+      barWidth: 2,
+      barGap: 1,
+      barRadius: 1,
+      height: 48,
+      normalize: true,
+      backend: "WebAudio",
+      minPxPerSec: 50,
+      fillParent: false,
+      autoScroll: false,
+      hideScrollbar: true,
+    });
+    wavesurfer = source;
+    const isCurrent = () =>
+      generation === sourceGeneration &&
+      source === wavesurfer &&
+      getState().getAudioUrl() === url;
+
+    source.on("ready", () => {
+      if (!isCurrent()) return;
+      isReady = true;
+      getState().setAudioDuration(source.getDuration());
+      audioElement = source.getMediaElement();
+      if (audioElement) getPlayback().connectAudio(audioElement);
+    });
+    source.on("audioprocess", (time: number) => {
+      if (isCurrent() && source.isPlaying() && getPlayback().direction === 1) {
+        getState().setPlayheadPosition(time);
+      }
+    });
+    source.on("seeking", (progress: number) => {
+      if (isCurrent())
+        getPlayback().seek(progress * (getState().project.audio.duration || 0));
+    });
+    void source
+      .load(url)
+      .catch((error) => {
+        if (isCurrent()) console.error("Failed to load audio:", error);
+      })
+      .finally(() => {
+        if (isCurrent()) isLoadingAudio = false;
+      });
+  });
+
+  function loadAudio(file: File) {
+    getState().setAudioFile(file.name, URL.createObjectURL(file));
+  }
+
+  function removeAudio() {
     getState().clearAudio();
   }
 
@@ -223,13 +225,8 @@
   }
 
   onDestroy(() => {
-    if (wavesurfer) {
-      wavesurfer.destroy();
-      wavesurfer = null;
-    }
-    if (audioElement) {
-      getPlayback().disconnectAudio();
-    }
+    sourceGeneration++;
+    disconnectSource();
   });
 </script>
 

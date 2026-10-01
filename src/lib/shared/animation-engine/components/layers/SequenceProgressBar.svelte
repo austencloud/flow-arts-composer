@@ -5,7 +5,10 @@ Linear progress indicator for animation sequences.
 Shows current position within the sequence and resets on loop.
 
 Two modes (chosen by whether `onSeek` is provided):
-- Display-only (default): a thin progress LINE. role="progressbar".
+- Display-only (default): a thin progress LINE. role="progressbar". With
+  `strip`, the line drops its panel band and inset and becomes a flush strip
+  across the full width of the surface it sits on, as thick as the shared
+  strip renderer paints it in exports.
 - Seekable: pass `onSeek` and it becomes a thin scrubber — click/drag to seek,
   keyboard arrows, a knob on hover/scrub. role="slider". The visible track stays
   3px; the hit area grows so it's easy to grab. Pointer behaviour mirrors
@@ -25,10 +28,17 @@ Design:
   import { motionDuration } from "$lib/shared/transitions/motion";
   import { DURATION } from "$lib/shared/transitions/transitions";
   import TransportControls from "../controls/TransportControls.svelte";
+  import { tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
+  import { sequenceFrameAt } from "$lib/shared/media-composition/domain/sequence-frame";
+  import { sequenceProgressStripHeightCss } from "$lib/shared/animation-engine/services/sequence-progress-renderer";
+
+  const stripHeight = sequenceProgressStripHeightCss();
 
   let {
     currentStep = 0,
     totalSteps = 0,
+    stepDurations = [],
+    normalizedProgress,
     visible = true,
     darkMode = false,
     onSeek = null,
@@ -37,11 +47,15 @@ Design:
     showPlaybackControl = false,
     isPlaying = false,
     onPlaybackToggle = null,
+    strip = false,
   }: {
     /** Current beat/step number (can exceed totalSteps for looping sequences) */
     currentStep?: number;
     /** Total number of steps in the sequence */
     totalSteps?: number;
+    stepDurations?: readonly number[];
+    /** Mapped pass progress, including a final landing or hold at 1. */
+    normalizedProgress?: number;
     /** Whether the progress bar should be visible */
     visible?: boolean;
     /** Dark mode override (matches WordHeader pattern) */
@@ -57,6 +71,9 @@ Design:
     showPlaybackControl?: boolean;
     isPlaying?: boolean;
     onPlaybackToggle?: (() => void) | null;
+    /** Display-only: a flush full-width strip along the surface's bottom
+     *  edge, sized from the nearest size container's shorter side. */
+    strip?: boolean;
   } = $props();
 
   const interactive = $derived(!!onSeek);
@@ -74,16 +91,20 @@ Design:
    * - currentStep = 0 or 1: at/before beat 1 start = 0% progress
    * - currentStep = 2.0: beat 2 just starting (33% for 3-step sequence)
    *
-   * Formula: (currentStep - 1) / totalSteps converts to 0-based progress
+   * The shared frame mapper weights durations and preserves the final landing.
    */
   const progress = $derived.by(() => {
+    if (normalizedProgress !== undefined)
+      return Number.isFinite(normalizedProgress)
+        ? Math.max(0, Math.min(1, normalizedProgress))
+        : 0;
     if (totalSteps <= 0) return 0;
-    // Convert 1-based beat number to 0-based progress before modulo
-    // currentStep 0.0-0.99 = start position hold (no progress yet)
-    const zeroBasedStep = currentStep < 1 ? 0 : currentStep - 1;
-    // Use modulo to wrap progress on loop
-    const normalizedStep = zeroBasedStep % totalSteps;
-    return Math.max(0, Math.min(1, normalizedStep / totalSteps));
+    const durations = Array.from({ length: totalSteps }, (_, index) => {
+      const duration = stepDurations[index] ?? 1;
+      return Number.isFinite(duration) && duration > 0 ? duration : 1;
+    });
+    return sequenceFrameAt(Math.max(0, currentStep - 1), durations)
+      .passBeatProgress;
   });
 
   // While scrubbing, show the dragged ratio immediately so the fill/knob track
@@ -102,11 +123,12 @@ Design:
    * currentStep is 1-based: 1.5 means beat 1, halfway through
    */
   const ariaLabel = $derived.by(() => {
-    if (totalSteps <= 0) return "Sequence progress: no sequence loaded";
+    if (totalSteps <= 0) return tDynamic("guide_runtime_progress_empty");
     // Convert to 0-based, modulo for looping, then back to 1-based for display
     const zeroBasedStep = currentStep < 1 ? 0 : currentStep - 1;
-    const step = Math.floor(zeroBasedStep % totalSteps) + 1;
-    return `Sequence progress: step ${step} of ${totalSteps}`;
+    const step =
+      progress === 1 ? totalSteps : Math.floor(zeroBasedStep % totalSteps) + 1;
+    return tDynamic("guide_runtime_progress_step", { step, total: totalSteps });
   });
 
   // ── Seek gesture (only wired when interactive) ──
@@ -197,7 +219,7 @@ Design:
         transition:fade={fadeParams}
         role="slider"
         tabindex="0"
-        aria-label="Seek position"
+        aria-label={tDynamic("guide_runtime_seek_position")}
         aria-valuemin={0}
         aria-valuemax={100}
         aria-valuenow={Math.round(displayProgress * 100)}
@@ -220,6 +242,8 @@ Design:
       <div
         class="progress-bar-container"
         class:dark-mode={darkMode}
+        class:strip
+        style:height={strip ? stripHeight : undefined}
         transition:fade={fadeParams}
         role="progressbar"
         aria-label={ariaLabel}
@@ -298,6 +322,30 @@ Design:
 
   .dark-mode .progress-track {
     background: var(--theme-stroke, rgba(255, 255, 255, 0.08));
+  }
+
+  /* Strip: the line is the whole element, flush with the surface's bottom
+     edge and as wide as it. No band behind it, no inset, square ends, and no
+     glow reaching up over the notation. */
+  .progress-bar-container.strip,
+  .progress-bar-container.strip.dark-mode,
+  :global(:root.dark) .progress-bar-container.strip:not(.dark-mode) {
+    padding: 0;
+    background: transparent;
+  }
+
+  .strip .progress-track {
+    height: 100%;
+    border-radius: 0;
+  }
+
+  .strip .progress-fill,
+  .strip.dark-mode .progress-fill,
+  :global(:root.dark)
+    .progress-bar-container.strip:not(.dark-mode)
+    .progress-fill {
+    border-radius: 0;
+    box-shadow: none;
   }
 
   :global(:root.dark) .progress-bar-container:not(.dark-mode) .progress-track {

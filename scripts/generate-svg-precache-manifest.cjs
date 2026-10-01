@@ -52,12 +52,12 @@ const ESSENTIAL_ROOT_FILES = [
 // print/card pipeline (choreo-card/domain/tnd-element.ts) and are NOT
 // precached.
 const ELEMENT_FILES = [
-  "air-v2.webp",
-  "earth-v2.webp",
-  "fire-v2.webp",
-  "moon-v2.webp",
-  "sun-v4.webp",
-  "water-v2.webp",
+  "norm/air.webp",
+  "norm/earth.webp",
+  "norm/fire.webp",
+  "norm/moon.webp",
+  "norm/sun.webp",
+  "norm/water.webp",
 ];
 
 const ASSET_EXTENSIONS = new Set([".svg", ".json"]);

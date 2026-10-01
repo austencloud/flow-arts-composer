@@ -7,6 +7,7 @@
   Choreographed entrance: hatches from nothing, overshoots, settles, then breathes.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
   import { WORKSPACE_BUTTON_ICON } from "../../workspace-button-layout";
 
@@ -16,12 +17,15 @@
     purpose = "open-viewer",
     isStopping = false,
     playbackState = "idle",
+    quiet = false,
   } = $props<{
     onclick?: () => void;
     isActive?: boolean;
     purpose?: "open-viewer" | "expand-viewer" | "play";
     isStopping?: boolean;
     playbackState?: "idle" | "preparing" | "retry";
+    /** Plain surface for the phone Assemble rail, where the pictures lead. */
+    quiet?: boolean;
   }>();
 
   const icon = $derived(
@@ -39,27 +43,27 @@
   );
   const accessibleLabel = $derived(
     playbackState === "preparing"
-      ? "Cancel playback preparation"
+      ? t("create_workspace_cancel_playback_preparation")
       : playbackState === "retry"
-        ? "Retry playback after loading failed"
+        ? t("create_workspace_retry_playback")
         : isStopping
-          ? "Stop playback and return to card"
+          ? t("create_workspace_stop_playback")
           : purpose === "play"
             ? WORKSPACE_BUTTON_ICON.view.actionLabel
             : purpose === "expand-viewer"
-              ? "Expand sequence viewer"
-              : "Open sequence viewer"
+              ? t("create_workspace_expand_viewer")
+              : t("create_workspace_open_viewer")
   );
   const visibleLabel = $derived(
     playbackState === "preparing"
-      ? "Cancel"
+      ? t("common_cancel")
       : playbackState === "retry"
-        ? "Retry"
+        ? t("common_retry")
         : isStopping
-          ? "Stop"
+          ? t("viewer_ui_stop")
           : purpose === "play"
             ? WORKSPACE_BUTTON_ICON.view.visibleLabel
-            : "View"
+            : t("train_view_label")
   );
 
   /**
@@ -87,6 +91,7 @@
   class:stopping={isStopping}
   class:preparing={playbackState === "preparing"}
   class:retry={playbackState === "retry"}
+  class:quiet
   onclick={handleClick}
   aria-label={accessibleLabel}
   data-ghost={isActive ? undefined : "safe"}
@@ -287,6 +292,30 @@
     background: linear-gradient(135deg, var(--semantic-success), #059669);
     box-shadow: 0 6px 20px
       color-mix(in srgb, var(--semantic-success) 70%, transparent);
+  }
+
+  .view-sequence-button.quiet,
+  .view-sequence-button.quiet.play-purpose,
+  .view-sequence-button.quiet.expand-purpose {
+    border: 1px solid var(--theme-stroke);
+    background: var(--theme-card-bg);
+    box-shadow: none;
+    animation: none;
+  }
+
+  .view-sequence-button.quiet:hover,
+  .view-sequence-button.quiet.active {
+    background: var(--theme-card-hover-bg);
+    box-shadow: none;
+  }
+
+  /* Quiet keeps the familiar icon color: green Play, blue expand. */
+  .view-sequence-button.quiet i {
+    color: color-mix(in srgb, var(--semantic-success) 78%, white);
+  }
+
+  .view-sequence-button.quiet.expand-purpose i {
+    color: color-mix(in srgb, var(--semantic-info) 72%, white);
   }
 
   .view-sequence-button i {

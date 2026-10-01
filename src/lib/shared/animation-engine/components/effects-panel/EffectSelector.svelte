@@ -1,6 +1,7 @@
 <script lang="ts">
   import { effectUiLabel } from "./effect-ui-label";
   import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { claimedViewTransitionName } from "$lib/shared/transitions/claimed-view-transition-name";
   import type { Snippet } from "svelte";
   import { EFFECTS, type EffectMeta } from "./effect-registry";
   import {
@@ -14,11 +15,14 @@
   interface Props {
     activeEffect: string;
     onSelect: (effect: string) => void;
+    disabled?: boolean;
     /** Hover/press intent — fires before the click commits so the canvas can warm
      *  the effect's webgl renderer ahead of activation (kills the switch freeze). */
     onPrewarm?: (effect: string) => void;
     /** Trays recompose from 4 to 8 columns when their own width allows it. */
     layout?: "panel" | "tray";
+    /** Share a bounded chooser's space without compressing labels. */
+    fit?: boolean;
     /** In the tray, tapping the selected effect opens its tuning screen. */
     activeAction?: "disable" | "tune";
     /** Restrict the roster to the effects this host can actually draw. A host
@@ -33,18 +37,33 @@
      *  definite height; the others take the height their tiles need. */
     catalog?: EffectCatalogFit | null;
     portrait?: Snippet<[string]>;
+    /** While the host carries this grid from one arrangement to another, the
+     *  prefix under which each tile's box, picture, icon, name and badge claim
+     *  view-transition names, so each travels as its own piece. Null the rest
+     *  of the time, which keeps the names out of every other transition. */
+    morphName?: string | null;
   }
 
   const {
     activeEffect,
     onSelect,
+    disabled = false,
     onPrewarm,
     layout = "panel",
+    fit = false,
     activeAction = "disable",
     availableEffects,
     catalog = null,
     portrait,
+    morphName = null,
   }: Props = $props();
+
+  function morphPart(part: string, effectId: string) {
+    return {
+      name: morphName ? `${morphName}-${part}-${effectId}` : "",
+      enabled: !!morphName,
+    };
+  }
 
   const showCatalog = $derived(!!catalog);
   const showPortraits = $derived(
@@ -66,6 +85,7 @@
 
 <div
   class="effect-selector-shell"
+  class:fit
   class:catalog={showCatalog}
   class:fill={catalog?.fill}
 >
@@ -98,6 +118,7 @@
         class:active={isActive}
         role="radio"
         aria-checked={isActive}
+        {disabled}
         aria-label={isActive && activeAction === "tune"
           ? getActiveLabel(effect)
           : effectUiLabel(effect.label)}
@@ -109,27 +130,52 @@
         data-ghost-active={isActive || undefined}
         data-ghost-label={effectUiLabel(effect.label)}
         onclick={() => onSelect(effect.id)}
-        onpointerenter={() => onPrewarm?.(effect.id)}
-        onpointerdown={() => onPrewarm?.(effect.id)}
+        onpointerenter={() => !disabled && onPrewarm?.(effect.id)}
+        onpointerdown={() => !disabled && onPrewarm?.(effect.id)}
+        use:claimedViewTransitionName={morphPart("tile", effect.id)}
       >
         {#if showCatalog}
           {#if showPortraits && portrait}
-            <span class="effect-portrait" aria-hidden="true">
+            <span
+              class="effect-portrait"
+              aria-hidden="true"
+              use:claimedViewTransitionName={morphPart("picture", effect.id)}
+            >
               {@render portrait(effect.id)}
             </span>
           {/if}
           <span class="effect-caption">
             {#if !showPortraits}
-              <i class="fas {effect.icon}" aria-hidden="true"></i>
+              <i
+                class="fas effect-icon {effect.icon}"
+                aria-hidden="true"
+                use:claimedViewTransitionName={morphPart("icon", effect.id)}
+              ></i>
             {/if}
-            <span class="effect-label">{effectUiLabel(effect.label)}</span>
+            <span
+              class="effect-label"
+              use:claimedViewTransitionName={morphPart("name", effect.id)}
+              >{effectUiLabel(effect.label)}</span
+            >
           </span>
         {:else}
-          <i class="fas {effect.icon}" aria-hidden="true"></i>
-          <span class="effect-label">{effectUiLabel(effect.label)}</span>
+          <i
+            class="fas effect-icon {effect.icon}"
+            aria-hidden="true"
+            use:claimedViewTransitionName={morphPart("icon", effect.id)}
+          ></i>
+          <span
+            class="effect-label"
+            use:claimedViewTransitionName={morphPart("name", effect.id)}
+            >{effectUiLabel(effect.label)}</span
+          >
         {/if}
         {#if isActive && activeAction === "tune"}
-          <span class="tune-badge" aria-hidden="true">
+          <span
+            class="tune-badge"
+            aria-hidden="true"
+            use:claimedViewTransitionName={morphPart("badge", effect.id)}
+          >
             <i class="fas fa-sliders"></i>
           </span>
         {/if}
@@ -139,6 +185,25 @@
 </div>
 
 <style>
+  .effect-selector-shell.fit {
+    display: flex;
+    flex: 1;
+    min-height: 0;
+  }
+  .fit .effect-selector.tray {
+    flex: 1;
+    grid-template-columns: repeat(auto-fit, minmax(min(96px, 100%), 1fr));
+    grid-auto-rows: minmax(72px, 1fr);
+    gap: 8px;
+  }
+  .fit .effect-label {
+    font-size: var(--font-size-min, 14px);
+    line-height: 1.25;
+    white-space: normal;
+  }
+  .fit .effect-btn i {
+    font-size: 24px;
+  }
   .effect-selector-shell {
     container: effect-selector / inline-size;
   }
@@ -194,6 +259,19 @@
       background var(--duration-fast, 100ms) ease,
       border-color var(--duration-fast, 100ms) ease,
       color var(--duration-fast, 100ms) ease;
+    /* view-transitions.css: the box stretches between arrangements while the
+       parts inside it keep their own proportions. */
+    view-transition-class: fx-roster-box;
+  }
+
+  .effect-portrait,
+  .effect-icon,
+  .effect-label {
+    view-transition-class: fx-roster-part;
+  }
+
+  .tune-badge {
+    view-transition-class: fx-roster-swap;
   }
 
   .effect-btn.active {
@@ -208,7 +286,12 @@
     }
   }
 
-  .effect-btn:hover:not(.active) {
+  .effect-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .effect-btn:hover:not(.active, :disabled) {
     background: color-mix(
       in srgb,
       var(--theme-text, white) 6%,

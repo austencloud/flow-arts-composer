@@ -33,7 +33,7 @@ hub between encounters.
 | Concern | Canonical owner | Evidence path | Current conflict |
 |---|---|---|---|
 | Creative direction | Museum tracker | `1bUBNo26hJpRq4Bf36gh` | Supersedes the accepted August 6 S-procession decision `jl8TveF5GrOgHsA2Vyfr`. |
-| Story canon | Accepted tracker decisions, then story bible | `fsJqYPYkMjY2BESGuIBC`; `docs/museum/story-bible.md` | The story bible and older Fire documents still contain stale performer-count and S-plan language. |
+| Story canon | Accepted tracker decisions, then story bible | `fsJqYPYkMjY2BESGuIBC`; `E:/flow-arts-private/museum/story-bible.md` | The story bible and older Fire documents still contain stale performer-count and S-plan language. |
 | Room shell and transitions | Live cave floor-plan contract | `src/lib/features/museum/data/vulcan-cave-floor-plan.ts` | The current compiled Fire interior is smaller than the approved 58 by 44 metre isolated candidate. Gate 5 owns the museum resize and adjacent-room movement. |
 | Performer roster | Live museum room data | `src/lib/features/museum/data/vulcan-cave-floor-plan.ts`; `src/lib/features/museum/data/museum-room-content.ts` | None: the live roster already contains DJ, EK, and FL. |
 | TKA motion | Flow Arts MCP | `get_domain_topic(elemental-model)`, 2026-08-08 | Do not infer motion behavior from the old design prose. |

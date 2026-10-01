@@ -235,6 +235,8 @@ export class Canvas2DDirectRenderer implements IDirectRenderer {
       try {
         const prepared = await preparer.prepareSingle(pictograph, {
           fanAppearance: options.visibility.fanAppearance,
+          propLook: options.visibility.propLook,
+          triangleGrip: options.visibility.triangleGrip,
           themeMode: options.visibility.darkMode ? "dark" : "light",
           leftPropType: options.visibility.leftPropType,
           rightPropType: options.visibility.rightPropType,

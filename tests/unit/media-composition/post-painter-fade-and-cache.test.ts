@@ -60,6 +60,7 @@ vi.mock("$lib/shared/foundation/get-svg-image-converter", () => ({
 }));
 
 import { sequenceFrameAt } from "$lib/shared/media-composition/domain/sequence-frame";
+import { getSequenceProgressStripHeight } from "$lib/shared/animation-engine/services/sequence-progress-renderer";
 import { createSequenceStripPainter } from "$lib/shared/media-composition/services/sequence-strip-painter";
 import {
   paintSizeBucket,
@@ -116,7 +117,7 @@ function recordingContext(alpha = 1) {
     moveTo() {},
     lineTo() {},
     setLineDash() {},
-    fillRect() {},
+    fillRect: vi.fn(),
     createLinearGradient: () => ({ addColorStop() {} }),
     stroke() {
       marks.push({ mark: "stroke", alpha: this.globalAlpha });
@@ -161,8 +162,6 @@ describe("painters in a fading layer", () => {
       { mark: "text 2", alpha: 0.5 },
       { mark: "letter", alpha: 0.5 },
       { mark: "element", alpha: 0.5 },
-      // The progress bar.
-      { mark: "stroke", alpha: 0.5 },
     ]);
   });
 
@@ -176,7 +175,57 @@ describe("painters in a fading layer", () => {
     strip.paint(context, { x: 0, y: 0, width: 500, height: 500 }, frame);
     overlay.paint(context, { x: 0, y: 0, width: 960, height: 960 }, frame);
 
-    expect(marks.map((entry) => entry.alpha)).toEqual([0.25, 1, 1, 1, 1, 1]);
+    expect(marks.map((entry) => entry.alpha)).toEqual([0.25, 1, 1, 1, 1]);
+  });
+});
+
+describe("legacy Moves progress", () => {
+  it("tracks duration-weighted sequence progress through seeking, loops and ending holds", async () => {
+    const painter = createSequenceStripPainter({ sequence, mode: "arrows" });
+    await painter.prepare({ width: 500, height: 500 });
+    const { context } = recordingContext();
+    const fillRect = vi.mocked(context.fillRect);
+    for (const [arrival, expected] of [
+      [0, 0],
+      [1.5, 0.7],
+      [2, 1],
+      [0.5, 0.2],
+      [2.5, 0.2],
+      [4, 1],
+    ]) {
+      fillRect.mockClear();
+      painter.paint(
+        context,
+        { x: 0, y: 0, width: 500, height: 500 },
+        {
+          ...frame,
+          projectProgress: 0.99,
+          sequenceFrame: sequenceFrameAt(arrival!, [2, 3], { endArrival: 4 }),
+        }
+      );
+      const barHeight = getSequenceProgressStripHeight(500);
+      const barMarks = fillRect.mock.calls.filter((call) => call[3] === barHeight);
+      // First mark is the empty track. A filled bar exists only past opening.
+      expect(barMarks).toHaveLength(expected! > 0 ? 2 : 1);
+      if (expected! > 0) expect(barMarks[1]![2]).toBeCloseTo(500 * expected!);
+    }
+  });
+
+  it("reads the visibility preference at paint time, including while paused", async () => {
+    let visible = true;
+    const painter = createSequenceStripPainter({
+      sequence,
+      mode: "arrows",
+      showProgressBar: () => visible,
+    });
+    await painter.prepare({ width: 500, height: 500 });
+    const { context } = recordingContext();
+    painter.paint(context, { x: 0, y: 0, width: 500, height: 500 }, frame);
+    expect(context.fillRect).toHaveBeenCalledTimes(3);
+    visible = false;
+    vi.mocked(context.fillRect).mockClear();
+    painter.paint(context, { x: 0, y: 0, width: 500, height: 500 }, frame);
+    expect(context.fillRect).toHaveBeenCalledTimes(1);
   });
 });
 
@@ -236,5 +285,36 @@ describe("strip painter sizes", () => {
     expect(paintSizeBucket(300)).not.toBe(paintSizeBucket(200));
     const img = `img-${paintSizeBucket(300)}`;
     expect(paintAt(painter, 200, 200)).toEqual([img, img]);
+  });
+});
+
+describe("strip arrow handoff", () => {
+  it("paints independent cached arrows at the frame opacities, including after a backward seek", async () => {
+    const painter = createSequenceStripPainter({ sequence, mode: "arrows" });
+    await painter.prepare({ width: 500, height: 500 });
+    const paint = (arrival: number) => {
+      const { context, marks } = recordingContext(0.5);
+      painter.paint(
+        context,
+        { x: 0, y: 0, width: 500, height: 500 },
+        {
+          ...frame,
+          sequenceFrame: sequenceFrameAt(arrival, BEATS),
+        }
+      );
+      expect(context.globalAlpha).toBe(0.5);
+      return marks.map((mark) => mark.alpha);
+    };
+    const boundary = paint(1.025);
+    expect(boundary).toHaveLength(3);
+    expect(boundary[0]).toBe(0.5);
+    expect(boundary[1]).toBeCloseTo(0.0125);
+    expect(boundary[2]).toBeCloseTo(0.25);
+    paint(3.5);
+    expect(paint(1.025)).toEqual(boundary);
+    // First move has no outgoing arrow; after the handoff only the new arrow remains.
+    expect(paint(0.025)).toHaveLength(2);
+    expect(paint(1.1)).toHaveLength(2);
+    expect(paint(2.025)[2]).toBeCloseTo(0.25);
   });
 });

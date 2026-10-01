@@ -22,6 +22,7 @@
   import { onMount, untrack } from "svelte";
   import { browser } from "$app/environment";
   import { page } from "$app/state";
+  import { tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
   import GuideSidebar from "./GuideSidebar.svelte";
   import { setGuideChromeContext } from "./guide-chrome-context";
   import SiteHeader from "$lib/shared/landing/components/SiteHeader.svelte";
@@ -92,7 +93,9 @@
 
 <svelte:window onscroll={onScroll} />
 
-<a href="#guide-main" class="skip-link">Skip to guide content</a>
+<a href="#guide-main" class="skip-link"
+  >{tDynamic("guide_runtime_skip_content")}</a
+>
 
 {#if ownsStandaloneChrome}
   <SiteHeader />
@@ -103,14 +106,18 @@
     class="mobile-menu-btn"
     class:tucked={(pillTucked || pillHolds > 0) && !sidebarOpen}
     onclick={() => (sidebarOpen = !sidebarOpen)}
-    aria-label={sidebarOpen ? "Close Guide contents" : "Open Guide contents"}
+    aria-label={tDynamic(
+      sidebarOpen
+        ? "guide_runtime_close_contents"
+        : "guide_runtime_open_contents"
+    )}
     aria-expanded={sidebarOpen}
   >
     <i
       class="fa-solid {sidebarOpen ? 'fa-xmark' : 'fa-list'}"
       aria-hidden="true"
     ></i>
-    <span>Guide contents</span>
+    <span>{tDynamic("guide_runtime_contents")}</span>
   </button>
 
   <aside class="guide-sidebar" class:open={sidebarOpen}>

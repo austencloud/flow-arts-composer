@@ -23,17 +23,23 @@ import { DURATION } from "$lib/shared/transitions/transitions";
 import { MandalaOverlapMasks, paintMandalaGuide } from "./mandala-guide-painter";
 
 /**
- * Prepared mandala paths use the animation renderer's backing-pixel scale.
- * The guide painter takes logical pixels and applies DPR itself. Normalize
- * to this layer's logical width before CSS fits both canvases to the stage.
+ * Prepared mandala paths are scaled to the renderer's square of side
+ * `rendererCanvasSize`. The guide painter takes this layer's logical pixels
+ * and applies DPR itself, so rescale by the layer's own square side against
+ * the renderer's.
+ *
+ * The side is `min(width, height)`, never the width: on a wide stage the
+ * engine's square sits centred in a wider overlay frame, and scaling by the
+ * frame's width drew the guide width/height times the path the tips trace
+ * (1.5x on the Shape Engine stage).
  */
 export function scaleGuideForOverlay(
 	preparedScale: number,
-	overlayLogicalWidth: number,
+	overlayLogicalSquareSide: number,
 	rendererCanvasSize: number
 ): number {
 	return rendererCanvasSize > 0
-		? preparedScale * (overlayLogicalWidth / rendererCanvasSize)
+		? preparedScale * (overlayLogicalSquareSide / rendererCanvasSize)
 		: preparedScale;
 }
 
@@ -255,7 +261,7 @@ export class MandalaOverlayCanvas {
 					paths: preparedPaths.paths,
 					scale: scaleGuideForOverlay(
 						preparedPaths.scale,
-						this.width,
+						Math.min(this.width, this.height),
 						params.canvasSize
 					),
 					strokeWidth: config.strokeWidth,

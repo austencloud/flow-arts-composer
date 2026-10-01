@@ -1,5 +1,6 @@
 import type { OrchestratorContext } from "../domain/viewer-orchestrator-context";
 import { VIDEO_UPLOAD_ENABLED } from "../config/viewer-feature-flags";
+import { openCollectionPicker } from "$lib/features/library/state/collection-picker-state.svelte";
 
 // One profile since every viewer destination adopted SequenceViewerShell (the
 // same chrome verbatim) — the hand-rolled "scan" funnel profile is gone. The param
@@ -27,6 +28,7 @@ export interface ViewerHeaderActions {
   showPractice: boolean;
   onFavoriteToggle?: () => void;
   onSave?: () => void;
+  onAddToCollection?: () => void;
   onRemix?: () => void;
   remixLabel?: string;
   onVideoUpload?: () => void;
@@ -41,8 +43,9 @@ export interface ViewerHeaderActions {
  * (grounded in SequenceViewerOrchestrator.svelte:400,1060):
  *   - Engagement (favorite/save/remix/practice): always offered — a guest tap
  *     prompts login via invokeGatedAction.
- *   - Management (video/publish/unpublish/delete): gated by ctx eligibility
- *     (isLoggedIn / exact owned library record).
+ *   - Management (video/publish/unpublish/delete): gated by ctx eligibility.
+ *     Collections need the exact owned library record, but do not depend on
+ *     whether the current content hash matches the saved version.
  */
 export function buildHeaderActions(
   ctx: OrchestratorContext,
@@ -69,6 +72,16 @@ export function buildHeaderActions(
 
   if (ctx.isLoggedIn && VIDEO_UPLOAD_ENABLED)
     a.onVideoUpload = () => ctx.handleVideoUpload();
+  if (ctx.isLoggedIn && ctx.isOwned && ctx.isOwnedLibraryRecord) {
+    a.onAddToCollection = () => {
+      const sequence = ctx.sequence;
+      if (!sequence) return;
+      openCollectionPicker({
+        sequenceId: sequence.id,
+        sequenceLabel: sequence.name || sequence.word || undefined,
+      });
+    };
+  }
   if (ownerCanManage) {
     a.onPublish = () =>
       ctx.invokeGatedAction("publish", ctx.handlePublishAction);

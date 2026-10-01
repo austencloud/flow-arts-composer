@@ -240,7 +240,28 @@
     }
   }
 
-  @container shape-matrix-drill (min-width: 42rem) and (max-height: 24rem) {
+  /* A short phone needs two shallow rows of choices to leave room for the
+     animation. Keep the icon and both name lines visible beside each other. */
+  @container shape-matrix-drill (max-width: 25rem) and (max-height: 40rem) {
+    .relationship-choice {
+      flex-direction: row;
+      gap: 0.25rem;
+      padding: 0.3rem 0.25rem;
+      text-align: left;
+    }
+
+    .choice-icon {
+      width: 1.55rem;
+      height: 1.55rem;
+    }
+
+    .choice-copy {
+      width: auto;
+      flex: 0 1 auto;
+    }
+  }
+
+  @container shape-matrix-drill-compact (min-width: 42rem) and (min-aspect-ratio: 5 / 6) {
     .relationship-choice {
       flex-direction: row;
       justify-content: start;
@@ -250,8 +271,8 @@
     }
 
     .choice-icon {
-      width: 2.1rem;
-      height: 2.1rem;
+      width: var(--choice-icon-size, 2.1rem);
+      height: var(--choice-icon-size, 2.1rem);
     }
 
     .choice-copy {
@@ -260,7 +281,25 @@
     }
 
     .choice-copy strong {
-      font-size: var(--font-size-compact, 0.75rem);
+      font-size: var(--choice-copy-size, var(--font-size-compact, 0.75rem));
+    }
+  }
+
+  @container element-chip-row (min-height: 24rem) {
+    .relationship-choice {
+      flex-direction: column;
+      justify-content: center;
+      gap: 0.65rem;
+      text-align: center;
+    }
+
+    .choice-icon {
+      width: clamp(3rem, 28cqw, 5rem);
+      height: clamp(3rem, 28cqw, 5rem);
+    }
+
+    .choice-copy {
+      width: 100%;
     }
   }
 

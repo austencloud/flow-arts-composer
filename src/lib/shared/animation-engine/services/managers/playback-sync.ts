@@ -373,11 +373,9 @@ export class PlaybackSync {
 
     // Update glyph transition
     const stepNumber = frameSystem.calculateBeatNumber(props);
-    const turnsTuple = frameSystem.calculateTurnsTuple(props);
     const musicalPosition = frameSystem.calculateMusicalPosition(props);
     lifecycleManager.glyphTransition?.updateTarget(
       props.letter ?? null,
-      turnsTuple,
       stepNumber,
       musicalPosition
     );

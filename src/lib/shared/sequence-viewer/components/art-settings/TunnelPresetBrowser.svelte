@@ -21,12 +21,15 @@
     saveTunnelLabel?: string;
     onCustomize?: (source: "custom_card" | "customize_button") => void;
     minimumInstances?: number;
+    maximumInstances?: number;
     showCustomCard?: boolean;
     showCustomizeButton?: boolean;
     presetLabel?: string;
     selectionMode?: "recipe" | "config";
     formationOnly?: boolean;
     showUserPresets?: boolean;
+    showcase?: boolean;
+    showGridControl?: boolean;
     onArtSettingChange?: ArtSettingChangeHandler;
   }
 
@@ -37,12 +40,15 @@
     saveTunnelLabel,
     onCustomize,
     minimumInstances = 1,
+    maximumInstances = Infinity,
     showCustomCard = true,
     showCustomizeButton = true,
     presetLabel,
     selectionMode = "recipe",
     formationOnly = false,
     showUserPresets = true,
+    showcase = false,
+    showGridControl = true,
     onArtSettingChange,
   }: Props = $props();
 
@@ -152,6 +158,7 @@
 {#if !dense}<span class="rt-section-label">{effectivePresetLabel}</span>{/if}
 <div
   class="preset-grid"
+  class:showcase
   role="radiogroup"
   aria-label={t("viewer_ui_tunnel_preset")}
 >
@@ -162,10 +169,13 @@
       type="button"
       role="radio"
       aria-checked={selectedBuiltInId === p.id}
-      disabled={imageCount(p.config) < minimumInstances}
+      disabled={imageCount(p.config) < minimumInstances ||
+        imageCount(p.config) > maximumInstances}
       title={imageCount(p.config) < minimumInstances
         ? t("viewer_ui_needs_stage_positions", { count: minimumInstances })
-        : undefined}
+        : imageCount(p.config) > maximumInstances
+          ? `Unavailable with reduced motion: maximum ${maximumInstances} performers`
+          : undefined}
       onclick={() =>
         changeSetting(
           "art_tunnel",
@@ -175,8 +185,14 @@
           () => applyBuiltInPreset(p.id)
         )}
     >
-      <PerformerRing config={p.config} size={30} animate={false} />
+      <PerformerRing
+        config={p.config}
+        size={showcase ? 48 : 30}
+        animate={false}
+      />
       <span>{p.name}</span>
+      {#if showcase}<i class="fas fa-check preset-check" aria-hidden="true"
+        ></i>{/if}
     </button>
   {/each}
   <!-- Saved user presets: your personal library, each deletable. -->
@@ -189,10 +205,13 @@
           type="button"
           role="radio"
           aria-checked={selectedUserId === up.id}
-          disabled={imageCount(up.config) < minimumInstances}
+          disabled={imageCount(up.config) < minimumInstances ||
+            imageCount(up.config) > maximumInstances}
           title={imageCount(up.config) < minimumInstances
             ? t("viewer_ui_needs_stage_positions", { count: minimumInstances })
-            : undefined}
+            : imageCount(up.config) > maximumInstances
+              ? `Unavailable with reduced motion: maximum ${maximumInstances} performers`
+              : undefined}
           onclick={() =>
             changeSetting(
               "art_tunnel",
@@ -242,33 +261,35 @@
   {/if}
 </div>
 
-<div class="prim-row">
-  <span class="row-lbl">{t("generator_grid")}</span>
-  <button
-    class="grid-toggle"
-    class:active={controller.gridVisible}
-    type="button"
-    aria-pressed={controller.gridVisible}
-    aria-label={t("viewer_ui_toggle_grid")}
-    data-ghost="safe"
-    data-ghost-kind="view-toggle"
-    data-ghost-label={t("viewer_ui_toggle_grid")}
-    title={t("generator_grid")}
-    onclick={() =>
-      changeSetting(
-        "art_tunnel",
-        "grid_visible",
-        controller.gridVisible,
-        !controller.gridVisible,
-        () => (controller.gridVisible = !controller.gridVisible)
-      )}
-  >
-    <i class="fas fa-border-all" aria-hidden="true"></i>
-  </button>
-  <span class="prim-count"
-    >{t("viewer_ui_prop_count", { count: controller.propCount })}</span
-  >
-</div>
+{#if showGridControl}
+  <div class="prim-row">
+    <span class="row-lbl">{t("generator_grid")}</span>
+    <button
+      class="grid-toggle"
+      class:active={controller.gridVisible}
+      type="button"
+      aria-pressed={controller.gridVisible}
+      aria-label={t("viewer_ui_toggle_grid")}
+      data-ghost="safe"
+      data-ghost-kind="view-toggle"
+      data-ghost-label={t("viewer_ui_toggle_grid")}
+      title={t("generator_grid")}
+      onclick={() =>
+        changeSetting(
+          "art_tunnel",
+          "grid_visible",
+          controller.gridVisible,
+          !controller.gridVisible,
+          () => (controller.gridVisible = !controller.gridVisible)
+        )}
+    >
+      <i class="fas fa-border-all" aria-hidden="true"></i>
+    </button>
+    <span class="prim-count"
+      >{t("viewer_ui_prop_count", { count: controller.propCount })}</span
+    >
+  </div>
+{/if}
 
 {#if showCustomizeButton}
   <button
@@ -319,6 +340,54 @@
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(96px, 1fr));
     gap: 6px;
+  }
+  .preset-grid.showcase {
+    container-type: inline-size;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.6rem;
+  }
+  .showcase .preset-card {
+    position: relative;
+    min-width: 0;
+    min-height: 4.5rem;
+    padding: 0.55rem 0.7rem;
+    font-size: var(--font-size-sm, 0.875rem);
+  }
+  .showcase .preset-card > span {
+    font-size: inherit;
+    font-weight: 600;
+  }
+  .showcase .preset-card.active {
+    box-shadow: inset 0 0 0 1px var(--theme-accent, #8b5cf6);
+  }
+  .showcase .preset-check {
+    position: absolute;
+    top: 0.45rem;
+    right: 0.45rem;
+    font-size: 0.8rem;
+    opacity: 0;
+  }
+  .showcase .preset-card.active .preset-check {
+    opacity: 1;
+  }
+  @container (max-width: 22rem) {
+    .showcase .preset-card {
+      flex-direction: column;
+      justify-content: center;
+      gap: 0.1rem;
+      padding: 0.25rem;
+    }
+    .showcase .preset-card :global(svg) {
+      width: 2.25rem;
+      height: 2.25rem;
+    }
+    .showcase .preset-card > span {
+      max-width: 100%;
+      overflow: visible;
+      text-overflow: clip;
+      white-space: normal;
+      text-align: center;
+    }
   }
   .preset-card {
     display: flex;

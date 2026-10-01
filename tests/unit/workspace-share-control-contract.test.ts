@@ -9,6 +9,13 @@ const shareButtonSource = readFileSync(
   ),
   "utf8"
 );
+const shareSheetSource = readFileSync(
+  resolve(
+    process.cwd(),
+    "src/lib/features/create/shared/workspace-panel/shared/components/buttons/WorkspaceShareSheet.svelte"
+  ),
+  "utf8"
+);
 const shareControlSource = readFileSync(
   resolve(
     process.cwd(),
@@ -34,7 +41,7 @@ const sendSequenceStateSource = readFileSync(
 describe("Create workspace share control contract", () => {
   it("uses one Share trigger for the desktop menu and mobile sheet", () => {
     expect(shareControlSource).toContain('testId="workspace-share-button"');
-    expect(shareControlSource).toContain('ariaLabel="Share sequence"');
+    expect(shareControlSource).toContain('ariaLabel={t("share_sequence")}');
     expect(sharedShareMenuSource).toContain("data-testid={testId}");
     expect(shareControlSource).not.toContain("More share options");
     expect(shareControlSource).not.toContain("workspace-share-options-button");
@@ -63,17 +70,19 @@ describe("Create workspace share control contract", () => {
     expect(share).toBeGreaterThan(send);
     expect(copy).toBeGreaterThan(share);
     expect(download).toBeGreaterThan(copy);
-    expect(shareControlSource).toContain("Preparing Card…");
-    expect(shareControlSource).toContain("Share Card…");
-    expect(shareControlSource).toContain("Share Card Unavailable");
-    expect(shareControlSource).toContain("Try Preparing Card Again");
+    expect(shareControlSource).toContain('t("inbox_ui_preparing_card")');
+    expect(shareControlSource).toContain('t("create_workspace_share_card")');
+    expect(shareControlSource).toContain(
+      't("create_workspace_share_card_unavailable")'
+    );
+    expect(shareControlSource).toContain('t("create_workspace_retry_card")');
     expect(shareControlSource).toContain(
       "getWorkspaceCardMenuAction(cardPhase, canShareCard)"
     );
   });
 
   it("uses the existing inbox sequence flow for the send action", () => {
-    expect(shareControlSource).toContain('label: "Send Sequence"');
+    expect(shareControlSource).toContain('label: t("viewer_ui_send_sequence")');
     expect(shareControlSource).toContain('icon: "fa-paper-plane"');
     expect(shareButtonSource).toContain(
       'from "$lib/shared/inbox/state/send-sequence-state.svelte"'
@@ -105,8 +114,9 @@ describe("Create workspace share control contract", () => {
     );
     expect(shareControlSource).toContain("canOpen={true}");
     expect(shareButtonSource).toContain("onDirectOpen={openPostSheet}");
-    expect(shareButtonSource).toContain("canCreateLink={hasFullAccount}");
-    expect(shareButtonSource).toContain(
+    expect(shareButtonSource).toContain("<WorkspaceShareSheet");
+    expect(shareSheetSource).toContain("canCreateLink={hasFullAccount}");
+    expect(shareSheetSource).toContain(
       "onSendInTka={hasFullAccount ? sendSequenceToInbox : undefined}"
     );
   });

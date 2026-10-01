@@ -17,6 +17,7 @@ function makeOverlay(
     renderFrame: vi.fn(),
     clear: vi.fn(),
     clearBuffers: vi.fn(),
+    refreshStyle: vi.fn(),
     setVisible: vi.fn(),
     setCanvasZIndex: vi.fn(),
     dispose: vi.fn(),

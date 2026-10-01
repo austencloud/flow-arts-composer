@@ -1,30 +1,28 @@
 <script lang="ts">
   import { onDestroy } from "svelte";
   import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import type { HandLabeling } from "$lib/shared/video-collaboration/domain/hand-labeling";
   import ChoreoCard from "$lib/shared/sequence-viewer/components/ChoreoCard.svelte";
   import type { SequenceExportOptions } from "$lib/shared/render/domain/models/sequence-export-options";
   import { isCardLayoutAutomatic } from "$lib/shared/share/services/card-render-options";
   import { getImageCompositionManager } from "$lib/shared/share/state/image-composition-state.svelte";
   import { getViewerStudioSurfaces } from "$lib/shared/sequence-viewer/context/viewer-studio-surfaces-context";
+  import { postCardHighlightedStepIndex } from "./post-card-highlight";
 
   let {
     sequence,
     displayedBeatNumber,
     cardRenderOptions = null,
-    handLabeling = null,
     qrSequence = sequence,
   }: {
     sequence: SequenceData;
-    displayedBeatNumber: number;
+    displayedBeatNumber?: number;
     cardRenderOptions?: Partial<SequenceExportOptions> | null;
-    handLabeling?: HandLabeling | null;
     /** The source behind a labeled `sequence`; what a scan of the card opens. */
     qrSequence?: SequenceData;
   } = $props();
 
   const highlightedStepIndex = $derived(
-    displayedBeatNumber < 1 ? -1 : displayedBeatNumber - 1
+    postCardHighlightedStepIndex(displayedBeatNumber)
   );
 
   // The composition manager publishes through observers rather than runes, so
@@ -43,14 +41,14 @@
    */
   const automatic = $derived.by(() => {
     void compositionVersion;
-    return isCardLayoutAutomatic(sequence.steps?.length ?? 0);
+    return isCardLayoutAutomatic(sequence.steps?.length ?? 0) &&
+      cardRenderOptions?.columnCount == null &&
+      !cardRenderOptions?.startPlacementLayout;
   });
 
-  const columnCount = $derived(
-    automatic ? null : (cardRenderOptions?.columnCount ?? null)
-  );
+  const columnCount = $derived(cardRenderOptions?.columnCount ?? null);
   const startPlacementLayoutOverride = $derived(
-    automatic ? null : (cardRenderOptions?.startPlacementLayout ?? null)
+    cardRenderOptions?.startPlacementLayout ?? null
   );
   const shared = getViewerStudioSurfaces();
   const owner = {};
@@ -58,7 +56,9 @@
     return {
       destroy: shared?.requestCard(owner, node, () => ({
         sequence,
-        handLabeling,
+        // The post's footer choice owns this line; viewer hand guidance must
+        // not replace its Off, Credit, or Custom selection.
+        handLabeling: null,
         qrSequence,
         highlightedStepIndex,
         options: cardRenderOptions,
@@ -72,16 +72,17 @@
   {#if !shared?.ownsCard(owner)}
     <ChoreoCard
       {sequence}
-      {handLabeling}
       {qrSequence}
       {highlightedStepIndex}
-      showHighlight
+      showHighlight={highlightedStepIndex !== null}
+      visibilityOverrides={cardRenderOptions?.visibilityOverrides}
       darkMode={cardRenderOptions?.visibilityOverrides?.darkMode ?? true}
       showWord={cardRenderOptions?.addWord ?? true}
       showStepNumbers={cardRenderOptions?.addStepNumbers ?? true}
       showDifficultyLevel={cardRenderOptions?.addDifficultyLevel ?? true}
       includeStartPlacement={cardRenderOptions?.includeStartPlacement ?? true}
       showNotes={cardRenderOptions?.showNotes ?? false}
+      customNotesText={cardRenderOptions?.customNotesText}
       showLoopGlyph={cardRenderOptions?.showLoopGlyph ?? true}
       showQRCode={cardRenderOptions?.visibilityOverrides?.showQRCode ?? false}
       showMandala={cardRenderOptions?.visibilityOverrides?.showMandala ?? false}

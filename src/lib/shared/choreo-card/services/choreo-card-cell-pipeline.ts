@@ -77,7 +77,9 @@ export function getPreviewCacheKey(
     ? `-colors:${opts.primaryPropColors.left}:${opts.primaryPropColors.right}`
     : "";
   const fanKey = opts.fanAppearance ? `-fan:${JSON.stringify(opts.fanAppearance)}` : "";
-  return `${seq.id ?? seq.word ?? "?"}-${sequenceContentKey}-${seq.steps?.length ?? 0}-${opts.size}-${opts.showStepNumbers}-${opts.showNonRadialPoints}-${opts.showTKA}-${opts.showReversals}-${opts.handPathMode ?? false}-${resolvedLeft}-${resolvedRight}-${colCount ?? "auto"}-${isDark ? "dark" : "light"}-spl:${spl}-${sp}-d:${durationFingerprint}-vm:${vmKey}-mv:${mv}-gv:${gv}${paletteKey}${fanKey}`;
+  const lookKey = opts.propLook === "model" ? "-look:model" : "";
+  const gripKey = opts.triangleGrip === "side" ? "-grip:side" : "";
+  return `${seq.id ?? seq.word ?? "?"}-${sequenceContentKey}-${seq.steps?.length ?? 0}-${opts.size}-${opts.showStepNumbers}-${opts.showNonRadialPoints}-${opts.showTKA}-${opts.showReversals}-${opts.handPathMode ?? false}-${resolvedLeft}-${resolvedRight}-${colCount ?? "auto"}-${isDark ? "dark" : "light"}-spl:${spl}-${sp}-d:${durationFingerprint}-vm:${vmKey}-mv:${mv}-gv:${gv}${paletteKey}${fanKey}${lookKey}${gripKey}`;
 }
 
 /**

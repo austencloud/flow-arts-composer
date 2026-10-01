@@ -8,6 +8,7 @@
    * the same forms family as the locked Level 1 cover - instead of decoding
    * each composite stroke-for-stroke.
    */
+  import { t as translate } from "$lib/shared/i18n/i18n.svelte.js";
   import SequenceMandala from "$lib/shared/mandala/components/SequenceMandala.svelte";
 
   const S = 816 / 612; // pt → px
@@ -59,7 +60,7 @@
 
   <div class="num" style="top:{232 * S}px">2.0</div>
   <div class="vrule" style="top:{330 * S}px; height:{115 * S}px"></div>
-  <div class="guide-title word" style="top:{492 * S}px">1-Turns</div>
+  <div class="guide-title word" style="top:{492 * S}px">{translate("guide_l2_print_one_turns")}</div>
   <div class="vrule" style="top:{545 * S}px; height:{70 * S}px"></div>
 
   <!-- Bottom pictograph row (reversed order, like the original's variety) -->

@@ -5,19 +5,24 @@
   Clears the entire sequence when clicked.
 -->
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
   import { WORKSPACE_BUTTON_ICON } from "../../workspace-button-layout";
 
   // Props
-  const {
+  let {
     onclick,
     disabled = false,
-    label = "Clear sequence",
+    label,
+    quiet = false,
   }: {
     onclick?: () => void;
     disabled?: boolean;
     label?: string;
+    /** Plain surface with a red icon, for Assemble's quiet rail. */
+    quiet?: boolean;
   } = $props();
+  const accessibleLabel = $derived(label ?? t("create_workspace_clear_sequence"));
 
   // Services
   const hapticService = getHapticFeedback();
@@ -32,13 +37,14 @@
   type="button"
   {disabled}
   class="panel-button clear-button"
+  class:quiet
   data-testid="clear-sequence-button"
   data-ghost="safe"
   data-ghost-kind="clear"
-  data-ghost-label={label}
+  data-ghost-label={accessibleLabel}
   onclick={handleClick}
-  aria-label={label}
-  title={label}
+  aria-label={accessibleLabel}
+  title={accessibleLabel}
 >
   <i class="fa-solid {WORKSPACE_BUTTON_ICON.clear.icon}" aria-hidden="true"></i>
   <span class="workspace-action-label" aria-hidden="true">
@@ -127,6 +133,21 @@
         var(--semantic-error, var(--semantic-error)) 60%,
         transparent
       );
+  }
+
+  .clear-button.quiet {
+    background: var(--theme-card-bg);
+    border-color: var(--theme-stroke);
+    box-shadow: none;
+  }
+
+  .clear-button.quiet:hover {
+    background: var(--theme-card-hover-bg);
+    box-shadow: none;
+  }
+
+  .clear-button.quiet i {
+    color: color-mix(in srgb, var(--semantic-error) 72%, white);
   }
 
   .panel-button:disabled {

@@ -1,8 +1,6 @@
 import {
   createViteDependencyCachePlan,
-  getViteDependencyStatePaths,
   getViteDependencyCacheDir,
-  isViteDependencyStatePath,
   resolveViteDevPort,
 } from "../../../src/config/vite-dependency-cache";
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
@@ -142,28 +140,5 @@ describe("createViteDependencyCachePlan", () => {
       forceRefresh: true,
       reason: "repaired-install",
     });
-  });
-});
-
-describe("Vite dependency state paths", () => {
-  it("tracks the package manifest and pnpm lockfile", () => {
-    const projectRoot = createTemporaryProject();
-
-    expect(getViteDependencyStatePaths(projectRoot)).toEqual([
-      path.join(projectRoot, "package.json"),
-      path.join(projectRoot, "pnpm-lock.yaml"),
-    ]);
-    expect(
-      isViteDependencyStatePath(
-        projectRoot,
-        path.join(projectRoot, "package.json")
-      )
-    ).toBe(true);
-    expect(
-      isViteDependencyStatePath(
-        projectRoot,
-        path.join(projectRoot, "src/package.json")
-      )
-    ).toBe(false);
   });
 });

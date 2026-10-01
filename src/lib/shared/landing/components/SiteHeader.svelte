@@ -16,7 +16,12 @@
   import { onMount, type Component } from "svelte";
   import RobustAvatar from "../../components/avatar/RobustAvatar.svelte";
   import NavDropdown, { type NavDropdownItem } from "./NavDropdown.svelte";
-  import type { authState as AuthStateModule } from "../../auth/state/auth-state.svelte";
+  import {
+    hasSavedFirebaseUser,
+    signInWhenIdle,
+    startAuthState,
+    type AuthStateApi,
+  } from "../../auth/services/deferred-sign-in";
   import { trackCtaClick } from "$lib/shared/analytics/landing-events";
   import { analyticsRoute } from "$lib/shared/analytics/analytics-context";
   import type { AuthCta } from "$lib/shared/analytics/auth-events";
@@ -34,11 +39,15 @@
   // (auth/firestore/db/functions) into the landing bundle via auth-state →
   // firebase top-level side effects.
   //
-  // Instead: on mount, run a cheap SDK-free probe for Firebase's auth
-  // persistence IndexedDB. No DB → first-time/signed-out visitor → show
-  // "Sign in", never load Firebase. DB present → returning signed-in user →
-  // lazily load the real authState at idle and populate the avatar.
-  let authApi = $state<typeof AuthStateModule | null>(null);
+  // Instead: on mount, run a cheap SDK-free check for a user Firebase saved in
+  // this browser: in localStorage on Safari and iOS, in its IndexedDB database
+  // elsewhere. None → first-time or signed-out visitor → show "Sign in", never
+  // load Firebase. Found → returning visitor → lazily load the real authState
+  // at idle and populate the avatar. Asking only whether that database exists
+  // missed every Safari and iOS visitor, and loaded Firebase for signed-out
+  // ones. The check and the idle start live in deferred-sign-in.ts, shared
+  // with Shape Engine.
+  let authApi = $state<AuthStateApi | null>(null);
   let probeDone = $state(false);
   let hasPersistedAuth = $state(false);
 
@@ -67,73 +76,29 @@
   const currentPath = $derived(page.url?.pathname ?? "");
   const showBack = $derived(MORPH_DEST_PATHS.has(currentPath));
 
-  // Cheap, SDK-free check: does Firebase's auth-persistence IndexedDB exist?
-  // Its presence means this browser has signed in at least once.
-  async function hasFirebaseAuthDb(): Promise<boolean> {
-    try {
-      if (typeof indexedDB === "undefined") return false;
-      // indexedDB.databases() is available in Chromium/WebKit. If unavailable,
-      // assume auth may exist and let the real init decide.
-      if (typeof indexedDB.databases !== "function") return true;
-      const dbs = await indexedDB.databases();
-      return dbs.some((d) => d.name === "firebaseLocalStorageDb");
-    } catch (error) {
-      console.debug("[SiteHeader] Auth persistence probe unavailable:", error);
-      return true;
-    }
-  }
-
   // Load the real authState once (idempotent). Pulls Firebase — only ever
   // called when there's a reason to (persisted session found, or the user
   // explicitly clicks Sign in). Assigning authApi first lets the derived
   // getters track the auth rune as initialize() resolves.
   let authLoadPromise: Promise<void> | null = null;
   function ensureAuthLoaded(): Promise<void> {
-    if (!authLoadPromise) {
-      authLoadPromise = (async () => {
-        const mod = await import("../../auth/state/auth-state.svelte");
-        authApi = mod.authState;
-        await mod.authState.initialize();
-      })();
-    }
+    authLoadPromise ??= startAuthState((authState) => {
+      authApi = authState;
+    });
     return authLoadPromise;
   }
 
-  onMount(() => {
-    let mounted = true;
-    let idleHandle: number | undefined;
-    let timeoutHandle: ReturnType<typeof setTimeout> | undefined;
-
-    void (async () => {
-      const persisted = await hasFirebaseAuthDb();
-      if (!mounted) return;
-      hasPersistedAuth = persisted;
-      probeDone = true;
-      if (!persisted) return; // signed out → stay Firebase-free
-
-      const loadAuth = () => {
-        if (!mounted) return;
-        void ensureAuthLoaded().catch((error) =>
-          console.warn(
-            "[SiteHeader] Deferred auth initialization failed:",
-            error
-          )
-        );
-      };
-
-      if (typeof requestIdleCallback !== "undefined") {
-        idleHandle = requestIdleCallback(loadAuth);
-      } else {
-        timeoutHandle = setTimeout(loadAuth, 0);
-      }
-    })();
-
-    return () => {
-      mounted = false;
-      if (idleHandle !== undefined) cancelIdleCallback(idleHandle);
-      if (timeoutHandle !== undefined) clearTimeout(timeoutHandle);
-    };
-  });
+  onMount(() =>
+    signInWhenIdle({
+      hasSession: hasSavedFirebaseUser,
+      onProbed: (persisted) => {
+        hasPersistedAuth = persisted;
+        probeDone = true;
+      },
+      signIn: ensureAuthLoaded,
+      label: "SiteHeader",
+    })
+  );
 
   // In-place sign in: open the centered AuthModal over the landing page rather
   // than navigating to /create?sheet=auth (which bumped the user into the app
@@ -212,12 +177,6 @@
           href: "/shape-engine",
           icon: "fa-diagram-project",
           desc: "Generate exact flowers from level and ratio matrices",
-        },
-        {
-          label: "CAPs",
-          href: "/notation/caps",
-          icon: "fa-circle-nodes",
-          desc: "The poi community's parallel discovery, 2009",
         },
       ],
     },
@@ -337,10 +296,6 @@
 
   function handleScroll() {
     scrolled = window.scrollY > 40;
-  }
-
-  function close() {
-    mobileOpen = false;
   }
 
   // Close the mobile menu only AFTER navigation lands — not on tap. Closing on
@@ -495,17 +450,37 @@
       >
     </nav>
 
-    <button
-      class="toggle"
-      aria-label={siteCopy(mobileOpen ? "Close menu" : "Open menu")}
-      aria-expanded={mobileOpen}
-      aria-controls="site-mobile-nav"
-      onclick={() => (mobileOpen = !mobileOpen)}
-    >
-      <span class="bar" class:open={mobileOpen}></span>
-      <span class="bar" class:open={mobileOpen}></span>
-      <span class="bar" class:open={mobileOpen}></span>
-    </button>
+    <!-- Phones and tablets keep the way into the app in the bar, beside the
+         menu, so it shows on every page without opening anything. The label
+         shortens as the bar narrows; each variant is the button's full
+         accessible name while it shows. -->
+    <div class="compact-actions">
+      <a
+        class="compact-cta"
+        href="/create"
+        data-sveltekit-reload
+        onclick={() =>
+          trackCtaClick("header_mobile", {
+            cta_type: "open_composer",
+            destination: "/create",
+          })}
+      >
+        <span class="label-full">{siteCopy("Open Flow Arts Composer")}</span>
+        <span class="label-short">{siteCopy("Open Composer")}</span>
+        <span class="label-tiny">{siteCopy("Composer")}</span>
+      </a>
+      <button
+        class="toggle"
+        aria-label={siteCopy(mobileOpen ? "Close menu" : "Open menu")}
+        aria-expanded={mobileOpen}
+        aria-controls="site-mobile-nav"
+        onclick={() => (mobileOpen = !mobileOpen)}
+      >
+        <span class="bar" class:open={mobileOpen}></span>
+        <span class="bar" class:open={mobileOpen}></span>
+        <span class="bar" class:open={mobileOpen}></span>
+      </button>
+    </div>
   </div>
 </header>
 
@@ -574,21 +549,9 @@
     {/each}
   </ul>
 
+  <!-- The Composer button stays in the bar above this overlay, so the menu
+       does not repeat it. -->
   <div class="m-actions" style="--i:{NAV.length}">
-    <a
-      class="m-cta"
-      href="/create"
-      data-sveltekit-reload
-      onclick={() => {
-        trackCtaClick("header_mobile", {
-          cta_type: "open_composer",
-          destination: "/create",
-        });
-        close();
-      }}
-    >
-      <span>{siteCopy("Open Flow Arts Composer")}</span>
-    </a>
     {#if authReady && isFullAccount}
       <div class="m-identity">
         <RobustAvatar src={photoURL} name={displayName} customSize={32} />
@@ -887,15 +850,43 @@
     color: #ff8a8a;
     outline: none;
   }
-  .cta {
-    padding: 0.5rem 1.1rem !important;
+  /* One look for the Composer button in the desktop row and in the compact
+     bar. The desktop copy needs !important to beat `.desktop-nav a`. */
+  .cta,
+  .compact-cta {
     border-radius: 999px;
     background: linear-gradient(135deg, #6f8cff, #8b6cff);
+  }
+  .cta {
+    padding: 0.5rem 1.1rem !important;
     color: #fff !important;
     font-weight: 600 !important;
   }
-  .cta:hover {
+  .cta:hover,
+  .compact-cta:hover {
     filter: brightness(1.08);
+  }
+
+  .compact-actions {
+    display: none;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .compact-cta {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--min-touch-target, 44px);
+    padding: 0.5rem 1.1rem;
+    box-sizing: border-box;
+    color: #fff;
+    font-size: 0.92rem;
+    font-weight: 600;
+    text-decoration: none;
+    white-space: nowrap;
+  }
+  .label-short,
+  .label-tiny {
+    display: none;
   }
 
   /* Mobile toggle */
@@ -1107,28 +1098,6 @@
     animation: m-item-in 0.42s cubic-bezier(0.16, 1, 0.3, 1) both;
     animation-delay: calc(0.06s + var(--i) * 0.06s);
   }
-  .m-cta {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    width: 100%;
-    padding: 16px 24px;
-    border-radius: 999px;
-    background: linear-gradient(135deg, #6f8cff, #8b6cff);
-    color: #fff;
-    text-decoration: none;
-    font-size: 1.05rem;
-    font-weight: 700;
-    box-shadow: 0 8px 26px rgba(111, 140, 255, 0.45);
-    transition:
-      filter 0.18s ease,
-      transform 0.18s ease;
-  }
-  .m-cta:hover {
-    filter: brightness(1.07);
-    transform: translateY(-2px);
-  }
   .m-signin {
     color: #9b97bd;
     text-decoration: none;
@@ -1201,11 +1170,54 @@
     .desktop-nav {
       display: none;
     }
+    .compact-actions,
     .toggle {
       display: flex;
     }
     .mobile-nav {
       display: flex;
+    }
+  }
+
+  /* Phones: the bar holds Back, the logo, the Composer button and the menu.
+     Measured with the Back pill showing, which /composer and the other
+     launchpad pages do: "Open Composer" (and German "Composer öffnen") keeps
+     at least 11px clear of the logo from 375px wide; narrower bars say
+     "Composer". Back keeps its accessible name as an arrow-only circle. */
+  @media (max-width: 544px) {
+    .inner {
+      padding: 0 1rem;
+    }
+    .left-group {
+      gap: 0.5rem;
+    }
+    .surface-back {
+      justify-content: center;
+      width: var(--min-touch-target, 44px);
+      padding: 0;
+    }
+    .surface-back span {
+      display: none;
+    }
+    .toggle {
+      min-width: var(--min-touch-target, 44px);
+    }
+    .compact-cta {
+      padding-inline: 0.9rem;
+    }
+    .label-full {
+      display: none;
+    }
+    .label-short {
+      display: inline;
+    }
+  }
+  @media (max-width: 374px) {
+    .label-short {
+      display: none;
+    }
+    .label-tiny {
+      display: inline;
     }
   }
 

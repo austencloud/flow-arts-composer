@@ -56,6 +56,7 @@ describe("AnimationRenderLoop prop identity trail barrier", () => {
       setVisible: vi.fn(),
       clear: vi.fn(),
       clearBuffers: vi.fn(),
+      refreshStyle: vi.fn(),
       resize: vi.fn(),
       setCanvasZIndex: vi.fn(),
       dispose: vi.fn(),
@@ -84,5 +85,45 @@ describe("AnimationRenderLoop prop identity trail barrier", () => {
     expect(trailFrames[1]?.leftPropSwapSuppressed).toBe(true);
     expect(trailFrames[1]?.rightPropSwapSuppressed).toBe(false);
     expect(trailFrames[2]?.leftPropSwapSuppressed).toBe(false);
+  });
+
+  it("repaints a paused trail style edit without stamping unchanged frames", () => {
+    const renderFrame = vi.fn();
+    const refreshStyle = vi.fn();
+    const trailOverlay = {
+      renderFrame,
+      refreshStyle,
+      setVisible: vi.fn(),
+    } as unknown as ITrailOverlayCanvas;
+    const loop = new AnimationRenderLoop();
+    loop.initialize({
+      renderer: {
+        renderScene: vi.fn(),
+        isLeftPropCrossfadeInProgress: () => false,
+        isRightPropCrossfadeInProgress: () => false,
+      } as unknown as IAnimationRenderer,
+      TrailCapturer: null,
+      pathCache: null,
+      canvasSize: 500,
+      renderers: { trails: trailOverlay as never },
+    } satisfies RenderLoopConfig);
+
+    const original = { ...frameParams("staff"), isPlaying: false };
+    loop.renderSync(original, 100, 1 / 60);
+    loop.renderSync(original, 100, 1 / 60);
+    expect(renderFrame).toHaveBeenCalledTimes(1);
+    expect(refreshStyle).not.toHaveBeenCalled();
+
+    loop.renderSync(
+      {
+        ...original,
+        trailSettings: { ...original.trailSettings, lineWidth: 12 },
+      },
+      100,
+      1 / 60
+    );
+    expect(refreshStyle).toHaveBeenCalledOnce();
+    expect(renderFrame).toHaveBeenCalledTimes(2);
+    expect(renderFrame.mock.calls[1]?.[0].trailSettings.lineWidth).toBe(12);
   });
 });

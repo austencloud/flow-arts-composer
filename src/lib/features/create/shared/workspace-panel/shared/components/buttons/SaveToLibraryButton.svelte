@@ -15,10 +15,13 @@
     sequence = null,
     disabled = false,
     onclick,
+    quiet = false,
   }: {
     sequence?: SequenceData | null;
     disabled?: boolean;
     onclick?: () => void;
+    /** Plain surface for the phone Assemble rail, where the pictures lead. */
+    quiet?: boolean;
   } = $props();
 
   // Resolve haptic feedback service
@@ -43,7 +46,7 @@
   }
 
   const tooltip = $derived(
-    isDisabled ? "Create a sequence first" : "Save to Library"
+    isDisabled ? t("create_workspace_create_sequence_first") : t("create_ui_save_to_library")
   );
 </script>
 
@@ -51,6 +54,7 @@
   type="button"
   data-save-shortcut
   class="save-button"
+  class:quiet
   class:disabled={isDisabled}
   onclick={handleClick}
   disabled={isDisabled}
@@ -140,6 +144,22 @@
         var(--theme-accent-strong, var(--theme-accent-strong)) 60%,
         transparent
       );
+  }
+
+  .save-button.quiet {
+    background: var(--theme-card-bg);
+    border: 1px solid var(--theme-stroke);
+    box-shadow: none;
+  }
+
+  .save-button.quiet:hover:not(:disabled) {
+    background: var(--theme-card-hover-bg);
+    box-shadow: none;
+  }
+
+  /* Quiet keeps the familiar purple on the icon only. */
+  .save-button.quiet i {
+    color: color-mix(in srgb, var(--theme-accent-strong) 62%, white);
   }
 
   .save-button:active:not(:disabled) {

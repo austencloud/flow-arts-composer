@@ -6,6 +6,7 @@
   control lives in WorkspaceShareControl.
 -->
 <script lang="ts">
+  import { getLocale, t } from "$lib/shared/i18n/i18n.svelte.js";
   import { onDestroy, onMount, untrack } from "svelte";
   import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
   import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
@@ -39,14 +40,7 @@
     type PreparedWorkspaceCard,
   } from "../../state/workspace-share-readiness.svelte";
   import WorkspaceShareControl from "./WorkspaceShareControl.svelte";
-  import PostShareSheet from "$lib/shared/share/components/PostShareSheet.svelte";
-  import { getExportOptionsState } from "$lib/shared/animation-panel/state/export-options-state.svelte";
-  import InlineAnimationPlayer from "$lib/features/browse/sequences/display/components/media-viewer/InlineAnimationPlayer.svelte";
-  import { getAnimationVisibilityManager } from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
-  import { settingsService } from "$lib/shared/settings/state/settings-state.svelte";
-  import type { AnimationPlaybackController } from "$lib/shared/animation-engine/services/animation-playback-controller";
-  import type { AnimationPanelState } from "$lib/shared/animation-engine/state/animation-panel-state.svelte";
-  import type { SequenceModalExporter } from "$lib/shared/sequence-viewer/services/sequence-modal-exporter.svelte";
+  import WorkspaceShareSheet from "./WorkspaceShareSheet.svelte";
 
   interface Props {
     sequence?: SequenceData | null;
@@ -65,15 +59,6 @@
   const visibilityState = getVisibilityStateManager();
   const sharer = getSharer();
   const shortCodeManager = getShortCodeManager();
-  const exportOptions = getExportOptionsState();
-  const animationVisibility = getAnimationVisibilityManager();
-  // These stay unloaded until a person requests a file. Their controller never
-  // publishes into the workspace playhead or saves playback preferences.
-  let workspaceVideoState: AnimationPanelState | null = null;
-  let workspaceVideoExporter = $state<SequenceModalExporter | null>(null);
-  let workspaceVideoController: AnimationPlaybackController | null = null;
-  let workspaceVideoExport: Promise<void> | null = null;
-  let activeVideoSourceKey: string | null = null;
   const readiness = createWorkspaceShareReadiness({
     async renderCard(currentSequence, options) {
       const blob = await sharer.getCardImageBlob(currentSequence, options);
@@ -100,7 +85,6 @@
   let announcedCardRequest = $state<string | null>(null);
   let announcedLinkKey = $state<string | null>(null);
   let sendRequestGeneration = 0;
-  let videoRenderGeneration = 0;
   let linkFeedbackTimer: ReturnType<typeof setTimeout> | null = null;
 
   const hasContent = $derived((sequence?.steps?.length ?? 0) > 0);
@@ -146,7 +130,9 @@
     announcedCardRequest?.startsWith(`${cardKey}:`) ?? false
   );
   const tooltip = $derived(
-    hasContent ? "Share sequence" : "Create a sequence first"
+    hasContent
+      ? t("share_sequence")
+      : t("create_workspace_create_sequence_first")
   );
   const sequenceName = $derived(
     sequence?.displayName ||
@@ -163,29 +149,6 @@
       sequence?.word || sequence?.intendedWord || sequence?.displayName,
     sequenceLength: sequence?.steps?.length,
   });
-  const workspaceVideoSourceKey = $derived.by(() =>
-    hashString(
-      JSON.stringify({
-        sequence,
-        options: exportOptions.getVideoOptions(),
-      })
-    )
-  );
-  // Playback only reloads when the choreography changes. Export dimensions and
-  // loop count alter the eventual file, not the live motion a person is using
-  // to decide whether to download it.
-  const workspaceVideoPreviewKey = $derived.by(() =>
-    hashString(JSON.stringify(sequence))
-  );
-  const workspaceVideoUrl = $derived(
-    workspaceVideoExporter?.state.previewBlobUrl ?? null
-  );
-  const workspaceVideoExporting = $derived(
-    workspaceVideoExporter?.state.isExporting ?? false
-  );
-  const workspaceVideoProgress = $derived(
-    workspaceVideoExporter?.state.progress?.progress ?? null
-  );
 
   function noteRenderSettingsChanged(): void {
     renderSettingsVersion += 1;
@@ -210,17 +173,6 @@
 
   onDestroy(() => {
     sendRequestGeneration++;
-    cancelWorkspaceVideo();
-    const disposeVideoResources = () => {
-      workspaceVideoExporter?.dismissPreview();
-      workspaceVideoController?.dispose();
-      workspaceVideoState?.dispose();
-    };
-    if (workspaceVideoExport) {
-      void workspaceVideoExport.finally(disposeVideoResources);
-    } else {
-      disposeVideoResources();
-    }
     if (linkFeedbackTimer) clearTimeout(linkFeedbackTimer);
   });
 
@@ -240,15 +192,6 @@
       if (!nextLinkKey || announcedLinkKey !== nextLinkKey) {
         announcedLinkKey = null;
         linkCopied = false;
-      }
-    });
-  });
-
-  $effect(() => {
-    const sourceKey = workspaceVideoSourceKey;
-    untrack(() => {
-      if (activeVideoSourceKey && activeVideoSourceKey !== sourceKey) {
-        cancelWorkspaceVideo();
       }
     });
   });
@@ -350,7 +293,7 @@
     announcedCardRequest = requestId;
 
     showToast({
-      message: "Preparing card.",
+      message: t("inbox_ui_preparing_card"),
       type: "info",
       duration: 2500,
     });
@@ -363,11 +306,17 @@
         const needsOptions =
           action === "Share" && !canNativeShareFile(card.blob, card.filename);
         showToast({
-          message: "Card ready.",
+          message: t("create_workspace_card_ready"),
           type: "success",
           duration: 7000,
           action: {
-            label: needsOptions ? "Options" : action,
+            label: needsOptions
+              ? t("create_workspace_options")
+              : t(
+                  action === "Share"
+                    ? "create_workspace_share"
+                    : "create_workspace_download"
+                ),
             onClick: needsOptions
               ? openShareOptions
               : action === "Share"
@@ -382,7 +331,7 @@
         }
         console.error("[ShareButton] Card preparation failed:", error);
         showToast({
-          message: "Couldn't prepare this card. Try again.",
+          message: t("create_workspace_card_preparation_failed_retry"),
           type: "error",
           duration: 6000,
         });
@@ -406,12 +355,12 @@
     showToast({
       message:
         result.status === "unavailable"
-          ? "Sharing isn't available here."
-          : "Couldn't open device share options.",
+          ? t("create_workspace_share_unavailable")
+          : t("create_workspace_device_share_failed"),
       type: result.status === "unavailable" ? "info" : "error",
       duration: 7000,
       action: {
-        label: "Download",
+        label: t("create_workspace_download"),
         onClick: () => void downloadPreparedCard(card),
       },
     });
@@ -426,7 +375,7 @@
     // This must be created in the click handler, before any await.
     const shareOperation = shareBlobNatively(card.blob, card.filename, {
       title: sequenceName,
-      text: `Flow Arts Composer sequence: ${sequenceName}`,
+      text: t("create_workspace_native_share_text", { name: sequenceName }),
     });
 
     void shareOperation
@@ -470,7 +419,7 @@
     if (!result.success) {
       console.error("[ShareButton] Card download failed:", result.error);
       showToast({
-        message: "Couldn't download this card. Try again.",
+        message: t("create_workspace_download_failed"),
         type: "error",
         duration: 6000,
       });
@@ -521,7 +470,7 @@
     }
 
     showToast({
-      message: "Preparing card.",
+      message: t("inbox_ui_preparing_card"),
       type: "info",
       duration: 2500,
     });
@@ -544,7 +493,7 @@
         if (requestGeneration !== sendRequestGeneration) return;
         console.error("[ShareButton] Card preparation failed:", error);
         showToast({
-          message: "Couldn't prepare this card. Try again.",
+          message: t("create_workspace_card_preparation_failed_retry"),
           type: "error",
           duration: 6000,
         });
@@ -567,10 +516,10 @@
     const domainMessage = getShortCodeShareMessage(error);
     showToast({
       message:
-        domainMessage ||
+        (getLocale() === "en" ? domainMessage : null) ||
         (navigator.onLine
-          ? "Couldn't create a shareable link. Try again."
-          : "Couldn't create a link while offline."),
+          ? t("create_workspace_link_creation_failed")
+          : t("create_workspace_link_creation_offline")),
       type: "error",
       duration: 6000,
     });
@@ -583,7 +532,7 @@
     announcedLinkKey = linkKey;
 
     showToast({
-      message: "Preparing link.",
+      message: t("viewer_ui_preparing_link"),
       type: "info",
       duration: 2500,
     });
@@ -592,11 +541,11 @@
       .then(() => {
         if (announcedLinkKey !== linkKey) return;
         showToast({
-          message: "Link ready.",
+          message: t("create_workspace_link_ready"),
           type: "success",
           duration: 7000,
           action: {
-            label: "Copy",
+            label: t("create_workspace_copy"),
             onClick: handleCopyLink,
           },
         });
@@ -631,7 +580,7 @@
       isCopyingLink = false;
       console.error("[ShareButton] Link copy failed:", error);
       showToast({
-        message: "Couldn't copy the link. Try again.",
+        message: t("create_workspace_copy_link_failed"),
         type: "error",
         duration: 6000,
       });
@@ -656,7 +605,7 @@
       .catch((error) => {
         console.error("[ShareButton] Link copy failed:", error);
         showToast({
-          message: "Couldn't copy the link. Try again.",
+          message: t("create_workspace_copy_link_failed"),
           type: "error",
           duration: 6000,
         });
@@ -685,166 +634,7 @@
     if (!sequence) return;
     postSheetOpen = true;
   }
-
-  function sendSequenceToInbox(): void {
-    if (!sequence) return;
-    openSendSequenceSheet(buildSequenceSharePayload(sequence));
-  }
-
-  function cancelWorkspaceVideo(): void {
-    videoRenderGeneration += 1;
-    activeVideoSourceKey = null;
-    // SequenceModalExporter talks to the shared orchestrator. Only ask it to
-    // cancel while this button owns a live job; a stale workspace preview must
-    // never interrupt a render started from another surface.
-    if (workspaceVideoExport) workspaceVideoExporter?.cancel();
-    workspaceVideoExporter?.dismissPreview();
-  }
-
-  async function ensureWorkspaceVideoServices(): Promise<{
-    exporter: SequenceModalExporter;
-    panelState: AnimationPanelState;
-    createController: (options: {
-      syncSharedWorkspaceState: false;
-    }) => AnimationPlaybackController;
-  }> {
-    const [exporterModule, panelStateModule, controllerModule] =
-      await Promise.all([
-        import("$lib/shared/sequence-viewer/services/sequence-modal-exporter.svelte"),
-        import("$lib/shared/animation-engine/state/animation-panel-state.svelte"),
-        import("$lib/features/compose/services/animation-playback-controller-factory"),
-      ]);
-    workspaceVideoExporter ??= new exporterModule.SequenceModalExporter();
-    workspaceVideoState ??= panelStateModule.createAnimationPanelState({
-      ephemeral: true,
-    });
-    return {
-      exporter: workspaceVideoExporter,
-      panelState: workspaceVideoState,
-      createController: (options) =>
-        controllerModule.createAnimationPlaybackController(undefined, options),
-    };
-  }
-
-  async function requestWorkspaceVideo(): Promise<boolean> {
-    if (!sequence) return false;
-
-    // Capture the accepted request before waiting for a previous encoder to
-    // drain. The current workspace may regenerate during that wait.
-    const currentSequence = structuredClone($state.snapshot(sequence));
-    const options = exportOptions.getVideoOptions();
-    const sourceKey = workspaceVideoSourceKey;
-    cancelWorkspaceVideo();
-    const renderGeneration = ++videoRenderGeneration;
-    activeVideoSourceKey = sourceKey;
-    const previousExport = workspaceVideoExport;
-    if (previousExport) await previousExport;
-    if (
-      renderGeneration !== videoRenderGeneration ||
-      sourceKey !== workspaceVideoSourceKey
-    ) {
-      return false;
-    }
-    const { exporter, panelState, createController } =
-      await ensureWorkspaceVideoServices();
-    // A sequence can regenerate while export modules load. The source key was
-    // stamped beside the snapshot above, so a late request cannot start with
-    // an old sequence under the new workspace state.
-    if (
-      renderGeneration !== videoRenderGeneration ||
-      sourceKey !== workspaceVideoSourceKey
-    ) {
-      return false;
-    }
-    const layoutCanvas = document.createElement("canvas");
-    // The orchestrator uses this only for layout sizing; it creates and drives
-    // the real animation canvas offscreen.
-    layoutCanvas.width = 600;
-    layoutCanvas.height = 600;
-    const controller = createController({
-      syncSharedWorkspaceState: false,
-    });
-    workspaceVideoController?.dispose();
-    workspaceVideoController = controller;
-    panelState.reset();
-
-    if (!controller.initialize(currentSequence, panelState)) {
-      if (workspaceVideoController === controller) {
-        workspaceVideoController = null;
-      }
-      controller.dispose();
-      return false;
-    }
-
-    activeVideoSourceKey = sourceKey;
-    const exportPromise = exporter.exportAnimation(
-      {
-        fps: options.fps,
-        loopCount: options.loopCount,
-        resolution: options.resolution,
-        effectOverrides: options.effectOverrides ?? undefined,
-        includeStartPlacement: options.includeStartPlacement,
-        includeEndHold: options.includeEndHold,
-        quality: options.quality,
-        // The offscreen exporter calls this tunnel-shaped input for any custom
-        // pair. Supplying the workspace pair keeps its downloaded file aligned
-        // with the live animation, including non-blue/red prop choices.
-        tunnelPropColors:
-          settingsService.settings.primaryPropColors ?? undefined,
-      },
-      {
-        canvas: layoutCanvas,
-        playbackController: controller,
-        panelState,
-      },
-      {
-        onSuccess: () => {},
-        onError: () => {},
-        onHaptic: () => {},
-      }
-    );
-    workspaceVideoExport = exportPromise;
-    await exportPromise;
-    if (workspaceVideoExport === exportPromise) {
-      workspaceVideoExport = null;
-    }
-
-    if (renderGeneration !== videoRenderGeneration) return false;
-    return !!exporter.state.previewBlobUrl;
-  }
 </script>
-
-{#snippet workspaceLiveVideoPreview()}
-  {#if sequence}
-    <div class="workspace-live-video-preview">
-      <InlineAnimationPlayer
-        {sequence}
-        sequenceLoadKey={workspaceVideoPreviewKey}
-        chrome="minimal"
-        fill={true}
-        showControls={false}
-        autoPlay={true}
-        autoPlayDelay={0}
-        externalBpm={60}
-        interactive={true}
-        cornerToggle={true}
-        hoverHint="none"
-        playbackAllowed={postSheetOpen}
-        ephemeral={true}
-        visibilityManagerOverride={animationVisibility}
-        effectsConfigState={animationVisibility.effectsConfigState ?? undefined}
-        gridVisible={animationVisibility.isGridVisible()}
-        showWordHeader={animationVisibility.getVisibility("wordHeader")}
-        hideTkaGlyph={!animationVisibility.getVisibility("tkaGlyph")}
-        hideStepNumbers={!animationVisibility.getVisibility("stepNumbers")}
-        leftPropType={settingsService.settings.leftPropType}
-        rightPropType={settingsService.settings.rightPropType}
-        primaryPropColors={settingsService.settings.primaryPropColors ??
-          undefined}
-      />
-    </div>
-  {/if}
-{/snippet}
 
 <WorkspaceShareControl
   bind:open={menuOpen}
@@ -866,39 +656,8 @@
   onDirectOpen={openPostSheet}
 />
 
-<!-- No `shareUrl`: the workspace sequence has no canonical viewer URL yet, and
-     the sheet mints (or re-resolves) the short code itself. -->
-<PostShareSheet
+<WorkspaceShareSheet
   isOpen={postSheetOpen}
   {sequence}
-  shareUrl=""
-  videoBlobUrl={workspaceVideoUrl}
-  isExportingVideo={workspaceVideoExporting}
-  exportProgress={workspaceVideoProgress}
-  liveVideoPreview={workspaceLiveVideoPreview}
-  onRequestVideo={requestWorkspaceVideo}
-  onCancelVideo={cancelWorkspaceVideo}
-  onPrepareFile={(artifact) => {
-    if (artifact !== "video") return false;
-    cancelWorkspaceVideo();
-    return true;
-  }}
-  videoSourceKey={workspaceVideoSourceKey}
-  availableArtifacts={["card", "video"]}
-  canCreateLink={hasFullAccount}
-  onSendInTka={hasFullAccount ? sendSequenceToInbox : undefined}
-  needsAccountForFiles={!hasFullAccount}
-  onRequestAccount={() => authDrawerState.show("signup", "share-sequence")}
-  onClose={() => {
-    cancelWorkspaceVideo();
-    postSheetOpen = false;
-  }}
+  onClose={() => (postSheetOpen = false)}
 />
-
-<style>
-  .workspace-live-video-preview {
-    width: 100%;
-    height: 100%;
-    min-height: 0;
-  }
-</style>

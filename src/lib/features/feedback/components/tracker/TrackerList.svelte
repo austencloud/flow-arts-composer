@@ -41,7 +41,7 @@
   <div class="filter-bar">
     <div class="filter-row">
       <span class="filter-label">{t("feedback_filter_type")}</span>
-      <div class="filter-chips" role="radiogroup" aria-label="Filter by type">
+      <div class="filter-chips" role="radiogroup" aria-label={t("create_review_filter_by_type")}>
         {#each typeOptions as opt}
           <button
             class="filter-chip"
@@ -60,7 +60,7 @@
 
     <div class="filter-row">
       <span class="filter-label">{t("feedback_filter_status")}</span>
-      <div class="filter-chips" role="radiogroup" aria-label="Filter by status">
+      <div class="filter-chips" role="radiogroup" aria-label={t("create_review_filter_by_status")}>
         {#each statusOptions as opt}
           <button
             class="filter-chip"

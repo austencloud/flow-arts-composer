@@ -18,7 +18,7 @@
   import type { ViewerCustomColorPair } from "$lib/shared/sequence-viewer/domain/viewer-custom-colors";
   import PropGrid from "./PropGrid.svelte";
   import PrimaryPropColorSettings from "./PrimaryPropColorSettings.svelte";
-  import { growFade } from "$lib/shared/transitions/motion";
+  import { growFade, STEP_DRIFT_PX } from "$lib/shared/transitions/motion";
   import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { DEFAULT_TRIANGLE_GRIP } from "$lib/shared/pictograph/prop/domain/triangle-appearance";
 
@@ -32,7 +32,7 @@
     onPrimaryPropColorsChange,
     showColors = true,
     compactColors = false,
-    showPropLook = true,
+    showPropLook,
     onDrillChange,
     heading: hostHeading,
     ...props
@@ -69,7 +69,7 @@
     /** Show colours as a toolbar button that opens the full editor. */
     compactColors?: boolean;
     /**
-     * The 3D model / Pictograph choice is how the 2D canvas draws a prop. A 3D
+     * The Realistic / Pictograph choice is how the 2D canvas draws a prop. A 3D
      * scene always renders the model, so its picker turns the choice off.
      */
     showPropLook?: boolean;
@@ -106,15 +106,26 @@
   />
 {/snippet}
 
+<!-- Above the grid, the colours are part of the grid screen: a drill fades them
+     out with the tiles as one page, with nothing resizing, and Back returns
+     them the same way. -->
+{#snippet colorLead()}
+  {@render colorSettings(false)}
+{/snippet}
+
+<!-- The block that drops the colours on a drill owns their transition. Svelte
+     plays a local transition only when its own block changes, so under a nested
+     {#if} they would vanish in one frame. -->
 {#snippet colorControl()}
-  {#if showColors && !drilled}
-    {#if colorsPlace === "toolbar" || colorsPlace === "compact-before"}
-      {@render colorSettings(true)}
-    {:else}
-      <div class="prop-colors" transition:growFade={{ axis: "y" }}>
-        {@render colorSettings(false)}
-      </div>
-    {/if}
+  {#if colorsPlace === "toolbar" || colorsPlace === "compact-before"}
+    {#if showColors && !drilled}{@render colorSettings(true)}{/if}
+  {:else if showColors && !drilled}
+    <div
+      class="prop-colors"
+      transition:growFade={{ axis: "y", x: -STEP_DRIFT_PX }}
+    >
+      {@render colorSettings(false)}
+    </div>
   {/if}
 {/snippet}
 
@@ -127,7 +138,6 @@
   </div>
 {/snippet}
 
-{#if colorsPlace === "before"}{@render colorControl()}{/if}
 {#if colorsPlace === "compact-before" && showColors && !drilled}
   <div class="compact-color-toolbar" transition:growFade={{ axis: "y" }}>
     {@render colorControl()}
@@ -138,6 +148,7 @@
   heading={colorsPlace === "toolbar" && showColors
     ? toolbarHeading
     : hostHeading}
+  lead={colorsPlace === "before" && showColors ? colorLead : undefined}
   onDrillChange={(next) => {
     drilled = next;
     onDrillChange?.(next);
@@ -149,7 +160,7 @@
   premiumVisible={isPremiumCosmeticVisible()}
   premiumAllowed={checkPremiumCosmeticAccess().allowed}
   propLook={propLook ?? settings.propArtwork}
-  onPropLookChange={showPropLook
+  onPropLookChange={(showPropLook ?? props.showAppearance !== false)
     ? (onPropLookChange ??
       ((propArtwork) => void updateSettings({ propArtwork })))
     : undefined}

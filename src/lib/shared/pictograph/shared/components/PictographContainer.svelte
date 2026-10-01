@@ -47,6 +47,7 @@ with pre-prepared data for better performance.
     normalizeFanAppearance,
   } from "../../prop/domain/fan-appearance";
   import { normalizePropLook } from "../../prop/domain/prop-look";
+  import { normalizeTriangleGrip } from "../../prop/domain/triangle-appearance";
   import { calculatePictographMotionPositions } from "../../prop/services/pictograph-motion-positioner";
   import { GridMode, GridLocation } from "../../grid/domain/enums/grid-enums";
   import PictographRenderer from "./PictographRenderer.svelte";
@@ -88,6 +89,7 @@ with pre-prepared data for better performance.
     // Renderable option: hide arrows entirely (props + grid still render).
     // Default true = zero behavior change for existing callers.
     showArrow = true,
+    showProps = true,
     // Enable prop selection for variant cycling
     propsClickable = false,
     // Currently selected prop hand (for visual feedback)
@@ -173,6 +175,7 @@ with pre-prepared data for better performance.
     arrowsClickable?: boolean;
     /** Renderable option: hide arrows entirely (props + grid still render). Default true. */
     showArrow?: boolean;
+    showProps?: boolean;
     propsClickable?: boolean;
     selectedPropHand?: HandSide | null;
     onPropClick?: (hand: HandSide) => void;
@@ -465,6 +468,9 @@ with pre-prepared data for better performance.
   const effectivePropLook = $derived(
     normalizePropLook(getSettings().propArtwork)
   );
+  const effectiveTriangleGrip = $derived(
+    normalizeTriangleGrip(getSettings().triangleGrip)
+  );
 
   // Create a stable key for data preparation dependencies
   // Include effectiveDarkMode so that when it changes (via prop OR global toggle), we re-prepare with correct colors
@@ -529,6 +535,7 @@ with pre-prepared data for better performance.
         normalizeFanAppearance(fanAppearanceOverride ?? settings.fanAppearance)
       ),
       propLook: effectivePropLook,
+      triangleGrip: effectiveTriangleGrip,
       darkMode: effectiveDarkMode, // Include effective dark mode for color-correct preparation
       leftMotion: leftFingerprint,
       rightMotion: rightFingerprint,
@@ -593,6 +600,7 @@ with pre-prepared data for better performance.
             fanAppearanceOverride ?? getSettings().fanAppearance
           ),
           propLook: effectivePropLook,
+          triangleGrip: effectiveTriangleGrip,
           showLeftMotion: preparationShowLeftMotion,
           showRightMotion: preparationShowRightMotion,
         };
@@ -752,6 +760,7 @@ with pre-prepared data for better performance.
         {visibleHand}
         {arrowsClickable}
         {showArrow}
+        {showProps}
         darkMode={effectiveDarkMode}
         {printMode}
         {transparentBackground}
@@ -770,7 +779,10 @@ with pre-prepared data for better performance.
         propPositionOverrides={motionPropPositionOverrides}
         {directPropPositioning}
         animateContent={animateContent && liveAnimateVisibility}
-        {arrowOpacity}
+        arrowOpacity={disableTransitions && appliedPrepareKey !== prepareKey
+          ? 0
+          : arrowOpacity}
+        {disableTransitions}
         onGridReady={handleGridReady}
       />
     {:else}
@@ -806,6 +818,7 @@ with pre-prepared data for better performance.
             {visibleHand}
             {arrowsClickable}
             {showArrow}
+            {showProps}
             darkMode={effectiveDarkMode}
             {printMode}
             {transparentBackground}
@@ -824,7 +837,10 @@ with pre-prepared data for better performance.
             propPositionOverrides={motionPropPositionOverrides}
             {directPropPositioning}
             animateContent={animateContent && liveAnimateVisibility}
-            {arrowOpacity}
+            arrowOpacity={disableTransitions && appliedPrepareKey !== prepareKey
+              ? 0
+              : arrowOpacity}
+            {disableTransitions}
             onGridReady={handleGridReady}
           />
         </div>

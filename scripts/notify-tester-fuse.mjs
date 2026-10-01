@@ -12,8 +12,8 @@
  * not notifying them at all.
  *
  * Usage:
- *   node scripts/notify-tester-fuse.mjs sgarrard911            # dry run
- *   node scripts/notify-tester-fuse.mjs sgarrard911 --send
+ *   node scripts/notify-tester-fuse.mjs <username>            # dry run
+ *   node scripts/notify-tester-fuse.mjs <username> --send
  */
 import admin from "firebase-admin";
 import { readFileSync } from "fs";

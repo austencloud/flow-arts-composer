@@ -171,8 +171,8 @@ describe("UserActivityAnalytics transitions", () => {
     render(UserActivityAnalytics, {
       userId: "uid",
       userDisplayName: "Sky Guys Quest",
-      userUsername: "sgarrard911",
-      userEmail: "sgarrard911@gmail.com",
+      userUsername: "tester",
+      userEmail: "tester@example.com",
     });
     await page.getByRole("button", { name: /Inspect session from/ }).click();
     await expect.element(page.getByText("No gesture found")).toBeVisible();

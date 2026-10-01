@@ -35,7 +35,7 @@
   <Drawer
     {isOpen}
     onclose={handleCancel}
-    ariaLabel="Replace Construct Content?"
+    ariaLabel={t("create_review_replace_construct_content")}
   >
     {#snippet children()}
       <div class="transfer-confirmation-content">
@@ -43,15 +43,14 @@
           {t("create_ui_replace_construct_content")}
         </h3>
         <p class="confirmation-message">
-          The Construct workspace already has content. Transferring this
-          sequence will replace it.
+          {t("create_review_the_construct_workspace_already_has_content_transferring_this_sequence_will_replace_it")}
         </p>
         <div class="confirmation-actions">
           <button class="cancel-button" onclick={handleCancel}
             >{t("action_cancel")}</button
           >
           <button class="confirm-button" onclick={handleConfirm}>
-            Replace & Transfer
+            {t("create_review_replace_transfer")}
           </button>
         </div>
       </div>
@@ -62,9 +61,9 @@
   <ConfirmDialog
     bind:isOpen
     title={t("create_ui_replace_construct_content")}
-    message="The Construct workspace already has content. Transferring this sequence will replace it."
-    confirmText="Replace & Transfer"
-    cancelText="Cancel"
+    message={t("create_review_the_construct_workspace_already_has_content_transferring_this_sequence_will_replace_it")}
+    confirmText={t("create_review_replace_transfer")}
+    cancelText={t("create_review_cancel")}
     variant="warning"
     onConfirm={handleConfirm}
     onCancel={handleCancel}

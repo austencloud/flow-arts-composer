@@ -1,5 +1,5 @@
 import { render } from "vitest-browser-svelte";
-import { page } from "vitest/browser";
+import { page, userEvent } from "vitest/browser";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import EmailLinkAuth from "./EmailLinkAuth.svelte";
 
@@ -41,15 +41,20 @@ vi.mock("../firebase", () => ({
   getFunctionsInstance: vi.fn().mockResolvedValue({}),
 }));
 
-vi.mock("$lib/shared/i18n/i18n.svelte", () => ({
-  t: (key: string) =>
-    ({
-      form_email: "Email",
-      form_placeholder_email: "you@example.com",
-      auth_sending: "Sending...",
-      auth_send_magic_link: "Email me a code",
-    })[key] ?? key,
-}));
+// The real English catalog, so the assertions below follow copy changes
+// instead of a hand-kept list of strings.
+vi.mock("$lib/shared/i18n/i18n.svelte", async () => {
+  const english: Record<string, string> = (
+    await import("../../../../../messages/en.json")
+  ).default;
+  return {
+    t: (key: string, params: Record<string, string | number> = {}) =>
+      Object.entries(params).reduce(
+        (text, [name, value]) => text.replaceAll(`{${name}}`, String(value)),
+        english[key] ?? key
+      ),
+  };
+});
 
 vi.mock("$lib/shared/toast/state/toast-state.svelte", () => ({
   toast: { error: mocks.toastError, success: mocks.toastSuccess },
@@ -251,10 +256,13 @@ describe.each([false, true])(
         })
         .click();
 
+      // A full code signs in without a button press.
       const code = page.getByRole("textbox", { name: "Six-digit code" });
       await code.fill("123456");
-      await page.getByRole("button", { name: "Sign in" }).click();
 
+      await expect
+        .element(page.getByRole("status"))
+        .toHaveTextContent("Signed in");
       expect(mocks.sendMagicLink).toHaveBeenLastCalledWith({
         action: "redeem-code",
         requestId: "144599f0-7a73-4f38-8f3d-a654dc6c47c6",
@@ -267,9 +275,58 @@ describe.each([false, true])(
       );
       expect(mocks.markSkipped).toHaveBeenCalledWith("user-1");
       expect(localStorage.getItem("pendingMagicLinkCode")).toBeNull();
+    });
+
+    it("never mails a fresh code when Enter is pressed in the code box", async () => {
+      mocks.sendMagicLink.mockResolvedValue({
+        data: {
+          success: true,
+          requestId: "5d1c3a0e-2b7f-4c1e-9a55-0f3b6e2d8c41",
+          subject: "Your sign-in code",
+          senderEmail: "noreply@example.com",
+        },
+      });
+
+      render(EmailLinkAuth, { compact });
+      await page
+        .getByRole("textbox", { name: "Email" })
+        .fill("spinner@example.com");
+      await page
+        .getByRole("button", {
+          name: compact ? "Send a code" : "Email me a code",
+        })
+        .click();
+
+      const code = page.getByRole("textbox", { name: "Six-digit code" });
+      await expect.element(code).toHaveFocus();
+      await code.fill("123");
+      await userEvent.keyboard("{Enter}");
+
+      expect(mocks.sendMagicLink).toHaveBeenCalledTimes(1);
+    });
+
+    it("sends straight away when opened from the password form", async () => {
+      mocks.sendMagicLink.mockResolvedValue({
+        data: {
+          success: true,
+          requestId: "0b8e4f2a-6c3d-4e1f-8a7b-9c2d5e6f7a81",
+          subject: "Your sign-in code",
+          senderEmail: "noreply@example.com",
+        },
+      });
+
+      render(EmailLinkAuth, {
+        compact,
+        email: "spinner@example.com",
+        sendOnOpen: true,
+      });
+
       await expect
-        .element(page.getByRole("status"))
-        .toHaveTextContent("Signed in");
+        .element(page.getByRole("textbox", { name: "Six-digit code" }))
+        .toHaveFocus();
+      expect(mocks.sendMagicLink).toHaveBeenCalledWith(
+        expect.objectContaining({ email: "spinner@example.com" })
+      );
     });
   }
 );

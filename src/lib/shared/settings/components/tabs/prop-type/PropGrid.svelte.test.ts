@@ -67,7 +67,7 @@ describe("PropGrid fan look credit", () => {
     expect(document.querySelector(".rail-credit")).toBeNull();
   });
 
-  it("offers the global 3D model choice in a captured prop's rail", async () => {
+  it("offers the global Realistic choice in a captured prop's rail", async () => {
     const onPropLookChange = vi.fn();
     render(PropGrid, {
       selectedPropType: PropType.STAFF,
@@ -80,7 +80,7 @@ describe("PropGrid fan look credit", () => {
     });
 
     await page.getByTestId("prop-look-chip").click();
-    const model = page.getByRole("radio", { name: "3D model" });
+    const model = page.getByRole("radio", { name: "Realistic" });
     const pictograph = page.getByRole("radio", { name: "Pictograph" });
     await expect.element(model).toBeVisible();
     await expect.element(pictograph).toHaveAttribute("aria-checked", "true");
@@ -107,8 +107,8 @@ describe("PropGrid fan look credit", () => {
     for (const name of [
       "Triad prop type",
       "Trigeng prop type",
-      "Triad 3D",
-      "Trigeng 3D",
+      "Triad 3D prop type",
+      "Trigeng 3D prop type",
     ]) {
       await expect
         .element(
@@ -121,10 +121,49 @@ describe("PropGrid fan look credit", () => {
     ).toHaveLength(0);
 
     await page
-      .getByRole("button", { name: "Select Trigeng 3D", exact: true })
+      .getByRole("button", { name: "Select Trigeng 3D prop type", exact: true })
       .click();
     expect(onSelect).toHaveBeenCalledWith(PropType.TRIGENG);
     expect(onPropLookChange).toHaveBeenCalledWith("model");
+  });
+
+  // The grip once sat alone on a Triangle details page one level further
+  // down. It belongs on the styles page where the Triangle is picked.
+  it("keeps a picked Triangle on its styles page, with its grip there", async () => {
+    const onSelect = vi.fn();
+    const onTriangleGripChange = vi.fn();
+    const { rerender } = render(PropGrid, {
+      selectedPropType: PropType.MINIHOOP,
+      onSelect,
+      allowedProps: [PropType.MINIHOOP, PropType.BIGHOOP, PropType.TRIANGLE],
+      fanAppearance: { build: "fire", frameColor: "black", cover: "bare" },
+      onFanAppearanceChange: vi.fn(),
+      triangleGrip: "corner",
+      onTriangleGripChange,
+    });
+
+    await page.getByRole("button", { name: "Choose Mini Hoop style" }).click();
+    const styles = page.getByRole("region", { name: "Mini Hoop styles" });
+    await expect.element(styles).toBeVisible();
+    expect(styles.getByRole("group", { name: "Triangle grip" }).elements())
+      .toHaveLength(0);
+
+    await page
+      .getByRole("button", { name: "Select Triangle prop type", exact: true })
+      .click();
+    expect(onSelect).toHaveBeenLastCalledWith(PropType.TRIANGLE);
+    await rerender({ selectedPropType: PropType.TRIANGLE });
+
+    const side = styles.getByRole("button", { name: "Side", exact: true });
+    await expect.element(side).toBeVisible();
+    // Past the page swap a details page would take.
+    await new Promise((resolve) => setTimeout(resolve, 600));
+    expect(
+      document.querySelector('section[aria-label="Triangle details"]')
+    ).toBeNull();
+
+    await side.click();
+    expect(onTriangleGripChange).toHaveBeenCalledWith("side");
   });
 
   it("selects Buugeng and replaces the root grid with its persistent details", async () => {
@@ -150,13 +189,13 @@ describe("PropGrid fan look credit", () => {
       .element(page.getByRole("radio", { name: "Pictograph" }))
       .toHaveAttribute("aria-checked", "true");
     await expect
-      .element(page.getByRole("radio", { name: "3D model" }))
+      .element(page.getByRole("radio", { name: "Realistic" }))
       .toBeVisible();
     await expect
       .element(page.getByRole("button", { name: "Big" }))
       .toBeVisible();
 
-    await page.getByRole("radio", { name: "3D model" }).click();
+    await page.getByRole("radio", { name: "Realistic" }).click();
     expect(onPropLookChange).toHaveBeenCalledWith("model");
 
     await page.getByRole("button", { name: "Back to all props" }).click();
@@ -164,7 +203,7 @@ describe("PropGrid fan look credit", () => {
       .element(page.getByRole("button", { name: "Select Buugeng prop type" }))
       .toBeVisible();
     await expect
-      .element(page.getByRole("radio", { name: "3D model" }))
+      .element(page.getByRole("radio", { name: "Realistic" }))
       .not.toBeInTheDocument();
   });
 });
