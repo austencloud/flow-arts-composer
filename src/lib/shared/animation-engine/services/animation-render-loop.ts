@@ -2049,6 +2049,7 @@ export class AnimationRenderLoop {
               : undefined,
           tunnelSpectrum: props.tunnelSpectrum ?? true,
           tunnelPropColors: props.tunnelPropColors,
+          primaryPropColors: params.primaryPropColors,
         };
 
         const allLeds = this.toFrameLeds(

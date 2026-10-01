@@ -112,7 +112,7 @@ const KEYS: Readonly<Record<string, TranslationKey>> = {
   Campfire: "effect_deep_name_campfire",
   Bubbles: "effect_deep_name_bubbles",
   "Breathing green tips": "effect_deep_name_breathing_green_tips",
-  "Blue and red shaft ends": "effect_deep_name_blue_and_red_shaft_ends",
+  "One color per hand": "effect_deep_name_blue_and_red_shaft_ends",
   "Blue Flame": "effect_deep_name_blue_flame",
   Bloom: "effect_deep_name_bloom",
   "Banked Ember": "effect_deep_name_banked_ember",
