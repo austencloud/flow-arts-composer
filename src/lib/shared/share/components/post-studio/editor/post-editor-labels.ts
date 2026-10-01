@@ -80,7 +80,7 @@ export const TOOL_ICON: Record<PostToolId, string> = {
   sequence: "fa-shuffle",
   text: "fa-font",
   rename: "fa-pen",
-  back: "fa-arrow-left",
+  back: "fa-xmark",
   split: "fa-scissors",
   tutorial: "fa-wand-magic-sparkles",
   template: "fa-copy",
