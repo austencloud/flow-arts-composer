@@ -126,6 +126,7 @@
   // the panel drops you - landing in it is the same trap as navigating on
   // select, just triggered by boot instead of a click.
   let sidebarDetailOpen = $state(preferSelectedDetail);
+  let detailOpen = $state(preferSelectedDetail);
 
   // ── Catalog and roster (fill hosts) ────────────────────────────────────────
   // In a card wide enough for four pictures across, every tile shows a picture
@@ -441,9 +442,9 @@
     return snapshot;
   }
 
-  // Desktop customize components mutate the shared effects state directly. A
-  // primitive-field diff keeps those controls observable without exporting a
-  // config blob. Mobile tuning reports at the shared control primitive below.
+  // Rich customize components (including LED) mutate effects state directly.
+  // Observe them whenever their controls are visible so scoped hosts can save
+  // the edit and update their preview.
   let observedCustomizationEffect: EffectId | null = null;
   let customizationSnapshot: Record<string, SettingValue> | null = null;
   function syncCustomizationSnapshot(): void {
@@ -453,10 +454,15 @@
   }
   $effect(() => {
     void effectsConfigState.version;
+    const richTuningVisible =
+      activeEffect !== "none" &&
+      isEffectId(activeEffect) &&
+      primaryControls(activeEffect, "2d").length === 0 &&
+      ((layout === "sidebar" && (wideWorkspace || sidebarDetailOpen)) ||
+        (layout === "strip" && detailOpen));
     if (
       !onSettingChange ||
-      layout === "strip" ||
-      !customizeOpen ||
+      (!customizeOpen && !richTuningVisible) ||
       activeEffect === "none" ||
       !isEffectId(activeEffect)
     ) {
@@ -545,8 +551,6 @@
   // already-active tile drills into its detail screen (looks + primary slider +
   // More tuning). An explicit Off tile replaces the old tap-again-to-disable
   // toggle, which the drill gesture now owns.
-  let detailOpen = $state(preferSelectedDetail);
-
   const stripView = $derived<"picker" | "detail" | "customize">(
     customizeOpen && CustomizeComponent
       ? "customize"
