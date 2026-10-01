@@ -1,5 +1,8 @@
 <script lang="ts">
-  import { onDestroy, untrack } from "svelte";
+  import { onDestroy, onMount, untrack } from "svelte";
+  import Drawer from "$lib/shared/foundation/ui/Drawer.svelte";
+  import DrawerHeader from "$lib/shared/foundation/ui/DrawerHeader.svelte";
+  import { responsiveLayoutManager } from "$lib/shared/create/services/responsive-layout-manager";
   import DisplayPanel from "$lib/shared/animation-engine/components/settings-panels/DisplayPanel.svelte";
   import PathShapePanel from "$lib/shared/animation-engine/components/settings-panels/PathShapePanel.svelte";
   import EffortPanel from "$lib/shared/animation-engine/components/settings-panels/EffortPanel.svelte";
@@ -121,6 +124,48 @@
           ((timingSection.landingHoldRatio ?? 0) > 0 ||
             timingSection.overrides.length > 0)
   );
+  let timingDetailsOpen = $state(false);
+  let sideBySide = $state(false);
+  onMount(() => {
+    const update = () =>
+      (sideBySide = responsiveLayoutManager.shouldUseSideBySideLayout());
+    update();
+    return responsiveLayoutManager.onLayoutChange(update);
+  });
+  const timingSummary = $derived.by(() => {
+    const parts = item
+      ? customParts
+      : timingSection
+        ? [
+            {
+              landingHoldRatio: timingSection.landingHoldRatio ?? 0,
+              movedLandings: timingSection.overrides.length,
+            },
+          ]
+        : [];
+    const holds = [
+      ...new Set(
+        parts.map((part) => part.landingHoldRatio).filter((ratio) => ratio > 0)
+      ),
+    ];
+    const moved = parts.reduce((sum, part) => sum + part.movedLandings, 0);
+    const details: string[] = [];
+    if (holds.length === 1)
+      details.push(Math.round(holds[0]! * 100) + "% landing hold");
+    else if (holds.length > 1) details.push("Varying landing holds");
+    if (moved > 0)
+      details.push(
+        moved + (moved === 1 ? " adjusted landing" : " adjusted landings")
+      );
+    if (
+      item &&
+      timingParts.some(
+        (part) => part.landingHoldRatio === 0 && part.movedLandings === 0
+      )
+    )
+      details.push("part of this layer");
+    return details.join(" · ");
+  });
   const otherCustomLayer = $derived.by(() => {
     if (!item) return null;
     const candidates = editor.project.tracks
@@ -412,62 +457,26 @@
           {/snippet}
         </PostAppearanceChooser>
       {:else if activeSection === "efforts"}
-        <div class="movement-summary" aria-live="polite">
-          <div class="movement-heading">
-            <strong>{item ? `Selected: ${appliedScope}` : appliedScope}</strong>
-            {#if hasCustomTiming}<span class="custom-badge">Custom timing</span
-              >{/if}
-          </div>
-          <p>
-            {hasCustomTiming ? "Base movement" : "Movement"}: {appliedEffortLabel}
-          </p>
-          {#if !item && timingSection}
-            <p class="preview-detail">
-              {timingSectionLabel ?? "Selected section"}
-              {#if (timingSection.landingHoldRatio ?? 0) > 0}
-                · {Math.round((timingSection.landingHoldRatio ?? 0) * 100)}%
-                landing hold
-              {/if}
-              {#if timingSection.overrides.length > 0}
-                · {timingSection.overrides.length}
-                {timingSection.overrides.length === 1 ? "landing" : "landings"} moved
-                by hand
-              {/if}
-            </p>
-          {/if}
-          {#if customParts.length > 0}
-            <ul>
-              {#each timingParts as part (`${part.takeId}:${part.sectionIndex}:${part.start}`)}
-                <li>
-                  {#if timingParts.length > 1}
-                    {editor.takes.find((take) => take.id === part.takeId)
-                      ?.label ?? "Take"}
-                    · {part.start.toFixed(1)}–{part.end.toFixed(1)}s:
-                  {/if}
-                  {part.landingHoldRatio > 0
-                    ? `${Math.round(part.landingHoldRatio * 100)}% landing hold`
-                    : "No landing hold"}{part.movedLandings > 0
-                    ? ` · ${part.movedLandings} ${part.movedLandings === 1 ? "landing" : "landings"} moved by hand`
-                    : ""}
-                </li>
-              {/each}
-            </ul>
-          {/if}
-          {#if otherCustomLayer}
-            <button
-              class="other-layer"
-              type="button"
-              onclick={() =>
-                (editor.selectedItemId = otherCustomLayer!.item.id)}
-            >
-              View {otherCustomLayer.item.label ??
-                itemDisplayLabel(otherCustomLayer.item, editor.project)}
-              · {otherEffortLabel}{otherCustomLayer.part.landingHoldRatio > 0
-                ? ` + ${Math.round(otherCustomLayer.part.landingHoldRatio * 100)}% hold`
-                : " + custom timing"}
-            </button>
-          {/if}
-        </div>
+        <button
+          class="movement-overview"
+          type="button"
+          aria-haspopup="dialog"
+          onclick={() => (timingDetailsOpen = true)}
+        >
+          <span class="movement-heading"
+            ><strong
+              >{hasCustomTiming
+                ? "Custom timing"
+                : "Movement: " + appliedEffortLabel}</strong
+            ><span aria-hidden="true">›</span></span
+          >
+          <span
+            >{appliedScope}{hasCustomTiming
+              ? " · Base: " + appliedEffortLabel
+              : ""}</span
+          >
+          {#if hasCustomTiming}<span>{timingSummary}</span>{/if}
+        </button>
         <PostAppearanceChooser
           title={hasCustomTiming
             ? "Base movement and paths"
@@ -522,7 +531,106 @@
   {/if}
 </div>
 
+<Drawer
+  bind:isOpen={timingDetailsOpen}
+  placement={sideBySide ? "right" : "bottom"}
+  ariaLabel="Movement timing"
+  showHandle={!sideBySide}
+>
+  <DrawerHeader
+    title="Movement timing"
+    onBack={() => (timingDetailsOpen = false)}
+    onClose={() => (timingDetailsOpen = false)}
+  />
+  <div class="timing-details">
+    <div class="movement-summary" aria-live="polite">
+      <div class="movement-heading">
+        <strong>{item ? `Selected: ${appliedScope}` : appliedScope}</strong>
+        {#if hasCustomTiming}<span class="custom-badge">Custom timing</span
+          >{/if}
+      </div>
+      <p>
+        {hasCustomTiming ? "Base movement" : "Movement"}: {appliedEffortLabel}
+      </p>
+      {#if !item && timingSection}
+        <p class="preview-detail">
+          {timingSectionLabel ?? "Selected section"}
+          {#if (timingSection.landingHoldRatio ?? 0) > 0}
+            · {Math.round((timingSection.landingHoldRatio ?? 0) * 100)}% landing
+            hold
+          {/if}
+          {#if timingSection.overrides.length > 0}
+            · {timingSection.overrides.length}
+            {timingSection.overrides.length === 1 ? "landing" : "landings"} moved
+            by hand
+          {/if}
+        </p>
+      {/if}
+      {#if customParts.length > 0}
+        <ul>
+          {#each timingParts as part (`${part.takeId}:${part.sectionIndex}:${part.start}`)}
+            <li>
+              {#if timingParts.length > 1}
+                {editor.takes.find((take) => take.id === part.takeId)?.label ??
+                  "Take"}
+                · {part.start.toFixed(1)}–{part.end.toFixed(1)}s:
+              {/if}
+              {part.landingHoldRatio > 0
+                ? `${Math.round(part.landingHoldRatio * 100)}% landing hold`
+                : "No landing hold"}{part.movedLandings > 0
+                ? ` · ${part.movedLandings} ${part.movedLandings === 1 ? "landing" : "landings"} moved by hand`
+                : ""}
+            </li>
+          {/each}
+        </ul>
+      {/if}
+      {#if otherCustomLayer}
+        <button
+          class="other-layer"
+          type="button"
+          onclick={() => {
+            editor.selectedItemId = otherCustomLayer!.item.id;
+            timingDetailsOpen = false;
+          }}
+        >
+          View {otherCustomLayer.item.label ??
+            itemDisplayLabel(otherCustomLayer.item, editor.project)}
+          · {otherEffortLabel}{otherCustomLayer.part.landingHoldRatio > 0
+            ? ` + ${Math.round(otherCustomLayer.part.landingHoldRatio * 100)}% hold`
+            : " + custom timing"}
+        </button>
+      {/if}
+    </div>
+  </div>
+</Drawer>
+
 <style>
+  .movement-overview {
+    flex: none;
+    display: grid;
+    gap: 0.25rem;
+    width: 100%;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid var(--theme-stroke, #484755);
+    border-radius: 0.625rem;
+    background: var(--theme-card-bg, #181820);
+    color: var(--theme-text, #fff);
+    font: inherit;
+    font-size: var(--font-size-sm, 0.875rem);
+    text-align: left;
+    cursor: pointer;
+  }
+  .movement-overview .movement-heading {
+    justify-content: space-between;
+  }
+  .movement-overview:focus-visible {
+    outline: 2px solid var(--theme-accent, currentColor);
+    outline-offset: 2px;
+  }
+  .timing-details {
+    padding: 0 1rem 1rem;
+  }
+
   .appearance-tool {
     display: flex;
     flex-direction: column;
