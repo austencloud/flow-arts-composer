@@ -39,6 +39,17 @@ describe("clampPixelsPerSecond", () => {
       POST_TIMELINE_DEFAULT_PIXELS_PER_SECOND
     );
   });
+
+  it("zooms smoothly from a fitted long timeline without jumping to the usual minimum", () => {
+    const fitZoom = fitPixelsPerSecond(77.69, 220);
+    expect(clampPixelsPerSecond(fitZoom * 1.25, fitZoom)).toBeCloseTo(
+      fitZoom * 1.25
+    );
+    expect(clampPixelsPerSecond(fitZoom / 1.25, fitZoom)).toBe(fitZoom);
+    expect(clampPixelsPerSecond(1, 100)).toBe(
+      POST_TIMELINE_MIN_PIXELS_PER_SECOND
+    );
+  });
 });
 
 describe("secondsToPixels / pixelsToSeconds", () => {
@@ -76,18 +87,29 @@ describe("fitPixelsPerSecond", () => {
     );
   });
 
-  it("clamps a fit that would zoom out past the minimum", () => {
-    // A 10,000-second post in a 500px viewport would ask for 0.05px/s.
-    expect(fitPixelsPerSecond(10_000, 500)).toBe(
-      POST_TIMELINE_MIN_PIXELS_PER_SECOND
-    );
-  });
+  it.each([
+    [77.69, 220],
+    [10_000, 500],
+  ])(
+    "fits the entire %s-second post in %s pixels even below the usual minimum",
+    (duration, width) => {
+      const zoom = fitPixelsPerSecond(duration, width);
+      expect(zoom).toBeLessThan(POST_TIMELINE_MIN_PIXELS_PER_SECOND);
+      expect(secondsToPixels(duration, zoom)).toBeCloseTo(width);
+    }
+  );
 
   it("falls back to the default when there is nothing to fit yet", () => {
     expect(fitPixelsPerSecond(0, 1000)).toBe(
       POST_TIMELINE_DEFAULT_PIXELS_PER_SECOND
     );
     expect(fitPixelsPerSecond(10, 0)).toBe(
+      POST_TIMELINE_DEFAULT_PIXELS_PER_SECOND
+    );
+    expect(fitPixelsPerSecond(Infinity, 500)).toBe(
+      POST_TIMELINE_DEFAULT_PIXELS_PER_SECOND
+    );
+    expect(fitPixelsPerSecond(10, Infinity)).toBe(
       POST_TIMELINE_DEFAULT_PIXELS_PER_SECOND
     );
   });
