@@ -125,6 +125,11 @@ interface ProgressResponse {
   frameIndex: number;
 }
 
+interface DequeuedResponse {
+  type: "dequeued";
+  frameCount: number;
+}
+
 interface CompleteResponse {
   type: "complete";
   buffer: ArrayBuffer;
@@ -138,6 +143,7 @@ interface ErrorResponse {
 export type ExportWorkerResponse =
   | ReadyResponse
   | ProgressResponse
+  | DequeuedResponse
   | CompleteResponse
   | ErrorResponse;
 
@@ -200,6 +206,8 @@ let encoderErrored = false;
  * counter parked at the end the whole time. Count what has landed instead.
  */
 let encodedFrames = 0;
+let acceptedFrames = 0;
+let dequeuedFrames = 0;
 let frameDurationMicros = 0;
 let encoderWidth = 0;
 let encoderHeight = 0;
@@ -252,6 +260,30 @@ function selectCodecAv1(
   if (pixelArea <= 2_073_600) return `av01.1.08M.${bitDepth}`;
   if (pixelArea <= 8_912_896) return `av01.1.13M.${bitDepth}`;
   return `av01.1.16M.${bitDepth}`;
+}
+
+export async function selectSupportedEncoderConfig(
+  baseConfig: VideoEncoderConfig,
+  useAv1: boolean,
+  isSupported: (config: VideoEncoderConfig) => Promise<boolean>
+): Promise<VideoEncoderConfig> {
+  const bitDepths = useAv1 ? (["10", "08"] as const) : (["10"] as const);
+  for (const bitDepth of bitDepths) {
+    for (const hardwareAcceleration of [
+      "prefer-hardware",
+      "no-preference",
+    ] as const) {
+      const candidate = {
+        ...baseConfig,
+        codec: useAv1
+          ? selectCodecAv1(baseConfig.width, baseConfig.height, bitDepth)
+          : baseConfig.codec,
+        hardwareAcceleration,
+      };
+      if (await isSupported(candidate).catch(() => false)) return candidate;
+    }
+  }
+  return { ...baseConfig, hardwareAcceleration: "no-preference" };
 }
 
 /**
@@ -360,6 +392,17 @@ function cleanup(): void {
   sourceHeight = 0;
   encoderErrored = false;
   encodedFrames = 0;
+  acceptedFrames = 0;
+  dequeuedFrames = 0;
+}
+
+function reportDequeuedFrames(): void {
+  if (!encoder || cancelled || encoderErrored) return;
+  const count = acceptedFrames - encoder.encodeQueueSize;
+  if (count > dequeuedFrames) {
+    dequeuedFrames = count;
+    post({ type: "dequeued", frameCount: count });
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -449,21 +492,10 @@ async function handleConfigWebCodecs(config: ExportConfig): Promise<void> {
       });
     },
   });
+  encoder.ondequeue = reportDequeuedFrames;
 
-  // Omit `hardwareAcceleration` entirely - this is the spec default
-  // (`"no-preference"`) and it's what production encoders should use.
-  //
-  // Why NOT "prefer-hardware":
-  // The older version of this config forced "prefer-hardware" to save
-  // a few ms/frame. In practice that choice was invisible compared to
-  // its downside: hardware H.264 encoders have tight internal queues and
-  // enter the closed state the moment a complex scene (collision lab,
-  // full audience, multi-performer effects) overwhelms them. Once closed,
-  // there's no recovery - the entire export fails near 100%.
-  //
-  // With "no-preference" the browser picks hardware when it's safe and
-  // transparently uses software when it isn't, which is exactly the
-  // correctness/speed tradeoff we actually want.
+  // Ask for hardware when supported. The bounded frame queue below keeps
+  // hardware encoders from being flooded; quality mode still preserves frames.
   const baseConfig: VideoEncoderConfig = {
     codec: useAv1
       ? selectCodecAv1(encoderWidth, encoderHeight, "10")
@@ -482,27 +514,19 @@ async function handleConfigWebCodecs(config: ExportConfig): Promise<void> {
     // CBR keeps the dark regions clean — the visible noise lever alongside
     // 10-bit depth.
     bitrateMode: "constant",
+    hardwareAcceleration: "prefer-hardware",
   };
 
-  // Probe support and degrade gracefully. AV1 10-bit + CBR is the max-fidelity
-  // target, but not every platform AV1 encoder offers 10-bit; fall back to
-  // 8-bit (still 4:4:4 CBR) rather than failing the export. If even that probe
-  // is unsupported, fall through to the base config and let configure() throw
-  // its own descriptive error.
-  let encoderConfig = baseConfig;
-  if (useAv1) {
-    const tenBitOk = await VideoEncoder.isConfigSupported(baseConfig)
-      .then((r) => r.supported === true)
-      .catch(() => false);
-    if (!tenBitOk) {
-      encoderConfig = {
-        ...baseConfig,
-        codec: selectCodecAv1(encoderWidth, encoderHeight, "08"),
-      };
-    }
-  }
+  // Keep 10-bit AV1 when software supports it, even if hardware only supports
+  // 8-bit. For each fidelity tier, ask for hardware before the safe fallback.
+  const encoderConfig = await selectSupportedEncoderConfig(
+    baseConfig,
+    useAv1,
+    async (candidate) =>
+      (await VideoEncoder.isConfigSupported(candidate)).supported === true
+  );
 
-  await encoder.configure(encoderConfig);
+  encoder.configure(encoderConfig);
 }
 
 function handleFrameWebCodecs(msg: FrameMessageLegacy): void {
@@ -540,6 +564,8 @@ function handleFrameWebCodecs(msg: FrameMessageLegacy): void {
   });
 
   encoder.encode(frame, { keyFrame: msg.isKeyframe });
+  acceptedFrames += 1;
+  reportDequeuedFrames();
 
   // Close immediately to free GPU/memory resources
   frame.close();
@@ -583,6 +609,8 @@ function handleFrameCapturedWebCodecs(msg: FrameMessageCaptured): void {
     }
 
     encoder.encode(videoFrame, { keyFrame: msg.isKeyframe });
+    acceptedFrames += 1;
+    reportDequeuedFrames();
   } catch (err) {
     // Defensive: if encode() throws synchronously (e.g. the codec entered
     // the closed state between our state check above and this call), flip
@@ -803,6 +831,7 @@ function handleFrame(msg: FrameMessage): void {
       handleFrameCapturedWebCodecs(msg);
     } else {
       handleFrameCapturedWasm(msg);
+      post({ type: "dequeued", frameCount: ++dequeuedFrames });
       post({ type: "progress", frameIndex: msg.frameIndex });
     }
     return;
@@ -813,6 +842,7 @@ function handleFrame(msg: FrameMessage): void {
     handleFrameWebCodecs(msg);
   } else {
     handleFrameWasm(msg);
+    post({ type: "dequeued", frameCount: ++dequeuedFrames });
     post({ type: "progress", frameIndex: msg.frameIndex });
   }
 }

@@ -31,6 +31,7 @@ export interface ExportPostStudioVideoInput {
   originalAudioStartSeconds?: number;
   onProgress?: (progress: PostStudioExportProgress) => void;
   shouldCancel?: () => boolean;
+  signal?: AbortSignal;
 }
 
 function nextPaint(): Promise<void> {
@@ -95,7 +96,8 @@ export async function exportPostStudioVideo(
     });
 
     for (let frameIndex = 0; frameIndex < totalFrames; frameIndex++) {
-      if (input.shouldCancel?.()) throw new Error("Export cancelled");
+      if (input.signal?.aborted || input.shouldCancel?.())
+        throw new Error("Export cancelled");
       const timeSeconds = Math.min(
         input.durationSeconds,
         frameIndex / frameRate
@@ -119,7 +121,7 @@ export async function exportPostStudioVideo(
         frameIndex,
         frameIndex % Math.max(1, Math.round(frameRate * 2)) === 0
       );
-      await encoder.waitForFrameQueue(6);
+      await encoder.waitForFrameQueue(6, input.signal);
       input.onProgress?.({
         completedFrames: frameIndex + 1,
         totalFrames,
