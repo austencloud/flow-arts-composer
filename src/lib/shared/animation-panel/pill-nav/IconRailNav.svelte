@@ -35,6 +35,7 @@
     alignment = "center",
     reservedSlots = 0,
     orientation = "vertical",
+    compact = false,
     ariaLabel,
     panelIdPrefix,
   }: {
@@ -46,6 +47,9 @@
     /** Reserve mode-specific slots without moving the common section buttons. */
     reservedSlots?: number;
     orientation?: "vertical" | "horizontal";
+    /** Horizontal only: shorter pills (56px instead of 72px) for a host short
+     *  on height. The icon still sits above its name. */
+    compact?: boolean;
     ariaLabel?: string;
     /** Connect a consumer-owned tab panel to its section button. */
     panelIdPrefix?: string;
@@ -104,6 +108,7 @@
 <div
   class="icon-rail"
   class:horizontal={orientation === "horizontal"}
+  class:compact={compact && orientation === "horizontal"}
   class:align-start={alignment === "start"}
   class:reserved-slots={reservedSlots > 0}
   style:--rail-slots={Math.max(reservedSlots, pills.length)}
@@ -303,6 +308,12 @@
   .horizontal .rail-copy {
     display: block;
     max-width: 100%;
+  }
+
+  .horizontal.compact .rail-btn {
+    height: 56px;
+    gap: 2px;
+    padding: 4px 2px;
   }
 
   .horizontal .rail-label {
