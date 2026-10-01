@@ -40,6 +40,7 @@
     onAppearanceChange,
     appearanceKey,
     locked,
+    fill = false,
     defaultPropType = PropType.STAFF,
   }: {
     editor: PostEditorState;
@@ -51,6 +52,8 @@
     ) => void;
     appearanceKey?: string;
     locked: boolean;
+    /** Fit the editor's bounded tool area; mapping accordions stay intrinsic. */
+    fill?: boolean;
     defaultPropType?: PropType;
   } = $props();
 
@@ -214,86 +217,105 @@
   }
 </script>
 
-{#if locked}
-  <p>Unlock this layer to change its appearance.</p>
-{:else}
-  <div class="section-navigation">
-    <IconRailNav
-      pills={sections}
-      activeId={activeSection}
-      onSelect={(section) => (activeSection = section)}
-      orientation="horizontal"
-      compact
-      panelIdPrefix={id}
-      ariaLabel="Animation appearance"
-    />
-  </div>
-  <div
-    class="section-content"
-    class:display={activeSection === "display"}
-    id="{id}-{activeSection}-panel"
-    role="tabpanel"
-    aria-labelledby="{id}-{activeSection}-tab"
-    tabindex="0"
-  >
-    {#if activeSection === "props"}
-      <BentoPropGrid
-        selectedPropType={pickedPropType ?? defaultPropType}
-        onSelect={(propType) => {
-          pickedPropType = propType;
-          save();
-        }}
-        showColors={false}
-        showPropLook={false}
-        showAppearance={false}
-        scrollMode="host"
-        variant="inline"
-        flat
-        tileDensity="comfortable"
-      />
-    {:else if activeSection === "effects"}
-      <PostScopedEffectsPanel
-        effects={trailEffects}
-        animationSettingsState={trailSettings}
-        onSettingChange={saveEffects}
-      />
-    {:else if activeSection === "efforts"}
-      <PathShapePanel visibilityManagerOverride={visibility} showHelp={false} />
-      <div class="effort-section">
-        <h3>Movement style</h3>
-        <EffortPanel visibilityManagerOverride={visibility} columns={2} />
-      </div>
-    {:else}
-      <div class="canvas-theme">
-        <span>Canvas theme</span>
-        <LightsToggleButton
-          lightsOn={!darkMode}
-          onToggle={() => {
-            visibility.setDarkMode(!darkMode);
-            darkMode = visibility.isDarkMode();
-          }}
-          showLabel
-        />
-      </div>
-      <DisplayPanel
+<div class="appearance-tool" class:fill>
+  {#if locked}
+    <p>Unlock this layer to change its appearance.</p>
+  {:else}
+    <div class="section-navigation">
+      <IconRailNav
+        pills={sections}
+        activeId={activeSection}
+        onSelect={(section) => (activeSection = section)}
+        orientation="horizontal"
         compact
-        sequence={editor.sequence}
-        propType={pickedPropType ?? defaultPropType}
-        visibilityManagerOverride={visibility}
-        animationSettingsOverride={trailSettings}
+        panelIdPrefix={id}
+        ariaLabel="Animation appearance"
       />
-    {/if}
-  </div>
-{/if}
+    </div>
+    <div
+      class="section-content"
+      class:display={activeSection === "display"}
+      id="{id}-{activeSection}-panel"
+      role="tabpanel"
+      aria-labelledby="{id}-{activeSection}-tab"
+      tabindex="0"
+    >
+      {#if activeSection === "props"}
+        <BentoPropGrid
+          selectedPropType={pickedPropType ?? defaultPropType}
+          onSelect={(propType) => {
+            pickedPropType = propType;
+            save();
+          }}
+          showColors={false}
+          showPropLook={false}
+          showAppearance={false}
+          scrollMode="host"
+          variant="inline"
+          flat
+          tileDensity="comfortable"
+        />
+      {:else if activeSection === "effects"}
+        <PostScopedEffectsPanel
+          effects={trailEffects}
+          animationSettingsState={trailSettings}
+          onSettingChange={saveEffects}
+        />
+      {:else if activeSection === "efforts"}
+        <PathShapePanel
+          visibilityManagerOverride={visibility}
+          showHelp={false}
+        />
+        <div class="effort-section">
+          <h3>Movement style</h3>
+          <EffortPanel visibilityManagerOverride={visibility} columns={2} />
+        </div>
+      {:else}
+        <div class="canvas-theme">
+          <span>Canvas theme</span>
+          <LightsToggleButton
+            lightsOn={!darkMode}
+            onToggle={() => {
+              visibility.setDarkMode(!darkMode);
+              darkMode = visibility.isDarkMode();
+            }}
+            showLabel
+          />
+        </div>
+        <DisplayPanel
+          {fill}
+          grow={fill}
+          compact
+          sequence={editor.sequence}
+          propType={pickedPropType ?? defaultPropType}
+          visibilityManagerOverride={visibility}
+          animationSettingsOverride={trailSettings}
+        />
+      {/if}
+    </div>
+  {/if}
+</div>
 
 <style>
+  .appearance-tool {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    min-width: 0;
+  }
+  .appearance-tool.fill {
+    flex: 1;
+    min-height: 0;
+  }
   .canvas-theme {
     display: flex;
+    flex: none;
     align-items: center;
     justify-content: space-between;
     gap: 0.75rem;
   }
   .section-navigation {
+    flex: none;
     padding: 0;
     background: var(--theme-panel-bg, #08080c);
   }
@@ -304,11 +326,15 @@
     min-width: 0;
     padding-bottom: 1rem;
   }
-  /* Display is the one section that has to fit the panel without scrolling,
-     in a panel that can be under 300px tall, so its rows sit closer. */
   .section-content.display {
+    display: flex;
+    flex-direction: column;
     gap: 0.5rem;
     padding-bottom: 0;
+  }
+  .fill .section-content.display {
+    flex: 1;
+    min-height: 0;
   }
   .section-content:focus-visible {
     outline: 2px solid var(--theme-accent, #8b6cff);
