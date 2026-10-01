@@ -49,7 +49,6 @@
     framingAt,
     isAnimated,
     opacityAt,
-    keyframeTimeOf,
   } from "$lib/shared/media-composition/domain/post-project-keyframes";
   import {
     POST_DEFAULT_EDGE_BORDER,
@@ -88,7 +87,6 @@
   import PostSourceGeometryTool from "./PostSourceGeometryTool.svelte";
   import { sourceCropAtRatio, sourceFillBox } from "./post-source-crop";
   import PostAnimationAppearanceTool from "./PostAnimationAppearanceTool.svelte";
-  import { timingVideoAt } from "../builder/post-timing-animation";
   import PostCardAppearanceTool from "./PostCardAppearanceTool.svelte";
   import PostSequenceActionsTool from "./PostSequenceActionsTool.svelte";
   import PostVideoColorTool from "./PostVideoColorTool.svelte";
@@ -146,14 +144,6 @@
     findItem(editor.project, item.id)?.trackIndex ?? 0
   );
   const trackId = $derived(editor.project.tracks[trackIndex]?.id ?? null);
-  const linkedItem = $derived(
-    item.anchor ? findItem(editor.project, item.anchor.itemId)?.item : null
-  );
-  const linkedTake = $derived(
-    linkedItem?.kind === "video"
-      ? editor.takes.find((take) => take.id === linkedItem.takeId)
-      : null
-  );
   const onMain = $derived(trackIndex === 0);
   const locked = $derived(editor.isLocked(item.id));
   const seconds = $derived(editor.previewSeconds);
@@ -163,39 +153,6 @@
     seconds >= item.start - POST_TIME_EPSILON &&
       seconds <= itemEnd(item) + POST_TIME_EPSILON
   );
-  const timingAt = $derived(withinSpan ? seconds : item.start);
-  const timingVideo = $derived(timingVideoAt(editor.project, timingAt));
-  const timingTake = $derived(
-    timingVideo
-      ? editor.takes.find((take) => take.id === timingVideo.takeId)
-      : null
-  );
-  const timing = $derived(
-    timingVideo ? editor.timing(timingVideo.takeId) : null
-  );
-  const timingSectionIndex = $derived.by(() => {
-    if (!timing || !timingVideo) return -1;
-    const mediaSeconds = keyframeTimeOf(timingVideo, timingAt);
-    let index = 0;
-    timing.sections.forEach((section, candidate) => {
-      if (mediaSeconds >= section.startSeconds) index = candidate;
-    });
-    return index;
-  });
-  const timingSection = $derived(
-    timingSectionIndex >= 0
-      ? (timing?.sections[timingSectionIndex] ?? null)
-      : null
-  );
-  const movementScope = $derived.by(() => {
-    const label = item.label ?? itemDisplayLabel(item, editor.project);
-    const linked =
-      linkedTake && linkedTake.id !== timingTake?.id
-        ? ` · linked to ${linkedTake.label}`
-        : "";
-    const source = timingTake ? ` · timing from ${timingTake.label}` : "";
-    return `Selected ${label}${linked}${source}${withinSpan ? "" : " · at layer start"}`;
-  });
   /** Far enough inside that an edge moved to the playhead leaves a piece. */
   const playheadInside = $derived(
     seconds - item.start > POST_MIN_ITEM_SECONDS + POST_TIME_EPSILON &&
@@ -346,7 +303,13 @@
 
   function setCropZoom(zoom: number): void {
     onCropFramingControl?.();
-    if (crop) crop.setZoom(item.kind === "video" && (item.sourceGeometry || item.keyframes?.sourceGeometry?.length) ? Math.max(1, zoom) : zoom);
+    if (crop)
+      crop.setZoom(
+        item.kind === "video" &&
+          (item.sourceGeometry || item.keyframes?.sourceGeometry?.length)
+          ? Math.max(1, zoom)
+          : zoom
+      );
     else change("zoom", { zoom });
   }
 
@@ -420,15 +383,23 @@
       chosenSourceShape = kind;
       return;
     }
-    const next = kind === "fill"
-      ? sourceFillBox(geometry, source, output, channelValueAt(item, "box", seconds))
-      : sourceCropAtRatio(
-          geometry,
-          source,
-          output,
-          kind === "original" ? source.width / source.height : ratioValue(kind),
-          kind === "original"
-        );
+    const next =
+      kind === "fill"
+        ? sourceFillBox(
+            geometry,
+            source,
+            output,
+            channelValueAt(item, "box", seconds)
+          )
+        : sourceCropAtRatio(
+            geometry,
+            source,
+            output,
+            kind === "original"
+              ? source.width / source.height
+              : ratioValue(kind),
+            kind === "original"
+          );
     onCropSourceControl?.();
     editor.pause();
     editor.edit((project, ctx) =>
@@ -939,7 +910,13 @@
         onclick={toggleMirror}
       />
       {#if crop}
-        <PanelButton onclick={resetCrop} disabled={locked || frozen || (!crop.canReset && !(item.sourceGeometry || item.keyframes?.sourceGeometry?.length))}>
+        <PanelButton
+          onclick={resetCrop}
+          disabled={locked ||
+            frozen ||
+            (!crop.canReset &&
+              !(item.sourceGeometry || item.keyframes?.sourceGeometry?.length))}
+        >
           <i class="fa-solid fa-arrows-rotate" aria-hidden="true"></i>
           {t("post_editor_reset_crop")}
         </PanelButton>
@@ -1208,11 +1185,6 @@
       {editor}
       {item}
       {locked}
-      scopeLabel={movementScope}
-      {timingSection}
-      timingSectionLabel={timing && timing.sections.length > 1
-        ? `Part ${timingSectionIndex + 1} of ${timing.sections.length}`
-        : undefined}
       defaultPropType={cardRenderOptions?.propTypeOverride}
     />
   {:else if tool === "appearance" && item.kind === "card"}
