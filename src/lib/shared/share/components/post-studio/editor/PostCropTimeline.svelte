@@ -130,7 +130,10 @@
     anchorSeconds: number,
     anchorClientXPx: number
   ): void {
-    const clamped = clampPixelsPerSecond(requested);
+    const clamped = clampPixelsPerSecond(
+      requested,
+      fitPixelsPerSecond(length, viewportWidthPx - 2 * EDGE_PX)
+    );
     if (clamped === pixelsPerSecond) return;
     followFit = false;
     pixelsPerSecond = clamped;
