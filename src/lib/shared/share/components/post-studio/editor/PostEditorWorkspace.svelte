@@ -141,7 +141,7 @@
     readInShotRecoveryPackage,
     loadPostProjectFonts,
   } from "$lib/shared/media-composition/services/inshot-recovery-package";
-  import { createCropSession } from "./post-crop-session.svelte";
+  import { createCropSession, type CropShapeKind } from "./post-crop-session.svelte";
   import {
     createPostDraftAutosave,
     loadPostDraft,
@@ -888,6 +888,7 @@
     },
   });
   let cropSourceView = $state(true);
+  let cropSourceShape = $state<CropShapeKind | null>(null);
 
   /**
    * The crop stage's shape, so a wide screen gives the stage only the width
@@ -1195,6 +1196,7 @@
     seekInClip(editor.previewSeconds);
     cropReturn = activeTool === "crop" ? null : activeTool;
     cropSourceView = true;
+    cropSourceShape = null;
     cropFlight.capture();
     activeTool = "crop";
     await tick();
@@ -2253,6 +2255,7 @@
       {tool}
       crop={cropMode ? crop : null}
       {cropSourceView}
+      bind:chosenSourceShape={cropSourceShape}
       onCropFramingControl={() => (cropSourceView = false)}
       onCropSourceControl={() => (cropSourceView = true)}
       {staffTips}
@@ -2457,6 +2460,7 @@
                 {exporting}
                 crop={cropMode ? crop : null}
                 {cropSourceView}
+                keepSourceCropRatio={cropSourceShape !== "free"}
                 onSourceSize={noteSourceSize}
                 bind:root={canvasRoot}
               />

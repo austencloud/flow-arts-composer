@@ -54,7 +54,7 @@
     type PostVideoItem,
   } from "$lib/shared/media-composition/domain/post-project";
   import { updateItemAt } from "$lib/shared/media-composition/domain/post-project-edits";
-  import { dragSourceCrop, type SourceCropEdge } from "./post-source-crop";
+  import { dragSourceCrop, type SourceCropHandle } from "./post-source-crop";
   import {
     boxAt,
     channelValueAt,
@@ -155,6 +155,8 @@
     crop?: CropSession | null;
     /** Imported footage opens at its precise source edges; framing controls show the composed clip. */
     cropSourceView?: boolean;
+    /** Keep the current source aspect until Free is explicitly chosen. */
+    keepSourceCropRatio?: boolean;
     /** A region's footage has reported its own size. */
     onSourceSize?: (regionId: string, size: CropSize) => void;
     root?: HTMLElement | null;
@@ -172,6 +174,7 @@
     exporting = false,
     crop = null,
     cropSourceView = true,
+    keepSourceCropRatio = true,
     onSourceSize,
     root = $bindable(null),
   }: Props = $props();
@@ -1289,13 +1292,6 @@
     rotation: 0,
     crop: { left: 0, top: 0, right: 1, bottom: 1 },
   };
-  type SourceCropHandle =
-    | SourceCropEdge
-    | "move"
-    | "top-left"
-    | "top-right"
-    | "bottom-left"
-    | "bottom-right";
   let sourceDrag: {
     pointerId: number;
     captureTarget: HTMLElement;
@@ -1303,6 +1299,7 @@
     x: number;
     y: number;
     geometry: PostSourceGeometry;
+    keepRatio: boolean;
     itemId: string;
     seconds: number;
   } | null = null;
@@ -1360,6 +1357,7 @@
       x: event.clientX,
       y: event.clientY,
       geometry,
+      keepRatio: keepSourceCropRatio,
       itemId: cropItem.id,
       seconds: editor.previewSeconds,
     };
@@ -1370,24 +1368,13 @@
     if (!active || event.pointerId !== active.pointerId || !sourceRect) return;
     const dx = (event.clientX - active.x) / sourceRect.width;
     const dy = (event.clientY - active.y) / sourceRect.height;
-    const next = active.edge.includes("-")
-      ? dragSourceCrop(
-          dragSourceCrop(
-            active.geometry,
-            active.edge.endsWith("left") ? "left" : "right",
-            dx,
-            dy
-          ),
-          active.edge.startsWith("top") ? "top" : "bottom",
-          dx,
-          dy
-        )
-      : dragSourceCrop(
-          active.geometry,
-          active.edge as SourceCropEdge | "move",
-          dx,
-          dy
-        );
+    const next = dragSourceCrop(
+      active.geometry,
+      active.edge,
+      dx,
+      dy,
+      active.keepRatio
+    );
     editor.gestureStep((project, context) =>
       updateItemAt(
         project,
@@ -2454,7 +2441,7 @@
                 class="source-crop-edge {edge}"
                 aria-hidden="true"
                 onpointerdown={(event) =>
-                  beginSourceDrag(event, edge as SourceCropEdge)}
+                  beginSourceDrag(event, edge as SourceCropHandle)}
                 onpointermove={moveSourceDrag}
                 onpointerup={(event) => endSourceDrag(event, true)}
                 onpointercancel={(event) => endSourceDrag(event, false)}
