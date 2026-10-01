@@ -240,6 +240,27 @@
     }
   }
 
+  /* A short phone needs two shallow rows of choices to leave room for the
+     animation. Keep the icon and both name lines visible beside each other. */
+  @container shape-matrix-drill (max-width: 25rem) and (max-height: 40rem) {
+    .relationship-choice {
+      flex-direction: row;
+      gap: 0.25rem;
+      padding: 0.3rem 0.25rem;
+      text-align: left;
+    }
+
+    .choice-icon {
+      width: 1.55rem;
+      height: 1.55rem;
+    }
+
+    .choice-copy {
+      width: auto;
+      flex: 0 1 auto;
+    }
+  }
+
   @container shape-matrix-drill-compact (min-width: 42rem) and (min-aspect-ratio: 5 / 6) {
     .relationship-choice {
       flex-direction: row;
