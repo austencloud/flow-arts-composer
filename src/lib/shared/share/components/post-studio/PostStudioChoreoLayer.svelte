@@ -1,7 +1,6 @@
 <script lang="ts">
   import { onDestroy } from "svelte";
   import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import type { HandLabeling } from "$lib/shared/video-collaboration/domain/hand-labeling";
   import ChoreoCard from "$lib/shared/sequence-viewer/components/ChoreoCard.svelte";
   import type { SequenceExportOptions } from "$lib/shared/render/domain/models/sequence-export-options";
   import { isCardLayoutAutomatic } from "$lib/shared/share/services/card-render-options";
@@ -13,13 +12,11 @@
     sequence,
     displayedBeatNumber,
     cardRenderOptions = null,
-    handLabeling = null,
     qrSequence = sequence,
   }: {
     sequence: SequenceData;
     displayedBeatNumber?: number;
     cardRenderOptions?: Partial<SequenceExportOptions> | null;
-    handLabeling?: HandLabeling | null;
     /** The source behind a labeled `sequence`; what a scan of the card opens. */
     qrSequence?: SequenceData;
   } = $props();
@@ -59,7 +56,9 @@
     return {
       destroy: shared?.requestCard(owner, node, () => ({
         sequence,
-        handLabeling,
+        // The post's footer choice owns this line; viewer hand guidance must
+        // not replace its Off, Credit, or Custom selection.
+        handLabeling: null,
         qrSequence,
         highlightedStepIndex,
         options: cardRenderOptions,
@@ -73,7 +72,6 @@
   {#if !shared?.ownsCard(owner)}
     <ChoreoCard
       {sequence}
-      {handLabeling}
       {qrSequence}
       {highlightedStepIndex}
       showHighlight={highlightedStepIndex !== null}
