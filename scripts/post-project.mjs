@@ -78,6 +78,11 @@ const EDIT_COMMANDS = {
   }),
   "remove-hook": () => ({ op: "remove-hook" }),
   "line-up-hook": () => ({ op: "line-up-hook" }),
+  "add-titles": () => ({
+    op: "add-titles",
+    ...(option("spoken") !== undefined ? { spoken: option("spoken") } : {}),
+    ...number("at"),
+  }),
   "hook-speed": () => ({ op: "hook-speed", speed: positional(0, "a curve") }),
   appearance: () => ({
     op: "appearance",
@@ -243,6 +248,7 @@ try {
   add-hook [--seconds 5] [--fold 8] [--mirror] [--speed ease-out]
   remove-hook
   line-up-hook                 end the tunnel on the footage's opening pose, footage behind it
+  add-titles [--spoken "how to say it"] [--at N]   name titles clip, over the opening tunnel when there is one
   hook-speed <ease-out|ease-in|ease-in-out|linear|smooth|overshoot|default|x1,y1,x2,y2>
   appearance [--item hook|animations|all|ID] --set glyph=false ...  (keys: tkaGlyph stepNumbers gridMode progressBar ...; null clears)
   item --item ID --patch '{"opacity":0.5}'

@@ -108,7 +108,7 @@ export function toolRow(selection: PostToolSelection): PostToolId[] {
         "split",
         "appearance",
         "sequence",
-        ...(selection.isTunnelHook ? (["speed", "titles"] as const) : []),
+        ...(selection.isTunnelHook ? (["speed"] as const) : []),
         "timing",
         ...ITEM_TAIL,
       ];
@@ -124,6 +124,8 @@ export function toolRow(selection: PostToolSelection): PostToolId[] {
       ];
     case "text":
       return ["back", "split", "text", "timing", ...ITEM_TAIL];
+    case "titles":
+      return ["back", "titles", "timing", ...ITEM_TAIL];
     case "carousel":
       return ["back", "split", "timing", ...ITEM_TAIL];
     case "image":

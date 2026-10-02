@@ -21,7 +21,10 @@ import {
   sameChannelValue,
 } from "$lib/shared/media-composition/domain/post-project-keyframes";
 import type { PostTake } from "$lib/shared/media-composition/domain/post-plan";
-import { mergeSeparateTunnelHook } from "$lib/shared/media-composition/domain/post-project-hook-migration";
+import {
+  mergeSeparateTunnelHook,
+  splitTunnelHookTitles,
+} from "$lib/shared/media-composition/domain/post-project-hook-migration";
 
 /**
  * The timeline's rules, applied after every edit so the stored project is
@@ -42,7 +45,7 @@ import { mergeSeparateTunnelHook } from "$lib/shared/media-composition/domain/po
  * item re-renders only that item.
  */
 export function normalizeProject(stored: PostProject): PostProject {
-  const project = mergeSeparateTunnelHook(stored);
+  const project = splitTunnelHookTitles(mergeSeparateTunnelHook(stored));
   const takes = new Map(project.takes.map((take) => [take.id, take]));
   const main: PostTrack = project.tracks[MAIN_TRACK_INDEX] ?? {
     id: MAIN_TRACK_ID,

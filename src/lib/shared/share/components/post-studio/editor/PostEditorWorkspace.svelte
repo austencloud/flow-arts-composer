@@ -28,7 +28,6 @@
     takeRole,
   } from "$lib/shared/media-composition/domain/post-plan-compiler";
   import {
-    TUNNEL_TITLES_ROLE,
     itemIdFromMovesAnimationRole,
     itemIdFromStaffEffectRole,
     itemIdFromTextRole,
@@ -87,6 +86,7 @@
   import { createTextItemPainter } from "$lib/shared/media-composition/services/text-item-painter";
   import { createStaffEffectPainter } from "$lib/shared/media-composition/services/staff-effect-painter";
   import { createTunnelTitlesPainter } from "$lib/shared/media-composition/services/tunnel-titles-painter";
+  import { itemIdFromTitlesRole } from "$lib/shared/media-composition/domain/tunnel-titles";
   import { createStaffTipAnalysis } from "$lib/shared/media-composition/state/staff-tip-analysis.svelte";
   import { loadAnimationOverlayPainter } from "$lib/shared/media-composition/services/animation-overlay-painter-registry";
   import { planProjectAudio } from "$lib/shared/media-composition/domain/post-audio-plan";
@@ -519,12 +519,24 @@
     return painter;
   }
 
-  /** The sequence's name and the video's parts around the opening tunnel. */
-  const tunnelTitlesPainter = createTunnelTitlesPainter(
-    () => editor.compiled?.tunnelTitles ?? null,
-    () =>
-      simplifyRepeatedWord(displaySequence.word || deriveWord(displaySequence))
-  );
+  /** One painter per titles clip: the sequence's name and how to say it. */
+  const titlesPainters = new Map<string, PostStudioLayerPainter>();
+  function titlesPainterFor(itemId: string): PostStudioLayerPainter {
+    let painter = titlesPainters.get(itemId);
+    if (!painter) {
+      painter = createTunnelTitlesPainter(
+        () =>
+          editor.compiled?.titles.find((plan) => plan.itemId === itemId) ??
+          null,
+        () =>
+          simplifyRepeatedWord(
+            displaySequence.word || deriveWord(displaySequence)
+          )
+      );
+      titlesPainters.set(itemId, painter);
+    }
+    return painter;
+  }
 
   /** Where each take's LED staffs are, found once per video. */
   const staffTips = createStaffTipAnalysis();
@@ -658,6 +670,14 @@
         status: "ready",
       };
     }
+    const titlesItemId = itemIdFromTitlesRole(role);
+    if (titlesItemId) {
+      return painted(
+        role,
+        t("post_editor_kind_titles"),
+        titlesPainterFor(titlesItemId)
+      );
+    }
     if (itemIdFromMovesAnimationRole(role)) {
       return {
         roleKey: role,
@@ -697,8 +717,6 @@
           t("share_studio_deep_beat_carousel"),
           carouselPainter
         );
-      case TUNNEL_TITLES_ROLE:
-        return painted(role, t("post_tunnel_titles"), tunnelTitlesPainter);
       case ANIMATION_OVERLAY_ROLE:
         return overlayPainter
           ? painted(
@@ -739,8 +757,8 @@
       painters.set(textRole(text.itemId), textPainterFor(text.itemId));
     }
     if (overlayPainter) painters.set(ANIMATION_OVERLAY_ROLE, overlayPainter);
-    if (editor.compiled?.tunnelTitles) {
-      painters.set(TUNNEL_TITLES_ROLE, tunnelTitlesPainter);
+    for (const plan of editor.compiled?.titles ?? []) {
+      painters.set(plan.role, titlesPainterFor(plan.itemId));
     }
     for (const track of editor.project.tracks) {
       for (const item of track.items) {

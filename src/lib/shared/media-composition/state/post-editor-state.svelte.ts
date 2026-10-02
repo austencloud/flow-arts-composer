@@ -19,6 +19,7 @@ import {
 } from "$lib/shared/media-composition/domain/post-project";
 import {
   addOverlayItem,
+  addTitlesItem,
   addTake,
   addTunnelHook as addProjectTunnelHook,
   findTunnelHook,
@@ -1039,6 +1040,15 @@ export function createPostEditorState(deps: PostEditorDeps) {
     return result.itemId;
   }
 
+  /** Titles go over the opening tunnel when the post has one, else at `at`. */
+  function addTitles(at: number): string | null {
+    if (gestureBase) return null;
+    const result = addTitlesItem(project, context(), { at });
+    if (!result || !commit(result.project)) return null;
+    selectedItemId = result.itemId;
+    return result.itemId;
+  }
+
   /** The choreo card goes on the end of the main track, like the Tutorial's. */
   function addCard(): string | null {
     if (gestureBase) return null;
@@ -1479,6 +1489,7 @@ export function createPostEditorState(deps: PostEditorDeps) {
     deleteSelected,
     duplicateSelected,
     addOverlay,
+    addTitles,
     addCard,
     addTunnelHook,
     removeTunnelHook,

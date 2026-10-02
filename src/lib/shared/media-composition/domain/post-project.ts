@@ -40,6 +40,8 @@ export const POST_MIN_ITEM_SECONDS = 0.1;
 export const POST_MIN_BOX_SIZE = 0.05;
 export const POST_MAX_TEXT_LENGTH = 140;
 export const POST_MAX_LABEL_LENGTH = 60;
+/** Longest "how to say it" line a titles clip takes. */
+export const POST_MAX_SPOKEN_LENGTH = 60;
 export const POST_DEFAULT_CARD_SECONDS = 5;
 export const POST_DEFAULT_OVERLAY_SECONDS = 3;
 /** The export's frame rate; nudges step by one of its frames. */
@@ -671,6 +673,22 @@ export const PostTextItemSchema = z
 
 export type PostTextItem = z.infer<typeof PostTextItemSchema>;
 
+/**
+ * The sequence's name in its glyphs, with how to say it under the name. The
+ * words come in as the clip starts and lift away as it ends; see
+ * `tunnel-titles.ts`.
+ */
+export const PostTitlesItemSchema = z
+  .object({
+    ...itemBase,
+    kind: z.literal("titles"),
+    /** How to say the name, shown in quotes under it. */
+    spoken: z.string().max(POST_MAX_SPOKEN_LENGTH).optional(),
+  })
+  .strict();
+
+export type PostTitlesItem = z.infer<typeof PostTitlesItemSchema>;
+
 export const PostItemSchema = z.discriminatedUnion("kind", [
   PostVideoItemSchema,
   PostImageItemSchema,
@@ -679,6 +697,7 @@ export const PostItemSchema = z.discriminatedUnion("kind", [
   PostMovesItemSchema,
   PostCarouselItemSchema,
   PostTextItemSchema,
+  PostTitlesItemSchema,
 ]);
 
 export type PostItem = z.infer<typeof PostItemSchema>;
@@ -877,6 +896,8 @@ export function defaultBoxFor(kind: PostItemKind): PostBox {
       return { ...POST_BOX.stripCarousel };
     case "text":
       return textBox("top");
+    case "titles":
+      return { ...POST_BOX.full };
   }
 }
 

@@ -6,6 +6,7 @@ import {
   type PostProject,
 } from "$lib/shared/media-composition/domain/post-project";
 import {
+  addTitlesItem,
   addTunnelHook,
   deleteItem,
   findTunnelHook,
@@ -46,6 +47,7 @@ export type PostProjectOp =
     }
   | { op: "remove-hook" }
   | { op: "line-up-hook" }
+  | { op: "add-titles"; spoken?: string; at?: number }
   | { op: "hook-speed"; speed: string | number[] }
   | { op: "appearance"; item?: string; set: Record<string, unknown> }
   | { op: "item"; item: string; patch: PostItemPatch }
@@ -137,6 +139,14 @@ function applyOp(
       if (!findTunnelHook(project))
         throw new Error("This post has no opening tunnel.");
       return lineUpTunnelHook(project, ctx);
+    }
+    case "add-titles": {
+      const result = addTitlesItem(project, ctx, {
+        ...(op.at !== undefined ? { at: op.at } : {}),
+        ...(op.spoken !== undefined ? { spoken: op.spoken } : {}),
+      });
+      if (!result) throw new Error("The titles could not be placed.");
+      return result.project;
     }
     case "hook-speed": {
       if (!findTunnelHook(project))

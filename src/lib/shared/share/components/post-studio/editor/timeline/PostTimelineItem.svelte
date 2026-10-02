@@ -49,6 +49,7 @@
     moves: "fa-solid fa-arrows-up-down-left-right",
     carousel: "fa-solid fa-images",
     text: "fa-solid fa-font",
+    titles: "fa-solid fa-heading",
   };
 
   const speedLabel = $derived(

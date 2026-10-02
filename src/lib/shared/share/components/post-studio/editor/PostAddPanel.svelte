@@ -64,6 +64,12 @@
     if (editor.addCatalogVideo(video)) onAdded("video");
   }
 
+  function addTitles(): void {
+    editor.pause();
+    const at = newItemStart(editor.durationSeconds, editor.previewSeconds);
+    if (editor.addTitles(at)) onAdded("titles");
+  }
+
   function addCard(): void {
     editor.pause();
     if (editor.addCard()) onAdded("card");
@@ -116,6 +122,12 @@
           text: t("post_editor_text_placeholder"),
           size: TEXT_SIZE,
         }),
+    },
+    {
+      id: "titles",
+      icon: ITEM_KIND_ICON.titles,
+      label: itemKindLabel("titles"),
+      run: addTitles,
     },
     {
       id: "card",

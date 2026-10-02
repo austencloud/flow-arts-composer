@@ -8,6 +8,7 @@ import {
   POST_MAX_LABEL_LENGTH,
   POST_MIN_BOX_SIZE,
   POST_MAX_SPEED,
+  POST_MAX_SPOKEN_LENGTH,
   POST_MAX_TEXT_LENGTH,
   POST_MAX_VOLUME,
   POST_MAX_ZOOM,
@@ -80,10 +81,9 @@ import {
 import {
   DEFAULT_TUNNEL_HOOK,
   DEFAULT_TUNNEL_HOOK_SECONDS,
-  TUNNEL_SPOKEN_MAX_LENGTH,
   type TunnelHook,
-  type TunnelTitles,
 } from "$lib/shared/media-composition/domain/tunnel-hook";
+import { openingTitlesSpan } from "$lib/shared/media-composition/domain/tunnel-titles";
 
 /**
  * The timeline's edits. Each one is pure: it takes the project and returns
@@ -314,6 +314,7 @@ export type NewOverlayKind =
   | "carousel"
   | "card"
   | "text"
+  | "titles"
   | "video";
 
 export interface NewOverlaySpec {
@@ -326,6 +327,8 @@ export interface NewOverlaySpec {
   mode?: PostMovesMode;
   text?: string;
   size?: PostTextSize;
+  /** A titles clip's "how to say it" line. */
+  spoken?: string;
   overlay?: boolean;
   animationAppearance?: PostAnimationItem["animationAppearance"] | null;
   cardAppearance?: PostCardItem["cardAppearance"] | null;
@@ -402,6 +405,29 @@ export function addOverlayItem(
       ? withTrackItems(project, top, [...topTrack.items, item])
       : withNewTrackOnTop(project, item, nextId);
   return { project: finish(next, ctx), itemId: item.id };
+}
+
+/**
+ * Adds the sequence's name as a titles clip. Over the opening tunnel it spans
+ * the words' time with the tunnel; otherwise it starts at `at`.
+ */
+export function addTitlesItem(
+  project: PostProject,
+  ctx: EditContext,
+  init: { at?: number; spoken?: string } = {}
+): { project: PostProject; itemId: string } | null {
+  const opening = openingTitlesSpan(project);
+  return addOverlayItem(
+    project,
+    {
+      kind: "titles",
+      at: opening?.start ?? finiteOr(init.at ?? 0, 0),
+      ...(opening ? { duration: opening.duration } : {}),
+      ...(init.spoken !== undefined ? { spoken: init.spoken } : {}),
+      fill: false,
+    },
+    ctx
+  );
 }
 
 /** The animation that opens with the tunnel, when the post has one. */
@@ -707,32 +733,6 @@ export function setTunnelHookSpeed(
   if (!hook?.tunnelHook) return project;
   const { speed: _previous, ...rest } = hook.tunnelHook;
   const tunnelHook: TunnelHook = speed ? { ...rest, speed } : rest;
-  const tracks = project.tracks.map((track) => ({
-    ...track,
-    items: track.items.map((item) =>
-      item.id === hook.id ? { ...item, tunnelHook } : item
-    ),
-  }));
-  return finish({ ...project, tracks }, ctx);
-}
-
-/** What the opening tunnel shows around it: the name and how to say it. */
-export function setTunnelHookTitles(
-  project: PostProject,
-  titles: TunnelTitles,
-  ctx: EditContext
-): PostProject {
-  const hook = findTunnelHook(project);
-  if (!hook?.tunnelHook) return project;
-  // Kept as typed, spaces and all, so the field never fights the cursor.
-  const spoken = titles.spoken?.slice(0, TUNNEL_SPOKEN_MAX_LENGTH);
-  const tunnelHook: TunnelHook = {
-    ...hook.tunnelHook,
-    titles: {
-      name: titles.name,
-      ...(spoken?.trim() ? { spoken } : {}),
-    },
-  };
   const tracks = project.tracks.map((track) => ({
     ...track,
     items: track.items.map((item) =>
@@ -1725,6 +1725,8 @@ export interface PostItemPatch {
   text?: string;
   size?: PostTextSize;
   style?: PostTextStyle | null;
+  /** A titles clip's "how to say it" line; blank removes it. */
+  spoken?: string;
   animation?: PostTextAnimation | null;
   /** A clip's effect on its staff ends; null removes it. */
   staffEffect?: PostStaffEffectId | null;
@@ -1897,6 +1899,12 @@ export function updateItem(
     else delete next.cardAppearance;
   }
   if (item.kind === "moves" && patch.mode) next.mode = patch.mode;
+  if (item.kind === "titles" && patch.spoken !== undefined) {
+    // Kept as typed, spaces and all, so the field never fights the cursor.
+    const spoken = patch.spoken.slice(0, POST_MAX_SPOKEN_LENGTH);
+    if (spoken.trim()) next.spoken = spoken;
+    else delete next.spoken;
+  }
   if (item.kind === "text") {
     if (patch.text !== undefined)
       next.text = patch.text.slice(0, POST_MAX_TEXT_LENGTH);
@@ -2333,6 +2341,10 @@ function withKind(
         text: (spec.text ?? "").slice(0, POST_MAX_TEXT_LENGTH),
         size: spec.size ?? "m",
       };
+    case "titles": {
+      const spoken = spec.spoken?.slice(0, POST_MAX_SPOKEN_LENGTH);
+      return { ...base, kind: "titles", ...(spoken?.trim() ? { spoken } : {}) };
+    }
   }
 }
 
