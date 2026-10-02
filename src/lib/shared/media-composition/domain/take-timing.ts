@@ -2,6 +2,7 @@ import { z } from "zod";
 import {
   SequenceTimeMapSchema,
   mediaTimeToSequencePosition,
+  sequencePositionToMediaTime,
   type SequenceTimeAnchor,
   type SequenceTimeMap,
 } from "$lib/shared/media-composition/domain/sequence-time-map";
@@ -1371,6 +1372,42 @@ export function takePositionAt(
   return takeSampleAt(resolved, mediaSeconds)?.arrival ?? null;
 }
 
+/**
+ * The media times either side of `mediaSeconds` at which the take lands back
+ * on its opening pose (a whole number of passes), read from the section in
+ * effect there. Either is null where the section's map does not reach it.
+ */
+export function takePassStartsAround(
+  resolved: ResolvedTakeTiming,
+  mediaSeconds: number
+): { earlier: number | null; later: number | null } {
+  const mapped = resolved.sections.filter((section) => section.map);
+  const passLength = resolved.movesPerPass;
+  if (mapped.length === 0 || passLength <= 0) {
+    return { earlier: null, later: null };
+  }
+  let chosen = mapped[0]!;
+  for (const section of mapped) {
+    if (mediaSeconds >= section.startSeconds) chosen = section;
+  }
+  const map = chosen.map!;
+  const position = mediaTimeToSequencePosition(map, mediaSeconds);
+  const at = (passStart: number): number | null => {
+    const seconds = sequencePositionToMediaTime(map, passStart);
+    // The map holds its ends past its anchors, so a pass start it never
+    // reaches would come back as the nearest anchor's time.
+    return seconds >= chosen.startSeconds - 1e-6 &&
+      seconds <= chosen.endSeconds + 1e-6 &&
+      Math.abs(mediaTimeToSequencePosition(map, seconds) - passStart) < 1e-6
+      ? seconds
+      : null;
+  };
+  return {
+    earlier: at(Math.floor(position / passLength + 1e-9) * passLength),
+    later: at(Math.ceil(position / passLength - 1e-9) * passLength),
+  };
+}
+
 /** True when every section has a fitted grid. */
 export function isTakeTimingMapped(resolved: ResolvedTakeTiming): boolean {
   return resolved.sections.every((section) => section.map !== null);
@@ -1379,6 +1416,17 @@ export function isTakeTimingMapped(resolved: ResolvedTakeTiming): boolean {
 /** Identifies a sequence's move lengths, so a changed sequence is noticed. */
 export function takeTimingMovesKey(moveBeats: readonly number[]): string {
   return `beats:${moveBeats.join(",")}`;
+}
+
+/** The move lengths a timing was checked against, or null when it never was. */
+export function takeTimingMoveBeats(timing: TakeTiming): number[] | null {
+  const key = timing.movesKey;
+  if (!key?.startsWith("beats:")) return null;
+  const beats = key.slice("beats:".length).split(",").map(Number);
+  return beats.length > 0 &&
+    beats.every((beat) => Number.isFinite(beat) && beat > 0)
+    ? beats
+    : null;
 }
 
 /**

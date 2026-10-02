@@ -22,7 +22,9 @@ import {
   itemEnd,
   mainItemAt,
   overlaysAnchoredTo,
+  timingVideoAt,
   trackHasRoom,
+  videoPostSeconds,
   wrapDegrees,
   type PostAnchor,
   type PostAnimationItem,
@@ -68,7 +70,13 @@ import {
   writeChannelValue,
 } from "$lib/shared/media-composition/domain/post-project-keyframes";
 import type { PostTake } from "$lib/shared/media-composition/domain/post-plan";
-import { shiftTakeTiming } from "$lib/shared/media-composition/domain/take-timing";
+import {
+  resolveTakeTiming,
+  shiftTakeTiming,
+  takePassStartsAround,
+  takeTimingMoveBeats,
+  type TakeTiming,
+} from "$lib/shared/media-composition/domain/take-timing";
 import {
   DEFAULT_TUNNEL_HOOK,
   DEFAULT_TUNNEL_HOOK_SECONDS,
@@ -425,12 +433,14 @@ function withKeysShifted(
  * sequence's own tunnel plays through; it then eases into its own box as the
  * extra performers fade. It stays one item on one canvas, so there is no
  * hand-off to a second animation. Everything after it moves later by the
- * intro. Returns null when there is no animation or it already has an intro.
+ * intro, which is then lined up with its footage (`lineUpTunnelHook`) when
+ * the take is timed. Returns null when there is no animation or it already
+ * has an intro.
  */
 export function addTunnelHook(
   project: PostProject,
   ctx: EditContext,
-  init: { seconds?: number; hook?: TunnelHook } = {}
+  init: { seconds?: number; hook?: TunnelHook; clock?: TunnelHookClock } = {}
 ): { project: PostProject; itemId: string } | null {
   if (findTunnelHook(project)) return null;
   let target: PostAnimationItem | null = null;
@@ -477,8 +487,158 @@ export function addTunnelHook(
     }),
   }));
   return {
-    project: finish({ ...project, tracks }, ctx),
+    project: lineUpTunnelHook(
+      finish({ ...project, tracks }, ctx),
+      ctx,
+      init.clock
+    ),
     itemId: opening.id,
+  };
+}
+
+/** The take timings a line-up reads; by default the ones saved in the post. */
+export interface TunnelHookClock {
+  timings?: Record<string, TakeTiming>;
+  /** The sequence's move lengths; by default the ones the timing was checked against. */
+  moveBeats?: readonly number[];
+}
+
+/** The shortest intro a line-up leaves, so the tunnel still has room to play. */
+const MIN_LINED_UP_INTRO_SECONDS = 2;
+/** The longest intro the hook can hold. */
+const MAX_INTRO_SECONDS = 60;
+
+/**
+ * Lines the opening tunnel up with its footage. The intro ends on the moment
+ * the performer lands on the opening pose, at the pass start nearest where it
+ * ends now, so the tunnel's own ease finishes on that pose and step 1 starts
+ * from rest as the footage does. The footage plays behind the whole intro:
+ * its clip starts with the animation, keeps every frame where it was in the
+ * post after that, and what is placed against it stays put. Returns the
+ * project unchanged when there is no tunnel, no footage where it ends, no
+ * fitted timing for that take, or too little footage before the cue.
+ */
+export function lineUpTunnelHook(
+  project: PostProject,
+  ctx: EditContext,
+  clock: TunnelHookClock = {}
+): PostProject {
+  const hook = findTunnelHook(project);
+  const seconds = hook?.tunnelHook?.seconds;
+  if (!hook?.tunnelHook || seconds === undefined) return project;
+  const main = project.tracks[MAIN_TRACK_INDEX]?.items ?? [];
+  const video = timingVideoAt(main, hook.start + seconds, hook.anchor?.itemId);
+  if (!video) return project;
+  const timing = (clock.timings ?? project.timings)?.[video.takeId];
+  const moveBeats =
+    clock.moveBeats ?? (timing ? takeTimingMoveBeats(timing) : null);
+  if (!timing || !moveBeats?.length) return project;
+
+  // The take's media time where the intro ends now.
+  const atIntroEnd =
+    video.sourceIn + (hook.start + seconds - video.start) * video.speed;
+  const { earlier, later } = takePassStartsAround(
+    resolveTakeTiming(timing, moveBeats),
+    atIntroEnd
+  );
+  const before = main.filter(
+    (item) => item.id !== video.id && item.start < video.start - POST_TIME_EPSILON
+  );
+  const clear = before.every(
+    (item) => itemEnd(item) <= hook.start + POST_TIME_EPSILON
+  );
+  const introFor = (cue: number) =>
+    seconds + (cue - atIntroEnd) / video.speed;
+  const fits = (cue: number | null): cue is number => {
+    if (cue === null || !clear) return false;
+    const intro = introFor(cue);
+    return (
+      intro >= MIN_LINED_UP_INTRO_SECONDS &&
+      intro <= MAX_INTRO_SECONDS &&
+      hook.start + intro < itemEnd(video) - POST_MIN_ITEM_SECONDS &&
+      cue - intro * video.speed >= -POST_TIME_EPSILON
+    );
+  };
+  const cue = [earlier, later]
+    .filter(fits)
+    .sort((a, b) => Math.abs(a - atIntroEnd) - Math.abs(b - atIntroEnd))[0];
+  if (cue === undefined) return project;
+
+  const intro = introFor(cue);
+  const sourceIn = Math.max(0, cue - intro * video.speed);
+  // How much earlier the clip now starts; items placed against it keep their place.
+  const earlierBy = video.start - hook.start;
+  if (
+    hook.tunnelHook.backdrop &&
+    Math.abs(intro - seconds) < POST_TIME_EPSILON &&
+    Math.abs(earlierBy) < POST_TIME_EPSILON
+  )
+    return project;
+  const tracks = project.tracks.map((track) => ({
+    ...track,
+    items: track.items.map((item): PostItem => {
+      if (item.id === video.id) {
+        return {
+          ...video,
+          start: hook.start,
+          sourceIn,
+          duration: videoPostSeconds({ ...video, sourceIn }),
+          pinnedStart: true,
+        };
+      }
+      const anchor =
+        item.anchor?.itemId === video.id
+          ? { ...item.anchor, offset: item.anchor.offset + earlierBy }
+          : item.anchor;
+      if (item.id === hook.id) {
+        return {
+          ...hook,
+          ...(hook.fill ? {} : { anchor }),
+          tunnelHook: { ...hook.tunnelHook!, seconds: intro, backdrop: true },
+        };
+      }
+      // Filling the clip would now stretch an overlay over the backdrop too.
+      return anchor === item.anchor ? item : { ...item, anchor, fill: false };
+    }),
+  }));
+  return finish({ ...project, tracks }, ctx);
+}
+
+/**
+ * Takes the footage back out from under the intro: its clip starts where the
+ * intro ends again, and what is placed against it stays put.
+ */
+function withoutTunnelBackdrop(
+  project: PostProject,
+  hook: PostAnimationItem
+): PostProject {
+  const introEnd = hook.start + (hook.tunnelHook?.seconds ?? hook.duration);
+  const main = project.tracks[MAIN_TRACK_INDEX]?.items ?? [];
+  const video = timingVideoAt(main, introEnd, hook.anchor?.itemId);
+  if (!video || video.start >= introEnd - POST_TIME_EPSILON) return project;
+  const laterBy = introEnd - video.start;
+  const sourceIn = video.sourceIn + laterBy * video.speed;
+  return {
+    ...project,
+    tracks: project.tracks.map((track) => ({
+      ...track,
+      items: track.items.map((item): PostItem => {
+        if (item.id === video.id) {
+          return {
+            ...video,
+            start: introEnd,
+            sourceIn,
+            duration: videoPostSeconds({ ...video, sourceIn }),
+          };
+        }
+        if (item.anchor?.itemId !== video.id || (item.fill && item.id === hook.id))
+          return item;
+        return {
+          ...item,
+          anchor: { ...item.anchor, offset: item.anchor.offset - laterBy },
+        };
+      }),
+    })),
   };
 }
 
@@ -487,13 +647,18 @@ export function removeTunnelHook(
   project: PostProject,
   ctx: EditContext
 ): PostProject {
-  const hook = findTunnelHook(project);
+  const found = findTunnelHook(project);
+  if (!found?.tunnelHook) return project;
+  const base = found.tunnelHook.backdrop
+    ? withoutTunnelBackdrop(project, found)
+    : project;
+  const hook = findTunnelHook(base);
   if (!hook?.tunnelHook) return project;
   // A hook saved as its own item is all intro, so the item itself goes.
   const separate = hook.tunnelHook.seconds === undefined;
   const seconds = hook.tunnelHook.seconds ?? hook.duration;
   const introEnd = hook.start + seconds;
-  const tracks = project.tracks
+  const tracks = base.tracks
     .map((track) => ({
       ...track,
       items: track.items
@@ -527,7 +692,7 @@ export function removeTunnelHook(
     .filter(
       (track, index) => index === MAIN_TRACK_INDEX || track.items.length > 0
     );
-  return finish({ ...project, tracks }, ctx);
+  return finish({ ...base, tracks }, ctx);
 }
 
 /** Sets how fast the hook plays the sequence; `null` returns to the default ease. */

@@ -7,6 +7,7 @@ import {
 import {
   addTunnelHook,
   findTunnelHook,
+  lineUpTunnelHook,
   removeTunnelHook,
   setTunnelHookSpeed,
 } from "$lib/shared/media-composition/domain/post-project-edits";
@@ -14,14 +15,37 @@ import { normalizeProject as finishProject } from "$lib/shared/media-composition
 import { compilePostProject } from "$lib/shared/media-composition/domain/post-project-compiler";
 import {
   tunnelHookArrival,
+  TUNNEL_HOOK_BACKDROP_OPACITY,
   TUNNEL_HOOK_CHROME_SECONDS,
   tunnelHookChromeOpacity,
   tunnelHookCopyOpacity,
+  tunnelHookPanelOpacity,
 } from "$lib/shared/media-composition/domain/tunnel-hook";
+import {
+  createTakeTiming,
+  resolveTakeTiming,
+  takePassStartsAround,
+  takePositionAt,
+  takeSampleAt,
+  takeTimingMoveBeats,
+  takeTimingMovesKey,
+  type TakeTiming,
+} from "$lib/shared/media-composition/domain/take-timing";
 import { sampleEasing } from "$lib/shared/media-composition/domain/post-project-keyframes";
 import { evaluatePresetFrame } from "$lib/shared/media-composition/services/frame-evaluator";
 import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import { NOW, overlay, project, spans, video } from "./post-project-fixtures";
+import {
+  itemEnd,
+  type PostVideoItem,
+} from "$lib/shared/media-composition/domain/post-project";
+import {
+  NOW,
+  overlay,
+  project,
+  spans,
+  take,
+  video,
+} from "./post-project-fixtures";
 
 const ctx = { now: NOW + 1 };
 
@@ -495,5 +519,201 @@ describe("tunnel hook chrome", () => {
     expect(half).toBeLessThan(0.6);
     expect(tunnelHookChromeOpacity(TUNNEL_HOOK_CHROME_SECONDS)).toBe(1);
     expect(tunnelHookChromeOpacity(30)).toBe(1);
+  });
+});
+
+describe("tunnel hook lined up with its footage", () => {
+  const EIGHT = [1, 1, 1, 1, 1, 1, 1, 1];
+  const SPB = 60 / 87;
+  /** Media time of landing `position` on take "a"; the opening pose is at 1 s. */
+  const at = (position: number) => 1 + SPB * position;
+  const timing: TakeTiming = (() => {
+    const base = createTakeTiming({
+      sequenceId: "seq",
+      takeKey: "key-a",
+      durationSeconds: 60,
+      now: 1,
+    });
+    return {
+      ...base,
+      movesKey: takeTimingMovesKey(EIGHT),
+      sections: [
+        {
+          ...base.sections[0]!,
+          tempo: "locked",
+          taps: Array.from({ length: 30 }, (_, index) => at(index + 1)),
+        },
+      ],
+    };
+  })();
+  const resolved = resolveTakeTiming(timing, EIGHT);
+
+  /** A clip opening on landing `opensAt`, with the animation filling it. */
+  function timed(opensAt: number) {
+    const base = project(
+      [
+        video("v1", {
+          start: 0,
+          sourceIn: at(opensAt),
+          sourceOut: 40,
+          pinnedStart: true,
+        }),
+      ],
+      [
+        [
+          overlay("anim", "animation", {
+            start: 0,
+            duration: 10,
+            box: { ...POST_BOX.bottom },
+            anchor: { itemId: "v1", offset: 0 },
+            fill: true,
+          } as Partial<PostAnimationItem>),
+          overlay("caption", "animation", {
+            start: 3,
+            duration: 2,
+            anchor: { itemId: "v1", offset: 3 },
+          } as Partial<PostAnimationItem>),
+        ],
+      ],
+      [take("a", 60)]
+    );
+    return { ...base, timings: { a: timing } };
+  }
+  const clip = (p: ReturnType<typeof timed>) =>
+    p.tracks[0]!.items.find((item) => item.id === "v1") as PostVideoItem;
+  /** Media time showing at post `seconds`. */
+  const mediaAt = (item: PostVideoItem, seconds: number) =>
+    item.sourceIn + (seconds - item.start) * item.speed;
+
+  it("reads the pass starts on either side of a moment", () => {
+    const around = takePassStartsAround(resolved, at(9.6));
+    expect(around.earlier).toBeCloseTo(at(8), 6);
+    expect(around.later).toBeCloseTo(at(16), 6);
+    const on = takePassStartsAround(resolved, at(16));
+    expect(on.earlier).toBeCloseTo(at(16), 6);
+    expect(on.later).toBeCloseTo(at(16), 6);
+  });
+
+  it("reads back the move lengths a timing was checked against", () => {
+    expect(takeTimingMoveBeats(timing)).toEqual(EIGHT);
+    expect(takeTimingMoveBeats({ ...timing, movesKey: undefined })).toBeNull();
+    expect(takeTimingMoveBeats({ ...timing, movesKey: "beats:1,x" })).toBeNull();
+  });
+
+  it("ends the intro on the opening pose, with the footage playing behind it", () => {
+    const before = timed(9.6);
+    const added = addTunnelHook(before, ctx, { seconds: 5 })!;
+    const hook = findTunnelHook(added.project)!;
+    const footage = clip(added.project);
+
+    expect(PostProjectSchema.safeParse(added.project).success).toBe(true);
+    expect(hook.tunnelHook!.backdrop).toBe(true);
+    // The nearer pass start is landing 8, 1.6 moves before the old cut.
+    expect(hook.tunnelHook!.seconds).toBeCloseTo(5 - 1.6 * SPB, 6);
+    expect(hook.start).toBe(0);
+    expect(footage.start).toBe(0);
+    const cue = hook.start + hook.tunnelHook!.seconds!;
+    expect(takePositionAt(resolved, mediaAt(footage, cue))).toBeCloseTo(8, 4);
+    // Every frame after the old cut stays where it was in the post.
+    for (const seconds of [5, 9, 20, 30]) {
+      expect(mediaAt(footage, seconds)).toBeCloseTo(
+        mediaAt(clip(before), seconds - 5),
+        6
+      );
+    }
+    expect(itemEnd(footage)).toBeCloseTo(5 + itemEnd(clip(before)), 6);
+    // Placed against the footage, the caption keeps its moment.
+    const caption = added.project.tracks
+      .flatMap((track) => track.items)
+      .find((item) => item.id === "caption")!;
+    expect(caption.start).toBeCloseTo(8, 6);
+  });
+
+  it("stretches to the coming pass start when the clip opens late in the last move", () => {
+    const added = addTunnelHook(timed(15.85), ctx, { seconds: 5 })!;
+    const hook = findTunnelHook(added.project)!;
+    const footage = clip(added.project);
+    expect(hook.tunnelHook!.seconds).toBeCloseTo(5 + 0.15 * SPB, 6);
+    const cue = hook.start + hook.tunnelHook!.seconds!;
+    expect(takePositionAt(resolved, mediaAt(footage, cue))).toBeCloseTo(16, 4);
+  });
+
+  it("leaves an untimed take alone", () => {
+    const untimed = { ...timed(9.6), timings: {} };
+    const added = addTunnelHook(untimed, ctx, { seconds: 5 })!;
+    expect(findTunnelHook(added.project)!.tunnelHook!.backdrop).toBeUndefined();
+    expect(clip(added.project).start).toBe(5);
+    expect(lineUpTunnelHook(added.project, ctx)).toBe(added.project);
+  });
+
+  it("lands the tunnel and the footage together on the opening pose", () => {
+    const added = addTunnelHook(timed(15.85), ctx, { seconds: 5 })!;
+    const hook = findTunnelHook(added.project)!;
+    const cue = hook.tunnelHook!.seconds!;
+    const compiled = compilePostProject(added.project, { now: NOW })!;
+    const roles = compiled.preset.clips.flatMap((item) =>
+      item.kind === "visual" && item.timeMapRole ? [item.timeMapRole] : []
+    );
+    const steps8 = EIGHT.map(() => ({ duration: 1 })) as unknown as StepData[];
+    const alignment = {
+      steps: steps8,
+      startPlacementDuration: 1,
+      clocks: Object.fromEntries(
+        roles.map((role) => [
+          role,
+          { sampleAt: (media: number) => takeSampleAt(resolved, media) },
+        ])
+      ),
+    };
+    const frame = (time: number) =>
+      evaluatePresetFrame(
+        compiled.preset,
+        compiled.durationSeconds,
+        time,
+        alignment as never
+      );
+    const position = (time: number) =>
+      frame(time).find((layer) => layer.sourceRole === "sequence-animation")!
+        .sequencePosition!;
+    const footage = (time: number) =>
+      frame(time).find((layer) => layer.clipId.startsWith("v1"))!;
+
+    // Position 9 is the last move's landing after the start placement: the
+    // opening pose, which the footage reaches at the same instant.
+    expect(position(cue)).toBeCloseTo(9, 3);
+    expect(position(cue - 1e-3)).toBeCloseTo(9, 2);
+    // The pass opens on the same pose, read as the start of the sequence.
+    let previous = position(0.05);
+    for (let time = 0.1; time < cue; time += 0.1) {
+      const next = position(time);
+      expect(next).toBeGreaterThanOrEqual(previous - 1e-6);
+      previous = next;
+    }
+    // Then step 1 starts from rest, as it does in the footage.
+    const after = position(cue + 0.2);
+    expect(after).toBeGreaterThan(1);
+    expect(after).toBeLessThan(1 + 0.2 / SPB + 1e-3);
+    // Dim behind the full-frame tunnel, whole once the canvas has settled.
+    expect(footage(0.5).opacity).toBeCloseTo(TUNNEL_HOOK_BACKDROP_OPACITY, 6);
+    expect(footage(cue * 0.95).opacity).toBeCloseTo(1, 6);
+    expect(footage(cue + 0.5).opacity).toBe(1);
+    const intro = frame(0.5).find((layer) => layer.tunnelHook)!;
+    expect(tunnelHookPanelOpacity(intro.tunnelHook, sampleEasing)).toBe(0);
+    const settled = frame(cue * 0.95).find((layer) => layer.tunnelHook)!;
+    expect(tunnelHookPanelOpacity(settled.tunnelHook, sampleEasing)).toBe(1);
+  });
+
+  it("takes the footage back out from under the intro when the hook goes", () => {
+    const added = addTunnelHook(timed(9.6), ctx, { seconds: 5 })!;
+    const removed = removeTunnelHook(added.project, ctx);
+    expect(PostProjectSchema.safeParse(removed).success).toBe(true);
+    expect(findTunnelHook(removed)).toBeNull();
+    const footage = clip(removed);
+    expect(footage.start).toBe(0);
+    // It now opens on the opening pose the intro ended on.
+    expect(takePositionAt(resolved, footage.sourceIn)).toBeCloseTo(8, 4);
+    const anim = removed.tracks[1]!.items.find((item) => item.id === "anim")!;
+    expect(anim.start).toBe(0);
+    expect(itemEnd(anim)).toBeCloseTo(itemEnd(footage), 6);
   });
 });

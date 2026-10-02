@@ -91,14 +91,17 @@ export function normalizeProject(stored: PostProject): PostProject {
     const anchored = sized.anchor ? mainById.get(sized.anchor.itemId) : null;
 
     // An animation with a tunnel intro opens that long before its footage, so
-    // the intro and the animation are one item on one canvas.
+    // the intro and the animation are one item on one canvas. When the
+    // footage plays behind the intro, it opens with the footage instead.
     const intro =
       sized.kind === "animation" ? (sized.tunnelHook?.seconds ?? 0) : 0;
+    const lead =
+      sized.kind === "animation" && sized.tunnelHook?.backdrop ? 0 : intro;
 
     if (sized.fill && sized.kind !== "video") {
       const target = anchored ?? mainAt(sized.start + intro);
       if (!target) return withChanges(sized, { fill: false, anchor: null });
-      const start = Math.max(0, target.start - intro);
+      const start = Math.max(0, target.start - lead);
       return withChanges(sized, {
         start,
         duration: target.duration + (target.start - start),
