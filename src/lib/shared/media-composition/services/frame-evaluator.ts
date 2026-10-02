@@ -17,6 +17,7 @@ import {
 import { sampleEasing } from "$lib/shared/media-composition/domain/post-project-keyframes";
 import {
   tunnelHookArrival,
+  tunnelHookBackdropOpacity,
   type TunnelHook,
 } from "$lib/shared/media-composition/domain/tunnel-hook";
 import type { SequenceTimeMap } from "$lib/shared/media-composition/domain/sequence-time-map";
@@ -653,6 +654,19 @@ export function evaluatePresetLayers(
     // picture whole and raising the new one over it. Fading both lets the
     // background show through at the midpoint.
     if (incoming) incoming.opacity *= progress;
+  }
+
+  // Footage playing behind a tunnel intro stays dim around it, and comes up
+  // to full strength as the canvas settles into its box.
+  const intro = layers.find((layer) => layer.tunnelHook?.hook.backdrop);
+  if (intro?.tunnelHook) {
+    const backdrop = tunnelHookBackdropOpacity(
+      intro.tunnelHook.progress,
+      sampleEasing
+    );
+    for (const layer of layers) {
+      if (layer.regionId !== intro.regionId) layer.opacity *= backdrop;
+    }
   }
 
   return layers;

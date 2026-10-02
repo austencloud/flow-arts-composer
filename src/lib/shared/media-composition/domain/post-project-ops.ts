@@ -9,6 +9,7 @@ import {
   addTunnelHook,
   deleteItem,
   findTunnelHook,
+  lineUpTunnelHook,
   removeTunnelHook,
   setProjectBackground,
   setProjectCanvas,
@@ -44,6 +45,7 @@ export type PostProjectOp =
       speed?: string | number[];
     }
   | { op: "remove-hook" }
+  | { op: "line-up-hook" }
   | { op: "hook-speed"; speed: string | number[] }
   | { op: "appearance"; item?: string; set: Record<string, unknown> }
   | { op: "item"; item: string; patch: PostItemPatch }
@@ -131,6 +133,11 @@ function applyOp(
     }
     case "remove-hook":
       return removeTunnelHook(project, ctx);
+    case "line-up-hook": {
+      if (!findTunnelHook(project))
+        throw new Error("This post has no opening tunnel.");
+      return lineUpTunnelHook(project, ctx);
+    }
     case "hook-speed": {
       if (!findTunnelHook(project))
         throw new Error("This post has no opening tunnel.");

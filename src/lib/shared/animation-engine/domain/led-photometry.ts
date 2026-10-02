@@ -104,6 +104,29 @@ export function perLedFlux(propFlux: number, ledCount: number): number {
   return propFlux / ledCount;
 }
 
+/**
+ * Stops of light a fading prop's LEDs lose across the fade, on top of the
+ * fade's own linear share.
+ */
+export const LED_FADE_STOPS = 6;
+
+/**
+ * Flux scale for the LEDs of a prop drawn at `opacity`, so the light looks as
+ * faded as the prop does.
+ *
+ * Scaling flux by opacity alone does not: the display tone map is logarithmic,
+ * and a core that clips to white still clips at half its flux. A tunnel copy
+ * fading out kept a full-white dot until its last frames and then vanished.
+ * Dropping a fixed number of stops across the fade tracks the tone curve:
+ * against AgX at the display gain, a core sitting at display white reads 0.49
+ * of full at opacity 0.5 and 0.07 at 0.2, where the linear scale read 0.92
+ * and 0.82.
+ */
+export function ledFadeFlux(opacity: number): number {
+  const o = Math.max(0, Math.min(1, opacity));
+  return o * Math.pow(2, -LED_FADE_STOPS * (1 - o));
+}
+
 
 /**
  * The on-screen footprint of one LED, derived from how densely the strip packs

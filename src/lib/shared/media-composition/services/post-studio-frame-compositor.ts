@@ -32,6 +32,8 @@ import { traceRoundedRect } from "$lib/shared/render/utils/trace-rounded-rect";
 import { videoColorFilter } from "$lib/shared/media-composition/domain/post-video-color-grade";
 import type { PostStudioExportVideoFrames } from "$lib/shared/media-composition/services/post-studio-export-video-frames";
 import { POST_STUDIO_DOM_CAPTURE_OPTIONS } from "$lib/shared/media-composition/services/post-studio-dom-capture";
+import { tunnelHookPanelOpacity } from "$lib/shared/media-composition/domain/tunnel-hook";
+import { sampleEasing } from "$lib/shared/media-composition/domain/post-project-keyframes";
 import type { PostStudioPictographCapture } from "$lib/shared/media-composition/services/post-studio-pictograph-capture";
 
 export interface FrameLayerGeometry {
@@ -698,6 +700,10 @@ async function drawRegionLayer(
       transform: layer.transform,
     });
     applyLayerTransform(context, geometry);
+    // Footage behind a tunnel intro shows through the panel until the canvas
+    // settles, as it does on the live surface captured below.
+    context.globalAlpha =
+      layer.opacity * tunnelHookPanelOpacity(layer.tunnelHook, sampleEasing);
     context.fillStyle = input.preset.output.backgroundColor;
     context.fillRect(
       geometry.region.x,
@@ -705,6 +711,7 @@ async function drawRegionLayer(
       geometry.region.width,
       geometry.region.height
     );
+    context.globalAlpha = layer.opacity;
     const animation = layerElement.querySelector<HTMLElement>(
       "[data-sequence-progress-visible]"
     );

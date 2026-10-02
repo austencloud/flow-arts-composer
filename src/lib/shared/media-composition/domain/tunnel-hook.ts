@@ -30,6 +30,12 @@ export const TunnelHookSchema = z
      * a separate item, whose whole span is the intro.
      */
     seconds: z.number().finite().min(0.5).max(60).optional(),
+    /**
+     * The footage plays, dimmed, behind the tunnel: its clip starts with the
+     * item instead of where the intro ends, and the intro ends on the moment
+     * the performer lands on the opening pose.
+     */
+    backdrop: z.boolean().optional(),
   })
   .strict();
 
@@ -85,6 +91,57 @@ export function tunnelHookBoxKeys<Box>(
       easing: "hold",
     },
   ];
+}
+
+/** How bright the rest of the post stays while the tunnel holds the frame. */
+export const TUNNEL_HOOK_BACKDROP_OPACITY = 0.3;
+
+type EasingSampler = (
+  easing: [number, number, number, number],
+  t: number
+) => number;
+
+/**
+ * How far the canvas has come from the full frame into its own box at intro
+ * `progress`, from 0 to 1, on the box's own curve. `sample` is the keyframe
+ * easing sampler.
+ */
+export function tunnelHookSettle(
+  progress: number,
+  sample: EasingSampler
+): number {
+  const t = clamp01(
+    (progress - MOVE_START_SHARE) / (MOVE_END_SHARE - MOVE_START_SHARE)
+  );
+  return clamp01(sample(MOVE_EASING, t));
+}
+
+/**
+ * Opacity of everything behind the tunnel at intro `progress`: dimmed while
+ * the tunnel fills the frame, brightening as the canvas eases into its box,
+ * so the footage is at full strength when the animation takes over.
+ */
+export function tunnelHookBackdropOpacity(
+  progress: number,
+  sample: EasingSampler
+): number {
+  return (
+    TUNNEL_HOOK_BACKDROP_OPACITY +
+    (1 - TUNNEL_HOOK_BACKDROP_OPACITY) * tunnelHookSettle(progress, sample)
+  );
+}
+
+/**
+ * Opacity of the animation's own panel colour. With footage behind the
+ * tunnel the panel is clear while the tunnel fills the frame and fills in as
+ * the canvas settles, so it is whole before the animation takes over and the
+ * canvas does not change at the cue.
+ */
+export function tunnelHookPanelOpacity(
+  intro: { hook: TunnelHook; progress: number } | null | undefined,
+  sample: EasingSampler
+): number {
+  return intro?.hook.backdrop ? tunnelHookSettle(intro.progress, sample) : 1;
 }
 
 /** Progress at which the extra performers start to leave. */

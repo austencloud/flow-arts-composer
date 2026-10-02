@@ -35,8 +35,10 @@
   import { sequenceArrowLayers } from "$lib/shared/media-composition/domain/sequence-frame";
   import {
     tunnelHookCopyOpacity,
+    tunnelHookPanelOpacity,
     type TunnelHook,
   } from "$lib/shared/media-composition/domain/tunnel-hook";
+  import { sampleEasing } from "$lib/shared/media-composition/domain/post-project-keyframes";
   import type { AdditionalLayerProps } from "$lib/shared/animation-engine/domain/types/trail-capture-types";
   import { DEFAULT_CONFIG } from "$lib/shared/sequence-viewer/tunnel/tunnel-config";
   import { buildTunnelLayers } from "$lib/shared/sequence-viewer/tunnel/tunnel-layer-builder";
@@ -336,11 +338,17 @@
       };
     });
   });
+
+  // With footage behind the tunnel, the panel stays clear while the tunnel
+  // fills the frame and fills in as the canvas settles into its box.
+  const panelAlpha = $derived(tunnelHookPanelOpacity(tunnelHook, sampleEasing));
 </script>
 
 <div
   class="animation-layer"
   class:light={animationAppearance?.darkMode === false}
+  class:see-through={panelAlpha < 1}
+  style:--panel-alpha={panelAlpha < 1 ? panelAlpha : undefined}
   data-studio-animation-destination
   data-studio-animation-mode={showMandala ? "mandala" : "pictograph"}
   data-sequence-position={sequencePosition}
@@ -533,6 +541,21 @@
 
   .animation-layer.light {
     background: #fff;
+  }
+  /* The same panel colours, faded by --panel-alpha while footage plays
+     behind the tunnel. */
+  .animation-layer.see-through {
+    background: rgb(8 8 12 / var(--panel-alpha));
+  }
+  .animation-layer.light.see-through {
+    background: rgb(255 255 255 / var(--panel-alpha));
+  }
+  .animation-layer.see-through :global(.canvas-wrapper) {
+    background: rgb(10 10 15 / var(--panel-alpha));
+    transition: none;
+  }
+  .animation-layer.see-through :global(.canvas-wrapper[data-dark-mode="false"]) {
+    background: rgb(245 245 245 / var(--panel-alpha));
   }
   .pictograph-motion {
     width: 100%;

@@ -95,6 +95,16 @@ interface FBOAttachment {
 	texture: WebGLTexture;
 }
 
+/** The frame's centred square, the region LED positions are drawn in. */
+function centredSquare(width: number, height: number): { x: number; y: number; side: number } {
+	const side = Math.min(width, height);
+	return {
+		x: Math.round((width - side) / 2),
+		y: Math.round((height - side) / 2),
+		side,
+	};
+}
+
 // Shader program with cached uniform locations
 
 interface ShaderProgram {
@@ -258,6 +268,9 @@ export class WebGLLedRenderer {
 
 	resize(width: number, height: number): void {
 		if (!this.canvas || !this.gl) return;
+		const gl = this.gl;
+		const previousWidth = this.displayWidth;
+		const previousHeight = this.displayHeight;
 
 		this.dpr = Math.min(window.devicePixelRatio || 1, MAX_DPR);
 		this.displayWidth = Math.round(width * this.dpr);
@@ -265,10 +278,67 @@ export class WebGLLedRenderer {
 		this.canvas.width = this.displayWidth;
 		this.canvas.height = this.displayHeight;
 
-		// Recreate all framebuffers at new size
-		this.destroyFramebuffers();
+		// Recreate all framebuffers at the new size, carrying the retained light
+		// across. Wiping it put every trail out at once and brought the lights
+		// back dim, which showed whenever the canvas settled into a new box (the
+		// end of a post's opening tunnel).
+		const history = this.accumFBOs
+			? {
+					width: previousWidth,
+					height: previousHeight,
+					accum: this.accumFBOs.read,
+					box: this.boxSeeded ? this.boxFBOs : null,
+				}
+			: null;
+		const kept = history
+			? [history.accum, ...(history.box ? [history.box.a, history.box.b] : [])]
+			: [];
+		this.destroyFramebuffers(new Set(kept));
 		this.createFramebuffers();
 		this.clearAllFramebuffers();
+		if (history) {
+			this.carryHistory(history);
+			for (const target of kept) {
+				gl.deleteTexture(target.texture);
+				gl.deleteFramebuffer(target.fbo);
+			}
+		}
+	}
+
+	/**
+	 * Copies retained light from the framebuffers of the previous size into the
+	 * new ones. LED positions live in the frame's centred square, so the old
+	 * square is scaled onto the new one; light outside it is dropped.
+	 */
+	private carryHistory(history: {
+		width: number;
+		height: number;
+		accum: FBOAttachment;
+		box: { a: FBOAttachment; b: FBOAttachment } | null;
+	}): void {
+		const gl = this.gl!;
+		if (history.width <= 0 || history.height <= 0) return;
+		const from = centredSquare(history.width, history.height);
+		const to = centredSquare(this.displayWidth, this.displayHeight);
+		const pairs: Array<[FBOAttachment, FBOAttachment]> = [
+			[history.accum, this.accumFBOs!.read],
+		];
+		if (history.box && this.boxFBOs) {
+			pairs.push([history.box.a, this.boxFBOs.a], [history.box.b, this.boxFBOs.b]);
+			this.boxSeeded = true;
+		}
+		for (const [source, target] of pairs) {
+			gl.bindFramebuffer(gl.READ_FRAMEBUFFER, source.fbo);
+			gl.bindFramebuffer(gl.DRAW_FRAMEBUFFER, target.fbo);
+			gl.blitFramebuffer(
+				from.x, from.y, from.x + from.side, from.y + from.side,
+				to.x, to.y, to.x + to.side, to.y + to.side,
+				gl.COLOR_BUFFER_BIT,
+				gl.LINEAR,
+			);
+		}
+		gl.bindFramebuffer(gl.READ_FRAMEBUFFER, null);
+		gl.bindFramebuffer(gl.DRAW_FRAMEBUFFER, null);
 	}
 
 	private _diagFrameCount = 0;
@@ -1101,12 +1171,13 @@ export class WebGLLedRenderer {
 		fbo.write = tmp;
 	}
 
-	private destroyFramebuffers(): void {
+	/** `keep` names framebuffers the caller still reads and deletes itself. */
+	private destroyFramebuffers(keep: ReadonlySet<FBOAttachment> = new Set()): void {
 		const gl = this.gl;
 		if (!gl) return;
 
 		const destroySingle = (f: FBOAttachment | null) => {
-			if (!f) return;
+			if (!f || keep.has(f)) return;
 			gl.deleteTexture(f.texture);
 			gl.deleteFramebuffer(f.fbo);
 		};

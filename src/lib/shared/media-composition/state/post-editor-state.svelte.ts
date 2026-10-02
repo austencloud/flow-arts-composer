@@ -1050,7 +1050,9 @@ export function createPostEditorState(deps: PostEditorDeps) {
   /** Puts the tunnel hook in front of the post; everything moves later by its length. */
   function addTunnelHook(): string | null {
     if (gestureBase) return null;
-    const result = addProjectTunnelHook(project, context());
+    const result = addProjectTunnelHook(project, context(), {
+      clock: { timings, moveBeats },
+    });
     if (!result || !commit(result.project)) return null;
     selectedItemId = result.itemId;
     return result.itemId;

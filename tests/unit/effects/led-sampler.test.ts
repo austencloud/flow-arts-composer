@@ -286,3 +286,53 @@ describe("LedSampler image source", () => {
     );
   });
 });
+
+describe("LedSampler tunnel copies", () => {
+  function copyBrightness(opacity: number): number[] {
+    const leds = warmedSampler().update(
+      prop(0),
+      prop(Math.PI),
+      {
+        ...SAMPLER_CONFIG,
+        additionalLayers: [
+          { leftProp: prop(Math.PI / 2), rightProp: prop(-Math.PI / 2), opacity },
+        ],
+      },
+      0,
+      solidWhite()
+    );
+    return leds.filter((led) => led.propIndex >= 2).map((led) => led.brightness);
+  }
+
+  it("lights a copy at full strength while it is fully shown", () => {
+    expect(copyBrightness(1)).toEqual([1, 1, 1, 1]);
+  });
+
+  it("dims a fading copy's lights faster than its opacity, so they leave with it", () => {
+    // The display tone map is logarithmic: half the light still reads close
+    // to full, so a copy at half opacity must give up several stops.
+    const half = copyBrightness(0.5);
+    expect(half).toHaveLength(4);
+    for (const brightness of half) {
+      expect(brightness).toBeGreaterThan(0);
+      expect(brightness).toBeLessThanOrEqual(0.5 / 8);
+    }
+    expect(copyBrightness(0).every((brightness) => brightness === 0)).toBe(true);
+  });
+
+  it("leaves the base pair at full strength while the copies fade", () => {
+    const leds = warmedSampler().update(
+      prop(0),
+      prop(Math.PI),
+      {
+        ...SAMPLER_CONFIG,
+        additionalLayers: [{ leftProp: prop(1), rightProp: prop(2), opacity: 0.3 }],
+      },
+      0,
+      solidWhite()
+    );
+    const base = leds.filter((led) => led.propIndex < 2);
+    expect(base).toHaveLength(4);
+    expect(base.every((led) => led.brightness === 1)).toBe(true);
+  });
+});

@@ -77,6 +77,7 @@ const EDIT_COMMANDS = {
     ...(option("speed") ? { speed: option("speed") } : {}),
   }),
   "remove-hook": () => ({ op: "remove-hook" }),
+  "line-up-hook": () => ({ op: "line-up-hook" }),
   "hook-speed": () => ({ op: "hook-speed", speed: positional(0, "a curve") }),
   appearance: () => ({
     op: "appearance",
@@ -241,6 +242,7 @@ try {
   show [--json]                items of the open post
   add-hook [--seconds 5] [--fold 8] [--mirror] [--speed ease-out]
   remove-hook
+  line-up-hook                 end the tunnel on the footage's opening pose, footage behind it
   hook-speed <ease-out|ease-in|ease-in-out|linear|smooth|overshoot|default|x1,y1,x2,y2>
   appearance [--item hook|animations|all|ID] --set glyph=false ...  (keys: tkaGlyph stepNumbers gridMode progressBar ...; null clears)
   item --item ID --patch '{"opacity":0.5}'
