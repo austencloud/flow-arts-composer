@@ -23,6 +23,7 @@ export const ITEM_KIND_ICON: Record<PostItemKind, string> = {
   moves: "fa-shapes",
   carousel: "fa-table-cells",
   text: "fa-font",
+  titles: "fa-heading",
 };
 
 export const MANDALA_ICON = "fa-sun";
@@ -48,6 +49,8 @@ export function itemKindLabel(
       return t("post_editor_kind_carousel");
     case "text":
       return t("post_editor_kind_text");
+    case "titles":
+      return t("post_editor_kind_titles");
   }
 }
 

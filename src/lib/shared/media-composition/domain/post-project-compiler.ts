@@ -52,8 +52,7 @@ import {
   tunnelHookBoxKeys,
 } from "$lib/shared/media-composition/domain/tunnel-hook";
 import {
-  TUNNEL_TITLES_ROLE,
-  tunnelTitlesPlanOf,
+  titlesPlanOf,
   type TunnelTitlesPlan,
 } from "$lib/shared/media-composition/domain/tunnel-titles";
 import {
@@ -82,7 +81,6 @@ import {
 
 export const TEXT_ROLE_PREFIX = "text:";
 
-export { TUNNEL_TITLES_ROLE };
 
 function isTransitionVisual(item: PostItem): boolean {
   return (
@@ -181,8 +179,8 @@ export interface CompiledPostProject {
   imageIds: string[];
   videoSegments: CompiledVideoSegment[];
   texts: CompiledTextItem[];
-  /** The words around the opening tunnel, for `tunnel-titles-painter.ts`. */
-  tunnelTitles: TunnelTitlesPlan | null;
+  /** Each titles clip's words, for `tunnel-titles-painter.ts`. */
+  titles: TunnelTitlesPlan[];
 }
 
 const OUTPUT_FRAME_RATE = 30;
@@ -747,6 +745,7 @@ export function compilePostProject(
   const transitions: PresetTransition[] = [];
   const videoSegments: CompiledVideoSegment[] = [];
   const texts: CompiledTextItem[] = [];
+  const titles: TunnelTitlesPlan[] = [];
   let maxEnd = 0;
 
   const useRole = (entry: PresetSourceRole): void => {
@@ -1220,6 +1219,37 @@ export function compilePostProject(
         });
         return true;
       }
+
+      case "titles": {
+        const plan = titlesPlanOf(item);
+        useRole(presetRole(plan.role, "Titles", "manual", ["image"]));
+        regions.push(region(item.id, label, box, "fill", zIndex));
+        {
+          const regionKeyframes = regionKeyframesFor(item, output);
+          if (regionKeyframes) regionKeyframesList.push(regionKeyframes);
+        }
+        const titlesMotion = motionFor(item);
+        clips.push({
+          id: item.id,
+          kind: "visual",
+          sourceRole: plan.role,
+          regionId: item.id,
+          start: seconds(item.start),
+          end: seconds(itemEnd(item)),
+          sourceIn: seconds(0),
+          sourceOut: seconds(item.duration),
+          playbackRate: 1,
+          loop: false,
+          opacity: item.opacity,
+          ...(item.fadeIn > 0 ? { fadeInSeconds: item.fadeIn } : {}),
+          ...(item.fadeOut > 0 ? { fadeOutSeconds: item.fadeOut } : {}),
+          transform: IDENTITY_TRANSFORM,
+          useResolvedTimeMap: false,
+          ...(titlesMotion ? { motion: titlesMotion } : {}),
+        });
+        titles.push(plan);
+        return true;
+      }
     }
   };
 
@@ -1278,42 +1308,6 @@ export function compilePostProject(
 
   if (clips.length === 0 || maxEnd <= 0) return null;
 
-  // The opening's words sit over everything, across the whole frame. Their
-  // clip carries the tunnel's item id, so it belongs to the opening.
-  const tunnelTitles = tunnelTitlesPlanOf(project);
-  if (tunnelTitles) {
-    const titlesId = `${tunnelTitles.itemId}~titles`;
-    useRole(
-      presetRole(TUNNEL_TITLES_ROLE, "Opening titles", "manual", ["image"])
-    );
-    regions.push(
-      region(
-        titlesId,
-        "Opening titles",
-        { x: 0, y: 0, width: 1, height: 1 },
-        "fill",
-        Math.max(0, ...regions.map((entry) => entry.zIndex)) + 1
-      )
-    );
-    clips.push({
-      id: titlesId,
-      kind: "visual",
-      sourceRole: TUNNEL_TITLES_ROLE,
-      regionId: titlesId,
-      start: seconds(tunnelTitles.start),
-      end: seconds(Math.min(tunnelTitles.end, maxEnd)),
-      sourceIn: seconds(0),
-      sourceOut: seconds(
-        Math.min(tunnelTitles.end, maxEnd) - tunnelTitles.start
-      ),
-      playbackRate: 1,
-      loop: false,
-      opacity: 1,
-      transform: IDENTITY_TRANSFORM,
-      useResolvedTimeMap: false,
-    });
-  }
-
   // A blurred background draws the main clip on screen, so only main clips
   // the post draws can fill it.
   const drawn = new Set(clips.map((clip) => clip.id));
@@ -1359,6 +1353,6 @@ export function compilePostProject(
     imageIds,
     videoSegments,
     texts,
-    tunnelTitles,
+    titles,
   };
 }

@@ -1,11 +1,17 @@
 import {
+  POST_BOX,
+  POST_MAX_SPOKEN_LENGTH,
   POST_TIME_EPSILON,
+  createIdAllocator,
   itemEnd,
+  mainItemAt,
   type PostAnimationItem,
   type PostItem,
   type PostItemKeyframes,
   type PostProject,
+  type PostTitlesItem,
 } from "$lib/shared/media-composition/domain/post-project";
+import { openingTitlesSpan } from "$lib/shared/media-composition/domain/tunnel-titles";
 
 /**
  * Posts saved before the opening tunnel was part of the animation held it as a
@@ -70,4 +76,62 @@ function shiftKeyframes(
       : frames;
   }
   return out as PostItemKeyframes;
+}
+
+/**
+ * Posts saved while the opening titles were a setting of the tunnel animation
+ * hold them on its `tunnelHook`. Titles are their own clip now: each such
+ * animation loses the setting, and a titles clip with the same words goes on a
+ * new track above, over the opening. Titles that were switched off just go.
+ */
+export function splitTunnelHookTitles(project: PostProject): PostProject {
+  const owner = project.tracks
+    .flatMap((track) => track.items)
+    .find(
+      (item): item is PostAnimationItem =>
+        item.kind === "animation" && !!item.tunnelHook?.titles
+    );
+  const legacy = owner?.tunnelHook?.titles;
+  if (!owner?.tunnelHook || !legacy) return project;
+
+  const { titles: _titles, ...hook } = owner.tunnelHook;
+  const stripped: PostProject = {
+    ...project,
+    tracks: project.tracks.map((track) => ({
+      ...track,
+      items: track.items.map(
+        (item): PostItem =>
+          item.id === owner.id ? { ...owner, tunnelHook: hook } : item
+      ),
+    })),
+  };
+  if (!legacy.name) return stripped;
+  const spoken = legacy.spoken?.trim().slice(0, POST_MAX_SPOKEN_LENGTH);
+
+  const span = openingTitlesSpan(stripped);
+  if (!span) return stripped;
+  const nextId = createIdAllocator(stripped);
+  const under = mainItemAt(stripped, span.start);
+  const titles: PostTitlesItem = {
+    id: nextId("titles"),
+    kind: "titles",
+    start: span.start,
+    duration: span.duration,
+    box: { ...POST_BOX.full },
+    opacity: 1,
+    fadeIn: 0,
+    fadeOut: 0,
+    anchor: under
+      ? { itemId: under.id, offset: span.start - under.start }
+      : null,
+    fill: false,
+    ...(spoken ? { spoken } : {}),
+  };
+  return {
+    ...stripped,
+    tracks: [
+      ...stripped.tracks,
+      { id: nextId("track"), hidden: false, locked: false, items: [titles] },
+    ],
+  };
 }

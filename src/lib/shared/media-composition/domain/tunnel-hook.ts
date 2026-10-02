@@ -8,8 +8,6 @@ import { z } from "zod";
  */
 export const TUNNEL_HOOK_FOLDS = [2, 4, 8] as const;
 
-/** Longest "how to say it" line the opening takes. */
-export const TUNNEL_SPOKEN_MAX_LENGTH = 60;
 
 const speedXSchema = z.number().finite().min(0).max(1);
 const speedYSchema = z.number().finite().min(-1).max(2);
@@ -40,16 +38,13 @@ export const TunnelHookSchema = z
      */
     backdrop: z.boolean().optional(),
     /**
-     * Words around the tunnel while it holds the frame: the sequence's name
-     * above it with how to say it. Absent shows the name; see
-     * `tunnel-titles.ts`.
+     * Words the opening once drew itself. They are a titles clip now; a post
+     * saved with them gets one when it opens (`post-project-hook-migration.ts`).
      */
     titles: z
       .object({
         name: z.boolean(),
-        /** How to say the name, shown in quotes under it. */
-        spoken: z.string().max(TUNNEL_SPOKEN_MAX_LENGTH).optional(),
-        /** The retired parts bar; read so older drafts still open, never drawn. */
+        spoken: z.string().max(60).optional(),
         structure: z.boolean().optional(),
       })
       .strict()
@@ -58,12 +53,6 @@ export const TunnelHookSchema = z
   .strict();
 
 export type TunnelHook = z.infer<typeof TunnelHookSchema>;
-export type TunnelTitles = NonNullable<TunnelHook["titles"]>;
-
-/** What an opening shows when it has no titles of its own. */
-export const DEFAULT_TUNNEL_TITLES: TunnelTitles = {
-  name: true,
-};
 
 /**
  * A new hook starts fast and settles into the opening pose (the "Ease out"

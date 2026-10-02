@@ -6,6 +6,7 @@
     POST_FRAME_RATE,
     POST_MAX_LABEL_LENGTH,
     POST_MAX_SPEED,
+    POST_MAX_SPOKEN_LENGTH,
     POST_MAX_TEXT_LENGTH,
     POST_MAX_VOLUME,
     POST_MAX_EDGE_BORDER,
@@ -34,7 +35,6 @@
     replaceOverlayVideoWithAnimation,
     trimItem,
     setTunnelHookSpeed,
-    setTunnelHookTitles,
     trimItemToSource,
     updateItem,
     updateItemAt,
@@ -101,11 +101,6 @@
     autoGradeVideo,
     type PostVideoColorGrade,
   } from "$lib/shared/media-composition/domain/post-video-color-grade";
-  import {
-    DEFAULT_TUNNEL_TITLES,
-    TUNNEL_SPOKEN_MAX_LENGTH,
-    type TunnelTitles,
-  } from "$lib/shared/media-composition/domain/tunnel-hook";
 
   /**
    * The body of one tool for the selected item. An amount is a slider, a
@@ -311,29 +306,6 @@
     editor.editSetting(`${item.id}:hook-speed`, (project, ctx) =>
       setTunnelHookSpeed(project, speed, ctx)
     );
-  }
-
-  /** Typing coalesces into one undo step per field, like a dragged slider. */
-  function commitHookTitles(titles: TunnelTitles, field: string): void {
-    if (locked) return;
-    editor.editSetting(`${item.id}:hook-titles:${field}`, (project, ctx) =>
-      setTunnelHookTitles(project, titles, ctx)
-    );
-  }
-
-  function shownOptions() {
-    return [
-      {
-        value: "shown",
-        label: t("post_editor_labels_shown"),
-        disabled: locked,
-      },
-      {
-        value: "hidden",
-        label: t("post_editor_labels_hidden"),
-        disabled: locked,
-      },
-    ];
   }
 
   function setSpeed(speed: number): void {
@@ -607,6 +579,7 @@
             },
           ];
         case "card":
+        case "titles":
           return [
             {
               id: "full",
@@ -1039,31 +1012,18 @@
       <i class="fa-solid fa-play" aria-hidden="true"></i>
       {t("post_editor_hook_play")}
     </PanelButton>
-  {:else if tool === "titles" && item.kind === "animation" && item.tunnelHook}
-    {@const titles = item.tunnelHook.titles ?? DEFAULT_TUNNEL_TITLES}
+  {:else if tool === "titles" && item.kind === "titles"}
     <div class="hook-titles">
-      <span class="readout-name">{t("post_editor_hook_name")}</span>
-      <SegmentedControl
-        color="accent"
-        options={shownOptions()}
-        value={titles.name ? "shown" : "hidden"}
-        onchange={(value) =>
-          commitHookTitles({ ...titles, name: value === "shown" }, "name")}
-        ariaLabel={t("post_editor_hook_name")}
-      />
       <span class="readout-name">{t("post_editor_hook_spoken")}</span>
       <input
         class="field"
-        value={titles.spoken ?? ""}
+        value={item.spoken ?? ""}
         placeholder={t("post_editor_hook_spoken_placeholder")}
-        maxlength={TUNNEL_SPOKEN_MAX_LENGTH}
+        maxlength={POST_MAX_SPOKEN_LENGTH}
         aria-label={t("post_editor_hook_spoken")}
-        disabled={locked || !titles.name}
+        disabled={locked}
         oninput={(event) =>
-          commitHookTitles(
-            { ...titles, spoken: event.currentTarget.value },
-            "spoken"
-          )}
+          change("titles-spoken", { spoken: event.currentTarget.value })}
       />
     </div>
   {:else if tool === "speed" && item.kind === "video"}
