@@ -370,8 +370,9 @@ with pre-prepared data for better performance.
   // "TnD" toggle, so in the global/interactive path both halves follow tndGlyph —
   // toggling TnD fully shows/hides the glyph. Explicit prop overrides still win
   // for external callers (export, TnD decks) that drive elemental directly.
+  // A caller that sets only showTnD means the whole glyph, so its half follows.
   const effectiveShowElemental = $derived(
-    showElemental !== undefined ? showElemental : syncedVisibility.tndGlyph
+    showElemental ?? showTnD ?? syncedVisibility.tndGlyph
   );
 
   // The prop-path glyph has its own toggle. A caller may hand in the element
