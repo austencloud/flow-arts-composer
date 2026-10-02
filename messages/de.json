@@ -5871,6 +5871,8 @@
   "effect_deep_tune": "Anpassen",
   "effect_deep_tune_anything": "Passe einen Regler an",
   "effect_deep_tune_effect": "{effect} anpassen",
+  "effect_deep_tune_load_failed": "Anpassung konnte nicht geöffnet werden. Versuche es erneut.",
+  "effect_deep_tune_loading": "Wird geöffnet...",
   "effect_deep_tune_look": "Aussehen anpassen",
   "effect_deep_turn_off_effect": "{effect} ausschalten",
   "effect_deep_unnamed": "Unbenannt",
