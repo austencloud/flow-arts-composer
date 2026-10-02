@@ -1328,6 +1328,16 @@ export interface TakeSample {
   endArrival: number | null;
 }
 
+export interface TakeSampleOptions {
+  /**
+   * Before the section's first landing, keep its opening tempo running back
+   * in time instead of holding the opening pose: the arrival goes negative
+   * and reaches 0 on beat one. A tunnel over the footage before beat one
+   * counts down into it this way.
+   */
+  leadIn?: boolean;
+}
+
 /**
  * The take at a media time, or null when nothing is mapped. Between sections
  * the earlier section holds its last pose; before the first mapped section
@@ -1335,7 +1345,8 @@ export interface TakeSample {
  */
 export function takeSampleAt(
   resolved: ResolvedTakeTiming,
-  mediaSeconds: number
+  mediaSeconds: number,
+  options: TakeSampleOptions = {}
 ): TakeSample | null {
   const mapped = resolved.sections.filter((section) => section.map);
   if (mapped.length === 0) return null;
@@ -1343,17 +1354,35 @@ export function takeSampleAt(
   for (const section of mapped) {
     if (mediaSeconds >= section.startSeconds) chosen = section;
   }
+  const lead = options.leadIn
+    ? leadInPosition(chosen.map!, mediaSeconds)
+    : null;
   const clamped = Math.min(
     chosen.endSeconds,
     Math.max(chosen.startSeconds, mediaSeconds)
   );
   return {
     arrival: holdAfterLanding(
-      mediaTimeToSequencePosition(chosen.map!, clamped),
+      lead ?? mediaTimeToSequencePosition(chosen.map!, clamped),
       chosen.landingHoldRatio
     ),
     endArrival: chosen.endPosition,
   };
+}
+
+/** The first interval's tempo carried back before a map's first anchor; null from it on. */
+function leadInPosition(
+  map: SequenceTimeMap,
+  mediaSeconds: number
+): number | null {
+  const [first, second] = map.anchors;
+  if (!first || !second || mediaSeconds >= first.mediaTimeSeconds) return null;
+  const span = second.mediaTimeSeconds - first.mediaTimeSeconds;
+  if (span <= 0) return null;
+  const perSecond = (second.sequencePosition - first.sequencePosition) / span;
+  return (
+    first.sequencePosition - (first.mediaTimeSeconds - mediaSeconds) * perSecond
+  );
 }
 
 /** Hold the previous complete arrival, then use the rest of the interval to reach the next. */

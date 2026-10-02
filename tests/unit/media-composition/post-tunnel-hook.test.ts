@@ -13,6 +13,7 @@ import {
 } from "$lib/shared/media-composition/domain/post-project-edits";
 import { normalizeProject as finishProject } from "$lib/shared/media-composition/domain/post-project-normalize";
 import { compilePostProject } from "$lib/shared/media-composition/domain/post-project-compiler";
+import { takeRole } from "$lib/shared/media-composition/domain/post-plan-compiler";
 import {
   tunnelHookArrival,
   TUNNEL_HOOK_BACKDROP_OPACITY,
@@ -597,7 +598,9 @@ describe("tunnel hook lined up with its footage", () => {
   it("reads back the move lengths a timing was checked against", () => {
     expect(takeTimingMoveBeats(timing)).toEqual(EIGHT);
     expect(takeTimingMoveBeats({ ...timing, movesKey: undefined })).toBeNull();
-    expect(takeTimingMoveBeats({ ...timing, movesKey: "beats:1,x" })).toBeNull();
+    expect(
+      takeTimingMoveBeats({ ...timing, movesKey: "beats:1,x" })
+    ).toBeNull();
   });
 
   it("ends the intro on the opening pose, with the footage playing behind it", () => {
@@ -715,5 +718,180 @@ describe("tunnel hook lined up with its footage", () => {
     const anim = removed.tracks[1]!.items.find((item) => item.id === "anim")!;
     expect(anim.start).toBe(0);
     expect(itemEnd(anim)).toBeCloseTo(itemEnd(footage), 6);
+  });
+});
+
+describe("tunnel hook on its footage's beats", () => {
+  const EIGHT = [1, 1, 1, 1, 1, 1, 1, 1];
+  const SPB = 60 / 87;
+  /** Media time of landing `position`: beat one is at 10 s, after a lead-in. */
+  const at = (position: number) => 10 + SPB * position;
+  const timing: TakeTiming = (() => {
+    const base = createTakeTiming({
+      sequenceId: "seq",
+      takeKey: "key-a",
+      durationSeconds: 60,
+      now: 1,
+    });
+    return {
+      ...base,
+      movesKey: takeTimingMovesKey(EIGHT),
+      sections: [
+        {
+          ...base.sections[0]!,
+          tempo: "locked",
+          taps: Array.from({ length: 30 }, (_, index) => at(index + 1)),
+        },
+      ],
+    };
+  })();
+  const resolved = resolveTakeTiming(timing, EIGHT);
+  const steps8 = EIGHT.map(() => ({ duration: 1 })) as unknown as StepData[];
+
+  /** The footage opening on landing `opensAt`, with a lined-up tunnel over it. */
+  function linedUp(opensAt: number, fields: Partial<PostVideoItem> = {}) {
+    const base = project(
+      [
+        video("v1", {
+          start: 0,
+          sourceIn: at(opensAt),
+          sourceOut: 40,
+          pinnedStart: true,
+          box: { ...POST_BOX.top },
+          ...fields,
+        }),
+      ],
+      [
+        [
+          overlay("anim", "animation", {
+            start: 0,
+            duration: 10,
+            box: { ...POST_BOX.bottom },
+            anchor: { itemId: "v1", offset: 0 },
+            fill: true,
+          } as Partial<PostAnimationItem>),
+        ],
+      ],
+      [take("a", 60)]
+    );
+    return addTunnelHook({ ...base, timings: { a: timing } }, ctx, {
+      seconds: 5,
+    })!.project;
+  }
+
+  function play(p: ReturnType<typeof linedUp>) {
+    const compiled = compilePostProject(p, { now: NOW })!;
+    const clock = {
+      sampleAt: (media: number, options?: { leadIn?: boolean }) =>
+        takeSampleAt(resolved, media, options),
+    };
+    const frame = (time: number) =>
+      evaluatePresetFrame(compiled.preset, compiled.durationSeconds, time, {
+        steps: steps8,
+        startPlacementDuration: 1,
+        clocks: { [takeRole("a")]: clock },
+      });
+    return {
+      compiled,
+      cue: findTunnelHook(p)!.tunnelHook!.seconds!,
+      footage: p.tracks[0]!.items.find((i) => i.id === "v1") as PostVideoItem,
+      position: (time: number) =>
+        frame(time).find((layer) => layer.sourceRole === "sequence-animation")!
+          .sequencePosition!,
+      layer: (time: number, id: string) =>
+        frame(time).find((layer) => layer.clipId === id)!,
+    };
+  }
+
+  it("counts back from beat one at the opening tempo when asked", () => {
+    expect(takeSampleAt(resolved, at(-2))!.arrival).toBe(0);
+    expect(
+      takeSampleAt(resolved, at(-2), { leadIn: true })!.arrival
+    ).toBeCloseTo(-2, 6);
+    expect(
+      takeSampleAt(resolved, at(3), { leadIn: true })!.arrival
+    ).toBeCloseTo(3, 6);
+  });
+
+  it("moves the tunnel with the performer in the footage behind it", () => {
+    const { cue, footage, position } = play(linedUp(9.6));
+    // Engine positions run one ahead of arrivals inside the first pass.
+    for (const time of [0.5, 1.5, cue / 2, cue - 0.3]) {
+      const media = footage.sourceIn + (time - footage.start) * footage.speed;
+      expect(position(time)).toBeCloseTo(
+        takePositionAt(resolved, media)! + 1,
+        4
+      );
+    }
+    expect(position(cue)).toBeCloseTo(9, 3);
+  });
+
+  it("keeps the beat before beat one, landing on the opening pose with it", () => {
+    const { cue, position } = play(linedUp(0));
+    expect(cue).toBeCloseTo(5, 6);
+    // The intro is all lead-in, read a pass later so it never sits below zero.
+    for (const time of [0.5, 2, 4]) {
+      expect(position(time)).toBeCloseTo(9 - (cue - time) / SPB, 4);
+    }
+    expect(position(cue - 1e-3)).toBeCloseTo(9, 2);
+    // On the cue the animation reads the same pose as the sequence's start.
+    expect(position(cue)).toBeCloseTo(1, 6);
+    const after = position(cue + 0.2);
+    expect(after).toBeGreaterThan(1);
+    expect(after).toBeLessThan(1 + 0.2 / SPB + 1e-3);
+  });
+
+  it("fills the frame with the footage, then moves it into its box with the canvas", () => {
+    const { compiled, cue, layer } = play(linedUp(9.6));
+    const keys = (id: string) =>
+      compiled.preset.regionKeyframes!.find((track) => track.regionId === id)!
+        .keyframes;
+    const footageKeys = keys("v1");
+    expect(footageKeys[0]!.value).toMatchObject(POST_BOX.full);
+    expect(footageKeys[footageKeys.length - 1]!.value).toMatchObject(
+      POST_BOX.top
+    );
+    expect(footageKeys.map((key) => [key.atSeconds, key.easing])).toEqual(
+      keys("anim").map((key) => [key.atSeconds, key.easing])
+    );
+    expect(layer(0.2, "v1").regionRect).toMatchObject(POST_BOX.full);
+    expect(layer(cue, "v1").regionRect).toMatchObject(POST_BOX.top);
+  });
+
+  it("uncrops a cropped picture to the full frame and back onto its crop", () => {
+    const band = {
+      x: 0,
+      y: 0,
+      width: 1,
+      height: 0.5,
+      rotation: 0,
+      crop: { left: 0, top: 0.2, right: 1, bottom: 0.7 },
+    };
+    const { compiled, cue, layer } = play(
+      linedUp(9.6, { box: { ...POST_BOX.full }, sourceGeometry: band })
+    );
+    const clip = compiled.preset.clips.find((item) => item.id === "v1")!;
+    const geometry =
+      clip.kind === "visual" ? clip.sourceGeometryKeyframes! : [];
+    // The 9:16 picture fills the 9:16 frame whole.
+    const full = geometry[0]!.value;
+    expect([full.x, full.y, full.width, full.height, full.rotation]).toEqual([
+      0, 0, 1, 1, 0,
+    ]);
+    expect(full.crop.left).toBeCloseTo(0, 9);
+    expect(full.crop.top).toBeCloseTo(0, 9);
+    expect(full.crop.right).toBeCloseTo(1, 9);
+    expect(full.crop.bottom).toBeCloseTo(1, 9);
+    expect(geometry[geometry.length - 1]!.value).toEqual(band);
+    expect(layer(0.2, "v1").sourceGeometry!.height).toBeCloseTo(1, 6);
+    expect(layer(cue, "v1").sourceGeometry).toEqual(band);
+  });
+
+  it("leaves footage alone under a tunnel with nothing behind it", () => {
+    const p = addTunnelHook(withAnimation(), ctx, { seconds: 5 })!.project;
+    const compiled = compilePostProject(p, { now: NOW })!;
+    expect(
+      compiled.preset.regionKeyframes?.some((track) => track.regionId === "v1")
+    ).toBeFalsy();
   });
 });
