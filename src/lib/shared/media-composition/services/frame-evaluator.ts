@@ -20,7 +20,10 @@ import {
   tunnelHookBackdropOpacity,
   type TunnelHook,
 } from "$lib/shared/media-composition/domain/tunnel-hook";
-import { pipHandoffSample } from "$lib/shared/media-composition/domain/pip-handoff";
+import {
+  pipHandoffLookBlend,
+  pipHandoffSample,
+} from "$lib/shared/media-composition/domain/pip-handoff";
 import type { SequenceTimeMap } from "$lib/shared/media-composition/domain/sequence-time-map";
 import {
   mediaTimeToSequencePosition,
@@ -119,6 +122,11 @@ export interface EvaluatedFrameLayer {
   displayedBeatNumber?: number;
   /** Set on the opening hook: its tunnel and how far through it the post is. */
   tunnelHook?: { hook: TunnelHook; progress: number };
+  /**
+   * Set on an animation turning into its picture-in-picture square on one
+   * surface: how far its look has turned to the square's, 0 to 1.
+   */
+  lookBlend?: number;
 }
 
 export function resolvePresetTimePoint(
@@ -657,7 +665,13 @@ export function evaluatePresetLayers(
       end <= start ||
       clampedTime < start ||
       clampedTime > end ||
-      (clip.tunnelHook && clampedTime >= end && end < durationSeconds)
+      (clip.tunnelHook && clampedTime >= end && end < durationSeconds) ||
+      // One surface carries a shared hand-off: the animation's pieces until
+      // the overlap ends, the square's from then on.
+      (clip.clockHandoff?.shared &&
+        (clip.clockHandoff.role === "to"
+          ? clampedTime < clip.clockHandoff.end
+          : clampedTime >= clip.clockHandoff.end))
     )
       return [];
 
@@ -757,6 +771,17 @@ export function evaluatePresetLayers(
           : {}),
         ...(clip.tunnelHook
           ? { tunnelHook: { hook: clip.tunnelHook, progress: projectProgress } }
+          : {}),
+        // Set from the animation's first piece on, so the surface has the
+        // square's arrows ready before they start to show.
+        ...(clip.clockHandoff?.shared && clip.clockHandoff.role === "from"
+          ? {
+              lookBlend: pipHandoffLookBlend(
+                clip.clockHandoff,
+                clampedTime,
+                sampleEasing
+              ),
+            }
           : {}),
       },
     ];

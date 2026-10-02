@@ -384,6 +384,11 @@ export const PresetVisualClipSchema = z
         role: z.enum(["from", "to"]),
         start: SecondsSchema,
         end: SecondsSchema,
+        /**
+         * Both sides draw on one surface: the animation's until `end`, the
+         * square's from then on, its look changing across the overlap.
+         */
+        shared: z.boolean().optional(),
       })
       .strict()
       .optional(),

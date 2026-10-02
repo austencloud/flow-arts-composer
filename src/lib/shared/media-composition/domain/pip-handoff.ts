@@ -26,6 +26,13 @@ export interface PipHandoff {
   /** The overlap, in post seconds. */
   start: number;
   end: number;
+  /**
+   * Both draw on the animation's surface: it shrinks into the square and
+   * changes its look there, and the square's own surface never starts. Off
+   * when the two show different props or the square shows only the mandala,
+   * which one surface cannot become; those still dissolve.
+   */
+  shared: boolean;
 }
 
 /** The first animation whose end a picture-in-picture square overlaps. */
@@ -50,11 +57,44 @@ export function pipHandoffOf(project: PostProject): PipHandoff | null {
           movesOnTop: movesTrack >= animationTrack,
           start: moves.start,
           end,
+          shared: sharesSurface(animation, moves),
         };
       }
     }
   }
   return null;
+}
+
+function sharesSurface(
+  animation: PostAnimationItem,
+  moves: PostMovesItem
+): boolean {
+  const from = animation.animationAppearance;
+  const to = moves.animationAppearance;
+  return (
+    !!from &&
+    !!to &&
+    moves.mode !== "mandala" &&
+    from.propType === to.propType &&
+    from.propLook === to.propLook
+  );
+}
+
+/**
+ * How far a shared surface has turned from the animation's look to the
+ * square's, 0 to 1, on the move's own curve.
+ */
+export function pipHandoffLookBlend(
+  handoff: Pick<PipHandoff, "start" | "end">,
+  postSeconds: number,
+  sampleEasing: (easing: [number, number, number, number], p: number) => number
+): number {
+  const span = handoff.end - handoff.start;
+  if (span <= 0) return postSeconds >= handoff.end ? 1 : 0;
+  const share = (postSeconds - handoff.start) / span;
+  if (share <= 0) return 0;
+  if (share >= 1) return 1;
+  return sampleEasing([...MOVE_EASING], share);
 }
 
 /** The box both layers ride across the overlap: eased into the square. */
