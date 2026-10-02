@@ -24,6 +24,7 @@ import { itemIdFromTitlesRole } from "$lib/shared/media-composition/domain/tunne
 import {
   pipHandoffLookBlend,
   pipHandoffSample,
+  type PipHandoffStep,
 } from "$lib/shared/media-composition/domain/pip-handoff";
 import type { SequenceTimeMap } from "$lib/shared/media-composition/domain/sequence-time-map";
 import {
@@ -79,6 +80,10 @@ export interface SequenceFrameAlignment {
    * back here keeps the card on the step the performer is actually landing.
    */
   mediaTimeOffsetSeconds?: number;
+  /** Told why each hand-off side drew what it did; for tracing only. */
+  explainHandoff?: (
+    step: PipHandoffStep & { role: "from" | "to"; postSeconds: number }
+  ) => void;
 }
 
 /**
@@ -640,7 +645,15 @@ export function evaluatePresetLayers(
       handoff,
       { from: side("from"), to: side("to"), passLength: moveBeats.length },
       clampedTime,
-      handoff.role
+      handoff.role,
+      alignment?.explainHandoff
+        ? (step) =>
+            alignment.explainHandoff!({
+              ...step,
+              role: handoff.role,
+              postSeconds: clampedTime,
+            })
+        : undefined
     );
     handoffSamples.set(key, sample);
     return sample;
