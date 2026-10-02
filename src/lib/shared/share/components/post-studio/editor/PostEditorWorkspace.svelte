@@ -1178,8 +1178,6 @@
         return !editor.selectionEditable;
       case "beats":
         return !canTapBeats;
-      case "tutorial":
-        return editor.takes.length === 0;
       case "template":
         return (
           editor.project.tracks[0]?.items.filter(
@@ -1219,15 +1217,6 @@
 
   function tapBeatsHere(): void {
     if (beatsClip) openBeats(beatsClip);
-  }
-
-  function applyTutorial(): void {
-    editor.pause();
-    editor.applyTutorial({
-      runThrough: t("post_editor_run_through"),
-      slowMo: t("post_editor_slow_mo"),
-      card: t("post_editor_card_label"),
-    });
   }
 
   async function useOmegaTemplate(): Promise<void> {
@@ -1277,9 +1266,6 @@
         if (editor.splitAtPlayhead()) {
           void focusAfterUpdate({ kind: "tool", id: "split" });
         }
-        return;
-      case "tutorial":
-        applyTutorial();
         return;
       case "template":
         void useOmegaTemplate();

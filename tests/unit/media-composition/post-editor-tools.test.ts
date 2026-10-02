@@ -22,7 +22,6 @@ describe("toolRow", () => {
       "add",
       "canvas",
       "split",
-      "tutorial",
       "template",
       "look",
     ]);
