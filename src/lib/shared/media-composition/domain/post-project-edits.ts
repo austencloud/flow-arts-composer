@@ -716,7 +716,7 @@ export function setTunnelHookSpeed(
   return finish({ ...project, tracks }, ctx);
 }
 
-/** What the opening tunnel shows around it: the name, how to say it, the parts. */
+/** What the opening tunnel shows around it: the name and how to say it. */
 export function setTunnelHookTitles(
   project: PostProject,
   titles: TunnelTitles,
@@ -731,7 +731,6 @@ export function setTunnelHookTitles(
     titles: {
       name: titles.name,
       ...(spoken?.trim() ? { spoken } : {}),
-      structure: titles.structure,
     },
   };
   const tracks = project.tracks.map((track) => ({

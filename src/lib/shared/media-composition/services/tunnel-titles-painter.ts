@@ -16,8 +16,6 @@ import { textRenderer } from "$lib/shared/render/services/text-renderer";
 const FILL_COLOR = "#ffffff";
 const STROKE_COLOR = "rgba(0, 0, 0, 0.85)";
 const SHADOW_COLOR = "rgba(0, 0, 0, 0.7)";
-/** The bar's empty track, dark enough to read over a bright room. */
-const TRACK_COLOR = "rgba(10, 10, 15, 0.55)";
 const LABEL_FONT_STACK = 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif';
 
 /** Share of the frame's short side the tunnel's ring covers while it holds the frame. */
@@ -31,54 +29,7 @@ const HEADER_GLYPH_SHARE = 0.65;
 /** "How to say it", relative to the name's letters. */
 const SPOKEN_SIZE = 0.42;
 const SPOKEN_GAP = 0.45;
-/** The parts bar, as shares of the frame's width. */
-const BAR_WIDTH = 0.74;
-const BAR_HEIGHT = 0.014;
-const BAR_GAP = 0.022;
-const LABEL_SIZE = 0.034;
-const LABEL_GAP = 0.6;
-/** The line along the animation's box, as shares of the frame's width. */
-const LINE_HEIGHT = 0.008;
-const LINE_GAP = 0.012;
-const LINE_INSET = 0.04;
-
 type Context = CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D;
-
-/** Equal segments across `[x, x + width]`, `gap` apart. */
-function segments(x: number, width: number, count: number, gap: number) {
-  const each = (width - gap * (count - 1)) / count;
-  return Array.from({ length: count }, (_, index) => ({
-    x: x + index * (each + gap),
-    width: each,
-  }));
-}
-
-function drawBar(
-  context: Context,
-  x: number,
-  y: number,
-  width: number,
-  height: number,
-  gap: number,
-  fills: readonly number[]
-) {
-  const radius = height / 2;
-  segments(x, width, fills.length, gap).forEach((segment, index) => {
-    context.fillStyle = TRACK_COLOR;
-    context.beginPath();
-    context.roundRect(segment.x, y, segment.width, height, radius);
-    context.fill();
-    const filled = segment.width * fills[index]!;
-    if (filled <= 0) return;
-    context.save();
-    context.beginPath();
-    context.roundRect(segment.x, y, segment.width, height, radius);
-    context.clip();
-    context.fillStyle = FILL_COLOR;
-    context.fillRect(segment.x, y, filled, height);
-    context.restore();
-  });
-}
 
 class TunnelTitlesPainter implements PostStudioLayerPainter {
   constructor(
@@ -105,7 +56,6 @@ class TunnelTitlesPainter implements PostStudioLayerPainter {
     const { x, y, width, height } = rect;
     const ring = (Math.min(width, height) * TUNNEL_EXTENT) / 2;
     const above = Math.max(0, height / 2 - ring);
-    const below = height / 2 + ring;
 
     context.save();
     context.lineJoin = "round";
@@ -159,68 +109,6 @@ class TunnelTitlesPainter implements PostStudioLayerPainter {
       const line = `“${plan.spoken}”`;
       context.strokeText(line, x + width / 2, spokenY, width * 0.9);
       context.fillText(line, x + width / 2, spokenY, width * 0.9);
-      context.restore();
-    }
-
-    // The video's parts, centred in the band below the tunnel.
-    if (look.parts.opacity > 0 && plan.parts.length > 0) {
-      const barWidth = width * BAR_WIDTH;
-      const barHeight = width * BAR_HEIGHT;
-      const gap = width * BAR_GAP;
-      let labelPx = width * LABEL_SIZE;
-      const font = (px: number) => `600 ${px}px ${LABEL_FONT_STACK}`;
-      context.font = font(labelPx);
-      const each = (barWidth - gap * (plan.parts.length - 1)) / plan.parts.length;
-      const widest = Math.max(
-        ...plan.parts.map((part) => context.measureText(part.label).width)
-      );
-      if (widest > each) labelPx *= each / widest;
-      const bandHeight = barHeight + labelPx * (LABEL_GAP + 1);
-      const barTop =
-        y + below + (height - below - bandHeight) / 2 - look.parts.rise * height;
-      const barLeft = x + (width - barWidth) / 2;
-      context.save();
-      context.globalAlpha *= look.parts.opacity;
-      drawBar(context, barLeft, barTop, barWidth, barHeight, gap, look.fills);
-      context.font = font(labelPx);
-      context.textAlign = "center";
-      context.textBaseline = "middle";
-      context.strokeStyle = STROKE_COLOR;
-      context.lineWidth = labelPx * CAPTION_STROKE_WIDTH_FRACTION;
-      context.fillStyle = FILL_COLOR;
-      const labelY = barTop + barHeight + labelPx * (LABEL_GAP + 0.5);
-      segments(barLeft, barWidth, plan.parts.length, gap).forEach(
-        (segment, index) => {
-          const label = plan.parts[index]!.label;
-          const centre = segment.x + segment.width / 2;
-          context.strokeText(label, centre, labelY);
-          context.fillText(label, centre, labelY);
-        }
-      );
-      context.restore();
-    }
-
-    // The same bar as a thin line along the top of the animation's box.
-    if (look.divider > 0 && plan.divider) {
-      const { box } = plan.divider;
-      const lineHeight = width * LINE_HEIGHT;
-      const inset = width * LINE_INSET;
-      const left = x + box.x * width + inset;
-      const lineWidth = box.width * width - inset * 2;
-      const seam = y + box.y * height;
-      const lineTop =
-        box.y > 0 ? seam - lineHeight / 2 : seam + width * LINE_GAP;
-      context.save();
-      context.globalAlpha *= look.divider;
-      drawBar(
-        context,
-        left,
-        lineTop,
-        lineWidth,
-        lineHeight,
-        width * LINE_GAP,
-        look.fills
-      );
       context.restore();
     }
 
