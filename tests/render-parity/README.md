@@ -116,6 +116,8 @@ tests blocks their asset requests and can cause unrelated readiness timeouts.
 
 The `composer` and `print` profiles intentionally have different dimensions and
 badge scales. Compare matching profiles and options. This suite covers image
-exports, not every interactive card state. The QR fixtures carry the real
-viewer deep link for the steps on the card (`DEMO_SEQUENCE_LINKS`); short-code
-minting stays outside the comparison.
+exports, not every interactive card state. The four-step QR fixtures use a
+published short code whose compact and embedded payloads were checked against
+the card's choreography. The eight-step fixture retains its inline viewer link
+because no matching short code exists. The unit test guards the stored compact
+payload and the inline link; minting stays outside the comparison.
