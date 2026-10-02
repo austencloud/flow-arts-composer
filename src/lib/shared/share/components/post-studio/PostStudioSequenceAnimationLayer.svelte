@@ -294,8 +294,11 @@
     const target = sequence;
     if (!hook) {
       hookCopies = [];
+      hookTexturesPending = false;
       return;
     }
+    hookCopies = [];
+    hookTexturesPending = true;
     let cancelled = false;
     void buildTunnelLayers(target, {
       ...DEFAULT_CONFIG,
@@ -333,7 +336,8 @@
   data-sequence-pass-index={sequencePassIndex}
   data-sequence-progress-visible={progressVisible}
   data-sequence-progress-dark={animationAppearance?.darkMode ?? true}
-  data-tunnel-hook-pending={hookLayers.length > 0 && hookTexturesPending}
+  data-tunnel-hook-pending={Boolean(tunnelHook) &&
+    (hookCopies.length === 0 || hookTexturesPending)}
 >
   <div class="animation-stage" use:destination={animationAppearance}>
     {#if showMandala}
@@ -438,7 +442,9 @@
           {rightProp}
           additionalLayers={hookLayers}
           onAdditionalLayerTextureStatusChange={(status) =>
-            (hookTexturesPending = status.loaded < status.requested)}
+            (hookTexturesPending =
+              Boolean(tunnelHook) &&
+              (status.requested === 0 || status.loaded < status.requested))}
           gridVisible={animationAppearance?.gridMode !== "none"}
           gridMode={sequence.gridMode ?? null}
           letter={stepData?.letter ?? null}
