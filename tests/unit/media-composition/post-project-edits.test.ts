@@ -137,6 +137,179 @@ function twoClips(): PostProject {
 }
 
 describe("setMainCutCrossfade", () => {
+  it("keeps both cuts in a three-item overlay chain while the first fade changes", () => {
+    const base = project(
+      [video("main", { sourceOut: 12 })],
+      [
+        [
+          card("a", 4, { start: 0 }),
+          card("b", 4, { start: 4 }),
+          card("c", 4, { start: 8 }),
+        ],
+      ]
+    );
+    const last = setTrackCutCrossfade(base, 1, "b", "c", true, ctx);
+    const both = valid(setTrackCutCrossfade(last, 1, "a", "b", true, ctx));
+    expect(spans(both, 1)).toEqual([
+      ["a", 0, 4],
+      ["b", 3, 4],
+      ["c", 6, 4],
+    ]);
+    expect(compilePostProject(both, ctx)?.preset.transitions).toHaveLength(2);
+    const resized = valid(
+      updateItem(
+        both,
+        "a",
+        { transitionOut: { type: "crossfade", duration: 0.5 } },
+        ctx
+      )
+    );
+    expect(spans(resized, 1)).toEqual([
+      ["a", 0, 4],
+      ["b", 3.5, 4],
+      ["c", 6.5, 4],
+    ]);
+    expect(compilePostProject(resized, ctx)?.preset.transitions).toHaveLength(
+      2
+    );
+    const restored = valid(
+      setTrackCutCrossfade(resized, 1, "a", "b", false, ctx)
+    );
+    expect(spans(restored, 1)).toEqual(spans(last, 1));
+    expect(compilePostProject(restored, ctx)?.preset.transitions).toHaveLength(
+      1
+    );
+  });
+
+  it("does not transfer a crossfade to a different main-track neighbor", () => {
+    const base = project([card("a", 4), card("b", 4), card("c", 4)]);
+    const crossed = setMainCutCrossfade(base, "a", "b", true, ctx);
+    const moved = valid(moveMainItem(crossed, "b", 2, ctx));
+    expect(item(moved, "a").transitionOut).toBeUndefined();
+    expect(item(moved, "a").duration).toBe(4);
+    expect(compilePostProject(moved, ctx)?.preset.transitions).toHaveLength(0);
+    const deleted = valid(deleteItem(crossed, "b", ctx));
+    expect(item(deleted, "a").transitionOut).toBeUndefined();
+    expect(compilePostProject(deleted, ctx)?.preset.transitions).toHaveLength(
+      0
+    );
+  });
+
+  it("clears an overlay fade when its incoming item moves past another item", () => {
+    const base = project(
+      [video("main", { sourceOut: 15 })],
+      [
+        [
+          card("a", 4, { start: 0 }),
+          card("b", 4, { start: 4 }),
+          card("c", 4, { start: 8 }),
+        ],
+      ]
+    );
+    const crossed = setTrackCutCrossfade(base, 1, "a", "b", true, ctx);
+    const moved = valid(
+      moveOverlayItem(crossed, "b", { start: 12, trackIndex: 1 }, ctx)
+    );
+    expect(item(moved, "a").transitionOut).toBeUndefined();
+    expect(compilePostProject(moved, ctx)?.preset.transitions).toHaveLength(0);
+  });
+
+  it("restores only editor-added footage left after trimming the outgoing clip", () => {
+    const base = project([
+      video("v1"),
+      video("v2", { takeId: "b", sourceOut: 5 }),
+    ]);
+    const crossed = setMainCutCrossfade(base, "v1", "v2", true, ctx);
+    const trimmed = valid(trimItem(crossed, "v1", "end", 10.5, ctx));
+    expect(item(trimmed, "v1").transitionOut?.editorAddedSeconds).toBeCloseTo(
+      0.5
+    );
+    const restored = valid(
+      setMainCutCrossfade(trimmed, "v1", "v2", false, ctx)
+    );
+    expect(item(restored, "v1")).toMatchObject({ sourceOut: 10, duration: 10 });
+    const short = valid(trimItem(crossed, "v1", "end", 4, ctx));
+    const shortRestored = valid(
+      setMainCutCrossfade(short, "v1", "v2", false, ctx)
+    );
+    expect(item(shortRestored, "v1")).toMatchObject({
+      sourceOut: 4,
+      duration: 4,
+    });
+    expect(item(shortRestored, "v1").transitionOut).toBeUndefined();
+  });
+
+  it("keeps a valid clip when its start is trimmed entirely into the added handle", () => {
+    const base = project([video("v1"), video("v2", { takeId: "b", sourceOut: 5 })]);
+    const crossed = setMainCutCrossfade(base, "v1", "v2", true, ctx);
+    const trimmed = valid(trimItem(crossed, "v1", "start", 10.5, ctx));
+    expect(item(trimmed, "v1").transitionOut?.editorAddedSeconds).toBe(0);
+    const restored = valid(setMainCutCrossfade(trimmed, "v1", "v2", false, ctx));
+    expect(item(restored, "v1")).toMatchObject({ sourceIn: 10.5, sourceOut: 11, duration: 0.5 });
+    expect(item(restored, "v1").transitionOut).toBeUndefined();
+  });
+
+  it("removes only the surviving handle after an end trim and fade resize", () => {
+    const base = project([video("v1"), video("v2", { takeId: "b", sourceOut: 5 })]);
+    const crossed = setMainCutCrossfade(base, "v1", "v2", true, ctx);
+    const trimmed = valid(trimItem(crossed, "v1", "end", 10.5, ctx));
+    const resized = valid(updateItem(trimmed, "v1", { transitionOut: { type: "crossfade", duration: 0.75 } }, ctx));
+    expect(item(resized, "v1").transitionOut?.editorAddedSeconds).toBeCloseTo(0.25);
+    const restored = valid(setMainCutCrossfade(resized, "v1", "v2", false, ctx));
+    expect(item(restored, "v1")).toMatchObject({ sourceIn: 0, sourceOut: 10, duration: 10 });
+  });
+
+  it("keeps the fade on the tail after splitting without leaving extra footage on the head", () => {
+    const base = project([
+      video("v1"),
+      video("v2", { takeId: "b", sourceOut: 5 }),
+    ]);
+    const crossed = setMainCutCrossfade(base, "v1", "v2", true, ctx);
+    const result = splitItemAt(crossed, "v1", 5, ctx)!;
+    const split = valid(result.project);
+    expect(item(split, "v1")).toMatchObject({ sourceOut: 5, duration: 5 });
+    expect(item(split, "v1").transitionOut).toBeUndefined();
+    expect(item(split, result.newItemId).transitionOut?.incomingId).toBe("v2");
+    expect(compilePostProject(split, ctx)?.preset.transitions).toHaveLength(1);
+    const duplicated = valid(duplicateItem(crossed, "v1", ctx)!.project);
+    expect(item(duplicated, "v1")).toMatchObject({
+      sourceOut: 10,
+      duration: 10,
+    });
+    expect(item(duplicated, "v1").transitionOut).toBeUndefined();
+    expect(
+      compilePostProject(duplicated, ctx)?.preset.transitions
+    ).toHaveLength(1);
+  });
+
+  it("tracks added source frames when speed or the Out point changes", () => {
+    const base = project([
+      video("v1"),
+      video("v2", { takeId: "b", sourceOut: 5 }),
+    ]);
+    const crossed = setMainCutCrossfade(base, "v1", "v2", true, ctx);
+    const sped = valid(setVideoSpeed(crossed, "v1", 2, ctx));
+    expect(item(sped, "v1").transitionOut?.editorAddedSeconds).toBeCloseTo(0.5);
+    const spedRestored = valid(
+      setMainCutCrossfade(sped, "v1", "v2", false, ctx)
+    );
+    expect(item(spedRestored, "v1")).toMatchObject({
+      sourceOut: 10,
+      duration: 5,
+    });
+    const patched = valid(updateItem(crossed, "v1", { sourceOut: 10.5 }, ctx));
+    expect(item(patched, "v1").transitionOut?.editorAddedSeconds).toBeCloseTo(
+      0.5
+    );
+    const patchedRestored = valid(
+      setMainCutCrossfade(patched, "v1", "v2", false, ctx)
+    );
+    expect(item(patchedRestored, "v1")).toMatchObject({
+      sourceOut: 10,
+      duration: 10,
+    });
+  });
+
   it("extends the outgoing video into its handle while keeping later cuts fixed", () => {
     const base = project([
       video("v1"),

@@ -781,6 +781,8 @@ export function compilePostProject(
       const incoming = track.items[index + 1]!;
       if (
         !outgoing.transitionOut?.duration ||
+        (outgoing.transitionOut.incomingId !== undefined &&
+          outgoing.transitionOut.incomingId !== incoming.id) ||
         !isTransitionVisual(outgoing) ||
         !isTransitionVisual(incoming)
       )

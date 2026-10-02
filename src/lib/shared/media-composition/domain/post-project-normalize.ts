@@ -53,7 +53,7 @@ export function normalizeProject(project: PostProject): PostProject {
   const laidMain: PostItem[] = [];
   let cursor = 0;
   let outgoingOverlap = 0;
-  for (const item of main.items) {
+  for (const [index, item] of main.items.entries()) {
     if (!MAIN_TRACK_KINDS.includes(item.kind)) {
       displaced.push(item);
       continue;
@@ -67,8 +67,11 @@ export function normalizeProject(project: PostProject): PostProject {
     const laid = withChanges(sized, { start, anchor: null, fill: false });
     laidMain.push(laid);
     cursor = start + laid.duration;
+    const boundToNext =
+      !item.transitionOut?.incomingId ||
+      item.transitionOut.incomingId === main.items[index + 1]?.id;
     outgoingOverlap = Math.min(
-      item.transitionOut?.duration ?? 0,
+      boundToNext ? (item.transitionOut?.duration ?? 0) : 0,
       laid.duration - POST_TIME_EPSILON
     );
   }
@@ -182,7 +185,21 @@ export function normalizeProject(project: PostProject): PostProject {
   ].filter((track) => track.items.length > 0);
 
   const nextMain = withTrackItems(main, laidMain);
-  const tracks = [nextMain, ...nextOverlays];
+  const tracks = [nextMain, ...nextOverlays].map((track) => {
+    let changed = false;
+    const items = track.items.map((item, index) => {
+      const incoming = track.items[index + 1];
+      if (item.transitionOut && !item.transitionOut.incomingId && incoming) {
+        changed = true;
+        return {
+          ...item,
+          transitionOut: { ...item.transitionOut, incomingId: incoming.id },
+        };
+      }
+      return item;
+    });
+    return changed ? { ...track, items } : track;
+  });
   const unchanged =
     tracks.length === project.tracks.length &&
     tracks.every((track, index) => track === project.tracks[index]);
@@ -325,6 +342,8 @@ function fitsAmong(items: readonly PostItem[], item: PostItem): boolean {
       isTransitionVisual(previous) &&
       isTransitionVisual(item) &&
       !!previous.transitionOut &&
+      (!previous.transitionOut.incomingId ||
+        previous.transitionOut.incomingId === item.id) &&
       previous.start <= item.start &&
       item.start >=
         itemEnd(previous) - previous.transitionOut.duration - POST_TIME_EPSILON

@@ -1106,18 +1106,30 @@
     />
   {:else if tool === "fade"}
     {#if item.transitionOut}
-      <TypeableValue
-        label="Crossfade (seconds)"
-        text={`${item.transitionOut.duration.toFixed(2)} s`}
+      <div class="readout">
+        <span>{t("post_editor_crossfade")}</span>
+        <TypeableValue
+          label={t("post_editor_crossfade_duration")}
+          text={`${item.transitionOut.duration.toFixed(2)} s`}
+          disabled={locked}
+          oncommit={(value) =>
+            change("transitionOut", {
+              transitionOut: {
+                ...item.transitionOut!,
+                duration: Math.max(
+                  FRAME_SECONDS,
+                  Math.min(item.duration, value)
+                ),
+              },
+            })}
+        />
+      </div>
+      <PanelButton
         disabled={locked}
-        oncommit={(value) =>
-          change("transitionOut", {
-            transitionOut: {
-              ...item.transitionOut!,
-              duration: Math.max(0, Math.min(item.duration, value)),
-            },
-          })}
-      />
+        onclick={() => patchItem({ transitionOut: null })}
+      >
+        {t("post_timeline_remove_crossfade")}
+      </PanelButton>
     {/if}
     <ValueSlider
       label={t("post_editor_opacity")}
