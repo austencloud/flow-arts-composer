@@ -93,6 +93,9 @@ describe("homepage hero notation rail contract", () => {
     expect(homeHero).toContain("showWordHeader={true}");
     expect(sequenceHero).toContain("showWordHeader,");
     expect(sequenceHero).toContain("visibilityManagerOverride: showWordHeader");
+    expect(sequenceHero).toContain(
+      'heroVisibilityManager.updateSettings({ wordHeaderHighlight: "travel" })'
+    );
     // Which word the header names is checked by mounting the hero player in
     // tests/unit/landing/hero-word-header.test.ts, not by matching source.
     expect(inlinePlayer).toContain("hideHeader={fill && !showWordHeader}");
