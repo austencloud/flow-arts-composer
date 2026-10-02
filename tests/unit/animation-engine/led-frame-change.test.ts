@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { WebGLLedRenderer } from "$lib/shared/animation-engine/services/led/web-gl-led-renderer";
 import {
   DEFAULT_LED_CONFIG,
@@ -104,5 +104,71 @@ describe("WebGLLedRenderer frame changes", () => {
     );
 
     expect(sweptLength(probe, written)).toBeGreaterThan(100);
+  });
+});
+
+describe("WebGLLedRenderer resize", () => {
+  interface Fbo {
+    fbo: object;
+    texture: object;
+  }
+  interface ResizeProbe {
+    canvas: { width: number; height: number };
+    gl: unknown;
+    displayWidth: number;
+    displayHeight: number;
+    accumFBOs: { read: Fbo; write: Fbo } | null;
+    createFramebuffers(): void;
+    resize(width: number, height: number): void;
+  }
+
+  /** A GL stand-in that records blits and which framebuffers are deleted. */
+  function fakeGl() {
+    const blits: Array<{ read: unknown; draw: unknown; rects: number[] }> = [];
+    const deleted = new Set<unknown>();
+    let read: unknown = null;
+    let draw: unknown = null;
+    const gl = new Proxy(
+      {
+        READ_FRAMEBUFFER: "read",
+        DRAW_FRAMEBUFFER: "draw",
+        FRAMEBUFFER: "both",
+        createTexture: () => ({}),
+        createFramebuffer: () => ({}),
+        deleteFramebuffer: (fbo: unknown) => deleted.add(fbo),
+        bindFramebuffer: (target: string, fbo: unknown) => {
+          if (target !== "draw") read = fbo;
+          if (target !== "read") draw = fbo;
+        },
+        blitFramebuffer: (...args: number[]) =>
+          blits.push({ read, draw, rects: args.slice(0, 8) }),
+      } as Record<string | symbol, unknown>,
+      { get: (target, key) => (key in target ? target[key] : () => undefined) }
+    );
+    return { gl, blits, deleted };
+  }
+
+  it("carries the retained light onto the re-centred square instead of wiping it", () => {
+    const { gl, blits, deleted } = fakeGl();
+    const probe = new WebGLLedRenderer() as unknown as ResizeProbe;
+    vi.stubGlobal("devicePixelRatio", 1);
+    probe.canvas = { width: 0, height: 0 };
+    probe.gl = gl;
+    probe.displayWidth = 400;
+    probe.displayHeight = 700;
+    probe.createFramebuffers();
+    const before = probe.accumFBOs!.read;
+
+    // The tall frame shrinks to its square, as the tunnel's canvas does when
+    // it settles into the animation's box.
+    probe.resize(360, 360);
+
+    expect(blits).toHaveLength(1);
+    expect(blits[0]!.read).toBe(before.fbo);
+    expect(blits[0]!.draw).toBe(probe.accumFBOs!.read.fbo);
+    // Old square: 400 wide, 150 down a 700 frame. New square: the whole frame.
+    expect(blits[0]!.rects).toEqual([0, 150, 400, 550, 0, 0, 360, 360]);
+    expect(deleted.has(before.fbo)).toBe(true);
+    vi.unstubAllGlobals();
   });
 });

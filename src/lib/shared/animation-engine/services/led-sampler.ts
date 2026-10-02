@@ -13,6 +13,7 @@
 
 import type { LedOverlayConfig, LedSample } from "../domain/types/led-types";
 import { ledBrightnessToFloat } from "../domain/types/led-types";
+import { ledFadeFlux } from "../domain/led-photometry";
 import type { PropState } from "$lib/shared/foundation/domain/types/prop-state";
 import { getTipPoints } from "../domain/types/prop-tip-points";
 import type { StripPattern } from "$lib/shared/poi/domain/strip-pattern";
@@ -54,7 +55,8 @@ export interface LedSamplerConfig {
    * Overlaid tunnel layers. When present, LEDs are also emitted for each
    * layer's left/right props (propIndex >= 2) so the LED effect covers the whole
    * kaleidoscope. Layers share the base dimensions/types and use the fallback
-   * position path. Absent = the plain two-prop case.
+   * position path. A layer's `opacity` fades its LEDs with its props. Absent =
+   * the plain two-prop case.
    */
   additionalLayers?: Array<{
     leftProp: PropState | null;
@@ -213,7 +215,7 @@ export class LedSampler {
                 ? tunnelPropColor(propIndex, layers.length).rgb01
                 : handColors?.left ?? null,
             count,
-            layer.opacity ?? 1
+            ledFadeFlux(layer.opacity ?? 1)
           );
         }
         if (layer.rightProp) {
@@ -235,7 +237,7 @@ export class LedSampler {
                 ? tunnelPropColor(propIndex, layers.length).rgb01
                 : handColors?.right ?? null,
             count,
-            layer.opacity ?? 1
+            ledFadeFlux(layer.opacity ?? 1)
           );
         }
       }

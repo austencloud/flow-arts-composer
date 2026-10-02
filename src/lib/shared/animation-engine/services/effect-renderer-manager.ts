@@ -822,10 +822,11 @@ export class EffectRendererManager {
     // LED + trail handled separately
     this.renderers.get("led")?.resize?.(width, height);
     this.renderers.get("trails")?.resize?.(width, height);
-    // Reset fire/LED tip trackers so positions recalculate at the new canvas size.
+    // Reset the fire tip tracker so positions recalculate at the new canvas size.
     // Without this, after HMR the tracker uses stale positions from the old size.
+    // The LED sampler keeps no positions between frames, and resetting it
+    // blanked every LED for its warmup frames at each resize.
     this.fireTipTracker?.reset();
-    this.ledSampler?.reset();
   }
 
   // ── Wire post-init overlays ─────────────────────────────────────────
