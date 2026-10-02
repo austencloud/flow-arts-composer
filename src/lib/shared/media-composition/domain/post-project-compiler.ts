@@ -701,6 +701,11 @@ export function compilePostProject(
             transform: IDENTITY_TRANSFORM,
             useResolvedTimeMap: piece.useResolvedTimeMap,
             ...(piece.timeMapRole ? { timeMapRole: piece.timeMapRole } : {}),
+            ...(item.kind === "animation" &&
+            item.tunnelHook &&
+            !piece.useResolvedTimeMap
+              ? { tunnelHook: item.tunnelHook }
+              : {}),
             ...(sequenceMotion ? { motion: sequenceMotion } : {}),
           };
           clips.push({

@@ -20,6 +20,9 @@ import {
 import {
   addOverlayItem,
   addTake,
+  addTunnelHook as addProjectTunnelHook,
+  findTunnelHook,
+  removeTunnelHook as removeProjectTunnelHook,
   cleanLabel,
   appendCardClip,
   appendVideoClip,
@@ -1042,6 +1045,23 @@ export function createPostEditorState(deps: PostEditorDeps) {
     return result.itemId;
   }
 
+  /** Puts the tunnel hook in front of the post; everything moves later by its length. */
+  function addTunnelHook(): string | null {
+    if (gestureBase) return null;
+    const result = addProjectTunnelHook(project, context());
+    if (!result || !commit(result.project)) return null;
+    selectedItemId = result.itemId;
+    return result.itemId;
+  }
+
+  /** Takes the hook out and brings everything back to where it was. */
+  function removeTunnelHook(): boolean {
+    if (gestureBase || !findTunnelHook(project)) return false;
+    const next = removeProjectTunnelHook(project, context());
+    selectedItemId = null;
+    return commit(next);
+  }
+
   /**
    * A trim shows the frame at the edge being dragged, as InShot does: the
    * new first frame, or the last one.
@@ -1372,6 +1392,9 @@ export function createPostEditorState(deps: PostEditorDeps) {
     set selectedItemId(next: string | null) {
       selectedItemId = next && findItem(project, next) ? next : null;
     },
+    get tunnelHook() {
+      return findTunnelHook(project);
+    },
     get selectedItem() {
       return selectedItem;
     },
@@ -1452,6 +1475,8 @@ export function createPostEditorState(deps: PostEditorDeps) {
     duplicateSelected,
     addOverlay,
     addCard,
+    addTunnelHook,
+    removeTunnelHook,
     applyTutorial,
     applyTemplate,
     setAudio,

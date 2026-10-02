@@ -68,6 +68,11 @@ import {
 } from "$lib/shared/media-composition/domain/post-project-keyframes";
 import type { PostTake } from "$lib/shared/media-composition/domain/post-plan";
 import { shiftTakeTiming } from "$lib/shared/media-composition/domain/take-timing";
+import {
+  DEFAULT_TUNNEL_HOOK,
+  DEFAULT_TUNNEL_HOOK_SECONDS,
+  type TunnelHook,
+} from "$lib/shared/media-composition/domain/tunnel-hook";
 
 /**
  * The timeline's edits. Each one is pure: it takes the project and returns
@@ -386,6 +391,108 @@ export function addOverlayItem(
       ? withTrackItems(project, top, [...topTrack.items, item])
       : withNewTrackOnTop(project, item, nextId);
   return { project: finish(next, ctx), itemId: item.id };
+}
+
+/** The opening hook, when the post has one. */
+export function findTunnelHook(project: PostProject): PostAnimationItem | null {
+  for (const track of project.tracks) {
+    for (const item of track.items) {
+      if (item.kind === "animation" && item.tunnelHook) return item;
+    }
+  }
+  return null;
+}
+
+const HOOK_EASE: PostKeyframe<PostBox>["easing"] = [0.65, 0, 0.35, 1];
+
+/**
+ * Puts the tunnel hook in front of the post: everything moves later by the
+ * hook's length and a full-frame live animation fills the gap, then slides
+ * into the lower half as the extra performers fade. The hook borrows the
+ * look of the post's own animation so the hand-off between them is seamless.
+ * Returns null when there is no animation to hand off to, or a hook exists.
+ */
+export function addTunnelHook(
+  project: PostProject,
+  ctx: EditContext,
+  init: { seconds?: number; hook?: TunnelHook } = {}
+): { project: PostProject; itemId: string } | null {
+  if (findTunnelHook(project)) return null;
+  let target: PostAnimationItem | null = null;
+  for (const track of project.tracks) {
+    for (const item of track.items) {
+      if (!target && item.kind === "animation") target = item;
+    }
+  }
+  if (!target) return null;
+  const seconds = Math.max(
+    POST_MIN_ITEM_SECONDS * 10,
+    finiteOr(init.seconds, DEFAULT_TUNNEL_HOOK_SECONDS)
+  );
+  const shifted: PostProject = {
+    ...project,
+    // A main clip that follows its neighbours would snap back to zero, so
+    // each is pinned where the hook leaves it.
+    tracks: project.tracks.map((track, trackIndex) => ({
+      ...track,
+      items: track.items.map((item) => ({
+        ...item,
+        start: item.start + seconds,
+        ...(trackIndex === MAIN_TRACK_INDEX ? { pinnedStart: true } : {}),
+      })),
+    })),
+  };
+  const nextId = createIdAllocator(project);
+  const itemId = nextId("animation");
+  const settled = { ...target.box };
+  const hook: PostAnimationItem = {
+    id: itemId,
+    kind: "animation",
+    label: "Opening hook",
+    start: 0,
+    duration: seconds,
+    box: { ...POST_BOX.full },
+    opacity: 1,
+    fadeIn: 0,
+    fadeOut: 0,
+    anchor: null,
+    fill: false,
+    overlay: false,
+    animationAppearance: { ...(target.animationAppearance ?? {}) },
+    tunnelHook: init.hook ?? DEFAULT_TUNNEL_HOOK,
+    keyframes: {
+      box: [
+        { t: 0, value: { ...POST_BOX.full }, easing: "hold" },
+        { t: seconds * 0.4, value: { ...POST_BOX.full }, easing: HOOK_EASE },
+        { t: seconds * 0.9, value: settled, easing: "hold" },
+      ],
+    },
+  };
+  return {
+    project: finish(withNewTrackOnTop(shifted, hook, nextId), ctx),
+    itemId,
+  };
+}
+
+/** Takes the hook out and brings everything back to where it was. */
+export function removeTunnelHook(
+  project: PostProject,
+  ctx: EditContext
+): PostProject {
+  const hook = findTunnelHook(project);
+  if (!hook) return project;
+  const seconds = hook.duration;
+  const tracks = project.tracks
+    .map((track) => ({
+      ...track,
+      items: track.items
+        .filter((item) => item.id !== hook.id)
+        .map((item) => ({ ...item, start: Math.max(0, item.start - seconds) })),
+    }))
+    .filter(
+      (track, index) => index === MAIN_TRACK_INDEX || track.items.length > 0
+    );
+  return finish({ ...project, tracks }, ctx);
 }
 
 /** The live view can take a video's place when its visible area fits the editable canvas. */
