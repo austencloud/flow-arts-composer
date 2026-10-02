@@ -43,6 +43,7 @@ import {
   type PostVideoItem,
 } from "$lib/shared/media-composition/domain/post-project";
 import {
+  channelValueAt,
   postSecondsOfKeyframe,
   sampleEasing,
 } from "$lib/shared/media-composition/domain/post-project-keyframes";
@@ -475,7 +476,7 @@ function fullFrameGeometry(
 interface FramingMatch {
   start: number;
   end: number;
-  to: PostSourceGeometry;
+  incoming: PostVideoItem;
 }
 
 /**
@@ -511,7 +512,7 @@ function framingMatchFor(
   const start = Math.max(incoming.start, itemEnd(item) - transition.duration);
   const end = Math.min(itemEnd(item), itemEnd(incoming));
   if (end - start <= POST_TIME_EPSILON) return null;
-  return { start, end, to: incoming.sourceGeometry };
+  return { start, end, incoming };
 }
 
 /** Steps a reframe is laid out in; the evaluator blends straight between them. */
@@ -520,8 +521,9 @@ const FRAMING_MATCH_STEPS = 12;
 /**
  * The outgoing picture's reframe as keys. Each step places the recording by
  * one zoom and offset, so the picture never stretches, and shows it through
- * a window moving from the old frame to the new; the steps follow the
- * opening move's curve.
+ * a window moving from the old frame to the incoming cut's framing at that
+ * moment, which may itself be moving; the steps follow the opening move's
+ * curve.
  */
 function framingMatchKeys(match: FramingMatch, from: PostSourceGeometry) {
   const placement = (geometry: PostSourceGeometry) => {
@@ -536,21 +538,21 @@ function framingMatchKeys(match: FramingMatch, from: PostSourceGeometry) {
     };
   };
   const a = placement(from);
-  const b = placement(match.to);
   const lerp = (u: number, v: number, p: number) => u + (v - u) * p;
-  const at = (p: number): PostSourceGeometry => {
+  const at = (to: PostSourceGeometry, p: number): PostSourceGeometry => {
+    const b = placement(to);
     const scaleX = lerp(a.scaleX, b.scaleX, p);
     const scaleY = lerp(a.scaleY, b.scaleY, p);
     const x = lerp(a.x, b.x, p);
     const y = lerp(a.y, b.y, p);
     const clamp = (value: number) => Math.min(1, Math.max(0, value));
-    const left = clamp((lerp(from.x, match.to.x, p) - x) / scaleX);
-    const top = clamp((lerp(from.y, match.to.y, p) - y) / scaleY);
+    const left = clamp((lerp(from.x, to.x, p) - x) / scaleX);
+    const top = clamp((lerp(from.y, to.y, p) - y) / scaleY);
     const right = clamp(
-      (lerp(from.x + from.width, match.to.x + match.to.width, p) - x) / scaleX
+      (lerp(from.x + from.width, to.x + to.width, p) - x) / scaleX
     );
     const bottom = clamp(
-      (lerp(from.y + from.height, match.to.y + match.to.height, p) - y) / scaleY
+      (lerp(from.y + from.height, to.y + to.height, p) - y) / scaleY
     );
     return {
       x: x + left * scaleX,
@@ -563,9 +565,11 @@ function framingMatchKeys(match: FramingMatch, from: PostSourceGeometry) {
   };
   return Array.from({ length: FRAMING_MATCH_STEPS + 1 }, (_, step) => {
     const share = step / FRAMING_MATCH_STEPS;
+    const atSeconds = match.start + (match.end - match.start) * share;
+    const to = channelValueAt(match.incoming, "sourceGeometry", atSeconds);
     return {
-      atSeconds: match.start + (match.end - match.start) * share,
-      value: step === 0 ? from : at(sampleEasing(MOVE_EASING, share)),
+      atSeconds,
+      value: step === 0 ? from : at(to, sampleEasing(MOVE_EASING, share)),
       easing:
         step === FRAMING_MATCH_STEPS
           ? ("hold" as const)
