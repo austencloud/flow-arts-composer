@@ -150,6 +150,9 @@ export function createPostEditorState(deps: PostEditorDeps) {
       ? initialProject.data
       : openPostProject(sequence.id, now())
   );
+  // History keeps its original objects; saved copies must still be newer
+  // than the edit that undo, session cancellation, or import replaces.
+  let savedUpdatedAt = project.updatedAt;
   let past = $state.raw<PostProject[]>([]);
   let future = $state.raw<PostProject[]>([]);
   /** The project a drag started from; each live step re-applies to it. */
@@ -300,12 +303,17 @@ export function createPostEditorState(deps: PostEditorDeps) {
       )
         embedded[take.id] = timing;
     }
-    return { ...current, timings: embedded };
+    return {
+      ...current,
+      updatedAt: Math.max(current.updatedAt, savedUpdatedAt),
+      timings: embedded,
+    };
   }
 
   function persistProject(
     timingResult?: { ok: true } | { ok: false; error: string }
   ): void {
+    savedUpdatedAt = Math.max(now(), project.updatedAt, savedUpdatedAt + 1);
     const result = savePostProject(snapshotFor(project));
     saveRevision += 1;
     saveError = !result.ok
@@ -534,7 +542,7 @@ export function createPostEditorState(deps: PostEditorDeps) {
     if (gestureBase) return;
     const next = {
       ...project,
-      updatedAt: Math.max(now(), project.updatedAt + 1),
+      updatedAt: Math.max(now(), project.updatedAt + 1, savedUpdatedAt + 1),
     };
     const effect = timingEffects.get(project);
     if (effect) timingEffects.set(next, effect);
@@ -667,7 +675,7 @@ export function createPostEditorState(deps: PostEditorDeps) {
     const transfer = resolvePostStudioDraft(sequence.id, [
       projectDraftRecord({
         ...validated,
-        updatedAt: Math.max(validated.updatedAt, project.updatedAt + 1),
+        updatedAt: Math.max(validated.updatedAt, currentSnapshot.updatedAt + 1),
       }),
       { key: "before-import", value: JSON.stringify(currentSnapshot) },
     ]);
