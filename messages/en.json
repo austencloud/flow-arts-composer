@@ -6579,6 +6579,8 @@
   "effect_deep_tune": "Tune",
   "effect_deep_tune_anything": "Tune anything to create",
   "effect_deep_tune_effect": "Tune {effect}",
+  "effect_deep_tune_load_failed": "Couldn’t open tuning. Try Tune again.",
+  "effect_deep_tune_loading": "Opening...",
   "effect_deep_tune_look": "Tune the look",
   "effect_deep_turn_off_effect": "Turn off {effect}",
   "effect_deep_unnamed": "Unnamed",

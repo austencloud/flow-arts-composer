@@ -122,6 +122,9 @@
   setContext(LED_CUSTOMIZE_PAGE_CONTEXT, ledCustomizePage);
 
   let customizeOpen = $state(false);
+  let customizeLoadingEffect = $state<EffectId | null>(null);
+  let customizeFailedEffect = $state<EffectId | null>(null);
+  let customizeRequest = 0;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let CustomizeComponent = $state<Component<any> | null>(null);
 
@@ -652,10 +655,28 @@
   });
 
   async function handleCustomizeOpen(): Promise<void> {
-    if (!registration) return;
-    const mod = await registration.customizeComponent();
-    CustomizeComponent = mod.default;
-    customizeOpen = true;
+    if (!registration || activeEffect === "none") return;
+    const effectId = activeEffect;
+    if (customizeLoadingEffect === effectId) return;
+    const request = ++customizeRequest;
+    customizeLoadingEffect = effectId;
+    customizeFailedEffect = null;
+    try {
+      const mod = await registration.customizeComponent();
+      if (request !== customizeRequest || activeEffect !== effectId) return;
+      CustomizeComponent = mod.default;
+      customizeOpen = true;
+    } catch (error) {
+      if (request === customizeRequest && activeEffect === effectId) {
+        customizeFailedEffect = effectId;
+        console.error(
+          `[EffectsPanel] Could not open ${effectId} tuning:`,
+          error
+        );
+      }
+    } finally {
+      if (request === customizeRequest) customizeLoadingEffect = null;
+    }
   }
 
   function handleCustomizeClose(): void {
@@ -737,6 +758,8 @@
         onPrimaryInput={setPrimaryValue}
         {onTune}
         {tuneLabel}
+        tuneLoading={customizeLoadingEffect === activeEffect}
+        tuneError={customizeFailedEffect === activeEffect}
         {looks}
       />
     {/if}

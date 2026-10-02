@@ -29,6 +29,8 @@
     onSelectPreset: (presetId: string) => void;
     onPrimaryInput: (value: number) => void;
     onTune: () => void;
+    tuneLoading?: boolean;
+    tuneError?: boolean;
     /** Sidebar opens the full inspector; the popover opens deep tuning. */
     tuneLabel?: string;
     /**
@@ -64,6 +66,8 @@
     onSelectPreset,
     onPrimaryInput,
     onTune,
+    tuneLoading = false,
+    tuneError = false,
     tuneLabel = "",
     looks = "rail",
   }: Props = $props();
@@ -85,11 +89,23 @@
       <i class="fas {registration.meta.icon} dock-icon" aria-hidden="true"></i>
       <span class="dock-name">{effectUiLabel(registration.meta.label)}</span>
     </span>
-    <button type="button" class="tune-btn" onclick={onTune}>
+    <button
+      type="button"
+      class="tune-btn"
+      onclick={onTune}
+      disabled={tuneLoading}
+    >
       <i class="fas fa-sliders" aria-hidden="true"></i>
-      <span>{tuneLabel || t("effect_deep_tune")}</span>
+      <span
+        >{tuneLoading
+          ? t("effect_deep_tune_loading")
+          : tuneLabel || t("effect_deep_tune")}</span
+      >
     </button>
   </div>
+  {#if tuneError}
+    <p class="tune-error" role="alert">{t("effect_deep_tune_load_failed")}</p>
+  {/if}
 
   {#if looks === "tiles"}
     <!-- The inspector's own Looks section, rendered here rather than
@@ -222,6 +238,17 @@
   .tune-btn:focus-visible {
     outline: 2px solid var(--effect-accent);
     outline-offset: 2px;
+  }
+
+  .tune-btn:disabled {
+    cursor: wait;
+    opacity: 0.7;
+  }
+
+  .tune-error {
+    margin: 0;
+    color: var(--theme-error, #ff8b8b);
+    font-size: var(--font-size-compact, 12px);
   }
 
   .slider-row {
