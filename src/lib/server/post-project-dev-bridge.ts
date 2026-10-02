@@ -3,6 +3,10 @@ import { promises as fs } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import {
+  applyPostProjectOps,
+  type PostProjectOp,
+} from "$lib/shared/media-composition/domain/post-project-ops";
+import {
   PostProjectSchema,
   type PostProject,
 } from "$lib/shared/media-composition/domain/post-project";
@@ -238,6 +242,34 @@ export async function queuePostProjectEdit(
   command.ready = true;
   session.result = undefined;
   return { commandId: command.id, status: "pending" as const };
+}
+
+/**
+ * Applies named edits to the editor's current project and queues the result,
+ * so a script never has to read, rewrite and echo back the whole manifest.
+ * Returns the edit's command id plus a one-line change summary.
+ */
+export async function queuePostProjectOps(
+  input: { sessionId: string; ops: PostProjectOp[] },
+  directory = backupDir
+) {
+  const session = sessions.get(input.sessionId);
+  if (!session || Date.now() - session.seenAt >= ACTIVE_MS)
+    throw new Error("Editor session is not active.");
+  const next = applyPostProjectOps(session.snapshot, input.ops, {
+    now: Date.now(),
+  });
+  if (fingerprint(next) === session.fingerprint)
+    return { commandId: null, status: "unchanged" as const };
+  return queuePostProjectEdit(
+    {
+      sessionId: session.id,
+      baseRevision: session.revision,
+      baseFingerprint: session.fingerprint,
+      project: next,
+    },
+    directory
+  );
 }
 
 export function postProjectEditStatus(sessionId: string, commandId: string) {

@@ -279,7 +279,9 @@ Local development manifest edits use `state/post-editor-state.svelte.ts` for
 schema validation, normalization, undo and persistence. The dev-only
 `server/post-project-dev-bridge.ts` queues exact-session replacements and
 archives the previous snapshot; `services/post-project-dev-client.ts` polls
-from the open editor. `scripts/post-project.mjs` is the local CLI. See
+from the open editor. `domain/post-project-ops.ts` maps named CLI edits
+(add-hook, hook-speed, appearance, trim, canvas...) onto the existing pure
+edits. `scripts/post-project.mjs` is the local CLI. See
 `docs/development/post-studio-manifest-bridge.md` for the command contract.
 
 Post Studio keyframes live on the item: `post-project-keyframes.ts` owns
