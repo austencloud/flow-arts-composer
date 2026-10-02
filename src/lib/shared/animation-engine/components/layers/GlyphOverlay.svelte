@@ -68,6 +68,8 @@ CSS class .dark-mode triggers styling, with fallback to :global(:root.dark).
     // Pictographs keep their canonical square. Stage embeds may let the four
     // annotations use a rectangular frame while the motion plane stays square.
     glyphFrame = "pictograph",
+    // Fades the whole overlay; the host brings it in over a running canvas.
+    opacity = 1,
   }: {
     letter?: Letter | null;
     displayedLetter?: Letter | null;
@@ -85,6 +87,7 @@ CSS class .dark-mode triggers styling, with fallback to :global(:root.dark).
     isAtStartPlacement?: boolean;
     isAtEndPlacement?: boolean;
     glyphFrame?: GlyphOverlayFrameMode;
+    opacity?: number;
   } = $props();
 
   let overlayWidth = $state(0);
@@ -258,6 +261,7 @@ CSS class .dark-mode triggers styling, with fallback to :global(:root.dark).
   class:dark-mode={darkMode}
   data-controlled="true"
   data-glyph-frame={glyphFrame}
+  style:opacity={opacity < 1 ? Math.max(0, opacity) : undefined}
   bind:clientWidth={overlayWidth}
   bind:clientHeight={overlayHeight}
 >

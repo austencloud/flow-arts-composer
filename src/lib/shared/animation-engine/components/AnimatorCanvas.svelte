@@ -94,6 +94,7 @@ Last audit: 2025-12-27
     tunnelSelectedLayer = null,
     gridVisible = true,
     gridOpacity = undefined,
+    chromeOpacity = 1,
     gridMode = GridMode.DIAMOND,
     backgroundAlpha = 1,
     letter = null,
@@ -179,6 +180,12 @@ Last audit: 2025-12-27
     /** Optional externally choreographed grid alpha. The Sequence Viewer uses
      * this when 2D transforms into Tunnel on one reversible timeline. */
     gridOpacity?: number;
+    /**
+     * Fades the grid and the glyph overlay (letter, step number, elemental
+     * glyph) together, so a host can bring them in over a canvas that has been
+     * running without them.
+     */
+    chromeOpacity?: number;
     gridMode?: GridMode | null;
     backgroundAlpha?: number;
     letter?: Letter | null;
@@ -864,7 +871,10 @@ Last audit: 2025-12-27
       {primaryPropColors}
       {tunnelSelectedLayer}
       {gridVisible}
-      {gridOpacity}
+      gridOpacity={chromeOpacity < 1
+        ? (gridOpacity ?? 1) * Math.max(0, chromeOpacity)
+        : gridOpacity}
+      {chromeOpacity}
       {gridMode}
       {backgroundAlpha}
       {letter}

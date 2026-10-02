@@ -58,6 +58,7 @@
     findTunnelHook,
     updateItemAt,
   } from "$lib/shared/media-composition/domain/post-project-edits";
+  import { tunnelHookChromeOpacity } from "$lib/shared/media-composition/domain/tunnel-hook";
   import { posterQrAppearance } from "../post-qr-image-appearance";
   import { dragSourceCrop, type SourceCropHandle } from "./post-source-crop";
   import {
@@ -332,8 +333,24 @@
     }
     return null;
   });
+  // The tunnel carries none of the canvas's notation; grid, glyph and step
+  // number fade in as the hook hands over.
+  function hookChromeOpacity(regionId: string): number {
+    const hook = findTunnelHook(editor.project);
+    if (!hook) return 1;
+    const continuous =
+      continuityIds !== null &&
+      (regionId === continuityIds.hook || regionId === continuityIds.next);
+    if (!continuous && regionId !== hook.id) return 1;
+    return tunnelHookChromeOpacity(editor.previewSeconds - itemEnd(hook));
+  }
+  // One canvas runs the tunnel and the animation, so it wears the animation's
+  // own look from the first frame; the hook's copy of it can go stale.
   const continuityAppearance = $derived.by(() => {
     if (!continuityIds) return null;
+    const next = findItem(editor.project, continuityIds.next)?.item;
+    if (next?.kind === "animation")
+      return animationAppearanceForItem(next) ?? null;
     const hook = findItem(editor.project, continuityIds.hook)?.item;
     return hook?.kind === "animation"
       ? (hook.animationAppearance ?? null)
@@ -2409,6 +2426,7 @@
                   )}
                   {qrSequence}
                   tunnelHook={layer.tunnelHook ?? null}
+                  chromeOpacity={hookChromeOpacity(region.id)}
                   sequencePosition={layer.sequencePosition ??
                     (isVideo ? undefined : OPENING_POSITION)}
                   sequencePassIndex={layer.sequencePassIndex}
@@ -2496,10 +2514,9 @@
             playing={editor.isPlaying && entry.live}
             {exporting}
             {sequence}
-            animationAppearance={animationAppearanceForItem(
-              sourceItem?.kind === "animation" ? sourceItem : null
-            ) ?? continuityAppearance}
+            animationAppearance={continuityAppearance}
             tunnelHook={layer.tunnelHook ?? null}
+            chromeOpacity={hookChromeOpacity(id)}
             sequencePosition={layer.sequencePosition ?? OPENING_POSITION}
             sequencePassIndex={layer.sequencePassIndex}
             sequenceProgress={layer.sequenceFrame?.passBeatProgress}

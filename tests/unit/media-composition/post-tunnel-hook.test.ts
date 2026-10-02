@@ -13,6 +13,8 @@ import {
 import { compilePostProject } from "$lib/shared/media-composition/domain/post-project-compiler";
 import {
   tunnelHookArrival,
+  TUNNEL_HOOK_CHROME_SECONDS,
+  tunnelHookChromeOpacity,
   tunnelHookCopyOpacity,
 } from "$lib/shared/media-composition/domain/tunnel-hook";
 import { sampleEasing } from "$lib/shared/media-composition/domain/post-project-keyframes";
@@ -298,5 +300,20 @@ describe("tunnel hook speed curve", () => {
     ).sequencePosition!;
     expect(quarter).toBeCloseTo(3, 1);
     expect(smooth).toBeLessThan(quarter);
+  });
+});
+
+describe("tunnel hook chrome", () => {
+  it("carries no grid, glyph or step number until the hook hands over", () => {
+    expect(tunnelHookChromeOpacity(-3)).toBe(0);
+    expect(tunnelHookChromeOpacity(0)).toBe(0);
+  });
+
+  it("fades them in over the hand-off and then holds", () => {
+    const half = tunnelHookChromeOpacity(TUNNEL_HOOK_CHROME_SECONDS / 2);
+    expect(half).toBeGreaterThan(0.4);
+    expect(half).toBeLessThan(0.6);
+    expect(tunnelHookChromeOpacity(TUNNEL_HOOK_CHROME_SECONDS)).toBe(1);
+    expect(tunnelHookChromeOpacity(30)).toBe(1);
   });
 });
