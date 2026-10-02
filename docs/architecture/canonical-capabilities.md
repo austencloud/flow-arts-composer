@@ -5,6 +5,14 @@ wholesale. Each row names the behavior owner. Verify the path in current code
 before relying on it. Add a row only for shared behavior or an intentional
 keep-separate decision, not for every component.
 
+Theme canvas sizing lives in
+`shared/background/shared/background-canvas-resolution.ts`. Searches: theme
+preview, background resolution, enlarged fish, zoomed blossoms, canvas scale.
+It extracts the existing `BackgroundHost` resolution adapter; both that host
+and `ThemePreview` compose it. It mounts `@austencloud/backgrounds` at one canvas
+pixel per CSS pixel, preserving the existing reduced-data cap. The package
+still owns rendering, resize observation, quality, and transitions.
+
 LOOP extension completion lives in
 `packages/sequence-engine/src/loop/execution/complete-loop-extension.ts`.
 Searches: extend sequence, LOOP execution, seed admission, orientation closure,
