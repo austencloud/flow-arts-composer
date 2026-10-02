@@ -374,6 +374,20 @@ export const PresetVisualClipSchema = z
     /** Plays the sequence's tunnel across this clip's span; see `tunnel-hook.ts`. */
     tunnelHook: TunnelHookSchema.optional(),
     /**
+     * One side of an animation shrinking into a picture-in-picture square:
+     * from `start` both sides read one clock; see `pip-handoff.ts`. `id`
+     * pairs the animation's pieces ("from") with the square's ("to").
+     */
+    clockHandoff: z
+      .object({
+        id: NonEmptyIdSchema,
+        role: z.enum(["from", "to"]),
+        start: SecondsSchema,
+        end: SecondsSchema,
+      })
+      .strict()
+      .optional(),
+    /**
      * Keyframed overrides of `transform` and `opacity`, sampled and composed
      * with the static fields, fades and transitions at evaluation time.
      */

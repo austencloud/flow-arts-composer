@@ -20,6 +20,7 @@ import {
   tunnelHookBackdropOpacity,
   type TunnelHook,
 } from "$lib/shared/media-composition/domain/tunnel-hook";
+import { pipHandoffSample } from "$lib/shared/media-composition/domain/pip-handoff";
 import type { SequenceTimeMap } from "$lib/shared/media-composition/domain/sequence-time-map";
 import {
   mediaTimeToSequencePosition,
@@ -571,6 +572,51 @@ export function evaluatePresetLayers(
     return next ? takeSampleAt(next, introEnd) : null;
   };
 
+  /**
+   * An animation shrinking into its square and the square draw one figure
+   * from their overlap on. Each side's clock is read from whichever of its
+   * pieces covers the moment asked.
+   */
+  const handoffSamples = new Map<string, TakeSample | null>();
+  const handoffSample = (
+    handoff: NonNullable<PresetVisualClip["clockHandoff"]>
+  ): TakeSample | null => {
+    const key = `${handoff.id}:${handoff.role}`;
+    if (handoffSamples.has(key)) return handoffSamples.get(key)!;
+    const side =
+      (role: "from" | "to") =>
+      (postSeconds: number): TakeSample | null => {
+        const clip = preset.clips.find(
+          (candidate): candidate is PresetVisualClip =>
+            candidate.kind === "visual" &&
+            candidate.clockHandoff?.id === handoff.id &&
+            candidate.clockHandoff.role === role &&
+            resolvePresetTimePoint(
+              candidate.start,
+              durationSeconds,
+              preset.markers
+            ) <=
+              postSeconds + 1e-9 &&
+            postSeconds <=
+              resolvePresetTimePoint(
+                candidate.end,
+                durationSeconds,
+                preset.markers
+              ) +
+                1e-9
+        );
+        return clip ? takeSampleAt(clip, postSeconds) : null;
+      };
+    const sample = pipHandoffSample(
+      handoff,
+      { from: side("from"), to: side("to"), passLength: moveBeats.length },
+      clampedTime,
+      handoff.role
+    );
+    handoffSamples.set(key, sample);
+    return sample;
+  };
+
   const regionRects = evaluateRegionRects(preset, durationSeconds, clampedTime);
   const layers = preset.clips.flatMap((clip): EvaluatedFrameLayer[] => {
     if (clip.kind !== "visual") return [];
@@ -638,6 +684,13 @@ export function evaluatePresetLayers(
         arrival: hookArrival(projectProgress),
         endArrival: hookArrival(1),
       };
+    } else if (
+      clip.clockHandoff &&
+      moveBeats.length > 0 &&
+      clampedTime >= clip.clockHandoff.start
+    ) {
+      sample =
+        handoffSample(clip.clockHandoff) ?? takeSampleAt(clip, clampedTime);
     } else {
       sample = takeSampleAt(clip, clampedTime);
     }
