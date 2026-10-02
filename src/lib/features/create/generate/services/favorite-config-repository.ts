@@ -111,6 +111,7 @@ export async function loadCommunity(
     rows.push({ ownerId, setup: parsed.data });
   }
 
+  // Only migrated public profiles may appear beside community setups.
   const owners = await getVisibleOwnerProfiles(
     rows.map((row) => row.ownerId)
   );
