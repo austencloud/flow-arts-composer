@@ -68,6 +68,7 @@ export const TOOL_ICON: Record<PostToolId, string> = {
   timing: "fa-clock",
   crop: "fa-crop-simple",
   speed: "fa-gauge-high",
+  titles: "fa-heading",
   volume: "fa-volume-high",
   layout: "fa-table-cells-large",
   position: "fa-up-down-left-right",
@@ -111,6 +112,8 @@ export function toolLabel(id: PostToolId): string {
       return t("post_editor_tool_crop");
     case "speed":
       return t("post_editor_speed");
+    case "titles":
+      return t("post_editor_tool_titles");
     case "volume":
       return t("post_editor_volume");
     case "layout":

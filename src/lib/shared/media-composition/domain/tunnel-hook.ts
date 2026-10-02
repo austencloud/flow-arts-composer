@@ -8,6 +8,9 @@ import { z } from "zod";
  */
 export const TUNNEL_HOOK_FOLDS = [2, 4, 8] as const;
 
+/** Longest "how to say it" line the opening takes. */
+export const TUNNEL_SPOKEN_MAX_LENGTH = 60;
+
 const speedXSchema = z.number().finite().min(0).max(1);
 const speedYSchema = z.number().finite().min(-1).max(2);
 
@@ -36,10 +39,31 @@ export const TunnelHookSchema = z
      * the performer lands on the opening pose.
      */
     backdrop: z.boolean().optional(),
+    /**
+     * Words around the tunnel while it holds the frame: the sequence's name
+     * above it with how to say it, and the video's parts below it. Absent
+     * shows the name and the parts; see `tunnel-titles.ts`.
+     */
+    titles: z
+      .object({
+        name: z.boolean(),
+        /** How to say the name, shown in quotes under it. */
+        spoken: z.string().max(TUNNEL_SPOKEN_MAX_LENGTH).optional(),
+        structure: z.boolean(),
+      })
+      .strict()
+      .optional(),
   })
   .strict();
 
 export type TunnelHook = z.infer<typeof TunnelHookSchema>;
+export type TunnelTitles = NonNullable<TunnelHook["titles"]>;
+
+/** What an opening shows when it has no titles of its own. */
+export const DEFAULT_TUNNEL_TITLES: TunnelTitles = {
+  name: true,
+  structure: true,
+};
 
 /**
  * A new hook starts fast and settles into the opening pose (the "Ease out"
@@ -55,9 +79,9 @@ export const DEFAULT_TUNNEL_HOOK: TunnelHook = {
 export const DEFAULT_TUNNEL_HOOK_SECONDS = 5;
 
 /** Share of the intro the canvas holds the full frame before it moves. */
-const MOVE_START_SHARE = 0.4;
+export const MOVE_START_SHARE = 0.4;
 /** Share of the intro by which the canvas has settled into its own box. */
-const MOVE_END_SHARE = 0.9;
+export const MOVE_END_SHARE = 0.9;
 /** The easing the canvas takes from full frame to its own box. */
 export const MOVE_EASING: [number, number, number, number] = [0.65, 0, 0.35, 1];
 
@@ -105,7 +129,9 @@ type EasingSampler = (
  * The curve the dimming lifts on. Gentler than the box's own, so the light
  * comes up over the whole move instead of all at once in its middle.
  */
-const LIFT_EASING: [number, number, number, number] = [0.37, 0, 0.63, 1];
+export const LIFT_EASING: [number, number, number, number] = [
+  0.37, 0, 0.63, 1,
+];
 
 /** Where `progress` sits between `from` and `to`, from 0 to 1. */
 function share(progress: number, from: number, to: number): number {
