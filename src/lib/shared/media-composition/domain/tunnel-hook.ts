@@ -41,12 +41,17 @@ function easeInOutCubic(value: number): number {
 }
 
 /**
- * Where the playhead stands `progress` of the way through the hook, counted in
- * arrivals: 0 is the opening pose and `stepCount` the last landing. The whole
- * sequence plays once, easing in and out so the hand-off lands softly.
+ * A quartered LOOP has four equivalent passes. Its final pass gives the ring
+ * all four quadrants and finishes on the real animation's opening pose without
+ * racing through the other twelve moves. Other sequences retain a full pass.
  */
-export function tunnelHookArrival(progress: number, stepCount: number): number {
-  return stepCount * easeInOutCubic(clamp01(progress));
+export function tunnelHookArrival(
+  progress: number,
+  stepCount: number,
+  period = 1
+): number {
+  const span = period === 4 && stepCount % 4 === 0 ? stepCount / 4 : stepCount;
+  return stepCount - span + span * easeInOutCubic(clamp01(progress));
 }
 
 /**

@@ -48,6 +48,8 @@ export interface TakeClock {
 export interface SequenceFrameAlignment {
   steps: readonly StepData[];
   startPlacementDuration: number;
+  /** Passes needed for this LOOP to return to its opening pose. */
+  sequencePeriod?: number;
   /**
    * Clocks by take role. A clip whose `timeMapRole` names one reads its move
    * from that take's media time at the clip's own source time.
@@ -486,7 +488,15 @@ export function evaluatePresetLayers(
       durationSeconds,
       preset.markers
     );
-    if (end <= start || clampedTime < start || clampedTime > end) return [];
+    // The hook and its destination live in separate regions. At their shared
+    // edge the destination owns the single mounted sequence surface.
+    if (
+      end <= start ||
+      clampedTime < start ||
+      clampedTime > end ||
+      (clip.tunnelHook && clampedTime >= end && end < durationSeconds)
+    )
+      return [];
 
     const projectProgress = clamp01((clampedTime - start) / (end - start));
     const sourceIn = resolvePresetTimePoint(clip.sourceIn, durationSeconds);
@@ -511,9 +521,13 @@ export function evaluatePresetLayers(
     // is unmapped: the post-wide map belongs to another take's footage.
     let sample: TakeSample | null = null;
     if (clip.tunnelHook && moveBeats.length > 0) {
-      // The hook owns the clock: the whole sequence plays across its span.
+      // The hook owns the clock; a quartered LOOP only needs its final pass.
       sample = {
-        arrival: tunnelHookArrival(projectProgress, moveBeats.length),
+        arrival: tunnelHookArrival(
+          projectProgress,
+          moveBeats.length,
+          alignment?.sequencePeriod
+        ),
         endArrival: moveBeats.length,
       };
     } else if (alignment && clip.useResolvedTimeMap && moveBeats.length > 0) {
