@@ -1494,6 +1494,32 @@ describe("setVideoSpeed", () => {
 });
 
 describe("updateItem", () => {
+  it("persists a QR image contrast choice and can return to the poster theme", () => {
+    const image = {
+      ...card("qr"),
+      kind: "image" as const,
+      imageId: "qr-asset",
+    };
+    const base = {
+      ...project([card("main")], [[image]]),
+      images: [
+        {
+          id: "qr-asset",
+          label: "Sequence QR",
+          ref: { kind: "linked" as const, url: "https://example.test/qr.png" },
+        },
+      ],
+    };
+    const dark = valid(updateItem(base, "qr", { qrAppearance: "dark" }, ctx));
+    expect(item(dark, "qr")).toHaveProperty("qrAppearance", "dark");
+    expect(
+      PostProjectSchema.parse(JSON.parse(JSON.stringify(dark))).tracks[1]
+        .items[0]
+    ).toHaveProperty("qrAppearance", "dark");
+    const restored = valid(updateItem(dark, "qr", { qrAppearance: null }, ctx));
+    expect(item(restored, "qr")).not.toHaveProperty("qrAppearance");
+  });
+
   it("applies only the fields the item's kind owns", () => {
     const base = twoClips();
     const result = valid(

@@ -81,6 +81,12 @@ describe("toolRow", () => {
     expect(toolRow({ kind: "moves", hasLayout: false })[3]).toBe("shows");
     expect(toolRow(TEXT)[2]).toBe("text");
     expect(toolRow(CARD)[2]).toBe("appearance");
+    expect(
+      toolRow({ kind: "image", hasLayout: false, isQrImage: true })[2]
+    ).toBe("appearance");
+    expect(toolRow({ kind: "image", hasLayout: false })).not.toContain(
+      "appearance"
+    );
   });
 
   it("offers Sequence after the look tools for every notation item", () => {
@@ -113,7 +119,9 @@ describe("panels", () => {
     expect(defaultPanel(MAIN_CLIP)).toBe("trim");
     expect(defaultPanel(TEXT)).toBe("text");
     expect(defaultPanel(CARD)).toBe("appearance");
-    expect(defaultPanel({ kind: "moves", hasLayout: false })).toBe("appearance");
+    expect(defaultPanel({ kind: "moves", hasLayout: false })).toBe(
+      "appearance"
+    );
   });
 
   it("keeps the chosen panel while the selection has it", () => {

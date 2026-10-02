@@ -133,6 +133,7 @@ export {
 } from "./duration-badge.js";
 export {
   MODERN_QR_STYLE,
+  DARK_POST_QR_STYLE,
   PLAY_GREEN,
   PRINT_QR_RENDER_SIZE,
   applyDarkQrStyle,
