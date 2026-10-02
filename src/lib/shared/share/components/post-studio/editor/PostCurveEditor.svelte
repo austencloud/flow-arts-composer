@@ -1,13 +1,13 @@
 <!--
   PostCurveEditor.svelte
 
-  The body of the Curve popover for one keyframe segment's easing: the preset
+  The body of a Curve popover for one easing (a keyframe segment's, or the
+  tunnel hook's speed): the preset
   list (PostKeyframeControls passes it in) beside an SVG bezier plot, with the
   four number fields for the same x1/y1/x2/y2 underneath. The plot's two
   control points drag with mouse or touch and step with the arrow keys. Every
-  edit is a coalesced setSegmentEasing at the playhead, joined into one undo
-  step per drag or per typed value the same way a framing slider joins its
-  own drags.
+  edit goes to `onCommit`, which the owner joins into one undo step per drag
+  or per typed value the same way a framing slider joins its own drags.
 
   One data unit is the same length on both axes, so the square a curve
   crosses draws as a true square, with overshoot room above and below it. A
@@ -20,16 +20,9 @@
   import {
     POST_EASING_X_MAX,
     POST_EASING_X_MIN,
-    type PostItem,
-    type PostKeyframeChannel,
+    type PostEasing,
   } from "$lib/shared/media-composition/domain/post-project";
-  import {
-    easingControlPoints,
-    setSegmentEasing,
-    type PostKeyframeSegment,
-  } from "$lib/shared/media-composition/domain/post-project-keyframes";
-  import { editItemKeyframes } from "$lib/shared/media-composition/domain/post-project-edits";
-  import type { PostEditorState } from "$lib/shared/media-composition/state/post-editor-state.svelte";
+  import { easingControlPoints } from "$lib/shared/media-composition/domain/post-project-keyframes";
   import ScrubbableNumber from "$lib/shared/ui/components/ScrubbableNumber.svelte";
   import {
     CURVE_EDITOR_Y_MAX,
@@ -44,16 +37,16 @@
   } from "./post-curve-plot";
 
   interface Props {
-    editor: PostEditorState;
-    item: PostItem;
-    channel: PostKeyframeChannel;
-    segment: PostKeyframeSegment;
+    /** The curve being edited. */
+    easing: PostEasing;
     locked: boolean;
+    /** Receives each edited set of control points. */
+    onCommit: (next: [number, number, number, number]) => void;
     /** The easing preset list, laid out beside the plot. */
     presets: Snippet;
   }
 
-  let { editor, item, channel, segment, locked, presets }: Props = $props();
+  let { easing, locked, onCommit, presets }: Props = $props();
 
   // 130px units stand the 2.2-unit-tall plot level with the seven preset rows
   // beside it.
@@ -76,11 +69,11 @@
     return Math.min(CURVE_EDITOR_Y_MAX, Math.max(CURVE_EDITOR_Y_MIN, value));
   }
 
-  const isHold = $derived(segment.easing === "hold");
+  const isHold = $derived(easing === "hold");
   // A hold has no control points; these only fill the hidden fields then.
   const points = $derived.by(
     (): readonly [number, number, number, number] =>
-      easingControlPoints(segment.easing) ?? [0.42, 0, 0.58, 1]
+      easingControlPoints(easing) ?? [0.42, 0, 0.58, 1]
   );
   const x1 = $derived(points[0]);
   const y1 = $derived(points[1]);
@@ -126,17 +119,7 @@
 
   function commit(next: readonly [number, number, number, number]): void {
     if (locked) return;
-    editor.editSetting(
-      `${item.id}:${channel}:easing:${segment.index}`,
-      (project, ctx) =>
-        editItemKeyframes(
-          project,
-          item.id,
-          (it) =>
-            setSegmentEasing(it, channel, editor.previewSeconds, [...next]),
-          ctx
-        )
-    );
+    onCommit([...next]);
   }
 
   function handlePointerDown(handle: "p1" | "p2", event: PointerEvent): void {

@@ -7,18 +7,37 @@ import { z } from "zod";
  */
 export const TUNNEL_HOOK_FOLDS = [2, 4, 8] as const;
 
+const speedXSchema = z.number().finite().min(0).max(1);
+const speedYSchema = z.number().finite().min(-1).max(2);
+
 export const TunnelHookSchema = z
   .object({
     /** Rotational arms, base included. */
     fold: z.union([z.literal(2), z.literal(4), z.literal(8)]),
     /** Reflect the arms across the vertical axis (doubles the copies). */
     mirror: z.boolean(),
+    /**
+     * How fast the sequence plays across the hook: a CSS cubic-bezier from
+     * hook progress to sequence progress. Absent means the original smooth
+     * ease in and out.
+     */
+    speed: z
+      .tuple([speedXSchema, speedYSchema, speedXSchema, speedYSchema])
+      .optional(),
   })
   .strict();
 
 export type TunnelHook = z.infer<typeof TunnelHookSchema>;
 
-export const DEFAULT_TUNNEL_HOOK: TunnelHook = { fold: 8, mirror: false };
+/**
+ * A new hook starts fast and settles into the opening pose (the "Ease out"
+ * preset). Hooks saved without a speed keep the original smooth ease.
+ */
+export const DEFAULT_TUNNEL_HOOK: TunnelHook = {
+  fold: 8,
+  mirror: false,
+  speed: [0, 0, 0.58, 1],
+};
 
 /** Hook seconds a new hook starts with. */
 export const DEFAULT_TUNNEL_HOOK_SECONDS = 5;
@@ -48,10 +67,11 @@ function easeInOutCubic(value: number): number {
 export function tunnelHookArrival(
   progress: number,
   stepCount: number,
-  period = 1
+  period = 1,
+  ease: (progress: number) => number = easeInOutCubic
 ): number {
   const span = period === 4 && stepCount % 4 === 0 ? stepCount / 4 : stepCount;
-  return stepCount - span + span * easeInOutCubic(clamp01(progress));
+  return stepCount - span + span * clamp01(ease(clamp01(progress)));
 }
 
 /**

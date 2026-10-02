@@ -53,6 +53,8 @@ export interface PostToolSelection {
   hasLayout: boolean;
   /** A decoded QR image has its own contrast setting. */
   isQrImage?: boolean;
+  /** The opening tunnel hook has its own speed curve. */
+  isTunnelHook?: boolean;
 }
 
 const ACTION_TOOLS = new Set<PostToolId>([
@@ -104,6 +106,7 @@ export function toolRow(selection: PostToolSelection): PostToolId[] {
         "split",
         "appearance",
         "sequence",
+        ...(selection.isTunnelHook ? (["speed"] as const) : []),
         "timing",
         ...ITEM_TAIL,
       ];

@@ -6146,6 +6146,7 @@
   "post_editor_add_card_end": "Choreografie-Karte am Ende",
   "post_editor_add_tunnel_hook": "Tunnel-Einstieg hinzufügen",
   "post_editor_remove_tunnel_hook": "Einstieg entfernen",
+  "post_editor_hook_play": "Einstieg abspielen",
   "post_editor_text_placeholder": "Dein Text",
   "post_editor_undo": "Rückgängig",
   "post_editor_redo": "Wiederholen",
