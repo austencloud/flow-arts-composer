@@ -1212,6 +1212,25 @@
       {locked}
       onchange={(value) => patchItem({ cardAppearance: value })}
     />
+  {:else if tool === "appearance" && item.kind === "image"}
+    <div class="qr-appearance">
+      <strong>QR code</strong>
+      <SegmentedControl
+        color="accent"
+        options={[
+          { value: "poster", label: "Poster", disabled: locked },
+          { value: "light", label: "Light", disabled: locked },
+          { value: "dark", label: "Dark", disabled: locked },
+        ]}
+        value={item.qrAppearance ?? "poster"}
+        onchange={(value) =>
+          patchItem({
+            qrAppearance: value === "poster" ? null : value,
+          })}
+        ariaLabel="QR code appearance"
+      />
+      <p>Poster follows the card's light or dark mode.</p>
+    </div>
   {:else if tool === "sequence" && (item.kind === "animation" || item.kind === "moves" || item.kind === "card")}
     <PostSequenceActionsTool {editor} {locked} busy={sequenceBusy} />
   {:else if tool === "labels" && item.kind === "animation"}
@@ -1325,6 +1344,18 @@
     flex-direction: column;
     height: 100%;
     min-height: 0;
+  }
+
+  .qr-appearance {
+    display: grid;
+    gap: 0.75rem;
+    min-width: 0;
+  }
+
+  .qr-appearance p {
+    margin: 0;
+    color: var(--theme-text-secondary, #aaa);
+    font-size: 0.8125rem;
   }
 
   .status {

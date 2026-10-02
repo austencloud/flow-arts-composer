@@ -461,6 +461,8 @@ export const PostImageItemSchema = z
     ...itemBase,
     kind: z.literal("image"),
     imageId: IdSchema,
+    /** QR artwork can follow the post theme or use a chosen contrast. */
+    qrAppearance: z.enum(["light", "dark"]).optional(),
     sourceGeometry: PostSourceGeometrySchema.optional(),
     keyframes: z
       .object({
