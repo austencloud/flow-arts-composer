@@ -9,6 +9,7 @@ import {
   findTunnelHook,
   lineUpTunnelHook,
   removeTunnelHook,
+  setTunnelHookBackdropFrame,
   setTunnelHookSpeed,
 } from "$lib/shared/media-composition/domain/post-project-edits";
 import { normalizeProject as finishProject } from "$lib/shared/media-composition/domain/post-project-normalize";
@@ -917,6 +918,60 @@ describe("tunnel hook on its footage's beats", () => {
     expect(geometry[geometry.length - 1]!.value).toEqual(band);
     expect(layer(0.2, "v1").sourceGeometry!.height).toBeCloseTo(1, 6);
     expect(layer(cue, "v1").sourceGeometry).toEqual(band);
+  });
+
+  it("frames the footage closer behind the tunnel, then settles onto its crop", () => {
+    const band = {
+      x: 0,
+      y: 0,
+      width: 1,
+      height: 0.5,
+      rotation: 0,
+      crop: { left: 0, top: 0.2, right: 1, bottom: 0.7 },
+    };
+    const framed = setTunnelHookBackdropFrame(
+      linedUp(9.6, { box: { ...POST_BOX.full }, sourceGeometry: band }),
+      { zoom: 1.25, x: 0.5, y: 0.55 },
+      ctx
+    );
+    expect(findTunnelHook(framed)!.tunnelHook!.backdropFrame).toEqual({
+      zoom: 1.25,
+      x: 0.5,
+      y: 0.55,
+    });
+    const { compiled, cue, layer } = play(framed);
+    const clip = compiled.preset.clips.find((item) => item.id === "v1")!;
+    const geometry =
+      clip.kind === "visual" ? clip.sourceGeometryKeyframes! : [];
+    // A fifth closer: the middle 80% of the picture, around the chosen centre.
+    const { crop } = geometry[0]!.value;
+    expect(crop.right - crop.left).toBeCloseTo(0.8, 9);
+    expect(crop.bottom - crop.top).toBeCloseTo(0.8, 9);
+    expect((crop.left + crop.right) / 2).toBeCloseTo(0.5, 9);
+    expect((crop.top + crop.bottom) / 2).toBeCloseTo(0.55, 9);
+    expect(layer(cue, "v1").sourceGeometry).toEqual(band);
+
+    // A centre near the edge keeps the view inside the picture.
+    const edge = setTunnelHookBackdropFrame(
+      framed,
+      { zoom: 2, x: 0, y: 1 },
+      ctx
+    );
+    const edgeClip = play(edge).compiled.preset.clips.find(
+      (item) => item.id === "v1"
+    )!;
+    const edgeCrop =
+      edgeClip.kind === "visual"
+        ? edgeClip.sourceGeometryKeyframes![0]!.value.crop
+        : null;
+    expect(edgeCrop!.left).toBeCloseTo(0, 9);
+    expect(edgeCrop!.top).toBeCloseTo(0.5, 9);
+    expect(edgeCrop!.right).toBeCloseTo(0.5, 9);
+    expect(edgeCrop!.bottom).toBeCloseTo(1, 9);
+
+    // Showing the whole video again drops the framing.
+    const whole = setTunnelHookBackdropFrame(framed, null, ctx);
+    expect(findTunnelHook(whole)!.tunnelHook!.backdropFrame).toBeUndefined();
   });
 
   it("leaves footage alone under a tunnel with nothing behind it", () => {

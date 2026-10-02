@@ -14,6 +14,7 @@ import {
   removeTunnelHook,
   setProjectBackground,
   setProjectCanvas,
+  setTunnelHookBackdropFrame,
   setTunnelHookSpeed,
   trimItem,
   updateItem,
@@ -49,6 +50,7 @@ export type PostProjectOp =
   | { op: "line-up-hook" }
   | { op: "add-titles"; spoken?: string; at?: number }
   | { op: "hook-speed"; speed: string | number[] }
+  | { op: "hook-frame"; zoom?: number; x?: number; y?: number; whole?: boolean }
   | { op: "appearance"; item?: string; set: Record<string, unknown> }
   | { op: "item"; item: string; patch: PostItemPatch }
   | { op: "trim"; item: string; edge: "start" | "end"; seconds: number }
@@ -147,6 +149,25 @@ function applyOp(
       });
       if (!result) throw new Error("The titles could not be placed.");
       return result.project;
+    }
+    case "hook-frame": {
+      const hook = findTunnelHook(project);
+      if (!hook?.tunnelHook?.backdrop)
+        throw new Error("This post has no opening tunnel over its footage.");
+      if (op.whole) return setTunnelHookBackdropFrame(project, null, ctx);
+      const current = hook.tunnelHook.backdropFrame ?? {
+        zoom: 1,
+        x: 0.5,
+        y: 0.5,
+      };
+      const parsed = TunnelHookSchema.shape.backdropFrame.safeParse({
+        zoom: op.zoom ?? current.zoom,
+        x: op.x ?? current.x,
+        y: op.y ?? current.y,
+      });
+      if (!parsed.success || !parsed.data)
+        throw new Error("zoom is 1 to 3; x and y are 0 to 1.");
+      return setTunnelHookBackdropFrame(project, parsed.data, ctx);
     }
     case "hook-speed": {
       if (!findTunnelHook(project))

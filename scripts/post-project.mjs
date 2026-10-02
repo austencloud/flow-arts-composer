@@ -84,6 +84,13 @@ const EDIT_COMMANDS = {
     ...number("at"),
   }),
   "hook-speed": () => ({ op: "hook-speed", speed: positional(0, "a curve") }),
+  "hook-frame": () => ({
+    op: "hook-frame",
+    ...number("zoom"),
+    ...number("x"),
+    ...number("y"),
+    ...(flag("whole") ? { whole: true } : {}),
+  }),
   appearance: () => ({
     op: "appearance",
     ...(option("item") ? { item: option("item") } : {}),
@@ -250,6 +257,7 @@ try {
   line-up-hook                 end the tunnel on the footage's opening pose, footage behind it
   add-titles [--spoken "how to say it"] [--at N]   name titles clip, over the opening tunnel when there is one
   hook-speed <ease-out|ease-in|ease-in-out|linear|smooth|overshoot|default|x1,y1,x2,y2>
+  hook-frame [--zoom 1.4] [--x 0.5] [--y 0.55] [--whole]   frame the footage behind the opening tunnel
   appearance [--item hook|animations|all|ID] --set glyph=false ...  (keys: tkaGlyph stepNumbers gridMode progressBar ...; null clears)
   item --item ID --patch '{"opacity":0.5}'
   trim --item ID --edge start|end --seconds N

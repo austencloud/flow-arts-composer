@@ -18,6 +18,7 @@
     POST_TIME_EPSILON,
     findItem,
     itemEnd,
+    mainItemAt,
     textBox,
     wrapDegrees,
     type PostBox,
@@ -34,6 +35,7 @@
     canReplaceOverlayVideoWithAnimation,
     replaceOverlayVideoWithAnimation,
     trimItem,
+    setTunnelHookBackdropFrame,
     setTunnelHookSpeed,
     trimItemToSource,
     updateItem,
@@ -97,6 +99,10 @@
   import PostCardAppearanceTool from "./PostCardAppearanceTool.svelte";
   import PostSequenceActionsTool from "./PostSequenceActionsTool.svelte";
   import PostVideoColorTool from "./PostVideoColorTool.svelte";
+  import {
+    TUNNEL_BACKDROP_MAX_ZOOM,
+    type TunnelBackdropFrame,
+  } from "$lib/shared/media-composition/domain/tunnel-hook";
   import {
     autoGradeVideo,
     type PostVideoColorGrade,
@@ -307,6 +313,38 @@
       setTunnelHookSpeed(project, speed, ctx)
     );
   }
+
+  /**
+   * The footage behind the opening, as framed now: the hook's own framing, or
+   * the whole picture centred where the clip under it is framed.
+   */
+  const backdropFrame = $derived.by((): TunnelBackdropFrame | null => {
+    if (item.kind !== "animation" || !item.tunnelHook?.backdrop) return null;
+    if (item.tunnelHook.backdropFrame) return item.tunnelHook.backdropFrame;
+    const under = mainItemAt(editor.project, item.start);
+    const crop =
+      under && (under.kind === "video" || under.kind === "image")
+        ? under.sourceGeometry?.crop
+        : undefined;
+    return {
+      zoom: 1,
+      x: crop ? (crop.left + crop.right) / 2 : 0.5,
+      y: crop ? (crop.top + crop.bottom) / 2 : 0.5,
+    };
+  });
+
+  function commitBackdropFrame(
+    patch: Partial<TunnelBackdropFrame>,
+    field: string
+  ): void {
+    if (locked || !backdropFrame) return;
+    const next = { ...backdropFrame, ...patch };
+    editor.editSetting(`${item.id}:backdrop-frame:${field}`, (project, ctx) =>
+      setTunnelHookBackdropFrame(project, next, ctx)
+    );
+  }
+
+  const zoomTimes = (value: number) => `${value.toFixed(2)}×`;
 
   function setSpeed(speed: number): void {
     if (locked) return;
@@ -984,6 +1022,50 @@
       onChange={(next, field) =>
         change(`source-geometry:${field}`, { sourceGeometry: next })}
     />
+  {:else if tool === "crop" && item.kind === "animation" && backdropFrame}
+    <p class="hint">{t("post_editor_backdrop_frame_hint")}</p>
+    <ValueSlider
+      label={t("post_editor_backdrop_zoom")}
+      value={backdropFrame.zoom}
+      min={1}
+      max={TUNNEL_BACKDROP_MAX_ZOOM}
+      step={0.01}
+      origin={1}
+      format={zoomTimes}
+      disabled={locked}
+      onchange={(zoom) => commitBackdropFrame({ zoom }, "zoom")}
+    />
+    <ValueSlider
+      label={t("post_editor_backdrop_up_down")}
+      value={backdropFrame.y * 100}
+      min={0}
+      max={100}
+      step={0.5}
+      format={percent}
+      disabled={locked}
+      onchange={(value) => commitBackdropFrame({ y: value / 100 }, "y")}
+    />
+    <ValueSlider
+      label={t("post_editor_backdrop_left_right")}
+      value={backdropFrame.x * 100}
+      min={0}
+      max={100}
+      step={0.5}
+      format={percent}
+      disabled={locked}
+      onchange={(value) => commitBackdropFrame({ x: value / 100 }, "x")}
+    />
+    {#if item.tunnelHook?.backdropFrame}
+      <PanelButton
+        disabled={locked}
+        onclick={() =>
+          editor.edit((project, ctx) =>
+            setTunnelHookBackdropFrame(project, null, ctx)
+          )}
+      >
+        {t("post_editor_backdrop_whole")}
+      </PanelButton>
+    {/if}
   {:else if tool === "speed" && item.kind === "animation" && item.tunnelHook}
     {@const hookSpeed = item.tunnelHook.speed ?? HOOK_DEFAULT_SPEED}
     <PostCurveEditor easing={hookSpeed} {locked} onCommit={commitHookSpeed}>

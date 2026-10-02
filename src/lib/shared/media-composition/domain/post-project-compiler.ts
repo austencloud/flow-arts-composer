@@ -50,6 +50,7 @@ import {
 import {
   MOVE_EASING,
   tunnelHookBoxKeys,
+  type TunnelBackdropFrame,
 } from "$lib/shared/media-composition/domain/tunnel-hook";
 import {
   titlesPlanOf,
@@ -401,6 +402,7 @@ function opacityMotionKeys(item: PostItem): MotionKey<number>[] | undefined {
 interface FootageIntro {
   start: number;
   seconds: number;
+  frame?: TunnelBackdropFrame;
 }
 
 /**
@@ -419,6 +421,9 @@ function footageIntroOf(project: PostProject): FootageIntro | null {
         return {
           start: item.start,
           seconds: Math.min(item.tunnelHook.seconds, item.duration),
+          ...(item.tunnelHook.backdropFrame
+            ? { frame: item.tunnelHook.backdropFrame }
+            : {}),
         };
       }
     }
@@ -436,12 +441,14 @@ function playsDuring(item: PostItem, intro: FootageIntro): boolean {
 
 /**
  * The same footage cropped to fill the whole frame, centred where `geometry`
- * frames it. The picture's shape is read back from `geometry`, which draws its
- * crop unstretched. Null for a slanted picture, which has no such crop.
+ * frames it, or `frame.zoom` times closer around `frame`'s centre. The
+ * picture's shape is read back from `geometry`, which draws its crop
+ * unstretched. Null for a slanted picture, which has no such crop.
  */
 function fullFrameGeometry(
   geometry: PostSourceGeometry,
-  output: PostOutputSize
+  output: PostOutputSize,
+  frame?: TunnelBackdropFrame
 ): PostSourceGeometry | null {
   const quarter = Math.round(geometry.rotation / 90);
   if (Math.abs(geometry.rotation - quarter * 90) > 1e-6) return null;
@@ -457,18 +464,15 @@ function fullFrameGeometry(
   const width = sideways ? output.height / output.width : 1;
   const height = sideways ? output.width / output.height : 1;
   const rectRatio = (width * output.width) / (height * output.height);
+  const zoom = frame?.zoom ?? 1;
   const share =
     pictureRatio > rectRatio
-      ? { x: rectRatio / pictureRatio, y: 1 }
-      : { x: 1, y: pictureRatio / rectRatio };
-  const left = Math.min(
-    1 - share.x,
-    Math.max(0, (crop.left + crop.right) / 2 - share.x / 2)
-  );
-  const top = Math.min(
-    1 - share.y,
-    Math.max(0, (crop.top + crop.bottom) / 2 - share.y / 2)
-  );
+      ? { x: rectRatio / pictureRatio / zoom, y: 1 / zoom }
+      : { x: 1 / zoom, y: pictureRatio / rectRatio / zoom };
+  const centreX = frame?.x ?? (crop.left + crop.right) / 2;
+  const centreY = frame?.y ?? (crop.top + crop.bottom) / 2;
+  const left = Math.min(1 - share.x, Math.max(0, centreX - share.x / 2));
+  const top = Math.min(1 - share.y, Math.max(0, centreY - share.y / 2));
   return {
     x: (1 - width) / 2,
     y: (1 - height) / 2,
@@ -597,7 +601,7 @@ function sourceGeometryKeys(
   }));
   const full =
     intro && output && item.sourceGeometry
-      ? fullFrameGeometry(item.sourceGeometry, output)
+      ? fullFrameGeometry(item.sourceGeometry, output, intro.frame)
       : null;
   if (intro && full) {
     // The intro sets the crop until it has settled; the item's own keys follow.

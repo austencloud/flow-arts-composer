@@ -81,6 +81,7 @@ import {
 import {
   DEFAULT_TUNNEL_HOOK,
   DEFAULT_TUNNEL_HOOK_SECONDS,
+  type TunnelBackdropFrame,
   type TunnelHook,
 } from "$lib/shared/media-composition/domain/tunnel-hook";
 import { openingTitlesSpan } from "$lib/shared/media-composition/domain/tunnel-titles";
@@ -733,6 +734,27 @@ export function setTunnelHookSpeed(
   if (!hook?.tunnelHook) return project;
   const { speed: _previous, ...rest } = hook.tunnelHook;
   const tunnelHook: TunnelHook = speed ? { ...rest, speed } : rest;
+  const tracks = project.tracks.map((track) => ({
+    ...track,
+    items: track.items.map((item) =>
+      item.id === hook.id ? { ...item, tunnelHook } : item
+    ),
+  }));
+  return finish({ ...project, tracks }, ctx);
+}
+
+/** Frames the footage behind the opening tunnel; null shows the whole picture. */
+export function setTunnelHookBackdropFrame(
+  project: PostProject,
+  frame: TunnelBackdropFrame | null,
+  ctx: EditContext
+): PostProject {
+  const hook = findTunnelHook(project);
+  if (!hook?.tunnelHook) return project;
+  const { backdropFrame: _previous, ...rest } = hook.tunnelHook;
+  const tunnelHook: TunnelHook = frame
+    ? { ...rest, backdropFrame: { ...frame } }
+    : rest;
   const tracks = project.tracks.map((track) => ({
     ...track,
     items: track.items.map((item) =>

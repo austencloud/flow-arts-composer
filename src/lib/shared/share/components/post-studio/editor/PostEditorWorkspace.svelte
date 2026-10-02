@@ -1013,6 +1013,7 @@
       kind: item.kind,
       isQrImage: item.kind === "image" && qrImageIds[item.imageId] === true,
       isTunnelHook: item.kind === "animation" && !!item.tunnelHook,
+      hasBackdrop: item.kind === "animation" && !!item.tunnelHook?.backdrop,
       hasLayout:
         item.kind === "video" &&
         findItem(editor.project, item.id)?.trackIndex === 0,
