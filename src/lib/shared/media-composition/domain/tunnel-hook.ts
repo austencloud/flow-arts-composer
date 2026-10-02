@@ -102,46 +102,46 @@ type EasingSampler = (
 ) => number;
 
 /**
- * How far the canvas has come from the full frame into its own box at intro
- * `progress`, from 0 to 1, on the box's own curve. `sample` is the keyframe
- * easing sampler.
+ * The curve the dimming lifts on. Gentler than the box's own, so the light
+ * comes up over the whole move instead of all at once in its middle.
  */
-export function tunnelHookSettle(
-  progress: number,
-  sample: EasingSampler
-): number {
-  const t = clamp01(
-    (progress - MOVE_START_SHARE) / (MOVE_END_SHARE - MOVE_START_SHARE)
-  );
-  return clamp01(sample(MOVE_EASING, t));
+const LIFT_EASING: [number, number, number, number] = [0.37, 0, 0.63, 1];
+
+/** Where `progress` sits between `from` and `to`, from 0 to 1. */
+function share(progress: number, from: number, to: number): number {
+  return clamp01((progress - from) / (to - from));
 }
 
 /**
  * Opacity of everything behind the tunnel at intro `progress`: dimmed while
- * the tunnel fills the frame, brightening as the canvas eases into its box,
- * so the footage is at full strength when the animation takes over.
+ * the tunnel fills the frame, brightening gently as the canvas eases into its
+ * box, so the footage is at full strength when the animation takes over.
+ * `sample` is the keyframe easing sampler.
  */
 export function tunnelHookBackdropOpacity(
   progress: number,
   sample: EasingSampler
 ): number {
+  const lift = clamp01(
+    sample(LIFT_EASING, share(progress, MOVE_START_SHARE, MOVE_END_SHARE))
+  );
   return (
-    TUNNEL_HOOK_BACKDROP_OPACITY +
-    (1 - TUNNEL_HOOK_BACKDROP_OPACITY) * tunnelHookSettle(progress, sample)
+    TUNNEL_HOOK_BACKDROP_OPACITY + (1 - TUNNEL_HOOK_BACKDROP_OPACITY) * lift
   );
 }
 
 /**
  * Opacity of the animation's own panel colour. With footage behind the
- * tunnel the panel is clear while the tunnel fills the frame and fills in as
- * the canvas settles, so it is whole before the animation takes over and the
- * canvas does not change at the cue.
+ * tunnel the panel stays clear while the canvas moves, so it never darkens
+ * the footage it passes over, and fills in once the canvas has settled into
+ * its box, so it is whole when the animation takes over at the cue.
  */
 export function tunnelHookPanelOpacity(
   intro: { hook: TunnelHook; progress: number } | null | undefined,
   sample: EasingSampler
 ): number {
-  return intro?.hook.backdrop ? tunnelHookSettle(intro.progress, sample) : 1;
+  if (!intro?.hook.backdrop) return 1;
+  return clamp01(sample(LIFT_EASING, share(intro.progress, MOVE_END_SHARE, 1)));
 }
 
 /** Progress at which the extra performers start to leave. */

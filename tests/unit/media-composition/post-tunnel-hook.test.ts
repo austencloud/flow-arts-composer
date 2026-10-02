@@ -700,10 +700,18 @@ describe("tunnel hook lined up with its footage", () => {
     expect(footage(0.5).opacity).toBeCloseTo(TUNNEL_HOOK_BACKDROP_OPACITY, 6);
     expect(footage(cue * 0.95).opacity).toBeCloseTo(1, 6);
     expect(footage(cue + 0.5).opacity).toBe(1);
-    const intro = frame(0.5).find((layer) => layer.tunnelHook)!;
-    expect(tunnelHookPanelOpacity(intro.tunnelHook, sampleEasing)).toBe(0);
-    const settled = frame(cue * 0.95).find((layer) => layer.tunnelHook)!;
-    expect(tunnelHookPanelOpacity(settled.tunnelHook, sampleEasing)).toBe(1);
+    // The panel stays clear while the canvas moves over the footage and fills
+    // in only once the canvas has settled, before the cue.
+    const panel = (time: number) =>
+      tunnelHookPanelOpacity(
+        frame(time).find((layer) => layer.tunnelHook)!.tunnelHook,
+        sampleEasing
+      );
+    expect(panel(0.5)).toBe(0);
+    expect(panel(cue * 0.89)).toBe(0);
+    expect(panel(cue * 0.95)).toBeGreaterThan(0);
+    expect(panel(cue * 0.95)).toBeLessThan(1);
+    expect(panel(cue - 1e-3)).toBeGreaterThan(0.99);
   });
 
   it("takes the footage back out from under the intro when the hook goes", () => {
