@@ -33,6 +33,14 @@
     postAnimationTrailSettings,
   } from "./post-animation-effects.svelte";
   import { sequenceArrowLayers } from "$lib/shared/media-composition/domain/sequence-frame";
+  import {
+    tunnelHookCopyOpacity,
+    type TunnelHook,
+  } from "$lib/shared/media-composition/domain/tunnel-hook";
+  import type { AdditionalLayerProps } from "$lib/shared/animation-engine/domain/types/trail-capture-types";
+  import { DEFAULT_CONFIG } from "$lib/shared/sequence-viewer/tunnel/tunnel-config";
+  import { buildTunnelLayers } from "$lib/shared/sequence-viewer/tunnel/tunnel-layer-builder";
+  import { sampleTunnelProps } from "$lib/shared/sequence-viewer/tunnel/tunnel-prop-sampling";
 
   let {
     sequence,
@@ -48,6 +56,7 @@
     leftPropType,
     rightPropType,
     animationAppearance = null,
+    tunnelHook = null,
   }: {
     sequence: SequenceData;
     sequencePosition: number;
@@ -66,6 +75,8 @@
     leftPropType?: PropType;
     rightPropType?: PropType;
     animationAppearance?: PostAnimationItem["animationAppearance"] | null;
+    /** The opening hook: extra performers around the sequence, leaving as it settles. */
+    tunnelHook?: { hook: TunnelHook; progress: number } | null;
   } = $props();
 
   const inheritedVisibility = getAnimationVisibilityManager();
@@ -271,6 +282,49 @@
       rightProp = stateManager.getRightPropState();
     });
   });
+
+  // The hook's extra performers: the sequence under each tunnel arm's
+  // transform, built once per sequence and arm layout, then sampled at the
+  // layer's own position so they run in lockstep with the red/blue pair.
+  /** The hook's extra performers still loading their prop artwork. */
+  let hookTexturesPending = $state(false);
+  let hookCopies = $state.raw<SequenceData[]>([]);
+  $effect(() => {
+    const hook = tunnelHook?.hook;
+    const target = sequence;
+    if (!hook) {
+      hookCopies = [];
+      hookTexturesPending = false;
+      return;
+    }
+    hookCopies = [];
+    hookTexturesPending = true;
+    let cancelled = false;
+    void buildTunnelLayers(target, {
+      ...DEFAULT_CONFIG,
+      fold: hook.fold,
+      mirror: hook.mirror,
+    }).then((built) => {
+      if (!cancelled) hookCopies = built;
+    });
+    return () => {
+      cancelled = true;
+    };
+  });
+  const hookLayers = $derived.by((): AdditionalLayerProps[] => {
+    if (!tunnelHook || hookCopies.length === 0) return [];
+    const progress = tunnelHook.progress;
+    return hookCopies.map((copy, index) => {
+      const props = sampleTunnelProps(copy, sequencePosition);
+      return {
+        leftProp: props.left,
+        rightProp: props.right,
+        opacity: tunnelHookCopyOpacity(progress, index, hookCopies.length),
+        leftPropType: propConfig.leftPropType,
+        rightPropType: propConfig.rightPropType,
+      };
+    });
+  });
 </script>
 
 <div
@@ -282,6 +336,8 @@
   data-sequence-pass-index={sequencePassIndex}
   data-sequence-progress-visible={progressVisible}
   data-sequence-progress-dark={animationAppearance?.darkMode ?? true}
+  data-tunnel-hook-pending={Boolean(tunnelHook) &&
+    (hookCopies.length === 0 || hookTexturesPending)}
 >
   <div class="animation-stage" use:destination={animationAppearance}>
     {#if showMandala}
@@ -384,6 +440,11 @@
         <AnimatorCanvas
           {leftProp}
           {rightProp}
+          additionalLayers={hookLayers}
+          onAdditionalLayerTextureStatusChange={(status) =>
+            (hookTexturesPending =
+              Boolean(tunnelHook) &&
+              (status.requested === 0 || status.loaded < status.requested))}
           gridVisible={animationAppearance?.gridMode !== "none"}
           gridMode={sequence.gridMode ?? null}
           letter={stepData?.letter ?? null}

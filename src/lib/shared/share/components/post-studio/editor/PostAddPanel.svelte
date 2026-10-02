@@ -69,6 +69,16 @@
     if (editor.addCard()) onAdded("card");
   }
 
+  function addTunnelHook(): void {
+    editor.pause();
+    if (editor.addTunnelHook()) onAdded("animation");
+  }
+
+  function removeTunnelHook(): void {
+    editor.pause();
+    editor.removeTunnelHook();
+  }
+
   const TEXT_SIZE: PostTextSize = "m";
 
   const ITEMS = $derived([
@@ -113,6 +123,19 @@
       label: t("post_editor_add_card_end"),
       run: addCard,
     },
+    editor.tunnelHook
+      ? {
+          id: "tunnel-hook",
+          icon: "fa-xmark",
+          label: t("post_editor_remove_tunnel_hook"),
+          run: removeTunnelHook,
+        }
+      : {
+          id: "tunnel-hook",
+          icon: "fa-circle-nodes",
+          label: t("post_editor_add_tunnel_hook"),
+          run: addTunnelHook,
+        },
   ]);
 </script>
 

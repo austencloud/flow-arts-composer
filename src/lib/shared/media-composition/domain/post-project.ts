@@ -7,6 +7,7 @@ import {
 } from "$lib/shared/media-composition/domain/post-plan";
 import { BREAKDOWN_GEOMETRY } from "$lib/shared/media-composition/domain/post-studio-presets";
 import { TakeTimingSchema } from "$lib/shared/media-composition/domain/take-timing";
+import { TunnelHookSchema } from "$lib/shared/media-composition/domain/tunnel-hook";
 import type { EffectsConfig } from "$lib/shared/effects/domain/effects-config";
 import { TrackingMode } from "$lib/shared/animation-engine/domain/types/trail-types";
 
@@ -535,6 +536,12 @@ export const PostAnimationItemSchema = z
     kind: z.literal("animation"),
     /** Paint the beat number, letter and progress over it. */
     overlay: z.boolean(),
+    /**
+     * Makes this item the opening hook: the sequence's tunnel plays through
+     * over the item's whole span, then the extra performers fade out. The
+     * sequence clock belongs to the hook, not to a take.
+     */
+    tunnelHook: TunnelHookSchema.optional(),
     /** Display flags for this live animation, independent of viewer settings. */
     animationAppearance: z
       .object({

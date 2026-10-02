@@ -364,6 +364,32 @@ async function drawBackdrop(
   });
 }
 
+/**
+ * Wait until the opening hook's extra performers have their prop artwork, so a
+ * frame never captures the ring half-drawn. Only the first hook frame waits;
+ * the artwork stays loaded after that.
+ */
+export async function waitForTunnelHookArtwork(
+  layerElement: HTMLElement,
+  timeoutMs = 10_000
+): Promise<void> {
+  const pending = () =>
+    layerElement.querySelector('[data-tunnel-hook-pending="true"]') !== null;
+  if (!pending()) return;
+  const deadline = performance.now() + timeoutMs;
+  while (pending()) {
+    if (performance.now() > deadline)
+      throw new Error(
+        "The opening hook's performers were not ready to render."
+      );
+    await new Promise<void>((resolve) =>
+      requestAnimationFrame(() => resolve())
+    );
+  }
+  // The renderer redraws once the artwork lands; let that frame paint.
+  await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+}
+
 /** Wait for the current pictograph's preparation, grid, and layout to commit. */
 export function waitForPictographMotion(
   layerElement: HTMLElement,
@@ -685,6 +711,7 @@ async function drawRegionLayer(
     if (!animation) {
       throw new Error("Sequence animation export surface is missing");
     }
+    await waitForTunnelHookArtwork(layerElement);
     if (animation.querySelector("[data-pictograph-motion]")) {
       await waitForPictographMotion(layerElement);
     }

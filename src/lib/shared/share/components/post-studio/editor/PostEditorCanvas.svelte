@@ -2352,6 +2352,7 @@
                       : null
                   )}
                   {qrSequence}
+                  tunnelHook={layer.tunnelHook ?? null}
                   sequencePosition={layer.sequencePosition ??
                     (isVideo ? undefined : OPENING_POSITION)}
                   sequencePassIndex={layer.sequencePassIndex}

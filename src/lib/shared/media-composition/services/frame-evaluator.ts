@@ -15,6 +15,10 @@ import {
   clampFraming,
 } from "$lib/shared/media-composition/domain/post-project";
 import { sampleEasing } from "$lib/shared/media-composition/domain/post-project-keyframes";
+import {
+  tunnelHookArrival,
+  type TunnelHook,
+} from "$lib/shared/media-composition/domain/tunnel-hook";
 import type { SequenceTimeMap } from "$lib/shared/media-composition/domain/sequence-time-map";
 import {
   mediaTimeToSequencePosition,
@@ -103,6 +107,8 @@ export interface EvaluatedFrameLayer {
   animationTimeSeconds?: number;
   /** The move showing, 1..N; 0 for the opening pose. */
   displayedBeatNumber?: number;
+  /** Set on the opening hook: its tunnel and how far through it the post is. */
+  tunnelHook?: { hook: TunnelHook; progress: number };
 }
 
 export function resolvePresetTimePoint(
@@ -504,7 +510,13 @@ export function evaluatePresetLayers(
     // over the same footage land on the same move. A take with no clock yet
     // is unmapped: the post-wide map belongs to another take's footage.
     let sample: TakeSample | null = null;
-    if (alignment && clip.useResolvedTimeMap && moveBeats.length > 0) {
+    if (clip.tunnelHook && moveBeats.length > 0) {
+      // The hook owns the clock: the whole sequence plays across its span.
+      sample = {
+        arrival: tunnelHookArrival(projectProgress, moveBeats.length),
+        endArrival: moveBeats.length,
+      };
+    } else if (alignment && clip.useResolvedTimeMap && moveBeats.length > 0) {
       const role = clip.timeMapRole;
       if (role === undefined) {
         sample = postSample;
@@ -546,6 +558,9 @@ export function evaluatePresetLayers(
         ...(sourceGeometry ? { sourceGeometry } : {}),
         ...(sample !== null && alignment
           ? sequenceFieldsFor(sample, alignment, moveBeats, holdLandings)
+          : {}),
+        ...(clip.tunnelHook
+          ? { tunnelHook: { hook: clip.tunnelHook, progress: projectProgress } }
           : {}),
       },
     ];

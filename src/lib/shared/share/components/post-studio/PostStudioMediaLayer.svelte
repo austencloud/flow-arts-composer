@@ -13,6 +13,7 @@
     qrImageForAppearance,
     type PostQrAppearance,
   } from "./post-qr-image-appearance";
+  import type { TunnelHook } from "$lib/shared/media-composition/domain/tunnel-hook";
   import PostStudioSequenceAnimationLayer from "./PostStudioSequenceAnimationLayer.svelte";
   import PostStudioChoreoLayer from "./PostStudioChoreoLayer.svelte";
   import PostStudioTunnelLayer from "./PostStudioTunnelLayer.svelte";
@@ -47,6 +48,7 @@
     cardRenderOptions?: Partial<SequenceExportOptions> | null;
     qrAppearance?: PostQrAppearance;
     animationAppearance?: PostAnimationItem["animationAppearance"] | null;
+    tunnelHook?: { hook: TunnelHook; progress: number } | null;
     sequencePosition?: number;
     sequencePassIndex?: number;
     sequenceProgress?: number;
@@ -81,6 +83,7 @@
     cardRenderOptions = null,
     qrAppearance,
     animationAppearance = null,
+    tunnelHook = null,
     sequencePosition,
     sequencePassIndex,
     sequenceProgress,
@@ -644,6 +647,7 @@
       {breakdownMode}
       {labelsPainted}
       {animationAppearance}
+      {tunnelHook}
       {playing}
       leftPropType={cardRenderOptions?.leftPropTypeOverride ??
         cardRenderOptions?.propTypeOverride}

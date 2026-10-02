@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { TunnelHookSchema } from "./tunnel-hook";
 import {
   ClipTransformSchema,
   LayoutRegionSchema,
@@ -370,6 +371,8 @@ export const PresetVisualClipSchema = z
      */
     timeMapRole: NonEmptyIdSchema.optional(),
     syncGroupId: NonEmptyIdSchema.optional(),
+    /** Plays the sequence's tunnel across this clip's span; see `tunnel-hook.ts`. */
+    tunnelHook: TunnelHookSchema.optional(),
     /**
      * Keyframed overrides of `transform` and `opacity`, sampled and composed
      * with the static fields, fades and transitions at evaluation time.
