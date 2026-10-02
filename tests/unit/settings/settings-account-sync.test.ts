@@ -81,6 +81,48 @@ describe("account settings synchronization", () => {
     );
   });
 
+  it("carries guest confirmation choices into a newly created account", async () => {
+    auth.currentUser = null;
+    const service = await loadSettingsService();
+    await service.updateSetting("skipClearConfirmation", true);
+    await service.updateSetting("skipLoopConfirmation", true);
+    expect(
+      JSON.parse(localStorage.getItem(SETTINGS_KEY) ?? "{}")
+    ).toMatchObject({
+      skipClearConfirmation: true,
+      skipLoopConfirmation: true,
+    });
+
+    auth.currentUser = { uid: "new-account" };
+    persister.loadSettings.mockResolvedValue(null);
+    await service.initializeFirebaseSync();
+
+    expect(persister.saveSettings).toHaveBeenCalledWith(
+      expect.objectContaining({
+        skipClearConfirmation: true,
+        skipLoopConfirmation: true,
+      })
+    );
+  });
+
+  it("keeps an existing account's confirmation choices on login", async () => {
+    auth.currentUser = null;
+    const service = await loadSettingsService();
+    await service.updateSetting("skipClearConfirmation", true);
+    await service.updateSetting("skipLoopConfirmation", true);
+
+    auth.currentUser = { uid: "existing-account" };
+    persister.loadSettings.mockResolvedValue({
+      skipClearConfirmation: false,
+      skipLoopConfirmation: false,
+    });
+    await service.initializeFirebaseSync();
+
+    expect(service.currentSettings.skipClearConfirmation).toBe(false);
+    expect(service.currentSettings.skipLoopConfirmation).toBe(false);
+    expect(persister.saveSettings).not.toHaveBeenCalled();
+  });
+
   it("publishes a missing account document and seeds it with Auto, not a stale local 8", async () => {
     localStorage.setItem(
       SETTINGS_KEY,

@@ -9,6 +9,7 @@
   import type { Section, SectionHomeDestination } from "../domain/types";
   import BottomNavigation from "./layouts/BottomNavigation.svelte";
   import SideNavigation from "./layouts/SideNavigation.svelte";
+  import { navigationState } from "../state/navigation-state.svelte";
 
   let {
     sections = [],
@@ -42,11 +43,19 @@
 
   // Services
   const localizedSections = $derived(
-    sections.map((section) => ({
-      ...section,
-      label: t(section.labelKey),
-      description: t(section.descKey),
-    }))
+    sections
+      .filter((section) => !section.navigationHidden)
+      .map((section) => ({
+        ...section,
+        label: t(section.labelKey),
+        description: t(section.descKey),
+      }))
+  );
+  const highlightedSection = $derived(
+    navigationState.currentModule === "settings" &&
+      (currentSection === "keyboard" || currentSection === "release-notes")
+      ? "preferences"
+      : currentSection
   );
 
   let deviceDetector: DeviceDetector | null = null;
@@ -93,7 +102,7 @@
 {#if isLandscape}
   <SideNavigation
     sections={localizedSections}
-    {currentSection}
+    currentSection={highlightedSection}
     {onSectionChange}
     {sectionHome}
     {onSectionHomeSelect}
@@ -104,7 +113,7 @@
 {:else}
   <BottomNavigation
     sections={localizedSections}
-    {currentSection}
+    currentSection={highlightedSection}
     {onSectionChange}
     {sectionHome}
     {onSectionHomeSelect}

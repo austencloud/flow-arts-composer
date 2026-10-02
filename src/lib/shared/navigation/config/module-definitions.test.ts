@@ -20,4 +20,16 @@ describe("settings language navigation migration", () => {
     expect(SETTINGS_TABS.some((tab) => tab.id === "preferences")).toBe(true);
     expect(SETTINGS_TABS.some((tab) => tab.id === "language")).toBe(false);
   });
+
+  it("keeps Keyboard and Release Notes links routable without sidebar destinations", () => {
+    for (const sectionId of ["keyboard", "release-notes"]) {
+      expect(normalizeNavigationTarget("settings", sectionId)).toEqual({
+        moduleId: "settings",
+        sectionId,
+      });
+      expect(
+        SETTINGS_TABS.find((tab) => tab.id === sectionId)?.navigationHidden
+      ).toBe(true);
+    }
+  });
 });

@@ -6,22 +6,33 @@ import {
 } from "../guest-access-config";
 
 describe("guest Settings access", () => {
-  it("allows the Preferences language control before sign-in", () => {
+  it("allows device settings and sign-in before sign-in", () => {
     expect(isModuleAccessible("settings", "guest")).toBe(true);
     expect(isTabAccessible("settings", "preferences", "guest")).toBe(true);
     expect(isTabAccessible("settings", "language", "guest")).toBe(false);
-    expect(getAccessibleTabs("settings", "guest")).toEqual(["preferences"]);
+    expect(getAccessibleTabs("settings", "guest")).toEqual([
+      "profile",
+      "preferences",
+      "theme",
+      "props",
+      "keyboard",
+      "release-notes",
+    ]);
   });
 
   it.each([
     "profile",
     "props",
     "theme",
-    "notifications",
+    "preferences",
     "keyboard",
     "release-notes",
-  ])("keeps %s protected for guests", (tab) => {
-    expect(isTabAccessible("settings", tab, "guest")).toBe(false);
+  ])("opens %s for guests", (tab) => {
+    expect(isTabAccessible("settings", tab, "guest")).toBe(true);
+  });
+
+  it("keeps account notifications protected for guests", () => {
+    expect(isTabAccessible("settings", "notifications", "guest")).toBe(false);
   });
 
   it("allows account holders to open their Settings tabs", () => {
