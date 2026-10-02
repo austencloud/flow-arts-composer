@@ -96,11 +96,14 @@
     const isolatedGroupMove = fixture === "group-move";
     // Exercise the real save/reload path without writing to the creator's post.
     const storageFixture = fixture === "draft-storage";
+    // `?sequence=DCKΨ-` opens that sequence's saved post read-only: the
+    // harness never saves it, so inspecting it cannot touch the creator's draft.
+    const viewedId = new URL(window.location.href).searchParams.get("sequence");
     const draftSequenceId = mapping
       ? "post-mapping-fixture"
       : storageFixture
         ? "post-draft-storage-fixture"
-        : SEQUENCE_ID;
+        : (viewedId ?? SEQUENCE_ID);
     const requestedLocale = toLocale(
       new URL(window.location.href).searchParams.get("lang") ?? ""
     );
@@ -115,8 +118,12 @@
     try {
       const [loaded, draft] = await Promise.all([
         getBrowseLoader().loadFullSequenceData(
-          mapping ? "Δ-ΛRZΔ-ΛRZΔ-ΛRZΔ-ΛRZ" : SEQUENCE_WORD,
-          mapping ? "Δ-ΛRZ" : SEQUENCE_ID
+          mapping
+            ? "Δ-ΛRZΔ-ΛRZΔ-ΛRZΔ-ΛRZ"
+            : viewedId
+              ? viewedId.repeat(4)
+              : SEQUENCE_WORD,
+          mapping ? "Δ-ΛRZ" : (viewedId ?? SEQUENCE_ID)
         ),
         isolatedKeyframes || isolatedTextAlignment || isolatedGroupMove
           ? Promise.resolve({
@@ -127,7 +134,7 @@
           : loadPostDraft(draftSequenceId),
       ]);
       initialProject = draft.project ?? undefined;
-      diskDrafts = !mapping && draft.diskAvailable;
+      diskDrafts = !mapping && !viewedId && draft.diskAvailable;
       draftLoadError = draft.error;
       if (!loaded)
         throw new Error("The visual fixture is no longer published.");
