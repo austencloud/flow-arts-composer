@@ -670,13 +670,22 @@ export function evaluatePresetLayers(
     const sourceTimeSeconds =
       (sourceTimeOffsets[clip.sourceRole] ?? 0) + sourceSpanTime;
     const regionRect = regionRects.get(clip.regionId);
-    const sourceGeometry = clip.sourceGeometryKeyframes?.length
+    const framing =
+      clip.framingFrom &&
+      clampedTime >= clip.framingFrom.start &&
+      clampedTime < clip.framingFrom.end
+        ? (preset.clips.find(
+            (other): other is PresetVisualClip =>
+              other.kind === "visual" && other.id === clip.framingFrom!.clipId
+          ) ?? clip)
+        : clip;
+    const sourceGeometry = framing.sourceGeometryKeyframes?.length
       ? sampleMotionTrack(
-          clip.sourceGeometryKeyframes,
+          framing.sourceGeometryKeyframes,
           clampedTime,
           lerpSourceGeometry
         )
-      : clip.sourceGeometry;
+      : framing.sourceGeometry;
 
     let sample: TakeSample | null = null;
     const footageHook =

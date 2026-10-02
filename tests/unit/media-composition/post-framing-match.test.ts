@@ -107,8 +107,20 @@ describe("crossfade framing match", () => {
     expect(incoming.width).toBeGreaterThan(CLOSE.width);
   });
 
+  it("shows both cuts through one framing while they dissolve", () => {
+    for (const time of [9.2, 9.5, 9.8]) {
+      expect(geometryAt(true, time, true, "slow")).toEqual(
+        geometryAt(true, time, true)
+      );
+    }
+    expect(geometryAt(true, 10.5, true, "slow").width).toBeGreaterThan(
+      CLOSE.width
+    );
+  });
+
   it("leaves a crossfade between different recordings alone", () => {
     expect(geometryAt(false, 9.5)).toEqual(BAND);
     expect(geometryAt(false, 10)).toEqual(BAND);
+    expect(geometryAt(false, 9.5, false, "slow")).toEqual(CLOSE);
   });
 });
