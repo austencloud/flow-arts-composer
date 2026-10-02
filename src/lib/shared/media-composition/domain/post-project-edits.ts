@@ -33,6 +33,7 @@ import {
   type PostClipEdge,
   type PostClipShape,
   type PostFraming,
+  type PostImageItem,
   type PostSourceGeometry,
   type PostAutoAdjust,
   type PostTransitionOut,
@@ -1375,6 +1376,7 @@ export interface PostItemPatch {
   staffEffect?: PostStaffEffectId | null;
   animationAppearance?: PostAnimationItem["animationAppearance"] | null;
   cardAppearance?: PostCardItem["cardAppearance"] | null;
+  qrAppearance?: PostImageItem["qrAppearance"] | null;
 }
 
 export function updateItem(
@@ -1504,6 +1506,10 @@ export function updateItem(
       if (patch.sourceGeometry) next.sourceGeometry = patch.sourceGeometry;
       else delete next.sourceGeometry;
     }
+  }
+  if (item.kind === "image" && patch.qrAppearance !== undefined) {
+    if (patch.qrAppearance) next.qrAppearance = patch.qrAppearance;
+    else delete next.qrAppearance;
   }
   if (item.kind === "animation" && patch.overlay !== undefined) {
     next.overlay = patch.overlay;

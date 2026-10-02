@@ -9,6 +9,10 @@
     PostAnimationItem,
     PostMovesMode,
   } from "$lib/shared/media-composition/domain/post-project";
+  import {
+    qrImageForAppearance,
+    type PostQrAppearance,
+  } from "./post-qr-image-appearance";
   import PostStudioSequenceAnimationLayer from "./PostStudioSequenceAnimationLayer.svelte";
   import PostStudioChoreoLayer from "./PostStudioChoreoLayer.svelte";
   import PostStudioTunnelLayer from "./PostStudioTunnelLayer.svelte";
@@ -41,6 +45,7 @@
     sequence: SequenceData;
     qrSequence?: SequenceData;
     cardRenderOptions?: Partial<SequenceExportOptions> | null;
+    qrAppearance?: PostQrAppearance;
     animationAppearance?: PostAnimationItem["animationAppearance"] | null;
     sequencePosition?: number;
     sequencePassIndex?: number;
@@ -74,6 +79,7 @@
     sequence,
     qrSequence,
     cardRenderOptions = null,
+    qrAppearance,
     animationAppearance = null,
     sequencePosition,
     sequencePassIndex,
@@ -95,6 +101,25 @@
   const composition = tryGetMediaCompositionContext();
   // The footage stays alive when the editor refreshes its binding each frame.
   const videoSource = $derived(binding.previewUrl ?? "");
+  let imageSource = $state(binding.previewUrl ?? "");
+  $effect(() => {
+    const source = binding.previewUrl ?? "";
+    const appearance = qrAppearance;
+    imageSource = source;
+    if (!source || !appearance) return;
+    let current = true;
+    void qrImageForAppearance(source, appearance).then(
+      (url) => {
+        if (current && url) imageSource = url;
+      },
+      () => {
+        /* Leave the imported artwork visible if rendering fails. */
+      }
+    );
+    return () => {
+      current = false;
+    };
+  });
   let video = $state<HTMLVideoElement | null>(null);
   let retainedCanvas = $state<HTMLCanvasElement | null>(null);
   let hasRetainedFrame = $state(false);
@@ -703,7 +728,7 @@
     ></canvas>
   {:else}
     <img
-      src={binding.previewUrl ?? undefined}
+      src={imageSource || undefined}
       crossorigin="anonymous"
       alt=""
       class:fitted={fitted !== null || cropped !== null}

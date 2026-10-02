@@ -32,6 +32,13 @@ export function applyDarkQrStyle(style: StyledQrStyle): StyledQrStyle {
   return { ...style, color: "#ffffff", backgroundColor: "#00000000" };
 }
 
+/** Standalone dark QR artwork keeps its black field when placed on a light poster. */
+export const DARK_POST_QR_STYLE: Readonly<StyledQrStyle> = {
+  ...MODERN_QR_STYLE,
+  color: "#ffffff",
+  backgroundColor: "#000000",
+};
+
 /** The play triangle's color — a vivid "go/play" green that reads on either
  *  badge. Universal play semantics; the badge isolates it from the card palette. */
 export const PLAY_GREEN = "#22c55e";

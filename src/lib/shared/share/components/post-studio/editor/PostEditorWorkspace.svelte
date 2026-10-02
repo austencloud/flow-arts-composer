@@ -116,6 +116,10 @@
   import { createPostTimingSession } from "../builder/post-timing-session.svelte";
   import { formatTakeClock } from "../builder/post-builder-format";
   import PostEditorCanvas from "./PostEditorCanvas.svelte";
+  import {
+    qrImageForAppearance,
+    qrPayloadForImage,
+  } from "../post-qr-image-appearance";
   import { createPostVideoPreviews } from "$lib/shared/media-composition/state/post-video-previews.svelte";
   import PostEditorTopBar from "./PostEditorTopBar.svelte";
   import PostEditorActions from "./PostEditorActions.svelte";
@@ -880,6 +884,26 @@
 
   // ---- Tools -----------------------------------------------------------------
 
+  let qrImageIds = $state<Record<string, boolean>>({});
+  $effect(() => {
+    const imageIds = new Set(
+      editor.project.tracks.flatMap((track) =>
+        track.items.flatMap((item) =>
+          item.kind === "image" ? [item.imageId] : []
+        )
+      )
+    );
+    for (const imageId of imageIds) {
+      const url = editor.imageUrl(imageId);
+      if (!url) continue;
+      void qrPayloadForImage(url).then((payload) => {
+        if (editor.imageUrl(imageId) === url) {
+          qrImageIds = { ...qrImageIds, [imageId]: payload !== null };
+        }
+      });
+    }
+  });
+
   /** The editor's own width, not the window's: wide enough for a panel
    * beside a full-height preview. */
   const WIDE_REM = 56;
@@ -935,6 +959,7 @@
     if (!item) return { kind: null, hasLayout: false };
     return {
       kind: item.kind,
+      isQrImage: item.kind === "image" && qrImageIds[item.imageId] === true,
       hasLayout:
         item.kind === "video" &&
         findItem(editor.project, item.id)?.trackIndex === 0,
@@ -2130,6 +2155,21 @@
     let audioUrl: string | null = null;
     try {
       await loadPostProjectFonts(editor.project);
+      await Promise.all(
+        editor.project.tracks.flatMap((track) =>
+          track.items.flatMap((item) => {
+            if (item.kind !== "image") return [];
+            const url = editor.imageUrl(item.imageId);
+            if (!url) return [];
+            return [
+              qrImageForAppearance(url, "light"),
+              qrImageForAppearance(url, "dark"),
+            ];
+          })
+        )
+      );
+      await tick();
+      await nextFrame();
       const takeUrls = new Map<string, string>();
       const videoSources = new Map<string, string>();
       for (const take of editor.takes) {

@@ -51,6 +51,8 @@ export interface PostToolSelection {
   kind: PostItemKind | null;
   /** A main-track clip whose layout (dual, breakdown, video only) applies. */
   hasLayout: boolean;
+  /** A decoded QR image has its own contrast setting. */
+  isQrImage?: boolean;
 }
 
 const ACTION_TOOLS = new Set<PostToolId>([
@@ -118,8 +120,15 @@ export function toolRow(selection: PostToolSelection): PostToolId[] {
     case "text":
       return ["back", "split", "text", "timing", ...ITEM_TAIL];
     case "carousel":
-    case "image":
       return ["back", "split", "timing", ...ITEM_TAIL];
+    case "image":
+      return [
+        "back",
+        "split",
+        ...(selection.isQrImage ? (["appearance"] as const) : []),
+        "timing",
+        ...ITEM_TAIL,
+      ];
     case "card":
       return [
         "back",

@@ -48,12 +48,14 @@
     POST_TIME_EPSILON,
     itemEnd,
     findItem,
+    mainItemAt,
     type PostBox,
     type PostItem,
     type PostSourceGeometry,
     type PostVideoItem,
   } from "$lib/shared/media-composition/domain/post-project";
   import { updateItemAt } from "$lib/shared/media-composition/domain/post-project-edits";
+  import { posterQrAppearance } from "../post-qr-image-appearance";
   import { dragSourceCrop, type SourceCropHandle } from "./post-source-crop";
   import {
     boxAt,
@@ -2303,6 +2305,10 @@
             editor.project,
             itemIdFromClipId(entry.clip.id)
           )?.item}
+          {@const underlyingItem = mainItemAt(
+            editor.project,
+            editor.previewSeconds
+          )}
           {@const isVideo = binding?.renderMode === "external-media"}
           {#if binding?.status === "ready"}
             {#if binding.renderMode === "painted" && binding.painter}
@@ -2332,6 +2338,13 @@
                     cardRenderOptions,
                     sourceItem?.kind === "card" ? sourceItem : null
                   )}
+                  qrAppearance={sourceItem?.kind === "image"
+                    ? (sourceItem.qrAppearance ??
+                      posterQrAppearance(
+                        cardRenderOptions,
+                        underlyingItem?.kind === "card" ? underlyingItem : null
+                      ))
+                    : undefined}
                   animationAppearance={animationAppearanceForItem(
                     sourceItem?.kind === "animation" ||
                       sourceItem?.kind === "moves"
