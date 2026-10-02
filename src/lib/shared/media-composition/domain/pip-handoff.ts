@@ -206,6 +206,29 @@ export function pipHandoffLanding(
   };
 }
 
+/** Why `pipHandoffSample` drew what it did, for tracing a hand-off. */
+export interface PipHandoffStep {
+  branch:
+    | "outside"
+    | "square's own"
+    | "animation before landing"
+    | "unreadable"
+    | "square before landing"
+    | "hold for square"
+    | "ease"
+    | "eased in";
+  landing: ReturnType<typeof pipHandoffLanding>;
+  pivot?: number;
+  pose?: number;
+  rate?: number;
+  targetRate?: number;
+  start?: number;
+  gap?: number;
+  seconds?: number;
+  from: number | null;
+  to: number | null;
+}
+
 /**
  * What one side draws at `postSeconds` from the overlap's start, or null
  * where neither clock is readable.
@@ -228,16 +251,39 @@ export function pipHandoffSample(
   handoff: Pick<PipHandoff, "start" | "end">,
   clocks: PipHandoffClocks,
   postSeconds: number,
-  side: "from" | "to"
+  side: "from" | "to",
+  explain?: (step: PipHandoffStep) => void
 ): TakeSample | null {
   const passLength = clocks.passLength;
-  if (postSeconds < handoff.start || passLength <= 0) return null;
   const own = clocks.to(postSeconds);
-  if (postSeconds > handoff.end + PIP_HANDOFF_MAX_CLOCK_SECONDS) return own;
+  const note = explain
+    ? (
+        branch: PipHandoffStep["branch"],
+        fields: Partial<PipHandoffStep> = {}
+      ) =>
+        explain({
+          branch,
+          landing: pipHandoffLanding(handoff, clocks),
+          from: clocks.from(postSeconds)?.arrival ?? null,
+          to: own?.arrival ?? null,
+          ...fields,
+        })
+    : () => {};
+  if (postSeconds < handoff.start || passLength <= 0) {
+    note("outside");
+    return null;
+  }
+  if (postSeconds > handoff.end + PIP_HANDOFF_MAX_CLOCK_SECONDS) {
+    note("square's own");
+    return own;
+  }
 
   const landing = pipHandoffLanding(handoff, clocks);
   const before = landing !== null && postSeconds < landing.at;
-  if (before && side === "from") return clocks.from(postSeconds);
+  if (before && side === "from") {
+    note("animation before landing");
+    return clocks.from(postSeconds);
+  }
   let pivot = handoff.start;
   let pose: number;
   let rate: number;
@@ -248,13 +294,19 @@ export function pipHandoffSample(
   } else {
     const now = clocks.from(handoff.start)?.arrival;
     const next = clocks.from(handoff.start + RATE_STEP)?.arrival;
-    if (now === undefined || next === undefined) return own;
+    if (now === undefined || next === undefined) {
+      note("unreadable");
+      return own;
+    }
     pose = now;
     rate = Math.max(0, (next - now) / RATE_STEP);
   }
   const meet = clocks.to(pivot);
   const meetNext = clocks.to(pivot + RATE_STEP);
-  if (!meet || !meetNext || !own) return own;
+  if (!meet || !meetNext || !own) {
+    note("unreadable", { pivot, pose, rate });
+    return own;
+  }
   const endArrival = own.endArrival;
 
   // The pass of the square's take nearest the pose, so the figure never
@@ -269,6 +321,7 @@ export function pipHandoffSample(
     endArrival,
   });
   if (before) {
+    note("square before landing", { pivot, pose, rate, start });
     const animation = clocks.from(postSeconds);
     return animation ? drawn(animation.arrival - passes) : own;
   }
@@ -276,6 +329,7 @@ export function pipHandoffSample(
   if (gap <= 1e-9) {
     // The square is not past the pose: hold it until the square's clock
     // comes up to it.
+    note("hold for square", { pivot, pose, rate, start, gap });
     return own.arrival >= start ? own : drawn(start);
   }
 
@@ -288,10 +342,18 @@ export function pipHandoffSample(
         )
       : CATCH_UP_SECONDS;
   const elapsed = postSeconds - pivot;
-  if (elapsed >= seconds) return own;
+  const fields = { pivot, pose, rate, targetRate, start, gap, seconds };
+  if (elapsed >= seconds) {
+    note("eased in", fields);
+    return own;
+  }
   const end = clocks.to(pivot + seconds);
   const endBefore = clocks.to(pivot + seconds - RATE_STEP);
-  if (!end || !endBefore) return own;
+  if (!end || !endBefore) {
+    note("unreadable", fields);
+    return own;
+  }
+  note("ease", fields);
   const travel = end.arrival - start;
   if (travel <= 0) return drawn(start);
 
