@@ -82,8 +82,14 @@ export const DEFAULT_TUNNEL_HOOK_SECONDS = 5;
 export const MOVE_START_SHARE = 0.4;
 /** Share of the intro by which the canvas has settled into its own box. */
 export const MOVE_END_SHARE = 0.9;
-/** The easing the canvas takes from full frame to its own box. */
-export const MOVE_EASING: [number, number, number, number] = [0.65, 0, 0.35, 1];
+/**
+ * The easing the canvas takes from full frame to its own box. A gentle sine
+ * curve, the same as the light's: it slows across the whole second half
+ * instead of rushing through the middle and crawling the last stretch.
+ */
+export const MOVE_EASING: [number, number, number, number] = [
+  0.37, 0, 0.63, 1,
+];
 
 interface IntroBoxKey<Box> {
   atSeconds: number;
