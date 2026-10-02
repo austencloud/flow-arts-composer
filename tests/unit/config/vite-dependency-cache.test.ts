@@ -1,9 +1,19 @@
 import {
   createViteDependencyCachePlan,
   getViteDependencyCacheDir,
+  isViteDependencyCacheRequest,
   resolveViteDevPort,
 } from "../../../src/config/vite-dependency-cache";
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import {
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  realpathSync,
+  rmSync,
+  symlinkSync,
+  unlinkSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
@@ -65,6 +75,48 @@ describe("resolveViteDevPort", () => {
 });
 
 describe("createViteDependencyCachePlan", () => {
+  it("keeps caches separate when worktrees share node_modules and a default port", () => {
+    const primaryRoot = createTemporaryProject();
+    const previewRoot = createTemporaryProject();
+    const sharedDependencies = path.join(primaryRoot, "node_modules");
+    const previewDependencies = path.join(previewRoot, "node_modules");
+    mkdirSync(sharedDependencies);
+    symlinkSync(sharedDependencies, previewDependencies, "junction");
+
+    try {
+      const primaryPlan = createViteDependencyCachePlan({
+        projectRoot: primaryRoot,
+        argv: ["vite"],
+        env: {},
+      });
+      const previewPlan = createViteDependencyCachePlan({
+        projectRoot: previewRoot,
+        argv: ["node", "preview.mjs"],
+        env: {},
+      });
+      const primaryMetadata = path.join(
+        primaryPlan.cacheDir,
+        "deps/_metadata.json"
+      );
+      const previewMetadata = path.join(
+        previewPlan.cacheDir,
+        "deps/_metadata.json"
+      );
+      writeFile(primaryMetadata, "primary");
+      writeFile(previewMetadata, "preview");
+
+      expect(primaryPlan.port).toBe(previewPlan.port);
+      expect(realpathSync(primaryMetadata)).not.toBe(
+        realpathSync(previewMetadata)
+      );
+      expect(readFileSync(primaryMetadata, "utf8")).toBe("primary");
+      expect(readFileSync(previewMetadata, "utf8")).toBe("preview");
+    } finally {
+      // Unlink the junction before recursive fixture cleanup on Windows.
+      unlinkSync(previewDependencies);
+    }
+  });
+
   it("isolates dependency caches by development port", () => {
     const projectRoot = createTemporaryProject();
 
@@ -140,5 +192,26 @@ describe("createViteDependencyCachePlan", () => {
       forceRefresh: true,
       reason: "repaired-install",
     });
+  });
+});
+
+describe("isViteDependencyCacheRequest", () => {
+  it.each([
+    "/node_modules/.vite/deps/theme.js?v=old",
+    "/node_modules/.vite/port-5173/deps/theme.js?v=old",
+    "/.cache/vite/port-5173/deps/theme.js?v=current",
+    "/@fs/C:/worktree/.cache/vite/port-5174/deps/theme.js?v=current",
+  ])("preserves Vite's cache headers for %s", (url) => {
+    expect(isViteDependencyCacheRequest(url)).toBe(true);
+  });
+
+  it.each([
+    undefined,
+    "/settings/theme",
+    "/src/ThemePreview.svelte",
+    "/src/ThemePreview.svelte?import=/.cache/vite/port-5173/deps/theme.js",
+    "/.cache/vite/port-5173/deps-temp/theme.js",
+  ])("keeps application responses uncached for %s", (url) => {
+    expect(isViteDependencyCacheRequest(url)).toBe(false);
   });
 });
