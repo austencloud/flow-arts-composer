@@ -503,10 +503,9 @@
         syncVideoTime();
         return {
           currentTime: element.currentTime,
-          ready:
-            !element.seeking &&
-            (element.readyState >= 3 ||
-              (element.ended && element.readyState >= 2)),
+          // A decoded current frame can start playback. Waiting for future
+          // frames here can deadlock a paused clip at a cut or speed change.
+          ready: !element.seeking && element.readyState >= 2,
           ended: element.ended,
         };
       },

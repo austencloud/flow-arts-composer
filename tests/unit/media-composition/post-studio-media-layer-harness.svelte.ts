@@ -2,6 +2,7 @@ import { flushSync, mount, unmount } from "svelte";
 import PostStudioMediaLayer from "$lib/shared/share/components/post-studio/PostStudioMediaLayer.svelte";
 import type { CompositionSourceBinding } from "$lib/shared/media-composition/state/media-composition-state.svelte";
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import type { PreviewVideoController } from "$lib/shared/media-composition/services/post-preview-clock";
 
 export function mountPlaybackMediaLayer() {
   let binding = $state.raw<CompositionSourceBinding>({
@@ -15,6 +16,8 @@ export function mountPlaybackMediaLayer() {
   });
   let sourceTimeSeconds = $state(0);
   let playing = $state(true);
+  let playbackRate = $state(1);
+  let playbackController: PreviewVideoController | null = null;
   const target = document.body.appendChild(document.createElement("div"));
   const component = mount(PostStudioMediaLayer, {
     target,
@@ -27,6 +30,12 @@ export function mountPlaybackMediaLayer() {
       },
       get playing() {
         return playing;
+      },
+      get playbackRate() {
+        return playbackRate;
+      },
+      onPlaybackVideo: (controller: PreviewVideoController | null) => {
+        playbackController = controller;
       },
       fit: "cover",
       opacity: 1,
@@ -45,6 +54,9 @@ export function mountPlaybackMediaLayer() {
   return {
     target,
     video: target.querySelector("video")!,
+    get controller() {
+      return playbackController;
+    },
     canvas: target.querySelector("canvas")!,
     tick(time: number) {
       // The real workspace creates a new bindingFor() result each frame.
@@ -58,6 +70,10 @@ export function mountPlaybackMediaLayer() {
     },
     setPlaying(value: boolean) {
       playing = value;
+      flushSync();
+    },
+    setPlaybackRate(value: number) {
+      playbackRate = value;
       flushSync();
     },
     async destroy() {
