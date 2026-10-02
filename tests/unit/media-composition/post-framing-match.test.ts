@@ -21,8 +21,10 @@ const CLOSE = {
   crop: { left: 0, top: 0, right: 1, bottom: 1 },
 };
 
+const CLOSER = { ...CLOSE, x: -1, y: -1, width: 3, height: 3 };
+
 /** A fast cut in the top band crossfading into a closer slow cut. */
-function seam(sameRecording: boolean) {
+function seam(sameRecording: boolean, zooming = false) {
   const recording = take("a");
   const slow = sameRecording ? { ...take("b"), ref: recording.ref } : take("b");
   return project(
@@ -40,20 +42,37 @@ function seam(sameRecording: boolean) {
         sourceOut: 52,
         pinnedStart: true,
         sourceGeometry: CLOSE,
-      }),
+        ...(zooming
+          ? {
+              keyframes: {
+                sourceGeometry: [
+                  { t: 40, value: CLOSER, easing: [0, 0, 1, 1] },
+                  { t: 44, value: CLOSE, easing: [0, 0, 1, 1] },
+                ],
+              },
+            }
+          : {}),
+      } as Partial<PostVideoItem>),
     ],
     [],
     [recording, slow]
   );
 }
 
-function geometryAt(sameRecording: boolean, time: number) {
-  const compiled = compilePostProject(seam(sameRecording), { now: NOW })!;
+function geometryAt(
+  sameRecording: boolean,
+  time: number,
+  zooming = false,
+  regionId = "fast"
+) {
+  const compiled = compilePostProject(seam(sameRecording, zooming), {
+    now: NOW,
+  })!;
   return evaluatePresetFrame(
     compiled.preset,
     compiled.durationSeconds,
     time
-  ).find((layer) => layer.regionId === "fast")!.sourceGeometry!;
+  ).find((layer) => layer.regionId === regionId)!.sourceGeometry!;
 }
 
 describe("crossfade framing match", () => {
@@ -76,6 +95,16 @@ describe("crossfade framing match", () => {
     }
     expect(geometryAt(true, 9.5).height).toBeGreaterThan(BAND.height);
     expect(geometryAt(true, 9.5).height).toBeLessThan(CLOSE.height);
+  });
+
+  it("lands on a moving framing where the next cut is by then", () => {
+    const landed = geometryAt(true, 10, true);
+    const incoming = geometryAt(true, 10, true, "slow");
+    for (const key of ["x", "y", "width", "height"] as const) {
+      expect(landed[key]).toBeCloseTo(incoming[key], 6);
+    }
+    expect(incoming.width).toBeLessThan(CLOSER.width);
+    expect(incoming.width).toBeGreaterThan(CLOSE.width);
   });
 
   it("leaves a crossfade between different recordings alone", () => {
