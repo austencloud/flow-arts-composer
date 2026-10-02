@@ -216,6 +216,12 @@ export interface WorkerPerformerEffectIntent {
   qualityTier: WorkerEffectQualityTier;
   propBuild: WorkerPropBuild;
   tips: readonly WorkerTipEffectDecision[];
+  /**
+   * Each prop's HAND-mode trail effect. The prop-centre source resolves key 1,
+   * as the 2D overlay does, which on a single-ended prop is not the key its
+   * slot-1 tip decision resolved.
+   */
+  handTrailEffects: readonly [EffectType, EffectType];
   trails: Trails3DParams;
   led: Led3DParams;
   pooled: WorkerPooledEffectConfigs;

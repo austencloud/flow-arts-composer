@@ -16,8 +16,12 @@
   import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { appEntryState } from "$lib/shared/onboarding/state/app-entry-state.svelte.ts";
   import { generateTourState } from "$lib/shared/onboarding/state/generate-tour-state.svelte";
-  import { handleModuleChange } from "$lib/shared/navigation-coordinator/navigation-coordinator.svelte";
+  import {
+    handleModuleChange,
+    handleSectionChange,
+  } from "$lib/shared/navigation-coordinator/navigation-coordinator.svelte";
   import OfflineLocalDataSection from "./preferences/OfflineLocalDataSection.svelte";
+  import LanguagePreference from "./preferences/LanguagePreference.svelte";
   import { Collapsible } from "bits-ui";
 
   let { currentSettings, onSettingUpdate } = $props<{
@@ -90,6 +94,25 @@
       <p>{t("settings_customize_behavior")}</p>
     </div>
   </header>
+
+  <LanguagePreference />
+
+  <section class="section">
+    <button
+      type="button"
+      class="toggle-row"
+      onclick={() => handleSectionChange("keyboard")}
+      aria-label={t("tab_settings_keyboard")}
+    >
+      <span class="toggle-info">
+        <span class="toggle-label"
+          ><i class="fas fa-keyboard" aria-hidden="true"></i>
+          {t("tab_settings_keyboard")}</span
+        >
+      </span>
+      <i class="fas fa-chevron-right" aria-hidden="true"></i>
+    </button>
+  </section>
 
   <!-- Confirmation Dialogs Section -->
   <section class="section">
@@ -182,6 +205,16 @@
         </div>
       </Collapsible.Content>
     </Collapsible.Root>
+  </section>
+  <section class="section version-section">
+    <span>v{__APP_VERSION__}</span>
+    <button
+      type="button"
+      class="version-button"
+      onclick={() => handleSectionChange("release-notes")}
+    >
+      {t("nav_ui_what_s_new")}
+    </button>
   </section>
 </div>
 
@@ -287,6 +320,7 @@
     transition: all var(--duration-fast) ease;
     text-align: left;
     width: 100%;
+    color: var(--theme-text);
   }
 
   .toggle-row:hover {
@@ -393,6 +427,29 @@
   .advanced-section {
     padding-top: 0.25rem;
     border-top: 1px solid var(--theme-stroke);
+  }
+
+  .version-section {
+    flex-direction: row;
+    align-items: center;
+    color: var(--theme-text-dim);
+    font-size: var(--font-size-compact);
+  }
+
+  .version-button {
+    border: 1px solid var(--theme-stroke);
+    border-radius: 999px;
+    background: var(--theme-card-bg);
+    color: var(--theme-text);
+    padding: 0.45rem 0.75rem;
+    cursor: pointer;
+    font: inherit;
+    font-size: var(--font-size-min);
+  }
+
+  .version-button:focus-visible {
+    outline: 2px solid var(--theme-accent);
+    outline-offset: 2px;
   }
 
   :global(.advanced-trigger) {

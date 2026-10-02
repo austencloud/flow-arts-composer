@@ -6,10 +6,18 @@ import {
 } from "../guest-access-config";
 
 describe("guest Settings access", () => {
-  it("allows the language tab before sign-in", () => {
+  it("allows device settings and sign-in before sign-in", () => {
     expect(isModuleAccessible("settings", "guest")).toBe(true);
-    expect(isTabAccessible("settings", "language", "guest")).toBe(true);
-    expect(getAccessibleTabs("settings", "guest")).toEqual(["language"]);
+    expect(isTabAccessible("settings", "preferences", "guest")).toBe(true);
+    expect(isTabAccessible("settings", "language", "guest")).toBe(false);
+    expect(getAccessibleTabs("settings", "guest")).toEqual([
+      "profile",
+      "preferences",
+      "theme",
+      "props",
+      "keyboard",
+      "release-notes",
+    ]);
   });
 
   it.each([
@@ -17,16 +25,19 @@ describe("guest Settings access", () => {
     "props",
     "theme",
     "preferences",
-    "notifications",
     "keyboard",
     "release-notes",
-  ])("keeps %s protected for guests", (tab) => {
-    expect(isTabAccessible("settings", tab, "guest")).toBe(false);
+  ])("opens %s for guests", (tab) => {
+    expect(isTabAccessible("settings", tab, "guest")).toBe(true);
+  });
+
+  it("keeps account notifications protected for guests", () => {
+    expect(isTabAccessible("settings", "notifications", "guest")).toBe(false);
   });
 
   it("allows account holders to open their Settings tabs", () => {
     expect(isTabAccessible("settings", "profile", "user")).toBe(true);
-    expect(isTabAccessible("settings", "language", "user")).toBe(true);
+    expect(isTabAccessible("settings", "preferences", "user")).toBe(true);
   });
 });
 

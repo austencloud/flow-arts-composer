@@ -183,6 +183,11 @@ describe("German translation contracts", () => {
         if (!/\.(svelte|ts)$/.test(file) || /\.(test|spec)\./.test(file)) continue;
         const fullPath = path.join(root, file);
         const source = readFileSync(fullPath, "utf8");
+        // Both scanners only count calls through names imported from an i18n
+        // module, so a file without that import has no keys to find. Skipping
+        // it before parsing cuts the scan to about a sixth of the files, which
+        // keeps this test inside its budget when the full suite loads the CPU.
+        if (!source.includes("/i18n/")) continue;
         // Literal calls are syntax nodes, so examples in comments and strings
         // cannot masquerade as UI lookups. Dynamic registries have their own test.
         const keys = file.endsWith(".svelte")

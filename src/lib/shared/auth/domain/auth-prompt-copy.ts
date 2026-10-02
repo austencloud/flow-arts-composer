@@ -32,8 +32,8 @@ const keys: Partial<Record<string, TranslationKey>> = {
   "Open your library": "auth_prompt_open_library",
   "Sign in or create an account to open your saved sequences.":
     "auth_prompt_open_library_body",
-  "Save your settings": "auth_prompt_save_settings",
-  "Sign in or create an account to customize your settings.":
+  "Notification settings": "auth_prompt_save_settings",
+  "Sign in or create an account to manage notifications.":
     "auth_prompt_save_settings_body",
   "Open 3D Studio": "auth_prompt_open_stage",
   "Sign in or create an account to build and choreograph sequences in 3D.":

@@ -186,18 +186,18 @@
   const tipBridge = new TipPositionBridge3D();
 
   /**
-   * The effect slots each prop actually presents: two for a staff, one for a
+   * The effect keys each prop actually presents: two for a staff, one for a
    * club. Iterating a hardcoded four would light effects for ends that do not
    * exist on the prop in hand.
    */
-  const leftTipSlots = $derived(
+  const leftTipEffectKeys = $derived(
     resolvePropTipAnchors3D(leftPropType, staffHalfLength, propBuild).map(
-      (anchor) => anchor.effectTipIndex
+      (anchor) => anchor.effectKeyIndex
     )
   );
-  const rightTipSlots = $derived(
+  const rightTipEffectKeys = $derived(
     resolvePropTipAnchors3D(rightPropType, staffHalfLength, propBuild).map(
-      (anchor) => anchor.effectTipIndex
+      (anchor) => anchor.effectKeyIndex
     )
   );
 
@@ -211,11 +211,11 @@
    */
   const layerActiveEffects = $derived([
     ...new Set([
-      ...leftTipSlots.map((tipIndex) =>
-        resolveEffect(0, tipIndex, tipEffectMap, globalTipEffectMap ?? {})
+      ...leftTipEffectKeys.map((effectKeyIndex) =>
+        resolveEffect(0, effectKeyIndex, tipEffectMap, globalTipEffectMap ?? {})
       ),
-      ...rightTipSlots.map((tipIndex) =>
-        resolveEffect(1, tipIndex, tipEffectMap, globalTipEffectMap ?? {})
+      ...rightTipEffectKeys.map((effectKeyIndex) =>
+        resolveEffect(1, effectKeyIndex, tipEffectMap, globalTipEffectMap ?? {})
       ),
     ]),
   ]);
@@ -625,7 +625,7 @@
       ),
       effect: resolveEffect(
         propIndex,
-        source.effectTipIndex,
+        source.effectKeyIndex,
         tipEffectMap,
         globalTipEffectMap ?? {}
       ),
@@ -878,12 +878,13 @@
       );
       leftEffectTips = result.tips;
       result.tips.forEach((tip, emitterIndex) => {
-        // The tip owns its effect slot. A single-ended prop publishes one tip
-        // on slot 1, so the array index is not the slot.
+        // The tip owns its slot and its effect key. A single-ended prop
+        // publishes one tip on slot 1 keyed to its 2D tip, so neither the
+        // array index nor the slot is the key.
         const tipIndex = tip.tipIndex;
         const resolved = resolveEffect(
           0,
-          tipIndex,
+          tip.effectKeyIndex,
           tipEffectMap,
           globalTipEffectMap ?? {}
         );
@@ -979,12 +980,13 @@
       );
       rightEffectTips = result.tips;
       result.tips.forEach((tip, emitterIndex) => {
-        // The tip owns its effect slot. A single-ended prop publishes one tip
-        // on slot 1, so the array index is not the slot.
+        // The tip owns its slot and its effect key. A single-ended prop
+        // publishes one tip on slot 1 keyed to its 2D tip, so neither the
+        // array index nor the slot is the key.
         const tipIndex = tip.tipIndex;
         const resolved = resolveEffect(
           1,
-          tipIndex,
+          tip.effectKeyIndex,
           tipEffectMap,
           globalTipEffectMap ?? {}
         );

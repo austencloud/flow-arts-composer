@@ -11,7 +11,10 @@ export type TrailSourceId3D = "left-end" | "right-end" | "hand";
 
 export interface TrailSource3D {
 	sourceId: TrailSourceId3D;
+	/** Logical end: 0 = LEFT_END, 1 = RIGHT_END. */
 	effectTipIndex: 0 | 1;
+	/** The per-tip effect key this source resolves, as in the 2D trail overlay. */
+	effectKeyIndex: number;
 	position: { x: number; y: number; z: number };
 }
 
@@ -20,9 +23,10 @@ export interface TrailSource3D {
  *
  * The logical left/right end ordering matches the canonical 2D trail pipeline:
  * tip 0 is the left end, tip 1 is the right end, and HAND uses one source at
- * the prop center while retaining the right-end effect-assignment slot.
+ * the prop center on the right-end slot and key 1, as the 2D overlay resolves
+ * its prop-centre source.
  *
- * Single-ended props publish only the right slot. As in `trail-capturer.ts`,
+ * Single-ended props publish only the right slot. As in the 2D trail config,
  * LEFT, RIGHT and BOTH all follow that one physical tip rather than inventing
  * a second path behind the hand.
  */
@@ -40,6 +44,7 @@ export function resolveTrailSources3D(
 					{
 						sourceId: "right-end",
 						effectTipIndex: 1,
+						effectKeyIndex: rightTip.effectKeyIndex,
 						position: rightTip.position,
 					},
 				]
@@ -53,6 +58,7 @@ export function resolveTrailSources3D(
 						{
 							sourceId: "left-end",
 							effectTipIndex: 0,
+							effectKeyIndex: leftTip.effectKeyIndex,
 							position: leftTip.position,
 						},
 					]
@@ -63,6 +69,7 @@ export function resolveTrailSources3D(
 						{
 							sourceId: "right-end",
 							effectTipIndex: 1,
+							effectKeyIndex: rightTip.effectKeyIndex,
 							position: rightTip.position,
 						},
 					]
@@ -74,6 +81,7 @@ export function resolveTrailSources3D(
 							{
 								sourceId: "left-end" as const,
 								effectTipIndex: 0 as const,
+								effectKeyIndex: leftTip.effectKeyIndex,
 								position: leftTip.position,
 							},
 						]
@@ -83,6 +91,7 @@ export function resolveTrailSources3D(
 							{
 								sourceId: "right-end" as const,
 								effectTipIndex: 1 as const,
+								effectKeyIndex: rightTip.effectKeyIndex,
 								position: rightTip.position,
 							},
 						]
@@ -93,6 +102,7 @@ export function resolveTrailSources3D(
 				{
 					sourceId: "hand",
 					effectTipIndex: 1,
+					effectKeyIndex: 1,
 					position: { ...propCenter },
 				},
 			];
@@ -184,9 +194,9 @@ export class TipPositionBridge3D {
 		);
 		const finalQuat = rotation.multiply(horizontalQuat);
 
-		// Effect assignments use the canonical logical order: Pinky/LEFT_END is
-		// tip 0, Thumb/RIGHT_END is tip 1. The prop mesh's positive axis points
-		// toward the thumb end, which is the end a single-ended prop keeps.
+		// Each anchor carries its logical end and the 2D tip its effects key.
+		// The prop mesh's positive axis points toward the thumb end, which is
+		// the end a single-ended prop keeps.
 		const anchors = resolvePropTipAnchors3D(propType, staffHalfLength, build);
 
 		// Swapping the prop mid-playback moves a tip discontinuously. Dropping
@@ -204,6 +214,7 @@ export class TipPositionBridge3D {
 			this.computeTipData(
 				propIndex,
 				anchor.effectTipIndex,
+				anchor.effectKeyIndex,
 				center
 					.clone()
 					.add(
@@ -227,6 +238,7 @@ export class TipPositionBridge3D {
 	private computeTipData(
 		propIndex: number,
 		tipIndex: 0 | 1,
+		effectKeyIndex: number,
 		position: Vector3,
 		emitterOrdinal: number,
 		deltaTime: number
@@ -244,6 +256,7 @@ export class TipPositionBridge3D {
 
 			return {
 				tipIndex,
+				effectKeyIndex,
 				position: { x: position.x, y: position.y, z: position.z },
 				velocity: { x: 0, y: 0, z: 0 },
 				jerk: { x: 0, y: 0, z: 0 },
@@ -265,6 +278,7 @@ export class TipPositionBridge3D {
 
 		return {
 			tipIndex,
+			effectKeyIndex,
 			position: { x: position.x, y: position.y, z: position.z },
 			velocity: { x: velocity.x, y: velocity.y, z: velocity.z },
 			jerk: { x: jerk.x, y: jerk.y, z: jerk.z },

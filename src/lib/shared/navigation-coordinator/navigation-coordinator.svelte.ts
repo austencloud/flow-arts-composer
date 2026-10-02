@@ -240,6 +240,7 @@ export function getAccessibleSectionsForModule(module: ModuleId) {
   // plus the guest-tier gating from isTabAccessible() (only subtracts for guests).
   return baseSections.filter((section) => {
     return (
+      !section.navigationHidden &&
       featureFlagService.canAccessTab(module, section.id) &&
       isTabAccessible(module, section.id, accessTier)
     );
@@ -451,7 +452,6 @@ const TAB_ORDERS: Record<string, string[]> = {
     "theme",
     "preferences",
     "keyboard",
-    "language",
   ],
 };
 
