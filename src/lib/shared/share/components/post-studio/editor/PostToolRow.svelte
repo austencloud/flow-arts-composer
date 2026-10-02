@@ -41,8 +41,6 @@
         return t("post_editor_split_hint");
       case "beats":
         return t("post_editor_beats_hint");
-      case "template":
-        return t("post_editor_use_omega_template_hint");
       default:
         return toolLabel(id);
     }

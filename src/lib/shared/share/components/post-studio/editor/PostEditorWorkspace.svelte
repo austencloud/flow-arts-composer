@@ -153,7 +153,6 @@
   import {
     createPostDraftAutosave,
     shouldSubmitPostDraft,
-    loadPostDraft,
   } from "$lib/shared/media-composition/services/post-draft-storage";
   import {
     parsePostStudioBackup,
@@ -324,8 +323,6 @@
 
   let draftSaving = $state(false);
   let draftError = $state<string | null>(draftLoadError);
-  let templateError = $state<string | null>(null);
-  let loadingTemplate = $state(false);
   /** When the last save finished, for the header's saved time. */
   let savedAt = $state<number | null>(null);
   /** The Save button was pressed and its save has not landed yet. */
@@ -470,8 +467,7 @@
   const displaySequence = $derived(labeledCard.sequence);
   /** A notice the top bar shows beside Undo and Redo. */
   const draftNotice = $derived(
-    !!templateError ||
-      !!labeledCard.error ||
+    !!labeledCard.error ||
       (!!(editor.project.mirrored || editor.project.sequenceActions?.length) &&
         labeledCard.pending)
   );
@@ -1178,14 +1174,6 @@
         return !editor.selectionEditable;
       case "beats":
         return !canTapBeats;
-      case "template":
-        return (
-          editor.project.tracks[0]?.items.filter(
-            (item) => item.kind === "video"
-          ).length < 2 ||
-          editor.project.sequenceId === "ΩΛ-XJ" ||
-          loadingTemplate
-        );
       default:
         return false;
     }
@@ -1219,29 +1207,6 @@
     if (beatsClip) openBeats(beatsClip);
   }
 
-  async function useOmegaTemplate(): Promise<void> {
-    loadingTemplate = true;
-    templateError = null;
-    try {
-      const saved = await loadPostDraft("ΩΛ-XJ");
-      if (!saved.project)
-        throw new Error(saved.error ?? "The ΩΛ-XJ draft could not be found.");
-      editor.pause();
-      if (!editor.applyTemplate(saved.project)) {
-        throw new Error(
-          "Add at least two video clips before using the template."
-        );
-      }
-    } catch (error) {
-      templateError =
-        error instanceof Error
-          ? error.message
-          : "The template could not be applied.";
-    } finally {
-      loadingTemplate = false;
-    }
-  }
-
   function pickTool(id: PostToolId): void {
     if (cropMode && id !== "crop") {
       cropFlight.capture();
@@ -1266,9 +1231,6 @@
         if (editor.splitAtPlayhead()) {
           void focusAfterUpdate({ kind: "tool", id: "split" });
         }
-        return;
-      case "template":
-        void useOmegaTemplate();
         return;
       case "beats":
         tapBeatsHere();
@@ -2250,9 +2212,6 @@
 />
 
 {#snippet draftStatus()}
-  {#if templateError}
-    <span class="draft-notice" role="alert">{templateError}</span>
-  {/if}
   {#if labeledCard.error}
     <span class="draft-notice" role="alert">{labeledCard.error}</span>
   {:else if (editor.project.mirrored || editor.project.sequenceActions?.length) && labeledCard.pending}
