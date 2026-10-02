@@ -59,7 +59,7 @@ const MOVE_START_SHARE = 0.4;
 /** Share of the intro by which the canvas has settled into its own box. */
 const MOVE_END_SHARE = 0.9;
 /** The easing the canvas takes from full frame to its own box. */
-const MOVE_EASING: [number, number, number, number] = [0.65, 0, 0.35, 1];
+export const MOVE_EASING: [number, number, number, number] = [0.65, 0, 0.35, 1];
 
 interface IntroBoxKey<Box> {
   atSeconds: number;

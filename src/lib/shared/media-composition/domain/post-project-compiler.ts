@@ -44,6 +44,12 @@ import {
 import { postSecondsOfKeyframe } from "$lib/shared/media-composition/domain/post-project-keyframes";
 import { tunnelHookBoxKeys } from "$lib/shared/media-composition/domain/tunnel-hook";
 import {
+  PIP_HANDOFF_MAX_CLOCK_SECONDS,
+  pipHandoffBoxAt,
+  pipHandoffOf,
+  withPipHandoffBoxKeys,
+} from "$lib/shared/media-composition/domain/pip-handoff";
+import {
   clipBox,
   postOutputSize,
   type PostOutputSize,
@@ -592,6 +598,22 @@ export function compilePostProject(
     (item): item is PostVideoItem => item.kind === "video"
   );
   const footageIntro = footageIntroOf(project);
+  // An animation ending over its picture-in-picture square shrinks into it.
+  const pipHandoff = pipHandoffOf(project);
+  const pipBoxes = pipHandoff
+    ? {
+        from: pipHandoffBoxAt(
+          regionKeyframesFor(pipHandoff.animation, output)?.keyframes ?? [],
+          pipHandoff.start,
+          clampBox(pipHandoff.animation.box)
+        ),
+        to: pipHandoffBoxAt(
+          regionKeyframesFor(pipHandoff.moves, output)?.keyframes ?? [],
+          pipHandoff.end,
+          clampBox(pipHandoff.moves.box)
+        ),
+      }
+    : null;
 
   const regions: LayoutRegion[] = [];
   const regionKeyframesList: PresetRegionKeyframesTrack[] = [];
@@ -808,10 +830,44 @@ export function compilePostProject(
           )
         );
         regions.push(region(item.id, label, box, "contain", zIndex));
+        const handoffRole =
+          pipHandoff?.animation === item
+            ? ("from" as const)
+            : pipHandoff?.moves === item
+              ? ("to" as const)
+              : null;
         {
           const regionKeyframes = regionKeyframesFor(item, output);
-          if (regionKeyframes) regionKeyframesList.push(regionKeyframes);
+          if (handoffRole && pipHandoff && pipBoxes) {
+            regionKeyframesList.push({
+              regionId: item.id,
+              keyframes: withPipHandoffBoxKeys(
+                regionKeyframes?.keyframes ?? [],
+                pipHandoff,
+                pipBoxes.from,
+                pipBoxes.to
+              ),
+            });
+          } else if (regionKeyframes) {
+            regionKeyframesList.push(regionKeyframes);
+          }
         }
+        // An animation shrinking into its square dissolves into it, or the
+        // square into the animation, whichever draws on top; the one beneath
+        // stays solid so the panel never thins in the middle.
+        const overlap = pipHandoff ? pipHandoff.end - pipHandoff.start : 0;
+        const fadeIn =
+          handoffRole === "to"
+            ? pipHandoff!.movesOnTop
+              ? overlap
+              : 0
+            : item.fadeIn;
+        const fadeOut =
+          handoffRole === "from"
+            ? pipHandoff!.movesOnTop
+              ? 0
+              : overlap
+            : item.fadeOut;
         const sequenceMotion = motionFor(item);
 
         const pieces = splitIntoPieces(item, mainVideos);
@@ -837,10 +893,22 @@ export function compilePostProject(
         const itemFinish = itemEnd(item);
         pieces.forEach((piece, index) => {
           if (piece.takeId) useTake(piece.takeId);
-          const inFadeIn =
-            item.fadeIn > 0 && piece.start < itemStart + item.fadeIn;
-          const inFadeOut =
-            item.fadeOut > 0 && piece.end > itemFinish - item.fadeOut;
+          const inFadeIn = fadeIn > 0 && piece.start < itemStart + fadeIn;
+          const inFadeOut = fadeOut > 0 && piece.end > itemFinish - fadeOut;
+          // Both sides of a hand-off read one clock from the overlap on.
+          const clockHandoff =
+            handoffRole &&
+            pipHandoff &&
+            (handoffRole === "from"
+              ? piece.end > pipHandoff.start + POST_TIME_EPSILON
+              : piece.start < pipHandoff.end + PIP_HANDOFF_MAX_CLOCK_SECONDS)
+              ? {
+                  id: pipHandoff.animation.id,
+                  role: handoffRole,
+                  start: pipHandoff.start,
+                  end: pipHandoff.end,
+                }
+              : null;
           const timing = {
             start: seconds(piece.start),
             end: seconds(piece.end),
@@ -851,7 +919,7 @@ export function compilePostProject(
             opacity: item.opacity,
             ...(inFadeIn
               ? {
-                  fadeInSeconds: item.fadeIn,
+                  fadeInSeconds: fadeIn,
                   ...(piece.start !== itemStart
                     ? { fadeInStartSeconds: itemStart }
                     : {}),
@@ -859,7 +927,7 @@ export function compilePostProject(
               : {}),
             ...(inFadeOut
               ? {
-                  fadeOutSeconds: item.fadeOut,
+                  fadeOutSeconds: fadeOut,
                   ...(piece.end !== itemFinish
                     ? { fadeOutEndSeconds: itemFinish }
                     : {}),
@@ -871,6 +939,7 @@ export function compilePostProject(
             ...(item.kind === "animation" && item.tunnelHook && piece.intro
               ? { tunnelHook: item.tunnelHook }
               : {}),
+            ...(clockHandoff ? { clockHandoff } : {}),
             ...(sequenceMotion ? { motion: sequenceMotion } : {}),
           };
           clips.push({
