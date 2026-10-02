@@ -5,7 +5,10 @@ import {
   createViteDevWatchIgnoredMatcher,
   I18N_MESSAGES_WATCH_PATH,
 } from "./src/config/vite-dev-watch-policy";
-import { createViteDependencyCachePlan } from "./src/config/vite-dependency-cache";
+import {
+  createViteDependencyCachePlan,
+  isViteDependencyCacheRequest,
+} from "./src/config/vite-dependency-cache";
 import { createViteDependencyRefreshPlugin } from "./src/config/vite-plugin-dependency-refresh";
 import { deployStaticCopyPlugin } from "./src/config/vite-plugin-deploy-static-copy";
 import { SSR_RESOLVE_CONDITIONS } from "./src/config/vite-ssr-conditions";
@@ -134,7 +137,7 @@ const devCachePlugin = () => ({
         // Skip Vite's pre-bundled deps — they use content-hashed URLs for
         // cache busting. Stripping cache headers causes 504 "Outdated Optimize
         // Dep" errors when Vite re-optimizes and the hash changes mid-session.
-        if (req.url?.includes(".vite/deps")) {
+        if (isViteDependencyCacheRequest(req.url)) {
           next();
           return;
         }

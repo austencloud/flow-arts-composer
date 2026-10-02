@@ -58,7 +58,16 @@ export function getViteDependencyCacheDir(
   projectRoot: string,
   port: number
 ): string {
-  return path.resolve(projectRoot, "node_modules/.vite", `port-${port}`);
+  // Worktrees share node_modules through a junction. Keeping generated modules
+  // inside each checkout prevents a preview from replacing the live app's cache.
+  return path.resolve(projectRoot, ".cache/vite", `port-${port}`);
+}
+
+export function isViteDependencyCacheRequest(url: string | undefined): boolean {
+  const pathname = url?.split("?", 1)[0] ?? "";
+  return /\/(?:\.cache\/vite|node_modules\/\.vite)\/(?:[^/]+\/)*deps(?:\/|$)/.test(
+    pathname
+  );
 }
 
 export function getInstalledDependencyStatePath(projectRoot: string): string {
