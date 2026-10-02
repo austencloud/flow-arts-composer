@@ -97,6 +97,14 @@
   const itemVisibility = new AnimationVisibilityStateManager({
     ephemeral: true,
   });
+  if (animationAppearance) {
+    itemVisibility.updateSettings({
+      ...inheritedVisibility.getSettings(),
+      wordHeader: false,
+      darkMode: true,
+      ...animationAppearance,
+    });
+  }
   const inheritedEffects = getEffectsConfigContext();
   const initialEffects = inheritedEffects?.snapshot() ?? DEFAULT_EFFECTS_CONFIG;
   const itemEffects = createEffectsConfigState(initialEffects, {
@@ -369,6 +377,7 @@
               previewDarkMode={animationAppearance.darkMode ?? true}
               mandalaStrokeWidthOverride={animationAppearance.mandalaThickness}
               hideProgressBar
+              hideHeader={animationAppearance.wordHeader !== true}
               visibilityManagerOverride={itemVisibility}
               effectsConfigState={itemEffects}
               trailSettings={itemTrailSettings}
@@ -459,7 +468,7 @@
           previewDarkMode={animationAppearance?.darkMode ?? true}
           mandalaStrokeWidthOverride={animationAppearance?.mandalaThickness}
           hideProgressBar
-          hideHeader={!animationAppearance}
+          hideHeader={animationAppearance?.wordHeader !== true}
           hideTkaGlyph={labelsPainted && !animationAppearance}
           hideStepNumbers={labelsPainted && !animationAppearance}
           hideElementalGlyph={labelsPainted && !animationAppearance}

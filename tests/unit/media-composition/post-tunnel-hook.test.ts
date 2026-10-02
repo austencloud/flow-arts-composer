@@ -51,6 +51,21 @@ describe("tunnel hook clock", () => {
     expect(tunnelHookArrival(0.05, 8)).toBeLessThan(0.05 * 8);
     expect(8 - tunnelHookArrival(0.95, 8)).toBeLessThan(0.05 * 8);
   });
+
+  it("uses four moves for a quartered sixteen-move LOOP and lands on the same terminal pose", () => {
+    expect(tunnelHookArrival(0, 16, 4)).toBe(12);
+    expect(tunnelHookArrival(0.5, 16, 4)).toBe(14);
+    expect(tunnelHookArrival(1, 16, 4)).toBe(16);
+    expect(
+      tunnelHookArrival(0.75, 16, 4) - tunnelHookArrival(0.25, 16, 4)
+    ).toBeLessThan(4);
+  });
+
+  it("keeps the full pass for other and irregular sequences", () => {
+    expect(tunnelHookArrival(0, 16, 1)).toBe(0);
+    expect(tunnelHookArrival(0, 8, 4)).toBe(6);
+    expect(tunnelHookArrival(0, 15, 4)).toBe(0);
+  });
 });
 
 describe("tunnel hook performers", () => {
@@ -185,5 +200,31 @@ describe("tunnel hook in the compiled post", () => {
     expect(early.sequencePosition).toBeLessThan(1.01);
     expect(late.tunnelHook?.progress).toBeGreaterThan(0.99);
     expect(late.sequencePosition).toBeCloseTo(5, 1);
+  });
+
+  it("evaluates a quartered sixteen-step hook across only its final four moves", () => {
+    const added = addTunnelHook(withAnimation(), ctx, { seconds: 5 })!;
+    const compiled = compilePostProject(added.project, { now: NOW })!;
+    const steps16 = Array.from({ length: 16 }, () => ({
+      duration: 1,
+    })) as unknown as StepData[];
+    const hookId = added.itemId;
+    const frame = (time: number) =>
+      evaluatePresetFrame(compiled.preset, compiled.durationSeconds, time, {
+        steps: steps16,
+        startPlacementDuration: 1,
+        sequencePeriod: 4,
+      }).find((layer) => layer.clipId.startsWith(hookId))!;
+    expect(frame(0).sequencePosition).toBe(13);
+    expect(frame(2.5).sequencePosition).toBe(15);
+    expect(frame(5 - 1e-6).sequencePosition).toBeCloseTo(17, 5);
+    const atCut = evaluatePresetFrame(
+      compiled.preset,
+      compiled.durationSeconds,
+      5,
+      { steps: steps16, startPlacementDuration: 1, sequencePeriod: 4 }
+    ).filter((layer) => layer.sourceRole === "sequence-animation");
+    expect(atCut.map((layer) => layer.clipId)).toEqual(["anim~0"]);
+    expect(atCut[0]?.regionId).toBe("anim");
   });
 });

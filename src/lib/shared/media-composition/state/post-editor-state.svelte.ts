@@ -237,6 +237,7 @@ export function createPostEditorState(deps: PostEditorDeps) {
       {
         steps: sequence.steps,
         startPlacementDuration: 1,
+        sequencePeriod: sequence.period ?? sequence.orientationCycleCount ?? 1,
         clocks,
       }
     );
