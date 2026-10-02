@@ -795,6 +795,21 @@ export function compilePostProject(
                 takes
               )
             : null;
+        // ...and the cut it reframes onto wears the same framing meanwhile.
+        const outgoing =
+          trackIndex === MAIN_TRACK_INDEX
+            ? project.tracks[MAIN_TRACK_INDEX]!.items[
+                project.tracks[MAIN_TRACK_INDEX]!.items.indexOf(item) - 1
+              ]
+            : undefined;
+        const incomingMatch =
+          outgoing?.kind === "video"
+            ? framingMatchFor(
+                project.tracks[MAIN_TRACK_INDEX]!.items,
+                outgoing,
+                takes
+              )
+            : null;
         const geometryKeys = match
           ? (() => {
               const before = (ownGeometryKeys ?? []).filter(
@@ -833,6 +848,15 @@ export function compilePostProject(
           ...(item.autoAdjust ? { autoAdjust: item.autoAdjust } : {}),
           ...(item.colorGrade ? { colorGrade: item.colorGrade } : {}),
           ...(geometryKeys ? { sourceGeometryKeyframes: geometryKeys } : {}),
+          ...(incomingMatch && outgoing
+            ? {
+                framingFrom: {
+                  clipId: outgoing.id,
+                  start: incomingMatch.start,
+                  end: incomingMatch.end,
+                },
+              }
+            : {}),
           ...(motion ? { motion } : {}),
         };
         clips.push({

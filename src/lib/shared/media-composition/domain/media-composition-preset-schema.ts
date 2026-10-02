@@ -396,6 +396,19 @@ export const PresetVisualClipSchema = z
     sourceGeometryKeyframes: z
       .array(motionKeySchema(PresetSourceGeometrySchema))
       .optional(),
+    /**
+     * From `start` to `end` this clip shows its picture through clip
+     * `clipId`'s framing, so two cuts of one recording dissolve with the
+     * room held still.
+     */
+    framingFrom: z
+      .object({
+        clipId: NonEmptyIdSchema,
+        start: SecondsSchema,
+        end: SecondsSchema,
+      })
+      .strict()
+      .optional(),
     autoAdjust: z
       .object({
         enabled: z.boolean(),
