@@ -73,7 +73,7 @@ describe("scripted post edits", () => {
     ).toThrow(/Edit 2 \(hook-speed\)/);
     expect(() =>
       applyPostProjectOps(post(), [{ op: "hook-speed", speed: "linear" }], ctx)
-    ).toThrow(/no opening hook/);
+    ).toThrow(/no opening tunnel/);
   });
 
   it("will not add a second hook", () => {
@@ -83,7 +83,7 @@ describe("scripted post edits", () => {
     ).toThrow(/already has/);
   });
 
-  it("sets and clears appearance flags on every animation, hook included", () => {
+  it("sets and clears appearance flags on every animation", () => {
     const withHook = applyPostProjectOps(post(), [{ op: "add-hook" }], ctx);
     const next = applyPostProjectOps(
       withHook,
@@ -99,7 +99,7 @@ describe("scripted post edits", () => {
     const animations = next.tracks
       .flatMap((track) => track.items)
       .filter((item) => item.kind === "animation") as PostAnimationItem[];
-    expect(animations).toHaveLength(2);
+    expect(animations).toHaveLength(1);
     for (const item of animations) {
       expect(item.animationAppearance?.stepNumbers).toBe(false);
       expect(item.animationAppearance).not.toHaveProperty("tkaGlyph");

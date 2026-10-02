@@ -22,6 +22,7 @@ import {
 import { POST_STUDIO_ROLE } from "$lib/shared/media-composition/domain/post-studio-presets";
 import {
   MAIN_TRACK_INDEX,
+  POST_BOX,
   POST_TIME_EPSILON,
   clampBox,
   itemEnd,
@@ -40,6 +41,7 @@ import {
   type PostVideoItem,
 } from "$lib/shared/media-composition/domain/post-project";
 import { postSecondsOfKeyframe } from "$lib/shared/media-composition/domain/post-project-keyframes";
+import { tunnelHookBoxKeys } from "$lib/shared/media-composition/domain/tunnel-hook";
 import {
   clipBox,
   postOutputSize,
@@ -249,6 +251,20 @@ interface SequencePiece {
   useResolvedTimeMap: boolean;
   timeMapRole?: string;
   takeId?: string;
+  /** Inside the item's tunnel intro, which owns the sequence clock. */
+  intro?: boolean;
+}
+
+/**
+ * Where an item's tunnel intro ends, in post seconds; null when it has none.
+ * A hook saved as its own item, with no stated length, is all intro.
+ */
+function tunnelIntroEnd(item: SequenceItem): number | null {
+  if (item.kind !== "animation" || !item.tunnelHook) return null;
+  const seconds = item.tunnelHook.seconds;
+  return seconds === undefined
+    ? itemEnd(item)
+    : Math.min(itemEnd(item), item.start + seconds);
 }
 
 /**
@@ -257,7 +273,8 @@ interface SequencePiece {
  * plays under it. A piece not fully covered by one main video - it sits over
  * a card, a gap, or (in a malformed project) straddles two videos - falls
  * back to holding its own opening pose rather than reading a move from
- * nothing.
+ * nothing. An item with a tunnel intro is also cut where the intro ends, and
+ * the intro's pieces read no footage: the intro owns the sequence clock.
  */
 function splitIntoPieces(
   item: SequenceItem,
@@ -265,7 +282,11 @@ function splitIntoPieces(
 ): SequencePiece[] {
   const start = item.start;
   const end = itemEnd(item);
+  const introEnd = tunnelIntroEnd(item);
   const boundaries = new Set<number>([start, end]);
+  if (introEnd !== null && introEnd > start && introEnd < end) {
+    boundaries.add(introEnd);
+  }
   for (const video of mainVideos) {
     const videoStart = video.start;
     const videoEnd = itemEnd(video);
@@ -279,6 +300,19 @@ function splitIntoPieces(
     const a = sorted[index]!;
     const b = sorted[index + 1]!;
     if (b - a < POST_TIME_EPSILON) continue;
+
+    if (introEnd !== null && b <= introEnd + POST_TIME_EPSILON) {
+      pieces.push({
+        start: a,
+        end: b,
+        sourceIn: 0,
+        sourceOut: b - a,
+        rate: 1,
+        useResolvedTimeMap: false,
+        intro: true,
+      });
+      continue;
+    }
 
     // The outgoing linked layer must finish its own motion as it fades.
     const covering = timingVideoAt(
@@ -399,6 +433,30 @@ function regionKeyframesFor(
   output: PostOutputSize
 ): PresetRegionKeyframesTrack | null {
   const frames = item.keyframes?.box;
+  const intro =
+    item.kind === "animation" && item.tunnelHook?.seconds !== undefined
+      ? tunnelHookBoxKeys<PostBox>(
+          item.start,
+          Math.min(item.tunnelHook.seconds, item.duration),
+          { ...POST_BOX.full },
+          { ...item.box }
+        )
+      : null;
+  if (intro) {
+    // The intro sets the box until it has settled; the item's own keys follow.
+    const settledAt = intro[intro.length - 1]!.atSeconds;
+    const own = (frames ?? [])
+      .filter(
+        (kf) =>
+          postSecondsOfKeyframe(item, kf.t) > settledAt + POST_TIME_EPSILON
+      )
+      .map((kf) => ({
+        atSeconds: postSecondsOfKeyframe(item, kf.t),
+        value: kf.value,
+        easing: kf.easing,
+      }));
+    return { regionId: item.id, keyframes: [...intro, ...own] };
+  }
   if (!frames || frames.length === 0) return null;
   const turns = frames.some((kf) => kf.value.turn !== undefined)
     ? continuousTurns(frames.map((kf) => kf.value.turn ?? 0))
@@ -701,9 +759,7 @@ export function compilePostProject(
             transform: IDENTITY_TRANSFORM,
             useResolvedTimeMap: piece.useResolvedTimeMap,
             ...(piece.timeMapRole ? { timeMapRole: piece.timeMapRole } : {}),
-            ...(item.kind === "animation" &&
-            item.tunnelHook &&
-            !piece.useResolvedTimeMap
+            ...(item.kind === "animation" && item.tunnelHook && piece.intro
               ? { tunnelHook: item.tunnelHook }
               : {}),
             ...(sequenceMotion ? { motion: sequenceMotion } : {}),

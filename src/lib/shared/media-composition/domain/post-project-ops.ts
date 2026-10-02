@@ -29,8 +29,8 @@ import {
  * one of the timeline's own pure edits, so a scripted change lays out and
  * validates exactly like the same change made by hand.
  *
- * An item is named by id, or by `hook` (the opening hook), `animations`
- * (every live animation, hook included) or `all`.
+ * An item is named by id, or by `hook` (the animation with the opening), `animations`
+ * (every live animation) or `all`.
  */
 
 type Speed = NonNullable<TunnelHook["speed"]>;
@@ -86,7 +86,7 @@ function itemIds(project: PostProject, selector: string): string[] {
     return all.filter((item) => item.kind === "animation").map((i) => i.id);
   if (selector === "hook") {
     const hook = findTunnelHook(project);
-    if (!hook) throw new Error("This post has no opening hook.");
+    if (!hook) throw new Error("This post has no opening tunnel.");
     return [hook.id];
   }
   if (!all.some((item) => item.id === selector))
@@ -124,8 +124,8 @@ function applyOp(
       if (!result)
         throw new Error(
           findTunnelHook(project)
-            ? "This post already has an opening hook."
-            : "The hook needs a live animation in the post to hand off to."
+            ? "This post already has an opening tunnel."
+            : "The opening tunnel needs a live animation in the post to open."
         );
       return result.project;
     }
@@ -133,7 +133,7 @@ function applyOp(
       return removeTunnelHook(project, ctx);
     case "hook-speed": {
       if (!findTunnelHook(project))
-        throw new Error("This post has no opening hook.");
+        throw new Error("This post has no opening tunnel.");
       return setTunnelHookSpeed(project, parseSpeed(op.speed), ctx);
     }
     case "appearance": {

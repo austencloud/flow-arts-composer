@@ -1,9 +1,10 @@
 import { z } from "zod";
 
 /**
- * The opening hook of a post: the sequence's own tunnel plays through, sped up
- * to fit the hook, then the extra performers fade and the red/blue pair lands
- * on the opening pose as the real animation takes over.
+ * The opening of an animation item: its own tunnel plays through, sped up to
+ * fit the intro, then the extra performers fade and the red/blue pair lands
+ * on the opening pose as the item carries on as the ordinary animation. The
+ * intro is the item's first `seconds`; the item keeps one canvas throughout.
  */
 export const TUNNEL_HOOK_FOLDS = [2, 4, 8] as const;
 
@@ -24,6 +25,11 @@ export const TunnelHookSchema = z
     speed: z
       .tuple([speedXSchema, speedYSchema, speedXSchema, speedYSchema])
       .optional(),
+    /**
+     * Length of the intro at the start of the item. Absent on a hook saved as
+     * a separate item, whose whole span is the intro.
+     */
+    seconds: z.number().finite().min(0.5).max(60).optional(),
   })
   .strict();
 
@@ -39,8 +45,47 @@ export const DEFAULT_TUNNEL_HOOK: TunnelHook = {
   speed: [0, 0, 0.58, 1],
 };
 
-/** Hook seconds a new hook starts with. */
+/** Intro seconds a new hook starts with. */
 export const DEFAULT_TUNNEL_HOOK_SECONDS = 5;
+
+/** Share of the intro the canvas holds the full frame before it moves. */
+const MOVE_START_SHARE = 0.4;
+/** Share of the intro by which the canvas has settled into its own box. */
+const MOVE_END_SHARE = 0.9;
+/** The easing the canvas takes from full frame to its own box. */
+const MOVE_EASING: [number, number, number, number] = [0.65, 0, 0.35, 1];
+
+interface IntroBoxKey<Box> {
+  atSeconds: number;
+  value: Box;
+  easing: "hold" | [number, number, number, number];
+}
+
+/**
+ * The region path of an intro: the full frame, held while the tunnel runs,
+ * then eased down into the item's own box. `start` is the item's start in
+ * post seconds.
+ */
+export function tunnelHookBoxKeys<Box>(
+  start: number,
+  seconds: number,
+  full: Box,
+  settled: Box
+): IntroBoxKey<Box>[] {
+  return [
+    { atSeconds: start, value: full, easing: "hold" },
+    {
+      atSeconds: start + seconds * MOVE_START_SHARE,
+      value: full,
+      easing: MOVE_EASING,
+    },
+    {
+      atSeconds: start + seconds * MOVE_END_SHARE,
+      value: settled,
+      easing: "hold",
+    },
+  ];
+}
 
 /** Progress at which the extra performers start to leave. */
 const FADE_START = 0.45;

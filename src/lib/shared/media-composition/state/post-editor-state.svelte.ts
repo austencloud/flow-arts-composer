@@ -150,7 +150,8 @@ export function createPostEditorState(deps: PostEditorDeps) {
   const initialProject = PostProjectSchema.safeParse(deps.initialProject);
   let project = $state.raw<PostProject>(
     initialProject.success && initialProject.data.sequenceId === sequence.id
-      ? initialProject.data
+      ? // A post saved with its opening as a separate item opens as one item.
+        normalizeProject(initialProject.data)
       : openPostProject(sequence.id, now())
   );
   // History keeps its original objects; saved copies must still be newer

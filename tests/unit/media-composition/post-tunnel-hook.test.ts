@@ -10,6 +10,7 @@ import {
   removeTunnelHook,
   setTunnelHookSpeed,
 } from "$lib/shared/media-composition/domain/post-project-edits";
+import { normalizeProject as finishProject } from "$lib/shared/media-composition/domain/post-project-normalize";
 import { compilePostProject } from "$lib/shared/media-composition/domain/post-project-compiler";
 import {
   tunnelHookArrival,
@@ -97,42 +98,76 @@ describe("tunnel hook performers", () => {
 });
 
 describe("addTunnelHook", () => {
-  it("puts a full-frame animation first and moves everything later by its length", () => {
+  it("gives the animation itself an opening and moves what it follows later", () => {
     const before = withAnimation();
     const result = addTunnelHook(before, ctx, { seconds: 5 })!;
     expect(result).not.toBeNull();
     expect(PostProjectSchema.safeParse(result.project).success).toBe(true);
 
+    // One animation item: it starts where the post started, is as long as the
+    // footage plus the opening, and keeps its own box.
+    const animations = result.project.tracks
+      .flatMap((track) => track.items)
+      .filter((item) => item.kind === "animation");
+    expect(animations).toHaveLength(1);
     const hook = findTunnelHook(result.project)!;
-    expect(hook.id).toBe(result.itemId);
+    expect(hook.id).toBe("anim");
+    expect(result.itemId).toBe("anim");
     expect(hook.start).toBe(0);
-    expect(hook.duration).toBe(5);
-    expect(hook.box).toEqual(POST_BOX.full);
+    expect(hook.duration).toBe(15);
+    expect(hook.box).toEqual(POST_BOX.bottom);
+    expect(hook.animationAppearance).toEqual({
+      mandala: true,
+      mandalaThickness: 1.5,
+    });
     // New hooks start on the "Ease out" speed preset.
     expect(hook.tunnelHook).toEqual({
       fold: 8,
       mirror: false,
       speed: [0, 0, 0.58, 1],
+      seconds: 5,
     });
-
     expect(spans(result.project, 0)).toEqual([["v1", 5, 10]]);
-    const real = result.project.tracks
-      .flatMap((track) => track.items)
-      .find((item) => item.id === "anim")!;
-    expect(real.start).toBe(5);
   });
 
-  it("hands over to the post's own animation: same look, lands in its box", () => {
+  it("opens on the full frame and lands in the animation's own box", () => {
     const result = addTunnelHook(withAnimation(), ctx, { seconds: 5 })!;
-    const hook = findTunnelHook(result.project)!;
-    expect(hook.animationAppearance).toEqual({
-      mandala: true,
-      mandalaThickness: 1.5,
-    });
-    const boxes = hook.keyframes!.box!;
-    expect(boxes[0]!.value).toEqual(POST_BOX.full);
-    expect(boxes[boxes.length - 1]!.value).toEqual(POST_BOX.bottom);
-    expect(boxes[boxes.length - 1]!.t).toBeLessThanOrEqual(hook.duration);
+    const compiled = compilePostProject(result.project, { now: NOW })!;
+    const keys = compiled.preset.regionKeyframes!.find(
+      (track) => track.regionId === "anim"
+    )!.keyframes;
+    expect(keys[0]!.atSeconds).toBe(0);
+    expect(keys[0]!.value).toMatchObject(POST_BOX.full);
+    const last = keys[keys.length - 1]!;
+    expect(last.value).toMatchObject(POST_BOX.bottom);
+    expect(last.atSeconds).toBeLessThanOrEqual(5);
+  });
+
+  it("keeps the item's own keyframes where they were in the post", () => {
+    const base = withAnimation();
+    const withKey = {
+      ...base,
+      tracks: base.tracks.map((track) => ({
+        ...track,
+        items: track.items.map((item) =>
+          item.id === "anim"
+            ? {
+                ...item,
+                keyframes: {
+                  opacity: [{ t: 4, value: 0.5, easing: "hold" as const }],
+                },
+              }
+            : item
+        ),
+      })),
+    };
+    const result = addTunnelHook(withKey, ctx, { seconds: 5 })!;
+    expect(findTunnelHook(result.project)!.keyframes!.opacity![0]!.t).toBe(9);
+    const restored = removeTunnelHook(result.project, ctx);
+    const anim = restored.tracks
+      .flatMap((track) => track.items)
+      .find((item) => item.id === "anim")!;
+    expect(anim.keyframes!.opacity![0]!.t).toBe(4);
   });
 
   it("pins main clips that would otherwise snap back to zero", () => {
@@ -153,7 +188,7 @@ describe("addTunnelHook", () => {
     expect(spans(result.project, 0)).toEqual([["v1", 4, 10]]);
   });
 
-  it("will not add a second hook, or one with nothing to hand over to", () => {
+  it("will not add a second hook, or one with no animation to open", () => {
     const once = addTunnelHook(withAnimation(), ctx)!;
     expect(addTunnelHook(once.project, ctx)).toBeNull();
     expect(
@@ -172,6 +207,86 @@ describe("addTunnelHook", () => {
       .flatMap((track) => track.items)
       .find((item) => item.id === "anim")!;
     expect(anim.start).toBe(0);
+    expect(anim.duration).toBe(10);
+    expect(anim).toMatchObject({ box: POST_BOX.bottom });
+  });
+});
+
+describe("hooks saved as a separate item", () => {
+  function separate(fill = true) {
+    return project(
+      [video("v1", { start: 5, duration: 10, pinnedStart: true })],
+      [
+        [
+          overlay("anim", "animation", {
+            start: 5,
+            duration: 10,
+            box: { ...POST_BOX.bottom },
+            anchor: { itemId: "v1", offset: 0 },
+            fill,
+            animationAppearance: { mandala: true },
+          } as Partial<PostAnimationItem>),
+        ],
+        [
+          overlay("hook", "animation", {
+            start: 0,
+            duration: 5,
+            box: { ...POST_BOX.full },
+            animationAppearance: { mandala: false },
+            tunnelHook: { fold: 8, mirror: false },
+          } as Partial<PostAnimationItem>),
+        ],
+      ]
+    );
+  }
+
+  it("become the animation's own opening when the project is normalized", () => {
+    const merged = finishProject(separate());
+    const animations = merged.tracks
+      .flatMap((track) => track.items)
+      .filter((item) => item.kind === "animation");
+    expect(animations.map((item) => item.id)).toEqual(["anim"]);
+    const hook = findTunnelHook(merged)!;
+    expect(hook.start).toBe(0);
+    expect(hook.duration).toBe(15);
+    expect(hook.tunnelHook).toEqual({ fold: 8, mirror: false, seconds: 5 });
+    // The post's own look wins over the stale copy the hook carried.
+    expect(hook.animationAppearance).toEqual({ mandala: true });
+    expect(merged.tracks).toHaveLength(2);
+    expect(PostProjectSchema.safeParse(merged).success).toBe(true);
+  });
+});
+
+describe("hooks saved with an animation placed against its clip", () => {
+  it("open from where the hook began, not where the animation was", () => {
+    const merged = finishProject(
+      project(
+        [video("v1", { start: 5, duration: 10, pinnedStart: true })],
+        [
+          [
+            overlay("anim", "animation", {
+              start: 5,
+              duration: 10,
+              box: { ...POST_BOX.bottom },
+              anchor: { itemId: "v1", offset: 0 },
+              fill: false,
+            } as Partial<PostAnimationItem>),
+          ],
+          [
+            overlay("hook", "animation", {
+              start: 0,
+              duration: 5,
+              box: { ...POST_BOX.full },
+              tunnelHook: { fold: 8, mirror: false },
+            } as Partial<PostAnimationItem>),
+          ],
+        ]
+      )
+    );
+    const hook = findTunnelHook(merged)!;
+    expect(hook.start).toBe(0);
+    expect(hook.duration).toBe(15);
+    expect(spans(merged, 0)).toEqual([["v1", 5, 10]]);
   });
 });
 
@@ -180,34 +295,38 @@ describe("tunnel hook in the compiled post", () => {
     duration: 1,
   })) as unknown as StepData[];
 
-  it("gives only the hook its own clock", () => {
+  it("gives only the opening its own clock", () => {
     const added = addTunnelHook(withAnimation(), ctx, {
       seconds: 5,
       hook: { fold: 8, mirror: false },
     })!;
     const compiled = compilePostProject(added.project, { now: NOW })!;
-    const hookClip = compiled.preset.clips.find((clip) =>
-      clip.id.startsWith(added.itemId)
-    )!;
-    expect(hookClip.useResolvedTimeMap).toBe(false);
-    expect(hookClip.tunnelHook).toEqual({ fold: 8, mirror: false });
-    const real = compiled.preset.clips.find((clip) =>
-      clip.id.startsWith("anim")
-    )!;
-    expect(real.tunnelHook).toBeUndefined();
+    const clips = compiled.preset.clips.filter((clip) =>
+      clip.id.startsWith("anim~")
+    );
+    expect(clips).toHaveLength(2);
+    const [intro, body] = clips as [(typeof clips)[0], (typeof clips)[0]];
+    expect(intro.useResolvedTimeMap).toBe(false);
+    expect(intro.tunnelHook).toEqual({ fold: 8, mirror: false, seconds: 5 });
+    expect(body.tunnelHook).toBeUndefined();
+    expect(body.useResolvedTimeMap).toBe(true);
+    // One region, so the canvas never changes hands.
+    expect(new Set(clips.map((clip) => clip.regionId))).toEqual(
+      new Set(["anim"])
+    );
 
     const early = evaluatePresetFrame(
       compiled.preset,
       compiled.durationSeconds,
       0.01,
       { steps } as never
-    ).find((layer) => layer.clipId === hookClip.id)!;
+    ).find((layer) => layer.clipId === intro.id)!;
     const late = evaluatePresetFrame(
       compiled.preset,
       compiled.durationSeconds,
       4.99,
       { steps } as never
-    ).find((layer) => layer.clipId === hookClip.id)!;
+    ).find((layer) => layer.clipId === intro.id)!;
     expect(early.tunnelHook?.progress).toBeLessThan(0.01);
     expect(early.sequencePosition).toBeLessThan(1.01);
     expect(late.tunnelHook?.progress).toBeGreaterThan(0.99);
@@ -224,13 +343,12 @@ describe("tunnel hook in the compiled post", () => {
     const steps16 = Array.from({ length: 16 }, () => ({
       duration: 1,
     })) as unknown as StepData[];
-    const hookId = added.itemId;
     const frame = (time: number) =>
       evaluatePresetFrame(compiled.preset, compiled.durationSeconds, time, {
         steps: steps16,
         startPlacementDuration: 1,
         sequencePeriod: 4,
-      }).find((layer) => layer.clipId.startsWith(hookId))!;
+      }).find((layer) => layer.clipId === "anim~0")!;
     expect(frame(0).sequencePosition).toBe(13);
     expect(frame(2.5).sequencePosition).toBe(15);
     expect(frame(5 - 1e-6).sequencePosition).toBeCloseTo(17, 5);
@@ -240,7 +358,7 @@ describe("tunnel hook in the compiled post", () => {
       5,
       { steps: steps16, startPlacementDuration: 1, sequencePeriod: 4 }
     ).filter((layer) => layer.sourceRole === "sequence-animation");
-    expect(atCut.map((layer) => layer.clipId)).toEqual(["anim~0"]);
+    expect(atCut.map((layer) => layer.clipId)).toEqual(["anim~1"]);
     expect(atCut[0]?.regionId).toBe("anim");
   });
 });
@@ -269,12 +387,14 @@ describe("tunnel hook speed curve", () => {
     expect(findTunnelHook(set)!.tunnelHook).toEqual({
       fold: 8,
       mirror: false,
+      seconds: 5,
       speed: [0, 0, 1, 1],
     });
     const cleared = setTunnelHookSpeed(set, null, ctx);
     expect(findTunnelHook(cleared)!.tunnelHook).toEqual({
       fold: 8,
       mirror: false,
+      seconds: 5,
     });
   });
 
