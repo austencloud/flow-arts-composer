@@ -22,6 +22,7 @@ export type PostPanelToolId =
   | "timing"
   | "crop"
   | "speed"
+  | "titles"
   | "volume"
   | "layout"
   | "position"
@@ -107,7 +108,7 @@ export function toolRow(selection: PostToolSelection): PostToolId[] {
         "split",
         "appearance",
         "sequence",
-        ...(selection.isTunnelHook ? (["speed"] as const) : []),
+        ...(selection.isTunnelHook ? (["speed", "titles"] as const) : []),
         "timing",
         ...ITEM_TAIL,
       ];

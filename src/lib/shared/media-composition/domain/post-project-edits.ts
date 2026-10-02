@@ -80,7 +80,9 @@ import {
 import {
   DEFAULT_TUNNEL_HOOK,
   DEFAULT_TUNNEL_HOOK_SECONDS,
+  TUNNEL_SPOKEN_MAX_LENGTH,
   type TunnelHook,
+  type TunnelTitles,
 } from "$lib/shared/media-composition/domain/tunnel-hook";
 
 /**
@@ -705,6 +707,33 @@ export function setTunnelHookSpeed(
   if (!hook?.tunnelHook) return project;
   const { speed: _previous, ...rest } = hook.tunnelHook;
   const tunnelHook: TunnelHook = speed ? { ...rest, speed } : rest;
+  const tracks = project.tracks.map((track) => ({
+    ...track,
+    items: track.items.map((item) =>
+      item.id === hook.id ? { ...item, tunnelHook } : item
+    ),
+  }));
+  return finish({ ...project, tracks }, ctx);
+}
+
+/** What the opening tunnel shows around it: the name, how to say it, the parts. */
+export function setTunnelHookTitles(
+  project: PostProject,
+  titles: TunnelTitles,
+  ctx: EditContext
+): PostProject {
+  const hook = findTunnelHook(project);
+  if (!hook?.tunnelHook) return project;
+  // Kept as typed, spaces and all, so the field never fights the cursor.
+  const spoken = titles.spoken?.slice(0, TUNNEL_SPOKEN_MAX_LENGTH);
+  const tunnelHook: TunnelHook = {
+    ...hook.tunnelHook,
+    titles: {
+      name: titles.name,
+      ...(spoken?.trim() ? { spoken } : {}),
+      structure: titles.structure,
+    },
+  };
   const tracks = project.tracks.map((track) => ({
     ...track,
     items: track.items.map((item) =>

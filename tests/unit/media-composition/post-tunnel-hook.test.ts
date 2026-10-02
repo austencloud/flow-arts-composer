@@ -338,8 +338,9 @@ describe("tunnel hook in the compiled post", () => {
       hook: { fold: 8, mirror: false },
     })!;
     const compiled = compilePostProject(added.project, { now: NOW })!;
-    const clips = compiled.preset.clips.filter((clip) =>
-      clip.id.startsWith("anim~")
+    // The opening's titles ride along as a painted clip of their own.
+    const clips = compiled.preset.clips.filter(
+      (clip) => clip.id.startsWith("anim~") && !clip.id.endsWith("~titles")
     );
     expect(clips).toHaveLength(2);
     const [intro, body] = clips as [(typeof clips)[0], (typeof clips)[0]];

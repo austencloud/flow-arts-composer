@@ -28,6 +28,7 @@
     takeRole,
   } from "$lib/shared/media-composition/domain/post-plan-compiler";
   import {
+    TUNNEL_TITLES_ROLE,
     itemIdFromMovesAnimationRole,
     itemIdFromStaffEffectRole,
     itemIdFromTextRole,
@@ -85,6 +86,7 @@
   import { getAnimationVisibilityManager } from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
   import { createTextItemPainter } from "$lib/shared/media-composition/services/text-item-painter";
   import { createStaffEffectPainter } from "$lib/shared/media-composition/services/staff-effect-painter";
+  import { createTunnelTitlesPainter } from "$lib/shared/media-composition/services/tunnel-titles-painter";
   import { createStaffTipAnalysis } from "$lib/shared/media-composition/state/staff-tip-analysis.svelte";
   import { loadAnimationOverlayPainter } from "$lib/shared/media-composition/services/animation-overlay-painter-registry";
   import { planProjectAudio } from "$lib/shared/media-composition/domain/post-audio-plan";
@@ -517,6 +519,13 @@
     return painter;
   }
 
+  /** The sequence's name and the video's parts around the opening tunnel. */
+  const tunnelTitlesPainter = createTunnelTitlesPainter(
+    () => editor.compiled?.tunnelTitles ?? null,
+    () =>
+      simplifyRepeatedWord(displaySequence.word || deriveWord(displaySequence))
+  );
+
   /** Where each take's LED staffs are, found once per video. */
   const staffTips = createStaffTipAnalysis();
   $effect(() => {
@@ -688,6 +697,8 @@
           t("share_studio_deep_beat_carousel"),
           carouselPainter
         );
+      case TUNNEL_TITLES_ROLE:
+        return painted(role, t("post_tunnel_titles"), tunnelTitlesPainter);
       case ANIMATION_OVERLAY_ROLE:
         return overlayPainter
           ? painted(
@@ -728,6 +739,9 @@
       painters.set(textRole(text.itemId), textPainterFor(text.itemId));
     }
     if (overlayPainter) painters.set(ANIMATION_OVERLAY_ROLE, overlayPainter);
+    if (editor.compiled?.tunnelTitles) {
+      painters.set(TUNNEL_TITLES_ROLE, tunnelTitlesPainter);
+    }
     for (const track of editor.project.tracks) {
       for (const item of track.items) {
         if (item.kind === "video" && item.staffEffect) {
