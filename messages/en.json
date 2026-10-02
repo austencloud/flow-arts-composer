@@ -6869,8 +6869,6 @@
   "post_editor_hook_name": "Sequence name",
   "post_editor_hook_spoken": "How to say it",
   "post_editor_hook_spoken_placeholder": "Optional",
-  "post_editor_hook_parts": "Parts bar",
-  "post_editor_hook_parts_note": "Shows each part of the video under the tunnel. The first part fills as it plays.",
   "post_tunnel_titles": "Opening titles",
   "post_editor_text_placeholder": "Your text",
   "post_editor_undo": "Undo",

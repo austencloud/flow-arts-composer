@@ -1065,19 +1065,6 @@
             "spoken"
           )}
       />
-      <span class="readout-name">{t("post_editor_hook_parts")}</span>
-      <SegmentedControl
-        color="accent"
-        options={shownOptions()}
-        value={titles.structure ? "shown" : "hidden"}
-        onchange={(value) =>
-          commitHookTitles(
-            { ...titles, structure: value === "shown" },
-            "structure"
-          )}
-        ariaLabel={t("post_editor_hook_parts")}
-      />
-      <p>{t("post_editor_hook_parts_note")}</p>
     </div>
   {:else if tool === "speed" && item.kind === "video"}
     <ValueSlider
@@ -1475,12 +1462,6 @@
     display: grid;
     gap: 0.5rem;
     min-width: 0;
-  }
-
-  .hook-titles p {
-    margin: 0;
-    color: var(--theme-text-secondary, #aaa);
-    font-size: 0.8125rem;
   }
 
   .qr-appearance {

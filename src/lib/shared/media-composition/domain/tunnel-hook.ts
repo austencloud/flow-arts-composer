@@ -41,15 +41,16 @@ export const TunnelHookSchema = z
     backdrop: z.boolean().optional(),
     /**
      * Words around the tunnel while it holds the frame: the sequence's name
-     * above it with how to say it, and the video's parts below it. Absent
-     * shows the name and the parts; see `tunnel-titles.ts`.
+     * above it with how to say it. Absent shows the name; see
+     * `tunnel-titles.ts`.
      */
     titles: z
       .object({
         name: z.boolean(),
         /** How to say the name, shown in quotes under it. */
         spoken: z.string().max(TUNNEL_SPOKEN_MAX_LENGTH).optional(),
-        structure: z.boolean(),
+        /** The retired parts bar; read so older drafts still open, never drawn. */
+        structure: z.boolean().optional(),
       })
       .strict()
       .optional(),
@@ -62,7 +63,6 @@ export type TunnelTitles = NonNullable<TunnelHook["titles"]>;
 /** What an opening shows when it has no titles of its own. */
 export const DEFAULT_TUNNEL_TITLES: TunnelTitles = {
   name: true,
-  structure: true,
 };
 
 /**
