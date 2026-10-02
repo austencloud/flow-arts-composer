@@ -339,8 +339,8 @@
     });
   });
 
-  // With footage behind the tunnel, the panel stays clear while the tunnel
-  // fills the frame and fills in as the canvas settles into its box.
+  // With footage behind the tunnel, the panel stays clear while the canvas
+  // moves and fills in once it has settled into its box.
   const panelAlpha = $derived(tunnelHookPanelOpacity(tunnelHook, sampleEasing));
 </script>
 
