@@ -33,7 +33,10 @@
   import PostTimelineTrackHeader from "./PostTimelineTrackHeader.svelte";
   import PostTimelineZoomControls from "./PostTimelineZoomControls.svelte";
   import {
+    joinTimelineGroup,
     selectTimelineItem,
+    timelineGroupOf,
+    timelineHandoffPair,
     timelineItemOrder,
     type TimelineSelection,
   } from "./post-timeline-selection";
@@ -194,11 +197,14 @@
     focusId: null,
   });
 
+  // The animation and the square it turns into show as one block.
+  const handoffPair = $derived(timelineHandoffPair(project));
+
   $effect(() => {
     if (selectedItemId !== selection.focusId)
       selection = selectedItemId
         ? {
-            ids: [selectedItemId],
+            ids: timelineGroupOf(handoffPair, selectedItemId),
             anchorId: selectedItemId,
             focusId: selectedItemId,
           }
@@ -210,7 +216,60 @@
     start: number;
     duration: number;
     trackIndex: number;
+    /** The row it is drawn on: the square of a joined pair sits on the animation's. */
+    rowTrackIndex: number;
     label: string;
+  }
+
+  function rowTrackIndexOf(itemId: string, trackIndex: number): number {
+    return handoffPair && itemId === handoffPair.movesId
+      ? handoffPair.animationTrackIndex
+      : trackIndex;
+  }
+
+  interface RowBlock {
+    item: PostItem;
+    trackIndex: number;
+    start: number;
+    end: number;
+    joinStart: boolean;
+    joinEnd: boolean;
+  }
+
+  /**
+   * What a row draws. A joined pair meets halfway through the stretch where
+   * the animation becomes the square; each half stays its own clip.
+   */
+  function rowBlocks(row: TimelineRow): RowBlock[] {
+    const pair = handoffPair;
+    const blocks: RowBlock[] = [];
+    for (const item of row.track.items) {
+      if (pair && item.id === pair.movesId) continue;
+      const joined = pair !== null && item.id === pair.animationId;
+      blocks.push({
+        item,
+        trackIndex: row.trackIndex,
+        start: item.start,
+        end: joined ? (pair.start + pair.end) / 2 : itemEnd(item),
+        joinStart: false,
+        joinEnd: joined,
+      });
+    }
+    if (pair && row.trackIndex === pair.animationTrackIndex) {
+      const moves = project.tracks[pair.movesTrackIndex]?.items.find(
+        (item) => item.id === pair.movesId
+      );
+      if (moves)
+        blocks.push({
+          item: moves,
+          trackIndex: pair.movesTrackIndex,
+          start: (pair.start + pair.end) / 2,
+          end: itemEnd(moves),
+          joinStart: true,
+          joinEnd: false,
+        });
+    }
+    return blocks;
   }
 
   interface TrimDrag {
@@ -321,6 +380,11 @@
       const outgoing = track.items[index]!;
       const incoming = track.items[index + 1]!;
       if (
+        handoffPair &&
+        [outgoing.id, incoming.id].includes(handoffPair.movesId)
+      )
+        continue;
+      if (
         !crossfadeKinds.has(outgoing.kind) ||
         !crossfadeKinds.has(incoming.kind)
       )
@@ -418,14 +482,17 @@
         isAnimated(item, channel)
     );
     if (channels.length === 0) return null;
+    // Drawn under the row the clip sits on, which for a joined square is the
+    // animation's.
+    const rowTrackIndex = rowTrackIndexOf(item.id, trackIndex);
     let topPx = 0;
     for (const row of rows) {
       topPx += row.heightPx;
-      if (row.trackIndex === trackIndex) break;
+      if (row.trackIndex === rowTrackIndex) break;
     }
     return {
       item,
-      trackIndex,
+      trackIndex: rowTrackIndex,
       locked: project.tracks[trackIndex]?.locked ?? false,
       channels,
       topPx,
@@ -644,15 +711,19 @@
       suppressNextClickForItemId = null;
       return;
     }
-    selection = selectTimelineItem(
-      selection,
-      itemId,
-      timelineItemOrder(project, itemId),
-      event.shiftKey
-        ? "range"
-        : event.ctrlKey || event.metaKey
-          ? "toggle"
-          : "plain"
+    selection = joinTimelineGroup(
+      selectTimelineItem(
+        selection,
+        itemId,
+        timelineItemOrder(project, itemId),
+        event.shiftKey
+          ? "range"
+          : event.ctrlKey || event.metaKey
+            ? "toggle"
+            : "plain"
+      ),
+      handoffPair,
+      itemId
     );
     onSelect(selection.focusId);
   }
@@ -673,7 +744,9 @@
     if (event.shiftKey || event.ctrlKey || event.metaKey) return;
     event.preventDefault();
     (event.currentTarget as HTMLElement).setPointerCapture(event.pointerId);
-    const ids = selection.ids.includes(item.id) ? selection.ids : [item.id];
+    const ids = selection.ids.includes(item.id)
+      ? selection.ids
+      : timelineGroupOf(handoffPair, item.id);
     const selected = new Set(ids);
     const members = project.tracks.flatMap((track, index) =>
       track.locked
@@ -685,6 +758,7 @@
               start: candidate.start,
               duration: candidate.duration,
               trackIndex: index,
+              rowTrackIndex: rowTrackIndexOf(candidate.id, index),
               label: labelFor(candidate),
             }))
     );
@@ -941,13 +1015,13 @@
     state: MoveMainDrag | MoveOverlayDrag,
     member: DragMember
   ): number {
-    if (member.trackIndex === MAIN_TRACK_INDEX) return mainRowTopPx;
+    if (member.rowTrackIndex === MAIN_TRACK_INDEX) return mainRowTopPx;
     const layerDelta =
       state.kind === "move-overlay"
         ? trackIndexForRowHit(state.rowHit, state.originalTrackIndex) -
           state.originalTrackIndex
         : 0;
-    const target = Math.max(1, member.trackIndex + layerDelta);
+    const target = Math.max(1, member.rowTrackIndex + layerDelta);
     return target > overlayTrackCount
       ? 0
       : overlayGhostTopPx({ kind: "overlay", trackIndex: target });
@@ -1075,7 +1149,7 @@
         !selection.ids.includes(state.itemId)
       ) {
         selection = {
-          ids: [state.itemId],
+          ids: timelineGroupOf(handoffPair, state.itemId),
           anchorId: state.itemId,
           focusId: state.itemId,
         };
@@ -1414,20 +1488,27 @@
                   {/if}
                 </div>
               {/if}
-              {#each row.track.items as item (item.id)}
+              {#each rowBlocks(row) as block (block.item.id)}
+                {@const item = block.item}
+                {@const track = project.tracks[block.trackIndex]!}
                 <PostTimelineItem
                   {item}
-                  leftPx={secondsToPixels(item.start, pixelsPerSecond)}
-                  widthPx={secondsToPixels(item.duration, pixelsPerSecond)}
+                  leftPx={secondsToPixels(block.start, pixelsPerSecond)}
+                  widthPx={secondsToPixels(
+                    block.end - block.start,
+                    pixelsPerSecond
+                  )}
                   labelText={labelFor(item)}
                   selected={selection.ids.includes(item.id)}
-                  locked={row.track.locked}
-                  dimmed={row.track.hidden}
+                  locked={track.locked}
+                  dimmed={track.hidden}
+                  joinStart={block.joinStart}
+                  joinEnd={block.joinEnd}
                   onActivate={handleItemActivate}
                   onBodyPointerDown={(event) =>
-                    beginBodyDrag(event, item, row.trackIndex)}
+                    beginBodyDrag(event, item, block.trackIndex)}
                   onHandlePointerDown={(event, edge) =>
-                    beginHandleDrag(event, item, edge, row.trackIndex)}
+                    beginHandleDrag(event, item, edge, block.trackIndex)}
                   animated={channelsOf(item).some((channel) =>
                     isAnimated(item, channel)
                   )}
