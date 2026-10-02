@@ -31,7 +31,7 @@
 	} from '../state/background-hold.svelte';
 	import { createRenderActivityGate } from '$lib/shared/render-gating/render-activity-gate';
 	import { sharedAnimationState } from '$lib/shared/animation-engine/state/shared-animation-state.svelte';
-	import { shouldReduceBackgroundResolution } from '$lib/shared/platform/network-conditions';
+	import { mountBackgroundAtDisplayResolution } from '../background-canvas-resolution';
 	import { installBackgroundQualityRecovery } from '../background-quality-recovery';
 
 	const {
@@ -86,21 +86,6 @@
 	const PAGE_HIDDEN_HOLD_KEY = 'background-host:page-hidden';
 	const PLAYBACK_HOLD_KEY = 'background-host:playback';
 
-	// The @austencloud/backgrounds package caps canvas at 960×540 for perf,
-	// but that makes 2D backgrounds look zoomed/blurry on modern displays.
-	// Patch the controller to use full viewport resolution (capped at 1x DPR).
-	// Proper fix: expose a public resolution API in @austencloud/backgrounds and
-	// remove this patch. Until then, keep it typed via the interface below.
-
-	/** Private fields accessed by the patched updateCanvasDimensions method. */
-	interface BackgroundControllerPrivate {
-		canvasA: HTMLCanvasElement | null;
-		canvasB: HTMLCanvasElement | null;
-		container: HTMLElement | null;
-		updateCanvasDimensions: () => void;
-	}
-
-
 	function foregroundOwnsPointer(event: PointerEvent): boolean {
 		// Pointer capture can retarget a move to the element where a drag began.
 		// elementFromPoint asks what is visibly on top at the pointer's current
@@ -116,49 +101,6 @@
 			width: canvas?.width ?? rect.width,
 			height: canvas?.height ?? rect.height
 		});
-	}
-
-	// On a genuinely low-capability device (explicit data-saver, or a slow 3g-or-worse
-	// radio bucket) the device is usually a phone that can't comfortably repaint the
-	// background at full viewport resolution every frame. In that case we cap the
-	// longest side so the background stays cheap. The cap mirrors the upstream
-	// package's own perf-first default, so the controller's pointer hit-testing
-	// (cursor flee, jellyfish poke) keeps working with a sub-viewport buffer just as
-	// it does by default. The check runs inside updateCanvasDimensions so it
-	// re-evaluates on every resize — if conditions improve, a later resize restores
-	// full res.
-	//
-	// This uses shouldReduceBackgroundResolution(), NOT isConstrainedConnection().
-	// Render resolution must not key off the noisy downlink-Mbps bandwidth estimate
-	// the prefetch heuristic uses: Chrome routinely under-reports downlink to 1–2
-	// Mbps on capable links (and on localhost), and a false positive there caps the
-	// canvas to 960px and stretches it ~2x across the viewport — the whole background
-	// renders zoomed in and blurry, permanently, until the estimate happens to rise.
-	const CONSTRAINED_MAX_DIMENSION = 960;
-
-	function patchCanvasResolution(ctrl: NonNullable<typeof controller>) {
-		const c = ctrl as unknown as BackgroundControllerPrivate;
-		c.updateCanvasDimensions = function (this: BackgroundControllerPrivate) {
-			const cA = this.canvasA;
-			const cB = this.canvasB;
-			const cont = this.container;
-			if (!cA || !cB || !cont) return;
-			const rect = cont.getBoundingClientRect();
-			let w = Math.max(1, Math.floor(rect.width));
-			let h = Math.max(1, Math.floor(rect.height));
-			if (shouldReduceBackgroundResolution()) {
-				const longest = Math.max(w, h);
-				if (longest > CONSTRAINED_MAX_DIMENSION) {
-					const scale = CONSTRAINED_MAX_DIMENSION / longest;
-					w = Math.max(1, Math.floor(w * scale));
-					h = Math.max(1, Math.floor(h * scale));
-				}
-			}
-			cA.width = w;
-			cA.height = h;
-			cB.width = w;
-			cB.height = h;
-		};
 	}
 
 	onMount(() => {
@@ -358,20 +300,9 @@
 		}
 		layoutRetries = 0;
 
-		// mount() is idempotent and container-aware: a no-op when already bound to
-		// this container, a re-bind (unmount + remount) when the container changed.
-		// Gating it on isReady() was the bug — once mounted+initialized, isReady()
-		// stays true, so after any SPA navigation / remount the new container never
-		// received the canvases and only the CSS gradient showed. Always call mount()
-		// so the canvases follow the current container; only (re)patch + resize when
-		// we actually bind a new one.
-		const priv = controller as unknown as BackgroundControllerPrivate;
-		const needsBind = priv.container !== containerRef;
-		controller.mount(containerRef);
-		if (needsBind) {
-			patchCanvasResolution(controller);
-			priv.updateCanvasDimensions();
-		}
+		// Mount is idempotent and follows a new host after navigation. Gating it
+		// on isReady() would leave a remounted host showing only its fallback.
+		mountBackgroundAtDisplayResolution(controller, containerRef);
 		controller.setBackground(backgroundType, {
 			backgroundColor,
 			gradientColors,

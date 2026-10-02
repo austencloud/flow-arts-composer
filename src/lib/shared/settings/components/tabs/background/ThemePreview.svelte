@@ -4,6 +4,7 @@
     type BackgroundType,
   } from "@austencloud/backgrounds";
   import { onMount } from "svelte";
+  import { mountBackgroundAtDisplayResolution } from "$lib/shared/background/shared/background-canvas-resolution";
 
   let { type, fallback }: { type: BackgroundType; fallback: string } = $props();
 
@@ -77,7 +78,7 @@
     const frame = requestAnimationFrame(() => {
       if (!host) return;
       mounted = true;
-      controller.mount(host);
+      mountBackgroundAtDisplayResolution(controller, host);
       controller.setAdaptiveQuality(true);
       controller.setQuality("medium");
       reducedMotion = motionQuery.matches;
