@@ -19,6 +19,7 @@ import {
   stripRole,
   takeRole,
 } from "$lib/shared/media-composition/domain/post-plan-compiler";
+import type { PostTake } from "$lib/shared/media-composition/domain/post-plan";
 import { POST_STUDIO_ROLE } from "$lib/shared/media-composition/domain/post-studio-presets";
 import {
   MAIN_TRACK_INDEX,
@@ -41,8 +42,14 @@ import {
   type PostTextAnimation,
   type PostVideoItem,
 } from "$lib/shared/media-composition/domain/post-project";
-import { postSecondsOfKeyframe } from "$lib/shared/media-composition/domain/post-project-keyframes";
-import { tunnelHookBoxKeys } from "$lib/shared/media-composition/domain/tunnel-hook";
+import {
+  postSecondsOfKeyframe,
+  sampleEasing,
+} from "$lib/shared/media-composition/domain/post-project-keyframes";
+import {
+  MOVE_EASING,
+  tunnelHookBoxKeys,
+} from "$lib/shared/media-composition/domain/tunnel-hook";
 import {
   PIP_HANDOFF_MAX_CLOCK_SECONDS,
   pipHandoffBoxAt,
@@ -464,6 +471,109 @@ function fullFrameGeometry(
   };
 }
 
+/** Where a crossfade reframes its outgoing picture, in post seconds. */
+interface FramingMatch {
+  start: number;
+  end: number;
+  to: PostSourceGeometry;
+}
+
+/**
+ * A crossfade between two cuts of one recording reframes the outgoing cut
+ * onto the incoming one's framing while it dissolves, so the room holds
+ * still and only the performer changes. Null for other footage, a cut with
+ * no framing of its own, or a turn or flip that differs.
+ */
+function framingMatchFor(
+  items: readonly PostItem[],
+  item: PostVideoItem,
+  takes: ReadonlyMap<string, PostTake>
+): FramingMatch | null {
+  const transition = item.transitionOut;
+  const incoming = items[items.indexOf(item) + 1];
+  if (
+    !transition?.duration ||
+    transition.type !== "crossfade" ||
+    incoming?.kind !== "video" ||
+    (transition.incomingId !== undefined &&
+      transition.incomingId !== incoming.id) ||
+    !item.sourceGeometry ||
+    !incoming.sourceGeometry ||
+    item.flip !== incoming.flip ||
+    Math.abs(item.sourceGeometry.rotation - incoming.sourceGeometry.rotation) >
+      1e-6
+  ) {
+    return null;
+  }
+  const from = takes.get(item.takeId)?.ref;
+  const to = takes.get(incoming.takeId)?.ref;
+  if (!from || !to || JSON.stringify(from) !== JSON.stringify(to)) return null;
+  const start = Math.max(incoming.start, itemEnd(item) - transition.duration);
+  const end = Math.min(itemEnd(item), itemEnd(incoming));
+  if (end - start <= POST_TIME_EPSILON) return null;
+  return { start, end, to: incoming.sourceGeometry };
+}
+
+/** Steps a reframe is laid out in; the evaluator blends straight between them. */
+const FRAMING_MATCH_STEPS = 12;
+
+/**
+ * The outgoing picture's reframe as keys. Each step places the recording by
+ * one zoom and offset, so the picture never stretches, and shows it through
+ * a window moving from the old frame to the new; the steps follow the
+ * opening move's curve.
+ */
+function framingMatchKeys(match: FramingMatch, from: PostSourceGeometry) {
+  const placement = (geometry: PostSourceGeometry) => {
+    const { crop } = geometry;
+    const scaleX = geometry.width / Math.max(1e-9, crop.right - crop.left);
+    const scaleY = geometry.height / Math.max(1e-9, crop.bottom - crop.top);
+    return {
+      scaleX,
+      scaleY,
+      x: geometry.x - crop.left * scaleX,
+      y: geometry.y - crop.top * scaleY,
+    };
+  };
+  const a = placement(from);
+  const b = placement(match.to);
+  const lerp = (u: number, v: number, p: number) => u + (v - u) * p;
+  const at = (p: number): PostSourceGeometry => {
+    const scaleX = lerp(a.scaleX, b.scaleX, p);
+    const scaleY = lerp(a.scaleY, b.scaleY, p);
+    const x = lerp(a.x, b.x, p);
+    const y = lerp(a.y, b.y, p);
+    const clamp = (value: number) => Math.min(1, Math.max(0, value));
+    const left = clamp((lerp(from.x, match.to.x, p) - x) / scaleX);
+    const top = clamp((lerp(from.y, match.to.y, p) - y) / scaleY);
+    const right = clamp(
+      (lerp(from.x + from.width, match.to.x + match.to.width, p) - x) / scaleX
+    );
+    const bottom = clamp(
+      (lerp(from.y + from.height, match.to.y + match.to.height, p) - y) / scaleY
+    );
+    return {
+      x: x + left * scaleX,
+      y: y + top * scaleY,
+      width: (right - left) * scaleX,
+      height: (bottom - top) * scaleY,
+      rotation: from.rotation,
+      crop: { left, top, right, bottom },
+    };
+  };
+  return Array.from({ length: FRAMING_MATCH_STEPS + 1 }, (_, step) => {
+    const share = step / FRAMING_MATCH_STEPS;
+    return {
+      atSeconds: match.start + (match.end - match.start) * share,
+      value: step === 0 ? from : at(sampleEasing(MOVE_EASING, share)),
+      easing:
+        step === FRAMING_MATCH_STEPS
+          ? ("hold" as const)
+          : ([0, 0, 1, 1] as [number, number, number, number]),
+    };
+  });
+}
+
 function sourceGeometryKeys(
   item: PostVideoItem | PostImageItem,
   output?: PostOutputSize,
@@ -671,7 +781,30 @@ export function compilePostProject(
         const regionKeyframes = regionKeyframesFor(item, output, intro);
         if (regionKeyframes) regionKeyframesList.push(regionKeyframes);
         const motion = motionFor(item, transformMotionKeys(item));
-        const geometryKeys = sourceGeometryKeys(item, output, intro);
+        const ownGeometryKeys = sourceGeometryKeys(item, output, intro);
+        // A crossfade into another cut of the same recording reframes onto it.
+        const match =
+          trackIndex === MAIN_TRACK_INDEX
+            ? framingMatchFor(
+                project.tracks[MAIN_TRACK_INDEX]!.items,
+                item,
+                takes
+              )
+            : null;
+        const geometryKeys = match
+          ? (() => {
+              const before = (ownGeometryKeys ?? []).filter(
+                (key) => key.atSeconds < match.start - POST_TIME_EPSILON
+              );
+              return [
+                ...before,
+                ...framingMatchKeys(
+                  match,
+                  before[before.length - 1]?.value ?? item.sourceGeometry!
+                ),
+              ];
+            })()
+          : ownGeometryKeys;
         const footage = {
           regionId: item.id,
           start: seconds(item.start),
