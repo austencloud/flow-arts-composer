@@ -1048,7 +1048,7 @@ export function compilePostProject(
             incomingClips.length === 1
               ? `transition:${outgoing.id}:${incoming.id}`
               : `transition:${outgoing.id}:${incoming.id}:${clip.id}`,
-          kind: "crossfade",
+          kind: outgoing.transitionOut.type,
           outgoingClipId: outgoingClip.id,
           incomingClipId: clip.id,
           start: seconds(start),

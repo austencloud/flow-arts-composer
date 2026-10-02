@@ -1453,8 +1453,8 @@
                   class="cut-crossfade"
                   class:active={cut.active}
                   style:left="{secondsToPixels(cut.center, pixelsPerSecond)}px"
-                  aria-label={`${t(cut.active ? "post_timeline_edit_crossfade" : "post_timeline_add_crossfade")}${cut.active ? `, ${cut.outgoing.transitionOut!.duration.toFixed(2)} s` : ""}: ${labelFor(cut.outgoing)} → ${labelFor(cut.incoming)}`}
-                  title={`${t(cut.active ? "post_timeline_edit_crossfade" : "post_timeline_add_crossfade")}: ${labelFor(cut.outgoing)} → ${labelFor(cut.incoming)}`}
+                  aria-label={`${t("post_editor_transition")}${cut.active ? `, ${t(cut.outgoing.transitionOut!.type === "fade-black" ? "post_transition_fade_black" : "post_transition_dissolve")}, ${cut.outgoing.transitionOut!.duration.toFixed(2)} s` : `, ${t("post_transition_cut")}`}: ${labelFor(cut.outgoing)} → ${labelFor(cut.incoming)}`}
+                  title={`${t("post_editor_transition")}${cut.active ? `, ${cut.outgoing.transitionOut!.duration.toFixed(2)} s` : ""}: ${labelFor(cut.outgoing)} → ${labelFor(cut.incoming)}`}
                   onpointerdown={(event) => event.stopPropagation()}
                   onclick={() =>
                     onOpenCrossfade(cut.outgoing.id, cut.incoming.id)}
@@ -1466,11 +1466,6 @@
                         : "fa-solid fa-plus"}
                       aria-hidden="true"
                     ></i>
-                    {#if cut.active}
-                      <span
-                        >{cut.outgoing.transitionOut!.duration.toFixed(2)} s</span
-                      >
-                    {/if}
                   </span>
                 </button>
               {/each}
@@ -1682,11 +1677,10 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 0.375rem;
-    min-width: 26px;
-    height: 26px;
+    width: 22px;
+    height: 22px;
     box-sizing: border-box;
-    padding: 0 0.375rem;
+    padding: 0;
     border: 1px solid var(--theme-stroke, #484755);
     border-radius: 0.375rem;
     background: var(--theme-panel-elevated-bg, #1c1c26);
@@ -1694,14 +1688,21 @@
     white-space: nowrap;
   }
 
-  .cut-crossfade.active .cut-crossfade-marker,
   .cut-crossfade:hover .cut-crossfade-marker {
     border-color: var(--theme-accent);
     background: var(--theme-panel-bg, #1c1c26);
   }
 
   .cut-crossfade.active .cut-crossfade-marker i {
-    color: var(--theme-accent);
+    color: var(--theme-text, #fff);
+  }
+
+  .cut-crossfade.active .cut-crossfade-marker {
+    border-color: color-mix(
+      in srgb,
+      var(--theme-accent) 45%,
+      var(--theme-stroke)
+    );
   }
 
   .crossfade-span {
@@ -1710,9 +1711,9 @@
     top: 6px;
     bottom: 6px;
     box-sizing: border-box;
-    border: 1px solid var(--theme-accent);
+    border: 0;
     border-radius: 0.375rem;
-    background: color-mix(in srgb, var(--theme-accent) 18%, transparent);
+    background: color-mix(in srgb, var(--theme-text, #fff) 6%, transparent);
     pointer-events: none;
   }
 

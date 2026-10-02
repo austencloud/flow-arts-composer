@@ -31,6 +31,41 @@ const region = preset.regions.find(
 )!;
 
 describe("decoded video export surfaces", () => {
+  it("covers the whole export frame with black at the transition midpoint", async () => {
+    const compiled = compilePostProject(
+      project([
+        card("out", 4, { transitionOut: { type: "fade-black", duration: 1 } }),
+        card("in", 4, { start: 3 }),
+      ]),
+      { now: NOW }
+    )!;
+    const fills: Array<{ color: string; alpha: number }> = [];
+    const context = {
+      save: vi.fn(),
+      restore: vi.fn(),
+      fillStyle: "",
+      globalAlpha: 1,
+      fillRect: vi.fn(function (this: { fillStyle: string; globalAlpha: number }) {
+        fills.push({ color: this.fillStyle, alpha: this.globalAlpha });
+      }),
+    };
+    const canvas = document.createElement("canvas");
+    canvas.width = 320;
+    canvas.height = 180;
+    vi.spyOn(canvas, "getContext").mockReturnValue(
+      context as unknown as CanvasRenderingContext2D
+    );
+    await renderPostStudioFrame({
+      canvas,
+      root: document.createElement("div"),
+      preset: compiled.preset,
+      layers: evaluatePresetFrame(compiled.preset, compiled.durationSeconds, 3.5),
+      cardFrameCache: new Map(),
+      timeSeconds: 3.5,
+    });
+    expect(fills.at(-1)).toEqual({ color: "#000", alpha: 1 });
+    expect(context.fillRect).toHaveBeenLastCalledWith(0, 0, 320, 180);
+  });
   it.each(["region", "source crop", "blurred backdrop"])(
     "draws a decoded canvas through the %s path without trying to decode it again",
     async (path) => {

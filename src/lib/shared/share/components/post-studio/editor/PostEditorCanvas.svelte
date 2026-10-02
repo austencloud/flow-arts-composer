@@ -13,6 +13,7 @@
   import type { CompositionSourceBinding } from "$lib/shared/media-composition/state/media-composition-state.svelte";
   import {
     resolvePresetTimePoint,
+    fadeBlackOpacityAt,
     type EvaluatedFrameLayer,
   } from "$lib/shared/media-composition/services/frame-evaluator";
   import {
@@ -193,6 +194,15 @@
 
   const hintId = $props.id();
   const preset = $derived(editor.compiled?.preset ?? null);
+  const transitionBlack = $derived(
+    preset
+      ? fadeBlackOpacityAt(
+          preset,
+          editor.durationSeconds,
+          editor.previewSeconds
+        )
+      : 0
+  );
   const previewAudioSegments = $derived(
     editor.compiled?.videoSegments.filter((segment) => segment.volume > 0) ?? []
   );
@@ -2415,6 +2425,13 @@
         {/each}
       </div>
     {/each}
+    {#if transitionBlack > 0 && !cropping}
+      <div
+        class="transition-black"
+        style:opacity={transitionBlack}
+        aria-hidden="true"
+      ></div>
+    {/if}
     {#if stripGuideVisible && !cropping}
       <div
         class="strip-guide"
@@ -2658,6 +2675,13 @@
 </div>
 
 <style>
+  .transition-black {
+    position: absolute;
+    inset: 0;
+    z-index: 19999;
+    background: #000;
+    pointer-events: none;
+  }
   /* The layers' stacking stays inside the preview, under the editor's dock. */
   .post-canvas {
     position: relative;

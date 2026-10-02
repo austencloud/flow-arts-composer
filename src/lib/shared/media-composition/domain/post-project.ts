@@ -198,7 +198,7 @@ export type PostAutoAdjust = z.infer<typeof PostAutoAdjustSchema>;
 export const PostTransitionOutSchema = z
   .object({
     duration: SecondsSchema,
-    type: z.literal("crossfade"),
+    type: z.enum(["crossfade", "fade-black"]),
     sourceTypeCode: z.string().optional(),
     incomingId: z.string().optional(),
     editorAddedSeconds: SecondsSchema.optional(),

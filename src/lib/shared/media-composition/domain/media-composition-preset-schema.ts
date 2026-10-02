@@ -467,7 +467,7 @@ export type PresetClip = z.infer<typeof PresetClipSchema>;
 export const PresetTransitionSchema = z
   .object({
     id: NonEmptyIdSchema,
-    kind: z.literal("crossfade"),
+    kind: z.enum(["crossfade", "fade-black"]),
     outgoingClipId: NonEmptyIdSchema,
     incomingClipId: NonEmptyIdSchema,
     start: PresetTimePointSchema,

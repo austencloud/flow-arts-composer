@@ -34,6 +34,7 @@
   import { keyframeClearFixture } from "./keyframe-clear-fixture";
   import { textAlignmentFixture } from "./text-alignment-fixture";
   import { groupMoveFixture } from "./group-move-fixture";
+  import { transitionsFixture } from "./transitions-fixture";
 
   const SEQUENCE_WORD = "ΩΛ-XJΩΛ-XJΩΛ-XJΩΛ-XJ";
   const SEQUENCE_ID = "ΩΛ-XJ";
@@ -94,6 +95,7 @@
     const isolatedKeyframes = fixture === "keyframe-clear";
     const isolatedTextAlignment = fixture === "text-alignment";
     const isolatedGroupMove = fixture === "group-move";
+    const isolatedTransitions = fixture === "transitions";
     // Exercise the real save/reload path without writing to the creator's post.
     const storageFixture = fixture === "draft-storage";
     // `?sequence=DCKΨ-` opens that sequence's saved post read-only: the
@@ -125,7 +127,10 @@
               : SEQUENCE_WORD,
           mapping ? "Δ-ΛRZ" : (viewedId ?? SEQUENCE_ID)
         ),
-        isolatedKeyframes || isolatedTextAlignment || isolatedGroupMove
+        isolatedKeyframes ||
+        isolatedTextAlignment ||
+        isolatedGroupMove ||
+        isolatedTransitions
           ? Promise.resolve({
               project: null,
               diskAvailable: false,
@@ -147,9 +152,11 @@
             ? "post-text-alignment-fixture"
             : isolatedGroupMove
               ? "post-group-move-fixture"
-              : storageFixture
-                ? draftSequenceId
-                : hydrated.id;
+              : isolatedTransitions
+                ? "post-transitions-fixture"
+                : storageFixture
+                  ? draftSequenceId
+                  : hydrated.id;
       if (!mapping) seedPerformance(editorSequenceId);
       sequence = {
         ...hydrated,
@@ -162,6 +169,8 @@
         initialProject = textAlignmentFixture(editorSequenceId);
       if (isolatedGroupMove)
         initialProject = groupMoveFixture(editorSequenceId);
+      if (isolatedTransitions)
+        initialProject = transitionsFixture(editorSequenceId);
       if (mapping && !initialProject) initialProject = mappingFixture();
       cardRenderOptions = buildCardRenderOptions(sequence, { darkMode: true });
 

@@ -1756,6 +1756,22 @@ export function updateItem(
             ctx
           );
         }
+        const current = findItem(transitioned, itemId)?.item;
+        if (
+          current?.transitionOut &&
+          current.transitionOut.type !== transitionOut.type
+        ) {
+          transitioned = finish(
+            replaceItem(transitioned, itemId, {
+              ...current,
+              transitionOut: {
+                ...current.transitionOut,
+                type: transitionOut.type,
+              },
+            }),
+            ctx
+          );
+        }
       }
     }
     return Object.keys(otherChanges).length
