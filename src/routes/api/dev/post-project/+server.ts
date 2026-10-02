@@ -5,6 +5,7 @@ import {
   listPostProjectSessions,
   postProjectEditStatus,
   queuePostProjectEdit,
+  queuePostProjectOps,
   readPostProjectSession,
 } from "$lib/server/post-project-dev-bridge";
 
@@ -109,6 +110,16 @@ export const POST: RequestHandler = async ({ request, getClientAddress }) => {
           baseRevision: input.baseRevision,
           baseFingerprint: input.baseFingerprint,
           project: input.project,
+        })
+      );
+    }
+    if (input.kind === "ops") {
+      if (typeof input.sessionId !== "string" || !Array.isArray(input.ops))
+        error(400, "Invalid edit request");
+      return json(
+        await queuePostProjectOps({
+          sessionId: input.sessionId,
+          ops: input.ops,
         })
       );
     }

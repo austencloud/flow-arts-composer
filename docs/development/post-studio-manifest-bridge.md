@@ -2,6 +2,30 @@
 
 The dev bridge lets a local script replace the manifest in one open Post Studio editor. It does not open media files or switch sequences. The editor applies a replacement as one undo step and saves through its normal local storage and draft autosave. The bridge runs only in development and accepts loopback, same-origin requests.
 
+## Named edits (the usual way)
+
+Most changes need no manifest file. Each command below is one of the timeline's own edits, applied to the editor's current project on the server and delivered as one undo step. With one editor open the session is found automatically; otherwise pass `--session ID` or `--sequence ID`. A command waits until the editor confirms.
+
+```powershell
+node scripts/post-project.mjs show                       # items, tracks, times
+node scripts/post-project.mjs add-hook --speed ease-out  # opening tunnel hook
+node scripts/post-project.mjs hook-speed linear          # name, or x1,y1,x2,y2, or default
+node scripts/post-project.mjs remove-hook
+node scripts/post-project.mjs appearance --item animations --set stepNumbers=false --set tkaGlyph=null
+node scripts/post-project.mjs item --item ITEM_ID --patch '{"opacity":0.5}'
+node scripts/post-project.mjs trim --item ITEM_ID --edge end --seconds 12
+node scripts/post-project.mjs delete --item ITEM_ID
+node scripts/post-project.mjs canvas 9:16
+node scripts/post-project.mjs background blur
+node scripts/post-project.mjs ops --file ops.json        # several edits, one undo step
+```
+
+`--item` takes an id, `hook`, `animations` or `all`. `--set key=value` accepts `true`, `false`, `null` (clears the flag), numbers and text. `ops.json` is an array such as `[{"op":"add-hook"},{"op":"hook-speed","speed":"smooth"}]`; a failing edit names its position and nothing is applied. A change that alters nothing returns `unchanged`. The editor tab must be open on the post, because the open editor owns the saved draft: a script never writes the draft file itself.
+
+Ownership: `post-project-ops.ts` maps each named edit onto the existing pure edit in `post-project-edits.ts`; `queuePostProjectOps` in the bridge applies them to the session snapshot and reuses the manifest queue below.
+
+## Whole-manifest replacement
+
 With the editor open on the local dev server:
 
 ```powershell
