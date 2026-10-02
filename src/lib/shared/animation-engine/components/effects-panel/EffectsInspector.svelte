@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { tick } from "svelte";
   import { effectUiLabel } from "./effect-ui-label";
   import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import type {
@@ -12,6 +13,7 @@
   } from "$lib/shared/effects/domain/effect-control-manifest";
   import EffectControlStack from "$lib/shared/effects/components/EffectControlStack.svelte";
   import EffectPresetsSection from "./EffectPresetsSection.svelte";
+  import LedCustomize from "./customize/LedCustomize.svelte";
   import type { EffectRegistration } from "./effect-registry";
 
   type SettingValue = string | number | boolean | null;
@@ -67,6 +69,16 @@
 
   let fineTuningOpen = $state(false);
   let selectedFineControl = $state(0);
+  let tuningSection = $state<HTMLElement | null>(null);
+  let loadAttempt = $state(0);
+  const tuningId = $props.id();
+
+  async function focusTuning(): Promise<void> {
+    fineTuningOpen = false;
+    await tick();
+    tuningSection?.focus();
+    tuningSection?.scrollIntoView({ block: "nearest" });
+  }
   // This inspector tunes the 2D canvas, so every manifest read asks for the 2D
   // view's controls.
   const fineControls = $derived(advancedControls(effect, "2d"));
@@ -82,9 +94,12 @@
   // a prop named `effect`, and inside it `$effect` parses as a store
   // subscription, not the rune.
   const usesRichPanel = $derived(primaryControls(effect, "2d").length === 0);
-  const richPanel = $derived(
-    usesRichPanel ? registration.customizeComponent() : null
-  );
+  const richPanel = $derived.by(() => {
+    void loadAttempt;
+    return usesRichPanel && effect !== "led"
+      ? registration.customizeComponent()
+      : null;
+  });
 </script>
 
 <div
@@ -137,7 +152,8 @@
         accentColor={registration.meta.color}
         {summary}
         showSummary={false}
-        showCustomize={false}
+        onCustomize={focusTuning}
+        customizeTarget={tuningId}
       />
     </section>
   {/if}
@@ -145,19 +161,42 @@
   <div class="tuning-column">
     {#if !boundedFine || !fineTuningOpen}<section
         class="inspector-section tune-section"
+        id={tuningId}
+        bind:this={tuningSection}
+        tabindex="-1"
+        aria-label={t("effect_deep_tune_effect", {
+          effect: effectUiLabel(registration.meta.label),
+        })}
       >
         <!-- No help line here. Every control in this section already writes to
            the canvas the instant it moves, so saying so cost a row of height
            and told the user nothing they were not about to see. -->
         <span class="section-title">{t("effect_deep_tune_look")}</span>
-        {#if richPanel}
-          {#await richPanel then mod}
+        {#if effect === "led"}
+          <LedCustomize {onBack} embedded paged={pagedRichDetail} />
+        {:else if richPanel}
+          {#await richPanel}
+            <p class="load-status" role="status">
+              {t("effect_deep_tune_loading")}
+            </p>
+          {:then mod}
             {@const Panel = mod.default}
             <Panel
               {onBack}
               embedded
               paged={pagedRichDetail && effect === "led"}
             />
+          {:catch}
+            <div class="load-status">
+              <p role="alert">{t("effect_deep_tune_load_failed")}</p>
+              <button
+                type="button"
+                class="back-action"
+                onclick={() => loadAttempt++}
+              >
+                {t("effect_deep_tune")}
+              </button>
+            </div>
           {/await}
         {:else}
           <EffectControlStack
@@ -398,6 +437,18 @@
     gap: 14px;
   }
 
+  .tune-section:focus-visible {
+    outline: 2px solid var(--effect-accent);
+    outline-offset: -2px;
+  }
+
+  .load-status {
+    min-height: 100px;
+    margin: 0;
+    color: var(--theme-text-dim);
+    font-size: var(--font-size-min, 14px);
+  }
+
   .tuning-column {
     display: contents;
   }
@@ -532,7 +583,6 @@
 
     .looks-section {
       grid-area: looks;
-      border-right: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.07));
     }
 
     .tuning-column {
@@ -541,6 +591,11 @@
       flex-direction: column;
       min-width: 0;
       align-self: start;
+      margin: 18px 20px 18px 0;
+      border: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.1));
+      border-radius: 12px;
+      background: var(--theme-card-bg, rgba(255, 255, 255, 0.04));
+      overflow: hidden;
     }
 
     .tune-section {
