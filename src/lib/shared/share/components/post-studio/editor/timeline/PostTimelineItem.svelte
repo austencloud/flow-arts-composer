@@ -25,6 +25,12 @@
     onHandlePointerDown: (event: PointerEvent, edge: "start" | "end") => void;
     /** Whether any channel has keyframes; the keys themselves show in rows under a selected clip. */
     animated: boolean;
+    /**
+     * This half carries on from the clip before it, or into the clip after
+     * it, as one block: the shared edge is flat and has no trim handle.
+     */
+    joinStart?: boolean;
+    joinEnd?: boolean;
   }
 
   let {
@@ -39,6 +45,8 @@
     onBodyPointerDown,
     onHandlePointerDown,
     animated,
+    joinStart = false,
+    joinEnd = false,
   }: Props = $props();
 
   const KIND_ICON: Record<PostItemKind, string> = {
@@ -98,6 +106,8 @@
   class="post-timeline-item kind-{item.kind}"
   class:selected
   class:dimmed
+  class:join-start={joinStart}
+  class:join-end={joinEnd}
   style="left: {leftPx}px; width: {Math.max(widthPx, 2)}px"
   data-item-id={item.id}
   aria-pressed={selected}
@@ -124,7 +134,7 @@
   {/if}
 </button>
 
-{#if selected && !locked}
+{#if selected && !locked && !joinStart}
   <button
     type="button"
     class="trim-handle trim-start"
@@ -134,6 +144,9 @@
   >
     <span class="handle-grip" aria-hidden="true"></span>
   </button>
+{/if}
+
+{#if selected && !locked && !joinEnd}
   <button
     type="button"
     class="trim-handle trim-end"
@@ -248,6 +261,33 @@
 
   .post-timeline-item.dimmed {
     opacity: 0.4;
+  }
+
+  .post-timeline-item.join-start {
+    border-left-color: transparent;
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+  }
+
+  .post-timeline-item.join-end {
+    border-right-color: transparent;
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+  }
+
+  /* A selected pair reads as one outline, open where the halves meet. */
+  .post-timeline-item.selected.join-start {
+    box-shadow:
+      inset 0 2px 0 var(--theme-accent),
+      inset 0 -2px 0 var(--theme-accent),
+      inset -2px 0 0 var(--theme-accent);
+  }
+
+  .post-timeline-item.selected.join-end {
+    box-shadow:
+      inset 0 2px 0 var(--theme-accent),
+      inset 0 -2px 0 var(--theme-accent),
+      inset 2px 0 0 var(--theme-accent);
   }
 
   .trim-handle {
