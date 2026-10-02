@@ -9,6 +9,7 @@
   } from "$lib/shared/effects/state/effects-config-state.svelte";
   import EffectSelector from "./EffectSelector.svelte";
   import EffectsInspector from "./EffectsInspector.svelte";
+  import LedCustomize from "./customize/LedCustomize.svelte";
   import EffectDock from "./EffectDock.svelte";
   import { EFFECTS, EFFECT_LABELS, getRegistration } from "./effect-registry";
   import type { EffectRegistration } from "./effect-registry";
@@ -659,6 +660,15 @@
     const effectId = activeEffect;
     if (customizeLoadingEffect === effectId) return;
     const request = ++customizeRequest;
+    // LED is the only structured editor with no flat controls to fall back to.
+    // Keep it in the route bundle so Tune never waits for a second module fetch.
+    if (effectId === "led") {
+      customizeLoadingEffect = null;
+      customizeFailedEffect = null;
+      CustomizeComponent = LedCustomize;
+      customizeOpen = true;
+      return;
+    }
     customizeLoadingEffect = effectId;
     customizeFailedEffect = null;
     try {
@@ -702,18 +712,16 @@
       class:active={activePresetId === DEFAULT_CHIP_ID}
       onclick={() => handlePresetSelect(DEFAULT_CHIP_ID)}
     >
-      {t("effect_deep_default")}
+      {t("effect_deep_original")}
     </button>
-    <button
-      type="button"
-      class="anchor-btn"
-      class:active={activePresetId === CUSTOM_CHIP_ID}
-      class:disabled={customDisabled}
-      disabled={customDisabled}
-      onclick={() => handlePresetSelect(CUSTOM_CHIP_ID)}
-    >
-      {t("effect_deep_custom")}
-    </button>
+    {#if !customDisabled}<button
+        type="button"
+        class="anchor-btn"
+        class:active={activePresetId === CUSTOM_CHIP_ID}
+        onclick={() => handlePresetSelect(CUSTOM_CHIP_ID)}
+      >
+        {t("effect_deep_your_look")}
+      </button>{/if}
   </div>
 {/snippet}
 
@@ -1034,17 +1042,16 @@
                 class:active={activePresetId === DEFAULT_CHIP_ID}
                 onclick={() => handlePresetSelect(DEFAULT_CHIP_ID)}
               >
-                {t("effect_deep_default")}
+                {t("effect_deep_original")}
               </button>
-              <button
-                type="button"
-                class="tune-anchor"
-                class:active={activePresetId === CUSTOM_CHIP_ID}
-                disabled={customDisabled}
-                onclick={() => handlePresetSelect(CUSTOM_CHIP_ID)}
-              >
-                {t("effect_deep_custom")}
-              </button>
+              {#if !customDisabled}<button
+                  type="button"
+                  class="tune-anchor"
+                  class:active={activePresetId === CUSTOM_CHIP_ID}
+                  onclick={() => handlePresetSelect(CUSTOM_CHIP_ID)}
+                >
+                  {t("effect_deep_your_look")}
+                </button>{/if}
             </div>
           </div>
           <!-- Every effect drills through the shared tune-strip: knobs as a
