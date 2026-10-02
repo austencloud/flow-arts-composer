@@ -2385,6 +2385,7 @@
                   {qrSequence}
                   tunnelHook={layer.tunnelHook ?? null}
                   chromeOpacity={hookChromeOpacity(region.id)}
+                  lookBlend={layer.lookBlend ?? 0}
                   sequencePosition={layer.sequencePosition ??
                     (isVideo ? undefined : OPENING_POSITION)}
                   sequencePassIndex={layer.sequencePassIndex}

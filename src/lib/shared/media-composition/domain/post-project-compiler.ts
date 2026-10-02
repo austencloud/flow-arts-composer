@@ -990,7 +990,23 @@ export function compilePostProject(
       case "animation":
       case "moves":
       case "carousel": {
-        const sequenceRole = sequenceRoleFor(item);
+        const handoffRole =
+          pipHandoff?.animation === item
+            ? ("from" as const)
+            : pipHandoff?.moves === item
+              ? ("to" as const)
+              : null;
+        // A shared hand-off draws the square on the animation's own surface,
+        // so the square's pieces join the animation's region and role.
+        const sharedHandoff =
+          handoffRole && pipHandoff?.shared ? pipHandoff : null;
+        const sequenceRole = sequenceRoleFor(
+          sharedHandoff && handoffRole === "to" ? sharedHandoff.animation : item
+        );
+        const pieceRegionId =
+          sharedHandoff && handoffRole === "to"
+            ? sharedHandoff.animation.id
+            : item.id;
         useRole(
           presetRole(
             sequenceRole.key,
@@ -999,24 +1015,51 @@ export function compilePostProject(
             sequenceRole.acceptedKinds
           )
         );
-        regions.push(region(item.id, label, box, "contain", zIndex));
-        const handoffRole =
-          pipHandoff?.animation === item
-            ? ("from" as const)
-            : pipHandoff?.moves === item
-              ? ("to" as const)
-              : null;
+        const movesTrack = sharedHandoff
+          ? project.tracks.findIndex((track) =>
+              track.items.includes(sharedHandoff.moves)
+            )
+          : -1;
+        regions.push(
+          region(
+            item.id,
+            label,
+            box,
+            "contain",
+            sharedHandoff && handoffRole === "from"
+              ? Math.max(zIndex, (movesTrack + 1) * 10)
+              : zIndex
+          )
+        );
         {
           const regionKeyframes = regionKeyframesFor(item, output);
           if (handoffRole && pipHandoff && pipBoxes) {
+            const handoffKeys = withPipHandoffBoxKeys(
+              regionKeyframes?.keyframes ?? [],
+              pipHandoff,
+              pipBoxes.from,
+              pipBoxes.to
+            );
             regionKeyframesList.push({
               regionId: item.id,
-              keyframes: withPipHandoffBoxKeys(
-                regionKeyframes?.keyframes ?? [],
-                pipHandoff,
-                pipBoxes.from,
-                pipBoxes.to
-              ),
+              // The shared surface goes on to follow the square's own box.
+              keyframes:
+                sharedHandoff && handoffRole === "from"
+                  ? [
+                      ...handoffKeys.filter(
+                        (key) =>
+                          key.atSeconds <
+                          sharedHandoff.end + POST_TIME_EPSILON
+                      ),
+                      ...(
+                        regionKeyframesFor(sharedHandoff.moves, output)
+                          ?.keyframes ?? []
+                      ).filter(
+                        (key) =>
+                          key.atSeconds > sharedHandoff.end + POST_TIME_EPSILON
+                      ),
+                    ]
+                  : handoffKeys,
             });
           } else if (regionKeyframes) {
             regionKeyframesList.push(regionKeyframes);
@@ -1024,17 +1067,18 @@ export function compilePostProject(
         }
         // An animation shrinking into its square dissolves into it, or the
         // square into the animation, whichever draws on top; the one beneath
-        // stays solid so the panel never thins in the middle.
+        // stays solid so the panel never thins in the middle. On a shared
+        // surface nothing dissolves: the one surface changes its look.
         const overlap = pipHandoff ? pipHandoff.end - pipHandoff.start : 0;
         const fadeIn =
           handoffRole === "to"
-            ? pipHandoff!.movesOnTop
+            ? pipHandoff!.movesOnTop && !sharedHandoff
               ? overlap
               : 0
             : item.fadeIn;
         const fadeOut =
           handoffRole === "from"
-            ? pipHandoff!.movesOnTop
+            ? pipHandoff!.movesOnTop || sharedHandoff
               ? 0
               : overlap
             : item.fadeOut;
@@ -1065,18 +1109,21 @@ export function compilePostProject(
           if (piece.takeId) useTake(piece.takeId);
           const inFadeIn = fadeIn > 0 && piece.start < itemStart + fadeIn;
           const inFadeOut = fadeOut > 0 && piece.end > itemFinish - fadeOut;
-          // Both sides of a hand-off read one clock from the overlap on.
+          // Both sides of a hand-off read one clock from the overlap on. A
+          // shared surface marks every piece, so it is ready to turn early.
           const clockHandoff =
             handoffRole &&
             pipHandoff &&
             (handoffRole === "from"
-              ? piece.end > pipHandoff.start + POST_TIME_EPSILON
+              ? !!sharedHandoff ||
+                piece.end > pipHandoff.start + POST_TIME_EPSILON
               : piece.start < pipHandoff.end + PIP_HANDOFF_MAX_CLOCK_SECONDS)
               ? {
                   id: pipHandoff.animation.id,
                   role: handoffRole,
                   start: pipHandoff.start,
                   end: pipHandoff.end,
+                  ...(sharedHandoff ? { shared: true } : {}),
                 }
               : null;
           const timing = {
@@ -1116,7 +1163,7 @@ export function compilePostProject(
             id: `${item.id}~${index}`,
             kind: "visual",
             sourceRole: sequenceRole.key,
-            regionId: item.id,
+            regionId: pieceRegionId,
             ...timing,
           });
           if (wantsOverlay) {
