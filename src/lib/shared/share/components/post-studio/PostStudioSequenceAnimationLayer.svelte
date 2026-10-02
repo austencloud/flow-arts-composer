@@ -396,6 +396,7 @@
           propLook={animationAppearance?.propLook}
           word={animationAppearance ? sequence.word : null}
           previewDarkMode={animationAppearance?.darkMode ?? true}
+          mandalaStrokeWidthOverride={animationAppearance?.mandalaThickness}
           hideProgressBar
           hideHeader={!animationAppearance}
           hideTkaGlyph={labelsPainted && !animationAppearance}
