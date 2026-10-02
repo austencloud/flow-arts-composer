@@ -106,7 +106,12 @@ describe("addTunnelHook", () => {
     expect(hook.start).toBe(0);
     expect(hook.duration).toBe(5);
     expect(hook.box).toEqual(POST_BOX.full);
-    expect(hook.tunnelHook).toEqual({ fold: 8, mirror: false });
+    // New hooks start on the "Ease out" speed preset.
+    expect(hook.tunnelHook).toEqual({
+      fold: 8,
+      mirror: false,
+      speed: [0, 0, 0.58, 1],
+    });
 
     expect(spans(result.project, 0)).toEqual([["v1", 5, 10]]);
     const real = result.project.tracks
@@ -174,7 +179,10 @@ describe("tunnel hook in the compiled post", () => {
   })) as unknown as StepData[];
 
   it("gives only the hook its own clock", () => {
-    const added = addTunnelHook(withAnimation(), ctx, { seconds: 5 })!;
+    const added = addTunnelHook(withAnimation(), ctx, {
+      seconds: 5,
+      hook: { fold: 8, mirror: false },
+    })!;
     const compiled = compilePostProject(added.project, { now: NOW })!;
     const hookClip = compiled.preset.clips.find((clip) =>
       clip.id.startsWith(added.itemId)
@@ -205,7 +213,11 @@ describe("tunnel hook in the compiled post", () => {
   });
 
   it("evaluates a quartered sixteen-step hook across only its final four moves", () => {
-    const added = addTunnelHook(withAnimation(), ctx, { seconds: 5 })!;
+    // The original symmetric ease, so the midpoint lands halfway.
+    const added = addTunnelHook(withAnimation(), ctx, {
+      seconds: 5,
+      hook: { fold: 8, mirror: false },
+    })!;
     const compiled = compilePostProject(added.project, { now: NOW })!;
     const steps16 = Array.from({ length: 16 }, () => ({
       duration: 1,
@@ -274,16 +286,16 @@ describe("tunnel hook speed curve", () => {
       const hookClip = compiled.preset.clips.find((clip) =>
         clip.id.startsWith(added.itemId)
       )!;
-      return evaluatePresetFrame(
-        compiled.preset,
-        compiled.durationSeconds,
-        t,
-        { steps } as never
-      ).find((layer) => layer.clipId === hookClip.id)!;
+      return evaluatePresetFrame(compiled.preset, compiled.durationSeconds, t, {
+        steps,
+      } as never).find((layer) => layer.clipId === hookClip.id)!;
     };
     const linear = setTunnelHookSpeed(added.project, [0, 0, 1, 1], ctx);
     const quarter = frameAt(linear, 1.25).sequencePosition!;
-    const smooth = frameAt(added.project, 1.25).sequencePosition!;
+    const smooth = frameAt(
+      setTunnelHookSpeed(added.project, null, ctx),
+      1.25
+    ).sequencePosition!;
     expect(quarter).toBeCloseTo(3, 1);
     expect(smooth).toBeLessThan(quarter);
   });

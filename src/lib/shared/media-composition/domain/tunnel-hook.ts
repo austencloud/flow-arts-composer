@@ -29,7 +29,15 @@ export const TunnelHookSchema = z
 
 export type TunnelHook = z.infer<typeof TunnelHookSchema>;
 
-export const DEFAULT_TUNNEL_HOOK: TunnelHook = { fold: 8, mirror: false };
+/**
+ * A new hook starts fast and settles into the opening pose (the "Ease out"
+ * preset). Hooks saved without a speed keep the original smooth ease.
+ */
+export const DEFAULT_TUNNEL_HOOK: TunnelHook = {
+  fold: 8,
+  mirror: false,
+  speed: [0, 0, 0.58, 1],
+};
 
 /** Hook seconds a new hook starts with. */
 export const DEFAULT_TUNNEL_HOOK_SECONDS = 5;
