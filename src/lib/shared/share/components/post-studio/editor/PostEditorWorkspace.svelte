@@ -2358,6 +2358,43 @@
   />
 {/snippet}
 
+<!-- A phone's tools sit over the timeline, or under the timing screen's
+     own timeline. An open panel takes the row's place. -->
+{#snippet dock()}
+  <div
+    class="dock"
+    class:timing={showTimingStage}
+    tabindex="-1"
+    bind:this={dockElement}
+    inert={sharing || undefined}
+  >
+    {#if showTimingStage}
+      <div class="timing-mobile-actions">
+        <PostTimingTap {session} />
+        <PanelButton
+          onclick={() => (timingSettingsOpen = true)}
+          ariaExpanded={timingSettingsOpen}
+        >
+          <i class="fa-solid fa-sliders" aria-hidden="true"></i> Settings
+        </PanelButton>
+      </div>
+    {:else}
+      <Crossfade
+        key={dockKey}
+        mode="swap"
+        duration={DURATION.fast}
+        animateHeight
+      >
+        {#if shown && !appearanceDockOpen}
+          {@render panel(shown, "dock")}
+        {:else}
+          {@render row()}
+        {/if}
+      </Crossfade>
+    {/if}
+  </div>
+{/snippet}
+
 {#snippet panelBody(tool: PostPanelToolId, placement: "dock" | "side")}
   {#if tool === "videos"}
     <PostMediaPanel
@@ -2781,6 +2818,8 @@
             {@render row()}
           </Crossfade>
         </div>
+      {:else}
+        {@render dock()}
       {/if}
       <div
         class="timeline-slot"
@@ -2849,41 +2888,8 @@
       </div>
     {/if}
 
-    {#if !panelBeside}
-      <!-- A phone's tools stay at the bottom of the screen while the post
-           scrolls above them. An open panel takes the row's place. -->
-      <div
-        class="dock"
-        class:timing={showTimingStage}
-        tabindex="-1"
-        bind:this={dockElement}
-        inert={sharing || undefined}
-      >
-        {#if showTimingStage}
-          <div class="timing-mobile-actions">
-            <PostTimingTap {session} />
-            <PanelButton
-              onclick={() => (timingSettingsOpen = true)}
-              ariaExpanded={timingSettingsOpen}
-            >
-              <i class="fa-solid fa-sliders" aria-hidden="true"></i> Settings
-            </PanelButton>
-          </div>
-        {:else}
-          <Crossfade
-            key={dockKey}
-            mode="swap"
-            duration={DURATION.fast}
-            animateHeight
-          >
-            {#if shown && !appearanceDockOpen}
-              {@render panel(shown, "dock")}
-            {:else}
-              {@render row()}
-            {/if}
-          </Crossfade>
-        {/if}
-      </div>
+    {#if !panelBeside && showTimingStage}
+      {@render dock()}
     {/if}
   </div>
 
@@ -3043,7 +3049,7 @@
   }
 
   /* A phone stacks the parts in the order they are used: the top bar, the
-     preview and its transport, the timeline, then the dock of tools. */
+     preview and its transport, the dock of tools, then the timeline. */
   .layout {
     display: flex;
     flex-direction: column;
@@ -3062,7 +3068,13 @@
     grid-template-rows:
       auto minmax(var(--post-stage-min, 12rem), 1fr)
       auto auto auto;
-    grid-template-areas: "top" "stage" "transport" "timeline" "dock";
+    grid-template-areas: "top" "stage" "transport" "dock" "timeline";
+  }
+
+  /* Over the timeline the dock spans the editor's width but keeps the gap
+     under it. */
+  .post-editor[data-layout="phone"][data-mode="edit"] .dock {
+    margin: 0 calc(-1 * var(--post-gap));
   }
 
   /* Never taller than a full-width frame needs. */
@@ -3159,8 +3171,9 @@
     background: var(--theme-panel-bg, rgba(10, 12, 18, 0.92));
   }
 
-  /* A phone's tools stay at the bottom of the screen, in a dock an open
-     panel takes over. A short window scrolls the post under it. */
+  /* A phone's tools sit in a dock an open panel takes over. While its place
+     is out of view, or a panel makes it taller than the room left, it holds
+     the bottom edge and the post scrolls under it. */
   .dock {
     position: sticky;
     bottom: 0;
