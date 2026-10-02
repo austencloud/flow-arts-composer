@@ -22,9 +22,16 @@ const GUEST_MODULE_ACCESS: Record<string, string[]> = {
   browse: ["explore", "you"],
   post: [],
   creators: [],
-  // Preferences holds the device language control. Its other settings remain
-  // hidden inside the page until the visitor has a full account.
-  settings: ["preferences"],
+  // Device preferences and appearance belong to the visitor's browser.
+  // Notifications still require an account.
+  settings: [
+    "profile",
+    "preferences",
+    "theme",
+    "props",
+    "keyboard",
+    "release-notes",
+  ],
 };
 
 export function isModuleAccessible(

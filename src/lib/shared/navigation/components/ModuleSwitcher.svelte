@@ -293,7 +293,11 @@
               module={selectedModule}
               sections={selectedSections}
               {currentModule}
-              currentSection={navigationState.activeTab}
+              currentSection={navigationState.currentModule === "settings" &&
+              (navigationState.activeTab === "keyboard" ||
+                navigationState.activeTab === "release-notes")
+                ? "preferences"
+                : navigationState.activeTab}
               moduleHomeActive={navigationState.isModuleHomeOpen(
                 selectedModule.id
               )}

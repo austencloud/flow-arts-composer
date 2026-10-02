@@ -164,7 +164,7 @@
   });
 
   $effect(() => {
-    const user = authState.user;
+    const user = authState.isFullAccount ? authState.user : null;
     if (!user) {
       loadedAccountUserId = null;
       return;
@@ -487,7 +487,7 @@
         </div>
       </div>
     </div>
-  {:else if authState.isAuthenticated && authState.user}
+  {:else if authState.isFullAccount && authState.user}
     <div class="profile-content">
       {#if showAccountSetup && accountSetupState}
         <AccountSetupChecklist
