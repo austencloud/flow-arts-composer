@@ -1529,22 +1529,19 @@
     editor.seek(seconds);
   }
 
-  function toggleCrossfade(
-    outgoingId: string,
-    incomingId: string,
-    enabled: boolean
-  ): void {
+  function openCrossfade(outgoingId: string, incomingId: string): void {
     editor.pause();
     const trackIndex = findItem(editor.project, outgoingId)?.trackIndex;
     if (trackIndex === undefined) return;
     if (
+      !findItem(editor.project, outgoingId)?.item.transitionOut &&
       !editor.edit((project, context) =>
         setTrackCutCrossfade(
           project,
           trackIndex,
           outgoingId,
           incomingId,
-          enabled,
+          true,
           context
         )
       )
@@ -1554,10 +1551,9 @@
     const outgoing = findItem(editor.project, outgoingId)?.item;
     const incoming = findItem(editor.project, incomingId)?.item;
     if (outgoing && incoming) {
-      editor.seek(
-        enabled ? (incoming.start + itemEnd(outgoing)) / 2 : itemEnd(outgoing)
-      );
+      editor.seek((incoming.start + itemEnd(outgoing)) / 2);
     }
+    openTool("fade");
   }
 
   // ---- Keyframe rows -------------------------------------------------------
@@ -2812,7 +2808,7 @@
             applyMove((project, context) =>
               moveOverlayItem(project, itemId, { start, trackIndex }, context)
             )}
-          onToggleCrossfade={toggleCrossfade}
+          onOpenCrossfade={openCrossfade}
           onMoveSelection={(itemIds, draggedItemId, start, trackIndex) =>
             applyMove((project, context) =>
               moveSelectedItems(

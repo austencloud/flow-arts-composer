@@ -199,6 +199,8 @@ export const PostTransitionOutSchema = z
     duration: SecondsSchema,
     type: z.literal("crossfade"),
     sourceTypeCode: z.string().optional(),
+    incomingId: z.string().optional(),
+    editorAddedSeconds: SecondsSchema.optional(),
   })
   .strict();
 export type PostTransitionOut = z.infer<typeof PostTransitionOutSchema>;

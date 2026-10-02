@@ -83,11 +83,7 @@
     onTrim: (itemId: string, edge: "start" | "end", seconds: number) => void;
     onMoveMain: (itemId: string, start: number) => void;
     onMoveOverlay: (itemId: string, start: number, trackIndex: number) => void;
-    onToggleCrossfade: (
-      outgoingId: string,
-      incomingId: string,
-      enabled: boolean
-    ) => void;
+    onOpenCrossfade: (outgoingId: string, incomingId: string) => void;
     onMoveSelection: (
       itemIds: string[],
       draggedItemId: string,
@@ -153,7 +149,7 @@
     onTrim,
     onMoveMain,
     onMoveOverlay,
-    onToggleCrossfade,
+    onOpenCrossfade,
     onMoveSelection,
     onTrackFlag,
     keyChannel,
@@ -330,7 +326,11 @@
       )
         continue;
       const gap = incoming.start - itemEnd(outgoing);
-      const active = Boolean(outgoing.transitionOut);
+      const active = Boolean(
+        outgoing.transitionOut &&
+        (!outgoing.transitionOut.incomingId ||
+          outgoing.transitionOut.incomingId === incoming.id)
+      );
       if (
         active
           ? gap > POST_TIME_EPSILON ||
@@ -1434,35 +1434,44 @@
                 />
               {/each}
               {#each cutsFor(row.track) as cut (`${cut.outgoing.id}:${cut.incoming.id}`)}
+                {#if cut.active}
+                  <span
+                    class="crossfade-span"
+                    aria-hidden="true"
+                    style:left="{secondsToPixels(
+                      cut.incoming.start,
+                      pixelsPerSecond
+                    )}px"
+                    style:width="{secondsToPixels(
+                      Math.max(0, itemEnd(cut.outgoing) - cut.incoming.start),
+                      pixelsPerSecond
+                    )}px"
+                  ></span>
+                {/if}
                 <button
                   type="button"
                   class="cut-crossfade"
                   class:active={cut.active}
                   style:left="{secondsToPixels(cut.center, pixelsPerSecond)}px"
-                  aria-label={t(
-                    cut.active
-                      ? "post_timeline_remove_crossfade"
-                      : "post_timeline_add_crossfade"
-                  )}
-                  title={t(
-                    cut.active
-                      ? "post_timeline_remove_crossfade"
-                      : "post_timeline_add_crossfade"
-                  )}
+                  aria-label={`${t(cut.active ? "post_timeline_edit_crossfade" : "post_timeline_add_crossfade")}${cut.active ? `, ${cut.outgoing.transitionOut!.duration.toFixed(2)} s` : ""}: ${labelFor(cut.outgoing)} → ${labelFor(cut.incoming)}`}
+                  title={`${t(cut.active ? "post_timeline_edit_crossfade" : "post_timeline_add_crossfade")}: ${labelFor(cut.outgoing)} → ${labelFor(cut.incoming)}`}
                   onpointerdown={(event) => event.stopPropagation()}
                   onclick={() =>
-                    onToggleCrossfade(
-                      cut.outgoing.id,
-                      cut.incoming.id,
-                      !cut.active
-                    )}
+                    onOpenCrossfade(cut.outgoing.id, cut.incoming.id)}
                 >
-                  <i
-                    class={cut.active
-                      ? "fa-solid fa-right-left"
-                      : "fa-solid fa-plus"}
-                    aria-hidden="true"
-                  ></i>
+                  <span class="cut-crossfade-marker">
+                    <i
+                      class={cut.active
+                        ? "fa-solid fa-right-left"
+                        : "fa-solid fa-plus"}
+                      aria-hidden="true"
+                    ></i>
+                    {#if cut.active}
+                      <span
+                        >{cut.outgoing.transitionOut!.duration.toFixed(2)} s</span
+                      >
+                    {/if}
+                  </span>
                 </button>
               {/each}
             </div>
@@ -1656,22 +1665,55 @@
     top: 50%;
     display: grid;
     place-items: center;
-    width: 32px;
-    height: 32px;
+    min-width: 44px;
+    height: 44px;
     padding: 0;
     transform: translate(-50%, -50%);
-    border: 1px solid var(--theme-accent);
-    border-radius: 50%;
-    background: var(--theme-panel-elevated-bg, #1c1c26);
+    border: 0;
+    border-radius: 0.5rem;
+    background: transparent;
     color: var(--theme-text, #fff);
     cursor: pointer;
     font: inherit;
     font-size: 0.75rem;
   }
 
-  .cut-crossfade.active {
-    background: var(--theme-accent);
-    color: var(--theme-bg, #101018);
+  .cut-crossfade-marker {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.375rem;
+    min-width: 26px;
+    height: 26px;
+    box-sizing: border-box;
+    padding: 0 0.375rem;
+    border: 1px solid var(--theme-stroke, #484755);
+    border-radius: 0.375rem;
+    background: var(--theme-panel-elevated-bg, #1c1c26);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+
+  .cut-crossfade.active .cut-crossfade-marker,
+  .cut-crossfade:hover .cut-crossfade-marker {
+    border-color: var(--theme-accent);
+    background: var(--theme-panel-bg, #1c1c26);
+  }
+
+  .cut-crossfade.active .cut-crossfade-marker i {
+    color: var(--theme-accent);
+  }
+
+  .crossfade-span {
+    position: absolute;
+    z-index: 5;
+    top: 6px;
+    bottom: 6px;
+    box-sizing: border-box;
+    border: 1px solid var(--theme-accent);
+    border-radius: 0.375rem;
+    background: color-mix(in srgb, var(--theme-accent) 18%, transparent);
+    pointer-events: none;
   }
 
   .cut-crossfade:focus-visible {
