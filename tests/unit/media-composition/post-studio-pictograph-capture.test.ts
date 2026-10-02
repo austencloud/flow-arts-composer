@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { POST_STUDIO_DOM_CAPTURE_OPTIONS } from "$lib/shared/media-composition/services/post-studio-dom-capture";
 import { PostStudioPictographCapture } from "$lib/shared/media-composition/services/post-studio-pictograph-capture";
 
 const { createContext, destroyContext, domToCanvas } = vi.hoisted(() => ({
@@ -54,6 +55,17 @@ describe("Post Studio pictograph capture", () => {
     expect(options.includeStyleProperties).toContain("color");
     expect(options.includeStyleProperties).toContain("fill");
     expect(options.includeStyleProperties).not.toContain("--motion-accent");
+    capture.dispose();
+  });
+
+  it("hands the shared capture options to the reused context", async () => {
+    const capture = new PostStudioPictographCapture();
+
+    await capture.capture(createMotion(), 200, 100, 2);
+
+    expect(createContext.mock.calls[0]![1].onCreateForeignObjectSvg).toBe(
+      POST_STUDIO_DOM_CAPTURE_OPTIONS.onCreateForeignObjectSvg
+    );
     capture.dispose();
   });
 

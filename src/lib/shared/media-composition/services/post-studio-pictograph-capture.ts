@@ -1,4 +1,5 @@
 import type * as ModernScreenshot from "modern-screenshot";
+import { POST_STUDIO_DOM_CAPTURE_OPTIONS } from "$lib/shared/media-composition/services/post-studio-dom-capture";
 
 function resolvedStyleProperties(element: HTMLElement): string[] {
   const computed = getComputedStyle(element);
@@ -44,6 +45,7 @@ export class PostStudioPictographCapture {
           // Copying inherited custom tokens into every cloned child dominates
           // capture time without changing those painted values.
           includeStyleProperties: resolvedStyleProperties(element),
+          ...POST_STUDIO_DOM_CAPTURE_OPTIONS,
         });
       }
       return await screenshot.domToCanvas(this.context);

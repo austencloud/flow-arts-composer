@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { describe, expect, it, vi } from "vitest";
 import { POST_STUDIO_PRESETS } from "$lib/shared/media-composition/domain/post-studio-presets";
+import { POST_STUDIO_DOM_CAPTURE_OPTIONS } from "$lib/shared/media-composition/services/post-studio-dom-capture";
 import {
   resolveFrameLayerGeometry,
   renderPostStudioFrame,
@@ -185,6 +186,153 @@ describe("split animation export", () => {
       cardFrameCache: new Map(),
     });
     expect(fillRect).toHaveBeenCalledTimes(2);
+  });
+
+  it("covers a non-square region with the captured animation, not a centred square", async () => {
+    // The tutorial posts give the animation the lower half of the frame, a
+    // region wider than it is tall. The preview fills that box; the export
+    // fitted a 1x1 stand-in into it and drew a square, about 11% narrower.
+    const compiled = compilePostProject(
+      project(
+        [video("footage", { takeId: "a", sourceOut: 4 })],
+        [
+          [
+            overlay("motion", "animation", {
+              start: 0,
+              duration: 4,
+              box: { x: 0, y: 0.5, width: 1, height: 0.5 },
+            }),
+          ],
+        ]
+      ),
+      { now: NOW }
+    )!;
+    const layers = evaluatePresetFrame(
+      compiled.preset,
+      compiled.durationSeconds,
+      1
+    ).filter((layer) => layer.regionId === "motion");
+    expect(layers).toHaveLength(1);
+    const motion = compiled.preset.regions.find(
+      (candidate) => candidate.id === "motion"
+    )!;
+    const { width, height } = compiled.preset.output;
+    const expected = [
+      motion.x * width,
+      motion.y * height,
+      motion.width * width,
+      motion.height * height,
+    ];
+    expect(expected[2]).toBeGreaterThan(expected[3]! + 1);
+
+    const root = document.createElementNS(
+      "http://www.w3.org/1999/xhtml",
+      "div"
+    );
+    const mounted = document.createElementNS(
+      "http://www.w3.org/1999/xhtml",
+      "div"
+    );
+    mounted.className = "media-layer";
+    mounted.dataset.clipId = layers[0]!.clipId;
+    mounted.dataset.renderMode = "sequence-animation";
+    const animation = document.createElementNS(
+      "http://www.w3.org/1999/xhtml",
+      "div"
+    ) as HTMLElement;
+    animation.dataset.sequenceProgressVisible = "false";
+    vi.spyOn(animation, "getBoundingClientRect").mockReturnValue({
+      width: 270,
+      height: 240,
+    } as DOMRect);
+    mounted.append(animation);
+    root.append(mounted);
+    const captured = document.createElement("canvas");
+    captureMotion.mockReset().mockResolvedValue(captured);
+    const drawImage = vi.fn();
+    const context = new Proxy(
+      { drawImage },
+      {
+        get(target, key) {
+          return Reflect.get(target, key) ?? vi.fn();
+        },
+      }
+    );
+    const canvas = document.createElement("canvas");
+    vi.spyOn(canvas, "getContext").mockReturnValue(
+      context as unknown as CanvasRenderingContext2D
+    );
+
+    await renderPostStudioFrame({
+      canvas,
+      root,
+      preset: compiled.preset,
+      layers,
+      cardFrameCache: new Map(),
+    });
+
+    expect(drawImage).toHaveBeenCalledWith(captured, ...expected);
+  });
+});
+
+describe("export capture options", () => {
+  it("gives the choreo card capture the shared options", async () => {
+    const compiled = compilePostProject(project([card("main", 6)]), {
+      now: NOW,
+    })!;
+    const layers = evaluatePresetFrame(compiled.preset, 6, 1).filter(
+      (layer) => layer.clipId === "main"
+    );
+    expect(layers).toHaveLength(1);
+
+    const createElement = <T extends HTMLElement>(tag: string) =>
+      document.createElementNS("http://www.w3.org/1999/xhtml", tag) as T;
+    const root = createElement<HTMLDivElement>("div");
+    const mounted = createElement<HTMLDivElement>("div");
+    mounted.className = "media-layer";
+    mounted.dataset.clipId = "main";
+    mounted.dataset.renderMode = "choreo-card";
+    const choreo = createElement<HTMLDivElement>("div");
+    choreo.className = "choreo-layer";
+    vi.spyOn(choreo, "getBoundingClientRect").mockReturnValue({
+      width: 300,
+      height: 420,
+    } as DOMRect);
+    mounted.append(choreo);
+    root.append(mounted);
+    const captured = createElement<HTMLCanvasElement>("canvas");
+    captured.width = 300;
+    captured.height = 420;
+    captureMotion.mockReset().mockResolvedValue(captured);
+    const context = new Proxy(
+      {},
+      {
+        get(target, key) {
+          return Reflect.get(target, key) ?? vi.fn();
+        },
+      }
+    );
+    const canvas = createElement<HTMLCanvasElement>("canvas");
+    vi.spyOn(canvas, "getContext").mockReturnValue(
+      context as unknown as CanvasRenderingContext2D
+    );
+
+    await renderPostStudioFrame({
+      canvas,
+      root,
+      preset: compiled.preset,
+      layers,
+      cardFrameCache: new Map(),
+    });
+
+    expect(captureMotion).toHaveBeenCalledTimes(1);
+    expect(captureMotion.mock.calls[0]![0]).toBe(choreo);
+    expect(captureMotion.mock.calls[0]![1]).toMatchObject({
+      width: 300,
+      height: 420,
+      onCreateForeignObjectSvg:
+        POST_STUDIO_DOM_CAPTURE_OPTIONS.onCreateForeignObjectSvg,
+    });
   });
 });
 
@@ -612,6 +760,8 @@ describe("scoped Moves export", () => {
       expect(captureMotion.mock.calls[0]![1]).toMatchObject({
         width: 200,
         height: 250,
+        onCreateForeignObjectSvg:
+          POST_STUDIO_DOM_CAPTURE_OPTIONS.onCreateForeignObjectSvg,
       });
       expect(animation.contains(labels)).toBe(true);
       expect(animation.contains(paths)).toBe(true);
