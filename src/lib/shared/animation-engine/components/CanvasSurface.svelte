@@ -109,6 +109,7 @@ captureEffectDiagnostics to the context menu.
     isSeamlesslyLoopable = undefined,
     showNonRadialPoints = true,
     mandalaVisibleOverride = undefined,
+    mandalaStrokeWidthOverride = undefined,
     fireConfig = undefined,
     ledConfig = undefined,
     tipEffectMap: cellTipEffectMap = undefined,
@@ -178,6 +179,7 @@ captureEffectDiagnostics to the context menu.
     isSeamlesslyLoopable?: boolean;
     showNonRadialPoints?: boolean;
     mandalaVisibleOverride?: boolean;
+    mandalaStrokeWidthOverride?: number;
     fireConfig?: Partial<FireOverlayConfig>;
     ledConfig?: Partial<LedOverlayConfig>;
     tipEffectMap?: TipEffectMap;
@@ -518,6 +520,7 @@ captureEffectDiagnostics to the context menu.
       virtualTime,
       showNonRadialPoints,
       mandalaVisibleOverride,
+      mandalaStrokeWidthOverride,
     };
     untrack(() => {
       if (currentFireConfig) {

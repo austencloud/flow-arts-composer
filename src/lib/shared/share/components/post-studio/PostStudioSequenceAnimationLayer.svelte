@@ -311,6 +311,7 @@
               propLook={animationAppearance.propLook}
               word={sequence.word}
               previewDarkMode={animationAppearance.darkMode ?? true}
+              mandalaStrokeWidthOverride={animationAppearance.mandalaThickness}
               hideProgressBar
               visibilityManagerOverride={itemVisibility}
               effectsConfigState={itemEffects}

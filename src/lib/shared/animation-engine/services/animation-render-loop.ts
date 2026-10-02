@@ -2249,6 +2249,18 @@ export class AnimationRenderLoop {
    * cached by sequence, path policy, prop types, and resolved trail endpoints,
    * so the per-frame path is an identity check after the first preparation.
    */
+  private guideConfigByStroke: MandalaOverlayConfig = MANDALA_GUIDE_CONFIG;
+
+  /** The guide config, with the post's per-animation line width when set. */
+  private mandalaGuideConfig(params: RenderFrameParams): MandalaOverlayConfig {
+    const strokeWidth =
+      params.mandalaStrokeWidth ?? MANDALA_GUIDE_CONFIG.strokeWidth;
+    if (this.guideConfigByStroke.strokeWidth !== strokeWidth) {
+      this.guideConfigByStroke = { ...MANDALA_GUIDE_CONFIG, strokeWidth };
+    }
+    return this.guideConfigByStroke;
+  }
+
   private renderMandalaGuide(
     params: RenderFrameParams,
     deltaTime: number,
@@ -2280,7 +2292,7 @@ export class AnimationRenderLoop {
       overlay.renderFrame({
         preparedPaths: this.previousMandalaPaths,
         progress: 1,
-        config: MANDALA_GUIDE_CONFIG,
+        config: this.mandalaGuideConfig(params),
         deltaTime,
         currentTime,
         canvasSize: this.canvasSize,
@@ -2328,7 +2340,7 @@ export class AnimationRenderLoop {
     overlay.renderFrame({
       preparedPaths,
       progress: 1,
-      config: MANDALA_GUIDE_CONFIG,
+      config: this.mandalaGuideConfig(params),
       deltaTime,
       currentTime,
       canvasSize: this.canvasSize,

@@ -80,6 +80,7 @@ export class FrameSystem {
     this.mandalaPathOptions.motionAware = pathPolicy.motionAwarePaths;
     params.mandalaVisible =
       props.mandalaVisibleOverride ?? this.state.visibilityState.mandala;
+    params.mandalaStrokeWidth = props.mandalaStrokeWidthOverride;
     params.mandalaSteps = props.sequenceData?.steps ?? null;
     params.mandalaPathOptions = this.mandalaPathOptions;
     return params;
