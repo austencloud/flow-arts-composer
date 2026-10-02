@@ -25,7 +25,7 @@ async function serverFor(directory, run) {
   }
 }
 
-test("draft versions survive server restart and retain earlier mappings", async () => {
+test("draft versions survive server restart and reads return the newest", async () => {
   const directory = await fs.mkdtemp(
     path.join(os.tmpdir(), "post-studio-drafts-test-")
   );
@@ -49,7 +49,7 @@ test("draft versions survive server restart and retain earlier mappings", async 
       const saved = await (
         await fetch(`${base}/_local/post-studio-drafts`)
       ).json();
-      assert.deepEqual(saved.records, [first, second]);
+      assert.deepEqual(saved.records, [second]);
       const rejected = await fetch(`${base}/_local/post-studio-drafts`, {
         method: "POST",
         headers: { Origin: "https://unrelated.test" },
@@ -74,7 +74,7 @@ test("draft versions survive server restart and retain earlier mappings", async 
   }
 });
 
-test("scoped reads keep all Unicode sequence history and previous timings", async () => {
+test("scoped reads keep Unicode sequences and previous timings apart", async () => {
   const directory = await fs.mkdtemp(
     path.join(os.tmpdir(), "post-studio-drafts-scoped-test-")
   );
@@ -105,16 +105,11 @@ test("scoped reads keep all Unicode sequence history and previous timings", asyn
           `${base}/_local/post-studio-drafts?sequenceId=%CE%A9%CE%9B-XJ`
         )
       ).json();
-      assert.deepEqual(scoped.records, [
-        records[0],
-        records[1],
-        records[2],
-        records[5],
-      ]);
+      assert.deepEqual(scoped.records, [records[1], records[2], records[5]]);
       const unscoped = await (
         await fetch(`${base}/_local/post-studio-drafts`)
       ).json();
-      assert.deepEqual(unscoped.records, records);
+      assert.deepEqual(unscoped.records, records.slice(1));
       assert.equal((await fs.readdir(directory)).length, records.length);
     });
   } finally {
@@ -187,6 +182,87 @@ test("HTTP/2 saves accept the editor authority and reject other origins", async 
   } finally {
     client.close();
     await new Promise((resolve) => server.close(resolve));
+    assert.ok(
+      path.resolve(directory).startsWith(path.resolve(os.tmpdir()) + path.sep)
+    );
+    await fs.rm(directory, { recursive: true });
+  }
+});
+
+test("reads send the saves that decide a post, not every autosave", async () => {
+  const directory = await fs.mkdtemp(
+    path.join(os.tmpdir(), "post-studio-drafts-select-test-")
+  );
+  const sequenceId = "ΩΛ-XJ";
+  const take = {
+    id: "take-1",
+    takeKey: "woods",
+    durationSeconds: 10,
+    ref: { kind: "file", name: "woods.mp4" },
+  };
+  const timing = (updatedAt, taps) => ({
+    sequenceId,
+    takeKey: "woods",
+    updatedAt,
+    sections: [
+      {
+        startSeconds: 0,
+        endSeconds: 10,
+        tempo: "follow",
+        snap: "grid",
+        taps,
+        offsetSeconds: 0,
+        overrides: [],
+      },
+    ],
+  });
+  const save = (updatedAt, takeTiming) => ({
+    key: `tka:post-studio:project:v2:${sequenceId}`,
+    value: JSON.stringify({
+      sequenceId,
+      updatedAt,
+      takes: [take],
+      timings: { [take.id]: takeTiming },
+    }),
+  });
+  const mapped = timing(50, [1, 2, 3]);
+  const mappedSave = save(50, mapped);
+  const autosaves = Array.from({ length: 30 }, (_, index) =>
+    save(51 + index, mapped)
+  );
+  // An editor opened before the mapping saves its old, unmapped timing
+  // under a newer project.
+  const staleTab = save(500, timing(10, []));
+  // A deliberate clear after the mapping: newest timing, no taps.
+  const cleared = save(600, timing(90, []));
+  try {
+    await serverFor(directory, async (base) => {
+      const write = async (record) => {
+        const response = await fetch(`${base}/_local/post-studio-drafts`, {
+          method: "POST",
+          body: JSON.stringify({ records: [record] }),
+        });
+        assert.equal(response.status, 200);
+      };
+      const read = async () =>
+        (
+          await (
+            await fetch(
+              `${base}/_local/post-studio-drafts?sequenceId=${encodeURIComponent(sequenceId)}`
+            )
+          ).json()
+        ).records;
+      for (const record of [mappedSave, ...autosaves, staleTab])
+        await write(record);
+      // The stale project is newest, and the first save of the newest
+      // timing comes with it.
+      assert.deepEqual(await read(), [mappedSave, staleTab]);
+      await write(cleared);
+      // The clear is newest; a mapped save stays so it counts as deliberate.
+      assert.deepEqual(await read(), [autosaves.at(-1), cleared]);
+      assert.equal((await fs.readdir(directory)).length, autosaves.length + 3);
+    });
+  } finally {
     assert.ok(
       path.resolve(directory).startsWith(path.resolve(os.tmpdir()) + path.sep)
     );
