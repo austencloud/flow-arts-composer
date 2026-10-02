@@ -138,10 +138,15 @@ export class WebGLLedRenderer {
 		INITIAL_SEGMENT_CAPACITY * INSTANCE_STRIDE_FLOATS,
 	);
 
-	/** Per-LED previous-frame positions in viewbox coords, keyed by
-	 *  `propIndex*1000 + ledIndex`. Viewbox rather than pixels so a resize
-	 *  between frames cannot fabricate a streak. */
+	/** Per-LED previous-frame positions in input canvas coords, keyed by
+	 *  `propIndex*1000 + ledIndex`. Those coords include the frame's centring
+	 *  offset, so they are only comparable while the input frame keeps its size;
+	 *  see `inputFrame`. */
 	private prevPositions: Map<number, { x: number; y: number }> = new Map();
+	/** The input frame the stored positions were measured in. A change moves
+	 *  every LED at once (the square re-centres and rescales), which would
+	 *  otherwise deposit a streak from the old spot to the new one. */
+	private inputFrame = { width: 0, height: 0 };
 	/** Previous-frame position of each LED in this frame's order, viewbox coords. */
 	private prevScratch = new Float32Array(MAX_LEDS * 2);
 	/** Reused across frames; a per-frame Map would allocate inside the RAF loop. */
@@ -607,8 +612,14 @@ export class WebGLLedRenderer {
 		input: LedFrameInput,
 		config: LedOverlayConfig,
 		dt: number,
-		isDiscontinuity: boolean,
+		timeDiscontinuity: boolean,
 	): number {
+		const frameChanged =
+			input.canvasWidth !== this.inputFrame.width || input.canvasHeight !== this.inputFrame.height;
+		this.inputFrame.width = input.canvasWidth;
+		this.inputFrame.height = input.canvasHeight;
+		const isDiscontinuity = timeDiscontinuity || frameChanged;
+
 		const ledCount = Math.min(input.leds.length, MAX_LEDS);
 		const scaleX = this.displayWidth / Math.max(input.canvasWidth, 1);
 		const scaleY = this.displayHeight / Math.max(input.canvasHeight, 1);
