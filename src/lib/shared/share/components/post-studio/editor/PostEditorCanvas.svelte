@@ -54,7 +54,10 @@
     type PostSourceGeometry,
     type PostVideoItem,
   } from "$lib/shared/media-composition/domain/post-project";
-  import { updateItemAt } from "$lib/shared/media-composition/domain/post-project-edits";
+  import {
+    findTunnelHook,
+    updateItemAt,
+  } from "$lib/shared/media-composition/domain/post-project-edits";
   import { posterQrAppearance } from "../post-qr-image-appearance";
   import { dragSourceCrop, type SourceCropHandle } from "./post-source-crop";
   import {
@@ -294,6 +297,49 @@
     return out;
   });
 
+  // The hook and the animation it introduces occupy different editable boxes,
+  // but their shared sequence needs one mounted renderer across the handoff.
+  const continuityIds = $derived.by(() => {
+    const hook = findTunnelHook(editor.project);
+    if (!hook) return null;
+    const next = editor.project.tracks
+      .flatMap((track) => track.items)
+      .find(
+        (item) =>
+          item.kind === "animation" &&
+          !item.tunnelHook &&
+          Math.abs(item.start - itemEnd(hook)) < POST_TIME_EPSILON
+      );
+    return next ? { hook: hook.id, next: next.id } : null;
+  });
+  const continuity = $derived.by(() => {
+    if (!continuityIds || !preset) return null;
+    const ids =
+      editor.previewSeconds <
+      (findItem(editor.project, continuityIds.hook)?.item?.start ?? 0) +
+        (findItem(editor.project, continuityIds.hook)?.item?.duration ?? 0)
+        ? [continuityIds.hook, continuityIds.next]
+        : [continuityIds.next, continuityIds.hook];
+    for (const id of ids) {
+      const entry = entries
+        .get(id)
+        ?.find(
+          (candidate) =>
+            candidate.role === POST_STUDIO_ROLE.animation && candidate.live
+        );
+      const region = preset.regions.find((candidate) => candidate.id === id);
+      if (entry && region) return { entry, region, id };
+    }
+    return null;
+  });
+  const continuityAppearance = $derived.by(() => {
+    if (!continuityIds) return null;
+    const hook = findItem(editor.project, continuityIds.hook)?.item;
+    return hook?.kind === "animation"
+      ? (hook.animationAppearance ?? null)
+      : null;
+  });
+
   const playbackVideos = new Map<string, PreviewVideoController>();
   let masterVideoKey: string | null = null;
 
@@ -314,6 +360,16 @@
         const video =
           binding?.previewType === "video" || binding?.kind === "video";
         if (!entry.live || !video || binding?.renderMode !== "external-media")
+          return [];
+        // The evaluator includes a clip's final instant for still captures.
+        // Playback must release an outgoing master there, or its decoder can
+        // pin the clock at the cut before the incoming video's clock takes over.
+        const end = resolvePresetTimePoint(
+          entry.clip.end,
+          editor.durationSeconds,
+          preset!.markers
+        );
+        if (end < editor.durationSeconds && editor.previewSeconds >= end)
           return [];
         if (cropping && regionId !== cropItem?.id) return [];
         const key = `${regionId}:${entry.role}`;
@@ -2310,7 +2366,7 @@
             editor.previewSeconds
           )}
           {@const isVideo = binding?.renderMode === "external-media"}
-          {#if binding?.status === "ready"}
+          {#if binding?.status === "ready" && !(continuityIds && entry.role === POST_STUDIO_ROLE.animation && (region.id === continuityIds.hook || region.id === continuityIds.next))}
             {#if binding.renderMode === "painted" && binding.painter}
               <!-- The crop screen shows the whole picture to frame, bare. -->
               <div
@@ -2393,6 +2449,82 @@
         {/each}
       </div>
     {/each}
+    {#if continuity && bindingFor(POST_STUDIO_ROLE.animation)?.status === "ready"}
+      {@const { entry, region, id } = continuity}
+      {@const layer = entry.layer}
+      {@const rect = editor.regionRects.get(id) ?? region}
+      {@const edge = edgeStyle(region, rect, [entry])}
+      {@const cropRegion = cropping && id === cropItem?.id}
+      {@const cropWindow = cropRegion
+        ? sourceCropping
+          ? sourceRect
+          : windowRect
+        : null}
+      {@const sourceItem = findItem(
+        editor.project,
+        itemIdFromClipId(entry.clip.id)
+      )?.item}
+      <div
+        class="region"
+        class:edged={edge !== null}
+        class:crop-region={cropRegion}
+        class:crop-hidden={cropping && !cropRegion}
+        data-crop-region={cropRegion ? "" : undefined}
+        data-crop-flip={id === (cropItem?.id ?? editor.selectedItemId) &&
+        !rect.turn
+          ? "region"
+          : undefined}
+        data-continuous-animation
+        style:left={cropWindow ? `${cropWindow.left}px` : pct(rect.x)}
+        style:top={cropWindow ? `${cropWindow.top}px` : pct(rect.y)}
+        style:width={cropWindow ? `${cropWindow.width}px` : pct(rect.width)}
+        style:height={cropWindow ? `${cropWindow.height}px` : pct(rect.height)}
+        style:rotate={!cropRegion && rect.turn ? `${rect.turn}deg` : undefined}
+        style:z-index={region.zIndex}
+        style:border-radius={edge?.radius}
+        style:box-shadow={edge?.shadow}
+        style:--edge-border={edge?.border}
+        style:--edge-color={edge?.color}
+        style:--edge-opacity={edge?.opacity}
+      >
+        <div class="layer">
+          <PostStudioMediaLayer
+            binding={bindingFor(POST_STUDIO_ROLE.animation)!}
+            fit={region.fit}
+            opacity={cropRegion ? 1 : layer.opacity}
+            sourceTimeSeconds={layer.sourceTimeSeconds}
+            playing={editor.isPlaying && entry.live}
+            {exporting}
+            {sequence}
+            animationAppearance={animationAppearanceForItem(
+              sourceItem?.kind === "animation" ? sourceItem : null
+            ) ?? continuityAppearance}
+            tunnelHook={layer.tunnelHook ?? null}
+            sequencePosition={layer.sequencePosition ?? OPENING_POSITION}
+            sequencePassIndex={layer.sequencePassIndex}
+            sequenceProgress={layer.sequenceFrame?.passBeatProgress}
+            animationTimeSeconds={layer.animationTimeSeconds ?? 0}
+            labelsPainted={paintedLabelRegions.has(id)}
+            displayedBeatNumber={layer.displayedBeatNumber}
+            clipId={entry.clip.id}
+            colorGrade={entry.clip.colorGrade}
+            transform={sourceCropping && cropRegion
+              ? {
+                  ...layer.transform,
+                  scale: 1,
+                  rotationDegrees: 0,
+                  translateX: 0,
+                  translateY: 0,
+                  flipHorizontal: false,
+                }
+              : layer.transform}
+            sourceGeometry={sourceCropping && cropRegion
+              ? fullSourceGeometry
+              : layer.sourceGeometry}
+          />
+        </div>
+      </div>
+    {/if}
     {#if stripGuideVisible && !cropping}
       <div
         class="strip-guide"

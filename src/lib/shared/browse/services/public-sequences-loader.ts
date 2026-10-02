@@ -241,6 +241,14 @@ export class PublicSequencesLoader {
       await this.loadSequenceMetadata();
     }
 
+    // The public index already carries the compositional LOOP period. Older
+    // source documents can lack it even though their published index has it.
+    let indexedPeriod = sequenceId
+      ? (this.cachedSequences ?? this.initialPageSequences)?.find(
+          (sequence) => sequence.id === sequenceId
+        )?.period
+      : undefined;
+
     // When an ID is supplied, resolve only that exact document. Falling back to
     // a word here can silently load somebody else's same-word variation.
     let sourceRef = sequenceId
@@ -284,6 +292,7 @@ export class PublicSequencesLoader {
       const indexData = normalizeLegacySequence(
         publicDoc.data()
       ) as PublicSequenceIndex;
+      indexedPeriod = indexData.period;
       if (indexData.sourceRef) {
         sourceRef = indexData.sourceRef;
         this.cacheSourceRef(
@@ -358,7 +367,11 @@ export class PublicSequencesLoader {
     }
 
     const data = fullDoc.data();
-    return this.mapFirestoreToSequenceData(data, fullDoc.id);
+    const sequence = this.mapFirestoreToSequenceData(data, fullDoc.id);
+    return {
+      ...sequence,
+      period: sequence.period ?? indexedPeriod,
+    };
   }
 
   private findRenderableCached(
@@ -717,6 +730,7 @@ export class PublicSequencesLoader {
       isFavorite: (data.isFavorite as boolean) ?? false,
       isCircular: (data.isCircular as boolean) ?? false,
       loopType: data.loopType as SequenceData["loopType"],
+      period: data.period as SequenceData["period"],
       orientationCycleCount:
         data.orientationCycleCount as SequenceData["orientationCycleCount"],
       difficultyLevel: data.difficultyLevel as string | undefined,

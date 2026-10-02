@@ -142,6 +142,73 @@ describe("PublicSequencesLoader grid mode mapping", () => {
 });
 
 describe("PublicSequencesLoader exact-ID resolution", () => {
+  it("keeps the published LOOP period when an older source document omits it", async () => {
+    const loader = new PublicSequencesLoader();
+    loader.warmFromCache([], new Map());
+    mocks.getDoc
+      .mockResolvedValueOnce({
+        id: "quartered-loop",
+        exists: () => true,
+        data: () => ({
+          name: "Quartered LOOP",
+          word: "ABABABAB",
+          period: 4,
+          sourceRef: "users/owner/sequences/quartered-loop",
+        }),
+        metadata: { fromCache: false },
+      })
+      .mockResolvedValueOnce({
+        id: "quartered-loop",
+        exists: () => true,
+        data: () => ({
+          name: "Quartered LOOP",
+          word: "ABABABAB",
+          steps: [{ stepNumber: 1, letter: "A", motions: {} }],
+        }),
+        metadata: { fromCache: false },
+      });
+
+    const sequence = await loader.loadFullSequenceDataStrict(
+      "ABABABAB",
+      "quartered-loop"
+    );
+    expect(sequence?.period).toBe(4);
+  });
+
+  it("passes through an exact source document period", async () => {
+    const loader = new PublicSequencesLoader();
+    loader.warmFromCache([], new Map());
+    mocks.getDoc
+      .mockResolvedValueOnce({
+        id: "quartered-loop",
+        exists: () => true,
+        data: () => ({
+          name: "Quartered LOOP",
+          word: "ABABABAB",
+          period: 2,
+          sourceRef: "users/owner/sequences/quartered-loop",
+        }),
+        metadata: { fromCache: false },
+      })
+      .mockResolvedValueOnce({
+        id: "quartered-loop",
+        exists: () => true,
+        data: () => ({
+          name: "Quartered LOOP",
+          word: "ABABABAB",
+          period: 4,
+          steps: [{ stepNumber: 1, letter: "A", motions: {} }],
+        }),
+        metadata: { fromCache: false },
+      });
+
+    const sequence = await loader.loadFullSequenceDataStrict(
+      "ABABABAB",
+      "quartered-loop"
+    );
+    expect(sequence?.period).toBe(4);
+  });
+
   it("repairs an old warmed cache that has sequence metadata but no ID source-ref key", async () => {
     const loader = new PublicSequencesLoader();
     loader.warmFromCache(
