@@ -49,6 +49,7 @@
     qrAppearance?: PostQrAppearance;
     animationAppearance?: PostAnimationItem["animationAppearance"] | null;
     tunnelHook?: { hook: TunnelHook; progress: number } | null;
+    chromeOpacity?: number;
     sequencePosition?: number;
     sequencePassIndex?: number;
     sequenceProgress?: number;
@@ -84,6 +85,7 @@
     qrAppearance,
     animationAppearance = null,
     tunnelHook = null,
+    chromeOpacity = 1,
     sequencePosition,
     sequencePassIndex,
     sequenceProgress,
@@ -648,6 +650,7 @@
       {labelsPainted}
       {animationAppearance}
       {tunnelHook}
+      {chromeOpacity}
       {playing}
       leftPropType={cardRenderOptions?.leftPropTypeOverride ??
         cardRenderOptions?.propTypeOverride}

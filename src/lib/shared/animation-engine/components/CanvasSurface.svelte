@@ -91,6 +91,7 @@ captureEffectDiagnostics to the context menu.
     tunnelSelectedLayer = null,
     gridVisible = true,
     gridOpacity = undefined,
+    chromeOpacity = 1,
     gridMode = GridMode.DIAMOND,
     backgroundAlpha = 1,
     letter = null,
@@ -160,6 +161,7 @@ captureEffectDiagnostics to the context menu.
     tunnelSelectedLayer?: number | readonly number[] | null;
     gridVisible?: boolean;
     gridOpacity?: number;
+    chromeOpacity?: number;
     gridMode?: GridMode | null;
     backgroundAlpha?: number;
     letter?: Letter | null;
@@ -599,6 +601,7 @@ captureEffectDiagnostics to the context menu.
       {glyphFrame}
       stepNumbersVisible={effectiveBeatNumbersVisible}
       {placementGlyphVisible}
+      opacity={chromeOpacity}
       darkMode={darkModeEnabled}
       isAtStartPlacement={beatIndicators &&
         !hideStepNumbers &&

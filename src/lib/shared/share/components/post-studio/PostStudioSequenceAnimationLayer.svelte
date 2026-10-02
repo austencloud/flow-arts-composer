@@ -57,6 +57,7 @@
     rightPropType,
     animationAppearance = null,
     tunnelHook = null,
+    chromeOpacity = 1,
   }: {
     sequence: SequenceData;
     sequencePosition: number;
@@ -77,6 +78,8 @@
     animationAppearance?: PostAnimationItem["animationAppearance"] | null;
     /** The opening hook: extra performers around the sequence, leaving as it settles. */
     tunnelHook?: { hook: TunnelHook; progress: number } | null;
+    /** Grid, glyph, step number and progress strip: 0 during the hook, 1 once they have faded in. */
+    chromeOpacity?: number;
   } = $props();
 
   const inheritedVisibility = getAnimationVisibilityManager();
@@ -455,6 +458,7 @@
               Boolean(tunnelHook) &&
               (status.requested === 0 || status.loaded < status.requested))}
           gridVisible={animationAppearance?.gridMode !== "none"}
+          {chromeOpacity}
           gridMode={sequence.gridMode ?? null}
           letter={stepData?.letter ?? null}
           {stepData}
@@ -485,7 +489,10 @@
       {/key}
     {/if}
   </div>
-  <div class="sequence-progress">
+  <div
+    class="sequence-progress"
+    style:opacity={chromeOpacity < 1 ? chromeOpacity : undefined}
+  >
     <SequenceProgressBar
       currentStep={sequencePosition}
       totalSteps={sequence.steps.length}

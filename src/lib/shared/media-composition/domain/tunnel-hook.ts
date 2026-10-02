@@ -74,6 +74,20 @@ export function tunnelHookArrival(
   return stepCount - span + span * clamp01(ease(clamp01(progress)));
 }
 
+/** Seconds the grid, glyph and step number take to come in after the hook. */
+export const TUNNEL_HOOK_CHROME_SECONDS = 0.9;
+
+/**
+ * Opacity of the canvas chrome (grid, glyph, step number, progress strip) for
+ * the hook's canvas. It carries none while the tunnel runs and fades in over
+ * the hand-off, so the tunnel and the animation are one canvas that gains its
+ * notation rather than two canvases swapped.
+ */
+export function tunnelHookChromeOpacity(secondsSinceHookEnd: number): number {
+  const t = clamp01(secondsSinceHookEnd / TUNNEL_HOOK_CHROME_SECONDS);
+  return t * t * (3 - 2 * t);
+}
+
 /**
  * Opacity of extra performer `index` (0-based among `count`) at `progress`.
  * They leave one after another, outermost last, so the ring thins instead of
