@@ -17,14 +17,7 @@ const CARD: PostToolSelection = { kind: "card", hasLayout: false };
 
 describe("toolRow", () => {
   it("offers the post's tools when nothing is selected", () => {
-    expect(toolRow(POST)).toEqual([
-      "videos",
-      "add",
-      "canvas",
-      "split",
-      "template",
-      "look",
-    ]);
+    expect(toolRow(POST)).toEqual(["videos", "add", "canvas", "split", "look"]);
   });
 
   it("puts Crop beside Trim for a clip and Layout only on a main-track clip", () => {
