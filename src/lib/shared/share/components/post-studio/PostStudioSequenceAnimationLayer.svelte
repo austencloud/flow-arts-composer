@@ -447,6 +447,7 @@
               showGrid={false}
               showTKA={false}
               showTnD={false}
+              showElemental={false}
               showPropTnD={false}
               showPlacements={false}
               showHandColorKey={false}
@@ -506,6 +507,7 @@
             showGrid
             showTKA={false}
             showTnD={false}
+            showElemental={false}
             showPropTnD={false}
             showPlacements={false}
             showHandColorKey={false}
