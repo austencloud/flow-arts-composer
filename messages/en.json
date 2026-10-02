@@ -6854,6 +6854,7 @@
   "post_editor_add_card_end": "Choreo card at the end",
   "post_editor_add_tunnel_hook": "Opening tunnel hook",
   "post_editor_remove_tunnel_hook": "Remove opening hook",
+  "post_editor_hook_play": "Play the hook",
   "post_editor_text_placeholder": "Your text",
   "post_editor_undo": "Undo",
   "post_editor_redo": "Redo",

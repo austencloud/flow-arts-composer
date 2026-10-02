@@ -140,6 +140,22 @@
     );
   }
 
+  function commitCurve(next: [number, number, number, number]): void {
+    if (locked || !segment) return;
+    const index = segment.index;
+    editor.editSetting(
+      `${item.id}:${channel}:easing:${index}`,
+      (project, ctx) =>
+        editItemKeyframes(
+          project,
+          item.id,
+          (it) =>
+            setSegmentEasing(it, channel, editor.previewSeconds, [...next]),
+          ctx
+        )
+    );
+  }
+
   function choosePreset(id: PostEasingPresetId): void {
     if (locked || !segment) return;
     const easing = EASING_PRESETS[id];
@@ -245,7 +261,11 @@
             {#snippet children()}
               <div class="curve-popover">
                 <p class="curve-range">{curveLabel}</p>
-                <PostCurveEditor {editor} {item} {channel} {segment} {locked}>
+                <PostCurveEditor
+                  easing={segment.easing}
+                  {locked}
+                  onCommit={commitCurve}
+                >
                   {#snippet presets()}
                     <div
                       class="preset-list"

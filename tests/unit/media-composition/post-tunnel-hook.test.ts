@@ -8,12 +8,14 @@ import {
   addTunnelHook,
   findTunnelHook,
   removeTunnelHook,
+  setTunnelHookSpeed,
 } from "$lib/shared/media-composition/domain/post-project-edits";
 import { compilePostProject } from "$lib/shared/media-composition/domain/post-project-compiler";
 import {
   tunnelHookArrival,
   tunnelHookCopyOpacity,
 } from "$lib/shared/media-composition/domain/tunnel-hook";
+import { sampleEasing } from "$lib/shared/media-composition/domain/post-project-keyframes";
 import { evaluatePresetFrame } from "$lib/shared/media-composition/services/frame-evaluator";
 import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
 import { NOW, overlay, project, spans, video } from "./post-project-fixtures";
@@ -226,5 +228,63 @@ describe("tunnel hook in the compiled post", () => {
     ).filter((layer) => layer.sourceRole === "sequence-animation");
     expect(atCut.map((layer) => layer.clipId)).toEqual(["anim~0"]);
     expect(atCut[0]?.regionId).toBe("anim");
+  });
+});
+
+describe("tunnel hook speed curve", () => {
+  it("a linear curve plays the sequence at an even pace", () => {
+    const linear = (p: number) => sampleEasing([0, 0, 1, 1], p);
+    expect(tunnelHookArrival(0.25, 8, 1, linear)).toBeCloseTo(2, 3);
+    expect(tunnelHookArrival(0.5, 8, 1, linear)).toBeCloseTo(4, 3);
+    expect(tunnelHookArrival(1, 8, 1, linear)).toBeCloseTo(8, 6);
+  });
+
+  it("an ease-out curve starts fast and settles, and never leaves the sequence", () => {
+    const out = (p: number) => sampleEasing([0, 0, 0.58, 1], p);
+    expect(tunnelHookArrival(0.25, 8, 1, out)).toBeGreaterThan(2);
+    const overshoot = (p: number) => sampleEasing([0.34, 1.56, 0.64, 1], p);
+    for (const p of [0.2, 0.4, 0.6, 0.8]) {
+      expect(tunnelHookArrival(p, 8, 1, overshoot)).toBeLessThanOrEqual(8);
+    }
+  });
+
+  it("stores a chosen curve on the hook and drops it to return to the default", () => {
+    const added = addTunnelHook(withAnimation(), ctx)!;
+    const set = setTunnelHookSpeed(added.project, [0, 0, 1, 1], ctx);
+    expect(PostProjectSchema.safeParse(set).success).toBe(true);
+    expect(findTunnelHook(set)!.tunnelHook).toEqual({
+      fold: 8,
+      mirror: false,
+      speed: [0, 0, 1, 1],
+    });
+    const cleared = setTunnelHookSpeed(set, null, ctx);
+    expect(findTunnelHook(cleared)!.tunnelHook).toEqual({
+      fold: 8,
+      mirror: false,
+    });
+  });
+
+  it("the post's frames follow the chosen curve", () => {
+    const steps = Array.from({ length: 8 }, () => ({
+      duration: 1,
+    })) as unknown as StepData[];
+    const added = addTunnelHook(withAnimation(), ctx, { seconds: 5 })!;
+    const frameAt = (project: typeof added.project, t: number) => {
+      const compiled = compilePostProject(project, { now: NOW })!;
+      const hookClip = compiled.preset.clips.find((clip) =>
+        clip.id.startsWith(added.itemId)
+      )!;
+      return evaluatePresetFrame(
+        compiled.preset,
+        compiled.durationSeconds,
+        t,
+        { steps } as never
+      ).find((layer) => layer.clipId === hookClip.id)!;
+    };
+    const linear = setTunnelHookSpeed(added.project, [0, 0, 1, 1], ctx);
+    const quarter = frameAt(linear, 1.25).sequencePosition!;
+    const smooth = frameAt(added.project, 1.25).sequencePosition!;
+    expect(quarter).toBeCloseTo(3, 1);
+    expect(smooth).toBeLessThan(quarter);
   });
 });

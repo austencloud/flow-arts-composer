@@ -526,7 +526,10 @@ export function evaluatePresetLayers(
         arrival: tunnelHookArrival(
           projectProgress,
           moveBeats.length,
-          alignment?.sequencePeriod
+          alignment?.sequencePeriod,
+          clip.tunnelHook.speed
+            ? (p) => sampleEasing([...clip.tunnelHook!.speed!], p)
+            : undefined
         ),
         endArrival: moveBeats.length,
       };

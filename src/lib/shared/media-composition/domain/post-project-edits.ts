@@ -495,6 +495,25 @@ export function removeTunnelHook(
   return finish({ ...project, tracks }, ctx);
 }
 
+/** Sets how fast the hook plays the sequence; `null` returns to the default ease. */
+export function setTunnelHookSpeed(
+  project: PostProject,
+  speed: NonNullable<TunnelHook["speed"]> | null,
+  ctx: EditContext
+): PostProject {
+  const hook = findTunnelHook(project);
+  if (!hook?.tunnelHook) return project;
+  const { speed: _previous, ...rest } = hook.tunnelHook;
+  const tunnelHook: TunnelHook = speed ? { ...rest, speed } : rest;
+  const tracks = project.tracks.map((track) => ({
+    ...track,
+    items: track.items.map((item) =>
+      item.id === hook.id ? { ...item, tunnelHook } : item
+    ),
+  }));
+  return finish({ ...project, tracks }, ctx);
+}
+
 /** The live view can take a video's place when its visible area fits the editable canvas. */
 export function canReplaceOverlayVideoWithAnimation(
   project: PostProject,

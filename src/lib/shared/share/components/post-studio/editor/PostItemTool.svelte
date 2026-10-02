@@ -33,6 +33,7 @@
     canReplaceOverlayVideoWithAnimation,
     replaceOverlayVideoWithAnimation,
     trimItem,
+    setTunnelHookSpeed,
     trimItemToSource,
     updateItem,
     updateItemAt,
@@ -46,9 +47,12 @@
   import {
     boxAt,
     channelValueAt,
+    EASING_PRESETS,
+    easingPresetOf,
     framingAt,
     isAnimated,
     opacityAt,
+    type PostEasingPresetId,
   } from "$lib/shared/media-composition/domain/post-project-keyframes";
   import {
     POST_DEFAULT_EDGE_BORDER,
@@ -65,7 +69,9 @@
   import TypeableValue from "$lib/shared/ui/components/TypeableValue.svelte";
   import ValueSlider from "$lib/shared/ui/components/ValueSlider.svelte";
   import { formatTakeClock, parseClock } from "../builder/post-builder-format";
-  import { itemDisplayLabel } from "./post-editor-labels";
+  import { easingPresetLabel, itemDisplayLabel } from "./post-editor-labels";
+  import ChipPopoverOption from "$lib/shared/browse/components/filter-chips/ChipPopoverOption.svelte";
+  import PostCurveEditor from "./PostCurveEditor.svelte";
   import { boxTurn, typeBox, type BoxField } from "./post-box-drag";
   import { keepsShape, keptBox, shownBox } from "./post-item-rect";
   import { panelChannel, type PostPanelToolId } from "./post-editor-tools";
@@ -281,6 +287,23 @@
     editor.pause();
     editor.edit((project, ctx) =>
       replaceOverlayVideoWithAnimation(project, item.id, ctx)
+    );
+  }
+
+  const HOOK_SPEED_PRESETS = [
+    "linear",
+    "ease-in",
+    "ease-out",
+    "ease-in-out",
+    "smooth",
+  ] as const satisfies readonly PostEasingPresetId[];
+  const HOOK_DEFAULT_SPEED = EASING_PRESETS.smooth;
+
+  function commitHookSpeed(next: readonly number[]): void {
+    if (locked) return;
+    const speed = next as [number, number, number, number];
+    editor.editSetting(`${item.id}:hook-speed`, (project, ctx) =>
+      setTunnelHookSpeed(project, speed, ctx)
     );
   }
 
@@ -959,6 +982,34 @@
       onChange={(next, field) =>
         change(`source-geometry:${field}`, { sourceGeometry: next })}
     />
+  {:else if tool === "speed" && item.kind === "animation" && item.tunnelHook}
+    {@const hookSpeed = item.tunnelHook.speed ?? HOOK_DEFAULT_SPEED}
+    <PostCurveEditor easing={hookSpeed} {locked} onCommit={commitHookSpeed}>
+      {#snippet presets()}
+        <div
+          class="preset-list"
+          role="listbox"
+          aria-label={t("post_curve_presets")}
+        >
+          {#each HOOK_SPEED_PRESETS as id (id)}
+            <ChipPopoverOption
+              label={easingPresetLabel(id)}
+              selected={easingPresetOf([...hookSpeed]) === id}
+              onclick={() => commitHookSpeed([...EASING_PRESETS[id]])}
+            />
+          {/each}
+        </div>
+      {/snippet}
+    </PostCurveEditor>
+    <PanelButton
+      onclick={() => {
+        editor.seek(item.start);
+        editor.togglePlayback();
+      }}
+    >
+      <i class="fa-solid fa-play" aria-hidden="true"></i>
+      {t("post_editor_hook_play")}
+    </PanelButton>
   {:else if tool === "speed" && item.kind === "video"}
     <ValueSlider
       label={t("post_editor_speed")}
@@ -1305,6 +1356,11 @@
 </div>
 
 <style>
+  .preset-list {
+    display: grid;
+    gap: 0.125rem;
+  }
+
   .native-limit {
     margin: 0;
     color: var(--text-secondary, #a3a3a3);
