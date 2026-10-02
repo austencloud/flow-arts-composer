@@ -106,17 +106,29 @@ function easeInOutCubic(value: number): number {
 
 /**
  * A quartered LOOP has four equivalent passes. Its final pass gives the ring
- * all four quadrants and finishes on the real animation's opening pose without
- * racing through the other twelve moves. Other sequences retain a full pass.
+ * all four quadrants without racing through the other twelve moves. Other
+ * sequences retain a full pass.
+ *
+ * The pass ends at `landing`, the arrival the animation itself reads when the
+ * intro hands over: a take whose footage starts mid-move carries on from where
+ * the tunnel left the pair instead of pulling them back to the end of the move
+ * before. A landing too early for a whole pass is moved a pass later, which
+ * draws the same pose. Without a landing it is the opening pose.
  */
 export function tunnelHookArrival(
   progress: number,
   stepCount: number,
   period = 1,
-  ease: (progress: number) => number = easeInOutCubic
+  ease: (progress: number) => number = easeInOutCubic,
+  landing = stepCount
 ): number {
   const span = period === 4 && stepCount % 4 === 0 ? stepCount / 4 : stepCount;
-  return stepCount - span + span * clamp01(ease(clamp01(progress)));
+  const passesLater =
+    stepCount > 0 && landing < span
+      ? Math.ceil((span - landing) / stepCount)
+      : 0;
+  const end = landing + passesLater * stepCount;
+  return end - span + span * clamp01(ease(clamp01(progress)));
 }
 
 /** Seconds the grid, glyph and step number take to come in after the hook. */

@@ -455,12 +455,12 @@ export function evaluatePresetLayers(
   // The single-map path reads the post clock once for every clip. A map
   // saved in the engine's count (move k in flight is [k, k + 1)) is moved
   // onto arrivals first, so both kinds of map meet the frame record alike.
-  const postSample = ((): TakeSample | null => {
+  const postSampleAt = (postSeconds: number): TakeSample | null => {
     if (!alignment?.timeMap || moveBeats.length === 0) return null;
     const map = alignment.timeMap;
     const raw = mediaTimeToSequencePosition(
       map,
-      clampedTime + (alignment.mediaTimeOffsetSeconds ?? 0)
+      postSeconds + (alignment.mediaTimeOffsetSeconds ?? 0)
     );
     if (!Number.isFinite(raw)) return null;
     const toArrival = (position: number) =>
@@ -472,7 +472,70 @@ export function evaluatePresetLayers(
       arrival: toArrival(raw),
       endArrival: last ? toArrival(last.sequencePosition) : null,
     };
-  })();
+  };
+  const postSample = postSampleAt(clampedTime);
+
+  // A clip tied to a take reads that take's clock at the take's media time
+  // under this clip, trim included, so a slowed act and a derived square
+  // over the same footage land on the same move. A take with no clock yet
+  // is unmapped: the post-wide map belongs to another take's footage.
+  const takeSampleAt = (
+    clip: Extract<PresetClip, { kind: "visual" }>,
+    postSeconds: number
+  ): TakeSample | null => {
+    if (!alignment || !clip.useResolvedTimeMap || moveBeats.length === 0) {
+      return null;
+    }
+    const role = clip.timeMapRole;
+    if (role === undefined) {
+      return postSeconds === clampedTime
+        ? postSample
+        : postSampleAt(postSeconds);
+    }
+    const clock = alignment.clocks?.[role];
+    if (!clock) return null;
+    const start = resolvePresetTimePoint(
+      clip.start,
+      durationSeconds,
+      preset.markers
+    );
+    const end = resolvePresetTimePoint(
+      clip.end,
+      durationSeconds,
+      preset.markers
+    );
+    const progress =
+      end > start ? clamp01((postSeconds - start) / (end - start)) : 0;
+    const sourceIn = resolvePresetTimePoint(clip.sourceIn, durationSeconds);
+    const sourceOut = resolvePresetTimePoint(clip.sourceOut, durationSeconds);
+    return clock.sampleAt(
+      (sourceTimeOffsets[role] ?? 0) +
+        sourceIn +
+        (sourceOut - sourceIn) * progress
+    );
+  };
+
+  /**
+   * Where the animation picks up when a tunnel intro ends: the clock of the
+   * clip that continues in the same region from the intro's last instant.
+   */
+  const introLandingAt = (
+    intro: Extract<PresetClip, { kind: "visual" }>,
+    introEnd: number
+  ): TakeSample | null => {
+    const next = preset.clips.find(
+      (clip): clip is Extract<PresetClip, { kind: "visual" }> =>
+        clip.kind === "visual" &&
+        clip !== intro &&
+        !clip.tunnelHook &&
+        clip.regionId === intro.regionId &&
+        Math.abs(
+          resolvePresetTimePoint(clip.start, durationSeconds, preset.markers) -
+            introEnd
+        ) < 1e-6
+    );
+    return next ? takeSampleAt(next, introEnd) : null;
+  };
 
   const regionRects = evaluateRegionRects(preset, durationSeconds, clampedTime);
   const layers = preset.clips.flatMap((clip): EvaluatedFrameLayer[] => {
@@ -515,34 +578,27 @@ export function evaluatePresetLayers(
         )
       : clip.sourceGeometry;
 
-    // A clip tied to a take reads that take's clock at the take's media time
-    // under this clip, trim included, so a slowed act and a derived square
-    // over the same footage land on the same move. A take with no clock yet
-    // is unmapped: the post-wide map belongs to another take's footage.
     let sample: TakeSample | null = null;
     if (clip.tunnelHook && moveBeats.length > 0) {
-      // The hook owns the clock; a quartered LOOP only needs its final pass.
-      sample = {
-        arrival: tunnelHookArrival(
-          projectProgress,
+      // The hook owns the clock and lands on the arrival the animation reads
+      // as it takes over, so the pair never steps back at the hand-off.
+      const landing = introLandingAt(clip, end)?.arrival;
+      const hookArrival = (progress: number) =>
+        tunnelHookArrival(
+          progress,
           moveBeats.length,
           alignment?.sequencePeriod,
-          clip.tunnelHook.speed
+          clip.tunnelHook!.speed
             ? (p) => sampleEasing([...clip.tunnelHook!.speed!], p)
-            : undefined
-        ),
-        endArrival: moveBeats.length,
+            : undefined,
+          landing
+        );
+      sample = {
+        arrival: hookArrival(projectProgress),
+        endArrival: hookArrival(1),
       };
-    } else if (alignment && clip.useResolvedTimeMap && moveBeats.length > 0) {
-      const role = clip.timeMapRole;
-      if (role === undefined) {
-        sample = postSample;
-      } else {
-        const clock = alignment.clocks?.[role];
-        sample = clock
-          ? clock.sampleAt((sourceTimeOffsets[role] ?? 0) + sourceSpanTime)
-          : null;
-      }
+    } else {
+      sample = takeSampleAt(clip, clampedTime);
     }
 
     return [

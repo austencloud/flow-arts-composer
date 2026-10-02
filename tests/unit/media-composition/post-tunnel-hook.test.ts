@@ -71,6 +71,18 @@ describe("tunnel hook clock", () => {
     expect(tunnelHookArrival(0, 8, 4)).toBe(6);
     expect(tunnelHookArrival(0, 15, 4)).toBe(0);
   });
+
+  it("ends on the landing the animation takes over at, mid-move included", () => {
+    expect(tunnelHookArrival(0, 16, 4, undefined, 15.85)).toBeCloseTo(11.85, 9);
+    expect(tunnelHookArrival(1, 16, 4, undefined, 15.85)).toBeCloseTo(15.85, 9);
+    expect(tunnelHookArrival(1, 16, 4, undefined, 31.85)).toBeCloseTo(31.85, 9);
+  });
+
+  it("moves a landing too early for a whole pass one pass later, the same pose", () => {
+    expect(tunnelHookArrival(0, 16, 4, undefined, 2.5)).toBe(14.5);
+    expect(tunnelHookArrival(1, 16, 4, undefined, 2.5)).toBe(18.5);
+    expect(tunnelHookArrival(1, 8, 1, undefined, 0)).toBe(8);
+  });
 });
 
 describe("tunnel hook performers", () => {
@@ -360,6 +372,54 @@ describe("tunnel hook in the compiled post", () => {
     ).filter((layer) => layer.sourceRole === "sequence-animation");
     expect(atCut.map((layer) => layer.clipId)).toEqual(["anim~1"]);
     expect(atCut[0]?.regionId).toBe("anim");
+  });
+
+  it("lands where the footage's clock picks up, so the pair never steps back", () => {
+    // The take's footage starts mid-move: the mapped pass is 0.85 into the
+    // last move when the intro hands over.
+    const added = addTunnelHook(withAnimation(), ctx, {
+      seconds: 5,
+      hook: { fold: 8, mirror: false, speed: [0, 0, 0.58, 1] },
+    })!;
+    const compiled = compilePostProject(added.project, { now: NOW })!;
+    const body = compiled.preset.clips.find((clip) => clip.id === "anim~1")!;
+    expect(body.kind === "visual" && body.timeMapRole).toBeTruthy();
+    const role = (body as { timeMapRole: string }).timeMapRole;
+    const steps16 = Array.from({ length: 16 }, () => ({
+      duration: 1,
+    })) as unknown as StepData[];
+    const alignment = {
+      steps: steps16,
+      startPlacementDuration: 1,
+      sequencePeriod: 4,
+      clocks: {
+        [role]: {
+          sampleAt: (media: number) => ({
+            arrival: 15.85 + media * 1.5,
+            endArrival: null,
+          }),
+        },
+      },
+    };
+    const position = (time: number) =>
+      evaluatePresetFrame(
+        compiled.preset,
+        compiled.durationSeconds,
+        time,
+        alignment
+      ).find((layer) => layer.sourceRole === "sequence-animation")!
+        .sequencePosition!;
+
+    const handedOver = position(5);
+    expect(handedOver).toBeCloseTo(16.85, 6);
+    expect(position(5 - 1e-6)).toBeCloseTo(handedOver, 4);
+    // Forward through the whole intro, never back.
+    let previous = position(0);
+    for (let time = 0.25; time < 5; time += 0.25) {
+      const next = position(time);
+      expect(next).toBeGreaterThanOrEqual(previous);
+      previous = next;
+    }
   });
 });
 
