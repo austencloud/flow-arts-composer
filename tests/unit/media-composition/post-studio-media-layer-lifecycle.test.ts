@@ -1,6 +1,7 @@
 import { flushSync } from "svelte";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { mountPlaybackMediaLayer } from "./post-studio-media-layer-harness.svelte";
+import { previewClockStep } from "$lib/shared/media-composition/services/post-preview-clock";
 
 vi.mock(
   "$lib/shared/media-composition/state/media-composition-context",
@@ -121,6 +122,34 @@ afterEach(async () => {
 });
 
 describe("Post Studio playback media lifetime", () => {
+  it("starts the half-speed clip when its current frame is decoded", async () => {
+    const h = mountPlaybackMediaLayer();
+    mounted.push(h);
+    await Promise.resolve();
+    await Promise.resolve();
+    h.setPlaybackRate(0.5);
+    expect(h.video.playbackRate).toBe(0.5);
+    const controller = h.controller!;
+    controller.hold(true);
+    expect(h.video.paused).toBe(true);
+    Object.defineProperty(h.video, "readyState", { configurable: true, value: 2 });
+    const step = previewClockStep(10, 1 / 60, [
+      { ...controller.read(), targetTime: 0, playbackRate: 0.5 },
+    ]);
+    expect(step.waiting).toBe(false);
+    controller.hold(step.waiting);
+    await vi.waitFor(() => {
+      controller.hold(step.waiting);
+      expect(h.video.paused).toBe(false);
+    });
+    h.video.currentTime = 0.02;
+    expect(
+      previewClockStep(10, 1 / 60, [
+        { ...controller.read(), targetTime: 0, playbackRate: 0.5 },
+      ]).deltaSeconds
+    ).toBeCloseTo(0.04);
+  });
+
   it("keeps retained pixels and pending frame callbacks across equivalent playback bindings", () => {
     const h = mountPlaybackMediaLayer();
     mounted.push(h);
