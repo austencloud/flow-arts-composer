@@ -21,6 +21,7 @@ import {
   sameChannelValue,
 } from "$lib/shared/media-composition/domain/post-project-keyframes";
 import type { PostTake } from "$lib/shared/media-composition/domain/post-plan";
+import { mergeSeparateTunnelHook } from "$lib/shared/media-composition/domain/post-project-hook-migration";
 
 /**
  * The timeline's rules, applied after every edit so the stored project is
@@ -40,7 +41,8 @@ import type { PostTake } from "$lib/shared/media-composition/domain/post-plan";
  * Unchanged items and tracks keep their identity, so a drag that moves one
  * item re-renders only that item.
  */
-export function normalizeProject(project: PostProject): PostProject {
+export function normalizeProject(stored: PostProject): PostProject {
+  const project = mergeSeparateTunnelHook(stored);
   const takes = new Map(project.takes.map((take) => [take.id, take]));
   const main: PostTrack = project.tracks[MAIN_TRACK_INDEX] ?? {
     id: MAIN_TRACK_ID,
@@ -88,13 +90,19 @@ export function normalizeProject(project: PostProject): PostProject {
     const sized = sizeItem(item, takes);
     const anchored = sized.anchor ? mainById.get(sized.anchor.itemId) : null;
 
+    // An animation with a tunnel intro opens that long before its footage, so
+    // the intro and the animation are one item on one canvas.
+    const intro =
+      sized.kind === "animation" ? (sized.tunnelHook?.seconds ?? 0) : 0;
+
     if (sized.fill && sized.kind !== "video") {
-      const target = anchored ?? mainAt(sized.start);
+      const target = anchored ?? mainAt(sized.start + intro);
       if (!target) return withChanges(sized, { fill: false, anchor: null });
+      const start = Math.max(0, target.start - intro);
       return withChanges(sized, {
-        start: target.start,
-        duration: target.duration,
-        anchor: { itemId: target.id, offset: 0 },
+        start,
+        duration: target.duration + (target.start - start),
+        anchor: { itemId: target.id, offset: start - target.start },
       });
     }
 

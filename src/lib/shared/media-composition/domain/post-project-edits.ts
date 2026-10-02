@@ -40,6 +40,7 @@ import {
   type PostTextStyle,
   type PostTextAnimation,
   type PostItem,
+  type PostItemKeyframes,
   type PostKeyframe,
   type PostMovesMode,
   type PostProject,
@@ -393,7 +394,7 @@ export function addOverlayItem(
   return { project: finish(next, ctx), itemId: item.id };
 }
 
-/** The opening hook, when the post has one. */
+/** The animation that opens with the tunnel, when the post has one. */
 export function findTunnelHook(project: PostProject): PostAnimationItem | null {
   for (const track of project.tracks) {
     for (const item of track.items) {
@@ -403,14 +404,28 @@ export function findTunnelHook(project: PostProject): PostAnimationItem | null {
   return null;
 }
 
-const HOOK_EASE: PostKeyframe<PostBox>["easing"] = [0.65, 0, 0.35, 1];
+/** Content-time keys of an item that starts `seconds` later (or earlier, negative). */
+function withKeysShifted(
+  keyframes: PostItemKeyframes | undefined,
+  seconds: number
+): { keyframes?: PostItemKeyframes } {
+  if (!keyframes) return {};
+  const out: Record<string, unknown> = {};
+  for (const [channel, frames] of Object.entries(keyframes)) {
+    out[channel] = Array.isArray(frames)
+      ? frames.map((kf) => ({ ...kf, t: kf.t + seconds }))
+      : frames;
+  }
+  return { keyframes: out as PostItemKeyframes };
+}
 
 /**
- * Puts the tunnel hook in front of the post: everything moves later by the
- * hook's length and a full-frame live animation fills the gap, then slides
- * into the lower half as the extra performers fade. The hook borrows the
- * look of the post's own animation so the hand-off between them is seamless.
- * Returns null when there is no animation to hand off to, or a hook exists.
+ * Gives the post's animation an opening tunnel. The animation itself starts
+ * earlier by the intro's length and opens on the full frame, where the
+ * sequence's own tunnel plays through; it then eases into its own box as the
+ * extra performers fade. It stays one item on one canvas, so there is no
+ * hand-off to a second animation. Everything after it moves later by the
+ * intro. Returns null when there is no animation or it already has an intro.
  */
 export function addTunnelHook(
   project: PostProject,
@@ -429,65 +444,85 @@ export function addTunnelHook(
     POST_MIN_ITEM_SECONDS * 10,
     finiteOr(init.seconds, DEFAULT_TUNNEL_HOOK_SECONDS)
   );
-  const shifted: PostProject = {
-    ...project,
-    // A main clip that follows its neighbours would snap back to zero, so
-    // each is pinned where the hook leaves it.
-    tracks: project.tracks.map((track, trackIndex) => ({
-      ...track,
-      items: track.items.map((item) => ({
+  const opening = target;
+  const tracks = project.tracks.map((track, trackIndex) => ({
+    ...track,
+    items: track.items.map((item): PostItem => {
+      if (item.id === opening.id) {
+        return {
+          ...opening,
+          duration: opening.duration + seconds,
+          fadeIn: 0,
+          // The animation keeps its place; what it follows moves later.
+          ...(opening.anchor && !opening.fill
+            ? {
+                anchor: {
+                  ...opening.anchor,
+                  offset: opening.anchor.offset - seconds,
+                },
+              }
+            : {}),
+          ...withKeysShifted(opening.keyframes, seconds),
+          tunnelHook: { ...(init.hook ?? DEFAULT_TUNNEL_HOOK), seconds },
+        };
+      }
+      if (item.start < opening.start - POST_TIME_EPSILON) return item;
+      // A main clip that follows its neighbours would snap back to zero, so
+      // each is pinned where the intro leaves it.
+      return {
         ...item,
         start: item.start + seconds,
         ...(trackIndex === MAIN_TRACK_INDEX ? { pinnedStart: true } : {}),
-      })),
-    })),
-  };
-  const nextId = createIdAllocator(project);
-  const itemId = nextId("animation");
-  const settled = { ...target.box };
-  const hook: PostAnimationItem = {
-    id: itemId,
-    kind: "animation",
-    label: "Opening hook",
-    start: 0,
-    duration: seconds,
-    box: { ...POST_BOX.full },
-    opacity: 1,
-    fadeIn: 0,
-    fadeOut: 0,
-    anchor: null,
-    fill: false,
-    overlay: false,
-    animationAppearance: { ...(target.animationAppearance ?? {}) },
-    tunnelHook: init.hook ?? DEFAULT_TUNNEL_HOOK,
-    keyframes: {
-      box: [
-        { t: 0, value: { ...POST_BOX.full }, easing: "hold" },
-        { t: seconds * 0.4, value: { ...POST_BOX.full }, easing: HOOK_EASE },
-        { t: seconds * 0.9, value: settled, easing: "hold" },
-      ],
-    },
-  };
+      };
+    }),
+  }));
   return {
-    project: finish(withNewTrackOnTop(shifted, hook, nextId), ctx),
-    itemId,
+    project: finish({ ...project, tracks }, ctx),
+    itemId: opening.id,
   };
 }
 
-/** Takes the hook out and brings everything back to where it was. */
+/** Takes the intro off the animation and brings everything back to where it was. */
 export function removeTunnelHook(
   project: PostProject,
   ctx: EditContext
 ): PostProject {
   const hook = findTunnelHook(project);
-  if (!hook) return project;
-  const seconds = hook.duration;
+  if (!hook?.tunnelHook) return project;
+  // A hook saved as its own item is all intro, so the item itself goes.
+  const separate = hook.tunnelHook.seconds === undefined;
+  const seconds = hook.tunnelHook.seconds ?? hook.duration;
+  const introEnd = hook.start + seconds;
   const tracks = project.tracks
     .map((track) => ({
       ...track,
       items: track.items
-        .filter((item) => item.id !== hook.id)
-        .map((item) => ({ ...item, start: Math.max(0, item.start - seconds) })),
+        .filter((item) => !(separate && item.id === hook.id))
+        .map((item): PostItem => {
+          if (item.id === hook.id) {
+            const { tunnelHook: _intro, ...rest } = item as PostAnimationItem;
+            return {
+              ...rest,
+              start: introEnd,
+              duration: Math.max(
+                POST_MIN_ITEM_SECONDS,
+                hook.duration - seconds
+              ),
+              ...(hook.anchor && !hook.fill
+                ? {
+                    anchor: {
+                      ...hook.anchor,
+                      offset: hook.anchor.offset + seconds,
+                    },
+                  }
+                : {}),
+              ...withKeysShifted(hook.keyframes, -seconds),
+            } as PostItem;
+          }
+          return item.start >= introEnd - POST_TIME_EPSILON
+            ? { ...item, start: Math.max(0, item.start - seconds) }
+            : item;
+        }),
     }))
     .filter(
       (track, index) => index === MAIN_TRACK_INDEX || track.items.length > 0

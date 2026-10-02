@@ -8,7 +8,7 @@ Most changes need no manifest file. Each command below is one of the timeline's 
 
 ```powershell
 node scripts/post-project.mjs show                       # items, tracks, times
-node scripts/post-project.mjs add-hook --speed ease-out  # opening tunnel hook
+node scripts/post-project.mjs add-hook --speed ease-out  # opening tunnel on the animation
 node scripts/post-project.mjs hook-speed linear          # name, or x1,y1,x2,y2, or default
 node scripts/post-project.mjs remove-hook
 node scripts/post-project.mjs appearance --item animations --set stepNumbers=false --set tkaGlyph=null
@@ -20,7 +20,7 @@ node scripts/post-project.mjs background blur
 node scripts/post-project.mjs ops --file ops.json        # several edits, one undo step
 ```
 
-`--item` takes an id, `hook`, `animations` or `all`. `--set key=value` accepts `true`, `false`, `null` (clears the flag), numbers and text. `ops.json` is an array such as `[{"op":"add-hook"},{"op":"hook-speed","speed":"smooth"}]`; a failing edit names its position and nothing is applied. A change that alters nothing returns `unchanged`. The editor tab must be open on the post, because the open editor owns the saved draft: a script never writes the draft file itself.
+`--item` takes an id, `hook` (the animation that opens with the tunnel), `animations` or `all`. The opening tunnel is part of the animation item itself, one canvas from the first frame to the last; a post saved with the tunnel as a separate item is merged into its animation when it opens. `--set key=value` accepts `true`, `false`, `null` (clears the flag), numbers and text. `ops.json` is an array such as `[{"op":"add-hook"},{"op":"hook-speed","speed":"smooth"}]`; a failing edit names its position and nothing is applied. A change that alters nothing returns `unchanged`. The editor tab must be open on the post, because the open editor owns the saved draft: a script never writes the draft file itself.
 
 Ownership: `post-project-ops.ts` maps each named edit onto the existing pure edit in `post-project-edits.ts`; `queuePostProjectOps` in the bridge applies them to the session snapshot and reuses the manifest queue below.
 

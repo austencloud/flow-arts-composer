@@ -162,7 +162,7 @@ function summarize(snapshot) {
   snapshot.tracks.forEach((track, trackIndex) => {
     for (const item of track.items)
       rows.push(
-        `track ${trackIndex}  ${item.id}  ${item.kind}${item.tunnelHook ? " (hook)" : ""}  ${item.start.toFixed(2)}s +${item.duration.toFixed(2)}s${item.label ? `  "${item.label}"` : ""}`
+        `track ${trackIndex}  ${item.id}  ${item.kind}${item.tunnelHook ? " (opening tunnel)" : ""}  ${item.start.toFixed(2)}s +${item.duration.toFixed(2)}s${item.label ? `  "${item.label}"` : ""}`
       );
   });
   return rows.join("\n");
