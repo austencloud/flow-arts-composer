@@ -34,7 +34,10 @@ import {
   sequenceFrameAt,
   type SequenceFrame,
 } from "$lib/shared/media-composition/domain/sequence-frame";
-import type { TakeSample } from "$lib/shared/media-composition/domain/take-timing";
+import type {
+  TakeSample,
+  TakeSampleOptions,
+} from "$lib/shared/media-composition/domain/take-timing";
 
 /**
  * A take's timing, asked by media time. Each take has its own, so a post that
@@ -43,7 +46,10 @@ import type { TakeSample } from "$lib/shared/media-composition/domain/take-timin
  */
 export interface TakeClock {
   /** Where the take is at this media time, or null where nothing is mapped. */
-  sampleAt(mediaSeconds: number): TakeSample | null;
+  sampleAt(
+    mediaSeconds: number,
+    options?: TakeSampleOptions
+  ): TakeSample | null;
 }
 
 export interface SequenceFrameAlignment {
@@ -482,7 +488,8 @@ export function evaluatePresetLayers(
   // is unmapped: the post-wide map belongs to another take's footage.
   const takeSampleAt = (
     clip: Extract<PresetClip, { kind: "visual" }>,
-    postSeconds: number
+    postSeconds: number,
+    options?: TakeSampleOptions
   ): TakeSample | null => {
     if (!alignment || !clip.useResolvedTimeMap || moveBeats.length === 0) {
       return null;
@@ -512,8 +519,34 @@ export function evaluatePresetLayers(
     return clock.sampleAt(
       (sourceTimeOffsets[role] ?? 0) +
         sourceIn +
-        (sourceOut - sourceIn) * progress
+        (sourceOut - sourceIn) * progress,
+      options
     );
+  };
+
+  /**
+   * A tunnel over beat-mapped footage keeps the performer's time: its arrival
+   * is the footage's, counted back from beat one where the intro plays before
+   * it, and moved whole passes later (the same pose) so it never reads below
+   * the opening. Null when the intro has no mapped footage under it.
+   */
+  const footageHookSample = (
+    clip: Extract<PresetClip, { kind: "visual" }>,
+    start: number,
+    end: number
+  ): TakeSample | null => {
+    if (!clip.useResolvedTimeMap || clip.timeMapRole === undefined) return null;
+    const at = (seconds: number) =>
+      takeSampleAt(clip, seconds, { leadIn: true })?.arrival;
+    const first = at(start);
+    const here = at(clampedTime);
+    const last = at(end);
+    if (first === undefined || here === undefined || last === undefined) {
+      return null;
+    }
+    const passes = first < 0 ? Math.ceil(-first / moveBeats.length - 1e-9) : 0;
+    const shift = passes * moveBeats.length;
+    return { arrival: here + shift, endArrival: last + shift };
   };
 
   /**
@@ -580,9 +613,16 @@ export function evaluatePresetLayers(
       : clip.sourceGeometry;
 
     let sample: TakeSample | null = null;
-    if (clip.tunnelHook && moveBeats.length > 0) {
-      // The hook owns the clock and lands on the arrival the animation reads
-      // as it takes over, so the pair never steps back at the hand-off.
+    const footageHook =
+      clip.tunnelHook && moveBeats.length > 0
+        ? footageHookSample(clip, start, end)
+        : null;
+    if (footageHook) {
+      sample = footageHook;
+    } else if (clip.tunnelHook && moveBeats.length > 0) {
+      // With no footage to follow the hook owns the clock, and lands on the
+      // arrival the animation reads as it takes over, so the pair never steps
+      // back at the hand-off.
       const landing = introLandingAt(clip, end)?.arrival;
       const hookArrival = (progress: number) =>
         tunnelHookArrival(

@@ -212,7 +212,8 @@ export function createPostEditorState(deps: PostEditorDeps) {
     const out: Record<string, TakeClock> = {};
     for (const [takeId, timing] of Object.entries(resolved)) {
       out[takeRole(takeId)] = {
-        sampleAt: (mediaSeconds) => takeSampleAt(timing, mediaSeconds),
+        sampleAt: (mediaSeconds, options) =>
+          takeSampleAt(timing, mediaSeconds, options),
       };
     }
     return out;

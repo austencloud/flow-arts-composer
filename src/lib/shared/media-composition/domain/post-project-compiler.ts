@@ -35,6 +35,7 @@ import {
   type PostImageItem,
   type PostMovesItem,
   type PostProject,
+  type PostSourceGeometry,
   type PostTextSize,
   type PostTextStyle,
   type PostTextAnimation,
@@ -273,8 +274,9 @@ function tunnelIntroEnd(item: SequenceItem): number | null {
  * plays under it. A piece not fully covered by one main video - it sits over
  * a card, a gap, or (in a malformed project) straddles two videos - falls
  * back to holding its own opening pose rather than reading a move from
- * nothing. An item with a tunnel intro is also cut where the intro ends, and
- * the intro's pieces read no footage: the intro owns the sequence clock.
+ * nothing. An item with a tunnel intro is also cut where the intro ends. An
+ * intro played over its footage reads that footage's beats; any other intro
+ * reads no footage and runs on its own speed curve.
  */
 function splitIntoPieces(
   item: SequenceItem,
@@ -283,6 +285,8 @@ function splitIntoPieces(
   const start = item.start;
   const end = itemEnd(item);
   const introEnd = tunnelIntroEnd(item);
+  const introOverFootage =
+    item.kind === "animation" && item.tunnelHook?.backdrop === true;
   const boundaries = new Set<number>([start, end]);
   if (introEnd !== null && introEnd > start && introEnd < end) {
     boundaries.add(introEnd);
@@ -301,46 +305,32 @@ function splitIntoPieces(
     const b = sorted[index + 1]!;
     if (b - a < POST_TIME_EPSILON) continue;
 
-    if (introEnd !== null && b <= introEnd + POST_TIME_EPSILON) {
-      pieces.push({
-        start: a,
-        end: b,
-        sourceIn: 0,
-        sourceOut: b - a,
-        rate: 1,
-        useResolvedTimeMap: false,
-        intro: true,
-      });
-      continue;
-    }
-
+    const intro = introEnd !== null && b <= introEnd + POST_TIME_EPSILON;
     // The outgoing linked layer must finish its own motion as it fades.
-    const covering = timingVideoAt(
-      mainVideos,
-      (a + b) / 2,
-      item.anchor?.itemId
-    );
-    if (covering) {
-      pieces.push({
-        start: a,
-        end: b,
-        sourceIn: covering.sourceIn + (a - covering.start) * covering.speed,
-        sourceOut: covering.sourceIn + (b - covering.start) * covering.speed,
-        rate: covering.speed,
-        useResolvedTimeMap: true,
-        timeMapRole: takeRole(covering.takeId),
-        takeId: covering.takeId,
-      });
-    } else {
-      pieces.push({
-        start: a,
-        end: b,
-        sourceIn: 0,
-        sourceOut: b - a,
-        rate: 1,
-        useResolvedTimeMap: false,
-      });
-    }
+    const covering =
+      intro && !introOverFootage
+        ? undefined
+        : timingVideoAt(mainVideos, (a + b) / 2, item.anchor?.itemId);
+    const piece: SequencePiece = covering
+      ? {
+          start: a,
+          end: b,
+          sourceIn: covering.sourceIn + (a - covering.start) * covering.speed,
+          sourceOut: covering.sourceIn + (b - covering.start) * covering.speed,
+          rate: covering.speed,
+          useResolvedTimeMap: true,
+          timeMapRole: takeRole(covering.takeId),
+          takeId: covering.takeId,
+        }
+      : {
+          start: a,
+          end: b,
+          sourceIn: 0,
+          sourceOut: b - a,
+          rate: 1,
+          useResolvedTimeMap: false,
+        };
+    pieces.push(intro ? { ...piece, intro: true } : piece);
   }
   return pieces;
 }
@@ -386,12 +376,118 @@ function opacityMotionKeys(item: PostItem): MotionKey<number>[] | undefined {
   }));
 }
 
-function sourceGeometryKeys(item: PostVideoItem | PostImageItem) {
+/** Where a tunnel intro that plays over its footage runs, in post seconds. */
+interface FootageIntro {
+  start: number;
+  seconds: number;
+}
+
+/**
+ * The tunnel intro with footage behind it, or null. Its footage fills the
+ * frame while the tunnel does and moves into its own framing with the canvas.
+ */
+function footageIntroOf(project: PostProject): FootageIntro | null {
+  for (const track of project.tracks) {
+    if (track.hidden) continue;
+    for (const item of track.items) {
+      if (
+        item.kind === "animation" &&
+        item.tunnelHook?.backdrop &&
+        item.tunnelHook.seconds !== undefined
+      ) {
+        return {
+          start: item.start,
+          seconds: Math.min(item.tunnelHook.seconds, item.duration),
+        };
+      }
+    }
+  }
+  return null;
+}
+
+/** True when the clip plays during the intro. */
+function playsDuring(item: PostItem, intro: FootageIntro): boolean {
+  return (
+    item.start < intro.start + intro.seconds - POST_TIME_EPSILON &&
+    itemEnd(item) > intro.start + POST_TIME_EPSILON
+  );
+}
+
+/**
+ * The same footage cropped to fill the whole frame, centred where `geometry`
+ * frames it. The picture's shape is read back from `geometry`, which draws its
+ * crop unstretched. Null for a slanted picture, which has no such crop.
+ */
+function fullFrameGeometry(
+  geometry: PostSourceGeometry,
+  output: PostOutputSize
+): PostSourceGeometry | null {
+  const quarter = Math.round(geometry.rotation / 90);
+  if (Math.abs(geometry.rotation - quarter * 90) > 1e-6) return null;
+  const { crop } = geometry;
+  const cropWidth = crop.right - crop.left;
+  const cropHeight = crop.bottom - crop.top;
+  const pictureRatio =
+    (geometry.width * output.width * cropHeight) /
+    (geometry.height * output.height * cropWidth);
+  // The rect is drawn before its turn, so a quarter-turned picture fills the
+  // frame from a rect on its side.
+  const sideways = quarter % 2 !== 0;
+  const width = sideways ? output.height / output.width : 1;
+  const height = sideways ? output.width / output.height : 1;
+  const rectRatio = (width * output.width) / (height * output.height);
+  const share =
+    pictureRatio > rectRatio
+      ? { x: rectRatio / pictureRatio, y: 1 }
+      : { x: 1, y: pictureRatio / rectRatio };
+  const left = Math.min(
+    1 - share.x,
+    Math.max(0, (crop.left + crop.right) / 2 - share.x / 2)
+  );
+  const top = Math.min(
+    1 - share.y,
+    Math.max(0, (crop.top + crop.bottom) / 2 - share.y / 2)
+  );
+  return {
+    x: (1 - width) / 2,
+    y: (1 - height) / 2,
+    width,
+    height,
+    rotation: geometry.rotation,
+    crop: { left, top, right: left + share.x, bottom: top + share.y },
+  };
+}
+
+function sourceGeometryKeys(
+  item: PostVideoItem | PostImageItem,
+  output?: PostOutputSize,
+  intro?: FootageIntro | null
+) {
   const keys = item.keyframes?.sourceGeometry?.map((kf) => ({
     atSeconds: postSecondsOfKeyframe(item, kf.t),
     value: kf.value,
     easing: kf.easing,
   }));
+  const full =
+    intro && output && item.sourceGeometry
+      ? fullFrameGeometry(item.sourceGeometry, output)
+      : null;
+  if (intro && full) {
+    // The intro sets the crop until it has settled; the item's own keys follow.
+    const introKeys = tunnelHookBoxKeys(
+      intro.start,
+      intro.seconds,
+      full,
+      item.sourceGeometry!
+    );
+    const settledAt = introKeys[introKeys.length - 1]!.atSeconds;
+    return [
+      ...introKeys,
+      ...(keys ?? []).filter(
+        (key) => key.atSeconds > settledAt + POST_TIME_EPSILON
+      ),
+    ];
+  }
   if (!keys?.length) return undefined;
   // The native base matrix holds until the first authored transform key.
   if (
@@ -426,53 +522,59 @@ function motionFor(
 /**
  * A `regionKeyframes` track for the item's own region, or undefined. A
  * shaped clip's region is its shape inside each keyed box. When any key is
- * turned, every key carries its turn, a straight one as 0.
+ * turned, every key carries its turn, a straight one as 0. A tunnel intro
+ * carries its canvas from the full frame into its box, and an uncropped video
+ * behind it (`footageIntro`) makes the same move.
  */
 function regionKeyframesFor(
   item: PostItem,
-  output: PostOutputSize
+  output: PostOutputSize,
+  footageIntro: FootageIntro | null = null
 ): PresetRegionKeyframesTrack | null {
-  const frames = item.keyframes?.box;
-  const intro =
-    item.kind === "animation" && item.tunnelHook?.seconds !== undefined
-      ? tunnelHookBoxKeys<PostBox>(
-          item.start,
-          Math.min(item.tunnelHook.seconds, item.duration),
-          { ...POST_BOX.full },
-          { ...item.box }
-        )
-      : null;
-  if (intro) {
-    // The intro sets the box until it has settled; the item's own keys follow.
-    const settledAt = intro[intro.length - 1]!.atSeconds;
-    const own = (frames ?? [])
-      .filter(
-        (kf) =>
-          postSecondsOfKeyframe(item, kf.t) > settledAt + POST_TIME_EPSILON
-      )
-      .map((kf) => ({
-        atSeconds: postSecondsOfKeyframe(item, kf.t),
-        value: kf.value,
-        easing: kf.easing,
-      }));
-    return { regionId: item.id, keyframes: [...intro, ...own] };
-  }
-  if (!frames || frames.length === 0) return null;
+  const frames = item.keyframes?.box ?? [];
+  const rectOf = (box: PostBox): PostBox =>
+    item.kind === "video" ? clipBox(item, box, output) : box;
   const turns = frames.some((kf) => kf.value.turn !== undefined)
     ? continuousTurns(frames.map((kf) => kf.value.turn ?? 0))
     : null;
-  return {
-    regionId: item.id,
-    keyframes: frames.map((kf, index) => {
-      const rect =
-        item.kind === "video" ? clipBox(item, kf.value, output) : kf.value;
-      return {
-        atSeconds: postSecondsOfKeyframe(item, kf.t),
-        value: turns ? { ...rect, turn: turns[index]! } : rect,
-        easing: kf.easing,
-      };
-    }),
-  };
+  const own = frames.map((kf, index) => {
+    const rect = rectOf(kf.value);
+    return {
+      atSeconds: postSecondsOfKeyframe(item, kf.t),
+      value: turns ? { ...rect, turn: turns[index]! } : rect,
+      easing: kf.easing,
+    };
+  });
+  const span =
+    item.kind === "animation" && item.tunnelHook?.seconds !== undefined
+      ? {
+          start: item.start,
+          seconds: Math.min(item.tunnelHook.seconds, item.duration),
+        }
+      : item.kind === "video" && !item.sourceGeometry
+        ? footageIntro
+        : null;
+  if (span) {
+    // The intro sets the box until it has settled; the item's own keys follow.
+    const straight = (box: PostBox): PostBox =>
+      turns ? { ...rectOf(box), turn: 0 } : rectOf(box);
+    const intro = tunnelHookBoxKeys<PostBox>(
+      span.start,
+      span.seconds,
+      straight({ ...POST_BOX.full }),
+      straight({ ...item.box })
+    );
+    const settledAt = intro[intro.length - 1]!.atSeconds;
+    return {
+      regionId: item.id,
+      keyframes: [
+        ...intro,
+        ...own.filter((key) => key.atSeconds > settledAt + POST_TIME_EPSILON),
+      ],
+    };
+  }
+  if (own.length === 0) return null;
+  return { regionId: item.id, keyframes: own };
 }
 
 export function compilePostProject(
@@ -489,6 +591,7 @@ export function compilePostProject(
   const mainVideos = (project.tracks[MAIN_TRACK_INDEX]?.items ?? []).filter(
     (item): item is PostVideoItem => item.kind === "video"
   );
+  const footageIntro = footageIntroOf(project);
 
   const regions: LayoutRegion[] = [];
   const regionKeyframesList: PresetRegionKeyframesTrack[] = [];
@@ -536,9 +639,17 @@ export function compilePostProject(
             regionEdge(item.edge)
           )
         );
-        const regionKeyframes = regionKeyframesFor(item, output);
+        // The footage the tunnel plays over fills the frame with it.
+        const intro =
+          trackIndex === MAIN_TRACK_INDEX &&
+          footageIntro &&
+          playsDuring(item, footageIntro)
+            ? footageIntro
+            : null;
+        const regionKeyframes = regionKeyframesFor(item, output, intro);
         if (regionKeyframes) regionKeyframesList.push(regionKeyframes);
         const motion = motionFor(item, transformMotionKeys(item));
+        const geometryKeys = sourceGeometryKeys(item, output, intro);
         const footage = {
           regionId: item.id,
           start: seconds(item.start),
@@ -562,9 +673,7 @@ export function compilePostProject(
             : {}),
           ...(item.autoAdjust ? { autoAdjust: item.autoAdjust } : {}),
           ...(item.colorGrade ? { colorGrade: item.colorGrade } : {}),
-          ...(sourceGeometryKeys(item)
-            ? { sourceGeometryKeyframes: sourceGeometryKeys(item) }
-            : {}),
+          ...(geometryKeys ? { sourceGeometryKeyframes: geometryKeys } : {}),
           ...(motion ? { motion } : {}),
         };
         clips.push({
