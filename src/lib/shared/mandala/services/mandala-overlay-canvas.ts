@@ -81,6 +81,7 @@ export class MandalaOverlayCanvas {
 	private warmupFramesRemaining = OVERLAY_WARMUP_FRAMES;
 	private lastGuidePaths: MandalaOverlayRenderParams["preparedPaths"] = null;
 	private lastGuideOpacity = -1;
+	private lastGuideStroke = -1;
 
 	initialize(container: HTMLElement, width: number, height: number): void {
 		this.dispose();
@@ -172,13 +173,16 @@ export class MandalaOverlayCanvas {
 			guideMode && this.lastGuidePaths !== preparedPaths;
 		const guideOpacityChanged =
 			guideMode && this.lastGuideOpacity !== config.opacity;
+		const guideStrokeChanged =
+			guideMode && this.lastGuideStroke !== config.strokeWidth;
 
 		// A guide is immutable until its sequence, prop endpoints, colors, size,
-		// or opacity changes. Avoid re-stroking identical paths on every RAF.
+		// opacity, or line width changes. Avoid re-stroking identical paths on every RAF.
 		if (
 			guideMode &&
 			!guidePathsChanged &&
 			!guideOpacityChanged &&
+			!guideStrokeChanged &&
 			!this.guideFadeManager.isFadingInProgress()
 		) {
 			return;
@@ -246,7 +250,7 @@ export class MandalaOverlayCanvas {
 		// The incoming guide is painted once, then the two retained canvases are
 		// blended for the rest of the transition. This keeps a prop swap cheap
 		// even when the mandala contains many paths.
-		if (!guideMode || guidePathsChanged) {
+		if (!guideMode || guidePathsChanged || guideStrokeChanged) {
 			// One painter for every mandala the product shows: the live guide,
 			// the progressive reveal, and the still images the Shape Matrix
 			// paints through mandala-guide-image.ts.
@@ -277,6 +281,7 @@ export class MandalaOverlayCanvas {
 			this.compositeGuideFrame(ctx, config.opacity, currentTime);
 			this.lastGuidePaths = preparedPaths;
 			this.lastGuideOpacity = config.opacity;
+			this.lastGuideStroke = config.strokeWidth;
 			return;
 		}
 

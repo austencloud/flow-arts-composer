@@ -206,6 +206,8 @@ export interface RenderFrameParams {
   trailsSuppressedUntilTextureLoad?: boolean;
   /** Whether the engine-aligned mandala guide is enabled for this canvas. */
   mandalaVisible?: boolean;
+  /** Line width of the mandala guide in canvas pixels; default 2.5. */
+  mandalaStrokeWidth?: number;
   /** Sequence motions used to prepare the complete prop-tip guide paths. */
   mandalaSteps?: readonly StepLike[] | null;
   /** Path-shape policy shared with live trail interpolation. */

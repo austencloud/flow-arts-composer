@@ -84,6 +84,7 @@ export class PlaybackSync {
   private _prevTrailsActive: boolean = true;
   private _prevPropsVisible: boolean = true;
   private _prevMandalaVisible: boolean = false;
+  private _prevMandalaStrokeWidth: number | undefined = undefined;
   private prevPathShape: "arc" | "linear" | "concave" = "arc";
   private prevMotionAwarePaths: boolean = false;
 
@@ -135,6 +136,7 @@ export class PlaybackSync {
     this.prevStepData = null;
     this.prevSequenceData = null;
     this._prevMandalaVisible = false;
+    this._prevMandalaStrokeWidth = undefined;
   }
 
 
@@ -156,6 +158,17 @@ export class PlaybackSync {
     if (effectiveMandalaVisible !== this._prevMandalaVisible) {
       this._prevMandalaVisible = effectiveMandalaVisible;
       lifecycleManager.syncMandalaOverlay(effectiveMandalaVisible);
+    }
+
+    // A new guide line width only changes the next frame's config; a paused
+    // canvas has to be told to draw it.
+    if (props.mandalaStrokeWidthOverride !== this._prevMandalaStrokeWidth) {
+      this._prevMandalaStrokeWidth = props.mandalaStrokeWidthOverride;
+      if (this.state.isInitialized) {
+        lifecycleManager.renderLoop?.triggerRender(() =>
+          frameSystem.buildFrameParams(props, buildFrameDeps())
+        );
+      }
     }
 
     // Track only what we actually compare (avoid object spread GC pressure)

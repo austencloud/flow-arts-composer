@@ -548,6 +548,8 @@ export const PostAnimationItemSchema = z
         wordHeader: z.boolean().optional(),
         wordHeaderHighlight: z.enum(["arrival", "travel"]).optional(),
         mandala: z.boolean().optional(),
+        /** Line width of the mandala guide in canvas pixels; 2.5 when absent. */
+        mandalaThickness: z.number().min(1).max(12).optional(),
         leftPathLines: z.boolean().optional(),
         rightPathLines: z.boolean().optional(),
         pathShape: z.enum(["arc", "linear", "concave"]).optional(),

@@ -18,6 +18,7 @@
   import { isPremiumCosmeticVisible } from "$lib/shared/subscription/domain/premium-prop-access";
   import BentoPropGrid from "$lib/shared/settings/components/tabs/prop-type/BentoPropGrid.svelte";
   import IconRailNav from "$lib/shared/animation-panel/pill-nav/IconRailNav.svelte";
+  import ValueSlider from "$lib/shared/ui/components/ValueSlider.svelte";
   import LightsToggleButton from "$lib/shared/ui/components/LightsToggleButton.svelte";
   import { RAIL_CATEGORY_ACCENTS } from "$lib/shared/animation-panel/pill-nav/rail-category-accents";
   import { EFFORTS } from "$lib/shared/effort/domain/effort-types";
@@ -90,6 +91,9 @@
   let activeSection = $state<Section>("display");
   let pickedPropType = $state<PropType | undefined>();
   let pickedPropLook = $state<PropLook>("pictograph");
+  const DEFAULT_MANDALA_THICKNESS = 2.5;
+  let mandalaThickness = $state(DEFAULT_MANDALA_THICKNESS);
+  let mandalaShown = $state(true);
   const inheritedVisibility = getAnimationVisibilityManager();
   let inheritedEffort = $state(inheritedVisibility.getEffortPreset());
   const syncInheritedEffort = () => {
@@ -293,6 +297,8 @@
         darkMode = visibility.isDarkMode();
         const trail = appearance?.trail;
         pickedPropType = appearance?.propType;
+        mandalaThickness =
+          appearance?.mandalaThickness ?? DEFAULT_MANDALA_THICKNESS;
         pickedPropLook = normalizePropLook(
           appearance?.propLook ?? getSettings().propArtwork
         );
@@ -336,6 +342,8 @@
     ) as NonNullable<PostAnimationItem["animationAppearance"]>;
     if (pickedPropType) appearance.propType = pickedPropType;
     appearance.propLook = pickedPropLook;
+    if (mandalaThickness !== DEFAULT_MANDALA_THICKNESS)
+      appearance.mandalaThickness = mandalaThickness;
     if (effectsWereEdited) {
       appearance.effects = trailEffects.snapshot();
       const trails = trailEffects.trails;
@@ -366,6 +374,12 @@
       );
     else editor.edit(change);
   }
+  const syncMandalaShown = () => {
+    mandalaShown = visibility.getVisibility("mandala");
+  };
+  syncMandalaShown();
+  visibility.registerObserver(syncMandalaShown);
+  onDestroy(() => visibility.unregisterObserver(syncMandalaShown));
   visibility.registerObserver(save);
   onDestroy(() => visibility.unregisterObserver(save));
 
@@ -548,6 +562,20 @@
           propType={pickedPropType ?? defaultPropType}
           visibilityManagerOverride={visibility}
           animationSettingsOverride={trailSettings}
+        />
+        <ValueSlider
+          label="Mandala thickness"
+          value={mandalaThickness}
+          min={1}
+          max={12}
+          step={0.5}
+          origin={DEFAULT_MANDALA_THICKNESS}
+          format={(value) => `${value.toFixed(1)} px`}
+          disabled={!mandalaShown}
+          onchange={(value) => {
+            mandalaThickness = value;
+            save("mandalaThickness");
+          }}
         />
       {/if}
     </div>

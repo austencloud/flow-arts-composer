@@ -112,6 +112,7 @@ Last audit: 2025-12-27
     rightBuugengFlipped = undefined,
     word = null,
     previewDarkMode = null,
+    mandalaStrokeWidthOverride = undefined,
     hideTkaGlyph = false,
     hideStepNumbers = false,
     hideElementalGlyph = false,
@@ -197,6 +198,7 @@ Last audit: 2025-12-27
     rightBuugengFlipped?: boolean;
     word?: string | null;
     previewDarkMode?: boolean | null;
+    mandalaStrokeWidthOverride?: number;
     hideTkaGlyph?: boolean;
     hideStepNumbers?: boolean;
     /** Hide the element icons, for a host that paints its own. */
@@ -878,6 +880,7 @@ Last audit: 2025-12-27
       {leftBuugengFlipped}
       {rightBuugengFlipped}
       {previewDarkMode}
+      {mandalaStrokeWidthOverride}
       {isSeamlesslyLoopable}
       {showNonRadialPoints}
       {fireConfig}
