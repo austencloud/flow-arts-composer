@@ -52,9 +52,13 @@
   );
   let changeError = $state(false);
 
-  function change(next: TransitionChoice, duration = seconds): void {
+  function change(
+    next: TransitionChoice,
+    duration = seconds,
+    continuous = false
+  ): void {
     editor.pause();
-    const changed = editor.edit((project, context) =>
+    const apply: Parameters<PostEditorState["edit"]>[0] = (project, context) =>
       updateItem(
         project,
         outgoing.id,
@@ -62,8 +66,10 @@
           transitionOut: next === "cut" ? null : { type: next, duration },
         },
         context
-      )
-    );
+      );
+    const changed = continuous
+      ? editor.editSetting(`${outgoing.id}:transition-duration`, apply)
+      : editor.edit(apply);
     changeError = !changed && next !== choice;
     const current = editor.project.tracks.flatMap((track) => track.items);
     const after = current.find((item) => item.id === outgoing.id);
@@ -96,7 +102,7 @@
     step={0.05}
     disabled={choice === "cut"}
     format={(value) => `${value.toFixed(2)} s`}
-    onchange={(duration) => change(choice, duration)}
+    onchange={(duration) => change(choice, duration, true)}
   />
   <PanelButton variant="secondary" fullWidth onclick={preview}>
     <i class="fa-solid fa-play" aria-hidden="true"></i>
