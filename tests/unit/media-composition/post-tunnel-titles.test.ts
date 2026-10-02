@@ -10,6 +10,7 @@ import {
 } from "$lib/shared/media-composition/domain/post-project-compiler";
 import { setTunnelHookTitles } from "$lib/shared/media-composition/domain/post-project-edits";
 import { sampleEasing } from "$lib/shared/media-composition/domain/post-project-keyframes";
+import { evaluatePresetFrame } from "$lib/shared/media-composition/services/frame-evaluator";
 import {
   DEFAULT_TUNNEL_HOOK,
   MOVE_END_SHARE,
@@ -210,6 +211,24 @@ describe("opening titles in the post", () => {
       Math.max(...compiled.preset.regions.map((entry) => entry.zIndex))
     );
     expect(compiled.tunnelTitles?.itemId).toBe("anim");
+  });
+
+  it("stays bright while the footage behind the tunnel is dimmed", () => {
+    const dimmed = opening();
+    const hook = dimmed.tracks[1]!.items[0] as PostAnimationItem;
+    hook.tunnelHook = { ...hook.tunnelHook!, backdrop: true };
+    const compiled = compilePostProject(dimmed, ctx)!;
+    const layers = evaluatePresetFrame(
+      compiled.preset,
+      compiled.durationSeconds,
+      1
+    );
+    const titles = layers.find(
+      (layer) => layer.sourceRole === TUNNEL_TITLES_ROLE
+    )!;
+    const footage = layers.find((layer) => layer.clipId.startsWith("full"))!;
+    expect(footage.opacity).toBeLessThan(1);
+    expect(titles.opacity).toBe(1);
   });
 
   it("keeps the pronunciation as typed, within its limit", () => {

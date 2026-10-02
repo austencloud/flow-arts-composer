@@ -46,6 +46,9 @@ export interface TunnelTitlesPlan {
   end: number;
 }
 
+/** The painted layer with the words around the opening tunnel. */
+export const TUNNEL_TITLES_ROLE = "tunnel-titles";
+
 /** What the closing card stands for in the parts. */
 export const TUNNEL_TITLES_CARD_LABEL = "Your turn";
 
