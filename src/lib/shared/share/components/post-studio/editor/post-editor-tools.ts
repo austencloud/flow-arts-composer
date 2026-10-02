@@ -39,7 +39,6 @@ export type PostPanelToolId =
 export type PostActionToolId =
   | "back"
   | "split"
-  | "tutorial"
   | "template"
   | "beats"
   | "duplicate"
@@ -58,7 +57,6 @@ export interface PostToolSelection {
 const ACTION_TOOLS = new Set<PostToolId>([
   "back",
   "split",
-  "tutorial",
   "template",
   "beats",
   "duplicate",
@@ -86,7 +84,6 @@ export function toolRow(selection: PostToolSelection): PostToolId[] {
         "add",
         "canvas",
         "split",
-        "tutorial",
         "template",
         "look",
       ];
