@@ -440,6 +440,26 @@ export function isVisibleLayer(layer: EvaluatedFrameLayer): boolean {
   return layer.opacity > 0.0001;
 }
 
+/** A full-frame black cover keeps the midpoint black even over a blurred backdrop. */
+export function fadeBlackOpacityAt(
+  preset: MediaCompositionPreset,
+  durationSeconds: number,
+  timeSeconds: number
+): number {
+  let opacity = 0;
+  for (const transition of preset.transitions) {
+    if (transition.kind !== "fade-black") continue;
+    const start = resolvePresetTimePoint(transition.start, durationSeconds);
+    const end = resolvePresetTimePoint(transition.end, durationSeconds);
+    if (end <= start || timeSeconds <= start || timeSeconds >= end) continue;
+    const rawProgress = clamp01((timeSeconds - start) / (end - start));
+    const progress =
+      transition.curve === "ease-in-out" ? easeInOut(rawProgress) : rawProgress;
+    opacity = Math.max(opacity, 1 - Math.abs(2 * progress - 1));
+  }
+  return opacity;
+}
+
 /**
  * Every visual layer whose clip spans one project timestamp, including one a
  * fade leaves fully clear, as at the first instant of a fade-in. The crop
@@ -743,6 +763,12 @@ export function evaluatePresetLayers(
     const progress =
       transition.curve === "ease-in-out" ? easeInOut(rawProgress) : rawProgress;
     const incoming = byId.get(transition.incomingClipId);
+    if (transition.kind === "fade-black") {
+      const outgoing = byId.get(transition.outgoingClipId);
+      if (outgoing) outgoing.opacity *= progress < 0.5 ? 1 : 0;
+      if (incoming) incoming.opacity *= progress > 0.5 ? 1 : 0;
+      continue;
+    }
     // Source-over compositing blends two opaque clips by keeping the older
     // picture whole and raising the new one over it. Fading both lets the
     // background show through at the midpoint.

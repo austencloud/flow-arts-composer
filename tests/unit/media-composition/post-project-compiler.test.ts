@@ -11,7 +11,7 @@ import {
   textRole,
 } from "$lib/shared/media-composition/domain/post-project-compiler";
 import { MediaCompositionPresetSchema } from "$lib/shared/media-composition/domain/media-composition-preset-schema";
-import { evaluatePresetFrame } from "$lib/shared/media-composition/services/frame-evaluator";
+import { evaluatePresetFrame, fadeBlackOpacityAt, resolvePresetTimePoint } from "$lib/shared/media-composition/services/frame-evaluator";
 import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
 import {
   clampBox,
@@ -36,6 +36,37 @@ import { NOW, card, overlay, project, take, text, video } from "./post-project-f
 const ctx = { now: NOW };
 
 describe("compilePostProject", () => {
+  it("fades out to black, then fades in the next clip at the same cut", () => {
+    const base = project([
+      video("outgoing", { sourceOut: 5 }),
+      video("incoming", { takeId: "b", start: 5, sourceOut: 5 }),
+    ]);
+    const edited = updateItem(
+      base,
+      "outgoing",
+      { transitionOut: { type: "fade-black", duration: 1 } },
+      ctx
+    );
+    const compiled = compilePostProject(edited, ctx)!;
+    expect(MediaCompositionPresetSchema.safeParse(compiled.preset).success).toBe(true);
+    expect(compiled.preset.transitions[0]?.kind).toBe("fade-black");
+    const transition = compiled.preset.transitions[0]!;
+    const start = resolvePresetTimePoint(transition.start, compiled.durationSeconds);
+    const end = resolvePresetTimePoint(transition.end, compiled.durationSeconds);
+    const midpoint = (start + end) / 2;
+    const at = (time: number) => evaluatePresetFrame(compiled.preset, compiled.durationSeconds, time);
+    expect(at(start).find((layer) => layer.clipId === "outgoing")?.opacity).toBe(1);
+    expect(at(start).find((layer) => layer.clipId === "incoming")).toBeUndefined();
+    expect(at((start + midpoint) / 2).find((layer) => layer.clipId === "outgoing")?.opacity).toBe(1);
+    expect(at((start + midpoint) / 2).find((layer) => layer.clipId === "incoming")).toBeUndefined();
+    expect(fadeBlackOpacityAt(compiled.preset, compiled.durationSeconds, (start + midpoint) / 2)).toBeCloseTo(0.5);
+    expect(at(midpoint).some((layer) => layer.clipId === "outgoing" || layer.clipId === "incoming")).toBe(false);
+    expect(fadeBlackOpacityAt(compiled.preset, compiled.durationSeconds, midpoint)).toBe(1);
+    expect(at((midpoint + end) / 2).find((layer) => layer.clipId === "incoming")?.opacity).toBe(1);
+    expect(at(end).find((layer) => layer.clipId === "incoming")?.opacity).toBe(1);
+    expect(fadeBlackOpacityAt(compiled.preset, compiled.durationSeconds, start)).toBe(0);
+    expect(fadeBlackOpacityAt(compiled.preset, compiled.durationSeconds, end)).toBe(0);
+  });
   describe("regions", () => {
     it("draws one clamped region per item, stacked in z-order by track", () => {
       const box = { x: 0.9, y: 0.9, width: 0.5, height: 0.5 };

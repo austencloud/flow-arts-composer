@@ -73,6 +73,7 @@ export const TOOL_ICON: Record<PostToolId, string> = {
   position: "fa-up-down-left-right",
   border: "fa-border-top-left",
   fade: "fa-circle-half-stroke",
+  transition: "fa-right-left",
   effects: "fa-wand-sparkles",
   labels: "fa-hashtag",
   appearance: "fa-sliders",
@@ -90,6 +91,8 @@ export const TOOL_ICON: Record<PostToolId, string> = {
 /** The short name under a tool's icon, also its panel's title. */
 export function toolLabel(id: PostToolId): string {
   switch (id) {
+    case "transition":
+      return t("post_editor_transition");
     case "videos":
       return t("post_editor_videos");
     case "add":

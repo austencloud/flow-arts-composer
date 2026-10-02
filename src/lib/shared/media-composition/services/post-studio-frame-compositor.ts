@@ -4,6 +4,7 @@ import type {
 } from "$lib/shared/media-composition/domain/media-composition-preset-schema";
 import type { LayoutRegion } from "$lib/shared/media-composition/domain/media-layout-schema";
 import {
+  fadeBlackOpacityAt,
   regionRectIsOnFrame,
   type EvaluatedFrameLayer,
 } from "$lib/shared/media-composition/services/frame-evaluator";
@@ -604,6 +605,18 @@ export async function renderPostStudioFrame(
     if (edge && drawn[index + 1]?.layer.regionId !== layer.regionId) {
       paintEdgeBorder(context, regionPixels, edge, edgeOpacity, turn);
     }
+  }
+  const blackOpacity = fadeBlackOpacityAt(
+    input.preset,
+    input.preset.duration.mode === "fixed" ? input.preset.duration.seconds : 0,
+    input.timeSeconds ?? 0
+  );
+  if (blackOpacity > 0) {
+    context.save();
+    context.globalAlpha = blackOpacity;
+    context.fillStyle = "#000";
+    context.fillRect(0, 0, input.canvas.width, input.canvas.height);
+    context.restore();
   }
 }
 

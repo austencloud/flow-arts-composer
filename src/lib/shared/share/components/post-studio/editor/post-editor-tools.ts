@@ -27,6 +27,7 @@ export type PostPanelToolId =
   | "position"
   | "border"
   | "fade"
+  | "transition"
   | "effects"
   | "labels"
   | "appearance"
@@ -149,7 +150,12 @@ export function availablePanels(
   selection: PostToolSelection
 ): PostPanelToolId[] {
   const panels = toolRow(selection).filter(isPanelTool);
-  return selection.kind === null ? [...panels, "export"] : panels;
+  if (selection.kind === null) return [...panels, "export"];
+  return ["video", "image", "card", "animation", "moves", "carousel"].includes(
+    selection.kind
+  )
+    ? [...panels, "transition"]
+    : panels;
 }
 
 /** The first panel tool in the row, which a wide screen shows by default. */

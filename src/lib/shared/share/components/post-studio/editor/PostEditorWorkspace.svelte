@@ -61,7 +61,6 @@
     clearProjectKeyframes,
     editItemKeyframes,
     placeMainItem,
-    setTrackCutCrossfade,
     moveOverlayItem,
     moveSelectedItems,
     setProjectBackground,
@@ -129,6 +128,7 @@
   import PostCropTimeline from "./PostCropTimeline.svelte";
   import PostToolRow from "./PostToolRow.svelte";
   import PostToolPanel from "./PostToolPanel.svelte";
+  import PostTransitionTool from "./PostTransitionTool.svelte";
   import PostItemTool from "./PostItemTool.svelte";
   import PostKeyframeControls from "./PostKeyframeControls.svelte";
   import ConfirmDialog from "$lib/shared/foundation/ui/ConfirmDialog.svelte";
@@ -829,6 +829,26 @@
   let remPixels = $state(16);
   /** The panel last asked for. A wide screen falls back to a default. */
   let activeTool = $state<PostPanelToolId | null>(null);
+  let selectedCut = $state<{ outgoingId: string; incomingId: string } | null>(
+    null
+  );
+  const transitionCut = $derived.by(() => {
+    if (!selectedCut || editor.selectedItemId !== selectedCut.outgoingId)
+      return null;
+    const found = findItem(editor.project, selectedCut.outgoingId);
+    if (!found) return null;
+    const track = editor.project.tracks[found.trackIndex];
+    const index = track.items.findIndex(
+      (item) => item.id === selectedCut.outgoingId
+    );
+    const incoming = track.items[index + 1];
+    if (track.locked || track.hidden || incoming?.id !== selectedCut.incomingId)
+      return null;
+    const gap = incoming.start - itemEnd(found.item);
+    if (gap > 0.001 || (!found.item.transitionOut && Math.abs(gap) > 0.001))
+      return null;
+    return { outgoing: found.item, incoming };
+  });
 
   let exportProgress = $state<PostStudioExportProgress | null>(null);
   let exportError = $state("");
@@ -1185,7 +1205,11 @@
   // A tool the new selection lacks closes, so it does not open again by
   // surprise when a later selection has it.
   $effect(() => {
-    if (activeTool && !availablePanels(selection).includes(activeTool)) {
+    if (
+      activeTool &&
+      (!availablePanels(selection).includes(activeTool) ||
+        (activeTool === "transition" && !transitionCut))
+    ) {
       activeTool = null;
     }
   });
@@ -1505,29 +1529,14 @@
 
   function openCrossfade(outgoingId: string, incomingId: string): void {
     editor.pause();
-    const trackIndex = findItem(editor.project, outgoingId)?.trackIndex;
-    if (trackIndex === undefined) return;
-    if (
-      !findItem(editor.project, outgoingId)?.item.transitionOut &&
-      !editor.edit((project, context) =>
-        setTrackCutCrossfade(
-          project,
-          trackIndex,
-          outgoingId,
-          incomingId,
-          true,
-          context
-        )
-      )
-    )
-      return;
     editor.selectedItemId = outgoingId;
+    selectedCut = { outgoingId, incomingId };
     const outgoing = findItem(editor.project, outgoingId)?.item;
     const incoming = findItem(editor.project, incomingId)?.item;
     if (outgoing && incoming) {
       editor.seek((incoming.start + itemEnd(outgoing)) / 2);
     }
-    openTool("fade");
+    openTool("transition");
   }
 
   // ---- Keyframe rows -------------------------------------------------------
@@ -2447,6 +2456,8 @@
       onTapBeats={openTakeBeats}
       {onSharePost}
     />
+  {:else if tool === "transition" && transitionCut}
+    <PostTransitionTool {editor} {...transitionCut} />
   {:else if editor.selectedItem}
     <PostItemTool
       {editor}
@@ -2469,7 +2480,11 @@
 {#snippet panel(tool: PostPanelToolId, placement: "dock" | "side")}
   <PostToolPanel
     {tool}
-    subject={editor.selectedItem ? labelFor(editor.selectedItem) : undefined}
+    subject={tool === "transition" && transitionCut
+      ? `${labelFor(transitionCut.outgoing)} → ${labelFor(transitionCut.incoming)}`
+      : editor.selectedItem
+        ? labelFor(editor.selectedItem)
+        : undefined}
     onDone={placement === "dock" && !cropMode ? closePanel : undefined}
     {placement}
     bare={(placement === "dock" && cropMode) ||

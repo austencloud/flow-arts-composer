@@ -345,6 +345,34 @@ describe("setMainCutCrossfade", () => {
     expect(spans(restored, 0)).toEqual(spans(base, 0));
   });
 
+  it("switches a saved transition style without changing the overlap or total length", () => {
+    const base = project([
+      video("v1"),
+      video("v2", { takeId: "b", sourceOut: 6 }),
+      video("v3", { takeId: "b", sourceOut: 4 }),
+    ]);
+    const dissolve = valid(
+      updateItem(base, "v1", { transitionOut: { type: "crossfade", duration: 0.75 } }, ctx)
+    );
+    const beforeSpans = spans(dissolve, 0);
+    const beforeDuration = compilePostProject(dissolve, ctx)!.durationSeconds;
+    const black = valid(
+      updateItem(dissolve, "v1", { transitionOut: { type: "fade-black", duration: 0.75 } }, ctx)
+    );
+    expect(spans(black, 0)).toEqual(beforeSpans);
+    expect(compilePostProject(black, ctx)!.durationSeconds).toBe(beforeDuration);
+    expect(PostProjectSchema.parse(JSON.parse(JSON.stringify(black))).tracks[0]!.items[0]!.transitionOut?.type).toBe("fade-black");
+    expect(compilePostProject(black, ctx)!.preset.transitions[0]?.kind).toBe("fade-black");
+
+    const dissolveAgain = valid(
+      updateItem(black, "v1", { transitionOut: { type: "crossfade", duration: 0.75 } }, ctx)
+    );
+    expect(spans(dissolveAgain, 0)).toEqual(beforeSpans);
+    expect(compilePostProject(dissolveAgain, ctx)!.durationSeconds).toBe(beforeDuration);
+    const cut = valid(updateItem(dissolveAgain, "v1", { transitionOut: null }, ctx));
+    expect(spans(cut, 0)).toEqual(spans(base, 0));
+  });
+
   it("overlaps full-length videos by rippling later clips and anchored overlays", () => {
     const base = project(
       [
