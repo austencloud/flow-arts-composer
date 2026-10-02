@@ -12,6 +12,9 @@ export const TUNNEL_HOOK_FOLDS = [2, 4, 8] as const;
 const speedXSchema = z.number().finite().min(0).max(1);
 const speedYSchema = z.number().finite().min(-1).max(2);
 
+/** The closest the footage behind the tunnel can be framed. */
+export const TUNNEL_BACKDROP_MAX_ZOOM = 3;
+
 export const TunnelHookSchema = z
   .object({
     /** Rotational arms, base included. */
@@ -38,6 +41,20 @@ export const TunnelHookSchema = z
      */
     backdrop: z.boolean().optional(),
     /**
+     * How the footage behind the tunnel is framed while it fills the frame:
+     * `zoom` times closer than the whole picture, centred on `x`, `y` (shares
+     * of the picture). Absent shows the whole picture centred on the clip's
+     * own framing.
+     */
+    backdropFrame: z
+      .object({
+        zoom: z.number().finite().min(1).max(TUNNEL_BACKDROP_MAX_ZOOM),
+        x: z.number().finite().min(0).max(1),
+        y: z.number().finite().min(0).max(1),
+      })
+      .strict()
+      .optional(),
+    /**
      * Words the opening once drew itself. They are a titles clip now; a post
      * saved with them gets one when it opens (`post-project-hook-migration.ts`).
      */
@@ -53,6 +70,7 @@ export const TunnelHookSchema = z
   .strict();
 
 export type TunnelHook = z.infer<typeof TunnelHookSchema>;
+export type TunnelBackdropFrame = NonNullable<TunnelHook["backdropFrame"]>;
 
 /**
  * A new hook starts fast and settles into the opening pose (the "Ease out"

@@ -57,6 +57,8 @@ export interface PostToolSelection {
   isQrImage?: boolean;
   /** The opening tunnel hook has its own speed curve. */
   isTunnelHook?: boolean;
+  /** The hook plays over its footage, which it frames while it fills the frame. */
+  hasBackdrop?: boolean;
 }
 
 const ACTION_TOOLS = new Set<PostToolId>([
@@ -109,6 +111,7 @@ export function toolRow(selection: PostToolSelection): PostToolId[] {
         "appearance",
         "sequence",
         ...(selection.isTunnelHook ? (["speed"] as const) : []),
+        ...(selection.hasBackdrop ? (["crop"] as const) : []),
         "timing",
         ...ITEM_TAIL,
       ];
