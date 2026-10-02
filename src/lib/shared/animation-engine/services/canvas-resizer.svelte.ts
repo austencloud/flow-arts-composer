@@ -13,8 +13,12 @@ import {
   measureFrame,
   sameFrame,
   squareFrame,
+  staleRasterScale,
   type CanvasFrame,
 } from "../domain/types/canvas-frame";
+
+/** Below this the stale-raster correction is invisible, so it is left off. */
+const STALE_SCALE_EPSILON = 0.001;
 
 /**
  * Default canvas size
@@ -76,6 +80,8 @@ export class CanvasResizer {
   /** Lifting `inert` does not change the container's box, so ResizeObserver
    *  stays silent on reveal. This watches the suppressing ancestor instead. */
   private revealObserver: MutationObserver | null = null;
+  /** Re-fits the canvases whenever a layer reallocates its raster. */
+  private rasterObserver: MutationObserver | null = null;
   private hasSizedFromObservation = false;
   /** The renderer is initialized before ResizeObserver reports its first box.
    *  Keep that observer pass responsible for its initial texture resize, while
@@ -108,6 +114,21 @@ export class CanvasResizer {
       this.resizeObserver.observe(this.container);
     }
 
+    if (
+      typeof MutationObserver !== "undefined" &&
+      typeof Node !== "undefined" &&
+      this.container instanceof Node
+    ) {
+      // Layers reallocate their own rasters, some a tick after the resize.
+      this.rasterObserver = new MutationObserver(() => this.fitStaleRasters());
+      this.rasterObserver.observe(this.container, {
+        childList: true,
+        subtree: true,
+        attributes: true,
+        attributeFilter: ["width", "height"],
+      });
+    }
+
     if (typeof window !== "undefined") {
       window.addEventListener("resize", this.boundResizeHandler);
     }
@@ -116,6 +137,8 @@ export class CanvasResizer {
   teardown(): void {
     this.resizeObserver?.disconnect();
     this.resizeObserver = null;
+    this.rasterObserver?.disconnect();
+    this.rasterObserver = null;
     this.cancelSettle();
     this.cancelVisibleSettle();
     this.stopWatchingForReveal();
@@ -219,15 +242,18 @@ export class CanvasResizer {
    * is what turned a 280ms panel transition into a slideshow.
    *
    * So an observed change only arms a timer, and the canvas is rebuilt once, at
-   * the size the container came to rest on. In between, the canvas keeps its
-   * current backing store and the wrapper's `width: 100%; object-fit: contain`
-   * scales it — briefly soft while things are moving, sharp the moment they
-   * stop, which is the trade every mature canvas app makes here.
+   * the size the container came to rest on. In between, each canvas keeps its
+   * current backing store and is scaled to the box — briefly soft while things
+   * are moving, sharp the moment they stop, which is the trade every mature
+   * canvas app makes here. `fitStaleRasters` keeps that scaling true to the
+   * drawing when the box also changes shape.
    *
    * The first observation is not deferred: the canvas would otherwise sit at
    * DEFAULT_CANVAS_SIZE and pop.
    */
   private handleResize(): void {
+    // Runs before paint, every frame a box animates, whatever the raster does.
+    this.fitStaleRasters();
     if (this.paused) return;
 
     if (this.observationSuppressed()) {
@@ -265,6 +291,37 @@ export class CanvasResizer {
       if (this.paused || this.observationSuppressed()) return;
       this.performResize();
     }, RESIZE_SETTLE_MS);
+  }
+
+  /**
+   * A canvas shows its raster with `object-fit: contain`, which fits the
+   * raster's rectangle. While a frame-shaped overlay raster still has the old
+   * box's shape, that draws the engine's square at the wrong size: an opening
+   * tunnel easing from the full frame into a short box showed its mandala at
+   * half size until the settle rebuilt the raster and it jumped back. Scale
+   * each canvas so its square matches the box's, and clip what the larger
+   * scale would push past the box.
+   */
+  private fitStaleRasters(): void {
+    const container = this.container;
+    if (!container?.children) return;
+    const width = container.clientWidth;
+    const height = container.clientHeight;
+    for (const canvas of container.children) {
+      if (!(canvas instanceof HTMLCanvasElement)) continue;
+      const scale = staleRasterScale(
+        width,
+        height,
+        canvas.width,
+        canvas.height
+      );
+      const off = Math.abs(scale - 1) < STALE_SCALE_EPSILON;
+      canvas.style.scale = off ? "" : String(scale);
+      // The canvas box is the container's, so clipping the scaled-away share
+      // before the scale leaves exactly the container's rectangle visible.
+      canvas.style.clipPath =
+        off || scale < 1 ? "" : `inset(${(50 * (1 - 1 / scale)).toFixed(4)}%)`;
+    }
   }
 
   private async performResize(): Promise<number> {
