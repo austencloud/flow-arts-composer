@@ -52,6 +52,7 @@ import {
   tunnelHookBoxKeys,
 } from "$lib/shared/media-composition/domain/tunnel-hook";
 import {
+  TUNNEL_TITLES_ROLE,
   tunnelTitlesPlanOf,
   type TunnelTitlesPlan,
 } from "$lib/shared/media-composition/domain/tunnel-titles";
@@ -81,8 +82,7 @@ import {
 
 export const TEXT_ROLE_PREFIX = "text:";
 
-/** The painted layer with the words around the opening tunnel. */
-export const TUNNEL_TITLES_ROLE = "tunnel-titles";
+export { TUNNEL_TITLES_ROLE };
 
 function isTransitionVisual(item: PostItem): boolean {
   return (

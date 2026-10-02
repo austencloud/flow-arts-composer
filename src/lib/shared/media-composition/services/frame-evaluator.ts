@@ -20,6 +20,7 @@ import {
   tunnelHookBackdropOpacity,
   type TunnelHook,
 } from "$lib/shared/media-composition/domain/tunnel-hook";
+import { TUNNEL_TITLES_ROLE } from "$lib/shared/media-composition/domain/tunnel-titles";
 import {
   pipHandoffLookBlend,
   pipHandoffSample,
@@ -810,7 +811,8 @@ export function evaluatePresetLayers(
   }
 
   // Footage playing behind a tunnel intro stays dim around it, and comes up
-  // to full strength as the canvas settles into its box.
+  // to full strength as the canvas settles into its box. The words around
+  // the tunnel belong to it and stay bright.
   const intro = layers.find((layer) => layer.tunnelHook?.hook.backdrop);
   if (intro?.tunnelHook) {
     const backdrop = tunnelHookBackdropOpacity(
@@ -818,7 +820,11 @@ export function evaluatePresetLayers(
       sampleEasing
     );
     for (const layer of layers) {
-      if (layer.regionId !== intro.regionId) layer.opacity *= backdrop;
+      if (
+        layer.regionId !== intro.regionId &&
+        layer.sourceRole !== TUNNEL_TITLES_ROLE
+      )
+        layer.opacity *= backdrop;
     }
   }
 
