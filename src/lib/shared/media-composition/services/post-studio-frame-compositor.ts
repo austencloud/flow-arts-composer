@@ -31,6 +31,7 @@ import {
 import { traceRoundedRect } from "$lib/shared/render/utils/trace-rounded-rect";
 import { videoColorFilter } from "$lib/shared/media-composition/domain/post-video-color-grade";
 import type { PostStudioExportVideoFrames } from "$lib/shared/media-composition/services/post-studio-export-video-frames";
+import { POST_STUDIO_DOM_CAPTURE_OPTIONS } from "$lib/shared/media-composition/services/post-studio-dom-capture";
 import type { PostStudioPictographCapture } from "$lib/shared/media-composition/services/post-studio-pictograph-capture";
 
 export interface FrameLayerGeometry {
@@ -298,6 +299,7 @@ async function captureCardLayer(
     width: bounds.width,
     height: bounds.height,
     scale: targetWidth / bounds.width,
+    ...POST_STUDIO_DOM_CAPTURE_OPTIONS,
   });
   cache.set(cacheKey, canvas);
   return canvas;
@@ -658,9 +660,13 @@ async function drawRegionLayer(
 
   const renderMode = layerElement.dataset.renderMode;
   if (renderMode === "sequence-animation") {
+    // The preview lays this surface out to fill its region box, and a DOM
+    // surface has no footage size to fit. Fitting a 1x1 stand-in with the
+    // region's own "contain" drew the capture as a centred square, so a
+    // non-square region came out narrower than on screen.
     const geometry = resolveFrameLayerGeometry({
       preset: input.preset,
-      region,
+      region: { ...region, fit: "fill" },
       sourceWidth: 1,
       sourceHeight: 1,
       transform: layer.transform,
@@ -702,6 +708,7 @@ async function drawRegionLayer(
           width: bounds.width,
           height: bounds.height,
           scale,
+          ...POST_STUDIO_DOM_CAPTURE_OPTIONS,
         });
     drawSource(context, image, geometry);
   } else if (renderMode === "choreo-card") {
