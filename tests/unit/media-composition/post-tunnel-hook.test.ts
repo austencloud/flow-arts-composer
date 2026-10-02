@@ -15,6 +15,7 @@ import { normalizeProject as finishProject } from "$lib/shared/media-composition
 import { compilePostProject } from "$lib/shared/media-composition/domain/post-project-compiler";
 import { takeRole } from "$lib/shared/media-composition/domain/post-plan-compiler";
 import {
+  MOVE_EASING,
   tunnelHookArrival,
   TUNNEL_HOOK_BACKDROP_OPACITY,
   TUNNEL_HOOK_CHROME_SECONDS,
@@ -506,6 +507,28 @@ describe("tunnel hook speed curve", () => {
     ).sequencePosition!;
     expect(quarter).toBeCloseTo(3, 1);
     expect(smooth).toBeLessThan(quarter);
+  });
+});
+
+describe("tunnel hook move into its box", () => {
+  const travelled = (share: number) => sampleEasing([...MOVE_EASING], share);
+
+  it("slows gently instead of crawling the last stretch", () => {
+    // The old curve covered 7% of the way in its last quarter and took a
+    // fifth of the move over the final 5%, which read as a stall.
+    expect(1 - travelled(0.75)).toBeGreaterThan(0.12);
+    expect(travelled(0.85)).toBeLessThan(0.95);
+  });
+
+  it("never rushes the middle", () => {
+    const steps = 200;
+    let peak = 0;
+    for (let step = 1; step <= steps; step++) {
+      const speed =
+        (travelled(step / steps) - travelled((step - 1) / steps)) * steps;
+      peak = Math.max(peak, speed);
+    }
+    expect(peak).toBeLessThan(2);
   });
 });
 
