@@ -205,6 +205,7 @@ export class TrailOverlayCanvas implements ITrailOverlayCanvas {
     canvas.width = width;
     canvas.height = height;
     canvas.setAttribute("aria-hidden", "true");
+    canvas.dataset.animationLayer = "trails";
 
     canvas.style.position = "absolute";
     canvas.style.top = "0";

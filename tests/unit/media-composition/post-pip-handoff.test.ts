@@ -112,7 +112,11 @@ describe("picture-in-picture hand-off clock", () => {
   });
 });
 
-function handoffProject(movesOnTop: boolean) {
+/**
+ * An animation and the square it shrinks into. Unless `shared`, the square
+ * shows a different prop look, which one surface cannot become.
+ */
+function handoffProject(movesOnTop: boolean, shared = false) {
   const anim = overlay("anim", "animation", {
     start: 0,
     duration: 10,
@@ -127,7 +131,10 @@ function handoffProject(movesOnTop: boolean) {
     box: { ...CORNER },
     anchor: { itemId: "v2", offset: 0 },
     fill: true,
-    animationAppearance: { mandala: false },
+    animationAppearance: {
+      mandala: false,
+      ...(shared ? {} : { propLook: "model" as const }),
+    },
   } as Partial<PostMovesItem>);
   return project(
     [
@@ -148,6 +155,31 @@ function handoffProject(movesOnTop: boolean) {
   );
 }
 
+function frameOf(compiled: NonNullable<ReturnType<typeof compilePostProject>>) {
+  const steps = Array.from({ length: MOVES }, () => ({
+    duration: 1,
+  })) as unknown as StepData[];
+  const alignment = {
+    steps,
+    startPlacementDuration: 1,
+    clocks: {
+      // Media time equals post time on the first take and runs from 9 on
+      // the second.
+      [takeRole("a")]: { sampleAt: (media: number) => fast(media) },
+      [takeRole("b")]: {
+        sampleAt: (media: number) => slow(9.1)(media + 9),
+      },
+    },
+  };
+  return (time: number) =>
+    evaluatePresetFrame(
+      compiled.preset,
+      compiled.durationSeconds,
+      time,
+      alignment as never
+    );
+}
+
 describe("picture-in-picture hand-off", () => {
   it("finds the animation and the square it shrinks into", () => {
     const found = pipHandoffOf(handoffProject(true))!;
@@ -155,33 +187,14 @@ describe("picture-in-picture hand-off", () => {
     expect(found.moves.id).toBe("pip");
     expect(found.movesOnTop).toBe(true);
     expect([found.start, found.end]).toEqual([9, 10]);
+    expect(found.shared).toBe(false);
     expect(pipHandoffOf(handoffProject(false))!.movesOnTop).toBe(false);
+    expect(pipHandoffOf(handoffProject(true, true))!.shared).toBe(true);
   });
 
   it("shrinks the animation into the square and draws one figure", () => {
     const compiled = compilePostProject(handoffProject(true), { now: NOW })!;
-    const steps = Array.from({ length: MOVES }, () => ({
-      duration: 1,
-    })) as unknown as StepData[];
-    const alignment = {
-      steps,
-      startPlacementDuration: 1,
-      clocks: {
-        // Media time equals post time on the first take and runs from 9 on
-        // the second.
-        [takeRole("a")]: { sampleAt: (media: number) => fast(media) },
-        [takeRole("b")]: {
-          sampleAt: (media: number) => slow(9.1)(media + 9),
-        },
-      },
-    };
-    const frame = (time: number) =>
-      evaluatePresetFrame(
-        compiled.preset,
-        compiled.durationSeconds,
-        time,
-        alignment as never
-      );
+    const frame = frameOf(compiled);
     const layer = (time: number, id: string) =>
       frame(time).find((entry) => entry.regionId === id);
 
@@ -231,5 +244,74 @@ describe("picture-in-picture hand-off", () => {
       id: "anim",
       role: "to",
     });
+  });
+});
+
+describe("picture-in-picture hand-off on one surface", () => {
+  const compiled = compilePostProject(handoffProject(true, true), {
+    now: NOW,
+  })!;
+  const frame = frameOf(compiled);
+  const sequenceLayers = (time: number) =>
+    frame(time).filter((entry) => entry.sourceRole === "sequence-animation");
+
+  it("draws the square on the animation's own region and role", () => {
+    const pieces = compiled.preset.clips.filter(
+      (entry) =>
+        entry.kind === "visual" &&
+        (entry.id.startsWith("anim") || entry.id.startsWith("pip"))
+    ) as Extract<(typeof compiled.preset.clips)[number], { kind: "visual" }>[];
+    expect(new Set(pieces.map((piece) => piece.regionId))).toEqual(
+      new Set(["anim"])
+    );
+    expect(new Set(pieces.map((piece) => piece.sourceRole)).size).toBe(1);
+    // Nothing dissolves: the one surface changes its look instead.
+    expect(pieces.every((piece) => !piece.fadeInSeconds)).toBe(true);
+    expect(pieces.every((piece) => !piece.fadeOutSeconds)).toBe(true);
+    // The square still has its own region, for picking it in the editor,
+    // and the shared one draws at the higher of the two tracks.
+    const regions = new Map(
+      compiled.preset.regions.map((entry) => [entry.id, entry])
+    );
+    expect(regions.has("pip")).toBe(true);
+    expect(regions.get("anim")!.zIndex).toBe(regions.get("pip")!.zIndex);
+  });
+
+  it("shows exactly one layer at every moment, turning its look", () => {
+    for (const time of [8.5, 9, 9.3, 9.6, 9.99, 10, 10.5, 14]) {
+      // At a footage cut two pieces of one item meet; the surface follows
+      // the later. Never both items.
+      const items = new Set(
+        sequenceLayers(time).map((entry) => entry.clipId.split("~")[0])
+      );
+      expect(items.size).toBe(1);
+    }
+    expect(sequenceLayers(9.5)[0]!.clipId.startsWith("anim")).toBe(true);
+    expect(sequenceLayers(10)[0]!.clipId.startsWith("pip")).toBe(true);
+
+    const blend = (time: number) => sequenceLayers(time).at(-1)!.lookBlend;
+    expect(blend(8.5)).toBe(0);
+    expect(blend(9)).toBe(0);
+    expect(blend(9.5)).toBeCloseTo(0.5, 6);
+    expect(blend(9.3)!).toBeLessThan(blend(9.6)!);
+    expect(blend(9.99)!).toBeGreaterThan(0.99);
+    // The square draws its own look; no blend rides on it.
+    expect(blend(10)).toBeUndefined();
+  });
+
+  it("follows the same box into the corner and stays there", () => {
+    const rect = (time: number) => sequenceLayers(time).at(-1)!.regionRect!;
+    expect(rect(9)).toMatchObject(POST_BOX.bottom);
+    expect(rect(9.5).width).toBeLessThan(1);
+    expect(rect(9.5).width).toBeGreaterThan(CORNER.width);
+    expect(rect(10)).toMatchObject(CORNER);
+    expect(rect(14)).toMatchObject(CORNER);
+  });
+
+  it("hands the figure over at the same pose", () => {
+    const before = sequenceLayers(9.9999)[0]!;
+    const after = sequenceLayers(10)[0]!;
+    expect(after.sequencePosition!).toBeCloseTo(before.sequencePosition!, 2);
+    expect(after.sequencePassIndex).toBe(before.sequencePassIndex);
   });
 });

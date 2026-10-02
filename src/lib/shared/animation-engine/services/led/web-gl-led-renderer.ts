@@ -201,6 +201,7 @@ export class WebGLLedRenderer {
 		this.canvas.style.zIndex = "3";
 		this.canvas.style.background = "transparent";
 		this.canvas.setAttribute("aria-hidden", "true");
+		this.canvas.dataset.animationLayer = "led";
 
 		this.dpr = Math.min(window.devicePixelRatio || 1, MAX_DPR);
 		this.displayWidth = Math.round(width * this.dpr);

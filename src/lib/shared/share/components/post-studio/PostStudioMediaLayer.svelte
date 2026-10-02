@@ -50,6 +50,8 @@
     animationAppearance?: PostAnimationItem["animationAppearance"] | null;
     tunnelHook?: { hook: TunnelHook; progress: number } | null;
     chromeOpacity?: number;
+    /** An animation turning into its square's look on one surface, 0 to 1. */
+    lookBlend?: number;
     sequencePosition?: number;
     sequencePassIndex?: number;
     sequenceProgress?: number;
@@ -86,6 +88,7 @@
     animationAppearance = null,
     tunnelHook = null,
     chromeOpacity = 1,
+    lookBlend = 0,
     sequencePosition,
     sequencePassIndex,
     sequenceProgress,
@@ -651,6 +654,7 @@
       {animationAppearance}
       {tunnelHook}
       {chromeOpacity}
+      {lookBlend}
       {playing}
       leftPropType={cardRenderOptions?.leftPropTypeOverride ??
         cardRenderOptions?.propTypeOverride}
