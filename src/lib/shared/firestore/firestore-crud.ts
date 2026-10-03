@@ -4,6 +4,7 @@ import {
   addDoc,
   getDoc,
   getDocs,
+  getDocsFromServer,
   setDoc,
   deleteDoc,
   onSnapshot,
@@ -159,7 +160,7 @@ export async function firestoreList<T>(
   try {
     const db = await getFirestoreInstance();
     const q = buildQuery(collectionPath, db, options);
-    const snap = await getDocs(q);
+    const snap = options?.serverOnly ? await getDocsFromServer(q) : await getDocs(q);
     const items: T[] = [];
     for (const d of snap.docs) {
       const parsed = parseDoc(schema, d.id, d.data() as Record<string, unknown>, collectionPath);

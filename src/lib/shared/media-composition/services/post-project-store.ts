@@ -6,14 +6,16 @@ import {
 import { normalizeProject } from "$lib/shared/media-composition/domain/post-project-normalize";
 import { migratePostPlan } from "$lib/shared/media-composition/domain/post-project-migration";
 import { loadPostPlan } from "$lib/shared/media-composition/services/post-plan-store";
+import { auth } from "$lib/shared/auth/firebase";
 
 /**
  * Saves a sequence's v2 project on this device, beside its v1 plan (kept
  * around only so a project that predates the timeline editor still opens).
- * Nothing here writes to Firestore.
+ * Cloud persistence is handled by the Post workspace after this local save.
  */
 
 const PREFIX = "tka:post-studio:project:v2:";
+const CLAIM_KEY = "tka:post-studio:legacy-owner:v1";
 export type SaveResult = { ok: true } | { ok: false; error: string };
 
 /** Keep the previous edit recoverable across reloads when importing a draft. */
@@ -24,7 +26,9 @@ export function backupPostProjectBeforeImport(project: PostProject): void {
       "Device storage is unavailable. The current post was kept."
     );
   store.setItem(
-    `${PREFIX}before-import:${project.sequenceId}`,
+    auth.currentUser && !auth.currentUser.isAnonymous
+      ? `${projectKey(project.sequenceId)}:before-import`
+      : `${PREFIX}before-import:${project.sequenceId}`,
     JSON.stringify(project)
   );
 }
@@ -37,11 +41,43 @@ function storage(): Storage | null {
   }
 }
 
+function projectKey(sequenceId: string): string {
+  const uid = auth.currentUser && !auth.currentUser.isAnonymous ? auth.currentUser.uid : null;
+  return uid
+    ? `${PREFIX}account:${uid}:${sequenceId}`
+    : legacyPostOwner()
+      ? `${PREFIX}guest:${sequenceId}`
+      : `${PREFIX}${sequenceId}`;
+}
+
+export function legacyPostOwner(): string | null {
+  return storage()?.getItem(CLAIM_KEY) ?? null;
+}
+
+export function claimLegacyPosts(uid: string): void {
+  if (auth.currentUser?.uid !== uid || auth.currentUser.isAnonymous)
+    throw new Error("The account changed while claiming device posts.");
+  const store = storage();
+  if (!store) throw new Error("Device storage is unavailable.");
+  const owner = store.getItem(CLAIM_KEY);
+  if (owner && owner !== uid) throw new Error("These device posts belong to another account.");
+  store.setItem(CLAIM_KEY, uid);
+}
+
+export function accountPostProjectKeys(uid: string): string[] {
+  const store = storage();
+  if (!store) return [];
+  const prefix = `${PREFIX}account:${uid}:`;
+  return Array.from({ length: store.length }, (_, index) => store.key(index))
+    .filter((key): key is string => !!key?.startsWith(prefix) &&
+      !key.endsWith(":previous") && !key.endsWith(":before-import"));
+}
+
 export function loadPostProject(sequenceId: string): PostProject | null {
   const store = storage();
   if (!store) return null;
   try {
-    const raw = store.getItem(`${PREFIX}${sequenceId}`);
+    const raw = store.getItem(projectKey(sequenceId));
     if (!raw) return null;
     const parsed = PostProjectSchema.safeParse(JSON.parse(raw));
     if (!parsed.success || parsed.data.sequenceId !== sequenceId) return null;
@@ -58,11 +94,16 @@ export function savePostProject(project: PostProject): SaveResult {
   const store = storage();
   if (!store) return { ok: false, error: "Device storage is unavailable." };
   try {
-    const key = `${PREFIX}${project.sequenceId}`;
+    const key = projectKey(project.sequenceId);
     const next = JSON.stringify(project);
     const previous = store.getItem(key);
     if (previous !== null && previous !== next) {
-      store.setItem(`${PREFIX}previous:${project.sequenceId}`, previous);
+      store.setItem(
+        (auth.currentUser && !auth.currentUser.isAnonymous) || legacyPostOwner()
+          ? `${key}:previous`
+          : `${PREFIX}previous:${project.sequenceId}`,
+        previous
+      );
     }
     store.setItem(key, next);
     if (store.getItem(key) !== next) {
