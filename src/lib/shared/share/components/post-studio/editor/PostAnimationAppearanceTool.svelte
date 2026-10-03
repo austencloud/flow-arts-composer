@@ -567,6 +567,9 @@
         </div>
         <DisplayPanel
           compact
+          {fill}
+          grow={fill}
+          stretch={fill}
           sequence={editor.sequence}
           propType={pickedPropType ?? defaultPropType}
           visibilityManagerOverride={visibility}
