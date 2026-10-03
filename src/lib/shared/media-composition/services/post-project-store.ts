@@ -90,22 +90,52 @@ export function loadPostProject(sequenceId: string): PostProject | null {
   }
 }
 
+/** Spare copies of earlier saves, which give way when storage is full. */
+function isSpareCopy(key: string): boolean {
+  return (
+    key.startsWith(PREFIX) &&
+    (key.endsWith(":previous") || key.startsWith(`${PREFIX}previous:`))
+  );
+}
+
+function dropSpareCopies(store: Storage, keep: string): void {
+  const spare = Array.from({ length: store.length }, (_, index) =>
+    store.key(index)
+  ).filter((key): key is string => !!key && key !== keep && isSpareCopy(key));
+  for (const key of spare) store.removeItem(key);
+}
+
+/**
+ * Saves the post on this device. The post itself always comes first: when
+ * storage is full, the spare copies of earlier saves give way to it, and the
+ * spare copy of this post is kept only when it still fits.
+ */
 export function savePostProject(project: PostProject): SaveResult {
   const store = storage();
   if (!store) return { ok: false, error: "Device storage is unavailable." };
   try {
     const key = projectKey(project.sequenceId);
+    const spareKey =
+      (auth.currentUser && !auth.currentUser.isAnonymous) || legacyPostOwner()
+        ? `${key}:previous`
+        : `${PREFIX}previous:${project.sequenceId}`;
     const next = JSON.stringify(project);
     const previous = store.getItem(key);
-    if (previous !== null && previous !== next) {
-      store.setItem(
-        (auth.currentUser && !auth.currentUser.isAnonymous) || legacyPostOwner()
-          ? `${key}:previous`
-          : `${PREFIX}previous:${project.sequenceId}`,
-        previous
-      );
+    try {
+      store.setItem(key, next);
+    } catch {
+      dropSpareCopies(store, spareKey);
+      store.removeItem(spareKey);
+      store.setItem(key, next);
     }
-    store.setItem(key, next);
+    if (previous !== null && previous !== next) {
+      try {
+        store.setItem(spareKey, previous);
+      } catch {
+        // No room for a spare copy; the post itself is saved.
+        store.removeItem(spareKey);
+      }
+    }
     if (store.getItem(key) !== next) {
       return {
         ok: false,

@@ -160,6 +160,8 @@
     createPostDraftAutosave,
     shouldSubmitPostDraft,
   } from "$lib/shared/media-composition/services/post-draft-storage";
+  import { loadPostProject } from "$lib/shared/media-composition/services/post-project-store";
+  import { createPostTabSync } from "$lib/shared/media-composition/services/post-tab-sync";
   import {
     parsePostStudioBackup,
     serializePostStudioBackup,
@@ -200,7 +202,8 @@
     active: boolean;
     sequence: SequenceData;
     initialProject?: PostProject;
-    onSaveDraft?: (project: PostProject) => Promise<void>;
+    /** Saves elsewhere too; may hand back a later edit saved somewhere else. */
+    onSaveDraft?: (project: PostProject) => Promise<PostProject | null | void>;
     draftLoadError?: string | null;
     cardPreviewUrl: string | null;
     animationPreviewUrl: string | null;
@@ -336,17 +339,31 @@
   let saveFlash = $state(false);
   let saveFlashTimer: ReturnType<typeof setTimeout> | undefined;
   const draftAutosave = onSaveDraft
-    ? createPostDraftAutosave(onSaveDraft, (saving, error) => {
-        draftSaving = saving;
-        draftError = error;
-        if (saving) return;
-        if (!error) savedAt = Date.now();
-        if (saveRequested) settleSave();
-      })
+    ? createPostDraftAutosave(
+        async (project) => {
+          const newer = await onSaveDraft(project);
+          if (newer) editor.adoptSaved(newer);
+        },
+        (saving, error) => {
+          draftSaving = saving;
+          draftError = error;
+          if (saving) return;
+          if (!error) savedAt = Date.now();
+          if (saveRequested) settleSave();
+        }
+      )
     : null;
+
+  // Every open tab of this post stays on the newest saved copy.
+  const tabSync = createPostTabSync(
+    sequence.id,
+    (project) => editor.adoptSaved(project),
+    () => loadPostProject(sequence.id)
+  );
 
   $effect(() => {
     const revision = editor.saveRevision;
+    if (revision > 0) untrack(() => tabSync.announce(editor.snapshot));
     if (draftAutosave)
       untrack(() => {
         const snapshot = editor.snapshot;
@@ -360,6 +377,7 @@
       });
   });
   onDestroy(() => {
+    tabSync.dispose();
     draftAutosave?.dispose();
     clearTimeout(saveFlashTimer);
   });
@@ -374,7 +392,9 @@
     };
   });
 
-  const saveFailure = $derived(draftError ?? editor.saveError);
+  // With an account or disk save behind it, a full device storage alone does
+  // not lose work, so only the save that keeps the post can fail.
+  const saveFailure = $derived(draftAutosave ? draftError : editor.saveError);
   const saveStatus = $derived(
     saveFailure
       ? "failed"
@@ -394,13 +414,13 @@
 
   function settleSave(): void {
     saveRequested = false;
-    if (draftError ?? editor.saveError) return;
+    if (saveFailure) return;
     saveFlash = true;
     saveFlashTimer = setTimeout(() => (saveFlash = false), 1600);
   }
 
   function protectUnsavedDraft(event: BeforeUnloadEvent): void {
-    if (!draftSaving && !draftError && !editor.saveError) return;
+    if (!draftSaving && !saveFailure) return;
     event.preventDefault();
     event.returnValue = "";
   }
@@ -2322,7 +2342,7 @@
     onBackup={() => void downloadDraft()}
     onRestore={() => recoveryInput?.click()}
     onRetry={() => draftAutosave?.retry()}
-    canRetry={!!onSaveDraft && !!(draftError ?? editor.saveError)}
+    canRetry={!!onSaveDraft && !!saveFailure}
     onExport={openExport}
     onImport={() => {
       if (!readingFile) recoveryInput?.click();

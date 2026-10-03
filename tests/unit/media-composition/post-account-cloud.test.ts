@@ -9,9 +9,15 @@ import {
 import { overlay, project as buildProject } from "./post-project-fixtures";
 import {
   loadAccountPostProject,
+  loadSyncedPostDraft,
   resolveSyncedPostSequence,
   saveAccountPostProject,
+  saveSyncedPostDraft,
 } from "$lib/features/post/services/post-account-projects";
+import {
+  loadPostProject,
+  savePostProject,
+} from "$lib/shared/media-composition/services/post-project-store";
 
 const mocks = vi.hoisted(() => ({
   auth: { currentUser: { uid: "owner", isAnonymous: false } },
@@ -19,6 +25,8 @@ const mocks = vi.hoisted(() => ({
   transaction: vi.fn(),
   set: vi.fn(),
   revision: 0,
+  /** The whole cloud document, when a test needs more than its revision. */
+  remote: null as Record<string, unknown> | null,
   cachedSource: null as SequenceData | null,
 }));
 vi.mock("$lib/features/post/services/post-workspace-projects", () => ({
@@ -49,15 +57,21 @@ vi.mock("firebase/firestore", () => ({
 beforeEach(() => {
   mocks.auth.currentUser.uid = "owner";
   mocks.revision = 0;
+  mocks.remote = null;
   mocks.cachedSource = null;
+  localStorage.clear();
+  vi.useRealTimers();
+  vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response("{}")));
   mocks.read.mockReset().mockResolvedValue({ status: "absent" });
   mocks.set.mockReset();
   mocks.transaction.mockReset().mockImplementation(async (_db, callback) =>
     callback({
       get: async () =>
-        mocks.revision
-          ? { exists: () => true, data: () => ({ revision: mocks.revision }) }
-          : { exists: () => false },
+        mocks.remote
+          ? { exists: () => true, data: () => mocks.remote }
+          : mocks.revision
+            ? { exists: () => true, data: () => ({ revision: mocks.revision }) }
+            : { exists: () => false },
       set: mocks.set,
     })
   );
@@ -75,14 +89,90 @@ describe("account Post writes", () => {
     );
   });
 
-  it("rejects an unseen newer revision instead of overwriting it", async () => {
+  /** A cloud copy of the post saved somewhere else at `updatedAt`. */
+  function savedElsewhere(sequenceId: string, updatedAt: number, revision = 2) {
+    const project = createEmptyPostProject({ sequenceId, now: updatedAt });
+    mocks.remote = {
+      sequenceId,
+      project: JSON.stringify(project),
+      projectUpdatedAt: updatedAt,
+      revision,
+    };
+    return project;
+  }
+
+  it("keeps a later edit saved elsewhere and hands it back", async () => {
     const project = createEmptyPostProject({ sequenceId: "post-2", now: 20 });
     await loadAccountPostProject("owner", project.sequenceId);
-    mocks.revision = 2;
+    const later = savedElsewhere(project.sequenceId, 50);
     await expect(
       saveAccountPostProject("owner", project, source(project.sequenceId))
-    ).rejects.toThrow("changed on another device");
+    ).resolves.toEqual(later);
     expect(mocks.set).not.toHaveBeenCalled();
+  });
+
+  it("replaces an older copy saved elsewhere", async () => {
+    const project = createEmptyPostProject({ sequenceId: "post-2b", now: 20 });
+    savedElsewhere(project.sequenceId, 5);
+    await expect(
+      saveAccountPostProject("owner", project, source(project.sequenceId))
+    ).resolves.toBeNull();
+    expect(mocks.set).toHaveBeenCalledWith(
+      "users/owner/postProjects/post-2b",
+      expect.objectContaining({ revision: 3, projectUpdatedAt: 20 })
+    );
+  });
+
+  it("never fails a save when the cloud write does not go through, and tries again", async () => {
+    vi.useFakeTimers();
+    const project = createEmptyPostProject({ sequenceId: "post-4", now: 60 });
+    mocks.transaction.mockRejectedValueOnce(new Error("offline"));
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    await expect(
+      saveSyncedPostDraft(project, source(project.sequenceId))
+    ).resolves.toBeNull();
+    expect(mocks.set).not.toHaveBeenCalled();
+    await vi.advanceTimersByTimeAsync(15_000);
+    expect(mocks.set).toHaveBeenCalledWith(
+      "users/owner/postProjects/post-4",
+      expect.objectContaining({ projectUpdatedAt: 60 })
+    );
+  });
+
+  it("puts a later edit from elsewhere on this device when saving", async () => {
+    const project = createEmptyPostProject({ sequenceId: "post-5", now: 20 });
+    await loadAccountPostProject("owner", project.sequenceId);
+    const later = savedElsewhere(project.sequenceId, 70);
+    await expect(
+      saveSyncedPostDraft(project, source(project.sequenceId))
+    ).resolves.toEqual(later);
+    expect(loadPostProject(project.sequenceId)?.updatedAt).toBe(70);
+  });
+
+  it("opens this device's newer copy, or its copy when the cloud is unreachable, without an error", async () => {
+    const local = createEmptyPostProject({ sequenceId: "post-6", now: 90 });
+    expect(savePostProject(local).ok).toBe(true);
+    const older = createEmptyPostProject({ sequenceId: "post-6", now: 10 });
+    mocks.read.mockResolvedValue({
+      status: "found",
+      data: {
+        id: "post-6",
+        sequenceId: "post-6",
+        project: JSON.stringify(older),
+        projectUpdatedAt: 10,
+        revision: 1,
+      },
+    });
+    await expect(loadSyncedPostDraft("post-6")).resolves.toMatchObject({
+      project: { updatedAt: 90 },
+      error: null,
+    });
+    mocks.read.mockResolvedValue({ status: "unknown" });
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    await expect(loadSyncedPostDraft("post-6")).resolves.toMatchObject({
+      project: { updatedAt: 90 },
+      error: null,
+    });
   });
 
   it("does not save when the account changes after the read", async () => {

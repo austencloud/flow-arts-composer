@@ -746,6 +746,61 @@ export function createPostEditorState(deps: PostEditorDeps) {
     timingTakeId = parsed.takes[0]?.id ?? null;
   }
 
+  /**
+   * Takes a newer save of this post from another open tab, so tabs on one
+   * post never drift apart. It joins the undo history like an edit but is
+   * not saved again: the other tab already saved it. A copy that needs a
+   * video only the other tab holds (a file picked there) is left alone.
+   */
+  function adoptSaved(next: PostProject): boolean {
+    if (gestureBase || session) return false;
+    const parsed = PostProjectSchema.safeParse(next);
+    if (
+      !parsed.success ||
+      parsed.data.sequenceId !== project.sequenceId ||
+      // This tab's own saves carry savedUpdatedAt, so only a later save from
+      // somewhere else gets through.
+      parsed.data.updatedAt <= Math.max(project.updatedAt, savedUpdatedAt)
+    )
+      return false;
+    const incoming = parsed.data;
+    const known = new Map(
+      project.takes.map((take) => [take.id, JSON.stringify(take.ref)])
+    );
+    const added = incoming.takes.filter(
+      (take) => known.get(take.id) !== JSON.stringify(take.ref)
+    );
+    if (added.some((take) => take.ref.kind === "local")) return false;
+    const nextTimings = { ...timings };
+    for (const [takeId, timing] of Object.entries(incoming.timings ?? {})) {
+      const mine = nextTimings[takeId];
+      if (!mine || timing.updatedAt > mine.updatedAt)
+        nextTimings[takeId] = timing;
+    }
+    timings = nextTimings;
+    for (const take of added) {
+      if (take.ref.kind === "linked")
+        attach(take, take.ref.url, false, undefined, incoming);
+      else
+        timings = {
+          ...timings,
+          [take.id]: timings[take.id] ?? openTiming(take, undefined, incoming),
+        };
+    }
+    const nextImages = { ...imageMedia };
+    for (const image of incoming.images ?? [])
+      if (image.ref.kind === "linked" && !nextImages[image.id])
+        nextImages[image.id] = { url: image.ref.url, owned: false };
+    imageMedia = nextImages;
+    past = [...past, project].slice(-HISTORY_DEPTH);
+    future = [];
+    project = incoming;
+    savedUpdatedAt = Math.max(savedUpdatedAt, incoming.updatedAt);
+    lastSetting = null;
+    keepSelectionValid(incoming);
+    return true;
+  }
+
   /** Apply a local dev manifest edit without replacing loaded footage or the playhead. */
   function replaceManifestFromDev(
     candidate: unknown,
@@ -1494,6 +1549,7 @@ export function createPostEditorState(deps: PostEditorDeps) {
     relinkProjectFiles,
     attachCatalogTakes,
     renameTake,
+    adoptSaved,
     removeTake,
     seek,
     advance,
