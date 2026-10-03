@@ -76,6 +76,7 @@ import {
   resolvePostStudioDraft,
 } from "$lib/shared/media-composition/services/post-project-backup";
 import { normalizeProject } from "$lib/shared/media-composition/domain/post-project-normalize";
+import { bridgeLockedChange } from "$lib/shared/media-composition/domain/post-project-bridge-guard";
 import {
   catalogTakeKey,
   loadTakeTiming,
@@ -773,23 +774,12 @@ export function createPostEditorState(deps: PostEditorDeps) {
         ok: false,
         error: "The replacement belongs to another sequence.",
       };
-    for (const key of [
-      "takes",
-      "images",
-      "timings",
-      "mappingPreviewAppearances",
-      "fonts",
-      "importSource",
-    ] as const) {
-      if (
-        JSON.stringify(next[key] ?? null) !==
-        JSON.stringify(current[key] ?? null)
-      )
-        return {
-          ok: false,
-          error: `${key} cannot be changed through the manifest bridge.`,
-        };
-    }
+    const locked = bridgeLockedChange(current, next);
+    if (locked)
+      return {
+        ok: false,
+        error: `${locked} cannot be changed through the manifest bridge.`,
+      };
     const normalized = normalizeProject(next);
     const withoutTimestamp = (value: PostProject) => ({
       ...value,
