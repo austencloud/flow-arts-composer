@@ -396,6 +396,7 @@ export class WebGLFireRenderer {
 
   initialize(container: HTMLElement, width: number, height: number): boolean {
     this.canvas = document.createElement("canvas");
+    this.canvas.dataset.animationLayer = "effect";
     this.canvas.style.position = "absolute";
     this.canvas.style.top = "0";
     this.canvas.style.left = "0";

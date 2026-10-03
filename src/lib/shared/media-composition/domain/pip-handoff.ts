@@ -97,6 +97,24 @@ export function pipHandoffLookBlend(
   return sampleEasing([...MOVE_EASING], share);
 }
 
+/** How long a square's own glow and effects take to fade in after it lands. */
+export const PIP_HANDOFF_EFFECTS_IN_SECONDS = 0.5;
+
+/**
+ * How far a square's own effects have faded in, 0 to 1. The animation's
+ * effects fade out across the overlap; the square's start where it ends.
+ */
+export function pipHandoffEffectsIn(
+  handoff: Pick<PipHandoff, "end">,
+  postSeconds: number,
+  sampleEasing: (easing: [number, number, number, number], p: number) => number
+): number {
+  const share = (postSeconds - handoff.end) / PIP_HANDOFF_EFFECTS_IN_SECONDS;
+  if (share <= 0) return 0;
+  if (share >= 1) return 1;
+  return sampleEasing([...MOVE_EASING], share);
+}
+
 /** The box both layers ride across the overlap: eased into the square. */
 export function pipHandoffBoxKeys(
   handoff: Pick<PipHandoff, "start" | "end">,

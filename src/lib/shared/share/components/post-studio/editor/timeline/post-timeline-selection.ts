@@ -66,7 +66,7 @@ export function selectTimelineItem(
 /**
  * An animation and the picture-in-picture square it turns into. The timeline
  * draws them as one block on the animation's row, joined across the stretch
- * where one becomes the other, and selects and moves them together.
+ * where one becomes the other. Each half selects on its own; they move together.
  */
 export interface TimelineHandoffPair {
   animationId: string;
@@ -113,7 +113,7 @@ export function timelineHandoffPair(
   };
 }
 
-/** The clips a press on this one acts on: both halves of a joined pair. */
+/** The clips a drag of this one moves: both halves of a joined pair. */
 export function timelineGroupOf(
   pair: TimelineHandoffPair | null,
   itemId: string
@@ -121,29 +121,4 @@ export function timelineGroupOf(
   return pair && (itemId === pair.animationId || itemId === pair.movesId)
     ? [pair.animationId, pair.movesId]
     : [itemId];
-}
-
-/**
- * Keeps a joined pair whole in a selection: when the pressed clip ended up
- * selected, or any half did, both are; a toggle that dropped one drops both.
- */
-export function joinTimelineGroup(
-  selection: TimelineSelection,
-  pair: TimelineHandoffPair | null,
-  pressedId: string
-): TimelineSelection {
-  if (!pair) return selection;
-  const group = [pair.animationId, pair.movesId];
-  const without = selection.ids.filter((id) => !group.includes(id));
-  const keep = group.includes(pressedId)
-    ? selection.ids.includes(pressedId)
-    : group.some((id) => selection.ids.includes(id));
-  if (keep) return { ...selection, ids: [...without, ...group] };
-  const outside = (id: string | null) =>
-    id !== null && !group.includes(id) ? id : (without.at(-1) ?? null);
-  return {
-    ids: without,
-    anchorId: outside(selection.anchorId),
-    focusId: outside(selection.focusId),
-  };
 }

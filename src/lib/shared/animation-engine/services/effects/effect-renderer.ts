@@ -42,6 +42,7 @@ export abstract class EffectRenderer implements EffectRendererLike {
     canvas.width = width;
     canvas.height = height;
     canvas.setAttribute("aria-hidden", "true");
+    canvas.dataset.animationLayer = "effect";
     canvas.style.position = "absolute";
     canvas.style.top = "0";
     canvas.style.left = "0";

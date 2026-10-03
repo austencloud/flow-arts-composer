@@ -52,6 +52,7 @@
     chromeOpacity?: number;
     /** An animation turning into its square's look on one surface, 0 to 1. */
     lookBlend?: number;
+    effectsIn?: number;
     sequencePosition?: number;
     sequencePassIndex?: number;
     sequenceProgress?: number;
@@ -89,6 +90,7 @@
     tunnelHook = null,
     chromeOpacity = 1,
     lookBlend = 0,
+    effectsIn = 1,
     sequencePosition,
     sequencePassIndex,
     sequenceProgress,
@@ -655,6 +657,7 @@
       {tunnelHook}
       {chromeOpacity}
       {lookBlend}
+      {effectsIn}
       {playing}
       leftPropType={cardRenderOptions?.leftPropTypeOverride ??
         cardRenderOptions?.propTypeOverride}
