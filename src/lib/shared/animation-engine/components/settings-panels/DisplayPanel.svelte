@@ -317,6 +317,22 @@
   /** The shortest grid a stretched panel keeps. A shorter panel scrolls
    *  rather than squeezing the grid under the controls that follow it. */
   const MIN_STRETCH_GRID = 136;
+  let labelMeasure: CanvasRenderingContext2D | null = null;
+
+  /** The widest label as one line of text, however the grid wraps it now. */
+  function widestLabel(grid: HTMLElement): number {
+    labelMeasure ??= document.createElement("canvas").getContext("2d");
+    if (!labelMeasure) return 0;
+    let widest = 0;
+    for (const label of grid.querySelectorAll<HTMLElement>(".chip-label")) {
+      labelMeasure.font = getComputedStyle(label).font;
+      widest = Math.max(
+        widest,
+        labelMeasure.measureText(label.textContent ?? "").width
+      );
+    }
+    return Math.ceil(widest);
+  }
 
   function measureFit(): void {
     if (!fill || !shellEl || !gridEl) return;
@@ -368,6 +384,8 @@
       grow,
       minArt: compact ? COMPACT_MIN_ART : undefined,
       allowPartialRows: compact,
+      // Compact chrome is measured from one-line labels; keep them on one.
+      minTileWidth: compact ? widestLabel(gridEl) + padX + 2 : undefined,
       groupBoundary: showPropChips || compact ? null : 4,
     });
     fitCols = fit?.cols ?? 0;

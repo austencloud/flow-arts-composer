@@ -134,6 +134,29 @@ describe("Post Display box fitting", () => {
     if (height > 900) expect(fit!.art).toBeGreaterThan(COMPACT_MAX_ART);
   });
 
+  it("never picks columns too narrow for a label on one line", () => {
+    // Post's side panel in a short window, with one-line labels. Ten across
+    // would wrap "Progress bar" and "Hand paths"; the taller labels then fit
+    // nothing, the grid fell back, unwrapped, and picked ten again.
+    const box = {
+      ...metrics,
+      chromeY: 26,
+      width: 718,
+      height: 136,
+      grow: true,
+      groupBoundary: null,
+      minArt: COMPACT_MIN_ART,
+      allowPartialRows: true,
+    };
+    expect(fitDisplayGrid(box)!.cols).toBe(10);
+    const fit = fitDisplayGrid({ ...box, minTileWidth: 90 });
+    expect(fit).not.toBeNull();
+    expect(
+      (box.width - box.gapX * (fit!.cols - 1)) / fit!.cols
+    ).toBeGreaterThanOrEqual(90);
+    expect(fit!.art).toBeGreaterThanOrEqual(COMPACT_MIN_ART);
+  });
+
   it("preserves readable pictures by falling back in an impossibly short box", () => {
     expect(
       fitDisplayGrid({
