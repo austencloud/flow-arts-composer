@@ -50,6 +50,8 @@
     animationAppearance?: PostAnimationItem["animationAppearance"] | null;
     tunnelHook?: { hook: TunnelHook; progress: number } | null;
     chromeOpacity?: number;
+    /** The mandala coming in as the tunnel hands over, 0 to 1. */
+    mandalaIn?: number;
     /** An animation turning into its square's look on one surface, 0 to 1. */
     lookBlend?: number;
     effectsIn?: number;
@@ -89,6 +91,7 @@
     animationAppearance = null,
     tunnelHook = null,
     chromeOpacity = 1,
+    mandalaIn = 1,
     lookBlend = 0,
     effectsIn = 1,
     sequencePosition,
@@ -651,6 +654,7 @@
       {animationAppearance}
       {tunnelHook}
       {chromeOpacity}
+      {mandalaIn}
       {lookBlend}
       {effectsIn}
       {playing}

@@ -75,9 +75,13 @@
     playheadSeconds: number;
     isPlaying: boolean;
     selectedItemId: string | null;
+    /** `"tunnel"` while the selected animation's opening tunnel is what is selected. */
+    selectedPart?: "tunnel" | null;
     labelFor: (item: PostItem) => string;
     onSeek: (seconds: number) => void;
     onSelect: (itemId: string | null) => void;
+    /** An animation's opening tunnel was pressed: it has its own look. */
+    onSelectTunnel?: (itemId: string) => void;
     onGestureStart: () => void;
     onGestureEnd: () => void;
     /** Puts back what the gesture changed, leaving no undo step. */
@@ -142,9 +146,11 @@
     playheadSeconds,
     isPlaying,
     selectedItemId,
+    selectedPart = null,
     labelFor,
     onSeek,
     onSelect,
+    onSelectTunnel,
     onGestureStart,
     onGestureEnd,
     onGestureCancel,
@@ -233,11 +239,26 @@
     end: number;
     joinStart: boolean;
     joinEnd: boolean;
+    /** The animation's opening tunnel, drawn as its own block ahead of the rest. */
+    tunnel: boolean;
+  }
+
+  /** Where an animation's opening tunnel hands over to the rest of it, if inside it. */
+  function tunnelEndOf(item: PostItem, end: number): number | null {
+    if (item.kind !== "animation" || item.tunnelHook?.seconds === undefined)
+      return null;
+    const introEnd = item.start + item.tunnelHook.seconds;
+    return introEnd > item.start + POST_TIME_EPSILON &&
+      introEnd < end - POST_TIME_EPSILON
+      ? introEnd
+      : null;
   }
 
   /**
    * What a row draws. A joined pair meets halfway through the stretch where
-   * the animation becomes the square; each half stays its own clip.
+   * the animation becomes the square; each half stays its own clip. An
+   * animation's opening tunnel is drawn as its own block joined to the rest,
+   * so it selects, and takes a look of its own, apart from the animation.
    */
   function rowBlocks(row: TimelineRow): RowBlock[] {
     const pair = handoffPair;
@@ -245,13 +266,26 @@
     for (const item of row.track.items) {
       if (pair && item.id === pair.movesId) continue;
       const joined = pair !== null && item.id === pair.animationId;
+      const end = joined ? (pair.start + pair.end) / 2 : itemEnd(item);
+      const tunnelEnd = tunnelEndOf(item, end);
+      if (tunnelEnd !== null)
+        blocks.push({
+          item,
+          trackIndex: row.trackIndex,
+          start: item.start,
+          end: tunnelEnd,
+          joinStart: false,
+          joinEnd: true,
+          tunnel: true,
+        });
       blocks.push({
         item,
         trackIndex: row.trackIndex,
-        start: item.start,
-        end: joined ? (pair.start + pair.end) / 2 : itemEnd(item),
-        joinStart: false,
+        start: tunnelEnd ?? item.start,
+        end,
+        joinStart: tunnelEnd !== null,
         joinEnd: joined,
+        tunnel: false,
       });
     }
     if (pair && row.trackIndex === pair.animationTrackIndex) {
@@ -266,6 +300,7 @@
           end: itemEnd(moves),
           joinStart: true,
           joinEnd: false,
+          tunnel: false,
         });
     }
     return blocks;
@@ -723,6 +758,23 @@
           : "plain"
     );
     onSelect(selection.focusId);
+  }
+
+  /**
+   * The tunnel block selects its animation with the tunnel as the part in
+   * hand. Shift and Ctrl clicks pick the whole clip, as on any other block.
+   */
+  function handleTunnelActivate(itemId: string, event: MouseEvent): void {
+    if (event.shiftKey || event.ctrlKey || event.metaKey || !onSelectTunnel) {
+      handleItemActivate(itemId, event);
+      return;
+    }
+    if (suppressNextClickForItemId === itemId) {
+      suppressNextClickForItemId = null;
+      return;
+    }
+    selection = { ids: [itemId], anchorId: itemId, focusId: itemId };
+    onSelectTunnel(itemId);
   }
 
   function handleLaneBackgroundPointerDown(): void {
@@ -1485,7 +1537,7 @@
                   {/if}
                 </div>
               {/if}
-              {#each rowBlocks(row) as block (block.item.id)}
+              {#each rowBlocks(row) as block (`${block.item.id}${block.tunnel ? ":tunnel" : ""}`)}
                 {@const item = block.item}
                 {@const track = project.tracks[block.trackIndex]!}
                 <PostTimelineItem
@@ -1495,13 +1547,20 @@
                     block.end - block.start,
                     pixelsPerSecond
                   )}
-                  labelText={labelFor(item)}
-                  selected={selection.ids.includes(item.id)}
+                  labelText={block.tunnel
+                    ? t("post_timeline_tunnel")
+                    : labelFor(item)}
+                  selected={selection.ids.includes(item.id) &&
+                    block.tunnel ===
+                      (selectedPart === "tunnel" && item.id === selectedItemId)}
                   locked={track.locked}
                   dimmed={track.hidden}
                   joinStart={block.joinStart}
                   joinEnd={block.joinEnd}
-                  onActivate={handleItemActivate}
+                  tunnel={block.tunnel}
+                  onActivate={block.tunnel
+                    ? handleTunnelActivate
+                    : handleItemActivate}
                   onBodyPointerDown={(event) =>
                     beginBodyDrag(event, item, block.trackIndex)}
                   onHandlePointerDown={(event, edge) =>

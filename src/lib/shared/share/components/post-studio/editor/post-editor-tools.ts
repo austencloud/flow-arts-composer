@@ -55,6 +55,11 @@ export interface PostToolSelection {
   hasLayout: boolean;
   /** A decoded QR image has its own contrast setting. */
   isQrImage?: boolean;
+  /**
+   * An animation's opening tunnel is what is selected: it has its own look,
+   * its own speed curve and, over footage, its own framing of that footage.
+   */
+  isTunnel?: boolean;
   /** The opening tunnel hook has its own speed curve. */
   isTunnelHook?: boolean;
   /** The hook plays over its footage, which it frames while it fills the frame. */
@@ -105,6 +110,14 @@ export function toolRow(selection: PostToolSelection): PostToolId[] {
         "delete",
       ];
     case "animation":
+      if (selection.isTunnel)
+        return [
+          "back",
+          "appearance",
+          "speed",
+          ...(selection.hasBackdrop ? (["crop"] as const) : []),
+          "delete",
+        ];
       return [
         "back",
         "split",

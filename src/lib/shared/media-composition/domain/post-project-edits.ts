@@ -28,6 +28,7 @@ import {
   videoPostSeconds,
   wrapDegrees,
   type PostAnchor,
+  type PostAnimationAppearance,
   type PostAnimationItem,
   type PostBackground,
   type PostBox,
@@ -694,7 +695,11 @@ export function removeTunnelHook(
         .filter((item) => !(separate && item.id === hook.id))
         .map((item): PostItem => {
           if (item.id === hook.id) {
-            const { tunnelHook: _intro, ...rest } = item as PostAnimationItem;
+            const {
+              tunnelHook: _intro,
+              tunnelAppearance: _look,
+              ...rest
+            } = item as PostAnimationItem;
             return {
               ...rest,
               start: introEnd,
@@ -762,6 +767,35 @@ export function setTunnelHookBackdropFrame(
     ),
   }));
   return finish({ ...project, tracks }, ctx);
+}
+
+/**
+ * Sets what the opening tunnel shows differently from the animation it opens.
+ * `changes` merge into what the tunnel already sets; a flag set back to the
+ * animation's own value follows the animation again. `null` makes the tunnel
+ * look like the animation throughout.
+ */
+export function setTunnelAppearance(
+  project: PostProject,
+  changes: PostAnimationAppearance | null,
+  ctx: EditContext
+): PostProject {
+  const hook = findTunnelHook(project);
+  if (!hook) return project;
+  const own: Record<string, unknown> = hook.animationAppearance ?? {};
+  const kept = Object.fromEntries(
+    Object.entries(
+      changes ? { ...hook.tunnelAppearance, ...changes } : {}
+    ).filter(
+      ([key, value]) =>
+        value !== undefined &&
+        JSON.stringify(value) !== JSON.stringify(own[key])
+    )
+  ) as PostAnimationAppearance;
+  const { tunnelAppearance: _previous, ...rest } = hook;
+  const next: PostAnimationItem =
+    Object.keys(kept).length > 0 ? { ...rest, tunnelAppearance: kept } : rest;
+  return finish(replaceItem(project, hook.id, next), ctx);
 }
 
 /** The live view can take a video's place when its visible area fits the editable canvas. */

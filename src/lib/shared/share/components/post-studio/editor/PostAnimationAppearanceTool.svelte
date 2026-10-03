@@ -76,9 +76,15 @@
     editor: PostEditorState;
     item?: PostAnimationItem | PostMovesItem | null;
     appearanceOverride?: PostAnimationItem["animationAppearance"] | null;
+    /**
+     * Takes each change instead of the item. `changed` names the flags this
+     * change moved, so a look that only overrides some of them can keep the
+     * rest following another.
+     */
     onAppearanceChange?: (
       appearance: NonNullable<PostAnimationItem["animationAppearance"]>,
-      settingKey?: string
+      settingKey: string | undefined,
+      changed: (keyof NonNullable<PostAnimationItem["animationAppearance"]>)[]
     ) => void;
     appearanceKey?: string;
     scopeLabel?: string;
@@ -284,6 +290,9 @@
   ] as const;
   let syncing = false;
   let effectsWereEdited = false;
+  type Appearance = NonNullable<PostAnimationItem["animationAppearance"]>;
+  /** The look as last shown or saved, to tell which flags a change moved. */
+  let lastSnapshot: Appearance | null = null;
 
   $effect(() => {
     const appearance = item?.animationAppearance ?? appearanceOverride;
@@ -328,18 +337,18 @@
           trail: postAnimationTrailSettings(initialTrail, nextEffects, trail),
         });
         trailEffects.replace(nextEffects);
+        lastSnapshot = snapshot();
       } finally {
         syncing = false;
       }
     });
   });
 
-  function save(settingKey?: string): void {
-    if (syncing || locked) return;
+  function snapshot(): Appearance {
     const settings = visibility.getSettings();
     const appearance = Object.fromEntries(
       keys.map((key) => [key, settings[key]])
-    ) as NonNullable<PostAnimationItem["animationAppearance"]>;
+    ) as Appearance;
     if (pickedPropType) appearance.propType = pickedPropType;
     appearance.propLook = pickedPropLook;
     if (mandalaThickness !== DEFAULT_MANDALA_THICKNESS)
@@ -366,8 +375,23 @@
         },
       };
     }
+    return appearance;
+  }
+
+  function save(settingKey?: string): void {
+    if (syncing || locked) return;
+    const appearance = snapshot();
+    const previous: Partial<Appearance> = lastSnapshot ?? {};
+    lastSnapshot = appearance;
     if (onAppearanceChange) {
-      onAppearanceChange(appearance, settingKey);
+      const changed = [
+        ...new Set([...Object.keys(previous), ...Object.keys(appearance)]),
+      ].filter(
+        (key) =>
+          JSON.stringify(previous[key as keyof Appearance]) !==
+          JSON.stringify(appearance[key as keyof Appearance])
+      ) as (keyof Appearance)[];
+      onAppearanceChange(appearance, settingKey, changed);
       return;
     }
     if (!item) return;

@@ -1034,11 +1034,21 @@
   const selection = $derived.by((): PostToolSelection => {
     const item = editor.selectedItem;
     if (!item) return { kind: null, hasLayout: false };
+    // A tunnel folded into its animation has its own block, which carries its
+    // speed and framing; only a hook saved as a whole item keeps them here.
+    const tunnel = editor.selectedPart === "tunnel";
+    const wholeHook =
+      item.kind === "animation" && item.tunnelHook?.seconds === undefined;
     return {
       kind: item.kind,
       isQrImage: item.kind === "image" && qrImageIds[item.imageId] === true,
-      isTunnelHook: item.kind === "animation" && !!item.tunnelHook,
-      hasBackdrop: item.kind === "animation" && !!item.tunnelHook?.backdrop,
+      isTunnel: tunnel,
+      isTunnelHook:
+        item.kind === "animation" && !!item.tunnelHook && (tunnel || wholeHook),
+      hasBackdrop:
+        item.kind === "animation" &&
+        !!item.tunnelHook?.backdrop &&
+        (tunnel || wholeHook),
       hasLayout:
         item.kind === "video" &&
         findItem(editor.project, item.id)?.trackIndex === 0,
@@ -2521,6 +2531,7 @@
       {editor}
       item={editor.selectedItem}
       {tool}
+      tunnel={editor.selectedPart === "tunnel"}
       appearanceFill={placement === "side"}
       crop={cropMode ? crop : null}
       {cropSourceView}
@@ -2540,9 +2551,11 @@
     {tool}
     subject={tool === "transition" && transitionCut
       ? `${labelFor(transitionCut.outgoing)} → ${labelFor(transitionCut.incoming)}`
-      : editor.selectedItem
-        ? labelFor(editor.selectedItem)
-        : undefined}
+      : editor.selectedPart === "tunnel"
+        ? t("post_timeline_tunnel")
+        : editor.selectedItem
+          ? labelFor(editor.selectedItem)
+          : undefined}
     onDone={placement === "dock" && !cropMode ? closePanel : undefined}
     {placement}
     bare={(placement === "dock" && cropMode) ||
@@ -2887,9 +2900,11 @@
           playheadSeconds={editor.previewSeconds}
           isPlaying={editor.isPlaying}
           selectedItemId={editor.selectedItemId}
+          selectedPart={editor.selectedPart}
           {labelFor}
           onSeek={seekFromTimeline}
           onSelect={(itemId) => (editor.selectedItemId = itemId)}
+          onSelectTunnel={(itemId) => editor.selectTunnel(itemId)}
           onGestureStart={() => {
             editor.pause();
             editor.beginGesture();

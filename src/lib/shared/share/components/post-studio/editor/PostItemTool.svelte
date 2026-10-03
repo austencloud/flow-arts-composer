@@ -21,6 +21,7 @@
     mainItemAt,
     textBox,
     wrapDegrees,
+    type PostAnimationAppearance,
     type PostBox,
     type PostEdgeColor,
     type PostItem,
@@ -35,6 +36,7 @@
     canReplaceOverlayVideoWithAnimation,
     replaceOverlayVideoWithAnimation,
     trimItem,
+    setTunnelAppearance,
     setTunnelHookBackdropFrame,
     setTunnelHookSpeed,
     trimItemToSource,
@@ -96,6 +98,7 @@
   import PostSourceGeometryTool from "./PostSourceGeometryTool.svelte";
   import { sourceCropAtRatio, sourceFillBox } from "./post-source-crop";
   import PostAnimationAppearanceTool from "./PostAnimationAppearanceTool.svelte";
+  import { DEFAULT_MANDALA_OVERLAY_CONFIG } from "$lib/shared/mandala/domain/mandala-overlay-types";
   import PostCardAppearanceTool from "./PostCardAppearanceTool.svelte";
   import PostSequenceActionsTool from "./PostSequenceActionsTool.svelte";
   import PostVideoColorTool from "./PostVideoColorTool.svelte";
@@ -135,6 +138,8 @@
     stepCount?: number;
     /** The post's changed notation is still being prepared. */
     sequenceBusy?: boolean;
+    /** The animation's opening tunnel is what is selected, with a look of its own. */
+    tunnel?: boolean;
   }
 
   let {
@@ -151,6 +156,7 @@
     cardRenderOptions = null,
     stepCount = 0,
     sequenceBusy = false,
+    tunnel = false,
   }: Props = $props();
   let grading = $state(false);
   let gradeError = $state("");
@@ -305,6 +311,44 @@
     "smooth",
   ] as const satisfies readonly PostEasingPresetId[];
   const HOOK_DEFAULT_SPEED = EASING_PRESETS.smooth;
+
+  type AnimationAppearance = PostAnimationAppearance;
+  /** What the tunnel shows: the animation's look with the tunnel's own changes over it. */
+  const tunnelLook = $derived(
+    item.kind === "animation"
+      ? { ...item.animationAppearance, ...item.tunnelAppearance }
+      : null
+  );
+
+  /**
+   * The tunnel keeps only the flags changed on it; everything else goes on
+   * following the animation.
+   */
+  function commitTunnelAppearance(
+    look: AnimationAppearance,
+    settingKey: string | undefined,
+    changed: (keyof AnimationAppearance)[]
+  ): void {
+    if (locked || changed.length === 0) return;
+    const changes = Object.fromEntries(
+      changed.map((key) => [
+        key,
+        // The slider leaves the default thickness unsaid; the tunnel says it,
+        // so it is not taken for "follow the animation".
+        key === "mandalaThickness"
+          ? (look.mandalaThickness ??
+            DEFAULT_MANDALA_OVERLAY_CONFIG.strokeWidth)
+          : look[key],
+      ])
+    ) as AnimationAppearance;
+    const change = (
+      project: Parameters<typeof setTunnelAppearance>[0],
+      ctx: Parameters<typeof setTunnelAppearance>[2]
+    ) => setTunnelAppearance(project, changes, ctx);
+    if (settingKey)
+      editor.editSetting(`${item.id}:tunnel:effects:${settingKey}`, change);
+    else editor.edit(change);
+  }
 
   function commitHookSpeed(next: readonly number[]): void {
     if (locked) return;
@@ -1345,6 +1389,17 @@
         onPick={(effect) => patchItem({ staffEffect: effect })}
       />
     {/if}
+  {:else if tool === "appearance" && tunnel && item.kind === "animation"}
+    <PostAnimationAppearanceTool
+      fill={appearanceFill}
+      {editor}
+      appearanceOverride={tunnelLook}
+      onAppearanceChange={commitTunnelAppearance}
+      appearanceKey="{item.id}:tunnel"
+      scopeLabel={t("post_timeline_tunnel")}
+      {locked}
+      defaultPropType={cardRenderOptions?.propTypeOverride}
+    />
   {:else if tool === "appearance" && (item.kind === "animation" || item.kind === "moves")}
     <PostAnimationAppearanceTool
       fill={appearanceFill}

@@ -60,6 +60,7 @@
     animationAppearance = null,
     tunnelHook = null,
     chromeOpacity = 1,
+    mandalaIn = 1,
     lookBlend,
     effectsIn = 1,
   }: {
@@ -84,6 +85,11 @@
     tunnelHook?: { hook: TunnelHook; progress: number } | null;
     /** Grid, glyph, step number and progress strip: 0 during the hook, 1 once they have faded in. */
     chromeOpacity?: number;
+    /**
+     * The mandala coming in as the tunnel hands over, 0 to 1, when the
+     * tunnel hides it and the animation shows it.
+     */
+    mandalaIn?: number;
     /**
      * Set while this animation is the surface its picture-in-picture square
      * will draw on: how far it has turned to the square's look, 0 to 1. Its
@@ -369,6 +375,8 @@
     : undefined}
   class:effects-in={effectsIn < 1}
   style:--effects-in={effectsIn < 1 ? effectsIn : undefined}
+  class:mandala-in={mandalaIn < 1}
+  style:--mandala-in={mandalaIn < 1 ? mandalaIn : undefined}
   data-studio-animation-destination
   data-studio-animation-mode={showMandala ? "mandala" : "pictograph"}
   data-sequence-position={sequencePosition}
@@ -671,6 +679,9 @@
   .animation-layer.effects-in :global(canvas[data-animation-layer="trails"]),
   .animation-layer.effects-in :global(canvas[data-animation-layer="mandala"]) {
     opacity: var(--effects-in);
+  }
+  .animation-layer.mandala-in :global(canvas[data-animation-layer="mandala"]) {
+    opacity: var(--mandala-in);
   }
   .pictograph-motion > div:not(.arrow-overlay):not(.outgoing-arrows) {
     width: 100%;
