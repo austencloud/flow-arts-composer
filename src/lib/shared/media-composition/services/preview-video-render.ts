@@ -1,4 +1,7 @@
-import type { PreviewVideoCopy } from "../domain/preview-video";
+import {
+  PREVIEW_STALL_MS,
+  type PreviewVideoCopy,
+} from "../domain/preview-video";
 
 type PreviewWorkerMessage =
   | { type: "progress"; progress: number }
@@ -20,21 +23,25 @@ export function renderPreviewVideo(
       { type: "module" }
     );
     const finish = (error?: Error, copy?: PreviewVideoCopy) => {
-      clearTimeout(timeout);
+      clearTimeout(stall);
       signal.removeEventListener("abort", abort);
       worker.terminate();
       if (copy) resolve(copy);
       else reject(error ?? new Error("Preview preparation failed"));
     };
     const abort = () => finish(new Error("Preview preparation cancelled"));
-    const timeout = setTimeout(
-      () => finish(new Error("Preview preparation timed out")),
-      180_000
-    );
+    // A long 4K recording takes minutes to copy; only a copy that stops
+    // moving is given up.
+    let stall = setTimeout(stalled, PREVIEW_STALL_MS);
+    function stalled() {
+      finish(new Error("Preview preparation stopped making progress"));
+    }
     signal.addEventListener("abort", abort, { once: true });
     worker.onmessage = (event: MessageEvent<PreviewWorkerMessage>) => {
       const result = event.data;
       if (result.type === "progress") {
+        clearTimeout(stall);
+        stall = setTimeout(stalled, PREVIEW_STALL_MS);
         onProgress(result.progress);
         return;
       }

@@ -27,6 +27,7 @@
     takeIdFromRole,
     takeRole,
   } from "$lib/shared/media-composition/domain/post-plan-compiler";
+  import { takeFileKey } from "$lib/shared/media-composition/domain/post-plan";
   import {
     itemIdFromMovesAnimationRole,
     itemIdFromStaffEffectRole,
@@ -317,11 +318,15 @@
       editor.takes.map((take) => ({
         id: take.id,
         url: editor.mediaUrl(take.id),
-        assetKey: take.takeKey,
+        // Takes cut from one recording share one editing copy.
+        assetKey: takeFileKey(take.ref),
       })),
     () => editor.isPlaying
   );
-  const session = createPostTimingSession(editor);
+  const session = createPostTimingSession(
+    editor,
+    (takeId, url) => videoPreviews.resolve(takeId, url).url
+  );
   onMount(() => {
     // Standalone sequence pages have no app shortcut coordinator. Reuse its
     // manager and history bindings; both are safe to initialize again in-app.

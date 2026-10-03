@@ -191,7 +191,7 @@ describe("preview video cache", () => {
   });
 
   it("caps active preview memory and recovers capacity when a region releases", async () => {
-    const large = { ...copy(), blob: { size: 80 * 1024 * 1024 } as Blob };
+    const large = { ...copy(), blob: { size: 900 * 1024 * 1024 } as Blob };
     const { cache } = fixture({ render: async () => large });
     const first = cache.acquire("first");
     expect(await first.ready).toMatchObject({ status: "ready" });
@@ -243,14 +243,75 @@ describe("preview video cache", () => {
     retry.release();
   });
 
+  it("plays a copy made ahead of time without encoding or storing one", async () => {
+    const findPrepared = vi.fn(async () => ({
+      url: "/videos/take.edit.mp4",
+      width: 720,
+      height: 1280,
+      sourceWidth: 2160,
+      sourceHeight: 3840,
+      durationSeconds: 204,
+    }));
+    const { cache, dependencies } = fixture({ findPrepared });
+    const handle = cache.acquire("/videos/take.mp4");
+    expect(await handle.ready).toMatchObject({
+      status: "ready",
+      url: "/videos/take.edit.mp4",
+      sourceWidth: 2160,
+    });
+    expect(dependencies.render).not.toHaveBeenCalled();
+    expect(dependencies.store.read).not.toHaveBeenCalled();
+    expect(dependencies.createUrl).not.toHaveBeenCalled();
+    handle.release();
+    expect(dependencies.revokeUrl).not.toHaveBeenCalled();
+  });
+
+  it("encodes in the browser when looking for a prepared copy fails", async () => {
+    const { cache, dependencies } = fixture({
+      findPrepared: async () => {
+        throw new Error("offline");
+      },
+    });
+    const handle = cache.acquire("/videos/take.mp4");
+    expect(await handle.ready).toMatchObject({ status: "ready" });
+    expect(dependencies.render).toHaveBeenCalledTimes(1);
+    handle.release();
+  });
+
+  it("opens a stored copy while another video is still encoding", async () => {
+    const slow = deferred<PreviewVideoCopy>();
+    const { cache } = fixture({
+      render: () => slow.promise,
+      store: {
+        read: async (key: string) =>
+          key === previewVideoCacheKey("stored", "stored") ? copy() : null,
+        write: vi.fn(async () => {}),
+        remove: vi.fn(async () => {}),
+      },
+    });
+    const encoding = cache.acquire("encoding");
+    const stored = cache.acquire("stored");
+    expect(await stored.ready).toMatchObject({ status: "ready" });
+    expect(encoding.getState().status).toBe("preparing");
+    slow.resolve(copy());
+    expect(await encoding.ready).toMatchObject({ status: "ready" });
+    encoding.release();
+    stored.release();
+  });
+
   it("keeps landscape and portrait previews inside 720p bounds with even dimensions", () => {
     expect(previewVideoDimensions(3840, 2160)).toEqual({
       width: 1280,
       height: 720,
     });
+    // Portrait keeps 720 across, as landscape keeps 720 high.
     expect(previewVideoDimensions(1080, 1920)).toEqual({
-      width: 406,
-      height: 720,
+      width: 720,
+      height: 1280,
+    });
+    expect(previewVideoDimensions(2160, 3840)).toEqual({
+      width: 720,
+      height: 1280,
     });
     expect(previewVideoDimensions(640, 480)).toEqual({
       width: 640,

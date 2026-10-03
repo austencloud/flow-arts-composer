@@ -132,7 +132,10 @@ describe("Post Studio playback media lifetime", () => {
     const controller = h.controller!;
     controller.hold(true);
     expect(h.video.paused).toBe(true);
-    Object.defineProperty(h.video, "readyState", { configurable: true, value: 2 });
+    Object.defineProperty(h.video, "readyState", {
+      configurable: true,
+      value: 2,
+    });
     const step = previewClockStep(10, 1 / 60, [
       { ...controller.read(), targetTime: 0, playbackRate: 0.5 },
     ]);
@@ -148,6 +151,17 @@ describe("Post Studio playback media lifetime", () => {
         { ...controller.read(), targetTime: 0, playbackRate: 0.5 },
       ]).deltaSeconds
     ).toBeCloseTo(0.04);
+  });
+
+  it("stops the footage when pausing also moves it back to the playhead", async () => {
+    const h = mountPlaybackMediaLayer();
+    mounted.push(h);
+    present(0);
+    await vi.waitFor(() => expect(h.video.paused).toBe(false));
+    h.video.currentTime = 4;
+    h.pauseAt(1);
+    expect(h.video.currentTime).toBe(1);
+    expect(h.video.paused).toBe(true);
   });
 
   it("keeps retained pixels and pending frame callbacks across equivalent playback bindings", () => {

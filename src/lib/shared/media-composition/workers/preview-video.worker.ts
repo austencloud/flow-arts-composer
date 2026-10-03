@@ -10,6 +10,9 @@ import {
 import {
   MAX_PREVIEW_DURATION_SECONDS,
   MAX_PREVIEW_VIDEO_BYTES,
+  PREVIEW_AUDIO_BITRATE,
+  PREVIEW_KEY_FRAME_SECONDS,
+  PREVIEW_VIDEO_BITRATE,
   previewVideoDimensions,
 } from "../domain/preview-video";
 
@@ -53,11 +56,15 @@ self.onmessage = async (event: MessageEvent<{ sourceUrl: string }>) => {
         width,
         height,
         fit: "contain",
-        bitrate: 1_500_000,
-        keyFrameInterval: 0.5,
+        bitrate: PREVIEW_VIDEO_BITRATE,
+        keyFrameInterval: PREVIEW_KEY_FRAME_SECONDS,
         allowRotationMetadata: false,
       },
-      audio: { forceTranscode: true, codec: "aac", bitrate: 96_000 },
+      audio: {
+        forceTranscode: true,
+        codec: "aac",
+        bitrate: PREVIEW_AUDIO_BITRATE,
+      },
     });
     if (!conversion.isValid || conversion.discardedTracks.length) {
       throw new Error(

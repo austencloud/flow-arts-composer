@@ -2,6 +2,7 @@ import {
   MAX_ACTIVE_PREVIEW_BYTES,
   MAX_PREVIEW_VIDEO_BYTES,
   previewVideoCacheKey,
+  type PreparedPreviewVideo,
   type PreviewVideoCopy,
   type PreviewVideoState,
 } from "../../domain/preview-video";
@@ -21,6 +22,11 @@ export interface PreviewVideoDependencies {
   supported(): boolean;
   createUrl(blob: Blob): string;
   revokeUrl(url: string): void;
+  /** A copy made ahead of time, which needs no encoding in the browser. */
+  findPrepared?(
+    sourceUrl: string,
+    signal: AbortSignal
+  ): Promise<PreparedPreviewVideo | null>;
 }
 
 interface Entry {
@@ -36,7 +42,9 @@ interface Entry {
 
 export class PreviewVideoCache implements IPreviewVideoCache {
   private entries = new Map<string, Entry>();
-  private queue: Promise<void> = Promise.resolve();
+  // One encode at a time; a prepared or stored copy never waits behind one.
+  private renders: Promise<void> = Promise.resolve();
+  private removals: Promise<void> = Promise.resolve();
   private activeBytes = 0;
 
   constructor(private readonly dependencies: PreviewVideoDependencies) {}
@@ -59,7 +67,7 @@ export class PreviewVideoCache implements IPreviewVideoCache {
       };
       this.entries.set(key, entry);
       const owned = entry;
-      this.queue = this.queue.then(() => this.prepare(key, assetKey, owned));
+      void Promise.resolve().then(() => this.prepare(key, assetKey, owned));
     }
     entry.refs++;
     const owned = entry;
@@ -83,7 +91,7 @@ export class PreviewVideoCache implements IPreviewVideoCache {
       ) => {
         if (released || owned.state.status !== "ready") return;
         // Remove the bad copy before a later region can acquire it again.
-        this.queue = this.queue.then(async () => {
+        this.removals = this.removals.then(async () => {
           try {
             await this.dependencies.store.remove(key);
           } catch {
@@ -134,6 +142,45 @@ export class PreviewVideoCache implements IPreviewVideoCache {
     }
   }
 
+  private async findPrepared(
+    sourceUrl: string,
+    entry: Entry
+  ): Promise<PreparedPreviewVideo | null> {
+    try {
+      return (
+        (await this.dependencies.findPrepared?.(
+          sourceUrl,
+          entry.controller.signal
+        )) ?? null
+      );
+    } catch {
+      return null;
+    }
+  }
+
+  /** Runs one encode after the ones before it, unless its regions left. */
+  private encode(sourceUrl: string, entry: Entry): Promise<PreviewVideoCopy> {
+    const run = this.renders.then(() => {
+      if (!entry.refs) throw new Error("Preview preparation cancelled");
+      return this.dependencies.render(
+        sourceUrl,
+        entry.controller.signal,
+        (progress) => {
+          if (entry.refs)
+            this.emit(entry, {
+              ...entry.state,
+              progress: Math.min(1, Math.max(0, progress)),
+            });
+        }
+      );
+    });
+    this.renders = run.then(
+      () => undefined,
+      () => undefined
+    );
+    return run;
+  }
+
   private async prepare(
     key: string,
     assetKey: string,
@@ -142,9 +189,23 @@ export class PreviewVideoCache implements IPreviewVideoCache {
     if (!entry.refs) return;
     const sourceUrl = entry.state.sourceUrl;
     try {
+      const prepared = await this.findPrepared(sourceUrl, entry);
+      if (!entry.refs) return;
+      if (prepared) {
+        const { url, ...metadata } = prepared;
+        this.emit(entry, {
+          status: "ready",
+          sourceUrl,
+          url,
+          progress: 1,
+          ...metadata,
+        });
+        return;
+      }
       let copy: PreviewVideoCopy | null;
       let storageReason: string | undefined;
       try {
+        await this.removals;
         copy = await this.dependencies.store.read(key);
       } catch {
         copy = null;
@@ -155,17 +216,7 @@ export class PreviewVideoCache implements IPreviewVideoCache {
       if (!copy) {
         if (!this.dependencies.supported())
           throw new Error("This browser uses the original video for previews");
-        copy = await this.dependencies.render(
-          sourceUrl,
-          entry.controller.signal,
-          (progress) => {
-            if (entry.refs)
-              this.emit(entry, {
-                ...entry.state,
-                progress: Math.min(1, Math.max(0, progress)),
-              });
-          }
-        );
+        copy = await this.encode(sourceUrl, entry);
         if (!entry.refs) return;
         if (copy.blob.size > MAX_PREVIEW_VIDEO_BYTES)
           throw new Error("This preview exceeds the local size limit");

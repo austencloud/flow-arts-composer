@@ -598,21 +598,16 @@
     if (playing) {
       if (!playingFrameRequest && !video.seeking) watchPlayingFrames(video);
       startPlayback(video);
-    } else if (seeked) {
+    } else {
+      // A paused post never leaves its footage running underneath, even when
+      // pausing also moved it back to the playhead. Only the frame recovery's
+      // short muted decode may play it.
+      if (!frameRecovery?.isPriming && !video.paused) video.pause();
       cancelPlayingFrame();
       awaitingPlayingFrame = false;
       recoveryStartedAt = null;
       // The frame must arrive from the completed seek, not the old position.
-      if (!video.seeking) showPausedFrame(video);
-    } else if (!frameRecovery?.isPriming && !video.paused) {
-      cancelPlayingFrame();
-      awaitingPlayingFrame = false;
-      recoveryStartedAt = null;
-      video.pause();
-    } else if (!playing) {
-      cancelPlayingFrame();
-      awaitingPlayingFrame = false;
-      recoveryStartedAt = null;
+      if (seeked && !video.seeking) showPausedFrame(video);
     }
   });
 
