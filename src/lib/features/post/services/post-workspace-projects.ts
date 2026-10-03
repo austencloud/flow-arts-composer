@@ -7,6 +7,8 @@ import {
   type PostDraftRecord,
 } from "$lib/shared/media-composition/services/post-draft-storage";
 import { loadByIdentifier } from "$lib/shared/sequence-viewer/services/sequence-data-provider";
+import { auth } from "$lib/shared/auth/firebase";
+import { legacyPostOwner } from "$lib/shared/media-composition/services/post-project-store";
 
 const SNAPSHOT_PREFIX = "tka:post:sequence:v1:";
 const RECENT_KEY = "tka:post:recent:v1";
@@ -14,6 +16,19 @@ const SELECTED_KEY = "tka:post:selected:v1";
 const PROJECT_PREFIX = "tka:post-studio:project:v2:";
 const PLAN_PREFIX = "tka:post-studio:plan:v1:";
 const memorySnapshots = new Map<string, SequenceData>();
+
+function accountId(): string | null {
+  return auth.currentUser && !auth.currentUser.isAnonymous ? auth.currentUser.uid : null;
+}
+
+function scopedKey(key: string): string {
+  const uid = accountId();
+  return uid ? `${key}:account:${uid}` : legacyPostOwner() ? `${key}:guest` : key;
+}
+
+function snapshotKey(sequenceId: string): string {
+  return `${scopedKey(SNAPSHOT_PREFIX)}${sequenceId}`;
+}
 
 export interface PostProjectChoice {
   sequenceId: string;
@@ -41,7 +56,7 @@ function safeStorage(): Storage | null {
 function recentSequences(): RecentSequence[] {
   try {
     const parsed: unknown = JSON.parse(
-      safeStorage()?.getItem(RECENT_KEY) ?? "[]"
+      safeStorage()?.getItem(scopedKey(RECENT_KEY)) ?? "[]"
     );
     return Array.isArray(parsed)
       ? parsed.filter(
@@ -61,7 +76,7 @@ function recentSequences(): RecentSequence[] {
 
 export function rememberPostSequence(sequence: SequenceData): void {
   if (!sequence.id) throw new Error("A sequence needs an ID to open in Post.");
-  memorySnapshots.set(sequence.id, sequence);
+  cachePostSequence(sequence);
   const store = safeStorage();
   const recent = [
     {
@@ -74,22 +89,28 @@ export function rememberPostSequence(sequence: SequenceData): void {
     ...recentSequences().filter((entry) => entry.sequenceId !== sequence.id),
   ].slice(0, 50);
   try {
-    store?.setItem(RECENT_KEY, JSON.stringify(recent));
-    store?.setItem(SELECTED_KEY, sequence.id);
-    if (sequence.steps?.length)
-      store?.setItem(
-        `${SNAPSHOT_PREFIX}${sequence.id}`,
-        JSON.stringify(sequence)
-      );
+    store?.setItem(scopedKey(RECENT_KEY), JSON.stringify(recent));
+    store?.setItem(scopedKey(SELECTED_KEY), sequence.id);
   } catch {
     // A full sequence may exceed browser quota. Its identity is still saved when possible.
+  }
+}
+
+/** Cache a cloud source without changing the user's current Post selection. */
+export function cachePostSequence(sequence: SequenceData): void {
+  if (!sequence.id || !sequence.steps?.length) return;
+  memorySnapshots.set(snapshotKey(sequence.id), sequence);
+  try {
+    safeStorage()?.setItem(snapshotKey(sequence.id), JSON.stringify(sequence));
+  } catch {
+    // The in-memory snapshot still supports this session.
   }
 }
 
 export function selectPostSequence(sequenceId: string): void {
   const store = safeStorage();
   try {
-    store?.setItem(SELECTED_KEY, sequenceId);
+    store?.setItem(scopedKey(SELECTED_KEY), sequenceId);
   } catch {
     /* in-memory navigation still works */
   }
@@ -98,7 +119,7 @@ export function selectPostSequence(sequenceId: string): void {
   if (!selected) return;
   try {
     store?.setItem(
-      RECENT_KEY,
+      scopedKey(RECENT_KEY),
       JSON.stringify([
         { ...selected, openedAt: Date.now() },
         ...recent.filter((entry) => entry.sequenceId !== sequenceId),
@@ -111,7 +132,7 @@ export function selectPostSequence(sequenceId: string): void {
 
 export function lastSelectedPostSequenceId(): string | null {
   try {
-    return safeStorage()?.getItem(SELECTED_KEY) || null;
+    return safeStorage()?.getItem(scopedKey(SELECTED_KEY)) || null;
   } catch {
     return null;
   }
@@ -127,10 +148,13 @@ export async function resolvePostSequence(
 }
 
 function cachedPostSequence(sequenceId: string): SequenceData | null {
-  const memory = memorySnapshots.get(sequenceId);
+  const memory = memorySnapshots.get(snapshotKey(sequenceId));
   if (memory?.id === sequenceId && memory.steps?.length) return memory;
   try {
-    const raw = safeStorage()?.getItem(`${SNAPSHOT_PREFIX}${sequenceId}`);
+    const raw = safeStorage()?.getItem(snapshotKey(sequenceId)) ??
+      ((!legacyPostOwner() || legacyPostOwner() === accountId())
+        ? safeStorage()?.getItem(`${SNAPSHOT_PREFIX}${sequenceId}`)
+        : null);
     if (raw) {
       const parsed: unknown = JSON.parse(raw);
       if (
@@ -199,7 +223,8 @@ function choicesFromRecords(
       const parsed = PostProjectSchema.safeParse(JSON.parse(record.value));
       if (
         !parsed.success ||
-        record.key !== `${PROJECT_PREFIX}${parsed.data.sequenceId}`
+        record.key !== `${PROJECT_PREFIX}${parsed.data.sequenceId}` &&
+        record.key !== `${PROJECT_PREFIX}guest:${parsed.data.sequenceId}`
       )
         continue;
       const project = parsed.data;
@@ -223,6 +248,7 @@ export async function listPostProjects(): Promise<{
   projects: PostProjectChoice[];
   error: string | null;
 }> {
+  const guestAfterClaim = !!legacyPostOwner() && legacyPostOwner() !== (auth.currentUser?.isAnonymous ? null : auth.currentUser?.uid);
   let browserRecords: PostDraftRecord[] = [];
   let error: string | null = null;
   try {
@@ -234,6 +260,7 @@ export async function listPostProjects(): Promise<{
   const controller = new AbortController();
   let deadline: ReturnType<typeof setTimeout> | undefined;
   try {
+    if (guestAfterClaim) throw new Error("Account backups are private.");
     const archive = (async () => {
       const response = await fetch("/_local/post-studio-drafts", {
         cache: "no-store",
@@ -268,7 +295,7 @@ export async function listPostProjects(): Promise<{
         typeof record.value === "string"
     );
   } catch {
-    error = [
+    error = guestAfterClaim ? error : [
       error,
       "Computer backups could not be read. Browser projects are shown.",
     ]
@@ -278,10 +305,10 @@ export async function listPostProjects(): Promise<{
     clearTimeout(deadline);
   }
   const choices = choicesFromRecords([...browserRecords, ...diskRecords]);
-  for (const legacy of legacyPlanChoices()) {
+  for (const legacy of guestAfterClaim ? [] : legacyPlanChoices()) {
     if (!choices.has(legacy.sequenceId)) choices.set(legacy.sequenceId, legacy);
   }
-  for (const recent of recentSequences()) {
+  for (const recent of guestAfterClaim ? [] : recentSequences()) {
     const draft = choices.get(recent.sequenceId);
     choices.set(recent.sequenceId, {
       sequenceId: recent.sequenceId,

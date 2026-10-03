@@ -1,18 +1,16 @@
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
 import type { PostProject } from "$lib/shared/media-composition/domain/post-project";
-import { loadPostDraft } from "$lib/shared/media-composition/services/post-draft-storage";
+import { loadSyncedPostDraft, listSyncedPostProjects, resolveSyncedPostSequence } from "../services/post-account-projects";
 import {
   lastSelectedPostSequenceId,
-  listPostProjects,
-  resolvePostSequence,
   selectPostSequence,
   type PostProjectChoice,
 } from "../services/post-workspace-projects";
 
 export interface PostModuleServices {
-  list: typeof listPostProjects;
-  resolve: typeof resolvePostSequence;
-  loadDraft: typeof loadPostDraft;
+  list: typeof listSyncedPostProjects;
+  resolve: typeof resolveSyncedPostSequence;
+  loadDraft: typeof loadSyncedPostDraft;
 }
 
 export function createPostModuleState(services: PostModuleServices) {
@@ -86,6 +84,16 @@ export function createPostModuleState(services: PostModuleServices) {
     void refreshProjects();
   }
 
+  function resetForAccount(): void {
+    ++request;
+    projects = [];
+    selectedId = null;
+    sequence = null;
+    draft = null;
+    showingProjects = true;
+    void refreshProjects();
+  }
+
   return {
     get projects() {
       return projects;
@@ -120,6 +128,7 @@ export function createPostModuleState(services: PostModuleServices) {
     refreshProjects,
     open,
     showProjects,
+    resetForAccount,
     lastSelectedId: lastSelectedPostSequenceId,
   };
 }

@@ -1,4 +1,6 @@
 import type { PostProject } from "../domain/post-project";
+import { auth } from "$lib/shared/auth/firebase";
+import { legacyPostOwner } from "./post-project-store";
 import {
   projectDraftRecord,
   resolvePostStudioDraft,
@@ -47,9 +49,15 @@ function recordsForSequence(
 /** Read only this editor's drafts; unrelated browser data never enters a backup. */
 export function readPostDraftRecords(): PostDraftRecord[] {
   const records: PostDraftRecord[] = [];
+  const owner = legacyPostOwner();
+  const uid = auth.currentUser && !auth.currentUser.isAnonymous ? auth.currentUser.uid : null;
+  const guestAfterClaim = !!owner && owner !== uid;
   for (let index = 0; index < localStorage.length; index += 1) {
     const key = localStorage.key(index);
-    if (!key || !PREFIXES.some((prefix) => key.startsWith(prefix))) continue;
+    if (!key || key.startsWith(`${PREFIXES[0]}account:`) ||
+        (guestAfterClaim && !key.startsWith(`${PREFIXES[0]}guest:`)) ||
+        (!guestAfterClaim && key.startsWith(`${PREFIXES[0]}guest:`)) ||
+        !PREFIXES.some((prefix) => key.startsWith(prefix))) continue;
     const value = localStorage.getItem(key);
     if (value !== null) records.push({ key, value });
   }
@@ -62,6 +70,12 @@ export async function loadPostDraft(sequenceId: string): Promise<{
   diskAvailable: boolean;
   error: string | null;
 }> {
+  if (legacyPostOwner() && legacyPostOwner() !== (auth.currentUser?.isAnonymous ? null : auth.currentUser?.uid))
+    return {
+      project: resolvePostStudioDraft(sequenceId, readPostDraftRecords().filter((record) => record.key === `${PREFIXES[0]}guest:${sequenceId}`)),
+      diskAvailable: false,
+      error: null,
+    };
   let records: PostDraftRecord[] = [];
   let error: string | null = null;
   const browserRecords = (): PostDraftRecord[] => {
