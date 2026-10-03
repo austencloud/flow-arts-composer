@@ -7,7 +7,6 @@ import {
   type PostVideoItem,
 } from "$lib/shared/media-composition/domain/post-project";
 import {
-  joinTimelineGroup,
   selectTimelineItem,
   timelineGroupOf,
   timelineHandoffPair,
@@ -149,35 +148,5 @@ describe("the animation and the square it becomes", () => {
     expect(timelineGroupOf(pair, "anim")).toEqual(["anim", "pip"]);
     expect(timelineGroupOf(pair, "v1")).toEqual(["v1"]);
     expect(timelineGroupOf(null, "pip")).toEqual(["pip"]);
-  });
-
-  it("keeps the pair whole in a selection, focused on the half pressed", () => {
-    const pair = timelineHandoffPair(handoffProject());
-    const pressed = joinTimelineGroup(
-      { ids: ["pip"], anchorId: "pip", focusId: "pip" },
-      pair,
-      "pip"
-    );
-    expect(pressed).toEqual({
-      ids: ["anim", "pip"],
-      anchorId: "pip",
-      focusId: "pip",
-    });
-    // A toggle that dropped one half drops both.
-    expect(
-      joinTimelineGroup(
-        { ids: ["v1", "anim"], anchorId: "v1", focusId: "v1" },
-        pair,
-        "pip"
-      )
-    ).toEqual({ ids: ["v1"], anchorId: "v1", focusId: "v1" });
-    // A range that reached one half takes the other along.
-    expect(
-      joinTimelineGroup(
-        { ids: ["v1", "anim"], anchorId: "v1", focusId: "anim" },
-        pair,
-        "v2"
-      ).ids
-    ).toEqual(["v1", "anim", "pip"]);
   });
 });

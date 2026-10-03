@@ -130,6 +130,7 @@ export class WebGLSmokeRenderer {
     const canvas = document.createElement("canvas");
     canvas.setAttribute("aria-hidden", "true");
     canvas.dataset.overlayType = "smoke";
+    canvas.dataset.animationLayer = "effect";
     Object.assign(canvas.style, {
       position: "absolute",
       inset: "0",

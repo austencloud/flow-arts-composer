@@ -299,6 +299,18 @@ describe("picture-in-picture hand-off on one surface", () => {
     expect(blend(10)).toBeUndefined();
   });
 
+  it("fades the square's own effects in after it lands, not before", () => {
+    const fadeIn = (time: number) => sequenceLayers(time).at(-1)!.effectsIn;
+    // The animation keeps its effects (fading by its look blend); the square's
+    // start at the landing and arrive over half a second.
+    expect(fadeIn(9.5)).toBeUndefined();
+    expect(fadeIn(10)).toBe(0);
+    expect(fadeIn(10.25)).toBeCloseTo(0.5, 6);
+    expect(fadeIn(10.1)!).toBeLessThan(fadeIn(10.4)!);
+    expect(fadeIn(10.5)).toBeUndefined();
+    expect(fadeIn(14)).toBeUndefined();
+  });
+
   it("follows the same box into the corner and stays there", () => {
     const rect = (time: number) => sequenceLayers(time).at(-1)!.regionRect!;
     expect(rect(9)).toMatchObject(POST_BOX.bottom);

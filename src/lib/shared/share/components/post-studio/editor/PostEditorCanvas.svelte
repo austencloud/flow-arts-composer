@@ -2386,6 +2386,7 @@
                   tunnelHook={layer.tunnelHook ?? null}
                   chromeOpacity={hookChromeOpacity(region.id)}
                   lookBlend={layer.lookBlend ?? 0}
+                  effectsIn={layer.effectsIn ?? 1}
                   sequencePosition={layer.sequencePosition ??
                     (isVideo ? undefined : OPENING_POSITION)}
                   sequencePassIndex={layer.sequencePassIndex}

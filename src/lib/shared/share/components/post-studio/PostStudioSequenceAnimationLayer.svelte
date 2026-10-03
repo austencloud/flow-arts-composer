@@ -61,6 +61,7 @@
     tunnelHook = null,
     chromeOpacity = 1,
     lookBlend,
+    effectsIn = 1,
   }: {
     sequence: SequenceData;
     sequencePosition: number;
@@ -89,6 +90,8 @@
      * glow, trails and mandala fade out and the square's arrows fade in.
      */
     lookBlend?: number;
+    /** A square's own glow and effects fading in after a hand-off, 0 to 1. */
+    effectsIn?: number;
   } = $props();
 
   const inheritedVisibility = getAnimationVisibilityManager();
@@ -364,6 +367,8 @@
   style:--look-out={!breakdownMotion && (lookBlend ?? 0) > 0
     ? 1 - lookBlend!
     : undefined}
+  class:effects-in={effectsIn < 1}
+  style:--effects-in={effectsIn < 1 ? effectsIn : undefined}
   data-studio-animation-destination
   data-studio-animation-mode={showMandala ? "mandala" : "pictograph"}
   data-sequence-position={sequencePosition}
@@ -635,7 +640,8 @@
     background: rgb(10 10 15 / var(--panel-alpha));
     transition: none;
   }
-  .animation-layer.see-through :global(.canvas-wrapper[data-dark-mode="false"]) {
+  .animation-layer.see-through
+    :global(.canvas-wrapper[data-dark-mode="false"]) {
     background: rgb(245 245 245 / var(--panel-alpha));
   }
   .pictograph-motion {
@@ -652,12 +658,19 @@
   .unseen {
     visibility: hidden;
   }
-  /* Turning into its square: the glow, trails and mandala the square does
-     not draw fade out on the same canvas. */
+  /* Turning into its square: the animation's own glow, trails, effects and
+     mandala fade out on the same canvas; the square shows its own after. */
   .animation-layer.turning :global(canvas[data-animation-layer="led"]),
+  .animation-layer.turning :global(canvas[data-animation-layer="effect"]),
   .animation-layer.turning :global(canvas[data-animation-layer="trails"]),
   .animation-layer.turning :global(canvas[data-animation-layer="mandala"]) {
     opacity: var(--look-out);
+  }
+  .animation-layer.effects-in :global(canvas[data-animation-layer="led"]),
+  .animation-layer.effects-in :global(canvas[data-animation-layer="effect"]),
+  .animation-layer.effects-in :global(canvas[data-animation-layer="trails"]),
+  .animation-layer.effects-in :global(canvas[data-animation-layer="mandala"]) {
+    opacity: var(--effects-in);
   }
   .pictograph-motion > div:not(.arrow-overlay):not(.outgoing-arrows) {
     width: 100%;

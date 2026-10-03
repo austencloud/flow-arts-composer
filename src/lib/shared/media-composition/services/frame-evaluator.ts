@@ -22,6 +22,8 @@ import {
 } from "$lib/shared/media-composition/domain/tunnel-hook";
 import { itemIdFromTitlesRole } from "$lib/shared/media-composition/domain/tunnel-titles";
 import {
+  PIP_HANDOFF_EFFECTS_IN_SECONDS,
+  pipHandoffEffectsIn,
   pipHandoffLookBlend,
   pipHandoffSample,
   type PipHandoffStep,
@@ -133,6 +135,11 @@ export interface EvaluatedFrameLayer {
    * surface: how far its look has turned to the square's, 0 to 1.
    */
   lookBlend?: number;
+  /**
+   * Set on a square just after an animation turned into it: how far its own
+   * glow and effects have faded in, 0 to 1, so they arrive instead of popping.
+   */
+  effectsIn?: number;
 }
 
 export function resolvePresetTimePoint(
@@ -791,6 +798,17 @@ export function evaluatePresetLayers(
         ...(clip.clockHandoff?.shared && clip.clockHandoff.role === "from"
           ? {
               lookBlend: pipHandoffLookBlend(
+                clip.clockHandoff,
+                clampedTime,
+                sampleEasing
+              ),
+            }
+          : {}),
+        ...(clip.clockHandoff?.shared &&
+        clip.clockHandoff.role === "to" &&
+        clampedTime < clip.clockHandoff.end + PIP_HANDOFF_EFFECTS_IN_SECONDS
+          ? {
+              effectsIn: pipHandoffEffectsIn(
                 clip.clockHandoff,
                 clampedTime,
                 sampleEasing

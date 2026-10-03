@@ -33,7 +33,6 @@
   import PostTimelineTrackHeader from "./PostTimelineTrackHeader.svelte";
   import PostTimelineZoomControls from "./PostTimelineZoomControls.svelte";
   import {
-    joinTimelineGroup,
     selectTimelineItem,
     timelineGroupOf,
     timelineHandoffPair,
@@ -204,7 +203,7 @@
     if (selectedItemId !== selection.focusId)
       selection = selectedItemId
         ? {
-            ids: timelineGroupOf(handoffPair, selectedItemId),
+            ids: [selectedItemId],
             anchorId: selectedItemId,
             focusId: selectedItemId,
           }
@@ -711,19 +710,17 @@
       suppressNextClickForItemId = null;
       return;
     }
-    selection = joinTimelineGroup(
-      selectTimelineItem(
-        selection,
-        itemId,
-        timelineItemOrder(project, itemId),
-        event.shiftKey
-          ? "range"
-          : event.ctrlKey || event.metaKey
-            ? "toggle"
-            : "plain"
-      ),
-      handoffPair,
-      itemId
+    // Each half of a joined pair selects on its own, so the animation's and
+    // the square's looks and effects edit separately; they still move as one.
+    selection = selectTimelineItem(
+      selection,
+      itemId,
+      timelineItemOrder(project, itemId),
+      event.shiftKey
+        ? "range"
+        : event.ctrlKey || event.metaKey
+          ? "toggle"
+          : "plain"
     );
     onSelect(selection.focusId);
   }
@@ -744,9 +741,9 @@
     if (event.shiftKey || event.ctrlKey || event.metaKey) return;
     event.preventDefault();
     (event.currentTarget as HTMLElement).setPointerCapture(event.pointerId);
-    const ids = selection.ids.includes(item.id)
-      ? selection.ids
-      : timelineGroupOf(handoffPair, item.id);
+    const ids = (
+      selection.ids.includes(item.id) ? selection.ids : [item.id]
+    ).flatMap((id) => timelineGroupOf(handoffPair, id));
     const selected = new Set(ids);
     const members = project.tracks.flatMap((track, index) =>
       track.locked
@@ -1149,7 +1146,7 @@
         !selection.ids.includes(state.itemId)
       ) {
         selection = {
-          ids: timelineGroupOf(handoffPair, state.itemId),
+          ids: [state.itemId],
           anchorId: state.itemId,
           focusId: state.itemId,
         };
