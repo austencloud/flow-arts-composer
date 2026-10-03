@@ -25,17 +25,21 @@ export function createPostModuleState(services: PostModuleServices) {
   let projectError = $state<string | null>(null);
   let showingProjects = $state(true);
   let request = 0;
+  let catalogRequest = 0;
 
   async function refreshProjects(): Promise<void> {
+    const current = ++catalogRequest;
     loadingCatalog = true;
     try {
       const loaded = await services.list();
+      if (current !== catalogRequest) return;
       projects = loaded.projects;
       catalogError = loaded.error;
     } catch {
+      if (current !== catalogRequest) return;
       catalogError = "Projects could not be listed on this device.";
     } finally {
-      loadingCatalog = false;
+      if (current === catalogRequest) loadingCatalog = false;
     }
   }
 
@@ -87,6 +91,7 @@ export function createPostModuleState(services: PostModuleServices) {
   function resetForAccount(): void {
     ++request;
     projects = [];
+    catalogError = null;
     selectedId = null;
     sequence = null;
     draft = null;
