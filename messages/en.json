@@ -6830,6 +6830,7 @@
   "post_timeline_empty_hint": "Add a video to get started",
   "post_timeline_add_video": "Add video",
   "post_timeline_item_animated": "Animated",
+  "post_timeline_tunnel": "Tunnel",
   "post_timeline_channel_lane": "{channel} keyframes",
   "post_timeline_channel_keyframe_at": "{channel} keyframe at {time}",
   "post_timeline_channel_curve": "{channel} curve from {start} to {end}, {curve}",

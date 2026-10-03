@@ -550,6 +550,99 @@ export const PostCardItemSchema = z
 
 export type PostCardItem = z.infer<typeof PostCardItemSchema>;
 
+/** Display flags for a live animation, independent of viewer settings. */
+export const PostAnimationAppearanceSchema = z
+  .object({
+    propType: z.nativeEnum(PropType).optional(),
+    propLook: z.enum(PROP_LOOKS).optional(),
+    gridMode: z.enum(["none", "8point", "auto"]).optional(),
+    props: z.boolean().optional(),
+    tkaGlyph: z.boolean().optional(),
+    elementalGlyph: z.boolean().optional(),
+    propElementalGlyph: z.boolean().optional(),
+    stepNumbers: z.boolean().optional(),
+    progressBar: z.boolean().optional(),
+    wordHeader: z.boolean().optional(),
+    wordHeaderHighlight: z.enum(["arrival", "travel"]).optional(),
+    mandala: z.boolean().optional(),
+    /** Line width of the mandala guide in canvas pixels; 2.5 when absent. */
+    mandalaThickness: z.number().min(1).max(12).optional(),
+    leftPathLines: z.boolean().optional(),
+    rightPathLines: z.boolean().optional(),
+    pathShape: z.enum(["arc", "linear", "concave"]).optional(),
+    motionAwarePaths: z.boolean().optional(),
+    effortPreset: z
+      .enum([
+        "linear",
+        "glide",
+        "dab",
+        "press",
+        "punch",
+        "elastic",
+        "bounce",
+        "anticipation",
+      ])
+      .optional(),
+    darkMode: z.boolean().optional(),
+    /** Full canonical effects snapshot, scoped to this timeline item. */
+    effects: z
+      .custom<EffectsConfig>(
+        (value) =>
+          value !== null &&
+          typeof value === "object" &&
+          typeof (value as EffectsConfig).version === "number" &&
+          typeof (value as EffectsConfig).activeEffect === "string" &&
+          typeof (value as EffectsConfig).tipEffectMap === "object"
+      )
+      .optional(),
+    trail: z
+      .object({
+        enabled: z.boolean(),
+        trackingMode: z.nativeEnum(TrackingMode),
+        thickness: z.number().finite().min(1).max(12),
+        brightness: z.number().finite().min(0.3).max(1),
+        tailLength: z.number().int().min(10).max(400),
+        leftColor: z.string().regex(/^#[0-9a-fA-F]{6}$/),
+        rightColor: z.string().regex(/^#[0-9a-fA-F]{6}$/),
+        /** Complete rendering settings; older projects retain the fields above. */
+        settings: z
+          .object({
+            mode: z.nativeEnum(TrailMode),
+            effect: z.nativeEnum(TrailEffect),
+            fadeDurationMs: z.number().finite().nonnegative(),
+            maxPoints: z.number().int().positive(),
+            lineWidth: z.number().finite().positive(),
+            glowBlur: z.number().finite().nonnegative(),
+            leftColor: z.string().regex(/^#[0-9a-fA-F]{6}$/),
+            rightColor: z.string().regex(/^#[0-9a-fA-F]{6}$/),
+            additionalLayerColors: z.array(
+              z
+                .object({
+                  left: z.string().regex(/^#[0-9a-fA-F]{6}$/),
+                  right: z.string().regex(/^#[0-9a-fA-F]{6}$/),
+                })
+                .strict()
+            ),
+            minOpacity: z.number().finite().min(0).max(1),
+            maxOpacity: z.number().finite().min(0).max(1),
+            trackingMode: z.nativeEnum(TrackingMode),
+            hideProps: z.boolean(),
+            usePathCache: z.boolean(),
+            previewMode: z.boolean(),
+            tailLength: z.number().int().min(10).max(400),
+          })
+          .strict()
+          .optional(),
+      })
+      .strict()
+      .optional(),
+  })
+  .strict();
+
+export type PostAnimationAppearance = z.infer<
+  typeof PostAnimationAppearanceSchema
+>;
+
 /** The sequence animation: the dual view's lower panel. */
 export const PostAnimationItemSchema = z
   .object({
@@ -564,94 +657,14 @@ export const PostAnimationItemSchema = z
      */
     tunnelHook: TunnelHookSchema.optional(),
     /** Display flags for this live animation, independent of viewer settings. */
-    animationAppearance: z
-      .object({
-        propType: z.nativeEnum(PropType).optional(),
-        propLook: z.enum(PROP_LOOKS).optional(),
-        gridMode: z.enum(["none", "8point", "auto"]).optional(),
-        props: z.boolean().optional(),
-        tkaGlyph: z.boolean().optional(),
-        elementalGlyph: z.boolean().optional(),
-        propElementalGlyph: z.boolean().optional(),
-        stepNumbers: z.boolean().optional(),
-        progressBar: z.boolean().optional(),
-        wordHeader: z.boolean().optional(),
-        wordHeaderHighlight: z.enum(["arrival", "travel"]).optional(),
-        mandala: z.boolean().optional(),
-        /** Line width of the mandala guide in canvas pixels; 2.5 when absent. */
-        mandalaThickness: z.number().min(1).max(12).optional(),
-        leftPathLines: z.boolean().optional(),
-        rightPathLines: z.boolean().optional(),
-        pathShape: z.enum(["arc", "linear", "concave"]).optional(),
-        motionAwarePaths: z.boolean().optional(),
-        effortPreset: z
-          .enum([
-            "linear",
-            "glide",
-            "dab",
-            "press",
-            "punch",
-            "elastic",
-            "bounce",
-            "anticipation",
-          ])
-          .optional(),
-        darkMode: z.boolean().optional(),
-        /** Full canonical effects snapshot, scoped to this timeline item. */
-        effects: z
-          .custom<EffectsConfig>(
-            (value) =>
-              value !== null &&
-              typeof value === "object" &&
-              typeof (value as EffectsConfig).version === "number" &&
-              typeof (value as EffectsConfig).activeEffect === "string" &&
-              typeof (value as EffectsConfig).tipEffectMap === "object"
-          )
-          .optional(),
-        trail: z
-          .object({
-            enabled: z.boolean(),
-            trackingMode: z.nativeEnum(TrackingMode),
-            thickness: z.number().finite().min(1).max(12),
-            brightness: z.number().finite().min(0.3).max(1),
-            tailLength: z.number().int().min(10).max(400),
-            leftColor: z.string().regex(/^#[0-9a-fA-F]{6}$/),
-            rightColor: z.string().regex(/^#[0-9a-fA-F]{6}$/),
-            /** Complete rendering settings; older projects retain the fields above. */
-            settings: z
-              .object({
-                mode: z.nativeEnum(TrailMode),
-                effect: z.nativeEnum(TrailEffect),
-                fadeDurationMs: z.number().finite().nonnegative(),
-                maxPoints: z.number().int().positive(),
-                lineWidth: z.number().finite().positive(),
-                glowBlur: z.number().finite().nonnegative(),
-                leftColor: z.string().regex(/^#[0-9a-fA-F]{6}$/),
-                rightColor: z.string().regex(/^#[0-9a-fA-F]{6}$/),
-                additionalLayerColors: z.array(
-                  z
-                    .object({
-                      left: z.string().regex(/^#[0-9a-fA-F]{6}$/),
-                      right: z.string().regex(/^#[0-9a-fA-F]{6}$/),
-                    })
-                    .strict()
-                ),
-                minOpacity: z.number().finite().min(0).max(1),
-                maxOpacity: z.number().finite().min(0).max(1),
-                trackingMode: z.nativeEnum(TrackingMode),
-                hideProps: z.boolean(),
-                usePathCache: z.boolean(),
-                previewMode: z.boolean(),
-                tailLength: z.number().int().min(10).max(400),
-              })
-              .strict()
-              .optional(),
-          })
-          .strict()
-          .optional(),
-      })
-      .strict()
-      .optional(),
+    animationAppearance: PostAnimationAppearanceSchema.optional(),
+    /**
+     * What the opening tunnel shows differently from the animation it opens:
+     * only the flags set here, read over `animationAppearance` while the
+     * intro plays. Everything else follows the animation. Meaningless
+     * without a `tunnelHook`.
+     */
+    tunnelAppearance: PostAnimationAppearanceSchema.optional(),
   })
   .strict();
 

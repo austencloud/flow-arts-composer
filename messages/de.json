@@ -6122,6 +6122,7 @@
   "post_timeline_empty_hint": "Füge ein Video hinzu, um zu beginnen",
   "post_timeline_add_video": "Video hinzufügen",
   "post_timeline_item_animated": "Animiert",
+  "post_timeline_tunnel": "Tunnel",
   "post_timeline_channel_lane": "{channel}: Keyframes",
   "post_timeline_channel_keyframe_at": "{channel}: Keyframe bei {time}",
   "post_timeline_channel_curve": "{channel}: Kurve von {start} bis {end}, {curve}",

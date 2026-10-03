@@ -73,6 +73,7 @@
   import {
     cardOptionsForItem,
     animationAppearanceForItem,
+    tunnelHidesMandala,
   } from "../post-item-render-options";
   import PostStudioPaintedLayer from "../PostStudioPaintedLayer.svelte";
   import {
@@ -767,11 +768,23 @@
     };
   }
 
-  /** A press on the frame selects what is on top there, ready to drag. */
+  /**
+   * A press on the frame selects what is on top there, ready to drag. While
+   * an animation's opening tunnel plays, that is the tunnel.
+   */
   function pressFrame(event: PointerEvent): void {
     if (!interactive || event.button !== 0) return;
     const hit = hitTest(event);
-    editor.selectedItemId = hit?.id ?? null;
+    const hitItem = hit ? findItem(editor.project, hit.id)?.item : null;
+    if (
+      hit &&
+      hitItem?.kind === "animation" &&
+      hitItem.tunnelHook?.seconds !== undefined &&
+      editor.previewSeconds <
+        hitItem.start + hitItem.tunnelHook.seconds - POST_TIME_EPSILON
+    )
+      editor.selectTunnel(hit.id);
+    else editor.selectedItemId = hit?.id ?? null;
     if (hit && !trackLocked(hit.id)) startDrag(event, hit, "move");
   }
 
@@ -2380,11 +2393,17 @@
                     sourceItem?.kind === "animation" ||
                       sourceItem?.kind === "moves"
                       ? sourceItem
-                      : null
+                      : null,
+                    !!layer.tunnelHook
                   )}
                   {qrSequence}
                   tunnelHook={layer.tunnelHook ?? null}
                   chromeOpacity={hookChromeOpacity(region.id)}
+                  mandalaIn={!layer.tunnelHook &&
+                  sourceItem?.kind === "animation" &&
+                  tunnelHidesMandala(sourceItem)
+                    ? hookChromeOpacity(region.id)
+                    : 1}
                   lookBlend={layer.lookBlend ?? 0}
                   effectsIn={layer.effectsIn ?? 1}
                   sequencePosition={layer.sequencePosition ??

@@ -200,6 +200,8 @@ export function createPostEditorState(deps: PostEditorDeps) {
   let playing = $state(false);
   let mode = $state<PostEditorMode>("edit");
   let selectedItemId = $state<string | null>(null);
+  /** The animation whose opening tunnel, not the rest of it, is selected. */
+  let tunnelSelectedFor = $state<string | null>(null);
   let timingTakeId = $state<string | null>(null);
 
   const resolved = $derived.by(() => {
@@ -263,6 +265,14 @@ export function createPostEditorState(deps: PostEditorDeps) {
 
   const selectedItem = $derived(
     selectedItemId ? (findItem(project, selectedItemId)?.item ?? null) : null
+  );
+  const selectedPart = $derived(
+    tunnelSelectedFor !== null &&
+      tunnelSelectedFor === selectedItemId &&
+      selectedItem?.kind === "animation" &&
+      selectedItem.tunnelHook
+      ? ("tunnel" as const)
+      : null
   );
 
   /** Takes the post's clips use, in timeline order: their timing matters. */
@@ -1065,6 +1075,15 @@ export function createPostEditorState(deps: PostEditorDeps) {
   function deleteSelected(): boolean {
     const target = selectedItem;
     if (!target || isLocked(target.id)) return false;
+    // With the opening tunnel in hand, only the tunnel goes; the animation stays.
+    if (selectedPart === "tunnel") {
+      if (gestureBase) return false;
+      const kept = target.id;
+      if (!commit(removeProjectTunnelHook(project, context()))) return false;
+      selectedItemId = findItem(project, kept) ? kept : null;
+      tunnelSelectedFor = null;
+      return true;
+    }
     return edit((current, ctx) => deleteItem(current, target.id, ctx));
   }
 
@@ -1451,6 +1470,16 @@ export function createPostEditorState(deps: PostEditorDeps) {
     },
     set selectedItemId(next: string | null) {
       selectedItemId = next && findItem(project, next) ? next : null;
+      tunnelSelectedFor = null;
+    },
+    /** `"tunnel"` while an animation's opening tunnel is what is selected. */
+    get selectedPart() {
+      return selectedPart;
+    },
+    /** Selects an animation's opening tunnel, which has a look of its own. */
+    selectTunnel(itemId: string) {
+      selectedItemId = findItem(project, itemId) ? itemId : null;
+      tunnelSelectedFor = selectedItemId;
     },
     get tunnelHook() {
       return findTunnelHook(project);

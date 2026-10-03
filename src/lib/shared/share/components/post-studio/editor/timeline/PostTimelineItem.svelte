@@ -31,6 +31,8 @@
      */
     joinStart?: boolean;
     joinEnd?: boolean;
+    /** The block is an animation's opening tunnel, which selects on its own. */
+    tunnel?: boolean;
   }
 
   let {
@@ -47,6 +49,7 @@
     animated,
     joinStart = false,
     joinEnd = false,
+    tunnel = false,
   }: Props = $props();
 
   const KIND_ICON: Record<PostItemKind, string> = {
@@ -104,18 +107,23 @@
 <button
   type="button"
   class="post-timeline-item kind-{item.kind}"
+  class:tunnel
   class:selected
   class:dimmed
   class:join-start={joinStart}
   class:join-end={joinEnd}
   style="left: {leftPx}px; width: {Math.max(widthPx, 2)}px"
   data-item-id={item.id}
+  data-part={tunnel ? "tunnel" : undefined}
   aria-pressed={selected}
   aria-label={accessibleName}
   onpointerdown={handleBodyPointerDown}
   onclick={(event) => onActivate(item.id, event)}
 >
-  <i class={KIND_ICON[item.kind]} aria-hidden="true"></i>
+  <i
+    class={tunnel ? "fa-solid fa-fan" : KIND_ICON[item.kind]}
+    aria-hidden="true"
+  ></i>
   <span class="item-label">{labelText}</span>
   {#if speedLabel}
     <span class="item-badge">{speedLabel}</span>
@@ -192,6 +200,9 @@
   }
   .post-timeline-item.kind-animation {
     --kind-tint: var(--semantic-warning, #f6c85f);
+  }
+  .post-timeline-item.kind-animation.tunnel {
+    --kind-tint: #7cc4fa;
   }
   .post-timeline-item.kind-moves {
     --kind-tint: #b98af8;
