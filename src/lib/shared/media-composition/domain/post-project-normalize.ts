@@ -21,6 +21,7 @@ import {
   sameChannelValue,
 } from "$lib/shared/media-composition/domain/post-project-keyframes";
 import type { PostTake } from "$lib/shared/media-composition/domain/post-plan";
+import { withMotionKeys } from "$lib/shared/media-composition/domain/post-project-motion-keys";
 import {
   mergeSeparateTunnelHook,
   splitTunnelHookTitles,
@@ -45,6 +46,10 @@ import {
  * item re-renders only that item.
  */
 export function normalizeProject(stored: PostProject): PostProject {
+  return withMotionKeys(normalizeLayout(stored));
+}
+
+function normalizeLayout(stored: PostProject): PostProject {
   const project = splitTunnelHookTitles(mergeSeparateTunnelHook(stored));
   const takes = new Map(project.takes.map((take) => [take.id, take]));
   const main: PostTrack = project.tracks[MAIN_TRACK_INDEX] ?? {

@@ -82,7 +82,6 @@ import {
 
 export const TEXT_ROLE_PREFIX = "text:";
 
-
 function isTransitionVisual(item: PostItem): boolean {
   return (
     item.kind === "video" ||
@@ -696,6 +695,12 @@ function regionKeyframesFor(
       straight({ ...item.box })
     );
     const settledAt = intro[intro.length - 1]!.atSeconds;
+    // An animation's intro is written as its own keys, which may be edited.
+    if (
+      item.kind === "animation" &&
+      own.some((key) => key.atSeconds <= settledAt + POST_TIME_EPSILON)
+    )
+      return { regionId: item.id, keyframes: own };
     return {
       regionId: item.id,
       keyframes: [
@@ -1041,7 +1046,10 @@ export function compilePostProject(
               regionKeyframes?.keyframes ?? [],
               pipHandoff,
               pipBoxes.from,
-              pipBoxes.to
+              pipBoxes.to,
+              handoffRole === "from"
+                ? regionKeyframes?.keyframes
+                : regionKeyframesFor(pipHandoff.animation, output)?.keyframes
             );
             regionKeyframesList.push({
               regionId: item.id,
@@ -1051,8 +1059,7 @@ export function compilePostProject(
                   ? [
                       ...handoffKeys.filter(
                         (key) =>
-                          key.atSeconds <
-                          sharedHandoff.end + POST_TIME_EPSILON
+                          key.atSeconds < sharedHandoff.end + POST_TIME_EPSILON
                       ),
                       ...(
                         regionKeyframesFor(sharedHandoff.moves, output)

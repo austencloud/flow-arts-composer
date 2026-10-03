@@ -150,7 +150,8 @@ export function pipHandoffBoxAt(
 
 /**
  * A layer's box keys with the hand-off's in place of whatever it had across
- * the overlap.
+ * the overlap. When the animation's own keys (`animationKeys`) shape the
+ * shrink with at least two keys inside the overlap, both layers ride those.
  */
 export function withPipHandoffBoxKeys<
   Key extends { atSeconds: number; value: PostBox },
@@ -158,11 +159,17 @@ export function withPipHandoffBoxKeys<
   keys: readonly Key[],
   handoff: Pick<PipHandoff, "start" | "end">,
   from: PostBox,
-  to: PostBox
+  to: PostBox,
+  animationKeys?: readonly Key[]
 ): (Key | ReturnType<typeof pipHandoffBoxKeys>[number])[] {
+  const across = (animationKeys ?? []).filter(
+    (key) =>
+      key.atSeconds >= handoff.start - POST_TIME_EPSILON &&
+      key.atSeconds <= handoff.end + POST_TIME_EPSILON
+  );
   return [
     ...keys.filter((key) => key.atSeconds < handoff.start - POST_TIME_EPSILON),
-    ...pipHandoffBoxKeys(handoff, from, to),
+    ...(across.length >= 2 ? across : pipHandoffBoxKeys(handoff, from, to)),
     ...keys.filter((key) => key.atSeconds > handoff.end + POST_TIME_EPSILON),
   ];
 }

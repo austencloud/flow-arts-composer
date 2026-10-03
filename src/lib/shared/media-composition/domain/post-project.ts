@@ -157,11 +157,26 @@ function postKeyframeSchema<V extends z.ZodTypeAny>(value: V) {
       value,
       /** How the value travels to the next keyframe. */
       easing: PostEasingSchema,
+      /**
+       * Written by the opening tunnel or the picture-in-picture hand-off, and
+       * kept in step with them until edited; an edit makes the key the
+       * author's own (see `post-project-motion-keys.ts`).
+       */
+      auto: PostMotionKeySchema.optional(),
     })
     .strict();
 }
 
-export type PostKeyframe<V> = { t: number; value: V; easing: PostEasing };
+/** Which automatic move wrote a keyframe. */
+export const PostMotionKeySchema = z.enum(["tunnel", "handoff"]);
+export type PostMotionKey = z.infer<typeof PostMotionKeySchema>;
+
+export type PostKeyframe<V> = {
+  t: number;
+  value: V;
+  easing: PostEasing;
+  auto?: PostMotionKey;
+};
 
 /** Channels an item's `keyframes` may animate; `framing` is video only. */
 export type PostKeyframeChannel =

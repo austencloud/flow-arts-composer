@@ -721,7 +721,8 @@ export function moveKeyframe(
   const moving = list[fromIndex]!;
   if (Math.abs(toT - moving.t) <= POST_TIME_EPSILON) return item;
   const landingIndex = keyframeIndexAt(item, channel, clampedTo);
-  const relocated = { ...moving, t: toT };
+  const { auto: _auto, ...own } = moving;
+  const relocated = { ...own, t: toT };
   let updated = list.filter((_, i) => i !== fromIndex);
   if (landingIndex >= 0 && landingIndex !== fromIndex) {
     const target = list[landingIndex]!;
@@ -756,7 +757,7 @@ export function setSegmentEasing(
   const current = list[segment.index]!;
   if (sameEasing(current.easing, easing)) return item;
   const next = list.map((kf, i) =>
-    i === segment.index ? { ...kf, easing } : kf
+    i === segment.index ? { t: kf.t, value: kf.value, easing } : kf
   );
   return withChannel(item, channel, next as never);
 }
