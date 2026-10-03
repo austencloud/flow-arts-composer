@@ -33,6 +33,8 @@
     joinEnd?: boolean;
     /** The block is an animation's opening tunnel, which selects on its own. */
     tunnel?: boolean;
+    /** The stretch this block covers when it shows only part of the item. */
+    span?: { start: number; end: number };
   }
 
   let {
@@ -50,6 +52,7 @@
     joinStart = false,
     joinEnd = false,
     tunnel = false,
+    span,
   }: Props = $props();
 
   const KIND_ICON: Record<PostItemKind, string> = {
@@ -72,8 +75,8 @@
     const parts = [
       labelText,
       t("post_timeline_item_time_range", {
-        start: formatPostClock(item.start),
-        end: formatPostClock(item.start + item.duration),
+        start: formatPostClock(span?.start ?? item.start),
+        end: formatPostClock(span?.end ?? item.start + item.duration),
       }),
     ];
     if (speedLabel)

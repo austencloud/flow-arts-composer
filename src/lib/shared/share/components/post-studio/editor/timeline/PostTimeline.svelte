@@ -1558,6 +1558,7 @@
                   joinStart={block.joinStart}
                   joinEnd={block.joinEnd}
                   tunnel={block.tunnel}
+                  span={block}
                   onActivate={block.tunnel
                     ? handleTunnelActivate
                     : handleItemActivate}
