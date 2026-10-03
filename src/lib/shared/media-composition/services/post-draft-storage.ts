@@ -50,14 +50,21 @@ function recordsForSequence(
 export function readPostDraftRecords(): PostDraftRecord[] {
   const records: PostDraftRecord[] = [];
   const owner = legacyPostOwner();
-  const uid = auth.currentUser && !auth.currentUser.isAnonymous ? auth.currentUser.uid : null;
+  const uid =
+    auth.currentUser && !auth.currentUser.isAnonymous
+      ? auth.currentUser.uid
+      : null;
   const guestAfterClaim = !!owner && owner !== uid;
   for (let index = 0; index < localStorage.length; index += 1) {
     const key = localStorage.key(index);
-    if (!key || key.startsWith(`${PREFIXES[0]}account:`) ||
-        (guestAfterClaim && !key.startsWith(`${PREFIXES[0]}guest:`)) ||
-        (!guestAfterClaim && key.startsWith(`${PREFIXES[0]}guest:`)) ||
-        !PREFIXES.some((prefix) => key.startsWith(prefix))) continue;
+    if (
+      !key ||
+      key.startsWith(`${PREFIXES[0]}account:`) ||
+      (guestAfterClaim && !key.startsWith(`${PREFIXES[0]}guest:`)) ||
+      (!guestAfterClaim && key.startsWith(`${PREFIXES[0]}guest:`)) ||
+      !PREFIXES.some((prefix) => key.startsWith(prefix))
+    )
+      continue;
     const value = localStorage.getItem(key);
     if (value !== null) records.push({ key, value });
   }
@@ -70,9 +77,18 @@ export async function loadPostDraft(sequenceId: string): Promise<{
   diskAvailable: boolean;
   error: string | null;
 }> {
-  if (legacyPostOwner() && legacyPostOwner() !== (auth.currentUser?.isAnonymous ? null : auth.currentUser?.uid))
+  if (
+    legacyPostOwner() &&
+    legacyPostOwner() !==
+      (auth.currentUser?.isAnonymous ? null : auth.currentUser?.uid)
+  )
     return {
-      project: resolvePostStudioDraft(sequenceId, readPostDraftRecords().filter((record) => record.key === `${PREFIXES[0]}guest:${sequenceId}`)),
+      project: resolvePostStudioDraft(
+        sequenceId,
+        readPostDraftRecords().filter(
+          (record) => record.key === `${PREFIXES[0]}guest:${sequenceId}`
+        )
+      ),
       diskAvailable: false,
       error: null,
     };
@@ -151,7 +167,14 @@ export async function loadPostDraft(sequenceId: string): Promise<{
 }
 
 export async function savePostDraft(project: PostProject): Promise<void> {
-  const body = JSON.stringify({ records: [projectDraftRecord(project)] });
+  await savePostDraftRecords([projectDraftRecord(project)]);
+}
+
+/** Writes draft records to the dev server's draft folder. */
+export async function savePostDraftRecords(
+  records: readonly PostDraftRecord[]
+): Promise<void> {
+  const body = JSON.stringify({ records });
   const post = (keepalive: boolean) =>
     fetch(ENDPOINT, {
       method: "POST",
