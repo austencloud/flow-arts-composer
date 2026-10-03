@@ -9,7 +9,11 @@ import { BREAKDOWN_GEOMETRY } from "$lib/shared/media-composition/domain/post-st
 import { TakeTimingSchema } from "$lib/shared/media-composition/domain/take-timing";
 import { TunnelHookSchema } from "$lib/shared/media-composition/domain/tunnel-hook";
 import type { EffectsConfig } from "$lib/shared/effects/domain/effects-config";
-import { TrackingMode } from "$lib/shared/animation-engine/domain/types/trail-types";
+import {
+  TrackingMode,
+  TrailEffect,
+  TrailMode,
+} from "$lib/shared/animation-engine/domain/types/trail-types";
 
 /**
  * A post as Austen edits it on the timeline: tracks of items, InShot style.
@@ -598,6 +602,35 @@ export const PostAnimationItemSchema = z
             tailLength: z.number().int().min(10).max(400),
             leftColor: z.string().regex(/^#[0-9a-fA-F]{6}$/),
             rightColor: z.string().regex(/^#[0-9a-fA-F]{6}$/),
+            /** Complete rendering settings; older projects retain the fields above. */
+            settings: z
+              .object({
+                mode: z.nativeEnum(TrailMode),
+                effect: z.nativeEnum(TrailEffect),
+                fadeDurationMs: z.number().finite().nonnegative(),
+                maxPoints: z.number().int().positive(),
+                lineWidth: z.number().finite().positive(),
+                glowBlur: z.number().finite().nonnegative(),
+                leftColor: z.string().regex(/^#[0-9a-fA-F]{6}$/),
+                rightColor: z.string().regex(/^#[0-9a-fA-F]{6}$/),
+                additionalLayerColors: z.array(
+                  z
+                    .object({
+                      left: z.string().regex(/^#[0-9a-fA-F]{6}$/),
+                      right: z.string().regex(/^#[0-9a-fA-F]{6}$/),
+                    })
+                    .strict()
+                ),
+                minOpacity: z.number().finite().min(0).max(1),
+                maxOpacity: z.number().finite().min(0).max(1),
+                trackingMode: z.nativeEnum(TrackingMode),
+                hideProps: z.boolean(),
+                usePathCache: z.boolean(),
+                previewMode: z.boolean(),
+                tailLength: z.number().int().min(10).max(400),
+              })
+              .strict()
+              .optional(),
           })
           .strict()
           .optional(),
