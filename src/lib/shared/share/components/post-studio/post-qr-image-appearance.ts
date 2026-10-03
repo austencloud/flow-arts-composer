@@ -42,7 +42,7 @@ export function isQrArtwork(
   height: number
 ): string | null {
   if (detections.length !== 1 || width <= 0 || height <= 0) return null;
-  const code = detections[0];
+  const code = detections[0]!;
   if (
     code.boundingBox.width / width < 0.65 ||
     code.boundingBox.height / height < 0.65
@@ -100,12 +100,17 @@ export function qrImageForAppearance(
       if (!payload) return null;
       const { getUrlQRCodeGenerator } =
         await import("$lib/shared/qr/get-qr-code-generator");
-      const result = await getUrlQRCodeGenerator().generateForUrl(payload, {
+      const generator = getUrlQRCodeGenerator();
+      const result = await generator.generateForUrl(payload, {
         size: 512,
         margin: 1,
         style:
           appearance === "dark"
-            ? DARK_POST_QR_STYLE
+            ? {
+                ...generator.getPresetStyle("modern"),
+                color: DARK_POST_QR_STYLE.color,
+                backgroundColor: DARK_POST_QR_STYLE.backgroundColor,
+              }
             : "modern",
       });
       return result.dataUrl;

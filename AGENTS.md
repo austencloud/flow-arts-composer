@@ -22,6 +22,12 @@ unless a higher-priority platform or safety instruction conflicts.
   checkout at `E:/tka-platform` is reserved for read-only investigation, the
   dev server, and final integration unless Austen explicitly requests direct
   edits there.
+- Production releases use direct pushes to `main`, without pull requests or
+  manual review gates. When Austen authorizes a release, fetch remote `main`,
+  integrate completed commits, verify them, and push. Keep Web App CI and
+  Deploy Pages (gated) so production waits for passing checks. Do not restore
+  branch protection, required pull requests, or owner approval gates unless
+  Austen explicitly requests them.
 - Create a unique `codex/<task-slug>` branch. Stage and commit only task-owned
   paths; never use broad staging, a bare commit, or destructive reset/checkout.
 - Completed implementation must be on local `main` or in a verified, live
