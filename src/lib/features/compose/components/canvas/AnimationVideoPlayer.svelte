@@ -7,10 +7,8 @@
 
   Flow:
   1. User sees live preview immediately (real-time trail drawing)
-  2. User can click "Generate Video" to start background rendering
-  3. Progress indicator shows generation status
-  4. When ready, user can switch to video playback
-  5. Video plays back perfectly smooth, regardless of device
+  2. Cached video, when available, allows switching to video playback
+  3. Video plays back smoothly, regardless of device
 -->
 <script lang="ts">
   import { getErrorHandler } from "$lib/shared/application/get-error-handler";
@@ -21,7 +19,6 @@
   import { getVideoGenerationCoordinator } from "../../services/video-generation-coordinator";
   import VideoGenerationStatus from "../video-player/VideoGenerationStatus.svelte";
   import VideoReadyNotification from "../video-player/VideoReadyNotification.svelte";
-  import GenerateVideoButton from "../video-player/GenerateVideoButton.svelte";
   import PlaybackModeToggle from "../video-player/PlaybackModeToggle.svelte";
 
   // Props
@@ -272,11 +269,6 @@
 {#if videoResult?.success && playbackMode === "live" && !isGeneratingVideo}
   <VideoReadyNotification onSwitchToVideo={switchToVideo} />
 {/if}
-
-<!-- Generate video button (when no video exists) -->
-<!-- {#if !videoResult && !isGeneratingVideo && sequenceData} -->
-<!-- <GenerateVideoButton onGenerate={startVideoGeneration} /> -->
-<!-- {/if} -->
 
 <!-- Mode toggle (when video exists) -->
 {#if videoResult?.success}
