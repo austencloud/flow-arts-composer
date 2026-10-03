@@ -33,6 +33,11 @@ export interface DisplayGridBox {
   minArt?: number;
   /** Compact grids may center a shorter final row, but never leave one tile. */
   allowPartialRows?: boolean;
+  /** Narrowest tile whose label still fits on one line. `chromeY` was
+   *  measured from labels on one line, so a narrower column would wrap them,
+   *  grow the chrome past what the fit allowed for, and refit to a different
+   *  arrangement whose labels unwrap again, over and over. */
+  minTileWidth?: number;
   /** Tile index where the second visual group starts; null for one group. */
   groupBoundary?: number | null;
 }
@@ -88,6 +93,7 @@ export function fitDisplayGrid(box: DisplayGridBox): DisplayGridFit | null {
         gapY * (rows - 1) -
         (grouped && rows > 1 ? DISPLAY_GROUP_GAP : 0)) /
       rows;
+    if (box.minTileWidth && tileW < box.minTileWidth) continue;
     const art = Math.min(cap, tileW - chrome, tileH - chrome);
     if (art <= 0) continue;
     const tile = art + chrome;
