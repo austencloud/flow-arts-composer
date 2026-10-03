@@ -13,10 +13,17 @@ vi.mock("../mandala-guide-painter", () => ({
 
 import { MandalaOverlayCanvas } from "../mandala-overlay-canvas";
 
+// The shared setup replaces createElement with export stubs. This service
+// appends its canvas to the DOM and sets accessibility attributes, so use
+// jsdom elements while retaining the controlled drawing context below.
+const realCreateElement = Object.getPrototypeOf(document)
+  .createElement as typeof document.createElement;
+
 // A paused post canvas draws the guide once. When the animator changes the
 // guide's line width the painted buffer is stale, so the overlay must paint
 // again on the width change and only then.
 describe("MandalaOverlayCanvas guide line width", () => {
+  let stubbedCreateElement: typeof document.createElement;
   const context = {
     scale: vi.fn(),
     save: vi.fn(),
@@ -29,6 +36,8 @@ describe("MandalaOverlayCanvas guide line width", () => {
   };
 
   beforeEach(() => {
+    stubbedCreateElement = document.createElement;
+    document.createElement = realCreateElement.bind(document);
     paint.mockClear();
     vi.stubGlobal(
       "OffscreenCanvas",
@@ -46,6 +55,7 @@ describe("MandalaOverlayCanvas guide line width", () => {
   });
 
   afterEach(() => {
+    document.createElement = stubbedCreateElement;
     vi.unstubAllGlobals();
     vi.restoreAllMocks();
   });

@@ -26,9 +26,7 @@ describe("capsule baton 3D", () => {
     expect(toScenePropType(AppPropType.CAPSULE_BATON)).toBe(
       PropType.CAPSULE_BATON
     );
-    expect(toScenePropType(AppPropType.CAPSULE_BATON)).not.toBe(
-      PropType.STAFF
-    );
+    expect(toScenePropType(AppPropType.CAPSULE_BATON)).not.toBe(PropType.STAFF);
 
     expect(resolvePropModel(PropType.CAPSULE_BATON)).toMatchObject({
       entry: {
@@ -68,8 +66,13 @@ describe("capsule baton 3D", () => {
     for (const propType of [PropType.STAFF, PropType.DOUBLESTAR]) {
       const anchors = resolvePropTipAnchors3D(propType, STAFF_HALF_M, BUILD);
       expect(anchors).toHaveLength(2);
-      expect(anchors[1].offset.y).toBeCloseTo(STAFF_HALF_M, 6);
-      expect(anchors[0].offset.y).toBeCloseTo(-STAFF_HALF_M, 6);
+      // Tip order follows each prop's 2D table; both physical ends retain
+      // the staff reach regardless of which end occupies effect slot 0.
+      const ends = anchors
+        .map((anchor) => anchor.offset.y)
+        .sort((a, b) => a - b);
+      expect(ends[0]).toBeCloseTo(-STAFF_HALF_M, 6);
+      expect(ends[1]).toBeCloseTo(STAFF_HALF_M, 6);
     }
   });
 });

@@ -8,26 +8,28 @@ vi.mock("$lib/shared/application/get-haptic-feedback", () => ({
   getHapticFeedback: () => ({ trigger: vi.fn() }),
 }));
 
-const { default: LanguageTab } =
-  await import("$lib/shared/settings/components/tabs/LanguageTab.svelte");
+const { default: LanguagePreference } =
+  await import("$lib/shared/settings/components/tabs/preferences/LanguagePreference.svelte");
 
 // vitest-setup.ts swaps document.createElement for canvas stubs that are not
 // DOM nodes. Mounting a component needs jsdom's own, from document's prototype.
 const realCreateElement = Object.getPrototypeOf(document)
   .createElement as typeof document.createElement;
 
-function languageCards(host: HTMLElement): HTMLButtonElement[] {
-  return [...host.querySelectorAll<HTMLButtonElement>(".language-card")];
+function languageOptions(host: HTMLElement): HTMLButtonElement[] {
+  return [
+    ...host.querySelectorAll<HTMLButtonElement>('[role="menuitemradio"]'),
+  ];
 }
 
-function cardNamed(host: HTMLElement, nativeName: string): HTMLButtonElement {
-  const card = languageCards(host).find(
+function optionNamed(host: HTMLElement, nativeName: string): HTMLButtonElement {
+  const option = languageOptions(host).find(
     (candidate) =>
-      candidate.querySelector(".native-name")?.textContent?.trim() ===
+      candidate.querySelector(".overflow-item-label")?.textContent?.trim() ===
       nativeName
   );
-  if (!card) throw new Error(`No language card for ${nativeName}`);
-  return card;
+  if (!option) throw new Error(`No language option for ${nativeName}`);
+  return option;
 }
 
 // The list offers plain languages only. Someone who saved Mexican Spanish must
@@ -44,7 +46,9 @@ describe("Language tab with Mexican Spanish in use", () => {
     host = document.createElement("div");
     document.body.append(host);
     await setLocale("es-MX");
-    component = mount(LanguageTab, { target: host });
+    component = mount(LanguagePreference, { target: host });
+    flushSync();
+    host.querySelector<HTMLButtonElement>('[aria-haspopup="menu"]')!.click();
     flushSync();
   });
 
@@ -58,14 +62,14 @@ describe("Language tab with Mexican Spanish in use", () => {
   });
 
   it("marks Español as the language in use", () => {
-    const pressed = languageCards(host).filter(
-      (card) => card.getAttribute("aria-pressed") === "true"
+    const selected = languageOptions(host).filter(
+      (option) => option.getAttribute("aria-checked") === "true"
     );
-    expect(pressed).toEqual([cardNamed(host, "Español")]);
+    expect(selected).toEqual([optionNamed(host, "Español")]);
   });
 
   it("keeps Mexican Spanish when Español is tapped again", async () => {
-    cardNamed(host, "Español").click();
+    optionNamed(host, "Español").click();
     await new Promise((resolve) => setTimeout(resolve));
     expect(getLocale()).toBe("es-MX");
   });
