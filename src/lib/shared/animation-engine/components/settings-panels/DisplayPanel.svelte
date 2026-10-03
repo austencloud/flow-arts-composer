@@ -314,18 +314,21 @@
   let fitArt = $state(0);
   let fitTile = $state(0);
   const fitted = $derived(fitCols > 0);
+  /** The shortest grid a stretched panel keeps. A shorter panel scrolls
+   *  rather than squeezing the grid under the controls that follow it. */
+  const MIN_STRETCH_GRID = 136;
 
   function measureFit(): void {
     if (!fill || !shellEl || !gridEl) return;
     const width = shellEl.clientWidth;
     // The word highlight switch sits under the grid and keeps its own height.
-    const height =
-      shellEl.clientHeight -
-      Array.from(shellEl.children).reduce(
-        (sum, child) =>
-          child === gridEl ? sum : sum + (child as HTMLElement).offsetHeight,
-        0
-      );
+    const below = Array.from(shellEl.children).reduce(
+      (sum, child) =>
+        child === gridEl ? sum : sum + (child as HTMLElement).offsetHeight,
+      0
+    );
+    if (stretch) shellEl.style.minHeight = `${below + MIN_STRETCH_GRID}px`;
+    const height = shellEl.clientHeight - below;
     const chip = gridEl.firstElementChild as HTMLElement | null;
     if (width <= 0 || height <= 0 || !chip) return;
 
@@ -618,6 +621,14 @@
   .vis-grid-shell.fill > .vis-grid:not(.fitted) {
     flex: none;
     min-width: 0;
+  }
+
+  /* A stretched panel keeps the controls after the grid where they are: a
+     grid that cannot fit scrolls inside its own share of the box. */
+  .vis-grid-shell.stretch > .vis-grid:not(.fitted) {
+    flex: 1 1 0;
+    min-height: 0;
+    overflow-y: auto;
   }
 
   /* Four columns as soon as there is room for them, two below that. Eight tiles
