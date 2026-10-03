@@ -50,6 +50,18 @@ export const PostTakeRefSchema = z.discriminatedUnion("kind", [
 
 export type PostTakeRef = z.infer<typeof PostTakeRefSchema>;
 
+/** The file a take plays. Takes cut from one recording share it. */
+export function takeFileKey(ref: PostTakeRef): string {
+  switch (ref.kind) {
+    case "local":
+      return `local:${ref.name}:${ref.size}:${ref.lastModified}`;
+    case "catalog":
+      return `catalog:${ref.videoId}`;
+    case "linked":
+      return `linked:${ref.url}`;
+  }
+}
+
 export const PostTakeSchema = z
   .object({
     id: IdSchema,

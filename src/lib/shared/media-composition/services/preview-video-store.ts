@@ -3,8 +3,18 @@ import type { PreviewVideoStore } from "./contracts/IPreviewVideoCache";
 import {
   MAX_PREVIEW_CACHE_BYTES,
   MAX_PREVIEW_VIDEO_BYTES,
+  PREVIEW_VIDEO_POLICY,
   type PreviewVideoCopy,
 } from "../domain/preview-video";
+
+/** Copies made under an older policy are never read again. */
+function stale(key: string): boolean {
+  try {
+    return (JSON.parse(key) as unknown[])[0] !== PREVIEW_VIDEO_POLICY;
+  } catch {
+    return true;
+  }
+}
 
 interface PreviewRecord extends Omit<PreviewVideoCopy, "blob"> {
   key: string;
@@ -82,9 +92,11 @@ export class PreviewVideoLocalStore implements PreviewVideoStore {
     await db.transaction("rw", db.records, db.files, async () => {
       const records = await db.records.toArray();
       let bytes = copy.blob.size;
-      const retained = records.filter((record) => record.assetKey !== assetKey);
+      const replaced = (record: PreviewRecord) =>
+        record.assetKey === assetKey || stale(record.key);
+      const retained = records.filter((record) => !replaced(record));
       bytes += retained.reduce((sum, record) => sum + record.bytes, 0);
-      const removed = records.filter((record) => record.assetKey === assetKey);
+      const removed = records.filter(replaced);
       retained.sort((a, b) => a.accessed - b.accessed);
       for (const record of retained) {
         if (bytes <= MAX_PREVIEW_CACHE_BYTES) break;

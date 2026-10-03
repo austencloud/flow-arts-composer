@@ -72,6 +72,12 @@ export function mountPlaybackMediaLayer() {
       playing = value;
       flushSync();
     },
+    /** Pausing that also moves the playhead, as the editor's pause does. */
+    pauseAt(time: number) {
+      playing = false;
+      sourceTimeSeconds = time;
+      flushSync();
+    },
     setPlaybackRate(value: number) {
       playbackRate = value;
       flushSync();

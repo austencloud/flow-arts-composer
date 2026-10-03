@@ -84,7 +84,11 @@ export interface TimingHost {
  * square and the lanes) and its panel (the controls), which the studio may
  * lay out apart. The take plays on its own clock here, not the post's.
  */
-export function createPostTimingSession(builder: TimingHost) {
+export function createPostTimingSession(
+  builder: TimingHost,
+  /** The editing copy to play in place of the take's own file, if any. */
+  editingUrl?: (takeId: string, url: string | null) => string | null
+) {
   let video = $state<HTMLVideoElement | null>(null);
   let mediaSeconds = $state(0);
   let playing = $state(false);
@@ -118,7 +122,18 @@ export function createPostTimingSession(builder: TimingHost) {
       : (takes[0]?.id ?? null)
   );
   const take = $derived(takes.find((entry) => entry.id === takeId) ?? null);
-  const url = $derived(takeId ? builder.mediaUrl(takeId) : null);
+  let shown: { takeId: string | null; url: string | null } = {
+    takeId: null,
+    url: null,
+  };
+  const url = $derived.by(() => {
+    const original = takeId ? builder.mediaUrl(takeId) : null;
+    const next = takeId && editingUrl ? editingUrl(takeId, original) : original;
+    // A copy that finishes mid-play waits for the pause, not restart the take.
+    if (playing && shown.takeId === takeId && shown.url) return shown.url;
+    shown = { takeId, url: next };
+    return next;
+  });
   const timing = $derived(takeId ? builder.timing(takeId) : null);
   const resolved = $derived(takeId ? builder.resolvedTiming(takeId) : null);
   const status = $derived(takeId ? builder.timingStatus(takeId) : "untapped");
@@ -211,8 +226,9 @@ export function createPostTimingSession(builder: TimingHost) {
     adjustLandings = false;
   });
 
-  // A newly mounted video starts at 0; bring it to where the tool is.
+  // A newly mounted or reloaded video starts at 0; bring it to where the tool is.
   $effect(() => {
+    void url;
     if (!video) return;
     const target = video;
     const align = () => {
@@ -812,7 +828,8 @@ export function createPostTimingSession(builder: TimingHost) {
       );
     },
     setLandingHoldPercent(percent: number): boolean {
-      if (!Number.isFinite(percent) || percent < 0 || percent > 90) return false;
+      if (!Number.isFinite(percent) || percent < 0 || percent > 90)
+        return false;
       const landingHoldRatio = Math.round(percent) / 100;
       editCurrent((current) =>
         (current.landingHoldRatio ?? 0) === landingHoldRatio
