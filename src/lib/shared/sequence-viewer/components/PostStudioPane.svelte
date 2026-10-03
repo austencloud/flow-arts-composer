@@ -6,10 +6,9 @@
   import PostStudio from "$lib/shared/share/components/post-studio/PostStudio.svelte";
   import type { PostStudioShareExport } from "$lib/shared/share/components/post-studio/post-studio-share-export";
   import type { PostProject } from "$lib/shared/media-composition/domain/post-project";
-  import {
-    loadPostDraft,
-    savePostDraft,
-  } from "$lib/shared/media-composition/services/post-draft-storage";
+  import { authState } from "$lib/shared/auth/state/auth-state.svelte";
+  import { savePostDraft } from "$lib/shared/media-composition/services/post-draft-storage";
+  import { loadSyncedPostDraft, saveSyncedPostDraft } from "$lib/features/post/services/post-account-projects";
 
   /**
    * Post Studio as a sequence-viewer surface.
@@ -65,10 +64,21 @@
 
   $effect(() => {
     const sequenceId = sequence.id;
+    authState.user?.uid;
     let current = true;
-    void loadPostDraft(sequenceId).then((loaded) => {
-      if (current) draft = { sequenceId, ...loaded };
-    });
+    draft = null;
+    void loadSyncedPostDraft(sequenceId)
+      .then((loaded) => {
+        if (current) draft = { sequenceId, ...loaded };
+      })
+      .catch((cause: unknown) => {
+        if (current) draft = {
+          sequenceId,
+          project: null,
+          diskAvailable: false,
+          error: cause instanceof Error ? cause.message : "The saved post could not be opened.",
+        };
+      });
     return () => {
       current = false;
     };
@@ -77,11 +87,12 @@
 
 <div class="post-studio-pane">
   {#if draft?.sequenceId === sequence.id}
+    {#key `${authState.user && !authState.user.isAnonymous ? authState.user.uid : "guest"}:${sequence.id}`}
     <PostStudio
       {active}
       {sequence}
       initialProject={draft.project ?? undefined}
-      onSaveDraft={draft.diskAvailable ? savePostDraft : undefined}
+      onSaveDraft={authState.user && !authState.user.isAnonymous ? (project) => saveSyncedPostDraft(project, sequence) : draft.diskAvailable ? savePostDraft : undefined}
       draftLoadError={draft.error}
       cardPreviewUrl={cardPreview.url}
       cardRenderOptions={cardPreview.renderOptions}
@@ -96,6 +107,7 @@
       {onRegisterShareExport}
       {sharing}
     />
+    {/key}
   {:else}
     <div class="draft-loading" role="status">Loading saved post…</div>
   {/if}

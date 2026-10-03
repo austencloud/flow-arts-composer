@@ -20,6 +20,35 @@ const sequence = (id: string) =>
   ({ id, name: id, word: id, steps: [{}] }) as SequenceData;
 
 describe("Post module state", () => {
+  it("discards the previous account's project list after an account switch", async () => {
+    const previous = deferred<Awaited<ReturnType<PostModuleServices["list"]>>>();
+    const next = deferred<Awaited<ReturnType<PostModuleServices["list"]>>>();
+    const list = vi.fn()
+      .mockImplementationOnce(() => previous.promise)
+      .mockImplementationOnce(() => next.promise);
+    const state = createPostModuleState({
+      list,
+      resolve: vi.fn(async () => null),
+      loadDraft: vi.fn(async () => ({ project: null, diskAvailable: false, error: null })),
+    });
+    const pending = state.refreshProjects();
+    state.resetForAccount();
+    previous.resolve({
+      projects: [{ sequenceId: "old", title: "Old", word: "OLD", updatedAt: 1, hasDraft: true }],
+      error: "Previous account error",
+    });
+    await pending;
+    expect(state.projects).toEqual([]);
+    expect(state.catalogError).toBeNull();
+    expect(state.loadingCatalog).toBe(true);
+    next.resolve({
+      projects: [{ sequenceId: "new", title: "New", word: "NEW", updatedAt: 2, hasDraft: true }],
+      error: null,
+    });
+    await vi.waitFor(() => expect(state.loadingCatalog).toBe(false));
+    expect(state.projects.map((project) => project.sequenceId)).toEqual(["new"]);
+  });
+
   it("ignores an older project load after a newer selection", async () => {
     const first = deferred<SequenceData | null>();
     const second = deferred<SequenceData | null>();

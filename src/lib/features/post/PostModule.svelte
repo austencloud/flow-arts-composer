@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { onMount } from "svelte";
   import { goto } from "$app/navigation";
   import { page } from "$app/state";
   import { isTkaWord, simplifyRepeatedWord } from "$lib/shared/foundation/utils/word-simplifier";
@@ -7,16 +6,16 @@
   import { getExportOptionsState } from "$lib/shared/animation-panel/state/export-options-state.svelte";
   import { createCardPreviewState } from "$lib/shared/share/state/card-preview-state.svelte";
   import PostStudio from "$lib/shared/share/components/post-studio/PostStudio.svelte";
+  import { authState } from "$lib/shared/auth/state/auth-state.svelte";
   import {
-    loadPostDraft,
-    savePostDraft,
-  } from "$lib/shared/media-composition/services/post-draft-storage";
+    listSyncedPostProjects,
+    loadSyncedPostDraft,
+    resolveSyncedPostSequence,
+    saveSyncedPostDraft,
+  } from "./services/post-account-projects";
+  import { savePostDraft } from "$lib/shared/media-composition/services/post-draft-storage";
   import { createPostModuleState } from "./state/post-module-state.svelte";
   import { setPostModuleContext } from "./context/post-module-context";
-  import {
-    listPostProjects,
-    resolvePostSequence,
-  } from "./services/post-workspace-projects";
   import { canAccessPostStudio } from "$lib/shared/sequence-viewer/services/post-studio-access";
   import { providePostEditorHeader } from "$lib/shared/share/components/post-studio/editor/post-editor-header.svelte";
 
@@ -25,9 +24,9 @@
   }
   let { visible = true }: Props = $props();
   const state = createPostModuleState({
-    list: listPostProjects,
-    resolve: resolvePostSequence,
-    loadDraft: loadPostDraft,
+    list: listSyncedPostProjects,
+    resolve: resolveSyncedPostSequence,
+    loadDraft: loadSyncedPostDraft,
   });
   setPostModuleContext(state);
   /** The editor puts Save, more actions and Export in this header row. */
@@ -54,10 +53,19 @@
     )
   );
 
-  onMount(() => {
-    void state.refreshProjects();
+  let previousAccount: string | null | undefined = undefined;
+  $effect(() => {
+    if (!authState.initialized) return;
+    const uid = authState.user && !authState.user.isAnonymous ? authState.user.uid : null;
+    if (previousAccount === uid) return;
+    previousAccount = uid;
+    initialVisit = true;
+    previousParam = null;
+    state.resetForAccount();
   });
   $effect(() => {
+    if (!authState.initialized) return;
+    authState.user?.uid;
     const project = page.url.searchParams.get("project");
     if (initialVisit) {
       initialVisit = false;
@@ -90,6 +98,7 @@
         <h1>Projects</h1>
         <p>Open a saved post or choose Edit in Post from a sequence.</p>
       </header>
+      {#if authState.user && !authState.user.isAnonymous}<p class="notice">Saved edits sync with your account. You need to select this device’s videos again on another device.</p>{/if}
       {#if state.catalogError}<p class="notice" role="status">
           {state.catalogError}
         </p>{/if}
@@ -178,12 +187,12 @@
           >
         </div>
       {:else}
-        {#key state.sequence.id}
+        {#key `${authState.user && !authState.user.isAnonymous ? authState.user.uid : "guest"}:${state.sequence.id}`}
           <PostStudio
             active={visible && !state.showingProjects}
             sequence={state.sequence}
             initialProject={state.draft ?? undefined}
-            onSaveDraft={state.diskAvailable ? savePostDraft : undefined}
+            onSaveDraft={authState.user && !authState.user.isAnonymous ? (project) => saveSyncedPostDraft(project, state.sequence!) : state.diskAvailable ? savePostDraft : undefined}
             draftLoadError={state.projectError}
             cardPreviewUrl={cardPreview.url}
             cardRenderOptions={cardPreview.renderOptions}

@@ -657,6 +657,24 @@ service cloud.firestore {
         allow delete: if isOwner(userId) || isAdmin();
       }
 
+      // Private Post timeline projects. Media selected from a device is only
+      // referenced here; the file itself stays on that device until relinked.
+      match /postProjects/{postId} {
+        allow read: if isOwner(userId);
+        allow create, update: if isOwner(userId)
+          && request.resource.data.keys().hasOnly(['sequenceId', 'project', 'source', 'projectUpdatedAt', 'revision'])
+          && request.resource.data.keys().hasAll(['sequenceId', 'project', 'source', 'projectUpdatedAt', 'revision'])
+          && request.resource.data.sequenceId is string
+          && request.resource.data.project is string
+          && request.resource.data.project.size() <= 700000
+          && request.resource.data.source is string
+          && request.resource.data.source.size() <= 200000
+          && request.resource.data.projectUpdatedAt is int
+          && request.resource.data.revision is int
+          && request.resource.data.revision > 0;
+        allow delete: if isOwner(userId);
+      }
+
       // -------------------------------------------------------------------------
       // TIKA CONVERSATIONS (AI Learning Assistant)
       // -------------------------------------------------------------------------
