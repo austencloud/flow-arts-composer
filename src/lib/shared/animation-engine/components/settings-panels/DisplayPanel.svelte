@@ -50,6 +50,11 @@
      *  toggles modest, so the grid spends the card rather than sitting in
      *  the middle of it. */
     grow = false,
+    /** With `fill`: the tiles share the whole box instead of sitting square in
+     *  its middle, so a host whose panel has room to spare (Post Studio's side
+     *  tool panel) shows bigger buttons rather than empty space below them.
+     *  The arrangement and the picture size are still the fitted ones. */
+    stretch = false,
     /** The host scrolls this panel inside a box it does not size (Post
      *  Studio's tool panel body), so there is no definite height to fit to.
      *  The tiles become short, in two rows where the width allows, and the
@@ -80,6 +85,7 @@
     propType?: string;
     fill?: boolean;
     grow?: boolean;
+    stretch?: boolean;
     compact?: boolean;
     showSequenceMarks?: boolean;
     showWordToggle?: boolean;
@@ -312,7 +318,14 @@
   function measureFit(): void {
     if (!fill || !shellEl || !gridEl) return;
     const width = shellEl.clientWidth;
-    const height = shellEl.clientHeight;
+    // The word highlight switch sits under the grid and keeps its own height.
+    const height =
+      shellEl.clientHeight -
+      Array.from(shellEl.children).reduce(
+        (sum, child) =>
+          child === gridEl ? sum : sum + (child as HTMLElement).offsetHeight,
+        0
+      );
     const chip = gridEl.firstElementChild as HTMLElement | null;
     if (width <= 0 || height <= 0 || !chip) return;
 
@@ -476,7 +489,12 @@
   }
 </script>
 
-<div class="vis-grid-shell" class:fill bind:this={shellEl}>
+<div
+  class="vis-grid-shell"
+  class:fill
+  class:stretch={fill && stretch}
+  bind:this={shellEl}
+>
   <div
     class:motion-grid={showPropChips}
     class:ten-tiles={showPropChips && chips.length === 10}
@@ -581,20 +599,25 @@
 
   /* Given a real height, take all of it. The grid's rows are then fractions of
      a box the content does not set, which is what makes measuring the tile and
-     sizing the picture from it settle in one pass. */
+     sizing the picture from it settle in one pass. The word highlight switch
+     goes under the grid, not beside it. */
   .vis-grid-shell.fill {
     flex: 1 1 0;
     min-height: 0;
     display: flex;
+    flex-direction: column;
+  }
+
+  .vis-grid-shell.fill > .word-highlight-control {
+    flex: none;
   }
 
   /* A box too small to fit (MIN_FIT_ART in display-grid-fit) keeps the
      width-only grid at its own height, across the whole box, and the page
      scrolls. */
   .vis-grid-shell.fill > .vis-grid:not(.fitted) {
-    flex: 1 1 auto;
+    flex: none;
     min-width: 0;
-    align-self: flex-start;
   }
 
   /* Four columns as soon as there is room for them, two below that. Eight tiles
@@ -660,6 +683,19 @@
      whatever room is left instead. */
   .vis-grid.fitted .rt-chip {
     aspect-ratio: 1;
+  }
+
+  /* Stretched: the fitted columns and rows share the box, so the slack the
+     square tiles would leave around the grid goes into the buttons instead.
+     The picture keeps its fitted size, centred in its button. */
+  .vis-grid-shell.stretch > .vis-grid.fitted {
+    grid-template-columns: repeat(var(--vis-cols), minmax(0, 1fr));
+    grid-auto-rows: minmax(0, 1fr);
+    place-content: stretch;
+  }
+
+  .vis-grid-shell.stretch > .vis-grid.fitted .rt-chip {
+    aspect-ratio: auto;
   }
 
   /* Same breath between the two groups, placed on whichever axis the boundary
