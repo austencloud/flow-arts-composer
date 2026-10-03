@@ -1,6 +1,7 @@
 import type { EffectsConfig } from "$lib/shared/effects/domain/effects-config";
 import { foldTrailIntentIntoSettings } from "$lib/shared/effects/translators/canvas2d-translator";
 import {
+  DEFAULT_TRAIL_SETTINGS,
   TrailMode,
   type TrailSettings,
 } from "$lib/shared/animation-engine/domain/types/trail-types";
@@ -19,12 +20,14 @@ export function postAnimationTrailSettings(
   effects: EffectsConfig,
   trail: NonNullable<PostAnimationItem["animationAppearance"]>["trail"]
 ): TrailSettings {
+  const saved = trail?.settings;
+  const source = trail ? { ...DEFAULT_TRAIL_SETTINGS, ...saved } : base;
   return foldTrailIntentIntoSettings(
     {
-      ...base,
-      mode: TrailMode.FADE,
-      trackingMode: trail?.trackingMode ?? base.trackingMode,
-      tailLength: trail?.tailLength ?? base.tailLength,
+      ...source,
+      mode: saved?.mode ?? TrailMode.FADE,
+      trackingMode: trail?.trackingMode ?? source.trackingMode,
+      tailLength: trail?.tailLength ?? source.tailLength,
     },
     effects.trails
   );

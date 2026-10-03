@@ -9,7 +9,12 @@ import { migratePostPlan } from "$lib/shared/media-composition/domain/post-proje
 import { createEmptyPostProject } from "$lib/shared/media-composition/domain/post-project";
 import { normalizeProject } from "$lib/shared/media-composition/domain/post-project-normalize";
 import { createDefaultPostPlan } from "$lib/shared/media-composition/domain/post-plan";
-import { NOW, card, project, video } from "./post-project-fixtures";
+import {
+  DEFAULT_TRAIL_SETTINGS,
+  TrailMode,
+} from "$lib/shared/animation-engine/domain/types/trail-types";
+import { DEFAULT_EFFECTS_CONFIG } from "$lib/shared/effects/domain/defaults";
+import { NOW, card, overlay, project, video } from "./post-project-fixtures";
 
 const PREFIX = "tka:post-studio:project:v2:";
 
@@ -24,6 +29,45 @@ describe("loadPostProject / savePostProject", () => {
     );
     savePostProject(saved);
     expect(loadPostProject(saved.sequenceId)).toEqual(saved);
+  });
+
+  it("round-trips an item's full trail settings and effect tuning", () => {
+    const effects = structuredClone(DEFAULT_EFFECTS_CONFIG);
+    effects.activeEffect = "trails";
+    effects.tipEffectMap = { "*": { effect: "trails" } };
+    effects.trails.thickness = 8;
+    const settings = {
+      ...DEFAULT_TRAIL_SETTINGS,
+      mode: TrailMode.PERSISTENT,
+      fadeDurationMs: 6400,
+      glowBlur: 7,
+      hideProps: true,
+      usePathCache: false,
+      previewMode: true,
+    };
+    const item = overlay("animation", "animation", {
+      animationAppearance: {
+        effects,
+        trail: {
+          enabled: true,
+          trackingMode: settings.trackingMode,
+          thickness: effects.trails.thickness,
+          brightness: effects.trails.brightness,
+          tailLength: settings.tailLength,
+          leftColor: effects.trails.leftColor,
+          rightColor: effects.trails.rightColor,
+          settings,
+        },
+      },
+    });
+    const saved = project([video("v1")], [[item]]);
+    expect(savePostProject(saved)).toEqual({ ok: true });
+    const restored = loadPostProject(saved.sequenceId)!;
+    const animation = restored.tracks[1]!.items[0]!;
+    expect(animation.kind).toBe("animation");
+    if (animation.kind !== "animation") return;
+    expect(animation.animationAppearance?.trail?.settings).toEqual(settings);
+    expect(animation.animationAppearance?.effects?.trails.thickness).toBe(8);
   });
 
   it("normalizes a project on load", () => {

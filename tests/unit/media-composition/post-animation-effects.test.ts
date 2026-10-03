@@ -57,4 +57,45 @@ describe("post animation effects", () => {
     });
     expect(base.mode).toBe(TrailMode.OFF);
   });
+
+  it("restores every saved trail rendering setting without borrowing viewer values", () => {
+    const viewer = {
+      ...DEFAULT_TRAIL_SETTINGS,
+      mode: TrailMode.OFF,
+      fadeDurationMs: 900,
+      hideProps: false,
+    };
+    const saved = {
+      ...DEFAULT_TRAIL_SETTINGS,
+      mode: TrailMode.PERSISTENT,
+      fadeDurationMs: 6400,
+      glowBlur: 7,
+      hideProps: true,
+      usePathCache: false,
+      previewMode: true,
+      additionalLayerColors: [{ left: "#112233", right: "#445566" }],
+      tailLength: 75,
+    };
+    const result = postAnimationTrailSettings(viewer, DEFAULT_EFFECTS_CONFIG, {
+      enabled: true,
+      trackingMode: saved.trackingMode,
+      thickness: DEFAULT_EFFECTS_CONFIG.trails.thickness,
+      brightness: DEFAULT_EFFECTS_CONFIG.trails.brightness,
+      tailLength: saved.tailLength,
+      leftColor: DEFAULT_EFFECTS_CONFIG.trails.leftColor,
+      rightColor: DEFAULT_EFFECTS_CONFIG.trails.rightColor,
+      settings: saved,
+    });
+    expect(result).toMatchObject({
+      mode: TrailMode.PERSISTENT,
+      fadeDurationMs: 6400,
+      glowBlur: 7,
+      hideProps: true,
+      usePathCache: false,
+      previewMode: true,
+      additionalLayerColors: saved.additionalLayerColors,
+      tailLength: 75,
+    });
+    expect(viewer.mode).toBe(TrailMode.OFF);
+  });
 });

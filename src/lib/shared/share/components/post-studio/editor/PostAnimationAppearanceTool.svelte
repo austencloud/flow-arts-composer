@@ -46,6 +46,7 @@
   import { createEffectsConfigState } from "$lib/shared/effects/state/effects-config-state.svelte";
   import { DEFAULT_EFFECTS_CONFIG } from "$lib/shared/effects/domain/defaults";
   import { getEffectsConfigContext } from "$lib/shared/effects/state/effects-config-context";
+  import { TrailMode } from "$lib/shared/animation-engine/domain/types/trail-types";
   import type {
     PostAnimationItem,
     PostMovesItem,
@@ -54,7 +55,10 @@
   import { itemDisplayLabel } from "./post-editor-labels";
   import { updateItem } from "$lib/shared/media-composition/domain/post-project-edits";
   import type { PostEditorState } from "$lib/shared/media-composition/state/post-editor-state.svelte";
-  import { copyPostAnimationEffects } from "../post-animation-effects.svelte";
+  import {
+    copyPostAnimationEffects,
+    postAnimationTrailSettings,
+  } from "../post-animation-effects.svelte";
 
   let {
     editor,
@@ -303,13 +307,6 @@
           appearance?.propLook ?? getSettings().propArtwork
         );
         effectsWereEdited = !!appearance?.effects || !!trail;
-        trailSettings.updateSettings({
-          trail: {
-            ...initialTrail,
-            trackingMode: trail?.trackingMode ?? initialTrail.trackingMode,
-            tailLength: trail?.tailLength ?? initialTrail.tailLength,
-          },
-        });
         const nextEffects = copyPostAnimationEffects(
           appearance?.effects ?? initialEffects
         );
@@ -327,6 +324,9 @@
             ? { "*": { effect: "trails" } }
             : {};
         }
+        trailSettings.updateSettings({
+          trail: postAnimationTrailSettings(initialTrail, nextEffects, trail),
+        });
         trailEffects.replace(nextEffects);
       } finally {
         syncing = false;
@@ -347,6 +347,7 @@
     if (effectsWereEdited) {
       appearance.effects = trailEffects.snapshot();
       const trails = trailEffects.trails;
+      const savedTrailSettings = trailSettings.snapshot().trail;
       appearance.trail = {
         enabled: trailEffects.activeEffect === "trails",
         trackingMode: trailSettings.trail.trackingMode,
@@ -355,6 +356,14 @@
         tailLength: trailSettings.trail.tailLength,
         leftColor: trails.leftColor,
         rightColor: trails.rightColor,
+        settings: {
+          ...savedTrailSettings,
+          mode:
+            trailEffects.activeEffect === "trails" &&
+            savedTrailSettings.mode === TrailMode.OFF
+              ? TrailMode.FADE
+              : savedTrailSettings.mode,
+        },
       };
     }
     if (onAppearanceChange) {
