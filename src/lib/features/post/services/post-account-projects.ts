@@ -4,7 +4,7 @@ import { auth, getFirestoreInstance } from "$lib/shared/auth/firebase";
 import { firestoreGetDetailed, firestoreList } from "$lib/shared/firestore";
 import { awaitAuthSettled } from "$lib/shared/auth/state/auth-state.svelte";
 import { PostProjectSchema, type PostProject } from "$lib/shared/media-composition/domain/post-project";
-import { loadPostDraft, savePostDraftRecords } from "$lib/shared/media-composition/services/post-draft-storage";
+import { loadDiskPostDraft, loadPostDraft, savePostDraftRecords } from "$lib/shared/media-composition/services/post-draft-storage";
 import { projectDraftRecord } from "$lib/shared/media-composition/services/post-project-backup";
 import { accountPostProjectKeys, claimLegacyPosts, legacyPostOwner, loadPostProject, savePostProject } from "$lib/shared/media-composition/services/post-project-store";
 import { listPostProjects, type PostProjectChoice } from "./post-workspace-projects";
@@ -243,19 +243,28 @@ export async function loadSyncedPostDraft(sequenceId: string): Promise<{
       local = project;
     }
   }
+  // In development the disk folder also holds every browser's saves, so a
+  // post edited on another site of this computer opens at its newest too.
+  const disk = loadDiskPostDraft(sequenceId);
   try {
     const remote = await loadAccountPostProject(uid, sequenceId);
-    // The newer copy opens; when it is this device's, the next save sends it up.
-    if (local && remote && local.updatedAt > remote.updatedAt)
-      return { project: local, diskAvailable: false, error: null };
-    return { project: remote ?? local, diskAvailable: false, error: null };
+    // The newest copy opens; when it is not the cloud's, the next save sends it up.
+    return { project: newestPost(local, remote, await disk), diskAvailable: false, error: null };
   } catch (cause) {
-    if (local) {
-      console.warn(`[Post] ${sequenceId} opened from this device; the cloud copy could not be read:`, cause);
-      return { project: local, diskAvailable: false, error: null };
+    const project = newestPost(local, await disk);
+    if (project) {
+      console.warn(`[Post] ${sequenceId} opened without the cloud copy, which could not be read:`, cause);
+      return { project, diskAvailable: false, error: null };
     }
     return { project: null, diskAvailable: false, error: cause instanceof Error ? cause.message : "Cloud post could not be loaded." };
   }
+}
+
+function newestPost(...copies: (PostProject | null)[]): PostProject | null {
+  return copies.reduce<PostProject | null>(
+    (newest, copy) => (copy && (!newest || copy.updatedAt > newest.updatedAt) ? copy : newest),
+    null
+  );
 }
 
 export async function resolveSyncedPostSequence(sequenceId: string): Promise<SequenceData | null> {

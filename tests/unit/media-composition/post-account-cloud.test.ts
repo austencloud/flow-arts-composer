@@ -149,6 +149,38 @@ describe("account Post writes", () => {
     expect(loadPostProject(project.sequenceId)?.updatedAt).toBe(70);
   });
 
+  it("opens a newer save from another site of this computer out of the disk folder", async () => {
+    const local = createEmptyPostProject({ sequenceId: "post-7", now: 30 });
+    expect(savePostProject(local).ok).toBe(true);
+    const onDisk = createEmptyPostProject({ sequenceId: "post-7", now: 80 });
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(
+        async () =>
+          new Response(
+            JSON.stringify({
+              records: [
+                {
+                  key: "tka:post-studio:project:v2:post-7",
+                  value: JSON.stringify(onDisk),
+                },
+              ],
+            })
+          )
+      )
+    );
+    await expect(loadSyncedPostDraft("post-7")).resolves.toMatchObject({
+      project: { updatedAt: 80 },
+      error: null,
+    });
+    mocks.read.mockResolvedValue({ status: "unknown" });
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    await expect(loadSyncedPostDraft("post-7")).resolves.toMatchObject({
+      project: { updatedAt: 80 },
+      error: null,
+    });
+  });
+
   it("opens this device's newer copy, or its copy when the cloud is unreachable, without an error", async () => {
     const local = createEmptyPostProject({ sequenceId: "post-6", now: 90 });
     expect(savePostProject(local).ok).toBe(true);
