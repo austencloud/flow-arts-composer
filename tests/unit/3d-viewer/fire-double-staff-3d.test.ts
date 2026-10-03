@@ -49,9 +49,9 @@ describe("fire double staff 3D", () => {
     // Both are staff-family GLB props added the same way, and the failure mode
     // of that is one entry overwriting the other and the two staves rendering
     // as the same object.
-    expect(resolvePropModel(PropType.FIRE_DOUBLE_STAFF)!.entry.modelUrl).not.toBe(
-      resolvePropModel(PropType.CAPSULE_BATON)!.entry.modelUrl
-    );
+    expect(
+      resolvePropModel(PropType.FIRE_DOUBLE_STAFF)!.entry.modelUrl
+    ).not.toBe(resolvePropModel(PropType.CAPSULE_BATON)!.entry.modelUrl);
   });
 
   it("emits from the burning part of each wick, not from the far rim", () => {
@@ -78,8 +78,13 @@ describe("fire double staff 3D", () => {
     for (const propType of [PropType.STAFF, PropType.DOUBLESTAR]) {
       const anchors = resolvePropTipAnchors3D(propType, STAFF_HALF_M, BUILD);
       expect(anchors).toHaveLength(2);
-      expect(anchors[1].offset.y).toBeCloseTo(STAFF_HALF_M, 6);
-      expect(anchors[0].offset.y).toBeCloseTo(-STAFF_HALF_M, 6);
+      // Tip order follows each prop's 2D table; both physical ends retain
+      // the staff reach regardless of which end occupies effect slot 0.
+      const ends = anchors
+        .map((anchor) => anchor.offset.y)
+        .sort((a, b) => a - b);
+      expect(ends[0]).toBeCloseTo(-STAFF_HALF_M, 6);
+      expect(ends[1]).toBeCloseTo(STAFF_HALF_M, 6);
     }
   });
 });
