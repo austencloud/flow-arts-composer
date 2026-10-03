@@ -16,7 +16,8 @@ import { textRenderer } from "$lib/shared/render/services/text-renderer";
 const FILL_COLOR = "#ffffff";
 const STROKE_COLOR = "rgba(0, 0, 0, 0.85)";
 const SHADOW_COLOR = "rgba(0, 0, 0, 0.7)";
-const LABEL_FONT_STACK = 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif';
+const LABEL_FONT_STACK =
+  'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif';
 
 /** Share of the frame's short side the tunnel's ring covers while it holds the frame. */
 const TUNNEL_EXTENT = 0.62;
@@ -28,7 +29,6 @@ const NAME_BAND_SHARE = 0.3;
 const HEADER_GLYPH_SHARE = 0.65;
 /** "How to say it", relative to the name's letters. */
 const SPOKEN_SIZE = 0.42;
-const SPOKEN_GAP = 0.45;
 type Context = CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D;
 
 class TunnelTitlesPainter implements PostStudioLayerPainter {
@@ -55,17 +55,17 @@ class TunnelTitlesPainter implements PostStudioLayerPainter {
     const look = tunnelTitlesLook(plan, seconds, sampleEasing);
     const { x, y, width, height } = rect;
     const ring = (Math.min(width, height) * TUNNEL_EXTENT) / 2;
+    // The ring sits in the middle, so the bands above and below it match.
     const above = Math.max(0, height / 2 - ring);
 
     context.save();
     context.lineJoin = "round";
 
-    // The name and how to say it, centred in the band above the tunnel.
+    // The name centred in the band above the tunnel, and how to say it
+    // centred in the band below, as far from the ring as the name.
     const glyphHeight = Math.min(height * NAME_HEIGHT, above * NAME_BAND_SHARE);
     const spokenPx = glyphHeight * SPOKEN_SIZE;
-    const blockHeight =
-      glyphHeight + (plan.spoken ? glyphHeight * SPOKEN_GAP + spokenPx : 0);
-    const blockTop = y + (above - blockHeight) / 2;
+    const blockTop = y + (above - glyphHeight) / 2;
     const word = this.getWord();
     if (look.name.opacity > 0 && word && glyphHeight > 0) {
       const band = glyphHeight / HEADER_GLYPH_SHARE;
@@ -101,11 +101,7 @@ class TunnelTitlesPainter implements PostStudioLayerPainter {
       context.strokeStyle = STROKE_COLOR;
       context.lineWidth = spokenPx * CAPTION_STROKE_WIDTH_FRACTION;
       context.fillStyle = FILL_COLOR;
-      const spokenY =
-        blockTop +
-        glyphHeight * (1 + SPOKEN_GAP) +
-        spokenPx / 2 -
-        look.spoken.rise * height;
+      const spokenY = y + height - above / 2 - look.spoken.rise * height;
       const line = `“${plan.spoken}”`;
       context.strokeText(line, x + width / 2, spokenY, width * 0.9);
       context.fillText(line, x + width / 2, spokenY, width * 0.9);

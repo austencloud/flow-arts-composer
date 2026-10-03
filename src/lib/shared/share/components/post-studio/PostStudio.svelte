@@ -38,7 +38,8 @@
     active?: boolean;
     sequence: SequenceData;
     initialProject?: PostProject;
-    onSaveDraft?: (project: PostProject) => Promise<void>;
+    /** Saves elsewhere too; may hand back a later edit saved somewhere else. */
+    onSaveDraft?: (project: PostProject) => Promise<PostProject | null | void>;
     draftLoadError?: string | null;
     cardPreviewUrl: string | null;
     animationPreviewUrl: string | null;

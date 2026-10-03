@@ -50,14 +50,21 @@ function recordsForSequence(
 export function readPostDraftRecords(): PostDraftRecord[] {
   const records: PostDraftRecord[] = [];
   const owner = legacyPostOwner();
-  const uid = auth.currentUser && !auth.currentUser.isAnonymous ? auth.currentUser.uid : null;
+  const uid =
+    auth.currentUser && !auth.currentUser.isAnonymous
+      ? auth.currentUser.uid
+      : null;
   const guestAfterClaim = !!owner && owner !== uid;
   for (let index = 0; index < localStorage.length; index += 1) {
     const key = localStorage.key(index);
-    if (!key || key.startsWith(`${PREFIXES[0]}account:`) ||
-        (guestAfterClaim && !key.startsWith(`${PREFIXES[0]}guest:`)) ||
-        (!guestAfterClaim && key.startsWith(`${PREFIXES[0]}guest:`)) ||
-        !PREFIXES.some((prefix) => key.startsWith(prefix))) continue;
+    if (
+      !key ||
+      key.startsWith(`${PREFIXES[0]}account:`) ||
+      (guestAfterClaim && !key.startsWith(`${PREFIXES[0]}guest:`)) ||
+      (!guestAfterClaim && key.startsWith(`${PREFIXES[0]}guest:`)) ||
+      !PREFIXES.some((prefix) => key.startsWith(prefix))
+    )
+      continue;
     const value = localStorage.getItem(key);
     if (value !== null) records.push({ key, value });
   }
@@ -70,9 +77,18 @@ export async function loadPostDraft(sequenceId: string): Promise<{
   diskAvailable: boolean;
   error: string | null;
 }> {
-  if (legacyPostOwner() && legacyPostOwner() !== (auth.currentUser?.isAnonymous ? null : auth.currentUser?.uid))
+  if (
+    legacyPostOwner() &&
+    legacyPostOwner() !==
+      (auth.currentUser?.isAnonymous ? null : auth.currentUser?.uid)
+  )
     return {
-      project: resolvePostStudioDraft(sequenceId, readPostDraftRecords().filter((record) => record.key === `${PREFIXES[0]}guest:${sequenceId}`)),
+      project: resolvePostStudioDraft(
+        sequenceId,
+        readPostDraftRecords().filter(
+          (record) => record.key === `${PREFIXES[0]}guest:${sequenceId}`
+        )
+      ),
       diskAvailable: false,
       error: null,
     };
@@ -88,40 +104,9 @@ export async function loadPostDraft(sequenceId: string): Promise<{
     return records;
   };
   browserRecords();
-  const controller = new AbortController();
-  let deadline: ReturnType<typeof setTimeout> | undefined;
   try {
-    const archive = (async () => {
-      const query = new URLSearchParams({ sequenceId });
-      const response = await fetch(`${ENDPOINT}?${query}`, {
-        cache: "no-store",
-        signal: controller.signal,
-      });
-      if (response.status === 404) return { response, saved: null };
-      if (!response.ok)
-        throw new Error("Could not read saved drafts from this computer.");
-      const saved: unknown = await response.json();
-      if (
-        !saved ||
-        typeof saved !== "object" ||
-        !("records" in saved) ||
-        !Array.isArray(saved.records)
-      )
-        throw new Error("The draft archive returned an invalid response.");
-      return { response, saved: { records: saved.records } };
-    })();
-    const { response, saved } = await Promise.race([
-      archive,
-      new Promise<never>((_resolve, reject) => {
-        deadline = setTimeout(() => {
-          controller.abort();
-          reject(
-            new Error("Reading the draft archive timed out after 10 seconds.")
-          );
-        }, LOAD_DEADLINE_MS);
-      }),
-    ]);
-    if (response.status === 404) {
+    const archived = await readArchiveRecords(sequenceId);
+    if (archived === null) {
       return {
         project: resolvePostStudioDraft(sequenceId, browserRecords()),
         diskAvailable: false,
@@ -131,7 +116,7 @@ export async function loadPostDraft(sequenceId: string): Promise<{
     return {
       project: resolvePostStudioDraft(sequenceId, [
         ...browserRecords(),
-        ...recordsForSequence(sequenceId, saved!.records),
+        ...recordsForSequence(sequenceId, archived),
       ]),
       diskAvailable: true,
       error,
@@ -145,13 +130,82 @@ export async function loadPostDraft(sequenceId: string): Promise<{
           ? cause.message
           : "Could not read the draft archive.",
     };
+  }
+}
+
+/** The archive's saves of one post, or null when this server keeps none. */
+async function readArchiveRecords(
+  sequenceId: string
+): Promise<PostDraftRecord[] | null> {
+  const controller = new AbortController();
+  let deadline: ReturnType<typeof setTimeout> | undefined;
+  try {
+    const archive = (async () => {
+      const query = new URLSearchParams({ sequenceId });
+      const response = await fetch(`${ENDPOINT}?${query}`, {
+        cache: "no-store",
+        signal: controller.signal,
+      });
+      if (response.status === 404) return null;
+      if (!response.ok)
+        throw new Error("Could not read saved drafts from this computer.");
+      const saved: unknown = await response.json();
+      if (
+        !saved ||
+        typeof saved !== "object" ||
+        !("records" in saved) ||
+        !Array.isArray(saved.records)
+      )
+        throw new Error("The draft archive returned an invalid response.");
+      return saved.records as PostDraftRecord[];
+    })();
+    return await Promise.race([
+      archive,
+      new Promise<never>((_resolve, reject) => {
+        deadline = setTimeout(() => {
+          controller.abort();
+          reject(
+            new Error("Reading the draft archive timed out after 10 seconds.")
+          );
+        }, LOAD_DEADLINE_MS);
+      }),
+    ]);
   } finally {
     clearTimeout(deadline);
   }
 }
 
+/**
+ * The newest save of a post in the dev server's draft folder, which every
+ * browser and site on this computer writes to. Null outside development or
+ * when the folder cannot be read.
+ */
+export async function loadDiskPostDraft(
+  sequenceId: string
+): Promise<PostProject | null> {
+  if (!import.meta.env.DEV) return null;
+  try {
+    const archived = await readArchiveRecords(sequenceId);
+    return archived
+      ? resolvePostStudioDraft(
+          sequenceId,
+          recordsForSequence(sequenceId, archived)
+        )
+      : null;
+  } catch {
+    return null;
+  }
+}
+
 export async function savePostDraft(project: PostProject): Promise<void> {
-  const body = JSON.stringify({ records: [projectDraftRecord(project)] });
+  await savePostDraftRecords([projectDraftRecord(project)]);
+}
+
+/** Writes draft records to the dev server's draft folder. */
+export async function savePostDraftRecords(
+  records: readonly PostDraftRecord[]
+): Promise<void> {
+  const body = JSON.stringify({ records });
   const post = (keepalive: boolean) =>
     fetch(ENDPOINT, {
       method: "POST",

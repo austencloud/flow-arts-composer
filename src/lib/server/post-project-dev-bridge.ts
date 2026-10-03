@@ -1,3 +1,4 @@
+import { bridgeLockedChange } from "$lib/shared/media-composition/domain/post-project-bridge-guard";
 import { createHash, randomUUID } from "node:crypto";
 import { promises as fs } from "node:fs";
 import os from "node:os";
@@ -183,20 +184,9 @@ export async function queuePostProjectEdit(
   const next = parsed.data;
   if (next.sequenceId !== session.snapshot.sequenceId)
     throw new Error("Wrong sequence.");
-  for (const key of [
-    "takes",
-    "images",
-    "timings",
-    "mappingPreviewAppearances",
-    "fonts",
-    "importSource",
-  ] as const) {
-    if (
-      JSON.stringify(next[key] ?? null) !==
-      JSON.stringify(session.snapshot[key] ?? null)
-    )
-      throw new Error(`${key} cannot be changed through the manifest bridge.`);
-  }
+  const locked = bridgeLockedChange(session.snapshot, next);
+  if (locked)
+    throw new Error(`${locked} cannot be changed through the manifest bridge.`);
   const command: Command = {
     id: randomUUID(),
     ready: false,

@@ -4,7 +4,8 @@ import { auth, getFirestoreInstance } from "$lib/shared/auth/firebase";
 import { firestoreGetDetailed, firestoreList } from "$lib/shared/firestore";
 import { awaitAuthSettled } from "$lib/shared/auth/state/auth-state.svelte";
 import { PostProjectSchema, type PostProject } from "$lib/shared/media-composition/domain/post-project";
-import { loadPostDraft } from "$lib/shared/media-composition/services/post-draft-storage";
+import { loadDiskPostDraft, loadPostDraft, savePostDraftRecords } from "$lib/shared/media-composition/services/post-draft-storage";
+import { projectDraftRecord } from "$lib/shared/media-composition/services/post-project-backup";
 import { accountPostProjectKeys, claimLegacyPosts, legacyPostOwner, loadPostProject, savePostProject } from "$lib/shared/media-composition/services/post-project-store";
 import { listPostProjects, type PostProjectChoice } from "./post-workspace-projects";
 import { loadPostPlan } from "$lib/shared/media-composition/services/post-plan-store";
@@ -87,8 +88,12 @@ export async function loadAccountPostProject(uid: string, sequenceId: string): P
   return project;
 }
 
-/** A transaction rejects edits made elsewhere since this editor loaded. */
-export async function saveAccountPostProject(uid: string, project: PostProject, sequence: SequenceData): Promise<void> {
+/**
+ * Writes the post to the account. The newest edit wins: when another tab or
+ * device has since saved a later edit, that copy stays and is handed back
+ * for the editor to take up; otherwise this one replaces whatever is there.
+ */
+export async function saveAccountPostProject(uid: string, project: PostProject, sequence: SequenceData): Promise<PostProject | null> {
   const validated = PostProjectSchema.parse(project);
   const payload = JSON.stringify(validated);
   if (sequence.id !== validated.sequenceId || !sequence.steps?.length)
@@ -100,17 +105,24 @@ export async function saveAccountPostProject(uid: string, project: PostProject, 
       encoder.encode(payload).length + encoder.encode(source).length > 900_000)
     throw new Error("This post is too large for cloud sync. Download a backup.");
   const key = revisionKey(uid, validated.sequenceId);
-  const expected = revisions.get(key);
-  if (expected === undefined)
-    throw new Error("Cloud state has not been checked. Reopen this post before saving online.");
   const db = await getFirestoreInstance();
   const ref = doc(db, path(uid), documentId(validated.sequenceId));
+  let newer: PostProject | null = null;
   const next = await runTransaction(db, async (transaction) => {
     if (auth.currentUser?.uid !== uid) throw new Error("The account changed while saving this post.");
+    newer = null;
     const existing = await transaction.get(ref);
-    const revision = existing.exists() ? existing.data().revision : 0;
-    if (revision !== expected)
-      throw new Error("This post changed on another device. Your local copy is safe. Reopen it to review the newer version.");
+    const data = existing.exists() ? existing.data() : null;
+    const revision: number = data ? data.revision : 0;
+    if (data && revision !== revisions.get(key) && data.projectUpdatedAt > validated.updatedAt) {
+      const record = CloudPostSchema.safeParse({ ...data, id: documentId(validated.sequenceId) });
+      try {
+        newer = record.success ? parseCloudPost(record.data) : null;
+      } catch {
+        newer = null;
+      }
+      if (newer) return revision;
+    }
     transaction.set(ref, {
       sequenceId: validated.sequenceId,
       project: payload,
@@ -121,6 +133,7 @@ export async function saveAccountPostProject(uid: string, project: PostProject, 
     return revision + 1;
   });
   revisions.set(key, next);
+  return newer;
 }
 
 export async function listSyncedPostProjects(): Promise<{ projects: PostProjectChoice[]; error: string | null }> {
@@ -182,7 +195,14 @@ export async function listSyncedPostProjects(): Promise<{ projects: PostProjectC
           errors.push(cause instanceof Error ? cause.message : "A local post could not sync.");
         }
       } else if (project.updatedAt > remote.updatedAt) {
-        errors.push(`A newer local copy of ${project.sequenceId} needs review before cloud sync.`);
+        // This device has the newer copy; it goes up.
+        try {
+          const source = await resolvePostSequence(project.sequenceId);
+          if (source) await saveAccountPostProject(uid, project, source);
+          cloudById.set(project.sequenceId, project);
+        } catch (cause) {
+          console.warn(`[Post] ${project.sequenceId} will sync later:`, cause);
+        }
       }
     }
   }
@@ -217,22 +237,34 @@ export async function loadSyncedPostDraft(sequenceId: string): Promise<{
     })();
     if (project) {
       if (auth.currentUser?.uid !== uid) throw new Error("The account changed while opening this post.");
+      // Opens even when the device copy could not be written; the next edit saves it.
       const saved = savePostProject(project);
-      if (!saved.ok) throw new Error(saved.error);
+      if (!saved.ok) console.warn(`[Post] ${sequenceId} opened without a device copy:`, saved.error);
       local = project;
     }
   }
+  // In development the disk folder also holds every browser's saves, so a
+  // post edited on another site of this computer opens at its newest too.
+  const disk = loadDiskPostDraft(sequenceId);
   try {
     const remote = await loadAccountPostProject(uid, sequenceId);
-    if (local && remote && local.updatedAt > remote.updatedAt) {
-      revisions.delete(revisionKey(uid, sequenceId));
-      return { project: local, diskAvailable: false, error: "This device has a newer copy than the cloud. Download a backup before resolving the conflict." };
-    }
-    return { project: remote ?? local, diskAvailable: false, error: null };
+    // The newest copy opens; when it is not the cloud's, the next save sends it up.
+    return { project: newestPost(local, remote, await disk), diskAvailable: false, error: null };
   } catch (cause) {
-    revisions.delete(revisionKey(uid, sequenceId));
-    return { project: local, diskAvailable: false, error: cause instanceof Error ? cause.message : "Cloud post could not be loaded." };
+    const project = newestPost(local, await disk);
+    if (project) {
+      console.warn(`[Post] ${sequenceId} opened without the cloud copy, which could not be read:`, cause);
+      return { project, diskAvailable: false, error: null };
+    }
+    return { project: null, diskAvailable: false, error: cause instanceof Error ? cause.message : "Cloud post could not be loaded." };
   }
+}
+
+function newestPost(...copies: (PostProject | null)[]): PostProject | null {
+  return copies.reduce<PostProject | null>(
+    (newest, copy) => (copy && (!newest || copy.updatedAt > newest.updatedAt) ? copy : newest),
+    null
+  );
 }
 
 export async function resolveSyncedPostSequence(sequenceId: string): Promise<SequenceData | null> {
@@ -244,8 +276,55 @@ export async function resolveSyncedPostSequence(sequenceId: string): Promise<Seq
   return resolvePostSequence(sequenceId);
 }
 
-export async function saveSyncedPostDraft(project: PostProject, sequence: SequenceData): Promise<void> {
+/** The first wait before trying a cloud write again, doubling up to the cap. */
+const CLOUD_RETRY_MS = 15_000;
+const CLOUD_RETRY_CAP_MS = 5 * 60_000;
+const cloudRetries = new Map<string, { timer: ReturnType<typeof setTimeout>; attempt: number }>();
+
+/** Keeps a copy in the dev server's draft folder, where there is one. */
+function keepOnDisk(project: PostProject): void {
+  if (!import.meta.env.DEV) return;
+  void savePostDraftRecords([projectDraftRecord(project)]).catch((cause) =>
+    console.warn("[Post] The disk copy was not written:", cause)
+  );
+}
+
+/**
+ * Sends a post that is already saved on this device to the account, and
+ * keeps a copy on disk in development. A cloud write that does not go
+ * through is tried again later with the newest copy, so it never turns a
+ * save that landed on this device into a failed one. Returns a later edit
+ * saved elsewhere, which the editor takes up instead of this copy.
+ */
+export async function saveSyncedPostDraft(project: PostProject, sequence: SequenceData): Promise<PostProject | null> {
+  keepOnDisk(project);
+  const pending = cloudRetries.get(project.sequenceId);
+  clearTimeout(pending?.timer);
+  cloudRetries.delete(project.sequenceId);
   const uid = await currentPostAccount();
-  if (!uid) throw new Error("Sign in again before syncing this post.");
-  await saveAccountPostProject(uid, project, sequence);
+  if (!uid) {
+    console.warn(`[Post] ${project.sequenceId} is saved on this device; sign in to sync it.`);
+    return null;
+  }
+  try {
+    const newer = await saveAccountPostProject(uid, project, sequence);
+    if (newer) {
+      savePostProject(newer);
+      keepOnDisk(newer);
+    }
+    return newer;
+  } catch (cause) {
+    if (cause instanceof Error && cause.message.startsWith("The account changed")) throw cause;
+    const attempt = (pending?.attempt ?? 0) + 1;
+    console.warn(`[Post] ${project.sequenceId} is saved on this device and will sync to the cloud shortly:`, cause);
+    cloudRetries.set(project.sequenceId, {
+      attempt,
+      // The entry stays until the try, so the wait keeps doubling.
+      timer: setTimeout(() => {
+        void saveSyncedPostDraft(project, sequence)
+          .then(() => undefined, () => undefined);
+      }, Math.min(CLOUD_RETRY_MS * 2 ** (attempt - 1), CLOUD_RETRY_CAP_MS)),
+    });
+    return null;
+  }
 }
