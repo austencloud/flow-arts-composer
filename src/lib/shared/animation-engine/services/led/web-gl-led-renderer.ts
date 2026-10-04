@@ -22,6 +22,7 @@
  * window.__TKA_UNIFIED_VIEWER.
  */
 
+import { frameOffset, measureFrame } from "../../domain/types/canvas-frame";
 import type { LedFrameInput, LedOverlayConfig } from "../../domain/types/led-types";
 import { ledBrightnessToFloat } from "../../domain/types/led-types";
 import {
@@ -151,8 +152,8 @@ export class WebGLLedRenderer {
 
 	/** Per-LED previous-frame positions in input canvas coords, keyed by
 	 *  `propIndex*1000 + ledIndex`. Those coords include the frame's centring
-	 *  offset, so they are only comparable while the input frame keeps its size;
-	 *  see `inputFrame`. */
+	 *  offset, so a change of `inputFrame` carries them onto the new square
+	 *  (`carryPositions`). */
 	private prevPositions: Map<number, { x: number; y: number }> = new Map();
 	/** The input frame the stored positions were measured in. A change moves
 	 *  every LED at once (the square re-centres and rescales), which would
@@ -396,10 +397,8 @@ export class WebGLLedRenderer {
 			: Math.min(Math.max(rawDt, MIN_DT), MAX_STREAK_DT);
 		this.lastFrameTime = currentTimeSec;
 
-		// buildSegments also breaks the streak when the input frame changes size.
-		const frameChanged =
-			input.canvasWidth !== this.inputFrame.width ||
-			input.canvasHeight !== this.inputFrame.height;
+		// A change of input frame size keeps the streak: buildSegments carries
+		// the stored positions onto the new square.
 		const segmentCount = this.buildSegments(input, config, dt, isDiscontinuity);
 		if (segmentCount === 0) {
 			this.repeatGuard.reset();
@@ -410,7 +409,7 @@ export class WebGLLedRenderer {
 			lookKey,
 			this.displayWidth,
 			this.displayHeight,
-			!isDiscontinuity && !frameChanged,
+			!isDiscontinuity,
 		);
 
 		gl.bindBuffer(gl.ARRAY_BUFFER, this.instanceBuffer);
@@ -712,9 +711,12 @@ export class WebGLLedRenderer {
 	): number {
 		const frameChanged =
 			input.canvasWidth !== this.inputFrame.width || input.canvasHeight !== this.inputFrame.height;
+		const carried =
+			frameChanged &&
+			this.carryPositions(this.inputFrame, { width: input.canvasWidth, height: input.canvasHeight });
 		this.inputFrame.width = input.canvasWidth;
 		this.inputFrame.height = input.canvasHeight;
-		const isDiscontinuity = timeDiscontinuity || frameChanged;
+		const isDiscontinuity = timeDiscontinuity || (frameChanged && !carried);
 
 		const ledCount = Math.min(input.leds.length, MAX_LEDS);
 		const scaleX = this.displayWidth / Math.max(input.canvasWidth, 1);
@@ -924,6 +926,34 @@ export class WebGLLedRenderer {
 		}
 
 		return written;
+	}
+
+	/**
+	 * Moves every stored position from one input frame onto another. LEDs are
+	 * drawn in the frame's centred square, so a resize re-centres and rescales
+	 * them all at once; carried onto the new square, an LED that held still
+	 * deposits nothing and one that moved keeps its streak. A box animating its
+	 * size (the opening tunnel settling into the animation's box) resizes every
+	 * frame, and discarding the positions there drew one dot per frame. The
+	 * retained light is carried the same way; see carryHistory.
+	 *
+	 * Returns false when there is no previous frame to carry from.
+	 */
+	private carryPositions(
+		from: { width: number; height: number },
+		to: { width: number; height: number },
+	): boolean {
+		if (from.width <= 0 || from.height <= 0) return false;
+		const before = measureFrame(from.width, from.height);
+		const after = measureFrame(to.width, to.height);
+		const beforeOffset = frameOffset(before);
+		const afterOffset = frameOffset(after);
+		const scale = after.size / before.size;
+		for (const position of this.prevPositions.values()) {
+			position.x = afterOffset.x + (position.x - beforeOffset.x) * scale;
+			position.y = afterOffset.y + (position.y - beforeOffset.y) * scale;
+		}
+		return true;
 	}
 
 	private ensureSegmentCapacity(needed: number): void {
