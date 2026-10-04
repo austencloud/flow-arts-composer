@@ -46,7 +46,10 @@ with pre-prepared data for better performance.
     fanAppearanceSignature,
     normalizeFanAppearance,
   } from "../../prop/domain/fan-appearance";
-  import { normalizePropLook } from "../../prop/domain/prop-look";
+  import {
+    normalizePropLook,
+    type PropLook,
+  } from "../../prop/domain/prop-look";
   import { normalizeTriangleGrip } from "../../prop/domain/triangle-appearance";
   import { calculatePictographMotionPositions } from "../../prop/services/pictograph-motion-positioner";
   import { GridMode, GridLocation } from "../../grid/domain/enums/grid-enums";
@@ -116,6 +119,9 @@ with pre-prepared data for better performance.
     // Explicit prop types for export/thumbnail rendering
     // When provided, passed to PictographPreparer for consistency during async operations
     fanAppearanceOverride = undefined,
+    propLookOverride = undefined,
+    leftBuugengFlippedOverride = undefined,
+    rightBuugengFlippedOverride = undefined,
     leftPropTypeOverride = undefined,
     rightPropTypeOverride = undefined,
     leftColorOverride = undefined,
@@ -195,6 +201,9 @@ with pre-prepared data for better performance.
     poseOnly?: boolean;
     /** Explicit prop type for the left hand. Export/thumbnail rendering provides this for consistency. */
     fanAppearanceOverride?: FanAppearance;
+    propLookOverride?: PropLook;
+    leftBuugengFlippedOverride?: boolean;
+    rightBuugengFlippedOverride?: boolean;
     leftPropTypeOverride?: PropType;
     /** Explicit prop type for the right hand. Export/thumbnail rendering provides this for consistency. */
     rightPropTypeOverride?: PropType;
@@ -467,7 +476,7 @@ with pre-prepared data for better performance.
     rightPropTypeOverride ?? getSettings().rightPropType
   );
   const effectivePropLook = $derived(
-    normalizePropLook(getSettings().propArtwork)
+    normalizePropLook(propLookOverride ?? getSettings().propArtwork)
   );
   const effectiveTriangleGrip = $derived(
     normalizeTriangleGrip(getSettings().triangleGrip)
@@ -528,8 +537,10 @@ with pre-prepared data for better performance.
       rightPropType: effectiveRightPropType,
       // Buugeng chirality feeds the beta offset (opposite chirality nests, so
       // no separation), so a flip has to re-prepare.
-      leftBuugengFlipped: settings.leftBuugengFlipped ?? false,
-      rightBuugengFlipped: settings.rightBuugengFlipped ?? false,
+      leftBuugengFlipped:
+        leftBuugengFlippedOverride ?? settings.leftBuugengFlipped ?? false,
+      rightBuugengFlipped:
+        rightBuugengFlippedOverride ?? settings.rightBuugengFlipped ?? false,
       // The fan build picks the prop artwork, so choosing DoodleGrip Fire
       // over the notation fan has to re-prepare every fan pictograph.
       fanAppearance: fanAppearanceSignature(
@@ -595,8 +606,14 @@ with pre-prepared data for better performance.
           themeMode: currentDarkMode ? ("dark" as const) : ("light" as const),
           leftPropType: effectiveLeftPropType,
           rightPropType: effectiveRightPropType,
-          leftBuugengFlipped: getSettings().leftBuugengFlipped ?? false,
-          rightBuugengFlipped: getSettings().rightBuugengFlipped ?? false,
+          leftBuugengFlipped:
+            leftBuugengFlippedOverride ??
+            getSettings().leftBuugengFlipped ??
+            false,
+          rightBuugengFlipped:
+            rightBuugengFlippedOverride ??
+            getSettings().rightBuugengFlipped ??
+            false,
           fanAppearance: normalizeFanAppearance(
             fanAppearanceOverride ?? getSettings().fanAppearance
           ),
@@ -767,6 +784,8 @@ with pre-prepared data for better performance.
         {transparentBackground}
         {leftColorOverride}
         {rightColorOverride}
+        {leftBuugengFlippedOverride}
+        {rightBuugengFlippedOverride}
         {onToggleTKA}
         {onToggleTnD}
         {onToggleElemental}
@@ -825,6 +844,8 @@ with pre-prepared data for better performance.
             {transparentBackground}
             {leftColorOverride}
             {rightColorOverride}
+            {leftBuugengFlippedOverride}
+            {rightBuugengFlippedOverride}
             {onToggleTKA}
             {onToggleTnD}
             {onToggleElemental}

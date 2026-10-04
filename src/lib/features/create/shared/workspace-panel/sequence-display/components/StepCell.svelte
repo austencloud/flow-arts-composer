@@ -20,6 +20,8 @@
   import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
   import type { BuildModeId } from "$lib/shared/foundation/ui/ui-types";
   import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+  import type { FanAppearance } from "$lib/shared/pictograph/prop/domain/fan-appearance";
+  import type { PropLook } from "$lib/shared/pictograph/prop/domain/prop-look";
   import { onMount } from "svelte";
   import PictographContainer from "$lib/shared/pictograph/shared/components/PictographContainer.svelte";
   import PictographContextMenuHost from "$lib/shared/pictograph/shared/components/context-menu/PictographContextMenuHost.svelte";
@@ -55,6 +57,10 @@
     // Prop type overrides for demo/preview rendering (bypasses global settings)
     leftPropTypeOverride = undefined,
     rightPropTypeOverride = undefined,
+    fanAppearanceOverride = undefined,
+    propLookOverride = undefined,
+    leftBuugengFlippedOverride = undefined,
+    rightBuugengFlippedOverride = undefined,
     leftColorOverride = undefined,
     poseOnly = false,
     rightColorOverride = undefined,
@@ -92,6 +98,10 @@
     leftPropTypeOverride?: PropType;
     /** Override prop type for right hand. Bypasses global settings for demo/preview rendering. */
     rightPropTypeOverride?: PropType;
+    fanAppearanceOverride?: FanAppearance;
+    propLookOverride?: PropLook;
+    leftBuugengFlippedOverride?: boolean;
+    rightBuugengFlippedOverride?: boolean;
     /** Display-only color for the blue-hand prop and arrow. */
     leftColorOverride?: string;
     /** Choose Start picker: render only the pose after this beat. */
@@ -131,7 +141,9 @@
     }
     return step.isBlank
       ? t("create_workspace_empty_step_label", { number: displayStepNumber })
-      : t("create_workspace_pictograph_step_label", { number: displayStepNumber });
+      : t("create_workspace_pictograph_step_label", {
+          number: displayStepNumber,
+        });
   });
 
   // Create step data with selection state for the Pictograph component
@@ -428,6 +440,10 @@
     {transitionKey}
     {leftPropTypeOverride}
     {rightPropTypeOverride}
+    {fanAppearanceOverride}
+    {propLookOverride}
+    {leftBuugengFlippedOverride}
+    {rightBuugengFlippedOverride}
     {leftColorOverride}
     {rightColorOverride}
     {poseOnly}

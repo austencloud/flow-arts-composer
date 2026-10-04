@@ -10,6 +10,8 @@
   import type { StartPlacementData } from "$lib/shared/foundation/domain/models/start-placement-data";
   import type { TimeSignatureKey } from "$lib/shared/foundation/domain/models/time-signature";
   import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+  import type { FanAppearance } from "$lib/shared/pictograph/prop/domain/fan-appearance";
+  import type { PropLook } from "$lib/shared/pictograph/prop/domain/prop-look";
   import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
   import type { ConstructOptionAudition } from "$lib/shared/create/domain/construct-option-audition";
   import type {
@@ -89,6 +91,10 @@
     timeSignature = undefined,
     leftPropTypeOverride = undefined,
     rightPropTypeOverride = undefined,
+    fanAppearanceOverride = undefined,
+    propLookOverride = undefined,
+    leftBuugengFlippedOverride = undefined,
+    rightBuugengFlippedOverride = undefined,
     leftColorOverride = undefined,
     rightColorOverride = undefined,
     sequenceWord = "",
@@ -150,6 +156,10 @@
     leftPropTypeOverride?: PropType;
     /** Override prop type for right hand. Used by demos/previews to bypass global settings. */
     rightPropTypeOverride?: PropType;
+    fanAppearanceOverride?: FanAppearance;
+    propLookOverride?: PropLook;
+    leftBuugengFlippedOverride?: boolean;
+    rightBuugengFlippedOverride?: boolean;
     /** Display-only color for the blue-hand prop and arrow. */
     leftColorOverride?: string;
     /** Display-only color for the red-hand prop and arrow. */
@@ -820,6 +830,10 @@
       {getDurationDisplay}
       {leftPropTypeOverride}
       {rightPropTypeOverride}
+      {fanAppearanceOverride}
+      {propLookOverride}
+      {leftBuugengFlippedOverride}
+      {rightBuugengFlippedOverride}
       {leftColorOverride}
       {rightColorOverride}
       {posePicker}
