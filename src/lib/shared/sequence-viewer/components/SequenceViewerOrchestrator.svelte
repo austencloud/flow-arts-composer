@@ -179,6 +179,8 @@
     /** Initial shared-shell surface. Scan uses card so animation work stays out
      *  of the first visible frame; other hosts retain persisted mode. */
     initialViewerMode?: ViewerMode;
+    /** A host can demonstrate a consistent path style without saving it. */
+    pathPolicyOverride?: AnimationPathPolicy;
     /** Hold animation/LAN services until the host promotes away from card. */
     deferInteractiveStartup?: boolean;
     /** Fires once the card has settled all of its cells. Progressive hosts use
@@ -220,6 +222,7 @@
     forceGuest = false,
     initialRenderMode,
     initialViewerMode,
+    pathPolicyOverride,
     deferInteractiveStartup = false,
     onCardReady,
     onReadyForReveal,
@@ -813,7 +816,7 @@
     const original = savedSequence;
     return untrack(() => {
       const close = anStores.visibility.beginPathSession(
-        savedSequencePathPolicy(original, pathDefaults),
+        pathPolicyOverride ?? savedSequencePathPolicy(original, pathDefaults),
         countPathOverrides(original)
       );
       if (firstPathSession && anSeedPayload?.pathPreview) {
