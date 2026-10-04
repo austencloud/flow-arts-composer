@@ -114,6 +114,16 @@
   const composition = tryGetMediaCompositionContext();
   // The footage stays alive when the editor refreshes its binding each frame.
   const videoSource = $derived(binding.previewUrl ?? "");
+  /**
+   * A paused preview keeps its download open but stops reading it, and over
+   * HTTP/2 every such stream holds part of the connection's shared receive
+   * window. A few of them starve every other download from the same server,
+   * which left the render's sound step at 0% for good. The render decodes its
+   * own copy of every take, so take footage lets its download go while the
+   * render runs and loads again afterwards. Other video previews stay, since
+   * the render reads those from the page.
+   */
+  const releasesDownload = $derived(exporting && binding.kind === "video");
   let imageSource = $state(binding.previewUrl ?? "");
   $effect(() => {
     const source = binding.previewUrl ?? "";
@@ -614,6 +624,13 @@
     }
   });
 
+  $effect(() => {
+    const element = video;
+    if (!element || !releasesDownload) return;
+    // The src is already gone, but that alone leaves the old download open.
+    if (element.networkState !== HTMLMediaElement.NETWORK_EMPTY) element.load();
+  });
+
   onDestroy(() => {
     cancelPausedFrame();
     cancelPlayingFrame();
@@ -692,7 +709,7 @@
     <!-- svelte-ignore a11y_media_has_caption -->
     <video
       bind:this={video}
-      src={videoSource || undefined}
+      src={(!releasesDownload && videoSource) || undefined}
       crossorigin="anonymous"
       muted
       playsinline
@@ -719,7 +736,7 @@
       onplaying={onCanPlay}
     ></video>
     <!-- Keep the decoded picture visible while the browser restores its video surface.
-         Export still reads the original video element and its source dimensions. -->
+         Export never reads this canvas: it decodes take footage from the original file. -->
     <canvas
       bind:this={retainedCanvas}
       class="retained-frame"

@@ -5445,6 +5445,7 @@
   "share_studio_render_failed": "Der Beitrag konnte nicht erstellt werden.",
   "share_studio_done": "Fertig",
   "share_studio_mixing_sound": "Ton wird gemischt",
+  "share_studio_sound_stalled": "Der Ton wird nicht mehr geladen. Schließ andere Post-Studio-Tabs und erstelle den Beitrag dann erneut.",
   "share_studio_rendering_frame": "Bild wird erstellt",
   "share_studio_of": "von",
   "share_studio_rendering": "Wird erstellt",
