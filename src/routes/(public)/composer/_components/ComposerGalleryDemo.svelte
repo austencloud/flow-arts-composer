@@ -43,7 +43,7 @@
     // Short cards keep the introductory examples readable at thumbnail size.
     const shortSequences = pool.filter((sequence) => {
       const steps = sequence.steps?.length || sequence.sequenceLength || 0;
-      return steps > 0 && steps <= 8;
+      return steps === 4;
     });
     for (const sequence of [...shortSequences, ...pool]) {
       const word = (
