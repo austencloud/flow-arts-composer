@@ -4,6 +4,7 @@
   import { activateWhenNear } from "$lib/actions/activate-when-near";
   import LazyMount from "$lib/shared/components/LazyMount.svelte";
   import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
+  import BaseModal from "$lib/shared/foundation/ui/modal/BaseModal.svelte";
   import LinkChip from "$lib/shared/ui/components/LinkChip.svelte";
   import PropCompositionPreview from "$lib/shared/pictograph/prop/components/PropCompositionPreview.svelte";
   import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
@@ -147,7 +148,7 @@
   let constructActive = $state(false);
   let generateActive = $state(false);
   let tunnelActive = $state(false);
-  let viewerActive = $state(false);
+  let viewerOpen = $state(false);
   let shelfActive = $state(false);
   let webglChecked = $state(false);
   let webglAvailable = $state(false);
@@ -197,7 +198,7 @@
     () => (generateActive = true)
   );
   const activateTunnel = activateNear("changing", () => (tunnelActive = true));
-  const activateViewer = activateNear("viewing", () => (viewerActive = true));
+  const activateViewer = activateNear("viewing", () => {});
   const activateShelf = activateNear("keeping", () => (shelfActive = true));
 </script>
 
@@ -291,16 +292,7 @@
 
 {#snippet viewerPlaceholder()}
   <div class="viewer-placeholder">
-    {#if viewerActive}
-      <span class="sr-only" role="status">Loading the live 3D performance.</span
-      >
-    {/if}
-    <!-- The viewer's controls now live on a rail INSIDE the stage, so the
-         skeleton reserves the stage alone. Reserving control rows under it
-         would leave a gap that collapses on activation. -->
-    <div aria-hidden="true">
-      <div class="placeholder-wide"></div>
-    </div>
+    <span role="status">Loading the 3D viewer…</span>
   </div>
 {/snippet}
 
@@ -533,17 +525,22 @@
             <p>3D is unavailable in this browser.</p>
           </div>
         {:else}
-          <LazyMount
-            loader={() => import("./Composer3DViewerDemo.svelte")}
-            active={viewerActive && canShow3D && !!carriedSequence}
-            props={{ sequence: carriedSequence }}
-            error={viewerLoadError}
-            debugName="composer 3D viewer"
-          >
-            {#snippet placeholder()}
-              {@render viewerPlaceholder()}
-            {/snippet}
-          </LazyMount>
+          <div class="viewer-entry">
+            <p>Choose the scene, arrange performers, and explore the camera.</p>
+            <button
+              type="button"
+              class="primary-action"
+              disabled={!canShow3D}
+              aria-haspopup="dialog"
+              onclick={() => (viewerOpen = true)}
+            >
+              <i class="fas fa-cube" aria-hidden="true"></i>
+              Enter 3D
+            </button>
+            <p class="viewer-entry-note">
+              Opens a full-window viewer. Close it to return here.
+            </p>
+          </div>
         {/if}
       </div>
     </div>
@@ -585,7 +582,109 @@
   <ProjectStory />
 </main>
 
+<BaseModal
+  open={viewerOpen && canShow3D}
+  onclose={() => (viewerOpen = false)}
+  size="full"
+  class="composer-3d-modal"
+  labelledBy="composer-3d-dialog-title"
+>
+  {#snippet header()}
+    <div class="viewer-dialog-header">
+      <h2 id="composer-3d-dialog-title">3D viewer</h2>
+      <button
+        type="button"
+        class="viewer-close"
+        aria-label="Close 3D viewer"
+        onclick={() => (viewerOpen = false)}
+      >
+        <i class="fas fa-xmark" aria-hidden="true"></i>
+      </button>
+    </div>
+  {/snippet}
+  <div class="viewer-dialog-stage">
+    <LazyMount
+      loader={() => import("./Composer3DViewerDemo.svelte")}
+      active={true}
+      props={{ sequence: carriedSequence, fillHeight: true }}
+      error={viewerLoadError}
+      debugName="composer 3D viewer"
+    >
+      {#snippet placeholder()}{@render viewerPlaceholder()}{/snippet}
+    </LazyMount>
+  </div>
+</BaseModal>
+
 <style>
+  .viewer-entry {
+    aspect-ratio: 16 / 9;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1.25rem;
+    padding: 1.5rem;
+    box-sizing: border-box;
+    text-align: center;
+  }
+  .viewer-entry p {
+    margin: 0;
+    max-width: 32rem;
+    line-height: 1.5;
+  }
+  .viewer-entry-note {
+    color: var(--theme-text-secondary);
+    font-size: var(--font-size-min, 0.875rem);
+  }
+  :global(dialog.composer-3d-modal[data-size="full"]) {
+    width: 100vw;
+    max-width: none;
+    height: 100dvh;
+    max-height: 100dvh;
+    margin: 0;
+    border-radius: 0;
+  }
+  :global(.composer-3d-modal .modal-body) {
+    display: flex;
+    overflow: hidden;
+  }
+  .viewer-dialog-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.5rem 1rem;
+    gap: 1rem;
+  }
+  .viewer-dialog-header h2 {
+    margin: 0;
+    font-size: 1.25rem;
+  }
+  .viewer-close {
+    display: grid;
+    place-items: center;
+    width: max(var(--min-touch-target, 48px), 48px);
+    height: max(var(--min-touch-target, 48px), 48px);
+    border: 1px solid var(--theme-stroke);
+    border-radius: var(--settings-radius-lg, 0.85rem);
+    background: var(--theme-card-bg);
+    color: var(--theme-text);
+    cursor: pointer;
+  }
+  .viewer-close:focus-visible {
+    outline: 2px solid var(--theme-accent);
+    outline-offset: 3px;
+  }
+  .viewer-dialog-stage {
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    position: relative;
+  }
+  .viewer-dialog-stage .viewer-placeholder {
+    height: 100%;
+    display: grid;
+    place-items: center;
+  }
   :global(html:has(.composer-page)) {
     scroll-behavior: smooth;
   }
