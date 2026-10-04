@@ -318,15 +318,18 @@ describe("canonical concept lesson composition", () => {
     expect(order).toEqual([...order].sort((a, b) => a - b));
     expect(anatomy).toContain("ArtifactRegionSpotlight");
     expect(anatomy).toContain("PictographContainer");
-    // The captions are translated; the English copy lives in messages/en.json.
-    const en = JSON.parse(readSource("messages/en.json")) as Record<string, string>;
-    for (const [key, text] of [
-      ["learn_anatomy_number_text", "Top left: the step number."],
-      ["learn_anatomy_hands_text", "Bottom right: the hands’ time and direction."],
-      ["learn_anatomy_props_text", "Top right: the props’ time and direction."],
-    ]) {
-      expect(anatomy).toContain(`"${key}"`);
-      expect(en[key]).toBe(text);
+    // 09622f6cb2 moved the anatomy copy into the message catalog. The lesson
+    // renders each step through tDynamic, and the English is unchanged.
+    expect(anatomy).toContain("<p>{tDynamic(current.text)}</p>");
+    const english = readMessages("en");
+    const anatomyCopy = {
+      learn_anatomy_number_text: "Top left: the step number.",
+      learn_anatomy_hands_text: "Bottom right: the hands’ time and direction.",
+      learn_anatomy_props_text: "Top right: the props’ time and direction.",
+    };
+    for (const [key, text] of Object.entries(anatomyCopy)) {
+      expect(anatomy).toContain(`text: "${key}"`);
+      expect(english[key]).toBe(text);
     }
   });
 
