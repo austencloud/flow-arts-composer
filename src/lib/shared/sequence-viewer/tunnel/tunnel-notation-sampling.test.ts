@@ -9,7 +9,7 @@ function layer(id: string, arm: number, beats: string[]): BuiltTunnelLayer {
   return {
     stageInstanceId: id,
     arm,
-    sequence: { steps } as SequenceData,
+    sequence: { steps } as unknown as SequenceData,
   } as BuiltTunnelLayer;
 }
 

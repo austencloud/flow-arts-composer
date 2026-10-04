@@ -23,7 +23,8 @@ export function sampleTunnelNotation(
       offset,
       speed
     );
-    const step = index === null ? undefined : layer.sequence.steps[index];
+    if (index === null) return [];
+    const step = layer.sequence.steps[index];
     return step ? [{ layer, step, stepIndex: index }] : [];
   });
 }
