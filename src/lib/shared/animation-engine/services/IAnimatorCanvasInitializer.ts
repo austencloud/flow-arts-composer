@@ -39,6 +39,8 @@ export interface InitializerDependencies {
   paintBackground?: boolean;
   gridMode: GridMode | null;
   showNonRadialPoints?: boolean;
+  /** Load the Level 7 joined pair instead of one grid. */
+  gridConjoined?: boolean;
   loadAnimatorServices: () => Promise<boolean>;
   initializePrecomputationService: () => void;
   initializePropTextureLoader: () => void;

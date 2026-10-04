@@ -73,6 +73,8 @@ export interface LifecycleInitCtx {
   initialGridMode: GridMode | null | undefined;
   /** Initial showNonRadialPoints flag (from lastPropsRef). */
   initialShowNonRadialPoints: boolean;
+  /** Whether the visibility manager wanted the conjoined grid at init. */
+  initialGridConjoined: boolean;
   /** Engine's buildFrameParams bound method — called by render-loop boot. */
   buildFrameParams: (props: AnimationEngineProps) => RenderFrameParams;
   /** Engine's getVM() bound method — passed into erm.wire(). */
@@ -167,6 +169,7 @@ export class CanvasLifecycleManager {
       prevDarkMode,
       initialGridMode,
       initialShowNonRadialPoints,
+      initialGridConjoined,
       buildFrameParams,
       getVM,
       onVisibilityChange,
@@ -252,6 +255,7 @@ export class CanvasLifecycleManager {
         backgroundAlpha: 1,
         gridMode: initialGridMode ?? null,
         showNonRadialPoints: initialShowNonRadialPoints,
+        gridConjoined: initialGridConjoined,
         loadAnimatorServices: loadAnimatorServicesFn,
         initializePrecomputationService: () => {
           initPrecomputationFn();

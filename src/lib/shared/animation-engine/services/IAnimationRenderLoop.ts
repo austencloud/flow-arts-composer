@@ -204,6 +204,12 @@ export interface RenderFrameParams {
    * with this transient per-swap suppression.
    */
   trailsSuppressedUntilTextureLoad?: boolean;
+  /**
+   * Level 7 conjoined grid: `props` already carry each hand's shift onto its
+   * own grid, so only path-cache trail points (built from step data) still
+   * need it.
+   */
+  conjoinedGrid?: boolean;
   /** Whether the engine-aligned mandala guide is enabled for this canvas. */
   mandalaVisible?: boolean;
   /** Line width of the mandala guide in canvas pixels; default 2.5. */

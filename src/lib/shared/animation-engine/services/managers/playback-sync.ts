@@ -30,7 +30,10 @@ import type { PropSystem } from "./prop-system";
 import type { FrameSystem } from "./frame-system";
 import type { EffectSystem } from "./effect-system";
 import type { AnimationVisibilityState } from "../animation-visibility-synchronizer";
-import type { AnimationVisibilityStateManager } from "../../state/animation-visibility-state.svelte";
+import type {
+  AnimationVisibilityStateManager,
+  GridLayout,
+} from "../../state/animation-visibility-state.svelte";
 import type { AnimationEngineProps, AnimationEngineCallbacks } from "../animation-engine.svelte";
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
 import type { StartPlacementData } from "$lib/shared/foundation/domain/models/start-placement-data";
@@ -90,6 +93,7 @@ export class PlaybackSync {
 
   private previousGridMode: string | null = null;
   private previousShowNonRadialPoints: boolean = true;
+  private previousGridLayout: GridLayout = "single";
   private cacheSequenceId: string | null = null;
   private lastClearSignal: number = 0;
   private lastPreRenderClearSignal: number = 0;
@@ -127,6 +131,10 @@ export class PlaybackSync {
 
   setPreviousShowNonRadialPoints(value: boolean): void {
     this.previousShowNonRadialPoints = value;
+  }
+
+  setPreviousGridLayout(value: GridLayout): void {
+    this.previousGridLayout = value;
   }
 
   // ── Reset (called from engine.dispose()) ────────────────────────────────────
@@ -350,6 +358,7 @@ export class PlaybackSync {
           );
         });
     }
+    this.syncGridLayout();
 
     // Handle preview dark mode override
     if (props.previewDarkMode !== undefined && props.previewDarkMode !== null) {
@@ -495,6 +504,8 @@ export class PlaybackSync {
     // Delegate all effect-specific sync to EffectSystem
     effectSystem.syncEffects(state, vm);
 
+    this.syncGridLayout();
+
     // Path shape or hybrid mode changed.
     const pathShape = vm.getPathShape();
     const motionAwarePaths = vm.getMotionAwarePaths();
@@ -548,6 +559,43 @@ export class PlaybackSync {
         );
       }
     }
+  }
+
+  /**
+   * The conjoined grid was switched on or off: load the matching grid picture
+   * and drop trails and flames drawn for the old layout, which would otherwise
+   * streak across to the props' new places.
+   */
+  private syncGridLayout(): void {
+    const { lifecycleManager, frameSystem, effectSystem, getVM, buildFrameDeps } =
+      this.deps;
+    const renderer = lifecycleManager.animationRenderer;
+    if (!this.state.isInitialized || !renderer) return;
+    const layout = getVM().getGridLayout();
+    if (layout === this.previousGridLayout) return;
+    this.previousGridLayout = layout;
+
+    effectSystem.trailOverlay?.clearBuffers();
+    lifecycleManager.trailCapturer?.clearTrails();
+    effectSystem.fireTipTracker?.reset();
+    effectSystem.fireRenderer?.clearSimulation();
+    effectSystem.charcoalRenderer?.clearSimulation();
+
+    const rerender = () =>
+      lifecycleManager.renderLoop?.triggerRender(() =>
+        frameSystem.buildFrameParams(
+          this._lastPropsRef ?? DEFAULT_ENGINE_PROPS,
+          buildFrameDeps()
+        )
+      );
+    rerender();
+    void renderer
+      .loadGridTexture(
+        this.previousGridMode ?? "diamond",
+        this.previousShowNonRadialPoints,
+        layout === "conjoined"
+      )
+      .then(rerender);
   }
 
   // ── Service-state pull (was engine.syncServiceState) ────────────────────────

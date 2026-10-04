@@ -5,6 +5,7 @@ import {
   generateGridSvg,
 } from "$lib/shared/animation-engine/services/svg-generator";
 import { hashString } from "$lib/shared/foundation/services/content-hasher";
+import { buildConjoinedGridSvg } from "../conjoined-grid-layout";
 import { getSvgImageCache } from "$lib/shared/render/services/svg-image-cache";
 import type { TunnelPropColorPair } from "$lib/shared/sequence-viewer/tunnel/tunnel-prop-colors";
 
@@ -58,6 +59,8 @@ export class Canvas2DImageLoader {
   private leftPropImage: HTMLImageElement | null = null;
   private rightPropImage: HTMLImageElement | null = null;
   private gridImage: HTMLImageElement | null = null;
+  /** Grid loads can overlap (mode and layout change together); the newest wins. */
+  private gridLoadSeq = 0;
   private glyphImage: HTMLImageElement | null = null;
   private previousGlyphImage: HTMLImageElement | null = null;
   // A crossfade needs the complete outgoing visual, not just its image. Keeping
@@ -336,14 +339,16 @@ export class Canvas2DImageLoader {
   async loadGridImage(
     gridMode: string,
     canvasSize: number,
-    showNonRadialPoints: boolean = true
+    showNonRadialPoints: boolean = true,
+    conjoined: boolean = false
   ): Promise<HTMLImageElement> {
     // The grid is the one image reloaded on every resize, and it is also the
     // most expensive: a dynamic import, an SVG build, a base64 encode, and a
     // full image decode. None of that changes with the canvas size — only the
     // decoded raster does — so both halves are cached, and a container that
     // returns to a size it has already drawn at pays nothing at all.
-    const spriteKey = `${gridMode}|${showNonRadialPoints}|${canvasSize}`;
+    const spriteKey = `${gridMode}|${showNonRadialPoints}|${conjoined}|${canvasSize}`;
+    const loadSeq = ++this.gridLoadSeq;
     const cachedSprite = GRID_SPRITE_CACHE.get(spriteKey);
     if (cachedSprite) {
       this.gridImage = cachedSprite;
@@ -365,14 +370,17 @@ export class Canvas2DImageLoader {
           GridMode.DIAMOND;
       }
 
-      const svgKey = `${gridMode}|${showNonRadialPoints}`;
+      const svgKey = `${gridMode}|${showNonRadialPoints}|${conjoined}`;
       let gridSvg = GRID_SVG_CACHE.get(svgKey);
       if (gridSvg === undefined) {
-        gridSvg = await generateGridSvg(
+        const singleGridSvg = await generateGridSvg(
           gridModeEnum,
           true,
           showNonRadialPoints
         );
+        gridSvg = conjoined
+          ? buildConjoinedGridSvg(singleGridSvg)
+          : singleGridSvg;
         GRID_SVG_CACHE.set(svgKey, gridSvg);
       }
 
@@ -385,10 +393,10 @@ export class Canvas2DImageLoader {
 
       rememberGridSprite(spriteKey, newImage);
 
-      // Swap reference
-      this.gridImage = newImage;
+      // Swap reference unless a later request already owns the grid
+      if (loadSeq === this.gridLoadSeq) this.gridImage = newImage;
 
-      return this.gridImage;
+      return newImage;
     } catch (error) {
       console.error("[Canvas2DImageLoader] Failed to load grid image:", error);
       throw error;

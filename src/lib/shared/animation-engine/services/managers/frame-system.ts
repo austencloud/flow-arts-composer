@@ -28,6 +28,12 @@ import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence
 import type { EffectsConfigState } from "$lib/shared/effects/state/effects-config-state.svelte";
 import type { EffectRendererManager } from "../effect-renderer-manager";
 import type { MandalaPathOptions } from "$lib/shared/mandala/services/types";
+import type { PropState } from "$lib/shared/foundation/domain/types/prop-state";
+import type { GridLayout } from "../../state/animation-visibility-state.svelte";
+import {
+  conjoinedShiftUnits,
+  shiftPropState,
+} from "../conjoined-grid-layout";
 
 export class FrameSystem {
   readonly frameParameterBuilder = new FrameParameterBuilder();
@@ -35,6 +41,14 @@ export class FrameSystem {
   private readonly mandalaPathOptions: MandalaPathOptions = {
     pathShape: "arc",
     motionAware: false,
+  };
+  private readonly conjoinedLeftProp: PropState = {
+    centerPathAngle: 0,
+    staffRotationAngle: 0,
+  };
+  private readonly conjoinedRightProp: PropState = {
+    centerPathAngle: 0,
+    staffRotationAngle: 0,
   };
 
   constructor(
@@ -75,7 +89,8 @@ export class FrameSystem {
       orchestrator: this.deps.lifecycleManager.orchestrator,
     });
 
-    const pathPolicy = buildDeps.getVM().getPathPolicy();
+    const vm = buildDeps.getVM();
+    const pathPolicy = vm.getPathPolicy();
     this.mandalaPathOptions.pathShape = pathPolicy.pathShape;
     this.mandalaPathOptions.motionAware = pathPolicy.motionAwarePaths;
     params.mandalaVisible =
@@ -83,7 +98,37 @@ export class FrameSystem {
     params.mandalaStrokeWidth = props.mandalaStrokeWidthOverride;
     params.mandalaSteps = props.sequenceData?.steps ?? null;
     params.mandalaPathOptions = this.mandalaPathOptions;
+    this.applyGridLayout(params, vm.getGridLayout());
     return params;
+  }
+
+  /**
+   * Conjoined grid: each hand moves onto its own grid. Overlaid tunnel layers
+   * share one grid, so they keep the single layout.
+   */
+  private applyGridLayout(params: RenderFrameParams, layout: GridLayout): void {
+    const conjoined =
+      layout === "conjoined" && params.props.additionalLayers.length === 0;
+    params.conjoinedGrid = conjoined;
+    if (!conjoined) return;
+
+    const { leftProp, rightProp } = params.props;
+    if (leftProp) {
+      params.props.leftProp = shiftPropState(
+        leftProp,
+        conjoinedShiftUnits(0),
+        this.conjoinedLeftProp
+      );
+    }
+    if (rightProp) {
+      params.props.rightProp = shiftPropState(
+        rightProp,
+        conjoinedShiftUnits(1),
+        this.conjoinedRightProp
+      );
+    }
+    // The mandala guide draws both hands around the one canvas center.
+    params.mandalaVisible = false;
   }
 
 

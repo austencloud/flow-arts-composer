@@ -129,6 +129,18 @@ describe("an slice", () => {
     expect(slice?.visibility).toEqual({ gridMode: "none" });
   });
 
+  it("carries the conjoined grid layout through a link", () => {
+    const a = defaultStores();
+    a.visibility.setGridLayout("conjoined");
+
+    const slice = captureAnSlice(a);
+    expect(slice?.visibility).toEqual({ gridLayout: "conjoined" });
+
+    const b = defaultStores();
+    b.visibility.replaceAll(seedFromAnSlice(slice!).visibility);
+    expect(b.visibility.getGridLayout()).toBe("conjoined");
+  });
+
   it("omits a sub-key whose store is untouched", () => {
     const stores = defaultStores();
     stores.visibility.setVisibility("mandala", false);
