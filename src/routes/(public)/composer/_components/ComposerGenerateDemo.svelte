@@ -28,6 +28,7 @@
   import type { Snippet } from "svelte";
   import { t } from "$lib/shared/i18n/i18n.svelte";
   import { MediaQuery } from "svelte/reactivity";
+  import { AnimationVisibilityStateManager } from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
   import { activateWhenNear } from "$lib/actions/activate-when-near";
   import LazyMount from "$lib/shared/components/LazyMount.svelte";
   import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
@@ -50,6 +51,15 @@
 
   /** Four columns keep the real workspace cells legible at showcase scale. */
   const STEP_COLUMNS = 4;
+
+  // Introduce circular paths consistently, regardless of saved hybrid choices.
+  const demoVisibilityManager = new AnimationVisibilityStateManager({
+    ephemeral: true,
+  });
+  demoVisibilityManager.setPathPolicy({
+    pathShape: "arc",
+    motionAwarePaths: false,
+  });
 
   /** The page's per-visit demo sequence seeds the stages; null while it is
       still generating (the bounded stages hold the footprint). */
@@ -202,6 +212,7 @@
               leftPropType,
               rightPropType: rightPropType ?? leftPropType,
               ...appearance,
+              visibilityManagerOverride: demoVisibilityManager,
               trailSettingsOverride: HERO_TRAIL_PRESET,
               tipEffectMap: HERO_TIP_EFFECT_MAP,
             }}
