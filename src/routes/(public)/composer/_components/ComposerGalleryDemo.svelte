@@ -31,6 +31,9 @@
   let status = $state<"loading" | "ready" | "error">("loading");
   let sequences = $state<SequenceData[]>([]);
   let selected = $state<SequenceData | null>(null);
+  let InlineViewer = $state<
+    typeof import("./ComposerInlineSequenceViewer.svelte").default | null
+  >(null);
   let opening = $state(false);
   let viewerError = $state(false);
   let requestId = 0;
@@ -85,9 +88,14 @@
     opening = true;
     viewerError = false;
     try {
-      const hydrated = await hydrateSequence(sequence);
+      // Keep the cards visible until both the sequence and its viewer are ready.
+      const [hydrated, viewer] = await Promise.all([
+        hydrateSequence(sequence),
+        import("./ComposerInlineSequenceViewer.svelte"),
+      ]);
       if (!mounted || currentRequest !== requestId) return;
       if (!hydrated.steps?.length) throw new Error("Sequence has no steps");
+      InlineViewer = viewer.default;
       selected = hydrated;
     } catch (error) {
       if (!mounted || currentRequest !== requestId) return;
@@ -126,7 +134,7 @@
   });
 </script>
 
-<div class="gallery-frame">
+<div class="gallery-frame" aria-busy={opening}>
   <header class="gallery-header">
     <div class="header-copy">
       <span class="eyebrow">Community sequences</span>
@@ -169,20 +177,12 @@
       fill
       label={selected ? "Sequence viewer" : "Community sequences"}
     >
-      {#if selected}
-        {#await import("./ComposerInlineSequenceViewer.svelte") then viewer}
-          <viewer.default
-            sequence={selected}
-            isMobile={mobile.current}
-            onBack={back}
-          />
-        {:catch}
-          <div class="gallery-error" role="alert">
-            The viewer couldn't open. <button type="button" onclick={back}
-              >Back to sequences</button
-            >
-          </div>
-        {/await}
+      {#if selected && InlineViewer}
+        <InlineViewer
+          sequence={selected}
+          isMobile={mobile.current}
+          onBack={back}
+        />
       {:else if status === "ready"}
         <div class="sequence-grid">
           {#each sequences as sequence (sequence.id)}
@@ -306,7 +306,7 @@
     display: grid;
     width: 100%;
     height: 100%;
-    grid-template-columns: repeat(4, minmax(0, min(13rem, 55cqh)));
+    grid-template-columns: repeat(4, minmax(0, min(210px, 56cqh)));
     align-content: center;
     justify-content: center;
     gap: clamp(0.55rem, 1vw, 1rem);

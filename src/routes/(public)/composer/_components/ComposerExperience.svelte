@@ -556,7 +556,8 @@
       <div class="keeping-lede">
         <p>
           Guests keep three sequences on this device. A full account keeps a
-          cloud library and collections. Choose a sequence below to watch it here.
+          cloud library and collections. Choose a sequence below to watch it
+          here.
         </p>
         <div class="keeping-actions">
           <a href="/browse" class="primary-action">Browse the Gallery</a>
@@ -941,10 +942,16 @@
   .keeping-shelf {
     container-type: inline-size;
     min-width: 0;
+    width: 100%;
+    max-width: min(
+      900px,
+      calc((var(--composer-gallery-height) - 110px) * 2.28 + 80px)
+    );
+    margin-inline: auto;
     --composer-gallery-height: clamp(
-      24rem,
-      calc(var(--stop-room, 100dvh) - 14rem),
-      36rem
+      360px,
+      calc(var(--stop-room, 100dvh) - 220px),
+      480px
     );
   }
 
