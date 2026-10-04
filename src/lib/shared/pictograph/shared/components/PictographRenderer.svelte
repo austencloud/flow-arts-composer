@@ -77,6 +77,8 @@ Usage:
     rightMotionVisible = true,
     leftColorOverride = undefined,
     rightColorOverride = undefined,
+    leftBuugengFlippedOverride = undefined,
+    rightBuugengFlippedOverride = undefined,
     // Core visibility controls
     showGrid = true,
     gridPointsOnTop = false,
@@ -170,6 +172,8 @@ Usage:
     /** Display-only hand colors for Tunnel performer cards. */
     leftColorOverride?: string;
     rightColorOverride?: string;
+    leftBuugengFlippedOverride?: boolean;
+    rightBuugengFlippedOverride?: boolean;
     /** Master toggle for grid visibility */
     showGrid?: boolean;
     /** Match the cached bitmap card's separate grid-point overlay. */
@@ -621,6 +625,9 @@ Usage:
             colorOverride={hand === HandSide.LEFT
               ? effectiveLeftColor
               : effectiveRightColor}
+            buugengFlippedOverride={hand === HandSide.LEFT
+              ? leftBuugengFlippedOverride
+              : rightBuugengFlippedOverride}
           />
         </g>
       {/each}

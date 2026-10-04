@@ -18,6 +18,8 @@
   } from "../state/step-grid-display-state.svelte";
   import type { ScrollState } from "../state/scroll-state.svelte";
   import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+  import type { FanAppearance } from "$lib/shared/pictograph/prop/domain/fan-appearance";
+  import type { PropLook } from "$lib/shared/pictograph/prop/domain/prop-look";
   import {
     calculateStepPosition,
     calculateStepWaveBand,
@@ -100,6 +102,10 @@
     getDurationDisplay,
     leftPropTypeOverride = undefined,
     rightPropTypeOverride = undefined,
+    fanAppearanceOverride = undefined,
+    propLookOverride = undefined,
+    leftBuugengFlippedOverride = undefined,
+    rightBuugengFlippedOverride = undefined,
     leftColorOverride = undefined,
     rightColorOverride = undefined,
     posePicker = false,
@@ -146,6 +152,10 @@
     getDurationDisplay: (stepIndex: number) => string;
     leftPropTypeOverride?: PropType;
     rightPropTypeOverride?: PropType;
+    fanAppearanceOverride?: FanAppearance;
+    propLookOverride?: PropLook;
+    leftBuugengFlippedOverride?: boolean;
+    rightBuugengFlippedOverride?: boolean;
     leftColorOverride?: string;
     rightColorOverride?: string;
     /** Choose Start picker: step tiles render as poses; the start tile does not. */
@@ -886,6 +896,10 @@
                 isTimelineMode={true}
                 {leftPropTypeOverride}
                 {rightPropTypeOverride}
+                {fanAppearanceOverride}
+                {propLookOverride}
+                {leftBuugengFlippedOverride}
+                {rightBuugengFlippedOverride}
                 {leftColorOverride}
                 {rightColorOverride}
                 onContentReady={() =>
@@ -1021,6 +1035,10 @@
                     animationEpoch={displayState.animationEpoch}
                     {leftPropTypeOverride}
                     {rightPropTypeOverride}
+                    {fanAppearanceOverride}
+                    {propLookOverride}
+                    {leftBuugengFlippedOverride}
+                    {rightBuugengFlippedOverride}
                     {leftColorOverride}
                     {rightColorOverride}
                     poseOnly={posePicker}
@@ -1078,6 +1096,10 @@
               animationEpoch={displayState.animationEpoch}
               {leftPropTypeOverride}
               {rightPropTypeOverride}
+              {fanAppearanceOverride}
+              {propLookOverride}
+              {leftBuugengFlippedOverride}
+              {rightBuugengFlippedOverride}
               {leftColorOverride}
               {rightColorOverride}
               onContentReady={() => noteContentReady(START_TILE_REVEAL_KEY, 0)}
@@ -1141,6 +1163,10 @@
               animationEpoch={displayState.animationEpoch}
               {leftPropTypeOverride}
               {rightPropTypeOverride}
+              {fanAppearanceOverride}
+              {propLookOverride}
+              {leftBuugengFlippedOverride}
+              {rightBuugengFlippedOverride}
               {leftColorOverride}
               {rightColorOverride}
               poseOnly={posePicker}
