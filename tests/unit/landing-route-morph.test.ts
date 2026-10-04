@@ -450,11 +450,15 @@ describe("landing shared-element contract", () => {
     const generate = readSource(
       "src/routes/(public)/composer/_components/ComposerGenerateDemo.svelte"
     );
+    const recipe = readSource(
+      "src/routes/(public)/composer/_components/composer-demo-generation.ts"
+    );
     const construct = readSource(
       "src/routes/(public)/composer/_sections/ConstructSection.svelte"
     );
 
-    expect(generate).toContain("turnIntensity: 1.5");
+    expect(generate).toContain("generateComposerDemoSequence()");
+    expect(recipe).toContain("turnIntensity: 1.5");
     expect(construct).toContain('{ value: "1.5", label: "1.5" }');
     expect(construct).not.toContain('{ value: "2", label: "2" }');
     expect(construct).not.toContain('{ value: "3", label: "3" }');
