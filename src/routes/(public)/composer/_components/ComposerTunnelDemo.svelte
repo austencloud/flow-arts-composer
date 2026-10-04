@@ -15,10 +15,14 @@
 <script lang="ts">
   import { t } from "$lib/shared/i18n/i18n.svelte";
   import { MediaQuery } from "svelte/reactivity";
-  import { onDestroy, onMount, type Snippet } from "svelte";
+  import { onDestroy, onMount, untrack, type Snippet } from "svelte";
   import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
   import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
+  import FilterChipBase from "$lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
   import TunnelArtView from "$lib/shared/sequence-viewer/tunnel/TunnelArtView.svelte";
+  import TunnelPictographStrip from "$lib/shared/sequence-viewer/tunnel/TunnelPictographStrip.svelte";
+  import DualSourceCrossfade from "$lib/shared/components/DualSourceCrossfade.svelte";
+  import { DURATION } from "$lib/shared/transitions/transitions";
   import TunnelPresetBrowser from "$lib/shared/sequence-viewer/components/art-settings/TunnelPresetBrowser.svelte";
   import type { ComposerPropAppearance } from "./composer-prop-appearance";
   import { generateComposerDemoSequence } from "./composer-demo-generation";
@@ -41,10 +45,7 @@
   import { builtInTunnelPresetRecipe } from "$lib/shared/sequence-viewer/tunnel/tunnel-preset-recipe";
   import { createEffectsConfigState } from "$lib/shared/effects/state/effects-config-state.svelte";
   import { setEffectsConfigContext } from "$lib/shared/effects/state/effects-config-context";
-  import {
-    createSequenceData,
-    type SequenceData,
-  } from "$lib/shared/foundation/domain/models/sequence-data";
+  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
   import { simplifyRepeatedWord } from "$lib/shared/foundation/utils/word-simplifier";
   import type { ViewerPlaybackState } from "$lib/shared/sequence-viewer/domain/viewer-prop-groups";
 
@@ -78,6 +79,20 @@
   let fold = $state(4);
   let generating = $state(false);
   let generationResult = $state<ComposerGenerationResult>("idle");
+  let showArrows = $state(true);
+  let showProps = $state(true);
+  type Source = "first" | "second";
+  let activeSource = $state<Source>("first");
+  let pendingSource = $state<Source | null>(null);
+  let swapping = $state(false);
+  let publishPending = false;
+  let firstSequence = $state<SequenceData | null>(sourceSequence);
+  let secondSequence = $state<SequenceData | null>(null);
+  let seenSource = $state(sourceSequence);
+  let firstStep = $state(1);
+  let secondStep = $state(1);
+  let firstCanvasReady = $state(false);
+  let secondCanvasReady = $state(false);
 
   async function generate() {
     if (generating) return;
@@ -85,14 +100,12 @@
     generationResult = "idle";
     try {
       const next = await generateComposerDemoSequence();
-      onGenerated?.(next);
-      generationResult = "success";
+      prepareSequence(next, true);
     } catch (error) {
       generationResult = classifyComposerGenerationFailure(error);
       if (generationResult === "error") {
         console.error("[composer tunnel] generation failed", error);
       }
-    } finally {
       generating = false;
     }
   }
@@ -110,33 +123,119 @@
   const effects = createEffectsConfigState(undefined, { persist: false });
   setEffectsConfigContext(effects);
 
-  // Derived, not snapshotted. The controller reads it through `getSequence`,
-  // and its own re-bake effect picks the new topology up, so the host can swap
-  // the sequence without remounting the renderer.
+  const initialViewState =
+    layout === "band"
+      ? {
+          ...DEFAULT_TUNNEL_VIEW_STATE,
+          config: initialPreset.config,
+          presetRecipe: builtInTunnelPresetRecipe(initialPreset.id),
+        }
+      : (prevTunnelViewState ?? DEFAULT_TUNNEL_VIEW_STATE);
+  const firstController = new TunnelViewController({
+    getSequence: () => firstSequence,
+    initialViewState,
+    persistViewState: false,
+  });
+  const secondController = new TunnelViewController({
+    getSequence: () => secondSequence,
+    initialViewState,
+    persistViewState: false,
+  });
+  firstController.active = true;
+  const controller = $derived(
+    activeSource === "first" ? firstController : secondController
+  );
   const sequence = $derived(
-    createSequenceData({
-      id: "composer-tunnel-demo",
-      name: sourceSequence.word,
-      word: sourceSequence.word,
-      steps: sourceSequence.steps,
-      gridMode: sourceSequence.gridMode,
-    })
+    (activeSource === "first" ? firstSequence : secondSequence)!
+  );
+  const currentStep = $derived(
+    activeSource === "first" ? firstStep : secondStep
   );
 
-  const controller = new TunnelViewController({
-    getSequence: () => sequence,
-    ...(layout === "band"
-      ? {
-          initialViewState: {
-            ...DEFAULT_TUNNEL_VIEW_STATE,
-            config: initialPreset.config,
-            presetRecipe: builtInTunnelPresetRecipe(initialPreset.id),
-          },
-          persistViewState: false,
-        }
-      : {}),
+  function prepareSequence(next: SequenceData, publish = false): void {
+    const incoming =
+      activeSource === "first" ? secondController : firstController;
+    incoming.applyConfig(controller.config, controller.presetRecipe);
+    incoming.colors = controller.colors;
+    incoming.gridVisible = controller.gridVisible;
+    incoming.active = true;
+    publishPending = publish;
+    if (activeSource === "first") {
+      secondCanvasReady = false;
+      secondStep = 1;
+      secondSequence = next;
+      pendingSource = "second";
+    } else {
+      firstCanvasReady = false;
+      firstStep = 1;
+      firstSequence = next;
+      pendingSource = "first";
+    }
+  }
+
+  $effect(() => {
+    const next = sourceSequence;
+    if (next === seenSource || pendingSource || swapping) return;
+    seenSource = next;
+    untrack(() => prepareSequence(next));
   });
-  controller.active = true;
+
+  // The outgoing tunnel keeps its own choreography and clock until every
+  // incoming copy and its first canvas frame are ready to be revealed.
+  $effect(() => {
+    if (!pendingSource) return;
+    const incoming =
+      pendingSource === "first" ? firstController : secondController;
+    const painted =
+      pendingSource === "first" ? firstCanvasReady : secondCanvasReady;
+    if (incoming.buildError) {
+      generationResult = "error";
+      generating = false;
+      if (pendingSource === "first") firstSequence = null;
+      else secondSequence = null;
+      incoming.active = false;
+      pendingSource = null;
+      return;
+    }
+    if (!incoming.layersReady || !painted) return;
+    activeSource = pendingSource;
+    pendingSource = null;
+    swapping = true;
+    generationResult = "success";
+    if (publishPending) {
+      seenSource = sequence;
+      untrack(() => onGenerated?.(sequence));
+    }
+  });
+
+  function finishHandoff(source: Source): void {
+    if (!swapping || source !== activeSource) return;
+    if (source === "first") {
+      secondSequence = null;
+      secondController.active = false;
+    } else {
+      firstSequence = null;
+      firstController.active = false;
+    }
+    swapping = false;
+    generating = false;
+  }
+
+  function seek(step: number): void {
+    playing = false;
+    if (activeSource === "first") firstStep = step;
+    else secondStep = step;
+  }
+
+  function setPerformers(value: string): void {
+    fold = Number(value);
+    controller.applyConfig({
+      ...controller.config,
+      fold,
+      mirror: false,
+      flip: false,
+    });
+  }
 
   onMount(() => {
     const preference = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -185,15 +284,13 @@
         ? `${controller.presetRecipe?.name ?? 'custom'} preset with ${controller.performerCount} performers`
         : `${fold} performers`}"
     >
-      <TunnelArtView
-        {sequence}
-        {playback}
-        {controller}
-        bpm={60}
-        {leftPropType}
-        {rightPropType}
-        {...appearance}
-        bind:playing
+      <DualSourceCrossfade
+        active={activeSource}
+        first={firstArt}
+        second={secondArt}
+        duration={DURATION.dramatic}
+        profile="soft-dissolve"
+        onsettled={finishHandoff}
       />
     </div>
     {#if layout === "square"}
@@ -210,11 +307,47 @@
   </div>
 {/snippet}
 
+{#snippet firstArt()}
+  {#if firstSequence}
+    <TunnelArtView
+      sequence={firstSequence}
+      controller={firstController}
+      {playback}
+      bpm={60}
+      {leftPropType}
+      {rightPropType}
+      {...appearance}
+      playing={playing && (activeSource === "first" || swapping)}
+      onPlayingChange={(next) => (playing = next)}
+      bind:currentStep={firstStep}
+      onCanvasReady={(canvas) => (firstCanvasReady = !!canvas)}
+    />
+  {/if}
+{/snippet}
+
+{#snippet secondArt()}
+  {#if secondSequence}
+    <TunnelArtView
+      sequence={secondSequence}
+      controller={secondController}
+      {playback}
+      bpm={60}
+      {leftPropType}
+      {rightPropType}
+      {...appearance}
+      playing={playing && (activeSource === "second" || swapping)}
+      onPlayingChange={(next) => (playing = next)}
+      bind:currentStep={secondStep}
+      onCanvasReady={(canvas) => (secondCanvasReady = !!canvas)}
+    />
+  {/if}
+{/snippet}
+
 {#snippet performers()}
   <SegmentedControl
     options={foldOptions}
-    value={String(fold)}
-    onchange={(v) => (fold = Number(v))}
+    value={String(controller.performerCount)}
+    onchange={setPerformers}
     ariaLabel={t("composer_demo_tunnel_performers")}
     color="accent"
     size="md"
@@ -225,6 +358,26 @@
   <div class="tunnel-demo band">
     <div class="band-stage">
       {@render stage()}
+      <div class="tunnel-notation">
+        <div class="notation-caption">
+          <span>All performers, one beat</span>
+          <span class="beat-count"
+            >{Math.floor(currentStep)} / {controller.loopSteps}</span
+          >
+        </div>
+        <TunnelPictographStrip
+          {controller}
+          {currentStep}
+          bpm={60}
+          {leftPropType}
+          {rightPropType}
+          {appearance}
+          showGrid={controller.gridVisible}
+          {showArrows}
+          {showProps}
+          onCellClick={seek}
+        />
+      </div>
       <div
         class="stage-toolbar"
         role="group"
@@ -249,24 +402,53 @@
       </div>
     </div>
     <div class="band-controls">
-      <h3 class="preset-heading">Choose a tunnel</h3>
-      <TunnelPresetBrowser
-        {controller}
-        dense={true}
-        showcase={true}
-        showGridControl={false}
-        showUserPresets={false}
-        showCustomCard={false}
-        showCustomizeButton={false}
-        maximumInstances={reduceMotion.current ? MAX_IMAGES_RM : MAX_IMAGES}
-        selectionMode="config"
-      />
+      <div
+        class="tunnel-settings"
+        inert={generating || swapping || !!pendingSource}
+      >
+        <div class="performer-control">
+          <span class="control-label">{t("composer_demo_performers")}</span>
+          {@render performers()}
+        </div>
+        <div
+          class="notation-controls"
+          role="group"
+          aria-label="Pictograph layers"
+        >
+          <FilterChipBase
+            label="Arrows"
+            mode="toggle"
+            active={showArrows}
+            labelScale="readable"
+            onclick={() => (showArrows = !showArrows)}
+          />
+          <FilterChipBase
+            label="Props"
+            mode="toggle"
+            active={showProps}
+            labelScale="readable"
+            onclick={() => (showProps = !showProps)}
+          />
+        </div>
+        <h3 class="preset-heading">Choose a tunnel</h3>
+        <TunnelPresetBrowser
+          {controller}
+          dense={true}
+          showcase={true}
+          showGridControl={false}
+          showUserPresets={false}
+          showCustomCard={false}
+          showCustomizeButton={false}
+          maximumInstances={reduceMotion.current ? MAX_IMAGES_RM : MAX_IMAGES}
+          selectionMode="config"
+        />
+      </div>
       {#if onGenerated}
         <div class="new-tunnel-action">
           <PanelButton
             variant="primary"
             onclick={generate}
-            disabled={generating}
+            disabled={generating || swapping || !!pendingSource}
             ariaBusy={generating}
           >
             <i
@@ -276,11 +458,13 @@
             <span>New tunnel</span>
           </PanelButton>
           <span class="retry-note" aria-live="polite">
-            {generationResult === "no-result"
-              ? t("composer_demo_no_result")
-              : generationResult === "error"
-                ? t("composer_demo_generate_failed")
-                : ""}
+            {generating
+              ? "Preparing the next tunnel…"
+              : generationResult === "no-result"
+                ? t("composer_demo_no_result")
+                : generationResult === "error"
+                  ? t("composer_demo_generate_failed")
+                  : ""}
           </span>
         </div>
       {/if}
@@ -414,6 +598,39 @@
     gap: 0.8rem;
     max-width: 30rem;
     width: 100%;
+  }
+  .tunnel-settings {
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+  }
+  .performer-control {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.75rem;
+  }
+  .notation-controls {
+    display: flex;
+    gap: 0.5rem;
+  }
+  .tunnel-notation {
+    margin-top: 0.75rem;
+    min-width: 0;
+    height: 8.125rem;
+  }
+  .notation-caption {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.5rem;
+    padding-inline: 0.25rem;
+    margin-bottom: 0.25rem;
+    font-size: 0.875rem;
+    color: var(--theme-text-muted);
+  }
+  .beat-count {
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
   }
   .preset-heading {
     margin: 0;

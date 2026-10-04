@@ -248,6 +248,7 @@
   <div class="tunnel-placeholder" aria-hidden="true">
     <div class="placeholder-stage-wrap">
       <div class="placeholder-square"></div>
+      <div class="placeholder-notation"></div>
       <div class="placeholder-toolbar">
         <div class="placeholder-tool"></div>
         <div class="placeholder-tool"></div>
@@ -255,6 +256,8 @@
       </div>
     </div>
     <div class="placeholder-band-controls">
+      <div class="placeholder-toolbar"></div>
+      <div class="placeholder-toolbar"></div>
       <div class="placeholder-line placeholder-line-title"></div>
       <div class="placeholder-preset-grid">
         {#each Array(7) as _}<div class="placeholder-control"></div>{/each}
@@ -970,7 +973,7 @@
   /* The frame hugs the stage-plus-controls composition instead of spanning a
      wide shell with dark margins on both sides of it. On the stage the square
      also fits the room: less the heading, this frame's padding and border,
-     and the toolbar under the square. Without the stage the 200vh fallback
+     and the notation rail and toolbar under the square. Without the stage the 200vh fallback
      leaves the plain page's own sizing in charge. */
   .band-frame {
     max-width: min(100%, 92rem);
@@ -979,7 +982,7 @@
       46rem,
       62vh,
       var(--stop-room, 200vh) - var(--stop-head) - 2 * var(--frame-pad) -
-        3.75rem - 2px
+        12.625rem - 2px
     );
   }
 
@@ -1030,6 +1033,10 @@
   }
   .placeholder-stage-wrap {
     min-width: 0;
+  }
+  .placeholder-notation {
+    height: 8.125rem;
+    margin-top: 0.75rem;
   }
   .placeholder-toolbar {
     display: flex;
