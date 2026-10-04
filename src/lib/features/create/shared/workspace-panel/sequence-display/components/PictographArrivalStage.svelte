@@ -8,6 +8,10 @@
   import PictographContainer from "$lib/shared/pictograph/shared/components/PictographContainer.svelte";
   import { DURATION } from "$lib/shared/transitions/transitions";
   import {
+    bootProfiler,
+    isBootProfileVerbose,
+  } from "$lib/shared/analytics/boot-profiler";
+  import {
     calculatePictographArrivalTransform,
     type ArrivalRect,
   } from "../domain/pictograph-arrival-geometry";
@@ -92,6 +96,63 @@
   let cardElement: HTMLElement | null = $state(null);
   let scrimElement: HTMLElement | null = $state(null);
   let activeAnimations: Animation[] = [];
+  let finishRequestSpan:
+    | ((
+        outcome?: "ok" | "error" | "cancelled",
+        detail?: Record<string, string | number | boolean>
+      ) => void)
+    | null = null;
+  let finishPhaseSpan:
+    | ((
+        outcome?: "ok" | "error" | "cancelled",
+        detail?: Record<string, string | number | boolean>
+      ) => void)
+    | null = null;
+  let measuredPhase: ArrivalPhase | null = null;
+  let profileFrame: number | null = null;
+  let profileStartedAt = 0;
+  let previousFrameAt = 0;
+  let maxFrameGapMs = 0;
+  let delayedFrameCount = 0;
+
+  function sampleFrame(timestamp: number) {
+    if (timestamp - profileStartedAt > 10_000) {
+      profileFrame = null;
+      return;
+    }
+    if (previousFrameAt) {
+      const gap = timestamp - previousFrameAt;
+      maxFrameGapMs = Math.max(maxFrameGapMs, gap);
+      if (gap > 50) delayedFrameCount++;
+    }
+    previousFrameAt = timestamp;
+    profileFrame = requestAnimationFrame(sampleFrame);
+  }
+
+  function profilePhase(next: ArrivalPhase) {
+    if (measuredPhase === next) return;
+    finishPhaseSpan?.();
+    measuredPhase = next;
+    finishPhaseSpan = bootProfiler.startSpan(`construct:arrival:${next}`, {
+      requestId: activeRequestId,
+      intent: request.intent,
+    });
+  }
+
+  function finishProfile(outcome: "ok" | "error" | "cancelled") {
+    finishPhaseSpan?.(outcome);
+    finishPhaseSpan = null;
+    measuredPhase = null;
+    if (profileFrame !== null) cancelAnimationFrame(profileFrame);
+    profileFrame = null;
+    previousFrameAt = 0;
+    finishRequestSpan?.(outcome, {
+      lastPhase: phase,
+      maxFrameGapMs: Math.round(maxFrameGapMs),
+      delayedFrameCount,
+    });
+    finishRequestSpan = null;
+  }
 
   const reducedMotionEnabled = $derived(
     (getSettings().reducedMotion ?? false) || systemPrefersReducedMotion
@@ -125,6 +186,7 @@
   function handOffToCell(requestId: number, preserveLandedFrame = false) {
     if (request.requestId !== requestId || request.owner !== "stage") return;
 
+    profilePhase("handing-off");
     flushSync(() => {
       phase = "handing-off";
       if (!preserveLandedFrame) entranceComplete = false;
@@ -134,6 +196,7 @@
     animationFrame = requestAnimationFrame(() => {
       if (!preserveLandedFrame) {
         animationFrame = null;
+        finishProfile("ok");
         onComplete(requestId);
         return;
       }
@@ -143,6 +206,7 @@
       // frame between the two renderers.
       animationFrame = requestAnimationFrame(() => {
         animationFrame = null;
+        finishProfile("ok");
         onComplete(requestId);
       });
     });
@@ -151,6 +215,7 @@
   async function enterStage(requestId: number) {
     if (request.requestId !== requestId || request.owner !== "stage") return;
 
+    profilePhase("entering");
     const card = cardElement;
     const scrim = scrimElement;
     flushSync(() => {
@@ -246,6 +311,7 @@
   async function landInGrid(requestId: number) {
     if (request.requestId !== requestId || request.owner !== "stage") return;
 
+    profilePhase("landing");
     const card = cardElement;
     const sourceRect = card?.getBoundingClientRect() ?? null;
 
@@ -320,6 +386,7 @@
 
   function beginHold(requestId: number) {
     if (request.requestId !== requestId || request.owner !== "stage") return;
+    profilePhase("holding");
     phase = "holding";
     motionProgress = reducedMotionEnabled ? null : 1;
     arrowOpacity = 1;
@@ -366,6 +433,7 @@
 
   function beginPropMotion(requestId: number) {
     if (request.requestId !== requestId || request.owner !== "stage") return;
+    profilePhase("moving");
     phase = "moving";
     motionStartedAt = null;
     motionProgress = 0;
@@ -383,6 +451,7 @@
   }
 
   function beginRequest(requestId: number) {
+    finishProfile("cancelled");
     clearActiveWork();
     activeRequestId = requestId;
     phase = "preparing";
@@ -390,9 +459,27 @@
     motionProgress = reducedMotionEnabled ? null : 0;
     arrowOpacity = reducedMotionEnabled ? 1 : 0;
     lastObservedReducedMotion = reducedMotionEnabled;
+    maxFrameGapMs = 0;
+    delayedFrameCount = 0;
+    profileStartedAt = performance.now();
+    finishRequestSpan = bootProfiler.startSpan("construct:arrival", {
+      requestId,
+      stepIndex: request.stepIndex,
+      intent: request.intent,
+      viewerCanvasMounted: Boolean(
+        document.querySelector(".viewer-demo canvas")
+      ),
+      viewerDialogOpen: Boolean(
+        document.querySelector("dialog.composer-3d-modal[open]")
+      ),
+    });
+    profilePhase("preparing");
+    if (isBootProfileVerbose())
+      profileFrame = requestAnimationFrame(sampleFrame);
 
     phaseTimer = setTimeout(() => {
       if (isAudition) {
+        finishProfile("error");
         onComplete(requestId);
         return;
       }
@@ -435,7 +522,10 @@
     return () => query.removeEventListener("change", handleChange);
   });
 
-  onDestroy(clearActiveWork);
+  onDestroy(() => {
+    finishProfile("cancelled");
+    clearActiveWork();
+  });
 </script>
 
 {#if step}

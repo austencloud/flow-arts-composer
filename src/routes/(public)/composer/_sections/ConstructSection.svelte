@@ -75,6 +75,7 @@
     type ConstructAttractAct,
   } from "./construct-attract-act.svelte";
   import { isVisitorOwnedConstructSequence } from "../_components/composer-sequence-ownership";
+  import { bootProfiler } from "$lib/shared/analytics/boot-profiler";
 
   type ConstructPresentationMode = "full" | "guided-build" | "continuous";
 
@@ -391,17 +392,33 @@
   });
 
   function handleOptionSelected(option: PictographData) {
+    const finishCommit = bootProfiler.startSpan("construct:option-commit", {
+      previousStepCount: steps.length,
+      viewerCanvasMounted: Boolean(
+        document.querySelector(".viewer-demo canvas")
+      ),
+      viewerDialogOpen: Boolean(
+        document.querySelector("dialog.composer-3d-modal[open]")
+      ),
+    });
     if (isContinuous && editingStepNumber) {
       recordHistory();
       steps = [...steps.slice(0, editingStepNumber - 1), option];
       editingStepNumber = null;
       playingStepNumber = null;
+      void tick().then(() => finishCommit("ok", { mode: "replace" }));
       return;
     }
-    if (steps.length >= MAX_STEPS) return;
+    if (steps.length >= MAX_STEPS) {
+      finishCommit("cancelled", { reason: "step-limit" });
+      return;
+    }
     const carry = holdsFocus(pickerPaneEl);
     recordHistory();
     steps = [...steps, option];
+    void tick().then(() =>
+      finishCommit("ok", { mode: "append", stepCount: steps.length })
+    );
     // The eighth step plays at once and the player replaces the options, so
     // focus goes to the play actions, as it does from Play.
     if (carry && phase === "play") void focusPlayControls();
