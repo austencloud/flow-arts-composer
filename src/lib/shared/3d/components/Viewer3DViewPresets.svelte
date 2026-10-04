@@ -14,6 +14,7 @@
   import { PlaneMode } from "@austencloud/scene-3d";
   import { GRID_OFFSETS } from "@austencloud/scene-3d";
   import { userProportionsState } from "@austencloud/scene-3d";
+  import { largestHandDistance } from "../domain/performer-hand-distance";
   import {
     reportViewerControlChange,
     type ViewerControlSink,
@@ -47,7 +48,9 @@
   });
 
   const FOV_DEG = 50;
-  const GRID_RADIUS = 0.52;
+  const gridRadius = $derived(
+    largestHandDistance(characterState?.handDistance)
+  );
   const GRID_FILL_FRACTION = 0.2;
   const dualWheelOffset = $derived(userProportionsState.staffLength / 2);
 
@@ -66,14 +69,14 @@
 
   function computeDistance(): number {
     const sceneWidth = isDualWheel
-      ? 2 * (dualWheelOffset + GRID_RADIUS)
-      : GRID_RADIUS * 2;
+      ? 2 * (dualWheelOffset + gridRadius)
+      : gridRadius * 2;
     return computeDistanceForWidth(sceneWidth);
   }
 
   function computeSideDistance(): number {
-    const singleWidth = GRID_RADIUS * 2;
-    const dualWidth = 2 * (dualWheelOffset + GRID_RADIUS);
+    const singleWidth = gridRadius * 2;
+    const dualWidth = 2 * (dualWheelOffset + gridRadius);
     return computeDistanceForWidth((singleWidth + dualWidth) / 2);
   }
 

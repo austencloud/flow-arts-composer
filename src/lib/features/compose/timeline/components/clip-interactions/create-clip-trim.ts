@@ -10,6 +10,7 @@ import { getTimelineState } from "$lib/shared/animation-engine/state/timeline-st
 export interface ClipTrimHandlers {
   handleTrimLeftStart: (e: MouseEvent) => void;
   handleTrimRightStart: (e: MouseEvent) => void;
+  dispose: () => void;
 }
 
 export interface ClipTrimCallbacks {
@@ -24,6 +25,8 @@ export function createClipTrim(
 ): ClipTrimHandlers {
   let dragStartX = 0;
   let dragStartValue = 0;
+  let leftActive = false;
+  let rightActive = false;
 
   function getState() {
     return getTimelineState();
@@ -44,9 +47,13 @@ export function createClipTrim(
   }
 
   function handleTrimLeftEnd() {
+    if (!leftActive) return;
+    leftActive = false;
+    getState().endEdit();
     callbacks.onDragEnd();
     window.removeEventListener("mousemove", handleTrimLeftUpdate);
     window.removeEventListener("mouseup", handleTrimLeftEnd);
+    window.removeEventListener("blur", handleTrimLeftEnd);
   }
 
   function handleTrimLeftStart(e: MouseEvent) {
@@ -58,11 +65,14 @@ export function createClipTrim(
 
     dragStartX = e.clientX;
     dragStartValue = clip.inPoint;
+    leftActive = true;
+    getState().beginEdit("TRIM_CLIP", "Trim clip");
 
     callbacks.onDragStart();
 
     window.addEventListener("mousemove", handleTrimLeftUpdate);
     window.addEventListener("mouseup", handleTrimLeftEnd);
+    window.addEventListener("blur", handleTrimLeftEnd);
   }
 
   // Right trim (out-point) handlers
@@ -80,9 +90,13 @@ export function createClipTrim(
   }
 
   function handleTrimRightEnd() {
+    if (!rightActive) return;
+    rightActive = false;
+    getState().endEdit();
     callbacks.onDragEnd();
     window.removeEventListener("mousemove", handleTrimRightUpdate);
     window.removeEventListener("mouseup", handleTrimRightEnd);
+    window.removeEventListener("blur", handleTrimRightEnd);
   }
 
   function handleTrimRightStart(e: MouseEvent) {
@@ -94,12 +108,22 @@ export function createClipTrim(
 
     dragStartX = e.clientX;
     dragStartValue = clip.outPoint;
+    rightActive = true;
+    getState().beginEdit("TRIM_CLIP", "Trim clip");
 
     callbacks.onDragStart();
 
     window.addEventListener("mousemove", handleTrimRightUpdate);
     window.addEventListener("mouseup", handleTrimRightEnd);
+    window.addEventListener("blur", handleTrimRightEnd);
   }
 
-  return { handleTrimLeftStart, handleTrimRightStart };
+  return {
+    handleTrimLeftStart,
+    handleTrimRightStart,
+    dispose: () => {
+      handleTrimLeftEnd();
+      handleTrimRightEnd();
+    },
+  };
 }

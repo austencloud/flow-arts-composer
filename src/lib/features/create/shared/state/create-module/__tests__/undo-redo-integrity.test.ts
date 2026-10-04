@@ -12,11 +12,18 @@
 
 import { readFileSync } from "node:fs";
 import path from "node:path";
-import { describe, it, expect, vi } from "vitest";
+import { afterEach, describe, it, expect, vi } from "vitest";
 import { UndoManager, UndoOperationType } from "../../../services/undo-manager";
 import { createUndoController } from "../undo-controller.svelte";
 import { removeStep } from "../../../services/step-operations/step-removal-handler";
 import { createSequenceState } from "../../sequence-state-orchestrator.svelte";
+import { registerCreateShortcuts } from "$lib/shared/keyboard/registration/register-create-shortcuts";
+import { KeyboardShortcutManager } from "$lib/shared/keyboard/services/keyboard-shortcut-manager";
+import { ShortcutRegistry } from "$lib/shared/keyboard/services/shortcut-registry";
+import type { ShortcutRegistrationOptions } from "$lib/shared/keyboard/domain/types/keyboard-types";
+import type { createKeyboardShortcutState } from "$lib/shared/keyboard/state/keyboard-shortcut-state.svelte";
+import { setCreateModuleStateRef } from "$lib/shared/create/state/create-module-state-ref.svelte";
+import { createPanelCoordinationState } from "$lib/shared/create/state/panel-coordination-state.svelte";
 import { createSequence } from "$lib/shared/create/services/sequence-domain-manager";
 import { createStepData } from "$lib/shared/foundation/domain/factories/create-step-data";
 import { createStartPlacementData } from "$lib/shared/create/factories/create-start-placement-data";
@@ -357,6 +364,268 @@ describe("Create history: one delete is one history entry", () => {
     expect(handler).toContain("StepOperator.removeStep");
     expect(handler).not.toMatch(/pushUndoSnapshot\s*\(/);
   });
+});
+
+describe("Create history: a keyboard delete is one history entry", () => {
+  /**
+   * Delete and Backspace on a selected step reach Create's window shortcut
+   * before anything else. It used to remove the steps itself, so the Undo
+   * button never offered them back. The shortcuts run here as registered,
+   * against the real orchestrator, removal handler and history.
+   */
+  function registerDeleteShortcuts() {
+    const registered = new Map<string, ShortcutRegistrationOptions>();
+    const service = {
+      register: (options: ShortcutRegistrationOptions) => {
+        registered.set(options.id, options);
+        return () => {};
+      },
+    } as unknown as KeyboardShortcutManager;
+    const state = {
+      settings: { enableSingleKeyShortcuts: true },
+    } as unknown as ReturnType<typeof createKeyboardShortcutState>;
+    registerCreateShortcuts(service, state);
+    return registered;
+  }
+
+  afterEach(() => {
+    setCreateModuleStateRef(null);
+    vi.useRealTimers();
+  });
+
+  it.each([
+    ["Backspace", "create.delete-beat"],
+    ["Delete", "create.delete-beat-delete-key"],
+  ])(
+    "%s brings back the step and every step after it with one Undo",
+    async (key, shortcutId) => {
+      vi.useFakeTimers();
+      const sequenceState = createSequenceState({
+        tabId: "construct",
+        ReversalDetector: reversalDetector,
+      });
+      sequenceState.setCurrentSequence(makeSequence("ABCDE", 5));
+      const built = sequenceState.currentSequence;
+      const manager = new UndoManager();
+      const controller = createUndoController({
+        UndoManager: manager,
+        sequenceState: sequenceState as never,
+        getActiveSection: () => "construct",
+        setActiveSectionInternal: async () => {},
+      });
+      const createModuleState = {
+        sequenceState,
+        pushUndoSnapshot: controller.pushUndoSnapshot,
+        setActiveToolPanel: vi.fn(),
+      };
+      setCreateModuleStateRef({
+        CreateModuleState: createModuleState as never,
+        constructTabState: {} as never,
+        panelState: {} as never,
+        executeSequenceAction: vi.fn(),
+        requestClearSequence: vi.fn(),
+        removeStep: (stepIndex: number) =>
+          removeStep(stepIndex, createModuleState as never),
+      });
+      const shortcut = registerDeleteShortcuts().get(shortcutId);
+      if (!shortcut) throw new Error(`${shortcutId} was not registered`);
+
+      sequenceState.selectStep(3);
+      await shortcut.action(new KeyboardEvent("keydown", { key }));
+      // Past the fade the steps play before they leave.
+      await vi.advanceTimersByTimeAsync(1000);
+
+      expect(sequenceState.currentSequence?.steps).toHaveLength(2);
+      expect(manager.undoHistory).toHaveLength(1);
+      expect(manager.undoHistory[0]?.type).toBe(UndoOperationType.REMOVE_BEATS);
+      expect(manager.undoHistory[0]?.metadata?.description).toBe(
+        "Remove steps 3 to 5"
+      );
+
+      controller.undo();
+      expect(sequenceState.currentSequence?.steps).toEqual(built?.steps);
+      expect(controller.canUndo).toBe(false);
+    }
+  );
+});
+
+describe("Create history: a keyboard delete goes through the workspace's own rules", () => {
+  /**
+   * Each key press arrives through the real shortcut manager, the way the
+   * browser delivers it: the manager skips a shortcut whose condition says no,
+   * and otherwise cancels the key's default before the action runs.
+   */
+  let disposeShortcuts: (() => void) | undefined;
+
+  afterEach(() => {
+    disposeShortcuts?.();
+    disposeShortcuts = undefined;
+    setCreateModuleStateRef(null);
+    vi.useRealTimers();
+  });
+
+  function createWorkspaceWithShortcuts() {
+    const sequenceState = createSequenceState({
+      tabId: "construct",
+      ReversalDetector: reversalDetector,
+    });
+    sequenceState.setCurrentSequence(makeSequence("ABCDE", 5));
+    const manager = new UndoManager();
+    const controller = createUndoController({
+      UndoManager: manager,
+      sequenceState: sequenceState as never,
+      getActiveSection: () => "construct",
+      setActiveSectionInternal: async () => {},
+    });
+    const createModuleState = {
+      sequenceState,
+      // Every key press asks each Create shortcut whether it applies, and the
+      // Alt+key transforms look at the active tab's sequence to answer.
+      getActiveTabSequenceState: () => sequenceState,
+      pushUndoSnapshot: controller.pushUndoSnapshot,
+      setActiveToolPanel: vi.fn(),
+    };
+    const panelState = createPanelCoordinationState();
+    // Stands in for CreateModule's clear, which opens the confirmation dialog.
+    const requestClearSequence = vi.fn();
+    setCreateModuleStateRef({
+      CreateModuleState: createModuleState as never,
+      constructTabState: {} as never,
+      panelState,
+      executeSequenceAction: vi.fn(),
+      requestClearSequence,
+      removeStep: (stepIndex: number) =>
+        removeStep(stepIndex, createModuleState as never),
+    });
+
+    const shortcuts = new KeyboardShortcutManager(new ShortcutRegistry());
+    registerCreateShortcuts(shortcuts, {
+      settings: { enableSingleKeyShortcuts: true },
+    } as unknown as ReturnType<typeof createKeyboardShortcutState>);
+    shortcuts.setContext("create");
+    shortcuts.initialize();
+    disposeShortcuts = () => shortcuts.dispose();
+
+    return {
+      sequenceState,
+      manager,
+      panelState,
+      requestClearSequence,
+      press(key: string) {
+        const event = new KeyboardEvent("keydown", {
+          key,
+          bubbles: true,
+          cancelable: true,
+        });
+        document.body.dispatchEvent(event);
+        return event;
+      },
+      play() {
+        panelState.startWorkspacePlayback(
+          sequenceState.currentSequence!,
+          1,
+          "construct"
+        );
+        panelState.confirmWorkspacePlaybackReady(
+          panelState.workspacePlaybackPreparation!
+        );
+        expect(panelState.workspacePlayback).not.toBeNull();
+      },
+      /** Play pressed: the player is still loading, or failed and shows Retry. */
+      load(phase: "loading" | "showing Retry") {
+        panelState.startWorkspacePlayback(
+          sequenceState.currentSequence!,
+          1,
+          "construct"
+        );
+        if (phase === "showing Retry")
+          panelState.failWorkspacePlaybackPreparation(
+            panelState.workspacePlaybackPreparation!
+          );
+        expect(panelState.workspacePlaybackPreparation).not.toBeNull();
+        expect(panelState.workspacePlayback).toBeNull();
+      },
+    };
+  }
+
+  // Backspace used to ask first and Delete cleared straight away, still
+  // leaving a Clear entry in history. Both now take the path the step
+  // editor's Delete button takes, which shows the confirmation dialog unless
+  // the user turned it off.
+  it.each(["Backspace", "Delete"])(
+    "%s on the start position asks before clearing anything",
+    async (key) => {
+      vi.useFakeTimers();
+      const workspace = createWorkspaceWithShortcuts();
+      workspace.sequenceState.selectStep(0);
+      expect(workspace.sequenceState.selectedStepData?.stepNumber).toBe(0);
+
+      workspace.press(key);
+      // Past the clear's 300 ms fade.
+      await vi.advanceTimersByTimeAsync(1000);
+
+      expect(workspace.requestClearSequence).toHaveBeenCalledOnce();
+      expect(workspace.sequenceState.currentSequence?.steps).toHaveLength(5);
+      expect(workspace.manager.undoHistory).toHaveLength(0);
+    }
+  );
+
+  // The grid ignores clicks while the workspace player runs, but a selection
+  // made before Play survives it, so the keys used to reach it anyway.
+  it.each([
+    ["Backspace", "step 3", 3],
+    ["Delete", "step 3", 3],
+    ["Backspace", "the start position", 0],
+    ["Delete", "the start position", 0],
+  ])(
+    "%s on %s does nothing while the workspace plays",
+    async (key, _label, stepNumber) => {
+      vi.useFakeTimers();
+      const workspace = createWorkspaceWithShortcuts();
+      workspace.sequenceState.selectStep(stepNumber);
+      workspace.play();
+
+      const event = workspace.press(key);
+      await vi.advanceTimersByTimeAsync(1000);
+
+      expect(workspace.sequenceState.currentSequence?.steps).toHaveLength(5);
+      expect(workspace.manager.undoHistory).toHaveLength(0);
+      expect(workspace.requestClearSequence).not.toHaveBeenCalled();
+      expect(workspace.panelState.workspacePlayback).not.toBeNull();
+      // Skipped outright rather than swallowed, so the manager also left any
+      // open sheet beside the player where it was.
+      expect(event.defaultPrevented).toBe(false);
+    }
+  );
+
+  // The selection also survives the moment between Play and the first frame,
+  // while the card still shows. The keys wait from the moment Play is
+  // pressed until Stop, including a failed load showing Retry.
+  it.each([
+    ["Backspace", "step 3", "loading", 3],
+    ["Delete", "step 3", "loading", 3],
+    ["Backspace", "the start position", "loading", 0],
+    ["Delete", "the start position", "loading", 0],
+    ["Delete", "step 3", "showing Retry", 3],
+    ["Backspace", "the start position", "showing Retry", 0],
+  ] as const)(
+    "%s on %s does nothing while Play is %s",
+    async (key, _label, phase, stepNumber) => {
+      vi.useFakeTimers();
+      const workspace = createWorkspaceWithShortcuts();
+      workspace.sequenceState.selectStep(stepNumber);
+      workspace.load(phase);
+
+      const event = workspace.press(key);
+      await vi.advanceTimersByTimeAsync(1000);
+
+      expect(workspace.sequenceState.currentSequence?.steps).toHaveLength(5);
+      expect(workspace.manager.undoHistory).toHaveLength(0);
+      expect(workspace.requestClearSequence).not.toHaveBeenCalled();
+      expect(workspace.panelState.workspacePlaybackPreparation).not.toBeNull();
+      expect(event.defaultPrevented).toBe(false);
+    }
+  );
 });
 
 describe("Create history: clearing animation cannot outlive the state it clears", () => {

@@ -9,6 +9,10 @@
   - CENTER ZONE: Play
   - RIGHT ZONE: Sequence Actions + Share
 
+  Compact rail (phone-width Assemble): Save arrives as a snippet and joins
+  this row, and Share moves to the Actions panel. Undo/Redo float over the
+  grid panel instead, so Clear keeps its place on the left.
+
   Architecture:
   - Uses CreateModuleContext for state access
   - Derives all boolean flags locally from context
@@ -17,6 +21,7 @@
   - Just composition and prop passing
 -->
 <script lang="ts">
+  import type { Snippet } from "svelte";
   import { fade } from "svelte/transition";
   import { PresenceAnimation } from "../../../../../../shared/ui-animation/animations.svelte";
   import { getCreateModuleContext } from "$lib/features/create/shared/context/create-module-context";
@@ -51,10 +56,15 @@
     onClearSequence,
     onViewSequence,
     visible = true,
+    compact = false,
+    trailingActions,
   }: {
     onClearSequence?: () => void;
     onViewSequence?: () => void;
     visible?: boolean;
+    /** One-row rail: Save joins the panel and Share leaves it */
+    compact?: boolean;
+    trailingActions?: Snippet;
   } = $props();
 
   // Derive computed values from context
@@ -189,6 +199,7 @@
     <div
       class="button-panel"
       class:assemble-layout={isAssembleTab}
+      class:compact-rail={compact}
       transition:fade={{ duration: 200 }}
     >
       <!-- LEFT ZONE: destructive document actions -->
@@ -196,7 +207,9 @@
         {#each leftButtons as btn (btn.id)}
           {#if btn.id === "clear" && canClearSequence && onClearSequence}
             <div transition:presenceTransition>
-              <ClearSequencePanelButton onclick={() => onClearSequence?.()} />
+              <ClearSequencePanelButton
+                onclick={() => onClearSequence?.()}
+              />
             </div>
           {/if}
         {/each}
@@ -261,8 +274,11 @@
                   panelState.openSequenceActionsPanel("workspace_button")}
               />
             </div>
-          {:else if btn.id === "share" && canShareSequence}
-            <div transition:presenceTransition>
+          {:else if btn.id === "share" && canShareSequence && !compact}
+            <div
+              class="share-slot"
+              transition:presenceTransition
+            >
               <ShareButton
                 sequence={currentSequence}
                 useMobileSheet={useMobileShareSheet}
@@ -270,6 +286,9 @@
             </div>
           {/if}
         {/each}
+        {#if compact && trailingActions}
+          {@render trailingActions()}
+        {/if}
       </div>
 
       {#if shouldShowOptionInteractionBanner}

@@ -6,6 +6,7 @@ import {
   mkdtempSync,
   readFileSync,
   rmSync,
+  symlinkSync,
   writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
@@ -34,7 +35,8 @@ describe("worktree finish lifecycle", () => {
     git(repo, "config", "user.email", "worktree-test@example.com");
     git(repo, "config", "user.name", "Worktree Test");
     git(repo, "config", "core.autocrlf", "false");
-    writeFileSync(join(repo, ".gitignore"), "node_modules/\n");
+    // Directory-only patterns do not ignore a symlink on Linux.
+    writeFileSync(join(repo, ".gitignore"), "node_modules\n");
     writeFileSync(join(repo, "shared.txt"), "base\n");
     git(repo, "add", ".gitignore", "shared.txt");
     git(repo, "commit", "-m", "base");
@@ -93,6 +95,46 @@ describe("worktree finish lifecycle", () => {
       }).status
     ).not.toBe(0);
     expect(git(repo, "log", "-1", "--format=%P").split(" ")).toHaveLength(2);
+  });
+
+  function linkPrimaryNodeModules(relativeLinkPath: string) {
+    const target = join(repo, "node_modules", "pkg");
+    mkdirSync(target, { recursive: true });
+    writeFileSync(join(target, "index.js"), "module.exports = 1;\n");
+    const link = join(task, relativeLinkPath);
+    mkdirSync(dirname(link), { recursive: true });
+    symlinkSync(join(repo, "node_modules"), link, "junction");
+    return join(target, "index.js");
+  }
+
+  it("unlinks a root node_modules junction and leaves the primary packages intact", () => {
+    commitTaskFile("feature.txt", "linked\n");
+    const primaryFile = linkPrimaryNodeModules("node_modules");
+
+    const result = finish();
+
+    expect(result.status, `${result.stdout}\n${result.stderr}`).toBe(0);
+    expect(result.stdout).toContain("unlinked node_modules junction");
+    expect(existsSync(task)).toBe(false);
+    expect(readFileSync(primaryFile, "utf8")).toBe("module.exports = 1;\n");
+  });
+
+  it("refuses to remove a worktree that still contains a nested junction", () => {
+    commitTaskFile("feature.txt", "nested link\n");
+    const primaryFile = linkPrimaryNodeModules(
+      join("packages", "app", "node_modules")
+    );
+    const mainBefore = git(repo, "rev-parse", "HEAD");
+
+    const result = finish();
+
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain(
+      "refusing to remove worktree while links remain"
+    );
+    expect(git(repo, "rev-parse", "HEAD")).toBe(mainBefore);
+    expect(existsSync(task)).toBe(true);
+    expect(readFileSync(primaryFile, "utf8")).toBe("module.exports = 1;\n");
   });
 
   it("blocks overlapping primary-checkout edits without removing anything", () => {

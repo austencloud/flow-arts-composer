@@ -5,9 +5,12 @@
   playwright round-trip between clicks and miss the mid-transition window.
 -->
 <script lang="ts">
+  import { tick } from "svelte";
   import Crossfade from "./Crossfade.svelte";
 
   let key = $state("alpha");
+  let focusKey = $state<"idle" | "playing" | "finished">("idle");
+  let focusAfterSwap = $state("");
   let stepKey = $state("first");
   let stepDirection = $state<-1 | 1>(1);
   let maxReadableStepLayers = $state(0);
@@ -15,9 +18,31 @@
   let collapseMidpoint = $state(0);
   let maxInteractiveLayers = $state(0);
   let observedOverlap = $state(false);
+  let outsideKey = $state<"idle" | "playing">("idle");
+  let outsideStage = $state<ReturnType<typeof Crossfade> | null>(null);
   let stage: HTMLDivElement;
 
   const HEIGHTS: Record<string, number> = { alpha: 60, beta: 160, gamma: 100 };
+
+  async function play(): Promise<void> {
+    focusKey = "playing";
+    // Read focus as soon as the swap commits. On a busy page the browser's
+    // own fix-up for the inert layer can land before the leaving layer's
+    // delayed `outrostart`, so the handoff has to be done by this point.
+    await tick();
+    focusAfterSwap = document.activeElement?.textContent ?? "";
+  }
+
+  // Plays and stops from a control outside the stage, stopping before the
+  // idle layer has finished fading out, so the key returns to a layer that
+  // resumes instead of remounting. In the page for the rapid toggle's reason.
+  async function playAndStopFromOutside(): Promise<void> {
+    outsideKey = "playing";
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    outsideKey = "idle";
+    await tick();
+    outsideStage?.focusShown();
+  }
 
   function rapidToggle(): void {
     key = "beta";
@@ -132,6 +157,51 @@
 <div data-testid="scaled-stage" style="width: 240px; transform: scale(0.8);">
   <Crossfade key="scaled" duration={80} animateHeight>
     <div style="height: 125px;">scaled panel</div>
+  </Crossfade>
+</div>
+
+<!-- A control that swaps itself out, like Play trading places with the
+     playing controls. -->
+<output data-testid="focus-after-swap">{focusAfterSwap}</output>
+<div data-testid="focus-stage">
+  <Crossfade
+    key={focusKey}
+    duration={80}
+    mode="swap"
+    label={focusKey === "finished" ? "Playback finished" : undefined}
+  >
+    {#if focusKey === "idle"}
+      <button type="button" onclick={play}>Play</button>
+    {:else if focusKey === "playing"}
+      <button type="button" onclick={() => (focusKey = "idle")}
+        >Keep building</button
+      >
+      <button type="button" onclick={() => (focusKey = "finished")}
+        >Finish</button
+      >
+    {:else}
+      <p>Finished</p>
+    {/if}
+  </Crossfade>
+</div>
+
+<!-- Controls outside the keyed region, like a phone layout that shows the
+     playing controls under the player. -->
+<button type="button" onclick={playAndStopFromOutside}
+  >Play and stop from outside</button
+>
+<div data-testid="outside-stage">
+  <Crossfade
+    bind:this={outsideStage}
+    key={outsideKey}
+    duration={80}
+    mode="swap"
+  >
+    {#if outsideKey === "idle"}
+      <button type="button">Idle action</button>
+    {:else}
+      <p>Playing</p>
+    {/if}
   </Crossfade>
 </div>
 

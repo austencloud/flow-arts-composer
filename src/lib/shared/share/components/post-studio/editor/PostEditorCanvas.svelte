@@ -1,6 +1,7 @@
 <script lang="ts">
-  import { tick, untrack } from "svelte";
+  import { onMount, tick, untrack } from "svelte";
   import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { getKeyboardShortcutManager } from "$lib/shared/keyboard/get-keyboard-shortcut-manager";
   import { DURATION } from "$lib/shared/transitions/transitions";
   import {
     motionDuration,
@@ -9,12 +10,33 @@
   import { LAYOUT_MOTION_EASING } from "$lib/shared/transitions/layout-flip";
   import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
   import type { SequenceExportOptions } from "$lib/shared/render/domain/models/sequence-export-options";
-  import type { HandLabeling } from "$lib/shared/video-collaboration/domain/hand-labeling";
   import type { CompositionSourceBinding } from "$lib/shared/media-composition/state/media-composition-state.svelte";
-  import type { EvaluatedFrameLayer } from "$lib/shared/media-composition/services/frame-evaluator";
+  import {
+    resolvePresetTimePoint,
+    fadeBlackOpacityAt,
+    type EvaluatedFrameLayer,
+  } from "$lib/shared/media-composition/services/frame-evaluator";
+  import {
+    previewClockStep,
+    type PreviewVideoController,
+  } from "$lib/shared/media-composition/services/post-preview-clock";
   import type { PresetClip } from "$lib/shared/media-composition/domain/media-composition-preset-schema";
   import type { PostEditorState } from "$lib/shared/media-composition/state/post-editor-state.svelte";
-  import { toPaintFrame } from "$lib/shared/media-composition/services/post-studio-layer-painter";
+  import {
+    paintSurfaceGeometry,
+    toPaintFrame,
+  } from "$lib/shared/media-composition/services/post-studio-layer-painter";
+  import { backdropLayer } from "$lib/shared/media-composition/services/post-backdrop-painter";
+  import {
+    regionEdgePixels,
+    shadowDropInRegion,
+  } from "$lib/shared/media-composition/services/region-edge-painter";
+  import type { LayoutRegion } from "$lib/shared/media-composition/domain/media-layout-schema";
+  import {
+    itemIdFromClipId,
+    itemIdFromStaffEffectRole,
+  } from "$lib/shared/media-composition/domain/post-project-compiler";
+  import { planProjectAudio } from "$lib/shared/media-composition/domain/post-audio-plan";
   import {
     ANIMATION_OVERLAY_ROLE,
     STRIP_AREA,
@@ -26,25 +48,55 @@
     POST_MIN_ZOOM,
     POST_TIME_EPSILON,
     itemEnd,
+    findItem,
+    mainItemAt,
     type PostBox,
     type PostItem,
+    type PostSourceGeometry,
     type PostVideoItem,
   } from "$lib/shared/media-composition/domain/post-project";
   import { updateItemAt } from "$lib/shared/media-composition/domain/post-project-edits";
+  import { tunnelHookChromeOpacity } from "$lib/shared/media-composition/domain/tunnel-hook";
+  import { posterQrAppearance } from "../post-qr-image-appearance";
+  import { dragSourceCrop, type SourceCropHandle } from "./post-source-crop";
   import {
     boxAt,
+    channelValueAt,
     framingAt,
   } from "$lib/shared/media-composition/domain/post-project-keyframes";
+  import {
+    postOutputSize,
+    postSafeArea,
+  } from "$lib/shared/media-composition/domain/post-canvas";
+  import PostStudioBackdrop from "../PostStudioBackdrop.svelte";
   import PostStudioMediaLayer from "../PostStudioMediaLayer.svelte";
+  import {
+    cardOptionsForItem,
+    animationAppearanceForItem,
+    tunnelHidesMandala,
+  } from "../post-item-render-options";
   import PostStudioPaintedLayer from "../PostStudioPaintedLayer.svelte";
   import {
     BOX_CORNERS,
     BOX_NUDGE,
     BOX_SIDES,
+    NO_GUIDES,
+    TURN_HANDLE_GAP,
+    boxContains,
+    boxTurn,
     dragBox,
+    handleCursor,
+    intoTurnedBox,
+    turnBox,
+    turnHandleSide,
     type BoxGuides,
     type BoxHandle,
   } from "./post-box-drag";
+  import { keepsShape, keptBox, shownBox } from "./post-item-rect";
+  import {
+    dragSourceGeometry,
+    scaleSourceGeometry,
+  } from "./post-source-geometry";
   import {
     PICTURE_NUDGE,
     dragPicturePan,
@@ -54,17 +106,30 @@
   } from "./post-picture-pan-drag";
   import {
     CROP_CORNERS,
-    cornerFrame,
-    cornerPoint,
-    cornerScaleAt,
-    cornerScaleRange,
+    CROP_SIDES,
+    cameraDisplayScale,
+    cameraWindowCenter,
+    cropCamera,
     cropWindowScale,
-    settleTransform,
-    type CropCorner,
+    handlePoint,
+    handleScaleAt,
+    handleScaleRange,
+    type CropCamera,
+    type CropHandle,
     type CropPoint,
     type CropPose,
     type CropSize,
   } from "./post-crop-geometry";
+  import {
+    boxPicture,
+    frameGlideStart,
+    glideStart,
+    stagePicture,
+    transformOfStyle,
+    transformPicture,
+    type StageFrame,
+    type StageTransform,
+  } from "./post-crop-glide";
   import type { CropSession } from "./post-crop-session.svelte";
 
   /**
@@ -79,13 +144,13 @@
     bindingFor: (role: string) => CompositionSourceBinding | null;
     labelFor: (item: PostItem) => string;
     cardRenderOptions?: Partial<SequenceExportOptions> | null;
-    handLabeling?: HandLabeling | null;
     /** The record a scan of the card opens: the source, not a labeled copy. */
     qrSequence?: SequenceData;
     /** Outline the strip so prop ends can be framed clear of it. */
     showStripGuide?: boolean;
     /** Selecting and dragging boxes; off while a render or a share runs. */
     interactive?: boolean;
+    exporting?: boolean;
     /**
      * The crop screen's session. While it holds a clip the canvas is the crop
      * stage: that clip's window fitted large in the middle, the rest of its
@@ -93,6 +158,10 @@
      * still mounted.
      */
     crop?: CropSession | null;
+    /** Imported footage opens at its precise source edges; framing controls show the composed clip. */
+    cropSourceView?: boolean;
+    /** Keep the current source aspect until Free is explicitly chosen. */
+    keepSourceCropRatio?: boolean;
     /** A region's footage has reported its own size. */
     onSourceSize?: (regionId: string, size: CropSize) => void;
     root?: HTMLElement | null;
@@ -104,11 +173,13 @@
     bindingFor,
     labelFor,
     cardRenderOptions = null,
-    handLabeling = null,
     qrSequence,
     showStripGuide = false,
     interactive = true,
+    exporting = false,
     crop = null,
+    cropSourceView = true,
+    keepSourceCropRatio = true,
     onSourceSize,
     root = $bindable(null),
   }: Props = $props();
@@ -124,9 +195,59 @@
 
   const hintId = $props.id();
   const preset = $derived(editor.compiled?.preset ?? null);
+  const transitionBlack = $derived(
+    preset
+      ? fadeBlackOpacityAt(
+          preset,
+          editor.durationSeconds,
+          editor.previewSeconds
+        )
+      : 0
+  );
+  const previewAudioSegments = $derived(
+    editor.compiled?.videoSegments.filter((segment) => segment.volume > 0) ?? []
+  );
+  const previewAudioPlan = $derived(
+    editor.compiled
+      ? planProjectAudio(editor.compiled, editor.project.audio)
+      : []
+  );
+
+  function previewGain(entry: RegionEntry): number {
+    if (!interactive || !editor.isPlaying || !entry.live) return 0;
+    const index = previewAudioSegments.findIndex(
+      (segment) => segment.itemId === itemIdFromClipId(entry.clip.id)
+    );
+    const segment = previewAudioPlan[index];
+    if (!segment) return 0;
+    const elapsed = editor.previewSeconds - segment.postStartSeconds;
+    if (elapsed < 0 || elapsed >= segment.durationSeconds) return 0;
+    const edgeFade = 0.008;
+    let envelope = 1;
+    const fadeIn = segment.crossfadeInSeconds ?? edgeFade;
+    const fadeOut = segment.crossfadeOutSeconds ?? edgeFade;
+    if (fadeIn > 0) envelope = Math.min(envelope, elapsed / fadeIn);
+    if (fadeOut > 0)
+      envelope = Math.min(
+        envelope,
+        (segment.durationSeconds - elapsed) / fadeOut
+      );
+    return Math.max(0, Math.min(1, envelope * (segment.gain ?? 1)));
+  }
+  /** The post's size, before anything is on it too. */
+  const outputSize = $derived(
+    preset?.output ?? postOutputSize(editor.project.canvas)
+  );
   const visible = $derived(
     new Map(editor.frameLayers.map((layer) => [layer.clipId, layer]))
   );
+  /** The main clip the blurred background shows, when the post has one. */
+  const backdrop = $derived(
+    preset ? backdropLayer(preset, editor.frameLayers) : null
+  );
+  /** The clip on the crop screen, while it is open. */
+  const cropItem = $derived(interactive ? (crop?.item ?? null) : null);
+  const cropping = $derived(cropItem !== null);
   /** The crop screen shows its clip even where a fade leaves it clear. */
   const present = $derived(
     cropping
@@ -185,6 +306,104 @@
     return out;
   });
 
+  // The tunnel carries none of the canvas's notation; grid, glyph and step
+  // number fade in as the item's opening ends and it carries on as the
+  // ordinary animation, on the same canvas.
+  function hookChromeOpacity(regionId: string): number {
+    const item = findItem(editor.project, regionId)?.item;
+    if (item?.kind !== "animation" || !item.tunnelHook) return 1;
+    const introEnd = item.start + (item.tunnelHook.seconds ?? item.duration);
+    return tunnelHookChromeOpacity(editor.previewSeconds - introEnd);
+  }
+
+  const playbackVideos = new Map<string, PreviewVideoController>();
+  let masterVideoKey: string | null = null;
+
+  function registerPlaybackVideo(
+    regionId: string,
+    role: string,
+    controller: PreviewVideoController | null
+  ): void {
+    const key = `${regionId}:${role}`;
+    if (controller) playbackVideos.set(key, controller);
+    else playbackVideos.delete(key);
+  }
+
+  function requiredPlaybackVideos() {
+    return [...entries].flatMap(([regionId, layers]) =>
+      layers.flatMap((entry) => {
+        const binding = bindingFor(entry.role);
+        const video =
+          binding?.previewType === "video" || binding?.kind === "video";
+        if (!entry.live || !video || binding?.renderMode !== "external-media")
+          return [];
+        // The evaluator includes a clip's final instant for still captures.
+        // Playback must release an outgoing master there, or its decoder can
+        // pin the clock at the cut before the incoming video's clock takes over.
+        const end = resolvePresetTimePoint(
+          entry.clip.end,
+          editor.durationSeconds,
+          preset!.markers
+        );
+        if (end < editor.durationSeconds && editor.previewSeconds >= end)
+          return [];
+        if (cropping && regionId !== cropItem?.id) return [];
+        const key = `${regionId}:${entry.role}`;
+        return [{ entry, key, controller: playbackVideos.get(key) }];
+      })
+    );
+  }
+
+  export function alignPlayback(): void {
+    for (const { controller } of requiredPlaybackVideos()) controller?.align();
+  }
+
+  export function playbackStep(wallDeltaSeconds: number): number {
+    const required = requiredPlaybackVideos();
+    // Audible footage sets the clock during an overlap. Both clips still
+    // have to be ready before either may run.
+    if (!required.some(({ key }) => key === masterVideoKey)) {
+      required.sort((a, b) => previewGain(b.entry) - previewGain(a.entry));
+      masterVideoKey = required[0]?.key ?? null;
+    }
+    required.sort(
+      (a, b) =>
+        Number(b.key === masterVideoKey) - Number(a.key === masterVideoKey)
+    );
+    const media = required.map(({ entry, controller }) => ({
+      ...(controller?.read() ?? { currentTime: 0, ready: false, ended: false }),
+      targetTime: entry.layer.sourceTimeSeconds,
+      playbackRate: entry.clip.playbackRate ?? 1,
+    }));
+    let nextBoundary = Infinity;
+    if (preset) {
+      for (const clip of preset.clips) {
+        if (clip.kind !== "visual") continue;
+        for (const point of [clip.start, clip.end]) {
+          const seconds = resolvePresetTimePoint(
+            point,
+            editor.durationSeconds,
+            preset.markers
+          );
+          if (seconds > editor.previewSeconds + 1e-7)
+            nextBoundary = Math.min(nextBoundary, seconds);
+        }
+      }
+    }
+    const step = previewClockStep(
+      editor.previewSeconds,
+      wallDeltaSeconds,
+      media,
+      nextBoundary
+    );
+    const requiredControllers = new Set(
+      required.map(({ controller }) => controller)
+    );
+    for (const controller of playbackVideos.values())
+      controller.hold(step.waiting || !requiredControllers.has(controller));
+    return step.deltaSeconds;
+  }
+
   function parkedLayer(clip: VisualClip): EvaluatedFrameLayer {
     const sourceIn = clip.sourceIn.unit === "seconds" ? clip.sourceIn.value : 0;
     return {
@@ -195,6 +414,51 @@
       sourceTimeSeconds: sourceIn,
       projectProgress: 0,
       transform: clip.transform,
+    };
+  }
+
+  interface EdgeStyle {
+    radius: string;
+    shadow: string | undefined;
+    border: string | undefined;
+    color: string;
+    opacity: number;
+  }
+
+  /**
+   * A clip's corners, border and shadow at the stage's size, measured as the
+   * export measures them. They fade with the clip, and the crop screen shows
+   * the picture without them. A turned clip's shadow still drops straight
+   * down the frame.
+   */
+  function edgeStyle(
+    region: LayoutRegion,
+    rect: { width: number; height: number; turn?: number },
+    list: readonly RegionEntry[]
+  ): EdgeStyle | null {
+    if (!region.edge || cropping || stageWidth <= 0 || stageHeight <= 0) {
+      return null;
+    }
+    const opacity = Math.max(
+      0,
+      ...list.map((entry) => (entry.live ? entry.layer.opacity : 0))
+    );
+    const pixels = regionEdgePixels(
+      region.edge,
+      { width: rect.width * stageWidth, height: rect.height * stageHeight },
+      { width: stageWidth, height: stageHeight }
+    );
+    const shadow = pixels.shadow;
+    const drop = shadow && shadowDropInRegion(shadow.drop, rect.turn ?? 0);
+    return {
+      radius: `${pixels.radius}px`,
+      shadow:
+        shadow && drop && opacity > 0
+          ? `${drop.x}px ${drop.y}px ${shadow.blur}px rgb(0 0 0 / ${shadow.alpha * opacity})`
+          : undefined,
+      border: pixels.border > 0 ? `${pixels.border}px` : undefined,
+      color: pixels.color,
+      opacity,
     };
   }
 
@@ -275,15 +539,48 @@
    * left to show for it.
    */
   function isPictureDragTarget(item: PostItem, box: PostBox): boolean {
-    return item.kind === "video" && fillsFrame(box);
+    return (
+      item.kind === "video" &&
+      !sourceGeometryAt(item, editor.previewSeconds) &&
+      fillsFrame(box)
+    );
+  }
+
+  function sourceGeometryAt(
+    item: PostItem,
+    seconds: number
+  ): PostSourceGeometry | null {
+    if (item.kind !== "video" && item.kind !== "image") return null;
+    if (!item.sourceGeometry && !item.keyframes?.sourceGeometry?.length)
+      return null;
+    return channelValueAt(item, "sourceGeometry", seconds);
+  }
+
+  function shownItemBox(item: PostItem, seconds: number): PostBox {
+    const geometry = sourceGeometryAt(item, seconds);
+    return geometry
+      ? {
+          x: geometry.x,
+          y: geometry.y,
+          width: geometry.width,
+          height: geometry.height,
+          turn: geometry.rotation,
+        }
+      : shownBox(editor, item, seconds);
   }
 
   interface BoxDrag {
     kind: "box";
     pointerId: number;
     itemId: string;
+    /** The item as the drag found it; its shape holds for the drag. */
+    item: PostItem;
     handle: BoxHandle;
+    /** Where it showed, which the handle moves. */
     startBox: PostBox;
+    /** Its box, which a shaped clip keeps its room from. */
+    startSpot: PostBox;
+    startGeometry?: PostSourceGeometry;
     startSeconds: number;
     startX: number;
     startY: number;
@@ -308,14 +605,46 @@
     fit: "cover" | "contain";
     zoom: number;
     rotation: number;
+    /** The box's own turn, which the drag is turned back out of. */
+    turn: number;
     moved: boolean;
   }
 
-  type Drag = BoxDrag | PictureDrag;
+  /** The turn handle swinging the whole box about its centre. */
+  interface TurnDrag {
+    kind: "turn";
+    pointerId: number;
+    itemId: string;
+    /** Its box, which the turn keeps all but the angle of. */
+    startSpot: PostBox;
+    startGeometry?: PostSourceGeometry;
+    startSeconds: number;
+    startX: number;
+    startY: number;
+    /** The box's centre, in client pixels. */
+    centreX: number;
+    centreY: number;
+    /** The pointer's angle about the centre as the drag began, in degrees. */
+    startAngle: number;
+    moved: boolean;
+  }
+
+  type Drag = BoxDrag | PictureDrag | TurnDrag;
 
   let drag: Drag | null = null;
-  let guides = $state<BoxGuides>({ vertical: false, horizontal: false });
+  let guides = $state.raw<BoxGuides>(NO_GUIDES);
+  /** A box, a picture or a pinch is moving: the grid and safe area show. */
   let dragging = $state(false);
+  /**
+   * A turn in progress: the side its handle keeps until the drag ends, so
+   * it never jumps under the pointer, and the angle so far.
+   */
+  let turning = $state.raw<{
+    side: "above" | "below" | "inside";
+    degrees: number;
+  } | null>(null);
+  /** What Instagram leaves uncovered on this post's shape, if it covers any. */
+  const safeArea = $derived(postSafeArea(editor.project.canvas));
   /** A press this small is a tap, not a move. */
   const TAP_PIXELS = 4;
 
@@ -326,17 +655,18 @@
     const y = (event.clientY - rect.top) / rect.height;
     const seconds = editor.previewSeconds;
     return (
-      itemsHere.find((item) => {
-        const box = boxAt(item, seconds);
-        return (
-          x >= box.x &&
-          x <= box.x + box.width &&
-          y >= box.y &&
-          y <= box.y + box.height
-        );
-      }) ?? null
+      itemsHere.find((item) =>
+        boxContains(shownItemBox(item, seconds), x, y, rect.width / rect.height)
+      ) ?? null
     );
   }
+
+  /** The pointer's angle about a point, in degrees clockwise from east. */
+  function angleAbout(x: number, y: number, event: PointerEvent): number {
+    return (Math.atan2(event.clientY - y, event.clientX - x) * 180) / Math.PI;
+  }
+
+  const degreesLabel = (value: number) => `${Number(value.toFixed(1))}°`;
 
   /** The mounted video's own pixel size, or zero until it has loaded. */
   function mountedVideoSize(itemId: string): { width: number; height: number } {
@@ -358,7 +688,7 @@
     editor.pause();
     (event.currentTarget as HTMLElement).setPointerCapture(event.pointerId);
     const seconds = editor.previewSeconds;
-    const box = boxAt(item, seconds);
+    const box = shownItemBox(item, seconds);
 
     if (handle === "move" && isPictureDragTarget(item, box)) {
       const video = item as PostVideoItem;
@@ -380,6 +710,7 @@
         fit: video.fit,
         zoom: framing.zoom,
         rotation: framing.rotation,
+        turn: boxTurn(box),
         moved: false,
       };
       return;
@@ -389,8 +720,11 @@
       kind: "box",
       pointerId: event.pointerId,
       itemId: item.id,
+      item,
       handle,
       startBox: box,
+      startSpot: boxAt(item, seconds),
+      startGeometry: sourceGeometryAt(item, seconds) ?? undefined,
       startSeconds: seconds,
       startX: event.clientX,
       startY: event.clientY,
@@ -400,11 +734,57 @@
     };
   }
 
-  /** A press on the frame selects what is on top there, ready to drag. */
+  /** The turn handle, pressed: the box turns about its centre as it goes. */
+  function startTurn(event: PointerEvent, item: PostItem): void {
+    if (!root || event.button !== 0) return;
+    const rect = root.getBoundingClientRect();
+    if (rect.width <= 0 || rect.height <= 0) return;
+    event.preventDefault();
+    event.stopPropagation();
+    releaseDrag(true);
+    editor.pause();
+    (event.currentTarget as HTMLElement).setPointerCapture(event.pointerId);
+    const seconds = editor.previewSeconds;
+    const box = shownItemBox(item, seconds);
+    const centreX = rect.left + (box.x + box.width / 2) * rect.width;
+    const centreY = rect.top + (box.y + box.height / 2) * rect.height;
+    drag = {
+      kind: "turn",
+      pointerId: event.pointerId,
+      itemId: item.id,
+      startSpot: boxAt(item, seconds),
+      startGeometry: sourceGeometryAt(item, seconds) ?? undefined,
+      startSeconds: seconds,
+      startX: event.clientX,
+      startY: event.clientY,
+      centreX,
+      centreY,
+      startAngle: angleAbout(centreX, centreY, event),
+      moved: false,
+    };
+    turning = {
+      side: turnHandleSide(box, { width: rect.width, height: rect.height }),
+      degrees: boxTurn(box),
+    };
+  }
+
+  /**
+   * A press on the frame selects what is on top there, ready to drag. While
+   * an animation's opening tunnel plays, that is the tunnel.
+   */
   function pressFrame(event: PointerEvent): void {
     if (!interactive || event.button !== 0) return;
     const hit = hitTest(event);
-    editor.selectedItemId = hit?.id ?? null;
+    const hitItem = hit ? findItem(editor.project, hit.id)?.item : null;
+    if (
+      hit &&
+      hitItem?.kind === "animation" &&
+      hitItem.tunnelHook?.seconds !== undefined &&
+      editor.previewSeconds <
+        hitItem.start + hitItem.tunnelHook.seconds - POST_TIME_EPSILON
+    )
+      editor.selectTunnel(hit.id);
+    else editor.selectedItemId = hit?.id ?? null;
     if (hit && !trackLocked(hit.id)) startDrag(event, hit, "move");
   }
 
@@ -428,6 +808,11 @@
     const itemId = current.itemId;
     const seconds = current.startSeconds;
     if (current.kind === "picture") {
+      const [deltaXPx, deltaYPx] = intoTurnedBox(
+        pixelsX,
+        pixelsY,
+        current.turn
+      );
       const result = dragPicturePan({
         sourceWidth: current.sourceWidth,
         sourceHeight: current.sourceHeight,
@@ -438,8 +823,8 @@
         rotation: current.rotation,
         startPanX: current.startPanX,
         startPanY: current.startPanY,
-        deltaXPx: pixelsX,
-        deltaYPx: pixelsY,
+        deltaXPx,
+        deltaYPx,
       });
       editor.gestureStep((base, context) =>
         updateItemAt(
@@ -452,16 +837,52 @@
       );
       return;
     }
+    if (current.kind === "turn") {
+      // Alt turns freely and Shift in steps, as a move's Alt skips its snaps.
+      const turn = turnBox(
+        current.startGeometry
+          ? { ...current.startSpot, turn: current.startGeometry.rotation }
+          : current.startSpot,
+        angleAbout(current.centreX, current.centreY, event) -
+          current.startAngle,
+        event.altKey ? "free" : event.shiftKey ? "step" : "snap"
+      );
+      if (turning) turning = { ...turning, degrees: turn };
+      const patch = current.startGeometry
+        ? { sourceGeometry: { ...current.startGeometry, rotation: turn } }
+        : { box: { ...current.startSpot, turn } };
+      editor.gestureStep((base, context) =>
+        updateItemAt(base, itemId, patch, seconds, context)
+      );
+      return;
+    }
+    if (current.startGeometry) {
+      const sourceGeometry = dragSourceGeometry(
+        current.startGeometry,
+        current.handle,
+        pixelsX,
+        pixelsY,
+        current.width,
+        current.height
+      );
+      editor.gestureStep((base, context) =>
+        updateItemAt(base, itemId, { sourceGeometry }, seconds, context)
+      );
+      return;
+    }
     const result = dragBox(
       current.startBox,
       current.handle,
       pixelsX / current.width,
       pixelsY / current.height,
-      !event.altKey
+      !event.altKey,
+      safeArea,
+      current.width / current.height
     );
     guides = result.guides;
+    const box = keptBox(editor, current.item, result.box, current.startSpot);
     editor.gestureStep((base, context) =>
-      updateItemAt(base, itemId, { box: result.box }, seconds, context)
+      updateItemAt(base, itemId, { box }, seconds, context)
     );
   }
 
@@ -471,7 +892,8 @@
     if (!current) return;
     drag = null;
     dragging = false;
-    guides = { vertical: false, horizontal: false };
+    guides = NO_GUIDES;
+    turning = null;
     if (!current.moved) return;
     if (keep) editor.endGesture();
     else editor.cancelGesture();
@@ -502,19 +924,33 @@
     event.preventDefault();
     event.stopPropagation();
     const seconds = editor.previewSeconds;
-    const current = boxAt(item, seconds);
+    const current = shownItemBox(item, seconds);
+    const geometry = sourceGeometryAt(item, seconds);
+    if (geometry) {
+      const step = event.shiftKey ? BOX_NUDGE.large : BOX_NUDGE.step;
+      const sourceGeometry = {
+        ...geometry,
+        x: geometry.x + direction[0] * step,
+        y: geometry.y + direction[1] * step,
+      };
+      editor.editSetting(`${item.id}:source-position`, (project, context) =>
+        updateItemAt(project, item.id, { sourceGeometry }, seconds, context)
+      );
+      return;
+    }
     if (item.kind === "video" && isPictureDragTarget(item, current)) {
       nudgePicture(item, current, direction, event.shiftKey, seconds);
       return;
     }
     const step = event.shiftKey ? BOX_NUDGE.large : BOX_NUDGE.step;
-    const box = dragBox(
+    const moved = dragBox(
       current,
       "move",
       direction[0] * step,
       direction[1] * step,
       false
     ).box;
+    const box = keptBox(editor, item, moved, boxAt(item, seconds));
     editor.edit((project, context) =>
       updateItemAt(project, item.id, { box }, seconds, context)
     );
@@ -531,6 +967,12 @@
     const rect = root.getBoundingClientRect();
     const framing = framingAt(item, seconds);
     const size = mountedVideoSize(item.id);
+    // The picture moves the way the key points on screen, turned box or not.
+    const [directionX, directionY] = intoTurnedBox(
+      direction[0],
+      direction[1],
+      boxTurn(box)
+    );
     const pan = nudgePicturePan({
       sourceWidth: size.width,
       sourceHeight: size.height,
@@ -541,8 +983,8 @@
       rotation: framing.rotation,
       panX: framing.panX,
       panY: framing.panY,
-      directionX: direction[0],
-      directionY: direction[1],
+      directionX,
+      directionY,
       step: large ? PICTURE_NUDGE.large : PICTURE_NUDGE.step,
     });
     if (pan.panX === framing.panX && pan.panY === framing.panY) return;
@@ -573,12 +1015,45 @@
     }
     if (!(event.ctrlKey || event.metaKey)) return;
     const item = selected;
-    if (!item || item.kind !== "video" || trackLocked(item.id)) return;
+    if (
+      !item ||
+      (item.kind !== "video" && item.kind !== "image") ||
+      trackLocked(item.id)
+    )
+      return;
     // A ctrl/cmd + wheel zoom - a trackpad pinch reports the same way - is a
     // deliberate replacement for the page's own zoom.
     event.preventDefault();
     editor.pause();
     const seconds = editor.previewSeconds;
+    const sourceGeometry = sourceGeometryAt(item, seconds);
+    if (sourceGeometry) {
+      const rect = root?.getBoundingClientRect();
+      if (!rect) return;
+      const factor = Math.max(
+        0.5,
+        Math.min(2, Math.exp(-event.deltaY * 0.001))
+      );
+      const next = scaleSourceGeometry(
+        sourceGeometry,
+        factor,
+        0,
+        0,
+        rect.width,
+        rect.height
+      );
+      editor.editSetting(`${item.id}:source-size`, (project, context) =>
+        updateItemAt(
+          project,
+          item.id,
+          { sourceGeometry: next },
+          seconds,
+          context
+        )
+      );
+      return;
+    }
+    if (item.kind !== "video") return;
     const framing = framingAt(item, seconds);
     const zoom = zoomFromWheelDelta(
       framing.zoom,
@@ -599,6 +1074,7 @@
 
   interface PinchState {
     itemId: string;
+    sourceGeometry?: PostSourceGeometry;
     pointerA: number;
     pointerB: number;
     posA: PinchPoint;
@@ -616,6 +1092,8 @@
     sourceHeight: number;
     fit: "cover" | "contain";
     rotation: number;
+    /** The box's own turn, which the fingers' slide is turned back out of. */
+    turn: number;
     moved: boolean;
   }
 
@@ -634,7 +1112,15 @@
   /** A second finger landing anywhere on the frame pinches a selected video. */
   function startPinch(): void {
     const item = selected;
-    if (!root || !item || item.kind !== "video" || trackLocked(item.id)) return;
+    if (
+      !root ||
+      !item ||
+      (item.kind !== "video" && item.kind !== "image") ||
+      trackLocked(item.id)
+    )
+      return;
+    if (item.kind === "image" && !sourceGeometryAt(item, editor.previewSeconds))
+      return;
     const [first, second] = [...touchPoints.entries()];
     if (touchPoints.size !== 2 || !first || !second) return;
     const [idA, posA] = first;
@@ -644,13 +1130,20 @@
     releaseDrag(true);
     const rect = root.getBoundingClientRect();
     const seconds = editor.previewSeconds;
-    const box = boxAt(item, seconds);
-    const framing = framingAt(item, seconds);
-    const size = mountedVideoSize(item.id);
+    const box = shownItemBox(item, seconds);
+    const framing =
+      item.kind === "video"
+        ? framingAt(item, seconds)
+        : { zoom: 1, panX: 0, panY: 0, rotation: 0 };
+    const size =
+      item.kind === "video"
+        ? mountedVideoSize(item.id)
+        : { width: 0, height: 0 };
     editor.pause();
     const mid = midpointOf(posA, posB);
     pinch = {
       itemId: item.id,
+      sourceGeometry: sourceGeometryAt(item, seconds) ?? undefined,
       pointerA: idA,
       pointerB: idB,
       posA,
@@ -666,8 +1159,9 @@
       regionHeightPx: box.height * rect.height,
       sourceWidth: size.width,
       sourceHeight: size.height,
-      fit: item.fit,
+      fit: item.kind === "video" ? item.fit : "contain",
       rotation: framing.rotation,
+      turn: boxTurn(box),
       moved: false,
     };
   }
@@ -692,6 +1186,38 @@
       dragging = true;
       editor.beginGesture();
     }
+    if (current.sourceGeometry) {
+      const rect = root?.getBoundingClientRect();
+      if (!rect) return;
+      const factor = current.distance > 0 ? distance / current.distance : 1;
+      const next = scaleSourceGeometry(
+        current.sourceGeometry,
+        factor,
+        mid.x - current.midX,
+        mid.y - current.midY,
+        rect.width,
+        rect.height
+      );
+      current.sourceGeometry = next;
+      current.distance = distance;
+      current.midX = mid.x;
+      current.midY = mid.y;
+      editor.gestureStep((base, context) =>
+        updateItemAt(
+          base,
+          current.itemId,
+          { sourceGeometry: next },
+          current.startSeconds,
+          context
+        )
+      );
+      return;
+    }
+    const [slideX, slideY] = intoTurnedBox(
+      mid.x - current.midX,
+      mid.y - current.midY,
+      current.turn
+    );
     const step = stepPicturePinch({
       sourceWidth: current.sourceWidth,
       sourceHeight: current.sourceHeight,
@@ -703,8 +1229,8 @@
       panX: current.panX,
       panY: current.panY,
       distanceRatio: current.distance > 0 ? distance / current.distance : 1,
-      midpointDeltaXPx: mid.x - current.midX,
-      midpointDeltaYPx: mid.y - current.midY,
+      midpointDeltaXPx: slideX,
+      midpointDeltaYPx: slideY,
       minZoom: POST_MIN_ZOOM,
       maxZoom: POST_MAX_ZOOM,
     });
@@ -743,6 +1269,12 @@
 
   function cancelOnEscape(event: KeyboardEvent): void {
     if (event.key !== "Escape") return;
+    if (sourceDrag) {
+      cancelSourceDrag();
+      event.preventDefault();
+      event.stopPropagation();
+      return;
+    }
     if (cancelCropGesture()) {
       event.preventDefault();
       event.stopPropagation();
@@ -762,13 +1294,179 @@
 
   // ---- The crop screen -------------------------------------------------------
 
-  /** The clip on the crop screen, while it is open. */
-  const cropItem = $derived(interactive ? (crop?.item ?? null) : null);
-  const cropping = $derived(cropItem !== null);
+  const sourceCropping = $derived(
+    cropSourceView &&
+      cropItem !== null &&
+      sourceGeometryAt(cropItem, editor.previewSeconds) !== null
+  );
 
   /** The canvas's own size: on the crop screen, the stage's. */
   let stageWidth = $state(0);
   let stageHeight = $state(0);
+  const sourceRect = $derived.by((): ScreenRect | null => {
+    if (!sourceCropping || stageWidth <= 0 || stageHeight <= 0) return null;
+    const size = crop?.source;
+    const ratio = size ? size.width / size.height : stageWidth / stageHeight;
+    const scale = Math.min((stageWidth * 0.84) / ratio, stageHeight * 0.84);
+    const width = ratio * scale;
+    return {
+      left: (stageWidth - width) / 2,
+      top: (stageHeight - scale) / 2,
+      width,
+      height: scale,
+    };
+  });
+  const sourceFrame = $derived.by((): ScreenRect | null => {
+    const rect = sourceRect;
+    const geometry = cropItem
+      ? sourceGeometryAt(cropItem, editor.previewSeconds)
+      : null;
+    if (!rect || !geometry) return null;
+    const { left, top, right, bottom } = geometry.crop;
+    return {
+      left: rect.left + left * rect.width,
+      top: rect.top + top * rect.height,
+      width: (right - left) * rect.width,
+      height: (bottom - top) * rect.height,
+    };
+  });
+  const fullSourceGeometry: PostSourceGeometry = {
+    x: 0,
+    y: 0,
+    width: 1,
+    height: 1,
+    rotation: 0,
+    crop: { left: 0, top: 0, right: 1, bottom: 1 },
+  };
+  let sourceDrag: {
+    pointerId: number;
+    captureTarget: HTMLElement;
+    edge: SourceCropHandle;
+    x: number;
+    y: number;
+    geometry: PostSourceGeometry;
+    keepRatio: boolean;
+    itemId: string;
+    seconds: number;
+  } | null = null;
+  function releaseSourceCapture(active: NonNullable<typeof sourceDrag>): void {
+    if (active.captureTarget.hasPointerCapture(active.pointerId))
+      active.captureTarget.releasePointerCapture(active.pointerId);
+  }
+  function cancelSourceDrag(): void {
+    const active = sourceDrag;
+    if (!active) return;
+    sourceDrag = null;
+    editor.cancelGesture();
+    releaseSourceCapture(active);
+  }
+  onMount(() =>
+    getKeyboardShortcutManager().addInputSuppressor(
+      (event) => sourceDrag !== null && event.key === "Escape"
+    )
+  );
+  $effect(() => {
+    const inGesture = editor.inGesture;
+    if (!inGesture && sourceDrag) {
+      const active = sourceDrag;
+      sourceDrag = null;
+      releaseSourceCapture(active);
+    }
+  });
+  $effect(() => {
+    if (!sourceCropping) untrack(cancelSourceDrag);
+  });
+  function beginSourceDrag(event: PointerEvent, edge: SourceCropHandle): void {
+    const geometry = cropItem
+      ? sourceGeometryAt(cropItem, editor.previewSeconds)
+      : null;
+    if (
+      !geometry ||
+      !cropItem ||
+      !sourceRect ||
+      crop?.locked ||
+      sourceDrag ||
+      event.button !== 0 ||
+      !event.isPrimary ||
+      editor.inGesture
+    )
+      return;
+    event.preventDefault();
+    event.stopPropagation();
+    editor.pause();
+    editor.beginGesture();
+    const captureTarget = event.currentTarget as HTMLElement;
+    sourceDrag = {
+      pointerId: event.pointerId,
+      captureTarget,
+      edge,
+      x: event.clientX,
+      y: event.clientY,
+      geometry,
+      keepRatio: keepSourceCropRatio,
+      itemId: cropItem.id,
+      seconds: editor.previewSeconds,
+    };
+    captureTarget.setPointerCapture(event.pointerId);
+  }
+  function moveSourceDrag(event: PointerEvent): void {
+    const active = sourceDrag;
+    if (!active || event.pointerId !== active.pointerId || !sourceRect) return;
+    const dx = (event.clientX - active.x) / sourceRect.width;
+    const dy = (event.clientY - active.y) / sourceRect.height;
+    const next = dragSourceCrop(
+      active.geometry,
+      active.edge,
+      dx,
+      dy,
+      active.keepRatio
+    );
+    editor.gestureStep((project, context) =>
+      updateItemAt(
+        project,
+        active.itemId,
+        { sourceGeometry: next },
+        active.seconds,
+        context
+      )
+    );
+  }
+  function endSourceDrag(event: PointerEvent, keep: boolean): void {
+    const active = sourceDrag;
+    if (!active || event.pointerId !== active.pointerId) return;
+    sourceDrag = null;
+    if (keep) editor.endGesture();
+    else editor.cancelGesture();
+    releaseSourceCapture(active);
+  }
+  function sourceCropKey(event: KeyboardEvent): void {
+    if (
+      !cropItem ||
+      crop?.locked ||
+      event.altKey ||
+      event.ctrlKey ||
+      event.metaKey
+    )
+      return;
+    const direction = ARROW_DIRECTIONS[event.key];
+    const size = crop?.source;
+    const geometry = sourceGeometryAt(cropItem, editor.previewSeconds);
+    if (!direction || !size || !geometry) return;
+    event.preventDefault();
+    event.stopPropagation();
+    const count = event.shiftKey ? 10 : 1;
+    const next = dragSourceCrop(
+      geometry,
+      "move",
+      (direction[0] * count) / size.width,
+      (direction[1] * count) / size.height
+    );
+    const id = cropItem.id;
+    const seconds = editor.previewSeconds;
+    editor.editSetting(`${id}:source-crop-move`, (project, context) =>
+      updateItemAt(project, id, { sourceGeometry: next }, seconds, context)
+    );
+  }
 
   // Measured as soon as the screen opens, so the window is in place before
   // the flight into it is measured.
@@ -780,24 +1478,31 @@
 
   const cropWindowWidth = $derived(crop?.window?.width ?? 0);
   const cropWindowHeight = $derived(crop?.window?.height ?? 0);
-  const cropPoseReady = $derived(crop?.pose != null);
+  const cropPose = $derived(cropping ? (crop?.pose ?? null) : null);
 
   /**
-   * Screen pixels per output pixel on the crop stage. Worked out when the
-   * screen opens, when the stage or the slot changes size and once the
-   * footage's size is known; never from an edit, so the window holds still
-   * under the finger.
+   * Where the stage shows the clip's whole picture, with the window over its
+   * part of it. Between gestures it follows the crop; while a drag, pinch or
+   * handle runs it holds still, so the picture stays put and the frame moves.
    */
+  let heldCamera = $state.raw<CropCamera | null>(null);
+  const liveCamera = $derived.by((): CropCamera | null => {
+    if (!cropPose || stageWidth <= 0 || stageHeight <= 0) return null;
+    return cropCamera({
+      stage: { width: stageWidth, height: stageHeight },
+      pose: cropPose,
+    });
+  });
+  const camera = $derived(heldCamera ?? liveCamera);
+
+  /** Screen pixels per output pixel on the crop stage. */
   const displayScale = $derived.by(() => {
     if (!cropping || stageWidth <= 0 || stageHeight <= 0) return 0;
+    if (cropPose && camera) return cameraDisplayScale(cropPose, camera);
     if (cropWindowWidth <= 0 || cropWindowHeight <= 0) return 0;
-    const stage = { width: stageWidth, height: stageHeight };
-    const window = { width: cropWindowWidth, height: cropWindowHeight };
-    if (!cropPoseReady) return cropWindowScale({ stage, window });
     return cropWindowScale({
-      stage,
-      window,
-      pose: untrack(() => crop?.pose ?? null),
+      stage: { width: stageWidth, height: stageHeight },
+      window: { width: cropWindowWidth, height: cropWindowHeight },
     });
   });
 
@@ -808,24 +1513,42 @@
     height: number;
   }
 
-  /** The window on the stage, centred, in whole screen pixels. */
+  /**
+   * The window on the stage, over its part of the picture; centred until the
+   * footage's size is known.
+   */
   const windowRect = $derived.by((): ScreenRect | null => {
-    if (displayScale <= 0) return null;
-    const width = Math.max(1, Math.round(cropWindowWidth * displayScale));
-    const height = Math.max(1, Math.round(cropWindowHeight * displayScale));
+    if (displayScale <= 0 || cropWindowWidth <= 0 || cropWindowHeight <= 0)
+      return null;
+    const width = cropWindowWidth * displayScale;
+    const height = cropWindowHeight * displayScale;
+    const center =
+      cropPose && camera
+        ? cameraWindowCenter(cropPose, camera)
+        : { x: stageWidth / 2, y: stageHeight / 2 };
     return {
-      left: Math.round((stageWidth - width) / 2),
-      top: Math.round((stageHeight - height) / 2),
+      left: center.x - width / 2,
+      top: center.y - height / 2,
       width,
       height,
     };
   });
+
+  /** Where a gesture measures from: the window as the gesture began. */
+  interface GestureOrigin {
+    /** The window's centre, in client pixels. */
+    x: number;
+    y: number;
+    /** Screen pixels per output pixel. */
+    scale: number;
+  }
 
   interface CropDrag {
     pointerId: number;
     startX: number;
     startY: number;
     started: boolean;
+    origin: GestureOrigin;
   }
 
   interface CropPinch {
@@ -837,29 +1560,30 @@
     /** Output pixels from the window's centre. */
     startMidpoint: CropPoint;
     started: boolean;
+    origin: GestureOrigin;
   }
 
-  interface CornerDrag {
+  interface HandleDrag {
     pointerId: number;
-    corner: CropCorner;
-    /** Where on the handle it was taken, from the corner, in output pixels. */
+    handle: CropHandle;
+    /** Where on the handle it was taken, from its point, in output pixels. */
     grab: CropPoint;
     range: { min: number; max: number };
-    /** The frame's size as a share of the window. */
-    scale: number;
+    /** The window as the drag began, in output pixels. */
+    window: CropSize;
+    origin: GestureOrigin;
   }
 
   let cropDrag: CropDrag | null = null;
   let cropPinch: CropPinch | null = null;
-  let cornerDrag = $state<CornerDrag | null>(null);
-  /** A drag, pinch or corner is moving: the thirds show clearly. */
+  let handleDrag = $state<HandleDrag | null>(null);
+  /** A drag, pinch or handle is moving: the thirds show clearly. */
   let cropActive = $state(false);
-  /** How far past its limit the picture is pulled, in screen pixels. */
+  /** How far past its limit the frame is pulled, in screen pixels. */
   let rubber = $state<CropPoint>({ x: 0, y: 0 });
 
   /** The furthest a pull past the limit still shows, in screen pixels. */
   const RUBBER_RANGE_PX = 64;
-  const SPRING_EASING = "cubic-bezier(0.2, 0.8, 0.2, 1)";
   /** + and - zoom by this much about the window's centre. */
   const CROP_ZOOM_STEP = 1.1;
   /** Pixels a wheel scrolls per line, for wheels that count in lines. */
@@ -867,25 +1591,17 @@
   /** A wheel this long idle has finished, and what it left is announced. */
   const WHEEL_SETTLE_MS = 400;
 
-  /** The frame on the stage: the window, or where a held corner has it. */
+  /** The frame on the stage in whole pixels: the window, and any pull past it. */
   const frameRect = $derived.by((): ScreenRect | null => {
     const rect = windowRect;
-    const held = cornerDrag;
-    if (!rect || !held || held.scale === 1) return rect;
-    const frame = cornerFrame(
-      { width: cropWindowWidth, height: cropWindowHeight },
-      held.corner,
-      held.scale
-    );
-    const width = rect.width * held.scale;
-    const height = rect.height * held.scale;
+    if (!rect) return null;
+    const left = Math.round(rect.left + rubber.x);
+    const top = Math.round(rect.top + rubber.y);
     return {
-      left:
-        rect.left + rect.width / 2 + frame.center.x * displayScale - width / 2,
-      top:
-        rect.top + rect.height / 2 + frame.center.y * displayScale - height / 2,
-      width,
-      height,
+      left,
+      top,
+      width: Math.max(1, Math.round(rect.left + rubber.x + rect.width) - left),
+      height: Math.max(1, Math.round(rect.top + rubber.y + rect.height) - top),
     };
   });
 
@@ -896,21 +1612,41 @@
     untrack(() => {
       cropDrag = null;
       cropPinch = null;
-      cornerDrag = null;
+      handleDrag = null;
       cropActive = false;
+      heldCamera = null;
       rubber = { x: 0, y: 0 };
     });
   });
 
-  /** A client point in output pixels from the window's centre. */
-  function toWindowPoint(clientX: number, clientY: number): CropPoint | null {
+  /** The window's centre and scale now, for a gesture to measure from. */
+  function gestureOrigin(): GestureOrigin | null {
     const rect = windowRect;
     if (!root || !rect || displayScale <= 0) return null;
     const bounds = root.getBoundingClientRect();
     return {
-      x: (clientX - bounds.left - rect.left - rect.width / 2) / displayScale,
-      y: (clientY - bounds.top - rect.top - rect.height / 2) / displayScale,
+      x: bounds.left + rect.left + rect.width / 2,
+      y: bounds.top + rect.top + rect.height / 2,
+      scale: displayScale,
     };
+  }
+
+  /** A client point in output pixels from the window's centre at `origin`. */
+  function fromOrigin(
+    origin: GestureOrigin,
+    clientX: number,
+    clientY: number
+  ): CropPoint {
+    return {
+      x: (clientX - origin.x) / origin.scale,
+      y: (clientY - origin.y) / origin.scale,
+    };
+  }
+
+  /** A client point in output pixels from the window's centre. */
+  function toWindowPoint(clientX: number, clientY: number): CropPoint | null {
+    const origin = gestureOrigin();
+    return origin ? fromOrigin(origin, clientX, clientY) : null;
   }
 
   function cropRegionElement(): HTMLElement | null {
@@ -927,7 +1663,7 @@
       : RUBBER_RANGE_PX / displayScale;
   }
 
-  /** A new gesture takes the picture from wherever a flight or settle had it. */
+  /** A new gesture takes the frame from wherever a flight or settle had it. */
   function stopCropMotion(): void {
     for (const element of [cropRegionElement(), cropFrameElement()]) {
       for (const animation of element?.getAnimations() ?? [])
@@ -935,243 +1671,44 @@
     }
   }
 
-  /** A pull past the limit eases back to it. */
-  function springBack(): void {
-    const from = rubber;
-    if (from.x === 0 && from.y === 0) return;
-    rubber = { x: 0, y: 0 };
-    const region = cropRegionElement();
-    const duration = motionDuration(DURATION.normal);
-    if (!region || duration <= 0) return;
-    region.animate(
-      [{ translate: `${from.x}px ${from.y}px` }, { translate: "0px 0px" }],
-      {
-        duration,
-        easing: SPRING_EASING,
-      }
-    );
-  }
-
-  function isPinchPointer(
-    state: { pointerA: number; pointerB: number },
-    event: PointerEvent
-  ): boolean {
-    return (
-      event.pointerId === state.pointerA || event.pointerId === state.pointerB
-    );
-  }
-
-  /** A press anywhere on the stage takes the picture, ready to drag. */
-  function pressCropStage(event: PointerEvent): void {
-    if (!crop || event.button !== 0 || cornerDrag) return;
-    event.preventDefault();
-    releaseCropDrag(true);
-    (event.currentTarget as HTMLElement).setPointerCapture(event.pointerId);
-    cropDrag = {
-      pointerId: event.pointerId,
-      startX: event.clientX,
-      startY: event.clientY,
-      started: false,
-    };
-  }
-
-  /** The picture follows the pointer, and past its limit, with resistance. */
-  function moveCropDrag(event: PointerEvent): void {
-    const current = cropDrag;
-    if (!current || !crop || event.pointerId !== current.pointerId) return;
-    if (displayScale <= 0) return;
-    const dx = event.clientX - current.startX;
-    const dy = event.clientY - current.startY;
-    if (!current.started) {
-      if (Math.hypot(dx, dy) < TAP_PIXELS) return;
-      stopCropMotion();
-      if (!crop.startGesture(rubberRange())) {
-        cropDrag = null;
-        return;
-      }
-      current.started = true;
-      cropActive = true;
-    }
-    const over = crop.dragTo({ x: dx / displayScale, y: dy / displayScale });
-    rubber = { x: over.x * displayScale, y: over.y * displayScale };
-  }
-
-  function releaseCropDrag(keep: boolean): void {
-    const current = cropDrag;
-    if (!current) return;
-    cropDrag = null;
-    if (!current.started) return;
-    cropActive = false;
-    crop?.endGesture(keep);
-    springBack();
-  }
-
-  /** A second finger turns the drag into a pinch about the fingers. */
-  function startCropPinch(): void {
-    const [first, second] = [...touchPoints.entries()];
-    if (!crop || touchPoints.size !== 2 || !first || !second) return;
-    // A one-finger move already made is kept as its own step; a held corner
-    // is let go without a crop.
-    releaseCropDrag(true);
-    releaseCornerDrag(false);
-    const [idA, posA] = first;
-    const [idB, posB] = second;
-    const mid = midpointOf(posA, posB);
-    const startMidpoint = toWindowPoint(mid.x, mid.y);
-    if (!startMidpoint) return;
-    cropPinch = {
-      pointerA: idA,
-      pointerB: idB,
-      posA,
-      posB,
-      startDistance: distanceBetween(posA, posB),
-      startMidpoint,
-      started: false,
-    };
-  }
-
-  function stepCropPinch(event: PointerEvent): void {
-    const current = cropPinch;
-    if (!current || !crop || !isPinchPointer(current, event)) return;
-    const point = { x: event.clientX, y: event.clientY };
-    if (event.pointerId === current.pointerA) current.posA = point;
-    else current.posB = point;
-    const mid = midpointOf(current.posA, current.posB);
-    const midpoint = toWindowPoint(mid.x, mid.y);
-    if (!midpoint) return;
-    const distance = distanceBetween(current.posA, current.posB);
-    if (!current.started) {
-      const spread = Math.abs(distance - current.startDistance);
-      const shift =
-        Math.hypot(
-          midpoint.x - current.startMidpoint.x,
-          midpoint.y - current.startMidpoint.y
-        ) * displayScale;
-      if (spread < TAP_PIXELS && shift < TAP_PIXELS) return;
-      stopCropMotion();
-      if (!crop.startGesture(rubberRange())) {
-        cropPinch = null;
-        return;
-      }
-      current.started = true;
-      cropActive = true;
-    }
-    const over = crop.pinchTo({
-      startMidpoint: current.startMidpoint,
-      midpoint,
-      spread: current.startDistance > 0 ? distance / current.startDistance : 1,
-    });
-    rubber = { x: over.x * displayScale, y: over.y * displayScale };
-  }
-
-  function releaseCropPinch(keep: boolean): void {
-    const current = cropPinch;
-    if (!current) return;
-    cropPinch = null;
-    if (!current.started) return;
-    cropActive = false;
-    crop?.endGesture(keep);
-    springBack();
-  }
-
-  /** A corner handle takes the frame; the picture holds still under it. */
-  function pressCorner(event: PointerEvent, corner: CropCorner): void {
-    const pose = crop?.pose;
-    if (
-      !crop ||
-      !pose ||
-      crop.locked ||
-      event.button !== 0 ||
-      displayScale <= 0
-    )
-      return;
-    if (touchPoints.size > 1) return;
-    const point = toWindowPoint(event.clientX, event.clientY);
-    if (!point) return;
-    event.preventDefault();
-    event.stopPropagation();
-    releaseCropDrag(true);
-    stopCropMotion();
-    editor.pause();
-    (event.currentTarget as HTMLElement).setPointerCapture(event.pointerId);
-    const at = cornerPoint(pose.window, corner, 1);
-    cornerDrag = {
-      pointerId: event.pointerId,
-      corner,
-      grab: { x: point.x - at.x, y: point.y - at.y },
-      range: cornerScaleRange({
-        pose,
-        corner,
-        limit: crop.limit,
-        displayScale,
-        stage: { width: stageWidth, height: stageHeight },
-      }),
-      scale: 1,
-    };
-    crop.holdCorner(true);
+  /** Starts a gesture with the picture held where it is. */
+  function beginCropGesture(range: number): boolean {
+    if (!crop || !crop.startGesture(range)) return false;
+    heldCamera = camera;
     cropActive = true;
-  }
-
-  function moveCorner(event: PointerEvent): void {
-    const current = cornerDrag;
-    const pose = crop?.pose;
-    if (!current || !pose || event.pointerId !== current.pointerId) return;
-    const point = toWindowPoint(event.clientX, event.clientY);
-    if (!point) return;
-    const scale = cornerScaleAt(pose.window, current.corner, {
-      x: point.x - current.grab.x,
-      y: point.y - current.grab.y,
-    });
-    current.scale = Math.min(
-      current.range.max,
-      Math.max(current.range.min, scale)
-    );
+    return true;
   }
 
   /**
-   * Let go, what the frame held becomes the crop: the frame eases back to
-   * the window while the picture, already reframed, grows or shrinks to it.
+   * Ends a gesture. A pull past the limit eases back to it, and where the
+   * frame was left past the picture the stage eases to show both again.
    */
-  function releaseCornerDrag(keep: boolean): void {
-    const current = cornerDrag;
-    if (!current) return;
-    const from = frameRect;
-    const { corner, scale } = current;
-    cornerDrag = null;
+  function finishCropGesture(keep: boolean): void {
+    const fromFrame = frameRect;
+    const fromRegion = windowRect;
     cropActive = false;
-    if (!crop) return;
-    const poses = keep ? crop.releaseCorner(corner, scale) : null;
-    if (!poses) crop.holdCorner(false);
-    void settleCrop(from, poses);
+    crop?.endGesture(keep);
+    heldCamera = null;
+    rubber = { x: 0, y: 0 };
+    void settleCamera(fromFrame, fromRegion);
   }
 
-  async function settleCrop(
-    from: ScreenRect | null,
-    poses: { before: CropPose; after: CropPose } | null
+  async function settleCamera(
+    fromFrame: ScreenRect | null,
+    fromRegion: ScreenRect | null
   ): Promise<void> {
     const duration = motionDuration(DURATION.emphasis);
     await tick();
-    const to = windowRect;
-    if (duration <= 0 || !to) return;
-    const frame = cropFrameElement();
-    if (frame && from && !sameRect(from, to)) {
-      frame.animate([rectKeyframe(from), rectKeyframe(to)], {
+    if (duration <= 0) return;
+    for (const [element, from, to] of [
+      [cropRegionElement(), fromRegion, windowRect],
+      [cropFrameElement(), fromFrame, frameRect],
+    ] as const) {
+      if (!element || !from || !to || sameRect(from, to)) continue;
+      element.animate([rectKeyframe(from), rectKeyframe(to)], {
         duration,
         easing: LAYOUT_MOTION_EASING,
       });
-    }
-    const region = cropRegionElement();
-    if (region && poses) {
-      const move = settleTransform(poses.before, poses.after);
-      region.animate(
-        [
-          {
-            transform: `translate(${move.x * displayScale}px, ${move.y * displayScale}px) scale(${move.scale})`,
-          },
-          { transform: "none" },
-        ],
-        { duration, easing: LAYOUT_MOTION_EASING }
-      );
     }
   }
 
@@ -1193,10 +1730,350 @@
     );
   }
 
+  /** What the stage last drew, for a press to glide from. */
+  interface Drawn {
+    pose: CropPose;
+    mirror: boolean;
+    presses: number;
+  }
+  let drawn: Drawn | null = null;
+  /** The running glide; any other change to the framing ends it. */
+  let glide: Animation[] = [];
+
+  const STILL: StageTransform = {
+    x: 0,
+    y: 0,
+    rotation: 0,
+    scale: 1,
+    mirror: false,
+  };
+
+  // Rotate, a shape and Reset draw their framing at once, and the picture and
+  // its frame glide there from where they were. The stage is read before it
+  // draws the press, so a press during a glide or a settle carries on from
+  // there. Any other change moves them at once: a slider or a key follows
+  // the hand.
+  $effect.pre(() => {
+    const presses = crop?.presses ?? 0;
+    const pose = cropPose;
+    untrack(() => {
+      if (drawn && pose && presses !== drawn.presses) glideFrom(drawn);
+      else stopGlide();
+    });
+  });
+
+  $effect(() => {
+    const pose = cropPose;
+    const mirror = cropItem?.flip ?? false;
+    const presses = crop?.presses ?? 0;
+    drawn = pose ? { pose, mirror, presses } : null;
+  });
+
+  function stopGlide(): void {
+    for (const animation of glide) animation.cancel();
+    glide = [];
+  }
+
+  function styleRect(style: CSSStyleDeclaration): ScreenRect {
+    return {
+      left: Number.parseFloat(style.left),
+      top: Number.parseFloat(style.top),
+      width: Number.parseFloat(style.width),
+      height: Number.parseFloat(style.height),
+    };
+  }
+
+  function rectCenter(rect: ScreenRect): CropPoint {
+    return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+  }
+
+  /** Starts a press's glide from the picture and frame as they are drawn now. */
+  function glideFrom(before: Drawn): void {
+    const region = cropRegionElement();
+    const frameElement = cropFrameElement();
+    const duration = motionDuration(DURATION.emphasis);
+    if (!region || !frameElement || duration <= 0) {
+      stopGlide();
+      return;
+    }
+    const regionStyle = getComputedStyle(region);
+    const box = styleRect(regionStyle);
+    const flight = transformOfStyle(regionStyle);
+    const picture = transformPicture(
+      boxPicture(
+        before.pose,
+        { center: rectCenter(box), width: box.width },
+        before.mirror
+      ),
+      flight,
+      rectCenter(box)
+    );
+    const frameStyle = getComputedStyle(frameElement);
+    const shownFrame = styleRect(frameStyle);
+    const frame: StageFrame = {
+      center: rectCenter(shownFrame),
+      width: shownFrame.width,
+      height: shownFrame.height,
+      rotation: transformOfStyle(frameStyle).rotation,
+    };
+    stopCropMotion();
+    glide = [];
+    void tick().then(() => {
+      const pose = cropPose;
+      const slot = windowRect;
+      const to = frameRect;
+      if (!pose || !camera || !slot || !to) return;
+      const start = glideStart(
+        picture,
+        stagePicture(pose, camera, cropItem?.flip ?? false),
+        rectCenter(slot),
+        flight.rotation
+      );
+      const frameStart = frameGlideStart(frame, to, start.rotation);
+      const frameEnd: StageFrame = {
+        center: rectCenter(to),
+        width: to.width,
+        height: to.height,
+        rotation: 0,
+      };
+      const options = { duration, easing: LAYOUT_MOTION_EASING };
+      const regionNow = cropRegionElement();
+      const frameNow = cropFrameElement();
+      if (regionNow && !isStill(start)) {
+        glide.push(
+          regionNow.animate(
+            [transformKeyframe(start), transformKeyframe(STILL)],
+            options
+          )
+        );
+      }
+      if (frameNow && !sameFrame(frameStart, frameEnd)) {
+        glide.push(
+          frameNow.animate(
+            [frameKeyframe(frameStart), frameKeyframe(frameEnd)],
+            options
+          )
+        );
+      }
+    });
+  }
+
+  function isStill(transform: StageTransform): boolean {
+    return (
+      Math.abs(transform.x) < 0.5 &&
+      Math.abs(transform.y) < 0.5 &&
+      Math.abs(transform.rotation) < 0.01 &&
+      Math.abs(transform.scale - 1) < 0.001 &&
+      !transform.mirror
+    );
+  }
+
+  function sameFrame(a: StageFrame, b: StageFrame): boolean {
+    return (
+      Math.abs(a.rotation - b.rotation) < 0.01 &&
+      sameRect(frameBox(a), frameBox(b))
+    );
+  }
+
+  function frameBox(frame: StageFrame): ScreenRect {
+    return {
+      left: frame.center.x - frame.width / 2,
+      top: frame.center.y - frame.height / 2,
+      width: frame.width,
+      height: frame.height,
+    };
+  }
+
+  /** CSS's own translate, rotate and scale, which a glide eases to none. */
+  function transformKeyframe(transform: StageTransform): Keyframe {
+    const across = transform.mirror ? -transform.scale : transform.scale;
+    return {
+      translate: `${transform.x}px ${transform.y}px`,
+      rotate: `${transform.rotation}deg`,
+      scale: `${across} ${transform.scale}`,
+    };
+  }
+
+  function frameKeyframe(frame: StageFrame): Keyframe {
+    return { ...rectKeyframe(frameBox(frame)), rotate: `${frame.rotation}deg` };
+  }
+
+  function isPinchPointer(
+    state: { pointerA: number; pointerB: number },
+    event: PointerEvent
+  ): boolean {
+    return (
+      event.pointerId === state.pointerA || event.pointerId === state.pointerB
+    );
+  }
+
+  /** A press anywhere on the stage takes the frame, ready to drag. */
+  function pressCropStage(event: PointerEvent): void {
+    if (!crop || event.button !== 0 || handleDrag) return;
+    const origin = gestureOrigin();
+    if (!origin) return;
+    event.preventDefault();
+    releaseCropDrag(true);
+    (event.currentTarget as HTMLElement).setPointerCapture(event.pointerId);
+    cropDrag = {
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      startY: event.clientY,
+      started: false,
+      origin,
+    };
+  }
+
+  /** The frame follows the pointer, and past its limit, with resistance. */
+  function moveCropDrag(event: PointerEvent): void {
+    const current = cropDrag;
+    if (!current || !crop || event.pointerId !== current.pointerId) return;
+    const dx = event.clientX - current.startX;
+    const dy = event.clientY - current.startY;
+    if (!current.started) {
+      if (Math.hypot(dx, dy) < TAP_PIXELS) return;
+      stopCropMotion();
+      if (!beginCropGesture(rubberRange())) {
+        cropDrag = null;
+        return;
+      }
+      current.started = true;
+    }
+    const scale = current.origin.scale;
+    const over = crop.dragTo({ x: dx / scale, y: dy / scale });
+    rubber = { x: over.x * displayScale, y: over.y * displayScale };
+  }
+
+  function releaseCropDrag(keep: boolean): void {
+    const current = cropDrag;
+    if (!current) return;
+    cropDrag = null;
+    if (current.started) finishCropGesture(keep);
+  }
+
+  /** A second finger turns the drag into a pinch about the fingers. */
+  function startCropPinch(): void {
+    const [first, second] = [...touchPoints.entries()];
+    if (!crop || touchPoints.size !== 2 || !first || !second) return;
+    // A one-finger move or a corner already made is kept as its own step.
+    releaseCropDrag(true);
+    releaseHandleDrag(true);
+    const origin = gestureOrigin();
+    if (!origin) return;
+    const [idA, posA] = first;
+    const [idB, posB] = second;
+    const mid = midpointOf(posA, posB);
+    cropPinch = {
+      pointerA: idA,
+      pointerB: idB,
+      posA,
+      posB,
+      startDistance: distanceBetween(posA, posB),
+      startMidpoint: fromOrigin(origin, mid.x, mid.y),
+      started: false,
+      origin,
+    };
+  }
+
+  function stepCropPinch(event: PointerEvent): void {
+    const current = cropPinch;
+    if (!current || !crop || !isPinchPointer(current, event)) return;
+    const point = { x: event.clientX, y: event.clientY };
+    if (event.pointerId === current.pointerA) current.posA = point;
+    else current.posB = point;
+    const mid = midpointOf(current.posA, current.posB);
+    const midpoint = fromOrigin(current.origin, mid.x, mid.y);
+    const distance = distanceBetween(current.posA, current.posB);
+    if (!current.started) {
+      const spread = Math.abs(distance - current.startDistance);
+      const shift =
+        Math.hypot(
+          midpoint.x - current.startMidpoint.x,
+          midpoint.y - current.startMidpoint.y
+        ) * current.origin.scale;
+      if (spread < TAP_PIXELS && shift < TAP_PIXELS) return;
+      stopCropMotion();
+      if (!beginCropGesture(rubberRange())) {
+        cropPinch = null;
+        return;
+      }
+      current.started = true;
+    }
+    const over = crop.pinchTo({
+      startMidpoint: current.startMidpoint,
+      midpoint,
+      spread: current.startDistance > 0 ? distance / current.startDistance : 1,
+    });
+    rubber = { x: over.x * displayScale, y: over.y * displayScale };
+  }
+
+  function releaseCropPinch(keep: boolean): void {
+    const current = cropPinch;
+    if (!current) return;
+    cropPinch = null;
+    if (current.started) finishCropGesture(keep);
+  }
+
+  /** A corner or side takes the frame; the picture holds still under it. */
+  function pressHandle(event: PointerEvent, handle: CropHandle): void {
+    const pose = crop?.pose;
+    const rect = windowRect;
+    if (!crop || !pose || !rect || crop.locked || event.button !== 0) return;
+    if (touchPoints.size > 1) return;
+    const origin = gestureOrigin();
+    if (!origin) return;
+    event.preventDefault();
+    event.stopPropagation();
+    releaseCropDrag(true);
+    stopCropMotion();
+    const range = handleScaleRange({
+      pose,
+      handle,
+      limit: crop.limit,
+      displayScale,
+      stage: { width: stageWidth, height: stageHeight },
+      center: { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 },
+      free: crop.free,
+    });
+    if (!beginCropGesture(0)) return;
+    (event.currentTarget as HTMLElement).setPointerCapture(event.pointerId);
+    const point = fromOrigin(origin, event.clientX, event.clientY);
+    const at = handlePoint(pose.window, handle, 1);
+    handleDrag = {
+      pointerId: event.pointerId,
+      handle,
+      grab: { x: point.x - at.x, y: point.y - at.y },
+      range,
+      window: pose.window,
+      origin,
+    };
+  }
+
+  function moveHandle(event: PointerEvent): void {
+    const current = handleDrag;
+    if (!current || !crop || event.pointerId !== current.pointerId) return;
+    const point = fromOrigin(current.origin, event.clientX, event.clientY);
+    const scale = handleScaleAt(current.window, current.handle, {
+      x: point.x - current.grab.x,
+      y: point.y - current.grab.y,
+    });
+    crop.handleTo(
+      current.handle,
+      Math.min(current.range.max, Math.max(current.range.min, scale))
+    );
+  }
+
+  /** Let go, the frame stays where it was held: that is the crop. */
+  function releaseHandleDrag(keep: boolean): void {
+    if (!handleDrag) return;
+    handleDrag = null;
+    finishCropGesture(keep);
+  }
+
   /** Escape during a crop gesture puts it back; true when one was running. */
   function cancelCropGesture(): boolean {
-    if (cornerDrag) {
-      releaseCornerDrag(false);
+    if (handleDrag) {
+      releaseHandleDrag(false);
       return true;
     }
     if (cropPinch?.started) {
@@ -1212,12 +2089,13 @@
 
   let wheelSettle: ReturnType<typeof setTimeout> | undefined;
 
-  /** Ctrl or Cmd + scroll zooms about the pointer; a plain scroll moves the picture. */
+  /** Ctrl or Cmd + scroll zooms about the pointer; a plain scroll moves the frame. */
   function cropWheel(event: WheelEvent): void {
+    if (sourceCropping) return;
     if (
       !crop ||
       displayScale <= 0 ||
-      cornerDrag ||
+      handleDrag ||
       cropPinch ||
       cropDrag?.started
     )
@@ -1256,7 +2134,7 @@
 
   $effect(() => () => clearTimeout(wheelSettle));
 
-  /** On the window: arrows move the picture, + and - zoom it. */
+  /** On the frame: arrows move it, + and - zoom. */
   function cropKey(event: KeyboardEvent): void {
     if (!crop || event.altKey || event.ctrlKey || event.metaKey) return;
     const direction = ARROW_DIRECTIONS[event.key];
@@ -1292,6 +2170,14 @@
     // The first finger of a new touch: any finger still counted was lost.
     if (event.isPrimary) touchPoints.clear();
     touchPoints.set(event.pointerId, { x: event.clientX, y: event.clientY });
+    if (sourceCropping) {
+      if (touchPoints.size > 1) {
+        cancelSourceDrag();
+        event.preventDefault();
+        event.stopPropagation();
+      }
+      return;
+    }
     if (touchPoints.size < 2) return;
     event.preventDefault();
     event.stopPropagation();
@@ -1312,6 +2198,7 @@
 
   function onLayerPointerDown(event: PointerEvent): void {
     if (pinch || cropPinch) return;
+    if (sourceCropping) return;
     if (cropping) pressCropStage(event);
     else pressFrame(event);
   }
@@ -1321,8 +2208,8 @@
       stepCropPinch(event);
       return;
     }
-    if (cornerDrag) {
-      moveCorner(event);
+    if (handleDrag) {
+      moveHandle(event);
       return;
     }
     if (cropDrag) {
@@ -1346,8 +2233,8 @@
       if (isPinchPointer(cropPinch, event)) releaseCropPinch(true);
       return;
     }
-    if (cornerDrag) {
-      if (event.pointerId === cornerDrag.pointerId) releaseCornerDrag(true);
+    if (handleDrag) {
+      if (event.pointerId === handleDrag.pointerId) releaseHandleDrag(true);
       return;
     }
     if (cropDrag) {
@@ -1371,8 +2258,8 @@
       if (isPinchPointer(cropPinch, event)) releaseCropPinch(false);
       return;
     }
-    if (cornerDrag) {
-      if (event.pointerId === cornerDrag.pointerId) releaseCornerDrag(false);
+    if (handleDrag) {
+      if (event.pointerId === handleDrag.pointerId) releaseHandleDrag(false);
       return;
     }
     if (cropDrag) {
@@ -1392,7 +2279,7 @@
   }
 </script>
 
-<svelte:window onkeydown={cancelOnEscape} />
+<svelte:window onkeydown={cancelOnEscape} onblur={cancelSourceDrag} />
 
 <div
   class="post-canvas"
@@ -1402,40 +2289,80 @@
   bind:clientHeight={stageHeight}
   style:aspect-ratio={cropping
     ? undefined
-    : preset
-      ? `${preset.output.width} / ${preset.output.height}`
-      : "9 / 16"}
+    : `${outputSize.width} / ${outputSize.height}`}
   data-post-canvas
 >
   {#if preset}
+    {#if backdrop && !cropping}
+      <PostStudioBackdrop
+        {root}
+        layer={backdrop}
+        aspect={outputSize.width / outputSize.height}
+      />
+    {/if}
     {#each preset.regions as region (region.id)}
       {@const rect = editor.regionRects.get(region.id) ?? region}
       {@const cropRegion = cropping && region.id === cropItem?.id}
-      {@const cropWindow = cropRegion ? windowRect : null}
+      {@const cropWindow = cropRegion
+        ? sourceCropping
+          ? sourceRect
+          : windowRect
+        : null}
+      {@const edge = edgeStyle(region, rect, entries.get(region.id) ?? [])}
+      <!-- A turned clip turns whole, but the crop screen frames it straight,
+           and it cuts to the crop screen rather than flying. -->
       <div
         class="region"
+        class:paint-overflow={(entries.get(region.id) ?? []).some((entry) => {
+          const painter = bindingFor(entry.role)?.painter;
+          if (!painter) return false;
+          const surface = paintSurfaceGeometry(painter, {
+            width: 1,
+            height: 1,
+          });
+          return surface.width > 1 || surface.height > 1;
+        })}
+        class:edged={edge !== null}
         class:crop-region={cropRegion}
         class:crop-hidden={cropping && !cropRegion}
         data-crop-region={cropRegion ? "" : undefined}
-        data-crop-flip={region.id === (cropItem?.id ?? editor.selectedItemId)
+        data-crop-flip={region.id === (cropItem?.id ?? editor.selectedItemId) &&
+        !rect.turn
           ? "region"
           : undefined}
         style:left={cropWindow ? `${cropWindow.left}px` : pct(rect.x)}
         style:top={cropWindow ? `${cropWindow.top}px` : pct(rect.y)}
         style:width={cropWindow ? `${cropWindow.width}px` : pct(rect.width)}
         style:height={cropWindow ? `${cropWindow.height}px` : pct(rect.height)}
-        style:translate={cropRegion && (rubber.x !== 0 || rubber.y !== 0)
-          ? `${rubber.x}px ${rubber.y}px`
-          : undefined}
+        style:rotate={!cropRegion && rect.turn ? `${rect.turn}deg` : undefined}
         style:z-index={region.zIndex}
+        style:border-radius={edge?.radius}
+        style:box-shadow={edge?.shadow}
+        style:--edge-border={edge?.border}
+        style:--edge-color={edge?.color}
+        style:--edge-opacity={edge?.opacity}
       >
         {#each entries.get(region.id) ?? [] as entry (entry.role)}
           {@const binding = bindingFor(entry.role)}
           {@const layer = entry.layer}
+          {@const sourceItem = findItem(
+            editor.project,
+            itemIdFromClipId(entry.clip.id)
+          )?.item}
+          {@const underlyingItem = mainItemAt(
+            editor.project,
+            editor.previewSeconds
+          )}
           {@const isVideo = binding?.renderMode === "external-media"}
           {#if binding?.status === "ready"}
             {#if binding.renderMode === "painted" && binding.painter}
-              <div class="painted" style:opacity={layer.opacity}>
+              <!-- The crop screen shows the whole picture to frame, bare. -->
+              <div
+                class="painted"
+                class:crop-bare={cropRegion &&
+                  itemIdFromStaffEffectRole(entry.role) !== null}
+                style:opacity={layer.opacity}
+              >
                 <PostStudioPaintedLayer
                   painter={binding.painter}
                   frame={toPaintFrame(layer, editor.previewSeconds)}
@@ -1449,23 +2376,69 @@
                   opacity={cropRegion ? 1 : layer.opacity}
                   sourceTimeSeconds={layer.sourceTimeSeconds}
                   playing={editor.isPlaying && entry.live}
+                  {exporting}
                   {sequence}
-                  {cardRenderOptions}
-                  {handLabeling}
+                  cardRenderOptions={cardOptionsForItem(
+                    cardRenderOptions,
+                    sourceItem?.kind === "card" ? sourceItem : null
+                  )}
+                  qrAppearance={sourceItem?.kind === "image"
+                    ? (sourceItem.qrAppearance ??
+                      posterQrAppearance(
+                        cardRenderOptions,
+                        underlyingItem?.kind === "card" ? underlyingItem : null
+                      ))
+                    : undefined}
+                  animationAppearance={animationAppearanceForItem(
+                    sourceItem?.kind === "animation" ||
+                      sourceItem?.kind === "moves"
+                      ? sourceItem
+                      : null,
+                    !!layer.tunnelHook
+                  )}
                   {qrSequence}
+                  tunnelHook={layer.tunnelHook ?? null}
+                  chromeOpacity={hookChromeOpacity(region.id)}
+                  mandalaIn={!layer.tunnelHook &&
+                  sourceItem?.kind === "animation" &&
+                  tunnelHidesMandala(sourceItem)
+                    ? hookChromeOpacity(region.id)
+                    : 1}
+                  lookBlend={layer.lookBlend ?? 0}
+                  effectsIn={layer.effectsIn ?? 1}
                   sequencePosition={layer.sequencePosition ??
                     (isVideo ? undefined : OPENING_POSITION)}
                   sequencePassIndex={layer.sequencePassIndex}
+                  sequenceProgress={layer.sequenceFrame?.passBeatProgress}
                   animationTimeSeconds={layer.animationTimeSeconds ??
                     (isVideo ? undefined : 0)}
-                  breakdownMotion={stripModeFromRole(entry.role) !== null}
+                  breakdownMotion={sourceItem?.kind === "moves" ||
+                    stripModeFromRole(entry.role) !== null}
+                  breakdownMode={sourceItem?.kind === "moves"
+                    ? sourceItem.mode
+                    : undefined}
                   labelsPainted={paintedLabelRegions.has(region.id)}
-                  displayedBeatNumber={layer.displayedBeatNumber ??
-                    (binding.renderMode === "choreo-card" ? 0 : undefined)}
+                  displayedBeatNumber={layer.displayedBeatNumber}
                   clipId={entry.clip.id}
-                  transform={layer.transform}
+                  colorGrade={entry.clip.colorGrade}
+                  transform={sourceCropping && cropRegion
+                    ? {
+                        ...layer.transform,
+                        scale: 1,
+                        rotationDegrees: 0,
+                        translateX: 0,
+                        translateY: 0,
+                        flipHorizontal: false,
+                      }
+                    : layer.transform}
+                  sourceGeometry={sourceCropping && cropRegion
+                    ? fullSourceGeometry
+                    : layer.sourceGeometry}
                   playbackRate={entry.clip.playbackRate}
+                  previewGain={previewGain(entry)}
                   onSourceSize={(size) => onSourceSize?.(region.id, size)}
+                  onPlaybackVideo={(controller) =>
+                    registerPlaybackVideo(region.id, entry.role, controller)}
                 />
               </div>
             {/if}
@@ -1473,6 +2446,13 @@
         {/each}
       </div>
     {/each}
+    {#if transitionBlack > 0 && !cropping}
+      <div
+        class="transition-black"
+        style:opacity={transitionBlack}
+        aria-hidden="true"
+      ></div>
+    {/if}
     {#if stripGuideVisible && !cropping}
       <div
         class="strip-guide"
@@ -1496,7 +2476,7 @@
     <div
       class="edit-layer"
       class:crop={cropping}
-      class:grabbing={cropActive && !cornerDrag}
+      class:grabbing={cropActive && !handleDrag}
       bind:this={editLayer}
       role="presentation"
       onpointerdowncapture={countTouchDown}
@@ -1509,7 +2489,53 @@
       onpointercancel={onLayerPointerCancel}
     >
       {#if cropping && cropItem}
-        {#if frameRect}
+        {#if sourceCropping && sourceFrame}
+          <div
+            class="crop-frame source-crop-frame"
+            class:locked={crop?.locked}
+            data-crop-frame
+            style:left="{sourceFrame.left}px"
+            style:top="{sourceFrame.top}px"
+            style:width="{sourceFrame.width}px"
+            style:height="{sourceFrame.height}px"
+            role="group"
+            tabindex="0"
+            aria-label="Source crop frame"
+            aria-describedby={hintId}
+            onkeydown={sourceCropKey}
+            onpointerdown={(event) => beginSourceDrag(event, "move")}
+            onpointermove={moveSourceDrag}
+            onpointerup={(event) => endSourceDrag(event, true)}
+            onpointercancel={(event) => endSourceDrag(event, false)}
+            onlostpointercapture={cancelSourceDrag}
+          >
+            <span class="thirds" aria-hidden="true"></span>
+            {#each ["left", "top", "right", "bottom"] as edge (edge)}
+              <span
+                class="source-crop-edge {edge}"
+                aria-hidden="true"
+                onpointerdown={(event) =>
+                  beginSourceDrag(event, edge as SourceCropHandle)}
+                onpointermove={moveSourceDrag}
+                onpointerup={(event) => endSourceDrag(event, true)}
+                onpointercancel={(event) => endSourceDrag(event, false)}
+                onlostpointercapture={cancelSourceDrag}
+              ></span>
+            {/each}
+            {#each ["top-left", "top-right", "bottom-left", "bottom-right"] as corner (corner)}
+              <span
+                class="source-crop-corner {corner}"
+                aria-hidden="true"
+                onpointerdown={(event) =>
+                  beginSourceDrag(event, corner as SourceCropHandle)}
+                onpointermove={moveSourceDrag}
+                onpointerup={(event) => endSourceDrag(event, true)}
+                onpointercancel={(event) => endSourceDrag(event, false)}
+                onlostpointercapture={cancelSourceDrag}
+              ></span>
+            {/each}
+          </div>
+        {:else if frameRect}
           <div
             class="crop-frame"
             class:active={cropActive}
@@ -1529,11 +2555,18 @@
           >
             <span class="thirds" aria-hidden="true"></span>
             {#if !crop?.locked}
+              {#each CROP_SIDES as side (side)}
+                <span
+                  class="crop-side {side}"
+                  aria-hidden="true"
+                  onpointerdown={(event) => pressHandle(event, side)}
+                ></span>
+              {/each}
               {#each CROP_CORNERS as corner (corner)}
                 <span
                   class="crop-corner {corner}"
                   aria-hidden="true"
-                  onpointerdown={(event) => pressCorner(event, corner)}
+                  onpointerdown={(event) => pressHandle(event, corner)}
                 ></span>
               {/each}
             {/if}
@@ -1543,6 +2576,30 @@
           >{crop?.announcement ?? ""}</span
         >
       {:else}
+        <div class="drag-grid" class:shown={dragging} aria-hidden="true">
+          {#if safeArea}
+            <div
+              class="safe-area"
+              style:left={pct(safeArea.x)}
+              style:top={pct(safeArea.y)}
+              style:width={pct(safeArea.width)}
+              style:height={pct(safeArea.height)}
+            >
+              {#if guides.safeX}
+                <span class="snap-line {guides.safeX}"></span>
+              {/if}
+              {#if guides.safeY}
+                <span class="snap-line {guides.safeY}"></span>
+              {/if}
+            </div>
+          {/if}
+          <span class="thirds"></span>
+          {#if safeArea}
+            <span class="covered" style:top={pct(safeArea.y + safeArea.height)}
+              >{t("post_editor_reels_covered")}</span
+            >
+          {/if}
+        </div>
         {#if guides.vertical}
           <div class="guide vertical" aria-hidden="true"></div>
         {/if}
@@ -1551,18 +2608,23 @@
         {/if}
         {#if selected}
           {@const locked = trackLocked(selected.id)}
-          {@const box = boxAt(selected, editor.previewSeconds)}
+          {@const box = shownItemBox(selected, editor.previewSeconds)}
           {@const pictureMode = isPictureDragTarget(selected, box)}
+          {@const turn = boxTurn(box)}
+          {@const turnSide =
+            turning?.side ??
+            turnHandleSide(box, { width: stageWidth, height: stageHeight })}
           <div
             class="selection"
             class:dragging
             class:locked
             class:picture-mode={pictureMode}
-            data-crop-flip="frame"
+            data-crop-flip={turn ? undefined : "frame"}
             style:left={pct(box.x)}
             style:top={pct(box.y)}
             style:width={pct(box.width)}
             style:height={pct(box.height)}
+            style:rotate={turn ? `${turn}deg` : undefined}
             role="group"
             tabindex="0"
             aria-roledescription={t("post_editor_box")}
@@ -1577,36 +2639,70 @@
                 <span
                   class="handle corner {corner}"
                   aria-hidden="true"
+                  style:cursor={turn ? handleCursor(corner, turn) : undefined}
                   onpointerdown={(event) => startDrag(event, selected, corner)}
                 ></span>
               {/each}
-              {#each BOX_SIDES as side (side)}
-                <span
-                  class="handle side {side}"
-                  aria-hidden="true"
-                  onpointerdown={(event) => startDrag(event, selected, side)}
-                ></span>
-              {/each}
+              {#if !keepsShape(selected)}
+                {#each BOX_SIDES as side (side)}
+                  <span
+                    class="handle side {side}"
+                    aria-hidden="true"
+                    style:cursor={turn ? handleCursor(side, turn) : undefined}
+                    onpointerdown={(event) => startDrag(event, selected, side)}
+                  ></span>
+                {/each}
+              {/if}
+              <span
+                class="turn-handle"
+                aria-hidden="true"
+                style:top={turnSide === "above"
+                  ? `${-TURN_HANDLE_GAP}px`
+                  : turnSide === "below"
+                    ? `calc(100% + ${TURN_HANDLE_GAP}px)`
+                    : `${TURN_HANDLE_GAP}px`}
+                onpointerdown={(event) => startTurn(event, selected)}
+              >
+                <i class="fa-solid fa-rotate" aria-hidden="true"></i>
+              </span>
             {/if}
           </div>
+          {#if dragging && turning}
+            <span
+              class="turn-readout"
+              aria-hidden="true"
+              style:left={pct(box.x + box.width / 2)}
+              style:top={pct(box.y + box.height / 2)}
+              >{degreesLabel(turning.degrees)}</span
+            >
+          {/if}
         {/if}
       {/if}
       <span id={hintId} class="sr-only">
-        {cropping
-          ? t("post_crop_keys_hint")
-          : selected &&
-              isPictureDragTarget(
-                selected,
-                boxAt(selected, editor.previewSeconds)
-              )
-            ? t("post_editor_picture_hint")
-            : t("post_editor_box_hint")}
+        {sourceCropping
+          ? "Drag the frame, edges, or corners to adjust the crop. Use arrow keys to move it."
+          : cropping
+            ? t("post_crop_keys_hint")
+            : selected &&
+                isPictureDragTarget(
+                  selected,
+                  shownItemBox(selected, editor.previewSeconds)
+                )
+              ? t("post_editor_picture_hint")
+              : t("post_editor_box_hint")}
       </span>
     </div>
   {/if}
 </div>
 
 <style>
+  .transition-black {
+    position: absolute;
+    inset: 0;
+    z-index: 19999;
+    background: #000;
+    pointer-events: none;
+  }
   /* The layers' stacking stays inside the preview, under the editor's dock. */
   .post-canvas {
     position: relative;
@@ -1628,7 +2724,8 @@
     position: absolute;
     overflow: hidden;
   }
-  .region.crop-region {
+  .region.crop-region,
+  .region.paint-overflow {
     overflow: visible;
   }
   .region.crop-hidden {
@@ -1639,7 +2736,24 @@
     position: absolute;
     inset: 0;
   }
-  .layer.parked {
+  .region.edged > .layer,
+  .region.edged > .painted {
+    z-index: 0;
+  }
+  /* The border lies over the clip's layers, inside its rounded edge. */
+  .region.edged::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    box-sizing: border-box;
+    border: var(--edge-border, 0) solid var(--edge-color, transparent);
+    border-radius: inherit;
+    opacity: var(--edge-opacity, 1);
+    pointer-events: none;
+  }
+  .layer.parked,
+  .painted.crop-bare {
     visibility: hidden;
   }
   .strip-guide {
@@ -1666,6 +2780,91 @@
     box-sizing: border-box;
     border: 2px solid var(--theme-primary, #d4813a);
     box-shadow: 0 0 0 100vmax rgb(0 0 0 / 0.55);
+    container-type: size;
+  }
+  .source-crop-frame {
+    cursor: move;
+    touch-action: none;
+  }
+  .source-crop-edge {
+    position: absolute;
+    z-index: 2;
+    touch-action: none;
+  }
+  .source-crop-edge::after {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 12px;
+    height: 12px;
+    border: 2px solid var(--theme-primary, #d4813a);
+    border-radius: 3px;
+    background: var(--theme-background, #161616);
+    box-shadow: 0 1px 5px rgb(0 0 0 / 0.6);
+    content: "";
+    transform: translate(-50%, -50%);
+  }
+  .source-crop-edge.left,
+  .source-crop-edge.right {
+    top: 0;
+    bottom: 0;
+    width: 16px;
+    cursor: ew-resize;
+  }
+  .source-crop-edge.left {
+    left: -8px;
+  }
+  .source-crop-edge.right {
+    right: -8px;
+  }
+  .source-crop-edge.top,
+  .source-crop-edge.bottom {
+    left: 0;
+    right: 0;
+    height: 16px;
+    cursor: ns-resize;
+  }
+  .source-crop-edge.top {
+    top: -8px;
+  }
+  .source-crop-edge.bottom {
+    bottom: -8px;
+  }
+  .source-crop-corner {
+    position: absolute;
+    z-index: 3;
+    width: 20px;
+    height: 20px;
+    touch-action: none;
+  }
+  .source-crop-corner::after {
+    position: absolute;
+    inset: 4px;
+    border: 2px solid var(--theme-primary, #d4813a);
+    border-radius: 2px;
+    background: var(--theme-background, #161616);
+    box-shadow: 0 1px 5px rgb(0 0 0 / 0.6);
+    content: "";
+  }
+  .source-crop-corner.top-left {
+    top: -10px;
+    left: -10px;
+    cursor: nwse-resize;
+  }
+  .source-crop-corner.top-right {
+    top: -10px;
+    right: -10px;
+    cursor: nesw-resize;
+  }
+  .source-crop-corner.bottom-left {
+    bottom: -10px;
+    left: -10px;
+    cursor: nesw-resize;
+  }
+  .source-crop-corner.bottom-right {
+    bottom: -10px;
+    right: -10px;
+    cursor: nwse-resize;
   }
   .crop-frame:focus-visible {
     outline: 2px solid var(--theme-text, #fff);
@@ -1680,6 +2879,69 @@
   }
   .crop-frame.active .thirds {
     opacity: 1;
+  }
+  /* A bar in the middle of each side, with a 44px grab area that runs
+     along the side, so the frame can be taken anywhere between corners. */
+  .crop-side {
+    position: absolute;
+    display: grid;
+    place-items: center;
+  }
+  .crop-side::before {
+    content: "";
+    background: #fff;
+    border-radius: 2px;
+    box-shadow: 0 0 0 1px rgb(0 0 0 / 0.45);
+  }
+  .crop-side.n,
+  .crop-side.s {
+    left: 44px;
+    right: 44px;
+    height: 44px;
+    cursor: ns-resize;
+  }
+  .crop-side.n {
+    top: -22px;
+  }
+  .crop-side.s {
+    bottom: -22px;
+  }
+  .crop-side.n::before,
+  .crop-side.s::before {
+    width: 28px;
+    height: 4px;
+  }
+  .crop-side.e,
+  .crop-side.w {
+    top: 44px;
+    bottom: 44px;
+    width: 44px;
+    cursor: ew-resize;
+  }
+  .crop-side.e {
+    right: -22px;
+  }
+  .crop-side.w {
+    left: -22px;
+  }
+  .crop-side.e::before,
+  .crop-side.w::before {
+    width: 4px;
+    height: 28px;
+  }
+  /* A side too short to hold a bar between its corners drops the bar, and
+     the corners take that side. */
+  @container (height < 96px) {
+    .crop-side.e,
+    .crop-side.w {
+      display: none;
+    }
+  }
+  @container (width < 96px) {
+    .crop-side.n,
+    .crop-side.s {
+      display: none;
+    }
   }
   /* L-shaped marks on the corners, each with a 44px grab area. */
   .crop-corner {
@@ -1761,7 +3023,8 @@
     border-style: dashed;
     cursor: default;
   }
-  /* Rule-of-thirds lines for framing on the crop screen. */
+  /* Rule-of-thirds lines: on the crop frame, and over the post while
+     something on it moves. */
   .thirds {
     position: absolute;
     inset: 0;
@@ -1854,6 +3117,46 @@
     top: 50%;
     cursor: ew-resize;
   }
+  /* A round grip past the box's edge, with a 44px grab area, that turns the
+     whole box as the pointer goes round it. */
+  .turn-handle {
+    position: absolute;
+    left: 50%;
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    transform: translate(-50%, -50%);
+    cursor: grab;
+  }
+  .selection.dragging .turn-handle {
+    cursor: grabbing;
+  }
+  .turn-handle i {
+    display: grid;
+    place-items: center;
+    width: 1.75rem;
+    height: 1.75rem;
+    border: 2px solid var(--theme-primary, #d4813a);
+    border-radius: 50%;
+    background: #fff;
+    color: #08080c;
+    font-size: 0.75rem;
+    box-shadow: 0 0 0 1px rgb(0 0 0 / 0.45);
+  }
+  /* The angle so far, upright over the box's centre while it turns. */
+  .turn-readout {
+    position: absolute;
+    transform: translate(-50%, -50%);
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.375rem;
+    background: rgb(0 0 0 / 0.75);
+    color: #fff;
+    font-size: 0.8125rem;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    pointer-events: none;
+  }
   .guide {
     position: absolute;
     background: var(--theme-primary, #d4813a);
@@ -1870,6 +3173,68 @@
     left: 0;
     right: 0;
     height: 1px;
+  }
+  /* While something moves: the thirds and, on a Reel, the part Instagram
+     leaves clear, with what its header, buttons and caption cover dimmed. */
+  .drag-grid {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity var(--transition-fast);
+  }
+  .drag-grid.shown {
+    opacity: 1;
+  }
+  .safe-area {
+    position: absolute;
+    box-sizing: border-box;
+    border: 1px dashed rgb(255 255 255 / 0.8);
+    box-shadow: 0 0 0 100vmax rgb(0 0 0 / 0.3);
+  }
+  /* A safe side a box's edge rests on, lit like the centre guides. */
+  .snap-line {
+    position: absolute;
+    background: var(--theme-primary, #d4813a);
+  }
+  .snap-line.left,
+  .snap-line.right {
+    top: -1px;
+    bottom: -1px;
+    width: 2px;
+  }
+  .snap-line.top,
+  .snap-line.bottom {
+    left: -1px;
+    right: -1px;
+    height: 2px;
+  }
+  .snap-line.left {
+    left: -1px;
+  }
+  .snap-line.right {
+    right: -1px;
+  }
+  .snap-line.top {
+    top: -1px;
+  }
+  .snap-line.bottom {
+    bottom: -1px;
+  }
+  .covered {
+    position: absolute;
+    left: 0;
+    right: 0;
+    padding: 0.25rem 0.5rem 0;
+    color: #fff;
+    font-size: 0.75rem;
+    text-align: center;
+    text-shadow: 0 1px 2px rgb(0 0 0 / 0.9);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .drag-grid {
+      transition: none;
+    }
   }
   .empty {
     position: absolute;

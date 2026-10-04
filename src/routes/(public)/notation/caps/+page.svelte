@@ -1,11 +1,10 @@
 <script lang="ts">
-  import { tick } from "svelte";
   import Seo from "$lib/shared/components/Seo.svelte";
-  import SourceVideoCard from "$lib/shared/components/SourceVideoCard.svelte";
-  import CapsHub from "./_components/CapsHub.svelte";
+  import LinkChip from "$lib/shared/ui/components/LinkChip.svelte";
+  import SequenceHeroDemo from "$lib/shared/landing/components/SequenceHeroDemo.svelte";
+  import { NOTATION_LOOP_TEASER_SEQUENCE } from "$lib/shared/loop-explorer/domain/notation-loop-teaser";
   import CapsAssembly from "./_components/CapsAssembly.svelte";
-  import CurveAtlas from "./_components/CurveAtlas.svelte";
-  import FocusedConstruction from "./_components/FocusedConstruction.svelte";
+  import YutaCapLiveDemo from "./_components/YutaCapLiveDemo.svelte";
   import "$lib/shared/landing/styles/public-editorial.css";
 
   // Suffix is deliberately NOT "| The Kinetic Alphabet". CAPs are not TKA's,
@@ -14,77 +13,37 @@
   const TITLE =
     "CAPs: Continuous Assembly Patterns | Flow Arts Notation Archive";
   const DESCRIPTION =
-    "The history and mathematics of Continuous Assembly Patterns, with reconstructed curves, geometric models, and original sources.";
+    "What a CAP is, where Continuous Assembly Patterns came from, and how they differ from LOOPs, with links to the original sources.";
   const URL = "https://tkaflowarts.com/notation/caps";
+
   const THREAD_URL =
     "https://www.homeofpoi.com/en/community/forums/topics/891193/What-are-CAP-s";
   const MATH_URL = "https://drexfactor.com/reference/math_caps";
-  const MATHCURVE_URL = "https://mathcurve.com/";
+  const CCAP_URL =
+    "https://drexfactor.com/index.php?q=weirdscience%2F2012%2F08%2F21%2Fbasic_poi_dancing_tutorial_c_caps";
+  const PLAYPOI_URL =
+    "https://playpoi.com/learn/learning-caps-capped-antispin-patterns/";
+  const EIGHT_STEP_URL =
+    "https://www.drexfactor.com/weirdscience/2016/09/27/tutorial_double_staff_8_step_cap_recipe";
 
-  type MediaItem = {
-    id: string;
-    title: string;
-    creator: string;
-    year: string;
-    note: string;
-  };
-
-  const MODERN_MEDIA: MediaItem[] = [
+  const SOURCES: { href: string; label: string }[] = [
+    { href: THREAD_URL, label: "What are CAP's? Home of Poi, 2009" },
+    { href: MATH_URL, label: "The Math of CAPs, preserved by DrexFactor" },
     {
-      id: "DyK42suXQUk",
-      title: "Tech Poi Blog #213: What is a CAP?",
-      creator: "DrexFactor Poi",
-      year: "2011",
-      note: "A direct explanation of the term and the debate around it.",
+      href: "https://www.youtube.com/watch?v=DyK42suXQUk",
+      label: "Tech Poi Blog #213: What is a CAP? 2011",
     },
+    { href: CCAP_URL, label: "Basic Poi Dancing Tutorial: C-CAPs, 2012" },
     {
-      id: "B-o3E7Ix5uM",
-      title: "Basic Poi Dancing Tutorial: C-CAPs",
-      creator: "DrexFactor Poi",
-      year: "2012",
-      note: "A lesson on the extension and antispin pattern commonly called a C-CAP.",
+      href: PLAYPOI_URL,
+      label: "Learning CAPs (Capped Antispin Patterns), PlayPoi, 2016",
     },
+    { href: EIGHT_STEP_URL, label: "Double staff 8-step CAP recipe, 2016" },
     {
-      id: "UBx2IZVzSVA",
-      title: "Poi Flowers: Learning CAPs (Capped Antispin Patterns)",
-      creator: "Nick Woolsey · PlayPoi",
-      year: "2016",
-      note: "The PlayPoi lesson that uses the expansion Capped Antispin Patterns.",
-    },
-    {
-      id: "Lh5wtTddhEE",
-      title: "Charlie's 9-Square Theory for Poi #3",
-      creator: "Charlie",
-      year: "~2015",
-      note: "Part three of Charlie's 9-Square Theory video series.",
-    },
-    {
-      id: "dBn6kz_7huc",
-      title: "How to do 8-Step CAPs for Poi: 1-minute tutorial",
-      creator: "DrexFactor Poi",
-      year: "2017",
-      note: "An eight-step CAP taught in one minute.",
-    },
-    {
-      id: "Chf9IAhqp7M",
-      title: "Poi CAPs Tutorial: Basic C-CAPs",
-      creator: "DrexFactor Poi",
-      year: "2020",
-      note: "A later lesson on the classic C-CAP pattern.",
+      href: "https://www.youtube.com/playlist?list=PLDE05D5E593C54AED",
+      label: "Charlie's 9-Square Theory playlist",
     },
   ];
-
-  let selectedCurveId = $state<string | null>("yuta-cap");
-
-  async function selectCurve(id: string): Promise<void> {
-    selectedCurveId = id;
-    await tick();
-    document.getElementById("focused-construction-title")?.focus();
-  }
-
-  function enterCustomState(): void {
-    selectedCurveId = null;
-  }
 </script>
 
 <Seo title={TITLE} description={DESCRIPTION} canonical={URL} ogType="article">
@@ -112,7 +71,7 @@
       ]
     },
     "citation": [
-      { "@type": "CreativeWork", "name": "What are CAPs? — Home of Poi forums, 2009", "url": "${THREAD_URL}" },
+      { "@type": "CreativeWork", "name": "What are CAPs? Home of Poi forums, 2009", "url": "${THREAD_URL}" },
       { "@type": "CreativeWork", "name": "The mathematics of CAPs, preserved by DrexFactor", "url": "${MATH_URL}" }
     ]
   }
@@ -130,697 +89,209 @@
   </script>`}
 </Seo>
 
-<CapsHub />
+<div class="editorial caps-page">
+  <header class="editorial-header">
+    <h1 class="page-title">CAPs: Continuous Assembly Patterns</h1>
+    <p class="page-subtitle">
+      What a CAP is, where the idea came from, and how it differs from a LOOP.
+    </p>
+  </header>
 
-<div class="editorial caps-editorial">
-  <section
-    id="what-is"
-    class="editorial-section has-duo"
-    style="--accent: #38bdf8"
-  >
-    <div class="section-duo demo-star definition-duo">
-      <div class="duo-demo definition-demo">
-        <CapsAssembly />
-      </div>
-      <div class="duo-copy definition-copy">
-        <span class="section-kicker">Start with the path</span>
-        <h2 class="section-title">What is a CAP?</h2>
-        <div class="prose">
-          <p>
-            A CAP is a cyclic path assembled in time from two or more elementary
-            patterns, each used one or more times. One prop traces every
-            fragment and returns to its starting point.
-          </p>
-          <p class="cap-credit">
-            Damien coined the term and published the construction while posting
-            as Zaltymbunk and French_Saltimbanque on <a href={THREAD_URL}
-              >Home of Poi in 2009</a
-            >.
-          </p>
-        </div>
-
-        <h3 id="breakdown" class="breakdown-title">How this CAP is built</h3>
-        <ul class="bullet-list compact-list">
-          <li>
-            <strong>Extension:</strong> the hand carries the prop through half a cycle
-            while the prop stays pointed away from center.
-          </li>
-          <li>
-            <strong>Antispin:</strong> the hand returns while the prop rotates against
-            the hand path, shaping the inner petals.
-          </li>
-          <li>
-            <strong>The join:</strong> the hand and prop tip meet at the shared endpoint.
-          </li>
-          <li>
-            <strong>The cycle:</strong> the final position and orientation match the
-            start, so the curve can repeat.
-          </li>
-        </ul>
-      </div>
-    </div>
-  </section>
-
-  <section
-    id="math"
-    class="editorial-section math-section"
-    style="--accent: #34d399"
-  >
-    <header class="math-heading">
-      <div>
-        <span class="section-kicker">The curve atlas</span>
-        <h2 class="section-title">From elementary curves to assembled CAPs</h2>
-      </div>
+  <section id="what-is" class="editorial-section">
+    <div class="text-and-figure">
       <div class="prose">
+        <h2 class="section-title">What a CAP is</h2>
         <p>
-          Damien called the elementary families rosettes and cycloids. In
-          standard curve language they belong to the centered trochoid family;
-          his cycloid cases are the cusp-forming epicycloids or hypocycloids.
-          The plots below use his published parameters.
+          A CAP is the path of one prop, built from two or more simple curves
+          joined end to end. A curve can be used more than once. The prop
+          traces every piece in turn and comes back to where it started, so
+          the whole path can repeat.
         </p>
-        <p class="atlas-credit">
-          The animated reference illustrations Damien linked were by
-          <a href={MATHCURVE_URL}
-            >Robert Ferréol, Encyclopédie des formes mathématiques remarquables</a
-          >. Those archival GIFs are credited here and not republished.
+        <p>
+          Damien coined the term and published the construction on <LinkChip
+            size="inline"
+            href={THREAD_URL}>Home of Poi in 2009</LinkChip
+          >, posting as Zaltymbunk and French_Saltimbanque.
+        </p>
+        <p>
+          The CAP drawn here has two halves. In the first, the hand carries the
+          prop through half a circle while the prop keeps pointing away from
+          the center. That is an extension. In the second, the hand comes back
+          while the prop turns against it, which draws the inner petals. That
+          is antispin. The halves meet at a shared point, and the prop ends in
+          the same place and direction it started, so the path closes.
         </p>
       </div>
-    </header>
-
-    <CurveAtlas selectedId={selectedCurveId} onselect={selectCurve} />
-    <FocusedConstruction
-      selectedId={selectedCurveId}
-      oncustom={enterCustomState}
-    />
-  </section>
-
-  <section id="origin" class="editorial-section" style="--accent: #f472b6">
-    <span class="section-kicker">Origin chronology</span>
-    <h2 class="section-title">From Burning Man to Home of Poi</h2>
-    <ol class="chronology">
-      <li>
-        <time>2007</time>
-        <div>
-          <h3>Ideas at Burning Man</h3>
-          <p>
-            Alien Jon described the OMCC group pulling apart complex poi
-            patterns with Noel, Greg, Jordan, and Zan. Damien joined them with
-            his own CAP explorations.
-          </p>
-        </div>
-      </li>
-      <li>
-        <time>2009</time>
-        <div>
-          <h3>The name and the model</h3>
-          <p>
-            In a Home of Poi thread about Yuta's spinning, Alien Jon wrote, “I
-            got the term from Damien.” Damien then set out the O/M/E model,
-            notation, feasibility rules, and worked CAP examples.
-          </p>
-        </div>
-      </li>
-      <li>
-        <time>2011–2017</time>
-        <div>
-          <h3>Lessons spread the idea</h3>
-          <p>
-            Drex documented the definition and C-CAP technique. Nick Woolsey
-            taught Capped Antispin Patterns. Drex's eight-step lesson credited
-            Charlie's 9-Square Theory.
-          </p>
-        </div>
-      </li>
-      <li>
-        <time>Today</time>
-        <div>
-          <h3>What survives</h3>
-          <p>
-            The forum discussion and Damien's mathematical framework survive.
-            Some playlists and image hosts linked from the thread have
-            disappeared.
-          </p>
-        </div>
-      </li>
-    </ol>
-  </section>
-
-  <section id="credits" class="editorial-section" style="--accent: #38bdf8">
-    <span class="section-kicker">The people</span>
-    <h2 class="section-title">People behind CAPs</h2>
-    <div class="credits-layout">
-      <article class="credit-primary">
-        <span class="credit-role">Term, notation, and mathematics</span>
-        <h3>Damien</h3>
-        <p class="alias">Posting as Zaltymbunk and French_Saltimbanque</p>
-        <p>
-          Coined Continuous Assembly Patterns and published the elementary
-          curves, O/M/E notation, rosettes, cycloids, wrap fractions,
-          feasibility rules, and composite examples shown on this page.
-        </p>
-        <div class="credit-links">
-          <a href={THREAD_URL}>Origin thread</a>
-          <a href={MATH_URL}>The Math of CAPs</a>
-        </div>
-      </article>
-
-      <div class="credit-support">
-        <article>
-          <h3>Alien Jon</h3>
-          <p>
-            Carried Damien's term into wider use and framed CAPs as a way to
-            think about movement rather than the name of one move.
-          </p>
-        </article>
-        <article>
-          <h3>Nick Woolsey <span>PlayPoi</span></h3>
-          <p>
-            Taught CAPs to a broad learner audience in 2016 and used the
-            expansion “Capped Antispin Patterns.”
-          </p>
-          <a
-            href="https://playpoi.com/learn/learning-caps-capped-antispin-patterns/"
-            >PlayPoi lesson</a
-          >
-        </article>
-        <article>
-          <h3>Charlie</h3>
-          <p>
-            Developed 9-Square Theory and the eight-step CAP approach credited
-            in Drex's double staff lesson.
-          </p>
-          <a
-            href="https://www.drexfactor.com/weirdscience/2016/09/27/tutorial_double_staff_8_step_cap_recipe"
-            >Eight-step lesson</a
-          >
-        </article>
-        <article>
-          <h3>Drex <span>DrexFactor</span></h3>
-          <p>
-            Documented CAPs across the Tech Poi Blog, tutorials, and the
-            preserved copy of Damien's mathematical framework.
-          </p>
-          <a
-            href="https://drexfactor.com/index.php?q=weirdscience%2F2012%2F08%2F21%2Fbasic_poi_dancing_tutorial_c_caps"
-            >C-CAP lesson</a
-          >
-        </article>
-      </div>
-    </div>
-    <p class="credit-footnote">
-      Also in the room at Burning Man 2007: Noel, Greg, Jordan, and Zan of the
-      OMCC crew.
-    </p>
-  </section>
-
-  <section
-    id="relationship"
-    class="editorial-section"
-    style="--accent: #22d3ee"
-  >
-    <span class="section-kicker">Two ways to close a pattern</span>
-    <h2 class="section-title">CAPs and LOOPs start from different units</h2>
-    <div class="relationship-grid">
-      <article>
-        <span>CAPs</span>
-        <h3>A path for one prop</h3>
-        <p>
-          CAPs serially assemble elementary paths for one prop. Each hand's
-          trajectory is defined independently, then two-hand movement can be
-          overlaid.
-        </p>
-      </article>
-      <article>
-        <span>LOOPs</span>
-        <h3>A letter for both hands</h3>
-        <p>
-          Each TKA letter records both hands at one step. LOOP transformations
-          combine those letters into speakable words that return to their start.
-        </p>
-      </article>
+      <figure class="figure">
+        <div class="assembly-frame"><CapsAssembly /></div>
+      </figure>
     </div>
   </section>
 
-  <section id="watch" class="editorial-section" style="--accent: #a78bfa">
-    <span class="section-kicker">See it in motion</span>
-    <h2 class="section-title">CAPs on video, 2009 to now</h2>
-    <div class="cap-media-grid">
-      {#each MODERN_MEDIA as media (media.id)}
-        <SourceVideoCard
-          id={media.id}
-          title={media.title}
-          creator={media.creator}
-          year={media.year}
-          note={media.note}
+  <section id="origin" class="editorial-section">
+    <div class="prose">
+      <h2 class="section-title">Where the idea came from</h2>
+      <p>
+        Alien Jon described sessions at Burning Man in 2007 where the OMCC
+        group, with Noel, Greg, Jordan and Zan, took complex poi patterns apart
+        to see how they worked. Damien joined them with his own CAP
+        explorations.
+      </p>
+      <p>
+        The name reached a wider audience in 2009, in a <LinkChip
+          size="inline"
+          href={THREAD_URL}>Home of Poi thread</LinkChip
+        > about Yuta's spinning. Alien Jon wrote that he got the term from Damien.
+        Damien then set out his model in the thread: the O/M/E notation, rules
+        for which combinations can be spun, and worked examples. His framework
+        survives in <LinkChip size="inline" href={MATH_URL}
+          >The Math of CAPs</LinkChip
+        >, preserved by DrexFactor. Some playlists and images linked from the
+        thread are gone.
+      </p>
+      <p>
+        Lessons carried the idea from there. Drex documented the definition and
+        the <LinkChip size="inline" href={CCAP_URL}>C-CAP</LinkChip> from 2011
+        on. Nick Woolsey taught CAPs on <LinkChip
+          size="inline"
+          href={PLAYPOI_URL}>PlayPoi</LinkChip
+        > in 2016 as Capped Antispin Patterns. Drex's <LinkChip
+          size="inline"
+          href={EIGHT_STEP_URL}>eight-step double staff lesson</LinkChip
+        > credits Charlie's 9-Square Theory.
+      </p>
+    </div>
+  </section>
+
+  <section id="loops" class="editorial-section">
+    <div class="prose">
+      <h2 class="section-title">CAPs and LOOPs</h2>
+      <p>
+        A CAP starts from one prop. Its path is built from simple curves, and
+        each hand's path is worked out on its own. A two-hand pattern comes from
+        putting two of those paths together.
+      </p>
+      <p>
+        A LOOP starts from both hands at once. Each letter of the Kinetic
+        Alphabet records where both hands and props go on one beat, and a LOOP
+        is a word made of those letters that comes back to its starting
+        position. The first Kinetic Alphabet guide called these CAPs too, which
+        is why the two names get mixed up. They are covered in the <LinkChip
+          size="inline"
+          href="/guide/level-1/permutations">Level 1 guide</LinkChip
+        >.
+      </p>
+    </div>
+    <div id="comparison" class="comparison">
+      <figure class="figure cap-figure">
+        <div class="cap-frame"><YutaCapLiveDemo /></div>
+        <figcaption>a CAP: one club, one path</figcaption>
+      </figure>
+      <div class="figure">
+        <SequenceHeroDemo
+          sequence={NOTATION_LOOP_TEASER_SEQUENCE}
+          leftPropType="club"
+          rightPropType="club"
+          note="a LOOP: both hands, turning a quarter each time it repeats"
         />
-      {/each}
+      </div>
     </div>
-    <p class="media-footnote">
-      Charlie's series continues in the <a
-        href="https://www.youtube.com/playlist?list=PLDE05D5E593C54AED"
-        >full 9-Square Theory playlist</a
-      >. Alien Jon's pattern playlist from the origin thread no longer resolves.
-    </p>
   </section>
 
-  <section id="sources" class="editorial-section" style="--accent: #94a3b8">
-    <span class="section-kicker">Sources</span>
-    <h2 class="section-title">Read the originals</h2>
-    <ol class="sources-grid">
-      <li>
-        <span>Origin discussion</span>
-        <a href={THREAD_URL}>“What are CAP's?”</a>
-        <p>
-          Home of Poi, ca. 2009. Coinage attribution, the OMCC account, Damien's
-          framework, and the community debate.
-        </p>
-      </li>
-      <li>
-        <span>Mathematical framework</span>
-        <a href={MATH_URL}>The Math of CAPs</a>
-        <p>Damien's model and notation, preserved by DrexFactor.</p>
-      </li>
-      <li>
-        <span>Curve references</span>
-        <a href={MATHCURVE_URL}
-          >Encyclopédie des formes mathématiques remarquables</a
-        >
-        <p>
-          Robert Ferréol's mathematical curve encyclopedia supplied the animated
-          illustrations Damien linked.
-        </p>
-      </li>
-      <li>
-        <span>C-CAP lesson</span>
-        <a
-          href="https://drexfactor.com/index.php?q=weirdscience%2F2012%2F08%2F21%2Fbasic_poi_dancing_tutorial_c_caps"
-          >Basic Poi Dancing Tutorial: C-CAPs</a
-        >
-        <p>DrexFactor, 2012.</p>
-      </li>
-      <li>
-        <span>Learner lesson</span>
-        <a
-          href="https://playpoi.com/learn/learning-caps-capped-antispin-patterns/"
-          >Learning CAPs (Capped Antispin Patterns)</a
-        >
-        <p>Nick Woolsey, PlayPoi, 2016.</p>
-      </li>
-      <li>
-        <span>Print reference</span>
-        <strong>Encyclo-poi-dia Vol. 2</strong>
-        <p>A print-era CAP chapter referenced in the origin thread.</p>
-      </li>
-    </ol>
+  <section id="sources" class="editorial-section">
+    <h2 class="section-title">Sources</h2>
+    <ul class="sources" role="list">
+      {#each SOURCES as source (source.href)}
+        <li><LinkChip href={source.href} wrap>{source.label}</LinkChip></li>
+      {/each}
+    </ul>
+    <p class="print-note">
+      Print: Encyclo-poi-dia Vol. 2 has a CAP chapter, referenced in the
+      original thread.
+    </p>
   </section>
 </div>
 
 <style>
-  .caps-editorial {
-    --caps-surface: color-mix(
-      in oklch,
-      var(--theme-card-bg, #11151f) 92%,
-      #0b1324
-    );
+  .caps-page .prose {
+    max-inline-size: 68ch;
   }
 
-  :global(.caps-editorial code) {
-    padding: 0.08em 0.35em;
-    border-radius: 0.3rem;
-    background: color-mix(in srgb, currentColor 8%, transparent);
-    font-variant-numeric: tabular-nums;
-  }
-
-  #what-is,
-  #math,
-  #origin,
-  #credits,
-  #relationship,
-  #watch,
-  #sources,
-  #breakdown {
-    scroll-margin-top: 6rem;
-  }
-
-  .definition-duo {
-    align-items: stretch;
-  }
-
-  .definition-demo {
+  .text-and-figure {
     display: grid;
-    place-items: center;
-    min-width: 0;
-    padding: clamp(1rem, 2.6vw, 2rem);
-    border: 1px solid
-      color-mix(in srgb, var(--accent) 25%, rgb(255 255 255 / 0.08));
-    border-radius: clamp(1rem, 1rem + 0.6vw, 1.6rem);
-    background:
-      radial-gradient(
-        circle at 50% 44%,
-        rgb(56 189 248 / 0.12),
-        transparent 56%
-      ),
-      var(--caps-surface);
-  }
-
-  .definition-demo :global(.assembly) {
-    min-height: clamp(24rem, 46vw, 42rem);
-  }
-
-  .definition-copy {
-    align-self: center;
-  }
-
-  .cap-credit,
-  .atlas-credit {
-    color: color-mix(in srgb, var(--theme-text-dim, #aab4c3) 86%, transparent);
-    font-size: 0.88em;
-  }
-
-  .breakdown-title {
-    margin: clamp(1.5rem, 2.4vw, 2.25rem) 0 0.75rem;
-    color: var(--theme-text, #f8fafc);
-    font-size: clamp(1.15rem, 1rem + 0.35vw, 1.5rem);
-    letter-spacing: -0.015em;
-  }
-
-  .compact-list {
-    margin-block: 0;
-  }
-
-  .compact-list li {
-    margin-bottom: 0.55rem;
-    font-size: clamp(0.92rem, 0.88rem + 0.16vw, 1.08rem);
-    line-height: 1.5;
-  }
-
-  .math-heading {
-    display: grid;
-    grid-template-columns: minmax(0, 0.72fr) minmax(0, 1.28fr);
-    align-items: start;
-    gap: clamp(2rem, 5vw, 6rem);
-    margin-bottom: clamp(2rem, 3.5vw, 3.75rem);
-  }
-
-  .math-heading .section-title {
-    margin-bottom: 0;
-  }
-
-  .chronology {
-    display: grid;
-    gap: 0;
-    margin: clamp(1.5rem, 2.5vw, 2.5rem) 0 0;
-    padding: 0;
-    list-style: none;
-  }
-
-  .chronology li {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 0.5rem;
-    padding: clamp(1rem, 1.6vw, 1.5rem) 0;
-    border-top: 1px solid rgb(255 255 255 / 0.08);
-  }
-
-  .chronology time {
-    color: color-mix(in srgb, var(--accent) 76%, white);
-    font-size: clamp(1rem, 0.9rem + 0.3vw, 1.3rem);
-    font-weight: 760;
-    font-variant-numeric: tabular-nums;
-  }
-
-  .chronology h3 {
-    margin: 0 0 0.35rem;
-    color: var(--theme-text, #f8fafc);
-    font-size: clamp(1.05rem, 0.96rem + 0.24vw, 1.28rem);
-  }
-
-  .chronology p {
-    margin: 0;
-    color: var(--theme-text-dim, #aab4c3);
-    font-size: clamp(0.92rem, 0.88rem + 0.14vw, 1.08rem);
-    line-height: 1.6;
-  }
-
-  .credits-layout {
-    display: grid;
-    gap: clamp(1rem, 1.8vw, 1.5rem);
-    margin-top: clamp(1.5rem, 2.4vw, 2.5rem);
-  }
-
-  .credit-primary,
-  .credit-support article,
-  .relationship-grid article,
-  .sources-grid li {
-    border: 1px solid rgb(255 255 255 / 0.09);
-    background: color-mix(in oklch, var(--caps-surface) 94%, transparent);
-  }
-
-  .credit-primary {
-    padding: clamp(1.25rem, 2.4vw, 2.25rem);
-    border-color: color-mix(
-      in srgb,
-      var(--accent) 32%,
-      rgb(255 255 255 / 0.08)
-    );
-    border-radius: 1rem;
-    background:
-      radial-gradient(circle at 0% 0%, rgb(56 189 248 / 0.12), transparent 44%),
-      var(--caps-surface);
-  }
-
-  .credit-role,
-  .sources-grid li > span,
-  .relationship-grid article > span {
-    color: color-mix(in srgb, var(--accent) 72%, white);
-    font-size: 0.75rem;
-    font-weight: 720;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-  }
-
-  .credit-primary h3 {
-    margin: 0.35rem 0 0;
-    color: var(--theme-text, #f8fafc);
-    font-size: clamp(2rem, 1.5rem + 1.5vw, 3.6rem);
-    letter-spacing: -0.04em;
-  }
-
-  .credit-primary .alias {
-    margin: 0.1rem 0 1rem;
-    color: color-mix(in srgb, var(--accent) 65%, white);
-    font-size: 0.82rem;
-  }
-
-  .credit-primary > p:last-of-type,
-  .credit-support p,
-  .relationship-grid p,
-  .sources-grid p {
-    color: var(--theme-text-dim, #aab4c3);
-    line-height: 1.58;
-  }
-
-  .credit-primary > p:last-of-type {
-    margin: 0;
-    font-size: clamp(0.95rem, 0.9rem + 0.16vw, 1.1rem);
-  }
-
-  .credit-links,
-  .credit-support article {
-    display: flex;
-  }
-
-  .credit-links {
-    flex-wrap: wrap;
-    gap: 0.55rem;
-    margin-top: 1.25rem;
-  }
-
-  .credit-links a,
-  .credit-support a {
-    color: color-mix(in srgb, var(--accent) 72%, white);
-    text-decoration: none;
-  }
-
-  .credit-links a {
+    gap: clamp(1.5rem, 1rem + 2vw, 3rem);
     align-items: center;
-    min-height: 44px;
-    padding: 0.45rem 0.85rem;
-    border: 1px solid rgb(255 255 255 / 0.14);
-    border-radius: 999px;
-    background: rgb(255 255 255 / 0.04);
   }
 
-  .credit-support {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: clamp(0.8rem, 1.2vw, 1.15rem);
-  }
-
-  .credit-support article {
-    flex-direction: column;
-    min-width: 0;
-    padding: clamp(1rem, 1.6vw, 1.5rem);
-    border-radius: 0.9rem;
-  }
-
-  .credit-support h3 {
-    margin: 0 0 0.5rem;
-    color: var(--theme-text, #f8fafc);
-    font-size: clamp(1rem, 0.92rem + 0.22vw, 1.22rem);
-  }
-
-  .credit-support h3 span {
-    color: var(--theme-text-dim, #aab4c3);
-    font-size: 0.72em;
-    font-weight: 500;
-  }
-
-  .credit-support p {
+  .figure {
     margin: 0;
-    font-size: clamp(0.86rem, 0.82rem + 0.12vw, 0.98rem);
+    min-inline-size: 0;
   }
 
-  .credit-support a {
-    width: fit-content;
-    margin-top: auto;
-    padding-top: 0.8rem;
-    font-size: 0.82rem;
-    text-decoration: underline;
-    text-underline-offset: 0.2rem;
+  .assembly-frame {
+    inline-size: min(100%, 30rem);
+    aspect-ratio: 1 / 1.2;
+    margin-inline: auto;
   }
 
-  .credit-footnote,
-  .media-footnote {
-    margin: 1.25rem 0 0;
-    color: var(--theme-text-dim, #aab4c3);
-    font-size: clamp(0.88rem, 0.84rem + 0.12vw, 1rem);
-    line-height: 1.55;
-  }
-
-  .relationship-grid {
+  .comparison {
+    --pair-w: min(26rem, 100%);
+    --hero-demo-max-width: var(--pair-w);
+    --hero-demo-wide-max-width: var(--pair-w);
     display: grid;
-    grid-template-columns: 1fr;
-    gap: clamp(0.85rem, 1.5vw, 1.35rem);
-    margin-top: clamp(1.5rem, 2.4vw, 2.5rem);
+    gap: clamp(1.5rem, 1rem + 2vw, 3rem);
+    margin-block-start: clamp(1.5rem, 1rem + 1vw, 2.5rem);
+    align-items: start;
   }
 
-  .relationship-grid article {
-    padding: clamp(1.15rem, 2vw, 2rem);
-    border-radius: 1rem;
+  /* Same width and stage as the LOOP demo beside it, so the pair reads as
+     one comparison. */
+  .cap-figure {
+    inline-size: var(--pair-w);
+    margin-inline: auto;
   }
 
-  .relationship-grid h3 {
-    margin: 0.35rem 0 0.6rem;
-    color: var(--theme-text, #f8fafc);
-    font-size: clamp(1.2rem, 1rem + 0.5vw, 1.7rem);
+  .comparison :global(.hero-demo) {
+    margin-block-start: 0;
   }
 
-  .relationship-grid p {
+  .cap-frame {
+    border: 1px solid oklch(0.4 0.04 270 / 0.14);
+    border-radius: 18px;
+    background: oklch(0.14 0.006 270);
+  }
+
+  .cap-figure figcaption {
+    margin-block-start: 0.8rem;
+    font-size: clamp(0.85rem, 0.8rem + 0.12vw, 1rem);
+    font-style: italic;
+    color: oklch(0.6 0.02 270);
+  }
+
+  .sources {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
     margin: 0;
-    font-size: clamp(0.92rem, 0.88rem + 0.14vw, 1.06rem);
-  }
-
-  .cap-media-grid {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: clamp(1rem, 1.5vw, 1.5rem);
-    margin-top: clamp(1.5rem, 2.4vw, 2.5rem);
-  }
-
-  .media-footnote a {
-    color: color-mix(in srgb, var(--accent) 74%, white);
-  }
-
-  .sources-grid {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: clamp(0.8rem, 1.2vw, 1.1rem);
-    margin: clamp(1.5rem, 2.4vw, 2.5rem) 0 0;
     padding: 0;
     list-style: none;
-    counter-reset: sources;
   }
 
-  .sources-grid li {
-    position: relative;
-    min-width: 0;
-    padding: clamp(1rem, 1.5vw, 1.4rem);
-    border-radius: 0.85rem;
-    counter-increment: sources;
+  .print-note {
+    margin: 1.2rem 0 0;
+    font-size: clamp(0.9rem, 0.85rem + 0.12vw, 1.05rem);
+    color: oklch(0.62 0.02 270);
   }
 
-  .sources-grid li::after {
-    content: counter(sources, decimal-leading-zero);
-    position: absolute;
-    top: 0.75rem;
-    right: 0.85rem;
-    color: rgb(255 255 255 / 0.12);
-    font-size: 1.5rem;
-    font-weight: 760;
-    font-variant-numeric: tabular-nums;
-  }
-
-  .sources-grid a,
-  .sources-grid strong {
-    display: block;
-    width: fit-content;
-    max-width: calc(100% - 2rem);
-    margin-top: 0.45rem;
-    color: var(--theme-text, #f8fafc);
-    font-size: clamp(0.94rem, 0.9rem + 0.12vw, 1.06rem);
-    font-weight: 680;
-  }
-
-  .sources-grid a {
-    text-decoration-color: color-mix(in srgb, var(--accent) 48%, transparent);
-    text-underline-offset: 0.22rem;
-  }
-
-  .sources-grid p {
-    margin: 0.5rem 0 0;
-    font-size: clamp(0.82rem, 0.79rem + 0.1vw, 0.93rem);
-  }
-
-  @media (min-width: 48rem) {
-    .credit-support,
-    .sources-grid,
-    .relationship-grid,
-    .cap-media-grid {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-  }
-
-  @media (max-width: 68rem) {
-    .math-heading {
-      grid-template-columns: 1fr;
-      gap: 0.75rem;
-    }
-  }
-
-  @media (min-width: 105rem) {
-    .chronology li {
-      grid-template-columns: 8rem minmax(0, 1fr);
-      gap: clamp(2rem, 4vw, 5rem);
-      align-items: baseline;
+  @media (min-width: 960px) {
+    .text-and-figure {
+      grid-template-columns: minmax(0, 68ch) minmax(0, 1fr);
     }
 
-    .credits-layout {
-      grid-template-columns: minmax(24rem, 0.78fr) minmax(0, 1.52fr);
-    }
-
-    .cap-media-grid {
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-    }
-  }
-
-  @media (max-width: 37.5rem) {
-    .definition-demo {
-      padding: 0.75rem;
-    }
-
-    .definition-demo :global(.assembly) {
-      min-height: 22rem;
+    .comparison {
+      grid-template-columns: repeat(2, var(--pair-w));
+      justify-content: center;
+      column-gap: clamp(3rem, 2rem + 3vw, 6rem);
     }
   }
 </style>

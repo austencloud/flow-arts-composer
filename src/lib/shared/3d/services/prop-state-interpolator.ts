@@ -11,8 +11,11 @@ import type { MotionConfig3D } from "../domain/models/motion-data-3d";
 import {
   planeAngleToWorldPosition,
   calculatePropQuaternion,
-  GRID_RADIUS_3D,
 } from "../domain/constants/plane-transforms";
+import {
+  DEFAULT_HAND_DISTANCE,
+  type HandDistance,
+} from "../domain/performer-hand-distance";
 import {
   normalizeAngle,
   lerpAngle,
@@ -53,7 +56,8 @@ function interpolateDashPosition(
   config: MotionConfig3D,
   startAngle: number,
   endAngle: number,
-  progress: number
+  progress: number,
+  handDistance: HandDistance
 ): { worldPosition: Vector3; centerPathAngle: number } {
   const startX = Math.cos(startAngle);
   const startY = Math.sin(startAngle);
@@ -69,7 +73,7 @@ function interpolateDashPosition(
   const worldPosition = planeAngleToWorldPosition(
     config.plane,
     centerPathAngle,
-    radius * GRID_RADIUS_3D
+    radius * handDistance.toward(config.plane, centerPathAngle)
   );
 
   return { worldPosition, centerPathAngle };
@@ -103,7 +107,8 @@ function interpolateConcavePosition(
   config: MotionConfig3D,
   startAngle: number,
   endAngle: number,
-  progress: number
+  progress: number,
+  handDistance: HandDistance
 ): { worldPosition: Vector3; centerPathAngle: number } {
   // Angle rides the arc; the petal model modulates radius only. The old
   // chord-reflection produced one mid-step dip regardless of turns — the
@@ -115,7 +120,7 @@ function interpolateConcavePosition(
   const worldPosition = planeAngleToWorldPosition(
     config.plane,
     centerPathAngle,
-    radius * GRID_RADIUS_3D
+    radius * handDistance.toward(config.plane, centerPathAngle)
   );
 
   return { worldPosition, centerPathAngle };
@@ -123,10 +128,15 @@ function interpolateConcavePosition(
 
 /**
  * Calculate PropState3D from config and progress.
+ *
+ * `handDistance` is how far this hand sits from its grid center. Performers
+ * pass their own; labs and diagrams that draw their own grids take the fixed
+ * default.
  */
 export function calculatePropState(
   config: MotionConfig3D,
-  progress: number
+  progress: number,
+  handDistance: HandDistance = DEFAULT_HAND_DISTANCE
 ): PropState3D {
   const startCenterAngle = LOCATION_ANGLES[config.startLocation] ?? 0;
   const endCenterAngle = LOCATION_ANGLES[config.endLocation] ?? 0;
@@ -162,7 +172,8 @@ export function calculatePropState(
       config,
       startCenterAngle,
       endCenterAngle,
-      progress
+      progress,
+      handDistance
     );
 
     return {
@@ -179,7 +190,8 @@ export function calculatePropState(
       config,
       startCenterAngle,
       endCenterAngle,
-      progress
+      progress,
+      handDistance
     );
 
     return {
@@ -200,7 +212,7 @@ export function calculatePropState(
   const worldPosition = planeAngleToWorldPosition(
     config.plane,
     centerPathAngle,
-    GRID_RADIUS_3D
+    handDistance.toward(config.plane, centerPathAngle)
   );
 
   return {
@@ -215,6 +227,9 @@ export function calculatePropState(
 /**
  * Compute the start-position PropState3D (progress = 0).
  */
-export function getStartPropState(config: MotionConfig3D): PropState3D {
-  return calculatePropState(config, 0);
+export function getStartPropState(
+  config: MotionConfig3D,
+  handDistance: HandDistance = DEFAULT_HAND_DISTANCE
+): PropState3D {
+  return calculatePropState(config, 0, handDistance);
 }

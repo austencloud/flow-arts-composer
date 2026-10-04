@@ -130,11 +130,13 @@ export class SnapPoints {
     const currentValue = this.getCurrentValue();
     const { velocityThreshold, distanceThreshold } = this.options;
 
-    // Determine direction: positive offset means dragging towards closed
-    const isDraggingToClose = dragOffset > 0;
-
-    // Calculate effective position (current visible size minus drag)
-    const effectiveSize = currentValue - Math.abs(dragOffset);
+    // Bottom/right drawers close with positive travel; top/left with negative.
+    const closingTravel =
+      this.options.placement === "bottom" || this.options.placement === "right"
+        ? dragOffset
+        : -dragOffset;
+    const isDraggingToClose = closingTravel > 0;
+    const effectiveSize = currentValue - closingTravel;
 
     // Find the nearest snap point
     let nearestIndex = this.currentIndex;
@@ -148,38 +150,19 @@ export class SnapPoints {
       }
     }
 
-    // Check velocity - if moving fast enough, snap to next point in that direction
-    const absVelocity = Math.abs(velocity);
-    if (absVelocity > velocityThreshold!) {
-      if (isDraggingToClose && this.currentIndex > 0) {
-        // Snap to smaller size (or close)
-        return Math.max(0, nearestIndex - 1);
-      } else if (
-        !isDraggingToClose &&
-        this.currentIndex < this.snapPointsPx.length - 1
-      ) {
-        // Snap to larger size
-        return Math.min(this.snapPointsPx.length - 1, nearestIndex + 1);
-      }
+    const nextIndex = this.currentIndex + (isDraggingToClose ? -1 : 1);
+    if (nextIndex < 0 || nextIndex >= this.snapPointsPx.length) {
+      return this.currentIndex;
     }
-
-    const thresholdDistance = Math.abs(
-      (this.snapPointsPx[nearestIndex]! -
-        (this.snapPointsPx[nearestIndex - 1] ?? 0)) *
-        distanceThreshold!
+    if (Math.abs(velocity) > velocityThreshold! && Math.abs(dragOffset) > 5) {
+      return nextIndex;
+    }
+    const distanceToNext = Math.abs(
+      this.snapPointsPx[nextIndex]! - currentValue
     );
-
-    if (Math.abs(dragOffset) > thresholdDistance) {
-      if (isDraggingToClose && nearestIndex > 0) {
-        return nearestIndex - 1;
-      } else if (
-        !isDraggingToClose &&
-        nearestIndex < this.snapPointsPx.length - 1
-      ) {
-        return nearestIndex + 1;
-      }
+    if (Math.abs(dragOffset) < distanceToNext * distanceThreshold!) {
+      return this.currentIndex;
     }
-
     return nearestIndex;
   }
 

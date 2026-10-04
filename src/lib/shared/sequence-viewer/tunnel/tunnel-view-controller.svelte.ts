@@ -414,6 +414,23 @@ export class TunnelViewController {
     return this.#layersReady;
   }
 
+  /** The same transformed stage instances used by the animation canvas. */
+  get notationLayers(): readonly BuiltTunnelLayer[] {
+    return this.#layers;
+  }
+
+  get notationSequence(): SequenceData | null | undefined {
+    return this.#sources.getSequence();
+  }
+
+  /** The canvas's offset and speed for this exact stage appearance. */
+  notationTimingForLayer(layer: BuiltTunnelLayer): {
+    offset: number;
+    speed: number;
+  } {
+    return this.#samplingTimingForLayer(layer);
+  }
+
   /** The live config as a plain object (for propCount / persistence / key). */
   get config(): TunnelConfig {
     return {

@@ -97,6 +97,10 @@ export class AdaptiveTrailOverlay implements ITrailOverlayCanvas {
     this.active?.clearBuffers();
   }
 
+  refreshStyle(): void {
+    this.active?.refreshStyle();
+  }
+
   setVisible(visible: boolean): void {
     this.visible = visible;
     this.active?.setVisible(visible);

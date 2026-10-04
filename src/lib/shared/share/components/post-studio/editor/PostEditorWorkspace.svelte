@@ -1,6 +1,10 @@
 <script lang="ts">
   import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import { onDestroy, tick, untrack } from "svelte";
+  import EditHistoryShortcutBridge from "$lib/shared/keyboard/components/EditHistoryShortcutBridge.svelte";
+  import { getKeyboardShortcutManager } from "$lib/shared/keyboard/get-keyboard-shortcut-manager";
+  import { registerEditHistoryShortcuts } from "$lib/shared/keyboard/registration/register-edit-history-shortcuts";
+  import { keyboardShortcutState } from "$lib/shared/keyboard/state/keyboard-shortcut-state.svelte";
+  import { onDestroy, onMount, tick, untrack } from "svelte";
   import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
   import type { SequenceExportOptions } from "$lib/shared/render/domain/models/sequence-export-options";
   import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
@@ -9,7 +13,8 @@
   import { simplifyRepeatedWord } from "$lib/shared/foundation/utils/word-simplifier";
   import { deriveWord } from "$lib/shared/foundation/services/word-deriver";
   import { getSequenceVideosStore } from "$lib/shared/video-collaboration/state/sequence-videos-store.svelte";
-  import { createHandLabeledCard } from "$lib/shared/sequence-viewer/services/hand-labeled-card.svelte";
+  import { createPostSequenceView } from "$lib/shared/media-composition/services/post-sequence-view.svelte";
+  import { mirrorPostProject } from "$lib/shared/media-composition/domain/post-project-mirror";
   import {
     DEFAULT_HAND_LABELING,
     type HandLabeling,
@@ -20,33 +25,55 @@
     stripModeFromRole,
     stripRole,
     takeIdFromRole,
+    takeRole,
   } from "$lib/shared/media-composition/domain/post-plan-compiler";
+  import { takeFileKey } from "$lib/shared/media-composition/domain/post-plan";
   import {
+    itemIdFromMovesAnimationRole,
+    itemIdFromStaffEffectRole,
     itemIdFromTextRole,
+    staffEffectRole,
     textRole,
   } from "$lib/shared/media-composition/domain/post-project-compiler";
   import {
+    POST_CANVAS_RATIOS,
+    POST_DEFAULT_BACKGROUND,
     POST_FRAME_RATE,
     POST_TIME_EPSILON,
     findItem,
     itemEnd,
     mainItemAt,
+    type PostBackground,
+    type PostCanvasRatio,
     type PostItem,
     type PostItemKind,
+    type PostKeyframeChannel,
+    type PostProject,
     type PostVideoItem,
   } from "$lib/shared/media-composition/domain/post-project";
   import {
-    moveKeyframes,
-    removeKeyframesAt,
+    channelsOf,
+    keyframeCount,
+    moveKeyframe,
+    removeKeyframe,
     toggleKeyframe,
   } from "$lib/shared/media-composition/domain/post-project-keyframes";
   import {
+    clearProjectKeyframes,
     editItemKeyframes,
-    moveMainItem,
+    placeMainItem,
     moveOverlayItem,
+    moveSelectedItems,
+    setProjectBackground,
+    setProjectCanvas,
     setTrackFlag,
   } from "$lib/shared/media-composition/domain/post-project-edits";
   import type { StripMode } from "$lib/shared/media-composition/domain/strip-view";
+  import {
+    postCanvasOf,
+    postOutputSize,
+    ratioValue,
+  } from "$lib/shared/media-composition/domain/post-canvas";
   import type { CompositionSourceBinding } from "$lib/shared/media-composition/state/media-composition-state.svelte";
   import {
     createPostEditorState,
@@ -56,10 +83,18 @@
   import type { PostStudioLayerPainter } from "$lib/shared/media-composition/services/post-studio-layer-painter";
   import { createBeatCarouselPainter } from "$lib/shared/media-composition/services/beat-carousel-painter";
   import { createSequenceStripPainter } from "$lib/shared/media-composition/services/sequence-strip-painter";
+  import { getAnimationVisibilityManager } from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
   import { createTextItemPainter } from "$lib/shared/media-composition/services/text-item-painter";
+  import { createStaffEffectPainter } from "$lib/shared/media-composition/services/staff-effect-painter";
+  import { createTunnelTitlesPainter } from "$lib/shared/media-composition/services/tunnel-titles-painter";
+  import { itemIdFromTitlesRole } from "$lib/shared/media-composition/domain/tunnel-titles";
+  import { createStaffTipAnalysis } from "$lib/shared/media-composition/state/staff-tip-analysis.svelte";
   import { loadAnimationOverlayPainter } from "$lib/shared/media-composition/services/animation-overlay-painter-registry";
   import { planProjectAudio } from "$lib/shared/media-composition/domain/post-audio-plan";
-  import { buildMixedAudioTrack } from "$lib/shared/media-composition/services/post-audio-track";
+  import {
+    AudioDownloadStalledError,
+    buildMixedAudioTrack,
+  } from "$lib/shared/media-composition/services/post-audio-track";
   import {
     exportPostStudioVideo,
     type PostStudioExportProgress,
@@ -75,25 +110,79 @@
   } from "$lib/shared/transitions/layout-flip";
   import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
   import type { PostStudioShareExport } from "../post-studio-share-export";
+  import Drawer from "$lib/shared/foundation/ui/Drawer.svelte";
+  import DrawerHeader from "$lib/shared/foundation/ui/DrawerHeader.svelte";
+  import PostTimingTap from "../builder/PostTimingTap.svelte";
+  import PostTimingAnimationPreview from "../builder/PostTimingAnimationPreview.svelte";
+  import PostTimingAnimationSettings from "../builder/PostTimingAnimationSettings.svelte";
   import PostTimingStage from "../builder/PostTimingStage.svelte";
+  import PostTimingTimeline from "../builder/PostTimingTimeline.svelte";
   import PostTimingPanel from "../builder/PostTimingPanel.svelte";
   import { createPostTimingSession } from "../builder/post-timing-session.svelte";
+  import { formatTakeClock } from "../builder/post-builder-format";
   import PostEditorCanvas from "./PostEditorCanvas.svelte";
+  import {
+    qrImageForAppearance,
+    qrPayloadForImage,
+  } from "../post-qr-image-appearance";
+  import { createPostVideoPreviews } from "$lib/shared/media-composition/state/post-video-previews.svelte";
   import PostEditorTopBar from "./PostEditorTopBar.svelte";
+  import PostEditorActions from "./PostEditorActions.svelte";
+  import PostSaveButton from "./PostSaveButton.svelte";
+  import { getPostEditorHeader } from "./post-editor-header.svelte";
   import PostEditorTransport from "./PostEditorTransport.svelte";
-  import PostCropTimebar from "./PostCropTimebar.svelte";
+  import PostCropTimeline from "./PostCropTimeline.svelte";
   import PostToolRow from "./PostToolRow.svelte";
   import PostToolPanel from "./PostToolPanel.svelte";
+  import PostTransitionTool from "./PostTransitionTool.svelte";
   import PostItemTool from "./PostItemTool.svelte";
+  import PostKeyframeControls from "./PostKeyframeControls.svelte";
+  import ConfirmDialog from "$lib/shared/foundation/ui/ConfirmDialog.svelte";
+  import OverflowMenu from "$lib/shared/ui/components/OverflowMenu.svelte";
+  import {
+    showToast,
+    removeToast,
+  } from "$lib/shared/toast/state/toast-state.svelte";
   import PostAddPanel from "./PostAddPanel.svelte";
   import PostMediaPanel from "./PostMediaPanel.svelte";
   import PostExportPanel from "./PostExportPanel.svelte";
+  import PostRatioPicker from "./PostRatioPicker.svelte";
+  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
   import PostTimeline from "./timeline/PostTimeline.svelte";
   import { clampPixelsPerSecond } from "./timeline/post-timeline-geometry";
-  import { itemDisplayLabel } from "./post-editor-labels";
+  import { channelLabel, itemDisplayLabel } from "./post-editor-labels";
   import { readVideoFile, videoFileError } from "./post-editor-files";
-  import { createCropSession } from "./post-crop-session.svelte";
-  import type { CropSize } from "./post-crop-geometry";
+  import {
+    readInShotRecoveryPackage,
+    loadPostProjectFonts,
+  } from "$lib/shared/media-composition/services/inshot-recovery-package";
+  import {
+    createCropSession,
+    type CropShapeKind,
+  } from "./post-crop-session.svelte";
+  import {
+    createPostDraftAutosave,
+    shouldSubmitPostDraft,
+  } from "$lib/shared/media-composition/services/post-draft-storage";
+  import { loadPostProject } from "$lib/shared/media-composition/services/post-project-store";
+  import { createPostTabSync } from "$lib/shared/media-composition/services/post-tab-sync";
+  import {
+    parsePostStudioBackup,
+    serializePostStudioBackup,
+  } from "$lib/shared/media-composition/services/post-project-backup";
+  import { downloadBlobToDisk } from "$lib/shared/foundation/services/file-downloader";
+  import PostDraftStatus from "./PostDraftStatus.svelte";
+  import ResizeHandle from "$lib/shared/panels/ResizeHandle.svelte";
+  import {
+    adjacentStepSeconds,
+    clipSteps,
+    type ClipStep,
+  } from "./post-crop-steps";
+  import {
+    CROP_STAGE_MARGIN_PX,
+    cropStageRatio,
+    type CropSize,
+  } from "./post-crop-geometry";
   import {
     availablePanels,
     isPanelTool,
@@ -116,6 +205,10 @@
   interface Props {
     active: boolean;
     sequence: SequenceData;
+    initialProject?: PostProject;
+    /** Saves elsewhere too; may hand back a later edit saved somewhere else. */
+    onSaveDraft?: (project: PostProject) => Promise<PostProject | null | void>;
+    draftLoadError?: string | null;
     cardPreviewUrl: string | null;
     animationPreviewUrl: string | null;
     animationPreviewType: "video" | "image";
@@ -128,6 +221,7 @@
     sharing: boolean;
     selectedPropType: PropType;
     onPropChange: (propType: PropType) => void;
+    onProjectPropChange: (propType: PropType | undefined) => void;
     /** Sound a shared link asked for, applied once on open. */
     audioSeed: "takes" | "silent" | null;
     /** `chosen` is false for the sound a saved project opens with. */
@@ -139,6 +233,9 @@
   let {
     active,
     sequence,
+    initialProject,
+    onSaveDraft,
+    draftLoadError = null,
     cardPreviewUrl,
     animationPreviewUrl,
     animationPreviewType,
@@ -151,6 +248,7 @@
     sharing,
     selectedPropType,
     onPropChange,
+    onProjectPropChange,
     audioSeed,
     onAudioChange,
     registerExport,
@@ -186,12 +284,180 @@
   let overlayPainter = $state.raw<PostStudioLayerPainter | null>(null);
 
   const editor = createPostEditorState({
+    initialProject,
     getSequence: () => sequence,
     getCatalogVideo: (videoId) =>
       catalog.find((video) => video.videoId === videoId) ?? null,
     hasAnimationOverlay: () => overlayPainter !== null,
   });
-  const session = createPostTimingSession(editor);
+
+  onMount(() => {
+    if (!import.meta.env.DEV) return;
+    let disposed = false;
+    let stop: (() => void) | undefined;
+    void import("$lib/shared/media-composition/services/post-project-dev-client")
+      .then(({ startPostProjectDevBridge }) => {
+        if (!disposed) stop = startPostProjectDevBridge(editor);
+      })
+      .catch(() => {});
+    return () => {
+      disposed = true;
+      stop?.();
+    };
+  });
+
+  $effect(() => onProjectPropChange(editor.project.propType));
+
+  function choosePropType(propType: PropType): void {
+    editor.edit((project, context) =>
+      project.propType === propType
+        ? project
+        : { ...project, propType, updatedAt: context.now }
+    );
+    onPropChange(propType);
+  }
+  const videoPreviews = createPostVideoPreviews(
+    () =>
+      editor.takes.map((take) => ({
+        id: take.id,
+        url: editor.mediaUrl(take.id),
+        // Takes cut from one recording share one editing copy.
+        assetKey: takeFileKey(take.ref),
+      })),
+    () => editor.isPlaying
+  );
+  const session = createPostTimingSession(
+    editor,
+    (takeId, url) => videoPreviews.resolve(takeId, url).url
+  );
+  onMount(() => {
+    // Standalone sequence pages have no app shortcut coordinator. Reuse its
+    // manager and history bindings; both are safe to initialize again in-app.
+    const manager = getKeyboardShortcutManager();
+    manager.initialize();
+    registerEditHistoryShortcuts(manager, keyboardShortcutState.isMac);
+  });
+
+  let draftSaving = $state(false);
+  let draftError = $state<string | null>(draftLoadError);
+  /** When the last save finished, for the header's saved time. */
+  let savedAt = $state<number | null>(null);
+  /** The Save button was pressed and its save has not landed yet. */
+  let saveRequested = $state(false);
+  let saveFlash = $state(false);
+  let saveFlashTimer: ReturnType<typeof setTimeout> | undefined;
+  const draftAutosave = onSaveDraft
+    ? createPostDraftAutosave(
+        async (project) => {
+          const newer = await onSaveDraft(project);
+          if (newer) editor.adoptSaved(newer);
+        },
+        (saving, error) => {
+          draftSaving = saving;
+          draftError = error;
+          if (saving) return;
+          if (!error) savedAt = Date.now();
+          if (saveRequested) settleSave();
+        }
+      )
+    : null;
+
+  // Every open tab of this post stays on the newest saved copy.
+  const tabSync = createPostTabSync(
+    sequence.id,
+    (project) => editor.adoptSaved(project),
+    () => loadPostProject(sequence.id)
+  );
+
+  $effect(() => {
+    const revision = editor.saveRevision;
+    if (revision > 0) untrack(() => tabSync.announce(editor.snapshot));
+    if (draftAutosave)
+      untrack(() => {
+        const snapshot = editor.snapshot;
+        if (shouldSubmitPostDraft(snapshot, revision))
+          draftAutosave.submit(snapshot);
+      });
+    else if (revision > 0)
+      untrack(() => {
+        if (!editor.saveError) savedAt = Date.now();
+        if (saveRequested) settleSave();
+      });
+  });
+  onDestroy(() => {
+    tabSync.dispose();
+    draftAutosave?.dispose();
+    clearTimeout(saveFlashTimer);
+  });
+
+  /** The page's header row, when it gives one, holds Save and Export. */
+  const header = getPostEditorHeader();
+  $effect(() => {
+    if (!header) return;
+    header.actions = headerActions;
+    return () => {
+      if (header.actions === headerActions) header.actions = undefined;
+    };
+  });
+
+  // With an account or disk save behind it, a full device storage alone does
+  // not lose work, so only the save that keeps the post can fail.
+  const saveFailure = $derived(draftAutosave ? draftError : editor.saveError);
+  const saveStatus = $derived(
+    saveFailure
+      ? "failed"
+      : saveRequested
+        ? "saving"
+        : saveFlash
+          ? "saved"
+          : "idle"
+  );
+
+  function saveNow(): void {
+    clearTimeout(saveFlashTimer);
+    saveFlash = false;
+    saveRequested = true;
+    editor.saveNow();
+  }
+
+  function settleSave(): void {
+    saveRequested = false;
+    if (saveFailure) return;
+    saveFlash = true;
+    saveFlashTimer = setTimeout(() => (saveFlash = false), 1600);
+  }
+
+  function protectUnsavedDraft(event: BeforeUnloadEvent): void {
+    if (!draftSaving && !saveFailure) return;
+    event.preventDefault();
+    event.returnValue = "";
+  }
+
+  async function downloadDraft(): Promise<void> {
+    const blob = new Blob([serializePostStudioBackup(editor.snapshot)], {
+      type: "application/json",
+    });
+    const result = await downloadBlobToDisk(
+      blob,
+      `${sequence.id}-mapped.post-studio.json`
+    );
+    if (!result.success)
+      draftError =
+        "Could not download the backup. Keep this editor open and try again.";
+  }
+  /** The post's size in pixels, from its shape. */
+  const outputSize = $derived(postOutputSize(editor.project.canvas));
+
+  function setCanvas(canvas: PostCanvasRatio): void {
+    editor.pause();
+    editor.edit((project, ctx) => setProjectCanvas(project, canvas, ctx));
+  }
+
+  function setBackground(background: PostBackground): void {
+    editor.edit((project, ctx) =>
+      setProjectBackground(project, background, ctx)
+    );
+  }
 
   untrack(() => {
     if (audioSeed && audioSeed !== editor.project.audio) {
@@ -226,20 +492,43 @@
     }
     return DEFAULT_HAND_LABELING;
   });
-  const labeledCard = createHandLabeledCard({
+  const labeledCard = createPostSequenceView({
     getSequence: () => sequence,
     getLabeling: () => handLabeling,
+    getMirrored: () => editor.project.mirrored ?? false,
+    getActions: () => editor.project.sequenceActions ?? [],
   });
   const displaySequence = $derived(labeledCard.sequence);
+  /** A notice the top bar shows beside Undo and Redo. */
+  const draftNotice = $derived(
+    !!labeledCard.error ||
+      (!!(editor.project.mirrored || editor.project.sequenceActions?.length) &&
+        labeledCard.pending)
+  );
 
   // ---- What each layer draws -----------------------------------------------
 
   const carouselPainter = $derived(createBeatCarouselPainter(displaySequence));
+  const animationVisibility = getAnimationVisibilityManager();
+  let progressBarVisible = $state(
+    animationVisibility.getVisibility("progressBar")
+  );
+  function syncProgressBarVisibility(): void {
+    progressBarVisible = animationVisibility.getVisibility("progressBar");
+  }
+  animationVisibility.registerObserver(syncProgressBarVisibility);
+  onDestroy(() =>
+    animationVisibility.unregisterObserver(syncProgressBarVisibility)
+  );
   const stripPainters = $derived(
     new Map<StripMode, PostStudioLayerPainter>(
       (["arrows", "mandala", "alternate"] as const).map((mode) => [
         mode,
-        createSequenceStripPainter({ sequence: displaySequence, mode }),
+        createSequenceStripPainter({
+          sequence: displaySequence,
+          mode,
+          showProgressBar: () => progressBarVisible,
+        }),
       ])
     )
   );
@@ -258,17 +547,78 @@
     return painter;
   }
 
+  /** One painter per titles clip: the sequence's name and how to say it. */
+  const titlesPainters = new Map<string, PostStudioLayerPainter>();
+  function titlesPainterFor(itemId: string): PostStudioLayerPainter {
+    let painter = titlesPainters.get(itemId);
+    if (!painter) {
+      painter = createTunnelTitlesPainter(
+        () =>
+          editor.compiled?.titles.find((plan) => plan.itemId === itemId) ??
+          null,
+        () =>
+          simplifyRepeatedWord(
+            displaySequence.word || deriveWord(displaySequence)
+          )
+      );
+      titlesPainters.set(itemId, painter);
+    }
+    return painter;
+  }
+
+  /** Where each take's LED staffs are, found once per video. */
+  const staffTips = createStaffTipAnalysis();
+  $effect(() => {
+    for (const take of editor.takes) staffTips.ensure(take.takeKey);
+  });
+
+  function videoItem(itemId: string): PostVideoItem | null {
+    const found = findItem(editor.project, itemId)?.item;
+    return found?.kind === "video" ? found : null;
+  }
+
+  /** One painter per clip, reading its effect and its take's staff ends live. */
+  const staffPainters = new Map<string, PostStudioLayerPainter>();
+  function staffPainterFor(itemId: string): PostStudioLayerPainter {
+    let painter = staffPainters.get(itemId);
+    if (!painter) {
+      painter = createStaffEffectPainter({
+        track: () => {
+          const item = videoItem(itemId);
+          const take = item
+            ? editor.takes.find((entry) => entry.id === item.takeId)
+            : null;
+          return take ? staffTips.track(take.takeKey) : null;
+        },
+        effect: () => videoItem(itemId)?.staffEffect?.effect ?? null,
+        fit: () => videoItem(itemId)?.fit ?? "cover",
+      });
+      staffPainters.set(itemId, painter);
+    }
+    return painter;
+  }
+
   let overlayVersion = 0;
+  let overlaySequence = $state.raw<SequenceData | null>(null);
+  let overlayError = $state<string | null>(null);
   $effect(() => {
     const drawn = displaySequence;
     const version = ++overlayVersion;
+    overlayError = null;
     void loadAnimationOverlayPainter(drawn)
       .then((painter) => {
-        if (version === overlayVersion) overlayPainter = painter;
+        if (version === overlayVersion) {
+          overlayPainter = painter;
+          overlaySequence = drawn;
+        }
       })
       .catch((error: unknown) => {
         console.error("[PostStudio] Beat overlay unavailable:", error);
-        if (version === overlayVersion) overlayPainter = null;
+        if (version === overlayVersion) {
+          overlayPainter = null;
+          overlayError =
+            "Could not prepare the animation. Reload the saved post to retry.";
+        }
       });
   });
 
@@ -289,20 +639,51 @@
   }
 
   function bindingFor(role: string): CompositionSourceBinding | null {
+    if (role.startsWith("image:")) {
+      const imageId = role.slice("image:".length);
+      const asset = editor.images.find((entry) => entry.id === imageId);
+      const url = editor.imageUrl(imageId);
+      return {
+        roleKey: role,
+        kind: "image",
+        label: asset?.label ?? "Image",
+        previewUrl: url,
+        previewType: "image",
+        renderMode: "external-media",
+        status: url ? "ready" : "missing",
+        missingMessage: "Relink this image from the recovered files.",
+      };
+    }
     const takeId = takeIdFromRole(role);
     if (takeId) {
       const take = editor.takes.find((entry) => entry.id === takeId);
       const url = editor.mediaUrl(takeId);
+      const preview = videoPreviews.resolve(takeId, url);
       return {
         roleKey: role,
         kind: "video",
         label: take?.label ?? t("share_studio_deep_take"),
-        previewUrl: url,
+        previewUrl: preview.url,
+        sourceWidth: preview.sourceWidth,
+        sourceHeight: preview.sourceHeight,
+        onPreviewError: () => videoPreviews.reportPlaybackError(takeId),
         previewType: "video",
         renderMode: "external-media",
         ...(take ? { durationSeconds: take.durationSeconds } : {}),
         status: url ? "ready" : "missing",
         missingMessage: t("share_studio_repick_local"),
+      };
+    }
+    const staffItemId = itemIdFromStaffEffectRole(role);
+    if (staffItemId) {
+      return {
+        roleKey: role,
+        kind: "image",
+        label: t("post_staff_effect"),
+        previewUrl: null,
+        renderMode: "painted",
+        painter: staffPainterFor(staffItemId),
+        status: "ready",
       };
     }
     const textItemId = itemIdFromTextRole(role);
@@ -315,6 +696,24 @@
         renderMode: "painted",
         painter: textPainterFor(textItemId),
         status: "ready",
+      };
+    }
+    const titlesItemId = itemIdFromTitlesRole(role);
+    if (titlesItemId) {
+      return painted(
+        role,
+        t("post_editor_kind_titles"),
+        titlesPainterFor(titlesItemId)
+      );
+    }
+    if (itemIdFromMovesAnimationRole(role)) {
+      return {
+        roleKey: role,
+        kind: "sequence-animation",
+        label: t("share_studio_deep_moves"),
+        previewUrl: null,
+        renderMode: "sequence-animation",
+        status: sequence.steps.length > 0 ? "ready" : "missing",
       };
     }
     const strip = stripModeFromRole(role);
@@ -386,6 +785,16 @@
       painters.set(textRole(text.itemId), textPainterFor(text.itemId));
     }
     if (overlayPainter) painters.set(ANIMATION_OVERLAY_ROLE, overlayPainter);
+    for (const plan of editor.compiled?.titles ?? []) {
+      painters.set(plan.role, titlesPainterFor(plan.itemId));
+    }
+    for (const track of editor.project.tracks) {
+      for (const item of track.items) {
+        if (item.kind === "video" && item.staffEffect) {
+          painters.set(staffEffectRole(item.id), staffPainterFor(item.id));
+        }
+      }
+    }
     return painters;
   }
 
@@ -395,31 +804,111 @@
 
   let rootElement = $state<HTMLElement | null>(null);
   let canvasRoot = $state<HTMLElement | null>(null);
+  let playbackCanvas: PostEditorCanvas | undefined = $state();
   /** The side column beside the preview, or in the viewer's side panel. */
   let panelHost = $state<HTMLElement | null>(null);
   /** The panel's own slot in that column, under the top bar. */
   let panelSlot = $state<HTMLElement | null>(null);
   /** A phone's bottom dock: the row, or the panel open in its place. */
   let dockElement = $state<HTMLElement | null>(null);
-  /** The row under the timeline on a wide screen. */
+  /** The row over the timeline on a wide screen. */
   let rowSlot = $state<HTMLElement | null>(null);
   /** The transport, or the crop screen's time bar in its place. */
   let transportSlot = $state<HTMLElement | null>(null);
   /** The preview and its neighbors, the row that grows to fill a phone. */
   let stageRow = $state<HTMLElement | null>(null);
-  /** The preview's height when a phone panel opened, held until it closes. */
+  /** The preview's height before a phone panel opened, kept across tool swaps. */
   let heldStageHeight = $state<number | null>(null);
+  let heldStageEditorSize: { width: number; height: number } | null = null;
   /** The tallest that phone panel may grow and still clear the preview. */
   let dockPanelMax = $state<number | null>(null);
+  let appearancePanelHeight = $state(0);
+  let appearanceDrawerOpen = $state(false);
+  let appearanceSnapPoint = $state<number | null>(1);
   let fileInput = $state<HTMLInputElement | null>(null);
+  let recoveryInput = $state<HTMLInputElement | null>(null);
+
+  $effect(() => {
+    const project = editor.project;
+    if (!project.fonts?.length) return;
+    void loadPostProjectFonts(project).catch((error: unknown) => {
+      fileError =
+        error instanceof Error
+          ? error.message
+          : "Could not load the project font.";
+    });
+  });
   let readingFile = $state(false);
   let fileError = $state("");
+  let showImportDifferences = $state(false);
   let pixelsPerSecond = $state(60);
   let editorWidth = $state(0);
   let editorHeight = $state(0);
+  const DEFAULT_TIMELINE_HEIGHT_PX = 280;
+  const MIN_TIMELINE_HEIGHT_PX = 160;
+  let timelineHeightPx = $state(DEFAULT_TIMELINE_HEIGHT_PX);
+  let timelineResizeStartPx = DEFAULT_TIMELINE_HEIGHT_PX;
+  const maxTimelineHeightPx = $derived(
+    Math.max(MIN_TIMELINE_HEIGHT_PX, Math.min(520, editorHeight - 360))
+  );
+  const shownTimelineHeightPx = $derived(
+    Math.min(timelineHeightPx, maxTimelineHeightPx)
+  );
+
+  function resizeTimeline(delta: number): void {
+    timelineHeightPx = Math.max(
+      MIN_TIMELINE_HEIGHT_PX,
+      Math.min(maxTimelineHeightPx, timelineResizeStartPx - delta)
+    );
+  }
+
+  function resizeTimelineWithKeys(event: KeyboardEvent): void {
+    let nextHeight: number;
+    switch (event.key) {
+      case "ArrowUp":
+        nextHeight = shownTimelineHeightPx + 20;
+        break;
+      case "ArrowDown":
+        nextHeight = shownTimelineHeightPx - 20;
+        break;
+      case "Home":
+        nextHeight = MIN_TIMELINE_HEIGHT_PX;
+        break;
+      case "End":
+        nextHeight = maxTimelineHeightPx;
+        break;
+      default:
+        return;
+    }
+    event.preventDefault();
+    timelineHeightPx = Math.max(
+      MIN_TIMELINE_HEIGHT_PX,
+      Math.min(maxTimelineHeightPx, nextHeight)
+    );
+  }
   let remPixels = $state(16);
   /** The panel last asked for. A wide screen falls back to a default. */
   let activeTool = $state<PostPanelToolId | null>(null);
+  let selectedCut = $state<{ outgoingId: string; incomingId: string } | null>(
+    null
+  );
+  const transitionCut = $derived.by(() => {
+    if (!selectedCut || editor.selectedItemId !== selectedCut.outgoingId)
+      return null;
+    const found = findItem(editor.project, selectedCut.outgoingId);
+    if (!found) return null;
+    const track = editor.project.tracks[found.trackIndex];
+    const index = track.items.findIndex(
+      (item) => item.id === selectedCut.outgoingId
+    );
+    const incoming = track.items[index + 1];
+    if (track.locked || track.hidden || incoming?.id !== selectedCut.incomingId)
+      return null;
+    const gap = incoming.start - itemEnd(found.item);
+    if (gap > 0.001 || (!found.item.transitionOut && Math.abs(gap) > 0.001))
+      return null;
+    return { outgoing: found.item, incoming };
+  });
 
   let exportProgress = $state<PostStudioExportProgress | null>(null);
   let exportError = $state("");
@@ -453,6 +942,12 @@
     Boolean(editor.compiled) &&
       editor.durationSeconds > 0 &&
       !exporting &&
+      !labeledCard.pending &&
+      !labeledCard.error &&
+      (!editor.project.tracks.some((track) =>
+        track.items.some((item) => item.kind === "moves")
+      ) ||
+        (overlaySequence === displaySequence && !overlayError)) &&
       !sharedSurfaces?.moving
   );
 
@@ -469,6 +964,26 @@
 
   // ---- Tools -----------------------------------------------------------------
 
+  let qrImageIds = $state<Record<string, boolean>>({});
+  $effect(() => {
+    const imageIds = new Set(
+      editor.project.tracks.flatMap((track) =>
+        track.items.flatMap((item) =>
+          item.kind === "image" ? [item.imageId] : []
+        )
+      )
+    );
+    for (const imageId of imageIds) {
+      const url = editor.imageUrl(imageId);
+      if (!url) continue;
+      void qrPayloadForImage(url).then((payload) => {
+        if (editor.imageUrl(imageId) === url) {
+          qrImageIds = { ...qrImageIds, [imageId]: payload !== null };
+        }
+      });
+    }
+  });
+
   /** The editor's own width, not the window's: wide enough for a panel
    * beside a full-height preview. */
   const WIDE_REM = 56;
@@ -482,23 +997,61 @@
       16;
   });
 
+  const shortMappingLayout = $derived(
+    showTimingStage &&
+      !externalInspector &&
+      editorHeight < 28 * remPixels &&
+      editorWidth >= LANDSCAPE_WIDE_REM * remPixels &&
+      editorWidth > editorHeight
+  );
   const layout = $derived<"phone" | "wide" | "viewer">(
     externalInspector
       ? "viewer"
-      : editorWidth >= WIDE_REM * remPixels ||
-          (editorWidth > editorHeight &&
-            editorWidth >= LANDSCAPE_WIDE_REM * remPixels)
+      : !shortMappingLayout &&
+          (editorWidth >= WIDE_REM * remPixels ||
+            (editorWidth > editorHeight &&
+              editorWidth >= LANDSCAPE_WIDE_REM * remPixels))
         ? "wide"
         : "phone"
   );
   /** A panel always shows beside the preview or in the viewer's side panel. */
   const panelBeside = $derived(layout !== "phone");
+  let timingSettingsOpen = $state(false);
+  let timingAnimationOpen = $state(false);
+  let timingRatio = $state(9 / 16);
+  let timingAnimationSection: HTMLDivElement | undefined = $state();
+  async function openTimingAnimation(): Promise<void> {
+    timingAnimationOpen = true;
+    if (!panelBeside) {
+      timingSettingsOpen = true;
+      return;
+    }
+    await tick();
+    timingAnimationSection?.scrollIntoView({ block: "nearest" });
+    timingAnimationSection?.focus({ preventScroll: true });
+  }
+  $effect(() => {
+    if (!showTimingStage || panelBeside) timingSettingsOpen = false;
+  });
 
   const selection = $derived.by((): PostToolSelection => {
     const item = editor.selectedItem;
     if (!item) return { kind: null, hasLayout: false };
+    // A tunnel folded into its animation has its own block, which carries its
+    // speed and framing; only a hook saved as a whole item keeps them here.
+    const tunnel = editor.selectedPart === "tunnel";
+    const wholeHook =
+      item.kind === "animation" && item.tunnelHook?.seconds === undefined;
     return {
       kind: item.kind,
+      isQrImage: item.kind === "image" && qrImageIds[item.imageId] === true,
+      isTunnel: tunnel,
+      isTunnelHook:
+        item.kind === "animation" && !!item.tunnelHook && (tunnel || wholeHook),
+      hasBackdrop:
+        item.kind === "animation" &&
+        !!item.tunnelHook?.backdrop &&
+        (tunnel || wholeHook),
       hasLayout:
         item.kind === "video" &&
         findItem(editor.project, item.id)?.trackIndex === 0,
@@ -507,8 +1060,24 @@
   const tools = $derived(toolRow(selection));
   const rowKey = $derived(`row:${tools.join(" ")}`);
   const shown = $derived(shownPanel(activeTool, selection, panelBeside));
+  const appearanceDockOpen = $derived(
+    layout === "phone" &&
+      !cropMode &&
+      !showTimingStage &&
+      shown === "appearance"
+  );
+  $effect(() => {
+    appearanceDrawerOpen = appearanceDockOpen;
+    if (appearanceDockOpen) appearanceSnapPoint = 1;
+  });
+  const appearanceSnapPoints = $derived.by(() => {
+    if (!appearancePanelHeight || !editorHeight) return null;
+    const maximum = Math.min(editorHeight * 0.88, 760);
+    const compact = Math.min(appearancePanelHeight + 32, maximum * 0.8);
+    return [0, compact, maximum];
+  });
   /** A phone shows the panel in the row's place, else the row. */
-  const dockKey = $derived(shown ?? rowKey);
+  const dockKey = $derived(appearanceDockOpen ? rowKey : (shown ?? rowKey));
   /**
    * The crop screen: the selected clip's Crop is open, so the stage shows
    * that clip alone with its window large in the middle. The share sheet, a
@@ -538,6 +1107,40 @@
       const id = editor.selectedItemId;
       return id ? (sourceSizes[id] ?? null) : null;
     },
+  });
+  let cropSourceView = $state(true);
+  let cropSourceShape = $state<CropShapeKind | null>(null);
+
+  /**
+   * The crop stage's shape, so a wide screen gives the stage only the width
+   * it needs and the panel sits beside the picture. It is set once the
+   * footage's size is known and kept until the screen closes: it has room to
+   * straighten, and a quarter turn fits inside it, so the panel never moves
+   * under the pointer. Until then the window's own shape stands in.
+   */
+  let cropStage: { itemId: string; ratio: number } | null = null;
+  const cropView = $derived.by(() => {
+    const itemId = cropMode ? editor.selectedItemId : null;
+    if (!itemId) {
+      cropStage = null;
+      return null;
+    }
+    if (
+      cropSourceView &&
+      (crop.item?.sourceGeometry ||
+        crop.item?.keyframes?.sourceGeometry?.length)
+    ) {
+      const source = crop.source;
+      return source ? source.width / source.height : 1.7778;
+    }
+    if (cropStage?.itemId === itemId) return cropStage.ratio;
+    const pose = crop.pose;
+    if (pose) {
+      cropStage = { itemId, ratio: cropStageRatio(pose, crop.parts.quarter) };
+      return cropStage.ratio;
+    }
+    const window = crop.window;
+    return window ? window.width / window.height : null;
   });
 
   /** The panel that was open before the crop screen, to go back to. */
@@ -576,24 +1179,34 @@
   // than the row, so the preview keeps its height while one is open, and the
   // panel fits the room under it and scrolls inside. When that room is too
   // small to use it may take half the editor, which then scrolls under the
-  // dock. This measures before the panel goes in.
+  // dock. Keep the preview's minimum height while the panel closes: the dock
+  // crossfade retains its tall outgoing layer for a beat before easing down.
+  // Releasing the minimum on Escape would squeeze the preview for that beat.
   const MIN_DOCK_PANEL_REM = 14;
   $effect.pre(() => {
     const phone = layout === "phone" && !showTimingStage;
     const cropDock = phone && cropMode;
-    const holding = phone && !cropMode && shown !== null;
+    const holding = phone && !cropMode && shown !== null && !appearanceDockOpen;
+    const size = { width: editorWidth, height: editorHeight };
     untrack(() => {
+      if (
+        !phone ||
+        cropDock ||
+        (heldStageEditorSize &&
+          (heldStageEditorSize.width !== size.width ||
+            heldStageEditorSize.height !== size.height))
+      ) {
+        heldStageHeight = null;
+        heldStageEditorSize = null;
+      }
       // The crop screen sizes its own dock once it is on screen, below.
       if (cropDock) {
-        heldStageHeight = null;
         return;
       }
       if (!holding) {
-        heldStageHeight = null;
         dockPanelMax = null;
         return;
       }
-      if (heldStageHeight !== null) return;
       if (!stageRow || !rootElement || !dockElement) return;
       const stage = stageRow.getBoundingClientRect();
       const stageBottom =
@@ -610,7 +1223,10 @@
       // The dock's edge lands mid-gap, so it hides the transport completely.
       const room =
         rootElement.clientHeight - stageBottom - gap / 2 - dockChrome;
-      heldStageHeight = stage.height;
+      if (heldStageHeight === null) {
+        heldStageHeight = stage.height;
+        heldStageEditorSize = size;
+      }
       dockPanelMax =
         room >= MIN_DOCK_PANEL_REM * remPixels
           ? room
@@ -619,8 +1235,12 @@
   });
 
   // On a phone the crop screen keeps at least half the room under the top
-  // bar for its stage. Its panel fits under the time bar and scrolls inside.
+  // bar for its stage. Its panel fits under the timeline and scrolls inside.
+  // A short phone gives the panel less, down to a slider and a half, before
+  // the stage goes under its 12rem or the dock covers the keyframes.
   const MIN_CROP_PANEL_REM = 10;
+  const SHORT_CROP_PANEL_REM = 6;
+  const MIN_CROP_STAGE_REM = 12;
   $effect(() => {
     if (!cropMode || layout !== "phone") return;
     void editorHeight;
@@ -640,16 +1260,27 @@
         Number.parseFloat(dock.paddingTop) +
         Number.parseFloat(dock.paddingBottom) +
         Number.parseFloat(dock.borderTopWidth);
-      const room =
-        below / 2 - transportSlot.offsetHeight - gap * 1.5 - dockChrome;
-      dockPanelMax = Math.max(room, MIN_CROP_PANEL_REM * remPixels);
+      const underStage = transportSlot.offsetHeight + gap * 2 + dockChrome;
+      const room = below / 2 - underStage + gap / 2;
+      const fits = below - MIN_CROP_STAGE_REM * remPixels - underStage;
+      dockPanelMax = Math.max(
+        room,
+        Math.min(
+          MIN_CROP_PANEL_REM * remPixels,
+          Math.max(fits, SHORT_CROP_PANEL_REM * remPixels)
+        )
+      );
     });
   });
 
   // A tool the new selection lacks closes, so it does not open again by
   // surprise when a later selection has it.
   $effect(() => {
-    if (activeTool && !availablePanels(selection).includes(activeTool)) {
+    if (
+      activeTool &&
+      (!availablePanels(selection).includes(activeTool) ||
+        (activeTool === "transition" && !transitionCut))
+    ) {
       activeTool = null;
     }
   });
@@ -664,8 +1295,6 @@
         return !editor.selectionEditable;
       case "beats":
         return !canTapBeats;
-      case "tutorial":
-        return editor.takes.length === 0;
       default:
         return false;
     }
@@ -699,16 +1328,16 @@
     if (beatsClip) openBeats(beatsClip);
   }
 
-  function applyTutorial(): void {
-    editor.pause();
-    editor.applyTutorial({
-      runThrough: t("post_editor_run_through"),
-      slowMo: t("post_editor_slow_mo"),
-      card: t("post_editor_card_label"),
-    });
-  }
-
   function pickTool(id: PostToolId): void {
+    if (cropMode && id !== "crop") {
+      cropFlight.capture();
+      crop.abandonGesture();
+      editor.endSession(true);
+      cropSessionOpen = false;
+      cropReturn = null;
+      activeTool = null;
+      void tick().then(() => cropFlight.play());
+    }
     if (isPanelTool(id)) {
       openTool(id);
       return;
@@ -723,9 +1352,6 @@
         if (editor.splitAtPlayhead()) {
           void focusAfterUpdate({ kind: "tool", id: "split" });
         }
-        return;
-      case "tutorial":
-        applyTutorial();
         return;
       case "beats":
         tapBeatsHere();
@@ -759,6 +1385,8 @@
     // Crop edits the frame under the playhead, so it starts inside the clip.
     seekInClip(editor.previewSeconds);
     cropReturn = activeTool === "crop" ? null : activeTool;
+    cropSourceView = true;
+    cropSourceShape = null;
     cropFlight.capture();
     activeTool = "crop";
     await tick();
@@ -809,6 +1437,43 @@
     if (inside !== editor.previewSeconds) editor.seek(inside);
   }
 
+  /** The beats tapped for the crop clip's take, where a keyframe likely goes. */
+  const cropSteps = $derived.by((): ClipStep[] => {
+    const clip = cropMode ? crop.item : null;
+    if (!clip) return [];
+    return clipSteps(
+      clip,
+      editor.timing(clip.takeId),
+      editor.resolvedTiming(clip.takeId)
+    );
+  });
+
+  function cropStepName(step: ClipStep): string {
+    const time = formatTakeClock(step.seconds - (crop.item?.start ?? 0));
+    return step.position === 0
+      ? t("post_crop_opening_at", { time })
+      : t("post_crop_beat_at", { count: step.label, time });
+  }
+
+  function stepCropBeat(direction: "previous" | "next"): void {
+    const seconds = adjacentStepSeconds(
+      cropSteps,
+      editor.previewSeconds,
+      direction
+    );
+    editor.pause();
+    if (seconds !== null) seekInClip(seconds);
+  }
+
+  /** The crop timeline's Curve chip, apart from the stowed timeline's. */
+  let cropCurveOpen = $state(false);
+
+  function openCropCurve(fromSeconds: number): void {
+    editor.pause();
+    seekInClip(fromSeconds);
+    cropCurveOpen = true;
+  }
+
   /** Done on a phone: back to the row, on the tool that opened the panel. */
   function closePanel(): void {
     const tool = shown;
@@ -843,6 +1508,53 @@
     if (readingFile) return;
     fileError = "";
     fileInput?.click();
+  }
+
+  async function importRecovery(event: Event): Promise<void> {
+    const input = event.currentTarget as HTMLInputElement;
+    const selected = [...(input.files ?? [])];
+    input.value = "";
+    if (!selected.length) return;
+    readingFile = true;
+    fileError = "";
+    try {
+      const backupFile = selected.find((file) =>
+        file.name.endsWith(".post-studio.json")
+      );
+      const backup = backupFile
+        ? parsePostStudioBackup(await backupFile.text(), sequence.id)
+        : null;
+      if (backup) {
+        const files = new Map(selected.map((file) => [file.name, file]));
+        await loadPostProjectFonts(backup, files);
+        editor.importProject(backup, files);
+        activeTool = null;
+        return;
+      }
+      if (!selected.some((file) => file.name.endsWith(".post-studio.json"))) {
+        const files = new Map(selected.map((file) => [file.name, file]));
+        await loadPostProjectFonts(editor.project, files);
+        if (!editor.relinkProjectFiles(files))
+          throw new Error(
+            "Select the saved post's original media files, or a .post-studio.json recovery file to import a post."
+          );
+        return;
+      }
+      const { project, files } = await readInShotRecoveryPackage(
+        selected,
+        sequence.id,
+        Date.now()
+      );
+      editor.importProject(project, files);
+      activeTool = null;
+    } catch (error) {
+      fileError =
+        error instanceof Error
+          ? error.message
+          : "Could not import the recovered post.";
+    } finally {
+      readingFile = false;
+    }
   }
 
   async function addDeviceVideo(event: Event): Promise<void> {
@@ -886,6 +1598,143 @@
     editor.seek(seconds);
   }
 
+  function openCrossfade(outgoingId: string, incomingId: string): void {
+    editor.pause();
+    editor.selectedItemId = outgoingId;
+    selectedCut = { outgoingId, incomingId };
+    const outgoing = findItem(editor.project, outgoingId)?.item;
+    const incoming = findItem(editor.project, incomingId)?.item;
+    if (outgoing && incoming) {
+      editor.seek((incoming.start + itemEnd(outgoing)) / 2);
+    }
+    openTool("transition");
+  }
+
+  // ---- Keyframe rows -------------------------------------------------------
+
+  /**
+   * A keyframe row picked on the timeline. It holds only while the same clip
+   * and tool stay up, so opening Fade goes back to keying Fade.
+   */
+  let pickedKeyRow = $state<{
+    itemId: string;
+    tool: PostPanelToolId | null;
+    channel: PostKeyframeChannel;
+  } | null>(null);
+  let keyCurveOpen = $state(false);
+
+  /** What the toolbar diamond and K key: the picked row, else the open tool's channel. */
+  const keyChannel = $derived.by((): PostKeyframeChannel | null => {
+    const item = editor.selectedItem;
+    if (!item) return null;
+    const picked = pickedKeyRow;
+    if (
+      picked &&
+      picked.itemId === item.id &&
+      picked.tool === shown &&
+      channelsOf(item).includes(picked.channel)
+    ) {
+      return picked.channel;
+    }
+    if (
+      (item.kind === "video" || item.kind === "image") &&
+      item.sourceGeometry &&
+      shown !== "fade"
+    )
+      return "sourceGeometry";
+    return keyframeChannelFor(shown, item.kind);
+  });
+
+  function pickKeyRow(channel: PostKeyframeChannel): void {
+    const item = editor.selectedItem;
+    if (item) pickedKeyRow = { itemId: item.id, tool: shown, channel };
+  }
+
+  function editKeys(
+    itemId: string,
+    change: (item: PostItem) => PostItem
+  ): void {
+    editor.edit((project, ctx) =>
+      editItemKeyframes(project, itemId, change, ctx)
+    );
+  }
+
+  const clearablePostKeys = $derived(
+    editor.project.tracks.reduce(
+      (total, track) =>
+        total +
+        (track.locked
+          ? 0
+          : track.items.reduce((sum, item) => sum + keyframeCount(item), 0)),
+      0
+    )
+  );
+  const lockedPostKeys = $derived(
+    editor.project.tracks.reduce(
+      (total, track) =>
+        total +
+        (!track.locked
+          ? 0
+          : track.items.reduce((sum, item) => sum + keyframeCount(item), 0)),
+      0
+    )
+  );
+  let confirmClearPost = $state(false);
+  let clearToast: { id: string; project: PostProject } | null = null;
+
+  $effect(() => {
+    const current = editor.project;
+    if (clearToast && current !== clearToast.project) {
+      removeToast(clearToast.id);
+      clearToast = null;
+    }
+  });
+
+  function reportCleared(count: number, edit: PostEdit): void {
+    if (!count || !editor.edit(edit)) return;
+    const clearedProject = editor.project;
+    if (clearToast) removeToast(clearToast.id);
+    const id = showToast({
+      message: t("post_keyframe_cleared", { count }),
+      type: "success",
+      action: {
+        label: t("post_editor_undo"),
+        onClick: () => {
+          if (editor.project === clearedProject) editor.undo();
+        },
+      },
+    });
+    clearToast = { id, project: clearedProject };
+  }
+
+  function clearClipKeys(itemId: string): void {
+    const located = findItem(editor.project, itemId);
+    if (!located || editor.project.tracks[located.trackIndex]?.locked) return;
+    const count = keyframeCount(located.item);
+    reportCleared(count, (project, ctx) =>
+      clearProjectKeyframes(project, editor.previewSeconds, ctx, itemId)
+    );
+  }
+
+  function clearPostKeys(): void {
+    confirmClearPost = false;
+    reportCleared(clearablePostKeys, (project, ctx) =>
+      clearProjectKeyframes(project, editor.previewSeconds, ctx)
+    );
+  }
+
+  // A curve's easing is edited from the toolbar's Curve chip, which follows
+  // the playhead, so the playhead goes to the curve's first key.
+  function openKeyCurve(
+    itemId: string,
+    channel: PostKeyframeChannel,
+    fromSeconds: number
+  ): void {
+    pickKeyRow(channel);
+    seekFromTimeline(fromSeconds);
+    keyCurveOpen = true;
+  }
+
   function zoomTimeline(factor: number): void {
     pixelsPerSecond = clampPixelsPerSecond(pixelsPerSecond * factor);
   }
@@ -899,14 +1748,19 @@
   function isTyping(target: EventTarget | null): boolean {
     if (!(target instanceof HTMLElement)) return false;
     if (target.isContentEditable) return true;
-    const field = target.closest("input, textarea, select");
+    const field = target.closest("input, textarea");
     return (
       field !== null &&
-      !(field instanceof HTMLInputElement && field.type === "range")
+      !(
+        field instanceof HTMLInputElement &&
+        ["range", "checkbox", "radio", "button", "submit", "reset"].includes(
+          field.type
+        )
+      )
     );
   }
 
-  /** Controls that answer Space themselves. */
+  /** Controls that answer Enter themselves. */
   function isControl(target: EventTarget | null): boolean {
     return (
       target instanceof HTMLElement &&
@@ -924,6 +1778,40 @@
         )
       )
     );
+  }
+
+  /** Playback owns Space before focused buttons and popovers can activate. */
+  function handlePlaybackKey(event: KeyboardEvent): void {
+    if (
+      !active ||
+      exporting ||
+      event.key !== " " ||
+      event.ctrlKey ||
+      event.metaKey ||
+      event.altKey ||
+      isTyping(event.target)
+    )
+      return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    // Leave the action row so playback does not reactivate its last tool.
+    if (
+      event.target instanceof HTMLElement &&
+      event.target.closest("[data-tool]")
+    ) {
+      rootElement?.focus({ preventScroll: true });
+    }
+    if (event.repeat) return;
+    if (showTimingStage) session.togglePlay();
+    else if (cropMode) toggleCropPlayback();
+    else editor.togglePlayback();
+  }
+
+  function mirrorWholePost(): void {
+    session.pause();
+    editor.pause();
+    keyCurveOpen = false;
+    editor.edit(mirrorPostProject);
   }
 
   /**
@@ -952,11 +1840,6 @@
     }
     if (cropMode && handleCropKey(event)) return;
     switch (event.key) {
-      case " ":
-        if (event.repeat || isControl(event.target)) return;
-        event.preventDefault();
-        editor.togglePlayback();
-        return;
       case "s":
       case "S":
         if (event.repeat) return;
@@ -977,8 +1860,9 @@
           return;
         }
         event.preventDefault();
-        // K keys what the tool on screen edits: Crop, Position or Fade.
-        const channel = keyframeChannelFor(shown, item.kind);
+        // K keys the picked keyframe row, else what the tool on screen
+        // edits: Crop, Position or Fade.
+        const channel = keyChannel ?? keyframeChannelFor(shown, item.kind);
         editor.edit((project, ctx) =>
           editItemKeyframes(
             project,
@@ -1042,16 +1926,12 @@
    * The crop screen's keys, true when the key is the screen's to answer.
    * Enter is Done and Escape is Cancel, unless a drag or a held corner is
    * running: Escape then drops only that. Space loops the clip, the arrows,
-   * Home and End stay on it, and K still keys the framing. Split, Delete,
-   * Duplicate and the timeline's zoom wait until the crop is done.
+   * Home and End stay on it, Up and Down go to the beat before or after, and
+   * K still keys the framing. Split, Delete, Duplicate and the timeline's
+   * zoom wait until the crop is done.
    */
   function handleCropKey(event: KeyboardEvent): boolean {
     switch (event.key) {
-      case " ":
-        if (event.repeat || isControl(event.target)) return true;
-        event.preventDefault();
-        toggleCropPlayback();
-        return true;
       case "Enter":
         if (
           event.repeat ||
@@ -1080,6 +1960,12 @@
         );
         return true;
       }
+      case "ArrowUp":
+      case "ArrowDown":
+        if (ownsArrows(event.target)) return true;
+        event.preventDefault();
+        stepCropBeat(event.key === "ArrowUp" ? "previous" : "next");
+        return true;
       case "Home":
       case "End":
         if (ownsArrows(event.target)) return true;
@@ -1114,7 +2000,7 @@
       propType: selectedPropType,
       toggle: editor.togglePlayback,
       setBpm: () => undefined,
-      setProp: onPropChange,
+      setProp: choosePropType,
     }))
   );
 
@@ -1258,15 +2144,27 @@
 
   let frameRequest: number | null = null;
   let previousFrameTime: number | null = null;
+  let previousPreviewSeconds: number | null = null;
+  let playbackNeedsAlign = false;
 
   function frame(now: number): void {
     if (previousFrameTime !== null) {
-      const delta = (now - previousFrameTime) / 1000;
+      if (
+        playbackNeedsAlign ||
+        (previousPreviewSeconds !== null &&
+          editor.previewSeconds !== previousPreviewSeconds)
+      ) {
+        playbackCanvas?.alignPlayback();
+        playbackNeedsAlign = false;
+      }
+      const delta =
+        playbackCanvas?.playbackStep((now - previousFrameTime) / 1000) ?? 0;
       const clip = cropMode ? crop.item : null;
       if (clip) loopClip(clip, delta);
       else editor.advance(delta);
     }
     previousFrameTime = now;
+    previousPreviewSeconds = editor.previewSeconds;
     if (editor.isPlaying) frameRequest = requestAnimationFrame(frame);
   }
 
@@ -1283,6 +2181,7 @@
     }
     const into = (((next - clip.start) % length) + length) % length;
     editor.seek(clip.start + into);
+    playbackNeedsAlign = true;
   }
 
   $effect(() => {
@@ -1292,6 +2191,8 @@
       if (frameRequest !== null) cancelAnimationFrame(frameRequest);
       frameRequest = null;
       previousFrameTime = null;
+      previousPreviewSeconds = null;
+      playbackNeedsAlign = false;
     };
   });
 
@@ -1302,7 +2203,11 @@
   }
 
   async function renderPost(): Promise<boolean> {
-    if (exporting || !editor.compiled || editor.durationSeconds <= 0) {
+    if (!canRender) {
+      exportError =
+        labeledCard.error ??
+        overlayError ??
+        "The animation is still being prepared. Try again in a moment.";
       return false;
     }
     session.pause();
@@ -1330,16 +2235,43 @@
 
     let audioUrl: string | null = null;
     try {
+      await loadPostProjectFonts(editor.project);
+      await Promise.all(
+        editor.project.tracks.flatMap((track) =>
+          track.items.flatMap((item) => {
+            if (item.kind !== "image") return [];
+            const url = editor.imageUrl(item.imageId);
+            if (!url) return [];
+            return [
+              qrImageForAppearance(url, "light"),
+              qrImageForAppearance(url, "dark"),
+            ];
+          })
+        )
+      );
+      await tick();
+      await nextFrame();
       const takeUrls = new Map<string, string>();
+      const videoSources = new Map<string, string>();
       for (const take of editor.takes) {
         const url = editor.mediaUrl(take.id);
-        if (url) takeUrls.set(take.id, url);
+        if (url) {
+          takeUrls.set(take.id, url);
+          videoSources.set(takeRole(take.id), url);
+        }
       }
       const audio = await buildMixedAudioTrack({
         segments: planProjectAudio(compiled, editor.project.audio),
         durationSeconds: compiled.durationSeconds,
         takeUrls,
         signal: exportAbort.signal,
+        onProgress: (fraction) => {
+          exportProgress = {
+            completedFrames: Math.floor(fraction * totalFrames),
+            totalFrames,
+            phase: "audio",
+          };
+        },
       });
       if (exportCancelled) return false;
       audioUrl = audio ? URL.createObjectURL(audio) : null;
@@ -1352,10 +2284,12 @@
         getLayers: () => editor.frameLayers,
         seek: editor.seek,
         painters: exportPainters(),
+        videoSources,
         originalAudioUrl: audioUrl,
         originalAudioStartSeconds: 0,
         onProgress: (progress) => (exportProgress = progress),
         shouldCancel: () => exportCancelled,
+        signal: exportAbort.signal,
       });
       if (exportedUrl) URL.revokeObjectURL(exportedUrl);
       exportedUrl = URL.createObjectURL(blob);
@@ -1365,9 +2299,11 @@
       if (!exportCancelled) {
         console.error("[PostStudio] Export failed:", error);
         exportError =
-          error instanceof Error
-            ? error.message
-            : t("share_studio_render_failed");
+          error instanceof AudioDownloadStalledError
+            ? t("share_studio_sound_stalled")
+            : error instanceof Error
+              ? error.message
+              : t("share_studio_render_failed");
       }
       return false;
     } finally {
@@ -1395,21 +2331,76 @@
     if (frameRequest !== null) cancelAnimationFrame(frameRequest);
     if (exportedUrl) URL.revokeObjectURL(exportedUrl);
     editor.dispose();
+    staffTips.dispose();
   });
 </script>
 
-<svelte:window onkeydown={handleKey} />
+<svelte:window
+  onkeydowncapture={handlePlaybackKey}
+  onkeydown={handleKey}
+  onbeforeunload={protectUnsavedDraft}
+/>
+
+{#snippet draftStatus()}
+  {#if labeledCard.error}
+    <span class="draft-notice" role="alert">{labeledCard.error}</span>
+  {:else if (editor.project.mirrored || editor.project.sequenceActions?.length) && labeledCard.pending}
+    <span class="draft-notice" role="status"
+      >Preparing the changed animation and cards…</span
+    >
+  {/if}
+  {#if !header}
+    <PostDraftStatus
+      saving={draftSaving}
+      error={draftError ?? editor.saveError}
+      disk={!!onSaveDraft}
+    />
+  {/if}
+{/snippet}
+
+{#snippet postActions(inHeader: boolean)}
+  <PostEditorActions
+    {exporting}
+    locked={showTimingStage || (inHeader && cropMode)}
+    onClearPostKeyframes={() => (confirmClearPost = true)}
+    clearableKeyframes={clearablePostKeys}
+    onMirror={mirrorWholePost}
+    mirrored={editor.project.mirrored ?? false}
+    onBackup={() => void downloadDraft()}
+    onRestore={() => recoveryInput?.click()}
+    onRetry={() => draftAutosave?.retry()}
+    canRetry={!!onSaveDraft && !!saveFailure}
+    onExport={openExport}
+    onImport={() => {
+      if (!readingFile) recoveryInput?.click();
+    }}
+    onImportDifferences={editor.project.importSource?.unresolved.length
+      ? () => (showImportDifferences = true)
+      : undefined}
+    trailing={cropMode && !inHeader ? cropActions : undefined}
+  />
+{/snippet}
+
+{#snippet editorActions()}
+  {@render postActions(false)}
+{/snippet}
+
+{#snippet headerActions()}
+  <div class="header-actions" inert={sharing || undefined}>
+    <PostDraftStatus
+      saving={draftSaving}
+      error={saveFailure}
+      disk={!!onSaveDraft}
+      {savedAt}
+      header
+    />
+    <PostSaveButton status={saveStatus} onSave={saveNow} disabled={exporting} />
+    {@render postActions(true)}
+  </div>
+{/snippet}
 
 {#snippet cropActions()}
   <div class="crop-actions">
-    <PanelButton
-      onclick={crop.reset}
-      disabled={!crop.canReset}
-      ariaLabel={t("post_editor_reset_crop")}
-    >
-      <i class="fa-solid fa-arrows-rotate" aria-hidden="true"></i>
-      <span class="crop-reset-label">{t("post_editor_reset_crop")}</span>
-    </PanelButton>
     <PanelButton onclick={() => void closeCrop(false)}>
       {t("common_cancel")}
     </PanelButton>
@@ -1424,8 +2415,8 @@
   <PostEditorTopBar
     {editor}
     {exporting}
-    onExport={openExport}
-    trailing={cropMode ? cropActions : undefined}
+    draftStatus={header && !draftNotice ? undefined : draftStatus}
+    actions={header ? (cropMode ? cropActions : undefined) : editorActions}
   />
 {/snippet}
 
@@ -1438,7 +2429,44 @@
   />
 {/snippet}
 
-{#snippet panelBody(tool: PostPanelToolId)}
+<!-- A phone's tools sit over the timeline, or under the timing screen's
+     own timeline. An open panel takes the row's place. -->
+{#snippet dock()}
+  <div
+    class="dock"
+    class:timing={showTimingStage}
+    tabindex="-1"
+    bind:this={dockElement}
+    inert={sharing || undefined}
+  >
+    {#if showTimingStage}
+      <div class="timing-mobile-actions">
+        <PostTimingTap {session} />
+        <PanelButton
+          onclick={() => (timingSettingsOpen = true)}
+          ariaExpanded={timingSettingsOpen}
+        >
+          <i class="fa-solid fa-sliders" aria-hidden="true"></i> Settings
+        </PanelButton>
+      </div>
+    {:else}
+      <Crossfade
+        key={dockKey}
+        mode="swap"
+        duration={DURATION.fast}
+        animateHeight
+      >
+        {#if shown && !appearanceDockOpen}
+          {@render panel(shown, "dock")}
+        {:else}
+          {@render row()}
+        {/if}
+      </Crossfade>
+    {/if}
+  </div>
+{/snippet}
+
+{#snippet panelBody(tool: PostPanelToolId, placement: "dock" | "side")}
   {#if tool === "videos"}
     <PostMediaPanel
       {editor}
@@ -1457,6 +2485,31 @@
       onAddDeviceVideo={pickDeviceVideo}
       onAdded={itemAdded}
     />
+  {:else if tool === "canvas"}
+    <div class="canvas-tool">
+      <PostRatioPicker
+        options={POST_CANVAS_RATIOS.map((canvas) => ({
+          value: canvas,
+          label: canvas,
+          ratio: ratioValue(canvas),
+        }))}
+        value={postCanvasOf(editor.project)}
+        onchange={setCanvas}
+        ariaLabel={t("post_canvas_shape")}
+      />
+      <!-- Words, not icons: this control shows an option's icon in place of
+           its label, and a drop and a square say little on their own. -->
+      <SegmentedControl
+        color="accent"
+        options={[
+          { value: "dark", label: t("post_canvas_background_dark") },
+          { value: "blur", label: t("post_canvas_background_blur") },
+        ]}
+        value={editor.project.background ?? POST_DEFAULT_BACKGROUND}
+        onchange={setBackground}
+        ariaLabel={t("post_canvas_background")}
+      />
+    </div>
   {:else if tool === "look"}
     <AnimationPanel
       layout="sidebar"
@@ -1466,7 +2519,7 @@
       showTempoControls={false}
       showEffectsPlayback={false}
       {selectedPropType}
-      {onPropChange}
+      onPropChange={choosePropType}
       sequence={displaySequence}
     />
   {:else if tool === "export"}
@@ -1483,12 +2536,24 @@
       onTapBeats={openTakeBeats}
       {onSharePost}
     />
+  {:else if tool === "transition" && transitionCut}
+    <PostTransitionTool {editor} {...transitionCut} />
   {:else if editor.selectedItem}
     <PostItemTool
       {editor}
       item={editor.selectedItem}
       {tool}
+      tunnel={editor.selectedPart === "tunnel"}
+      appearanceFill={placement === "side"}
       crop={cropMode ? crop : null}
+      {cropSourceView}
+      bind:chosenSourceShape={cropSourceShape}
+      onCropFramingControl={() => (cropSourceView = false)}
+      onCropSourceControl={() => (cropSourceView = true)}
+      {staffTips}
+      {cardRenderOptions}
+      stepCount={displaySequence.steps?.length ?? 0}
+      sequenceBusy={labeledCard.pending}
     />
   {/if}
 {/snippet}
@@ -1496,47 +2561,128 @@
 {#snippet panel(tool: PostPanelToolId, placement: "dock" | "side")}
   <PostToolPanel
     {tool}
-    subject={editor.selectedItem ? labelFor(editor.selectedItem) : undefined}
+    subject={tool === "transition" && transitionCut
+      ? `${labelFor(transitionCut.outgoing)} → ${labelFor(transitionCut.incoming)}`
+      : editor.selectedPart === "tunnel"
+        ? t("post_timeline_tunnel")
+        : editor.selectedItem
+          ? labelFor(editor.selectedItem)
+          : undefined}
     onDone={placement === "dock" && !cropMode ? closePanel : undefined}
     {placement}
-    bare={placement === "dock" && cropMode}
+    bare={(placement === "dock" && cropMode) ||
+      (placement === "side" &&
+        tool === "appearance" &&
+        editor.selectedItem?.kind === "animation")}
   >
-    {@render panelBody(tool)}
+    {@render panelBody(tool, placement)}
   </PostToolPanel>
+{/snippet}
+
+{#snippet timelineKeys()}
+  {#if editor.selectedItem && keyChannel}
+    <PostKeyframeControls
+      {editor}
+      item={editor.selectedItem}
+      channel={keyChannel}
+      locked={editor.isLocked(editor.selectedItem.id)}
+      label={channelLabel(keyChannel)}
+      bind:curveOpen={keyCurveOpen}
+      onCleared={reportCleared}
+    />
+    <OverflowMenu
+      triggerPresentation="labelled"
+      ariaLabel={t("post_keyframe_clip_actions")}
+      placement="bottom"
+      items={[
+        {
+          label: t("post_keyframe_remove_all_clip"),
+          icon: "fa-solid fa-diamond",
+          disabled:
+            editor.isLocked(editor.selectedItem.id) ||
+            keyframeCount(editor.selectedItem) === 0,
+          action: () => clearClipKeys(editor.selectedItem!.id),
+        },
+      ]}
+    >
+      {#snippet trigger()}{t("post_keyframe_clip_actions")}{/snippet}
+    </OverflowMenu>
+  {/if}
+{/snippet}
+
+{#snippet cropKeys()}
+  {#if crop.item}
+    <PostKeyframeControls
+      {editor}
+      item={crop.item}
+      channel="framing"
+      locked={editor.isLocked(crop.item.id)}
+      bind:curveOpen={cropCurveOpen}
+      onCleared={reportCleared}
+    />
+  {/if}
 {/snippet}
 
 {#snippet timingPanel()}
   <div class="timing-panel">
-    <div class="timing-back">
-      <PanelButton onclick={session.exit}>
-        <i class="fa-solid fa-arrow-left" aria-hidden="true"></i>
-        {t("post_editor_back_to_editing")}
-      </PanelButton>
-    </div>
-    <PostTimingPanel {session} />
+    <PostTimingPanel
+      {session}
+      showPrimary={panelBeside}
+      bind:animationOpen={timingAnimationOpen}
+    >
+      {#snippet animation()}
+        <div
+          class="timing-animation"
+          tabindex="-1"
+          bind:this={timingAnimationSection}
+        >
+          <PostTimingAnimationSettings {editor} {session} />
+        </div>
+      {/snippet}
+    </PostTimingPanel>
   </div>
 {/snippet}
 
 <!-- The editor owns Space, S, K, the arrows and Delete, so the viewer's own
      handlers skip it (the app's shortcuts, Shift+P, Ctrl+Z and the rest,
      still reach it); tabindex keeps a click inside it from sending focus back
-     to the page. Undo and Redo on its top bar answer the app's history keys
-     while focus is inside it. -->
+     to the page. Keep a history target inside this scope because the viewer
+     moves the visible top bar into its external inspector. -->
 <section
   class="post-editor"
   tabindex="-1"
   data-viewer-keys-ignore
   data-edit-history-shortcut-scope
   data-layout={layout}
+  data-short-mapping={shortMappingLayout}
   data-sharing={sharing}
   data-mode={showTimingStage ? "timing" : cropMode ? "crop" : "edit"}
+  style:--post-ratio={outputSize.width / outputSize.height}
+  style:--crop-view={cropView}
+  style:--crop-margin="{CROP_STAGE_MARGIN_PX}px"
   aria-label={t("post_editor_label", { name: sequenceName })}
   bind:this={rootElement}
   bind:offsetWidth={editorWidth}
   bind:offsetHeight={editorHeight}
 >
+  {#if showTimingStage}
+    <EditHistoryShortcutBridge
+      onUndo={session.undo}
+      onRedo={session.redo}
+      canUndo={session.canUndo}
+      canRedo={session.canRedo}
+    />
+  {:else}
+    <EditHistoryShortcutBridge
+      onUndo={editor.undo}
+      onRedo={editor.redo}
+      canUndo={editor.canUndo}
+      canRedo={editor.canRedo}
+    />
+  {/if}
   <div
     class="layout"
+    style:--post-timeline-height="{shownTimelineHeightPx}px"
     style:--post-stage-min={heldStageHeight === null
       ? null
       : `${heldStageHeight}px`}
@@ -1544,6 +2690,29 @@
       ? null
       : `${dockPanelMax}px`}
   >
+    {#if showTimingStage}
+      <div class="timing-toolbar">
+        <PanelButton onclick={session.exit} ariaLabel="Back to editing">
+          <i class="fa-solid fa-arrow-left" aria-hidden="true"></i>
+          <span class="back-label">Back to editing</span><span
+            class="back-short">Back</span
+          >
+        </PanelButton>
+        <label class="take-picker">
+          <span>Take</span>
+          <select
+            aria-label="Take to map"
+            value={session.take?.id ?? ""}
+            onchange={(event) => session.selectTake(event.currentTarget.value)}
+          >
+            {#each session.takes as take (take.id)}<option value={take.id}
+                >{take.label}</option
+              >{/each}
+          </select>
+        </label>
+        <div class="timing-save">{@render draftStatus()}</div>
+      </div>
+    {/if}
     {#if !showTimingStage && !panelBeside}
       <div class="top-bar-slot" inert={sharing || undefined}>
         {@render topBar()}
@@ -1552,11 +2721,18 @@
 
     <div class="stage-row" bind:this={stageRow}>
       {#if showTimingStage}
-        <div class="timing-stage">
+        <div class="timing-stage" style:--take-ratio={timingRatio}>
           <PostTimingStage
             {session}
-            squarePainter={stripPainters.get("arrows") ?? null}
-          />
+            bind:ratio={timingRatio}
+            onOpenAnimation={openTimingAnimation}
+          >
+            {#snippet preview()}<PostTimingAnimationPreview
+                {editor}
+                {session}
+                sequence={displaySequence}
+              />{/snippet}
+          </PostTimingStage>
         </div>
       {:else}
         <div class="preview-frame">
@@ -1567,16 +2743,18 @@
           >
             <div class="canvas-slot">
               <PostEditorCanvas
+                bind:this={playbackCanvas}
                 {editor}
                 sequence={displaySequence}
-                qrSequence={sequence}
                 {bindingFor}
                 {labelFor}
                 {cardRenderOptions}
-                handLabeling={labeledCard.labeling}
                 showStripGuide={editor.selectedItem?.kind === "video"}
                 interactive={!exporting && !sharing && !previewTarget}
+                {exporting}
                 crop={cropMode ? crop : null}
+                {cropSourceView}
+                keepSourceCropRatio={cropSourceShape !== "free"}
                 onSourceSize={noteSourceSize}
                 bind:root={canvasRoot}
               />
@@ -1592,6 +2770,8 @@
         <aside
           class="panel-host"
           class:external={layout === "viewer"}
+          class:appearance={shown === "appearance" &&
+            editor.selectedItem?.kind === "animation"}
           tabindex="-1"
           data-viewer-keys-ignore
           bind:this={panelHost}
@@ -1610,8 +2790,15 @@
                     key={shown}
                     mode="swap"
                     duration={DURATION.fast}
-                    fill={layout === "wide"}
-                    animateHeight={layout === "viewer"}
+                    fill={layout === "wide" ||
+                      (layout === "viewer" &&
+                        shown === "appearance" &&
+                        editor.selectedItem?.kind === "animation")}
+                    animateHeight={layout === "viewer" &&
+                      !(
+                        shown === "appearance" &&
+                        editor.selectedItem?.kind === "animation"
+                      )}
                   >
                     {@render panel(shown, "side")}
                   </Crossfade>
@@ -1623,14 +2810,35 @@
       {/if}
     </div>
 
+    {#if showTimingStage}
+      <div class="timing-timeline">
+        <PostTimingTimeline
+          {session}
+          squarePainter={stripPainters.get("arrows") ?? null}
+        />
+      </div>
+    {/if}
+
     {#if !showTimingStage}
       <div class="transport-slot" bind:this={transportSlot}>
         {#if cropMode && crop.item}
-          <PostCropTimebar
+          {@const clip = crop.item}
+          <PostCropTimeline
             {editor}
-            item={crop.item}
+            item={clip}
+            steps={cropSteps}
+            stepName={cropStepName}
+            locked={editor.isLocked(clip.id)}
+            keys={cropKeys}
             onToggle={toggleCropPlayback}
             onSeek={seekInClip}
+            onMoveKey={(fromSeconds, toSeconds) =>
+              editKeys(clip.id, (it) =>
+                moveKeyframe(it, "framing", fromSeconds, toSeconds)
+              )}
+            onDeleteKey={(seconds) =>
+              editKeys(clip.id, (it) => removeKeyframe(it, "framing", seconds))}
+            onOpenCurve={openCropCurve}
           />
         {:else}
           <PostEditorTransport {editor} disabled={exporting} />
@@ -1638,67 +2846,46 @@
         {#if fileError}
           <p class="file-error" role="alert">{fileError}</p>
         {/if}
+        {#if showImportDifferences && editor.project.importSource?.unresolved.length}
+          <details
+            class="import-differences"
+            open
+            ontoggle={(event) => {
+              if (!event.currentTarget.open) showImportDifferences = false;
+            }}
+          >
+            <summary>InShot import: rendering differences remain</summary>
+            <ul>
+              {#each editor.project.importSource.unresolved as difference}
+                <li>{difference}</li>
+              {/each}
+            </ul>
+          </details>
+        {/if}
       </div>
 
-      <!-- The crop screen stows the timeline and the row out of sight, still
-           mounted, so they come back scrolled where they were. -->
-      <div
-        class="timeline-slot"
-        class:stowed={cropMode}
-        inert={sharing || exporting || cropMode || undefined}
-      >
-        <PostTimeline
-          project={editor.project}
-          durationSeconds={editor.durationSeconds}
-          playheadSeconds={editor.previewSeconds}
-          isPlaying={editor.isPlaying}
-          selectedItemId={editor.selectedItemId}
-          {labelFor}
-          onSeek={seekFromTimeline}
-          onSelect={(itemId) => (editor.selectedItemId = itemId)}
-          onGestureStart={() => {
-            editor.pause();
-            editor.beginGesture();
-          }}
-          onGestureEnd={editor.endGesture}
-          onGestureCancel={editor.cancelGesture}
-          onTrim={(itemId, edge, seconds) =>
-            asOneStep(() => editor.trimLive(itemId, edge, seconds))}
-          onMoveMain={(itemId, toIndex) =>
-            applyMove((project, context) =>
-              moveMainItem(project, itemId, toIndex, context)
-            )}
-          onMoveOverlay={(itemId, start, trackIndex) =>
-            applyMove((project, context) =>
-              moveOverlayItem(project, itemId, { start, trackIndex }, context)
-            )}
-          onTrackFlag={(trackId, flag, value) =>
-            editor.edit((project, context) =>
-              setTrackFlag(project, trackId, flag, value, context)
-            )}
-          onMoveKeyframe={(itemId, fromSeconds, toSeconds) =>
-            editor.edit((project, context) =>
-              editItemKeyframes(
-                project,
-                itemId,
-                (it) => moveKeyframes(it, fromSeconds, toSeconds),
-                context
-              )
-            )}
-          onDeleteKeyframesAt={(itemId, seconds) =>
-            editor.edit((project, context) =>
-              editItemKeyframes(
-                project,
-                itemId,
-                (it) => removeKeyframesAt(it, seconds),
-                context
-              )
-            )}
-          onAddVideo={pickDeviceVideo}
-          bind:pixelsPerSecond
-        />
-      </div>
-
+      <!-- The crop screen takes the editor over: it stows the post's timeline
+           and the tool row out of sight, still mounted, so they come back
+           scrolled where they were. Its own clip timeline stands in for
+           them, and Done or Cancel brings them back. -->
+      {#if panelBeside && !showTimingStage && !cropMode}
+        <div class="timeline-resizer">
+          <ResizeHandle
+            direction="vertical"
+            size={12}
+            ariaLabel="Resize preview and timeline"
+            ariaValueNow={editorHeight > 0
+              ? (100 * (editorHeight - shownTimelineHeightPx)) / editorHeight
+              : 50}
+            disabled={maxTimelineHeightPx <= MIN_TIMELINE_HEIGHT_PX}
+            onDragStart={() => (timelineResizeStartPx = shownTimelineHeightPx)}
+            onDrag={resizeTimeline}
+            onKeydown={resizeTimelineWithKeys}
+            onDoubleClick={() =>
+              (timelineHeightPx = DEFAULT_TIMELINE_HEIGHT_PX)}
+          />
+        </div>
+      {/if}
       {#if panelBeside}
         <div
           class="row-slot"
@@ -1711,36 +2898,80 @@
             {@render row()}
           </Crossfade>
         </div>
+      {:else}
+        {@render dock()}
       {/if}
+      <div
+        class="timeline-slot"
+        class:stowed={cropMode}
+        inert={sharing || exporting || cropMode || undefined}
+      >
+        <PostTimeline
+          project={editor.project}
+          durationSeconds={editor.durationSeconds}
+          playheadSeconds={editor.previewSeconds}
+          isPlaying={editor.isPlaying}
+          selectedItemId={editor.selectedItemId}
+          selectedPart={editor.selectedPart}
+          {labelFor}
+          onSeek={seekFromTimeline}
+          onSelect={(itemId) => (editor.selectedItemId = itemId)}
+          onSelectTunnel={(itemId) => editor.selectTunnel(itemId)}
+          onGestureStart={() => {
+            editor.pause();
+            editor.beginGesture();
+          }}
+          onGestureEnd={editor.endGesture}
+          onGestureCancel={editor.cancelGesture}
+          onTrim={(itemId, edge, seconds) =>
+            asOneStep(() => editor.trimLive(itemId, edge, seconds))}
+          onMoveMain={(itemId, start) =>
+            applyMove((project, context) =>
+              placeMainItem(project, itemId, start, context)
+            )}
+          onMoveOverlay={(itemId, start, trackIndex) =>
+            applyMove((project, context) =>
+              moveOverlayItem(project, itemId, { start, trackIndex }, context)
+            )}
+          onOpenCrossfade={openCrossfade}
+          onMoveSelection={(itemIds, draggedItemId, start, trackIndex) =>
+            applyMove((project, context) =>
+              moveSelectedItems(
+                project,
+                itemIds,
+                draggedItemId,
+                start,
+                trackIndex,
+                context
+              )
+            )}
+          onTrackFlag={(trackId, flag, value) =>
+            editor.edit((project, context) =>
+              setTrackFlag(project, trackId, flag, value, context)
+            )}
+          {keyChannel}
+          toolChannel={keyChannel}
+          onKeyChannel={pickKeyRow}
+          onToggleKey={(itemId, channel, seconds) =>
+            editKeys(itemId, (it) => toggleKeyframe(it, channel, seconds))}
+          onMoveKey={(itemId, channel, fromSeconds, toSeconds) =>
+            editKeys(itemId, (it) =>
+              moveKeyframe(it, channel, fromSeconds, toSeconds)
+            )}
+          onDeleteKey={(itemId, channel, seconds) =>
+            editKeys(itemId, (it) => removeKeyframe(it, channel, seconds))}
+          onOpenCurve={openKeyCurve}
+          toolbarStart={editor.selectedItem && keyChannel
+            ? timelineKeys
+            : undefined}
+          onAddVideo={pickDeviceVideo}
+          bind:pixelsPerSecond
+        />
+      </div>
     {/if}
 
-    {#if !panelBeside}
-      <!-- A phone's tools stay at the bottom of the screen while the post
-           scrolls above them. An open panel takes the row's place. -->
-      <div
-        class="dock"
-        class:timing={showTimingStage}
-        tabindex="-1"
-        bind:this={dockElement}
-        inert={sharing || undefined}
-      >
-        {#if showTimingStage}
-          {@render timingPanel()}
-        {:else}
-          <Crossfade
-            key={dockKey}
-            mode="swap"
-            duration={DURATION.fast}
-            animateHeight
-          >
-            {#if shown}
-              {@render panel(shown, "dock")}
-            {:else}
-              {@render row()}
-            {/if}
-          </Crossfade>
-        {/if}
-      </div>
+    {#if !panelBeside && showTimingStage}
+      {@render dock()}
     {/if}
   </div>
 
@@ -1753,7 +2984,63 @@
     tabindex="-1"
     aria-hidden="true"
   />
+  <input
+    bind:this={recoveryInput}
+    class="file-input"
+    type="file"
+    multiple
+    accept=".json,video/*,image/*,.ttf,.otf"
+    onchange={importRecovery}
+    tabindex="-1"
+    aria-hidden="true"
+  />
 </section>
+
+<Drawer
+  bind:isOpen={appearanceDrawerOpen}
+  bind:activeSnapPoint={appearanceSnapPoint}
+  title="Appearance"
+  placement="bottom"
+  class="post-appearance-main-drawer"
+  backdropClass="edit-panel-backdrop"
+  snapPoints={appearanceSnapPoints}
+  resizeWithSnapPoints
+  dragHandleOnly
+  closeOnSnapToZero
+  closeOnBackdrop={false}
+  modal={false}
+  trapFocus={false}
+  autoFocus={false}
+  setInertOnSiblings={false}
+  preventScroll={false}
+  keyboardShortcutsPassthrough
+  onOpenChange={(open) => {
+    if (!open && shown === "appearance") closePanel();
+  }}
+>
+  <div
+    class="appearance-drawer-panel"
+    bind:offsetHeight={appearancePanelHeight}
+    data-edit-history-shortcut-scope
+    data-viewer-keys-ignore
+  >
+    {@render panel("appearance", "dock")}
+  </div>
+</Drawer>
+
+<ConfirmDialog
+  bind:isOpen={confirmClearPost}
+  title={t("post_keyframe_clear_post_title")}
+  message={t("post_keyframe_clear_post_message", {
+    count: clearablePostKeys,
+  }) +
+    (lockedPostKeys > 0
+      ? ` ${t("post_keyframe_clear_post_locked", { count: lockedPostKeys })}`
+      : "")}
+  confirmText={t("post_keyframe_remove_all_post_confirm")}
+  onConfirm={clearPostKeys}
+  onCancel={() => (confirmClearPost = false)}
+/>
 
 <!-- The render reads the live canvas frame by frame. Any edit made while it
      runs lands in the middle of the output, so the app is locked until it
@@ -1770,7 +3057,56 @@
   label={t("share_studio_rendering_post")}
 />
 
+{#if showTimingStage && !panelBeside}
+  <Drawer
+    bind:isOpen={timingSettingsOpen}
+    title="Mapping settings"
+    placement="bottom"
+    initialFocusElement={timingAnimationOpen ? timingAnimationSection : null}
+  >
+    <DrawerHeader
+      title="Mapping settings"
+      onClose={() => (timingSettingsOpen = false)}
+    />
+    <div
+      class="timing-drawer-content"
+      data-edit-history-shortcut-scope
+      data-viewer-keys-ignore
+    >
+      <EditHistoryShortcutBridge
+        onUndo={session.undo}
+        onRedo={session.redo}
+        canUndo={session.canUndo}
+        canRedo={session.canRedo}
+      />
+      {@render draftStatus()}
+      {@render timingPanel()}
+    </div>
+  </Drawer>
+{/if}
+
 <style>
+  .appearance-drawer-panel {
+    padding: 0.5rem var(--post-gap, 0.75rem)
+      max(0.5rem, env(safe-area-inset-bottom, 0px));
+  }
+  :global(.post-appearance-main-drawer) {
+    --sheet-min-height: 0;
+    --sheet-max-height: min(88dvh, 760px);
+    --sheet-bg:
+      linear-gradient(
+        var(--theme-panel-bg, #0f0f14),
+        var(--theme-panel-bg, #0f0f14)
+      ),
+      var(--sheet-bg-solid, #0f0f14);
+    --sheet-filter: none;
+  }
+  .canvas-tool {
+    display: grid;
+    gap: 1rem;
+    min-width: 0;
+  }
+
   .post-editor:focus,
   .panel-host:focus,
   .panel-slot:focus,
@@ -1780,6 +3116,8 @@
   }
 
   .post-editor {
+    /* The post's width over its height; the canvas sets it. */
+    --post-ratio: 0.5625;
     /* The ruler, the main track and two layers. */
     --post-timeline-height: 17.5rem;
     --post-gap: 0.75rem;
@@ -1793,7 +3131,7 @@
   }
 
   /* A phone stacks the parts in the order they are used: the top bar, the
-     preview and its transport, the timeline, then the dock of tools. */
+     preview and its transport, the dock of tools, then the timeline. */
   .layout {
     display: flex;
     flex-direction: column;
@@ -1812,13 +3150,19 @@
     grid-template-rows:
       auto minmax(var(--post-stage-min, 12rem), 1fr)
       auto auto auto;
-    grid-template-areas: "top" "stage" "transport" "timeline" "dock";
+    grid-template-areas: "top" "stage" "transport" "dock" "timeline";
+  }
+
+  /* Over the timeline the dock spans the editor's width but keeps the gap
+     under it. */
+  .post-editor[data-layout="phone"][data-mode="edit"] .dock {
+    margin: 0 calc(-1 * var(--post-gap));
   }
 
   /* Never taller than a full-width frame needs. */
   .post-editor[data-layout="phone"][data-mode="edit"] .stage-row {
     align-self: center;
-    height: min(100%, calc((100cqw - 2 * var(--post-gap)) * 16 / 9));
+    height: min(100%, calc((100cqw - 2 * var(--post-gap)) / var(--post-ratio)));
   }
 
   .stage-row {
@@ -1836,7 +3180,7 @@
   }
 
   /* The host fills whatever holds it, here or in the share sheet, and the
-     frame inside it is the largest 9:16 that fits. */
+     frame inside it is the largest of the post's shape that fits. */
   .preview-host {
     container-type: size;
     display: grid;
@@ -1848,7 +3192,7 @@
   }
 
   .canvas-slot {
-    width: min(100cqw, calc(100cqh * 9 / 16));
+    width: min(100cqw, calc(100cqh * var(--post-ratio)));
   }
 
   .timing-stage {
@@ -1870,6 +3214,27 @@
     text-align: center;
   }
 
+  .import-differences {
+    color: var(--theme-text-secondary, #aaa);
+    font-size: 0.8125rem;
+    line-height: 1.4;
+  }
+
+  .import-differences summary {
+    cursor: pointer;
+    padding-block: 0.375rem;
+  }
+
+  .import-differences summary:focus-visible {
+    outline: 2px solid var(--theme-accent);
+    outline-offset: 2px;
+  }
+
+  .import-differences ul {
+    margin: 0.25rem 0;
+    padding-left: 1.5rem;
+  }
+
   /* The timeline's playhead and guides stack inside it, under the dock. */
   .timeline-slot {
     min-width: 0;
@@ -1877,15 +3242,21 @@
     isolation: isolate;
   }
 
+  /* A wide screen's row sits over the timeline. In a window too short to
+     show it there, it holds the bottom edge until a scroll brings its place
+     into view, so the tools never leave reach. */
   .row-slot {
+    position: sticky;
+    bottom: 0;
+    z-index: 1;
     min-width: 0;
+    background: var(--theme-panel-bg, rgba(10, 12, 18, 0.92));
   }
 
-  /* The tools stay at the bottom of the screen on every layout: a phone's
-     dock, which an open panel takes over, and the row beside a wide
-     preview. A short window scrolls the post under them. */
-  .dock,
-  .row-slot {
+  /* A phone's tools sit in a dock an open panel takes over. While its place
+     is out of view, or a panel makes it taller than the room left, it holds
+     the bottom edge and the post scrolls under it. */
+  .dock {
     position: sticky;
     bottom: 0;
     z-index: 1;
@@ -1894,7 +3265,9 @@
       max(0.5rem, env(safe-area-inset-bottom, 0px));
     border-top: 1px solid var(--theme-stroke, #484755);
     background: var(--theme-panel-bg, rgba(10, 12, 18, 0.92));
-    backdrop-filter: blur(12px);
+    /* A filter would anchor the appearance drawers to this dock, clipping
+       their headers on phones instead of positioning them in the viewport. */
+    backdrop-filter: none;
   }
 
   .dock.timing {
@@ -1913,8 +3286,87 @@
     min-width: 0;
   }
 
-  .timing-back {
+  .timing-toolbar {
+    grid-area: top;
     display: flex;
+    align-items: center;
+    gap: 1rem;
+    min-width: 0;
+  }
+  .take-picker {
+    display: flex;
+    align-items: center;
+    gap: 0.625rem;
+    min-width: 0;
+    color: var(--theme-text-dim, #aaa);
+    font-size: var(--mapping-text-size, 0.875rem);
+  }
+  .take-picker select {
+    min-width: 0;
+    width: 18rem;
+    max-width: 100%;
+    min-height: 2.75rem;
+    padding: 0.5rem 2rem 0.5rem 0.75rem;
+    border: 1px solid var(--theme-stroke);
+    border-radius: 0.5rem;
+    color: var(--theme-text);
+    background: var(--theme-panel-bg);
+    font: inherit;
+    text-overflow: ellipsis;
+  }
+  .take-picker select:focus-visible {
+    outline: 2px solid var(--theme-accent);
+    outline-offset: 2px;
+  }
+  .timing-save {
+    margin-left: auto;
+  }
+  .back-short {
+    display: none;
+  }
+  .timing-mobile-actions {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 0.5rem;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  .timing-drawer-content {
+    padding: 0 1rem 1rem;
+    overflow-y: auto;
+    max-height: 75dvh;
+  }
+  .timing-animation {
+    min-width: 0;
+  }
+  .post-editor[data-mode="timing"][data-layout="wide"] .timing-stage {
+    flex: none;
+    width: min(
+      calc(100cqh * var(--take-ratio)),
+      calc(100cqw - var(--post-panel-width) - 1rem)
+    );
+  }
+  .post-editor[data-mode="timing"][data-layout="wide"] .panel-host {
+    padding: 0.5rem 1rem;
+    background: var(--theme-panel-bg);
+    border: 1px solid var(--theme-stroke);
+    border-radius: 0.75rem;
+  }
+  .post-editor[data-mode="timing"][data-layout="phone"] .timing-toolbar {
+    gap: 0.5rem;
+  }
+  .post-editor[data-mode="timing"][data-layout="phone"] .take-picker {
+    flex: 1;
+  }
+  .post-editor[data-mode="timing"][data-layout="phone"] .take-picker select {
+    width: 100%;
+  }
+  .post-editor[data-mode="timing"][data-layout="phone"] .take-picker > span,
+  .post-editor[data-mode="timing"][data-layout="phone"] .timing-save,
+  .post-editor[data-mode="timing"][data-layout="phone"] .back-label {
+    display: none;
+  }
+  .post-editor[data-mode="timing"][data-layout="phone"] .back-short {
+    display: inline;
   }
 
   .file-input {
@@ -1922,18 +3374,24 @@
   }
 
   /* On a wide screen the post fills the height: the preview with the top
-     bar and the panel right beside it, then the transport, the timeline and
-     the tool row. A short window scrolls under the row rather than shrinking
-     the preview and its panel below 15rem. The timeline keeps one height, so
-     a new layer scrolls inside it instead of shrinking the preview. The
-     viewer's own side panel holds the top bar and the panel, and the rest
-     stacks the same way. */
+     bar and the panel right beside it, then the transport, and under the
+     resize handle the tool row over the timeline it acts on. A short window
+     scrolls rather than shrinking the preview and its panel below 15rem.
+     The timeline keeps one height, so a new layer scrolls inside it instead
+     of shrinking the preview. The viewer's own side panel holds the top bar
+     and the panel, and the rest stacks the same way. */
   .post-editor:is([data-layout="wide"], [data-layout="viewer"]) .layout {
     --post-panel-width: clamp(20rem, 30cqw, 26rem);
     display: grid;
     grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: minmax(15rem, 1fr) auto var(--post-timeline-height) auto;
-    grid-template-areas: "stage" "transport" "timeline" "row";
+    grid-template-rows:
+      minmax(15rem, 1fr) auto 12px auto
+      var(--post-timeline-height);
+    grid-template-areas: "stage" "transport" "resize" "row" "timeline";
+  }
+
+  .post-editor[data-mode="edit"][data-layout="wide"] .layout {
+    --post-panel-width: clamp(20rem, 54cqw, 75rem);
   }
 
   .post-editor[data-mode="timing"]:is(
@@ -1941,12 +3399,51 @@
       [data-layout="viewer"]
     )
     .layout {
-    grid-template-rows: minmax(0, 1fr);
-    grid-template-areas: "stage";
+    height: 100%;
+    grid-template-rows: auto minmax(10rem, 1fr) auto;
+    grid-template-areas: "top" "stage" "timeline";
+  }
+
+  .post-editor[data-mode="timing"][data-layout="phone"] .layout {
+    display: grid;
+    height: 100%;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto minmax(8rem, 1fr) auto auto;
+    grid-template-areas: "top" "stage" "timeline" "dock";
+  }
+
+  /* A landscape phone gives the video the full available height. Timing
+     controls sit beside it; adjustments use the same sheet as portrait. */
+  .post-editor[data-mode="timing"][data-short-mapping="true"] .layout {
+    --post-gap: 0.5rem;
+    grid-template-columns: minmax(10rem, 0.8fr) minmax(21rem, 1fr);
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    grid-template-areas: "top top" "stage timeline" "stage dock";
+  }
+  .post-editor[data-short-mapping="true"] .timing-timeline {
+    align-self: center;
+  }
+  .post-editor[data-short-mapping="true"] .take-picker {
+    max-width: 26rem;
   }
 
   .top-bar-slot {
     grid-area: top;
+  }
+
+  .header-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex: none;
+    margin-left: auto;
+  }
+
+  .draft-notice {
+    flex-basis: 100%;
+    min-width: 0;
+    color: var(--semantic-warning, #fbbf24);
+    font-size: var(--font-size-compact, 0.75rem);
   }
 
   .stage-row {
@@ -1955,6 +3452,11 @@
 
   .transport-slot {
     grid-area: transport;
+  }
+
+  .timeline-resizer {
+    grid-area: resize;
+    min-width: 0;
   }
 
   .timeline-slot {
@@ -1980,20 +3482,55 @@
   .post-editor[data-layout="wide"] .preview-frame {
     flex: none;
     width: min(
-      calc(100cqh * 9 / 16),
+      calc(100cqh * var(--post-ratio)),
       calc(100cqw - var(--post-panel-width) - 1rem)
     );
     height: 100%;
   }
 
+  .post-editor[data-mode="edit"][data-layout="wide"] .preview-frame {
+    width: calc(100cqw - var(--post-panel-width) - 1rem);
+  }
+
   .post-editor[data-layout="viewer"] .preview-frame {
     flex: none;
-    width: min(100cqw, calc(100cqh * 9 / 16));
+    width: min(100cqw, calc(100cqh * var(--post-ratio)));
     height: 100%;
   }
 
-  .post-editor[data-mode="timing"] .timing-stage {
-    overflow-y: auto;
+  .timing-timeline {
+    grid-area: timeline;
+    min-width: 0;
+  }
+  .post-editor[data-mode="timing"] {
+    user-select: none;
+    -webkit-user-select: none;
+  }
+  .post-editor[data-mode="timing"] :global(input) {
+    user-select: text;
+    -webkit-user-select: text;
+  }
+  .post-editor[data-mode="timing"][data-layout="phone"] .timing-stage {
+    height: 100%;
+  }
+
+  @media (max-height: 500px) and (min-width: 601px) {
+    .post-editor[data-mode="timing"][data-layout="wide"] .layout {
+      gap: 0.5rem;
+      grid-template-rows: auto minmax(8rem, 1fr) auto;
+    }
+  }
+
+  @container post-editor (min-width: 2400px) {
+    .post-editor[data-mode="timing"] .layout {
+      --mapping-text-size: 1.125rem;
+      --mapping-heading-size: 1.25rem;
+      --mapping-meta-size: 1rem;
+      --font-size-sm: 1.125rem;
+      --font-size-compact: 1rem;
+      --min-touch-target: 3rem;
+      --post-panel-width: 28rem;
+    }
   }
 
   .panel-host {
@@ -2003,6 +3540,10 @@
 
   .post-editor[data-layout="wide"] .panel-host {
     flex: 0 0 var(--post-panel-width);
+  }
+
+  .post-editor[data-mode="edit"][data-layout="wide"] .panel-host {
+    flex: 1 1 20rem;
   }
 
   .side-column {
@@ -2019,9 +3560,34 @@
     min-height: 0;
   }
 
+  /* A short landscape window scrolls the entire inspector so its header
+     cannot leave just a sliver of space for the selected item's controls. */
+  @media (max-height: 600px) {
+    .post-editor[data-layout="wide"] .side-column {
+      grid-template-rows: auto auto;
+      align-content: start;
+      overflow-y: auto;
+    }
+
+    .post-editor[data-layout="wide"] .panel-slot :global(.tool-panel.side) {
+      height: auto;
+    }
+
+    .post-editor[data-layout="wide"]
+      .panel-slot
+      :global(.tool-panel.side .body) {
+      overflow-y: visible;
+    }
+  }
+
   .panel-host.external .side-column {
     grid-template-rows: auto auto;
     height: auto;
+  }
+
+  .panel-host.external.appearance .side-column {
+    grid-template-rows: auto minmax(0, 1fr);
+    height: 100%;
   }
 
   .post-editor[data-mode="timing"][data-layout="wide"] .panel-host {
@@ -2041,7 +3607,7 @@
   }
 
   /* The crop screen: the stage takes the room the timeline and the row
-     leave, with the clip's time bar under it. */
+     leave, with the clip's own timeline under it. */
   .post-editor[data-mode="crop"] .layout {
     position: relative;
   }
@@ -2062,6 +3628,15 @@
     grid-template-areas: "top" "stage" "transport" "dock";
   }
 
+  .timeline-slot.stowed,
+  .row-slot.stowed {
+    position: absolute;
+    inset: 0 0 auto;
+    margin: 0;
+    visibility: hidden;
+    pointer-events: none;
+  }
+
   .post-editor[data-mode="crop"] .stage-row {
     min-height: 0;
   }
@@ -2076,40 +3651,30 @@
     height: 100%;
   }
 
-  /* Beside the panel the time bar sits under the picture and the panel runs
-     down past it, so a short screen scrolls the panel less. The panel keeps
-     the width it has while editing: 30% of the stage row, measured here
-     against the editor less the layout's padding. */
+  /* The panel sits beside the picture, the two centred as one group, and
+     the clip's timeline runs under both, as wide as the screen. The stage is
+     as wide as the picture needs at the row's height, straightened any
+     amount, and it keeps that width until the screen closes. The panel
+     keeps the width it has while editing: 30% of the stage row, measured
+     here against the editor less the layout's padding. */
   .post-editor[data-mode="crop"][data-layout="wide"] .layout {
     --post-panel-width: clamp(
       20rem,
       calc((100cqw - 2 * var(--post-gap)) * 0.3),
       26rem
     );
-    grid-template-columns: minmax(0, 1fr) var(--post-panel-width);
-    grid-template-areas: "stage panel" "transport panel";
-    column-gap: 1rem;
-  }
-
-  .post-editor[data-mode="crop"][data-layout="wide"] .stage-row {
-    display: contents;
   }
 
   .post-editor[data-mode="crop"][data-layout="wide"] .preview-frame {
-    grid-area: stage;
-  }
-
-  .post-editor[data-mode="crop"][data-layout="wide"] .panel-host {
-    grid-area: panel;
-  }
-
-  .timeline-slot.stowed,
-  .row-slot.stowed {
-    position: absolute;
-    inset: 0 0 auto;
-    margin: 0;
-    visibility: hidden;
-    pointer-events: none;
+    flex: none;
+    width: min(
+      calc(
+        (100cqh - 2 * var(--crop-margin)) * var(--crop-view, 1.7778) + 2 *
+          var(--crop-margin)
+      ),
+      calc(100cqw - var(--post-panel-width) - 1rem)
+    );
+    height: 100%;
   }
 
   /* Reset shows its words when the bar has room, else its icon alone. */
@@ -2123,15 +3688,5 @@
     align-items: center;
     gap: 0.5rem;
     min-width: 0;
-  }
-
-  .crop-reset-label {
-    display: none;
-  }
-
-  @container post-top-bar (min-width: 30rem) {
-    .crop-reset-label {
-      display: inline;
-    }
   }
 </style>

@@ -5,7 +5,7 @@
  * and produces ContextMenuEntry[] for the animation canvas right-click menu.
  *
  * Submenu groups:
- *   - Visibility: Props, Step Numbers, TKA Glyph, Hand TnD, Prop TnD,
+ *   - Visibility: Props, Step numbers, TKA Glyph, Hand TnD, Prop TnD,
  *     Word Header, Mandala, Paths, Progress Bar, Dark Mode (toggles, menu
  *     stays open)
  *   - Grid: Off / 8-Point / Auto (radio-style)

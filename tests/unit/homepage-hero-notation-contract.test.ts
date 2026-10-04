@@ -93,11 +93,11 @@ describe("homepage hero notation rail contract", () => {
     expect(homeHero).toContain("showWordHeader={true}");
     expect(sequenceHero).toContain("showWordHeader,");
     expect(sequenceHero).toContain("visibilityManagerOverride: showWordHeader");
-    // d567221ccd added a presentation-only displayWord override (localized
-    // guide words) in front of the loaded sequence's own word.
-    expect(inlinePlayer).toContain(
-      "word={displayWord ?? animationState.sequenceData?.word ?? sequence.word}"
+    expect(sequenceHero).toContain(
+      'heroVisibilityManager.updateSettings({ wordHeaderHighlight: "travel" })'
     );
+    // Which word the header names is checked by mounting the hero player in
+    // tests/unit/landing/hero-word-header.test.ts, not by matching source.
     expect(inlinePlayer).toContain("hideHeader={fill && !showWordHeader}");
     expect(animatorCanvas).toContain(
       "activeStepNumber={headerActiveStepNumber}"

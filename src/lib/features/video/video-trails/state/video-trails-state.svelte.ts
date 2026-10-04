@@ -127,6 +127,20 @@ export function createVideoTrailsState(
     sessionSave("corrections", corrections);
   }
 
+  function removeCorrection(frame: number, propIndex: 0 | 1, tipIndex: number): void {
+    const existing = corrections[frame] ?? [];
+    const remaining = existing.filter(
+      (c) => c.propIndex !== propIndex || c.tipIndex !== tipIndex,
+    );
+    if (remaining.length === existing.length) return;
+    const updated = { ...corrections };
+    if (remaining.length > 0) updated[frame] = remaining;
+    else delete updated[frame];
+    corrections = updated;
+    isDirty = true;
+    sessionSave("corrections", corrections);
+  }
+
   function markOccluded(frame: number, propIndex: 0 | 1, tipIndex: number): void {
     correctEndpoint(frame, {
       propIndex,
@@ -238,6 +252,7 @@ export function createVideoTrailsState(
     updateSourceMetadata,
     storeFrameDetection,
     correctEndpoint,
+    removeCorrection,
     markOccluded,
     interpolateGap,
     saveProject,

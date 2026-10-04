@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { tick } from "svelte";
   import { effectUiLabel } from "./effect-ui-label";
   import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import type {
@@ -12,6 +13,7 @@
   } from "$lib/shared/effects/domain/effect-control-manifest";
   import EffectControlStack from "$lib/shared/effects/components/EffectControlStack.svelte";
   import EffectPresetsSection from "./EffectPresetsSection.svelte";
+  import LedCustomize from "./customize/LedCustomize.svelte";
   import type { EffectRegistration } from "./effect-registry";
 
   type SettingValue = string | number | boolean | null;
@@ -29,6 +31,10 @@
     propType?: string | null;
     overrides?: EffectControlOverrides;
     onBack: () => void;
+    showBack?: boolean;
+    pagedRichDetail?: boolean;
+    compactPresets?: boolean;
+    boundedFine?: boolean;
     onDisable: () => void;
     onSelectPreset: (presetId: string) => void;
     onSettingChange?: (
@@ -52,12 +58,27 @@
     propType = null,
     overrides,
     onBack,
+    showBack = true,
+    pagedRichDetail = false,
+    compactPresets = false,
+    boundedFine = false,
     onDisable,
     onSelectPreset,
     onSettingChange,
   }: Props = $props();
 
   let fineTuningOpen = $state(false);
+  let selectedFineControl = $state(0);
+  let tuningSection = $state<HTMLElement | null>(null);
+  let loadAttempt = $state(0);
+  const tuningId = $props.id();
+
+  async function focusTuning(): Promise<void> {
+    fineTuningOpen = false;
+    await tick();
+    tuningSection?.focus();
+    tuningSection?.scrollIntoView({ block: "nearest" });
+  }
   // This inspector tunes the 2D canvas, so every manifest read asks for the 2D
   // view's controls.
   const fineControls = $derived(advancedControls(effect, "2d"));
@@ -73,24 +94,29 @@
   // a prop named `effect`, and inside it `$effect` parses as a store
   // subscription, not the rune.
   const usesRichPanel = $derived(primaryControls(effect, "2d").length === 0);
-  const richPanel = $derived(
-    usesRichPanel ? registration.customizeComponent() : null
-  );
+  const richPanel = $derived.by(() => {
+    void loadAttempt;
+    return usesRichPanel && effect !== "led"
+      ? registration.customizeComponent()
+      : null;
+  });
 </script>
 
 <div
   class="inspector"
   class:fine-open={fineTuningOpen}
+  class:compact-presets={compactPresets}
+  class:bounded-fine={boundedFine}
   style:--effect-accent={registration.meta.color}
   style:--effect-accent-soft={`${registration.meta.color}22`}
 >
-  <header class="inspector-header">
-    <button class="back-action" type="button" onclick={onBack}>
-      <span class="back-arrow" aria-hidden="true">
-        <i class="fas fa-arrow-left"></i>
-      </span>
-      <span>{t("effect_deep_all_effects")}</span>
-    </button>
+  <header class="inspector-header" class:without-back={!showBack}>
+    {#if showBack}<button class="back-action" type="button" onclick={onBack}>
+        <span class="back-arrow" aria-hidden="true">
+          <i class="fas fa-arrow-left"></i>
+        </span>
+        <span>{t("effect_deep_all_effects")}</span>
+      </button>{/if}
 
     <span class="effect-identity">
       <span class="effect-icon" aria-hidden="true">
@@ -126,34 +152,64 @@
         accentColor={registration.meta.color}
         {summary}
         showSummary={false}
-        showCustomize={false}
+        onCustomize={focusTuning}
+        customizeTarget={tuningId}
       />
     </section>
   {/if}
 
   <div class="tuning-column">
-    <section class="inspector-section tune-section">
-      <!-- No help line here. Every control in this section already writes to
+    {#if !boundedFine || !fineTuningOpen}<section
+        class="inspector-section tune-section"
+        id={tuningId}
+        bind:this={tuningSection}
+        tabindex="-1"
+        aria-label={t("effect_deep_tune_effect", {
+          effect: effectUiLabel(registration.meta.label),
+        })}
+      >
+        <!-- No help line here. Every control in this section already writes to
            the canvas the instant it moves, so saying so cost a row of height
            and told the user nothing they were not about to see. -->
-      <span class="section-title">{t("effect_deep_tune_look")}</span>
-      {#if richPanel}
-        {#await richPanel then mod}
-          {@const Panel = mod.default}
-          <Panel {onBack} embedded />
-        {/await}
-      {:else}
-        <EffectControlStack
-          {effect}
-          {config}
-          view="2d"
-          tiers={["primary", "tracking"]}
-          {propType}
-          {overrides}
-          {onSettingChange}
-        />
-      {/if}
-    </section>
+        <span class="section-title">{t("effect_deep_tune_look")}</span>
+        {#if effect === "led"}
+          <LedCustomize {onBack} embedded paged={pagedRichDetail} />
+        {:else if richPanel}
+          {#await richPanel}
+            <p class="load-status" role="status">
+              {t("effect_deep_tune_loading")}
+            </p>
+          {:then mod}
+            {@const Panel = mod.default}
+            <Panel
+              {onBack}
+              embedded
+              paged={pagedRichDetail && effect === "led"}
+            />
+          {:catch}
+            <div class="load-status">
+              <p role="alert">{t("effect_deep_tune_load_failed")}</p>
+              <button
+                type="button"
+                class="back-action"
+                onclick={() => loadAttempt++}
+              >
+                {t("effect_deep_tune")}
+              </button>
+            </div>
+          {/await}
+        {:else}
+          <EffectControlStack
+            {effect}
+            {config}
+            view="2d"
+            tiers={["primary", "tracking"]}
+            {propType}
+            {overrides}
+            {onSettingChange}
+          />
+        {/if}
+      </section>{/if}
 
     {#if fineControls.length > 0}
       <section class="inspector-section fine-section">
@@ -180,11 +236,31 @@
 
         {#if fineTuningOpen}
           <div class="fine-controls">
+            {#if boundedFine}
+              <div
+                class="fine-pages"
+                role="group"
+                aria-label={t("effect_deep_fine_tuning")}
+              >
+                {#each fineControls as control, index (control.id)}
+                  <button
+                    type="button"
+                    aria-pressed={selectedFineControl === index}
+                    class:active={selectedFineControl === index}
+                    onclick={() => (selectedFineControl = index)}
+                    >{control.label}</button
+                  >
+                {/each}
+              </div>
+            {/if}
             <EffectControlStack
               {effect}
               {config}
               view="2d"
               tiers={["advanced"]}
+              only={boundedFine
+                ? [fineControls[selectedFineControl]?.id ?? fineControls[0].id]
+                : undefined}
               {propType}
               {overrides}
               {onSettingChange}
@@ -215,6 +291,10 @@
     gap: 8px;
     padding: 12px 16px;
     border-bottom: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.07));
+  }
+
+  .inspector-header.without-back {
+    grid-template-areas: "identity off";
   }
 
   .back-action,
@@ -357,6 +437,18 @@
     gap: 14px;
   }
 
+  .tune-section:focus-visible {
+    outline: 2px solid var(--effect-accent);
+    outline-offset: -2px;
+  }
+
+  .load-status {
+    min-height: 100px;
+    margin: 0;
+    color: var(--theme-text-dim);
+    font-size: var(--font-size-min, 14px);
+  }
+
   .tuning-column {
     display: contents;
   }
@@ -419,6 +511,28 @@
     padding: 0 16px 16px;
   }
 
+  .fine-pages {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding-block: 8px 12px;
+  }
+
+  .fine-pages button {
+    min-height: var(--min-touch-target, 44px);
+    padding: 6px 10px;
+    border: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.12));
+    border-radius: 8px;
+    color: var(--theme-text, white);
+    background: var(--theme-card-bg, rgba(255, 255, 255, 0.04));
+    cursor: pointer;
+  }
+
+  .fine-pages button.active {
+    border-color: var(--effect-accent);
+    color: var(--effect-accent);
+  }
+
   @container effect-inspector (max-width: 26rem) {
     .off-action span {
       display: none;
@@ -469,7 +583,6 @@
 
     .looks-section {
       grid-area: looks;
-      border-right: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.07));
     }
 
     .tuning-column {
@@ -478,6 +591,11 @@
       flex-direction: column;
       min-width: 0;
       align-self: start;
+      margin: 18px 20px 18px 0;
+      border: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.1));
+      border-radius: 12px;
+      background: var(--theme-card-bg, rgba(255, 255, 255, 0.04));
+      overflow: hidden;
     }
 
     .tune-section {
@@ -517,12 +635,12 @@
       grid-template-columns: minmax(0, 1.12fr) minmax(20rem, 0.88fr);
     }
 
-    .looks-section :global(.preset-grid) {
+    .inspector:not(.compact-presets) .looks-section :global(.preset-grid) {
       grid-template-columns: 1fr;
       gap: 10px;
     }
 
-    .looks-section :global(.preset-card) {
+    .inspector:not(.compact-presets) .looks-section :global(.preset-card) {
       display: grid;
       grid-template-columns: minmax(13rem, 1.45fr) minmax(8rem, 0.55fr);
       grid-template-rows: auto 1fr;
@@ -532,21 +650,21 @@
       padding: 10px;
     }
 
-    .looks-section :global(.preview-area) {
+    .inspector:not(.compact-presets) .looks-section :global(.preview-area) {
       grid-column: 1;
       grid-row: 1 / span 2;
     }
 
-    .looks-section :global(.preset-name),
-    .looks-section :global(.preset-trait) {
+    .inspector:not(.compact-presets) .looks-section :global(.preset-name),
+    .inspector:not(.compact-presets) .looks-section :global(.preset-trait) {
       grid-column: 2;
     }
 
-    .looks-section :global(.preset-name) {
+    .inspector:not(.compact-presets) .looks-section :global(.preset-name) {
       align-self: end;
     }
 
-    .looks-section :global(.preset-trait) {
+    .inspector:not(.compact-presets) .looks-section :global(.preset-trait) {
       align-self: start;
     }
   }

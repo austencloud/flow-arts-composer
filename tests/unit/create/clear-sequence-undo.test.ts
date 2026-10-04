@@ -36,7 +36,7 @@ function sequenceFixture(): SequenceData {
   } as SequenceData;
 }
 
-function sequenceStateHarness(initialSequence: SequenceData) {
+function sequenceStateHarness(initialSequence: SequenceData | null) {
   let currentSequence: SequenceData | null = initialSequence;
   let selectedStepNumber: number | null = 2;
 
@@ -210,6 +210,56 @@ describe("cleared sequence undo", () => {
         insertedStepIdentities: new Set(["step:step-3"]),
       })
     );
+  });
+
+  it.each([
+    UndoOperationType.GENERATE_SEQUENCE,
+    UndoOperationType.SPELL_GENERATE,
+  ])(
+    "restores a blank Generate workspace after %s and redoes the generated sequence",
+    async (operation) => {
+      const harness = sequenceStateHarness(null);
+      const controller = createUndoController({
+        UndoManager: new UndoManager(),
+        sequenceState: harness.state,
+        getActiveSection: () => "generate",
+        setActiveSectionInternal: vi.fn(),
+      });
+      const generated = sequenceFixture();
+
+      controller.pushUndoSnapshot(operation);
+      await Promise.resolve();
+      harness.replace(generated, 1);
+
+      expect(controller.canUndo).toBe(true);
+      expect(controller.undo()).toBe(true);
+      expect(harness.state.currentSequence).toBeNull();
+      expect(controller.redo()).toBe(true);
+      expect(harness.state.currentSequence).toEqual(generated);
+    }
+  );
+
+  it("keeps the pre-transform snapshot until an async edit commits", () => {
+    const original = sequenceFixture();
+    const harness = sequenceStateHarness(original);
+    const controller = createUndoController({
+      UndoManager: new UndoManager(),
+      sequenceState: harness.state,
+      getActiveSection: () => "construct",
+      setActiveSectionInternal: vi.fn(),
+    });
+    const commit = controller.beginUndoSnapshot(
+      UndoOperationType.MIRROR_SEQUENCE
+    );
+    const transformed = { ...original, name: "Mirrored" };
+    harness.replace(transformed, 1);
+
+    expect(controller.canUndo).toBe(false);
+    commit();
+    commit();
+    expect(controller.undoHistory).toHaveLength(1);
+    expect(controller.undo()).toBe(true);
+    expect(harness.state.currentSequence).toEqual(original);
   });
 
   it("keeps redo entries isolated to the tab that produced them", () => {

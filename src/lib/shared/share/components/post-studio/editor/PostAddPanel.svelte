@@ -64,9 +64,25 @@
     if (editor.addCatalogVideo(video)) onAdded("video");
   }
 
+  function addTitles(): void {
+    editor.pause();
+    const at = newItemStart(editor.durationSeconds, editor.previewSeconds);
+    if (editor.addTitles(at)) onAdded("titles");
+  }
+
   function addCard(): void {
     editor.pause();
     if (editor.addCard()) onAdded("card");
+  }
+
+  function addTunnelHook(): void {
+    editor.pause();
+    if (editor.addTunnelHook()) onAdded("animation");
+  }
+
+  function removeTunnelHook(): void {
+    editor.pause();
+    editor.removeTunnelHook();
   }
 
   const TEXT_SIZE: PostTextSize = "m";
@@ -108,11 +124,30 @@
         }),
     },
     {
+      id: "titles",
+      icon: ITEM_KIND_ICON.titles,
+      label: itemKindLabel("titles"),
+      run: addTitles,
+    },
+    {
       id: "card",
       icon: ITEM_KIND_ICON.card,
       label: t("post_editor_add_card_end"),
       run: addCard,
     },
+    editor.tunnelHook
+      ? {
+          id: "tunnel-hook",
+          icon: "fa-xmark",
+          label: t("post_editor_remove_tunnel_hook"),
+          run: removeTunnelHook,
+        }
+      : {
+          id: "tunnel-hook",
+          icon: "fa-circle-nodes",
+          label: t("post_editor_add_tunnel_hook"),
+          run: addTunnelHook,
+        },
   ]);
 </script>
 

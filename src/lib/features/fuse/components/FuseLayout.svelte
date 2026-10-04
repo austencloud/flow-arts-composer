@@ -10,8 +10,12 @@
   } from "$lib/shared/device/domain/constants/device-constants";
   import { openSequenceViewer } from "$lib/shared/sequence-viewer/services/sequence-viewer-navigator";
   import { getLibrarySaveService } from "$lib/features/library/get-library-save-service";
+  import WorkspaceShareSheet from "$lib/features/create/shared/workspace-panel/shared/components/buttons/WorkspaceShareSheet.svelte";
   import { getSettings } from "$lib/shared/application/state/app-state.svelte";
-  import { createSequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+  import {
+    createSequenceData,
+    type SequenceData,
+  } from "$lib/shared/foundation/domain/models/sequence-data";
   import { showToast } from "$lib/shared/toast/state/toast-state.svelte";
   import { LibraryError } from "$lib/shared/library/domain/library-error";
   import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
@@ -56,6 +60,11 @@
   let pathBuilderOpen = $state(false);
   let pathBuilderSide = $state<FuseSide | null>(null);
   let isSavingResult = $state(false);
+  // Share opens the shared share sheet over Fuse; the sequence viewer is never
+  // involved. The sheet shares the fused result as built when Share was pressed.
+  let shareSequence = $state.raw<SequenceData | null>(null);
+  let shareOpen = $state(false);
+  let resumePreviewAfterShare = false;
   // Full desktop cards include their start position and mandala. Smaller
   // workspaces keep the lean, big-cell view; especially wide ones can seat the
   // two complete cards on opposite sides of the result.
@@ -618,14 +627,6 @@
   });
 
   async function handleOpenViewer(): Promise<void> {
-    await openBuiltResult(false);
-  }
-
-  async function handleShare(): Promise<void> {
-    await openBuiltResult(true);
-  }
-
-  async function openBuiltResult(shareOnOpen: boolean): Promise<void> {
     const sequence = await fuseState.buildFusedSequence();
     if (!sequence) return;
 
@@ -635,11 +636,29 @@
         returnPath: "/app/create",
         returnLabel: "Fuse",
         initialBpm: fuseState.bpm,
-        shareOnOpen,
       });
     } catch (failure) {
       fuseState.reportViewerFailure(failure);
     }
+  }
+
+  async function handleShare(): Promise<void> {
+    // Building the result pauses the preview. Closing the sheet puts Fuse back
+    // the way it was, so a preview that was playing plays again.
+    const wasPlaying = fuseState.clockRunning;
+    const sequence = await fuseState.buildFusedSequence();
+    if (!sequence) return;
+    resumePreviewAfterShare = wasPlaying;
+    shareSequence = sequence;
+    shareOpen = true;
+  }
+
+  function closeShare(): void {
+    shareOpen = false;
+    if (resumePreviewAfterShare && !fuseState.clockRunning) {
+      fuseState.toggleClock();
+    }
+    resumePreviewAfterShare = false;
   }
 
   async function handleSaveResult(): Promise<void> {
@@ -888,6 +907,12 @@
     side={pathBuilderSide}
     desktopModal={fullCard}
     onClose={closePathBuilder}
+  />
+  <WorkspaceShareSheet
+    isOpen={shareOpen}
+    sequence={shareSequence}
+    bpm={fuseState.bpm}
+    onClose={closeShare}
   />
 </div>
 

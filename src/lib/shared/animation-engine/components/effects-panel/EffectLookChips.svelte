@@ -12,9 +12,8 @@
    * on screen. Both delegate the actual apply to the caller's onSelect, so the
    * two presentations never diverge on behaviour.
    *
-   * The rail always leads with the synthetic Default and Custom anchors, so it
-   * is never empty even for an effect with no named presets (Ghost). That keeps
-   * the dock's height identical for all sixteen effects.
+   * Original keeps the rail useful even without named presets. Your look joins
+   * it once tuning has captured settings that can actually be restored.
    */
   interface Props {
     presetGroup: EffectPresetGroup;
@@ -71,6 +70,7 @@
     // Re-measure when the effect (and therefore the chip count) changes.
     void presetGroup.effectType;
     void wrap;
+    void customDisabled;
     if (!rail) return;
     measure();
     const observer = new ResizeObserver(measure);
@@ -123,25 +123,24 @@
       <span class="swatch" style:background={accentColor} aria-hidden="true"
       ></span>
     {/if}
-    {t("effect_deep_default")}
+    {t("effect_deep_original")}
   </button>
 
-  <button
-    type="button"
-    class="look-chip"
-    class:active={activePresetId === customChipId}
-    role="radio"
-    aria-checked={activePresetId === customChipId}
-    disabled={customDisabled}
-    onclick={() => onSelect(customChipId)}
-  >
-    {#if customColors}
-      {@render dualSwatch(customColors.left, customColors.right)}
-    {:else}
-      <span class="swatch custom" aria-hidden="true"></span>
-    {/if}
-    {t("effect_deep_custom")}
-  </button>
+  {#if !customDisabled}<button
+      type="button"
+      class="look-chip"
+      class:active={activePresetId === customChipId}
+      role="radio"
+      aria-checked={activePresetId === customChipId}
+      onclick={() => onSelect(customChipId)}
+    >
+      {#if customColors}
+        {@render dualSwatch(customColors.left, customColors.right)}
+      {:else}
+        <span class="swatch custom" aria-hidden="true"></span>
+      {/if}
+      {t("effect_deep_your_look")}
+    </button>{/if}
 
   {#each presetGroup.presets as preset (preset.id)}
     {@const isActive = activePresetId === preset.id}

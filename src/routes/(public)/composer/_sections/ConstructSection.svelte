@@ -31,7 +31,7 @@
 -->
 <script lang="ts">
   import { t } from "$lib/shared/i18n/i18n.svelte";
-  import { onMount, onDestroy } from "svelte";
+  import { onMount, onDestroy, tick, type Snippet } from "svelte";
   import { MediaQuery } from "svelte/reactivity";
   import { createSimplifiedStartPlacementState } from "$lib/shared/create/state/start-placement-state.svelte";
   import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
@@ -55,7 +55,11 @@
   import UndoGlyph from "$lib/features/create/shared/workspace-panel/shared/components/buttons/UndoGlyph.svelte";
   import Crossfade from "$lib/shared/components/Crossfade.svelte";
   import { DURATION } from "$lib/shared/transitions/transitions";
-  import { motionDuration } from "$lib/shared/transitions/motion";
+  import {
+    motionDuration,
+    reducedMotion,
+  } from "$lib/shared/transitions/motion";
+  import { focusFirstOrContainer } from "$lib/shared/foundation/ui/modal/helpers/focus-restore";
   import { slide } from "svelte/transition";
   import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
   import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
@@ -71,6 +75,7 @@
     type ConstructAttractAct,
   } from "./construct-attract-act.svelte";
   import { isVisitorOwnedConstructSequence } from "../_components/composer-sequence-ownership";
+  import { bootProfiler } from "$lib/shared/analytics/boot-profiler";
 
   type ConstructPresentationMode = "full" | "guided-build" | "continuous";
 
@@ -82,6 +87,7 @@
     primaryPropColors,
     active = true,
     embedded = false,
+    propControl,
   }: {
     presentationMode?: ConstructPresentationMode;
     onVisitorComposed?: (sequence: SequenceData) => void;
@@ -90,6 +96,8 @@
     primaryPropColors?: ViewerCustomColorPair | null;
     active?: boolean;
     embedded?: boolean;
+    /** The host page's prop chooser, shown at the start of the word row. */
+    propControl?: Snippet;
   } = $props();
 
   const isGuidedBuild = $derived(presentationMode === "guided-build");
@@ -181,6 +189,7 @@
     unsubscribe = startPlacementState.onSelectedPlacementChange(
       (position, source) => {
         if (source === "user" && position) {
+          const carry = holdsFocus(pickerPaneEl);
           recordHistory();
           startPlacement = position;
           gridMode = startPlacementState.currentGridMode;
@@ -188,6 +197,7 @@
           playing = false;
           editingStepNumber = null;
           dropPlayerRefs();
+          if (carry) void focusPickerPane();
         }
       }
     );
@@ -382,16 +392,36 @@
   });
 
   function handleOptionSelected(option: PictographData) {
+    const finishCommit = bootProfiler.startSpan("construct:option-commit", {
+      previousStepCount: steps.length,
+      viewerCanvasMounted: Boolean(
+        document.querySelector(".viewer-demo canvas")
+      ),
+      viewerDialogOpen: Boolean(
+        document.querySelector("dialog.composer-3d-modal[open]")
+      ),
+    });
     if (isContinuous && editingStepNumber) {
       recordHistory();
       steps = [...steps.slice(0, editingStepNumber - 1), option];
       editingStepNumber = null;
       playingStepNumber = null;
+      void tick().then(() => finishCommit("ok", { mode: "replace" }));
       return;
     }
-    if (steps.length >= MAX_STEPS) return;
+    if (steps.length >= MAX_STEPS) {
+      finishCommit("cancelled", { reason: "step-limit" });
+      return;
+    }
+    const carry = holdsFocus(pickerPaneEl);
     recordHistory();
     steps = [...steps, option];
+    void tick().then(() =>
+      finishCommit("ok", { mode: "append", stepCount: steps.length })
+    );
+    // The eighth step plays at once and the player replaces the options, so
+    // focus goes to the play actions, as it does from Play.
+    if (carry && phase === "play") void focusPlayControls();
   }
 
   // ── build history ────────────────────────────────────────────────────────
@@ -445,23 +475,23 @@
       dropPlayerRefs();
     }
     compactPane = "build";
-    // Put the restored pick back in the picker. setSelectedPosition notifies
+    // Put the restored pick back in the picker. setSelectedPlacement notifies
     // with source "sync", which our listener ignores, so this cannot recurse
     // into the selection branch that wipes the steps we just restored.
-    startPlacementState.setSelectedPosition(target.startPlacement);
+    startPlacementState.setSelectedPlacement(target.startPlacement);
   }
 
   function undo() {
-    if (!canUndo) return;
     const previous = past[past.length - 1];
+    if (!previous) return;
     future = [snapshot(), ...future];
     past = past.slice(0, -1);
     applySnapshot(previous);
   }
 
   function redo() {
-    if (!canRedo) return;
     const next = future[0];
+    if (!next) return;
     past = [...past, snapshot()];
     future = future.slice(1);
     applySnapshot(next);
@@ -541,25 +571,100 @@
     startPlacementState.clearSelectedPlacement();
     compactPane = "build";
   }
+
+  // Focus follows the build when a phase change removes the control that held
+  // it. The action slot's crossfade covers controls inside the slot; the
+  // handlers below cover the rest. Below 1200 px the play-phase actions sit
+  // under the player, outside the slot, so Play hands focus to Keep building
+  // and leaving play hands it back to the slot, as the crossfade itself does
+  // on wide screens. Either end can be off screen, so it scrolls just into
+  // view.
+  let actionSwapEl = $state<HTMLElement | null>(null);
+  let actionFade = $state<ReturnType<typeof Crossfade> | null>(null);
+  let playActionsEl = $state<HTMLElement | null>(null);
+  let pickerPaneEl = $state<HTMLElement | null>(null);
+  let clearSideEl = $state<HTMLElement | null>(null);
+
+  function holdsFocus(element: HTMLElement | null): boolean {
+    return !!element?.contains(document.activeElement);
+  }
+
+  function reveal(element: Element | null) {
+    element?.scrollIntoView({
+      block: "nearest",
+      behavior: reducedMotion() ? "instant" : "smooth",
+    });
+  }
+
+  function play() {
+    const carry = holdsFocus(actionSwapEl);
+    playing = true;
+    compactPane = "build";
+    if (carry) void focusPlayActions();
+  }
+
+  async function focusPlayActions() {
+    await tick();
+    if (!playActionsEl) return;
+    focusFirstOrContainer(playActionsEl, { preventScroll: true });
+    reveal(playActionsEl);
+  }
+
+  function focusPlayControls() {
+    return isCompactDemo ? focusPlayActions() : focusActionSlot();
+  }
+
+  // Picking a start swaps the start picker for the step options. They load
+  // after the swap, so focus usually lands on the pane itself, and Tab
+  // reaches the first option.
+  async function focusPickerPane() {
+    await tick();
+    if (!pickerPaneEl) return;
+    focusFirstOrContainer(pickerPaneEl, { preventScroll: true });
+  }
+
+  function keepBuilding() {
+    const carry = holdsFocus(playActionsEl);
+    playing = false;
+    playingStepNumber = null;
+    compactPane = "build";
+    dropPlayerRefs();
+    if (carry) void focusActionSlot();
+  }
+
+  function buildAnother() {
+    const carry = holdsFocus(playActionsEl);
+    reset();
+    if (carry) void focusActionSlot();
+  }
+
+  // Clear sequence goes away with the build it clears, so focus goes to the
+  // slot beside it, as it does from Build another.
+  function clearSequence() {
+    const carry = holdsFocus(clearSideEl);
+    reset();
+    if (carry) void focusActionSlot();
+  }
+
+  async function focusActionSlot() {
+    await tick();
+    reveal(actionFade?.focusShown({ preventScroll: true }) ?? null);
+  }
 </script>
 
 {#snippet playPhaseActions()}
   <div class="play-actions">
     {#if steps.length < MAX_STEPS}
-      <PanelButton
-        variant="secondary"
-        onclick={() => {
-          playing = false;
-          playingStepNumber = null;
-          compactPane = "build";
-          dropPlayerRefs();
-        }}
-      >
+      <PanelButton variant="secondary" onclick={keepBuilding}>
         <i class="fas fa-arrow-left" aria-hidden="true"></i>
         {t("composer_demo_keep_building")}
       </PanelButton>
     {/if}
-    <PanelButton variant="primary" ariaLabel="Build another" onclick={reset}>
+    <PanelButton
+      variant="primary"
+      ariaLabel="Build another"
+      onclick={buildAnother}
+    >
       <i class="fas fa-rotate-left" aria-hidden="true"></i>
       {t("composer_demo_build_another")}
     </PanelButton>
@@ -661,13 +766,17 @@
         <div class="workspace" class:has-sequence={!!startStepData}>
           <!-- Canonical word display: the same WordLabel the real workspace shows
            top-center (TKA glyphs, click-to-copy, letter highlighting during
-           playback). No step counter — the app doesn't count steps at you. -->
+           playback). No step counter — the app doesn't count steps at you.
+           The host's prop chooser sits at the row's start, outside the live
+           region, so changing props is not announced as a change to the word. -->
           <header
             class="demo-status word-label-area"
-            aria-live={tookOver ? "polite" : "off"}
+            class:with-prop={!!propControl}
           >
-            <span class="region-label">{t("composer_demo_your_sequence")}</span>
-            <div class="status-content">
+            {#if propControl}
+              <div class="status-prop">{@render propControl()}</div>
+            {/if}
+            <div class="status-content" aria-live={tookOver ? "polite" : "off"}>
               {#if rawWord}
                 <WordLabel
                   word={rawWord}
@@ -755,13 +864,21 @@
           <div class="action-slot">
             <!-- Left zone: the real app's clear button — back out of a build to
              pick a different start position. Play phase has Build another. -->
-            <div class="slot-side">
+            <div class="slot-side" bind:this={clearSideEl}>
               {#if phase === "add-step"}
-                <ClearSequenceButton onclick={reset} />
+                <ClearSequenceButton onclick={clearSequence} />
               {/if}
             </div>
-            <div class="action-swap">
-              <Crossfade key={phase} duration={DURATION.normal} mode="swap">
+            <div class="action-swap" bind:this={actionSwapEl}>
+              <Crossfade
+                bind:this={actionFade}
+                key={phase}
+                duration={DURATION.normal}
+                mode="swap"
+                label={phase === "pick-start"
+                  ? t("create_ui_choose_your_start_placement")
+                  : undefined}
+              >
                 <div class="action-swap-state">
                   {#if phase === "add-step"}
                     {#if isContinuous}
@@ -786,13 +903,7 @@
                           ? "visible"
                           : "hidden"}
                       >
-                        <ViewSequenceButton
-                          purpose="play"
-                          onclick={() => {
-                            playing = true;
-                            compactPane = "build";
-                          }}
-                        />
+                        <ViewSequenceButton purpose="play" onclick={play} />
                       </span>
                     {/if}
                   {:else if phase === "play" && !isCompactDemo}
@@ -884,7 +995,7 @@
         {/if}
 
         <!-- PICKER / PLAYER: the real primitives; phase swap lives HERE only. -->
-        <div class="picker-pane">
+        <div class="picker-pane" bind:this={pickerPaneEl}>
           {#if phase === "pick-start"}
             {#await import("$lib/features/create/construct/start-placement-picker/components/StartPlacementPicker.svelte") then mod}
               <mod.default
@@ -957,7 +1068,7 @@
     </div>
 
     {#if isCompactDemo && phase === "play"}
-      <div class="compact-play-actions">
+      <div class="compact-play-actions" bind:this={playActionsEl}>
         {@render playPhaseActions()}
       </div>
     {/if}
@@ -1402,6 +1513,22 @@
     align-items: center;
     justify-content: center;
     --text-color: var(--theme-text, #fff);
+  }
+
+  /* With the host's prop chooser the row becomes three tracks: the chooser,
+     the word, and an empty track of the same width, so the word stays on the
+     workspace's center line. */
+  .demo-status.with-prop {
+    display: grid;
+    grid-template-columns: 3rem minmax(0, 1fr) 3rem;
+    column-gap: 0.75rem;
+  }
+
+  .status-prop {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    min-width: 0;
   }
 
   .status-content {

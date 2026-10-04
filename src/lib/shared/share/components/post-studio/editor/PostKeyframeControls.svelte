@@ -5,13 +5,12 @@
   animatable channel (framing, box or opacity) of the selected item. The
   chevrons seek to the nearest in-view keyframe; the diamond adds one at the
   playhead recording the value currently showing, or removes the one already
-  there. The Curve chip opens the segment under the playhead: easing presets
+  there, and its plus or minus says which a press will do. The Curve chip opens the segment under the playhead: easing presets
   plus PostCurveEditor for fine control, in a popover that closes on Escape
   or a press anywhere outside it.
 
-  Renders nothing while the playhead sits outside the item - the spec calls
-  animated values read-only there, and there is nothing to seek to, toggle or
-  ease at a time the item isn't even showing.
+  The add, seek and curve controls require the playhead inside the item.
+  Clearing remains available wherever the playhead is.
 -->
 <script lang="ts">
   import { t } from "$lib/shared/i18n/i18n.svelte.js";
@@ -29,34 +28,58 @@
     segmentAt,
     setSegmentEasing,
     toggleKeyframe,
+    keyframeCount,
+    clearChannel,
     type PostEasingPresetId,
   } from "$lib/shared/media-composition/domain/post-project-keyframes";
   import { editItemKeyframes } from "$lib/shared/media-composition/domain/post-project-edits";
+  import type { PostEdit } from "$lib/shared/media-composition/state/post-editor-state.svelte";
   import type { PostEditorState } from "$lib/shared/media-composition/state/post-editor-state.svelte";
   import FilterChipBase from "$lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
   import ChipPopoverOption from "$lib/shared/browse/components/filter-chips/ChipPopoverOption.svelte";
   import PostCurveEditor from "./PostCurveEditor.svelte";
   import { formatPostClock } from "../builder/post-builder-format";
+  import { easingPresetLabel } from "./post-editor-labels";
 
   interface Props {
     editor: PostEditorState;
     item: PostItem;
     channel: PostKeyframeChannel;
     locked: boolean;
+    /** Whether the Curve popover is open; a keyframe row's curve opens it. */
+    curveOpen?: boolean;
+    /** Names the channel beside the buttons where no panel title does. */
+    label?: string;
+    onCleared: (count: number, edit: PostEdit) => void;
   }
 
-  let { editor, item, channel, locked }: Props = $props();
+  let {
+    editor,
+    item,
+    channel,
+    locked,
+    curveOpen = $bindable(false),
+    label,
+    onCleared,
+  }: Props = $props();
 
   const PRESET_IDS = Object.keys(EASING_PRESETS) as PostEasingPresetId[];
 
   const seconds = $derived(editor.previewSeconds);
+  const count = $derived(keyframeCount(item, channel));
   const withinSpan = $derived(
     seconds >= item.start - POST_TIME_EPSILON &&
       seconds <= itemEnd(item) + POST_TIME_EPSILON
   );
-  const previous = $derived(adjacentKeyframeSeconds(item, channel, seconds, "previous"));
-  const next = $derived(adjacentKeyframeSeconds(item, channel, seconds, "next"));
-  const hasKeyframeHere = $derived(keyframeIndexAt(item, channel, seconds) >= 0);
+  const previous = $derived(
+    adjacentKeyframeSeconds(item, channel, seconds, "previous")
+  );
+  const next = $derived(
+    adjacentKeyframeSeconds(item, channel, seconds, "next")
+  );
+  const hasKeyframeHere = $derived(
+    keyframeIndexAt(item, channel, seconds) >= 0
+  );
   const segment = $derived(segmentAt(item, channel, seconds));
   const curveLabel = $derived(
     segment
@@ -66,15 +89,16 @@
         })
       : ""
   );
-  const curveName = $derived(t("post_keyframe_curve_for_range", { range: curveLabel }));
+  const curveName = $derived(
+    t("post_keyframe_curve_for_range", { range: curveLabel })
+  );
   const presetId = $derived(segment ? easingPresetOf(segment.easing) : null);
   const chipLabel = $derived.by(() => {
     const id = presetId;
     if (id === null) return "";
-    return id === "custom" ? t("post_curve_custom") : presetLabel(id);
+    return id === "custom" ? t("post_curve_custom") : easingPresetLabel(id);
   });
 
-  let curveOpen = $state(false);
   let curveWrapperEl: HTMLDivElement | null = $state(null);
 
   // The chip goes away when the playhead leaves the item or its keyframes
@@ -95,27 +119,9 @@
       curveOpen = false;
     }
     document.addEventListener("pointerdown", closeOnOutsidePress, true);
-    return () => document.removeEventListener("pointerdown", closeOnOutsidePress, true);
+    return () =>
+      document.removeEventListener("pointerdown", closeOnOutsidePress, true);
   });
-
-  function presetLabel(id: PostEasingPresetId): string {
-    switch (id) {
-      case "linear":
-        return t("post_curve_preset_linear");
-      case "ease-in":
-        return t("post_curve_preset_ease_in");
-      case "ease-out":
-        return t("post_curve_preset_ease_out");
-      case "ease-in-out":
-        return t("post_curve_preset_ease_in_out");
-      case "smooth":
-        return t("post_curve_preset_smooth");
-      case "overshoot":
-        return t("post_curve_preset_overshoot");
-      case "hold":
-        return t("post_curve_preset_hold");
-    }
-  }
 
   function seekTo(value: number | null): void {
     if (value === null) return;
@@ -125,7 +131,28 @@
   function toggleHere(): void {
     if (locked || !withinSpan) return;
     editor.edit((project, ctx) =>
-      editItemKeyframes(project, item.id, (it) => toggleKeyframe(it, channel, seconds), ctx)
+      editItemKeyframes(
+        project,
+        item.id,
+        (it) => toggleKeyframe(it, channel, seconds),
+        ctx
+      )
+    );
+  }
+
+  function commitCurve(next: [number, number, number, number]): void {
+    if (locked || !segment) return;
+    const index = segment.index;
+    editor.editSetting(
+      `${item.id}:${channel}:easing:${index}`,
+      (project, ctx) =>
+        editItemKeyframes(
+          project,
+          item.id,
+          (it) =>
+            setSegmentEasing(it, channel, editor.previewSeconds, [...next]),
+          ctx
+        )
     );
   }
 
@@ -134,79 +161,132 @@
     const easing = EASING_PRESETS[id];
     const at = seconds;
     editor.edit((project, ctx) =>
-      editItemKeyframes(project, item.id, (it) => setSegmentEasing(it, channel, at, easing), ctx)
+      editItemKeyframes(
+        project,
+        item.id,
+        (it) => setSegmentEasing(it, channel, at, easing),
+        ctx
+      )
     );
+  }
+
+  function clearKeys(): void {
+    if (locked || count === 0) return;
+    const edit: PostEdit = (project, ctx) =>
+      editItemKeyframes(
+        project,
+        item.id,
+        (it) => clearChannel(it, channel, seconds),
+        ctx
+      );
+    onCleared(count, edit);
   }
 </script>
 
-{#if withinSpan}
+{#if withinSpan || count > 0}
   <div class="keyframe-controls">
-    <div class="kf-nav" role="group" aria-label={t("post_keyframe_nav")}>
-      <button
-        class="kf-btn"
-        type="button"
-        disabled={previous === null}
-        onclick={() => seekTo(previous)}
-        aria-label={t("post_keyframe_previous")}
+    {#if label}
+      <span class="kf-label"
+        >{label} · {t("post_keyframe_count", { count })}</span
       >
-        <i class="fa-solid fa-chevron-left" aria-hidden="true"></i>
-      </button>
+    {/if}
+    {#if count > 0}
       <button
-        class="kf-btn kf-diamond"
-        class:active={hasKeyframeHere}
+        class="kf-clear"
         type="button"
         disabled={locked}
-        aria-pressed={hasKeyframeHere}
-        aria-label={t(hasKeyframeHere ? "post_keyframe_remove" : "post_keyframe_add")}
-        onclick={toggleHere}
+        onclick={clearKeys}
+        aria-label={`${t("post_keyframe_clear")} ${label ?? channel}: ${count}`}
+        >{t("post_keyframe_clear")}</button
       >
-        <i class="fa-solid fa-diamond" aria-hidden="true"></i>
-      </button>
-      <button
-        class="kf-btn"
-        type="button"
-        disabled={next === null}
-        onclick={() => seekTo(next)}
-        aria-label={t("post_keyframe_next")}
-      >
-        <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>
-      </button>
-    </div>
-    {#if segment}
-      <div class="curve-chip-wrapper" bind:this={curveWrapperEl}>
-        <FilterChipBase
-          mode="dropdown"
-          popupRole="dialog"
-          popupLabel={curveName}
-          icon="fa-solid fa-wave-square"
-          label={chipLabel}
-          ariaLabel={curveName}
-          size="sm"
-          disabled={locked}
-          expanded={curveOpen}
-          onclick={() => (curveOpen = !curveOpen)}
-          ondismiss={() => (curveOpen = false)}
+    {/if}
+    {#if withinSpan}
+      <div class="kf-nav" role="group" aria-label={t("post_keyframe_nav")}>
+        <button
+          class="kf-btn kf-step"
+          type="button"
+          disabled={previous === null}
+          onclick={() => seekTo(previous)}
+          aria-label={t("post_keyframe_previous")}
+          title={t("post_keyframe_previous")}
         >
-          {#snippet children()}
-            <div class="curve-popover">
-              <p class="curve-range">{curveLabel}</p>
-              <PostCurveEditor {editor} {item} {channel} {segment} {locked}>
-                {#snippet presets()}
-                  <div class="preset-list" role="listbox" aria-label={t("post_curve_presets")}>
-                    {#each PRESET_IDS as id (id)}
-                      <ChipPopoverOption
-                        label={presetLabel(id)}
-                        selected={presetId === id}
-                        onclick={() => choosePreset(id)}
-                      />
-                    {/each}
-                  </div>
-                {/snippet}
-              </PostCurveEditor>
-            </div>
-          {/snippet}
-        </FilterChipBase>
+          <i class="fa-solid fa-chevron-left" aria-hidden="true"></i>
+        </button>
+        <button
+          class="kf-btn kf-diamond"
+          class:active={hasKeyframeHere}
+          type="button"
+          disabled={locked}
+          aria-pressed={hasKeyframeHere}
+          aria-label={t(
+            hasKeyframeHere ? "post_keyframe_remove" : "post_keyframe_add"
+          )}
+          title={t(
+            hasKeyframeHere ? "post_keyframe_remove" : "post_keyframe_add"
+          )}
+          onclick={toggleHere}
+        >
+          <i class="fa-solid fa-diamond" aria-hidden="true"></i>
+          <i
+            class="kf-badge fa-solid {hasKeyframeHere ? 'fa-minus' : 'fa-plus'}"
+            aria-hidden="true"
+          ></i>
+        </button>
+        <button
+          class="kf-btn kf-step"
+          type="button"
+          disabled={next === null}
+          onclick={() => seekTo(next)}
+          aria-label={t("post_keyframe_next")}
+          title={t("post_keyframe_next")}
+        >
+          <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>
+        </button>
       </div>
+      {#if segment}
+        <div class="curve-chip-wrapper" bind:this={curveWrapperEl}>
+          <FilterChipBase
+            mode="dropdown"
+            popupRole="dialog"
+            popupLabel={curveName}
+            icon="fa-solid fa-wave-square"
+            label={chipLabel}
+            ariaLabel={curveName}
+            size="sm"
+            disabled={locked}
+            expanded={curveOpen}
+            onclick={() => (curveOpen = !curveOpen)}
+            ondismiss={() => (curveOpen = false)}
+          >
+            {#snippet children()}
+              <div class="curve-popover">
+                <p class="curve-range">{curveLabel}</p>
+                <PostCurveEditor
+                  easing={segment.easing}
+                  {locked}
+                  onCommit={commitCurve}
+                >
+                  {#snippet presets()}
+                    <div
+                      class="preset-list"
+                      role="listbox"
+                      aria-label={t("post_curve_presets")}
+                    >
+                      {#each PRESET_IDS as id (id)}
+                        <ChipPopoverOption
+                          label={easingPresetLabel(id)}
+                          selected={presetId === id}
+                          onclick={() => choosePreset(id)}
+                        />
+                      {/each}
+                    </div>
+                  {/snippet}
+                </PostCurveEditor>
+              </div>
+            {/snippet}
+          </FilterChipBase>
+        </div>
+      {/if}
     {/if}
   </div>
 {/if}
@@ -217,6 +297,30 @@
     align-items: center;
     gap: 0.5rem;
     flex-wrap: wrap;
+  }
+
+  .kf-label {
+    color: var(--theme-text-dim);
+    font-size: var(--font-size-compact, 0.75rem);
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  .kf-clear {
+    border: 0;
+    background: none;
+    color: var(--theme-text-secondary, #aaa);
+    cursor: pointer;
+    min-height: var(--min-touch-target, 44px);
+    min-width: var(--min-touch-target, 44px);
+  }
+
+  .kf-clear:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+  .kf-clear:focus-visible {
+    outline: 2px solid var(--theme-accent, currentColor);
   }
 
   .kf-nav {
@@ -247,7 +351,11 @@
 
   @media (hover: hover) {
     .kf-btn:not(:disabled):hover {
-      background: color-mix(in srgb, var(--theme-accent, #d4813a) 10%, transparent);
+      background: color-mix(
+        in srgb,
+        var(--theme-accent, #d4813a) 10%,
+        transparent
+      );
       color: var(--theme-text, #fff);
     }
   }
@@ -262,10 +370,42 @@
     cursor: not-allowed;
   }
 
+  .kf-diamond {
+    position: relative;
+  }
+
   .kf-diamond.active {
-    border-color: color-mix(in srgb, var(--theme-accent, #d4813a) 50%, transparent);
-    background: color-mix(in srgb, var(--theme-accent, #d4813a) 18%, transparent);
+    border-color: color-mix(
+      in srgb,
+      var(--theme-accent, #d4813a) 50%,
+      transparent
+    );
+    background: color-mix(
+      in srgb,
+      var(--theme-accent, #d4813a) 18%,
+      transparent
+    );
     color: var(--theme-accent, #d4813a);
+  }
+
+  /* Plus adds a keyframe here; minus, on a keyframe, takes it away. */
+  .kf-badge {
+    position: absolute;
+    right: 4px;
+    bottom: 4px;
+    display: grid;
+    place-items: center;
+    width: 15px;
+    height: 15px;
+    border-radius: 50%;
+    background: var(--theme-text, #fff);
+    color: var(--theme-bg, #101018);
+    font-size: 0.5625rem;
+  }
+
+  .kf-diamond.active .kf-badge {
+    background: var(--semantic-danger, #ff5d5d);
+    color: #fff;
   }
 
   .curve-chip-wrapper {

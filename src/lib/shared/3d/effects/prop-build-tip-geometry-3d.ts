@@ -167,11 +167,17 @@ interface Offset3D {
   readonly z: number;
 }
 
+/**
+ * An emitter before `resolvePropTipAnchors3D` gives it an effect key, which
+ * depends on the prop's 2D tip table rather than on its build.
+ */
+export type PropTipEmitter3D = Omit<PropTipAnchor3D, "effectKeyIndex">;
+
 /** Fixed-size geometry, scaled only by the prop's own group scale. */
 function fixedAnchors(
   points: readonly Offset3D[],
   scale: number
-): PropTipAnchor3D[] {
+): PropTipEmitter3D[] {
   return points.map((offset) => ({
     effectTipIndex: 1,
     offset: { x: offset.x * scale, y: offset.y * scale, z: offset.z * scale },
@@ -192,7 +198,7 @@ function silhouetteAnchors(
   config: PropTipConfig,
   reach: number,
   effectTipIndices?: readonly (0 | 1)[]
-): PropTipAnchor3D[] {
+): PropTipEmitter3D[] {
   const maxRadius = Math.max(
     ...config.points.map(({ dx, dy }) => Math.hypot(dx, dy))
   );
@@ -207,7 +213,7 @@ function fanAnchors(
   build: PropBuildTipGeometry3D,
   staffLength: number,
   scale: number
-): PropTipAnchor3D[] {
+): PropTipEmitter3D[] {
   if (build.fanBuild === "fire") {
     return fixedAnchors(FAN_FIRE_WICK_CENTERS_M, scale);
   }
@@ -242,7 +248,7 @@ export function resolveBuildTipAnchors3D(
   propType: string | undefined,
   staffLength: number,
   build: PropBuildTipGeometry3D
-): PropTipAnchor3D[] | null {
+): PropTipEmitter3D[] | null {
   switch (propType) {
     case PropType.FAN:
       return fanAnchors(build, staffLength, 1);

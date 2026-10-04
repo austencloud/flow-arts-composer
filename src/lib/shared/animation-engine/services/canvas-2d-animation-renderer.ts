@@ -449,7 +449,10 @@ export class Canvas2DAnimationRenderer {
     this.appManager.clear();
 
     // 2. Draw grid (with fade transition for toggle)
-    this.gridFadeManager.setVisible(params.visibility.gridVisible);
+    this.gridFadeManager.setVisible(
+      params.visibility.gridVisible,
+      params.instantVisibility
+    );
     const gridFadeState = this.gridFadeManager.updateProgress(
       params.currentTime
     );
@@ -476,7 +479,10 @@ export class Canvas2DAnimationRenderer {
     }
 
     // 3. Draw trails (with fade transition for toggle)
-    this.trailsFadeManager.setVisible(params.visibility.trailsVisible);
+    this.trailsFadeManager.setVisible(
+      params.visibility.trailsVisible,
+      params.instantVisibility
+    );
     const trailsFadeState = this.trailsFadeManager.updateProgress(
       params.currentTime
     );
@@ -502,15 +508,22 @@ export class Canvas2DAnimationRenderer {
     // 4. Draw props (with fade transitions for toggles)
     // Overall props toggle affects all props
     this.propsFadeManager.setVisible(
-      params.visibility.propsVisible && !params.trailSettings.hideProps
+      params.visibility.propsVisible && !params.trailSettings.hideProps,
+      params.instantVisibility
     );
     const propsFadeState = this.propsFadeManager.updateProgress(
       params.currentTime
     );
 
     // Individual motion toggles for blue/red (combined with overall props alpha)
-    this.leftPropFadeManager.setVisible(params.visibility.leftMotionVisible);
-    this.rightPropFadeManager.setVisible(params.visibility.rightMotionVisible);
+    this.leftPropFadeManager.setVisible(
+      params.visibility.leftMotionVisible,
+      params.instantVisibility
+    );
+    this.rightPropFadeManager.setVisible(
+      params.visibility.rightMotionVisible,
+      params.instantVisibility
+    );
     const leftFadeState = this.leftPropFadeManager.updateProgress(
       params.currentTime
     );

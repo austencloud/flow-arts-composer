@@ -1,10 +1,25 @@
 import { t } from "$lib/shared/i18n/i18n.svelte.js";
 import {
+  POST_MAX_ZOOM,
+  POST_MIN_ZOOM,
   findItem,
+  shortestTurn,
+  wrapDegrees,
+  type PostBox,
+  type PostClipShape,
+  type PostClipShapeKind,
   type PostFraming,
+  type PostKeyframe,
   type PostVideoItem,
 } from "$lib/shared/media-composition/domain/post-project";
 import {
+  clipBox,
+  clipShapeFor,
+  shapedBox,
+  type PostOutputSize,
+} from "$lib/shared/media-composition/domain/post-canvas";
+import {
+  editItemKeyframes,
   resetFraming,
   updateItem,
   updateItemAt,
@@ -13,29 +28,34 @@ import {
   boxAt,
   framingAt,
   isAnimated,
+  postSecondsOfKeyframe,
 } from "$lib/shared/media-composition/domain/post-project-keyframes";
 import type { PostEditorState } from "$lib/shared/media-composition/state/post-editor-state.svelte";
 import {
   STRAIGHTEN_LIMIT,
+  clampToCoverage,
+  coverZoom,
   cropLimitFor,
   cropPoseOf,
   fillPose,
+  framePose,
   framingOfPose,
+  handleFrame,
+  handlePose,
   isCovered,
+  isCropSide,
   joinRotation,
   limitPose,
   movePose,
   overshootOf,
-  pinchPose,
   quarterLeft,
-  releaseCorner,
+  reshapePose,
   sameFraming,
   splitRotation,
   turnPose,
   zoomFloor,
   zoomPoseAbout,
-  type CropCorner,
-  type CropFit,
+  type CropHandle,
   type CropLimit,
   type CropPoint,
   type CropPose,
@@ -46,9 +66,14 @@ import {
  * The crop screen's edits to one clip. Every control, key and gesture on the
  * screen goes through here, so each works out the same framing from the same
  * pose: the stored zoom, pan and turn as a picture placed under the slot's
- * window. Writes land at the playhead, as keyframes when the framing is
- * animated, and a drag or pinch is one undo step however long it runs.
+ * window. On the stage the picture holds still and the window is the frame
+ * that moves over it, so a drag moves the frame and a corner sizes it.
+ * Writes land at the playhead, as keyframes when the framing is animated,
+ * and a drag, pinch or corner is one undo step however long it runs.
  */
+
+/** A clip's shape on the crop screen: Fill (its whole box) or a shape in it. */
+export type CropShapeKind = PostClipShapeKind | "fill";
 
 export interface CropSessionDeps {
   editor: PostEditorState;
@@ -64,7 +89,7 @@ const CENTER: CropPoint = { x: 0, y: 0 };
 /** A slider moved again within this long continues from where its drag began. */
 const SLIDER_IDLE_MS = 800;
 
-/** An arrow key moves the picture this share of the window; Shift, the larger. */
+/** An arrow key moves the frame this share of the window; Shift, the larger. */
 export const CROP_NUDGE = { step: 0.01, large: 0.1 } as const;
 
 /** A framing read back from the project matches what was written this closely. */
@@ -85,6 +110,55 @@ interface Gesture {
   seconds: number;
   /** How far past the limit a pull may still show, in output pixels. */
   range: number;
+  /** The clip takes a free shape, so its sides reshape the frame. */
+  free: boolean;
+  /** The clip's box and the post's size, for a side that reshapes the frame. */
+  spot: PostBox;
+  output: PostOutputSize;
+}
+
+function sizeIn(
+  box: Pick<PostBox, "width" | "height">,
+  output: PostOutputSize
+): CropSize | null {
+  const width = box.width * output.width;
+  const height = box.height * output.height;
+  return width > 0 && height > 0 ? { width, height } : null;
+}
+
+function sameShape(a: PostClipShape | null, b: PostClipShape | null): boolean {
+  if (!a || !b) return a === b;
+  return a.kind === b.kind && Math.abs(a.ratio - b.ratio) < 1e-9;
+}
+
+/** The frame moves the opposite way to the picture under it. */
+function framePull(over: CropPoint): CropPoint {
+  return { x: -over.x || 0, y: -over.y || 0 };
+}
+
+/**
+ * A pose turned a quarter to `rotation`, within its limit. Given the window
+ * of a shape that turns with the footage, it moves into that window instead,
+ * as far past covering it as it was past covering its own.
+ */
+function quarterTurned(
+  current: CropPose,
+  rotation: number,
+  nextWindow: CropSize | null
+): CropPose {
+  const turned = turnPose(current, rotation);
+  if (!nextWindow) return limitPose(turned, cropLimitFor(current, turned));
+  const placeIn = (zoom: number) =>
+    cropPoseOf({
+      framing: { ...framingOfPose(turned), zoom },
+      fit: current.fit,
+      window: nextWindow,
+      source: current.source,
+    })!;
+  const resized = placeIn(
+    (coverZoom(placeIn(1)) * current.zoom) / coverZoom(current)
+  );
+  return resized.fit === "cover" ? clampToCoverage(resized) : resized;
 }
 
 function samePlacement(a: CropPose, b: CropPose): boolean {
@@ -109,14 +183,15 @@ export function createCropSession(deps: CropSessionDeps) {
   const locked = $derived(item ? editor.isLocked(item.id) : true);
   const seconds = $derived(editor.previewSeconds);
 
+  const output = $derived(editor.compiled?.preset.output ?? null);
+  /** The clip's box at the playhead; its shape sits in the middle of it. */
+  const spot = $derived(item ? boxAt(item, seconds) : null);
+
   /** The slot at the playhead, in output pixels: what the export fills. */
   const window = $derived.by((): CropSize | null => {
-    const output = editor.compiled?.preset.output;
-    if (!item || !output) return null;
-    const rect = editor.regionRects.get(item.id) ?? boxAt(item, seconds);
-    const width = rect.width * output.width;
-    const height = rect.height * output.height;
-    return width > 0 && height > 0 ? { width, height } : null;
+    if (!item || !output || !spot) return null;
+    const rect = editor.regionRects.get(item.id) ?? clipBox(item, spot, output);
+    return sizeIn(rect, output);
   });
 
   const framing = $derived(item ? framingAt(item, seconds) : null);
@@ -132,10 +207,18 @@ export function createCropSession(deps: CropSessionDeps) {
   let quarterHint = $state<number | null>(null);
   const parts = $derived(splitRotation(framing?.rotation ?? 0, quarterHint));
 
+  /** The shape picked for the clip; null for an older Show all. */
+  const shapeKind = $derived.by((): CropShapeKind | null => {
+    if (!item) return null;
+    if (item.shape) return item.shape.kind;
+    return item.fit === "cover" ? "fill" : null;
+  });
+
   const canReset = $derived(
     item !== null &&
       !locked &&
       !(
+        !item.shape &&
         item.fit === "cover" &&
         item.zoom === 1 &&
         item.panX === 0 &&
@@ -148,14 +231,13 @@ export function createCropSession(deps: CropSessionDeps) {
 
   let sliderBase: SliderBase | null = null;
   let gesture = $state.raw<Gesture | null>(null);
-  /** A corner is held on the stage; nothing is written until it is let go. */
-  let cornerHeld = $state(false);
   let announcement = $state("");
+  /** Presses of Rotate, a shape or Reset; the stage glides to each. */
+  let presses = $state(0);
 
   /** Whether an edit may land now: a clip, unlocked, with no drag running. */
   function editable(): PostVideoItem | null {
-    if (!item || locked || gesture || cornerHeld || editor.inGesture)
-      return null;
+    if (!item || locked || gesture || editor.inGesture) return null;
     return item;
   }
 
@@ -259,6 +341,28 @@ export function createCropSession(deps: CropSessionDeps) {
     );
   }
 
+  /** The window a shape gives the clip at the playhead, in output pixels. */
+  function windowFor(shape: PostClipShape | null): CropSize | null {
+    if (!spot || !output) return null;
+    return sizeIn(shape ? shapedBox(spot, shape.ratio, output) : spot, output);
+  }
+
+  /** One undo step for a turn that may turn the clip's shape too. */
+  function writeShaped(
+    target: PostVideoItem,
+    shape: PostClipShape | null,
+    framing: Partial<PostFraming>
+  ): void {
+    const id = target.id;
+    const at = seconds;
+    editor.pause();
+    sliderBase = null;
+    editor.edit((project, ctx) => {
+      const shaped = shape ? updateItem(project, id, { shape }, ctx) : project;
+      return updateItemAt(shaped, id, framing, at, ctx);
+    });
+  }
+
   // ---- Controls ---------------------------------------------------------------
 
   /** Zoom about the window's centre; Fill stops where the window would show a gap. */
@@ -307,49 +411,161 @@ export function createCropSession(deps: CropSessionDeps) {
     );
   }
 
-  /** A quarter turn anticlockwise, as Photos turns. */
+  /**
+   * A quarter turn anticlockwise, as Photos turns. A clip in its footage's
+   * own shape turns its window with it, filled the way it was. The turn is
+   * the whole clip's: with its framing animated, every key turns.
+   */
   function rotateQuarter(): void {
     const target = editable();
     if (!target) return;
+    presses += 1;
     const quarter = quarterLeft(parts.quarter);
     const rotation = joinRotation(quarter, parts.straighten);
     quarterHint = quarter;
-    const current = pose;
-    if (!current) {
-      const id = target.id;
-      const at = seconds;
-      editor.pause();
-      sliderBase = null;
-      editor.edit((project, ctx) =>
-        updateItemAt(project, id, { rotation }, at, ctx)
+    const shape =
+      target.shape?.kind === "original"
+        ? clipShapeFor("original", 1 / target.shape.ratio)
+        : null;
+    if (isAnimated(target, "framing")) {
+      turnEveryKey(
+        target,
+        shape,
+        shortestTurn(framing?.rotation ?? 0, rotation)
       );
+      announce();
       return;
     }
-    const turned = turnPose(current, rotation);
-    if (writeStep(target, limitPose(turned, cropLimitFor(current, turned))))
+    const current = pose;
+    const nextWindow = shape ? windowFor(shape) : null;
+    if (!current) {
+      writeShaped(target, shape, { rotation });
+      return;
+    }
+    const next = quarterTurned(current, rotation, nextWindow);
+    if (shape && nextWindow) {
+      writeShaped(target, shape, framingOfPose(next));
       announce();
+      return;
+    }
+    if (writeStep(target, next)) announce();
   }
 
   /**
-   * Fill zooms the picture up to cover the window if it has to. When the
-   * framing is animated only the fit changes, so no keyframe is written
-   * behind the user's back.
+   * A quarter turn of a clip whose framing is animated: every key turns by
+   * `delta`, each in its own window at its own time, so the picture turns
+   * all through the clip as its shape does. One undo step.
    */
-  function setFit(fit: CropFit): void {
+  function turnEveryKey(
+    target: PostVideoItem,
+    shape: PostClipShape | null,
+    delta: number
+  ): void {
+    const footage = source;
+    const post = output;
+    const id = target.id;
+    const turnKey = (key: PostKeyframe<PostFraming>): PostFraming => {
+      const rotation = wrapDegrees(key.value.rotation + delta);
+      const keySpot = boxAt(target, postSecondsOfKeyframe(target, key.t));
+      const keyWindow = post
+        ? sizeIn(clipBox(target, keySpot, post), post)
+        : null;
+      const keyPose = keyWindow
+        ? cropPoseOf({
+            framing: key.value,
+            fit: target.fit,
+            window: keyWindow,
+            source: footage,
+          })
+        : null;
+      if (!keyPose || !post) return { ...key.value, rotation };
+      const nextWindow = shape
+        ? sizeIn(shapedBox(keySpot, shape.ratio, post), post)
+        : null;
+      return framingOfPose(quarterTurned(keyPose, rotation, nextWindow));
+    };
+    editor.pause();
+    sliderBase = null;
+    editor.edit((project, ctx) => {
+      const turned = updateItem(
+        project,
+        id,
+        { ...(shape ? { shape } : {}), rotation: target.rotation + delta },
+        ctx
+      );
+      return editItemKeyframes(
+        turned,
+        id,
+        (it) => {
+          const keys = it.kind === "video" ? it.keyframes?.framing : undefined;
+          if (it.kind !== "video" || !keys) return it;
+          return {
+            ...it,
+            keyframes: {
+              ...it.keyframes,
+              framing: keys.map((key) => ({ ...key, value: turnKey(key) })),
+            },
+          };
+        },
+        ctx
+      );
+    });
+  }
+
+  /**
+   * The clip's shape: Fill takes its whole box, Original the footage's own
+   * shape as it is turned, Free the frame's shape now (its sides then change
+   * it), and a ratio that ratio. The window fills, zooming up if it has to;
+   * when the framing is animated only the shape changes.
+   */
+  function setShape(kind: CropShapeKind): void {
     const target = editable();
-    if (!target || target.fit === fit) return;
+    if (!target) return;
+    let shape: PostClipShape | null = null;
+    if (kind === "original") {
+      const footage = source;
+      const turned = Math.abs(parts.quarter) % 2 === 1;
+      shape = footage
+        ? clipShapeFor(
+            "original",
+            turned
+              ? footage.height / footage.width
+              : footage.width / footage.height
+          )
+        : null;
+      if (!shape) return;
+    } else if (kind === "free") {
+      shape = window
+        ? clipShapeFor("free", window.width / window.height)
+        : null;
+      if (!shape) return;
+    } else if (kind !== "fill") {
+      shape = clipShapeFor(kind);
+    }
+    if (target.fit === "cover" && sameShape(target.shape ?? null, shape))
+      return;
     const id = target.id;
     editor.pause();
     sliderBase = null;
+    presses += 1;
     const current = pose;
-    if (fit === "cover" && current && !isAnimated(target, "framing")) {
-      const filled = framingOfPose(fillPose(current));
-      editor.edit((project, ctx) =>
-        updateItem(project, id, { fit, ...filled }, ctx)
-      );
-    } else {
-      editor.edit((project, ctx) => updateItem(project, id, { fit }, ctx));
-    }
+    const nextWindow = windowFor(shape);
+    const filled =
+      current && nextWindow && !isAnimated(target, "framing")
+        ? framingOfPose(
+            fillPose(
+              cropPoseOf({
+                framing: framingOfPose(current),
+                fit: "cover",
+                window: nextWindow,
+                source: current.source,
+              })!
+            )
+          )
+        : {};
+    editor.edit((project, ctx) =>
+      updateItem(project, id, { shape, fit: "cover", ...filled }, ctx)
+    );
     announce();
   }
 
@@ -362,7 +578,7 @@ export function createCropSession(deps: CropSessionDeps) {
     editor.edit((project, ctx) => updateItem(project, id, { flip }, ctx));
   }
 
-  /** Fill, no mirror, no zoom, move or turn, and no framing keyframes. */
+  /** Fill, no shape, no mirror, no zoom, move or turn, and no framing keyframes. */
   function reset(): void {
     const target = editable();
     if (!target || !canReset) return;
@@ -370,9 +586,15 @@ export function createCropSession(deps: CropSessionDeps) {
     editor.pause();
     sliderBase = null;
     quarterHint = null;
+    presses += 1;
     editor.edit((project, ctx) =>
       resetFraming(
-        updateItem(project, id, { fit: "cover", flip: false }, ctx),
+        updateItem(
+          project,
+          id,
+          { fit: "cover", flip: false, shape: null },
+          ctx
+        ),
         id,
         ctx
       )
@@ -395,14 +617,14 @@ export function createCropSession(deps: CropSessionDeps) {
     );
   }
 
-  /** An arrow key: the picture moves the way the key points. */
+  /** An arrow key: the frame moves the way the key points. */
   function nudge(direction: CropPoint, large: boolean): boolean {
     const current = pose;
     if (!current) return false;
     const share = large ? CROP_NUDGE.large : CROP_NUDGE.step;
     const moved = panBy({
-      x: direction.x * share * current.window.width,
-      y: direction.y * share * current.window.height,
+      x: -direction.x * share * current.window.width,
+      y: -direction.y * share * current.window.height,
     });
     if (moved) announce();
     return moved;
@@ -432,7 +654,7 @@ export function createCropSession(deps: CropSessionDeps) {
   function startGesture(rubberRange: number): boolean {
     const target = editable();
     const current = pose;
-    if (!target || !current) return false;
+    if (!target || !current || !spot || !output) return false;
     editor.pause();
     sliderBase = null;
     editor.beginGesture();
@@ -442,6 +664,9 @@ export function createCropSession(deps: CropSessionDeps) {
       limit: cropLimitFor(current),
       seconds,
       range: Math.max(0, rubberRange),
+      free: target.shape?.kind === "free",
+      spot,
+      output,
     };
     return true;
   }
@@ -458,16 +683,22 @@ export function createCropSession(deps: CropSessionDeps) {
   }
 
   /**
-   * The picture follows the pointer: `delta` output pixels from where the
-   * drag began. Returns how far past the limit the pull still shows.
+   * The frame follows the pointer: `delta` output pixels from where the drag
+   * began. Returns how far past the limit the frame's pull still shows.
    */
   function dragTo(delta: CropPoint): CropPoint {
     const active = gesture;
     if (!active) return CENTER;
-    return stepGesture(active, movePose(active.start, delta));
+    return framePull(
+      stepGesture(active, movePose(active.start, { x: -delta.x, y: -delta.y }))
+    );
   }
 
-  /** Two fingers from where they landed: spread zooms, travel moves. */
+  /**
+   * Two fingers from where they landed, in output pixels from the window's
+   * centre as the pinch began. Spreading them zooms in, so the frame shrinks
+   * about them; their travel moves it.
+   */
   function pinchTo(input: {
     startMidpoint: CropPoint;
     midpoint: CropPoint;
@@ -475,12 +706,50 @@ export function createCropSession(deps: CropSessionDeps) {
   }): CropPoint {
     const active = gesture;
     if (!active) return CENTER;
-    return stepGesture(
-      active,
-      pinchPose(active.start, {
-        ...input,
-        floor: zoomFloor(active.start, active.limit),
-      })
+    const { start } = active;
+    const spread =
+      Number.isFinite(input.spread) && input.spread > 0 ? input.spread : 1;
+    const zoom = Math.min(
+      POST_MAX_ZOOM,
+      Math.max(zoomFloor(start, active.limit), start.zoom * spread)
+    );
+    const scale = start.zoom / zoom;
+    const center = {
+      x: input.midpoint.x - scale * input.startMidpoint.x,
+      y: input.midpoint.y - scale * input.startMidpoint.y,
+    };
+    return framePull(stepGesture(active, framePose(start, center, scale)));
+  }
+
+  /**
+   * A corner or side held at `scale` of the window as the gesture began: the
+   * frame it makes is the crop. A free clip's side changes the frame's shape,
+   * and so the clip's.
+   */
+  function handleTo(handle: CropHandle, scale: number): void {
+    const active = gesture;
+    if (!active || !(scale > 0)) return;
+    const { start } = active;
+    if (!active.free || !isCropSide(handle)) {
+      stepGesture(active, handlePose(start, handle, scale));
+      return;
+    }
+    const frame = handleFrame(start.window, handle, scale, true);
+    const shape = clipShapeFor("free", frame.width / frame.height);
+    const next = shape
+      ? sizeIn(
+          shapedBox(active.spot, shape.ratio, active.output),
+          active.output
+        )
+      : null;
+    if (!shape || !next) return;
+    const value = framingOfPose(
+      limitPose(reshapePose(start, handle, scale, next), active.limit)
+    );
+    const id = active.itemId;
+    const at = active.seconds;
+    editor.gestureStep((project, ctx) =>
+      updateItemAt(updateItem(project, id, { shape }, ctx), id, value, at, ctx)
     );
   }
 
@@ -499,37 +768,14 @@ export function createCropSession(deps: CropSessionDeps) {
    */
   function abandonGesture(): void {
     gesture = null;
-    cornerHeld = false;
-  }
-
-  /** The stage holds a corner, or lets it go without a crop. */
-  function holdCorner(held: boolean): void {
-    cornerHeld = held && item !== null && !locked;
-  }
-
-  /**
-   * A corner let go at `scale` of the window: what the dragged frame held
-   * now fills the slot. Returns the poses either side, for the settle.
-   */
-  function releaseCornerAt(
-    corner: CropCorner,
-    scale: number
-  ): { before: CropPose; after: CropPose } | null {
-    cornerHeld = false;
-    const target = editable();
-    const current = pose;
-    if (!target || !current || !(scale > 0) || Math.abs(scale - 1) < 1e-6)
-      return null;
-    const released = releaseCorner(current, corner, scale);
-    const next = limitPose(released, cropLimitFor(current, released));
-    if (!writeStep(target, next)) return null;
-    announce();
-    return { before: current, after: pose ?? next };
   }
 
   return {
     get item() {
       return item;
+    },
+    get source() {
+      return source;
     },
     get locked() {
       return locked;
@@ -548,6 +794,10 @@ export function createCropSession(deps: CropSessionDeps) {
     get limit() {
       return limit;
     },
+    /** The least zoom there is: Fill stops where the window would show a gap. */
+    get zoomFloor() {
+      return pose ? zoomFloor(pose, limit) : POST_MIN_ZOOM;
+    },
     /** The turn as quarter turns plus a straighten of -45..45 degrees. */
     get parts() {
       return parts;
@@ -555,21 +805,33 @@ export function createCropSession(deps: CropSessionDeps) {
     get canReset() {
       return canReset;
     },
+    /** The shape picked: Fill, Original, Free or a ratio; null for Show all. */
+    get shapeKind() {
+      return shapeKind;
+    },
+    /** The frame's sides change its shape. */
+    get free() {
+      return item?.shape?.kind === "free";
+    },
     get inGesture() {
       return gesture !== null;
     },
-    /** A drag, pinch or held corner is running; Enter and Escape wait for it. */
+    /** A drag, pinch or handle is running; Enter and Escape wait for it. */
     get busy() {
-      return gesture !== null || cornerHeld;
+      return gesture !== null;
     },
     /** What the last settled change left, for a polite live region. */
     get announcement() {
       return announcement;
     },
+    /** Counts presses of Rotate, a shape and Reset, for the stage to glide to. */
+    get presses() {
+      return presses;
+    },
     setZoom,
     setStraighten,
     rotateQuarter,
-    setFit,
+    setShape,
     toggleMirror,
     reset,
     panBy,
@@ -578,10 +840,9 @@ export function createCropSession(deps: CropSessionDeps) {
     startGesture,
     dragTo,
     pinchTo,
+    handleTo,
     endGesture,
     abandonGesture,
-    holdCorner,
-    releaseCorner: releaseCornerAt,
     announce,
   };
 }

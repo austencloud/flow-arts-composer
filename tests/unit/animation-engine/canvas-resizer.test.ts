@@ -328,6 +328,41 @@ describe("CanvasResizer", () => {
     resizer.dispose();
   });
 
+  it("keeps a stale overlay's drawing at the box's size until the rebuild", async () => {
+    // The opening tunnel's canvas easing from the full frame into a short
+    // box: the overlay raster stays tall until the move stops, so contain
+    // alone drew the mandala at half size and it jumped back on the rebuild.
+    const size = { width: 396, height: 700 };
+    const container = laidOut(
+      mountHtml(
+        '<div><canvas width="594" height="1050"></canvas><canvas width="594" height="594"></canvas></div>'
+      ) as HTMLDivElement,
+      size
+    );
+    const [overlay, square] = [...container.children] as HTMLCanvasElement[];
+    const renderer = { resize: vi.fn().mockResolvedValue(undefined) };
+    const resizer = new CanvasResizer();
+    resizer.initialize(container, renderer);
+    resizer.setup();
+    notifyResize([], {} as ResizeObserver);
+    expect(overlay!.style.scale).toBe("");
+
+    size.height = 349;
+    notifyResize([], {} as ResizeObserver);
+    expect(Number(overlay!.style.scale)).toBeCloseTo(1050 / 594, 6);
+    expect(overlay!.style.clipPath).toMatch(/^inset\(/);
+    // A square raster under contain already draws at the right size.
+    expect(square!.style.scale).toBe("");
+
+    // The overlay reallocates to the settled box: the correction comes off.
+    overlay!.height = 523;
+    await Promise.resolve();
+    expect(overlay!.style.scale).toBe("");
+    expect(overlay!.style.clipPath).toBe("");
+
+    resizer.dispose();
+  });
+
   it("keeps a laid-out staging source current while it is inert", async () => {
     // A crossfade's standby source is inert but keeps the stage's full box,
     // so its observations are real layout, not a collapsing pane. It must

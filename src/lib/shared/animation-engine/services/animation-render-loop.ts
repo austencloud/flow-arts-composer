@@ -258,6 +258,7 @@ export class AnimationRenderLoop {
   // sentinel) so the export-duplicate guard works correctly even when the
   // virtualTime is exactly 0 (the first export frame: i/fps * 1000 = 0).
   private lastStampedTrailTime: number | null = null;
+  private lastTrailSettingsKey: string | null = null;
   // The texture-load/crossfade signals can begin a render tick after the frame
   // parameters switch to the new prop type. Remember the last geometry identity
   // seen by the trail path so that exact boundary frame is always segmented.
@@ -526,6 +527,7 @@ export class AnimationRenderLoop {
     this.lastFrameTime = 0;
     this.lastTrailFrameTime = 0;
     this.lastStampedTrailTime = null;
+    this.lastTrailSettingsKey = null;
     this.loopStartTime = 0;
     this.effectLastFrameTime.clear();
     this.fpsWindowStart = 0;
@@ -1614,6 +1616,17 @@ export class AnimationRenderLoop {
       if (this.lastTrailFrameTime === 0) {
         trailOverlay.setVisible(true);
       }
+      const trailSettingsKey = JSON.stringify(trailSettings);
+      const styleChanged =
+        this.lastTrailSettingsKey !== null &&
+        trailSettingsKey !== this.lastTrailSettingsKey;
+      if (styleChanged) {
+        // Keep the captured tip paths, but replace pixels painted with the old
+        // look. A paused Post preview has the same virtual timestamp on every
+        // tick, so its style edit must also bypass the duplicate-stamp guard.
+        trailOverlay.refreshStyle();
+      }
+      this.lastTrailSettingsKey = trailSettingsKey;
       // Re-stamp only when (virtual) time has advanced. During export the
       // render loop ticks multiple times at the SAME virtualTime — one
       // calculateStateForStep sets the position, then several rAF ticks fire
@@ -1627,7 +1640,7 @@ export class AnimationRenderLoop {
       const isDuplicateTimestamp =
         this.lastStampedTrailTime !== null &&
         currentTime === this.lastStampedTrailTime;
-      if (isDuplicateTimestamp) {
+      if (isDuplicateTimestamp && !styleChanged) {
         // No new stamp this tick; visible trail canvas keeps the first-tick
         // composite, which the exporter reads.
       } else {
@@ -1710,6 +1723,7 @@ export class AnimationRenderLoop {
       trailOverlay.setVisible(false);
       this.lastTrailFrameTime = 0;
       this.lastStampedTrailTime = null;
+      this.lastTrailSettingsKey = null;
     }
 
     // Render scene
@@ -1742,6 +1756,7 @@ export class AnimationRenderLoop {
       trailSettings,
       skipTrailRendering: this.renderers.has("trails"),
       currentTime,
+      instantVisibility: params.virtualTime !== undefined,
       visibility: {
         gridVisible: effectiveGridVisible,
         propsVisible: effectivePropsVisible,
@@ -2034,6 +2049,7 @@ export class AnimationRenderLoop {
               : undefined,
           tunnelSpectrum: props.tunnelSpectrum ?? true,
           tunnelPropColors: props.tunnelPropColors,
+          primaryPropColors: params.primaryPropColors,
         };
 
         const allLeds = this.toFrameLeds(
@@ -2233,6 +2249,18 @@ export class AnimationRenderLoop {
    * cached by sequence, path policy, prop types, and resolved trail endpoints,
    * so the per-frame path is an identity check after the first preparation.
    */
+  private guideConfigByStroke: MandalaOverlayConfig = MANDALA_GUIDE_CONFIG;
+
+  /** The guide config, with the post's per-animation line width when set. */
+  private mandalaGuideConfig(params: RenderFrameParams): MandalaOverlayConfig {
+    const strokeWidth =
+      params.mandalaStrokeWidth ?? MANDALA_GUIDE_CONFIG.strokeWidth;
+    if (this.guideConfigByStroke.strokeWidth !== strokeWidth) {
+      this.guideConfigByStroke = { ...MANDALA_GUIDE_CONFIG, strokeWidth };
+    }
+    return this.guideConfigByStroke;
+  }
+
   private renderMandalaGuide(
     params: RenderFrameParams,
     deltaTime: number,
@@ -2264,7 +2292,7 @@ export class AnimationRenderLoop {
       overlay.renderFrame({
         preparedPaths: this.previousMandalaPaths,
         progress: 1,
-        config: MANDALA_GUIDE_CONFIG,
+        config: this.mandalaGuideConfig(params),
         deltaTime,
         currentTime,
         canvasSize: this.canvasSize,
@@ -2312,7 +2340,7 @@ export class AnimationRenderLoop {
     overlay.renderFrame({
       preparedPaths,
       progress: 1,
-      config: MANDALA_GUIDE_CONFIG,
+      config: this.mandalaGuideConfig(params),
       deltaTime,
       currentTime,
       canvasSize: this.canvasSize,

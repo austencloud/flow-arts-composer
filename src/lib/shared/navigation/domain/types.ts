@@ -30,6 +30,8 @@ export interface Section {
   color?: string;
   gradient?: string;
   disabled?: boolean;
+  /** Routable from links and Settings entry points, but absent from tab navigation. */
+  navigationHidden?: boolean;
   metadata?: SectionMetadata;
   /** Optional grouping key. When a module defines `groups`, sections sharing a
    *  groupId render under a collapsible group header in the desktop sidebar. */
@@ -77,6 +79,7 @@ export type ModuleId =
   | "tika" // Tika AI tutor (TKA Intelligent Knowledge Assistant)
   | "premium"
   | "compose"
+  | "post"
   | "train"
   | "choreo_card" // Choreography reference cards (printable)
   | "word_card" // Legacy alias for choreo_card

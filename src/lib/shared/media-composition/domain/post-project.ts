@@ -1,12 +1,25 @@
 import { z } from "zod";
-import { PostTakeSchema } from "$lib/shared/media-composition/domain/post-plan";
+import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+import { PROP_LOOKS } from "$lib/shared/pictograph/prop/domain/prop-look";
+import {
+  PostTakeRefSchema,
+  PostTakeSchema,
+} from "$lib/shared/media-composition/domain/post-plan";
 import { BREAKDOWN_GEOMETRY } from "$lib/shared/media-composition/domain/post-studio-presets";
+import { TakeTimingSchema } from "$lib/shared/media-composition/domain/take-timing";
+import { TunnelHookSchema } from "$lib/shared/media-composition/domain/tunnel-hook";
+import type { EffectsConfig } from "$lib/shared/effects/domain/effects-config";
+import {
+  TrackingMode,
+  TrailEffect,
+  TrailMode,
+} from "$lib/shared/animation-engine/domain/types/trail-types";
 
 /**
  * A post as Austen edits it on the timeline: tracks of items, InShot style.
  *
- * `tracks[0]` is the main track. Its clips sit end to end, so trimming or
- * removing one closes the gap. Every later track is an overlay track drawn
+ * `tracks[0]` is the main track. Clips normally follow one another, but a
+ * dragged clip keeps its chosen start and can leave a gap. Every later track is drawn
  * above the ones before it; its items keep their own times and follow the
  * main clip they are anchored to. `normalizeProject` in
  * `post-project-normalize.ts` owns those rules; every edit ends there.
@@ -31,6 +44,8 @@ export const POST_MIN_ITEM_SECONDS = 0.1;
 export const POST_MIN_BOX_SIZE = 0.05;
 export const POST_MAX_TEXT_LENGTH = 140;
 export const POST_MAX_LABEL_LENGTH = 60;
+/** Longest "how to say it" line a titles clip takes. */
+export const POST_MAX_SPOKEN_LENGTH = 60;
 export const POST_DEFAULT_CARD_SECONDS = 5;
 export const POST_DEFAULT_OVERLAY_SECONDS = 3;
 /** The export's frame rate; nudges step by one of its frames. */
@@ -48,13 +63,19 @@ export const POST_EASING_Y_MAX = 2;
 
 export const MAIN_TRACK_INDEX = 0;
 
-/** Where an item sits in the frame, as shares of its width and height. */
+/**
+ * Where an item sits in the frame, as shares of its width and height, and
+ * how far the whole item is turned about the box's centre: degrees
+ * clockwise, left out when it sits straight. The unturned box stays inside
+ * the frame; turned, its corners may run past the edge.
+ */
 export const PostBoxSchema = z
   .object({
     x: z.number().finite().min(0).max(1),
     y: z.number().finite().min(0).max(1),
     width: z.number().finite().min(POST_MIN_BOX_SIZE).max(1),
     height: z.number().finite().min(POST_MIN_BOX_SIZE).max(1),
+    turn: z.number().finite().min(-180).max(180).optional(),
   })
   .strict()
   .refine((box) => box.x + box.width <= 1 + POST_TIME_EPSILON, {
@@ -85,13 +106,33 @@ export type PostAnchor = z.infer<typeof PostAnchorSchema>;
 // Keyframes
 // ---------------------------------------------------------------------------
 
-const easingXSchema = z.number().finite().min(POST_EASING_X_MIN).max(POST_EASING_X_MAX);
-const easingYSchema = z.number().finite().min(POST_EASING_Y_MIN).max(POST_EASING_Y_MAX);
+const easingXSchema = z
+  .number()
+  .finite()
+  .min(POST_EASING_X_MIN)
+  .max(POST_EASING_X_MAX);
+const easingYSchema = z
+  .number()
+  .finite()
+  .min(POST_EASING_Y_MIN)
+  .max(POST_EASING_Y_MAX);
 
 /** A CSS `cubic-bezier(x1, y1, x2, y2)`, or a hold until the next keyframe. */
 export const PostEasingSchema = z.union([
   z.literal("hold"),
   z.tuple([easingXSchema, easingYSchema, easingXSchema, easingYSchema]),
+  z
+    .object({
+      kind: z.literal("sampled-bezier"),
+      curve: z.tuple([
+        easingXSchema,
+        easingYSchema,
+        easingXSchema,
+        easingYSchema,
+      ]),
+      samples: z.literal(300),
+    })
+    .strict(),
 ]);
 
 export type PostEasing = z.infer<typeof PostEasingSchema>;
@@ -116,20 +157,84 @@ function postKeyframeSchema<V extends z.ZodTypeAny>(value: V) {
       value,
       /** How the value travels to the next keyframe. */
       easing: PostEasingSchema,
+      /**
+       * Written by the opening tunnel or the picture-in-picture hand-off, and
+       * kept in step with them until edited; an edit makes the key the
+       * author's own (see `post-project-motion-keys.ts`).
+       */
+      auto: PostMotionKeySchema.optional(),
     })
     .strict();
 }
 
-export type PostKeyframe<V> = { t: number; value: V; easing: PostEasing };
+/** Which automatic move wrote a keyframe. */
+export const PostMotionKeySchema = z.enum(["tunnel", "handoff"]);
+export type PostMotionKey = z.infer<typeof PostMotionKeySchema>;
+
+export type PostKeyframe<V> = {
+  t: number;
+  value: V;
+  easing: PostEasing;
+  auto?: PostMotionKey;
+};
 
 /** Channels an item's `keyframes` may animate; `framing` is video only. */
-export type PostKeyframeChannel = "framing" | "box" | "opacity";
+export type PostKeyframeChannel =
+  | "framing"
+  | "sourceGeometry"
+  | "box"
+  | "opacity";
+
+/** The drawn media rectangle may pass outside the canvas. Crop coordinates are source UVs. */
+export const PostSourceGeometrySchema = z
+  .object({
+    x: z.number().finite(),
+    y: z.number().finite(),
+    width: z.number().finite().positive(),
+    height: z.number().finite().positive(),
+    rotation: z.number().finite(),
+    crop: z
+      .object({
+        left: z.number().finite().min(0).max(1),
+        top: z.number().finite().min(0).max(1),
+        right: z.number().finite().min(0).max(1),
+        bottom: z.number().finite().min(0).max(1),
+      })
+      .strict()
+      .refine((crop) => crop.right > crop.left && crop.bottom > crop.top),
+  })
+  .strict();
+export type PostSourceGeometry = z.infer<typeof PostSourceGeometrySchema>;
+
+export const PostAutoAdjustSchema = z
+  .object({
+    enabled: z.boolean(),
+    strength: z.number().finite().min(0).max(1),
+    startSeconds: SecondsSchema.optional(),
+    endSeconds: SecondsSchema.optional(),
+  })
+  .strict();
+export type PostAutoAdjust = z.infer<typeof PostAutoAdjustSchema>;
+
+export const PostTransitionOutSchema = z
+  .object({
+    duration: SecondsSchema,
+    type: z.enum(["crossfade", "fade-black"]),
+    sourceTypeCode: z.string().optional(),
+    incomingId: z.string().optional(),
+    editorAddedSeconds: SecondsSchema.optional(),
+  })
+  .strict();
+export type PostTransitionOut = z.infer<typeof PostTransitionOutSchema>;
 
 const PostKeyframeBoxSchema = postKeyframeSchema(PostBoxSchema);
 const PostKeyframeOpacitySchema = postKeyframeSchema(
   z.number().finite().min(0).max(1)
 );
 const PostKeyframeFramingSchema = postKeyframeSchema(PostFramingSchema);
+const PostKeyframeSourceGeometrySchema = postKeyframeSchema(
+  PostSourceGeometrySchema
+);
 
 /** Every kind: where it sits, and how it fades in and out over its fades. */
 const PostItemKeyframesSchema = z
@@ -143,6 +248,7 @@ const PostItemKeyframesSchema = z
 const PostVideoItemKeyframesSchema = z
   .object({
     framing: z.array(PostKeyframeFramingSchema).optional(),
+    sourceGeometry: z.array(PostKeyframeSourceGeometrySchema).optional(),
     box: z.array(PostKeyframeBoxSchema).optional(),
     opacity: z.array(PostKeyframeOpacitySchema).optional(),
   })
@@ -150,22 +256,161 @@ const PostVideoItemKeyframesSchema = z
 
 export interface PostItemKeyframes {
   framing?: PostKeyframe<PostFraming>[];
+  sourceGeometry?: PostKeyframe<PostSourceGeometry>[];
   box?: PostKeyframe<PostBox>[];
   opacity?: PostKeyframe<number>[];
 }
+
+/**
+ * Effects that can follow a take's lit staff ends: trails, plus every effect
+ * the shared canvas 2D host draws (`CANVAS2D_HOSTED_EFFECTS`). A test keeps
+ * the two lists in step; the host is not imported here, since it pulls in
+ * every renderer.
+ */
+export const POST_STAFF_EFFECTS = [
+  "trails",
+  "sparkles",
+  "smoke",
+  "zap",
+  "bloom",
+  "silk",
+  "bubbles",
+  "petals",
+  "ink",
+  "goo",
+  "pulse",
+  "animal",
+] as const;
+
+export type PostStaffEffectId = (typeof POST_STAFF_EFFECTS)[number];
+
+/** What a clip draws on the lit ends of its take's staffs. */
+export const PostStaffEffectSchema = z
+  .object({
+    effect: z.enum(POST_STAFF_EFFECTS),
+  })
+  .strict();
+
+export type PostStaffEffect = z.infer<typeof PostStaffEffectSchema>;
+
+/** The shapes a post can be, width by height; 9:16 when a project names none. */
+export const POST_CANVAS_RATIOS = [
+  "9:16",
+  "4:5",
+  "1:1",
+  "16:9",
+  "3:4",
+  "4:3",
+] as const;
+export type PostCanvasRatio = (typeof POST_CANVAS_RATIOS)[number];
+export const POST_DEFAULT_CANVAS: PostCanvasRatio = "9:16";
+
+/**
+ * What fills the frame where no item covers it: the dark colour, or the main
+ * clip playing, filling the frame and blurred, as phone editors offer.
+ */
+export const POST_BACKGROUNDS = ["dark", "blur"] as const;
+export type PostBackground = (typeof POST_BACKGROUNDS)[number];
+export const POST_DEFAULT_BACKGROUND: PostBackground = "dark";
+
+/**
+ * Whole-sequence changes a post makes to its notation, in press order. See
+ * `post-sequence-actions.ts`.
+ */
+export const POST_SEQUENCE_ACTIONS = [
+  "mirror",
+  "flip",
+  "rotate-left",
+  "rotate-right",
+  "swap",
+] as const;
+export type PostSequenceAction = (typeof POST_SEQUENCE_ACTIONS)[number];
+export const POST_MAX_SEQUENCE_ACTIONS = 64;
+
+/**
+ * A clip's own shape inside its spot. `original` is the footage's shape and
+ * `free` one dragged by hand; either way `ratio` holds the width over height
+ * it was given, in output pixels.
+ */
+export const POST_CLIP_SHAPES = [
+  "original",
+  "free",
+  ...POST_CANVAS_RATIOS,
+] as const;
+export type PostClipShapeKind = (typeof POST_CLIP_SHAPES)[number];
+export const POST_SHAPE_RATIO_MIN = 0.25;
+export const POST_SHAPE_RATIO_MAX = 4;
+
+export const PostClipShapeSchema = z
+  .object({
+    kind: z.enum(POST_CLIP_SHAPES),
+    ratio: z
+      .number()
+      .finite()
+      .min(POST_SHAPE_RATIO_MIN)
+      .max(POST_SHAPE_RATIO_MAX),
+  })
+  .strict();
+
+export type PostClipShape = z.infer<typeof PostClipShapeSchema>;
+
+/** The colours a clip's border comes in. */
+export const POST_EDGE_COLORS = [
+  "white",
+  "black",
+  "red",
+  "orange",
+  "gold",
+  "blue",
+  "violet",
+] as const;
+export type PostEdgeColor = (typeof POST_EDGE_COLORS)[number];
+/** A border this wide, as a share of the post's shorter side, is the widest. */
+export const POST_MAX_EDGE_BORDER = 0.03;
+/** A corner this round, as a share of the picture's shorter side, is a full curve. */
+export const POST_MAX_EDGE_CORNERS = 0.5;
+
+/**
+ * A clip's edges, as editors dress picture-in-picture: rounded corners, a
+ * border inside them and a drop shadow under the picture.
+ */
+export const PostClipEdgeSchema = z
+  .object({
+    /** Corner radius, as a share of the drawn picture's shorter side. */
+    corners: z.number().finite().min(0).max(POST_MAX_EDGE_CORNERS),
+    /** Border width, as a share of the post's shorter side. */
+    border: z.number().finite().min(0).max(POST_MAX_EDGE_BORDER),
+    borderColor: z.enum(POST_EDGE_COLORS),
+    /** Drop shadow strength: 0 is none, 1 the darkest. */
+    shadow: z.number().finite().min(0).max(1),
+  })
+  .strict();
+
+export type PostClipEdge = z.infer<typeof PostClipEdgeSchema>;
+
+/** Plain square edges: what a clip without `edge` shows. */
+export const POST_PLAIN_EDGE: PostClipEdge = {
+  corners: 0,
+  border: 0,
+  borderColor: "white",
+  shadow: 0,
+};
 
 const itemBase = {
   id: IdSchema,
   /** Austen's own name for it; the kind's name shows when absent. */
   label: z.string().trim().max(POST_MAX_LABEL_LENGTH).optional(),
-  /** Post seconds. Derived on the main track and for anchored overlays. */
+  /** Post seconds. Derived on the main track unless pinnedStart is true. */
   start: SecondsSchema,
+  /** A main clip placed by hand keeps its timeline time through normalization. */
+  pinnedStart: z.boolean().optional(),
   /** Post seconds. Derived for video, from its source span and speed. */
   duration: z.number().finite().positive(),
   box: PostBoxSchema,
   opacity: z.number().finite().min(0).max(1),
   fadeIn: SecondsSchema,
   fadeOut: SecondsSchema,
+  transitionOut: PostTransitionOutSchema.optional(),
   /** Overlays only; always null on the main track. */
   anchor: PostAnchorSchema.nullable(),
   /** Overlays only: span exactly the anchored main clip. */
@@ -180,6 +425,17 @@ export const PostVideoItemSchema = z
     kind: z.literal("video"),
     /** Overrides the base: video also keyframes its framing. */
     keyframes: PostVideoItemKeyframesSchema.optional(),
+    sourceGeometry: PostSourceGeometrySchema.optional(),
+    autoAdjust: PostAutoAdjustSchema.optional(),
+    colorGrade: z
+      .object({
+        brightness: z.number().finite().min(0.5).max(1.5),
+        contrast: z.number().finite().min(0.5).max(1.5),
+        saturation: z.number().finite().min(0).max(2),
+        hue: z.number().finite().min(-180).max(180).optional(),
+      })
+      .strict()
+      .optional(),
     takeId: IdSchema,
     /** Take media seconds. */
     sourceIn: SecondsSchema,
@@ -188,6 +444,13 @@ export const PostVideoItemSchema = z
     speed: z.number().finite().min(POST_MIN_SPEED).max(POST_MAX_SPEED),
     /** cover crops to fill the box; contain shows the whole picture. */
     fit: z.enum(["cover", "contain"]),
+    /**
+     * The clip's own shape, the largest of it centred in the box. Without
+     * one the clip fills the box.
+     */
+    shape: PostClipShapeSchema.optional(),
+    /** Rounded corners, a border and a shadow; square and bare when absent. */
+    edge: PostClipEdgeSchema.optional(),
     /** Scales the picture about the box's centre. */
     zoom: z.number().finite().min(POST_MIN_ZOOM).max(POST_MAX_ZOOM),
     /**
@@ -201,6 +464,11 @@ export const PostVideoItemSchema = z
     flip: z.boolean(),
     /** 1 is the take as recorded; 0 is silent. */
     volume: z.number().finite().min(0).max(POST_MAX_VOLUME),
+    /**
+     * An effect drawn on the take's lit staff ends, from the staff track
+     * saved with the take. Nothing draws until the take has one.
+     */
+    staffEffect: PostStaffEffectSchema.optional(),
   })
   .strict()
   .refine((item) => item.sourceOut > item.sourceIn, {
@@ -210,11 +478,170 @@ export const PostVideoItemSchema = z
 
 export type PostVideoItem = z.infer<typeof PostVideoItemSchema>;
 
+export const PostImageItemSchema = z
+  .object({
+    ...itemBase,
+    kind: z.literal("image"),
+    imageId: IdSchema,
+    /** QR artwork can follow the post theme or use a chosen contrast. */
+    qrAppearance: z.enum(["light", "dark"]).optional(),
+    sourceGeometry: PostSourceGeometrySchema.optional(),
+    keyframes: z
+      .object({
+        sourceGeometry: z.array(PostKeyframeSourceGeometrySchema).optional(),
+        box: z.array(PostKeyframeBoxSchema).optional(),
+        opacity: z.array(PostKeyframeOpacitySchema).optional(),
+      })
+      .strict()
+      .optional(),
+  })
+  .strict();
+export type PostImageItem = z.infer<typeof PostImageItemSchema>;
+
+export const PostImageSchema = z
+  .object({
+    id: IdSchema,
+    label: z.string().trim().min(1).max(120),
+    ref: PostTakeRefSchema,
+  })
+  .strict();
+export type PostImage = z.infer<typeof PostImageSchema>;
+export const PostFontSchema = z
+  .object({
+    family: z.string().min(1),
+    ref: PostTakeRefSchema,
+  })
+  .strict();
+export type PostFont = z.infer<typeof PostFontSchema>;
+
 export const PostCardItemSchema = z
-  .object({ ...itemBase, kind: z.literal("card") })
+  .object({
+    ...itemBase,
+    kind: z.literal("card"),
+    /** Overrides for this card only; absent fields retain the viewer look. */
+    cardAppearance: z
+      .object({
+        addWord: z.boolean().optional(),
+        addStepNumbers: z.boolean().optional(),
+        includeStartPlacement: z.boolean().optional(),
+        addDifficultyLevel: z.boolean().optional(),
+        showLoopGlyph: z.boolean().optional(),
+        showNotes: z.boolean().optional(),
+        showGrid: z.boolean().optional(),
+        showTKA: z.boolean().optional(),
+        showTnD: z.boolean().optional(),
+        showPlacements: z.boolean().optional(),
+        showReversals: z.boolean().optional(),
+        showPropTnD: z.boolean().optional(),
+        showHandColorKey: z.boolean().optional(),
+        showNonRadialPoints: z.boolean().optional(),
+        showQRCode: z.boolean().optional(),
+        showMandala: z.boolean().optional(),
+        infoCellChoice: z.enum(["qr", "mandala", "none"]).optional(),
+        startPlacementLayout: z.enum(["row", "column"]).optional(),
+        columnCount: z.number().int().positive().nullable().optional(),
+        darkMode: z.boolean().optional(),
+        customNotesText: z.string().max(120).optional(),
+      })
+      .strict()
+      .optional(),
+  })
   .strict();
 
 export type PostCardItem = z.infer<typeof PostCardItemSchema>;
+
+/** Display flags for a live animation, independent of viewer settings. */
+export const PostAnimationAppearanceSchema = z
+  .object({
+    propType: z.nativeEnum(PropType).optional(),
+    propLook: z.enum(PROP_LOOKS).optional(),
+    gridMode: z.enum(["none", "8point", "auto"]).optional(),
+    props: z.boolean().optional(),
+    tkaGlyph: z.boolean().optional(),
+    elementalGlyph: z.boolean().optional(),
+    propElementalGlyph: z.boolean().optional(),
+    stepNumbers: z.boolean().optional(),
+    progressBar: z.boolean().optional(),
+    wordHeader: z.boolean().optional(),
+    wordHeaderHighlight: z.enum(["arrival", "travel"]).optional(),
+    mandala: z.boolean().optional(),
+    /** Line width of the mandala guide in canvas pixels; 2.5 when absent. */
+    mandalaThickness: z.number().min(1).max(12).optional(),
+    leftPathLines: z.boolean().optional(),
+    rightPathLines: z.boolean().optional(),
+    pathShape: z.enum(["arc", "linear", "concave"]).optional(),
+    motionAwarePaths: z.boolean().optional(),
+    effortPreset: z
+      .enum([
+        "linear",
+        "glide",
+        "dab",
+        "press",
+        "punch",
+        "elastic",
+        "bounce",
+        "anticipation",
+      ])
+      .optional(),
+    darkMode: z.boolean().optional(),
+    /** Full canonical effects snapshot, scoped to this timeline item. */
+    effects: z
+      .custom<EffectsConfig>(
+        (value) =>
+          value !== null &&
+          typeof value === "object" &&
+          typeof (value as EffectsConfig).version === "number" &&
+          typeof (value as EffectsConfig).activeEffect === "string" &&
+          typeof (value as EffectsConfig).tipEffectMap === "object"
+      )
+      .optional(),
+    trail: z
+      .object({
+        enabled: z.boolean(),
+        trackingMode: z.nativeEnum(TrackingMode),
+        thickness: z.number().finite().min(1).max(12),
+        brightness: z.number().finite().min(0.3).max(1),
+        tailLength: z.number().int().min(10).max(400),
+        leftColor: z.string().regex(/^#[0-9a-fA-F]{6}$/),
+        rightColor: z.string().regex(/^#[0-9a-fA-F]{6}$/),
+        /** Complete rendering settings; older projects retain the fields above. */
+        settings: z
+          .object({
+            mode: z.nativeEnum(TrailMode),
+            effect: z.nativeEnum(TrailEffect),
+            fadeDurationMs: z.number().finite().nonnegative(),
+            maxPoints: z.number().int().positive(),
+            lineWidth: z.number().finite().positive(),
+            glowBlur: z.number().finite().nonnegative(),
+            leftColor: z.string().regex(/^#[0-9a-fA-F]{6}$/),
+            rightColor: z.string().regex(/^#[0-9a-fA-F]{6}$/),
+            additionalLayerColors: z.array(
+              z
+                .object({
+                  left: z.string().regex(/^#[0-9a-fA-F]{6}$/),
+                  right: z.string().regex(/^#[0-9a-fA-F]{6}$/),
+                })
+                .strict()
+            ),
+            minOpacity: z.number().finite().min(0).max(1),
+            maxOpacity: z.number().finite().min(0).max(1),
+            trackingMode: z.nativeEnum(TrackingMode),
+            hideProps: z.boolean(),
+            usePathCache: z.boolean(),
+            previewMode: z.boolean(),
+            tailLength: z.number().int().min(10).max(400),
+          })
+          .strict()
+          .optional(),
+      })
+      .strict()
+      .optional(),
+  })
+  .strict();
+
+export type PostAnimationAppearance = z.infer<
+  typeof PostAnimationAppearanceSchema
+>;
 
 /** The sequence animation: the dual view's lower panel. */
 export const PostAnimationItemSchema = z
@@ -223,6 +650,21 @@ export const PostAnimationItemSchema = z
     kind: z.literal("animation"),
     /** Paint the beat number, letter and progress over it. */
     overlay: z.boolean(),
+    /**
+     * Makes this item the opening hook: the sequence's tunnel plays through
+     * over the item's whole span, then the extra performers fade out. The
+     * sequence clock belongs to the hook, not to a take.
+     */
+    tunnelHook: TunnelHookSchema.optional(),
+    /** Display flags for this live animation, independent of viewer settings. */
+    animationAppearance: PostAnimationAppearanceSchema.optional(),
+    /**
+     * What the opening tunnel shows differently from the animation it opens:
+     * only the flags set here, read over `animationAppearance` while the
+     * intro plays. Everything else follows the animation. Meaningless
+     * without a `tunnelHook`.
+     */
+    tunnelAppearance: PostAnimationAppearanceSchema.optional(),
   })
   .strict();
 
@@ -237,6 +679,8 @@ export const PostMovesItemSchema = z
     ...itemBase,
     kind: z.literal("moves"),
     mode: PostMovesModeSchema,
+    /** PiP uses the same scoped canvas appearance as an animation item. */
+    animationAppearance: PostAnimationItemSchema.shape.animationAppearance,
   })
   .strict();
 
@@ -252,31 +696,80 @@ export type PostCarouselItem = z.infer<typeof PostCarouselItemSchema>;
 export const PostTextSizeSchema = z.enum(["s", "m", "l"]);
 export type PostTextSize = z.infer<typeof PostTextSizeSchema>;
 
+export const PostTextStyleSchema = z
+  .object({
+    fontFamily: z.string().min(1),
+    fontSizeNative: z.number().finite().positive(),
+    fontScale: z.number().finite().positive().optional(),
+    sourceCanvasWidth: z.number().finite().positive().optional(),
+    letterSpacing: z.number().finite(),
+    lineSpacing: z.number().finite().positive(),
+    alignment: z.enum(["left", "center", "right"]),
+    alpha: z.number().finite().min(0).max(1),
+  })
+  .strict();
+export type PostTextStyle = z.infer<typeof PostTextStyleSchema>;
+
+export const PostTextAnimationSchema = z
+  .object({
+    kind: z.literal("letter-slide"),
+    inDurationSeconds: SecondsSchema,
+    outDurationSeconds: SecondsSchema,
+    entranceProgress: z.number().finite(),
+    exitProgress: z.number().finite(),
+  })
+  .strict();
+export type PostTextAnimation = z.infer<typeof PostTextAnimationSchema>;
+
 export const PostTextItemSchema = z
   .object({
     ...itemBase,
     kind: z.literal("text"),
     text: z.string().max(POST_MAX_TEXT_LENGTH),
     size: PostTextSizeSchema,
+    style: PostTextStyleSchema.optional(),
+    animation: PostTextAnimationSchema.optional(),
   })
   .strict();
 
 export type PostTextItem = z.infer<typeof PostTextItemSchema>;
 
+/**
+ * The sequence's name in its glyphs, with how to say it under the name. The
+ * words come in as the clip starts and lift away as it ends; see
+ * `tunnel-titles.ts`.
+ */
+export const PostTitlesItemSchema = z
+  .object({
+    ...itemBase,
+    kind: z.literal("titles"),
+    /** How to say the name, shown in quotes under it. */
+    spoken: z.string().max(POST_MAX_SPOKEN_LENGTH).optional(),
+  })
+  .strict();
+
+export type PostTitlesItem = z.infer<typeof PostTitlesItemSchema>;
+
 export const PostItemSchema = z.discriminatedUnion("kind", [
   PostVideoItemSchema,
+  PostImageItemSchema,
   PostCardItemSchema,
   PostAnimationItemSchema,
   PostMovesItemSchema,
   PostCarouselItemSchema,
   PostTextItemSchema,
+  PostTitlesItemSchema,
 ]);
 
 export type PostItem = z.infer<typeof PostItemSchema>;
 export type PostItemKind = PostItem["kind"];
 
 /** Kinds the main track holds; anything else lives on an overlay track. */
-export const MAIN_TRACK_KINDS: readonly PostItemKind[] = ["video", "card"];
+export const MAIN_TRACK_KINDS: readonly PostItemKind[] = [
+  "video",
+  "image",
+  "card",
+];
 
 /** Kinds drawn from the sequence, which read the move of the footage under them. */
 export const SEQUENCE_ITEM_KINDS: readonly PostItemKind[] = [
@@ -302,13 +795,45 @@ export const PostProjectSchema = z
   .object({
     schemaVersion: z.literal(POST_PROJECT_SCHEMA_VERSION),
     sequenceId: IdSchema,
+    /** Prop used by this post's card and animation when an item has no override. */
+    propType: z.nativeEnum(PropType).optional(),
     takes: z.array(PostTakeSchema),
+    /** Maps travel with a post, keyed by the take id they were edited against. */
+    timings: z.record(z.string(), TakeTimingSchema).optional(),
+    /** Scoped appearance for each take's timing preview, independent of timeline layers. */
+    mappingPreviewAppearances: z
+      .record(
+        z.string(),
+        PostAnimationItemSchema.shape.animationAppearance.unwrap()
+      )
+      .optional(),
+    images: z.array(PostImageSchema).optional(),
+    fonts: z.array(PostFontSchema).optional(),
+    importSource: z
+      .object({
+        format: z.literal("inshot-recovery"),
+        rawDraftText: z.string(),
+        unresolved: z.array(z.string()),
+      })
+      .strict()
+      .optional(),
     tracks: z.array(PostTrackSchema).min(1),
     /**
      * - takes: each clip carries its take's sound at its own volume.
      * - silent: no sound, for music added in the app it is posted from.
      */
     audio: z.enum(["takes", "silent"]),
+    /** The post's shape, and so the export's size; 9:16 when absent. */
+    canvas: z.enum(POST_CANVAS_RATIOS).optional(),
+    /** What fills the frame where no item covers it; dark when absent. */
+    background: z.enum(POST_BACKGROUNDS).optional(),
+    /** Reflect the post's layout and footage for a mirrored teaching view. */
+    mirrored: z.boolean().optional(),
+    /** Mirror, flip, turn or swap the notation alone; the footage keeps its own. */
+    sequenceActions: z
+      .array(z.enum(POST_SEQUENCE_ACTIONS))
+      .max(POST_MAX_SEQUENCE_ACTIONS)
+      .optional(),
     updatedAt: z.number().finite().int().nonnegative(),
   })
   .strict()
@@ -421,6 +946,7 @@ export function textBox(placement: PostTextPlacement): PostBox {
 export function defaultBoxFor(kind: PostItemKind): PostBox {
   switch (kind) {
     case "video":
+    case "image":
     case "card":
       return { ...POST_BOX.full };
     case "animation":
@@ -431,6 +957,8 @@ export function defaultBoxFor(kind: PostItemKind): PostBox {
       return { ...POST_BOX.stripCarousel };
     case "text":
       return textBox("top");
+    case "titles":
+      return { ...POST_BOX.full };
   }
 }
 
@@ -441,11 +969,14 @@ export function defaultBoxFor(kind: PostItemKind): PostBox {
 export function clampBox(box: PostBox): PostBox {
   const width = Math.min(1, Math.max(POST_MIN_BOX_SIZE, box.width));
   const height = Math.min(1, Math.max(POST_MIN_BOX_SIZE, box.height));
+  const turn = wrapDegrees(box.turn ?? 0);
   return {
     x: Math.min(1 - width, Math.max(0, box.x)),
     y: Math.min(1 - height, Math.max(0, box.y)),
     width,
     height,
+    // A box turned back to straight drops its turn, so it reads as it did.
+    ...(turn !== 0 ? { turn } : {}),
   };
 }
 
@@ -453,6 +984,14 @@ export function clampBox(box: PostBox): PostBox {
 export function wrapDegrees(value: number): number {
   if (value >= -180 && value <= 180) return value;
   return ((((value + 180) % 360) + 360) % 360) - 180;
+}
+
+/**
+ * The turn from one angle to another the short way round, in degrees
+ * (-180 to 180), so a blend from -180 to 175 turns 5 degrees, not 355.
+ */
+export function shortestTurn(from: number, to: number): number {
+  return wrapDegrees(to - from);
 }
 
 /** A framing moved or turned back into its bounds, rotation wrapped. */
@@ -502,6 +1041,26 @@ export function findItem(
 
 export function mainItems(project: PostProject): readonly PostItem[] {
   return project.tracks[MAIN_TRACK_INDEX]?.items ?? [];
+}
+
+/** Keep linked motion on its own take during an overlap; free layers follow the incoming take. */
+export function timingVideoAt(
+  items: readonly PostItem[],
+  seconds: number,
+  anchorItemId?: string
+): PostVideoItem | null {
+  let covering: PostVideoItem | null = null;
+  for (const item of items) {
+    if (
+      item.kind !== "video" ||
+      seconds < item.start - POST_TIME_EPSILON ||
+      seconds >= itemEnd(item) - POST_TIME_EPSILON
+    )
+      continue;
+    if (item.id === anchorItemId) return item;
+    if (!covering || item.start >= covering.start) covering = item;
+  }
+  return covering;
 }
 
 /** The main clip playing at a post time; the later one at a shared edge. */

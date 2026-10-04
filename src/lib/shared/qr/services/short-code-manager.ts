@@ -10,23 +10,7 @@
  * Domain: QR - URL Shortening
  */
 
-import {
-  addDoc,
-  collection,
-  doc,
-  getDoc,
-  setDoc,
-  query,
-  where,
-  getDocs,
-  limit,
-  updateDoc,
-  increment,
-  runTransaction,
-  type Firestore,
-  type QueryConstraint,
-} from "firebase/firestore";
-import { getFirestoreInstance } from "$lib/shared/auth/firebase";
+import type { Firestore, QueryConstraint } from "firebase/firestore";
 import { type SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
 import { isHandPathSequence } from "$lib/shared/foundation/domain/models/sequence-kind";
 import { buildHandPathShortCodePayload } from "./hand-path-short-code-payload";
@@ -384,10 +368,18 @@ export class ShortCodeManager {
   }
 
   /**
-   * Initialize Firestore instance (called lazily)
+   * Firestore, loaded on first use. Public pages such as the timing pages and
+   * the guide build this manager for their QR links, and most visits never
+   * read or write a code, so Firebase stays off their first download. Each
+   * method loads the Firestore functions it needs with its own import() of
+   * "firebase/firestore": naming the Firebase module itself stops the build's
+   * small-chunk merge (vite.config.ts) from folding it back into the page.
    */
   private async ensureFirestore(): Promise<Firestore> {
     if (!this.firestore) {
+      const { getFirestoreInstance } = await import(
+        "$lib/shared/auth/firebase"
+      );
       this.firestore = await getFirestoreInstance();
     }
     return this.firestore;
@@ -720,15 +712,16 @@ export class ShortCodeManager {
   private async queryCandidates(
     field: "encoderHash" | "payloadDigest" | "sequence",
     value: string,
-    ...constraints: QueryConstraint[]
+    maxResults?: number
   ): Promise<CodeCandidate[]> {
     const firestore = await this.ensureFirestore();
+    const { collection, getDocs, limit, query, where } = await import(
+      "firebase/firestore"
+    );
+    const constraints: QueryConstraint[] = [where(field, "==", value)];
+    if (maxResults !== undefined) constraints.push(limit(maxResults));
     const snapshot = await getDocs(
-      query(
-        collection(firestore, SHORTCODES_COLLECTION),
-        where(field, "==", value),
-        ...constraints
-      )
+      query(collection(firestore, SHORTCODES_COLLECTION), ...constraints)
     );
     return snapshot.docs
       .map((d) => {
@@ -788,7 +781,7 @@ export class ShortCodeManager {
         await this.queryCandidates(
           "sequence",
           keys.fallbackWord,
-          limit(DEDUP_CANDIDATE_LIMIT)
+          DEDUP_CANDIDATE_LIMIT
         ),
         expected
       );
@@ -800,7 +793,7 @@ export class ShortCodeManager {
         await this.queryCandidates(
           "payloadDigest",
           keys.digest,
-          limit(DEDUP_CANDIDATE_LIMIT)
+          DEDUP_CANDIDATE_LIMIT
         ),
         expected
       );
@@ -829,6 +822,7 @@ export class ShortCodeManager {
     label: string
   ): Promise<{ code: string; isNew: boolean }> {
     const firestore = await this.ensureFirestore();
+    const { doc, runTransaction } = await import("firebase/firestore");
     const maxAttemptsPerLength = 10;
     let codeLength = MIN_CODE_LENGTH;
     let indexRef = claimHash
@@ -956,6 +950,9 @@ export class ShortCodeManager {
 
       onProgress?.(0, missHashes.length);
       const firestore = await this.ensureFirestore();
+      const { collection, getDocs, query, where } = await import(
+        "firebase/firestore"
+      );
       const candidatesByHash = new Map<string, CodeCandidate[]>();
 
       // 4. Chunked `in` queries (Firestore caps the `in` list at 30).
@@ -1021,6 +1018,7 @@ export class ShortCodeManager {
     digest: string
   ): Promise<{ code: string; isNew: boolean }> {
     const firestore = await this.ensureFirestore();
+    const { doc, getDoc, updateDoc } = await import("firebase/firestore");
     const expected = projectChoreography(sequence);
 
     // Reuse an existing code only when its stored payload provably plays this
@@ -1267,7 +1265,7 @@ export class ShortCodeManager {
         await this.queryCandidates(
           "payloadDigest",
           await choreographyDigest(sequence),
-          limit(DEDUP_CANDIDATE_LIMIT)
+          DEDUP_CANDIDATE_LIMIT
         ),
         expected
       );
@@ -1290,6 +1288,7 @@ export class ShortCodeManager {
   ): Promise<void> {
     try {
       const firestore = await this.ensureFirestore();
+      const { doc, getDoc, setDoc } = await import("firebase/firestore");
       const ref = doc(firestore, HASH_INDEX_COLLECTION, hash);
       const snap = await getDoc(ref);
       if (!snap.exists()) {
@@ -1431,6 +1430,7 @@ export class ShortCodeManager {
     if (data.ownerId && data.sequenceId) {
       try {
         const firestore = await this.ensureFirestore();
+        const { doc, getDoc } = await import("firebase/firestore");
         const directSnap = await getDoc(
           doc(firestore, `users/${data.ownerId}/sequences/${data.sequenceId}`)
         );
@@ -1481,6 +1481,7 @@ export class ShortCodeManager {
     code: string
   ): Promise<ShortCodeData | null> {
     const firestore = await this.ensureFirestore();
+    const { doc, getDoc } = await import("firebase/firestore");
     const docRef = doc(firestore, SHORTCODES_COLLECTION, code);
     const docSnap = await getDoc(docRef);
 
@@ -1756,6 +1757,7 @@ export class ShortCodeManager {
     if (data.ownerId && data.sequenceId) {
       try {
         const firestore = await this.ensureFirestore();
+        const { doc, getDoc } = await import("firebase/firestore");
         const directRef = doc(
           firestore,
           `users/${data.ownerId}/sequences/${data.sequenceId}`
@@ -1788,6 +1790,7 @@ export class ShortCodeManager {
   async incrementScanCount(code: string): Promise<void> {
     try {
       const firestore = await this.ensureFirestore();
+      const { doc, increment, updateDoc } = await import("firebase/firestore");
       const docRef = doc(firestore, SHORTCODES_COLLECTION, code);
 
       // Write three things atomically:
@@ -1814,6 +1817,7 @@ export class ShortCodeManager {
 
   async getAnalytics(code: string): Promise<ShortCodeRecord | null> {
     const firestore = await this.ensureFirestore();
+    const { doc, getDoc } = await import("firebase/firestore");
     const docRef = doc(firestore, SHORTCODES_COLLECTION, code);
     const docSnap = await getDoc(docRef);
 
@@ -1868,6 +1872,7 @@ export class ShortCodeManager {
   ): Promise<void> {
     try {
       const firestore = await this.ensureFirestore();
+      const { addDoc, collection } = await import("firebase/firestore");
       const eventsRef = collection(
         firestore,
         SHORTCODES_COLLECTION,
@@ -1901,6 +1906,7 @@ export class ShortCodeManager {
   ): Promise<void> {
     try {
       const firestore = await this.ensureFirestore();
+      const { addDoc, collection } = await import("firebase/firestore");
       const ref = collection(
         firestore,
         SHORTCODES_COLLECTION,

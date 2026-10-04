@@ -47,15 +47,17 @@
   import { AnimationStateManager } from "$lib/shared/animation-engine/services/animation-state-manager";
   import { AnimationLoop } from "$lib/shared/animation-engine/services/animation-loop";
 
-  // Canvas-menu video download (opt-in via `videoDownload`)
-  import { getExportOrchestrator } from "$lib/shared/export-panel/get-export-orchestrator";
+  // Canvas-menu video download (opt-in via `videoDownload`). The export
+  // orchestrator loads inside downloadAnimationVideo() because the export
+  // stack imports Firebase, and the home page hero runs this player for
+  // visitors who never download anything.
   import { ensureVideoExportOrchestrator } from "$lib/shared/animation-engine/get-video-export-orchestrator";
-  import {
-    removeToast,
-    showToast,
-    toast,
-  } from "$lib/shared/toast/state/toast-state.svelte";
+  import { toast } from "$lib/shared/toast/state/toast-state.svelte";
+  import ExportTakeover from "$lib/shared/video-export/components/ExportTakeover.svelte";
+  import { toExportTakeoverPhase } from "$lib/shared/video-export/services/export-takeover-phase";
+  import type { VideoExportProgress } from "$lib/shared/compose/domain/video-export-types";
   import type { ContextMenuEntry } from "$lib/shared/components/context-menu/context-menu-types";
+  import { createInlineVideoExportAttempt } from "./inline-video-export-attempt";
 
   // BPM/Speed conversion constant
   const DEFAULT_BPM = 60;
@@ -435,6 +437,17 @@
   // routing through the drawer.
   let liveCanvas = $state<HTMLCanvasElement | null>(null);
   let isVideoExporting = $state(false);
+  let videoExportProgress = $state<VideoExportProgress | null>(null);
+  let activeExportAttempt: ReturnType<
+    typeof createInlineVideoExportAttempt
+  > | null = null;
+  const exportTakeover = $derived(
+    toExportTakeoverPhase(videoExportProgress, isVideoExporting)
+  );
+
+  function cancelVideoExport(): void {
+    activeExportAttempt?.cancel();
+  }
 
   // Deliberately does NOT gate on playbackController: it is a plain `let`, so a
   // derived that read it would latch on whatever it saw at first evaluation and
@@ -451,25 +464,25 @@
     const seq = animationState.sequenceData;
     if (isVideoExporting || !canvas || !controller || !seq) return;
 
+    const attempt = createInlineVideoExportAttempt();
+    activeExportAttempt = attempt;
     isVideoExporting = true;
-    let progressToastId: string | null = null;
+    videoExportProgress = null;
 
     try {
-      progressToastId = showToast({
-        message: "Rendering video from this animation…",
-        type: "info",
-        duration: 0,
-      });
-
       // The video orchestrator is registered by whichever surface loaded it
       // first (usually the export drawer). This player can be the first one
       // here, so it registers the same lazily-loaded singleton rather than
       // failing with "orchestrator not available".
+      const { getExportOrchestrator } =
+        await import("$lib/shared/export-panel/get-export-orchestrator");
       const exportOrchestrator = getExportOrchestrator();
       const videoExportOrchestrator = await ensureVideoExportOrchestrator();
+      if (attempt.cancelled) return;
       exportOrchestrator.setVideoOrchestrator(videoExportOrchestrator);
+      if (!attempt.attach(() => exportOrchestrator.cancelExport())) return;
 
-      await exportOrchestrator.export(
+      const result = await exportOrchestrator.export(
         seq,
         { format: "animation" },
         {
@@ -478,15 +491,27 @@
             playbackController: controller,
             animationState,
           },
+          onProgress: (progress) => {
+            if (!attempt.cancelled) videoExportProgress = progress;
+          },
         }
       );
+      if (attempt.cancelled || result.canceled) return;
+      if (!result.success) {
+        throw new Error(result.error ?? t("browse_ui_video_export_failed"));
+      }
       toast.success(t("browse_ui_video_downloaded"));
     } catch (err) {
-      toast.error(
-        err instanceof Error ? err.message : t("browse_ui_video_export_failed")
-      );
+      if (!attempt.cancelled) {
+        toast.error(
+          err instanceof Error
+            ? err.message
+            : t("browse_ui_video_export_failed")
+        );
+      }
     } finally {
-      if (progressToastId) removeToast(progressToastId, "programmatic");
+      if (activeExportAttempt === attempt) activeExportAttempt = null;
+      videoExportProgress = null;
       isVideoExporting = false;
     }
   }
@@ -711,6 +736,7 @@
   });
 
   onDestroy(() => {
+    cancelVideoExport();
     activityGate.dispose();
     playbackController?.offLoopComplete();
     playbackController?.offSequenceBoundary();
@@ -1121,6 +1147,15 @@
     {/if}
   {/if}
 </div>
+
+{#if exportTakeover.phase !== "idle"}
+  <ExportTakeover
+    phase={exportTakeover.phase}
+    progress={videoExportProgress?.progress ?? 0}
+    phaseLabel={exportTakeover.labelKey ? t(exportTakeover.labelKey) : ""}
+    onCancel={cancelVideoExport}
+  />
+{/if}
 
 <style>
   .inline-animation-player {

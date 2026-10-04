@@ -2,7 +2,10 @@ import { existsSync, readFileSync, realpathSync } from "node:fs";
 import path from "node:path";
 
 const DEFAULT_VITE_DEV_PORT = 5173;
-const DEPENDENCY_STATE_FILES = ["package.json", "pnpm-lock.yaml"] as const;
+// pnpm rewrites this copy of the lockfile after it finishes linking
+// node_modules. Vite hashes it to decide whether optimized dependencies are
+// stale, unlike pnpm-lock.yaml, which git can change long before an install.
+const INSTALLED_DEPENDENCY_STATE_FILE = "node_modules/.pnpm/lock.yaml";
 
 interface OptimizedDependencyMetadata {
   optimized?: Record<string, { src?: unknown }>;
@@ -55,23 +58,20 @@ export function getViteDependencyCacheDir(
   projectRoot: string,
   port: number
 ): string {
-  return path.resolve(projectRoot, "node_modules/.vite", `port-${port}`);
+  // Worktrees share node_modules through a junction. Keeping generated modules
+  // inside each checkout prevents a preview from replacing the live app's cache.
+  return path.resolve(projectRoot, ".cache/vite", `port-${port}`);
 }
 
-export function getViteDependencyStatePaths(projectRoot: string): string[] {
-  return DEPENDENCY_STATE_FILES.map((fileName) =>
-    path.resolve(projectRoot, fileName)
+export function isViteDependencyCacheRequest(url: string | undefined): boolean {
+  const pathname = url?.split("?", 1)[0] ?? "";
+  return /\/(?:\.cache\/vite|node_modules\/\.vite)\/(?:[^/]+\/)*deps(?:\/|$)/.test(
+    pathname
   );
 }
 
-export function isViteDependencyStatePath(
-  projectRoot: string,
-  candidatePath: string
-): boolean {
-  const normalizedCandidate = path.resolve(candidatePath);
-  return getViteDependencyStatePaths(projectRoot).some(
-    (statePath) => normalizedCandidate === statePath
-  );
+export function getInstalledDependencyStatePath(projectRoot: string): string {
+  return path.resolve(projectRoot, INSTALLED_DEPENDENCY_STATE_FILE);
 }
 
 function getPackageName(dependencyId: string): string | null {

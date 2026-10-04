@@ -144,9 +144,14 @@
     panelState?.openStepEditorPanel();
   }
 
-  // Handle beat deletion via keyboard
+  // Handle beat deletion via keyboard. Like Create's Delete shortcut, it waits
+  // from the moment Play is pressed until Stop, while the player loads too.
   function handleStepDelete(stepNumber: number) {
-    if (panelState?.workspacePlayback) return;
+    if (
+      panelState?.workspacePlayback ||
+      panelState?.workspacePlaybackPreparation
+    )
+      return;
     if (!createModuleState) {
       console.warn("Cannot delete beat - createModuleState not initialized");
       return;

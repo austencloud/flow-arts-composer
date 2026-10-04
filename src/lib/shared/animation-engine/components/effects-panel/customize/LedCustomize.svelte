@@ -1,6 +1,12 @@
 <script lang="ts">
+  import { getContext } from "svelte";
   import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { effectUiLabel } from "../effect-ui-label";
+  import {
+    LED_CUSTOMIZE_PAGE_CONTEXT,
+    type LedCustomizePage,
+    type LedCustomizePageState,
+  } from "../led-customize-page-context";
   import { getEffectsConfigContext } from "$lib/shared/effects/state/effects-config-context";
   import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
   import {
@@ -30,9 +36,19 @@
      * whole view, keep it.
      */
     embedded?: boolean;
+    /** Post Studio's short inspector shows one bounded control group at a time. */
+    paged?: boolean;
   }
 
-  const { onBack, embedded = false }: Props = $props();
+  const { onBack, embedded = false, paged = false }: Props = $props();
+  const sharedPage = getContext<LedCustomizePageState | undefined>(
+    LED_CUSTOMIZE_PAGE_CONTEXT
+  );
+  let page = $state<LedCustomizePage>(sharedPage?.current ?? "pattern");
+  function selectPage(next: LedCustomizePage): void {
+    page = next;
+    if (sharedPage) sharedPage.current = next;
+  }
   const effectsState = getEffectsConfigContext();
 
   const led = $derived(effectsState?.led ?? null);
@@ -271,7 +287,7 @@
   );
 </script>
 
-<div class="customize-view">
+<div class="customize-view" class:paged>
   {#if !embedded}
     <button type="button" class="back-btn" onclick={onBack}>
       <i class="fas fa-arrow-left" aria-hidden="true"></i>
@@ -280,220 +296,250 @@
   {/if}
 
   {#if effectsState && led}
+    {#if paged}
+      <div class="group-pages" role="group" aria-label="LED controls">
+        {#each [{ id: "prop", label: "Prop" }, { id: "pattern", label: "Pattern" }, { id: "color", label: "Colors & loop" }, { id: "look", label: "Look" }] as option}
+          <button
+            type="button"
+            aria-pressed={page === option.id}
+            class:active={page === option.id}
+            onclick={() => selectPage(option.id as LedCustomizePage)}
+            >{option.label}</button
+          >
+        {/each}
+      </div>
+    {/if}
     <div class="led-controls">
       <!-- Device -->
-      <div class="group">
-        <span class="group-label" id="led-device-label"
-          >{t("effect_deep_prop")}</span
-        >
-        <SegmentedControl
-          options={DEVICE_OPTIONS.map((option) => ({
-            ...option,
-            label: effectUiLabel(option.label),
-            shortLabel: option.shortLabel
-              ? effectUiLabel(option.shortLabel)
-              : undefined,
-          }))}
-          value={deviceValue}
-          onchange={(v) => setDevice(v as DeviceValue)}
-          color="accent"
-          size="sm"
-          ariaLabelledby="led-device-label"
-          semantics="radiogroup"
-        />
-      </div>
+      {#if !paged || page === "prop"}
+        <div class="group">
+          <span class="group-label" id="led-device-label"
+            >{t("effect_deep_prop")}</span
+          >
+          <SegmentedControl
+            options={DEVICE_OPTIONS.map((option) => ({
+              ...option,
+              label: effectUiLabel(option.label),
+              shortLabel: option.shortLabel
+                ? effectUiLabel(option.shortLabel)
+                : undefined,
+            }))}
+            value={deviceValue}
+            onchange={(v) => setDevice(v as DeviceValue)}
+            color="accent"
+            size="sm"
+            ariaLabelledby="led-device-label"
+            semantics="radiogroup"
+          />
+        </div>
+      {/if}
 
       <!-- Pattern -->
-      <div class="group">
-        <span class="group-label" id="led-pattern-label"
-          >{t("effect_deep_pattern")}</span
-        >
-        <div
-          class="pattern-grid"
-          role="radiogroup"
-          aria-labelledby="led-pattern-label"
-        >
-          {#each BUILT_IN_PRESETS as generator (generator.id)}
-            {@const isActive = generator.id === activeGeneratorId}
-            <button
-              type="button"
-              class="pattern-card"
-              class:active={isActive}
-              role="radio"
-              aria-checked={isActive}
-              onclick={() => setGenerator(generator.id)}
-            >
-              <canvas
-                class="pattern-strip"
-                width="144"
-                height="40"
-                bind:this={stripCanvases[generator.id]}
-              ></canvas>
-              <span class="pattern-name">
-                {effectUiLabel(PATTERN_LABELS[generator.id] ?? generator.name)}
-              </span>
-            </button>
-          {/each}
+      {#if !paged || page === "pattern"}
+        <div class="group">
+          <span class="group-label" id="led-pattern-label"
+            >{t("effect_deep_pattern")}</span
+          >
+          <div
+            class="pattern-grid"
+            role="radiogroup"
+            aria-labelledby="led-pattern-label"
+          >
+            {#each BUILT_IN_PRESETS as generator (generator.id)}
+              {@const isActive = generator.id === activeGeneratorId}
+              <button
+                type="button"
+                class="pattern-card"
+                class:active={isActive}
+                role="radio"
+                aria-checked={isActive}
+                onclick={() => setGenerator(generator.id)}
+              >
+                <canvas
+                  class="pattern-strip"
+                  width="144"
+                  height="40"
+                  bind:this={stripCanvases[generator.id]}
+                ></canvas>
+                <span class="pattern-name">
+                  {effectUiLabel(
+                    PATTERN_LABELS[generator.id] ?? generator.name
+                  )}
+                </span>
+              </button>
+            {/each}
+          </div>
         </div>
-      </div>
+      {/if}
 
       <!-- Colors: the slot is always reserved so switching patterns never
            shifts the rows below; pickers the pattern ignores go invisible. -->
-      <div class="color-row" class:reserved-hidden={colorSlots === 0}>
-        <span class="color-label"
-          >{colorSlots === 2
-            ? t("effect_deep_colors")
-            : t("effect_deep_color")}</span
-        >
-        <div class="color-pickers">
-          <label class="color-picker">
-            <input
-              type="color"
-              aria-label={t("effect_deep_primary_pattern_color")}
-              value={rgbToHex(currentParams.primaryColor)}
-              oninput={(e) =>
-                setParamColor(
-                  "primaryColor",
-                  (e.currentTarget as HTMLInputElement).value
+      {#if !paged || page === "color"}
+        <div class="color-row" class:reserved-hidden={colorSlots === 0}>
+          <span class="color-label"
+            >{colorSlots === 2
+              ? t("effect_deep_colors")
+              : t("effect_deep_color")}</span
+          >
+          <div class="color-pickers">
+            <label class="color-picker">
+              <input
+                type="color"
+                aria-label={t("effect_deep_primary_pattern_color")}
+                value={rgbToHex(currentParams.primaryColor)}
+                oninput={(e) =>
+                  setParamColor(
+                    "primaryColor",
+                    (e.currentTarget as HTMLInputElement).value
+                  )}
+              />
+            </label>
+            <label class="color-picker" class:reserved-hidden={colorSlots < 2}>
+              <input
+                type="color"
+                aria-label={t("effect_deep_secondary_pattern_color")}
+                value={rgbToHex(
+                  currentParams.secondaryColor ?? currentParams.primaryColor
                 )}
-            />
-          </label>
-          <label class="color-picker" class:reserved-hidden={colorSlots < 2}>
-            <input
-              type="color"
-              aria-label={t("effect_deep_secondary_pattern_color")}
-              value={rgbToHex(
-                currentParams.secondaryColor ?? currentParams.primaryColor
-              )}
-              oninput={(e) =>
-                setParamColor(
-                  "secondaryColor",
-                  (e.currentTarget as HTMLInputElement).value
-                )}
-            />
-          </label>
+                oninput={(e) =>
+                  setParamColor(
+                    "secondaryColor",
+                    (e.currentTarget as HTMLInputElement).value
+                  )}
+              />
+            </label>
+          </div>
         </div>
-      </div>
 
-      <!-- Loop -->
-      <div class="slider-row">
-        <label for="led-cycle">{t("effect_deep_loop")}</label>
-        <input
-          id="led-cycle"
-          type="range"
-          min="0"
-          max="1"
-          step="0.005"
-          value={cycleSliderValue}
-          oninput={(e) =>
-            setCycleFromSlider(+(e.currentTarget as HTMLInputElement).value)}
-        />
-        <span class="slider-value">{formatSeconds(led.cycleDuration)}</span>
-      </div>
+        <!-- Loop -->
+        <div class="slider-row">
+          <label for="led-cycle">{t("effect_deep_loop")}</label>
+          <input
+            id="led-cycle"
+            type="range"
+            min="0"
+            max="1"
+            step="0.005"
+            value={cycleSliderValue}
+            oninput={(e) =>
+              setCycleFromSlider(+(e.currentTarget as HTMLInputElement).value)}
+          />
+          <span class="slider-value">{formatSeconds(led.cycleDuration)}</span>
+        </div>
+      {/if}
 
       <!-- Look -->
-      <div class="group">
-        <span class="group-label">{t("effect_deep_look")}</span>
+      {#if !paged || page === "look"}
+        <div class="group">
+          <span class="group-label">{t("effect_deep_look")}</span>
 
-        <div class="shutter-row">
-          <span class="group-label" id="led-shutter-label"
-            >{t("effect_deep_shutter")}</span
-          >
-          <SegmentedControl
-            options={SHUTTER_MODE_OPTIONS.map((option) => ({
-              ...option,
-              label: effectUiLabel(option.label),
-            }))}
-            value={shutterMode}
-            onchange={(v) => setShutterMode(v)}
-            color="accent"
-            size="sm"
-            ariaLabelledby="led-shutter-label"
-            semantics="radiogroup"
-          />
-          <p class="helper-text">
-            Eye is what you see: a fading afterglow. Camera is what a long
-            exposure captures: a solid streak.
-          </p>
-        </div>
+          <div class="shutter-row">
+            <span class="group-label" id="led-shutter-label"
+              >{t("effect_deep_shutter")}</span
+            >
+            <SegmentedControl
+              options={SHUTTER_MODE_OPTIONS.map((option) => ({
+                ...option,
+                label: effectUiLabel(option.label),
+              }))}
+              value={shutterMode}
+              onchange={(v) => setShutterMode(v)}
+              color="accent"
+              size="sm"
+              ariaLabelledby="led-shutter-label"
+              semantics="radiogroup"
+            />
+            <p class="helper-text">
+              Eye is what you see: a fading afterglow. Camera is what a long
+              exposure captures: a solid streak.
+            </p>
+          </div>
 
-        <!-- Only one of these two rows applies at a time. They share one grid
+          <!-- Only one of these two rows applies at a time. They share one grid
              cell, so the slot is exactly one row tall whichever is showing and
              switching shutter mode shifts nothing below it. -->
-        <div class="shutter-slot">
-          <div class="slider-row" class:reserved-hidden={shutterMode !== "eye"}>
-            <label for="led-eye-persistence"
-              >{t("effect_deep_persistence")}</label
+          <div class="shutter-slot">
+            <div
+              class="slider-row"
+              class:reserved-hidden={shutterMode !== "eye"}
             >
-            <input
-              id="led-eye-persistence"
-              type="range"
-              min={EYE_TIME_CONSTANT_MIN_S}
-              max={EYE_TIME_CONSTANT_MAX_S}
-              step="0.005"
-              value={eyeTimeConstant}
-              oninput={(e) =>
-                setEyeTimeConstant(
-                  +(e.currentTarget as HTMLInputElement).value
-                )}
-            />
-            <span class="slider-value">
-              {Math.round(eyeTimeConstant * 1000)}ms
-            </span>
+              <label for="led-eye-persistence"
+                >{t("effect_deep_persistence")}</label
+              >
+              <input
+                id="led-eye-persistence"
+                type="range"
+                min={EYE_TIME_CONSTANT_MIN_S}
+                max={EYE_TIME_CONSTANT_MAX_S}
+                step="0.005"
+                value={eyeTimeConstant}
+                oninput={(e) =>
+                  setEyeTimeConstant(
+                    +(e.currentTarget as HTMLInputElement).value
+                  )}
+              />
+              <span class="slider-value">
+                {Math.round(eyeTimeConstant * 1000)}ms
+              </span>
+            </div>
+
+            <div
+              class="slider-row"
+              class:reserved-hidden={shutterMode !== "camera"}
+            >
+              <label for="led-camera-exposure"
+                >{t("effect_deep_exposure")}</label
+              >
+              <input
+                id="led-camera-exposure"
+                type="range"
+                min={CAMERA_EXPOSURE_MIN_S}
+                max={CAMERA_EXPOSURE_MAX_S}
+                step="0.05"
+                value={cameraExposure}
+                oninput={(e) =>
+                  setCameraExposure(
+                    +(e.currentTarget as HTMLInputElement).value
+                  )}
+              />
+              <span class="slider-value">{cameraExposure.toFixed(2)}s</span>
+            </div>
           </div>
 
-          <div
-            class="slider-row"
-            class:reserved-hidden={shutterMode !== "camera"}
-          >
-            <label for="led-camera-exposure">{t("effect_deep_exposure")}</label>
+          <div class="slider-row">
+            <label for="led-glare">{t("effect_deep_glare")}</label>
             <input
-              id="led-camera-exposure"
+              id="led-glare"
               type="range"
-              min={CAMERA_EXPOSURE_MIN_S}
-              max={CAMERA_EXPOSURE_MAX_S}
-              step="0.05"
-              value={cameraExposure}
+              min={GLARE_WEIGHT_MIN}
+              max={GLARE_WEIGHT_MAX}
+              step="0.01"
+              value={led.look.glare}
               oninput={(e) =>
-                setCameraExposure(+(e.currentTarget as HTMLInputElement).value)}
+                setGlare(+(e.currentTarget as HTMLInputElement).value)}
             />
-            <span class="slider-value">{cameraExposure.toFixed(2)}s</span>
+            <span class="slider-value">{glarePct}%</span>
+          </div>
+
+          <div class="brightness-row">
+            <span class="group-label" id="led-brightness-label"
+              >{t("effect_deep_brightness")}</span
+            >
+            <SegmentedControl
+              options={BRIGHTNESS_OPTIONS.map((option) => ({
+                ...option,
+                label: effectUiLabel(option.label),
+              }))}
+              value={String(led.look.brightness)}
+              onchange={(v) => setLook({ brightness: Number(v) })}
+              color="accent"
+              size="sm"
+              ariaLabelledby="led-brightness-label"
+              semantics="radiogroup"
+            />
           </div>
         </div>
-
-        <div class="slider-row">
-          <label for="led-glare">{t("effect_deep_glare")}</label>
-          <input
-            id="led-glare"
-            type="range"
-            min={GLARE_WEIGHT_MIN}
-            max={GLARE_WEIGHT_MAX}
-            step="0.01"
-            value={led.look.glare}
-            oninput={(e) =>
-              setGlare(+(e.currentTarget as HTMLInputElement).value)}
-          />
-          <span class="slider-value">{glarePct}%</span>
-        </div>
-
-        <div class="brightness-row">
-          <span class="group-label" id="led-brightness-label"
-            >{t("effect_deep_brightness")}</span
-          >
-          <SegmentedControl
-            options={BRIGHTNESS_OPTIONS.map((option) => ({
-              ...option,
-              label: effectUiLabel(option.label),
-            }))}
-            value={String(led.look.brightness)}
-            onchange={(v) => setLook({ brightness: Number(v) })}
-            color="accent"
-            size="sm"
-            ariaLabelledby="led-brightness-label"
-            semantics="radiogroup"
-          />
-        </div>
-      </div>
+      {/if}
     </div>
   {:else}
     <p class="empty">{t("effect_deep_effect_state_unavailable")}</p>
@@ -505,6 +551,38 @@
     display: flex;
     flex-direction: column;
     gap: 12px;
+    container: effect-led / inline-size;
+  }
+
+  .group-pages {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 4px;
+    min-width: 0;
+  }
+  .group-pages button {
+    min-width: 0;
+    min-height: var(--min-touch-target, 44px);
+    padding: 4px 6px;
+    border: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.1));
+    border-radius: 8px;
+    background: var(--theme-card-bg, rgba(255, 255, 255, 0.04));
+    color: var(--theme-text, white);
+    font: inherit;
+    font-size: var(--font-size-compact, 12px);
+    cursor: pointer;
+  }
+  .group-pages button.active {
+    border-color: var(--theme-accent, #8b5cf6);
+    background: color-mix(
+      in srgb,
+      var(--theme-accent, #8b5cf6) 22%,
+      transparent
+    );
+  }
+  .group-pages button:focus-visible {
+    outline: 2px solid var(--theme-accent, #8b5cf6);
+    outline-offset: 2px;
   }
 
   .back-btn {
@@ -563,12 +641,30 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 8px;
   }
+  .paged .group-label {
+    display: none;
+  }
+  .paged .pattern-card {
+    padding: 5px;
+  }
+  .paged .pattern-strip {
+    height: 20px;
+  }
 
   /* Seven generators against two columns leaves the last one alone on its own
      row. Let it take the full width instead — a wide card reads as the end of
      the list; a half-width one reads as a mistake. */
   .pattern-card:last-child:nth-child(odd) {
     grid-column: 1 / -1;
+  }
+
+  @container effect-led (min-width: 30rem) {
+    .paged .pattern-grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+    .paged .pattern-card:last-child:nth-child(odd) {
+      grid-column: auto;
+    }
   }
 
   .pattern-card {

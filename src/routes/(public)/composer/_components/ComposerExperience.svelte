@@ -4,6 +4,8 @@
   import { activateWhenNear } from "$lib/actions/activate-when-near";
   import LazyMount from "$lib/shared/components/LazyMount.svelte";
   import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
+  import BaseModal from "$lib/shared/foundation/ui/modal/BaseModal.svelte";
+  import LinkChip from "$lib/shared/ui/components/LinkChip.svelte";
   import PropCompositionPreview from "$lib/shared/pictograph/prop/components/PropCompositionPreview.svelte";
   import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
   import { getPropTypeDisplayInfo } from "$lib/shared/pictograph/prop/domain/prop-type-display-registry";
@@ -46,15 +48,6 @@
       page: analyticsRoute(),
       cta_type: "open_composer",
       destination: "/create",
-    });
-  }
-
-  // Each demo section hands off to the part of the app it previews.
-  function trackSectionEntry(ctaType: string, destination: string): void {
-    trackCtaClick("section", {
-      page: analyticsRoute(),
-      cta_type: ctaType,
-      destination,
     });
   }
 
@@ -153,7 +146,9 @@
 
   const reduceMotion = new MediaQuery("(prefers-reduced-motion: reduce)");
   let constructActive = $state(false);
-  let outputsActive = $state(false);
+  let generateActive = $state(false);
+  let tunnelActive = $state(false);
+  let viewerOpen = $state(false);
   let shelfActive = $state(false);
   let webglChecked = $state(false);
   let webglAvailable = $state(false);
@@ -179,38 +174,32 @@
     void heroAct.advanceNow();
   }
 
-  function activateConstruct(node: HTMLElement) {
-    return activateWhenNear(node, {
-      activate: () => {
-        trackSectionView("making", analyticsRoute());
-        constructActive = true;
-      },
-      rootMargin: "420px",
-      deferUntilIdle: true,
-    });
+  // Each stop loads its demonstration as it nears the window and reports the
+  // view once. On the stage, a parked stop is off to the side, so it loads
+  // when a glide is one stop away.
+  function activateNear(section: string, activate: () => void) {
+    return (node: HTMLElement) =>
+      activateWhenNear(node, {
+        activate: () => {
+          trackSectionView(section, analyticsRoute());
+          activate();
+        },
+        rootMargin: "420px",
+        deferUntilIdle: true,
+      });
   }
 
-  function activateOutputs(node: HTMLElement) {
-    return activateWhenNear(node, {
-      activate: () => {
-        trackSectionView("changing", analyticsRoute());
-        outputsActive = true;
-      },
-      rootMargin: "420px",
-      deferUntilIdle: true,
-    });
-  }
-
-  function activateShelf(node: HTMLElement) {
-    return activateWhenNear(node, {
-      activate: () => {
-        trackSectionView("keeping", analyticsRoute());
-        shelfActive = true;
-      },
-      rootMargin: "420px",
-      deferUntilIdle: true,
-    });
-  }
+  const activateConstruct = activateNear(
+    "making",
+    () => (constructActive = true)
+  );
+  const activateGenerate = activateNear(
+    "generating",
+    () => (generateActive = true)
+  );
+  const activateTunnel = activateNear("changing", () => (tunnelActive = true));
+  const activateViewer = activateNear("viewing", () => {});
+  const activateShelf = activateNear("keeping", () => (shelfActive = true));
 </script>
 
 {#snippet propControl()}
@@ -260,6 +249,7 @@
   <div class="tunnel-placeholder" aria-hidden="true">
     <div class="placeholder-stage-wrap">
       <div class="placeholder-square"></div>
+      <div class="placeholder-notation"></div>
       <div class="placeholder-toolbar">
         <div class="placeholder-tool"></div>
         <div class="placeholder-tool"></div>
@@ -267,6 +257,8 @@
       </div>
     </div>
     <div class="placeholder-band-controls">
+      <div class="placeholder-toolbar"></div>
+      <div class="placeholder-toolbar"></div>
       <div class="placeholder-line placeholder-line-title"></div>
       <div class="placeholder-preset-grid">
         {#each Array(7) as _}<div class="placeholder-control"></div>{/each}
@@ -275,32 +267,32 @@
   </div>
 {/snippet}
 
-{#snippet constructPlaceholder()}
-  <div class="construct-placeholder" aria-hidden="true">
+<!-- Both making stops fill a frame of fixed height, so a skeleton that fills
+     the same frame reserves them exactly. -->
+{#snippet makingPlaceholder()}
+  <div class="making-placeholder" aria-hidden="true">
     <div class="placeholder-pane"></div>
     <div class="placeholder-pane"></div>
   </div>
 {/snippet}
 
 {#snippet constructLoadError(_error: unknown, retry: () => void)}
-  <div class="demo-load-error construct-error" role="alert">
+  <div class="demo-load-error making-error" role="alert">
     <p>The step-by-step demonstration did not load.</p>
     <button type="button" onclick={retry}>Try the builder again</button>
   </div>
 {/snippet}
 
+{#snippet generateLoadError(_error: unknown, retry: () => void)}
+  <div class="demo-load-error making-error" role="alert">
+    <p>The generator demonstration did not load.</p>
+    <button type="button" onclick={retry}>Try the generator again</button>
+  </div>
+{/snippet}
+
 {#snippet viewerPlaceholder()}
   <div class="viewer-placeholder">
-    {#if outputsActive}
-      <span class="sr-only" role="status">Loading the live 3D performance.</span
-      >
-    {/if}
-    <!-- The viewer's controls now live on a rail INSIDE the stage, so the
-         skeleton reserves the stage alone. Reserving control rows under it
-         would leave a gap that collapses on activation. -->
-    <div aria-hidden="true">
-      <div class="placeholder-wide"></div>
-    </div>
+    <span role="status">Loading the 3D viewer…</span>
   </div>
 {/snippet}
 
@@ -322,7 +314,7 @@
   <!-- Same bounded frame ComposerGalleryDemo owns, so the swap cannot move
        the footer. Keep the height in step with its .gallery-frame. -->
   <div class="gallery-placeholder" aria-hidden="true">
-    {#each Array.from({ length: 12 }, (_, i) => i) as i (i)}
+    {#each Array.from({ length: 4 }, (_, i) => i) as i (i)}
       <div class="placeholder-card"></div>
     {/each}
   </div>
@@ -398,14 +390,13 @@
 
     <!-- Absolutely positioned, so revealing it cannot move the hero content.
          It marks where the fold is; the section below starts under it. -->
-    <a
+    <LinkChip
       class="scroll-cue"
-      href="#making-title"
-      aria-label="Scroll to Try Composer"
+      href="#construct-title"
+      aria-label="Scroll to Construct a sequence"
     >
-      <span>Scroll</span>
-      <i class="fas fa-chevron-down" aria-hidden="true"></i>
-    </a>
+      Scroll
+    </LinkChip>
   </section>
 
   <section class="notation-bridge" aria-labelledby="notation-title">
@@ -422,95 +413,109 @@
     </div>
   </section>
 
-  <section class="making" aria-labelledby="making-title">
-    <h2 id="making-title" class="making-title">Try Composer</h2>
-
-    <div class="making-demos" use:activateConstruct>
+  <!-- One stop per thing the visitor can do with a sequence, in the order the
+       app offers them: build it, generate it, multiply it, watch it in 3D.
+       The way into the app is the header's Open Flow Arts Composer button on
+       every page, so no stop ends in its own link. -->
+  <section
+    class="stop making-stop"
+    aria-labelledby="construct-title"
+    use:activateConstruct
+  >
+    <h2 id="construct-title">Construct a sequence</h2>
+    <div class="stop-frame construct-frame">
       <LazyMount
-        loader={() => import("./ComposerPractice.svelte")}
+        loader={() => import("../_sections/ConstructSection.svelte")}
         active={constructActive}
         props={{
-          sequence: carriedSequence,
-          onSequenceChange: carryVisitorSequence,
+          presentationMode: "guided-build",
+          embedded: true,
           leftPropType: selectedProp,
           rightPropType: selectedProp,
-          appearance: propAppearance,
+          primaryPropColors,
+          onVisitorComposed: carryVisitorSequence,
           propControl,
         }}
         error={constructLoadError}
         debugName="composer guided construct"
       >
         {#snippet placeholder()}
-          {@render constructPlaceholder()}
+          {@render makingPlaceholder()}
         {/snippet}
       </LazyMount>
-    </div>
-
-    <div class="section-entry">
-      <a
-        href="/create/construct"
-        class="primary-action"
-        data-sveltekit-reload
-        onclick={() => trackSectionEntry("construct", "/create/construct")}
-      >
-        Construct a sequence
-        <i class="fas fa-arrow-right" aria-hidden="true"></i>
-      </a>
     </div>
   </section>
 
   <section
-    class="changing"
-    aria-labelledby="changing-title"
-    use:activateOutputs
+    class="stop making-stop"
+    aria-labelledby="generate-title"
+    use:activateGenerate
   >
-    <div class="changing-intro">
-      <h2 id="changing-title">Put it in a tunnel</h2>
+    <h2 id="generate-title">Generate a sequence</h2>
+    <div class="stop-frame">
+      <LazyMount
+        loader={() => import("./ComposerGenerateDemo.svelte")}
+        active={generateActive}
+        props={{
+          sequence: carriedSequence,
+          embedded: true,
+          leftPropType: selectedProp,
+          rightPropType: selectedProp,
+          appearance: propAppearance,
+          onGenerated: carryVisitorSequence,
+          propControl,
+        }}
+        error={generateLoadError}
+        debugName="composer generate"
+      >
+        {#snippet placeholder()}
+          {@render makingPlaceholder()}
+        {/snippet}
+      </LazyMount>
     </div>
+  </section>
+
+  <section
+    class="stop tunnel-stop"
+    aria-labelledby="tunnel-title"
+    use:activateTunnel
+  >
+    <h2 id="tunnel-title">Put it in a tunnel</h2>
 
     <!-- The tunnel stage and its seven real presets share this band. -->
-    <div class="tunnel-band">
-      <div class="product-frame band-frame">
-        <!-- No {#key}: both demos accept a changing `sequence` prop and swap
-             in place, the way SequenceHeroDemo's player deliberately does. -->
-        <LazyMount
-          loader={() => import("./ComposerTunnelDemo.svelte")}
-          active={outputsActive && !!carriedSequence}
-          props={{
-            sequence: carriedSequence,
-            layout: "band",
-            leftPropType: selectedProp,
-            rightPropType: selectedProp,
-            appearance: propAppearance,
-            propControl,
-          }}
-          error={tunnelLoadError}
-          debugName="composer tunnel"
-        >
-          {#snippet placeholder()}
-            {@render tunnelPlaceholder()}
-          {/snippet}
-        </LazyMount>
-      </div>
-    </div>
-
-    <!-- The 3D band gets no entry yet: 3D Studio still sends guests to a
-         sign-in prompt, so a button there would dead-end. -->
-    <div class="section-entry">
-      <a
-        href="/browse/explore/visuals/tunnels"
-        class="primary-action"
-        data-sveltekit-reload
-        onclick={() =>
-          trackSectionEntry(
-            "community_tunnels",
-            "/browse/explore/visuals/tunnels"
-          )}
+    <div class="product-frame band-frame">
+      <!-- No {#key}: both demos accept a changing `sequence` prop and swap
+           in place, the way SequenceHeroDemo's player deliberately does. -->
+      <LazyMount
+        loader={() => import("./ComposerTunnelDemo.svelte")}
+        active={tunnelActive && !!carriedSequence}
+        props={{
+          sequence: carriedSequence,
+          layout: "band",
+          onGenerated: carryVisitorSequence,
+          leftPropType: selectedProp,
+          rightPropType: selectedProp,
+          appearance: propAppearance,
+          propControl,
+        }}
+        error={tunnelLoadError}
+        debugName="composer tunnel"
       >
-        See community tunnels
-        <i class="fas fa-arrow-right" aria-hidden="true"></i>
-      </a>
+        {#snippet placeholder()}
+          {@render tunnelPlaceholder()}
+        {/snippet}
+      </LazyMount>
     </div>
+  </section>
+
+  <!-- Activation sits on the stop, not the viewer, because small screens
+       hide the viewer and show only the note. -->
+  <section
+    class="stop viewer-stop"
+    aria-labelledby="viewer-title"
+    use:activateViewer
+  >
+    <h2 id="viewer-title">See it in 3D</h2>
 
     <div class="viewer-output">
       <div class="product-frame wide-frame">
@@ -520,17 +525,22 @@
             <p>3D is unavailable in this browser.</p>
           </div>
         {:else}
-          <LazyMount
-            loader={() => import("./Composer3DViewerDemo.svelte")}
-            active={outputsActive && canShow3D && !!carriedSequence}
-            props={{ sequence: carriedSequence }}
-            error={viewerLoadError}
-            debugName="composer 3D viewer"
-          >
-            {#snippet placeholder()}
-              {@render viewerPlaceholder()}
-            {/snippet}
-          </LazyMount>
+          <div class="viewer-entry">
+            <p>Choose the scene, arrange performers, and explore the camera.</p>
+            <button
+              type="button"
+              class="primary-action"
+              disabled={!canShow3D}
+              aria-haspopup="dialog"
+              onclick={() => (viewerOpen = true)}
+            >
+              <i class="fas fa-cube" aria-hidden="true"></i>
+              Enter 3D
+            </button>
+            <p class="viewer-entry-note">
+              Opens a full-window viewer. Close it to return here.
+            </p>
+          </div>
         {/if}
       </div>
     </div>
@@ -546,7 +556,8 @@
       <div class="keeping-lede">
         <p>
           Guests keep three sequences on this device. A full account keeps a
-          cloud library and collections. Browse other people's sequences below.
+          cloud library and collections. Choose a sequence below to watch it
+          here.
         </p>
         <div class="keeping-actions">
           <a href="/browse" class="primary-action">Browse the Gallery</a>
@@ -572,7 +583,109 @@
   <ProjectStory />
 </main>
 
+<BaseModal
+  open={viewerOpen && canShow3D}
+  onclose={() => (viewerOpen = false)}
+  size="full"
+  class="composer-3d-modal"
+  labelledBy="composer-3d-dialog-title"
+>
+  {#snippet header()}
+    <div class="viewer-dialog-header">
+      <h2 id="composer-3d-dialog-title">3D viewer</h2>
+      <button
+        type="button"
+        class="viewer-close"
+        aria-label="Close 3D viewer"
+        onclick={() => (viewerOpen = false)}
+      >
+        <i class="fas fa-xmark" aria-hidden="true"></i>
+      </button>
+    </div>
+  {/snippet}
+  <div class="viewer-dialog-stage">
+    <LazyMount
+      loader={() => import("./Composer3DViewerDemo.svelte")}
+      active={true}
+      props={{ sequence: carriedSequence, fillHeight: true }}
+      error={viewerLoadError}
+      debugName="composer 3D viewer"
+    >
+      {#snippet placeholder()}{@render viewerPlaceholder()}{/snippet}
+    </LazyMount>
+  </div>
+</BaseModal>
+
 <style>
+  .viewer-entry {
+    aspect-ratio: 16 / 9;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1.25rem;
+    padding: 1.5rem;
+    box-sizing: border-box;
+    text-align: center;
+  }
+  .viewer-entry p {
+    margin: 0;
+    max-width: 32rem;
+    line-height: 1.5;
+  }
+  .viewer-entry-note {
+    color: var(--theme-text-secondary);
+    font-size: var(--font-size-min, 0.875rem);
+  }
+  :global(dialog.composer-3d-modal[data-size="full"]) {
+    width: 100vw;
+    max-width: none;
+    height: 100dvh;
+    max-height: 100dvh;
+    margin: 0;
+    border-radius: 0;
+  }
+  :global(.composer-3d-modal .modal-body) {
+    display: flex;
+    overflow: hidden;
+  }
+  .viewer-dialog-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.5rem 1rem;
+    gap: 1rem;
+  }
+  .viewer-dialog-header h2 {
+    margin: 0;
+    font-size: 1.25rem;
+  }
+  .viewer-close {
+    display: grid;
+    place-items: center;
+    width: max(var(--min-touch-target, 48px), 48px);
+    height: max(var(--min-touch-target, 48px), 48px);
+    border: 1px solid var(--theme-stroke);
+    border-radius: var(--settings-radius-lg, 0.85rem);
+    background: var(--theme-card-bg);
+    color: var(--theme-text);
+    cursor: pointer;
+  }
+  .viewer-close:focus-visible {
+    outline: 2px solid var(--theme-accent);
+    outline-offset: 3px;
+  }
+  .viewer-dialog-stage {
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    position: relative;
+  }
+  .viewer-dialog-stage .viewer-placeholder {
+    height: 100%;
+    display: grid;
+    place-items: center;
+  }
   :global(html:has(.composer-page)) {
     scroll-behavior: smooth;
   }
@@ -602,48 +715,11 @@
   }
 
   /* Quiet fold marker. Sits in the hero's bottom padding, out of flow. */
-  .scroll-cue {
+  .opening :global(.scroll-cue) {
     position: absolute;
     left: 50%;
     bottom: 0.65rem;
     transform: translateX(-50%);
-    display: inline-flex;
-    min-block-size: var(--min-touch-target, 44px);
-    box-sizing: border-box;
-    flex-direction: column;
-    align-items: center;
-    gap: 0.3rem;
-    padding: 0.4rem 0.75rem;
-    border-radius: var(--settings-radius-lg, 0.85rem);
-    color: oklch(0.72 0.018 270);
-    font-size: var(--font-size-min, 0.875rem);
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-    text-decoration: none;
-    transition: color 160ms ease;
-  }
-
-  .scroll-cue:hover {
-    color: oklch(0.88 0.02 270);
-  }
-
-  .scroll-cue:focus-visible {
-    outline: 2px solid var(--theme-accent, #8b8cff);
-    outline-offset: 3px;
-  }
-
-  .scroll-cue i {
-    animation: scroll-cue-drift 2.4s ease-in-out infinite;
-  }
-
-  @keyframes scroll-cue-drift {
-    0%,
-    100% {
-      transform: translateY(0);
-    }
-    50% {
-      transform: translateY(0.28rem);
-    }
   }
 
   .opening-copy {
@@ -844,7 +920,7 @@
      192px between columns at 3840. Section rhythm should be constant once it is
      generous; it is the CONTENT that gets the extra 4K width. */
   .keeping {
-    padding-block: clamp(2.5rem, 4.5vw, 4.5rem);
+    padding-block: var(--stop-pad, clamp(2.5rem, 4.5vw, 4.5rem));
   }
 
   .keeping-intro {
@@ -866,17 +942,17 @@
   .keeping-shelf {
     container-type: inline-size;
     min-width: 0;
-    --composer-gallery-height: 88rem;
-  }
-
-  .making {
-    padding-block: clamp(2rem, 4vw, 64px);
-    border-top: 1px solid var(--theme-stroke, oklch(0.45 0.03 270 / 0.2));
-  }
-
-  .making-title {
-    scroll-margin-top: calc(var(--marketing-header-h, 64px) + 1rem);
-    text-align: center;
+    width: 100%;
+    max-width: min(
+      900px,
+      calc((var(--composer-gallery-height) - 110px) * 2.28 + 80px)
+    );
+    margin-inline: auto;
+    --composer-gallery-height: clamp(
+      360px,
+      calc(var(--stop-room, 100dvh) - 220px),
+      480px
+    );
   }
 
   /* px ceiling — see the note on h1. Was 5rem, which the root ramp turned into
@@ -895,22 +971,102 @@
     line-height: 1.7;
   }
 
-  .making-demos {
-    display: grid;
-    gap: clamp(1.5rem, 3vw, 3rem);
-    min-width: 0;
-    margin-top: var(--spacing-lg, 24px);
+  /* ===== Stops =====
+     Each demonstration is a heading over one frame. The stage supplies
+     --stop-room, the height between the header and Next, and --stop-pad, and
+     the frames are sized from them so a stop fills the window it rests in.
+     Without the stage a making stop is about one window tall. The heading's
+     line box is its font size (line-height 1), so the space it takes is known
+     without measuring. */
+  .stop {
+    --stop-pad-plain: clamp(2rem, 4vw, 64px);
+    --stop-title-size: clamp(2.45rem, 1.8rem + 2.5vw, 74px);
+    --stop-gap: var(--spacing-lg, 24px);
+    --stop-head: calc(var(--stop-title-size) + var(--stop-gap));
+    padding-block: var(--stop-pad, var(--stop-pad-plain));
+    border-top: 1px solid var(--theme-stroke, oklch(0.45 0.03 270 / 0.2));
   }
 
-  .construct-placeholder {
-    min-height: clamp(36rem, 52vw, 46rem);
+  .stop > h2 {
+    margin-bottom: var(--stop-gap);
+    font-size: var(--stop-title-size);
+    text-align: center;
+  }
+
+  /* The builder and the generator fill a frame of definite height: both
+     size their panels from it, and the skeleton fills the same box. */
+  .making-stop {
+    container-type: inline-size;
+    --making-fill: calc(
+      var(
+          --stop-room,
+          100dvh - var(--marketing-header-h, 64px) - 2 * var(--stop-pad-plain)
+        ) -
+        var(--stop-head)
+    );
+  }
+
+  /* The width cap keeps a very tall window (3840 x 2160) from stretching
+     a demo into a column of empty space. */
+  .stop-frame {
+    box-sizing: border-box;
+    height: clamp(34rem, var(--making-fill), 62cqw);
+    min-width: 0;
+    overflow: hidden;
+    border: 1px solid var(--theme-stroke, oklch(0.45 0.03 270 / 0.2));
+    border-radius: var(--settings-radius-lg, 0.85rem);
+    background: var(--theme-panel-bg, oklch(0.13 0.025 270 / 0.92));
+  }
+
+  /* The builder's option tiles and step cells stop growing at fixed sizes,
+     so past the frame it gets in a 1920 x 1080 window more room only reads
+     as empty panel. It stops there and sits centered. The generator scales
+     its grid and player with its width, so it keeps the whole room. */
+  .construct-frame {
+    max-width: 108rem;
+    height: clamp(34rem, min(var(--making-fill), 52rem), 62cqw);
+    margin-inline: auto;
+  }
+
+  /* The builder stacks its panels in a narrow stop, and in any window under
+     75rem (its own compact query), so it needs a taller frame there. */
+  @container (max-width: 69rem) {
+    .construct-frame {
+      height: clamp(52rem, 110cqw, 62rem);
+    }
+  }
+
+  @media (max-width: 74.99rem) {
+    .construct-frame {
+      height: clamp(52rem, 110cqw, 62rem);
+    }
+  }
+
+  /* Both demos stack here. Last, so it wins over the rules above. */
+  @container (max-width: 56rem) {
+    .stop-frame {
+      height: clamp(52rem, 170cqw, 74rem);
+    }
+  }
+
+  .making-placeholder,
+  .making-error {
+    box-sizing: border-box;
+    height: 100%;
+  }
+
+  .making-placeholder {
     display: grid;
     grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
     gap: clamp(1.5rem, 3vw, 3rem);
     padding: clamp(1rem, 2.2vw, 1.75rem);
-    border: 1px solid var(--theme-stroke, oklch(0.45 0.03 270 / 0.2));
-    border-radius: 1.5rem;
-    background: var(--theme-panel-bg, oklch(0.13 0.025 270 / 0.92));
+  }
+
+  @container (max-width: 69rem) {
+    .making-placeholder {
+      grid-template-columns: minmax(0, 1fr);
+      grid-template-rows: repeat(2, minmax(0, 1fr));
+    }
   }
 
   .placeholder-pane {
@@ -924,57 +1080,40 @@
     );
   }
 
-  .construct-error {
-    min-height: clamp(36rem, 52vw, 46rem);
-  }
-
-  /* `.making` already ends on 9rem of padding; a matching 8rem here stacked to
-     17rem of nothing between the two sections — most of a screen at 4K, where
-     the root ramp scales every rem. The seam is one generous gap, not two. */
-  .changing {
-    padding: clamp(2.75rem, 4vw, 4rem) 0 clamp(3rem, 5vw, 5rem);
-  }
-
-  .changing-intro {
-    min-width: 0;
-    text-align: center;
-  }
-
-  .tunnel-band {
-    min-width: 0;
-    margin-top: clamp(2rem, 3.5vw, 3.5rem);
-  }
-
   /* The frame hugs the stage-plus-controls composition instead of spanning a
-     wide shell with dark margins on both sides of it. */
+     wide shell with dark margins on both sides of it. On the stage the square
+     also fits the room: less the heading, this frame's padding and border,
+     and the notation rail and toolbar under the square. Without the stage the 200vh fallback
+     leaves the plain page's own sizing in charge. */
   .band-frame {
     max-width: min(100%, 92rem);
     margin-inline: auto;
+    --tunnel-stage-size: min(
+      46rem,
+      62vh,
+      var(--stop-room, 200vh) - var(--stop-head) - 2 * var(--frame-pad) -
+        12.625rem - 2px
+    );
   }
 
-  .viewer-output {
-    margin-top: clamp(2rem, 3.5vw, 3.5rem);
-  }
-
-  /* The way from a demo into the matching part of the app, centred under the
-     demo like the section titles above it. */
-  .section-entry {
-    display: flex;
-    justify-content: center;
-    margin-top: clamp(1.25rem, 2.2vw, 2rem);
-  }
-
-  .section-entry i {
-    transition: transform 160ms ease;
-  }
-
-  .section-entry a:hover i {
-    transform: translateX(0.2em);
+  /* On the stage the 16:9 viewer takes the width that lets its height fit
+     the room under the heading. */
+  .viewer-stop .wide-frame {
+    max-width: min(
+      100%,
+      (
+          var(--stop-room, 200vh) - var(--stop-head) - 2 * var(--frame-pad) -
+            2px
+        ) *
+        16 / 9 + 2 * var(--frame-pad) + 2px
+    );
+    margin-inline: auto;
   }
 
   .product-frame {
+    --frame-pad: clamp(0.75rem, 1.7vw, 1.4rem);
     min-width: 0;
-    padding: clamp(0.75rem, 1.7vw, 1.4rem);
+    padding: var(--frame-pad);
     border: 1px solid var(--theme-stroke, oklch(0.45 0.03 270 / 0.2));
     border-radius: clamp(1rem, 1.5vw, 1.5rem);
     background: var(--theme-panel-bg, oklch(0.13 0.025 270 / 0.94));
@@ -991,17 +1130,23 @@
     );
   }
 
-  /* Mirrors ComposerTunnelDemo's band: stage width min(46rem, 62vh), a
-     controls column beside it, stacked under 60rem. */
+  /* Mirrors ComposerTunnelDemo's band: the stage track (--tunnel-stage-size,
+     set on .band-frame), a controls column beside it, stacked under 60rem. */
   .tunnel-placeholder {
     display: grid;
-    grid-template-columns: minmax(0, min(46rem, 62vh)) minmax(16rem, 30rem);
+    grid-template-columns:
+      minmax(0, var(--tunnel-stage-size, min(46rem, 62vh)))
+      minmax(16rem, 30rem);
     gap: clamp(1.5rem, 4vw, 3rem);
     align-items: center;
     justify-content: center;
   }
   .placeholder-stage-wrap {
     min-width: 0;
+  }
+  .placeholder-notation {
+    height: 8.125rem;
+    margin-top: 0.75rem;
   }
   .placeholder-toolbar {
     display: flex;
@@ -1130,7 +1275,7 @@
   .gallery-placeholder,
   .gallery-error {
     box-sizing: border-box;
-    height: var(--composer-gallery-height, 80rem);
+    height: var(--composer-gallery-height, 36rem);
     padding: clamp(0.75rem, 1.7vw, 1.4rem);
     border: 1px solid var(--theme-stroke, oklch(0.45 0.03 270 / 0.2));
     border-radius: clamp(1rem, 1.5vw, 1.5rem);
@@ -1156,8 +1301,7 @@
   }
 
   @media (max-width: 70rem) {
-    .opening,
-    .making {
+    .opening {
       grid-template-columns: 1fr;
     }
 
@@ -1189,15 +1333,6 @@
       width: min(100%, 38rem);
       --hero-demo-max-width: min(100%, 38rem, 31svh);
     }
-
-    .construct-placeholder {
-      min-height: 38rem;
-      grid-template-columns: 1fr;
-    }
-
-    .placeholder-pane:last-child {
-      display: none;
-    }
   }
 
   @media (max-width: 60rem) {
@@ -1206,7 +1341,7 @@
     }
 
     .placeholder-square {
-      width: min(46rem, 62vh, 100%);
+      width: min(var(--tunnel-stage-size, min(46rem, 62vh)), 100%);
       margin-inline: auto;
     }
   }
@@ -1221,7 +1356,7 @@
      width and the hero grows past the fold instead of shrinking it. */
   @media (max-width: 48rem) {
     .keeping-shelf {
-      --composer-gallery-height: 56rem;
+      --composer-gallery-height: 36rem;
     }
 
     .opening {
@@ -1232,7 +1367,7 @@
       --hero-demo-max-width: min(100%, 22rem);
     }
 
-    .scroll-cue {
+    .opening :global(.scroll-cue) {
       position: static;
       transform: none;
       justify-self: center;
@@ -1339,17 +1474,12 @@
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .scroll-cue i {
-      animation: none;
-    }
-
     :global(html:has(.composer-page)) {
       scroll-behavior: auto;
     }
 
     .primary-action,
     .open-app i,
-    .section-entry i,
     .demo-load-error button,
     .opening {
       transition: none;

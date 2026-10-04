@@ -3,7 +3,11 @@ import { flushSync } from "svelte";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createStepData } from "$lib/shared/foundation/domain/factories/create-step-data";
 import { createSequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import { createPlaceholderMotion } from "$lib/shared/pictograph/shared/domain/models/motion-data";
+import { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
 import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+import { createEmptyPostProject } from "$lib/shared/media-composition/domain/post-project";
+import { loadPostProject } from "$lib/shared/media-composition/services/post-project-store";
 import { settingsService } from "$lib/shared/settings/state/settings-state.svelte";
 import { createViewerUrlSession } from "$lib/shared/sequence-viewer/services/viewer-url-session";
 import { encodeViewerStateParams } from "$lib/shared/sequence-viewer/services/viewer-url-state-codec";
@@ -63,11 +67,20 @@ function seededUrl(prop: PropType): URLSearchParams {
   );
 }
 
-function mountStudio(url = new URLSearchParams()) {
+function mountStudio(
+  url = new URLSearchParams(),
+  initialProject?: ReturnType<typeof createEmptyPostProject>,
+  studioSequence = sequence
+) {
   const session = createViewerUrlSession(url, { writeParams: () => undefined });
   const surfaces = createViewerStudioSurfaces();
   surfaces.enter(0, false, 60);
-  render(PostStudioTestHarness, { sequence, session, surfaces });
+  render(PostStudioTestHarness, {
+    sequence: studioSequence,
+    initialProject,
+    session,
+    surfaces,
+  });
   flushSync();
   const controls = () => {
     const current = surfaces.controls;
@@ -79,6 +92,7 @@ function mountStudio(url = new URLSearchParams()) {
 
 describe("Post Studio prop against the settings prop", () => {
   beforeEach(() => {
+    localStorage.removeItem(`tka:post-studio:project:v2:${sequence.id}`);
     changeSettingsProp(PropType.STAFF);
   });
 
@@ -118,5 +132,51 @@ describe("Post Studio prop against the settings prop", () => {
       expect(controls().propType).toBe(PropType.TRIAD);
       expect(session.captureNow().ps).toEqual({ propType: PropType.TRIAD });
     }
+  });
+
+  it("restores the saved project prop and saves an explicit change", () => {
+    const project = {
+      ...createEmptyPostProject({ sequenceId: sequence.id, now: 1 }),
+      propType: PropType.STAFF,
+    };
+    const { controls } = mountStudio(new URLSearchParams(), project);
+
+    changeSettingsProp(PropType.TRIANGLE);
+    expect(controls().propType).toBe(PropType.STAFF);
+
+    controls().setProp(PropType.CLUB);
+    flushSync();
+    expect(loadPostProject(sequence.id)?.propType).toBe(PropType.CLUB);
+
+    changeSettingsProp(PropType.FAN);
+    expect(controls().propType).toBe(PropType.CLUB);
+  });
+
+  it("uses a visible sequence prop for an older project without a saved prop", () => {
+    const staffSequence = createSequenceData({
+      id: "post-studio-sequence-staff",
+      name: "Staff",
+      word: "A",
+      steps: [
+        createStepData({
+          letter: "A",
+          motions: {
+            left: {
+              ...createPlaceholderMotion(HandSide.LEFT),
+              isVisible: true,
+              propType: PropType.STAFF,
+            },
+          },
+        }),
+      ],
+    });
+    const { controls } = mountStudio(
+      new URLSearchParams(),
+      createEmptyPostProject({ sequenceId: staffSequence.id, now: 1 }),
+      staffSequence
+    );
+
+    changeSettingsProp(PropType.TRIANGLE);
+    expect(controls().propType).toBe(PropType.STAFF);
   });
 });

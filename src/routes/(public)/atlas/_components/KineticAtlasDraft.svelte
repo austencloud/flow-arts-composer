@@ -1,4 +1,5 @@
 <script lang="ts">
+  import LinkChip from "$lib/shared/ui/components/LinkChip.svelte";
   import "$lib/shared/landing/styles/public-editorial.css";
   import { onMount, tick } from "svelte";
   import { MediaQuery } from "svelte/reactivity";
@@ -808,8 +809,10 @@
     {/if}
 
     <p class="creator-credit">
-      A reference for <a href="/history">Flow Arts History</a> ·
-      <a href="/guide">Guide</a>
+      A reference for <LinkChip size="inline" href="/history"
+        >Flow Arts History</LinkChip
+      >
+      · <LinkChip size="inline" href="/guide">Guide</LinkChip>
     </p>
   </div>
 </div>
@@ -1238,7 +1241,15 @@
   }
   .term-item {
     border-bottom: 1px solid oklch(0.5 0.03 270 / 0.1);
-    scroll-margin-top: 130px; /* deep links clear the header + mobile bar */
+    /* The marketing root's scroll padding clears the site header; this adds
+       the sticky mobile bar under it, so deep links land below both. */
+    scroll-margin-top: 50px;
+  }
+  @media (min-width: 1024px) {
+    /* No mobile bar here, so the root padding alone clears the header. */
+    .term-item {
+      scroll-margin-top: 0;
+    }
   }
   .term-item:last-child {
     border-bottom: none;
@@ -1478,14 +1489,6 @@
   .back-top:focus-visible {
     outline: 2px solid oklch(0.65 0.13 275);
     outline-offset: 2px;
-  }
-
-  .creator-credit a {
-    color: oklch(0.6 0.1 275);
-    text-decoration: none;
-  }
-  .creator-credit a:hover {
-    color: oklch(0.8 0.08 275);
   }
 
   /* ── entry motion: one orchestrated fade-up when a view mounts ── */

@@ -36,6 +36,7 @@ import {
   appendFileSync,
   existsSync,
   lstatSync,
+  readdirSync,
   realpathSync,
   rmSync,
   statSync,
@@ -43,7 +44,7 @@ import {
   writeFileSync,
 } from "node:fs";
 import { isAbsolute, join, relative, resolve } from "node:path";
-import { pathToFileURL } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 
 const SKIP_BRANCH_PREFIXES = [
   "wip/",
@@ -228,6 +229,40 @@ function removeRootNodeModules(worktreePath) {
   console.log("    removed task-owned node_modules directory");
 }
 
+/**
+ * List every reparse point (symlink or junction) under a worktree without
+ * descending into any of them. `git worktree remove` follows junctions and
+ * deletes the target's files, so nothing may remain linked when it runs.
+ */
+function findReparsePoints(root) {
+  const found = [];
+  const walk = (dir) => {
+    for (const entry of readdirSync(dir)) {
+      const path = join(dir, entry);
+      const metadata = lstatSync(path);
+      if (metadata.isSymbolicLink()) found.push(path);
+      else if (metadata.isDirectory()) walk(path);
+    }
+  };
+  walk(root);
+  return found;
+}
+
+function assertNoReparsePoints(
+  worktreePath,
+  { allowRootNodeModules = false } = {}
+) {
+  const rootNodeModules = join(worktreePath, "node_modules");
+  const remaining = findReparsePoints(worktreePath).filter(
+    (path) => !(allowRootNodeModules && path === rootNodeModules)
+  );
+  if (remaining.length) {
+    fail(
+      `refusing to remove worktree while links remain (git worktree remove would delete their targets): ${remaining.join(", ")}`
+    );
+  }
+}
+
 function localFinish() {
   const url = deliveryUrl();
   const worktrees = listWorktrees();
@@ -246,6 +281,7 @@ function localFinish() {
   if (statusCodes(task.path).length) {
     fail(`task worktree is dirty: ${task.path}`);
   }
+  assertNoReparsePoints(task.path, { allowRootNodeModules: true });
   assertNoGitOperation(primary.path);
 
   const taskHead = git(["rev-parse", FINISH_BRANCH]);
@@ -290,6 +326,14 @@ function localFinish() {
       } else {
         run("npm", ["run", "check"], { cwd: task.path, stdio: "inherit" });
       }
+      // svelte-check no longer reads components; compile the changed ones.
+      const compileGate = fileURLToPath(
+        new URL("svelte-compile-gate.mjs", import.meta.url)
+      );
+      run(process.execPath, [compileGate, mainBefore], {
+        cwd: task.path,
+        stdio: "inherit",
+      });
     } else if (!SKIP_CHECKS) {
       console.log(
         "    skipping `npm run check` for documentation-only changes"
@@ -332,6 +376,7 @@ function localFinish() {
   }
 
   removeRootNodeModules(task.path);
+  assertNoReparsePoints(task.path);
   git(["worktree", "remove", "--force", task.path]);
   git(["branch", "-d", FINISH_BRANCH]);
   git(["worktree", "prune"]);

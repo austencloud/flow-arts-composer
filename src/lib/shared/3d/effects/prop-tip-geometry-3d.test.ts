@@ -51,6 +51,9 @@ describe("resolvePropTipAnchors3D", () => {
     expect(anchors).toEqual(
       FAN_FIRE_WICK_CENTERS_M.map((offset) => ({
         effectTipIndex: 1,
+        // Every wick shares slot 1, so every wick keys the centre rib, the
+        // 2D fan's primary trail tip.
+        effectKeyIndex: 2,
         offset: { ...offset },
       }))
     );
@@ -61,6 +64,9 @@ describe("resolvePropTipAnchors3D", () => {
     expect(anchors).toEqual(
       FAN_DAY_RIM_POINTS_M.map((offset) => ({
         effectTipIndex: 1,
+        // Every wick shares slot 1, so every wick keys the centre rib, the
+        // 2D fan's primary trail tip.
+        effectKeyIndex: 2,
         offset: { ...offset },
       }))
     );
@@ -71,6 +77,9 @@ describe("resolvePropTipAnchors3D", () => {
     expect(anchors).toEqual(
       FAN_LOTUS_WICK_CENTERS_M.map((offset) => ({
         effectTipIndex: 1,
+        // Every wick shares slot 1, so every wick keys the centre rib, the
+        // 2D fan's primary trail tip.
+        effectKeyIndex: 2,
         offset: { ...offset },
       }))
     );

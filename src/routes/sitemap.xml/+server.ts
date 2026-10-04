@@ -53,7 +53,7 @@ const pages: SitemapEntry[] = [
   { url: "shape-engine" },
   // /notation/loops is gated in production (404 via its +page.server.ts) while
   // the LOOP algebra page gets rebuilt. Un-gate before re-listing it.
-  { url: "notation/caps" },
+  // /notation/caps is gated the same way (2026-09-29) until it is rewritten.
   // The Kinetic Atlas is behind a noindex Coming Soon gate while it is rebuilt.
   // Re-list it when the production gate is removed.
   // The staff choreography article is deliberately absent while it awaits
@@ -83,6 +83,7 @@ const pages: SitemapEntry[] = [
   { url: "guide/level-2/turns" },
   { url: "guide/level-2/double-turns" },
   { url: "guide/ratios" },
+  { url: "guide/prospin-and-inspin" },
   { url: "guide/motion-paths" },
   { url: "guide/codex" },
   // The interactive lesson course. The index is the course landing; each

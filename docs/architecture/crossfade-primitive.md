@@ -70,6 +70,26 @@ short directional drift through the shared motion helper, and animates a changed
 natural height on the same clock when `animateHeight` is enabled. This is the
 canonical wizard-step transition; feature code does not reproduce it.
 
+### Focus follows the swap
+
+A key change often comes from a control inside the leaving layer, such as Play
+trading places with the playing controls. The primitive moves focus to the
+replacing layer's first control, or to that layer when it has none, on the same
+commit that makes the leaving layer inert and before it is `aria-hidden`.
+Otherwise the browser drops focus to `<body>` and a keyboard or screen-reader
+user starts again from the top of the page. A layer with no controls is an
+unnamed box to a screen reader, so a consumer passes `label` for that key and
+the layer becomes a named group, as the Construct demo's action slot is during
+the start pick ("Choose your start placement"). Consumers that want a specific
+target still move focus after `tick()`; that runs later and wins. Controls a
+consumer renders outside the keyed region are its own to focus. When such a
+control goes away with the key change, as the Construct demo's phone-width play
+actions do, the consumer binds the Crossfade and calls `focusShown()` after
+`tick()`. It makes the same handoff and returns the element that took focus,
+so the consumer can scroll it into view. It looks the shown layer up rather
+than trusting a `bind:this` inside the content, because a key that returns to
+a layer still fading out resumes that layer instead of remounting it.
+
 ## What is on the primitive (migrated 2026-06-30)
 
 | File                                             | Mode              | Note                                                                |

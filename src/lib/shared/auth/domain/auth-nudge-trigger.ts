@@ -82,7 +82,7 @@ export const AUTH_NUDGE_TEXTS: Record<AuthNudgeTrigger, string> = {
   "module:learn": "Create a free account to start learning TKA notation.",
   "module:library":
     "Your saved sequences live here. Log in or create a free account to see them.",
-  "module:settings": "Create a free account to customize your settings.",
+  "module:settings": "Create a free account to manage notifications.",
   "module:stage":
     "Create a free account to use 3D Studio and choreograph sequences in 3D.",
   "module:other": "Create a free account to open this part of the app.",
@@ -230,8 +230,8 @@ const AUTH_PROMPT_CONTENTS: Record<AuthNudgeTrigger, AuthPromptContent> = {
   },
   "module:settings": {
     key: "module:settings",
-    title: "Save your settings",
-    body: "Sign in or create an account to customize your settings.",
+    title: "Notification settings",
+    body: "Sign in or create an account to manage notifications.",
   },
   "module:stage": {
     key: "module:stage",
@@ -351,14 +351,17 @@ export function createMethodNudgeTrigger(methodId: string): AuthNudgeTrigger {
   return CREATE_METHOD_NUDGE_TRIGGERS[methodId] ?? "module:other";
 }
 
+// One key for both modes: the key marks a new encounter, and switching between
+// signing in and creating an account is the same encounter. A per-mode key
+// reset the open email form every time someone pressed the switch.
 const GENERIC_AUTH_PROMPTS: Record<AuthMode, AuthPromptContent> = {
   signup: {
-    key: "generic-signup",
+    key: "generic",
     title: "Create your account",
     body: "Save your sequences and open them on any device.",
   },
   signin: {
-    key: "generic-signin",
+    key: "generic",
     title: "Welcome back",
     body: "Sign in to open your saved work.",
   },

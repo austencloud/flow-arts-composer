@@ -1,7 +1,18 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { updateItem } from "$lib/shared/media-composition/domain/post-project-edits";
+import {
+  clearProjectKeyframes,
+  updateItem,
+} from "$lib/shared/media-composition/domain/post-project-edits";
+import {
+  setKeyframe,
+  keyframeCount,
+} from "$lib/shared/media-composition/domain/post-project-keyframes";
+import { card, overlay, project as rawProject } from "./post-project-fixtures";
 import { createPostEditorState } from "$lib/shared/media-composition/state/post-editor-state.svelte";
+import { addTakeTap } from "$lib/shared/media-composition/domain/take-timing";
+import { loadTakeTiming } from "$lib/shared/media-composition/services/take-timing-store";
+import { DEFAULT_MAPPING_PREVIEW_APPEARANCE } from "$lib/shared/share/components/post-studio/builder/post-timing-animation";
 
 const LABELS = { runThrough: "Run through", slowMo: "Slow mo", card: "Card" };
 
@@ -23,6 +34,189 @@ function createEditor() {
 
 describe("post editor history", () => {
   beforeEach(() => localStorage.clear());
+
+  it("undoes a PiP Progress edit without changing neighboring appearance, timing or keyframes", () => {
+    const editor = createEditor();
+    const moves = setKeyframe(overlay("moves", "moves"), "opacity", 0.5, 0.6);
+    editor.edit(() =>
+      rawProject(
+        [card("base")],
+        [[moves, overlay("neighbor", "moves", { start: 4 })]]
+      )
+    );
+    const before = editor.project;
+    editor.edit((project, ctx) =>
+      updateItem(
+        project,
+        "moves",
+        {
+          animationAppearance: { progressBar: false },
+        },
+        ctx
+      )
+    );
+    const after = editor.project;
+    const items = after.tracks[1]!.items;
+    expect(items[0]).toEqual({
+      ...moves,
+      animationAppearance: { progressBar: false },
+    });
+    expect(items[1]).toEqual(before.tracks[1]!.items[1]);
+    editor.undo();
+    expect(editor.project).toEqual(before);
+    editor.redo();
+    expect(editor.project).toEqual(after);
+  });
+
+  it("undoes a whole-post clear of multiple clips in one step", () => {
+    const editor = createEditor();
+    const first = setKeyframe(card("first"), "opacity", 0, 0.2);
+    const second = setKeyframe(card("second"), "opacity", 0, 0.4);
+    editor.edit(() => rawProject([first, second]));
+    const before = editor.project;
+    expect(
+      editor.edit((project, ctx) => clearProjectKeyframes(project, 0, ctx))
+    ).toBe(true);
+    expect(
+      editor.project.tracks[0]!.items.map((item) => keyframeCount(item))
+    ).toEqual([0, 0]);
+    expect(
+      editor.edit((project, ctx) => clearProjectKeyframes(project, 0, ctx))
+    ).toBe(false);
+    editor.undo();
+    expect(editor.project).toBe(before);
+    expect(
+      editor.project.tracks[0]!.items.map((item) => keyframeCount(item))
+    ).toEqual([1, 1]);
+  });
+
+  it("undoes, redoes, and persists take timing without reviving stale redo", () => {
+    const editor = createEditor();
+    editor.addCatalogVideo({
+      videoId: "timed-take",
+      label: "Take",
+      url: "https://example.test/take.mp4",
+      durationSeconds: 40,
+    });
+    const takeId = editor.takes[0]!.id;
+    const takeKey = editor.timing(takeId)!.takeKey;
+    const taps = () => editor.timing(takeId)!.sections[0]!.taps;
+    const savedTaps = () =>
+      loadTakeTiming(sequence().id, takeKey)!.sections[0]!.taps;
+
+    editor.editTiming(takeId, (current) =>
+      addTakeTap(current, 2, editor.moveBeats)
+    );
+    editor.editTiming(takeId, (current) =>
+      addTakeTap(current, 3, editor.moveBeats)
+    );
+    expect(taps()).toEqual([2, 3]);
+    editor.undoTiming(takeId);
+    expect(taps()).toEqual([2]);
+    expect(savedTaps()).toEqual([2]);
+    expect(editor.canRedoTiming(takeId)).toBe(true);
+    editor.redoTiming(takeId);
+    expect(taps()).toEqual([2, 3]);
+    expect(savedTaps()).toEqual([2, 3]);
+
+    editor.undoTiming(takeId);
+    editor.editTiming(takeId, (current) =>
+      addTakeTap(current, 4, editor.moveBeats)
+    );
+    expect(taps()).toEqual([2, 4]);
+    expect(savedTaps()).toEqual([2, 4]);
+    expect(editor.canRedoTiming(takeId)).toBe(false);
+  });
+
+  it("undoes interleaved mapping appearance and taps per take without reverting timeline edits", () => {
+    const editor = createEditor();
+    for (const videoId of ["take-a", "take-b"])
+      editor.addCatalogVideo({
+        videoId,
+        label: videoId,
+        url: `https://example.test/${videoId}.mp4`,
+        durationSeconds: 40,
+      });
+    const [first, second] = editor.takes.map((take) => take.id);
+    const firstAppearance = {
+      ...DEFAULT_MAPPING_PREVIEW_APPEARANCE,
+      props: false,
+    };
+    const secondAppearance = {
+      ...DEFAULT_MAPPING_PREVIEW_APPEARANCE,
+      darkMode: false,
+    };
+    editor.editTiming(first!, (timing) =>
+      addTakeTap(timing, 2, editor.moveBeats)
+    );
+    expect(editor.editMappingPreviewAppearance(first!, firstAppearance)).toBe(
+      true
+    );
+    expect(editor.canUndoTiming(first!)).toBe(true);
+    editor.edit((project) => ({
+      ...project,
+      tracks: rawProject([card("unrelated")]).tracks,
+    }));
+    const timeline = editor.project.tracks;
+    editor.editTiming(first!, (timing) =>
+      addTakeTap(timing, 3, editor.moveBeats)
+    );
+    editor.editMappingPreviewAppearance(first!, secondAppearance);
+    editor.editMappingPreviewAppearance(second!, firstAppearance);
+
+    editor.undoTiming(first!);
+    expect(editor.project.mappingPreviewAppearances?.[first!]).toEqual(
+      firstAppearance
+    );
+    expect(editor.project.tracks).toEqual(timeline);
+    expect(editor.project.mappingPreviewAppearances?.[second!]).toEqual(
+      firstAppearance
+    );
+    editor.undoTiming(first!);
+    expect(editor.timing(first!)!.sections[0]!.taps).toEqual([2]);
+    editor.undoTiming(first!);
+    expect(editor.project.mappingPreviewAppearances?.[first!]).toBeUndefined();
+    expect(editor.project.mappingPreviewAppearances?.[second!]).toEqual(
+      firstAppearance
+    );
+    expect(editor.project.tracks).toEqual(timeline);
+    editor.redoTiming(first!);
+    editor.redoTiming(first!);
+    editor.redoTiming(first!);
+    expect(editor.project.mappingPreviewAppearances?.[first!]).toEqual(
+      secondAppearance
+    );
+    expect(editor.timing(first!)!.sections[0]!.taps).toEqual([2, 3]);
+    expect(editor.project.tracks).toEqual(timeline);
+  });
+
+  it("joins rapid edits to one mapping control into one take undo step", () => {
+    const editor = createEditor();
+    editor.addCatalogVideo({
+      videoId: "take-effects",
+      label: "Take",
+      url: "https://example.test/take-effects.mp4",
+      durationSeconds: 40,
+    });
+    const takeId = editor.takes[0]!.id;
+    editor.editMappingPreviewAppearance(
+      takeId,
+      { ...DEFAULT_MAPPING_PREVIEW_APPEARANCE, props: false },
+      "effort"
+    );
+    editor.editMappingPreviewAppearance(
+      takeId,
+      { ...DEFAULT_MAPPING_PREVIEW_APPEARANCE, darkMode: false },
+      "effort"
+    );
+    editor.undoTiming(takeId);
+    expect(editor.project.mappingPreviewAppearances?.[takeId]).toBeUndefined();
+    expect(editor.canUndoTiming(takeId)).toBe(false);
+    editor.redoTiming(takeId);
+    expect(editor.project.mappingPreviewAppearances?.[takeId]?.darkMode).toBe(
+      false
+    );
+  });
 
   it("undoes and redoes the Tutorial's timing split along with the post", () => {
     const editor = createEditor();
@@ -80,7 +274,9 @@ describe("post editor sessions", () => {
       return item?.kind === "video" ? item.zoom : Number.NaN;
     };
     const setZoom = (value: number) =>
-      editor.edit((project, context) => updateItem(project, clip.id, { zoom: value }, context));
+      editor.edit((project, context) =>
+        updateItem(project, clip.id, { zoom: value }, context)
+      );
     return { editor, clip, zoom, setZoom };
   }
 
@@ -111,7 +307,9 @@ describe("post editor sessions", () => {
     editor.undo();
     expect(zoom()).toBe(1);
     editor.undo();
-    expect(editor.project.tracks.flatMap((track) => track.items)).toHaveLength(0);
+    expect(editor.project.tracks.flatMap((track) => track.items)).toHaveLength(
+      0
+    );
   });
 
   it("puts the project and both undo lists back when cancelled", () => {
@@ -141,7 +339,9 @@ describe("post editor sessions", () => {
 
     expect(editor.project).toBe(before);
     editor.undo();
-    expect(editor.project.tracks.flatMap((track) => track.items)).toHaveLength(0);
+    expect(editor.project.tracks.flatMap((track) => track.items)).toHaveLength(
+      0
+    );
     expect(zoom()).toBeNaN();
   });
 

@@ -12,6 +12,8 @@
   import Grid3D from "$lib/shared/3d/components/Grid3D.svelte";
   import LiveSequencePerformer3D from "$lib/shared/3d/performers/LiveSequencePerformer3D.svelte";
   import type { StanceYawTrack } from "$lib/shared/3d/collision/stance-yaw-track";
+  import type { BodyClearanceTrack } from "$lib/shared/3d/collision/body-clearance";
+  import type { PerformerHandDistance } from "$lib/shared/3d/domain/performer-hand-distance";
 
   interface Props {
     id: string;
@@ -28,6 +30,23 @@
      */
     propLengthCm?: number | null;
     /**
+     * Where the hands sit from the grid center. Null keeps the performer's
+     * fixed distance.
+     */
+    handDistance?: PerformerHandDistance | null;
+    /**
+     * Move the body off the staffs: the hips with the feet planted, or a
+     * step. Null keeps today's performer.
+     */
+    bodyClearance?: "shift" | "step" | null;
+    /**
+     * The drawn hand and outer rings in metres, for hands that sit somewhere
+     * other than the fixed distance. Undefined sizes them from the global
+     * staff length, as every other scene does.
+     */
+    handPointRadius?: number;
+    outerPointRadius?: number;
+    /**
      * The grid stays centred on the performer in every pane, because that is
      * the corrected anchoring. What changes is how much of it is drawn: the
      * wide reference pane names its points, and the close panes keep only the
@@ -43,6 +62,8 @@
      * needs to report the curve.
      */
     onStanceTrack?: (track: StanceYawTrack | null) => void;
+    /** The body's planned move, for the pane that reports it. */
+    onBodyClearanceTrack?: (track: BodyClearanceTrack | null) => void;
     onCollisionEvents?: (
       events: CollisionEvent[],
       diagnostics: AvatarPoseDiagnostics,
@@ -57,9 +78,14 @@
     characterId,
     propType,
     propLengthCm = null,
+    handDistance = null,
+    bodyClearance = null,
+    handPointRadius,
+    outerPointRadius,
     gridEmphasis = "reference",
     showGridLabels = true,
     onStanceTrack,
+    onBodyClearanceTrack,
     onCollisionEvents,
   }: Props = $props();
 
@@ -87,6 +113,8 @@
   {characterId}
   {propType}
   {propLengthCm}
+  {handDistance}
+  {bodyClearance}
   {sequence}
   effectId="led"
   phaseOffsetSteps={phase}
@@ -96,6 +124,7 @@
   enableLocomotion={false}
   enableFootPlanting={false}
   {onStanceTrack}
+  {onBodyClearanceTrack}
   {onCollisionEvents}
 >
   {#snippet gridSlot()}
@@ -105,6 +134,8 @@
         gridMode="diamond"
         planeMode={PlaneMode.WALL}
         planeOpacity={PLANE_SURFACE_OPACITY}
+        {handPointRadius}
+        {outerPointRadius}
         {showLabels}
         showOrientationHelpers={false}
       />

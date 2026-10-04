@@ -1,4 +1,5 @@
 <script lang="ts">
+  import LinkChip from "$lib/shared/ui/components/LinkChip.svelte";
   import { tick } from "svelte";
 
   import Crossfade from "$lib/shared/components/Crossfade.svelte";
@@ -335,28 +336,28 @@
         </div>
 
         <div class="advanced" aria-label="Other ways to begin">
-          <button
-            type="button"
+          <PanelButton
             onclick={() => {
               dismiss();
               onOpenChoreography();
-            }}>Keep this example and choreograph it</button
+            }}>Keep this example and choreograph it</PanelButton
           >
-          <button
-            type="button"
+          <PanelButton
             onclick={() => {
               dismiss();
               onChooseSequence();
-            }}>Open a sequence from your library</button
+            }}>Open a sequence from your library</PanelButton
           >
           {#if showDirector}
-            <a href={directorHref}
-              >Director preview &amp; JSON
-              <span
-                >Expert workspace. It does not load this unsaved Stage project
-                yet.</span
-              ></a
-            >
+            <div class="director-link">
+              <LinkChip href={directorHref}
+                >Director preview &amp; JSON</LinkChip
+              >
+              <p>
+                Expert workspace. It does not load this unsaved Stage project
+                yet.
+              </p>
+            </div>
           {/if}
         </div>
       </div>
@@ -697,34 +698,16 @@
     border-top: 1px solid var(--theme-stroke);
   }
 
-  .advanced button,
-  .advanced a {
-    min-height: var(--min-touch-target, 44px);
-    border: 0;
-    background: transparent;
-    color: var(--theme-text-dim);
-    font: inherit;
-    font-size: 1rem;
-    text-align: left;
-    cursor: pointer;
-  }
-
-  .advanced button:hover,
-  .advanced button:focus-visible,
-  .advanced a:hover,
-  .advanced a:focus-visible {
-    color: var(--theme-text);
-    text-decoration: underline;
-  }
-
-  .advanced a {
-    display: grid;
+  .director-link {
+    display: flex;
+    flex-wrap: wrap;
     grid-column: 1 / -1;
-    align-content: center;
-    text-decoration: none;
+    align-items: center;
+    gap: 0.25rem 0.75rem;
   }
 
-  .advanced a span {
+  .director-link p {
+    margin: 0;
     color: var(--theme-text-dim);
     font-size: 0.9375rem;
     line-height: 1.5;
@@ -995,10 +978,6 @@
 
     .advanced {
       grid-template-columns: 1fr;
-    }
-
-    .advanced a {
-      grid-column: auto;
     }
 
     .choice-card.visual-choice {

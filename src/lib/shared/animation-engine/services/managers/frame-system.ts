@@ -1,16 +1,15 @@
 /**
  * FrameSystem
  *
- * Owns per-frame parameter building, beat/turns/musical-position label
- * calculation, and glyph-state synchronisation for a single animator instance.
+ * Owns per-frame parameter building, beat/musical-position label calculation,
+ * and glyph-state synchronisation for a single animator instance.
  *
  * Extracted from AnimationEngine to reduce its surface area.  All logic is
  * moved verbatim — no behavior changes on the per-frame hot path.
  *
  * Depends on:
  *  - AnimatorState (type only — written to via setGlyphState)
- *  - CanvasLifecycleManager (type only — reads glyphTransition, orchestrator,
- *    turnsTupleGenerator)
+ *  - CanvasLifecycleManager (type only — reads glyphTransition, orchestrator)
  *  - PropSystem (type only — reads prevDarkMode)
  *  - EffectRendererManager (passed into FrameParameterBuilder.getFrameParams)
  *
@@ -81,6 +80,7 @@ export class FrameSystem {
     this.mandalaPathOptions.motionAware = pathPolicy.motionAwarePaths;
     params.mandalaVisible =
       props.mandalaVisibleOverride ?? this.state.visibilityState.mandala;
+    params.mandalaStrokeWidth = props.mandalaStrokeWidthOverride;
     params.mandalaSteps = props.sequenceData?.steps ?? null;
     params.mandalaPathOptions = this.mandalaPathOptions;
     return params;
@@ -91,13 +91,6 @@ export class FrameSystem {
     return this.frameBuilder.calculateBeatNumber(
       props.sequenceData ?? null,
       props.stepData ?? null
-    );
-  }
-
-  calculateTurnsTuple(props: AnimationEngineProps): string {
-    return this.frameBuilder.calculateTurnsTuple(
-      props.stepData ?? null,
-      this.deps.lifecycleManager.turnsTupleGenerator ?? null
     );
   }
 
@@ -129,11 +122,9 @@ export class FrameSystem {
     const gs = glyphTransition.state;
     this.state.setGlyphState({
       displayedLetter: gs.displayedLetter,
-      displayedTurnsTuple: gs.displayedTurnsTuple,
       displayedStepNumber: gs.displayedStepNumber,
       displayedMusicalPosition: gs.displayedMusicalPosition,
       fadingOutLetter: gs.fadingOutLetter,
-      fadingOutTurnsTuple: gs.fadingOutTurnsTuple,
       fadingOutStepNumber: gs.fadingOutStepNumber,
       isNewLetter: gs.isNewLetter,
     });

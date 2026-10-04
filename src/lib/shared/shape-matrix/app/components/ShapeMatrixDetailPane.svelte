@@ -86,8 +86,12 @@
       border-radius: 0;
     }
 
+    /* Compact hosts answer to a second name as well. The drill and its chip
+       rows put the modes beside the animation only on a compact host, so a
+       wide desktop pane (or the customize split) keeps its stacked layout. */
     .drill-stage {
       padding: 0.65rem;
+      container-name: shape-matrix-drill shape-matrix-drill-compact;
     }
   }
 </style>

@@ -7,7 +7,6 @@ import {
   POST_TIME_EPSILON,
   createIdAllocator,
   itemEnd,
-  trackHasRoom,
   type PostItem,
   type PostItemKeyframes,
   type PostKeyframe,
@@ -22,13 +21,19 @@ import {
   sameChannelValue,
 } from "$lib/shared/media-composition/domain/post-project-keyframes";
 import type { PostTake } from "$lib/shared/media-composition/domain/post-plan";
+import { withMotionKeys } from "$lib/shared/media-composition/domain/post-project-motion-keys";
+import {
+  mergeSeparateTunnelHook,
+  splitTunnelHookTitles,
+} from "$lib/shared/media-composition/domain/post-project-hook-migration";
 
 /**
  * The timeline's rules, applied after every edit so the stored project is
  * always the one on screen:
  *
- * 1. Main clips sit end to end from zero in their order. A clip lasts its
- *    source span at its speed, cut to its take's length.
+ * 1. Main clips follow one another unless placed by hand. A placed clip
+ *    keeps its chosen start, or moves right to limit overlap to its transition.
+ *    A clip lasts its source span at its speed, cut to its take's length.
  * 2. An anchored overlay starts at its main clip's start plus its offset;
  *    one that fills spans the clip exactly. An overlay whose clip is gone
  *    stays where it stands and follows the clip now under it.
@@ -40,7 +45,12 @@ import type { PostTake } from "$lib/shared/media-composition/domain/post-plan";
  * Unchanged items and tracks keep their identity, so a drag that moves one
  * item re-renders only that item.
  */
-export function normalizeProject(project: PostProject): PostProject {
+export function normalizeProject(stored: PostProject): PostProject {
+  return withMotionKeys(normalizeLayout(stored));
+}
+
+function normalizeLayout(stored: PostProject): PostProject {
+  const project = splitTunnelHookTitles(mergeSeparateTunnelHook(stored));
   const takes = new Map(project.takes.map((take) => [take.id, take]));
   const main: PostTrack = project.tracks[MAIN_TRACK_INDEX] ?? {
     id: MAIN_TRACK_ID,
@@ -52,15 +62,28 @@ export function normalizeProject(project: PostProject): PostProject {
   const displaced: PostItem[] = [];
   const laidMain: PostItem[] = [];
   let cursor = 0;
-  for (const item of main.items) {
+  let outgoingOverlap = 0;
+  for (const [index, item] of main.items.entries()) {
     if (!MAIN_TRACK_KINDS.includes(item.kind)) {
       displaced.push(item);
       continue;
     }
     const sized = sizeItem(item, takes);
-    const laid = withChanges(sized, { start: cursor, anchor: null, fill: false });
+    const earliest =
+      cursor - Math.min(outgoingOverlap, sized.duration - POST_TIME_EPSILON);
+    const start = sized.pinnedStart
+      ? Math.max(earliest, sized.start)
+      : earliest;
+    const laid = withChanges(sized, { start, anchor: null, fill: false });
     laidMain.push(laid);
-    cursor += laid.duration;
+    cursor = start + laid.duration;
+    const boundToNext =
+      !item.transitionOut?.incomingId ||
+      item.transitionOut.incomingId === main.items[index + 1]?.id;
+    outgoingOverlap = Math.min(
+      boundToNext ? (item.transitionOut?.duration ?? 0) : 0,
+      laid.duration - POST_TIME_EPSILON
+    );
   }
 
   const mainById = new Map(laidMain.map((item) => [item.id, item]));
@@ -75,13 +98,22 @@ export function normalizeProject(project: PostProject): PostProject {
     const sized = sizeItem(item, takes);
     const anchored = sized.anchor ? mainById.get(sized.anchor.itemId) : null;
 
+    // An animation with a tunnel intro opens that long before its footage, so
+    // the intro and the animation are one item on one canvas. When the
+    // footage plays behind the intro, it opens with the footage instead.
+    const intro =
+      sized.kind === "animation" ? (sized.tunnelHook?.seconds ?? 0) : 0;
+    const lead =
+      sized.kind === "animation" && sized.tunnelHook?.backdrop ? 0 : intro;
+
     if (sized.fill && sized.kind !== "video") {
-      const target = anchored ?? mainAt(sized.start);
+      const target = anchored ?? mainAt(sized.start + intro);
       if (!target) return withChanges(sized, { fill: false, anchor: null });
+      const start = Math.max(0, target.start - lead);
       return withChanges(sized, {
-        start: target.start,
-        duration: target.duration,
-        anchor: { itemId: target.id, offset: 0 },
+        start,
+        duration: target.duration + (target.start - start),
+        anchor: { itemId: target.id, offset: start - target.start },
       });
     }
 
@@ -172,7 +204,21 @@ export function normalizeProject(project: PostProject): PostProject {
   ].filter((track) => track.items.length > 0);
 
   const nextMain = withTrackItems(main, laidMain);
-  const tracks = [nextMain, ...nextOverlays];
+  const tracks = [nextMain, ...nextOverlays].map((track) => {
+    let changed = false;
+    const items = track.items.map((item, index) => {
+      const incoming = track.items[index + 1];
+      if (item.transitionOut && !item.transitionOut.incomingId && incoming) {
+        changed = true;
+        return {
+          ...item,
+          transitionOut: { ...item.transitionOut, incomingId: incoming.id },
+        };
+      }
+      return item;
+    });
+    return changed ? { ...track, items } : track;
+  });
   const unchanged =
     tracks.length === project.tracks.length &&
     tracks.every((track, index) => track === project.tracks[index]);
@@ -253,14 +299,19 @@ function canonicalChannel(
   const merged: PostKeyframe<unknown>[] = [];
   for (const kf of sorted) {
     const clamped = clampChannelValue(channel, kf.value as never);
-    const candidate: PostKeyframe<unknown> = sameChannelValue(channel, clamped, kf.value)
+    const candidate: PostKeyframe<unknown> = sameChannelValue(
+      channel,
+      clamped,
+      kf.value
+    )
       ? kf
       : { ...kf, value: clamped };
     const last = merged[merged.length - 1];
     if (
       last &&
       Math.abs(
-        postSecondsOfKeyframe(item, candidate.t) - postSecondsOfKeyframe(item, last.t)
+        postSecondsOfKeyframe(item, candidate.t) -
+          postSecondsOfKeyframe(item, last.t)
       ) <= POST_KEYFRAME_MERGE_SECONDS
     ) {
       merged[merged.length - 1] = candidate;
@@ -268,7 +319,10 @@ function canonicalChannel(
       merged.push(candidate);
     }
   }
-  if (merged.length === raw.length && merged.every((kf, index) => kf === raw[index])) {
+  if (
+    merged.length === raw.length &&
+    merged.every((kf, index) => kf === raw[index])
+  ) {
     return raw as PostKeyframe<unknown>[];
   }
   return merged;
@@ -293,11 +347,37 @@ function fittedFades(
 }
 
 function fitsAmong(items: readonly PostItem[], item: PostItem): boolean {
-  return trackHasRoom(
-    { id: "", hidden: false, locked: false, items: [...items] },
-    item.start,
-    itemEnd(item),
-    item.id
+  return items.every((previous, index) => {
+    if (
+      previous.id === item.id ||
+      itemEnd(item) <= previous.start + POST_TIME_EPSILON ||
+      item.start >= itemEnd(previous) - POST_TIME_EPSILON
+    )
+      return true;
+    // An intentional transition is the sole overlap allowed on one overlay
+    // lane. Only the immediately preceding visual item can own that overlap.
+    return (
+      index === items.length - 1 &&
+      isTransitionVisual(previous) &&
+      isTransitionVisual(item) &&
+      !!previous.transitionOut &&
+      (!previous.transitionOut.incomingId ||
+        previous.transitionOut.incomingId === item.id) &&
+      previous.start <= item.start &&
+      item.start >=
+        itemEnd(previous) - previous.transitionOut.duration - POST_TIME_EPSILON
+    );
+  });
+}
+
+function isTransitionVisual(item: PostItem): boolean {
+  return (
+    item.kind === "video" ||
+    item.kind === "image" ||
+    item.kind === "animation" ||
+    item.kind === "moves" ||
+    item.kind === "carousel" ||
+    item.kind === "card"
   );
 }
 

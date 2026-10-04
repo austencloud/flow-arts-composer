@@ -50,43 +50,39 @@ export function createUndoController({
   });
 
   function pushUndoSnapshot(type: UndoOperationType, metadata?: UndoMetadata) {
+    const commit = beginUndoSnapshot(type, metadata);
+    queueMicrotask(commit);
+  }
+
+  function beginUndoSnapshot(
+    type: UndoOperationType,
+    metadata?: UndoMetadata
+  ): () => void {
     if (historySuspended) {
-      return;
+      return () => {};
     }
 
     if (
       !sequenceState.currentSequence &&
-      type !== UndoOperationType.SELECT_START_PLACEMENT
+      type !== UndoOperationType.SELECT_START_PLACEMENT &&
+      type !== UndoOperationType.GENERATE_SEQUENCE &&
+      type !== UndoOperationType.SPELL_GENERATE
     ) {
-      return;
+      return () => {};
     }
 
-    const currentSequenceRef = sequenceState.currentSequence;
-    const selectedStepNumberRef = sequenceState.selectedStepNumber;
-    const activeSectionRef = getActiveSection();
-    const timestampRef = Date.now();
+    const beforeState = {
+      ...captureCurrentState(getActiveSection()),
+      shouldShowStartPlacementPicker:
+        type === UndoOperationType.SELECT_START_PLACEMENT,
+    };
+    let committed = false;
 
-    queueMicrotask(() => {
-      const sequenceCopy: SequenceData | null = currentSequenceRef
-        ? {
-            ...currentSequenceRef,
-            steps: currentSequenceRef.steps.map((step) =>
-              step ? { ...step } : step
-            ),
-          }
-        : null;
-
-      const beforeState = {
-        sequence: sequenceCopy,
-        selectedStepNumber: selectedStepNumberRef,
-        activeSection: activeSectionRef,
-        shouldShowStartPlacementPicker:
-          type === UndoOperationType.SELECT_START_PLACEMENT,
-        timestamp: timestampRef,
-      };
-
+    return () => {
+      if (committed) return;
+      committed = true;
       UndoManager.pushUndo(type, beforeState, metadata);
-    });
+    };
   }
 
   function captureCurrentState(activeSection: BuildModeId) {
@@ -315,6 +311,7 @@ export function createUndoController({
 
   return {
     pushUndoSnapshot,
+    beginUndoSnapshot,
     undo,
     redo,
     clearUndoHistory,

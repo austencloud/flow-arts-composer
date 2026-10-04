@@ -304,8 +304,9 @@
   }
 
   .catalog {
-    /* Clears the sticky filter when the hero button jumps down here. */
-    scroll-margin-top: 8.5rem;
+    /* The marketing root's scroll padding clears the site header; this adds
+       the sticky filter under it for the hero button's jump down here. */
+    scroll-margin-top: 3.5rem;
     padding-top: clamp(1.5rem, 2.5vw, 2.5rem);
   }
 

@@ -21,7 +21,10 @@
   import { areServicesInitialized } from "$lib/shared/application/state/services.svelte";
   import IOSSkeletonLoader from "$lib/shared/settings/components/IOSSkeletonLoader.svelte";
   import Toast from "$lib/shared/settings/components/Toast.svelte";
-  import { handleModuleChange } from "$lib/shared/navigation-coordinator/navigation-coordinator.svelte";
+  import {
+    handleModuleChange,
+    handleSectionChange,
+  } from "$lib/shared/navigation-coordinator/navigation-coordinator.svelte";
   import type { ModuleId } from "$lib/shared/navigation/domain/types";
   import type { DeviceDetector } from "$lib/shared/device/services/device-detector";
   import type { ResponsiveSettings } from "$lib/shared/device/domain/models/device-models";
@@ -31,6 +34,8 @@
 
   // Navigation state - use global activeTab
   import { navigationState } from "$lib/shared/navigation/state/navigation-state.svelte";
+  import { authState } from "$lib/shared/auth/state/auth-state.svelte";
+  import { isTabAccessible } from "$lib/shared/auth/domain/guest-access-config";
 
   // Import all tab components directly
   import ProfileTab from "$lib/shared/settings/components/tabs/ProfileTab.svelte";
@@ -38,7 +43,7 @@
   import PropTypeTab from "$lib/shared/settings/components/tabs/PropTypeTab.svelte";
   import BackgroundTab from "$lib/shared/settings/components/tabs/background/BackgroundTab.svelte";
   import PreferencesTab from "$lib/shared/settings/components/tabs/PreferencesTab.svelte";
-  import LanguageTab from "$lib/shared/settings/components/tabs/LanguageTab.svelte";
+  import LanguagePreference from "$lib/shared/settings/components/tabs/preferences/LanguagePreference.svelte";
   import ShortcutCenter from "$lib/shared/keyboard/components/ShortcutCenter.svelte";
   import NotificationPreferencesPanel from "$lib/features/feedback/components/NotificationPreferencesPanel.svelte";
 
@@ -130,7 +135,12 @@
   }
 
   // Use navigation state's active tab
-  const activeTab = $derived(navigationState.activeTab);
+  const activeTab = $derived(
+    authState.isFullAccount ||
+      isTabAccessible("settings", navigationState.activeTab, "guest")
+      ? navigationState.activeTab
+      : "preferences"
+  );
 
   // Swipe-to-exit gesture state
   let swipeStartX = 0;
@@ -240,8 +250,11 @@
     </div>
   </div>
 
-  {#if !isSettingsLoaded && activeTab !== "language"}
+  {#if !isSettingsLoaded}
     <div class="loading-state">
+      {#if activeTab === "preferences"}
+        <LanguagePreference />
+      {/if}
       <IOSSkeletonLoader variant="toggle" count={8} />
     </div>
   {:else}
@@ -253,6 +266,17 @@
         class="panel"
         class:theme-background-active={activeTab === "theme"}
       >
+        {#if activeTab === "keyboard" || activeTab === "release-notes"}
+          <button
+            type="button"
+            class="subpage-back"
+            onclick={() => handleSectionChange("preferences")}
+            aria-label={t("action_go_back")}
+          >
+            <i class="fas fa-chevron-left" aria-hidden="true"></i>
+            {t("settings_preferences")}
+          </button>
+        {/if}
         {#if activeTab === "profile"}
           <ProfileTab
             currentSettings={settings}
@@ -273,8 +297,6 @@
           />
         {:else if activeTab === "keyboard"}
           <ShortcutCenter />
-        {:else if activeTab === "language"}
-          <LanguageTab />
         {:else}
           <!-- Fallback to account if unknown tab -->
           <ProfileTab
@@ -302,6 +324,27 @@
     color: var(--foreground, #ffffff);
     font-family:
       -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
+  }
+
+  .subpage-back {
+    display: inline-flex;
+    align-self: flex-start;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 0.75rem 1rem;
+    min-height: 44px;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid var(--theme-stroke);
+    border-radius: 999px;
+    background: var(--theme-card-bg);
+    color: var(--theme-text);
+    font-size: var(--font-size-min);
+    cursor: pointer;
+  }
+
+  .subpage-back:focus-visible {
+    outline: 2px solid var(--theme-accent);
+    outline-offset: 2px;
   }
 
   /* Remove tap highlight across all settings buttons */

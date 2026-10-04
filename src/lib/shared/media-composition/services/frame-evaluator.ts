@@ -6,6 +6,7 @@ import type {
   PresetClip,
   PresetMarker,
   PresetTimeRef,
+  PresetSourceGeometry,
   RegionKeyframe,
 } from "$lib/shared/media-composition/domain/media-composition-preset-schema";
 import type { ClipTransform } from "$lib/shared/media-composition/domain/media-layout-schema";
@@ -14,6 +15,19 @@ import {
   clampFraming,
 } from "$lib/shared/media-composition/domain/post-project";
 import { sampleEasing } from "$lib/shared/media-composition/domain/post-project-keyframes";
+import {
+  tunnelHookArrival,
+  tunnelHookBackdropOpacity,
+  type TunnelHook,
+} from "$lib/shared/media-composition/domain/tunnel-hook";
+import { itemIdFromTitlesRole } from "$lib/shared/media-composition/domain/tunnel-titles";
+import {
+  PIP_HANDOFF_EFFECTS_IN_SECONDS,
+  pipHandoffEffectsIn,
+  pipHandoffLookBlend,
+  pipHandoffSample,
+  type PipHandoffStep,
+} from "$lib/shared/media-composition/domain/pip-handoff";
 import type { SequenceTimeMap } from "$lib/shared/media-composition/domain/sequence-time-map";
 import {
   mediaTimeToSequencePosition,
@@ -28,7 +42,10 @@ import {
   sequenceFrameAt,
   type SequenceFrame,
 } from "$lib/shared/media-composition/domain/sequence-frame";
-import type { TakeSample } from "$lib/shared/media-composition/domain/take-timing";
+import type {
+  TakeSample,
+  TakeSampleOptions,
+} from "$lib/shared/media-composition/domain/take-timing";
 
 /**
  * A take's timing, asked by media time. Each take has its own, so a post that
@@ -37,12 +54,17 @@ import type { TakeSample } from "$lib/shared/media-composition/domain/take-timin
  */
 export interface TakeClock {
   /** Where the take is at this media time, or null where nothing is mapped. */
-  sampleAt(mediaSeconds: number): TakeSample | null;
+  sampleAt(
+    mediaSeconds: number,
+    options?: TakeSampleOptions
+  ): TakeSample | null;
 }
 
 export interface SequenceFrameAlignment {
   steps: readonly StepData[];
   startPlacementDuration: number;
+  /** Passes needed for this LOOP to return to its opening pose. */
+  sequencePeriod?: number;
   /**
    * Clocks by take role. A clip whose `timeMapRole` names one reads its move
    * from that take's media time at the clip's own source time.
@@ -60,6 +82,10 @@ export interface SequenceFrameAlignment {
    * back here keeps the card on the step the performer is actually landing.
    */
   mediaTimeOffsetSeconds?: number;
+  /** Told why each hand-off side drew what it did; for tracing only. */
+  explainHandoff?: (
+    step: PipHandoffStep & { role: "from" | "to"; postSeconds: number }
+  ) => void;
 }
 
 /**
@@ -86,6 +112,8 @@ export interface EvaluatedFrameLayer {
    * by hand; consumers fall back to the region's static rect.
    */
   regionRect?: RegionRect;
+  /** Source UV crop and its destination rectangle in output fractions. */
+  sourceGeometry?: PresetSourceGeometry;
   /** Which move is showing. Every other sequence field derives from it. */
   sequenceFrame?: SequenceFrame;
   /**
@@ -100,6 +128,18 @@ export interface EvaluatedFrameLayer {
   animationTimeSeconds?: number;
   /** The move showing, 1..N; 0 for the opening pose. */
   displayedBeatNumber?: number;
+  /** Set on the opening hook: its tunnel and how far through it the post is. */
+  tunnelHook?: { hook: TunnelHook; progress: number };
+  /**
+   * Set on an animation turning into its picture-in-picture square on one
+   * surface: how far its look has turned to the square's, 0 to 1.
+   */
+  lookBlend?: number;
+  /**
+   * Set on a square just after an animation turned into it: how far its own
+   * glow and effects have faded in, 0 to 1, so they arrive instead of popping.
+   */
+  effectsIn?: number;
 }
 
 export function resolvePresetTimePoint(
@@ -147,14 +187,22 @@ export function clamp01(value: number): number {
   return Math.min(1, Math.max(0, value));
 }
 
-function lerpRect(from: MotionRect, to: MotionRect, progress: number) {
+function lerpRect(
+  from: MotionRect,
+  to: MotionRect,
+  progress: number
+): MotionRect {
   const lerp = (a: number, b: number) => a + (b - a) * progress;
-  return {
+  const rect: MotionRect = {
     x: lerp(from.x, to.x),
     y: lerp(from.y, to.y),
     width: lerp(from.width, to.width),
     height: lerp(from.height, to.height),
   };
+  if (from.turn !== undefined || to.turn !== undefined) {
+    rect.turn = lerp(from.turn ?? 0, to.turn ?? 0);
+  }
+  return rect;
 }
 
 function lerpNumber(from: number, to: number, progress: number): number {
@@ -168,9 +216,33 @@ function lerpTransformValue(
 ): MotionTransformValue {
   return {
     scale: lerpNumber(from.scale, to.scale, progress),
-    rotationDegrees: lerpNumber(from.rotationDegrees, to.rotationDegrees, progress),
+    rotationDegrees: lerpNumber(
+      from.rotationDegrees,
+      to.rotationDegrees,
+      progress
+    ),
     translateX: lerpNumber(from.translateX, to.translateX, progress),
     translateY: lerpNumber(from.translateY, to.translateY, progress),
+  };
+}
+
+function lerpSourceGeometry(
+  from: PresetSourceGeometry,
+  to: PresetSourceGeometry,
+  progress: number
+): PresetSourceGeometry {
+  return {
+    x: lerpNumber(from.x, to.x, progress),
+    y: lerpNumber(from.y, to.y, progress),
+    width: lerpNumber(from.width, to.width, progress),
+    height: lerpNumber(from.height, to.height, progress),
+    rotation: lerpNumber(from.rotation, to.rotation, progress),
+    crop: {
+      left: lerpNumber(from.crop.left, to.crop.left, progress),
+      top: lerpNumber(from.crop.top, to.crop.top, progress),
+      right: lerpNumber(from.crop.right, to.crop.right, progress),
+      bottom: lerpNumber(from.crop.bottom, to.crop.bottom, progress),
+    },
   };
 }
 
@@ -197,8 +269,13 @@ function sampleMotionTrack<V>(
     const previous = keys[index - 1]!;
     if (previous.easing === "hold") return previous.value;
     const progress =
-      (timeSeconds - previous.atSeconds) / (next.atSeconds - previous.atSeconds);
-    return lerpValue(previous.value, next.value, sampleEasing(previous.easing, progress));
+      (timeSeconds - previous.atSeconds) /
+      (next.atSeconds - previous.atSeconds);
+    return lerpValue(
+      previous.value,
+      next.value,
+      sampleEasing(previous.easing, progress)
+    );
   }
   return last.value;
 }
@@ -220,7 +297,10 @@ function clipOpacityAt(clip: PresetVisualClip, timeSeconds: number): number {
  * way the editor's own sampler clamps a framing, so the zoom the inspector
  * shows is the zoom that plays.
  */
-function clipTransformAt(clip: PresetVisualClip, timeSeconds: number): ClipTransform {
+function clipTransformAt(
+  clip: PresetVisualClip,
+  timeSeconds: number
+): ClipTransform {
   const keys = clip.motion?.transform;
   if (!keys || keys.length === 0) return clip.transform;
   const sampled = sampleMotionTrack(keys, timeSeconds, lerpTransformValue);
@@ -276,8 +356,10 @@ function rectAtTime(
 
 /**
  * Every region's rect at one project time: the static rect, or where its
- * motion track has carried it. The preview positions regions from this and
- * the export draws into it, so a slide cannot land differently in the file.
+ * motion track has carried it, with its turn. A rect in motion takes its
+ * turn from its keys alone, never from the static rect. The preview
+ * positions regions from this and the export draws into it, so a slide
+ * cannot land differently in the file.
  */
 export function evaluateRegionRects(
   preset: MediaCompositionPreset,
@@ -287,7 +369,13 @@ export function evaluateRegionRects(
   const rects = new Map<string, RegionRect>(
     preset.regions.map((region) => [
       region.id,
-      { x: region.x, y: region.y, width: region.width, height: region.height },
+      {
+        x: region.x,
+        y: region.y,
+        width: region.width,
+        height: region.height,
+        ...(region.turn ? { turn: region.turn } : {}),
+      },
     ])
   );
   const markers = preset.markers ?? [];
@@ -373,6 +461,26 @@ export function isVisibleLayer(layer: EvaluatedFrameLayer): boolean {
   return layer.opacity > 0.0001;
 }
 
+/** A full-frame black cover keeps the midpoint black even over a blurred backdrop. */
+export function fadeBlackOpacityAt(
+  preset: MediaCompositionPreset,
+  durationSeconds: number,
+  timeSeconds: number
+): number {
+  let opacity = 0;
+  for (const transition of preset.transitions) {
+    if (transition.kind !== "fade-black") continue;
+    const start = resolvePresetTimePoint(transition.start, durationSeconds);
+    const end = resolvePresetTimePoint(transition.end, durationSeconds);
+    if (end <= start || timeSeconds <= start || timeSeconds >= end) continue;
+    const rawProgress = clamp01((timeSeconds - start) / (end - start));
+    const progress =
+      transition.curve === "ease-in-out" ? easeInOut(rawProgress) : rawProgress;
+    opacity = Math.max(opacity, 1 - Math.abs(2 * progress - 1));
+  }
+  return opacity;
+}
+
 /**
  * Every visual layer whose clip spans one project timestamp, including one a
  * fade leaves fully clear, as at the first instant of a fade-in. The crop
@@ -396,12 +504,12 @@ export function evaluatePresetLayers(
   // The single-map path reads the post clock once for every clip. A map
   // saved in the engine's count (move k in flight is [k, k + 1)) is moved
   // onto arrivals first, so both kinds of map meet the frame record alike.
-  const postSample = ((): TakeSample | null => {
+  const postSampleAt = (postSeconds: number): TakeSample | null => {
     if (!alignment?.timeMap || moveBeats.length === 0) return null;
     const map = alignment.timeMap;
     const raw = mediaTimeToSequencePosition(
       map,
-      clampedTime + (alignment.mediaTimeOffsetSeconds ?? 0)
+      postSeconds + (alignment.mediaTimeOffsetSeconds ?? 0)
     );
     if (!Number.isFinite(raw)) return null;
     const toArrival = (position: number) =>
@@ -413,7 +521,150 @@ export function evaluatePresetLayers(
       arrival: toArrival(raw),
       endArrival: last ? toArrival(last.sequencePosition) : null,
     };
-  })();
+  };
+  const postSample = postSampleAt(clampedTime);
+
+  // A clip tied to a take reads that take's clock at the take's media time
+  // under this clip, trim included, so a slowed act and a derived square
+  // over the same footage land on the same move. A take with no clock yet
+  // is unmapped: the post-wide map belongs to another take's footage.
+  const takeSampleAt = (
+    clip: Extract<PresetClip, { kind: "visual" }>,
+    postSeconds: number,
+    options?: TakeSampleOptions
+  ): TakeSample | null => {
+    if (!alignment || !clip.useResolvedTimeMap || moveBeats.length === 0) {
+      return null;
+    }
+    const role = clip.timeMapRole;
+    if (role === undefined) {
+      return postSeconds === clampedTime
+        ? postSample
+        : postSampleAt(postSeconds);
+    }
+    const clock = alignment.clocks?.[role];
+    if (!clock) return null;
+    const start = resolvePresetTimePoint(
+      clip.start,
+      durationSeconds,
+      preset.markers
+    );
+    const end = resolvePresetTimePoint(
+      clip.end,
+      durationSeconds,
+      preset.markers
+    );
+    const progress =
+      end > start ? clamp01((postSeconds - start) / (end - start)) : 0;
+    const sourceIn = resolvePresetTimePoint(clip.sourceIn, durationSeconds);
+    const sourceOut = resolvePresetTimePoint(clip.sourceOut, durationSeconds);
+    return clock.sampleAt(
+      (sourceTimeOffsets[role] ?? 0) +
+        sourceIn +
+        (sourceOut - sourceIn) * progress,
+      options
+    );
+  };
+
+  /**
+   * A tunnel over beat-mapped footage keeps the performer's time: its arrival
+   * is the footage's, counted back from beat one where the intro plays before
+   * it, and moved whole passes later (the same pose) so it never reads below
+   * the opening. Null when the intro has no mapped footage under it.
+   */
+  const footageHookSample = (
+    clip: Extract<PresetClip, { kind: "visual" }>,
+    start: number,
+    end: number
+  ): TakeSample | null => {
+    if (!clip.useResolvedTimeMap || clip.timeMapRole === undefined) return null;
+    const at = (seconds: number) =>
+      takeSampleAt(clip, seconds, { leadIn: true })?.arrival;
+    const first = at(start);
+    const here = at(clampedTime);
+    const last = at(end);
+    if (first === undefined || here === undefined || last === undefined) {
+      return null;
+    }
+    const passes = first < 0 ? Math.ceil(-first / moveBeats.length - 1e-9) : 0;
+    const shift = passes * moveBeats.length;
+    return { arrival: here + shift, endArrival: last + shift };
+  };
+
+  /**
+   * Where the animation picks up when a tunnel intro ends: the clock of the
+   * clip that continues in the same region from the intro's last instant.
+   */
+  const introLandingAt = (
+    intro: Extract<PresetClip, { kind: "visual" }>,
+    introEnd: number
+  ): TakeSample | null => {
+    const next = preset.clips.find(
+      (clip): clip is Extract<PresetClip, { kind: "visual" }> =>
+        clip.kind === "visual" &&
+        clip !== intro &&
+        !clip.tunnelHook &&
+        clip.regionId === intro.regionId &&
+        Math.abs(
+          resolvePresetTimePoint(clip.start, durationSeconds, preset.markers) -
+            introEnd
+        ) < 1e-6
+    );
+    return next ? takeSampleAt(next, introEnd) : null;
+  };
+
+  /**
+   * An animation shrinking into its square and the square draw one figure
+   * from their overlap on. Each side's clock is read from whichever of its
+   * pieces covers the moment asked.
+   */
+  const handoffSamples = new Map<string, TakeSample | null>();
+  const handoffSample = (
+    handoff: NonNullable<PresetVisualClip["clockHandoff"]>
+  ): TakeSample | null => {
+    const key = `${handoff.id}:${handoff.role}`;
+    if (handoffSamples.has(key)) return handoffSamples.get(key)!;
+    const side =
+      (role: "from" | "to") =>
+      (postSeconds: number): TakeSample | null => {
+        const clip = preset.clips.find(
+          (candidate): candidate is PresetVisualClip =>
+            candidate.kind === "visual" &&
+            candidate.clockHandoff?.id === handoff.id &&
+            candidate.clockHandoff.role === role &&
+            resolvePresetTimePoint(
+              candidate.start,
+              durationSeconds,
+              preset.markers
+            ) <=
+              postSeconds + 1e-9 &&
+            postSeconds <=
+              resolvePresetTimePoint(
+                candidate.end,
+                durationSeconds,
+                preset.markers
+              ) +
+                1e-9
+        );
+        return clip ? takeSampleAt(clip, postSeconds) : null;
+      };
+    const sample = pipHandoffSample(
+      handoff,
+      { from: side("from"), to: side("to"), passLength: moveBeats.length },
+      clampedTime,
+      handoff.role,
+      alignment?.explainHandoff
+        ? (step) =>
+            alignment.explainHandoff!({
+              ...step,
+              role: handoff.role,
+              postSeconds: clampedTime,
+            })
+        : undefined
+    );
+    handoffSamples.set(key, sample);
+    return sample;
+  };
 
   const regionRects = evaluateRegionRects(preset, durationSeconds, clampedTime);
   const layers = preset.clips.flatMap((clip): EvaluatedFrameLayer[] => {
@@ -429,7 +680,21 @@ export function evaluatePresetLayers(
       durationSeconds,
       preset.markers
     );
-    if (end <= start || clampedTime < start || clampedTime > end) return [];
+    // The hook and its destination live in separate regions. At their shared
+    // edge the destination owns the single mounted sequence surface.
+    if (
+      end <= start ||
+      clampedTime < start ||
+      clampedTime > end ||
+      (clip.tunnelHook && clampedTime >= end && end < durationSeconds) ||
+      // One surface carries a shared hand-off: the animation's pieces until
+      // the overlap ends, the square's from then on.
+      (clip.clockHandoff?.shared &&
+        (clip.clockHandoff.role === "to"
+          ? clampedTime < clip.clockHandoff.end
+          : clampedTime >= clip.clockHandoff.end))
+    )
+      return [];
 
     const projectProgress = clamp01((clampedTime - start) / (end - start));
     const sourceIn = resolvePresetTimePoint(clip.sourceIn, durationSeconds);
@@ -440,22 +705,58 @@ export function evaluatePresetLayers(
     const sourceTimeSeconds =
       (sourceTimeOffsets[clip.sourceRole] ?? 0) + sourceSpanTime;
     const regionRect = regionRects.get(clip.regionId);
+    const framing =
+      clip.framingFrom &&
+      clampedTime >= clip.framingFrom.start &&
+      clampedTime < clip.framingFrom.end
+        ? (preset.clips.find(
+            (other): other is PresetVisualClip =>
+              other.kind === "visual" && other.id === clip.framingFrom!.clipId
+          ) ?? clip)
+        : clip;
+    const sourceGeometry = framing.sourceGeometryKeyframes?.length
+      ? sampleMotionTrack(
+          framing.sourceGeometryKeyframes,
+          clampedTime,
+          lerpSourceGeometry
+        )
+      : framing.sourceGeometry;
 
-    // A clip tied to a take reads that take's clock at the take's media time
-    // under this clip, trim included, so a slowed act and a derived square
-    // over the same footage land on the same move. A take with no clock yet
-    // is unmapped: the post-wide map belongs to another take's footage.
     let sample: TakeSample | null = null;
-    if (alignment && clip.useResolvedTimeMap && moveBeats.length > 0) {
-      const role = clip.timeMapRole;
-      if (role === undefined) {
-        sample = postSample;
-      } else {
-        const clock = alignment.clocks?.[role];
-        sample = clock
-          ? clock.sampleAt((sourceTimeOffsets[role] ?? 0) + sourceSpanTime)
-          : null;
-      }
+    const footageHook =
+      clip.tunnelHook && moveBeats.length > 0
+        ? footageHookSample(clip, start, end)
+        : null;
+    if (footageHook) {
+      sample = footageHook;
+    } else if (clip.tunnelHook && moveBeats.length > 0) {
+      // With no footage to follow the hook owns the clock, and lands on the
+      // arrival the animation reads as it takes over, so the pair never steps
+      // back at the hand-off.
+      const landing = introLandingAt(clip, end)?.arrival;
+      const hookArrival = (progress: number) =>
+        tunnelHookArrival(
+          progress,
+          moveBeats.length,
+          alignment?.sequencePeriod,
+          clip.tunnelHook!.speed
+            ? (p) => sampleEasing([...clip.tunnelHook!.speed!], p)
+            : undefined,
+          landing
+        );
+      sample = {
+        arrival: hookArrival(projectProgress),
+        endArrival: hookArrival(1),
+      };
+    } else if (
+      clip.clockHandoff &&
+      moveBeats.length > 0 &&
+      clampedTime >= clip.clockHandoff.start
+    ) {
+      sample =
+        handoffSample(clip.clockHandoff) ?? takeSampleAt(clip, clampedTime);
+    } else {
+      sample = takeSampleAt(clip, clampedTime);
     }
 
     return [
@@ -485,8 +786,34 @@ export function evaluatePresetLayers(
         projectProgress,
         transform: clipTransformAt(clip, clampedTime),
         ...(regionRect ? { regionRect } : {}),
+        ...(sourceGeometry ? { sourceGeometry } : {}),
         ...(sample !== null && alignment
           ? sequenceFieldsFor(sample, alignment, moveBeats, holdLandings)
+          : {}),
+        ...(clip.tunnelHook
+          ? { tunnelHook: { hook: clip.tunnelHook, progress: projectProgress } }
+          : {}),
+        // Set from the animation's first piece on, so the surface has the
+        // square's arrows ready before they start to show.
+        ...(clip.clockHandoff?.shared && clip.clockHandoff.role === "from"
+          ? {
+              lookBlend: pipHandoffLookBlend(
+                clip.clockHandoff,
+                clampedTime,
+                sampleEasing
+              ),
+            }
+          : {}),
+        ...(clip.clockHandoff?.shared &&
+        clip.clockHandoff.role === "to" &&
+        clampedTime < clip.clockHandoff.end + PIP_HANDOFF_EFFECTS_IN_SECONDS
+          ? {
+              effectsIn: pipHandoffEffectsIn(
+                clip.clockHandoff,
+                clampedTime,
+                sampleEasing
+              ),
+            }
           : {}),
       },
     ];
@@ -501,10 +828,35 @@ export function evaluatePresetLayers(
     const rawProgress = clamp01((clampedTime - start) / (end - start));
     const progress =
       transition.curve === "ease-in-out" ? easeInOut(rawProgress) : rawProgress;
-    const outgoing = byId.get(transition.outgoingClipId);
     const incoming = byId.get(transition.incomingClipId);
-    if (outgoing) outgoing.opacity *= 1 - progress;
+    if (transition.kind === "fade-black") {
+      const outgoing = byId.get(transition.outgoingClipId);
+      if (outgoing) outgoing.opacity *= progress < 0.5 ? 1 : 0;
+      if (incoming) incoming.opacity *= progress > 0.5 ? 1 : 0;
+      continue;
+    }
+    // Source-over compositing blends two opaque clips by keeping the older
+    // picture whole and raising the new one over it. Fading both lets the
+    // background show through at the midpoint.
     if (incoming) incoming.opacity *= progress;
+  }
+
+  // Footage playing behind a tunnel intro stays dim around it, and comes up
+  // to full strength as the canvas settles into its box. Titles over the
+  // tunnel are read with it and stay bright.
+  const intro = layers.find((layer) => layer.tunnelHook?.hook.backdrop);
+  if (intro?.tunnelHook) {
+    const backdrop = tunnelHookBackdropOpacity(
+      intro.tunnelHook.progress,
+      sampleEasing
+    );
+    for (const layer of layers) {
+      if (
+        layer.regionId !== intro.regionId &&
+        itemIdFromTitlesRole(layer.sourceRole) === null
+      )
+        layer.opacity *= backdrop;
+    }
   }
 
   return layers;

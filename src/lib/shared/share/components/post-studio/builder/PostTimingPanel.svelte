@@ -1,4 +1,7 @@
 <script lang="ts">
+  import type { Snippet } from "svelte";
+  import PostTimingDisclosure from "./PostTimingDisclosure.svelte";
+  import PostTimingTap from "./PostTimingTap.svelte";
   import {
     MIN_MOVE_SECONDS,
     TAKE_MAX_BPM,
@@ -8,27 +11,46 @@
   import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
   import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
   import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import TypeableValue from "$lib/shared/ui/components/TypeableValue.svelte";
   import type { PostTimingSession } from "./post-timing-session.svelte";
-  import { formatTakeClock } from "./post-builder-format";
+  import { formatTakeClock, parseClock } from "./post-builder-format";
 
   /**
    * The Timing step's controls, top to bottom in the order they are needed:
    * tap along at a typed tempo, read the verdict, fix what it points at,
    * and say the map looks right.
    */
-  let { session }: { session: PostTimingSession } = $props();
+  let {
+    session,
+    animation,
+    animationOpen = $bindable(false),
+    showPrimary = true,
+  }: {
+    session: PostTimingSession;
+    animation?: Snippet;
+    animationOpen?: boolean;
+    showPrimary?: boolean;
+  } = $props();
 
   let bpmDraft = $state("");
+  let holdDraft = $state(0);
   // A part cut from a fitted grid keeps that grid's exact tempo; the field
   // shows it to the tenth it is typed at.
   const shownBpm = (bpm: number) => String(Math.round(bpm * 10) / 10);
   $effect(() => {
     bpmDraft = session.section ? shownBpm(session.section.bpm) : "";
+    holdDraft = Math.round((session.section?.landingHoldRatio ?? 0) * 100);
   });
 
   function commitBpm(): void {
     if (!session.setBpm(Number(bpmDraft))) {
       bpmDraft = session.section ? shownBpm(session.section.bpm) : "";
+    }
+  }
+
+  function commitHold(): void {
+    if (!session.setLandingHoldPercent(holdDraft)) {
+      holdDraft = Math.round((session.section?.landingHoldRatio ?? 0) * 100);
     }
   }
 
@@ -45,59 +67,18 @@
   {@const fitted = Boolean(session.resolvedSection?.fit)}
   <div class="timing-panel">
     <header class="head">
-      <h3>{t("share_studio_deep_map_take", { take: session.take.label })}</h3>
+      <h3>Map landings</h3>
       <span class="status status-{session.status}">
         {STATUS_TEXT[session.status]}
       </span>
     </header>
 
-    <div class="group">
-      <button
-        type="button"
-        class="tap"
-        data-space-plays
-        onclick={session.tap}
-        disabled={!session.url}
-        aria-describedby="post-tap-help"
-      >
-        {#key session.tapCount}<span class="flash" aria-hidden="true"
-          ></span>{/key}
-        {t("share_studio_deep_tap_landing")}
-        <kbd>T</kbd>
-      </button>
-      <p id="post-tap-help" class="help">
-        {t("share_studio_deep_tap_help")}
-      </p>
-      <div class="row">
-        <label class="bpm">
-          <span>BPM</span>
-          <input
-            type="number"
-            inputmode="decimal"
-            min={TAKE_MIN_BPM}
-            max={TAKE_MAX_BPM}
-            step="0.1"
-            bind:value={bpmDraft}
-            onchange={commitBpm}
-            onkeydown={(event) => {
-              if (event.key === "Enter") commitBpm();
-            }}
-          />
-        </label>
-        {#if section}
-          <SegmentedControl
-            options={[
-              { value: "locked", label: t("share_studio_deep_hold_bpm") },
-              { value: "follow", label: t("share_studio_deep_follow_video") },
-            ]}
-            value={section.tempo}
-            onchange={session.setTempo}
-            size="sm"
-            ariaLabel={t("share_studio_deep_tempo")}
-          />
-        {/if}
+    {#if showPrimary}
+      <div class="primary-action">
+        <PostTimingTap {session} />
+        <p class="help">Play the take and tap when the props land.</p>
       </div>
-    </div>
+    {/if}
 
     {#if session.summary}
       {@const summary = session.summary}
@@ -134,118 +115,214 @@
       </div>
     {/if}
 
-    <div class="group">
-      <h4>{t("share_studio_deep_move_one")}</h4>
+    <PostTimingDisclosure
+      title="Align sequence"
+      description="Choose where move 1 lands"
+    >
+      <p class="help">
+        At the first landing, set move 1. Shift it if the sequence is one move
+        off.
+      </p>
       <div class="row">
         <PanelButton onclick={session.beatOneHere}
-          >{t("share_studio_deep_lands_here")}</PanelButton
+          >Move 1 lands here</PanelButton
         >
+      </div>
+      <div class="paired">
         <PanelButton
           onclick={() => session.shiftBeatOne(-1)}
           disabled={!fitted}
-          ariaLabel={t("share_studio_deep_move_one_earlier")}
+          ariaLabel="Move 1 one landing earlier"
         >
-          <i class="fa-solid fa-chevron-left" aria-hidden="true"></i>
-          {t("share_studio_deep_earlier")}
+          <i class="fa-solid fa-chevron-left" aria-hidden="true"></i> Earlier
         </PanelButton>
+        <span class="step-unit">1 move</span>
         <PanelButton
           onclick={() => session.shiftBeatOne(1)}
           disabled={!fitted}
-          ariaLabel={t("share_studio_deep_move_one_later")}
+          ariaLabel="Move 1 one landing later"
         >
-          {t("share_studio_deep_later")}
-          <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>
+          Later <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>
         </PanelButton>
       </div>
-    </div>
+    </PostTimingDisclosure>
+
+    {#if animation}
+      <PostTimingDisclosure
+        title="Animation"
+        description="Effort, playback, effects & display"
+        bind:open={animationOpen}
+      >
+        {@render animation()}
+      </PostTimingDisclosure>
+    {/if}
 
     {#if fitted && section}
-      <div class="group">
-        <h4>{t("share_studio_deep_whole_grid")}</h4>
-        <div class="row">
-          <PanelButton
-            onclick={() => session.nudgeGrid(-1)}
-            ariaLabel={t("share_studio_deep_grid_frame_earlier")}
-          >
-            <i class="fa-solid fa-chevron-left" aria-hidden="true"></i> 1 frame
-          </PanelButton>
-          <PanelButton
-            onclick={() => session.nudgeGrid(1)}
-            ariaLabel={t("share_studio_deep_grid_frame_later")}
-          >
-            1 frame <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>
-          </PanelButton>
-          <span class="value">
-            {section.offsetSeconds !== 0
-              ? `${section.offsetSeconds > 0 ? "+" : ""}${section.offsetSeconds.toFixed(2)} s`
-              : t("share_studio_deep_on_taps")}
-          </span>
-        </div>
-        <label class="check">
-          <input
-            type="checkbox"
-            checked={section.snap === "taps"}
-            onchange={(event) =>
-              session.setSnap(event.currentTarget.checked ? "taps" : "grid")}
-          />
-          {t("share_studio_deep_land_exactly_on_taps")}
-        </label>
-      </div>
-
       {#if session.selected && session.selectedLanding}
         {@const landing = session.selectedLanding}
         {@const ref = session.selected}
         <div class="group">
-          <h4>{landingName(landing.position, session.movesPerPass)}</h4>
+          <div class="head">
+            <h4>{landingName(landing.position, session.movesPerPass)}</h4>
+            <PanelButton onclick={session.deselect}>Deselect (Esc)</PanelButton>
+          </div>
           <p class="help">
-            {t("share_studio_deep_at_time", {
-              time: formatTakeClock(landing.seconds),
-            })}{landing.pinned
-              ? t("share_studio_deep_placed_by_hand_suffix")
-              : ""}. {t("share_studio_deep_drag_or_nudge")}
+            {landing.pinned
+              ? `${t("share_studio_deep_placed_by_hand")} `
+              : ""}{t("share_studio_deep_drag_nudge_or_type")}
           </p>
-          <div class="row">
+          <div class="paired">
             <PanelButton
               onclick={() =>
                 session.placeLanding(ref, landing.seconds - MIN_MOVE_SECONDS)}
               ariaLabel={t("share_studio_deep_landing_frame_earlier")}
             >
-              <i class="fa-solid fa-chevron-left" aria-hidden="true"></i> 1 frame
+              <i class="fa-solid fa-chevron-left" aria-hidden="true"></i>
+              {t("share_studio_deep_one_frame")}
             </PanelButton>
+            <TypeableValue
+              label={landingName(landing.position, session.movesPerPass)}
+              text={formatTakeClock(landing.seconds)}
+              draft={formatTakeClock(landing.seconds)}
+              parse={parseClock}
+              oncommit={(seconds) => session.placeLanding(ref, seconds)}
+            />
             <PanelButton
               onclick={() =>
                 session.placeLanding(ref, landing.seconds + MIN_MOVE_SECONDS)}
               ariaLabel={t("share_studio_deep_landing_frame_later")}
             >
-              1 frame <i class="fa-solid fa-chevron-right" aria-hidden="true"
-              ></i>
+              {t("share_studio_deep_one_frame")}
+              <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>
             </PanelButton>
-            {#if landing.pinned}
-              <PanelButton onclick={session.releaseSelected}>
-                {t("share_studio_deep_back_on_grid")}
-              </PanelButton>
+          </div>
+          {#if landing.pinned}
+            <PanelButton onclick={session.releaseSelected}>
+              {t("share_studio_deep_back_on_grid")}
+            </PanelButton>
+          {/if}
+        </div>
+      {/if}
+    {/if}
+
+    <PostTimingDisclosure
+      title="Tempo & fine timing"
+      description={section
+        ? `${shownBpm(section.bpm)} BPM · ${section.tempo === "follow" ? "Follow video" : "Hold BPM"}`
+        : "Set a tempo or shift the grid"}
+    >
+      <div class="row">
+        <label class="bpm">
+          <span>BPM</span>
+          <input
+            type="number"
+            inputmode="decimal"
+            min={TAKE_MIN_BPM}
+            max={TAKE_MAX_BPM}
+            step="0.1"
+            bind:value={bpmDraft}
+            onchange={commitBpm}
+            onkeydown={(event) => {
+              if (event.key === "Enter") commitBpm();
+            }}
+          />
+        </label>
+        {#if section}
+          <SegmentedControl
+            options={[
+              { value: "locked", label: t("share_studio_deep_hold_bpm") },
+              { value: "follow", label: t("share_studio_deep_follow_video") },
+            ]}
+            value={section.tempo}
+            onchange={session.setTempo}
+            size="md"
+            ariaLabel={t("share_studio_deep_tempo")}
+          />
+        {/if}
+      </div>
+      {#if section}
+        <div class="group">
+          <label class="bpm">
+            <span>Hold after landing</span>
+            <input
+              type="number"
+              inputmode="numeric"
+              min="0"
+              max="90"
+              step="1"
+              bind:value={holdDraft}
+              onchange={commitHold}
+            />
+            <span>%</span>
+          </label>
+          <p class="help">
+            Keep each landed pose for this part of the next move interval, then
+            catch up by the next landing.
+          </p>
+        </div>
+      {/if}
+      {#if fitted && section}
+        <div class="group">
+          <h4>{t("share_studio_deep_whole_grid")}</h4>
+          <div class="paired">
+            <PanelButton
+              onclick={() => session.nudgeGrid(-1)}
+              ariaLabel={t("share_studio_deep_grid_frame_earlier")}
+            >
+              <i class="fa-solid fa-chevron-left" aria-hidden="true"></i>
+              {t("share_studio_deep_one_frame")}
+            </PanelButton>
+            <TypeableValue
+              label={t("share_studio_deep_whole_grid")}
+              text={section.offsetSeconds !== 0
+                ? `${section.offsetSeconds > 0 ? "+" : ""}${section.offsetSeconds.toFixed(2)} s`
+                : t("share_studio_deep_on_taps")}
+              draft={section.offsetSeconds.toFixed(2)}
+              unit="s"
+              signed
+              oncommit={session.setGridOffset}
+            />
+            <PanelButton
+              onclick={() => session.nudgeGrid(1)}
+              ariaLabel={t("share_studio_deep_grid_frame_later")}
+            >
+              {t("share_studio_deep_one_frame")}
+              <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>
+            </PanelButton>
+          </div>
+          <SegmentedControl
+            options={[
+              { value: "grid", label: t("share_studio_deep_land_on_grid") },
+              { value: "taps", label: t("share_studio_deep_land_on_taps") },
+            ]}
+            value={section.snap}
+            onchange={session.setSnap}
+            size="md"
+            ariaLabel={t("share_studio_deep_landings")}
+          />
+        </div>
+      {/if}
+    </PostTimingDisclosure>
+
+    <PostTimingDisclosure
+      title="Parts & end"
+      description="Split an edited take or mark its ending"
+    >
+      {#if fitted && section}
+        <div class="group">
+          <h4>{t("share_studio_deep_end")}</h4>
+          <div class="row">
+            <PanelButton onclick={session.endHere}
+              >{t("share_studio_deep_performance_ends_here")}</PanelButton
+            >
+            {#if session.endClearable}
+              <PanelButton onclick={session.clearEnd}
+                >{t("share_studio_deep_clear_end")}</PanelButton
+              >
             {/if}
           </div>
         </div>
       {/if}
-
-      <div class="group">
-        <h4>{t("share_studio_deep_end")}</h4>
-        <div class="row">
-          <PanelButton onclick={session.endHere}
-            >{t("share_studio_deep_performance_ends_here")}</PanelButton
-          >
-          {#if session.endClearable}
-            <PanelButton onclick={session.clearEnd}
-              >{t("share_studio_deep_clear_end")}</PanelButton
-            >
-          {/if}
-        </div>
-      </div>
-    {/if}
-
-    <details class="group parts" open={session.timing.sections.length > 1}>
-      <summary>{t("share_studio_deep_split_take_summary")}</summary>
       <p class="help">
         {t("share_studio_deep_split_take_help")}
       </p>
@@ -271,21 +348,18 @@
       {#if session.canSplit && !session.canKeepCounting}
         <p class="help">{t("share_studio_deep_tap_to_here_first")}</p>
       {/if}
-    </details>
-
-    <footer class="foot">
-      <PanelButton onclick={session.undo} disabled={!session.canUndo}>
-        <i class="fa-solid fa-rotate-left" aria-hidden="true"></i>
-        {t("share_studio_deep_undo")}
-      </PanelButton>
       <PanelButton
         onclick={session.clearTaps}
         disabled={!section || section.taps.length === 0}
       >
-        {t("share_studio_deep_clear_taps")}
+        {session.timing.sections.length > 1
+          ? "Clear this part & restart"
+          : "Clear taps & restart"}
       </PanelButton>
+    </PostTimingDisclosure>
+
+    <footer class="foot">
       <PanelButton
-        variant="primary"
         onclick={session.confirm}
         disabled={session.status === "untapped" ||
           session.status === "confirmed"}
@@ -307,9 +381,10 @@
     min-width: 0;
   }
   .timing-panel {
-    gap: 1rem;
+    gap: 0;
   }
   .head {
+    padding-bottom: 0.75rem;
     display: flex;
     flex-wrap: wrap;
     align-items: baseline;
@@ -322,14 +397,14 @@
     color: var(--theme-text, #fff);
   }
   h3 {
-    font-size: 1rem;
+    font-size: var(--mapping-heading-size, 1rem);
   }
   h4 {
-    font-size: 0.9375rem;
+    font-size: var(--mapping-text-size, 0.9375rem);
   }
   .status {
-    color: var(--theme-text-secondary, #aaa);
-    font-size: 0.8125rem;
+    color: var(--theme-text-dim, #aaa);
+    font-size: var(--mapping-meta-size, 0.8125rem);
   }
   .status-confirmed {
     color: var(--semantic-success, #4ade80);
@@ -339,14 +414,14 @@
   }
   .help {
     margin: 0;
-    color: var(--theme-text-secondary, #aaa);
-    font-size: 0.875rem;
+    color: var(--theme-text-dim, #aaa);
+    font-size: var(--mapping-text-size, 0.875rem);
     line-height: 1.4;
   }
   .verdict-text {
     margin: 0;
     color: var(--theme-text, #fff);
-    font-size: 0.9375rem;
+    font-size: var(--mapping-text-size, 0.9375rem);
     line-height: 1.4;
   }
   .tone-good .verdict-text {
@@ -356,6 +431,26 @@
   .tone-tempo .verdict-text {
     color: var(--semantic-warning, #fbbf24);
   }
+  .primary-action {
+    display: grid;
+    justify-items: start;
+    gap: 0.75rem;
+    padding-block: 0.25rem 1rem;
+  }
+  .verdict {
+    padding-bottom: 1rem;
+  }
+  .paired {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .step-unit {
+    font-size: var(--mapping-text-size, 0.875rem);
+    color: var(--theme-text-dim, #aaa);
+    text-align: center;
+  }
   .row {
     display: flex;
     flex-wrap: wrap;
@@ -363,74 +458,12 @@
     gap: 0.5rem;
     min-width: 0;
   }
-  .value {
-    color: var(--theme-text, #fff);
-    font-size: 0.875rem;
-    font-variant-numeric: tabular-nums;
-  }
-  .tap {
-    position: relative;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.75rem;
-    min-height: 3.5rem;
-    overflow: hidden;
-    border: 1px solid var(--theme-primary, #d4813a);
-    border-radius: 0.75rem;
-    color: var(--theme-text, #fff);
-    background: color-mix(
-      in srgb,
-      var(--theme-primary, #d4813a) 22%,
-      transparent
-    );
-    font: inherit;
-    font-size: 1rem;
-    font-weight: 600;
-    cursor: pointer;
-    touch-action: manipulation;
-  }
-  .tap:disabled {
-    opacity: 0.5;
-    cursor: default;
-  }
-  .tap:focus-visible {
-    outline: 2px solid var(--theme-primary, currentColor);
-    outline-offset: 2px;
-  }
-  .tap kbd {
-    padding: 0.1rem 0.4rem;
-    border: 1px solid currentColor;
-    border-radius: 0.25rem;
-    font-size: 0.75rem;
-  }
-  .flash {
-    position: absolute;
-    inset: 0;
-    background: var(--theme-primary, #d4813a);
-    opacity: 0;
-    animation: tap-flash 220ms ease-out;
-    pointer-events: none;
-  }
-  @keyframes tap-flash {
-    from {
-      opacity: 0.5;
-    }
-    to {
-      opacity: 0;
-    }
-  }
-  @media (prefers-reduced-motion: reduce) {
-    .flash {
-      animation: none;
-    }
-  }
   .bpm {
     display: inline-flex;
     align-items: center;
     gap: 0.5rem;
     color: var(--theme-text, #fff);
-    font-size: 0.875rem;
+    font-size: var(--mapping-text-size, 0.875rem);
   }
   .bpm input {
     width: 5.5rem;
@@ -447,41 +480,12 @@
     outline: 2px solid var(--theme-primary, currentColor);
     outline-offset: 1px;
   }
-  .check {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    min-height: 2.75rem;
-    color: var(--theme-text, #fff);
-    font-size: 0.875rem;
-    cursor: pointer;
-  }
-  .check input {
-    width: 1.125rem;
-    height: 1.125rem;
-    accent-color: var(--theme-primary, #d4813a);
-  }
-  .parts summary {
-    display: flex;
-    align-items: center;
-    min-height: 2.75rem;
-    color: var(--theme-text, #fff);
-    font-size: 0.875rem;
-    cursor: pointer;
-  }
-  /* "Looks right" is the step's way out, so it stays in view while the
-     controls above it scroll. The wash is translucent on dark themes; the
-     blur keeps what scrolls under it from reading through. */
   .foot {
-    position: sticky;
-    bottom: 0;
-    z-index: 1;
     display: flex;
     flex-wrap: wrap;
     gap: 0.5rem;
     padding-block: 0.75rem;
     border-top: 1px solid var(--theme-stroke, #484755);
     background: var(--theme-panel-bg, #12121c);
-    backdrop-filter: blur(12px);
   }
 </style>

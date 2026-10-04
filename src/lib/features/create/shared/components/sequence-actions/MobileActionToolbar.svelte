@@ -322,7 +322,9 @@
     class="action-grid"
     id="panel-{activeCategory}"
     role="tabpanel"
-    aria-label={t("create_action_category_actions", { category: activeCategoryLabel })}
+    aria-label={t("create_action_category_actions", {
+      category: activeCategoryLabel,
+    })}
   >
     {#each activeActions as action (action.id + action.icon)}
       {#if action.id === "swap"}

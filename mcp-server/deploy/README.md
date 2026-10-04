@@ -35,7 +35,34 @@ Follow the official remote-managed path (Cloudflare's current recommended setup)
 
 1. Open [Cloudflare Zero Trust dashboard](https://one.dash.cloudflare.com/) → **Networks → Tunnels** → **Create a tunnel**.
 2. Connector type: **Cloudflared**. Name it `tka-mcp`. **Save tunnel**.
-3. Environment: **Windows**. Architecture: **64-bit**. Copy the generated install command (contains a token); run it in **an elevated PowerShell**. It installs `cloudflared` as a Windows service for you. Wait for the dashboard to show the connector as healthy, then **Next**.
+3. In the dashboard (**Networking → Tunnels → `tka-mcp`**), with Environment
+   **Windows** and Architecture **64-bit**, copy the token with the copy icon.
+   The install command on screen is masked. **Never run it.** It puts the token
+   on the service's command line, which any local user can read, and Windows
+   logs that line in plain text in System event 7045 ("A service was
+   installed"). That is how the `tka-mcp` token leaked before its 2026-09-28
+   rotation. Instead, from **an elevated PowerShell**, save the token where
+   only SYSTEM and Administrators can read it, and create the service yourself:
+
+   ```powershell
+   $dir = 'C:\ProgramData\cloudflared'
+   New-Item -ItemType Directory -Force $dir | Out-Null
+   # No inheritance: full control for SYSTEM and Administrators only
+   icacls $dir /inheritance:r /grant:r '*S-1-5-18:(OI)(CI)F' '*S-1-5-32-544:(OI)(CI)F'
+   # Writes the clipboard's last word (the token, even from a copied command) as
+   # UTF-8 without a BOM, so the token never appears on a command line
+   [IO.File]::WriteAllText("$dir\tka-mcp.token", ((Get-Clipboard -Raw).Trim() -split '\s+')[-1])
+
+   $bin = '"C:\Program Files (x86)\cloudflared\cloudflared.exe" tunnel --protocol http2 run --token-file "C:\ProgramData\cloudflared\tka-mcp.token"'
+   New-Service -Name Cloudflared -DisplayName 'Cloudflared agent' -StartupType Automatic -BinaryPathName $bin
+   sc.exe failure Cloudflared reset= 86400 actions= restart/20000   # restart 20 s after a crash
+   Start-Service Cloudflared
+   ```
+
+   Event 7045 now records only the file path. Delete the copied entry from
+   clipboard history (**Win+V**), wait for the dashboard to show the connector
+   as healthy, then **Next**.
+
 4. **Public Hostnames** tab → **Add a public hostname**:
    - Subdomain: `mcp`
    - Domain: `tkaflowarts.com`
@@ -45,6 +72,19 @@ Follow the official remote-managed path (Cloudflare's current recommended setup)
 5. In the **TLS** section of that hostname's advanced settings, leave **No TLS verify** off — the origin is plain HTTP on localhost, which Cloudflare handles correctly by default.
 
 Public URL: `https://mcp.tkaflowarts.com/mcp`
+
+**Rotating the token.** In **Networking → Tunnels → `tka-mcp`**, open
+**Overview** → **Refresh token** → **Rotate token**, then copy the new token
+with the copy icon. Again, never run the install command. From an elevated
+PowerShell, overwrite the file (it keeps the folder's ACL) and restart the
+service:
+
+```powershell
+[IO.File]::WriteAllText('C:\ProgramData\cloudflared\tka-mcp.token', ((Get-Clipboard -Raw).Trim() -split '\s+')[-1])
+Restart-Service Cloudflared
+```
+
+Then delete the copied entry from clipboard history (**Win+V**).
 
 ---
 
@@ -109,6 +149,13 @@ are what make the transport authenticated; they are not optional.
 
 ## Verifying end-to-end
 
+From any checkout, `npm run verify:mcp-service` checks everything below in one
+read-only pass: the service state, the local health URL, how many times the
+server exited on its own in the last hour, and whether any running cloudflared
+tunnel routes `mcp.tkaflowarts.com`. It exits 1 and says what failed, with the
+last error line from `logs\mcp-stderr.log` when the server itself is down.
+`--json` prints the same report for other tools.
+
 ```powershell
 # Service status
 Get-Service FlowArtsKnowledgeMCP, cloudflared
@@ -117,13 +164,47 @@ Get-Service FlowArtsKnowledgeMCP, cloudflared
 curl http://localhost:3333/
 
 # Public — Access answers BEFORE the tunnel, so this is a 401 challenge, not the
-# health string. A 502 here means the origin is down; a 401 means it is working.
+# health string, and it comes back even when no tunnel routes the hostname.
 curl -i https://mcp.tkaflowarts.com/mcp
 ```
 
 The public 401 must carry `WWW-Authenticate: Bearer ... resource_metadata=...`.
 `Server-Timing: cfOrigin;dur=0` confirms Access refused it at the edge without
-ever reaching the tunnel.
+ever reaching the tunnel, so a 401 proves nothing about the tunnel or the
+server. The route check in `npm run verify:mcp-service` asks each running
+cloudflared which hostnames it routes; calling a tool through the claude.ai
+connector is the only end-to-end proof.
+
+---
+
+## Monitoring
+
+A scheduled task under your account runs that check at logon and every 15
+minutes, and shows a Windows notification when the connector stops working.
+It needs no admin rights:
+
+```powershell
+cd E:\tka-platform\mcp-server\deploy
+powershell -ExecutionPolicy Bypass -File .\install-watch-task.ps1             # install; runs once right away
+powershell -ExecutionPolicy Bypass -File .\install-watch-task.ps1 -Uninstall  # remove
+```
+
+The task runs `scripts\watch-mcp-service.mjs` from the main checkout through a
+headless console, so no window appears. A failure counts only when a second
+check a minute later agrees. You get a notification when the connector goes
+down, when the problem moves between the server and the tunnel route, every 6
+hours while it stays down, and once when it works again. Problem notifications
+stay on screen until you dismiss them. The watcher never starts, stops, or
+reconfigures the service. Its state and a line per run are in
+`%LOCALAPPDATA%\FlowArtsKnowledgeMCP\`, and
+`node scripts\watch-mcp-service.mjs --test-notification` shows a sample.
+
+**Log retention.** NSSM rotates both logs before every start and never deletes
+the old copies, so a crash loop leaves two files per attempt. Before each start,
+`run-mcp-http.cmd` runs `prune-logs.mjs`, which keeps the newest 200 rotated
+logs in `deploy\logs\` and never touches the live logs or subfolders. The
+backlog from before the cap is in `deploy\logs\archive-2026-09-28\`; delete it
+whenever you like.
 
 ---
 
@@ -136,6 +217,25 @@ Restart-Service FlowArtsKnowledgeMCP    # needs an ELEVATED shell
 ```
 
 No rebuild needed — it runs via `tsx` on source.
+
+**After a merge that changes `mcp-server\package.json` or its lockfile**,
+install in this folder before the service next restarts. The service loads
+packages from the main checkout's `mcp-server\node_modules`, which a root
+`pnpm install` never touches. The running process keeps its old code until a
+restart or reboot, then fails on the missing package. That is how it
+crash-looped from 2026-09-18 to 09-27.
+
+```powershell
+npm install --no-save --ignore-scripts --prefix "E:\tka-platform\mcp-server"
+```
+
+Never use `npm ci` here. It deletes `node_modules`, which holds the junctions
+into `packages\`. If npm fails with `EPERM` or `EBUSY`, a running process has
+one of the files open: stop the service (elevated), install, then start it.
+`npm run wt:finish` checks this folder and `mcp-server-pkg` after every merge
+and prints the install command when either drifts from its lockfile. Run the
+same check at any time with `npm run verify:standalone-installs` from the repo
+root.
 
 **If it comes back as `Paused`, it is crash-looping, not idle.** NSSM parks a
 service that keeps exiting. `Get-Service` shows `Paused`, nothing listens on
@@ -154,5 +254,7 @@ Get-Content .\logs\mcp-stderr.log -Tail 20
 ```powershell
 nssm stop FlowArtsKnowledgeMCP confirm
 nssm remove FlowArtsKnowledgeMCP confirm
-cloudflared service uninstall
+Stop-Service Cloudflared
+sc.exe delete Cloudflared
+Remove-Item C:\ProgramData\cloudflared\tka-mcp.token
 ```

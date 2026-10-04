@@ -1,8 +1,10 @@
 <script lang="ts">
   import { PATH_SHAPE_COLORS } from "$lib/shared/animation-engine/domain/path-shape-colors";
   import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import LinkChip from "$lib/shared/ui/components/LinkChip.svelte";
   import { onDestroy, type Snippet } from "svelte";
   import { getAnimationVisibilityManager } from "../../state/animation-visibility-state.svelte";
+  import type { AnimationVisibilityStateManager } from "../../state/animation-visibility-state.svelte";
   import { getAnimationVisibilityContext } from "../../state/animation-visibility-context";
 
   let {
@@ -10,6 +12,7 @@
     preview,
     showHelp = true,
     fill = false,
+    visibilityManagerOverride,
   }: {
     onSettingChange?: (previousValue: string, value: string) => void;
     preview?: Snippet<["arc" | "linear" | "concave" | "hybrid", number]>;
@@ -17,9 +20,13 @@
     /** Size the preview tiles to the box the grid is given, its height as
      *  well as its width. The host must give the grid a definite height. */
     fill?: boolean;
+    visibilityManagerOverride?: AnimationVisibilityStateManager;
   } = $props();
 
-  const vm = getAnimationVisibilityContext() ?? getAnimationVisibilityManager();
+  const vm =
+    visibilityManagerOverride ??
+    getAnimationVisibilityContext() ??
+    getAnimationVisibilityManager();
   let session = $state(vm.getPathSession());
   let previewWidth = $state(0);
   let previewHeight = $state(0);
@@ -185,35 +192,25 @@
 {#if session}
   {#if session.overrideCount > 0}
     <p class="path-scope" aria-live="polite">
-      {t("animation_path_override_count", { count: session.overrideCount })}{session.preview ? t("animation_path_replaced_in_preview") : ""}
+      {t("animation_path_override_count", {
+        count: session.overrideCount,
+      })}{session.preview ? t("animation_path_replaced_in_preview") : ""}
     </p>
   {/if}
 {/if}
 
 {#if showHelp}
-  <a
-    class="path-help"
+  <LinkChip
     href="/guide/motion-paths"
     target="_blank"
     rel="noopener noreferrer"
   >
-    {t("animation_path_about")} <span class="sr-only">{t("animation_opens_new_tab")}</span>
-  </a>
+    {t("animation_path_about")}
+    <span class="sr-only">{t("animation_opens_new_tab")}</span>
+  </LinkChip>
 {/if}
 
 <style>
-  .path-help {
-    display: inline-flex;
-    align-items: center;
-    min-height: var(--min-touch-target, 44px);
-    color: var(--theme-accent);
-    font-size: var(--font-size-sm, 14px);
-    text-underline-offset: 3px;
-  }
-  .path-help:focus-visible {
-    outline: 2px solid var(--theme-accent);
-    outline-offset: 2px;
-  }
   .path-shape-grid.with-preview {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: var(--spacing-sm, 8px);

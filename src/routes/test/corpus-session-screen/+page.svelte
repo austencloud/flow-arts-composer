@@ -11,6 +11,7 @@
   import CorpusSessionScreen from "$lib/features/lab/pronunciation-recorder/components/CorpusSessionScreen.svelte";
   import type { ReadState } from "$lib/features/lab/pronunciation-recorder/state/corpus-session-state.svelte";
   import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
+  import LinkChip from "$lib/shared/ui/components/LinkChip.svelte";
 
   type State =
     | "idle"
@@ -110,7 +111,7 @@
   <header>
     <p class="banner">
       Mock. Nothing here records: the numbers are invented and Start does nothing. The working
-      recorder is at <a href="/lab/pronunciation-recorder">/lab/pronunciation-recorder</a>.
+      recorder is at <LinkChip size="inline" href="/lab/pronunciation-recorder">/lab/pronunciation-recorder</LinkChip>.
     </p>
 
     <!-- SegmentedControl's root is `width: 100%`, so without a bounded wrapper

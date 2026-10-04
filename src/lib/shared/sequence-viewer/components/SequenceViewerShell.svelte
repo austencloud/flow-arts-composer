@@ -56,6 +56,7 @@
   import PostStudioPane from "./PostStudioPane.svelte";
   import type { PostStudioShareExport } from "$lib/shared/share/components/post-studio/post-studio-share-export";
   import { POST_STUDIO_STAGE_MIN_WIDTH } from "../services/viewer-shell-model";
+  import { resolveSequenceIdentityTitle } from "../services/viewer-title";
   import { createPaneKeepAlive } from "./pane-keep-alive.svelte";
   import PracticeSetupBar from "./PracticeSetupBar.svelte";
   import ViewerSharePanel from "./ViewerSharePanel.svelte";
@@ -89,6 +90,11 @@
   import { VIDEO_UPLOAD_ENABLED } from "../config/viewer-feature-flags";
   import { uploadRenderedFilm } from "$lib/shared/video-collaboration/services/upload-rendered-film";
   import { canAccessPostStudio } from "../services/post-studio-access";
+  import { getPostWorkspaceNavigator } from "$lib/features/post/services/get-post-workspace-navigator";
+  import {
+    closeSequenceOverlay,
+    isSequenceOverlayOpen,
+  } from "../state/sequence-viewer-overlay-state.svelte";
   import ChoreoCardContextMenuHost from "./choreo-card-context-menu/ChoreoCardContextMenuHost.svelte";
   import { createSequenceSendSession } from "$lib/shared/inbox/state/send-sequence-state.svelte";
   import { inboxState } from "$lib/shared/inbox/state/inbox-state.svelte";
@@ -204,6 +210,8 @@
      * the hero is there to show.
      */
     embedded?: boolean;
+    /** Compact in-page introduction using the shared stage and canvas. */
+    introPreview?: boolean;
     /** Route hosts can replace the drawer's Close control with a Back control. */
     navigation?: { label: string };
     tunnelComposition?: TunnelComposition | null;
@@ -234,6 +242,7 @@
     exportOverrides,
     guideAction = null,
     embedded = false,
+    introPreview = false,
     navigation,
     contextContent,
     showFullscreenControls = false,
@@ -545,6 +554,23 @@
    */
   let postStudioVideoUrl = $state<string | null>(null);
   let postStudioSharePreviewTarget = $state<HTMLElement | null>(null);
+  let openingPost = false;
+  async function openInPost(): Promise<void> {
+    if (openingPost) return;
+    openingPost = true;
+    try {
+      await getPostWorkspaceNavigator().openSequence(
+        ctx.effectiveSequence ?? sequence
+      );
+      if (isSequenceOverlayOpen()) closeSequenceOverlay();
+    } catch (error) {
+      console.error("[SequenceViewer] Could not open Post", error);
+      toast.error("Could not open Post. Please try again.");
+    } finally {
+      openingPost = false;
+    }
+  }
+
   let postStudioShareExport: PostStudioShareExport | null = null;
   function adoptPostStudioRender(blob: Blob): void {
     if (postStudioVideoUrl) URL.revokeObjectURL(postStudioVideoUrl);
@@ -836,10 +862,9 @@
     toExportTakeoverPhase(interactions.videoProgress, interactions.videoBusy)
   );
   const takeoverLabel = $derived(
-    ctx.effectiveSequence?.word ||
-      ctx.effectiveSequence?.displayName ||
-      ctx.effectiveSequence?.name ||
-      ""
+    ctx.effectiveSequence
+      ? resolveSequenceIdentityTitle(ctx.effectiveSequence)
+      : ""
   );
   const takeoverWord = $derived(simplifyRepeatedWord(takeoverLabel));
 
@@ -1072,82 +1097,89 @@
   class="drawer-viewer-container"
   class:landscape={layout.isLandscape}
   class:practice-mobile={isMobile && ctx.practiceActive}
+  class:intro-preview={introPreview}
 >
-  <ViewerHeader
-    {ctx}
-    sequence={ctx.effectiveSequence ?? sequence}
-    {isMobile}
-    viewerWidth={layout.bodyWidth}
-    onClose={interactions.handleClose}
-    hidden={ctx.isFullscreen}
-    {embedded}
-    {navigation}
-    titleOverride={tunnelComposition?.name?.trim() || null}
-    {openAppHref}
-    onAccountSignIn={!embedded ? onAccountSignIn : undefined}
-    onAccountOpenApp={openAppHref && !embedded
-      ? interactions.handleAccountOpenApp
-      : undefined}
-    guideAction={embedded ? null : guideAction}
-    isFavorite={interactions.headerActions.isFavorite}
-    onFavoriteToggle={interactions.headerActions.onFavoriteToggle && !embedded
-      ? interactions.handleFavoriteToggle
-      : undefined}
-    isSaved={interactions.headerActions.isSaved}
-    isSaving={interactions.headerActions.isSaving}
-    onSave={interactions.headerActions.onSave && !embedded
-      ? interactions.handleSave
-      : undefined}
-    onRemix={(onRemix ?? interactions.headerActions.onRemix) && !embedded
-      ? interactions.handleRemix
-      : undefined}
-    onPracticeToggle={interactions.headerActions.showPractice
-      ? ctx.practiceActive
-        ? interactions.handleExitPractice
-        : interactions.handleEnterPractice
-      : undefined}
-    {canToggleMotionVisibility}
-    onMotionToggleLeft={() => interactions.handleMotionToggle("left")}
-    onMotionToggleRight={() => interactions.handleMotionToggle("right")}
-    onVideoUpload={interactions.headerActions.onVideoUpload && !embedded
-      ? interactions.handleHeaderVideoUpload
-      : undefined}
-    isPublished={interactions.headerActions.isPublished}
-    onPublish={interactions.headerActions.onPublish && !embedded
-      ? interactions.handlePublish
-      : undefined}
-    onUnpublish={interactions.headerActions.onUnpublish && !embedded
-      ? interactions.handleUnpublish
-      : undefined}
-    onDeleteRequest={interactions.headerActions.onDeleteRequest && !embedded
-      ? interactions.handleDeleteRequest
-      : undefined}
-    onOpenApp={openAppHref && !embedded
-      ? interactions.handleOpenApp
-      : undefined}
-    exportSettings={layout.isAnyExportActive &&
-    !share.panelOpen &&
-    !layout.effectiveMobile &&
-    !layout.isRecordSceneActive &&
-    !layout.isImageExportActive
-      ? {
-          expanded: !layout.exportSidebarCollapsed,
-          onToggle: layout.toggleExportSidebar,
-        }
-      : null}
-    sharePanelOpen={share.panelOpen}
-    shareActions={share.actions}
-    shareStatusMessage={share.statusMessage}
-    onShareActionSelect={share.selectAction}
-    onOverflowOpenChange={(open, reason) =>
-      captureScanAction(
-        open ? "overflow_open" : "overflow_close",
-        {},
-        { count: reason !== "item" }
-      )}
-  />
+  {#if !introPreview}
+    <ViewerHeader
+      {ctx}
+      sequence={ctx.effectiveSequence ?? sequence}
+      {isMobile}
+      viewerWidth={layout.bodyWidth}
+      onClose={interactions.handleClose}
+      hidden={ctx.isFullscreen}
+      {embedded}
+      {navigation}
+      titleOverride={tunnelComposition?.name?.trim() || null}
+      {openAppHref}
+      onAccountSignIn={!embedded ? onAccountSignIn : undefined}
+      onAccountOpenApp={openAppHref && !embedded
+        ? interactions.handleAccountOpenApp
+        : undefined}
+      guideAction={embedded ? null : guideAction}
+      isFavorite={interactions.headerActions.isFavorite}
+      onFavoriteToggle={interactions.headerActions.onFavoriteToggle && !embedded
+        ? interactions.handleFavoriteToggle
+        : undefined}
+      isSaved={interactions.headerActions.isSaved}
+      isSaving={interactions.headerActions.isSaving}
+      onSave={interactions.headerActions.onSave && !embedded
+        ? interactions.handleSave
+        : undefined}
+      onAddToCollection={interactions.headerActions.onAddToCollection &&
+      !embedded
+        ? interactions.handleAddToCollection
+        : undefined}
+      onRemix={(onRemix ?? interactions.headerActions.onRemix) && !embedded
+        ? interactions.handleRemix
+        : undefined}
+      onPracticeToggle={interactions.headerActions.showPractice
+        ? ctx.practiceActive
+          ? interactions.handleExitPractice
+          : interactions.handleEnterPractice
+        : undefined}
+      {canToggleMotionVisibility}
+      onMotionToggleLeft={() => interactions.handleMotionToggle("left")}
+      onMotionToggleRight={() => interactions.handleMotionToggle("right")}
+      onVideoUpload={interactions.headerActions.onVideoUpload && !embedded
+        ? interactions.handleHeaderVideoUpload
+        : undefined}
+      isPublished={interactions.headerActions.isPublished}
+      onPublish={interactions.headerActions.onPublish && !embedded
+        ? interactions.handlePublish
+        : undefined}
+      onUnpublish={interactions.headerActions.onUnpublish && !embedded
+        ? interactions.handleUnpublish
+        : undefined}
+      onDeleteRequest={interactions.headerActions.onDeleteRequest && !embedded
+        ? interactions.handleDeleteRequest
+        : undefined}
+      onOpenApp={openAppHref && !embedded
+        ? interactions.handleOpenApp
+        : undefined}
+      exportSettings={layout.isAnyExportActive &&
+      !share.panelOpen &&
+      !layout.effectiveMobile &&
+      !layout.isRecordSceneActive &&
+      !layout.isImageExportActive
+        ? {
+            expanded: !layout.exportSidebarCollapsed,
+            onToggle: layout.toggleExportSidebar,
+          }
+        : null}
+      sharePanelOpen={share.panelOpen}
+      shareActions={share.actions}
+      shareStatusMessage={share.statusMessage}
+      onShareActionSelect={share.selectAction}
+      onOverflowOpenChange={(open, reason) =>
+        captureScanAction(
+          open ? "overflow_open" : "overflow_close",
+          {},
+          { count: reason !== "item" }
+        )}
+    />
+  {/if}
 
-  {#if contextContent && !ctx.isFullscreen}
+  {#if contextContent && !ctx.isFullscreen && !introPreview}
     {@render contextContent()}
   {/if}
 
@@ -1156,6 +1188,22 @@
        viewer is open AND in 3D" — so open-viewer stayed satisfiable while the
        viewer sat open in 2D and the ghost kept trying to open what it was
        already looking at. -->
+  {#if introPreview}
+    <div class="intro-mode-switch" role="group" aria-label="Sequence view">
+      <button
+        type="button"
+        class:active={ctx.viewerState.viewerMode === "animation"}
+        aria-pressed={ctx.viewerState.viewerMode === "animation"}
+        onclick={() => layout.selectViewerMode("animation")}>Animation</button
+      >
+      <button
+        type="button"
+        class:active={ctx.viewerState.viewerMode === "card"}
+        aria-pressed={ctx.viewerState.viewerMode === "card"}
+        onclick={() => layout.selectViewerMode("card")}>Card</button
+      >
+    </div>
+  {/if}
   <div
     class="drawer-main"
     data-ghost-state="viewer-open"
@@ -1198,8 +1246,8 @@
         <div
           bind:this={viewerWorkspaceElement}
           class="viewer-and-export"
-          class:export-active={layout.isWorkspaceInspectorActive ||
-            studioUsesSideInspector}
+          class:export-active={!introPreview &&
+            (layout.isWorkspaceInspectorActive || studioUsesSideInspector)}
           class:record-scene-active={layout.isRecordSceneActive}
           class:card-inspector={layout.inspectorProfile === "card"}
           class:performance-inspector={layout.inspectorProfile ===
@@ -1210,9 +1258,9 @@
           class:stacked-rail={layout.stackedExportWithRail}
           class:sidebar-collapsed={layout.exportSidebarCollapsed &&
             !layout.isImageExportActive}
-          class:has-rail={layout.showRail}
+          class:has-rail={layout.showRail && !introPreview}
         >
-          {#if layout.showRail}
+          {#if layout.showRail && !introPreview}
             <div
               class="viewer-rail-wrap"
               class:collapsed={ctx.practiceActive}
@@ -1233,6 +1281,7 @@
                   : undefined}
                 onSelectSplit={() => layout.selectSplitMode()}
                 onSelectMode={(mode) => layout.selectViewerMode(mode)}
+                onOpenPost={embedded ? undefined : openInPost}
               />
             </div>
           {/if}
@@ -1256,8 +1305,8 @@
 
           <ViewerWorkspacePanels
             direction={layout.effectiveMobile ? "vertical" : "horizontal"}
-            inspectorActive={layout.isWorkspaceInspectorActive ||
-              studioUsesSideInspector}
+            inspectorActive={!introPreview &&
+              (layout.isWorkspaceInspectorActive || studioUsesSideInspector)}
             inspectorCollapsed={!studioUsesSideInspector &&
               !share.panelOpen &&
               layout.exportSidebarCollapsed &&
@@ -1301,6 +1350,7 @@
                       data-persistent-motion-stage
                     >
                       <ViewerSplitPane
+                        showcasePlayback={introPreview}
                         sequence={ctx.effectiveSequence}
                         activeHandLabeling={ctx.activeHandLabeling}
                         {tunnelComposition}
@@ -1317,7 +1367,9 @@
                         bpm={ctx.bpmLocal}
                         onBpmChange={(bpm) =>
                           interactions.handleBpmChange(bpm, "viewer")}
-                        onSaveToLibrary={interactions.handleSave}
+                        onSaveToLibrary={introPreview
+                          ? undefined
+                          : interactions.handleSave}
                         onPropChange={(prop) =>
                           interactions.handlePropChange(prop, "viewer")}
                         onFanAppearanceChange={ctx.handleFanAppearanceChange}
@@ -1380,8 +1432,9 @@
                           }
                         }}
                         {rerenderTrigger}
-                        onChoreoCardContextMenu={(x, y) =>
-                          choreoCardMenuHost?.openContextMenu(x, y)}
+                        onChoreoCardContextMenu={introPreview
+                          ? undefined
+                          : (x, y) => choreoCardMenuHost?.openContextMenu(x, y)}
                         onPlaybackToggle={() =>
                           interactions.handlePlaybackToggle("viewer_transport")}
                         onSystemPlaybackChange={interactions.handleSystemPlaybackChange}
@@ -1410,16 +1463,24 @@
                               : ctx.viewerState.viewerMode === "videos"
                                 ? { leftPane: "animation", rightPane: "card" }
                                 : ctx.viewerState.splitConfig}
-                        isLoggedIn={ctx.isLoggedIn}
-                        onVideoUpload={ctx.isLoggedIn && VIDEO_UPLOAD_ENABLED
+                        isLoggedIn={ctx.isLoggedIn && !introPreview}
+                        onVideoUpload={!introPreview &&
+                        ctx.isLoggedIn &&
+                        VIDEO_UPLOAD_ENABLED
                           ? interactions.handleGalleryVideoUpload
                           : undefined}
-                        onArtExport={interactions.handleArtExport}
-                        onArtShare={share.setArtShareTarget}
+                        onArtExport={introPreview
+                          ? undefined
+                          : interactions.handleArtExport}
+                        onArtShare={introPreview
+                          ? undefined
+                          : share.setArtShareTarget}
                         artShareActive={!!share.artShare}
                         onArtExportEvent={interactions.handleArtExportEvent}
                         onArtSettingChange={interactions.handleArtSettingChange}
-                        onArtAction={interactions.handleArtAction}
+                        onArtAction={introPreview
+                          ? undefined
+                          : interactions.handleArtAction}
                         onViewer3DSettingChange={scanInstrumentationEnabled
                           ? interactions.handleViewer3DSetting
                           : undefined}
@@ -1714,7 +1775,7 @@
         {/if}
       {/if}
     </div>
-    {#if isMobile && ctx.hasSequence && ctx.effectiveSequence && !focusedModeActive && dockTrayState.openCount === 0}
+    {#if isMobile && !introPreview && ctx.hasSequence && ctx.effectiveSequence && !focusedModeActive && dockTrayState.openCount === 0}
       <!-- Ducks while any ControlDock tray is open — the media switcher is
            noise while the user edits, and the tray gets the room.
            Choreography: the slot height eases closed (outer slide) while
@@ -1740,12 +1801,13 @@
             webgl2Available={ctx.viewer3DState.webgl2Available}
             onSelectSplit={() => layout.selectSplitMode()}
             onSelectMode={(mode) => layout.selectViewerMode(mode)}
+            onOpenPost={embedded ? undefined : openInPost}
           />
         </div>
       </div>
     {/if}
   </div>
-  {#if ctx.hasSequence}
+  {#if ctx.hasSequence && !introPreview}
     <!-- Bottom workstation: stays mounted, a flow child that PUSHES the
          content up (so the bottom rows stay visible). Height toggles in
          one reflow at the slide's near edge; the visible motion is a
@@ -1863,7 +1925,9 @@
     needsAccountForFiles={!authState.isFullAccount}
     onRequestAccount={() => authDrawerState.show("signup", "export")}
     onOpenPostStudio={canAccessPostStudio()
-      ? () => layout.selectViewerMode("post-studio")
+      ? embedded
+        ? () => layout.selectViewerMode("post-studio")
+        : openInPost
       : undefined}
     onClose={() => share.setPostSheetOpen(false)}
   />
@@ -1905,6 +1969,36 @@
     min-height: 0;
     overflow: hidden;
     position: relative;
+  }
+
+  .intro-mode-switch {
+    display: flex;
+    align-self: center;
+    gap: 0.25rem;
+    flex-shrink: 0;
+    padding: 0.2rem;
+    margin: 0.35rem;
+    border: 1px solid var(--theme-stroke, #55536a);
+    border-radius: 0.7rem;
+    background: var(--theme-card-bg, #242332);
+  }
+  .intro-mode-switch button {
+    min-height: 2.75rem;
+    min-width: 6rem;
+    border: 0;
+    border-radius: 0.5rem;
+    background: transparent;
+    color: var(--theme-text, white);
+    font: inherit;
+    cursor: pointer;
+  }
+  .intro-mode-switch button.active {
+    background: var(--theme-accent, #7777d6);
+    color: white;
+  }
+  .intro-mode-switch button:focus-visible {
+    outline: 2px solid var(--theme-accent, #8b8cff);
+    outline-offset: 2px;
   }
 
   .drawer-body-content {

@@ -28,8 +28,9 @@ import { Plane } from "@austencloud/scene-3d";
  * This determines the distance from center to hand points.
  * Matches handPointRadius for default 34" staff (86.4cm * 0.01 * 0.6 ≈ 0.52m)
  *
- * TODO: This should eventually be passed dynamically based on user proportions
- * rather than hardcoded. For now, it matches the default staff size.
+ * Performers place their hands by their own hand distance
+ * (`performer-hand-distance.ts`), which defaults to this. Labs and diagrams
+ * that draw their own grids use it directly.
  */
 export const GRID_RADIUS_3D = 0.52;
 

@@ -15,8 +15,8 @@ tests are necessary evidence, but none can substitute for the rendered image.
 
 - `scripts/build-autumn-environment.py` owns authored terrain geometry, UVs,
   material assignment, and exported ground metadata.
-- `AutumnGroundDetail` and `autumn-ground-detail.ts` own repeated surface
-  modulation across Autumn ground materials.
+- `autumn-ground-detail.ts`, applied by `createAutumnMaterialRuntime`, owns
+  repeated surface modulation across Autumn ground materials.
 - `AutumnScene.svelte` and `autumn-scene-config.ts` own the sky/fog join.
 - `SceneShaderWarmup.svelte` owns renderer compilation and the smooth-frame
   gate used before a scene can be called visually ready.

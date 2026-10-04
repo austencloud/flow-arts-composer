@@ -36,6 +36,7 @@
     | "tkaGlyph"
     | "element"
     | "stepNumber"
+    | "progress"
     | "word";
 
   interface PreviewSequence {
@@ -251,6 +252,19 @@
     <text x="50" y="59" class="step-text" textLength="68" lengthAdjust="spacing"
       >1 2 3</text
     >
+  </svg>
+{:else if kind === "progress"}
+  <svg class="art" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet">
+    <rect
+      x="8"
+      y="47"
+      width="84"
+      height="6"
+      rx="3"
+      fill="currentColor"
+      opacity="0.2"
+    />
+    <rect x="8" y="47" width="52" height="6" rx="3" fill="currentColor" />
   </svg>
 {:else if kind === "word"}
   <svg class="art" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet">

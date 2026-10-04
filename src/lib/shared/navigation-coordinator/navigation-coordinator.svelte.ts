@@ -67,6 +67,7 @@ import {
   resolveBrowsePathname,
 } from "../browse/navigation/browse-route-resolver";
 import { captureEvent } from "../analytics/services/posthog";
+import { canAccessPostStudio } from "../sequence-viewer/services/post-studio-access";
 
 // Session storage key for persisting navigation history across HMR
 const PREVIOUS_MODULE_KEY = "tka-previous-module-before-settings";
@@ -239,6 +240,7 @@ export function getAccessibleSectionsForModule(module: ModuleId) {
   // plus the guest-tier gating from isTabAccessible() (only subtracts for guests).
   return baseSections.filter((section) => {
     return (
+      !section.navigationHidden &&
       featureFlagService.canAccessTab(module, section.id) &&
       isTabAccessible(module, section.id, accessTier)
     );
@@ -450,7 +452,6 @@ const TAB_ORDERS: Record<string, string[]> = {
     "theme",
     "preferences",
     "keyboard",
-    "language",
   ],
 };
 
@@ -635,6 +636,7 @@ export function getModuleDefinitions() {
   const _globalOverrides = featureFlagState.globalFlagOverrides;
 
   return ENABLED_MODULE_DEFINITIONS.filter((module) => {
+    if (module.id === "post" && !canAccessPostStudio()) return false;
     // Library module is now integrated into Gallery via Community/My Library toggle
     // (Note: "library" is not in ModuleId type but may exist in legacy data)
     if (module.id === ("library" as unknown)) {

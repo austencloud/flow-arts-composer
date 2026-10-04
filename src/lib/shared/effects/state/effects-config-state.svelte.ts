@@ -481,7 +481,8 @@ export function createEffectsConfigState(
     if (!isEffectId(effectId)) {
       throw new Error(`Unknown effect id: "${effectId}"`);
     }
-    sceneUndo.captureState("update-effect-config", `Update ${effectId}`);
+    if (persist)
+      sceneUndo.captureState("update-effect-config", `Update ${effectId}`);
     // The keyed config write is a genuine TS mapped-type limitation: indexing
     // config by the generic K and merging Partial<EffectConfigMap[K]> can't be
     // expressed without widening, so the cast stays here (and at applyPreset).
@@ -497,7 +498,7 @@ export function createEffectsConfigState(
     );
     scheduleSave();
     persistPersonalDefaults();
-    sceneUndo.commitStateCoalescing(`effects-${effectId}`);
+    if (persist) sceneUndo.commitStateCoalescing(`effects-${effectId}`);
   }
 
   /** The effect's personal default ("your look"), or null if none seeded. */
@@ -567,7 +568,8 @@ export function createEffectsConfigState(
   }
 
   function setActiveEffect(effect: EffectType) {
-    sceneUndo.captureState("set-active-effect", "Set active effect");
+    if (persist)
+      sceneUndo.captureState("set-active-effect", "Set active effect");
     if (effect === "none") {
       config.activeEffect = "none";
       config.tipEffectMap = {};
@@ -576,7 +578,7 @@ export function createEffectsConfigState(
       config.tipEffectMap = { "*": { effect } };
     }
     scheduleSave();
-    sceneUndo.commitState();
+    if (persist) sceneUndo.commitState();
   }
 
   /** Hover-intent: ask the canvas layer to warm this effect's renderer ahead of

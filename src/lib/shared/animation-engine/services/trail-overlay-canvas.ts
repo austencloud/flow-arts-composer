@@ -205,6 +205,7 @@ export class TrailOverlayCanvas implements ITrailOverlayCanvas {
     canvas.width = width;
     canvas.height = height;
     canvas.setAttribute("aria-hidden", "true");
+    canvas.dataset.animationLayer = "trails";
 
     canvas.style.position = "absolute";
     canvas.style.top = "0";
@@ -850,6 +851,12 @@ export class TrailOverlayCanvas implements ITrailOverlayCanvas {
     // the canvas size may still be settling (resize events arrive async)
     // and Svelte reactive props may not have propagated yet.
     this.warmupFramesRemaining = TrailOverlayCanvas.WARMUP_FRAMES;
+  }
+
+  refreshStyle(): void {
+    this.leftAccumCtx?.clearRect(0, 0, this.width, this.height);
+    this.rightAccumCtx?.clearRect(0, 0, this.width, this.height);
+    this.ctx?.clearRect(0, 0, this.width, this.height);
   }
 
   setVisible(visible: boolean): void {

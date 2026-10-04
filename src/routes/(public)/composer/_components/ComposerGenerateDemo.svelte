@@ -25,8 +25,10 @@
   footprint so nothing shifts while those chunks arrive.
 -->
 <script lang="ts">
+  import type { Snippet } from "svelte";
   import { t } from "$lib/shared/i18n/i18n.svelte";
   import { MediaQuery } from "svelte/reactivity";
+  import { AnimationVisibilityStateManager } from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
   import { activateWhenNear } from "$lib/actions/activate-when-near";
   import LazyMount from "$lib/shared/components/LazyMount.svelte";
   import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
@@ -45,9 +47,19 @@
   } from "./composer-generation-failure";
   import { shouldAdoptCarriedSequence } from "./composer-sequence-ownership";
   import type { ComposerPropAppearance } from "./composer-prop-appearance";
+  import { generateComposerDemoSequence } from "./composer-demo-generation";
 
   /** Four columns keep the real workspace cells legible at showcase scale. */
   const STEP_COLUMNS = 4;
+
+  // Introduce circular paths consistently, regardless of saved hybrid choices.
+  const demoVisibilityManager = new AnimationVisibilityStateManager({
+    ephemeral: true,
+  });
+  demoVisibilityManager.setPathPolicy({
+    pathShape: "arc",
+    motionAwarePaths: false,
+  });
 
   /** The page's per-visit demo sequence seeds the stages; null while it is
       still generating (the bounded stages hold the footprint). */
@@ -59,6 +71,7 @@
     appearance,
     active = true,
     embedded = false,
+    propControl,
   }: {
     sequence: SequenceData | null;
     onGenerated?: (sequence: SequenceData) => void;
@@ -67,6 +80,8 @@
     appearance?: ComposerPropAppearance;
     active?: boolean;
     embedded?: boolean;
+    /** The host page's prop chooser, shown at the start of the word row. */
+    propControl?: Snippet;
   } = $props();
 
   let current = $state<SequenceData | null>(null);
@@ -74,7 +89,17 @@
   let generating = $state(false);
   let result = $state<ComposerGenerationResult>("idle");
   let previewActive = $state(false);
+  let playbackStep = $state<number | null>(null);
+  let playbackSequenceId = $state<string | null>(null);
+  const selectedStepNumber = $derived(
+    current && playbackSequenceId === current.id ? playbackStep : null
+  );
   const reduceMotion = new MediaQuery("(prefers-reduced-motion: reduce)");
+
+  function handlePlayerStepChange(step: number, sequenceId: string | null) {
+    playbackStep = Math.floor(step);
+    playbackSequenceId = sequenceId;
+  }
 
   $effect(() => {
     if (shouldAdoptCarriedSequence(current, sequence, hasGeneratedLocally)) {
@@ -102,35 +127,14 @@
     generating = true;
     result = "idle";
     try {
-      const [{ generationOrchestrator }, models, circular, grid, prop] =
-        await Promise.all([
-          import("$lib/shared/create/services/generation-orchestrator"),
-          import("$lib/shared/foundation/domain/models/generation/generate-models"),
-          import("$lib/shared/foundation/domain/models/generation/circular-models"),
-          import("$lib/shared/pictograph/grid/domain/enums/grid-enums"),
-          import("$lib/shared/pictograph/prop/domain/enums/prop-type"),
-        ]);
-      // This button intentionally exposes one prepared recipe, not the full
-      // generator: 16 steps, intermediate difficulty, smooth constraints, and
-      // a rotated quarter-period LOOP. Each draw may change the whole sequence.
-      const seq = await generationOrchestrator.generateSequence({
-        mode: models.GenerationMode.CIRCULAR,
-        loopType: circular.LOOPType.ROTATED,
-        period: circular.Period.QUARTERED,
-        length: 16,
-        turnIntensity: 1.5,
-        gridMode: grid.GridMode.DIAMOND,
-        propType: prop.PropType.STAFF,
-        difficulty: models.DifficultyLevel.INTERMEDIATE,
-        constraintPreset: "smooth",
-      });
+      const seq = await generateComposerDemoSequence();
       // Plain-ify reactive proxies before handing to the grid/player.
       // Raise the app's generation flag first: the remounted StepGrid reads it
       // on its first render and runs the same staggered reveal the Generate tab
       // produces. It clears itself once consumed.
       setPendingGenerationAnimation(true);
       hasGeneratedLocally = true;
-      current = JSON.parse(JSON.stringify(seq)) as SequenceData;
+      current = seq;
       onGenerated?.(current);
       result = "success";
     } catch (error) {
@@ -152,12 +156,19 @@
          grid, and the player beside it already traces that same figure. -->
 
     <div class="stage notation-stage">
-      <header class="word-slot" aria-live="polite">
-        {#if current}
-          <WordLabel word={current.word ?? ""} />
-        {:else}
-          <span aria-hidden="true"></span>
+      <!-- The prop chooser sits outside the live region, so changing props is
+           not announced as a new word. -->
+      <header class="word-slot" class:with-prop={!!propControl}>
+        {#if propControl}
+          <div class="slot-prop">{@render propControl()}</div>
         {/if}
+        <div class="slot-word" aria-live="polite">
+          {#if current}
+            <WordLabel word={current.word ?? ""} />
+          {:else}
+            <span aria-hidden="true"></span>
+          {/if}
+        </div>
       </header>
       <div class="stage-content">
         {#key current?.id}
@@ -170,10 +181,18 @@
               startPlacement: current?.startPlacement ?? null,
               manualColumnCount: STEP_COLUMNS,
               activeMode: "generate",
+              selectedStepNumber,
+              autoFocusSelectedStep: false,
               fitAllSteps: true,
               sequenceWord: current?.word ?? "",
               leftPropTypeOverride: leftPropType,
               rightPropTypeOverride: rightPropType ?? leftPropType,
+              fanAppearanceOverride: appearance?.fanAppearance,
+              propLookOverride: appearance?.propLook,
+              leftBuugengFlippedOverride: appearance?.leftBuugengFlipped,
+              rightBuugengFlippedOverride: appearance?.rightBuugengFlipped,
+              leftColorOverride: appearance?.primaryPropColors?.left,
+              rightColorOverride: appearance?.primaryPropColors?.right,
             }}
           />
         {/key}
@@ -195,9 +214,11 @@
               cornerToggle: true,
               playbackAllowed: active,
               resumeWhenPlaybackAllowed: true,
+              onStepChange: handlePlayerStepChange,
               leftPropType,
               rightPropType: rightPropType ?? leftPropType,
               ...appearance,
+              visibilityManagerOverride: demoVisibilityManager,
               trailSettingsOverride: HERO_TRAIL_PRESET,
               tipEffectMap: HERO_TIP_EFFECT_MAP,
             }}
@@ -271,6 +292,26 @@
     place-items: center;
     color: var(--theme-text, #fff);
     --text-color: var(--theme-text, #fff);
+  }
+
+  /* The chooser, the word, and an empty track as wide as the chooser, so the
+     word stays centered over the grid below it. */
+  .word-slot.with-prop {
+    grid-template-columns: 3rem minmax(0, 1fr) 3rem;
+    column-gap: 0.75rem;
+    padding-bottom: 0.5rem;
+  }
+
+  .slot-prop {
+    justify-self: start;
+    display: flex;
+  }
+
+  .slot-word {
+    width: 100%;
+    min-width: 0;
+    display: grid;
+    place-items: center;
   }
 
   .stages {

@@ -1,9 +1,27 @@
+<script lang="ts" module>
+  // Deleting the focused step removes its cell, and focus falls back to the
+  // page. When Delete or Backspace reaches a cell, it leaves a note for its
+  // grid. Once that cell is gone, the step selected in its place takes focus,
+  // so the next Delete press keeps deleting. Nothing else moves focus into the
+  // grid: playback selects the playing step on every beat, and following it
+  // would pull focus off Play, or off whatever the user is on, every beat.
+  //
+  // Create removes a step after a 200ms fade. The note expires well after
+  // that, so a cell that goes later for another reason, such as a new
+  // sequence replacing the grid, cannot pull focus back in.
+  const FOCUS_HANDOFF_WINDOW_MS = 1000;
+  let focusHandoff: { scope: Element; from: Element; armedAt: number } | null =
+    null;
+</script>
+
 <script lang="ts">
   import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
   import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
   import type { BuildModeId } from "$lib/shared/foundation/ui/ui-types";
   import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+  import type { FanAppearance } from "$lib/shared/pictograph/prop/domain/fan-appearance";
+  import type { PropLook } from "$lib/shared/pictograph/prop/domain/prop-look";
   import { onMount } from "svelte";
   import PictographContainer from "$lib/shared/pictograph/shared/components/PictographContainer.svelte";
   import PictographContextMenuHost from "$lib/shared/pictograph/shared/components/context-menu/PictographContextMenuHost.svelte";
@@ -39,6 +57,10 @@
     // Prop type overrides for demo/preview rendering (bypasses global settings)
     leftPropTypeOverride = undefined,
     rightPropTypeOverride = undefined,
+    fanAppearanceOverride = undefined,
+    propLookOverride = undefined,
+    leftBuugengFlippedOverride = undefined,
+    rightBuugengFlippedOverride = undefined,
     leftColorOverride = undefined,
     poseOnly = false,
     rightColorOverride = undefined,
@@ -53,11 +75,10 @@
     shouldAnimate?: boolean;
     isSelected?: boolean;
     /**
-     * Whether a newly selected cell should take keyboard focus.
-     *
-     * Editing grids opt into this by default so repeated Delete presses keep
-     * working. Playback previews disable it because their selection advances
-     * automatically and must never steal focus from surrounding controls.
+     * Whether this cell takes keyboard focus when it is selected in place of a
+     * focused step the user just deleted, so repeated Delete presses keep
+     * working. Selection that moves any other way, playback included, never
+     * moves focus.
      */
     autoFocusOnSelection?: boolean;
     isPracticeStep?: boolean;
@@ -77,6 +98,10 @@
     leftPropTypeOverride?: PropType;
     /** Override prop type for right hand. Bypasses global settings for demo/preview rendering. */
     rightPropTypeOverride?: PropType;
+    fanAppearanceOverride?: FanAppearance;
+    propLookOverride?: PropLook;
+    leftBuugengFlippedOverride?: boolean;
+    rightBuugengFlippedOverride?: boolean;
     /** Display-only color for the blue-hand prop and arrow. */
     leftColorOverride?: string;
     /** Choose Start picker: render only the pose after this beat. */
@@ -116,7 +141,9 @@
     }
     return step.isBlank
       ? t("create_workspace_empty_step_label", { number: displayStepNumber })
-      : t("create_workspace_pictograph_step_label", { number: displayStepNumber });
+      : t("create_workspace_pictograph_step_label", {
+          number: displayStepNumber,
+        });
   });
 
   // Create step data with selection state for the Pictograph component
@@ -199,8 +226,32 @@
     animationState = animationManager.getState();
   }
 
-  // Auto-focus when this cell becomes selected (e.g., after deleting another step)
-  // This enables continuous Delete key presses to delete steps one by one
+  // The grid this cell belongs to. WorkspaceGrid marks it, so a delete in one
+  // grid never hands focus to a cell in another.
+  function focusScope(): Element {
+    return cellElement?.closest("[data-step-focus-scope]") ?? document.body;
+  }
+
+  function takeFocusHandoff() {
+    const handoff = focusHandoff;
+    if (!handoff || !cellElement?.isConnected) return;
+    if (performance.now() - handoff.armedAt > FOCUS_HANDOFF_WINDOW_MS) {
+      focusHandoff = null;
+      return;
+    }
+    // The cell the key reached is still here, so nothing was deleted.
+    if (handoff.from.isConnected) return;
+    const scope = focusScope();
+    if (handoff.scope !== scope) return;
+    // Focus went down with the deleted cell and now rests on the page or on
+    // something around the grid. A control the user moved to meanwhile keeps
+    // its focus.
+    const active = document.activeElement;
+    if (active && active.isConnected && !active.contains(scope)) return;
+    focusHandoff = null;
+    cellElement.focus({ preventScroll: true });
+  }
+
   // Use null as sentinel to detect first run and initialize to isSelected's value
   let wasSelected: boolean | null = null;
   let hasMounted = false;
@@ -221,11 +272,9 @@
       !wasSelected &&
       cellElement
     ) {
-      // Small delay to ensure DOM is settled after deletion animation
-      requestAnimationFrame(() => {
-        // Use preventScroll to avoid pulling user's viewport during animation playback
-        cellElement?.focus({ preventScroll: true });
-      });
+      // The deleted cell leaves the page in the same update that selects
+      // this one; by the next frame focus has settled wherever it fell.
+      requestAnimationFrame(takeFocusHandoff);
     }
     wasSelected = isSelected;
   });
@@ -256,8 +305,21 @@
       // Don't call onClick - let global shortcuts handle Space
       return;
     } else if (event.key === "Delete" || event.key === "Backspace") {
-      // Allow deletion if step is selected (including start placement)
-      if (isSelected) {
+      // Create's Delete shortcut sees this press first and removes the step
+      // itself. While the step editor is open it also closes the editor,
+      // which clears the selection. So the note goes down whether or not
+      // this cell still counts as selected.
+      if (cellElement) {
+        focusHandoff = {
+          scope: focusScope(),
+          from: cellElement,
+          armedAt: performance.now(),
+        };
+      }
+      // Allow deletion if step is selected (including start placement). The
+      // shortcut marks a press it handled; deleting here as well would remove
+      // the steps twice and leave two undo entries for one press.
+      if (isSelected && !event.defaultPrevented) {
         event.preventDefault();
         // Trigger warning haptic feedback for deletion
         hapticService?.trigger("warning");
@@ -378,6 +440,10 @@
     {transitionKey}
     {leftPropTypeOverride}
     {rightPropTypeOverride}
+    {fanAppearanceOverride}
+    {propLookOverride}
+    {leftBuugengFlippedOverride}
+    {rightBuugengFlippedOverride}
     {leftColorOverride}
     {rightColorOverride}
     {poseOnly}

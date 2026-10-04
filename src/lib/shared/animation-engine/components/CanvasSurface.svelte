@@ -91,6 +91,7 @@ captureEffectDiagnostics to the context menu.
     tunnelSelectedLayer = null,
     gridVisible = true,
     gridOpacity = undefined,
+    chromeOpacity = 1,
     gridMode = GridMode.DIAMOND,
     backgroundAlpha = 1,
     letter = null,
@@ -109,6 +110,7 @@ captureEffectDiagnostics to the context menu.
     isSeamlesslyLoopable = undefined,
     showNonRadialPoints = true,
     mandalaVisibleOverride = undefined,
+    mandalaStrokeWidthOverride = undefined,
     fireConfig = undefined,
     ledConfig = undefined,
     tipEffectMap: cellTipEffectMap = undefined,
@@ -159,6 +161,7 @@ captureEffectDiagnostics to the context menu.
     tunnelSelectedLayer?: number | readonly number[] | null;
     gridVisible?: boolean;
     gridOpacity?: number;
+    chromeOpacity?: number;
     gridMode?: GridMode | null;
     backgroundAlpha?: number;
     letter?: Letter | null;
@@ -178,6 +181,7 @@ captureEffectDiagnostics to the context menu.
     isSeamlesslyLoopable?: boolean;
     showNonRadialPoints?: boolean;
     mandalaVisibleOverride?: boolean;
+    mandalaStrokeWidthOverride?: number;
     fireConfig?: Partial<FireOverlayConfig>;
     ledConfig?: Partial<LedOverlayConfig>;
     tipEffectMap?: TipEffectMap;
@@ -280,7 +284,8 @@ captureEffectDiagnostics to the context menu.
     engineInstance.setEffectsConfigState(ecs);
     // Wire to the global VM singleton so the fallback getActiveEffect/setActiveEffect
     // delegates work in UI contexts that don't use the effects-config-context provider.
-    getAnimationVisibilityManager().effectsConfigState = ecs;
+    if (!visibilityManagerOverride)
+      getAnimationVisibilityManager().effectsConfigState = ecs;
   });
 
   // Re-sync the engine whenever effects config changes (fire sliders, presets, etc.).
@@ -373,9 +378,6 @@ captureEffectDiagnostics to the context menu.
   );
   const displayedLetter = $derived(
     engineInstance.animatorState.displayedLetter
-  );
-  const displayedTurnsTuple = $derived(
-    engineInstance.animatorState.displayedTurnsTuple
   );
   const displayedStepNumber = $derived(
     engineInstance.animatorState.displayedStepNumber
@@ -520,6 +522,7 @@ captureEffectDiagnostics to the context menu.
       virtualTime,
       showNonRadialPoints,
       mandalaVisibleOverride,
+      mandalaStrokeWidthOverride,
     };
     untrack(() => {
       if (currentFireConfig) {
@@ -588,7 +591,6 @@ captureEffectDiagnostics to the context menu.
     <GlyphOverlay
       {letter}
       {displayedLetter}
-      {displayedTurnsTuple}
       {displayedStepNumber}
       {displayedMusicalPosition}
       {stepData}
@@ -599,6 +601,7 @@ captureEffectDiagnostics to the context menu.
       {glyphFrame}
       stepNumbersVisible={effectiveBeatNumbersVisible}
       {placementGlyphVisible}
+      opacity={chromeOpacity}
       darkMode={darkModeEnabled}
       isAtStartPlacement={beatIndicators &&
         !hideStepNumbers &&

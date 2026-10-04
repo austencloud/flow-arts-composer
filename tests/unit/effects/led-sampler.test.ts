@@ -133,6 +133,58 @@ describe("LedSampler device handling", () => {
 });
 
 describe("LedSampler color", () => {
+  it("colors both ends of each hand from its own Prop Colors slot", () => {
+    const leds = warmedSampler().update(
+      prop(0),
+      prop(Math.PI),
+      SAMPLER_CONFIG,
+      0,
+      DEFAULT_LED_CONFIG
+    );
+
+    expect(
+      leds.map(({ r, g, b }) => [r, g, b].map((v) => Math.round(v * 255)))
+    ).toEqual([
+      [33, 150, 243],
+      [33, 150, 243],
+      [244, 67, 54],
+      [244, 67, 54],
+    ]);
+  });
+
+  it("uses chosen prop colors for both ends of their respective hands", () => {
+    const leds = warmedSampler().update(
+      prop(0),
+      prop(Math.PI),
+      { ...SAMPLER_CONFIG, primaryPropColors: { left: "#12ab34", right: "#ef5678" } },
+      0,
+      DEFAULT_LED_CONFIG
+    );
+
+    expect(
+      leds.map(({ r, g, b }) => [r, g, b].map((v) => Math.round(v * 255)))
+    ).toEqual([
+      [18, 171, 52],
+      [18, 171, 52],
+      [239, 86, 120],
+      [239, 86, 120],
+    ]);
+  });
+
+  it("keeps an entire pixel staff in its hand's chosen color", () => {
+    const leds = warmedSampler().update(
+      prop(0),
+      prop(Math.PI),
+      { ...SAMPLER_CONFIG, primaryPropColors: { left: "#00ff00", right: "#ff00ff" } },
+      0,
+      config({ device: { kind: "pixel-staff", ledCount: 32 } })
+    );
+
+    expect(leds).toHaveLength(64);
+    expect(leds.slice(0, 32).every(({ r, g, b }) => r === 0 && g === 1 && b === 0)).toBe(true);
+    expect(leds.slice(32).every(({ r, g, b }) => r === 1 && g === 0 && b === 1)).toBe(true);
+  });
+
   it("emits the pattern color unscaled, whatever the brightness level", () => {
     // Brightness is a flux term the renderer applies once, to prop flux. The
     // sampler applying it too squared it, so a level-5 strip came out 25x.
@@ -232,5 +284,55 @@ describe("LedSampler image source", () => {
     expect(leds.every((led) => led.r === 0 && led.g === 0 && led.b === 0)).toBe(
       true
     );
+  });
+});
+
+describe("LedSampler tunnel copies", () => {
+  function copyBrightness(opacity: number): number[] {
+    const leds = warmedSampler().update(
+      prop(0),
+      prop(Math.PI),
+      {
+        ...SAMPLER_CONFIG,
+        additionalLayers: [
+          { leftProp: prop(Math.PI / 2), rightProp: prop(-Math.PI / 2), opacity },
+        ],
+      },
+      0,
+      solidWhite()
+    );
+    return leds.filter((led) => led.propIndex >= 2).map((led) => led.brightness);
+  }
+
+  it("lights a copy at full strength while it is fully shown", () => {
+    expect(copyBrightness(1)).toEqual([1, 1, 1, 1]);
+  });
+
+  it("dims a fading copy's lights faster than its opacity, so they leave with it", () => {
+    // The display tone map is logarithmic: half the light still reads close
+    // to full, so a copy at half opacity must give up several stops.
+    const half = copyBrightness(0.5);
+    expect(half).toHaveLength(4);
+    for (const brightness of half) {
+      expect(brightness).toBeGreaterThan(0);
+      expect(brightness).toBeLessThanOrEqual(0.5 / 8);
+    }
+    expect(copyBrightness(0).every((brightness) => brightness === 0)).toBe(true);
+  });
+
+  it("leaves the base pair at full strength while the copies fade", () => {
+    const leds = warmedSampler().update(
+      prop(0),
+      prop(Math.PI),
+      {
+        ...SAMPLER_CONFIG,
+        additionalLayers: [{ leftProp: prop(1), rightProp: prop(2), opacity: 0.3 }],
+      },
+      0,
+      solidWhite()
+    );
+    const base = leds.filter((led) => led.propIndex < 2);
+    expect(base).toHaveLength(4);
+    expect(base.every((led) => led.brightness === 1)).toBe(true);
   });
 });

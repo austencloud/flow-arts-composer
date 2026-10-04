@@ -2,6 +2,7 @@ import { z } from "zod";
 import {
   SequenceTimeMapSchema,
   mediaTimeToSequencePosition,
+  sequencePositionToMediaTime,
   type SequenceTimeAnchor,
   type SequenceTimeMap,
 } from "$lib/shared/media-composition/domain/sequence-time-map";
@@ -68,6 +69,8 @@ export const TimingSectionSchema = z
     tempo: z.enum(["locked", "follow"]),
     /** "grid": even landings. "taps": each matched tap is its landing. */
     snap: z.enum(["grid", "taps"]),
+    /** Fraction of each move interval spent holding its previous landing. */
+    landingHoldRatio: z.number().finite().min(0).max(0.9).optional(),
     taps: z.array(MediaSecondsSchema),
     /**
      * The position the earliest matched tap marks. 1 is move 1's landing.
@@ -201,6 +204,43 @@ export function createTakeTiming(input: {
       }),
     ],
     updatedAt: input.now,
+  };
+}
+
+/**
+ * The same timing for a copy of its video that holds the old one
+ * `offsetSeconds` in, such as the whole recording a clip was cut from. Every
+ * media time moves with the footage; the nudge is relative and stays. The
+ * sections still cover the whole video, so the first opens at its start and
+ * the last runs to its end. It counts as an edit made `now`, so it outranks
+ * a timing the editor opened for the copy before it arrived.
+ */
+export function shiftTakeTiming(
+  timing: TakeTiming,
+  offsetSeconds: number,
+  take: { takeKey: string; durationSeconds: number },
+  now: number
+): TakeTiming {
+  const at = (seconds: number) => seconds + offsetSeconds;
+  const last = timing.sections.length - 1;
+  return {
+    ...timing,
+    takeKey: take.takeKey,
+    updatedAt: now,
+    sections: timing.sections.map((section, index) => ({
+      ...section,
+      startSeconds: index === 0 ? 0 : at(section.startSeconds),
+      endSeconds:
+        index === last ? take.durationSeconds : at(section.endSeconds),
+      taps: section.taps.map(at),
+      ...(section.beatOneSeconds !== undefined
+        ? { beatOneSeconds: at(section.beatOneSeconds) }
+        : {}),
+      overrides: section.overrides.map((override) => ({
+        ...override,
+        seconds: at(override.seconds),
+      })),
+    })),
   };
 }
 
@@ -378,6 +418,9 @@ export function splitTimingSection(
     }),
     tempo: section.tempo,
     snap: section.snap,
+    ...(section.landingHoldRatio !== undefined
+      ? { landingHoldRatio: section.landingHoldRatio }
+      : {}),
     taps: rightTaps,
     offsetSeconds: section.offsetSeconds,
     ...(section.continuesIntoNext ? { continuesIntoNext: true as const } : {}),
@@ -596,6 +639,7 @@ export interface ResolvedTimingSection {
   id: string;
   startSeconds: number;
   endSeconds: number;
+  landingHoldRatio: number;
   /** Arrival map covering the section; null until it has a tap. */
   map: SequenceTimeMap | null;
   fit: TapFitResult | null;
@@ -1180,6 +1224,7 @@ function resolveSection(
     id: section.id,
     startSeconds: section.startSeconds,
     endSeconds: section.endSeconds,
+    landingHoldRatio: section.landingHoldRatio ?? 0,
     map: null,
     fit: null,
     landings: [],
@@ -1283,6 +1328,16 @@ export interface TakeSample {
   endArrival: number | null;
 }
 
+export interface TakeSampleOptions {
+  /**
+   * Before the section's first landing, keep its opening tempo running back
+   * in time instead of holding the opening pose: the arrival goes negative
+   * and reaches 0 on beat one. A tunnel over the footage before beat one
+   * counts down into it this way.
+   */
+  leadIn?: boolean;
+}
+
 /**
  * The take at a media time, or null when nothing is mapped. Between sections
  * the earlier section holds its last pose; before the first mapped section
@@ -1290,7 +1345,8 @@ export interface TakeSample {
  */
 export function takeSampleAt(
   resolved: ResolvedTakeTiming,
-  mediaSeconds: number
+  mediaSeconds: number,
+  options: TakeSampleOptions = {}
 ): TakeSample | null {
   const mapped = resolved.sections.filter((section) => section.map);
   if (mapped.length === 0) return null;
@@ -1298,14 +1354,44 @@ export function takeSampleAt(
   for (const section of mapped) {
     if (mediaSeconds >= section.startSeconds) chosen = section;
   }
+  const lead = options.leadIn
+    ? leadInPosition(chosen.map!, mediaSeconds)
+    : null;
   const clamped = Math.min(
     chosen.endSeconds,
     Math.max(chosen.startSeconds, mediaSeconds)
   );
   return {
-    arrival: mediaTimeToSequencePosition(chosen.map!, clamped),
+    arrival: holdAfterLanding(
+      lead ?? mediaTimeToSequencePosition(chosen.map!, clamped),
+      chosen.landingHoldRatio
+    ),
     endArrival: chosen.endPosition,
   };
+}
+
+/** The first interval's tempo carried back before a map's first anchor; null from it on. */
+function leadInPosition(
+  map: SequenceTimeMap,
+  mediaSeconds: number
+): number | null {
+  const [first, second] = map.anchors;
+  if (!first || !second || mediaSeconds >= first.mediaTimeSeconds) return null;
+  const span = second.mediaTimeSeconds - first.mediaTimeSeconds;
+  if (span <= 0) return null;
+  const perSecond = (second.sequencePosition - first.sequencePosition) / span;
+  return (
+    first.sequencePosition - (first.mediaTimeSeconds - mediaSeconds) * perSecond
+  );
+}
+
+/** Hold the previous complete arrival, then use the rest of the interval to reach the next. */
+function holdAfterLanding(arrival: number, ratio: number): number {
+  if (ratio === 0 || !Number.isFinite(arrival)) return arrival;
+  const previous = Math.floor(arrival);
+  const progress = arrival - previous;
+  if (progress <= ratio) return previous;
+  return previous + (progress - ratio) / (1 - ratio);
 }
 
 export function takePositionAt(
@@ -1313,6 +1399,42 @@ export function takePositionAt(
   mediaSeconds: number
 ): number | null {
   return takeSampleAt(resolved, mediaSeconds)?.arrival ?? null;
+}
+
+/**
+ * The media times either side of `mediaSeconds` at which the take lands back
+ * on its opening pose (a whole number of passes), read from the section in
+ * effect there. Either is null where the section's map does not reach it.
+ */
+export function takePassStartsAround(
+  resolved: ResolvedTakeTiming,
+  mediaSeconds: number
+): { earlier: number | null; later: number | null } {
+  const mapped = resolved.sections.filter((section) => section.map);
+  const passLength = resolved.movesPerPass;
+  if (mapped.length === 0 || passLength <= 0) {
+    return { earlier: null, later: null };
+  }
+  let chosen = mapped[0]!;
+  for (const section of mapped) {
+    if (mediaSeconds >= section.startSeconds) chosen = section;
+  }
+  const map = chosen.map!;
+  const position = mediaTimeToSequencePosition(map, mediaSeconds);
+  const at = (passStart: number): number | null => {
+    const seconds = sequencePositionToMediaTime(map, passStart);
+    // The map holds its ends past its anchors, so a pass start it never
+    // reaches would come back as the nearest anchor's time.
+    return seconds >= chosen.startSeconds - 1e-6 &&
+      seconds <= chosen.endSeconds + 1e-6 &&
+      Math.abs(mediaTimeToSequencePosition(map, seconds) - passStart) < 1e-6
+      ? seconds
+      : null;
+  };
+  return {
+    earlier: at(Math.floor(position / passLength + 1e-9) * passLength),
+    later: at(Math.ceil(position / passLength - 1e-9) * passLength),
+  };
 }
 
 /** True when every section has a fitted grid. */
@@ -1323,6 +1445,17 @@ export function isTakeTimingMapped(resolved: ResolvedTakeTiming): boolean {
 /** Identifies a sequence's move lengths, so a changed sequence is noticed. */
 export function takeTimingMovesKey(moveBeats: readonly number[]): string {
   return `beats:${moveBeats.join(",")}`;
+}
+
+/** The move lengths a timing was checked against, or null when it never was. */
+export function takeTimingMoveBeats(timing: TakeTiming): number[] | null {
+  const key = timing.movesKey;
+  if (!key?.startsWith("beats:")) return null;
+  const beats = key.slice("beats:".length).split(",").map(Number);
+  return beats.length > 0 &&
+    beats.every((beat) => Number.isFinite(beat) && beat > 0)
+    ? beats
+    : null;
 }
 
 /**

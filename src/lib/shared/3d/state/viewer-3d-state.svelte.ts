@@ -1090,35 +1090,27 @@ function buildViewer3DState(
   }
 
   function resetAllPerformersProp(): void {
-    sceneUndo.captureState("reset-all-overrides", "Reset all prop overrides");
-    sceneUndo.withoutUndo(() => {
-      for (const p of performerManager.performers) p.resetProp();
-    });
-    sceneUndo.commitState();
+    resetPerformerOverrides("prop", "Reset all prop overrides", (p) =>
+      p.resetProp()
+    );
   }
 
   function resetAllPerformersEffort(): void {
-    sceneUndo.captureState("reset-all-overrides", "Reset all effort overrides");
-    sceneUndo.withoutUndo(() => {
-      for (const p of performerManager.performers) p.resetEffort();
-    });
-    sceneUndo.commitState();
+    resetPerformerOverrides("effort", "Reset all effort overrides", (p) =>
+      p.resetEffort()
+    );
   }
 
   function resetAllPerformersEffects(): void {
-    sceneUndo.captureState("reset-all-overrides", "Reset all effect overrides");
-    sceneUndo.withoutUndo(() => {
-      for (const p of performerManager.performers) p.resetEffects();
-    });
-    sceneUndo.commitState();
+    resetPerformerOverrides("effects", "Reset all effect overrides", (p) =>
+      p.resetEffects()
+    );
   }
 
   function resetAllPerformersPlanes(): void {
-    sceneUndo.captureState("reset-all-overrides", "Reset all plane overrides");
-    sceneUndo.withoutUndo(() => {
-      for (const p of performerManager.performers) p.resetPlanes();
-    });
-    sceneUndo.commitState();
+    resetPerformerOverrides("planes", "Reset all plane overrides", (p) =>
+      p.resetPlanes()
+    );
   }
 
   type ScopedPerformerSnapshot = {
@@ -1142,6 +1134,26 @@ function buildViewer3DState(
       for (const { performer, snapshot } of snapshots) {
         performer.restoreEditingSnapshot(snapshot);
       }
+    });
+  }
+
+  function resetPerformerOverrides(
+    category: CascadeCategory,
+    description: string,
+    reset: (performer: CharacterInstanceState) => void
+  ): void {
+    const targets = performerManager.performers.filter(
+      (performer) => performer.hasOverride[category]
+    );
+    if (targets.length === 0) return;
+    const before = captureScopedEditingSnapshots(targets);
+    sceneUndo.withoutUndo(() => {
+      for (const performer of targets) reset(performer);
+    });
+    const after = captureScopedEditingSnapshots(targets);
+    sceneUndo.pushSelfRestoringEntry("reset-all-overrides", description, {
+      undo: () => restoreScopedEditingSnapshots(before),
+      redo: () => restoreScopedEditingSnapshots(after),
     });
   }
 
@@ -1444,7 +1456,7 @@ function buildViewer3DState(
       if (!p) return;
       p.position.x = ps.position.x;
       p.position.z = ps.position.z;
-      p.setFacingAngle(ps.facingAngle);
+      p.snapFacingAngle(ps.facingAngle);
       p.setHandPlane("left", ps.customLeftPlane);
       p.setHandPlane("right", ps.customRightPlane);
       if (_currentSequenceData && !p.totalSteps) {
@@ -1501,6 +1513,68 @@ function buildViewer3DState(
     sceneUndo.captureState("spawn-performer", "Add performer");
     spawnPerformerWithoutUndo();
     sceneUndo.commitState();
+  }
+
+  type PerformerClipboard = {
+    performer: PerformerDomainSnapshot;
+    position: { x: number; z: number };
+    facingAngle: number;
+    step: number;
+    progress: number;
+  };
+  let performerClipboard: PerformerClipboard | null = null;
+
+  function copySelectedPerformer(): boolean {
+    if (selectedPerformerIndices().length !== 1) return false;
+    const index = primaryPerformerIndex();
+    const source = index === null ? null : performerManager.performers[index];
+    if (!source) return false;
+    performerClipboard = {
+      performer: source.captureEditingSnapshot(),
+      position: { x: source.position.x, z: source.position.z },
+      facingAngle: source.facingAngle,
+      step: source.currentStepIndex,
+      progress: source.progress,
+    };
+    return true;
+  }
+
+  function pasteSelectedPerformer(): boolean {
+    if (!performerClipboard) return false;
+    const clipboard = structuredClone(performerClipboard);
+    const before = captureViewerSnapshot();
+    const placement = {
+      position: {
+        x: clipboard.position.x + 0.75,
+        z: clipboard.position.z + 0.75,
+      },
+      facingAngle: clipboard.facingAngle,
+    };
+    const targets = performerManager.addPerformer(placement);
+    if (!targets) return false;
+    const index = performerManager.performers.length - 1;
+    const pasted = performerManager.performers[index];
+    if (!pasted) return false;
+    sceneUndo.withoutUndo(() => {
+      pasted.restoreEditingSnapshot(clipboard.performer);
+      pasted.goToStep(clipboard.step);
+      pasted.setProgress(clipboard.progress);
+    });
+    markFormationCustom();
+    replacePerformerSelection(index);
+    const after = captureViewerSnapshot();
+    sceneUndo.pushSelfRestoringEntry("spawn-performer", "Paste performer", {
+      undo: () => restoreViewerSnapshot(before),
+      redo: () => {
+        restoreViewerSnapshot(after);
+        const restored = performerManager.performers[index];
+        if (!restored) return;
+        restored.restoreEditingSnapshot(structuredClone(clipboard.performer));
+        restored.goToStep(clipboard.step);
+        restored.setProgress(clipboard.progress);
+      },
+    });
+    return true;
   }
 
   function removePerformerAtIndexWithoutUndo(index: number): boolean {
@@ -1908,7 +1982,7 @@ function buildViewer3DState(
           if (!p) return;
           p.position.x = snap.position.x;
           p.position.z = snap.position.z;
-          p.setFacingAngle(snap.facingAngle);
+          p.snapFacingAngle(snap.facingAngle);
           p.setHandPlane("left", snap.customLeftPlane);
           p.setHandPlane("right", snap.customRightPlane);
           if (snap.characterId) p.setCharacter(snap.characterId);
@@ -2109,7 +2183,7 @@ function buildViewer3DState(
           if (!p) return;
           p.position.x = snap.position.x;
           p.position.z = snap.position.z;
-          p.setFacingAngle(snap.facingAngle);
+          p.snapFacingAngle(snap.facingAngle);
           p.setHandPlane("left", snap.customLeftPlane);
           p.setHandPlane("right", snap.customRightPlane);
           if (snap.characterId) p.setCharacter(snap.characterId);
@@ -2441,6 +2515,8 @@ function buildViewer3DState(
       return activeFormation;
     },
     spawnPerformerFromUI,
+    copySelectedPerformer,
+    pasteSelectedPerformer,
     removePerformerFromUI,
     setPerformerCountFromUI,
     applyFormationFromUI,

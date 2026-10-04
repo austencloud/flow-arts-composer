@@ -254,8 +254,10 @@
   // its icon stays put while the label appears beside it.
   const hostModules = $derived<SidebarModuleDefinition[]>(
     isInSettings
-      ? SETTINGS_TABS.filter((tab) =>
-          featureFlagService.canAccessTab("settings", tab.id)
+      ? SETTINGS_TABS.filter(
+          (tab) =>
+            !tab.navigationHidden &&
+            featureFlagService.canAccessTab("settings", tab.id)
         ).map((tab) => ({
           id: tab.id,
           label: tab.label,
@@ -281,7 +283,12 @@
         }))
   );
   const hostCurrentModule = $derived(
-    isInSettings ? navigationState.activeTab : currentModule
+    isInSettings
+      ? SETTINGS_TABS.find((tab) => tab.id === navigationState.activeTab)
+          ?.navigationHidden
+        ? "preferences"
+        : navigationState.activeTab
+      : currentModule
   );
   const hostCurrentSection = $derived(
     !isInSettings && navigationState.isModuleHomeOpen(currentModule as ModuleId)

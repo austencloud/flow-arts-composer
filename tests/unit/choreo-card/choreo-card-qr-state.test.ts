@@ -71,6 +71,37 @@ describe("choreo card QR state", () => {
       harness.dispose();
     }
   });
+  it("settles again when the QR cell comes back with a code it already made", async () => {
+    const generateForSequence = vi.fn().mockResolvedValue(qrResult("first"));
+    const harness = createChoreoCardQrStateHarness({
+      sequence: TRANSITION_REVIEW_SEQUENCE,
+      leftPropType: PropType.STAFF,
+      rightPropType: PropType.STAFF,
+      generateForSequence,
+    });
+    try {
+      flushSync();
+      await Promise.resolve();
+      flushSync();
+      expect(harness.settled).toBe(true);
+
+      // A layout pass hides the QR cell, then shows it again. The card reads
+      // `settled` before the state's effect reuses the cached code.
+      harness.setShowQRCode(false);
+      void harness.settled;
+      flushSync();
+      harness.setShowQRCode(true);
+      void harness.settled;
+      flushSync();
+
+      expect(generateForSequence).toHaveBeenCalledTimes(1);
+      expect(harness.qrState.dataUrl).toBe(qrResult("first").dataUrl);
+      expect(harness.settled).toBe(true);
+    } finally {
+      harness.dispose();
+    }
+  });
+
   it("draws a published code for a guest without minting a new sequence code", async () => {
     const generateForSequence = vi.fn();
     const generateForUrl = vi.fn().mockResolvedValue(qrResult("published"));

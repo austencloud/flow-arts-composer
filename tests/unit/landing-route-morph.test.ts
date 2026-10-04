@@ -346,10 +346,13 @@ describe("landing shared-element contract", () => {
     );
     expect(composer).toContain("latchedHeroSequence = first;");
     expect(composer).not.toContain("{#key carriedSequence?.id}");
-    // 5bf02781c1 wrapped the construct demo in ComposerPractice, which still
-    // arrives through a lazy loader.
+    // Construct and Generate are separate stops; each demo still arrives
+    // through its own lazy loader.
     expect(composer).toContain(
-      'loader={() => import("./ComposerPractice.svelte")}'
+      'loader={() => import("../_sections/ConstructSection.svelte")}'
+    );
+    expect(composer).toContain(
+      'loader={() => import("./ComposerGenerateDemo.svelte")}'
     );
     expect(composer).toContain(
       'loader={() => import("./Composer3DViewerDemo.svelte")}'
@@ -388,16 +391,17 @@ describe("landing shared-element contract", () => {
     expect(anatomyExplainer).toContain('role="alert"');
     expect(anatomyExplainer).toContain('disabled={cardStatus !== "ready"}');
     expect(anatomyExplainer).toContain('class="card-placeholder-stack"');
-    // 09622f6cb2 moved the placeholder captions into the message catalog.
+    // 09622f6cb2 moved the placeholder captions into the catalog. A missing
+    // key renders as the raw key, so English still has to read Front and Back.
     expect(anatomyExplainer).toContain(
       '<figcaption>{tDynamic("learn_card_anatomy_front")}</figcaption>'
     );
     expect(anatomyExplainer).toContain(
       '<figcaption>{tDynamic("learn_card_anatomy_back")}</figcaption>'
     );
-    const en = readEnglishMessages();
-    expect(en["learn_card_anatomy_front"]).toBe("Front");
-    expect(en["learn_card_anatomy_back"]).toBe("Back");
+    const english = readEnglishMessages();
+    expect(english.learn_card_anatomy_front).toBe("Front");
+    expect(english.learn_card_anatomy_back).toBe("Back");
     expect(anatomyExplainer).toContain("card-placeholder-shuffle");
     expect(anatomyExplainer).toContain(".card-load-failure :global(.skeleton)");
     expect(anatomyExplainer).toContain(".legend-row:hover:not(:disabled)");
@@ -446,11 +450,15 @@ describe("landing shared-element contract", () => {
     const generate = readSource(
       "src/routes/(public)/composer/_components/ComposerGenerateDemo.svelte"
     );
+    const recipe = readSource(
+      "src/routes/(public)/composer/_components/composer-demo-generation.ts"
+    );
     const construct = readSource(
       "src/routes/(public)/composer/_sections/ConstructSection.svelte"
     );
 
-    expect(generate).toContain("turnIntensity: 1.5");
+    expect(generate).toContain("generateComposerDemoSequence()");
+    expect(recipe).toContain("turnIntensity: 1.5");
     expect(construct).toContain('{ value: "1.5", label: "1.5" }');
     expect(construct).not.toContain('{ value: "2", label: "2" }');
     expect(construct).not.toContain('{ value: "3", label: "3" }');

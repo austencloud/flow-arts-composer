@@ -22,4 +22,6 @@ export interface WriteOptions {
 
 export interface ReadOptions {
   onError?: (error: Error) => void;
+  /** Require a server answer when cached results could hide cloud documents. */
+  serverOnly?: boolean;
 }

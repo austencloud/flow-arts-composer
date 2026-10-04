@@ -41,6 +41,8 @@
   import {
     LAB_LENGTH_MAX_CM,
     LAB_LENGTH_MIN_CM,
+    type LabBodyClearance,
+    type LabGridStyle,
     type LabView,
     type StaffLabState,
   } from "./lab-state.svelte";
@@ -112,6 +114,45 @@
   ]);
 
   const lengthMode = $derived(lab.propLength === "body" ? "body" : "pinned");
+
+  const gridStyleOptions: {
+    value: LabGridStyle;
+    label: string;
+    ariaLabel: string;
+  }[] = [
+    {
+      value: "fixed",
+      label: "Fixed",
+      ariaLabel: "Hands 52 cm from the grid center",
+    },
+    {
+      value: "isolation",
+      label: "Isolation",
+      ariaLabel: "Hands half a staff from the grid center",
+    },
+  ];
+
+  const bodyClearanceOptions: {
+    value: LabBodyClearance;
+    label: string;
+    ariaLabel: string;
+  }[] = [
+    {
+      value: "off",
+      label: "Stays",
+      ariaLabel: "The body stays where the clip puts it",
+    },
+    {
+      value: "shift",
+      label: "Hips",
+      ariaLabel: "The hips move off the staffs, feet planted",
+    },
+    {
+      value: "step",
+      label: "Step",
+      ariaLabel: "The whole body steps off the staffs",
+    },
+  ];
 
   /**
    * A model the scene does not stretch draws at its authored length and never
@@ -223,6 +264,40 @@
         <p class="note">
           {propLabel} is drawn from a model at {fixedLengthCm.toFixed(0)} cm
           and ignores this. Pick Staff to size the mesh.
+        </p>
+      {/if}
+    </div>
+
+    <div class="field">
+      <span class="field-label">Grid style</span>
+      <SegmentedControl
+        options={gridStyleOptions}
+        value={lab.gridStyle}
+        density="tight"
+        ariaLabel="Where the hands sit"
+        onchange={(style) => lab.setGridStyle(style)}
+      />
+      {#if lab.gridStyle === "isolation"}
+        <p class="note">
+          Each hand sits half the staff from the center, so a staff pointing in
+          ends on it.
+        </p>
+      {/if}
+    </div>
+
+    <div class="field">
+      <span class="field-label">Body</span>
+      <SegmentedControl
+        options={bodyClearanceOptions}
+        value={lab.bodyClearance}
+        density="tight"
+        ariaLabel="How the body gets out of the staffs' way"
+        onchange={(clearance) => lab.setBodyClearance(clearance)}
+      />
+      {#if lab.bodyClearance !== "off"}
+        <p class="note">
+          The chest moves off any staff it would pass through; the staffs stay
+          where the score puts them.
         </p>
       {/if}
     </div>

@@ -1,5 +1,6 @@
 <script lang="ts">
   import SequenceHeroDemo from "$lib/shared/landing/components/SequenceHeroDemo.svelte";
+  import LinkChip from "$lib/shared/ui/components/LinkChip.svelte";
   import demoJson from "$lib/shared/landing/data/demo-sequence.json";
   import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
 
@@ -89,8 +90,8 @@
         <a class="door-button primary" href="/notation"
           >Explore Flow Arts Notation</a
         >
-        <a class="inline-link" href="/shape-engine"
-          >See the 144 shape matrix</a
+        <LinkChip class="inline-link" href="/shape-engine"
+          >See the 144 shape matrix</LinkChip
         >
       </div>
     </div>
@@ -304,15 +305,6 @@
       var(--front-purple) 22%,
       var(--front-surface)
     );
-  }
-
-  .inline-link {
-    min-height: 44px;
-    display: inline-flex;
-    align-items: center;
-    padding-inline: 0.35rem;
-    color: color-mix(in oklch, var(--front-purple) 72%, white);
-    text-underline-offset: 0.25em;
   }
 
   .masthead-index {

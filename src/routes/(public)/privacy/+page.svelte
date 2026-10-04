@@ -1,4 +1,5 @@
 <script lang="ts">
+  import LinkChip from "$lib/shared/ui/components/LinkChip.svelte";
   import LegalPageShell from "$lib/shared/legal/components/LegalPageShell.svelte";
   import Seo from "$lib/shared/components/Seo.svelte";
 </script>
@@ -31,8 +32,9 @@
         <li>Your data is never sold or used for ML training</li>
         <li>You can export or delete your data anytime</li>
         <li>
-          Questions? Email <a href="mailto:tkaflowarts@gmail.com"
-            >tkaflowarts@gmail.com</a
+          Questions? Email <LinkChip
+            size="inline"
+            href="mailto:tkaflowarts@gmail.com">tkaflowarts@gmail.com</LinkChip
           >
         </li>
       </ul>
@@ -81,10 +83,9 @@
     <section id="data-storage">
       <h2>3. Data Storage and Security</h2>
       <p>
-        Your data is stored securely using <a
-          href="https://firebase.google.com/support/privacy"
-          target="_blank"
-          rel="noopener noreferrer">Firebase</a
+        Your data is stored securely using <LinkChip
+          size="inline"
+          href="https://firebase.google.com/support/privacy">Firebase</LinkChip
         > services, including:
       </p>
       <ul>
@@ -135,10 +136,10 @@
       <ul>
         <li>With your consent when you choose to share sequences publicly</li>
         <li>
-          With Firebase/Google as the infrastructure provider (see their <a
+          With Firebase/Google as the infrastructure provider (see their <LinkChip
+            size="inline"
             href="https://firebase.google.com/support/privacy"
-            target="_blank"
-            rel="noopener noreferrer">privacy policy</a
+            >privacy policy</LinkChip
           >)
         </li>
         <li>
@@ -161,8 +162,9 @@
         <li>Export your sequences and content</li>
       </ul>
       <p>
-        To delete your account, visit the <a href="/delete-account"
-          >account deletion page</a
+        To delete your account, visit the <LinkChip
+          size="inline"
+          href="/delete-account">account deletion page</LinkChip
         >.
       </p>
       <p>
@@ -209,8 +211,9 @@
         <li>Anonymized usage statistics may be retained indefinitely</li>
       </ul>
       <p>
-        To delete your account and all associated data, visit the <a
-          href="/delete-account">account deletion page</a
+        To delete your account and all associated data, visit the <LinkChip
+          size="inline"
+          href="/delete-account">account deletion page</LinkChip
         >.
       </p>
       <p>
@@ -237,10 +240,10 @@
       <p>Flow Arts Composer uses the following third-party services:</p>
       <ul>
         <li>
-          <strong>Firebase:</strong> Authentication, database, and storage (<a
+          <strong>Firebase:</strong> Authentication, database, and storage (<LinkChip
+            size="inline"
             href="https://firebase.google.com/support/privacy"
-            target="_blank"
-            rel="noopener noreferrer">privacy policy</a
+            >privacy policy</LinkChip
           >)
         </li>
         <li>
@@ -279,7 +282,9 @@
       <h2>12. Contact</h2>
       <p>
         For questions about this Privacy Policy or your data, email
-        <a href="mailto:tkaflowarts@gmail.com">tkaflowarts@gmail.com</a>.
+        <LinkChip size="inline" href="mailto:tkaflowarts@gmail.com"
+          >tkaflowarts@gmail.com</LinkChip
+        >.
       </p>
     </section>
   </div>

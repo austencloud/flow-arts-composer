@@ -46,7 +46,11 @@ with pre-prepared data for better performance.
     fanAppearanceSignature,
     normalizeFanAppearance,
   } from "../../prop/domain/fan-appearance";
-  import { normalizePropLook } from "../../prop/domain/prop-look";
+  import {
+    normalizePropLook,
+    type PropLook,
+  } from "../../prop/domain/prop-look";
+  import { normalizeTriangleGrip } from "../../prop/domain/triangle-appearance";
   import { calculatePictographMotionPositions } from "../../prop/services/pictograph-motion-positioner";
   import { GridMode, GridLocation } from "../../grid/domain/enums/grid-enums";
   import PictographRenderer from "./PictographRenderer.svelte";
@@ -88,6 +92,7 @@ with pre-prepared data for better performance.
     // Renderable option: hide arrows entirely (props + grid still render).
     // Default true = zero behavior change for existing callers.
     showArrow = true,
+    showProps = true,
     // Enable prop selection for variant cycling
     propsClickable = false,
     // Currently selected prop hand (for visual feedback)
@@ -114,6 +119,9 @@ with pre-prepared data for better performance.
     // Explicit prop types for export/thumbnail rendering
     // When provided, passed to PictographPreparer for consistency during async operations
     fanAppearanceOverride = undefined,
+    propLookOverride = undefined,
+    leftBuugengFlippedOverride = undefined,
+    rightBuugengFlippedOverride = undefined,
     leftPropTypeOverride = undefined,
     rightPropTypeOverride = undefined,
     leftColorOverride = undefined,
@@ -173,6 +181,7 @@ with pre-prepared data for better performance.
     arrowsClickable?: boolean;
     /** Renderable option: hide arrows entirely (props + grid still render). Default true. */
     showArrow?: boolean;
+    showProps?: boolean;
     propsClickable?: boolean;
     selectedPropHand?: HandSide | null;
     onPropClick?: (hand: HandSide) => void;
@@ -192,6 +201,9 @@ with pre-prepared data for better performance.
     poseOnly?: boolean;
     /** Explicit prop type for the left hand. Export/thumbnail rendering provides this for consistency. */
     fanAppearanceOverride?: FanAppearance;
+    propLookOverride?: PropLook;
+    leftBuugengFlippedOverride?: boolean;
+    rightBuugengFlippedOverride?: boolean;
     leftPropTypeOverride?: PropType;
     /** Explicit prop type for the right hand. Export/thumbnail rendering provides this for consistency. */
     rightPropTypeOverride?: PropType;
@@ -367,8 +379,9 @@ with pre-prepared data for better performance.
   // "TnD" toggle, so in the global/interactive path both halves follow tndGlyph —
   // toggling TnD fully shows/hides the glyph. Explicit prop overrides still win
   // for external callers (export, TnD decks) that drive elemental directly.
+  // A caller that sets only showTnD means the whole glyph, so its half follows.
   const effectiveShowElemental = $derived(
-    showElemental !== undefined ? showElemental : syncedVisibility.tndGlyph
+    showElemental ?? showTnD ?? syncedVisibility.tndGlyph
   );
 
   // The prop-path glyph has its own toggle. A caller may hand in the element
@@ -463,7 +476,10 @@ with pre-prepared data for better performance.
     rightPropTypeOverride ?? getSettings().rightPropType
   );
   const effectivePropLook = $derived(
-    normalizePropLook(getSettings().propArtwork)
+    normalizePropLook(propLookOverride ?? getSettings().propArtwork)
+  );
+  const effectiveTriangleGrip = $derived(
+    normalizeTriangleGrip(getSettings().triangleGrip)
   );
 
   // Create a stable key for data preparation dependencies
@@ -521,14 +537,17 @@ with pre-prepared data for better performance.
       rightPropType: effectiveRightPropType,
       // Buugeng chirality feeds the beta offset (opposite chirality nests, so
       // no separation), so a flip has to re-prepare.
-      leftBuugengFlipped: settings.leftBuugengFlipped ?? false,
-      rightBuugengFlipped: settings.rightBuugengFlipped ?? false,
+      leftBuugengFlipped:
+        leftBuugengFlippedOverride ?? settings.leftBuugengFlipped ?? false,
+      rightBuugengFlipped:
+        rightBuugengFlippedOverride ?? settings.rightBuugengFlipped ?? false,
       // The fan build picks the prop artwork, so choosing DoodleGrip Fire
       // over the notation fan has to re-prepare every fan pictograph.
       fanAppearance: fanAppearanceSignature(
         normalizeFanAppearance(fanAppearanceOverride ?? settings.fanAppearance)
       ),
       propLook: effectivePropLook,
+      triangleGrip: effectiveTriangleGrip,
       darkMode: effectiveDarkMode, // Include effective dark mode for color-correct preparation
       leftMotion: leftFingerprint,
       rightMotion: rightFingerprint,
@@ -587,12 +606,19 @@ with pre-prepared data for better performance.
           themeMode: currentDarkMode ? ("dark" as const) : ("light" as const),
           leftPropType: effectiveLeftPropType,
           rightPropType: effectiveRightPropType,
-          leftBuugengFlipped: getSettings().leftBuugengFlipped ?? false,
-          rightBuugengFlipped: getSettings().rightBuugengFlipped ?? false,
+          leftBuugengFlipped:
+            leftBuugengFlippedOverride ??
+            getSettings().leftBuugengFlipped ??
+            false,
+          rightBuugengFlipped:
+            rightBuugengFlippedOverride ??
+            getSettings().rightBuugengFlipped ??
+            false,
           fanAppearance: normalizeFanAppearance(
             fanAppearanceOverride ?? getSettings().fanAppearance
           ),
           propLook: effectivePropLook,
+          triangleGrip: effectiveTriangleGrip,
           showLeftMotion: preparationShowLeftMotion,
           showRightMotion: preparationShowRightMotion,
         };
@@ -752,11 +778,14 @@ with pre-prepared data for better performance.
         {visibleHand}
         {arrowsClickable}
         {showArrow}
+        {showProps}
         darkMode={effectiveDarkMode}
         {printMode}
         {transparentBackground}
         {leftColorOverride}
         {rightColorOverride}
+        {leftBuugengFlippedOverride}
+        {rightBuugengFlippedOverride}
         {onToggleTKA}
         {onToggleTnD}
         {onToggleElemental}
@@ -770,7 +799,10 @@ with pre-prepared data for better performance.
         propPositionOverrides={motionPropPositionOverrides}
         {directPropPositioning}
         animateContent={animateContent && liveAnimateVisibility}
-        {arrowOpacity}
+        arrowOpacity={disableTransitions && appliedPrepareKey !== prepareKey
+          ? 0
+          : arrowOpacity}
+        {disableTransitions}
         onGridReady={handleGridReady}
       />
     {:else}
@@ -806,11 +838,14 @@ with pre-prepared data for better performance.
             {visibleHand}
             {arrowsClickable}
             {showArrow}
+            {showProps}
             darkMode={effectiveDarkMode}
             {printMode}
             {transparentBackground}
             {leftColorOverride}
             {rightColorOverride}
+            {leftBuugengFlippedOverride}
+            {rightBuugengFlippedOverride}
             {onToggleTKA}
             {onToggleTnD}
             {onToggleElemental}
@@ -824,7 +859,10 @@ with pre-prepared data for better performance.
             propPositionOverrides={motionPropPositionOverrides}
             {directPropPositioning}
             animateContent={animateContent && liveAnimateVisibility}
-            {arrowOpacity}
+            arrowOpacity={disableTransitions && appliedPrepareKey !== prepareKey
+              ? 0
+              : arrowOpacity}
+            {disableTransitions}
             onGridReady={handleGridReady}
           />
         </div>
@@ -832,7 +870,7 @@ with pre-prepared data for better performance.
     {/if}
   {:else}
     <div class="empty-state">
-      {#if pictographData}
+      {#if pictographData && !transparentBackground}
         <div class="loading-indicator">
           <PanelSpinner
             size={6}
@@ -844,7 +882,11 @@ with pre-prepared data for better performance.
         <rect
           width="950"
           height="950"
-          fill={effectiveDarkMode ? "#0a0a0f" : "white"}
+          fill={transparentBackground
+            ? "none"
+            : effectiveDarkMode
+              ? "#0a0a0f"
+              : "white"}
         />
       </svg>
     </div>

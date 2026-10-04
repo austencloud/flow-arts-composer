@@ -84,3 +84,36 @@ describe("fan appearance through preview and export caches", () => {
     );
   });
 });
+
+describe("triangle grip through export and in-memory layer caches", () => {
+  const triangle = {
+    size: 240,
+    leftPropType: PropType.TRIANGLE,
+    rightPropType: PropType.TRIANGLE,
+  };
+  const layerKey = (options: Record<string, unknown>) =>
+    deriveBaseLayerKey(
+      data,
+      resolvePreviewCellRender(data, true, { ...triangle, ...options })
+        .renderOptions
+    );
+
+  it("carries the grip into export cells and keys its layers apart", () => {
+    expect(
+      buildCellLayerOptions(240, { triangleGrip: "side" }).options.triangleGrip
+    ).toBe("side");
+    expect(layerKey({ triangleGrip: "side" })).not.toBe(layerKey({}));
+    expect(layerKey({ triangleGrip: "side", propLook: "model" })).not.toBe(
+      layerKey({ propLook: "model" })
+    );
+  });
+
+  it("does not fragment corner, other-prop or hand-path layers", () => {
+    expect(layerKey({ triangleGrip: "corner" })).toBe(layerKey({}));
+    expect(layerKey({ handPathMode: true, triangleGrip: "side" })).toBe(
+      layerKey({ handPathMode: true })
+    );
+    const staff = { leftPropType: PropType.STAFF, rightPropType: PropType.STAFF };
+    expect(layerKey({ ...staff, triangleGrip: "side" })).toBe(layerKey(staff));
+  });
+});

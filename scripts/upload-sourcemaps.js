@@ -19,7 +19,10 @@
  * of which this project has ~499. trim-deploy-assets.js doesn't touch .map
  * either; it only strips screenshots, thumbnails, and files over 25 MiB.
  *
- * Hence: upload when credentialed, and sweep on every path out of this script.
+ * Hence: upload when credentialed and the build made maps, and sweep on every
+ * path out of this script. The build makes maps only when its environment
+ * sets VITE_SOURCEMAP=true (see build.sourcemap in vite.config.ts); without
+ * them there is nothing to upload, so the CLI is not fetched or run.
  *
  * A PostHog outage must never fail a TKA deploy. Symbolicated stack traces are
  * a diagnostic nicety; shipping the app is not. Upload failures log and exit 0.
@@ -54,32 +57,35 @@ const host = rawHost
     : `https://${rawHost}`
   : undefined;
 
-/** Delete every *.map under `dir`, whatever produced it. Returns the count. */
-function sweepSourcemaps(dir) {
-  let removed = 0;
+/** Every *.map under `dir`, whatever produced it. */
+function listSourcemaps(dir) {
   let entries;
   try {
     entries = readdirSync(dir, { withFileTypes: true });
   } catch {
-    return 0; // No output dir (build failed earlier) — nothing to sweep.
+    return []; // No output dir (build failed earlier) — nothing to sweep.
   }
-  for (const entry of entries) {
+  return entries.flatMap((entry) => {
     const full = join(dir, entry.name);
-    if (entry.isDirectory()) {
-      removed += sweepSourcemaps(full);
-    } else if (entry.name.endsWith(".map")) {
-      try {
-        rmSync(full);
-        removed += 1;
-      } catch (error) {
-        // A map we cannot delete is a map that could ship. Fail loudly rather
-        // than let it ride into an app bundle.
-        console.error(`FATAL: could not delete sourcemap ${full}`, error);
-        process.exit(1);
-      }
+    if (entry.isDirectory()) return listSourcemaps(full);
+    return entry.name.endsWith(".map") ? [full] : [];
+  });
+}
+
+/** Delete every *.map under `dir`. Returns the count. */
+function sweepSourcemaps(dir) {
+  const maps = listSourcemaps(dir);
+  for (const full of maps) {
+    try {
+      rmSync(full);
+    } catch (error) {
+      // A map we cannot delete is a map that could ship. Fail loudly rather
+      // than let it ride into an app bundle.
+      console.error(`FATAL: could not delete sourcemap ${full}`, error);
+      process.exit(1);
     }
   }
-  return removed;
+  return maps.length;
 }
 
 function finish(reason) {
@@ -106,6 +112,13 @@ if (!apiKey || !projectId) {
     "Skipping PostHog sourcemap upload (POSTHOG_PERSONAL_API_KEY / " +
       "POSTHOG_PROJECT_ID not set — expected everywhere except the Cloudflare " +
       "Pages production build)."
+  );
+}
+
+if (listSourcemaps(OUTPUT_DIR).length === 0) {
+  finish(
+    "Skipping PostHog sourcemap upload (the build made no sourcemaps; set " +
+      "VITE_SOURCEMAP=true in the build environment to make them)."
   );
 }
 

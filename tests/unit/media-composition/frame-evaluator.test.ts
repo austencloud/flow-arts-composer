@@ -81,12 +81,56 @@ describe("evaluatePresetFrame", () => {
   });
 
   it("crossfades performance and animation at the midpoint", () => {
-    expect(layerAt(5, "performance")?.opacity).toBeCloseTo(0.5);
+    expect(layerAt(5, "performance")?.opacity).toBeCloseTo(1);
     expect(layerAt(5, "performance-animation")?.opacity).toBeCloseTo(0.5);
     expect(layerAt(5, "performance")?.sourceTimeSeconds).toBeCloseTo(5);
     expect(layerAt(5, "performance-animation")?.sourceTimeSeconds).toBeCloseTo(
       5
     );
+  });
+
+  it("samples every source geometry and crop channel without clamping an overflowing rect", () => {
+    const start = {
+      x: -0.2,
+      y: 0.1,
+      width: 1.4,
+      height: 0.8,
+      rotation: -20,
+      crop: { left: 0, top: 0.1, right: 0.8, bottom: 0.9 },
+    };
+    const end = {
+      x: 0.2,
+      y: -0.3,
+      width: 1.8,
+      height: 1.2,
+      rotation: 40,
+      crop: { left: 0.2, top: 0.3, right: 1, bottom: 1 },
+    };
+    const withGeometry = {
+      ...performancePreset,
+      clips: performancePreset.clips.map((clip) =>
+        clip.kind === "visual" && clip.id === "card"
+          ? {
+              ...clip,
+              sourceGeometry: start,
+              sourceGeometryKeyframes: [
+                { atSeconds: 0, value: start, easing: LINEAR },
+                { atSeconds: 10, value: end, easing: LINEAR },
+              ],
+            }
+          : clip
+      ),
+    };
+    const geometry = layerOn(withGeometry, 5, "card")?.sourceGeometry;
+    expect(geometry?.x).toBeCloseTo(0);
+    expect(geometry?.y).toBeCloseTo(-0.1);
+    expect(geometry?.width).toBeCloseTo(1.6);
+    expect(geometry?.height).toBeCloseTo(1);
+    expect(geometry?.rotation).toBeCloseTo(10);
+    expect(geometry?.crop.left).toBeCloseTo(0.1);
+    expect(geometry?.crop.top).toBeCloseTo(0.2);
+    expect(geometry?.crop.right).toBeCloseTo(0.9);
+    expect(geometry?.crop.bottom).toBeCloseTo(0.95);
   });
 
   it("shows only the animation after the overlap", () => {
@@ -361,7 +405,9 @@ describe("evaluatePresetFrame", () => {
       steps,
       startPlacementDuration: 1,
       clocks: {
-        "take:a": { sampleAt: (media) => ({ arrival: media, endArrival: null }) },
+        "take:a": {
+          sampleAt: (media) => ({ arrival: media, endArrival: null }),
+        },
       },
     });
     const untimed = layers.find((layer) => layer.clipId === "performance")!;
@@ -473,7 +519,12 @@ describe("evaluatePresetFrame: motion tracks", () => {
         },
         {
           atSeconds: 10,
-          value: { scale: 2, rotationDegrees: 90, translateX: 0.1, translateY: -0.1 },
+          value: {
+            scale: 2,
+            rotationDegrees: 90,
+            translateX: 0.1,
+            translateY: -0.1,
+          },
           easing: LINEAR,
         },
       ],
@@ -503,7 +554,12 @@ describe("evaluatePresetFrame: motion tracks", () => {
       transform: [
         {
           atSeconds: 0,
-          value: { scale: -2, rotationDegrees: 200, translateX: 0.9, translateY: -0.9 },
+          value: {
+            scale: -2,
+            rotationDegrees: 200,
+            translateX: 0.9,
+            translateY: -0.9,
+          },
           easing: LINEAR,
         },
       ],
@@ -529,7 +585,12 @@ describe("evaluatePresetFrame: motion tracks", () => {
         },
         {
           atSeconds: 10,
-          value: { scale: POST_MAX_ZOOM, rotationDegrees: 0, translateX: 0, translateY: 0 },
+          value: {
+            scale: POST_MAX_ZOOM,
+            rotationDegrees: 0,
+            translateX: 0,
+            translateY: 0,
+          },
           easing: LINEAR,
         },
       ],
@@ -607,8 +668,54 @@ describe("evaluatePresetFrame: motion tracks", () => {
     });
   });
 
+  it("turns a region as its rect or its keys say, folded back into -180..180", () => {
+    const turnedCard: typeof performancePreset = {
+      ...performancePreset,
+      regions: performancePreset.regions.map((region) =>
+        region.id === "card" ? { ...region, turn: 30 } : region
+      ),
+    };
+    expect(layerOn(turnedCard, 5, "card")?.regionRect?.turn).toBe(30);
+    expect(
+      layerOn(performancePreset, 5, "card")?.regionRect
+    ).not.toHaveProperty("turn");
+
+    const keyed = (
+      turns: readonly (number | undefined)[]
+    ): typeof performancePreset => ({
+      ...turnedCard,
+      regionKeyframes: [
+        {
+          regionId: "card",
+          keyframes: turns.map((turn, index) => ({
+            atSeconds: index * 10,
+            value: {
+              x: 0,
+              y: 0,
+              width: 1,
+              height: 1,
+              ...(turn === undefined ? {} : { turn }),
+            },
+            easing: LINEAR,
+          })),
+        },
+      ],
+    });
+    // Keys hold turns past 180 so a blend never spins; a sample folds back.
+    expect(layerOn(keyed([170, 250]), 0, "card")?.regionRect?.turn).toBe(170);
+    expect(
+      layerOn(keyed([170, 250]), 2.5, "card")?.regionRect?.turn
+    ).toBeCloseTo(-170, 5);
+    // A region in motion is turned by its keys alone.
+    expect(
+      layerOn(keyed([undefined]), 5, "card")?.regionRect
+    ).not.toHaveProperty("turn");
+  });
+
   it("keeps a clip at the first instant of its fade-in among the present layers only", () => {
-    const [first] = performancePreset.clips.filter((clip) => clip.kind === "visual");
+    const [first] = performancePreset.clips.filter(
+      (clip) => clip.kind === "visual"
+    );
     const preset: typeof performancePreset = {
       ...performancePreset,
       clips: [

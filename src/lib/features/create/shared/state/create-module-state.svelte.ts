@@ -273,6 +273,54 @@ export function createCreateModuleState(
     }
   }
 
+  function pushUndoSnapshotForSequenceState(
+    type: UndoOperationType,
+    sourceState: object,
+    metadata?: UndoMetadata
+  ): void {
+    if (tutorialWorkspaceActive) return;
+
+    if (sourceState === getSequenceStateForTab("construct")) {
+      _constructorTabState?.undoController?.pushUndoSnapshot(type, metadata);
+    } else if (sourceState === getSequenceStateForTab("generate")) {
+      _generatorTabState?.undoController?.pushUndoSnapshot(type, metadata);
+    } else if (sourceState === getSequenceStateForTab("assemble")) {
+      _assembleTabState?.assembleBuilderState.beginExternalEdit(
+        metadata?.description ?? formatUndoOperation(type)
+      );
+    }
+  }
+
+  function beginUndoSnapshotForSequenceState(
+    type: UndoOperationType,
+    sourceState: object,
+    metadata?: UndoMetadata
+  ): () => void {
+    if (tutorialWorkspaceActive) return () => {};
+
+    if (sourceState === getSequenceStateForTab("construct")) {
+      return (
+        _constructorTabState?.undoController?.beginUndoSnapshot(
+          type,
+          metadata
+        ) ?? (() => {})
+      );
+    }
+    if (sourceState === getSequenceStateForTab("generate")) {
+      return (
+        _generatorTabState?.undoController?.beginUndoSnapshot(type, metadata) ??
+        (() => {})
+      );
+    }
+    if (sourceState === getSequenceStateForTab("assemble")) {
+      // Assemble records its own document snapshot when the external edit finishes.
+      _assembleTabState?.assembleBuilderState.beginExternalEdit(
+        metadata?.description ?? formatUndoOperation(type)
+      );
+    }
+    return () => {};
+  }
+
   function beginTutorialWorkspace(): void {
     if (tutorialWorkspaceActive) {
       return;
@@ -346,20 +394,14 @@ export function createCreateModuleState(
       return getActiveTabUndoController();
     },
     pushUndoSnapshot: (type: UndoOperationType, metadata?: UndoMetadata) => {
-      if (tutorialWorkspaceActive) {
-        return;
-      }
-
-      const activeTab = navigationState.activeTab as BuildModeId;
-      if (activeTab === "assemble") {
-        _assembleTabState?.assembleBuilderState.beginExternalEdit(
-          metadata?.description ?? formatUndoOperation(type)
-        );
-        return;
-      }
-      const controller = getActiveTabUndoController();
-      controller?.pushUndoSnapshot(type, metadata);
+      pushUndoSnapshotForSequenceState(
+        type,
+        getActiveTabSequenceState(),
+        metadata
+      );
     },
+    pushUndoSnapshotForSequenceState,
+    beginUndoSnapshotForSequenceState,
     undo: () => {
       if (tutorialWorkspaceActive) {
         return false;

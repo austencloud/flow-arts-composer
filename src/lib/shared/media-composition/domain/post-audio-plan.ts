@@ -30,6 +30,9 @@ export interface PostAudioSegment {
   /** Linear volume multiplier layered under the edge fades, not instead of
    *  them. Defaults to 1. */
   gain?: number;
+  /** Duration of the overlap with the adjacent clip on this video track. */
+  crossfadeInSeconds?: number;
+  crossfadeOutSeconds?: number;
 }
 
 export function planPostAudio(
@@ -71,16 +74,38 @@ export function planProjectAudio(
 ): PostAudioSegment[] {
   if (mode === "silent") return [];
 
-  return post.videoSegments
-    .filter((segment) => segment.volume > 0)
-    .map((segment) => ({
-      takeId: segment.takeId,
-      postStartSeconds: segment.startSeconds,
-      sourceInSeconds: segment.sourceIn,
-      durationSeconds: segment.endSeconds - segment.startSeconds,
-      rate: segment.speed,
-      gain: segment.volume,
-    }));
+  const segments: (PostAudioSegment & { trackIndex: number })[] =
+    post.videoSegments
+      .filter((segment) => segment.volume > 0)
+      .map((segment) => ({
+        trackIndex: segment.trackIndex,
+        takeId: segment.takeId,
+        postStartSeconds: segment.startSeconds,
+        sourceInSeconds: segment.sourceIn,
+        durationSeconds: segment.endSeconds - segment.startSeconds,
+        rate: segment.speed,
+        gain: segment.volume,
+      }));
+  for (const trackIndex of new Set(
+    segments.map((segment) => segment.trackIndex)
+  )) {
+    const track = segments
+      .filter((segment) => segment.trackIndex === trackIndex)
+      .sort((a, b) => a.postStartSeconds - b.postStartSeconds);
+    for (let index = 1; index < track.length; index += 1) {
+      const previous = track[index - 1]!;
+      const next = track[index]!;
+      const overlap =
+        Math.min(
+          previous.postStartSeconds + previous.durationSeconds,
+          next.postStartSeconds + next.durationSeconds
+        ) - next.postStartSeconds;
+      if (overlap <= 0) continue;
+      previous.crossfadeOutSeconds = overlap;
+      next.crossfadeInSeconds = overlap;
+    }
+  }
+  return segments.map(({ trackIndex: _trackIndex, ...segment }) => segment);
 }
 
 // ---------------------------------------------------------------------------
@@ -172,6 +197,12 @@ function mixSegmentInto(
   );
   const rate = segment.rate ?? 1;
   const gain = segment.gain ?? 1;
+  const crossfadeInSamples = Math.round(
+    (segment.crossfadeInSeconds ?? 0) * outSampleRate
+  );
+  const crossfadeOutSamples = Math.round(
+    (segment.crossfadeOutSeconds ?? 0) * outSampleRate
+  );
 
   for (let i = 0; i < outCount; i++) {
     const outIndex = outStart + i;
@@ -190,9 +221,16 @@ function mixSegmentInto(
 
     let fadeGain = 1;
     if (fadeSamples > 0) {
-      if (i < fadeSamples) fadeGain = i / fadeSamples;
-      else if (i >= outCount - fadeSamples)
+      if (i < fadeSamples && crossfadeInSamples === 0)
+        fadeGain = i / fadeSamples;
+      else if (i >= outCount - fadeSamples && crossfadeOutSamples === 0)
         fadeGain = (outCount - 1 - i) / fadeSamples;
+    }
+    if (crossfadeInSamples > 0 && i < crossfadeInSamples) {
+      fadeGain = Math.min(fadeGain, i / crossfadeInSamples);
+    }
+    if (crossfadeOutSamples > 0 && i >= outCount - crossfadeOutSamples) {
+      fadeGain = Math.min(fadeGain, (outCount - i) / crossfadeOutSamples);
     }
 
     outLeft[outIndex]! += left * fadeGain * gain;

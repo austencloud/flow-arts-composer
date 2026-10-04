@@ -14,7 +14,7 @@
     defaultChipId?: string;
     /** Sentinel id for the synthetic Custom chip (your auto-captured look). */
     customChipId?: string;
-    /** Render the Custom chip disabled (no custom captured yet). */
+    /** Hide Your look until custom settings have been captured. */
     customDisabled?: boolean;
     /** Trail's captured custom blue/red for the Custom chip preview (else null). */
     customColors?: { left: string; right: string } | null;
@@ -27,6 +27,7 @@
     /** Compact consumers already expose the raw controls directly. */
     showSummary?: boolean;
     showCustomize?: boolean;
+    customizeTarget?: string;
   }
 
   const {
@@ -43,6 +44,7 @@
     summary = "",
     showSummary = true,
     showCustomize = true,
+    customizeTarget,
   }: Props = $props();
 
   // Trail's Default IS the colour-matched factory blue/red, so its Default chip
@@ -87,7 +89,21 @@
 </script>
 
 <div class="presets-section">
-  <span class="section-label">{t("effect_deep_looks")}</span>
+  <div class="section-heading" class:with-tune={showCustomize && !!onCustomize}>
+    <span class="section-label">{t("effect_deep_looks")}</span>
+    {#if showCustomize && onCustomize}
+      <button
+        class="customize-btn"
+        type="button"
+        style:--btn-accent={accentColor}
+        aria-controls={customizeTarget}
+        onclick={onCustomize}
+      >
+        <i class="fas fa-sliders" aria-hidden="true"></i>
+        {t("effect_deep_tune")}
+      </button>
+    {/if}
+  </div>
 
   <div
     class="look-choices"
@@ -158,16 +174,14 @@
           </button>
         {/if}
 
-        {#if customChipId}
+        {#if customChipId && !customDisabled}
           {@const isCustomActive = activePresetId === customChipId}
           <button
             class="anchor-card"
             class:active={isCustomActive}
-            class:disabled={customDisabled}
             type="button"
             role="radio"
             aria-checked={isCustomActive}
-            disabled={customDisabled}
             style:--card-accent={accentColor}
             onclick={() => onSelectPreset(customChipId)}
           >
@@ -185,9 +199,7 @@
             <span class="anchor-copy">
               <span class="anchor-name">{t("effect_deep_your_look")}</span>
               <span class="anchor-description">
-                {customDisabled
-                  ? t("effect_deep_tune_anything")
-                  : t("effect_deep_updates_controls")}
+                {t("effect_deep_updates_controls")}
               </span>
             </span>
           </button>
@@ -201,19 +213,6 @@
       <span class="summary-label">{t("effect_deep_current")}</span>
       <span class="summary-text">{summary}</span>
     </div>
-  {/if}
-
-  {#if showCustomize && onCustomize}
-    <button
-      class="customize-btn"
-      type="button"
-      style:--btn-accent={accentColor}
-      onclick={onCustomize}
-    >
-      {t("effect_deep_customize_settings", {
-        effect: effectUiLabel(effectLabel),
-      })}
-    </button>
   {/if}
 </div>
 
@@ -231,6 +230,17 @@
     letter-spacing: 0.04em;
     text-transform: uppercase;
     color: var(--theme-text, white);
+  }
+
+  .section-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .section-heading.with-tune {
+    min-height: 44px;
   }
 
   .look-choices {
@@ -335,11 +345,6 @@
     background: color-mix(in srgb, var(--card-accent) 8%, transparent);
   }
 
-  .anchor-card.disabled {
-    opacity: 0.48;
-    cursor: not-allowed;
-  }
-
   .anchor-card:focus-visible {
     outline: 2px solid var(--card-accent, var(--theme-accent, #8b5cf6));
     outline-offset: 2px;
@@ -413,7 +418,10 @@
   }
 
   .customize-btn {
-    width: 100%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
     min-height: 44px;
     padding: 10px 16px;
     border: 1.5px solid color-mix(in srgb, var(--btn-accent) 40%, transparent);
@@ -421,7 +429,7 @@
     background: color-mix(in srgb, var(--btn-accent) 8%, transparent);
     color: var(--btn-accent);
     font-size: var(--font-size-min, 14px);
-    font-weight: 500;
+    font-weight: 650;
     cursor: pointer;
     transition:
       background var(--duration-fast, 100ms) ease,

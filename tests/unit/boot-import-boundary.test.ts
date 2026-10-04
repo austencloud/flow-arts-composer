@@ -97,6 +97,39 @@ describe("boot import boundary", () => {
     ).toEqual([]);
   });
 
+  it.each([
+    [
+      "/shape-engine",
+      [
+        "src/routes/(public)/+layout@.svelte",
+        "src/routes/(public)/+layout.ts",
+        "src/routes/(public)/shape-engine/+page.svelte",
+      ],
+    ],
+    ["/embed/spinner", ["src/routes/embed/spinner/+page.svelte"]],
+  ])("keeps %s free of Firebase at startup", (_route, routeFiles) => {
+    // Public pages that nobody needs to sign in to use. The spinner still
+    // loads Firebase with import() once it has drawn. The build-output check
+    // (scripts/verify-public-firebase.mjs) also catches chunk merges that
+    // this source walk cannot see.
+    const pageGraph = staticGraph(
+      ["src/routes/+layout.svelte", "src/routes/+layout.ts", ...routeFiles].map(
+        rel
+      )
+    );
+    // A renamed route file would otherwise leave nothing to check.
+    for (const file of routeFiles) {
+      expect(pageGraph.files.has(rel(file)), `${file} not found`).toBe(true);
+    }
+    const firebaseImporters = [...pageGraph.packages.entries()]
+      .filter(([spec]) => spec === "firebase" || spec.startsWith("firebase/"))
+      .flatMap(([, files]) => [...files]);
+    expect(
+      firebaseImporters.map((file) => chainTo(pageGraph, file)),
+      "Load Firebase with import() where it is used instead."
+    ).toEqual([]);
+  });
+
   it("keeps the viewer URL param names free of the compression codec", () => {
     const paramsGraph = staticGraph([
       rel("src/lib/shared/sequence-viewer/services/viewer-url-state-params.ts"),

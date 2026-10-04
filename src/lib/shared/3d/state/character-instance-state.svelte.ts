@@ -22,6 +22,10 @@ import {
 import { createPlaybackState } from "./playback-state.svelte";
 import { calculatePropState } from "../services/prop-state-interpolator";
 import {
+  DEFAULT_PERFORMER_HAND_DISTANCE,
+  type PerformerHandDistance,
+} from "../domain/performer-hand-distance";
+import {
   sequenceToMotionConfigs,
   getStartPlacementConfigs,
 } from "../services/sequence-converter";
@@ -407,6 +411,13 @@ export function createCharacterInstanceState(
     resolveEasedFrame(currentStepIndex, playback.progress)
   );
 
+  // How far each hand sits from its grid center. Every performer holds the
+  // fixed default until a grid style derives it from the body and the staff
+  // (docs/architecture/performer-grid-styles.md). Not persisted.
+  let handDistance = $state.raw<PerformerHandDistance>(
+    DEFAULT_PERFORMER_HAND_DISTANCE
+  );
+
   /**
    * The prop pair this sequence renders at an arbitrary motion score time,
    * where 0.00 is the start of beat 1. Runs the same eased-frame resolution
@@ -428,9 +439,11 @@ export function createCharacterInstanceState(
     );
     const frame = resolveEasedFrame(stepIndexAt, wrapped - Math.floor(wrapped));
     return {
-      left: frame.left ? calculatePropState(frame.left, frame.progress) : null,
+      left: frame.left
+        ? calculatePropState(frame.left, frame.progress, handDistance.left)
+        : null,
       right: frame.right
-        ? calculatePropState(frame.right, frame.progress)
+        ? calculatePropState(frame.right, frame.progress, handDistance.right)
         : null,
     };
   }
@@ -442,12 +455,20 @@ export function createCharacterInstanceState(
   // Computed prop states
   const leftPropState = $derived(
     easedFrame.left
-      ? calculatePropState(easedFrame.left, easedFrame.progress)
+      ? calculatePropState(
+          easedFrame.left,
+          easedFrame.progress,
+          handDistance.left
+        )
       : null
   );
   const rightPropState = $derived(
     easedFrame.right
-      ? calculatePropState(easedFrame.right, easedFrame.progress)
+      ? calculatePropState(
+          easedFrame.right,
+          easedFrame.progress,
+          handDistance.right
+        )
       : null
   );
 
@@ -956,6 +977,9 @@ export function createCharacterInstanceState(
     else clearSequence();
     beatPlaneOverrides = new Map(snap.planes.beatPlaneOverrides);
     reconvertWithConfig(getEffectiveModeConfig(effectivePlaneMode));
+    // The overrides live in the Map but the step configs only carry them once
+    // patched in; without this a restored performer forgets its per-beat planes.
+    if (beatPlaneOverrides.size > 0) applyBeatPlaneOverrides();
   }
 
   // Performer undo uses pushSelfRestoringEntry so each performer's closures
@@ -1454,6 +1478,14 @@ export function createCharacterInstanceState(
     },
     get rightPropState() {
       return rightPropState;
+    },
+    /** How far each hand sits from its grid center. */
+    get handDistance() {
+      return handDistance;
+    },
+    /** Grid styles and picture probes set this; nothing persists it. */
+    setHandDistance(next: PerformerHandDistance) {
+      handDistance = next;
     },
 
     // Playback delegation

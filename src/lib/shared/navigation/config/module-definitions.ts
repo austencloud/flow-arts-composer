@@ -96,6 +96,9 @@ export function normalizeModuleId(rawModuleId: string): ModuleId | undefined {
 const SECTION_ID_MIGRATIONS: Readonly<
   Record<string, Readonly<Record<string, string>>>
 > = {
+  settings: {
+    language: "preferences",
+  },
   choreo_card: {
     "scan-activity": CHOREO_CARD_SCAN_ATLAS_TAB_ID,
   },
@@ -243,6 +246,17 @@ export const MODULE_DEFINITIONS: ModuleDefinition[] = [
     description: "Compose sequences into animations",
     isMain: true,
     sections: COMPOSE_TABS, // TODO: Rename to COMPOSE_TABS
+  },
+  {
+    id: "post",
+    labelKey: "module_post",
+    descKey: "module_desc_post",
+    label: "Post",
+    icon: '<i class="fas fa-clapperboard" aria-hidden="true"></i>',
+    color: "#a4aab5",
+    description: "Edit and export sequence posts",
+    isMain: true,
+    sections: [],
   },
   // Playground/Art module dissolved 2026-07-12: the tunnel/scene/mandala
   // galleries now mount inside the Library's Art shelf detail pane
@@ -477,6 +491,7 @@ const FEATURE_ENABLED: Record<string, boolean> = {
     typeof __FEATURE_PREMIUM__ !== "undefined" ? __FEATURE_PREMIUM__ : true,
   compose:
     typeof __FEATURE_COMPOSE__ !== "undefined" ? __FEATURE_COMPOSE__ : true,
+  post: true,
   arena: typeof __FEATURE_ARENA__ !== "undefined" ? __FEATURE_ARENA__ : true,
   train: typeof __FEATURE_TRAIN__ !== "undefined" ? __FEATURE_TRAIN__ : true,
   choreo_card:

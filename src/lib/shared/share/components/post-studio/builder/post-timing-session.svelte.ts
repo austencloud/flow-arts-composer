@@ -30,6 +30,7 @@ import {
 } from "$lib/shared/media-composition/domain/timing-summary";
 import { shownLanding } from "./timing-lane-landings";
 import { t } from "$lib/shared/i18n/i18n.svelte.js";
+import { nextMappedLanding } from "./post-timing-animation";
 
 export interface LandingRef {
   sectionId: string;
@@ -37,6 +38,7 @@ export interface LandingRef {
 }
 
 export type TimingSpeed = "1" | "0.75" | "0.5";
+export type TimingPlaybackMode = "continuous" | "step";
 
 /** Inputs that take no typing: their keys belong to the take. */
 const NOT_TEXT_ENTRY = new Set([
@@ -71,6 +73,8 @@ export interface TimingHost {
   confirmTiming(takeId: string): void;
   canUndoTiming(takeId: string): boolean;
   undoTiming(takeId: string): void;
+  canRedoTiming(takeId: string): boolean;
+  redoTiming(takeId: string): void;
   /** Leave the tool: "done" after the last take checks out, "back" otherwise. */
   exitTiming(reason: "done" | "back"): void;
 }
@@ -80,14 +84,34 @@ export interface TimingHost {
  * square and the lanes) and its panel (the controls), which the studio may
  * lay out apart. The take plays on its own clock here, not the post's.
  */
-export function createPostTimingSession(builder: TimingHost) {
+export function createPostTimingSession(
+  builder: TimingHost,
+  /** The editing copy to play in place of the take's own file, if any. */
+  editingUrl?: (takeId: string, url: string | null) => string | null
+) {
   let video = $state<HTMLVideoElement | null>(null);
   let mediaSeconds = $state(0);
   let playing = $state(false);
   let speed = $state<TimingSpeed>("1");
+  let playbackMode = $state<TimingPlaybackMode>("continuous");
+  const stepPlaybackPauseMs = 300;
+  let stepRunning = $state(false);
+  let stepDwelling = false;
+  let stepTimer: ReturnType<typeof setTimeout> | null = null;
+  let stepFrameId: number | null = null;
+  let stepGeneration = 0;
+  let stepSnapPending: number | null = null;
+  $effect(() => {
+    return () => {
+      cancelStepReview();
+      video?.pause();
+    };
+  });
   let zoom = $state<TimingZoom>("8");
   let showSquare = $state(true);
   let selected = $state<LandingRef | null>(null);
+  let adjustLandings = $state(false);
+  let adjustmentCancel = $state<(() => void) | null>(null);
   let tapCount = $state(0);
 
   const takes = $derived(builder.takes);
@@ -98,7 +122,18 @@ export function createPostTimingSession(builder: TimingHost) {
       : (takes[0]?.id ?? null)
   );
   const take = $derived(takes.find((entry) => entry.id === takeId) ?? null);
-  const url = $derived(takeId ? builder.mediaUrl(takeId) : null);
+  let shown: { takeId: string | null; url: string | null } = {
+    takeId: null,
+    url: null,
+  };
+  const url = $derived.by(() => {
+    const original = takeId ? builder.mediaUrl(takeId) : null;
+    const next = takeId && editingUrl ? editingUrl(takeId, original) : original;
+    // A copy that finishes mid-play waits for the pause, not restart the take.
+    if (playing && shown.takeId === takeId && shown.url) return shown.url;
+    shown = { takeId, url: next };
+    return next;
+  });
   const timing = $derived(takeId ? builder.timing(takeId) : null);
   const resolved = $derived(takeId ? builder.resolvedTiming(takeId) : null);
   const status = $derived(takeId ? builder.timingStatus(takeId) : "untapped");
@@ -182,14 +217,18 @@ export function createPostTimingSession(builder: TimingHost) {
   // nothing selected.
   $effect(() => {
     void takeId;
+    untrack(() => video?.pause());
+    cancelStepReview();
     mediaSeconds = pendingStart ?? 0;
     pendingStart = null;
     playing = false;
     selected = null;
+    adjustLandings = false;
   });
 
-  // A newly mounted video starts at 0; bring it to where the tool is.
+  // A newly mounted or reloaded video starts at 0; bring it to where the tool is.
   $effect(() => {
+    void url;
     if (!video) return;
     const target = video;
     const align = () => {
@@ -220,22 +259,111 @@ export function createPostTimingSession(builder: TimingHost) {
   });
 
   function seek(seconds: number): void {
+    if (stepRunning) pause();
     const clamped = Math.min(durationSeconds, Math.max(0, seconds));
     mediaSeconds = clamped;
     if (video) video.currentTime = clamped;
   }
 
   function pause(): void {
+    cancelStepReview();
     video?.pause();
+    playing = false;
+  }
+
+  function cancelStepReview(): void {
+    stepGeneration += 1;
+    stepRunning = false;
+    stepDwelling = false;
+    if (stepTimer !== null) clearTimeout(stepTimer);
+    if (stepFrameId !== null) cancelAnimationFrame(stepFrameId);
+    stepTimer = null;
+    stepFrameId = null;
+    stepSnapPending = null;
+  }
+
+  /** Video time is the only animation clock: stop it for each landing dwell. */
+  function playToNextLanding(
+    generation: number,
+    takeAtStart: string | null
+  ): void {
+    const target = video;
+    if (!target || generation !== stepGeneration || takeAtStart !== takeId)
+      return;
+    const landing = nextMappedLanding(resolved, target.currentTime);
+    if (landing === null) {
+      // The last mapped pose holds while any trailing footage plays out.
+      // Native ended/pause events close the review when media runs out.
+      void target.play().catch(() => {
+        if (generation === stepGeneration) pause();
+      });
+      return;
+    }
+    const follow = () => {
+      if (
+        generation !== stepGeneration ||
+        target !== video ||
+        takeAtStart !== takeId
+      )
+        return;
+      mediaSeconds = target.currentTime;
+      if (target.currentTime >= landing - 0.008) {
+        stepDwelling = true;
+        target.pause();
+        if (Math.abs(target.currentTime - landing) > 0.001) {
+          stepSnapPending = landing;
+          target.currentTime = landing;
+        }
+        mediaSeconds = landing;
+        stepFrameId = null;
+        stepTimer = setTimeout(() => {
+          stepTimer = null;
+          if (
+            generation !== stepGeneration ||
+            target !== video ||
+            takeAtStart !== takeId
+          )
+            return;
+          stepDwelling = false;
+          playToNextLanding(generation, takeAtStart);
+        }, stepPlaybackPauseMs);
+        return;
+      }
+      stepFrameId = requestAnimationFrame(follow);
+    };
+    void target
+      .play()
+      .then(() => {
+        if (
+          generation !== stepGeneration ||
+          target !== video ||
+          takeAtStart !== takeId
+        ) {
+          return;
+        }
+        stepFrameId = requestAnimationFrame(follow);
+      })
+      .catch(() => {
+        if (generation === stepGeneration) pause();
+      });
   }
 
   function togglePlay(): void {
     if (!video) return;
+    if (stepRunning) {
+      pause();
+      return;
+    }
     if (video.paused) {
       if (video.ended || video.currentTime >= durationSeconds - 0.05) seek(0);
-      void video.play().catch(() => (playing = false));
+      if (playbackMode === "step") {
+        stepRunning = true;
+        playToNextLanding(stepGeneration, takeId);
+      } else {
+        void video.play().catch(() => (playing = false));
+      }
     } else {
-      video.pause();
+      pause();
     }
   }
 
@@ -328,6 +456,15 @@ export function createPostTimingSession(builder: TimingHost) {
     }));
   }
 
+  /** Puts the whole grid a typed number of seconds off the taps. */
+  function setGridOffset(seconds: number): void {
+    if (!Number.isFinite(seconds)) return;
+    editCurrent((current) => ({
+      ...current,
+      offsetSeconds: Math.round(seconds * 1e6) / 1e6,
+    }));
+  }
+
   // Parts that keep one count share its end, wherever it is stored.
   function clearEnd(): void {
     if (!takeId || !section) return;
@@ -341,6 +478,19 @@ export function createPostTimingSession(builder: TimingHost) {
     editCurrent((current) =>
       current.taps.length === 0 ? current : { ...current, taps: [] }
     );
+    restart();
+  }
+
+  function deselect(): void {
+    selected = null;
+  }
+
+  function restart(): void {
+    pause();
+    playing = false;
+    deselect();
+    adjustLandings = false;
+    seek(0);
   }
 
   /**
@@ -445,11 +595,7 @@ export function createPostTimingSession(builder: TimingHost) {
     if (target instanceof HTMLInputElement) {
       return !NOT_TEXT_ENTRY.has(target.type);
     }
-    return (
-      target.isContentEditable ||
-      target instanceof HTMLTextAreaElement ||
-      target instanceof HTMLSelectElement
-    );
+    return target.isContentEditable || target instanceof HTMLTextAreaElement;
   }
 
   /** T taps, Space plays, comma and period step a frame. */
@@ -463,24 +609,21 @@ export function createPostTimingSession(builder: TimingHost) {
       return;
     }
     if (isTyping(event.target)) return;
-    if (event.key === "t" || event.key === "T") {
+    if (event.key === "Escape") {
+      if (selected || adjustLandings) {
+        event.preventDefault();
+        deselect();
+        adjustLandings = false;
+      }
+    } else if (event.key === "Home") {
+      event.preventDefault();
+      restart();
+    } else if (event.key === "t" || event.key === "T") {
       event.preventDefault();
       // A held key repeats; one press is one landing.
       if (!event.repeat) tap();
     } else if (event.key === " ") {
-      // Space presses a focused button, toggles a focused checkbox and opens
-      // a focused disclosure, so the keyboard can still work them - except
-      // Tap, which Austen clicks mid-take and would otherwise tap a second
-      // time.
-      const target = event.target;
-      if (
-        (target instanceof HTMLButtonElement &&
-          !target.hasAttribute("data-space-plays")) ||
-        target instanceof HTMLInputElement ||
-        (target instanceof HTMLElement && target.localName === "summary")
-      ) {
-        return;
-      }
+      // Playback keeps Space even after a timing control has retained focus.
       event.preventDefault();
       if (!event.repeat) togglePlay();
     } else if (event.key === ",") {
@@ -495,6 +638,7 @@ export function createPostTimingSession(builder: TimingHost) {
       return video;
     },
     set video(next: HTMLVideoElement | null) {
+      if (video !== next) cancelStepReview();
       video = next;
     },
     get mediaSeconds() {
@@ -503,11 +647,26 @@ export function createPostTimingSession(builder: TimingHost) {
     get playing() {
       return playing;
     },
+    /** Review transport stays active while the video dwells at a step. */
+    get reviewPlaying() {
+      return playing || stepRunning;
+    },
     get speed() {
       return speed;
     },
     set speed(next: TimingSpeed) {
       speed = next;
+    },
+    get playbackMode() {
+      return playbackMode;
+    },
+    set playbackMode(next: TimingPlaybackMode) {
+      if (next === playbackMode) return;
+      pause();
+      playbackMode = next;
+    },
+    get stepPlaybackPauseMs() {
+      return stepPlaybackPauseMs;
     },
     get zoom() {
       return zoom;
@@ -526,6 +685,13 @@ export function createPostTimingSession(builder: TimingHost) {
     },
     set selected(next: LandingRef | null) {
       selected = next;
+    },
+    get adjustLandings() {
+      return adjustLandings;
+    },
+    set adjustLandings(next: boolean) {
+      adjustLandings = next;
+      if (!next) deselect();
     },
     get tapCount() {
       return tapCount;
@@ -592,15 +758,36 @@ export function createPostTimingSession(builder: TimingHost) {
       return resolvedSection?.endStored ?? false;
     },
     get canUndo() {
-      return takeId ? builder.canUndoTiming(takeId) : false;
+      return (
+        adjustmentCancel !== null ||
+        (takeId ? builder.canUndoTiming(takeId) : false)
+      );
+    },
+    get canRedo() {
+      return (
+        adjustmentCancel !== null ||
+        (takeId ? builder.canRedoTiming(takeId) : false)
+      );
     },
     /** The video element reports its own play state. */
     notePlaying(next: boolean): void {
       playing = next;
       if (!next && video) mediaSeconds = video.currentTime;
+      if (!next && stepRunning && !stepDwelling) cancelStepReview();
     },
     noteSeeked(): void {
       if (video && !playing) mediaSeconds = video.currentTime;
+      if (stepRunning) {
+        if (
+          stepSnapPending !== null &&
+          video &&
+          Math.abs(video.currentTime - stepSnapPending) < 0.01
+        ) {
+          stepSnapPending = null;
+        } else {
+          pause();
+        }
+      }
     },
     selectTake(id: string): void {
       builder.selectedTakeId = id;
@@ -620,6 +807,8 @@ export function createPostTimingSession(builder: TimingHost) {
     },
     exit(): void {
       pause();
+      adjustLandings = false;
+      deselect();
       builder.exitTiming("back");
     },
     seek,
@@ -637,6 +826,22 @@ export function createPostTimingSession(builder: TimingHost) {
       editCurrent((current) =>
         current.snap === snap ? current : { ...current, snap }
       );
+    },
+    setLandingHoldPercent(percent: number): boolean {
+      if (!Number.isFinite(percent) || percent < 0 || percent > 90)
+        return false;
+      const landingHoldRatio = Math.round(percent) / 100;
+      editCurrent((current) =>
+        (current.landingHoldRatio ?? 0) === landingHoldRatio
+          ? current
+          : {
+              ...current,
+              ...(landingHoldRatio === 0
+                ? { landingHoldRatio: undefined }
+                : { landingHoldRatio }),
+            }
+      );
+      return true;
     },
     beatOneHere(): void {
       const at = mediaSeconds;
@@ -660,15 +865,32 @@ export function createPostTimingSession(builder: TimingHost) {
     firstTapWasMoveOne,
     dropLeadingTaps,
     nudgeGrid,
+    setGridOffset,
     clearEnd,
     clearTaps,
+    deselect,
+    restart,
     placeLanding,
     landingRange,
     releaseSelected,
     split,
     joinWithPrevious,
+    setAdjustmentCancel(cancel: (() => void) | null): void {
+      adjustmentCancel = cancel;
+    },
     undo(): void {
+      if (adjustmentCancel) {
+        adjustmentCancel();
+        return;
+      }
       if (takeId) builder.undoTiming(takeId);
+    },
+    redo(): void {
+      if (adjustmentCancel) {
+        adjustmentCancel();
+        return;
+      }
+      if (takeId) builder.redoTiming(takeId);
     },
     confirm,
     handleKey,

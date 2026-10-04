@@ -2,11 +2,14 @@
   import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { POST_FRAME_RATE } from "$lib/shared/media-composition/domain/post-project";
   import type { PostEditorState } from "$lib/shared/media-composition/state/post-editor-state.svelte";
-  import { formatTakeClock } from "../builder/post-builder-format";
+  import TypeableValue from "$lib/shared/ui/components/TypeableValue.svelte";
+  import { formatTakeClock, parseClock } from "../builder/post-builder-format";
+  import { roundToFrameSeconds } from "./timeline/post-timeline-geometry";
 
   /**
    * Play, one frame back or on, and the clock. The clock reads to the
-   * hundredth so a single frame step shows.
+   * hundredth so a single frame step shows; pressing it types a time to go
+   * to.
    */
   interface Props {
     editor: PostEditorState;
@@ -22,6 +25,14 @@
     editor.pause();
     editor.seek(editor.previewSeconds + frames * FRAME_SECONDS);
   }
+
+  function goTo(seconds: number): void {
+    editor.pause();
+    editor.seek(roundToFrameSeconds(seconds));
+  }
+
+  const now = $derived(formatTakeClock(editor.previewSeconds));
+  const total = $derived(formatTakeClock(editor.durationSeconds));
 </script>
 
 <div class="transport" role="group" aria-label={t("share_studio_deep_playback")}>
@@ -62,10 +73,18 @@
   >
     <i class="fa-solid fa-forward-step" aria-hidden="true"></i>
   </button>
-  <output class="clock" aria-label={t("share_studio_deep_playhead")}>
-    {formatTakeClock(editor.previewSeconds)}
-    <span class="total">/ {formatTakeClock(editor.durationSeconds)}</span>
-  </output>
+  <div class="clock">
+    <TypeableValue
+      label={t("share_studio_deep_playhead")}
+      text={now}
+      draft={now}
+      parse={parseClock}
+      sizer={total}
+      disabled={disabled || empty}
+      oncommit={goTo}
+    />
+    <span class="total">/ {total}</span>
+  </div>
 </div>
 
 <style>
@@ -107,11 +126,14 @@
   }
 
   .clock {
-    min-width: 9.5rem;
+    --typeable-font-size: 0.9375rem;
+    --typeable-min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
     color: var(--theme-text, #fff);
     font-size: 0.9375rem;
     font-variant-numeric: tabular-nums;
-    text-align: center;
     white-space: nowrap;
   }
 

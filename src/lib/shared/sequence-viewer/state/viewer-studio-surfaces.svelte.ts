@@ -12,7 +12,7 @@ export interface StudioCardFrame {
   handLabeling: HandLabeling | null;
   /** The record a scan of the card should open: the source, not the labeled copy. */
   qrSequence: SequenceData;
-  highlightedStepIndex: number;
+  highlightedStepIndex: number | null;
   options: Partial<SequenceExportOptions> | null;
   automatic: boolean;
 }

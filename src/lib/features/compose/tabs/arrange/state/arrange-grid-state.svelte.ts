@@ -197,7 +197,7 @@ function createArrangeGridState() {
   // =========================================================================
 
   const undoManager = getArrangeUndoManager();
-  undoManager.init(() => ({ cells: deepCloneCells(cells) }));
+  undoManager.init(() => ({ cells: deepCloneCells(cells), gridRows, gridCols }));
 
   let canUndo = $state(false);
   let canRedo = $state(false);
@@ -245,7 +245,9 @@ function createArrangeGridState() {
   }
 
   function restoreSnapshot(snapshot: ArrangeGridSnapshot): void {
-    cells = snapshot.cells;
+    cells = deepCloneCells(snapshot.cells);
+    gridRows = snapshot.gridRows;
+    gridCols = snapshot.gridCols;
     save();
   }
 

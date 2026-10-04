@@ -1,10 +1,12 @@
 import { PropType } from "@austencloud/scene-3d/worker";
 import { propTipEnds } from "$lib/shared/pictograph/prop/domain/prop-tip-ends";
 import { getTipPointsBaseline } from "$lib/shared/animation-engine/domain/types/prop-tip-points";
+import { getDefaultTrailPointConfig } from "$lib/shared/animation-engine/domain/types/trail-point-types";
 import { HOOP_FAMILY_REACH_M } from "$lib/shared/pictograph/prop/domain/hoop-family-geometry.generated";
 import {
   resolveBuildTipAnchors3D,
   type PropBuildTipGeometry3D,
+  type PropTipEmitter3D,
 } from "./prop-build-tip-geometry-3d";
 
 /**
@@ -21,14 +23,27 @@ import {
  * this module answers only the 3D-specific half: WHERE along the prop's axis
  * each tracked tip lands, in metres.
  *
- * Effect-slot ordering follows the canonical 2D convention: tip 0 is the
- * pinky/LEFT_END slot, tip 1 is the thumb/RIGHT_END slot. A single-ended prop
- * keeps slot 1 — the same slot `trail-capturer.ts` gives it — so a saved
- * per-tip effect assignment means the same thing in 2D and 3D.
+ * A saved per-tip effect names a 2D tip: "1-0" is tip 0 of
+ * `getTipPoints(propType).points` on the right prop. Those indices are frozen,
+ * and the tables do not agree on which end comes first: the staff family lists
+ * its -dx pinky end as tip 0, while the doublestar and eight rings list their
+ * +dx end first. 3D +Y is the 2D +dx direction, so each anchor takes its slot
+ * and effect key from the 2D table instead of assuming tip 0 is always -Y.
  */
 export interface PropTipAnchor3D {
-  /** Effect-assignment slot: 0 = pinky/left end, 1 = thumb/right end. */
+  /**
+   * Logical end: 0 = LEFT_END, 1 = RIGHT_END. On a two-ended prop this is also
+   * the 2D tip index of the same physical end. A single-ended prop's one end is
+   * slot 1, the end the POV strip, the zap arcs and the right-end trail read.
+   */
   readonly effectTipIndex: 0 | 1;
+  /**
+   * The 2D tip index this emitter's per-tip effect key names; resolve it with
+   * `resolveEffect(propIndex, effectKeyIndex, ...)`. It equals
+   * `effectTipIndex` on a two-ended prop. A single-ended prop keys the tip its
+   * 2D trail follows, so a club's "0-0" reaches the cap.
+   */
+  readonly effectKeyIndex: number;
   /** Prop-local metres from the hand pivot: +Y reach, +X across. */
   readonly offset: {
     readonly x: number;
@@ -189,11 +204,57 @@ function twoEndedReach3D(
 }
 
 /**
+ * Which slot each end of a two-ended prop takes, read from its 2D tip table.
+ * A 3D-only prop with no table keeps the staff order.
+ */
+function twoEndedSlots3D(propType: string | undefined): {
+  readonly minusY: 0 | 1;
+  readonly plusY: 0 | 1;
+} {
+  const [first, second] = getTipPointsBaseline(propType).points;
+  return first && second && first.dx > second.dx
+    ? { minusY: 1, plusY: 0 }
+    : { minusY: 0, plusY: 1 };
+}
+
+/**
+ * The 2D tip a single-ended prop's effects key: the one its 2D trail follows
+ * (`getDefaultTrailPointConfig`). A prop with no tips (contact ball, hand) has
+ * no per-tip key to match, so it takes tip 0.
+ */
+function singleEndedEffectKey3D(propType: string | undefined): number {
+  const source = getDefaultTrailPointConfig(
+    propType,
+    getTipPointsBaseline(propType).points
+  ).right;
+  return source.type === "tip" ? source.index : 0;
+}
+
+/**
+ * Give every emitter its effect key. Emitters that share a slot share a key:
+ * the 3D slot consumers hold one effect per slot, so a fan's five wicks all
+ * key the centre rib its 2D trail follows.
+ */
+function withEffectKeys3D(
+  propType: string | undefined,
+  emitters: readonly PropTipEmitter3D[]
+): PropTipAnchor3D[] {
+  if (isTwoEnded3D(propType)) {
+    return emitters.map((emitter) => ({
+      ...emitter,
+      effectKeyIndex: emitter.effectTipIndex,
+    }));
+  }
+  const effectKeyIndex = singleEndedEffectKey3D(propType);
+  return emitters.map((emitter) => ({ ...emitter, effectKeyIndex }));
+}
+
+/**
  * The tracked effect emitters for a prop, in effect-slot order.
  *
  * Two-ended props get a symmetric pair, half a staff out unless
- * `TWO_ENDED_REACH_3D` says otherwise. Everything else returns exactly one
- * anchor, on slot 1.
+ * `TWO_ENDED_REACH_3D` says otherwise, each on the slot of the 2D tip at the
+ * same end. Everything else returns one anchor on slot 1.
  */
 export function resolvePropTipAnchors3D(
   propType: string | undefined,
@@ -205,17 +266,23 @@ export function resolvePropTipAnchors3D(
     staffHalfLength * 2,
     build
   );
-  if (buildAnchors) return buildAnchors;
+  if (buildAnchors) return withEffectKeys3D(propType, buildAnchors);
 
   if (isTwoEnded3D(propType)) {
     const reach = twoEndedReach3D(propType, staffHalfLength);
-    return [
-      { effectTipIndex: 0, offset: { x: 0, y: -reach, z: 0 } },
-      { effectTipIndex: 1, offset: { x: 0, y: reach, z: 0 } },
-    ];
+    const { minusY, plusY } = twoEndedSlots3D(propType);
+    const minusEnd = {
+      effectTipIndex: minusY,
+      offset: { x: 0, y: -reach, z: 0 },
+    };
+    const plusEnd = { effectTipIndex: plusY, offset: { x: 0, y: reach, z: 0 } };
+    return withEffectKeys3D(
+      propType,
+      minusY === 0 ? [minusEnd, plusEnd] : [plusEnd, minusEnd]
+    );
   }
 
-  return [
+  return withEffectKeys3D(propType, [
     {
       effectTipIndex: 1,
       offset: {
@@ -224,7 +291,7 @@ export function resolvePropTipAnchors3D(
         z: 0,
       },
     },
-  ];
+  ]);
 }
 
 /** Stable identity for an anchor set, so a prop swap can drop stale velocity history. */

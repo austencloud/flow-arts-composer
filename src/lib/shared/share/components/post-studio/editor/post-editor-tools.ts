@@ -15,18 +15,25 @@ import type {
 export type PostPanelToolId =
   | "videos"
   | "add"
+  | "canvas"
   | "look"
   | "export"
   | "trim"
   | "timing"
   | "crop"
   | "speed"
+  | "titles"
   | "volume"
   | "layout"
   | "position"
+  | "border"
   | "fade"
+  | "transition"
+  | "effects"
   | "labels"
+  | "appearance"
   | "shows"
+  | "sequence"
   | "text"
   | "rename";
 
@@ -34,7 +41,6 @@ export type PostPanelToolId =
 export type PostActionToolId =
   | "back"
   | "split"
-  | "tutorial"
   | "beats"
   | "duplicate"
   | "delete";
@@ -47,12 +53,22 @@ export interface PostToolSelection {
   kind: PostItemKind | null;
   /** A main-track clip whose layout (dual, breakdown, video only) applies. */
   hasLayout: boolean;
+  /** A decoded QR image has its own contrast setting. */
+  isQrImage?: boolean;
+  /**
+   * An animation's opening tunnel is what is selected: it has its own look,
+   * its own speed curve and, over footage, its own framing of that footage.
+   */
+  isTunnel?: boolean;
+  /** The opening tunnel hook has its own speed curve. */
+  isTunnelHook?: boolean;
+  /** The hook plays over its footage, which it frames while it fills the frame. */
+  hasBackdrop?: boolean;
 }
 
 const ACTION_TOOLS = new Set<PostToolId>([
   "back",
   "split",
-  "tutorial",
   "beats",
   "duplicate",
   "delete",
@@ -74,7 +90,7 @@ const ITEM_TAIL: readonly PostToolId[] = [
 export function toolRow(selection: PostToolSelection): PostToolId[] {
   switch (selection.kind) {
     case null:
-      return ["videos", "add", "split", "tutorial", "look"];
+      return ["videos", "add", "canvas", "split", "look"];
     case "video":
       return [
         "back",
@@ -85,21 +101,66 @@ export function toolRow(selection: PostToolSelection): PostToolId[] {
         "volume",
         ...(selection.hasLayout ? (["layout"] as const) : []),
         "position",
+        "border",
         "fade",
+        "effects",
         "beats",
         "rename",
         "duplicate",
         "delete",
       ];
     case "animation":
-      return ["back", "split", "labels", "timing", ...ITEM_TAIL];
+      if (selection.isTunnel)
+        return [
+          "back",
+          "appearance",
+          "speed",
+          ...(selection.hasBackdrop ? (["crop"] as const) : []),
+          "delete",
+        ];
+      return [
+        "back",
+        "split",
+        "appearance",
+        "sequence",
+        ...(selection.isTunnelHook ? (["speed"] as const) : []),
+        ...(selection.hasBackdrop ? (["crop"] as const) : []),
+        "timing",
+        ...ITEM_TAIL,
+      ];
     case "moves":
-      return ["back", "split", "shows", "timing", ...ITEM_TAIL];
+      return [
+        "back",
+        "split",
+        "appearance",
+        "shows",
+        "sequence",
+        "timing",
+        ...ITEM_TAIL,
+      ];
     case "text":
       return ["back", "split", "text", "timing", ...ITEM_TAIL];
+    case "titles":
+      return ["back", "titles", "timing", ...ITEM_TAIL];
     case "carousel":
-    case "card":
       return ["back", "split", "timing", ...ITEM_TAIL];
+    case "image":
+      return [
+        "back",
+        "split",
+        ...(selection.isQrImage ? (["appearance"] as const) : []),
+        "timing",
+        ...ITEM_TAIL,
+      ];
+    case "card":
+      return [
+        "back",
+        "split",
+        "appearance",
+        "sequence",
+        "timing",
+        ...ITEM_TAIL,
+      ];
   }
 }
 
@@ -108,7 +169,12 @@ export function availablePanels(
   selection: PostToolSelection
 ): PostPanelToolId[] {
   const panels = toolRow(selection).filter(isPanelTool);
-  return selection.kind === null ? [...panels, "export"] : panels;
+  if (selection.kind === null) return [...panels, "export"];
+  return ["video", "image", "card", "animation", "moves", "carousel"].includes(
+    selection.kind
+  )
+    ? [...panels, "transition"]
+    : panels;
 }
 
 /** The first panel tool in the row, which a wide screen shows by default. */

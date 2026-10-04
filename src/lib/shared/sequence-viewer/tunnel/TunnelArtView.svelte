@@ -39,6 +39,7 @@
     saveTunnelLabel = "Save tunnel",
     onPlayingChange,
     playing = $bindable(true),
+    currentStep = $bindable(1),
     stageFit = "cover",
     animationSettingsState = animationSettings,
     visibilityManager,
@@ -70,6 +71,8 @@
      *  hosts with their own pause control (e.g. the collection's detail
      *  preview) stay in sync — WCAG 2.2.2. */
     playing?: boolean;
+    /** One-indexed playhead shared with a host's notation rail and seek controls. */
+    currentStep?: number;
     /** The viewer fills its pane; framed previews preserve the complete tunnel. */
     stageFit?: "cover" | "contain";
     animationSettingsState?: AnimationSettingsState;
@@ -155,7 +158,6 @@
   // the way through when the base completes, so playback follows through into a
   // fresh kaleidoscope and the whole ring re-homes together only at the loop
   // boundary. Driven by the global tempo: beats/sec = bpm/60 (60 BPM = 1 beat/s).
-  let phase = $state(0);
   const speed = $derived(Math.max(0, bpm) / 60);
   // One base loop = stepCount; slow arms need more loops to return home, so the
   // shared clock spans `controller.loopCycles` of them (¼× → 4, ½× → 2, else 1).
@@ -188,7 +190,7 @@
       const dt = (now - last) / 1000;
       last = now;
       if (stepCount > 0 && playing) {
-        phase = (phase + dt * effSpeed) % loopSteps;
+        currentStep = ((currentStep - 1 + dt * effSpeed) % loopSteps) + 1;
       }
       raf = requestAnimationFrame(tick);
     };
@@ -201,10 +203,12 @@
 
   // Unbounded-within-loop playhead (1-indexed) for the kaleidoscope sampling —
   // the controller wraps it per-arm so drift works.
-  const samplingStep = $derived(phase + 1);
+  const samplingStep = $derived(currentStep);
   // Base-cycle-wrapped playhead for the canvas's own step bookkeeping (word-header
   // underline / glyph highlight expect a value inside one sequence length).
-  const displayStep = $derived((stepCount > 0 ? phase % stepCount : 0) + 1);
+  const displayStep = $derived(
+    (stepCount > 0 ? (currentStep - 1) % stepCount : 0) + 1
+  );
   const base = $derived(controller.basePropsAt(samplingStep));
   const additionalLayers = $derived(
     controller.additionalLayersAt(samplingStep)

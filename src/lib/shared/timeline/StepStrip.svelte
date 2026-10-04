@@ -13,7 +13,7 @@
   into smaller editorial surfaces without changing the established default.
 -->
 <script lang="ts">
-  import { untrack } from "svelte";
+  import { untrack, type Snippet } from "svelte";
   import PictographContainer from "$lib/shared/pictograph/shared/components/PictographContainer.svelte";
   import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
   import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
@@ -34,6 +34,7 @@
     currentStep,
     bpm,
     cellSize = 72,
+    compactCellSize = undefined,
     density = "standard",
     presentation = "spotlight",
     anchor = "center",
@@ -48,6 +49,7 @@
     stepPulse = false,
     staggerCellUpdates = false,
     onCellClick = null,
+    renderCell = undefined,
   }: {
     /** Prebuilt cells for callers that already own the notation mapping. */
     cells?: NotationCell[] | null;
@@ -63,6 +65,8 @@
     bpm: number;
     /** Cell width/height in px. Smaller = more read-ahead visible (zoom out). */
     cellSize?: number;
+    /** Fixed compact tile size for hosts that reserve enough rail height. */
+    compactCellSize?: number;
     /** Standard preserves the original Play with It geometry. Compact keeps
      *  the focus treatment while fitting an editorial/card-sized rail. */
     density?: "standard" | "compact";
@@ -101,6 +105,8 @@
     staggerCellUpdates?: boolean;
     /** Seek callback when a cell is tapped (receives the cell's stepNumber). */
     onCellClick?: ((stepNumber: number) => void) | null;
+    /** Optional artwork inside each cell; the carousel still owns layout and seeking. */
+    renderCell?: Snippet<[NotationCell]>;
   } = $props();
 
   const GAP = $derived(presentation === "strip" ? 3 : 6);
@@ -232,7 +238,10 @@
       const byHeight = stripContainerHeight / COMPACT_VERTICAL_CELLS;
       return Math.max(44, Math.floor(Math.min(byWidth, byHeight)));
     }
-    if (!fillHeight) return density === "compact" ? compactCell : cellSize;
+    if (!fillHeight)
+      return density === "compact"
+        ? (compactCellSize ?? compactCell)
+        : cellSize;
 
     // The homepage rail is intentionally short. Its compact cells should use
     // that height instead of inheriting the practice pane's half-height rule;
@@ -391,17 +400,21 @@
               item.dist
             )})"
           >
-            <PictographContainer
-              pictographData={item.cell.data}
-              darkMode={true}
-              disableTransitions={true}
-              disableContentTransitions={true}
-              leftPropTypeOverride={leftPropType ?? undefined}
-              rightPropTypeOverride={rightPropType ?? undefined}
-              {leftColorOverride}
-              {rightColorOverride}
-              {propElementalType}
-            />
+            {#if renderCell}
+              {@render renderCell(item.cell)}
+            {:else}
+              <PictographContainer
+                pictographData={item.cell.data}
+                darkMode={true}
+                disableTransitions={true}
+                disableContentTransitions={true}
+                leftPropTypeOverride={leftPropType ?? undefined}
+                rightPropTypeOverride={rightPropType ?? undefined}
+                {leftColorOverride}
+                {rightColorOverride}
+                {propElementalType}
+              />
+            {/if}
           </div>
         </div>
       {/each}

@@ -34,6 +34,7 @@
     autoFocus = true,
     lockScroll = false,
     keepMounted = false,
+    keyboardShortcutsPassthrough = false,
     labelledBy,
     ariaLabel,
     placement: placementOverride, // Override context-derived placement (for standalone use)
@@ -51,6 +52,7 @@
     autoFocus?: boolean;
     lockScroll?: boolean;
     keepMounted?: boolean;
+    keyboardShortcutsPassthrough?: boolean; // See Drawer; only for a panel the Create shortcuts act on
     labelledBy?: string;
     ariaLabel?: string;
     placement?: "bottom" | "right"; // Override for standalone use outside Create module
@@ -242,6 +244,7 @@
         {autoFocus}
         preventScroll={lockScroll}
         {keepMounted}
+        {keyboardShortcutsPassthrough}
       >
         <div class="create-drawer-body" style={panelHeightStyle}>
           {@render children()}
@@ -266,6 +269,7 @@
       {autoFocus}
       preventScroll={lockScroll}
       {keepMounted}
+      {keyboardShortcutsPassthrough}
     >
       <div class="create-drawer-body" style={panelHeightStyle}>
         {@render children()}

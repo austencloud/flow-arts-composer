@@ -173,8 +173,10 @@ export function handModeOptionsForContext(
  * The engine option for a hand selection, or undefined for Free. QS and QO
  * have two senses. A pinned start decides: the sense whose map sends the right
  * hand's start location onto the left's. Otherwise a diagonal LOOP axis
- * decides for QO (the reflection must be the LOOP's own). Otherwise a random
- * sense per build, so consecutive generations differ.
+ * picks QO's first choice, the LOOP's own reflection; the other diagonal
+ * builds the same LOOP, so start-feasibility falls back to it when every start
+ * for the first is blocked. Otherwise a random sense per build, so
+ * consecutive generations differ.
  */
 export function handModeToEngine(
   hand: TnDSelection,
@@ -196,7 +198,10 @@ export function handModeToEngine(
   }
 
   const random = context.random ?? Math.random;
-  const index = Math.min(options.length - 1, Math.floor(random() * options.length));
+  const index = Math.min(
+    options.length - 1,
+    Math.floor(random() * options.length)
+  );
   return options[index]!;
 }
 

@@ -3,9 +3,11 @@
   import { onDestroy, onMount } from "svelte";
   import DisplayTilePreview from "./DisplayTilePreview.svelte";
   import { getAnimationVisibilityManager } from "../../state/animation-visibility-state.svelte";
+  import type { AnimationVisibilityStateManager } from "../../state/animation-visibility-state.svelte";
   import { getAnimationVisibilityContext } from "../../state/animation-visibility-context";
   import { getAnimationScopeContext } from "../../state/animation-scope-context";
   import { animationSettings } from "../../state/animation-settings-state.svelte";
+  import type { AnimationSettingsState } from "../../state/animation-settings-state.svelte";
   import {
     resolveEffectivePropsVisibility,
     toggleEffectivePropsVisibility,
@@ -13,7 +15,13 @@
   import { tryGetViewerVisibilityContext } from "$lib/shared/sequence-viewer/context/viewer-visibility-context";
   import type { ViewerControlSink } from "$lib/shared/sequence-viewer/domain/viewer-control-analytics";
   import { reportViewerControlChange } from "$lib/shared/sequence-viewer/domain/viewer-control-analytics";
-  import { fitDisplayGrid } from "../../domain/display-grid-fit";
+  import {
+    COMPACT_MAX_ART,
+    COMPACT_MIN_ART,
+    compactDisplayArt,
+    compactDisplayColumns,
+    fitDisplayGrid,
+  } from "../../domain/display-grid-fit";
 
   let {
     /** Show per-color prop (Left/Right) chips. Only surfaces without a header
@@ -42,6 +50,20 @@
      *  toggles modest, so the grid spends the card rather than sitting in
      *  the middle of it. */
     grow = false,
+    /** With `fill`: the tiles share the whole box instead of sitting square in
+     *  its middle, so a host whose panel has room to spare (Post Studio's side
+     *  tool panel) shows bigger buttons rather than empty space below them.
+     *  The arrangement and the picture size are still the fitted ones. */
+    stretch = false,
+    /** The host scrolls this panel inside a box it does not size (Post
+     *  Studio's tool panel body), so there is no definite height to fit to.
+     *  The tiles become short, in two rows where the width allows, and the
+     *  picture size is chosen so that everything the scroller holds fits its
+     *  visible height. Where it cannot (a very short window) the pictures stop
+     *  at a size that still reads and the host scrolls. With `fill`, keeps the
+     *  compact padding but fits the arrangement to both dimensions. Ignored
+     *  with the per-hand chips. */
+    compact = false,
     /** The four edge marks (TKA glyph, element, step number, word) describe a
      *  realized sequence. A host animating something that has no letter and no
      *  steps — the shape-matrix theory stage traces a bare spin ratio — turns
@@ -52,6 +74,8 @@
      *  Word tile out rather than offering a toggle that changes nothing. */
     showWordToggle = true,
     onSettingChange,
+    visibilityManagerOverride,
+    animationSettingsOverride,
   }: {
     showMotionVisibility?: boolean;
     sequence?: {
@@ -61,17 +85,23 @@
     propType?: string;
     fill?: boolean;
     grow?: boolean;
+    stretch?: boolean;
+    compact?: boolean;
     showSequenceMarks?: boolean;
     showWordToggle?: boolean;
     onSettingChange?: ViewerControlSink;
+    visibilityManagerOverride?: AnimationVisibilityStateManager;
+    animationSettingsOverride?: AnimationSettingsState;
   } = $props();
 
   const animationScope = getAnimationScopeContext();
   const vm =
+    visibilityManagerOverride ??
     animationScope?.visibility ??
     getAnimationVisibilityContext() ??
     getAnimationVisibilityManager();
-  const trailOnlyState = animationScope?.settings ?? animationSettings;
+  const trailOnlyState =
+    animationSettingsOverride ?? animationScope?.settings ?? animationSettings;
   const viewerVis = tryGetViewerVisibilityContext();
   const showPropChips = $derived(showMotionVisibility && viewerVis !== null);
 
@@ -80,6 +110,7 @@
   let elementalGlyph = $state(vm.getVisibility("elementalGlyph"));
   let propElementalGlyph = $state(vm.getVisibility("propElementalGlyph"));
   let stepNumbers = $state(vm.getVisibility("stepNumbers"));
+  let progressBar = $state(vm.getVisibility("progressBar"));
   let propsVisibilityEnabled = $state(vm.getVisibility("props"));
   const propsVisible = $derived(
     resolveEffectivePropsVisibility(
@@ -88,6 +119,7 @@
     )
   );
   let wordHeader = $state(vm.getVisibility("wordHeader"));
+  let wordHeaderHighlight = $state(vm.getSettings().wordHeaderHighlight);
   let mandala = $state(vm.getVisibility("mandala"));
   let pathLines = $state(
     vm.getVisibility("leftPathLines") || vm.getVisibility("rightPathLines")
@@ -105,8 +137,10 @@
     elementalGlyph = vm.getVisibility("elementalGlyph");
     propElementalGlyph = vm.getVisibility("propElementalGlyph");
     stepNumbers = vm.getVisibility("stepNumbers");
+    progressBar = vm.getVisibility("progressBar");
     propsVisibilityEnabled = vm.getVisibility("props");
     wordHeader = vm.getVisibility("wordHeader");
+    wordHeaderHighlight = vm.getSettings().wordHeaderHighlight;
     mandala = vm.getVisibility("mandala");
     pathLines =
       vm.getVisibility("leftPathLines") || vm.getVisibility("rightPathLines");
@@ -123,8 +157,7 @@
   // visibility — that lives in PathShapePanel.
   function togglePathLines(): void {
     const next = !pathLines;
-    vm.setVisibility("leftPathLines", next);
-    vm.setVisibility("rightPathLines", next);
+    vm.updateSettings({ leftPathLines: next, rightPathLines: next });
   }
 
   vm.registerObserver(handleVisibilityChange);
@@ -149,6 +182,7 @@
       | "tkaGlyph"
       | "element"
       | "stepNumber"
+      | "progress"
       | "word";
     accent?: string;
     tone?: "blue" | "red";
@@ -254,13 +288,15 @@
       active: () => wordHeader,
       toggle: () => vm.toggleVisibility("wordHeader"),
     },
+    {
+      id: "progressBar",
+      label: t("animation_menu_progress_bar"),
+      preview: "progress",
+      active: () => progressBar,
+      toggle: () => vm.toggleVisibility("progressBar"),
+    },
   ];
 
-  // Progress used to sit here. On screen that one key gated the ENTIRE
-  // transport — play, tempo, scrubber, mode — so switching it off removed the
-  // canonical playback surface rather than a progress bar. The transport is now
-  // unconditional; whether a progress bar burns into the exported video is an
-  // export question and lives on the Export page.
   const chips: Chip[] = $derived([
     ...(showPropChips ? propChips : [masterPropsChip]),
     ...fieldChips,
@@ -278,17 +314,46 @@
   let fitArt = $state(0);
   let fitTile = $state(0);
   const fitted = $derived(fitCols > 0);
+  /** The shortest grid a stretched panel keeps. A shorter panel scrolls
+   *  rather than squeezing the grid under the controls that follow it. */
+  const MIN_STRETCH_GRID = 136;
+  let labelMeasure: CanvasRenderingContext2D | null = null;
+
+  /** The widest label as one line of text, however the grid wraps it now. */
+  function widestLabel(grid: HTMLElement): number {
+    labelMeasure ??= document.createElement("canvas").getContext("2d");
+    if (!labelMeasure) return 0;
+    let widest = 0;
+    for (const label of grid.querySelectorAll<HTMLElement>(".chip-label")) {
+      labelMeasure.font = getComputedStyle(label).font;
+      widest = Math.max(
+        widest,
+        labelMeasure.measureText(label.textContent ?? "").width
+      );
+    }
+    return Math.ceil(widest);
+  }
 
   function measureFit(): void {
     if (!fill || !shellEl || !gridEl) return;
     const width = shellEl.clientWidth;
-    const height = shellEl.clientHeight;
+    // The word highlight switch sits under the grid and keeps its own height.
+    const below = Array.from(shellEl.children).reduce(
+      (sum, child) =>
+        child === gridEl ? sum : sum + (child as HTMLElement).offsetHeight,
+      0
+    );
+    if (stretch) shellEl.style.minHeight = `${below + MIN_STRETCH_GRID}px`;
+    const height = shellEl.clientHeight - below;
     const chip = gridEl.firstElementChild as HTMLElement | null;
     if (width <= 0 || height <= 0 || !chip) return;
 
     const chipStyle = getComputedStyle(chip);
     const padX =
-      parseFloat(chipStyle.paddingLeft) + parseFloat(chipStyle.paddingRight);
+      parseFloat(chipStyle.paddingLeft) +
+      parseFloat(chipStyle.paddingRight) +
+      parseFloat(chipStyle.borderLeftWidth) +
+      parseFloat(chipStyle.borderRightWidth);
     const labelH = Math.max(
       ...Array.from(
         gridEl.children,
@@ -300,6 +365,8 @@
     const chromeY =
       parseFloat(chipStyle.paddingTop) +
       parseFloat(chipStyle.paddingBottom) +
+      parseFloat(chipStyle.borderTopWidth) +
+      parseFloat(chipStyle.borderBottomWidth) +
       (parseFloat(chipStyle.rowGap) || 0) +
       labelH;
     const gridStyle = getComputedStyle(gridEl);
@@ -315,7 +382,11 @@
       gapY,
       count: chips.length,
       grow,
-      groupBoundary: showPropChips ? null : 4,
+      minArt: compact ? COMPACT_MIN_ART : undefined,
+      allowPartialRows: compact,
+      // Compact chrome is measured from one-line labels; keep them on one.
+      minTileWidth: compact ? widestLabel(gridEl) + padX + 2 : undefined,
+      groupBoundary: showPropChips || compact ? null : 4,
     });
     fitCols = fit?.cols ?? 0;
     fitArt = fit?.art ?? 0;
@@ -327,6 +398,11 @@
     measureFit();
     const observer = new ResizeObserver(() => measureFit());
     if (shellEl) observer.observe(shellEl);
+    // Changing columns can wrap a label without resizing the outer box.
+    // Refit after that wrap so the picture still leaves room for the text.
+    gridEl
+      ?.querySelectorAll(".chip-label")
+      .forEach((label) => observer.observe(label));
     return () => observer.disconnect();
   });
 
@@ -340,6 +416,74 @@
     measureFit();
   });
 
+  // The compact layout is written straight to the grid's custom properties
+  // rather than through state: fitting it takes two layouts in one pass (draw
+  // at the largest picture, see how far the scroller overflows, then shrink),
+  // and the second needs the first's result before anything paints.
+  const compactMode = $derived(compact && !fill && !showPropChips);
+
+  function scrollerOf(el: HTMLElement): HTMLElement | null {
+    for (let node = el.parentElement; node; node = node.parentElement) {
+      const { overflowY } = getComputedStyle(node);
+      if (overflowY === "auto" || overflowY === "scroll") return node;
+    }
+    return null;
+  }
+
+  function fitCompact(): void {
+    if (!compactMode || !shellEl || !gridEl) return;
+    const width = shellEl.clientWidth;
+    if (width <= 0) return;
+
+    const cols = compactDisplayColumns({
+      width,
+      count: chips.length,
+      gap: parseFloat(getComputedStyle(gridEl).columnGap) || 0,
+    });
+    gridEl.style.setProperty("--vis-cols", String(cols));
+    gridEl.style.setProperty("--compact-art", `${COMPACT_MAX_ART}px`);
+
+    const scroller = scrollerOf(shellEl);
+    if (!scroller) return;
+    const probeArt =
+      (gridEl.querySelector(".art") as HTMLElement | null)?.offsetHeight ??
+      COMPACT_MAX_ART;
+    const art = compactDisplayArt({
+      probeArt,
+      rows: Math.ceil(chips.length / cols),
+      overflow: scroller.scrollHeight - scroller.clientHeight,
+    });
+    gridEl.style.setProperty("--compact-art", `${art}px`);
+  }
+
+  // Everything from the grid up to its scroller can change size without the
+  // scroller's own box moving (a button appearing under the panel pushes the
+  // content, not the viewport), so each of them is watched. One frame's
+  // notifications are coalesced into one fit.
+  $effect(() => {
+    if (!compactMode || !shellEl) return;
+    fitCompact();
+    let frame = 0;
+    const observer = new ResizeObserver(() => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(fitCompact);
+    });
+    observer.observe(shellEl);
+    const scroller = scrollerOf(shellEl);
+    for (
+      let node: HTMLElement | null = shellEl.parentElement;
+      node;
+      node = node.parentElement
+    ) {
+      observer.observe(node);
+      if (node === scroller) break;
+    }
+    return () => {
+      cancelAnimationFrame(frame);
+      observer.disconnect();
+    };
+  });
+
   function toggleChip(chip: Chip): void {
     const previous = chip.active();
     chip.toggle();
@@ -351,13 +495,32 @@
       !previous
     );
   }
+
+  function setWordHeaderHighlight(mode: "arrival" | "travel"): void {
+    const previous = wordHeaderHighlight;
+    if (previous === mode) return;
+    vm.updateSettings({ wordHeaderHighlight: mode });
+    reportViewerControlChange(
+      onSettingChange,
+      "display",
+      "wordHeaderHighlight",
+      previous,
+      mode
+    );
+  }
 </script>
 
-<div class="vis-grid-shell" class:fill bind:this={shellEl}>
+<div
+  class="vis-grid-shell"
+  class:fill
+  class:stretch={fill && stretch}
+  bind:this={shellEl}
+>
   <div
     class:motion-grid={showPropChips}
     class:ten-tiles={showPropChips && chips.length === 10}
     class:fitted
+    class:compact={compact && !showPropChips}
     class="vis-grid"
     bind:this={gridEl}
     style={fitted
@@ -368,18 +531,25 @@
       <button
         class="rt-chip"
         class:group-row={!showPropChips &&
+          !compact &&
           fitted &&
           fitCols < chips.length &&
           index >= 4 &&
           index < 4 + fitCols}
         class:group-inline={!showPropChips &&
+          !compact &&
           fitted &&
           fitCols >= chips.length &&
           index === 4}
         type="button"
         aria-pressed={chip.active()}
         data-tone={chip.tone}
-        style={chip.accent ? `--rail-accent: ${chip.accent};` : undefined}
+        style:--rail-accent={chip.accent}
+        style:grid-column-start={compact &&
+        fitted &&
+        index === chips.length - (chips.length % fitCols)
+          ? Math.floor((fitCols - (chips.length % fitCols)) / 2) + 1
+          : undefined}
         onclick={() => toggleChip(chip)}
       >
         {#if chip.preview}
@@ -398,29 +568,85 @@
       </button>
     {/each}
   </div>
+  {#if showSequenceMarks && showWordToggle}
+    <div
+      class="word-highlight-control"
+      role="group"
+      aria-label="Word highlight timing"
+    >
+      <span>Word highlight</span>
+      <button
+        type="button"
+        aria-pressed={wordHeaderHighlight === "arrival"}
+        onclick={() => setWordHeaderHighlight("arrival")}>On arrival</button
+      >
+      <button
+        type="button"
+        aria-pressed={wordHeaderHighlight === "travel"}
+        onclick={() => setWordHeaderHighlight("travel")}>During travel</button
+      >
+    </div>
+  {/if}
 </div>
 
 <style>
+  .word-highlight-control {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 2px;
+    font-size: var(--font-size-sm, 0.875rem);
+  }
+
+  .word-highlight-control button {
+    border: 1px solid var(--theme-border, currentColor);
+    border-radius: 999px;
+    padding: 4px 10px;
+    color: inherit;
+    background: transparent;
+    cursor: pointer;
+  }
+
+  .word-highlight-control button[aria-pressed="true"] {
+    background: var(
+      --theme-surface-active,
+      color-mix(in srgb, currentColor 18%, transparent)
+    );
+  }
   .vis-grid-shell {
     container-type: inline-size;
   }
 
   /* Given a real height, take all of it. The grid's rows are then fractions of
      a box the content does not set, which is what makes measuring the tile and
-     sizing the picture from it settle in one pass. */
+     sizing the picture from it settle in one pass. The word highlight switch
+     goes under the grid, not beside it. */
   .vis-grid-shell.fill {
     flex: 1 1 0;
     min-height: 0;
     display: flex;
+    flex-direction: column;
+  }
+
+  .vis-grid-shell.fill > .word-highlight-control {
+    flex: none;
   }
 
   /* A box too small to fit (MIN_FIT_ART in display-grid-fit) keeps the
      width-only grid at its own height, across the whole box, and the page
      scrolls. */
   .vis-grid-shell.fill > .vis-grid:not(.fitted) {
-    flex: 1 1 auto;
+    flex: none;
     min-width: 0;
-    align-self: flex-start;
+  }
+
+  /* A stretched panel keeps the controls after the grid where they are: a
+     grid that cannot fit scrolls inside its own share of the box. */
+  .vis-grid-shell.stretch > .vis-grid:not(.fitted) {
+    flex: 1 1 0;
+    min-height: 0;
+    overflow-y: auto;
   }
 
   /* Four columns as soon as there is room for them, two below that. Eight tiles
@@ -465,7 +691,7 @@
   /* A breath between the layers that live in the square and the marks drawn at
      its edges, so the grouping is visible without a heading for each. Skipped
      on the landing variant, where the group boundary falls mid-row. */
-  .vis-grid:not(.motion-grid):not(.fitted) > :nth-child(n + 5) {
+  .vis-grid:not(.motion-grid):not(.fitted):not(.compact) > :nth-child(n + 5) {
     margin-top: 10px;
   }
 
@@ -486,6 +712,19 @@
      whatever room is left instead. */
   .vis-grid.fitted .rt-chip {
     aspect-ratio: 1;
+  }
+
+  /* Stretched: the fitted columns and rows share the box, so the slack the
+     square tiles would leave around the grid goes into the buttons instead.
+     The picture keeps its fitted size, centred in its button. */
+  .vis-grid-shell.stretch > .vis-grid.fitted {
+    grid-template-columns: repeat(var(--vis-cols), minmax(0, 1fr));
+    grid-auto-rows: minmax(0, 1fr);
+    place-content: stretch;
+  }
+
+  .vis-grid-shell.stretch > .vis-grid.fitted .rt-chip {
+    aspect-ratio: auto;
   }
 
   /* Same breath between the two groups, placed on whichever axis the boundary
@@ -516,7 +755,7 @@
   /* The width-only ladder. It is the whole story where the host gives no
      height, and is skipped entirely once the measured fit sets --tile-art on
      the grid — a cap declared on the chip would win over the inherited one. */
-  .vis-grid:not(.fitted) .rt-chip {
+  .vis-grid:not(.fitted):not(.compact) .rt-chip {
     --tile-art: 6rem;
   }
 
@@ -526,16 +765,40 @@
      the picture takes 7rem, which spends the tile on the picture instead of on
      padding, and below it the column itself is the binding constraint. */
   @container (min-width: 24rem) {
-    .vis-grid:not(.fitted) .rt-chip {
+    .vis-grid:not(.fitted):not(.compact) .rt-chip {
       --tile-art: 7rem;
     }
   }
 
   /* The 3840 inspector again: 195px tiles were still carrying a 7rem picture. */
   @container (min-width: 46rem) {
-    .vis-grid:not(.fitted) .rt-chip {
+    .vis-grid:not(.fitted):not(.compact) .rt-chip {
       --tile-art: 8.5rem;
     }
+  }
+
+  /* The compact layout. Short tiles, picture over label, in as few rows as the
+     width allows. The column count and the picture cap are set by fitCompact
+     from the scroller the panel sits in; the values here only hold until it
+     has run, and where the host has no scroller they are the whole story. The
+     columns stay 1fr, so a wider host spreads the tiles instead of stretching
+     the pictures (the picture is capped, square, and centred in its tile). */
+  .vis-grid.compact:not(.fitted) {
+    grid-template-columns: repeat(var(--vis-cols, 5), minmax(0, 1fr));
+    gap: 6px;
+  }
+
+  .vis-grid.compact .rt-chip {
+    gap: 3px;
+    padding: 3px;
+  }
+  .vis-grid.compact:not(.fitted) .rt-chip {
+    --tile-art: var(--compact-art, 4rem);
+  }
+
+  .vis-grid.compact .chip-label {
+    font-size: var(--font-size-sm, 0.875rem);
+    text-wrap: balance;
   }
 
   /* The picture carries recognition; the label names it. Dimming the inactive

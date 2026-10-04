@@ -55,7 +55,7 @@ describe("SiteHeader desktop disclosures", () => {
     const notationHrefs = Array.from(
       document.querySelectorAll<HTMLAnchorElement>(".desktop-nav .panel a")
     ).map((link) => link.getAttribute("href"));
-    expect(notationHrefs).toEqual(["/shape-engine", "/notation/caps"]);
+    expect(notationHrefs).toEqual(["/shape-engine"]);
   });
 
   it("keeps hover visual-only and opens on click", async () => {

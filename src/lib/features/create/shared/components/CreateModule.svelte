@@ -482,7 +482,11 @@
           getSequenceState: () =>
             CreateModuleState?.getActiveTabSequenceState() ?? null,
           getCreateMode: () => navigationState.activeTab,
-          pushUndoSnapshot: (type) => CreateModuleState?.pushUndoSnapshot(type),
+          beginUndoSnapshot: (type, sourceState) =>
+            CreateModuleState?.beginUndoSnapshotForSequenceState(
+              type,
+              sourceState
+            ) ?? (() => {}),
           hapticService: getHapticFeedback(),
           setGridRotationDirection,
         });
@@ -495,6 +499,8 @@
           executeSequenceAction: (action, options) =>
             sequenceTransformActions!.execute(action, options),
           requestClearSequence: () => handleClearSequence(),
+          removeStep: (stepIndex) =>
+            handlers?.handleRemoveStep(stepIndex, CreateModuleState),
         });
 
         servicesInitialized = true;

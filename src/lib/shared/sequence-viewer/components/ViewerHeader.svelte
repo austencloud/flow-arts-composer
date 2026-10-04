@@ -13,6 +13,7 @@
   import WordHeader from "$lib/shared/animation-engine/components/layers/WordHeader.svelte";
   import WordActionMenu from "$lib/shared/choreo-card/components/WordActionMenu.svelte";
   import ShareActionMenu from "$lib/shared/share/components/ShareActionMenu.svelte";
+  import { resolveSequenceIdentityTitle } from "../services/viewer-title";
   import MotionVisibilityToggle from "./MotionVisibilityToggle.svelte";
   import ViewerOverflowMenu from "./ViewerOverflowMenu.svelte";
   import PropViewingControl from "$lib/shared/browse/components/PropViewingControl.svelte";
@@ -77,6 +78,7 @@
     isSaved: boolean;
     isSaving: boolean;
     onSave?: () => void;
+    onAddToCollection?: () => void;
     onRemix?: () => void;
     onPracticeToggle?: () => void;
     /**
@@ -119,6 +121,7 @@
     isSaved,
     isSaving,
     onSave,
+    onAddToCollection,
     onRemix,
     onPracticeToggle,
     sharePanelOpen = false,
@@ -157,10 +160,7 @@
     !!onOpenApp && !(hasAccountEntry && authState.isFullAccount)
   );
   const identityWord = $derived(
-    sequence.word ||
-      sequence.displayName ||
-      sequence.name ||
-      t("viewer_header_sequence")
+    resolveSequenceIdentityTitle(sequence)
   );
   const trimmedTitleOverride = $derived(titleOverride?.trim() || "");
   /** Plain-text title actually shown in the slot: the override when present,
@@ -179,6 +179,7 @@
   const hasDirectVisibilityAction = $derived(!!onPublish || !!onUnpublish);
   const hasContextActions = $derived(
     canToggleMotionVisibility ||
+      !!onAddToCollection ||
       hasDirectVisibilityAction ||
       !!onVideoUpload ||
       showOpenAppAction ||
@@ -356,6 +357,18 @@
             />
           {/if}
 
+          {#if onAddToCollection}
+            <button
+              type="button"
+              class="viewer-action context-action collection-action"
+              onclick={onAddToCollection}
+              aria-label={t("browse_audit_add_to_collection")}
+              title={t("browse_audit_add_to_collection")}
+            >
+              <i class="fas fa-folder-plus" aria-hidden="true"></i>
+            </button>
+          {/if}
+
           {#if hasDirectVisibilityAction}
             <button
               type="button"
@@ -428,6 +441,7 @@
           {isSaved}
           {isSaving}
           {onSave}
+          {onAddToCollection}
           {onRemix}
           {onVideoUpload}
           {isPublished}
@@ -504,12 +518,14 @@
       {/if}
     {/snippet}
 
-    <WordActionMenu
-      word={isWordTitle ? identityWord : ""}
-      enabled={isWordTitle}
-      errorContext={{ module: "sequence-viewer" }}
-      trigger={wordTrigger}
-    />
+    {#if displayTitle}
+      <WordActionMenu
+        word={isWordTitle ? identityWord : ""}
+        enabled={isWordTitle}
+        errorContext={{ module: "sequence-viewer" }}
+        trigger={wordTrigger}
+      />
+    {/if}
   </div>
 
   <div class="header-side header-right">

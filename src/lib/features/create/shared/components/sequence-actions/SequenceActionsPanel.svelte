@@ -48,6 +48,7 @@
   import HandSelector from "./HandSelector.svelte";
   import MobileHandSelector from "./MobileHandSelector.svelte";
   import MobileActionToolbar from "./MobileActionToolbar.svelte";
+  import ShareButton from "../../workspace-panel/shared/components/buttons/ShareButton.svelte";
   import { getSequenceActionsPanelHeight } from "./sequence-actions-panel-height";
   import { openSequenceViewer } from "$lib/shared/sequence-viewer/services/sequence-viewer-navigator";
   import { getReturnContext } from "$lib/shared/coordinators/sequence-handoff.svelte";
@@ -115,6 +116,11 @@
   });
 
   const isMobileLayout = $derived(!isSideBySideLayout);
+  // The compact phone Assemble rail keeps one quiet row, so Share lives here
+  // instead.
+  const showHeaderShare = $derived(
+    panelState.isWorkspaceRailCompact && hasSequence && !!sequence
+  );
 
   // Keep the sequence visible above the actions whenever the workspace and
   // controls are stacked. Phone-sized layouts still use the compact toolbar,
@@ -147,7 +153,8 @@
     getSequenceState: () => activeSequenceState,
     getTargetHand: () => panelState.targetHand,
     hapticService,
-    pushUndoSnapshot: (type) => CreateModuleState.pushUndoSnapshot(type),
+    pushUndoSnapshot: (type, sourceState) =>
+      CreateModuleState.pushUndoSnapshotForSequenceState(type, sourceState),
     executeTransformAction: (action, options) => {
       const dispatcher = ctx.getSequenceTransformActions();
       return dispatcher
@@ -761,7 +768,11 @@
           </div>
         {:else}
           <!-- Simple header with title and actions -->
-          <div class="compact-header" class:dimmed={helpMode === "selecting"}>
+          <div
+            class="compact-header"
+            class:dimmed={helpMode === "selecting"}
+            class:has-share={showHeaderShare}
+          >
             <div class="header-lead">
               <button
                 type="button"
@@ -807,6 +818,11 @@
                   <i class="fas fa-circle-question" aria-hidden="true"></i>
                   <span class="button-label">{t("create_ui_help")}</span>
                 </button>
+              {/if}
+              {#if showHeaderShare}
+                <div class="header-share">
+                  <ShareButton {sequence} useMobileSheet={true} />
+                </div>
               {/if}
               <button
                 type="button"
@@ -1230,6 +1246,21 @@
     .compact-header:not(.sub) .header-lead {
       gap: 8px;
     }
+
+    /* Share takes the title's width. The drawer's accessible name still
+       says what this panel is. */
+    .compact-header.has-share:not(.sub) .panel-title {
+      display: none;
+    }
+  }
+
+  .header-share {
+    display: flex;
+    --share-trigger-label-display: none;
+    --share-trigger-width: var(--min-touch-target, 44px);
+    --share-trigger-gap: 0;
+    --share-trigger-padding-inline: 0;
+    --share-trigger-radius: 50%;
   }
 
   /* Note: Beat grid visibility is controlled by isSideBySideLayout in the template,

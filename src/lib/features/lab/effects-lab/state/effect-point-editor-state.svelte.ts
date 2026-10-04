@@ -29,6 +29,7 @@ function deepCopy<T>(value: T): T {
 interface UndoEntry {
 	points: TipPoint[];
 	label: string;
+	hadOverride: boolean;
 }
 
 export class EffectPointEditorState {
@@ -42,7 +43,9 @@ export class EffectPointEditorState {
 	/** Bumped whenever stored points change so resolution getters re-run. */
 	private storeRevision = $state(0);
 
-	private undoStack: UndoEntry[] = [];
+	private undoStack = $state<UndoEntry[]>([]);
+	private dragStartPoints: TipPoint[] | null = null;
+	private dragUndoEntry: UndoEntry | null = null;
 	private provider: TipPointOverrideProvider;
 	private saveIndicatorTimer: ReturnType<typeof setTimeout> | null = null;
 	private actionFeedbackTimer: ReturnType<typeof setTimeout> | null = null;
@@ -65,7 +68,11 @@ export class EffectPointEditorState {
 			this.unsubscribePersister = persister.subscribe(() => {
 				// Only reload if we're NOT actively editing (dragging or just saved)
 				if (!this.isDragging && !this.saveIndicatorVisible) {
+					const previousPoints = JSON.stringify(this.points);
 					this.loadPointsForCurrentProp();
+					if (JSON.stringify(this.points) !== previousPoints) {
+						this.undoStack = [];
+					}
 				}
 			});
 		}
@@ -112,6 +119,9 @@ export class EffectPointEditorState {
 		this.selectedPropType = propType;
 		this.selectedPointIndex = -1;
 		this.undoStack = [];
+		this.isDragging = false;
+		this.dragStartPoints = null;
+		this.dragUndoEntry = null;
 		this.loadPointsForCurrentProp();
 		try { localStorage.setItem(this.storageKey, propType); } catch { /* ignore */ }
 	}
@@ -125,7 +135,10 @@ export class EffectPointEditorState {
 	}
 
 	updatePoint(index: number, updates: Record<string, unknown>): void {
-		if (index < 0 || index >= this.points.length) return;
+		const current = this.points[index] as Record<string, unknown> | undefined;
+		if (!current) return;
+		if (Object.entries(updates).every(([key, value]) => current[key] === value)) return;
+		this.pushUndo("Edit point");
 		this.points = this.points.map((p, i) =>
 			i === index ? { ...p, ...updates } : p,
 		);
@@ -133,7 +146,9 @@ export class EffectPointEditorState {
 	}
 
 	movePoint(index: number, updates: Record<string, unknown>): void {
-		if (index < 0 || index >= this.points.length) return;
+		const current = this.points[index] as Record<string, unknown> | undefined;
+		if (!current) return;
+		if (Object.entries(updates).every(([key, value]) => current[key] === value)) return;
 		this.pushUndo("Move point");
 		this.points = this.points.map((p, i) =>
 			i === index ? { ...p, ...updates } : p,
@@ -142,7 +157,14 @@ export class EffectPointEditorState {
 	}
 
 	updatePointPosition(index: number, dx: number, dy: number): void {
-		if (index < 0 || index >= this.points.length) return;
+		const current = this.points[index];
+		if (!current) return;
+		if (current.dx === dx && current.dy === dy) return;
+		if (this.isDragging && this.dragStartPoints) {
+			this.pushUndo("Move point", this.dragStartPoints);
+			this.dragUndoEntry = this.undoStack.at(-1) ?? null;
+			this.dragStartPoints = null;
+		}
 		this.points = this.points.map((p, i) =>
 			i === index ? { ...p, dx, dy } : p,
 		);
@@ -160,13 +182,26 @@ export class EffectPointEditorState {
 	}
 
 	beginDrag(index: number): void {
-		this.pushUndo("Move point");
+		if (index < 0 || index >= this.points.length) return;
+		this.dragStartPoints = deepCopy(this.points);
+		this.dragUndoEntry = null;
 		this.selectedPointIndex = index;
 		this.isDragging = true;
 	}
 
 	endDrag(): void {
 		this.isDragging = false;
+		this.dragStartPoints = null;
+		const entry = this.dragUndoEntry;
+		this.dragUndoEntry = null;
+		if (entry && this.undoStack.at(-1) === entry &&
+			JSON.stringify(entry.points) === JSON.stringify(this.points)) {
+			this.undoStack.pop();
+			if (!entry.hadOverride) {
+				this.provider.clearOverride(this.selectedPropType);
+				this.storeRevision++;
+			}
+		}
 	}
 
 	undo(): void {
@@ -176,7 +211,13 @@ export class EffectPointEditorState {
 		if (this.selectedPointIndex >= this.points.length) {
 			this.selectedPointIndex = this.points.length - 1;
 		}
-		this.autoSave();
+		if (entry.hadOverride) {
+			this.autoSave();
+		} else {
+			this.provider.clearOverride(this.selectedPropType);
+			this.storeRevision++;
+			this.showSaveIndicator();
+		}
 	}
 
 	setAsDefault(): void {
@@ -317,10 +358,11 @@ export class EffectPointEditorState {
 		}, 2000);
 	}
 
-	private pushUndo(label: string): void {
+	private pushUndo(label: string, points = this.points): void {
 		this.undoStack.push({
-			points: deepCopy(this.points),
+			points: deepCopy(points),
 			label,
+			hadOverride: this.provider.hasOverride(this.selectedPropType),
 		});
 		if (this.undoStack.length > MAX_UNDO_DEPTH) {
 			this.undoStack.shift();

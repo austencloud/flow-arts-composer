@@ -46,6 +46,8 @@ in float a_density;    // linear energy density along the path
 in float a_sigma;      // effective footprint sigma, device pixels
 in float a_capStart;   // 1 = round cap, 0 = butt cap
 in float a_capEnd;
+in vec2 a_cutStart;    // butt cap at segA: normal of the cut, pointing along the path
+in vec2 a_cutEnd;      // butt cap at segB: likewise
 
 uniform vec2 u_resolution; // canvas size in device pixels
 
@@ -57,6 +59,8 @@ flat out float v_density;
 flat out float v_sigma;
 flat out float v_capStart;
 flat out float v_capEnd;
+flat out vec2 v_cutStart;
+flat out vec2 v_cutEnd;
 
 void main() {
   v_segA = a_segA;
@@ -66,6 +70,8 @@ void main() {
   v_sigma = a_sigma;
   v_capStart = a_capStart;
   v_capEnd = a_capEnd;
+  v_cutStart = a_cutStart;
+  v_cutEnd = a_cutEnd;
 
   vec2 dir = a_segB - a_segA;
   float segLen = length(dir);
@@ -101,6 +107,8 @@ flat in float v_density;
 flat in float v_sigma;
 flat in float v_capStart;
 flat in float v_capEnd;
+flat in vec2 v_cutStart;
+flat in vec2 v_cutEnd;
 
 out vec4 fragColor;
 
@@ -110,12 +118,15 @@ void main() {
   vec2 pa = v_pixelPos - v_segA;
   vec2 ba = v_segB - v_segA;
   float baLenSq = dot(ba, ba);
-  float t = baLenSq > 1e-6 ? dot(pa, ba) / baLenSq : 0.0;
+  bool hasLength = baLenSq > 1e-6;
+  float t = hasLength ? dot(pa, ba) / baLenSq : 0.0;
 
   // Butt caps at a sub-step join, round caps only where the path ends.
-  // Rounding both would deposit the join's half-Gaussian twice.
-  if (v_capStart < 0.5 && t < 0.0) discard;
-  if (v_capEnd < 0.5 && t > 1.0) discard;
+  // Rounding both would deposit the join's half-Gaussian twice. Two chords
+  // that meet share one cut, so the outside of a curve gets no gap and the
+  // inside no doubled sliver; see writeJoinCuts in web-gl-led-renderer.ts.
+  if (hasLength && v_capStart < 0.5 && dot(pa, v_cutStart) < 0.0) discard;
+  if (hasLength && v_capEnd < 0.5 && dot(v_pixelPos - v_segB, v_cutEnd) > 0.0) discard;
 
   float d = length(pa - ba * clamp(t, 0.0, 1.0));
   float s = max(v_sigma, 1e-4);

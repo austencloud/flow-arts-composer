@@ -229,6 +229,7 @@ export class TrailOverlayWebGL2 implements ITrailOverlayCanvas {
     canvas.width = width;
     canvas.height = height;
     canvas.setAttribute("aria-hidden", "true");
+    canvas.dataset.animationLayer = "trails";
     canvas.style.position = "absolute";
     canvas.style.top = "0";
     canvas.style.left = "0";
@@ -1021,6 +1022,10 @@ export class TrailOverlayWebGL2 implements ITrailOverlayCanvas {
     this.hasPrevCenter = false;
     this.resetRingsAndTails();
     this.warmupFramesRemaining = TrailOverlayWebGL2.WARMUP_FRAMES;
+    this.freshAccumulators();
+  }
+
+  refreshStyle(): void {
     this.freshAccumulators();
   }
 

@@ -27,6 +27,7 @@
   let { tools, shown = null, isDisabled, onpick }: Props = $props();
 
   const KEYS: Partial<Record<PostToolId, string>> = {
+    back: "Escape",
     split: "S",
     duplicate: "Control+D",
     delete: "Delete",
@@ -34,12 +35,12 @@
 
   function titleFor(id: PostToolId): string {
     switch (id) {
+      case "back":
+        return `${toolLabel(id)} (Esc)`;
       case "split":
         return t("post_editor_split_hint");
       case "beats":
         return t("post_editor_beats_hint");
-      case "tutorial":
-        return t("post_editor_tutorial_hint");
       default:
         return toolLabel(id);
     }

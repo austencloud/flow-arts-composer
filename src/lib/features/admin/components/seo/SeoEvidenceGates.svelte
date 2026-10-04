@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { SeoDashboardSnapshot } from "$lib/features/admin/domain/models/seo-dashboard-model";
+  import LinkChip from "$lib/shared/ui/components/LinkChip.svelte";
   import {
     formatCriterion,
     formatDate,
@@ -278,9 +279,9 @@
         {#each activeSources as source (source.id)}
           <li>
             <p>
-              <a href={source.sourceUrl} target="_blank" rel="noreferrer">
+              <LinkChip size="inline" href={source.sourceUrl}>
                 {source.publisher}
-              </a>
+              </LinkChip>
               <span> · {source.context}</span>
             </p>
             <small>
@@ -514,12 +515,7 @@
     color: var(--theme-text-dim, rgba(248, 250, 252, 0.68));
     font-size: var(--font-size-compact, 0.75rem);
     line-height: 1.4;
-  }
-
-  .source-list a {
-    color: var(--semantic-seo-accent);
-    font-weight: 700;
-    text-underline-offset: 0.18em;
+    --theme-accent: var(--semantic-seo-accent);
   }
 
   .source-list small {

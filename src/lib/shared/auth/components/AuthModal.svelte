@@ -8,6 +8,7 @@
   flow.
 -->
 <script lang="ts">
+  import { untrack } from "svelte";
   import { page } from "$app/state";
   import { captureWhenReady } from "$lib/shared/analytics/services/posthog";
   import {
@@ -25,6 +26,7 @@
     recordAuthSubmission,
   } from "$lib/shared/auth/services/auth-analytics-bridge";
   import { signInWithFacebook } from "$lib/shared/auth/services/authenticator";
+  import { getLastAuthMethod } from "$lib/shared/auth/services/last-auth-method.svelte";
   import BaseModal from "$lib/shared/foundation/ui/modal/BaseModal.svelte";
   import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { authDrawerState } from "../state/auth-drawer-state.svelte";
@@ -53,6 +55,7 @@
 
   let authMode = $state<AuthMode>("signup");
   let facebookError = $state<string | null>(null);
+  let prompt = $state<{ focusFirstField: () => void }>();
 
   const promptContent = $derived(
     getAuthPromptContent(reason, authMode, attempt, encore)
@@ -61,12 +64,14 @@
     getInAppBrowserDetector().isInAppBrowserOrForced(page.url.searchParams)
   );
 
-  // Reopening the dialog always starts from the mode requested by the action
-  // that launched it. Provider errors belong only to that encounter.
+  // Reopening the dialog starts from the mode requested by the action that
+  // launched it, unless this device has signed in before: then the person
+  // already has an account, and a sign-up form is one more thing to click past.
+  // Provider errors belong only to that encounter.
   $effect(() => {
     if (!open) return;
     authDrawerState.dismissGuestSaveNudge();
-    authMode = initialMode;
+    authMode = untrack(getLastAuthMethod) ? "signin" : initialMode;
     facebookError = null;
   });
 
@@ -117,6 +122,12 @@
     }
   }
 
+  // Someone who pressed "Sign in" gets the cursor in the email form when it is
+  // already open. A prompt raised by an action does not grab the keyboard.
+  function handleOpened() {
+    if (!reason) prompt?.focusFirstField();
+  }
+
   function handleCloseButtonClick() {
     trackAuthModalAbandoned("close_button");
     clearAuthSubmissionBridge();
@@ -142,8 +153,10 @@
   closeOnEscape
   allowExternalOverlays
   onclose={handleModalDismiss}
+  onopened={handleOpened}
 >
   <ContextualAuthPrompt
+    bind:this={prompt}
     content={promptContent}
     encoreOffer={encore === "offer"}
     {onAcceptEncore}

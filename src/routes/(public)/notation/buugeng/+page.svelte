@@ -1,4 +1,5 @@
 <script lang="ts">
+  import LinkChip from "$lib/shared/ui/components/LinkChip.svelte";
   import Seo from "$lib/shared/components/Seo.svelte";
   import OpenChapter from "$lib/shared/landing/components/OpenChapter.svelte";
   import SequenceHeroDemo from "$lib/shared/landing/components/SequenceHeroDemo.svelte";
@@ -53,8 +54,9 @@
       <div class="duo-copy">
         <div class="prose">
           <p>
-            Buugeng have two visible ends, so the <a href="/notation/staves"
-              >staff notation</a
+            Buugeng have two visible ends, so the <LinkChip
+              size="inline"
+              href="/notation/staves">staff notation</LinkChip
             > carries over, including the isolation and antispin relationships. The
             two end references still apply, as do the grid positions and timing of
             each letter. Eight rings and double contact ball belong to the same dual-ended

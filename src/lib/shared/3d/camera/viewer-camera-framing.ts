@@ -1,12 +1,12 @@
 import type { CameraStateSnapshot } from "@austencloud/scene-3d";
 import type { SceneEnvironmentId } from "../environments/domain/scene-environment";
 
+import { GRID_RADIUS_3D } from "../domain/constants/plane-transforms";
 import { getViewerFrontStageCameraZ } from "../domain/viewer-formation-facing";
 import { getBlossomOpeningCamera } from "../environments/scenes/cherry-blossom/blossom-site";
 
 const GRID_CENTER_Y = 0;
 const GRID_CENTER_Z = 0.3;
-const GRID_RADIUS_3D = 0.52;
 
 export interface ViewerCameraFraming {
   position: { x: number; y: number; z: number };
@@ -17,6 +17,11 @@ export interface ViewerCameraFramingOptions {
   environmentId: SceneEnvironmentId;
   fov: number;
   document?: Document | null;
+  /**
+   * The lead performer's largest hand distance in meters. The opening shot
+   * sizes the 3D hand ring to the 2D card's, so a longer reach frames wider.
+   */
+  handDistance?: number;
 }
 
 function isFinitePoint(
@@ -138,8 +143,9 @@ export function computeViewerAlignedCamera(
   const verticalHalfFov = ((options.fov / 2) * Math.PI) / 180;
   const horizontalHalfFov = Math.atan(Math.tan(verticalHalfFov) * aspect);
   const visibleWidthAtUnitDistance = 2 * Math.tan(horizontalHalfFov);
+  const handDistance = options.handDistance ?? GRID_RADIUS_3D;
   const distance =
-    (GRID_RADIUS_3D * 2) / (diameterFraction * visibleWidthAtUnitDistance);
+    (handDistance * 2) / (diameterFraction * visibleWidthAtUnitDistance);
   const cameraYOffset =
     (0.5 - centerYFraction) * (2 * distance * Math.tan(verticalHalfFov));
 

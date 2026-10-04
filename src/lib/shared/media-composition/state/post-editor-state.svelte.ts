@@ -3,24 +3,33 @@ import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence
 import type { StepMap } from "$lib/shared/video-collaboration/domain/collaborative-video";
 import type { PostTake } from "$lib/shared/media-composition/domain/post-plan";
 import { takeRole } from "$lib/shared/media-composition/domain/post-plan-compiler";
+import { takeDisplayLabel } from "$lib/shared/media-composition/domain/post-take-labels";
 import {
   POST_FRAME_RATE,
   POST_MIN_ITEM_SECONDS,
   POST_TIME_EPSILON,
+  PostProjectSchema,
   findItem,
   itemEnd,
   mainItemAt,
   projectDurationSeconds,
+  type PostAnimationItem,
   type PostItem,
   type PostProject,
 } from "$lib/shared/media-composition/domain/post-project";
 import {
   addOverlayItem,
+  addTitlesItem,
   addTake,
+  addTunnelHook as addProjectTunnelHook,
+  findTunnelHook,
+  removeTunnelHook as removeProjectTunnelHook,
+  cleanLabel,
   appendCardClip,
   appendVideoClip,
   deleteItem,
   duplicateItem,
+  finish,
   removeTake as removeProjectTake,
   setProjectAudio,
   splitItemAt,
@@ -29,6 +38,7 @@ import {
   type NewOverlaySpec,
 } from "$lib/shared/media-composition/domain/post-project-edits";
 import {
+  applyTutorialTemplate,
   applyTutorialPreset,
   type TutorialLabels,
 } from "$lib/shared/media-composition/domain/post-project-looks";
@@ -43,6 +53,7 @@ import {
   takeSampleAt,
   takeTimingFromLegacyMarks,
   takeTimingStatus,
+  TakeTimingSchema,
   type ResolvedTakeTiming,
   type TakeTiming,
   type TakeTimingStatus,
@@ -57,8 +68,15 @@ import {
 } from "$lib/shared/media-composition/services/frame-evaluator";
 import {
   openPostProject,
+  backupPostProjectBeforeImport,
   savePostProject,
 } from "$lib/shared/media-composition/services/post-project-store";
+import {
+  projectDraftRecord,
+  resolvePostStudioDraft,
+} from "$lib/shared/media-composition/services/post-project-backup";
+import { normalizeProject } from "$lib/shared/media-composition/domain/post-project-normalize";
+import { bridgeLockedChange } from "$lib/shared/media-composition/domain/post-project-bridge-guard";
 import {
   catalogTakeKey,
   loadTakeTiming,
@@ -66,6 +84,12 @@ import {
   openTakeTiming,
   saveTakeTiming,
 } from "$lib/shared/media-composition/services/take-timing-store";
+import {
+  loadPostEditorHistory,
+  savePostEditorHistory,
+  type PostTimingEffect,
+} from "$lib/shared/media-composition/services/post-editor-history-store";
+import { deepEqual } from "$lib/shared/sequence-viewer/services/viewer-url-state-codec";
 
 /**
  * The timeline editor's working state: the project with its undo history,
@@ -74,7 +98,8 @@ import {
  * in one shows in all of them.
  *
  * Nothing here touches Firestore. The project and the timings save on this
- * device as they change.
+ * device as they change, and the undo history is kept in the tab, so Undo
+ * still works after a reload.
  */
 
 export type PostEditorMode = "edit" | "timing";
@@ -101,10 +126,19 @@ const HISTORY_DEPTH = 100;
 const TIMING_UNDO_DEPTH = 50;
 /** Changes to one setting this close together undo as one. */
 const SETTING_JOIN_MS = 800;
+/** The undo history is kept in the tab once edits pause this long. */
+const HISTORY_KEEP_DELAY_MS = 400;
 const FRAME_SECONDS = 1 / POST_FRAME_RATE;
+
+type MappingAppearance = NonNullable<PostAnimationItem["animationAppearance"]>;
+type TakeHistoryEntry =
+  | { kind: "timing"; timing: TakeTiming }
+  | { kind: "appearance"; appearance: MappingAppearance | undefined };
 
 export interface PostEditorDeps {
   getSequence: () => SequenceData;
+  /** A recovered full draft to open in place of this browser's saved copy. */
+  initialProject?: PostProject;
   /** Catalog videos for the sequence, looked up by id. */
   getCatalogVideo?: (videoId: string) => CatalogTakeSource | null;
   /** True when a painter can draw the beat overlay on animation items. */
@@ -113,7 +147,10 @@ export interface PostEditorDeps {
 }
 
 /** A pure project edit; returning the same project means nothing changed. */
-export type PostEdit = (project: PostProject, context: EditContext) => PostProject;
+export type PostEdit = (
+  project: PostProject,
+  context: EditContext
+) => PostProject;
 
 export function createPostEditorState(deps: PostEditorDeps) {
   const now = deps.now ?? (() => Date.now());
@@ -121,11 +158,27 @@ export function createPostEditorState(deps: PostEditorDeps) {
   const sequence = $derived(deps.getSequence());
   const moveBeats = $derived(sequence.steps.map((step) => step.duration ?? 1));
 
-  let project = $state.raw<PostProject>(openPostProject(sequence.id, now()));
-  let past = $state.raw<PostProject[]>([]);
-  let future = $state.raw<PostProject[]>([]);
+  const initialProject = PostProjectSchema.safeParse(deps.initialProject);
+  let project = $state.raw<PostProject>(
+    initialProject.success && initialProject.data.sequenceId === sequence.id
+      ? // A post saved with its opening as a separate item opens as one item.
+        normalizeProject(initialProject.data)
+      : openPostProject(sequence.id, now())
+  );
+  // History keeps its original objects; saved copies must still be newer
+  // than the edit that undo, session cancellation, or import replaces.
+  let savedUpdatedAt = project.updatedAt;
+  // A reload in this tab brings back the undo history, but only when this is
+  // the very save it led up to.
+  const restoredHistory = loadPostEditorHistory(project);
+  let past = $state.raw<PostProject[]>(
+    restoredHistory?.past.map((entry) => entry.project) ?? []
+  );
+  let future = $state.raw<PostProject[]>(
+    restoredHistory?.future.map((entry) => entry.project) ?? []
+  );
   /** The project a drag started from; each live step re-applies to it. */
-  let gestureBase: PostProject | null = null;
+  let gestureBase = $state.raw<PostProject | null>(null);
   /** The setting changed last and when, so a slider drag undoes as one step. */
   let lastSetting: { key: string; at: number } | null = null;
   /**
@@ -143,21 +196,42 @@ export function createPostEditorState(deps: PostEditorDeps) {
   } | null>(null);
 
   let media = $state.raw<Record<string, TakeMedia>>({});
+  let imageMedia = $state.raw<Record<string, TakeMedia>>({});
   let timings = $state.raw<Record<string, TakeTiming>>({});
-  let timingUndo = $state.raw<Record<string, TakeTiming[]>>({});
+  let timingUndo = $state.raw<Record<string, TakeHistoryEntry[]>>({});
+  let timingRedo = $state.raw<Record<string, TakeHistoryEntry[]>>({});
+  let lastMappingSetting: Record<string, { key: string; at: number }> = {};
+  let saveError = $state<string | null>(null);
+  let saveRevision = $state(0);
   /**
    * Timing an edit changed along with the post, keyed by the project the
    * edit made, so undoing that edit puts the take's timing back too.
    */
-  const timingEffects = new WeakMap<
-    PostProject,
-    { takeId: string; before: TakeTiming; after: TakeTiming }
-  >();
+  const timingEffects = new WeakMap<PostProject, PostTimingEffect>();
+  if (restoredHistory) {
+    for (const entry of [...restoredHistory.past, ...restoredHistory.future]) {
+      if (entry.effect) timingEffects.set(entry.project, entry.effect);
+    }
+    if (restoredHistory.headEffect)
+      timingEffects.set(project, restoredHistory.headEffect);
+  }
+  /** The last saved post and the undo lists leading to it, not yet kept. */
+  let historyToKeep: {
+    /** The post as saved, which is what a reload opens. */
+    head: PostProject;
+    /** The same post as the editor holds it, which timing effects key on. */
+    headProject: PostProject;
+    past: PostProject[];
+    future: PostProject[];
+  } | null = null;
+  let historyTimer: ReturnType<typeof setTimeout> | undefined;
 
   let previewSeconds = $state(0);
   let playing = $state(false);
   let mode = $state<PostEditorMode>("edit");
   let selectedItemId = $state<string | null>(null);
+  /** The animation whose opening tunnel, not the rest of it, is selected. */
+  let tunnelSelectedFor = $state<string | null>(null);
   let timingTakeId = $state<string | null>(null);
 
   const resolved = $derived.by(() => {
@@ -172,7 +246,8 @@ export function createPostEditorState(deps: PostEditorDeps) {
     const out: Record<string, TakeClock> = {};
     for (const [takeId, timing] of Object.entries(resolved)) {
       out[takeRole(takeId)] = {
-        sampleAt: (mediaSeconds) => takeSampleAt(timing, mediaSeconds),
+        sampleAt: (mediaSeconds, options) =>
+          takeSampleAt(timing, mediaSeconds, options),
       };
     }
     return out;
@@ -198,6 +273,7 @@ export function createPostEditorState(deps: PostEditorDeps) {
       {
         steps: sequence.steps,
         startPlacementDuration: 1,
+        sequencePeriod: sequence.period ?? sequence.orientationCycleCount ?? 1,
         clocks,
       }
     );
@@ -210,11 +286,23 @@ export function createPostEditorState(deps: PostEditorDeps) {
    *  this map, keyed by region id (an item's own id, one region each). */
   const regionRects = $derived.by((): Map<string, RegionRect> => {
     if (!compiled || compiled.durationSeconds <= 0) return new Map();
-    return evaluateRegionRects(compiled.preset, compiled.durationSeconds, previewSeconds);
+    return evaluateRegionRects(
+      compiled.preset,
+      compiled.durationSeconds,
+      previewSeconds
+    );
   });
 
   const selectedItem = $derived(
     selectedItemId ? (findItem(project, selectedItemId)?.item ?? null) : null
+  );
+  const selectedPart = $derived(
+    tunnelSelectedFor !== null &&
+      tunnelSelectedFor === selectedItemId &&
+      selectedItem?.kind === "animation" &&
+      selectedItem.tunnelHook
+      ? ("tunnel" as const)
+      : null
   );
 
   /** Takes the post's clips use, in timeline order: their timing matters. */
@@ -240,7 +328,8 @@ export function createPostEditorState(deps: PostEditorDeps) {
   // ---- The project and its history ---------------------------------------
 
   function keepSelectionValid(next: PostProject): void {
-    if (selectedItemId && !findItem(next, selectedItemId)) selectedItemId = null;
+    if (selectedItemId && !findItem(next, selectedItemId))
+      selectedItemId = null;
     if (previewSeconds > projectDurationSeconds(next)) {
       previewSeconds = projectDurationSeconds(next);
     }
@@ -251,6 +340,76 @@ export function createPostEditorState(deps: PostEditorDeps) {
     if (session) session = { ...session, steps: session.steps + 1, undone: 0 };
   }
 
+  function snapshotFor(current: PostProject): PostProject {
+    const embedded: Record<string, TakeTiming> = {};
+    for (const take of current.takes) {
+      const timing = timings[take.id];
+      if (
+        timing?.sequenceId === current.sequenceId &&
+        timing.takeKey === take.takeKey &&
+        TakeTimingSchema.safeParse(timing).success
+      )
+        embedded[take.id] = timing;
+    }
+    return {
+      ...current,
+      updatedAt: Math.max(current.updatedAt, savedUpdatedAt),
+      timings: embedded,
+    };
+  }
+
+  function persistProject(
+    timingResult?: { ok: true } | { ok: false; error: string }
+  ): void {
+    savedUpdatedAt = Math.max(now(), project.updatedAt, savedUpdatedAt + 1);
+    const snapshot = snapshotFor(project);
+    const result = savePostProject(snapshot);
+    saveRevision += 1;
+    saveError = !result.ok
+      ? `Post Studio could not save this post: ${result.error}`
+      : timingResult && !timingResult.ok
+        ? `Post Studio could not save this take's separate timing: ${timingResult.error}`
+        : null;
+    // A post that failed to save opens as the older save after a reload, and
+    // the history already kept still leads to that one.
+    if (result.ok) keepHistorySoon(snapshot);
+  }
+
+  /**
+   * The history is written once edits pause, so a slider drag does not copy
+   * the whole history on every frame. A reload or leaving the editor writes
+   * it straight away.
+   */
+  function keepHistorySoon(head: PostProject): void {
+    historyToKeep = { head, headProject: project, past, future };
+    clearTimeout(historyTimer);
+    historyTimer = setTimeout(keepHistory, HISTORY_KEEP_DELAY_MS);
+  }
+
+  function keepHistory(): void {
+    clearTimeout(historyTimer);
+    historyTimer = undefined;
+    const pending = historyToKeep;
+    if (!pending) return;
+    historyToKeep = null;
+    // Effects are read now: the Tutorial records its timing change only
+    // after its step is saved.
+    const entry = (step: PostProject) => {
+      const effect = timingEffects.get(step);
+      return effect ? { project: step, effect } : { project: step };
+    };
+    const headEffect = timingEffects.get(pending.headProject);
+    savePostEditorHistory({
+      head: pending.head,
+      ...(headEffect ? { headEffect } : {}),
+      past: pending.past.map(entry),
+      future: pending.future.map(entry),
+    });
+  }
+
+  if (typeof window !== "undefined")
+    window.addEventListener("pagehide", keepHistory);
+
   function commit(next: PostProject): boolean {
     if (next === project) return false;
     past = [...past, project].slice(-HISTORY_DEPTH);
@@ -259,7 +418,7 @@ export function createPostEditorState(deps: PostEditorDeps) {
     project = next;
     lastSetting = null;
     keepSelectionValid(next);
-    savePostProject(next);
+    persistProject();
     return true;
   }
 
@@ -288,7 +447,7 @@ export function createPostEditorState(deps: PostEditorDeps) {
       if (session) session = { ...session, undone: 0 };
       project = next;
       keepSelectionValid(next);
-      savePostProject(next);
+      persistProject();
     } else {
       commit(next);
     }
@@ -320,7 +479,7 @@ export function createPostEditorState(deps: PostEditorDeps) {
     past = [...past, base].slice(-HISTORY_DEPTH);
     future = [];
     countSessionStep();
-    savePostProject(project);
+    persistProject();
   }
 
   function cancelGesture(): void {
@@ -333,7 +492,11 @@ export function createPostEditorState(deps: PostEditorDeps) {
   }
 
   function undo(): void {
-    if (gestureBase || (session && session.steps === 0)) return;
+    if (gestureBase) {
+      cancelGesture();
+      return;
+    }
+    if (session && session.steps === 0) return;
     lastSetting = null;
     const previous = past[past.length - 1];
     if (!previous) return;
@@ -341,28 +504,42 @@ export function createPostEditorState(deps: PostEditorDeps) {
     past = past.slice(0, -1);
     future = [...future, project];
     if (session) {
-      session = { ...session, steps: session.steps - 1, undone: session.undone + 1 };
+      session = {
+        ...session,
+        steps: session.steps - 1,
+        undone: session.undone + 1,
+      };
     }
     project = previous;
     keepSelectionValid(previous);
-    savePostProject(previous);
+    loadSavedMedia();
     replayTiming(undone, "before");
+    persistProject();
   }
 
   function redo(): void {
-    if (gestureBase || (session && session.undone === 0)) return;
+    if (gestureBase) {
+      cancelGesture();
+      return;
+    }
+    if (session && session.undone === 0) return;
     lastSetting = null;
     const next = future[future.length - 1];
     if (!next) return;
     future = future.slice(0, -1);
     past = [...past, project];
     if (session) {
-      session = { ...session, steps: session.steps + 1, undone: session.undone - 1 };
+      session = {
+        ...session,
+        steps: session.steps + 1,
+        undone: session.undone - 1,
+      };
     }
     project = next;
     keepSelectionValid(next);
-    savePostProject(next);
+    loadSavedMedia();
     replayTiming(next, "after");
+    persistProject();
   }
 
   /**
@@ -402,21 +579,22 @@ export function createPostEditorState(deps: PostEditorDeps) {
     if (keep && differs(open.base, project)) {
       past = [...open.pastAtStart, open.base].slice(-HISTORY_DEPTH);
       future = [];
-      savePostProject(project);
+      persistProject();
       return;
     }
     project = open.base;
     past = open.pastAtStart;
     future = open.futureAtStart;
     keepSelectionValid(open.base);
-    savePostProject(open.base);
+    persistProject();
   }
 
   /** Whether two projects differ in more than when they were saved. */
   function differs(a: PostProject, b: PostProject): boolean {
     if (a === b) return false;
     return (
-      JSON.stringify({ ...a, updatedAt: 0 }) !== JSON.stringify({ ...b, updatedAt: 0 })
+      JSON.stringify({ ...a, updatedAt: 0 }) !==
+      JSON.stringify({ ...b, updatedAt: 0 })
     );
   }
 
@@ -428,7 +606,8 @@ export function createPostEditorState(deps: PostEditorDeps) {
     const effect = timingEffects.get(edited);
     if (!effect) return;
     const expected = side === "before" ? effect.after : effect.before;
-    if (timings[effect.takeId] !== expected) return;
+    // Compared by value: after a reload the timing is a fresh copy.
+    if (!deepEqual(timings[effect.takeId], expected)) return;
     setTiming(effect.takeId, effect[side], false);
   }
 
@@ -441,13 +620,45 @@ export function createPostEditorState(deps: PostEditorDeps) {
     const next = setProjectAudio(project, audio, context());
     if (next === project) return;
     project = next;
-    savePostProject(next);
+    persistProject();
+  }
+
+  /**
+   * Saves the post now, as the Save button asks. Edits already save
+   * themselves; this stamps the time so this copy is the newest wherever
+   * it is saved, and it adds no undo step.
+   */
+  function saveNow(): void {
+    if (gestureBase) return;
+    const next = {
+      ...project,
+      updatedAt: Math.max(now(), project.updatedAt + 1, savedUpdatedAt + 1),
+    };
+    const effect = timingEffects.get(project);
+    if (effect) timingEffects.set(next, effect);
+    project = next;
+    persistProject();
   }
 
   // ---- Takes and their media -----------------------------------------------
 
-  function openTiming(take: PostTake, legacy?: StepMap): TakeTiming {
+  function openTiming(
+    take: PostTake,
+    legacy?: StepMap,
+    sourceProject: PostProject = project
+  ): TakeTiming {
     const saved = loadTakeTiming(sequence.id, take.takeKey);
+    const embedded = sourceProject.timings?.[take.id];
+    const validEmbedded =
+      embedded?.sequenceId === sequence.id &&
+      embedded.takeKey === take.takeKey &&
+      TakeTimingSchema.safeParse(embedded).success
+        ? embedded
+        : null;
+    if (saved && validEmbedded) {
+      return saved.updatedAt > validEmbedded.updatedAt ? saved : validEmbedded;
+    }
+    if (validEmbedded) return validEmbedded;
     if (saved) return saved;
     // A catalog video mapped in the older editor seeds its landings once.
     if (legacy && legacy.stepCount === moveBeats.length) {
@@ -479,37 +690,263 @@ export function createPostEditorState(deps: PostEditorDeps) {
     take: PostTake,
     url: string,
     owned: boolean,
-    legacy?: StepMap
+    legacy?: StepMap,
+    sourceProject: PostProject = project
   ): void {
     const previous = media[take.id];
-    if (previous?.owned && previous.url !== url) URL.revokeObjectURL(previous.url);
+    if (previous?.owned && previous.url !== url)
+      URL.revokeObjectURL(previous.url);
     media = { ...media, [take.id]: { url, owned } };
-    if (!timings[take.id]) {
-      timings = { ...timings, [take.id]: openTiming(take, legacy) };
+    if (
+      timings[take.id]?.takeKey !== take.takeKey ||
+      timings[take.id]?.sequenceId !== sequence.id
+    ) {
+      timings = {
+        ...timings,
+        [take.id]: openTiming(take, legacy, sourceProject),
+      };
     }
   }
 
   function nextTakeId(): string {
     let index = project.takes.length + 1;
-    while (project.takes.some((take) => take.id === `take-${index}`)) index += 1;
+    while (project.takes.some((take) => take.id === `take-${index}`))
+      index += 1;
     return `take-${index}`;
   }
 
-  // Takes saved in the project: catalog and linked ones come straight back,
-  // a local file waits to be picked again.
-  for (const take of project.takes) {
-    if (take.ref.kind === "catalog") {
-      const video = deps.getCatalogVideo?.(take.ref.videoId);
-      // Without its video yet, the timing waits too, so an older editor's
-      // map can still seed it when the catalog arrives.
-      if (video) attach(take, video.url, false, video.legacyStepMap);
-    } else if (take.ref.kind === "linked") {
-      attach(take, take.ref.url, false);
-    } else {
-      timings = { ...timings, [take.id]: openTiming(take) };
+  /**
+   * Media saved in the project: catalog and linked takes and linked images
+   * come straight back, a local file waits to be picked again. Undo after a
+   * reload can bring back media this page has not loaded yet, so it runs
+   * then too.
+   */
+  function loadSavedMedia(): void {
+    for (const take of project.takes) {
+      const loaded = timings[take.id];
+      if (loaded?.takeKey === take.takeKey && loaded.sequenceId === sequence.id)
+        continue;
+      if (take.ref.kind === "catalog") {
+        const video = deps.getCatalogVideo?.(take.ref.videoId);
+        // Without its video yet, the timing waits too, so an older editor's
+        // map can still seed it when the catalog arrives.
+        if (video) attach(take, video.url, false, video.legacyStepMap);
+        else if (
+          project.timings?.[take.id] ||
+          loadTakeTiming(sequence.id, take.takeKey)
+        ) {
+          timings = { ...timings, [take.id]: openTiming(take) };
+        }
+      } else if (take.ref.kind === "linked") {
+        attach(take, take.ref.url, false);
+      } else {
+        timings = { ...timings, [take.id]: openTiming(take) };
+      }
+    }
+    for (const image of project.images ?? []) {
+      if (image.ref.kind === "linked" && !imageMedia[image.id]) {
+        imageMedia = {
+          ...imageMedia,
+          [image.id]: { url: image.ref.url, owned: false },
+        };
+      }
     }
   }
+  loadSavedMedia();
   timingTakeId = takesInUse[0]?.id ?? project.takes[0]?.id ?? null;
+
+  /** Import through the same atomic history path as every other edit. */
+  function importProject(
+    next: PostProject,
+    files: ReadonlyMap<string, File> = new Map()
+  ): void {
+    if (gestureBase || session)
+      throw new Error("Finish the current edit before importing a post.");
+    const importedTimings = Object.fromEntries(
+      Object.entries(next.timings ?? {}).map(([takeId, timing]) => [
+        takeId,
+        { ...timing, sequenceId: sequence.id },
+      ])
+    );
+    const validated = PostProjectSchema.parse({
+      ...next,
+      sequenceId: sequence.id,
+      timings: importedTimings,
+    });
+    const currentSnapshot = snapshotFor(project);
+    const transfer = resolvePostStudioDraft(sequence.id, [
+      projectDraftRecord({
+        ...validated,
+        updatedAt: Math.max(validated.updatedAt, currentSnapshot.updatedAt + 1),
+      }),
+      { key: "before-import", value: JSON.stringify(currentSnapshot) },
+    ]);
+    const parsed = {
+      ...validated,
+      timings: transfer?.timings ?? validated.timings,
+    };
+    for (const asset of [...parsed.takes, ...(parsed.images ?? [])]) {
+      if (asset.ref.kind === "local" && !files.has(asset.ref.name)) {
+        throw new Error(`Missing media: ${asset.ref.name}`);
+      }
+    }
+    // Preserve the old post before changing the project or its loaded media.
+    backupPostProjectBeforeImport(snapshotFor(project));
+    const retained: Record<string, TakeTiming> = {};
+    for (const take of parsed.takes) {
+      const existing = timings[take.id];
+      const imported = parsed.timings?.[take.id];
+      if (
+        existing?.sequenceId !== sequence.id ||
+        existing.takeKey !== take.takeKey
+      )
+        continue;
+      if (
+        imported?.takeKey === take.takeKey &&
+        imported.updatedAt > existing.updatedAt
+      )
+        continue;
+      retained[take.id] = existing;
+    }
+    timings = retained;
+    for (const take of parsed.takes) {
+      if (take.ref.kind === "linked")
+        attach(take, take.ref.url, false, undefined, parsed);
+      else if (take.ref.kind === "local") {
+        const file = files.get(take.ref.name);
+        if (!file) throw new Error(`Missing video: ${take.ref.name}`);
+        attach(take, URL.createObjectURL(file), true, undefined, parsed);
+      } else
+        timings = {
+          ...timings,
+          [take.id]: timings[take.id] ?? openTiming(take, undefined, parsed),
+        };
+    }
+    const nextImages = { ...imageMedia };
+    for (const image of parsed.images ?? []) {
+      if (image.ref.kind === "linked")
+        nextImages[image.id] = { url: image.ref.url, owned: false };
+      else if (image.ref.kind === "local") {
+        const file = files.get(image.ref.name);
+        if (!file) throw new Error(`Missing image: ${image.ref.name}`);
+        nextImages[image.id] = { url: URL.createObjectURL(file), owned: true };
+      }
+    }
+    playing = false;
+    imageMedia = nextImages;
+    commit(parsed);
+    previewSeconds = 0;
+    selectedItemId = null;
+    timingTakeId = parsed.takes[0]?.id ?? null;
+  }
+
+  /**
+   * Takes a newer save of this post from another open tab, so tabs on one
+   * post never drift apart. It joins the undo history like an edit but is
+   * not saved again: the other tab already saved it. A copy that needs a
+   * video only the other tab holds (a file picked there) is left alone.
+   */
+  function adoptSaved(next: PostProject): boolean {
+    if (gestureBase || session) return false;
+    const parsed = PostProjectSchema.safeParse(next);
+    if (
+      !parsed.success ||
+      parsed.data.sequenceId !== project.sequenceId ||
+      // This tab's own saves carry savedUpdatedAt, so only a later save from
+      // somewhere else gets through.
+      parsed.data.updatedAt <= Math.max(project.updatedAt, savedUpdatedAt)
+    )
+      return false;
+    const incoming = parsed.data;
+    const known = new Map(
+      project.takes.map((take) => [take.id, JSON.stringify(take.ref)])
+    );
+    const added = incoming.takes.filter(
+      (take) => known.get(take.id) !== JSON.stringify(take.ref)
+    );
+    if (added.some((take) => take.ref.kind === "local")) return false;
+    const nextTimings = { ...timings };
+    for (const [takeId, timing] of Object.entries(incoming.timings ?? {})) {
+      const mine = nextTimings[takeId];
+      if (!mine || timing.updatedAt > mine.updatedAt)
+        nextTimings[takeId] = timing;
+    }
+    timings = nextTimings;
+    for (const take of added) {
+      if (take.ref.kind === "linked")
+        attach(take, take.ref.url, false, undefined, incoming);
+      else
+        timings = {
+          ...timings,
+          [take.id]: timings[take.id] ?? openTiming(take, undefined, incoming),
+        };
+    }
+    const nextImages = { ...imageMedia };
+    for (const image of incoming.images ?? [])
+      if (image.ref.kind === "linked" && !nextImages[image.id])
+        nextImages[image.id] = { url: image.ref.url, owned: false };
+    imageMedia = nextImages;
+    past = [...past, project].slice(-HISTORY_DEPTH);
+    future = [];
+    project = incoming;
+    savedUpdatedAt = Math.max(savedUpdatedAt, incoming.updatedAt);
+    lastSetting = null;
+    keepSelectionValid(incoming);
+    // The other tab's save is what a reload opens; the history now leads to it.
+    keepHistorySoon(incoming);
+    return true;
+  }
+
+  /** Apply a local dev manifest edit without replacing loaded footage or the playhead. */
+  function replaceManifestFromDev(
+    candidate: unknown,
+    expectedSnapshot: PostProject
+  ): { ok: true } | { ok: false; error: string } {
+    if (gestureBase || session)
+      return { ok: false, error: "Finish the current edit first." };
+    const current = PostProjectSchema.parse(snapshotFor(project));
+    if (
+      JSON.stringify(current) !==
+      JSON.stringify(PostProjectSchema.parse(expectedSnapshot))
+    )
+      return {
+        ok: false,
+        error: "The editor changed since this manifest was read.",
+      };
+    const parsed = PostProjectSchema.safeParse(candidate);
+    if (!parsed.success)
+      return {
+        ok: false,
+        error: "The replacement is not a valid Post Studio project.",
+      };
+    const next = parsed.data;
+    if (next.sequenceId !== project.sequenceId)
+      return {
+        ok: false,
+        error: "The replacement belongs to another sequence.",
+      };
+    const locked = bridgeLockedChange(current, next);
+    if (locked)
+      return {
+        ok: false,
+        error: `${locked} cannot be changed through the manifest bridge.`,
+      };
+    const normalized = normalizeProject(next);
+    const withoutTimestamp = (value: PostProject) => ({
+      ...value,
+      updatedAt: 0,
+    });
+    if (
+      JSON.stringify(withoutTimestamp(normalized)) ===
+      JSON.stringify(withoutTimestamp(project))
+    )
+      return { ok: true };
+    commit({
+      ...normalized,
+      updatedAt: Math.max(now(), project.updatedAt + 1, normalized.updatedAt),
+    });
+    return { ok: true };
+  }
 
   /** The catalog loads after the editor opens; saved takes get their video. */
   function attachCatalogTakes(): void {
@@ -529,7 +966,9 @@ export function createPostEditorState(deps: PostEditorDeps) {
     if (gestureBase) return null;
     const ctx = context();
     const withTake = addTake(project, take, ctx);
-    const stored = withTake.takes.find((entry) => entry.takeKey === take.takeKey);
+    const stored = withTake.takes.find(
+      (entry) => entry.takeKey === take.takeKey
+    );
     const placed = stored ? appendVideoClip(withTake, stored.id, ctx) : null;
     if (!placed) {
       commit(withTake);
@@ -595,22 +1034,74 @@ export function createPostEditorState(deps: PostEditorDeps) {
   /** Reattaches a saved local take; false when the file is a different one. */
   function relinkLocalTake(takeId: string, file: File): boolean {
     const take = project.takes.find((candidate) => candidate.id === takeId);
-    if (!take || take.takeKey !== localTakeKey(file)) return false;
+    if (
+      !take ||
+      take.ref.kind !== "local" ||
+      take.ref.name !== file.name ||
+      take.ref.size !== file.size ||
+      take.ref.lastModified !== file.lastModified
+    )
+      return false;
     attach(take, URL.createObjectURL(file), true);
     return true;
   }
 
+  /** Restore selected source files after reload without replacing the user's edits. */
+  function relinkProjectFiles(files: ReadonlyMap<string, File>): number {
+    const matches = (ref: PostTake["ref"]): File | undefined => {
+      if (ref.kind !== "local") return undefined;
+      const file = files.get(ref.name);
+      return file &&
+        file.size === ref.size &&
+        file.lastModified === ref.lastModified
+        ? file
+        : undefined;
+    };
+    let linked = 0;
+    for (const take of project.takes) {
+      const file = matches(take.ref);
+      if (file) {
+        attach(take, URL.createObjectURL(file), true);
+        linked++;
+      }
+    }
+    const nextImages = { ...imageMedia };
+    for (const asset of project.images ?? []) {
+      const file = matches(asset.ref);
+      if (!file) continue;
+      const previous = nextImages[asset.id];
+      if (previous?.owned) URL.revokeObjectURL(previous.url);
+      nextImages[asset.id] = { url: URL.createObjectURL(file), owned: true };
+      linked++;
+    }
+    imageMedia = nextImages;
+    return linked;
+  }
+
   function renameTake(takeId: string, label: string): void {
-    const name = label.trim().slice(0, 120);
+    const name = cleanLabel(label);
     if (!name) return;
     edit((current, ctx) => {
       const take = current.takes.find((entry) => entry.id === takeId);
-      if (!take || take.label === name) return current;
+      if (!take) return current;
+      const previousName = takeDisplayLabel(current, takeId);
+      const tracks = current.tracks.map((track) => ({
+        ...track,
+        items: track.items.map((item) =>
+          item.kind === "video" &&
+          item.takeId === takeId &&
+          item.label === previousName
+            ? { ...item, label: name }
+            : item
+        ),
+      }));
+      if (take.label === name && previousName === name) return current;
       return {
         ...current,
         takes: current.takes.map((entry) =>
           entry.id === takeId ? { ...entry, label: name } : entry
         ),
+        tracks,
         updatedAt: ctx.now,
       };
     });
@@ -670,6 +1161,15 @@ export function createPostEditorState(deps: PostEditorDeps) {
   function deleteSelected(): boolean {
     const target = selectedItem;
     if (!target || isLocked(target.id)) return false;
+    // With the opening tunnel in hand, only the tunnel goes; the animation stays.
+    if (selectedPart === "tunnel") {
+      if (gestureBase) return false;
+      const kept = target.id;
+      if (!commit(removeProjectTunnelHook(project, context()))) return false;
+      selectedItemId = findItem(project, kept) ? kept : null;
+      tunnelSelectedFor = null;
+      return true;
+    }
     return edit((current, ctx) => deleteItem(current, target.id, ctx));
   }
 
@@ -690,6 +1190,15 @@ export function createPostEditorState(deps: PostEditorDeps) {
     return result.itemId;
   }
 
+  /** Titles go over the opening tunnel when the post has one, else at `at`. */
+  function addTitles(at: number): string | null {
+    if (gestureBase) return null;
+    const result = addTitlesItem(project, context(), { at });
+    if (!result || !commit(result.project)) return null;
+    selectedItemId = result.itemId;
+    return result.itemId;
+  }
+
   /** The choreo card goes on the end of the main track, like the Tutorial's. */
   function addCard(): string | null {
     if (gestureBase) return null;
@@ -699,11 +1208,34 @@ export function createPostEditorState(deps: PostEditorDeps) {
     return result.itemId;
   }
 
+  /** Puts the tunnel hook in front of the post; everything moves later by its length. */
+  function addTunnelHook(): string | null {
+    if (gestureBase) return null;
+    const result = addProjectTunnelHook(project, context(), {
+      clock: { timings, moveBeats },
+    });
+    if (!result || !commit(result.project)) return null;
+    selectedItemId = result.itemId;
+    return result.itemId;
+  }
+
+  /** Takes the hook out and brings everything back to where it was. */
+  function removeTunnelHook(): boolean {
+    if (gestureBase || !findTunnelHook(project)) return false;
+    const next = removeProjectTunnelHook(project, context());
+    selectedItemId = null;
+    return commit(next);
+  }
+
   /**
    * A trim shows the frame at the edge being dragged, as InShot does: the
    * new first frame, or the last one.
    */
-  function trimLive(itemId: string, edge: "start" | "end", seconds: number): void {
+  function trimLive(
+    itemId: string,
+    edge: "start" | "end",
+    seconds: number
+  ): void {
     if (isLocked(itemId)) return;
     gestureStep((base, ctx) => trimItem(base, itemId, edge, seconds, ctx));
     const trimmed = findItem(project, itemId)?.item;
@@ -741,6 +1273,11 @@ export function createPostEditorState(deps: PostEditorDeps) {
     return true;
   }
 
+  function applyTemplate(template: PostProject): boolean {
+    if (gestureBase) return false;
+    return commit(applyTutorialTemplate(project, template, context()));
+  }
+
   /** Starts a new timing part at a media time unless one already starts near it. */
   function splitTakeTimingAt(takeId: string, atSeconds: number): void {
     const current = timings[takeId];
@@ -751,7 +1288,14 @@ export function createPostEditorState(deps: PostEditorDeps) {
     }
     const partId = `part-${index}`;
     editTiming(takeId, (timing) =>
-      splitTimingSection(timing, atSeconds, partId, now(), moveBeats, "restarts")
+      splitTimingSection(
+        timing,
+        atSeconds,
+        partId,
+        now(),
+        moveBeats,
+        "restarts"
+      )
     );
   }
 
@@ -761,17 +1305,25 @@ export function createPostEditorState(deps: PostEditorDeps) {
 
   // ---- Timing ------------------------------------------------------------
 
-  function setTiming(takeId: string, next: TakeTiming, remember: boolean): void {
+  function setTiming(
+    takeId: string,
+    next: TakeTiming,
+    remember: boolean
+  ): void {
     const current = timings[takeId];
     if (!current || next === current) return;
+    delete lastMappingSetting[takeId];
     if (remember) {
-      const stack = [...(timingUndo[takeId] ?? []), current].slice(
-        -TIMING_UNDO_DEPTH
-      );
+      const stack = [
+        ...(timingUndo[takeId] ?? []),
+        { kind: "timing" as const, timing: current },
+      ].slice(-TIMING_UNDO_DEPTH);
       timingUndo = { ...timingUndo, [takeId]: stack };
+      timingRedo = { ...timingRedo, [takeId]: [] };
     }
     timings = { ...timings, [takeId]: next };
-    saveTakeTiming(next);
+    const result = saveTakeTiming(next);
+    persistProject(result);
   }
 
   function editTiming(
@@ -785,18 +1337,119 @@ export function createPostEditorState(deps: PostEditorDeps) {
     setTiming(takeId, { ...next, confirmedAt: null, updatedAt: now() }, true);
   }
 
+  /** Mapping appearance shares the take's undo order without touching tracks. */
+  function writeMappingAppearance(
+    takeId: string,
+    appearance: MappingAppearance | undefined
+  ): void {
+    const appearances = { ...project.mappingPreviewAppearances };
+    if (appearance) appearances[takeId] = appearance;
+    else delete appearances[takeId];
+    project = finish(
+      {
+        ...project,
+        mappingPreviewAppearances: Object.keys(appearances).length
+          ? appearances
+          : undefined,
+      },
+      context()
+    );
+    persistProject();
+  }
+
+  function editMappingPreviewAppearance(
+    takeId: string,
+    appearance: MappingAppearance,
+    settingKey?: string
+  ): boolean {
+    if (!timings[takeId] || !project.takes.some((take) => take.id === takeId))
+      return false;
+    const current = project.mappingPreviewAppearances?.[takeId];
+    if (JSON.stringify(current) === JSON.stringify(appearance)) return false;
+    const at = now();
+    const last = lastMappingSetting[takeId];
+    const previous = timingUndo[takeId]?.at(-1);
+    const joins =
+      !!settingKey &&
+      last?.key === settingKey &&
+      at - last.at < SETTING_JOIN_MS &&
+      previous?.kind === "appearance";
+    if (!joins) {
+      timingUndo = {
+        ...timingUndo,
+        [takeId]: [
+          ...(timingUndo[takeId] ?? []),
+          { kind: "appearance" as const, appearance: current },
+        ].slice(-TIMING_UNDO_DEPTH),
+      };
+    }
+    timingRedo = { ...timingRedo, [takeId]: [] };
+    if (settingKey) lastMappingSetting[takeId] = { key: settingKey, at };
+    else delete lastMappingSetting[takeId];
+    writeMappingAppearance(takeId, appearance);
+    return true;
+  }
+
+  function currentTakeHistoryEntry(
+    takeId: string,
+    kind: TakeHistoryEntry["kind"]
+  ): TakeHistoryEntry | null {
+    if (kind === "appearance")
+      return {
+        kind,
+        appearance: project.mappingPreviewAppearances?.[takeId],
+      };
+    const timing = timings[takeId];
+    return timing ? { kind, timing } : null;
+  }
+
+  function applyTakeHistoryEntry(
+    takeId: string,
+    entry: TakeHistoryEntry
+  ): void {
+    if (entry.kind === "appearance")
+      writeMappingAppearance(takeId, entry.appearance);
+    else setTiming(takeId, { ...entry.timing, updatedAt: now() }, false);
+  }
+
   function undoTiming(takeId: string): void {
     const stack = timingUndo[takeId];
     const previous = stack?.[stack.length - 1];
     if (!previous) return;
+    const current = currentTakeHistoryEntry(takeId, previous.kind);
+    if (!current) return;
+    delete lastMappingSetting[takeId];
     timingUndo = { ...timingUndo, [takeId]: stack.slice(0, -1) };
-    setTiming(takeId, { ...previous, updatedAt: now() }, false);
+    timingRedo = {
+      ...timingRedo,
+      [takeId]: [...(timingRedo[takeId] ?? []), current].slice(
+        -TIMING_UNDO_DEPTH
+      ),
+    };
+    applyTakeHistoryEntry(takeId, previous);
+  }
+
+  function redoTiming(takeId: string): void {
+    const stack = timingRedo[takeId];
+    const next = stack?.[stack.length - 1];
+    if (!next) return;
+    const current = currentTakeHistoryEntry(takeId, next.kind);
+    if (!current) return;
+    delete lastMappingSetting[takeId];
+    timingRedo = { ...timingRedo, [takeId]: stack.slice(0, -1) };
+    timingUndo = {
+      ...timingUndo,
+      [takeId]: [...(timingUndo[takeId] ?? []), current].slice(
+        -TIMING_UNDO_DEPTH
+      ),
+    };
+    applyTakeHistoryEntry(takeId, next);
   }
 
   function confirmTiming(takeId: string): void {
     const current = timings[takeId];
     if (!current) return;
-    setTiming(takeId, confirmTakeTiming(current, moveBeats, now()), false);
+    setTiming(takeId, confirmTakeTiming(current, moveBeats, now()), true);
   }
 
   // ---- The preview clock ---------------------------------------------------
@@ -817,7 +1470,8 @@ export function createPostEditorState(deps: PostEditorDeps) {
   }
 
   function togglePlayback(): void {
-    if (!playing && previewSeconds >= durationSeconds - 1e-3) previewSeconds = 0;
+    if (!playing && previewSeconds >= durationSeconds - 1e-3)
+      previewSeconds = 0;
     playing = durationSeconds > 0 && !playing;
   }
 
@@ -826,7 +1480,13 @@ export function createPostEditorState(deps: PostEditorDeps) {
   }
 
   function dispose(): void {
+    keepHistory();
+    if (typeof window !== "undefined")
+      window.removeEventListener("pagehide", keepHistory);
     for (const held of Object.values(media)) {
+      if (held.owned) URL.revokeObjectURL(held.url);
+    }
+    for (const held of Object.values(imageMedia)) {
       if (held.owned) URL.revokeObjectURL(held.url);
     }
   }
@@ -841,9 +1501,30 @@ export function createPostEditorState(deps: PostEditorDeps) {
     get project() {
       return project;
     },
+    get snapshot() {
+      return snapshotFor(project);
+    },
+    get saveError() {
+      return saveError;
+    },
+    get saveRevision() {
+      return saveRevision;
+    },
+    saveNow,
     get takes() {
       return project.takes;
     },
+    takeDisplayLabel(takeId: string): string {
+      return takeDisplayLabel(project, takeId);
+    },
+    get images() {
+      return project.images ?? [];
+    },
+    imageUrl(imageId: string): string | null {
+      return imageMedia[imageId]?.url ?? null;
+    },
+    importProject,
+    replaceManifestFromDev,
     get compiled() {
       return compiled;
     },
@@ -878,15 +1559,34 @@ export function createPostEditorState(deps: PostEditorDeps) {
     },
     set selectedItemId(next: string | null) {
       selectedItemId = next && findItem(project, next) ? next : null;
+      tunnelSelectedFor = null;
+    },
+    /** `"tunnel"` while an animation's opening tunnel is what is selected. */
+    get selectedPart() {
+      return selectedPart;
+    },
+    /** Selects an animation's opening tunnel, which has a look of its own. */
+    selectTunnel(itemId: string) {
+      selectedItemId = findItem(project, itemId) ? itemId : null;
+      tunnelSelectedFor = selectedItemId;
+    },
+    get tunnelHook() {
+      return findTunnelHook(project);
     },
     get selectedItem() {
       return selectedItem;
     },
     get canUndo() {
-      return past.length > 0 && (!session || session.steps > 0);
+      return (
+        gestureBase !== null ||
+        (past.length > 0 && (!session || session.steps > 0))
+      );
     },
     get canRedo() {
-      return future.length > 0 && (!session || session.undone > 0);
+      return (
+        gestureBase !== null ||
+        (future.length > 0 && (!session || session.undone > 0))
+      );
     },
     get inGesture() {
       return gestureBase !== null;
@@ -926,8 +1626,13 @@ export function createPostEditorState(deps: PostEditorDeps) {
     canUndoTiming(takeId: string): boolean {
       return (timingUndo[takeId]?.length ?? 0) > 0;
     },
+    canRedoTiming(takeId: string): boolean {
+      return (timingRedo[takeId]?.length ?? 0) > 0;
+    },
     editTiming,
+    editMappingPreviewAppearance,
     undoTiming,
+    redoTiming,
     confirmTiming,
     exitTiming(_reason: "done" | "back"): void {
       mode = "edit";
@@ -947,16 +1652,22 @@ export function createPostEditorState(deps: PostEditorDeps) {
     deleteSelected,
     duplicateSelected,
     addOverlay,
+    addTitles,
     addCard,
+    addTunnelHook,
+    removeTunnelHook,
     applyTutorial,
+    applyTemplate,
     setAudio,
     seedAudio,
     addLocalVideo,
     addCatalogVideo,
     appendTakeClip,
     relinkLocalTake,
+    relinkProjectFiles,
     attachCatalogTakes,
     renameTake,
+    adoptSaved,
     removeTake,
     seek,
     advance,

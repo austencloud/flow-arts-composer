@@ -24,7 +24,6 @@
   import type { IToolPanelMethods } from "../types/create-module-types";
   import { navigationState } from "$lib/shared/navigation/state/navigation-state.svelte";
   import type { LetterSource } from "$lib/shared/create/domain/spell-models";
-  import { UndoOperationType } from "../services/undo-manager";
   import { logConstructImmediateUndo } from "../../construct/services/construct-analytics";
 
   type CreateModuleState = ReturnType<typeof CreateModuleStateType>;
@@ -69,7 +68,10 @@
 
   let workspaceContainerRef: HTMLElement | null = $state(null);
   let layoutWrapperRef: HTMLElement | null = $state(null);
+  let layoutWidth = $state(0);
+  let layoutHeight = $state(0);
   let buttonPanelHeight = $state(0);
+  let workspaceWidth = $state(0);
   let panelSizes = $state<number[]>([]);
   let appliedPanelLayout = $state<string | null>(null);
 
@@ -95,6 +97,15 @@
 
   const isGeneratorTab = $derived(navigationState.activeTab === "generate");
   const isAssembleTab = $derived(navigationState.activeTab === "assemble");
+  // A tall Assemble stage needs the sequence above the grid so both can use
+  // the full width. Other Create tabs keep their existing desktop layout.
+  const useSideBySidePanels = $derived(
+    shouldUseSideBySideLayout &&
+      (!isAssembleTab ||
+        layoutWidth === 0 ||
+        layoutHeight === 0 ||
+        layoutWidth / layoutHeight >= 1.4)
+  );
   const currentSequence = $derived(
     CreateModuleState.sequenceState.currentSequence
   );
@@ -108,16 +119,69 @@
   );
   const isWorkspacePlayback = $derived(!!panelState.workspacePlayback);
 
+  // A stacked phone-width Assemble workspace spends two control rows around
+  // its step pictures. Folding Save into the bottom rail, Undo/Redo into the
+  // grid panel's top-left corner, and the word into a thin strip between the
+  // corner badges returns that height to the pictures. Share moves to the
+  // Actions panel to make room. Below 340px the rail can't hold them, so the
+  // two-row layout returns.
+  const COMPACT_TOOLBAR_MIN_WIDTH = 340;
+  const COMPACT_TOOLBAR_MAX_WIDTH = 600;
+  const useCompactToolbar = $derived(
+    isAssembleTab &&
+      !useSideBySidePanels &&
+      workspaceWidth >= COMPACT_TOOLBAR_MIN_WIDTH &&
+      workspaceWidth < COMPACT_TOOLBAR_MAX_WIDTH
+  );
+
   $effect(() => {
-    const layoutKey = `${shouldUseSideBySideLayout}:${isAssembleTab}`;
+    panelState.setWorkspaceRailCompact(useCompactToolbar);
+    return () => panelState.setWorkspaceRailCompact(false);
+  });
+
+  $effect(() => {
+    const wrapper = layoutWrapperRef;
+    if (!wrapper) return;
+    const measure = () => {
+      layoutWidth = wrapper.clientWidth;
+      layoutHeight = wrapper.clientHeight;
+    };
+    measure();
+    const resizeObserver = new ResizeObserver(measure);
+    resizeObserver.observe(wrapper);
+    return () => resizeObserver.disconnect();
+  });
+
+  $effect(() => {
+    const container = workspaceContainerRef;
+    if (!container) return;
+    const measure = () => {
+      workspaceWidth = container.clientWidth;
+    };
+    measure();
+    const resizeObserver = new ResizeObserver(measure);
+    resizeObserver.observe(container);
+    return () => resizeObserver.disconnect();
+  });
+
+  // The compact phone workspace spends a thin strip on the word, so it takes
+  // a larger share to keep two rows of step pictures unclipped and readable.
+  const defaultPanelSizes = $derived(
+    useSideBySidePanels
+      ? [1, 1]
+      : useCompactToolbar
+        ? [2, 3]
+        : isAssembleTab
+          ? [3, 7]
+          : [5, 4]
+  );
+
+  $effect(() => {
+    const layoutKey = `${useSideBySidePanels}:${isAssembleTab}:${useCompactToolbar}`;
     if (layoutKey === appliedPanelLayout) return;
 
     appliedPanelLayout = layoutKey;
-    panelSizes = shouldUseSideBySideLayout
-      ? [1, 1]
-      : isAssembleTab
-        ? [3, 7]
-        : [5, 4];
+    panelSizes = [...defaultPanelSizes];
   });
 
   // Fuse, Tunnel and Shape own complete workspaces inside their tool-panel surface.
@@ -131,11 +195,13 @@
   const shouldShowWorkspace = $derived(
     !isInputMode && !ownsFullWorkspace && (hasWorkspaceContent || isAssembleTab)
   );
-  const showClearRecovery = $derived(
+  const showCompactHistory = $derived(shouldShowWorkspace && useCompactToolbar);
+  const showHistoryRecovery = $derived(
     !hasWorkspaceContent &&
+      !isInputMode &&
+      !ownsFullWorkspace &&
       CreateModuleState.sequenceState.currentSequence === null &&
-      CreateModuleState.undoController?.nextUndoEntry?.type ===
-        UndoOperationType.CLEAR_SEQUENCE
+      (CreateModuleState.canUndo || CreateModuleState.canRedo)
   );
 
   // While the preview is showing, a click on anything that isn't a control or
@@ -217,6 +283,17 @@
   });
 </script>
 
+{#snippet compactSaveAction()}
+  {#if canSaveToLibrary}
+    <div class="compact-save-action">
+      <SaveToLibraryButton
+        sequence={currentSequence}
+        onclick={() => panelState.openSaveToLibraryPanel()}
+      />
+    </div>
+  {/if}
+{/snippet}
+
 {#snippet workspacePanel()}
   <!-- Workspace Panel - Visible based on tab and content -->
   <!-- Background click is a pointer shortcut; Escape, the corner X and Stop
@@ -242,6 +319,8 @@
             animatingStepNumber,
             currentDisplayWord,
             buttonPanelHeight,
+            compactToolbar: useCompactToolbar,
+            isSideBySideLayout: useSideBySidePanels,
             letterSources: currentLetterSources,
             ...(toolPanelRef?.getAnimationStateRef?.()
               ? { animationStateRef: toolPanelRef.getAnimationStateRef() }
@@ -256,17 +335,23 @@
       {/if}
     </div>
 
-    {#if shouldShowWorkspace}
+    {#if shouldShowWorkspace && !useCompactToolbar}
       <div
         class="workspace-history-actions"
         inert={!!panelState.workspacePlayback}
       >
-        <UndoButton {CreateModuleState} onAction={handleWorkspaceUndo} />
-        <UndoButton {CreateModuleState} direction="redo" />
+        <UndoButton
+          {CreateModuleState}
+          onAction={handleWorkspaceUndo}
+        />
+        <UndoButton
+          {CreateModuleState}
+          direction="redo"
+        />
       </div>
     {/if}
 
-    {#if shouldShowWorkspace && canSaveToLibrary}
+    {#if shouldShowWorkspace && canSaveToLibrary && !useCompactToolbar}
       <div class="workspace-save-action">
         <SaveToLibraryButton
           sequence={currentSequence}
@@ -278,7 +363,12 @@
     <!-- Button Panel - Shows when workspace is visible -->
     {#if shouldShowWorkspace}
       <div class="button-panel-wrapper" bind:this={buttonPanelElement}>
-        <ButtonPanel {onClearSequence} {onViewSequence} />
+        <ButtonPanel
+          {onClearSequence}
+          {onViewSequence}
+          compact={useCompactToolbar}
+          trailingActions={compactSaveAction}
+        />
       </div>
     {/if}
 
@@ -302,12 +392,26 @@
   <!-- Tool Panel -->
   <div
     class="tool-panel-container"
-    class:has-clear-recovery={showClearRecovery}
+    class:has-clear-recovery={showHistoryRecovery && !showCompactHistory}
+    style:--history-recovery-count={Number(CreateModuleState.canUndo) +
+      Number(CreateModuleState.canRedo)}
     bind:this={toolPanelElement}
   >
-    {#if showClearRecovery}
+    <!-- On phones Undo/Redo sit in the grid panel's empty top-left corner,
+         clear of every grid point; that pair also undoes a Clear. -->
+    {#if showCompactHistory}
+      <div class="compact-history-actions" inert={isWorkspacePlayback}>
+        <UndoButton {CreateModuleState} onAction={handleWorkspaceUndo} quiet />
+        <UndoButton {CreateModuleState} direction="redo" quiet />
+      </div>
+    {:else if showHistoryRecovery}
       <div class="clear-recovery-action">
-        <UndoButton {CreateModuleState} />
+        {#if CreateModuleState.canUndo}
+          <UndoButton {CreateModuleState} />
+        {/if}
+        {#if CreateModuleState.canRedo}
+          <UndoButton {CreateModuleState} direction="redo" />
+        {/if}
       </div>
     {/if}
 
@@ -333,23 +437,22 @@
 
 <div bind:this={layoutWrapperRef} class="layout-wrapper">
   <PanelGroup
-    direction={shouldUseSideBySideLayout ? "horizontal" : "vertical"}
+    direction={useSideBySidePanels ? "horizontal" : "vertical"}
     bind:sizes={panelSizes}
     gap={0}
     panels={[
       {
         id: "create-workspace",
         content: workspacePanel,
-        defaultSize: shouldUseSideBySideLayout ? 1 : isAssembleTab ? 3 : 5,
+        defaultSize: defaultPanelSizes[0],
         fixedSize: !shouldShowWorkspace ? "0px" : undefined,
         resizable: false,
       },
       {
         id: "create-tool-panel",
         content: toolPanel,
-        defaultSize: shouldUseSideBySideLayout ? 1 : isAssembleTab ? 7 : 4,
-        fixedSize:
-          isWorkspacePlayback || isAssembleComplete ? "0px" : undefined,
+        defaultSize: defaultPanelSizes[1],
+        fixedSize: isWorkspacePlayback || isAssembleComplete ? "0px" : undefined,
         resizable: false,
       },
     ]}
@@ -425,8 +528,37 @@
     pointer-events: auto;
   }
 
-  .workspace-history-actions[inert] {
+  .workspace-history-actions[inert],
+  .compact-history-actions[inert] {
     opacity: 0.45;
+  }
+
+  /* The rail's zones let taps through to the grid; this wrapper is authored
+     here, so ButtonPanel's own wrapper rule doesn't reach it. */
+  .compact-save-action {
+    pointer-events: auto;
+  }
+
+  /* Same corner as the clear-recovery Undo, which this pair replaces. */
+  .compact-history-actions {
+    position: absolute;
+    top: clamp(6px, 1.5cqh, 14px);
+    left: clamp(6px, 1.5cqw, 18px);
+    z-index: 160;
+    display: flex;
+    gap: var(--settings-spacing-sm, 8px);
+    pointer-events: auto;
+  }
+
+  .compact-save-action {
+    display: grid;
+    place-items: center;
+  }
+
+  /* The step pictures sit on the theme's panel colour so a busy background
+     image doesn't compete with them, matching the grid panel below. */
+  .workspace-container.assemble-workspace {
+    background: var(--theme-panel-bg);
   }
 
   /* Signals that the empty space around the preview closes it. */
@@ -514,7 +646,8 @@
 
   .tool-panel-container.has-clear-recovery {
     --picker-leading-action-offset: calc(
-      var(--min-touch-target, 48px) + var(--settings-spacing-sm, 8px)
+      var(--history-recovery-count, 1) *
+        (var(--min-touch-target, 48px) + var(--settings-spacing-sm, 8px))
     );
   }
 
@@ -541,6 +674,8 @@
   }
 
   .clear-recovery-action {
+    display: flex;
+    gap: var(--settings-spacing-sm, 8px);
     position: absolute;
     top: clamp(6px, 1.5cqh, 14px);
     left: clamp(6px, 1.5cqw, 18px);

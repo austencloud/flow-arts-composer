@@ -100,6 +100,7 @@ even when Svelte recreates the component instance.
     // and CSS transition layer so these coordinates paint on the same frame.
     directPositioning = false,
     colorOverride = undefined,
+    buugengFlippedOverride = undefined,
   } = $props<{
     motionData: MotionData;
     propAssets: PropAssets;
@@ -116,6 +117,7 @@ even when Svelte recreates the component instance.
     directPositioning?: boolean;
     /** Optional display-only color. The motion remains blue/red semantically. */
     colorOverride?: string;
+    buugengFlippedOverride?: boolean;
   }>();
 
   const renderedPropType = $derived(propAssets.propType ?? motionData.propType);
@@ -238,11 +240,15 @@ even when Svelte recreates the component instance.
     }
 
     // Check buugeng flip preference based on hand color
-    if (BUUGENG_FAMILY.has(actualPropType as PropType)) {
+    const flipPropType =
+      buugengFlippedOverride !== undefined
+        ? motionData.propType
+        : actualPropType;
+    if (BUUGENG_FAMILY.has(flipPropType as PropType)) {
       if (motionData.hand === HandSide.LEFT) {
-        return settings.leftBuugengFlipped ?? false;
+        return buugengFlippedOverride ?? settings.leftBuugengFlipped ?? false;
       } else if (motionData.hand === HandSide.RIGHT) {
-        return settings.rightBuugengFlipped ?? false;
+        return buugengFlippedOverride ?? settings.rightBuugengFlipped ?? false;
       }
     }
 

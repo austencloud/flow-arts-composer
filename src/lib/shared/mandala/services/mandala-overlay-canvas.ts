@@ -23,17 +23,23 @@ import { DURATION } from "$lib/shared/transitions/transitions";
 import { MandalaOverlapMasks, paintMandalaGuide } from "./mandala-guide-painter";
 
 /**
- * Prepared mandala paths use the animation renderer's backing-pixel scale.
- * The guide painter takes logical pixels and applies DPR itself. Normalize
- * to this layer's logical width before CSS fits both canvases to the stage.
+ * Prepared mandala paths are scaled to the renderer's square of side
+ * `rendererCanvasSize`. The guide painter takes this layer's logical pixels
+ * and applies DPR itself, so rescale by the layer's own square side against
+ * the renderer's.
+ *
+ * The side is `min(width, height)`, never the width: on a wide stage the
+ * engine's square sits centred in a wider overlay frame, and scaling by the
+ * frame's width drew the guide width/height times the path the tips trace
+ * (1.5x on the Shape Engine stage).
  */
 export function scaleGuideForOverlay(
 	preparedScale: number,
-	overlayLogicalWidth: number,
+	overlayLogicalSquareSide: number,
 	rendererCanvasSize: number
 ): number {
 	return rendererCanvasSize > 0
-		? preparedScale * (overlayLogicalWidth / rendererCanvasSize)
+		? preparedScale * (overlayLogicalSquareSide / rendererCanvasSize)
 		: preparedScale;
 }
 
@@ -75,6 +81,7 @@ export class MandalaOverlayCanvas {
 	private warmupFramesRemaining = OVERLAY_WARMUP_FRAMES;
 	private lastGuidePaths: MandalaOverlayRenderParams["preparedPaths"] = null;
 	private lastGuideOpacity = -1;
+	private lastGuideStroke = -1;
 
 	initialize(container: HTMLElement, width: number, height: number): void {
 		this.dispose();
@@ -166,13 +173,16 @@ export class MandalaOverlayCanvas {
 			guideMode && this.lastGuidePaths !== preparedPaths;
 		const guideOpacityChanged =
 			guideMode && this.lastGuideOpacity !== config.opacity;
+		const guideStrokeChanged =
+			guideMode && this.lastGuideStroke !== config.strokeWidth;
 
 		// A guide is immutable until its sequence, prop endpoints, colors, size,
-		// or opacity changes. Avoid re-stroking identical paths on every RAF.
+		// opacity, or line width changes. Avoid re-stroking identical paths on every RAF.
 		if (
 			guideMode &&
 			!guidePathsChanged &&
 			!guideOpacityChanged &&
+			!guideStrokeChanged &&
 			!this.guideFadeManager.isFadingInProgress()
 		) {
 			return;
@@ -240,7 +250,7 @@ export class MandalaOverlayCanvas {
 		// The incoming guide is painted once, then the two retained canvases are
 		// blended for the rest of the transition. This keeps a prop swap cheap
 		// even when the mandala contains many paths.
-		if (!guideMode || guidePathsChanged) {
+		if (!guideMode || guidePathsChanged || guideStrokeChanged) {
 			// One painter for every mandala the product shows: the live guide,
 			// the progressive reveal, and the still images the Shape Matrix
 			// paints through mandala-guide-image.ts.
@@ -255,7 +265,7 @@ export class MandalaOverlayCanvas {
 					paths: preparedPaths.paths,
 					scale: scaleGuideForOverlay(
 						preparedPaths.scale,
-						this.width,
+						Math.min(this.width, this.height),
 						params.canvasSize
 					),
 					strokeWidth: config.strokeWidth,
@@ -271,6 +281,7 @@ export class MandalaOverlayCanvas {
 			this.compositeGuideFrame(ctx, config.opacity, currentTime);
 			this.lastGuidePaths = preparedPaths;
 			this.lastGuideOpacity = config.opacity;
+			this.lastGuideStroke = config.strokeWidth;
 			return;
 		}
 

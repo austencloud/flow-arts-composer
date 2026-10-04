@@ -80,7 +80,7 @@ describe("elemental glyph without createImageBitmap (Node)", () => {
         /\\/g,
         "/"
       );
-      expect(loadedPath).toMatch(/\/static\/images\/elements\/water-v2\.png$/);
+      expect(loadedPath).toMatch(/\/static\/images\/elements\/norm\/water\.png$/);
       expect(ctx.drawImage).toHaveBeenCalledTimes(1);
       expect(vi.mocked(ctx.drawImage).mock.calls[0]?.[0]).toBe(decoded);
       expect(ctx.filter).toBe("none");
@@ -125,7 +125,7 @@ describe("elemental glyph without createImageBitmap (Node)", () => {
       /\\/g,
       "/"
     );
-    expect(loadedPath).toMatch(/\/static\/images\/elements\/[a-z]+-v\d\.png$/);
+    expect(loadedPath).toMatch(/\/static\/images\/elements\/norm\/[a-z]+\.png$/);
     expect(vi.mocked(ctx.drawImage).mock.calls[0]?.[0]).toBe(decoded);
   });
 });
@@ -148,7 +148,7 @@ describe("elemental glyph with createImageBitmap (browser, worker)", () => {
 
     await drawElementalGlyph(ctx, letterA, GridMode.DIAMOND, 950, false);
 
-    expect(fetchSpy).toHaveBeenCalledWith("/images/elements/water-v2.webp");
+    expect(fetchSpy).toHaveBeenCalledWith("/images/elements/norm/water.webp");
     expect(decode).toHaveBeenCalledTimes(1);
     expect(mocks.loadImage).not.toHaveBeenCalled();
     expect(vi.mocked(ctx.drawImage).mock.calls[0]?.[0]).toBe(bitmap);

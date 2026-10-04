@@ -4,6 +4,9 @@ import {
   takeTimingFromLegacyMarks,
   type TakeTiming,
 } from "$lib/shared/media-composition/domain/take-timing";
+import type { SaveResult } from "$lib/shared/media-composition/services/post-project-store";
+import { legacyPostOwner } from "$lib/shared/media-composition/services/post-project-store";
+import { auth } from "$lib/shared/auth/firebase";
 
 /**
  * Saves each take's timing on this device, keyed by sequence and take.
@@ -44,7 +47,15 @@ function storage(): Storage | null {
 }
 
 function storageKey(sequenceId: string, takeKey: string): string {
-  return `${PREFIX}${sequenceId}:${takeKey}`;
+  const uid = auth.currentUser && !auth.currentUser.isAnonymous ? auth.currentUser.uid : null;
+  const scope = uid ? `account:${uid}:` : legacyPostOwner() ? "guest:" : "";
+  return `${PREFIX}${scope}${sequenceId}:${takeKey}`;
+}
+
+function canReadLegacyTiming(): boolean {
+  const owner = legacyPostOwner();
+  const uid = auth.currentUser && !auth.currentUser.isAnonymous ? auth.currentUser.uid : null;
+  return !owner || owner === uid;
 }
 
 function readJson(store: Storage, key: string): unknown {
@@ -62,9 +73,12 @@ export function loadTakeTiming(
 ): TakeTiming | null {
   const store = storage();
   if (!store) return null;
-  const parsed = TakeTimingSchema.safeParse(
-    readJson(store, storageKey(sequenceId, takeKey))
-  );
+  const key = storageKey(sequenceId, takeKey);
+  const stored = readJson(store, key);
+  const legacy = stored === null && canReadLegacyTiming() && key !== `${PREFIX}${sequenceId}:${takeKey}`
+    ? readJson(store, `${PREFIX}${sequenceId}:${takeKey}`)
+    : null;
+  const parsed = TakeTimingSchema.safeParse(stored ?? legacy);
   if (!parsed.success) return null;
   if (
     parsed.data.sequenceId !== sequenceId ||
@@ -72,19 +86,39 @@ export function loadTakeTiming(
   ) {
     return null;
   }
+  if (legacy) saveTakeTiming(parsed.data);
   return parsed.data;
 }
 
-export function saveTakeTiming(timing: TakeTiming): void {
+export function saveTakeTiming(timing: TakeTiming): SaveResult {
   const store = storage();
-  if (!store) return;
+  if (!store) return { ok: false, error: "Device storage is unavailable." };
   try {
-    store.setItem(
-      storageKey(timing.sequenceId, timing.takeKey),
-      JSON.stringify(timing)
-    );
-  } catch {
-    // Quota or private browsing: the timing still drives this session.
+    const key = storageKey(timing.sequenceId, timing.takeKey);
+    const next = JSON.stringify(timing);
+    const previous = store.getItem(key);
+    if (previous !== null && previous !== next) {
+      store.setItem(`${key}:previous`, previous);
+    }
+    store.setItem(key, next);
+    if (store.getItem(key) !== next) {
+      return {
+        ok: false,
+        error: "The take timing could not be verified in device storage.",
+      };
+    }
+    return { ok: true };
+  } catch (cause) {
+    return {
+      ok: false,
+      error:
+        cause &&
+        typeof cause === "object" &&
+        "message" in cause &&
+        typeof cause.message === "string"
+          ? cause.message
+          : "The take timing could not be saved on this device.",
+    };
   }
 }
 
@@ -116,6 +150,7 @@ export function migrateLegacyTakeTiming(input: {
   movesPerPass: number;
   now: number;
 }): TakeTiming | null {
+  if (!canReadLegacyTiming()) return null;
   const store = storage();
   if (!store) return null;
   for (const key of legacyKeys(input.sequenceId, input.takeKey)) {

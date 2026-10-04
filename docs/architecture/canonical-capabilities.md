@@ -5,6 +5,14 @@ wholesale. Each row names the behavior owner. Verify the path in current code
 before relying on it. Add a row only for shared behavior or an intentional
 keep-separate decision, not for every component.
 
+Theme canvas sizing lives in
+`shared/background/shared/background-canvas-resolution.ts`. Searches: theme
+preview, background resolution, enlarged fish, zoomed blossoms, canvas scale.
+It extracts the existing `BackgroundHost` resolution adapter; both that host
+and `ThemePreview` compose it. It mounts `@austencloud/backgrounds` at one canvas
+pixel per CSS pixel, preserving the existing reduced-data cap. The package
+still owns rendering, resize observation, quality, and transitions.
+
 LOOP extension completion lives in
 `packages/sequence-engine/src/loop/execution/complete-loop-extension.ts`.
 Searches: extend sequence, LOOP execution, seed admission, orientation closure,
@@ -41,6 +49,15 @@ Legacy pose links retain their closed grip until explicitly edited.
 The production `collision/stance-yaw-track.ts` remains the automatic anticipatory
 stance owner; it does not author these user-taught poses. This lab intentionally
 eases to rest at each taught pose instead of choosing anticipation itself.
+
+Moving the body off the point its staffs isolate around lives in
+`src/lib/shared/3d/collision/body-clearance.ts` (`buildBodyClearanceTrack`,
+`sampleBodyClearanceTrack`). Searches: body clearance, body offset, chest
+clears the isolation point, hip shift, step off the staffs.
+`resolvePerformerContact` owns the opt-in (`clearBody`) beside hard-beat
+displacement, and the scene-3d `AvatarAnimator` applies it (`setBodyOffset`,
+planted feet). It moves the body, never the staff or the grid; see step 5 of
+`docs/architecture/performer-grid-styles.md`.
 
 Grip Lab's `KeyframeTimeline.svelte` presents these whole-pose keys at their
 actual phase and plots the same shared lean sampler. It extends the existing
@@ -102,9 +119,13 @@ sequence viewer and the motion-paths guide do. Sequence cards read it through
 `PreviewCellRenderOptions.propLook` (`ChoreoCard.svelte`, then
 `resolvePreviewCellRender`), and personal card exports carry it in
 `visibilityOverrides.propLook`. `renderedPropLook` adds the look to cell and
-layer cache keys only when a captured model replaces a prop. Printed and
-scanned cards stay notation artwork: the deck profile and the scan card's
-cloud cells omit the look, as they omit the fan build (decided 2026-09-27).
+layer cache keys only when a captured model replaces a prop. The triangle grip
+(`AppSettings.triangleGrip`) takes the same path in both looks, from
+`PropSvgLoader` through `triangleGrip` on the prepare, cell and export options.
+`renderedTriangleGrip` keys it only when a triangle is drawn with the side
+grip. Printed and scanned cards stay notation artwork: the deck profile and
+the scan card's cloud cells omit the look and the grip, as they omit the fan
+build (decided 2026-09-27).
 `FanStyleOptionsCore.svelte` composes the existing
 `FanAppearancePicker.svelte` for fan builds and covers. The effect tuner and
 viewer reuse this gallery; `ScenePropPicker.svelte` adds scene-specific finish
@@ -244,12 +265,26 @@ owns layout and runs after every edit. `post-project-edits.ts` owns the pure
 edit operations, and `post-project-looks.ts` owns the dual, breakdown and
 video-only looks plus the Tutorial preset. Looks are ordinary overlay items, so
 each part stays movable. `state/post-editor-state.svelte.ts` owns selection,
-drag gestures and undo steps over those operations. `post-project-compiler.ts`
-feeds the renderer, and `post-project-migration.ts` converts saved v1 act
-plans. The timeline UI is `share/components/post-studio/editor/timeline/`, and
+drag gestures and undo steps over those operations;
+`services/post-editor-history-store.ts` keeps those steps in the tab's
+sessionStorage so a reload restores them for the same save.
+`post-project-compiler.ts` feeds the renderer, and `post-project-migration.ts` converts saved v1 act
+plans. `post-project.ts` `timingVideoAt` owns overlap clock selection: anchored
+layers keep their own take while it covers them; unanchored layers follow the
+incoming take. The compiler and effort timing summary share it. The timeline
+UI is `share/components/post-studio/editor/timeline/`, and
 its ruler is the shared `shared/timeline/TimeRuler.svelte`. Ctrl+Z and Ctrl+Y
 reach the editor through `data-edit-history-shortcut-scope` and
 `registerEditHistoryShortcuts`; do not bind them locally.
+
+Local development manifest edits use `state/post-editor-state.svelte.ts` for
+schema validation, normalization, undo and persistence. The dev-only
+`server/post-project-dev-bridge.ts` queues exact-session replacements and
+archives the previous snapshot; `services/post-project-dev-client.ts` polls
+from the open editor. `domain/post-project-ops.ts` maps named CLI edits
+(add-hook, hook-speed, appearance, trim, canvas...) onto the existing pure
+edits. `scripts/post-project.mjs` is the local CLI. See
+`docs/development/post-studio-manifest-bridge.md` for the command contract.
 
 Post Studio keyframes live on the item: `post-project-keyframes.ts` owns
 content time, sampling, the auto-key rule, easing presets and every keyframe
@@ -276,11 +311,76 @@ sits beside the preview. A tool takes a `ValueSlider` for an amount, a
 `SegmentedControl` for a pick and a `PanelButton` for an action. Searches: tool
 row, toolbar, dock, bottom sheet, side panel, inspector, crop tool.
 
+The editor's numbers are typed in a `TypeableValue`: a `ValueSlider`'s value,
+the clocks, trim points, the beat grid's offset and the Position tool's X, Y,
+width, height and turn. The small readings inside timeline buttons (a clip's speed,
+a lane's zoom or opacity) stay labels, typed in their tool. Where an item
+shows on the frame, for the preview's handles and the typed position alike, is
+`editor/post-item-rect.ts`; `typeBox` in `editor/post-box-drag.ts` applies a
+typed side. Searches: typed value, exact value, numeric entry, type a time.
+
+While a box, the picture or a pinch moves, `PostEditorCanvas.svelte` shows a
+rule-of-thirds grid and, on a 9:16 post, the part of a Reel that Instagram's
+header, buttons and caption leave clear. `postSafeArea` in
+`media-composition/domain/post-canvas.ts` owns that area, from Meta's Reels
+guide. `dragBox` in `editor/post-box-drag.ts` snaps a moved box to the frame's
+centre and edges and to the safe area's sides. Searches: safe area, safe zone,
+Reels overlay, thirds grid, snapping guides, drag guides.
+
+A Post Studio clip's rounded corners, border and drop shadow are its `edge`
+(`media-composition/domain/post-clip-edge.ts`), compiled onto the region and
+measured by `media-composition/services/region-edge-painter.ts`, so the export
+canvas and the preview's CSS draw the same edge. Searches: rounded corners,
+border, stroke, drop shadow, picture in picture, PiP frame.
+
+A Post Studio preview video keeps a canvas copy of its picture over it, so a
+browser that stops drawing the video's own layer (seen 2026-09-30: decoder
+healthy, slot black) still shows footage. The editor's media layer uses
+`PreviewVideoFrameRecovery` in
+`media-composition/services/preview-video-frame-recovery.ts`, which also primes
+and re-seeks the decoder. The timing screen uses `videoMirror` in
+`media-composition/services/video-mirror.ts`, kept separate on purpose: it only
+watches, because the timing session reads the video's play and pause events
+as the creator's own. Searches: black video, blackout, retained frame, video
+surface, video to canvas, frame copy.
+
+A Post Studio clip opens out only over footage its take's file holds:
+`trimItem` stops at the file's first and last frames, so a clip linked to a
+pre-cut file has nothing to reveal. `replaceTakeMedia` in
+`post-project-edits.ts` points a take at a longer copy of its video, such as the
+whole recording the clip was cut from, and moves every clip's source points,
+its keyframes and the take's timing (`shiftTakeTiming` in `take-timing.ts`) by
+the offset, so the post plays the same and each edge can then be dragged out.
+`docs/superpowers/specs/tutorial-videos-scripts/use-whole-recording.ts` applies
+it to a saved post. Searches: whole recording, replace media, relink, pre-cut
+clip, extend clip, trim won't extend, reveal hidden footage.
+
+A whole item turns with its box's `turn` (`PostBox` in
+`media-composition/domain/post-project.ts`): degrees clockwise about the box's
+centre, edge and all, compiled onto the region's `turn` and keyed like the
+rest of the box. `turnAboutCentre` in `region-edge-painter.ts` turns the
+export's drawing, whose shadow still drops straight down the frame. The
+preview's turn handle, turned resizing, hit testing and handle cursors are
+`turnBox`, `dragBox`, `boxContains` and `handleCursor` in
+`editor/post-box-drag.ts`; the Position tool types the turn. A picture's own
+turn inside its box is its framing's `rotation`, set on the crop screen.
+Searches: turn, rotate, rotation handle, tilt, spin a clip.
+
+Canvas rounded-rectangle paths use `traceRoundedRect` in
+`shared/render/utils/trace-rounded-rect.ts`, which keeps the radius within
+half of each side and falls back to arcs without `roundRect`. Searches: round
+rect, rounded clip, pill path, corner radius. The choreo card's older
+`roundRect` in `info-card-canvas-renderer.ts` and `roundRectPath` in
+`card-back-bitmaps-percard.ts` predate it; move them to it rather than adding
+another.
+
 | Search vocabulary                                                                                                                   | Canonical owner                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
 | ----------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | scene boot, scene switch, persistent worker renderer, poster handoff, shader warmup, GLB prefetch                                   | `shared/3d/worker-renderer/` owns the persistent production worker for all ten environments; `shared/3d/scene-boot/` owns legacy main-thread boot (Record Scene); `shared/3d/rendering/viewer-lighting-rig.ts` owns viewer lighting; environment worlds under `shared/3d/environments/worlds/` stay renderer-neutral with thin Svelte and worker adapters                                                                                                                                                                                                                                                                  |
 | filter, chip, pill, toggle row, segmented selector                                                                                  | `FilterChipBase` for independent toggles; `SegmentedControl` for exactly-one selection; see `.claude/rules/chip-primitives.md`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
-| slider, range input, amount, labeled value                                                                                          | `shared/ui/components/ValueSlider.svelte` for a named amount with a visible track and its value beside the name; `ScrubbableNumber` for dense scrub-to-change numbers in desktop tools                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| link, hyperlink, text link, reading list, source list, external link, inline mention, next step, navigation pill | `shared/ui/components/LinkChip.svelte`: every text link is a pill (`size="inline"` inside a sentence); external links open a new tab and say so. Closest matches kept separate: `FilterChipBase` (buttons, no href), `EntityCard`-style record boxes. See `.claude/rules/no-text-links.md`. Decision: create. |
+| slider, range input, amount, labeled value                                                                                          | `shared/ui/components/ValueSlider.svelte` for a named amount with a visible track and its value in a box beside it that types an exact value; `ScrubbableNumber` for dense scrub-to-change numbers in desktop tools                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| typed value, type a number, number field, exact value, editable readout, press to type, time entry | `shared/ui/components/TypeableValue.svelte` shows a reading in a box that opens a text field: Enter or leaving sets the value, Escape keeps the old one, text with no value stays open and marked; `shared/ui/typed-number.ts` reads what was typed (decimal comma, typographic minus, units), `parseClock` in Post Studio's `post-builder-format.ts` reads a time |
 | crossfade, keyed swap, canvas handoff, animated height                                                                              | `shared/components/Crossfade.svelte` for cheap keyed content; `shared/components/DualSourceCrossfade.svelte` for heavy or stateful sources (`clip={false}` preserves stage-owned overflow controls); see `.claude/rules/crossfade-primitive.md`                                                                                                                                                                                                                                                                                                                                                                            |
 | layout motion, reflow, panel presence, reorder, FLIP, intrinsic modal height                                                        | `shared/transitions/motion.ts` (`createIntrinsicHeightMotion` through `BaseModal.animateSize` for content-sized dialogs), `shared/panels/PanelGroup.svelte`, Svelte `animate:flip` with `flipDuration()`, and `shared/transitions/layout-flip.ts`; see `.claude/rules/no-layout-shift.md`                                                                                                                                                                                                                                                                                                                                  |
 | step grid, pictograph preview swap, visual slot identity, difficulty and LOOP metadata                                              | `features/create/shared/workspace-panel/sequence-display/components/StepGrid.svelte` owns document-vs-slot identity; `SequenceMetadataRail.svelte` owns compact difficulty and LOOP indicators                                                                                                                                                                                                                                                                                                                                                                                                                             |
@@ -308,7 +408,10 @@ row, toolbar, dock, bottom sheet, side panel, inspector, crop tool.
 | canvas2d effect, emitter tips, custom effect surface                                                                                | `shared/effects/services/canvas2d-effect-host.ts`; the render registry owns normal in-loop dispatch                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
 | Firestore reads, query bounds, indexes, egress                                                                                      | `.claude/rules/firestore-cost-discipline.md` and `firestore.indexes.json`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
 | environment map, image-based lighting, IBL, RoomEnvironment, PMREM, scene.environment, specular fill, flat PBR, metal renders black | `shared/3d/rendering/room-environment.ts` owns the prefiltered neutral room: `getRoomEnvironmentTexture(renderer)` builds three.js `RoomEnvironment` through one `PMREMGenerator` per renderer and caches the texture. Consumers set `scene.environment` and `scene.environmentIntensity` themselves and clear both on teardown (the bake-off route, and Ocean through `ocean-scene-appearance.ts`). The production performer viewer has no environment map today; adding one is a viewer decision with visual verification. HDRI or scene-specific environments are a different owner. Do not build a second PMREM cache. |
-| quiet sign-in, deferred auth, saved session probe, returning visitor, public or headerless page sign-in, settings sync              | `shared/auth/services/deferred-sign-in.ts`: `signInWhenIdle` checks browser storage for a saved session without loading Firebase, then starts `authState.initialize()` at idle, which attaches settings sync. `SiteHeader.svelte` keeps the coarse `hasFirebaseAuthDatabase` check; the headerless `/shape-engine` route uses `hasSavedFirebaseUser`, because that page loads Firebase for every visitor. Embeds (`/embed/*`) run inside other sites and stay device-only.                                                                                                                                                 |
+| quiet sign-in, deferred auth, saved session probe, returning visitor, public or headerless page sign-in, settings sync              | `shared/auth/services/deferred-sign-in.ts`: `signInWhenIdle` checks browser storage for a saved session without loading Firebase, then starts `authState.initialize()` at idle, which attaches settings sync. `SiteHeader.svelte` and the headerless `/shape-engine` and `/sequence/[id]` routes use `hasSavedFirebaseUser`, which looks for the saved user record in localStorage (Safari and iOS) and in Firebase's IndexedDB database. Never test only whether that database exists: Safari and iOS never create it, and it stays for signed-out visitors. Embeds (`/embed/*`) stay device-only.                        |
+| sign-up window on a page without the app shell, guest save limit, auth drawer host                                                  | `shared/auth/components/AuthModalHost.svelte` listens to `authDrawerState` and loads `AuthModal` only when something opens it. `MainApplication` hosts the window inside the app; mount the host on routes outside it (`/shape-engine`, `/embed/spinner` opened directly), never on a component the app also uses.                                                                                                                                                                                                                                                                                                         |
+| framed by another site, cross-site iframe, partitioned storage, embed account actions                                               | `shared/foundation/utils/embedded-in-another-site.ts`: `isEmbeddedInAnotherSite()` is true only inside another origin's frame. The canvas and card menus leave the library save out there, and the spinner page leaves out its sign-up window, since storage in that frame never reaches our own site.                                                                                                                                                                                                                                                                                                                     |
+| page stage, section glide, fly-through, scroll between sections, one section at a time                                              | `src/routes/(public)/composer/_glide/`: `ComposerGlide.svelte` stages the /composer sections and `glide-plan.ts` holds the math, timed by `DURATION.scene`. Smaller or zoomed windows, touch screens, and reduced motion keep the plain page; see that route's `presentation-guardrails.md`. /about renders the same sections unstaged.                                                                                                                                                                                                                                                                                    |
 
 When no owner exists, record the search evidence and establish one owner. A
 different style or smaller API is not a separate capability.
@@ -335,3 +438,32 @@ keeps the preview.
 Discovery: `generateForSequence`, `qr-image-cache`, `prepared-scan-card`,
 `warmSequenceCells`, `pictograph-cloud-cache`. Decision: extend these owners;
 do not introduce a second QR renderer or scan-asset preparation pipeline.
+
+Sign-in reads that must not load Firebase go through
+`shared/auth/loaded-auth.ts` (`loadedAuth.currentUser`) and
+`shared/auth/state/loaded-auth-state.svelte.ts` (`loadedAuthState.isAdmin`,
+`loadedAuthState.isAuthenticated`). `firebase.ts` and `auth-state.svelte.ts`
+remain the owners and register a reader when they load; before that nobody can
+be signed in, so the answers are null and false. Public pages import settings,
+feature flags, the premium prop check, the sequence thumbnails and the Level 1
+guide's admin gate, and importing either owner there put Firebase Auth and
+Firestore on their first download. Firebase calls on those paths (QR short
+codes, card catalogs, guide overrides, learning progress, thumbnail uploads,
+and the shop's products, cart and waitlist) load it with `import()` that names
+the Firebase modules directly, because the small-chunk merge in
+`vite.config.ts` can fold a small wrapper module back into the page. A screen
+that brings Firebase with it mounts through `LazyMount` on a public page, as
+the Learn tab's Play, TIKA and Guide screens do on the public concept course.
+Code that follows sign-in changes without loading Firebase itself waits with
+`whenAuthLoaded` in `loaded-auth.ts`. `hasSavedFirebaseUser`
+(`shared/auth/services/saved-firebase-user.ts`, re-exported by
+`deferred-sign-in.ts`) imports nothing and tells whether a saved session could
+sign anyone in; the card layout settings (`image-composition-state.svelte.ts`)
+load the bootstrap only when it does. `scripts/verify-public-firebase.mjs`
+checks the listed public pages in the built chunk graph, and
+`tests/unit/landing/home-first-visit-firebase.test.ts` follows the home page's
+LazyMount components and first-visit `import()` calls in source. Searches:
+currentUser, signed-in user, isAdmin, isAuthenticated, whenAuthLoaded, saved
+session, public page Firebase, first download, LazyMount. Decision: extend the two owners; code
+a public page loads at startup uses these readers instead of importing either
+owner.

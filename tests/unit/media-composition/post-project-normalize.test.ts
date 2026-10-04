@@ -15,6 +15,17 @@ import {
 } from "./post-project-fixtures";
 
 describe("normalizeProject", () => {
+  it("binds a saved legacy crossfade to its current neighbor", () => {
+    const result = normalizeProject(
+      project([
+        card("a", 5, { transitionOut: { type: "crossfade", duration: 1 } }),
+        card("b", 4),
+        card("c", 4),
+      ])
+    );
+    expect(result.tracks[0]!.items[0]!.transitionOut?.incomingId).toBe("b");
+  });
+
   it("lays main clips end to end at their speed", () => {
     const result = normalizeProject(
       project([

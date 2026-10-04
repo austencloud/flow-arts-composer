@@ -1,4 +1,5 @@
 <script lang="ts">
+  import LinkChip from "$lib/shared/ui/components/LinkChip.svelte";
   import Seo from "$lib/shared/components/Seo.svelte";
   import OpenChapter from "$lib/shared/landing/components/OpenChapter.svelte";
   import SequenceHeroDemo from "$lib/shared/landing/components/SequenceHeroDemo.svelte";
@@ -53,8 +54,9 @@
       <div class="duo-copy">
         <div class="prose">
           <p>
-            Fans use the same single-ended translation as <a
-              href="/notation/clubs">clubs</a
+            Fans use the same single-ended translation as <LinkChip
+              size="inline"
+              href="/notation/clubs">clubs</LinkChip
             >. Imagine the pinky end of a staff is invisible. A fan's
             orientation follows the staff's thumb end, and its flat face makes
             that direction easy to read. The grid positions, letters, and timing

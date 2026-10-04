@@ -7,6 +7,8 @@
   import type { BuildModeId } from "$lib/shared/foundation/ui/ui-types";
   import type { HapticFeedback } from "$lib/shared/application/services/haptic-feedback";
   import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+  import type { FanAppearance } from "$lib/shared/pictograph/prop/domain/fan-appearance";
+  import type { PropLook } from "$lib/shared/pictograph/prop/domain/prop-look";
   import StepCell from "./StepCell.svelte";
 
   let {
@@ -22,6 +24,10 @@
     isTimelineMode = false,
     leftPropTypeOverride = undefined,
     rightPropTypeOverride = undefined,
+    fanAppearanceOverride = undefined,
+    propLookOverride = undefined,
+    leftBuugengFlippedOverride = undefined,
+    rightBuugengFlippedOverride = undefined,
     leftColorOverride = undefined,
     rightColorOverride = undefined,
     onContentReady = undefined,
@@ -40,6 +46,10 @@
      *  settings) — same convention as StepCell/PictographContainer. */
     leftPropTypeOverride?: PropType;
     rightPropTypeOverride?: PropType;
+    fanAppearanceOverride?: FanAppearance;
+    propLookOverride?: PropLook;
+    leftBuugengFlippedOverride?: boolean;
+    rightBuugengFlippedOverride?: boolean;
     leftColorOverride?: string;
     rightColorOverride?: string;
     /** Forwarded from the inner cell — see StepCell's onContentReady. */
@@ -88,6 +98,10 @@
     {animationEpoch}
     {leftPropTypeOverride}
     {rightPropTypeOverride}
+    {fanAppearanceOverride}
+    {propLookOverride}
+    {leftBuugengFlippedOverride}
+    {rightBuugengFlippedOverride}
     {leftColorOverride}
     {rightColorOverride}
     {onContentReady}
