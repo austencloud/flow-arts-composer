@@ -23,6 +23,25 @@ const DEFAULT_SAMPLE_RATE = 48_000;
 /** Any valid rate works - see the comment on its one use in decodeTakeAudio. */
 const DECODE_CONTEXT_SAMPLE_RATE = 44_100;
 
+/**
+ * No bytes for this long means the download has stopped, not slowed. Paused
+ * preview videos can hold a whole HTTP/2 connection's receive window, and then
+ * a take's body never arrives: the render used to sit at "Mixing the sound" 0%
+ * for good.
+ */
+export const AUDIO_DOWNLOAD_STALL_MS = 30_000;
+
+/** A take's file stopped arriving. This fails the render instead of quietly
+ *  exporting the post without its sound. */
+export class AudioDownloadStalledError extends Error {
+  constructor(readonly url: string) {
+    super(
+      `No audio bytes arrived for ${AUDIO_DOWNLOAD_STALL_MS / 1000}s: ${url}`
+    );
+    this.name = "AudioDownloadStalledError";
+  }
+}
+
 export interface BuildMixedAudioTrackInput {
   segments: readonly PostAudioSegment[];
   durationSeconds: number;
@@ -33,6 +52,9 @@ export interface BuildMixedAudioTrackInput {
   sampleRate?: number;
   /** Cancelling the render stops the downloads rather than waiting on them. */
   signal?: AbortSignal;
+  /** Share of the takes' bytes downloaded so far, from 0 to 1. Reported once
+   *  every download knows its size. */
+  onProgress?: (fraction: number) => void;
 }
 
 /**
@@ -59,18 +81,41 @@ export async function buildMixedAudioTrack(
 
   const neededTakeIds = [...new Set(segments.map((segment) => segment.takeId))];
   const sources = new Map<string, PostAudioSource>();
+  // A stalled file ends the other downloads too: the render has failed.
+  const downloads = new AbortController();
+  const stopDownloads = () => downloads.abort();
+  input.signal?.addEventListener("abort", stopDownloads, { once: true });
+  if (input.signal?.aborted) downloads.abort();
+  const progress = downloadProgress(input.onProgress);
 
-  // One fetch+decode per take, not per segment - a take can back more than
-  // one segment (e.g. reused across full-speed acts, or split across a
-  // sequence layer's pieces) but its audio only needs reading once.
-  await Promise.all(
-    neededTakeIds.map(async (takeId) => {
-      const url = input.takeUrls.get(takeId);
-      if (!url) return;
-      const source = await decodeTakeAudio(takeId, url, input.signal);
-      if (source) sources.set(takeId, source);
-    })
-  );
+  // One fetch+decode per file, not per take or segment - a take can back more
+  // than one segment (e.g. reused across full-speed acts, or split across a
+  // sequence layer's pieces), and two takes can cut from the same recording,
+  // but each file only needs reading once.
+  const decodes = new Map<string, Promise<PostAudioSource | null>>();
+  for (const takeId of neededTakeIds) {
+    const url = input.takeUrls.get(takeId);
+    if (url && !decodes.has(url)) {
+      decodes.set(
+        url,
+        decodeTakeAudio(takeId, url, downloads.signal, progress.track(url))
+      );
+    }
+  }
+  try {
+    await Promise.all(
+      neededTakeIds.map(async (takeId) => {
+        const url = input.takeUrls.get(takeId);
+        const source = url ? await decodes.get(url) : null;
+        if (source) sources.set(takeId, source);
+      })
+    );
+  } catch (error) {
+    downloads.abort();
+    throw error;
+  } finally {
+    input.signal?.removeEventListener("abort", stopDownloads);
+  }
   if (input.signal?.aborted) return null;
 
   const mixed = mixPostAudio({
@@ -98,21 +143,116 @@ export async function buildPostAudioTrack(
   });
 }
 
-/** Fetches and decodes one take's audio. Failure - a missing file, a codec
- *  the browser can't decode, a network error - is swallowed and logged: the
- *  mix simply plays that segment's span as silence rather than failing the
- *  whole export over one bad take. */
-async function decodeTakeAudio(
-  takeId: string,
+interface DownloadTracker {
+  expect(bytes: number): void;
+  receive(bytes: number): void;
+}
+
+/** Sums every download into one fraction. Until each file's size is known the
+ *  total would keep growing, so nothing is reported before then. */
+function downloadProgress(onProgress?: (fraction: number) => void): {
+  track(url: string): DownloadTracker;
+} {
+  const expected = new Map<string, number>();
+  let tracked = 0;
+  let received = 0;
+  const report = () => {
+    if (!onProgress || expected.size < tracked) return;
+    let total = 0;
+    for (const bytes of expected.values()) total += bytes;
+    if (total > 0) onProgress(Math.min(1, received / total));
+  };
+  return {
+    track(url) {
+      tracked++;
+      return {
+        expect(bytes) {
+          expected.set(url, bytes);
+          report();
+        },
+        receive(bytes) {
+          received += bytes;
+          report();
+        },
+      };
+    },
+  };
+}
+
+/** Reads a whole body, failing with `AudioDownloadStalledError` once no bytes
+ *  have arrived for `AUDIO_DOWNLOAD_STALL_MS`, waiting for headers included. */
+async function downloadAudioFile(
   url: string,
-  signal?: AbortSignal
-): Promise<PostAudioSource | null> {
+  signal: AbortSignal,
+  tracker: DownloadTracker
+): Promise<ArrayBuffer> {
+  const request = new AbortController();
+  const cancel = () => request.abort();
+  signal.addEventListener("abort", cancel, { once: true });
+  if (signal.aborted) request.abort();
+  let stalled = false;
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const watch = () => {
+    clearTimeout(timer);
+    timer = setTimeout(() => {
+      stalled = true;
+      request.abort();
+    }, AUDIO_DOWNLOAD_STALL_MS);
+  };
   try {
-    const response = await fetch(url, { signal });
+    watch();
+    const response = await fetch(url, { signal: request.signal });
     if (!response.ok) {
       throw new Error(`Fetch failed with status ${response.status}`);
     }
-    const arrayBuffer = await response.arrayBuffer();
+    const length = Number(response.headers.get("content-length")) || 0;
+    tracker.expect(length);
+    if (!response.body) return await response.arrayBuffer();
+    const reader = response.body.getReader();
+    // A known length fills one buffer in place, so a long take is never held
+    // twice while its chunks are joined.
+    let bytes = new Uint8Array(length);
+    let size = 0;
+    for (;;) {
+      watch();
+      const { done, value } = await reader.read();
+      if (done) break;
+      if (size + value.byteLength > bytes.byteLength) {
+        const grown = new Uint8Array(
+          Math.max(size + value.byteLength, bytes.byteLength * 2)
+        );
+        grown.set(bytes.subarray(0, size));
+        bytes = grown;
+      }
+      bytes.set(value, size);
+      size += value.byteLength;
+      tracker.receive(value.byteLength);
+    }
+    return size === bytes.byteLength
+      ? bytes.buffer
+      : bytes.buffer.slice(0, size);
+  } catch (error) {
+    if (stalled) throw new AudioDownloadStalledError(url);
+    throw error;
+  } finally {
+    clearTimeout(timer);
+    signal.removeEventListener("abort", cancel);
+  }
+}
+
+/** Fetches and decodes one take's audio. Failure - a missing file, a codec
+ *  the browser can't decode, a network error - is swallowed and logged: the
+ *  mix simply plays that segment's span as silence rather than failing the
+ *  whole export over one bad take. A stalled download says nothing about the
+ *  take, so it fails the render where it can be seen instead. */
+async function decodeTakeAudio(
+  takeId: string,
+  url: string,
+  signal: AbortSignal,
+  tracker: DownloadTracker
+): Promise<PostAudioSource | null> {
+  try {
+    const arrayBuffer = await downloadAudioFile(url, signal, tracker);
     // A throwaway OfflineAudioContext is the standard way to reach
     // decodeAudioData without touching the live output device or needing a
     // user gesture to leave "suspended" (a real AudioContext can start
@@ -128,7 +268,8 @@ async function decodeTakeAudio(
     }
     return { sampleRate: audioBuffer.sampleRate, channels };
   } catch (error) {
-    if (signal?.aborted) return null;
+    if (error instanceof AudioDownloadStalledError) throw error;
+    if (signal.aborted) return null;
     console.warn(
       `[post-audio-track] Take "${takeId}" audio could not be decoded; treating it as silent.`,
       error

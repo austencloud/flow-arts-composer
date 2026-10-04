@@ -91,7 +91,10 @@
   import { createStaffTipAnalysis } from "$lib/shared/media-composition/state/staff-tip-analysis.svelte";
   import { loadAnimationOverlayPainter } from "$lib/shared/media-composition/services/animation-overlay-painter-registry";
   import { planProjectAudio } from "$lib/shared/media-composition/domain/post-audio-plan";
-  import { buildMixedAudioTrack } from "$lib/shared/media-composition/services/post-audio-track";
+  import {
+    AudioDownloadStalledError,
+    buildMixedAudioTrack,
+  } from "$lib/shared/media-composition/services/post-audio-track";
   import {
     exportPostStudioVideo,
     type PostStudioExportProgress,
@@ -2262,6 +2265,13 @@
         durationSeconds: compiled.durationSeconds,
         takeUrls,
         signal: exportAbort.signal,
+        onProgress: (fraction) => {
+          exportProgress = {
+            completedFrames: Math.floor(fraction * totalFrames),
+            totalFrames,
+            phase: "audio",
+          };
+        },
       });
       if (exportCancelled) return false;
       audioUrl = audio ? URL.createObjectURL(audio) : null;
@@ -2289,9 +2299,11 @@
       if (!exportCancelled) {
         console.error("[PostStudio] Export failed:", error);
         exportError =
-          error instanceof Error
-            ? error.message
-            : t("share_studio_render_failed");
+          error instanceof AudioDownloadStalledError
+            ? t("share_studio_sound_stalled")
+            : error instanceof Error
+              ? error.message
+              : t("share_studio_render_failed");
       }
       return false;
     } finally {

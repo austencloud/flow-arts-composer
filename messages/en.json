@@ -6153,6 +6153,7 @@
   "share_studio_render_failed": "The post could not be rendered.",
   "share_studio_done": "Done",
   "share_studio_mixing_sound": "Mixing the sound",
+  "share_studio_sound_stalled": "The sound stopped downloading. Close other Post Studio tabs, then render again.",
   "share_studio_rendering_frame": "Rendering frame",
   "share_studio_of": "of",
   "share_studio_rendering": "Rendering",
