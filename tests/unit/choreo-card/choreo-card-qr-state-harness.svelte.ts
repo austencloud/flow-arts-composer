@@ -39,15 +39,29 @@ export function createChoreoCardQrStateHarness(options: HarnessOptions) {
   } as ReturnType<typeof getQRCodeGenerator>;
 
   let qrState!: ReturnType<typeof createChoreoCardQrState>;
+  let settledView!: { readonly current: boolean };
   const dispose = $effect.root(() => {
     qrState = createChoreoCardQrState(() => deps, {
       getGenerator: () => generator,
     });
+    // A card reads `settled` through a derived, as its template does.
+    const settled = $derived(qrState.settled);
+    settledView = {
+      get current() {
+        return settled;
+      },
+    };
   });
 
   return {
     get qrState() {
       return qrState;
+    },
+    get settled() {
+      return settledView.current;
+    },
+    setShowQRCode(showQRCode: boolean) {
+      deps = { ...deps, showQRCode };
     },
     setProps(leftPropType: PropType, rightPropType: PropType) {
       deps = { ...deps, leftPropType, rightPropType };
