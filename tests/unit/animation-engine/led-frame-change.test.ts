@@ -221,3 +221,87 @@ describe("WebGLLedRenderer resize", () => {
     vi.unstubAllGlobals();
   });
 });
+
+describe("WebGLLedRenderer reframe", () => {
+  interface RenderProbe extends SegmentProbe {
+    canvas: { width: number; height: number };
+    gl: unknown;
+    initialized: boolean;
+    createFramebuffers(): void;
+    resize(width: number, height: number): void;
+    renderLeds(input: LedFrameInput, config: typeof DEFAULT_LED_CONFIG): void;
+  }
+
+  const PROGRAMS = [
+    "streakProgram",
+    "accumProgram",
+    "boxResolveProgram",
+    "bloomDownProgram",
+    "bloomUpProgram",
+    "displayProgram",
+  ] as const;
+
+  /** A renderer on a GL stand-in that logs which shader programs run. */
+  function renderProbe() {
+    const used: string[] = [];
+    const gl = new Proxy(
+      {
+        createTexture: () => ({}),
+        createFramebuffer: () => ({}),
+        useProgram: (program: { name: string }) => used.push(program.name),
+      } as Record<string | symbol, unknown>,
+      { get: (target, key) => (key in target ? target[key] : () => undefined) }
+    );
+    vi.stubGlobal("devicePixelRatio", 1);
+    const probe = new WebGLLedRenderer() as unknown as RenderProbe &
+      Record<(typeof PROGRAMS)[number], unknown>;
+    probe.canvas = { width: 396, height: 700 };
+    probe.gl = gl;
+    probe.initialized = true;
+    probe.displayWidth = 396;
+    probe.displayHeight = 700;
+    for (const name of PROGRAMS) {
+      probe[name] = { program: { name }, uniforms: { get: () => ({}) } };
+    }
+    probe.createFramebuffers();
+    return { probe, used };
+  }
+
+  function tunnelFrame(timeMs: number, height: number, u: number): LedFrameInput {
+    return {
+      leds: staffInFrame(396, height, u, 0.4),
+      currentTime: timeMs,
+      canvasWidth: 396,
+      canvasHeight: height,
+    };
+  }
+
+  it("shows the moment again on a resized box without a new exposure", () => {
+    const { probe, used } = renderProbe();
+    probe.renderLeds(tunnelFrame(967, 700, 0.3), DEFAULT_LED_CONFIG);
+    probe.renderLeds(tunnelFrame(1000, 700, 0.4), DEFAULT_LED_CONFIG);
+    expect(used).toContain("streakProgram");
+
+    // The tunnel's box shrinks one tick after the frame was drawn.
+    probe.resize(396, 690);
+    used.length = 0;
+    probe.renderLeds(tunnelFrame(1000, 690, 0.4), DEFAULT_LED_CONFIG);
+    expect(used).not.toContain("streakProgram");
+    expect(used).not.toContain("accumProgram");
+    expect(used).not.toContain("boxResolveProgram");
+    expect(used).toContain("displayProgram");
+
+    // Later ticks of that moment draw nothing at all.
+    used.length = 0;
+    probe.renderLeds(tunnelFrame(1000, 690, 0.4), DEFAULT_LED_CONFIG);
+    expect(used).toHaveLength(0);
+
+    // The next frame streaks on from where the staff was, without a new dot.
+    const build = vi.spyOn(probe, "buildSegments");
+    probe.renderLeds(tunnelFrame(1033, 690, 0.5), DEFAULT_LED_CONFIG);
+    const written = build.mock.results[0]!.value as number;
+    expect(sweptLength(probe, written)).toBeCloseTo(2 * 39.6, 0);
+    expect(probe.instanceData[9]).toBe(0);
+    vi.unstubAllGlobals();
+  });
+});
