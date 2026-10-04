@@ -97,6 +97,14 @@ interface FBOAttachment {
 	texture: WebGLTexture;
 }
 
+/** Diagnostic switches read from `window.__tka_led_blast`. */
+interface LedBlastFlags {
+	noTrail: boolean;
+	noBloom: boolean;
+	noBloomUpsample: boolean;
+	spritesOnly: boolean;
+}
+
 /** The frame's centred square, the region LED positions are drawn in. */
 function centredSquare(width: number, height: number): { x: number; y: number; side: number } {
 	const side = Math.min(width, height);
@@ -350,7 +358,7 @@ export class WebGLLedRenderer {
 
 	// Nuclear blast diagnostic flags — set from console:
 	// window.__tka_led_blast = { noTrail: true }  etc.
-	private getBlastFlags(): { noTrail: boolean; noBloom: boolean; noBloomUpsample: boolean; spritesOnly: boolean } {
+	private getBlastFlags(): LedBlastFlags {
 		const w = typeof window !== "undefined" ? (window as unknown as Record<string, unknown>).__tka_led_blast as Record<string, boolean> | undefined : undefined;
 		return {
 			noTrail: w?.noTrail === true,
@@ -382,7 +390,21 @@ export class WebGLLedRenderer {
 		// An export holds each frame's time for a dozen loop ticks; a repeat of
 		// a continuous frame would only bead the trail. See LedRepeatFrameGuard.
 		const lookKey = LedRepeatFrameGuard.lookKey(config.look, this.reducedMotion);
-		if (this.repeatGuard.isRepeat(input, lookKey, this.displayWidth, this.displayHeight)) {
+		const verdict = this.repeatGuard.classify(
+			input,
+			lookKey,
+			this.displayWidth,
+			this.displayHeight,
+		);
+		if (verdict === "repeat") return;
+		if (verdict === "reframe" && !blast.noTrail && !blast.spritesOnly) {
+			// The moment already drawn, on a frame that resized after it was drawn.
+			// `resize` carried the retained light onto the new square; drawing it
+			// as a new exposure deposited a dot at every LED and decayed the trail
+			// again, once per frame of the opening tunnel's resizing box.
+			this.adoptFrame(input.canvasWidth, input.canvasHeight);
+			this.present(this.accumFBOs!.read.texture, config, blast);
+			this.repeatGuard.record(input, lookKey, this.displayWidth, this.displayHeight, true);
 			return;
 		}
 
@@ -492,6 +514,16 @@ export class WebGLLedRenderer {
 		const sceneTexture = (blast.noTrail || blast.spritesOnly)
 			? this.depositFBO!.texture
 			: this.accumFBOs!.read.texture;
+		this.present(sceneTexture, config, blast);
+	}
+
+	/** Glare and tone mapping: shows `sceneTexture` on the visible canvas. */
+	private present(
+		sceneTexture: WebGLTexture,
+		config: LedOverlayConfig,
+		blast: LedBlastFlags,
+	): void {
+		const gl = this.gl!;
 
 		// 3-4. Glare pyramid
 		if (!blast.noBloom && !blast.spritesOnly) {
@@ -709,14 +741,8 @@ export class WebGLLedRenderer {
 		dt: number,
 		timeDiscontinuity: boolean,
 	): number {
-		const frameChanged =
-			input.canvasWidth !== this.inputFrame.width || input.canvasHeight !== this.inputFrame.height;
-		const carried =
-			frameChanged &&
-			this.carryPositions(this.inputFrame, { width: input.canvasWidth, height: input.canvasHeight });
-		this.inputFrame.width = input.canvasWidth;
-		this.inputFrame.height = input.canvasHeight;
-		const isDiscontinuity = timeDiscontinuity || (frameChanged && !carried);
+		const keptPositions = this.adoptFrame(input.canvasWidth, input.canvasHeight);
+		const isDiscontinuity = timeDiscontinuity || !keptPositions;
 
 		const ledCount = Math.min(input.leds.length, MAX_LEDS);
 		const scaleX = this.displayWidth / Math.max(input.canvasWidth, 1);
@@ -926,6 +952,19 @@ export class WebGLLedRenderer {
 		}
 
 		return written;
+	}
+
+	/**
+	 * Makes `width` x `height` the input frame, carrying the stored positions
+	 * onto its square. Returns false when there were none to carry, so the next
+	 * streak starts fresh.
+	 */
+	private adoptFrame(width: number, height: number): boolean {
+		if (width === this.inputFrame.width && height === this.inputFrame.height) return true;
+		const carried = this.carryPositions(this.inputFrame, { width, height });
+		this.inputFrame.width = width;
+		this.inputFrame.height = height;
+		return carried;
 	}
 
 	/**
