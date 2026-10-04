@@ -19,7 +19,7 @@ interface SegmentProbe {
   displayHeight: number;
 }
 
-const STRIDE = 11;
+const STRIDE = 15;
 
 function staff(x: number, y: number): LedSample[] {
   return [0, 1].map((ledIndex) => ({
@@ -153,6 +153,101 @@ describe("WebGLLedRenderer frame changes", () => {
     );
 
     expect(sweptLength(probe, written)).toBeGreaterThan(100);
+  });
+});
+
+describe("WebGLLedRenderer join cuts", () => {
+  const CENTRE = { x: 200, y: 350 };
+  const RADIUS = 60;
+
+  /** A staff spinning about its middle, at `degrees`, with an LED at each end. */
+  function spunStaff(degrees: number): LedSample[] {
+    const a = (degrees * Math.PI) / 180;
+    return [-1, 1].map((side, ledIndex) => ({
+      x: CENTRE.x + side * RADIUS * Math.cos(a),
+      y: CENTRE.y + side * RADIUS * Math.sin(a),
+      propIndex: 0,
+      ledIndex,
+      endpointIndex: ledIndex,
+      brightness: 1,
+      r: 1,
+      g: 1,
+      b: 1,
+    }));
+  }
+
+  function spin(probe: SegmentProbe, degrees: number, timeMs: number): number {
+    return probe.buildSegments(
+      { leds: spunStaff(degrees), currentTime: timeMs, canvasWidth: 396, canvasHeight: 700 },
+      DEFAULT_LED_CONFIG,
+      1 / 30,
+      false
+    );
+  }
+
+  function segment(probe: SegmentProbe, i: number) {
+    const d = probe.instanceData;
+    const o = i * STRIDE;
+    return {
+      a: { x: d[o]!, y: d[o + 1]! },
+      b: { x: d[o + 2]!, y: d[o + 3]! },
+      cutStart: { x: d[o + 11]!, y: d[o + 12]! },
+      cutEnd: { x: d[o + 13]!, y: d[o + 14]! },
+    };
+  }
+
+  const near = (p: { x: number; y: number }, q: { x: number; y: number }) =>
+    Math.hypot(p.x - q.x, p.y - q.y) < 1e-3;
+
+  it("cuts the chords of one arc along a shared line where they meet", () => {
+    const probe = renderer();
+    spin(probe, 0, 1000);
+    const written = spin(probe, 30, 1033);
+
+    let joins = 0;
+    for (let i = 0; i + 1 < written; i++) {
+      const here = segment(probe, i);
+      const next = segment(probe, i + 1);
+      if (!near(here.b, next.a)) continue;
+      joins++;
+      expect(here.cutEnd.x).toBeCloseTo(next.cutStart.x, 5);
+      expect(here.cutEnd.y).toBeCloseTo(next.cutStart.y, 5);
+      expect(Math.hypot(here.cutEnd.x, here.cutEnd.y)).toBeCloseTo(1, 5);
+      // Not square to either chord: the cut bisects the angle between them.
+      const dir = { x: here.b.x - here.a.x, y: here.b.y - here.a.y };
+      const len = Math.hypot(dir.x, dir.y);
+      expect((here.cutEnd.x * dir.x + here.cutEnd.y * dir.y) / len).toBeLessThan(0.99999);
+    }
+    expect(joins).toBeGreaterThan(0);
+  });
+
+  it("meets the next frame's first chord on the arc's tangent", () => {
+    const probe = renderer();
+    spin(probe, 0, 1000);
+    const first = spin(probe, 30, 1033);
+    const tip = spunStaff(30)[1]!;
+    const handOff = { x: tip.x, y: tip.y };
+    let endCut: { x: number; y: number } | undefined;
+    for (let i = 0; i < first; i++) {
+      const s = segment(probe, i);
+      if (near(s.b, handOff)) endCut = s.cutEnd;
+    }
+
+    const second = spin(probe, 60, 1066);
+    let startCut: { x: number; y: number } | undefined;
+    for (let i = 0; i < second; i++) {
+      const s = segment(probe, i);
+      if (near(s.a, handOff)) startCut = s.cutStart;
+    }
+
+    expect(endCut).toBeDefined();
+    expect(startCut).toBeDefined();
+    expect(endCut!.x).toBeCloseTo(startCut!.x, 4);
+    expect(endCut!.y).toBeCloseTo(startCut!.y, 4);
+    // The tip turns clockwise on screen (y down), so its tangent at 30° is
+    // (-sin 30°, cos 30°).
+    expect(endCut!.x).toBeCloseTo(-0.5, 3);
+    expect(endCut!.y).toBeCloseTo(Math.sqrt(3) / 2, 3);
   });
 });
 
