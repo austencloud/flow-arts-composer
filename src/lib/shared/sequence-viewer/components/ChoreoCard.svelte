@@ -261,6 +261,7 @@
   // resolves the answer is false — which is also the correct answer for the
   // signed-out visitor who dominates the landing path.
   let authApi = $state<typeof AuthStateModule | null>(null);
+  let authLoadFailed = $state(false);
   let authLoadPromise: Promise<void> | null = null;
   let liveContentDomVersion = $state(0);
   let contentReadyScheduled = false;
@@ -271,10 +272,16 @@
   function ensureAuthLoaded(): void {
     if (authLoadPromise) return;
     authLoadPromise = (async () => {
-      const mod = await import("$lib/shared/auth/state/auth-state.svelte");
-      authApi = mod.authState;
-      // Idempotent; app-mode boot has normally already run it.
-      await mod.authState.initialize();
+      try {
+        const mod = await import("$lib/shared/auth/state/auth-state.svelte");
+        authApi = mod.authState;
+        // Idempotent; app-mode boot has normally already run it.
+        await mod.authState.initialize();
+      } catch (error) {
+        // No answer is coming; the card settles without its QR.
+        authLoadFailed = true;
+        throw error;
+      }
     })();
   }
   $effect(() => {
@@ -600,6 +607,16 @@
   );
   const qrDataUrl = $derived(qrState.dataUrl);
   const qrPending = $derived(qrState.pending);
+  // Until sign-in settles, a requested QR has no answer yet: the cell draws a
+  // mandala and swaps the code in a moment later. A capture taken in between
+  // keeps the mandala, so the card is not settled until auth is.
+  const qrAuthPending = $derived(
+    showQRCode &&
+      !qrUrl &&
+      !authLoadFailed &&
+      !(authApi?.initialized ?? false)
+  );
+  const qrSettled = $derived(!qrAuthPending && qrState.settled);
 
   // Layout and DOM sizing are separate owners with a deliberate one-way loop:
   // raw container measurements feed layout; the resolved layout model then
@@ -695,7 +712,7 @@
       !cells
         .filter((cell) => includeStartPlacement || cell.index !== -1)
         .every((cell) => cell.isLoaded || cell.renderFailed) ||
-      !qrState.settled
+      !qrSettled
     )
       return;
     let cancelled = false;
@@ -1108,6 +1125,7 @@
   data-contain-size-jump={sizingState.sizeJump ? "true" : undefined}
   data-header-motion={headerMotion ? "true" : undefined}
   aria-busy={isRefreshing ? "true" : undefined}
+  data-qr-pending={qrSettled ? undefined : "true"}
   data-layout-columns={effectiveColumns}
   data-layout-rows={effectiveRows}
   data-preview-aspect={previewAspectRatio}

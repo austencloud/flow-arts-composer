@@ -292,6 +292,7 @@ async function captureCardLayer(
 
   const cardElement = layerElement.querySelector<HTMLElement>(".choreo-layer");
   if (!cardElement) throw new Error("Choreo card export surface is missing");
+  await waitForChoreoCardQr(cardElement);
   const bounds = cardElement.getBoundingClientRect();
   if (bounds.width <= 0 || bounds.height <= 0) {
     throw new Error("Choreo card export surface has no size");
@@ -390,6 +391,42 @@ export async function waitForTunnelHookArtwork(
     );
   }
   // The renderer redraws once the artwork lands; let that frame paint.
+  await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+}
+
+/**
+ * Wait until a card has its QR code drawn. A card mounts on the frame it first
+ * shows and mints its code a moment later, and the render keeps one capture
+ * per beat, so capturing early showed a mandala in the QR cell for the whole
+ * card.
+ */
+export async function waitForChoreoCardQr(
+  cardElement: HTMLElement,
+  timeoutMs = 10_000
+): Promise<void> {
+  const pending = () =>
+    cardElement.querySelector('[data-qr-pending="true"]') !== null;
+  if (!pending()) return;
+  const deadline = performance.now() + timeoutMs;
+  while (pending()) {
+    if (performance.now() > deadline)
+      throw new Error("The card's QR code was not ready to render.");
+    await new Promise<void>((resolve) =>
+      requestAnimationFrame(() => resolve())
+    );
+  }
+  // The code fades in; capture it once it has landed.
+  await Promise.allSettled(
+    [...cardElement.querySelectorAll("img")].map((image) => image.decode())
+  );
+  await Promise.allSettled(
+    cardElement
+      .getAnimations({ subtree: true })
+      .filter(
+        (animation) => animation.effect?.getTiming().iterations !== Infinity
+      )
+      .map((animation) => animation.finished)
+  );
   await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
 }
 
