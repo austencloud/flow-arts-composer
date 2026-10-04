@@ -1,99 +1,225 @@
-<!--
-  ComposerGalleryDemo
-
-  The "keeping" beat's evidence: the real community gallery, mounted standalone
-  in a bounded product frame. Same engine + BrowsePanel wiring the
-  /test/gallery-redesign harness proves, with the drill and the source toggle
-  off — this page only shows the community pool.
-
-  The frame owns a fixed height and the panel owns the scroll inside it, so the
-  page never scrolls the whole community pool.
--->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte";
   import { onMount } from "svelte";
-  import { browser } from "$app/environment";
-  import { goto } from "$app/navigation";
-  import BrowsePanel from "$lib/shared/browse/components/BrowsePanel.svelte";
-  import { createBrowseEngine } from "$lib/shared/browse/engine/create-browse-engine.svelte";
-  import { loopDetector } from "$lib/features/create/generate/circular/services/loop-detector";
+  import { MediaQuery } from "svelte/reactivity";
+  import Crossfade from "$lib/shared/components/Crossfade.svelte";
+  import ChoreoCardThumbnail from "$lib/shared/browse/components/ChoreoCardThumbnail/ChoreoCardThumbnail.svelte";
+  import { getBrowseLoader } from "$lib/shared/browse/get-browse-loader";
+  import {
+    hydrateSequence,
+    prefetch,
+  } from "$lib/shared/sequence-viewer/services/sequence-data-provider";
+  import {
+    getSettings,
+    updateSettings,
+  } from "$lib/shared/application/state/app-state.svelte";
+  import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+  import { getPropTypeDisplayInfo } from "$lib/shared/pictograph/prop/domain/prop-type-display-registry";
   import { registerLoopDetector } from "$lib/shared/create/get-loop-detector";
+  import { loopDetector } from "$lib/features/create/generate/circular/services/loop-detector";
+  import { t } from "$lib/shared/i18n/i18n.svelte";
   import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
 
-  const engine = createBrowseEngine({
-    persistKey: null,
-    initialSource: "community",
-    sections: false,
-    allowSourceToggle: false,
-    sources: ["community"],
-  });
-
+  const mobile = new MediaQuery("(max-width: 640px)");
+  const propTypes = [
+    PropType.STAFF,
+    PropType.FAN,
+    PropType.CLUB,
+    PropType.POI,
+    PropType.BUUGENG,
+    PropType.HAND,
+  ];
   let status = $state<"loading" | "ready" | "error">("loading");
+  let sequences = $state<SequenceData[]>([]);
+  let selected = $state<SequenceData | null>(null);
+  let opening = $state(false);
+  let viewerError = $state(false);
+  let requestId = 0;
+  let mounted = false;
+  const selectedProp = $derived(getSettings().leftPropType ?? PropType.STAFF);
+
+  function pickSequences(pool: readonly SequenceData[]): SequenceData[] {
+    const words = new Set<string>();
+    const picks: SequenceData[] = [];
+    for (const sequence of pool) {
+      const word = (
+        sequence.word ||
+        sequence.name ||
+        sequence.id
+      ).toUpperCase();
+      if (!sequence.id || words.has(word)) continue;
+      words.add(word);
+      picks.push(sequence);
+      if (picks.length === 4) break;
+    }
+    return picks;
+  }
 
   async function load(): Promise<void> {
     status = "loading";
     try {
-      // initialize() resolves even on a loader failure — it records the reason
-      // on the engine rather than throwing, so the frame reads that.
-      await engine.initialize();
-      status = engine.error ? "error" : "ready";
-    } catch {
+      const loader = getBrowseLoader();
+      const pool =
+        (await loader.loadCachedSequenceMetadata()) ??
+        (await loader.loadInitialSequenceMetadata()) ??
+        (await loader.loadSequenceMetadata());
+      if (!mounted) return;
+      sequences = pickSequences(pool);
+      status = sequences.length > 0 ? "ready" : "error";
+    } catch (error) {
+      if (!mounted) return;
+      console.error(
+        "[Composer gallery] Could not load community sequences",
+        error
+      );
       status = "error";
     }
   }
 
+  async function open(sequence: SequenceData): Promise<void> {
+    const currentRequest = ++requestId;
+    opening = true;
+    viewerError = false;
+    try {
+      const hydrated = await hydrateSequence(sequence);
+      if (!mounted || currentRequest !== requestId) return;
+      if (!hydrated.steps?.length) throw new Error("Sequence has no steps");
+      selected = hydrated;
+    } catch (error) {
+      if (!mounted || currentRequest !== requestId) return;
+      console.error("[Composer gallery] Could not open sequence", error);
+      viewerError = true;
+    } finally {
+      if (mounted && currentRequest === requestId) opening = false;
+    }
+  }
+
+  function back(): void {
+    requestId += 1;
+    selected = null;
+    opening = false;
+    viewerError = false;
+  }
+
+  function chooseProp(event: Event): void {
+    const value = (event.currentTarget as HTMLSelectElement).value as PropType;
+    if (!propTypes.includes(value) && value !== selectedProp) return;
+    void updateSettings({
+      leftPropType: value,
+      rightPropType: value,
+      propViewingMode: "my-props",
+    });
+  }
+
   onMount(() => {
-    if (!browser) return;
-    // The grid's hover prefetch hydrates a sequence for the viewer, and that
-    // path resolves the LOOP detector from the registry. Marketing routes do
-    // not mount the app composition root, so this page registers it the same
-    // way the standalone /sequence route does.
+    mounted = true;
     registerLoopDetector(loopDetector);
     void load();
-    return () => engine.destroy();
+    return () => {
+      mounted = false;
+      requestId += 1;
+    };
   });
 </script>
 
 <div class="gallery-frame">
-  {#if status === "ready"}
-    <BrowsePanel
-      {engine}
-      layout="fullpage"
-      showSidebar={false}
-      showFilterBar
-      showSourceToggle={false}
-      toolbarVariant="embedded"
-      eager
-      onSelect={(sequence: SequenceData) =>
-        void goto(`/sequence/${sequence.id}`)}
-    />
-  {:else if status === "loading"}
-    <div class="gallery-skeleton" aria-hidden="true">
-      {#each Array.from({ length: 12 }, (_, i) => i) as i (i)}
-        <div class="skeleton-cell" style:--stagger={i}></div>
-      {/each}
+  <header class="gallery-header">
+    <div class="header-copy">
+      <span class="eyebrow">Community sequences</span>
+      <h3>{selected ? selected.name || selected.word : "Pick a sequence"}</h3>
     </div>
-    <span class="sr-only" role="status"
-      >{t("composer_demo_gallery_loading")}</span
-    >
-  {:else}
-    <div class="gallery-error" role="alert">
-      <p>{t("composer_gallery_demo_failed")}</p>
-      <button type="button" onclick={() => void load()}>
-        {t("composer_retry_gallery")}
+    {#if selected}
+      <button class="back-button" type="button" onclick={back}>
+        <i class="fas fa-arrow-left" aria-hidden="true"></i> Back to sequences
       </button>
+    {:else}
+      <label class="prop-picker">
+        <span>Props</span>
+        <select
+          value={selectedProp}
+          onchange={chooseProp}
+          aria-label="Choose props for sequences"
+        >
+          {#if !propTypes.includes(selectedProp)}
+            <option value={selectedProp}
+              >{getPropTypeDisplayInfo(selectedProp).label}</option
+            >
+          {/if}
+          {#each propTypes as prop (prop)}
+            <option value={prop}>{getPropTypeDisplayInfo(prop).label}</option>
+          {/each}
+        </select>
+      </label>
+    {/if}
+  </header>
+
+  <div class="gallery-stage">
+    <Crossfade
+      key={selected?.id ?? "grid"}
+      fill
+      label={selected ? "Sequence viewer" : "Community sequences"}
+    >
+      {#if selected}
+        {#await import("./ComposerInlineSequenceViewer.svelte") then viewer}
+          <viewer.default
+            sequence={selected}
+            isMobile={mobile.current}
+            onBack={back}
+          />
+        {:catch}
+          <div class="gallery-error" role="alert">
+            The viewer couldn't open. <button type="button" onclick={back}
+              >Back to sequences</button
+            >
+          </div>
+        {/await}
+      {:else if status === "ready"}
+        <div class="sequence-grid">
+          {#each sequences as sequence (sequence.id)}
+            <ChoreoCardThumbnail
+              {sequence}
+              eager
+              allowQR={false}
+              onHover={prefetch}
+              onPrimaryAction={open}
+            />
+          {/each}
+        </div>
+      {:else if status === "loading"}
+        <div class="gallery-skeleton" aria-hidden="true">
+          {#each Array.from({ length: 4 }, (_, i) => i) as i (i)}
+            <div class="skeleton-cell" style:--stagger={i}></div>
+          {/each}
+        </div>
+      {:else}
+        <div class="gallery-error" role="alert">
+          <p>{t("composer_gallery_demo_failed")}</p>
+          <button type="button" onclick={() => void load()}
+            >{t("composer_retry_gallery")}</button
+          >
+        </div>
+      {/if}
+    </Crossfade>
+  </div>
+  {#if opening || viewerError}
+    <div class="gallery-feedback" role={viewerError ? "alert" : "status"}>
+      {#if viewerError}
+        This sequence couldn't open. <button
+          type="button"
+          onclick={() => (viewerError = false)}>Dismiss</button
+        >
+      {:else}
+        Opening sequence…
+      {/if}
     </div>
   {/if}
 </div>
 
 <style>
-  /* Matches .product-frame in +page.svelte, plus a bounded height so the
-     panel's own scroller — not the page — owns the community pool. */
   .gallery-frame {
     display: flex;
     flex-direction: column;
     min-width: 0;
-    height: var(--composer-gallery-height, 80rem);
+    height: var(--composer-gallery-height, 36rem);
     overflow: hidden;
     padding: clamp(0.75rem, 1.7vw, 1.4rem);
     border: 1px solid var(--theme-stroke, oklch(0.45 0.03 270 / 0.2));
@@ -101,25 +227,82 @@
     background: var(--theme-panel-bg, oklch(0.13 0.025 270 / 0.94));
     box-shadow: 0 1.5rem 4rem oklch(0.04 0.03 270 / 0.3);
   }
-
-  .gallery-frame :global(.browse-panel) {
-    flex: 1;
-    min-height: 0;
+  .gallery-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    min-height: 3.5rem;
+    margin-bottom: 0.8rem;
   }
-
-  /* The skeleton fills the same bounded frame, so nothing moves when the real
-     grid replaces it. */
-  .gallery-skeleton {
-    flex: 1;
-    min-height: 0;
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr));
-    grid-auto-rows: minmax(0, 1fr);
-    gap: clamp(0.8rem, 1.4vw, 1.4rem);
+  .header-copy {
+    min-width: 0;
+  }
+  .eyebrow {
+    color: var(--theme-text-muted, #b5b3c4);
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  h3 {
+    margin: 0.2rem 0 0;
     overflow: hidden;
+    color: var(--theme-text, white);
+    font-size: clamp(1rem, 1.6vw, 1.25rem);
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
-
+  .prop-picker {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--theme-text-muted, #b5b3c4);
+    font-size: 0.875rem;
+    white-space: nowrap;
+  }
+  .prop-picker select,
+  .back-button,
+  .gallery-error button,
+  .gallery-feedback button {
+    min-height: 3rem;
+    padding: 0.4rem 0.7rem;
+    border: 1px solid var(--theme-stroke-strong, #777487);
+    border-radius: 0.7rem;
+    background: var(--theme-card-bg, #242332);
+    color: var(--theme-text, white);
+    font: inherit;
+    cursor: pointer;
+  }
+  .prop-picker select {
+    max-width: 12rem;
+  }
+  .back-button {
+    white-space: nowrap;
+  }
+  .gallery-stage {
+    position: relative;
+    flex: 1;
+    min-height: 0;
+  }
+  .gallery-stage :global(.crossfade) {
+    height: 100%;
+  }
+  .sequence-grid,
+  .gallery-skeleton {
+    display: grid;
+    width: 100%;
+    height: 100%;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    align-content: center;
+    gap: clamp(0.55rem, 1vw, 1rem);
+  }
+  .sequence-grid :global(.choreo-card) {
+    min-width: 0;
+  }
   .skeleton-cell {
+    aspect-ratio: 0.8;
+    max-height: 100%;
     border-radius: 0.9rem;
     background: linear-gradient(
       100deg,
@@ -131,7 +314,6 @@
     animation: gallery-shimmer 1.6s ease-in-out infinite;
     animation-delay: calc(var(--stagger) * 90ms);
   }
-
   @keyframes gallery-shimmer {
     from {
       background-position: 120% 0;
@@ -140,46 +322,50 @@
       background-position: -80% 0;
     }
   }
-
   .gallery-error {
-    flex: 1;
     display: flex;
+    height: 100%;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     gap: 0.9rem;
-    color: oklch(0.72 0.02 270);
-    font-size: var(--font-size-min, 0.875rem);
+    color: var(--theme-text-muted, #b5b3c4);
+    text-align: center;
   }
-
   .gallery-error p {
     margin: 0;
   }
-
-  .gallery-error button {
-    min-height: max(var(--min-touch-target, 48px), 48px);
-    display: inline-flex;
-    align-items: center;
-    padding: 0.72em 1.15em;
-    border: 1px solid var(--theme-stroke-strong, oklch(0.58 0.04 270 / 0.34));
-    border-radius: var(--settings-radius-lg, 0.85rem);
-    background: var(--theme-card-bg, oklch(0.18 0.025 270 / 0.75));
-    color: #fff;
-    font: inherit;
-    font-size: var(--font-size-min, 0.875rem);
-    font-weight: 680;
-    cursor: pointer;
+  .gallery-feedback {
+    padding-top: 0.4rem;
+    color: var(--theme-text-muted, #b5b3c4);
+    font-size: 0.8rem;
   }
-
-  .gallery-error button:hover {
-    border-color: oklch(0.72 0.12 277 / 0.65);
-  }
-
-  .gallery-error button:focus-visible {
+  button:focus-visible,
+  select:focus-visible {
     outline: 2px solid var(--theme-accent, #8b8cff);
     outline-offset: 3px;
   }
-
+  @media (max-width: 640px) {
+    .gallery-header {
+      align-items: flex-start;
+    }
+    .prop-picker {
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 0.2rem;
+    }
+    .prop-picker select {
+      max-width: 9rem;
+    }
+    .sequence-grid,
+    .gallery-skeleton {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      grid-template-rows: repeat(2, minmax(0, 1fr));
+    }
+    .sequence-grid :global(.choreo-card) {
+      max-height: 100%;
+    }
+  }
   @media (prefers-reduced-motion: reduce) {
     .skeleton-cell {
       animation: none;

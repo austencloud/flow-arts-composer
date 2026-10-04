@@ -314,7 +314,7 @@
   <!-- Same bounded frame ComposerGalleryDemo owns, so the swap cannot move
        the footer. Keep the height in step with its .gallery-frame. -->
   <div class="gallery-placeholder" aria-hidden="true">
-    {#each Array.from({ length: 12 }, (_, i) => i) as i (i)}
+    {#each Array.from({ length: 4 }, (_, i) => i) as i (i)}
       <div class="placeholder-card"></div>
     {/each}
   </div>
@@ -556,7 +556,7 @@
       <div class="keeping-lede">
         <p>
           Guests keep three sequences on this device. A full account keeps a
-          cloud library and collections. Browse other people's sequences below.
+          cloud library and collections. Choose a sequence below to watch it here.
         </p>
         <div class="keeping-actions">
           <a href="/browse" class="primary-action">Browse the Gallery</a>
@@ -941,7 +941,7 @@
   .keeping-shelf {
     container-type: inline-size;
     min-width: 0;
-    --composer-gallery-height: 88rem;
+    --composer-gallery-height: 36rem;
   }
 
   /* px ceiling — see the note on h1. Was 5rem, which the root ramp turned into
@@ -1264,7 +1264,7 @@
   .gallery-placeholder,
   .gallery-error {
     box-sizing: border-box;
-    height: var(--composer-gallery-height, 80rem);
+    height: var(--composer-gallery-height, 36rem);
     padding: clamp(0.75rem, 1.7vw, 1.4rem);
     border: 1px solid var(--theme-stroke, oklch(0.45 0.03 270 / 0.2));
     border-radius: clamp(1rem, 1.5vw, 1.5rem);
@@ -1345,7 +1345,7 @@
      width and the hero grows past the fold instead of shrinking it. */
   @media (max-width: 48rem) {
     .keeping-shelf {
-      --composer-gallery-height: 56rem;
+      --composer-gallery-height: 36rem;
     }
 
     .opening {
