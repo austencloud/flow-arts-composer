@@ -133,8 +133,14 @@
       <h3>{selected ? selected.name || selected.word : "Pick a sequence"}</h3>
     </div>
     {#if selected}
-      <button class="back-button" type="button" onclick={back}>
-        <i class="fas fa-arrow-left" aria-hidden="true"></i> Back to sequences
+      <button
+        class="back-button"
+        type="button"
+        aria-label="Back to sequences"
+        onclick={back}
+      >
+        <i class="fas fa-arrow-left" aria-hidden="true"></i>
+        {mobile.current ? "Back" : "Back to sequences"}
       </button>
     {:else}
       <label class="prop-picker">
@@ -283,6 +289,7 @@
     max-width: 12rem;
   }
   .back-button {
+    flex-shrink: 0;
     white-space: nowrap;
   }
   .gallery-stage {
