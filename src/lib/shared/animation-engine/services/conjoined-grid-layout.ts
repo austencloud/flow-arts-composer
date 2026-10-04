@@ -1,21 +1,19 @@
 /**
- * Level 7 conjoined grid for the 2D animation: the "2 Diamond" topology
- * (grid B's center on grid A's east outer point) laid across the square
- * canvas. Each grid sits one hand-point radius from the canvas center, so the
- * pair spans the canvas edge to edge at the usual scale. The blue hand moves
- * on the left grid and the red hand on the right.
+ * Level 7 conjoined grid for the 2D animation: two grids side by side, the
+ * blue hand moving on the left grid and the red hand on the right. The grid
+ * centers sit half a staff apart, so when both hands reach the same point
+ * with their staffs level (north, say), the staffs overlap by half and each
+ * staff's tip lands on the other hand.
  */
+import { STAFF_TIP_REACH } from "$lib/shared/animation-engine/domain/types/prop-tip-points";
 import type { PropState } from "$lib/shared/foundation/domain/types/prop-state";
-import {
-  OUTER_POINT_MULTIPLIER,
-  PIXELS_PER_UNIT,
-} from "$lib/shared/multi-grid/domain/constants/grid-mode-offsets";
+import { PIXELS_PER_UNIT } from "$lib/shared/multi-grid/domain/constants/grid-mode-offsets";
 
-/** Grid-center shift from the canvas center, in hand-point radii (prop x/y units). */
-export const CONJOINED_SHIFT_UNITS = OUTER_POINT_MULTIPLIER / 2;
+/** Grid-center shift from the canvas center in the 950-unit grid viewBox. */
+export const CONJOINED_SHIFT_VIEWBOX = STAFF_TIP_REACH / 2;
 
-/** The same shift in the 950-unit grid viewBox. */
-export const CONJOINED_SHIFT_VIEWBOX = CONJOINED_SHIFT_UNITS * PIXELS_PER_UNIT;
+/** The same shift in hand-point radii (prop x/y units). */
+export const CONJOINED_SHIFT_UNITS = CONJOINED_SHIFT_VIEWBOX / PIXELS_PER_UNIT;
 
 /** Prop index 0 is the blue (left) hand and moves left; 1 is red and moves right. */
 export function conjoinedShiftUnits(propIndex: number): number {
@@ -57,9 +55,9 @@ export function shiftPropState(
 }
 
 /**
- * Each grid's center lands on the other grid's outer point. Those big outer
- * dots are dropped so the center dots stay readable; the shared hand point
- * between the grids draws from both copies in the same spot.
+ * The left grid's east outer dot covers the right grid's east hand point, and
+ * the right grid's west outer dot covers the left grid's west hand point.
+ * Those two dots are dropped so every hand point stays visible.
  */
 const HIDDEN_OUTER_POINT = {
   left: "e_diamond_outer_point",

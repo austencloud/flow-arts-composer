@@ -23,8 +23,8 @@ export interface MotionColorsCache {
 export type TrailVisibility = "off" | "on";
 export type GridMode = "none" | "8point" | "auto";
 /**
- * "conjoined" is the Level 7 side-by-side grid: two grids joined at a shared
- * point, the blue hand moving on the left grid and the red hand on the right.
+ * "conjoined" is the Level 7 side-by-side grid: two overlapping grids half a
+ * staff apart, the blue hand moving on the left grid and the red on the right.
  */
 export type GridLayout = "single" | "conjoined";
 export type PlaybackMode = "continuous" | "step";
