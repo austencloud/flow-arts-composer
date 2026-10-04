@@ -478,12 +478,6 @@ with pre-prepared data for better performance.
   const effectivePropLook = $derived(
     normalizePropLook(propLookOverride ?? getSettings().propArtwork)
   );
-  const effectiveLeftBuugengFlipped = $derived(
-    leftBuugengFlippedOverride ?? getSettings().leftBuugengFlipped ?? false
-  );
-  const effectiveRightBuugengFlipped = $derived(
-    rightBuugengFlippedOverride ?? getSettings().rightBuugengFlipped ?? false
-  );
   const effectiveTriangleGrip = $derived(
     normalizeTriangleGrip(getSettings().triangleGrip)
   );
@@ -543,8 +537,10 @@ with pre-prepared data for better performance.
       rightPropType: effectiveRightPropType,
       // Buugeng chirality feeds the beta offset (opposite chirality nests, so
       // no separation), so a flip has to re-prepare.
-      leftBuugengFlipped: effectiveLeftBuugengFlipped,
-      rightBuugengFlipped: effectiveRightBuugengFlipped,
+      leftBuugengFlipped:
+        leftBuugengFlippedOverride ?? settings.leftBuugengFlipped ?? false,
+      rightBuugengFlipped:
+        rightBuugengFlippedOverride ?? settings.rightBuugengFlipped ?? false,
       // The fan build picks the prop artwork, so choosing DoodleGrip Fire
       // over the notation fan has to re-prepare every fan pictograph.
       fanAppearance: fanAppearanceSignature(
@@ -610,8 +606,14 @@ with pre-prepared data for better performance.
           themeMode: currentDarkMode ? ("dark" as const) : ("light" as const),
           leftPropType: effectiveLeftPropType,
           rightPropType: effectiveRightPropType,
-          leftBuugengFlipped: effectiveLeftBuugengFlipped,
-          rightBuugengFlipped: effectiveRightBuugengFlipped,
+          leftBuugengFlipped:
+            leftBuugengFlippedOverride ??
+            getSettings().leftBuugengFlipped ??
+            false,
+          rightBuugengFlipped:
+            rightBuugengFlippedOverride ??
+            getSettings().rightBuugengFlipped ??
+            false,
           fanAppearance: normalizeFanAppearance(
             fanAppearanceOverride ?? getSettings().fanAppearance
           ),
@@ -782,6 +784,8 @@ with pre-prepared data for better performance.
         {transparentBackground}
         {leftColorOverride}
         {rightColorOverride}
+        {leftBuugengFlippedOverride}
+        {rightBuugengFlippedOverride}
         {onToggleTKA}
         {onToggleTnD}
         {onToggleElemental}
@@ -840,6 +844,8 @@ with pre-prepared data for better performance.
             {transparentBackground}
             {leftColorOverride}
             {rightColorOverride}
+            {leftBuugengFlippedOverride}
+            {rightBuugengFlippedOverride}
             {onToggleTKA}
             {onToggleTnD}
             {onToggleElemental}
