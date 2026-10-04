@@ -138,7 +138,7 @@ describe("home page first visit", () => {
     // behind the static graph to check.
     for (const component of [
       "src/lib/features/browse/sequences/display/components/media-viewer/InlineAnimationPlayer.svelte",
-      "src/lib/shared/sequence-viewer/components/ChoreoCard.svelte",
+      "src/lib/shared/landing/components/launchpad/ChoreoCardPreview.svelte",
     ]) {
       expect(loadedBy.get(repoPath(component)), component).toBeTruthy();
     }
