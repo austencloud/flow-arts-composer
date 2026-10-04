@@ -86,9 +86,11 @@
   let pendingSource = $state<Source | null>(null);
   let swapping = $state(false);
   let publishPending = false;
-  let firstSequence = $state<SequenceData | null>(sourceSequence);
-  let secondSequence = $state<SequenceData | null>(null);
-  let seenSource = $state(sourceSequence);
+  let firstSequence = $state.raw<SequenceData | null>(sourceSequence);
+  let secondSequence = $state.raw<SequenceData | null>(null);
+  // Generated sequences are immutable snapshots. Keep their reference identity
+  // so the source effect cannot mistake a deep state proxy for a new sequence.
+  let seenSource = $state.raw(sourceSequence);
   let firstStep = $state(1);
   let secondStep = $state(1);
   let firstCanvasReady = $state(false);
