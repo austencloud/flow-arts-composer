@@ -104,6 +104,8 @@ export interface ViewerSplitPaneProps {
   onViewer3DSettingChange?: ViewerControlSink;
   onViewer3DAction?: ViewerActionSink;
   suppressProgress?: boolean;
+  /** Use the canonical canvas's compact showcase playback affordance. */
+  showcasePlayback?: boolean;
   practiceActive?: boolean;
   practiceCellSize?: number;
   practiceCanvasFraction?: number;
@@ -141,6 +143,7 @@ export interface ViewerMotionSurfaceProps {
   onViewer3DSettingChange?: ViewerControlSink;
   onViewer3DAction?: ViewerActionSink;
   suppressProgress: boolean;
+  showcasePlayback?: boolean;
   practiceActive: boolean;
   practiceMirrorEnabled: boolean;
   practiceResizePaused: boolean;

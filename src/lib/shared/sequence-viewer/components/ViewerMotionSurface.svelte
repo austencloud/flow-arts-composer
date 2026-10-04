@@ -63,6 +63,7 @@
     onViewer3DSettingChange,
     onViewer3DAction,
     suppressProgress,
+    showcasePlayback = false,
     practiceActive,
     practiceMirrorEnabled,
     practiceResizePaused,
@@ -502,7 +503,11 @@
 {#snippet viewer3DError(_error: unknown, retry: () => void)}
   <div class="error-state viewer-3d-load-state" role="alert">
     <i class="fas fa-triangle-exclamation" aria-hidden="true"></i>
-    <span>{t("viewer_detail_3d_viewer_couldn_t_load_check_your_connection_and_try_again")}</span>
+    <span
+      >{t(
+        "viewer_detail_3d_viewer_couldn_t_load_check_your_connection_and_try_again"
+      )}</span
+    >
     <PanelButton variant="secondary" onclick={retry}>
       <i class="fas fa-rotate-right" aria-hidden="true"></i>
       <span>{t("viewer_ui_try_again")}</span>
@@ -732,10 +737,11 @@
           glyphFrame="stage"
           hideProgressBar={inStudio ||
             (side === "left"
-              ? suppressProgress ||
-                (!practiceActive &&
-                  layout.isMobile &&
-                  layout.focusedPane === null)
+              ? !showcasePlayback &&
+                (suppressProgress ||
+                  (!practiceActive &&
+                    layout.isMobile &&
+                    layout.focusedPane === null))
               : true)}
           hideHeader
           hideTkaGlyph={tunnelVisualActive || !!studioFrame?.labelsPainted}
@@ -743,14 +749,22 @@
           hideElementalGlyph={!!studioFrame?.labelsPainted}
           hidePathLines={tunnelVisualActive}
           tapToToggle={side === "left" && !inStudio}
-          hoverHint={isTunnelActive ? "badge" : undefined}
-          cornerToggle={isTunnelActive}
+          hoverHint={showcasePlayback
+            ? "pill"
+            : isTunnelActive
+              ? "badge"
+              : undefined}
+          cornerToggle={showcasePlayback || isTunnelActive}
           hidePlay={false}
-          progressLine={false}
-          bpm={side === "left" ? bpm : undefined}
-          onBpmChange={side === "left" ? onBpmChange : undefined}
-          playbackMode={side === "left" ? playbackMode : undefined}
-          onPlaybackModeChange={side === "left"
+          progressLine={showcasePlayback}
+          bpm={side === "left" && !showcasePlayback ? bpm : undefined}
+          onBpmChange={side === "left" && !showcasePlayback
+            ? onBpmChange
+            : undefined}
+          playbackMode={side === "left" && !showcasePlayback
+            ? playbackMode
+            : undefined}
+          onPlaybackModeChange={side === "left" && !showcasePlayback
             ? onPlaybackModeChange
             : undefined}
           resizePaused={practiceResizePaused}

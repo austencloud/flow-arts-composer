@@ -179,6 +179,8 @@
     /** Initial shared-shell surface. Scan uses card so animation work stays out
      *  of the first visible frame; other hosts retain persisted mode. */
     initialViewerMode?: ViewerMode;
+    /** Keep a page-owned preview out of the viewer URL and saved view mode. */
+    passivePreview?: boolean;
     /** A host can demonstrate a consistent path style without saving it. */
     pathPolicyOverride?: AnimationPathPolicy;
     /** Hold animation/LAN services until the host promotes away from card. */
@@ -222,6 +224,7 @@
     forceGuest = false,
     initialRenderMode,
     initialViewerMode,
+    passivePreview = false,
     pathPolicyOverride,
     deferInteractiveStartup = false,
     onCardReady,
@@ -254,9 +257,12 @@
   // visibility). The session never reads or writes `vm`, so scanned-card links
   // pass through untouched by construction.
   const urlSession = createViewerUrlSession(
-    new URLSearchParams(browser ? window.location.search : ""),
+    new URLSearchParams(
+      browser && !passivePreview ? window.location.search : ""
+    ),
     {
-      writeParams: (patch) =>
+      writeParams: (patch) => {
+        if (passivePreview) return;
         mutateCurrentUrl((url) => {
           for (const name of patch.remove) {
             url.searchParams.delete(name);
@@ -264,7 +270,8 @@
           for (const [name, value] of Object.entries(patch.set)) {
             url.searchParams.set(name, value);
           }
-        }),
+        });
+      },
     }
   );
 
@@ -506,7 +513,7 @@
   const viewerState = createViewerState({
     initialMode: vwSeed?.mode as ViewerMode | undefined,
     initialSplit: vwSeed?.split as SplitConfig | undefined,
-    persist: !vwIsOverride,
+    persist: !passivePreview && !vwIsOverride,
   });
   // Precedence: an explicit open option beats the URL, which beats localStorage.
   // A programmatic open (`openSequenceOverlay({ initialViewerMode })`, the scan
@@ -985,6 +992,7 @@
   // this effect re-runs whenever any of them changes; the session owns the
   // debounce, and `mutateCurrentUrl` no-ops when nothing actually moved.
   $effect(() => {
+    if (passivePreview) return;
     void urlSession.captureNow();
     urlSession.scheduleUrlWrite();
   });

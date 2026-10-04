@@ -107,6 +107,7 @@
     onViewer3DSettingChange,
     onViewer3DAction,
     suppressProgress = false,
+    showcasePlayback = false,
     practiceActive = false,
     practiceCellSize = 72,
     practiceCanvasFraction = 0.38,
@@ -583,6 +584,7 @@
       {onViewer3DSettingChange}
       {onViewer3DAction}
       {suppressProgress}
+      {showcasePlayback}
       {practiceActive}
       {practiceMirrorEnabled}
       {practiceResizePaused}
@@ -670,6 +672,7 @@
         {onViewer3DSettingChange}
         {onViewer3DAction}
         {suppressProgress}
+        {showcasePlayback}
         {practiceActive}
         {practiceMirrorEnabled}
         {practiceResizePaused}
