@@ -7,7 +7,6 @@ import { pathToFileURL } from "node:url";
 export const CRITICAL_IMPORTS = Object.freeze([
   "zod",
   "@9square/domain",
-  "@caps/domain",
   "@flow-arts/core",
   "@spin-science/domain",
   "@tka/domain",
