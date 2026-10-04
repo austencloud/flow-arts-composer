@@ -919,7 +919,7 @@
      192px between columns at 3840. Section rhythm should be constant once it is
      generous; it is the CONTENT that gets the extra 4K width. */
   .keeping {
-    padding-block: clamp(2.5rem, 4.5vw, 4.5rem);
+    padding-block: var(--stop-pad, clamp(2.5rem, 4.5vw, 4.5rem));
   }
 
   .keeping-intro {
@@ -941,7 +941,11 @@
   .keeping-shelf {
     container-type: inline-size;
     min-width: 0;
-    --composer-gallery-height: 36rem;
+    --composer-gallery-height: clamp(
+      24rem,
+      calc(var(--stop-room, 100dvh) - 14rem),
+      36rem
+    );
   }
 
   /* px ceiling — see the note on h1. Was 5rem, which the root ramp turned into

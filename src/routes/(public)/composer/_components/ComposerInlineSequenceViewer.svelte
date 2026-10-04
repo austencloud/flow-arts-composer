@@ -19,6 +19,7 @@
     {sequence}
     {isMobile}
     initialViewerMode="animation"
+    passivePreview
     pathPolicyOverride={{ pathShape: "arc", motionAwarePaths: false }}
     onClose={onBack}
   >
@@ -30,7 +31,7 @@
         analyticsSource="browse_gallery"
         onClose={onBack}
         embedded
-        navigation={{ label: "Back to sequences" }}
+        introPreview
       />
     {/snippet}
   </SequenceViewerOrchestrator>

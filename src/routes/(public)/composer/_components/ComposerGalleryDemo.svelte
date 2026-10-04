@@ -200,8 +200,8 @@
       {/if}
     </Crossfade>
   </div>
-  {#if opening || viewerError}
-    <div class="gallery-feedback" role={viewerError ? "alert" : "status"}>
+  <div class="gallery-feedback" role={viewerError ? "alert" : "status"}>
+    {#if opening || viewerError}
       {#if viewerError}
         This sequence couldn't open. <button
           type="button"
@@ -210,8 +210,8 @@
       {:else}
         Opening sequence…
       {/if}
-    </div>
-  {/if}
+    {/if}
+  </div>
 </div>
 
 <style>
@@ -240,7 +240,7 @@
   }
   .eyebrow {
     color: var(--theme-text-muted, #b5b3c4);
-    font-size: 0.72rem;
+    font-size: 0.75rem;
     font-weight: 700;
     letter-spacing: 0.08em;
     text-transform: uppercase;
@@ -284,6 +284,7 @@
     position: relative;
     flex: 1;
     min-height: 0;
+    container-type: size;
   }
   .gallery-stage :global(.crossfade) {
     height: 100%;
@@ -293,8 +294,9 @@
     display: grid;
     width: 100%;
     height: 100%;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(0, min(13rem, 55cqh)));
     align-content: center;
+    justify-content: center;
     gap: clamp(0.55rem, 1vw, 1rem);
   }
   .sequence-grid :global(.choreo-card) {
@@ -336,7 +338,9 @@
     margin: 0;
   }
   .gallery-feedback {
-    padding-top: 0.4rem;
+    flex: 0 0 1.7rem;
+    display: flex;
+    align-items: center;
     color: var(--theme-text-muted, #b5b3c4);
     font-size: 0.8rem;
   }
@@ -359,7 +363,7 @@
     }
     .sequence-grid,
     .gallery-skeleton {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
+      grid-template-columns: repeat(2, minmax(0, min(10rem, 28cqh)));
       grid-template-rows: repeat(2, minmax(0, 1fr));
     }
     .sequence-grid :global(.choreo-card) {
