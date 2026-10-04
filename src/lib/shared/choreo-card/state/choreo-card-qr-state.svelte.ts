@@ -66,6 +66,9 @@ export function createChoreoCardQrState(
 ) {
   let dataUrl = $state<string | null>(null);
   let generating = $state(false);
+  // The key whose QR is decided. `activeKey` is not reactive, so a reused
+  // cached code would otherwise leave a reader's derived `settled` stale.
+  let settledKey = $state("");
   const cache = new Map<string, string>();
   let activeKey = "";
   let warnedUnencodable = false;
@@ -124,6 +127,7 @@ export function createChoreoCardQrState(
     if (cached) {
       dataUrl = cached;
       generating = false;
+      settledKey = key;
       return;
     }
 
@@ -131,6 +135,7 @@ export function createChoreoCardQrState(
     if (!deps.isAuthenticated && !deps.qrUrl) {
       dataUrl = null;
       generating = false;
+      settledKey = key;
       return;
     }
 
@@ -140,6 +145,7 @@ export function createChoreoCardQrState(
         : services.getGenerator();
     if (!generator) {
       generating = false;
+      settledKey = key;
       return;
     }
 
@@ -170,11 +176,15 @@ export function createChoreoCardQrState(
         if (activeKey === key) {
           dataUrl = result.dataUrl;
           generating = false;
+          settledKey = key;
         }
       })
       .catch(() => {
         // QR is optional. Settling the state prevents an indefinite spinner.
-        if (activeKey === key) generating = false;
+        if (activeKey === key) {
+          generating = false;
+          settledKey = key;
+        }
       });
   });
 
@@ -188,7 +198,7 @@ export function createChoreoCardQrState(
       return pending;
     },
     get settled() {
-      return !cacheKey || (activeKey === cacheKey && !generating);
+      return !cacheKey || settledKey === cacheKey;
     },
   } as const;
 }
