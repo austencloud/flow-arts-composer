@@ -870,7 +870,7 @@ with pre-prepared data for better performance.
     {/if}
   {:else}
     <div class="empty-state">
-      {#if pictographData}
+      {#if pictographData && !transparentBackground}
         <div class="loading-indicator">
           <PanelSpinner
             size={6}
@@ -882,7 +882,11 @@ with pre-prepared data for better performance.
         <rect
           width="950"
           height="950"
-          fill={effectiveDarkMode ? "#0a0a0f" : "white"}
+          fill={transparentBackground
+            ? "none"
+            : effectiveDarkMode
+              ? "#0a0a0f"
+              : "white"}
         />
       </svg>
     </div>
