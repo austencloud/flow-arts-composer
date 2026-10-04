@@ -211,15 +211,16 @@
           {:else if tile.media === "choreo-card"}
             <span class="choreo-card-box">
               <LazyMount
-                loader={() =>
-                  import("$lib/shared/sequence-viewer/components/ChoreoCard.svelte")}
+                loader={() => import("./ChoreoCardPreview.svelte")}
                 {active}
                 prefetch={visible}
-                onStatusChange={handleMediaStatus}
+                onStatusChange={(status) => {
+                  if (status !== "loaded") handleMediaStatus(status);
+                }}
                 props={{
                   sequence: demoSequence,
-                  showQRCode: false,
-                  showNotes: false,
+                  onReady: () => handleMediaStatus("loaded"),
+                  onError: () => handleMediaStatus("error"),
                 }}
               />
             </span>
@@ -679,6 +680,21 @@
     opacity: 0.96;
   }
 
+  .tile.variant-home.t-choreo-cards .choreo-card-box {
+    right: 6%;
+    width: auto;
+    height: 78%;
+    max-width: 32%;
+    opacity: 1;
+    box-shadow: none;
+  }
+
+  /* The complete print card stays beside the copy, so no text scrim needs
+     to tint its white cells or conceal the QR code. */
+  .tile.variant-home.t-choreo-cards .card .body {
+    background: none;
+  }
+
   .pictograph-box {
     position: absolute;
     right: 0;
@@ -689,7 +705,7 @@
   }
 
   /* Card framing lives here (not in PictographFadeCard.svelte), matching how
-	   .choreo-card-box frames ChoreoCard.svelte above: the wrapper owns
+	   .choreo-card-box frames ChoreoCardPreview.svelte above: the wrapper owns
 	   position/rotation/shadow, the loaded component just fills the box. */
   .pictograph-fade-box {
     position: absolute;
@@ -966,12 +982,6 @@
       max-width: 100%;
       max-height: 100%;
     }
-    .tile.variant-home .choreo-card-box {
-      right: 2%;
-      width: 5.25rem;
-      opacity: 0.96;
-      filter: saturate(1.06) brightness(1.04);
-    }
     .tile.variant-home .pictograph-box {
       opacity: 0.82;
       filter: saturate(1.08) brightness(1.04);
@@ -1060,9 +1070,6 @@
     .tile.variant-home .dictionary-box {
       display: none;
     }
-    .tile.variant-home .choreo-card-box {
-      width: 4.25rem;
-    }
     .tile.variant-home .guide-cover-box {
       width: 4rem;
     }
@@ -1082,7 +1089,6 @@
       .tile.variant-home.t-choreo-cards .card:has(.chips) .body {
         padding-bottom: 0.8rem;
       }
-      .tile.variant-home .choreo-card-box,
       .tile.variant-home .guide-cover-box {
         width: 4.75rem;
       }
@@ -1223,10 +1229,6 @@
       max-width: 100%;
       max-height: 100%;
     }
-    .tile.variant-home .choreo-card-box {
-      right: 2%;
-      width: 3.5rem;
-    }
     .tile.variant-home .guide-cover-box {
       right: 4%;
       width: 3.25rem;
@@ -1353,14 +1355,6 @@
       opacity: 0.98;
       filter: saturate(1.18) brightness(1.08)
         drop-shadow(0 0 0.75rem color-mix(in oklch, var(--c) 42%, transparent));
-    }
-    .tile.variant-home.t-choreo-cards .choreo-card-box {
-      right: -0.15rem;
-      width: 4.75rem;
-      opacity: 0.9;
-      filter: saturate(1.08) brightness(1.06);
-      -webkit-mask-image: linear-gradient(to right, transparent, black 50%);
-      mask-image: linear-gradient(to right, transparent, black 50%);
     }
     .tile.variant-home.t-guide .guide-cover-box {
       right: 0.3rem;
