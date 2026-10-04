@@ -311,7 +311,7 @@ describe("split animation export", () => {
 });
 
 describe("export capture options", () => {
-  it("gives the choreo card capture the shared options", async () => {
+  function mountCard() {
     const compiled = compilePostProject(project([card("main", 6)]), {
       now: NOW,
     })!;
@@ -333,12 +333,13 @@ describe("export capture options", () => {
       width: 300,
       height: 420,
     } as DOMRect);
+    const cardRoot = createElement<HTMLDivElement>("div");
+    choreo.append(cardRoot);
     mounted.append(choreo);
     root.append(mounted);
     const captured = createElement<HTMLCanvasElement>("canvas");
     captured.width = 300;
     captured.height = 420;
-    captureMotion.mockReset().mockResolvedValue(captured);
     const context = new Proxy(
       {},
       {
@@ -351,14 +352,22 @@ describe("export capture options", () => {
     vi.spyOn(canvas, "getContext").mockReturnValue(
       context as unknown as CanvasRenderingContext2D
     );
+    const render = () =>
+      renderPostStudioFrame({
+        canvas,
+        root,
+        preset: compiled.preset,
+        layers,
+        cardFrameCache: new Map(),
+      });
+    return { choreo, cardRoot, captured, render };
+  }
 
-    await renderPostStudioFrame({
-      canvas,
-      root,
-      preset: compiled.preset,
-      layers,
-      cardFrameCache: new Map(),
-    });
+  it("gives the choreo card capture the shared options", async () => {
+    const { choreo, captured, render } = mountCard();
+    captureMotion.mockReset().mockResolvedValue(captured);
+
+    await render();
 
     expect(captureMotion).toHaveBeenCalledTimes(1);
     expect(captureMotion.mock.calls[0]![0]).toBe(choreo);
@@ -368,6 +377,29 @@ describe("export capture options", () => {
       onCreateForeignObjectSvg:
         POST_STUDIO_DOM_CAPTURE_OPTIONS.onCreateForeignObjectSvg,
     });
+  });
+
+  it("keeps its one card capture only after the QR code has landed", async () => {
+    const { choreo, cardRoot, captured, render } = mountCard();
+    // jsdom has no Web Animations; the card's fade-in has finished here.
+    choreo.getAnimations = () => [];
+    cardRoot.dataset.qrPending = "true";
+    let pendingAtCapture: boolean | null = null;
+    captureMotion.mockReset().mockImplementation(async (element: Element) => {
+      pendingAtCapture =
+        element.querySelector('[data-qr-pending="true"]') !== null;
+      return captured;
+    });
+
+    const rendering = render();
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    expect(captureMotion).not.toHaveBeenCalled();
+
+    delete cardRoot.dataset.qrPending;
+    await rendering;
+
+    expect(captureMotion).toHaveBeenCalledTimes(1);
+    expect(pendingAtCapture).toBe(false);
   });
 });
 
