@@ -265,8 +265,10 @@ owns layout and runs after every edit. `post-project-edits.ts` owns the pure
 edit operations, and `post-project-looks.ts` owns the dual, breakdown and
 video-only looks plus the Tutorial preset. Looks are ordinary overlay items, so
 each part stays movable. `state/post-editor-state.svelte.ts` owns selection,
-drag gestures and undo steps over those operations. `post-project-compiler.ts`
-feeds the renderer, and `post-project-migration.ts` converts saved v1 act
+drag gestures and undo steps over those operations;
+`services/post-editor-history-store.ts` keeps those steps in the tab's
+sessionStorage so a reload restores them for the same save.
+`post-project-compiler.ts` feeds the renderer, and `post-project-migration.ts` converts saved v1 act
 plans. `post-project.ts` `timingVideoAt` owns overlap clock selection: anchored
 layers keep their own take while it covers them; unanchored layers follow the
 incoming take. The compiler and effort timing summary share it. The timeline
