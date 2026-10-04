@@ -65,8 +65,36 @@ const MAX_LEDS = LED_SAMPLER_MAX_LEDS;
 const BLOOM_MIP_COUNT = 5;
 
 /** Floats per instance. One instance is one sub-step of one LED.
- *  Layout: [ax, ay, bx, by, r, g, b, density, sigma, capStart, capEnd] */
-const INSTANCE_STRIDE_FLOATS = 11;
+ *  Layout: [ax, ay, bx, by, r, g, b, density, sigma, capStart, capEnd,
+ *  cutStartX, cutStartY, cutEndX, cutEndY] */
+const INSTANCE_STRIDE_FLOATS = 15;
+
+/** A join cut further than this from square to its own chord (cosine) is a
+ *  cusp, not a curve; such a chord is cut square instead. */
+const MIN_CUT_ALIGNMENT = 0.3;
+
+// Scratch for writeJoinCuts, so building a frame allocates nothing.
+const CUT_DIR = new Float32Array(2);
+const CUT_NEIGHBOUR = new Float32Array(2);
+const CUT_START = new Float32Array(2);
+const CUT_END = new Float32Array(2);
+
+/** Normalizes (x, y) into `out`, falling back to the chord (dx, dy) when the
+ *  cut is degenerate or too oblique to be a join on a curve. */
+function setCut(out: Float32Array, x: number, y: number, dx: number, dy: number): void {
+	const len = Math.hypot(x, y);
+	if (len > 1e-6) {
+		const nx = x / len;
+		const ny = y / len;
+		if (nx * dx + ny * dy >= MIN_CUT_ALIGNMENT) {
+			out[0] = nx;
+			out[1] = ny;
+			return;
+		}
+	}
+	out[0] = dx;
+	out[1] = dy;
+}
 
 /** Instances allocated up front. The buffer grows on demand up to
  *  MAX_LEDS * MAX_SUB_STEPS; a typical spin asks for 1-4 sub-steps, so
@@ -910,10 +938,16 @@ export class WebGLLedRenderer {
 				const isolated = framePathPx < sigmaEff;
 				const pathStartCap = isolated || isDiscontinuity ? 1 : 0;
 				const pathEndCap = isolated ? 1 : 0;
+				const firstSegment = written;
+				let firstTurn = 0;
+				let lastTurn = 0;
 
 				for (let k = 0; k < subSteps; k += stepGroup) {
 					const kNext = Math.min(k + stepGroup, subSteps);
 					const t = kNext / subSteps;
+					const turn = (deltaAngle * (kNext - k)) / subSteps;
+					if (k === 0) firstTurn = turn;
+					lastTurn = turn;
 					const bx =
 						relX * this.stepCos[kNext]! - relY * this.stepSin[kNext]! + this.stepCx[kNext]! + correctX * t;
 					const by =
@@ -948,10 +982,70 @@ export class WebGLLedRenderer {
 					ax = bx;
 					ay = by;
 				}
+				this.writeJoinCuts(firstSegment, written, firstTurn, lastTurn);
 			}
 		}
 
 		return written;
+	}
+
+	/**
+	 * Angles the butt-cap cuts of one LED's chords so neighbours meet on a
+	 * shared line. Cut square, two chords that meet at an angle leave a wedge
+	 * uncovered on the outside of the curve and overlap on the inside, and an
+	 * arc shows a faint notch at every join. Joins inside the frame cut along
+	 * the bisector of the two chords; the frame's own ends cut along the arc's
+	 * tangent there, half a step's turn off the chord, so the next frame's
+	 * first chord, cut the same way, meets this one.
+	 */
+	private writeJoinCuts(from: number, to: number, firstTurn: number, lastTurn: number): void {
+		const data = this.instanceData;
+		for (let i = from; i < to; i++) {
+			const o = i * INSTANCE_STRIDE_FLOATS;
+			this.chordDirection(i, CUT_DIR);
+			const dx = CUT_DIR[0]!;
+			const dy = CUT_DIR[1]!;
+
+			if (i > from) {
+				this.chordDirection(i - 1, CUT_NEIGHBOUR);
+				setCut(CUT_START, CUT_NEIGHBOUR[0]! + dx, CUT_NEIGHBOUR[1]! + dy, dx, dy);
+			} else {
+				const half = -firstTurn * 0.5;
+				const c = Math.cos(half);
+				const s = Math.sin(half);
+				setCut(CUT_START, dx * c - dy * s, dx * s + dy * c, dx, dy);
+			}
+
+			if (i < to - 1) {
+				this.chordDirection(i + 1, CUT_NEIGHBOUR);
+				setCut(CUT_END, dx + CUT_NEIGHBOUR[0]!, dy + CUT_NEIGHBOUR[1]!, dx, dy);
+			} else {
+				const half = lastTurn * 0.5;
+				const c = Math.cos(half);
+				const s = Math.sin(half);
+				setCut(CUT_END, dx * c - dy * s, dx * s + dy * c, dx, dy);
+			}
+
+			data[o + 11] = CUT_START[0]!;
+			data[o + 12] = CUT_START[1]!;
+			data[o + 13] = CUT_END[0]!;
+			data[o + 14] = CUT_END[1]!;
+		}
+	}
+
+	/** Unit direction of segment `i`'s chord, or +x for a zero-length one. */
+	private chordDirection(i: number, out: Float32Array): void {
+		const o = i * INSTANCE_STRIDE_FLOATS;
+		const dx = this.instanceData[o + 2]! - this.instanceData[o]!;
+		const dy = this.instanceData[o + 3]! - this.instanceData[o + 1]!;
+		const len = Math.hypot(dx, dy);
+		if (len > 1e-6) {
+			out[0] = dx / len;
+			out[1] = dy / len;
+		} else {
+			out[0] = 1;
+			out[1] = 0;
+		}
 	}
 
 	/**
@@ -1125,7 +1219,7 @@ export class WebGLLedRenderer {
 		gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
 
 		// Instance attributes (per-instance, divisor 1).
-		// Layout (11 floats, stride 44 bytes):
+		// Layout (15 floats, stride 60 bytes):
 		//   1: a_segA     vec2   offset  0
 		//   2: a_segB     vec2   offset  8
 		//   3: a_color    vec3   offset 16
@@ -1133,6 +1227,8 @@ export class WebGLLedRenderer {
 		//   5: a_sigma    float  offset 32
 		//   6: a_capStart float  offset 36
 		//   7: a_capEnd   float  offset 40
+		//   8: a_cutStart vec2   offset 44
+		//   9: a_cutEnd   vec2   offset 52
 		gl.bindBuffer(gl.ARRAY_BUFFER, this.instanceBuffer);
 		const stride = INSTANCE_STRIDE_FLOATS * 4;
 
@@ -1163,6 +1259,14 @@ export class WebGLLedRenderer {
 		gl.enableVertexAttribArray(7);
 		gl.vertexAttribPointer(7, 1, gl.FLOAT, false, stride, 40);
 		gl.vertexAttribDivisor(7, 1);
+
+		gl.enableVertexAttribArray(8);
+		gl.vertexAttribPointer(8, 2, gl.FLOAT, false, stride, 44);
+		gl.vertexAttribDivisor(8, 1);
+
+		gl.enableVertexAttribArray(9);
+		gl.vertexAttribPointer(9, 2, gl.FLOAT, false, stride, 52);
+		gl.vertexAttribDivisor(9, 1);
 
 		gl.bindVertexArray(null);
 	}
@@ -1369,6 +1473,8 @@ export class WebGLLedRenderer {
 		gl.bindAttribLocation(program, 5, "a_sigma");
 		gl.bindAttribLocation(program, 6, "a_capStart");
 		gl.bindAttribLocation(program, 7, "a_capEnd");
+		gl.bindAttribLocation(program, 8, "a_cutStart");
+		gl.bindAttribLocation(program, 9, "a_cutEnd");
 
 		gl.linkProgram(program);
 
