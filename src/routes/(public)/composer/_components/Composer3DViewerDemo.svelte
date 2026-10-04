@@ -10,7 +10,8 @@
   enter3D(sequence) — which spins up one performer and loads the sequence onto
   it. Viewer3DCanvas owns its own Threlte Canvas, orbit camera, and scene-
   feature context. This whole stack is heavy WebGL, so the page mounts it
-  through LazyMount only when the section nears the viewport.
+  through LazyMount only after the visitor chooses Enter 3D. Closing the
+  dialog unmounts the scene and releases its animation loop.
 
   Controls are the app's own: SceneControlWorkspace, the same right-hand rail
   every 3D stage in the product carries (sequence viewer, fullscreen, Director).
@@ -45,7 +46,10 @@
   } from "./composer-3d-demo-state";
 
   /** The per-visit demo sequence, provided by the page (no baked canon). */
-  let { sequence: sourceSequence }: { sequence: SequenceData } = $props();
+  let {
+    sequence: sourceSequence,
+    fillHeight = false,
+  }: { sequence: SequenceData; fillHeight?: boolean } = $props();
 
   // ── contexts (must be set during component init, not onMount) ────────────
   const viewer = createViewer3DState(COMPOSER_3D_DEMO_SEED);
@@ -139,7 +143,7 @@
   });
 </script>
 
-<div class="viewer-demo">
+<div class="viewer-demo" class:fill-height={fillHeight}>
   <div class="stage">
     <div class="art" role="img" aria-label={stageLabel}>
       {#if ready}
@@ -197,6 +201,14 @@
     overflow: hidden;
     background: oklch(0.12 0.02 270);
     border: 1px solid oklch(0.4 0.04 270 / 0.16);
+  }
+  .viewer-demo.fill-height {
+    height: 100%;
+  }
+  .fill-height .stage {
+    height: 100%;
+    aspect-ratio: auto;
+    border-radius: 0;
   }
   .art {
     position: absolute;
