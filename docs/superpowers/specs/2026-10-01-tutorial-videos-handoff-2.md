@@ -1,5 +1,8 @@
 # Tutorial Videos, Part 2 — Handoff (2026-10-01, 14:35)
 
+**Closed 2026-10-04.** All three videos are exported and uploaded by Austen.
+Nothing below is open. See the first handoff for the closing note.
+
 ## Completion update (2026-10-01, 14:46 CDT)
 Both code changes and the final draft edits below are complete on local main.
 The empty mount-save guard and the arrival/travel title highlight switch landed

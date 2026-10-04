@@ -1,5 +1,9 @@
 # Halloween Tutorial Videos — Handoff (2026-09-30)
 
+**Closed 2026-10-04.** All three videos (DCKΨ-, ΩΛ-XJ, Δ-ΛRZ) are exported
+and uploaded to the submission folder by Austen. Nothing below is open. The
+Post Studio fixes made for them are on local main and are not yet pushed.
+
 Living document. Updated at every milestone by whichever agent holds the work.
 Last update: 2026-10-01 14:46 CDT (final Post code and draft pass).
 No work branch is open. `codex/tutorial-videos-fixes`, `codex/auto-colour`,
