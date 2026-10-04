@@ -497,6 +497,7 @@
         props={{
           sequence: carriedSequence,
           layout: "band",
+          onGenerated: carryVisitorSequence,
           leftPropType: selectedProp,
           rightPropType: selectedProp,
           appearance: propAppearance,
