@@ -72,10 +72,12 @@ function radialTipConfig(
 
 // Bilateral — two mirror-symmetric ends, each ~126 from the pivot (the 252.8
 // pictograph half-width), so the staff spans ~253 tip to tip.
+export const STAFF_TIP_REACH = 126.4;
+
 const STAFF_TIP_POINTS: PropTipConfig = {
   points: [
-    { dx: -126.4, dy: 0 },
-    { dx: 126.4, dy: 0 },
+    { dx: -STAFF_TIP_REACH, dy: 0 },
+    { dx: STAFF_TIP_REACH, dy: 0 },
   ],
 };
 

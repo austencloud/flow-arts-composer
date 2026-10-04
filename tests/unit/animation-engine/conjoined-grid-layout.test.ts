@@ -13,11 +13,11 @@ import {
 } from "$lib/shared/animation-engine/services/conjoined-grid-layout";
 import { calculatePropCenter } from "$lib/shared/animation-engine/services/prop-position-calculator";
 import { AnimationVisibilityStateManager } from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
-import { TOPOLOGY_PRESETS } from "$lib/shared/multi-grid/domain/constants/topology-presets";
 import { PIXELS_PER_UNIT } from "$lib/shared/multi-grid/domain/constants/grid-mode-offsets";
 import type { PropState } from "$lib/shared/foundation/domain/types/prop-state";
 
 const GRID_DIR = resolve(__dirname, "../../../static/images/grid");
+const STAFF_SVG = resolve(__dirname, "../../../static/images/props/staff.svg");
 const STORAGE_KEY = "animation-visibility-settings";
 
 function strictGridSvg(file: string): string {
@@ -30,6 +30,7 @@ function strictGridSvg(file: string): string {
 
 interface DrawnCircle {
   id: string;
+  className: string;
   cx: number;
   cy: number;
   r: number;
@@ -42,31 +43,71 @@ function drawnCircles(svg: string): DrawnCircle[] {
     /<g transform="translate\((-?[\d.]+) 0\)">([\s\S]*?)<\/g>/g
   );
   for (const [, dx, body] of groups) {
-    const found = body!.matchAll(
-      /<circle\b[^>]*\sid="([^"]+)"[^>]*\scx="([\d.]+)"[^>]*\scy="([\d.]+)"[^>]*\sr="([\d.]+)"/g
-    );
-    for (const [, id, cx, cy, r] of found) {
+    for (const [tag] of body!.matchAll(/<circle\b[^>]*>/g)) {
+      const attr = (name: string) =>
+        new RegExp(`\\s${name}="([^"]*)"`).exec(tag)?.[1] ?? "";
       circles.push({
-        id: id!,
-        cx: Number(cx) + Number(dx),
-        cy: Number(cy),
-        r: Number(r),
+        id: attr("id"),
+        className: attr("class"),
+        cx: Number(attr("cx")) + Number(dx),
+        cy: Number(attr("cy")),
+        r: Number(attr("r")),
       });
     }
   }
   return circles;
 }
 
-describe("conjoined grid geometry", () => {
-  it("matches the canonical 2 Diamond topology, centered on the canvas", () => {
-    const preset = TOPOLOGY_PRESETS.find((p) => p.id === "2-row-diamond");
-    const [a, b] = preset!.build().grids;
-    const spanPx = (b!.center.x - a!.center.x) * PIXELS_PER_UNIT;
+/** Classes the strict-mode grid style leaves unfilled. */
+const UNFILLED_IN_STRICT_MODE = new Set([
+  "normal-hand-point",
+  "normal-layer2-point",
+  "diamond-grid-invisible",
+  "box-grid-invisible",
+]);
 
-    expect(b!.center.y).toBe(a!.center.y);
-    expect(2 * CONJOINED_SHIFT_VIEWBOX).toBe(spanPx);
-    expect(CONJOINED_SHIFT_VIEWBOX).toBe(150);
-    expect(CONJOINED_SHIFT_UNITS).toBe(1);
+/** How far the staff artwork reaches from the hand, in grid viewBox units. */
+function staffArtworkReach(): number {
+  const svg = readFileSync(STAFF_SVG, "utf8");
+  const width = Number(/viewBox="0 0 ([\d.]+) /.exec(svg)![1]);
+  const handX = Number(/id="centerPoint" cx="([\d.]+)"/.exec(svg)![1]);
+  expect(handX).toBeCloseTo(width / 2, 9);
+  return width - handX;
+}
+
+describe("conjoined grid geometry", () => {
+  it("sets the grid centers half a staff apart", () => {
+    expect(2 * CONJOINED_SHIFT_VIEWBOX).toBeCloseTo(staffArtworkReach(), 9);
+    expect(CONJOINED_SHIFT_UNITS * PIXELS_PER_UNIT).toBeCloseTo(
+      CONJOINED_SHIFT_VIEWBOX,
+      9
+    );
+  });
+
+  it("puts each level staff's tip on the other hand when both reach north", () => {
+    const north: PropState = {
+      centerPathAngle: -Math.PI / 2,
+      staffRotationAngle: 0,
+    };
+    const config = {
+      canvasSize: 950,
+      propDimensions: { width: 252.8, height: 77.8 },
+    };
+    const [blue, red] = [0, 1].map((propIndex) =>
+      calculatePropCenter(
+        shiftPropState(north, conjoinedShiftUnits(propIndex), {
+          centerPathAngle: 0,
+          staffRotationAngle: 0,
+        }),
+        config
+      )
+    );
+    const reach = staffArtworkReach();
+
+    expect(blue!.y).toBeCloseTo(325, 9);
+    expect(red!.y).toBeCloseTo(325, 9);
+    expect(blue!.x + reach).toBeCloseTo(red!.x, 9);
+    expect(red!.x - reach).toBeCloseTo(blue!.x, 9);
   });
 
   it("moves blue to the left grid and red to the right grid", () => {
@@ -76,14 +117,17 @@ describe("conjoined grid geometry", () => {
 });
 
 describe("shiftPropState", () => {
-  const config = { canvasSize: 500, propDimensions: { width: 100, height: 20 } };
+  const config = {
+    canvasSize: 500,
+    propDimensions: { width: 100, height: 20 },
+  };
   const shiftPx = CONJOINED_SHIFT_VIEWBOX * (500 / 950);
 
   it.each([
     ["angle", { centerPathAngle: 0.7, staffRotationAngle: 2.1 }],
     ["dash", { centerPathAngle: 0, staffRotationAngle: 1.2, x: 0.25, y: -0.4 }],
   ] as [string, PropState][])(
-    "places a %s prop one grid over for both hands",
+    "moves a %s prop onto its own grid for both hands",
     (_kind, prop) => {
       const original = calculatePropCenter(prop, config);
       for (const propIndex of [0, 1]) {
@@ -109,13 +153,17 @@ describe("shiftPropState", () => {
 
   it("moves cached trail points as far as the props, in canvas pixels", () => {
     const scaleFactor = 500 / 950;
-    const blue = [{ x: 100, y: 7 }, { x: 260, y: 9 }];
+    const blue = [
+      { x: 100, y: 7 },
+      { x: 260, y: 9 },
+    ];
     const red = [{ x: 100, y: 7 }];
 
     shiftTrailPoints(blue, 0, scaleFactor);
     shiftTrailPoints(red, 1, scaleFactor);
 
-    expect(blue.map((p) => p.x)).toEqual([100 - shiftPx, 260 - shiftPx]);
+    expect(blue[0]!.x).toBeCloseTo(100 - shiftPx, 9);
+    expect(blue[1]!.x).toBeCloseTo(260 - shiftPx, 9);
     expect(blue.map((p) => p.y)).toEqual([7, 9]);
     expect(red[0]!.x).toBeCloseTo(100 + shiftPx, 9);
   });
@@ -135,16 +183,22 @@ describe("buildConjoinedGridSvg", () => {
     }
   );
 
-  it.each(["diamond_grid.svg", "8point_grid.svg"])(
-    "shows only the center dot where %s grids meet a center",
+  it.each(["diamond_grid.svg", "8point_grid.svg", "box_grid.svg"])(
+    "never lets a %s dot overlap a dot of the other grid",
     (file) => {
-      const circles = drawnCircles(buildConjoinedGridSvg(strictGridSvg(file)));
-      for (const side of ["left", "right"]) {
-        const center = circles.find((c) => c.id === `${side}_center_point`)!;
-        const stacked = circles.filter(
-          (c) => c.cx === center.cx && c.cy === center.cy
-        );
-        expect(stacked.map((c) => c.id)).toEqual([`${side}_center_point`]);
+      const drawn = drawnCircles(
+        buildConjoinedGridSvg(strictGridSvg(file))
+      ).filter((c) => !UNFILLED_IN_STRICT_MODE.has(c.className));
+      const left = drawn.filter((c) => c.id.startsWith("left_"));
+      const right = drawn.filter((c) => c.id.startsWith("right_"));
+
+      expect(left.some((c) => c.id.includes("hand_point"))).toBe(true);
+      expect(right).toHaveLength(left.length);
+      for (const a of left) {
+        for (const b of right) {
+          const gap = Math.hypot(a.cx - b.cx, a.cy - b.cy) - a.r - b.r;
+          expect(gap, `${a.id} / ${b.id}`).toBeGreaterThan(0);
+        }
       }
     }
   );
@@ -186,7 +240,9 @@ describe("grid layout setting", () => {
 
   it("reads an unknown stored or linked layout as a single grid", () => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify({ gridLayout: "triple" }));
-    expect(new AnimationVisibilityStateManager().getGridLayout()).toBe("single");
+    expect(new AnimationVisibilityStateManager().getGridLayout()).toBe(
+      "single"
+    );
 
     const vm = new AnimationVisibilityStateManager({ ephemeral: true });
     vm.updateSettings({ gridLayout: "triple" as never });
