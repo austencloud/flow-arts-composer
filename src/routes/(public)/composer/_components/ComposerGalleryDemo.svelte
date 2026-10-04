@@ -40,7 +40,12 @@
   function pickSequences(pool: readonly SequenceData[]): SequenceData[] {
     const words = new Set<string>();
     const picks: SequenceData[] = [];
-    for (const sequence of pool) {
+    // Short cards keep the introductory examples readable at thumbnail size.
+    const shortSequences = pool.filter((sequence) => {
+      const steps = sequence.steps?.length || sequence.sequenceLength || 0;
+      return steps === 4;
+    });
+    for (const sequence of [...shortSequences, ...pool]) {
       const word = (
         sequence.word ||
         sequence.name ||
@@ -128,8 +133,14 @@
       <h3>{selected ? selected.name || selected.word : "Pick a sequence"}</h3>
     </div>
     {#if selected}
-      <button class="back-button" type="button" onclick={back}>
-        <i class="fas fa-arrow-left" aria-hidden="true"></i> Back to sequences
+      <button
+        class="back-button"
+        type="button"
+        aria-label="Back to sequences"
+        onclick={back}
+      >
+        <i class="fas fa-arrow-left" aria-hidden="true"></i>
+        {mobile.current ? "Back" : "Back to sequences"}
       </button>
     {:else}
       <label class="prop-picker">
@@ -278,6 +289,7 @@
     max-width: 12rem;
   }
   .back-button {
+    flex-shrink: 0;
     white-space: nowrap;
   }
   .gallery-stage {
