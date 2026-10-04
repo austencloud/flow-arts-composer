@@ -48,7 +48,6 @@ See licenses/MIT.txt for the full text.
   - @tka/domain             (packages/domain/)
   - @vtg/domain             (packages/vtg-domain/)
   - @spin-science/domain    (packages/spin-science-domain/)
-  - @caps/domain            (packages/caps-domain/)
   - @9square/domain         (packages/9square-domain/)
   - @tka/tka-types          (packages/tka-types/)
   - @austencloud/feedback-types (packages/feedback-types/)

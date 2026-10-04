@@ -1,7 +1,7 @@
 <!--
   Trochoid model artifact. These curves are TKA-owned SVG recreations generated
   from the exact parameters Zaltymbunk posted in the archived 2009 thread.
-  The generator and the full seven-pattern set live with the CAPs article.
+  The files are committed in static/caps/; their generator has been retired.
 -->
 <script lang="ts">
 	let { active = false }: { active?: boolean } = $props();

@@ -19,7 +19,7 @@ Root `LICENSE` file declares the canonical license for every directory. All pack
 
 | License | Directories |
 |---------|-------------|
-| MIT | `packages/flow-arts-core`, `packages/domain`, `packages/vtg-domain`, `packages/spin-science-domain`, `packages/caps-domain`, `packages/9square-domain`, `packages/tka-types`, `packages/feedback-types`, `packages/render-core`, `packages/sequence-engine` |
+| MIT | `packages/flow-arts-core`, `packages/domain`, `packages/vtg-domain`, `packages/spin-science-domain`, `packages/9square-domain`, `packages/tka-types`, `packages/feedback-types`, `packages/render-core`, `packages/sequence-engine` |
 | Elastic-2.0 | `src/`, `packages/render-composition`, `packages/animation-renderer`, `packages/pictograph`, `mcp-server/`, `mcp-server-pkg/`, `packages/mcp-game-controller`, `packages/mcp-tika-talk` |
 | CC BY-SA 4.0 | Sequence datasets, deck data, pictograph reference data, notation docs |
 
