@@ -40,7 +40,12 @@
   function pickSequences(pool: readonly SequenceData[]): SequenceData[] {
     const words = new Set<string>();
     const picks: SequenceData[] = [];
-    for (const sequence of pool) {
+    // Short cards keep the introductory examples readable at thumbnail size.
+    const shortSequences = pool.filter((sequence) => {
+      const steps = sequence.steps?.length || sequence.sequenceLength || 0;
+      return steps > 0 && steps <= 8;
+    });
+    for (const sequence of [...shortSequences, ...pool]) {
       const word = (
         sequence.word ||
         sequence.name ||
