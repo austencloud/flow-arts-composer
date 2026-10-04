@@ -47,6 +47,7 @@ import {
 	type LedShutter,
 } from "../../domain/led-photometry";
 import { LED_SAMPLER_MAX_LEDS } from "../led-sampler";
+import { LedRepeatFrameGuard } from "./led-repeat-frame";
 import {
 	FULLSCREEN_VERT,
 	LED_STREAK_VERT,
@@ -168,6 +169,8 @@ export class WebGLLedRenderer {
 	private stepCy = new Float32Array(MAX_SUB_STEPS + 1);
 	/** Timestamp of the last frame rendered, in seconds (from the input). */
 	private lastFrameTime = -1;
+	/** Recognises a re-render of the moment already on the canvas. */
+	private repeatGuard = new LedRepeatFrameGuard(MAX_LEDS);
 
 	// Framebuffers
 	private depositFBO: FBOAttachment | null = null;
@@ -371,6 +374,14 @@ export class WebGLLedRenderer {
 			gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
 			gl.clearColor(0, 0, 0, 0);
 			gl.clear(gl.COLOR_BUFFER_BIT);
+			this.repeatGuard.reset();
+			return;
+		}
+
+		// An export holds each frame's time for a dozen loop ticks; a repeat of
+		// a continuous frame would only bead the trail. See LedRepeatFrameGuard.
+		const lookKey = LedRepeatFrameGuard.lookKey(config.look, this.reducedMotion);
+		if (this.repeatGuard.isRepeat(input, lookKey, this.displayWidth, this.displayHeight)) {
 			return;
 		}
 
@@ -385,8 +396,22 @@ export class WebGLLedRenderer {
 			: Math.min(Math.max(rawDt, MIN_DT), MAX_STREAK_DT);
 		this.lastFrameTime = currentTimeSec;
 
+		// buildSegments also breaks the streak when the input frame changes size.
+		const frameChanged =
+			input.canvasWidth !== this.inputFrame.width ||
+			input.canvasHeight !== this.inputFrame.height;
 		const segmentCount = this.buildSegments(input, config, dt, isDiscontinuity);
-		if (segmentCount === 0) return;
+		if (segmentCount === 0) {
+			this.repeatGuard.reset();
+			return;
+		}
+		this.repeatGuard.record(
+			input,
+			lookKey,
+			this.displayWidth,
+			this.displayHeight,
+			!isDiscontinuity && !frameChanged,
+		);
 
 		gl.bindBuffer(gl.ARRAY_BUFFER, this.instanceBuffer);
 		gl.bufferSubData(
@@ -1150,6 +1175,7 @@ export class WebGLLedRenderer {
 		this.prevPositions.clear();
 		this.propGroups.clear();
 		this.lastFrameTime = -1;
+		this.repeatGuard.reset();
 		this._diagFrameCount = 0;
 	}
 
