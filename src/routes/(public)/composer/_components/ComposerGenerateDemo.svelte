@@ -28,6 +28,7 @@
   import type { Snippet } from "svelte";
   import { t } from "$lib/shared/i18n/i18n.svelte";
   import { MediaQuery } from "svelte/reactivity";
+  import { AnimationVisibilityStateManager } from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
   import { activateWhenNear } from "$lib/actions/activate-when-near";
   import LazyMount from "$lib/shared/components/LazyMount.svelte";
   import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
@@ -46,9 +47,19 @@
   } from "./composer-generation-failure";
   import { shouldAdoptCarriedSequence } from "./composer-sequence-ownership";
   import type { ComposerPropAppearance } from "./composer-prop-appearance";
+  import { generateComposerDemoSequence } from "./composer-demo-generation";
 
   /** Four columns keep the real workspace cells legible at showcase scale. */
   const STEP_COLUMNS = 4;
+
+  // Introduce circular paths consistently, regardless of saved hybrid choices.
+  const demoVisibilityManager = new AnimationVisibilityStateManager({
+    ephemeral: true,
+  });
+  demoVisibilityManager.setPathPolicy({
+    pathShape: "arc",
+    motionAwarePaths: false,
+  });
 
   /** The page's per-visit demo sequence seeds the stages; null while it is
       still generating (the bounded stages hold the footprint). */
@@ -116,35 +127,14 @@
     generating = true;
     result = "idle";
     try {
-      const [{ generationOrchestrator }, models, circular, grid, prop] =
-        await Promise.all([
-          import("$lib/shared/create/services/generation-orchestrator"),
-          import("$lib/shared/foundation/domain/models/generation/generate-models"),
-          import("$lib/shared/foundation/domain/models/generation/circular-models"),
-          import("$lib/shared/pictograph/grid/domain/enums/grid-enums"),
-          import("$lib/shared/pictograph/prop/domain/enums/prop-type"),
-        ]);
-      // This button intentionally exposes one prepared recipe, not the full
-      // generator: 16 steps, intermediate difficulty, smooth constraints, and
-      // a rotated quarter-period LOOP. Each draw may change the whole sequence.
-      const seq = await generationOrchestrator.generateSequence({
-        mode: models.GenerationMode.CIRCULAR,
-        loopType: circular.LOOPType.ROTATED,
-        period: circular.Period.QUARTERED,
-        length: 16,
-        turnIntensity: 1.5,
-        gridMode: grid.GridMode.DIAMOND,
-        propType: prop.PropType.STAFF,
-        difficulty: models.DifficultyLevel.INTERMEDIATE,
-        constraintPreset: "smooth",
-      });
+      const seq = await generateComposerDemoSequence();
       // Plain-ify reactive proxies before handing to the grid/player.
       // Raise the app's generation flag first: the remounted StepGrid reads it
       // on its first render and runs the same staggered reveal the Generate tab
       // produces. It clears itself once consumed.
       setPendingGenerationAnimation(true);
       hasGeneratedLocally = true;
-      current = JSON.parse(JSON.stringify(seq)) as SequenceData;
+      current = seq;
       onGenerated?.(current);
       result = "success";
     } catch (error) {
@@ -222,6 +212,7 @@
               leftPropType,
               rightPropType: rightPropType ?? leftPropType,
               ...appearance,
+              visibilityManagerOverride: demoVisibilityManager,
               trailSettingsOverride: HERO_TRAIL_PRESET,
               tipEffectMap: HERO_TIP_EFFECT_MAP,
             }}

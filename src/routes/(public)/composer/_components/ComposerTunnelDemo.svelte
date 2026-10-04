@@ -21,6 +21,11 @@
   import TunnelArtView from "$lib/shared/sequence-viewer/tunnel/TunnelArtView.svelte";
   import TunnelPresetBrowser from "$lib/shared/sequence-viewer/components/art-settings/TunnelPresetBrowser.svelte";
   import type { ComposerPropAppearance } from "./composer-prop-appearance";
+  import { generateComposerDemoSequence } from "./composer-demo-generation";
+  import {
+    classifyComposerGenerationFailure,
+    type ComposerGenerationResult,
+  } from "./composer-generation-failure";
   import { TunnelViewController } from "$lib/shared/sequence-viewer/tunnel/tunnel-view-controller.svelte";
   import {
     DEFAULT_TUNNEL_VIEW_STATE,
@@ -57,6 +62,7 @@
     rightPropType = "staff",
     appearance,
     propControl,
+    onGenerated,
   }: {
     sequence: SequenceData;
     layout?: "square" | "band";
@@ -64,11 +70,32 @@
     rightPropType?: string;
     appearance?: ComposerPropAppearance;
     propControl?: Snippet;
+    onGenerated?: (sequence: SequenceData) => void;
   } = $props();
 
   const reduceMotion = new MediaQuery("(prefers-reduced-motion: reduce)");
   let playing = $state(!reduceMotion.current);
   let fold = $state(4);
+  let generating = $state(false);
+  let generationResult = $state<ComposerGenerationResult>("idle");
+
+  async function generate() {
+    if (generating) return;
+    generating = true;
+    generationResult = "idle";
+    try {
+      const next = await generateComposerDemoSequence();
+      onGenerated?.(next);
+      generationResult = "success";
+    } catch (error) {
+      generationResult = classifyComposerGenerationFailure(error);
+      if (generationResult === "error") {
+        console.error("[composer tunnel] generation failed", error);
+      }
+    } finally {
+      generating = false;
+    }
+  }
 
   const foldOptions = [2, 4, 8].map((f) => ({
     value: String(f),
@@ -234,6 +261,29 @@
         maximumInstances={reduceMotion.current ? MAX_IMAGES_RM : MAX_IMAGES}
         selectionMode="config"
       />
+      {#if onGenerated}
+        <div class="new-tunnel-action">
+          <PanelButton
+            variant="primary"
+            onclick={generate}
+            disabled={generating}
+            ariaBusy={generating}
+          >
+            <i
+              class="fas {generating ? 'fa-circle-notch fa-spin' : 'fa-dice'}"
+              aria-hidden="true"
+            ></i>
+            <span>New tunnel</span>
+          </PanelButton>
+          <span class="retry-note" aria-live="polite">
+            {generationResult === "no-result"
+              ? t("composer_demo_no_result")
+              : generationResult === "error"
+                ? t("composer_demo_generate_failed")
+                : ""}
+          </span>
+        </div>
+      {/if}
     </div>
   </div>
 {:else}
@@ -369,6 +419,19 @@
     margin: 0;
     font-size: var(--font-size-lg, 1.25rem);
     font-weight: 650;
+  }
+
+  .new-tunnel-action {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .retry-note {
+    min-height: 1.25rem;
+    font-size: var(--font-size-min, 0.875rem);
+    color: var(--theme-text-muted);
   }
 
   @media (max-width: 959.98px) {
