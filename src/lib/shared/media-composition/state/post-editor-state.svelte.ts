@@ -84,6 +84,12 @@ import {
   openTakeTiming,
   saveTakeTiming,
 } from "$lib/shared/media-composition/services/take-timing-store";
+import {
+  loadPostEditorHistory,
+  savePostEditorHistory,
+  type PostTimingEffect,
+} from "$lib/shared/media-composition/services/post-editor-history-store";
+import { deepEqual } from "$lib/shared/sequence-viewer/services/viewer-url-state-codec";
 
 /**
  * The timeline editor's working state: the project with its undo history,
@@ -92,7 +98,8 @@ import {
  * in one shows in all of them.
  *
  * Nothing here touches Firestore. The project and the timings save on this
- * device as they change.
+ * device as they change, and the undo history is kept in the tab, so Undo
+ * still works after a reload.
  */
 
 export type PostEditorMode = "edit" | "timing";
@@ -119,6 +126,8 @@ const HISTORY_DEPTH = 100;
 const TIMING_UNDO_DEPTH = 50;
 /** Changes to one setting this close together undo as one. */
 const SETTING_JOIN_MS = 800;
+/** The undo history is kept in the tab once edits pause this long. */
+const HISTORY_KEEP_DELAY_MS = 400;
 const FRAME_SECONDS = 1 / POST_FRAME_RATE;
 
 type MappingAppearance = NonNullable<PostAnimationItem["animationAppearance"]>;
@@ -159,8 +168,15 @@ export function createPostEditorState(deps: PostEditorDeps) {
   // History keeps its original objects; saved copies must still be newer
   // than the edit that undo, session cancellation, or import replaces.
   let savedUpdatedAt = project.updatedAt;
-  let past = $state.raw<PostProject[]>([]);
-  let future = $state.raw<PostProject[]>([]);
+  // A reload in this tab brings back the undo history, but only when this is
+  // the very save it led up to.
+  const restoredHistory = loadPostEditorHistory(project);
+  let past = $state.raw<PostProject[]>(
+    restoredHistory?.past.map((entry) => entry.project) ?? []
+  );
+  let future = $state.raw<PostProject[]>(
+    restoredHistory?.future.map((entry) => entry.project) ?? []
+  );
   /** The project a drag started from; each live step re-applies to it. */
   let gestureBase = $state.raw<PostProject | null>(null);
   /** The setting changed last and when, so a slider drag undoes as one step. */
@@ -191,10 +207,24 @@ export function createPostEditorState(deps: PostEditorDeps) {
    * Timing an edit changed along with the post, keyed by the project the
    * edit made, so undoing that edit puts the take's timing back too.
    */
-  const timingEffects = new WeakMap<
-    PostProject,
-    { takeId: string; before: TakeTiming; after: TakeTiming }
-  >();
+  const timingEffects = new WeakMap<PostProject, PostTimingEffect>();
+  if (restoredHistory) {
+    for (const entry of [...restoredHistory.past, ...restoredHistory.future]) {
+      if (entry.effect) timingEffects.set(entry.project, entry.effect);
+    }
+    if (restoredHistory.headEffect)
+      timingEffects.set(project, restoredHistory.headEffect);
+  }
+  /** The last saved post and the undo lists leading to it, not yet kept. */
+  let historyToKeep: {
+    /** The post as saved, which is what a reload opens. */
+    head: PostProject;
+    /** The same post as the editor holds it, which timing effects key on. */
+    headProject: PostProject;
+    past: PostProject[];
+    future: PostProject[];
+  } | null = null;
+  let historyTimer: ReturnType<typeof setTimeout> | undefined;
 
   let previewSeconds = $state(0);
   let playing = $state(false);
@@ -332,14 +362,53 @@ export function createPostEditorState(deps: PostEditorDeps) {
     timingResult?: { ok: true } | { ok: false; error: string }
   ): void {
     savedUpdatedAt = Math.max(now(), project.updatedAt, savedUpdatedAt + 1);
-    const result = savePostProject(snapshotFor(project));
+    const snapshot = snapshotFor(project);
+    const result = savePostProject(snapshot);
     saveRevision += 1;
     saveError = !result.ok
       ? `Post Studio could not save this post: ${result.error}`
       : timingResult && !timingResult.ok
         ? `Post Studio could not save this take's separate timing: ${timingResult.error}`
         : null;
+    // A post that failed to save opens as the older save after a reload, and
+    // the history already kept still leads to that one.
+    if (result.ok) keepHistorySoon(snapshot);
   }
+
+  /**
+   * The history is written once edits pause, so a slider drag does not copy
+   * the whole history on every frame. A reload or leaving the editor writes
+   * it straight away.
+   */
+  function keepHistorySoon(head: PostProject): void {
+    historyToKeep = { head, headProject: project, past, future };
+    clearTimeout(historyTimer);
+    historyTimer = setTimeout(keepHistory, HISTORY_KEEP_DELAY_MS);
+  }
+
+  function keepHistory(): void {
+    clearTimeout(historyTimer);
+    historyTimer = undefined;
+    const pending = historyToKeep;
+    if (!pending) return;
+    historyToKeep = null;
+    // Effects are read now: the Tutorial records its timing change only
+    // after its step is saved.
+    const entry = (step: PostProject) => {
+      const effect = timingEffects.get(step);
+      return effect ? { project: step, effect } : { project: step };
+    };
+    const headEffect = timingEffects.get(pending.headProject);
+    savePostEditorHistory({
+      head: pending.head,
+      ...(headEffect ? { headEffect } : {}),
+      past: pending.past.map(entry),
+      future: pending.future.map(entry),
+    });
+  }
+
+  if (typeof window !== "undefined")
+    window.addEventListener("pagehide", keepHistory);
 
   function commit(next: PostProject): boolean {
     if (next === project) return false;
@@ -443,6 +512,7 @@ export function createPostEditorState(deps: PostEditorDeps) {
     }
     project = previous;
     keepSelectionValid(previous);
+    loadSavedMedia();
     replayTiming(undone, "before");
     persistProject();
   }
@@ -467,6 +537,7 @@ export function createPostEditorState(deps: PostEditorDeps) {
     }
     project = next;
     keepSelectionValid(next);
+    loadSavedMedia();
     replayTiming(next, "after");
     persistProject();
   }
@@ -535,7 +606,8 @@ export function createPostEditorState(deps: PostEditorDeps) {
     const effect = timingEffects.get(edited);
     if (!effect) return;
     const expected = side === "before" ? effect.after : effect.before;
-    if (timings[effect.takeId] !== expected) return;
+    // Compared by value: after a reload the timing is a fresh copy.
+    if (!deepEqual(timings[effect.takeId], expected)) return;
     setTiming(effect.takeId, effect[side], false);
   }
 
@@ -643,33 +715,45 @@ export function createPostEditorState(deps: PostEditorDeps) {
     return `take-${index}`;
   }
 
-  // Takes saved in the project: catalog and linked ones come straight back,
-  // a local file waits to be picked again.
-  for (const take of project.takes) {
-    if (take.ref.kind === "catalog") {
-      const video = deps.getCatalogVideo?.(take.ref.videoId);
-      // Without its video yet, the timing waits too, so an older editor's
-      // map can still seed it when the catalog arrives.
-      if (video) attach(take, video.url, false, video.legacyStepMap);
-      else if (
-        project.timings?.[take.id] ||
-        loadTakeTiming(sequence.id, take.takeKey)
-      ) {
+  /**
+   * Media saved in the project: catalog and linked takes and linked images
+   * come straight back, a local file waits to be picked again. Undo after a
+   * reload can bring back media this page has not loaded yet, so it runs
+   * then too.
+   */
+  function loadSavedMedia(): void {
+    for (const take of project.takes) {
+      const loaded = timings[take.id];
+      if (loaded?.takeKey === take.takeKey && loaded.sequenceId === sequence.id)
+        continue;
+      if (take.ref.kind === "catalog") {
+        const video = deps.getCatalogVideo?.(take.ref.videoId);
+        // Without its video yet, the timing waits too, so an older editor's
+        // map can still seed it when the catalog arrives.
+        if (video) attach(take, video.url, false, video.legacyStepMap);
+        else if (
+          project.timings?.[take.id] ||
+          loadTakeTiming(sequence.id, take.takeKey)
+        ) {
+          timings = { ...timings, [take.id]: openTiming(take) };
+        }
+      } else if (take.ref.kind === "linked") {
+        attach(take, take.ref.url, false);
+      } else {
         timings = { ...timings, [take.id]: openTiming(take) };
       }
-    } else if (take.ref.kind === "linked") {
-      attach(take, take.ref.url, false);
-    } else {
-      timings = { ...timings, [take.id]: openTiming(take) };
+    }
+    for (const image of project.images ?? []) {
+      if (image.ref.kind === "linked" && !imageMedia[image.id]) {
+        imageMedia = {
+          ...imageMedia,
+          [image.id]: { url: image.ref.url, owned: false },
+        };
+      }
     }
   }
+  loadSavedMedia();
   timingTakeId = takesInUse[0]?.id ?? project.takes[0]?.id ?? null;
-
-  for (const image of project.images ?? []) {
-    if (image.ref.kind === "linked") {
-      imageMedia[image.id] = { url: image.ref.url, owned: false };
-    }
-  }
 
   /** Import through the same atomic history path as every other edit. */
   function importProject(
@@ -808,6 +892,8 @@ export function createPostEditorState(deps: PostEditorDeps) {
     savedUpdatedAt = Math.max(savedUpdatedAt, incoming.updatedAt);
     lastSetting = null;
     keepSelectionValid(incoming);
+    // The other tab's save is what a reload opens; the history now leads to it.
+    keepHistorySoon(incoming);
     return true;
   }
 
@@ -1394,6 +1480,9 @@ export function createPostEditorState(deps: PostEditorDeps) {
   }
 
   function dispose(): void {
+    keepHistory();
+    if (typeof window !== "undefined")
+      window.removeEventListener("pagehide", keepHistory);
     for (const held of Object.values(media)) {
       if (held.owned) URL.revokeObjectURL(held.url);
     }
