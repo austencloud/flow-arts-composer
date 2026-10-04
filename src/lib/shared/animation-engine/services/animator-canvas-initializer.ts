@@ -125,7 +125,11 @@ export class AnimatorCanvasInitializer {
       // Step 7: Load initial textures
       const initialGridMode = deps.gridMode?.toString() ?? "diamond";
       await Promise.all([
-        this.renderer.loadGridTexture(initialGridMode, deps.showNonRadialPoints ?? true),
+        this.renderer.loadGridTexture(
+          initialGridMode,
+          deps.showNonRadialPoints ?? true,
+          deps.gridConjoined ?? false
+        ),
         deps.loadPropTextures(),
       ]);
 

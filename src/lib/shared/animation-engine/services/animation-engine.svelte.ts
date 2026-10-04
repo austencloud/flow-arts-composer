@@ -384,6 +384,7 @@ export class AnimationEngine {
     });
 
     // Build the init context and delegate service creation to the manager.
+    const initGridLayout = vm.getGridLayout();
     const ctx: LifecycleInitCtx = {
       containerElement,
       visibilityManagerOverride: this.visibilityManagerOverride,
@@ -399,6 +400,7 @@ export class AnimationEngine {
       initialGridMode: this.playbackSync.lastPropsRef?.gridMode,
       initialShowNonRadialPoints:
         this.playbackSync.lastPropsRef?.showNonRadialPoints ?? true,
+      initialGridConjoined: initGridLayout === "conjoined",
       buildFrameParams: (props) =>
         this.frameSystem.buildFrameParams(props, this.buildFrameDeps()),
       getVM: () => this.getVM(),
@@ -420,6 +422,7 @@ export class AnimationEngine {
     this.playbackSync.setPreviousShowNonRadialPoints(
       this.playbackSync.lastPropsRef?.showNonRadialPoints ?? true
     );
+    this.playbackSync.setPreviousGridLayout(initGridLayout);
 
     // Wire overlay renderers that may have been created during the async
     // initializeCanvas gap.

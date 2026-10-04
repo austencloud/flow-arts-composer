@@ -22,6 +22,11 @@ export interface MotionColorsCache {
 
 export type TrailVisibility = "off" | "on";
 export type GridMode = "none" | "8point" | "auto";
+/**
+ * "conjoined" is the Level 7 side-by-side grid: two grids joined at a shared
+ * point, the blue hand moving on the left grid and the red hand on the right.
+ */
+export type GridLayout = "single" | "conjoined";
 export type PlaybackMode = "continuous" | "step";
 export type WordHeaderHighlight = "arrival" | "travel";
 export interface AnimationPathPolicy {
@@ -31,6 +36,7 @@ export interface AnimationPathPolicy {
 
 export interface AnimationVisibilitySettings {
   gridMode: GridMode;
+  gridLayout: GridLayout;
   stepNumbers: boolean;
   props: boolean;
   playbackMode: PlaybackMode;
@@ -123,6 +129,7 @@ export class AnimationVisibilityStateManager {
   private getDefaultSettings(): AnimationVisibilitySettings {
     return {
       gridMode: "8point",
+      gridLayout: "single",
       stepNumbers: true,
       props: true,
       playbackMode: "continuous",
@@ -196,6 +203,7 @@ export class AnimationVisibilityStateManager {
 
         if (parsed.wordHeaderHighlight !== "travel")
           parsed.wordHeaderHighlight = "arrival";
+        if (parsed.gridLayout !== "conjoined") parsed.gridLayout = "single";
 
         return {
           ...defaults,
@@ -245,6 +253,7 @@ export class AnimationVisibilityStateManager {
     key: Exclude<
       keyof AnimationVisibilitySettings,
       | "gridMode"
+      | "gridLayout"
       | "playbackMode"
       | "speed"
       | "darkMode"
@@ -272,6 +281,7 @@ export class AnimationVisibilityStateManager {
     key: Exclude<
       keyof AnimationVisibilitySettings,
       | "gridMode"
+      | "gridLayout"
       | "playbackMode"
       | "speed"
       | "effortPreset"
@@ -336,6 +346,17 @@ export class AnimationVisibilityStateManager {
 
   setGridMode(mode: GridMode): void {
     this.settings.gridMode = mode;
+    this.saveToStorage();
+    this.notifyObservers();
+  }
+
+  /** Anything other than "conjoined" (for example a hand-edited link) is single. */
+  getGridLayout(): GridLayout {
+    return this.settings.gridLayout === "conjoined" ? "conjoined" : "single";
+  }
+
+  setGridLayout(layout: GridLayout): void {
+    this.settings.gridLayout = layout;
     this.saveToStorage();
     this.notifyObservers();
   }
@@ -623,6 +644,7 @@ export class AnimationVisibilityStateManager {
     key: Exclude<
       keyof AnimationVisibilitySettings,
       | "gridMode"
+      | "gridLayout"
       | "playbackMode"
       | "speed"
       | "darkMode"

@@ -30,6 +30,7 @@ vi.mock(
     getAnimationVisibilityManager: () => ({
       effectsConfigState: {},
       isDarkMode: () => true,
+      getGridLayout: () => "single",
     }),
   })
 );

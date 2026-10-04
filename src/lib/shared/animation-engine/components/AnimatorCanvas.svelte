@@ -682,6 +682,7 @@ Last audit: 2025-12-27
   let progressBarVisible = $state(false);
   let leftPathLinesVisible = $state(false);
   let rightPathLinesVisible = $state(false);
+  let gridConjoined = $state(false);
   $effect.pre(() => {
     tkaGlyphVisible = visibilityManager.getVisibility("tkaGlyph");
     elementalGlyphVisible = visibilityManager.getVisibility("elementalGlyph");
@@ -694,6 +695,7 @@ Last audit: 2025-12-27
     progressBarVisible = visibilityManager.getVisibility("progressBar");
     leftPathLinesVisible = visibilityManager.getVisibility("leftPathLines");
     rightPathLinesVisible = visibilityManager.getVisibility("rightPathLines");
+    gridConjoined = visibilityManager.getGridLayout() === "conjoined";
   });
 
   const darkModeEnabled = $derived(
@@ -723,6 +725,10 @@ Last audit: 2025-12-27
   const effectiveRightPathLinesVisible = $derived(
     rightPathLinesVisible && !hidePathLines
   );
+  // Tunnel layers keep the single grid (the engine makes the same call).
+  const effectiveGridConjoined = $derived(
+    gridConjoined && additionalLayers.length === 0
+  );
 
   function handleVisibilityChange() {
     tkaGlyphVisible = visibilityManager.getVisibility("tkaGlyph");
@@ -736,6 +742,7 @@ Last audit: 2025-12-27
     progressBarVisible = visibilityManager.getVisibility("progressBar");
     leftPathLinesVisible = visibilityManager.getVisibility("leftPathLines");
     rightPathLinesVisible = visibilityManager.getVisibility("rightPathLines");
+    gridConjoined = visibilityManager.getGridLayout() === "conjoined";
   }
 
   // Register/unregister observer reactively so visibilityManager is tracked
@@ -910,6 +917,7 @@ Last audit: 2025-12-27
       {effectiveBeatNumbersVisible}
       leftPathLinesVisible={effectiveLeftPathLinesVisible}
       rightPathLinesVisible={effectiveRightPathLinesVisible}
+      gridConjoined={effectiveGridConjoined}
       {suppress2DOverlays}
       {resizePaused}
       {visibilityManagerOverride}

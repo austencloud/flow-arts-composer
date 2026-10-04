@@ -22,6 +22,7 @@
   import { cubicOut } from "svelte/easing";
   import { motionDuration } from "$lib/shared/transitions/motion";
   import { DURATION } from "$lib/shared/transitions/transitions";
+  import { CONJOINED_SHIFT_VIEWBOX } from "../../services/conjoined-grid-layout";
 
   let {
     sequenceData = null,
@@ -30,6 +31,7 @@
     showLeft = false,
     showRight = false,
     primaryPropColors,
+    conjoined = false,
     vm = null,
   }: {
     sequenceData?: SequenceData | null;
@@ -42,6 +44,8 @@
     showLeft?: boolean;
     showRight?: boolean;
     primaryPropColors?: ViewerCustomColorPair | null;
+    /** Level 7 joined grids: blue's path on the left grid, red's on the right. */
+    conjoined?: boolean;
     /** Per-surface visibility manager; falls back to the global singleton. */
     vm?: AnimationVisibilityStateManager | null;
   } = $props();
@@ -107,6 +111,12 @@
   const rightColor = $derived(
     colors?.right ?? getMotionColor(HandSide.RIGHT, "dark")
   );
+  const leftTransform = $derived(
+    conjoined ? `translate(${-CONJOINED_SHIFT_VIEWBOX} 0)` : undefined
+  );
+  const rightTransform = $derived(
+    conjoined ? `translate(${CONJOINED_SHIFT_VIEWBOX} 0)` : undefined
+  );
   const drawLeft = $derived(showLeft && leftPathD !== null);
   const drawRight = $derived(showRight && rightPathD !== null);
 </script>
@@ -128,6 +138,7 @@
     {#if drawLeft}
       <path
         d={leftPathD}
+        transform={leftTransform}
         fill="none"
         stroke={leftColor}
         stroke-width="3"
@@ -139,6 +150,7 @@
     {#if drawRight}
       <path
         d={rightPathD}
+        transform={rightTransform}
         fill="none"
         stroke={rightColor}
         stroke-width="3"

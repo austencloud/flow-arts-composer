@@ -196,6 +196,7 @@ export class Canvas2DAnimationRenderer {
 
   // Track current grid mode for resize operations
   private currentGridMode: string = "diamond";
+  private currentGridConjoined = false;
 
   // Cached off-white tinted grid for dark mode. ctx.filter("invert") is
   // silently ignored on iOS Safari, leaving the grid pure black and invisible
@@ -379,14 +380,17 @@ export class Canvas2DAnimationRenderer {
 
   async loadGridTexture(
     gridMode: string,
-    showNonRadialPoints: boolean = true
+    showNonRadialPoints: boolean = true,
+    conjoined: boolean = this.currentGridConjoined
   ): Promise<void> {
     this.currentGridMode = gridMode;
+    this.currentGridConjoined = conjoined;
     const canvasSize = this.appManager.getCurrentSize();
     await this.imageLoader.loadGridImage(
       gridMode,
       canvasSize,
-      showNonRadialPoints
+      showNonRadialPoints,
+      conjoined
     );
   }
 

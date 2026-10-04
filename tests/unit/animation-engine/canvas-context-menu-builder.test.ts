@@ -160,4 +160,24 @@ describe("canvas context menu builder", () => {
     expect(vm.getVisibility("rightPathLines")).toBe(true);
     expect(paths()?.checked).toBe(true);
   });
+
+  it("switches the conjoined grid on and off without touching the grid mode", () => {
+    const conjoined = () =>
+      (
+        submenu(
+          buildCanvasContextMenuItems({ visibilityManager: vm }),
+          "grid-submenu"
+        )?.children ?? []
+      ).find((c) => c.id === "grid-conjoined");
+    const modeBefore = vm.getGridMode();
+
+    expect(conjoined()?.checked).toBe(false);
+    conjoined()?.action?.();
+    expect(vm.getGridLayout()).toBe("conjoined");
+    expect(conjoined()?.checked).toBe(true);
+
+    conjoined()?.action?.();
+    expect(vm.getGridLayout()).toBe("single");
+    expect(vm.getGridMode()).toBe(modeBefore);
+  });
 });

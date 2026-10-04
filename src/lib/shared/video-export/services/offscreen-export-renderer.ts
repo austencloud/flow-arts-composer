@@ -171,7 +171,8 @@ export class OffscreenExportRenderer {
     const gridMode = this.panelState.sequenceData?.gridMode ?? GridMode.DIAMOND;
     await this.handle.context.renderer.loadGridTexture(
       gridMode,
-      init.showNonRadialPoints
+      init.showNonRadialPoints,
+      vm.getGridLayout() === "conjoined"
     );
 
     // Thread the resolved prop types into the offscreen engine's STATE before the

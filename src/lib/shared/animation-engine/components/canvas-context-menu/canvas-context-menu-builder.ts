@@ -8,7 +8,8 @@
  *   - Visibility: Props, Step numbers, TKA Glyph, Hand TnD, Prop TnD,
  *     Word Header, Mandala, Paths, Progress Bar, Dark Mode (toggles, menu
  *     stays open)
- *   - Grid: Off / 8-Point / Auto (radio-style)
+ *   - Grid: Off / 8-Point / Auto (radio-style), plus the Level 7 Conjoined
+ *     (side by side) toggle
  *   - Playback: Continuous / Step (radio-style)
  *   - Effects: None + every effect in the shared registry (radio-style)
  *   - Effect Presets: the active effect's presets + Default (radio-style)
@@ -251,6 +252,7 @@ function buildGridChildren(
   vm: AnimationVisibilityStateManager
 ): ContextMenuItem[] {
   const current: GridMode = vm.getGridMode();
+  const conjoined = vm.getGridLayout() === "conjoined";
   return [
     {
       id: "grid-none",
@@ -272,6 +274,15 @@ function buildGridChildren(
       icon: "fa-wand-magic",
       checked: current === "auto",
       action: () => vm.setGridMode("auto"),
+    },
+    // Level 7 conjoined grid: blue on the left grid, red on the right.
+    {
+      id: "grid-conjoined",
+      label: t("animation_menu_conjoined"),
+      icon: "fa-table-columns",
+      checked: conjoined,
+      keepOpen: true,
+      action: () => vm.setGridLayout(conjoined ? "single" : "conjoined"),
     },
   ];
 }

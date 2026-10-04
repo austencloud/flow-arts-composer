@@ -130,6 +130,7 @@ captureEffectDiagnostics to the context menu.
     placementGlyphVisible = false,
     leftPathLinesVisible = false,
     rightPathLinesVisible = false,
+    gridConjoined = false,
     suppress2DOverlays = false,
     // Engine wiring props
     resizePaused = false,
@@ -203,6 +204,8 @@ captureEffectDiagnostics to the context menu.
     placementGlyphVisible?: boolean;
     leftPathLinesVisible?: boolean;
     rightPathLinesVisible?: boolean;
+    /** Level 7 joined grids: path lines move onto each hand's own grid. */
+    gridConjoined?: boolean;
     suppress2DOverlays?: boolean;
     resizePaused?: boolean;
     visibilityManagerOverride?: AnimationVisibilityStateManager;
@@ -624,6 +627,7 @@ captureEffectDiagnostics to the context menu.
       {stepData}
       showLeft={leftPathLinesVisible}
       showRight={rightPathLinesVisible}
+      conjoined={gridConjoined}
       vm={visibilityManager}
     />
 

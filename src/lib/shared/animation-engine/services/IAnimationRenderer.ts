@@ -149,10 +149,12 @@ export interface IAnimationRenderer {
   /**
    * Load grid image for a specific grid mode
    * @param gridMode - Grid mode (e.g., "diamond", "box")
+   * @param conjoined - Draw the Level 7 joined pair; omitted keeps the current layout
    */
   loadGridTexture(
     gridMode: string,
-    showNonRadialPoints?: boolean
+    showNonRadialPoints?: boolean,
+    conjoined?: boolean
   ): Promise<void>;
 
   /**
