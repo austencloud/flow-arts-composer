@@ -35,6 +35,20 @@ function staff(x: number, y: number): LedSample[] {
   }));
 }
 
+/**
+ * A staff at (u, v) in the engine's square, drawn in a width x height frame
+ * the way the sampler places it: scaled to the square, offset by its centring.
+ */
+function staffInFrame(width: number, height: number, u: number, v: number): LedSample[] {
+  const side = Math.min(width, height);
+  const x = (width - side) / 2 + u * side;
+  const y = (height - side) / 2 + v * side;
+  return staff(x, y).map((led, ledIndex) => ({
+    ...led,
+    y: y + ledIndex * 0.15 * side,
+  }));
+}
+
 function sweptLength(probe: SegmentProbe, written: number): number {
   let total = 0;
   for (let i = 0; i < written; i++) {
@@ -57,11 +71,12 @@ function renderer(): SegmentProbe {
 describe("WebGLLedRenderer frame changes", () => {
   it("does not streak a staff across a re-centred frame", () => {
     const probe = renderer();
-    // Tall frame: the square sits 176 px down. Then the frame shrinks to the
-    // square, so the same staff is drawn 176 px higher without having moved.
+    // Tall frame: the square sits 152 px down. Then the frame shrinks below
+    // the square's width, so the same staff is drawn higher and smaller
+    // without having moved.
     probe.buildSegments(
       {
-        leds: staff(200, 300),
+        leds: staffInFrame(396, 700, 0.5, 0.4),
         currentTime: 1000,
         canvasWidth: 396,
         canvasHeight: 700,
@@ -73,7 +88,7 @@ describe("WebGLLedRenderer frame changes", () => {
     probe.displayHeight = 349;
     const written = probe.buildSegments(
       {
-        leds: staff(200, 124),
+        leds: staffInFrame(396, 349, 0.5, 0.4),
         currentTime: 1016,
         canvasWidth: 396,
         canvasHeight: 349,
@@ -85,6 +100,40 @@ describe("WebGLLedRenderer frame changes", () => {
 
     expect(written).toBeGreaterThan(0);
     expect(sweptLength(probe, written)).toBeLessThan(1);
+  });
+
+  it("keeps a moving staff's streak while its frame resizes every frame", () => {
+    const probe = renderer();
+    // The opening tunnel's box shrinks a few pixels a frame while the staff
+    // swings; each frame must still streak from where the staff was.
+    probe.buildSegments(
+      {
+        leds: staffInFrame(396, 700, 0.4, 0.4),
+        currentTime: 1000,
+        canvasWidth: 396,
+        canvasHeight: 700,
+      },
+      DEFAULT_LED_CONFIG,
+      1 / 30,
+      false
+    );
+    probe.displayHeight = 690;
+    const written = probe.buildSegments(
+      {
+        leds: staffInFrame(396, 690, 0.5, 0.4),
+        currentTime: 1033,
+        canvasWidth: 396,
+        canvasHeight: 690,
+      },
+      DEFAULT_LED_CONFIG,
+      1 / 30,
+      false
+    );
+
+    // Both LEDs moved a tenth of the 396 px square to the right.
+    expect(sweptLength(probe, written)).toBeCloseTo(2 * 39.6, 0);
+    // A continuing path joins the last frame with a butt cap, not a new dot.
+    expect(probe.instanceData[9]).toBe(0);
   });
 
   it("still streaks real motion inside an unchanged frame", () => {
