@@ -78,7 +78,17 @@
   let generating = $state(false);
   let result = $state<ComposerGenerationResult>("idle");
   let previewActive = $state(false);
+  let playbackStep = $state<number | null>(null);
+  let playbackSequenceId = $state<string | null>(null);
+  const selectedStepNumber = $derived(
+    current && playbackSequenceId === current.id ? playbackStep : null
+  );
   const reduceMotion = new MediaQuery("(prefers-reduced-motion: reduce)");
+
+  function handlePlayerStepChange(step: number, sequenceId: string | null) {
+    playbackStep = Math.floor(step);
+    playbackSequenceId = sequenceId;
+  }
 
   $effect(() => {
     if (shouldAdoptCarriedSequence(current, sequence, hasGeneratedLocally)) {
@@ -181,6 +191,8 @@
               startPlacement: current?.startPlacement ?? null,
               manualColumnCount: STEP_COLUMNS,
               activeMode: "generate",
+              selectedStepNumber,
+              autoFocusSelectedStep: false,
               fitAllSteps: true,
               sequenceWord: current?.word ?? "",
               leftPropTypeOverride: leftPropType,
@@ -206,6 +218,7 @@
               cornerToggle: true,
               playbackAllowed: active,
               resumeWhenPlaybackAllowed: true,
+              onStepChange: handlePlayerStepChange,
               leftPropType,
               rightPropType: rightPropType ?? leftPropType,
               ...appearance,
