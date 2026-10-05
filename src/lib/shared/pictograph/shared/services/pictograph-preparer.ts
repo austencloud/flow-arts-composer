@@ -34,7 +34,7 @@ import {
   gridJoinKey,
   gridJoinPropNudges,
   isGridJoin,
-} from "$lib/shared/multi-grid/services/grid-join-layout";
+} from "@tka/render-core";
 import { getBetaOffsetSize } from "$lib/shared/render/core/constants/prop-classification";
 // Prop-type defaults used when callers don't pass explicit options.
 // Formerly imported getSettings() from app-state.svelte, but that module chain

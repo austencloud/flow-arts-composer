@@ -8,7 +8,7 @@ import {
   JOINED_POINT_RADIUS,
   type GridJoinLayout,
   type JoinedGridPoint,
-} from "$lib/shared/multi-grid/services/grid-join-layout";
+} from "@tka/render-core";
 import type { RenderContext2D } from "./types";
 
 const VIEWBOX_SIZE = 950;

@@ -3,7 +3,7 @@ import type { PreparedPictographData } from "../../pictograph/shared/domain/mode
 import { isVisibleMotion } from "../../pictograph/shared/domain/models/motion-data";
 import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
 import { deriveBaseLayerKey, deriveGridPointsLayerKey, deriveTKALayerKey, deriveReversalLayerKey, getJoinedActiveHandPoints } from "./layer-key-deriver";
-import { getGridJoinLayout } from "$lib/shared/multi-grid/services/grid-join-layout";
+import { getGridJoinLayout } from "@tka/render-core";
 import {
   applyJoinedGridFit,
   paintJoinedGridPoints,

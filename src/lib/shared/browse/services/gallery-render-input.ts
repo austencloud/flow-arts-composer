@@ -14,7 +14,7 @@
 
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
 import { deriveWord } from "$lib/shared/foundation/services/word-deriver";
-import { sequenceGridJoinKey } from "$lib/shared/multi-grid/services/grid-join-layout";
+import { sequenceGridJoinKey } from "@tka/render-core";
 import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
 import {
   resolveInfoCellDisplay,

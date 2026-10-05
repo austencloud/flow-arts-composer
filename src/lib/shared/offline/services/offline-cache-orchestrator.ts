@@ -16,7 +16,7 @@ import {
   markMissing,
 } from "$lib/shared/browse/services/cloud-thumbnail-cache";
 import { getThumbnailRenderOrchestrator } from "$lib/shared/browse/get-thumbnail-render-orchestrator";
-import { sequenceGridJoinKey } from "$lib/shared/multi-grid/services/grid-join-layout";
+import { sequenceGridJoinKey } from "@tka/render-core";
 import { getBrowseLoader } from "$lib/shared/browse/get-browse-loader";
 import { getAnimationVisibilityManager } from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
 import { settingsService } from "$lib/shared/settings/state/settings-state.svelte";

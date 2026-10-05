@@ -8,7 +8,7 @@ import { createStartPlacementFromBeatStart } from "$lib/shared/create/services/s
 import {
   isGridJoin,
   resolveStepGridJoin,
-} from "$lib/shared/multi-grid/services/grid-join-layout";
+} from "@tka/render-core";
 // These 5 imports are loaded dynamically at usage sites to avoid pulling
 // Svelte stores and $app/environment into the composition worker bundle.
 // See: getVisibilitySettings(), renderPictographDirect(), storePictographBlob()

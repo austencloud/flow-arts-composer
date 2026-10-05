@@ -40,7 +40,7 @@ import { applyModelSpriteColor } from "$lib/shared/pictograph/prop/domain/prop-p
 import {
   getGridJoinLayout,
   type GridJoinLayout,
-} from "$lib/shared/multi-grid/services/grid-join-layout";
+} from "@tka/render-core";
 import {
   applyJoinedGridFit,
   paintJoinedGridPoints,

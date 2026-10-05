@@ -16,7 +16,7 @@ import {
   isVisibleMotion,
   type MotionData,
 } from "../../pictograph/shared/domain/models/motion-data";
-import { gridJoinKey } from "$lib/shared/multi-grid/services/grid-join-layout";
+import { gridJoinKey } from "@tka/render-core";
 
 export interface BaseLayerKeyComponents {
   motionHash: string;

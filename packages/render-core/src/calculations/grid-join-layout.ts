@@ -1,8 +1,8 @@
 /**
  * Joined-grid layout: one pictograph drawn on two grids, one per hand.
  *
- * Owns the geometry every joined painter shares, so the preparer, the canvas
- * renderer and the layer compositor cannot drift apart:
+ * Owns the geometry every joined painter shares, so the app's canvas card
+ * path and the MCP's SVG renderers cannot drift apart:
  * - where each hand's grid sits (the blue grid is the anchor; the pair is
  *   centered in the 950-unit scene),
  * - which grid points are drawn: a point both grids share is drawn once, and
@@ -15,19 +15,28 @@
  * Scene units throughout. Painters scale the joined content (grid, props,
  * arrows) about the scene center; glyphs stay where they always are.
  */
-import type { GridJoin, GridJoinDirection } from "@tka/tka-types";
-import type { GridLocation } from "$lib/shared/render/core/types";
+import type { GridLocation } from "../types.js";
 import {
   CENTER_POINT,
-  DIAMOND_HAND_POINTS,
   DIAMOND_OUTER_POINTS,
-} from "$lib/shared/render/core/constants/grid-coordinates";
-import {
-  HAND_POINT_LOCATIONS,
-  LOCATION_OFFSETS,
-} from "../domain/constants/grid-mode-offsets";
+} from "../constants/grid-coordinates.js";
+import { getNormalHandPointCoordinates } from "./grid-placement.js";
 
 type Hand = "left" | "right";
+
+/** The direction from the blue grid's center toward the red grid's. */
+export type GridJoinDirection = Exclude<GridLocation, "c">;
+
+/**
+ * How the two hands' grids join. Mirrors `GridJoin` in `@tka/tka-types`, the
+ * schema owner; this package takes no dependency on it, and the two types are
+ * structurally the same.
+ */
+export interface GridJoinSpec {
+  readonly toward: GridJoinDirection;
+  /** Center distance in hand-point steps: 1 interlocks, 2 meets hand to hand. */
+  readonly steps: 1 | 2;
+}
 
 export interface JoinVec {
   readonly x: number;
@@ -48,7 +57,7 @@ export interface JoinedGridPoint {
 }
 
 export interface GridJoinLayout {
-  readonly join: GridJoin;
+  readonly join: GridJoinSpec;
   /** Each hand's grid offset from the scene center, before the fit scale. */
   readonly offsets: Readonly<Record<Hand, JoinVec>>;
   /** Points to draw, after shared points merge and crowded outer points hide. */
@@ -59,7 +68,8 @@ export interface GridJoinLayout {
 
 const SCENE_CENTER = CENTER_POINT.x;
 /** Center to hand point on the drawn grid (143.1). */
-export const JOIN_HAND_RADIUS = DIAMOND_HAND_POINTS.e!.x - SCENE_CENTER;
+export const JOIN_HAND_RADIUS =
+  getNormalHandPointCoordinates("e", "diamond").x - SCENE_CENTER;
 /** Center to outer point on the drawn grid (300). */
 const OUTER_RADIUS = DIAMOND_OUTER_POINTS.e!.x - SCENE_CENTER;
 
@@ -80,6 +90,28 @@ const SAME_POINT = 1;
 /** An outer point this close to the other grid's point is hidden. */
 const CROWDED_OUTER = 20;
 
+const INV_SQRT2 = Math.SQRT1_2;
+/** Unit vector from a grid's center toward each location. */
+const LOCATION_UNIT: Readonly<Record<GridLocation, JoinVec>> = {
+  n: { x: 0, y: -1 },
+  e: { x: 1, y: 0 },
+  s: { x: 0, y: 1 },
+  w: { x: -1, y: 0 },
+  ne: { x: INV_SQRT2, y: -INV_SQRT2 },
+  se: { x: INV_SQRT2, y: INV_SQRT2 },
+  sw: { x: -INV_SQRT2, y: INV_SQRT2 },
+  nw: { x: -INV_SQRT2, y: -INV_SQRT2 },
+  c: { x: 0, y: 0 },
+};
+
+/** Hand-point (and outer-point) locations of each drawn grid. */
+const GRID_LOCATIONS: Readonly<
+  Record<"diamond" | "box", readonly GridLocation[]>
+> = {
+  diamond: ["n", "e", "s", "w"],
+  box: ["ne", "se", "sw", "nw"],
+};
+
 const JOIN_DIRECTIONS: ReadonlySet<string> = new Set<GridJoinDirection>([
   "n",
   "e",
@@ -92,7 +124,7 @@ const JOIN_DIRECTIONS: ReadonlySet<string> = new Set<GridJoinDirection>([
 ]);
 
 /** True for a well-formed join (anything read from storage or a link). */
-export function isGridJoin(value: unknown): value is GridJoin {
+export function isGridJoin(value: unknown): value is GridJoinSpec {
   if (!value || typeof value !== "object") return false;
   const join = value as { toward?: unknown; steps?: unknown };
   return (
@@ -107,20 +139,20 @@ export function isGridJoin(value: unknown): value is GridJoin {
  * grid), otherwise the sequence's.
  */
 export function resolveStepGridJoin(
-  sequenceJoin: GridJoin | null | undefined,
-  stepJoin: GridJoin | null | undefined
-): GridJoin | null {
+  sequenceJoin: GridJoinSpec | null | undefined,
+  stepJoin: GridJoinSpec | null | undefined
+): GridJoinSpec | null {
   if (stepJoin === null) return null;
   if (isGridJoin(stepJoin)) return stepJoin;
   return isGridJoin(sequenceJoin) ? sequenceJoin : null;
 }
 
 /** Short stable cache-key term, e.g. "e1". */
-export function gridJoinKey(join: GridJoin): string {
+export function gridJoinKey(join: GridJoinSpec): string {
   return `${join.toward}${join.steps}`;
 }
 
-type JoinCell = { readonly conjoined?: GridJoin | null } | null | undefined;
+type JoinCell = { readonly conjoined?: GridJoinSpec | null } | null | undefined;
 
 /**
  * Every join a sequence's cells draw with, as one filename-safe term for
@@ -129,7 +161,7 @@ type JoinCell = { readonly conjoined?: GridJoin | null } | null | undefined;
  * its index and join, e.g. "e1_3x_5ne2". Cell 0 is the start placement.
  */
 export function sequenceGridJoinKey(sequence: {
-  readonly conjoined?: GridJoin | null;
+  readonly conjoined?: GridJoinSpec | null;
   readonly startPlacement?: JoinCell;
   readonly steps?: readonly JoinCell[];
 }): string {
@@ -146,8 +178,8 @@ export function sequenceGridJoinKey(sequence: {
 }
 
 /** Each hand's grid offset: half the center distance either side of center. */
-export function gridJoinOffsets(join: GridJoin): Record<Hand, JoinVec> {
-  const unit = LOCATION_OFFSETS[join.toward];
+export function gridJoinOffsets(join: GridJoinSpec): Record<Hand, JoinVec> {
+  const unit = LOCATION_UNIT[join.toward];
   const half = (join.steps * JOIN_HAND_RADIUS) / 2;
   return {
     left: { x: -unit.x * half, y: -unit.y * half },
@@ -162,7 +194,7 @@ const layoutCache = new Map<string, GridJoinLayout>();
  * other mode draws diamond grids, as the single-grid painters do.
  */
 export function getGridJoinLayout(
-  join: GridJoin,
+  join: GridJoinSpec,
   gridMode: string | undefined
 ): GridJoinLayout {
   const box = gridMode === "box";
@@ -171,7 +203,7 @@ export function getGridJoinLayout(
   if (cached) return cached;
 
   const offsets = gridJoinOffsets(join);
-  const locations = HAND_POINT_LOCATIONS[box ? "box" : "diamond"];
+  const locations = GRID_LOCATIONS[box ? "box" : "diamond"];
   const raw: {
     hand: Hand;
     kind: JoinedGridPointKind;
@@ -184,7 +216,7 @@ export function getGridJoinLayout(
     const cy = SCENE_CENTER + offsets[hand].y;
     raw.push({ hand, kind: "center", location: "c", x: cx, y: cy });
     for (const location of locations) {
-      const unit = LOCATION_OFFSETS[location];
+      const unit = LOCATION_UNIT[location];
       raw.push({
         hand,
         kind: "hand",
@@ -283,7 +315,7 @@ const OVERLAP = 1;
  * so the touch shows as it does in the animation.
  */
 export function gridJoinPropNudges(
-  join: GridJoin,
+  join: GridJoinSpec,
   left: JoinPropBody,
   right: JoinPropBody,
   distances: Readonly<Record<Hand, number>>
@@ -322,7 +354,7 @@ export function gridJoinPropNudges(
     return null;
   }
 
-  const toward = LOCATION_OFFSETS[join.toward];
+  const toward = LOCATION_UNIT[join.toward];
   const towardAlong = toward.x * axis.x + toward.y * axis.y;
   const across = {
     x: toward.x - towardAlong * axis.x,

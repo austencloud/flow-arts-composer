@@ -10,7 +10,7 @@
 import type { GridJoin } from "@tka/tka-types";
 import type { PropState } from "$lib/shared/foundation/domain/types/prop-state";
 import { PIXELS_PER_UNIT } from "$lib/shared/multi-grid/domain/constants/grid-mode-offsets";
-import { isGridJoin } from "$lib/shared/multi-grid/services/grid-join-layout";
+import { isGridJoin } from "@tka/render-core";
 import type { GridLayout } from "../state/animation-visibility-state.svelte";
 
 /** Grid-center shift from the canvas center in the 950-unit grid viewBox. */

@@ -18,7 +18,7 @@ import { renderedTriangleGrip } from "$lib/shared/pictograph/prop/domain/triangl
 import {
   gridJoinKey,
   isGridJoin,
-} from "$lib/shared/multi-grid/services/grid-join-layout";
+} from "@tka/render-core";
 // getSettings loaded dynamically to avoid pulling $app/environment into worker bundle
 
 interface MotionKeyData {

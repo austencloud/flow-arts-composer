@@ -153,6 +153,28 @@ export {
   getLayer2PointCoordinates,
 } from "./calculations/grid-placement.js";
 
+// Joined grids (one grid per hand)
+export {
+  BOX_OUTER_RING_WIDTH,
+  JOIN_HAND_RADIUS,
+  JOINED_POINT_RADIUS,
+  getGridJoinLayout,
+  gridJoinKey,
+  gridJoinOffsets,
+  gridJoinPropNudges,
+  isGridJoin,
+  resolveStepGridJoin,
+  sequenceGridJoinKey,
+} from "./calculations/grid-join-layout.js";
+export type {
+  GridJoinLayout,
+  GridJoinSpec,
+  JoinPropBody,
+  JoinVec,
+  JoinedGridPoint,
+  JoinedGridPointKind,
+} from "./calculations/grid-join-layout.js";
+
 // Prop placement
 export {
   calculatePropPlacement,

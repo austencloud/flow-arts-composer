@@ -1,5 +1,4 @@
 import { describe, expect, it } from "vitest";
-import type { GridJoin } from "@tka/tka-types";
 import {
   JOIN_HAND_RADIUS,
   getGridJoinLayout,
@@ -9,11 +8,12 @@ import {
   isGridJoin,
   resolveStepGridJoin,
   type GridJoinLayout,
+  type GridJoinSpec,
   type JoinPropBody,
-} from "$lib/shared/multi-grid/services/grid-join-layout";
+} from "../src/calculations/grid-join-layout.js";
 
-const EAST_1: GridJoin = { toward: "e", steps: 1 };
-const EAST_2: GridJoin = { toward: "e", steps: 2 };
+const EAST_1: GridJoinSpec = { toward: "e", steps: 1 };
+const EAST_2: GridJoinSpec = { toward: "e", steps: 2 };
 const STAFF_HALF = 252.8 / 2;
 const STAFF_NUDGE = 950 / 45;
 
@@ -25,7 +25,7 @@ function countKinds(layout: GridJoinLayout) {
 
 /** Where a hand point of one grid lands in the scene, before the fit scale. */
 function handPoint(
-  join: GridJoin,
+  join: GridJoinSpec,
   hand: "left" | "right",
   dx: number,
   dy: number
