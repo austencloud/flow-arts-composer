@@ -166,25 +166,18 @@
   }
 
   .front-door-inner {
-    width: min(
-      calc(100% - clamp(20px, 5cqi, 80px)),
-      clamp(960px, 76cqi, 1440px)
-    );
+    width: calc(100% - clamp(20px, 3cqi, 80px));
     min-height: 100%;
     margin: 0 auto;
     padding-block: clamp(20px, 4cqh, 52px);
     box-sizing: border-box;
     display: grid;
-    align-content: start;
+    grid-template-rows: auto minmax(min-content, 1fr);
     gap: clamp(16px, 2.5cqh, 24px);
   }
 
   .front-door-header {
     width: 100%;
-  }
-
-  .front-door-inner.two-methods {
-    align-content: center;
   }
 
   h1 {
@@ -200,6 +193,7 @@
   .method-index {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-auto-rows: minmax(min-content, 1fr);
     column-gap: 8px;
     row-gap: 16px;
     width: 100%;
@@ -222,6 +216,7 @@
     position: relative;
     width: 100%;
     min-height: 174px;
+    height: 100%;
     display: flex;
     flex-direction: column;
     align-items: flex-start;
@@ -327,18 +322,27 @@
 
     .method-card,
     .method-item.default-method .method-card {
+      --settings-method-icon-size: clamp(44px, 6cqi, 56px);
       min-height: 132px;
       display: grid;
-      grid-template-columns: 44px minmax(0, 1fr);
+      grid-template-columns: var(--settings-method-icon-size) minmax(0, 1fr);
       align-items: center;
       gap: 14px;
       padding: 14px;
     }
 
     .method-icon {
-      width: 44px;
-      height: 44px;
+      width: var(--settings-method-icon-size);
+      height: var(--settings-method-icon-size);
       font-size: var(--font-size-lg, 1.125rem);
+    }
+
+    .method-name {
+      font-size: clamp(1.125rem, 2.8cqi, 1.5rem);
+    }
+
+    .method-description {
+      font-size: clamp(14px, 1.9cqi, 1rem);
     }
   }
 
@@ -366,10 +370,6 @@
   /* Foldables keep two readable columns. Four secondary cards only fit
      once each card has room for its icon, padding, and description. */
   @container create-entry (min-width: 1200px) {
-    .front-door-inner {
-      align-content: center;
-    }
-
     /* Two primary cards fill the first row and the secondary cards share
        the second, so no card ever wraps alone. Three methods sit in one
        row of three. */
@@ -380,7 +380,7 @@
     }
 
     h1 {
-      font-size: 2.5rem;
+      font-size: clamp(2.5rem, 3cqi, 4rem);
     }
 
     .method-item.primary-method {
@@ -402,9 +402,10 @@
 
     .method-card,
     .method-item.default-method .method-card {
+      --settings-method-icon-size: clamp(56px, 5cqi, 96px);
       min-height: 160px;
       display: grid;
-      grid-template-columns: 56px minmax(0, 1fr);
+      grid-template-columns: var(--settings-method-icon-size) minmax(0, 1fr);
       align-items: center;
       gap: 20px;
       padding: 22px;
@@ -414,34 +415,24 @@
       min-height: 176px;
     }
 
-    .method-card {
-      height: 100%;
-    }
-
     .method-icon {
-      width: 56px;
-      height: 56px;
-      font-size: var(--font-size-xl, 1.25rem);
+      width: var(--settings-method-icon-size);
+      height: var(--settings-method-icon-size);
+      font-size: clamp(1.25rem, 1.8cqi, 2rem);
     }
 
     .method-name {
-      font-size: 1.375rem;
+      font-size: clamp(1.375rem, 1.8cqi, 2.25rem);
     }
 
     .method-description {
-      font-size: var(--font-size-base, 1rem);
+      font-size: clamp(1rem, 1.1cqi, 1.5rem);
     }
   }
 
-  @container create-entry (min-width: 2600px) {
+  @container create-entry (max-height: 640px) and (min-width: 760px) {
     .front-door-inner {
-      width: min(calc(100% - 240px), 1600px);
-    }
-  }
-
-  @media (max-height: 640px) and (min-width: 760px) {
-    .front-door-inner {
-      width: min(calc(100% - 28px), 960px);
+      width: calc(100% - 28px);
       gap: 8px;
       padding-block: 6px 8px;
     }
