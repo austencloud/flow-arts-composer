@@ -2,6 +2,7 @@
   import { flushSync, onMount } from "svelte";
   import { MediaQuery } from "svelte/reactivity";
   import { activateWhenNear } from "$lib/actions/activate-when-near";
+  import { observeComposerStopVisibility } from "./observe-composer-stop-visibility";
   import LazyMount from "$lib/shared/components/LazyMount.svelte";
   import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
   import BaseModal from "$lib/shared/foundation/ui/modal/BaseModal.svelte";
@@ -153,6 +154,7 @@
   let constructActive = $state(false);
   let generateActive = $state(false);
   let tunnelActive = $state(false);
+  let tunnelVisible = $state(false);
   let viewerOpen = $state(false);
   let shelfActive = $state(false);
   let webglChecked = $state(false);
@@ -365,6 +367,8 @@
     () => (generateActive = true)
   );
   const activateTunnel = activateNear("changing", () => (tunnelActive = true));
+  const observeTunnel = (node: HTMLElement) =>
+    observeComposerStopVisibility(node, (visible) => (tunnelVisible = visible));
   const activateViewer = activateNear("viewing", () => {});
   const activateShelf = activateNear("keeping", () => (shelfActive = true));
 </script>
@@ -647,6 +651,7 @@
     class="stop tunnel-stop"
     aria-labelledby="tunnel-title"
     use:activateTunnel
+    use:observeTunnel
   >
     <h2 id="tunnel-title">Put it in a tunnel</h2>
 
@@ -656,9 +661,10 @@
            in place, the way SequenceHeroDemo's player deliberately does. -->
       <LazyMount
         loader={() => import("./ComposerTunnelDemo.svelte")}
-        active={tunnelActive && !!carriedSequence}
+        active={tunnelActive && tunnelVisible && !!carriedSequence}
         props={{
           sequence: carriedSequence,
+          active: tunnelVisible,
           layout: "band",
           onGenerated: carryVisitorSequence,
           leftPropType: selectedProp,

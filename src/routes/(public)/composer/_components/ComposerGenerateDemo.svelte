@@ -48,6 +48,7 @@
   import { shouldAdoptCarriedSequence } from "./composer-sequence-ownership";
   import type { ComposerPropAppearance } from "./composer-prop-appearance";
   import { generateComposerDemoSequence } from "./composer-demo-generation";
+  import { observeComposerStopVisibility } from "./observe-composer-stop-visibility";
 
   /** Four columns keep the real workspace cells legible at showcase scale. */
   const STEP_COLUMNS = 4;
@@ -129,40 +130,8 @@
     });
   }
 
-  function observeViewport(node: HTMLElement) {
-    const section = node.closest("section");
-    let intersects = typeof IntersectionObserver === "undefined";
-
-    // Glide keeps neighboring stops inside the viewport while hiding them.
-    // It disables their pointer events until they have finished arriving.
-    const updateVisibility = () => {
-      inViewport = intersects && section?.style.pointerEvents !== "none";
-    };
-    updateVisibility();
-
-    const intersectionObserver =
-      typeof IntersectionObserver === "undefined"
-        ? null
-        : new IntersectionObserver((entries) => {
-            intersects = entries.some((entry) => entry.isIntersecting);
-            updateVisibility();
-          });
-    intersectionObserver?.observe(node);
-
-    const stageObserver = new MutationObserver(updateVisibility);
-    if (section) {
-      stageObserver.observe(section, {
-        attributes: true,
-        attributeFilter: ["style"],
-      });
-    }
-    return {
-      destroy() {
-        intersectionObserver?.disconnect();
-        stageObserver.disconnect();
-      },
-    };
-  }
+  const observeViewport = (node: HTMLElement) =>
+    observeComposerStopVisibility(node, (visible) => (inViewport = visible));
 
   async function generate() {
     if (generating) return;
