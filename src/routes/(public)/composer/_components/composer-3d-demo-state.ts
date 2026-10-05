@@ -57,6 +57,19 @@ export const COMPOSER_3D_DEMO_SEED: Viewer3DStateSeed = {
 };
 
 /**
+ * The establishing pose the page's 3D poster was rendered from: twice the solo
+ * opening shot's distance back and a little raised, looking down at the stage.
+ * The entrance starts the live camera here so the poster dissolves into the
+ * same view before the glide in. A portrait window frames its opening shot
+ * further back, still short of this pose, so the glide always moves forward.
+ * Re-render the poster if this changes.
+ */
+export const COMPOSER_3D_ENTRANCE_CAMERA = {
+  position: { x: 0, y: 1.1, z: 6.2 },
+  target: { x: 0, y: 0.15, z: 0 },
+} as const;
+
+/**
  * Older viewer fields still initialize from storage even on a seeded viewer.
  * Correct them through the viewer's public API after enter3D. Seeded writers
  * are no-ops, so this changes the demonstration without changing the account.

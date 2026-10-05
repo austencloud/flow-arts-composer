@@ -263,6 +263,14 @@ dialog.base-modal[data-closing="true"]::backdrop {
   -webkit-backdrop-filter: blur(0);
 }
 
+/* Morph: the host's view transition carries the dialog and fades the page
+   behind it, so neither the dialog nor its backdrop moves on its own. */
+dialog.base-modal[data-animation="morph"],
+dialog.base-modal[data-animation="morph"]::backdrop {
+  transition: none;
+  animation: none;
+}
+
 /* Staggered content animations - only when modal has entered */
 dialog.base-modal[data-entered="true"] [data-animate] {
   animation: modalContentFadeUp var(--modal-duration-content)
