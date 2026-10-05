@@ -75,16 +75,27 @@ function staffArtworkReach(): number {
   return width - handX;
 }
 
+/** Center to strict east hand point of the diamond grid, in viewBox units. */
+function handPointStep(): number {
+  const svg = readFileSync(resolve(GRID_DIR, "diamond_grid.svg"), "utf8");
+  const cx = (id: string) =>
+    Number(new RegExp(`id="${id}"[^>]*\\scx="([\\d.]+)"`).exec(svg)![1]);
+  return cx("e_diamond_hand_point_strict") - cx("center_point");
+}
+
+/** Dots of the two grids closer than this, without coinciding, read as doubled. */
+const NEAR_DOUBLE = PIXELS_PER_UNIT / 3;
+
 describe("conjoined grid geometry", () => {
-  it("sets the grid centers half a staff apart", () => {
-    expect(2 * CONJOINED_SHIFT_VIEWBOX).toBeCloseTo(staffArtworkReach(), 9);
+  it("sets the grid centers one hand-point step apart", () => {
+    expect(2 * CONJOINED_SHIFT_VIEWBOX).toBeCloseTo(handPointStep(), 9);
     expect(CONJOINED_SHIFT_UNITS * PIXELS_PER_UNIT).toBeCloseTo(
       CONJOINED_SHIFT_VIEWBOX,
       9
     );
   });
 
-  it("puts each level staff's tip on the other hand when both reach north", () => {
+  it("overlaps level staffs at north, each tip stopping short of the other hand like an inward staff stops short of the center", () => {
     const north: PropState = {
       centerPathAngle: -Math.PI / 2,
       staffRotationAngle: 0,
@@ -103,11 +114,15 @@ describe("conjoined grid geometry", () => {
       )
     );
     const reach = staffArtworkReach();
+    const singleNorth = calculatePropCenter(north, config);
+    const inwardGap = 475 - (singleNorth.y + reach);
 
     expect(blue!.y).toBeCloseTo(325, 9);
     expect(red!.y).toBeCloseTo(325, 9);
-    expect(blue!.x + reach).toBeCloseTo(red!.x, 9);
-    expect(red!.x - reach).toBeCloseTo(blue!.x, 9);
+    expect(inwardGap).toBeGreaterThan(0);
+    expect(red!.x - (blue!.x + reach)).toBeCloseTo(inwardGap, 9);
+    expect(red!.x - reach - blue!.x).toBeCloseTo(inwardGap, 9);
+    expect(blue!.x + reach).toBeGreaterThan(red!.x - reach);
   });
 
   it("moves blue to the left grid and red to the right grid", () => {
@@ -184,7 +199,7 @@ describe("buildConjoinedGridSvg", () => {
   );
 
   it.each(["diamond_grid.svg", "8point_grid.svg", "box_grid.svg"])(
-    "never lets a %s dot overlap a dot of the other grid",
+    "puts each %s dot exactly on, or well clear of, every dot of the other grid",
     (file) => {
       const drawn = drawnCircles(
         buildConjoinedGridSvg(strictGridSvg(file))
@@ -196,10 +211,43 @@ describe("buildConjoinedGridSvg", () => {
       expect(right).toHaveLength(left.length);
       for (const a of left) {
         for (const b of right) {
-          const gap = Math.hypot(a.cx - b.cx, a.cy - b.cy) - a.r - b.r;
-          expect(gap, `${a.id} / ${b.id}`).toBeGreaterThan(0);
+          const pair = `${a.id} / ${b.id}`;
+          const distance = Math.hypot(a.cx - b.cx, a.cy - b.cy);
+          if (distance < 0.01) {
+            // A shared spot, never an outer dot swallowing another point.
+            expect(pair).not.toContain("outer_point");
+          } else {
+            expect(distance, pair).toBeGreaterThan(NEAR_DOUBLE);
+          }
         }
       }
+    }
+  );
+
+  it("interlocks the diamond grids: each center sits on the other grid's inner hand point", () => {
+    const byId = new Map(
+      drawnCircles(buildConjoinedGridSvg(strictGridSvg("diamond_grid.svg"))).map(
+        (c) => [c.id, c]
+      )
+    );
+    for (const [center, handPoint] of [
+      ["left_center_point", "right_w_diamond_hand_point_strict"],
+      ["right_center_point", "left_e_diamond_hand_point_strict"],
+    ] as const) {
+      expect(byId.get(center)!.cx, center).toBeCloseTo(byId.get(handPoint)!.cx, 9);
+      expect(byId.get(center)!.cy, center).toBeCloseTo(byId.get(handPoint)!.cy, 9);
+    }
+  });
+
+  it.each(["diamond_grid.svg", "8point_grid.svg", "box_grid.svg"])(
+    "leaves the nonradial guide points out of %s",
+    (file) => {
+      const single = strictGridSvg(file);
+
+      expect(single).toMatch(/<circle\b[^>]*class="strict-layer2-point"/);
+      expect(buildConjoinedGridSvg(single)).not.toMatch(
+        /<[a-zA-Z]+\b[^>]*\sclass="[^"]*layer2-point/
+      );
     }
   );
 

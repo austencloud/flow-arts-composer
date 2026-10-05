@@ -1,16 +1,17 @@
 /**
  * Level 7 conjoined grid for the 2D animation: two grids side by side, the
  * blue hand moving on the left grid and the red hand on the right. The grid
- * centers sit half a staff apart, so when both hands reach the same point
- * with their staffs level (north, say), the staffs overlap by half and each
- * staff's tip lands on the other hand.
+ * centers sit one hand-point step apart, so the grids interlock: each center
+ * lands exactly on the other grid's inner hand point instead of beside it.
+ * When both hands reach the same point with their staffs level (north, say),
+ * the staffs overlap and each tip stops just short of the other hand, the
+ * same gap a staff leaves before the center point when it points in.
  */
-import { STAFF_TIP_REACH } from "$lib/shared/animation-engine/domain/types/prop-tip-points";
 import type { PropState } from "$lib/shared/foundation/domain/types/prop-state";
 import { PIXELS_PER_UNIT } from "$lib/shared/multi-grid/domain/constants/grid-mode-offsets";
 
 /** Grid-center shift from the canvas center in the 950-unit grid viewBox. */
-export const CONJOINED_SHIFT_VIEWBOX = STAFF_TIP_REACH / 2;
+export const CONJOINED_SHIFT_VIEWBOX = PIXELS_PER_UNIT / 2;
 
 /** The same shift in hand-point radii (prop x/y units). */
 export const CONJOINED_SHIFT_UNITS = CONJOINED_SHIFT_VIEWBOX / PIXELS_PER_UNIT;
@@ -55,14 +56,22 @@ export function shiftPropState(
 }
 
 /**
- * The left grid's east outer dot covers the right grid's east hand point, and
- * the right grid's west outer dot covers the left grid's west hand point.
+ * The left grid's east outer dot lands on the right grid's east hand point,
+ * and the right grid's west outer dot on the left grid's west hand point.
  * Those two dots are dropped so every hand point stays visible.
  */
 const HIDDEN_OUTER_POINT = {
   left: "e_diamond_outer_point",
   right: "w_diamond_outer_point",
 } as const;
+
+/**
+ * Nonradial guide points (the grid files' layer 2), where a staff lying
+ * across the radius points. No hand stops on them, pictographs hide them by
+ * default, and here a diamond grid's inner ones would sit on the other grid's
+ * north and south hand points, so the joined view leaves them out.
+ */
+const NONRADIAL_POINT = /<[a-zA-Z]+\b[^>]*\sclass="[^"]*layer2-point[^"]*"[^>]*\/>/g;
 
 /**
  * Turns one grid SVG (950 viewBox, style block first) into the joined pair:
@@ -97,6 +106,7 @@ function gridCopy(body: string, side: "left" | "right", dx: number): string {
   );
   const points = body
     .replace(hidden, "")
+    .replace(NONRADIAL_POINT, "")
     .replace(/(\s)id="([^"]+)"/g, `$1id="${side}_$2"`);
   return `<g transform="translate(${dx} 0)">${points}</g>`;
 }
