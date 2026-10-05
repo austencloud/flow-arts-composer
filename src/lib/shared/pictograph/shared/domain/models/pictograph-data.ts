@@ -9,6 +9,7 @@ import type { GridPlacement } from "../../../grid/domain/enums/grid-enums";
 import type { HandSide } from "../enums/pictograph-enums";
 import type { MotionData } from "./motion-data";
 import type { GridMode } from '../../../grid/domain/enums/grid-enums';
+import type { GridJoin } from "@tka/tka-types";
 
 export interface PictographData {
   readonly id: string;
@@ -34,4 +35,8 @@ export interface PictographData {
   // Beta offset swap — flips which hand gets which side when both end at same location.
   // Legacy Python app feature ported to web. Toggle via B key in step editor.
   readonly betaSwapped?: boolean;
+
+  // Joined grids for this pictograph. Undefined follows the sequence's join,
+  // null draws one shared grid. Renderers read the join resolved per cell.
+  readonly conjoined?: GridJoin | null;
 }

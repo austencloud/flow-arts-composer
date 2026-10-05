@@ -5,6 +5,10 @@ import type { SequenceData } from "../../foundation/domain/models/sequence-data"
 import { PropType } from "../../pictograph/prop/domain/enums/prop-type";
 import type { PictographVisibilityOptions } from "../utils/pictograph-to-svg";
 import { createStartPlacementFromBeatStart } from "$lib/shared/create/services/sequence-transforms";
+import {
+  isGridJoin,
+  resolveStepGridJoin,
+} from "$lib/shared/multi-grid/services/grid-join-layout";
 // These 5 imports are loaded dynamically at usage sites to avoid pulling
 // Svelte stores and $app/environment into the composition worker bundle.
 // See: getVisibilitySettings(), renderPictographDirect(), storePictographBlob()
@@ -420,6 +424,20 @@ export class ImageComposer {
     const effectiveRightPropType =
       options.rightPropTypeOverride ?? options.propTypeOverride;
 
+    // Joined grids: each cell carries the join it draws with, its own value
+    // or else the sequence's. Cells are untouched when nothing is joined.
+    const anyJoin =
+      isGridJoin(sequence.conjoined) ||
+      isGridJoin(effectiveStartPlacement?.conjoined) ||
+      sequence.steps.some((step) => isGridJoin(step?.conjoined));
+    const withJoin = <T extends PictographData>(cell: T): T =>
+      anyJoin
+        ? {
+            ...cell,
+            conjoined: resolveStepGridJoin(sequence.conjoined, cell.conjoined),
+          }
+        : cell;
+
     const endCells = trace?.start("pictograph-cells");
     if (hasStartPlacement && effectiveStartPlacement) {
       const startStepNumber = options.addStepNumbers ? 0 : undefined;
@@ -433,7 +451,7 @@ export class ImageComposer {
         : effectiveStartPlacement;
       await this.renderPictographAt(
         ctx,
-        startPlacementData,
+        withJoin(startPlacementData),
         0,
         0,
         stepSize,
@@ -473,7 +491,7 @@ export class ImageComposer {
         : beat;
       await this.renderPictographAt(
         ctx,
-        stepData,
+        withJoin(stepData),
         col,
         row,
         stepSize,
@@ -588,6 +606,8 @@ export class ImageComposer {
   ): void {
     // Custom palettes must not seed default preview cells.
     if (visibilitySettings.primaryPropColors) return;
+    // Nor may joined grids: the preview-cell key has no join term.
+    if (isGridJoin(pictographData.conjoined)) return;
     const isDark = visibilitySettings.darkMode ?? false;
     const leftProp = visibilitySettings.leftPropType;
     const rightProp = visibilitySettings.rightPropType;

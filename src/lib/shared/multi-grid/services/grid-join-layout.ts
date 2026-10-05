@@ -1,0 +1,328 @@
+/**
+ * Joined-grid layout: one pictograph drawn on two grids, one per hand.
+ *
+ * Owns the geometry every joined painter shares, so the preparer, the canvas
+ * renderer and the layer compositor cannot drift apart:
+ * - where each hand's grid sits (the blue grid is the anchor; the pair is
+ *   centered in the 950-unit scene),
+ * - which grid points are drawn: a point both grids share is drawn once, and
+ *   an outer point that lands beside the other grid's point is hidden,
+ * - the fit scale that keeps the joined picture clear of the cell's edge
+ *   glyphs (the reversal dots sit at the middle of the left edge),
+ * - the nudge that separates two props lying along one line, using the
+ *   prop's beta-offset distance.
+ *
+ * Scene units throughout. Painters scale the joined content (grid, props,
+ * arrows) about the scene center; glyphs stay where they always are.
+ */
+import type { GridJoin, GridJoinDirection } from "@tka/tka-types";
+import type { GridLocation } from "$lib/shared/render/core/types";
+import {
+  CENTER_POINT,
+  DIAMOND_HAND_POINTS,
+  DIAMOND_OUTER_POINTS,
+} from "$lib/shared/render/core/constants/grid-coordinates";
+import {
+  HAND_POINT_LOCATIONS,
+  LOCATION_OFFSETS,
+} from "../domain/constants/grid-mode-offsets";
+
+type Hand = "left" | "right";
+
+export interface JoinVec {
+  readonly x: number;
+  readonly y: number;
+}
+
+export type JoinedGridPointKind = "center" | "hand" | "outer";
+
+export interface JoinedGridPoint {
+  readonly kind: JoinedGridPointKind;
+  readonly x: number;
+  readonly y: number;
+  /** Every grid this point belongs to, with its location in that grid. */
+  readonly members: readonly {
+    readonly hand: Hand;
+    readonly location: GridLocation;
+  }[];
+}
+
+export interface GridJoinLayout {
+  readonly join: GridJoin;
+  /** Each hand's grid offset from the scene center, before the fit scale. */
+  readonly offsets: Readonly<Record<Hand, JoinVec>>;
+  /** Points to draw, after shared points merge and crowded outer points hide. */
+  readonly points: readonly JoinedGridPoint[];
+  /** Scale about the scene center that fits the joined content in the cell. */
+  readonly scale: number;
+}
+
+const SCENE_CENTER = CENTER_POINT.x;
+/** Center to hand point on the drawn grid (143.1). */
+export const JOIN_HAND_RADIUS = DIAMOND_HAND_POINTS.e!.x - SCENE_CENTER;
+/** Center to outer point on the drawn grid (300). */
+const OUTER_RADIUS = DIAMOND_OUTER_POINTS.e!.x - SCENE_CENTER;
+
+/** Drawn radius of each point kind, as the painters draw them. */
+export const JOINED_POINT_RADIUS: Readonly<
+  Record<JoinedGridPointKind, number>
+> = { center: 12, hand: 4.7, outer: 25 };
+/** Box outer points are rings stroked this wide. */
+export const BOX_OUTER_RING_WIDTH = 13;
+
+/**
+ * Joined content stays this far inside the cell edge. The reversal dots
+ * reach 86.5 units in from the left edge (x 71.5, radius 15).
+ */
+const FIT_MARGIN = 92;
+/** Two points closer than this are one point. */
+const SAME_POINT = 1;
+/** An outer point this close to the other grid's point is hidden. */
+const CROWDED_OUTER = 20;
+
+const JOIN_DIRECTIONS: ReadonlySet<string> = new Set<GridJoinDirection>([
+  "n",
+  "e",
+  "s",
+  "w",
+  "ne",
+  "se",
+  "sw",
+  "nw",
+]);
+
+/** True for a well-formed join (anything read from storage or a link). */
+export function isGridJoin(value: unknown): value is GridJoin {
+  if (!value || typeof value !== "object") return false;
+  const join = value as { toward?: unknown; steps?: unknown };
+  return (
+    typeof join.toward === "string" &&
+    JOIN_DIRECTIONS.has(join.toward) &&
+    (join.steps === 1 || join.steps === 2)
+  );
+}
+
+/**
+ * The join a step draws with: its own value when set (null means one shared
+ * grid), otherwise the sequence's.
+ */
+export function resolveStepGridJoin(
+  sequenceJoin: GridJoin | null | undefined,
+  stepJoin: GridJoin | null | undefined
+): GridJoin | null {
+  if (stepJoin === null) return null;
+  if (isGridJoin(stepJoin)) return stepJoin;
+  return isGridJoin(sequenceJoin) ? sequenceJoin : null;
+}
+
+/** Short stable cache-key term, e.g. "e1". */
+export function gridJoinKey(join: GridJoin): string {
+  return `${join.toward}${join.steps}`;
+}
+
+/** Each hand's grid offset: half the center distance either side of center. */
+export function gridJoinOffsets(join: GridJoin): Record<Hand, JoinVec> {
+  const unit = LOCATION_OFFSETS[join.toward];
+  const half = (join.steps * JOIN_HAND_RADIUS) / 2;
+  return {
+    left: { x: -unit.x * half, y: -unit.y * half },
+    right: { x: unit.x * half, y: unit.y * half },
+  };
+}
+
+const layoutCache = new Map<string, GridJoinLayout>();
+
+/**
+ * The joined layout for a join and grid mode. Box draws box grids; every
+ * other mode draws diamond grids, as the single-grid painters do.
+ */
+export function getGridJoinLayout(
+  join: GridJoin,
+  gridMode: string | undefined
+): GridJoinLayout {
+  const box = gridMode === "box";
+  const cacheKey = `${gridJoinKey(join)}:${box ? "box" : "diamond"}`;
+  const cached = layoutCache.get(cacheKey);
+  if (cached) return cached;
+
+  const offsets = gridJoinOffsets(join);
+  const locations = HAND_POINT_LOCATIONS[box ? "box" : "diamond"];
+  const raw: {
+    hand: Hand;
+    kind: JoinedGridPointKind;
+    location: GridLocation;
+    x: number;
+    y: number;
+  }[] = [];
+  for (const hand of ["left", "right"] as const) {
+    const cx = SCENE_CENTER + offsets[hand].x;
+    const cy = SCENE_CENTER + offsets[hand].y;
+    raw.push({ hand, kind: "center", location: "c", x: cx, y: cy });
+    for (const location of locations) {
+      const unit = LOCATION_OFFSETS[location];
+      raw.push({
+        hand,
+        kind: "hand",
+        location,
+        x: cx + unit.x * JOIN_HAND_RADIUS,
+        y: cy + unit.y * JOIN_HAND_RADIUS,
+      });
+      raw.push({
+        hand,
+        kind: "outer",
+        location,
+        x: cx + unit.x * OUTER_RADIUS,
+        y: cy + unit.y * OUTER_RADIUS,
+      });
+    }
+  }
+
+  const distance = (a: JoinVec, b: JoinVec) => Math.hypot(a.x - b.x, a.y - b.y);
+  const points: JoinedGridPoint[] = [];
+  for (const point of raw) {
+    const others = raw.filter((other) => other.hand !== point.hand);
+    const twin = others.find(
+      (other) =>
+        other.kind === point.kind && distance(other, point) < SAME_POINT
+    );
+    // A shared point is drawn once, by the blue grid.
+    if (twin && point.hand === "right") continue;
+    if (
+      !twin &&
+      point.kind === "outer" &&
+      others.some((other) => distance(other, point) < CROWDED_OUTER)
+    ) {
+      continue;
+    }
+    points.push({
+      kind: point.kind,
+      x: point.x,
+      y: point.y,
+      members: twin
+        ? [
+            { hand: point.hand, location: point.location },
+            { hand: twin.hand, location: twin.location },
+          ]
+        : [{ hand: point.hand, location: point.location }],
+    });
+  }
+
+  const outerReach =
+    JOINED_POINT_RADIUS.outer + (box ? BOX_OUTER_RING_WIDTH / 2 : 0);
+  const reach = Math.max(
+    ...points.map(
+      (point) =>
+        Math.max(
+          Math.abs(point.x - SCENE_CENTER),
+          Math.abs(point.y - SCENE_CENTER)
+        ) +
+        (point.kind === "outer" ? outerReach : JOINED_POINT_RADIUS[point.kind])
+    )
+  );
+  const scale = Math.min(1, (SCENE_CENTER - FIT_MARGIN) / reach);
+
+  const layout: GridJoinLayout = Object.freeze({
+    join: Object.freeze({ toward: join.toward, steps: join.steps }),
+    offsets: Object.freeze(offsets),
+    points: Object.freeze(points),
+    scale,
+  });
+  layoutCache.set(cacheKey, layout);
+  return layout;
+}
+
+/** A prop as the nudge sees it: a segment through its hand point. */
+export interface JoinPropBody {
+  /** Hand point, with the grid offset applied. */
+  readonly x: number;
+  readonly y: number;
+  /** Degrees, as the painters rotate the prop artwork. */
+  readonly rotation: number;
+  /** Half the prop's drawn length along its rotation. */
+  readonly halfLength: number;
+}
+
+/**
+ * Keep two collinear props unnudged when one's end lands on the other's hand
+ * point, so the touch stays visible. Sample-only switch: Austen picks the
+ * rule from the two sample cards.
+ */
+export const JOIN_KEEP_TIP_ON_HAND = false;
+/** An end this close to the other prop's hand point counts as on it. */
+const TIP_ON_HAND = 30;
+const PARALLEL = 1e-3;
+const SAME_LINE = 1;
+const OVERLAP = 1;
+
+/**
+ * Separation for two props drawn on joined grids, or null when they do not
+ * overlap. Props lying along one line and overlapping each move their own
+ * beta-offset distance off that line, in opposite directions: blue toward its
+ * own grid when the join crosses the line, otherwise red a quarter turn
+ * counterclockwise of the line (up, for a horizontal line) and blue the
+ * other way.
+ */
+export function gridJoinPropNudges(
+  join: GridJoin,
+  left: JoinPropBody,
+  right: JoinPropBody,
+  distances: Readonly<Record<Hand, number>>,
+  keepTipOnHand: boolean = JOIN_KEEP_TIP_ON_HAND
+): Record<Hand, JoinVec> | null {
+  const toRadians = (degrees: number) => (degrees * Math.PI) / 180;
+  const leftAxis = {
+    x: Math.cos(toRadians(left.rotation)),
+    y: Math.sin(toRadians(left.rotation)),
+  };
+  const rightAxis = {
+    x: Math.cos(toRadians(right.rotation)),
+    y: Math.sin(toRadians(right.rotation)),
+  };
+  if (Math.abs(leftAxis.x * rightAxis.y - leftAxis.y * rightAxis.x) > PARALLEL)
+    return null;
+
+  // One direction per line, so the result does not depend on which way
+  // either artwork happens to face.
+  const axis =
+    leftAxis.x < -PARALLEL ||
+    (Math.abs(leftAxis.x) <= PARALLEL && leftAxis.y < 0)
+      ? { x: -leftAxis.x, y: -leftAxis.y }
+      : leftAxis;
+  const apart = { x: right.x - left.x, y: right.y - left.y };
+  if (Math.abs(apart.x * axis.y - apart.y * axis.x) > SAME_LINE) return null;
+  const along = apart.x * axis.x + apart.y * axis.y;
+  const overlap =
+    Math.min(left.halfLength, along + right.halfLength) -
+    Math.max(-left.halfLength, along - right.halfLength);
+  if (overlap <= OVERLAP) return null;
+
+  if (
+    keepTipOnHand &&
+    (Math.abs(Math.abs(along) - left.halfLength) < TIP_ON_HAND ||
+      Math.abs(Math.abs(along) - right.halfLength) < TIP_ON_HAND)
+  ) {
+    return null;
+  }
+
+  const toward = LOCATION_OFFSETS[join.toward];
+  const towardAlong = toward.x * axis.x + toward.y * axis.y;
+  const across = {
+    x: toward.x - towardAlong * axis.x,
+    y: toward.y - towardAlong * axis.y,
+  };
+  const acrossLength = Math.hypot(across.x, across.y);
+  const redDirection =
+    acrossLength > PARALLEL
+      ? { x: across.x / acrossLength, y: across.y / acrossLength }
+      : { x: axis.y, y: -axis.x };
+  return {
+    left: {
+      x: -redDirection.x * distances.left,
+      y: -redDirection.y * distances.left,
+    },
+    right: {
+      x: redDirection.x * distances.right,
+      y: redDirection.y * distances.right,
+    },
+  };
+}

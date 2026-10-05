@@ -28,6 +28,14 @@ import {
   normalizeFanAppearance,
 } from "../../prop/domain/fan-appearance";
 import { resolvePropRenderKey } from "../../prop/domain/prop-look";
+import type { GridJoin } from "@tka/tka-types";
+import {
+  getGridJoinLayout,
+  gridJoinKey,
+  gridJoinPropNudges,
+  isGridJoin,
+} from "$lib/shared/multi-grid/services/grid-join-layout";
+import { getBetaOffsetSize } from "$lib/shared/render/core/constants/prop-classification";
 // Prop-type defaults used when callers don't pass explicit options.
 // Formerly imported getSettings() from app-state.svelte, but that module chain
 // pulls in Firebase auth which accesses `window` — crashing in Web Workers.
@@ -104,7 +112,10 @@ export class PictographPreparer {
     }
 
     this.cacheMisses++;
-    const preparePromise = this.doPrepare(pictograph, options);
+    const join = pictograph.conjoined;
+    const preparePromise = isGridJoin(join)
+      ? this.doPrepareJoined(pictograph, join, options)
+      : this.doPrepare(pictograph, options);
     this.pendingPrepares.set(cacheKey, preparePromise);
 
     try {
@@ -199,6 +210,97 @@ export class PictographPreparer {
       propPositions,
       propAssets,
     };
+  }
+
+  /**
+   * Two joined grids, one per hand. Each hand is prepared alone on its own
+   * grid (no beta offset, solo arrow placement) and moved by that grid's
+   * offset. Props left lying along one line get the join's nudge instead of
+   * a beta offset.
+   */
+  private async doPrepareJoined(
+    pictograph: PictographData,
+    join: GridJoin,
+    options?: PrepareOptions
+  ): Promise<PreparedRenderData> {
+    // One-hand placement reads `pictograph.gridMode`, so pin the mode the two
+    // hands derive together.
+    const gridMode = this.deriveGridMode(pictograph);
+    const pinned = { ...pictograph, gridMode };
+    const [leftPrep, rightPrep] = await Promise.all([
+      this.doPrepare(pinned, { ...options, showRightMotion: false }),
+      this.doPrepare(pinned, { ...options, showLeftMotion: false }),
+    ]);
+    const { offsets } = getGridJoinLayout(join, gridMode);
+
+    const prepared: PreparedRenderData = {
+      gridMode,
+      arrowPositions: {},
+      arrowAssets: {},
+      arrowMirroring: {},
+      propPositions: {},
+      propAssets: {},
+      join,
+    };
+    for (const [hand, prep, offset] of [
+      [HandSide.LEFT, leftPrep, offsets.left],
+      [HandSide.RIGHT, rightPrep, offsets.right],
+    ] as const) {
+      const arrow = prep.arrowPositions[hand];
+      const arrowAsset = prep.arrowAssets[hand];
+      if (arrow && arrowAsset) {
+        prepared.arrowPositions[hand] = {
+          ...arrow,
+          x: arrow.x + offset.x,
+          y: arrow.y + offset.y,
+        };
+        prepared.arrowAssets[hand] = arrowAsset;
+        prepared.arrowMirroring[hand] = prep.arrowMirroring[hand] ?? false;
+      }
+      const prop = prep.propPositions[hand];
+      const propAsset = prep.propAssets[hand];
+      if (prop && propAsset) {
+        prepared.propPositions[hand] = {
+          ...prop,
+          x: prop.x + offset.x,
+          y: prop.y + offset.y,
+        };
+        prepared.propAssets[hand] = propAsset;
+      }
+    }
+
+    const left = prepared.propPositions[HandSide.LEFT];
+    const right = prepared.propPositions[HandSide.RIGHT];
+    const leftAsset = prepared.propAssets[HandSide.LEFT];
+    const rightAsset = prepared.propAssets[HandSide.RIGHT];
+    if (left && right && leftAsset && rightAsset) {
+      const halfLength = (asset: PropAssets) =>
+        (Number(asset.viewBox.split(" ")[0]) || 0) / 2;
+      const nudges = gridJoinPropNudges(
+        join,
+        { ...left, halfLength: halfLength(leftAsset) },
+        { ...right, halfLength: halfLength(rightAsset) },
+        {
+          left: getBetaOffsetSize(String(leftAsset.propType ?? PropType.STAFF)),
+          right: getBetaOffsetSize(
+            String(rightAsset.propType ?? PropType.STAFF)
+          ),
+        }
+      );
+      if (nudges) {
+        prepared.propPositions[HandSide.LEFT] = {
+          ...left,
+          x: left.x + nudges.left.x,
+          y: left.y + nudges.left.y,
+        };
+        prepared.propPositions[HandSide.RIGHT] = {
+          ...right,
+          x: right.x + nudges.right.x,
+          y: right.y + nudges.right.y,
+        };
+      }
+    }
+    return prepared;
   }
 
   /**
@@ -300,6 +402,10 @@ export class PictographPreparer {
       left?.isVisible === false ? "bInvis" : "",
       right?.isVisible === false ? "rInvis" : "",
     ];
+    // Appended only when joined, so every single-grid key stays as it was.
+    if (isGridJoin(pictograph.conjoined)) {
+      parts.push(`join:${gridJoinKey(pictograph.conjoined)}`);
+    }
 
     return parts.join("|");
   }

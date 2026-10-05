@@ -37,6 +37,14 @@ import type { RenderCanvas } from "./types";
 import { captureException } from "$lib/shared/analytics/services/posthog";
 import { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
 import { applyModelSpriteColor } from "$lib/shared/pictograph/prop/domain/prop-preview-color";
+import {
+  getGridJoinLayout,
+  type GridJoinLayout,
+} from "$lib/shared/multi-grid/services/grid-join-layout";
+import {
+  applyJoinedGridFit,
+  paintJoinedGridPoints,
+} from "./joined-grid-painter";
 
 import {
   applyColorToSvg,
@@ -283,8 +291,26 @@ export class Canvas2DDirectRenderer implements IDirectRenderer {
     //    base grid, hand points, and non-radial points together)
     const gridStart = performance.now();
     const gridMode = prepared?.gridMode ?? GridMode.DIAMOND;
+    // Two joined grids are wider than one: the grids, props and arrows shrink
+    // together about the center, and the glyphs drawn after them stay put.
+    const joinLayout = prepared?.join
+      ? getGridJoinLayout(prepared.join, gridMode)
+      : null;
+    if (joinLayout) {
+      ctx.save();
+      applyJoinedGridFit(ctx, size, joinLayout);
+    }
     if (visibility.showGrid === false) {
       // Grid hidden — draw nothing
+    } else if (joinLayout) {
+      this.drawJoinedGrid(
+        ctx,
+        size,
+        isDarkMode,
+        gridMode,
+        joinLayout,
+        visibility.baseGridOnly ?? false
+      );
     } else if (visibility.baseGridOnly) {
       // Base layer mode: draw only center + outer points (no hand points or layer 2)
       this.drawBaseGridOnly(ctx, size, isDarkMode, gridMode);
@@ -315,6 +341,7 @@ export class Canvas2DDirectRenderer implements IDirectRenderer {
       await this.drawArrows(ctx, prepared, size, options);
       arrowsTime = performance.now() - arrowsStart; // eslint-disable-line @typescript-eslint/no-unused-vars
     }
+    if (joinLayout) ctx.restore();
 
     // Computed once (when TKA is visible at all) and threaded through to
     // both the braces and the turns column below, instead of each
@@ -589,6 +616,36 @@ export class Canvas2DDirectRenderer implements IDirectRenderer {
       }
     }
 
+    ctx.restore();
+  }
+
+  /**
+   * Both joined grids as dots. The base layer leaves hand points to the
+   * compositor's overlay, as `drawBaseGridOnly` does. Non-radial points are a
+   * single-grid overlay and stay off.
+   */
+  private drawJoinedGrid(
+    ctx: CanvasRenderingContext2D,
+    size: number,
+    isDarkMode: boolean,
+    gridMode: GridMode,
+    layout: GridJoinLayout,
+    baseOnly: boolean
+  ): void {
+    const pointColor = isDarkMode
+      ? GRID_POINT_COLOR_DARK
+      : GRID_POINT_COLOR_LIGHT;
+    ctx.save();
+    ctx.globalAlpha = isDarkMode ? 0.85 : 1.0;
+    ctx.fillStyle = pointColor;
+    ctx.strokeStyle = pointColor;
+    paintJoinedGridPoints(
+      ctx,
+      layout,
+      size,
+      gridMode === GridMode.BOX,
+      (point) => !baseOnly || point.kind !== "hand"
+    );
     ctx.restore();
   }
 
