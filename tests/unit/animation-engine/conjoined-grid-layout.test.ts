@@ -4,12 +4,15 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { beforeEach, describe, expect, it } from "vitest";
 import {
+  ANIMATION_GRID_JOIN,
   CONJOINED_SHIFT_UNITS,
   CONJOINED_SHIFT_VIEWBOX,
   buildConjoinedGridSvg,
   conjoinedShiftUnits,
+  effectiveGridLayout,
   shiftPropState,
   shiftTrailPoints,
+  withAnimationGridJoin,
 } from "$lib/shared/animation-engine/services/conjoined-grid-layout";
 import { calculatePropCenter } from "$lib/shared/animation-engine/services/prop-position-calculator";
 import { AnimationVisibilityStateManager } from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
@@ -295,5 +298,44 @@ describe("grid layout setting", () => {
     const vm = new AnimationVisibilityStateManager({ ephemeral: true });
     vm.updateSettings({ gridLayout: "triple" as never });
     expect(vm.getGridLayout()).toBe("single");
+  });
+});
+
+describe("joined sequences", () => {
+  it("names the join this layout draws: red's grid one hand-point step east", () => {
+    expect(ANIMATION_GRID_JOIN).toEqual({ toward: "e", steps: 1 });
+    expect(ANIMATION_GRID_JOIN.steps * handPointStep()).toBeCloseTo(
+      2 * CONJOINED_SHIFT_VIEWBOX,
+      9
+    );
+  });
+
+  it("draws a sequence saved with that join joined, even with the switch off", () => {
+    expect(
+      effectiveGridLayout("single", { conjoined: ANIMATION_GRID_JOIN })
+    ).toBe("conjoined");
+    expect(effectiveGridLayout("single", {})).toBe("single");
+    expect(effectiveGridLayout("single", null)).toBe("single");
+    expect(effectiveGridLayout("conjoined", {})).toBe("conjoined");
+  });
+
+  it("leaves a join it cannot draw to the switch", () => {
+    for (const conjoined of [
+      { toward: "n", steps: 1 },
+      { toward: "e", steps: 2 },
+    ] as const) {
+      expect(effectiveGridLayout("single", { conjoined })).toBe("single");
+    }
+  });
+
+  it("joins a card made while the switch is on, unless the sequence has its own join", () => {
+    const plain = { id: "a" };
+    expect(withAnimationGridJoin(plain, "single")).toBe(plain);
+    expect(withAnimationGridJoin(plain, "conjoined")).toEqual({
+      id: "a",
+      conjoined: ANIMATION_GRID_JOIN,
+    });
+    const own = { id: "b", conjoined: { toward: "n", steps: 2 } as const };
+    expect(withAnimationGridJoin(own, "conjoined")).toBe(own);
   });
 });

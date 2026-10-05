@@ -32,6 +32,7 @@ import type { PropState } from "$lib/shared/foundation/domain/types/prop-state";
 import type { GridLayout } from "../../state/animation-visibility-state.svelte";
 import {
   conjoinedShiftUnits,
+  effectiveGridLayout,
   shiftPropState,
 } from "../conjoined-grid-layout";
 
@@ -98,7 +99,10 @@ export class FrameSystem {
     params.mandalaStrokeWidth = props.mandalaStrokeWidthOverride;
     params.mandalaSteps = props.sequenceData?.steps ?? null;
     params.mandalaPathOptions = this.mandalaPathOptions;
-    this.applyGridLayout(params, vm.getGridLayout());
+    this.applyGridLayout(
+      params,
+      effectiveGridLayout(vm.getGridLayout(), props.sequenceData)
+    );
     return params;
   }
 
