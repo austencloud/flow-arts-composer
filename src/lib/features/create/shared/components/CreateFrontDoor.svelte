@@ -320,9 +320,9 @@
     text-wrap: pretty;
   }
 
-  @container create-entry (min-width: 480px) and (max-width: 619px) {
+  @container create-entry (min-width: 480px) and (max-width: 1199px) {
     .front-door-inner {
-      width: min(calc(100% - 28px), 560px);
+      width: calc(100% - 28px);
     }
 
     .method-card,
@@ -363,7 +363,9 @@
     }
   }
 
-  @container create-entry (min-width: 620px) {
+  /* Foldables keep two readable columns. Four secondary cards only fit
+     once each card has room for its icon, padding, and description. */
+  @container create-entry (min-width: 1200px) {
     .front-door-inner {
       align-content: center;
     }
