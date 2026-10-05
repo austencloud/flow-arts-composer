@@ -1,4 +1,4 @@
-import { Box3, Mesh, Vector3 } from "three";
+import { Box3, Mesh, MeshStandardMaterial, Vector3 } from "three";
 import { describe, expect, it } from "vitest";
 import { createProceduralWorkerProp } from "$lib/shared/3d/worker-renderer/worlds/props/worker-procedural-props";
 import type { WorkerPropFactoryOptions } from "$lib/shared/3d/worker-renderer/worlds/props/worker-prop-factory-types";
@@ -71,7 +71,15 @@ describe("worker hoop family", () => {
     for (const grip of ["corner", "side"] as const) {
       const visual = createProceduralWorkerProp(options("triangle", grip));
       expect(visual, grip).not.toBeNull();
-      expect(meshes(visual!.root), grip).toHaveLength(3 + 6 + 3 + 1);
+      expect(meshes(visual!.root), grip).toHaveLength(
+        3 + 6 + 3 + (grip === "corner" ? 2 : 1) + 1
+      );
+      const goldWraps = meshes(visual!.root).filter(
+        (part) =>
+          part.material instanceof MeshStandardMaterial &&
+          part.material.color.getHexString() === "c9ac68"
+      );
+      expect(goldWraps, grip).toHaveLength(grip === "corner" ? 2 : 1);
       const box = bodyBounds(visual!);
       expect(box.max.y, grip).toBeCloseTo(
         TRIANGLE_STATIONS_M.reach + TRIANGLE_STATIONS_M.tubeRadius,
@@ -84,7 +92,7 @@ describe("worker hoop family", () => {
       expect(box.min.x, grip).toBeCloseTo(-box.max.x, 2);
     }
     // The corner grip has nothing behind the hand but the sleeve sphere; the
-    // side grip has only the tube radius.
+    // side grip has the gold sleeve radius around its near tube.
     const corner = bodyBounds(
       createProceduralWorkerProp(options("triangle", "corner"))!
     );
@@ -92,6 +100,6 @@ describe("worker hoop family", () => {
       createProceduralWorkerProp(options("triangle", "side"))!
     );
     expect(corner.min.y).toBeCloseTo(-TRIANGLE_STATIONS_M.sleeveRadius, 3);
-    expect(side.min.y).toBeCloseTo(-TRIANGLE_STATIONS_M.tubeRadius, 3);
+    expect(side.min.y).toBeCloseTo(-TRIANGLE_STATIONS_M.sleeveRadius, 3);
   });
 });

@@ -17,7 +17,9 @@
     Box3,
     Group,
     Mesh,
+    MeshStandardMaterial,
     OrthographicCamera,
+    CylinderGeometry,
     Vector3,
     Quaternion,
   } from "three";
@@ -30,6 +32,7 @@
     type PropType as ScenePropType,
   } from "@austencloud/scene-3d";
   import { getRoomEnvironmentTexture } from "$lib/shared/3d/rendering/room-environment";
+  import { TRIANGLE_STATIONS_M } from "$lib/shared/pictograph/prop/domain/hoop-family-geometry.generated";
   import {
     paintedBounds,
     type PaintedBounds,
@@ -90,6 +93,32 @@
   const propBuild = $derived({
     ...propFinishState.build,
     ...(buildOverride ?? {}),
+  });
+  const triangleGrip = $derived(
+    propBuild.triangleGrip === "side" ? "side" : "corner"
+  );
+  const cornerGripLength = 0.075;
+  const triangleGripVisual = $derived.by(() => {
+    if (propType !== "triangle") return null;
+    return {
+      material: new MeshStandardMaterial({
+        color: "#C9AC68",
+        roughness: 0.55,
+        metalness: 0.2,
+      }),
+      corner: new CylinderGeometry(
+        TRIANGLE_STATIONS_M.sleeveRadius,
+        TRIANGLE_STATIONS_M.sleeveRadius,
+        cornerGripLength,
+        16
+      ),
+      side: new CylinderGeometry(
+        TRIANGLE_STATIONS_M.sleeveRadius,
+        TRIANGLE_STATIONS_M.sleeveRadius,
+        0.15,
+        16
+      ),
+    };
   });
 
   const bounds = new Box3();
@@ -232,4 +261,38 @@
 <T.Group bind:ref={propGroup}>
   <!-- Not the active player: keeps the prop on LAYER_WORLD, which the camera sees. -->
   <Prop3D {propType} {propState} {color} build={propBuild} />
+  {#if triangleGripVisual}
+    <!-- The package triangle has no grip wrap. These gold tube sleeves follow
+         its physical hand origin in both grips and bake into the 2D model look. -->
+    <T.Group rotation={[0, 0, Math.PI / 2]}>
+      {#if triangleGrip === "side"}
+        <T.Mesh
+          geometry={triangleGripVisual.side}
+          material={triangleGripVisual.material}
+          rotation={[0, 0, Math.PI / 2]}
+        />
+      {:else}
+        <T.Mesh
+          geometry={triangleGripVisual.corner}
+          material={triangleGripVisual.material}
+          position={[
+            cornerGripLength / 4,
+            (cornerGripLength * Math.sqrt(3)) / 4,
+            0,
+          ]}
+          rotation={[0, 0, -Math.PI / 6]}
+        />
+        <T.Mesh
+          geometry={triangleGripVisual.corner}
+          material={triangleGripVisual.material}
+          position={[
+            -cornerGripLength / 4,
+            (cornerGripLength * Math.sqrt(3)) / 4,
+            0,
+          ]}
+          rotation={[0, 0, Math.PI / 6]}
+        />
+      {/if}
+    </T.Group>
+  {/if}
 </T.Group>
