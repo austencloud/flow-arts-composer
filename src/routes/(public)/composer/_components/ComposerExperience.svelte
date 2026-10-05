@@ -1,10 +1,15 @@
 <script lang="ts">
-  import { onMount } from "svelte";
+  import { flushSync, onMount } from "svelte";
   import { MediaQuery } from "svelte/reactivity";
   import { activateWhenNear } from "$lib/actions/activate-when-near";
   import LazyMount from "$lib/shared/components/LazyMount.svelte";
   import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
   import BaseModal from "$lib/shared/foundation/ui/modal/BaseModal.svelte";
+  import SceneChromeButton from "$lib/shared/3d/components/controls/SceneChromeButton.svelte";
+  import { claimedViewTransitionName } from "$lib/shared/transitions/claimed-view-transition-name";
+  import { motionDuration } from "$lib/shared/transitions/motion";
+  import { startMorph } from "$lib/shared/transitions/results-morph";
+  import { DURATION } from "$lib/shared/transitions/transitions";
   import LinkChip from "$lib/shared/ui/components/LinkChip.svelte";
   import PropCompositionPreview from "$lib/shared/pictograph/prop/components/PropCompositionPreview.svelte";
   import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
@@ -157,12 +162,174 @@
     webglChecked && webglAvailable && viewportFits3D()
   );
 
+  // ===== 3D portal =====
+  // The card's picture of the scene grows into a frame over the dimmed page,
+  // and closing carries it back. Each way is one view transition. The card and
+  // the frame hold the shared names only while it runs, so no other transition
+  // on the page picks them up. The scene mounts once the frame has landed,
+  // because building it mid-flight would stall the morph. The picture waits
+  // over the stage until it is lit, then dissolves while the camera glides in
+  // from the pose the picture was taken at.
+  type PortalPhase = "idle" | "opening" | "open" | "closing";
+  const PORTAL_NAME = "composer-3d-portal";
+  const PORTAL_CAPTION_NAME = "composer-3d-portal-caption";
+  const PORTAL_CLOSE_NAME = "composer-3d-portal-close";
+  const PORTAL_MORPH_CLASS = "composer-3d-portal-morph";
+  const PORTAL_EARLY_CLASS = "composer-3d-portal-early";
+  /** Rendered from COMPOSER_3D_ENTRANCE_CAMERA; see composer-3d-demo-state. */
+  const PORTAL_STILL = "/images/landing/composer-3d-poster.webp";
+  const loadViewer = () => import("./Composer3DViewerDemo.svelte");
+
+  let portalPhase = $state<PortalPhase>("idle");
+  let sceneMounted = $state(false);
+  let stillShown = $state(false);
+  let stillLeaving = $state(false);
+  let portalWindow = $state<HTMLElement | null>(null);
+  let portalFrame = $state<HTMLElement | null>(null);
+  let portalStill = $state<HTMLImageElement | null>(null);
+  let stillTimer = 0;
+  let viewerWarm: Promise<unknown> | null = null;
+  let resolvePortalClosed: (() => void) | null = null;
+
+  const portalMorphing = $derived(
+    portalPhase === "opening" || portalPhase === "closing"
+  );
+  const cardNamed = $derived(portalMorphing && !viewerOpen);
+  const frameNamed = $derived(portalMorphing && viewerOpen);
+
+  // Fetch the scene's code before the visitor commits, so the frame does not
+  // wait on the network after it lands.
+  function warmViewer(): void {
+    viewerWarm ??= loadViewer().catch(() => {
+      viewerWarm = null;
+    });
+  }
+
+  function openPortal(): void {
+    if (!canShow3D || portalPhase !== "idle") return;
+    warmViewer();
+    clearTimeout(stillTimer);
+    sceneMounted = false;
+    stillShown = true;
+    stillLeaving = false;
+    beginPortalMorph("opening");
+    const transition = startMorph(
+      () => (viewerOpen = true),
+      async () => {
+        await settlePortalStill();
+        markPortalSwap("opening");
+      }
+    );
+    finishPortalMorph(transition, "open");
+  }
+
+  // Escape, the dimmed edge, and the close button all arrive here.
+  function closePortal(): void {
+    if (portalPhase !== "open") return;
+    const closed = new Promise<void>(
+      (resolve) => (resolvePortalClosed = resolve)
+    );
+    beginPortalMorph("closing");
+    markPortalSwap("closing");
+    const transition = startMorph(
+      () => {
+        viewerOpen = false;
+        sceneMounted = false;
+      },
+      // The dialog leaves the top layer on the modal's own timer, and the new
+      // state is the page without it.
+      async () => {
+        await closed;
+        flushSync();
+      }
+    );
+    finishPortalMorph(transition, "idle");
+  }
+
+  function handlePortalClosed(): void {
+    if (resolvePortalClosed) {
+      resolvePortalClosed();
+      resolvePortalClosed = null;
+      return;
+    }
+    // The page closed the frame itself: the window became too small for 3D.
+    viewerOpen = false;
+    sceneMounted = false;
+    portalPhase = "idle";
+  }
+
+  // The names have to be on the page before the browser captures the old
+  // state.
+  function beginPortalMorph(phase: "opening" | "closing"): void {
+    document.documentElement.classList.add(PORTAL_MORPH_CLASS);
+    flushSync(() => (portalPhase = phase));
+  }
+
+  function finishPortalMorph(
+    transition: ViewTransition | null,
+    next: "open" | "idle"
+  ): void {
+    const settle = () => {
+      document.documentElement.classList.remove(
+        PORTAL_MORPH_CLASS,
+        PORTAL_EARLY_CLASS
+      );
+      portalPhase = next;
+      if (next === "open") sceneMounted = true;
+    };
+    if (transition) void transition.finished.then(settle, settle);
+    else settle();
+  }
+
+  // The frame's picture has to be decoded when the browser captures the new
+  // state, or the frame arrives empty. A slow decode gives up after a beat.
+  async function settlePortalStill(): Promise<void> {
+    const still = portalStill;
+    if (!still) return;
+    await Promise.race([
+      still.decode().catch(() => {}),
+      new Promise((resolve) => setTimeout(resolve, DURATION.dramatic)),
+    ]);
+  }
+
+  // Each picture in the flight is cover-fit, so it stays true while the box
+  // it travels in is no wider than the shape it was taken at. The wider
+  // shape's picture leads, and the other takes over at the end nearest it.
+  function markPortalSwap(direction: "opening" | "closing"): void {
+    const card = portalWindow?.getBoundingClientRect();
+    const frame = portalFrame?.getBoundingClientRect();
+    if (!card?.height || !frame?.height) return;
+    const frameWider =
+      frame.width / frame.height > (card.width / card.height) * 1.1;
+    const early = direction === "opening" ? frameWider : !frameWider;
+    document.documentElement.classList.toggle(PORTAL_EARLY_CLASS, early);
+  }
+
+  // The stage is lit and the camera has started its glide, so the picture
+  // dissolves into it. A stage that failed to load is uncovered the same way.
+  function revealScene(): void {
+    if (stillLeaving) return;
+    stillLeaving = true;
+    clearTimeout(stillTimer);
+    stillTimer = window.setTimeout(
+      () => (stillShown = false),
+      motionDuration(DURATION.scene)
+    );
+  }
+
+  // The load-error message uncovers the stage as soon as it mounts.
+  function uncoverOnMount(_node: HTMLElement): void {
+    revealScene();
+  }
+
   onMount(() => {
     webglAvailable = isWebGL2Available();
     webglChecked = true;
     if (isConstrainedConnection()) return;
     return runAfterNamedRouteMorphIdle(heroAct.start);
   });
+
+  onMount(() => () => clearTimeout(stillTimer));
 
   function carryVisitorSequence(next: SequenceData): void {
     visitorSequence = next;
@@ -303,8 +470,9 @@
   </div>
 {/snippet}
 
+<!-- The error renders under the frame's picture, so it uncovers the stage. -->
 {#snippet viewerLoadError(_error: unknown, retry: () => void)}
-  <div class="demo-load-error" role="alert">
+  <div class="demo-load-error" role="alert" use:uncoverOnMount>
     <p>The 3D demonstration did not load.</p>
     <button type="button" onclick={retry}>Try the 3D viewer again</button>
   </div>
@@ -525,22 +693,53 @@
             <p>3D is unavailable in this browser.</p>
           </div>
         {:else}
-          <div class="viewer-entry">
-            <p>Choose the scene, arrange performers, and explore the camera.</p>
-            <button
-              type="button"
-              class="primary-action"
-              disabled={!canShow3D}
-              aria-haspopup="dialog"
-              onclick={() => (viewerOpen = true)}
+          <!-- The whole picture is the way in. It grows into the viewer's
+               frame, and the hint and cue fade as it lifts. -->
+          <button
+            type="button"
+            class="portal-card"
+            disabled={!canShow3D}
+            aria-haspopup="dialog"
+            aria-label="Enter 3D"
+            aria-describedby="viewer-portal-hint"
+            onclick={openPortal}
+            onpointerenter={warmViewer}
+            onfocus={warmViewer}
+          >
+            <span
+              class="portal-window"
+              bind:this={portalWindow}
+              use:claimedViewTransitionName={{
+                name: PORTAL_NAME,
+                enabled: cardNamed,
+              }}
             >
-              <i class="fas fa-cube" aria-hidden="true"></i>
-              Enter 3D
-            </button>
-            <p class="viewer-entry-note">
-              Opens a full-window viewer. Close it to return here.
-            </p>
-          </div>
+              <img
+                class="portal-picture"
+                src={PORTAL_STILL}
+                alt=""
+                width="2400"
+                height="1090"
+                loading="lazy"
+                decoding="async"
+              />
+            </span>
+            <span
+              class="portal-caption"
+              use:claimedViewTransitionName={{
+                name: PORTAL_CAPTION_NAME,
+                enabled: cardNamed,
+              }}
+            >
+              <span id="viewer-portal-hint" class="portal-hint">
+                Choose the scene, arrange performers, and explore the camera.
+              </span>
+              <span class="primary-action portal-cue">
+                <i class="fas fa-cube" aria-hidden="true"></i>
+                Enter 3D
+              </span>
+            </span>
+          </button>
         {/if}
       </div>
     </div>
@@ -583,109 +782,296 @@
   <ProjectStory />
 </main>
 
+<!-- The frame leaves a margin of the dimmed page around it, so the visitor
+     still sees where they were. The picture from the card covers the stage
+     until it is lit. The close button sits outside the frame's name, so it
+     fades in where it lands instead of growing with the frame. -->
 <BaseModal
   open={viewerOpen && canShow3D}
-  onclose={() => (viewerOpen = false)}
+  onclose={closePortal}
+  onclosed={handlePortalClosed}
+  animation="morph"
   size="full"
-  class="composer-3d-modal"
+  class="composer-3d-portal"
   labelledBy="composer-3d-dialog-title"
 >
-  {#snippet header()}
-    <div class="viewer-dialog-header">
-      <h2 id="composer-3d-dialog-title">3D viewer</h2>
-      <button
-        type="button"
-        class="viewer-close"
-        aria-label="Close 3D viewer"
-        onclick={() => (viewerOpen = false)}
-      >
-        <i class="fas fa-xmark" aria-hidden="true"></i>
-      </button>
+  <h2 id="composer-3d-dialog-title" class="sr-only">3D viewer</h2>
+  <div
+    class="portal-frame"
+    bind:this={portalFrame}
+    use:claimedViewTransitionName={{ name: PORTAL_NAME, enabled: frameNamed }}
+  >
+    <div class="portal-stage">
+      {#if sceneMounted}
+        <LazyMount
+          loader={loadViewer}
+          active={true}
+          props={{
+            sequence: carriedSequence,
+            fillHeight: true,
+            entrance: true,
+            railTopOffset: "4.5rem",
+            onReveal: revealScene,
+          }}
+          error={viewerLoadError}
+          debugName="composer 3D viewer"
+        >
+          {#snippet placeholder()}{@render viewerPlaceholder()}{/snippet}
+        </LazyMount>
+      {/if}
     </div>
-  {/snippet}
-  <div class="viewer-dialog-stage">
-    <LazyMount
-      loader={() => import("./Composer3DViewerDemo.svelte")}
-      active={true}
-      props={{ sequence: carriedSequence, fillHeight: true }}
-      error={viewerLoadError}
-      debugName="composer 3D viewer"
-    >
-      {#snippet placeholder()}{@render viewerPlaceholder()}{/snippet}
-    </LazyMount>
+    {#if stillShown}
+      <div class="portal-still" class:leaving={stillLeaving}>
+        <img
+          bind:this={portalStill}
+          src={PORTAL_STILL}
+          alt=""
+          width="2400"
+          height="1090"
+        />
+        <span class="portal-loading" aria-hidden="true">
+          Loading the 3D viewer…
+        </span>
+      </div>
+    {/if}
+  </div>
+  <div
+    class="portal-close"
+    use:claimedViewTransitionName={{
+      name: PORTAL_CLOSE_NAME,
+      enabled: frameNamed,
+    }}
+  >
+    <SceneChromeButton
+      icon="fa-xmark"
+      label="Close 3D viewer"
+      onclick={closePortal}
+    />
   </div>
 </BaseModal>
 
 <style>
-  .viewer-entry {
+  /* ===== 3D portal =====
+     The card is a window onto the scene, at the shape of the stage it opens.
+     On hover its picture leans in, a first step toward the glide the viewer
+     opens with. */
+  .portal-card {
+    --portal-radius: var(--settings-radius-lg, 0.85rem);
+    position: relative;
+    display: block;
+    width: 100%;
     aspect-ratio: 16 / 9;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 1.25rem;
-    padding: 1.5rem;
-    box-sizing: border-box;
-    text-align: center;
-  }
-  .viewer-entry p {
-    margin: 0;
-    max-width: 32rem;
-    line-height: 1.5;
-  }
-  .viewer-entry-note {
-    color: var(--theme-text-secondary);
-    font-size: var(--font-size-min, 0.875rem);
-  }
-  :global(dialog.composer-3d-modal[data-size="full"]) {
-    width: 100vw;
-    max-width: none;
-    height: 100dvh;
-    max-height: 100dvh;
-    margin: 0;
-    border-radius: 0;
-  }
-  :global(.composer-3d-modal .modal-body) {
-    display: flex;
-    overflow: hidden;
-  }
-  .viewer-dialog-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0.5rem 1rem;
-    gap: 1rem;
-  }
-  .viewer-dialog-header h2 {
-    margin: 0;
-    font-size: 1.25rem;
-  }
-  .viewer-close {
-    display: grid;
-    place-items: center;
-    width: max(var(--min-touch-target, 48px), 48px);
-    height: max(var(--min-touch-target, 48px), 48px);
-    border: 1px solid var(--theme-stroke);
-    border-radius: var(--settings-radius-lg, 0.85rem);
-    background: var(--theme-card-bg);
-    color: var(--theme-text);
+    padding: 0;
+    border: 0;
+    border-radius: var(--portal-radius);
+    background: oklch(0.12 0.02 270);
+    color: inherit;
+    font: inherit;
+    text-align: start;
     cursor: pointer;
   }
-  .viewer-close:focus-visible {
-    outline: 2px solid var(--theme-accent);
+
+  .portal-card:disabled {
+    cursor: default;
+  }
+
+  .portal-card:focus-visible {
+    outline: 2px solid var(--theme-accent, #8b8cff);
     outline-offset: 3px;
   }
-  .viewer-dialog-stage {
+
+  .portal-window {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    border-radius: var(--portal-radius);
+    background: oklch(0.12 0.02 270);
+  }
+
+  .portal-picture {
+    display: block;
     width: 100%;
     height: 100%;
-    min-height: 0;
-    position: relative;
+    object-fit: cover;
+    transition: transform var(--duration-emphasis) var(--ease-out);
   }
-  .viewer-dialog-stage .viewer-placeholder {
+
+  .portal-card:enabled:hover .portal-picture,
+  .portal-card:focus-visible .portal-picture {
+    transform: scale(1.025);
+  }
+
+  /* The hint and cue sit on a shade at the foot of the picture. The shade
+     has the card's corners because the morph lifts it out of the card. */
+  .portal-caption {
+    position: absolute;
+    inset: auto 0 0;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 0.75rem 1.25rem;
+    padding: clamp(1rem, 2.4vw, 1.75rem);
+    border-end-start-radius: var(--portal-radius);
+    border-end-end-radius: var(--portal-radius);
+    background: linear-gradient(
+      to top,
+      oklch(0.08 0.02 270 / 0.88),
+      oklch(0.08 0.02 270 / 0.5) 60%,
+      transparent
+    );
+  }
+
+  .portal-hint {
+    max-width: 30rem;
+    color: oklch(0.9 0.015 270);
+    font-size: clamp(1rem, 0.94rem + 0.24vw, 1.18rem);
+    line-height: 1.5;
+  }
+
+  .portal-card:enabled:hover .portal-cue {
+    transform: translateY(-2px);
+    box-shadow: 0 1.25rem 3rem oklch(0.38 0.18 278 / 0.4);
+  }
+
+  .portal-card:disabled .portal-cue {
+    opacity: 0.55;
+    box-shadow: none;
+  }
+
+  /* The frame stands a gutter in from the window's edges, so a margin of the
+     dimmed page stays in view around it, in proportion on a large screen. */
+  :global(dialog.base-modal.composer-3d-portal[data-size="full"]) {
+    --portal-gutter: clamp(16px, 3vmin, 64px);
+    width: calc(100% - 2 * var(--portal-gutter));
+    height: calc(100% - 2 * var(--portal-gutter));
+    max-width: none;
+    max-height: none;
+    margin: auto;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    overflow: visible;
+  }
+
+  /* Light enough that the page stays recognizable around the frame. */
+  :global(dialog.base-modal.composer-3d-portal::backdrop) {
+    background: oklch(0.08 0.02 270 / 0.48);
+    backdrop-filter: blur(3px);
+    -webkit-backdrop-filter: blur(3px);
+  }
+
+  :global(dialog.composer-3d-portal .modal-body) {
+    position: relative;
+    display: flex;
+    flex: 1;
+    overflow: visible;
+  }
+
+  /* The page behind the frame holds still while it is open, so a scroll on
+     the margin cannot carry the stage on to the next section. */
+  :global(html:has(dialog.composer-3d-portal[open])) {
+    overflow: hidden;
+  }
+
+  /* Only the card and the frame travel through the portal. The hero and the
+     gallery cards carry transition names of their own, which would lift them
+     out of the page picture and draw them undimmed above the backdrop until
+     the move ends. Every name on these pages is set inline. */
+  :global(
+      html.composer-3d-portal-morph
+        [style*="view-transition-name"]:not(
+          .portal-window,
+          .portal-caption,
+          .portal-frame,
+          .portal-close
+        )
+    ) {
+    view-transition-name: none !important;
+  }
+
+  .portal-frame {
+    position: relative;
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
+    overflow: hidden;
+    border: 1px solid oklch(0.45 0.04 270 / 0.3);
+    border-radius: var(--settings-radius-lg, 0.85rem);
+    background: oklch(0.12 0.02 270);
+  }
+
+  /* Its own stacking context keeps the viewer's controls under the picture
+     until the stage is lit. */
+  .portal-stage {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    isolation: isolate;
+  }
+
+  .portal-stage .viewer-placeholder,
+  .portal-stage .demo-load-error {
     height: 100%;
+  }
+
+  .portal-stage .viewer-placeholder {
     display: grid;
     place-items: center;
   }
+
+  .portal-still {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+    transition: opacity var(--duration-scene) var(--ease-in-out);
+  }
+
+  .portal-still.leaving {
+    opacity: 0;
+  }
+
+  .portal-still img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  /* Appears only when the stage is slow to arrive. */
+  .portal-loading {
+    position: absolute;
+    left: 50%;
+    bottom: 1.25rem;
+    translate: -50% 0;
+    padding: 0.55rem 1rem;
+    border-radius: 999px;
+    background: oklch(0.08 0.02 270 / 0.75);
+    color: oklch(0.92 0.015 270);
+    font-size: var(--font-size-min, 0.875rem);
+    white-space: nowrap;
+    animation: portal-loading-in var(--duration-normal) var(--ease-out)
+      calc(2 * var(--duration-scene)) both;
+  }
+
+  @keyframes portal-loading-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  /* Level with the viewer's control rail, which is lowered to clear it. */
+  .portal-close {
+    position: absolute;
+    top: calc(0.75rem + 1px);
+    right: calc(0.75rem + 1px);
+    z-index: 2;
+  }
+
   :global(html:has(.composer-page)) {
     scroll-behavior: smooth;
   }
@@ -1481,8 +1867,19 @@
     .primary-action,
     .open-app i,
     .demo-load-error button,
-    .opening {
+    .opening,
+    .portal-picture,
+    .portal-still {
       transition: none;
+    }
+
+    .portal-card:enabled:hover .portal-picture,
+    .portal-card:focus-visible .portal-picture {
+      transform: none;
+    }
+
+    .portal-loading {
+      animation: none;
     }
   }
 </style>

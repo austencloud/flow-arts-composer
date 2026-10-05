@@ -106,6 +106,141 @@ html.generate-card-morph-tnd::view-transition-group(generate-card-tnd) {
   z-index: 2;
 }
 
+/* The /composer 3D card opening into the viewer's frame over the dimmed page,
+   and closing back into the card. The card's picture and the frame share one
+   name, so the group carries the box between them while the dimmed page fades
+   in or out around it. Only the frame's opening runs here: startMorph never
+   starts a transition under reduced motion. Owner:
+   routes/(public)/composer/_components/ComposerExperience.svelte. */
+html.composer-3d-portal-morph::view-transition-group(*) {
+  animation-duration: var(--duration-scene);
+  animation-timing-function: var(--ease-in-out);
+}
+
+/* The new page fades over the old one both ways: the dimmed page in as the
+   frame opens, the plain page back as it closes. */
+html.composer-3d-portal-morph::view-transition-new(root) {
+  animation: composer-portal-fade-in var(--duration-scene) var(--ease-in-out)
+    both;
+}
+
+html.composer-3d-portal-morph::view-transition-group(composer-3d-portal) {
+  z-index: 1;
+  overflow: clip;
+  border-radius: var(--settings-radius-lg, 0.85rem);
+}
+
+/* Both pictures fill the box and keep their own shape, cropping what falls
+   outside, so a 16:9 card and a tall frame meet without stretching. */
+html.composer-3d-portal-morph::view-transition-old(composer-3d-portal),
+html.composer-3d-portal-morph::view-transition-new(composer-3d-portal) {
+  height: 100%;
+  object-fit: cover;
+  overflow: clip;
+  mix-blend-mode: plus-lighter;
+}
+
+/* The picture taken at the wider shape leads the flight and hands over at the
+   end nearest the other (markPortalSwap). The old picture leads by default;
+   composer-3d-portal-early hands over to the new one at the start. */
+html.composer-3d-portal-morph::view-transition-old(composer-3d-portal) {
+  animation: composer-portal-hand-over-late-out var(--duration-scene) linear
+    both;
+}
+
+html.composer-3d-portal-morph::view-transition-new(composer-3d-portal) {
+  animation: composer-portal-hand-over-late-in var(--duration-scene) linear both;
+}
+
+html.composer-3d-portal-early::view-transition-old(composer-3d-portal) {
+  animation-name: composer-portal-hand-over-early-out;
+}
+
+html.composer-3d-portal-early::view-transition-new(composer-3d-portal) {
+  animation-name: composer-portal-hand-over-early-in;
+}
+
+/* The card's hint and cue fade as the picture lifts and return as it lands.
+   The close button arrives once the frame has landed and leaves first. */
+html.composer-3d-portal-morph::view-transition-group(
+    composer-3d-portal-caption
+  ) {
+  z-index: 2;
+}
+
+html.composer-3d-portal-morph::view-transition-group(composer-3d-portal-close) {
+  z-index: 3;
+}
+
+html.composer-3d-portal-morph::view-transition-old(composer-3d-portal-caption),
+html.composer-3d-portal-morph::view-transition-old(composer-3d-portal-close) {
+  animation: composer-portal-fade-out var(--duration-fast) linear both;
+}
+
+html.composer-3d-portal-morph::view-transition-new(composer-3d-portal-caption),
+html.composer-3d-portal-morph::view-transition-new(composer-3d-portal-close) {
+  animation: composer-portal-fade-in var(--duration-normal) linear
+    calc(var(--duration-scene) - var(--duration-normal)) both;
+}
+
+@keyframes composer-portal-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes composer-portal-fade-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes composer-portal-hand-over-late-out {
+  0%,
+  60% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes composer-portal-hand-over-late-in {
+  0%,
+  60% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes composer-portal-hand-over-early-out {
+  0% {
+    opacity: 1;
+  }
+  40%,
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes composer-portal-hand-over-early-in {
+  0% {
+    opacity: 0;
+  }
+  40%,
+  100% {
+    opacity: 1;
+  }
+}
+
 /* The effects roster moving between its two arrangements when an effect is
    turned on or off. Boxes (each tile, the section) stretch to their new size;
    the parts inside them (pictures, icons, names) travel at their own
