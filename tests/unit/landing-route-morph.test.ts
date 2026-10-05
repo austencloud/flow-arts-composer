@@ -354,9 +354,14 @@ describe("landing shared-element contract", () => {
     expect(composer).toContain(
       'loader={() => import("./ComposerGenerateDemo.svelte")}'
     );
+    // The 3D portal shares its lazy import with hover warming, then mounts
+    // the scene only after the opening morph has finished.
     expect(composer).toContain(
-      'loader={() => import("./Composer3DViewerDemo.svelte")}'
+      'const loadViewer = () => import("./Composer3DViewerDemo.svelte");'
     );
+    expect(composer).toContain("loader={loadViewer}");
+    expect(composer).toContain("{#if sceneMounted}");
+    expect(composer).toContain('if (next === "open") sceneMounted = true;');
     expect(composer).toContain("showNotationStrip={true}");
     expect(composer).toContain("showWordHeader={true}");
     expect(composer).toContain('loadPriority="immediate"');

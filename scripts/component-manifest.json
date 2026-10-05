@@ -6,21 +6,21 @@
       "LEAN_SCRIPT": 350,
       "BIG_TOTAL": 800
     },
-    "totalComponents": 2764,
+    "totalComponents": 2760,
     "bySpecies": {
       "logic": 975,
-      "style": 1489,
+      "style": 1485,
       "template": 300
     },
     "byAction": {
       "extract-script": 72,
       "review": 5,
       "ok": 1209,
-      "keeper": 1478
+      "keeper": 1474
     },
     "extractCandidates": 72,
     "splitCandidates": 0,
-    "keepers": 1478,
+    "keepers": 1474,
     "hiddenMonsters": [
       "lib/features/create/shared/components/coordinators/SequenceDrawerHost.svelte",
       "lib/shared/3d/environments/primitives/FallingParticles.svelte",
@@ -36,9 +36,9 @@
       "lib/features/create/construct/option-picker/components/OptionPicker.svelte"
     ],
     "over800": {
-      "count": 172,
+      "count": 171,
       "logic": 80,
-      "style": 86,
+      "style": 85,
       "template": 6
     }
   },
@@ -6977,23 +6977,6 @@
       "species": "logic",
       "action": "ok",
       "reason": "below the disease-score gate",
-      "hiddenMonster": false
-    },
-    {
-      "file": "routes/landing/components/HeroCarouselSection.svelte",
-      "total": 1049,
-      "scriptLines": 208,
-      "templateLines": 163,
-      "styleLines": 678,
-      "stateCount": 7,
-      "derivedCount": 1,
-      "effectCount": 0,
-      "functionCount": 12,
-      "childComponents": 1,
-      "diseaseScore": 248,
-      "species": "style",
-      "action": "keeper",
-      "reason": "presentational: CSS-dominant with a lean script",
       "hiddenMonster": false
     },
     {
@@ -29828,23 +29811,6 @@
       "hiddenMonster": false
     },
     {
-      "file": "routes/landing/components/PlayWithItSection.svelte",
-      "total": 122,
-      "scriptLines": 36,
-      "templateLines": 23,
-      "styleLines": 63,
-      "stateCount": 3,
-      "derivedCount": 0,
-      "effectCount": 1,
-      "functionCount": 0,
-      "childComponents": 2,
-      "diseaseScore": 44,
-      "species": "style",
-      "action": "keeper",
-      "reason": "presentational: CSS-dominant with a lean script",
-      "hiddenMonster": false
-    },
-    {
       "file": "lib/features/admin/components/feature-flags/shared/RoleBadge.svelte",
       "total": 121,
       "scriptLines": 31,
@@ -38889,23 +38855,6 @@
       "hiddenMonster": false
     },
     {
-      "file": "routes/landing/components/GuidesSection.svelte",
-      "total": 290,
-      "scriptLines": 20,
-      "templateLines": 43,
-      "styleLines": 227,
-      "stateCount": 0,
-      "derivedCount": 0,
-      "effectCount": 0,
-      "functionCount": 0,
-      "childComponents": 0,
-      "diseaseScore": 20,
-      "species": "style",
-      "action": "keeper",
-      "reason": "presentational: CSS-dominant with a lean script",
-      "hiddenMonster": false
-    },
-    {
       "file": "routes/notation/qft/_components/QftArchivePanel.svelte",
       "total": 208,
       "scriptLines": 17,
@@ -43297,23 +43246,6 @@
       "scriptLines": 10,
       "templateLines": 31,
       "styleLines": 130,
-      "stateCount": 0,
-      "derivedCount": 0,
-      "effectCount": 0,
-      "functionCount": 0,
-      "childComponents": 0,
-      "diseaseScore": 10,
-      "species": "style",
-      "action": "keeper",
-      "reason": "presentational: CSS-dominant with a lean script",
-      "hiddenMonster": false
-    },
-    {
-      "file": "routes/landing/components/ShopCtaSection.svelte",
-      "total": 124,
-      "scriptLines": 10,
-      "templateLines": 19,
-      "styleLines": 95,
       "stateCount": 0,
       "derivedCount": 0,
       "effectCount": 0,

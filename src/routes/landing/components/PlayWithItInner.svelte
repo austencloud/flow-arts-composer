@@ -1,8 +1,9 @@
 <!--
   PlayWithItInner.svelte
 
-  The heavy inner component for the Infinite Spinner section. Dynamically
-  imported by PlayWithItSection when scrolled into view. Renders the endless
+  The heavy inner component for the Infinite Spinner. /embed/spinner renders
+  it directly, and the /test/composer-wings "Play with it" slot imports it
+  when scrolled into view. Renders the endless
   spinner through the SAME control surface the app uses: AnimatorCanvas plus
   the real AnimationPanel (pill-nav sidebar on desktop, ControlDock bottom bar
   on mobile). No hand-rolled controls — effects, props, effort, display, and
@@ -156,7 +157,7 @@ import { sequenceTransformer } from "$lib/shared/create/services/sequence-transf
     if (newProp === currentPropType) return;
     // After the no-op guard, so re-picking the prop you're already on doesn't
     // register as a swap. The route id rides along automatically — this player
-    // is embedded on /composer, the landing page, and /embed/spinner.
+    // is embedded on /embed/spinner and the /test/composer-wings harness.
     trackDemoInteraction("change_prop", { prop_type: newProp });
     currentPropType = newProp;
     playback?.setPropType(newProp);
