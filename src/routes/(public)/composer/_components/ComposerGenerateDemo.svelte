@@ -130,16 +130,38 @@
   }
 
   function observeViewport(node: HTMLElement) {
-    if (typeof IntersectionObserver === "undefined") {
-      inViewport = true;
-      return { destroy() {} };
-    }
+    const section = node.closest("section");
+    let intersects = typeof IntersectionObserver === "undefined";
 
-    const observer = new IntersectionObserver((entries) => {
-      inViewport = entries.some((entry) => entry.isIntersecting);
-    });
-    observer.observe(node);
-    return { destroy: () => observer.disconnect() };
+    // Glide keeps neighboring stops inside the viewport while hiding them.
+    // It disables their pointer events until they have finished arriving.
+    const updateVisibility = () => {
+      inViewport = intersects && section?.style.pointerEvents !== "none";
+    };
+    updateVisibility();
+
+    const intersectionObserver =
+      typeof IntersectionObserver === "undefined"
+        ? null
+        : new IntersectionObserver((entries) => {
+            intersects = entries.some((entry) => entry.isIntersecting);
+            updateVisibility();
+          });
+    intersectionObserver?.observe(node);
+
+    const stageObserver = new MutationObserver(updateVisibility);
+    if (section) {
+      stageObserver.observe(section, {
+        attributes: true,
+        attributeFilter: ["style"],
+      });
+    }
+    return {
+      destroy() {
+        intersectionObserver?.disconnect();
+        stageObserver.disconnect();
+      },
+    };
   }
 
   async function generate() {
