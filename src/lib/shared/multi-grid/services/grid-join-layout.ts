@@ -120,6 +120,31 @@ export function gridJoinKey(join: GridJoin): string {
   return `${join.toward}${join.steps}`;
 }
 
+type JoinCell = { readonly conjoined?: GridJoin | null } | null | undefined;
+
+/**
+ * Every join a sequence's cells draw with, as one filename-safe term for
+ * image cache keys. Empty when every cell is on one grid. Otherwise the
+ * sequence's join ("x" for none), then each cell that draws differently as
+ * its index and join, e.g. "e1_3x_5ne2". Cell 0 is the start placement.
+ */
+export function sequenceGridJoinKey(sequence: {
+  readonly conjoined?: GridJoin | null;
+  readonly startPlacement?: JoinCell;
+  readonly steps?: readonly JoinCell[];
+}): string {
+  const base = isGridJoin(sequence.conjoined) ? sequence.conjoined : null;
+  const baseKey = base ? gridJoinKey(base) : "x";
+  const parts = [baseKey];
+  const cells = [sequence.startPlacement, ...(sequence.steps ?? [])];
+  cells.forEach((cell, index) => {
+    const join = resolveStepGridJoin(base, cell?.conjoined);
+    const key = join ? gridJoinKey(join) : "x";
+    if (key !== baseKey) parts.push(`${index}${key}`);
+  });
+  return base || parts.length > 1 ? parts.join("_") : "";
+}
+
 /** Each hand's grid offset: half the center distance either side of center. */
 export function gridJoinOffsets(join: GridJoin): Record<Hand, JoinVec> {
   const unit = LOCATION_OFFSETS[join.toward];
