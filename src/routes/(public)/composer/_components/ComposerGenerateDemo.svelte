@@ -89,6 +89,7 @@
   let generating = $state(false);
   let result = $state<ComposerGenerationResult>("idle");
   let previewActive = $state(false);
+  let inViewport = $state(false);
   let playbackStep = $state<number | null>(null);
   let playbackSequenceId = $state<string | null>(null);
   const selectedStepNumber = $derived(
@@ -102,7 +103,14 @@
   }
 
   $effect(() => {
-    if (shouldAdoptCarriedSequence(current, sequence, hasGeneratedLocally)) {
+    if (
+      shouldAdoptCarriedSequence(
+        current,
+        sequence,
+        hasGeneratedLocally,
+        inViewport
+      )
+    ) {
       current = sequence;
     }
   });
@@ -119,6 +127,41 @@
       idleTimeout: 2200,
       fallbackDelay: 180,
     });
+  }
+
+  function observeViewport(node: HTMLElement) {
+    const section = node.closest("section");
+    let intersects = typeof IntersectionObserver === "undefined";
+
+    // Glide keeps neighboring stops inside the viewport while hiding them.
+    // It disables their pointer events until they have finished arriving.
+    const updateVisibility = () => {
+      inViewport = intersects && section?.style.pointerEvents !== "none";
+    };
+    updateVisibility();
+
+    const intersectionObserver =
+      typeof IntersectionObserver === "undefined"
+        ? null
+        : new IntersectionObserver((entries) => {
+            intersects = entries.some((entry) => entry.isIntersecting);
+            updateVisibility();
+          });
+    intersectionObserver?.observe(node);
+
+    const stageObserver = new MutationObserver(updateVisibility);
+    if (section) {
+      stageObserver.observe(section, {
+        attributes: true,
+        attributeFilter: ["style"],
+      });
+    }
+    return {
+      destroy() {
+        intersectionObserver?.disconnect();
+        stageObserver.disconnect();
+      },
+    };
   }
 
   async function generate() {
@@ -148,7 +191,12 @@
   }
 </script>
 
-<div class="generate-demo" class:embedded use:activatePreview>
+<div
+  class="generate-demo"
+  class:embedded
+  use:activatePreview
+  use:observeViewport
+>
   <div class="stages">
     <!-- The notation: the real workspace grid, cascading in on each draw.
          fitAllSteps scales the cells to the box instead of sizing them from the
@@ -175,7 +223,7 @@
           <LazyMount
             loader={() =>
               import("$lib/features/create/shared/workspace-panel/sequence-display/components/StepGrid.svelte")}
-            active={previewActive && !!current}
+            active={previewActive && inViewport && !!current}
             props={{
               steps: stepData,
               startPlacement: current?.startPlacement ?? null,
@@ -201,29 +249,27 @@
     <!-- The movement: the same steps, playing. -->
     <div class="stage movement-stage">
       <div class="stage-content">
-        {#key current?.id}
-          <LazyMount
-            loader={() =>
-              import("$lib/features/browse/sequences/display/components/media-viewer/InlineAnimationPlayer.svelte")}
-            active={previewActive && !!current}
-            props={{
-              sequence: current,
-              autoPlay: active && !reduceMotion.current,
-              chrome: "minimal",
-              fill: true,
-              cornerToggle: true,
-              playbackAllowed: active,
-              resumeWhenPlaybackAllowed: true,
-              onStepChange: handlePlayerStepChange,
-              leftPropType,
-              rightPropType: rightPropType ?? leftPropType,
-              ...appearance,
-              visibilityManagerOverride: demoVisibilityManager,
-              trailSettingsOverride: HERO_TRAIL_PRESET,
-              tipEffectMap: HERO_TIP_EFFECT_MAP,
-            }}
-          />
-        {/key}
+        <LazyMount
+          loader={() =>
+            import("$lib/features/browse/sequences/display/components/media-viewer/InlineAnimationPlayer.svelte")}
+          active={previewActive && inViewport && !!current}
+          props={{
+            sequence: current,
+            autoPlay: active && inViewport && !reduceMotion.current,
+            chrome: "minimal",
+            fill: true,
+            cornerToggle: true,
+            playbackAllowed: active && inViewport,
+            resumeWhenPlaybackAllowed: true,
+            onStepChange: handlePlayerStepChange,
+            leftPropType,
+            rightPropType: rightPropType ?? leftPropType,
+            ...appearance,
+            visibilityManagerOverride: demoVisibilityManager,
+            trailSettingsOverride: HERO_TRAIL_PRESET,
+            tipEffectMap: HERO_TIP_EFFECT_MAP,
+          }}
+        />
       </div>
     </div>
   </div>

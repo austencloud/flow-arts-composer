@@ -23,6 +23,11 @@
   The viewer is constructed from a complete, non-persisting demonstration seed.
   Scene choices address its own environment state, so this surface never reads
   or writes the visitor's 2D background or saved 3D setup.
+
+  With `entrance`, the page has carried its poster of the scene into a frame
+  around this stage. Once the loading curtain has lifted, the camera starts
+  from the poster's wide establishing pose and glides in to the opening shot,
+  so the still picture becomes the place you arrive in.
 -->
 <script lang="ts">
   import { onMount, onDestroy } from "svelte";
@@ -40,16 +45,31 @@
   } from "$lib/shared/foundation/domain/models/sequence-data";
   import { simplifyRepeatedWord } from "$lib/shared/foundation/utils/word-simplifier";
   import SceneControlWorkspace from "$lib/shared/3d/components/controls/SceneControlWorkspace.svelte";
+  import { motionDuration } from "$lib/shared/transitions/motion";
+  import { DURATION } from "$lib/shared/transitions/transitions";
   import {
     COMPOSER_3D_DEMO_SEED,
+    COMPOSER_3D_ENTRANCE_CAMERA,
     normalizeComposer3DDemoState,
   } from "./composer-3d-demo-state";
 
-  /** The per-visit demo sequence, provided by the page (no baked canon). */
   let {
     sequence: sourceSequence,
     fillHeight = false,
-  }: { sequence: SequenceData; fillHeight?: boolean } = $props();
+    entrance = false,
+    railTopOffset,
+    onReveal,
+  }: {
+    /** The per-visit demo sequence, provided by the page (no baked canon). */
+    sequence: SequenceData;
+    fillHeight?: boolean;
+    /** Glide in from the poster's wide pose once the stage is visible. */
+    entrance?: boolean;
+    /** Lowers the rail to clear host controls in the stage's top-right corner. */
+    railTopOffset?: string;
+    /** The stage is on screen: the loading curtain has finished lifting. */
+    onReveal?: () => void;
+  } = $props();
 
   // ── contexts (must be set during component init, not onMount) ────────────
   const viewer = createViewer3DState(COMPOSER_3D_DEMO_SEED);
@@ -110,6 +130,42 @@
     effects.setActiveEffect("fire");
   }
 
+  // Two scene beats: the arrival is the page's scene motion carried on into
+  // the 3D space, slow enough to read as travel rather than a cut.
+  const ENTRANCE_GLIDE_MS = DURATION.scene * 2;
+
+  // The loading curtain lifts over one emphasis beat after the scene reports
+  // ready. Revealing after it means a host overlay never fades onto the curtain.
+  let revealTimer = 0;
+  function handleSceneReady(sceneReady: boolean): void {
+    armDefaultEffect(sceneReady);
+    if (!sceneReady || revealTimer) return;
+    revealTimer = window.setTimeout(
+      reveal,
+      motionDuration(DURATION.emphasis)
+    );
+  }
+
+  function reveal(): void {
+    if (entrance) glideIn();
+    onReveal?.();
+  }
+
+  // The welcome framing already holds the opening shot. Without motion the
+  // camera simply stays there.
+  function glideIn(): void {
+    const shot = viewer.openingShot();
+    const durationMs = motionDuration(ENTRANCE_GLIDE_MS);
+    if (!shot || durationMs === 0) return;
+    const wide = COMPOSER_3D_ENTRANCE_CAMERA;
+    viewer.snapCameraTo(wide.position, wide.target, undefined, false);
+    viewer.snapCameraTo(shot.position, shot.target, undefined, true, {
+      id: 0,
+      startTimeMs: performance.now(),
+      durationMs,
+    });
+  }
+
   // Reload the new choreography onto the performers already on stage. The
   // scene, camera, environment, and every compiled shader survive.
   let loadedWord: string | null = null;
@@ -139,6 +195,7 @@
 
   onDestroy(() => {
     cancelAnimationFrame(raf);
+    clearTimeout(revealTimer);
     viewer.dispose();
   });
 </script>
@@ -155,7 +212,7 @@
           {isPlaying}
           bpm={BPM}
           hideOverlays
-          onSceneReadyChange={armDefaultEffect}
+          onSceneReadyChange={handleSceneReady}
         />
       {:else}
         <div class="stage-curtain" aria-hidden="true"></div>
@@ -165,11 +222,13 @@
     <!-- The canonical rail, overlaying the stage exactly as it does in the
          sequence viewer. bottomOffset clears the pause button in the same
          corner; the app's default is sized for a transport bar this demo has
-         no room for. -->
+         no room for. A lowered rail leaves the performer bar at the top. -->
     {#if ready}
       <SceneControlWorkspace
         allowSaveScene={false}
         bpm={BPM}
+        topOffset={railTopOffset}
+        topLeftOffset={railTopOffset ? "12px" : undefined}
         bottomOffset="4.75rem"
       />
     {/if}
