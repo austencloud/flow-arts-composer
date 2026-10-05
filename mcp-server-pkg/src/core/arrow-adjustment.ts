@@ -587,22 +587,23 @@ function getDefaultAdjustment(
  * @param pictograph - Full pictograph data (needed for both motions' turns)
  * @param motion - The specific motion to get adjustment for
  * @param arrowLocation - Calculated arrow location (NE, SE, etc.)
+ * @param options.solo - Place the arrow for its hand alone, as on a joined
+ *   grid: no special placement, and the default placement reads alpha.
  * @returns Adjustment [x, y]
  */
 export function calculateArrowAdjustment(
   pictograph: PictographAdjustmentInput,
   motion: MotionAdjustmentInput,
-  arrowLocation: GridLocation
+  arrowLocation: GridLocation,
+  options: { solo?: boolean } = {}
 ): [number, number] {
   const leftEndOri = pictograph.leftMotion.endOrientation || "in";
   const rightEndOri = pictograph.rightMotion.endOrientation || "in";
   const oriKey = calculateOriKey(leftEndOri, rightEndOri);
 
-  const placementData = loadSpecialPlacement(
-    pictograph.gridMode,
-    oriKey,
-    pictograph.letter
-  );
+  const placementData = options.solo
+    ? null
+    : loadSpecialPlacement(pictograph.gridMode, oriKey, pictograph.letter);
 
   let baseX = 0;
   let baseY = 0;
@@ -634,7 +635,7 @@ export function calculateArrowAdjustment(
       motion.turns,
       pictograph.gridMode,
       motion.endOrientation,
-      pictograph.endPlacement
+      options.solo ? undefined : pictograph.endPlacement
     );
     baseX = defaultAdj[0];
     baseY = defaultAdj[1];

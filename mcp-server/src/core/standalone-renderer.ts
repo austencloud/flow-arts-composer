@@ -46,6 +46,15 @@ import {
   RED_COLOR_DARK,
   RED_COLOR_LIGHT,
   resolveFullArrowAssetPath,
+  BOX_OUTER_RING_WIDTH,
+  JOINED_POINT_RADIUS,
+  getBetaOffsetSize,
+  getGridJoinLayout,
+  gridJoinPropNudges,
+  isGridJoin,
+  type GridJoinLayout,
+  type GridJoinSpec,
+  type JoinVec,
   type MotionType as RenderMotionType,
   type Orientation as RenderOrientation,
 } from "@tka/render-core";
@@ -278,6 +287,11 @@ export interface PictographInput {
   leftReversal?: boolean;
   /** Whether the right motion has a reversal (direction change from previous step) */
   rightReversal?: boolean;
+  /**
+   * Draws each hand on its own grid, the blue grid the anchor. Absent or null
+   * draws the one shared grid.
+   */
+  conjoined?: GridJoinSpec | null;
 }
 
 export interface RenderVisibilityOptions {
@@ -366,6 +380,19 @@ function fanAppearanceFile(appearance: ResolvedFanAppearance): string | null {
       : "fan-day.svg";
   }
   return `fan-${appearance.build}.svg`;
+}
+
+/** A prop ready to draw: its grip position, rotation and colored artwork. */
+interface PlacedProp {
+  x: number;
+  y: number;
+  rotation: number;
+  /** Artwork viewBox size; the artwork's center sits on the grip. */
+  width: number;
+  height: number;
+  /** Right hands are mirrored to show their anatomy. */
+  mirror: boolean;
+  content: string;
 }
 
 export class StandaloneRenderer {
@@ -477,7 +504,13 @@ export class StandaloneRenderer {
     } = options;
 
     const gridMode = this.parseGridMode(input.gridMode);
+    const joinLayout = isGridJoin(input.conjoined)
+      ? getGridJoinLayout(input.conjoined, gridMode)
+      : null;
     const svgParts: string[] = [];
+    // Joined grids, props and arrows are drawn into their own group, scaled
+    // about the center so they clear the edge glyphs.
+    const sceneParts = joinLayout ? [] : svgParts;
 
     // 1. Background
     const bgColor = this.resolveColor(
@@ -493,42 +526,59 @@ export class StandaloneRenderer {
 
     // 2. Grid
     if (showGrid) {
-      const gridSvg = this.renderGrid(gridMode, darkMode, themeable);
-      if (gridSvg) svgParts.push(`<g class="svg-grid">${gridSvg}</g>`);
+      const gridSvg = joinLayout
+        ? this.renderJoinedGrid(joinLayout, gridMode, darkMode, themeable)
+        : this.renderGrid(gridMode, darkMode, themeable);
+      if (gridSvg) sceneParts.push(`<g class="svg-grid">${gridSvg}</g>`);
     }
 
     // 3. Props (using CORRECT placement logic with beta offset)
-    // Pass BOTH propTypes to each renderProp call so beta offset can detect when both are hands
-    if (showLeftMotion) {
-      const leftProp = this.renderProp(
-        input,
-        input.leftMotion,
-        gridMode,
-        darkMode,
+    // Pass BOTH propTypes to each placeProp call so beta offset can detect when both are hands
+    const leftProp = showLeftMotion
+      ? this.placeProp(
+          input,
+          input.leftMotion,
+          gridMode,
+          darkMode,
+          leftPropType,
+          rightPropType,
+          fanAppearance,
+          themeable,
+          primaryPropColors,
+          joinLayout?.offsets.left
+        )
+      : null;
+    const rightProp = showRightMotion
+      ? this.placeProp(
+          input,
+          input.rightMotion,
+          gridMode,
+          darkMode,
+          leftPropType,
+          rightPropType,
+          fanAppearance,
+          themeable,
+          primaryPropColors,
+          joinLayout?.offsets.right
+        )
+      : null;
+    if (joinLayout && leftProp && rightProp) {
+      this.nudgeJoinedProps(
+        joinLayout,
+        leftProp,
+        rightProp,
         leftPropType,
-        rightPropType,
-        fanAppearance,
-        themeable,
-        primaryPropColors
+        rightPropType
       );
-      if (leftProp)
-        svgParts.push(`<g class="svg-prop svg-prop-blue">${leftProp}</g>`);
     }
-    if (showRightMotion) {
-      const rightProp = this.renderProp(
-        input,
-        input.rightMotion,
-        gridMode,
-        darkMode,
-        leftPropType,
-        rightPropType,
-        fanAppearance,
-        themeable,
-        primaryPropColors
+    if (leftProp)
+      sceneParts.push(
+        `<g class="svg-prop svg-prop-blue">${this.propMarkup(leftProp)}</g>`
       );
-      if (rightProp)
-        svgParts.push(`<g class="svg-prop svg-prop-red">${rightProp}</g>`);
-    }
+    if (rightProp)
+      sceneParts.push(
+        `<g class="svg-prop svg-prop-red">${this.propMarkup(rightProp)}</g>`
+      );
 
     // 4. Arrows (using CORRECT placement logic WITH adjustments)
     if (showLeftMotion) {
@@ -538,10 +588,11 @@ export class StandaloneRenderer {
         gridMode,
         darkMode,
         themeable,
-        primaryPropColors
+        primaryPropColors,
+        joinLayout?.offsets.left
       );
       if (leftArrow)
-        svgParts.push(`<g class="svg-arrow svg-arrow-blue">${leftArrow}</g>`);
+        sceneParts.push(`<g class="svg-arrow svg-arrow-blue">${leftArrow}</g>`);
     }
     if (showRightMotion) {
       const rightArrow = this.renderArrow(
@@ -550,10 +601,19 @@ export class StandaloneRenderer {
         gridMode,
         darkMode,
         themeable,
-        primaryPropColors
+        primaryPropColors,
+        joinLayout?.offsets.right
       );
       if (rightArrow)
-        svgParts.push(`<g class="svg-arrow svg-arrow-red">${rightArrow}</g>`);
+        sceneParts.push(`<g class="svg-arrow svg-arrow-red">${rightArrow}</g>`);
+    }
+
+    if (joinLayout && sceneParts.length > 0) {
+      svgParts.push(
+        `<g class="svg-joined" transform="translate(${CENTER} ${CENTER}) scale(${joinLayout.scale}) translate(${-CENTER} ${-CENTER})">
+${sceneParts.join("\n")}
+</g>`
+      );
     }
 
     // 5. Placement glyph (top center)
@@ -773,6 +833,36 @@ ${svgParts.join("\n")}
     }
   }
 
+  /**
+   * The joined grids' points from the shared layout, in this renderer's grid
+   * colors. Box grids draw their outer points as rings, as one box grid does.
+   * Non-radial points are a one-grid overlay and stay off.
+   */
+  private renderJoinedGrid(
+    layout: GridJoinLayout,
+    gridMode: GridMode,
+    darkMode: boolean,
+    themeable: boolean = false
+  ): string {
+    const gridColor = this.resolveColor(
+      "--dm-grid-point",
+      "#ffffff",
+      "#000000",
+      darkMode,
+      themeable
+    );
+    const opacity = darkMode ? "0.85" : "1.0";
+    const box = gridMode === GridMode.BOX;
+    const circles = layout.points.map((point) => {
+      const paint =
+        box && point.kind === "outer"
+          ? `fill="none" stroke="${gridColor}" stroke-width="${BOX_OUTER_RING_WIDTH}"`
+          : `fill="${gridColor}"`;
+      return `<circle cx="${point.x}" cy="${point.y}" r="${JOINED_POINT_RADIUS[point.kind]}" ${paint}/>`;
+    });
+    return `<g style="color: ${gridColor}" opacity="${opacity}">${circles.join("")}</g>`;
+  }
+
   // ==========================================================================
   // PROP RENDERING (USING CORRECT PLACEMENT)
   // ==========================================================================
@@ -826,7 +916,12 @@ ${svgParts.join("\n")}
     return calculateBetaOffset(betaInput, targetMotion);
   }
 
-  private renderProp(
+  /**
+   * Position, rotation and colored artwork for one prop. With `joinOffset`
+   * the prop sits on its own joined grid, moved by that offset, and takes no
+   * beta offset.
+   */
+  private placeProp(
     pictograph: PictographInput,
     motion: MotionInput,
     gridMode: GridMode,
@@ -835,8 +930,9 @@ ${svgParts.join("\n")}
     rightPropType: string | null = null,
     fanAppearance: FanAppearanceInput | null = null,
     themeable: boolean = false,
-    customColors?: HandColorPair | null
-  ): string {
+    customColors?: HandColorPair | null,
+    joinOffset?: JoinVec
+  ): PlacedProp | null {
     // Get the end location and orientation
     const endLocation = motion.endLocation.toLowerCase() as GridLocation;
     const endOrientation = (
@@ -862,15 +958,18 @@ ${svgParts.join("\n")}
 
     // Apply beta offset if both props end at the same location
     // Pass BOTH propTypes so hand props get the special "right on right, left on left" logic
-    const betaOffset = this.calculateBetaOffsetForProp(
-      pictograph,
-      motion,
-      gridMode,
-      leftPropType,
-      rightPropType
-    );
-    const finalX = propPosition.x + betaOffset.x;
-    const finalY = propPosition.y + betaOffset.y;
+    // On joined grids the prop moves by its own grid's offset instead.
+    const offset =
+      joinOffset ??
+      this.calculateBetaOffsetForProp(
+        pictograph,
+        motion,
+        gridMode,
+        leftPropType,
+        rightPropType
+      );
+    const finalX = propPosition.x + offset.x;
+    const finalY = propPosition.y + offset.y;
 
     // Determine prop file name - use provided prop type or default to staff
     // Use the current motion's prop type
@@ -886,7 +985,7 @@ ${svgParts.join("\n")}
       : join(this.projectRoot, "static/images/props", propFileName);
     if (!existsSync(propPath)) {
       console.error("[Renderer] Prop file not found:", propPath);
-      return "";
+      return null;
     }
 
     // HAND PROP SPECIAL LOGIC (matching PropPlacer.ts and PropSvg.svelte):
@@ -947,34 +1046,79 @@ ${svgParts.join("\n")}
         innerContent = `<g transform="translate(60 92.3731) scale(1.8461538)">${innerContent}</g>`;
       }
 
-      // The prop's center point is at the middle of its viewBox
-      const centerX = width / 2;
-      const centerY = height / 2;
-
-      // Canvas2D renderer draws props at their FULL viewBox dimensions
-      // within the 950x950 scene - NO additional scaling
-      // Transform: translate to position → rotate → mirror the right hand → translate by -center
-      const mirrorTransform = isRightHand ? " scale(-1, 1)" : "";
-      return `<g transform="translate(${finalX}, ${finalY}) rotate(${rotation})${mirrorTransform} translate(${-centerX}, ${-centerY})">
-  ${innerContent}
-</g>`;
+      return {
+        x: finalX,
+        y: finalY,
+        rotation,
+        width,
+        height,
+        mirror: isRightHand,
+        content: innerContent,
+      };
     } catch (error) {
       console.error("[Renderer] Failed to load prop:", error);
-      return "";
+      return null;
     }
+  }
+
+  private propMarkup(prop: PlacedProp): string {
+    // The prop's center point is at the middle of its viewBox
+    const centerX = prop.width / 2;
+    const centerY = prop.height / 2;
+
+    // Canvas2D renderer draws props at their FULL viewBox dimensions
+    // within the 950x950 scene - NO additional scaling
+    // Transform: translate to position → rotate → mirror the right hand → translate by -center
+    const mirrorTransform = prop.mirror ? " scale(-1, 1)" : "";
+    return `<g transform="translate(${prop.x}, ${prop.y}) rotate(${prop.rotation})${mirrorTransform} translate(${-centerX}, ${-centerY})">
+  ${prop.content}
+</g>`;
+  }
+
+  /**
+   * Two props on joined grids lying along one line move apart by their beta
+   * offset distance, unless an end rests on the other hand.
+   */
+  private nudgeJoinedProps(
+    layout: GridJoinLayout,
+    left: PlacedProp,
+    right: PlacedProp,
+    leftPropType: string | null,
+    rightPropType: string | null
+  ): void {
+    const body = (prop: PlacedProp) => ({
+      x: prop.x,
+      y: prop.y,
+      rotation: prop.rotation,
+      halfLength: prop.width / 2,
+    });
+    const nudges = gridJoinPropNudges(layout.join, body(left), body(right), {
+      left: getBetaOffsetSize(leftPropType ?? "staff"),
+      right: getBetaOffsetSize(rightPropType ?? "staff"),
+    });
+    if (!nudges) return;
+    left.x += nudges.left.x;
+    left.y += nudges.left.y;
+    right.x += nudges.right.x;
+    right.y += nudges.right.y;
   }
 
   // ==========================================================================
   // ARROW RENDERING (USING CORRECT PLACEMENT + ADJUSTMENTS)
   // ==========================================================================
 
+  /**
+   * With `joinOffset` the arrow is placed for its hand alone (no special
+   * placement, and a dash ignores the other hand) on that hand's joined grid.
+   */
   private renderArrow(
     pictograph: PictographInput,
     motion: MotionInput,
     gridMode: GridMode,
     darkMode: boolean,
     themeable: boolean = false,
-    customColors?: HandColorPair | null
+    customColors?: HandColorPair | null,
+    joinOffset?: JoinVec
   ): string {
     const motionType = motion.motionType.toLowerCase();
 
@@ -1000,8 +1144,11 @@ ${svgParts.join("\n")}
     // For DASH motions, use the dash location calculator
     if (motionType === "dash") {
       // Get the "other" motion for dash location calculation
-      const otherMotion =
-        motion.hand === "left" ? pictograph.rightMotion : pictograph.leftMotion;
+      const otherMotion = joinOffset
+        ? undefined
+        : motion.hand === "left"
+          ? pictograph.rightMotion
+          : pictograph.leftMotion;
 
       const dashLocationInput: DashLocationInput = {
         letter: pictograph.letter,
@@ -1096,12 +1243,13 @@ ${svgParts.join("\n")}
     const [adjustX, adjustY] = calculateArrowAdjustment(
       adjustmentInput,
       motionAdjustmentInput,
-      placement.location as unknown as GridLocation
+      placement.location as unknown as GridLocation,
+      { solo: !!joinOffset }
     );
 
     // Apply adjustment to placement
-    const finalX = placement.x + adjustX;
-    const finalY = placement.y + adjustY;
+    const finalX = placement.x + adjustX + (joinOffset?.x ?? 0);
+    const finalY = placement.y + adjustY + (joinOffset?.y ?? 0);
 
     // Determine arrow file path based on motion type and start orientation
     const arrowPath = this.getArrowPath(
