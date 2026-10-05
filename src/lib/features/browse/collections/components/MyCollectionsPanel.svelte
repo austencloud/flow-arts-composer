@@ -611,17 +611,23 @@ instead of showing an empty shell.
     onOpen={() => openCollection("all", t("browse_verified_saved_sequences"))}
   />
 
-  {#each collections as c (c.id)}
-    <CollectionCard
-      collection={c}
-      readonly={previewReadOnly}
-      selected={!!sel && sel.id === c.id && !sel.ownerId}
-      onOpen={() => openCollection(c.id, c.name)}
-      onEditRule={c.kind === "smart" && !previewReadOnly
-        ? () => (smartEditTarget = c)
-        : undefined}
-    />
-  {/each}
+  {#if loading && collections.length === 0}
+    {#each Array(isSideBySide ? 5 : 1) as _}
+      <span class="tile-skeleton" aria-hidden="true"></span>
+    {/each}
+  {:else}
+    {#each collections as c (c.id)}
+      <CollectionCard
+        collection={c}
+        readonly={previewReadOnly}
+        selected={!!sel && sel.id === c.id && !sel.ownerId}
+        onOpen={() => openCollection(c.id, c.name)}
+        onEditRule={c.kind === "smart" && !previewReadOnly
+          ? () => (smartEditTarget = c)
+          : undefined}
+      />
+    {/each}
+  {/if}
 
   {#if !previewReadOnly}
     {#if showInput}
@@ -738,7 +744,9 @@ instead of showing an empty shell.
         {@const ArtGallery = mod.default}
         <ArtGallery />
       {:catch}
-        <div class="art-detail-loading">{t("browse_verified_gallery_load_failed")}</div>
+        <div class="art-detail-loading">
+          {t("browse_verified_gallery_load_failed")}
+        </div>
       {/await}
     </div>
   </div>
@@ -791,17 +799,9 @@ instead of showing an empty shell.
 
 {#snippet shelfContent(shelfId: WorkShelfId)}
   {#if shelfId === "collections"}
-    {#if loading && collections.length === 0}
-      <div class="rail-cards" aria-hidden="true">
-        {#each Array(5) as _}
-          <span class="tile-skeleton"></span>
-        {/each}
-      </div>
-    {:else}
-      <div class="rail-cards">
-        {@render ownShelves(railSelection)}
-      </div>
-    {/if}
+    <div class="rail-cards">
+      {@render ownShelves(railSelection)}
+    </div>
   {:else if shelfId === "performances"}
     <div class="rail-cards">
       {@render performancesShelfCard(railSelection)}
@@ -928,12 +928,6 @@ instead of showing an empty shell.
             {t("browse_ui_create_account")}
           </PanelButton>
         </div>
-      </div>
-    {:else if loading && collections.length === 0}
-      <div class="card-grid" aria-hidden="true">
-        {#each Array(4) as _}
-          <span class="tile-skeleton"></span>
-        {/each}
       </div>
     {:else}
       <h3 class="shelf-heading">{t("browse_ui_my_collections")}</h3>
