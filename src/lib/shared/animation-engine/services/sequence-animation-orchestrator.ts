@@ -45,6 +45,7 @@ import { findPhraseAtBeat } from "$lib/shared/effort/domain/effort-timeline-type
 import type { EffortTimeline } from "$lib/shared/effort/domain/effort-timeline-types";
 import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
 import { isVisibleMotion } from "$lib/shared/pictograph/shared/domain/models/motion-data";
+import { deriveWord } from "$lib/shared/foundation/services/word-deriver";
 
 /**
  * Lightweight Animation Orchestrator
@@ -147,7 +148,10 @@ export class SequenceAnimationOrchestrator {
       const propConfig = this.getDefaultPropConfig();
 
       this.metadata = {
-        word: sequenceData.word || sequenceData.name || "",
+        // Read the word from the beats that play, with the helper the share
+        // sheet uses. An unsaved sequence stores an empty word and a name such
+        // as "Sequence 11:46:02 PM", which the video's glyph header drew as "SPM".
+        word: deriveWord({ ...sequenceData, steps }),
         author:
           sequenceData.author ||
           (sequenceData.metadata?.["author"] as string) ||

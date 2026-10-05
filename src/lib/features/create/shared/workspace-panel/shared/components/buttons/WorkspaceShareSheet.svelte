@@ -11,6 +11,7 @@
   import { onDestroy, untrack } from "svelte";
   import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
   import { hashString } from "$lib/shared/foundation/services/content-hasher";
+  import { deriveWord } from "$lib/shared/foundation/services/word-deriver";
   import { authState } from "$lib/shared/auth/state/auth-state.svelte";
   import { authDrawerState } from "$lib/shared/auth/state/auth-drawer-state.svelte";
   import {
@@ -68,6 +69,11 @@
   // to decide whether to download it.
   const workspaceVideoPreviewKey = $derived.by(() =>
     hashString(JSON.stringify(sequence))
+  );
+  // The live preview's title bar shows the word the rendered video carries.
+  // An unsaved sequence stores an empty word, which left the bar blank.
+  const workspaceVideoPreviewWord = $derived(
+    sequence ? deriveWord(sequence) : null
   );
   const workspaceVideoUrl = $derived(
     workspaceVideoExporter?.state.previewBlobUrl ?? null
@@ -240,6 +246,7 @@
     <div class="workspace-live-video-preview">
       <InlineAnimationPlayer
         {sequence}
+        displayWord={workspaceVideoPreviewWord}
         sequenceLoadKey={workspaceVideoPreviewKey}
         chrome="minimal"
         fill={true}
