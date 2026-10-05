@@ -186,7 +186,7 @@ describe("model sprite tip points", () => {
       ).toBeLessThan(paintedHalfHeight);
     }
     expect(getTipPoints("triangle").points).toEqual(
-      PROP_TIP_POINTS.triangle.points
+      PROP_TIP_POINTS.triangle!.points
     );
   });
 
