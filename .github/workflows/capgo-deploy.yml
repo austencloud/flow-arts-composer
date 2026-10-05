@@ -19,7 +19,9 @@ jobs:
   deploy-ota:
     name: Build & Push to Capgo
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    # The first upload sends every file (about 720 MB); later ones send only
+    # the files that changed.
+    timeout-minutes: 45
     # workflow_run fires on failure too; only a green CI run may deploy.
     # Manual dispatch stays available as the escape hatch.
     if: >-
@@ -47,11 +49,59 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Create .env from .env.example
-        run: cp .env.example .env
+      # The web deploy's PUBLIC_ settings live in the Cloudflare dashboard.
+      # .env.example's blanks would ship a phone app without analytics or maps.
+      - name: Copy the live site's public settings into .env
+        run: node scripts/write-live-public-env.mjs https://tkaflowarts.com
 
+      # Same steps as scripts/native-push-deploy.mjs, which builds the
+      # installed app: no service worker, no dev-only code, and an
+      # _app/env.js, without which the phone app never finishes starting.
       - name: Build web app
         run: pnpm run build
+        env:
+          DISABLE_PWA: "true"
 
+      - name: Check the build for dev-only code
+        run: node scripts/verify-native-release-surface.mjs
+
+      - name: Write _app/env.js
+        run: node scripts/generate-native-env.mjs
+
+      - name: Stage the over-the-air bundle
+        run: node scripts/stage-capgo-ota-bundle.mjs
+
+      # Delta upload: the phone fetches only files whose contents changed.
+      # Already-compressed formats skip Brotli, which would only cost time.
       - name: Upload bundle to Capgo
-        run: npx @capgo/cli bundle upload --channel production --no-code-check --apikey ${{ secrets.CAPGO_API_KEY }}
+        env:
+          CAPGO_API_KEY: ${{ secrets.CAPGO_API_KEY }}
+        run: |
+          # Capgo refuses bundles numbered below the installed app's version
+          # or on another major version, so number them from its major.minor.
+          native_version=$(sed -nE 's/^[[:space:]]*versionName "([0-9]+\.[0-9]+)\.[0-9]+".*/\1/p' android/app/build.gradle)
+          test -n "$native_version"
+          bundle="${native_version}.${GITHUB_RUN_NUMBER}"
+          # Capgo never reuses a bundle number, so a re-run needs its own.
+          if [ "$GITHUB_RUN_ATTEMPT" -gt 1 ]; then
+            bundle="${bundle}-${GITHUB_RUN_ATTEMPT}"
+          fi
+          npx --yes @capgo/cli@8.71.0 bundle upload com.tkaflowarts.composer \
+            --apikey "$CAPGO_API_KEY" \
+            --path .svelte-kit/capgo-ota \
+            --bundle "$bundle" \
+            --channel production \
+            --delta-only \
+            --no-brotli-patterns '**/*.glb,**/*.png,**/*.jpg,**/*.jpeg,**/*.webp,**/*.avif,**/*.gif,**/*.ktx2,**/*.basis,**/*.mp3,**/*.mp4,**/*.m4a,**/*.ogg,**/*.webm,**/*.woff,**/*.woff2,**/*.pdf' \
+            --no-code-check \
+            --delete-linked-bundle-on-upload \
+            --comment "main $(git rev-parse --short HEAD)"
+
+      # Phones without a channel of their own follow the default channel.
+      # Setting it on every run repairs a recreated app or channel.
+      - name: Make production the default channel
+        env:
+          CAPGO_API_KEY: ${{ secrets.CAPGO_API_KEY }}
+        run: >-
+          npx --yes @capgo/cli@8.71.0 channel set production
+          com.tkaflowarts.composer --state default --apikey "$CAPGO_API_KEY"
