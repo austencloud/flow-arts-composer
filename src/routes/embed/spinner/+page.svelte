@@ -4,7 +4,7 @@
   Minimal, frameless page for embedding the spinner demo in an iframe.
   The URL is outward-facing (third parties may iframe it), so it stays alive
   even though its original consumer (the old NotationShowcaseSection) is gone.
-  Serves the same PlayWithItInner spinner the landing page uses.
+  Serves the same PlayWithItInner spinner the retired landing section used.
 
   No header, no footer, no navigation. Just the animation.
   Sends postMessage to parent with "ready" when loaded.
