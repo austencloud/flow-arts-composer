@@ -140,6 +140,56 @@ describe("render-key tip points", () => {
 });
 
 describe("model sprite tip points", () => {
+  it("places both triangle grips' five sources on their physical model stations", () => {
+    // Measured model stations in metres, then converted with the capture's fit.
+    // The old notation table reached 135.15 units, beyond the ~117-unit paint.
+    for (const [key, stations] of [
+      [
+        "triangle",
+        [
+          [0.506285, 0],
+          [0.483935, 0.2794],
+          [0.483935, -0.2794],
+          [0.2307925, 0.1590557],
+          [0.2307925, -0.1590557],
+        ],
+      ],
+      [
+        "triangle_side",
+        [
+          [0.506285, 0],
+          [0.02235, 0.2794],
+          [0.02235, -0.2794],
+          [0.2754925, 0.1590557],
+          [0.2754925, -0.1590557],
+        ],
+      ],
+    ] as const) {
+      const scale = PROP_MODEL_SPRITES[key]!.fit;
+      const points = getTipPoints(`${key}__model`).points;
+      closeTo(
+        points,
+        stations.map(([axial, lateral]) => [axial * scale, lateral * scale])
+      );
+      const entry = PROP_MODEL_SPRITES[key]!;
+      const bounds = entry.bounds!;
+      const paintedReach = entry.width / 2 - bounds.x;
+      const paintedHalfHeight = Math.max(
+        Math.abs(bounds.y - entry.height / 2),
+        Math.abs(bounds.y + bounds.height - entry.height / 2)
+      );
+      expect(Math.max(...points.map((point) => point.dx))).toBeLessThan(
+        paintedReach
+      );
+      expect(
+        Math.max(...points.map((point) => Math.abs(point.dy)))
+      ).toBeLessThan(paintedHalfHeight);
+    }
+    expect(getTipPoints("triangle").points).toEqual(
+      PROP_TIP_POINTS.triangle.points
+    );
+  });
+
   it("keeps the notation reach for a one-sided sprite that fills its half box", () => {
     // The club capture faces away from the notation glyph; the sprite is
     // rotated when it is drawn, so its tip stays on the notation reach.

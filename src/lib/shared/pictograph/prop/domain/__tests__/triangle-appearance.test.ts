@@ -121,7 +121,7 @@ describe("triangle grip appearance", () => {
     expect(getTipPointsBaseline("triangle__side").points).toEqual(
       HOOP_FAMILY_TIP_POINTS.triangle_side
     );
-    expect(getTipPointsBaseline("triangle_side__model").points).toEqual(
+    expect(getTipPointsBaseline("triangle_side__model").points).not.toEqual(
       HOOP_FAMILY_TIP_POINTS.triangle_side
     );
     expect(getTipPointsBaseline("minihoop").points).toEqual(
