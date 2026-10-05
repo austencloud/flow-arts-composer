@@ -162,14 +162,17 @@ describe("joined grid layout", () => {
 describe("joined prop nudge", () => {
   const blueOnRedCenter = handPoint(EAST_1, "left", 1, 0);
   const redOnBlueCenter = handPoint(EAST_1, "right", -1, 0);
+  const distances = { left: STAFF_NUDGE, right: STAFF_NUDGE };
+  // One step apart, a prop this long ends 43 short of the other hand: still
+  // overlapping, but not touching it.
+  const SHORT_HALF = 100;
 
   it("moves two overlapping props on one line apart by their beta distance", () => {
     const nudges = gridJoinPropNudges(
       EAST_2,
       staff(handPoint(EAST_2, "left", 1, 0), 0),
       staff(handPoint(EAST_2, "right", -1, 0), 0),
-      { left: STAFF_NUDGE, right: STAFF_NUDGE },
-      false
+      distances
     );
     // The join runs along the line, so red goes up and blue down.
     expect(nudges!.right.x).toBeCloseTo(0, 6);
@@ -182,8 +185,7 @@ describe("joined prop nudge", () => {
       EAST_2,
       staff(handPoint(EAST_2, "left", 1, 0), 0),
       staff(handPoint(EAST_2, "right", -1, 0), 0),
-      { left: 950 / 60, right: STAFF_NUDGE },
-      false
+      { left: 950 / 60, right: STAFF_NUDGE }
     );
     expect(nudges!.left.y).toBeCloseTo(950 / 60, 6);
     expect(nudges!.right.y).toBeCloseTo(-STAFF_NUDGE, 6);
@@ -194,10 +196,9 @@ describe("joined prop nudge", () => {
     expect(redNorth.x).toBeCloseTo(blueOnRedCenter.x, 6);
     const nudges = gridJoinPropNudges(
       EAST_1,
-      staff(blueOnRedCenter, 90),
-      staff(redNorth, 90),
-      { left: STAFF_NUDGE, right: STAFF_NUDGE },
-      false
+      staff(blueOnRedCenter, 90, SHORT_HALF),
+      staff(redNorth, 90, SHORT_HALF),
+      distances
     );
     expect(nudges!.left.x).toBeCloseTo(-STAFF_NUDGE, 6);
     expect(nudges!.right.x).toBeCloseTo(STAFF_NUDGE, 6);
@@ -207,48 +208,51 @@ describe("joined prop nudge", () => {
   it("does not depend on which way either artwork faces", () => {
     const facing = gridJoinPropNudges(
       EAST_1,
-      staff(blueOnRedCenter, 0),
-      staff(redOnBlueCenter, 0),
-      { left: STAFF_NUDGE, right: STAFF_NUDGE },
-      false
+      staff(blueOnRedCenter, 0, SHORT_HALF),
+      staff(redOnBlueCenter, 0, SHORT_HALF),
+      distances
     );
     const turned = gridJoinPropNudges(
       EAST_1,
-      staff(blueOnRedCenter, 180),
-      staff(redOnBlueCenter, 0),
-      { left: STAFF_NUDGE, right: STAFF_NUDGE },
-      false
+      staff(blueOnRedCenter, 180, SHORT_HALF),
+      staff(redOnBlueCenter, 0, SHORT_HALF),
+      distances
     );
     expect(turned!.right.x).toBeCloseTo(facing!.right.x, 6);
     expect(turned!.right.y).toBeCloseTo(facing!.right.y, 6);
   });
 
-  it("can leave a tip resting on the other prop's hand point alone", () => {
-    const bodies = [
-      staff(blueOnRedCenter, 0),
-      staff(redOnBlueCenter, 0),
-    ] as const;
-    const distances = { left: STAFF_NUDGE, right: STAFF_NUDGE };
+  it("leaves a tip resting on the other prop's hand point alone", () => {
     // Each staff's tip stops 16.7 short of the other hand.
     expect(
-      gridJoinPropNudges(EAST_1, ...bodies, distances, false)
+      gridJoinPropNudges(
+        EAST_1,
+        staff(blueOnRedCenter, 0),
+        staff(redOnBlueCenter, 0),
+        distances
+      )
+    ).toBeNull();
+    expect(
+      gridJoinPropNudges(
+        EAST_1,
+        staff(blueOnRedCenter, 0, SHORT_HALF),
+        staff(redOnBlueCenter, 0, SHORT_HALF),
+        distances
+      )
     ).not.toBeNull();
-    expect(gridJoinPropNudges(EAST_1, ...bodies, distances, true)).toBeNull();
   });
 
   it("leaves crossing, side-by-side and separate props alone", () => {
-    const distances = { left: STAFF_NUDGE, right: STAFF_NUDGE };
     const at = handPoint(EAST_2, "left", 1, 0);
     expect(
-      gridJoinPropNudges(EAST_2, staff(at, 0), staff(at, 90), distances, false)
+      gridJoinPropNudges(EAST_2, staff(at, 0), staff(at, 90), distances)
     ).toBeNull();
     expect(
       gridJoinPropNudges(
         EAST_2,
         staff(at, 0),
         staff({ x: at.x, y: at.y + 50 }, 0),
-        distances,
-        false
+        distances
       )
     ).toBeNull();
     expect(
@@ -256,8 +260,7 @@ describe("joined prop nudge", () => {
         EAST_2,
         staff(at, 0),
         staff({ x: at.x + 300, y: at.y }, 0),
-        distances,
-        false
+        distances
       )
     ).toBeNull();
   });

@@ -242,12 +242,6 @@ export interface JoinPropBody {
   readonly halfLength: number;
 }
 
-/**
- * Keep two collinear props unnudged when one's end lands on the other's hand
- * point, so the touch stays visible. Sample-only switch: Austen picks the
- * rule from the two sample cards.
- */
-export const JOIN_KEEP_TIP_ON_HAND = false;
 /** An end this close to the other prop's hand point counts as on it. */
 const TIP_ON_HAND = 30;
 const PARALLEL = 1e-3;
@@ -260,14 +254,14 @@ const OVERLAP = 1;
  * beta-offset distance off that line, in opposite directions: blue toward its
  * own grid when the join crosses the line, otherwise red a quarter turn
  * counterclockwise of the line (up, for a horizontal line) and blue the
- * other way.
+ * other way. When an end lands on the other prop's hand point they stay put,
+ * so the touch shows as it does in the animation.
  */
 export function gridJoinPropNudges(
   join: GridJoin,
   left: JoinPropBody,
   right: JoinPropBody,
-  distances: Readonly<Record<Hand, number>>,
-  keepTipOnHand: boolean = JOIN_KEEP_TIP_ON_HAND
+  distances: Readonly<Record<Hand, number>>
 ): Record<Hand, JoinVec> | null {
   const toRadians = (degrees: number) => (degrees * Math.PI) / 180;
   const leftAxis = {
@@ -297,9 +291,8 @@ export function gridJoinPropNudges(
   if (overlap <= OVERLAP) return null;
 
   if (
-    keepTipOnHand &&
-    (Math.abs(Math.abs(along) - left.halfLength) < TIP_ON_HAND ||
-      Math.abs(Math.abs(along) - right.halfLength) < TIP_ON_HAND)
+    Math.abs(Math.abs(along) - left.halfLength) < TIP_ON_HAND ||
+    Math.abs(Math.abs(along) - right.halfLength) < TIP_ON_HAND
   ) {
     return null;
   }
