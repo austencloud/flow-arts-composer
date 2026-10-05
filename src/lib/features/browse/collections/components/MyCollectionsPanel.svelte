@@ -612,7 +612,7 @@ instead of showing an empty shell.
   />
 
   {#if loading && collections.length === 0}
-    {#each Array(isSideBySide ? 5 : 4) as _}
+    {#each Array(isSideBySide ? 5 : 1) as _}
       <span class="tile-skeleton" aria-hidden="true"></span>
     {/each}
   {:else}
