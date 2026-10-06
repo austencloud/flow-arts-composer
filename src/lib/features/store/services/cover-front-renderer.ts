@@ -21,6 +21,8 @@ import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence
 import type { CoverCard } from "../domain/models/product";
 import { getPrintCardRenderer } from "$lib/features/choreo-card/getPrintCardRenderer";
 import { getCatalogLayoutPolicy } from "$lib/features/choreo-card/domain/catalog-layout-policy";
+import { calculatePhysicalCardLayout } from "$lib/features/choreo-card/services/physical-card-layout-calculator";
+import type { PhysicalCardLayout } from "$lib/features/choreo-card/services/physical-card-layout-calculator";
 import { hydrateSequence } from "$lib/features/choreo-card/services/catalog-loader";
 import type { TnDElement } from "$lib/features/choreo-card/domain/tnd-element";
 import type { PrintRenderOptions } from "$lib/features/choreo-card/services/types";
@@ -194,6 +196,23 @@ const PRINT_W = 822;
 const PRINT_H = 1122;
 const PRINT_BLEED = 36;
 
+/** Layout shared by the fresh hero render and its scan cue. */
+export function resolvePhysicalCoverLayout(
+  sequence: SequenceData,
+  showQRCode: boolean
+): PhysicalCardLayout {
+  return calculatePhysicalCardLayout({
+    sequence,
+    canvasWidth: PRINT_W,
+    canvasHeight: PRINT_H,
+    bleedPx: PRINT_BLEED,
+    includeStartPlacement: true,
+    showHeader: true,
+    showFooter: true,
+    showQRCode,
+  });
+}
+
 /**
  * Scale the print canvas down to a display target. The whole card-front layout
  * derives linearly from canvasWidth (card-front-assembler: stepSize + every
@@ -227,6 +246,10 @@ export function renderCoverFront(
      *  render at screen resolution instead of 822×1122 print res. Omit to bake
      *  full print res. */
     maxWidthPx?: number;
+    qrUrl?: string;
+    showQRCode?: boolean;
+    /** Match the physical card print preview's best-fit portrait grid. */
+    usePhysicalLayout?: boolean;
   } = {}
 ): Promise<string> {
   const seq = card.sequence;
@@ -248,6 +271,9 @@ export function renderCoverFront(
     propType,
     deck.deckId ?? "-",
     deck.deckName ?? "-",
+    deck.qrUrl ?? "-",
+    deck.showQRCode ?? "default",
+    deck.usePhysicalLayout ? "physical" : "catalog",
     sizeTag,
   ].join("|");
   const cached = urlCache.get(key);
@@ -260,11 +286,18 @@ export function renderCoverFront(
     try {
       const hydrated = hydrateCached(seq);
       const stepCount = hydrated.steps?.length ?? 8;
+      const physicalLayout = deck.usePhysicalLayout
+        ? resolvePhysicalCoverLayout(hydrated, deck.showQRCode ?? true)
+        : null;
       const options: PrintRenderOptions = {
         includeStartPlacement: true,
         // Same policy as the print preview: 8/12-count cards put the start
         // position in the left column.
-        startPlacementLayout: getCatalogLayoutPolicy(stepCount),
+        startPlacementLayout:
+          physicalLayout?.startPlacementLayout ?? getCatalogLayoutPolicy(stepCount),
+        ...(physicalLayout?.totalGridColumns !== undefined && {
+          totalGridColumns: physicalLayout.totalGridColumns,
+        }),
         showMandala: true,
         tndElement: frameElement(card),
         leftPropType: propType,
@@ -275,6 +308,8 @@ export function renderCoverFront(
         iconPath: card.iconPath,
         ...(deck.deckId && { deckId: deck.deckId }),
         ...(deck.deckName && { deckName: deck.deckName }),
+        ...(deck.qrUrl && { qrUrl: deck.qrUrl }),
+        ...(deck.showQRCode !== undefined && { showQRCode: deck.showQRCode }),
         ...sizeOpts,
       };
       const canvas = await getPrintCardRenderer().renderFront(hydrated, options);

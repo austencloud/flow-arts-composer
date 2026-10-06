@@ -51,6 +51,13 @@ import {
 import { recalculateAllOrientations } from "$lib/shared/create/services/orientation-propagation";
 import { getToggledGridMode } from "$lib/shared/create/services/rotation-helpers";
 import type { TargetHand } from "$lib/shared/create/state/panel-coordination-state.svelte";
+import {
+  mirrorGridJoin,
+  flipGridJoin,
+  rotateGridJoin,
+  swapGridJoin,
+  turnedJoinUpdate,
+} from "$lib/shared/create/services/grid-join-transforms";
 
 /**
  * Clear all steps in a sequence (make them blank).
@@ -118,6 +125,7 @@ export async function mirrorSequence(
     ...(mirroredStartingPlacementStep && {
       startingPlacement: mirroredStartingPlacementStep,
     }),
+    ...turnedJoinUpdate(sequence, targetHand, mirrorGridJoin),
   });
 }
 
@@ -154,6 +162,7 @@ export async function flipSequence(
     ...(flippedStartingPlacementStep && {
       startingPlacement: flippedStartingPlacementStep,
     }),
+    ...turnedJoinUpdate(sequence, targetHand, flipGridJoin),
   });
 }
 
@@ -198,11 +207,16 @@ export async function rotateSequence(
       startingPlacement: rotatedStartingPlacementStep,
     }),
     gridMode: newGridMode,
+    ...turnedJoinUpdate(sequence, targetHand, (join) =>
+      rotateGridJoin(join, rotationAmount)
+    ),
   });
 }
 
 /**
  * Swap performer-hand assignments in the sequence (left ↔ right).
+ * Every path stays where it was, so a join turns to point from the new blue
+ * grid (the old red one).
  */
 export function handSwapSequence(sequence: SequenceData): SequenceData {
   const swappedBeats = sequence.steps.map(handSwapBeat);
@@ -222,6 +236,7 @@ export function handSwapSequence(sequence: SequenceData): SequenceData {
     ...(swappedStartingPlacementStep && {
       startingPlacement: swappedStartingPlacementStep,
     }),
+    ...turnedJoinUpdate(sequence, "both", swapGridJoin),
   });
 }
 
@@ -281,6 +296,9 @@ export async function invertSequence(
  * the other hand is untouched, so both hands stay continuous. The result is a
  * legitimate sequence with new letters and a different feel. See
  * {@link rewindSingleHand}.
+ *
+ * A grid join is kept as it is: each hand retraces its own path on its own
+ * grid, so neither grid moves.
  *
  * @param targetHand - Which hand(s) to rewind. Defaults to "both".
  */

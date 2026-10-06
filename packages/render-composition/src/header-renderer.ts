@@ -475,8 +475,7 @@ export function renderHeader(
 
   // Word: compressed glyphs → flat glyphs → styled text → plain text
   if (word?.trim()) {
-    const hasCompression = compressedSegments?.some((s) => s.repeat > 1);
-    if (hasCompression && glyphImages && glyphImages.size > 0) {
+    if (compressedSegments && (compressedSegments.length > 1 || compressedSegments.some((s) => s.repeat > 1)) && glyphImages && glyphImages.size > 0) {
       renderCompressedGlyphWord(
         ctx,
         compressedSegments!,
