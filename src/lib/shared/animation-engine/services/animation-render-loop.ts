@@ -1773,6 +1773,7 @@ export class AnimationRenderLoop {
       rightPropType: params.rightPropType,
       qualityHints: this.frameBudgetMonitor?.getQualityHints(),
       tunnelSelectedLayer: props.tunnelSelectedLayer ?? null,
+      primaryPropColors: params.primaryPropColors ?? null,
     });
 
     // Read prop transforms from Canvas2D renderer for fire coherence

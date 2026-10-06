@@ -9,6 +9,8 @@ import type { GridJoin } from "@tka/tka-types";
 import {
   animationGridJoinKey,
   buildJoinedGridSvg,
+  joinedGridPaintKey,
+  type JoinedGridPaint,
 } from "../animation-grid-join";
 import { getSvgImageCache } from "$lib/shared/render/services/svg-image-cache";
 import type { TunnelPropColorPair } from "$lib/shared/sequence-viewer/tunnel/tunnel-prop-colors";
@@ -50,6 +52,89 @@ function rememberGridSprite(key: string, image: HTMLImageElement): void {
   }
 }
 
+/**
+ * A grid's decoded raster at one size, from the shared caches. The grid is
+ * the one image reloaded on every resize, and it is also the most expensive:
+ * a dynamic import, an SVG build, a base64 encode, and a full image decode.
+ * None of that changes with the canvas size — only the decoded raster does —
+ * so both halves are cached, and a container that returns to a size it has
+ * already drawn at pays nothing at all. `paint` colors a joined grid's dots.
+ */
+async function loadGridSprite(
+  gridMode: string,
+  canvasSize: number,
+  showNonRadialPoints: boolean,
+  gridJoin: GridJoin | null,
+  paint: JoinedGridPaint | null
+): Promise<HTMLImageElement> {
+  const svgKey = `${gridMode}|${showNonRadialPoints}|${animationGridJoinKey(gridJoin)}|${gridJoin ? joinedGridPaintKey(paint) : ""}`;
+  const spriteKey = `${svgKey}|${canvasSize}`;
+  const cachedSprite = GRID_SPRITE_CACHE.get(spriteKey);
+  if (cachedSprite) return cachedSprite;
+
+  let gridSvg = GRID_SVG_CACHE.get(svgKey);
+  if (gridSvg === undefined) {
+    const { GridMode } =
+      await import("$lib/shared/pictograph/grid/domain/enums/grid-enums");
+    // "8point" needs special handling since "8POINT" isn't a valid enum key
+    const gridModeEnum =
+      gridMode === "8point"
+        ? GridMode.EIGHT_POINT
+        : GridMode[gridMode.toUpperCase() as keyof typeof GridMode] ||
+          GridMode.DIAMOND;
+    const singleGridSvg = await generateGridSvg(
+      gridModeEnum,
+      true,
+      showNonRadialPoints
+    );
+    gridSvg = gridJoin
+      ? buildJoinedGridSvg(singleGridSvg, gridJoin, paint)
+      : singleGridSvg;
+    GRID_SVG_CACHE.set(svgKey, gridSvg);
+  }
+
+  const image = await svgToImage(gridSvg, canvasSize, canvasSize);
+  rememberGridSprite(spriteKey, image);
+  return image;
+}
+
+/**
+ * Convert SVG string to HTMLImageElement
+ * Uses data URL approach for reliable cross-browser support
+ */
+async function svgToImage(
+  svgString: string,
+  width: number,
+  height: number
+): Promise<HTMLImageElement> {
+  // Convert SVG to data URL
+  const base64 = btoa(unescape(encodeURIComponent(svgString)));
+  const dataUrl = `data:image/svg+xml;base64,${base64}`;
+
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.width = width;
+    img.height = height;
+
+    img.onload = () => {
+      // Clean up handlers
+      img.onload = null;
+      img.onerror = null;
+      resolve(img);
+    };
+
+    img.onerror = () => {
+      // Clean up handlers
+      img.onload = null;
+      img.onerror = null;
+      console.error("[Canvas2DImageLoader] Image load error");
+      reject(new Error("Failed to load SVG image"));
+    };
+
+    img.src = dataUrl;
+  });
+}
+
 export interface PropSpriteSnapshot {
   image: HTMLImageElement;
   dimensions: { width: number; height: number };
@@ -65,6 +150,16 @@ export class Canvas2DImageLoader {
   private gridImage: HTMLImageElement | null = null;
   /** Grid loads can overlap (mode and layout change together); the newest wins. */
   private gridLoadSeq = 0;
+  /** The arguments of the newest grid load, which a painted copy repeats. */
+  private gridRequest: {
+    gridMode: string;
+    canvasSize: number;
+    showNonRadialPoints: boolean;
+    gridJoin: GridJoin | null;
+  } | null = null;
+  /** Painted joined grid: the newest request's key, and the decoded copy. */
+  private paintedGridKey = "";
+  private paintedGrid: { key: string; image: HTMLImageElement } | null = null;
   private glyphImage: HTMLImageElement | null = null;
   private previousGlyphImage: HTMLImageElement | null = null;
   // A crossfade needs the complete outgoing visual, not just its image. Keeping
@@ -346,66 +441,55 @@ export class Canvas2DImageLoader {
     showNonRadialPoints: boolean = true,
     gridJoin: GridJoin | null = null
   ): Promise<HTMLImageElement> {
-    // The grid is the one image reloaded on every resize, and it is also the
-    // most expensive: a dynamic import, an SVG build, a base64 encode, and a
-    // full image decode. None of that changes with the canvas size — only the
-    // decoded raster does — so both halves are cached, and a container that
-    // returns to a size it has already drawn at pays nothing at all.
-    const joinKey = animationGridJoinKey(gridJoin);
-    const spriteKey = `${gridMode}|${showNonRadialPoints}|${joinKey}|${canvasSize}`;
     const loadSeq = ++this.gridLoadSeq;
-    const cachedSprite = GRID_SPRITE_CACHE.get(spriteKey);
-    if (cachedSprite) {
-      this.gridImage = cachedSprite;
-      return cachedSprite;
-    }
-
+    this.gridRequest = { gridMode, canvasSize, showNonRadialPoints, gridJoin };
     try {
-      const { GridMode } =
-        await import("$lib/shared/pictograph/grid/domain/enums/grid-enums");
-
-      // Convert gridMode string to GridMode enum
-      // "8point" needs special handling since "8POINT" isn't a valid enum key
-      let gridModeEnum: (typeof GridMode)[keyof typeof GridMode];
-      if (gridMode === "8point") {
-        gridModeEnum = GridMode.EIGHT_POINT;
-      } else {
-        gridModeEnum =
-          GridMode[gridMode.toUpperCase() as keyof typeof GridMode] ||
-          GridMode.DIAMOND;
-      }
-
-      const svgKey = `${gridMode}|${showNonRadialPoints}|${joinKey}`;
-      let gridSvg = GRID_SVG_CACHE.get(svgKey);
-      if (gridSvg === undefined) {
-        const singleGridSvg = await generateGridSvg(
-          gridModeEnum,
-          true,
-          showNonRadialPoints
-        );
-        gridSvg = gridJoin
-          ? buildJoinedGridSvg(singleGridSvg, gridJoin)
-          : singleGridSvg;
-        GRID_SVG_CACHE.set(svgKey, gridSvg);
-      }
-
-      // Create new image
-      const newImage = await this.createImageFromSVG(
-        gridSvg,
+      const newImage = await loadGridSprite(
+        gridMode,
         canvasSize,
-        canvasSize
+        showNonRadialPoints,
+        gridJoin,
+        null
       );
-
-      rememberGridSprite(spriteKey, newImage);
-
       // Swap reference unless a later request already owns the grid
       if (loadSeq === this.gridLoadSeq) this.gridImage = newImage;
-
       return newImage;
     } catch (error) {
       console.error("[Canvas2DImageLoader] Failed to load grid image:", error);
       throw error;
     }
+  }
+
+  /**
+   * The current joined grid with each dot in `paint`'s colors, ready to draw
+   * as is; null for one grid, or while that copy is still decoding (the
+   * first request starts it, and the plain grid stands in until then).
+   */
+  getPaintedJoinedGrid(paint: JoinedGridPaint): HTMLImageElement | null {
+    const request = this.gridRequest;
+    if (!request?.gridJoin) return null;
+    const key = `${request.gridMode}|${request.showNonRadialPoints}|${animationGridJoinKey(request.gridJoin)}|${request.canvasSize}|${joinedGridPaintKey(paint)}`;
+    if (this.paintedGrid?.key === key) return this.paintedGrid.image;
+    if (this.paintedGridKey !== key) {
+      this.paintedGridKey = key;
+      void loadGridSprite(
+        request.gridMode,
+        request.canvasSize,
+        request.showNonRadialPoints,
+        request.gridJoin,
+        paint
+      )
+        .then((image) => {
+          if (this.paintedGridKey === key) this.paintedGrid = { key, image };
+        })
+        .catch((error) => {
+          console.error(
+            "[Canvas2DImageLoader] Failed to load painted grid:",
+            error
+          );
+        });
+    }
+    return null;
   }
 
   async loadGlyphImage(
@@ -468,41 +552,13 @@ export class Canvas2DImageLoader {
     return propImage;
   }
 
-  /**
-   * Convert SVG string to HTMLImageElement
-   * Uses data URL approach for reliable cross-browser support
-   */
-  private async createImageFromSVG(
+  /** Convert SVG string to HTMLImageElement. */
+  private createImageFromSVG(
     svgString: string,
     width: number,
     height: number
   ): Promise<HTMLImageElement> {
-    // Convert SVG to data URL
-    const base64 = btoa(unescape(encodeURIComponent(svgString)));
-    const dataUrl = `data:image/svg+xml;base64,${base64}`;
-
-    return new Promise((resolve, reject) => {
-      const img = new Image();
-      img.width = width;
-      img.height = height;
-
-      img.onload = () => {
-        // Clean up handlers
-        img.onload = null;
-        img.onerror = null;
-        resolve(img);
-      };
-
-      img.onerror = () => {
-        // Clean up handlers
-        img.onload = null;
-        img.onerror = null;
-        console.error("[Canvas2DImageLoader] Image load error");
-        reject(new Error("Failed to load SVG image"));
-      };
-
-      img.src = dataUrl;
-    });
+    return svgToImage(svgString, width, height);
   }
 
   // Getters
@@ -606,6 +662,9 @@ export class Canvas2DImageLoader {
     this.primaryColorRequest = null;
     this.additionalLayerDimensions.length = 0;
     this.gridImage = null;
+    this.gridRequest = null;
+    this.paintedGridKey = "";
+    this.paintedGrid = null;
     this.glyphImage = null;
     this.previousGlyphImage = null;
   }
