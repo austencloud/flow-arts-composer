@@ -38,6 +38,12 @@ export interface WorkerWorldContext {
     phase: WorkerRendererProgressMessage["phase"],
     fraction: number
   ): void;
+  /** Settles once this scene's first frame is on screen; never settles for a
+   * superseded scene. Lets optional set dressing load without competing with
+   * the reveal. */
+  scenePresented?: Promise<void>;
+  /** Readies an object that joins the scene after its first frame. */
+  prepareLateObject?(object: Object3D, scene: Scene): Promise<void>;
 }
 
 export interface WorkerWorldFactory {

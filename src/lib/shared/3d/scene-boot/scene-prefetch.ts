@@ -91,6 +91,15 @@ export function warmSceneCode(background: BackgroundType): void {
 }
 
 /**
+ * Warm specific models a caller knows its scene waits on, when the manifest's
+ * whole list would fetch models that renderer never loads.
+ */
+export function warmSceneUrls(urls: readonly string[]): void {
+  if (shouldSkipWarming() || urls.length === 0) return;
+  onIdle(() => void warmUrls(urls));
+}
+
+/**
  * Warm the environment the viewer will actually open, read from the same
  * remembered choice the viewer boots with, plus the shared decoders. Callers
  * that only know 3D is one click away — the split pane, fullscreen, a saved
