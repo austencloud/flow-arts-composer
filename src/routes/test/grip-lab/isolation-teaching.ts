@@ -1,6 +1,9 @@
 import type { AuthoredContactPose } from "@austencloud/scene-3d";
 import { sampleIsolationChannel } from "$lib/shared/3d/performers/isolation-keyframes";
-import { wrapStaffIsolationPhase } from "$lib/shared/3d/performers/staff-isolation";
+import {
+  ISOLATION_STAFF_CONTACT,
+  wrapStaffIsolationPhase,
+} from "$lib/shared/3d/performers/staff-isolation";
 
 export const POSE_CHANNELS = [
   "turn",
@@ -133,10 +136,12 @@ export function defaultTeachingKeys(): TeachingKey[] {
       phase: 3.5,
       turn: 1.3,
       lean: 0.05,
-      pelvisX: -0.0175,
+      // Carry the shoulder toward the hand so the grip stays in reach on the
+      // way back to South.
+      pelvisX: 0.02,
       pelvisZ: 0.0125,
       tipX: -0.1,
-      tipY: 0.07,
+      tipY: 0.08,
       tipZ: 0.05,
     },
   ];
@@ -241,18 +246,30 @@ export function upsertTeachingKey(
     { ...pose, phase: t },
   ].sort((a, b) => a.phase - b.phase);
 }
+/** Staffs at least this long leave North through stage left. Leaving through
+ * the other side pulls a long staff through the forearm and the wrist out of
+ * reach. A shorter staff circles in front of the face, where the elbow cannot
+ * go around the hand, so it leaves through the other side. */
+export const STAGE_LEFT_EXIT_STAFF_M = 0.85;
 /** The ordinary North grip follows the original turn. An authored wrist edit
- * on the East-to-North passage selects the shorter, inward-facing approach. */
+ * on the East-to-North passage selects the shorter, inward-facing approach.
+ * Both leave North through the same side, chosen by staff length. */
 export function isolationPalmRoll(
   phase: number,
-  inwardApproach = false
+  inwardApproach = false,
+  staffLengthM: number = ISOLATION_STAFF_CONTACT.lengthM
 ): number {
   const t = wrapStaffIsolationPhase(phase);
+  const stageLeftExit = staffLengthM >= STAGE_LEFT_EXIT_STAFF_M;
   if (!inwardApproach) {
     const roll = Math.PI - 0.18;
     if (t < 2) return (t / 2) * roll;
     if (t < 2.5) return roll;
-    if (t < 3) return (3 - t) * 2 * roll;
+    if (t < 3) {
+      if (!stageLeftExit) return (3 - t) * 2 * roll;
+      const onward = roll + (t - 2.5) * 2 * (2 * Math.PI - roll);
+      return onward > Math.PI ? onward - 2 * Math.PI : onward;
+    }
     return 0;
   }
   const stageLeftRoll = -2.8;
@@ -265,13 +282,28 @@ export function isolationPalmRoll(
   if (t < 2)
     return stageLeftRoll + (t - 1.9) * 10 * (northRoll - stageLeftRoll);
   if (t < 2.5) return northRoll;
-  if (t < 3) return (3 - t) * 2 * (northRoll + 2 * Math.PI);
+  if (t < 3)
+    return (3 - t) * 2 * (stageLeftExit ? northRoll : northRoll + 2 * Math.PI);
   return 0;
+}
+/** Leaving North through stage left turns the hand one full turn further
+ * around the staff than leaving through the other side. The elbow pole goes
+ * once around the shoulder-to-wrist line with it, so the arm follows the hand
+ * instead of flipping to the other side of the reach. */
+export function isolationElbowSwivel(
+  phase: number,
+  staffLengthM: number = ISOLATION_STAFF_CONTACT.lengthM
+): number {
+  const t = wrapStaffIsolationPhase(phase);
+  if (staffLengthM < STAGE_LEFT_EXIT_STAFF_M || t < 2.5 || t >= 3) return 0;
+  const progress = (t - 2.5) * 2;
+  return -2 * Math.PI * progress * progress * (3 - 2 * progress);
 }
 export function authoredBodyPose(
   pose: TeachingPose,
   phase = 0,
-  keys?: readonly TeachingKey[]
+  keys?: readonly TeachingKey[],
+  staffLengthM: number = ISOLATION_STAFF_CONTACT.lengthM
 ): AuthoredContactPose {
   const inwardApproach =
     keys?.some(
@@ -286,9 +318,10 @@ export function authoredBodyPose(
     torsoLeanRad: pose.lean,
     torsoPitchRad: pose.pitch,
     elbowPole: { x: pose.elbowX, y: pose.elbowY, z: pose.elbowZ },
+    elbowSwivelRad: isolationElbowSwivel(phase, staffLengthM),
     gripRelaxation: pose.gripRelaxation,
     gripTiltRad: pose.gripTilt,
-    gripPalmRollRad: isolationPalmRoll(phase, inwardApproach),
+    gripPalmRollRad: isolationPalmRoll(phase, inwardApproach, staffLengthM),
     gripRiseM: pose.wristRaise,
   };
 }
