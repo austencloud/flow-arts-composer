@@ -10,10 +10,14 @@ The corpus covers light/dark exports, explicit and default difficulty badges,
 physical print frames, LOOP periods/reflection/overlay metadata, repeated titles,
 custom hand colors, mixed fan/staff props, footer notes, step duration badges
 (`duration` on a step), TnD accent tint (`accentColor`, `accentTintOpacity`),
-and the published-link QR cell (`qrUrl`, with the mandala moved off that cell).
+the published-link QR cell (`qrUrl`, with the mandala moved off that cell),
+and joined grids (`conjoined`: the sequence's join, per-cell overrides with a
+one-grid Start cell and a two-step south join, and a print card). The MCP takes
+the sequence's join as an option and the Composer reads it from the sequence;
+per-cell joins ride on the steps for both.
 Header, body, and footer are measured separately so the large white body cannot
 hide a missing badge. A deliberately removed badge must fail the header
-tolerance.
+tolerance, and a joined card drawn on one grid must fail the body tolerance.
 
 The Start-cell L/R hand-color key also has its own cropped comparison. Removing
 the key must fail that region, even when the change is too small to fail the
