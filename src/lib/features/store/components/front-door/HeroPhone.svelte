@@ -40,7 +40,7 @@
   The iframe renders at a true 375 CSS viewport WIDTH — a phone's width, so /q
   lays itself out exactly as it does on a phone — and is scaled into the frame
   with a transform. Its HEIGHT is derived from the measured screen so the
-  embedded page's own viewport is exactly the visible screen (see `frameH`).
+  embedded page's own viewport fits below the camera's top bar (see `frameH`).
   Nothing loads until the first scan press.
 -->
 <script lang="ts">
@@ -90,6 +90,8 @@
    *  this one is a constant: 375 is a phone, and a derived width would just be
    *  a smaller phone. */
   const FRAME_W = 375;
+  // Reserve the camera's status bar in the same phone pixels as the live page.
+  const SAFE_AREA_TOP = 28;
   /** Only until the screen has been measured — see `frameH`. */
   const FALLBACK_H = 812;
 
@@ -122,7 +124,7 @@
    *
    * Exactly right, so the component tells it. Width stays 375 because that is
    * what makes /q lay out as a phone; the height is whatever, at this scale,
-   * fills the screen we actually have — measured, not assumed. /q's own
+   * fills the screen below the camera bar — measured, not assumed. /q's own
    * `svh`/`dvh` rules then resolve against the iframe, and its bottom bar sits
    * on the visible bottom edge by construction, at every viewport.
    *
@@ -135,7 +137,9 @@
    * along the bottom edge.
    */
   const frameH = $derived(
-    scale && screenH ? Math.ceil(screenH / scale) : FALLBACK_H
+    scale && screenH
+      ? Math.ceil(screenH / scale - SAFE_AREA_TOP)
+      : FALLBACK_H - SAFE_AREA_TOP
   );
 
   /**
@@ -238,7 +242,12 @@
   <span class="nub vol-down" aria-hidden="true"></span>
   <span class="nub power" aria-hidden="true"></span>
 
-  <div class="screen" bind:clientWidth={screenW} bind:clientHeight={screenH}>
+  <div
+    class="screen"
+    bind:clientWidth={screenW}
+    bind:clientHeight={screenH}
+    style:--phone-safe-area-top="{SAFE_AREA_TOP * scale}px"
+  >
     <!-- CAMERA VIEW: what the phone sees before it resolves the code — a photo
          of a card lying in the room, not a card pasted over the screen.
 
@@ -316,9 +325,7 @@
     <span class="glare" aria-hidden="true"></span>
   </div>
 
-  <!-- Cut into the display, not painted on the bezel: it sits a hair below the
-       screen's top edge, which is where a punch-hole is. Kept small on purpose
-       — the embedded viewer's top bar runs under it. -->
+  <!-- The camera sits in the display's reserved top bar, above the live page. -->
   <span class="punch" aria-hidden="true"></span>
 
   <!-- Quiet, and only where the screen actually takes a press. Absolutely
@@ -496,10 +503,7 @@
     border-radius: 0 0.14rem 0.14rem 0;
   }
 
-  /* The camera. Sits ON the display a hair below its top edge, which is what a
-     punch-hole is — and small enough that the embedded viewer's top bar runs
-     under it rather than around it. Sibling of .screen rather than a child, so
-     the screen's `overflow: hidden` and its scaled iframe never touch it. */
+  /* The camera stays above the live page, inside its reserved top bar. */
   .punch {
     position: absolute;
     z-index: 5;
@@ -533,6 +537,15 @@
     isolation: isolate;
   }
 
+  .screen::before {
+    content: "";
+    position: absolute;
+    inset: 0 0 auto;
+    height: var(--phone-safe-area-top);
+    z-index: 4;
+    background: #0b0d12;
+    pointer-events: none;
+  }
 
   .camera {
     position: absolute;
@@ -664,11 +677,10 @@
     }
   }
 
-
   /* Swipes up from below, the way tapping a code hands you the page. */
   .page {
     position: absolute;
-    inset: 0;
+    inset: var(--phone-safe-area-top) 0 0;
     background: #0b0d12;
     transform: translateY(100%);
     transition: transform 560ms cubic-bezier(0.22, 1, 0.36, 1);
@@ -787,7 +799,6 @@
     background: #7ee0ff;
     box-shadow: 0 0 0.4rem rgba(126, 224, 255, 0.8);
   }
-
 
   /* Seated fully BELOW the phone, never on its bezel. It used to hang at
      `bottom: -1.4rem`, which put its top 19px INSIDE the screen and covered the
