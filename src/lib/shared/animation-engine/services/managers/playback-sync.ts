@@ -628,7 +628,8 @@ export class PlaybackSync {
     if (!this.state.isInitialized || !renderer) return;
     const join = resolveAnimationGridJoin(
       this._lastPropsRef?.sequenceData,
-      this._lastPropsRef?.additionalLayers?.length ?? 0
+      this._lastPropsRef?.additionalLayers?.length ?? 0,
+      this._lastPropsRef?.gridMode
     );
     if (
       animationGridJoinKey(join) === animationGridJoinKey(this.previousGridJoin)

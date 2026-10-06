@@ -16,6 +16,7 @@ import type { PropState } from "$lib/shared/foundation/domain/types/prop-state";
 import { PIXELS_PER_UNIT } from "$lib/shared/multi-grid/domain/constants/grid-mode-offsets";
 import {
   JOIN_GRID_LOCATIONS,
+  alignGridJoin,
   gridJoinKey,
   gridJoinOffsets,
   isGridJoin,
@@ -34,18 +35,26 @@ export const ANIMATION_GRID_GEOMETRY: JoinGridGeometry = Object.freeze({
   outerRadius: 2 * PIXELS_PER_UNIT,
 });
 
-type JoinedSequence = { readonly conjoined?: GridJoin | null };
+type JoinedSequence = {
+  readonly conjoined?: GridJoin | null;
+  readonly gridMode?: string | null;
+};
 
 /**
  * The join the animation draws for a sequence, or null for one grid. Overlaid
- * tunnel layers share one grid, so they keep it single.
+ * tunnel layers share one grid, so they keep it single. The join is lined up
+ * with the grid drawn (`gridMode`, else the sequence's own), as the cards
+ * line it up.
  */
 export function resolveAnimationGridJoin(
   sequence: JoinedSequence | null | undefined,
-  tunnelLayerCount = 0
+  tunnelLayerCount = 0,
+  gridMode?: string | null
 ): GridJoin | null {
   const join = sequence?.conjoined;
-  return tunnelLayerCount === 0 && isGridJoin(join) ? join : null;
+  return tunnelLayerCount === 0 && isGridJoin(join)
+    ? alignGridJoin(join, gridMode ?? sequence?.gridMode)
+    : null;
 }
 
 /** Short stable cache-key term for a join, e.g. "e1"; "" for one grid. */

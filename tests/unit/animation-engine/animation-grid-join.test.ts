@@ -124,10 +124,32 @@ function pointKeyOf(id: string): string | null {
 describe("which grids the animation draws", () => {
   it("reads the join from the sequence, never from a view setting", () => {
     expect(
-      resolveAnimationGridJoin({ conjoined: { toward: "nw", steps: 2 } })
+      resolveAnimationGridJoin({
+        conjoined: { toward: "nw", steps: 2 },
+        gridMode: "box",
+      })
     ).toEqual({ toward: "nw", steps: 2 });
     expect(resolveAnimationGridJoin({})).toBeNull();
     expect(resolveAnimationGridJoin(null)).toBeNull();
+  });
+
+  it("lines the join up with the grid it draws, as the cards do", () => {
+    const diagonal = { conjoined: { toward: "nw", steps: 2 } } as const;
+    // No grid mode reads as diamond: the diagonal turns onto north.
+    expect(resolveAnimationGridJoin(diagonal)).toEqual({
+      toward: "n",
+      steps: 2,
+    });
+    // The grid the animation draws wins over the sequence's stored mode.
+    expect(
+      resolveAnimationGridJoin({ ...diagonal, gridMode: "diamond" }, 0, "box")
+    ).toEqual({ toward: "nw", steps: 2 });
+    expect(
+      resolveAnimationGridJoin(
+        { conjoined: { toward: "e", steps: 1 }, gridMode: "box" },
+        0
+      )
+    ).toEqual({ toward: "se", steps: 1 });
   });
 
   it("ignores a malformed stored join", () => {
@@ -450,7 +472,9 @@ describe("buildJoinedGridSvg", () => {
         }
         expect(painted, where).toBe(plan.points.length);
       }
-      expect(buildJoinedGridSvg(single, ALL_JOINS[0]!)).not.toMatch(/\sstyle="/);
+      expect(buildJoinedGridSvg(single, ALL_JOINS[0]!)).not.toMatch(
+        /\sstyle="/
+      );
     }
   );
 

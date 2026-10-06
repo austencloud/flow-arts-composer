@@ -17,8 +17,11 @@ export type ThumbnailVariant = "gallery" | "wordcard";
  */
 export const THUMBNAIL_RENDERER_VERSION = 6;
 
-/** Joined-grid dots lean toward each hand's color (see render-core's tint). */
-const JOINED_GRID_TINT_REVISION = "t1";
+/**
+ * Joined-grid dots lean toward each hand's color (see render-core's tint), and
+ * a join off the grid's hand-point lines draws lined up with them (t2).
+ */
+const JOINED_GRID_TINT_REVISION = "t2";
 
 export interface ThumbnailVisibilitySettings {
   showTKA?: boolean;

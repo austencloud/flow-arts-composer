@@ -107,7 +107,8 @@ export class FrameSystem {
       params,
       resolveAnimationGridJoin(
         props.sequenceData,
-        params.props.additionalLayers.length
+        params.props.additionalLayers.length,
+        props.gridMode
       )
     );
     return params;

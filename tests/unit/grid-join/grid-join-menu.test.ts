@@ -26,7 +26,7 @@ import {
   type ContextMenuItem,
 } from "$lib/shared/components/context-menu/context-menu-types";
 
-function holder(initial: GridJoin | null = null) {
+function holder(initial: GridJoin | null = null, gridMode = "diamond") {
   let join = initial;
   const sets: (GridJoin | null)[] = [];
   const controller: GridJoinController = createGridJoinController({
@@ -35,6 +35,7 @@ function holder(initial: GridJoin | null = null) {
       join = next;
       sets.push(next);
     },
+    gridMode: () => gridMode,
   });
   return { controller, sets, current: () => join };
 }
@@ -75,28 +76,30 @@ const DIRECTION_ARROWS: Record<string, { x: number; y: number }> = {
 };
 
 describe("grid join submenu items", () => {
-  it("lists one grid, both distances, then all eight directions", () => {
-    const { controller } = holder();
-    const ids = buildGridJoinChildren(controller).map((c) => c.id);
+  it.each([
+    ["diamond", ["e", "w", "n", "s"]],
+    ["skewed", ["e", "w", "n", "s"]],
+    ["box", ["ne", "se", "sw", "nw"]],
+  ])(
+    "lists one grid, both distances, then the %s grid's four directions",
+    (gridMode, directions) => {
+      const { controller } = holder(null, gridMode);
+      const ids = buildGridJoinChildren(controller).map((c) => c.id);
 
-    expect(ids).toEqual([
-      "grid-join-none",
-      "grid-join-steps-1",
-      "grid-join-steps-2",
-      "grid-join-e",
-      "grid-join-w",
-      "grid-join-n",
-      "grid-join-s",
-      "grid-join-ne",
-      "grid-join-se",
-      "grid-join-sw",
-      "grid-join-nw",
-    ]);
-  });
+      expect(ids).toEqual([
+        "grid-join-none",
+        "grid-join-steps-1",
+        "grid-join-steps-2",
+        ...directions.map((toward) => `grid-join-${toward}`),
+      ]);
+    }
+  );
 
   it("names each direction by where red's grid sits from blue's", () => {
-    const { controller } = holder();
-    const children = buildGridJoinChildren(controller);
+    const children = [
+      ...buildGridJoinChildren(holder().controller),
+      ...buildGridJoinChildren(holder(null, "box").controller),
+    ];
 
     expect(child(children, "grid-join-e").label).toBe("Red right");
     expect(child(children, "grid-join-w").label).toBe("Red left");
@@ -112,8 +115,10 @@ describe("grid join submenu items", () => {
   });
 
   it("points each direction's arrow where red's grid goes", () => {
-    const { controller } = holder();
-    const children = buildGridJoinChildren(controller);
+    const children = [
+      ...buildGridJoinChildren(holder().controller),
+      ...buildGridJoinChildren(holder(null, "box").controller),
+    ];
 
     for (const [toward, vector] of Object.entries(DIRECTION_ARROWS)) {
       const item = child(children, `grid-join-${toward}`);
@@ -144,13 +149,29 @@ describe("grid join radio states", () => {
   });
 
   it.each([
-    [{ toward: "e", steps: 1 }, ["grid-join-steps-1", "grid-join-e"]],
-    [{ toward: "nw", steps: 2 }, ["grid-join-steps-2", "grid-join-nw"]],
-    [{ toward: "s", steps: 2 }, ["grid-join-steps-2", "grid-join-s"]],
-  ] as [GridJoin, string[]][])(
-    "checks the distance and the direction of %j",
-    (join, expected) => {
-      const { controller } = holder(join);
+    [
+      { toward: "e", steps: 1 },
+      "diamond",
+      ["grid-join-steps-1", "grid-join-e"],
+    ],
+    [{ toward: "nw", steps: 2 }, "box", ["grid-join-steps-2", "grid-join-nw"]],
+    [
+      { toward: "s", steps: 2 },
+      "diamond",
+      ["grid-join-steps-2", "grid-join-s"],
+    ],
+    // Stored off the grid's lines (its grid mode changed): it draws turned
+    // 45° clockwise onto them, so that is the direction checked.
+    [
+      { toward: "ne", steps: 1 },
+      "diamond",
+      ["grid-join-steps-1", "grid-join-e"],
+    ],
+    [{ toward: "w", steps: 2 }, "box", ["grid-join-steps-2", "grid-join-nw"]],
+  ] as [GridJoin, string, string[]][])(
+    "checks the distance and the direction of %j on a %s grid",
+    (join, gridMode, expected) => {
+      const { controller } = holder(join, gridMode);
       expect(checkedIds(buildGridJoinChildren(controller))).toEqual(expected);
     }
   );
@@ -165,12 +186,12 @@ describe("grid join choices", () => {
 
   it("a direction keeps the current distance", () => {
     const state = holder({ toward: "n", steps: 2 });
-    child(buildGridJoinChildren(state.controller), "grid-join-sw").action?.();
-    expect(state.current()).toEqual({ toward: "sw", steps: 2 });
+    child(buildGridJoinChildren(state.controller), "grid-join-w").action?.();
+    expect(state.current()).toEqual({ toward: "w", steps: 2 });
   });
 
   it("a distance keeps the current direction", () => {
-    const state = holder({ toward: "sw", steps: 1 });
+    const state = holder({ toward: "sw", steps: 1 }, "box");
     child(
       buildGridJoinChildren(state.controller),
       "grid-join-steps-2"
@@ -178,10 +199,10 @@ describe("grid join choices", () => {
     expect(state.current()).toEqual({ toward: "sw", steps: 2 });
   });
 
-  it("from one grid, a direction joins at one point and a distance joins east", () => {
+  it("from one grid, a direction joins at one point and a distance joins east (southeast on a box grid)", () => {
     const first = holder(null);
-    child(buildGridJoinChildren(first.controller), "grid-join-nw").action?.();
-    expect(first.current()).toEqual({ toward: "nw", steps: 1 });
+    child(buildGridJoinChildren(first.controller), "grid-join-n").action?.();
+    expect(first.current()).toEqual({ toward: "n", steps: 1 });
 
     const second = holder(null);
     child(
@@ -189,6 +210,22 @@ describe("grid join choices", () => {
       "grid-join-steps-2"
     ).action?.();
     expect(second.current()).toEqual({ toward: "e", steps: 2 });
+
+    const box = holder(null, "box");
+    child(
+      buildGridJoinChildren(box.controller),
+      "grid-join-steps-1"
+    ).action?.();
+    expect(box.current()).toEqual({ toward: "se", steps: 1 });
+  });
+
+  it("a distance on a join stored off the grid's lines saves it lined up", () => {
+    const state = holder({ toward: "ne", steps: 1 });
+    child(
+      buildGridJoinChildren(state.controller),
+      "grid-join-steps-2"
+    ).action?.();
+    expect(state.current()).toEqual({ toward: "e", steps: 2 });
   });
 
   it("does nothing when the choice is already the join", () => {
@@ -267,7 +304,7 @@ describe("one owner for both menus", () => {
   );
 
   it("changes in one menu show in the other", () => {
-    const state = holder(null);
+    const state = holder(null, "box");
 
     child(canvasSubmenu(state.controller).children!, "grid-join-se").action?.();
     expect(checkedIds(pictographSubmenu(state.controller).children!)).toEqual([

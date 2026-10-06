@@ -17,6 +17,11 @@ export interface GridJoinController {
   /** Sets the join; null returns the sequence to one grid. */
   set(join: GridJoin | null): void;
   /**
+   * The sequence's grid mode, which decides the directions a join can take
+   * (see `GRID_JOIN_DIRECTIONS`). Absent reads as diamond.
+   */
+  gridMode(): string | null | undefined;
+  /**
    * Calls `listener` after the join changes, for menus that rebuild from a
    * version counter. Returns the unsubscribe function.
    */
@@ -39,10 +44,12 @@ export function gridJoinsEqual(
 export function createGridJoinController(options: {
   get: () => GridJoin | null;
   apply: (join: GridJoin | null) => void;
+  gridMode?: () => string | null | undefined;
 }): GridJoinController {
   const listeners = new Set<() => void>();
   return {
     current: options.get,
+    gridMode: options.gridMode ?? (() => undefined),
     set(join) {
       if (gridJoinsEqual(join, options.get())) return;
       options.apply(join);

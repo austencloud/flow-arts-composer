@@ -231,7 +231,9 @@ export class PictographPreparer {
       this.doPrepare(pinned, { ...options, showRightMotion: false }),
       this.doPrepare(pinned, { ...options, showLeftMotion: false }),
     ]);
-    const { offsets } = getGridJoinLayout(join, gridMode);
+    // The layout lines the join up with this grid; draw and nudge by that.
+    const layout = getGridJoinLayout(join, gridMode);
+    const { offsets } = layout;
 
     const prepared: PreparedRenderData = {
       gridMode,
@@ -240,7 +242,7 @@ export class PictographPreparer {
       arrowMirroring: {},
       propPositions: {},
       propAssets: {},
-      join,
+      join: layout.join,
     };
     for (const [hand, prep, offset] of [
       [HandSide.LEFT, leftPrep, offsets.left],
@@ -277,7 +279,7 @@ export class PictographPreparer {
       const halfLength = (asset: PropAssets) =>
         (Number(asset.viewBox.split(" ")[0]) || 0) / 2;
       const nudges = gridJoinPropNudges(
-        join,
+        layout.join,
         { ...left, halfLength: halfLength(leftAsset) },
         { ...right, halfLength: halfLength(rightAsset) },
         {
