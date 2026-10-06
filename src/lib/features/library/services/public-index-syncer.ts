@@ -226,6 +226,14 @@ export class PublicIndexSyncer {
           level,
           isCircular,
           loopType: loopType as SequenceData["loopType"],
+          ...(hydrated.conjoined !== undefined && {
+            conjoined: hydrated.conjoined,
+          }),
+          // Only a start cell with a join of its own is carried; the viewer
+          // derives every other start cell from the first step.
+          ...(hydrated.startPlacement?.conjoined !== undefined && {
+            startPlacement: hydrated.startPlacement,
+          }),
           isFavorite: false,
           tags: tagNames,
           metadata: {},

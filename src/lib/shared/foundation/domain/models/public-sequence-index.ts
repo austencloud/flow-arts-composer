@@ -19,6 +19,7 @@ import type { SoloPropData } from "$lib/shared/foundation/domain/models/solo-pro
 import type { StepPairingData } from "$lib/shared/foundation/domain/models/step-pairing-data";
 import type { CreatorIntent } from "$lib/shared/foundation/domain/models/creator-intent";
 import type { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+import type { GridJoin } from "@tka/tka-types";
 
 /**
  * PublicSequenceIndex - Self-contained public sequence for Browse
@@ -62,6 +63,9 @@ export interface PublicSequenceIndex {
 
   /** Grid used by the sequence's placements. */
   readonly gridMode?: GridMode;
+
+  /** Side-by-side grid join of the whole sequence; absent when on one grid. */
+  readonly conjoined?: GridJoin;
 
   /** LOOP type label (e.g., "rotated", "mirrored+swapped", "freeform", null for non-LOOP) */
   readonly loopType?: string | null;

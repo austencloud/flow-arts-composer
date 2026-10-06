@@ -224,6 +224,9 @@ export function createStep(input: CreateStepInput): Step {
     ...(populated.variation !== undefined && { variation: populated.variation }),
     ...(populated.isBridge !== undefined && { isBridge: populated.isBridge }),
     ...(populated.isBlank !== undefined && { isBlank: populated.isBlank }),
+    ...(populated.conjoined !== undefined && {
+      conjoined: populated.conjoined,
+    }),
   };
   return Object.freeze(frozen);
 }

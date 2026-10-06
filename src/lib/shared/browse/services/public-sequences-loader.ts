@@ -55,6 +55,22 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
+/**
+ * Hydration re-derives the start cell and this mapper never reads the stored
+ * one, so the start cell's own grid join is carried over by itself.
+ */
+function withStoredStartJoin(
+  sequence: SequenceData,
+  stored: SequenceData["startPlacement"]
+): SequenceData {
+  const join = stored?.conjoined;
+  if (join === undefined || !sequence.startPlacement) return sequence;
+  return {
+    ...sequence,
+    startPlacement: { ...sequence.startPlacement, conjoined: join },
+  };
+}
+
 // The public spinner imports this loader, and it can open from the bundled
 // index before any Firestore read. Loading Firebase on the first read lets the
 // spinner draw before Firebase downloads. The import() must name the Firebase
@@ -589,6 +605,7 @@ export class PublicSequencesLoader {
       components?: SequenceData["components"];
       componentDomains?: SequenceData["componentDomains"];
       isCircular?: boolean;
+      startPlacement?: SequenceData["startPlacement"];
     };
 
     const seq: SequenceData = {
@@ -602,6 +619,7 @@ export class PublicSequencesLoader {
       level: data.level ?? this.difficultyStringToLevel(data.difficultyLevel),
       difficultyLevel: data.difficultyLevel,
       gridMode: data.gridMode,
+      ...(data.conjoined !== undefined && { conjoined: data.conjoined }),
       loopType: data.loopType as SequenceData["loopType"],
       period: data.period,
       components: doc.components,
@@ -646,7 +664,7 @@ export class PublicSequencesLoader {
     // so the sequence is fully renderable without a sourceRef fetch
     if (data.leftSoloProp && data.rightSoloProp && data.stepPairings) {
       try {
-        const hydrated = hydrate(seq);
+        const hydrated = withStoredStartJoin(hydrate(seq), doc.startPlacement);
         // Trust the actual step count over the stored sequenceLength,
         // which may be stale (e.g. base word length before LOOP expansion)
         if (hydrated.steps && hydrated.steps.length > 0) {
@@ -726,6 +744,9 @@ export class PublicSequencesLoader {
         ? new Date(data.dateAdded as string)
         : undefined,
       gridMode: data.gridMode as SequenceData["gridMode"],
+      ...(data.conjoined !== undefined && {
+        conjoined: data.conjoined as SequenceData["conjoined"],
+      }),
       // propType removed - prop type is a viewer preference, not sequence data
       isFavorite: (data.isFavorite as boolean) ?? false,
       isCircular: (data.isCircular as boolean) ?? false,

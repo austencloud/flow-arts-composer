@@ -133,6 +133,29 @@ describe("buildChoreoCardRenderKeys — overlay vs structural routing", () => {
     }
   });
 
+  it("joining or parting a card's grids moves its props → swap", () => {
+    const before = baseInputs();
+    const joined = {
+      ...before,
+      sequence: {
+        ...SEQ,
+        conjoined: { toward: "e", steps: 1 },
+      } as SequenceData,
+    };
+    const stepJoined = {
+      ...before,
+      sequence: {
+        ...SEQ,
+        steps: SEQ.steps.map((step, index) =>
+          index === 1 ? { ...step, conjoined: { toward: "s", steps: 2 } } : step
+        ),
+      } as SequenceData,
+    };
+    expect(routeMode(before, joined)).toBe("swap");
+    expect(routeMode(joined, before)).toBe("swap");
+    expect(routeMode(before, stepJoined)).toBe("swap");
+  });
+
   it("same-id transforms with unchanged letters invalidate rendered geometry", () => {
     const before = baseInputs();
     const sequence = before.sequence;

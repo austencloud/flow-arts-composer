@@ -3,6 +3,10 @@ import type { MotionData } from "$lib/shared/pictograph/shared/domain/models/mot
 import type { SoloPropData } from "../domain/models/solo-prop-data";
 import type { SoloPropStepData } from "../domain/models/solo-prop-step-data";
 import type { SequenceData } from "../domain/models/sequence-data";
+import {
+  gridJoinToken,
+  sequenceGridJoinToken,
+} from "../domain/models/grid-join-token";
 
 const BASE62_CHARS =
   "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
@@ -134,8 +138,30 @@ function serializeChoreoNode(node: HashableNode): string {
 }
 
 /**
+ * Every grid join the sequence draws with: "gj|", the sequence's own join,
+ * then each cell that has its own as its index (the start placement is cell 0)
+ * and join, e.g. "gj|e1_0ne2_3x". Empty when no join is set, so a sequence
+ * drawn on one grid keeps the fingerprint it had before joins existed.
+ */
+function serializeGridJoins(
+  seq: Pick<SequenceData, "steps" | "startPlacement" | "conjoined">
+): string {
+  const own = [seq.startPlacement, ...(seq.steps ?? [])].flatMap(
+    (cell, index) => {
+      const token = gridJoinToken(cell?.conjoined);
+      return token ? [`${index}${token}`] : [];
+    }
+  );
+  const sequenceJoin = sequenceGridJoinToken(seq.conjoined);
+  return sequenceJoin || own.length
+    ? `gj|${[sequenceJoin, ...own].join("_")}`
+    : "";
+}
+
+/**
  * Content fingerprint of a sequence's render-relevant state: word, start
- * position, and every step's letter, both motions, and reversal flags.
+ * position, every step's letter, both motions, and reversal flags, and the
+ * grid joins the cards draw on.
  *
  * Use as a render-cache discriminator. Any transform that changes what the
  * card draws (reversal flips, re-derived letters, recomputed orientations)
@@ -143,7 +169,7 @@ function serializeChoreoNode(node: HashableNode): string {
  * and reversal variants that reuse a base sequence's id never collide.
  */
 export function hashSequenceContent(
-  seq: Pick<SequenceData, "word" | "steps" | "startPlacement">
+  seq: Pick<SequenceData, "word" | "steps" | "startPlacement" | "conjoined">
 ): string {
   const parts: string[] = [String(seq.word ?? "")];
   if (seq.startPlacement) {
@@ -152,6 +178,8 @@ export function hashSequenceContent(
   for (const step of seq.steps ?? []) {
     parts.push(serializeChoreoNode(step as HashableNode));
   }
+  const joins = serializeGridJoins(seq);
+  if (joins) parts.push(joins);
   return hash128(parts.join("~"));
 }
 

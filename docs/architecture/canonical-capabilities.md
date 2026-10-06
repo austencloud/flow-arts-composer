@@ -180,6 +180,18 @@ joins), and the share and Post Studio pictures (`card-preview-state`), the
 viewer's card export and the composite video's step grid come out joined.
 Links, library saves and QR codes keep the sequence as saved.
 
+A join saved on a sequence travels with it.
+`foundation/domain/models/grid-join-token.ts` spells a join as text (`e1`, or
+`x` for a cell kept on one grid) for the share-link codec, the content hashers
+and the public wire schema. `sequence-encoder.ts` closes a link's header with
+`J<toward><steps>` and writes a cell's own join as a fourth beat segment
+(`:J<token>`). The step and start factories, the pairing compose and derive,
+the public projection and loaders, the arena repository and the short-code
+payloads carry it too. A sequence with no join writes nothing anywhere, so its
+links, short codes, QR digests and hashes stay as they were; a joined sequence
+mints its own. Mirror, flip, rotate and rewind do not yet turn a join's
+direction.
+
 `ChoreoCard` resolves its palette once for cells and `CardGridLayout` mandalas.
 Animation frame parameters carry the same hand pair independently of effect
 styling, and `mandala-guide-painter.ts` derives overlap from its actual path

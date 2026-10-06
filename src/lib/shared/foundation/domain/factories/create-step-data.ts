@@ -47,5 +47,7 @@ export function createStepData(data: CreateStepDataInput = {}): StepData {
     ...(data.category !== undefined && { category: data.category }),
     // Beta offset swap — preserve if set
     ...(data.betaSwapped !== undefined && { betaSwapped: data.betaSwapped }),
+    // Grid join — preserve if set; null keeps this step on one grid
+    ...(data.conjoined !== undefined && { conjoined: data.conjoined }),
   };
 }

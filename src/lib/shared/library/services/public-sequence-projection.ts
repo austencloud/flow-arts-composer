@@ -158,6 +158,8 @@ export interface PublicSequenceProjectionWrite {
   readonly level?: number;
 
   readonly gridMode?: SequenceData["gridMode"];
+  /** Present only when the sequence is drawn on joined grids. */
+  readonly conjoined?: SequenceData["conjoined"];
   readonly reversalPattern?: string;
 
   readonly isCircular: boolean;
@@ -276,6 +278,7 @@ export async function buildPublicSequenceProjection(
     ...(context.level !== undefined && { level: context.level }),
 
     ...(source.gridMode !== undefined && { gridMode: source.gridMode }),
+    ...(source.conjoined !== undefined && { conjoined: source.conjoined }),
     ...(source.reversalPattern !== undefined && {
       reversalPattern: source.reversalPattern,
     }),
