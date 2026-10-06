@@ -108,6 +108,11 @@ export interface SequenceRenderOptions {
   accentTintOpacity?: number;
   /** Draws every cell, the start included, on the same joined grids. */
   conjoined?: GridJoinSpec | null;
+  /**
+   * The sequence's grid mode ("diamond", "box" or "skewed") for every cell,
+   * the start included. Diamond when absent.
+   */
+  gridMode?: string;
 }
 const DEFAULT_OPTIONS = {
   ...COMPOSER_CARD_EXPORT_PROFILE_V1,
@@ -218,6 +223,7 @@ export async function renderSequenceToImage(
         },
         leftReversal: step.leftReversal,
         rightReversal: step.rightReversal,
+        gridMode: opts.gridMode,
         conjoined: isGridJoin(opts.conjoined) ? opts.conjoined : null,
       };
       ctx.drawImage(

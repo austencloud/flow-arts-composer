@@ -1199,6 +1199,7 @@ export function registerSequenceTools(server: McpServer): void {
             cellSize,
             showStepNumbers,
             showWord,
+            gridMode,
             darkMode,
             exportProfile,
             columnCount,

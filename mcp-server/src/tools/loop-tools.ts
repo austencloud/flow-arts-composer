@@ -846,6 +846,7 @@ export function registerLoopTools(server: McpServer): void {
             cellSize,
             showStepNumbers,
             showWord,
+            gridMode,
             darkMode,
             padding: COMPOSER_CARD_EXPORT_PROFILE_V1.padding,
             showDifficulty:
@@ -1245,6 +1246,7 @@ export function registerLoopTools(server: McpServer): void {
             cellSize,
             showStepNumbers,
             showWord,
+            gridMode,
             darkMode,
             padding: COMPOSER_CARD_EXPORT_PROFILE_V1.padding,
             showDifficulty:

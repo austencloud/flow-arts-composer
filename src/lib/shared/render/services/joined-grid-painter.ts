@@ -1,12 +1,14 @@
 /**
- * Canvas painting for pictographs drawn on two joined grids. The geometry
- * lives in grid-join-layout; this file only turns it into canvas calls, so
- * the full renderer and the layer compositor draw identical dots.
+ * Canvas painting for grid points, one grid's or two joined grids'. The
+ * geometry lives in render-core (grid-points, grid-join-layout); this file
+ * only turns it into canvas calls, so the full renderer and the layer
+ * compositor draw identical dots.
  */
 import {
   BOX_OUTER_RING_WIDTH,
-  JOINED_POINT_RADIUS,
+  GRID_POINT_RADIUS,
   type GridJoinLayout,
+  type GridPointKind,
   type JoinedGridPoint,
 } from "@tka/render-core";
 import type { RenderContext2D } from "./types";
@@ -30,6 +32,42 @@ export function applyJoinedGridFit(
 }
 
 /**
+ * Paint `points`, each at its kind's radius: in its entry of `colors` when
+ * given (in point order), else in the current fill and stroke style. Box
+ * grids draw their outer points as rings.
+ */
+export function paintGridPoints(
+  ctx: RenderContext2D,
+  points: readonly { kind: GridPointKind; x: number; y: number }[],
+  size: number,
+  box: boolean,
+  colors?: readonly string[]
+): void {
+  const scale = size / VIEWBOX_SIZE;
+  points.forEach((point, index) => {
+    const color = colors?.[index];
+    if (color) {
+      ctx.fillStyle = color;
+      ctx.strokeStyle = color;
+    }
+    ctx.beginPath();
+    ctx.arc(
+      point.x * scale,
+      point.y * scale,
+      GRID_POINT_RADIUS[point.kind] * scale,
+      0,
+      Math.PI * 2
+    );
+    if (box && point.kind === "outer") {
+      ctx.lineWidth = BOX_OUTER_RING_WIDTH * scale;
+      ctx.stroke();
+    } else {
+      ctx.fill();
+    }
+  });
+}
+
+/**
  * Paint the layout's points that `include` accepts, each in its entry of
  * `colors` (in point order, from `joinedPointColors`). Box grids draw their
  * outer points as rings, as one box grid does.
@@ -42,25 +80,14 @@ export function paintJoinedGridPoints(
   colors: readonly string[],
   include: (point: JoinedGridPoint) => boolean
 ): void {
-  const scale = size / VIEWBOX_SIZE;
-  layout.points.forEach((point, index) => {
-    if (!include(point)) return;
-    const color = colors[index]!;
-    ctx.fillStyle = color;
-    ctx.strokeStyle = color;
-    ctx.beginPath();
-    ctx.arc(
-      point.x * scale,
-      point.y * scale,
-      JOINED_POINT_RADIUS[point.kind] * scale,
-      0,
-      Math.PI * 2
-    );
-    if (box && point.kind === "outer") {
-      ctx.lineWidth = BOX_OUTER_RING_WIDTH * scale;
-      ctx.stroke();
-    } else {
-      ctx.fill();
-    }
-  });
+  const shown = layout.points.flatMap((point, index) =>
+    include(point) ? [{ point, color: colors[index]! }] : []
+  );
+  paintGridPoints(
+    ctx,
+    shown.map(({ point }) => point),
+    size,
+    box,
+    shown.map(({ color }) => color)
+  );
 }

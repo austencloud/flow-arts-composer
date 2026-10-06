@@ -46,8 +46,10 @@ import {
   RED_COLOR_DARK,
   RED_COLOR_LIGHT,
   resolveFullArrowAssetPath,
-  BOX_OUTER_RING_WIDTH,
-  JOINED_POINT_RADIUS,
+  getGridPoints,
+  gridPointsSvg,
+  isBoxGrid,
+  type GridPointKind,
   getBetaOffsetSize,
   getGridJoinLayout,
   JOINED_GRID_TINT,
@@ -496,6 +498,7 @@ export class StandaloneRenderer {
       showReversals = false,
       showHandColorKey = false,
       showGrid = true,
+      showNonRadialPoints = false,
       showLeftMotion = true,
       showRightMotion = true,
       leftPropType = null,
@@ -544,7 +547,12 @@ export class StandaloneRenderer {
               primaryPropColors
             ),
           })
-        : this.renderGrid(gridMode, darkMode, themeable);
+        : this.renderGrid(
+            gridMode,
+            darkMode,
+            themeable,
+            showNonRadialPoints
+          );
       if (gridSvg) sceneParts.push(`<g class="svg-grid">${gridSvg}</g>`);
     }
 
@@ -781,15 +789,23 @@ ${svgParts.join("\n")}
   private renderGrid(
     gridMode: GridMode,
     darkMode: boolean,
-    themeable: boolean = false
+    themeable: boolean = false,
+    showNonRadial: boolean = false
   ): string {
-    const gridFileName =
-      gridMode === GridMode.BOX
-        ? "box_grid.svg"
-        : gridMode === GridMode.SKEWED
-          ? "skewed_grid.svg"
-          : "diamond_grid.svg";
-    const gridPath = join(this.projectRoot, "static/images/grid", gridFileName);
+    // Diamond and box grids paint the shared points, as the app's dot grid
+    // does: box is the diamond grid turned 45° clockwise, outer points as
+    // rings. Skewed keeps its own artwork.
+    if (gridMode !== GridMode.SKEWED) {
+      const points = getGridPoints(gridMode).filter(
+        (point) => point.kind !== "nonRadial" || showNonRadial
+      );
+      return this.gridPointsGroup(points, gridMode, darkMode, themeable);
+    }
+    const gridPath = join(
+      this.projectRoot,
+      "static/images/grid",
+      "skewed_grid.svg"
+    );
 
     if (!existsSync(gridPath)) {
       console.error("[Renderer] Grid file not found:", gridPath);
@@ -825,15 +841,6 @@ ${svgParts.join("\n")}
         `<circle fill="${gridColor}"`
       );
 
-      // Box mode outer points use <circle> elements with stroke-only rendering.
-      // Update stroke color so the rings are visible on dark backgrounds.
-      if (gridMode === GridMode.BOX) {
-        innerContent = innerContent.replace(
-          /\.box-outer-ring\{fill:none;stroke:#000;/,
-          `.box-outer-ring{fill:none;stroke:${gridColor};`
-        );
-      }
-
       // Replace currentColor with the grid color (for hand points with fill:currentColor in CSS)
       // The CSS class .normal-hand-point { fill: currentColor } needs the color property set
       if (darkMode) {
@@ -864,27 +871,46 @@ ${svgParts.join("\n")}
     themeable: boolean,
     handColors: Record<HandSide, string>
   ): string {
-    const gridColor = this.resolveColor(
+    const gridColor = this.gridColor(darkMode, themeable);
+    return this.gridPointsGroup(
+      layout.points,
+      gridMode,
+      darkMode,
+      themeable,
+      themeable
+        ? this.themeableJoinedPointColors(layout, gridColor, handColors)
+        : joinedPointColors(layout.points, gridColor, handColors)
+    );
+  }
+
+  private gridColor(darkMode: boolean, themeable: boolean): string {
+    return this.resolveColor(
       "--dm-grid-point",
       "#ffffff",
       "#000000",
       darkMode,
       themeable
     );
+  }
+
+  /** Grid points in the grid color, or each in its entry of `colors`. */
+  private gridPointsGroup(
+    points: readonly { kind: GridPointKind; x: number; y: number }[],
+    gridMode: GridMode,
+    darkMode: boolean,
+    themeable: boolean,
+    colors?: readonly string[]
+  ): string {
+    const gridColor = this.gridColor(darkMode, themeable);
+    // Solid black in light mode; slightly see-through white in dark mode.
     const opacity = darkMode ? "0.85" : "1.0";
-    const box = gridMode === GridMode.BOX;
-    const colors = themeable
-      ? this.themeableJoinedPointColors(layout, gridColor, handColors)
-      : joinedPointColors(layout.points, gridColor, handColors);
-    const circles = layout.points.map((point, index) => {
-      const color = colors[index]!;
-      const paint =
-        box && point.kind === "outer"
-          ? `fill="none" stroke="${color}" stroke-width="${BOX_OUTER_RING_WIDTH}"`
-          : `fill="${color}"`;
-      return `<circle cx="${point.x}" cy="${point.y}" r="${JOINED_POINT_RADIUS[point.kind]}" ${paint}/>`;
-    });
-    return `<g style="color: ${gridColor}" opacity="${opacity}">${circles.join("")}</g>`;
+    const box = isBoxGrid(gridMode);
+    const circles = colors
+      ? points
+          .map((point, index) => gridPointsSvg([point], box, colors[index]!))
+          .join("")
+      : gridPointsSvg(points, box, gridColor);
+    return `<g style="color: ${gridColor}" opacity="${opacity}">${circles}</g>`;
   }
 
   /** `joinedPointColors` for CSS-variable colors, as color-mix() values. */
