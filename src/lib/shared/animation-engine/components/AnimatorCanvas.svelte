@@ -727,7 +727,7 @@ Last audit: 2025-12-27
   // The join belongs to the sequence. Tunnel layers keep the single grid (the
   // engine makes the same call).
   const gridJoin = $derived(
-    resolveAnimationGridJoin(sequenceData, additionalLayers.length)
+    resolveAnimationGridJoin(sequenceData, additionalLayers.length, gridMode)
   );
 
   function handleVisibilityChange() {

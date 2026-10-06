@@ -279,6 +279,7 @@
         apply: (join) => {
           gridJoinOverride = normalizeGridJoinOverride(join, savedGridJoin);
         },
+        gridMode: () => sequence?.gridMode,
       })
   );
 

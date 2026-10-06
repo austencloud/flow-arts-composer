@@ -102,9 +102,10 @@ describe("getGridPoints", () => {
 
   it("sits on the same points a joined grid's own grid draws", () => {
     const box = getGridPoints("box");
-    const joined = getGridJoinLayout({ toward: "e", steps: 2 }, "box");
-    // With two hand steps apart, the blue grid is centered 143.1 west.
-    const shift = joined.offsets.left.x;
+    // Box grids join along their diagonals. Two hand steps apart, the blue
+    // grid is centered 143.1 toward the northwest.
+    const joined = getGridJoinLayout({ toward: "se", steps: 2 }, "box");
+    const shift = joined.offsets.left;
     for (const point of box.filter((point) => point.kind !== "nonRadial")) {
       const match = joined.points.find(
         (candidate) =>
@@ -115,8 +116,8 @@ describe("getGridPoints", () => {
           )
       );
       if (!match) continue; // hidden beside the other grid
-      expect(match.x - shift).toBeCloseTo(point.x, 0);
-      expect(match.y).toBeCloseTo(point.y, 0);
+      expect(match.x - shift.x).toBeCloseTo(point.x, 0);
+      expect(match.y - shift.y).toBeCloseTo(point.y, 0);
     }
   });
 });

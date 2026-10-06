@@ -43,12 +43,15 @@ import {
   BLUE_COLOR_LIGHT,
   RED_COLOR_DARK,
   RED_COLOR_LIGHT,
-  BOX_OUTER_RING_WIDTH,
-  JOINED_POINT_RADIUS,
   getBetaOffsetSize,
+  getGridPoints,
+  gridPointsSvg,
+  isBoxGrid,
+  type GridPointKind,
   getGridJoinLayout,
   gridJoinPropNudges,
   isGridJoin,
+  joinedPointColors,
   type GridJoinLayout,
   type GridJoinSpec,
   type JoinVec,
@@ -474,6 +477,7 @@ export class StandaloneRenderer {
       showReversals = false,
       showHandColorKey = false,
       showGrid = true,
+      showNonRadialPoints = false,
       showLeftMotion = true,
       showRightMotion = true,
       leftPropType = null,
@@ -500,8 +504,11 @@ export class StandaloneRenderer {
     // 2. Grid
     if (showGrid) {
       const gridSvg = joinLayout
-        ? this.renderJoinedGrid(joinLayout, gridMode, darkMode)
-        : this.renderGrid(darkMode);
+        ? this.renderJoinedGrid(joinLayout, gridMode, darkMode, {
+            left: resolveMotionColor("left", darkMode, primaryPropColors),
+            right: resolveMotionColor("right", darkMode, primaryPropColors),
+          })
+        : this.renderGrid(gridMode, darkMode, showNonRadialPoints);
       if (gridSvg) sceneParts.push(gridSvg);
     }
 
@@ -648,72 +655,60 @@ ${svgParts.join("\n")}
 </svg>`;
   }
 
-  private renderGrid(darkMode: boolean): string {
-    const gridPath = join(this.assetsRoot, "images/grid/diamond_grid.svg");
-
-    if (!existsSync(gridPath)) {
-      console.error("[Renderer] Grid file not found:", gridPath);
-      return "";
-    }
-
-    try {
-      let gridSvg = readFileSync(gridPath, "utf-8");
-
-      // Extract inner content
-      const innerMatch = gridSvg.match(/<svg[^>]*>([\s\S]*)<\/svg>/i);
-      let innerContent = innerMatch ? innerMatch[1] : gridSvg;
-
-      // Grid SVG has several issues to address:
-      // 1. Outer circles and center point have NO fill attribute (default black)
-      // 2. Hand points use class="normal-hand-point" with fill:currentColor
-      // 3. Layer 2 points use fill:none (not visible in normal mode)
-      //
-      // Solution: Add explicit fill to circles without fill attribute
-      const gridColor = darkMode ? "#ffffff" : "#000000";
-      const opacity = darkMode ? "0.85" : "1.0"; // Solid black in light mode
-
-      // Add fill attribute to circles that don't have one
-      // The regex matches <circle that is NOT followed by fill= before the >
-      innerContent = innerContent.replace(
-        /<circle(?![^>]*fill=)/g,
-        `<circle fill="${gridColor}"`
-      );
-
-      // Replace currentColor with the grid color (for hand points with fill:currentColor in CSS)
-      // The CSS class .normal-hand-point { fill: currentColor } needs the color property set
-      if (darkMode) {
-        innerContent = innerContent.replace(/#000000/gi, gridColor);
-        innerContent = innerContent.replace(/black/gi, gridColor);
-      }
-
-      return `<g style="color: ${gridColor}" opacity="${opacity}">${innerContent}</g>`;
-    } catch (error) {
-      console.error("[Renderer] Failed to load grid:", error);
-      return "";
-    }
+  /**
+   * One grid's points from the shared owner, in this renderer's grid colors:
+   * box mode draws the diamond grid turned 45° clockwise, its outer points
+   * as rings, as the app's dot grid does.
+   */
+  private renderGrid(
+    gridMode: GridMode,
+    darkMode: boolean,
+    showNonRadial: boolean
+  ): string {
+    const points = getGridPoints(gridMode).filter(
+      (point) => point.kind !== "nonRadial" || showNonRadial
+    );
+    return this.gridPointsGroup(points, gridMode, darkMode);
   }
 
   /**
-   * The joined grids' points from the shared layout, in this renderer's grid
-   * colors. Box grids draw their outer points as rings, as one box grid does.
-   * Non-radial points are a one-grid overlay and stay off.
+   * The joined grids' points from the shared layout, each in this renderer's
+   * grid color leaning toward its hand's color (both hands' where the grids
+   * share the spot). Box grids draw their outer points as rings, as one box
+   * grid does. Non-radial points are a one-grid overlay and stay off.
    */
   private renderJoinedGrid(
     layout: GridJoinLayout,
     gridMode: GridMode,
-    darkMode: boolean
+    darkMode: boolean,
+    handColors: Record<"left" | "right", string>
   ): string {
     const gridColor = darkMode ? "#ffffff" : "#000000";
+    return this.gridPointsGroup(
+      layout.points,
+      gridMode,
+      darkMode,
+      joinedPointColors(layout.points, gridColor, handColors)
+    );
+  }
+
+  /** Grid points in the grid color, or each in its entry of `colors`. */
+  private gridPointsGroup(
+    points: readonly { kind: GridPointKind; x: number; y: number }[],
+    gridMode: GridMode,
+    darkMode: boolean,
+    colors?: readonly string[]
+  ): string {
+    const gridColor = darkMode ? "#ffffff" : "#000000";
+    // Solid black in light mode; slightly see-through white in dark mode.
     const opacity = darkMode ? "0.85" : "1.0";
-    const box = gridMode === GridMode.BOX;
-    const circles = layout.points.map((point) => {
-      const paint =
-        box && point.kind === "outer"
-          ? `fill="none" stroke="${gridColor}" stroke-width="${BOX_OUTER_RING_WIDTH}"`
-          : `fill="${gridColor}"`;
-      return `<circle cx="${point.x}" cy="${point.y}" r="${JOINED_POINT_RADIUS[point.kind]}" ${paint}/>`;
-    });
-    return `<g style="color: ${gridColor}" opacity="${opacity}">${circles.join("")}</g>`;
+    const box = isBoxGrid(gridMode);
+    const circles = colors
+      ? points
+          .map((point, index) => gridPointsSvg([point], box, colors[index]!))
+          .join("")
+      : gridPointsSvg(points, box, gridColor);
+    return `<g style="color: ${gridColor}" opacity="${opacity}">${circles}</g>`;
   }
 
   /**

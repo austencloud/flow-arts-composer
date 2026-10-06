@@ -21,6 +21,7 @@ import { PIXELS_PER_UNIT } from "$lib/shared/multi-grid/domain/constants/grid-mo
 import type { PropState } from "$lib/shared/foundation/domain/types/prop-state";
 import {
   JOIN_GRID_LOCATIONS,
+  joinedPointColors,
   joinedPointKey,
   joinedPointsDrawnBy,
   planJoinedGridPoints,
@@ -123,10 +124,32 @@ function pointKeyOf(id: string): string | null {
 describe("which grids the animation draws", () => {
   it("reads the join from the sequence, never from a view setting", () => {
     expect(
-      resolveAnimationGridJoin({ conjoined: { toward: "nw", steps: 2 } })
+      resolveAnimationGridJoin({
+        conjoined: { toward: "nw", steps: 2 },
+        gridMode: "box",
+      })
     ).toEqual({ toward: "nw", steps: 2 });
     expect(resolveAnimationGridJoin({})).toBeNull();
     expect(resolveAnimationGridJoin(null)).toBeNull();
+  });
+
+  it("lines the join up with the grid it draws, as the cards do", () => {
+    const diagonal = { conjoined: { toward: "nw", steps: 2 } } as const;
+    // No grid mode reads as diamond: the diagonal turns onto north.
+    expect(resolveAnimationGridJoin(diagonal)).toEqual({
+      toward: "n",
+      steps: 2,
+    });
+    // The grid the animation draws wins over the sequence's stored mode.
+    expect(
+      resolveAnimationGridJoin({ ...diagonal, gridMode: "diamond" }, 0, "box")
+    ).toEqual({ toward: "nw", steps: 2 });
+    expect(
+      resolveAnimationGridJoin(
+        { conjoined: { toward: "e", steps: 1 }, gridMode: "box" },
+        0
+      )
+    ).toEqual({ toward: "se", steps: 1 });
   });
 
   it("ignores a malformed stored join", () => {
@@ -406,6 +429,54 @@ describe("buildJoinedGridSvg", () => {
     expect(center.x).toBeCloseTo(facing.x!, 9);
     expect(center.y).toBeCloseTo(facing.y!, 9);
   });
+
+  it.each(GRID_FILES)(
+    "paints each drawn point of %s in its hand's tint, rings by stroke",
+    (file) => {
+      const single = strictGridSvg(file);
+      const paint = {
+        base: "#000000",
+        hands: { left: "#3575e2", right: "#ed1c24" },
+      };
+      for (const join of ALL_JOINS) {
+        const svg = buildJoinedGridSvg(single, join, paint);
+        const plan = planJoinedGridPoints(
+          join,
+          locationsOf(file),
+          ANIMATION_GRID_GEOMETRY
+        );
+        const colors = joinedPointColors(plan.points, paint.base, paint.hands);
+        const expected = new Map(
+          plan.points.map((p, i) => [
+            `${p.members[0]!.hand}_${joinedPointKey(p.kind, p.members[0]!.location)}`,
+            colors[i]!,
+          ])
+        );
+        const where = `${file} ${join.toward}${join.steps}`;
+        let painted = 0;
+        for (const [element, id] of svg.matchAll(
+          /<(?:circle|path)\b[^>]*\sid="((?:left|right)_[^"]+)"[^>]*\/>/g
+        )) {
+          const hand = id!.startsWith("left_") ? "left" : "right";
+          const key = gridPointOfElementId(id!.slice(hand.length + 1));
+          const style = /\sstyle="([^"]*)"/.exec(element)?.[1];
+          if (key === null) {
+            expect(style, `${where} ${id}`).toBeUndefined();
+            continue;
+          }
+          const ring = /class="[^"]*box-outer-ring/.test(element);
+          expect(style, `${where} ${id}`).toBe(
+            `${ring ? "stroke" : "fill"}:${expected.get(`${hand}_${key}`)}`
+          );
+          painted++;
+        }
+        expect(painted, where).toBe(plan.points.length);
+      }
+      expect(buildJoinedGridSvg(single, ALL_JOINS[0]!)).not.toMatch(
+        /\sstyle="/
+      );
+    }
+  );
 
   it.each(GRID_FILES)("leaves the nonradial guide points out of %s", (file) => {
     const single = strictGridSvg(file);

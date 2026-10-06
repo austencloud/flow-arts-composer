@@ -387,7 +387,8 @@ export class AnimationEngine {
     // Build the init context and delegate service creation to the manager.
     const initGridJoin = resolveAnimationGridJoin(
       this.playbackSync.lastPropsRef?.sequenceData,
-      this.playbackSync.lastPropsRef?.additionalLayers?.length ?? 0
+      this.playbackSync.lastPropsRef?.additionalLayers?.length ?? 0,
+      this.playbackSync.lastPropsRef?.gridMode
     );
     const ctx: LifecycleInitCtx = {
       containerElement,

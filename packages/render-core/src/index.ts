@@ -165,9 +165,11 @@ export type { GridPoint, GridPointKind } from "./calculations/grid-points.js";
 // Joined grids (one grid per hand)
 export {
   BOX_OUTER_RING_WIDTH,
+  GRID_JOIN_DIRECTIONS,
   JOIN_HAND_RADIUS,
   JOINED_POINT_RADIUS,
   JOIN_GRID_LOCATIONS,
+  alignGridJoin,
   getGridJoinLayout,
   gridJoinCellResolver,
   gridJoinKey,

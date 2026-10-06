@@ -16,9 +16,11 @@ import type { PropState } from "$lib/shared/foundation/domain/types/prop-state";
 import { PIXELS_PER_UNIT } from "$lib/shared/multi-grid/domain/constants/grid-mode-offsets";
 import {
   JOIN_GRID_LOCATIONS,
+  alignGridJoin,
   gridJoinKey,
   gridJoinOffsets,
   isGridJoin,
+  joinedPointColors,
   joinedPointKey,
   joinedPointsDrawnBy,
   planJoinedGridPoints,
@@ -33,18 +35,26 @@ export const ANIMATION_GRID_GEOMETRY: JoinGridGeometry = Object.freeze({
   outerRadius: 2 * PIXELS_PER_UNIT,
 });
 
-type JoinedSequence = { readonly conjoined?: GridJoin | null };
+type JoinedSequence = {
+  readonly conjoined?: GridJoin | null;
+  readonly gridMode?: string | null;
+};
 
 /**
  * The join the animation draws for a sequence, or null for one grid. Overlaid
- * tunnel layers share one grid, so they keep it single.
+ * tunnel layers share one grid, so they keep it single. The join is lined up
+ * with the grid drawn (`gridMode`, else the sequence's own), as the cards
+ * line it up.
  */
 export function resolveAnimationGridJoin(
   sequence: JoinedSequence | null | undefined,
-  tunnelLayerCount = 0
+  tunnelLayerCount = 0,
+  gridMode?: string | null
 ): GridJoin | null {
   const join = sequence?.conjoined;
-  return tunnelLayerCount === 0 && isGridJoin(join) ? join : null;
+  return tunnelLayerCount === 0 && isGridJoin(join)
+    ? alignGridJoin(join, gridMode ?? sequence?.gridMode)
+    : null;
 }
 
 /** Short stable cache-key term for a join, e.g. "e1"; "" for one grid. */
@@ -166,12 +176,31 @@ function gridFileLocations(body: string): GridLocation[] {
 }
 
 /**
+ * Colors for a joined grid's dots: `base` is the one-grid dot color, and each
+ * dot leans toward its hand's color (spots both grids share, toward the mix).
+ */
+export interface JoinedGridPaint {
+  readonly base: string;
+  readonly hands: Readonly<Record<"left" | "right", string>>;
+}
+
+/** Short stable cache-key term for a paint; "" for unpainted. */
+export function joinedGridPaintKey(paint: JoinedGridPaint | null): string {
+  return paint ? `${paint.base}|${paint.hands.left}|${paint.hands.right}` : "";
+}
+
+/**
  * Turns one grid SVG (950 viewBox, style block first) into the joined pair:
  * two shifted copies of its points under the original root and style, each
- * keeping only the points the join draws. Unrecognised markup is returned
- * unchanged.
+ * keeping only the points the join draws. With `paint`, each drawn point
+ * gets its own color inline; without it the points keep the file's ink.
+ * Unrecognised markup is returned unchanged.
  */
-export function buildJoinedGridSvg(gridSvg: string, join: GridJoin): string {
+export function buildJoinedGridSvg(
+  gridSvg: string,
+  join: GridJoin,
+  paint: JoinedGridPaint | null = null
+): string {
   const rootOpen = /<svg\b[^>]*>/.exec(gridSvg);
   const closeAt = gridSvg.lastIndexOf("</svg>");
   if (!rootOpen || closeAt < 0) return gridSvg;
@@ -189,6 +218,17 @@ export function buildJoinedGridSvg(gridSvg: string, join: GridJoin): string {
     gridFileLocations(body),
     ANIMATION_GRID_GEOMETRY
   );
+  const colors = new Map<string, string>();
+  if (paint) {
+    const pointColors = joinedPointColors(plan.points, paint.base, paint.hands);
+    plan.points.forEach((point, index) => {
+      const owner = point.members[0]!;
+      colors.set(
+        `${owner.hand}|${joinedPointKey(point.kind, owner.location)}`,
+        pointColors[index]!
+      );
+    });
+  }
 
   return (
     gridSvg.slice(0, splitAt) +
@@ -196,13 +236,15 @@ export function buildJoinedGridSvg(gridSvg: string, join: GridJoin): string {
       body,
       "left",
       plan.offsets.left,
-      joinedPointsDrawnBy(plan.points, "left")
+      joinedPointsDrawnBy(plan.points, "left"),
+      colors
     ) +
     gridCopy(
       body,
       "right",
       plan.offsets.right,
-      joinedPointsDrawnBy(plan.points, "right")
+      joinedPointsDrawnBy(plan.points, "right"),
+      colors
     ) +
     gridSvg.slice(closeAt)
   );
@@ -212,14 +254,29 @@ function gridCopy(
   body: string,
   side: "left" | "right",
   offset: JoinVec,
-  drawn: ReadonlySet<string>
+  drawn: ReadonlySet<string>,
+  colors: ReadonlyMap<string, string>
 ): string {
   const points = body
     .replace(POINT_ELEMENT, (element, id: string) => {
       const point = gridPointOfElementId(id);
-      return point !== null && !drawn.has(point) ? "" : element;
+      if (point === null) return element;
+      if (!drawn.has(point)) return "";
+      const color = colors.get(`${side}|${point}`);
+      return color ? paintElement(element, color) : element;
     })
     .replace(NONRADIAL_POINT, "")
     .replace(/(\s)id="([^"]+)"/g, `$1id="${side}_$2"`);
   return `<g transform="translate(${offset.x} ${offset.y})">${points}</g>`;
+}
+
+/**
+ * Colors one point element inline, which outranks the file's class rules: a
+ * ring (the box outer points) by its stroke, a dot by its fill.
+ */
+function paintElement(element: string, color: string): string {
+  const paint = /\sclass="[^"]*box-outer-ring/.test(element)
+    ? `stroke:${color}`
+    : `fill:${color}`;
+  return element.replace(/\s*\/>$/, ` style="${paint}"/>`);
 }
