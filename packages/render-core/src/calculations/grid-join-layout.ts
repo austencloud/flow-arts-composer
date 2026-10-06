@@ -21,7 +21,11 @@ import {
   DIAMOND_OUTER_POINTS,
 } from "../constants/grid-coordinates.js";
 import { getNormalHandPointCoordinates } from "./grid-placement.js";
-import { BOX_OUTER_RING_WIDTH, GRID_POINT_RADIUS } from "./grid-points.js";
+import {
+  BOX_OUTER_RING_WIDTH,
+  GRID_POINT_RADIUS,
+  isBoxGrid,
+} from "./grid-points.js";
 
 export { BOX_OUTER_RING_WIDTH };
 
@@ -127,6 +131,48 @@ const JOIN_DIRECTIONS: ReadonlySet<string> = new Set<GridJoinDirection>([
   "sw",
   "nw",
 ]);
+
+/**
+ * The directions a join can take on each drawn grid: along the grid's own
+ * hand-point lines. Sliding a grid along one of them lands the other grid's
+ * center on a hand point (one step) or meets hand to hand (two steps); along
+ * any other line no point meets another, and the near-misses read as clutter.
+ */
+export const GRID_JOIN_DIRECTIONS: Readonly<
+  Record<"diamond" | "box", readonly GridJoinDirection[]>
+> = {
+  diamond: ["n", "e", "s", "w"],
+  box: ["ne", "se", "sw", "nw"],
+};
+
+/** A quarter-step clockwise turn of each direction. */
+const CLOCKWISE_EIGHTH: Readonly<Record<GridJoinDirection, GridJoinDirection>> =
+  {
+    n: "ne",
+    ne: "e",
+    e: "se",
+    se: "s",
+    s: "sw",
+    sw: "w",
+    w: "nw",
+    nw: "n",
+  };
+
+/**
+ * The join as drawn on `gridMode`'s grid. A direction off that grid's
+ * hand-point lines (a diagonal on a diamond grid, a straight one on a box
+ * grid, as a sequence carries after its grid mode changes) turns 45°
+ * clockwise onto them; a join already on them comes back unchanged.
+ */
+export function alignGridJoin<T extends GridJoinSpec>(
+  join: T,
+  gridMode: string | null | undefined
+): T {
+  const directions =
+    GRID_JOIN_DIRECTIONS[isBoxGrid(gridMode ?? undefined) ? "box" : "diamond"];
+  if (directions.includes(join.toward)) return join;
+  return { ...join, toward: CLOCKWISE_EIGHTH[join.toward] };
+}
 
 /** True for a well-formed join (anything read from storage or a link). */
 export function isGridJoin(value: unknown): value is GridJoinSpec {
@@ -346,13 +392,15 @@ const layoutCache = new Map<string, GridJoinLayout>();
 
 /**
  * The joined layout for a join and grid mode. Box draws box grids; every
- * other mode draws diamond grids, as the single-grid painters do.
+ * other mode draws diamond grids, as the single-grid painters do. The join is
+ * aligned to that grid first, so `layout.join` is the join actually drawn.
  */
 export function getGridJoinLayout(
   join: GridJoinSpec,
   gridMode: string | undefined
 ): GridJoinLayout {
   const box = gridMode === "box";
+  join = alignGridJoin(join, gridMode);
   const cacheKey = `${gridJoinKey(join)}:${box ? "box" : "diamond"}`;
   const cached = layoutCache.get(cacheKey);
   if (cached) return cached;
