@@ -11,9 +11,7 @@ import { createStartPlacementData } from "$lib/shared/foundation/domain/factorie
 import {
   gridJoinToken,
   parseGridJoinToken,
-  sequenceGridJoinToken,
 } from "$lib/shared/foundation/domain/models/grid-join-token";
-import type { GridJoin } from "@tka/tka-types";
 import type { MotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
 import { createPlaceholderMotion } from "$lib/shared/pictograph/shared/domain/models/motion-data";
 import type { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
@@ -281,37 +279,14 @@ function encodeBeat(
   // Keep the legacy byte representation for ordinary one-beat steps. Custom
   // durations get an explicit third segment so old links and their hashes stay
   // stable while newly timed sequences round-trip without a source document.
-  let durationSegment = "";
-  if ("duration" in beat) {
-    const duration = beat.duration ?? 1;
-    if (!Number.isFinite(duration) || duration <= 0) {
-      throw new Error(`Invalid step duration: ${String(duration)}`);
-    }
-    if (duration !== 1) durationSegment = `d${duration}`;
+  if (!("duration" in beat)) return encodedMotions;
+
+  const duration = beat.duration ?? 1;
+  if (!Number.isFinite(duration) || duration <= 0) {
+    throw new Error(`Invalid step duration: ${String(duration)}`);
   }
 
-  // A cell's own grid join is a fourth segment, after a duration slot that
-  // stays empty for a one-beat step. A cell that follows its sequence writes
-  // nothing, so every beat without a join keeps its bytes.
-  const join = gridJoinToken(beat.conjoined);
-  if (join) return `${encodedMotions}:${durationSegment}:J${join}`;
-
-  return durationSegment
-    ? `${encodedMotions}:${durationSegment}`
-    : encodedMotions;
-}
-
-/**
- * The join in a beat's fourth segment ("Je1", or "Jx" for a cell that stays
- * on one grid). A token this build does not recognise reads as no join, so a
- * link from a newer build still opens.
- */
-function decodeBeatJoin(
-  segment: string | undefined
-): GridJoin | null | undefined {
-  return segment?.startsWith("J")
-    ? parseGridJoinToken(segment.slice(1))
-    : undefined;
+  return duration === 1 ? encodedMotions : `${encodedMotions}:d${duration}`;
 }
 
 function decodeDuration(
@@ -535,29 +510,12 @@ function findMotionMismatch(a: SequenceData, b: SequenceData): string | null {
   return null;
 }
 
-/** First cell where two sequences carry a different grid join, or null. */
+/** The sequence's grid join when the two carry a different one, or null. */
 function findGridJoinMismatch(a: SequenceData, b: SequenceData): string | null {
-  const cellsOf = (sequence: SequenceData) => [
-    { label: "sequence", token: sequenceGridJoinToken(sequence.conjoined) },
-    {
-      label: "start",
-      token: gridJoinToken(
-        (sequence.startPlacement ?? sequence.startingPlacement)?.conjoined
-      ),
-    },
-    ...sequence.steps.map((step, i) => ({
-      label: `step ${i + 1}`,
-      token: gridJoinToken(step.conjoined),
-    })),
-  ];
-  const cellsB = cellsOf(b);
-  for (const [i, cell] of cellsOf(a).entries()) {
-    const other = cellsB[i]?.token ?? "";
-    if (cell.token !== other) {
-      return `${cell.label} grid join: ${cell.token || "(none)"} vs ${other || "(none)"}`;
-    }
-  }
-  return null;
+  const tokenA = gridJoinToken(a.conjoined);
+  const tokenB = gridJoinToken(b.conjoined);
+  if (tokenA === tokenB) return null;
+  return `grid join: ${tokenA || "(none)"} vs ${tokenB || "(none)"}`;
 }
 
 // ============================================================================
@@ -609,7 +567,9 @@ function encodeSequenceWithFloatFormat(
       startPlacementStep = step0;
       actualSteps = sequence.steps.filter((b) => b.stepNumber !== 0);
     } else {
-      startPlacementStep = createStartPlacementData({ id: crypto.randomUUID() });
+      startPlacementStep = createStartPlacementData({
+        id: crypto.randomUUID(),
+      });
       actualSteps = sequence.steps;
     }
   }
@@ -630,9 +590,9 @@ function encodeSequenceWithFloatFormat(
       (spMotions.right?.propType ?? PropType.STAFF) as PropType
     ] ?? PROP_TYPE_ENCODE[PropType.STAFF];
 
-  // The sequence's own grid join closes the header, after the optional
+  // The sequence's one grid join closes the header, after the optional
   // hand-path flag. A sequence on one grid writes nothing.
-  const joinToken = sequenceGridJoinToken(sequence.conjoined);
+  const joinToken = gridJoinToken(sequence.conjoined);
   const sequenceJoin = joinToken ? `J${joinToken}` : "";
   const header = `${leftSeed}${rightSeed}${leftPropCode}${rightPropCode}${sequence.sequenceKind === "hand-path" ? "H" : ""}${sequenceJoin}`;
   const encodedStartPlacement = encodeBeat(startPlacementStep, floatWireFormat);
@@ -702,7 +662,6 @@ export function decodeSequence(encoded: string): SequenceData {
       rightOri = right.endOrientation;
       rightLoc = right.endLocation;
     }
-    const join = decodeBeatJoin(segs[3]);
     return {
       stepNumber,
       duration: decodeDuration(segs[2], stepNumber),
@@ -727,7 +686,6 @@ export function decodeSequence(encoded: string): SequenceData {
       letter: null,
       startPlacement: null,
       endPlacement: null,
-      ...(join !== undefined && { conjoined: join }),
     };
   };
 
@@ -739,9 +697,6 @@ export function decodeSequence(encoded: string): SequenceData {
     startPlacement: startBeat.startPlacement,
     endPlacement: startBeat.endPlacement,
     motions: startBeat.motions,
-    ...(startBeat.conjoined !== undefined && {
-      conjoined: startBeat.conjoined,
-    }),
   });
 
   const steps = beatEncodings

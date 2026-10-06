@@ -1,7 +1,7 @@
 /**
- * A joined sequence keeps its join through the link codec. The sequence's join
- * closes the header (`iiSSJe1`, `iiSSHJne2`), a cell's own join is a fourth
- * beat segment (`a:b::Je1`, `a:b:d2:Jx`), and a link without a join keeps the
+ * A joined sequence keeps its one join through the link codec. The sequence's
+ * join closes the header (`iiSSJe1`, `iiSSHJne2`); beats carry no join, since
+ * a sequence is joined one way for every cell. A link without a join keeps the
  * exact bytes it always had: those bytes are printed on physical cards.
  */
 import { describe, expect, it } from "vitest";
@@ -18,10 +18,9 @@ import { GRID_JOIN_DIRECTIONS } from "$lib/shared/foundation/domain/models/grid-
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
 import {
   buildJoinFixture,
-  joinsOf,
+  joinOf,
   JOIN_EAST_ONE,
   JOIN_NORTHEAST_TWO,
-  JOIN_SOUTH_TWO,
   type JoinFixtureOptions,
 } from "../grid-join/grid-join-fixtures";
 
@@ -29,12 +28,6 @@ import {
 const PLAIN = "iiSS|nonox0:sosox0|noeac0:sowec0|easoc1:wenoc1:d2|soweu0:noeau0";
 const PLAIN_HAND_PATH =
   "iiSSH|nonox0:sosox0|noeac0:sowec0|easoc1:wenoc1:d2|soweu0:noeau0";
-
-const NO_JOINS = {
-  sequence: undefined,
-  start: undefined,
-  steps: [undefined, undefined, undefined],
-};
 
 describe("links without a join", () => {
   it("keep the bytes they always had", () => {
@@ -49,8 +42,6 @@ describe("links without a join", () => {
     const sequence = {
       ...base,
       conjoined: undefined,
-      startPlacement: { ...base.startPlacement!, conjoined: undefined },
-      steps: base.steps.map((step) => ({ ...step, conjoined: undefined })),
     } as SequenceData;
 
     expect(encodeSequence(sequence)).toBe(PLAIN);
@@ -59,12 +50,7 @@ describe("links without a join", () => {
   it("write nothing for a join that is not well formed", () => {
     const base = buildJoinFixture();
     const bad = { toward: "c", steps: 7 };
-    const sequence = {
-      ...base,
-      conjoined: bad,
-      startPlacement: { ...base.startPlacement!, conjoined: "e1" },
-      steps: base.steps.map((step) => ({ ...step, conjoined: bad })),
-    } as unknown as SequenceData;
+    const sequence = { ...base, conjoined: bad } as unknown as SequenceData;
 
     expect(encodeSequence(sequence)).toBe(PLAIN);
   });
@@ -72,14 +58,14 @@ describe("links without a join", () => {
   it("decode with no join key anywhere", () => {
     const decoded = decodeSequence(PLAIN);
 
-    expect(joinsOf(decoded)).toEqual(NO_JOINS);
+    expect(joinOf(decoded)).toBeUndefined();
     expect("conjoined" in decoded).toBe(false);
     expect("conjoined" in decoded.startPlacement!).toBe(false);
     expect(decoded.steps.some((step) => "conjoined" in step)).toBe(false);
   });
 });
 
-describe("where a join is written", () => {
+describe("where the join is written", () => {
   const cases: readonly {
     readonly name: string;
     readonly options: JoinFixtureOptions;
@@ -97,76 +83,27 @@ describe("where a join is written", () => {
       encoded:
         "iiSSHJne2|nonox0:sosox0|noeac0:sowec0|easoc1:wenoc1:d2|soweu0:noeau0",
     },
-    {
-      name: "the start cell's join is a fourth segment after an empty duration",
-      options: { startJoin: JOIN_NORTHEAST_TWO },
-      encoded:
-        "iiSS|nonox0:sosox0::Jne2|noeac0:sowec0|easoc1:wenoc1:d2|soweu0:noeau0",
-    },
-    {
-      name: "a start cell that stays on one grid is Jx",
-      options: { sequenceJoin: JOIN_EAST_ONE, startJoin: null },
-      encoded:
-        "iiSSJe1|nonox0:sosox0::Jx|noeac0:sowec0|easoc1:wenoc1:d2|soweu0:noeau0",
-    },
-    {
-      name: "a one-beat step's join follows an empty duration",
-      options: { stepJoins: [JOIN_SOUTH_TWO, undefined, undefined] },
-      encoded:
-        "iiSS|nonox0:sosox0|noeac0:sowec0::Js2|easoc1:wenoc1:d2|soweu0:noeau0",
-    },
-    {
-      name: "a timed step's join follows its duration",
-      options: { stepJoins: [undefined, JOIN_SOUTH_TWO, undefined] },
-      encoded:
-        "iiSS|nonox0:sosox0|noeac0:sowec0|easoc1:wenoc1:d2:Js2|soweu0:noeau0",
-    },
-    {
-      name: "a step that stays on one grid is Jx",
-      options: { stepJoins: [undefined, undefined, null] },
-      encoded:
-        "iiSS|nonox0:sosox0|noeac0:sowec0|easoc1:wenoc1:d2|soweu0:noeau0::Jx",
-    },
-    {
-      name: "every kind of join together",
-      options: {
-        sequenceJoin: JOIN_EAST_ONE,
-        startJoin: JOIN_NORTHEAST_TWO,
-        stepJoins: [JOIN_SOUTH_TWO, undefined, null],
-      },
-      encoded:
-        "iiSSJe1|nonox0:sosox0::Jne2|noeac0:sowec0::Js2|easoc1:wenoc1:d2|soweu0:noeau0::Jx",
-    },
   ];
 
   it.each(cases)("$name", ({ options, encoded }) => {
     const sequence = buildJoinFixture(options);
 
     expect(encodeSequence(sequence)).toBe(encoded);
-    expect(joinsOf(decodeSequence(encoded))).toEqual(joinsOf(sequence));
+    expect(joinOf(decodeSequence(encoded))).toEqual(joinOf(sequence));
   });
 
-  it("carries a join on a beat whose hands are both blank", () => {
+  it("writes no join on a beat, whatever a cell carries", () => {
     const base = buildJoinFixture({ sequenceJoin: JOIN_EAST_ONE });
-    const first = base.steps[0]!;
-    const blank = {
-      ...first,
-      isBlank: true,
-      conjoined: JOIN_SOUTH_TWO,
-      motions: {
-        left: { ...first.motions.left, isVisible: false },
-        right: { ...first.motions.right, isVisible: false },
-      },
-    };
-    const encoded = encodeSequence({
+    const stray = {
       ...base,
-      steps: [blank, ...base.steps.slice(1)],
-    } as SequenceData);
+      startPlacement: {
+        ...base.startPlacement!,
+        conjoined: JOIN_NORTHEAST_TWO,
+      },
+      steps: base.steps.map((step) => ({ ...step, conjoined: null })),
+    } as unknown as SequenceData;
 
-    expect(encoded.split("|")[2]).toBe(":::Js2");
-    const decoded = decodeSequence(encoded);
-    expect(decoded.steps[0]!.isBlank).toBe(true);
-    expect(decoded.steps[0]!.conjoined).toEqual(JOIN_SOUTH_TWO);
+    expect(encodeSequence(stray)).toBe(encodeSequence(base));
   });
 });
 
@@ -191,38 +128,18 @@ describe("decoding", () => {
     expect(decoded.conjoined).toEqual(JOIN_EAST_ONE);
   });
 
-  it("carries a start cell's join onto the start placement", () => {
+  it("gives no cell a join of its own, the start placement included", () => {
     const decoded = decodeSequence(
-      encodeSequence(buildJoinFixture({ startJoin: JOIN_NORTHEAST_TWO }))
+      encodeSequence(buildJoinFixture({ sequenceJoin: JOIN_EAST_ONE }))
     );
 
-    expect(decoded.startPlacement?.conjoined).toEqual(JOIN_NORTHEAST_TWO);
+    expect("conjoined" in decoded.startPlacement!).toBe(false);
     expect(decoded.startingPlacement).toBe(decoded.startPlacement);
-    expect(joinsOf(decoded).steps).toEqual([undefined, undefined, undefined]);
-  });
-
-  it("keeps a timed step's duration when it also has a join", () => {
-    const decoded = decodeSequence(
-      encodeSequence(
-        buildJoinFixture({ stepJoins: [undefined, JOIN_SOUTH_TWO, undefined] })
-      )
-    );
-
-    expect(decoded.steps.map((step) => step.duration)).toEqual([1, 2, 1]);
-    expect(decoded.steps[1]!.conjoined).toEqual(JOIN_SOUTH_TWO);
+    expect(decoded.steps.some((step) => "conjoined" in step)).toBe(false);
   });
 
   describe("reads a token it does not know as no join", () => {
     const unknown = ["Jq9", "Jc1", "Je3", "Jx1", "J", "Zfuture", "e1"];
-
-    it.each(unknown)("%s in a beat", (token) => {
-      const decoded = decodeSequence(
-        `iiSS|nonox0:sosox0::${token}|noeac0:sowec0::${token}|easoc1:wenoc1:d2:${token}|soweu0:noeau0`
-      );
-
-      expect(joinsOf(decoded)).toEqual(NO_JOINS);
-      expect(decoded.steps.map((step) => step.duration)).toEqual([1, 2, 1]);
-    });
 
     it.each(unknown)("%s closing the header", (token) => {
       const decoded = decodeSequence(
@@ -232,13 +149,20 @@ describe("decoding", () => {
       expect(decoded.conjoined).toBeUndefined();
       expect(decoded.sequenceKind).toBe("hand-path");
     });
+  });
 
-    it("ignores a segment after the join", () => {
+  describe("skips a join segment on a beat, as a build that never shipped wrote it", () => {
+    const tokens = ["Je1", "Jne2", "Jx", "Jq9", "J"];
+
+    it.each(tokens)("%s", (token) => {
       const decoded = decodeSequence(
-        "iiSS|nonox0:sosox0|noeac0:sowec0::Je1:future|soweu0:noeau0"
+        `iiSSJs1|nonox0:sosox0::${token}|noeac0:sowec0::${token}|easoc1:wenoc1:d2:${token}|soweu0:noeau0::${token}`
       );
 
-      expect(joinsOf(decoded).steps).toEqual([JOIN_EAST_ONE, undefined]);
+      expect(decoded.conjoined).toEqual({ toward: "s", steps: 1 });
+      expect(decoded.steps.map((step) => step.duration)).toEqual([1, 2, 1]);
+      expect("conjoined" in decoded.startPlacement!).toBe(false);
+      expect(decoded.steps.some((step) => "conjoined" in step)).toBe(false);
     });
   });
 });
@@ -255,12 +179,7 @@ describe("old links and new links are told apart", () => {
     ({ toward, steps, handPath }) => {
       const join = { toward, steps };
       const encoded = encodeSequence(
-        buildJoinFixture({
-          sequenceJoin: join,
-          startJoin: join,
-          stepJoins: [join, null, join],
-          handPath,
-        })
+        buildJoinFixture({ sequenceJoin: join, handPath })
       );
 
       // The legacy detector reads only the header, and takes a colon or an
@@ -270,9 +189,7 @@ describe("old links and new links are told apart", () => {
       expect(header).not.toMatch(/^\d+$/);
       expect(detectLegacySequenceFormat(encoded)).toBeNull();
 
-      const decoded = decodeSequence(encoded);
-      expect(decoded.conjoined).toEqual(join);
-      expect(joinsOf(decoded).steps).toEqual([join, null, join]);
+      expect(decodeSequence(encoded).conjoined).toEqual(join);
     }
   );
 
@@ -294,35 +211,13 @@ describe("round trips", () => {
       name: "a joined hand-path sequence",
       options: { sequenceJoin: JOIN_NORTHEAST_TWO, handPath: true },
     },
-    { name: "a joined start cell", options: { startJoin: JOIN_SOUTH_TWO } },
-    {
-      name: "joined steps",
-      options: { stepJoins: [JOIN_EAST_ONE, JOIN_SOUTH_TWO, null] },
-    },
-    {
-      name: "a sequence with cells on one grid",
-      options: {
-        sequenceJoin: JOIN_EAST_ONE,
-        startJoin: null,
-        stepJoins: [undefined, null, undefined],
-      },
-    },
-    {
-      name: "every kind of join together",
-      options: {
-        sequenceJoin: JOIN_EAST_ONE,
-        startJoin: JOIN_NORTHEAST_TWO,
-        stepJoins: [JOIN_SOUTH_TWO, undefined, null],
-        handPath: true,
-      },
-    },
   ];
 
   it.each(sequences)("$name through the link", ({ options }) => {
     const sequence = buildJoinFixture(options);
 
-    expect(joinsOf(decodeSequence(encodeSequence(sequence)))).toEqual(
-      joinsOf(sequence)
+    expect(joinOf(decodeSequence(encodeSequence(sequence)))).toEqual(
+      joinOf(sequence)
     );
   });
 
@@ -330,8 +225,8 @@ describe("round trips", () => {
     const sequence = buildJoinFixture(options);
     const { encoded } = encodeSequenceWithCompression(sequence);
 
-    expect(joinsOf(decodeSequenceWithCompression(encoded))).toEqual(
-      joinsOf(sequence)
+    expect(joinOf(decodeSequenceWithCompression(encoded))).toEqual(
+      joinOf(sequence)
     );
   });
 
@@ -342,13 +237,13 @@ describe("round trips", () => {
 
     expect(result.ok).toBe(true);
     if (result.ok) {
-      expect(joinsOf(result.decoded)).toEqual(joinsOf(sequence));
+      expect(joinOf(result.decoded)).toEqual(joinOf(sequence));
     }
   });
 
   it("re-encodes a decoded link to the same bytes", () => {
     const encoded =
-      "iiSSHJe1|nonox0:sosox0::Jne2|noeac0:sowec0::Js2|easoc1:wenoc1:d2|soweu0:noeau0::Jx";
+      "iiSSHJe1|nonox0:sosox0|noeac0:sowec0|easoc1:wenoc1:d2|soweu0:noeau0";
 
     expect(encodeSequence(decodeSequence(encoded))).toBe(encoded);
   });
@@ -356,13 +251,9 @@ describe("round trips", () => {
 
 describe("the join check behind the round trip", () => {
   const { findGridJoinMismatch } = __test__;
-  const JOINED: JoinFixtureOptions = {
-    sequenceJoin: JOIN_EAST_ONE,
-    startJoin: JOIN_NORTHEAST_TWO,
-    stepJoins: [JOIN_SOUTH_TWO, undefined, null],
-  };
+  const JOINED: JoinFixtureOptions = { sequenceJoin: JOIN_EAST_ONE };
 
-  it("finds nothing between sequences that carry the same joins", () => {
+  it("finds nothing between sequences that carry the same join", () => {
     expect(
       findGridJoinMismatch(buildJoinFixture(JOINED), buildJoinFixture(JOINED))
     ).toBeNull();
@@ -372,35 +263,16 @@ describe("the join check behind the round trip", () => {
   });
 
   it.each<readonly [string, JoinFixtureOptions, string]>([
+    ["a lost join", {}, "grid join: e1 vs (none)"],
     [
-      "the sequence's join",
-      { ...JOINED, sequenceJoin: undefined },
-      "sequence grid join: e1 vs (none)",
+      "a join that points elsewhere",
+      { sequenceJoin: { toward: "w", steps: 1 } },
+      "grid join: e1 vs w1",
     ],
     [
-      "the start cell's join",
-      { ...JOINED, startJoin: undefined },
-      "start grid join: ne2 vs (none)",
-    ],
-    [
-      "a start cell that moved onto one grid",
-      { ...JOINED, startJoin: null },
-      "start grid join: ne2 vs x",
-    ],
-    [
-      "a step that gained a join",
-      { ...JOINED, stepJoins: [JOIN_SOUTH_TWO, JOIN_EAST_ONE, null] },
-      "step 2 grid join: (none) vs e1",
-    ],
-    [
-      "a step that moved onto one grid",
-      { ...JOINED, stepJoins: [JOIN_SOUTH_TWO, undefined, undefined] },
-      "step 3 grid join: x vs (none)",
-    ],
-    [
-      "a step whose join points elsewhere",
-      { ...JOINED, stepJoins: [{ toward: "s", steps: 1 }, undefined, null] },
-      "step 1 grid join: s2 vs s1",
+      "a join at another distance",
+      { sequenceJoin: { toward: "e", steps: 2 } },
+      "grid join: e1 vs e2",
     ],
   ])("names %s", (_label, other, reason) => {
     expect(
@@ -408,49 +280,22 @@ describe("the join check behind the round trip", () => {
     ).toBe(reason);
   });
 
-  it("names the first cell that differs", () => {
+  it("names a join that appeared", () => {
     expect(
-      findGridJoinMismatch(
-        buildJoinFixture(JOINED),
-        buildJoinFixture({
-          sequenceJoin: undefined,
-          startJoin: null,
-          stepJoins: [],
-        })
-      )
-    ).toBe("sequence grid join: e1 vs (none)");
+      findGridJoinMismatch(buildJoinFixture(), buildJoinFixture(JOINED))
+    ).toBe("grid join: (none) vs e1");
   });
 
   it("reads a join that is not well formed as no join", () => {
     const base = buildJoinFixture();
-    const bad = { toward: "c", steps: 7 };
     const malformed = {
       ...base,
-      conjoined: bad,
-      startPlacement: { ...base.startPlacement!, conjoined: "e1" },
-      steps: base.steps.map((step) => ({ ...step, conjoined: bad })),
+      conjoined: { toward: "c", steps: 7 },
     } as unknown as SequenceData;
 
     expect(findGridJoinMismatch(base, malformed)).toBeNull();
     expect(findGridJoinMismatch(buildJoinFixture(JOINED), malformed)).toBe(
-      "sequence grid join: e1 vs (none)"
+      "grid join: e1 vs (none)"
     );
-  });
-
-  it("reads a start cell stored under its older name", () => {
-    const joined = buildJoinFixture(JOINED);
-    const older = {
-      ...joined,
-      startPlacement: undefined,
-      startingPlacement: joined.startPlacement,
-    } as SequenceData;
-
-    expect(findGridJoinMismatch(joined, older)).toBeNull();
-    expect(
-      findGridJoinMismatch(
-        older,
-        buildJoinFixture({ ...JOINED, startJoin: null })
-      )
-    ).toBe("start grid join: ne2 vs x");
   });
 });

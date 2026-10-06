@@ -1,6 +1,7 @@
 /**
  * The arena opens a sequence from its owner's document. A joined sequence
- * keeps its join through that read, and a sequence on one grid gains no key.
+ * keeps its one join through that read, and a sequence on one grid gains no
+ * key.
  */
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -34,20 +35,14 @@ import { sequenceGridJoinKey } from "@tka/render-core";
 import { ensureComposition } from "$lib/shared/foundation/services/sequence-hydrator";
 import {
   buildJoinFixture,
-  joinsOf,
+  joinOf,
   JOIN_EAST_ONE,
-  JOIN_NORTHEAST_TWO,
-  JOIN_SOUTH_TWO,
   type JoinFixtureOptions,
 } from "./grid-join-fixtures";
 
 const SOURCE_PATH = "users/owner-1/sequences/fixture-sequence";
 
-const JOINED: JoinFixtureOptions = {
-  sequenceJoin: JOIN_EAST_ONE,
-  startJoin: JOIN_NORTHEAST_TWO,
-  stepJoins: [JOIN_SOUTH_TWO, undefined, null],
-};
+const JOINED: JoinFixtureOptions = { sequenceJoin: JOIN_EAST_ONE };
 
 /** What Firestore holds for a saved sequence: plain JSON with no `undefined`. */
 function ownerDocument(options: JoinFixtureOptions) {
@@ -79,37 +74,21 @@ describe("arena full sequence", () => {
     expect(mocks.getDoc).toHaveBeenCalledWith({ path: SOURCE_PATH });
   });
 
-  it("keeps the sequence's, the start cell's and each step's join", async () => {
+  it("keeps the sequence's join, and no cell gains one", async () => {
     const sequence = await openFromOwnerDocument(JOINED);
 
-    expect(joinsOf(sequence)).toEqual({
-      sequence: JOIN_EAST_ONE,
-      start: JOIN_NORTHEAST_TWO,
-      steps: [JOIN_SOUTH_TWO, undefined, null],
-    });
+    expect(joinOf(sequence)).toEqual(JOIN_EAST_ONE);
     expect(sequenceGridJoinKey(sequence)).toBe(
       sequenceGridJoinKey(buildJoinFixture({ ...JOINED, lettered: true }))
     );
-  });
-
-  it("keeps a start cell that stays on one grid while the rest are joined", async () => {
-    const sequence = await openFromOwnerDocument({
-      sequenceJoin: JOIN_EAST_ONE,
-      startJoin: null,
-    });
-
-    expect(joinsOf(sequence).sequence).toEqual(JOIN_EAST_ONE);
-    expect(joinsOf(sequence).start).toBeNull();
+    expect("conjoined" in (sequence.startPlacement ?? {})).toBe(false);
+    expect(sequence.steps.some((step) => "conjoined" in step)).toBe(false);
   });
 
   it("adds no join to a sequence that had none", async () => {
     const sequence = await openFromOwnerDocument({});
 
-    expect(joinsOf(sequence)).toEqual({
-      sequence: undefined,
-      start: undefined,
-      steps: [undefined, undefined, undefined],
-    });
+    expect(joinOf(sequence)).toBeUndefined();
     expect("conjoined" in sequence).toBe(false);
     expect("conjoined" in (sequence.startPlacement ?? {})).toBe(false);
     expect(sequence.steps.some((step) => "conjoined" in step)).toBe(false);
