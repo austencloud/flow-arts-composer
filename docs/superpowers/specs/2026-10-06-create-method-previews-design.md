@@ -1,7 +1,7 @@
 # Create Method Previews
 
 **Date:** 2026-10-06
-**Status:** Draft for Austen's review
+**Status:** Approved by Austen 2026-10-06
 **Owner:** Austen Cloud
 **Builds on:** `2026-09-01-create-front-door-design.md`
 
@@ -36,8 +36,8 @@ Austen chose these on 2026-10-06:
 | Where a preview sits    | Room-based: it takes the icon's place and grows into room the text leaves |
 | What each card acts out | The six scenes under **Scenes**                                           |
 
-Three details were settled while writing this spec. All are open to change in
-review:
+Three details were settled while writing this spec, and Austen approved them
+in review the same day:
 
 1. **Turns stop after two rounds.** Each time the front door opens, the cards
    take two rounds of turns, about 45 seconds in all, and then rest. See
