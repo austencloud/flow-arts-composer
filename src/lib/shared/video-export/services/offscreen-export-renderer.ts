@@ -39,7 +39,7 @@ import { animationSettings } from "$lib/shared/animation-engine/state/animation-
 import { foldTrailIntentIntoSettings } from "$lib/shared/effects/translators/canvas2d-translator";
 import type { TrailSettings } from "$lib/shared/animation-engine/domain/types/trail-types";
 import { getAnimationVisibilityManager } from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
-import { effectiveGridLayout } from "$lib/shared/animation-engine/services/conjoined-grid-layout";
+import { resolveAnimationGridJoin } from "$lib/shared/animation-engine/services/animation-grid-join";
 import type { AnimationPanelState } from "$lib/shared/animation-engine/state/animation-panel-state.svelte";
 import type { AnimationPlaybackController } from "$lib/shared/animation-engine/services/animation-playback-controller";
 import type { AdditionalLayerProps } from "$lib/shared/animation-engine/domain/types/trail-capture-types";
@@ -173,8 +173,7 @@ export class OffscreenExportRenderer {
     await this.handle.context.renderer.loadGridTexture(
       gridMode,
       init.showNonRadialPoints,
-      effectiveGridLayout(vm.getGridLayout(), this.panelState.sequenceData) ===
-        "conjoined"
+      resolveAnimationGridJoin(this.panelState.sequenceData)
     );
 
     // Thread the resolved prop types into the offscreen engine's STATE before the

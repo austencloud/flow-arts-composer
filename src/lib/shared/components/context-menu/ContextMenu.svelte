@@ -4,9 +4,20 @@
   (via floating-ui). We position via `customAnchor` virtual element at (x, y)
   and preserve the original (menuState, items, onClose) public API so consumers
   don't change.
+
+  bits-ui's shift only slides the menu along its alignment axis. On windows wide
+  enough for the menu to fit beside the cursor, it sits on the cursor's right,
+  top-aligned (drawn the same as bottom-start for a point anchor), so it can
+  slide vertically and use the full window height on short screens; bottom
+  could only flip upward and run off the top. Narrower windows use bottom, for
+  submenus too (they open under their row instead of beside a menu with no room
+  either side), so they can still slide sideways. sticky "always" drops limitShift so nothing
+  is held past an edge, and the CSS caps height at bits-ui's available-height
+  variable so a taller menu scrolls.
 -->
 <script lang="ts">
   import { DropdownMenu } from "bits-ui";
+  import { innerWidth } from "svelte/reactivity/window";
   import type {
     ContextMenuEntry,
     ContextMenuItem,
@@ -27,6 +38,16 @@
 
   let loadingItemId: string | null = $state(null);
   let pendingCloseReason: "item" | "outside" | "dismiss" = "dismiss";
+
+  // Matches the max-width and collisionPadding below. At twice this width one
+  // side of any cursor has room for the menu, so right/left flipping suffices.
+  const MENU_MAX_WIDTH = 300;
+  const COLLISION_PADDING = 8;
+  const menuSide = $derived(
+    (innerWidth.current ?? 0) >= 2 * (MENU_MAX_WIDTH + COLLISION_PADDING)
+      ? "right"
+      : "bottom"
+  );
 
   // Virtual anchor for floating-ui; Measurable = { getBoundingClientRect }
   const anchor = $derived(
@@ -123,6 +144,14 @@
     }
   }
 
+  /** Icon tint, and a turn for arrows the icon set has no diagonal glyph for. */
+  function iconStyle(item: ContextMenuItem): string {
+    const parts: string[] = [];
+    if (item.iconColor) parts.push(`color: ${item.iconColor}`);
+    if (item.iconRotate) parts.push(`transform: rotate(${item.iconRotate}deg)`);
+    return parts.join("; ");
+  }
+
   function checkedAccentStyle(item: ContextMenuItem): string {
     if (!item.checked || !item.iconColor) return "";
     return `background: color-mix(in srgb, ${item.iconColor} 12%, transparent);`;
@@ -146,7 +175,7 @@
     ></i>
     <i
       class="fas {item.icon} ctx-menu-icon"
-      style={item.iconColor ? `color: ${item.iconColor}` : ""}
+      style={iconStyle(item)}
       aria-hidden="true"
     ></i>
   {:else if item.checked !== undefined}
@@ -160,7 +189,7 @@
   {:else if item.icon}
     <i
       class="fas {item.icon} ctx-menu-icon"
-      style={item.iconColor ? `color: ${item.iconColor}` : ""}
+      style={iconStyle(item)}
       aria-hidden="true"
     ></i>
   {:else}
@@ -172,10 +201,11 @@
   <DropdownMenu.Portal>
     <DropdownMenu.Content
       customAnchor={anchor}
-      side="bottom"
+      side={menuSide}
       align="start"
       sideOffset={0}
-      collisionPadding={8}
+      collisionPadding={COLLISION_PADDING}
+      sticky="always"
       class="ctx-menu-content"
     >
       {#each items as entry, i (isMenuItem(entry) ? entry.id : `${entry.type}-${i}`)}
@@ -215,8 +245,11 @@
               <DropdownMenu.Portal>
                 <DropdownMenu.SubContent
                   class="ctx-menu-content ctx-submenu"
+                  side={menuSide}
+                  align="start"
                   sideOffset={4}
-                  collisionPadding={8}
+                  collisionPadding={COLLISION_PADDING}
+                  sticky="always"
                 >
                   {#each entry.children ?? [] as child, j (child.id)}
                     {@const childLoading = loadingItemId === child.id}
@@ -280,11 +313,12 @@
       0 8px 24px var(--theme-shadow, rgba(0, 0, 0, 0.6)),
       0 2px 8px var(--theme-shadow, rgba(0, 0, 0, 0.4));
     overflow-y: auto;
-    max-height: calc(100vh - 16px);
+    overscroll-behavior: contain;
+    max-height: var(--bits-floating-available-height, calc(100dvh - 16px));
     scrollbar-width: thin;
     scrollbar-color: var(--scrollbar-thumb, rgba(255, 255, 255, 0.2))
       transparent;
-    transform-origin: top left;
+    transform-origin: var(--bits-floating-transform-origin, top left);
     outline: none;
   }
 
@@ -292,7 +326,10 @@
     min-width: 160px;
     max-width: 260px;
     z-index: calc(var(--z-dropdown) + 1);
-    transform-origin: top left;
+    /* On narrow windows a submenu opens over its parent, and the panel token
+       is translucent, so blur the parent's labels instead of ghosting them. */
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
   }
 
   /* Entrance animation via bits-ui data-state */

@@ -11,6 +11,8 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { buildCanvasContextMenuItems } from "$lib/shared/animation-engine/components/canvas-context-menu/canvas-context-menu-builder";
 import { EFFECTS } from "$lib/shared/animation-engine/components/effects-panel/effect-registry";
 import { AnimationVisibilityStateManager } from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
+import type { GridJoin } from "@tka/tka-types";
+import { createGridJoinController } from "$lib/shared/grid-join/grid-join-controller";
 import { createEffectsConfigState } from "$lib/shared/effects/state/effects-config-state.svelte";
 import {
   isMenuItem,
@@ -161,23 +163,37 @@ describe("canvas context menu builder", () => {
     expect(paths()?.checked).toBe(true);
   });
 
-  it("switches the conjoined grid on and off without touching the grid mode", () => {
-    const conjoined = () =>
-      (
-        submenu(
-          buildCanvasContextMenuItems({ visibilityManager: vm }),
-          "grid-submenu"
-        )?.children ?? []
-      ).find((c) => c.id === "grid-conjoined");
+  it("leaves the join out of the grid submenu, and out of the menu where it cannot be changed", () => {
+    const items = buildCanvasContextMenuItems({ visibilityManager: vm });
+
+    expect(
+      (submenu(items, "grid-submenu")?.children ?? []).map((c) => c.id)
+    ).toEqual(["grid-none", "grid-8point", "grid-auto"]);
+    expect(submenu(items, "grid-join-submenu")).toBeUndefined();
+  });
+
+  it("offers the sequence's join as its own submenu after Grid when a controller is passed", () => {
+    let join: GridJoin | null = null;
+    const gridJoin = createGridJoinController({
+      get: () => join,
+      apply: (next) => {
+        join = next;
+      },
+    });
+    const items = buildCanvasContextMenuItems({
+      visibilityManager: vm,
+      gridJoin,
+    });
+    const ids = items.filter(isMenuItem).map((e) => e.id);
+
+    expect(ids.indexOf("grid-join-submenu")).toBe(
+      ids.indexOf("grid-submenu") + 1
+    );
     const modeBefore = vm.getGridMode();
-
-    expect(conjoined()?.checked).toBe(false);
-    conjoined()?.action?.();
-    expect(vm.getGridLayout()).toBe("conjoined");
-    expect(conjoined()?.checked).toBe(true);
-
-    conjoined()?.action?.();
-    expect(vm.getGridLayout()).toBe("single");
+    submenu(items, "grid-join-submenu")
+      ?.children?.find((c) => c.id === "grid-join-s")
+      ?.action?.();
+    expect(join).toEqual({ toward: "s", steps: 1 });
     expect(vm.getGridMode()).toBe(modeBefore);
   });
 });

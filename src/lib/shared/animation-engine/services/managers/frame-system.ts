@@ -29,12 +29,12 @@ import type { EffectsConfigState } from "$lib/shared/effects/state/effects-confi
 import type { EffectRendererManager } from "../effect-renderer-manager";
 import type { MandalaPathOptions } from "$lib/shared/mandala/services/types";
 import type { PropState } from "$lib/shared/foundation/domain/types/prop-state";
-import type { GridLayout } from "../../state/animation-visibility-state.svelte";
+import type { GridJoin } from "@tka/tka-types";
 import {
-  conjoinedShiftUnits,
-  effectiveGridLayout,
+  gridJoinShiftUnits,
+  resolveAnimationGridJoin,
   shiftPropState,
-} from "../conjoined-grid-layout";
+} from "../animation-grid-join";
 
 export class FrameSystem {
   readonly frameParameterBuilder = new FrameParameterBuilder();
@@ -43,11 +43,11 @@ export class FrameSystem {
     pathShape: "arc",
     motionAware: false,
   };
-  private readonly conjoinedLeftProp: PropState = {
+  private readonly joinedLeftProp: PropState = {
     centerPathAngle: 0,
     staffRotationAngle: 0,
   };
-  private readonly conjoinedRightProp: PropState = {
+  private readonly joinedRightProp: PropState = {
     centerPathAngle: 0,
     staffRotationAngle: 0,
   };
@@ -59,7 +59,6 @@ export class FrameSystem {
       propSystem: PropSystem;
     }
   ) {}
-
 
   /**
    * Build the RenderFrameParams for the current frame.
@@ -77,18 +76,23 @@ export class FrameSystem {
       getVM: () => import("$lib/shared/animation-engine/state/animation-visibility-state.svelte").AnimationVisibilityStateManager;
     }
   ): RenderFrameParams {
-    const params = this.frameParameterBuilder.getFrameParams(props, this.state, {
-      prevDarkMode: this.deps.propSystem.prevDarkMode,
-      prevHasFireTips: buildDeps.effectRendererManager.wasEnabled("fire"),
-      prevHasCharcoalTips: buildDeps.effectRendererManager.wasEnabled("charcoal"),
-      trailsSuppressedUntilTextureLoad:
-        this.deps.propSystem.propTypeManager.trailsSuppressedUntilTextureLoad,
-      effectsConfigState: buildDeps.effectsConfigState,
-      settingsService: this.deps.lifecycleManager.settingsService,
-      effectRendererManager: buildDeps.effectRendererManager,
-      getVM: buildDeps.getVM,
-      orchestrator: this.deps.lifecycleManager.orchestrator,
-    });
+    const params = this.frameParameterBuilder.getFrameParams(
+      props,
+      this.state,
+      {
+        prevDarkMode: this.deps.propSystem.prevDarkMode,
+        prevHasFireTips: buildDeps.effectRendererManager.wasEnabled("fire"),
+        prevHasCharcoalTips:
+          buildDeps.effectRendererManager.wasEnabled("charcoal"),
+        trailsSuppressedUntilTextureLoad:
+          this.deps.propSystem.propTypeManager.trailsSuppressedUntilTextureLoad,
+        effectsConfigState: buildDeps.effectsConfigState,
+        settingsService: this.deps.lifecycleManager.settingsService,
+        effectRendererManager: buildDeps.effectRendererManager,
+        getVM: buildDeps.getVM,
+        orchestrator: this.deps.lifecycleManager.orchestrator,
+      }
+    );
 
     const vm = buildDeps.getVM();
     const pathPolicy = vm.getPathPolicy();
@@ -99,42 +103,46 @@ export class FrameSystem {
     params.mandalaStrokeWidth = props.mandalaStrokeWidthOverride;
     params.mandalaSteps = props.sequenceData?.steps ?? null;
     params.mandalaPathOptions = this.mandalaPathOptions;
-    this.applyGridLayout(
+    this.applyGridJoin(
       params,
-      effectiveGridLayout(vm.getGridLayout(), props.sequenceData)
+      resolveAnimationGridJoin(
+        props.sequenceData,
+        params.props.additionalLayers.length
+      )
     );
     return params;
   }
 
   /**
-   * Conjoined grid: each hand moves onto its own grid. Overlaid tunnel layers
-   * share one grid, so they keep the single layout.
+   * Joined grids: each hand moves onto its own grid, set by the sequence's
+   * join. Overlaid tunnel layers share one grid, so they keep it single (the
+   * resolved join is null for them).
    */
-  private applyGridLayout(params: RenderFrameParams, layout: GridLayout): void {
-    const conjoined =
-      layout === "conjoined" && params.props.additionalLayers.length === 0;
-    params.conjoinedGrid = conjoined;
-    if (!conjoined) return;
+  private applyGridJoin(
+    params: RenderFrameParams,
+    join: GridJoin | null
+  ): void {
+    params.gridJoin = join;
+    if (!join) return;
 
     const { leftProp, rightProp } = params.props;
     if (leftProp) {
       params.props.leftProp = shiftPropState(
         leftProp,
-        conjoinedShiftUnits(0),
-        this.conjoinedLeftProp
+        gridJoinShiftUnits(join, 0),
+        this.joinedLeftProp
       );
     }
     if (rightProp) {
       params.props.rightProp = shiftPropState(
         rightProp,
-        conjoinedShiftUnits(1),
-        this.conjoinedRightProp
+        gridJoinShiftUnits(join, 1),
+        this.joinedRightProp
       );
     }
     // The mandala guide draws both hands around the one canvas center.
     params.mandalaVisible = false;
   }
-
 
   calculateBeatNumber(props: AnimationEngineProps): number {
     return this.frameBuilder.calculateBeatNumber(
@@ -150,7 +158,6 @@ export class FrameSystem {
       this.deps.lifecycleManager.orchestrator ?? null
     );
   }
-
 
   /**
    * Sync the glyph transition service state into AnimatorState.
@@ -178,7 +185,6 @@ export class FrameSystem {
       isNewLetter: gs.isNewLetter,
     });
   }
-
 
   enforceUnilateralConstraint(
     settings: TrailSettings,

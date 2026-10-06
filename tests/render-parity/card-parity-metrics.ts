@@ -5,7 +5,13 @@ import {
   getCardFrameContentInset,
 } from "@tka/render-composition";
 import type { CardParityCase } from "./card-parity-cases";
-import { calculateHandColorKeyLayout, HAND_COLOR_KEY } from "@tka/render-core";
+import {
+  calculateHandColorKeyLayout,
+  getGridJoinLayout,
+  getNormalHandPointCoordinates,
+  HAND_COLOR_KEY,
+  type GridMode,
+} from "@tka/render-core";
 
 export interface ParityImage {
   width: number;
@@ -24,31 +30,52 @@ export const CARD_PARITY_LIMITS: Record<string, number> = {
   // this 1,026px crop (3.71%) across Chromium and native Canvas rasterizers.
   // Missing-key controls cover both this smallest print crop and normal cards.
   handColorKey: 4,
+  // A 9-36px crop around each Start-cell prop's hand point. The prop covers
+  // the grid's hand point there, so a dot painted over it shows here although
+  // it vanishes inside the body tolerance. Matching cards measure 0% in every
+  // case; the old dot measured 8.33% or more, the painted control 5.56%.
+  leftHandPoint: 4,
+  rightHandPoint: 4,
 };
 
-export function assertCardParity(
-  metrics: ReturnType<typeof cardParityMetrics>,
-  label: string
-) {
-  for (const region of metrics) {
-    const limit = CARD_PARITY_LIMITS[region.name]!;
-    if (region.percent > limit)
-      throw new Error(
-        `${label}: ${region.name} differs by ${region.percent.toFixed(4)}% (limit ${limit}%)`
-      );
-  }
+/** Half the side of each hand-point crop, in the 950 viewBox. */
+const HAND_POINT_HALF_SIDE = 8;
+
+/** The grid's hand-point radius in the 950 viewBox, as the painters draw it. */
+const HAND_POINT_RADIUS = 4.7;
+
+/** Where each hand's Start-cell prop crosses its grid's hand point (950 box). */
+function startHandPoints(testCase: CardParityCase) {
+  const gridMode = testCase.sequence.gridMode as GridMode;
+  const join = testCase.options.conjoined;
+  const joined = join ? getGridJoinLayout(join, gridMode) : null;
+  return (["left", "right"] as const).map((hand) => {
+    const location =
+      testCase.sequence.startPlacement.motions[hand].startLocation;
+    if (!joined)
+      return {
+        hand,
+        ...getNormalHandPointCoordinates(location, gridMode),
+        pointScale: 1,
+      };
+    const point = joined.points.find(
+      (candidate) =>
+        candidate.kind === "hand" &&
+        candidate.members.some(
+          (member) => member.hand === hand && member.location === location
+        )
+    );
+    if (!point) throw new Error(`No joined ${hand} hand point at ${location}`);
+    return {
+      hand,
+      x: 475 + (point.x - 475) * joined.scale,
+      y: 475 + (point.y - 475) * joined.scale,
+      pointScale: joined.scale,
+    };
+  });
 }
 
-export function cardParityMetrics(
-  actual: ParityImage,
-  expected: ParityImage,
-  testCase: CardParityCase
-) {
-  if (actual.width !== expected.width || actual.height !== expected.height) {
-    throw new Error(
-      `Card dimensions differ: ${actual.width}x${actual.height} versus ${expected.width}x${expected.height}`
-    );
-  }
+function cardGeometry(testCase: CardParityCase) {
   const options = { ...COMPOSER_CARD_EXPORT_PROFILE_V1, ...testCase.options };
   const layout = calculateSequenceCardLayout(
     testCase.sequence.steps.length + 1,
@@ -63,8 +90,57 @@ export function cardParityMetrics(
     options.exportProfile === "print"
       ? getCardFrameContentInset(options.frame?.bleedPx ?? 36)
       : 0;
+  return {
+    layout,
+    inset,
+    // The Start cell is the grid's first cell.
+    cellX: inset + (layout.gridStartX ?? 0),
+    cellY: inset + layout.gridStartY,
+    scale: (layout.cellSize ?? options.cellSize) / 950,
+  };
+}
+
+/** Each Start-cell hand point in card pixels, with its drawn radius. */
+export function startHandPointPixels(testCase: CardParityCase) {
+  const { cellX, cellY, scale } = cardGeometry(testCase);
+  return startHandPoints(testCase).map((point) => ({
+    hand: point.hand,
+    x: cellX + point.x * scale,
+    y: cellY + point.y * scale,
+    radius: HAND_POINT_RADIUS * point.pointScale * scale,
+  }));
+}
+
+export function assertCardParity(
+  metrics: ReturnType<typeof cardParityMetrics>,
+  label: string
+) {
+  for (const region of metrics) {
+    const limit = CARD_PARITY_LIMITS[region.name]!;
+    if (region.percent > limit)
+      throw new Error(
+        `${label}: ${region.name} differs by ${region.percent.toFixed(4)}% (limit ${limit}%)`
+      );
+  }
+}
+
+/**
+ * `startHandPoints` adds the Start-cell hand-point crops. The MCP comparison
+ * measures them; the live-card gate has no measurement for them yet.
+ */
+export function cardParityMetrics(
+  actual: ParityImage,
+  expected: ParityImage,
+  testCase: CardParityCase,
+  { startHandPoints: withHandPoints = false } = {}
+) {
+  if (actual.width !== expected.width || actual.height !== expected.height) {
+    throw new Error(
+      `Card dimensions differ: ${actual.width}x${actual.height} versus ${expected.width}x${expected.height}`
+    );
+  }
+  const { layout, inset, cellX, cellY, scale } = cardGeometry(testCase);
   const key = calculateHandColorKeyLayout(true, true);
-  const scale = (layout.cellSize ?? options.cellSize) / 950;
   const keyLeft = 475 + key.entries[0]!.swatchX - key.swatchRadius - 8;
   const keyRight =
     475 + key.entries[1]!.labelX + HAND_COLOR_KEY.LABEL_WIDTH + 8;
@@ -72,11 +148,18 @@ export function cardParityMetrics(
   const regions = [
     {
       name: "handColorKey",
-      x: Math.floor(inset + (layout.gridStartX ?? 0) + keyLeft * scale),
-      y: Math.floor(inset + layout.gridStartY + keyTop * scale),
+      x: Math.floor(cellX + keyLeft * scale),
+      y: Math.floor(cellY + keyTop * scale),
       width: Math.ceil((keyRight - keyLeft) * scale),
       height: Math.ceil((HAND_COLOR_KEY.FONT_SIZE + 16) * scale),
     },
+    ...(withHandPoints ? startHandPoints(testCase) : []).map((point) => ({
+      name: `${point.hand}HandPoint`,
+      x: Math.floor(cellX + (point.x - HAND_POINT_HALF_SIDE) * scale),
+      y: Math.floor(cellY + (point.y - HAND_POINT_HALF_SIDE) * scale),
+      width: Math.ceil(2 * HAND_POINT_HALF_SIDE * scale),
+      height: Math.ceil(2 * HAND_POINT_HALF_SIDE * scale),
+    })),
     {
       name: "header",
       x: inset,

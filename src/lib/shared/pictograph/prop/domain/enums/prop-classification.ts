@@ -76,6 +76,8 @@ export const SMALL_BILATERAL_PROPS = [
   // The fire double staff is a staff too, and its 90cm tube is exactly what the
   // span was measured from.
   "fire_double_staff",
+  // A found stick is spun as a staff, cut to the performer's staff length.
+  "stick",
   // Energy Staff follows staff exactly: same reach, same small-prop beta offset.
   "energy_staff",
   "buugeng",
@@ -213,6 +215,8 @@ const STAFF_FAMILY_PROPS = [
   // The fire double staff marks its thumb end with a gold band, but the wicks
   // themselves are identical, so the landmark still rides on the grip.
   "fire_double_staff",
+  // A stick's thick end is the thumb end of the branch, as the staff's is.
+  "stick",
 ] as const;
 
 /**

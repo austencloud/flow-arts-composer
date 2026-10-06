@@ -24,6 +24,8 @@ import type { StartPlacementData } from "$lib/shared/foundation/domain/models/st
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
 import type { ValidationResult } from "$lib/shared/validation/validation-result";
 import type { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+import type { GridJoin } from "@tka/tka-types";
+import { withSequenceGridJoin } from "$lib/shared/grid-join/sequence-grid-join";
 import { deepLinker } from "$lib/shared/navigation/services/deep-linker";
 import type { TargetHand } from "./panel-coordination-state.svelte";
 import { logSequenceAction } from "$lib/shared/analytics/services/posthog-activity-logger";
@@ -436,7 +438,8 @@ export function createSequenceState(services: SequenceStateServices) {
     // sees a real startPlacement instead of undefined.
     if (!startPosStep && sequence?.steps?.length) {
       try {
-        const derived = startPlacementDeriver.getOrDeriveStartPlacement(sequence);
+        const derived =
+          startPlacementDeriver.getOrDeriveStartPlacement(sequence);
         // getOrDeriveStartPlacement returns StartPlacementData when deriving from steps
         // The StepData return type is for legacy compatibility only
         if (derived && "isStartPlacement" in derived) {
@@ -452,7 +455,10 @@ export function createSequenceState(services: SequenceStateServices) {
           coreState.setCurrentSequence(sequence);
         }
       } catch (error) {
-        console.warn("Failed to derive start placement from first step:", error);
+        console.warn(
+          "Failed to derive start placement from first step:",
+          error
+        );
       }
     }
 
@@ -471,6 +477,20 @@ export function createSequenceState(services: SequenceStateServices) {
         console.error("Failed to auto-save sequence state:", error);
       });
     }, SAVE_DEBOUNCE_MS);
+  }
+
+  /**
+   * Sets the join the whole sequence is drawn with (null: one grid). It goes
+   * through `setCurrentSequence`, the same path every other edit takes, so it
+   * autosaves, reaches the animation and the cards, and rides along in library
+   * saves, links and exports.
+   */
+  function setGridJoin(join: GridJoin | null): void {
+    const current = coreState.currentSequence;
+    if (!current) return;
+    const next = withSequenceGridJoin(current, join);
+    if (next === current) return;
+    setCurrentSequence(next);
   }
 
   function setSelectedStartPlacement(
@@ -542,7 +562,8 @@ export function createSequenceState(services: SequenceStateServices) {
     const sequence = coreState.currentSequence;
     if (sequence) {
       const steps = sequence.steps || [];
-      const startPlacement = sequence.startingPlacement || sequence.startPlacement;
+      const startPlacement =
+        sequence.startingPlacement || sequence.startPlacement;
 
       if (steps.length > 0) {
         return steps.map((step: StepData) => step).filter(Boolean);
@@ -763,6 +784,7 @@ export function createSequenceState(services: SequenceStateServices) {
     isStepSelected: (stepNumber: number) =>
       selectionState.isStepSelected(stepNumber),
     setSelectedStartPlacement,
+    setGridJoin,
 
     // Grid mode
     setGridMode: (mode: GridMode) => coreState.setGridMode(mode),

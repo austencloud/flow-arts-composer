@@ -33,6 +33,7 @@ import {
 import {
   modelSpriteArtwork,
   parseModelRenderKey,
+  propArtworkStem,
   resolvePropRenderKey,
 } from "../domain/prop-look";
 import {
@@ -144,16 +145,14 @@ export class PropSvgLoader {
       // Two prop SVG folders:
       //   /images/props/animated/    → animation canvas (wider viewBox for rotation)
       //   /images/props/pictograph/  → pictograph grid rendering
+      const side = color === HandSide.RIGHT ? "right" : "left";
       const path = modelRenderKey
-        ? modelSpriteArtwork(
-            modelRenderKey.propType,
-            color === HandSide.RIGHT ? "right" : "left"
-          )
+        ? modelSpriteArtwork(modelRenderKey.propType, side)
         : (fanArtworkPath ??
           triangleArtworkPath ??
           (useGridVersion
-            ? `/images/props/animated/${propType}.svg`
-            : `/images/props/pictograph/${propType}.svg`));
+            ? `/images/props/animated/${propArtworkStem(propType, side)}.svg`
+            : `/images/props/pictograph/${propArtworkStem(propType, side)}.svg`));
       // The prop type is part of the key because fan and bigfan share one
       // appearance file and differ only in the sizing applied below.
       const transformedCacheKey = `${path}:${propType}:${color}:${themeMode}`;

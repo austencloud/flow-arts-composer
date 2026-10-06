@@ -22,7 +22,8 @@
   import { cubicOut } from "svelte/easing";
   import { motionDuration } from "$lib/shared/transitions/motion";
   import { DURATION } from "$lib/shared/transitions/transitions";
-  import { CONJOINED_SHIFT_VIEWBOX } from "../../services/conjoined-grid-layout";
+  import type { GridJoin } from "@tka/tka-types";
+  import { gridJoinShiftViewBox } from "../../services/animation-grid-join";
 
   let {
     sequenceData = null,
@@ -31,7 +32,7 @@
     showLeft = false,
     showRight = false,
     primaryPropColors,
-    conjoined = false,
+    gridJoin = null,
     vm = null,
   }: {
     sequenceData?: SequenceData | null;
@@ -44,8 +45,8 @@
     showLeft?: boolean;
     showRight?: boolean;
     primaryPropColors?: ViewerCustomColorPair | null;
-    /** Level 7 joined grids: blue's path on the left grid, red's on the right. */
-    conjoined?: boolean;
+    /** The sequence's join: blue's path on its grid, red's on the other. */
+    gridJoin?: GridJoin | null;
     /** Per-surface visibility manager; falls back to the global singleton. */
     vm?: AnimationVisibilityStateManager | null;
   } = $props();
@@ -83,7 +84,10 @@
     if (stepData) {
       const idx = sequenceData.steps.indexOf(stepData as StepData);
       if (idx >= 0) return sequenceData.steps[idx] ?? null;
-      if (sequenceData.startPlacement && stepData === sequenceData.startPlacement)
+      if (
+        sequenceData.startPlacement &&
+        stepData === sequenceData.startPlacement
+      )
         return null;
     }
     if (stepIndex < 0 || stepIndex >= sequenceData.steps.length) return null;
@@ -111,12 +115,16 @@
   const rightColor = $derived(
     colors?.right ?? getMotionColor(HandSide.RIGHT, "dark")
   );
-  const leftTransform = $derived(
-    conjoined ? `translate(${-CONJOINED_SHIFT_VIEWBOX} 0)` : undefined
-  );
-  const rightTransform = $derived(
-    conjoined ? `translate(${CONJOINED_SHIFT_VIEWBOX} 0)` : undefined
-  );
+  const leftTransform = $derived.by(() => {
+    if (!gridJoin) return undefined;
+    const shift = gridJoinShiftViewBox(gridJoin, 0);
+    return `translate(${shift.x} ${shift.y})`;
+  });
+  const rightTransform = $derived.by(() => {
+    if (!gridJoin) return undefined;
+    const shift = gridJoinShiftViewBox(gridJoin, 1);
+    return `translate(${shift.x} ${shift.y})`;
+  });
   const drawLeft = $derived(showLeft && leftPathD !== null);
   const drawRight = $derived(showRight && rightPathD !== null);
 </script>

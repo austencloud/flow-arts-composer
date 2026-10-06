@@ -186,7 +186,7 @@ const server = createServer(async (request, response) => {
           ),
         ]);
         if (!isProfile) results.push({
-          regions: cardParityMetrics(a, b, testCase),
+          regions: cardParityMetrics(a, b, testCase, { startHandPoints: true }),
           name,
           adapter,
           diffPercent: diffPercent!,

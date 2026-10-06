@@ -1,4 +1,5 @@
 import type { CompressedSegment } from "./types.js";
+import { INVERTED_LETTER_MAP } from "@tka/sequence-engine/loop";
 
 /** Tokenize glyph words without splitting a letter from its dash suffix. */
 export function splitWordLetterUnits(word: string): string[] {
@@ -59,6 +60,21 @@ export function compressWord(word: string): CompressedSegment[] {
   const units = splitWordLetterUnits(word);
   if (!units.length) return [];
 
+  // An inverted LOOP has two equal halves in the same step order. Keep the
+  // boundary even when neither half contains a repeated run.
+  const half = units.length / 2;
+  if (
+    Number.isInteger(half) &&
+    half > 0 &&
+    units.slice(0, half).every((unit, index) => INVERTED_LETTER_MAP[unit] === units[half + index]) &&
+    units.slice(0, half).some((unit, index) => unit !== units[half + index])
+  ) {
+    return [...compressUnits(units.slice(0, half)), ...compressUnits(units.slice(half))];
+  }
+  return compressUnits(units);
+}
+
+function compressUnits(units: string[]): CompressedSegment[] {
   const segments: CompressedSegment[] = [];
   for (let index = 0; index < units.length; ) {
     let bestLength = 0;

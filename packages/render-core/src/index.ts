@@ -153,24 +153,46 @@ export {
   getLayer2PointCoordinates,
 } from "./calculations/grid-placement.js";
 
+// One grid's points (center, outer, hand and non-radial points)
+export {
+  GRID_POINT_RADIUS,
+  getGridPoints,
+  gridPointsSvg,
+  isBoxGrid,
+} from "./calculations/grid-points.js";
+export type { GridPoint, GridPointKind } from "./calculations/grid-points.js";
+
 // Joined grids (one grid per hand)
 export {
   BOX_OUTER_RING_WIDTH,
   JOIN_HAND_RADIUS,
   JOINED_POINT_RADIUS,
+  JOIN_GRID_LOCATIONS,
   getGridJoinLayout,
   gridJoinCellResolver,
   gridJoinKey,
   gridJoinOffsets,
   gridJoinPropNudges,
   isGridJoin,
+  joinedFitScale,
+  joinedPointKey,
+  joinedPointsDrawnBy,
+  planJoinedGridPoints,
   sequenceGridJoinKey,
 } from "./calculations/grid-join-layout.js";
+export {
+  JOINED_GRID_TINT,
+  joinedPointColors,
+  joinedPointsHands,
+  mixHexColors,
+} from "./calculations/grid-join-tint.js";
 export type {
   GridJoinLayout,
   GridJoinSpec,
+  JoinGridGeometry,
   JoinPropBody,
   JoinVec,
+  JoinedGridPlan,
   JoinedGridPoint,
   JoinedGridPointKind,
 } from "./calculations/grid-join-layout.js";

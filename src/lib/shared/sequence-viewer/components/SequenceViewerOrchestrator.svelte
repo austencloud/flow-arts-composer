@@ -7,6 +7,22 @@
     savedSequencePathPolicy,
     countPathOverrides,
   } from "../services/sequence-path-policy";
+  import {
+    createGridJoinController,
+    setGridJoinContext,
+    tryGetGridJoinContext,
+  } from "$lib/shared/grid-join/grid-join-controller";
+  import {
+    sequenceGridJoin,
+    withSequenceGridJoin,
+  } from "$lib/shared/grid-join/sequence-grid-join";
+  import {
+    captureGjSlice,
+    legacyConjoinedOverride,
+    normalizeGridJoinOverride,
+    seedFromGjSlice,
+    type GridJoinOverride,
+  } from "../services/viewer-url-slices/gj-slice";
   import type { AnimationPathPolicy } from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
   import { getAnimationPlaybackController } from "$lib/shared/animation-engine/get-animation-playback-controller";
   import { getSequenceAnimationOrchestrator } from "$lib/shared/animation-engine/get-sequence-animation-orchestrator";
@@ -119,8 +135,6 @@
   import { sceneEnvironmentIdForBackground } from "$lib/shared/3d/environments/domain/scene-environment";
   import { viewportFits3D } from "$lib/shared/3d/capabilities/viewport-3d-gate.svelte";
   import { setViewerVisibilityContext } from "../context/viewer-visibility-context";
-  import { setCardGridLayoutContext } from "../context/card-grid-layout-context";
-  import { followAnimationGridLayout } from "$lib/shared/animation-engine/state/animation-grid-layout.svelte";
   import { propFinishState } from "@austencloud/scene-3d";
   import {
     fanAppearanceSignature,
@@ -241,8 +255,31 @@
 
   let pathPreview = $state<AnimationPathPolicy | null>(null);
   let pathPreviewPending = $state(false);
-  const sequence = $derived(
-    applySequencePathPreview(savedSequence, pathPreview)
+  // The viewer's own grid-join choice, layered over the saved sequence the way
+  // the path preview is, so the animation, cards, exports, library saves and
+  // links all carry it. undefined follows the saved join; null is one grid.
+  // It lives only in this viewer: nothing is written to storage, and a
+  // different sequence starts from its own saved join.
+  let gridJoinOverride = $state<GridJoinOverride>(undefined);
+  const savedGridJoin = $derived(sequenceGridJoin(savedSequence));
+  const sequence = $derived.by(() => {
+    const previewed = applySequencePathPreview(savedSequence, pathPreview);
+    return previewed && gridJoinOverride !== undefined
+      ? withSequenceGridJoin(previewed, gridJoinOverride)
+      : previewed;
+  });
+  // A viewer inside a workspace that owns the sequence (Create's drawer) hands
+  // the choice to that workspace, so it edits the sequence itself; the
+  // `sequence` it was given then already carries the join.
+  setGridJoinContext(
+    tryGetGridJoinContext() ??
+      createGridJoinController({
+        get: () =>
+          gridJoinOverride !== undefined ? gridJoinOverride : savedGridJoin,
+        apply: (join) => {
+          gridJoinOverride = normalizeGridJoinOverride(join, savedGridJoin);
+        },
+      })
   );
 
   // ── URL state session ────────────────────────────────────────────────────
@@ -853,12 +890,32 @@
   urlSession.registerSlice("an", (options) =>
     captureAnSlice(anStores, options)
   );
+  // The join choice: from a `gj` seed, or from an old link's Conjoined switch
+  // (`an` slice `gridLayout: "conjoined"`) when the sequence has no join.
+  const gjSeedPayload = urlSession.getSeed("gj");
+  gridJoinOverride = normalizeGridJoinOverride(
+    gjSeedPayload != null
+      ? seedFromGjSlice(gjSeedPayload)
+      : legacyConjoinedOverride(anSeedPayload, savedGridJoin),
+    savedGridJoin
+  );
+  urlSession.registerSlice("gj", () =>
+    captureGjSlice(gridJoinOverride, savedGridJoin)
+  );
+  // Another sequence arriving in this viewer starts from its own saved join.
+  let joinedSequenceId = untrack(() => savedSequence?.id);
+  $effect.pre(() => {
+    const id = savedSequence?.id;
+    if (id === joinedSequenceId) return;
+    joinedSequenceId = id;
+    untrack(() => {
+      gridJoinOverride = undefined;
+    });
+  });
   // The visibility manager is a plain class, not runes, so the live-sync effect
   // below cannot see its changes. Its own observer API closes that gap.
   const anVisibilityObserver = () => urlSession.scheduleUrlWrite();
   anStores.visibility.registerObserver(anVisibilityObserver);
-  // The cards in this viewer join their grids while its 2D animation does.
-  setCardGridLayoutContext(followAnimationGridLayout());
 
   // Export options are another app-global singleton (`getExportOptionsState()`,
   // borrowed here via `exportCoord.exportOptions` — same instance ~8 files call

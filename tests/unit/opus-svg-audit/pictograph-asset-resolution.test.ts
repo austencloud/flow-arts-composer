@@ -17,6 +17,7 @@ import { describe, it, expect } from "vitest";
 import { resolveFullArrowAssetPath } from "@tka/render-core";
 import { HALF_ASSET_TURNS } from "$lib/shared/pictograph/arrow/rendering/services/half-asset-manifest";
 import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+import { propArtworkStem } from "$lib/shared/pictograph/prop/domain/prop-look";
 import { REPO_ROOT } from "./svg-corpus";
 
 const exists = (assetPath: string) =>
@@ -234,6 +235,17 @@ describe("prop artwork resolution", () => {
     expect(missing).toEqual([]);
   });
 
+  it("gives every prop type the right-hand pictograph artwork the loader fetches", () => {
+    // Props whose hands hold different objects (stick) have a -right file.
+    const missing = propTypes
+      .map(
+        (propType) =>
+          `/images/props/pictograph/${propArtworkStem(propType, "right")}.svg`
+      )
+      .filter((assetPath) => !exists(assetPath));
+    expect(missing).toEqual([]);
+  });
+
   it("gives every animated-only prop its animated artwork", () => {
     // resolvePropSvgPath() sends exactly this set to /images/props/animated/.
     const missing = propTypes
@@ -246,10 +258,12 @@ describe("prop artwork resolution", () => {
   it.fails(
     "gives every prop enum value a same-named animated artwork file",
     () => {
-      // AUDIT INVENTORY (finding F3). Two prop enum values have no same-named
-      // animated file: capsule_baton and fire_double_staff. PropPlane2D is the
-      // only production requester established by the source trace; the report
-      // classifies other possible consumers as latent or unreferenced.
+      // AUDIT INVENTORY (finding F3). Three prop enum values have no same-named
+      // animated file: capsule_baton, fire_double_staff and stick. PropPlane2D
+      // is the only production requester established by the source trace; the
+      // report classifies other possible consumers as latent or unreferenced.
+      // Its one caller, Viewer2DScene, mounts only in UnifiedViewerCanvas,
+      // which nothing imports, so the stick ships pictograph artwork only.
       const missing = propTypes
         .map((propType) => `/images/props/animated/${propType}.svg`)
         .filter((assetPath) => !exists(assetPath));
@@ -257,7 +271,7 @@ describe("prop artwork resolution", () => {
     }
   );
 
-  it("names exactly the two animated-artwork gaps that exist today", () => {
+  it("names exactly the three animated-artwork gaps that exist today", () => {
     const missing = propTypes
       .map((propType) => `/images/props/animated/${propType}.svg`)
       .filter((assetPath) => !exists(assetPath))
@@ -265,6 +279,7 @@ describe("prop artwork resolution", () => {
     expect(missing).toEqual([
       "/images/props/animated/capsule_baton.svg",
       "/images/props/animated/fire_double_staff.svg",
+      "/images/props/animated/stick.svg",
     ]);
   });
 });

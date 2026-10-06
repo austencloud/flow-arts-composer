@@ -36,27 +36,49 @@
   // Type descriptions for all operation types
   const typeDescriptions: Record<UndoOperationType, () => string> = {
     [UndoOperationType.ADD_BEAT]: () => t("create_workspace_history_add_step"),
-    [UndoOperationType.REMOVE_BEATS]: () => t("create_workspace_history_remove_steps"),
-    [UndoOperationType.CLEAR_SEQUENCE]: () => t("create_workspace_clear_sequence"),
-    [UndoOperationType.SELECT_START_PLACEMENT]: () => t("create_workspace_history_select_start"),
-    [UndoOperationType.UPDATE_BEAT]: () => t("create_workspace_history_update_step"),
-    [UndoOperationType.INSERT_BEAT]: () => t("create_workspace_history_insert_step"),
-    [UndoOperationType.BATCH_EDIT]: () => t("create_workspace_history_batch_edit"),
-    [UndoOperationType.MIRROR_SEQUENCE]: () => t("create_workspace_history_mirror"),
+    [UndoOperationType.REMOVE_BEATS]: () =>
+      t("create_workspace_history_remove_steps"),
+    [UndoOperationType.CLEAR_SEQUENCE]: () =>
+      t("create_workspace_clear_sequence"),
+    [UndoOperationType.SELECT_START_PLACEMENT]: () =>
+      t("create_workspace_history_select_start"),
+    [UndoOperationType.UPDATE_BEAT]: () =>
+      t("create_workspace_history_update_step"),
+    [UndoOperationType.INSERT_BEAT]: () =>
+      t("create_workspace_history_insert_step"),
+    [UndoOperationType.BATCH_EDIT]: () =>
+      t("create_workspace_history_batch_edit"),
+    [UndoOperationType.MIRROR_SEQUENCE]: () =>
+      t("create_workspace_history_mirror"),
     [UndoOperationType.FLIP_SEQUENCE]: () => t("create_workspace_history_flip"),
-    [UndoOperationType.ROTATE_SEQUENCE]: () => t("create_workspace_history_rotate"),
-    [UndoOperationType.SWAP_HANDS]: () => t("create_workspace_history_swap_hands"),
-    [UndoOperationType.INVERT_SEQUENCE]: () => t("create_workspace_history_invert"),
-    [UndoOperationType.REWIND_SEQUENCE]: () => t("create_workspace_history_rewind"),
-    [UndoOperationType.SHIFT_START]: () => t("create_workspace_history_shift_start"),
-    [UndoOperationType.APPLY_TURN_PATTERN]: () => t("create_workspace_history_turn_pattern"),
-    [UndoOperationType.APPLY_ROTATION_PATTERN]: () => t("create_workspace_history_rotation_pattern"),
-    [UndoOperationType.APPLY_DURATION_PATTERN]: () => t("create_workspace_history_duration_pattern"),
-    [UndoOperationType.EXTEND_SEQUENCE]: () => t("create_workspace_history_extend"),
-    [UndoOperationType.MODIFY_BEAT_PROPERTIES]: () => t("create_workspace_history_edit_step"),
-    [UndoOperationType.GENERATE_SEQUENCE]: () => t("create_ui_generate_sequence"),
-    [UndoOperationType.SPELL_GENERATE]: () => t("create_workspace_history_spell_generate"),
-    [UndoOperationType.SPELL_APPLY_LOOP]: () => t("create_workspace_history_spell_loop"),
+    [UndoOperationType.ROTATE_SEQUENCE]: () =>
+      t("create_workspace_history_rotate"),
+    [UndoOperationType.SWAP_HANDS]: () =>
+      t("create_workspace_history_swap_hands"),
+    [UndoOperationType.INVERT_SEQUENCE]: () =>
+      t("create_workspace_history_invert"),
+    [UndoOperationType.REWIND_SEQUENCE]: () =>
+      t("create_workspace_history_rewind"),
+    [UndoOperationType.SET_GRID_JOIN]: () =>
+      t("create_workspace_history_grid_join"),
+    [UndoOperationType.SHIFT_START]: () =>
+      t("create_workspace_history_shift_start"),
+    [UndoOperationType.APPLY_TURN_PATTERN]: () =>
+      t("create_workspace_history_turn_pattern"),
+    [UndoOperationType.APPLY_ROTATION_PATTERN]: () =>
+      t("create_workspace_history_rotation_pattern"),
+    [UndoOperationType.APPLY_DURATION_PATTERN]: () =>
+      t("create_workspace_history_duration_pattern"),
+    [UndoOperationType.EXTEND_SEQUENCE]: () =>
+      t("create_workspace_history_extend"),
+    [UndoOperationType.MODIFY_BEAT_PROPERTIES]: () =>
+      t("create_workspace_history_edit_step"),
+    [UndoOperationType.GENERATE_SEQUENCE]: () =>
+      t("create_ui_generate_sequence"),
+    [UndoOperationType.SPELL_GENERATE]: () =>
+      t("create_workspace_history_spell_generate"),
+    [UndoOperationType.SPELL_APPLY_LOOP]: () =>
+      t("create_workspace_history_spell_loop"),
   };
 
   // Derived state for button text/tooltip
@@ -67,13 +89,17 @@
   const historyAction = $derived.by(() => {
     if (isAssembleTab) {
       const builder = CreateModuleState.assembleTabState?.assembleBuilderState;
-      const label = direction === "undo" ? builder?.undoLabel : builder?.redoLabel;
-      return getLocale() === "en" && label ? label : t("create_workspace_history_last_action");
+      const label =
+        direction === "undo" ? builder?.undoLabel : builder?.redoLabel;
+      return getLocale() === "en" && label
+        ? label
+        : t("create_workspace_history_last_action");
     }
 
-    const entry = direction === "undo"
-      ? CreateModuleState.undoController?.nextUndoEntry
-      : CreateModuleState.undoController?.nextRedoEntry;
+    const entry =
+      direction === "undo"
+        ? CreateModuleState.undoController?.nextUndoEntry
+        : CreateModuleState.undoController?.nextRedoEntry;
     const type = entry?.type as UndoOperationType | undefined;
     if (getLocale() === "en" && entry?.metadata?.description) {
       return entry.metadata.description;
@@ -85,12 +111,25 @@
 
   const historyButtonText = $derived(
     !canAct
-      ? t(direction === "undo" ? "create_workspace_nothing_to_undo" : "create_workspace_nothing_to_redo")
-      : t(direction === "undo" ? "create_workspace_undo_named" : "create_workspace_redo_named", { action: historyAction })
+      ? t(
+          direction === "undo"
+            ? "create_workspace_nothing_to_undo"
+            : "create_workspace_nothing_to_redo"
+        )
+      : t(
+          direction === "undo"
+            ? "create_workspace_undo_named"
+            : "create_workspace_redo_named",
+          { action: historyAction }
+        )
   );
   const historyTooltip = $derived(
     !canAct
-      ? t(direction === "undo" ? "create_workspace_no_actions_to_undo" : "create_workspace_no_actions_to_redo")
+      ? t(
+          direction === "undo"
+            ? "create_workspace_no_actions_to_undo"
+            : "create_workspace_no_actions_to_redo"
+        )
       : historyButtonText
   );
 
@@ -111,12 +150,8 @@
   type="button"
   data-undo-shortcut={direction === "undo" ? "" : undefined}
   data-redo-shortcut={direction === "redo" ? "" : undefined}
-  data-undo-shortcut-label={direction === "undo"
-    ? historyAction
-    : undefined}
-  data-redo-shortcut-label={direction === "redo"
-    ? historyAction
-    : undefined}
+  data-undo-shortcut-label={direction === "undo" ? historyAction : undefined}
+  data-redo-shortcut-label={direction === "redo" ? historyAction : undefined}
   class="undo-button"
   class:quiet
   class:disabled={!canAct}
@@ -126,7 +161,9 @@
   aria-label={historyButtonText}
   data-ghost={direction === "undo" && canAct ? "safe" : undefined}
   data-ghost-kind={direction === "undo" ? "undo" : undefined}
-  data-ghost-label={direction === "undo" ? t("create_workspace_undo") : undefined}
+  data-ghost-label={direction === "undo"
+    ? t("create_workspace_undo")
+    : undefined}
 >
   <UndoGlyph size={20} {direction} />
   <span class="workspace-action-label" aria-hidden="true">

@@ -1,3 +1,4 @@
+import type { GridJoin } from "@tka/tka-types";
 import type { CanvasResizer } from "./canvas-resizer.svelte";
 import type { IAnimationRenderLoop } from "$lib/shared/animation-engine/services/IAnimationRenderLoop";
 import type { EffectRendererManager } from "./effect-renderer-manager";
@@ -21,7 +22,10 @@ import type { PropSystem } from "./managers/prop-system";
 import type { PropPipeline } from "./prop-pipeline";
 import type { PropTypeManager } from "./prop-type-manager";
 import type { FrameBudgetMonitor } from "./frame-budget-monitor";
-import type { AnimationEngineProps, AnimationEngineCallbacks } from "./animation-engine.svelte";
+import type {
+  AnimationEngineProps,
+  AnimationEngineCallbacks,
+} from "./animation-engine.svelte";
 import type { AnimatorState } from "../state/animator-state.svelte";
 import type { RenderFrameParams } from "$lib/shared/animation-engine/services/IAnimationRenderLoop";
 import { loadAnimatorServices as loadServices } from "./animator-loader";
@@ -73,8 +77,8 @@ export interface LifecycleInitCtx {
   initialGridMode: GridMode | null | undefined;
   /** Initial showNonRadialPoints flag (from lastPropsRef). */
   initialShowNonRadialPoints: boolean;
-  /** Whether the visibility manager wanted the conjoined grid at init. */
-  initialGridConjoined: boolean;
+  /** The sequence's join at init; null draws one grid. */
+  initialGridJoin: GridJoin | null;
   /** Engine's buildFrameParams bound method — called by render-loop boot. */
   buildFrameParams: (props: AnimationEngineProps) => RenderFrameParams;
   /** Engine's getVM() bound method — passed into erm.wire(). */
@@ -111,21 +115,51 @@ export class CanvasLifecycleManager {
   private _orchestrator: SequenceAnimationOrchestrator | null = null;
 
   // ── Public getters — the engine reads these instead of its own fields ───────
-  get renderLoop(): IAnimationRenderLoop | null { return this._renderLoop; }
-  get resizer(): CanvasResizer | null { return this._resizer; }
-  get precomputer(): IAnimationPrecomputer | null { return this._precomputer; }
-  get glyphTextureLoader(): IGlyphTextureLoader | null { return this._glyphTextureService; }
-  get propTextureLoader(): IPropTextureLoader | null { return this._propTextureService; }
-  get visibilitySynchronizer(): AnimationVisibilitySynchronizer | null { return this._visibilitySyncService; }
-  get glyphTransition(): GlyphTransitionController | null { return this._glyphTransitionService; }
-  get sequenceCache(): SequenceCache | null { return this._sequenceCacheService; }
-  get trailSettingsSync(): TrailSettingsSynchronizer | null { return this._trailSettingsSyncService; }
-  get propTypeChanger(): PropTypeChanger | null { return this._propTypeChangeService; }
-  get trailCapturer(): TrailCapturer | null { return this._trailCapturer; }
-  get animationRenderer(): AnimationRenderer | null { return this._animationRenderer; }
-  get svgGenerator(): SVGGenerator | null { return this._svgGenerator; }
-  get settingsService(): SettingsState | null { return this._settingsService; }
-  get orchestrator(): SequenceAnimationOrchestrator | null { return this._orchestrator; }
+  get renderLoop(): IAnimationRenderLoop | null {
+    return this._renderLoop;
+  }
+  get resizer(): CanvasResizer | null {
+    return this._resizer;
+  }
+  get precomputer(): IAnimationPrecomputer | null {
+    return this._precomputer;
+  }
+  get glyphTextureLoader(): IGlyphTextureLoader | null {
+    return this._glyphTextureService;
+  }
+  get propTextureLoader(): IPropTextureLoader | null {
+    return this._propTextureService;
+  }
+  get visibilitySynchronizer(): AnimationVisibilitySynchronizer | null {
+    return this._visibilitySyncService;
+  }
+  get glyphTransition(): GlyphTransitionController | null {
+    return this._glyphTransitionService;
+  }
+  get sequenceCache(): SequenceCache | null {
+    return this._sequenceCacheService;
+  }
+  get trailSettingsSync(): TrailSettingsSynchronizer | null {
+    return this._trailSettingsSyncService;
+  }
+  get propTypeChanger(): PropTypeChanger | null {
+    return this._propTypeChangeService;
+  }
+  get trailCapturer(): TrailCapturer | null {
+    return this._trailCapturer;
+  }
+  get animationRenderer(): AnimationRenderer | null {
+    return this._animationRenderer;
+  }
+  get svgGenerator(): SVGGenerator | null {
+    return this._svgGenerator;
+  }
+  get settingsService(): SettingsState | null {
+    return this._settingsService;
+  }
+  get orchestrator(): SequenceAnimationOrchestrator | null {
+    return this._orchestrator;
+  }
 
   /**
    * Wire the canvasInitializer and effectManager before calling initialize().
@@ -136,8 +170,10 @@ export class CanvasLifecycleManager {
     canvasInitializer?: AnimatorCanvasInitializer;
     effectManager?: EffectRendererManager;
   }): void {
-    if (deps.canvasInitializer !== undefined) this._canvasInitializer = deps.canvasInitializer;
-    if (deps.effectManager !== undefined) this._effectManager = deps.effectManager;
+    if (deps.canvasInitializer !== undefined)
+      this._canvasInitializer = deps.canvasInitializer;
+    if (deps.effectManager !== undefined)
+      this._effectManager = deps.effectManager;
   }
 
   /**
@@ -152,7 +188,9 @@ export class CanvasLifecycleManager {
    */
   async initialize(ctx: LifecycleInitCtx): Promise<void> {
     if (!this._canvasInitializer || !this._effectManager) {
-      throw new Error("[CanvasLifecycleManager] configure() must be called before initialize()");
+      throw new Error(
+        "[CanvasLifecycleManager] configure() must be called before initialize()"
+      );
     }
 
     const {
@@ -169,7 +207,7 @@ export class CanvasLifecycleManager {
       prevDarkMode,
       initialGridMode,
       initialShowNonRadialPoints,
-      initialGridConjoined,
+      initialGridJoin,
       buildFrameParams,
       getVM,
       onVisibilityChange,
@@ -181,9 +219,12 @@ export class CanvasLifecycleManager {
     const propTypeManager = propSystem.propTypeManager;
 
     // ── Pre-canvas: create sync services that do not need the renderer ────────
-    this._visibilitySyncService = new VisibilitySync(visibilityManagerOverride ?? undefined);
+    this._visibilitySyncService = new VisibilitySync(
+      visibilityManagerOverride ?? undefined
+    );
     this._visibilitySyncService.effectsConfigState = effectsConfigState;
-    this._unsubscribeVisibility = this._visibilitySyncService.subscribe(onVisibilityChange);
+    this._unsubscribeVisibility =
+      this._visibilitySyncService.subscribe(onVisibilityChange);
 
     this._glyphTransitionService = new GlyphTransition();
     this._sequenceCacheService = new SequenceCacheImpl();
@@ -255,7 +296,7 @@ export class CanvasLifecycleManager {
         backgroundAlpha: 1,
         gridMode: initialGridMode ?? null,
         showNonRadialPoints: initialShowNonRadialPoints,
-        gridConjoined: initialGridConjoined,
+        gridJoin: initialGridJoin,
         loadAnimatorServices: loadAnimatorServicesFn,
         initializePrecomputationService: () => {
           initPrecomputationFn();
@@ -292,7 +333,9 @@ export class CanvasLifecycleManager {
   ): Promise<boolean> {
     const result = loadServices();
     if (!result.success) {
-      state.setRendererError(result.error || "Failed to load animator services");
+      state.setRendererError(
+        result.error || "Failed to load animator services"
+      );
       return false;
     }
     const { services } = result;
@@ -338,7 +381,9 @@ export class CanvasLifecycleManager {
     propPipeline: PropPipeline
   ): void {
     if (!this._animationRenderer || !this._svgGenerator) {
-      state.setRendererError("Cannot initialize PropTextureLoader: missing dependencies");
+      state.setRendererError(
+        "Cannot initialize PropTextureLoader: missing dependencies"
+      );
       return;
     }
     this._propTextureService = propPipeline.initializeTextureLoader(
@@ -423,7 +468,10 @@ export class CanvasLifecycleManager {
       canvasSize: initialFrame.size,
       canvasFrame: initialFrame,
       renderLoopService: renderLoop,
-      getFrameParams: () => buildFrameParams(getLastPropsRef() ?? { leftProp: null, rightProp: null }),
+      getFrameParams: () =>
+        buildFrameParams(
+          getLastPropsRef() ?? { leftProp: null, rightProp: null }
+        ),
       getVM,
     });
 
@@ -444,10 +492,14 @@ export class CanvasLifecycleManager {
       initialFrame.width,
       initialFrame.height
     );
-    renderLoop.updateConfig({ renderers: { trails: erm.trailOverlay as unknown as import("./effects/effect-renderer").EffectRendererLike } });
+    renderLoop.updateConfig({
+      renderers: {
+        trails:
+          erm.trailOverlay as unknown as import("./effects/effect-renderer").EffectRendererLike,
+      },
+    });
     erm.syncEffectLayers();
   }
-
 
   pauseResize(): void {
     this._resizer?.pauseObservation();

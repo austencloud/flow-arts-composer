@@ -456,6 +456,7 @@
   bind:this={contextMenuHost}
   onAdjustArrow={handleAdjustArrow}
   {showArrowAdjustment}
+  offerGridJoin
 />
 
 {#if arrowModalOpen}

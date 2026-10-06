@@ -5,6 +5,7 @@
  * Replaces PixiJS WebGL rendering with simpler, leak-free Canvas2D.
  */
 
+import type { GridJoin } from "@tka/tka-types";
 import type { RenderedPropTransform } from "$lib/shared/animation-engine/domain/types/fire-types";
 import type { RenderedPropSprite } from "$lib/shared/animation-engine/domain/types/rendered-prop-sprite";
 import type { RenderSceneParams } from "$lib/shared/animation-engine/domain/types/animation-render-types";
@@ -149,12 +150,13 @@ export interface IAnimationRenderer {
   /**
    * Load grid image for a specific grid mode
    * @param gridMode - Grid mode (e.g., "diamond", "box")
-   * @param conjoined - Draw the Level 7 joined pair; omitted keeps the current layout
+   * @param gridJoin - Draw the sequence's joined pair of grids; null draws one
+   *   grid, and omitting it keeps the current layout
    */
   loadGridTexture(
     gridMode: string,
     showNonRadialPoints?: boolean,
-    conjoined?: boolean
+    gridJoin?: GridJoin | null
   ): Promise<void>;
 
   /**
