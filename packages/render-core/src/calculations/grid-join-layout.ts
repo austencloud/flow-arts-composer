@@ -177,6 +177,24 @@ export function sequenceGridJoinKey(sequence: {
   return base || parts.length > 1 ? parts.join("_") : "";
 }
 
+/**
+ * Sets each of a card's cells to the join it draws with (see
+ * resolveStepGridJoin). When nothing on the card is joined, cells pass
+ * through as they are, so one-grid cards keep their exact cache keys.
+ */
+export function gridJoinCellResolver(sequence: {
+  readonly conjoined?: GridJoinSpec | null;
+  readonly startPlacement?: JoinCell;
+  readonly steps?: readonly JoinCell[];
+}): <T extends NonNullable<JoinCell>>(cell: T) => T {
+  if (!sequenceGridJoinKey(sequence)) return (cell) => cell;
+  const base = sequence.conjoined;
+  return (cell) => ({
+    ...cell,
+    conjoined: resolveStepGridJoin(base, cell.conjoined),
+  });
+}
+
 /** Each hand's grid offset: half the center distance either side of center. */
 export function gridJoinOffsets(join: GridJoinSpec): Record<Hand, JoinVec> {
   const unit = LOCATION_UNIT[join.toward];

@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   JOIN_HAND_RADIUS,
   getGridJoinLayout,
+  gridJoinCellResolver,
   gridJoinKey,
   gridJoinOffsets,
   gridJoinPropNudges,
@@ -16,6 +17,9 @@ const EAST_1: GridJoinSpec = { toward: "e", steps: 1 };
 const EAST_2: GridJoinSpec = { toward: "e", steps: 2 };
 const STAFF_HALF = 252.8 / 2;
 const STAFF_NUDGE = 950 / 45;
+
+/** A card cell: any pictograph, with or without its own join. */
+type Cell = { letter?: string; conjoined?: GridJoinSpec | null };
 
 function countKinds(layout: GridJoinLayout) {
   const counts = { center: 0, hand: 0, outer: 0 };
@@ -62,6 +66,38 @@ describe("grid join values", () => {
     expect(resolveStepGridJoin(EAST_1, null)).toBeNull();
     expect(resolveStepGridJoin(undefined, EAST_2)).toBe(EAST_2);
     expect(resolveStepGridJoin(undefined, undefined)).toBeNull();
+  });
+
+  it("hands one-grid card cells back untouched", () => {
+    const start: Cell = { letter: "α" };
+    const step: Cell = { letter: "β", conjoined: null };
+    const resolve = gridJoinCellResolver({
+      startPlacement: start,
+      steps: [step],
+    });
+
+    expect(resolve(start)).toBe(start);
+    expect(resolve(step)).toBe(step);
+  });
+
+  it("gives each card cell the join it draws with", () => {
+    const steps: Cell[] = [{}, { conjoined: EAST_2 }, { conjoined: null }];
+    const resolve = gridJoinCellResolver({ conjoined: EAST_1, steps });
+
+    expect(steps.map((step) => resolve(step).conjoined)).toEqual([
+      EAST_1,
+      EAST_2,
+      null,
+    ]);
+    // A join on the start cell alone still joins it; the steps stay one grid.
+    const start: Cell = { conjoined: EAST_2 };
+    const plainStep: Cell = {};
+    const startOnly = gridJoinCellResolver({
+      startPlacement: start,
+      steps: [plainStep],
+    });
+    expect(startOnly(start).conjoined).toBe(EAST_2);
+    expect(startOnly(plainStep).conjoined).toBeNull();
   });
 
   it("names a join with a short stable key", () => {

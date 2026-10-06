@@ -159,6 +159,7 @@ export {
   JOIN_HAND_RADIUS,
   JOINED_POINT_RADIUS,
   getGridJoinLayout,
+  gridJoinCellResolver,
   gridJoinKey,
   gridJoinOffsets,
   gridJoinPropNudges,

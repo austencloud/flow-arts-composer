@@ -5,10 +5,7 @@ import type { SequenceData } from "../../foundation/domain/models/sequence-data"
 import { PropType } from "../../pictograph/prop/domain/enums/prop-type";
 import type { PictographVisibilityOptions } from "../utils/pictograph-to-svg";
 import { createStartPlacementFromBeatStart } from "$lib/shared/create/services/sequence-transforms";
-import {
-  isGridJoin,
-  resolveStepGridJoin,
-} from "@tka/render-core";
+import { gridJoinCellResolver, isGridJoin } from "@tka/render-core";
 // These 5 imports are loaded dynamically at usage sites to avoid pulling
 // Svelte stores and $app/environment into the composition worker bundle.
 // See: getVisibilitySettings(), renderPictographDirect(), storePictographBlob()
@@ -426,17 +423,11 @@ export class ImageComposer {
 
     // Joined grids: each cell carries the join it draws with, its own value
     // or else the sequence's. Cells are untouched when nothing is joined.
-    const anyJoin =
-      isGridJoin(sequence.conjoined) ||
-      isGridJoin(effectiveStartPlacement?.conjoined) ||
-      sequence.steps.some((step) => isGridJoin(step?.conjoined));
-    const withJoin = <T extends PictographData>(cell: T): T =>
-      anyJoin
-        ? {
-            ...cell,
-            conjoined: resolveStepGridJoin(sequence.conjoined, cell.conjoined),
-          }
-        : cell;
+    const withJoin = gridJoinCellResolver({
+      conjoined: sequence.conjoined,
+      startPlacement: effectiveStartPlacement,
+      steps: sequence.steps,
+    });
 
     const endCells = trace?.start("pictograph-cells");
     if (hasStartPlacement && effectiveStartPlacement) {
