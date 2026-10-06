@@ -52,7 +52,7 @@ describe("joined-grid thumbnail cache identity", () => {
     const joined = deriveKey({ ...galleryInput, gridJoin: "e1" });
     const single = deriveKey(galleryInput);
     expect(joined.hash).not.toBe(single.hash);
-    expect(joined.cloudPath).toContain("_je1-t1_");
+    expect(joined.cloudPath).toContain("_je1-t2_");
     expect(single.cloudPath).not.toContain("_j");
     // Each join is its own image.
     expect(deriveKey({ ...galleryInput, gridJoin: "e2" }).hash).not.toBe(

@@ -5,10 +5,19 @@
  * so the two show identical items in the same order and change the same
  * sequence value. Hosts opt in by passing a controller; with none, there is no
  * submenu.
+ *
+ * Only the four directions along the sequence's own grid lines are offered
+ * (straight on a diamond grid, diagonal on a box grid): a join along any other
+ * line never lands one grid's points on the other's.
  */
 import { t } from "$lib/shared/i18n/i18n.svelte.js";
 import type { ContextMenuItem } from "$lib/shared/components/context-menu/context-menu-types";
 import type { GridJoin } from "@tka/tka-types";
+import {
+  GRID_JOIN_DIRECTIONS,
+  alignGridJoin,
+  isBoxGrid,
+} from "@tka/render-core";
 import type { GridJoinController } from "./grid-join-controller";
 
 type JoinDirection = GridJoin["toward"];
@@ -54,7 +63,10 @@ const DIRECTIONS: readonly {
   },
 ];
 
-/** Direction and distance a join choice keeps when only the other changes. */
+/**
+ * Direction and distance a first choice starts from (the direction turned onto
+ * the grid's lines), and that a later choice keeps when only the other changes.
+ */
 const DEFAULT_DIRECTION: JoinDirection = "e";
 const DEFAULT_STEPS: GridJoin["steps"] = 1;
 
@@ -62,9 +74,19 @@ const DEFAULT_STEPS: GridJoin["steps"] = 1;
 export function buildGridJoinChildren(
   controller: GridJoinController
 ): ContextMenuItem[] {
-  const current = controller.current();
-  const toward = current?.toward ?? DEFAULT_DIRECTION;
-  const steps = current?.steps ?? DEFAULT_STEPS;
+  const gridMode = controller.gridMode();
+  const stored = controller.current();
+  // A join stored off this grid's lines draws aligned, so it reads aligned.
+  const current = stored ? alignGridJoin(stored, gridMode) : null;
+  const { toward, steps } =
+    current ??
+    alignGridJoin(
+      { toward: DEFAULT_DIRECTION, steps: DEFAULT_STEPS },
+      gridMode
+    );
+  const offered = GRID_JOIN_DIRECTIONS[
+    isBoxGrid(gridMode ?? undefined) ? "box" : "diamond"
+  ] as readonly JoinDirection[];
 
   const distance = (
     id: string,
@@ -90,7 +112,7 @@ export function buildGridJoinChildren(
     },
     distance("grid-join-steps-1", t("animation_menu_grid_join_one_point"), 1),
     distance("grid-join-steps-2", t("animation_menu_grid_join_two_points"), 2),
-    ...DIRECTIONS.map(
+    ...DIRECTIONS.filter((direction) => offered.includes(direction.toward)).map(
       (direction): ContextMenuItem => ({
         id: `grid-join-${direction.toward}`,
         label: direction.label(),
