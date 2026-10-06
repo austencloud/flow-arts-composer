@@ -81,7 +81,6 @@ Usage:
     rightBuugengFlippedOverride = undefined,
     // Core visibility controls
     showGrid = true,
-    gridPointsOnTop = false,
     showTKA = true,
     showReversals = true,
     showNonRadialPoints = false,
@@ -176,8 +175,6 @@ Usage:
     rightBuugengFlippedOverride?: boolean;
     /** Master toggle for grid visibility */
     showGrid?: boolean;
-    /** Match the cached bitmap card's separate grid-point overlay. */
-    gridPointsOnTop?: boolean;
     showTKA?: boolean;
     showReversals?: boolean;
     showNonRadialPoints?: boolean;
@@ -589,7 +586,6 @@ Usage:
       <!-- Grid -->
       {#if showGrid || previewMode || animateVisibility}
         <GridSvg
-          layer={gridPointsOnTop ? "base" : "all"}
           rotationOverride={gridRotation}
           {gridMode}
           {showNonRadialPoints}
@@ -715,20 +711,6 @@ Usage:
           {/each}
         {/if}
       </g>
-      {#if gridPointsOnTop && (showGrid || animateVisibility)}
-        <GridSvg
-          layer="points"
-          rotationOverride={gridRotation}
-          {gridMode}
-          {showNonRadialPoints}
-          {handPointVisibility}
-          {activeLocations}
-          {darkMode}
-          {animateVisibility}
-          visible={showGrid}
-          onLoaded={() => onGridReady?.()}
-        />
-      {/if}
     </g>
 
     <!-- Corner glyphs - positioned at edges of expanded viewBox -->

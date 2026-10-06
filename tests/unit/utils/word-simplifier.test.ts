@@ -157,6 +157,13 @@ describe("Word Simplifier", () => {
   });
 
   describe("compressWord", () => {
+    it("keeps exact inverted halves as separate display groups", () => {
+      expect(compressWord("MW-Θ-QNX-Ω-P")).toEqual([
+        { tokens: ["M", "W-", "Θ-", "Q"], repeat: 1 },
+        { tokens: ["N", "X-", "Ω-", "P"], repeat: 1 },
+      ]);
+    });
+
     it("should detect two different repeated halves", () => {
       // (AB)×2 (CD)×2 = ABABCDCD
       const segments = compressWord("ABABCDCD");

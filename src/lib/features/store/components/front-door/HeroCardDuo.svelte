@@ -2,6 +2,7 @@
      replacement clears the phone and waits for an explicit scan. -->
 <script lang="ts">
   import type { HeroCoverEntry } from "./front-door-catalog";
+  import type { CoverCard } from "../../domain/models/product";
   import ShopEntryArt from "../ShopEntryArt.svelte";
   import BackJobPreview from "$lib/features/choreo-card/components/card-back/BackJobPreview.svelte";
   import HeroPhone from "./HeroPhone.svelte";
@@ -11,10 +12,10 @@
   import {
     DEFAULT_SHOP_PROP,
     SHOP_BACK_THEME,
-    bakedCoverUrl,
   } from "../../domain/shop-prop-options";
   import { hydrateSequence } from "$lib/features/choreo-card/services/catalog-loader";
   import { resolveHeroScanCode } from "./hero-scan-code";
+  import { resolvePhysicalCoverLayout } from "../../services/cover-front-renderer";
 
   interface Props {
     /** Empty until the catalog's cover cards land. The stage holds its shape. */
@@ -65,13 +66,35 @@
     card?.sequence ? hydrateSequence({ ...card.sequence }) : null
   );
 
+  // A public shop visit may read an existing code, but may never mint one.
+  // Wait for that lookup before asking the print pipeline for its QR cell.
+  let frontCode = $state<{ card: CoverCard; code: string | null } | null>(null);
+  $effect(() => {
+    const currentCard = card;
+    const seq = backSequence;
+    if (!currentCard || !seq) return;
+    let cancelled = false;
+    void resolveHeroScanCode(seq, null).then((code) => {
+      if (!cancelled) frontCode = { card: currentCard, code };
+    });
+    return () => { cancelled = true; };
+  });
+  const frontQrUrl = $derived(
+    frontCode?.card === card && frontCode.code
+      ? `https://tka.run/${encodeURIComponent(frontCode.code)}`
+      : undefined
+  );
   const qrCell = $derived(
-    card ? computeFrontQrCellRect(card.sequence?.steps?.length ?? 8) : null
+    backSequence && frontQrUrl
+      ? computeFrontQrCellRect(backSequence, resolvePhysicalCoverLayout(backSequence, true))
+      : null
   );
 
-  const coverUrl = $derived(
-    card ? (bakedCoverUrl(card, printedProp) ?? null) : null
-  );
+  let resolvedFront = $state<{ card: CoverCard; url: string } | null>(null);
+  const coverUrl = $derived(resolvedFront?.card === card ? resolvedFront.url : null);
+  function frontResolved(resolvedCard: CoverCard, url: string): void {
+    resolvedFront = { card: resolvedCard, url };
+  }
 
   // A catalog/code mismatch suppresses the phone instead of showing a false scan.
   let scanCode = $state<string | null>(null);
@@ -79,7 +102,7 @@
     const seq = backSequence;
     const cover = coverUrl;
     scanCode = null;
-    if (!seq) return;
+    if (!seq || !cover) return;
     let cancelled = false;
     void resolveHeroScanCode(seq, cover).then((code) => {
       if (!cancelled) scanCode = code;
@@ -215,7 +238,7 @@
       </div>
 
       <div class="slot front">
-        {#if card && product}
+        {#if card && product && frontCode?.card === card}
           <div class="art">
             <ShopEntryArt
               cards={[card]}
@@ -224,6 +247,9 @@
               cardWidth={140}
               maxCardWidth={822}
               exactCount={1}
+              freshFront
+              qrUrl={frontQrUrl}
+              onCoverResolved={frontResolved}
             />
           </div>
         {/if}

@@ -133,6 +133,8 @@ const PROP_TYPE_ENCODE: Record<PropType, string> = {
   // after 7, the way the earlier standard-size variants (baton, fire staff,
   // classic club) did.
   [PropType.TRIANGLE]: "8",
+  // Same code the current codec uses, so a sequence keeps its prop across formats.
+  [PropType.STICK]: "9",
   [PropType.BUUGENG]: "B",
   [PropType.BIGBUUGENG]: "b",
   [PropType.TRIGENG]: "J",

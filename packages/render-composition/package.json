@@ -16,6 +16,9 @@
     "test": "vitest run",
     "test:watch": "vitest"
   },
+  "dependencies": {
+    "@tka/sequence-engine": "workspace:*"
+  },
   "devDependencies": {
     "vitest": "^3.0.0"
   }

@@ -38,7 +38,7 @@
 <script lang="ts">
   import type { CoverCard } from "../domain/models/product";
   import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-  import { renderCoverFront, renderCoverBack } from "../services/cover-front-renderer";
+  import { renderCoverFront, renderCoverBack, prewarmCovers } from "../services/cover-front-renderer";
   import { DEFAULT_SHOP_PROP, bakedCoverUrl } from "../domain/shop-prop-options";
   import { simplifyRepeatedWord } from "$lib/shared/foundation/utils/word-simplifier";
 
@@ -74,6 +74,12 @@
     /** Which card face to render. Backs skip the baked-URL shortcut (bakes are
         fronts only) and render through the live back pipeline. */
     face?: "front" | "back";
+    /** Render the current full print front, including its real QR. Used by the
+        shop hero so an old baked cover cannot disagree with its scan demo. */
+    freshFront?: boolean;
+    /** Existing read-only short URL for a fresh printed front. */
+    qrUrl?: string;
+    onCoverResolved?: (card: CoverCard, url: string) => void;
     /** When set, each card becomes a real, focusable button that calls this
         with the card — turning the decorative fan into an interactive one (the
         `aria-hidden`/`inert` decorative shell is dropped). Used by the composer
@@ -100,6 +106,9 @@
     deal = false,
     dealNonce = 0,
     face = "front",
+    freshFront = false,
+    qrUrl,
+    onCoverResolved,
     onCardClick,
     viewTransitionName,
   }: Props = $props();
@@ -210,6 +219,8 @@
       c.footerCenter ?? "-",
       propType,
       face,
+      freshFront ? "fresh" : "baked",
+      freshFront ? (qrUrl ?? "no-qr") : "-",
     ].join("|");
 
   // key -> object URL, filled as the print renders land. Keyed per (card,
@@ -231,31 +242,45 @@
 
   $effect(() => {
     const prop = propType;
+    if (freshFront && face === "front") {
+      prewarmCovers(shown, prop, { includeBaked: true });
+    }
     for (const c of shown) {
       const k = cardKey(c);
-      if (urls[k]) continue;
+      if (urls[k]) {
+        onCoverResolved?.(c, urls[k]);
+        continue;
+      }
       // A cover this fan hasn't seen but a prior mount rendered — paint it
       // synchronously (no shimmer) from the shared cache.
       const cached = resolvedCovers.get(k);
       if (cached) {
         urls[k] = cached;
+        onCoverResolved?.(c, cached);
         continue;
       }
       // Baked covers load straight from Storage — no print pipeline. Fronts only.
-      const baked = face === "front" ? bakedCoverUrl(c, prop) : undefined;
+      const baked = face === "front" && !freshFront ? bakedCoverUrl(c, prop) : undefined;
       if (baked) {
         urls[k] = baked;
         resolvedCovers.set(k, baked);
+        onCoverResolved?.(c, baked);
         continue;
       }
       const render =
         face === "back"
           ? renderCoverBack(c, { propType: prop })
-          : renderCoverFront(c, { deckId, deckName, propType: prop, maxWidthPx: renderWidth });
+          : renderCoverFront(c, {
+              deckId, deckName, propType: prop,
+              ...(freshFront
+                ? { qrUrl, showQRCode: Boolean(qrUrl), usePhysicalLayout: true }
+                : { maxWidthPx: renderWidth }),
+            });
       render
         .then((url) => {
           urls[k] = url;
           resolvedCovers.set(k, url);
+          onCoverResolved?.(c, url);
         })
         .catch((e) => console.error("[DeckFanCover] cover render failed:", e));
     }

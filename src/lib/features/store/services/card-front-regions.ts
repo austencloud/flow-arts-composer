@@ -13,14 +13,17 @@
  * (822x1122, content inset by the 72px border) → displayed image (object-fit:
  * cover into a 5:7 box crops ~1.25% off each horizontal edge).
  *
- * `computeFrontQrCellRect` maps that same QR cell into a SECOND display space:
- * the trimmed card DeckFanCover shows (the guillotine cut, bleed removed). Both
- * spaces read the one grid computation below, so nothing about where the QR
- * lands is written down twice.
+ * `computeFrontQrCellRect` maps the hero's physical-print QR cell into a
+ * SECOND display space: the trimmed card DeckFanCover shows (bleed removed).
+ * It receives the same physical layout selected for that printed front.
  */
 import { calculateLayout } from "$lib/shared/render/services/layout-calculator";
 import { getCatalogLayoutPolicy } from "$lib/features/choreo-card/domain/catalog-layout-policy";
 import { getMandalaPlacements } from "$lib/shared/sequence-viewer/services/get-mandala-placements";
+import { calculateCardSurface } from "@tka/render-composition";
+import { findEmptyCellForQR } from "$lib/shared/render/services/cell-border-renderer";
+import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import type { PhysicalCardLayout } from "$lib/features/choreo-card/services/physical-card-layout-calculator";
 
 export interface Rect {
   x: number;
@@ -176,13 +179,37 @@ export function computeFrontRegions(stepCount: number): Record<string, Rect> {
  * Where the QR cell lands on a card front as DeckFanCover displays it — % of
  * the trimmed 750x1050 card, i.e. of the fan's 5:7 `.card-box`.
  *
- * The shop hero's scan cue needs this: the sweep reads the code, so it has to
- * cover the code's cell and nothing else, and that cell moves between the
- * bottom of the left column (8/12 steps) and the end of the top row. Same grid
- * math the bake used, so the band and the printed code can't disagree.
+ * The shop hero's scan cue covers the actual QR cell selected by the front's
+ * physical layout. The QR placement helper is shared with ImageComposer.
  */
-export function computeFrontQrCellRect(stepCount: number): Rect {
-  const r = qrCellSpan(grid(stepCount), getCatalogLayoutPolicy(stepCount));
+export function computeFrontQrCellRect(
+  sequence: SequenceData,
+  layout: PhysicalCardLayout
+): Rect | null {
+  const columns = layout.totalGridColumns ?? calculateLayout(sequence.steps.length, true, layout.startPlacementLayout)[0];
+  const rows = layout.startPlacementLayout === "column"
+    ? Math.max(1, Math.ceil(sequence.steps.length / Math.max(1, columns - 1)))
+    : 1 + Math.ceil(sequence.steps.length / columns);
+  const cell = findEmptyCellForQR(columns, rows, sequence, {
+    includeStartPlacement: true,
+    startPlacementLayout: layout.startPlacementLayout,
+    columnCount: columns,
+  });
+  if (!cell) return null;
+  const surface = calculateCardSurface({
+    columns,
+    rows,
+    cellSize: 300,
+    showHeader: true,
+    showFooter: true,
+    deckCard: { contentWidth: CONTENT_W, contentHeight: CONTENT_H },
+  });
+  const r = {
+    x: surface.gridStartX + cell.col * surface.cellSize,
+    y: surface.gridStartY + cell.row * surface.cellSize,
+    w: surface.cellSize,
+    h: surface.cellSize,
+  };
   return {
     x: ((BORDER + r.x - BLEED) / TRIM_W) * 100,
     y: ((BORDER + r.y - BLEED) / TRIM_H) * 100,

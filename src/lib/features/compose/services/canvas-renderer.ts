@@ -364,7 +364,6 @@ function drawWordHeader(
 
   const glyphImages = textRenderer.buildGlyphMap(displayText);
   const segments = compressWord(displayText);
-  const hasCompression = segments.some((s: { repeat: number }) => s.repeat > 1);
 
   renderHeader(ctx, {
     canvasWidth: canvasSize,
@@ -384,7 +383,7 @@ function drawWordHeader(
     darkMode,
     letterStyles,
     glyphImages: glyphImages.size > 0 ? glyphImages : undefined,
-    compressedSegments: hasCompression ? segments : undefined,
+    compressedSegments: segments.length > 1 || segments.some((s) => s.repeat > 1) ? segments : undefined,
   });
 }
 

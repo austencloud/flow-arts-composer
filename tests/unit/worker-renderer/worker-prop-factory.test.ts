@@ -192,6 +192,25 @@ describe("worker prop canonical transforms", () => {
     prop.dispose();
   });
 
+  it("gives each hand its own stick, both stretched to the staff length", async () => {
+    // Cast: the stick reaches scene-3d's PropType through the package patch.
+    const stick = "stick" as PropType;
+    const urls: Record<string, string> = {};
+    for (const color of ["blue", "red"] as const) {
+      const loadModel: WorkerPropModelLoader = vi.fn(async () => sourceModel());
+      const prop = await visual(stick, { color, length: 1.35, loadModel });
+      urls[color] = vi.mocked(loadModel).mock.calls[0]?.[0] ?? "";
+      const transform = prop.root.getObjectByName("worker-prop-model-transform");
+      expect(transform?.scale.y).toBeCloseTo(1.35 / 0.9, 12);
+      expect(transform?.scale.x).toBeCloseTo(1, 12);
+      prop.dispose();
+    }
+    expect(urls).toEqual({
+      blue: "/models/props/stick.glb",
+      red: "/models/props/stick-right.glb",
+    });
+  });
+
   it("loads each authored model from the canonical registry URL", async () => {
     const loadModel: WorkerPropModelLoader = vi.fn(async () => sourceModel());
     const result = await createWorkerPropVisual(
