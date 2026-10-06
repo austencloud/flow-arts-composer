@@ -19,7 +19,7 @@ import {
 } from "@tka/sequence-engine/generation";
 import { getLetterTransitionGraph } from "./letter-transition-graph.js";
 import { recalculateAllOrientations } from "./orientation-propagation.js";
-import type { HandSide } from "@tka/tka-types";
+import type { GridJoin, HandSide } from "@tka/tka-types";
 
 // Types (re-exported for consumers)
 
@@ -49,6 +49,8 @@ export interface SequenceStep {
   isBridge?: boolean;
   leftReversal?: boolean;
   rightReversal?: boolean;
+  /** Overrides the card's join for this step; null draws it on one grid. */
+  conjoined?: GridJoin | null;
 }
 
 export interface SequenceResult {

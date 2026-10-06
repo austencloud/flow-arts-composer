@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
   getGridJoinLayout,
   getNormalHandPointCoordinates,
@@ -10,6 +10,8 @@ import {
   type MotionInput,
   type PictographInput,
 } from "../src/core/standalone-renderer.js";
+import type { SequenceStep } from "../src/core/sequence-builder-adapter.js";
+import { renderSequenceToImage } from "../src/core/sequence-renderer.js";
 
 const renderer = getStandaloneRenderer();
 const E1: GridJoinSpec = { toward: "e", steps: 1 };
@@ -179,4 +181,51 @@ describe("joined grids in the MCP renderer", () => {
       expect(movesOnOneGrid).toBeGreaterThan(0);
     }
   );
+});
+
+describe("joined grids on an MCP card", () => {
+  it("draws each cell on the card's join unless its step sets its own", async () => {
+    const pair = staticPair("n", "s", "in");
+    const step = (
+      stepNumber: number,
+      conjoined?: GridJoinSpec | null
+    ): SequenceStep => ({
+      letter: "α",
+      variation: 0,
+      startPlacement: "alpha1",
+      endPlacement: "alpha1",
+      leftMotion: pair.leftMotion,
+      rightMotion: pair.rightMotion,
+      stepNumber,
+      conjoined,
+    });
+    const steps = [step(0), step(1, E2), step(2, null), step(3)];
+    const cellJoins = async (conjoined?: GridJoinSpec) => {
+      const joins: unknown[] = [];
+      const draw = renderer.renderToPng.bind(renderer);
+      const spy = vi
+        .spyOn(renderer, "renderToPng")
+        .mockImplementation(async (pictograph, options) => {
+          joins.push(pictograph.conjoined);
+          return draw(pictograph, options);
+        });
+      try {
+        await renderSequenceToImage(steps, "ααα", {
+          layout: "strip",
+          cellSize: 120,
+          padding: 8,
+          showStepNumbers: false,
+          showWord: false,
+          darkMode: false,
+          conjoined,
+        });
+      } finally {
+        spy.mockRestore();
+      }
+      return joins;
+    };
+
+    expect(await cellJoins(E1)).toEqual([E1, E2, null, E1]);
+    expect(await cellJoins()).toEqual([null, E2, null, null]);
+  });
 });

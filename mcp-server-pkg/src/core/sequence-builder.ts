@@ -13,6 +13,7 @@
 import { getLetterTransitionGraph } from "./letter-transition-graph.js";
 import { recalculateAllOrientations } from "./orientation-propagation.js";
 import { Period } from "@tka/sequence-engine/loop";
+import type { GridJoin } from "@tka/tka-types";
 
 interface MotionData {
   hand: "left" | "right";
@@ -51,6 +52,8 @@ export interface SequenceStep {
   leftReversal?: boolean;
   /** Whether the right-hand motion has a reversal (direction change from previous step) */
   rightReversal?: boolean;
+  /** Overrides the card's join for this step; null draws it on one grid. */
+  conjoined?: GridJoin | null;
 }
 
 export interface SequenceResult {

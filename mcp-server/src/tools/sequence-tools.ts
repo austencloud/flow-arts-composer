@@ -19,6 +19,7 @@ import {
   saveAndOpenImage,
   generateRandomWord,
 } from "../shared/server-context.js";
+import { gridJoinSchema } from "../shared/grid-join-schema.js";
 import {
   buildSequenceFromLetters,
   parseWordToLetters,
@@ -929,6 +930,7 @@ export function registerSequenceTools(server: McpServer): void {
         })
         .nullable()
         .optional(),
+      conjoined: gridJoinSchema.optional(),
       showDifficulty: z
         .boolean()
         .optional()
@@ -1005,6 +1007,7 @@ export function registerSequenceTools(server: McpServer): void {
       leftPropType,
       rightPropType,
       fanAppearance,
+      conjoined,
       showDifficulty,
       showReversals = COMPOSER_CARD_EXPORT_PROFILE_V1.showReversals,
       loopComponents,
@@ -1236,6 +1239,7 @@ export function registerSequenceTools(server: McpServer): void {
               rightPropType === undefined ? propType : rightPropType,
             fanAppearance,
             primaryPropColors,
+            conjoined,
           }
         );
 
