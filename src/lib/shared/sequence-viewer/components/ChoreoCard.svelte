@@ -34,7 +34,7 @@
   import { getSettings } from "$lib/shared/application/state/app-state.svelte";
   import { tryGetViewerVisibilityContext } from "../context/viewer-visibility-context";
   import { sequenceGridJoinKey } from "@tka/render-core";
-  import { getScanCardCloudProbe } from "$lib/shared/sequence-viewer/scan-card-cloud-context";
+  import { getScanCardCloudPolicy } from "$lib/shared/sequence-viewer/scan-card-cloud-context";
   import { CANONICAL_CARD_VISIBILITY } from "$lib/shared/render/services/cloud-cell-key";
   import { normalizePropLook } from "$lib/shared/pictograph/prop/domain/prop-look";
   import { normalizeTriangleGrip } from "$lib/shared/pictograph/prop/domain/triangle-appearance";
@@ -567,7 +567,8 @@
   );
 
   // True only under a scan-origin /sequence route — cells use the cloud cache.
-  const cloudProbeEnabled = getScanCardCloudProbe();
+  const scanCloudPolicy = getScanCardCloudPolicy();
+  const cloudProbeEnabled = scanCloudPolicy.probeCloud;
   // Cells draw the sequence's own join (the viewer layers its join choice
   // over the sequence it hands down).
   const cardSequence = $derived(sequence);
@@ -918,7 +919,7 @@
       probeCloud: cloudProbeEnabled,
       // Hand-path records embed motion data; their cells can be rendered locally
       // without requiring the prop catalog's prepublished cloud assets.
-      cloudOnly: cloudProbeEnabled && !handPathMode,
+      cloudOnly: scanCloudPolicy.cloudOnly && !handPathMode,
     };
   }
 
