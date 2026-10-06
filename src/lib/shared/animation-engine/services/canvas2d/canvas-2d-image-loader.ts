@@ -5,7 +5,11 @@ import {
   generateGridSvg,
 } from "$lib/shared/animation-engine/services/svg-generator";
 import { hashString } from "$lib/shared/foundation/services/content-hasher";
-import { buildConjoinedGridSvg } from "../conjoined-grid-layout";
+import type { GridJoin } from "@tka/tka-types";
+import {
+  animationGridJoinKey,
+  buildJoinedGridSvg,
+} from "../animation-grid-join";
 import { getSvgImageCache } from "$lib/shared/render/services/svg-image-cache";
 import type { TunnelPropColorPair } from "$lib/shared/sequence-viewer/tunnel/tunnel-prop-colors";
 
@@ -340,14 +344,15 @@ export class Canvas2DImageLoader {
     gridMode: string,
     canvasSize: number,
     showNonRadialPoints: boolean = true,
-    conjoined: boolean = false
+    gridJoin: GridJoin | null = null
   ): Promise<HTMLImageElement> {
     // The grid is the one image reloaded on every resize, and it is also the
     // most expensive: a dynamic import, an SVG build, a base64 encode, and a
     // full image decode. None of that changes with the canvas size — only the
     // decoded raster does — so both halves are cached, and a container that
     // returns to a size it has already drawn at pays nothing at all.
-    const spriteKey = `${gridMode}|${showNonRadialPoints}|${conjoined}|${canvasSize}`;
+    const joinKey = animationGridJoinKey(gridJoin);
+    const spriteKey = `${gridMode}|${showNonRadialPoints}|${joinKey}|${canvasSize}`;
     const loadSeq = ++this.gridLoadSeq;
     const cachedSprite = GRID_SPRITE_CACHE.get(spriteKey);
     if (cachedSprite) {
@@ -370,7 +375,7 @@ export class Canvas2DImageLoader {
           GridMode.DIAMOND;
       }
 
-      const svgKey = `${gridMode}|${showNonRadialPoints}|${conjoined}`;
+      const svgKey = `${gridMode}|${showNonRadialPoints}|${joinKey}`;
       let gridSvg = GRID_SVG_CACHE.get(svgKey);
       if (gridSvg === undefined) {
         const singleGridSvg = await generateGridSvg(
@@ -378,8 +383,8 @@ export class Canvas2DImageLoader {
           true,
           showNonRadialPoints
         );
-        gridSvg = conjoined
-          ? buildConjoinedGridSvg(singleGridSvg)
+        gridSvg = gridJoin
+          ? buildJoinedGridSvg(singleGridSvg, gridJoin)
           : singleGridSvg;
         GRID_SVG_CACHE.set(svgKey, gridSvg);
       }

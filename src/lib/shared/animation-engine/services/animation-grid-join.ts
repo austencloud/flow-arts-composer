@@ -1,0 +1,225 @@
+/**
+ * Joined grids for the 2D animation: two grids, the blue hand moving on one
+ * and the red hand on the other, set by the sequence's own join (any of eight
+ * directions, one or two points across).
+ *
+ * The join is read from the sequence data the animation plays, never from a
+ * viewer preference, so the animation, the cards and every picture made from
+ * the sequence draw the same pair of grids. Where the grids sit and which of
+ * their points are drawn come from `@tka/render-core`, the rule the cards
+ * follow; this module only adds the animation's own scale: the grid it draws
+ * puts hand points 150 units from the center and outer points 300 out, in the
+ * 950-unit viewBox, and props use hand-point radii as their unit.
+ */
+import type { GridJoin } from "@tka/tka-types";
+import type { PropState } from "$lib/shared/foundation/domain/types/prop-state";
+import { PIXELS_PER_UNIT } from "$lib/shared/multi-grid/domain/constants/grid-mode-offsets";
+import {
+  JOIN_GRID_LOCATIONS,
+  gridJoinKey,
+  gridJoinOffsets,
+  isGridJoin,
+  joinedPointKey,
+  joinedPointsDrawnBy,
+  planJoinedGridPoints,
+  type JoinGridGeometry,
+  type JoinVec,
+} from "@tka/render-core";
+import type { GridLocation } from "@tka/render-core";
+
+/** Center to hand point, and center to outer point, on the animation's grid. */
+export const ANIMATION_GRID_GEOMETRY: JoinGridGeometry = Object.freeze({
+  handRadius: PIXELS_PER_UNIT,
+  outerRadius: 2 * PIXELS_PER_UNIT,
+});
+
+type JoinedSequence = { readonly conjoined?: GridJoin | null };
+
+/**
+ * The join the animation draws for a sequence, or null for one grid. Overlaid
+ * tunnel layers share one grid, so they keep it single.
+ */
+export function resolveAnimationGridJoin(
+  sequence: JoinedSequence | null | undefined,
+  tunnelLayerCount = 0
+): GridJoin | null {
+  const join = sequence?.conjoined;
+  return tunnelLayerCount === 0 && isGridJoin(join) ? join : null;
+}
+
+/** Short stable cache-key term for a join, e.g. "e1"; "" for one grid. */
+export function animationGridJoinKey(join: GridJoin | null): string {
+  return join ? gridJoinKey(join) : "";
+}
+
+/** Prop index 0 is the blue (left) hand; 1 is red. */
+function handOf(propIndex: number): "left" | "right" {
+  return propIndex === 0 ? "left" : "right";
+}
+
+/**
+ * Where a hand's grid sits from the canvas center, in hand-point radii (the
+ * unit of prop x/y): half the center distance, blue back and red forward.
+ */
+export function gridJoinShiftUnits(join: GridJoin, propIndex: number): JoinVec {
+  return gridJoinOffsets(join, 1)[handOf(propIndex)];
+}
+
+/** The same shift in the 950-unit grid viewBox. */
+export function gridJoinShiftViewBox(
+  join: GridJoin,
+  propIndex: number
+): JoinVec {
+  return gridJoinOffsets(join, PIXELS_PER_UNIT)[handOf(propIndex)];
+}
+
+/**
+ * Moves path-cache trail points, which are built from step data on the single
+ * grid, onto the hand's own grid. `scaleFactor` is canvas pixels per viewBox
+ * unit.
+ */
+export function shiftTrailPoints(
+  points: { x: number; y: number }[],
+  join: GridJoin,
+  propIndex: number,
+  scaleFactor: number
+): void {
+  const shift = gridJoinShiftViewBox(join, propIndex);
+  const dx = shift.x * scaleFactor;
+  const dy = shift.y * scaleFactor;
+  for (const point of points) {
+    point.x += dx;
+    point.y += dy;
+  }
+}
+
+/**
+ * Writes `source` moved by `shift` (in hand-point radii) into `target` and
+ * returns it. Setting x/y sends every position reader (renderer, trail
+ * capture, effects) down their shared Cartesian branch, which places a prop
+ * exactly where the angle branch would, plus the shift.
+ */
+export function shiftPropState(
+  source: PropState,
+  shift: JoinVec,
+  target: PropState
+): PropState {
+  const cartesian = source.x !== undefined && source.y !== undefined;
+  target.centerPathAngle = source.centerPathAngle;
+  target.staffRotationAngle = source.staffRotationAngle;
+  target.x =
+    (cartesian ? source.x! : Math.cos(source.centerPathAngle)) + shift.x;
+  target.y =
+    (cartesian ? source.y! : Math.sin(source.centerPathAngle)) + shift.y;
+  return target;
+}
+
+/**
+ * Nonradial guide points (the grid files' layer 2), where a staff lying
+ * across the radius points. No hand stops on them, pictographs hide them by
+ * default, and in a joined view they would sit on the other grid's hand
+ * points, so the joined view leaves them out.
+ */
+const NONRADIAL_POINT =
+  /<[a-zA-Z]+\b[^>]*\sclass="[^"]*layer2-point[^"]*"[^>]*\/>/g;
+
+/**
+ * The grid files name the box outer points by the opposite corner of the one
+ * each sits at (`ne_box_outer_point` is drawn top-left, where the hand points
+ * and the cards call it nw). Hand points are named correctly.
+ */
+const BOX_OUTER_ID_LOCATION: Readonly<Record<string, GridLocation>> = {
+  ne: "nw",
+  se: "ne",
+  sw: "se",
+  nw: "sw",
+};
+
+const POINT_ELEMENT = /<(?:circle|path)\b[^>]*\sid="([^"]+)"[^>]*\/>/g;
+
+/** Which grid point an element of a grid file draws, or null for the rest. */
+export function gridPointOfElementId(id: string): string | null {
+  if (id === "center_point") return joinedPointKey("center", "c");
+  let match = /^([nesw])_diamond_outer_point$/.exec(id);
+  if (match) return joinedPointKey("outer", match[1] as GridLocation);
+  match = /^([nesw])_diamond_hand_point_strict$/.exec(id);
+  if (match) return joinedPointKey("hand", match[1] as GridLocation);
+  match = /^(ne|se|sw|nw)_box_outer_point$/.exec(id);
+  if (match) {
+    return joinedPointKey("outer", BOX_OUTER_ID_LOCATION[match[1]!]!);
+  }
+  match = /^strict_(ne|se|sw|nw)_box_hand_point$/.exec(id);
+  if (match) return joinedPointKey("hand", match[1] as GridLocation);
+  return null;
+}
+
+/** The grid locations a grid file has points at: diamond, box, or both. */
+function gridFileLocations(body: string): GridLocation[] {
+  const locations: GridLocation[] = [];
+  if (/_diamond_(?:outer|hand)_point/.test(body)) {
+    locations.push(...JOIN_GRID_LOCATIONS.diamond);
+  }
+  if (/_box_(?:outer|hand)_point/.test(body)) {
+    locations.push(...JOIN_GRID_LOCATIONS.box);
+  }
+  return locations;
+}
+
+/**
+ * Turns one grid SVG (950 viewBox, style block first) into the joined pair:
+ * two shifted copies of its points under the original root and style, each
+ * keeping only the points the join draws. Unrecognised markup is returned
+ * unchanged.
+ */
+export function buildJoinedGridSvg(gridSvg: string, join: GridJoin): string {
+  const rootOpen = /<svg\b[^>]*>/.exec(gridSvg);
+  const closeAt = gridSvg.lastIndexOf("</svg>");
+  if (!rootOpen || closeAt < 0) return gridSvg;
+
+  const bodyStart = rootOpen.index + rootOpen[0].length;
+  const styleClose = gridSvg.indexOf("</style>", bodyStart);
+  const splitAt =
+    styleClose >= 0 && styleClose < closeAt
+      ? styleClose + "</style>".length
+      : bodyStart;
+  const body = gridSvg.slice(splitAt, closeAt);
+
+  const plan = planJoinedGridPoints(
+    join,
+    gridFileLocations(body),
+    ANIMATION_GRID_GEOMETRY
+  );
+
+  return (
+    gridSvg.slice(0, splitAt) +
+    gridCopy(
+      body,
+      "left",
+      plan.offsets.left,
+      joinedPointsDrawnBy(plan.points, "left")
+    ) +
+    gridCopy(
+      body,
+      "right",
+      plan.offsets.right,
+      joinedPointsDrawnBy(plan.points, "right")
+    ) +
+    gridSvg.slice(closeAt)
+  );
+}
+
+function gridCopy(
+  body: string,
+  side: "left" | "right",
+  offset: JoinVec,
+  drawn: ReadonlySet<string>
+): string {
+  const points = body
+    .replace(POINT_ELEMENT, (element, id: string) => {
+      const point = gridPointOfElementId(id);
+      return point !== null && !drawn.has(point) ? "" : element;
+    })
+    .replace(NONRADIAL_POINT, "")
+    .replace(/(\s)id="([^"]+)"/g, `$1id="${side}_$2"`);
+  return `<g transform="translate(${offset.x} ${offset.y})">${points}</g>`;
+}

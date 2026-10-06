@@ -75,7 +75,7 @@ Last audit: 2025-12-27
     type DisassemblyArrangement,
   } from "../services/disassembly-arrangement";
   import SplitCanvasView from "./SplitCanvasView.svelte";
-  import { effectiveGridLayout } from "../services/conjoined-grid-layout";
+  import { resolveAnimationGridJoin } from "../services/animation-grid-join";
   import type { EffectsConfigState } from "$lib/shared/effects/state/effects-config-state.svelte";
   import type { QualityTier } from "../domain/types/quality-types";
   import type { FanAppearance } from "$lib/shared/pictograph/prop/domain/fan-appearance";
@@ -683,7 +683,6 @@ Last audit: 2025-12-27
   let progressBarVisible = $state(false);
   let leftPathLinesVisible = $state(false);
   let rightPathLinesVisible = $state(false);
-  let gridConjoined = $state(false);
   $effect.pre(() => {
     tkaGlyphVisible = visibilityManager.getVisibility("tkaGlyph");
     elementalGlyphVisible = visibilityManager.getVisibility("elementalGlyph");
@@ -696,7 +695,6 @@ Last audit: 2025-12-27
     progressBarVisible = visibilityManager.getVisibility("progressBar");
     leftPathLinesVisible = visibilityManager.getVisibility("leftPathLines");
     rightPathLinesVisible = visibilityManager.getVisibility("rightPathLines");
-    gridConjoined = visibilityManager.getGridLayout() === "conjoined";
   });
 
   const darkModeEnabled = $derived(
@@ -726,13 +724,10 @@ Last audit: 2025-12-27
   const effectiveRightPathLinesVisible = $derived(
     rightPathLinesVisible && !hidePathLines
   );
-  // Tunnel layers keep the single grid (the engine makes the same call). A
-  // sequence saved with the join turns it on by itself.
-  const effectiveGridConjoined = $derived(
-    effectiveGridLayout(
-      gridConjoined ? "conjoined" : "single",
-      sequenceData
-    ) === "conjoined" && additionalLayers.length === 0
+  // The join belongs to the sequence. Tunnel layers keep the single grid (the
+  // engine makes the same call).
+  const gridJoin = $derived(
+    resolveAnimationGridJoin(sequenceData, additionalLayers.length)
   );
 
   function handleVisibilityChange() {
@@ -747,7 +742,6 @@ Last audit: 2025-12-27
     progressBarVisible = visibilityManager.getVisibility("progressBar");
     leftPathLinesVisible = visibilityManager.getVisibility("leftPathLines");
     rightPathLinesVisible = visibilityManager.getVisibility("rightPathLines");
-    gridConjoined = visibilityManager.getGridLayout() === "conjoined";
   }
 
   // Register/unregister observer reactively so visibilityManager is tracked
@@ -922,7 +916,7 @@ Last audit: 2025-12-27
       {effectiveBeatNumbersVisible}
       leftPathLinesVisible={effectiveLeftPathLinesVisible}
       rightPathLinesVisible={effectiveRightPathLinesVisible}
-      gridConjoined={effectiveGridConjoined}
+      {gridJoin}
       {suppress2DOverlays}
       {resizePaused}
       {visibilityManagerOverride}

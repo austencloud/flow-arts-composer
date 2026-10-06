@@ -69,7 +69,8 @@ import {
 } from "$lib/shared/mandala/domain/mandala-overlay-types";
 import type { MandalaHandVisibility } from "$lib/shared/mandala/domain/mandala-types";
 import type { RenderActivityGate } from "$lib/shared/render-gating/render-activity-gate";
-import { shiftTrailPoints } from "./conjoined-grid-layout";
+import type { GridJoin } from "@tka/tka-types";
+import { shiftTrailPoints } from "./animation-grid-join";
 
 // Longtask observer singleton - one PerformanceObserver shared across every
 // AnimationRenderLoop instance. Without this, each loop attaches its own
@@ -1496,7 +1497,7 @@ export class AnimationRenderLoop {
       trailSettings,
       effectiveLoopable,
       params.tipEffectMap,
-      params.conjoinedGrid === true
+      params.gridJoin ?? null
     );
 
     // Update loopStartTime when a loop is detected (set inside gatherTrailPoints)
@@ -2369,7 +2370,7 @@ export class AnimationRenderLoop {
     trailSettings: TrailSettings,
     isSeamlesslyLoopable: boolean,
     tipEffectMap?: TipEffectMap,
-    conjoined = false
+    gridJoin: GridJoin | null = null
   ): {
     left: TrailPoint[];
     right: TrailPoint[];
@@ -2608,9 +2609,19 @@ export class AnimationRenderLoop {
         }
 
         // Live capture already follows the shifted props; the cache does not.
-        if (conjoined) {
-          shiftTrailPoints(this.reusableLeftTrailPoints, 0, scaleFactor);
-          shiftTrailPoints(this.reusableRightTrailPoints, 1, scaleFactor);
+        if (gridJoin) {
+          shiftTrailPoints(
+            this.reusableLeftTrailPoints,
+            gridJoin,
+            0,
+            scaleFactor
+          );
+          shiftTrailPoints(
+            this.reusableRightTrailPoints,
+            gridJoin,
+            1,
+            scaleFactor
+          );
         }
       }
     } else if (this.TrailCapturer && !this.renderers.has("trails")) {

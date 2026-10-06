@@ -21,6 +21,7 @@
     type AnimationVisibilityStateManager,
   } from "../../state/animation-visibility-state.svelte";
   import { getViewer3DContext } from "$lib/shared/3d/context/viewer-3d-context";
+  import { tryGetGridJoinContext } from "$lib/shared/grid-join/grid-join-controller";
   import { getEffectsConfigContext } from "$lib/shared/effects/state/effects-config-context";
   interface Props {
     sequence?: SequenceData | null;
@@ -81,10 +82,15 @@
     menuItemsVersion++;
   }
 
+  // The sequence's join, when the surrounding workspace lets it be changed
+  const gridJoin = tryGetGridJoinContext();
+  const unsubscribeGridJoin = gridJoin?.subscribe(onSettingsChanged);
+
   visibilityManager.registerObserver(onSettingsChanged);
 
   onDestroy(() => {
     visibilityManager.unregisterObserver(onSettingsChanged);
+    unsubscribeGridJoin?.();
   });
 
   function closeContextMenu(): void {
@@ -135,6 +141,7 @@
               captureEffectDiagnostics,
               viewer3DState,
               onToggle3DView,
+              gridJoin,
             })
           : [],
       },

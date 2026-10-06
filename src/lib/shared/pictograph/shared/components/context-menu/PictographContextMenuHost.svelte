@@ -5,17 +5,33 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import ContextMenu from "$lib/shared/components/context-menu/ContextMenu.svelte";
-  import type { ContextMenuState, ContextMenuEntry } from "$lib/shared/components/context-menu/context-menu-types";
+  import type {
+    ContextMenuState,
+    ContextMenuEntry,
+  } from "$lib/shared/components/context-menu/context-menu-types";
   import { buildPictographContextMenuItems } from "./pictograph-context-menu-builder";
   import { getVisibilityStateManager } from "../../state/visibility-state.svelte";
   import type { HandSide } from "../../domain/enums/pictograph-enums";
+  import { followGridJoin } from "$lib/shared/grid-join/grid-join-follower.svelte";
 
   interface Props {
     onAdjustArrow?: (hand: HandSide) => void;
     showArrowAdjustment?: boolean;
+    /**
+     * Offer the sequence's "Grid join" choice, when the surrounding workspace
+     * provides one. Only the cells of the sequence itself opt in; pictograph
+     * previews of options do not.
+     */
+    offerGridJoin?: boolean;
   }
 
-  const { onAdjustArrow, showArrowAdjustment = false }: Props = $props();
+  const {
+    onAdjustArrow,
+    showArrowAdjustment = false,
+    offerGridJoin = false,
+  }: Props = $props();
+
+  const joinFollower = followGridJoin();
 
   const visibilityManager = getVisibilityStateManager();
 
@@ -24,7 +40,9 @@
   // Increments on every visibility change so $derived rebuilds menu items with fresh checked states
   let version = $state(0);
 
-  function bumpVersion() { version++; }
+  function bumpVersion() {
+    version++;
+  }
 
   onMount(() => {
     visibilityManager.registerObserver(bumpVersion, ["all"]);
@@ -37,13 +55,17 @@
 
   const menuItems: ContextMenuEntry[] = $derived.by(() => {
     void version;
+    void joinFollower.version();
     return buildPictographContextMenuItems({
       visibilityManager,
-      onAdjustArrow: onAdjustArrow ? (color) => {
-        closeContextMenu();
-        onAdjustArrow(color);
-      } : undefined,
+      onAdjustArrow: onAdjustArrow
+        ? (color) => {
+            closeContextMenu();
+            onAdjustArrow(color);
+          }
+        : undefined,
       showArrowAdjustment,
+      gridJoin: offerGridJoin ? joinFollower.controller : null,
     });
   });
 

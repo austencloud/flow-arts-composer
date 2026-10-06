@@ -32,8 +32,6 @@
   import { getVisibilityStateManager } from "$lib/shared/pictograph/shared/state/visibility-state.svelte";
   import { getSettings } from "$lib/shared/application/state/app-state.svelte";
   import { tryGetViewerVisibilityContext } from "../context/viewer-visibility-context";
-  import { tryGetCardGridLayoutContext } from "../context/card-grid-layout-context";
-  import { withAnimationGridJoin } from "$lib/shared/animation-engine/services/conjoined-grid-layout";
   import { sequenceGridJoinKey } from "@tka/render-core";
   import { getScanCardCloudProbe } from "$lib/shared/sequence-viewer/scan-card-cloud-context";
   import { CANONICAL_CARD_VISIBILITY } from "$lib/shared/render/services/cloud-cell-key";
@@ -82,6 +80,7 @@
   } from "$lib/shared/choreo-card/services/choreo-card-render-engine";
   import { composeMenu } from "$lib/shared/components/context-menu/compose-menu";
   import { buildCardMenuSection } from "$lib/shared/choreo-card/services/card-menu-section";
+  import { followGridJoin } from "$lib/shared/grid-join/grid-join-follower.svelte";
   import { buildPictographContextMenuItems } from "$lib/shared/pictograph/shared/components/context-menu/pictograph-context-menu-builder";
 
   // Eagerly initialize the singleton so its constructor (which mutates $state)
@@ -560,14 +559,9 @@
 
   // True only under a scan-origin /sequence route — cells use the cloud cache.
   const cloudProbeEnabled = getScanCardCloudProbe();
-  // Inside the viewer, cells join their grids while its 2D animation does. A
-  // scanned card stands for the printed one and keeps only saved joins.
-  const viewerGridLayout = tryGetCardGridLayoutContext();
-  const cardSequence = $derived(
-    viewerGridLayout && !cloudProbeEnabled
-      ? withAnimationGridJoin(sequence, viewerGridLayout())
-      : sequence
-  );
+  // Cells draw the sequence's own join (the viewer layers its join choice
+  // over the sequence it hands down).
+  const cardSequence = $derived(sequence);
   // Live cells draw one grid only, so a joined card renders image cells.
   const livePictographs = $derived(
     !cloudProbeEnabled && !sequenceGridJoinKey(cardSequence)
@@ -626,10 +620,7 @@
   // mandala and swaps the code in a moment later. A capture taken in between
   // keeps the mandala, so the card is not settled until auth is.
   const qrAuthPending = $derived(
-    showQRCode &&
-      !qrUrl &&
-      !authLoadFailed &&
-      !(authApi?.initialized ?? false)
+    showQRCode && !qrUrl && !authLoadFailed && !(authApi?.initialized ?? false)
   );
   const qrSettled = $derived(!qrAuthPending && qrState.settled);
 
@@ -1048,9 +1039,11 @@
   // Pictograph section (cells live-follow the visibility manager) + Card
   // section (Re-render for everyone, image actions for admins).
   let contextMenuState: ContextMenuState = $state({ open: false });
+  const joinFollower = followGridJoin();
 
   const contextMenuItems = $derived.by(() => {
     void displayState.visibilityVersion;
+    void joinFollower.version();
     return composeMenu([
       {
         header: "Pictograph",
@@ -1059,6 +1052,7 @@
           // Card step numbers read ImageComposition.addStepNumbers, not the
           // visibility manager — the toggle would lie here.
           includeStepNumbers: false,
+          gridJoin: joinFollower.controller,
         }),
       },
       {

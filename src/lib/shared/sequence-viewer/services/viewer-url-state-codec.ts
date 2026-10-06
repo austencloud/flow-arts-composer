@@ -17,10 +17,28 @@ import {
 // existing importers keep working.
 import { VIEWER_STATE_PARAM_NAMES } from "./viewer-url-state-params";
 
-export type SliceId = "vw" | "fx" | "an" | "ex" | "t3" | "cd" | "tn" | "ps";
+export type SliceId =
+  | "vw"
+  | "fx"
+  | "an"
+  | "ex"
+  | "t3"
+  | "cd"
+  | "tn"
+  | "ps"
+  | "gj";
 export type SlicePayloads = Partial<Record<SliceId, unknown>>;
 
-const BLOB_SLICE_IDS: readonly SliceId[] = ["fx", "an", "ex", "t3", "cd", "tn", "ps"];
+const BLOB_SLICE_IDS: readonly SliceId[] = [
+  "fx",
+  "an",
+  "ex",
+  "t3",
+  "cd",
+  "tn",
+  "ps",
+  "gj",
+];
 
 export { VIEWER_STATE_PARAM_NAMES };
 
@@ -42,7 +60,9 @@ interface CdPayload {
   rest?: Record<string, unknown>;
 }
 
-export function encodeViewerStateParams(slices: SlicePayloads): ViewerUrlParamPatch {
+export function encodeViewerStateParams(
+  slices: SlicePayloads
+): ViewerUrlParamPatch {
   const set: Record<string, string> = {};
   const blob: Record<string, unknown> = {};
 
@@ -72,14 +92,19 @@ export function encodeViewerStateParams(slices: SlicePayloads): ViewerUrlParamPa
   return { set, remove };
 }
 
-export function decodeViewerStateParams(params: URLSearchParams): SlicePayloads {
+export function decodeViewerStateParams(
+  params: URLSearchParams
+): SlicePayloads {
   const slices: SlicePayloads = {};
 
   let blob: Record<string, unknown> = {};
   const s = params.get("s");
   if (s) {
     try {
-      const parsed = JSON.parse(decompressFromURL(s)) as Record<string, unknown>;
+      const parsed = JSON.parse(decompressFromURL(s)) as Record<
+        string,
+        unknown
+      >;
       if (parsed && typeof parsed === "object") blob = parsed;
     } catch {
       // Corrupt blob: tolerated per spec — headline params still apply.
@@ -138,6 +163,9 @@ export function deepEqual(a: unknown, b: unknown): boolean {
   );
   if (aKeys.length !== bKeys.length) return false;
   return aKeys.every((k) =>
-    deepEqual((a as Record<string, unknown>)[k], (b as Record<string, unknown>)[k])
+    deepEqual(
+      (a as Record<string, unknown>)[k],
+      (b as Record<string, unknown>)[k]
+    )
   );
 }

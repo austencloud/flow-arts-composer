@@ -5,6 +5,7 @@
  * Handles service loading, renderer setup, texture loading, and sub-service wiring.
  */
 
+import type { GridJoin } from "@tka/tka-types";
 import type { IAnimationRenderer } from "$lib/shared/animation-engine/services/IAnimationRenderer";
 import type { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
 
@@ -39,8 +40,8 @@ export interface InitializerDependencies {
   paintBackground?: boolean;
   gridMode: GridMode | null;
   showNonRadialPoints?: boolean;
-  /** Load the Level 7 joined pair instead of one grid. */
-  gridConjoined?: boolean;
+  /** Load the sequence's joined pair of grids instead of one grid. */
+  gridJoin?: GridJoin | null;
   loadAnimatorServices: () => Promise<boolean>;
   initializePrecomputationService: () => void;
   initializePropTextureLoader: () => void;

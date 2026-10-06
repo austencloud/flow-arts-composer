@@ -35,6 +35,7 @@ export enum UndoOperationType {
   INVERT_SEQUENCE = "INVERT_SEQUENCE",
   REWIND_SEQUENCE = "REWIND_SEQUENCE",
   SHIFT_START = "SHIFT_START",
+  SET_GRID_JOIN = "SET_GRID_JOIN",
 
   // Pattern operations
   APPLY_TURN_PATTERN = "APPLY_TURN_PATTERN",
@@ -141,6 +142,7 @@ const OPERATION_DESCRIPTIONS: Record<UndoOperationType, string> = {
   SWAP_HANDS: "Swap Hands",
   INVERT_SEQUENCE: "Invert",
   REWIND_SEQUENCE: "Rewind",
+  SET_GRID_JOIN: "Grid Join",
   SHIFT_START: "Shift Start",
   APPLY_TURN_PATTERN: "Apply Turn Pattern",
   APPLY_ROTATION_PATTERN: "Apply Rotation Pattern",

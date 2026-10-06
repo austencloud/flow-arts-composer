@@ -11,6 +11,7 @@ import type {
   ITrailCapturer,
   AdditionalLayerProps,
 } from "$lib/shared/animation-engine/services/ITrailCapturer";
+import type { GridJoin } from "@tka/tka-types";
 import type { TrailSettings } from "../domain/types/trail-types";
 import type { PropState } from "$lib/shared/foundation/domain/types/prop-state";
 import type { AnimationPathCache } from "$lib/shared/animation-engine/services/animation-path-cache";
@@ -205,11 +206,12 @@ export interface RenderFrameParams {
    */
   trailsSuppressedUntilTextureLoad?: boolean;
   /**
-   * Level 7 conjoined grid: `props` already carry each hand's shift onto its
-   * own grid, so only path-cache trail points (built from step data) still
-   * need it.
+   * The sequence's join, when the animation draws joined grids: `props`
+   * already carry each hand's shift onto its own grid, so only path-cache
+   * trail points (built from step data) still need it. Null or absent for one
+   * grid.
    */
-  conjoinedGrid?: boolean;
+  gridJoin?: GridJoin | null;
   /** Whether the engine-aligned mandala guide is enabled for this canvas. */
   mandalaVisible?: boolean;
   /** Line width of the mandala guide in canvas pixels; default 2.5. */

@@ -37,7 +37,6 @@ vi.mock(
     getAnimationVisibilityManager: () => ({
       effectsConfigState: { trails: state.trailLook },
       isDarkMode: () => true,
-      getGridLayout: () => "single",
     }),
   })
 );

@@ -25,6 +25,7 @@
  * - Canvas2DGridFadeManager: Grid visibility toggle transitions
  * - Canvas2DVisibilityFadeManager: Props and trails visibility transitions
  */
+import type { GridJoin } from "@tka/tka-types";
 import type { TunnelPropColorPair } from "$lib/shared/sequence-viewer/tunnel/tunnel-prop-colors";
 
 import type { RenderedPropTransform } from "$lib/shared/animation-engine/domain/types/fire-types";
@@ -196,7 +197,7 @@ export class Canvas2DAnimationRenderer {
 
   // Track current grid mode for resize operations
   private currentGridMode: string = "diamond";
-  private currentGridConjoined = false;
+  private currentGridJoin: GridJoin | null = null;
 
   // Cached off-white tinted grid for dark mode. ctx.filter("invert") is
   // silently ignored on iOS Safari, leaving the grid pure black and invisible
@@ -381,16 +382,16 @@ export class Canvas2DAnimationRenderer {
   async loadGridTexture(
     gridMode: string,
     showNonRadialPoints: boolean = true,
-    conjoined: boolean = this.currentGridConjoined
+    gridJoin: GridJoin | null = this.currentGridJoin
   ): Promise<void> {
     this.currentGridMode = gridMode;
-    this.currentGridConjoined = conjoined;
+    this.currentGridJoin = gridJoin;
     const canvasSize = this.appManager.getCurrentSize();
     await this.imageLoader.loadGridImage(
       gridMode,
       canvasSize,
       showNonRadialPoints,
-      conjoined
+      gridJoin
     );
   }
 

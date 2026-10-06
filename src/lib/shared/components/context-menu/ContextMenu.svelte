@@ -123,6 +123,14 @@
     }
   }
 
+  /** Icon tint, and a turn for arrows the icon set has no diagonal glyph for. */
+  function iconStyle(item: ContextMenuItem): string {
+    const parts: string[] = [];
+    if (item.iconColor) parts.push(`color: ${item.iconColor}`);
+    if (item.iconRotate) parts.push(`transform: rotate(${item.iconRotate}deg)`);
+    return parts.join("; ");
+  }
+
   function checkedAccentStyle(item: ContextMenuItem): string {
     if (!item.checked || !item.iconColor) return "";
     return `background: color-mix(in srgb, ${item.iconColor} 12%, transparent);`;
@@ -146,7 +154,7 @@
     ></i>
     <i
       class="fas {item.icon} ctx-menu-icon"
-      style={item.iconColor ? `color: ${item.iconColor}` : ""}
+      style={iconStyle(item)}
       aria-hidden="true"
     ></i>
   {:else if item.checked !== undefined}
@@ -160,7 +168,7 @@
   {:else if item.icon}
     <i
       class="fas {item.icon} ctx-menu-icon"
-      style={item.iconColor ? `color: ${item.iconColor}` : ""}
+      style={iconStyle(item)}
       aria-hidden="true"
     ></i>
   {:else}

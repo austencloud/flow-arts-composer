@@ -129,16 +129,17 @@ describe("an slice", () => {
     expect(slice?.visibility).toEqual({ gridMode: "none" });
   });
 
-  it("carries the conjoined grid layout through a link", () => {
-    const a = defaultStores();
-    a.visibility.setGridLayout("conjoined");
+  it("no longer carries a grid layout: the join rides in the gj slice", () => {
+    const slice = captureAnSlice(defaultStores(), { full: true });
+    expect(slice?.visibility && "gridLayout" in slice.visibility).toBe(false);
+  });
 
-    const slice = captureAnSlice(a);
-    expect(slice?.visibility).toEqual({ gridLayout: "conjoined" });
-
-    const b = defaultStores();
-    b.visibility.replaceAll(seedFromAnSlice(slice!).visibility);
-    expect(b.visibility.getGridLayout()).toBe("conjoined");
+  it("opens an old link's gridLayout without a trace of it in the stores", () => {
+    const seed = seedFromAnSlice({
+      visibility: { gridLayout: "conjoined", gridMode: "none" },
+    } as never);
+    expect("gridLayout" in seed.visibility).toBe(false);
+    expect(seed.visibility.gridMode).toBe("none");
   });
 
   it("omits a sub-key whose store is untouched", () => {

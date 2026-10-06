@@ -30,7 +30,6 @@ vi.mock(
     getAnimationVisibilityManager: () => ({
       effectsConfigState: {},
       isDarkMode: () => true,
-      getGridLayout: () => "single",
     }),
   })
 );
@@ -157,7 +156,9 @@ describe("OffscreenExportRenderer motion visibility", () => {
     expect(handle.engine.setMotionVisibility).toHaveBeenCalledWith(false, true);
     // The per-hand fade eases out over 200ms of render clock, so the settle
     // pass must render past that and then discard what it painted.
-    const clocks = handle.engine.renderFrame.mock.calls.map((c) => c[1] as number);
+    const clocks = handle.engine.renderFrame.mock.calls.map(
+      (c) => c[1] as number
+    );
     expect(clocks.length).toBeGreaterThanOrEqual(2);
     expect(Math.max(...clocks)).toBeGreaterThanOrEqual(200);
     expect(handle.context.trailCapturer.clearTrails).toHaveBeenCalled();
