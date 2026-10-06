@@ -121,6 +121,38 @@ describe("renderHeader", () => {
       };
     }
 
+    it("keeps a single repeated group compressed and draws a dot between inverse halves", () => {
+      const glyphImages = new Map<string, GlyphImageData>([
+        ["A", makeGlyphImage()],
+        ["B", makeGlyphImage()],
+      ]);
+      const repeated = createMockCtx();
+      renderHeader(repeated, {
+        canvasWidth: 900,
+        headerHeight: 100,
+        word: "AAAA",
+        glyphImages,
+        compressedSegments: [{ tokens: ["A"], repeat: 4 }],
+      });
+      expect(repeated.drawImage).toHaveBeenCalledTimes(1);
+
+      const inverted = createMockCtx();
+      renderHeader(inverted, {
+        canvasWidth: 900,
+        headerHeight: 100,
+        word: "AB",
+        glyphImages,
+        compressedSegments: [
+          { tokens: ["A"], repeat: 1 },
+          { tokens: ["B"], repeat: 1 },
+        ],
+      });
+      expect(inverted.drawImage).toHaveBeenCalledTimes(2);
+      expect(inverted.arc).toHaveBeenCalledTimes(
+        (repeated.arc as ReturnType<typeof vi.fn>).mock.calls.length + 1
+      );
+    });
+
     it("calls drawImage for each letter when glyphImages is provided", () => {
       const ctx = createMockCtx();
       const glyphImages = new Map<string, GlyphImageData>([

@@ -42,6 +42,14 @@ function renderWordLabel() {
 }
 
 describe("WordLabel word actions", () => {
+  it("keeps inverse halves grouped while highlighting the expanded beat", () => {
+    render(WordLabel, { word: "MW-Θ-QNX-Ω-P", activeStepNumber: 5 });
+    const letters = document.querySelectorAll(".word-label .letter");
+    expect(letters).toHaveLength(8);
+    expect(document.querySelectorAll(".word-label .group-dot")).toHaveLength(1);
+    expect(document.querySelector(".word-label .letter.active")).toBe(letters[4]);
+  });
+
   it("opens the action menu and reads the exact workspace label aloud", async () => {
     const trigger = renderWordLabel();
 

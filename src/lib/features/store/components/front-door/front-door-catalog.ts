@@ -19,11 +19,9 @@ export function shelfChipLabel(shelf: string): string {
 /**
  * The card the hero holds up.
  *
- * A baked cover comes back from Storage at full print resolution, which is the
- * only render that carries the card's real, scannable QR — on-screen preview
- * renders skip the QR entirely. So a baked card wins; if none is baked yet the
- * hero still shows a real card, just without the code. It never shows an
- * invented QR pattern.
+ * The hero renders a fresh print-resolution front with an existing read-only
+ * short code when one is available. Baked-cover priority keeps the initial
+ * catalog choice stable; the displayed front no longer uses that baked image.
  */
 export function heroCoverCard(products: readonly Product[]): CoverCard | null {
   return heroCoverPool(products)[0]?.card ?? null;
@@ -42,10 +40,8 @@ export interface HeroCoverEntry {
  * The hero used to hold ONE card forever, which made its second scan a repeat
  * of its first. Dealing a different card is the payoff, and the deck it deals
  * from is this: the active catalog's covers, already loaded, no generation at
- * runtime. Baked covers come first for the same reason `heroCoverCard` picked
- * one — only a baked render carries the card's real, scannable QR — and the
- * unbaked remainder still follows, so a shuffle keeps finding new cards after
- * the baked ones run out rather than dead-ending.
+ * runtime. Baked covers retain first priority for a stable initial choice;
+ * the unbaked remainder follows so a shuffle keeps finding new cards.
  */
 export function heroCoverPool(products: readonly Product[]): HeroCoverEntry[] {
   const entries = products

@@ -5,7 +5,6 @@
     compressWord,
     parseWordNotation,
     stripWordNotation,
-    type CompressedSegment,
   } from "$lib/shared/foundation/utils/word-simplifier";
   import {
     getSkewBraceInk,
@@ -47,7 +46,7 @@
     const units = parseWordNotation(word ?? "");
     return units.length > 0 && units.every((unit) => unit.skewed);
   });
-  const hasCompression = $derived(segments.some((s: CompressedSegment) => s.repeat > 1));
+  const hasGroups = $derived(segments.length > 1 || segments.some((segment) => segment.repeat > 1));
   const neededBaseLetters = $derived.by(() => [
     ...new Set(
       segments.flatMap((segment) =>
@@ -103,7 +102,7 @@
       <span class="skew-brace" style="font-size: {height * BRACE_SCALE}px; height: {height}px; top: {-BRACE_DROP}em; margin-right: {height * LETTER_GAP_RATIO}px;">&#123;</span>
     {/if}
     {#each segments as segment, segIdx}
-      {#if segIdx > 0 && hasCompression}
+      {#if segIdx > 0 && hasGroups}
         <span
           class="group-dot"
           style="width: {height * DOT_SIZE_RATIO}px; height: {height * DOT_SIZE_RATIO}px; margin: 0 {height * GROUP_GAP_RATIO * 0.5}px;"

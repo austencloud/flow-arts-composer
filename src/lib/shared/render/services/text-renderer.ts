@@ -11,7 +11,6 @@ import {
   type LoopInversionPeriod,
   type LoopReflectionAxis,
   type GlyphImageData,
-  type CompressedSegment,
 } from "@tka/render-composition";
 import { Letter } from "$lib/shared/foundation/domain/models/letter";
 // getGlyphCache loaded dynamically to avoid pulling $app/environment into worker bundle
@@ -293,9 +292,6 @@ export class TextRenderer {
       : this.buildGlyphMap(opts.word ?? "");
     const segments =
       opts.word && !opts.renderAsText ? compressWord(opts.word) : undefined;
-    const hasCompression = segments?.some(
-      (s: CompressedSegment) => s.repeat > 1
-    );
 
     renderHeader(ctx, {
       canvasWidth: opts.canvas.width,
@@ -315,7 +311,7 @@ export class TextRenderer {
       accentColor: opts.accentColor,
       accentTintOpacity: opts.accentTintOpacity,
       glyphImages: glyphImages.size > 0 ? glyphImages : undefined,
-      compressedSegments: hasCompression ? segments : undefined,
+      compressedSegments: segments && (segments.length > 1 || segments.some((s) => s.repeat > 1)) ? segments : undefined,
     });
   }
 
