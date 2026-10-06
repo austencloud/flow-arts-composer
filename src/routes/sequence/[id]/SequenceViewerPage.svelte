@@ -770,6 +770,7 @@
     {sequence}
     {isMobile}
     {forceGuest}
+    demoScanProps={isDemo && !!scanOriginCode}
     initialBpm={urlBpm ||
       (scanOriginCode ? scanInitialBpm : handoffData?.playbackState?.bpm || 60)}
     initialStep={handoffData?.playbackState?.currentStep || 0}
@@ -814,6 +815,7 @@
           saveOnOpen={saveFromShapeEngine}
           {isMobile}
           startInCardThenSplit={!!scanOriginCode}
+          demoScanProps={isDemo && !!scanOriginCode}
           embedded={isEmbedded}
           onClose={handleClose}
           navigation={{
