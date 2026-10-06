@@ -8,7 +8,7 @@
   import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { getDeviceDetector } from "$lib/shared/device/get-device-detector";
   import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
-  import { onMount } from "svelte";
+  import { onMount, tick } from "svelte";
   import { desktopSidebarState } from "../../layout/desktop-sidebar-state.svelte";
   import type { ModuleDefinition, ModuleId } from "../domain/types";
   import ModuleList from "./ModuleList.svelte";
@@ -18,6 +18,12 @@
   import type { ResponsiveSettings } from "../../device/domain/models/device-models";
   import Drawer from "../../foundation/ui/Drawer.svelte";
   import AccountRow from "./account/AccountRow.svelte";
+  import type AuthModal from "../../auth/components/AuthModal.svelte";
+  import {
+    trackAuthModalAbandoned,
+    trackAuthSurfaceOpened,
+  } from "$lib/shared/analytics/auth-events";
+  import { clearAuthSubmissionBridge } from "$lib/shared/auth/services/auth-analytics-bridge";
   import { authState } from "../../auth/state/auth-state.svelte";
   import { inboxState } from "../../inbox/state/inbox-state.svelte";
   import { userPreviewState } from "../../debug/state/user-preview-state.svelte";
@@ -54,6 +60,10 @@
   let deviceDetector: DeviceDetector | null = null;
   let isOpen = $state(false);
   let selectedModuleId = $state<ModuleId | null>(null);
+  let authView = $state(false);
+  let InlineAuthComponent = $state<typeof AuthModal | null>(null);
+  let authBackButton = $state<HTMLButtonElement | null>(null);
+  let drawerContainer = $state<HTMLDivElement | null>(null);
   const localizedCurrentModuleName = $derived.by(() => {
     const module = modules.find((item) => item.id === currentModule);
     return module ? t(module.labelKey) : currentModuleName;
@@ -64,8 +74,53 @@
   let listScroller = $state<HTMLElement | null>(null);
 
   function resetListScroll() {
-    listScroller?.scrollTo({ top: 0 });
+    // Nested auth form transitions also emit introstart. Preserve the focused
+    // field's scroll position while switching email, password, and recovery.
+    if (!authView) listScroller?.scrollTo({ top: 0 });
   }
+
+  function revealFocusedAuthField() {
+    const target = document.activeElement;
+    const scroller = listScroller;
+    if (
+      !authView ||
+      !(target instanceof HTMLElement) ||
+      !scroller ||
+      !scroller.querySelector(".navigation-auth-view")?.contains(target)
+    )
+      return;
+    const field = target.getBoundingClientRect();
+    const viewport = scroller.getBoundingClientRect();
+    if (field.bottom > viewport.bottom - 12) {
+      scroller.scrollTop += field.bottom - viewport.bottom + 12;
+    } else if (field.top < viewport.top + 12) {
+      scroller.scrollTop -= viewport.top + 12 - field.top;
+    }
+  }
+
+  function revealAuthFocus(event: FocusEvent) {
+    if (!(event.target instanceof HTMLElement)) return;
+    requestAnimationFrame(revealFocusedAuthField);
+    // Email, password, and recovery forms can grow after receiving focus.
+    setTimeout(revealFocusedAuthField, DURATION.normal);
+  }
+
+  $effect(() => {
+    const scroller = listScroller;
+    if (!authView || !scroller) return;
+    const observer = new ResizeObserver(() =>
+      requestAnimationFrame(revealFocusedAuthField)
+    );
+    observer.observe(scroller);
+    window.visualViewport?.addEventListener("resize", revealFocusedAuthField);
+    return () => {
+      observer.disconnect();
+      window.visualViewport?.removeEventListener(
+        "resize",
+        revealFocusedAuthField
+      );
+    };
+  });
 
   const selectedModule = $derived(
     modules.find((module) => module.id === selectedModuleId) ?? null
@@ -74,6 +129,22 @@
     selectedModuleId ? getAccessibleSectionsForModule(selectedModuleId) : []
   );
   const drillDirection = $derived<-1 | 1>(selectedModuleId ? 1 : -1);
+
+  $effect(() => {
+    if (authView && isFullAccount) {
+      clearAuthSubmissionBridge();
+      authView = false;
+      void focusAccountRow();
+    }
+  });
+
+  $effect(() => {
+    if (!isOpen && authView) {
+      trackAuthModalAbandoned("backdrop_or_escape");
+      clearAuthSubmissionBridge();
+      authView = false;
+    }
+  });
 
   const hasUnread = $derived(inboxState.totalUnreadCount > 0);
   const unreadCount = $derived(inboxState.totalUnreadCount);
@@ -108,8 +179,40 @@
   function openDrawer() {
     hapticService?.trigger("selection");
     selectedModuleId = null;
+    authView = false;
     resetListScroll();
     isOpen = true;
+  }
+
+  async function handleSignIn() {
+    hapticService?.trigger("selection");
+    trackAuthSurfaceOpened({
+      surface: "auth_sheet",
+      origin: "module_navigation",
+      auth_mode: "signin",
+    });
+    authView = true;
+    listScroller?.scrollTo({ top: 0 });
+    InlineAuthComponent ??= (
+      await import("../../auth/components/AuthModal.svelte")
+    ).default;
+    await tick();
+    if (isOpen && authView) authBackButton?.focus();
+  }
+
+  async function handleAuthBack() {
+    hapticService?.trigger("selection");
+    trackAuthModalAbandoned("close_button");
+    clearAuthSubmissionBridge();
+    authView = false;
+    await focusAccountRow();
+  }
+
+  async function focusAccountRow() {
+    await tick();
+    drawerContainer
+      ?.querySelector<HTMLButtonElement>(".account-footer .account-row.drawer")
+      ?.focus();
   }
 
   function handleInboxClick() {
@@ -235,31 +338,44 @@
   showHandle={drawerPlacement === "bottom"}
   closeOnBackdrop={true}
 >
-  <div class="module-switcher-container">
+  <div class="module-switcher-container" bind:this={drawerContainer}>
     <!-- Header -->
-    <div class="module-switcher-header">
+    <div class="module-switcher-header" class:auth-view={authView}>
       <button
         type="button"
         class="drill-back-button"
-        class:visible={selectedModule !== null}
-        aria-label={t("nav_ui_back_to_all_modules")}
-        aria-hidden={selectedModule === null}
-        tabindex={selectedModule === null ? -1 : 0}
-        onclick={handleDrillBack}
+        class:visible={selectedModule !== null || authView}
+        class:auth-back={authView}
+        bind:this={authBackButton}
+        aria-label={authView
+          ? t("nav_ui_back_to_modules")
+          : t("nav_ui_back_to_all_modules")}
+        aria-hidden={selectedModule === null && !authView}
+        tabindex={selectedModule === null && !authView ? -1 : 0}
+        onclick={authView ? handleAuthBack : handleDrillBack}
       >
         <i class="fas fa-arrow-left" aria-hidden="true"></i>
+        {#if authView}<span>{t("nav_ui_navigation")}</span>{/if}
       </button>
       <div class="header-content">
         <h2>
-          {selectedModule ? t(selectedModule.labelKey) : t("nav_ui_navigation")}
+          {authView
+            ? t("settings_account")
+            : selectedModule
+              ? t(selectedModule.labelKey)
+              : t("nav_ui_navigation")}
         </h2>
-        <div class="current-location">
-          <span class="module-name">
-            {selectedModule
-              ? t("nav_ui_choose_a_destination")
-              : t("nav_current_module", { module: localizedCurrentModuleName })}
-          </span>
-        </div>
+        {#if !authView}
+          <div class="current-location">
+            <span class="module-name">
+              {selectedModule
+                ? t("nav_ui_choose_a_destination")
+                : t("nav_current_module", {
+                    module: localizedCurrentModuleName,
+                  })}
+            </span>
+          </div>
+        {/if}
       </div>
       <button
         class="close-button"
@@ -280,7 +396,7 @@
       onintrostartcapture={resetListScroll}
     >
       <Crossfade
-        key={selectedModuleId ?? "__modules__"}
+        key={authView ? "__auth__" : (selectedModuleId ?? "__modules__")}
         mode="swap"
         motion="step"
         direction={drillDirection}
@@ -288,7 +404,18 @@
         animateHeight={true}
       >
         <div class="navigator-body">
-          {#if selectedModule}
+          {#if authView}
+            <div class="navigation-auth-view" onfocusin={revealAuthFocus}>
+              {#if InlineAuthComponent}
+                <InlineAuthComponent
+                  open
+                  inline
+                  initialMode="signin"
+                  onClose={handleAuthBack}
+                />
+              {/if}
+            </div>
+          {:else if selectedModule}
             <ModuleDestinationList
               module={selectedModule}
               sections={selectedSections}
@@ -315,69 +442,72 @@
     </div>
 
     <!-- Account Footer -->
-    <div class="account-footer">
-      <AccountRow
-        variant="drawer"
-        onclick={userPreviewState.isActive
-          ? undefined
-          : isFullAccount
-            ? handleProfileTap
-            : closeDrawer}
-      />
-      <div class="account-footer-actions" class:full-account={isFullAccount}>
-        {#if isFullAccount}
+    {#if !authView}
+      <div class="account-footer">
+        <AccountRow
+          variant="drawer"
+          onSignIn={handleSignIn}
+          onclick={userPreviewState.isActive
+            ? undefined
+            : isFullAccount
+              ? handleProfileTap
+              : closeDrawer}
+        />
+        <div class="account-footer-actions" class:full-account={isFullAccount}>
+          {#if isFullAccount}
+            <button
+              class="drawer-action inbox"
+              onclick={handleInboxClick}
+              aria-label={t("module_inbox")}
+            >
+              <div class="drawer-action-icon-wrapper">
+                <i class="fas fa-inbox" aria-hidden="true"></i>
+                {#if hasUnread && unreadCount > 0}
+                  <span class="drawer-unread-badge"
+                    >{unreadCount > 99 ? "99+" : unreadCount}</span
+                  >
+                {/if}
+              </div>
+              <span>{t("module_inbox")}</span>
+            </button>
+          {/if}
           <button
-            class="drawer-action inbox"
-            onclick={handleInboxClick}
-            aria-label={t("module_inbox")}
+            class="drawer-action"
+            onclick={handleAccountSettings}
+            aria-label={t("module_settings")}
           >
-            <div class="drawer-action-icon-wrapper">
-              <i class="fas fa-inbox" aria-hidden="true"></i>
-              {#if hasUnread && unreadCount > 0}
-                <span class="drawer-unread-badge"
-                  >{unreadCount > 99 ? "99+" : unreadCount}</span
-                >
-              {/if}
-            </div>
-            <span>{t("module_inbox")}</span>
+            <i class="fas fa-cog" aria-hidden="true"></i>
+            <span>{t("module_settings")}</span>
           </button>
-        {/if}
-        <button
-          class="drawer-action"
-          onclick={handleAccountSettings}
-          aria-label={t("module_settings")}
-        >
-          <i class="fas fa-cog" aria-hidden="true"></i>
-          <span>{t("module_settings")}</span>
-        </button>
-        <button
-          class="drawer-action release-notes"
-          onclick={handleWhatsNew}
-          aria-label={t("nav_ui_open_release_notes")}
-        >
-          <i class="fas fa-gift" aria-hidden="true"></i>
-          <span>{t("tab_settings_release_notes")}</span>
-        </button>
-        <button
-          class="drawer-action support"
-          onclick={() => supportModalState.show()}
-          aria-label={t("tab_community_support")}
-        >
-          <i class="fas fa-heart" aria-hidden="true"></i>
-          <span>{t("tab_community_support")}</span>
-        </button>
-        {#if isFullAccount}
           <button
-            class="drawer-action sign-out"
-            onclick={handleSignOut}
-            aria-label={t("nav_ui_sign_out")}
+            class="drawer-action release-notes"
+            onclick={handleWhatsNew}
+            aria-label={t("nav_ui_open_release_notes")}
           >
-            <i class="fas fa-sign-out-alt" aria-hidden="true"></i>
-            <span>{t("nav_ui_sign_out")}</span>
+            <i class="fas fa-gift" aria-hidden="true"></i>
+            <span>{t("tab_settings_release_notes")}</span>
           </button>
-        {/if}
+          <button
+            class="drawer-action support"
+            onclick={() => supportModalState.show()}
+            aria-label={t("tab_community_support")}
+          >
+            <i class="fas fa-heart" aria-hidden="true"></i>
+            <span>{t("tab_community_support")}</span>
+          </button>
+          {#if isFullAccount}
+            <button
+              class="drawer-action sign-out"
+              onclick={handleSignOut}
+              aria-label={t("nav_ui_sign_out")}
+            >
+              <i class="fas fa-sign-out-alt" aria-hidden="true"></i>
+              <span>{t("nav_ui_sign_out")}</span>
+            </button>
+          {/if}
+        </div>
       </div>
-    </div>
+    {/if}
   </div>
 </Drawer>
 
@@ -452,6 +582,20 @@
     flex-shrink: 0;
     gap: 16px; /* More space between header content and close button */
     position: relative;
+  }
+
+  .module-switcher-header.auth-view {
+    grid-template-columns: auto minmax(0, 1fr) var(--min-touch-target);
+  }
+
+  .drill-back-button.auth-back {
+    display: inline-flex;
+    gap: 0.5rem;
+    width: auto;
+    padding-inline: 0.75rem;
+    color: var(--theme-text);
+    font-size: var(--font-size-min);
+    font-weight: 600;
   }
 
   /* Subtle gradient accent at top of header */
@@ -605,10 +749,31 @@
     padding: 12px 20px 16px;
   }
 
+  .navigation-auth-view {
+    width: min(100%, 35rem);
+    margin-inline: auto;
+  }
+
   /* Landscape mobile - optimize for left drawer */
   @media (max-height: 600px) and (orientation: landscape) {
     .module-switcher-header {
       padding: 12px 14px 10px;
+    }
+
+    .module-switcher-header.auth-view {
+      padding-inline: 6px;
+      gap: 6px;
+    }
+
+    .module-switcher-header.auth-view h2 {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .drill-back-button.auth-back {
+      padding-inline: 4px;
+      gap: 4px;
     }
 
     .module-switcher-header h2 {
@@ -821,10 +986,6 @@
     .account-footer {
       padding: 6px;
       gap: 0;
-    }
-
-    :global(.account-footer .account-row.drawer) {
-      display: none;
     }
 
     .account-footer-actions,
