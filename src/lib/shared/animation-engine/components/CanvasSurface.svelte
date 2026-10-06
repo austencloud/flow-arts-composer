@@ -320,6 +320,12 @@ captureEffectDiagnostics to the context menu.
   // changes. Reads tryGet so this still works outside the viewer
   // (landing page, browse previews) - context absent → method never called.
   const viewerVisibilityCtx = tryGetViewerVisibilityContext();
+  // A solo pathway still carries both motions in its sequence. Relationship
+  // glyphs need both hands on stage, regardless of the saved glyph toggles.
+  const bothMotionsVisible = $derived(
+    (viewerVisibilityCtx?.leftMotion ?? true) &&
+      (viewerVisibilityCtx?.rightMotion ?? true)
+  );
   $effect(() => {
     if (!viewerVisibilityCtx) return;
     engineInstance.setMotionVisibility(
@@ -599,8 +605,8 @@ captureEffectDiagnostics to the context menu.
       {displayedMusicalPosition}
       {stepData}
       tkaGlyphVisible={effectiveTkaGlyphVisible}
-      {elementalGlyphVisible}
-      {propElementalGlyphVisible}
+      elementalGlyphVisible={elementalGlyphVisible && bothMotionsVisible}
+      propElementalGlyphVisible={propElementalGlyphVisible && bothMotionsVisible}
       {propElementalType}
       {glyphFrame}
       stepNumbersVisible={effectiveBeatNumbersVisible}
