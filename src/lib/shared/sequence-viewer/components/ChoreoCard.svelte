@@ -24,6 +24,7 @@
   import { onDestroy, tick } from "svelte";
   import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
   import type { authState as AuthStateModule } from "$lib/shared/auth/state/auth-state.svelte";
+  import { hasSavedFirebaseUser } from "$lib/shared/auth/services/saved-firebase-user";
   import ContextMenu from "$lib/shared/components/context-menu/ContextMenu.svelte";
   import type { ContextMenuState } from "$lib/shared/components/context-menu/context-menu-types";
   import { featureFlagService } from "$lib/shared/auth/services/post-hog-feature-flag-service.svelte";
@@ -264,6 +265,7 @@
   // signed-out visitor who dominates the landing path.
   let authApi = $state<typeof AuthStateModule | null>(null);
   let authLoadFailed = $state(false);
+  let noSavedSession = $state(false);
   let authLoadPromise: Promise<void> | null = null;
   let liveContentDomVersion = $state(0);
   let contentReadyScheduled = false;
@@ -275,6 +277,13 @@
     if (authLoadPromise) return;
     authLoadPromise = (async () => {
       try {
+        // With no saved session the visitor is signed out, and a signed-out
+        // QR has its answer already. Starting auth to learn that opened
+        // Firestore's persistence and listeners in the /composer gallery.
+        if (!(await hasSavedFirebaseUser())) {
+          noSavedSession = true;
+          return;
+        }
         const mod = await import("$lib/shared/auth/state/auth-state.svelte");
         authApi = mod.authState;
         // Idempotent; app-mode boot has normally already run it.
@@ -620,7 +629,11 @@
   // mandala and swaps the code in a moment later. A capture taken in between
   // keeps the mandala, so the card is not settled until auth is.
   const qrAuthPending = $derived(
-    showQRCode && !qrUrl && !authLoadFailed && !(authApi?.initialized ?? false)
+    showQRCode &&
+      !qrUrl &&
+      !authLoadFailed &&
+      !noSavedSession &&
+      !(authApi?.initialized ?? false)
   );
   const qrSettled = $derived(!qrAuthPending && qrState.settled);
 
