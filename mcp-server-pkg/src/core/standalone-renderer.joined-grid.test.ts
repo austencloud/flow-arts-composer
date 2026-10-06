@@ -24,7 +24,7 @@ function staticMotion(
   hand: "left" | "right",
   location: string,
   orientation: string
-): MotionInput {
+) {
   return {
     motionType: "static",
     rotationDirection: "no_rotation",
@@ -34,7 +34,7 @@ function staticMotion(
     endOrientation: orientation,
     turns: 0,
     hand,
-  };
+  } satisfies MotionInput;
 }
 
 function staticPair(
@@ -42,14 +42,14 @@ function staticPair(
   rightLocation: string,
   orientation: string,
   conjoined?: GridJoinSpec | null
-): PictographInput {
+) {
   return {
     letter: "α",
     gridMode: "diamond",
     leftMotion: staticMotion("left", leftLocation, orientation),
     rightMotion: staticMotion("right", rightLocation, orientation),
     conjoined,
-  };
+  } satisfies PictographInput;
 }
 
 /** The `<g>` element starting at `start`, through its matching close. */
