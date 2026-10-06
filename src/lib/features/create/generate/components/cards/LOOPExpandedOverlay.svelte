@@ -628,16 +628,18 @@ Animates forward in z-axis and expands to fill the container space
   />
 
   {#snippet modeSelector()}
-    <SegmentedControl
-      options={[
-        { value: "single", label: t("create_deep_single") },
-        { value: "combo", label: t("create_deep_combo") },
-      ]}
-      value={isMultiSelectMode ? "combo" : "single"}
-      onchange={(v) => handleModeChange(v === "combo")}
-      size="sm"
-      color="accent"
-    />
+    <div class="mode-selector">
+      <SegmentedControl
+        options={[
+          { value: "single", label: t("create_deep_single") },
+          { value: "combo", label: t("create_deep_combo") },
+        ]}
+        value={isMultiSelectMode ? "combo" : "single"}
+        onchange={(v) => handleModeChange(v === "combo")}
+        size="sm"
+        color="accent"
+      />
+    </div>
   {/snippet}
 
   {#snippet configurator(
@@ -892,6 +894,11 @@ Animates forward in z-axis and expands to fill the container space
     overflow-y: auto;
     overflow-anchor: none;
     overscroll-behavior: contain;
+  }
+
+  .mode-selector {
+    width: min(100%, 360px);
+    margin-inline: auto;
   }
 
   .mobile-loop-stage {
