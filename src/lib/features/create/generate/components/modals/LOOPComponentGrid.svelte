@@ -146,7 +146,7 @@ LOOPComponentGrid.svelte - Layout for LOOP component selection buttons
     grid-template-columns: 1fr;
     grid-auto-rows: minmax(96px, auto);
     max-width: 960px;
-    align-content: center;
+    align-content: start;
     min-height: 100%;
   }
 
