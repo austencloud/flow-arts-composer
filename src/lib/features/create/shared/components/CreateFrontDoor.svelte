@@ -430,6 +430,51 @@
     }
   }
 
+  /* On wide screens, six equal choices keep the content close to its icon
+     instead of leaving two enormous panels above four smaller ones. */
+  @container create-entry (min-width: 1600px) and (min-height: 641px) {
+    .method-index[data-method-count="6"] {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: clamp(20px, 1.2cqi, 40px);
+    }
+
+    .method-index[data-method-count="6"] .method-item.primary-method,
+    .method-index[data-method-count="6"] .method-item:not(.primary-method) {
+      grid-column: auto;
+    }
+
+    .method-index[data-method-count="6"] .method-card {
+      --settings-method-icon-size: clamp(96px, 13cqh, 280px);
+      --font-size-compact: clamp(0.75rem, 1cqh, 1.375rem);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: clamp(20px, 2cqh, 40px);
+      padding: clamp(28px, 3cqi, 64px);
+      text-align: center;
+    }
+
+    .method-index[data-method-count="6"] .method-icon {
+      font-size: clamp(2.5rem, 5.5cqh, 7rem);
+    }
+
+    .method-index[data-method-count="6"] .method-copy {
+      width: 100%;
+      max-width: 24em;
+      font-size: clamp(1rem, 1.8cqh, 2.25rem);
+      gap: clamp(10px, 1cqh, 20px);
+    }
+
+    .method-index[data-method-count="6"] .method-name {
+      font-size: clamp(1.75rem, 3.6cqh, 4.75rem);
+    }
+
+    .method-index[data-method-count="6"] .method-description {
+      font-size: inherit;
+      text-wrap: balance;
+    }
+  }
+
   @container create-entry (max-height: 640px) and (min-width: 760px) {
     .front-door-inner {
       width: calc(100% - 28px);
