@@ -45,20 +45,12 @@ export interface BaseLayerKeyComponents {
   showGrid: boolean;
   /** Present only for joined grids (e.g. "e1"), so single-grid keys stay stable. */
   join?: string;
-}
-
-export interface GridPointsLayerKeyComponents {
+  // The grid's hand points are painted under the props in this layer.
   showNonRadialPoints: boolean;
   handPointVisibility: "all" | "active" | "none";
-  gridMode: string;
-  darkMode: boolean;
-  size: number;
-  showGrid: boolean;
-  /** Present only for joined grids (e.g. "e1"). */
-  join?: string;
   /**
-   * Joined grids showing only active hand points: the points each hand
-   * lights, so cells lighting different points never share an image.
+   * Only active hand points shown: the points each hand lights, so cells
+   * lighting different points never share an image.
    */
   activeHandPoints?: string;
 }
@@ -156,7 +148,17 @@ export function getBaseLayerComponents(
     ...(pictograph._prepared?.join && {
       join: gridJoinKey(pictograph._prepared.join),
     }),
+    showNonRadialPoints: options.showNonRadialPoints,
+    handPointVisibility: options.handPointVisibility,
+    ...(options.handPointVisibility === "active" && {
+      activeHandPoints: activeHandPointsKey(pictograph),
+    }),
   };
+}
+
+function activeHandPointsKey(pictograph: PreparedPictographData): string {
+  const active = getJoinedActiveHandPoints(pictograph);
+  return `b:${[...active.left].sort()}|r:${[...active.right].sort()}`;
 }
 
 export function deriveBaseLayerKey(
@@ -167,33 +169,9 @@ export function deriveBaseLayerKey(
   return `base:${hashComponents(components)}`;
 }
 
-export function getGridPointsLayerComponents(
-  pictograph: PreparedPictographData,
-  options: LayerRenderOptions
-): GridPointsLayerKeyComponents {
-  const prepared = pictograph._prepared;
-  const join = prepared?.join;
-  const active =
-    join && options.handPointVisibility === "active"
-      ? getJoinedActiveHandPoints(pictograph)
-      : null;
-  return {
-    showNonRadialPoints: options.showNonRadialPoints,
-    handPointVisibility: options.handPointVisibility,
-    gridMode: prepared?.gridMode ?? "diamond",
-    darkMode: options.darkMode,
-    size: options.size,
-    showGrid: options.showGrid ?? true,
-    ...(join && { join: gridJoinKey(join) }),
-    ...(active && {
-      activeHandPoints: `b:${[...active.left].sort()}|r:${[...active.right].sort()}`,
-    }),
-  };
-}
-
 /**
- * The hand points each hand lights on joined grids: its start and end
- * locations, in its own grid.
+ * The hand points each hand lights: its start and end locations (on joined
+ * grids, in its own grid).
  */
 export function getJoinedActiveHandPoints(
   pictograph: PreparedPictographData
@@ -209,14 +187,6 @@ export function getJoinedActiveHandPoints(
     left: lit(pictograph.motions?.left),
     right: lit(pictograph.motions?.right),
   };
-}
-
-export function deriveGridPointsLayerKey(
-  pictograph: PreparedPictographData,
-  options: LayerRenderOptions
-): string {
-  const components = getGridPointsLayerComponents(pictograph, options);
-  return `grid:${hashComponents(components)}`;
 }
 
 export function getTKALayerComponents(

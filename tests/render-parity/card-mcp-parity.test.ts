@@ -5,6 +5,7 @@ import {
   cardParityMetrics,
   assertCardParity,
   CARD_PARITY_LIMITS,
+  startHandPointPixels,
 } from "./card-parity-metrics";
 import { renderComposerCard } from "./render-composer-card";
 
@@ -60,6 +61,35 @@ describe("Composer ⇄ MCP card PNG parity", () => {
       );
     }
   );
+  it.each(["composer-light", "print-footer", "joined-grids-dark"])(
+    "negative control: a grid dot over the Start-cell staffs fails the hand-point regions (%s)",
+    async (name) => {
+      const testCase = cardParityCases().find((entry) => entry.name === name)!;
+      const canvas = await renderComposerCard(testCase);
+      const clean = await canvasImage(canvas);
+      // Paint the dot the layer compositor once drew over each staff.
+      const ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
+      ctx.fillStyle = testCase.options.darkMode ? "#ffffff" : "#000000";
+      ctx.globalAlpha = testCase.options.darkMode ? 0.85 : 1;
+      for (const point of startHandPointPixels(testCase)) {
+        ctx.beginPath();
+        ctx.arc(point.x, point.y, point.radius, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      const dotted = await canvasImage(canvas);
+      const regions = cardParityMetrics(dotted, clean, testCase, {
+        startHandPoints: true,
+      }).filter((region) => region.name.endsWith("HandPoint"));
+      expect(regions.map((region) => region.name)).toEqual([
+        "leftHandPoint",
+        "rightHandPoint",
+      ]);
+      for (const region of regions)
+        expect(region.percent).toBeGreaterThan(
+          CARD_PARITY_LIMITS[region.name]!
+        );
+    }
+  );
   for (const testCase of cardParityCases()) {
     it(`${testCase.name}: reports strict per-region parity for both adapters`, async () => {
       const composer = await canvasImage(await renderComposerCard(testCase));
@@ -72,7 +102,8 @@ describe("Composer ⇄ MCP card PNG parity", () => {
         const report = cardParityMetrics(
           composer,
           await decodePng(base64),
-          testCase
+          testCase,
+          { startHandPoints: true }
         );
         console.info(`${testCase.name}/${adapter}`, report);
         assertCardParity(report, `${testCase.name}/${adapter}`);
