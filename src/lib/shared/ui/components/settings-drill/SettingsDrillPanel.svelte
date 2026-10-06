@@ -261,7 +261,7 @@ named in .claude/rules/crossfade-primitive.md.
     }
   }
 
-  @container (min-width: 940px) {
+  @container (min-width: 820px) {
     .row-list.cards {
       grid-template-columns: repeat(3, minmax(0, 1fr));
     }
