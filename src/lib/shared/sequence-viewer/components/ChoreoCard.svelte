@@ -32,6 +32,9 @@
   import { getVisibilityStateManager } from "$lib/shared/pictograph/shared/state/visibility-state.svelte";
   import { getSettings } from "$lib/shared/application/state/app-state.svelte";
   import { tryGetViewerVisibilityContext } from "../context/viewer-visibility-context";
+  import { tryGetCardGridLayoutContext } from "../context/card-grid-layout-context";
+  import { withAnimationGridJoin } from "$lib/shared/animation-engine/services/conjoined-grid-layout";
+  import { sequenceGridJoinKey } from "@tka/render-core";
   import { getScanCardCloudProbe } from "$lib/shared/sequence-viewer/scan-card-cloud-context";
   import { CANONICAL_CARD_VISIBILITY } from "$lib/shared/render/services/cloud-cell-key";
   import { normalizePropLook } from "$lib/shared/pictograph/prop/domain/prop-look";
@@ -557,6 +560,18 @@
 
   // True only under a scan-origin /sequence route — cells use the cloud cache.
   const cloudProbeEnabled = getScanCardCloudProbe();
+  // Inside the viewer, cells join their grids while its 2D animation does. A
+  // scanned card stands for the printed one and keeps only saved joins.
+  const viewerGridLayout = tryGetCardGridLayoutContext();
+  const cardSequence = $derived(
+    viewerGridLayout && !cloudProbeEnabled
+      ? withAnimationGridJoin(sequence, viewerGridLayout())
+      : sequence
+  );
+  // Live cells draw one grid only, so a joined card renders image cells.
+  const livePictographs = $derived(
+    !cloudProbeEnabled && !sequenceGridJoinKey(cardSequence)
+  );
   const snapshotPrimaryPropColors = $derived(
     primaryPropColors !== undefined
       ? primaryPropColors
@@ -913,8 +928,8 @@
   const renderEngine = createChoreoCardRenderEngine(
     renderModel,
     () => ({
-      sequence,
-      livePictographs: !cloudProbeEnabled,
+      sequence: cardSequence,
+      livePictographs,
       renderOptions: buildRenderOptionsFn(),
       leftPropType,
       rightPropType,
@@ -950,7 +965,7 @@
       propLook: cardPropLook,
       triangleGrip: cardTriangleGrip,
       primaryPropColors: effectivePrimaryPropColors,
-      sequence,
+      sequence: cardSequence,
       leftPropType,
       rightPropType,
       browseViewMode,

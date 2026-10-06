@@ -50,6 +50,8 @@ import { getRenderContextRegistry } from "$lib/shared/animation-engine/get-rende
 import { renderMandalaOpener } from "$lib/shared/share/services/video-opener-mandala";
 import { settingsService } from "$lib/shared/settings/state/settings-state.svelte";
 import { buildCardRenderOptions } from "$lib/shared/share/services/card-render-options";
+import { getAnimationVisibilityManager } from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
+import { withAnimationGridJoin } from "$lib/shared/animation-engine/services/conjoined-grid-layout";
 import type { ResolvedAutoLayout } from "$lib/shared/render/services/container-aware-layout";
 import {
   sanitizeFilename,
@@ -985,10 +987,16 @@ export function createExportCoordinator(deps: ExportCoordinatorDeps) {
         showToast("Sequence has no steps to export.", "error");
         return false;
       }
+      // A card exported while the 2D animation joins its grids comes out
+      // joined, as the live card beside it draws.
+      const cardSequence = withAnimationGridJoin(
+        effectiveSequence,
+        getAnimationVisibilityManager().getGridLayout()
+      );
       // All card toggles (word/difficulty/LOOP/mandala/QR/grid/footer/columns/
       // start-layout) + hand-path suppression come from the one canonical builder,
       // so the downloaded PNG matches the live ChoreoCard preview.
-      const renderOptions = buildCardRenderOptions(effectiveSequence, {
+      const renderOptions = buildCardRenderOptions(cardSequence, {
         propConfig: deps.getPropConfig?.(),
         darkMode: exportOptions.imageDarkMode,
         isHandPath,
@@ -996,7 +1004,7 @@ export function createExportCoordinator(deps: ExportCoordinatorDeps) {
       });
       await sequenceModalExporter.exportImage(
         renderOptions,
-        { sequence: effectiveSequence },
+        { sequence: cardSequence },
         callbacks
       );
     }
