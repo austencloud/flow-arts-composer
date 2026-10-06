@@ -815,6 +815,7 @@
           saveOnOpen={saveFromShapeEngine}
           {isMobile}
           startInCardThenSplit={!!scanOriginCode}
+          demoScanProps={isDemo && !!scanOriginCode}
           embedded={isEmbedded}
           onClose={handleClose}
           navigation={{

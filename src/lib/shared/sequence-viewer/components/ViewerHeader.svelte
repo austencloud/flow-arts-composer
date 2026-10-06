@@ -62,6 +62,7 @@
     onClose: () => void;
     hidden?: boolean;
     embedded?: boolean;
+    demoScanProps?: boolean;
     navigation?: HeaderNavigation;
     /** A non-word title that outranks `sequence.word` — e.g. a tunnel's own
      *  name, which is a composition (cast, formation, props) rather than a
@@ -110,6 +111,7 @@
     onClose,
     hidden = false,
     embedded = false,
+    demoScanProps = false,
     navigation,
     titleOverride = null,
     openAppHref,
@@ -190,12 +192,20 @@
   let shareMenuOpen = $state(false);
   let viewingControl = $state<{ show: () => void }>();
   const showViewingProps = $derived(
-    !hidden && (ctx.leftPropType !== "hand" || ctx.rightPropType !== "hand")
+    !hidden &&
+      !demoScanProps &&
+      (ctx.leftPropType !== "hand" || ctx.rightPropType !== "hand")
   );
   const viewingLabel = $derived(
     viewingPropLabel(
-      resolveViewingProps(getSettings(), sequence, ctx.collectionPropType)
-        .config
+      demoScanProps && ctx.leftPropType && ctx.rightPropType
+        ? {
+            leftPropType: ctx.leftPropType,
+            rightPropType: ctx.rightPropType,
+            catDogMode: ctx.catDogModeEnabled ?? false,
+          }
+        : resolveViewingProps(getSettings(), sequence, ctx.collectionPropType)
+            .config
     )
   );
 
