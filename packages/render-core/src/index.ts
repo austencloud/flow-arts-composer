@@ -220,6 +220,17 @@ export { calculateArrowRotation } from "./calculations/arrow-rotation.js";
 export { resolveFullArrowAssetPath } from "./calculations/arrow-asset-path.js";
 export type { FullArrowAssetPathInput } from "./calculations/arrow-asset-path.js";
 
+// Canonical arrow placement frame (box is the diamond frame turned 45°)
+export {
+  BOX_FRAME_ROTATION_DEGREES,
+  placementFrameRotation,
+  rotateGridLocation,
+  rotatePlacementAngleToDisplayed,
+  rotatePlacementVectorToDisplayed,
+  toCanonicalLocation,
+  toDisplayedLocation,
+} from "./calculations/placement-frame.js";
+
 // Dash location
 export { calculateDashLocation } from "./calculations/dash-location.js";
 export type { DashLocationInput } from "./calculations/dash-location.js";

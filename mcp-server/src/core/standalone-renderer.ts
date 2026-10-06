@@ -62,10 +62,14 @@ import {
   type JoinVec,
   type MotionType as RenderMotionType,
   type Orientation as RenderOrientation,
+  placementFrameRotation,
+  rotatePlacementAngleToDisplayed,
+  rotatePlacementVectorToDisplayed,
+  toCanonicalLocation,
 } from "@tka/render-core";
 // Arrow calculations still use local files (they have MCP-specific logic)
 import {
-  calculateArrowPlacement,
+  calculateArrowLocation,
   calculateArrowRotation,
 } from "./arrow-placement.js";
 import { derivePropElementalType } from "./prop-tnd.js";
@@ -1205,7 +1209,16 @@ ${svgParts.join("\n")}
       startOrientation === Orientation.IN ||
       startOrientation === Orientation.OUT;
 
-    let placement;
+    // Box is the diamond placement frame turned 45Â° clockwise. The arrow's
+    // location and anchor come from the displayed grid, but its glyph angle and
+    // adjustment are looked up as the diamond arrow it presents and then turned
+    // back onto the box, as the app's canonical placement frame does.
+    const frameRotation = placementFrameRotation(gridMode);
+    const canonicalGridMode = frameRotation ? GridMode.DIAMOND : gridMode;
+    const toCanonical = (location: string) =>
+      toCanonicalLocation(location, frameRotation);
+
+    let location: GridLocation;
 
     // For DASH motions, use the dash location calculator
     if (motionType === "dash") {
@@ -1231,91 +1244,66 @@ ${svgParts.join("\n")}
         gridMode,
       };
 
-      const dashLocation = calculateDashLocation(dashLocationInput);
-
-      // Get coordinates for the calculated dash location
-      const position = getLayer2PointCoordinates(dashLocation, gridMode);
-
-      // Calculate rotation for dash arrow at this location
-      const rotation = calculateArrowRotation(
-        motionType,
-        dashLocation,
-        motion.rotationDirection,
-        startLocation,
-        endLocation,
-        isRadialOrientation
-      );
-
-      placement = {
-        x: position.x,
-        y: position.y,
-        rotation,
-        location: dashLocation,
-      };
+      location = calculateDashLocation(dashLocationInput) as GridLocation;
     } else {
-      // Use the standard placement calculation for non-dash motions
-      placement = calculateArrowPlacement(
+      location = calculateArrowLocation(
         motionType as MotionType,
         startLocation,
-        endLocation,
-        motion.rotationDirection,
-        gridMode,
-        isRadialOrientation
+        endLocation
       );
     }
+
+    const position = getLayer2PointCoordinates(location, gridMode);
+    const canonicalLocation = toCanonical(location) as GridLocation;
+    const rotation = rotatePlacementAngleToDisplayed(
+      calculateArrowRotation(
+        motionType,
+        canonicalLocation,
+        motion.rotationDirection,
+        toCanonical(startLocation),
+        toCanonical(endLocation),
+        isRadialOrientation
+      ),
+      frameRotation
+    );
+
+    const adjustmentMotion = (
+      source: MotionInput,
+      hand: HandSide
+    ): MotionAdjustmentInput => ({
+      letter: pictograph.letter,
+      motionType: source.motionType,
+      rotationDirection: source.rotationDirection,
+      startLocation: toCanonical(source.startLocation),
+      endLocation: toCanonical(source.endLocation),
+      hand,
+      turns: source.turns,
+      endOrientation: source.endOrientation as string | undefined,
+    });
 
     // Calculate arrow adjustment from special placement data
     const adjustmentInput: PictographAdjustmentInput = {
       letter: pictograph.letter,
-      gridMode,
+      gridMode: canonicalGridMode,
       endPlacement: pictograph.endPlacement,
-      leftMotion: {
-        letter: pictograph.letter,
-        motionType: pictograph.leftMotion.motionType,
-        rotationDirection: pictograph.leftMotion.rotationDirection,
-        startLocation: pictograph.leftMotion.startLocation,
-        endLocation: pictograph.leftMotion.endLocation,
-        hand: "left",
-        turns: pictograph.leftMotion.turns,
-        endOrientation: pictograph.leftMotion.endOrientation as
-          | string
-          | undefined,
-      },
-      rightMotion: {
-        letter: pictograph.letter,
-        motionType: pictograph.rightMotion.motionType,
-        rotationDirection: pictograph.rightMotion.rotationDirection,
-        startLocation: pictograph.rightMotion.startLocation,
-        endLocation: pictograph.rightMotion.endLocation,
-        hand: "right",
-        turns: pictograph.rightMotion.turns,
-        endOrientation: pictograph.rightMotion.endOrientation as
-          | string
-          | undefined,
-      },
+      leftMotion: adjustmentMotion(pictograph.leftMotion, "left"),
+      rightMotion: adjustmentMotion(pictograph.rightMotion, "right"),
     };
 
-    const motionAdjustmentInput: MotionAdjustmentInput = {
-      letter: pictograph.letter,
-      motionType: motion.motionType,
-      rotationDirection: motion.rotationDirection,
-      startLocation: motion.startLocation,
-      endLocation: motion.endLocation,
-      hand: motion.hand,
-      turns: motion.turns,
-      endOrientation: motion.endOrientation as string | undefined,
-    };
-
-    const [adjustX, adjustY] = calculateArrowAdjustment(
+    const [canonicalAdjustX, canonicalAdjustY] = calculateArrowAdjustment(
       adjustmentInput,
-      motionAdjustmentInput,
-      placement.location as unknown as GridLocation,
+      adjustmentMotion(motion, motion.hand),
+      canonicalLocation,
       { solo: !!joinOffset }
+    );
+    const adjustment = rotatePlacementVectorToDisplayed(
+      { x: canonicalAdjustX, y: canonicalAdjustY },
+      frameRotation
     );
 
     // Apply adjustment to placement
-    const finalX = placement.x + adjustX + (joinOffset?.x ?? 0);
-    const finalY = placement.y + adjustY + (joinOffset?.y ?? 0);
+    const finalX = position.x + adjustment.x + (joinOffset?.x ?? 0);
+    const finalY = position.y + adjustment.y + (joinOffset?.y ?? 0);
 
     // Determine arrow file path based on motion type and start orientation
     const arrowPath = this.getArrowPath(
@@ -1382,7 +1370,7 @@ ${svgParts.join("\n")}
       // Canvas2D renderer transform order:
       // translate to position → rotate → mirror (if needed) → translate by -center
       const mirrorTransform = shouldMirror ? " scale(-1, 1)" : "";
-      return `<g filter="url(#arrow-halo)" transform="translate(${finalX}, ${finalY}) rotate(${placement.rotation})${mirrorTransform} translate(${-centerX}, ${-centerY})">
+      return `<g filter="url(#arrow-halo)" transform="translate(${finalX}, ${finalY}) rotate(${rotation})${mirrorTransform} translate(${-centerX}, ${-centerY})">
   ${innerContent}
 </g>`;
     } catch (error) {

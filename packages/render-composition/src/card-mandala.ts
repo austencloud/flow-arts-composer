@@ -18,7 +18,7 @@ const LOCATION_ANGLES: Record<string, number> = {
   s: PI / 2,
   sw: (3 * PI) / 4,
   w: PI,
-  nw: (3 * PI) / 2,
+  nw: (5 * PI) / 4,
   n: -PI / 2,
   ne: -PI / 4,
   c: 0,
