@@ -134,6 +134,8 @@ const PROP_TYPE_ENCODE: Record<PropType, string> = {
   // after 7, the way the earlier standard-size variants (baton, fire staff,
   // classic club) did.
   [PropType.TRIANGLE]: "8",
+  // Stick is a standard-size staff variant too: the next free digit.
+  [PropType.STICK]: "9",
   [PropType.BUUGENG]: "B",
   [PropType.BIGBUUGENG]: "b",
   [PropType.TRIGENG]: "J",

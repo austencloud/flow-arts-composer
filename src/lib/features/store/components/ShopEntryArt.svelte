@@ -29,6 +29,9 @@
     maxCards?: number;
     /** Show exactly this many cards regardless of width (1 = a single card). */
     exactCount?: number;
+    freshFront?: boolean;
+    qrUrl?: string;
+    onCoverResolved?: (card: CoverCard, url: string) => void;
     /** How wide the printed guide's cover renders. Hosts whose art box is
      *  short and wide pass a height-aware value so the cover isn't cropped. */
     bookWidth?: string;
@@ -42,6 +45,9 @@
     maxCardWidth = 150,
     maxCards = 5,
     exactCount,
+    freshFront = false,
+    qrUrl,
+    onCoverResolved,
     bookWidth = "clamp(6rem, 42%, 11rem)",
   }: Props = $props();
 
@@ -64,6 +70,9 @@
       {maxCardWidth}
       {maxCards}
       {exactCount}
+      {freshFront}
+      {qrUrl}
+      {onCoverResolved}
     />
   {/await}
 {:else if product.type === "guide" && ready}

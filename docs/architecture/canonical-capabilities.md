@@ -190,8 +190,12 @@ decoder skips the fourth beat segment an unreleased build once wrote. The
 public projection and loaders, the arena repository and the short-code
 payloads carry the sequence's join too. A sequence with no join writes nothing anywhere, so its
 links, short codes, QR digests and hashes stay as they were; a joined sequence
-mints its own. Mirror, flip, rotate and rewind do not yet turn a join's
-direction.
+mints its own. `create/services/grid-join-transforms.ts` turns the join with
+the sequence transforms: mirror, flip and rotate (and the deck's
+`rotateSequenceGeometry`) turn `toward` the way they move a hand location,
+Swap Hands points it back because the blue grid takes red's place, and rewind
+keeps it. A transform aimed at one hand leaves the grids, and the join, where
+they are.
 
 `ChoreoCard` resolves its palette once for cells and `CardGridLayout` mandalas.
 Animation frame parameters carry the same hand pair independently of effect

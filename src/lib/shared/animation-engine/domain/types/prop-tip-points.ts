@@ -599,6 +599,9 @@ export const PROP_TIP_POINTS: Record<string, PropTipConfig> = {
   staff_v2: STAFF_V2_TIP_POINTS,
   capsule_baton: CAPSULE_BATON_TIP_POINTS,
   fire_double_staff: FIRE_DOUBLE_STAFF_TIP_POINTS,
+  // Both branches end on the axis at the staff's half-width; the saw cuts slant
+  // across that point, so the staff's own ends are the stick's.
+  stick: STAFF_TIP_POINTS,
 
   // Club family
   club: CLUB_TIP_POINTS,

@@ -2,6 +2,7 @@
   import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import {
     compressWord,
+    parseWordNotation,
     simplifyAndTruncate,
   } from "$lib/shared/foundation/utils/word-simplifier";
   import WordActionMenu from "$lib/shared/choreo-card/components/WordActionMenu.svelte";
@@ -168,8 +169,11 @@
   // animation headers, card glyphs, and exports.
   const compressedSegments = $derived.by(() => {
     if (!word || isContextualMessage) return null;
+    const notationUnits = parseWordNotation(word);
+    const skewedCount = notationUnits.filter((unit) => unit.skewed).length;
+    if (skewedCount > 0 && skewedCount < notationUnits.length) return null;
     const segments = compressWord(word);
-    if (!segments.some((segment) => segment.repeat > 1)) return null;
+    if (segments.length < 2 && !segments.some((segment) => segment.repeat > 1)) return null;
     const letterCount = segments.reduce(
       (count, segment) => count + segment.tokens.length,
       0

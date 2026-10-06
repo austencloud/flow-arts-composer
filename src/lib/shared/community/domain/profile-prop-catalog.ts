@@ -39,6 +39,7 @@ export const PROFILE_PROP_FAMILIES: readonly ProfilePropFamily[] = [
         PropType.STAFF2,
         PropType.CAPSULE_BATON,
         PropType.FIRE_DOUBLE_STAFF,
+        PropType.STICK,
         PropType.ENERGY_STAFF,
       ]),
     ],

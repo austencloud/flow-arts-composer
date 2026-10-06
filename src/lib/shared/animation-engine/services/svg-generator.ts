@@ -29,6 +29,7 @@ import {
 import {
   modelSpriteArtwork,
   parseModelRenderKey,
+  propArtworkStem,
   type PropSpriteSide,
 } from "$lib/shared/pictograph/prop/domain/prop-look";
 import {
@@ -272,7 +273,7 @@ export function resolvePropSvgPath(
     return modelSpriteArtwork(modelRenderKey.propType, side);
   }
   const family = isAnimatedOnlyProp(propTypeLower) ? "animated" : "pictograph";
-  return `/images/props/${family}/${propTypeLower}.svg`;
+  return `/images/props/${family}/${propArtworkStem(propTypeLower, side)}.svg`;
 }
 
 // The fan build helpers live with the fan appearance domain so the static
@@ -351,7 +352,10 @@ export async function generatePropSvg(
     const { width, height } = extractViewBoxDimensions(svg);
     return { svg, width, height };
   }
-  const path = resolvePropSvgPath(propTypeLower);
+  const path = resolvePropSvgPath(
+    propTypeLower,
+    side ?? spriteSideForColor(color)
+  );
   const fanRenderKey = parseFanRenderKey(propTypeLower);
   const fetchedSvg = await fetchPropSvg(path);
   const semanticPropType =
