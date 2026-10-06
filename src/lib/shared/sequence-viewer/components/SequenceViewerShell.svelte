@@ -1958,7 +1958,9 @@
     display: flex;
     flex-direction: column;
     height: 100%;
-    overflow: hidden;
+    /* The parked practice panel extends past the viewport during its slide.
+       Clip it without making the shell scroll when a bottom control gains focus. */
+    overflow: clip;
     background: var(--theme-panel-bg, #0a0a14);
   }
 
