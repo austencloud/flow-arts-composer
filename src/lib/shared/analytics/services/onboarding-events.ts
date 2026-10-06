@@ -5,7 +5,8 @@
  * (offered -> accepted -> completed, or offered -> declined) plus first-run
  * completion. Keeping every call site behind these functions means the event
  * names and property shape live in one place instead of drifting per
- * call site, mirroring landing-analytics.ts's captureEvent wrappers.
+ * call site, mirroring the captureEvent wrappers in
+ * `$lib/shared/analytics/landing-events`.
  *
  * `source` distinguishes the normal automatic app-entry flow from a user
  * manually re-triggering the tutorial (Settings "replay tutorial").

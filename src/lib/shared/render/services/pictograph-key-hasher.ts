@@ -15,10 +15,7 @@ import {
 } from "$lib/shared/pictograph/prop/domain/fan-appearance";
 import { renderedPropLook } from "$lib/shared/pictograph/prop/domain/prop-look";
 import { renderedTriangleGrip } from "$lib/shared/pictograph/prop/domain/triangle-appearance";
-import {
-  gridJoinKey,
-  isGridJoin,
-} from "@tka/render-core";
+import { gridJoinKey, isGridJoin } from "@tka/render-core";
 // getSettings loaded dynamically to avoid pulling $app/environment into worker bundle
 
 interface MotionKeyData {
@@ -330,9 +327,10 @@ export class PictographKeyHasher {
       leftReversal: reversalsVisible ? (step.leftReversal ?? false) : false,
       rightReversal: reversalsVisible ? (step.rightReversal ?? false) : false,
       betaSwapped: data.betaSwapped ?? false,
-      ...(isGridJoin(data.conjoined) && {
-        conjoined: gridJoinKey(data.conjoined),
-      }),
+      ...("conjoined" in data &&
+        isGridJoin(data.conjoined) && {
+          conjoined: gridJoinKey(data.conjoined),
+        }),
       ...(hasVisibleMotion && {
         arrowRenderRevision: CANONICAL_HAND_ARROW_RENDER_REVISION,
       }),
