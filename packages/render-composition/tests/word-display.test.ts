@@ -16,4 +16,31 @@ describe("portable card title display", () => {
       { tokens: ["C", "D"], repeat: 1 },
     ]);
   });
+
+  it("groups an inverted LOOP at the half boundary without repeated runs", () => {
+    expect(compressWord("MW-Θ-QNX-Ω-P")).toEqual([
+      { tokens: ["M", "W-", "Θ-", "Q"], repeat: 1 },
+      { tokens: ["N", "X-", "Ω-", "P"], repeat: 1 },
+    ]);
+  });
+
+  it("does not group a mismatched or incomplete inverse", () => {
+    expect(compressWord("MW-Θ-QNX-Ω-Q")).toEqual([
+      { tokens: ["M", "W-", "Θ-", "Q", "N", "X-", "Ω-", "Q"], repeat: 1 },
+    ]);
+    expect(compressWord("MW-Θ-QNX-Ω-")).toEqual([
+      { tokens: ["M", "W-", "Θ-", "Q", "N", "X-", "Ω-"], repeat: 1 },
+    ]);
+  });
+
+  it("retains repetition inside each inverse half", () => {
+    expect(compressWord("ABABBABA")).toEqual([
+      { tokens: ["A", "B"], repeat: 2 },
+      { tokens: ["B", "A"], repeat: 2 },
+    ]);
+  });
+
+  it("retains a single compressed repeated group", () => {
+    expect(compressWord("AAAA")).toEqual([{ tokens: ["A"], repeat: 4 }]);
+  });
 });

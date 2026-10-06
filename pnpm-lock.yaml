@@ -665,6 +665,10 @@ importers:
         version: 5.9.3
 
   packages/render-composition:
+    dependencies:
+      '@tka/sequence-engine':
+        specifier: workspace:*
+        version: link:../sequence-engine
     devDependencies:
       vitest:
         specifier: ^3.0.0

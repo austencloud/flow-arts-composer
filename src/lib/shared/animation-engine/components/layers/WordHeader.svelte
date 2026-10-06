@@ -211,7 +211,7 @@ Supports letter highlighting during animation playback.
     const skewedCount = units.filter((unit) => unit.skewed).length;
     if (skewedCount > 0 && skewedCount < units.length) return null;
     const segments = compressWord(stripWordNotation(displayedWord));
-    if (!segments.some((s) => s.repeat > 1)) return null;
+    if (segments.length < 2 && !segments.some((segment) => segment.repeat > 1)) return null;
     const letterCount = segments.reduce((n, s) => n + s.tokens.length, 0);
     if (letterCount > 12) return null;
     return segments;
