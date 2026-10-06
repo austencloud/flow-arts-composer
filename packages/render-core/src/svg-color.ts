@@ -55,6 +55,10 @@ export const SELECTIVE_COLOR_PROP_TYPES = [
   // take left or right, while the kevlar wicks and the gold thumb bands stay as
   // authored. Kevlar is never left or right.
   "fire_double_staff",
+  // Stick: only the grip tape (#B4B4B4) takes left or right. The bark is a
+  // painted image and the cut ends and buds are saturated or dark, so the
+  // branch stays a branch on both hands.
+  "stick",
   // Hoop family: commit 9fefc947d5 regenerated these glyphs with a neutral
   // #9A9A9A tube (repainted to the hand colour here) and #1C1C1F / #3A3A3F
   // hardware plus a #C9AC68 grip band that selective mode preserves. Before

@@ -95,6 +95,10 @@ export const PROP_DIMENSIONS: Record<string, PropDimensions> = {
   // spacing match, in the same shallow box its artwork is drawn in.
   fire_double_staff: { width: 252.8, height: 24 },
 
+  // Stick — staff's exact span, in the same shallow box as the fire staff.
+  // Both hands' branches share it, so a pair places identically.
+  stick: { width: 252.8, height: 24 },
+
   // Chicken family
   chicken: { width: 325, height: 30.3 },
   bigchicken: { width: 252.8, height: 44.4 },

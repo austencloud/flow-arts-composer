@@ -4507,7 +4507,7 @@ diff --git a/dist/lib/components/props/Poi3D.svelte.d.ts.map b/dist/lib/componen
 deleted file mode 100644
 index 4c2d4a9b12da3596bfed1803e1a6d6649fa0dfd9..0000000000000000000000000000000000000000
 diff --git a/dist/lib/components/props/Prop3D.svelte b/dist/lib/components/props/Prop3D.svelte
-index 8f023f7b8a3dc4f441fc086719b929b5b56e9c74..d4857a5a4c25784d0d7ccd1cebc8d8fd41a0b711 100644
+index 8f023f7b8a3dc4f441fc086719b929b5b56e9c74..b00753fdc0e504b14ff42779ebabf11ca8f45433 100644
 --- a/dist/lib/components/props/Prop3D.svelte
 +++ b/dist/lib/components/props/Prop3D.svelte
 @@ -13,6 +13,9 @@
@@ -4536,7 +4536,7 @@ index 8f023f7b8a3dc4f441fc086719b929b5b56e9c74..d4857a5a4c25784d0d7ccd1cebc8d8fd
    }
  
    let {
-@@ -48,8 +53,11 @@
+@@ -48,27 +53,48 @@
      visible = true,
      isActivePlayer = false,
      length,
@@ -4548,10 +4548,27 @@ index 8f023f7b8a3dc4f441fc086719b929b5b56e9c74..d4857a5a4c25784d0d7ccd1cebc8d8fd
    // "Big" variants use a 1.4x scale on the base prop.
    const BIG_SCALE = 1.4;
  
-@@ -61,14 +69,19 @@
+   // Check if a GLTF model is available for this prop type.
+   // resolvePropModel handles big variant → base type resolution.
+   const gltfResolution = $derived(resolvePropModel(propType));
++
++  // Props whose two hands hold different objects (found sticks) carry a
++  // right-hand model; the red hand is the right hand.
++  const handModelEntry = $derived(
++    gltfResolution && color === "red" && gltfResolution.entry.rightHandModelUrl
++      ? { ...gltfResolution.entry, modelUrl: gltfResolution.entry.rightHandModelUrl }
++      : gltfResolution?.entry,
++  );
++
++  // Models authored at 0.9 m that stretch to the performer's staff length.
++  const stretchesToStaffLength = $derived(
++    propType === PropType.FIRE_DOUBLE_STAFF || propType === PropType.STICK,
++  );
+ </script>
+ 
  {#if visible}
    <!-- Tier 1: GLTF model (when available in registry) -->
-   {#if gltfResolution}
+-  {#if gltfResolution}
 -    <GltfProp3D
 -      modelEntry={gltfResolution.entry}
 -      {propState}
@@ -4560,23 +4577,24 @@ index 8f023f7b8a3dc4f441fc086719b929b5b56e9c74..d4857a5a4c25784d0d7ccd1cebc8d8fd
 -      {isActivePlayer}
 -      extraScale={gltfResolution.scale}
 -    />
++  {#if gltfResolution && handModelEntry}
 +    <!-- useGltf reads the model URL once. Replace this component when the URL
 +         changes so the selected prop and the prop in the hand cannot diverge. -->
-+    {#key gltfResolution.entry.modelUrl}
++    {#key handModelEntry.modelUrl}
 +      <GltfProp3D
-+        modelEntry={gltfResolution.entry}
++        modelEntry={handModelEntry}
 +        {propState}
 +        {color}
 +        {visible}
 +        {isActivePlayer}
 +        extraScale={gltfResolution.scale}
-+        lengthScaleY={propType === PropType.FIRE_DOUBLE_STAFF ? (length ?? userProportionsState.staffLength) / 0.9 : 1}
++        lengthScaleY={stretchesToStaffLength ? (length ?? userProportionsState.staffLength) / 0.9 : 1}
 +      />
 +    {/key}
  
    <!-- Tier 2: Procedural fallback geometry -->
    {:else if propType === PropType.STAFF || propType === PropType.SIMPLESTAFF || propType === PropType.STAFF2}
-@@ -82,14 +95,22 @@
+@@ -82,14 +108,22 @@
      <Club3D {propState} {color} {visible} {isActivePlayer} {length} scale={BIG_SCALE} />
  
    {:else if propType === PropType.FAN}
@@ -4603,7 +4621,7 @@ index 8f023f7b8a3dc4f441fc086719b929b5b56e9c74..d4857a5a4c25784d0d7ccd1cebc8d8fd
  
    {:else if propType === PropType.MINIHOOP}
      <Hoop3D {propState} {color} {visible} {isActivePlayer} {length} />
-@@ -102,10 +123,19 @@
+@@ -102,10 +136,19 @@
      <Buugeng3D {propState} {color} {visible} {isActivePlayer} {length} scale={BIG_SCALE} />
  
    {:else if propType === PropType.TRIGENG}
@@ -4625,7 +4643,7 @@ index 8f023f7b8a3dc4f441fc086719b929b5b56e9c74..d4857a5a4c25784d0d7ccd1cebc8d8fd
  
    {:else if propType === PropType.SWORD}
      <Sword3D {propState} {color} {visible} {isActivePlayer} {length} />
-@@ -140,7 +170,15 @@
+@@ -140,7 +183,15 @@
      <Ball3D {propState} {color} {visible} {isActivePlayer} {length} scale={BIG_SCALE} />
  
    {:else if propType === PropType.QUIAD}
@@ -6894,7 +6912,7 @@ diff --git a/dist/lib/components/props/prop-model-registry.d.ts.map b/dist/lib/c
 deleted file mode 100644
 index 61d578d9780308efad435cde03d59b9a1636564f..0000000000000000000000000000000000000000
 diff --git a/dist/lib/components/props/prop-model-registry.js b/dist/lib/components/props/prop-model-registry.js
-index d26cd3a0b4aecdbc58a6132f134f8d0965a94ebf..5798f38500594260911b358577cd8f90e011a010 100644
+index d26cd3a0b4aecdbc58a6132f134f8d0965a94ebf..e91cd0df9c05a13143aa4b4a16c1cce726219afd 100644
 --- a/dist/lib/components/props/prop-model-registry.js
 +++ b/dist/lib/components/props/prop-model-registry.js
 @@ -25,6 +25,39 @@ function modelUrl(filename) {
@@ -6937,7 +6955,7 @@ index d26cd3a0b4aecdbc58a6132f134f8d0965a94ebf..5798f38500594260911b358577cd8f90
  /**
   * Registry of available GLTF prop models.
   *
-@@ -32,9 +65,119 @@ function modelUrl(filename) {
+@@ -32,9 +65,131 @@ function modelUrl(filename) {
   * Add entries as models become available - the system degrades gracefully.
   */
  export const PROP_MODEL_REGISTRY = {
@@ -7053,13 +7071,25 @@ index d26cd3a0b4aecdbc58a6132f134f8d0965a94ebf..5798f38500594260911b358577cd8f90
 +        scale: 1,
 +        gripOffsetY: 0,
 +    },
++    /**
++     * Two found sticks, one per hand: no two real sticks match, so the right
++     * hand gets its own model. Bark stays natural; only the grip tape takes the
++     * hand colour. Authored 0.9 m long and stretched to the performer's staff
++     * length like the fire staff.
++     */
++    [PropType.STICK]: {
++        modelUrl: modelUrl("stick.glb"),
++        rightHandModelUrl: modelUrl("stick-right.glb"),
++        scale: 1,
++        gripOffsetY: 0,
++    },
  };
 +/** Smaller prop families that reuse an authored base model. */
 +export const SHARED_MODEL_VARIANT_MAP = {};
  /**
   * Look up a GLTF model for a prop type. Returns null if no model
   * is available (caller should fall back to procedural geometry).
-@@ -49,11 +192,13 @@ export function getPropModel(propType) {
+@@ -49,11 +204,13 @@ export function getPropModel(propType) {
  export const BIG_VARIANT_MAP = {
      [PropType.BIGSTAFF]: { base: PropType.STAFF, scale: 1.4 },
      [PropType.BIGCLUB]: { base: PropType.CLUB, scale: 1.4 },
@@ -7075,7 +7105,7 @@ index d26cd3a0b4aecdbc58a6132f134f8d0965a94ebf..5798f38500594260911b358577cd8f90
      [PropType.BIGDOUBLESTAR]: { base: PropType.DOUBLESTAR, scale: 1.4 },
      [PropType.BIGEIGHTRINGS]: { base: PropType.EIGHTRINGS, scale: 1.4 },
      [PropType.BIGCONTACTBALL]: { base: PropType.CONTACTBALL, scale: 1.4 },
-@@ -72,6 +217,15 @@ export function resolvePropModel(propType) {
+@@ -72,6 +229,15 @@ export function resolvePropModel(propType) {
      const direct = getPropModel(propType);
      if (direct)
          return { entry: direct, scale: direct.scale };
@@ -7878,7 +7908,7 @@ diff --git a/dist/lib/domain/enums/PropType.d.ts.map b/dist/lib/domain/enums/Pro
 deleted file mode 100644
 index b7409eb0c5a99e845b2969440b9c08331729704d..0000000000000000000000000000000000000000
 diff --git a/dist/lib/domain/enums/PropType.js b/dist/lib/domain/enums/PropType.js
-index 15844ec32763c63fe4955b8c893dbcdd5156ff4b..9efeec83ae295374887406039ab5fcd1b1d40c96 100644
+index 15844ec32763c63fe4955b8c893dbcdd5156ff4b..134c1c2ea20defe2202d6c46ab9f3136409245b5 100644
 --- a/dist/lib/domain/enums/PropType.js
 +++ b/dist/lib/domain/enums/PropType.js
 @@ -20,6 +20,7 @@ export var PropType;
@@ -7889,12 +7919,13 @@ index 15844ec32763c63fe4955b8c893dbcdd5156ff4b..9efeec83ae295374887406039ab5fcd1
      PropType["CHICKEN"] = "chicken";
      PropType["BIGCHICKEN"] = "bigchicken";
      PropType["GUITAR"] = "guitar";
-@@ -33,6 +34,8 @@ export var PropType;
+@@ -33,6 +34,9 @@ export var PropType;
      PropType["DOUBLECONTACTBALL"] = "doublecontactball";
      PropType["BIGDOUBLECONTACTBALL"] = "bigdoublecontactball";
      PropType["QUIAD"] = "quiad";
 +    PropType["CAPSULE_BATON"] = "capsule_baton";
 +    PropType["FIRE_DOUBLE_STAFF"] = "fire_double_staff";
++    PropType["STICK"] = "stick";
      PropType["TORCH"] = "torch";
      PropType["BIGTORCH"] = "bigtorch";
      PropType["POI"] = "poi";
@@ -24921,7 +24952,7 @@ index 8a455aeebd6a4c8f408c732ac0c1bb2c177c2ab3..7cb29372ae34f587e0d58225dc3a5659
    const rotation = $derived(computePropRotation(propState));
  
 diff --git a/src/lib/components/props/Prop3D.svelte b/src/lib/components/props/Prop3D.svelte
-index 8f023f7b8a3dc4f441fc086719b929b5b56e9c74..b85756fd81323b0c09a2308874bae6e12662258e 100644
+index 8f023f7b8a3dc4f441fc086719b929b5b56e9c74..ed0d1156e7f2f4b781b1f5983acd91878e5c14c0 100644
 --- a/src/lib/components/props/Prop3D.svelte
 +++ b/src/lib/components/props/Prop3D.svelte
 @@ -13,6 +13,9 @@
@@ -24956,7 +24987,7 @@ index 8f023f7b8a3dc4f441fc086719b929b5b56e9c74..b85756fd81323b0c09a2308874bae6e1
    }
  
    let {
-@@ -48,8 +54,11 @@
+@@ -48,27 +54,48 @@
      visible = true,
      isActivePlayer = false,
      length,
@@ -24968,10 +24999,27 @@ index 8f023f7b8a3dc4f441fc086719b929b5b56e9c74..b85756fd81323b0c09a2308874bae6e1
    // "Big" variants use a 1.4x scale on the base prop.
    const BIG_SCALE = 1.4;
  
-@@ -61,14 +70,19 @@
+   // Check if a GLTF model is available for this prop type.
+   // resolvePropModel handles big variant → base type resolution.
+   const gltfResolution = $derived(resolvePropModel(propType));
++
++  // Props whose two hands hold different objects (found sticks) carry a
++  // right-hand model; the red hand is the right hand.
++  const handModelEntry = $derived(
++    gltfResolution && color === "red" && gltfResolution.entry.rightHandModelUrl
++      ? { ...gltfResolution.entry, modelUrl: gltfResolution.entry.rightHandModelUrl }
++      : gltfResolution?.entry,
++  );
++
++  // Models authored at 0.9 m that stretch to the performer's staff length.
++  const stretchesToStaffLength = $derived(
++    propType === PropType.FIRE_DOUBLE_STAFF || propType === PropType.STICK,
++  );
+ </script>
+ 
  {#if visible}
    <!-- Tier 1: GLTF model (when available in registry) -->
-   {#if gltfResolution}
+-  {#if gltfResolution}
 -    <GltfProp3D
 -      modelEntry={gltfResolution.entry}
 -      {propState}
@@ -24980,23 +25028,24 @@ index 8f023f7b8a3dc4f441fc086719b929b5b56e9c74..b85756fd81323b0c09a2308874bae6e1
 -      {isActivePlayer}
 -      extraScale={gltfResolution.scale}
 -    />
++  {#if gltfResolution && handModelEntry}
 +    <!-- useGltf reads the model URL once. Replace this component when the URL
 +         changes so the selected prop and the prop in the hand cannot diverge. -->
-+    {#key gltfResolution.entry.modelUrl}
++    {#key handModelEntry.modelUrl}
 +      <GltfProp3D
-+        modelEntry={gltfResolution.entry}
++        modelEntry={handModelEntry}
 +        {propState}
 +        {color}
 +        {visible}
 +        {isActivePlayer}
 +        extraScale={gltfResolution.scale}
-+        lengthScaleY={propType === PropType.FIRE_DOUBLE_STAFF ? (length ?? userProportionsState.staffLength) / 0.9 : 1}
++        lengthScaleY={stretchesToStaffLength ? (length ?? userProportionsState.staffLength) / 0.9 : 1}
 +      />
 +    {/key}
  
    <!-- Tier 2: Procedural fallback geometry -->
    {:else if propType === PropType.STAFF || propType === PropType.SIMPLESTAFF || propType === PropType.STAFF2}
-@@ -82,19 +96,29 @@
+@@ -82,19 +109,29 @@
      <Club3D {propState} {color} {visible} {isActivePlayer} {length} scale={BIG_SCALE} />
  
    {:else if propType === PropType.FAN}
@@ -25030,7 +25079,7 @@ index 8f023f7b8a3dc4f441fc086719b929b5b56e9c74..b85756fd81323b0c09a2308874bae6e1
  
    {:else if propType === PropType.BUUGENG || propType === PropType.FRACTALGENG}
      <Buugeng3D {propState} {color} {visible} {isActivePlayer} {length} />
-@@ -102,10 +126,19 @@
+@@ -102,10 +139,19 @@
      <Buugeng3D {propState} {color} {visible} {isActivePlayer} {length} scale={BIG_SCALE} />
  
    {:else if propType === PropType.TRIGENG}
@@ -25052,7 +25101,7 @@ index 8f023f7b8a3dc4f441fc086719b929b5b56e9c74..b85756fd81323b0c09a2308874bae6e1
  
    {:else if propType === PropType.SWORD}
      <Sword3D {propState} {color} {visible} {isActivePlayer} {length} />
-@@ -140,7 +173,15 @@
+@@ -140,7 +186,15 @@
      <Ball3D {propState} {color} {visible} {isActivePlayer} {length} scale={BIG_SCALE} />
  
    {:else if propType === PropType.QUIAD}
@@ -27861,10 +27910,10 @@ index 6d8e91ce13c491ba06883641fbabc36adb2beeb0..d4e3f130bcf51597c60f8e19a7b66eee
    });
  }
 diff --git a/src/lib/components/props/prop-model-registry.ts b/src/lib/components/props/prop-model-registry.ts
-index 899e076e7e08becffb11b36d6651a9099ab43d6c..a79703a0e472bc442440c2d2de4b6f0ebe4b71d0 100644
+index 899e076e7e08becffb11b36d6651a9099ab43d6c..6514593a0c7d19ccc71bf88730ac06873a1c42a3 100644
 --- a/src/lib/components/props/prop-model-registry.ts
 +++ b/src/lib/components/props/prop-model-registry.ts
-@@ -20,6 +20,16 @@ export interface PropModelEntry {
+@@ -20,6 +20,21 @@ export interface PropModelEntry {
    scale: number;
    /** Y offset to align grip point with origin (0 = model's origin IS the grip) */
    gripOffsetY: number;
@@ -27878,10 +27927,15 @@ index 899e076e7e08becffb11b36d6651a9099ab43d6c..a79703a0e472bc442440c2d2de4b6f0e
 +   * the bird is held by the head, which chicken.glb authors at +Y.
 +   */
 +  flipLongAxis?: boolean;
++  /**
++   * Model for the right (red) hand when the two hands hold different objects.
++   * Falls back to modelUrl.
++   */
++  rightHandModelUrl?: string;
  }
  
  /** R2 CDN base URL - same CDN used by forest/camping models */
-@@ -39,6 +49,44 @@ function modelUrl(filename: string): string {
+@@ -39,6 +54,44 @@ function modelUrl(filename: string): string {
      : `${LOCAL_PATH}/${filename}`;
  }
  
@@ -27926,7 +27980,7 @@ index 899e076e7e08becffb11b36d6651a9099ab43d6c..a79703a0e472bc442440c2d2de4b6f0e
  /**
   * Registry of available GLTF prop models.
   *
-@@ -46,10 +94,123 @@ function modelUrl(filename: string): string {
+@@ -46,10 +99,135 @@ function modelUrl(filename: string): string {
   * Add entries as models become available - the system degrades gracefully.
   */
  export const PROP_MODEL_REGISTRY: Partial<Record<PropType, PropModelEntry>> = {
@@ -28042,6 +28096,18 @@ index 899e076e7e08becffb11b36d6651a9099ab43d6c..a79703a0e472bc442440c2d2de4b6f0e
 +    scale: 1,
 +    gripOffsetY: 0,
 +  },
++  /**
++   * Two found sticks, one per hand: no two real sticks match, so the right
++   * hand gets its own model. Bark stays natural; only the grip tape takes the
++   * hand colour. Authored 0.9 m long and stretched to the performer's staff
++   * length like the fire staff.
++   */
++  [PropType.STICK]: {
++    modelUrl: modelUrl("stick.glb"),
++    rightHandModelUrl: modelUrl("stick-right.glb"),
++    scale: 1,
++    gripOffsetY: 0,
++  },
  };
  
 +/** Smaller prop families that reuse an authored base model. */
@@ -28052,7 +28118,7 @@ index 899e076e7e08becffb11b36d6651a9099ab43d6c..a79703a0e472bc442440c2d2de4b6f0e
  /**
   * Look up a GLTF model for a prop type. Returns null if no model
   * is available (caller should fall back to procedural geometry).
-@@ -67,11 +228,13 @@ export const BIG_VARIANT_MAP: Partial<
+@@ -67,11 +245,13 @@ export const BIG_VARIANT_MAP: Partial<
  > = {
    [PropType.BIGSTAFF]: { base: PropType.STAFF, scale: 1.4 },
    [PropType.BIGCLUB]: { base: PropType.CLUB, scale: 1.4 },
@@ -28068,7 +28134,7 @@ index 899e076e7e08becffb11b36d6651a9099ab43d6c..a79703a0e472bc442440c2d2de4b6f0e
    [PropType.BIGDOUBLESTAR]: { base: PropType.DOUBLESTAR, scale: 1.4 },
    [PropType.BIGEIGHTRINGS]: { base: PropType.EIGHTRINGS, scale: 1.4 },
    [PropType.BIGCONTACTBALL]: { base: PropType.CONTACTBALL, scale: 1.4 },
-@@ -93,6 +256,16 @@ export function resolvePropModel(
+@@ -93,6 +273,16 @@ export function resolvePropModel(
    const direct = getPropModel(propType);
    if (direct) return { entry: direct, scale: direct.scale };
  
@@ -29116,7 +29182,7 @@ index 0000000000000000000000000000000000000000..7533d55eb9587dc3eda6ea149de226fc
 +  w.__avatarLoadClear = clearAvatarLoadSpans;
 +}
 diff --git a/src/lib/domain/enums/PropType.ts b/src/lib/domain/enums/PropType.ts
-index a6a29aa9b928eb98fc102f572da1ed2035c658ba..fe47e7800101428ecd25e58a40bd2bf8793c2f9c 100644
+index a6a29aa9b928eb98fc102f572da1ed2035c658ba..0da81cb64e5752aeeb29e8e9cf25065832926447 100644
 --- a/src/lib/domain/enums/PropType.ts
 +++ b/src/lib/domain/enums/PropType.ts
 @@ -11,6 +11,7 @@ export enum PropType {
@@ -29135,12 +29201,13 @@ index a6a29aa9b928eb98fc102f572da1ed2035c658ba..fe47e7800101428ecd25e58a40bd2bf8
  	CHICKEN = "chicken",
  	BIGCHICKEN = "bigchicken",
  	GUITAR = "guitar",
-@@ -32,6 +34,8 @@ export enum PropType {
+@@ -32,6 +34,9 @@ export enum PropType {
  	DOUBLECONTACTBALL = "doublecontactball",
  	BIGDOUBLECONTACTBALL = "bigdoublecontactball",
  	QUIAD = "quiad",
 +	CAPSULE_BATON = "capsule_baton",
 +	FIRE_DOUBLE_STAFF = "fire_double_staff",
++	STICK = "stick",
  	TORCH = "torch",
  	BIGTORCH = "bigtorch",
  	POI = "poi",

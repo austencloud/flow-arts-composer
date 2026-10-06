@@ -206,6 +206,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--output-dir", type=Path, default=DEFAULT_OUTPUT_DIR)
     parser.add_argument("--render-dir", type=Path)
     parser.add_argument("--blend-dir", type=Path)
+    parser.add_argument(
+        "--preview-png",
+        type=Path,
+        help="Render the left stick lying flat, for the prop picker preview.",
+    )
     return parser.parse_args(argv)
 
 
@@ -724,11 +729,7 @@ def render_proofs(render_dir: Path, stick: Stick, tape_material) -> None:
     scene.view_settings.look = "AgX - Medium High Contrast"
     scene.view_settings.exposure = -1.6
 
-    # The tape in its hand's colour, as the runtime recolour paints it.
-    principled = tape_material.node_tree.nodes.get("Principled BSDF")
-    principled.inputs["Base Color"].default_value = (
-        (0.0356, 0.177, 0.761, 1.0) if hand == "left" else (0.83, 0.016, 0.022, 1.0)
-    )
+    paint_tape(tape_material, hand)
 
     def shoot(label, location, rotation=None, target=None):
         camera.location = location
@@ -760,6 +761,41 @@ def render_proofs(render_dir: Path, stick: Stick, tape_material) -> None:
     shoot("close", (x, y, z + 0.24), target=(x, y, z))
 
 
+def paint_tape(tape_material, hand: str) -> None:
+    """The tape in its hand's colour, as the runtime recolour paints it."""
+    principled = tape_material.node_tree.nodes.get("Principled BSDF")
+    principled.inputs["Base Color"].default_value = (
+        (0.0356, 0.177, 0.761, 1.0) if hand == "left" else (0.83, 0.016, 0.022, 1.0)
+    )
+
+
+def render_preview(png_path: Path, stick: Stick, tape_material) -> None:
+    """The stick lying flat, thumb end right, on a transparent 1280x480 frame.
+
+    The picker previews are 640x240 on #080912; the caller scales this down and
+    lays it on that background.
+    """
+    png_path.parent.mkdir(parents=True, exist_ok=True)
+    camera = add_proof_lighting()
+    camera.data.type = "ORTHO"
+    camera.data.ortho_scale = 1.0
+    camera.location = (0.0, 0.0, 1.70)
+    camera.rotation_euler = (0.0, 0.0, math.radians(90))
+    scene = bpy.context.scene
+    scene.render.engine = "BLENDER_EEVEE"
+    scene.render.resolution_x = 1280
+    scene.render.resolution_y = 480
+    scene.render.resolution_percentage = 100
+    scene.render.image_settings.file_format = "PNG"
+    scene.render.image_settings.color_mode = "RGBA"
+    scene.render.film_transparent = True
+    scene.view_settings.look = "AgX - Medium High Contrast"
+    scene.view_settings.exposure = -1.6
+    paint_tape(tape_material, stick.hand)
+    scene.render.filepath = str(png_path)
+    bpy.ops.render.render(write_still=True)
+
+
 def print_summary(hand: str, output_path: Path, model_objects) -> None:
     meshes = [item for item in model_objects if item.type == "MESH"]
     tag = f"STICK_{hand.upper()}"
@@ -785,8 +821,11 @@ def main() -> None:
             blend_path = (args.blend_dir / f"stick-{hand}.blend").resolve()
             blend_path.parent.mkdir(parents=True, exist_ok=True)
             bpy.ops.wm.save_as_mainfile(filepath=str(blend_path))
+        tape = bpy.data.materials["TKA_Stick_Tape_Recolor"]
         if args.render_dir:
-            render_proofs(args.render_dir.resolve(), stick, bpy.data.materials["TKA_Stick_Tape_Recolor"])
+            render_proofs(args.render_dir.resolve(), stick, tape)
+        if args.preview_png and hand == "left":
+            render_preview(args.preview_png.resolve(), stick, tape)
 
         print_summary(hand, output_path, model_objects)
 

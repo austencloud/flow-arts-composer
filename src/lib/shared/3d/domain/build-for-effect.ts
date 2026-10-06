@@ -42,6 +42,7 @@ const DOUBLE_STAFF_FAMILY: ReadonlySet<PropType> = new Set([
   PropType.STAFF,
   PropType.CAPSULE_BATON,
   PropType.FIRE_DOUBLE_STAFF,
+  PropType.STICK,
 ]);
 
 /** Every member of the "Club build" family. */

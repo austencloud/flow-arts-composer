@@ -28,6 +28,7 @@ const PRESENTATIONS: Partial<
   [PropType.STAFF2]: { scale: 1.48 },
   [PropType.CAPSULE_BATON]: { scale: 1.5 },
   [PropType.FIRE_DOUBLE_STAFF]: { scale: 1.52 },
+  [PropType.STICK]: { scale: 1.52 },
 
   // The source club artwork is pivoted at the center with the whole club on
   // its right half. Stand it upright, then move that visible half back into
