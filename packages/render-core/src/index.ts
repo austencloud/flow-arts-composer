@@ -180,6 +180,12 @@ export {
   planJoinedGridPoints,
   sequenceGridJoinKey,
 } from "./calculations/grid-join-layout.js";
+export {
+  JOINED_GRID_TINT,
+  joinedPointColors,
+  joinedPointsHands,
+  mixHexColors,
+} from "./calculations/grid-join-tint.js";
 export type {
   GridJoinLayout,
   GridJoinSpec,
