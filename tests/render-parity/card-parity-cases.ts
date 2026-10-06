@@ -15,6 +15,7 @@ export function cardParityCases(): CardParityCase[] {
   const eightSteps = structuredClone(demo);
   eightSteps.steps = eightSteps.steps.slice(0, 8);
   eightSteps.word = eightSteps.steps.map((step) => step.letter).join("");
+  const stillBox = stillOnBoxGrid(sequence);
   return [
     {
       name: "loop-metadata",
@@ -185,7 +186,73 @@ export function cardParityCases(): CardParityCase[] {
         conjoined: JOIN_EAST,
       },
     },
+    {
+      name: "box-grid",
+      sequence: stillBox,
+      options: { showDifficulty: true, showMandala: false, gridMode: "box" },
+    },
+    {
+      name: "box-grid-dark",
+      sequence: stillBox,
+      options: {
+        showDifficulty: true,
+        showMandala: false,
+        darkMode: true,
+        gridMode: "box",
+      },
+    },
   ];
+}
+
+const TURN_CLOCKWISE_45: Record<string, string> = {
+  n: "ne",
+  ne: "e",
+  e: "se",
+  se: "s",
+  s: "sw",
+  sw: "w",
+  w: "nw",
+  nw: "n",
+};
+
+/** A placement turned 45° clockwise: the next number within its group of 8. */
+function turnedPlacement(placement: string): string {
+  const [, group, number] = placement.match(/^([a-z]+)(\d+)$/)!;
+  const index = Number(number) - 1;
+  return `${group}${(index & ~7) + ((index + 1) % 8) + 1}`;
+}
+
+/**
+ * The start position on the box grid (the diamond grid turned 45° clockwise),
+ * held still for every step (static γ). Still steps draw no arrows and the
+ * cases draw no mandala, so they check only the box grid and the props on
+ * it; box arrows and the mandala do not yet match the app.
+ */
+function stillOnBoxGrid(sequence: typeof demo): typeof demo {
+  const start = structuredClone(sequence.startPlacement);
+  start.gridPlacement = turnedPlacement(start.gridPlacement);
+  start.startPlacement = turnedPlacement(start.startPlacement);
+  start.endPlacement = turnedPlacement(start.endPlacement);
+  for (const motion of Object.values(start.motions)) {
+    motion.startLocation = TURN_CLOCKWISE_45[motion.startLocation]!;
+    motion.endLocation = TURN_CLOCKWISE_45[motion.endLocation]!;
+    motion.arrowLocation = TURN_CLOCKWISE_45[motion.arrowLocation]!;
+    motion.gridMode = "box";
+  }
+  const box = structuredClone(sequence);
+  box.gridMode = "box";
+  box.startPlacement = start;
+  box.startingPlacement = start as never;
+  box.steps = sequence.steps.map((step) => ({
+    ...step,
+    letter: "γ",
+    gridMode: "box",
+    startPlacement: start.startPlacement,
+    endPlacement: start.endPlacement,
+    motions: structuredClone(start.motions),
+  }));
+  box.word = box.steps.map((step) => step.letter).join("");
+  return box;
 }
 
 /** The join the 2D animation draws: red's grid one hand-point step east. */
