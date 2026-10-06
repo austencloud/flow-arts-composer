@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import {
   getGridJoinLayout,
+  getGridPoints,
   getNormalHandPointCoordinates,
   type GridJoinSpec,
 } from "@tka/render-core";
@@ -187,6 +188,52 @@ describe("joined grids in the packaged MCP renderer", () => {
   );
 });
 
+describe("one grid in the packaged MCP renderer", () => {
+  /** Every grid circle drawn, as "x y r ring|dot". */
+  async function gridCircles(input: PictographInput) {
+    const svg = await renderer.renderToSvg(input, {
+      showLeftMotion: false,
+      showRightMotion: false,
+      showTKA: false,
+    });
+    return [...svg.matchAll(/<circle cx="([^"]+)" cy="([^"]+)" r="([^"]+)" ([^/]*)\/>/g)]
+      .map(
+        ([, x, y, r, paint]) =>
+          `${x} ${y} ${r} ${paint.includes('fill="none"') ? "ring" : "dot"}`
+      )
+      .sort();
+  }
+
+  it("turns a box grid 45° clockwise, its outer points rings, as the app does", async () => {
+    const circles = await gridCircles({
+      ...staticPair("ne", "sw", "in"),
+      gridMode: "box",
+    });
+    const expected = getGridPoints("box")
+      .filter((point) => point.kind !== "nonRadial")
+      .map(
+        (point) =>
+          `${point.x} ${point.y} ${{ center: 12, hand: 4.7, outer: 25 }[point.kind as "center"]} ${point.kind === "outer" ? "ring" : "dot"}`
+      )
+      .sort();
+
+    expect(circles).toEqual(expected);
+    expect(circles).toContain("576.2 373.8 4.7 dot");
+    expect(circles).not.toContain("475 331.9 4.7 dot");
+  });
+
+  it("keeps the diamond grid's filled points", async () => {
+    const circles = await gridCircles(staticPair("n", "s", "in"));
+
+    expect(circles).toContain("475 331.9 4.7 dot");
+    expect(circles).toContain("475 175 25 dot");
+    expect(circles.some((circle) => circle.endsWith("ring"))).toBe(false);
+  });
+});
+
+/** A whole card loads its fonts and glyphs first; that can pass 5 s. */
+const CARD_TIMEOUT = 30_000;
+
 describe("joined grids on an MCP card", () => {
   it("draws every cell, the start included, on the card's one join", async () => {
     const pair = staticPair("n", "s", "in");
@@ -233,5 +280,43 @@ describe("joined grids on an MCP card", () => {
 
     expect(await cellJoins(E1)).toEqual([E1, E1, E1, E1]);
     expect(await cellJoins()).toEqual([null, null, null, null]);
-  });
+  }, CARD_TIMEOUT);
+
+  it("draws every cell, the start included, in the card's grid mode", async () => {
+    const pair = staticPair("ne", "sw", "in");
+    const steps = [0, 1, 2].map(
+      (stepNumber): SequenceStep => ({
+        letter: "α",
+        variation: 0,
+        startPlacement: "alpha2",
+        endPlacement: "alpha2",
+        leftMotion: pair.leftMotion,
+        rightMotion: pair.rightMotion,
+        stepNumber,
+      })
+    );
+    const modes: unknown[] = [];
+    const draw = renderer.renderToPng.bind(renderer);
+    const spy = vi
+      .spyOn(renderer, "renderToPng")
+      .mockImplementation(async (pictograph, options) => {
+        modes.push(pictograph.gridMode);
+        return draw(pictograph, options);
+      });
+    try {
+      await renderSequenceToImage(steps, "αα", {
+        layout: "strip",
+        cellSize: 120,
+        padding: 8,
+        showStepNumbers: false,
+        showWord: false,
+        darkMode: false,
+        gridMode: "box",
+      });
+    } finally {
+      spy.mockRestore();
+    }
+
+    expect(modes).toEqual(["box", "box", "box"]);
+  }, CARD_TIMEOUT);
 });
