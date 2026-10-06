@@ -46,8 +46,10 @@ import {
   RED_COLOR_DARK,
   RED_COLOR_LIGHT,
   resolveFullArrowAssetPath,
-  BOX_OUTER_RING_WIDTH,
-  JOINED_POINT_RADIUS,
+  getGridPoints,
+  gridPointsSvg,
+  isBoxGrid,
+  type GridPointKind,
   getBetaOffsetSize,
   getGridJoinLayout,
   gridJoinPropNudges,
@@ -493,6 +495,7 @@ export class StandaloneRenderer {
       showReversals = false,
       showHandColorKey = false,
       showGrid = true,
+      showNonRadialPoints = false,
       showLeftMotion = true,
       showRightMotion = true,
       leftPropType = null,
@@ -528,7 +531,12 @@ export class StandaloneRenderer {
     if (showGrid) {
       const gridSvg = joinLayout
         ? this.renderJoinedGrid(joinLayout, gridMode, darkMode, themeable)
-        : this.renderGrid(gridMode, darkMode, themeable);
+        : this.renderGrid(
+            gridMode,
+            darkMode,
+            themeable,
+            showNonRadialPoints
+          );
       if (gridSvg) sceneParts.push(`<g class="svg-grid">${gridSvg}</g>`);
     }
 
@@ -765,15 +773,23 @@ ${svgParts.join("\n")}
   private renderGrid(
     gridMode: GridMode,
     darkMode: boolean,
-    themeable: boolean = false
+    themeable: boolean = false,
+    showNonRadial: boolean = false
   ): string {
-    const gridFileName =
-      gridMode === GridMode.BOX
-        ? "box_grid.svg"
-        : gridMode === GridMode.SKEWED
-          ? "skewed_grid.svg"
-          : "diamond_grid.svg";
-    const gridPath = join(this.projectRoot, "static/images/grid", gridFileName);
+    // Diamond and box grids paint the shared points, as the app's dot grid
+    // does: box is the diamond grid turned 45° clockwise, outer points as
+    // rings. Skewed keeps its own artwork.
+    if (gridMode !== GridMode.SKEWED) {
+      const points = getGridPoints(gridMode).filter(
+        (point) => point.kind !== "nonRadial" || showNonRadial
+      );
+      return this.gridPointsGroup(points, gridMode, darkMode, themeable);
+    }
+    const gridPath = join(
+      this.projectRoot,
+      "static/images/grid",
+      "skewed_grid.svg"
+    );
 
     if (!existsSync(gridPath)) {
       console.error("[Renderer] Grid file not found:", gridPath);
@@ -809,15 +825,6 @@ ${svgParts.join("\n")}
         `<circle fill="${gridColor}"`
       );
 
-      // Box mode outer points use <circle> elements with stroke-only rendering.
-      // Update stroke color so the rings are visible on dark backgrounds.
-      if (gridMode === GridMode.BOX) {
-        innerContent = innerContent.replace(
-          /\.box-outer-ring\{fill:none;stroke:#000;/,
-          `.box-outer-ring{fill:none;stroke:${gridColor};`
-        );
-      }
-
       // Replace currentColor with the grid color (for hand points with fill:currentColor in CSS)
       // The CSS class .normal-hand-point { fill: currentColor } needs the color property set
       if (darkMode) {
@@ -835,14 +842,22 @@ ${svgParts.join("\n")}
 
   /**
    * The joined grids' points from the shared layout, in this renderer's grid
-   * colors. Box grids draw their outer points as rings, as one box grid does.
-   * Non-radial points are a one-grid overlay and stay off.
+   * colors. Non-radial points are a one-grid overlay and stay off.
    */
   private renderJoinedGrid(
     layout: GridJoinLayout,
     gridMode: GridMode,
     darkMode: boolean,
     themeable: boolean = false
+  ): string {
+    return this.gridPointsGroup(layout.points, gridMode, darkMode, themeable);
+  }
+
+  private gridPointsGroup(
+    points: readonly { kind: GridPointKind; x: number; y: number }[],
+    gridMode: GridMode,
+    darkMode: boolean,
+    themeable: boolean
   ): string {
     const gridColor = this.resolveColor(
       "--dm-grid-point",
@@ -851,16 +866,9 @@ ${svgParts.join("\n")}
       darkMode,
       themeable
     );
+    // Solid black in light mode; slightly see-through white in dark mode.
     const opacity = darkMode ? "0.85" : "1.0";
-    const box = gridMode === GridMode.BOX;
-    const circles = layout.points.map((point) => {
-      const paint =
-        box && point.kind === "outer"
-          ? `fill="none" stroke="${gridColor}" stroke-width="${BOX_OUTER_RING_WIDTH}"`
-          : `fill="${gridColor}"`;
-      return `<circle cx="${point.x}" cy="${point.y}" r="${JOINED_POINT_RADIUS[point.kind]}" ${paint}/>`;
-    });
-    return `<g style="color: ${gridColor}" opacity="${opacity}">${circles.join("")}</g>`;
+    return `<g opacity="${opacity}">${gridPointsSvg(points, isBoxGrid(gridMode), gridColor)}</g>`;
   }
 
   // ==========================================================================
