@@ -49,6 +49,7 @@ import {
   getGridJoinLayout,
   gridJoinPropNudges,
   isGridJoin,
+  joinedPointColors,
   type GridJoinLayout,
   type GridJoinSpec,
   type JoinVec,
@@ -500,7 +501,10 @@ export class StandaloneRenderer {
     // 2. Grid
     if (showGrid) {
       const gridSvg = joinLayout
-        ? this.renderJoinedGrid(joinLayout, gridMode, darkMode)
+        ? this.renderJoinedGrid(joinLayout, gridMode, darkMode, {
+            left: resolveMotionColor("left", darkMode, primaryPropColors),
+            right: resolveMotionColor("right", darkMode, primaryPropColors),
+          })
         : this.renderGrid(darkMode);
       if (gridSvg) sceneParts.push(gridSvg);
     }
@@ -694,23 +698,27 @@ ${svgParts.join("\n")}
   }
 
   /**
-   * The joined grids' points from the shared layout, in this renderer's grid
-   * colors. Box grids draw their outer points as rings, as one box grid does.
-   * Non-radial points are a one-grid overlay and stay off.
+   * The joined grids' points from the shared layout, each in this renderer's
+   * grid color leaning toward its hand's color (both hands' where the grids
+   * share the spot). Box grids draw their outer points as rings, as one box
+   * grid does. Non-radial points are a one-grid overlay and stay off.
    */
   private renderJoinedGrid(
     layout: GridJoinLayout,
     gridMode: GridMode,
-    darkMode: boolean
+    darkMode: boolean,
+    handColors: Record<"left" | "right", string>
   ): string {
     const gridColor = darkMode ? "#ffffff" : "#000000";
     const opacity = darkMode ? "0.85" : "1.0";
     const box = gridMode === GridMode.BOX;
-    const circles = layout.points.map((point) => {
+    const colors = joinedPointColors(layout.points, gridColor, handColors);
+    const circles = layout.points.map((point, index) => {
+      const color = colors[index]!;
       const paint =
         box && point.kind === "outer"
-          ? `fill="none" stroke="${gridColor}" stroke-width="${BOX_OUTER_RING_WIDTH}"`
-          : `fill="${gridColor}"`;
+          ? `fill="none" stroke="${color}" stroke-width="${BOX_OUTER_RING_WIDTH}"`
+          : `fill="${color}"`;
       return `<circle cx="${point.x}" cy="${point.y}" r="${JOINED_POINT_RADIUS[point.kind]}" ${paint}/>`;
     });
     return `<g style="color: ${gridColor}" opacity="${opacity}">${circles.join("")}</g>`;

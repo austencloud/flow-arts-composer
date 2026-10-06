@@ -99,6 +99,10 @@ const COMPLETE_QUARTER_TURN_GLYPH_REVISION = "quarter-turn-glyph-v2";
 // props, so every cell it drew with hand points showing must miss. A custom
 // palette always went through the full renderer, which drew them under.
 const GRID_POINT_REVISION = "hand-points-under-props-v1";
+// Joined grids' dots were all the grid color. Each now leans toward its
+// hand's color (shared spots toward the mix), so joined cells drawn before
+// must miss. Single-grid cells keep their key.
+const JOINED_GRID_TINT_REVISION = "tint-v1";
 const COMPLETED_QUARTER_TURN_VALUES = new Set([0.75, 1.25, 1.75, 2.25, 2.75]);
 const PROP_APPEARANCE_REVISIONS: Readonly<Record<string, string>> = {
   // The original club raster was a single flat silhouette. The regular-club
@@ -335,7 +339,7 @@ export class PictographKeyHasher {
       betaSwapped: data.betaSwapped ?? false,
       ...("conjoined" in data &&
         isGridJoin(data.conjoined) && {
-          conjoined: gridJoinKey(data.conjoined),
+          conjoined: `${gridJoinKey(data.conjoined)}:${JOINED_GRID_TINT_REVISION}`,
         }),
       ...(hasVisibleMotion && {
         arrowRenderRevision: CANONICAL_HAND_ARROW_RENDER_REVISION,

@@ -50,6 +50,9 @@ import {
   JOINED_POINT_RADIUS,
   getBetaOffsetSize,
   getGridJoinLayout,
+  JOINED_GRID_TINT,
+  joinedPointColors,
+  joinedPointsHands,
   gridJoinPropNudges,
   isGridJoin,
   type GridJoinLayout,
@@ -527,7 +530,20 @@ export class StandaloneRenderer {
     // 2. Grid
     if (showGrid) {
       const gridSvg = joinLayout
-        ? this.renderJoinedGrid(joinLayout, gridMode, darkMode, themeable)
+        ? this.renderJoinedGrid(joinLayout, gridMode, darkMode, themeable, {
+            left: this.resolveMotionColor(
+              "left",
+              darkMode,
+              themeable,
+              primaryPropColors
+            ),
+            right: this.resolveMotionColor(
+              "right",
+              darkMode,
+              themeable,
+              primaryPropColors
+            ),
+          })
         : this.renderGrid(gridMode, darkMode, themeable);
       if (gridSvg) sceneParts.push(`<g class="svg-grid">${gridSvg}</g>`);
     }
@@ -834,15 +850,19 @@ ${svgParts.join("\n")}
   }
 
   /**
-   * The joined grids' points from the shared layout, in this renderer's grid
-   * colors. Box grids draw their outer points as rings, as one box grid does.
-   * Non-radial points are a one-grid overlay and stay off.
+   * The joined grids' points from the shared layout, each in this renderer's
+   * grid color leaning toward its hand's color (both hands' where the grids
+   * share the spot). Themeable output mixes the theme's CSS colors with
+   * color-mix(), by the same share. Box grids draw their outer points as
+   * rings, as one box grid does. Non-radial points are a one-grid overlay and
+   * stay off.
    */
   private renderJoinedGrid(
     layout: GridJoinLayout,
     gridMode: GridMode,
     darkMode: boolean,
-    themeable: boolean = false
+    themeable: boolean,
+    handColors: Record<HandSide, string>
   ): string {
     const gridColor = this.resolveColor(
       "--dm-grid-point",
@@ -853,14 +873,34 @@ ${svgParts.join("\n")}
     );
     const opacity = darkMode ? "0.85" : "1.0";
     const box = gridMode === GridMode.BOX;
-    const circles = layout.points.map((point) => {
+    const colors = themeable
+      ? this.themeableJoinedPointColors(layout, gridColor, handColors)
+      : joinedPointColors(layout.points, gridColor, handColors);
+    const circles = layout.points.map((point, index) => {
+      const color = colors[index]!;
       const paint =
         box && point.kind === "outer"
-          ? `fill="none" stroke="${gridColor}" stroke-width="${BOX_OUTER_RING_WIDTH}"`
-          : `fill="${gridColor}"`;
+          ? `fill="none" stroke="${color}" stroke-width="${BOX_OUTER_RING_WIDTH}"`
+          : `fill="${color}"`;
       return `<circle cx="${point.x}" cy="${point.y}" r="${JOINED_POINT_RADIUS[point.kind]}" ${paint}/>`;
     });
     return `<g style="color: ${gridColor}" opacity="${opacity}">${circles.join("")}</g>`;
+  }
+
+  /** `joinedPointColors` for CSS-variable colors, as color-mix() values. */
+  private themeableJoinedPointColors(
+    layout: GridJoinLayout,
+    gridColor: string,
+    handColors: Record<HandSide, string>
+  ): string[] {
+    const handShare = Math.round(JOINED_GRID_TINT * 100);
+    const shared = `color-mix(in srgb, ${handColors.left} 50%, ${handColors.right})`;
+    return joinedPointsHands(layout.points).map(
+      (hands) =>
+        `color-mix(in srgb, ${gridColor} ${100 - handShare}%, ${
+          hands === "both" ? shared : handColors[hands]
+        })`
+    );
   }
 
   // ==========================================================================
