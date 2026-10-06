@@ -21,6 +21,9 @@ import {
   DIAMOND_OUTER_POINTS,
 } from "../constants/grid-coordinates.js";
 import { getNormalHandPointCoordinates } from "./grid-placement.js";
+import { BOX_OUTER_RING_WIDTH, GRID_POINT_RADIUS } from "./grid-points.js";
+
+export { BOX_OUTER_RING_WIDTH };
 
 type Hand = "left" | "right";
 
@@ -73,12 +76,14 @@ export const JOIN_HAND_RADIUS =
 /** Center to outer point on the drawn grid (300). */
 const OUTER_RADIUS = DIAMOND_OUTER_POINTS.e!.x - SCENE_CENTER;
 
-/** Drawn radius of each point kind, as the painters draw them. */
+/** Drawn radius of each point kind, as one grid draws them. */
 export const JOINED_POINT_RADIUS: Readonly<
   Record<JoinedGridPointKind, number>
-> = { center: 12, hand: 4.7, outer: 25 };
-/** Box outer points are rings stroked this wide. */
-export const BOX_OUTER_RING_WIDTH = 13;
+> = {
+  center: GRID_POINT_RADIUS.center,
+  hand: GRID_POINT_RADIUS.hand,
+  outer: GRID_POINT_RADIUS.outer,
+};
 
 /**
  * Joined content stays this far inside the cell edge. The reversal dots
