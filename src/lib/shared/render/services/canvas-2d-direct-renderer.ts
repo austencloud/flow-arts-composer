@@ -45,6 +45,8 @@ import {
   applyJoinedGridFit,
   paintJoinedGridPoints,
 } from "./joined-grid-painter";
+import { getJoinedActiveHandPoints } from "./layer-key-deriver";
+import { isVisibleMotion } from "../../pictograph/shared/domain/models/motion-data";
 
 import {
   applyColorToSvg,
@@ -63,6 +65,25 @@ const BASE_GRID_POINTS = {
     w: { x: 175, y: 475, r: 25 },
   },
 };
+
+// diamond_grid.svg's hand points and non-radial points, in the 950 viewBox.
+// A box grid is the diamond grid turned 45° clockwise, so its hand points are
+// these turned too: n lands on ne, e on se, s on sw, w on nw.
+const DIAMOND_HAND_POINTS = {
+  n: { x: 475, y: 331.9 },
+  e: { x: 618.1, y: 475 },
+  s: { x: 475, y: 618.1 },
+  w: { x: 331.9, y: 475 },
+};
+const BOX_HAND_POINT_LOCATIONS = { n: "ne", e: "se", s: "sw", w: "nw" };
+const HAND_POINT_RADIUS = 4.7;
+const DIAMOND_NON_RADIAL_POINTS = [
+  { x: 618.1, y: 331.9 },
+  { x: 618.1, y: 618.1 },
+  { x: 331.9, y: 618.1 },
+  { x: 331.9, y: 331.9 },
+];
+const NON_RADIAL_POINT_RADIUS = 8.8;
 
 const GRID_POINT_COLOR_LIGHT = "#000000";
 const GRID_POINT_COLOR_DARK = "#ffffff";
@@ -309,11 +330,25 @@ export class Canvas2DDirectRenderer implements IDirectRenderer {
         isDarkMode,
         gridMode,
         joinLayout,
-        visibility.baseGridOnly ?? false
+        visibility.dotGrid
+          ? (visibility.handPointVisibility ?? "all")
+          : "all",
+        preparedPictograph
       );
-    } else if (visibility.baseGridOnly) {
-      // Base layer mode: draw only center + outer points (no hand points or layer 2)
+    } else if (visibility.dotGrid) {
+      // The layer compositor's grid: painted dots, with only the hand points
+      // the setting shows. Drawn before the props, so a prop covers the hand
+      // point it sits on, as the live pictograph's grid does.
       this.drawBaseGridOnly(ctx, size, isDarkMode, gridMode);
+      this.drawHandPoints(
+        ctx,
+        size,
+        isDarkMode,
+        gridMode,
+        visibility.handPointVisibility ?? "all",
+        visibility.showNonRadialPoints ?? false,
+        preparedPictograph
+      );
     } else {
       // Full mode: draw complete grid with all points
       await this.drawGrid(
@@ -547,11 +582,8 @@ export class Canvas2DDirectRenderer implements IDirectRenderer {
   }
 
   /**
-   * Draw only the base grid points (center + outer corners)
-   *
-   * This is used by the LayerCompositor for the base layer, which excludes
-   * toggleable grid points (hand points and layer 2 points).
-   * Those are rendered separately in the gridPoints layer.
+   * Draw only the base grid points (center + outer corners). The dot grid
+   * adds the hand points with `drawHandPoints`.
    */
   drawBaseGridOnly(
     ctx: CanvasRenderingContext2D,
@@ -620,9 +652,77 @@ export class Canvas2DDirectRenderer implements IDirectRenderer {
   }
 
   /**
-   * Both joined grids as dots. The base layer leaves hand points to the
-   * compositor's overlay, as `drawBaseGridOnly` does. Non-radial points are a
-   * single-grid overlay and stay off.
+   * The hand points `handPointVisibility` shows ("active": the start and end
+   * locations of the visible motions), plus the non-radial points when on,
+   * where the grid artwork has them.
+   */
+  private drawHandPoints(
+    ctx: CanvasRenderingContext2D,
+    size: number,
+    isDarkMode: boolean,
+    gridMode: GridMode,
+    handPointVisibility: "all" | "active" | "none",
+    showNonRadial: boolean,
+    pictograph: PreparedPictographData
+  ): void {
+    const scale = size / VIEWBOX_SIZE;
+    const isBoxMode = gridMode === GridMode.BOX;
+    const lit = (location: string) =>
+      [pictograph.motions?.left, pictograph.motions?.right].some(
+        (motion) =>
+          isVisibleMotion(motion) &&
+          (motion.startLocation?.toLowerCase() === location ||
+            motion.endLocation?.toLowerCase() === location)
+      );
+    const handPoints =
+      handPointVisibility === "none"
+        ? []
+        : Object.entries(DIAMOND_HAND_POINTS)
+            .filter(
+              ([diamondLocation]) =>
+                handPointVisibility === "all" ||
+                lit(
+                  isBoxMode
+                    ? BOX_HAND_POINT_LOCATIONS[
+                        diamondLocation as keyof typeof BOX_HAND_POINT_LOCATIONS
+                      ]
+                    : diamondLocation
+                )
+            )
+            .map(([, point]) => ({ ...point, r: HAND_POINT_RADIUS }));
+    const points = [
+      ...handPoints,
+      ...(showNonRadial
+        ? DIAMOND_NON_RADIAL_POINTS.map((point) => ({
+            ...point,
+            r: NON_RADIAL_POINT_RADIUS,
+          }))
+        : []),
+    ];
+
+    ctx.save();
+    ctx.globalAlpha = isDarkMode ? 0.85 : 1.0;
+    ctx.fillStyle = isDarkMode ? GRID_POINT_COLOR_DARK : GRID_POINT_COLOR_LIGHT;
+    // Turn the diamond's points into the box grid's, as drawBaseGridOnly and
+    // GridSvg.svelte turn the diamond grid.
+    if (isBoxMode) {
+      const center = size / 2;
+      ctx.translate(center, center);
+      ctx.rotate((45 * Math.PI) / 180);
+      ctx.translate(-center, -center);
+    }
+    for (const point of points) {
+      ctx.beginPath();
+      ctx.arc(point.x * scale, point.y * scale, point.r * scale, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  /**
+   * Both joined grids as dots, with the hand points `handPointVisibility`
+   * shows ("active": the points each hand lights in its own grid).
+   * Non-radial points are a single-grid overlay and stay off.
    */
   private drawJoinedGrid(
     ctx: CanvasRenderingContext2D,
@@ -630,11 +730,16 @@ export class Canvas2DDirectRenderer implements IDirectRenderer {
     isDarkMode: boolean,
     gridMode: GridMode,
     layout: GridJoinLayout,
-    baseOnly: boolean
+    handPointVisibility: "all" | "active" | "none",
+    pictograph: PreparedPictographData
   ): void {
     const pointColor = isDarkMode
       ? GRID_POINT_COLOR_DARK
       : GRID_POINT_COLOR_LIGHT;
+    const active =
+      handPointVisibility === "active"
+        ? getJoinedActiveHandPoints(pictograph)
+        : null;
     ctx.save();
     ctx.globalAlpha = isDarkMode ? 0.85 : 1.0;
     ctx.fillStyle = pointColor;
@@ -644,7 +749,13 @@ export class Canvas2DDirectRenderer implements IDirectRenderer {
       layout,
       size,
       gridMode === GridMode.BOX,
-      (point) => !baseOnly || point.kind !== "hand"
+      (point) =>
+        point.kind !== "hand" ||
+        (handPointVisibility !== "none" &&
+          (!active ||
+            point.members.some((member) =>
+              active[member.hand].has(member.location)
+            )))
     );
     ctx.restore();
   }

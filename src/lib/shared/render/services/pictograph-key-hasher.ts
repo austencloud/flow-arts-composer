@@ -56,6 +56,7 @@ interface PictographKeyInput {
   propGeometryRevision?: string;
   propAppearanceRevision?: string;
   turnGlyphRevision?: string;
+  gridPointRevision?: string;
   visibility: {
     fanAppearance?: string;
     // Present only when a captured model sprite replaces a notation prop, so
@@ -96,6 +97,11 @@ const BETA_SHIFT_MAP_REVISION = "beta-shift-map-v2";
 const CANONICAL_HAND_ARROW_RENDER_REVISION = "canonical-hand-arrows-v1";
 const FIRST_QUARTER_TURN_GLYPH_REVISION = "quarter-turn-glyph-v1";
 const COMPLETE_QUARTER_TURN_GLYPH_REVISION = "quarter-turn-glyph-v2";
+// The layer compositor used to paint the grid's hand points over the props,
+// leaving a dot in the middle of every staff. It now paints them under the
+// props, so every cell it drew with hand points showing must miss. A custom
+// palette always went through the full renderer, which drew them under.
+const GRID_POINT_REVISION = "hand-points-under-props-v1";
 const COMPLETED_QUARTER_TURN_VALUES = new Set([0.75, 1.25, 1.75, 2.25, 2.75]);
 const PROP_APPEARANCE_REVISIONS: Readonly<Record<string, string>> = {
   // The original club raster was a single flat silhouette. The regular-club
@@ -339,6 +345,11 @@ export class PictographKeyHasher {
       ...(propGeometryRevision && { propGeometryRevision }),
       ...(propAppearanceRevision && { propAppearanceRevision }),
       ...(turnGlyphRevision && { turnGlyphRevision }),
+      ...((visibility.showGrid ?? true) &&
+        (visibility.handPointVisibility ?? "all") !== "none" &&
+        !visibility.primaryPropColors && {
+          gridPointRevision: GRID_POINT_REVISION,
+        }),
       visibility: {
         ...(visibility.fanAppearance &&
           (isFanPropType(resolvedLeftProp) ||
