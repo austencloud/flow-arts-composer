@@ -166,13 +166,8 @@ export function cardParityCases(): CardParityCase[] {
       },
     },
     {
-      name: "joined-cell-overrides-dark",
-      // Start on one grid, step 2 joined south two steps apart, the rest
-      // following the sequence's join.
-      sequence: withCellJoins(sequence, null, [
-        undefined,
-        { toward: "s", steps: 2 },
-      ]),
+      name: "joined-grids-dark",
+      sequence,
       options: {
         showDifficulty: true,
         showMandala: true,
@@ -211,21 +206,5 @@ function withDurations(
     ...step,
     duration: durations[index] ?? 1,
   }));
-  return copy;
-}
-
-/** Per-cell joins: `undefined` follows the sequence, `null` keeps one grid. */
-function withCellJoins(
-  sequence: typeof demo,
-  start: GridJoinSpec | null | undefined,
-  steps: Array<GridJoinSpec | null | undefined>
-): typeof demo {
-  const copy = structuredClone(sequence);
-  if (start !== undefined) {
-    Object.assign(copy.startPlacement, { conjoined: start });
-  }
-  copy.steps = copy.steps.map((step, index) =>
-    steps[index] === undefined ? step : { ...step, conjoined: steps[index] }
-  );
   return copy;
 }

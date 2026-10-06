@@ -12,7 +12,6 @@ import {
   gridJoinToken,
   isWellFormedGridJoin,
   parseGridJoinToken,
-  sequenceGridJoinToken,
 } from "$lib/shared/foundation/domain/models/grid-join-token";
 
 const EVERY_DIRECTION: Record<GridJoinDirection, true> = {
@@ -99,40 +98,33 @@ describe("what counts as a well-formed join", () => {
 describe("the token of a join", () => {
   it.each(WELL_FORMED)("spells $toward $steps as render-core's key", (join) => {
     expect(gridJoinToken(join)).toBe(gridJoinKey(join));
-    expect(sequenceGridJoinToken(join)).toBe(gridJoinKey(join));
   });
 
-  it("is x for a cell kept on one grid, which only a cell can be", () => {
-    expect(gridJoinToken(null)).toBe("x");
-    expect(sequenceGridJoinToken(null)).toBe("");
-  });
-
-  it("is empty for a join that follows the sequence or is malformed", () => {
+  it("is empty for a sequence on one grid", () => {
     expect(gridJoinToken(undefined)).toBe("");
-    expect(sequenceGridJoinToken(undefined)).toBe("");
+    expect(gridJoinToken(null)).toBe("");
+  });
 
-    for (const value of MALFORMED.filter((entry) => entry !== null)) {
-      expect(gridJoinToken(value as never), JSON.stringify(value)).toBe("");
-      expect(sequenceGridJoinToken(value as never), JSON.stringify(value)).toBe(
-        ""
-      );
+  it("is empty for a join that is malformed", () => {
+    for (const value of MALFORMED) {
+      expect(gridJoinToken(value), JSON.stringify(value)).toBe("");
     }
   });
 
-  it("matches render-core's key for a sequence with only its own join", () => {
+  it("matches render-core's key for a sequence", () => {
     for (const join of WELL_FORMED) {
       expect(sequenceGridJoinKey({ conjoined: join })).toBe(
-        sequenceGridJoinToken(join)
+        gridJoinToken(join)
       );
     }
-    expect(sequenceGridJoinKey({})).toBe(sequenceGridJoinToken(undefined));
+    expect(sequenceGridJoinKey({})).toBe(gridJoinToken(undefined));
+    expect(sequenceGridJoinKey({ conjoined: null })).toBe(gridJoinToken(null));
   });
 
   it("reads back to the join it spells", () => {
     for (const join of WELL_FORMED) {
       expect(parseGridJoinToken(gridJoinToken(join))).toEqual(join);
     }
-    expect(parseGridJoinToken("x")).toBeNull();
   });
 
   it.each([
@@ -148,6 +140,7 @@ describe("the token of a join", () => {
     "e11",
     "1",
     "e ",
+    "x",
     "xx",
   ])("reads %j as no join at all", (token) => {
     expect(parseGridJoinToken(token)).toBeUndefined();

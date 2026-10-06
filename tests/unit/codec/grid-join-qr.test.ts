@@ -1,6 +1,6 @@
 /**
- * A joined sequence keeps its join through QR encoding, on the flat path and
- * on the recipe (r1) path. The recipe encoder only emits a recipe when
+ * A joined sequence keeps its one join through QR encoding, on the flat path
+ * and on the recipe (r1) path. The recipe encoder only emits a recipe when
  * rebuilding the sequence from its seed gives back the same flat bytes, so a
  * join the rebuild would lose sends the sequence down the flat path instead.
  */
@@ -37,10 +37,9 @@ import {
 } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
 import {
   buildJoinFixture,
-  joinsOf,
+  joinOf,
   JOIN_EAST_ONE,
   JOIN_NORTHEAST_TWO,
-  JOIN_SOUTH_TWO,
   type JoinFixtureOptions,
 } from "../grid-join/grid-join-fixtures";
 
@@ -83,8 +82,6 @@ function cell(
 
 interface LoopOptions {
   readonly sequenceJoin?: JoinFixtureOptions["sequenceJoin"];
-  readonly startJoin?: JoinFixtureOptions["startJoin"];
-  readonly seedJoin?: JoinFixtureOptions["startJoin"];
 }
 
 /** A rotated, quartered LOOP: one seed step run round the four quarters. */
@@ -126,7 +123,6 @@ function buildLoop(options: LoopOptions = {}): SequenceData {
     {
       startPlacement: GridPlacement.ALPHA1,
       endPlacement: GridPlacement.ALPHA3,
-      ...(options.seedJoin !== undefined && { conjoined: options.seedJoin }),
     }
   );
   const completed = loopExecutorSelector
@@ -145,7 +141,6 @@ function buildLoop(options: LoopOptions = {}): SequenceData {
       startPlacement: startCell.startPlacement,
       endPlacement: startCell.endPlacement,
       motions: startCell.motions,
-      ...(options.startJoin !== undefined && { conjoined: options.startJoin }),
     },
     ...(options.sequenceJoin && { conjoined: options.sequenceJoin }),
   });
@@ -161,20 +156,15 @@ describe("flat QR encoding", () => {
   const options: readonly JoinFixtureOptions[] = [
     { sequenceJoin: JOIN_EAST_ONE },
     { sequenceJoin: JOIN_NORTHEAST_TWO, handPath: true },
-    {
-      sequenceJoin: JOIN_EAST_ONE,
-      startJoin: JOIN_NORTHEAST_TWO,
-      stepJoins: [JOIN_SOUTH_TWO, undefined, null],
-    },
   ];
 
-  it.each(options)("keeps the joins of %j", async (join) => {
+  it.each(options)("keeps the join of %j", async (join) => {
     const sequence = buildJoinFixture(join);
     const qr = await encodeSequenceForQR(sequence);
     const decoded = await decodeSequenceFromQR(qr);
 
     expect(qr.startsWith("s~")).toBe(true);
-    expect(joinsOf(decoded)).toEqual(joinsOf(sequence));
+    expect(joinOf(decoded)).toEqual(joinOf(sequence));
   });
 });
 
@@ -205,43 +195,6 @@ describe("recipe QR encoding", () => {
     const qr = await encodeSequenceForQR(sequence);
 
     expect(qr.startsWith("s~r1:")).toBe(true);
-    expect(joinsOf(await decodeSequenceFromQR(qr))).toEqual(joinsOf(sequence));
+    expect(joinOf(await decodeSequenceFromQR(qr))).toEqual(joinOf(sequence));
   });
-
-  it("falls back to the flat bytes when the start cell has its own join", async () => {
-    const sequence = buildLoop({
-      sequenceJoin: JOIN_EAST_ONE,
-      startJoin: JOIN_NORTHEAST_TWO,
-    });
-    const qr = await encodeSequenceForQR(sequence);
-
-    expect(qr.startsWith("s~r1:")).toBe(false);
-    expect(joinsOf(await decodeSequenceFromQR(qr))).toEqual(joinsOf(sequence));
-  });
-
-  it("falls back to the flat bytes when the start cell stays on one grid", async () => {
-    const sequence = buildLoop({
-      sequenceJoin: JOIN_EAST_ONE,
-      startJoin: null,
-    });
-    const qr = await encodeSequenceForQR(sequence);
-
-    expect(qr.startsWith("s~r1:")).toBe(false);
-    expect(joinsOf(await decodeSequenceFromQR(qr)).start).toBeNull();
-  });
-
-  it.each([JOIN_SOUTH_TWO, null] as const)(
-    "keeps the seed step's own join %j, whichever path carries it",
-    async (seedJoin) => {
-      const sequence = buildLoop({
-        sequenceJoin: JOIN_EAST_ONE,
-        seedJoin,
-      });
-      const qr = await encodeSequenceForQR(sequence);
-      const decoded = await decodeSequenceFromQR(qr);
-
-      expect(joinsOf(decoded)).toEqual(joinsOf(sequence));
-      expect(encodeSequence(decoded)).toBe(encodeSequence(sequence));
-    }
-  );
 });

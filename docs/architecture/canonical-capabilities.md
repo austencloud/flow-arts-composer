@@ -155,17 +155,19 @@ Timing and direction as a generator setting lives on the Generate bento's TnD ca
 Joined grids in still pictographs (one grid per hand, side by side) live in
 `packages/render-core/src/calculations/grid-join-layout.ts`. Searches:
 conjoined, joined grids, GridJoin, two grids, grid join. `GridJoin` in
-`@tka/tka-types` is the schema: `SequenceData.conjoined` joins a whole sequence
-and `Step.conjoined` overrides one step (`null` keeps that step on one grid).
-`resolveStepGridJoin` picks a cell's join, `gridJoinCellResolver` sets every
-card cell to it (one-grid cards pass through untouched, keeping their cache
-keys), `getGridJoinLayout` owns the merged and hidden points and the fit scale,
+`@tka/tka-types` is the schema: `SequenceData.conjoined` joins a whole
+sequence, and a sequence has exactly one join for every cell, the Start cell
+included. Steps and the start placement carry no join of their own: changing
+the join between two steps would make a hand jump, so any layout switch is left
+to a future junction model. `gridJoinCellResolver` sets every card cell to the
+sequence's join (one-grid cards pass through untouched, keeping their cache
+keys; a stray per-cell join is stripped), `getGridJoinLayout` owns the merged and hidden points and the fit scale,
 and `gridJoinPropNudges` parts two flat props on one line by their beta offset.
 `PictographPreparer` prepares each hand alone on its grid,
 `render/services/joined-grid-painter.ts` paints the points for
 `Canvas2DDirectRenderer` and the `LayerCompositor` overlay, and
-`image-composer.ts` and `choreo-card-render-engine.ts` give each card cell its
-join. The MCP `StandaloneRenderer` draws joins too, and its picture tools take
+`image-composer.ts` and `choreo-card-render-engine.ts` give each card cell the
+sequence's join. The MCP `StandaloneRenderer` draws joins too, and its picture tools take
 a `conjoined` option. The live Svelte `PictographRenderer` draws one grid only,
 so a joined `ChoreoCard` renders image cells instead of live ones.
 
@@ -181,13 +183,12 @@ viewer's card export and the composite video's step grid come out joined.
 Links, library saves and QR codes keep the sequence as saved.
 
 A join saved on a sequence travels with it.
-`foundation/domain/models/grid-join-token.ts` spells a join as text (`e1`, or
-`x` for a cell kept on one grid) for the share-link codec, the content hashers
-and the public wire schema. `sequence-encoder.ts` closes a link's header with
-`J<toward><steps>` and writes a cell's own join as a fourth beat segment
-(`:J<token>`). The step and start factories, the pairing compose and derive,
-the public projection and loaders, the arena repository and the short-code
-payloads carry it too. A sequence with no join writes nothing anywhere, so its
+`foundation/domain/models/grid-join-token.ts` spells the sequence's join as text
+(`e1`) for the content hashers and the public wire schema. `sequence-encoder.ts`
+closes a link's header with `J<toward><steps>`; beats carry no join, and the
+decoder skips the fourth beat segment an unreleased build once wrote. The
+public projection and loaders, the arena repository and the short-code
+payloads carry the sequence's join too. A sequence with no join writes nothing anywhere, so its
 links, short codes, QR digests and hashes stay as they were; a joined sequence
 mints its own. Mirror, flip, rotate and rewind do not yet turn a join's
 direction.
@@ -418,9 +419,9 @@ another.
 | ----------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | scene boot, scene switch, persistent worker renderer, poster handoff, shader warmup, GLB prefetch                                   | `shared/3d/worker-renderer/` owns the persistent production worker for all ten environments; `shared/3d/scene-boot/` owns legacy main-thread boot (Record Scene); `shared/3d/rendering/viewer-lighting-rig.ts` owns viewer lighting; environment worlds under `shared/3d/environments/worlds/` stay renderer-neutral with thin Svelte and worker adapters                                                                                                                                                                                                                                                                  |
 | filter, chip, pill, toggle row, segmented selector                                                                                  | `FilterChipBase` for independent toggles; `SegmentedControl` for exactly-one selection; see `.claude/rules/chip-primitives.md`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
-| link, hyperlink, text link, reading list, source list, external link, inline mention, next step, navigation pill | `shared/ui/components/LinkChip.svelte`: every text link is a pill (`size="inline"` inside a sentence); external links open a new tab and say so. Closest matches kept separate: `FilterChipBase` (buttons, no href), `EntityCard`-style record boxes. See `.claude/rules/no-text-links.md`. Decision: create. |
-| slider, range input, amount, labeled value                                                                                          | `shared/ui/components/ValueSlider.svelte` for a named amount with a visible track and its value in a box beside it that types an exact value; `ScrubbableNumber` for dense scrub-to-change numbers in desktop tools                                                                                                                                                                                                                                                                                                                                                                                                                                     |
-| typed value, type a number, number field, exact value, editable readout, press to type, time entry | `shared/ui/components/TypeableValue.svelte` shows a reading in a box that opens a text field: Enter or leaving sets the value, Escape keeps the old one, text with no value stays open and marked; `shared/ui/typed-number.ts` reads what was typed (decimal comma, typographic minus, units), `parseClock` in Post Studio's `post-builder-format.ts` reads a time |
+| link, hyperlink, text link, reading list, source list, external link, inline mention, next step, navigation pill                    | `shared/ui/components/LinkChip.svelte`: every text link is a pill (`size="inline"` inside a sentence); external links open a new tab and say so. Closest matches kept separate: `FilterChipBase` (buttons, no href), `EntityCard`-style record boxes. See `.claude/rules/no-text-links.md`. Decision: create.                                                                                                                                                                                                                                                                                                              |
+| slider, range input, amount, labeled value                                                                                          | `shared/ui/components/ValueSlider.svelte` for a named amount with a visible track and its value in a box beside it that types an exact value; `ScrubbableNumber` for dense scrub-to-change numbers in desktop tools                                                                                                                                                                                                                                                                                                                                                                                                        |
+| typed value, type a number, number field, exact value, editable readout, press to type, time entry                                  | `shared/ui/components/TypeableValue.svelte` shows a reading in a box that opens a text field: Enter or leaving sets the value, Escape keeps the old one, text with no value stays open and marked; `shared/ui/typed-number.ts` reads what was typed (decimal comma, typographic minus, units), `parseClock` in Post Studio's `post-builder-format.ts` reads a time                                                                                                                                                                                                                                                         |
 | crossfade, keyed swap, canvas handoff, animated height                                                                              | `shared/components/Crossfade.svelte` for cheap keyed content; `shared/components/DualSourceCrossfade.svelte` for heavy or stateful sources (`clip={false}` preserves stage-owned overflow controls); see `.claude/rules/crossfade-primitive.md`                                                                                                                                                                                                                                                                                                                                                                            |
 | layout motion, reflow, panel presence, reorder, FLIP, intrinsic modal height                                                        | `shared/transitions/motion.ts` (`createIntrinsicHeightMotion` through `BaseModal.animateSize` for content-sized dialogs), `shared/panels/PanelGroup.svelte`, Svelte `animate:flip` with `flipDuration()`, and `shared/transitions/layout-flip.ts`; see `.claude/rules/no-layout-shift.md`                                                                                                                                                                                                                                                                                                                                  |
 | step grid, pictograph preview swap, visual slot identity, difficulty and LOOP metadata                                              | `features/create/shared/workspace-panel/sequence-display/components/StepGrid.svelte` owns document-vs-slot identity; `SequenceMetadataRail.svelte` owns compact difficulty and LOOP indicators                                                                                                                                                                                                                                                                                                                                                                                                                             |

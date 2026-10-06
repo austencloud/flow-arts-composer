@@ -1,7 +1,7 @@
 /**
- * A step's, a start cell's and a whole sequence's grid join must survive every
- * rebuild the save and load paths run: the step and start-placement factories,
- * the persisted step pairings, and the hydrate that re-derives steps on read.
+ * A sequence's one grid join must survive every rebuild the save and load
+ * paths run: the persisted step pairings and the hydrate that re-derives steps
+ * on read. Steps and the start cell carry no join of their own.
  */
 import { describe, expect, it } from "vitest";
 import { createStepData } from "$lib/shared/foundation/domain/factories/create-step-data";
@@ -13,81 +13,43 @@ import {
 } from "$lib/shared/foundation/services/sequence-hydrator";
 import { extractStepPairings } from "$lib/shared/foundation/services/sequence-decomposer";
 import { deriveSteps } from "$lib/shared/foundation/services/step-deriver";
-import {
-  buildJoinFixture,
-  joinsOf,
-  JOIN_EAST_ONE,
-  JOIN_NORTHEAST_TWO,
-  JOIN_SOUTH_TWO,
-} from "./grid-join-fixtures";
+import { buildJoinFixture, joinOf, JOIN_EAST_ONE } from "./grid-join-fixtures";
 
-describe("createStepData", () => {
-  it("keeps a step's own join", () => {
-    const step = createStepData({ conjoined: JOIN_EAST_ONE });
-    expect(step.conjoined).toEqual(JOIN_EAST_ONE);
+describe("cell factories", () => {
+  it("build a step with no join key, even from input that carries one", () => {
+    const stray = { conjoined: JOIN_EAST_ONE } as never;
+    expect("conjoined" in createStepData(stray)).toBe(false);
   });
 
-  it("keeps null, the step that stays on one grid", () => {
-    const step = createStepData({ conjoined: null });
-    expect(step.conjoined).toBeNull();
-  });
-
-  it("leaves the key off when the step follows the sequence", () => {
-    const step = createStepData({});
-    expect("conjoined" in step).toBe(false);
-  });
-});
-
-describe.each([
-  ["foundation", createStartPlacementData],
-  ["create", createStartPlacementDataFromCreate],
-])("createStartPlacementData (%s factory)", (_name, create) => {
-  it("keeps the start cell's own join", () => {
-    expect(create({ conjoined: JOIN_NORTHEAST_TWO }).conjoined).toEqual(
-      JOIN_NORTHEAST_TWO
-    );
-  });
-
-  it("keeps null", () => {
-    expect(create({ conjoined: null }).conjoined).toBeNull();
-  });
-
-  it("leaves the key off when the start follows the sequence", () => {
-    expect("conjoined" in create({})).toBe(false);
+  it.each([
+    ["foundation", createStartPlacementData],
+    ["create", createStartPlacementDataFromCreate],
+  ])("build a start cell with no join key (%s factory)", (_name, create) => {
+    const stray = { conjoined: JOIN_EAST_ONE } as never;
+    expect("conjoined" in create(stray)).toBe(false);
   });
 });
 
 describe("step pairings", () => {
-  const joined = buildJoinFixture({
-    sequenceJoin: JOIN_EAST_ONE,
-    stepJoins: [undefined, null, JOIN_SOUTH_TWO],
-  });
+  const joined = buildJoinFixture({ sequenceJoin: JOIN_EAST_ONE });
 
-  it("carry each step's own join and nothing for a step that follows", () => {
+  it("carry no join: the sequence's one join covers every step", () => {
     const pairings = extractStepPairings(joined);
-    expect("conjoined" in pairings[0]!).toBe(false);
-    expect(pairings[1]!.conjoined).toBeNull();
-    expect(pairings[2]!.conjoined).toEqual(JOIN_SOUTH_TWO);
+    expect(pairings.some((pairing) => "conjoined" in pairing)).toBe(false);
   });
 
-  it("give the same per-step joins back when steps are derived", () => {
+  it("derive steps with no join, even from a stored pairing that has one", () => {
     const composed = ensureComposition(joined);
+    const legacyPairings = composed.stepPairings!.map((pairing) => ({
+      ...pairing,
+      conjoined: JOIN_EAST_ONE,
+    }));
     const steps = deriveSteps(
       composed.leftSoloProp!,
       composed.rightSoloProp!,
-      composed.stepPairings!
+      legacyPairings
     );
-    expect(steps.map((step) => step.conjoined)).toEqual([
-      undefined,
-      null,
-      JOIN_SOUTH_TWO,
-    ]);
-    expect("conjoined" in steps[0]!).toBe(false);
-  });
-
-  it("leave a sequence without joins with pairings that have no join key", () => {
-    const pairings = extractStepPairings(buildJoinFixture());
-    expect(pairings.some((pairing) => "conjoined" in pairing)).toBe(false);
+    expect(steps.some((step) => "conjoined" in step)).toBe(false);
   });
 });
 
@@ -97,27 +59,15 @@ describe("save then load", () => {
     return { ...ensureComposition(sequence), steps: [] };
   }
 
-  it("keeps the sequence, start-cell and per-step joins through hydrate", () => {
-    const original = buildJoinFixture({
-      sequenceJoin: JOIN_EAST_ONE,
-      startJoin: JOIN_NORTHEAST_TWO,
-      stepJoins: [JOIN_SOUTH_TWO, undefined, null],
-    });
-    const stored = JSON.parse(JSON.stringify(persisted(original)));
-    const loaded = hydrate(stored);
-
-    expect(joinsOf(loaded)).toEqual(joinsOf(original));
-  });
-
-  it("keeps a start cell that stays on one grid", () => {
-    const original = buildJoinFixture({
-      sequenceJoin: JOIN_EAST_ONE,
-      startJoin: null,
-    });
+  it("keeps the sequence's join through hydrate, and no cell gains one", () => {
+    const original = buildJoinFixture({ sequenceJoin: JOIN_EAST_ONE });
     const loaded = hydrate(JSON.parse(JSON.stringify(persisted(original))));
 
-    expect(joinsOf(loaded).start).toBeNull();
-    expect(joinsOf(loaded).sequence).toEqual(JOIN_EAST_ONE);
+    expect(joinOf(loaded)).toEqual(JOIN_EAST_ONE);
+    expect(loaded.steps.some((step) => "conjoined" in step)).toBe(false);
+    expect(
+      "conjoined" in (loaded.startPlacement ?? loaded.startingPlacement ?? {})
+    ).toBe(false);
   });
 
   it("adds no join to a sequence that had none", () => {
@@ -125,11 +75,7 @@ describe("save then load", () => {
       JSON.parse(JSON.stringify(persisted(buildJoinFixture())))
     );
 
-    expect(joinsOf(loaded)).toEqual({
-      sequence: undefined,
-      start: undefined,
-      steps: [undefined, undefined, undefined],
-    });
+    expect(joinOf(loaded)).toBeUndefined();
     expect(loaded.steps.some((step) => "conjoined" in step)).toBe(false);
   });
 });

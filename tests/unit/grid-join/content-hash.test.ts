@@ -1,6 +1,7 @@
 /**
  * Grid joins in the two content hashes. The identity hash (V3) and the
- * render-cache fingerprint include a join only where one is set, so every
+ * render-cache fingerprint include the sequence's join only where one is set,
+ * so every
  * sequence drawn on one grid keeps the hash it already had: those hashes are
  * stored in documents and keyed into caches. The pinned values below were
  * computed before joins existed.
@@ -25,7 +26,6 @@ import {
   buildJoinFixture,
   JOIN_EAST_ONE,
   JOIN_NORTHEAST_TWO,
-  JOIN_SOUTH_TWO,
   type JoinFixtureOptions,
 } from "./grid-join-fixtures";
 
@@ -106,6 +106,20 @@ describe("sequences drawn on one grid keep their hashes", () => {
       expect(hashSequenceContent(sequence)).toBe(hashSequenceContent(base));
     }
   });
+
+  it("when steps or the start cell carry a join of their own", async () => {
+    const base = buildJoinFixture();
+    const stray = {
+      ...base,
+      startPlacement: { ...base.startPlacement!, conjoined: JOIN_EAST_ONE },
+      steps: base.steps.map((step) => ({ ...step, conjoined: JOIN_EAST_ONE })),
+    } as unknown as SequenceData;
+
+    expect(await computeHash(stray, HASH_VERSION_V3)).toBe(
+      await computeHash(base, HASH_VERSION_V3)
+    );
+    expect(hashSequenceContent(stray)).toBe(hashSequenceContent(base));
+  });
 });
 
 describe("a joined sequence", () => {
@@ -113,24 +127,7 @@ describe("a joined sequence", () => {
     "joined sequence": { sequenceJoin: JOIN_EAST_ONE },
     "joined toward the west": { sequenceJoin: { toward: "w", steps: 1 } },
     "joined two steps apart": { sequenceJoin: { toward: "e", steps: 2 } },
-    "joined start cell only": { startJoin: JOIN_EAST_ONE },
-    "joined first step only": { stepJoins: [JOIN_EAST_ONE] },
-    "joined last step only": {
-      stepJoins: [undefined, undefined, JOIN_EAST_ONE],
-    },
-    "start cell on one grid in a joined sequence": {
-      sequenceJoin: JOIN_EAST_ONE,
-      startJoin: null,
-    },
-    "step on one grid in a joined sequence": {
-      sequenceJoin: JOIN_EAST_ONE,
-      stepJoins: [undefined, null],
-    },
-    "every kind of join together": {
-      sequenceJoin: JOIN_EAST_ONE,
-      startJoin: JOIN_NORTHEAST_TWO,
-      stepJoins: [JOIN_SOUTH_TWO, undefined, null],
-    },
+    "joined diagonally": { sequenceJoin: JOIN_NORTHEAST_TWO },
   };
   const entries = Object.entries(variants);
 
@@ -146,7 +143,7 @@ describe("a joined sequence", () => {
     }
   });
 
-  it("gets a different V3 hash for every place and kind of join", async () => {
+  it("gets a different V3 hash for every kind of join", async () => {
     const hashes = await Promise.all(
       entries.map(([, options]) =>
         computeHash(buildJoinFixture(options), HASH_VERSION_V3)
@@ -156,7 +153,7 @@ describe("a joined sequence", () => {
     expect(new Set(hashes).size).toBe(entries.length);
   });
 
-  it("gets a different fingerprint for every place and kind of join", () => {
+  it("gets a different fingerprint for every kind of join", () => {
     const plain = hashSequenceContent(buildJoinFixture());
     const fingerprints = entries.map(([, options]) =>
       hashSequenceContent(buildJoinFixture(options))
@@ -166,7 +163,7 @@ describe("a joined sequence", () => {
     expect(new Set(fingerprints).size).toBe(entries.length);
   });
 
-  it("gets a different V3 hash for every place and kind of join on a hand path", async () => {
+  it("gets a different V3 hash for every kind of join on a hand path", async () => {
     const plain = await computeHash(
       buildJoinFixture({ handPath: true }),
       HASH_VERSION_V3
@@ -235,15 +232,9 @@ describe("a joined sequence", () => {
   it("hashes the same however the stored join orders its keys", async () => {
     const swapped = (join: { toward: string; steps: number }) =>
       ({ steps: join.steps, toward: join.toward }) as never;
-    const options: JoinFixtureOptions = {
-      sequenceJoin: JOIN_EAST_ONE,
-      startJoin: JOIN_NORTHEAST_TWO,
-      stepJoins: [JOIN_SOUTH_TWO, undefined, null],
-    };
+    const options: JoinFixtureOptions = { sequenceJoin: JOIN_EAST_ONE };
     const reordered: JoinFixtureOptions = {
       sequenceJoin: swapped(JOIN_EAST_ONE),
-      startJoin: swapped(JOIN_NORTHEAST_TWO),
-      stepJoins: [swapped(JOIN_SOUTH_TWO), undefined, null],
     };
 
     expect(await computeHash(buildJoinFixture(reordered))).toBe(
@@ -267,22 +258,8 @@ describe("the identity hash across save and load", () => {
   it.each(
     Object.entries({
       "on one grid": {},
-      joined: {
-        sequenceJoin: JOIN_EAST_ONE,
-        startJoin: JOIN_NORTHEAST_TWO,
-        stepJoins: [JOIN_SOUTH_TWO, undefined, null],
-      },
-      "with cells on one grid": {
-        sequenceJoin: JOIN_EAST_ONE,
-        startJoin: null,
-        stepJoins: [undefined, null, undefined],
-      },
-      "joined on a hand path": {
-        sequenceJoin: JOIN_EAST_ONE,
-        startJoin: JOIN_NORTHEAST_TWO,
-        stepJoins: [JOIN_SOUTH_TWO, undefined, null],
-        handPath: true,
-      },
+      joined: { sequenceJoin: JOIN_EAST_ONE },
+      "joined on a hand path": { sequenceJoin: JOIN_EAST_ONE, handPath: true },
     } satisfies Record<string, JoinFixtureOptions>)
   )(
     "does not change a sequence %s, so saving it again forks nothing",

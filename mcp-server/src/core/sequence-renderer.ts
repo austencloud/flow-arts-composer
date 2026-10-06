@@ -9,7 +9,7 @@ import {
   type PictographInput,
   type RenderVisibilityOptions,
 } from "./standalone-renderer.js";
-import { resolveStepGridJoin, type GridJoinSpec } from "@tka/render-core";
+import { isGridJoin, type GridJoinSpec } from "@tka/render-core";
 import type { SequenceStep } from "./sequence-builder-adapter.js";
 import { applyCanonicalReversals } from "./card-reversals.js";
 import { renderCardQrCode } from "./qr-code-renderer.js";
@@ -108,7 +108,7 @@ export interface SequenceRenderOptions {
   accentColor?: string;
   /** 0–1 alpha for the accent tint; omit for the Composer default. */
   accentTintOpacity?: number;
-  /** Draws every cell on joined grids; a step's own join overrides it. */
+  /** Draws every cell, the start included, on the same joined grids. */
   conjoined?: GridJoinSpec | null;
 }
 const DEFAULT_OPTIONS = {
@@ -250,7 +250,7 @@ export async function renderSequenceToImage(
         },
         leftReversal: step.leftReversal,
         rightReversal: step.rightReversal,
-        conjoined: resolveStepGridJoin(opts.conjoined, step.conjoined),
+        conjoined: isGridJoin(opts.conjoined) ? opts.conjoined : null,
       };
       const png = await renderer.renderToPng(pictograph, {
         ...visibilityOptions,

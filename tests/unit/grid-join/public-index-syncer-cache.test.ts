@@ -1,8 +1,8 @@
 /**
- * Publishing a joined sequence hands the join on twice: into the document
+ * Publishing a joined sequence hands its one join on twice: into the document
  * written to the public mirror, and into the entry the Browse gallery caches
  * so the new sequence shows its join before the next catalog read. A sequence
- * on one grid gains no key in either place.
+ * on one grid gains no key in either place, and no cell carries a join.
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -59,40 +59,26 @@ vi.mock("$lib/shared/sequence-viewer/get-public-sequence-hash-matcher", () => ({
   })),
 }));
 
-import type { GridJoin } from "@tka/tka-types";
 import { PublicIndexSyncer } from "$lib/features/library/services/public-index-syncer";
 import type { LibrarySequence } from "$lib/shared/library/domain/models/library-sequence";
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
 import { Letter } from "$lib/shared/foundation/domain/models/letter";
 import {
   buildJoinFixture,
-  joinsOf,
+  joinOf,
   JOIN_EAST_ONE,
-  JOIN_NORTHEAST_TWO,
-  JOIN_SOUTH_TWO,
   type JoinFixtureOptions,
 } from "./grid-join-fixtures";
 
-const JOINED: JoinFixtureOptions = {
-  sequenceJoin: JOIN_EAST_ONE,
-  startJoin: JOIN_NORTHEAST_TWO,
-  stepJoins: [JOIN_SOUTH_TWO, undefined, null],
-};
-
-const STEP_JOINS: readonly (GridJoin | null | undefined)[] = [
-  JOIN_SOUTH_TWO,
-  undefined,
-  null,
-  undefined,
-];
+const JOINED: JoinFixtureOptions = { sequenceJoin: JOIN_EAST_ONE };
 
 /**
- * The fixture flow plus a fourth step that follows the sequence: the public
+ * The fixture flow plus a fourth step: the public
  * gallery refuses anything shorter than four steps.
  */
 function communityFlow(options: JoinFixtureOptions): LibrarySequence {
   const flow = buildJoinFixture({ ...options, lettered: true });
-  const { conjoined: _join, ...third } = flow.steps[2]!;
+  const third = flow.steps[2]!;
   return {
     ...flow,
     steps: [
@@ -163,37 +149,23 @@ afterEach(() => {
 });
 
 describe("publishing a joined sequence", () => {
-  it("writes the sequence's, the start cell's and each step's join to the public document", async () => {
+  it("writes the sequence's join to the public document, and none on any cell", async () => {
     const { written } = await publish(communityFlow(JOINED));
 
     expect(written["conjoined"]).toEqual(JOIN_EAST_ONE);
+    expect("conjoined" in (written["startPlacement"] as object)).toBe(false);
     expect(
-      (written["startPlacement"] as { conjoined?: GridJoin }).conjoined
-    ).toEqual(JOIN_NORTHEAST_TWO);
-    expect(
-      (written["stepPairings"] as { conjoined?: GridJoin | null }[]).map(
-        (pairing) => pairing.conjoined
+      (written["stepPairings"] as object[]).some(
+        (pairing) => "conjoined" in pairing
       )
-    ).toEqual(STEP_JOINS);
+    ).toBe(false);
   });
 
-  it("hands the Browse cache the same joins", async () => {
+  it("hands the Browse cache the same join", async () => {
     const { cached } = await publish(communityFlow(JOINED));
 
-    expect(joinsOf(cached)).toEqual({
-      sequence: JOIN_EAST_ONE,
-      start: JOIN_NORTHEAST_TWO,
-      steps: STEP_JOINS,
-    });
-  });
-
-  it("hands the Browse cache a start cell that stays on one grid", async () => {
-    const { cached } = await publish(
-      communityFlow({ sequenceJoin: JOIN_EAST_ONE, startJoin: null })
-    );
-
-    expect(joinsOf(cached).sequence).toEqual(JOIN_EAST_ONE);
-    expect(joinsOf(cached).start).toBeNull();
+    expect(joinOf(cached)).toEqual(JOIN_EAST_ONE);
+    expect(cached.steps.some((step) => "conjoined" in step)).toBe(false);
   });
 });
 

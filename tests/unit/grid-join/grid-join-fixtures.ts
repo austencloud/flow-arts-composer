@@ -1,8 +1,9 @@
 /**
  * Shared fixtures for the joined-grid persistence tests: a three-step flow
- * whose sequence-level join, start-cell join and per-step joins are chosen by
- * the test. Steps and the start placement are plain literals, not factory
- * output, so a factory that drops `conjoined` cannot hide inside the fixture.
+ * whose one sequence-level join is chosen by the test. A sequence has one join
+ * for every cell, so the steps and the start placement carry none. They are
+ * plain literals, not factory output, so a factory cannot hide a stray join
+ * inside the fixture.
  */
 import type { GridJoin } from "@tka/tka-types";
 import {
@@ -109,7 +110,6 @@ const LETTERS: readonly Letter[] = [Letter.A, Letter.B, Letter.C];
 function plainStep(
   index: number,
   shape: StepShape,
-  join: GridJoin | null | undefined,
   lettered: boolean
 ): StepData {
   return {
@@ -123,13 +123,10 @@ function plainStep(
     startPlacement: null,
     endPlacement: null,
     motions: motions(shape.left, shape.right),
-    ...(join !== undefined && { conjoined: join }),
   };
 }
 
-function plainStartPlacement(
-  join: GridJoin | null | undefined
-): StartPlacementData {
+function plainStartPlacement(): StartPlacementData {
   const hold = { motionType: MotionType.STATIC, turns: 0 };
   return {
     isStartPlacement: true,
@@ -142,17 +139,12 @@ function plainStartPlacement(
       { ...hold, startLocation: N, endLocation: N },
       { ...hold, startLocation: S, endLocation: S }
     ),
-    ...(join !== undefined && { conjoined: join }),
   };
 }
 
 export interface JoinFixtureOptions {
   /** The join the whole sequence follows. */
   readonly sequenceJoin?: GridJoin;
-  /** The start cell's own join; null keeps it on one grid. */
-  readonly startJoin?: GridJoin | null;
-  /** Each step's own join, step 1 first; undefined follows the sequence. */
-  readonly stepJoins?: readonly (GridJoin | null | undefined)[];
   readonly handPath?: boolean;
   /**
    * Give the steps the letters A, B, C so the sequence has a complete word.
@@ -165,61 +157,34 @@ export interface JoinFixtureOptions {
 export function buildJoinFixture(
   options: JoinFixtureOptions = {}
 ): SequenceData {
-  const stepJoins = options.stepJoins ?? [];
   return createSequenceData({
     id: "fixture-sequence",
     word: "ABC",
     name: "Join fixture",
     steps: STEP_SHAPES.map((shape, index) =>
-      plainStep(index, shape, stepJoins[index], options.lettered ?? false)
+      plainStep(index, shape, options.lettered ?? false)
     ),
-    startPlacement: plainStartPlacement(options.startJoin),
+    startPlacement: plainStartPlacement(),
     ...(options.sequenceJoin && { conjoined: options.sequenceJoin }),
     ...(options.handPath && { sequenceKind: "hand-path" as const }),
   });
 }
 
 /**
- * `sequence` with the joins `options` describes, its motions untouched. Lets a
+ * `sequence` with the join `options` describes, its motions untouched. Lets a
  * test join a real saved sequence instead of the built fixture.
  */
 export function withJoins(
   sequence: SequenceData,
-  options: Pick<JoinFixtureOptions, "sequenceJoin" | "startJoin" | "stepJoins">
+  options: Pick<JoinFixtureOptions, "sequenceJoin">
 ): SequenceData {
-  const stepJoins = options.stepJoins ?? [];
-  const startJoin = options.startJoin !== undefined && {
-    conjoined: options.startJoin,
-  };
   return {
     ...sequence,
     ...(options.sequenceJoin && { conjoined: options.sequenceJoin }),
-    ...(startJoin &&
-      sequence.startPlacement && {
-        startPlacement: { ...sequence.startPlacement, ...startJoin },
-      }),
-    ...(startJoin &&
-      sequence.startingPlacement && {
-        startingPlacement: { ...sequence.startingPlacement, ...startJoin },
-      }),
-    steps: sequence.steps.map((step, index) =>
-      stepJoins[index] !== undefined
-        ? { ...step, conjoined: stepJoins[index] }
-        : step
-    ),
   };
 }
 
-/** The join fields of a sequence, for comparing across a round trip. */
-export function joinsOf(sequence: SequenceData): {
-  readonly sequence: GridJoin | null | undefined;
-  readonly start: GridJoin | null | undefined;
-  readonly steps: readonly (GridJoin | null | undefined)[];
-} {
-  const start = sequence.startPlacement ?? sequence.startingPlacement;
-  return {
-    sequence: sequence.conjoined,
-    start: start?.conjoined,
-    steps: sequence.steps.map((step) => step.conjoined),
-  };
+/** The sequence's join, for comparing across a round trip. */
+export function joinOf(sequence: SequenceData): GridJoin | undefined {
+  return sequence.conjoined;
 }

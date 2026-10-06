@@ -242,8 +242,6 @@ const StepPairingWireSchema = z
     rightReversal: z.boolean().optional(),
     startPlacement: z.string().nullable().optional(),
     endPlacement: z.string().nullable().optional(),
-    /** The step's own join; null keeps the step on one grid. */
-    conjoined: GridJoinWireSchema.nullable().optional().catch(undefined),
   })
   .passthrough();
 

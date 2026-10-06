@@ -1,5 +1,5 @@
 /**
- * A joined sequence keeps its join through short-code records, and a code
+ * A joined sequence keeps its one join through short-code records, and a code
  * minted for a sequence drawn on one grid never answers a joined one (nor the
  * other way round). The record is hydrated exactly as a scan hydrates it: the
  * embedded copy first, then the compact blob alone, which is all the offline
@@ -129,10 +129,9 @@ import type { ShortCodeData } from "$lib/shared/qr/services/types";
 import realRecords from "../../fixtures/shortcode-payloads/real-records.json";
 import {
   buildJoinFixture,
-  joinsOf,
+  joinOf,
   JOIN_EAST_ONE,
   JOIN_NORTHEAST_TWO,
-  JOIN_SOUTH_TWO,
   withJoins,
   type JoinFixtureOptions,
 } from "../grid-join/grid-join-fixtures";
@@ -158,21 +157,10 @@ function saved(code: string): SequenceData {
   );
 }
 
-/** A join in every place one can sit, and a step kept on one grid. */
-const ALL_JOINS: JoinFixtureOptions = {
-  sequenceJoin: JOIN_EAST_ONE,
-  startJoin: JOIN_NORTHEAST_TWO,
-  stepJoins: [JOIN_SOUTH_TWO, undefined, null],
-};
+/** A joined sequence: the join covers every cell, the start included. */
+const JOINED: JoinFixtureOptions = { sequenceJoin: JOIN_EAST_ONE };
 
-/** `ALL_JOINS` for the two-step flows below. */
-const TWO_STEP_JOINS: JoinFixtureOptions = {
-  sequenceJoin: JOIN_EAST_ONE,
-  startJoin: JOIN_NORTHEAST_TWO,
-  stepJoins: [JOIN_SOUTH_TWO, null],
-};
-
-/** Every place and kind of join a record has to tell apart. */
+/** Every kind of join a record has to tell apart. */
 const VARIANTS: Record<string, JoinFixtureOptions> = {
   "a joined sequence": { sequenceJoin: JOIN_EAST_ONE },
   "a sequence joined toward the west": {
@@ -181,13 +169,7 @@ const VARIANTS: Record<string, JoinFixtureOptions> = {
   "a sequence joined two steps apart": {
     sequenceJoin: { toward: "e", steps: 2 },
   },
-  "a start cell with its own join": { startJoin: JOIN_EAST_ONE },
-  "a single step with its own join": { stepJoins: [JOIN_EAST_ONE] },
-  "a step kept on one grid in a joined sequence": {
-    sequenceJoin: JOIN_EAST_ONE,
-    stepJoins: [undefined, null],
-  },
-  "every kind of join together": TWO_STEP_JOINS,
+  "a sequence joined diagonally": { sequenceJoin: JOIN_NORTHEAST_TWO },
 };
 
 /**
@@ -215,7 +197,7 @@ function exactFlow(options: JoinFixtureOptions = {}): SequenceData {
   };
 }
 
-/** `exactFlow` as a hand path, with joins as chosen. */
+/** `exactFlow` as a hand path, with the join as chosen. */
 function handPathFlow(options: JoinFixtureOptions = {}): SequenceData {
   return exactFlow({ ...options, handPath: true });
 }
@@ -258,20 +240,29 @@ describe("the choreography projection", () => {
     }
   });
 
-  it("names the join of the sequence, the start cell and each step", () => {
-    const projection = projectChoreography(buildJoinFixture(ALL_JOINS));
+  it("names the join of the sequence, and of nothing else", () => {
+    const projection = projectChoreography(buildJoinFixture(JOINED));
 
     expect(projection.join).toBe("e1");
-    expect(projection.start.join).toBe("ne2");
-    expect(projection.steps.map((step) => step.join)).toEqual([
-      "s2",
-      undefined,
-      "x",
-    ]);
+    expect(Object.keys(projection.start)).toEqual(["left", "right"]);
+    for (const step of projection.steps) {
+      expect(Object.keys(step)).toEqual(["duration", "left", "right"]);
+    }
+  });
+
+  it("ignores a join a cell carries on its own", () => {
+    const base = buildJoinFixture();
+    const sequence = {
+      ...base,
+      startPlacement: { ...base.startPlacement!, conjoined: JOIN_EAST_ONE },
+      steps: base.steps.map((step) => ({ ...step, conjoined: null })),
+    } as unknown as SequenceData;
+
+    expect(projectChoreography(sequence)).toEqual(projectChoreography(base));
   });
 
   it("is the same from the stored plain-object shape", () => {
-    const sequence = buildJoinFixture(ALL_JOINS);
+    const sequence = buildJoinFixture(JOINED);
     const stored = JSON.parse(JSON.stringify(sequence));
 
     expect(projectChoreography(stored)).toEqual(projectChoreography(sequence));
@@ -281,12 +272,7 @@ describe("the choreography projection", () => {
   it("ignores a join that is malformed, as a drawing does", () => {
     const base = buildJoinFixture();
     const bad = { toward: "c", steps: 7 };
-    const sequence = {
-      ...base,
-      conjoined: bad,
-      startPlacement: { ...base.startPlacement!, conjoined: bad },
-      steps: base.steps.map((step) => ({ ...step, conjoined: bad })),
-    } as unknown as SequenceData;
+    const sequence = { ...base, conjoined: bad } as unknown as SequenceData;
 
     expect(projectChoreography(sequence)).toEqual(projectChoreography(base));
   });
@@ -310,7 +296,7 @@ describe("the choreography digest", () => {
     ).toBe("0415cdba54d52d4713725511702341519a29bb2e924f018f9a190161c96b6262");
   });
 
-  it("differs for every place and kind of join", async () => {
+  it("differs for every kind of join", async () => {
     const plain = await choreographyDigest(buildJoinFixture());
     const digests = await Promise.all(
       Object.values(VARIANTS).map((options) =>
@@ -327,12 +313,10 @@ describe("the choreography digest", () => {
       ({ steps: join.steps, toward: join.toward }) as never;
     const reordered = buildJoinFixture({
       sequenceJoin: swapped(JOIN_EAST_ONE),
-      startJoin: swapped(JOIN_NORTHEAST_TWO),
-      stepJoins: [swapped(JOIN_SOUTH_TWO), undefined, null],
     });
 
     expect(await choreographyDigest(reordered)).toBe(
-      await choreographyDigest(buildJoinFixture(ALL_JOINS))
+      await choreographyDigest(buildJoinFixture(JOINED))
     );
   });
 });
@@ -368,15 +352,6 @@ describe("a joined sequence against a one-grid record", () => {
     expect(mismatch({ sequenceJoin: JOIN_EAST_ONE })).toBe(
       "join: e1 vs (none)"
     );
-    expect(mismatch({ startJoin: JOIN_NORTHEAST_TWO })).toBe(
-      "start join: ne2 vs (none)"
-    );
-    expect(mismatch({ stepJoins: [undefined, JOIN_SOUTH_TWO] })).toBe(
-      "step 2 join: s2 vs (none)"
-    );
-    expect(mismatch({ stepJoins: [undefined, undefined, null] })).toBe(
-      "step 3 join: x vs (none)"
-    );
   });
 
   it("is told apart from the same sequence joined another way", () => {
@@ -400,9 +375,9 @@ describe("a joined sequence against a one-grid record", () => {
 });
 
 describe("a hand-path record", () => {
-  const sequence = handPathFlow(TWO_STEP_JOINS);
+  const sequence = handPathFlow(JOINED);
 
-  it("keeps every join in its embedded copy, its blob and its digest", async () => {
+  it("keeps the join in its embedded copy, its blob and its digest", async () => {
     const record = await buildHandPathShortCodePayload(sequence);
 
     expect(record.encodedLossReason).toBeUndefined();
@@ -417,15 +392,15 @@ describe("a hand-path record", () => {
     ).toMatchObject({ exact: true });
   });
 
-  it("plays its joins from the embedded copy", async () => {
+  it("plays its join from the embedded copy", async () => {
     const record = await buildHandPathShortCodePayload(sequence);
     const played = await hydrateSelfContainedShortCodePayload("HP01", record);
 
     expect(played).not.toBeNull();
-    expect(joinsOf(played!)).toEqual(joinsOf(sequence));
+    expect(joinOf(played!)).toEqual(joinOf(sequence));
   });
 
-  it("plays its joins from the blob alone, as the offline snapshot serves it", async () => {
+  it("plays its join from the blob alone, as the offline snapshot serves it", async () => {
     const record = await buildHandPathShortCodePayload(sequence);
     const played = await hydrateSelfContainedShortCodePayload(
       "HP01",
@@ -433,7 +408,7 @@ describe("a hand-path record", () => {
     );
 
     expect(played).not.toBeNull();
-    expect(joinsOf(played!)).toEqual(joinsOf(sequence));
+    expect(joinOf(played!)).toEqual(joinOf(sequence));
   });
 
   it("leaves a sequence drawn on one grid with no join in its embedded copy", async () => {
@@ -464,7 +439,6 @@ describe("a word record", () => {
     );
   const recordOf = (code: string) =>
     store.get(`shortcodes/${code}`) as unknown as ShortCodeData;
-  const NO_JOINS = { sequence: undefined, start: undefined } as const;
 
   beforeEach(() => {
     store.clear();
@@ -472,8 +446,8 @@ describe("a word record", () => {
   });
 
   describe("minted from a joined sequence", () => {
-    it("keeps every join in its embedded copy and its blob", async () => {
-      const joined = await wordFlow(TWO_STEP_JOINS);
+    it("keeps the join in its embedded copy and its blob", async () => {
+      const joined = await wordFlow(JOINED);
       const { code } = await manager().createShortCode(joined);
       const record = recordOf(code);
 
@@ -486,19 +460,19 @@ describe("a word record", () => {
       ).toMatchObject({ exact: true });
     });
 
-    it("plays its joins from the embedded copy", async () => {
-      const joined = await wordFlow(TWO_STEP_JOINS);
+    it("plays its join from the embedded copy", async () => {
+      const joined = await wordFlow(JOINED);
       const { code } = await manager().createShortCode(joined);
       const played = await hydrateSelfContainedShortCodePayload(
         code,
         recordOf(code)
       );
 
-      expect(joinsOf(played!)).toEqual(joinsOf(joined));
+      expect(joinOf(played!)).toEqual(joinOf(joined));
     });
 
-    it("plays its joins from the blob alone, as the offline snapshot serves it", async () => {
-      const joined = await wordFlow(TWO_STEP_JOINS);
+    it("plays its join from the blob alone, as the offline snapshot serves it", async () => {
+      const joined = await wordFlow(JOINED);
       const { code } = await manager().createShortCode(joined);
       const played = await hydrateSelfContainedShortCodePayload(
         code,
@@ -506,11 +480,11 @@ describe("a word record", () => {
       );
 
       expect(played).not.toBeNull();
-      expect(joinsOf(played!)).toEqual(joinsOf(joined));
+      expect(joinOf(played!)).toEqual(joinOf(joined));
     });
 
-    it("plays the joins of the blob when the embedded copy is unusable", async () => {
-      const joined = await wordFlow(TWO_STEP_JOINS);
+    it("plays the join of the blob when the embedded copy is unusable", async () => {
+      const joined = await wordFlow(JOINED);
       const { code } = await manager().createShortCode(joined);
       const played = await hydrateSelfContainedShortCodePayload(code, {
         ...recordOf(code),
@@ -518,11 +492,11 @@ describe("a word record", () => {
       });
 
       expect(played).not.toBeNull();
-      expect(joinsOf(played!)).toEqual(joinsOf(joined));
+      expect(joinOf(played!)).toEqual(joinOf(joined));
     });
 
-    it("still plays its joins once the scan page hydrates it", async () => {
-      const joined = await wordFlow(TWO_STEP_JOINS);
+    it("still plays its join once the scan page hydrates it", async () => {
+      const joined = await wordFlow(JOINED);
       const { code } = await manager().createShortCode(joined);
       const record = recordOf(code);
 
@@ -530,15 +504,12 @@ describe("a word record", () => {
         const played = await hydrateSelfContainedShortCodePayload(code, stored);
         const shown = await hydrateSequence(played!, { loopDetector });
 
-        expect(joinsOf(shown)).toEqual(joinsOf(joined));
+        expect(joinOf(shown)).toEqual(joinOf(joined));
       }
     });
 
-    it("keeps the joins of a real saved sequence", async () => {
-      const joined = withJoins(saved("O1FC"), {
-        sequenceJoin: JOIN_EAST_ONE,
-        stepJoins: [JOIN_SOUTH_TWO, undefined, null, JOIN_NORTHEAST_TWO],
-      });
+    it("keeps the join of a real saved sequence", async () => {
+      const joined = withJoins(saved("O1FC"), { sequenceJoin: JOIN_EAST_ONE });
       const { code } = await manager().createShortCode(joined);
       const record = recordOf(code);
 
@@ -547,7 +518,7 @@ describe("a word record", () => {
       for (const stored of [record, withoutEmbed(record)]) {
         const played = await hydrateSelfContainedShortCodePayload(code, stored);
 
-        expect(joinsOf(played!)).toEqual(joinsOf(joined));
+        expect(joinOf(played!)).toEqual(joinOf(joined));
       }
     });
   });
@@ -559,22 +530,16 @@ describe("a word record", () => {
       const decoded = await decodeSequenceFromQR(record.encoded!);
 
       expect(record.sequenceData).not.toHaveProperty("conjoined");
-      expect(joinsOf(decoded)).toEqual({
-        ...NO_JOINS,
-        steps: [undefined, undefined],
-      });
+      expect(joinOf(decoded)).toBeUndefined();
     });
 
-    it("plays no joins", async () => {
+    it("plays no join", async () => {
       const { code } = await manager().createShortCode(await wordFlow());
 
       for (const stored of [recordOf(code), withoutEmbed(recordOf(code))]) {
         const played = await hydrateSelfContainedShortCodePayload(code, stored);
 
-        expect(joinsOf(played!)).toEqual({
-          ...NO_JOINS,
-          steps: [undefined, undefined],
-        });
+        expect(joinOf(played!)).toBeUndefined();
       }
     });
   });
@@ -674,15 +639,15 @@ describe("a word record", () => {
         two.code,
         recordOf(two.code)
       );
-      expect(joinsOf(played!)).toEqual(joinsOf(await joined()));
+      expect(joinOf(played!)).toEqual(joinOf(await joined()));
     });
   });
 
   describe("minted from a joined hand-path sequence", () => {
     const plain = () => saved("D14B4D");
-    const joined = () => withJoins(saved("D14B4D"), ALL_JOINS);
+    const joined = () => withJoins(saved("D14B4D"), JOINED);
 
-    it("keeps its joins and gets its own code", async () => {
+    it("keeps its join and gets its own code", async () => {
       const one = await manager().createShortCode(plain());
       const two = await manager().createShortCode(joined());
 
@@ -694,7 +659,7 @@ describe("a word record", () => {
         two.code,
         recordOf(two.code)
       );
-      expect(joinsOf(played!)).toEqual(joinsOf(joined()));
+      expect(joinOf(played!)).toEqual(joinOf(joined()));
       expect((await manager().createShortCode(joined())).code).toBe(two.code);
       expect((await manager().createShortCode(plain())).code).toBe(one.code);
     });

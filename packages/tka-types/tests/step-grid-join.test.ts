@@ -47,27 +47,11 @@ const base = {
 };
 
 const east: GridJoin = { toward: "e", steps: 1 };
-const northwest: GridJoin = { toward: "nw", steps: 2 };
 
 describe("createStep grid join", () => {
-  it("keeps the step's own join", () => {
-    expect(createStep({ ...base, conjoined: east }).conjoined).toEqual(east);
-  });
-
-  it("keeps null, the step that stays on one grid", () => {
-    expect(createStep({ ...base, conjoined: null }).conjoined).toBeNull();
-  });
-
-  it("leaves the key off when the step follows the sequence", () => {
-    expect("conjoined" in createStep(base)).toBe(false);
-  });
-
-  it("keeps the join through updateStep, and lets an update change it", () => {
-    const joined = createStep({ ...base, conjoined: east });
-    expect(updateStep(joined, { duration: 2 }).conjoined).toEqual(east);
-    expect(updateStep(joined, { conjoined: northwest }).conjoined).toEqual(
-      northwest
-    );
-    expect(updateStep(joined, { conjoined: null }).conjoined).toBeNull();
+  it("carries no join: a sequence has one join, so a step never keeps its own", () => {
+    const step = createStep({ ...base, conjoined: east } as never);
+    expect("conjoined" in step).toBe(false);
+    expect("conjoined" in updateStep(step, { duration: 2 })).toBe(false);
   });
 });

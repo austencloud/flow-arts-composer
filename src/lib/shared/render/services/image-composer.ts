@@ -421,12 +421,10 @@ export class ImageComposer {
     const effectiveRightPropType =
       options.rightPropTypeOverride ?? options.propTypeOverride;
 
-    // Joined grids: each cell carries the join it draws with, its own value
-    // or else the sequence's. Cells are untouched when nothing is joined.
+    // Joined grids: every cell, the start placement included, carries the
+    // sequence's one join. Cells are untouched when nothing is joined.
     const withJoin = gridJoinCellResolver({
       conjoined: sequence.conjoined,
-      startPlacement: effectiveStartPlacement,
-      steps: sequence.steps,
     });
 
     const endCells = trace?.start("pictograph-cells");

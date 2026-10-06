@@ -9,7 +9,7 @@
  * script on the missing export. `tests/unit/grid-join/grid-join-token.test.ts`
  * pins both to the same answers.
  *
- * A cell that stays on one grid while its sequence is joined is "x".
+ * A sequence has one join for every cell, so there is no per-cell token.
  */
 import type { GridJoin, GridJoinDirection } from "@tka/tka-types";
 
@@ -37,22 +37,15 @@ export function isWellFormedGridJoin(value: unknown): value is GridJoin {
 }
 
 /**
- * "e1" for a join and "x" for null, a cell that stays on one grid. Empty for
- * undefined and for anything malformed, both of which follow the sequence.
+ * "e1" for a sequence's join. Empty for a sequence on one grid (undefined or
+ * null) and for anything malformed.
  */
 export function gridJoinToken(join: unknown): string {
-  if (join === null) return "x";
   return isWellFormedGridJoin(join) ? `${join.toward}${join.steps}` : "";
 }
 
-/** A sequence's own join: its token, or empty (a sequence is never "x"). */
-export function sequenceGridJoinToken(join: unknown): string {
-  return isWellFormedGridJoin(join) ? gridJoinToken(join) : "";
-}
-
-/** The join a token spells: null for "x", undefined for any other text. */
-export function parseGridJoinToken(token: string): GridJoin | null | undefined {
-  if (token === "x") return null;
+/** The join a token spells, or undefined for any other text. */
+export function parseGridJoinToken(token: string): GridJoin | undefined {
   const join = { toward: token.slice(0, -1), steps: Number(token.slice(-1)) };
   return isWellFormedGridJoin(join) ? join : undefined;
 }

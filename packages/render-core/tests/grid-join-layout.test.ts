@@ -7,7 +7,7 @@ import {
   gridJoinOffsets,
   gridJoinPropNudges,
   isGridJoin,
-  resolveStepGridJoin,
+  sequenceGridJoinKey,
   type GridJoinLayout,
   type GridJoinSpec,
   type JoinPropBody,
@@ -18,7 +18,7 @@ const EAST_2: GridJoinSpec = { toward: "e", steps: 2 };
 const STAFF_HALF = 252.8 / 2;
 const STAFF_NUDGE = 950 / 45;
 
-/** A card cell: any pictograph, with or without its own join. */
+/** A card cell: any pictograph, even one carrying a stray join of its own. */
 type Cell = { letter?: string; conjoined?: GridJoinSpec | null };
 
 function countKinds(layout: GridJoinLayout) {
@@ -60,44 +60,45 @@ describe("grid join values", () => {
     expect(isGridJoin("e1")).toBe(false);
   });
 
-  it("lets a step keep, replace or drop the sequence's join", () => {
-    expect(resolveStepGridJoin(EAST_1, undefined)).toBe(EAST_1);
-    expect(resolveStepGridJoin(EAST_1, EAST_2)).toBe(EAST_2);
-    expect(resolveStepGridJoin(EAST_1, null)).toBeNull();
-    expect(resolveStepGridJoin(undefined, EAST_2)).toBe(EAST_2);
-    expect(resolveStepGridJoin(undefined, undefined)).toBeNull();
-  });
-
   it("hands one-grid card cells back untouched", () => {
     const start: Cell = { letter: "α" };
-    const step: Cell = { letter: "β", conjoined: null };
-    const resolve = gridJoinCellResolver({
-      startPlacement: start,
-      steps: [step],
-    });
+    const step: Cell = { letter: "β" };
+    const resolve = gridJoinCellResolver({});
 
     expect(resolve(start)).toBe(start);
     expect(resolve(step)).toBe(step);
   });
 
-  it("gives each card cell the join it draws with", () => {
-    const steps: Cell[] = [{}, { conjoined: EAST_2 }, { conjoined: null }];
-    const resolve = gridJoinCellResolver({ conjoined: EAST_1, steps });
+  it("gives every card cell, the start included, the sequence's one join", () => {
+    const resolve = gridJoinCellResolver({ conjoined: EAST_1 });
+    const cells: Cell[] = [{ letter: "α" }, { letter: "β" }, { letter: "γ" }];
 
-    expect(steps.map((step) => resolve(step).conjoined)).toEqual([
+    expect(cells.map((cell) => resolve(cell).conjoined)).toEqual([
       EAST_1,
-      EAST_2,
-      null,
+      EAST_1,
+      EAST_1,
     ]);
-    // A join on the start cell alone still joins it; the steps stay one grid.
-    const start: Cell = { conjoined: EAST_2 };
-    const plainStep: Cell = {};
-    const startOnly = gridJoinCellResolver({
-      startPlacement: start,
-      steps: [plainStep],
-    });
-    expect(startOnly(start).conjoined).toBe(EAST_2);
-    expect(startOnly(plainStep).conjoined).toBeNull();
+  });
+
+  it("ignores a join a cell carries on its own", () => {
+    const stray: Cell = { letter: "β", conjoined: EAST_2 };
+    const strayOneGrid: Cell = { letter: "γ", conjoined: null };
+
+    // The sequence's join replaces it...
+    expect(gridJoinCellResolver({ conjoined: EAST_1 })(stray).conjoined).toBe(
+      EAST_1
+    );
+    // ...and a one-grid sequence drops it, so the cell draws on one grid.
+    const resolveOneGrid = gridJoinCellResolver({});
+    expect(resolveOneGrid(stray)).toEqual({ letter: "β" });
+    expect(resolveOneGrid(strayOneGrid)).toEqual({ letter: "γ" });
+  });
+
+  it("keys a sequence's pictures by its one join, and one-grid sequences by nothing", () => {
+    expect(sequenceGridJoinKey({})).toBe("");
+    expect(sequenceGridJoinKey({ conjoined: null })).toBe("");
+    expect(sequenceGridJoinKey({ conjoined: EAST_1 })).toBe("e1");
+    expect(sequenceGridJoinKey({ conjoined: EAST_2 })).toBe("e2");
   });
 
   it("names a join with a short stable key", () => {

@@ -178,7 +178,6 @@ export function deriveSteps(
       leftReversal: pairing.leftReversal,
       rightReversal: pairing.rightReversal,
       isBlank: false,
-      ...(pairing.conjoined !== undefined && { conjoined: pairing.conjoined }),
     };
 
     return stepData;

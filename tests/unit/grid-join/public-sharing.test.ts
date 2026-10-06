@@ -1,6 +1,6 @@
 /**
- * A joined sequence keeps its join into the public document and back out of
- * it: the projection writes the sequence's join only when it has one, the wire
+ * A joined sequence keeps its one join into the public document and back out
+ * of it (no cell carries a join of its own): the projection writes the sequence's join only when it has one, the wire
  * schema reads it (and treats a malformed one as absent), and the Browse
  * loader hands it to the viewer, both from the public index and from the
  * owner's full document. A sequence without a join gains no key anywhere along
@@ -48,10 +48,8 @@ import {
 import { normalizeSequenceForPersistence } from "$lib/shared/library/services/sequence-persistence-normalizer";
 import {
   buildJoinFixture,
-  joinsOf,
+  joinOf,
   JOIN_EAST_ONE,
-  JOIN_NORTHEAST_TWO,
-  JOIN_SOUTH_TWO,
   type JoinFixtureOptions,
 } from "./grid-join-fixtures";
 
@@ -67,8 +65,6 @@ const NOW = new Date("2026-10-05T12:00:00Z");
 
 const JOINED: JoinFixtureOptions = {
   sequenceJoin: JOIN_EAST_ONE,
-  startJoin: JOIN_NORTHEAST_TWO,
-  stepJoins: [JOIN_SOUTH_TWO, undefined, null],
   lettered: true,
 };
 
@@ -103,16 +99,14 @@ function stored(
 }
 
 describe("public projection", () => {
-  it("writes the sequence's join, each step's join and the start cell's join", async () => {
+  it("writes the sequence's join and no join on any cell", async () => {
     const document = await project(JOINED);
 
     expect(document.conjoined).toEqual(JOIN_EAST_ONE);
-    expect(document.startPlacement?.conjoined).toEqual(JOIN_NORTHEAST_TWO);
-    expect(document.stepPairings?.map((pairing) => pairing.conjoined)).toEqual([
-      JOIN_SOUTH_TWO,
-      undefined,
-      null,
-    ]);
+    expect("conjoined" in (document.startPlacement ?? {})).toBe(false);
+    expect(
+      document.stepPairings?.some((pairing) => "conjoined" in pairing)
+    ).toBe(false);
   });
 
   it("writes no join key for a sequence on one grid", async () => {
@@ -159,10 +153,6 @@ describe("public wire schema", () => {
     const projection = toPublicSequenceProjection(parsed.document);
 
     expect(projection.conjoined).toEqual(JOIN_EAST_ONE);
-    expect(projection.startPlacement?.conjoined).toEqual(JOIN_NORTHEAST_TWO);
-    expect(
-      projection.stepPairings?.map((pairing) => pairing.conjoined)
-    ).toEqual([JOIN_SOUTH_TWO, undefined, null]);
   });
 
   it("adds no join key to a document that had none", async () => {
@@ -174,32 +164,18 @@ describe("public wire schema", () => {
     const projection = toPublicSequenceProjection(parsed.document);
 
     expect("conjoined" in projection).toBe(false);
-    expect(
-      projection.stepPairings?.some((pairing) => "conjoined" in pairing)
-    ).toBe(false);
   });
 
   it("reads a malformed join as absent instead of rejecting the document", async () => {
     const document = stored(await project({}));
     const parsed = parsePublicSequenceWireDocument(
-      {
-        ...document,
-        conjoined: { toward: "c", steps: 7 },
-        stepPairings: (document.stepPairings as Record<string, unknown>[]).map(
-          (pairing) => ({ ...pairing, conjoined: "e1" })
-        ),
-      },
+      { ...document, conjoined: { toward: "c", steps: 7 } },
       "fixture-sequence"
     );
 
     if (!parsed.ok) throw new Error(parsed.issues.join("; "));
     const projection = toPublicSequenceProjection(parsed.document);
     expect("conjoined" in projection).toBe(false);
-    expect(
-      projection.stepPairings?.every(
-        (pairing) => pairing.conjoined === undefined
-      )
-    ).toBe(true);
   });
 
   describe("accepts exactly what the renderers accept", () => {
@@ -253,41 +229,21 @@ describe("Browse loader", () => {
     return sequence;
   }
 
-  it("hands the viewer the sequence's, the start cell's and each step's join", async () => {
+  it("hands the viewer the sequence's join, and no cell a join of its own", async () => {
     const sequence = await loadPublished(JOINED);
 
-    expect(joinsOf(sequence)).toEqual({
-      sequence: JOIN_EAST_ONE,
-      start: JOIN_NORTHEAST_TWO,
-      steps: [JOIN_SOUTH_TWO, undefined, null],
-    });
+    expect(joinOf(sequence)).toEqual(JOIN_EAST_ONE);
+    expect(sequence.steps.some((step) => "conjoined" in step)).toBe(false);
+    expect("conjoined" in (sequence.startPlacement ?? {})).toBe(false);
     expect(sequenceGridJoinKey(sequence)).toBe(
       sequenceGridJoinKey(buildJoinFixture(JOINED))
-    );
-  });
-
-  it("keeps a start cell that stays on one grid while the rest are joined", async () => {
-    const options: JoinFixtureOptions = {
-      sequenceJoin: JOIN_EAST_ONE,
-      startJoin: null,
-      lettered: true,
-    };
-    const sequence = await loadPublished(options);
-
-    expect(joinsOf(sequence).start).toBeNull();
-    expect(sequenceGridJoinKey(sequence)).toBe(
-      sequenceGridJoinKey(buildJoinFixture(options))
     );
   });
 
   it("adds no join to a sequence that had none", async () => {
     const sequence = await loadPublished({});
 
-    expect(joinsOf(sequence)).toEqual({
-      sequence: undefined,
-      start: undefined,
-      steps: [undefined, undefined, undefined],
-    });
+    expect(joinOf(sequence)).toBeUndefined();
     expect("conjoined" in sequence).toBe(false);
     expect(sequence.steps.some((step) => "conjoined" in step)).toBe(false);
     expect(sequenceGridJoinKey(sequence)).toBe("");
@@ -328,57 +284,31 @@ describe("Browse loader full sequence", () => {
     expect(mocks.getDoc).toHaveBeenCalledWith({ path: SOURCE_PATH });
   });
 
-  it("hands the viewer the joins the owner's document stores", async () => {
+  it("hands the viewer the join the owner's document stores", async () => {
     // The warmed index entry predates the join, so only the source document
     // can supply it.
     const sequence = await openFromSource({}, stored(await project(JOINED)));
 
-    expect(joinsOf(sequence)).toEqual({
-      sequence: JOIN_EAST_ONE,
-      start: JOIN_NORTHEAST_TWO,
-      steps: [JOIN_SOUTH_TWO, undefined, null],
-    });
+    expect(joinOf(sequence)).toEqual(JOIN_EAST_ONE);
     expect(sequenceGridJoinKey(sequence)).toBe(
       sequenceGridJoinKey(buildJoinFixture(JOINED))
     );
   });
 
-  it("keeps a start cell that stays on one grid while the rest are joined", async () => {
-    const options: JoinFixtureOptions = {
-      sequenceJoin: JOIN_EAST_ONE,
-      startJoin: null,
-      lettered: true,
-    };
-    const sequence = await openFromSource({}, stored(await project(options)));
-
-    expect(joinsOf(sequence).start).toBeNull();
-    expect(sequenceGridJoinKey(sequence)).toBe(
-      sequenceGridJoinKey(buildJoinFixture(options))
-    );
-  });
-
-  it("hands the viewer the joins of a document that stores its steps as they are", async () => {
+  it("hands the viewer the join of a document that stores its steps as they are", async () => {
     vi.spyOn(console, "debug").mockImplementation(() => {});
     const saved = JSON.parse(
       JSON.stringify(buildJoinFixture({ ...JOINED, lettered: true }))
     ) as Record<string, unknown>;
     const sequence = await openFromSource({}, saved);
 
-    expect(joinsOf(sequence)).toEqual({
-      sequence: JOIN_EAST_ONE,
-      start: JOIN_NORTHEAST_TWO,
-      steps: [JOIN_SOUTH_TWO, undefined, null],
-    });
+    expect(joinOf(sequence)).toEqual(JOIN_EAST_ONE);
   });
 
   it("adds no join to a document that had none", async () => {
     const sequence = await openFromSource({}, stored(await project({})));
 
-    expect(joinsOf(sequence)).toEqual({
-      sequence: undefined,
-      start: undefined,
-      steps: [undefined, undefined, undefined],
-    });
+    expect(joinOf(sequence)).toBeUndefined();
     expect("conjoined" in sequence).toBe(false);
     expect("conjoined" in (sequence.startPlacement ?? {})).toBe(false);
     expect(sequence.steps.some((step) => "conjoined" in step)).toBe(false);

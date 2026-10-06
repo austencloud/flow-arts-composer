@@ -8,7 +8,7 @@ import type { Letter } from "../../../../foundation/domain/models/letter";
 import type { GridPlacement } from "../../../grid/domain/enums/grid-enums";
 import type { HandSide } from "../enums/pictograph-enums";
 import type { MotionData } from "./motion-data";
-import type { GridMode } from '../../../grid/domain/enums/grid-enums';
+import type { GridMode } from "../../../grid/domain/enums/grid-enums";
 import type { GridJoin } from "@tka/tka-types";
 
 export interface PictographData {
@@ -36,7 +36,8 @@ export interface PictographData {
   // Legacy Python app feature ported to web. Toggle via B key in step editor.
   readonly betaSwapped?: boolean;
 
-  // Joined grids for this pictograph. Undefined follows the sequence's join,
-  // null draws one shared grid. Renderers read the join resolved per cell.
+  // Render input only: the sequence's join, which card and share renderers
+  // set on each cell they draw (see gridJoinCellResolver). Never stored on a
+  // step; a sequence has one join for every cell.
   readonly conjoined?: GridJoin | null;
 }

@@ -164,7 +164,7 @@ export function cardParitySequence(testCase: CardParityCase): SequenceData {
     loopType: opts.loopComponents ? LOOPType.ROTATED : undefined,
     loopSpec: { left: loopCertificate, right: loopCertificate },
     // The MCP takes the sequence's grid join as an option; the Composer reads
-    // it from the sequence. Per-cell joins ride on the steps for both.
+    // it from the sequence. One join covers every cell, the Start cell included.
     ...(opts.conjoined !== undefined ? { conjoined: opts.conjoined } : {}),
   } as unknown as SequenceData;
 }

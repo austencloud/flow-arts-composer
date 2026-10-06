@@ -41,13 +41,16 @@ interface ContentModerator {
   checkWord(word: string): { isAllowed: boolean; flaggedTerms: FlaggedTerm[] };
 }
 interface ContentAppealManager {
-  isWhitelisted(contentType: 'sequence' | 'act', contentId: string): Promise<boolean>;
+  isWhitelisted(
+    contentType: "sequence" | "act",
+    contentId: string
+  ): Promise<boolean>;
 }
 import type { PublicSequencesLoader } from "$lib/shared/browse/services/public-sequences-loader";
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
 import { ContentModerationError } from "$lib/features/moderation/errors/content-moderation-error";
 import { getPublicSequenceHashMatcher } from "$lib/shared/sequence-viewer/get-public-sequence-hash-matcher";
-import type { ErrorHandler } from '$lib/shared/application/services/error-handler'
+import type { ErrorHandler } from "$lib/shared/application/services/error-handler";
 import { LOOP_LABELS_COLLECTION } from "$lib/features/loop-labeler/domain/constants/firebase-collections";
 import { calculateDifficultyLevel as calculateSequenceDifficultyLevel } from "$lib/shared/browse/services/sequence-difficulty-calculator";
 import { loopDetector } from "$lib/features/create/generate/circular/services/loop-detector";
@@ -57,7 +60,6 @@ import { resolveLoopDisplay } from "$lib/features/loop-labeler/services/loop-dis
 import { MIN_COMMUNITY_STEPS } from "$lib/shared/library/domain/sequence-min-length";
 
 export class PublicIndexSyncer {
-
   constructor(
     private readonly contentModerator?: ContentModerator,
     private readonly contentAppealManager?: ContentAppealManager,
@@ -100,7 +102,10 @@ export class PublicIndexSyncer {
       if (!result.isAllowed) {
         // Check if this content has been whitelisted via appeal
         const isWhitelisted = this.contentAppealManager
-          ? await this.contentAppealManager.isWhitelisted("sequence", sequence.id)
+          ? await this.contentAppealManager.isWhitelisted(
+              "sequence",
+              sequence.id
+            )
           : false;
 
         if (!isWhitelisted) {
@@ -199,7 +204,10 @@ export class PublicIndexSyncer {
       // Fire-and-forget: write decomposed artifacts to public collections so
       // hand paths and solo props are independently discoverable in the gallery.
       this.syncArtifactsToPublic(firestore, sequence, userId).catch((err) =>
-        console.warn("[PublicIndexSyncer] Public artifact sync failed (non-blocking):", err)
+        console.warn(
+          "[PublicIndexSyncer] Public artifact sync failed (non-blocking):",
+          err
+        )
       );
 
       // Inject the newly published sequence into the browse gallery cache so it
@@ -229,23 +237,20 @@ export class PublicIndexSyncer {
           ...(hydrated.conjoined !== undefined && {
             conjoined: hydrated.conjoined,
           }),
-          // Only a start cell with a join of its own is carried; the viewer
-          // derives every other start cell from the first step.
-          ...(hydrated.startPlacement?.conjoined !== undefined && {
-            startPlacement: hydrated.startPlacement,
-          }),
           isFavorite: false,
           tags: tagNames,
           metadata: {},
           ownerId: userId,
-          ownerDisplayName: (userData["displayName"] as string | undefined) ?? "Unknown",
+          ownerDisplayName:
+            (userData["displayName"] as string | undefined) ?? "Unknown",
           ownerAvatarUrl: userData["photoURL"] as string | undefined,
           birthday: sequence.birthday ?? sequence.createdAt ?? new Date(),
           dateAdded: new Date(),
-          ...(sequence.source === "forked" && sequence.forkAttribution && {
-            source: "forked" as const,
-            forkAttribution: sequence.forkAttribution,
-          }),
+          ...(sequence.source === "forked" &&
+            sequence.forkAttribution && {
+              source: "forked" as const,
+              forkAttribution: sequence.forkAttribution,
+            }),
         };
         this.browseLoader.addToCache(cachedEntry);
       }
@@ -264,7 +269,8 @@ export class PublicIndexSyncer {
         const errorHandler = getErrorHandler() as ErrorHandler;
         errorHandler.showUserError({
           message: "Couldn't publish your sequence",
-          technicalDetails: error instanceof Error ? error.message : String(error),
+          technicalDetails:
+            error instanceof Error ? error.message : String(error),
           error: error instanceof Error ? error : new Error(String(error)),
           severity: "error",
           context: {
@@ -293,10 +299,7 @@ export class PublicIndexSyncer {
     const publicThumbnails = thumbnails.slice(0, 3);
 
     await updatePublicThumbnails(firestore, sequenceId, publicThumbnails);
-    this.browseLoader?.updateThumbnailsInCache(
-      sequenceId,
-      publicThumbnails
-    );
+    this.browseLoader?.updateThumbnailsInCache(sequenceId, publicThumbnails);
   }
 
   /**
@@ -321,7 +324,8 @@ export class PublicIndexSyncer {
       const errorHandler = getErrorHandler() as ErrorHandler;
       errorHandler.showUserError({
         message: "Couldn't unpublish your sequence",
-        technicalDetails: error instanceof Error ? error.message : String(error),
+        technicalDetails:
+          error instanceof Error ? error.message : String(error),
         error: error instanceof Error ? error : new Error(String(error)),
         severity: "error",
         context: {
@@ -349,7 +353,11 @@ export class PublicIndexSyncer {
 
     const timestamp = serverTimestamp();
 
-    const artifacts: Array<{ collectionPath: string; docId: string; data: Record<string, unknown> }> = [];
+    const artifacts: Array<{
+      collectionPath: string;
+      docId: string;
+      data: Record<string, unknown>;
+    }> = [];
 
     // Hand paths
     for (const soloProp of [leftSoloProp, rightSoloProp]) {
@@ -400,7 +408,9 @@ export class PublicIndexSyncer {
     // Write all artifacts in parallel - merge so we don't overwrite existing documents
     await Promise.allSettled(
       artifacts.map((a) =>
-        setDoc(doc(firestore, a.collectionPath, a.docId), a.data, { merge: true })
+        setDoc(doc(firestore, a.collectionPath, a.docId), a.data, {
+          merge: true,
+        })
       )
     );
   }
@@ -479,7 +489,12 @@ export class PublicIndexSyncer {
   private async detectLoopInfo(
     firestore: Firestore,
     sequence: LibrarySequence
-  ): Promise<{ isCircular: boolean; loopType: string | null; period?: number; components?: string[] }> {
+  ): Promise<{
+    isCircular: boolean;
+    loopType: string | null;
+    period?: number;
+    components?: string[];
+  }> {
     // Layer 1: Trust existing loopType on the sequence (set by LOOP generator)
     if (sequence.loopType) {
       // Run detection anyway to get the period and components
@@ -489,8 +504,11 @@ export class PublicIndexSyncer {
         return {
           isCircular: true,
           loopType: sequence.loopType,
-          period: detection.period ? periodToNumber(detection.period) : undefined,
-          components: display.components.size > 0 ? [...display.components] : undefined,
+          period: detection.period
+            ? periodToNumber(detection.period)
+            : undefined,
+          components:
+            display.components.size > 0 ? [...display.components] : undefined,
         };
       } catch {
         return { isCircular: true, loopType: sequence.loopType };
@@ -510,8 +528,11 @@ export class PublicIndexSyncer {
         return {
           isCircular: true,
           loopType: curatedLoopType,
-          period: detection.period ? periodToNumber(detection.period) : undefined,
-          components: display.components.size > 0 ? [...display.components] : undefined,
+          period: detection.period
+            ? periodToNumber(detection.period)
+            : undefined,
+          components:
+            display.components.size > 0 ? [...display.components] : undefined,
         };
       } catch {
         return { isCircular: true, loopType: curatedLoopType };
@@ -532,7 +553,8 @@ export class PublicIndexSyncer {
         isCircular: true,
         loopType: detection.loopType,
         period: detection.period ? periodToNumber(detection.period) : undefined,
-        components: display.components.size > 0 ? [...display.components] : undefined,
+        components:
+          display.components.size > 0 ? [...display.components] : undefined,
       };
     } catch (error) {
       console.warn(
@@ -554,7 +576,9 @@ export class PublicIndexSyncer {
     if (!word) return null;
 
     try {
-      const labelDoc = await getDoc(doc(firestore, LOOP_LABELS_COLLECTION, word));
+      const labelDoc = await getDoc(
+        doc(firestore, LOOP_LABELS_COLLECTION, word)
+      );
 
       if (!labelDoc.exists()) {
         return null;
@@ -568,10 +592,12 @@ export class PublicIndexSyncer {
       }
 
       // If has designations, join the components
-      const designations = data.designations as Array<{
-        loopType: string;
-        components: string[];
-      }> | undefined;
+      const designations = data.designations as
+        | Array<{
+            loopType: string;
+            components: string[];
+          }>
+        | undefined;
 
       if (designations && designations.length > 0) {
         const firstDesignation = designations[0];

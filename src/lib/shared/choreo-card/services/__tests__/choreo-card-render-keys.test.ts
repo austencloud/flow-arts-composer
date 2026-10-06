@@ -70,17 +70,30 @@ describe("buildChoreoCardRenderKeys — overlay vs structural routing", () => {
   it("invalidates geometry for hand-path and solo presentation changes", () => {
     const before = baseInputs();
     expect(routeMode(before, { ...before, handPathMode: true })).toBe("swap");
-    expect(routeMode(before, {
-      ...before,
-      browseViewMode: { subject: "props", granularity: "solo", hand: "right" },
-    })).toBe("swap");
+    expect(
+      routeMode(before, {
+        ...before,
+        browseViewMode: {
+          subject: "props",
+          granularity: "solo",
+          hand: "right",
+        },
+      })
+    ).toBe("swap");
   });
   it("repaints a changed palette without moving the card cells", () => {
     const before = baseInputs();
-    const after = { ...before, primaryPropColors: { left: "#00ff88", right: "#ff8800" } };
-    expect(buildChoreoCardRenderKeys(after).imageKey).not.toBe(buildChoreoCardRenderKeys(before).imageKey);
+    const after = {
+      ...before,
+      primaryPropColors: { left: "#00ff88", right: "#ff8800" },
+    };
+    expect(buildChoreoCardRenderKeys(after).imageKey).not.toBe(
+      buildChoreoCardRenderKeys(before).imageKey
+    );
     expect(routeMode(before, after)).toBe("crossfade");
-    expect(buildChoreoCardRenderKeys({ ...after, primaryPropColors: null })).toEqual(buildChoreoCardRenderKeys(before));
+    expect(
+      buildChoreoCardRenderKeys({ ...after, primaryPropColors: null })
+    ).toEqual(buildChoreoCardRenderKeys(before));
   });
   it("non-radial toggle is overlay-only → crossfade (the bug: it used to swap)", () => {
     const before = baseInputs();
@@ -142,18 +155,8 @@ describe("buildChoreoCardRenderKeys — overlay vs structural routing", () => {
         conjoined: { toward: "e", steps: 1 },
       } as SequenceData,
     };
-    const stepJoined = {
-      ...before,
-      sequence: {
-        ...SEQ,
-        steps: SEQ.steps.map((step, index) =>
-          index === 1 ? { ...step, conjoined: { toward: "s", steps: 2 } } : step
-        ),
-      } as SequenceData,
-    };
     expect(routeMode(before, joined)).toBe("swap");
     expect(routeMode(joined, before)).toBe("swap");
-    expect(routeMode(before, stepJoined)).toBe("swap");
   });
 
   it("same-id transforms with unchanged letters invalidate rendered geometry", () => {

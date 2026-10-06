@@ -25,8 +25,8 @@
  * - **V3** (`HASH_VERSION_V3`) — adds the authored motion plane. Plane was
  *   previously dropped by composition, so no V1/V2 stored identity could
  *   distinguish physically different multi-plane choreography. It also adds the
- *   grid join (the sequence's and each cell's own), written only where one is
- *   set, so a sequence drawn on one grid keeps the V3 hash it already had.
+ *   grid join (the sequence's), written only where one is set, so a sequence
+ *   drawn on one grid keeps the V3 hash it already had.
  *
  * `CONTENT_HASH_VERSION` is the ACTIVE version — **V3** since 2026-09-04. The
  * version-aware compare + lazy rehash introduced for V2 keeps mixed-version
@@ -34,10 +34,7 @@
  */
 
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import {
-  gridJoinToken,
-  sequenceGridJoinToken,
-} from "$lib/shared/foundation/domain/models/grid-join-token";
+import { gridJoinToken } from "$lib/shared/foundation/domain/models/grid-join-token";
 import { isHandPathSequence } from "$lib/shared/foundation/domain/models/sequence-kind";
 import type { MotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
 import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
@@ -145,20 +142,12 @@ function extractContent(sequence: SequenceData, opts: ExtractOptions): unknown {
   };
 }
 
-// Grid joins hash as tokens ("e1", or "x" for a cell that stays on one grid),
-// not as the stored object: a token does not depend on key order, so a join
-// read back from storage hashes as it did when it was written. A sequence or
-// cell without a join adds no key, which keeps every existing hash.
+// The sequence's join hashes as a token ("e1"), not as the stored object: a
+// token does not depend on key order, so a join read back from storage hashes
+// as it did when it was written. A sequence without a join adds no key, which
+// keeps every existing hash.
 function sequenceJoinEntry(
   join: GridJoin | undefined,
-  opts: ExtractOptions
-): { conjoined?: string } {
-  const token = opts.includeGridJoin ? sequenceGridJoinToken(join) : "";
-  return token ? { conjoined: token } : {};
-}
-
-function cellJoinEntry(
-  join: GridJoin | null | undefined,
   opts: ExtractOptions
 ): { conjoined?: string } {
   const token = opts.includeGridJoin ? gridJoinToken(join) : "";
@@ -176,7 +165,6 @@ function extractStartPlacement(
     ...(opts.excludeDerived
       ? {}
       : { gridMode: sp.gridMode ?? inheritedGridMode }),
-    ...cellJoinEntry(sp.conjoined, opts),
   };
 }
 
@@ -195,7 +183,6 @@ function extractStep(
       isBlank: step.isBlank,
       duration: step.duration,
       motions: extractMotions(step.motions, opts),
-      ...cellJoinEntry(step.conjoined, opts),
     };
   }
   return {
