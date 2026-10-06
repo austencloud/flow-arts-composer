@@ -2,7 +2,7 @@
  * Pictograph Context Menu Builder
  *
  * Inline visibility toggles for pictograph right-click menu.
- * Submenus for Grid & Points, Glyphs. Direct toggle for Step Numbers.
+ * Submenus for Grid & Points, Grid join (opt-in), Glyphs. Direct toggle for Step Numbers.
  * Optional arrow adjustment items (admin only).
  */
 
@@ -12,6 +12,8 @@ import type {
 } from "$lib/shared/components/context-menu/context-menu-types";
 import type { VisibilityStateManager } from "../../state/visibility-state.svelte";
 import { HandSide } from "../../domain/enums/pictograph-enums";
+import type { GridJoinController } from "$lib/shared/grid-join/grid-join-controller";
+import { buildGridJoinMenuItem } from "$lib/shared/grid-join/grid-join-menu";
 
 interface PictographContextMenuDeps {
   visibilityManager: VisibilityStateManager;
@@ -24,6 +26,12 @@ interface PictographContextMenuDeps {
    * stepNumbers — showing this toggle there would be a lying control.
    */
   includeStepNumbers?: boolean;
+  /**
+   * Surfaces that can change the sequence's join pass its controller; the
+   * "Grid join" submenu (the one the animation menu offers) follows Grid &
+   * Points. Without one, no join choice is shown.
+   */
+  gridJoin?: GridJoinController | null;
 }
 
 function buildGridChildren(vm: VisibilityStateManager): ContextMenuItem[] {
@@ -120,6 +128,7 @@ export function buildPictographContextMenuItems(
       icon: "fa-border-all",
       children: buildGridChildren(vm),
     },
+    ...(deps.gridJoin ? [buildGridJoinMenuItem(deps.gridJoin)] : []),
     {
       id: "glyphs-submenu",
       label: "Glyphs",

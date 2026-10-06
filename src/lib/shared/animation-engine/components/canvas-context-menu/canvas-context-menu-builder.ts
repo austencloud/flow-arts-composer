@@ -8,8 +8,10 @@
  *   - Visibility: Props, Step numbers, TKA Glyph, Hand TnD, Prop TnD,
  *     Word Header, Mandala, Paths, Progress Bar, Dark Mode (toggles, menu
  *     stays open)
- *   - Grid: Off / 8-Point / Auto (radio-style), plus the Level 7 Conjoined
- *     (side by side) toggle
+ *   - Grid: Off / 8-Point / Auto (radio-style)
+ *   - Grid join: the sequence's join (one grid, or two grids side by side in
+ *     any of eight directions, one or two points across), built by the shared
+ *     grid-join menu and shown only when a controller is passed
  *   - Playback: Continuous / Step (radio-style)
  *   - Effects: None + every effect in the shared registry (radio-style)
  *   - Effect Presets: the active effect's presets + Default (radio-style)
@@ -40,6 +42,8 @@ import { TrackingMode } from "../../domain/types/trail-types";
 import type { EffectType } from "../../domain/types/tip-effect-types";
 import type { EffectsConfigState } from "$lib/shared/effects/state/effects-config-state.svelte";
 import { EFFECTS, getRegistration } from "../effects-panel/effect-registry";
+import type { GridJoinController } from "$lib/shared/grid-join/grid-join-controller";
+import { buildGridJoinMenuItem } from "$lib/shared/grid-join/grid-join-menu";
 
 interface CanvasContextMenuDeps {
   visibilityManager: AnimationVisibilityStateManager;
@@ -53,6 +57,8 @@ interface CanvasContextMenuDeps {
     webgl2Available: boolean;
   };
   onToggle3DView?: () => void;
+  /** Reads and changes the sequence's join; omit where it cannot be changed. */
+  gridJoin?: GridJoinController | null;
 }
 
 function getActiveEffect(ecs?: EffectsConfigState | null): EffectType {
@@ -252,7 +258,6 @@ function buildGridChildren(
   vm: AnimationVisibilityStateManager
 ): ContextMenuItem[] {
   const current: GridMode = vm.getGridMode();
-  const conjoined = vm.getGridLayout() === "conjoined";
   return [
     {
       id: "grid-none",
@@ -274,15 +279,6 @@ function buildGridChildren(
       icon: "fa-wand-magic",
       checked: current === "auto",
       action: () => vm.setGridMode("auto"),
-    },
-    // Level 7 conjoined grid: blue on the left grid, red on the right.
-    {
-      id: "grid-conjoined",
-      label: t("animation_menu_conjoined"),
-      icon: "fa-table-columns",
-      checked: conjoined,
-      keepOpen: true,
-      action: () => vm.setGridLayout(conjoined ? "single" : "conjoined"),
     },
   ];
 }
@@ -428,6 +424,8 @@ export function buildCanvasContextMenuItems(
       icon: "fa-border-all",
       children: buildGridChildren(vm),
     },
+    // The sequence's join, the same submenu the pictograph menu offers
+    ...(deps.gridJoin ? [buildGridJoinMenuItem(deps.gridJoin)] : []),
     // Playback mode submenu
     {
       id: "playback-submenu",
@@ -486,7 +484,9 @@ export function buildCanvasContextMenuItems(
   if (deps.onToggleDisassemble) {
     items.push({
       id: "toggle-disassemble",
-      label: deps.disassembled ? t("animation_menu_reassemble") : t("animation_menu_disassemble"),
+      label: deps.disassembled
+        ? t("animation_menu_reassemble")
+        : t("animation_menu_disassemble"),
       icon: deps.disassembled ? "fa-compress" : "fa-table-columns",
       action: () => deps.onToggleDisassemble!(),
     });

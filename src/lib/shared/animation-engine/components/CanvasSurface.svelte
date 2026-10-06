@@ -35,6 +35,7 @@ captureEffectDiagnostics to the context menu.
 <script lang="ts">
   import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
   import { getSettings } from "$lib/shared/application/state/app-state.svelte";
+  import type { GridJoin } from "@tka/tka-types";
   import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
   import type { Letter } from "$lib/shared/foundation/domain/models/letter";
   import type { StartPlacementData } from "$lib/shared/foundation/domain/models/start-placement-data";
@@ -130,7 +131,7 @@ captureEffectDiagnostics to the context menu.
     placementGlyphVisible = false,
     leftPathLinesVisible = false,
     rightPathLinesVisible = false,
-    gridConjoined = false,
+    gridJoin = null,
     suppress2DOverlays = false,
     // Engine wiring props
     resizePaused = false,
@@ -204,8 +205,8 @@ captureEffectDiagnostics to the context menu.
     placementGlyphVisible?: boolean;
     leftPathLinesVisible?: boolean;
     rightPathLinesVisible?: boolean;
-    /** Level 7 joined grids: path lines move onto each hand's own grid. */
-    gridConjoined?: boolean;
+    /** The sequence's join: path lines move onto each hand's own grid. */
+    gridJoin?: GridJoin | null;
     suppress2DOverlays?: boolean;
     resizePaused?: boolean;
     visibilityManagerOverride?: AnimationVisibilityStateManager;
@@ -627,7 +628,7 @@ captureEffectDiagnostics to the context menu.
       {stepData}
       showLeft={leftPathLinesVisible}
       showRight={rightPathLinesVisible}
-      conjoined={gridConjoined}
+      {gridJoin}
       vm={visibilityManager}
     />
 

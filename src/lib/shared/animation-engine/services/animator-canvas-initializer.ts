@@ -128,7 +128,7 @@ export class AnimatorCanvasInitializer {
         this.renderer.loadGridTexture(
           initialGridMode,
           deps.showNonRadialPoints ?? true,
-          deps.gridConjoined ?? false
+          deps.gridJoin ?? null
         ),
         deps.loadPropTextures(),
       ]);

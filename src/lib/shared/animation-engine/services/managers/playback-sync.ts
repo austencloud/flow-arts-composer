@@ -30,19 +30,22 @@ import type { PropSystem } from "./prop-system";
 import type { FrameSystem } from "./frame-system";
 import type { EffectSystem } from "./effect-system";
 import type { AnimationVisibilityState } from "../animation-visibility-synchronizer";
+import type { AnimationVisibilityStateManager } from "../../state/animation-visibility-state.svelte";
+import type { GridJoin } from "@tka/tka-types";
 import type {
-  AnimationVisibilityStateManager,
-  GridLayout,
-} from "../../state/animation-visibility-state.svelte";
-import type { AnimationEngineProps, AnimationEngineCallbacks } from "../animation-engine.svelte";
+  AnimationEngineProps,
+  AnimationEngineCallbacks,
+} from "../animation-engine.svelte";
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
 import type { StartPlacementData } from "$lib/shared/foundation/domain/models/start-placement-data";
 import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
 import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
 import type { TrailSettings } from "../../domain/types/trail-types";
 import { DEFAULT_CANVAS_SIZE } from "../canvas-resizer.svelte";
-import { effectiveGridLayout } from "../conjoined-grid-layout";
-
+import {
+  animationGridJoinKey,
+  resolveAnimationGridJoin,
+} from "../animation-grid-join";
 
 /** Default props sentinel used when lastPropsRef is null */
 const DEFAULT_ENGINE_PROPS: AnimationEngineProps = {
@@ -60,7 +63,9 @@ export interface PlaybackSyncDeps {
   getCanvasSize: () => number;
   setCanvasSize: (s: number) => void;
   buildFrameDeps: () => {
-    effectsConfigState: import("$lib/shared/effects/state/effects-config-state.svelte").EffectsConfigState | null;
+    effectsConfigState:
+      | import("$lib/shared/effects/state/effects-config-state.svelte").EffectsConfigState
+      | null;
     effectRendererManager: import("../effect-renderer-manager").EffectRendererManager;
     getVM: () => AnimationVisibilityStateManager;
   };
@@ -94,7 +99,7 @@ export class PlaybackSync {
 
   private previousGridMode: string | null = null;
   private previousShowNonRadialPoints: boolean = true;
-  private previousGridLayout: GridLayout = "single";
+  private previousGridJoin: GridJoin | null = null;
   private cacheSequenceId: string | null = null;
   private lastClearSignal: number = 0;
   private lastPreRenderClearSignal: number = 0;
@@ -106,7 +111,6 @@ export class PlaybackSync {
     private readonly state: AnimatorState,
     private readonly deps: PlaybackSyncDeps
   ) {}
-
 
   get lastPropsRef(): AnimationEngineProps | null {
     return this._lastPropsRef;
@@ -134,8 +138,8 @@ export class PlaybackSync {
     this.previousShowNonRadialPoints = value;
   }
 
-  setPreviousGridLayout(value: GridLayout): void {
-    this.previousGridLayout = value;
+  setPreviousGridJoin(value: GridJoin | null): void {
+    this.previousGridJoin = value;
   }
 
   // ── Reset (called from engine.dispose()) ────────────────────────────────────
@@ -148,13 +152,19 @@ export class PlaybackSync {
     this._prevMandalaStrokeWidth = undefined;
   }
 
-
   /**
    * Per-prop orchestration — the entire update() body moved verbatim from engine.
    * Engine's public update() delegates here.
    */
   update(props: AnimationEngineProps): void {
-    const { lifecycleManager, propSystem, frameSystem, effectSystem, getCallbacks, buildFrameDeps } = this.deps;
+    const {
+      lifecycleManager,
+      propSystem,
+      frameSystem,
+      effectSystem,
+      getCallbacks,
+      buildFrameDeps,
+    } = this.deps;
 
     // Keep simple reference for initial render (no copy, just reference)
     this._lastPropsRef = props;
@@ -196,7 +206,11 @@ export class PlaybackSync {
       lifecycleManager.settingsService?.currentSettings ||
       props.externalTrailSettings !== undefined;
 
-    if (shouldInitTrailCapturer && lifecycleManager.trailCapturer && !this.trailCapturerInitialized) {
+    if (
+      shouldInitTrailCapturer &&
+      lifecycleManager.trailCapturer &&
+      !this.trailCapturerInitialized
+    ) {
       if (!this.settingsLoaded) {
         this.settingsLoaded = true;
       }
@@ -205,7 +219,8 @@ export class PlaybackSync {
     }
 
     // Handle prop type changes (delegated to PropSystem)
-    const getFrameParamsFn = () => frameSystem.buildFrameParams(props, buildFrameDeps());
+    const getFrameParamsFn = () =>
+      frameSystem.buildFrameParams(props, buildFrameDeps());
     propSystem.handlePropTypeChanges(props, getFrameParamsFn);
 
     // Handle trail settings changes - enforce unilateral constraint before syncing
@@ -220,7 +235,8 @@ export class PlaybackSync {
     }
 
     // Handle synced trail settings from service
-    const syncedSettings = lifecycleManager.trailSettingsSync?.state.syncedSettings;
+    const syncedSettings =
+      lifecycleManager.trailSettingsSync?.state.syncedSettings;
     if (syncedSettings) {
       // Only update and notify if settings actually changed (shallow comparison)
       const settingsChanged = this.trailSettingsChanged(
@@ -246,7 +262,9 @@ export class PlaybackSync {
     }
 
     // Handle sequence changes
-    lifecycleManager.sequenceCache?.handleSequenceChange(props.sequenceData ?? null);
+    lifecycleManager.sequenceCache?.handleSequenceChange(
+      props.sequenceData ?? null
+    );
 
     // Detect sequence content changes and re-initialize orchestrator if needed
     if (props.sequenceData && lifecycleManager.orchestrator) {
@@ -263,7 +281,8 @@ export class PlaybackSync {
         // ("let the earlier trail fade away naturally" — 2026-07-19). Any
         // discontinuous change (gallery switching sequences, first load)
         // still clears exactly as before.
-        const newStart = props.sequenceData.startPlacement?.startPlacement ?? null;
+        const newStart =
+          props.sequenceData.startPlacement?.startPlacement ?? null;
         const seamlessHandoff =
           this.lastTrailSeqWasCircular &&
           this.lastTrailSeqStartPlacement != null &&
@@ -271,7 +290,9 @@ export class PlaybackSync {
         this.lastTrailSeqStartPlacement = newStart;
         this.lastTrailSeqWasCircular = props.sequenceData.isCircular === true;
 
-        lifecycleManager.orchestrator.initializeWithDomainData(props.sequenceData);
+        lifecycleManager.orchestrator.initializeWithDomainData(
+          props.sequenceData
+        );
         frameSystem.lastSequenceContentHash = newHash;
 
         // Flush stale trail data so old ring buffer points don't draw
@@ -338,7 +359,9 @@ export class PlaybackSync {
     );
 
     // Handle playback changes
-    lifecycleManager.sequenceCache?.handlePlaybackChange(props.isPlaying ?? false);
+    lifecycleManager.sequenceCache?.handlePlaybackChange(
+      props.isPlaying ?? false
+    );
 
     // Handle grid mode changes (also reload when nonradial visibility changes)
     const currentGridMode = props.gridMode?.toString() ?? null;
@@ -359,7 +382,7 @@ export class PlaybackSync {
           );
         });
     }
-    this.syncGridLayout();
+    this.syncGridJoin();
 
     // Handle preview dark mode override
     if (props.previewDarkMode !== undefined && props.previewDarkMode !== null) {
@@ -414,13 +437,19 @@ export class PlaybackSync {
     }
   }
 
-
   /**
    * Handle visibility state changes from the subscription.
    * Moved verbatim from engine.handleVisibilityChange().
    */
   handleVisibilityChange(state: AnimationVisibilityState): void {
-    const { lifecycleManager, propSystem, frameSystem, effectSystem, getVM, buildFrameDeps } = this.deps;
+    const {
+      lifecycleManager,
+      propSystem,
+      frameSystem,
+      effectSystem,
+      getVM,
+      buildFrameDeps,
+    } = this.deps;
 
     this.state.setVisibilityState(state);
 
@@ -442,32 +471,44 @@ export class PlaybackSync {
         lifecycleManager.renderLoop?.triggerRender(() =>
           frameSystem.buildFrameParams(
             this._lastPropsRef ?? DEFAULT_ENGINE_PROPS,
-            buildFrameDeps(),
+            buildFrameDeps()
           )
         );
       }
     }
 
     // Sync Dark Mode to renderer when it changes
-    if (state.darkMode !== propSystem.prevDarkMode && !this.previewDarkModeActive) {
+    if (
+      state.darkMode !== propSystem.prevDarkMode &&
+      !this.previewDarkModeActive
+    ) {
       propSystem.setPrevDarkMode(state.darkMode);
       lifecycleManager.animationRenderer?.setDarkMode(state.darkMode);
 
       if (this.state.isInitialized) {
         lifecycleManager.renderLoop?.triggerRender(() =>
-          frameSystem.buildFrameParams(this._lastPropsRef ?? DEFAULT_ENGINE_PROPS, buildFrameDeps())
+          frameSystem.buildFrameParams(
+            this._lastPropsRef ?? DEFAULT_ENGINE_PROPS,
+            buildFrameDeps()
+          )
         );
 
         propSystem.reloadTexturesForDarkMode(() => {
           lifecycleManager.renderLoop?.triggerRender(() =>
-            frameSystem.buildFrameParams(this._lastPropsRef ?? DEFAULT_ENGINE_PROPS, buildFrameDeps())
+            frameSystem.buildFrameParams(
+              this._lastPropsRef ?? DEFAULT_ENGINE_PROPS,
+              buildFrameDeps()
+            )
           );
         });
       }
     }
 
     // Trigger render when trails visibility changes
-    const trailsInMap = this.hasEffectInMap(effectSystem.effectsConfigState?.tipEffectMap, "trails");
+    const trailsInMap = this.hasEffectInMap(
+      effectSystem.effectsConfigState?.tipEffectMap,
+      "trails"
+    );
     if (trailsInMap !== this._prevTrailsActive) {
       const trailsTurnedOff = this._prevTrailsActive && !trailsInMap;
       this._prevTrailsActive = trailsInMap;
@@ -481,7 +522,10 @@ export class PlaybackSync {
 
       if (this.state.isInitialized) {
         lifecycleManager.renderLoop?.triggerRender(() =>
-          frameSystem.buildFrameParams(this._lastPropsRef ?? DEFAULT_ENGINE_PROPS, buildFrameDeps())
+          frameSystem.buildFrameParams(
+            this._lastPropsRef ?? DEFAULT_ENGINE_PROPS,
+            buildFrameDeps()
+          )
         );
       }
     }
@@ -497,7 +541,10 @@ export class PlaybackSync {
 
       if (this.state.isInitialized) {
         lifecycleManager.renderLoop?.triggerRender(() =>
-          frameSystem.buildFrameParams(this._lastPropsRef ?? DEFAULT_ENGINE_PROPS, buildFrameDeps())
+          frameSystem.buildFrameParams(
+            this._lastPropsRef ?? DEFAULT_ENGINE_PROPS,
+            buildFrameDeps()
+          )
         );
       }
     }
@@ -505,12 +552,15 @@ export class PlaybackSync {
     // Delegate all effect-specific sync to EffectSystem
     effectSystem.syncEffects(state, vm);
 
-    this.syncGridLayout();
+    this.syncGridJoin();
 
     // Path shape or hybrid mode changed.
     const pathShape = vm.getPathShape();
     const motionAwarePaths = vm.getMotionAwarePaths();
-    if (pathShape !== this.prevPathShape || motionAwarePaths !== this.prevMotionAwarePaths) {
+    if (
+      pathShape !== this.prevPathShape ||
+      motionAwarePaths !== this.prevMotionAwarePaths
+    ) {
       this.prevPathShape = pathShape;
       this.prevMotionAwarePaths = motionAwarePaths;
 
@@ -556,28 +606,36 @@ export class PlaybackSync {
 
       if (this.state.isInitialized) {
         lifecycleManager.renderLoop?.triggerRender(() =>
-          frameSystem.buildFrameParams(this._lastPropsRef ?? DEFAULT_ENGINE_PROPS, buildFrameDeps())
+          frameSystem.buildFrameParams(
+            this._lastPropsRef ?? DEFAULT_ENGINE_PROPS,
+            buildFrameDeps()
+          )
         );
       }
     }
   }
 
   /**
-   * The conjoined grid was switched on or off: load the matching grid picture
+   * The sequence's join changed (a join was picked, changed or removed, or a
+   * sequence with a different join loaded): load the matching grid picture
    * and drop trails and flames drawn for the old layout, which would otherwise
    * streak across to the props' new places.
    */
-  private syncGridLayout(): void {
-    const { lifecycleManager, frameSystem, effectSystem, getVM, buildFrameDeps } =
+  private syncGridJoin(): void {
+    const { lifecycleManager, frameSystem, effectSystem, buildFrameDeps } =
       this.deps;
     const renderer = lifecycleManager.animationRenderer;
     if (!this.state.isInitialized || !renderer) return;
-    const layout = effectiveGridLayout(
-      getVM().getGridLayout(),
-      this._lastPropsRef?.sequenceData
+    const join = resolveAnimationGridJoin(
+      this._lastPropsRef?.sequenceData,
+      this._lastPropsRef?.additionalLayers?.length ?? 0
     );
-    if (layout === this.previousGridLayout) return;
-    this.previousGridLayout = layout;
+    if (
+      animationGridJoinKey(join) === animationGridJoinKey(this.previousGridJoin)
+    ) {
+      return;
+    }
+    this.previousGridJoin = join;
 
     effectSystem.trailOverlay?.clearBuffers();
     lifecycleManager.trailCapturer?.clearTrails();
@@ -597,7 +655,7 @@ export class PlaybackSync {
       .loadGridTexture(
         this.previousGridMode ?? "diamond",
         this.previousShowNonRadialPoints,
-        layout === "conjoined"
+        join
       )
       .then(rerender);
   }
@@ -610,7 +668,14 @@ export class PlaybackSync {
    * Internal-only — not exposed on the public surface.
    */
   private pullServiceState(): void {
-    const { lifecycleManager, propSystem, frameSystem, effectSystem, getCanvasSize, setCanvasSize } = this.deps;
+    const {
+      lifecycleManager,
+      propSystem,
+      frameSystem,
+      effectSystem,
+      getCanvasSize,
+      setCanvasSize,
+    } = this.deps;
 
     const precomputer = lifecycleManager.precomputer;
     if (precomputer) {
@@ -643,7 +708,6 @@ export class PlaybackSync {
     });
     setCanvasSize(newSize);
   }
-
 
   private initializeTrailCapturer(props: AnimationEngineProps): void {
     const { lifecycleManager, frameSystem, getCanvasSize } = this.deps;
@@ -686,7 +750,6 @@ export class PlaybackSync {
     }
   }
 
-
   /**
    * Shallow comparison of trail settings (faster than JSON.stringify)
    */
@@ -711,7 +774,10 @@ export class PlaybackSync {
   }
 
   /** Returns true if any entry in the map has the given effect type. */
-  private hasEffectInMap(map: import("../../domain/types/tip-effect-types").TipEffectMap | undefined, effect: string): boolean {
+  private hasEffectInMap(
+    map: import("../../domain/types/tip-effect-types").TipEffectMap | undefined,
+    effect: string
+  ): boolean {
     if (!map) return false;
     return Object.values(map).some((a) => a.effect === effect);
   }

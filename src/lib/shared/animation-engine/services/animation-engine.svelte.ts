@@ -54,7 +54,7 @@ import { PropSystem } from "./managers/prop-system";
 import { FrameSystem } from "./managers/frame-system";
 import { EffectSystem } from "./managers/effect-system";
 import { PlaybackSync } from "./managers/playback-sync";
-import { effectiveGridLayout } from "./conjoined-grid-layout";
+import { resolveAnimationGridJoin } from "./animation-grid-join";
 import type {
   EffectType,
   TipEffectMap,
@@ -385,9 +385,9 @@ export class AnimationEngine {
     });
 
     // Build the init context and delegate service creation to the manager.
-    const initGridLayout = effectiveGridLayout(
-      vm.getGridLayout(),
-      this.playbackSync.lastPropsRef?.sequenceData
+    const initGridJoin = resolveAnimationGridJoin(
+      this.playbackSync.lastPropsRef?.sequenceData,
+      this.playbackSync.lastPropsRef?.additionalLayers?.length ?? 0
     );
     const ctx: LifecycleInitCtx = {
       containerElement,
@@ -404,7 +404,7 @@ export class AnimationEngine {
       initialGridMode: this.playbackSync.lastPropsRef?.gridMode,
       initialShowNonRadialPoints:
         this.playbackSync.lastPropsRef?.showNonRadialPoints ?? true,
-      initialGridConjoined: initGridLayout === "conjoined",
+      initialGridJoin: initGridJoin,
       buildFrameParams: (props) =>
         this.frameSystem.buildFrameParams(props, this.buildFrameDeps()),
       getVM: () => this.getVM(),
@@ -426,7 +426,7 @@ export class AnimationEngine {
     this.playbackSync.setPreviousShowNonRadialPoints(
       this.playbackSync.lastPropsRef?.showNonRadialPoints ?? true
     );
-    this.playbackSync.setPreviousGridLayout(initGridLayout);
+    this.playbackSync.setPreviousGridJoin(initGridJoin);
 
     // Wire overlay renderers that may have been created during the async
     // initializeCanvas gap.

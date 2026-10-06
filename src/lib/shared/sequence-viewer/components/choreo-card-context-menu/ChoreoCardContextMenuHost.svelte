@@ -17,6 +17,7 @@
   } from "$lib/shared/components/context-menu/compose-menu";
   import { buildCardMenuSection } from "$lib/shared/choreo-card/services/card-menu-section";
   import { buildPictographContextMenuItems } from "$lib/shared/pictograph/shared/components/context-menu/pictograph-context-menu-builder";
+  import { followGridJoin } from "$lib/shared/grid-join/grid-join-follower.svelte";
   import { getVisibilityStateManager } from "$lib/shared/pictograph/shared/state/visibility-state.svelte";
   import { getImageCompositionManager } from "$lib/shared/share/state/image-composition-state.svelte";
   import { authState } from "$lib/shared/auth/state/auth-state.svelte";
@@ -60,6 +61,7 @@
 
   const visibilityManager = getVisibilityStateManager();
   const imageComposition = getImageCompositionManager();
+  const joinFollower = followGridJoin();
 
   let menuState: ContextMenuState = $state({ open: false });
   let menuVersion = $state(0);
@@ -97,6 +99,7 @@
 
   const menuItems: ContextMenuEntry[] = $derived.by(() => {
     void menuVersion;
+    void joinFollower.version();
     const sections: MenuSection[] = [];
     if (includePictographSection) {
       sections.push({
@@ -107,6 +110,7 @@
             // Card step numbers read ImageComposition.addStepNumbers, not this
             // manager — the toggle would lie here.
             includeStepNumbers: false,
+            gridJoin: joinFollower.controller,
           }),
           "pictograph",
           onAction

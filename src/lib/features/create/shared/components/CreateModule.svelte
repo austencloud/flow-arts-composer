@@ -70,6 +70,11 @@
   import DualSourceCrossfade from "$lib/shared/components/DualSourceCrossfade.svelte";
   import { DURATION } from "$lib/shared/transitions/transitions";
   import { setCreateModuleContext } from "../context/create-module-context";
+  import {
+    createGridJoinController,
+    setGridJoinContext,
+  } from "$lib/shared/grid-join/grid-join-controller";
+  import { sequenceGridJoin } from "$lib/shared/grid-join/sequence-grid-join";
   import LOOPCoordinator from "./coordinators/LOOPCoordinator.svelte";
   import StartEndCoordinator from "./coordinators/StartEndCoordinator.svelte";
   import SequenceDrawerLauncher from "./coordinators/SequenceDrawerLauncher.svelte";
@@ -239,6 +244,20 @@
       isInputMode = mode;
     },
   };
+
+  // The sequence's join, for the right-click menus of the step cells and the
+  // animation canvas. Changing it is an undoable sequence edit.
+  setGridJoinContext(
+    createGridJoinController({
+      get: () =>
+        sequenceGridJoin(CreateModuleState?.sequenceState.currentSequence),
+      apply: (join) => {
+        if (!CreateModuleState?.sequenceState.currentSequence) return;
+        CreateModuleState.pushUndoSnapshot(UndoOperationType.SET_GRID_JOIN);
+        CreateModuleState.sequenceState.setGridJoin(join);
+      },
+    })
+  );
 
   setCreateModuleContext({
     get CreateModuleState() {

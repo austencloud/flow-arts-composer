@@ -3,6 +3,8 @@ export interface ContextMenuItem {
   label: string;
   icon?: string;
   iconColor?: string;
+  /** Clockwise turn in degrees, for an arrow icon pointing off-axis. */
+  iconRotate?: number;
   /** Raw HTML icon (for trusted sources like MODULE_DEFINITIONS only) */
   rawIcon?: string;
   rawIconColor?: string;
@@ -24,7 +26,10 @@ export interface ContextMenuHeader {
   label: string;
 }
 
-export type ContextMenuEntry = ContextMenuItem | ContextMenuSeparator | ContextMenuHeader;
+export type ContextMenuEntry =
+  | ContextMenuItem
+  | ContextMenuSeparator
+  | ContextMenuHeader;
 
 export type ContextMenuState =
   | { open: false }
@@ -34,7 +39,9 @@ export function isMenuItem(entry: ContextMenuEntry): entry is ContextMenuItem {
   return !("type" in entry);
 }
 
-export function isSeparator(entry: ContextMenuEntry): entry is ContextMenuSeparator {
+export function isSeparator(
+  entry: ContextMenuEntry
+): entry is ContextMenuSeparator {
   return "type" in entry && entry.type === "separator";
 }
 

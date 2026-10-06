@@ -22,31 +22,45 @@ import {
   generateTimestampedFilename,
 } from "$lib/shared/foundation/services/file-downloader";
 import type { AnimationPlaybackController } from "$lib/shared/animation-engine/services/animation-playback-controller";
-import {
-  getHeaderHeight,
-  getProgressBarHeight,
-} from "./canvas-renderer";
+import { getHeaderHeight, getProgressBarHeight } from "./canvas-renderer";
 import type { VideoExporter } from "$lib/shared/animation-engine/services/video-exporter";
 import type { CompositeVideoRenderer } from "$lib/shared/animation-engine/services/composite-video-renderer";
 import type { ExportGlyphPrerenderer } from "$lib/shared/animation-engine/services/export-glyph-prerenderer";
-import { ExportFrameCompositor, type FrameCompositorConfig } from "./export-frame-compositor";
+import {
+  ExportFrameCompositor,
+  type FrameCompositorConfig,
+} from "./export-frame-compositor";
 import { OffscreenExportRenderer } from "$lib/shared/video-export/services/offscreen-export-renderer";
 import { drawOpenerFrame } from "$lib/shared/compose/domain/video-opener-frame";
 import { holdFrameCount } from "$lib/shared/share/domain/video-opener";
 
-import type { VideoExportFormat, VideoExportProgress, VideoEffectOverrides, IVideoExportOrchestrator, VideoExportOrchestratorOptions } from "$lib/shared/compose/domain/video-export-types";
-export type { VideoExportFormat, VideoExportProgress, VideoResolution, VideoEffectOverrides, VideoExportOrchestratorOptions } from "$lib/shared/compose/domain/video-export-types";
+import type {
+  VideoExportFormat,
+  VideoExportProgress,
+  VideoEffectOverrides,
+  IVideoExportOrchestrator,
+  VideoExportOrchestratorOptions,
+} from "$lib/shared/compose/domain/video-export-types";
+export type {
+  VideoExportFormat,
+  VideoExportProgress,
+  VideoResolution,
+  VideoEffectOverrides,
+  VideoExportOrchestratorOptions,
+} from "$lib/shared/compose/domain/video-export-types";
 import type { BackgroundVideoEncoder } from "$lib/shared/animation-engine/services/background-video-encoder";
 import { getAnimationVisibilityManager } from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
-import { withAnimationGridJoin } from "$lib/shared/animation-engine/services/conjoined-grid-layout";
 import { animationSettings } from "$lib/shared/animation-engine/state/animation-settings-state.svelte";
 import { fireCacheInvalidation } from "$lib/shared/animation-engine/state/fire-invalidation-signal.svelte";
-import { getExportDimensions, calculateBitrate } from "$lib/shared/animation-engine/domain/video-export-calculations";
+import {
+  getExportDimensions,
+  calculateBitrate,
+} from "$lib/shared/animation-engine/domain/video-export-calculations";
 import { calculateDifficultyLevel as calculateSequenceDifficultyLevel } from "$lib/shared/browse/services/sequence-difficulty-calculator";
 import { resolveLoopDisplay } from "$lib/features/loop-labeler/services/loop-display-resolver";
 import type { Period } from "$lib/shared/foundation/domain/models/generation/circular-models";
 import { simplifyRepeatedWord } from "$lib/shared/foundation/utils/word-simplifier";
-import type { TipEffectMap } from '$lib/shared/animation-engine/domain/types/tip-effect-types';
+import type { TipEffectMap } from "$lib/shared/animation-engine/domain/types/tip-effect-types";
 
 export class VideoExportOrchestrator implements IVideoExportOrchestrator {
   private _isExporting = false;
@@ -95,13 +109,17 @@ export class VideoExportOrchestrator implements IVideoExportOrchestrator {
       typeof sourceSizeOverride === "number" && sourceSizeOverride > 0;
     // Width used for header/progress sizing math. With an override the chrome is
     // forced off, so this only feeds the (zeroed) height calls.
-    const sourceSizingWidth = hasSourceOverride ? sourceSizeOverride : canvas.width;
+    const sourceSizingWidth = hasSourceOverride
+      ? sourceSizeOverride
+      : canvas.width;
     const showWordHeader = hasSourceOverride
       ? false
-      : (options.overlayOverrides?.wordHeader ?? visibilityManager.getVisibility("wordHeader"));
+      : (options.overlayOverrides?.wordHeader ??
+        visibilityManager.getVisibility("wordHeader"));
     const showProgressBar = hasSourceOverride
       ? false
-      : (options.overlayOverrides?.progressBar ?? visibilityManager.getVisibility("progressBar"));
+      : (options.overlayOverrides?.progressBar ??
+        visibilityManager.getVisibility("progressBar"));
     // Header/progress bar heights at SOURCE resolution - used only for
     // aspect ratio calculation so the output dimensions stay correct.
     const srcHeaderHeight = showWordHeader
@@ -168,7 +186,7 @@ export class VideoExportOrchestrator implements IVideoExportOrchestrator {
       this._isExporting = false;
       throw new Error(
         `Cannot export: canvas has zero dimensions (${canvas.width}x${canvas.height}). ` +
-        "Wait for the animation to load before exporting."
+          "Wait for the animation to load before exporting."
       );
     }
 
@@ -225,13 +243,16 @@ export class VideoExportOrchestrator implements IVideoExportOrchestrator {
       // The start position plays once at the very beginning and the end hold plays once
       // at the very end; only the motion steps repeat for each additional loop.
       const earlySteps = panelState.sequenceData?.steps ?? [];
-      const earlyStepDuration = earlySteps.length > 0
-        ? earlySteps.reduce((sum, s) => sum + (s.duration ?? 1), 0)
-        : panelState.totalSteps;
-      const earlyStartDur = (options.includeAnimationStartPlacement ?? true) ? 1 : 0;
+      const earlyStepDuration =
+        earlySteps.length > 0
+          ? earlySteps.reduce((sum, s) => sum + (s.duration ?? 1), 0)
+          : panelState.totalSteps;
+      const earlyStartDur =
+        (options.includeAnimationStartPlacement ?? true) ? 1 : 0;
       const earlyIsLoopable = playbackController.isSeamlesslyLoopable;
       const earlyEndDur = (options.includeEndHold ?? !earlyIsLoopable) ? 1 : 0;
-      const earlyLoopCount = options.loopCount ?? panelState.exportLoopCount ?? 1;
+      const earlyLoopCount =
+        options.loopCount ?? panelState.exportLoopCount ?? 1;
       const earlyTotalDuration =
         earlyStartDur + earlyStepDuration * earlyLoopCount + earlyEndDur;
       const secondsPerBeat = 1.0 / panelState.speed;
@@ -326,7 +347,12 @@ export class VideoExportOrchestrator implements IVideoExportOrchestrator {
       playbackController.jumpToStep(0);
 
       // Enable fire renderer diagnostics
-      const fireDiag = typeof window !== 'undefined' ? (window as unknown as Record<string, unknown>).__tka_fire_diag as { enable(): void; reset(): void; disable(): void } | undefined : undefined;
+      const fireDiag =
+        typeof window !== "undefined"
+          ? ((window as unknown as Record<string, unknown>).__tka_fire_diag as
+              | { enable(): void; reset(): void; disable(): void }
+              | undefined)
+          : undefined;
       if (fireDiag) {
         fireDiag.enable();
       }
@@ -343,10 +369,10 @@ export class VideoExportOrchestrator implements IVideoExportOrchestrator {
       // and threaded into offscreen.initialize() below.
       const ecs = visibilityManager.effectsConfigState;
       const tipMap = ecs?.tipEffectMap ?? {};
-      const hasEffectInMap = (effect: string) => Object.values(tipMap).some(a => a.effect === effect);
+      const hasEffectInMap = (effect: string) =>
+        Object.values(tipMap).some((a) => a.effect === effect);
       const needsFluidWarmup =
-        hasEffectInMap("fire") ||
-        hasEffectInMap("charcoal");
+        hasEffectInMap("fire") || hasEffectInMap("charcoal");
       if (needsFluidWarmup && fireDiag) {
         // Reset fire diagnostic counter so export frames get logged.
         fireDiag.reset();
@@ -364,7 +390,9 @@ export class VideoExportOrchestrator implements IVideoExportOrchestrator {
           if (ctx2d) {
             ctx2d.clearRect(0, 0, overlay.width, overlay.height);
           } else {
-            const glCtx = overlay.getContext("webgl2") as WebGL2RenderingContext | null;
+            const glCtx = overlay.getContext(
+              "webgl2"
+            ) as WebGL2RenderingContext | null;
             if (glCtx) {
               glCtx.bindFramebuffer(glCtx.FRAMEBUFFER, null);
               glCtx.clearColor(0, 0, 0, 0);
@@ -385,15 +413,18 @@ export class VideoExportOrchestrator implements IVideoExportOrchestrator {
       // Build step durations array - each step's relative duration (default 1)
       const steps = panelState.sequenceData?.steps ?? [];
       const stepDurations = steps.map((s) => s.duration ?? 1);
-      const totalDurationUnits = stepDurations.reduce((sum, d) => sum + d, 0) || panelState.totalSteps;
+      const totalDurationUnits =
+        stepDurations.reduce((sum, d) => sum + d, 0) || panelState.totalSteps;
 
       // Include optional start position (1 beat) and end hold for non-looping sequences.
       // The animation engine uses beat 0 = start position, beat 1+ = motion steps.
       // Without accounting for this, the exported glyph overlay is one beat ahead
       // of the animation, and the end position is cut off abruptly.
-      const startPlacementDuration = (options.includeAnimationStartPlacement ?? true) ? 1 : 0;
+      const startPlacementDuration =
+        (options.includeAnimationStartPlacement ?? true) ? 1 : 0;
       const isLoopable = playbackController.isSeamlesslyLoopable;
-      const endPlacementHoldDuration = (options.includeEndHold ?? !isLoopable) ? 1 : 0;
+      const endPlacementHoldDuration =
+        (options.includeEndHold ?? !isLoopable) ? 1 : 0;
 
       // Apply loop count for repeating the motion portion back-to-back.
       // Prefer options.loopCount if provided, otherwise use panelState.exportLoopCount.
@@ -433,13 +464,8 @@ export class VideoExportOrchestrator implements IVideoExportOrchestrator {
         if (!panelState.sequenceData) {
           throw new Error("Sequence data is required for composite mode");
         }
-        // The step grid beside the animation joins its grids while the
-        // animation does.
-        const gridSequence = withAnimationGridJoin(
-          panelState.sequenceData,
-          visibilityManager.getGridLayout()
-        );
-        await this.compositeRenderer.initialize(gridSequence, {
+        // The step grid beside the animation follows the sequence's own join.
+        await this.compositeRenderer.initialize(panelState.sequenceData, {
           orientation: options.compositeMode as "horizontal" | "vertical",
           gridStepSize: options.gridStepSize ?? 120,
           includeStartPlacement: options.includeStartPlacement ?? false,
@@ -452,12 +478,16 @@ export class VideoExportOrchestrator implements IVideoExportOrchestrator {
       // Merge any per-export overlayOverrides OVER the global visibility manager
       // (does NOT mutate global state) so tunnel export can suppress chrome.
       const ov = options.overlayOverrides;
-      const showTkaGlyph = ov?.tkaGlyph ?? visibilityManager.getVisibility("tkaGlyph");
+      const showTkaGlyph =
+        ov?.tkaGlyph ?? visibilityManager.getVisibility("tkaGlyph");
       const showElementalGlyph =
         ov?.elementalGlyph ?? visibilityManager.getVisibility("elementalGlyph");
-      const showStepNumbers = ov?.stepNumbers ?? visibilityManager.getVisibility("stepNumbers");
-      const showLeftPathLines = ov?.leftPathLines ?? visibilityManager.getVisibility("leftPathLines");
-      const showRightPathLines = ov?.rightPathLines ?? visibilityManager.getVisibility("rightPathLines");
+      const showStepNumbers =
+        ov?.stepNumbers ?? visibilityManager.getVisibility("stepNumbers");
+      const showLeftPathLines =
+        ov?.leftPathLines ?? visibilityManager.getVisibility("leftPathLines");
+      const showRightPathLines =
+        ov?.rightPathLines ?? visibilityManager.getVisibility("rightPathLines");
       const isDarkMode = visibilityManager.isDarkMode();
       // Grid is read from the global animation visibility/settings inside the
       // offscreen engine — there is no per-export grid flag on the offscreen init
@@ -560,7 +590,8 @@ export class VideoExportOrchestrator implements IVideoExportOrchestrator {
         showElementalGlyph,
         showStepNumbers,
         showWordHeader,
-        wordHeaderHighlight: visibilityManager.getSettings().wordHeaderHighlight,
+        wordHeaderHighlight:
+          visibilityManager.getSettings().wordHeaderHighlight,
         showProgressBar,
         isDarkMode,
         isCompositeMode: !!isCompositeMode,
@@ -589,11 +620,15 @@ export class VideoExportOrchestrator implements IVideoExportOrchestrator {
       // log the actual accumulator stamp count per captured frame. Expected: 1 per
       // active color (1 or 2). A higher value proves the leading edge is being
       // re-stamped multiple times at the same virtualTime — the "doubly opaque" bug.
-      const trailDiag = typeof window !== "undefined"
-        ? ((window as unknown as Record<string, unknown>).__tka_trail_diag as
-            | { read(): { stamps: number; lastDt: number; lastFade: number }; enable(): void }
-            | undefined)
-        : undefined;
+      const trailDiag =
+        typeof window !== "undefined"
+          ? ((window as unknown as Record<string, unknown>).__tka_trail_diag as
+              | {
+                  read(): { stamps: number; lastDt: number; lastFade: number };
+                  enable(): void;
+                }
+              | undefined)
+          : undefined;
       // Auto-enable in DEV so the per-frame stamp/dt/fade log prints without a
       // manual console step. The hook exists once the offscreen engine's trail
       // overlay has initialized (above).
@@ -634,7 +669,8 @@ export class VideoExportOrchestrator implements IVideoExportOrchestrator {
           if (this.shouldCancel) {
             throw new Error("Export cancelled");
           }
-          const timeProgress = ((w + phaseOffset) / totalFrames) * totalDurationWithHolds;
+          const timeProgress =
+            ((w + phaseOffset) / totalFrames) * totalDurationWithHolds;
           const virtualTimeMs = (w / fps) * 1000;
           panelState.setVirtualTime(virtualTimeMs);
 
@@ -643,14 +679,23 @@ export class VideoExportOrchestrator implements IVideoExportOrchestrator {
           let warmBeat: number;
           if (startPlacementDuration > 0 && timeProgress < motionStart) {
             warmBeat = timeProgress / startPlacementDuration;
-          } else if (endPlacementHoldDuration > 0 && timeProgress >= motionEnd) {
+          } else if (
+            endPlacementHoldDuration > 0 &&
+            timeProgress >= motionEnd
+          ) {
             warmBeat = steps.length + 1;
           } else {
             const motionTime = timeProgress - motionStart;
-            const wrapped = totalDurationUnits > 0 ? motionTime % totalDurationUnits : 0;
-            warmBeat = this.timeToBeat(wrapped, cumulativeDurations, stepDurations) + 1;
+            const wrapped =
+              totalDurationUnits > 0 ? motionTime % totalDurationUnits : 0;
+            warmBeat =
+              this.timeToBeat(wrapped, cumulativeDurations, stepDurations) + 1;
           }
-          offscreen.renderFrame(warmBeat, virtualTimeMs, options.additionalLayersForBeat);
+          offscreen.renderFrame(
+            warmBeat,
+            virtualTimeMs,
+            options.additionalLayersForBeat
+          );
           // Yield occasionally so a long warm-up doesn't jank the main thread.
           if (w % 30 === 29) await this.waitForAnimationFrame();
         }
@@ -709,7 +754,8 @@ export class VideoExportOrchestrator implements IVideoExportOrchestrator {
         // Frame-midpoint phase (see phaseOffset above): keeps seamless-loop
         // captures strictly inside (0, period) so the start snapshot is never
         // hit and the wrap is exactly one frame-step.
-        const timeProgress = ((i + phaseOffset) / totalFrames) * totalDurationWithHolds;
+        const timeProgress =
+          ((i + phaseOffset) / totalFrames) * totalDurationWithHolds;
 
         // Calculate deterministic virtual time for this frame (in ms). Continue
         // past any seamless-loop warm-up so the offscreen engine's trail fade
@@ -742,7 +788,11 @@ export class VideoExportOrchestrator implements IVideoExportOrchestrator {
           const motionTime = timeProgress - motionStart;
           const wrappedMotionTime =
             totalDurationUnits > 0 ? motionTime % totalDurationUnits : 0;
-          const rawStep = this.timeToBeat(wrappedMotionTime, cumulativeDurations, stepDurations);
+          const rawStep = this.timeToBeat(
+            wrappedMotionTime,
+            cumulativeDurations,
+            stepDurations
+          );
           stepIndex = Math.floor(rawStep);
           playbackPosition = rawStep + 1;
         }
@@ -754,7 +804,11 @@ export class VideoExportOrchestrator implements IVideoExportOrchestrator {
         //  - Composite: the grid renderer consumes the live canvas; update
         //    panel state and let the live render loop paint the new beat.
         if (!isCompositeMode) {
-          offscreen!.renderFrame(playbackPosition, virtualTimeMs, options.additionalLayersForBeat);
+          offscreen!.renderFrame(
+            playbackPosition,
+            virtualTimeMs,
+            options.additionalLayersForBeat
+          );
           // Yield to the event loop so the browser repaints (the live canvas keeps
           // animating under the takeover) and the Svelte progress update flushes.
           // The offscreen engine is deterministic and unaffected by the yield.
@@ -792,7 +846,9 @@ export class VideoExportOrchestrator implements IVideoExportOrchestrator {
         // When the canvas is temporarily unavailable, the offscreen canvas keeps
         // its previous content, producing a duplicated frame in the video.
         if (canvasAvailable) {
-          const compositeStepIndex = isInStartPlacement ? 0 : Math.max(0, stepIndex);
+          const compositeStepIndex = isInStartPlacement
+            ? 0
+            : Math.max(0, stepIndex);
           frameCompositor.renderCanvasLayers(
             offscreenCtx,
             sourceCanvas,
@@ -873,9 +929,8 @@ export class VideoExportOrchestrator implements IVideoExportOrchestrator {
           // browser's "download multiple files" prompt). Now it fires only when
           // window.__tka_export_frame_dump is explicitly set to a frame index.
           if (import.meta.env.DEV) {
-            const dumpTarget =
-              (window as unknown as Record<string, unknown>)
-                .__tka_export_frame_dump as number | undefined;
+            const dumpTarget = (window as unknown as Record<string, unknown>)
+              .__tka_export_frame_dump as number | undefined;
             if (typeof dumpTarget === "number" && i === dumpTarget) {
               // Flatten over opaque black to mirror exactly what the H.264
               // encoder receives: VideoFrame RGBA → encoder drops alpha, so any
@@ -976,7 +1031,12 @@ export class VideoExportOrchestrator implements IVideoExportOrchestrator {
       throw error;
     } finally {
       // --- EXPORT DIAGNOSTIC cleanup ---
-      const fireDiagCleanup = typeof window !== 'undefined' ? (window as unknown as Record<string, unknown>).__tka_fire_diag as { disable(): void } | undefined : undefined;
+      const fireDiagCleanup =
+        typeof window !== "undefined"
+          ? ((window as unknown as Record<string, unknown>).__tka_fire_diag as
+              | { disable(): void }
+              | undefined)
+          : undefined;
       if (fireDiagCleanup) {
         fireDiagCleanup.disable();
       }
@@ -1052,12 +1112,8 @@ export class VideoExportOrchestrator implements IVideoExportOrchestrator {
       mp4: "mp4",
     };
     const extension = extensionMap[format] || "mp4";
-    return generateTimestampedFilename(
-      baseName,
-      extension
-    );
+    return generateTimestampedFilename(baseName, extension);
   }
-
 
   /**
    * Convert a time position (in duration units) to a beat position (float).
@@ -1100,11 +1156,15 @@ export class VideoExportOrchestrator implements IVideoExportOrchestrator {
 
     // Determine which single effect (if any) should be active for the export.
     // Priority: fire > charcoal > led > trails > none.
-    const effect = overrides.fire ? "fire"
-      : overrides.charcoal ? "charcoal"
-      : overrides.led ? "led"
-      : overrides.trails ? "trails"
-      : "none";
+    const effect = overrides.fire
+      ? "fire"
+      : overrides.charcoal
+        ? "charcoal"
+        : overrides.led
+          ? "led"
+          : overrides.trails
+            ? "trails"
+            : "none";
 
     ecs?.setActiveEffect(effect);
 
