@@ -38,6 +38,7 @@ import type { VideoExportFormat, VideoExportProgress, VideoEffectOverrides, IVid
 export type { VideoExportFormat, VideoExportProgress, VideoResolution, VideoEffectOverrides, VideoExportOrchestratorOptions } from "$lib/shared/compose/domain/video-export-types";
 import type { BackgroundVideoEncoder } from "$lib/shared/animation-engine/services/background-video-encoder";
 import { getAnimationVisibilityManager } from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
+import { withAnimationGridJoin } from "$lib/shared/animation-engine/services/conjoined-grid-layout";
 import { animationSettings } from "$lib/shared/animation-engine/state/animation-settings-state.svelte";
 import { fireCacheInvalidation } from "$lib/shared/animation-engine/state/fire-invalidation-signal.svelte";
 import { getExportDimensions, calculateBitrate } from "$lib/shared/animation-engine/domain/video-export-calculations";
@@ -432,7 +433,13 @@ export class VideoExportOrchestrator implements IVideoExportOrchestrator {
         if (!panelState.sequenceData) {
           throw new Error("Sequence data is required for composite mode");
         }
-        await this.compositeRenderer.initialize(panelState.sequenceData, {
+        // The step grid beside the animation joins its grids while the
+        // animation does.
+        const gridSequence = withAnimationGridJoin(
+          panelState.sequenceData,
+          visibilityManager.getGridLayout()
+        );
+        await this.compositeRenderer.initialize(gridSequence, {
           orientation: options.compositeMode as "horizontal" | "vertical",
           gridStepSize: options.gridStepSize ?? 120,
           includeStartPlacement: options.includeStartPlacement ?? false,

@@ -5,6 +5,7 @@ import type { SequenceData } from "../../foundation/domain/models/sequence-data"
 import { PropType } from "../../pictograph/prop/domain/enums/prop-type";
 import type { PictographVisibilityOptions } from "../utils/pictograph-to-svg";
 import { createStartPlacementFromBeatStart } from "$lib/shared/create/services/sequence-transforms";
+import { gridJoinCellResolver, isGridJoin } from "@tka/render-core";
 // These 5 imports are loaded dynamically at usage sites to avoid pulling
 // Svelte stores and $app/environment into the composition worker bundle.
 // See: getVisibilitySettings(), renderPictographDirect(), storePictographBlob()
@@ -420,6 +421,12 @@ export class ImageComposer {
     const effectiveRightPropType =
       options.rightPropTypeOverride ?? options.propTypeOverride;
 
+    // Joined grids: every cell, the start placement included, carries the
+    // sequence's one join. Cells are untouched when nothing is joined.
+    const withJoin = gridJoinCellResolver({
+      conjoined: sequence.conjoined,
+    });
+
     const endCells = trace?.start("pictograph-cells");
     if (hasStartPlacement && effectiveStartPlacement) {
       const startStepNumber = options.addStepNumbers ? 0 : undefined;
@@ -433,7 +440,7 @@ export class ImageComposer {
         : effectiveStartPlacement;
       await this.renderPictographAt(
         ctx,
-        startPlacementData,
+        withJoin(startPlacementData),
         0,
         0,
         stepSize,
@@ -473,7 +480,7 @@ export class ImageComposer {
         : beat;
       await this.renderPictographAt(
         ctx,
-        stepData,
+        withJoin(stepData),
         col,
         row,
         stepSize,
@@ -588,6 +595,8 @@ export class ImageComposer {
   ): void {
     // Custom palettes must not seed default preview cells.
     if (visibilitySettings.primaryPropColors) return;
+    // Nor may joined grids: the preview-cell key has no join term.
+    if (isGridJoin(pictographData.conjoined)) return;
     const isDark = visibilitySettings.darkMode ?? false;
     const leftProp = visibilitySettings.leftPropType;
     const rightProp = visibilitySettings.rightPropType;

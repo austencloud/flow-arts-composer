@@ -75,6 +75,9 @@ export interface ThumbnailRenderInput {
 
   /** Use 5:7 playing card layout for physical card export (different from lightMode/printMode) */
   cardMode?: boolean;
+
+  /** Joined grids, as `sequenceGridJoinKey` names them. Absent on one grid. */
+  gridJoin?: string;
 }
 
 export interface ThumbnailCacheKey {
@@ -137,12 +140,16 @@ export function deriveKey(input: ThumbnailRenderInput): ThumbnailCacheKey {
   // every signed-in user — cacheable, but keyed apart from the no-QR card so a
   // guest's QR-less render can't overwrite it (and vice-versa).
   const qrSuffix = input.visibility?.showQRCode ? "_qr" : "";
+  // Joined grids are a different image of the same sequence. Present only when
+  // joined, so every one-grid key stays byte-identical.
+  const joinSuffix = input.gridJoin ? `_j${input.gridJoin}` : "";
   const rendererSuffix = `_r${THUMBNAIL_RENDERER_VERSION}`;
-  const cloudPath = `thumbnails/${input.variant}/${propKey}/${input.sequenceName}${idSuffix}${qrSuffix}${rendererSuffix}_${mode}.webp`;
+  const cloudPath = `thumbnails/${input.variant}/${propKey}/${input.sequenceName}${idSuffix}${qrSuffix}${joinSuffix}${rendererSuffix}_${mode}.webp`;
 
   // Compute hash of all inputs that affect visual output
   const hashInput = {
     renderer: THUMBNAIL_RENDERER_VERSION,
+    ...(input.gridJoin && { join: input.gridJoin }),
     ...(usesDefaults
       ? {
           seq: input.sequenceName,

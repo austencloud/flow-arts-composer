@@ -30,8 +30,9 @@
  *
  * Dependency policy
  * -----------------
- * Runtime dependencies: `zod` plus the pure `@tka/tka-types` legacy normalizer.
- * Every application-domain import remains type-only. That keeps the offline
+ * Runtime dependencies: `zod`, the pure `@tka/tka-types` legacy normalizer and
+ * the import-free `./grid-join-token`. Every other application-domain import
+ * remains type-only. That keeps the offline
  * cache, Browse loader, hash matcher, and Admin migration tooling free of
  * Firebase and Svelte runtime dependencies while giving every ingress path the
  * same blue/red-to-left/right compatibility behavior. The existing
@@ -50,6 +51,7 @@
 import { z } from "zod";
 import { normalizeLegacySequence } from "@tka/tka-types";
 
+import { GRID_JOIN_DIRECTIONS } from "./grid-join-token";
 import type { PublicSequenceIndex } from "./public-sequence-index";
 import type { SequenceData } from "./sequence-data";
 import type { SoloPropData } from "./solo-prop-data";
@@ -203,6 +205,19 @@ export const wireTimestamp = z.custom<WireTimestamp>(isWireTimestamp, {
 const looseObject = () => z.object({}).passthrough();
 
 /**
+ * A side-by-side grid join. A malformed value reads as absent: the renderers
+ * draw whatever `isGridJoin` rejects on one grid, so a bad join must not make
+ * the whole document unreadable. The directions come from `./grid-join-token`
+ * rather than `isGridJoin`: migration scripts run this file under tsx, where
+ * `@tka/render-core` resolves to a build that may predate the join helpers.
+ * `tests/unit/grid-join/grid-join-token.test.ts` pins them to the same answers.
+ */
+const GridJoinWireSchema = z.object({
+  toward: z.enum(GRID_JOIN_DIRECTIONS),
+  steps: z.union([z.literal(1), z.literal(2)]),
+});
+
+/**
  * Presence-and-shape check only. Whether the payload is actually renderable is
  * decided by `checkPublicProjectionSelfContainment`, so a malformed embedded
  * prop is reported as an invariant violation rather than failing the whole
@@ -250,6 +265,7 @@ const StepPairingWireSchema = z
  * - reached today only through a cast in `mapPublicIndexToSequenceData`:
  *   `displayName`, `components`, `componentDomains`, `isCircular`
  * - new in schema 2: the three `publicProjection*` stamps
+ * - written only for a joined sequence: `conjoined`
  */
 const PublicSequenceWireObjectSchema = z
   .object({
@@ -283,6 +299,8 @@ const PublicSequenceWireObjectSchema = z
 
     /** Grid Mode filter (`browse-filter.ts:459`); never written today. */
     gridMode: z.string().optional(),
+    /** Written only for a sequence drawn on joined grids. */
+    conjoined: GridJoinWireSchema.optional().catch(undefined),
     /** Reversal filter (`browse-filter.ts:649-655`); never written today. */
     reversalPattern: z.string().optional(),
 
@@ -457,6 +475,7 @@ export function toPublicSequenceProjection(
     ...(wire.gridMode !== undefined && {
       gridMode: wire.gridMode as SequenceData["gridMode"],
     }),
+    ...(wire.conjoined !== undefined && { conjoined: wire.conjoined }),
     ...(wire.reversalPattern !== undefined && {
       reversalPattern: wire.reversalPattern,
     }),

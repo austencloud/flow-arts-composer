@@ -18,6 +18,7 @@ import {
   saveAndOpenImage,
   type UserPreferences,
 } from "../shared/server-context.js";
+import { gridJoinSchema } from "../shared/grid-join-schema.js";
 
 export function registerPictographTools(server: McpServer): void {
   // Tool: generate_pictograph_url
@@ -149,6 +150,7 @@ export function registerPictographTools(server: McpServer): void {
         .boolean()
         .optional()
         .describe("Override: show right-hand motion (prop + arrow)"),
+      conjoined: gridJoinSchema.optional(),
       includeTextData: z
         .boolean()
         .optional()
@@ -157,7 +159,13 @@ export function registerPictographTools(server: McpServer): void {
           "Include motion data as text (false = image only, saves tokens)"
         ),
     },
-    async ({ letter, variation = 0, includeTextData = true, ...overrides }) => {
+    async ({
+      letter,
+      variation = 0,
+      includeTextData = true,
+      conjoined,
+      ...overrides
+    }) => {
       const allPictographs = ensureDataLoaded();
 
       const variations = allPictographs.filter((p) => p.letter === letter);
@@ -232,6 +240,7 @@ export function registerPictographTools(server: McpServer): void {
             turns: 0,
             startOrientation: "in",
           },
+          conjoined,
         };
 
         const visibility: RenderVisibilityOptions = {
@@ -369,8 +378,9 @@ export function registerPictographTools(server: McpServer): void {
         .boolean()
         .optional()
         .describe("Override: show right-hand motion (prop + arrow)"),
+      conjoined: gridJoinSchema.optional(),
     },
-    async ({ letter, variation = 0, ...overrides }) => {
+    async ({ letter, variation = 0, conjoined, ...overrides }) => {
       const allPictographs = ensureDataLoaded();
 
       const variations = allPictographs.filter((p) => p.letter === letter);
@@ -444,6 +454,7 @@ export function registerPictographTools(server: McpServer): void {
             turns: 0,
             startOrientation: "in",
           },
+          conjoined,
         };
 
         const visibility: RenderVisibilityOptions = {

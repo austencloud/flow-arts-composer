@@ -17,6 +17,7 @@ import {
   ensureDataLoaded,
   saveAndOpenImage,
 } from "../shared/server-context.js";
+import { gridJoinSchema } from "../shared/grid-join-schema.js";
 import {
   buildSequenceFromLetters,
   parseWordToLetters,
@@ -790,6 +791,7 @@ export function registerSequenceTools(server: McpServer): void {
         })
         .optional()
         .describe("Physical build for either fan or bigfan hand"),
+      conjoined: gridJoinSchema.optional(),
       maxAttempts: z
         .number()
         .optional()
@@ -933,6 +935,7 @@ export function registerSequenceTools(server: McpServer): void {
         leftPropType,
         rightPropType,
         fanAppearance,
+        conjoined,
         maxAttempts = 500,
         showDifficulty,
         userName,
@@ -1166,6 +1169,7 @@ export function registerSequenceTools(server: McpServer): void {
               rightPropType,
               fanAppearance,
               primaryPropColors,
+              conjoined,
             }
           );
 
@@ -1354,6 +1358,7 @@ export function registerSequenceTools(server: McpServer): void {
             leftPropType,
             rightPropType,
             fanAppearance,
+            conjoined,
           }
         );
 

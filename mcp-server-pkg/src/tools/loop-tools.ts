@@ -12,6 +12,7 @@ import {
   ensureDataLoaded,
   saveAndOpenImage,
 } from "../shared/server-context.js";
+import { gridJoinSchema } from "../shared/grid-join-schema.js";
 import {
   buildSequenceFromLetters,
   parseWordToLetters,
@@ -542,6 +543,7 @@ export function registerLoopTools(server: McpServer): void {
         })
         .nullable()
         .optional(),
+      conjoined: gridJoinSchema.optional(),
       maxAttempts: z
         .number()
         .optional()
@@ -601,6 +603,7 @@ export function registerLoopTools(server: McpServer): void {
       leftPropType,
       rightPropType,
       fanAppearance,
+      conjoined,
       maxAttempts = 500,
       loopComponents,
       level = 1,
@@ -781,6 +784,7 @@ export function registerLoopTools(server: McpServer): void {
             leftPropType,
             rightPropType,
             fanAppearance,
+            conjoined,
           }
         );
 
@@ -879,6 +883,7 @@ export function registerLoopTools(server: McpServer): void {
         })
         .nullable()
         .optional(),
+      conjoined: gridJoinSchema.optional(),
       maxAttempts: z
         .number()
         .optional()
@@ -938,6 +943,7 @@ export function registerLoopTools(server: McpServer): void {
       leftPropType,
       rightPropType,
       fanAppearance,
+      conjoined,
       maxAttempts = 500,
       loopComponents,
       level = 1,
@@ -1117,6 +1123,7 @@ export function registerLoopTools(server: McpServer): void {
             leftPropType,
             rightPropType,
             fanAppearance,
+            conjoined,
           }
         );
 

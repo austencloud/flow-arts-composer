@@ -54,6 +54,7 @@ import { PropSystem } from "./managers/prop-system";
 import { FrameSystem } from "./managers/frame-system";
 import { EffectSystem } from "./managers/effect-system";
 import { PlaybackSync } from "./managers/playback-sync";
+import { effectiveGridLayout } from "./conjoined-grid-layout";
 import type {
   EffectType,
   TipEffectMap,
@@ -384,7 +385,10 @@ export class AnimationEngine {
     });
 
     // Build the init context and delegate service creation to the manager.
-    const initGridLayout = vm.getGridLayout();
+    const initGridLayout = effectiveGridLayout(
+      vm.getGridLayout(),
+      this.playbackSync.lastPropsRef?.sequenceData
+    );
     const ctx: LifecycleInitCtx = {
       containerElement,
       visibilityManagerOverride: this.visibilityManagerOverride,

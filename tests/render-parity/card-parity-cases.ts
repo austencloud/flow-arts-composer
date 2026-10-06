@@ -1,4 +1,5 @@
 import demo from "../../src/lib/shared/landing/data/demo-sequence.json";
+import type { GridJoinSpec } from "@tka/render-core";
 import type { SequenceRenderOptions } from "../../mcp-server-pkg/src/core/sequence-renderer";
 
 export interface CardParityCase {
@@ -155,8 +156,40 @@ export function cardParityCases(): CardParityCase[] {
         qrUrl: DEMO_SEQUENCE_LINK_8,
       },
     },
+    {
+      name: "joined-grids",
+      sequence,
+      options: {
+        showDifficulty: true,
+        showMandala: true,
+        conjoined: JOIN_EAST,
+      },
+    },
+    {
+      name: "joined-grids-dark",
+      sequence,
+      options: {
+        showDifficulty: true,
+        showMandala: true,
+        darkMode: true,
+        conjoined: JOIN_EAST,
+      },
+    },
+    {
+      name: "print-joined-grids",
+      sequence: eightSteps,
+      options: {
+        exportProfile: "print",
+        columnCount: 3,
+        startPlacementLayout: "column",
+        conjoined: JOIN_EAST,
+      },
+    },
   ];
 }
+
+/** The join the 2D animation draws: red's grid one hand-point step east. */
+const JOIN_EAST: GridJoinSpec = { toward: "e", steps: 1 };
 
 // This published record includes the exact four-step choreography. The eight-
 // step fixture stays self-contained until an equivalent short code exists.

@@ -1108,7 +1108,7 @@
       onClose={interactions.handleClose}
       hidden={ctx.isFullscreen}
       {embedded}
-      {navigation}
+      navigation={embedded ? undefined : navigation}
       titleOverride={tunnelComposition?.name?.trim() || null}
       {openAppHref}
       onAccountSignIn={!embedded ? onAccountSignIn : undefined}
@@ -1958,7 +1958,9 @@
     display: flex;
     flex-direction: column;
     height: 100%;
-    overflow: hidden;
+    /* The parked practice panel extends past the viewport during its slide.
+       Clip it without making the shell scroll when a bottom control gains focus. */
+    overflow: clip;
     background: var(--theme-panel-bg, #0a0a14);
   }
 

@@ -41,6 +41,7 @@ import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
 import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
 import type { TrailSettings } from "../../domain/types/trail-types";
 import { DEFAULT_CANVAS_SIZE } from "../canvas-resizer.svelte";
+import { effectiveGridLayout } from "../conjoined-grid-layout";
 
 
 /** Default props sentinel used when lastPropsRef is null */
@@ -571,7 +572,10 @@ export class PlaybackSync {
       this.deps;
     const renderer = lifecycleManager.animationRenderer;
     if (!this.state.isInitialized || !renderer) return;
-    const layout = getVM().getGridLayout();
+    const layout = effectiveGridLayout(
+      getVM().getGridLayout(),
+      this._lastPropsRef?.sequenceData
+    );
     if (layout === this.previousGridLayout) return;
     this.previousGridLayout = layout;
 

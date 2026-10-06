@@ -15,6 +15,7 @@ import type { PropPosition } from "../../../prop/domain/models/prop-position";
 import type { PropAssets } from "../../../prop/domain/models/prop-assets";
 import type { ArrowAssets } from "../../../arrow/orchestration/domain/arrow-models";
 import type { HandSide } from "../enums/pictograph-enums";
+import type { GridJoin } from "@tka/tka-types";
 
 /**
  * Pre-calculated rendering data attached to a pictograph
@@ -26,6 +27,12 @@ export interface PreparedRenderData {
   arrowMirroring: Record<string, boolean>;
   propPositions: Partial<Record<HandSide, PropPosition>>;
   propAssets: Partial<Record<HandSide, PropAssets>>;
+  /**
+   * Set when the pictograph is drawn on two joined grids. Positions above
+   * already include each hand's grid offset; painters derive the grid layout
+   * and fit scale from this join and `gridMode`.
+   */
+  join?: GridJoin;
 }
 
 /**

@@ -15,11 +15,19 @@
  * and the start pose. Rendering data (arrow/prop placement, letters, grid
  * mode, reversals) is derived downstream and deliberately left out.
  *
+ * The sequence's grid join is kept as well: a record that lost it plays the
+ * same motions on a different picture, and a one-grid code must never answer a
+ * joined sequence. The join field appears only on a joined sequence, so the
+ * projection and digest of a sequence drawn on one grid are exactly what they
+ * were before joins existed. A sequence has one join for every cell, so no
+ * cell carries its own.
+ *
  * Pure: no Firebase, no browser APIs beyond Web Crypto for the digest.
  */
 
 import { normalizeLegacySequence } from "@tka/tka-types";
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import { gridJoinToken } from "$lib/shared/foundation/domain/models/grid-join-token";
 import { canonicalDigest } from "$lib/shared/foundation/utils/canonical-digest";
 import { decodeSequenceFromQR } from "$lib/shared/navigation/services/sequence-encoder";
 
@@ -34,6 +42,7 @@ type LooseBeat = {
 };
 type LooseSequence = {
   sequenceKind?: unknown;
+  conjoined?: unknown;
   steps?: readonly LooseBeat[] | null;
   startPlacement?: LooseBeat | null;
   startingPlacement?: LooseBeat | null;
@@ -72,6 +81,8 @@ export interface ChoreographyStep {
 
 export interface ChoreographyProjection {
   kind: "prop" | "hand-path";
+  /** The sequence's grid join token ("e1"); only on a joined sequence. */
+  join?: string;
   start: { left: ChoreographyPose | null; right: ChoreographyPose | null };
   steps: ChoreographyStep[];
 }
@@ -225,8 +236,10 @@ export function projectChoreography(
   const loose = normalized(sequence);
   const steps = contentStepsOf(loose.steps);
   const startBeat = startBeatOf(loose);
+  const join = gridJoinToken(loose.conjoined);
   return {
     kind: loose.sequenceKind === "hand-path" ? "hand-path" : "prop",
+    ...(join && { join }),
     start: {
       left: startPose(startBeat, steps[0], "left"),
       right: startPose(startBeat, steps[0], "right"),
@@ -277,6 +290,9 @@ export function findChoreographyMismatch(
   }
   if (expected.steps.length !== actual.steps.length) {
     return `step count: ${expected.steps.length} vs ${actual.steps.length}`;
+  }
+  if (expected.join !== actual.join) {
+    return `join: ${describe(expected.join)} vs ${describe(actual.join)}`;
   }
   for (const hand of HANDS) {
     const e = expected.start[hand];

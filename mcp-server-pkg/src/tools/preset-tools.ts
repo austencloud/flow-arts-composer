@@ -12,6 +12,7 @@ import {
   ensureDataLoaded,
   saveAndOpenImage,
 } from "../shared/server-context.js";
+import { gridJoinSchema } from "../shared/grid-join-schema.js";
 import type { GridMode } from "../types/pictograph.js";
 import {
   buildSequenceFromLetters,
@@ -326,6 +327,7 @@ export function registerPresetTools(server: McpServer): void {
         .describe(
           "Override left/right colors for every hand-colored card mark"
         ),
+      conjoined: gridJoinSchema.optional(),
       includeImage: z
         .boolean()
         .optional()
@@ -530,6 +532,7 @@ export function registerPresetTools(server: McpServer): void {
               rightPropType: input.rightPropType,
               fanAppearance: input.fanAppearance,
               primaryPropColors: input.primaryPropColors,
+              conjoined: input.conjoined,
             }
           );
 
@@ -638,6 +641,7 @@ export function registerPresetTools(server: McpServer): void {
           rightPropType: input.rightPropType,
           fanAppearance: input.fanAppearance,
           primaryPropColors: input.primaryPropColors,
+          conjoined: input.conjoined,
         });
 
         saveAndOpenImage(pngBuffer, sequenceWord);

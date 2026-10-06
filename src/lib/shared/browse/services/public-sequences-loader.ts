@@ -602,6 +602,7 @@ export class PublicSequencesLoader {
       level: data.level ?? this.difficultyStringToLevel(data.difficultyLevel),
       difficultyLevel: data.difficultyLevel,
       gridMode: data.gridMode,
+      ...(data.conjoined !== undefined && { conjoined: data.conjoined }),
       loopType: data.loopType as SequenceData["loopType"],
       period: data.period,
       components: doc.components,
@@ -726,6 +727,9 @@ export class PublicSequencesLoader {
         ? new Date(data.dateAdded as string)
         : undefined,
       gridMode: data.gridMode as SequenceData["gridMode"],
+      ...(data.conjoined !== undefined && {
+        conjoined: data.conjoined as SequenceData["conjoined"],
+      }),
       // propType removed - prop type is a viewer preference, not sequence data
       isFavorite: (data.isFavorite as boolean) ?? false,
       isCircular: (data.isCircular as boolean) ?? false,

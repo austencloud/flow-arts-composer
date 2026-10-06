@@ -29,6 +29,7 @@ import type {
   WallPlaneSourceAssessment,
 } from "$lib/shared/3d/domain/models/wall-feasibility";
 import { normalizeLegacySequence } from "@tka/tka-types";
+import type { GridJoin } from "@tka/tka-types";
 import type { CardPresentation } from "$lib/shared/share/domain/models/card-presentation";
 
 export interface SequenceData {
@@ -74,6 +75,12 @@ export interface SequenceData {
   /** When this library entry was created */
   readonly createdAt?: Date;
   readonly gridMode?: GridMode;
+  /**
+   * Draw every cell, the start placement included, on two joined grids, one
+   * per hand. Absent means one shared grid. A sequence has one join; steps
+   * carry none of their own.
+   */
+  readonly conjoined?: GridJoin;
   /** Time signature for this sequence (overrides global default). */
   readonly timeSignature?: TimeSignatureKey;
   // NOTE: propType removed - prop type is a viewer preference, not sequence data
@@ -290,6 +297,7 @@ export function createSequenceData(
     ...(data.level !== undefined && { level: data.level }),
     ...(data.dateAdded !== undefined && { dateAdded: data.dateAdded }),
     ...(data.gridMode !== undefined && { gridMode: data.gridMode }),
+    ...(data.conjoined !== undefined && { conjoined: data.conjoined }),
     ...(data.timeSignature !== undefined && {
       timeSignature: data.timeSignature,
     }),

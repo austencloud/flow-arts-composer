@@ -58,6 +58,7 @@
    */
   let {
     sequence: sourceSequence,
+    active = true,
     layout = "square",
     leftPropType = "staff",
     rightPropType = "staff",
@@ -66,6 +67,7 @@
     onGenerated,
   }: {
     sequence: SequenceData;
+    active?: boolean;
     layout?: "square" | "band";
     leftPropType?: string;
     rightPropType?: string;
@@ -86,6 +88,7 @@
   let pendingSource = $state<Source | null>(null);
   let swapping = $state(false);
   let publishPending = false;
+  let pendingGeneratedSequence = $state.raw<SequenceData | null>(null);
   let firstSequence = $state.raw<SequenceData | null>(sourceSequence);
   let secondSequence = $state.raw<SequenceData | null>(null);
   // Generated sequences are immutable snapshots. Keep their reference identity
@@ -102,7 +105,8 @@
     generationResult = "idle";
     try {
       const next = await generateComposerDemoSequence();
-      prepareSequence(next, true);
+      if (active) prepareSequence(next, true);
+      else pendingGeneratedSequence = next;
     } catch (error) {
       generationResult = classifyComposerGenerationFailure(error);
       if (generationResult === "error") {
@@ -143,7 +147,7 @@
     initialViewState,
     persistViewState: false,
   });
-  firstController.active = true;
+  firstController.active = active;
   const controller = $derived(
     activeSource === "first" ? firstController : secondController
   );
@@ -176,7 +180,23 @@
   }
 
   $effect(() => {
+    firstController.active =
+      active &&
+      (activeSource === "first" || pendingSource === "first" || swapping);
+    secondController.active =
+      active &&
+      (activeSource === "second" || pendingSource === "second" || swapping);
+  });
+
+  $effect(() => {
     const next = sourceSequence;
+    if (!active) return;
+    if (pendingGeneratedSequence) {
+      const generated = pendingGeneratedSequence;
+      pendingGeneratedSequence = null;
+      untrack(() => prepareSequence(generated, true));
+      return;
+    }
     if (next === seenSource || pendingSource || swapping) return;
     seenSource = next;
     untrack(() => prepareSequence(next));
@@ -185,7 +205,7 @@
   // The outgoing tunnel keeps its own choreography and clock until every
   // incoming copy and its first canvas frame are ready to be revealed.
   $effect(() => {
-    if (!pendingSource) return;
+    if (!active || !pendingSource) return;
     const incoming =
       pendingSource === "first" ? firstController : secondController;
     const painted =
@@ -319,7 +339,7 @@
       {leftPropType}
       {rightPropType}
       {...appearance}
-      playing={playing && (activeSource === "first" || swapping)}
+      playing={active && playing && (activeSource === "first" || swapping)}
       onPlayingChange={(next) => (playing = next)}
       bind:currentStep={firstStep}
       onCanvasReady={(canvas) => (firstCanvasReady = !!canvas)}
@@ -337,7 +357,7 @@
       {leftPropType}
       {rightPropType}
       {...appearance}
-      playing={playing && (activeSource === "second" || swapping)}
+      playing={active && playing && (activeSource === "second" || swapping)}
       onPlayingChange={(next) => (playing = next)}
       bind:currentStep={secondStep}
       onCanvasReady={(canvas) => (secondCanvasReady = !!canvas)}

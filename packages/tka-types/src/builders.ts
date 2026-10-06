@@ -21,7 +21,9 @@ import { HandSide } from "./hand-side.js";
 
 // Reusable enum-value lookups for fast runtime validation.
 const MOTION_TYPE_VALUES = new Set<string>(Object.values(MotionType));
-const ROTATION_DIRECTION_VALUES = new Set<string>(Object.values(RotationDirection));
+const ROTATION_DIRECTION_VALUES = new Set<string>(
+  Object.values(RotationDirection)
+);
 const ORIENTATION_VALUES = new Set<string>(Object.values(Orientation));
 const GRID_LOCATION_VALUES = new Set<string>(Object.values(GridLocation));
 const GRID_MODE_VALUES = new Set<string>(Object.values(GridMode));
@@ -211,7 +213,10 @@ export function createStep(input: CreateStepInput): Step {
     duration: input.duration ?? 1,
   };
   validateStepScalars(populated);
-  const motions = freezeStepMotions(populated.motions.left, populated.motions.right);
+  const motions = freezeStepMotions(
+    populated.motions.left,
+    populated.motions.right
+  );
   const frozen: Step = {
     id: populated.id,
     letter: populated.letter,
@@ -221,7 +226,9 @@ export function createStep(input: CreateStepInput): Step {
     stepNumber: populated.stepNumber,
     duration: populated.duration,
     ...(populated.gridMode !== undefined && { gridMode: populated.gridMode }),
-    ...(populated.variation !== undefined && { variation: populated.variation }),
+    ...(populated.variation !== undefined && {
+      variation: populated.variation,
+    }),
     ...(populated.isBridge !== undefined && { isBridge: populated.isBridge }),
     ...(populated.isBlank !== undefined && { isBlank: populated.isBlank }),
   };

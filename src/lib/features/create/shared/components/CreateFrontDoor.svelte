@@ -370,17 +370,27 @@
   /* Foldables keep two readable columns. Four secondary cards only fit
      once each card has room for its icon, padding, and description. */
   @container create-entry (min-width: 1200px) {
+    .front-door-inner {
+      width: calc(100% - clamp(48px, 6cqi, 160px));
+      max-width: 1440px;
+      grid-template-rows: auto auto;
+      align-content: center;
+      gap: 28px;
+      padding-block: 40px;
+    }
+
     /* Two primary cards fill the first row and the secondary cards share
        the second, so no card ever wraps alone. Three methods sit in one
        row of three. */
     .method-index {
       grid-template-columns: repeat(12, minmax(0, 1fr));
-      column-gap: 16px;
-      row-gap: 20px;
+      grid-auto-rows: auto;
+      column-gap: 20px;
+      row-gap: 28px;
     }
 
     h1 {
-      font-size: clamp(2.5rem, 3cqi, 4rem);
+      font-size: clamp(2.5rem, 3cqi, 3rem);
     }
 
     .method-item.primary-method {
@@ -402,31 +412,74 @@
 
     .method-card,
     .method-item.default-method .method-card {
-      --settings-method-icon-size: clamp(56px, 5cqi, 96px);
-      min-height: 160px;
-      display: grid;
-      grid-template-columns: var(--settings-method-icon-size) minmax(0, 1fr);
-      align-items: center;
+      --settings-method-icon-size: 48px;
+      min-height: 208px;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      justify-content: flex-start;
       gap: 20px;
-      padding: 22px;
+      padding: 28px;
+      background: color-mix(
+        in srgb,
+        var(--method-color) 6%,
+        var(--theme-card-bg)
+      );
     }
 
     .method-item.primary-method .method-card {
-      min-height: 176px;
+      --settings-method-icon-size: 72px;
+      min-height: 200px;
+      display: grid;
+      grid-template-columns: var(--settings-method-icon-size) minmax(0, 1fr);
+      align-items: center;
+      gap: 24px;
+      padding: 32px;
+      background: color-mix(
+        in srgb,
+        var(--method-color) 11%,
+        var(--theme-card-bg)
+      );
     }
 
     .method-icon {
       width: var(--settings-method-icon-size);
       height: var(--settings-method-icon-size);
-      font-size: clamp(1.25rem, 1.8cqi, 2rem);
+      font-size: 1.25rem;
+    }
+
+    .primary-method .method-icon {
+      font-size: 1.75rem;
+    }
+
+    .method-copy {
+      gap: 8px;
     }
 
     .method-name {
-      font-size: clamp(1.375rem, 1.8cqi, 2.25rem);
+      font-size: 1.5rem;
+    }
+
+    .primary-method .method-name {
+      font-size: 2rem;
     }
 
     .method-description {
-      font-size: clamp(1rem, 1.1cqi, 1.5rem);
+      font-size: 1rem;
+      max-width: 38ch;
+      text-wrap: pretty;
+    }
+
+    .primary-method .method-description {
+      font-size: 1.125rem;
+    }
+  }
+
+  /* A larger window adds breathing room around the decision. It doesn't
+     enlarge the controls or separate related choices across the monitor. */
+  @container create-entry (min-width: 2000px) {
+    .front-door-inner {
+      max-width: 1600px;
     }
   }
 
@@ -447,16 +500,14 @@
     }
 
     .method-card,
-    .method-item.default-method .method-card {
-      min-height: 104px;
-      grid-template-columns: 36px minmax(0, 1fr);
-      gap: 10px;
-      padding: 8px 12px;
-    }
-
     .method-item.primary-method .method-card,
     .method-item.default-method .method-card {
       min-height: 104px;
+      display: grid;
+      grid-template-columns: 36px minmax(0, 1fr);
+      align-items: center;
+      gap: 10px;
+      padding: 8px 12px;
     }
 
     .method-icon {
@@ -465,15 +516,21 @@
       font-size: var(--font-size-base, 1rem);
     }
 
+    .primary-method .method-icon {
+      font-size: var(--font-size-base, 1rem);
+    }
+
     .method-copy {
       gap: 2px;
     }
 
-    .method-name {
+    .method-name,
+    .primary-method .method-name {
       font-size: var(--font-size-lg, 1.125rem);
     }
 
-    .method-description {
+    .method-description,
+    .primary-method .method-description {
       font-size: var(--font-size-min, 14px);
       line-height: 1.25;
     }

@@ -24,7 +24,9 @@
  *   + cw↔ccw), so dropping the redundant reversal flag merges nothing.
  * - **V3** (`HASH_VERSION_V3`) — adds the authored motion plane. Plane was
  *   previously dropped by composition, so no V1/V2 stored identity could
- *   distinguish physically different multi-plane choreography.
+ *   distinguish physically different multi-plane choreography. It also adds the
+ *   grid join (the sequence's), written only where one is set, so a sequence
+ *   drawn on one grid keeps the V3 hash it already had.
  *
  * `CONTENT_HASH_VERSION` is the ACTIVE version — **V3** since 2026-09-04. The
  * version-aware compare + lazy rehash introduced for V2 keeps mixed-version
@@ -32,12 +34,13 @@
  */
 
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import { gridJoinToken } from "$lib/shared/foundation/domain/models/grid-join-token";
 import { isHandPathSequence } from "$lib/shared/foundation/domain/models/sequence-kind";
 import type { MotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
 import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
 import type { StartPlacementData } from "$lib/shared/foundation/domain/models/start-placement-data";
 import { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import { Plane } from "@tka/tka-types";
+import { Plane, type GridJoin } from "@tka/tka-types";
 
 export const HASH_VERSION_V1 = 1;
 export const HASH_VERSION_V2 = 2;
@@ -60,11 +63,25 @@ interface ExtractOptions {
   readonly excludeDerived: boolean;
   /** V3: authored planes distinguish physical movement in 3D space. */
   readonly includePlane: boolean;
+  /** V3: a joined grid is part of the choreography's identity. */
+  readonly includeGridJoin: boolean;
 }
 
-const V1_OPTS: ExtractOptions = { excludeDerived: false, includePlane: false };
-const V2_OPTS: ExtractOptions = { excludeDerived: true, includePlane: false };
-const V3_OPTS: ExtractOptions = { excludeDerived: true, includePlane: true };
+const V1_OPTS: ExtractOptions = {
+  excludeDerived: false,
+  includePlane: false,
+  includeGridJoin: false,
+};
+const V2_OPTS: ExtractOptions = {
+  excludeDerived: true,
+  includePlane: false,
+  includeGridJoin: false,
+};
+const V3_OPTS: ExtractOptions = {
+  excludeDerived: true,
+  includePlane: true,
+  includeGridJoin: true,
+};
 
 async function digest(content: unknown): Promise<string> {
   const json = JSON.stringify(content);
@@ -121,7 +138,20 @@ function extractContent(sequence: SequenceData, opts: ExtractOptions): unknown {
       opts
     ),
     steps: sequence.steps.map((step) => extractStep(step, seqGridMode, opts)),
+    ...sequenceJoinEntry(sequence.conjoined, opts),
   };
+}
+
+// The sequence's join hashes as a token ("e1"), not as the stored object: a
+// token does not depend on key order, so a join read back from storage hashes
+// as it did when it was written. A sequence without a join adds no key, which
+// keeps every existing hash.
+function sequenceJoinEntry(
+  join: GridJoin | undefined,
+  opts: ExtractOptions
+): { conjoined?: string } {
+  const token = opts.includeGridJoin ? gridJoinToken(join) : "";
+  return token ? { conjoined: token } : {};
 }
 
 function extractStartPlacement(

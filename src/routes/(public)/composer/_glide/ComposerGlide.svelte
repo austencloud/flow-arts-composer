@@ -13,9 +13,10 @@
    *
    * The page prerenders and hydrates as the plain page, and the stage takes
    * over once SvelteKit has finished the navigation that brought the reader
-   * here. A smaller or zoomed-in window, a touch screen, and reduced motion
-   * keep the plain page; /about renders the same sections without this
-   * wrapper.
+   * here, then holds the section it opens on until the reader's first input
+   * or a still moment. A smaller or zoomed-in window, a touch screen, and
+   * reduced motion keep the plain page; /about renders the same sections
+   * without this wrapper.
    */
   import type { Snippet } from "svelte";
   import { MediaQuery } from "svelte/reactivity";
@@ -55,9 +56,11 @@
   // The server cannot know the window, so hydration always matches the plain
   // page it prerendered. The stage then waits for SvelteKit to finish the
   // navigation, which scrolls the plain page itself: to a restored position,
-  // to a link's #target, or to the top, and smoothly, so the stage must not
-  // mistake that scroll for the reader's. The stage also clips the sections
-  // it parks, so a browser without overflow: clip keeps the plain page.
+  // to a link's #target, or to the top. That scroll is smooth and can still
+  // be running when the stage takes over, so the stage holds its opening
+  // place until it has stopped (see settle). The stage also clips the
+  // sections it parks, so a browser without overflow: clip keeps the plain
+  // page.
   let arrived = $state(false);
   let arrival: Arrival | null = null;
   afterNavigate((navigation) => {
@@ -92,6 +95,11 @@
   const HOLD = 32;
   /** Input quiet for this long ends the gesture that started a glide. */
   const QUIET_MS = 200;
+  /** Frames without scroll that, with QUIET_MS, end the hold on the place the
+      stage opened on. */
+  const SETTLE_FRAMES = 3;
+  /** Input that is the reader's own, which ends that hold at once. */
+  const READER_INPUT = ["pointerdown", "keydown", "wheel"] as const;
   /** Keyframes per glide; the compositor interpolates between them. */
   const GLIDE_SAMPLES = 24;
   /** A section whose top is above this share of the window is the one being
@@ -166,6 +174,11 @@
     // into view, a focused one included, stops above it rather than under it.
     const root = document.documentElement;
     root.style.scrollPaddingBottom = `${CONTROLS_BAND}px`;
+    // The page scrolls smoothly, but the stage makes its own moves. A scroll
+    // the navigation starts after the takeover, as SvelteKit does on Back to
+    // a link's #target, then lands at once while settle still holds the
+    // opening place, instead of creeping in after the hold has ended.
+    root.style.scrollBehavior = "auto";
 
     let plan = planStops({ heights: [], room: 1, travel: 1, hold: 0 });
     let heights: number[] = [];
@@ -188,6 +201,9 @@
     let lastScroll = 0;
     /** The resting stop's pan when the scroll gesture under way began. */
     let gesturePan = 0;
+    /** True while scroll holds the place the stage opened on; see settle. */
+    let settling = false;
+    let settleFrame = 0;
 
     // Whole device pixels, so a resting section's text stays sharp.
     const restY = (index: number, panned: number) =>
@@ -255,6 +271,54 @@
         return;
       }
       locked = false;
+    };
+
+    // The navigation that brought the reader here can still be scrolling the
+    // plain page when the stage takes over: the browser's own smooth scroll
+    // to a #target on a fresh load, or SvelteKit's to a restored place or a
+    // link's target. Moving the page to the stage's opening place stops it,
+    // but the browser can still apply a last step of it afterwards, which
+    // would read as the reader scrolling on to the next section. So scroll
+    // holds the opening place until the reader's first input, or until the
+    // page has gone SETTLE_FRAMES frames and QUIET_MS without scroll. A
+    // scroll is dispatched ahead of a frame's animation callbacks, so
+    // counting frames also catches a step that a busy page delays.
+    const settle = () => {
+      settling = true;
+      cancelAnimationFrame(settleFrame);
+      const start = performance.now();
+      let seen = lastScroll;
+      let still = 0;
+      const watch = () => {
+        settleFrame = requestAnimationFrame(() => {
+          still = lastScroll === seen ? still + 1 : 0;
+          seen = lastScroll;
+          const quiet = performance.now() - Math.max(start, lastScroll);
+          if (still >= SETTLE_FRAMES && quiet >= QUIET_MS) settled();
+          else watch();
+        });
+      };
+      watch();
+      for (const type of READER_INPUT) {
+        window.addEventListener(type, onReaderInput, {
+          capture: true,
+          passive: true,
+        });
+      }
+    };
+
+    const settled = () => {
+      settling = false;
+      cancelAnimationFrame(settleFrame);
+      for (const type of READER_INPUT) {
+        window.removeEventListener(type, onReaderInput, true);
+      }
+    };
+
+    // A pinch or ctrl+wheel zooms the window rather than scrolling it.
+    const onReaderInput = (event: Event) => {
+      if (event instanceof WheelEvent && event.ctrlKey) return;
+      settled();
     };
 
     // The stars drift on the glide's own eased progress.
@@ -358,7 +422,7 @@
       const now = performance.now();
       if (now - lastScroll > QUIET_MS) gesturePan = pan;
       lastScroll = now;
-      if (locked) {
+      if (locked || settling) {
         const hold = holdOffset();
         if (Math.abs(window.scrollY - hold) > 0.5) {
           window.scrollTo({ top: hold, behavior: "instant" });
@@ -490,12 +554,15 @@
       if (moved && !onFooter && Math.abs(window.scrollY - holdOffset()) > 0.5) {
         window.scrollTo({ top: holdOffset(), behavior: "instant" });
       }
+      if (first) settle();
     };
 
     goTo = (index) => glide(index, 0);
 
     // Back or Forward to another entry of this page returns straight to the
     // place it was left at, as the browser returns to a scroll position.
+    // SvelteKit scrolls the page for that entry too, and can scroll it again
+    // a moment later, so the stage holds the place as it does on arrival.
     const jump = (spot: GlidePlace) => {
       for (const animation of glides) animation.cancel();
       glides = [];
@@ -507,6 +574,7 @@
       depth = starDepth;
       place();
       window.scrollTo({ top: holdOffset(), behavior: "instant" });
+      settle();
     };
     const disconnect = memory.connect({
       resting: () => ({ stop: current, pan }),
@@ -527,6 +595,7 @@
     return () => {
       disconnect();
       observer.disconnect();
+      settled();
       clearTimeout(unlockTimer);
       cancelAnimationFrame(starFrame);
       for (const animation of glides) animation.cancel();
@@ -539,6 +608,7 @@
       page.removeEventListener("click", onClick);
       stage.classList.remove("staged");
       root.style.removeProperty("scroll-padding-bottom");
+      root.style.removeProperty("scroll-behavior");
       stage.style.removeProperty("height");
       for (const section of sections) {
         for (const property of STAGED_PROPERTIES) {

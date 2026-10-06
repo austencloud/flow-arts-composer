@@ -6,6 +6,8 @@ import {
 } from "$lib/shared/create/utils/grid-calculations";
 import { createStartPlacementFromBeatStart } from "$lib/shared/create/services/sequence-transforms";
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
+import { gridJoinCellResolver } from "@tka/render-core";
 import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
 import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
 import { pictographBlobCache } from "$lib/shared/render/services/pictograph-blob-cache";
@@ -238,29 +240,49 @@ export function createChoreoCardRenderEngine(
     return placeholders;
   }
 
+  /**
+   * The pictures a blob-mode card draws: its start cell and steps, each set to
+   * the sequence's one join, the same rule the exported PNG follows. One-grid
+   * cells pass through as they are.
+   */
+  function cardCells(deps: ChoreoCardRenderDeps): {
+    start: PictographData | undefined;
+    steps: (StepData | undefined)[];
+  } {
+    const firstStep = deps.sequence.steps[0];
+    const start =
+      deps.sequence.startPlacement ??
+      (firstStep ? createStartPlacementFromBeatStart(firstStep) : undefined);
+    const withJoin = gridJoinCellResolver({
+      conjoined: deps.sequence.conjoined,
+    });
+    return {
+      start: start && withJoin(start),
+      steps: deps.sequence.steps.map((step) => step && withJoin(step)),
+    };
+  }
+
   function buildTasks(
     deps: ChoreoCardRenderDeps,
     mixedDurations: boolean
   ): CellTask[] {
     const tasks: CellTask[] = [];
-    const firstStep = deps.sequence.steps[0];
-    if (deps.sequence.startPlacement || firstStep) {
-      const startData =
-        deps.sequence.startPlacement ??
-        createStartPlacementFromBeatStart(firstStep!);
+    const cells = cardCells(deps);
+    const startCell = cells.start;
+    if (startCell) {
       tasks.push({
         cellIndex: -1,
-        data: startData,
+        data: startCell,
         stepNumber: undefined,
         options: deps.renderOptions,
-        cacheKey: deriveCacheKey(startData, undefined, deps.darkMode, {
+        cacheKey: deriveCacheKey(startCell, undefined, deps.darkMode, {
           ...deps.renderOptions,
           showStepNumbers: false,
         }),
       });
     }
-    for (let index = 0; index < deps.sequence.steps.length; index++) {
-      const step = deps.sequence.steps[index];
+    for (let index = 0; index < cells.steps.length; index++) {
+      const step = cells.steps[index];
       if (!step) continue;
       const duration = step.duration ?? 1;
       const options =
@@ -597,6 +619,9 @@ export function createChoreoCardRenderEngine(
     const initialDeps = getDeps();
     if (initialDeps.livePictographs) return renderAllCells();
     if (!initialDeps.sequence.steps?.length || model.cells.length === 0) return;
+    // Cells drawn live keep drawing live until they are rebuilt, so a card
+    // leaving live mode (its grids just joined) renders afresh.
+    if (model.cells.some((cell) => cell.live)) return renderAllCells();
     if (isRendering) {
       renderQueued = true;
       return;
@@ -622,15 +647,12 @@ export function createChoreoCardRenderEngine(
         );
       } else {
         newUrls = new Map();
-        const firstStep = deps.sequence.steps[0];
-        if (deps.sequence.startPlacement || firstStep) {
-          const startData =
-            deps.sequence.startPlacement ??
-            createStartPlacementFromBeatStart(firstStep!);
+        const cells = cardCells(deps);
+        if (cells.start) {
           newUrls.set(
             -1,
             await renderCell(
-              startData,
+              cells.start,
               undefined,
               deps.darkMode,
               deps.renderOptions
@@ -638,8 +660,8 @@ export function createChoreoCardRenderEngine(
           );
         }
         const mixed = detectMixedDurations(deps.sequence.steps);
-        for (let index = 0; index < deps.sequence.steps.length; index++) {
-          const step = deps.sequence.steps[index];
+        for (let index = 0; index < cells.steps.length; index++) {
+          const step = cells.steps[index];
           if (!step) continue;
           const duration = step.duration ?? 1;
           const options =
@@ -753,20 +775,17 @@ export function createChoreoCardRenderEngine(
     }
     globalPreviewCache.delete(cacheKey(deps));
 
-    const firstStep = deps.sequence.steps[0];
-    if (deps.sequence.startPlacement || firstStep) {
-      const startData =
-        deps.sequence.startPlacement ??
-        createStartPlacementFromBeatStart(firstStep!);
+    const cells = cardCells(deps);
+    if (cells.start) {
       await deleteCellCache(
-        startData,
+        cells.start,
         undefined,
         deps.darkMode,
         deps.renderOptions
       );
     }
-    for (let index = 0; index < deps.sequence.steps.length; index++) {
-      const step = deps.sequence.steps[index];
+    for (let index = 0; index < cells.steps.length; index++) {
+      const step = cells.steps[index];
       if (step) {
         await deleteCellCache(
           step,

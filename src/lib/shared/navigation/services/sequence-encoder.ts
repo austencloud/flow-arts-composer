@@ -8,6 +8,10 @@ import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence
 import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
 import type { StartPlacementData } from "$lib/shared/foundation/domain/models/start-placement-data";
 import { createStartPlacementData } from "$lib/shared/foundation/domain/factories/create-start-placement-data";
+import {
+  gridJoinToken,
+  parseGridJoinToken,
+} from "$lib/shared/foundation/domain/models/grid-join-token";
 import type { MotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
 import { createPlaceholderMotion } from "$lib/shared/pictograph/shared/domain/models/motion-data";
 import type { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
@@ -506,6 +510,14 @@ function findMotionMismatch(a: SequenceData, b: SequenceData): string | null {
   return null;
 }
 
+/** The sequence's grid join when the two carry a different one, or null. */
+function findGridJoinMismatch(a: SequenceData, b: SequenceData): string | null {
+  const tokenA = gridJoinToken(a.conjoined);
+  const tokenB = gridJoinToken(b.conjoined);
+  if (tokenA === tokenB) return null;
+  return `grid join: ${tokenA || "(none)"} vs ${tokenB || "(none)"}`;
+}
+
 // ============================================================================
 // PUBLIC API
 // ============================================================================
@@ -555,7 +567,9 @@ function encodeSequenceWithFloatFormat(
       startPlacementStep = step0;
       actualSteps = sequence.steps.filter((b) => b.stepNumber !== 0);
     } else {
-      startPlacementStep = createStartPlacementData({ id: crypto.randomUUID() });
+      startPlacementStep = createStartPlacementData({
+        id: crypto.randomUUID(),
+      });
       actualSteps = sequence.steps;
     }
   }
@@ -576,7 +590,11 @@ function encodeSequenceWithFloatFormat(
       (spMotions.right?.propType ?? PropType.STAFF) as PropType
     ] ?? PROP_TYPE_ENCODE[PropType.STAFF];
 
-  const header = `${leftSeed}${rightSeed}${leftPropCode}${rightPropCode}${sequence.sequenceKind === "hand-path" ? "H" : ""}`;
+  // The sequence's one grid join closes the header, after the optional
+  // hand-path flag. A sequence on one grid writes nothing.
+  const joinToken = gridJoinToken(sequence.conjoined);
+  const sequenceJoin = joinToken ? `J${joinToken}` : "";
+  const header = `${leftSeed}${rightSeed}${leftPropCode}${rightPropCode}${sequence.sequenceKind === "hand-path" ? "H" : ""}${sequenceJoin}`;
   const encodedStartPlacement = encodeBeat(startPlacementStep, floatWireFormat);
   const encodedSteps = actualSteps.map((step) =>
     encodeBeat(step, floatWireFormat)
@@ -608,6 +626,12 @@ export function decodeSequence(encoded: string): SequenceData {
     PropType.STAFF) as PropType;
   const rightProp = (PROP_TYPE_DECODE[header[3] ?? "S"] ??
     PropType.STAFF) as PropType;
+  // Past the four fixed characters: the optional hand-path flag, then the
+  // sequence's grid join as `J<toward><steps>`.
+  const joinFlag = header.slice(header[4] === "H" ? 5 : 4);
+  const sequenceJoin = joinFlag.startsWith("J")
+    ? parseGridJoinToken(joinFlag.slice(1))
+    : undefined;
 
   const beatEncodings = parts.slice(1);
   if (beatEncodings.length === 0)
@@ -684,6 +708,7 @@ export function decodeSequence(encoded: string): SequenceData {
     id: crypto.randomUUID(),
     name: header[4] === "H" ? "Hand path" : "Shared Sequence",
     ...(header[4] === "H" && { sequenceKind: "hand-path" as const }),
+    ...(sequenceJoin && { conjoined: sequenceJoin }),
     word: "",
     steps,
     startingPlacement: startPlacement,
@@ -1106,11 +1131,18 @@ export function verifySequenceRoundTrip(
     return { ok: false, reason: `re-decode threw: ${(err as Error).message}` };
   }
 
-  const mismatch = findMotionMismatch(decoded, redecoded);
+  const mismatch =
+    findMotionMismatch(decoded, redecoded) ??
+    findGridJoinMismatch(decoded, redecoded);
   if (mismatch) return { ok: false, reason: mismatch };
 
   return { ok: true, decoded };
 }
 
 /** Test-only handles for unit tests. Not part of the public API. */
-export const __test__ = { encodeMotion, decodeMotion, encodeBeat };
+export const __test__ = {
+  encodeMotion,
+  decodeMotion,
+  encodeBeat,
+  findGridJoinMismatch,
+};

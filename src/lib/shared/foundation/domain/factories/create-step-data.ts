@@ -9,7 +9,10 @@
  * satisfies the both-required canonical `Step` shape. Callers that mean
  * "this hand is not really there" simply omit it, exactly as before.
  */
-import type { StepData, StepMotions } from "$lib/shared/foundation/domain/models/step-data";
+import type {
+  StepData,
+  StepMotions,
+} from "$lib/shared/foundation/domain/models/step-data";
 import {
   createPlaceholderMotion,
   type MotionData,

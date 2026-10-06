@@ -80,6 +80,23 @@ describe("Composer ⇄ MCP card PNG parity", () => {
     });
   }
 
+  it("negative control: drawing a joined card on one grid fails the body metric", async () => {
+    const testCase = cardParityCases().find(
+      (entry) => entry.name === "joined-grids"
+    )!;
+    const joined = await canvasImage(await renderComposerCard(testCase));
+    const oneGrid = await canvasImage(
+      await renderComposerCard({
+        ...testCase,
+        options: { ...testCase.options, conjoined: null },
+      })
+    );
+    const body = cardParityMetrics(joined, oneGrid, testCase).find(
+      (region) => region.name === "body"
+    )!;
+    expect(body.percent).toBeGreaterThan(CARD_PARITY_LIMITS.body!);
+  });
+
   it("negative control: removing the badge is visible in the header metric", async () => {
     const testCase = cardParityCases().find(
       (entry) => entry.name === "composer-light"

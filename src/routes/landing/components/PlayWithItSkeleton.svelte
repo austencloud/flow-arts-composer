@@ -2,8 +2,8 @@
   PlayWithItSkeleton
 
   Structural stand-in for PlayWithItInner's showcase with the SAME footprint
-  at every breakpoint, shared by both hosts (landing PlayWithItSection and the
-  /composer "Play with it" slot) so the lazy swap never reflows the page —
+  at every breakpoint. The /test/composer-wings "Play with it" slot shows it
+  until the lazy import lands, so the swap never reflows the page —
   identical by construction, the sequence-viewer-shell playbook applied to a
   skeleton (no-layout-shift.md).
 

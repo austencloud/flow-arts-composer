@@ -3,6 +3,7 @@ import type { MotionData } from "$lib/shared/pictograph/shared/domain/models/mot
 import type { SoloPropData } from "../domain/models/solo-prop-data";
 import type { SoloPropStepData } from "../domain/models/solo-prop-step-data";
 import type { SequenceData } from "../domain/models/sequence-data";
+import { gridJoinToken } from "../domain/models/grid-join-token";
 
 const BASE62_CHARS =
   "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
@@ -134,8 +135,18 @@ function serializeChoreoNode(node: HashableNode): string {
 }
 
 /**
+ * The sequence's one grid join, e.g. "gj|e1". Empty when it has none, so a
+ * sequence drawn on one grid keeps the fingerprint it had before joins existed.
+ */
+function serializeGridJoin(seq: Pick<SequenceData, "conjoined">): string {
+  const token = gridJoinToken(seq.conjoined);
+  return token ? `gj|${token}` : "";
+}
+
+/**
  * Content fingerprint of a sequence's render-relevant state: word, start
- * position, and every step's letter, both motions, and reversal flags.
+ * position, every step's letter, both motions, and reversal flags, and the
+ * grid join the cards draw on.
  *
  * Use as a render-cache discriminator. Any transform that changes what the
  * card draws (reversal flips, re-derived letters, recomputed orientations)
@@ -143,7 +154,7 @@ function serializeChoreoNode(node: HashableNode): string {
  * and reversal variants that reuse a base sequence's id never collide.
  */
 export function hashSequenceContent(
-  seq: Pick<SequenceData, "word" | "steps" | "startPlacement">
+  seq: Pick<SequenceData, "word" | "steps" | "startPlacement" | "conjoined">
 ): string {
   const parts: string[] = [String(seq.word ?? "")];
   if (seq.startPlacement) {
@@ -152,6 +163,8 @@ export function hashSequenceContent(
   for (const step of seq.steps ?? []) {
     parts.push(serializeChoreoNode(step as HashableNode));
   }
+  const join = serializeGridJoin(seq);
+  if (join) parts.push(join);
   return hash128(parts.join("~"));
 }
 

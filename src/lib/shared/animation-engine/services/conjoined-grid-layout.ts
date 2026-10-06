@@ -7,14 +7,59 @@
  * the staffs overlap and each tip stops just short of the other hand, the
  * same gap a staff leaves before the center point when it points in.
  */
+import type { GridJoin } from "@tka/tka-types";
 import type { PropState } from "$lib/shared/foundation/domain/types/prop-state";
 import { PIXELS_PER_UNIT } from "$lib/shared/multi-grid/domain/constants/grid-mode-offsets";
+import { isGridJoin } from "@tka/render-core";
+import type { GridLayout } from "../state/animation-visibility-state.svelte";
 
 /** Grid-center shift from the canvas center in the 950-unit grid viewBox. */
 export const CONJOINED_SHIFT_VIEWBOX = PIXELS_PER_UNIT / 2;
 
 /** The same shift in hand-point radii (prop x/y units). */
 export const CONJOINED_SHIFT_UNITS = CONJOINED_SHIFT_VIEWBOX / PIXELS_PER_UNIT;
+
+/**
+ * The join this layout draws, in the sequence schema: red's grid one
+ * hand-point step east of blue's.
+ */
+export const ANIMATION_GRID_JOIN: GridJoin = Object.freeze({
+  toward: "e",
+  steps: 1,
+});
+
+type JoinedSequence = { readonly conjoined?: GridJoin | null };
+
+/**
+ * The layout the animation draws: joined while the viewer's Conjoined switch
+ * is on, or for a sequence saved with the join this layout draws.
+ */
+export function effectiveGridLayout(
+  switchLayout: GridLayout,
+  sequence: JoinedSequence | null | undefined
+): GridLayout {
+  const join = sequence?.conjoined;
+  return switchLayout === "conjoined" ||
+    (isGridJoin(join) &&
+      join.toward === ANIMATION_GRID_JOIN.toward &&
+      join.steps === ANIMATION_GRID_JOIN.steps)
+    ? "conjoined"
+    : "single";
+}
+
+/**
+ * The sequence a card or picture made from the animation draws: its own join
+ * when it has one, otherwise this layout's join while the switch is on.
+ */
+export function withAnimationGridJoin<T extends JoinedSequence>(
+  sequence: T,
+  switchLayout: GridLayout
+): T {
+  if (switchLayout !== "conjoined" || isGridJoin(sequence.conjoined)) {
+    return sequence;
+  }
+  return { ...sequence, conjoined: ANIMATION_GRID_JOIN };
+}
 
 /** Prop index 0 is the blue (left) hand and moves left; 1 is red and moves right. */
 export function conjoinedShiftUnits(propIndex: number): number {
