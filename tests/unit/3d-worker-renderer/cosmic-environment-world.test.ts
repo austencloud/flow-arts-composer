@@ -194,4 +194,56 @@ describe("createCosmicEnvironmentWorld", () => {
     expect(world.root.getObjectByName("CosmicSeatedAudience")).toBeDefined();
     world.dispose();
   });
+
+  it("prepares a finished audience before it joins the world", async () => {
+    let releasePreparation!: () => void;
+    const prepareAudience = vi.fn(
+      () => new Promise<void>((resolve) => (releasePreparation = resolve))
+    );
+    const world = await createCosmicEnvironmentWorld(
+      options({ prepareAudience })
+    );
+    await vi.waitFor(() => expect(prepareAudience).toHaveBeenCalledOnce());
+
+    const [audience] = prepareAudience.mock.calls[0] as unknown as [Group];
+    expect(audience.name).toBe("CosmicSeatedAudience");
+    expect(world.root.getObjectByName("CosmicSeatedAudience")).toBeUndefined();
+
+    releasePreparation();
+    await world.audienceReady;
+    expect(world.root.getObjectByName("CosmicSeatedAudience")).toBe(audience);
+    world.dispose();
+  });
+
+  it("still seats the audience when its preparation fails", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    const world = await createCosmicEnvironmentWorld(
+      options({
+        prepareAudience: async () => Promise.reject(new Error("lost")),
+      })
+    );
+    await world.audienceReady;
+
+    expect(world.root.getObjectByName("CosmicSeatedAudience")).toBeDefined();
+    expect(warn).toHaveBeenCalledOnce();
+    warn.mockRestore();
+    world.dispose();
+  });
+
+  it("holds the audience's loading until its gate opens", async () => {
+    let openGate!: () => void;
+    const audienceGate = new Promise<void>((resolve) => (openGate = resolve));
+    const loader = audienceLoader();
+    const world = await createCosmicEnvironmentWorld(
+      options({ audienceLoader: loader, audienceGate })
+    );
+    await Promise.resolve();
+    expect(loader.preloadAll).not.toHaveBeenCalled();
+
+    openGate();
+    await world.audienceReady;
+    expect(loader.preloadAll).toHaveBeenCalledOnce();
+    expect(world.root.getObjectByName("CosmicSeatedAudience")).toBeDefined();
+    world.dispose();
+  });
 });

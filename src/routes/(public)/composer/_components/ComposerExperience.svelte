@@ -369,7 +369,24 @@
   const activateTunnel = activateNear("changing", () => (tunnelActive = true));
   const observeTunnel = (node: HTMLElement) =>
     observeComposerStopVisibility(node, (visible) => (tunnelVisible = visible));
-  const activateViewer = activateNear("viewing", () => {});
+  // One glide away from 3D, start the viewer's code and the stage model the
+  // opening waits on, so the portal opens on downloads already done. Only the
+  // reliquary: the manifest's Cosmic list also names the older renderer's
+  // 5 MB stage, which the portal's renderer never loads.
+  function warmViewerStage(): void {
+    if (!viewportFits3D() || (webglChecked && !webglAvailable)) return;
+    warmViewer();
+    void Promise.all([
+      import("$lib/shared/3d/scene-boot/scene-prefetch"),
+      import("$lib/shared/3d/environments/worlds/cosmic/cosmic-environment-assets"),
+    ])
+      .then(([prefetch, cosmic]) => {
+        prefetch.warmSceneUrls([cosmic.COSMIC_RELIQUARY_URL]);
+        prefetch.warmDecoderRuntimes();
+      })
+      .catch(() => undefined);
+  }
+  const activateViewer = activateNear("viewing", warmViewerStage);
   const activateShelf = activateNear("keeping", () => (shelfActive = true));
 </script>
 

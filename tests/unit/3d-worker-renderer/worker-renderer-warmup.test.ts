@@ -1,13 +1,17 @@
 import {
   BoxGeometry,
+  Group,
   Mesh,
   MeshBasicMaterial,
   MeshStandardMaterial,
   Scene,
+  Texture,
+  WebGLRenderTarget,
 } from "three";
 import { describe, expect, it, vi } from "vitest";
 import { warmWorkerRenderer } from "$lib/shared/3d/worker-renderer/services/worker-renderer-warmup";
 import {
+  prepareLateWorkerObject,
   primeWorkerRenderer,
   WORKER_PRIME_BATCH_SIZE,
 } from "$lib/shared/3d/worker-renderer/services/worker-renderer-warmup";
@@ -77,9 +81,7 @@ describe("worker renderer warm-up", () => {
       (_, index) => {
         const mesh = new Mesh(
           new BoxGeometry(),
-          index % 2 === 0
-            ? new MeshBasicMaterial()
-            : new MeshStandardMaterial()
+          index % 2 === 0 ? new MeshBasicMaterial() : new MeshStandardMaterial()
         );
         mesh.name = `mesh-${index}`;
         return mesh;
@@ -112,5 +114,52 @@ describe("worker renderer warm-up", () => {
     ]);
     expect(yieldBetween).toHaveBeenCalledTimes(1);
     expect(meshes.every(({ visible }) => visible)).toBe(true);
+  });
+
+  it("compiles a late object against the scene's render target and uploads its textures", async () => {
+    const scene = new Scene();
+    const sceneTarget = new WebGLRenderTarget(4, 4);
+    const map = new Texture();
+    const normalMap = new Texture();
+    const late = new Group();
+    late.add(
+      new Mesh(new BoxGeometry(), new MeshStandardMaterial({ map, normalMap })),
+      new Mesh(new BoxGeometry(), new MeshStandardMaterial({ map }))
+    );
+    let bound: WebGLRenderTarget | null = null;
+    const boundDuringCompile: Array<WebGLRenderTarget | null> = [];
+    let release!: () => void;
+    const renderer = {
+      getRenderTarget: () => bound,
+      setRenderTarget: (target: WebGLRenderTarget | null) => {
+        bound = target;
+      },
+      compileAsync: vi.fn(() => {
+        boundDuringCompile.push(bound);
+        return new Promise<void>((resolve) => (release = resolve));
+      }),
+      initTexture: vi.fn(),
+    };
+
+    let settled = false;
+    const preparing = prepareLateWorkerObject(
+      { renderer: renderer as never, scene, camera: {} as never },
+      late,
+      sceneTarget
+    ).then(() => (settled = true));
+
+    expect(renderer.compileAsync).toHaveBeenCalledWith(late, {}, scene);
+    expect(boundDuringCompile).toEqual([sceneTarget]);
+    // The live binding is back before the driver finishes linking.
+    expect(bound).toBeNull();
+    expect(renderer.initTexture.mock.calls.map(([texture]) => texture)).toEqual(
+      [map, normalMap]
+    );
+    await Promise.resolve();
+    expect(settled).toBe(false);
+
+    release();
+    await preparing;
+    expect(settled).toBe(true);
   });
 });
