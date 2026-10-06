@@ -39,11 +39,14 @@ import { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-
 import { applyModelSpriteColor } from "$lib/shared/pictograph/prop/domain/prop-preview-color";
 import {
   getGridJoinLayout,
+  getGridPoints,
+  isBoxGrid,
   joinedPointColors,
   type GridJoinLayout,
 } from "@tka/render-core";
 import {
   applyJoinedGridFit,
+  paintGridPoints,
   paintJoinedGridPoints,
 } from "./joined-grid-painter";
 import { getJoinedActiveHandPoints } from "./layer-key-deriver";
@@ -56,35 +59,6 @@ import {
 } from "$lib/shared/utils/svg-color-utils";
 
 const VIEWBOX_SIZE = 950;
-
-const BASE_GRID_POINTS = {
-  center: { x: 475, y: 475, r: 12 },
-  outer: {
-    n: { x: 475, y: 175, r: 25 },
-    e: { x: 775, y: 475, r: 25 },
-    s: { x: 475, y: 775, r: 25 },
-    w: { x: 175, y: 475, r: 25 },
-  },
-};
-
-// diamond_grid.svg's hand points and non-radial points, in the 950 viewBox.
-// A box grid is the diamond grid turned 45° clockwise, so its hand points are
-// these turned too: n lands on ne, e on se, s on sw, w on nw.
-const DIAMOND_HAND_POINTS = {
-  n: { x: 475, y: 331.9 },
-  e: { x: 618.1, y: 475 },
-  s: { x: 475, y: 618.1 },
-  w: { x: 331.9, y: 475 },
-};
-const BOX_HAND_POINT_LOCATIONS = { n: "ne", e: "se", s: "sw", w: "nw" };
-const HAND_POINT_RADIUS = 4.7;
-const DIAMOND_NON_RADIAL_POINTS = [
-  { x: 618.1, y: 331.9 },
-  { x: 618.1, y: 618.1 },
-  { x: 331.9, y: 618.1 },
-  { x: 331.9, y: 331.9 },
-];
-const NON_RADIAL_POINT_RADIUS = 8.8;
 
 const GRID_POINT_COLOR_LIGHT = "#000000";
 const GRID_POINT_COLOR_DARK = "#ffffff";
@@ -584,8 +558,8 @@ export class Canvas2DDirectRenderer implements IDirectRenderer {
   }
 
   /**
-   * Draw only the base grid points (center + outer corners). The dot grid
-   * adds the hand points with `drawHandPoints`.
+   * Draw only the base grid points (center + outer points). The dot grid
+   * adds the hand points with `drawHandPoints`. Box outer points are rings.
    */
   drawBaseGridOnly(
     ctx: CanvasRenderingContext2D,
@@ -593,70 +567,30 @@ export class Canvas2DDirectRenderer implements IDirectRenderer {
     isDarkMode: boolean,
     gridMode: GridMode = GridMode.DIAMOND
   ): void {
-    const scale = size / VIEWBOX_SIZE;
     const pointColor = isDarkMode
       ? GRID_POINT_COLOR_DARK
       : GRID_POINT_COLOR_LIGHT;
-    const isBoxMode = gridMode === GridMode.BOX;
 
-    // Set opacity for grid points
     // Dark mode: slightly transparent white (avoids harsh pure white)
     // Light mode: solid black for maximum clarity
     ctx.save();
     ctx.globalAlpha = isDarkMode ? 0.85 : 1.0;
-
-    // For box mode, rotate the entire coordinate system 45° around center
-    // This matches GridSvg.svelte which rotates diamond_grid.svg for box mode
-    if (isBoxMode) {
-      const center = size / 2;
-      ctx.translate(center, center);
-      ctx.rotate((45 * Math.PI) / 180);
-      ctx.translate(-center, -center);
-    }
-
-    // Draw center point (unaffected by rotation since it's at center)
     ctx.fillStyle = pointColor;
-    const center = BASE_GRID_POINTS.center;
-    ctx.beginPath();
-    ctx.arc(
-      center.x * scale,
-      center.y * scale,
-      center.r * scale,
-      0,
-      Math.PI * 2
+    ctx.strokeStyle = pointColor;
+    paintGridPoints(
+      ctx,
+      getGridPoints(gridMode).filter(
+        (point) => point.kind === "center" || point.kind === "outer"
+      ),
+      size,
+      isBoxGrid(gridMode)
     );
-    ctx.fill();
-
-    // Draw outer points
-    // Diamond mode: filled circles. Box mode: outlined (stroked) circles.
-    // This matches GridSvg.svelte's fill-opacity/stroke-opacity toggling.
-    for (const point of Object.values(BASE_GRID_POINTS.outer)) {
-      ctx.beginPath();
-      ctx.arc(
-        point.x * scale,
-        point.y * scale,
-        point.r * scale,
-        0,
-        Math.PI * 2
-      );
-      if (isBoxMode) {
-        // Box mode: outlined circles (stroke only, no fill)
-        ctx.strokeStyle = pointColor;
-        ctx.lineWidth = 13 * scale;
-        ctx.stroke();
-      } else {
-        // Diamond mode: filled circles
-        ctx.fill();
-      }
-    }
-
     ctx.restore();
   }
 
   /**
    * The hand points `handPointVisibility` shows ("active": the start and end
-   * locations of the visible motions), plus the non-radial points when on,
-   * where the grid artwork has them.
+   * locations of the visible motions), plus the non-radial points when on.
    */
   private drawHandPoints(
     ctx: CanvasRenderingContext2D,
@@ -667,8 +601,6 @@ export class Canvas2DDirectRenderer implements IDirectRenderer {
     showNonRadial: boolean,
     pictograph: PreparedPictographData
   ): void {
-    const scale = size / VIEWBOX_SIZE;
-    const isBoxMode = gridMode === GridMode.BOX;
     const lit = (location: string) =>
       [pictograph.motions?.left, pictograph.motions?.right].some(
         (motion) =>
@@ -676,48 +608,17 @@ export class Canvas2DDirectRenderer implements IDirectRenderer {
           (motion.startLocation?.toLowerCase() === location ||
             motion.endLocation?.toLowerCase() === location)
       );
-    const handPoints =
-      handPointVisibility === "none"
-        ? []
-        : Object.entries(DIAMOND_HAND_POINTS)
-            .filter(
-              ([diamondLocation]) =>
-                handPointVisibility === "all" ||
-                lit(
-                  isBoxMode
-                    ? BOX_HAND_POINT_LOCATIONS[
-                        diamondLocation as keyof typeof BOX_HAND_POINT_LOCATIONS
-                      ]
-                    : diamondLocation
-                )
-            )
-            .map(([, point]) => ({ ...point, r: HAND_POINT_RADIUS }));
-    const points = [
-      ...handPoints,
-      ...(showNonRadial
-        ? DIAMOND_NON_RADIAL_POINTS.map((point) => ({
-            ...point,
-            r: NON_RADIAL_POINT_RADIUS,
-          }))
-        : []),
-    ];
+    const points = getGridPoints(gridMode).filter((point) =>
+      point.kind === "hand"
+        ? handPointVisibility === "all" ||
+          (handPointVisibility === "active" && lit(point.location))
+        : point.kind === "nonRadial" && showNonRadial
+    );
 
     ctx.save();
     ctx.globalAlpha = isDarkMode ? 0.85 : 1.0;
     ctx.fillStyle = isDarkMode ? GRID_POINT_COLOR_DARK : GRID_POINT_COLOR_LIGHT;
-    // Turn the diamond's points into the box grid's, as drawBaseGridOnly and
-    // GridSvg.svelte turn the diamond grid.
-    if (isBoxMode) {
-      const center = size / 2;
-      ctx.translate(center, center);
-      ctx.rotate((45 * Math.PI) / 180);
-      ctx.translate(-center, -center);
-    }
-    for (const point of points) {
-      ctx.beginPath();
-      ctx.arc(point.x * scale, point.y * scale, point.r * scale, 0, Math.PI * 2);
-      ctx.fill();
-    }
+    paintGridPoints(ctx, points, size, isBoxGrid(gridMode));
     ctx.restore();
   }
 
