@@ -146,11 +146,11 @@ LOOPComponentGrid.svelte - Layout for LOOP component selection buttons
     grid-template-columns: 1fr;
     grid-auto-rows: minmax(96px, auto);
     max-width: 960px;
-    align-content: center;
+    align-content: start;
     min-height: 100%;
   }
 
-  @container (min-width: 700px) {
+  @container (min-width: 560px) {
     .loop-component-grid.list {
       grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: 12px;
@@ -158,6 +158,8 @@ LOOPComponentGrid.svelte - Layout for LOOP component selection buttons
 
     .loop-component-grid.list :global(.loop-component-shell.expanded) {
       grid-column: 1 / -1;
+      width: min(100%, 420px);
+      justify-self: center;
     }
   }
 
