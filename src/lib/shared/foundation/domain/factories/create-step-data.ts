@@ -9,7 +9,10 @@
  * satisfies the both-required canonical `Step` shape. Callers that mean
  * "this hand is not really there" simply omit it, exactly as before.
  */
-import type { StepData, StepMotions } from "$lib/shared/foundation/domain/models/step-data";
+import type {
+  StepData,
+  StepMotions,
+} from "$lib/shared/foundation/domain/models/step-data";
 import {
   createPlaceholderMotion,
   type MotionData,
@@ -47,7 +50,5 @@ export function createStepData(data: CreateStepDataInput = {}): StepData {
     ...(data.category !== undefined && { category: data.category }),
     // Beta offset swap — preserve if set
     ...(data.betaSwapped !== undefined && { betaSwapped: data.betaSwapped }),
-    // Grid join — preserve if set; null keeps this step on one grid
-    ...(data.conjoined !== undefined && { conjoined: data.conjoined }),
   };
 }

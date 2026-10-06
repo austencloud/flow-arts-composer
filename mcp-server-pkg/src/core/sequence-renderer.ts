@@ -9,7 +9,7 @@ import {
   type PictographInput,
   type RenderVisibilityOptions,
 } from "./standalone-renderer.js";
-import { resolveStepGridJoin, type GridJoinSpec } from "@tka/render-core";
+import { isGridJoin, type GridJoinSpec } from "@tka/render-core";
 import type { SequenceStep } from "./sequence-builder.js";
 import { applyCanonicalReversals } from "./card-reversals.js";
 import { renderCardQrCode } from "./qr-code-renderer.js";
@@ -106,7 +106,7 @@ export interface SequenceRenderOptions {
   accentColor?: string;
   /** 0–1 alpha for the accent tint; omit for the Composer default. */
   accentTintOpacity?: number;
-  /** Draws every cell on joined grids; a step's own join overrides it. */
+  /** Draws every cell, the start included, on the same joined grids. */
   conjoined?: GridJoinSpec | null;
 }
 const DEFAULT_OPTIONS = {
@@ -218,7 +218,7 @@ export async function renderSequenceToImage(
         },
         leftReversal: step.leftReversal,
         rightReversal: step.rightReversal,
-        conjoined: resolveStepGridJoin(opts.conjoined, step.conjoined),
+        conjoined: isGridJoin(opts.conjoined) ? opts.conjoined : null,
       };
       ctx.drawImage(
         (await loadImage(
@@ -279,7 +279,8 @@ export async function renderSequenceToImage(
     },
     renderHeader: async (ctx, header, layout, difficultyLevel) => {
       const display = header as PackagedHeader;
-      const compressedSegments = opts.compressedSegments ?? compressWord(display.word);
+      const compressedSegments =
+        opts.compressedSegments ?? compressWord(display.word);
       const loopPeriod =
         opts.period === 4
           ? "quartered"
@@ -290,9 +291,7 @@ export async function renderSequenceToImage(
         ? await loadTkaWordGlyphs(
             display.word,
             async (source) =>
-              (await loadImage(
-                source
-              )) as unknown as CanvasImageSource,
+              (await loadImage(source)) as unknown as CanvasImageSource,
             opts.darkMode
           )
         : undefined;

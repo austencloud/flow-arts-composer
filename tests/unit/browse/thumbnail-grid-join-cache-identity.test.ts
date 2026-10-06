@@ -69,24 +69,21 @@ describe("joined-grid thumbnail cache identity", () => {
     );
   });
 
-  it("names the join from the sequence and any step that draws differently", () => {
+  it("names the join from the sequence alone", () => {
     expect(inputFor({ conjoined: { toward: "e", steps: 1 } }).gridJoin).toBe(
       "e1"
     );
+    // A join a step carries on its own changes nothing: one join per sequence.
     expect(
       inputFor({
         conjoined: { toward: "e", steps: 1 },
         steps: [{}, { conjoined: null }] as never,
       }).gridJoin
-    ).toBe("e1_2x");
+    ).toBe("e1");
     expect(
       inputFor({
         steps: [{ conjoined: { toward: "ne", steps: 2 } }, {}] as never,
       }).gridJoin
-    ).toBe("x_1ne2");
-    // A step dropping a join the sequence never had changes nothing.
-    expect(
-      inputFor({ steps: [{ conjoined: null }, {}] as never }).gridJoin
     ).toBeUndefined();
   });
 });

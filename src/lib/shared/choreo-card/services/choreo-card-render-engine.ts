@@ -242,8 +242,8 @@ export function createChoreoCardRenderEngine(
 
   /**
    * The pictures a blob-mode card draws: its start cell and steps, each set to
-   * the grid join it draws with (its own, or else the card's), the same rule
-   * the exported PNG follows. One-grid cells pass through as they are.
+   * the sequence's one join, the same rule the exported PNG follows. One-grid
+   * cells pass through as they are.
    */
   function cardCells(deps: ChoreoCardRenderDeps): {
     start: PictographData | undefined;
@@ -255,8 +255,6 @@ export function createChoreoCardRenderEngine(
       (firstStep ? createStartPlacementFromBeatStart(firstStep) : undefined);
     const withJoin = gridJoinCellResolver({
       conjoined: deps.sequence.conjoined,
-      startPlacement: start,
-      steps: deps.sequence.steps,
     });
     return {
       start: start && withJoin(start),

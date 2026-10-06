@@ -22,8 +22,5 @@ export function createStartPlacementData(
 
     // StartPlacement-specific properties
     gridPlacement: data.gridPlacement ?? null,
-
-    // Grid join — preserve if set; null keeps the start on one grid
-    ...(data.conjoined !== undefined && { conjoined: data.conjoined }),
   };
 }

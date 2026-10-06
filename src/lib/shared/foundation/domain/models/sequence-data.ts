@@ -76,8 +76,9 @@ export interface SequenceData {
   readonly createdAt?: Date;
   readonly gridMode?: GridMode;
   /**
-   * Draw each step on two joined grids, one per hand. Absent means one shared
-   * grid. A step's own `conjoined` value overrides this for that step.
+   * Draw every cell, the start placement included, on two joined grids, one
+   * per hand. Absent means one shared grid. A sequence has one join; steps
+   * carry none of their own.
    */
   readonly conjoined?: GridJoin;
   /** Time signature for this sequence (overrides global default). */

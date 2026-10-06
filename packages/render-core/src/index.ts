@@ -164,7 +164,6 @@ export {
   gridJoinOffsets,
   gridJoinPropNudges,
   isGridJoin,
-  resolveStepGridJoin,
   sequenceGridJoinKey,
 } from "./calculations/grid-join-layout.js";
 export type {

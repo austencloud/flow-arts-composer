@@ -134,65 +134,40 @@ export function isGridJoin(value: unknown): value is GridJoinSpec {
   );
 }
 
-/**
- * The join a step draws with: its own value when set (null means one shared
- * grid), otherwise the sequence's.
- */
-export function resolveStepGridJoin(
-  sequenceJoin: GridJoinSpec | null | undefined,
-  stepJoin: GridJoinSpec | null | undefined
-): GridJoinSpec | null {
-  if (stepJoin === null) return null;
-  if (isGridJoin(stepJoin)) return stepJoin;
-  return isGridJoin(sequenceJoin) ? sequenceJoin : null;
-}
-
 /** Short stable cache-key term, e.g. "e1". */
 export function gridJoinKey(join: GridJoinSpec): string {
   return `${join.toward}${join.steps}`;
 }
 
-type JoinCell = { readonly conjoined?: GridJoinSpec | null } | null | undefined;
-
 /**
- * Every join a sequence's cells draw with, as one filename-safe term for
- * image cache keys. Empty when every cell is on one grid. Otherwise the
- * sequence's join ("x" for none), then each cell that draws differently as
- * its index and join, e.g. "e1_3x_5ne2". Cell 0 is the start placement.
+ * The join a sequence draws every cell with (the start placement included),
+ * as one filename-safe term for image cache keys, e.g. "e1". Empty when the
+ * sequence is on one grid, so one-grid cache keys stay unchanged.
  */
 export function sequenceGridJoinKey(sequence: {
   readonly conjoined?: GridJoinSpec | null;
-  readonly startPlacement?: JoinCell;
-  readonly steps?: readonly JoinCell[];
 }): string {
-  const base = isGridJoin(sequence.conjoined) ? sequence.conjoined : null;
-  const baseKey = base ? gridJoinKey(base) : "x";
-  const parts = [baseKey];
-  const cells = [sequence.startPlacement, ...(sequence.steps ?? [])];
-  cells.forEach((cell, index) => {
-    const join = resolveStepGridJoin(base, cell?.conjoined);
-    const key = join ? gridJoinKey(join) : "x";
-    if (key !== baseKey) parts.push(`${index}${key}`);
-  });
-  return base || parts.length > 1 ? parts.join("_") : "";
+  return isGridJoin(sequence.conjoined) ? gridJoinKey(sequence.conjoined) : "";
 }
 
 /**
- * Sets each of a card's cells to the join it draws with (see
- * resolveStepGridJoin). When nothing on the card is joined, cells pass
- * through as they are, so one-grid cards keep their exact cache keys.
+ * Sets a card's cell to the sequence's join. A sequence has one join for every
+ * cell (the start placement included), so a join a cell carries on its own is
+ * never honored: the sequence's replaces it, or it is dropped when the
+ * sequence is on one grid. Ordinary one-grid cells pass through untouched, so
+ * one-grid cards keep their exact cache keys.
  */
 export function gridJoinCellResolver(sequence: {
   readonly conjoined?: GridJoinSpec | null;
-  readonly startPlacement?: JoinCell;
-  readonly steps?: readonly JoinCell[];
-}): <T extends NonNullable<JoinCell>>(cell: T) => T {
-  if (!sequenceGridJoinKey(sequence)) return (cell) => cell;
-  const base = sequence.conjoined;
-  return (cell) => ({
-    ...cell,
-    conjoined: resolveStepGridJoin(base, cell.conjoined),
-  });
+}): <T extends object>(cell: T) => T {
+  const join = isGridJoin(sequence.conjoined) ? sequence.conjoined : null;
+  if (join) return (cell) => ({ ...cell, conjoined: join });
+  return (cell) => {
+    const carried = cell as { conjoined?: unknown };
+    if (carried.conjoined === undefined) return cell;
+    const { conjoined: _stray, ...rest } = carried;
+    return rest as typeof cell;
+  };
 }
 
 /** Each hand's grid offset: half the center distance either side of center. */

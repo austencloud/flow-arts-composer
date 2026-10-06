@@ -1,7 +1,7 @@
 /**
- * A choreo card whose grids join draws image cells, each set to the join it
- * draws with. A card on one grid hands its cells over untouched, so the images
- * it cached before joins existed still match.
+ * A choreo card whose grids join draws image cells, every one (the start cell
+ * included) set to the sequence's one join. A card on one grid hands its cells
+ * over untouched, so the images it cached before joins existed still match.
  */
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
@@ -31,18 +31,25 @@ const EAST_1 = { toward: "e", steps: 1 } as const;
 const SOUTH_2 = { toward: "s", steps: 2 } as const;
 const ONE_GRID = TRANSITION_REVIEW_SEQUENCE;
 
-/** The review card joined east; step 2 stays on one grid, step 3 joins south. */
-const JOINED: SequenceData = {
-  ...ONE_GRID,
-  conjoined: EAST_1,
-  steps: ONE_GRID.steps.map((step, index) =>
-    index === 1
-      ? { ...step, conjoined: null }
-      : index === 2
-        ? { ...step, conjoined: SOUTH_2 }
-        : step
-  ),
-};
+/** The review card joined east. */
+const JOINED: SequenceData = { ...ONE_GRID, conjoined: EAST_1 };
+
+/**
+ * Steps carrying a join of their own, which a sequence no longer has: step 2
+ * says one grid and step 3 says south. They must change nothing about a card.
+ */
+function withStrayStepJoins(sequence: SequenceData): SequenceData {
+  return {
+    ...sequence,
+    steps: sequence.steps.map((step, index) =>
+      index === 1
+        ? ({ ...step, conjoined: null } as typeof step)
+        : index === 2
+          ? ({ ...step, conjoined: SOUTH_2 } as typeof step)
+          : step
+    ),
+  };
+}
 
 function setup(overrides: Partial<ChoreoCardRenderDeps>) {
   const model: ChoreoCardRenderModel = {
@@ -127,7 +134,7 @@ beforeEach(() => {
 });
 
 describe("a joined card's image cells", () => {
-  it("each draw with their own join, or else the card's", async () => {
+  it("all draw with the sequence's one join, the start cell included", async () => {
     const { engine, model } = setup({ sequence: JOINED });
     await engine.renderAllCells();
 
@@ -137,10 +144,7 @@ describe("a joined card's image cells", () => {
     ]);
     expect(joins).toEqual([
       ["start", EAST_1],
-      [1, EAST_1],
-      [2, null],
-      [3, SOUTH_2],
-      ...[4, 5, 6, 7, 8].map((step) => [step, EAST_1]),
+      ...[1, 2, 3, 4, 5, 6, 7, 8].map((step) => [step, EAST_1]),
     ]);
     expect(model.cells).toHaveLength(9);
     expect(
@@ -151,7 +155,17 @@ describe("a joined card's image cells", () => {
     engine.dispose();
   });
 
-  it("look a step kept on one grid up under its one-grid image", async () => {
+  it("ignore a join a step carries on its own", async () => {
+    const { engine } = setup({ sequence: withStrayStepJoins(JOINED) });
+    await engine.renderAllCells();
+
+    for (const [, data] of drawnCells()) {
+      expect(data.conjoined).toEqual(EAST_1);
+    }
+    engine.dispose();
+  });
+
+  it("look every cell up under a joined image, none under its one-grid image", async () => {
     const plain = setup({});
     await plain.engine.renderAllCells();
     const oneGridKeys = lookedUpKeys();
@@ -162,13 +176,20 @@ describe("a joined card's image cells", () => {
     await joined.engine.renderAllCells();
     const joinedKeys = lookedUpKeys();
     joined.engine.dispose();
+    vi.clearAllMocks();
+    globalPreviewCache.clear();
 
-    // Cell 0 is the start; cell 2 is step 2, the one kept on one grid.
+    const stray = setup({ sequence: withStrayStepJoins(JOINED) });
+    await stray.engine.renderAllCells();
+    const strayKeys = lookedUpKeys();
+    stray.engine.dispose();
+
     expect(joinedKeys).toHaveLength(oneGridKeys.length);
     joinedKeys.forEach((key, cell) => {
-      if (cell === 2) expect(key).toBe(oneGridKeys[cell]);
-      else expect(key).not.toBe(oneGridKeys[cell]);
+      expect(key).not.toBe(oneGridKeys[cell]);
     });
+    // A join a step carries on its own does not change what the card looks up.
+    expect(strayKeys).toEqual(joinedKeys);
   });
 });
 
@@ -182,6 +203,16 @@ describe("a one-grid card's image cells", () => {
     ONE_GRID.steps.forEach((step, index) => {
       expect(cells.get(index + 1)).toBe(step);
     });
+    engine.dispose();
+  });
+
+  it("drop a join a step carries on its own", async () => {
+    const { engine } = setup({ sequence: withStrayStepJoins(ONE_GRID) });
+    await engine.renderAllCells();
+
+    for (const [, data] of drawnCells()) {
+      expect("conjoined" in data).toBe(false);
+    }
     engine.dispose();
   });
 });

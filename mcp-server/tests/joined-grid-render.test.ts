@@ -184,12 +184,9 @@ describe("joined grids in the MCP renderer", () => {
 });
 
 describe("joined grids on an MCP card", () => {
-  it("draws each cell on the card's join unless its step sets its own", async () => {
+  it("draws every cell, the start included, on the card's one join", async () => {
     const pair = staticPair("n", "s", "in");
-    const step = (
-      stepNumber: number,
-      conjoined?: GridJoinSpec | null
-    ): SequenceStep => ({
+    const step = (stepNumber: number): SequenceStep => ({
       letter: "α",
       variation: 0,
       startPlacement: "alpha1",
@@ -197,9 +194,14 @@ describe("joined grids on an MCP card", () => {
       leftMotion: pair.leftMotion,
       rightMotion: pair.rightMotion,
       stepNumber,
-      conjoined,
     });
-    const steps = [step(0), step(1, E2), step(2, null), step(3)];
+    // A join a step carries on its own is ignored: the card has one join.
+    const steps = [
+      step(0),
+      { ...step(1), conjoined: E2 } as SequenceStep,
+      { ...step(2), conjoined: null } as SequenceStep,
+      step(3),
+    ];
     const cellJoins = async (conjoined?: GridJoinSpec) => {
       const joins: unknown[] = [];
       const draw = renderer.renderToPng.bind(renderer);
@@ -225,7 +227,7 @@ describe("joined grids on an MCP card", () => {
       return joins;
     };
 
-    expect(await cellJoins(E1)).toEqual([E1, E2, null, E1]);
-    expect(await cellJoins()).toEqual([null, E2, null, null]);
+    expect(await cellJoins(E1)).toEqual([E1, E1, E1, E1]);
+    expect(await cellJoins()).toEqual([null, null, null, null]);
   });
 });
