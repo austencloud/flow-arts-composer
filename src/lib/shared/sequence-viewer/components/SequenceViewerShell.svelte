@@ -1108,7 +1108,7 @@
       onClose={interactions.handleClose}
       hidden={ctx.isFullscreen}
       {embedded}
-      {navigation}
+      navigation={embedded ? undefined : navigation}
       titleOverride={tunnelComposition?.name?.trim() || null}
       {openAppHref}
       onAccountSignIn={!embedded ? onAccountSignIn : undefined}

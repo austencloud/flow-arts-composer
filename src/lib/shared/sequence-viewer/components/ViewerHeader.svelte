@@ -159,9 +159,7 @@
   const showOpenAppAction = $derived(
     !!onOpenApp && !(hasAccountEntry && authState.isFullAccount)
   );
-  const identityWord = $derived(
-    resolveSequenceIdentityTitle(sequence)
-  );
+  const identityWord = $derived(resolveSequenceIdentityTitle(sequence));
   const trimmedTitleOverride = $derived(titleOverride?.trim() || "");
   /** Plain-text title actually shown in the slot: the override when present,
    *  else the word identity. */
@@ -644,7 +642,12 @@
     position: relative;
     z-index: 20;
     display: grid;
-    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    /* Keep the word centered while space permits; buttons must never spill
+       into its track when a phone or embedded viewer has less room. */
+    grid-template-columns: minmax(max-content, 1fr) minmax(0, auto) minmax(
+        max-content,
+        1fr
+      );
     align-items: center;
     gap: 8px;
     min-height: var(--min-touch-target, 44px);
@@ -881,6 +884,7 @@
   .header-word-slot {
     position: relative;
     min-width: 0;
+    max-width: 100%;
     width: clamp(80px, 19vw, 260px);
     justify-self: center;
   }
