@@ -15,11 +15,21 @@
  * and the start pose. Rendering data (arrow/prop placement, letters, grid
  * mode, reversals) is derived downstream and deliberately left out.
  *
+ * A grid join is kept as well: a record that lost it plays the same motions on
+ * a different picture, and a one-grid code must never answer a joined
+ * sequence. Join fields appear only where a join is set, so the projection and
+ * digest of a sequence drawn on one grid are exactly what they were before
+ * joins existed.
+ *
  * Pure: no Firebase, no browser APIs beyond Web Crypto for the digest.
  */
 
 import { normalizeLegacySequence } from "@tka/tka-types";
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import {
+  gridJoinToken,
+  sequenceGridJoinToken,
+} from "$lib/shared/foundation/domain/models/grid-join-token";
 import { canonicalDigest } from "$lib/shared/foundation/utils/canonical-digest";
 import { decodeSequenceFromQR } from "$lib/shared/navigation/services/sequence-encoder";
 
@@ -30,10 +40,12 @@ type LooseMotion = Record<string, unknown>;
 type LooseBeat = {
   stepNumber?: unknown;
   duration?: unknown;
+  conjoined?: unknown;
   motions?: Record<string, LooseMotion | null | undefined> | null;
 };
 type LooseSequence = {
   sequenceKind?: unknown;
+  conjoined?: unknown;
   steps?: readonly LooseBeat[] | null;
   startPlacement?: LooseBeat | null;
   startingPlacement?: LooseBeat | null;
@@ -68,11 +80,20 @@ export interface ChoreographyStep {
   duration: number;
   left: ChoreographyMotion | null;
   right: ChoreographyMotion | null;
+  /** The step's own grid join token ("x": one grid); only when it sets one. */
+  join?: string;
 }
 
 export interface ChoreographyProjection {
   kind: "prop" | "hand-path";
-  start: { left: ChoreographyPose | null; right: ChoreographyPose | null };
+  /** The sequence's grid join token ("e1"); only on a joined sequence. */
+  join?: string;
+  start: {
+    left: ChoreographyPose | null;
+    right: ChoreographyPose | null;
+    /** The start cell's own grid join token; only when it sets one. */
+    join?: string;
+  };
   steps: ChoreographyStep[];
 }
 
@@ -225,18 +246,24 @@ export function projectChoreography(
   const loose = normalized(sequence);
   const steps = contentStepsOf(loose.steps);
   const startBeat = startBeatOf(loose);
+  const join = sequenceGridJoinToken(loose.conjoined);
+  const startJoin = gridJoinToken(startBeat?.conjoined);
   return {
     kind: loose.sequenceKind === "hand-path" ? "hand-path" : "prop",
+    ...(join && { join }),
     start: {
       left: startPose(startBeat, steps[0], "left"),
       right: startPose(startBeat, steps[0], "right"),
+      ...(startJoin && { join: startJoin }),
     },
     steps: steps.map((beat) => {
       const duration = Number(beat.duration ?? 1);
+      const stepJoin = gridJoinToken(beat.conjoined);
       return {
         duration: Number.isFinite(duration) ? duration : 1,
         left: projectMotion(motionFor(beat, "left")),
         right: projectMotion(motionFor(beat, "right")),
+        ...(stepJoin && { join: stepJoin }),
       };
     }),
   };
@@ -278,6 +305,9 @@ export function findChoreographyMismatch(
   if (expected.steps.length !== actual.steps.length) {
     return `step count: ${expected.steps.length} vs ${actual.steps.length}`;
   }
+  if (expected.join !== actual.join) {
+    return `join: ${describe(expected.join)} vs ${describe(actual.join)}`;
+  }
   for (const hand of HANDS) {
     const e = expected.start[hand];
     const a = actual.start[hand];
@@ -289,11 +319,17 @@ export function findChoreographyMismatch(
       return `start ${hand}: ${e.location}/${e.orientation} vs ${a.location}/${a.orientation}`;
     }
   }
+  if (expected.start.join !== actual.start.join) {
+    return `start join: ${describe(expected.start.join)} vs ${describe(actual.start.join)}`;
+  }
   for (let i = 0; i < expected.steps.length; i++) {
     const e = expected.steps[i]!;
     const a = actual.steps[i]!;
     if (e.duration !== a.duration) {
       return `step ${i + 1} duration: ${e.duration} vs ${a.duration}`;
+    }
+    if (e.join !== a.join) {
+      return `step ${i + 1} join: ${describe(e.join)} vs ${describe(a.join)}`;
     }
     for (const hand of HANDS) {
       const em = e[hand];

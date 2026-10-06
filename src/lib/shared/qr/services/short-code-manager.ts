@@ -13,6 +13,7 @@
 import type { Firestore, QueryConstraint } from "firebase/firestore";
 import { type SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
 import { isHandPathSequence } from "$lib/shared/foundation/domain/models/sequence-kind";
+import { isWellFormedGridJoin } from "$lib/shared/foundation/domain/models/grid-join-token";
 import { buildHandPathShortCodePayload } from "./hand-path-short-code-payload";
 import {
   deriveWordStatusFromSteps,
@@ -1169,6 +1170,9 @@ export class ShortCodeManager {
     };
     if (startBeat != null) embed.startPlacement = startBeat;
     if (sequence.gridMode != null) embed.gridMode = sequence.gridMode;
+    if (isWellFormedGridJoin(sequence.conjoined)) {
+      embed.conjoined = sequence.conjoined;
+    }
     if (sequence.isCircular != null) embed.isCircular = sequence.isCircular;
     if (sequence.loopType != null) embed.loopType = sequence.loopType;
     const payload: Record<string, unknown> = {

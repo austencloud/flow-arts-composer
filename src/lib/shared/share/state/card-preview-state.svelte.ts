@@ -23,6 +23,8 @@ import type { CardPresentation } from "$lib/shared/share/domain/models/card-pres
 import { buildCardPreviewRenderKey } from "$lib/shared/share/state/card-preview-render-key";
 import { canonicalJSON } from "$lib/shared/foundation/utils/canonical-json";
 import { hashString } from "$lib/shared/foundation/services/content-hasher";
+import { followAnimationGridLayout } from "$lib/shared/animation-engine/state/animation-grid-layout.svelte";
+import { withAnimationGridJoin } from "$lib/shared/animation-engine/services/conjoined-grid-layout";
 
 interface CardPreviewInputs {
   /** The sequence to draw. Null suspends rendering. */
@@ -73,6 +75,8 @@ export function createCardPreviewState(inputs: CardPreviewInputs) {
   }
   composition.registerObserver(onCardSettingsChanged);
   visibility.registerObserver(onCardSettingsChanged, ["all"]);
+  // A card made while the 2D animation joins its grids comes out joined.
+  const animationGridLayout = followAnimationGridLayout();
 
   let blob = $state<Blob | null>(null);
   let url = $state<string | null>(null);
@@ -93,7 +97,9 @@ export function createCardPreviewState(inputs: CardPreviewInputs) {
     // Keep the object the asynchronous renderer receives tied to this exact
     // identity. Without a snapshot, an in-place edit can change the live
     // object after its identity was stamped but before Sharer reads it.
-    const target = $state.snapshot(liveTarget) as SequenceData;
+    const target = $state.snapshot(
+      withAnimationGridJoin(liveTarget, animationGridLayout())
+    ) as SequenceData;
 
     const darkMode = inputs.getDarkMode();
     const resolvedAutoLayout = inputs.getResolvedAutoLayout();

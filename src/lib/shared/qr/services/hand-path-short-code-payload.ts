@@ -1,3 +1,4 @@
+import { isWellFormedGridJoin } from "$lib/shared/foundation/domain/models/grid-join-token";
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
 import { isHandPathSequence } from "$lib/shared/foundation/domain/models/sequence-kind";
 import { encodeSequenceForQR } from "$lib/shared/navigation/services/sequence-encoder";
@@ -61,6 +62,9 @@ export async function buildHandPathShortCodePayload(
         steps: sequence.steps,
         startPlacement: sequence.startPlacement,
         gridMode: sequence.gridMode,
+        ...(isWellFormedGridJoin(sequence.conjoined) && {
+          conjoined: sequence.conjoined,
+        }),
         isCircular: sequence.isCircular,
         notes: sequence.notes,
         word: "",

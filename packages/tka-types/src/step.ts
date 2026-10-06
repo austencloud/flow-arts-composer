@@ -21,7 +21,7 @@
  */
 import type { Motion } from "./motion.js";
 import type { Letter } from "./letter.js";
-import type { GridPlacement, GridMode } from "./grid.js";
+import type { GridPlacement, GridMode, GridJoin } from "./grid.js";
 
 export interface StepMotions {
   readonly left: Motion;
@@ -44,4 +44,9 @@ export interface Step {
   readonly isBridge?: boolean;
   /** True when this step is an intentional blank (no pictograph). */
   readonly isBlank?: boolean;
+  /**
+   * Per-step grid join. Undefined follows the sequence's join, null draws
+   * this step on one shared grid, and a join draws it on two grids.
+   */
+  readonly conjoined?: GridJoin | null;
 }

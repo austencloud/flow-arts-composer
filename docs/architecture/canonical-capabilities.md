@@ -152,6 +152,46 @@ The prop timing-and-direction glyph (`propTndGlyph` visibility key, `showPropTnD
 
 Timing and direction as a generator setting lives on the Generate bento's TnD card. `shared/create/domain/hand-relationship.ts` owns the vocabulary (`TnDSelection` is `"free"` or a `VtgMode`, `describeTnDSelection`, `handModeToEngine`, `propModeToEngine`); `features/choreo-card/components/TnDModeGrid.svelte` is the one 3x2 mode picker (the Fuse picker wraps it); `features/create/generate/components/cards/TnDPanel.svelte` and `TnDCard.svelte` are the workspace and the card; `tndLoopCompatibility` and `handModesBlockedByLoop` in `shared/create/services/loop-type-utils.ts` own the cross-disabling between a hand mode and a LOOP. Searches: hand relationship, prop relationship, TnD card, together same, quarter opposite, match turns. Do not add a second mode grid or a second compatibility table.
 
+Joined grids in still pictographs (one grid per hand, side by side) live in
+`packages/render-core/src/calculations/grid-join-layout.ts`. Searches:
+conjoined, joined grids, GridJoin, two grids, grid join. `GridJoin` in
+`@tka/tka-types` is the schema: `SequenceData.conjoined` joins a whole sequence
+and `Step.conjoined` overrides one step (`null` keeps that step on one grid).
+`resolveStepGridJoin` picks a cell's join, `gridJoinCellResolver` sets every
+card cell to it (one-grid cards pass through untouched, keeping their cache
+keys), `getGridJoinLayout` owns the merged and hidden points and the fit scale,
+and `gridJoinPropNudges` parts two flat props on one line by their beta offset.
+`PictographPreparer` prepares each hand alone on its grid,
+`render/services/joined-grid-painter.ts` paints the points for
+`Canvas2DDirectRenderer` and the `LayerCompositor` overlay, and
+`image-composer.ts` and `choreo-card-render-engine.ts` give each card cell its
+join. The MCP `StandaloneRenderer` draws joins too, and its picture tools take
+a `conjoined` option. The live Svelte `PictographRenderer` draws one grid only,
+so a joined `ChoreoCard` renders image cells instead of live ones.
+
+The 2D animation's Conjoined switch stays a viewing choice;
+`animation-engine/services/conjoined-grid-layout.ts` owns its fixed join and
+`withAnimationGridJoin`, which stamps that join on a sequence that has none of
+its own. `followAnimationGridLayout` (`animation-engine/state/`) is the one
+reactive reader of the switch. While it is on, the cards in the viewer join
+through `sequence-viewer/context/card-grid-layout-context.ts` (set by
+`SequenceViewerOrchestrator`; cards elsewhere and scanned cards keep only saved
+joins), and the share and Post Studio pictures (`card-preview-state`), the
+viewer's card export and the composite video's step grid come out joined.
+Links, library saves and QR codes keep the sequence as saved.
+
+A join saved on a sequence travels with it.
+`foundation/domain/models/grid-join-token.ts` spells a join as text (`e1`, or
+`x` for a cell kept on one grid) for the share-link codec, the content hashers
+and the public wire schema. `sequence-encoder.ts` closes a link's header with
+`J<toward><steps>` and writes a cell's own join as a fourth beat segment
+(`:J<token>`). The step and start factories, the pairing compose and derive,
+the public projection and loaders, the arena repository and the short-code
+payloads carry it too. A sequence with no join writes nothing anywhere, so its
+links, short codes, QR digests and hashes stay as they were; a joined sequence
+mints its own. Mirror, flip, rotate and rewind do not yet turn a join's
+direction.
+
 `ChoreoCard` resolves its palette once for cells and `CardGridLayout` mandalas.
 Animation frame parameters carry the same hand pair independently of effect
 styling, and `mandala-guide-painter.ts` derives overlap from its actual path

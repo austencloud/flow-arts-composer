@@ -2,7 +2,12 @@ import type { LayerType, LayerRenderOptions, LayerVisibility, LayerRenderResult,
 import type { PreparedPictographData } from "../../pictograph/shared/domain/models/prepared-pictograph-data";
 import { isVisibleMotion } from "../../pictograph/shared/domain/models/motion-data";
 import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import { deriveBaseLayerKey, deriveGridPointsLayerKey, deriveTKALayerKey, deriveReversalLayerKey } from "./layer-key-deriver";
+import { deriveBaseLayerKey, deriveGridPointsLayerKey, deriveTKALayerKey, deriveReversalLayerKey, getJoinedActiveHandPoints } from "./layer-key-deriver";
+import { getGridJoinLayout } from "@tka/render-core";
+import {
+  applyJoinedGridFit,
+  paintJoinedGridPoints,
+} from "./joined-grid-painter";
 import { turnsTupleGenerator } from "../../pictograph/arrow/positioning/placement/services/turns-tuple-generator";
 import type { Letter } from "../../foundation/domain/models/letter";
 import { GridMode } from "../../pictograph/grid/domain/enums/grid-enums";
@@ -580,6 +585,37 @@ export class LayerCompositor {
     ctx.fillStyle = pointColor;
 
     const gridMode = pictograph._prepared?.gridMode ?? GridMode.DIAMOND;
+
+    // Joined grids: each grid's hand points, under the fit scale the base
+    // layer draws with. Non-radial points are a single-grid overlay.
+    const join = pictograph._prepared?.join;
+    if (join) {
+      if (options.handPointVisibility !== "none") {
+        const layout = getGridJoinLayout(join, gridMode);
+        const active =
+          options.handPointVisibility === "active"
+            ? getJoinedActiveHandPoints(pictograph)
+            : null;
+        ctx.save();
+        applyJoinedGridFit(ctx, options.size, layout);
+        paintJoinedGridPoints(
+          ctx,
+          layout,
+          options.size,
+          gridMode === GridMode.BOX,
+          (point) =>
+            point.kind === "hand" &&
+            (!active ||
+              point.members.some((member) =>
+                active[member.hand].has(member.location)
+              ))
+        );
+        ctx.restore();
+      }
+      ctx.globalAlpha = 1.0;
+      return canvas;
+    }
+
     const gridPoints = gridMode === GridMode.BOX ? BOX_GRID_POINTS : DIAMOND_GRID_POINTS;
 
     const activeLocations = this.getActiveHandLocations(pictograph, options.handPointVisibility, gridMode);

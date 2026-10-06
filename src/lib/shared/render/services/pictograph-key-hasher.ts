@@ -15,6 +15,10 @@ import {
 } from "$lib/shared/pictograph/prop/domain/fan-appearance";
 import { renderedPropLook } from "$lib/shared/pictograph/prop/domain/prop-look";
 import { renderedTriangleGrip } from "$lib/shared/pictograph/prop/domain/triangle-appearance";
+import {
+  gridJoinKey,
+  isGridJoin,
+} from "@tka/render-core";
 // getSettings loaded dynamically to avoid pulling $app/environment into worker bundle
 
 interface MotionKeyData {
@@ -43,6 +47,9 @@ interface PictographKeyInput {
   // betaSwapped changes prepared prop geometry (PictographPreparer keys it);
   // without it two identical-motion pictographs collide across the swap.
   betaSwapped: boolean;
+  // Present only for a cell drawn on two joined grids (e.g. "e1"), so every
+  // single-grid render keeps its established key.
+  conjoined?: string;
   // Present only when a narrowly-scoped render algorithm revision changes
   // this pictograph's pixels. Unaffected cells keep their established key.
   arrowRenderRevision?: string;
@@ -323,6 +330,9 @@ export class PictographKeyHasher {
       leftReversal: reversalsVisible ? (step.leftReversal ?? false) : false,
       rightReversal: reversalsVisible ? (step.rightReversal ?? false) : false,
       betaSwapped: data.betaSwapped ?? false,
+      ...(isGridJoin(data.conjoined) && {
+        conjoined: gridJoinKey(data.conjoined),
+      }),
       ...(hasVisibleMotion && {
         arrowRenderRevision: CANONICAL_HAND_ARROW_RENDER_REVISION,
       }),

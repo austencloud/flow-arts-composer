@@ -247,6 +247,9 @@ export async function loadFullSequenceData(sourceRef: string): Promise<SequenceD
       sequenceLength: raw.sequenceLength as number | undefined,
       level: raw.level as number | undefined,
       gridMode: raw.gridMode as SequenceData["gridMode"],
+      ...(raw.conjoined !== undefined && {
+        conjoined: raw.conjoined as SequenceData["conjoined"],
+      }),
       isFavorite: false,
       isCircular: (raw.isCircular as boolean) ?? false,
       loopType: raw.loopType as SequenceData["loopType"],

@@ -75,6 +75,7 @@ Last audit: 2025-12-27
     type DisassemblyArrangement,
   } from "../services/disassembly-arrangement";
   import SplitCanvasView from "./SplitCanvasView.svelte";
+  import { effectiveGridLayout } from "../services/conjoined-grid-layout";
   import type { EffectsConfigState } from "$lib/shared/effects/state/effects-config-state.svelte";
   import type { QualityTier } from "../domain/types/quality-types";
   import type { FanAppearance } from "$lib/shared/pictograph/prop/domain/fan-appearance";
@@ -725,9 +726,13 @@ Last audit: 2025-12-27
   const effectiveRightPathLinesVisible = $derived(
     rightPathLinesVisible && !hidePathLines
   );
-  // Tunnel layers keep the single grid (the engine makes the same call).
+  // Tunnel layers keep the single grid (the engine makes the same call). A
+  // sequence saved with the join turns it on by itself.
   const effectiveGridConjoined = $derived(
-    gridConjoined && additionalLayers.length === 0
+    effectiveGridLayout(
+      gridConjoined ? "conjoined" : "single",
+      sequenceData
+    ) === "conjoined" && additionalLayers.length === 0
   );
 
   function handleVisibilityChange() {

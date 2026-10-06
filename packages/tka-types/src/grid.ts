@@ -31,6 +31,22 @@ export const GRID_LOCATIONS: readonly GridLocation[] = Object.freeze(
   Object.values(GridLocation)
 );
 
+/** Any grid point except the center: the way one grid can sit from another. */
+export type GridJoinDirection = Exclude<GridLocation, "c">;
+
+/**
+ * Two grids drawn joined, one per hand. The blue (left) hand's grid is the
+ * anchor; the red (right) hand's grid sits `toward` of it.
+ *
+ * `steps` is the distance between the two centers, counted in hand-point
+ * radii: 1 puts the red center on a blue hand point, 2 makes the facing hand
+ * points meet. Three or more grids and hands crossing grids are out of scope.
+ */
+export interface GridJoin {
+  readonly toward: GridJoinDirection;
+  readonly steps: 1 | 2;
+}
+
 /**
  * Grid mode: diamond mode uses cardinal points (N/E/S/W), box mode uses
  * intercardinal points (NE/SE/SW/NW). Skewed mode mixes one cardinal with

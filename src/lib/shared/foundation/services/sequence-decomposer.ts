@@ -93,6 +93,7 @@ export function extractStepPairings(
     rightReversal: step.rightReversal,
     startPlacement: step.startPlacement ?? null,
     endPlacement: step.endPlacement ?? null,
+    ...(step.conjoined !== undefined && { conjoined: step.conjoined }),
   }));
 }
 

@@ -119,6 +119,8 @@
   import { sceneEnvironmentIdForBackground } from "$lib/shared/3d/environments/domain/scene-environment";
   import { viewportFits3D } from "$lib/shared/3d/capabilities/viewport-3d-gate.svelte";
   import { setViewerVisibilityContext } from "../context/viewer-visibility-context";
+  import { setCardGridLayoutContext } from "../context/card-grid-layout-context";
+  import { followAnimationGridLayout } from "$lib/shared/animation-engine/state/animation-grid-layout.svelte";
   import { propFinishState } from "@austencloud/scene-3d";
   import {
     fanAppearanceSignature,
@@ -855,6 +857,8 @@
   // below cannot see its changes. Its own observer API closes that gap.
   const anVisibilityObserver = () => urlSession.scheduleUrlWrite();
   anStores.visibility.registerObserver(anVisibilityObserver);
+  // The cards in this viewer join their grids while its 2D animation does.
+  setCardGridLayoutContext(followAnimationGridLayout());
 
   // Export options are another app-global singleton (`getExportOptionsState()`,
   // borrowed here via `exportCoord.exportOptions` — same instance ~8 files call
