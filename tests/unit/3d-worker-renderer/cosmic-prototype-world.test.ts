@@ -72,4 +72,41 @@ describe("createCosmicPrototypeWorld", () => {
       fov: 48,
     });
   });
+
+  it("opens without waiting for the seated audience and readies it in place", async () => {
+    let worldOptions!: {
+      audienceGate?: Promise<void>;
+      prepareAudience?: (audience: Group) => Promise<void>;
+    };
+    factory.mockImplementation(async (options) => {
+      worldOptions = options;
+      return {
+        root: new Group(),
+        fog: new FogExp2("#080818", 0.008),
+        audienceReady: new Promise<void>(() => undefined),
+        update: vi.fn(),
+        setGroundY: vi.fn(),
+        dispose: vi.fn(),
+      };
+    });
+    const reportProgress = vi.fn();
+    const prepareLateObject = vi.fn(async () => undefined);
+    const scenePresented = new Promise<void>(() => undefined);
+
+    const world = await createCosmicPrototypeWorld({
+      renderer: {} as WebGLRenderer,
+      camera: new PerspectiveCamera(),
+      requestId: 4,
+      performers: [],
+      reportProgress,
+      scenePresented,
+      prepareLateObject,
+    });
+
+    expect(reportProgress).toHaveBeenLastCalledWith("construct", 1);
+    expect(worldOptions.audienceGate).toBe(scenePresented);
+    const audience = new Group();
+    await worldOptions.prepareAudience?.(audience);
+    expect(prepareLateObject).toHaveBeenCalledWith(audience, world.scene);
+  });
 });

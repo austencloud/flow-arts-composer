@@ -10,6 +10,7 @@ import {
   HemisphereLight,
   Mesh,
   MeshStandardMaterial,
+  type Object3D,
   PointLight,
   ShaderMaterial,
   SphereGeometry,
@@ -64,6 +65,12 @@ export interface CosmicEnvironmentWorldOptions {
   onAssetProgress?: (fraction: number) => void;
   onAudienceReady?: () => void;
   onAudienceError?: (error: unknown) => void;
+  /** Holds the audience's loading until it settles, e.g. until the first
+   * frame is on screen. */
+  audienceGate?: Promise<void>;
+  /** Runs before a finished audience joins the root, e.g. to compile it when
+   * it arrives after the first frame. A failure here never drops the audience. */
+  prepareAudience?: (audience: Object3D) => Promise<void>;
 }
 
 export interface CosmicEnvironmentWorld {
@@ -406,27 +413,34 @@ export async function createCosmicEnvironmentWorld(
   if (meteors) animated.push(meteors);
 
   let audience: CosmicAudience | null = null;
+  async function seatAudience(): Promise<void> {
+    if (options.audienceGate) await options.audienceGate;
+    if (disposed) return;
+    const next = await createCosmicAudience({
+      count: deckConfig.seatingRows * 3,
+      arcRadius: deckConfig.radius + 2.5,
+      arcSpread: Math.PI * 0.55,
+      groundY,
+      loader: options.audienceLoader,
+      onPreloaded: options.onAudienceReady,
+    });
+    if (!disposed) {
+      await options.prepareAudience?.(next.object).catch((error: unknown) => {
+        console.warn("[CosmicWorld] audience preparation failed", error);
+      });
+    }
+    if (disposed) {
+      next.dispose();
+      return;
+    }
+    audience = next;
+    root.add(next.object);
+  }
   const audienceReady = deckConfig.seatingEnabled
-    ? createCosmicAudience({
-        count: deckConfig.seatingRows * 3,
-        arcRadius: deckConfig.radius + 2.5,
-        arcSpread: Math.PI * 0.55,
-        groundY,
-        loader: options.audienceLoader,
-        onPreloaded: options.onAudienceReady,
+    ? seatAudience().catch((error) => {
+        options.onAudienceError?.(error);
+        throw error;
       })
-        .then((next) => {
-          if (disposed) {
-            next.dispose();
-            return;
-          }
-          audience = next;
-          root.add(next.object);
-        })
-        .catch((error) => {
-          options.onAudienceError?.(error);
-          throw error;
-        })
     : Promise.resolve().then(() => options.onAudienceReady?.());
 
   return {
