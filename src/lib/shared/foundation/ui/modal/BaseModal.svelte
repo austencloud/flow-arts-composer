@@ -35,7 +35,7 @@
   type CloseReason = "backdrop" | "escape" | "programmatic" | "button";
   type ModalSize = "sm" | "md" | "lg" | "xl" | "full" | "fit" | "module-grid";
   type ModalPosition = "center" | "top";
-  type ModalAnimation = "pop" | "slide" | "none";
+  type ModalAnimation = "pop" | "slide" | "none" | "morph";
 
   interface Props {
     // Control
@@ -65,6 +65,15 @@
     // Appearance
     size?: ModalSize;
     position?: ModalPosition;
+    /**
+     * `morph` hands both transitions to the host, which carries the dialog in
+     * and out with a same-document view transition. The dialog enters and
+     * leaves the top layer in the same flush as `open` changes, because a
+     * transition's update callback suppresses rendering and the frame-delayed
+     * open below would miss the capture. It carries no CSS motion of its own
+     * and never closes itself: Escape, the backdrop, and the modal stack reach
+     * `onclose`, and the host turns `open` off inside its transition.
+     */
     animation?: ModalAnimation;
     /** Animate content-driven dialog height changes without remounting its children. */
     animateSize?: boolean;
@@ -217,13 +226,29 @@
     });
   }
 
+  function enterTopLayer(dialog: HTMLDialogElement) {
+    if (allowExternalOverlays) {
+      dialog.show();
+      focusTrap?.activate(dialog);
+    } else {
+      dialog.showModal();
+    }
+    onopened?.();
+
+    // Mark as entered for content animations
+    requestAnimationFrame(() => {
+      hasEntered = true;
+    });
+  }
+
   function closeModal(reason: CloseReason) {
     if (!open) return;
 
     // Only respond if we're the top modal (for nested modals)
     if (!isTopModal(modalId) && reason !== "programmatic") return;
 
-    open = false;
+    // A morphing host closes the dialog inside its own view transition.
+    if (animation !== "morph") open = false;
     onclose?.(reason);
   }
 
@@ -245,6 +270,9 @@
       return;
     }
 
+    // The native close would leave the top layer before a morphing host
+    // captures it.
+    if (animation === "morph") event.preventDefault();
     closeModal("escape");
   }
 
@@ -320,22 +348,14 @@
         () => closeOnEscape
       );
 
+      // Morph mode enters from the effect below, in this same flush.
+      if (animation === "morph") return;
+
       // Wait for DOM, then show modal
       requestAnimationFrame(() => {
         requestAnimationFrame(() => {
           if (open && dialogElement && !dialogElement.open) {
-            if (allowExternalOverlays) {
-              dialogElement.show();
-              focusTrap?.activate(dialogElement);
-            } else {
-              dialogElement.showModal();
-            }
-            onopened?.();
-
-            // Mark as entered for content animations
-            requestAnimationFrame(() => {
-              hasEntered = true;
-            });
+            enterTopLayer(dialogElement);
           }
         });
       });
@@ -349,7 +369,8 @@
 
       // Wait for exit animation to complete, then actually close the dialog.
       // Track the timer so a reopen within the animation window can cancel it.
-      const exitDuration = animation === "none" ? 0 : 200;
+      const exitDuration =
+        animation === "none" || animation === "morph" ? 0 : 200;
       exitTimer = setTimeout(() => {
         exitTimer = null;
         focusTrap?.deactivate();
@@ -362,6 +383,14 @@
         onclosed?.();
       }, exitDuration);
     }
+  });
+
+  // Morph mode: enter the top layer as soon as the dialog exists. This runs in
+  // the flush that turned `open` on, so a host's view transition captures the
+  // open dialog as its new state.
+  $effect(() => {
+    if (animation !== "morph" || !open || !dialogElement) return;
+    if (!dialogElement.open) enterTopLayer(dialogElement);
   });
 
   // ===== Update focus restore when prop changes =====
