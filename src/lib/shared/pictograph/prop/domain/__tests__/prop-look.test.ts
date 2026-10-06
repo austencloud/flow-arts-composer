@@ -6,6 +6,7 @@ import {
   modelSpriteArtwork,
   normalizePropLook,
   parseModelRenderKey,
+  propArtworkStem,
   propLookOptions,
   resolvePropRenderKey,
 } from "../prop-look";
@@ -87,5 +88,16 @@ describe("prop look", () => {
       pictograph!.crop!.imageWidth / 3
     );
     expect(pictograph?.crop?.width).toBeLessThan(pictograph!.crop!.imageWidth);
+  });
+});
+
+describe("prop artwork per hand", () => {
+  it("gives the right hand its own stick and shares every other drawing", () => {
+    expect(propArtworkStem("stick", "left")).toBe("stick");
+    expect(propArtworkStem("stick", "right")).toBe("stick-right");
+    expect(propArtworkStem("staff", "right")).toBe("staff");
+    expect(propArtworkStem("fire_double_staff", "right")).toBe(
+      "fire_double_staff"
+    );
   });
 });

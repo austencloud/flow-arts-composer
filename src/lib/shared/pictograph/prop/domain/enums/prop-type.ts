@@ -25,6 +25,12 @@ export enum PropType {
   // tracked ends — but its tracked tips sit at the wick centers, where the fuel
   // is, so fire and trails come off the burning part instead of the far rim.
   FIRE_DOUBLE_STAFF = "fire_double_staff",
+  // A found branch spun as a staff: a first double-staff set, before anyone
+  // buys a real one. Staff family -- same reach, same two tracked ends, and
+  // the performer's staff length. Each hand holds its own branch (stick.svg
+  // and stick-right.svg, stick.glb and stick-right.glb): a matched pair, never
+  // the same stick twice.
+  STICK = "stick",
 
   CLUB = "club",
   // The original flat 2D scan. It shares Club's physical geometry but remains
