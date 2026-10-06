@@ -436,6 +436,25 @@ interface TriangleGeometries {
   vertex: SphereGeometry;
 }
 let triangleGeometries: TriangleGeometries | null = null;
+const TRIANGLE_GRIP_GOLD = new MeshStandardMaterial({
+  color: "#c9ac68",
+  roughness: 0.55,
+  metalness: 0.2,
+});
+const TRIANGLE_CORNER_GRIP_LENGTH = 0.075;
+const TRIANGLE_SIDE_GRIP_LENGTH = 0.15;
+const triangleCornerGripGeometry = new CylinderGeometry(
+  HOOP_HARDWARE_RADIUS,
+  HOOP_HARDWARE_RADIUS,
+  TRIANGLE_CORNER_GRIP_LENGTH,
+  16
+);
+const triangleSideGripGeometry = new CylinderGeometry(
+  HOOP_HARDWARE_RADIUS,
+  HOOP_HARDWARE_RADIUS,
+  TRIANGLE_SIDE_GRIP_LENGTH,
+  16
+);
 
 function getTriangleGeometries(): TriangleGeometries {
   if (!triangleGeometries) {
@@ -528,6 +547,24 @@ function createTriangle(options: WorkerPropFactoryOptions): WorkerPropVisual {
     const vertex = mesh(geometry.vertex, materials.hardware, layer);
     vertex.position.set(vx, vy, 0);
     body.add(vertex);
+  }
+  if (grip === "side") {
+    const wrap = mesh(triangleSideGripGeometry, TRIANGLE_GRIP_GOLD, layer);
+    wrap.rotation.z = Math.PI / 2;
+    body.add(wrap);
+  } else {
+    // The hand sits at the near vertex, so each half of the wrap follows one
+    // outgoing leg and the two gold sleeves meet at the physical origin.
+    for (const direction of [-1, 1]) {
+      const wrap = mesh(triangleCornerGripGeometry, TRIANGLE_GRIP_GOLD, layer);
+      wrap.position.set(
+        (direction * TRIANGLE_CORNER_GRIP_LENGTH) / 4,
+        (TRIANGLE_CORNER_GRIP_LENGTH * Math.sqrt(3)) / 4,
+        0
+      );
+      wrap.rotation.z = (-direction * Math.PI) / 6;
+      body.add(wrap);
+    }
   }
   return createVisual(options, body, materials.trail);
 }

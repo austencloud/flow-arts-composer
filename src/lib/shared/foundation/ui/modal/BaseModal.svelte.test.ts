@@ -1,8 +1,9 @@
-import { page } from "vitest/browser";
+import { page, userEvent } from "vitest/browser";
 import { render } from "vitest-browser-svelte";
 import { afterEach, describe, expect, it } from "vitest";
 import { expectNoA11yViolations } from "$test-helpers/component-a11y";
 import BaseModalTestHarness from "./BaseModalTestHarness.svelte";
+import BaseModalMorphTestHarness from "./BaseModalMorphTestHarness.svelte";
 
 const FOLD_VIEWPORTS = [
   { label: "Fold cover portrait", width: 344, height: 884 },
@@ -337,5 +338,40 @@ describe("BaseModal fit sizing", () => {
     expect(overlayClicks).toBe(1);
     expect(document.activeElement).toBe(externalOverlay);
     expect(dialogElement?.open ?? false).toBe(true);
+  });
+});
+
+describe("BaseModal morph mode", () => {
+  it("opens within the flush and leaves every close to the host", async () => {
+    const { component } = render(BaseModalMorphTestHarness);
+    const nativeDialog = () =>
+      document.querySelector<HTMLDialogElement>("dialog.base-modal");
+    const closeRequests = () =>
+      document
+        .querySelector('[data-testid="base-modal-morph-requests"]')
+        ?.textContent?.trim();
+
+    // A view transition captures its new state when the update callback
+    // returns, and rendering is suppressed until then. The dialog has to be in
+    // the top layer by the end of the flush that opened it.
+    expect(component.setOpenNow(true)).toBe(true);
+
+    // Escape is a request. The dialog stays open until the host closes it
+    // inside its own transition. The click gives the page the user activation
+    // that real visitors have, which lets the cancel event be canceled.
+    await page.getByRole("button", { name: "Inside the modal" }).click();
+    await userEvent.keyboard("{Escape}");
+    await expect.poll(closeRequests).toBe("escape");
+    expect(nativeDialog()?.open).toBe(true);
+
+    component.setOpenNow(false);
+    await expect
+      .poll(() =>
+        document
+          .querySelector('[data-testid="base-modal-morph-closed"]')
+          ?.textContent?.trim()
+      )
+      .toBe("1");
+    expect(nativeDialog()).toBeNull();
   });
 });

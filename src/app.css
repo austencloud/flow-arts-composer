@@ -287,6 +287,7 @@ h6 {
   --duration-normal: 200ms; /* Standard transitions (panels, tabs) */
   --duration-emphasis: 280ms; /* Emphasized changes (module switches) */
   --duration-dramatic: 350ms; /* Major transitions (drawers, modals) */
+  --duration-scene: 800ms; /* A whole scene moving. Never a control or panel. */
 
   /* Easing Curves - Physics-based for natural motion */
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1); /* Decelerate (entering) */

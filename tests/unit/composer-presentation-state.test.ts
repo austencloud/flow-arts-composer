@@ -177,17 +177,33 @@ describe("Composer presentation state", () => {
     expect(classifyComposerGenerationFailure("unknown failure")).toBe("error");
   });
 
-  it("accepts carried sequences until the visitor generates one locally", () => {
+  it("adopts only the latest carried sequence on reentry until a local generation", () => {
     const current = sequenceFixture();
-    const incoming = createSequenceData({
+    const firstIncoming = createSequenceData({
       ...current,
       id: `${current.id}-guided-build-1`,
     });
+    const latestIncoming = createSequenceData({
+      ...current,
+      id: `${current.id}-guided-build-2`,
+    });
 
-    expect(shouldAdoptCarriedSequence(current, incoming, false)).toBe(true);
-    expect(shouldAdoptCarriedSequence(incoming, incoming, false)).toBe(false);
-    expect(shouldAdoptCarriedSequence(current, null, false)).toBe(false);
-    expect(shouldAdoptCarriedSequence(current, incoming, true)).toBe(false);
+    expect(
+      shouldAdoptCarriedSequence(current, firstIncoming, false, false)
+    ).toBe(false);
+    expect(
+      shouldAdoptCarriedSequence(current, latestIncoming, false, false)
+    ).toBe(false);
+    expect(
+      shouldAdoptCarriedSequence(current, latestIncoming, false, true)
+    ).toBe(true);
+    expect(
+      shouldAdoptCarriedSequence(latestIncoming, latestIncoming, false, true)
+    ).toBe(false);
+    expect(shouldAdoptCarriedSequence(current, null, false, true)).toBe(false);
+    expect(
+      shouldAdoptCarriedSequence(current, latestIncoming, true, true)
+    ).toBe(false);
   });
 
   it("provides the opening sequence before any live hero handoff", () => {

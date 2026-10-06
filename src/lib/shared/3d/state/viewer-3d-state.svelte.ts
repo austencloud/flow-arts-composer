@@ -2314,16 +2314,29 @@ function buildViewer3DState(
     performerManager.destroy();
   }
 
+  /**
+   * The first-load hero framing for the current cast: the pose the welcome
+   * move lands on. A host that stages its own entrance glides here. Null with
+   * no cast on stage.
+   */
+  function openingShot(): {
+    position: { x: number; y: number; z: number };
+    target: { x: number; y: number; z: number };
+  } | null {
+    const performers = performerManager.performers;
+    if (performers.length === 0) return null;
+    const shot = computeViewerOpeningShot(performers);
+    return {
+      position: { x: shot.eye.x, y: shot.eye.y, z: shot.eye.z },
+      target: { x: shot.target.x, y: shot.target.y, z: shot.target.z },
+    };
+  }
+
   function _fireWelcome(): void {
     if (!_welcomeAnimationPending || !_snapToFn) return;
     _welcomeAnimationPending = false;
-    const performers = performerManager.performers;
-    if (performers.length === 0) return;
-    const shot = computeViewerOpeningShot(performers);
-    snapCameraTo(
-      { x: shot.eye.x, y: shot.eye.y, z: shot.eye.z },
-      { x: shot.target.x, y: shot.target.y, z: shot.target.z }
-    );
+    const shot = openingShot();
+    if (shot) snapCameraTo(shot.position, shot.target);
   }
 
   /**
@@ -2740,6 +2753,7 @@ function buildViewer3DState(
     updateCameraSnapshot,
     registerSnapTo,
     snapCameraTo,
+    openingShot,
     dispose,
   };
 }

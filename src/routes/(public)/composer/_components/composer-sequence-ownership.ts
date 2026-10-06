@@ -11,16 +11,19 @@ export function resolveComposerCarriedSequence(
   return visitorSequence ?? latchedHeroSequence ?? openingSequence;
 }
 
-/** The generator follows the page until its visitor asks for a fresh result.
- * After that, the preview stays on the result they chose instead of being
- * replaced by activity in another demonstration. */
+/** The generator catches up to the latest page sequence when it returns to
+ * view. After a local draw, it keeps the visitor's chosen result instead. */
 export function shouldAdoptCarriedSequence(
   current: SequenceData | null,
   incoming: SequenceData | null,
-  hasGeneratedLocally: boolean
+  hasGeneratedLocally: boolean,
+  inViewport: boolean
 ): incoming is SequenceData {
   return (
-    !hasGeneratedLocally && incoming !== null && incoming.id !== current?.id
+    inViewport &&
+    !hasGeneratedLocally &&
+    incoming !== null &&
+    incoming.id !== current?.id
   );
 }
 

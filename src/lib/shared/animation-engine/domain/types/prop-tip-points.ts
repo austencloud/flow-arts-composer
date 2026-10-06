@@ -17,7 +17,10 @@ import {
   PROP_MODEL_SPRITES,
   type PropModelSpriteEntry,
 } from "$lib/shared/pictograph/prop/domain/prop-model-sprites.generated";
-import { HOOP_FAMILY_TIP_POINTS } from "$lib/shared/pictograph/prop/domain/hoop-family-geometry.generated";
+import {
+  HOOP_FAMILY_TIP_POINTS,
+  TRIANGLE_STATIONS_M,
+} from "$lib/shared/pictograph/prop/domain/hoop-family-geometry.generated";
 
 /**
  * A single tip attachment point on a prop. Position only - no effect-specific
@@ -769,6 +772,35 @@ function modelSpriteTipPoints(key: string): PropTipConfig | null {
   const cached = modelTipCache.get(key);
   if (cached) return cached;
   const baseKey = baseKeyOf(key);
+  if (baseKey === "triangle" || baseKey === "triangle_side") {
+    const entry = PROP_MODEL_SPRITES[baseKey];
+    if (!entry) return null;
+    const { sideChord, sagitta, height, reach } = TRIANGLE_STATIONS_M;
+    // The model is framed at its physical hand origin. Its bowed side
+    // midpoints and vertices are closer to the hand than the notation tips.
+    const halfSide = sideChord / 2;
+    const bowSide = halfSide / 2 + (sagitta * Math.sqrt(3)) / 2;
+    const sideGrip = baseKey === "triangle_side";
+    const endY = sideGrip ? sagitta : height;
+    const bowedY = sideGrip
+      ? sagitta + height / 2 + sagitta / 2
+      : height / 2 - sagitta / 2;
+    const stations = [
+      [reach, 0],
+      [endY, halfSide],
+      [endY, -halfSide],
+      [bowedY, bowSide],
+      [bowedY, -bowSide],
+    ];
+    const result = {
+      points: stations.map(([axial, lateral]) => ({
+        dx: axial! * entry.fit,
+        dy: lateral! * entry.fit,
+      })),
+    };
+    modelTipCache.set(key, result);
+    return result;
+  }
   const base = PROP_TIP_POINTS[baseKey];
   const entry = PROP_MODEL_SPRITES[baseKey];
   if (!base || !entry?.bounds || !isAxialTable(base)) return null;
@@ -820,6 +852,7 @@ function modelSpriteTipPoints(key: string): PropTipConfig | null {
 }
 
 function tableFor(key: string): PropTipConfig | null {
+  if (key === "triangle_side__model") return modelSpriteTipPoints(key);
   const renderKeyed = PROP_RENDER_KEY_TIP_POINTS[key];
   if (renderKeyed) return renderKeyed;
   if (key.endsWith(MODEL_RENDER_KEY_SUFFIX)) {
