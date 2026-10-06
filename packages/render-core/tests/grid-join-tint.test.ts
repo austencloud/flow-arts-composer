@@ -3,11 +3,12 @@ import {
   getGridJoinLayout,
   type JoinedGridPoint,
 } from "../src/calculations/grid-join-layout.js";
+// Through the package entry, so the exports the renderers use stay exported.
 import {
   joinedPointColors,
   joinedPointsHands,
   mixHexColors,
-} from "../src/calculations/grid-join-tint.js";
+} from "../src/index.js";
 
 const HANDS = { left: "#0000ff", right: "#ff0000" } as const;
 

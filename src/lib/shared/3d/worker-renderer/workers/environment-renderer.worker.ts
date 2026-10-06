@@ -38,6 +38,7 @@ import type {
 } from "../worlds/worker-environment-world";
 import { WorkerPerformerStage } from "../worlds/worker-performer";
 import {
+  prepareLateWorkerObject,
   primeWorkerRenderer,
   warmWorkerRenderer,
 } from "../services/worker-renderer-warmup";
@@ -532,6 +533,10 @@ async function prepareScene(sceneRequest: SceneRequest): Promise<boolean> {
   restoreDefaultRendererState();
   applyQualityTier(qualityTier);
 
+  let markPresented!: () => void;
+  const scenePresented = new Promise<void>((resolve) => {
+    markPresented = resolve;
+  });
   const factory = WORLD_FACTORIES[sceneRequest.environment];
   const builtWorld = await factory({
     renderer,
@@ -541,6 +546,15 @@ async function prepareScene(sceneRequest: SceneRequest): Promise<boolean> {
     reducedMotion: sceneRequest.reducedMotion,
     reportProgress(phase, fraction) {
       postProgress(phase, fraction);
+    },
+    scenePresented,
+    prepareLateObject(object, targetScene) {
+      if (!renderer || !camera) return Promise.resolve();
+      return prepareLateWorkerObject(
+        { renderer, scene: targetScene, camera },
+        object,
+        postProcessing?.sceneRenderTarget ?? null
+      );
     },
   });
   if (isSuperseded(sceneRequest)) {
@@ -724,6 +738,7 @@ async function prepareScene(sceneRequest: SceneRequest): Promise<boolean> {
         ...rendererMemory(),
       },
     });
+    markPresented();
     if (visible) animationFrame = scope.requestAnimationFrame(renderFrame);
     return true;
   } finally {

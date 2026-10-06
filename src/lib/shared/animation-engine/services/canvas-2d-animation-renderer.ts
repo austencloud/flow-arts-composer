@@ -51,6 +51,8 @@ import {
   lerpAngle,
 } from "$lib/shared/animation-engine/services/angle-calculator";
 import { wsEase } from "$lib/shared/transitions/ws-ease";
+import { getMotionColor } from "@tka/render-core";
+import type { JoinedGridPaint } from "$lib/shared/animation-engine/services/animation-grid-join";
 
 // Constants matching AnimatorCanvas EXACTLY
 const VIEWBOX_SIZE = 950;
@@ -159,6 +161,24 @@ function getSphereLayout(propType: string): SphereLayout | null {
   return { ...base, material };
 }
 
+/** Grid ink: black on light, the off-white the dark-mode tint paints. */
+const GRID_INK = { light: "#000000", dark: "#d9d9d9" } as const;
+
+/** Joined-grid dot colors for the mode and the props' hand colors. */
+function joinedGridPaint(
+  isDarkMode: boolean,
+  propColors: { left: string; right: string } | null | undefined
+): JoinedGridPaint {
+  const mode = isDarkMode ? "dark" : "light";
+  return {
+    base: GRID_INK[mode],
+    hands: {
+      left: propColors?.left ?? getMotionColor("left", mode),
+      right: propColors?.right ?? getMotionColor("right", mode),
+    },
+  };
+}
+
 export class Canvas2DAnimationRenderer {
   // Specialized service managers
   private appManager: Canvas2DApplicationManager;
@@ -257,7 +277,7 @@ export class Canvas2DAnimationRenderer {
     offCtx.drawImage(gridImage, 0, 0, canvasSize, canvasSize);
     // 2. Recolor only the drawn pixels to off-white.
     offCtx.globalCompositeOperation = "source-in";
-    offCtx.fillStyle = "#d9d9d9";
+    offCtx.fillStyle = GRID_INK.dark;
     offCtx.fillRect(0, 0, canvasSize, canvasSize);
     offCtx.globalCompositeOperation = "source-over";
 
@@ -476,10 +496,24 @@ export class Canvas2DAnimationRenderer {
       // unsupported on iOS Safari, so we draw a pre-tinted offscreen copy
       // instead of inverting at draw time (which left the grid black on iPhone).
       const isDarkMode = this.appManager.isDarkModeEnabled();
-      const tinted = isDarkMode
-        ? this.getTintedGrid(gridImage, canvasSize)
+      // Joined grids come painted, each hand's dots leaning toward its
+      // color; the plain grid stands in while that copy decodes.
+      const painted = this.currentGridJoin
+        ? this.imageLoader.getPaintedJoinedGrid(
+            joinedGridPaint(isDarkMode, params.primaryPropColors)
+          )
         : null;
-      ctx.drawImage(tinted ?? gridImage, 0, 0, canvasSize, canvasSize);
+      const tinted =
+        !painted && isDarkMode
+          ? this.getTintedGrid(gridImage, canvasSize)
+          : null;
+      ctx.drawImage(
+        painted ?? tinted ?? gridImage,
+        0,
+        0,
+        canvasSize,
+        canvasSize
+      );
       ctx.restore();
     }
 

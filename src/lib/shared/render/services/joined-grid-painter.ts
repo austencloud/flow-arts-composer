@@ -32,17 +32,24 @@ export function applyJoinedGridFit(
 }
 
 /**
- * Paint `points` in the current fill and stroke style, each at its kind's
- * radius. Box grids draw their outer points as rings.
+ * Paint `points`, each at its kind's radius: in its entry of `colors` when
+ * given (in point order), else in the current fill and stroke style. Box
+ * grids draw their outer points as rings.
  */
 export function paintGridPoints(
   ctx: RenderContext2D,
   points: readonly { kind: GridPointKind; x: number; y: number }[],
   size: number,
-  box: boolean
+  box: boolean,
+  colors?: readonly string[]
 ): void {
   const scale = size / VIEWBOX_SIZE;
-  for (const point of points) {
+  points.forEach((point, index) => {
+    const color = colors?.[index];
+    if (color) {
+      ctx.fillStyle = color;
+      ctx.strokeStyle = color;
+    }
     ctx.beginPath();
     ctx.arc(
       point.x * scale,
@@ -57,20 +64,30 @@ export function paintGridPoints(
     } else {
       ctx.fill();
     }
-  }
+  });
 }
 
 /**
- * Paint the layout's points that `include` accepts, in the current fill and
- * stroke style. Box grids draw their outer points as rings, as one box grid
- * does.
+ * Paint the layout's points that `include` accepts, each in its entry of
+ * `colors` (in point order, from `joinedPointColors`). Box grids draw their
+ * outer points as rings, as one box grid does.
  */
 export function paintJoinedGridPoints(
   ctx: RenderContext2D,
   layout: GridJoinLayout,
   size: number,
   box: boolean,
+  colors: readonly string[],
   include: (point: JoinedGridPoint) => boolean
 ): void {
-  paintGridPoints(ctx, layout.points.filter(include), size, box);
+  const shown = layout.points.flatMap((point, index) =>
+    include(point) ? [{ point, color: colors[index]! }] : []
+  );
+  paintGridPoints(
+    ctx,
+    shown.map(({ point }) => point),
+    size,
+    box,
+    shown.map(({ color }) => color)
+  );
 }

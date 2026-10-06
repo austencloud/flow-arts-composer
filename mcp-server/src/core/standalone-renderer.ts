@@ -52,6 +52,9 @@ import {
   type GridPointKind,
   getBetaOffsetSize,
   getGridJoinLayout,
+  JOINED_GRID_TINT,
+  joinedPointColors,
+  joinedPointsHands,
   gridJoinPropNudges,
   isGridJoin,
   type GridJoinLayout,
@@ -530,7 +533,20 @@ export class StandaloneRenderer {
     // 2. Grid
     if (showGrid) {
       const gridSvg = joinLayout
-        ? this.renderJoinedGrid(joinLayout, gridMode, darkMode, themeable)
+        ? this.renderJoinedGrid(joinLayout, gridMode, darkMode, themeable, {
+            left: this.resolveMotionColor(
+              "left",
+              darkMode,
+              themeable,
+              primaryPropColors
+            ),
+            right: this.resolveMotionColor(
+              "right",
+              darkMode,
+              themeable,
+              primaryPropColors
+            ),
+          })
         : this.renderGrid(
             gridMode,
             darkMode,
@@ -841,34 +857,76 @@ ${svgParts.join("\n")}
   }
 
   /**
-   * The joined grids' points from the shared layout, in this renderer's grid
-   * colors. Non-radial points are a one-grid overlay and stay off.
+   * The joined grids' points from the shared layout, each in this renderer's
+   * grid color leaning toward its hand's color (both hands' where the grids
+   * share the spot). Themeable output mixes the theme's CSS colors with
+   * color-mix(), by the same share. Box grids draw their outer points as
+   * rings, as one box grid does. Non-radial points are a one-grid overlay and
+   * stay off.
    */
   private renderJoinedGrid(
     layout: GridJoinLayout,
     gridMode: GridMode,
     darkMode: boolean,
-    themeable: boolean = false
+    themeable: boolean,
+    handColors: Record<HandSide, string>
   ): string {
-    return this.gridPointsGroup(layout.points, gridMode, darkMode, themeable);
+    const gridColor = this.gridColor(darkMode, themeable);
+    return this.gridPointsGroup(
+      layout.points,
+      gridMode,
+      darkMode,
+      themeable,
+      themeable
+        ? this.themeableJoinedPointColors(layout, gridColor, handColors)
+        : joinedPointColors(layout.points, gridColor, handColors)
+    );
   }
 
-  private gridPointsGroup(
-    points: readonly { kind: GridPointKind; x: number; y: number }[],
-    gridMode: GridMode,
-    darkMode: boolean,
-    themeable: boolean
-  ): string {
-    const gridColor = this.resolveColor(
+  private gridColor(darkMode: boolean, themeable: boolean): string {
+    return this.resolveColor(
       "--dm-grid-point",
       "#ffffff",
       "#000000",
       darkMode,
       themeable
     );
+  }
+
+  /** Grid points in the grid color, or each in its entry of `colors`. */
+  private gridPointsGroup(
+    points: readonly { kind: GridPointKind; x: number; y: number }[],
+    gridMode: GridMode,
+    darkMode: boolean,
+    themeable: boolean,
+    colors?: readonly string[]
+  ): string {
+    const gridColor = this.gridColor(darkMode, themeable);
     // Solid black in light mode; slightly see-through white in dark mode.
     const opacity = darkMode ? "0.85" : "1.0";
-    return `<g opacity="${opacity}">${gridPointsSvg(points, isBoxGrid(gridMode), gridColor)}</g>`;
+    const box = isBoxGrid(gridMode);
+    const circles = colors
+      ? points
+          .map((point, index) => gridPointsSvg([point], box, colors[index]!))
+          .join("")
+      : gridPointsSvg(points, box, gridColor);
+    return `<g style="color: ${gridColor}" opacity="${opacity}">${circles}</g>`;
+  }
+
+  /** `joinedPointColors` for CSS-variable colors, as color-mix() values. */
+  private themeableJoinedPointColors(
+    layout: GridJoinLayout,
+    gridColor: string,
+    handColors: Record<HandSide, string>
+  ): string[] {
+    const handShare = Math.round(JOINED_GRID_TINT * 100);
+    const shared = `color-mix(in srgb, ${handColors.left} 50%, ${handColors.right})`;
+    return joinedPointsHands(layout.points).map(
+      (hands) =>
+        `color-mix(in srgb, ${gridColor} ${100 - handShare}%, ${
+          hands === "both" ? shared : handColors[hands]
+        })`
+    );
   }
 
   // ==========================================================================

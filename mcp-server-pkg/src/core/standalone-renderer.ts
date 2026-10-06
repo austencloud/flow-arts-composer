@@ -51,6 +51,7 @@ import {
   getGridJoinLayout,
   gridJoinPropNudges,
   isGridJoin,
+  joinedPointColors,
   type GridJoinLayout,
   type GridJoinSpec,
   type JoinVec,
@@ -503,7 +504,10 @@ export class StandaloneRenderer {
     // 2. Grid
     if (showGrid) {
       const gridSvg = joinLayout
-        ? this.renderJoinedGrid(joinLayout, gridMode, darkMode)
+        ? this.renderJoinedGrid(joinLayout, gridMode, darkMode, {
+            left: resolveMotionColor("left", darkMode, primaryPropColors),
+            right: resolveMotionColor("right", darkMode, primaryPropColors),
+          })
         : this.renderGrid(gridMode, darkMode, showNonRadialPoints);
       if (gridSvg) sceneParts.push(gridSvg);
     }
@@ -668,26 +672,43 @@ ${svgParts.join("\n")}
   }
 
   /**
-   * The joined grids' points from the shared layout, in this renderer's grid
-   * colors. Non-radial points are a one-grid overlay and stay off.
+   * The joined grids' points from the shared layout, each in this renderer's
+   * grid color leaning toward its hand's color (both hands' where the grids
+   * share the spot). Box grids draw their outer points as rings, as one box
+   * grid does. Non-radial points are a one-grid overlay and stay off.
    */
   private renderJoinedGrid(
     layout: GridJoinLayout,
     gridMode: GridMode,
-    darkMode: boolean
+    darkMode: boolean,
+    handColors: Record<"left" | "right", string>
   ): string {
-    return this.gridPointsGroup(layout.points, gridMode, darkMode);
+    const gridColor = darkMode ? "#ffffff" : "#000000";
+    return this.gridPointsGroup(
+      layout.points,
+      gridMode,
+      darkMode,
+      joinedPointColors(layout.points, gridColor, handColors)
+    );
   }
 
+  /** Grid points in the grid color, or each in its entry of `colors`. */
   private gridPointsGroup(
     points: readonly { kind: GridPointKind; x: number; y: number }[],
     gridMode: GridMode,
-    darkMode: boolean
+    darkMode: boolean,
+    colors?: readonly string[]
   ): string {
     const gridColor = darkMode ? "#ffffff" : "#000000";
     // Solid black in light mode; slightly see-through white in dark mode.
     const opacity = darkMode ? "0.85" : "1.0";
-    return `<g opacity="${opacity}">${gridPointsSvg(points, isBoxGrid(gridMode), gridColor)}</g>`;
+    const box = isBoxGrid(gridMode);
+    const circles = colors
+      ? points
+          .map((point, index) => gridPointsSvg([point], box, colors[index]!))
+          .join("")
+      : gridPointsSvg(points, box, gridColor);
+    return `<g style="color: ${gridColor}" opacity="${opacity}">${circles}</g>`;
   }
 
   /**

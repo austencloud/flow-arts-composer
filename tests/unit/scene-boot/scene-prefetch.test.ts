@@ -18,6 +18,7 @@ import {
   _resetForTests,
   warmDecoderRuntimes,
   warmSceneAssets,
+  warmSceneUrls,
 } from "$lib/shared/3d/scene-boot/scene-prefetch";
 
 const OCEAN_URLS = sceneAssetUrls(BackgroundType.OCEAN);
@@ -129,6 +130,21 @@ describe("warmDecoderRuntimes", () => {
   it("respects Data Saver", async () => {
     setNavigatorProperty("connection", { saveData: true });
     warmDecoderRuntimes();
+    await Promise.resolve();
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+});
+
+describe("warmSceneUrls", () => {
+  it("warms only the named models, once, and respects Data Saver", async () => {
+    warmSceneUrls(["/models/cosmic/cosmic-reliquary.glb"]);
+    await vi.waitFor(() => expect(fetchMock).toHaveBeenCalledOnce());
+    expect(fetchedUrls()).toEqual(["/models/cosmic/cosmic-reliquary.glb"]);
+
+    fetchMock.mockClear();
+    warmSceneUrls(["/models/cosmic/cosmic-reliquary.glb"]);
+    setNavigatorProperty("connection", { saveData: true });
+    warmSceneUrls(["/models/cosmic/other.glb"]);
     await Promise.resolve();
     expect(fetchMock).not.toHaveBeenCalled();
   });

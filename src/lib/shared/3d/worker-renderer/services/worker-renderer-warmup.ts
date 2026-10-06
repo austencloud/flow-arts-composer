@@ -1,4 +1,12 @@
-import type { Camera, Object3D, Scene, WebGLRenderer } from "three";
+import {
+  Texture,
+  type Camera,
+  type Material,
+  type Object3D,
+  type Scene,
+  type WebGLRenderer,
+  type WebGLRenderTarget,
+} from "three";
 import { collectUniqueCompileTargets } from "../../scene-boot/renderer-program-targets";
 import type { WorkerRendererProgramMetric } from "../domain/worker-renderer-protocol";
 
@@ -141,4 +149,52 @@ export async function primeWorkerRenderer(
   }
 
   return renderables.length;
+}
+
+export interface LateObjectPreparationHandles {
+  renderer: Pick<
+    WebGLRenderer,
+    "compileAsync" | "initTexture" | "getRenderTarget" | "setRenderTarget"
+  >;
+  scene: Scene;
+  camera: Camera;
+}
+
+/**
+ * Readies an object that joins an already-live scene: compiles its programs
+ * against the scene's lights and uploads its textures, so its first draw does
+ * not stall the render loop. Program variants depend on the bound render
+ * target (tone mapping and output color space), so compile against the target
+ * the scene actually draws into. `compileAsync` resolves those parameters
+ * synchronously, so the live binding is restored before anything awaits.
+ */
+export async function prepareLateWorkerObject(
+  handles: LateObjectPreparationHandles,
+  object: Object3D,
+  sceneRenderTarget: WebGLRenderTarget | null
+): Promise<void> {
+  const { renderer, scene, camera } = handles;
+  const previous = renderer.getRenderTarget();
+  renderer.setRenderTarget(sceneRenderTarget);
+  let compilation: Promise<unknown>;
+  try {
+    compilation = renderer.compileAsync(object, camera, scene);
+  } finally {
+    renderer.setRenderTarget(previous);
+  }
+
+  const textures = new Set<Texture>();
+  object.traverse((child) => {
+    const material = (child as Object3D & { material?: Material | Material[] })
+      .material;
+    if (!material) return;
+    for (const entry of Array.isArray(material) ? material : [material]) {
+      for (const value of Object.values(entry)) {
+        if (value instanceof Texture) textures.add(value);
+      }
+    }
+  });
+  for (const texture of textures) renderer.initTexture(texture);
+
+  await compilation;
 }

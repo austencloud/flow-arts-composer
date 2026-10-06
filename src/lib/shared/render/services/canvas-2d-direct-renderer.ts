@@ -41,6 +41,7 @@ import {
   getGridJoinLayout,
   getGridPoints,
   isBoxGrid,
+  joinedPointColors,
   type GridJoinLayout,
 } from "@tka/render-core";
 import {
@@ -307,7 +308,8 @@ export class Canvas2DDirectRenderer implements IDirectRenderer {
         visibility.dotGrid
           ? (visibility.handPointVisibility ?? "all")
           : "all",
-        preparedPictograph
+        preparedPictograph,
+        visibility.primaryPropColors
       );
     } else if (visibility.dotGrid) {
       // The layer compositor's grid: painted dots, with only the hand points
@@ -622,7 +624,8 @@ export class Canvas2DDirectRenderer implements IDirectRenderer {
 
   /**
    * Both joined grids as dots, with the hand points `handPointVisibility`
-   * shows ("active": the points each hand lights in its own grid).
+   * shows ("active": the points each hand lights in its own grid). Each dot
+   * leans toward its hand's color, and spots both grids share toward the mix.
    * Non-radial points are a single-grid overlay and stay off.
    */
   private drawJoinedGrid(
@@ -632,24 +635,30 @@ export class Canvas2DDirectRenderer implements IDirectRenderer {
     gridMode: GridMode,
     layout: GridJoinLayout,
     handPointVisibility: "all" | "active" | "none",
-    pictograph: PreparedPictographData
+    pictograph: PreparedPictographData,
+    propColors: { left: string; right: string } | null | undefined
   ): void {
-    const pointColor = isDarkMode
-      ? GRID_POINT_COLOR_DARK
-      : GRID_POINT_COLOR_LIGHT;
+    const mode = isDarkMode ? "dark" : "light";
+    const colors = joinedPointColors(
+      layout.points,
+      isDarkMode ? GRID_POINT_COLOR_DARK : GRID_POINT_COLOR_LIGHT,
+      {
+        left: propColors?.left ?? getMotionColor(HandSide.LEFT, mode),
+        right: propColors?.right ?? getMotionColor(HandSide.RIGHT, mode),
+      }
+    );
     const active =
       handPointVisibility === "active"
         ? getJoinedActiveHandPoints(pictograph)
         : null;
     ctx.save();
     ctx.globalAlpha = isDarkMode ? 0.85 : 1.0;
-    ctx.fillStyle = pointColor;
-    ctx.strokeStyle = pointColor;
     paintJoinedGridPoints(
       ctx,
       layout,
       size,
       gridMode === GridMode.BOX,
+      colors,
       (point) =>
         point.kind !== "hand" ||
         (handPointVisibility !== "none" &&
