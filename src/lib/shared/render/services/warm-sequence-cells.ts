@@ -19,6 +19,7 @@ import { startPlacementDeriver } from "$lib/shared/pictograph/shared/services/st
 import { detectMixedDurations } from "$lib/shared/choreo-card/services/step-durations";
 import { getSequenceMotionVisibility } from "$lib/shared/foundation/services/sequence-motion-profile";
 import type { CardExportTrace } from "$lib/shared/render/services/card-export-trace";
+import { gridJoinCellResolver } from "@tka/render-core";
 
 export interface WarmOptions {
   /** Scan cards render dark by default. */
@@ -199,9 +200,16 @@ export function getCanonicalSequenceCells(
     data: PictographData;
     options: PreviewCellRenderOptions;
   }[] = [];
+  // A joined card asks the cloud for cells set to the sequence's one join (the
+  // join is part of each cell's key), so the warm uploads those same cells.
+  const withJoin = gridJoinCellResolver({ conjoined: sequence.conjoined });
   const start = startPlacementDeriver.getOrDeriveStartPlacement(sequence);
   if (start)
-    entries.push({ cell: "start", data: start, options: renderOptions });
+    entries.push({
+      cell: "start",
+      data: withJoin(start),
+      options: renderOptions,
+    });
   // Mixed-duration cards render held beats as WIDE cells with
   // widthMultiplier = duration, and the multiplier is part of the cache key
   // (`|wm2|`). The warm must derive the same per-cell options as ChoreoCard
@@ -214,7 +222,7 @@ export function getCanonicalSequenceCells(
       mixed && duration !== 1
         ? { ...renderOptions, widthMultiplier: duration }
         : renderOptions;
-    entries.push({ cell: index + 1, data: step, options });
+    entries.push({ cell: index + 1, data: withJoin(step), options });
   });
 
   return entries;
