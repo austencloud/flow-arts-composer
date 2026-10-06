@@ -596,7 +596,8 @@ export class ImageComposer {
     // Custom palettes must not seed default preview cells.
     if (visibilitySettings.primaryPropColors) return;
     // Nor may joined grids: the preview-cell key has no join term.
-    if (isGridJoin(pictographData.conjoined)) return;
+    if ("conjoined" in pictographData && isGridJoin(pictographData.conjoined))
+      return;
     const isDark = visibilitySettings.darkMode ?? false;
     const leftProp = visibilitySettings.leftPropType;
     const rightProp = visibilitySettings.rightPropType;

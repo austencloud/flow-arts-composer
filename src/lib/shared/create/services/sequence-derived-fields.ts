@@ -18,6 +18,7 @@ import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
 import { deriveGridMode } from "$lib/shared/pictograph/grid/services/grid-mode-deriver";
 import { getGridPlacementFromLocations } from "$lib/shared/pictograph/grid/services/grid-placement-deriver";
 import { rotateMotion } from "./motion-transforms";
+import { rotateGridJoin } from "./grid-join-transforms";
 
 /**
  * Recompute gridMode + start/end placements from a step's motions.
@@ -146,5 +147,6 @@ export function rotateSequenceGeometry(seq: SequenceData, steps: number): Sequen
     startPlacement,
     startingPlacement,
     gridMode,
+    ...(seq.conjoined && { conjoined: rotateGridJoin(seq.conjoined, steps) }),
   });
 }
