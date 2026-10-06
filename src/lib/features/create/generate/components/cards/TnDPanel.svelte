@@ -214,6 +214,12 @@
 
   .choice-stack > :global(.relationship-choice) {
     min-height: 4.5rem;
+    --choice-copy-size: var(--font-size-base, 1rem);
+  }
+
+  .choice-stack > :global(.relationship-choice .choice-dot) {
+    width: 0.9rem;
+    height: 0.9rem;
   }
 
   .section-head {
@@ -381,7 +387,7 @@
 
     .choice-stack {
       display: grid;
-      grid-template-rows: minmax(0, 1fr) minmax(0, 3fr);
+      grid-template-rows: 4.5rem minmax(0, 1fr);
       gap: clamp(10px, 1.25cqh, 18px);
     }
 

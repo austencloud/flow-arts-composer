@@ -888,6 +888,7 @@ Animates forward in z-axis and expands to fill the container space
   .grid-container {
     flex: 1;
     min-height: 0;
+    container-type: inline-size;
     overflow-y: auto;
     overflow-anchor: none;
     overscroll-behavior: contain;
