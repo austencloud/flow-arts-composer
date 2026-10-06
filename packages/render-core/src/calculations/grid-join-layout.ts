@@ -170,33 +170,61 @@ export function gridJoinCellResolver(sequence: {
   };
 }
 
-/** Each hand's grid offset: half the center distance either side of center. */
-export function gridJoinOffsets(join: GridJoinSpec): Record<Hand, JoinVec> {
+/**
+ * Each hand's grid offset: half the center distance either side of center.
+ * `handRadius` is the painter's own center-to-hand-point distance (the cards'
+ * is the default; the 2D animation draws 150, and passes 1 for offsets in
+ * hand-point radii).
+ */
+export function gridJoinOffsets(
+  join: GridJoinSpec,
+  handRadius: number = JOIN_HAND_RADIUS
+): Record<Hand, JoinVec> {
   const unit = LOCATION_UNIT[join.toward];
-  const half = (join.steps * JOIN_HAND_RADIUS) / 2;
+  const half = (join.steps * handRadius) / 2;
   return {
     left: { x: -unit.x * half, y: -unit.y * half },
     right: { x: unit.x * half, y: unit.y * half },
   };
 }
 
-const layoutCache = new Map<string, GridJoinLayout>();
+/** The grid locations a drawn grid has hand and outer points at. */
+export const JOIN_GRID_LOCATIONS: Readonly<
+  Record<"diamond" | "box", readonly GridLocation[]>
+> = GRID_LOCATIONS;
+
+/** A painter's own grid size: center to hand point and center to outer point. */
+export interface JoinGridGeometry {
+  readonly handRadius: number;
+  readonly outerRadius: number;
+}
+
+/** The painters' grid size on the 950-unit card scene. */
+const CARD_GRID_GEOMETRY: JoinGridGeometry = {
+  handRadius: JOIN_HAND_RADIUS,
+  outerRadius: OUTER_RADIUS,
+};
+
+export interface JoinedGridPlan {
+  /** Each hand's grid offset from the scene center, before any fit scale. */
+  readonly offsets: Readonly<Record<Hand, JoinVec>>;
+  /** Points to draw, after shared points merge and crowded outer points hide. */
+  readonly points: readonly JoinedGridPoint[];
+}
 
 /**
- * The joined layout for a join and grid mode. Box draws box grids; every
- * other mode draws diamond grids, as the single-grid painters do.
+ * Which points two joined grids draw, for any grid size. This is the one rule
+ * every joined painter follows (the cards' layout and the 2D animation's grid
+ * picture): a point both grids share is drawn once, by the blue grid, and an
+ * outer point that lands beside the other grid's point is hidden. Coordinates
+ * are in the 950-unit scene, centered on 475.
  */
-export function getGridJoinLayout(
+export function planJoinedGridPoints(
   join: GridJoinSpec,
-  gridMode: string | undefined
-): GridJoinLayout {
-  const box = gridMode === "box";
-  const cacheKey = `${gridJoinKey(join)}:${box ? "box" : "diamond"}`;
-  const cached = layoutCache.get(cacheKey);
-  if (cached) return cached;
-
-  const offsets = gridJoinOffsets(join);
-  const locations = GRID_LOCATIONS[box ? "box" : "diamond"];
+  locations: readonly GridLocation[],
+  geometry: JoinGridGeometry
+): JoinedGridPlan {
+  const offsets = gridJoinOffsets(join, geometry.handRadius);
   const raw: {
     hand: Hand;
     kind: JoinedGridPointKind;
@@ -214,15 +242,15 @@ export function getGridJoinLayout(
         hand,
         kind: "hand",
         location,
-        x: cx + unit.x * JOIN_HAND_RADIUS,
-        y: cy + unit.y * JOIN_HAND_RADIUS,
+        x: cx + unit.x * geometry.handRadius,
+        y: cy + unit.y * geometry.handRadius,
       });
       raw.push({
         hand,
         kind: "outer",
         location,
-        x: cx + unit.x * OUTER_RADIUS,
-        y: cy + unit.y * OUTER_RADIUS,
+        x: cx + unit.x * geometry.outerRadius,
+        y: cy + unit.y * geometry.outerRadius,
       });
     }
   }
@@ -256,7 +284,44 @@ export function getGridJoinLayout(
         : [{ hand: point.hand, location: point.location }],
     });
   }
+  return { offsets, points };
+}
 
+/** The key a hand's grid point is looked up by: "outer:e", "center:c". */
+export function joinedPointKey(
+  kind: JoinedGridPointKind,
+  location: GridLocation
+): string {
+  return `${kind}:${location}`;
+}
+
+/**
+ * The points one hand's grid draws, as `joinedPointKey` keys. A point both
+ * grids share belongs to the blue grid alone, which is where the plan puts
+ * its first member.
+ */
+export function joinedPointsDrawnBy(
+  points: readonly JoinedGridPoint[],
+  hand: Hand
+): ReadonlySet<string> {
+  const keys = new Set<string>();
+  for (const point of points) {
+    const owner = point.members[0]!;
+    if (owner.hand === hand)
+      keys.add(joinedPointKey(point.kind, owner.location));
+  }
+  return keys;
+}
+
+/**
+ * Scale about the scene center that keeps joined points (and their drawn
+ * dots) `margin` units inside the scene edge; 1 when they already fit.
+ */
+export function joinedFitScale(
+  points: readonly JoinedGridPoint[],
+  box: boolean,
+  margin: number
+): number {
   const outerReach =
     JOINED_POINT_RADIUS.outer + (box ? BOX_OUTER_RING_WIDTH / 2 : 0);
   const reach = Math.max(
@@ -269,7 +334,30 @@ export function getGridJoinLayout(
         (point.kind === "outer" ? outerReach : JOINED_POINT_RADIUS[point.kind])
     )
   );
-  const scale = Math.min(1, (SCENE_CENTER - FIT_MARGIN) / reach);
+  return Math.min(1, (SCENE_CENTER - margin) / reach);
+}
+
+const layoutCache = new Map<string, GridJoinLayout>();
+
+/**
+ * The joined layout for a join and grid mode. Box draws box grids; every
+ * other mode draws diamond grids, as the single-grid painters do.
+ */
+export function getGridJoinLayout(
+  join: GridJoinSpec,
+  gridMode: string | undefined
+): GridJoinLayout {
+  const box = gridMode === "box";
+  const cacheKey = `${gridJoinKey(join)}:${box ? "box" : "diamond"}`;
+  const cached = layoutCache.get(cacheKey);
+  if (cached) return cached;
+
+  const { offsets, points } = planJoinedGridPoints(
+    join,
+    GRID_LOCATIONS[box ? "box" : "diamond"],
+    CARD_GRID_GEOMETRY
+  );
+  const scale = joinedFitScale(points, box, FIT_MARGIN);
 
   const layout: GridJoinLayout = Object.freeze({
     join: Object.freeze({ toward: join.toward, steps: join.steps }),
