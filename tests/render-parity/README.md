@@ -23,6 +23,13 @@ the key must fail that region, even when the change is too small to fail the
 whole body. The same check runs against source, package-source, and installed
 MCP output with the default, dark-mode, and custom hand colors.
 
+Each Start-cell prop also gets a small crop around the grid hand point it
+covers (`leftHandPoint`, `rightHandPoint`). The props hide those points, so a
+grid dot painted over a staff fails here although it is far too small to fail
+the body. A negative control paints that dot back onto a light, a print, and a
+dark joined card. The MCP comparison measures these crops; the live-card gate
+below does not yet.
+
 For visual investigation, run `pnpm exec tsx tests/render-parity/serve-card-parity.ts`
 from the repository root and open the printed loopback URL. The page uses the
 same Composer fixture adapter as the automated test. PNG triplets and metrics

@@ -62,13 +62,12 @@ export type RenderContext2D =
 /**
  * Layer types for compositional caching
  *
- * - base: Props + Arrows (no grid dots)
- * - gridPoints: Grid dots only (toggleable via handPointVisibility)
+ * - base: Grid dots (hand points included, under the props) + Props + Arrows
  * - tka: Letter + Turns + DirectionDot
  * - reversal: Blue/red reversal indicators
  * - beat: Beat number text
  */
-export type LayerType = "base" | "gridPoints" | "tka" | "reversal" | "beat";
+export type LayerType = "base" | "tka" | "reversal" | "beat";
 
 /**
  * Options for layer rendering
@@ -148,7 +147,6 @@ export interface CompositionResult {
   timing: {
     totalMs: number;
     baseLayerMs: number;
-    gridPointsLayerMs: number;
     tkaLayerMs: number;
     reversalLayerMs: number;
     beatLayerMs: number;
@@ -156,7 +154,6 @@ export interface CompositionResult {
   };
   cacheStats: {
     baseFromCache: boolean;
-    gridPointsFromCache: boolean;
     tkaFromCache: boolean;
     reversalFromCache: boolean;
   };
@@ -167,13 +164,10 @@ export interface CompositionResult {
  */
 export interface LayerCacheStats {
   baseCacheSize: number;
-  gridPointsCacheSize: number;
   tkaCacheSize: number;
   reversalCacheSize: number;
   baseCacheHits: number;
   baseCacheMisses: number;
-  gridPointsCacheHits: number;
-  gridPointsCacheMisses: number;
   tkaCacheHits: number;
   tkaCacheMisses: number;
   totalCompositions: number;

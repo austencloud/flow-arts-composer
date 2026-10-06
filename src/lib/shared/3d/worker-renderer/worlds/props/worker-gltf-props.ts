@@ -24,6 +24,9 @@ import { CANONICAL_PROP_TYPE } from "./worker-prop-factory-types";
 
 interface PropModelEntry {
   modelUrl: string;
+  /** A different model for the red (right) hand: a found stick is never the
+   * same branch twice. Absent, both hands load `modelUrl`. */
+  rightHandModelUrl?: string;
   scale: number;
   gripOffsetY: number;
   flipLongAxis?: boolean;
@@ -98,6 +101,11 @@ export const WORKER_PROP_MODEL_REGISTRY: Partial<
     scale: 1,
     gripOffsetY: 0,
   }),
+  [CANONICAL_PROP_TYPE.STICK]: model("stick.glb", {
+    rightHandModelUrl: "/models/props/stick-right.glb",
+    scale: 1,
+    gripOffsetY: 0,
+  }),
 };
 
 export interface WorkerPropModelResolution {
@@ -141,6 +149,7 @@ export const REGISTRY_WORKER_PROP_TYPES = [
   CANONICAL_PROP_TYPE.BIGDOUBLECONTACTBALL,
   CANONICAL_PROP_TYPE.CAPSULE_BATON,
   CANONICAL_PROP_TYPE.FIRE_DOUBLE_STAFF,
+  CANONICAL_PROP_TYPE.STICK,
 ] as const;
 
 export function resolveWorkerPropModel(
@@ -277,16 +286,20 @@ function createRotatedVisual(
 }
 
 /**
- * Prop3D.svelte stretches the fire double staff's long axis to the performer's
- * staff length and keeps its grip diameter. The model is authored 900 mm end to
- * end (scripts/fire-double-staff-stations.json); every other model keeps its
- * size.
+ * Prop3D.svelte stretches the fire double staff's and the stick's long axis to
+ * the performer's staff length and keeps the grip diameter. Both are authored
+ * 900 mm end to end (scripts/fire-double-staff-stations.json,
+ * scripts/stick-stations.json); every other model keeps its size.
  */
-const FIRE_DOUBLE_STAFF_AUTHORED_LENGTH_M = 0.9;
+const STRETCHED_AUTHORED_LENGTH_M = 0.9;
+const STRETCHED_PROP_TYPES: ReadonlySet<string> = new Set([
+  CANONICAL_PROP_TYPE.FIRE_DOUBLE_STAFF,
+  CANONICAL_PROP_TYPE.STICK,
+]);
 
 function registryLengthScaleY(options: WorkerPropFactoryOptions): number {
-  return options.propType === CANONICAL_PROP_TYPE.FIRE_DOUBLE_STAFF
-    ? options.length / FIRE_DOUBLE_STAFF_AUTHORED_LENGTH_M
+  return STRETCHED_PROP_TYPES.has(options.propType)
+    ? options.length / STRETCHED_AUTHORED_LENGTH_M
     : 1;
 }
 
@@ -295,7 +308,11 @@ export async function createRegistryWorkerProp(
   resolution: WorkerPropModelResolution
 ): Promise<WorkerPropVisual | null> {
   if (!options.loadModel) return null;
-  const source = await options.loadModel(resolution.entry.modelUrl);
+  const modelUrl =
+    options.color === "red" && resolution.entry.rightHandModelUrl
+      ? resolution.entry.rightHandModelUrl
+      : resolution.entry.modelUrl;
+  const source = await options.loadModel(modelUrl);
   const scene = source.clone(true);
   const ownedMaterials = new Set<Material>();
   recolorRegistryScene(scene, options.color, ownedMaterials);

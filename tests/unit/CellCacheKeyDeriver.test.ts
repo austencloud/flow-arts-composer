@@ -550,6 +550,39 @@ describe("CellCacheKeyDeriver (lsp11/lsp12 composition)", () => {
     });
   });
 
+  describe("hand points under props revision", () => {
+    const keyFor = (overrides: Partial<PreviewCellRenderOptions>) =>
+      deriver.deriveCacheKey(
+        makeStartPlacement(),
+        undefined,
+        true,
+        makeOptions(overrides)
+      );
+
+    // Cells cached while the compositor painted hand points over the props
+    // carry a dot on every staff. They must miss, in every hand-point mode.
+    it("rekeys every cell drawn with hand points showing", () => {
+      for (const handPointVisibility of ["all", "active"] as const) {
+        const key = keyFor({ handPointVisibility });
+        expect(key).toContain(
+          '"gridPointRevision":"hand-points-under-props-v1"'
+        );
+        expect(key).toMatch(/^lsp11-/);
+      }
+    });
+
+    it("keeps keys whose pixels never changed", () => {
+      // No hand points, no grid, or the full renderer a custom palette uses.
+      expect(keyFor({ handPointVisibility: "none" })).not.toContain(
+        "gridPointRevision"
+      );
+      expect(keyFor({ showGrid: false })).not.toContain("gridPointRevision");
+      expect(
+        keyFor({ primaryPropColors: { left: "#123456", right: "#abcdef" } })
+      ).not.toContain("gridPointRevision");
+    });
+  });
+
   describe("gridMode differentiation (previously missing entirely)", () => {
     it("diamond vs box mode produces different keys", () => {
       // Diamond mode: cardinal locations

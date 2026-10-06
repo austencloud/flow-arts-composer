@@ -895,12 +895,6 @@
       propLook: cardPropLook,
       triangleGrip: cardTriangleGrip,
       primaryPropColors: effectivePrimaryPropColors,
-      // The compositor renders canonical blue/red cards in two layers, placing
-      // grid points over props. A genuinely custom palette uses its direct
-      // renderer, where grid sits below props instead.
-      ...(exportPresentation && {
-        gridPointsOnTop: !snapshotPrimaryPropColors,
-      }),
       // A scan represents the printed card, not the scanner's personal export
       // toggles. Pin the same canonical visibility used when QR creation
       // verifies cloud assets; retain the sequence's participating hands.

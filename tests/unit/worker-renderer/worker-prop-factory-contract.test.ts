@@ -28,8 +28,11 @@ const CANONICAL_PROP_SOURCE_HASHES = {
   // which the worker snapshot resolves the same way. MODEL_BUILD_LENGTHS in
   // scene-prop-catalog.ts records which models stretch, so the staff-grip lab
   // reports the length that is drawn; change it with the stretch.
+  // Stick: Prop3D stretches the stick the same way, and swaps in the entry's
+  // rightHandModelUrl for the red hand. createRegistryWorkerProp makes both
+  // choices from STRETCHED_PROP_TYPES and its own rightHandModelUrl.
   "Prop3D.svelte":
-    "325058d080be065746d30769d98724463c32d0dd3c9c30e09e1fab2e94db5ad9",
+    "6823e39d2150183267bd41b51bb6bc404b3d578dfeb2aa86887a80018e380a69",
   // Hand colors (d11b2ce06c): the component re-clones when the hand palette
   // changes. The worker recolors from the same live PROP_COLORS object and
   // rebuilds a performer whose snapshot handColors differ, so it already
@@ -79,8 +82,10 @@ const CANONICAL_PROP_SOURCE_HASHES = {
     "802012b4eb486184939ecc7b51f4da29e154ec01dd7f6f72fefa81fe83b5fd45",
   "frame-materials.ts":
     "b87df4094b88553c53cf560df7f741655284c52894a48f4b631d8d87336c3ceb",
+  // Stick: stick.glb for the left hand, stick-right.glb for the right, the
+  // same pair worker-gltf-props.ts registers.
   "prop-model-registry.ts":
-    "203495aac2e641cb0e69a1d467884d769eab7dd6bbdb1f4faf3dd5365800cd15",
+    "df5dad3b015a70acac80731e7ea7e81bfc6025639a39c7cb8a8b639fcf03247c",
   "prop-model-recolor.ts":
     "01f7cda639579236bf5cc45c3806f70b9967d5fa7a91c157f78959ad15f38813",
 } as const;

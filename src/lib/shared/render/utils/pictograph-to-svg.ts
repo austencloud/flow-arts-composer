@@ -74,11 +74,11 @@ export interface PictographVisibilityOptions {
    */
   showGrid?: boolean;
   /**
-   * When true, render only the base grid (center + outer corner points).
-   * Hand points and layer 2 points are excluded - they're rendered in a separate layer.
-   * Used by LayerCompositor for compositional caching.
+   * Paint the grid as dots (center, outer points, and the hand points
+   * handPointVisibility shows) instead of drawing the grid SVG. Used by
+   * LayerCompositor for its cached base layer.
    */
-  baseGridOnly?: boolean;
+  dotGrid?: boolean;
   /** Render as hand path visualization (HAND props, float arrows, no TKA) */
   handPathMode?: boolean;
   /** Show blue motion (prop + arrow). When false, renderer skips blue entirely. Default: true. */

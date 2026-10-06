@@ -2,15 +2,9 @@ import type { LayerType, LayerRenderOptions, LayerVisibility, LayerRenderResult,
 import type { PreparedPictographData } from "../../pictograph/shared/domain/models/prepared-pictograph-data";
 import { isVisibleMotion } from "../../pictograph/shared/domain/models/motion-data";
 import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import { deriveBaseLayerKey, deriveGridPointsLayerKey, deriveTKALayerKey, deriveReversalLayerKey, getJoinedActiveHandPoints } from "./layer-key-deriver";
-import { getGridJoinLayout } from "@tka/render-core";
-import {
-  applyJoinedGridFit,
-  paintJoinedGridPoints,
-} from "./joined-grid-painter";
+import { deriveBaseLayerKey, deriveTKALayerKey, deriveReversalLayerKey } from "./layer-key-deriver";
 import { turnsTupleGenerator } from "../../pictograph/arrow/positioning/placement/services/turns-tuple-generator";
 import type { Letter } from "../../foundation/domain/models/letter";
-import { GridMode } from "../../pictograph/grid/domain/enums/grid-enums";
 import { interpretTurnColors, resolveTurnDisplayColor, BLUE_HEX, RED_HEX } from "../../pictograph/tka-glyph/services/turn-color-interpreter";
 
 interface TurnsMotionVisibility {
@@ -52,41 +46,7 @@ const DASH_RADIUS = 9.5;
 const DASH_FILL_DARK = "#231f20"; 
 const DASH_FILL_LIGHT = "#ffffff"; 
 
-const DIAMOND_GRID_POINTS = {
-  handPoints: {
-    n: { x: 475, y: 331.9, r: 4.7 },
-    e: { x: 618.1, y: 475, r: 4.7 },
-    s: { x: 475, y: 618.1, r: 4.7 },
-    w: { x: 331.9, y: 475, r: 4.7 },
-  },
-  layer2Points: {
-    ne: { x: 618.1, y: 331.9, r: 8.8 },
-    se: { x: 618.1, y: 618.1, r: 8.8 },
-    sw: { x: 331.9, y: 618.1, r: 8.8 },
-    nw: { x: 331.9, y: 331.9, r: 8.8 },
-  },
-};
-
-const BOX_GRID_POINTS = {
-  handPoints: {
-    ne: { x: 618.1, y: 331.9, r: 4.7 },
-    se: { x: 618.1, y: 618.1, r: 4.7 },
-    sw: { x: 331.9, y: 618.1, r: 4.7 },
-    nw: { x: 331.9, y: 331.9, r: 4.7 },
-  },
-  layer2Points: {
-    n: { x: 475, y: 331.9, r: 8.8 },
-    e: { x: 618.1, y: 475, r: 8.8 },
-    s: { x: 475, y: 618.1, r: 8.8 },
-    w: { x: 331.9, y: 475, r: 8.8 },
-  },
-};
-
-const GRID_POINT_COLOR_LIGHT = "#000000";
-const GRID_POINT_COLOR_DARK = "#ffffff";
-
 const BASE_CACHE_LIMIT = 2000;
-const GRID_POINTS_CACHE_LIMIT = 500;
 const TKA_CACHE_LIMIT = 500;
 const REVERSAL_CACHE_LIMIT = 10;
 
@@ -103,7 +63,6 @@ function createCanvas(width: number, height: number): RenderCanvas {
 export class LayerCompositor {
 
   private baseCache = new Map<string, RenderCanvas>();
-  private gridPointsCache = new Map<string, RenderCanvas>();
   private tkaCache = new Map<string, RenderCanvas>();
   private reversalCache = new Map<string, RenderCanvas>();
 
@@ -113,8 +72,6 @@ export class LayerCompositor {
   private stats = {
     baseCacheHits: 0,
     baseCacheMisses: 0,
-    gridPointsCacheHits: 0,
-    gridPointsCacheMisses: 0,
     tkaCacheHits: 0,
     tkaCacheMisses: 0,
     totalCompositions: 0,
@@ -133,7 +90,6 @@ export class LayerCompositor {
     const timing = {
       totalMs: 0,
       baseLayerMs: 0,
-      gridPointsLayerMs: 0,
       tkaLayerMs: 0,
       reversalLayerMs: 0,
       beatLayerMs: 0,
@@ -142,7 +98,6 @@ export class LayerCompositor {
 
     const cacheStats = {
       baseFromCache: false,
-      gridPointsFromCache: false,
       tkaFromCache: false,
       reversalFromCache: false,
     };
@@ -180,16 +135,6 @@ export class LayerCompositor {
     const baseResult = await this.renderBaseLayer(pictograph, options);
     timing.baseLayerMs = performance.now() - baseStart;
     cacheStats.baseFromCache = baseResult.fromCache;
-
-    // Grid off hides the hand/non-radial points overlay entirely (the base
-    // grid is suppressed inside renderBaseLayerInternal via visibility.showGrid).
-    const gridOn = options.showGrid !== false;
-    const gridPointsStart = performance.now();
-    const gridPointsResult = gridOn
-      ? await this.renderGridPointsOverlay(pictograph, options)
-      : null;
-    timing.gridPointsLayerMs = performance.now() - gridPointsStart;
-    cacheStats.gridPointsFromCache = gridPointsResult?.fromCache ?? false;
 
     const motionVisibility = {
       showLeftMotion: options.showLeftMotion,
@@ -234,9 +179,6 @@ export class LayerCompositor {
     }
 
     ctx.drawImage(baseResult.canvas, coreOffset, 0);
-    if (gridPointsResult) {
-      ctx.drawImage(gridPointsResult.canvas, coreOffset, 0);
-    }
     if (tkaResult) {
       ctx.drawImage(tkaResult.canvas, 0, 0);
     }
@@ -286,44 +228,6 @@ export class LayerCompositor {
       if (firstKey) this.baseCache.delete(firstKey);
     }
     this.baseCache.set(cacheKey, canvas);
-
-    return {
-      canvas,
-      cacheKey,
-      fromCache: false,
-      renderTimeMs: performance.now() - startTime,
-    };
-  }
-
-  async renderGridPointsOverlay(
-    pictograph: PreparedPictographData,
-    options: LayerRenderOptions
-  ): Promise<LayerRenderResult> {
-    const startTime = performance.now();
-    const cacheKey = deriveGridPointsLayerKey(pictograph, options);
-
-    const cached = this.gridPointsCache.get(cacheKey);
-    if (cached) {
-      this.stats.gridPointsCacheHits++;
-      this.gridPointsCache.delete(cacheKey);
-      this.gridPointsCache.set(cacheKey, cached);
-      return {
-        canvas: cached,
-        cacheKey,
-        fromCache: true,
-        renderTimeMs: performance.now() - startTime,
-      };
-    }
-
-    this.stats.gridPointsCacheMisses++;
-
-    const canvas = await this.renderGridPointsOverlayInternal(pictograph, options);
-
-    if (this.gridPointsCache.size >= GRID_POINTS_CACHE_LIMIT) {
-      const firstKey = this.gridPointsCache.keys().next().value;
-      if (firstKey) this.gridPointsCache.delete(firstKey);
-    }
-    this.gridPointsCache.set(cacheKey, canvas);
 
     return {
       canvas,
@@ -424,13 +328,10 @@ export class LayerCompositor {
   getCacheStats(): LayerCacheStats {
     return {
       baseCacheSize: this.baseCache.size,
-      gridPointsCacheSize: this.gridPointsCache.size,
       tkaCacheSize: this.tkaCache.size,
       reversalCacheSize: this.reversalCache.size,
       baseCacheHits: this.stats.baseCacheHits,
       baseCacheMisses: this.stats.baseCacheMisses,
-      gridPointsCacheHits: this.stats.gridPointsCacheHits,
-      gridPointsCacheMisses: this.stats.gridPointsCacheMisses,
       tkaCacheHits: this.stats.tkaCacheHits,
       tkaCacheMisses: this.stats.tkaCacheMisses,
       totalCompositions: this.stats.totalCompositions,
@@ -439,14 +340,11 @@ export class LayerCompositor {
 
   clearCache(): void {
     this.baseCache.clear();
-    this.gridPointsCache.clear();
     this.tkaCache.clear();
     this.reversalCache.clear();
     this.stats = {
       baseCacheHits: 0,
       baseCacheMisses: 0,
-      gridPointsCacheHits: 0,
-      gridPointsCacheMisses: 0,
       tkaCacheHits: 0,
       tkaCacheMisses: 0,
       totalCompositions: 0,
@@ -457,9 +355,6 @@ export class LayerCompositor {
     switch (layer) {
       case "base":
         this.baseCache.clear();
-        break;
-      case "gridPoints":
-        this.gridPointsCache.clear();
         break;
       case "tka":
         this.tkaCache.clear();
@@ -501,8 +396,12 @@ export class LayerCompositor {
         darkMode: options.darkMode,
         showTKA: false,
         showReversals: false,
-        baseGridOnly: true,
+        // The cached base paints the grid as dots, hand points included, so
+        // the props cover the points they sit on, as in the live pictograph.
+        dotGrid: true,
         showGrid: options.showGrid,
+        handPointVisibility: options.handPointVisibility,
+        showNonRadialPoints: options.showNonRadialPoints,
         fanAppearance: options.fanAppearance,
         propLook: options.propLook,
         triangleGrip: options.triangleGrip,
@@ -567,112 +466,6 @@ export class LayerCompositor {
     }
 
     return canvas;
-  }
-
-  private async renderGridPointsOverlayInternal(
-    pictograph: PreparedPictographData,
-    options: LayerRenderOptions
-  ): Promise<RenderCanvas> {
-    const canvas = createCanvas(options.size, options.size);
-    const ctx = canvas.getContext("2d")! as RenderContext2D;
-
-    ctx.clearRect(0, 0, options.size, options.size);
-
-    const scale = options.size / VIEWBOX_SIZE;
-    const pointColor = options.darkMode ? GRID_POINT_COLOR_DARK : GRID_POINT_COLOR_LIGHT;
-
-    ctx.globalAlpha = options.darkMode ? 0.85 : 1.0;
-    ctx.fillStyle = pointColor;
-
-    const gridMode = pictograph._prepared?.gridMode ?? GridMode.DIAMOND;
-
-    // Joined grids: each grid's hand points, under the fit scale the base
-    // layer draws with. Non-radial points are a single-grid overlay.
-    const join = pictograph._prepared?.join;
-    if (join) {
-      if (options.handPointVisibility !== "none") {
-        const layout = getGridJoinLayout(join, gridMode);
-        const active =
-          options.handPointVisibility === "active"
-            ? getJoinedActiveHandPoints(pictograph)
-            : null;
-        ctx.save();
-        applyJoinedGridFit(ctx, options.size, layout);
-        paintJoinedGridPoints(
-          ctx,
-          layout,
-          options.size,
-          gridMode === GridMode.BOX,
-          (point) =>
-            point.kind === "hand" &&
-            (!active ||
-              point.members.some((member) =>
-                active[member.hand].has(member.location)
-              ))
-        );
-        ctx.restore();
-      }
-      ctx.globalAlpha = 1.0;
-      return canvas;
-    }
-
-    const gridPoints = gridMode === GridMode.BOX ? BOX_GRID_POINTS : DIAMOND_GRID_POINTS;
-
-    const activeLocations = this.getActiveHandLocations(pictograph, options.handPointVisibility, gridMode);
-
-    for (const [location, point] of Object.entries(gridPoints.handPoints)) {
-      if (options.handPointVisibility === "none") {
-        continue;
-      }
-      if (options.handPointVisibility === "active" && !activeLocations.has(location)) {
-        continue;
-      }
-      ctx.beginPath();
-      ctx.arc(point.x * scale, point.y * scale, point.r * scale, 0, Math.PI * 2);
-      ctx.fill();
-    }
-
-    if (options.showNonRadialPoints) {
-      for (const point of Object.values(gridPoints.layer2Points)) {
-        ctx.beginPath();
-        ctx.arc(point.x * scale, point.y * scale, point.r * scale, 0, Math.PI * 2);
-        ctx.fill();
-      }
-    }
-
-    ctx.globalAlpha = 1.0;
-    return canvas;
-  }
-
-  private getActiveHandLocations(
-    pictograph: PreparedPictographData,
-    handPointVisibility: "all" | "active" | "none",
-    gridMode: GridMode = GridMode.DIAMOND
-  ): Set<string> {
-    if (handPointVisibility === "none") {
-      return new Set();
-    }
-    if (handPointVisibility === "all") {
-      return gridMode === GridMode.BOX
-        ? new Set(["ne", "se", "sw", "nw"]) 
-        : new Set(["n", "e", "s", "w"]);   
-    }
-
-    const activeLocations = new Set<string>();
-
-    const leftMotion = pictograph.motions?.left;
-    if (isVisibleMotion(leftMotion)) {
-      if (leftMotion.startLocation) activeLocations.add(leftMotion.startLocation.toLowerCase());
-      if (leftMotion.endLocation) activeLocations.add(leftMotion.endLocation.toLowerCase());
-    }
-
-    const rightMotion = pictograph.motions?.right;
-    if (isVisibleMotion(rightMotion)) {
-      if (rightMotion.startLocation) activeLocations.add(rightMotion.startLocation.toLowerCase());
-      if (rightMotion.endLocation) activeLocations.add(rightMotion.endLocation.toLowerCase());
-    }
-
-    return activeLocations;
   }
 
   private renderReversalOverlayInternal(

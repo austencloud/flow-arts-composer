@@ -180,7 +180,6 @@
       leftColorOverride={options.primaryPropColors?.left}
       rightColorOverride={options.primaryPropColors?.right}
       showGrid={options.showGrid}
-      gridPointsOnTop={options.gridPointsOnTop ?? !options.primaryPropColors}
       showNonRadialPoints={options.showNonRadialPoints}
       handPointVisibility={options.handPointVisibility}
       {activeLocations}

@@ -42,6 +42,7 @@ export const CANONICAL_PROP_TYPE = {
   QUIAD: "quiad",
   CAPSULE_BATON: "capsule_baton",
   FIRE_DOUBLE_STAFF: "fire_double_staff",
+  STICK: "stick",
   TORCH: "torch",
   BIGTORCH: "bigtorch",
   POI: "poi",
