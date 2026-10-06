@@ -143,7 +143,8 @@
     ...authoredBodyPose(
       taughtPose,
       inspection.hand === "right" ? inspection.phase : 0,
-      inspection.keys
+      inspection.keys,
+      inspection.staffLengthM
     ),
     wristBendRad: taughtPose.wristBend,
     wristTwistRad: taughtPose.wristTwist,
