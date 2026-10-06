@@ -251,6 +251,10 @@
     min-height: 0;
   }
 
+  .embedded .mode-toggle {
+    flex-wrap: wrap;
+  }
+
   .contextual-auth-prompt {
     --prompt-blue: var(--prop-blue, #4155d8);
     --prompt-red: var(--prop-red, #ef3340);
