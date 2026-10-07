@@ -65,7 +65,12 @@ One piece of state replaces the two-variable priority: a page sequence with
 its origin.
 
 ```ts
-type PageSequenceSource = "opening" | "hero" | "construct" | "generate" | "tunnel";
+type PageSequenceSource =
+  | "opening"
+  | "hero"
+  | "construct"
+  | "generate"
+  | "tunnel";
 type PageSequence = { sequence: SequenceData; source: PageSequenceSource };
 ```
 
