@@ -1,7 +1,8 @@
 /**
  * A decorative tunnel (the Create front door's Tunnel preview) sits inside a
- * card button, so it must offer no controls of its own: no tap to pause, no
- * hover badge, no corner toggle, and no context menu.
+ * card button, so it offers none of its own controls: no tap to pause, no
+ * hover badge, no corner toggle, and no tunnel menu items. The canvas menu
+ * keeps Save to library, which is why the preview box is inert.
  */
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
@@ -26,5 +27,8 @@ describe("TunnelArtView decorative mode", () => {
     expect(source).toMatch(/hoverHint=\{decorative \? "none" : "badge"\}/);
     expect(source).toMatch(/cornerToggle=\{!decorative\}/);
     expect(source).toMatch(/disableContextMenu=\{decorative\}/);
+    expect(source).toMatch(
+      /extraContextMenuItems=\{decorative \? \[\] : saveMenuItems\}/
+    );
   });
 });

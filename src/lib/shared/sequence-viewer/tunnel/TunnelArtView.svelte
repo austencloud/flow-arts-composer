@@ -85,7 +85,11 @@
     onActivePerformerStepsChange?: (
       stepIndices: Readonly<Record<string, number>>
     ) => void;
-    /** Decorative previews: no tap, hover badge, corner toggle, or context menu. */
+    /**
+     * Decorative previews: no tap, hover badge, corner toggle, or tunnel menu
+     * items. The canvas menu still offers Save to library, so the host must
+     * make the preview inert.
+     */
     decorative?: boolean;
   } = $props();
 
@@ -292,7 +296,7 @@
         hidePathLines={true}
         fillContainer={true}
         fireConfig={{ disableFrameCache: true }}
-        extraContextMenuItems={saveMenuItems}
+        extraContextMenuItems={decorative ? [] : saveMenuItems}
       />
     {/if}
   </div>
