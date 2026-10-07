@@ -1,4 +1,5 @@
 import { bridgeLockedChange } from "$lib/shared/media-composition/domain/post-project-bridge-guard";
+import { isFeatureVideoSlug } from "$lib/shared/media-composition/domain/feature-video";
 import { createHash, randomUUID } from "node:crypto";
 import { promises as fs } from "node:fs";
 import os from "node:os";
@@ -32,6 +33,8 @@ type Session = {
   fingerprint: string;
   snapshot: PostProject;
   seenAt: number;
+  /** The feature video this editor has open, when it has one. */
+  featureSlug?: string;
   command?: Command;
   result?: Result;
 };
@@ -50,9 +53,19 @@ export function listPostProjectSessions() {
   return [...sessions.values()]
     .filter((session) => now - session.seenAt < ACTIVE_MS)
     .map(
-      ({ id, revision, fingerprint, snapshot, seenAt, command, result }) => ({
+      ({
+        id,
+        revision,
+        fingerprint,
+        snapshot,
+        seenAt,
+        featureSlug,
+        command,
+        result,
+      }) => ({
         id,
         sequenceId: snapshot.sequenceId,
+        featureSlug: featureSlug ?? null,
         revision,
         fingerprint,
         seenAt,
@@ -67,6 +80,7 @@ export function readPostProjectSession(id: string) {
   if (!session || Date.now() - session.seenAt >= ACTIVE_MS) return null;
   return {
     id: session.id,
+    featureSlug: session.featureSlug ?? null,
     revision: session.revision,
     fingerprint: session.fingerprint,
     snapshot: session.snapshot,
@@ -79,6 +93,7 @@ export function heartbeatPostProject(input: {
   sessionId: string;
   revision: number;
   snapshot?: unknown;
+  featureSlug?: string;
   result?: {
     commandId: string;
     status: "completed" | "failed";
@@ -88,10 +103,13 @@ export function heartbeatPostProject(input: {
   if (
     !/^[0-9a-f-]{36}$/i.test(input.sessionId) ||
     !Number.isSafeInteger(input.revision) ||
-    input.revision < 0
+    input.revision < 0 ||
+    (input.featureSlug !== undefined && !isFeatureVideoSlug(input.featureSlug))
   )
     throw new Error("Invalid editor session.");
   let session = sessions.get(input.sessionId);
+  if (session && (session.featureSlug ?? null) !== (input.featureSlug ?? null))
+    throw new Error("The editor session changed project.");
   if (input.snapshot !== undefined) {
     const parsed = PostProjectSchema.safeParse(input.snapshot);
     if (!parsed.success) throw new Error("Invalid editor snapshot.");
@@ -111,6 +129,7 @@ export function heartbeatPostProject(input: {
         fingerprint: nextFingerprint,
         snapshot: parsed.data,
         seenAt: Date.now(),
+        ...(input.featureSlug ? { featureSlug: input.featureSlug } : {}),
       };
       sessions.set(input.sessionId, session);
       if (sessions.size > MAX_SESSIONS) {
@@ -159,6 +178,20 @@ export function heartbeatPostProject(input: {
     command: session.command?.ready ? session.command : null,
     fingerprint: session.fingerprint,
   };
+}
+
+/** The newest active editor session holding this feature video, or null. */
+export function activeFeatureVideoSession(slug: string): string | null {
+  const now = Date.now();
+  let newest: Session | undefined;
+  for (const session of sessions.values())
+    if (
+      session.featureSlug === slug &&
+      now - session.seenAt < ACTIVE_MS &&
+      (!newest || session.seenAt > newest.seenAt)
+    )
+      newest = session;
+  return newest?.id ?? null;
 }
 
 export async function queuePostProjectEdit(

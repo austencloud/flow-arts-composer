@@ -945,6 +945,8 @@ export function createPostEditorState(deps: PostEditorDeps) {
       ...normalized,
       updatedAt: Math.max(now(), project.updatedAt + 1, normalized.updatedAt),
     });
+    // A take added through the bridge plays straight away.
+    loadSavedMedia();
     return { ok: true };
   }
 

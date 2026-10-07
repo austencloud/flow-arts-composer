@@ -1,5 +1,6 @@
 import { error, json, type RequestHandler } from "@sveltejs/kit";
 import { authorizeLoopback, readJsonBody } from "$lib/server/dev-loopback";
+import { featureVideos } from "$lib/server/feature-video-store";
 import {
   heartbeatPostProject,
   listPostProjectSessions,
@@ -33,25 +34,34 @@ export const POST: RequestHandler = async ({ request, getClientAddress }) => {
     if (input.kind === "heartbeat") {
       if (
         typeof input.sessionId !== "string" ||
-        typeof input.revision !== "number"
+        typeof input.revision !== "number" ||
+        (input.featureSlug !== undefined &&
+          typeof input.featureSlug !== "string")
       )
         error(400, "Invalid heartbeat");
-      return json(
-        heartbeatPostProject({
-          sessionId: input.sessionId,
-          revision: input.revision,
-          ...(input.snapshot !== undefined ? { snapshot: input.snapshot } : {}),
-          ...(input.result && typeof input.result === "object"
-            ? {
-                result: input.result as {
-                  commandId: string;
-                  status: "completed" | "failed";
-                  message: string;
-                },
-              }
-            : {}),
-        })
-      );
+      const featureSlug =
+        typeof input.featureSlug === "string" ? input.featureSlug : undefined;
+      const answer = heartbeatPostProject({
+        sessionId: input.sessionId,
+        revision: input.revision,
+        ...(featureSlug ? { featureSlug } : {}),
+        ...(input.snapshot !== undefined ? { snapshot: input.snapshot } : {}),
+        ...(input.result && typeof input.result === "object"
+          ? {
+              result: input.result as {
+                commandId: string;
+                status: "completed" | "failed";
+                message: string;
+              },
+            }
+          : {}),
+      });
+      if (!featureSlug) return json(answer);
+      // The editor compares this with the revision it last saved or loaded.
+      const featureRevision = await featureVideos()
+        .revision(featureSlug)
+        .catch(() => null);
+      return json({ ...answer, featureRevision });
     }
     if (input.kind === "apply") {
       if (
