@@ -574,7 +574,7 @@ function describePage() {
     }));
   return {
     title: document.title,
-    text: document.body.innerText.slice(0, 20000),
+    text: (document.body.innerText ?? document.body.textContent ?? "").slice(0, 20000),
     controls,
   };
 }
@@ -644,7 +644,7 @@ export function createCodexPage(tab) {
 - [ ] **Step 5: Run the test to confirm it passes**
 
 Run: `npx vitest run --config tests/config/vitest.config.ts tests/unit/scripts/capture-page-port.test.ts`
-Expected: PASS, 8 tests.
+Expected: PASS, 7 tests.
 
 - [ ] **Step 6: Format and commit**
 
