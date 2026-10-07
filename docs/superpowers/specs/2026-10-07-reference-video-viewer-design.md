@@ -25,9 +25,10 @@ later key) the avatar against his real body. The four pieces, in order:
    is saved in the app.
 2. In Post Studio, opens that sequence's post, adds the three videos as
    takes, and maps timing on one of them with the existing timing tool.
-3. Opens the staff grip lab on the same sequence (`seq=<id>`) and turns on
-   Reference. Picks the three files (local takes store metadata only, so they
-   are re-picked each session; catalog takes load on their own).
+3. Opens the staff grip lab on the same sequence (`seq=<id>`) and adds the
+   three files in the Reference video card. Local takes store metadata only,
+   so files are picked again each session. Version 1 takes local files only;
+   catalog and linked takes can follow.
 
 ## What the lab shows
 
@@ -44,13 +45,13 @@ later key) the avatar against his real body. The four pieces, in order:
 
 ## Parts
 
-| Part                       | Job                                                                                             | Builds on                                                        |
-| -------------------------- | ----------------------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
-| Reference take loader      | For the lab's sequence id, read the Post Studio project's takes and the mapped take's timing    | `loadPostProject`, `loadTakeTiming`, `resolveTakeTiming`         |
-| Clap finder                | Pure function: decoded audio in, time of the sharpest loud transient in the opening seconds out | New; decoding pattern from `post-audio-track.ts`                 |
-| Reference clock            | Video seconds of the timed take to lab phase and back; other takes add their clap offset        | `takeSampleAt`, `sequencePositionToMediaTime`, `sequenceFrameAt` |
-| Camera match               | Preset view plus a saved orbit offset per take                                                  | `inspection-framing.ts`                                          |
-| Reference panel and layout | File pickers, sync status, per-video manual offset, paired layout                               | `LabControls.svelte`, the lab's view grid                        |
+| Part                       | Job                                                                                                                                                          | Builds on                                                        |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------- |
+| Reference take loader      | For the lab's sequence id, read the Post Studio project's takes and the mapped take's timing                                                                 | `loadPostProject`, `loadTakeTiming`, `resolveTakeTiming`         |
+| Clap finder                | Pure function: decoded audio in, time of the first loud, sudden broadband jump in the opening seconds out (differenced signal, so tonal music barely counts) | New; decoding pattern from `post-audio-track.ts`                 |
+| Reference clock            | Video seconds of the timed take to lab phase and back; other takes add their clap offset                                                                     | `takeSampleAt`, `sequencePositionToMediaTime`, `sequenceFrameAt` |
+| Camera match               | Preset view plus a saved orbit offset per take                                                                                                               | `inspection-framing.ts`                                          |
+| Reference panel and layout | File pickers, sync status, per-video manual offset, paired layout                                                                                            | `LabControls.svelte`, the lab's view grid                        |
 
 Before the clock is built, confirm whether lab phase equals arrival position
 or `enginePosition - 1`; the census did not settle it.
@@ -62,8 +63,13 @@ or `enginePosition - 1`; the census did not settle it.
   Studio for that sequence.
 - Sequence changed since mapping (`takeTimingStatus` is `stale`): a warning;
   the viewer still plays.
-- A picked file whose name, size or date differs from the take's metadata:
-  ask before using it.
+- A picked file that matches no take in the post: it still plays as an
+  angle, synced to the timed video by its clap. One picked file must match a
+  take with mapped timing for the performer to follow.
+- Firebase restores the signed-in user after page load, and the post and
+  timing stores key by that user, so loading waits for `authStateReady()`.
+- Reference mode lasts while videos are loaded; it has no URL parameter,
+  because the files cannot come back from a link anyway.
 
 ## Checks
 
