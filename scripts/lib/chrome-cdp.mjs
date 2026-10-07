@@ -11,6 +11,7 @@
  */
 
 import { writeFileSync } from "node:fs";
+import { createEventBuffer } from "./cdp-event-buffer.mjs";
 
 const DEFAULT_PORT = 9222;
 
@@ -21,7 +22,10 @@ export const delay = (milliseconds) =>
  * Open a CDP session against `webSocketDebuggerUrl`. The returned `send`
  * resolves with the command result, or rejects with the protocol error.
  */
-export async function connect(webSocketDebuggerUrl) {
+export async function connect(
+  webSocketDebuggerUrl,
+  { bufferEvents = [], eventCapacity } = {}
+) {
   const socket = new WebSocket(webSocketDebuggerUrl);
   await new Promise((resolveConnection, rejectConnection) => {
     socket.addEventListener("open", resolveConnection, { once: true });
@@ -30,8 +34,14 @@ export async function connect(webSocketDebuggerUrl) {
 
   let nextId = 1;
   const pending = new Map();
+  const buffer = createEventBuffer({ capacity: eventCapacity });
   socket.addEventListener("message", (event) => {
     const message = JSON.parse(event.data);
+    if (message.id === undefined && message.method !== undefined) {
+      if (bufferEvents.includes(message.method))
+        buffer.push(message.method, message.params);
+      return;
+    }
     const resolver = pending.get(message.id);
     if (!resolver) return;
     pending.delete(message.id);
@@ -50,6 +60,13 @@ export async function connect(webSocketDebuggerUrl) {
       });
       socket.send(JSON.stringify({ id, method, params }));
       return response;
+    },
+    /**
+     * Events named in `bufferEvents` when this connection opened, as
+     * `{ cursor, events, hasMore, truncated }`; see cdp-event-buffer.mjs.
+     */
+    readEvents(options) {
+      return buffer.read(options);
     },
     close() {
       socket.close();
@@ -138,12 +155,15 @@ export async function waitFor(
 }
 
 /** Pin the CSS viewport and device pixel ratio for the life of the session. */
-export async function setViewport(client, { width, height, dpr = 1 }) {
+export async function setViewport(
+  client,
+  { width, height, dpr = 1, mobile = false }
+) {
   await client.send("Emulation.setDeviceMetricsOverride", {
     width,
     height,
     deviceScaleFactor: dpr,
-    mobile: false,
+    mobile,
   });
 }
 
@@ -170,7 +190,10 @@ async function browserEndpoint(port) {
  * belongs to every agent at once, and a bake that navigates someone else's tab
  * destroys their work.
  */
-export async function openTab(url, { port = DEFAULT_PORT } = {}) {
+export async function openTab(
+  url,
+  { port = DEFAULT_PORT, bufferEvents, eventCapacity } = {}
+) {
   const browser = await connect(await browserEndpoint(port));
   let targetId;
   try {
@@ -195,7 +218,10 @@ export async function openTab(url, { port = DEFAULT_PORT } = {}) {
     throw new Error(`Chrome never listed the tab it created for ${url}`);
   }
 
-  const page = await connect(target.webSocketDebuggerUrl);
+  const page = await connect(target.webSocketDebuggerUrl, {
+    bufferEvents,
+    eventCapacity,
+  });
   await page.send("Page.enable");
   await page.send("Runtime.enable");
 
