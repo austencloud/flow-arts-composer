@@ -988,7 +988,9 @@
     -webkit-backdrop-filter: blur(3px);
   }
 
-  :global(dialog.composer-3d-portal .modal-body) {
+  /* Child combinators keep this off the dialogs the 3D controls open inside
+     the frame (the sequence picker, for one), whose bodies stay blocks. */
+  :global(dialog.composer-3d-portal > .modal-content-wrapper > .modal-body) {
     position: relative;
     display: flex;
     flex: 1;
