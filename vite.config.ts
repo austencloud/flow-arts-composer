@@ -701,24 +701,32 @@ const packageJson = JSON.parse(
 //     feature-only packages forced all of them onto even the SSR scan shell's
 //     critical path. `vendor-sveltekit` depends only on the Svelte/devalue leaf.
 // Verified acyclic via DIAG_CHUNKS — see scripts/.. build log (no "Circular chunk").
+// Measured small, scene-only leaves. Rollup otherwise folds some into shared
+// startup chunks, where their Three imports pull vendor-three into boot.
+// Each leaf's runtime imports are already in the Three or Svelte vendor chunks.
+const SCENE_ONLY_THREE_LEAVES = [
+  "/src/lib/shared/3d/environments/worlds/winter/winter-starfield.ts",
+  "/src/lib/shared/3d/components/CanvasLifecycle.svelte",
+  "/src/lib/shared/3d/environments/primitives/organic-pond-shape.ts",
+  "/src/lib/shared/3d/scene-composer/scene-graph-object-adapter.ts",
+  "/src/lib/shared/3d/components/grid-render-resources.ts",
+  "/src/lib/shared/3d/environments/worlds/cosmic/cosmic-environment-assets.ts",
+  "/src/lib/shared/3d/domain/constants/plane-transforms.ts",
+  "/src/lib/shared/3d/effects/fire/fire-color-curve-3d.ts",
+  "/src/lib/shared/3d/environments/worlds/rainbow/rainbow-particle-field.ts",
+  "/src/lib/shared/3d/environments/primitives/reflective-pool-shader.ts",
+  "/src/lib/shared/3d/domain/character-model.ts",
+  "/src/lib/shared/3d/environments/domain/performer-stage-bounds.ts",
+] as const;
+
 const classifyChunk = (id: string): string | undefined => {
   // Vite injects this virtual helper into every module with a dynamic import.
   // If left unclassified Rollup hoists it into the most-shared manual chunk,
   // which made a lightweight route import `vendor` solely for one tiny helper.
   if (id.includes("vite/preload-helper")) return "vendor-sveltekit";
 
-  // Rollup's small-chunk merge can fold these scene-only modules into shared
-  // startup chunks, making vendor-three a startup import. Keep the exact
-  // modules with their existing Three dependencies before automatic merge.
   const normalizedId = id.replaceAll("\\", "/").split("?")[0];
-  if (
-    normalizedId.endsWith(
-      "/src/lib/shared/3d/environments/worlds/winter/winter-starfield.ts"
-    ) ||
-    normalizedId.endsWith(
-      "/src/lib/shared/3d/components/CanvasLifecycle.svelte"
-    )
-  ) {
+  if (SCENE_ONLY_THREE_LEAVES.some((suffix) => normalizedId.endsWith(suffix))) {
     return "vendor-three";
   }
 
@@ -1137,8 +1145,9 @@ export default defineConfig(({ command, mode }) => ({
         // Strategic chunking — see classifyChunk() above the config for the
         // full rationale (incl. the 2026-06-16 vendor-three ⇄ vendor TDZ fix).
         manualChunks: classifyChunk,
-        // classifyChunk only names node_modules chunks; every src/lib module
-        // falls through to Rollup's automatic split, which emits one chunk per
+        // classifyChunk names node_modules chunks and the measured scene-only
+        // leaves above. Other src/lib modules use Rollup's automatic split,
+        // which emits one chunk per
         // distinct set of reachable entry points. On a dynamic-import-heavy
         // graph that shatters into hundreds of micro-chunks: the homepage
         // launchpad's media closure alone was 238 files, of which 202 were
