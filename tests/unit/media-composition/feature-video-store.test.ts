@@ -231,6 +231,54 @@ describe("saving", () => {
       status: 409,
     });
   });
+
+  it("takes one of two saves from two dev servers on one root", async () => {
+    // Two stores on one root stand in for two dev servers, such as the
+    // primary checkout's and a worktree's; each orders only its own saves.
+    for (let round = 0; round < 20; round += 1) {
+      const slug = `race-${round}`;
+      const first = createFeatureVideoStore(root);
+      const second = createFeatureVideoStore(root);
+      const { file } = await first.create({ ...promo, slug }, NOW);
+      const results = await Promise.allSettled([
+        first.write(
+          slug,
+          { baseRevision: 1, project: { ...file.project, audio: "silent" } },
+          NOW + 1
+        ),
+        second.write(
+          slug,
+          { baseRevision: 1, project: { ...file.project, mirrored: true } },
+          NOW + 2
+        ),
+      ]);
+      expect(results.map((result) => result.status).sort()).toEqual([
+        "fulfilled",
+        "rejected",
+      ]);
+      const rejected = results.find((result) => result.status === "rejected");
+      expect((rejected as PromiseRejectedResult).reason).toMatchObject({
+        status: 409,
+      });
+      expect(await fs.readdir(path.join(root, slug))).not.toContain(".lock");
+    }
+  });
+
+  it("clears a lock a stopped save left behind", async () => {
+    const { file } = await store.create(promo, NOW);
+    const lock = path.join(root, "promo", ".lock");
+    await fs.writeFile(lock, "");
+    const old = new Date(Date.now() - 60_000);
+    await fs.utimes(lock, old, old);
+    expect(
+      await store.write(
+        "promo",
+        { baseRevision: 1, project: { ...file.project, audio: "silent" } },
+        NOW + 1
+      )
+    ).toMatchObject({ revision: 2 });
+    expect(await fs.readdir(path.join(root, "promo"))).not.toContain(".lock");
+  });
 });
 
 describe("revision", () => {

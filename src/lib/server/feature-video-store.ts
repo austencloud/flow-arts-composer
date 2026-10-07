@@ -60,6 +60,12 @@ export interface FeatureVideoSaved {
 
 const RETRY_CODES = new Set(["EPERM", "EBUSY", "EACCES"]);
 
+/** A lock this old was left by a save that stopped partway. */
+const LOCK_STALE_MS = 10_000;
+/** Longer than LOCK_STALE_MS, so a waiting save clears a lock left behind. */
+const LOCK_WAIT_MS = 15_000;
+const LOCK_RETRY_MS = 20;
+
 function code(cause: unknown): string | undefined {
   return cause && typeof cause === "object" && "code" in cause
     ? String((cause as { code: unknown }).code)
@@ -116,6 +122,44 @@ export function createFeatureVideoStore(
       if (chains.get(slug) === settled) chains.delete(slug);
     });
     return result;
+  }
+
+  /**
+   * Two dev servers on one root, such as the primary checkout's and a
+   * worktree's, each keep their own order. A lock file in the project's
+   * folder makes a save's read, revision check and write one step across
+   * both.
+   */
+  async function locked<T>(slug: string, run: () => Promise<T>): Promise<T> {
+    const lock = path.join(folder(slug), ".lock");
+    const started = Date.now();
+    for (;;) {
+      try {
+        await (await fs.open(lock, "wx")).close();
+        break;
+      } catch (cause) {
+        const reason = code(cause) ?? "";
+        if (reason === "ENOENT")
+          throw new FeatureVideoError(`No feature video named ${slug}.`, 404);
+        // Windows answers EPERM while another save is removing its lock.
+        if (reason !== "EEXIST" && !RETRY_CODES.has(reason)) throw cause;
+      }
+      const held = await fs.stat(lock).catch(() => null);
+      if (held && Date.now() - held.mtimeMs > LOCK_STALE_MS)
+        await fs.rm(lock, { force: true }).catch(() => undefined);
+      if (Date.now() - started > LOCK_WAIT_MS)
+        throw new FeatureVideoError(
+          `${slug} is busy: another dev server is saving it. Try the edit again.`,
+          500
+        );
+      await new Promise((resolve) => setTimeout(resolve, LOCK_RETRY_MS));
+    }
+    try {
+      return await run();
+    } finally {
+      // A lock that will not go now turns stale, and the next save clears it.
+      await fs.rm(lock, { force: true }).catch(() => undefined);
+    }
   }
 
   async function readFile(slug: string): Promise<FeatureVideoFile> {
@@ -281,21 +325,26 @@ export function createFeatureVideoStore(
     input: { baseRevision: number; project: unknown },
     now = Date.now()
   ): Promise<FeatureVideoSaved> {
-    return serialize(slug, async () => {
-      const current = await readFile(slug);
-      if (input.baseRevision !== current.revision)
-        throw new FeatureVideoError(
-          `${slug} changed on disk (now revision ${current.revision}). Load it again before saving.`,
-          409,
-          current.revision
-        );
-      const parsed = PostProjectSchema.safeParse(input.project);
-      if (!parsed.success)
-        throw new FeatureVideoError("That is not a valid Post project.", 422);
-      if (parsed.data.sequenceId !== current.project.sequenceId)
-        throw new FeatureVideoError("A feature video keeps its sequence.", 422);
-      return commit(slug, current, parsed.data, now);
-    });
+    return serialize(slug, () =>
+      locked(slug, async () => {
+        const current = await readFile(slug);
+        if (input.baseRevision !== current.revision)
+          throw new FeatureVideoError(
+            `${slug} changed on disk (now revision ${current.revision}). Load it again before saving.`,
+            409,
+            current.revision
+          );
+        const parsed = PostProjectSchema.safeParse(input.project);
+        if (!parsed.success)
+          throw new FeatureVideoError("That is not a valid Post project.", 422);
+        if (parsed.data.sequenceId !== current.project.sequenceId)
+          throw new FeatureVideoError(
+            "A feature video keeps its sequence.",
+            422
+          );
+        return commit(slug, current, parsed.data, now);
+      })
+    );
   }
 
   /** The revision on disk, or null when the project is missing or unreadable. */
@@ -365,37 +414,39 @@ export function createFeatureVideoStore(
     ops: unknown,
     now = Date.now()
   ): Promise<FeatureVideoSaved & { status: "applied" | "unchanged" }> {
-    return serialize(slug, async () => {
-      const current = await readFile(slug);
-      let next: PostProject;
-      try {
-        next = applyPostProjectOps(current.project, ops as PostProjectOp[], {
-          now,
-        });
-      } catch (cause) {
-        throw new FeatureVideoError(
-          cause instanceof Error ? cause.message : String(cause),
-          400
-        );
-      }
-      if (next === current.project || sameContent(next, current.project))
+    return serialize(slug, () =>
+      locked(slug, async () => {
+        const current = await readFile(slug);
+        let next: PostProject;
+        try {
+          next = applyPostProjectOps(current.project, ops as PostProjectOp[], {
+            now,
+          });
+        } catch (cause) {
+          throw new FeatureVideoError(
+            cause instanceof Error ? cause.message : String(cause),
+            400
+          );
+        }
+        if (next === current.project || sameContent(next, current.project))
+          return {
+            status: "unchanged" as const,
+            revision: current.revision,
+            savedAt: current.savedAt,
+            fingerprint: fingerprint(current.project),
+          };
+        const parsed = PostProjectSchema.safeParse(next);
+        if (!parsed.success)
+          throw new FeatureVideoError(
+            "Those edits would leave the post invalid.",
+            400
+          );
         return {
-          status: "unchanged" as const,
-          revision: current.revision,
-          savedAt: current.savedAt,
-          fingerprint: fingerprint(current.project),
+          status: "applied" as const,
+          ...(await commit(slug, current, parsed.data, now)),
         };
-      const parsed = PostProjectSchema.safeParse(next);
-      if (!parsed.success)
-        throw new FeatureVideoError(
-          "Those edits would leave the post invalid.",
-          400
-        );
-      return {
-        status: "applied" as const,
-        ...(await commit(slug, current, parsed.data, now)),
-      };
-    });
+      })
+    );
   }
 
   /**
