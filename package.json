@@ -335,7 +335,7 @@
     "@capacitor/splash-screen": "^8.0.1",
     "@capacitor/status-bar": "^8.0.2",
     "@capgo/capacitor-share-target": "8.0.44",
-    "@capgo/capacitor-updater": "^8.45.9",
+    "@capgo/capacitor-updater": "8.51.25",
     "@datadog/sketches-js": "2.1.1",
     "@dimforge/rapier3d-compat": "^0.19.3",
     "@flow-arts/core": "workspace:*",
