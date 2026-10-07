@@ -35,6 +35,7 @@
   import StartTile from "./StartTile.svelte";
   import DurationResizeHandle from "./DurationResizeHandle.svelte";
   import SequenceMandala from "$lib/shared/mandala/components/SequenceMandala.svelte";
+  import { mandalaGridJoinOffsets } from "$lib/shared/mandala/services/mandala-grid-join";
   import ContextMenu from "$lib/shared/components/context-menu/ContextMenu.svelte";
   import type {
     ContextMenuEntry,
@@ -736,6 +737,12 @@
   );
 
   const mandalaSize = $derived(Math.round(cellSize * MANDALA_CELL_SCALE));
+  // The cells carry the sequence's join; the full mandala draws each hand's
+  // figure on its own grid, as the card's mandala does.
+  const mandalaHandOffsets = $derived.by(() => {
+    const cell = steps[0] ?? startPlacement;
+    return mandalaGridJoinOffsets(cell?.conjoined, cell?.gridMode);
+  });
   const mandalaPaletteOverride = $derived.by((): MandalaPalette | undefined => {
     if (!leftColorOverride || !rightColorOverride) return undefined;
     return {
@@ -834,6 +841,7 @@
     rightPropType={effectiveRightPropType}
     palette={mandalaPaletteOverride}
     pathShape={mandalaPathShape}
+    handOffsets={mandalaHandOffsets}
     morphChanges
   />
 {/snippet}
