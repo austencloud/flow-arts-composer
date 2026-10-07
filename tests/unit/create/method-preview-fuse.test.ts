@@ -39,6 +39,7 @@ describe("Fuse preview sources", () => {
         step: 0,
         rect: at(0, 7, 34),
         slide: "translate(23px, -7px) scale(1.4118)",
+        onTop: false,
       },
       {
         key: "left:1",
@@ -46,6 +47,7 @@ describe("Fuse preview sources", () => {
         step: 1,
         rect: at(37, 7, 34),
         slide: "translate(37px, -7px) scale(1.4118)",
+        onTop: false,
       },
       {
         key: "right:0",
@@ -53,6 +55,7 @@ describe("Fuse preview sources", () => {
         step: 0,
         rect: at(74, 7, 34),
         slide: "translate(-51px, -7px) scale(1.4118)",
+        onTop: true,
       },
       {
         key: "right:1",
@@ -60,8 +63,23 @@ describe("Fuse preview sources", () => {
         step: 1,
         rect: at(111, 7, 34),
         slide: "translate(-37px, -7px) scale(1.4118)",
+        onTop: true,
       },
     ]);
+  });
+
+  it("floats exactly one half per fused step, the one drawn later", () => {
+    for (const [shape, width, height] of [
+      ["strip", 146, 48],
+      ["square", 144, 144],
+    ] as const) {
+      const sources = fuseSources(fuseLayout(shape, width, height)!);
+      for (const step of [0, 1]) {
+        const halves = sources.filter((source) => source.step === step);
+        expect(halves).toHaveLength(2);
+        expect(halves.filter((half) => half.onTop)).toEqual([halves[1]]);
+      }
+    }
   });
 
   it("merges a square's blue row and red row into the fused row", () => {

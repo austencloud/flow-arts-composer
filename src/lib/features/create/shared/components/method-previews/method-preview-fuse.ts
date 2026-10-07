@@ -55,11 +55,20 @@ export interface FuseSource {
   rect: CellRect;
   /** The transform that lands it on its fused cell. */
   slide: string;
+  /**
+   * True for the half drawn later in its step, which stacks over the other.
+   * It floats its pictograph over the other half's cell, so both props show
+   * as they meet instead of one cell hiding the other.
+   */
+  onTop: boolean;
 }
 
 /** The blue sources, then the red ones, each paired with its fused cell. */
 export function fuseSources(layout: FuseLayout): FuseSource[] {
-  const side = (hand: HandSide, rects: CellRect[]): FuseSource[] =>
+  const side = (
+    hand: HandSide,
+    rects: CellRect[]
+  ): Omit<FuseSource, "onTop">[] =>
     rects.flatMap((rect, step) => {
       const target = layout.combined[step];
       return target
@@ -74,8 +83,15 @@ export function fuseSources(layout: FuseLayout): FuseSource[] {
           ]
         : [];
     });
-  return [
+  const ordered = [
     ...side(HandSide.LEFT, layout.blue),
     ...side(HandSide.RIGHT, layout.red),
   ];
+  // Later in the list draws later, so it stacks over the earlier half.
+  const lastOfStep = new Map<number, number>();
+  ordered.forEach((source, index) => lastOfStep.set(source.step, index));
+  return ordered.map((source, index) => ({
+    ...source,
+    onTop: lastOfStep.get(source.step) === index,
+  }));
 }

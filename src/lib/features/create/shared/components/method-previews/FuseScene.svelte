@@ -12,7 +12,11 @@
    *
    * Each source shows its step at the start of its travel, so a blue half and
    * a red half on one cell make that fused step exactly, and the fused cell
-   * takes over without a jump.
+   * takes over without a jump. Each pictograph paints its own opaque cell, so
+   * the half drawn on top (FuseSource.onTop) keeps only its props and takes
+   * its cell backdrop from a ::before that dissolves during the slide: it
+   * lands as a floating layer over the other half's cell, and both props
+   * show as they meet.
    *
    * Finished picture: the fused steps, both hands, with their arrows.
    */
@@ -48,6 +52,8 @@
   let root = $state<HTMLElement | null>(null);
   let fusedRow = $state<HTMLElement | null>(null);
   let phase = $state<"rest" | "fusing">("rest");
+  /** True while the halves slide together: the floating half's box dissolves. */
+  let sliding = $state(false);
   /** Each fused step's travel, 0 to 1. Null rests on the finished step. */
   let progress = $state.raw<(number | null)[]>(frames.map(() => null));
 
@@ -108,6 +114,7 @@
     for (const animation of animations) animation.cancel();
     animations = [];
     progress = frames.map(() => null);
+    sliding = false;
     phase = "rest";
   }
 
@@ -150,6 +157,7 @@
     if (pieces.length === 0 || pieces.length !== sources.length) return;
     const timing = FUSE_PREVIEW_TIMING;
     phase = "fusing";
+    sliding = false;
 
     // The finished fused steps step aside, and their props go back to the
     // start of their travel while no one sees them.
@@ -172,6 +180,7 @@
     if (!(await run.wait(timing.sourcesInMs))) return;
 
     // They slide together: the blue and red half of each step land on one cell.
+    sliding = true;
     for (const [index, piece] of pieces.entries()) {
       const slide = sources[index]?.slide;
       if (!slide) continue;
@@ -212,7 +221,15 @@
   });
 </script>
 
-<div class="scene" bind:this={root} style:--accent={accent} data-phase={phase}>
+<div
+  class="scene"
+  class:sliding
+  bind:this={root}
+  style:--accent={accent}
+  style:--slide-ms="{FUSE_PREVIEW_TIMING.slideMs}ms"
+  style:--slide-ease={EASE}
+  data-phase={phase}
+>
   {#if layout}
     <div class="fused" bind:this={fusedRow}>
       {#each frames as frame, index (index)}
@@ -241,6 +258,7 @@
       {#if frame}
         <div
           class="cell source"
+          class:on-top={source.onTop}
           style:left="{source.rect.x}px"
           style:top="{source.rect.y}px"
           style:width="{source.rect.size}px"
@@ -249,6 +267,7 @@
           <MethodPreviewPictograph
             data={frame.step}
             visibleHand={source.hand}
+            transparentBackground={source.onTop}
             motionStartData={frame.motionStartData}
             motionProgress={0}
             arrowOpacity={0}
@@ -280,5 +299,34 @@
   .source {
     opacity: 0;
     transform-origin: 0 0;
+  }
+
+  /* The floating half draws its cell's backdrop itself (the Create grid's
+     --dm-pictograph-bg), under its pictograph in the cell's own stacking
+     context. It dissolves while the halves slide, so the other half's props
+     show through as they meet; resetting it when the sources are hidden is
+     instant. */
+  .source.on-top {
+    isolation: isolate;
+  }
+
+  .source.on-top::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background: var(--dm-pictograph-bg, #0a0a0f);
+  }
+
+  .scene.sliding .source.on-top::before {
+    opacity: 0;
+    transition: opacity var(--slide-ms, 520ms)
+      var(--slide-ease, cubic-bezier(0.22, 1, 0.36, 1));
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .scene.sliding .source.on-top::before {
+      transition: none;
+    }
   }
 </style>

@@ -20,6 +20,7 @@
     motionStep = null,
     motionProgress = null,
     arrowOpacity = 1,
+    transparentBackground = false,
     readyEpoch = 0,
     onReady,
   }: {
@@ -33,6 +34,11 @@
     motionProgress?: number | null;
     /** Arrows fade in with the travel, as on Fuse's own cards. */
     arrowOpacity?: number;
+    /**
+     * Skip the pictograph's own background fill, so the cell behind it
+     * shows through (Fuse's half that floats over the other).
+     */
+    transparentBackground?: boolean;
     /**
      * Bump to hear onReady again for the same data. A Generate reroll can
      * leave a cell's step unchanged; a new epoch still reports it ready.
@@ -62,6 +68,7 @@
   {motionStep}
   {motionProgress}
   {arrowOpacity}
+  {transparentBackground}
   {readyEpoch}
   {onReady}
 />
