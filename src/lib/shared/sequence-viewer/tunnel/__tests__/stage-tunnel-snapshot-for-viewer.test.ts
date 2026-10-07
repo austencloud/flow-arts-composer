@@ -77,9 +77,10 @@ describe("stageTunnelSnapshotForViewer", () => {
     expect(dependencies.animationSettings.updateSettings).toHaveBeenCalledWith({
       trail: snapshot.trailRender,
     });
-    expect(dependencies.settings.updateSettings).toHaveBeenCalledWith(
-      snapshot.props
-    );
+    expect(dependencies.settings.updateSettings).toHaveBeenCalledWith({
+      ...snapshot.props,
+      propArtwork: "pictograph",
+    });
     expect(dependencies.saveViewState).toHaveBeenCalledWith(snapshot.tunnel);
     expect(dependencies.ensureCustomColorPreference).toHaveBeenCalledOnce();
     expect(dependencies.stageCustomColors).toHaveBeenCalledWith(
@@ -114,8 +115,45 @@ describe("stageTunnelSnapshotForViewer", () => {
 
     stageTunnelSnapshotForViewer(snapshotWithCatDog, dependencies);
 
-    expect(dependencies.settings.updateSettings).toHaveBeenCalledWith(
-      snapshotWithCatDog.props
+    expect(dependencies.settings.updateSettings).toHaveBeenCalledWith({
+      ...snapshotWithCatDog.props,
+      propArtwork: "pictograph",
+    });
+  });
+
+  // The viewer draws the tunnel from the account's version, so a saved
+  // Version 2 has to be written there or the viewer would show Version 1.
+  function stagedPropArtwork(propLook?: "model" | "pictograph"): unknown {
+    const updateSettings = vi.fn();
+    const dependencies = {
+      visibility: {
+        setGridMode: vi.fn(),
+        setEffortPreset: vi.fn(),
+        setPathPolicy: vi.fn(),
+        setVisibility: vi.fn(),
+      },
+      animationSettings: { updateSettings: vi.fn() },
+      settings: { updateSettings },
+      saveViewState: vi.fn(),
+      storage: { setItem: vi.fn() },
+      ensureCustomColorPreference: vi.fn(),
+      stageCustomColors: vi.fn(),
+    } as unknown as TunnelViewerStagingDependencies;
+    stageTunnelSnapshotForViewer(
+      {
+        ...snapshot,
+        props: { ...snapshot.props, ...(propLook ? { propLook } : {}) },
+      } as unknown as TunnelSnapshot,
+      dependencies
     );
+    return updateSettings.mock.calls[0]![0].propArtwork;
+  }
+
+  it("stages a saved Version 2 as the viewer's prop version", () => {
+    expect(stagedPropArtwork("model")).toBe("model");
+  });
+
+  it("stages a tunnel saved before prop versions as Version 1", () => {
+    expect(stagedPropArtwork()).toBe("pictograph");
   });
 });

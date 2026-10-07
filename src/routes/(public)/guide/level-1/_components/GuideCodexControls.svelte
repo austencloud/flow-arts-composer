@@ -133,10 +133,13 @@
   </div>
 </div>
 
+<!-- Codex cells draw notation, so the codex always shows Version 1. -->
 <PropSelectionSheet
   bind:isOpen={propDrawerOpen}
   selectedPropType={codex.propType}
   title="Choose a prop"
+  showPropLook={false}
+  propLook="pictograph"
   onSelect={(pt: PropType) => codex.setPropType(pt)}
 />
 
