@@ -32,7 +32,7 @@ it("saves a plain staff in one edit without changing the account's props or artw
   await page.getByRole("tab", { name: "Props", exact: true }).click();
   await page.getByRole("button", { name: "Choose Double Staff style" }).click();
   const plain = page.getByRole("button", {
-    name: "Select Double Staff prop type",
+    name: "Select Double Staff V1 prop type",
     exact: true,
   });
   await plain.click();
@@ -47,7 +47,7 @@ it("saves a plain staff in one edit without changing the account's props or artw
   await expect
     .element(
       page.getByRole("button", {
-        name: "Select Double Staff 3D prop type",
+        name: "Select Double Staff V2 prop type",
         exact: true,
       })
     )
@@ -64,6 +64,41 @@ it("saves a plain staff in one edit without changing the account's props or artw
     right: getSettings().rightPropType,
     look: getSettings().propArtwork,
   }).toEqual(account);
+});
+
+it("saves Version 1 when a pick of a different prop names no version", async () => {
+  await page.viewport(760, 800);
+  const onAppearanceChange = vi.fn();
+  const { rerender } = render(PostAnimationAppearanceTool, {
+    editor: {
+      project: createEmptyPostProject({ sequenceId: "prop-test", now: 1 }),
+    } as PostEditorState,
+    appearanceOverride: { propType: PropType.STAFF, propLook: "pictograph" },
+    onAppearanceChange,
+    locked: false,
+  });
+  await page.getByRole("tab", { name: "Props", exact: true }).click();
+  await page.getByRole("button", { name: "Choose Double Staff style" }).click();
+
+  await page
+    .getByRole("button", { name: "Select LED Baton V2 prop type", exact: true })
+    .click();
+  const v2 = onAppearanceChange.mock.calls.at(-1)![0];
+  expect(v2).toMatchObject({
+    propType: PropType.CAPSULE_BATON,
+    propLook: "model",
+  });
+  await rerender({ appearanceOverride: v2 });
+
+  // Stick has one version, so its tile names none. The Version 2 chosen for
+  // the baton must not follow the performer onto it.
+  await page
+    .getByRole("button", { name: "Select Stick prop type", exact: true })
+    .click();
+  expect(onAppearanceChange.mock.calls.at(-1)![0]).toMatchObject({
+    propType: PropType.STICK,
+    propLook: "pictograph",
+  });
 });
 
 it("saves an LED look change from the selected effect inspector", async () => {

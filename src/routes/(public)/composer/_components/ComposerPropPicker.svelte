@@ -26,7 +26,7 @@
   }: {
     open: boolean;
     selectedPropType: PropType;
-    onSelect: (prop: PropType) => void;
+    onSelect: (prop: PropType, look?: PropLook) => void;
     onOpenChange: (open: boolean) => void;
     preview: Snippet;
     fanAppearance: FanAppearance;

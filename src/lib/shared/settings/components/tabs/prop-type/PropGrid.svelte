@@ -321,7 +321,7 @@
             ? t("settings_prop_details", {
                 prop: localizedPropName(drill.prop),
               })
-            : t("settings_prop_look")
+            : t("settings_prop_version")
   );
 
   async function openDrill(next: Drill): Promise<void> {
@@ -535,10 +535,10 @@
 
   const DRILL_GAP = 10;
   /**
-   * A family's styles, each in every look it has: a style with a captured 3D
-   * sprite gets a pictograph tile and a 3D tile, so one view holds every
-   * variation and a pick sets the prop and look together.
-   * Pictographs come first so the 3D row reads as the same set again.
+   * A family's styles, each in every version it has: a style with a captured
+   * model sprite gets a V1 tile and a V2 tile, so one view holds every
+   * variation and a pick sets the prop and version together. V1 tiles come
+   * first so the V2 row reads as the same set again.
    */
   type FamilyTile = { style: PropType; prop: PropType; look?: PropLook };
   const familyTiles = $derived.by((): FamilyTile[] => {
@@ -709,6 +709,12 @@
       : propLookOptions(selectedPropType).find(
           (option) => option.id === (propLook ?? "pictograph")
         )
+  );
+
+  const selectedVersionName = $derived(
+    t("settings_prop_version_n", {
+      version: selectedPropLookOption?.id === "model" ? 2 : 1,
+    })
   );
 
   const detailProp = $derived(
@@ -910,10 +916,7 @@
       class="look-chip"
       data-testid="prop-look-chip"
       aria-label={t("settings_change_prop_look", {
-        look:
-          selectedPropLookOption?.id === "model"
-            ? t("settings_3d_model")
-            : t("viewer_ui_pictograph"),
+        look: selectedVersionName,
       })}
       onclick={() => void openDrill({ kind: "prop-look" })}
     >
@@ -925,11 +928,7 @@
           draggable="false"
         />
       {/if}
-      <span class="look-name"
-        >{selectedPropLookOption?.id === "model"
-          ? t("settings_3d_model")
-          : t("viewer_ui_pictograph")}</span
-      >
+      <span class="look-name">{selectedVersionName}</span>
       <i class="fas fa-chevron-right look-caret" aria-hidden="true"></i>
     </button>
   {/snippet}
@@ -986,11 +985,18 @@
       and earn-tip can be positioned over / below the button. The click is
       always routed through handleTileClick (via PropTypeButton's onSelect
       prop).
+
+      A tile that names no version draws Version 1 unless it is the selected
+      prop, which shows the current version. Otherwise one V2 pick would
+      repaint every other tile that has a capture.
     -->
     {@const label =
-      look === "model"
-        ? `${localizedPropName(prop)} 3D`
-        : localizedPropName(prop)}
+      look === undefined
+        ? localizedPropName(prop)
+        : t("settings_prop_version_tile", {
+            prop: localizedPropName(prop),
+            version: look === "model" ? 2 : 1,
+          })}
     <div
       class="tile-wrapper"
       style:grid-column-start={columnStart}
@@ -999,16 +1005,16 @@
       <PropGridButton
         propType={prop}
         {label}
-        actionLabel={look === "model"
-          ? t("settings_select_prop_type", { prop: label })
-          : undefined}
+        actionLabel={look === undefined
+          ? undefined
+          : t("settings_select_prop_type", { prop: label })}
         selected={selectedPropType === prop &&
           (look === undefined || currentPropLook === look)}
         {color}
         buttonProps={{ "data-prop-tile": prop, "data-prop-look": look }}
         onSelect={() => handleTileClick(prop, look)}
         fanAppearance={normalizedFanAppearance}
-        propLook={look ?? propLook}
+        propLook={look ?? (prop === selectedPropType ? propLook : "pictograph")}
         triangleGrip={currentGrip}
         {recipeOverrides}
         {colors}
@@ -1050,7 +1056,7 @@
         onSelect={() => void openDrill({ kind: "family", base })}
         {color}
         fanAppearance={normalizedFanAppearance}
-        {propLook}
+        propLook={selectedBase === base ? propLook : "pictograph"}
         triangleGrip={currentGrip}
         {recipeOverrides}
         {colors}

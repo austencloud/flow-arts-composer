@@ -34,7 +34,7 @@ describe("BentoPropGrid style drill-down", () => {
       name: "Select Club prop type", exact: true,
     })).toBeVisible();
     await expect.element(page.getByRole("button", {
-      name: "Select Club 3D prop type", exact: true,
+      name: "Select Club V2 prop type", exact: true,
     })).not.toBeInTheDocument();
   });
 
@@ -59,7 +59,7 @@ describe("BentoPropGrid style drill-down", () => {
       .not.toBeInTheDocument();
 
     const torchOption = page.getByRole("button", {
-      name: "Select Torch prop type",
+      name: "Select Torch V1 prop type",
     });
     await torchOption.click();
 
@@ -125,7 +125,7 @@ describe("BentoPropGrid style settings", () => {
       .toBeVisible();
 
     await page
-      .getByRole("button", { name: "Select Triad 3D prop type", exact: true })
+      .getByRole("button", { name: "Select Triad V2 prop type", exact: true })
       .click();
     expect(onSelect).toHaveBeenLastCalledWith(PropType.TRIAD, "model");
     // Past the page swap a details page would take.
@@ -139,7 +139,7 @@ describe("BentoPropGrid style settings", () => {
     // The tiles follow the size, so a later pick keeps it.
     await rerender({ selectedPropType: PropType.BIGTRIAD });
     const bigModel = page.getByRole("button", {
-      name: "Select Big Triad 3D prop type",
+      name: "Select Big Triad V2 prop type",
       exact: true,
     });
     await expect.element(bigModel).toBeVisible();
@@ -234,7 +234,7 @@ describe("BentoPropGrid colours on a drill", () => {
   });
 });
 
-describe("BentoPropGrid prop look", () => {
+describe("BentoPropGrid prop version", () => {
   beforeEach(async () => {
     await page.viewport(760, 800);
     document.body.style.margin = "0";
@@ -255,20 +255,23 @@ describe("BentoPropGrid prop look", () => {
       .toBeVisible();
   }
 
-  it("offers the 2D artwork choice by default", async () => {
+  it("offers the Version 1 and 2 choice by default", async () => {
     await openBuugengDetails();
     await expect
-      .element(page.getByRole("radio", { name: "Realistic" }))
+      .element(page.getByRole("radio", { name: "Version 1" }))
+      .toBeVisible();
+    await expect
+      .element(page.getByRole("radio", { name: "Version 2" }))
       .toBeVisible();
   });
 
   it("leaves it out when the host renders in 3D", async () => {
     await openBuugengDetails(false);
     await expect
-      .element(page.getByRole("radio", { name: "Realistic" }))
+      .element(page.getByRole("radio", { name: "Version 2" }))
       .not.toBeInTheDocument();
     await expect
-      .element(page.getByRole("radio", { name: "Pictograph" }))
+      .element(page.getByRole("radio", { name: "Version 1" }))
       .not.toBeInTheDocument();
   });
 });
