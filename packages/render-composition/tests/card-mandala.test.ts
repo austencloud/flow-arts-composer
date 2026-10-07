@@ -45,7 +45,106 @@ const STEPS: CardMandalaStep[] = [
   },
 ];
 
+const TURN_CLOCKWISE_45: Record<string, string> = {
+  n: "ne",
+  ne: "e",
+  e: "se",
+  se: "s",
+  s: "sw",
+  sw: "w",
+  w: "nw",
+  nw: "n",
+};
+
+/** The same steps on the box grid: every location one step clockwise. */
+function onBoxGrid(steps: CardMandalaStep[]): CardMandalaStep[] {
+  const turn = (motion: CardMandalaStep["leftMotion"]) => ({
+    ...motion,
+    startLocation: TURN_CLOCKWISE_45[motion.startLocation]!,
+    endLocation: TURN_CLOCKWISE_45[motion.endLocation]!,
+  });
+  return steps.map((step) => ({
+    ...step,
+    leftMotion: turn(step.leftMotion),
+    rightMotion: turn(step.rightMotion),
+  }));
+}
+
+function pathPoints(path: string): Array<[number, number]> {
+  const numbers = path.match(/-?\d+\.\d+/g)!.map(Number);
+  const points: Array<[number, number]> = [];
+  for (let index = 0; index < numbers.length; index += 2)
+    points.push([numbers[index]!, numbers[index + 1]!]);
+  return points;
+}
+
 describe("card mandala geometry", () => {
+  it("draws a box sequence as its diamond mandala turned 45° clockwise", () => {
+    // Every perimeter point, including northwest, appears as a start or end.
+    const steps: CardMandalaStep[] = [
+      STEPS[0]!,
+      STEPS[1]!,
+      {
+        stepNumber: 2,
+        leftMotion: {
+          motionType: "anti",
+          rotationDirection: "cw",
+          startLocation: "e",
+          endLocation: "s",
+          startOrientation: "in",
+          endOrientation: "out",
+        },
+        rightMotion: {
+          motionType: "pro",
+          rotationDirection: "ccw",
+          startLocation: "w",
+          endLocation: "n",
+          startOrientation: "out",
+          endOrientation: "in",
+        },
+      },
+      {
+        stepNumber: 3,
+        leftMotion: {
+          motionType: "dash",
+          rotationDirection: "no_rotation",
+          startLocation: "s",
+          endLocation: "n",
+          startOrientation: "out",
+          endOrientation: "out",
+        },
+        rightMotion: {
+          motionType: "static",
+          rotationDirection: "no_rotation",
+          startLocation: "n",
+          endLocation: "n",
+          startOrientation: "in",
+          endOrientation: "in",
+        },
+      },
+    ];
+    const diamond = calculateCardMandalaPaths(steps);
+    const box = calculateCardMandalaPaths(onBoxGrid(steps));
+    const cos = Math.SQRT1_2;
+
+    for (const hand of ["left", "right"] as const) {
+      expect(box[hand]).toHaveLength(diamond[hand].length);
+      diamond[hand].forEach((path, index) => {
+        const expected = pathPoints(path).map(([x, y]) => [
+          x * cos - y * cos,
+          x * cos + y * cos,
+        ]);
+        const actual = pathPoints(box[hand][index]!);
+        expect(actual).toHaveLength(expected.length);
+        actual.forEach(([x, y], point) => {
+          expect(x).toBeCloseTo(expected[point]![0]!, 1);
+          expect(y).toBeCloseTo(expected[point]![1]!, 1);
+        });
+      });
+    }
+  });
+
+
   it("traces both staff tips for both hands", () => {
     const paths = calculateCardMandalaPaths(STEPS, {
       left: [1],
