@@ -499,15 +499,26 @@ the Firebase modules directly, because the small-chunk merge in
 `vite.config.ts` can fold a small wrapper module back into the page. A screen
 that brings Firebase with it mounts through `LazyMount` on a public page, as
 the Learn tab's Play, TIKA and Guide screens do on the public concept course.
+A public page that shows a few community cards without a click reads them with
+`PublicSequencesLoader.loadPreviewSequenceMetadata` (one REST query through
+`public-sequence-index-rest-reader.ts`, no Firestore SDK) and passes
+`shareRender={false}` to `ChoreoCardThumbnail`, because uploading a render signs
+a signed-out visitor in anonymously; the /composer gallery does both.
 Code that follows sign-in changes without loading Firebase itself waits with
 `whenAuthLoaded` in `loaded-auth.ts`. `hasSavedFirebaseUser`
 (`shared/auth/services/saved-firebase-user.ts`, re-exported by
 `deferred-sign-in.ts`) imports nothing and tells whether a saved session could
 sign anyone in; the card layout settings (`image-composition-state.svelte.ts`)
-load the bootstrap only when it does. `scripts/verify-public-firebase.mjs`
-checks the listed public pages in the built chunk graph, and
-`tests/unit/landing/home-first-visit-firebase.test.ts` follows the home page's
-LazyMount components and first-visit `import()` calls in source. Searches:
+and the choreo card's QR (`ChoreoCard.svelte`) load the bootstrap only when it
+does. `ChoreoCardThumbnail` loads auth and its menu actions when the context
+menu opens, so a page that shows cards does not download Firebase with them.
+The workspace step cells read `loadedAuthState.isAdmin`, and the mandala
+"Save to Collection" action loads its store when chosen, for the same reason.
+`scripts/verify-public-firebase.mjs` checks the listed public pages in the
+built chunk graph, `tests/unit/landing/home-first-visit-firebase.test.ts`
+follows the home page's LazyMount components and first-visit `import()` calls
+in source, and `tests/unit/composer/composer-gallery-firebase.test.ts` walks
+the imports of the /composer Glide stops before the 3D scene. Searches:
 currentUser, signed-in user, isAdmin, isAuthenticated, whenAuthLoaded, saved
 session, public page Firebase, first download, LazyMount. Decision: extend the two owners; code
 a public page loads at startup uses these readers instead of importing either

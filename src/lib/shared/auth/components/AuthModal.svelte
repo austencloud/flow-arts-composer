@@ -35,6 +35,7 @@
 
   interface Props {
     open: boolean;
+    inline?: boolean;
     initialMode?: AuthMode;
     reason?: AuthNudgeTrigger | null;
     attempt?: number;
@@ -45,6 +46,7 @@
 
   let {
     open,
+    inline = false,
     initialMode = "signup",
     reason = null,
     attempt = 1,
@@ -139,22 +141,16 @@
     clearAuthSubmissionBridge();
     onClose();
   }
+
+  $effect(() => {
+    if (!inline || !open) return;
+    // The drawer already owns focus containment; only move into a form that
+    // was opened automatically for a returning email user.
+    queueMicrotask(() => prompt?.focusFirstField());
+  });
 </script>
 
-<BaseModal
-  {open}
-  size="fit"
-  position="center"
-  animation="pop"
-  class="chromeless contextual-auth-shell"
-  labelledBy="auth-modal-title"
-  describedBy="auth-modal-description"
-  closeOnBackdrop
-  closeOnEscape
-  allowExternalOverlays
-  onclose={handleModalDismiss}
-  onopened={handleOpened}
->
+{#snippet authPrompt()}
   <ContextualAuthPrompt
     bind:this={prompt}
     content={promptContent}
@@ -162,11 +158,33 @@
     {onAcceptEncore}
     bind:mode={authMode}
     active={open}
-    idPrefix="auth-modal"
-    showClose
+    idPrefix={inline ? "navigation-auth" : "auth-modal"}
+    showClose={!inline}
+    embedded={inline}
     {inAppBrowser}
     {facebookError}
     onClose={handleCloseButtonClick}
     onFacebookAuth={handleFacebookAuth}
   />
-</BaseModal>
+{/snippet}
+
+{#if inline}
+  {@render authPrompt()}
+{:else}
+  <BaseModal
+    {open}
+    size="fit"
+    position="center"
+    animation="pop"
+    class="chromeless contextual-auth-shell"
+    labelledBy="auth-modal-title"
+    describedBy="auth-modal-description"
+    closeOnBackdrop
+    closeOnEscape
+    allowExternalOverlays
+    onclose={handleModalDismiss}
+    onopened={handleOpened}
+  >
+    {@render authPrompt()}
+  </BaseModal>
+{/if}

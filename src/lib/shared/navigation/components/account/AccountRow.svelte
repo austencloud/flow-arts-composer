@@ -8,9 +8,14 @@
   import { authDrawerState } from "../../../auth/state/auth-drawer-state.svelte";
   import { tryGetAccountSetupContext } from "$lib/shared/onboarding/context/account-setup-context";
 
-  let { variant = "expanded", onclick } = $props<{
+  let {
+    variant = "expanded",
+    onclick,
+    onSignIn,
+  } = $props<{
     variant?: "expanded" | "collapsed" | "drawer";
     onclick?: () => void;
+    onSignIn?: () => void;
   }>();
 
   const user = $derived(authState.user);
@@ -45,7 +50,8 @@
     } else {
       // Guests get the sign-in window straight away, not the account menu
       // popover. The row says "Sign in", so it opens on signing in.
-      authDrawerState.show("signin");
+      if (onSignIn) onSignIn();
+      else authDrawerState.show("signin");
     }
   }
 </script>
@@ -93,10 +99,13 @@
         try {
           (getHapticFeedback() as HapticFeedback)?.trigger("selection");
         } catch {}
-        // Close the containing drawer (e.g. mobile nav) before the auth drawer
-        // opens, so we never stack two full-height sheets on top of each other.
-        onclick?.();
-        authDrawerState.show("signin");
+        // A provided callback keeps auth in the containing drawer. Other
+        // callers close it before opening the shared auth drawer.
+        if (onSignIn) onSignIn();
+        else {
+          onclick?.();
+          authDrawerState.show("signin");
+        }
       }}
       aria-label={t("nav_ui_sign_in")}
     >

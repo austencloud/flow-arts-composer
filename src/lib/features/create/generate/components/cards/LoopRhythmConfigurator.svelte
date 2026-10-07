@@ -170,23 +170,25 @@
           : t("create_deep_halved")}
       </span>
     </div>
-    <SegmentedControl
-      options={[
-        { value: "2", label: t("create_deep_halved") },
-        {
-          value: "4",
-          label: t("create_deep_quartered"),
-          disabled: !(props.quarteredAvailable ?? true),
-        },
-      ]}
-      value={String(props.rhythm.rotationInterval)}
-      onchange={(value) =>
-        props.onChange({ rotationInterval: value === "4" ? 4 : 2 })}
-      size="sm"
-      color="accent"
-      semantics="radiogroup"
-      ariaLabelledby={`${idPrefix}-rotation-period-label`}
-    />
+    <div class="rotation-options">
+      <SegmentedControl
+        options={[
+          { value: "2", label: t("create_deep_halved") },
+          {
+            value: "4",
+            label: t("create_deep_quartered"),
+            disabled: !(props.quarteredAvailable ?? true),
+          },
+        ]}
+        value={String(props.rhythm.rotationInterval)}
+        onchange={(value) =>
+          props.onChange({ rotationInterval: value === "4" ? 4 : 2 })}
+        size="sm"
+        color="accent"
+        semantics="radiogroup"
+        ariaLabelledby={`${idPrefix}-rotation-period-label`}
+      />
+    </div>
     <div class="configurator-caption" aria-live="polite">
       <span class="configurator-caption-sizer" aria-hidden="true">
         {t("create_deep_rotate_quarter_hint")}
@@ -298,6 +300,10 @@
     display: flex;
     flex-direction: column;
     gap: 6px;
+  }
+
+  .rotation-options {
+    width: min(100%, 300px);
   }
 
   .configurator-heading,
