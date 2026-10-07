@@ -4,6 +4,8 @@ import http from "node:http";
 import https from "node:https";
 import path from "node:path";
 import { importTake } from "./feature-video/media-import.mjs";
+import { importMusic } from "./feature-video/music-import.mjs";
+import { parseTimeArg } from "./feature-video/time-args.mjs";
 
 const [command, ...args] = process.argv.slice(2);
 const option = (name) => {
@@ -107,7 +109,7 @@ const EDIT_COMMANDS = {
   "add-titles": () => ({
     op: "add-titles",
     ...(option("spoken") !== undefined ? { spoken: option("spoken") } : {}),
-    ...number("at"),
+    ...time("at"),
   }),
   "hook-speed": () => ({ op: "hook-speed", speed: positional(0, "a curve") }),
   "hook-frame": () => ({
@@ -137,7 +139,7 @@ const EDIT_COMMANDS = {
     op: "trim",
     item: required("item"),
     edge: required("edge"),
-    seconds: Number(required("seconds")),
+    seconds: parseTimeArg(required("seconds"), "seconds"),
   }),
   delete: () => ({ op: "delete", item: required("item") }),
   canvas: () => ({ op: "canvas", canvas: positional(0, "a ratio") }),
@@ -146,6 +148,36 @@ const EDIT_COMMANDS = {
     background: positional(0, "dark or blur"),
   }),
   "remove-take": () => ({ op: "remove-take", take: required("take") }),
+  music: () => {
+    const patch = {
+      ...time("start", "startSeconds"),
+      ...time("from", "sourceInSeconds"),
+      ...time("to", "sourceOutSeconds"),
+      ...number("gain"),
+      ...number("fade-in", "fadeInSeconds"),
+      ...number("fade-out", "fadeOutSeconds"),
+      ...bpm(),
+      ...number("downbeat", "downbeatSeconds"),
+      ...number("beats-per-bar", "beatsPerBar"),
+      ...text("label"),
+      ...text("artist"),
+      ...text("license"),
+    };
+    if (Object.keys(patch).length === 0)
+      throw new Error(
+        "music needs a setting to change, such as --gain 0.8 or --bpm 85."
+      );
+    return { op: "music", ...patch };
+  },
+  "remove-music": () => ({ op: "remove-music" }),
+  "sync-to-music": () => {
+    required("offset");
+    return {
+      op: "sync-to-music",
+      item: required("item"),
+      offsetSeconds: numberOption("offset"),
+    };
+  },
 };
 
 const BOOLEAN_FLAGS = [
@@ -163,8 +195,37 @@ function required(name) {
   if (value === undefined) throw new Error(`--${name} is required.`);
   return value;
 }
-function number(name) {
-  return option(name) === undefined ? {} : { [name]: Number(option(name)) };
+/** A number flag's value, or undefined when the flag is absent. */
+function numberOption(name) {
+  const value = option(name);
+  if (value === undefined) return undefined;
+  // JSON would send NaN as null, which some edits read as "remove".
+  if (!value.trim() || !Number.isFinite(Number(value)))
+    throw new Error(`--${name} must be a number.`);
+  return Number(value);
+}
+function number(name, key = name) {
+  const value = numberOption(name);
+  return value === undefined ? {} : { [key]: value };
+}
+/** A time flag: seconds, a clock, or a bar of the music such as @9.3. */
+function time(name, key = name) {
+  const value = option(name);
+  return value === undefined ? {} : { [key]: parseTimeArg(value, name) };
+}
+/** A text flag; an empty one removes an artist or license. */
+function text(name) {
+  const value = option(name);
+  return value === undefined ? {} : { [name]: value };
+}
+/** --bpm: a tempo, or none to remove the beat grid. */
+function bpm() {
+  const value = option("bpm");
+  if (value === undefined) return {};
+  if (value === "none") return { bpm: null };
+  if (!value.trim() || !Number.isFinite(Number(value)))
+    throw new Error("--bpm must be a number, or none to remove the beat grid.");
+  return { bpm: Number(value) };
 }
 function repeated(name) {
   return args.flatMap((arg, i) => (arg === `--${name}` ? [args[i + 1]] : []));
@@ -339,6 +400,30 @@ try {
         },
       ]),
     };
+  } else if (command === "add-music") {
+    const feature = required("feature");
+    const file = path.resolve(positional(0, "a music file"));
+    const { folder } = await request(
+      "GET",
+      {},
+      undefined,
+      featureRoute(feature)
+    );
+    const music = await importMusic(file, path.join(folder, "media", "music"));
+    result = {
+      media: music.relativePath,
+      converted: music.transcoded,
+      edit: await sendOps([
+        {
+          op: "add-music",
+          url: featureMediaUrl(feature, music.relativePath),
+          durationSeconds: music.durationSeconds,
+          ...text("label"),
+          ...text("artist"),
+          ...text("license"),
+        },
+      ]),
+    };
   } else if (command === "duplicate") {
     result = await request(
       "POST",
@@ -393,12 +478,12 @@ try {
   add-hook [--seconds 5] [--fold 8] [--mirror] [--speed ease-out]
   remove-hook
   line-up-hook                 end the tunnel on the footage's opening pose, footage behind it
-  add-titles [--spoken "how to say it"] [--at N]   name titles clip, over the opening tunnel when there is one
+  add-titles [--spoken "how to say it"] [--at T]   name titles clip, over the opening tunnel when there is one
   hook-speed <ease-out|ease-in|ease-in-out|linear|smooth|overshoot|default|x1,y1,x2,y2>
   hook-frame [--zoom 1.4] [--x 0.5] [--y 0.55] [--whole]   frame the footage behind the opening tunnel
   appearance [--item hook|animations|all|ID] --set glyph=false ...  (keys: tkaGlyph stepNumbers gridMode progressBar ...; null clears)
   item --item ID --patch '{"opacity":0.5}'
-  trim --item ID --edge start|end --seconds N
+  trim --item ID --edge start|end --seconds T
   delete --item ID
   canvas <ratio>   background <dark|blur>
   ops --file ops.json          a batch applied in one step
@@ -409,6 +494,12 @@ Feature videos, folders on the dev server's computer:
   add-take <clip.mp4|clip.mov> --feature SLUG [--label "Name"] [--append]   copies it into media/footage; HEVC, HDR and .mov become H.264 MP4
   remove-take --take ID
   duplicate <slug> <new-slug> [--title "Title"] [--share-media]
+  add-music <file> --feature SLUG [--label "Name"] [--artist "Name"] [--license "Library, id, date"]   copies it into media/music; anything but plain WAV becomes 48 kHz WAV
+  music [--start T] [--from T] [--to T] [--gain 0.8] [--fade-in S] [--fade-out S] [--bpm 85|none] [--downbeat S] [--beats-per-bar 4] [--label --artist --license]
+                               --start is where the music begins in the post; --from and --to are the part of the song that plays
+  remove-music
+  sync-to-music --item ID --offset S   puts a clip in time with the music at one of align-take's offsets
+  T is seconds (12.5), a clock (1:02.5), or a bar of the music: @9 is bar 9, @9.3 is bar 9, beat 3.
   With --feature, show and every edit use the editor that has it open, else the file on disk.
   Add --no-wait to return before the editor confirms; --out file to write output.`
     );
