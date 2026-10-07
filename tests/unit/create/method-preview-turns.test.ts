@@ -5,6 +5,8 @@
  * docs/superpowers/specs/2026-10-06-create-method-previews-design.md (Turns).
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { flushSync } from "svelte";
+import { observeTurnSignal } from "./method-preview-turns-effect-harness.svelte";
 import {
   createMethodPreviewTurns,
   type MethodPreviewTurnOptions,
@@ -204,14 +206,45 @@ describe("method preview turns", () => {
     ]);
   });
 
+  it("replays a held card cut by the page hiding when the page returns", () => {
+    const { turns } = setup();
+    turns.start();
+    const plays = tick(turns, 150, {
+      30: () => turns.hold("c"),
+      80: () => turns.setActive(false),
+      100: () => turns.setActive(true),
+    });
+    expect(plays).toEqual([
+      [5, "a"],
+      [50, "c"],
+      [110, "c"],
+    ]);
+  });
+
+  it("replays a held card whose hover delay the page hiding cut", () => {
+    const { turns } = setup();
+    turns.start();
+    const plays = tick(turns, 150, {
+      30: () => turns.hold("c"),
+      40: () => turns.setActive(false),
+      60: () => turns.setActive(true),
+    });
+    expect(plays).toEqual([
+      [5, "a"],
+      [70, "c"],
+    ]);
+  });
+
   it("ignores a repeated active signal", () => {
     const { turns } = setup();
     turns.start();
-    const plays = tick(turns, 150, { 50: () => turns.setActive(true) });
-    expect(plays).toEqual([
-      [5, "a"],
-      [115, "b"],
-    ]);
+    // The held card finished its turn and rests; a repeated signal must not
+    // replay it, since the page never hid.
+    const plays = tick(turns, 300, {
+      30: () => turns.hold("a"),
+      150: () => turns.setActive(true),
+    });
+    expect(plays).toEqual([[5, "a"]]);
   });
 
   it("starts two new rounds from the first card on return", () => {
@@ -264,10 +297,75 @@ describe("method preview turns", () => {
   it("ignores a release without a hold", () => {
     const { turns } = setup();
     turns.start();
-    expect(tick(turns, 150, { 50: () => turns.release("x") })).toEqual([
+    // The release lands while card c's hover delay is pending; it must not
+    // cancel that delay.
+    const plays = tick(turns, 100, {
+      30: () => turns.hold("c"),
+      35: () => turns.release("x"),
+    });
+    expect(plays).toEqual([
       [5, "a"],
-      [115, "b"],
+      [50, "c"],
     ]);
+  });
+
+  it("an extra turn that ends before the page settles does not start the rounds", () => {
+    const settles: Array<() => void> = [];
+    const { turns } = setup({
+      defer: (go) => {
+        settles.push(go);
+        return () => {};
+      },
+    });
+    turns.start();
+    const plays = tick(turns, 400, {
+      0: () => turns.hold("b"),
+      50: () => turns.release("b"),
+    });
+    expect(plays).toEqual([[20, "b"]]);
+    settles[0]!();
+    expect(tick(turns, 10)).toEqual([[5, "a"]]);
+  });
+
+  it("ignores a stale settle callback after start runs again", () => {
+    const settles: Array<() => void> = [];
+    const { turns } = setup({
+      defer: (go) => {
+        settles.push(go);
+        // A defer that ignores its cancel can still fire the old callback.
+        return () => {};
+      },
+    });
+    turns.start();
+    turns.start();
+    expect(settles).toHaveLength(2);
+    settles[0]!();
+    expect(tick(turns, 50)).toEqual([]);
+    settles[1]!();
+    expect(tick(turns, 10)).toEqual([[5, "a"]]);
+  });
+
+  it("signals from inside an effect without subscribing it to the turns", () => {
+    const { turns, ready } = setup({ order: () => ["a"] }, new Set<string>());
+    turns.start();
+    // The first turn waits for card a's scene; the pointer arrives meanwhile.
+    vi.advanceTimersByTime(TIMING.startDelayMs);
+    turns.hold("a");
+    vi.advanceTimersByTime(TIMING.hoverDelayMs);
+    expect(turns.playingId).toBeNull();
+
+    ready.add("a");
+    const effect = observeTurnSignal(turns, (t) => t.notifyReady("a"));
+    flushSync();
+    expect(turns.playingId).toBe("a");
+
+    // The turn that just started, and the one ending, must not re-run it.
+    flushSync();
+    vi.advanceTimersByTime(TIMING.turnMs);
+    flushSync();
+    expect(effect.runs).toBe(1);
+    expect(turns.playingId).toBeNull();
+    effect.dispose();
   });
 
   it("does nothing after dispose", () => {

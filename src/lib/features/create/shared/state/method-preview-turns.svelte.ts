@@ -13,6 +13,7 @@
  * (Turns). Owns order, rounds, holds, and pauses only: scenes own their
  * drawing, and the front door's render gate calls setActive().
  */
+import { untrack } from "svelte";
 import { getSettings } from "$lib/shared/application/state/app-state.svelte";
 import { DURATION } from "$lib/shared/transitions/transitions";
 import { reducedMotion as systemReducedMotion } from "$lib/shared/transitions/motion";
@@ -95,6 +96,12 @@ const nextTask = (go: () => void): (() => void) => {
   return () => clearTimeout(id);
 };
 
+/** Callers signal from inside effects; those effects must not subscribe to turn state. */
+const untracked =
+  <Args extends unknown[]>(fn: (...args: Args) => void) =>
+  (...args: Args): void =>
+    untrack(() => fn(...args));
+
 export function createMethodPreviewTurns(
   options: MethodPreviewTurnOptions
 ): MethodPreviewTurns {
@@ -120,6 +127,8 @@ export function createMethodPreviewTurns(
   let timer: ReturnType<typeof setTimeout> | null = null;
   /** Set while start() waits for the page to settle. */
   let cancelDefer: (() => void) | null = null;
+  /** Counts start() calls, so a stale settle callback can be told apart. */
+  let startCount = 0;
   /** A card whose scene has not loaded yet; its turn waits a while for it. */
   let waitingFor: string | null = null;
   /** Holds per card: a pointer and focus can hold one card at once. */
@@ -158,7 +167,16 @@ export function createMethodPreviewTurns(
 
   function advance(): void {
     timer = null;
-    if (!open || !active || disposed || roundsDone || holds.size > 0) return;
+    if (
+      !open ||
+      !active ||
+      disposed ||
+      roundsDone ||
+      holds.size > 0 ||
+      cancelDefer !== null
+    ) {
+      return;
+    }
     const order = options.order();
     if (order.length === 0 || cursor >= order.length * timing.rounds) {
       roundsDone = true;
@@ -184,7 +202,10 @@ export function createMethodPreviewTurns(
     begin(id, "extra");
   }
 
-  /** Whether the rounds may move on now: nothing playing, pending, or held. */
+  /**
+   * Whether nothing plays, waits on the page, or has a step pending. Holds are
+   * not checked here: advance() refuses to start a turn while any card is held.
+   */
   function idle(): boolean {
     return (
       open &&
@@ -215,8 +236,11 @@ export function createMethodPreviewTurns(
     roundsDone = false;
     if (isReduced()) return;
     open = true;
+    // A defer that ignores its cancel can still fire an older start's callback.
+    const generation = (startCount += 1);
     let settledAlready = false;
     const cancel = defer(() => {
+      if (generation !== startCount) return;
       settledAlready = true;
       cancelDefer = null;
       if (open && playingId === null && timer === null) {
@@ -239,7 +263,22 @@ export function createMethodPreviewTurns(
       playingKind = null;
       return;
     }
-    if (idle()) schedule(timing.gapMs, advance);
+    if (!idle()) return;
+    // Hiding cut the held card's turn or its hover delay: the most recently
+    // held card plays again, since advance() waits while anything is held.
+    const heldId = [...holds.keys()].at(-1);
+    if (heldId !== undefined && options.isReady(heldId)) {
+      schedule(timing.gapMs, () => {
+        timer = null;
+        if (open && active && !disposed && holds.has(heldId)) {
+          playExtra(heldId);
+          return;
+        }
+        advance();
+      });
+      return;
+    }
+    schedule(timing.gapMs, advance);
   }
 
   function hold(id: string): void {
@@ -293,12 +332,12 @@ export function createMethodPreviewTurns(
     get turn() {
       return turn;
     },
-    start,
-    stop,
-    setActive,
-    hold,
-    release,
-    notifyReady,
+    start: untracked(start),
+    stop: untracked(stop),
+    setActive: untracked(setActive),
+    hold: untracked(hold),
+    release: untracked(release),
+    notifyReady: untracked(notifyReady),
     dispose,
   };
 }
