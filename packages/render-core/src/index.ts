@@ -170,6 +170,7 @@ export {
   JOINED_POINT_RADIUS,
   JOIN_GRID_LOCATIONS,
   alignGridJoin,
+  fromJoinedHandPoint,
   getGridJoinLayout,
   gridJoinCellResolver,
   gridJoinKey,
@@ -177,10 +178,12 @@ export {
   gridJoinPropNudges,
   isGridJoin,
   joinedFitScale,
+  joinedHandTransform,
   joinedPointKey,
   joinedPointsDrawnBy,
   planJoinedGridPoints,
   sequenceGridJoinKey,
+  toJoinedHandPoint,
 } from "./calculations/grid-join-layout.js";
 export {
   JOINED_GRID_TINT,
@@ -193,6 +196,7 @@ export type {
   GridJoinSpec,
   JoinGridGeometry,
   JoinPropBody,
+  JoinedHandFrame,
   JoinVec,
   JoinedGridPlan,
   JoinedGridPoint,

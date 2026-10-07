@@ -26,6 +26,8 @@ vi.mock(
 );
 
 import PropPlacementGrid from "./PropPlacementGrid.svelte";
+import { getGridJoinLayout, toJoinedHandPoint } from "@tka/render-core";
+import { getPlacementGridPoints } from "$lib/shared/pictograph/grid/services/placement-grid-points";
 import {
   calculateBetaOffset,
   type BetaMotionInput,
@@ -332,6 +334,88 @@ describe("PropPlacementGrid", () => {
     expect(onOrientationChange).toHaveBeenCalledWith(
       HandSide.LEFT,
       Orientation.CENTER_N
+    );
+  });
+
+  it("places and aims each hand on its own grid when the sequence is joined", async () => {
+    const join = { toward: "e", steps: 1 } as const;
+    const layout = getGridJoinLayout(join, GridMode.DIAMOND);
+    const points = getPlacementGridPoints(GridMode.DIAMOND);
+    const onGrid = (hand: HandSide, location: GridLocation) =>
+      toJoinedHandPoint(
+        layout,
+        hand,
+        points.find((point) => point.location === location)!
+      );
+    const onChange = vi.fn();
+    const onOrientationChange = vi.fn();
+    render(PropPlacementGrid, {
+      gridMode: GridMode.DIAMOND,
+      initialLeftLocation: GridLocation.NORTH,
+      initialRightLocation: GridLocation.NORTH,
+      editAfterCompletion: true,
+      hitTargetRadius: 60,
+      gridJoin: join,
+      onChange,
+      onOrientationChange,
+    });
+
+    await expect
+      .element(page.getByTestId("placement-pictograph"))
+      .toHaveAttribute("data-join", "e1");
+
+    // A finished position offers each prop on its own grid: two north points,
+    // not one shared beta point.
+    expect(document.querySelectorAll(".click-target")).toHaveLength(2);
+    for (const [hand, noun] of [
+      [HandSide.LEFT, "left prop"],
+      [HandSide.RIGHT, "right prop"],
+    ] as const) {
+      const target = page
+        .getByRole("button", { name: `North point (${noun})`, exact: true })
+        .element() as SVGCircleElement;
+      const expected = onGrid(hand, GridLocation.NORTH);
+      expect(Number(target.getAttribute("cx"))).toBeCloseTo(expected.x, 6);
+      expect(Number(target.getAttribute("cy"))).toBeCloseTo(expected.y, 6);
+      expect(Number(target.getAttribute("r"))).toBeCloseTo(
+        60 * layout.scale,
+        6
+      );
+    }
+
+    // Dragging red's target aims red, read from red's own point.
+    const red = page.getByRole("button", {
+      name: "North point (right prop)",
+      exact: true,
+    });
+    const rect = (red.element() as SVGCircleElement).getBoundingClientRect();
+    const from = { x: rect.x + rect.width / 2, y: rect.y + rect.height / 2 };
+    await commands.dispatchRealTouchDrag(from, { x: from.x, y: from.y - 80 });
+    expect(onOrientationChange).toHaveBeenCalledWith(
+      HandSide.RIGHT,
+      Orientation.OUT
+    );
+    expect(onOrientationChange).not.toHaveBeenCalledWith(
+      HandSide.LEFT,
+      expect.any(String)
+    );
+
+    // Moving blue offers blue's grid only, and the tap lands blue there.
+    await page.getByRole("button", { name: "Move left prop" }).click();
+    expect(document.querySelectorAll(".click-target")).toHaveLength(4);
+    const east = page
+      .getByRole("button", { name: "East point", exact: true })
+      .element() as SVGCircleElement;
+    const blueEast = onGrid(HandSide.LEFT, GridLocation.EAST);
+    expect(Number(east.getAttribute("cx"))).toBeCloseTo(blueEast.x, 6);
+    expect(Number(east.getAttribute("cy"))).toBeCloseTo(blueEast.y, 6);
+    await page.getByRole("button", { name: "East point", exact: true }).click();
+    expect(onChange).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        leftLocation: GridLocation.EAST,
+        rightLocation: GridLocation.NORTH,
+        complete: true,
+      })
     );
   });
 });

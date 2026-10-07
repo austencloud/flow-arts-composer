@@ -19,7 +19,18 @@
     guideLineType?: "alpha" | "beta" | "gamma";
     guideCoordinates: PlacementGuideCoordinates | null;
     gammaArc: string;
+    /**
+     * Each hand's points on its own grid when the hands draw on joined grids.
+     * Each target then belongs to one hand: the hand being placed shows its
+     * own grid's points, and a finished position shows each prop's point.
+     */
+    handPoints?: Readonly<Record<HandSide, PlacementGridPoint[]>> | null;
+    /** Size of the drawn grid against one grid's: the joined fit scale. */
+    pointScale?: number;
   }
+
+  /** A target; `hand` is set when it is one hand's point on joined grids. */
+  type PlacementTarget = PlacementGridPoint & { hand?: HandSide };
 
   let {
     placement,
@@ -33,14 +44,44 @@
     guideLineType,
     guideCoordinates,
     gammaArc,
+    handPoints = null,
+    pointScale = 1,
   }: Props = $props();
 
-  function isLeftAt(location: GridLocation): boolean {
-    return placement.leftLocation === location;
+  const targets = $derived.by((): PlacementTarget[] => {
+    if (!handPoints) return activePoints;
+    const active = placement.activeHand;
+    const hands = active !== null ? [active] : [HandSide.LEFT, HandSide.RIGHT];
+    return hands.flatMap((hand) =>
+      handPoints[hand]
+        .filter((point) => active !== null || isAt(hand, point.location))
+        .map((point) => ({ ...point, hand }))
+    );
+  });
+  const dropPoints = $derived(
+    handPoints && aim.grabbedLocationColor !== null
+      ? handPoints[aim.grabbedLocationColor]
+      : activePoints
+  );
+
+  function isAt(hand: HandSide, location: GridLocation): boolean {
+    return hand === HandSide.LEFT
+      ? placement.leftLocation === location
+      : placement.rightLocation === location;
   }
 
-  function isRightAt(location: GridLocation): boolean {
-    return placement.rightLocation === location;
+  function isLeftAt(target: PlacementTarget): boolean {
+    return (
+      target.hand !== HandSide.RIGHT &&
+      placement.leftLocation === target.location
+    );
+  }
+
+  function isRightAt(target: PlacementTarget): boolean {
+    return (
+      target.hand !== HandSide.LEFT &&
+      placement.rightLocation === target.location
+    );
   }
 </script>
 
@@ -63,19 +104,19 @@
   bind:this={aim.overlayElement}
 >
   <g class="touch-indicators">
-    {#each activePoints as point (point.location)}
+    {#each targets as point (`${point.hand ?? ""}${point.location}`)}
       {#if placement.canPlace && aim.grabbedLocationColor === null}
         <circle
           cx={point.x}
           cy={point.y}
-          r="40"
+          r={40 * pointScale}
           fill={pulseColor}
           class="point-glow"
         />
         <circle
           cx={point.x}
           cy={point.y}
-          r="18"
+          r={18 * pointScale}
           fill={pulseColor}
           opacity="0.5"
           class="point-solid"
@@ -90,21 +131,26 @@
         ? "var(--prop-red)"
         : "var(--prop-blue)"}
     <g class="location-drag-feedback" aria-hidden="true" style:color>
-      {#each activePoints as point (point.location)}
-        <circle cx={point.x} cy={point.y} r="48" class="drop-option" />
+      {#each dropPoints as point (point.location)}
+        <circle
+          cx={point.x}
+          cy={point.y}
+          r={48 * pointScale}
+          class="drop-option"
+        />
       {/each}
       {#if aim.locationDragColor !== null && aim.locationDragOrigin}
         <circle
           cx={aim.locationDragOrigin.x}
           cy={aim.locationDragOrigin.y}
-          r="32"
+          r={32 * pointScale}
           class="drag-origin"
         />
       {/if}
       <circle
         cx={aim.locationDragCenter.x}
         cy={aim.locationDragCenter.y}
-        r="65"
+        r={65 * pointScale}
         class="grab-ring"
       />
       {#if aim.locationTarget}
@@ -118,19 +164,19 @@
         <circle
           cx={aim.locationTarget.x}
           cy={aim.locationTarget.y}
-          r="48"
+          r={48 * pointScale}
           class="drop-target-contrast"
         />
         <circle
           cx={aim.locationTarget.x}
           cy={aim.locationTarget.y}
-          r="48"
+          r={48 * pointScale}
           class="drop-target"
         />
         <circle
           cx={aim.locationTarget.x}
           cy={aim.locationTarget.y}
-          r="10"
+          r={10 * pointScale}
           class="drop-center"
         />
       {/if}
@@ -142,7 +188,7 @@
       <circle
         cx={aim.landing.point.x}
         cy={aim.landing.point.y}
-        r="54"
+        r={54 * pointScale}
         class="drop-landing"
         aria-hidden="true"
         stroke={aim.landing.color === HandSide.RIGHT
@@ -164,7 +210,7 @@
     <circle
       cx={aim.highlightCenter.x}
       cy={aim.highlightCenter.y}
-      r={aim.isBeta ? 44 : 56}
+      r={(aim.isBeta ? 44 : 56) * pointScale}
       fill="none"
       class="aim-halo"
       class:resting={aim.dragHand === null}
@@ -180,10 +226,10 @@
         {@const cos = Math.cos(radians)}
         {@const sin = Math.sin(radians)}
         <line
-          x1={aim.dragPoint.x + cos * 72}
-          y1={aim.dragPoint.y + sin * 72}
-          x2={aim.dragPoint.x + cos * 138}
-          y2={aim.dragPoint.y + sin * 138}
+          x1={aim.dragPoint.x + cos * 72 * pointScale}
+          y1={aim.dragPoint.y + sin * 72 * pointScale}
+          x2={aim.dragPoint.x + cos * 138 * pointScale}
+          y2={aim.dragPoint.y + sin * 138 * pointScale}
           class="aim-tick"
           class:aimed={direction.orientation === aim.dragAim}
           stroke={aim.dragHand === HandSide.RIGHT
@@ -195,26 +241,29 @@
   {/if}
 
   <g class="click-targets">
-    {#each activePoints as point (point.location)}
+    {#each targets as point (`${point.hand ?? ""}${point.location}`)}
       <circle
         cx={point.x}
         cy={point.y}
-        r={hitTargetRadius}
+        r={hitTargetRadius * pointScale}
         fill="transparent"
         class="click-target"
-        class:tappable={aim.isPressable(point.location)}
-        class:occupied={isLeftAt(point.location) || isRightAt(point.location)}
-        onpointerdown={(event) => aim.handlePointerDown(event, point.location)}
-        onpointermove={(event) => aim.updateHover(event, point.location)}
+        class:tappable={aim.isPressable(point.location, point.hand)}
+        class:occupied={isLeftAt(point) || isRightAt(point)}
+        onpointerdown={(event) =>
+          aim.handlePointerDown(event, point.location, point.hand)}
+        onpointermove={(event) =>
+          aim.updateHover(event, point.location, point.hand)}
         onpointerleave={aim.clearHover}
-        onclick={(event) => aim.handleClick(point.location, event)}
-        onkeydown={(event) => aim.handleKeydown(event, point.location)}
+        onclick={(event) => aim.handleClick(point.location, event, point.hand)}
+        onkeydown={(event) =>
+          aim.handleKeydown(event, point.location, point.hand)}
         role="button"
-        tabindex={aim.isPressable(point.location) ? 0 : -1}
-        aria-label="{point.label} point{isLeftAt(point.location)
+        tabindex={aim.isPressable(point.location, point.hand) ? 0 : -1}
+        aria-label="{point.label} point{isLeftAt(point)
           ? ` (${leftNoun})`
-          : ''}{isRightAt(point.location) ? ` (${rightNoun})` : ''}"
-        aria-disabled={!aim.isPressable(point.location)}
+          : ''}{isRightAt(point) ? ` (${rightNoun})` : ''}"
+        aria-disabled={!aim.isPressable(point.location, point.hand)}
       />
     {/each}
   </g>

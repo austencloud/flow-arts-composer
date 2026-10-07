@@ -11,9 +11,29 @@
   3. Ghost prop for inactive hand (animated in sync during the other hand's building phase)
   4. Active hand's prop indicator (animated <g> driven by SvgPropAnimator)
   5. Hit target circles (always on top for click capture)
+
+  When the sequence has a grid join, layer 1 draws the two joined grids and
+  every hand's prop, ghost and path draws on that hand's own grid; the hit
+  targets sit on the active hand's grid.
 -->
 <script lang="ts">
-  import { GridLocation } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+  import type { GridJoin } from "@tka/tka-types";
+  import {
+    getGridJoinLayout,
+    getMotionColor,
+    joinedHandTransform,
+    toJoinedHandPoint,
+  } from "@tka/render-core";
+  import {
+    GridLocation,
+    GridMode,
+  } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+  import {
+    joinedGridFitTransform,
+    joinedGridMarkup,
+  } from "$lib/shared/pictograph/grid/services/joined-grid-markup";
+  import { getAnimationVisibilityManager } from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
+  import { getAnimationVisibilityContext } from "$lib/shared/animation-engine/state/animation-visibility-context";
   import {
     HandSide,
     Orientation,
@@ -54,6 +74,7 @@
     onStepCapExceeded,
     startAimEnabled = true,
     fillPanel = false,
+    gridJoin = null,
   }: {
     builderState: AssembleState;
     /** Called when the user tries to add a motion. Return true to block the action and show the nudge. */
@@ -62,7 +83,54 @@
     startAimEnabled?: boolean;
     /** Assemble fills the panel above its dock; dialogs retain a square canvas. */
     fillPanel?: boolean;
+    /** The workspace sequence's grid join; absent or null draws one grid. */
+    gridJoin?: GridJoin | null;
   } = $props();
+
+  // Joined grids, drawn as the sequence's cells draw them: render-core's
+  // layout and tinted dots, and each hand's content moved onto its own grid.
+  const joinLayout = $derived(
+    gridJoin ? getGridJoinLayout(gridJoin, builderState.gridMode) : null
+  );
+  const visibility =
+    getAnimationVisibilityContext() ?? getAnimationVisibilityManager();
+  let darkMode = $state(true);
+  $effect(() => {
+    if (!joinLayout) return;
+    const sync = () => (darkMode = visibility.isDarkMode());
+    sync();
+    visibility.registerObserver(sync);
+    return () => visibility.unregisterObserver(sync);
+  });
+  const joinedGrid = $derived.by(() => {
+    if (!joinLayout) return "";
+    const mode = darkMode ? "dark" : "light";
+    const colors = getSettings().primaryPropColors;
+    return joinedGridMarkup(joinLayout, {
+      darkMode,
+      box: builderState.gridMode === GridMode.BOX,
+      handColors: {
+        left: colors?.left ?? getMotionColor(HandSide.LEFT, mode),
+        right: colors?.right ?? getMotionColor(HandSide.RIGHT, mode),
+      },
+    });
+  });
+  /** Draws one-grid content on `hand`'s grid; nothing when on one grid. */
+  function handLayer(hand: HandSide): string | undefined {
+    return joinLayout ? joinedHandTransform(joinLayout, hand) : undefined;
+  }
+  const inactiveHand = $derived(
+    builderState.activeHand === HandSide.LEFT ? HandSide.RIGHT : HandSide.LEFT
+  );
+  // Clicks act on the active hand, so its grid holds the targets.
+  const placeActiveTarget = $derived.by(() => {
+    const layout = joinLayout;
+    const hand = builderState.activeHand;
+    return layout
+      ? (point: { x: number; y: number }) =>
+          toJoinedHandPoint(layout, hand, point)
+      : null;
+  });
 
   // Services
   const animator = new SvgPropAnimator();
@@ -655,33 +723,48 @@
     />
 
     <!-- Layer 1: Grid lines and points -->
-    <GridSvg gridMode={builderState.gridMode} />
+    {#if joinLayout}
+      <g
+        class="joined-grid"
+        transform={joinedGridFitTransform(joinLayout)}
+        opacity={darkMode ? 0.85 : 1}
+        pointer-events="none"
+      >
+        {@html joinedGrid}
+      </g>
+    {:else}
+      <GridSvg gridMode={builderState.gridMode} />
+    {/if}
 
     <!-- Layer 2: Compare the other hand's same-beat route with the next click. -->
     {#if comparisonPathD}
-      <path
-        class="comparison-path motion-preview-path"
-        class:blue-path={builderState.activeHand === HandSide.RIGHT}
-        class:red-path={builderState.activeHand === HandSide.LEFT}
-        d={comparisonPathD}
-        fill="none"
-        stroke-linecap="round"
-        stroke-linejoin="round"
-        aria-hidden="true"
-      />
+      <g transform={handLayer(inactiveHand)}>
+        <path
+          class="comparison-path motion-preview-path"
+          class:blue-path={builderState.activeHand === HandSide.RIGHT}
+          class:red-path={builderState.activeHand === HandSide.LEFT}
+          d={comparisonPathD}
+          fill="none"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          aria-hidden="true"
+        />
+      </g>
     {/if}
 
     {#if candidatePathD}
-      <path
-        class="candidate-path motion-preview-path"
-        class:blue-path={builderState.activeHand === HandSide.LEFT}
-        class:red-path={builderState.activeHand === HandSide.RIGHT}
-        d={candidatePathD}
-        fill="none"
-        stroke-linecap="round"
-        stroke-linejoin="round"
-        aria-hidden="true"
-      />
+      <g transform={handLayer(builderState.activeHand)}>
+        <path
+          class="candidate-path motion-preview-path"
+          class:blue-path={builderState.activeHand === HandSide.LEFT}
+          class:red-path={builderState.activeHand === HandSide.RIGHT}
+          d={candidatePathD}
+          fill="none"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          aria-hidden="true"
+        />
+      </g>
     {/if}
 
     <!-- Layer 3: Ghost props (the inactive hand animated in sync during building).
@@ -689,136 +772,144 @@
     {#if ghostLeftState && builderState.phase !== "complete"}
       {@const ghostTarget = findTarget(ghostLeftState.position)}
       {#if ghostTarget}
-        {#if leftPropData?.svgData}
-          <g
-            bind:this={ghostLeftPropGroupRef}
-            class="prop-svg-group dimmed-prop"
-            style="transform: {propTransform(
-              ghostTarget.x,
-              ghostTarget.y,
-              getRotation(
-                ghostLeftState.position,
-                ghostLeftState.orientation,
-                currentLeftPropType
-              ),
-              leftPropData.svgData.center
-            )}"
-          >
-            {@html leftPropData.svgData.svgContent}
-          </g>
-        {:else}
-          <circle
-            cx={ghostTarget.x}
-            cy={ghostTarget.y}
-            r={FALLBACK_RADIUS}
-            class="prop-fallback blue-fallback dimmed-prop"
-          />
-        {/if}
+        <g transform={handLayer(HandSide.LEFT)}>
+          {#if leftPropData?.svgData}
+            <g
+              bind:this={ghostLeftPropGroupRef}
+              class="prop-svg-group dimmed-prop"
+              style="transform: {propTransform(
+                ghostTarget.x,
+                ghostTarget.y,
+                getRotation(
+                  ghostLeftState.position,
+                  ghostLeftState.orientation,
+                  currentLeftPropType
+                ),
+                leftPropData.svgData.center
+              )}"
+            >
+              {@html leftPropData.svgData.svgContent}
+            </g>
+          {:else}
+            <circle
+              cx={ghostTarget.x}
+              cy={ghostTarget.y}
+              r={FALLBACK_RADIUS}
+              class="prop-fallback blue-fallback dimmed-prop"
+            />
+          {/if}
+        </g>
       {/if}
     {/if}
 
     {#if ghostRightState && builderState.phase !== "complete"}
       {@const ghostRedTarget = findTarget(ghostRightState.position)}
       {#if ghostRedTarget}
-        {#if rightPropData?.svgData}
-          <g
-            bind:this={ghostRightPropGroupRef}
-            class="prop-svg-group dimmed-prop"
-            style="transform: {propTransform(
-              ghostRedTarget.x,
-              ghostRedTarget.y,
-              getRotation(
-                ghostRightState.position,
-                ghostRightState.orientation,
-                currentRightPropType
-              ),
-              rightPropData.svgData.center
-            )}"
-          >
-            {@html rightPropData.svgData.svgContent}
-          </g>
-        {:else}
-          <circle
-            cx={ghostRedTarget.x}
-            cy={ghostRedTarget.y}
-            r={FALLBACK_RADIUS}
-            class="prop-fallback red-fallback dimmed-prop"
-          />
-        {/if}
+        <g transform={handLayer(HandSide.RIGHT)}>
+          {#if rightPropData?.svgData}
+            <g
+              bind:this={ghostRightPropGroupRef}
+              class="prop-svg-group dimmed-prop"
+              style="transform: {propTransform(
+                ghostRedTarget.x,
+                ghostRedTarget.y,
+                getRotation(
+                  ghostRightState.position,
+                  ghostRightState.orientation,
+                  currentRightPropType
+                ),
+                rightPropData.svgData.center
+              )}"
+            >
+              {@html rightPropData.svgData.svgContent}
+            </g>
+          {:else}
+            <circle
+              cx={ghostRedTarget.x}
+              cy={ghostRedTarget.y}
+              r={FALLBACK_RADIUS}
+              class="prop-fallback red-fallback dimmed-prop"
+            />
+          {/if}
+        </g>
       {/if}
     {/if}
 
     <!-- Layer 4: Active hand's prop indicator (animated group) -->
     {#if activeTarget && builderState.phase !== "complete"}
-      <g
-        bind:this={activePropGroupRef}
-        class="active-prop-group"
-        class:no-transition={builderState.phase === "animating" ||
-          suppressTransition}
-        style="transform: {propTransform(
-          activeTarget.x,
-          activeTarget.y,
-          activeRotation,
-          activePropCenter
-        )}"
-      >
-        {#if activePropData?.svgData}
-          <g
-            class="active-prop-inner"
-            class:scale-in={justPlaced}
-            style="--active-color: {activeColor}; filter: drop-shadow(0 0 6px {activeColor})"
-          >
-            {@html activePropData.svgData.svgContent}
-          </g>
-        {:else}
-          <!-- Fallback circle while SVG loads -->
-          <circle
-            cx="0"
-            cy="0"
-            r={FALLBACK_RADIUS}
-            class="prop-fallback"
-            class:blue-fallback={builderState.activeHand === HandSide.LEFT}
-            class:red-fallback={builderState.activeHand === HandSide.RIGHT}
-            class:scale-in={justPlaced}
-          />
-        {/if}
+      <g transform={handLayer(builderState.activeHand)}>
+        <g
+          bind:this={activePropGroupRef}
+          class="active-prop-group"
+          class:no-transition={builderState.phase === "animating" ||
+            suppressTransition}
+          style="transform: {propTransform(
+            activeTarget.x,
+            activeTarget.y,
+            activeRotation,
+            activePropCenter
+          )}"
+        >
+          {#if activePropData?.svgData}
+            <g
+              class="active-prop-inner"
+              class:scale-in={justPlaced}
+              style="--active-color: {activeColor}; filter: drop-shadow(0 0 6px {activeColor})"
+            >
+              {@html activePropData.svgData.svgContent}
+            </g>
+          {:else}
+            <!-- Fallback circle while SVG loads -->
+            <circle
+              cx="0"
+              cy="0"
+              r={FALLBACK_RADIUS}
+              class="prop-fallback"
+              class:blue-fallback={builderState.activeHand === HandSide.LEFT}
+              class:red-fallback={builderState.activeHand === HandSide.RIGHT}
+              class:scale-in={justPlaced}
+            />
+          {/if}
+        </g>
       </g>
     {/if}
 
     <!-- Layer 4.5: Orientation ring indicator (sibling of prop group to avoid
          compounding parent rotation and interfering with CSS transition) -->
     {#if activeTarget && builderState.showOrientationArrow && builderState.phase !== "complete"}
-      <g
-        class="ori-indicator"
-        style="transform: translate({activeTarget.x}px, {activeTarget.y}px) rotate({arrowRotationDeg}deg)"
-      >
-        <!-- Directional arcs sweeping in facing direction -->
-        <path
-          d="M 60,0 A 60,60 0 0,1 30,52"
-          fill="none"
-          stroke="var(--color-gold, #FFD700)"
-          stroke-width="5"
-          stroke-linecap="round"
-        />
-        <path
-          d="M 60,0 A 60,60 0 0,0 30,-52"
-          fill="none"
-          stroke="var(--color-gold, #FFD700)"
-          stroke-width="5"
-          stroke-linecap="round"
-        />
-        <!-- Arrowhead at the tip -->
-        <polygon points="55,-8 72,0 55,8" fill="var(--color-gold, #FFD700)" />
-        <!-- Outer glow ring -->
-        <circle
-          cx="0"
-          cy="0"
-          r="80"
-          fill="none"
-          stroke="var(--color-gold, #FFD700)"
-          stroke-width="2"
-          opacity="0.2"
-        />
+      <g transform={handLayer(builderState.activeHand)}>
+        <g
+          class="ori-indicator"
+          style="transform: translate({activeTarget.x}px, {activeTarget.y}px) rotate({arrowRotationDeg}deg)"
+        >
+          <!-- Directional arcs sweeping in facing direction -->
+          <path
+            d="M 60,0 A 60,60 0 0,1 30,52"
+            fill="none"
+            stroke="var(--color-gold, #FFD700)"
+            stroke-width="5"
+            stroke-linecap="round"
+          />
+          <path
+            d="M 60,0 A 60,60 0 0,0 30,-52"
+            fill="none"
+            stroke="var(--color-gold, #FFD700)"
+            stroke-width="5"
+            stroke-linecap="round"
+          />
+          <!-- Arrowhead at the tip -->
+          <polygon points="55,-8 72,0 55,8" fill="var(--color-gold, #FFD700)" />
+          <!-- Outer glow ring -->
+          <circle
+            cx="0"
+            cy="0"
+            r="80"
+            fill="none"
+            stroke="var(--color-gold, #FFD700)"
+            stroke-width="2"
+            opacity="0.2"
+          />
+        </g>
       </g>
     {/if}
 
@@ -829,30 +920,32 @@
       {#if leftFinalLocation}
         {@const leftFinalT = findTarget(leftFinalLocation)}
         {#if leftFinalT}
-          {#if leftPropData?.svgData}
-            <g
-              class="prop-svg-group"
-              style="transform: {propTransform(
-                leftFinalT.x,
-                leftFinalT.y,
-                getRotation(
-                  leftFinalLocation,
-                  leftFinalOrientation,
-                  currentLeftPropType
-                ),
-                leftPropData.svgData.center
-              )}"
-            >
-              {@html leftPropData.svgData.svgContent}
-            </g>
-          {:else}
-            <circle
-              cx={leftFinalT.x}
-              cy={leftFinalT.y}
-              r={FALLBACK_RADIUS}
-              class="prop-fallback blue-fallback"
-            />
-          {/if}
+          <g transform={handLayer(HandSide.LEFT)}>
+            {#if leftPropData?.svgData}
+              <g
+                class="prop-svg-group"
+                style="transform: {propTransform(
+                  leftFinalT.x,
+                  leftFinalT.y,
+                  getRotation(
+                    leftFinalLocation,
+                    leftFinalOrientation,
+                    currentLeftPropType
+                  ),
+                  leftPropData.svgData.center
+                )}"
+              >
+                {@html leftPropData.svgData.svgContent}
+              </g>
+            {:else}
+              <circle
+                cx={leftFinalT.x}
+                cy={leftFinalT.y}
+                r={FALLBACK_RADIUS}
+                class="prop-fallback blue-fallback"
+              />
+            {/if}
+          </g>
         {/if}
       {/if}
       <!-- Right-hand final -->
@@ -865,30 +958,32 @@
                 .endOrientation
             : Orientation.IN}
         {#if rightFinalT}
-          {#if rightPropData?.svgData}
-            <g
-              class="prop-svg-group"
-              style="transform: {propTransform(
-                rightFinalT.x,
-                rightFinalT.y,
-                getRotation(
-                  rightFinalLocation,
-                  rightFinalOrientation,
-                  currentRightPropType
-                ),
-                rightPropData.svgData.center
-              )}"
-            >
-              {@html rightPropData.svgData.svgContent}
-            </g>
-          {:else}
-            <circle
-              cx={rightFinalT.x}
-              cy={rightFinalT.y}
-              r={FALLBACK_RADIUS}
-              class="prop-fallback red-fallback"
-            />
-          {/if}
+          <g transform={handLayer(HandSide.RIGHT)}>
+            {#if rightPropData?.svgData}
+              <g
+                class="prop-svg-group"
+                style="transform: {propTransform(
+                  rightFinalT.x,
+                  rightFinalT.y,
+                  getRotation(
+                    rightFinalLocation,
+                    rightFinalOrientation,
+                    currentRightPropType
+                  ),
+                  rightPropData.svgData.center
+                )}"
+              >
+                {@html rightPropData.svgData.svgContent}
+              </g>
+            {:else}
+              <circle
+                cx={rightFinalT.x}
+                cy={rightFinalT.y}
+                r={FALLBACK_RADIUS}
+                class="prop-fallback red-fallback"
+              />
+            {/if}
+          </g>
         {/if}
       {/if}
     {/if}
@@ -903,6 +998,8 @@
     aimEnabled={startAimEnabled && builderState.phase === "idle"}
     keyLabels={builderState.keyboardMode ? LOCATION_TO_KEY_LABEL : {}}
     labelForLocation={getTargetLabel}
+    placeTarget={placeActiveTarget}
+    targetScale={joinLayout?.scale ?? 1}
     onPointClick={handleTargetClick}
     onPointAim={(_location, orientation) => {
       builderState.setOrientation(orientation);
