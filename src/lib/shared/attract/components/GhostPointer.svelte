@@ -99,7 +99,9 @@
   // noise around a stationary dot.
   const trailing = $derived(speed > 0.12 && !parked && !dimmed);
   const trailLen = $derived(Math.round(speed * (stage ? 96 : 54)));
-  const headingDeg = $derived((heading * 180) / Math.PI);
+  // `heading` is the direction of travel. The wisp faces the other way, back
+  // toward where the dot came from.
+  const tailDeg = $derived((heading * 180) / Math.PI + 180);
 </script>
 
 <div
@@ -117,7 +119,7 @@
     <span
       class="trail"
       aria-hidden="true"
-      style={`width:${trailLen}px; opacity:${0.16 + speed * 0.4}; transform: rotate(${headingDeg}deg)`}
+      style={`width:${trailLen}px; opacity:${0.16 + speed * 0.4}; transform: rotate(${tailDeg}deg)`}
     ></span>
   {/if}
 
@@ -230,8 +232,10 @@
       0 0 62px color-mix(in srgb, var(--accent, #8b8cff) 40%, transparent);
   }
 
-  /* The wisp. Anchored at the dot's centre and rotated to point back down the
-     path, so it trails rather than leads. */
+  /* The wisp. Its left end is pinned to the dot's centre and the script turns
+     it to face opposite the heading (tailDeg), so it streams back down the path
+     just travelled. Brightest where it meets the dot and fading toward the tip,
+     so it trails rather than leads. */
   .trail {
     position: absolute;
     left: 0;
@@ -241,7 +245,7 @@
     border-radius: 999px;
     transform-origin: 0 50%;
     background: linear-gradient(
-      to left,
+      to right,
       color-mix(in srgb, var(--accent, #8b8cff) 70%, transparent),
       transparent
     );
