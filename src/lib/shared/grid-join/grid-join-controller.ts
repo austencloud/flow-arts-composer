@@ -3,10 +3,10 @@
  * sequence it shows.
  *
  * The join (`SequenceData.conjoined`) belongs to the sequence, so every right
- * click menu that offers it edits the same value through one of these. A host
- * (the sequence viewer, the Create workspace) provides the controller over its
- * own sequence; a surface with no controller offers no join choice but still
- * draws the join the sequence has.
+ * click menu that offers it edits the same value through one of these. The
+ * Create workspace provides the controller over its sequence; a surface with
+ * no controller (the viewer, which only shows a sequence) offers no join
+ * choice but still draws the join the sequence has.
  */
 import { getContext, setContext } from "svelte";
 import type { GridJoin } from "@tka/tka-types";
@@ -69,6 +69,14 @@ const KEY = Symbol("grid-join-controller");
 /** Provide the controller to every menu below this component. */
 export function setGridJoinContext(controller: GridJoinController): void {
   setContext(KEY, controller);
+}
+
+/**
+ * No controller for anything below this component: a surface that only shows
+ * a sequence (the viewer) offers no join choice, whatever its host provides.
+ */
+export function clearGridJoinContext(): void {
+  setContext(KEY, undefined);
 }
 
 /** The surrounding controller, or null where the join cannot be changed. */

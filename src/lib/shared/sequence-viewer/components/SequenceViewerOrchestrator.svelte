@@ -7,11 +7,7 @@
     savedSequencePathPolicy,
     countPathOverrides,
   } from "../services/sequence-path-policy";
-  import {
-    createGridJoinController,
-    setGridJoinContext,
-    tryGetGridJoinContext,
-  } from "$lib/shared/grid-join/grid-join-controller";
+  import { clearGridJoinContext } from "$lib/shared/grid-join/grid-join-controller";
   import {
     sequenceGridJoin,
     withSequenceGridJoin,
@@ -258,11 +254,13 @@
 
   let pathPreview = $state<AnimationPathPolicy | null>(null);
   let pathPreviewPending = $state(false);
-  // The viewer's own grid-join choice, layered over the saved sequence the way
-  // the path preview is, so the animation, cards, exports, library saves and
-  // links all carry it. undefined follows the saved join; null is one grid.
-  // It lives only in this viewer: nothing is written to storage, and a
-  // different sequence starts from its own saved join.
+  // The join is part of the sequence (an edit, made in Create), so the viewer
+  // shows the sequence as saved and offers no way to change it. The one
+  // exception is an older link that carried a join the viewer used to layer
+  // on: it still opens joined, layered over the saved sequence the way the
+  // path preview is. undefined follows the saved join; null is one grid.
+  // Nothing is written to storage, and a different sequence starts from its
+  // own saved join.
   let gridJoinOverride = $state<GridJoinOverride>(undefined);
   const savedGridJoin = $derived(sequenceGridJoin(savedSequence));
   const sequence = $derived.by(() => {
@@ -271,20 +269,9 @@
       ? withSequenceGridJoin(previewed, gridJoinOverride)
       : previewed;
   });
-  // A viewer inside a workspace that owns the sequence (Create's drawer) hands
-  // the choice to that workspace, so it edits the sequence itself; the
-  // `sequence` it was given then already carries the join.
-  setGridJoinContext(
-    tryGetGridJoinContext() ??
-      createGridJoinController({
-        get: () =>
-          gridJoinOverride !== undefined ? gridJoinOverride : savedGridJoin,
-        apply: (join) => {
-          gridJoinOverride = normalizeGridJoinOverride(join, savedGridJoin);
-        },
-        gridMode: () => sequence?.gridMode,
-      })
-  );
+  // Nothing below the viewer offers the join, even inside Create's drawer,
+  // whose workspace controller would otherwise reach the canvas menu.
+  clearGridJoinContext();
 
   // ── URL state session ────────────────────────────────────────────────────
   // One session per viewer mount. It decodes the inbound link into per-slice
@@ -903,8 +890,9 @@
   urlSession.registerSlice("an", (options) =>
     captureAnSlice(anStores, options)
   );
-  // The join choice: from a `gj` seed, or from an old link's Conjoined switch
+  // An older link's join: from a `gj` seed, or from its Conjoined switch
   // (`an` slice `gridLayout: "conjoined"`) when the sequence has no join.
+  // Re-captured as seeded, so the address bar stays stable.
   const gjSeedPayload = urlSession.getSeed("gj");
   gridJoinOverride = normalizeGridJoinOverride(
     gjSeedPayload != null

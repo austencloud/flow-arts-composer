@@ -34,7 +34,10 @@ import {
   resolveAnimationGridJoin,
   shiftPropState,
 } from "../animation-grid-join";
-import { GridJoinTween, gridJoinHandOffsets } from "../grid-join-tween";
+import {
+  GridJoinTween,
+  gridJoinHandOffsets,
+} from "$lib/shared/grid-join/grid-join-tween";
 
 export class FrameSystem {
   readonly frameParameterBuilder = new FrameParameterBuilder();

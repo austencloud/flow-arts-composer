@@ -1,7 +1,7 @@
 import type {
   GridJoinTweenSample,
   HandOffsets,
-} from "$lib/shared/animation-engine/services/grid-join-tween";
+} from "$lib/shared/grid-join/grid-join-tween";
 import type { TrailPoint, TrailSettings } from "./trail-types";
 import type { PropState } from "$lib/shared/foundation/domain/types/prop-state";
 import type { QualityHints } from "./quality-types";
