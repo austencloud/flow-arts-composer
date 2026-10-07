@@ -1777,7 +1777,7 @@ export function findCaptureTake(takes, id) {
 - [ ] **Step 4: Run it to confirm it passes**
 
 Run: `npx vitest run --config tests/config/vitest.config.ts tests/unit/scripts/capture-files.test.ts`
-Expected: PASS, 9 tests.
+Expected: PASS, 8 tests.
 
 - [ ] **Step 5: Write the failing CLI test**
 
@@ -2148,7 +2148,6 @@ Expected: FAIL, module not found.
 Create `scripts/feature-video/capture.mjs`:
 
 ```js
-#!/usr/bin/env node
 import { execFile } from "node:child_process";
 import fs from "node:fs/promises";
 import path from "node:path";
@@ -2246,10 +2245,18 @@ export function validateCaptureScript(script, id) {
     throw new Error(
       `${id}.capture.mjs asks for device scale ${viewport.deviceScaleFactor}. Chrome's screencast stops at 1.5 times the CSS viewport, so frames would come out smaller than you plan for. Use a bigger viewport at 1.5: 720 by 1280 gives 1080 by 1920.`
     );
-  const size = outputSize(viewport);
-  if (size.width % 2 || size.height % 2)
+  const exact = {
+    width: viewport.width * viewport.deviceScaleFactor,
+    height: viewport.height * viewport.deviceScaleFactor,
+  };
+  if (
+    !Number.isInteger(exact.width) ||
+    !Number.isInteger(exact.height) ||
+    exact.width % 2 ||
+    exact.height % 2
+  )
     throw new Error(
-      `${id}.capture.mjs would record ${size.width} by ${size.height}; the video size must be even.`
+      `${id}.capture.mjs would record ${exact.width} by ${exact.height}; the video size must be whole and even.`
     );
   if (typeof script.run !== "function")
     throw new Error(`${id}.capture.mjs needs a run(director) function.`);
@@ -2359,7 +2366,7 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
 - [ ] **Step 4: Run the test to confirm it passes**
 
 Run: `npx vitest run --config tests/config/vitest.config.ts tests/unit/scripts/capture-runner.test.ts`
-Expected: PASS, 13 tests.
+Expected: PASS, 11 tests.
 
 - [ ] **Step 5: Check the runner starts and explains itself**
 
