@@ -297,9 +297,17 @@ export function createFeatureVideoSync(
     const seen = adoptions;
     return inTurn(async () => {
       await wait(settleMs);
-      // A newer disk copy replaced this one in the editor while it waited;
-      // this copy is one Undo away.
-      if (adoptions !== seen || sameProject(project, knownProject)) return null;
+      // Only the newest copy the editor kept goes to disk. A copy made
+      // before a newer disk copy loaded is one Undo away, even one the
+      // autosave was still holding: that load clears `latest`. Opening a
+      // post keeps no copy, so it writes nothing.
+      if (
+        adoptions !== seen ||
+        latest === null ||
+        !sameProject(project, latest) ||
+        sameProject(project, knownProject)
+      )
+        return null;
       let response: Response;
       try {
         response = await fetcher(url, {

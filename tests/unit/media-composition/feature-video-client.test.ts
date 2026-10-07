@@ -9,6 +9,7 @@ import {
   createEmptyPostProject,
   type PostProject,
 } from "$lib/shared/media-composition/domain/post-project";
+import { applyPostProjectOps } from "$lib/shared/media-composition/domain/post-project-ops";
 import { addTakeTap } from "$lib/shared/media-composition/domain/take-timing";
 import {
   createFeatureVideoSync,
@@ -16,6 +17,7 @@ import {
   loadFeatureVideo,
   type FeatureVideoSync,
 } from "$lib/shared/media-composition/services/feature-video-client";
+import { createPostDraftAutosave } from "$lib/shared/media-composition/services/post-draft-storage";
 import { createPostEditorState } from "$lib/shared/media-composition/state/post-editor-state.svelte";
 
 const NOW = 1_780_000_000_000;
@@ -175,11 +177,16 @@ describe("a feature video in the Post editor", () => {
       fetcher: server.fetcher,
       settleMs: 0,
     });
-    await sync.save({ ...server.file.project, updatedAt: NOW + 7 });
+    // As the editor does: keep each copy in the tab, then save it.
+    const keepAndSave = (project: PostProject) => {
+      sync.store.saveProject(project);
+      return sync.save(project);
+    };
+    await keepAndSave({ ...server.file.project, updatedAt: NOW + 7 });
     expect(server.requests).toEqual([]);
     const silent = { ...server.file.project, audio: "silent" as const };
-    await sync.save(silent);
-    await sync.save({ ...silent, audio: "takes" as const });
+    await keepAndSave(silent);
+    await keepAndSave({ ...silent, audio: "takes" as const });
     expect(
       server.requests.map((request) => [
         request.method,
@@ -268,6 +275,83 @@ describe("a feature video in the Post editor", () => {
     expect(editor.project.audio).toBe("takes");
     editor.undo();
     expect(editor.project.audio).toBe("silent");
+    editor.dispose();
+  });
+
+  it("drops a copy the autosave still held when disk's newer copy loaded", async () => {
+    const server = fakeServer(featureFile());
+    const sync = createFeatureVideoSync(server.file, {
+      fetcher: server.fetcher,
+      settleMs: 0,
+    });
+    const editor = openEditor(sync);
+    const loaded = vi.fn();
+    sync.connect(editor, loaded);
+    const saving: boolean[] = [];
+    // The workspace's wiring: its autosave hands each copy to sync.save.
+    const autosave = createPostDraftAutosave(
+      async (project) => {
+        await sync.save(project);
+      },
+      (busy) => saving.push(busy)
+    );
+    server.writeElsewhere({ background: "blur" });
+    const check = sync.checkRevision(2);
+    // Two edits land while the check loads disk's copy. The second copy
+    // waits in the autosave, so the sync has not seen it yet.
+    editor.setAudio("silent");
+    autosave.submit(editor.snapshot);
+    editor.edit((project, ctx) => ({
+      ...project,
+      canvas: "1:1",
+      updatedAt: ctx.now,
+    }));
+    autosave.submit(editor.snapshot);
+    await check;
+    await vi.waitFor(() => expect(saving.at(-1)).toBe(false));
+    expect(loaded).toHaveBeenCalledTimes(1);
+    expect(server.requests.map((request) => request.method)).toEqual(["GET"]);
+    expect(server.file.revision).toBe(2);
+    expect(server.file.project.background).toBe("blur");
+    // An edit made after disk's copy loaded saves on top of it.
+    editor.setAudio("silent");
+    autosave.submit(editor.snapshot);
+    await vi.waitFor(() => expect(server.file.revision).toBe(3));
+    expect(server.file.project).toMatchObject({
+      background: "blur",
+      audio: "silent",
+    });
+    autosave.dispose();
+    editor.dispose();
+  });
+
+  it("writes nothing when a post with a take added on disk opens", async () => {
+    const file = featureFile();
+    const server = fakeServer({
+      ...file,
+      project: applyPostProjectOps(
+        file.project,
+        [
+          {
+            op: "add-take",
+            url: "/api/dev/feature-videos/promo/media/footage/clip.mp4",
+            durationSeconds: 10,
+          },
+        ],
+        { now: NOW + 1 }
+      ),
+    });
+    const sync = createFeatureVideoSync(server.file, {
+      fetcher: server.fetcher,
+      settleMs: 0,
+    });
+    const editor = openEditor(sync);
+    sync.connect(editor, () => {});
+    // The workspace hands the opened post to the autosave once. Opening
+    // fills in the new take's timing, which no edit asked to keep.
+    await expect(sync.save(editor.snapshot)).resolves.toBeNull();
+    expect(server.requests).toEqual([]);
+    expect(server.file.revision).toBe(1);
     editor.dispose();
   });
 
