@@ -45,6 +45,14 @@
 
 - Modify: `src/routes/(public)/composer/_components/composer-sequence-ownership.ts`
 - Create: `src/routes/(public)/composer/_components/__tests__/composer-sequence-ownership.test.ts`
+- Modify: `tests/unit/composer-presentation-state.test.ts` (drop its four cases
+  for the deleted carry helpers and the old adoption signature; keep the
+  construct-ownership case)
+
+> Executed 2026-10-07. The review follow-up commit also added three reducer
+> tests (a new draw from the same source replaces the old one; the same
+> sequence from a new source changes the source; the exact object given is
+> carried) and made `featuredCaption` exhaustive with a `never` default.
 
 - [ ] **Step 1: Write the failing tests**
 
@@ -330,6 +338,14 @@ Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>" -- src/lib/shared/land
 **Files:**
 
 - Modify: `src/routes/(public)/composer/_components/ComposerExperience.svelte`
+- Modify: `tests/unit/landing-route-morph.test.ts` (its source assertions on
+  the old latch become assertions on the page sequence and the hold)
+
+> Executed 2026-10-07, then amended by the review follow-up: the page sequence
+> is `$state.raw`, and the hold follows the hero stop leaving view instead of
+> Construct's near-activation (the stage keeps the next stop inside the window
+> so it loads early, which would have held the hero at load). The steps below
+> are the amended version.
 
 - [ ] **Step 1: Replace the carry state**
 
@@ -393,8 +409,10 @@ with:
 // The page has one sequence. The hero's live draws write it until the
 // visitor builds or generates one further down; after that, last write
 // wins. The baked opening keeps the lower demonstrations usable before the
-// hero has drawn anything live.
-let pageSequence = $state(openingPageSequence(FALLBACK_DEMO));
+// hero has drawn anything live. Raw, not deep: every write replaces the
+// whole object, and the tunnel compares the sequence it receives by
+// reference, so a proxy would make it re-prepare the same sequence.
+let pageSequence = $state.raw(openingPageSequence(FALLBACK_DEMO));
 
 function carryFrom(source: PageSequenceSource) {
   return (next: SequenceData) => {
@@ -418,16 +436,32 @@ $effect(() => {
   });
 });
 
-// The hero stops rolling on its own once the visitor touches it or moves
-// on to Construct, so the word they saw is the word the page carries.
+// The hero stops rolling on its own once the visitor touches it or leaves
+// it, so the word they saw is the word the page carries.
 function holdHero(): void {
   heroAct.hold();
 }
+
+// The stage keeps the next stop inside the window so it loads early, so
+// "near Construct" would hold the hero at load. The reader has left the
+// hero when its stop is no longer the one being read: scrolled past on
+// the plain page, or no longer the stage's current stop (the stage takes
+// its pointer events). A deep link or a restored scroll arrives already
+// past it, so the observer's first real report holds too; only the
+// synchronous report made before observation starts is ignored.
+function holdWhenHeroLeaves(node: HTMLElement) {
+  let observing = false;
+  const handle = observeComposerStopVisibility(node, (visible) => {
+    if (observing && !visible) holdHero();
+  });
+  observing = true;
+  return handle;
+}
 ```
 
-- [ ] **Step 2: Replace the old carry function and the Construct activation**
+- [ ] **Step 2: Delete the old carry function and hold when the hero leaves**
 
-Replace
+Delete
 
 ```ts
 function carryVisitorSequence(next: SequenceData): void {
@@ -435,22 +469,18 @@ function carryVisitorSequence(next: SequenceData): void {
 }
 ```
 
-with nothing (delete it). Replace
+`activateConstruct` is unchanged: its near-activation fires while the reader
+is still at the hero on the stage. Instead, add `use:holdWhenHeroLeaves` as
+the last attribute of the hero section's opening tag
+(`observeComposerStopVisibility` is already imported by the page):
 
-```ts
-const activateConstruct = activateNear(
-  "making",
-  () => (constructActive = true)
-);
-```
-
-with
-
-```ts
-const activateConstruct = activateNear("making", () => {
-  constructActive = true;
-  holdHero();
-});
+```svelte
+<section
+  class="opening"
+  aria-labelledby="composer-title"
+  style:view-transition-name="launchpad-composer"
+  use:holdWhenHeroLeaves
+>
 ```
 
 - [ ] **Step 3: Point every reader at the page sequence**
@@ -471,6 +501,29 @@ Expected: seven hits, all inside demo `props` objects or the tunnel's `active` a
 
 Re-run the grep. Expected: no hits.
 
+In `tests/unit/landing-route-morph.test.ts`, replace the comment that starts
+"// The tunnel and 3D bands open on the baked fixture, then latch the first"
+and the six assertions after it (from `sequence={heroAct.sequence}` to
+`not.toContain("{#key carriedSequence?.id}")`) with:
+
+```ts
+// The tunnel and 3D bands open on the baked fixture; every live hero
+// draw becomes the page sequence, written untracked, and the hero is
+// held once the reader leaves it, so a Threlte scene is never torn down
+// under a reader.
+expect(composer).toContain("sequence={heroAct.sequence}");
+expect(composer).toContain("FALLBACK_DEMO");
+expect(composer).toContain(
+  "let pageSequence = $state.raw(openingPageSequence(FALLBACK_DEMO));"
+);
+expect(composer).toContain(
+  'pageSequence = carryPageSequence(pageSequence, "hero", drawn);'
+);
+expect(composer).toContain("use:holdWhenHeroLeaves");
+expect(composer).toContain("heroAct.hold();");
+expect(composer).not.toContain("{#key pageSequence");
+```
+
 - [ ] **Step 4: Hold on the first touch of the player column**
 
 Change the hero's player wrapper opening tag
@@ -489,23 +542,24 @@ to
     >
 ```
 
-- [ ] **Step 5: Type-check the page**
+- [ ] **Step 5: Tests and the type gate**
 
 Run:
 
 ```bash
+npx vitest run --config tests/config/vitest.config.ts tests/unit/landing-route-morph.test.ts tests/unit/composer-presentation-state.test.ts
 npm run check:fast 2>&1 | tail -20
 ```
 
-Expected: no errors in `ComposerExperience.svelte`. Errors in `ComposerGenerateDemo.svelte` about `shouldAdoptCarriedSequence` arguments are expected until Task 4.
+Expected: both test files pass; no errors in `ComposerExperience.svelte`. Errors in `ComposerGenerateDemo.svelte` about `shouldAdoptCarriedSequence` arguments are expected until Task 4.
 
 - [ ] **Step 6: Commit**
 
 ```bash
-git add "src/routes/(public)/composer/_components/ComposerExperience.svelte"
+git add "src/routes/(public)/composer/_components/ComposerExperience.svelte" tests/unit/landing-route-morph.test.ts
 git commit -m "feat(composer): one page sequence, held once the visitor touches the hero
 
-Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>" -- "src/routes/(public)/composer/_components/ComposerExperience.svelte"
+Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>" -- "src/routes/(public)/composer/_components/ComposerExperience.svelte" tests/unit/landing-route-morph.test.ts
 ```
 
 ---
@@ -1584,8 +1638,8 @@ with
 - Only the reader moves it. A demonstration that moves focus by itself never
   starts a glide.
 - The hero rolls a new word on its own only until the reader touches its
-  player column or reaches Construct. After that it changes only on Roll, so
-  the word the reader saw is the word the page carries (2026-10-07).
+  player column or leaves the hero stop. After that it changes only on Roll,
+  so the word the reader saw is the word the page carries (2026-10-07).
 ```
 
 Replace
@@ -1700,6 +1754,25 @@ header reads "Or start from the community." while no sequence is open.
 Replace
 
 ```markdown
+- the Construct stop activating, through the existing `activateConstruct`
+  action, which fires on the stage and on the plain page alike. The page has
+  no view of the stage's index and does not need one.
+```
+
+with
+
+```markdown
+- the hero stop leaving view, through an action on the hero section built on
+  `observeComposerStopVisibility`: scrolled past on the plain page, or no
+  longer the stage's current stop. Construct's near-activation cannot be the
+  trigger: the stage keeps the next stop inside the window so it loads early,
+  which would hold the hero at load. A deep link or a restored scroll arrives
+  already past the hero and holds it at once.
+```
+
+Replace
+
+```markdown
 caller keeps today's hover reveal. The tunnel's square-layout pause and the
 3D demo's pause are already 48 px and visible.
 ```
@@ -1758,12 +1831,15 @@ In the agent browser at 1440x900 open `/composer` and verify, reading the access
 
 1. Headings: one h1, six h2 ("Construct a sequence", "Generate a sequence", "Put it in a tunnel", "See it in 3D", "Keep this sequence.", "Austen Cloud") and the gallery h3 "Or start from the community."; no "The Kinetic Alphabet" heading. The rail has one fewer stop than before.
 2. The hero toolbar is one row: Roll a new one, the prop button, Theme. Nothing else under the player.
-3. Click Roll once (`document.querySelector('.toolbar-row button').click()` through the JavaScript tool) and note the hero word. Wait 40 s. The word is unchanged (hold).
-4. Press Next through Construct, Generate, tunnel and 3D. Each stop's word row shows the hero word (read the WordLabel text in each stop). Keep's card caption reads "The sequence playing above."
-5. In Generate click Generate once and note the new word. Next to the tunnel, 3D and Keep: all show the new word; Keep's caption reads "The sequence you generated."
-6. Back to the hero, click Roll. Next to Generate: it shows the hero's new word.
-7. Hero and Generate players: the corner pause button has computed `opacity` 1 and `pointer-events` auto while playing, and a bounding box of at least 44x44.
-8. The console has no errors.
+3. Touch nothing. Note the hero word and wait 40 s: it changes at least once (the auto-roll is alive at load, so nothing held the hero on its own).
+4. Click Roll with a real pointer click (the computer tool at the button's coordinates; `element.click()` fires no pointerdown and would not hold) and note the hero word. Wait 40 s. The word is unchanged (hold on touch).
+5. Press Next through Construct, Generate, tunnel and 3D. Each stop's word row shows the hero word (read the WordLabel text in each stop). Keep's card caption reads "The sequence playing above."
+6. In Generate click Generate once and note the new word. Next to the tunnel, 3D and Keep: all show the new word; Keep's caption reads "The sequence you generated."
+7. Back to the hero, click Roll. Next to Generate: it shows the hero's new word.
+8. Hero and Generate players: the corner pause button has computed `opacity` 1 and `pointer-events` auto while playing, and a bounding box of at least 44x44.
+9. The console has no errors.
+10. Hold on leaving: reload, touch nothing, press Next to Construct within 10 s, wait 40 s, press Previous. The hero word is the one you left with.
+11. Deep link: open `/composer#tunnel-title` in a fresh tab and wait 30 s. The tunnel's word row never changes; press Previous back to the hero and it shows that same word.
 
 - [ ] **Step 4: Construct carry**
 
@@ -1776,7 +1852,7 @@ At 375x667: the 3D stop shows the poster image with the note under it, and no "E
 - [ ] **Step 6: Unit tests and the type gate**
 
 ```bash
-npx vitest run --config tests/config/vitest.config.ts src/lib/shared/landing/data/__tests__/hero-act.test.ts "src/routes/(public)/composer" && npm run check:fast 2>&1 | tail -5
+npx vitest run --config tests/config/vitest.config.ts src/lib/shared/landing/data/__tests__/hero-act.test.ts "src/routes/(public)/composer" tests/unit/landing-route-morph.test.ts tests/unit/composer-presentation-state.test.ts && npm run check:fast 2>&1 | tail -5
 ```
 
 Expected: all pass, no type errors.
