@@ -22,6 +22,11 @@
   import { getAuthSync } from "$lib/shared/auth/firebase";
   import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
   import {
+    DEFAULT_PROP_LOOK,
+    versionAfterPick,
+    type PropLook,
+  } from "$lib/shared/pictograph/prop/domain/prop-look";
+  import {
     PROP_TYPE_DISPLAY_REGISTRY,
     getAllPropTypes,
   } from "$lib/shared/pictograph/prop/domain/prop-type-display-registry";
@@ -49,14 +54,23 @@
   let transitioning = $state(false);
   let showKeyboardHints = $state(true);
 
-  // Prop type per matchup - both sides show the same prop
+  // Prop type and version per matchup - both sides show the same prop. The
+  // version belongs to the arena, never to the account's prop setting.
   let randomPropMode = $state(true);
   let matchupPropType = $state<PropType>(pickRandomPropType());
+  let matchupPropLook = $state<PropLook>(DEFAULT_PROP_LOOK);
   let propDrawerOpen = $state(false);
 
-  function handlePropSelect(pt: PropType) {
+  // A version belongs to the pick (versionAfterPick): a V2 tile sets Version 2,
+  // and a different prop, including a random one, starts at Version 1.
+  function setMatchupProp(prop: PropType, look?: PropLook): void {
+    matchupPropLook = versionAfterPick(matchupPropType, matchupPropLook, prop, look);
+    matchupPropType = prop;
+  }
+
+  function handlePropSelect(pt: PropType, look?: PropLook) {
     randomPropMode = false;
-    matchupPropType = pt;
+    setMatchupProp(pt, look);
   }
 
   function toggleRandomProp() {
@@ -66,7 +80,7 @@
     } else {
       // Switch back to random
       randomPropMode = true;
-      matchupPropType = pickRandomPropType();
+      setMatchupProp(pickRandomPropType());
     }
   }
 
@@ -95,7 +109,7 @@
 
       await orchestrator.initialize(userId);
       arenaState.currentMatchup = orchestrator.getCurrentMatchup();
-      if (randomPropMode) matchupPropType = pickRandomPropType();
+      if (randomPropMode) setMatchupProp(pickRandomPropType());
       arenaState.isLoading = false;
     } catch (err) {
       console.error("[Arena] Failed to initialize:", err);
@@ -168,7 +182,7 @@
     voteResult = null;
     winnerWord = "";
     arenaState.currentMatchup = orchestrator.getCurrentMatchup();
-    if (randomPropMode) matchupPropType = pickRandomPropType();
+    if (randomPropMode) setMatchupProp(pickRandomPropType());
     arenaState.sessionStreak = orchestrator.getSessionStreak();
     arenaState.matchupsCompleted = orchestrator.getMatchupsCompleted();
 
@@ -183,7 +197,7 @@
 
     await orchestrator.skip();
     arenaState.currentMatchup = orchestrator.getCurrentMatchup();
-    if (randomPropMode) matchupPropType = pickRandomPropType();
+    if (randomPropMode) setMatchupProp(pickRandomPropType());
 
     transitioning = false;
   }
@@ -231,6 +245,7 @@
         disabled={transitioning}
         onvote={() => vote("left")}
         propType={matchupPropType}
+        propLook={matchupPropLook}
         bpm={arenaBpm}
       />
 
@@ -245,6 +260,7 @@
         disabled={transitioning}
         onvote={() => vote("right")}
         propType={matchupPropType}
+        propLook={matchupPropLook}
         bpm={arenaBpm}
       />
     </div>
@@ -325,7 +341,9 @@
     <ArenaPropDrawer
       bind:isOpen={propDrawerOpen}
       selectedPropType={matchupPropType}
+      propLook={matchupPropLook}
       onSelect={handlePropSelect}
+      onPropLookChange={(look) => (matchupPropLook = look)}
     />
   {:else}
     <div class="battle-empty" role="status">
