@@ -30,6 +30,9 @@
   import { formatTime } from "$lib/shared/sequence-viewer/utils/format-time";
   import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
   import type { StartPlacementData } from "$lib/shared/foundation/domain/models/start-placement-data";
+  import type { GridJoin } from "@tka/tka-types";
+  import { gridJoinCellResolver } from "@tka/render-core";
+  import { mirrorGridJoin } from "$lib/shared/create/services/grid-join-transforms";
   import PictographContainer from "$lib/shared/pictograph/shared/components/PictographContainer.svelte";
   import TKAWordGlyph from "$lib/shared/choreo-card/components/TKAWordGlyph.svelte";
   import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
@@ -52,6 +55,8 @@
     steps: readonly StepData[];
     /** The opening pose. The first mark is the performer settling into it. */
     startPlacement?: StartPlacementData | null;
+    /** The join the sequence carries; the faces are drawn on its two grids. */
+    gridJoin?: GridJoin | null;
     initialStepMap?: StepMap;
     /**
      * Identifies this (sequence, video) pairing so an unfinished run survives
@@ -77,6 +82,7 @@
     videoDuration,
     steps,
     startPlacement = null,
+    gridJoin = null,
     initialStepMap,
     draftKey,
     initialTime,
@@ -244,8 +250,17 @@
   function faceFor(index: number): StepData | StartPlacementData | null {
     const showMirrored = mirrored && mirroredSteps !== null;
     const source = showMirrored ? mirroredSteps! : steps;
-    if (index <= 0) return showMirrored ? mirroredStart : startPlacement;
-    return source[moveNumberFor(index) - 1] ?? null;
+    const face =
+      index <= 0
+        ? showMirrored
+          ? mirroredStart
+          : startPlacement
+        : (source[moveNumberFor(index) - 1] ?? null);
+    if (!face) return null;
+    // Display-only: the faces sit on the sequence's grids, turned with the
+    // mirror view so the red grid stays on the side the performer sees.
+    const join = gridJoin && showMirrored ? mirrorGridJoin(gridJoin) : gridJoin;
+    return gridJoinCellResolver({ conjoined: join })(face);
   }
 
   function letterFor(index: number): string {

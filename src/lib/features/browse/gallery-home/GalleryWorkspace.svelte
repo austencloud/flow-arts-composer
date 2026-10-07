@@ -12,6 +12,7 @@
   import GalleryCreatorEditor from "./value-editors/GalleryCreatorEditor.svelte";
   import GalleryFamilyEditor from "./value-editors/GalleryFamilyEditor.svelte";
   import GalleryGridModeEditor from "./value-editors/GalleryGridModeEditor.svelte";
+  import GalleryGridJoinEditor from "./value-editors/GalleryGridJoinEditor.svelte";
   import GalleryLengthEditor from "./value-editors/GalleryLengthEditor.svelte";
   import GalleryLetterEditor from "./value-editors/GalleryLetterEditor.svelte";
   import GalleryLevelEditor from "./value-editors/GalleryLevelEditor.svelte";
@@ -157,6 +158,14 @@
     />
   {:else if section === "gridmode"}
     <GalleryGridModeEditor
+      {catalog}
+      {stackHint}
+      {isValueApplied}
+      {onPickValue}
+      {valueHead}
+    />
+  {:else if section === "gridjoin"}
+    <GalleryGridJoinEditor
       {catalog}
       {stackHint}
       {isValueApplied}

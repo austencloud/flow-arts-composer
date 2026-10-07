@@ -213,6 +213,23 @@ describe("buildBackJob", () => {
     expect(typeof args[3]).toBe("boolean"); // darkMode flag
   });
 
+  it("hands the mandala a joined sequence's hand offsets, and none for one grid", async () => {
+    const opts = { width: WIDTH, height: HEIGHT, bleedPx: BLEED, theme: "cosmic" as const };
+    const one = makeFakeDeps();
+    await buildBackJob(makeSequence(), opts, one.deps);
+    expect(one.calls.mandala![0]![5] ?? null).toBeNull();
+
+    const joined = makeFakeDeps();
+    await buildBackJob(
+      makeSequence({ conjoined: { toward: "e", steps: 1 }, gridMode: "diamond" } as Partial<SequenceData>),
+      opts,
+      joined.deps,
+    );
+    const offsets = joined.calls.mandala![0]![5] as { left: { x: number }; right: { x: number } };
+    expect(offsets.left.x).toBeLessThan(0);
+    expect(offsets.right.x).toBeGreaterThan(0);
+  });
+
   it("staff default: arc → undefined pathOptions (two tips), standard tip dx", async () => {
     const { deps, calls } = makeFakeDeps();
     await buildBackJob(

@@ -21,6 +21,7 @@
   import PostStudioBreakdownMandala from "./PostStudioBreakdownMandala.svelte";
   import PictographContainer from "$lib/shared/pictograph/shared/components/PictographContainer.svelte";
   import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+  import { withSequenceJoinApplied } from "$lib/shared/grid-join/sequence-grid-join";
   import type { PropState } from "$lib/shared/foundation/domain/types/prop-state";
   import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
   import {
@@ -285,6 +286,16 @@
       : (sequence.steps[arrowLayers.previousMove - 1] ?? null)
   );
 
+  // The arrow overlays and breakdown pictures draw on the same joined grids as
+  // the animation below them, so they take the sequence's join (display only).
+  const joinedStepData = $derived(withSequenceJoinApplied(sequence, stepData));
+  const joinedStartData = $derived(
+    withSequenceJoinApplied(sequence, startData)
+  );
+  const joinedPreviousArrowData = $derived(
+    withSequenceJoinApplied(sequence, previousArrowData)
+  );
+
   $effect(() => {
     const target = sequence;
     initializedSequence = untrack(() =>
@@ -445,8 +456,8 @@
             style:opacity={arrowShare < 1 ? arrowShare : undefined}
           >
             <PictographContainer
-              pictographData={stepData}
-              motionStartData={startData}
+              pictographData={joinedStepData}
+              motionStartData={joinedStartData}
               {motionProgress}
               arrowOpacity={arrowLayers.currentOpacity}
               leftPropTypeOverride={animationAppearance.propType ??
@@ -479,7 +490,7 @@
             aria-hidden="true"
           >
             <PictographContainer
-              pictographData={previousArrowData}
+              pictographData={joinedPreviousArrowData}
               leftPropTypeOverride={animationAppearance.propType ??
                 leftPropType}
               rightPropTypeOverride={animationAppearance.propType ??
@@ -507,8 +518,8 @@
       <div class="pictograph-motion" data-pictograph-motion>
         <div>
           <PictographContainer
-            pictographData={stepData}
-            motionStartData={startData}
+            pictographData={joinedStepData}
+            motionStartData={joinedStartData}
             {motionProgress}
             arrowOpacity={arrowLayers.currentOpacity}
             leftPropTypeOverride={leftPropType}
@@ -537,7 +548,7 @@
           aria-hidden="true"
         >
           <PictographContainer
-            pictographData={previousArrowData}
+            pictographData={joinedPreviousArrowData}
             leftPropTypeOverride={leftPropType}
             rightPropTypeOverride={rightPropType}
             disableTransitions
