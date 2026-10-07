@@ -23,6 +23,8 @@
   import { stepEditorTourState } from "$lib/shared/onboarding/state/step-editor-tour-state.svelte";
   import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
   import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+  import { gridJoinCellResolver } from "@tka/render-core";
+  import { sequenceGridJoin } from "$lib/shared/grid-join/sequence-grid-join";
   import { isVisibleMotion } from "$lib/shared/pictograph/shared/domain/models/motion-data";
   import {
     HandSide,
@@ -115,6 +117,16 @@
   // smoothly animate the pictograph elements to their new positions
   let displayedStepData = $state<StepData | null>(null);
   let displayedStepNumber = $state<number | null>(null);
+
+  // The preview draws the step on the sequence's joined grids when it has a
+  // join, the same as its cell in the step grid.
+  const gridJoin = $derived(sequenceGridJoin(sequence));
+  const withGridJoin = $derived(gridJoinCellResolver({ conjoined: gridJoin }));
+  const joinedStepData = $derived(
+    gridJoin && displayedStepData
+      ? withGridJoin(displayedStepData)
+      : displayedStepData
+  );
 
   $effect(() => {
     // Only update displayed data when we have actual new data
@@ -630,7 +642,7 @@
             </div>
           {:else}
             <PictographContainer
-              pictographData={displayedStepData}
+              pictographData={joinedStepData}
               arrowsClickable={isAdmin()}
               disableTransitions={true}
             />

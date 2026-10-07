@@ -12,6 +12,7 @@ import type {
   AdditionalLayerProps,
 } from "$lib/shared/animation-engine/services/ITrailCapturer";
 import type { GridJoin } from "@tka/tka-types";
+import type { GridJoinTweenSample, HandOffsets } from "./grid-join-tween";
 import type { TrailSettings } from "../domain/types/trail-types";
 import type { PropState } from "$lib/shared/foundation/domain/types/prop-state";
 import type { AnimationPathCache } from "$lib/shared/animation-engine/services/animation-path-cache";
@@ -212,6 +213,15 @@ export interface RenderFrameParams {
    * grid.
    */
   gridJoin?: GridJoin | null;
+  /**
+   * Where each hand's grid sits this frame, in hand-point radii: the join's
+   * resting offsets, or the in-between ones while a layout change slides.
+   * Path-cache trail points and the mandala guide move by these. Absent
+   * means centered.
+   */
+  gridJoinOffsets?: HandOffsets;
+  /** The layout slide running this frame, or null/absent when none is. */
+  gridJoinSlide?: GridJoinTweenSample | null;
   /** Whether the engine-aligned mandala guide is enabled for this canvas. */
   mandalaVisible?: boolean;
   /** Line width of the mandala guide in canvas pixels; default 2.5. */

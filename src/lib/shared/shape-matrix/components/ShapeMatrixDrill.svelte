@@ -73,6 +73,7 @@
   } from "../services/shape-matrix-artwork";
   import { getShapeMatrixTransitionRecorder } from "../debug/shape-matrix-transition-recorder";
   import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+  import type { PropLook } from "$lib/shared/pictograph/prop/domain/prop-look";
   import { TrackingMode } from "$lib/shared/animation-engine/domain/types/trail-types";
   import { QualityTier } from "$lib/shared/animation-engine/domain/types/quality-types";
   import { resolveRealizationEntryStep } from "../services/realization-phase-handoff";
@@ -115,7 +116,7 @@
      * this is only which hand a pick lands on. Defaults to the left hand.
      */
     selectedPropType?: PropType;
-    onproptypechange?: (propType: PropType) => void;
+    onproptypechange?: (propType: PropType, look?: PropLook) => void;
     /** The cat dog chip and hand segments, when the host keeps a pair. */
     handProps?: HandPropToolbarProps;
     /**

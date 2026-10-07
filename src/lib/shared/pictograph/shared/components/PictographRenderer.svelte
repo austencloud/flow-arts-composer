@@ -56,8 +56,15 @@ Usage:
   import { GridMode, GridLocation } from "../../grid/domain/enums/grid-enums";
   import {
     calculateHandColorKeyLayout,
+    getGridJoinLayout,
     getHandKeyGlyphPath,
+    getMotionColor,
   } from "@tka/render-core";
+  import {
+    joinedGridFitTransform,
+    joinedGridMarkup,
+  } from "../../grid/services/joined-grid-markup";
+  import { getJoinedActiveHandPoints } from "$lib/shared/render/services/layer-key-deriver";
   import {
     type ElementalType,
     HandSide,
@@ -542,6 +549,45 @@ Usage:
     rightColorOverride ?? getSettings().primaryPropColors?.right
   );
 
+  // Two joined grids, when the pictograph was prepared with the sequence's
+  // join (`_prepared.join`, which already moved the props and arrows onto
+  // each hand's grid). Drawn as the cards draw them: tinted dots from the
+  // render-core layout, and grids, props and arrows shrunk together about the
+  // center so they clear the edge glyphs. One-grid pictographs keep GridSvg.
+  const joinLayout = $derived(
+    pictograph._prepared?.join
+      ? getGridJoinLayout(pictograph._prepared.join, gridMode)
+      : null
+  );
+  const joinedGrid = $derived.by(() => {
+    if (!joinLayout) return "";
+    const dark = darkMode ?? true;
+    const mode = dark ? "dark" : "light";
+    return joinedGridMarkup(joinLayout, {
+      darkMode: dark,
+      box: gridMode === GridMode.BOX,
+      handColors: {
+        left: effectiveLeftColor ?? getMotionColor(HandSide.LEFT, mode),
+        right: effectiveRightColor ?? getMotionColor(HandSide.RIGHT, mode),
+      },
+      handPointVisibility,
+      activeHandPoints:
+        handPointVisibility === "active"
+          ? getJoinedActiveHandPoints(pictograph)
+          : undefined,
+    });
+  });
+  // The joined dots are drawn in the same pass, with no grid file to load, so
+  // they are ready as soon as they are in the DOM.
+  $effect(() => {
+    if (joinLayout && joinedGrid) onGridReady?.();
+  });
+  const coreContentTransform = $derived(
+    joinLayout
+      ? `translate(${coreContentOffset} 0) ${joinedGridFitTransform(joinLayout, BASE_SIZE)}`
+      : `translate(${coreContentOffset}, 0)`
+  );
+
   // Start-position hand colour key: shared geometry with the MCP renderer so the
   // viewer, card back and MCP images bake in the same legend. Hidden or absent
   // hands drop out of the key rather than advertising a colour that is not there.
@@ -582,9 +628,19 @@ Usage:
     />
 
     <!-- Core content (grid, props, arrows) - centered in expanded viewBox -->
-    <g transform="translate({coreContentOffset}, 0)">
+    <g transform={coreContentTransform}>
       <!-- Grid -->
-      {#if showGrid || previewMode || animateVisibility}
+      {#if joinLayout}
+        {#if showGrid}
+          <g
+            class="joined-grid"
+            opacity={(darkMode ?? true) ? 0.85 : 1}
+            pointer-events="none"
+          >
+            {@html joinedGrid}
+          </g>
+        {/if}
+      {:else if showGrid || previewMode || animateVisibility}
         <GridSvg
           rotationOverride={gridRotation}
           {gridMode}

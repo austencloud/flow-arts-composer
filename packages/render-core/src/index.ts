@@ -153,12 +153,23 @@ export {
   getLayer2PointCoordinates,
 } from "./calculations/grid-placement.js";
 
+// One grid's points (center, outer, hand and non-radial points)
+export {
+  GRID_POINT_RADIUS,
+  getGridPoints,
+  gridPointsSvg,
+  isBoxGrid,
+} from "./calculations/grid-points.js";
+export type { GridPoint, GridPointKind } from "./calculations/grid-points.js";
+
 // Joined grids (one grid per hand)
 export {
   BOX_OUTER_RING_WIDTH,
+  GRID_JOIN_DIRECTIONS,
   JOIN_HAND_RADIUS,
   JOINED_POINT_RADIUS,
   JOIN_GRID_LOCATIONS,
+  alignGridJoin,
   getGridJoinLayout,
   gridJoinCellResolver,
   gridJoinKey,
@@ -208,6 +219,17 @@ export { calculateArrowRotation } from "./calculations/arrow-rotation.js";
 // Arrow asset paths
 export { resolveFullArrowAssetPath } from "./calculations/arrow-asset-path.js";
 export type { FullArrowAssetPathInput } from "./calculations/arrow-asset-path.js";
+
+// Canonical arrow placement frame (box is the diamond frame turned 45°)
+export {
+  BOX_FRAME_ROTATION_DEGREES,
+  placementFrameRotation,
+  rotateGridLocation,
+  rotatePlacementAngleToDisplayed,
+  rotatePlacementVectorToDisplayed,
+  toCanonicalLocation,
+  toDisplayedLocation,
+} from "./calculations/placement-frame.js";
 
 // Dash location
 export { calculateDashLocation } from "./calculations/dash-location.js";

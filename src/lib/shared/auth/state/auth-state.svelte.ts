@@ -249,6 +249,7 @@ export function isAdmin(): boolean {
 registerLoadedAuthState({
   isAdmin,
   isAuthenticated: () => _state.user !== null,
+  userId: () => _state.user?.uid ?? null,
 });
 
 /**

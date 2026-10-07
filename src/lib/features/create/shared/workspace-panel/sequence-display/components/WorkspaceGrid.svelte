@@ -35,12 +35,12 @@
   import StartTile from "./StartTile.svelte";
   import DurationResizeHandle from "./DurationResizeHandle.svelte";
   import SequenceMandala from "$lib/shared/mandala/components/SequenceMandala.svelte";
+  import { mandalaGridJoinOffsets } from "$lib/shared/mandala/services/mandala-grid-join";
   import ContextMenu from "$lib/shared/components/context-menu/ContextMenu.svelte";
   import type {
     ContextMenuEntry,
     ContextMenuState,
   } from "$lib/shared/components/context-menu/context-menu-types";
-  import { saveMandalaToCollection } from "$lib/features/mandala/tabs/collection/services/save-mandala-to-collection";
   import { settingsService } from "$lib/shared/settings/state/settings-state.svelte";
   import { BackgroundType } from "@austencloud/backgrounds";
   import { toast } from "$lib/shared/toast/state/toast-state.svelte";
@@ -737,6 +737,12 @@
   );
 
   const mandalaSize = $derived(Math.round(cellSize * MANDALA_CELL_SCALE));
+  // The cells carry the sequence's join; the full mandala draws each hand's
+  // figure on its own grid, as the card's mandala does.
+  const mandalaHandOffsets = $derived.by(() => {
+    const cell = steps[0] ?? startPlacement;
+    return mandalaGridJoinOffsets(cell?.conjoined, cell?.gridMode);
+  });
   const mandalaPaletteOverride = $derived.by((): MandalaPalette | undefined => {
     if (!leftColorOverride || !rightColorOverride) return undefined;
     return {
@@ -789,6 +795,10 @@
       label: "Save to Collection",
       icon: "fa-bookmark",
       action: async () => {
+        // The collection store reaches Firestore, so it loads with this
+        // choice, not with every grid (the public /composer Construct stop).
+        const { saveMandalaToCollection } =
+          await import("$lib/features/mandala/tabs/collection/services/save-mandala-to-collection");
         const name = await saveMandalaToCollection({
           steps: [...steps],
           variant: mandalaMenuVariant,
@@ -831,6 +841,7 @@
     rightPropType={effectiveRightPropType}
     palette={mandalaPaletteOverride}
     pathShape={mandalaPathShape}
+    handOffsets={mandalaHandOffsets}
     morphChanges
   />
 {/snippet}

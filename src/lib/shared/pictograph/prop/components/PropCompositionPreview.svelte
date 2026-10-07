@@ -48,7 +48,7 @@
     useSavedOverrides = true,
     pairedGlyph = false,
     singleHand,
-    rightPropType = propType,
+    rightPropType: rightPropTypeProp,
     appearanceOverride,
     colors,
     leftFlipped = false,
@@ -68,6 +68,7 @@
     pairedGlyph?: boolean;
     /** Per-hand pickers preview only the hand they change. */
     singleHand?: "left" | "right";
+    /** The right hand's prop when the hands differ; defaults to `propType`. */
     rightPropType?: PropType;
     appearanceOverride?: PropRenderAppearance;
     colors?: ViewerCustomColorPair | null;
@@ -76,6 +77,11 @@
   } = $props();
 
   const id = $props.id();
+
+  // Derived, not a prop default: Svelte reads a default once, at mount, so a
+  // tile whose prop changes (a family tile after a size switch) would keep its
+  // first prop in the right hand and draw the pair apart as a mixed pair.
+  const rightPropType = $derived(rightPropTypeProp ?? propType);
 
   type GetSettings =
     (typeof import("$lib/shared/application/state/app-state.svelte"))["getSettings"];

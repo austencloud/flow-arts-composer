@@ -17,6 +17,13 @@ export type ThumbnailVariant = "gallery" | "wordcard";
  */
 export const THUMBNAIL_RENDERER_VERSION = 6;
 
+/**
+ * Joined-grid dots lean toward each hand's color (see render-core's tint), a
+ * join off the grid's hand-point lines draws lined up with them (t2), and the
+ * mandala draws each hand's figure on its own grid (t3).
+ */
+const JOINED_GRID_TINT_REVISION = "t3";
+
 export interface ThumbnailVisibilitySettings {
   showTKA?: boolean;
   showReversals?: boolean;
@@ -141,15 +148,19 @@ export function deriveKey(input: ThumbnailRenderInput): ThumbnailCacheKey {
   // guest's QR-less render can't overwrite it (and vice-versa).
   const qrSuffix = input.visibility?.showQRCode ? "_qr" : "";
   // Joined grids are a different image of the same sequence. Present only when
-  // joined, so every one-grid key stays byte-identical.
-  const joinSuffix = input.gridJoin ? `_j${input.gridJoin}` : "";
+  // joined, so every one-grid key stays byte-identical. The revision marks
+  // joined dots tinted toward each hand's color, so older joined images miss.
+  const joinTerm = input.gridJoin
+    ? `${input.gridJoin}-${JOINED_GRID_TINT_REVISION}`
+    : "";
+  const joinSuffix = joinTerm ? `_j${joinTerm}` : "";
   const rendererSuffix = `_r${THUMBNAIL_RENDERER_VERSION}`;
   const cloudPath = `thumbnails/${input.variant}/${propKey}/${input.sequenceName}${idSuffix}${qrSuffix}${joinSuffix}${rendererSuffix}_${mode}.webp`;
 
   // Compute hash of all inputs that affect visual output
   const hashInput = {
     renderer: THUMBNAIL_RENDERER_VERSION,
-    ...(input.gridJoin && { join: input.gridJoin }),
+    ...(joinTerm && { join: joinTerm }),
     ...(usesDefaults
       ? {
           seq: input.sequenceName,

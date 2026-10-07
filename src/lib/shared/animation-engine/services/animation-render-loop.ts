@@ -62,6 +62,7 @@ import type { FireFrameInput } from "../domain/types/fire-types";
 import { isVisibleMotion } from "$lib/shared/pictograph/shared/domain/models/motion-data";
 import type { MandalaOverlayCanvas } from "$lib/shared/mandala/services/mandala-overlay-canvas";
 import { MandalaPathPreparer } from "$lib/shared/mandala/services/mandala-path-preparer";
+import { mandalaOffsetsFromHandUnits } from "$lib/shared/mandala/services/mandala-grid-join";
 import {
   DEFAULT_MANDALA_OVERLAY_CONFIG,
   type MandalaOverlayConfig,
@@ -69,8 +70,8 @@ import {
 } from "$lib/shared/mandala/domain/mandala-overlay-types";
 import type { MandalaHandVisibility } from "$lib/shared/mandala/domain/mandala-types";
 import type { RenderActivityGate } from "$lib/shared/render-gating/render-activity-gate";
-import type { GridJoin } from "@tka/tka-types";
-import { shiftTrailPoints } from "./animation-grid-join";
+import { shiftTrailPointsBy } from "./animation-grid-join";
+import type { HandOffsets } from "./grid-join-tween";
 
 // Longtask observer singleton - one PerformanceObserver shared across every
 // AnimationRenderLoop instance. Without this, each loop attaches its own
@@ -1297,12 +1298,14 @@ export class AnimationRenderLoop {
     // Use virtual time if provided (export mode), otherwise fallback to RAF timestamp
     const effectiveTime = virtualTime ?? currentTime;
 
-    // Real-time trail capture
+    // Real-time trail capture. A grid layout slide pauses it: points taken
+    // mid-slide would streak from the old layout to the new.
     const trailsActive = hasTrailTips(params.tipEffectMap);
     if (
       trailsActive &&
       trailSettings.mode !== TrailMode.OFF &&
-      this.TrailCapturer
+      this.TrailCapturer &&
+      !params.gridJoinSlide
     ) {
       const currentStep =
         params.stepData && "stepNumber" in params.stepData
@@ -1369,6 +1372,7 @@ export class AnimationRenderLoop {
     const hasActiveWork =
       this.needsRender ||
       isPlaying ||
+      !!params.gridJoinSlide ||
       backgroundTransitioning ||
       mandalaTransitioning ||
       anyEffectActive;
@@ -1497,7 +1501,7 @@ export class AnimationRenderLoop {
       trailSettings,
       effectiveLoopable,
       params.tipEffectMap,
-      params.gridJoin ?? null
+      params.gridJoinOffsets ?? null
     );
 
     // Update loopStartTime when a loop is detected (set inside gatherTrailPoints)
@@ -1678,10 +1682,12 @@ export class AnimationRenderLoop {
         const leftPropSwapSuppressed =
           leftPropIdentityChanged ||
           !!params.trailsSuppressedUntilTextureLoad ||
+          !!params.gridJoinSlide ||
           (this.renderer?.isLeftPropCrossfadeInProgress() ?? false);
         const rightPropSwapSuppressed =
           rightPropIdentityChanged ||
           !!params.trailsSuppressedUntilTextureLoad ||
+          !!params.gridJoinSlide ||
           (this.renderer?.isRightPropCrossfadeInProgress() ?? false);
 
         trailOverlay.renderFrame({
@@ -1773,6 +1779,9 @@ export class AnimationRenderLoop {
       rightPropType: params.rightPropType,
       qualityHints: this.frameBudgetMonitor?.getQualityHints(),
       tunnelSelectedLayer: props.tunnelSelectedLayer ?? null,
+      primaryPropColors: params.primaryPropColors ?? null,
+      gridJoinOffsets: params.gridJoinOffsets,
+      gridJoinSlide: params.gridJoinSlide ?? null,
     });
 
     // Read prop transforms from Canvas2D renderer for fire coherence
@@ -2287,6 +2296,10 @@ export class AnimationRenderLoop {
       return;
     }
 
+    // Joined grids: each hand's figure sits on its own grid, moved exactly as
+    // that hand's props are (sliding with them while the layout changes).
+    const handOffsets = mandalaOffsetsFromHandUnits(params.gridJoinOffsets);
+
     // A prop type becomes reactive before its replacement texture finishes
     // loading. Keep the old guide in place during that gap so the mandala and
     // prop begin their crossfades together once the new artwork is ready.
@@ -2300,6 +2313,7 @@ export class AnimationRenderLoop {
         currentTime,
         canvasSize: this.canvasSize,
         currentStep: params.currentStep,
+        handOffsets,
       });
       return;
     }
@@ -2348,6 +2362,7 @@ export class AnimationRenderLoop {
       currentTime,
       canvasSize: this.canvasSize,
       currentStep: params.currentStep,
+      handOffsets,
     });
   }
 
@@ -2370,7 +2385,7 @@ export class AnimationRenderLoop {
     trailSettings: TrailSettings,
     isSeamlesslyLoopable: boolean,
     tipEffectMap?: TipEffectMap,
-    gridJoin: GridJoin | null = null
+    gridJoinOffsets: HandOffsets | null = null
   ): {
     left: TrailPoint[];
     right: TrailPoint[];
@@ -2609,17 +2624,17 @@ export class AnimationRenderLoop {
         }
 
         // Live capture already follows the shifted props; the cache does not.
-        if (gridJoin) {
-          shiftTrailPoints(
+        // During a layout slide these are the in-between offsets, so the
+        // trail glides along with its prop.
+        if (gridJoinOffsets) {
+          shiftTrailPointsBy(
             this.reusableLeftTrailPoints,
-            gridJoin,
-            0,
+            gridJoinOffsets.left,
             scaleFactor
           );
-          shiftTrailPoints(
+          shiftTrailPointsBy(
             this.reusableRightTrailPoints,
-            gridJoin,
-            1,
+            gridJoinOffsets.right,
             scaleFactor
           );
         }

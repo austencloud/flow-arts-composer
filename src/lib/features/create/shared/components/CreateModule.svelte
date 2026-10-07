@@ -256,6 +256,8 @@
         CreateModuleState.pushUndoSnapshot(UndoOperationType.SET_GRID_JOIN);
         CreateModuleState.sequenceState.setGridJoin(join);
       },
+      gridMode: () =>
+        CreateModuleState?.sequenceState.currentSequence?.gridMode,
     })
   );
 

@@ -13,6 +13,7 @@
   import { getPropTypeDisplayInfo } from "$lib/shared/pictograph/prop/domain/prop-type-display-registry";
   import { viewingPropLabel } from "$lib/shared/foundation/services/prop-viewing";
   import type { FanAppearance } from "$lib/shared/pictograph/prop/domain/fan-appearance";
+  import type { PropLook } from "$lib/shared/pictograph/prop/domain/prop-look";
   import { EFFORTS } from "$lib/shared/effort/domain/effort-types";
   import { getAnimationVisibilityManager } from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
   import { getAnimationVisibilityContext } from "$lib/shared/animation-engine/state/animation-visibility-context";
@@ -74,9 +75,14 @@
     onPlaybackModeChange: (mode: PlaybackMode) => void;
     onPlaybackToggle: () => void;
     leftPropType: string | null;
-    onPropChange?: (propType: PropType) => void;
+    /** A Version 2 tile passes its version with the prop. */
+    onPropChange?: (propType: PropType, look?: PropLook) => void;
     /** Per-hand picking for hosts that keep a local pair (Tunnel creator). */
     handProps?: HandPropToolbarProps;
+    /** The prop version of a host that owns it (Tunnel creator). Unset reads
+     *  the account's. */
+    propLook?: PropLook;
+    onPropLookChange?: (look: PropLook) => void;
     fanAppearance?: FanAppearance;
     onFanAppearanceChange?: (appearance: FanAppearance) => void;
     propChirality?: PropChiralitySeam;
@@ -108,6 +114,8 @@
     leftPropType,
     onPropChange,
     handProps,
+    propLook,
+    onPropLookChange,
     fanAppearance,
     propChirality = createGlobalChiralitySeam(),
     animationSettingsState = animationSettings,
@@ -356,7 +364,10 @@
   {:else if id === "props"}
     <!-- Prop selection: the same BentoPropGrid the 2D Download panel uses. The
          chosen prop goes to onPropChange; the host routes it (Tunnel routes it
-         to the addressed hand, the viewer host keeps its own handling). -->
+         to the addressed hand, the viewer host keeps its own handling). The
+         Tunnel creator owns its prop version and saves it with the tunnel, so
+         it passes propLook and onPropLookChange. The viewer's Art pane passes
+         neither, and the grid edits the account's version. -->
     {#if onPropChange && handProps}
       <HandPropToolbar {handProps} />
     {/if}
@@ -365,6 +376,8 @@
         <BentoPropGrid
           {selectedPropType}
           onSelect={onPropChange}
+          {propLook}
+          {onPropLookChange}
           variant="inline"
           flat
           showColors={false}

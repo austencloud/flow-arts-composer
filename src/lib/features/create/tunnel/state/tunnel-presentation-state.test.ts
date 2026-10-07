@@ -9,6 +9,7 @@ import { createEffectsConfigState } from "$lib/shared/effects/state/effects-conf
 import type { TunnelConfig } from "$lib/shared/sequence-viewer/tunnel/tunnel-config";
 import { DEFAULT_CONFIG } from "$lib/shared/sequence-viewer/tunnel/tunnel-config";
 import type { TunnelPresetRecipe } from "$lib/shared/sequence-viewer/tunnel/tunnel-preset-recipe";
+import { hasModelSprite } from "$lib/shared/pictograph/prop/domain/prop-look";
 import type { TunnelSnapshot } from "$lib/shared/sequence-viewer/tunnel/tunnel-snapshot";
 import type { TunnelViewController } from "$lib/shared/sequence-viewer/tunnel/tunnel-view-controller.svelte";
 import { createTunnelPresentationState } from "./tunnel-presentation-state.svelte";
@@ -47,6 +48,7 @@ function savedSnapshot(): TunnelSnapshot {
       catDogMode: false,
       leftBuugengFlipped: true,
       rightBuugengFlipped: false,
+      propLook: "model",
     },
     trailRender: {
       ...structuredClone(DEFAULT_TRAIL_SETTINGS),
@@ -346,6 +348,100 @@ describe("tunnel presentation state", () => {
       leftPropType: "buugeng",
       rightPropType: "fan",
       catDogMode: true,
+    });
+  });
+});
+
+describe("tunnel presentation prop version", () => {
+  function create(
+    overrides: Partial<Parameters<typeof createTunnelPresentationState>[0]> = {}
+  ) {
+    return createTunnelPresentationState({
+      effects: createEffectsConfigState(undefined, { persist: false }),
+      visibility: new AnimationVisibilityStateManager({ ephemeral: true }),
+      animationSettings: createAnimationSettingsState({ ephemeral: true }),
+      initialLeftPropType: "staff",
+      initialRightPropType: "staff",
+      initialLeftBuugengFlipped: false,
+      initialRightBuugengFlipped: false,
+      ...overrides,
+    });
+  }
+
+  it("starts a new tunnel at Version 1", () => {
+    expect(create().propLook).toBe("pictograph");
+  });
+
+  it("starts a new tunnel at the version the account holds", () => {
+    expect(create({ initialPropLook: "model" }).propLook).toBe("model");
+  });
+
+  it("takes a Version 2 pick with its prop", () => {
+    const state = create();
+    state.setPropType("triad", "model");
+    expect(state.leftPropType).toBe("triad");
+    expect(state.propLook).toBe("model");
+  });
+
+  it("returns to Version 1 for a different prop that has a Version 2", () => {
+    const state = create();
+    state.setPropType("triad", "model");
+    state.setPropType("club");
+    expect(state.propLook).toBe("pictograph");
+  });
+
+  it("keeps the version when the pick is the same prop at another size", () => {
+    const state = create();
+    state.setPropType("triad", "model");
+    state.setPropType("bigtriad");
+    expect(state.propLook).toBe("model");
+  });
+
+  it("keeps the version for a prop with no Version 2", () => {
+    // Fan has no captured model sprite, so there is nothing to reset to.
+    expect(hasModelSprite("fan")).toBe(false);
+    const state = create();
+    state.setPropType("triad", "model");
+    state.setPropType("fan");
+    expect(state.propLook).toBe("model");
+  });
+
+  it("sets the version on its own without touching the props", () => {
+    const state = create();
+    const { setPropLook } = state;
+    setPropLook("model");
+    expect(state.propLook).toBe("model");
+    expect([state.leftPropType, state.rightPropType]).toEqual(["staff", "staff"]);
+  });
+
+  it("opens a saved tunnel at its saved version and saves it back", () => {
+    const state = create({ initialSnapshot: savedSnapshot() });
+    expect(state.propLook).toBe("model");
+    // Before a stage controller attaches, capture reads the state directly.
+    expect(state.capture().props.propLook).toBe("model");
+    state.attachController(controllerFor());
+    expect(state.capture().props.propLook).toBe("model");
+  });
+
+  it("opens a tunnel saved before versions at Version 1, whatever the account holds", () => {
+    const snapshot = savedSnapshot();
+    delete (snapshot.props as { propLook?: unknown }).propLook;
+    const state = create({
+      initialSnapshot: snapshot,
+      initialPropLook: "model",
+    });
+    state.attachController(controllerFor());
+    expect(state.propLook).toBe("pictograph");
+    expect(state.capture().props.propLook).toBe("pictograph");
+  });
+
+  it("saves a version picked in the creator", () => {
+    const state = create();
+    state.attachController(controllerFor());
+    state.setPropType("triad", "model");
+    expect(state.capture().props).toMatchObject({
+      leftPropType: "triad",
+      propLook: "model",
     });
   });
 });

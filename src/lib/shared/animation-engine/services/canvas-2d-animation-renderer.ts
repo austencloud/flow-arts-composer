@@ -51,6 +51,17 @@ import {
   lerpAngle,
 } from "$lib/shared/animation-engine/services/angle-calculator";
 import { wsEase } from "$lib/shared/transitions/ws-ease";
+import { getMotionColor } from "@tka/render-core";
+import {
+  handGridCopyColor,
+  type JoinedGridPaint,
+} from "$lib/shared/animation-engine/services/animation-grid-join";
+import {
+  CENTERED_HAND_OFFSETS,
+  gridJoinLayerAlphas,
+  type GridJoinTweenSample,
+} from "$lib/shared/animation-engine/services/grid-join-tween";
+import { PIXELS_PER_UNIT } from "$lib/shared/multi-grid/domain/constants/grid-mode-offsets";
 
 // Constants matching AnimatorCanvas EXACTLY
 const VIEWBOX_SIZE = 950;
@@ -159,6 +170,67 @@ function getSphereLayout(propType: string): SphereLayout | null {
   return { ...base, material };
 }
 
+/** Grid ink: black on light, the off-white the dark-mode tint paints. */
+const GRID_INK = { light: "#000000", dark: "#d9d9d9" } as const;
+
+/**
+ * After a layout slide, the new still picture takes over from the moving
+ * grids over this long (scaled by how much of the handover is left). If the
+ * picture has still not decoded after `GRID_SLIDE_GIVE_UP_MS`, the moving
+ * grids stop holding the loop open and the ordinary draw takes over.
+ */
+const GRID_SLIDE_SETTLE_MS = 150;
+const GRID_SLIDE_GIVE_UP_MS = 2000;
+
+type GridLayerAlphas = { outgoing: number; moving: number; composite: number };
+
+/** The grid's layers while a join change slides (see drawGridSlide). */
+interface GridSlideState {
+  id: number;
+  /** The still picture shown before the pick, fading out. */
+  outgoing: CanvasImageSource | null;
+  startOutgoing: number;
+  startMoving: number;
+  /** What the last frame drew, so a retarget continues from it. */
+  shown: GridLayerAlphas;
+  composite: CanvasImageSource | null;
+  /** When the slide ended (wall clock), and the handover strength then. */
+  endedAtMs: number | null;
+  settleStartMs: number | null;
+  settleFrom: number;
+}
+
+/**
+ * A still grid picture to fade out. Images are immutable, but the dark-mode
+ * tinted canvas is repainted in place when the grid changes, so it is copied.
+ */
+function snapshotGrid(
+  source: CanvasImageSource | null,
+  canvasSize: number
+): CanvasImageSource | null {
+  if (!source || !(source instanceof HTMLCanvasElement)) return source;
+  const copy = document.createElement("canvas");
+  copy.width = canvasSize;
+  copy.height = canvasSize;
+  copy.getContext("2d")?.drawImage(source, 0, 0, canvasSize, canvasSize);
+  return copy;
+}
+
+/** Joined-grid dot colors for the mode and the props' hand colors. */
+function joinedGridPaint(
+  isDarkMode: boolean,
+  propColors: { left: string; right: string } | null | undefined
+): JoinedGridPaint {
+  const mode = isDarkMode ? "dark" : "light";
+  return {
+    base: GRID_INK[mode],
+    hands: {
+      left: propColors?.left ?? getMotionColor("left", mode),
+      right: propColors?.right ?? getMotionColor("right", mode),
+    },
+  };
+}
+
 export class Canvas2DAnimationRenderer {
   // Specialized service managers
   private appManager: Canvas2DApplicationManager;
@@ -205,6 +277,9 @@ export class Canvas2DAnimationRenderer {
   // (drawImage + "source-in" fill), which iOS does support. Rebuilt only when
   // the source grid image or canvas size changes.
   private tintedGridCanvas: HTMLCanvasElement | null = null;
+  /** The still grid picture the last ordinary frame drew. */
+  private lastGridDrawable: CanvasImageSource | null = null;
+  private gridSlide: GridSlideState | null = null;
   private tintedGridImageRef: HTMLImageElement | null = null;
   private tintedGridSize = 0;
 
@@ -257,7 +332,7 @@ export class Canvas2DAnimationRenderer {
     offCtx.drawImage(gridImage, 0, 0, canvasSize, canvasSize);
     // 2. Recolor only the drawn pixels to off-white.
     offCtx.globalCompositeOperation = "source-in";
-    offCtx.fillStyle = "#d9d9d9";
+    offCtx.fillStyle = GRID_INK.dark;
     offCtx.fillRect(0, 0, canvasSize, canvasSize);
     offCtx.globalCompositeOperation = "source-over";
 
@@ -416,7 +491,8 @@ export class Canvas2DAnimationRenderer {
       this.rightPropFadeManager.isTransitionInProgress() ||
       this.trailsFadeManager.isTransitionInProgress() ||
       this.leftPropCrossfadeManager.isFadingInProgress() ||
-      this.rightPropCrossfadeManager.isFadingInProgress()
+      this.rightPropCrossfadeManager.isFadingInProgress() ||
+      this.gridSlide !== null
     );
   }
 
@@ -434,6 +510,144 @@ export class Canvas2DAnimationRenderer {
     // Start fade transition if there's a previous glyph
     if (previous) {
       this.fadeManager.startFadeTransition();
+    }
+  }
+
+  /**
+   * The still grid picture for the current layout, ready to draw, or null
+   * while it decodes: the painted joined pair, or the one grid (tinted in
+   * Dark Mode) once the newest grid load has landed.
+   */
+  private currentGridDrawable(
+    isDarkMode: boolean,
+    paint: JoinedGridPaint,
+    canvasSize: number
+  ): CanvasImageSource | null {
+    if (this.currentGridJoin) {
+      return this.imageLoader.getPaintedJoinedGrid(paint);
+    }
+    const gridImage = this.imageLoader.getGridImage();
+    if (!gridImage || !this.imageLoader.isGridImageCurrent()) return null;
+    return isDarkMode ? this.getTintedGrid(gridImage, canvasSize) : gridImage;
+  }
+
+  /**
+   * The grid while a join change slides: the old still picture fades out,
+   * each hand's own whole grid fades in and moves with its hand's offset,
+   * and the new still picture takes over at the end, so the last frame is the
+   * ordinary joined (or single) grid. A second pick mid-slide continues from
+   * the strengths and places the last frame drew.
+   */
+  private drawGridSlide(
+    ctx: CanvasRenderingContext2D,
+    params: RenderSceneParams,
+    slide: GridJoinTweenSample | null,
+    gridAlpha: number,
+    canvasSize: number
+  ): void {
+    const isDarkMode = this.appManager.isDarkModeEnabled();
+    const paint = joinedGridPaint(isDarkMode, params.primaryPropColors);
+    const now = params.currentTime;
+
+    let state = this.gridSlide;
+    if (slide && state?.id !== slide.id) {
+      const shown = state?.shown;
+      const compositeLeads =
+        !!state?.composite && !!shown && shown.composite > shown.outgoing;
+      state = {
+        id: slide.id,
+        outgoing: !state
+          ? snapshotGrid(this.lastGridDrawable, canvasSize)
+          : compositeLeads
+            ? snapshotGrid(state.composite, canvasSize)
+            : state.outgoing,
+        startOutgoing: !shown
+          ? 1
+          : compositeLeads
+            ? shown.composite
+            : shown.outgoing,
+        startMoving: shown?.moving ?? 0,
+        shown: { outgoing: 1, moving: 0, composite: 0 },
+        composite: null,
+        endedAtMs: null,
+        settleStartMs: null,
+        settleFrom: 0,
+      };
+      this.gridSlide = state;
+    }
+    if (!state) return;
+    // After the snapshots above: the dark-mode tint repaints its canvas.
+    const composite = this.currentGridDrawable(isDarkMode, paint, canvasSize);
+
+    let alphas: GridLayerAlphas;
+    if (slide) {
+      alphas = gridJoinLayerAlphas(
+        slide.t,
+        composite !== null,
+        state.startOutgoing,
+        state.startMoving
+      );
+    } else {
+      state.endedAtMs ??= now;
+      if (composite) {
+        if (state.settleStartMs === null) {
+          state.settleStartMs = now;
+          state.settleFrom = state.shown.composite;
+        }
+        const span = GRID_SLIDE_SETTLE_MS * (1 - state.settleFrom);
+        const k =
+          span <= 0 ? 1 : Math.min(1, (now - state.settleStartMs) / span);
+        const c = state.settleFrom + (1 - state.settleFrom) * k;
+        alphas = { outgoing: 0, moving: 1 - c, composite: c };
+      } else {
+        alphas = { outgoing: 0, moving: 1, composite: 0 };
+      }
+    }
+
+    if (gridAlpha > 0) {
+      ctx.save();
+      if (state.outgoing && alphas.outgoing > 0) {
+        ctx.globalAlpha = gridAlpha * alphas.outgoing;
+        ctx.drawImage(state.outgoing, 0, 0, canvasSize, canvasSize);
+      }
+      if (alphas.moving > 0) {
+        const offsets =
+          slide?.offsets ?? params.gridJoinOffsets ?? CENTERED_HAND_OFFSETS;
+        const unit = (PIXELS_PER_UNIT * canvasSize) / VIEWBOX_SIZE;
+        ctx.globalAlpha = gridAlpha * alphas.moving;
+        for (const hand of ["left", "right"] as const) {
+          const copy = this.imageLoader.getHandGridCopy(
+            handGridCopyColor(paint, hand)
+          );
+          if (!copy) continue;
+          const offset = offsets[hand];
+          ctx.drawImage(
+            copy,
+            offset.x * unit,
+            offset.y * unit,
+            canvasSize,
+            canvasSize
+          );
+        }
+      }
+      if (composite && alphas.composite > 0) {
+        ctx.globalAlpha = gridAlpha * alphas.composite;
+        ctx.drawImage(composite, 0, 0, canvasSize, canvasSize);
+      }
+      ctx.restore();
+    }
+    state.shown = alphas;
+    state.composite = composite;
+
+    const settled = !slide && alphas.composite >= 1;
+    const gaveUp =
+      !slide &&
+      !composite &&
+      state.endedAtMs !== null &&
+      now - state.endedAtMs > GRID_SLIDE_GIVE_UP_MS;
+    if (settled || gaveUp) {
+      this.gridSlide = null;
+      if (composite) this.lastGridDrawable = composite;
     }
   }
 
@@ -466,9 +680,12 @@ export class Canvas2DAnimationRenderer {
         ? gridFadeState.alpha
         : Math.max(0, Math.min(1, params.gridOpacity));
     const gridImage = this.imageLoader.getGridImage();
+    const gridSlide = params.gridJoinSlide ?? null;
 
-    // Draw grid if alpha > 0 (either visible, or fading out)
-    if (gridAlpha > 0 && gridImage) {
+    if (gridSlide || this.gridSlide) {
+      this.drawGridSlide(ctx, params, gridSlide, gridAlpha, canvasSize);
+    } else if (gridAlpha > 0 && gridImage) {
+      // Draw grid if alpha > 0 (either visible, or fading out)
       ctx.save();
       ctx.globalAlpha = gridAlpha;
 
@@ -476,10 +693,20 @@ export class Canvas2DAnimationRenderer {
       // unsupported on iOS Safari, so we draw a pre-tinted offscreen copy
       // instead of inverting at draw time (which left the grid black on iPhone).
       const isDarkMode = this.appManager.isDarkModeEnabled();
-      const tinted = isDarkMode
-        ? this.getTintedGrid(gridImage, canvasSize)
+      // Joined grids come painted, each hand's dots leaning toward its
+      // color; the plain grid stands in while that copy decodes.
+      const painted = this.currentGridJoin
+        ? this.imageLoader.getPaintedJoinedGrid(
+            joinedGridPaint(isDarkMode, params.primaryPropColors)
+          )
         : null;
-      ctx.drawImage(tinted ?? gridImage, 0, 0, canvasSize, canvasSize);
+      const tinted =
+        !painted && isDarkMode
+          ? this.getTintedGrid(gridImage, canvasSize)
+          : null;
+      const drawable = painted ?? tinted ?? gridImage;
+      ctx.drawImage(drawable, 0, 0, canvasSize, canvasSize);
+      this.lastGridDrawable = drawable;
       ctx.restore();
     }
 

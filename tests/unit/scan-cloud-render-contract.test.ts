@@ -12,12 +12,17 @@ describe("QR scan cloud-render contract", () => {
     expect(page).not.toContain("getGlyphCache().initialize()");
   });
 
-  it("makes scan-card cell resolution cloud-only", () => {
+  it("uses the scan context's cloud-only policy for canonical cells", () => {
     const card = source(
       "src/lib/shared/sequence-viewer/components/ChoreoCard.svelte"
     );
     expect(card).toContain("probeCloud: cloudProbeEnabled");
-    expect(card).toContain("cloudOnly: cloudProbeEnabled");
+    expect(card).toContain(
+      "cloudOnly: scanCloudPolicy.cloudOnly && !handPathMode"
+    );
+    expect(card).toContain("...CANONICAL_CARD_VISIBILITY");
+    expect(card).toContain("showLeftMotion,");
+    expect(card).toContain("showRightMotion,");
   });
 
   it("prepares the viewer record once and retains the browser fallback", () => {
@@ -88,7 +93,7 @@ describe("QR scan cloud-render contract", () => {
     expect(modes).toContain('if (scanOrigin) return "card";');
     expect(page).toContain("deferInteractiveStartup");
     expect(page).toContain("startInCardThenSplit");
-    expect(page).toContain("setScanCardCloudProbe(true)");
+    expect(page).toContain("setScanCardCloudProbe(true, isDemo)");
   });
 
   it("does not launch the local card pre-warmer for a cloud-backed scan", () => {

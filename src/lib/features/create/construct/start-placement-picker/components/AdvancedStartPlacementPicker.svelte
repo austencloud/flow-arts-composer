@@ -2,6 +2,7 @@
 <script lang="ts">
   import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
   import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
+  import type { GridJoin } from "@tka/tka-types";
   import SimpleGlassScroll from "$lib/shared/foundation/ui/SimpleGlassScroll.svelte";
   import { onMount } from "svelte";
   import { createAdvancedPickerState } from "../state/advanced-picker-state.svelte";
@@ -14,12 +15,14 @@
     currentGridMode,
     onPictographSelect,
     isSideBySideLayout = () => false,
+    gridJoin = null,
   }: {
     pictographDataSet: PictographData[];
     selectedPictograph?: PictographData | null;
     currentGridMode: GridMode;
     onPictographSelect: (pictograph: PictographData) => void;
     isSideBySideLayout?: () => boolean;
+    gridJoin?: GridJoin | null;
   } = $props();
 
   // Create state for UI management
@@ -89,6 +92,7 @@
         shouldAnimate={pickerState.shouldPictographAnimate}
         {isTransitioning}
         onSelect={onPictographSelect}
+        {gridJoin}
         onAnimationEnd={pickerState.markAnimationComplete}
       />
 
@@ -101,6 +105,7 @@
         shouldAnimate={pickerState.shouldPictographAnimate}
         {isTransitioning}
         onSelect={onPictographSelect}
+        {gridJoin}
         onAnimationEnd={pickerState.markAnimationComplete}
       />
 
@@ -113,6 +118,7 @@
         shouldAnimate={pickerState.shouldPictographAnimate}
         {isTransitioning}
         onSelect={onPictographSelect}
+        {gridJoin}
         onAnimationEnd={pickerState.markAnimationComplete}
       />
     </ResponsivePlacementGrid>

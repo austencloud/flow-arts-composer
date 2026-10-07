@@ -21,10 +21,17 @@ export async function createCosmicPrototypeWorld(
     groundY: context.performers[0]?.groundY ?? -1.5,
     stageRadius: 3,
     onAssetProgress: (fraction) => context.reportProgress("assets", fraction),
+    // The seated audience sits outside the opening framing and costs six
+    // character models. It starts loading once the scene is on screen, so it
+    // never competes with the reveal, and is compiled and uploaded against the
+    // live scene before it joins, so it arrives without a hitch.
+    audienceGate: context.scenePresented,
+    prepareAudience: (audience) =>
+      context.prepareLateObject?.(audience, scene) ?? Promise.resolve(),
   });
   scene.add(environment.root);
   scene.fog = environment.fog;
-  await environment.audienceReady.catch(() => undefined);
+  void environment.audienceReady.catch(() => undefined);
   context.reportProgress("construct", 1);
 
   return {

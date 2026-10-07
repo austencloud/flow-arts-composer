@@ -51,10 +51,15 @@
   {/snippet}
 
   <div class="picker-body">
+    <!-- Deck cards print notation art (the locked render path draws only an
+         explicit look), so the deck has no version to choose and the selected
+         tile shows Version 1. -->
     <BentoPropGrid
       selectedPropType={rs.leftPropType}
       variant="inline"
       showColors={false}
+      showPropLook={false}
+      propLook="pictograph"
       title="Select Prop"
       onSelect={(p: PropType) => {
         rs.selectedPropType = p;

@@ -42,6 +42,20 @@ describe("Shape Matrix app boundary", () => {
     expect(offenders).toEqual([]);
   });
 
+  it("carries a picked version into every host pick of a prop", () => {
+    // The engine writes the pair after its load lands, and a write that
+    // names no version resets Version 2. A host that drops the tile's look
+    // here makes "LED Baton V2" end at Version 1.
+    const bare: string[] = [];
+    for (const file of svelteFiles(APP_ROOT)) {
+      const source = readFileSync(resolve(MATRIX_ROOT, file), "utf8");
+      for (const call of source.matchAll(/\.setPropType\(([^)]*)\)/g)) {
+        if (!call[1]!.includes("look")) bare.push(`${file}: ${call[0]}`);
+      }
+    }
+    expect(bare).toEqual([]);
+  });
+
   it("keeps viewport ownership in the embeddable app", () => {
     const appSource = readTree(APP_ROOT);
 

@@ -29,6 +29,8 @@ export interface PropPreset {
   catDogMode: boolean;
   leftBuugengFlipped?: boolean; // Flip buugeng for blue hand (asymmetric prop)
   rightBuugengFlipped?: boolean; // Flip buugeng for red hand (asymmetric prop)
+  /** The version the setup was saved at. Presets saved before versions existed have none and apply as Version 1. */
+  propArtwork?: PropLook;
 }
 
 export interface AppSettings {

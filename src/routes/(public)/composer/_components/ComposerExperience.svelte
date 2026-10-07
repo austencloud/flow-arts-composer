@@ -21,6 +21,7 @@
   } from "$lib/shared/pictograph/prop/domain/fan-appearance";
   import {
     DEFAULT_PROP_LOOK,
+    versionAfterPick,
     type PropLook,
   } from "$lib/shared/pictograph/prop/domain/prop-look";
   import type { PropChiralitySeam } from "$lib/shared/settings/components/tabs/prop-type/prop-chirality-seam";
@@ -145,7 +146,10 @@
     propPickerOpen = true;
   }
 
-  function selectProp(prop: PropType): void {
+  function selectProp(prop: PropType, look?: PropLook): void {
+    // A version belongs to the pick, so a different prop that names none
+    // starts at Version 1.
+    propLook = versionAfterPick(selectedProp, propLook, prop, look);
     // Keep the chooser open so a family pick can reveal its appearance options.
     selectedProp = prop;
   }
@@ -369,7 +373,24 @@
   const activateTunnel = activateNear("changing", () => (tunnelActive = true));
   const observeTunnel = (node: HTMLElement) =>
     observeComposerStopVisibility(node, (visible) => (tunnelVisible = visible));
-  const activateViewer = activateNear("viewing", () => {});
+  // One glide away from 3D, start the viewer's code and the stage model the
+  // opening waits on, so the portal opens on downloads already done. Only the
+  // reliquary: the manifest's Cosmic list also names the older renderer's
+  // 5 MB stage, which the portal's renderer never loads.
+  function warmViewerStage(): void {
+    if (!viewportFits3D() || (webglChecked && !webglAvailable)) return;
+    warmViewer();
+    void Promise.all([
+      import("$lib/shared/3d/scene-boot/scene-prefetch"),
+      import("$lib/shared/3d/environments/worlds/cosmic/cosmic-environment-assets"),
+    ])
+      .then(([prefetch, cosmic]) => {
+        prefetch.warmSceneUrls([cosmic.COSMIC_RELIQUARY_URL]);
+        prefetch.warmDecoderRuntimes();
+      })
+      .catch(() => undefined);
+  }
+  const activateViewer = activateNear("viewing", warmViewerStage);
   const activateShelf = activateNear("keeping", () => (shelfActive = true));
 </script>
 
@@ -967,7 +988,9 @@
     -webkit-backdrop-filter: blur(3px);
   }
 
-  :global(dialog.composer-3d-portal .modal-body) {
+  /* Child combinators keep this off the dialogs the 3D controls open inside
+     the frame (the sequence picker, for one), whose bodies stay blocks. */
+  :global(dialog.composer-3d-portal > .modal-content-wrapper > .modal-body) {
     position: relative;
     display: flex;
     flex: 1;

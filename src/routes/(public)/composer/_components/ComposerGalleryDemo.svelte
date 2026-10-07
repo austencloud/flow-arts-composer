@@ -5,10 +5,6 @@
   import ChoreoCardThumbnail from "$lib/shared/browse/components/ChoreoCardThumbnail/ChoreoCardThumbnail.svelte";
   import { getBrowseLoader } from "$lib/shared/browse/get-browse-loader";
   import {
-    hydrateSequence,
-    prefetch,
-  } from "$lib/shared/sequence-viewer/services/sequence-data-provider";
-  import {
     getSettings,
     updateSettings,
   } from "$lib/shared/application/state/app-state.svelte";
@@ -65,11 +61,9 @@
   async function load(): Promise<void> {
     status = "loading";
     try {
-      const loader = getBrowseLoader();
-      const pool =
-        (await loader.loadCachedSequenceMetadata()) ??
-        (await loader.loadInitialSequenceMetadata()) ??
-        (await loader.loadSequenceMetadata());
+      // One small read, not the Firestore SDK: the SDK's persistence and
+      // listeners stalled the glide and the 3D portal's opening.
+      const pool = await getBrowseLoader().loadPreviewSequenceMetadata();
       if (!mounted) return;
       sequences = pickSequences(pool);
       status = sequences.length > 0 ? "ready" : "error";
@@ -83,6 +77,15 @@
     }
   }
 
+  // The data provider reaches the local sequence store and its Firebase sync,
+  // so it loads with a hover or a click, never with the glide.
+  const loadDataProvider = () =>
+    import("$lib/shared/sequence-viewer/services/sequence-data-provider");
+
+  function prefetch(sequence: SequenceData): void {
+    void loadDataProvider().then((provider) => provider.prefetch(sequence));
+  }
+
   async function open(sequence: SequenceData): Promise<void> {
     const currentRequest = ++requestId;
     opening = true;
@@ -90,7 +93,9 @@
     try {
       // Keep the cards visible until both the sequence and its viewer are ready.
       const [hydrated, viewer] = await Promise.all([
-        hydrateSequence(sequence),
+        loadDataProvider().then((provider) =>
+          provider.hydrateSequence(sequence)
+        ),
         import("./ComposerInlineSequenceViewer.svelte"),
       ]);
       if (!mounted || currentRequest !== requestId) return;
@@ -190,6 +195,7 @@
               {sequence}
               eager
               allowQR={false}
+              shareRender={false}
               onHover={prefetch}
               onPrimaryAction={open}
             />

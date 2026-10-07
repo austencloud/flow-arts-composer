@@ -20,12 +20,13 @@ export function viewingPropLabel(config: ResolvedPropConfig): string {
 export function resolveViewingProps(
   settings: ActivePropSettings & { propViewingMode?: PropViewingMode },
   sequence?: SequenceData | null,
-  collectionProp?: PropType | null
+  collectionProp?: PropType | null,
+  modeOverride?: PropViewingMode
 ): {
   config: ResolvedPropConfig;
   source: "My props" | "Collection" | "Saved with sequence";
 } {
-  if (settings.propViewingMode === "as-saved") {
+  if ((modeOverride ?? settings.propViewingMode) === "as-saved") {
     if (collectionProp)
       return {
         config: {

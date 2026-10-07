@@ -46,9 +46,19 @@
   /**
    * Fan keeps its measured appearance builds; energy props are 2D cosmetics
    * that borrow a parent model and must keep their own glow artwork; hand is
-   * not a prop; Classic Club is a 2D artwork choice by definition.
+   * not a prop; Classic Club is a 2D artwork choice by definition. Simple
+   * Staff and Capped Staff draw the same Staff3D model as the plain staff, so
+   * their captures would duplicate it. Fire Staff's notation art is drawn from
+   * the model's own measurements, so its capture would match that art.
    */
   function isCaptureCandidate(prop: PropType): boolean {
+    if (
+      prop === PropType.SIMPLESTAFF ||
+      prop === PropType.STAFF2 ||
+      prop === PropType.FIRE_DOUBLE_STAFF
+    ) {
+      return false;
+    }
     const value = prop as string;
     if (value === "fan" || value === "bigfan" || value === "hand") return false;
     if (value.startsWith("energy_") || value === "classic_club") return false;

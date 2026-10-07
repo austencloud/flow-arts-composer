@@ -6,6 +6,7 @@
  */
 import type { ShapeMatrixPropSource } from "$lib/shared/shape-matrix/app/state/shape-matrix-app-state.svelte";
 import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+import type { PropLook } from "$lib/shared/pictograph/prop/domain/prop-look";
 import { propPairFromLegacy } from "$lib/shared/shape-matrix/domain/prop-pair";
 
 /** AppSettings keeps these optional; older saves carry only `propType`. */
@@ -14,6 +15,7 @@ interface ShapeEnginePropSettings {
   leftPropType?: PropType;
   rightPropType?: PropType;
   catDogMode?: boolean;
+  propArtwork?: PropLook;
 }
 
 export function createShapeEnginePropSource(dependencies: {
@@ -31,10 +33,14 @@ export function createShapeEnginePropSource(dependencies: {
       return dependencies.getSettings().catDogMode ?? false;
     },
     set(pair) {
+      // A pick that names a version writes it with the pair. The pair write
+      // lands after the engine's load, and a pair write that names no version
+      // resets Version 2 to Version 1 (see withPickVersion).
       void dependencies.updateSettings({
         leftPropType: pair.left,
         rightPropType: pair.right,
         catDogMode: pair.catDog,
+        ...(pair.look === undefined ? {} : { propArtwork: pair.look }),
       });
     },
   };

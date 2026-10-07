@@ -31,10 +31,10 @@ import type { MandalaPathOptions } from "$lib/shared/mandala/services/types";
 import type { PropState } from "$lib/shared/foundation/domain/types/prop-state";
 import type { GridJoin } from "@tka/tka-types";
 import {
-  gridJoinShiftUnits,
   resolveAnimationGridJoin,
   shiftPropState,
 } from "../animation-grid-join";
+import { GridJoinTween, gridJoinHandOffsets } from "../grid-join-tween";
 
 export class FrameSystem {
   readonly frameParameterBuilder = new FrameParameterBuilder();
@@ -51,6 +51,12 @@ export class FrameSystem {
     centerPathAngle: 0,
     staffRotationAngle: 0,
   };
+  /**
+   * The slide between grid layouts. PlaybackSync starts it when the join
+   * changes; every frame built while it runs places the hands part way.
+   */
+  readonly gridJoinTween = new GridJoinTween();
+  private gridJoinTweenEnded: (() => void) | null = null;
 
   constructor(
     private readonly state: AnimatorState,
@@ -107,41 +113,57 @@ export class FrameSystem {
       params,
       resolveAnimationGridJoin(
         props.sequenceData,
-        params.props.additionalLayers.length
+        params.props.additionalLayers.length,
+        props.gridMode
       )
     );
     return params;
   }
 
+  /** Called once, from a frame, when a grid layout slide finishes. */
+  onGridJoinTweenEnd(handler: (() => void) | null): void {
+    this.gridJoinTweenEnded = handler;
+  }
+
   /**
    * Joined grids: each hand moves onto its own grid, set by the sequence's
    * join. Overlaid tunnel layers share one grid, so they keep it single (the
-   * resolved join is null for them).
+   * resolved join is null for them). While a layout change slides, the hands
+   * sit where the slide has them, even on the way back to one grid.
    */
   private applyGridJoin(
     params: RenderFrameParams,
     join: GridJoin | null
   ): void {
     params.gridJoin = join;
-    if (!join) return;
+    let slide = this.gridJoinTween.sample(performance.now());
+    if (slide && slide.t >= 1) {
+      this.gridJoinTween.stop();
+      slide = null;
+      this.gridJoinTweenEnded?.();
+    }
+    const offsets = slide?.offsets ?? gridJoinHandOffsets(join);
+    params.gridJoinOffsets = offsets;
+    params.gridJoinSlide = slide;
+    if (!join && !slide) return;
 
     const { leftProp, rightProp } = params.props;
     if (leftProp) {
       params.props.leftProp = shiftPropState(
         leftProp,
-        gridJoinShiftUnits(join, 0),
+        offsets.left,
         this.joinedLeftProp
       );
     }
     if (rightProp) {
       params.props.rightProp = shiftPropState(
         rightProp,
-        gridJoinShiftUnits(join, 1),
+        offsets.right,
         this.joinedRightProp
       );
     }
-    // The mandala guide draws both hands around the one canvas center.
-    params.mandalaVisible = false;
+    // The mandala guide reads `gridJoinOffsets` and draws each hand's figure
+    // on its own grid, sliding with the props, so it stays visible.
   }
 
   calculateBeatNumber(props: AnimationEngineProps): number {

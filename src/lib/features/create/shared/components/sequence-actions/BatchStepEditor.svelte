@@ -15,6 +15,8 @@
   import PictographContainer from "$lib/shared/pictograph/shared/components/PictographContainer.svelte";
   import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
   import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+  import type { GridJoin } from "@tka/tka-types";
+  import { gridJoinCellResolver } from "@tka/render-core";
   import { calculateGridLayout } from "$lib/shared/create/utils/grid-calculations";
   import { getDeviceDetector } from "$lib/shared/device/get-device-detector";
   import { flip } from "svelte/animate";
@@ -29,6 +31,8 @@
     onSelectAll: () => void;
     leftPropTypeOverride?: PropType;
     rightPropTypeOverride?: PropType;
+    /** The sequence's grid join; the steps draw joined when set. */
+    gridJoin?: GridJoin | null;
   }
 
   let {
@@ -39,7 +43,10 @@
     onSelectAll,
     leftPropTypeOverride,
     rightPropTypeOverride,
+    gridJoin = null,
   }: Props = $props();
+
+  const withGridJoin = $derived(gridJoinCellResolver({ conjoined: gridJoin }));
 
   const count = $derived(steps.length);
 
@@ -127,7 +134,7 @@
           animate:flip={{ duration: flipDuration }}
         >
           <PictographContainer
-            pictographData={step}
+            pictographData={gridJoin ? withGridJoin(step) : step}
             disableTransitions={true}
             cellIndex={i}
             {leftPropTypeOverride}

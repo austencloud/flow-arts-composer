@@ -151,7 +151,8 @@
         showEffectsPlayback={false}
         selectedPropType={appState.addressedPropType}
         sequence={theory ? null : animationState.previewSequence}
-        onPropChange={(propType) => void appState.setPropType(propType)}
+        onPropChange={(propType, look) =>
+          void appState.setPropType(propType, undefined, look)}
         handProps={appState.handProps}
         showPathShape={false}
         showMotionVisibility={true}
