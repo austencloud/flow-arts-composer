@@ -23,6 +23,7 @@
   import { PROP_DIMENSIONS } from "$lib/shared/animation-engine/services/IPropTextureLoader";
   import { toScenePropType } from "$lib/shared/3d/domain/scene-prop-type";
   import { triangleSpriteKey } from "$lib/shared/pictograph/prop/domain/triangle-appearance";
+  import { isRetiredModelSprite } from "$lib/shared/pictograph/prop/domain/retired-model-sprites";
   import {
     PropType as ScenePropType,
     type PropBuild,
@@ -46,19 +47,11 @@
   /**
    * Fan keeps its measured appearance builds; energy props are 2D cosmetics
    * that borrow a parent model and must keep their own glow artwork; hand is
-   * not a prop; Classic Club is a 2D artwork choice by definition. Simple
-   * Staff and Capped Staff draw the same Staff3D model as the plain staff, so
-   * their captures would duplicate it. Fire Staff's notation art is drawn from
-   * the model's own measurements, so its capture would match that art.
+   * not a prop; Classic Club is a 2D artwork choice by definition. Retired
+   * props (see retired-model-sprites.ts) would duplicate another look.
    */
   function isCaptureCandidate(prop: PropType): boolean {
-    if (
-      prop === PropType.SIMPLESTAFF ||
-      prop === PropType.STAFF2 ||
-      prop === PropType.FIRE_DOUBLE_STAFF
-    ) {
-      return false;
-    }
+    if (isRetiredModelSprite(prop)) return false;
     const value = prop as string;
     if (value === "fan" || value === "bigfan" || value === "hand") return false;
     if (value.startsWith("energy_") || value === "classic_club") return false;
@@ -84,11 +77,14 @@
   };
 
   const requested = $derived(page.url.searchParams.get("prop"));
-  /** ?force=1 skips the candidate filter (orientation checks against fan artwork). */
+  /**
+   * ?force=1 skips the candidate filter (orientation checks against fan
+   * artwork), but never brings back a retired prop's Version 2.
+   */
   const force = $derived(page.url.searchParams.get("force") === "1");
   const queue = $derived.by(() => {
     const all = (Object.values(PropType) as PropType[]).filter((prop) =>
-      force && requested ? true : isCaptureCandidate(prop)
+      force && requested ? !isRetiredModelSprite(prop) : isCaptureCandidate(prop)
     );
     return requested
       ? all.filter(
