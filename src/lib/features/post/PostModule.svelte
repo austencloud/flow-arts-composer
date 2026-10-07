@@ -14,6 +14,8 @@
     saveSyncedPostDraft,
   } from "./services/post-account-projects";
   import { savePostDraft } from "$lib/shared/media-composition/services/post-draft-storage";
+  import type { PostProject } from "$lib/shared/media-composition/domain/post-project";
+  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
   import {
     createPostModuleState,
     featureSelectionId,
@@ -136,6 +138,14 @@
   function showProjects(): void {
     state.showProjects();
     void goto("/post", { replaceState: true });
+  }
+
+  /**
+   * The account save for one sequence, bound when the editor opens: a copy
+   * it still holds when another post opens saves with its own sequence.
+   */
+  function saveSyncedFor(sequence: SequenceData) {
+    return (project: PostProject) => saveSyncedPostDraft(project, sequence);
   }
 </script>
 
@@ -279,7 +289,7 @@
             sequence={state.sequence}
             feature={state.feature ?? undefined}
             initialProject={state.feature ? state.feature.initialProject : (state.draft ?? undefined)}
-            onSaveDraft={state.feature ? state.feature.save : authState.user && !authState.user.isAnonymous ? (project) => saveSyncedPostDraft(project, state.sequence!) : state.diskAvailable ? savePostDraft : undefined}
+            onSaveDraft={state.feature ? state.feature.save : authState.user && !authState.user.isAnonymous ? saveSyncedFor(state.sequence) : state.diskAvailable ? savePostDraft : undefined}
             draftLoadError={state.projectError}
             cardPreviewUrl={cardPreview.url}
             cardRenderOptions={cardPreview.renderOptions}

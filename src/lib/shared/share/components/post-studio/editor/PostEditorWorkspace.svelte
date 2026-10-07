@@ -370,10 +370,14 @@
   let saveRequested = $state(false);
   let saveFlash = $state(false);
   let saveFlashTimer: ReturnType<typeof setTimeout> | undefined;
-  const draftAutosave = onSaveDraft
+  // Read once, like `feature`: a copy the autosave still holds when the Post
+  // page opens another post saves where this post came from. Read later,
+  // the prop would give the next post's save.
+  const saveDraft = onSaveDraft;
+  const draftAutosave = saveDraft
     ? createPostDraftAutosave(
         async (project) => {
-          const newer = await onSaveDraft(project);
+          const newer = await saveDraft(project);
           if (newer) editor.adoptSaved(newer);
         },
         (saving, error) => {
@@ -1552,6 +1556,11 @@
 
   function pickDeviceVideo(): void {
     if (readingFile) return;
+    // A feature video plays only videos in its folder; the CLI copies them in.
+    if (featureVideo) {
+      fileError = `${featureVideo.slug} plays only videos in its folder. Add one with: node scripts/post-project.mjs add-take <file> --feature ${featureVideo.slug}`;
+      return;
+    }
     fileError = "";
     fileInput?.click();
   }
