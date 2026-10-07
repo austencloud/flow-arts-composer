@@ -472,9 +472,20 @@ dialog.drawer-content {
   padding-right: var(--drawer-handle-gutter, 28px);
 }
 
-/* Inner content container */
+/* Inner content container.
+   flex-basis is AUTO, never 0%. A bottom or top sheet with no set height is
+   as tall as its content (the <dialog> UA height is fit-content). WebKit
+   (Safari and every iPhone browser) sizes that height from each child's flex
+   basis, so `flex: 1` (basis 0%) plus `min-height: 0` made this region
+   contribute 0px: the sheet collapsed to its min-height, and a sheet with no
+   floor (the phone navigation menu) opened as a bare grab handle at the bottom
+   of the screen. Blink sized it from content, so it only failed on iOS. With
+   basis auto the region contributes its content height in both engines; under
+   a definite sheet height the result is unchanged, because it is the only
+   growing child and still shrinks (min-height: 0) and scrolls past the cap.
+   Content-sized consumers must keep their own flex chain on basis auto too. */
 .drawer-inner {
-  flex: 1;
+  flex: 1 1 auto;
   min-height: 0;
   display: flex;
   flex-direction: column;
