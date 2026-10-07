@@ -516,11 +516,13 @@
     outline-offset: 2px;
   }
 
+  /* Bar 1's flag sits on the music's bottom edge, clear of its name. */
   .bar-one {
     position: absolute;
-    top: 0;
+    bottom: 0;
     z-index: 3;
     display: flex;
+    align-items: flex-end;
     justify-content: center;
     width: 44px;
     height: 44px;
@@ -537,7 +539,7 @@
     place-items: center;
     min-width: 1.25rem;
     height: 1.25rem;
-    margin-top: 2px;
+    margin-bottom: 5px;
     border-radius: 0.25rem;
     background: var(--music-tint);
     color: #0b1a10;
