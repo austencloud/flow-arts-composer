@@ -13,6 +13,7 @@ import { buildRenderOptions as buildCellRenderOptions } from "$lib/shared/choreo
 import { isCatDogMode } from "$lib/shared/browse/utils/prop-mode-helpers";
 import { createStartPlacementFromBeatStart } from "$lib/shared/create/services/sequence-transforms";
 import { gridJoinCellResolver } from "@tka/render-core";
+import { sequenceGridJoin } from "$lib/shared/grid-join/sequence-grid-join";
 import { getVisibilityStateManager } from "$lib/shared/pictograph/shared/state/visibility-state.svelte";
 
 interface CellTask {
@@ -20,6 +21,12 @@ interface CellTask {
   stepNumber: number | undefined;
   cacheKey: string;
   isDark: boolean;
+}
+
+/** A finished warm counts only for the join it drew: a new join warms again. */
+function completedKey(sequence: SequenceData): string {
+  const join = sequenceGridJoin(sequence);
+  return join ? `${sequence.id}|${join.toward}${join.steps}` : sequence.id;
 }
 
 function hasSchedulerApi(): boolean {
@@ -41,8 +48,9 @@ export class CellPreWarmer {
     if (!sequence.steps?.length) return;
 
     const seqId = sequence.id;
+    const doneKey = completedKey(sequence);
 
-    if (this.completedSequences.has(seqId)) return;
+    if (this.completedSequences.has(doneKey)) return;
 
     const existing = this.activeWarms.get(seqId);
     if (existing) {
@@ -71,9 +79,21 @@ export class CellPreWarmer {
     const cellTasks = this.buildCellTasks(sequence, renderOptions, isDark);
 
     if (priority === "background") {
-      this.warmSequential(seqId, cellTasks, renderOptions, controller.signal);
+      this.warmSequential(
+        seqId,
+        doneKey,
+        cellTasks,
+        renderOptions,
+        controller.signal
+      );
     } else {
-      this.warmParallel(seqId, cellTasks, renderOptions, controller.signal);
+      this.warmParallel(
+        seqId,
+        doneKey,
+        cellTasks,
+        renderOptions,
+        controller.signal
+      );
     }
   }
 
@@ -81,7 +101,8 @@ export class CellPreWarmer {
     if (!sequence.steps?.length) return;
 
     const seqId = sequence.id;
-    if (this.completedSequences.has(seqId)) return;
+    const doneKey = completedKey(sequence);
+    if (this.completedSequences.has(doneKey)) return;
 
     const controller = new AbortController();
     this.activeWarms.set(seqId, controller);
@@ -90,7 +111,13 @@ export class CellPreWarmer {
     const renderOptions = this.buildRenderOptions();
     const cellTasks = this.buildCellTasks(sequence, renderOptions, isDark);
 
-    await this.warmParallel(seqId, cellTasks, renderOptions, controller.signal);
+    await this.warmParallel(
+      seqId,
+      doneKey,
+      cellTasks,
+      renderOptions,
+      controller.signal
+    );
   }
 
   cancelPreWarm(sequenceId: string): void {
@@ -203,6 +230,7 @@ export class CellPreWarmer {
 
   private async warmSequential(
     seqId: string,
+    doneKey: string,
     tasks: CellTask[],
     options: PreviewCellRenderOptions,
     signal: AbortSignal
@@ -223,7 +251,7 @@ export class CellPreWarmer {
         }
       }
 
-      this.completedSequences.add(seqId);
+      this.completedSequences.add(doneKey);
     } finally {
       // Only evict if THIS task's controller is still the registered one. A
       // superseding higher-priority warm aborts us and registers its own
@@ -238,6 +266,7 @@ export class CellPreWarmer {
 
   private async warmParallel(
     seqId: string,
+    doneKey: string,
     tasks: CellTask[],
     options: PreviewCellRenderOptions,
     signal: AbortSignal
@@ -249,7 +278,7 @@ export class CellPreWarmer {
       await Promise.allSettled(promises);
 
       if (!signal.aborted) {
-        this.completedSequences.add(seqId);
+        this.completedSequences.add(doneKey);
       }
     } finally {
       // See warmSequential: only evict if this task's controller is still the
