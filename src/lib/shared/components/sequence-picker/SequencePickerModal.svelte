@@ -209,9 +209,14 @@
    * the modal while the split pane inside starved (the value editor fell
    * below the dialog's bottom edge from 1440×900 up), and at 412px tall the
    * floor overshot the dialog by 5px so two scrollbars fought. */
+  /* Fill the body even when a host makes it a flex row: the drill below is
+     an inline-size container with no width of its own, so a content-sized
+     body would collapse to its padding. */
   .picker-body {
     position: relative;
     display: flex;
+    flex: 1;
+    width: 100%;
     height: 100%;
     min-height: 0;
     min-width: 0;
