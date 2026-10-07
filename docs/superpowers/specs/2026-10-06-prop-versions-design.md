@@ -47,9 +47,12 @@ model, so Fire Staff and Fire Staff 3D look the same at tile size.
   right after `normalizePropPatch`. Every prop writer (picker hosts, presets,
   Alt+N shortcuts, voice, randomize, step editor) already funnels through
   `updateSettings`, so they all inherit the rule.
-- Picker hosts that own a local look (Post Studio, Composer): `PropGrid`'s
-  `selectProp` passes Version 1 to `onSelect` and `onPropLookChange` when a
-  tile without a version picks a prop other than `selectedPropType`.
+- Picker hosts that own a local look (Post Studio's animation appearance tool,
+  Composer) apply the same rule in their own `onSelect` through one shared
+  helper in `prop-look.ts`: a versionless pick of a different prop means
+  Version 1. `PropGrid` itself does not reset the version, because hosts such
+  as the deck releaser and tunnel art settings fall back to the global look
+  writer while picking a prop for a local purpose.
 
 ## Verification
 

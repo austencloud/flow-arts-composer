@@ -169,3 +169,75 @@ describe("settings enforce the prop pair rule", () => {
     });
   });
 });
+
+describe("settings give a pick its own version", () => {
+  beforeEach(async () => {
+    localStorage.clear();
+    await settingsService.updateSettings({
+      leftPropType: PropType.STAFF,
+      rightPropType: PropType.STAFF,
+      catDogMode: false,
+      propArtwork: "model",
+    });
+  });
+
+  it("goes back to Version 1 when a different prop is picked", async () => {
+    await settingsService.updateSetting("propType", PropType.CLUB);
+    expect(settingsService.settings).toMatchObject({
+      leftPropType: PropType.CLUB,
+      propArtwork: "pictograph",
+    });
+  });
+
+  it("goes back to Version 1 for a single-hand pick", async () => {
+    await settingsService.updateSetting("rightPropType", PropType.FAN);
+    expect(settingsService.settings).toMatchObject({
+      catDogMode: true,
+      propArtwork: "pictograph",
+    });
+  });
+
+  it("keeps the version a write names for itself", async () => {
+    await settingsService.updateSettings({
+      leftPropType: PropType.CLUB,
+      rightPropType: PropType.CLUB,
+      propArtwork: "model",
+    });
+    expect(settingsService.settings.propArtwork).toBe("model");
+  });
+
+  it("keeps the version when the current prop is picked again", async () => {
+    await settingsService.updateSetting("propType", PropType.STAFF);
+    expect(settingsService.settings.propArtwork).toBe("model");
+  });
+
+  it("keeps the version when Cat Dog turns off", async () => {
+    await settingsService.updateSettings({
+      rightPropType: PropType.FAN,
+      propArtwork: "model",
+    });
+    await settingsService.updateSetting("catDogMode", false);
+    expect(settingsService.settings).toMatchObject({
+      rightPropType: PropType.STAFF,
+      catDogMode: false,
+      propArtwork: "model",
+    });
+  });
+
+  it("does not reset the version when settings load from storage", async () => {
+    localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({
+        leftPropType: PropType.CLUB,
+        rightPropType: PropType.CLUB,
+        catDogMode: false,
+        propArtwork: "model",
+      })
+    );
+    await settingsService.loadSettings();
+    expect(settingsService.settings).toMatchObject({
+      leftPropType: PropType.CLUB,
+      propArtwork: "model",
+    });
+  });
+});
