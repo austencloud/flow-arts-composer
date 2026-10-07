@@ -5,6 +5,7 @@
   import type { SheetCell } from "../../services/sheet-row-planner";
   import type { ChoreoSheetLayout } from "../../domain/types/choreo-sheet";
   import { SHEET_CELL_VISIBILITY } from "../../services/sheet-cell-config";
+  import { joinedCellStep } from "../../services/sheet-cell-raster";
 
   let {
     cell,
@@ -33,6 +34,8 @@
   } = $props();
 
   const selection = getSequenceSelection();
+  // Drawn on the grids the sequence is joined on.
+  const joinedStep = $derived(joinedCellStep(cell));
 </script>
 
 <div
@@ -77,7 +80,7 @@
   {/if}
   {#if cell.step && visible}
     <PictographContainer
-      pictographData={cell.step}
+      pictographData={joinedStep}
       disableTransitions={true}
       printMode={true}
       darkMode={false}
