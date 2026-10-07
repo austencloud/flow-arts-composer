@@ -13,80 +13,21 @@
 import { t } from "$lib/shared/i18n/i18n.svelte.js";
 import type { ContextMenuItem } from "$lib/shared/components/context-menu/context-menu-types";
 import type { GridJoin } from "@tka/tka-types";
-import {
-  GRID_JOIN_DIRECTIONS,
-  alignGridJoin,
-  isBoxGrid,
-} from "@tka/render-core";
 import type { GridJoinController } from "./grid-join-controller";
-
-type JoinDirection = GridJoin["toward"];
-
-/** Where red's grid sits from blue's, in the order the menu lists them. */
-const DIRECTIONS: readonly {
-  toward: JoinDirection;
-  /** Clockwise degrees from a right-pointing arrow. */
-  rotate: number;
-  label: () => string;
-}[] = [
-  { toward: "e", rotate: 0, label: () => t("animation_menu_grid_join_red_e") },
-  {
-    toward: "w",
-    rotate: 180,
-    label: () => t("animation_menu_grid_join_red_w"),
-  },
-  {
-    toward: "n",
-    rotate: 270,
-    label: () => t("animation_menu_grid_join_red_n"),
-  },
-  { toward: "s", rotate: 90, label: () => t("animation_menu_grid_join_red_s") },
-  {
-    toward: "ne",
-    rotate: 315,
-    label: () => t("animation_menu_grid_join_red_ne"),
-  },
-  {
-    toward: "se",
-    rotate: 45,
-    label: () => t("animation_menu_grid_join_red_se"),
-  },
-  {
-    toward: "sw",
-    rotate: 135,
-    label: () => t("animation_menu_grid_join_red_sw"),
-  },
-  {
-    toward: "nw",
-    rotate: 225,
-    label: () => t("animation_menu_grid_join_red_nw"),
-  },
-];
-
-/**
- * Direction and distance a first choice starts from (the direction turned onto
- * the grid's lines), and that a later choice keeps when only the other changes.
- */
-const DEFAULT_DIRECTION: JoinDirection = "e";
-const DEFAULT_STEPS: GridJoin["steps"] = 1;
+import {
+  gridJoinSelection,
+  offeredGridJoinDirections,
+} from "./grid-join-choices";
 
 /** The submenu's children, all radio-style and keeping the menu open. */
 export function buildGridJoinChildren(
   controller: GridJoinController
 ): ContextMenuItem[] {
   const gridMode = controller.gridMode();
-  const stored = controller.current();
-  // A join stored off this grid's lines draws aligned, so it reads aligned.
-  const current = stored ? alignGridJoin(stored, gridMode) : null;
-  const { toward, steps } =
-    current ??
-    alignGridJoin(
-      { toward: DEFAULT_DIRECTION, steps: DEFAULT_STEPS },
-      gridMode
-    );
-  const offered = GRID_JOIN_DIRECTIONS[
-    isBoxGrid(gridMode ?? undefined) ? "box" : "diamond"
-  ] as readonly JoinDirection[];
+  const { current, toward, steps } = gridJoinSelection(
+    controller.current(),
+    gridMode
+  );
 
   const distance = (
     id: string,
@@ -112,7 +53,7 @@ export function buildGridJoinChildren(
     },
     distance("grid-join-steps-1", t("animation_menu_grid_join_one_point"), 1),
     distance("grid-join-steps-2", t("animation_menu_grid_join_two_points"), 2),
-    ...DIRECTIONS.filter((direction) => offered.includes(direction.toward)).map(
+    ...offeredGridJoinDirections(gridMode).map(
       (direction): ContextMenuItem => ({
         id: `grid-join-${direction.toward}`,
         label: direction.label(),
