@@ -340,29 +340,6 @@
     gap: 16px;
   }
 
-  /* The phone tray: pictures capped by the screen's height so a landscape
-     tray stays short, and the two groups side by side once the tray is wide
-     enough for eight tiles in a row. */
-  .compact .groups {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr));
-    gap: 10px 20px;
-  }
-
-  .compact .group {
-    width: fit-content;
-    max-width: 100%;
-    justify-self: center;
-  }
-
-  .compact .tile-grid {
-    --art: min(5.5rem, 22dvh);
-    grid-template-columns: repeat(
-      4,
-      minmax(0, calc(var(--art) + 2 * var(--tile-pad) + 2px))
-    );
-  }
-
   .group {
     display: flex;
     flex-direction: column;
