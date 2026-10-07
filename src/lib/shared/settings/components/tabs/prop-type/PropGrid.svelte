@@ -244,6 +244,7 @@
           label: section.label,
           bases,
           columns: balancedColumns(bases.length),
+          orphans: tierOrphans(bases.length),
         };
       })
       .filter((section) => section.bases.length > 0);
@@ -258,6 +259,26 @@
       (max) => `--c${max}: ${balancedCount(count, max)}`
     ).join("; ");
   }
+
+  // The tiles that start a short last row at some tier, each with the doubled
+  // track it starts on there (--orphan-c2 ... --orphan-c12), so an unbounded
+  // grid centres that row at whichever tier its container reaches.
+  function tierOrphans(count: number): Map<number, string> {
+    const starts = new Map<number, string[]>();
+    for (const max of COLUMN_TIERS) {
+      const orphan = centeredOrphan(count, balancedCount(count, max));
+      if (orphan === null) continue;
+      const decls = starts.get(orphan.index) ?? [];
+      decls.push(`--orphan-c${max}: ${orphan.start}`);
+      starts.set(orphan.index, decls);
+    }
+    return new Map(
+      [...starts].map(([index, decls]) => [index, decls.join("; ")])
+    );
+  }
+
+  // A bounded grid's short last row starts at one doubled track, inline.
+  const columnStart = (start: number) => `grid-column-start: ${start}`;
 
   const allBases = $derived(sections.flatMap((section) => section.bases));
   const selectedBase = $derived(
@@ -579,6 +600,7 @@
     return big !== style && selectablePropSet.has(big) ? big : style;
   }
   const drillTileCount = $derived(familyTiles.length);
+  const drillOrphans = $derived(tierOrphans(drillTileCount));
   /**
    * Tile grid for a drilled family in a bounded host: the column count that
    * makes the largest tile once rows share the height, so a two-style family
@@ -980,7 +1002,7 @@
     </header>
   {/if}
 
-  {#snippet tile(prop: PropType, columnStart?: number, look?: PropLook)}
+  {#snippet tile(prop: PropType, placement?: string, look?: PropLook)}
     <!--
       Each tile is wrapped in a relative-positioned container so the lock glyph
       and earn-tip can be positioned over / below the button. The click is
@@ -1002,7 +1024,7 @@
           })}
     <div
       class="tile-wrapper"
-      style:grid-column-start={columnStart}
+      style={placement}
       class:locked={prop !== PropType.HAND && !isUnlocked(prop)}
     >
       <PropGridButton
@@ -1041,10 +1063,10 @@
     </div>
   {/snippet}
 
-  {#snippet familyTile(base: PropType, columnStart?: number)}
+  {#snippet familyTile(base: PropType, placement?: string)}
     {@const choices = familyChoices(base)}
     {#if choices.length <= 1}
-      {@render tile(choices[0] ?? base, columnStart)}
+      {@render tile(choices[0] ?? base, placement)}
     {:else}
       <PropGridButton
         propType={familyDisplayProp(base)}
@@ -1056,7 +1078,7 @@
         buttonProps={{
           "aria-expanded": drill?.kind === "family" && drill.base === base,
           "data-family-tile": base,
-          style: columnStart ? `grid-column-start: ${columnStart}` : undefined,
+          style: placement,
         }}
         onSelect={() => void openDrill({ kind: "family", base })}
         {color}
@@ -1232,9 +1254,11 @@
               {#each familyTiles as entry, index (`${entry.style}:${entry.look ?? ""}`)}
                 {@render tile(
                   entry.prop,
-                  drillLayout && index === drillLayout.orphanIndex
-                    ? drillLayout.orphanStart
-                    : undefined,
+                  drillLayout === null
+                    ? drillOrphans.get(index)
+                    : index === drillLayout.orphanIndex
+                      ? columnStart(drillLayout.orphanStart)
+                      : undefined,
                   entry.look
                 )}
               {/each}
@@ -1273,7 +1297,7 @@
               {@render familyTile(
                 base,
                 flatLayout && index === flatLayout.orphanIndex
-                  ? flatLayout.orphanStart
+                  ? columnStart(flatLayout.orphanStart)
                   : undefined
               )}
             {/each}
@@ -1308,7 +1332,11 @@
                   {#each section.bases as base, index (base)}
                     {@render familyTile(
                       base,
-                      index === orphan?.index ? orphan.start : undefined
+                      sectionLayout === null
+                        ? section.orphans.get(index)
+                        : index === orphan?.index
+                          ? columnStart(orphan.start)
+                          : undefined
                     )}
                   {/each}
                 </div>
@@ -1733,17 +1761,30 @@
 
   /* Sections and the drilled family grid read their balanced counts
      (--c2 ... --c12) from balancedColumns; the fallbacks are each tier's
-     full count. */
+     full count. Each tile spans two tracks, as in a bounded host, so the
+     tile that starts a short last row can start one track in at each tier
+     (its --orphan-cN from tierOrphans) and the row sits centred. */
   .section-buttons {
+    --tier-cols: var(--c2, 2);
+    --tier-tile: 124px;
     display: grid;
-    grid-template-columns: repeat(var(--c2, 2), minmax(0, 124px));
+    grid-template-columns: repeat(
+      calc(var(--tier-cols) * 2),
+      minmax(0, calc((var(--tier-tile) - 10px) / 2))
+    );
     gap: 10px;
     justify-content: center;
     padding: 0 2px;
   }
+  .section-buttons:not(.single) > :global(*) {
+    grid-column: var(--orphan-c2, auto) / span 2;
+  }
   .prop-grid-root.fluid-sections .section-buttons {
     grid-template-columns: repeat(auto-fit, minmax(8.75rem, 10.5rem));
     justify-content: center;
+  }
+  .prop-grid-root.fluid-sections .section-buttons > :global(*) {
+    grid-column: auto;
   }
 
   .prop-grid-root.fluid-sections .grid-content {
@@ -2045,19 +2086,30 @@
 
   @container prop-grid (min-width: 360px) {
     .section-buttons:not(.single) {
-      grid-template-columns: repeat(var(--c3, 3), minmax(0, 124px));
+      --tier-cols: var(--c3, 3);
+    }
+    .section-buttons:not(.single) > :global(*) {
+      grid-column-start: var(--orphan-c3, auto);
     }
   }
 
   @container prop-grid (min-width: 550px) {
     .section-buttons:not(.single) {
-      grid-template-columns: repeat(var(--c4, 4), minmax(0, 118px));
+      --tier-cols: var(--c4, 4);
+      --tier-tile: 118px;
+    }
+    .section-buttons:not(.single) > :global(*) {
+      grid-column-start: var(--orphan-c4, auto);
     }
   }
 
   @container prop-grid (min-width: 700px) {
     .section-buttons:not(.single) {
-      grid-template-columns: repeat(var(--c6, 6), minmax(0, 112px));
+      --tier-cols: var(--c6, 6);
+      --tier-tile: 112px;
+    }
+    .section-buttons:not(.single) > :global(*) {
+      grid-column-start: var(--orphan-c6, auto);
     }
 
     .prop-grid-root.fluid-sections .grid-content {
@@ -2071,7 +2123,10 @@
 
   @container prop-grid (min-width: 850px) {
     .section-buttons:not(.single) {
-      grid-template-columns: repeat(var(--c8, 8), minmax(0, 112px));
+      --tier-cols: var(--c8, 8);
+    }
+    .section-buttons:not(.single) > :global(*) {
+      grid-column-start: var(--orphan-c8, auto);
     }
   }
 
@@ -2079,13 +2134,19 @@
      the same eight tiles stranded in the middle of the card. */
   @container prop-grid (min-width: 1250px) {
     .section-buttons:not(.single) {
-      grid-template-columns: repeat(var(--c10, 10), minmax(0, 112px));
+      --tier-cols: var(--c10, 10);
+    }
+    .section-buttons:not(.single) > :global(*) {
+      grid-column-start: var(--orphan-c10, auto);
     }
   }
 
   @container prop-grid (min-width: 1500px) {
     .section-buttons:not(.single) {
-      grid-template-columns: repeat(var(--c12, 12), minmax(0, 112px));
+      --tier-cols: var(--c12, 12);
+    }
+    .section-buttons:not(.single) > :global(*) {
+      grid-column-start: var(--orphan-c12, auto);
     }
   }
 

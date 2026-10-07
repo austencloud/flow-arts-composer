@@ -14,6 +14,7 @@
   import { setEffectsConfigContext } from "$lib/shared/effects/state/effects-config-context";
   import { AnimationVisibilityStateManager } from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
   import { createAnimationSettingsState } from "$lib/shared/animation-engine/state/animation-settings-state.svelte";
+  import { normalizePropLook } from "$lib/shared/pictograph/prop/domain/prop-look";
   import type { ViewerPlaybackState } from "$lib/shared/sequence-viewer/domain/viewer-prop-groups";
   import type { CollectedTunnel } from "../domain/tunnel-collection-types";
   import { collectedTunnelViewerSequence } from "../domain/collected-tunnel-source";
@@ -83,6 +84,7 @@
       rightPropType={snap.props.rightPropType}
       leftBuugengFlipped={snap.props.leftBuugengFlipped}
       rightBuugengFlipped={snap.props.rightBuugengFlipped}
+      propLook={normalizePropLook(snap.props.propLook)}
       animationSettingsState={previewAnimationSettings}
       visibilityManager={visibility}
       bind:playing

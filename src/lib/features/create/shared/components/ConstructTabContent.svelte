@@ -11,6 +11,7 @@
 <script lang="ts">
   import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
   import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
+  import type { GridJoin } from "@tka/tka-types";
   import OptionPicker from "$lib/features/create/construct/option-picker/components/OptionPicker.svelte";
   import StartPlacementPicker from "$lib/features/create/construct/start-placement-picker/components/StartPlacementPicker.svelte";
   import Crossfade from "$lib/shared/components/Crossfade.svelte";
@@ -29,6 +30,7 @@
     onOptionSelected,
     currentSequence = [],
     currentGridMode = GridMode.DIAMOND,
+    gridJoin = null,
     initialStartPlacement = null,
     lockStartGridMode = false,
     startPlacementValidationMessage = null,
@@ -47,6 +49,8 @@
     onOptionSelected: (option: PictographData) => Promise<void>;
     currentSequence?: PictographData[];
     currentGridMode?: GridMode;
+    /** The sequence's grid join; both pickers draw their tiles on it. */
+    gridJoin?: GridJoin | null;
     initialStartPlacement?: PictographData | null;
     lockStartGridMode?: boolean;
     startPlacementValidationMessage?: string | null;
@@ -97,6 +101,7 @@
             <StartPlacementPicker
               {startPlacementState}
               {initialStartPlacement}
+              {gridJoin}
               lockedGridMode={lockStartGridMode ? currentGridMode : undefined}
               validationMessage={startPlacementValidationMessage}
               onNavigateToAdvanced={onStartPlacementNavigateToAdvanced}
@@ -111,6 +116,7 @@
               {onOptionSelected}
               {currentSequence}
               {currentGridMode}
+              {gridJoin}
               {isSideBySideLayout}
               {isContinuousOnly}
               {onToggleContinuous}

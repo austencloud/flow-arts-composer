@@ -336,6 +336,11 @@
       color-mix(in srgb, var(--theme-text, #fff) 40%, transparent);
   }
 
+  /* The ring goes on the grip, not around the wider touch area. */
+  .trim-handle:focus-visible {
+    outline: none;
+  }
+
   .trim-handle:focus-visible .handle-grip {
     outline: 2px solid var(--theme-accent);
     outline-offset: 2px;

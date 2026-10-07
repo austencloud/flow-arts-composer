@@ -27,6 +27,9 @@ vi.mock("./context/deck-releaser-context", () => ({
 
 import DeckPropSwitcher from "./DeckPropSwitcher.svelte";
 
+// The staff prop's display name is Double Staff.
+const DECK_TRIGGER = "Prop Double Staff. Change deck prop";
+
 function nextLayout(): Promise<void> {
   return new Promise((resolve) => {
     requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
@@ -36,9 +39,7 @@ function nextLayout(): Promise<void> {
 describe("DeckPropSwitcher modal", () => {
   it("stays open after the trigger click and returns focus after Escape", async () => {
     render(DeckPropSwitcher);
-    const trigger = page.getByRole("button", {
-      name: "Prop Staff. Change deck prop",
-    });
+    const trigger = page.getByRole("button", { name: DECK_TRIGGER });
 
     await trigger.click();
     await nextLayout();
@@ -58,5 +59,33 @@ describe("DeckPropSwitcher modal", () => {
     dialogElement.dispatchEvent(new Event("cancel", { cancelable: true }));
     await expect.element(dialog).not.toBeInTheDocument();
     await expect.element(trigger).toHaveFocus();
+  });
+
+  // Deck cards print on a path that draws only Version 1, so a family offers
+  // no Version 2 tile to pick (and none to leak into the account's prop).
+  it("offers no Version 2 tile in a family", async () => {
+    await page.viewport(900, 900);
+    render(DeckPropSwitcher);
+
+    await page.getByRole("button", { name: DECK_TRIGGER }).click();
+    await nextLayout();
+    await page.getByRole("button", { name: "Choose Triad style" }).click();
+
+    await expect
+      .element(
+        page.getByRole("button", {
+          name: "Select Triad prop type",
+          exact: true,
+        })
+      )
+      .toBeVisible();
+    await expect
+      .element(
+        page.getByRole("button", {
+          name: "Select Triad V2 prop type",
+          exact: true,
+        })
+      )
+      .not.toBeInTheDocument();
   });
 });
