@@ -5,12 +5,12 @@
     type PropState3D,
     type PropType,
   } from "@austencloud/scene-3d";
-  import { onDestroy, tick } from "svelte";
-  import { Group, Mesh } from "three";
+  import { onDestroy } from "svelte";
+  import type { Group } from "three";
   import type { GhostPoseSample } from "$lib/shared/effects/renderers/ghost-pose-history";
   import type { GhostPropPose3D } from "./ghost-prop-pose-3d";
   import {
-    createChronoFrostMaterial,
+    GhostSourceMaterials,
     resolveGhostAgeVisual,
     resolveGhostPoseFrostSeed,
     updateChronoFrostMaterial,
@@ -21,7 +21,6 @@
     fallbackState: PropState3D;
     propType: PropType;
     propHand: "left" | "right";
-    color: string;
     intensity: number;
     lifetimeSeconds: number;
     rimPower: number;
@@ -34,7 +33,6 @@
     fallbackState,
     propType,
     propHand,
-    color,
     intensity,
     lifetimeSeconds,
     rimPower,
@@ -43,7 +41,9 @@
   }: Props = $props();
 
   let groupRef = $state<Group>();
-  const material = createChronoFrostMaterial(slotIndex);
+  // Each mesh gets a frost material cut from its own material, so the ghost
+  // keeps the prop's texture and colors (bark and tape, a staff's hand color).
+  const sourceMaterials = new GhostSourceMaterials(slotIndex);
   const active = $derived(sample !== null);
   const pose = $derived(sample?.snapshot ?? null);
   const renderedState = $derived(pose?.propState ?? fallbackState);
@@ -65,42 +65,20 @@
       : resolveGhostPoseFrostSeed(`empty-${slotIndex}`)
   );
 
-  function applyChronoFrostMaterial(root: Group): void {
-    root.traverse((child) => {
-      if (!(child instanceof Mesh)) return;
-      child.material = material;
-      child.castShadow = false;
-      child.receiveShadow = false;
-    });
-  }
-
   $effect(() => {
     const root = groupRef;
-    const currentType = propType;
     if (!root) return;
-    let cancelled = false;
-    void tick().then(() => {
-      if (!cancelled && currentType === propType) {
-        applyChronoFrostMaterial(root);
-      }
-    });
-    return () => {
-      cancelled = true;
-    };
-  });
-
-  $effect(() => {
+    void propType;
     const ageSeconds = sample?.ageSeconds ?? lifetimeSeconds;
-    updateChronoFrostMaterial(
-      material,
-      color,
-      resolveGhostAgeVisual(ageSeconds, lifetimeSeconds, intensity),
-      rimPower,
-      frostSeed
-    );
+    const visual = resolveGhostAgeVisual(ageSeconds, lifetimeSeconds, intensity);
+    // GLTF props finish loading (and re-clone on a hand color change) after
+    // mount, so re-skin on every update rather than once.
+    for (const material of sourceMaterials.apply(root)) {
+      updateChronoFrostMaterial(material, visual, rimPower, frostSeed);
+    }
   });
 
-  onDestroy(() => material.dispose());
+  onDestroy(() => sourceMaterials.dispose());
 </script>
 
 <T.Group
