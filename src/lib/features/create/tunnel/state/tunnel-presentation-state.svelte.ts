@@ -93,7 +93,8 @@ export function createTunnelPresentationState(
       : (inputs.initialCatDogMode ?? false)) || leftPropType !== rightPropType
   );
   // The creator owns its prop version. The account's setting only seeds a new
-  // tunnel, so a pick here never changes what the viewer draws elsewhere.
+  // tunnel, so a pick here never writes the account's version; opening the
+  // tunnel in the viewer stages it, as it does the prop pair.
   let propLook = $state<PropLook>(
     normalizePropLook(
       initialSnapshot
