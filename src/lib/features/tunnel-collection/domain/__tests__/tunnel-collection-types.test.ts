@@ -321,7 +321,7 @@ describe("CollectedTunnelSchema grid join", () => {
 
   it("puts the join in the revision payload only when there is one", async () => {
     const { tunnelRevisionPayload } = await import("../tunnel-revision");
-    const base = CollectedTunnelSchema.parse(valid);
+    const base = valid as CollectedTunnel;
     expect("conjoined" in tunnelRevisionPayload(base)).toBe(false);
     const joined = tunnelRevisionPayload({
       ...base,

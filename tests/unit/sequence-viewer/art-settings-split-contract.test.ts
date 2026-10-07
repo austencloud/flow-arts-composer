@@ -71,6 +71,7 @@ describe("ArtSettingsPanel split contract", () => {
       "TunnelDisplaySettings",
       "TunnelMotionSettings",
       "TunnelPlaybackSettings",
+      "TunnelPropSettings",
     ];
 
     expect(coordinator.split("\n").length).toBeLessThan(500);

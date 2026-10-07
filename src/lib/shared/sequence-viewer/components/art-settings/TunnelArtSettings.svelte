@@ -4,11 +4,8 @@
   import { onDestroy, type Snippet } from "svelte";
   import AnimatorInspectorShell from "$lib/shared/animation-panel/components/AnimatorInspectorShell.svelte";
   import AnimatorInspectorFooter from "$lib/shared/animation-panel/components/AnimatorInspectorFooter.svelte";
-  import BentoPropGrid from "$lib/shared/settings/components/tabs/prop-type/BentoPropGrid.svelte";
   import { createGlobalChiralitySeam } from "$lib/shared/settings/components/tabs/prop-type/prop-chirality-seam";
-  import HandPropToolbar, {
-    type HandPropToolbarProps,
-  } from "$lib/shared/settings/components/tabs/prop-type/HandPropToolbar.svelte";
+  import type { HandPropToolbarProps } from "$lib/shared/settings/components/tabs/prop-type/HandPropToolbar.svelte";
   import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
   import { getPropTypeDisplayInfo } from "$lib/shared/pictograph/prop/domain/prop-type-display-registry";
   import { viewingPropLabel } from "$lib/shared/foundation/services/prop-viewing";
@@ -35,6 +32,7 @@
   import TunnelLookSettings from "./TunnelLookSettings.svelte";
   import TunnelMotionSettings from "./TunnelMotionSettings.svelte";
   import TunnelPlaybackSettings from "./TunnelPlaybackSettings.svelte";
+  import TunnelPropSettings from "./TunnelPropSettings.svelte";
   import TunnelSpeedSettings from "./TunnelSpeedSettings.svelte";
   import { reportArtSetting } from "./art-setting-change";
   import type {
@@ -362,29 +360,15 @@
       />
     {/if}
   {:else if id === "props"}
-    <!-- Prop selection: the same BentoPropGrid the 2D Download panel uses. The
-         chosen prop goes to onPropChange; the host routes it (Tunnel routes it
-         to the addressed hand, the viewer host keeps its own handling). The
-         Tunnel creator owns its prop version and saves it with the tunnel, so
-         it passes propLook and onPropLookChange. The viewer's Art pane passes
-         neither, and the grid edits the account's version. -->
-    {#if onPropChange && handProps}
-      <HandPropToolbar {handProps} />
-    {/if}
-    <div class="section-pad props-pad">
-      {#if onPropChange}
-        <BentoPropGrid
-          {selectedPropType}
-          onSelect={onPropChange}
-          {propLook}
-          {onPropLookChange}
-          variant="inline"
-          flat
-          showColors={false}
-          chirality={propChirality}
-        />
-      {/if}
-    </div>
+    <TunnelPropSettings
+      {selectedPropType}
+      {onPropChange}
+      {handProps}
+      {propLook}
+      {onPropLookChange}
+      chirality={propChirality}
+      {dense}
+    />
   {:else if id === "speed"}
     <TunnelSpeedSettings
       {controller}
@@ -492,20 +476,3 @@
     {/snippet}
   </AnimatorInspectorShell>
 {/if}
-
-<style>
-  .section-pad {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-    padding: 8px 16px 20px;
-  }
-
-  /* Mobile dock tray: tighten the shared section bodies. Buttons/inputs keep
-     their var(--min-touch-target) floor — only gaps and outer paddings collapse
-     so the tray stays compact floating over the art. */
-  .dock-dense .section-pad {
-    gap: 8px;
-    padding: 2px 2px 6px;
-  }
-</style>
