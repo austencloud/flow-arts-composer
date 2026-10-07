@@ -10,7 +10,11 @@ import {
   measureLoudness,
   suggestMusicGain,
 } from "./feature-video/loudness.mjs";
-import { importTake } from "./feature-video/media-import.mjs";
+import {
+  assertCaptureId,
+  findCaptureTake,
+} from "./feature-video/capture-files.mjs";
+import { importTake, probeMedia } from "./feature-video/media-import.mjs";
 import { importMusic } from "./feature-video/music-import.mjs";
 import { parseTimeArg } from "./feature-video/time-args.mjs";
 
@@ -426,6 +430,63 @@ try {
         },
       ]),
     };
+  } else if (command === "capture-info") {
+    const feature = required("feature");
+    const { folder, file } = await request(
+      "GET",
+      {},
+      undefined,
+      featureRoute(feature)
+    );
+    const existing = await fs
+      .readdir(path.join(folder, "media", "captures"))
+      .catch(() => []);
+    result = {
+      folder,
+      existing,
+      takes: (file.project.takes ?? []).map((take) => ({
+        id: take.id,
+        label: take.label,
+        url: take.ref.kind === "linked" ? take.ref.url : null,
+      })),
+    };
+  } else if (command === "link-capture") {
+    const feature = required("feature");
+    const capture = assertCaptureId(required("capture"));
+    const media = required("media");
+    if (!new RegExp(`^captures/${capture}\\.\\d+\\.mp4$`).test(media))
+      throw new Error(`--media must be captures/${capture}.<n>.mp4.`);
+    const { folder, file } = await request(
+      "GET",
+      {},
+      undefined,
+      featureRoute(feature)
+    );
+    const { durationSeconds } = await probeMedia(
+      path.join(folder, "media", ...media.split("/"))
+    );
+    const mediaUrl = featureMediaUrl(feature, media);
+    const earlier = findCaptureTake(file.project.takes ?? [], capture);
+    result = {
+      media,
+      durationSeconds,
+      take: earlier?.id ?? null,
+      edit: await sendOps([
+        earlier
+          ? {
+              op: "relink-take",
+              take: earlier.id,
+              url: mediaUrl,
+              durationSeconds,
+            }
+          : {
+              op: "add-take",
+              url: mediaUrl,
+              durationSeconds,
+              label: option("label") ?? capture,
+            },
+      ]),
+    };
   } else if (command === "add-music") {
     const feature = required("feature");
     const file = path.resolve(positional(0, "a music file"));
@@ -614,6 +675,8 @@ Feature videos, folders on the dev server's computer:
   align-take --place ITEM | --take ID   where a take sits in the music, from its camera sound; --place puts the clip in time with it
   sync-to-music --item ID --offset S   puts a clip in time with the music at one of align-take's offsets
   loudness <render.mp4> [--feature SLUG]   loudness and true peak; with --feature, the music level that reaches -14 LUFS
+  capture-info --feature SLUG   the project's folder, the recordings already in media/captures and its takes
+  link-capture --feature SLUG --capture ID --media captures/ID.N.mp4 [--label "Name"]   puts a recording in the project: the take that plays an earlier recording of ID is pointed at it, else it becomes a new take
   T is seconds (12.5), a clock (1:02.5), or a bar of the music: @9 is bar 9, @9.3 is bar 9, beat 3.
   With --feature, show and every edit use the editor that has it open, else the file on disk.
   Add --no-wait to return before the editor confirms; --out file to write output.`
