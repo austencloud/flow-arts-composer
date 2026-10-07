@@ -1,11 +1,11 @@
 /**
- * Energy Saber / Energy Staff — the paid cosmetic pair.
+ * Energy Saber / Energy Staff: a Sword style and a Double Staff style.
  *
  * Everything here guards a failure that produces plausible-looking output
  * instead of an obvious break: a prop that silently traces the wrong reach, a
  * blade that never changes color, a short code that decodes to the wrong prop,
- * or a paid prop handed out for free by a surface that just enumerates the
- * enum. None of those announce themselves on screen.
+ * or a style that drifts out of its parent's family in the picker. None of
+ * those announce themselves on screen.
  */
 
 import { describe, it, expect } from "vitest";
@@ -16,16 +16,13 @@ import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
 import { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
 import {
   PROP_PICKER_SECTIONS,
-  PREMIUM_COSMETIC_PROP_TYPES,
   VARIANT_PROP_TYPES,
   findPropTypeByValue,
-  getAllPropTypes,
   getAllVariations,
   getBasePropType,
   getBasePropsByCategory,
   getNextVariation,
   getPropTypeDisplayInfo,
-  isPremiumCosmeticProp,
 } from "$lib/shared/pictograph/prop/domain/prop-type-display-registry";
 import {
   isBigProp,
@@ -44,18 +41,6 @@ import {
   applyMotionColorToSvg,
   SELECTIVE_COLOR_PROP_TYPES,
 } from "$lib/shared/utils/svg-color-utils";
-import {
-  CORE_PROPS,
-  UNLOCKABLE_POOL,
-} from "$lib/shared/gamification/domain/prop-pool";
-import {
-  decidePremiumCosmeticAccess,
-  filterPremiumCosmeticProps,
-  filterPremiumCosmeticPropsForAccess,
-  routePropTileClick,
-  PREMIUM_COSMETIC_CAPABILITY,
-  PREMIUM_COSMETIC_NUDGE,
-} from "$lib/shared/subscription/domain/premium-prop-access";
 
 const REPO_ROOT = join(__dirname, "..", "..");
 
@@ -365,228 +350,54 @@ describe("energy prop motion coloring", () => {
 });
 
 // ───────────────────────────────────────────────────────────────────────────
-// Premium access
+// Family membership: each prop is a style of its parent
 // ───────────────────────────────────────────────────────────────────────────
 
-describe("premium cosmetic classification", () => {
-  it("names exactly the two paid props", () => {
-    expect([...PREMIUM_COSMETIC_PROP_TYPES].sort()).toEqual(
-      [PropType.ENERGY_SABER, PropType.ENERGY_STAFF].sort()
-    );
+describe("energy prop families", () => {
+  it("Energy Staff is a Double Staff style", () => {
+    expect(getBasePropType(PropType.ENERGY_STAFF)).toBe(PropType.STAFF);
+    expect(getAllVariations(PropType.STAFF)).toContain(PropType.ENERGY_STAFF);
   });
 
-  it("does not catch their free parents", () => {
-    expect(isPremiumCosmeticProp(PropType.SWORD)).toBe(false);
-    expect(isPremiumCosmeticProp(PropType.STAFF)).toBe(false);
-    expect(isPremiumCosmeticProp(undefined)).toBe(false);
+  it("Energy Saber is a Sword style", () => {
+    expect(getBasePropType(PropType.ENERGY_SABER)).toBe(PropType.SWORD);
+    expect(getAllVariations(PropType.SWORD)).toEqual([
+      PropType.SWORD,
+      PropType.ENERGY_SABER,
+    ]);
   });
 
-  it("reuses the one existing capability", () => {
-    expect(PREMIUM_COSMETIC_CAPABILITY).toBe(
-      "capability:props:premium-cosmetics"
-    );
-    expect(PREMIUM_COSMETIC_NUDGE.capability).toBe(
-      "capability:props:premium-cosmetics"
-    );
-  });
-});
-
-describe("decidePremiumCosmeticAccess", () => {
-  const denyingGate = () => ({
-    allowed: false,
-    reason: "premium_required" as const,
-  });
-  const allowingGate = () => ({ allowed: true });
-
-  it("while the tier is shelved, a developer gets preview access", () => {
-    expect(
-      decidePremiumCosmeticAccess({
-        premiumTierShipped: false,
-        isDev: true,
-        isAdminUser: false,
-        checkGate: denyingGate,
-      }).allowed
-    ).toBe(true);
-  });
-
-  it("while the tier is shelved, an admin gets preview access", () => {
-    expect(
-      decidePremiumCosmeticAccess({
-        premiumTierShipped: false,
-        isDev: false,
-        isAdminUser: true,
-        checkGate: denyingGate,
-      }).allowed
-    ).toBe(true);
-  });
-
-  it("while the tier is shelved, everyone else is denied with no dead-end upsell", () => {
-    const result = decidePremiumCosmeticAccess({
-      premiumTierShipped: false,
-      isDev: false,
-      isAdminUser: false,
-      checkGate: allowingGate,
-    });
-    expect(result.allowed).toBe(false);
-    // No nudge: the premium module it would navigate to is stubbed out.
-    expect(result.nudge).toBeUndefined();
-  });
-
-  it("once the tier ships, the real subscription gate decides — dev no longer overrides it", () => {
-    expect(
-      decidePremiumCosmeticAccess({
-        premiumTierShipped: true,
-        isDev: true,
-        isAdminUser: true,
-        checkGate: denyingGate,
-      }).allowed
-    ).toBe(false);
-    expect(
-      decidePremiumCosmeticAccess({
-        premiumTierShipped: true,
-        isDev: false,
-        isAdminUser: false,
-        checkGate: allowingGate,
-      }).allowed
-    ).toBe(true);
-  });
-});
-
-describe("routePropTileClick", () => {
-  it("selects a paid prop when premium says yes", () => {
-    expect(
-      routePropTileClick({
-        isPremiumCosmetic: true,
-        premiumAllowed: true,
-        isUnlocked: false,
-      })
-    ).toBe("select");
-  });
-
-  it("nudges instead of selecting when premium says no", () => {
-    expect(
-      routePropTileClick({
-        isPremiumCosmetic: true,
-        premiumAllowed: false,
-        isUnlocked: true,
-      })
-    ).toBe("premium-nudge");
-  });
-
-  it("premium is decided before play-earned unlock, in both directions", () => {
-    // Locked-but-allowed still selects: paid props are not in the unlock pool,
-    // so consulting isPropUnlocked first would make them permanently unclickable
-    // the day play-earned locking is switched back on.
-    expect(
-      routePropTileClick({
-        isPremiumCosmetic: true,
-        premiumAllowed: true,
-        isUnlocked: false,
-      })
-    ).toBe("select");
-    // Unlocked-but-denied still nudges: earning props by playing never buys one.
-    expect(
-      routePropTileClick({
-        isPremiumCosmetic: true,
-        premiumAllowed: false,
-        isUnlocked: true,
-      })
-    ).toBe("premium-nudge");
-  });
-
-  it("leaves free props on the play-earned path untouched", () => {
-    expect(
-      routePropTileClick({
-        isPremiumCosmetic: false,
-        premiumAllowed: false,
-        isUnlocked: true,
-      })
-    ).toBe("select");
-    expect(
-      routePropTileClick({
-        isPremiumCosmetic: false,
-        premiumAllowed: true,
-        isUnlocked: false,
-      })
-    ).toBe("earn-tip");
-  });
-});
-
-describe("premium and play-earned stay separate systems", () => {
-  it("neither paid prop is in the play-earned pool", () => {
+  it("both are variants, so no picker shows them as tiles of their own", () => {
     for (const prop of ENERGY_PROPS) {
-      expect(UNLOCKABLE_POOL).not.toContain(prop);
-      expect(CORE_PROPS).not.toContain(prop);
-    }
-  });
-});
-
-// ───────────────────────────────────────────────────────────────────────────
-// Enumeration leaks
-// ───────────────────────────────────────────────────────────────────────────
-
-describe("raw prop enumerators never hand out a paid prop", () => {
-  it("adding the enum members did put them in getAllPropTypes — which is the hazard", () => {
-    for (const prop of ENERGY_PROPS) {
-      expect(getAllPropTypes()).toContain(prop);
+      expect(VARIANT_PROP_TYPES).toContain(prop);
     }
   });
 
-  it("filterPremiumCosmeticProps removes them when access is denied", () => {
-    const all = getAllPropTypes();
-    const withoutPremium = filterPremiumCosmeticPropsForAccess(all, false);
-    expect(withoutPremium).not.toContain(PropType.ENERGY_SABER);
-    expect(withoutPremium).not.toContain(PropType.ENERGY_STAFF);
-    expect(withoutPremium).toContain(PropType.SWORD);
-    expect(withoutPremium).toContain(PropType.STAFF);
-    expect(withoutPremium).toHaveLength(all.length - 2);
+  it("the variant cycle steps Sword to Energy Saber and back", () => {
+    expect(getNextVariation(PropType.SWORD)).toBe(PropType.ENERGY_SABER);
+    expect(getNextVariation(PropType.ENERGY_SABER)).toBe(PropType.SWORD);
   });
 
-  it("keeps the original prop order when access is allowed", () => {
-    const all = getAllPropTypes();
-    expect(filterPremiumCosmeticPropsForAccess(all, true)).toEqual(all);
+  it("the picker lists both beside their parents, with no Premium section", () => {
+    expect(PROP_PICKER_SECTIONS.map((section) => section.label)).not.toContain(
+      "Premium"
+    );
+    const standard = PROP_PICKER_SECTIONS.find(
+      (section) => section.label === "Standard"
+    )!.props;
+    for (const prop of ENERGY_PROPS) {
+      expect(standard).toContain(prop);
+      expect(standard).toContain(getBasePropType(prop));
+    }
   });
 
-  it("the ambient filter leaves a free-only list unchanged", () => {
-    const free = [PropType.STAFF, PropType.SWORD] as const;
-    expect(filterPremiumCosmeticProps(free)).toEqual(free);
-  });
-
-  it("the category map excludes them, so the 3D prop controls cannot expand into one", () => {
+  it("the category map lists the parents, never the styles", () => {
     const byCategory = [...getBasePropsByCategory().values()].flat();
+    expect(byCategory).toContain(PropType.STAFF);
+    expect(byCategory).toContain(PropType.SWORD);
     for (const prop of ENERGY_PROPS) {
       expect(byCategory).not.toContain(prop);
-    }
-  });
-
-  it("neither prop carries a category at all", () => {
-    for (const prop of ENERGY_PROPS) {
       expect(getPropTypeDisplayInfo(prop).category).toBeUndefined();
-    }
-  });
-
-  it("the ungated variant cycle cannot reach either prop", () => {
-    // getNextVariation / getAllVariations are pure functions with no access
-    // check of any kind. If the energy props were wired as variants of their
-    // parents, any surface offering a variant toggle would hand one out free.
-    for (const prop of ENERGY_PROPS) {
-      expect(VARIANT_PROP_TYPES).not.toContain(prop);
-      expect(getBasePropType(prop)).toBe(prop);
-      expect(getAllVariations(prop)).toEqual([prop]);
-      expect(getNextVariation(prop)).toBe(prop);
-    }
-    expect(getAllVariations(PropType.SWORD)).not.toContain(
-      PropType.ENERGY_SABER
-    );
-    expect(getAllVariations(PropType.STAFF)).not.toContain(
-      PropType.ENERGY_STAFF
-    );
-  });
-
-  it("both tiles are listed in the picker, which gates them itself", () => {
-    const picker = PROP_PICKER_SECTIONS.flatMap((s) => s.props);
-    for (const prop of ENERGY_PROPS) {
-      expect(picker).toContain(prop);
     }
   });
 

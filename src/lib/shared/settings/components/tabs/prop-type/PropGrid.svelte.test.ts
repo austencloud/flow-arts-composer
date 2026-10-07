@@ -123,7 +123,7 @@ describe("PropGrid fan look credit", () => {
     await page
       .getByRole("button", { name: "Select Trigeng 3D prop type", exact: true })
       .click();
-    expect(onSelect).toHaveBeenCalledWith(PropType.TRIGENG);
+    expect(onSelect).toHaveBeenCalledWith(PropType.TRIGENG, "model");
     expect(onPropLookChange).toHaveBeenCalledWith("model");
   });
 

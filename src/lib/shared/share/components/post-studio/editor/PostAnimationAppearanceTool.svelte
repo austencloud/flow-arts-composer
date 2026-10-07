@@ -13,9 +13,7 @@
     PROP_PICKER_SECTIONS,
     getBasePropType,
     isPropActive,
-    isPremiumCosmeticProp,
   } from "$lib/shared/pictograph/prop/domain/prop-type-display-registry";
-  import { isPremiumCosmeticVisible } from "$lib/shared/subscription/domain/premium-prop-access";
   import BentoPropGrid from "$lib/shared/settings/components/tabs/prop-type/BentoPropGrid.svelte";
   import IconRailNav from "$lib/shared/animation-panel/pill-nav/IconRailNav.svelte";
   import ValueSlider from "$lib/shared/ui/components/ValueSlider.svelte";
@@ -207,11 +205,7 @@
   let motionAware = $state(visibility.getMotionAwarePaths());
   const propCount = $derived(
     PROP_PICKER_SECTIONS.flatMap((section) => section.props).filter(
-      (prop) =>
-        (prop === getBasePropType(prop) || isPremiumCosmeticProp(prop)) &&
-        (isPremiumCosmeticProp(prop)
-          ? isPremiumCosmeticVisible()
-          : isPropActive(prop))
+      (prop) => prop === getBasePropType(prop) && isPropActive(prop)
     ).length
   );
   const effortLabel = $derived(

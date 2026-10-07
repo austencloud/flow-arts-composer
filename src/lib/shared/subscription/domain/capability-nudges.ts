@@ -22,9 +22,4 @@ export const CAPABILITY_NUDGES: Record<CapabilityFeatureId, NudgeConfig> = {
 		description: "Full curriculum access",
 		premiumBenefit: "Letters, Combinations, and Advanced lessons",
 	},
-	"capability:props:premium-cosmetics": {
-		capability: "capability:props:premium-cosmetics",
-		description: "Premium props",
-		premiumBenefit: "Lightsabers and other fun prop styles",
-	},
 };

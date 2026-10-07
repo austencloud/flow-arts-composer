@@ -26,13 +26,10 @@
     getAllPropTypes,
   } from "$lib/shared/pictograph/prop/domain/prop-type-display-registry";
   import { t } from "$lib/shared/i18n/i18n.svelte";
-  import { filterPremiumCosmeticProps } from "$lib/shared/subscription/domain/premium-prop-access";
 
-  // All prop types for the random pool (excludes POI which is momentum-based,
-  // and paid cosmetics unless this player may actually use them — a matchup is
-  // not a place to hand out a prop that costs money).
+  // All prop types for the random pool (excludes POI which is momentum-based).
   function pickRandomPropType(): PropType {
-    const availableProps = filterPremiumCosmeticProps(getAllPropTypes()).filter(
+    const availableProps = getAllPropTypes().filter(
       (pt) => pt !== PropType.POI
     );
     return availableProps[Math.floor(Math.random() * availableProps.length)]!;
