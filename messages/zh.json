@@ -538,5 +538,8 @@
   "viewer_sequence_viewer": "序列查看器",
   "viewer_share": "分享",
   "viewer_unnamed_sequence": "未命名序列",
-  "visibility_animation": "动画"
+  "visibility_animation": "动画",
+  "color_cool_colors": "冷色",
+  "color_warm_colors": "暖色",
+  "color_neutral_colors": "中性色"
 }

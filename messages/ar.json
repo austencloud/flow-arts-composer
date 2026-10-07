@@ -538,5 +538,8 @@
   "viewer_sequence_viewer": "عارض التسلسل",
   "viewer_share": "مشاركة",
   "viewer_unnamed_sequence": "تسلسل غير مسمى",
-  "visibility_animation": "الرسوم المتحركة"
+  "visibility_animation": "الرسوم المتحركة",
+  "color_cool_colors": "ألوان باردة",
+  "color_warm_colors": "ألوان دافئة",
+  "color_neutral_colors": "ألوان محايدة"
 }
