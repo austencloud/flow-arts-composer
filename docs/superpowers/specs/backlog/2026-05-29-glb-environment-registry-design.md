@@ -2,11 +2,16 @@
 status: backlog
 value: 3
 effort: M
-remaining: "Genuinely unimplemented — verified 2026-09-13, not merely un-updated. src/lib/shared/3d/environments/components/Environment3D.svelte:100 still switches on the external BackgroundType enum (AUTUMN/FOREST/COSMIC/WINTER/OCEAN/EMBER/BLOSSOM/...), and no manifest or registry module exists anywhere under src/lib/shared/3d/environments/. Start at step 1 of the Design section: the self-describing scene manifest co-located with each GLB."
-depends_on: ""
-plan_path: ""
-tags: [3d, environments, registry, pipeline]
-last_triaged: 2026-09-13
+remaining: Current Environment3D.svelte still switches on BackgroundType and no environment manifest/registry exists; start with a self-describing GLB scene manifest.
+depends_on: ''
+plan_path: ''
+tags:
+- 3d
+- environments
+- registry
+- pipeline
+last_triaged: '2026-10-07'
+work_state: ready
 ---
 
 <!--
@@ -24,8 +29,11 @@ documented "broad paths" failure mode; the spec is not a rebuild hazard.
 # Data-Driven GLB Environment Registry — Design
 
 **Date:** 2026-05-29
-**Status:** Draft
+**Status:** Ready for implementation; the registry-specific path is absent as of 2026-10-07.
+**Original design status (2026-05-29):** Draft
 **Source:** 2026 pipeline audit (2026-05-29). Flagged "highest-leverage unlock" by the runtime, sourcing, and AI-gen prongs, and by the existing `.claude/rules/blender-first-3d-scenes.md` Gaps section.
+
+**Triage evidence (2026-10-07):** `Environment3D.svelte:99-120` still routes every environment through the `BackgroundType` switch. The proposed `environment-registry.ts`, `GlbEnvironment.svelte`, and `static/models/<scene>/scene.json` are absent. The design intentionally keeps the switch for legacy procedural scenes, so switch presence alone is not the gap. The shared-3D commits noted above do not establish the manifest and registry acceptance; browser parity remains unverified.
 
 ## Problem
 

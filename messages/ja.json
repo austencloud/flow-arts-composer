@@ -745,5 +745,8 @@
   "viewer_sequence_viewer": "シーケンスビューア",
   "viewer_share": "共有",
   "viewer_unnamed_sequence": "名前のないシーケンス",
-  "visibility_animation": "アニメーション"
+  "visibility_animation": "アニメーション",
+  "color_cool_colors": "寒色",
+  "color_warm_colors": "暖色",
+  "color_neutral_colors": "無彩色"
 }

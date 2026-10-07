@@ -14,6 +14,7 @@ export type WorkspaceSection =
   | "letter"
   | "placement"
   | "gridmode"
+  | "gridjoin"
   | "author"
   | "performance"
   | "collection"
@@ -30,6 +31,7 @@ export const SECTION_FOR_FILTER_TYPE: Partial<
   [BrowseFilterType.STARTING_LETTER]: "letter",
   [BrowseFilterType.STARTING_PLACEMENT]: "placement",
   [BrowseFilterType.GRID_MODE]: "gridmode",
+  [BrowseFilterType.GRID_JOIN]: "gridjoin",
   [BrowseFilterType.OWNER]: "author",
   [BrowseFilterType.PERFORMANCE_AVAILABILITY]: "performance",
   [BrowseFilterType.RECENT_PERFORMANCE]: "performance",

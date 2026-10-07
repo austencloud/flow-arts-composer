@@ -1,4 +1,5 @@
 import type { PreparedMandalaPaths } from "../services/types";
+import type { MandalaHandOffsets } from "../services/mandala-grid-join";
 import type { MandalaHandVisibility } from "./mandala-types";
 
 export interface MandalaOverlayConfig {
@@ -52,4 +53,9 @@ export interface MandalaOverlayRenderParams {
 	canvasSize: number;
 	/** Current animation step index - used to detect seeks/jumps */
 	currentStep: number;
+	/**
+	 * Joined grids: each hand's figure offset (mandala units) onto its own
+	 * grid, between two layouts while one slides. Absent or null for one grid.
+	 */
+	handOffsets?: MandalaHandOffsets | null;
 }

@@ -2,6 +2,8 @@ import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence
 import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
 import type { StartPlacementData } from "$lib/shared/foundation/domain/models/start-placement-data";
 import type { MotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
+import type { GridJoin } from "@tka/tka-types";
+import { sequenceGridJoin } from "$lib/shared/grid-join/sequence-grid-join";
 
 export interface MinimalMotion {
   type: string;
@@ -40,6 +42,8 @@ export interface MinimalSequence {
   word: string;
   isCircular: boolean;
   gridMode: string;
+  /** The sequence's grid join; absent for a sequence drawn on one grid. */
+  conjoined?: GridJoin;
   startPlacement: MinimalStep | null;
   steps: (MinimalStep | null)[];
 }
@@ -80,6 +84,7 @@ function minimalStep(beat: StepLike): MinimalStep | null {
 }
 
 export function toMinimalJson(sequence: SequenceData): MinimalSequence {
+  const join = sequenceGridJoin(sequence);
   return {
     key: {
       startPos: "placement = combination of both hand locations (e.g. gamma1, alpha3)",
@@ -96,6 +101,7 @@ export function toMinimalJson(sequence: SequenceData): MinimalSequence {
     word: sequence.word || "",
     isCircular: sequence.isCircular || false,
     gridMode: sequence.gridMode || "",
+    ...(join && { conjoined: { toward: join.toward, steps: join.steps } }),
     startPlacement: minimalStep(
       sequence.startPlacement || sequence.startingPlacement
     ),

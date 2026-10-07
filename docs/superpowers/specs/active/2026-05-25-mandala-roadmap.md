@@ -2,11 +2,12 @@
 status: active
 value: 2
 effort: L
-remaining: "Unscored until triage 2026-07-25; spec body carries no status line. Needs a read-through to establish real state before this score is trusted."
+remaining: "Verify which mandala roadmap phases after the viewer exist in the current sequence viewer, then split remaining phases into independently scoped specs."
 depends_on: ""
 plan_path: ""
 tags: []
-last_triaged: 2026-07-25
+last_triaged: 2026-10-07
+work_state: unverified
 ---
 # Mandala Creation Roadmap
 

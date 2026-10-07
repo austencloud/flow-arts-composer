@@ -94,4 +94,33 @@ describe("MandalaOverlayCanvas guide line width", () => {
     guide.renderFrame(frame(8));
     expect(paint).toHaveBeenCalledTimes(2);
   });
+
+  // Joined grids: while the layout slides, each hand's figure moves with its
+  // props, so the guide repaints in place on every offset change and stops
+  // once the offsets settle.
+  it("repaints in place when hand offsets move", () => {
+    const guide = overlay();
+    const at = (x: number) => ({
+      ...frame(2.5),
+      handOffsets: { left: { x: -x, y: 0 }, right: { x, y: 0 } },
+    });
+    guide.renderFrame(frame(2.5));
+    expect(paint).toHaveBeenCalledTimes(1);
+    expect(paint.mock.calls[0]?.[1].handOffsets).toBeUndefined();
+
+    guide.renderFrame(at(20));
+    guide.renderFrame(at(40));
+    expect(paint).toHaveBeenCalledTimes(3);
+    expect(paint.mock.calls[2]?.[1].handOffsets).toEqual({
+      left: { x: -40, y: 0 },
+      right: { x: 40, y: 0 },
+    });
+
+    guide.renderFrame(at(40));
+    expect(paint).toHaveBeenCalledTimes(3);
+
+    guide.renderFrame(frame(2.5));
+    expect(paint).toHaveBeenCalledTimes(4);
+    expect(paint.mock.calls[3]?.[1].handOffsets).toBeUndefined();
+  });
 });

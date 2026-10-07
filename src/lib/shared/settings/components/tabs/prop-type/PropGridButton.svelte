@@ -34,7 +34,7 @@
     previewPair = true,
   } = $props<{
     propType: PropType;
-    /** Overrides the registry name, e.g. "Triad 3D" for a look variant. */
+    /** Overrides the registry name, e.g. "Triad V2" for a version tile. */
     label?: string;
     selected?: boolean;
     selectedLeft?: boolean;

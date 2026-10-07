@@ -2,12 +2,14 @@
 status: backlog
 value: 2
 effort: L
-remaining: "BVH mesh collision, leg model, costume collision"
-depends_on: ""
-plan_path: plans/backlog/2026-04-10-collision-lab.md
+remaining: Inspect current Collision Lab mesh collision, leg, and costume models against the future-work acceptance before implementing.
+depends_on: ''
+plan_path: docs/superpowers/plans/shipped/2026-04-10-collision-lab.md
 tags: []
-last_triaged: 2026-04-26
+last_triaged: '2026-10-07'
+work_state: unverified
 ---
+
 # Collision Lab — Future Work
 
 > Follow-ups from the 2026-04-11 state-of-the-art audit. The stance optimizer

@@ -57,7 +57,7 @@
     /** Show colours as a toolbar button that opens the full editor. */
     compactColors?: boolean;
     /**
-     * The Realistic / Pictograph choice is how the 2D canvas draws a prop. A 3D
+     * The Version 1 / Version 2 choice is how the 2D canvas draws a prop. A 3D
      * scene always renders the model, so its picker turns the choice off.
      */
     showPropLook?: boolean;

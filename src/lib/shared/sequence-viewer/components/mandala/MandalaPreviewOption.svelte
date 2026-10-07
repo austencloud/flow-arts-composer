@@ -12,6 +12,7 @@
 -->
 <script lang="ts">
   import SequenceMandala from "$lib/shared/mandala/components/SequenceMandala.svelte";
+  import { sequenceMandalaHandOffsets } from "$lib/shared/mandala/services/mandala-grid-join";
   import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
   import type {
     MandalaPalette,
@@ -47,6 +48,9 @@
     leftPropType,
     rightPropType,
   }: Props = $props();
+
+  // The thumbnail shows what picking it produces, join included.
+  const handOffsets = $derived(sequenceMandalaHandOffsets(sequence));
 </script>
 
 <button
@@ -66,6 +70,7 @@
       {palette}
       {leftPropType}
       {rightPropType}
+      {handOffsets}
       animate={false}
       darkMode={true}
     />

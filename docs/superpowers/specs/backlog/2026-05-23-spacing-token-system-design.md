@@ -2,12 +2,14 @@
 status: backlog
 value: 3
 effort: M
-remaining: "Unscored until triage 2026-07-25; spec body carries no status line. Needs a read-through to establish real state before this score is trusted."
-depends_on: ""
-plan_path: ""
+remaining: Audit spacing-token usage against the design and identify the first concrete migration slice before implementation.
+depends_on: ''
+plan_path: ''
 tags: []
-last_triaged: 2026-07-25
+last_triaged: '2026-10-07'
+work_state: unverified
 ---
+
 # Spacing Token System
 
 ## Status: BACKLOG

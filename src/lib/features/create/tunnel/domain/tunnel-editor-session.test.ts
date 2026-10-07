@@ -122,6 +122,30 @@ describe("Tunnel editor session replacement status", () => {
     expect(tunnelEditorSessionStatus(changed, opened()).dirty).toBe(true);
   });
 
+  it("reads a missing prop version as Version 1", () => {
+    // The creator always captures a version, but a tunnel saved before
+    // versions has none, and opening it must not look like an edit.
+    const captured = draft({
+      presentation: {
+        ...snapshot,
+        props: { ...snapshot.props, propLook: "pictograph" },
+      },
+    });
+
+    expect(tunnelEditorSessionStatus(captured, opened()).dirty).toBe(false);
+  });
+
+  it("protects a prop version change", () => {
+    const changed = draft({
+      presentation: {
+        ...snapshot,
+        props: { ...snapshot.props, propLook: "model" },
+      },
+    });
+
+    expect(tunnelEditorSessionStatus(changed, opened()).dirty).toBe(true);
+  });
+
   it("protects source identity and provenance changes", () => {
     const changedComposition = {
       ...composition,

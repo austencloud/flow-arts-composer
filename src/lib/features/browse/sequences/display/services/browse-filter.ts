@@ -7,7 +7,11 @@
 
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
 import { stripWordNotation } from "$lib/shared/foundation/utils/word-notation";
-import { BrowseFilterType } from "$lib/shared/persistence/domain/enums/filtering-enums";
+import {
+  BrowseFilterType,
+  GridJoinFilterValue,
+} from "$lib/shared/persistence/domain/enums/filtering-enums";
+import { sequenceGridJoin } from "$lib/shared/grid-join/sequence-grid-join";
 import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
 import type { BrowseFilterValue } from "$lib/shared/persistence/domain/types/filtering-types";
 import type {
@@ -27,6 +31,7 @@ const STARTING_LETTER_RANGES = ["A-D", "E-H", "I-L", "M-P", "Q-T", "U-Z"];
 const LENGTH_OPTIONS = ["3", "4", "5", "6", "7", "8+"];
 const DIFFICULTY_OPTIONS = ["beginner", "intermediate", "advanced"];
 const GRID_MODE_OPTIONS = [GridMode.DIAMOND, GridMode.BOX, GridMode.SKEWED];
+const GRID_JOIN_OPTIONS = [GridJoinFilterValue.JOINED, GridJoinFilterValue.SINGLE];
 
 export class BrowseFilter {
 
@@ -56,6 +61,8 @@ export class BrowseFilter {
         return this.filterByAuthor(sequences, filterValue);
       case BrowseFilterType.GRID_MODE:
         return this.filterByGridMode(sequences, filterValue);
+      case BrowseFilterType.GRID_JOIN:
+        return this.filterByGridJoin(sequences, filterValue);
       case BrowseFilterType.FAVORITES:
         return this.filterByFavorites(sequences);
       case BrowseFilterType.RECENT:
@@ -82,6 +89,8 @@ export class BrowseFilter {
         return this.getUniqueAuthors(sequences);
       case BrowseFilterType.GRID_MODE:
         return GRID_MODE_OPTIONS;
+      case BrowseFilterType.GRID_JOIN:
+        return GRID_JOIN_OPTIONS;
       case BrowseFilterType.LOOP_TYPE:
         return this.getLOOPTypeOptions(sequences);
       default:
@@ -375,6 +384,19 @@ export class BrowseFilter {
     }
 
     return sequences.filter((seq) => (seq.gridMode ?? "diamond") === filterValue);
+  }
+
+  private filterByGridJoin(
+    sequences: SequenceData[],
+    filterValue: BrowseFilterValue
+  ): SequenceData[] {
+    if (filterValue === GridJoinFilterValue.JOINED) {
+      return sequences.filter((seq) => sequenceGridJoin(seq) !== null);
+    }
+    if (filterValue === GridJoinFilterValue.SINGLE) {
+      return sequences.filter((seq) => sequenceGridJoin(seq) === null);
+    }
+    return sequences;
   }
 
   private filterByFavorites(sequences: SequenceData[]): SequenceData[] {

@@ -17,7 +17,11 @@ import {
   ensureDataLoaded,
   saveAndOpenImage,
 } from "../shared/server-context.js";
-import { gridJoinSchema } from "../shared/grid-join-schema.js";
+import {
+  gridJoinField,
+  gridJoinLine,
+  gridJoinSchema,
+} from "../shared/grid-join-schema.js";
 import {
   buildSequenceFromLetters,
   parseWordToLetters,
@@ -371,7 +375,7 @@ export function registerSequenceTools(server: McpServer): void {
 
   server.tool(
     "get_sequence_data",
-    "Get sequence data without rendering an image. Use when Claude needs to analyze step data, check placements, or verify generation before showing to user. For showing sequences to users, use generate_sequence instead.",
+    "Get sequence data without rendering an image. Use when Claude needs to analyze step data, check placements, or verify generation before showing to user. For showing sequences to users, use generate_sequence instead. Pass conjoined to draw each hand on its own joined grid; omitting conjoined means one grid, and the result echoes the join used.",
     {
       word: z.string().describe('The sequence word, e.g., "ABC" or "DEFGH"'),
       gridMode: z
@@ -423,6 +427,7 @@ export function registerSequenceTools(server: McpServer): void {
         .describe(
           "Compact output - summary only without full step data (saves ~2000+ tokens for long sequences)"
         ),
+      conjoined: gridJoinSchema.optional(),
     },
     async ({
       word,
@@ -432,6 +437,7 @@ export function registerSequenceTools(server: McpServer): void {
       constraints,
       constraintPreset,
       compact = false,
+      conjoined,
     }) => {
       const allPictographs = ensureDataLoaded(gridMode);
 
@@ -564,6 +570,7 @@ export function registerSequenceTools(server: McpServer): void {
           startPlacement: result.startPlacement,
           endPlacement: result.endPlacement,
           stepCount: result.steps.length - 1,
+          ...gridJoinField(conjoined, gridMode),
           constraintReport: {
             score: result.constraintReport.score,
             satisfied: result.constraintReport.satisfied,
@@ -621,7 +628,7 @@ export function registerSequenceTools(server: McpServer): void {
             content: [
               {
                 type: "text" as const,
-                text: `${result.word}: ${result.steps.length} beats | ${result.startPlacement}→${result.endPlacement} | Score: ${score.toFixed(2)} | Satisfied: ${satisfiedConstraints}${bridgeCount > 0 ? ` | Bridges: ${bridgeCount}` : ""}`,
+                text: `${result.word}: ${result.steps.length} beats | ${result.startPlacement}→${result.endPlacement} | Score: ${score.toFixed(2)} | Satisfied: ${satisfiedConstraints}${bridgeCount > 0 ? ` | Bridges: ${bridgeCount}` : ""}${gridJoinLine(conjoined, gridMode)}`,
               },
             ],
           };
@@ -673,7 +680,7 @@ export function registerSequenceTools(server: McpServer): void {
           content: [
             {
               type: "text" as const,
-              text: `${result.word}: ${result.steps.length} beats | ${result.startPlacement}→${result.endPlacement}${bridgeCount > 0 ? ` | Bridges: ${bridgeCount}` : ""}`,
+              text: `${result.word}: ${result.steps.length} beats | ${result.startPlacement}→${result.endPlacement}${bridgeCount > 0 ? ` | Bridges: ${bridgeCount}` : ""}${gridJoinLine(conjoined, gridMode)}`,
             },
           ],
         };
@@ -690,6 +697,7 @@ export function registerSequenceTools(server: McpServer): void {
                 startPlacement: result.startPlacement,
                 endPlacement: result.endPlacement,
                 stepCount: result.steps.length - 1,
+                ...gridJoinField(conjoined, gridMode),
                 bridges: result.bridges,
               },
               null,
@@ -703,7 +711,7 @@ export function registerSequenceTools(server: McpServer): void {
 
   server.tool(
     "generate_sequence",
-    "Generate a TKA sequence. If no word or length given, defaults to Austen's preferred config: rotated LOOP, quartered period (16 beats), 4 random letters, level 2, turn intensity 1, smooth constraints. Supports all 15 LOOP types. Returns image inline.",
+    "Generate a TKA sequence. If no word or length given, defaults to Austen's preferred config: rotated LOOP, quartered period (16 beats), 4 random letters, level 2, turn intensity 1, smooth constraints. Supports all 15 LOOP types. Returns image inline. Pass conjoined to draw each hand on its own joined grid; omitting conjoined means one grid, and the result echoes the join used.",
     {
       word: z
         .string()
@@ -1388,7 +1396,7 @@ export function registerSequenceTools(server: McpServer): void {
             },
             {
               type: "text" as const,
-              text: `"${headerWord}" — ${result.steps.length - 1} beats, ${layout} layout${loopLine}${warningsLine}`,
+              text: `"${headerWord}" — ${result.steps.length - 1} beats, ${layout} layout${loopLine}${gridJoinLine(conjoined, gridMode)}${warningsLine}`,
             },
           ],
         };

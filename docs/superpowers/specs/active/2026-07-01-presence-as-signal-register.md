@@ -2,18 +2,21 @@
 status: active
 value: 4
 effort: M
-remaining: "This is a migration gate and reference register, not an implementation target. Before any StepData-to-Step adoption slice flips `.motions` from partial to required, choose and implement an explicit per-hand absence encoding, then disposition every touched register entry with a guard test, re-encoding, or verified no-op."
-depends_on: "internal: explicit per-hand absence encoding for canonical Step motions"
+remaining: "Reconcile each register family against the shipped 2026-07-02 absence-encoding design and current presence guards; record any uncovered behavior before marking this reference register complete."
+depends_on: ""
 plan_path: ""
 tags: []
-last_triaged: 2026-08-01
+last_triaged: 2026-10-07
+work_state: unverified
 ---
 # Presence-as-Signal Register — StepData→Step Migration Gate
 
+**Queue evidence (2026-10-07):** The separate `shipped/2026-07-02-stepdata-step-absence-encoding-design.md` records the required encoding and adoption slice as shipped; current `step-data.ts` declares `StepData extends Step`. The original encoding prerequisite is no longer outstanding. This register's individual sites have not been re-audited here, so its closeout remains unverified.
+
 **Date:** 2026-07-01 · **Source:** 4-agent adversarial sweep (110 unique sites, deduped)
-**Status:** BLOCKING INPUT for every adoption slice. A slice may not flip a `.motions` type
-until the sites it touches are consciously dispositioned (guard test, explicit re-encode, or
-verified no-op).
+**Original status (historical):** BLOCKING INPUT for each adoption slice. The
+absence encoding and initial adoption shipped on 2026-07-02; this register now
+needs an entry-by-entry reconciliation before closeout.
 
 ## Why this exists
 

@@ -2,12 +2,14 @@
 status: backlog
 value: 4
 effort: M
-remaining: Illustrator SVG splitting for 60 arrows + manifest
-depends_on: Manual Illustrator workflow
-plan_path: plans/backlog/2026-04-04-arrow-tip-z-promotion.md
+remaining: Verify the current 60 arrow SVG assets and manifest against the Illustrator split plan before assigning implementation.
+depends_on: 'external: Manual Illustrator SVG split workflow'
+plan_path: docs/superpowers/plans/backlog/2026-04-04-arrow-tip-z-promotion.md
 tags: []
-last_triaged: 2026-04-26
+last_triaged: '2026-10-07'
+work_state: unverified
 ---
+
 # Arrow Tip Z-Promotion
 
 ## Problem

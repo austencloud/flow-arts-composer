@@ -62,6 +62,7 @@ import type { FireFrameInput } from "../domain/types/fire-types";
 import { isVisibleMotion } from "$lib/shared/pictograph/shared/domain/models/motion-data";
 import type { MandalaOverlayCanvas } from "$lib/shared/mandala/services/mandala-overlay-canvas";
 import { MandalaPathPreparer } from "$lib/shared/mandala/services/mandala-path-preparer";
+import { mandalaOffsetsFromHandUnits } from "$lib/shared/mandala/services/mandala-grid-join";
 import {
   DEFAULT_MANDALA_OVERLAY_CONFIG,
   type MandalaOverlayConfig,
@@ -2295,6 +2296,10 @@ export class AnimationRenderLoop {
       return;
     }
 
+    // Joined grids: each hand's figure sits on its own grid, moved exactly as
+    // that hand's props are (sliding with them while the layout changes).
+    const handOffsets = mandalaOffsetsFromHandUnits(params.gridJoinOffsets);
+
     // A prop type becomes reactive before its replacement texture finishes
     // loading. Keep the old guide in place during that gap so the mandala and
     // prop begin their crossfades together once the new artwork is ready.
@@ -2308,6 +2313,7 @@ export class AnimationRenderLoop {
         currentTime,
         canvasSize: this.canvasSize,
         currentStep: params.currentStep,
+        handOffsets,
       });
       return;
     }
@@ -2356,6 +2362,7 @@ export class AnimationRenderLoop {
       currentTime,
       canvasSize: this.canvasSize,
       currentStep: params.currentStep,
+      handOffsets,
     });
   }
 

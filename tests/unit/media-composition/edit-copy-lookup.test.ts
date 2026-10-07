@@ -86,4 +86,16 @@ describe("editing copies made ahead of time", () => {
     ])
       expect(editCopyPaths(url)).toBeNull();
   });
+
+  it("does not look beside a feature video's media", async () => {
+    const request = vi.fn() as unknown as typeof fetch;
+    expect(
+      await findEditCopy(
+        "/api/dev/feature-videos/promo/media/footage/take.mp4",
+        new AbortController().signal,
+        request
+      )
+    ).toBeNull();
+    expect(request).not.toHaveBeenCalled();
+  });
 });

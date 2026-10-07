@@ -2,11 +2,12 @@
 status: active
 value: 3
 effort: L
-remaining: "Body status: Design — awaiting review"
+remaining: "Compare app, create-module, MCP, and sequence-engine derivers with the proposed collapse before implementation; no present completion evidence is recorded."
 depends_on: ""
 plan_path: ""
 tags: []
-last_triaged: 2026-07-25
+last_triaged: 2026-10-07
+work_state: unverified
 ---
 # Deriver Collapse — Design
 

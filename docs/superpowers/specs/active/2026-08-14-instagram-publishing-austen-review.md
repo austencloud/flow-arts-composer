@@ -1,3 +1,14 @@
+---
+status: active
+value: null
+effort: null
+remaining: "Obtain Austen review of the four publishing moments in this brief after the workspace implementation and Meta gates are known."
+depends_on: "external: Austen review of four publishing moments before approval"
+plan_path: ""
+tags: []
+last_triaged: 2026-10-07
+work_state: blocked
+---
 # Instagram Publishing: Austen Review Brief
 
 Read this instead of the engineering contract. The

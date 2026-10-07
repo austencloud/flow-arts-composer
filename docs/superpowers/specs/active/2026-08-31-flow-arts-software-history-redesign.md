@@ -1,3 +1,15 @@
+---
+status: active
+value: null
+effort: null
+work_state: unverified
+remaining: Inspect the flow-arts software history route at specified viewports and verify parser/submission behavior.
+depends_on: ''
+plan_path: ''
+tags: []
+last_triaged: '2026-10-07'
+---
+
 # Flow Arts Software History Redesign
 
 **Date:** 2026-08-31

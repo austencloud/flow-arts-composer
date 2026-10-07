@@ -15,6 +15,8 @@
   import { growFade } from "$lib/shared/transitions/motion";
   import type { ViewerCustomColorPair } from "$lib/shared/sequence-viewer/domain/viewer-custom-colors";
   import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import type { FanAppearance } from "$lib/shared/pictograph/prop/domain/fan-appearance";
+  import type { TriangleGrip } from "$lib/shared/pictograph/prop/domain/triangle-appearance";
   import type { PropPreset } from "../../../domain/app-settings";
   import {
     presetLabel,
@@ -29,6 +31,8 @@
     selectedIndex,
     colors,
     darkMode = true,
+    fanAppearance,
+    triangleGrip,
     showShortcuts = false,
     onApply,
     onSave,
@@ -43,6 +47,9 @@
     selectedIndex: number;
     colors?: ViewerCustomColorPair | null;
     darkMode?: boolean;
+    /** Current fan build and triangle grip, drawn the same on every chip. */
+    fanAppearance?: FanAppearance | null;
+    triangleGrip?: TriangleGrip | null;
     /** Show Alt-key slot marks and the shortcut hint. */
     showShortcuts?: boolean;
     onApply: (index: number) => void;
@@ -149,6 +156,8 @@
         {managing}
         {colors}
         {darkMode}
+        {fanAppearance}
+        {triangleGrip}
         onclick={() => handleChip(index)}
       />
     {/each}

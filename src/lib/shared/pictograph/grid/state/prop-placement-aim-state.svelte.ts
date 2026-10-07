@@ -27,6 +27,11 @@ interface PropPlacementAimInputs {
   getLeftPropType: () => PropType;
   getRightPropType: () => PropType;
   getBetaSwapped: () => boolean;
+  /**
+   * Each hand's points on its own grid when the two hands draw on joined
+   * grids; null (or absent) when both hands share one grid.
+   */
+  getHandPoints?: () => Readonly<Record<HandSide, PlacementGridPoint[]>> | null;
 }
 
 interface PropPlacementAimDependencies {
@@ -74,14 +79,36 @@ export function createPropPlacementAimState(
   );
   const locationTarget = $derived.by(() => {
     if (!locationDrag?.moved) return null;
-    return nearestDropPoint({
-      x: locationDrag.start.x + locationDrag.delta.x,
-      y: locationDrag.start.y + locationDrag.delta.y,
-    });
+    return nearestDropPoint(
+      {
+        x: locationDrag.start.x + locationDrag.delta.x,
+        y: locationDrag.start.y + locationDrag.delta.y,
+      },
+      locationDrag.color
+    );
   });
 
+  /** True when each hand draws on its own grid. */
+  function isJoined(): boolean {
+    return Boolean(inputs.getHandPoints?.());
+  }
+
+  /** The points a hand is placed on: its own grid's when joined. */
+  function pointsFor(color: HandSide): PlacementGridPoint[] {
+    return inputs.getHandPoints?.()?.[color] ?? inputs.getActivePoints();
+  }
+
+  function locationOf(color: HandSide): GridLocation | null {
+    return color === HandSide.LEFT
+      ? placement.leftLocation
+      : placement.rightLocation;
+  }
+
   // The visible target and the committed drop must use the same decision.
-  function nearestDropPoint(pointer: { x: number; y: number } | null) {
+  function nearestDropPoint(
+    pointer: { x: number; y: number } | null,
+    color: HandSide
+  ) {
     if (
       !pointer ||
       pointer.x < 0 ||
@@ -90,17 +117,15 @@ export function createPropPlacementAimState(
       pointer.y > 950
     )
       return null;
-    return inputs
-      .getActivePoints()
-      .reduce<PlacementGridPoint | null>(
-        (best, point) =>
-          !best ||
-          Math.hypot(point.x - pointer.x, point.y - pointer.y) <
-            Math.hypot(best.x - pointer.x, best.y - pointer.y)
-            ? point
-            : best,
-        null
-      );
+    return pointsFor(color).reduce<PlacementGridPoint | null>(
+      (best, point) =>
+        !best ||
+        Math.hypot(point.x - pointer.x, point.y - pointer.y) <
+          Math.hypot(best.x - pointer.x, best.y - pointer.y)
+          ? point
+          : best,
+      null
+    );
   }
 
   function committedOrientationFor(color: HandSide): Orientation {
@@ -125,6 +150,8 @@ export function createPropPlacementAimState(
   }
 
   function betaOffsets(): PlacementBetaOffsets {
+    // Joined hands sit on separate grids, so the renderer gives them no beta.
+    if (isJoined()) return { left: { x: 0, y: 0 }, right: { x: 0, y: 0 } };
     return calculatePlacementBetaOffsets({
       gridMode: inputs.getGridMode(),
       leftLocation: placement.leftLocation,
@@ -138,15 +165,10 @@ export function createPropPlacementAimState(
   }
 
   function propCenter(color: HandSide): { x: number; y: number } | null {
-    const location =
-      color === HandSide.LEFT
-        ? placement.leftLocation
-        : placement.rightLocation;
+    const location = locationOf(color);
     if (location === null) return null;
 
-    const point = inputs
-      .getActivePoints()
-      .find((entry) => entry.location === location);
+    const point = pointsFor(color).find((entry) => entry.location === location);
     if (!point) return null;
 
     const offsets = betaOffsets();
@@ -238,20 +260,71 @@ export function createPropPlacementAimState(
     return { x: point.x, y: point.y };
   }
 
+  // `hand` is set for a joined target, which is one hand's point on that
+  // hand's own grid; one-grid targets serve both hands and leave it unset.
   function resolvePressColor(
     location: GridLocation,
-    event: MouseEvent | null = null
+    event: MouseEvent | null = null,
+    hand?: HandSide
   ): HandSide | null {
-    if (placement.activeHand !== null) return placement.activeHand;
+    if (placement.activeHand !== null) {
+      return hand === undefined || hand === placement.activeHand
+        ? placement.activeHand
+        : null;
+    }
     if (!inputs.getEditAfterCompletion()) return null;
 
-    return occupiedColor(location, event);
+    return occupiedColor(location, event, hand);
+  }
+
+  /**
+   * The hand a press acts on, and the location it names in that hand's grid.
+   * A joined press can land on the other hand's prop where the two grids'
+   * points meet, and then acts on that hand at its own location.
+   */
+  function resolvePress(
+    location: GridLocation,
+    event: MouseEvent | null,
+    hand?: HandSide
+  ): { color: HandSide; location: GridLocation } | null {
+    const color = resolvePressColor(location, event, hand);
+    if (color === null) return null;
+    if (hand === undefined || color === hand) return { color, location };
+    const own = locationOf(color);
+    return own === null ? null : { color, location: own };
+  }
+
+  /**
+   * A joined target is one hand's point. Where both hands' props sit on one
+   * spot (two grids meeting hand to hand), the press goes to the prop under
+   * the pointer, as it does on a point both hands share on one grid.
+   */
+  function joinedOccupiedColor(
+    location: GridLocation,
+    event: MouseEvent | null,
+    hand: HandSide
+  ): HandSide | null {
+    if (locationOf(hand) !== location) return null;
+    const other = hand === HandSide.LEFT ? HandSide.RIGHT : HandSide.LEFT;
+    const mine = propCenter(hand);
+    const theirs = propCenter(other);
+    if (
+      !event ||
+      !mine ||
+      !theirs ||
+      Math.hypot(mine.x - theirs.x, mine.y - theirs.y) > 1
+    ) {
+      return hand;
+    }
+    return colorUnderPointer(event) ?? hand;
   }
 
   function occupiedColor(
     location: GridLocation,
-    event: MouseEvent | null = null
+    event: MouseEvent | null = null,
+    hand?: HandSide
   ): HandSide | null {
+    if (hand !== undefined) return joinedOccupiedColor(location, event, hand);
     const leftHere = placement.leftLocation === location;
     const rightHere = placement.rightLocation === location;
 
@@ -274,11 +347,11 @@ export function createPropPlacementAimState(
     return null;
   }
 
-  function isPressable(location: GridLocation): boolean {
+  function isPressable(location: GridLocation, hand?: HandSide): boolean {
     if (placement.canPlace) return true;
     return (
       (inputs.getCanAim() || placement.canEdit) &&
-      resolvePressColor(location) !== null
+      resolvePressColor(location, null, hand) !== null
     );
   }
 
@@ -287,7 +360,11 @@ export function createPropPlacementAimState(
     hoverOutline = null;
   }
 
-  function updateHover(event: PointerEvent, location: GridLocation): void {
+  function updateHover(
+    event: PointerEvent,
+    location: GridLocation,
+    hand?: HandSide
+  ): void {
     if (
       !inputs.getCanAim() ||
       dragPointerId !== null ||
@@ -296,31 +373,32 @@ export function createPropPlacementAimState(
       return;
     }
 
-    const color = resolvePressColor(location, event);
+    const color = resolvePressColor(location, event, hand);
     hoverHand = color;
     hoverOutline = color === null ? null : propOutline(color);
   }
 
   function handlePointerDown(
     event: PointerEvent,
-    location: GridLocation
+    location: GridLocation,
+    hand?: HandSide
   ): void {
     landing = null;
     pointerHandledPress = false;
-    if (startLocationDrag(event, occupiedColor(location, event))) return;
+    if (startLocationDrag(event, occupiedColor(location, event, hand))) return;
     if (!inputs.getCanAim() || dragPointerId !== null) return;
-    const color = resolvePressColor(location, event);
-    if (color === null) return;
+    const press = resolvePress(location, event, hand);
+    if (press === null) return;
 
     clearHover();
     pointerHandledPress = true;
-    placement.selectPoint(location, color);
+    placement.selectPoint(press.location, press.color);
     dragPointerId = event.pointerId;
-    dragHand = color;
-    dragLocation = location;
+    dragHand = press.color;
+    dragLocation = press.location;
     dragAim = normalizeOrientationForLocation(
-      committedOrientationFor(color),
-      location
+      committedOrientationFor(press.color),
+      press.location
     );
   }
 
@@ -355,9 +433,9 @@ export function createPropPlacementAimState(
     if (dragHand === null || dragLocation === null) return;
 
     const pointer = toSvgPoint(event);
-    const origin = inputs
-      .getActivePoints()
-      .find((point) => point.location === dragLocation);
+    const origin = pointsFor(dragHand).find(
+      (point) => point.location === dragLocation
+    );
     if (!pointer || !origin) return;
 
     const aimed = orientationFromDrag({
@@ -381,7 +459,7 @@ export function createPropPlacementAimState(
       locationDrag = null;
       if (!drag.moved) return; // A tap retains the existing select/place behavior.
       pointerHandledPress = true;
-      const nearest = valid ? nearestDropPoint(pointer) : null;
+      const nearest = valid ? nearestDropPoint(pointer, drag.color) : null;
       if (nearest) {
         placement.selectPoint(nearest.location, drag.color);
         landing = { point: nearest, color: drag.color };
@@ -482,34 +560,43 @@ export function createPropPlacementAimState(
 
   function selectOrEdit(
     location: GridLocation,
-    event: MouseEvent | null = null
+    event: MouseEvent | null = null,
+    hand?: HandSide
   ): void {
     if (
       !inputs.getCanAim() &&
       placement.canEdit &&
       placement.activeHand === null
     ) {
-      const color = resolvePressColor(location, event);
+      const color = resolvePressColor(location, event, hand);
       if (color !== null) placement.edit(color);
       return;
     }
     placement.selectPoint(location);
   }
 
-  function handleClick(location: GridLocation, event?: MouseEvent): void {
+  function handleClick(
+    location: GridLocation,
+    event?: MouseEvent,
+    hand?: HandSide
+  ): void {
     if (pointerHandledPress) {
       pointerHandledPress = false;
       return;
     }
     landing = null;
-    selectOrEdit(location, event);
+    selectOrEdit(location, event, hand);
   }
 
-  function handleKeydown(event: KeyboardEvent, location: GridLocation): void {
+  function handleKeydown(
+    event: KeyboardEvent,
+    location: GridLocation,
+    hand?: HandSide
+  ): void {
     if (event.key !== "Enter" && event.key !== " ") return;
     event.preventDefault();
     landing = null;
-    selectOrEdit(location);
+    selectOrEdit(location, null, hand);
   }
 
   function retireCommittedPreview(): void {
@@ -571,11 +658,11 @@ export function createPropPlacementAimState(
       return dragAim;
     },
     get dragPoint() {
-      return dragLocation === null
+      return dragLocation === null || dragHand === null
         ? null
-        : (inputs
-            .getActivePoints()
-            .find((point) => point.location === dragLocation) ?? null);
+        : (pointsFor(dragHand).find(
+            (point) => point.location === dragLocation
+          ) ?? null);
     },
     get pendingOrientation() {
       return pendingOrientation;
@@ -588,6 +675,7 @@ export function createPropPlacementAimState(
     },
     get isBeta() {
       return (
+        !isJoined() &&
         placement.leftLocation !== null &&
         placement.leftLocation === placement.rightLocation
       );

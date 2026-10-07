@@ -15,6 +15,8 @@ Delegates all rendering to child components.
   import type { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
   import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
   import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
+  import type { GridJoin } from "@tka/tka-types";
+  import { gridJoinCellResolver } from "@tka/render-core";
   import { onMount } from "svelte";
   import { getSettings } from "$lib/shared/application/state/app-state.svelte";
   import { pictographPreparer } from "$lib/shared/pictograph/shared/services/pictograph-preparer";
@@ -56,6 +58,9 @@ Delegates all rendering to child components.
   interface Props {
     currentSequence: PictographData[];
     currentGridMode: GridMode;
+    /** The sequence's grid join: tiles draw each candidate step on it, as the
+     *  workspace will once it is added. Display only; never stored on a step. */
+    gridJoin?: GridJoin | null;
     onOptionSelected: (option: PictographData) => void | Promise<void>;
     isContinuousOnly?: boolean;
     onToggleContinuous?: (value: boolean) => void;
@@ -82,6 +87,7 @@ Delegates all rendering to child components.
   const {
     currentSequence,
     currentGridMode,
+    gridJoin = null,
     onOptionSelected,
     isContinuousOnly = false,
     onToggleContinuous,
@@ -236,6 +242,9 @@ Delegates all rendering to child components.
           ? filterDirectionContinuousOptions(turned, currentSequence)
           : { options: turned, totalCount: turned.length, hiddenCount: 0 };
       turned = directionResult.options;
+      if (gridJoin) {
+        turned = turned.map(gridJoinCellResolver({ conjoined: gridJoin }));
+      }
 
       const s = getSettings();
       const options = await preparer!.prepareBatch(turned, {
@@ -397,6 +406,8 @@ Delegates all rendering to child components.
     void _rightTurns;
     void _leftRotation;
     void _rightRotation;
+    // A join change redraws the tiles on the new grids.
+    void gridJoin;
 
     prepareWithTurns(filtered).then((frame) => {
       preparedOptions = frame.options;

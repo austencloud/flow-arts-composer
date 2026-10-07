@@ -6,7 +6,8 @@ remaining: "Implementation recheck passed 13 focused files and 69 tests on 2026-
 depends_on: "external: requires signed-in admin warm, explicit browser control, target iPhone and desktop benchmarks, then a released production cohort"
 plan_path: ""
 tags: ["browse", "thumbnails", "performance", "telemetry", "cache"]
-last_triaged: 2026-07-29
+last_triaged: 2026-10-07
+work_state: verification
 ---
 
 # Gallery Thumbnail Timeout Attribution and Cache Coverage: Design Spec

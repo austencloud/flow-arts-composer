@@ -48,6 +48,7 @@
   import { getAnimationVisibilityManager } from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
   import { toMandalaPathShape } from "$lib/shared/mandala/services/mandala-path-policy";
   import type { MandalaPathShape } from "$lib/shared/mandala/domain/mandala-types";
+  import { mandalaGridJoinOffsets } from "$lib/shared/mandala/services/mandala-grid-join";
 
   import type { ChoreoCardCell as CellData } from "$lib/shared/choreo-card/services/choreo-card-render-engine";
 
@@ -163,6 +164,12 @@
     mandalaPathShape: requestedMandalaPathShape,
     exportPresentation = false,
   }: Props = $props();
+
+  // A joined sequence's full mandala draws each hand's figure on its own
+  // grid, as the cells draw the hands; one-hand cells stay centered.
+  const mandalaHandOffsets = $derived(
+    mandalaGridJoinOffsets(sequence?.conjoined, sequence?.gridMode)
+  );
 
   const mandalaCellScale = $derived(
     exportPresentation ? EXPORT_MANDALA_CELL_SCALE : MANDALA_CELL_SCALE
@@ -676,6 +683,7 @@
               pathShape={mandalaPathShape}
               strokeWidth={exportPresentation ? 3 : undefined}
               exportRaster={exportPresentation}
+              handOffsets={mandalaHandOffsets}
             />
           </div>
         </div>
@@ -803,6 +811,7 @@
             pathShape={mandalaPathShape}
             strokeWidth={exportPresentation ? 3 : undefined}
             exportRaster={exportPresentation}
+            handOffsets={mandalaHandOffsets}
           />
         </div>
       </div>

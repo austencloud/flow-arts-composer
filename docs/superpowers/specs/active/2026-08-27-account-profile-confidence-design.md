@@ -1,3 +1,15 @@
+---
+status: active
+value: null
+effort: null
+work_state: unverified
+remaining: Verify Account prop-preference flow for zero, one, and multiple saved props, including Profile display precedence and persistence.
+depends_on: ''
+plan_path: ''
+tags: []
+last_triaged: '2026-10-07'
+---
+
 # Account Profile Confidence
 
 **Status:** Approved for implementation

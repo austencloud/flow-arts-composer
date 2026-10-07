@@ -1,3 +1,15 @@
+---
+status: active
+value: null
+effort: null
+work_state: unverified
+remaining: Verify exact Left/Right Tunnel colors through snapshot, share, render, and export round trips.
+depends_on: ''
+plan_path: ''
+tags: []
+last_triaged: '2026-10-07'
+---
+
 # Tunnel Exact Prop Colors
 
 ## Outcome

@@ -1,6 +1,7 @@
 import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
 import { createSequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
 import { openSequenceOverlay } from "$lib/shared/sequence-viewer/state/sequence-viewer-overlay-state.svelte";
+import { sequenceGridJoin } from "$lib/shared/grid-join/sequence-grid-join";
 import { getLibraryRepository } from "$lib/shared/library/get-library-repository";
 
 /** Shape shared by every collected art entry that can carry a lineage stamp
@@ -10,6 +11,8 @@ export interface LineageSource {
   sourceWord?: string;
   sourceSequenceId?: string;
   steps?: StepData[];
+  /** The join the steps were made under; absent means one grid. */
+  conjoined?: unknown;
 }
 
 /** Whether the "From <word>" chip has anywhere to send the user. A word alone
@@ -59,12 +62,14 @@ export async function openLineageSource(entry: LineageSource): Promise<void> {
   const steps = entry.steps ?? [];
   if (steps.length === 0) return;
 
+  const join = sequenceGridJoin(entry);
   const sequence = createSequenceData({
     id: entry.sourceSequenceId ?? crypto.randomUUID(),
     name: entry.sourceWord ?? "Sequence",
     word: entry.sourceWord ?? "",
     steps: [...steps],
     gridMode: steps.find((s) => s.gridMode)?.gridMode,
+    ...(join ? { conjoined: join } : {}),
   });
   openSequenceOverlay(sequence, { analyticsSource: "lineage" });
 }

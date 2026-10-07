@@ -1,3 +1,14 @@
+---
+status: active
+value: null
+effort: null
+remaining: "Verify reply snapshot payload, attachment-only quote, legacy compatibility, and focus behavior in current Inbox."
+depends_on: ""
+plan_path: ""
+tags: []
+last_triaged: 2026-10-07
+work_state: unverified
+---
 # Specific Message Replies
 
 **Status:** Approved for implementation by the direct request on 2026-08-12

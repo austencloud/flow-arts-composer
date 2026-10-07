@@ -9,6 +9,7 @@ Controls moved below the grid for better UX
   import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
   import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
   import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
+  import type { GridJoin } from "@tka/tka-types";
   import type { HapticFeedback } from "$lib/shared/application/services/haptic-feedback";
   import { onDestroy, onMount, type Snippet } from "svelte";
   import Crossfade from "$lib/shared/components/Crossfade.svelte";
@@ -55,6 +56,7 @@ Controls moved below the grid for better UX
     rightPropTypeOverride = undefined,
     initialStartPlacement = null,
     lockedGridMode = undefined,
+    gridJoin = null,
     lockedPath = undefined,
     rememberPreferences = true,
     validationMessage = null,
@@ -77,6 +79,8 @@ Controls moved below the grid for better UX
     rightPropTypeOverride?: PropType;
     initialStartPlacement?: PictographData | null;
     lockedGridMode?: GridMode;
+    /** The sequence's grid join, drawn on the tiles (display only). */
+    gridJoin?: GridJoin | null;
     /** Pins the picker to one start method and hides the method switch. */
     lockedPath?: StartPlacementPath;
     /** False keeps this picker out of the saved picker preferences: it starts
@@ -437,6 +441,7 @@ Controls moved below the grid for better UX
             currentGridMode={pickerState.currentGridMode}
             onPictographSelect={handlePlacementSelect}
             {isSideBySideLayout}
+            {gridJoin}
           />
         {:else}
           <!-- Simple 3-placement grid -->
@@ -448,6 +453,7 @@ Controls moved below the grid for better UX
                 onPictographSelect={handlePlacementSelect}
                 {leftPropTypeOverride}
                 {rightPropTypeOverride}
+                {gridJoin}
               />
             </div>
           </div>

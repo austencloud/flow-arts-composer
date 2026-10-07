@@ -1,3 +1,14 @@
+---
+status: active
+value: null
+effort: null
+remaining: "Verify environment catalog normalization and 2D-pair migration against current 3D Studio and saved scene code."
+depends_on: ""
+plan_path: ""
+tags: []
+last_triaged: 2026-10-07
+work_state: unverified
+---
 # 3D Studio and Environment Separation
 
 **Date:** 2026-08-21  

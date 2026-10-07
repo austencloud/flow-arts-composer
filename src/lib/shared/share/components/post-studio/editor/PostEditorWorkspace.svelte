@@ -90,7 +90,11 @@
   import { itemIdFromTitlesRole } from "$lib/shared/media-composition/domain/tunnel-titles";
   import { createStaffTipAnalysis } from "$lib/shared/media-composition/state/staff-tip-analysis.svelte";
   import { loadAnimationOverlayPainter } from "$lib/shared/media-composition/services/animation-overlay-painter-registry";
-  import { planProjectAudio } from "$lib/shared/media-composition/domain/post-audio-plan";
+  import {
+    musicAudioKey,
+    planMusicAudio,
+    planProjectAudio,
+  } from "$lib/shared/media-composition/domain/post-audio-plan";
   import {
     AudioDownloadStalledError,
     buildMixedAudioTrack,
@@ -136,6 +140,13 @@
   import PostToolPanel from "./PostToolPanel.svelte";
   import PostTransitionTool from "./PostTransitionTool.svelte";
   import PostItemTool from "./PostItemTool.svelte";
+  import PostMusicTool from "./PostMusicTool.svelte";
+  import {
+    removeMusic,
+    trimMusic,
+    updateMusic,
+    type MusicPatch,
+  } from "$lib/shared/media-composition/domain/post-music-edits";
   import PostKeyframeControls from "./PostKeyframeControls.svelte";
   import ConfirmDialog from "$lib/shared/foundation/ui/ConfirmDialog.svelte";
   import OverflowMenu from "$lib/shared/ui/components/OverflowMenu.svelte";
@@ -166,6 +177,7 @@
   } from "$lib/shared/media-composition/services/post-draft-storage";
   import { loadPostProject } from "$lib/shared/media-composition/services/post-project-store";
   import { createPostTabSync } from "$lib/shared/media-composition/services/post-tab-sync";
+  import type { FeatureVideoSync } from "$lib/shared/media-composition/services/feature-video-client";
   import {
     parsePostStudioBackup,
     serializePostStudioBackup,
@@ -206,6 +218,11 @@
     active: boolean;
     sequence: SequenceData;
     initialProject?: PostProject;
+    /**
+     * A feature video. Its post saves to its folder on this computer, never
+     * to this browser's Post Studio storage; see feature-video-client.ts.
+     */
+    feature?: FeatureVideoSync;
     /** Saves elsewhere too; may hand back a later edit saved somewhere else. */
     onSaveDraft?: (project: PostProject) => Promise<PostProject | null | void>;
     draftLoadError?: string | null;
@@ -234,6 +251,7 @@
     active,
     sequence,
     initialProject,
+    feature,
     onSaveDraft,
     draftLoadError = null,
     cardPreviewUrl,
@@ -283,12 +301,18 @@
 
   let overlayPainter = $state.raw<PostStudioLayerPainter | null>(null);
 
+  // Read once: the Post page opens a new workspace for another feature video.
+  const featureVideo = feature;
+
   const editor = createPostEditorState({
     initialProject,
     getSequence: () => sequence,
     getCatalogVideo: (videoId) =>
       catalog.find((video) => video.videoId === videoId) ?? null,
     hasAnimationOverlay: () => overlayPainter !== null,
+    // A feature video keeps its post, timings and undo history apart from
+    // this browser's Post Studio storage.
+    store: featureVideo?.store,
   });
 
   onMount(() => {
@@ -297,7 +321,18 @@
     let stop: (() => void) | undefined;
     void import("$lib/shared/media-composition/services/post-project-dev-client")
       .then(({ startPostProjectDevBridge }) => {
-        if (!disposed) stop = startPostProjectDevBridge(editor);
+        if (disposed) return;
+        stop = startPostProjectDevBridge(
+          editor,
+          featureVideo
+            ? {
+                featureSlug: featureVideo.slug,
+                // Another editor, the CLI or a hand edit saved a newer copy.
+                onFeatureRevision: (revision) =>
+                  void featureVideo.checkRevision(revision),
+              }
+            : {}
+        );
       })
       .catch(() => {});
     return () => {
@@ -346,10 +381,14 @@
   let saveRequested = $state(false);
   let saveFlash = $state(false);
   let saveFlashTimer: ReturnType<typeof setTimeout> | undefined;
-  const draftAutosave = onSaveDraft
+  // Read once, like `feature`: a copy the autosave still holds when the Post
+  // page opens another post saves where this post came from. Read later,
+  // the prop would give the next post's save.
+  const saveDraft = onSaveDraft;
+  const draftAutosave = saveDraft
     ? createPostDraftAutosave(
         async (project) => {
-          const newer = await onSaveDraft(project);
+          const newer = await saveDraft(project);
           if (newer) editor.adoptSaved(newer);
         },
         (saving, error) => {
@@ -362,16 +401,37 @@
       )
     : null;
 
-  // Every open tab of this post stays on the newest saved copy.
-  const tabSync = createPostTabSync(
-    sequence.id,
-    (project) => editor.adoptSaved(project),
-    () => loadPostProject(sequence.id)
-  );
+  // Every open tab of this post stays on the newest saved copy. For a
+  // feature video, disk does that job, and no tab of the sequence's ordinary
+  // post may reach it: the tab sync is keyed by sequence alone.
+  const tabSync = featureVideo
+    ? null
+    : createPostTabSync(
+        sequence.id,
+        (project) => editor.adoptSaved(project),
+        () => loadPostProject(sequence.id)
+      );
+
+  // Disk's newer copy replaced the post as one undo step.
+  const disconnectFeature = featureVideo?.connect(editor, () => {
+    draftError = null;
+    const loaded = editor.project;
+    showToast({
+      message: "Loaded the newer copy from disk.",
+      type: "info",
+      duration: 8000,
+      action: {
+        label: t("post_editor_undo"),
+        onClick: () => {
+          if (editor.project === loaded) editor.undo();
+        },
+      },
+    });
+  });
 
   $effect(() => {
     const revision = editor.saveRevision;
-    if (revision > 0) untrack(() => tabSync.announce(editor.snapshot));
+    if (revision > 0) untrack(() => tabSync?.announce(editor.snapshot));
     if (draftAutosave)
       untrack(() => {
         const snapshot = editor.snapshot;
@@ -385,7 +445,8 @@
       });
   });
   onDestroy(() => {
-    tabSync.dispose();
+    tabSync?.dispose();
+    disconnectFeature?.();
     draftAutosave?.dispose();
     clearTimeout(saveFlashTimer);
   });
@@ -846,18 +907,33 @@
   let editorHeight = $state(0);
   const DEFAULT_TIMELINE_HEIGHT_PX = 280;
   const MIN_TIMELINE_HEIGHT_PX = 160;
+  /**
+   * With music the timeline must fit the ruler (52), Main (72) and Music
+   * (52) rows plus a sideways scrollbar, or the rows scroll inside an
+   * editor that scrolls too.
+   */
+  const MIN_TIMELINE_HEIGHT_WITH_MUSIC_PX = 196;
+  const minTimelineHeightPx = $derived(
+    editor.project.music
+      ? MIN_TIMELINE_HEIGHT_WITH_MUSIC_PX
+      : MIN_TIMELINE_HEIGHT_PX
+  );
   let timelineHeightPx = $state(DEFAULT_TIMELINE_HEIGHT_PX);
   let timelineResizeStartPx = DEFAULT_TIMELINE_HEIGHT_PX;
   const maxTimelineHeightPx = $derived(
-    Math.max(MIN_TIMELINE_HEIGHT_PX, Math.min(520, editorHeight - 360))
+    Math.max(minTimelineHeightPx, Math.min(520, editorHeight - 360))
   );
+  // A height chosen before music came keeps to the floor music needs.
   const shownTimelineHeightPx = $derived(
-    Math.min(timelineHeightPx, maxTimelineHeightPx)
+    Math.max(
+      minTimelineHeightPx,
+      Math.min(timelineHeightPx, maxTimelineHeightPx)
+    )
   );
 
   function resizeTimeline(delta: number): void {
     timelineHeightPx = Math.max(
-      MIN_TIMELINE_HEIGHT_PX,
+      minTimelineHeightPx,
       Math.min(maxTimelineHeightPx, timelineResizeStartPx - delta)
     );
   }
@@ -872,7 +948,7 @@
         nextHeight = shownTimelineHeightPx - 20;
         break;
       case "Home":
-        nextHeight = MIN_TIMELINE_HEIGHT_PX;
+        nextHeight = minTimelineHeightPx;
         break;
       case "End":
         nextHeight = maxTimelineHeightPx;
@@ -882,13 +958,45 @@
     }
     event.preventDefault();
     timelineHeightPx = Math.max(
-      MIN_TIMELINE_HEIGHT_PX,
+      minTimelineHeightPx,
       Math.min(maxTimelineHeightPx, nextHeight)
     );
   }
   let remPixels = $state(16);
   /** The panel last asked for. A wide screen falls back to a default. */
   let activeTool = $state<PostPanelToolId | null>(null);
+
+  /**
+   * The music under the post is selected. It is no item, so the editor's
+   * selection stays empty; picking an item, or removing the music, clears it.
+   */
+  let musicSelected = $state(false);
+  $effect(() => {
+    if (editor.selectedItemId !== null || !editor.project.music)
+      musicSelected = false;
+  });
+  /**
+   * The preview can't load the music's file and plays without it. The canvas
+   * reports it; the Music row and the Music panel say so.
+   */
+  let musicMissing = $state(false);
+
+  function selectMusic(): void {
+    editor.selectedItemId = null;
+    musicSelected = true;
+  }
+
+  /** One setting's change; a slider drag's steps join into one undo step. */
+  function changeMusic(key: string, patch: MusicPatch): void {
+    editor.editSetting(`music:${key}`, (project, context) =>
+      updateMusic(project, patch, context)
+    );
+  }
+
+  function deleteMusic(): void {
+    musicSelected = false;
+    editor.edit((project, context) => removeMusic(project, context));
+  }
   let selectedCut = $state<{ outgoingId: string; incomingId: string } | null>(
     null
   );
@@ -1036,7 +1144,7 @@
 
   const selection = $derived.by((): PostToolSelection => {
     const item = editor.selectedItem;
-    if (!item) return { kind: null, hasLayout: false };
+    if (!item) return { kind: null, hasLayout: false, music: musicSelected };
     // A tunnel folded into its animation has its own block, which carries its
     // speed and framing; only a hook saved as a whole item keeps them here.
     const tunnel = editor.selectedPart === "tunnel";
@@ -1291,8 +1399,9 @@
       case "split":
         return !editor.splitTarget;
       case "duplicate":
-      case "delete":
         return !editor.selectionEditable;
+      case "delete":
+        return !musicSelected && !editor.selectionEditable;
       case "beats":
         return !canTapBeats;
       default:
@@ -1362,6 +1471,11 @@
         }
         return;
       case "delete":
+        if (musicSelected) {
+          deleteMusic();
+          void focusAfterUpdate({ kind: "row" });
+          return;
+        }
         if (editor.deleteSelected()) void focusAfterUpdate({ kind: "row" });
         return;
     }
@@ -1483,12 +1597,14 @@
 
   function deselect(): void {
     editor.selectedItemId = null;
+    musicSelected = false;
     activeTool = null;
   }
 
   /** Export is the post's own panel: sound, the to-do list and the render. */
   function openExport(): void {
     editor.selectedItemId = null;
+    musicSelected = false;
     activeTool = "export";
     void focusAfterUpdate({ kind: "panel" });
   }
@@ -1506,6 +1622,11 @@
 
   function pickDeviceVideo(): void {
     if (readingFile) return;
+    // A feature video plays only videos in its folder; the CLI copies them in.
+    if (featureVideo) {
+      fileError = `${featureVideo.slug} plays only videos in its folder. Add one with: node scripts/post-project.mjs add-take <file> --feature ${featureVideo.slug}`;
+      return;
+    }
     fileError = "";
     fileInput?.click();
   }
@@ -1875,6 +1996,12 @@
       }
       case "Delete":
       case "Backspace":
+        if (musicSelected) {
+          event.preventDefault();
+          deleteMusic();
+          void focusAfterUpdate({ kind: "row" });
+          return;
+        }
         if (!editor.selectedItem) return;
         event.preventDefault();
         // The item's clip and tools go with it, as with the Delete tool.
@@ -1915,7 +2042,7 @@
           closePanel();
           return;
         }
-        if (!editor.selectedItemId) return;
+        if (!editor.selectedItemId && !musicSelected) return;
         event.preventDefault();
         deselect();
         return;
@@ -2142,6 +2269,14 @@
     }
   });
 
+  // A hidden tab stops animation frames but not the music, so pause both players.
+  function pauseWhenHidden(): void {
+    if (document.visibilityState === "hidden") {
+      editor.pause();
+      session.pause();
+    }
+  }
+
   let frameRequest: number | null = null;
   let previousFrameTime: number | null = null;
   let previousPreviewSeconds: number | null = null;
@@ -2260,10 +2395,16 @@
           videoSources.set(takeRole(take.id), url);
         }
       }
+      const music = editor.project.music;
+      if (music) takeUrls.set(musicAudioKey(music), music.url);
       const audio = await buildMixedAudioTrack({
-        segments: planProjectAudio(compiled, editor.project.audio),
+        segments: [
+          ...planProjectAudio(compiled, editor.project.audio),
+          ...planMusicAudio(music, compiled.durationSeconds),
+        ],
         durationSeconds: compiled.durationSeconds,
         takeUrls,
+        ...(music ? { required: new Set([musicAudioKey(music)]) } : {}),
         signal: exportAbort.signal,
         onProgress: (fraction) => {
           exportProgress = {
@@ -2340,6 +2481,7 @@
   onkeydown={handleKey}
   onbeforeunload={protectUnsavedDraft}
 />
+<svelte:document onvisibilitychange={pauseWhenHidden} />
 
 {#snippet draftStatus()}
   {#if labeledCard.error}
@@ -2538,6 +2680,18 @@
     />
   {:else if tool === "transition" && transitionCut}
     <PostTransitionTool {editor} {...transitionCut} />
+  {:else if tool === "music" && editor.project.music}
+    <PostMusicTool
+      music={editor.project.music}
+      playing={editor.isPlaying}
+      missing={musicMissing}
+      playheadSeconds={() => editor.previewSeconds}
+      onChange={changeMusic}
+      onTrim={(edge, seconds) =>
+        editor.edit((project, context) =>
+          trimMusic(project, edge, seconds, context)
+        )}
+    />
   {:else if editor.selectedItem}
     <PostItemTool
       {editor}
@@ -2563,11 +2717,13 @@
     {tool}
     subject={tool === "transition" && transitionCut
       ? `${labelFor(transitionCut.outgoing)} → ${labelFor(transitionCut.incoming)}`
-      : editor.selectedPart === "tunnel"
-        ? t("post_timeline_tunnel")
-        : editor.selectedItem
-          ? labelFor(editor.selectedItem)
-          : undefined}
+      : tool === "music"
+        ? editor.project.music?.label
+        : editor.selectedPart === "tunnel"
+          ? t("post_timeline_tunnel")
+          : editor.selectedItem
+            ? labelFor(editor.selectedItem)
+            : undefined}
     onDone={placement === "dock" && !cropMode ? closePanel : undefined}
     {placement}
     bare={(placement === "dock" && cropMode) ||
@@ -2756,6 +2912,7 @@
                 {cropSourceView}
                 keepSourceCropRatio={cropSourceShape !== "free"}
                 onSourceSize={noteSourceSize}
+                onMusicMissing={(missing) => (musicMissing = missing)}
                 bind:root={canvasRoot}
               />
             </div>
@@ -2877,7 +3034,7 @@
             ariaValueNow={editorHeight > 0
               ? (100 * (editorHeight - shownTimelineHeightPx)) / editorHeight
               : 50}
-            disabled={maxTimelineHeightPx <= MIN_TIMELINE_HEIGHT_PX}
+            disabled={maxTimelineHeightPx <= minTimelineHeightPx}
             onDragStart={() => (timelineResizeStartPx = shownTimelineHeightPx)}
             onDrag={resizeTimeline}
             onKeydown={resizeTimelineWithKeys}
@@ -2915,7 +3072,10 @@
           selectedPart={editor.selectedPart}
           {labelFor}
           onSeek={seekFromTimeline}
-          onSelect={(itemId) => (editor.selectedItemId = itemId)}
+          onSelect={(itemId) => {
+            musicSelected = false;
+            editor.selectedItemId = itemId;
+          }}
           onSelectTunnel={(itemId) => editor.selectTunnel(itemId)}
           onGestureStart={() => {
             editor.pause();
@@ -2965,6 +3125,21 @@
             ? timelineKeys
             : undefined}
           onAddVideo={pickDeviceVideo}
+          {musicSelected}
+          {musicMissing}
+          onSelectMusic={selectMusic}
+          onMoveMusic={(startSeconds) =>
+            applyMove((project, context) =>
+              updateMusic(project, { startSeconds }, context)
+            )}
+          onTrimMusic={(edge, seconds) =>
+            applyMove((project, context) =>
+              trimMusic(project, edge, seconds, context)
+            )}
+          onMoveDownbeat={(downbeatSeconds) =>
+            applyMove((project, context) =>
+              updateMusic(project, { downbeatSeconds }, context)
+            )}
           bind:pixelsPerSecond
         />
       </div>

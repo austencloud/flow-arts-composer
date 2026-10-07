@@ -9,6 +9,11 @@
   "scripts": {
     "skills:sync": "node scripts/sync-codex-skills.mjs",
     "skills:check": "node scripts/sync-codex-skills.mjs --check",
+    "specs:check": "node scripts/spec-queue.cjs check",
+    "specs:test": "node --test scripts/spec-queue.test.cjs",
+    "specs:list": "node scripts/spec-queue.cjs list",
+    "specs:next": "node scripts/spec-queue.cjs next",
+    "specs:drift": "node scripts/spec-drift-detector.cjs",
     "sequence:publish": "node scripts/publish-sequence.cjs",
     "sequence:transfer": "node --import tsx scripts/transfer-sequence.ts",
     "deck:release:hand-path": "node --import tsx scripts/release-hand-path-deck.ts",
@@ -249,7 +254,8 @@
     "vitest": "^4.0.16",
     "vitest-browser-svelte": "^2.1.1",
     "web-vitals": "^5.1.0",
-    "wrangler": "4.125.0"
+    "wrangler": "4.125.0",
+    "yaml": "2.9.0"
   },
   "engines": {
     "node": ">=22.0.0"

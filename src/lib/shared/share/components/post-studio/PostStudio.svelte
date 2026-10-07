@@ -5,6 +5,7 @@
   import type { ResolvedAutoLayout } from "$lib/shared/render/services/container-aware-layout";
   import type { SequenceTimeMap } from "$lib/shared/media-composition/domain/sequence-time-map";
   import type { PostProject } from "$lib/shared/media-composition/domain/post-project";
+  import type { FeatureVideoSync } from "$lib/shared/media-composition/services/feature-video-client";
   import {
     getEffectsConfigContext,
     setEffectsConfigContext,
@@ -38,6 +39,8 @@
     active?: boolean;
     sequence: SequenceData;
     initialProject?: PostProject;
+    /** A feature video: its post saves to its folder through the dev server. */
+    feature?: FeatureVideoSync;
     /** Saves elsewhere too; may hand back a later edit saved somewhere else. */
     onSaveDraft?: (project: PostProject) => Promise<PostProject | null | void>;
     draftLoadError?: string | null;
@@ -71,6 +74,7 @@
     active = true,
     sequence,
     initialProject,
+    feature,
     onSaveDraft,
     draftLoadError = null,
     cardPreviewUrl,
@@ -189,6 +193,7 @@
     {active}
     {sequence}
     {initialProject}
+    {feature}
     {onSaveDraft}
     {draftLoadError}
     {cardPreviewUrl}

@@ -1,4 +1,18 @@
+---
+status: active
+value: null
+effort: null
+work_state: blocked
+remaining: Get Austen's visual checkpoint on the real Tunnel publication pane and record the promotion decision.
+depends_on: 'external: Austen visual checkpoint and promotion decision for Tunnel publication'
+plan_path: ''
+tags: []
+last_triaged: '2026-10-07'
+---
+
 # Phase 3 Implementation Plan — Public Tunnel Vertical Slice
+
+**Queue evidence, 2026-10-07:** The implementation ledger is largely checked, but the Austen visual checkpoint remains unchecked. Keep the promotion gate open.
 
 **Date:** 2026-08-23
 **Parent charter:** `../2026-08-21-browse-explore-you-public-contributions-design.md`

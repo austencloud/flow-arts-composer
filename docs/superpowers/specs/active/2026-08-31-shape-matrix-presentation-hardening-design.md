@@ -1,7 +1,21 @@
+---
+status: active
+value: null
+effort: null
+work_state: verification
+remaining: Presentation code exists; capture shape-matrix geometry at required viewports and verify performance and motion acceptance.
+depends_on: ''
+plan_path: ''
+tags: []
+last_triaged: '2026-10-07'
+---
+
 # Shape Matrix Presentation Hardening
 
+**Queue evidence, 2026-10-07:** Shape Matrix presentation components and services exist, but the required geometry and performance browser proof is not recorded here. Keep this in verification until those checks are captured.
+
 **Date:** 2026-08-31  
-**Status:** Approved for implementation  
+**Status:** Implemented presentation work; geometry and performance verification pending
 **Branch:** `codex/shape-matrix-presentation-hardening`
 
 ## Objective

@@ -2,12 +2,14 @@
 status: active
 value: 2
 effort: S
-remaining: 'Of 6 items: 1 fixed, 2 moot (referenced code deleted), 3 genuinely open'
-depends_on: ""
-plan_path: ""
+remaining: Recheck the six deferred effects items against current source; distinguish the fixed, deleted, and three still-open cases.
+depends_on: ''
+plan_path: ''
 tags: []
-last_triaged: 2026-08-02
+last_triaged: '2026-10-07'
+work_state: unverified
 ---
+
 # Effects Unification: Deferred Items Backlog
 
 > **DRIFT WARNING — 2026-08-02.** Of 6 items: 1 fixed, **2 moot** (referenced code deleted), 3 genuinely open

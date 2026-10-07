@@ -162,9 +162,8 @@ export class FrameSystem {
         this.joinedRightProp
       );
     }
-    // The mandala guide draws both hands around the one canvas center; a
-    // slide always has a joined end, so it stays hidden throughout.
-    params.mandalaVisible = false;
+    // The mandala guide reads `gridJoinOffsets` and draws each hand's figure
+    // on its own grid, sliding with the props, so it stays visible.
   }
 
   calculateBeatNumber(props: AnimationEngineProps): number {

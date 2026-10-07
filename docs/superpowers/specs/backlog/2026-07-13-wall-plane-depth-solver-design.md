@@ -1,13 +1,15 @@
 ---
-status: active
+status: backlog
 value: 2
 effort: L
-remaining: 'Phase 3 solver never built. No depth-feasibility-solver.ts, solveStepDepth, withCheat producer, or scan-wall-feasibility --solve anywhere.'
-depends_on: ""
-plan_path: ""
+remaining: Current source has the withCheat verdict type but no depth-feasibility solver or solveStepDepth producer; implement the Phase 3 solver and scanner path.
+depends_on: ''
+plan_path: ''
 tags: []
-last_triaged: 2026-08-02
+last_triaged: '2026-10-07'
+work_state: ready
 ---
+
 # Wall-Plane Depth-First Joint Feasibility Solver — Design (Phase 3)
 
 **Date:** 2026-07-13

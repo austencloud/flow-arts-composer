@@ -1,10 +1,7 @@
 <script lang="ts">
   import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
-  import {
-    LOOP_COMPONENTS,
-    LOOPComponent,
-  } from "$lib/features/create/generate/shared/domain/constants/loop-components";
+  import { LOOPComponent } from "$lib/features/create/generate/shared/domain/constants/loop-components";
   import {
     REFLECTION_AXIS_DETAILS,
     REFLECTION_AXIS_OPTIONS,
@@ -28,10 +25,6 @@
 
   const props: Props = $props();
   const idPrefix = $derived(props.idPrefix ?? "loop");
-  const componentColor = $derived(
-    LOOP_COMPONENTS.find((info) => info.component === props.component)?.color ??
-      "#36c3ff"
-  );
   const reflectionDescription = $derived(
     t(
       (
@@ -43,13 +36,6 @@
         } as const
       )[props.rhythm.reflectionAxis]
     )
-  );
-  const reflectionName = $derived(
-    props.rhythm.reflectionAxis === "north-south"
-      ? t("generator_loop_mirrored")
-      : props.rhythm.reflectionAxis === "east-west"
-        ? t("generator_loop_flipped")
-        : t("create_deep_diagonal")
   );
   const localizedAxisOptions = $derived(
     (props.reflectionAxisOptions ?? REFLECTION_AXIS_OPTIONS).map((option) => {
@@ -94,15 +80,11 @@
 </script>
 
 {#if props.component === LOOPComponent.MIRRORED}
-  <div
-    class="reflection-axis-picker"
-    style="--reflection-color: {componentColor};"
-  >
+  <div class="reflection-axis-picker">
     <div class="axis-heading">
       <span class="axis-title" id={`${idPrefix}-reflection-axis-label`}>
         {t("create_deep_reflect_across")}
       </span>
-      <span class="axis-selection">{reflectionName}</span>
     </div>
 
     {#snippet axisOption(reflectionAxis: LoopRhythmValue["reflectionAxis"])}
@@ -156,18 +138,10 @@
     </div>
   </div>
 {:else if props.component === LOOPComponent.ROTATED}
-  <div
-    class="owned-configurator rotation-configurator"
-    style="--owner-color: {componentColor};"
-  >
+  <div class="owned-configurator rotation-configurator">
     <div class="configurator-heading">
       <span class="configurator-title" id={`${idPrefix}-rotation-period-label`}>
         {t("create_deep_rotation_period")}
-      </span>
-      <span class="configurator-selection">
-        {props.rhythm.rotationInterval === 4
-          ? t("create_deep_quartered")
-          : t("create_deep_halved")}
       </span>
     </div>
     <div class="rotation-options">
@@ -201,10 +175,7 @@
     </div>
   </div>
 {:else if props.component === LOOPComponent.INVERTED}
-  <div
-    class="owned-configurator inversion-configurator"
-    style="--owner-color: {componentColor};"
-  >
+  <div class="owned-configurator inversion-configurator">
     <div class="configurator-row">
       <div class="configurator-heading">
         <span
@@ -212,11 +183,6 @@
           id={`${idPrefix}-inversion-timing-label`}
           >{t("create_ui_invert_when")}</span
         >
-        <span class="configurator-selection">
-          {inversionInterval === 4
-            ? t("create_deep_every_quarter")
-            : t("create_deep_at_halfway")}
-        </span>
       </div>
       <SegmentedControl
         options={[
@@ -270,30 +236,22 @@
 
 <style>
   .owned-configurator {
-    --theme-accent: var(--owner-color);
-    --theme-card-bg: color-mix(
-      in srgb,
-      var(--owner-color) 18%,
-      var(--theme-panel-bg, #18152a)
-    );
-    --theme-card-hover-bg: color-mix(
-      in srgb,
-      var(--owner-color) 25%,
-      var(--theme-panel-bg, #18152a)
-    );
-    --theme-stroke: color-mix(in srgb, var(--owner-color) 48%, transparent);
-    --theme-text-dim: color-mix(
-      in srgb,
-      var(--theme-text, white) 72%,
-      var(--owner-color)
-    );
-
     display: flex;
     flex-direction: column;
     gap: 10px;
-    padding-top: 10px;
-    border-top: 1px solid
-      color-mix(in srgb, var(--owner-color) 42%, transparent);
+  }
+
+  @container (min-width: 430px) {
+    .rotation-configurator {
+      display: grid;
+      align-items: center;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 280px);
+      gap: 8px 12px;
+    }
+
+    .rotation-configurator .configurator-caption {
+      grid-column: 1 / -1;
+    }
   }
 
   .configurator-row {
@@ -303,7 +261,7 @@
   }
 
   .rotation-options {
-    width: min(100%, 300px);
+    width: min(100%, 280px);
   }
 
   .configurator-heading,
@@ -321,35 +279,12 @@
     font-weight: 700;
   }
 
-  .configurator-selection {
-    padding: 3px 8px;
-    border: 1px solid color-mix(in srgb, var(--owner-color) 70%, transparent);
-    border-radius: 999px;
-    background: color-mix(in srgb, var(--owner-color) 32%, transparent);
-    color: var(--theme-text, white);
-    font-size: var(--font-size-compact, 12px);
-    font-weight: 700;
-    text-align: center;
-    white-space: nowrap;
-  }
-
   .configurator-caption,
   .axis-caption {
     display: grid;
-    padding: 8px 10px;
-    border-radius: 0 8px 8px 0;
-    background: color-mix(
-      in srgb,
-      var(--theme-panel-bg, #18152a) 36%,
-      transparent
-    );
     color: var(--theme-text-dim);
-    font-size: var(--font-size-compact, 12px);
+    font-size: var(--font-size-sm, 14px);
     line-height: 1.4;
-  }
-
-  .configurator-caption {
-    border-left: 3px solid var(--owner-color);
   }
 
   .configurator-caption-sizer,
@@ -365,47 +300,9 @@
   }
 
   .reflection-axis-picker {
-    --theme-accent: var(--reflection-color);
-    --theme-card-bg: color-mix(
-      in srgb,
-      var(--reflection-color) 18%,
-      var(--theme-panel-bg, #18152a)
-    );
-    --theme-card-hover-bg: color-mix(
-      in srgb,
-      var(--reflection-color) 24%,
-      var(--theme-panel-bg, #18152a)
-    );
-    --theme-stroke: color-mix(
-      in srgb,
-      var(--reflection-color) 48%,
-      transparent
-    );
-    --theme-text-dim: color-mix(
-      in srgb,
-      var(--theme-text, white) 72%,
-      var(--reflection-color)
-    );
-
     display: flex;
     flex-direction: column;
     gap: 10px;
-    padding-top: 10px;
-    border-top: 1px solid
-      color-mix(in srgb, var(--reflection-color) 42%, transparent);
-  }
-
-  .axis-selection {
-    width: 8ch;
-    padding: 3px 8px;
-    border: 1px solid
-      color-mix(in srgb, var(--reflection-color) 70%, transparent);
-    border-radius: 999px;
-    background: color-mix(in srgb, var(--reflection-color) 32%, transparent);
-    color: var(--theme-text, white);
-    font-size: var(--font-size-compact, 12px);
-    font-weight: 700;
-    text-align: center;
   }
 
   .axis-option {
@@ -447,7 +344,7 @@
   .axis-option-label,
   .axis-option-name {
     color: currentColor;
-    font-size: var(--font-size-compact, 12px);
+    font-size: var(--font-size-sm, 14px);
     white-space: nowrap;
   }
 
@@ -462,7 +359,6 @@
   }
 
   .axis-caption {
-    border-left: 3px solid var(--reflection-color);
     font-size: var(--font-size-sm, 14px);
   }
 
@@ -474,7 +370,7 @@
     border-radius: 6px;
     background: color-mix(in srgb, var(--semantic-warning) 20%, transparent);
     color: var(--semantic-warning);
-    font-size: var(--font-size-compact, 12px);
+    font-size: var(--font-size-sm, 14px);
     font-weight: 600;
     text-align: center;
   }

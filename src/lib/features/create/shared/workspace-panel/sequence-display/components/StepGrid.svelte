@@ -44,6 +44,8 @@
   import { getArrivalPresentedStepCount } from "../domain/pictograph-arrival-layout";
   import PictographArrivalStage from "./PictographArrivalStage.svelte";
   import WorkspaceGrid from "./WorkspaceGrid.svelte";
+  import type { GridJoin } from "@tka/tka-types";
+  import { gridJoinCellResolver } from "@tka/render-core";
   import {
     createStableStepIdentities,
     type HistoryTransitionPlan,
@@ -105,6 +107,7 @@
     onAuditionDismiss,
     posePicker = false,
     observeScroll = true,
+    gridJoin = null,
   } = $props<{
     steps: ReadonlyArray<StepData> | StepData[];
     startPlacement?: StartPlacementData | StepData | null;
@@ -178,6 +181,12 @@
     posePicker?: boolean;
     /** The hidden editor does not need to recompute overflow while playback owns the stage. */
     observeScroll?: boolean;
+    /**
+     * The join of the sequence these steps belong to (`sequence.conjoined`).
+     * Every cell, the start cell and the arrival stage draw on the joined
+     * grids, as the sequence's card and animation do. Null: one grid.
+     */
+    gridJoin?: GridJoin | null;
   }>();
 
   // State management
@@ -230,10 +239,18 @@
   const presentedStepCount = $derived(
     getArrivalPresentedStepCount(steps.length, activeArrivalRequest)
   );
-  const presentedSteps = $derived.by(() =>
-    presentedStepCount === steps.length
-      ? steps
-      : steps.slice(0, presentedStepCount)
+  // Each cell carries the sequence's join, the way the card cells get it.
+  // On one grid the step list passes through as it is.
+  const withGridJoin = $derived(gridJoinCellResolver({ conjoined: gridJoin }));
+  const presentedSteps = $derived.by(() => {
+    const shown =
+      presentedStepCount === steps.length
+        ? steps
+        : steps.slice(0, presentedStepCount);
+    return gridJoin ? shown.map(withGridJoin) : shown;
+  });
+  const presentedStartPlacement = $derived(
+    gridJoin && startPlacement ? withGridJoin(startPlacement) : startPlacement
   );
 
   // An editable workbench needs room for its selected-cell glow and scale pop.
@@ -799,7 +816,7 @@
     <WorkspaceGrid
       bind:this={workspaceGridRef}
       steps={presentedSteps}
-      {startPlacement}
+      startPlacement={presentedStartPlacement}
       {isTimelineMode}
       {gridLayout}
       standardGridCenterOffset={displayedStandardGridCenterOffset}
@@ -847,6 +864,7 @@
         <PictographArrivalStage
           request={activeStageRequest}
           sequence={activeStageSequence}
+          {gridJoin}
           getDestinationRect={getArrivalDestinationRect}
           onBeginLanding={handleBeginArrivalLanding}
           onBeginHandoff={displayState.beginArrivalHandoff}

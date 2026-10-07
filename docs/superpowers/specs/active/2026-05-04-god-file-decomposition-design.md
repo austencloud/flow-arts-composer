@@ -2,13 +2,16 @@
 status: active
 value: 3
 effort: L
-remaining: 'Says "Draft"; real decomposition landed unevenly. ChoreoCard 2090→287. Museum3DScene 1770→1374 (target 600). Orchestrator + library-repository untouched'
+remaining: "Verify God File Decomposition against the current God File Decomposition runtime and acceptance criteria before resuming implementation. Prior recorded remainder: 'Says \"Draft\"; real decomposition landed unevenly. ChoreoCard 2090→287. Museum3DScene 1770→1374 (target 600). Orchestrator + library-repository untouched'"
 depends_on: ""
 plan_path: ""
 tags: []
-last_triaged: 2026-08-02
+last_triaged: 2026-10-07
+work_state: unverified
 ---
 # God File Decomposition
+
+**Queue evidence (2026-10-07):** Partial decomposition landed; the old Draft label no longer describes current code. See frontmatter for the remaining work.
 
 > **DRIFT WARNING — 2026-08-02.** Says "Draft"; real decomposition landed unevenly. ChoreoCard 2090→287. Museum3DScene 1770→1374 (target 600). Orchestrator + library-repository untouched
 >
@@ -17,7 +20,7 @@ last_triaged: 2026-08-02
 
 
 **Date:** 2026-05-04
-**Status:** Draft
+**Original status (historical):** Draft
 **Type:** Structural refactoring — zero behavior changes
 
 ## Problem

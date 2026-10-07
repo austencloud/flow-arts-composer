@@ -331,6 +331,34 @@ from the open editor. `domain/post-project-ops.ts` maps named CLI edits
 edits. `scripts/post-project.mjs` is the local CLI. See
 `docs/development/post-studio-manifest-bridge.md` for the command contract.
 
+Feature videos, such as the 1.0 promo, are Post Studio projects kept as
+folders on this computer, apart from any sequence's own post.
+`domain/feature-video-url.ts` owns slugs and media URLs, and
+`domain/feature-video.ts` the file format.
+`server/feature-video-store.ts` owns the folders, revisions, history and
+copies; `server/feature-video-media.ts` serves media with byte ranges; the
+routes live under `src/routes/api/dev/feature-videos/`, guarded like every dev
+route by `server/dev-loopback.ts`. In the browser,
+`services/feature-video-client.ts` keeps an open feature video in step with
+its folder through the editor's storage port, `services/post-editor-store.ts`,
+and `features/post/state/post-module-state.svelte.ts` opens one with
+`openFeature`. The CLI reaches them with `--feature`, and
+`scripts/feature-video/media-import.mjs` probes and converts takes. When disk
+and the editor disagree, disk wins and Undo brings back the editor's version.
+Searches: feature video, promo video, project folder, media route, byte range,
+revision, disk wins.
+
+A feature video's music is one file under the whole post. `domain/post-music.ts`
+owns its schema, `domain/music-grid.ts` bars, beats and the times that name a
+bar, and `domain/post-music-edits.ts` its edits; `domain/post-audio-plan.ts`
+plans its sound with `planMusicAudio` for the export and the preview alike.
+`services/music-preview-sync.ts` and `PostMusicPreview.svelte` keep the
+preview's player and clock on the music; the timeline lane is
+`timeline/PostTimelineMusicLane.svelte` and its panel `PostMusicTool.svelte`.
+The CLI's music commands use `scripts/feature-video/music-import.mjs`,
+`align-take.mjs`, `loudness.mjs` and `time-args.mjs`. Searches: music,
+soundtrack, beat grid, bar, downbeat, align take, loudness, LUFS.
+
 Post Studio keyframes live on the item: `post-project-keyframes.ts` owns
 content time, sampling, the auto-key rule, easing presets and every keyframe
 edit, and the compiler turns them into the preset's `motion` and
@@ -431,6 +459,7 @@ another.
 | step grid, pictograph preview swap, visual slot identity, difficulty and LOOP metadata                                              | `features/create/shared/workspace-panel/sequence-display/components/StepGrid.svelte` owns document-vs-slot identity; `SequenceMetadataRail.svelte` owns compact difficulty and LOOP indicators                                                                                                                                                                                                                                                                                                                                                                                                                             |
 | Choreo Card image export, MCP sequence image, renderer profile, packaged glyph assets                                               | `packages/render-composition/src/sequence-card-pipeline.ts` owns card composition and `COMPOSER_CARD_EXPORT_PROFILE_V1`. Composer and both MCP adapters consume that profile. `static/images/letters_trimmed/` owns TKA glyph artwork; `mcp-server-pkg/scripts/sync-card-assets.mjs` generates the publishable package copy during builds. Extend these owners instead of copying layout logic, defaults, or glyph files.                                                                                                                                                                                                  |
 | BPM, tempo, tap tempo, speed preset                                                                                                 | `shared/animation-engine/domain/tempo-behavior.ts` and `shared/animation-engine/domain/constants/timing.ts`; presentations are `BpmChips.svelte` and `TempoControl.svelte`                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| BPM detection, song tempo, beat times, suggest BPM                                                                                  | `shared/audio/bpm-analyzer.ts`: `analyzeAudioBpm` estimates a song's tempo from its sound and `generateStepTimestamps` spaces beats at a tempo; Compose's timeline and the Post Studio music panel's Suggest BPM use it                                                                                                                                                                                                                                                                                                                                                                                                    |
 | effect preview, preset lab, continuous demo                                                                                         | `InfiniteSequenceGenerator` and `isEffectPreviewLoop`; see `.claude/rules/sequence-generation.md`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
 | sequence transform, mirror, flip, invert, rotate, reset                                                                             | `shared/create/services/sequence-transformer.ts`; action tiles use `shared/create/components/SequenceTransformActions.svelte`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
 | contact juggling, contact ball, palm grid                                                                                           | `shared/3d/domain/prop-motion-discipline.ts` routes disciplines; contact state and poses belong to `features/contact-lab`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
@@ -487,9 +516,10 @@ do not introduce a second QR renderer or scan-asset preparation pipeline.
 Sign-in reads that must not load Firebase go through
 `shared/auth/loaded-auth.ts` (`loadedAuth.currentUser`) and
 `shared/auth/state/loaded-auth-state.svelte.ts` (`loadedAuthState.isAdmin`,
-`loadedAuthState.isAuthenticated`). `firebase.ts` and `auth-state.svelte.ts`
-remain the owners and register a reader when they load; before that nobody can
-be signed in, so the answers are null and false. Public pages import settings,
+`loadedAuthState.isAuthenticated`, `loadedAuthState.userId`). `firebase.ts`
+and `auth-state.svelte.ts` remain the owners and register a reader when they
+load; before that nobody can be signed in, so the answers are null and false.
+Public pages import settings,
 feature flags, the premium prop check, the sequence thumbnails and the Level 1
 guide's admin gate, and importing either owner there put Firebase Auth and
 Firestore on their first download. Firebase calls on those paths (QR short
@@ -514,11 +544,14 @@ does. `ChoreoCardThumbnail` loads auth and its menu actions when the context
 menu opens, so a page that shows cards does not download Firebase with them.
 The workspace step cells read `loadedAuthState.isAdmin`, and the mandala
 "Save to Collection" action loads its store when chosen, for the same reason.
+The shared 3D scene controls read `loadedAuthState` too, the per-user
+collection repository (`firebase-collection-repository.ts`) loads Firestore with
+its first call, and the performer sequence picker mounts through LazyMount.
 `scripts/verify-public-firebase.mjs` checks the listed public pages in the
 built chunk graph, `tests/unit/landing/home-first-visit-firebase.test.ts`
 follows the home page's LazyMount components and first-visit `import()` calls
 in source, and `tests/unit/composer/composer-gallery-firebase.test.ts` walks
-the imports of the /composer Glide stops before the 3D scene. Searches:
+the imports of every /composer Glide stop, the 3D scene included. Searches:
 currentUser, signed-in user, isAdmin, isAuthenticated, whenAuthLoaded, saved
 session, public page Firebase, first download, LazyMount. Decision: extend the two owners; code
 a public page loads at startup uses these readers instead of importing either

@@ -22,11 +22,15 @@ const ENGINE_HAND_RADIUS = 150;
  * `dx` cancels out of the tip radius itself; it survives only through the
  * extent the mandala fitted itself to, which is exactly what we're undoing.
  *
+ * A joined mandala fits its own extent plus how far the pair reaches past one
+ * figure (`joinReach`, from `mandalaJoinReach`), so the same reach is undone
+ * here and each hand's figure stays on its own grid's hand orbit.
+ *
  * Only for OVERLAYS. A standalone mandala should keep filling its own box.
  */
-export function engineAlignScale(tipDx: number): number {
+export function engineAlignScale(tipDx: number, joinReach = 0): number {
   const tipReach = (tipDx * MANDALA_GRID_RADIUS) / ENGINE_GRID_RADIUS;
-  const maxExtent = MANDALA_GRID_RADIUS + tipReach;
+  const maxExtent = MANDALA_GRID_RADIUS + tipReach + joinReach;
   const mandalaHandFraction = MANDALA_GRID_RADIUS / (2 * maxExtent * 1.05);
   const engineHandFraction = ENGINE_HAND_RADIUS / ENGINE_VIEWBOX;
   return engineHandFraction / mandalaHandFraction;

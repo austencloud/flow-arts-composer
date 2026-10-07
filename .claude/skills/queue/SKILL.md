@@ -1,203 +1,78 @@
 ---
-description: Use when starting a session and needing to pick work, when asking what to work on next, when triaging or re-scoring specs, or when user says /queue
+description: Use when picking work, listing the spec queue, or reconciling a spec with current implementation evidence.
 ---
 
 # Spec Queue
 
-## Default Behavior: PICK AND GO
+## Pick work
 
-When invoked without arguments (`/queue`):
+When invoked without arguments, run `npm run specs:next`. This command only reads the queue. It does not authorize implementation outside the user's current request.
 
-1. Read frontmatter from every `.md` in `docs/superpowers/specs/backlog/` and `docs/superpowers/specs/active/` (~155 files, ~4K tokens — not worth optimizing)
-2. Compute score for each: `value × effort_multiplier` (see Scoring table)
-3. Skip any spec where `depends_on` names a spec that isn't shipped
-4. Pick the highest-scoring non-blocked spec. Break ties by effort (smaller wins)
-5. **Drift-check the pick before acting on it** (see `/queue drift`). A spec that
-   misreports its own state is the one failure this queue cannot absorb: acting
-   on "not yet built" when the thing is already shipped means rebuilding live
-   code. Run the detector on the pick; if it comes back `DIVERGENT`,
-   `GHOST_PATHS`, or `LIKELY_DONE`, reconcile the spec against the repo FIRST and
-   tell the user what diverged instead of starting the work it describes.
-6. Tell the user in ONE sentence: "Top of queue: **[name]** (value [V] × [effort] = [score]) — [remaining]. Starting."
-7. Read the full spec and its `plan_path` (if set), then begin working
+The queue scans immediate Markdown files in `docs/superpowers/specs/active/` and `backlog/`. It excludes `backlog/someday/`. Only valid, scored, recently reviewed entries in `ready`, `in-progress`, or `verification` can be selected. Missing scores, unverified state, a review older than 30 days, unresolved dependencies, and existing claims hold an entry out of selection.
 
-**Do NOT list the full queue.** Do NOT present options. Do NOT ask the user to choose. The ranking already decided — just start.
+Read the selected spec, its current handoff, and its plan before acting. Check the relevant source and history for changes since the review. Run `npm run specs:drift` and adjudicate any finding on the pick. Historical design text is not a current implementation instruction.
 
-If the user wants to override: they'll say so.
+Tell the user the selected task, score, and specific remaining work. For a verification task, perform its acceptance checks and capture evidence. Do not rebuild a feature just because its original design says "not started". If no entry is eligible, report the reason and reconcile a candidate within the user's scope. Do not invent scores or silently select held work.
 
-### Session Budget Awareness
+## Commands
 
-At >60% context usage, prefer XS/S specs over L/XL — an XS close-out is more valuable than starting an L that can't finish this session. Mention the constraint: "Context is at ~70%, picking XS/S items."
+- `npm run specs:list`: show ranked eligible work and held entries with reasons.
+- `npm run specs:next`: show the next eligible entry without claiming or changing it.
+- `npm run specs:check`: validate queue metadata and referenced paths.
+- `npm run specs:drift`: compare declared state with repository evidence.
+- `node scripts/spec-drift-detector.cjs --quiet`: drift counts.
+- `node scripts/spec-drift-detector.cjs --json out.json`: machine-readable drift evidence.
 
-## `/queue list` — Full Ranked View
+A drift verdict is a shortlist for review. Commit traffic can match unrelated words or broad directories. A checked implementation ledger may still have acceptance work. An "implemented" header does not establish that browser, device, production, or external-decision gates passed. Never archive or implement from a detector verdict alone.
 
-Only when the user explicitly asks to see the queue (`/queue list`, "show me the queue", "what's in the backlog"):
+## Triage
 
-1. Read frontmatter from all specs in `active/` and `backlog/`
-2. Compute scores at read time (no stored `score` field)
-3. Output the compact ranked table (see Output Format below)
+Read the full spec and inspect the current code and relevant history. Update the opening status and the metadata together when they contradict each other. Keep historical decisions, but label obsolete execution instructions clearly.
 
-## `/queue triage [spec-name]` — Re-Score a Spec
+Use these work states:
 
-1. Read the full spec + grep git log for recent commits touching its deliverables
-2. Update frontmatter: value, effort, remaining, last_triaged (today's date)
-3. If all remaining work is done → `git mv` to `shipped/`, clear `remaining`
-4. If blocked → set `depends_on` to the blocking spec path or `external: <description>`
+| State        | Meaning                                                               |
+| ------------ | --------------------------------------------------------------------- |
+| ready        | Current implementation gap confirmed; work can start.                 |
+| in-progress  | Some scope exists; a specific current gap remains.                    |
+| verification | Implementation exists; acceptance evidence remains.                   |
+| blocked      | A prerequisite or external decision prevents progress.                |
+| unverified   | Current implementation or remaining scope has not been established.   |
+| complete     | All scoped acceptance evidence is recorded; ready to move to shipped. |
+| superseded   | A replacement or decision is documented; ready to move to archived.   |
 
-## `/queue drift` — Detect Specs That Lie
+Set `last_triaged` only after an actual review. This date alone does not certify the implementation: `work_state` records the remaining uncertainty. Use null scores when value or effort has not been assessed. Preserve explicit user decision gates.
 
-```bash
-node scripts/spec-drift-detector.cjs                      # full report
-node scripts/spec-drift-detector.cjs --quiet              # counts only
-node scripts/spec-drift-detector.cjs --verdict DIVERGENT   # one bucket
-node scripts/spec-drift-detector.cjs --json out.json       # machine-readable
-```
-
-Compares what each spec SAYS against what the repository DOES. Read-only; it
-never edits a spec. Exit 1 when actionable drift exists.
-
-| Verdict        | Meaning                                                                           | Action                                                            |
-| -------------- | --------------------------------------------------------------------------------- | ----------------------------------------------------------------- |
-| `DIVERGENT`    | claims not-built, but its own named files have heavy topical commit traffic since | **Rebuild hazard.** Reconcile before doing anything the spec says |
-| `PHANTOM_OPEN` | every box in its acceptance ledger is checked, still in `active/`                 | Free close-out → `shipped/`                                       |
-| `LIKELY_DONE`  | body declares implemented/shipped/superseded, still in `active/`                  | Verify, then move                                                 |
-| `GHOST_PATHS`  | most named deliverables were **deleted** (existed once, gone now)                 | Spec is describing removed code — likely superseded               |
-| `WATCH`        | moderate topical traffic against a not-built claim                                | Inconclusive, glance at it                                        |
-| `NO_STATE`     | no status line and no ledger                                                      | State unknowable from the file; needs a read                      |
-
-**Adjudicate, don't auto-apply.** The detector shortlists; a human or agent
-decides. Two known false-positive modes:
-
-- **Homonyms.** Topic words match unrelated commits — `physical-merch-store`
-  matched "SvelteKit page _store_ migration", `error-boundary` matched
-  "svelte-check *error*s". Check that the sample commit subjects are really
-  about the spec.
-- **Broad paths.** A spec naming `src/lib/features/` inherits traffic from the
-  whole repo. The `N topical of M touching its paths` ratio exposes this — a low
-  topical fraction with `0 on named files` is weak evidence.
-
-Hand-maintained `remaining` prose can drift while code and ledgers advance.
-Treat detector output as evidence to adjudicate, not as an automatic status
-change.
-
-## `/queue claim` — Parallel Agent Safety
-
-When starting work on a spec, write a claim file:
-
-```
-docs/superpowers/specs/.claims/<spec-filename>.lock
-```
-
-Contents: `agent_id: <session-id>\nclaimed_at: <ISO timestamp>\ntask: <one-line description>`
-
-Before picking a spec, check for an existing `.lock` file. If one exists and is <2 hours old, skip to the next spec. If >2 hours old, treat as stale and overwrite.
-
-On session end or task completion, delete the lock file.
-
-## When Done — Completion Handoff
-
-After finishing work on a spec:
-
-1. Run `npm run check` — must pass
-2. Update the spec's `remaining` field to reflect what's left (or clear it if done)
-3. If all remaining work is done:
-   - `git mv` the spec to `shipped/`
-   - Delete any `.claims/` lock file
-   - Update `last_triaged` to today
-4. If partially done:
-   - Update `remaining` to describe the new resume point
-   - Update `last_triaged` to today
-   - Delete the `.claims/` lock file
-5. Commit all changes (spec move + code) in one commit
-
-## Frontmatter Schema
+## Frontmatter
 
 ```yaml
 ---
-status: backlog # active | backlog
-value: 4 # 1-5 (5 = highest user impact)
-effort: M # XS | S | M | L | XL
-remaining: "What's left"
-depends_on: "" # spec filename or "external: description"
-plan_path: "" # relative path to implementation plan
-tags: [] # domain tags for filtering
-last_triaged: <YYYY-MM-DD>
+status: backlog # active | backlog; matches directory
+value: null # integer 1-5, or null if unassessed
+effort: null # XS | S | M | L | XL, or null
+work_state: unverified
+remaining: "Inspect the current implementation against the acceptance criteria before planning changes."
+depends_on: "" # spec filename, repository-relative spec path, or "external: description"
+plan_path: "" # existing repository-relative implementation plan, or empty
+tags: []
+last_triaged: null # YYYY-MM-DD after review, or null
 ---
 ```
 
-**No `score` field.** Score is computed at read time: `value × effort_multiplier`.
+Score is computed at read time: value multiplied by XS=5, S=4, M=3, L=2, or XL=1. Score remaining effort, not the cost of already completed work. A score is a prioritization aid, not proof of readiness.
 
-## Scoring
+Internal dependencies must resolve to a shipped spec before the dependent entry can be selected. External dependencies hold the entry until their resolution is evidenced. Fix dangling links rather than guessing that a missing dependency shipped.
 
-Score = `value × effort_multiplier`. Higher = better ROI.
+## Parallel ownership
 
-| Effort | Multiplier | Example: value 4 |
-| ------ | ---------- | ---------------- |
-| XS     | 5          | 20               |
-| S      | 4          | 16               |
-| M      | 3          | 12               |
-| L      | 2          | 8                |
-| XL     | 1          | 4                |
+Before starting work, check `docs/superpowers/specs/.claims/<spec-filename>.lock`. Existing claims hold a spec out of automatic selection. Inspect the owner before taking over; age alone is not permission to overwrite another session's claim.
 
-Weights are intentionally steep: an XS task at value 3 (score 15) outranks an L task at value 4 (score 8). This matches the reality that small completable items deliver more value per session than ambitious starts.
+Create a claim atomically with the session ID, ISO timestamp, and task description. Remove only your own claim after completion or handoff. Worktree-local claims cannot provide a global lock across checkouts; inspect active work before claiming and use the project's existing coordination workflow.
 
-## Output Format (for `/queue list` only)
+## Completion and handoff
 
-```
-## ACTIVE (N specs)
-  Name                         | Remaining
+Run the checks appropriate to the change and the repository's integration gates. Documentation changes need metadata, reference, and diff checks. Product changes need their focused acceptance evidence; a successful type check is not feature verification.
 
-## TIER 1: CLOSE-OUTS (score 16+)
-  #  Score  Effort  Name                        Remaining
+Update `remaining`, `work_state`, and `last_triaged` whenever work completes or pauses. Include source paths, relevant commits, or recorded acceptance evidence for significant corrections. If the original spec describes shipped implementation, make the remaining verification or decision visible at the top.
 
-## TIER 2: QUICK WINS (score 12-15)
-  ...
-
-## TIER 3: STRATEGIC (score 8-11)
-  ...
-
-## TIER 4: DEFER (score <8)
-  ...
-
-## BLOCKED
-  Name                    Depends On
-
-## STALE (last_triaged >30 days)
-  Name              Last Triaged    Days Ago
-```
-
-Summary line: `N active, N backlog, N blocked, N stale. Top pick: [highest-score spec]`
-
-## New Spec Integration
-
-When writing a new spec via brainstorming:
-
-1. Save to `docs/superpowers/specs/backlog/YYYY-MM-DD-<topic>-design.md`
-2. Include frontmatter with all schema fields
-3. Set `last_triaged` to today's date
-4. Compute appropriate `value` and `effort` during brainstorming
-5. Set `plan_path` after the implementation plan is written
-
-## Remaining Refresh Trigger
-
-Update a spec's `remaining` field whenever:
-
-- A commit touches files that are deliverables of that spec
-- A `/queue triage` is run on the spec
-- Work on the spec completes or pauses
-
-The `remaining` field is the resume point for the next agent. It must be specific enough that a cold-start agent can pick up without re-reading the full spec.
-
-## Directory Layout
-
-```
-docs/superpowers/
-  specs/
-    shipped/    completed
-    active/     in-flight
-    backlog/    scored and ranked
-    archived/   superseded/rejected/shelved
-    .claims/    lock files for parallel safety
-  plans/
-    shipped/    active/    backlog/
-```
+Move to `shipped/` only when all scoped acceptance criteria are satisfied. Move to `archived/` only with a documented superseding decision. Update inbound spec/plan links and directory status when moving, preserve history, and remove only your own claim. Commit explicit owned paths under the repository workflow.

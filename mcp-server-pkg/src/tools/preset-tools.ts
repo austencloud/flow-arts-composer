@@ -12,7 +12,10 @@ import {
   ensureDataLoaded,
   saveAndOpenImage,
 } from "../shared/server-context.js";
-import { gridJoinSchema } from "../shared/grid-join-schema.js";
+import {
+  gridJoinLine,
+  gridJoinSchema,
+} from "../shared/grid-join-schema.js";
 import type { GridMode } from "../types/pictograph.js";
 import {
   buildSequenceFromLetters,
@@ -98,7 +101,7 @@ export function registerPresetTools(server: McpServer): void {
   // Tool: save_user_preset
   server.tool(
     "save_user_preset",
-    "Create or update a user sequence preset. Presets remember generation settings across sessions.",
+    "Create or update a user sequence preset. Presets remember generation settings across sessions, including an optional grid join (omitting conjoined means one grid).",
     {
       name: z.string().describe("Preset name (e.g., 'Comfy 16')"),
       description: z.string().optional().describe("Description of the preset"),
@@ -144,6 +147,12 @@ export function registerPresetTools(server: McpServer): void {
         .optional()
         .describe("Image cell size in pixels"),
       layout: z.enum(["grid", "strip"]).optional().describe("Image layout"),
+      conjoined: gridJoinSchema
+        .nullable()
+        .optional()
+        .describe(
+          "Remember a grid join (red's hand on a second grid beside blue's) so generate_with_preset draws it. Omitting conjoined leaves the preset's join as it is (none for a new preset, meaning one grid); null on an update removes it."
+        ),
       update: z
         .boolean()
         .optional()
@@ -283,7 +292,7 @@ export function registerPresetTools(server: McpServer): void {
   // Tool: generate_with_preset
   server.tool(
     "generate_with_preset",
-    "Generate a sequence using a saved preset. Word is optional - if omitted, generates a random word of appropriate length.",
+    "Generate a sequence using a saved preset. Word is optional - if omitted, generates a random word of appropriate length. Pass conjoined to draw each hand on its own joined grid; omitting conjoined means one grid, and the result echoes the join used.",
     {
       preset: z.string().describe("Preset name or ID"),
       word: z
@@ -327,7 +336,12 @@ export function registerPresetTools(server: McpServer): void {
         .describe(
           "Override left/right colors for every hand-colored card mark"
         ),
-      conjoined: gridJoinSchema.optional(),
+      conjoined: gridJoinSchema
+        .nullable()
+        .optional()
+        .describe(
+          "Override the preset's grid join for this run. Omitting conjoined uses the preset's join, or one grid if it has none; null forces one grid."
+        ),
       includeImage: z
         .boolean()
         .optional()
@@ -340,6 +354,8 @@ export function registerPresetTools(server: McpServer): void {
       try {
         const p = getPreset(input.preset);
         const config = p.config;
+        // An explicit input wins; null forces one grid; absent uses the preset.
+        const join = input.conjoined === undefined ? config.conjoined : input.conjoined;
 
         // Determine word - track if user specified it (affects bridge behavior)
         const userSpecifiedWord = !!input.word;
@@ -533,7 +549,7 @@ export function registerPresetTools(server: McpServer): void {
               rightPropType: input.rightPropType,
               fanAppearance: input.fanAppearance,
               primaryPropColors: input.primaryPropColors,
-              conjoined: input.conjoined,
+              conjoined: join,
             }
           );
 
@@ -551,7 +567,7 @@ export function registerPresetTools(server: McpServer): void {
               },
               {
                 type: "text" as const,
-                text: `${config.loopType} LOOP from preset "${p.name}" — ${loopResult.loopWord}, ${stepCount} beats`,
+                text: `${config.loopType} LOOP from preset "${p.name}" — ${loopResult.loopWord}, ${stepCount} beats${gridJoinLine(join, gridMode)}`,
               },
             ],
           };
@@ -643,7 +659,7 @@ export function registerPresetTools(server: McpServer): void {
           rightPropType: input.rightPropType,
           fanAppearance: input.fanAppearance,
           primaryPropColors: input.primaryPropColors,
-          conjoined: input.conjoined,
+          conjoined: join,
         });
 
         saveAndOpenImage(pngBuffer, sequenceWord);
@@ -660,7 +676,7 @@ export function registerPresetTools(server: McpServer): void {
             },
             {
               type: "text" as const,
-              text: `Preset "${p.name}" — ${sequenceWord}, ${steps.length} beats, level ${level}`,
+              text: `Preset "${p.name}" — ${sequenceWord}, ${steps.length} beats, level ${level}${gridJoinLine(join, gridMode)}`,
             },
           ],
         };

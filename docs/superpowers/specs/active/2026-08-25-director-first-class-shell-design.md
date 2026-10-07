@@ -1,3 +1,15 @@
+---
+status: active
+value: null
+effort: null
+work_state: unverified
+remaining: Verify the Director shell on both entry surfaces at seven viewports and resolve the signed-in save rule gap described in this design.
+depends_on: ''
+plan_path: ''
+tags: []
+last_triaged: '2026-10-07'
+---
+
 # Director First-Class Shell — Design
 
 **Date:** 2026-08-25

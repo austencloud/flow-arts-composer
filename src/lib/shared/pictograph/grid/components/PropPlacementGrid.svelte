@@ -6,13 +6,18 @@
 -->
 <script lang="ts">
   import { untrack } from "svelte";
+  import type { GridJoin } from "@tka/tka-types";
+  import { getGridJoinLayout, toJoinedHandPoint } from "@tka/render-core";
   import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
   import {
     GridLocation,
     GridMode,
   } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
   import type { PropPlacementChange } from "$lib/shared/pictograph/grid/domain/prop-placement";
-  import { getPlacementGridPoints } from "$lib/shared/pictograph/grid/services/placement-grid-points";
+  import {
+    getPlacementGridPoints,
+    type PlacementGridPoint,
+  } from "$lib/shared/pictograph/grid/services/placement-grid-points";
   import {
     buildPlacementPictographData,
     buildPlacementPrompt,
@@ -69,6 +74,11 @@
       left: GridLocation;
       right: GridLocation;
     } | null;
+    /**
+     * The sequence's grid join. Each hand then draws, and is placed and aimed,
+     * on its own grid. Absent or null keeps one grid for both hands.
+     */
+    gridJoin?: GridJoin | null;
     onChange?: (change: PropPlacementChange) => void;
     onPlacementComplete?: (leftLocation, rightLocation) => void;
     onOrientationChange?: (color: HandSide, orientation: Orientation) => void;
@@ -102,6 +112,7 @@
     showGuideLines = false,
     guideLineType,
     guideLineLocations = null,
+    gridJoin = null,
     onChange = () => {},
     onPlacementComplete,
     onOrientationChange,
@@ -118,6 +129,34 @@
 
   const triggerHaptic = () => hapticService?.trigger("selection");
   const activePoints = $derived(getPlacementGridPoints(gridMode, showCenter));
+  // Joined grids: each hand's points sit where the renderer draws that hand,
+  // on its own grid and shrunk with the joined fit (no expanded viewBox here,
+  // so the pictograph and this overlay share one 950-unit frame).
+  const joinLayout = $derived(
+    gridJoin ? getGridJoinLayout(gridJoin, gridMode) : null
+  );
+  const handPoints = $derived.by(
+    (): Record<HandSide, PlacementGridPoint[]> | null => {
+      const layout = joinLayout;
+      if (!layout) return null;
+      const onGrid = (hand: HandSide) =>
+        activePoints.map((point) => ({
+          ...point,
+          ...toJoinedHandPoint(layout, hand, point),
+        }));
+      return {
+        [HandSide.LEFT]: onGrid(HandSide.LEFT),
+        [HandSide.RIGHT]: onGrid(HandSide.RIGHT),
+      };
+    }
+  );
+  const pointScale = $derived(joinLayout?.scale ?? 1);
+  /** Draws a pictograph on the join's grids; one-grid data passes through. */
+  function withJoin<T extends PictographData>(data: T): T;
+  function withJoin<T extends PictographData>(data: T | null): T | null;
+  function withJoin<T extends PictographData>(data: T | null): T | null {
+    return gridJoin && data ? { ...data, conjoined: gridJoin } : data;
+  }
   const canAim = $derived(!disabled && onOrientationChange !== undefined);
 
   const placement = createPropPlacementState(
@@ -159,6 +198,7 @@
       getLeftPropType: () => leftPropType,
       getRightPropType: () => rightPropType,
       getBetaSwapped: () => betaSwapped,
+      getHandPoints: () => handPoints,
     },
     {
       triggerHaptic,
@@ -315,16 +355,18 @@
         : "var(--prop-blue)"}
       class:dragging-left={aim.locationDragColor === HandSide.LEFT}
       class:dragging-right={aim.locationDragColor === HandSide.RIGHT}
-      style:--placement-drag-x={`${aim.locationDragDelta.x}px`}
-      style:--placement-drag-y={`${aim.locationDragDelta.y}px`}
+      style:--placement-drag-x={`${aim.locationDragDelta.x / pointScale}px`}
+      style:--placement-drag-y={`${aim.locationDragDelta.y / pointScale}px`}
       bind:this={aim.gridWrapper}
     >
       <div class="pictograph-layer">
         <PictographContainer
-          pictographData={motion.step ??
-            (positionLetter !== undefined
-              ? { ...pictographData, letter: positionLetter }
-              : pictographData)}
+          pictographData={withJoin(
+            motion.step ??
+              (positionLetter !== undefined
+                ? { ...pictographData, letter: positionLetter }
+                : pictographData)
+          )}
           gridMode={previewPictographData ? null : gridMode}
           showTKA={positionLetter !== undefined
             ? true
@@ -342,7 +384,7 @@
           cellIndex={null}
           leftPropTypeOverride={leftPropType}
           rightPropTypeOverride={rightPropType}
-          motionStartData={motion.startData}
+          motionStartData={withJoin(motion.startData)}
           motionProgress={motion.active ? motion.progress : null}
           arrowOpacity={motion.active ? 0 : 1}
         />
@@ -360,6 +402,8 @@
         {guideLineType}
         {guideCoordinates}
         {gammaArc}
+        {handPoints}
+        {pointScale}
       />
     </div>
   </div>

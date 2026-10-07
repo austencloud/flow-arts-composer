@@ -1,3 +1,14 @@
+---
+status: active
+value: null
+effort: null
+remaining: "Verify email opt-in routing, notification preference persistence, and queue decisions against current code."
+depends_on: ""
+plan_path: ""
+tags: []
+last_triaged: 2026-10-07
+work_state: unverified
+---
 # Notification Delivery Preferences
 
 **Status:** Approved for implementation in feedback `F4vf4hSnNHqJiqGzdIxf`

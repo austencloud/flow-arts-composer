@@ -1,3 +1,15 @@
+---
+status: active
+value: null
+effort: null
+work_state: unverified
+remaining: Audit shared prop selection across picker, profile, and Viewer; run exact family-art and Buugeng chirality checks.
+depends_on: ''
+plan_path: ''
+tags: []
+last_triaged: '2026-10-07'
+---
+
 # Prop Selection Unification
 
 ## Outcome

@@ -21,6 +21,11 @@ export enum BrowseFilterType {
    * the human creator shown on cards. */
   OWNER = "owner",
   GRID_MODE = "gridMode",
+  /** Joined grids (blue's hand on one grid, red's on a second beside it) or
+   * one grid. Values come from GridJoinFilterValue. A sequence is joined when
+   * `sequenceGridJoin(seq)` returns a join. Stackable like GRID_MODE: both
+   * values selected means "either". */
+  GRID_JOIN = "gridJoin",
   STARTING_PLACEMENT = "startPlacement",
   END_PLACEMENT = "endPlacement",
   RECENT = "recent",
@@ -51,4 +56,10 @@ export enum BrowseFilterType {
    * "book", "red-book", … A sequence with no stored reversalPattern is treated
    * as "continuous" (matches the app-wide reversal display policy). One-per-type. */
   REVERSAL_PATTERN = "reversal_pattern",
+}
+
+/** The two choices of the GRID_JOIN filter. */
+export enum GridJoinFilterValue {
+  JOINED = "joined",
+  SINGLE = "single",
 }

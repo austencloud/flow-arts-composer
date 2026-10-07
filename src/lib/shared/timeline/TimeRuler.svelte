@@ -23,6 +23,9 @@
     /** Extra class(es) on the root, for a caller that needs to position or
      *  size the ruler beyond the default 100% width/height. */
     class?: string;
+    /** Labels under the time labels at times of the caller's choosing, such
+     *  as a song's bar numbers. Laid out like the ticks, in the same unit. */
+    marks?: readonly { seconds: number; label: string }[];
   }
 
   let {
@@ -32,6 +35,7 @@
     tickInterval,
     offsetSeconds = 0,
     class: className,
+    marks = [],
   }: Props = $props();
 
   // Calculate appropriate tick interval based on zoom
@@ -103,6 +107,11 @@
       {/if}
     </div>
   {/each}
+  {#each marks as mark (mark.seconds)}
+    <span class="mark" style="left: {mark.seconds * pixelsPerSecond}px"
+      >{mark.label}</span
+    >
+  {/each}
 </div>
 
 <style>
@@ -146,5 +155,17 @@
     transform: translateX(-50%);
     font-variant-numeric: tabular-nums;
     font-weight: 500;
+  }
+
+  .mark {
+    position: absolute;
+    top: 22px;
+    font-size: var(--font-size-compact);
+    color: var(--ruler-mark-color, var(--theme-accent));
+    white-space: nowrap;
+    transform: translateX(-50%);
+    font-variant-numeric: tabular-nums;
+    font-weight: 600;
+    pointer-events: none;
   }
 </style>

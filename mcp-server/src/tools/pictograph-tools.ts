@@ -18,13 +18,18 @@ import {
   saveAndOpenImage,
   type UserPreferences,
 } from "../shared/server-context.js";
-import { gridJoinSchema } from "../shared/grid-join-schema.js";
+import {
+  describeGridJoin,
+  effectiveGridJoin,
+  gridJoinLine,
+  gridJoinSchema,
+} from "../shared/grid-join-schema.js";
 
 export function registerPictographTools(server: McpServer): void {
   // Tool: generate_pictograph_url
   server.tool(
     "generate_pictograph_url",
-    "Generate a URL to render a pictograph image. Use with Playwright to navigate and screenshot, or provide to user. The dev server must be running at localhost:5173.",
+    "Generate a URL to render a pictograph image. Use with Playwright to navigate and screenshot, or provide to user. The dev server must be running at localhost:5173. The URL format has no grid join, so this tool takes no conjoined option; to see a pictograph on joined grids use generate_pictograph or view_pictograph with conjoined.",
     {
       letter: z.string().describe("The letter to render (A-Z or Greek)"),
       variation: z
@@ -95,7 +100,7 @@ export function registerPictographTools(server: McpServer): void {
   // Tool: generate_pictograph
   server.tool(
     "generate_pictograph",
-    "Generate a pictograph PNG image directly in Node.js. Uses current preferences unless overridden. Returns base64-encoded image.",
+    "Generate a pictograph PNG image directly in Node.js. Uses current preferences unless overridden. Returns base64-encoded image. Pass conjoined to draw each hand on its own joined grid; omitting conjoined means one grid, and the result echoes the join used.",
     {
       letter: z
         .string()
@@ -293,8 +298,14 @@ export function registerPictographTools(server: McpServer): void {
 **Placement:** ${csvRow.startPlacement} → ${csvRow.endPlacement}
 
 **Left-hand motion:** ${leftMotionDesc}
-**Right-hand motion:** ${rightMotionDesc}`;
+**Right-hand motion:** ${rightMotionDesc}${gridJoinLine(conjoined)}`;
           content.push({ type: "text" as const, text: motionData });
+        } else if (effectiveGridJoin(conjoined)) {
+          // Image-only mode still says which join was drawn.
+          content.push({
+            type: "text" as const,
+            text: describeGridJoin(conjoined),
+          });
         }
 
         content.push({
@@ -323,7 +334,7 @@ export function registerPictographTools(server: McpServer): void {
   // Tool: view_pictograph
   server.tool(
     "view_pictograph",
-    "Generate a pictograph and open it in the system image viewer. Returns only confirmation text - NO image data returned. Use this when the USER needs to see the pictograph but Claude doesn't need to analyze it. Saves ~15-30k tokens compared to generate_pictograph.",
+    "Generate a pictograph and open it in the system image viewer. Returns only confirmation text - NO image data returned. Use this when the USER needs to see the pictograph but Claude doesn't need to analyze it. Saves ~15-30k tokens compared to generate_pictograph. Pass conjoined to draw each hand on its own joined grid; omitting conjoined means one grid, and the result echoes the join used.",
     {
       letter: z
         .string()
@@ -487,7 +498,7 @@ export function registerPictographTools(server: McpServer): void {
           content: [
             {
               type: "text" as const,
-              text: `Opened ${letter} (variation ${variation}) in system viewer.\nPlacement: ${csvRow.startPlacement} → ${csvRow.endPlacement}\nFile: ${tempPath}`,
+              text: `Opened ${letter} (variation ${variation}) in system viewer.\nPlacement: ${csvRow.startPlacement} → ${csvRow.endPlacement}${gridJoinLine(conjoined)}\nFile: ${tempPath}`,
             },
           ],
         };

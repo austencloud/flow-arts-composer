@@ -1,3 +1,14 @@
+---
+status: active
+value: null
+effort: null
+remaining: "Verify print cache reuse, key isolation, failed-build retry, and preview responsiveness in Deck Releaser."
+depends_on: ""
+plan_path: ""
+tags: []
+last_triaged: 2026-10-07
+work_state: unverified
+---
 # Deck Releaser print speed and layout
 
 **Date:** 2026-08-11

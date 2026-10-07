@@ -1,4 +1,18 @@
+---
+status: active
+value: null
+effort: null
+work_state: blocked
+remaining: Get Austen's decision to promote mandala Explore visibility past DEV, then verify the public route.
+depends_on: 'external: Austen promotion decision for mandala Explore visibility'
+plan_path: ''
+tags: []
+last_triaged: '2026-10-07'
+---
+
 # Phase 5A Implementation Plan — Mandala Publication Adapter
+
+**Queue evidence, 2026-10-07:** The implementation ledger is checked except the Austen decision to promote Explore visibility past DEV. Keep this gate open.
 
 **Date:** 2026-08-25
 **Parent charter:** `../2026-08-21-browse-explore-you-public-contributions-design.md`

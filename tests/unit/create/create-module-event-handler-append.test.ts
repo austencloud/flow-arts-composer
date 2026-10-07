@@ -20,6 +20,7 @@ import {
 import { createMotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
 import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
 import { buildAppendedOptionSequence } from "$lib/features/create/construct/option-picker/services/build-appended-option-sequence";
+import { gridJoinCellResolver } from "@tka/render-core";
 
 const PLACEMENT_BY_LOCATION = {
   [GridLocation.NORTH]: GridPlacement.BETA1,
@@ -149,5 +150,33 @@ describe("CreateModuleEventHandler option append", () => {
 
     expect(updates).toHaveLength(1);
     expect(current!.steps).toHaveLength(4);
+  });
+
+  it("keeps a joined option tile's display join off the stored step", async () => {
+    // The option picker draws each tile on the sequence's join by stamping
+    // `conjoined` on the tile's data. Picking it must store a plain step: the
+    // join belongs to the sequence alone.
+    const handler = new CreateModuleEventHandler();
+    const join = { toward: "e", steps: 1 } as const;
+    let current: SequenceData = { ...sequenceFixture(), conjoined: join };
+    handler.setSequenceStateCallbacks(
+      () => current,
+      (sequence) => {
+        current = sequence;
+      }
+    );
+
+    const tile = gridJoinCellResolver({ conjoined: join })(
+      pictograph("four", GridLocation.WEST, GridLocation.NORTH)
+    );
+    expect(tile.conjoined).toEqual(join);
+
+    const audition = buildAppendedOptionSequence(current, tile);
+    expect(audition.sequence.steps.at(-1)).not.toHaveProperty("conjoined");
+
+    await handler.handleOptionSelected(tile);
+    expect(current.steps).toHaveLength(4);
+    expect(current.steps.at(-1)).not.toHaveProperty("conjoined");
+    expect(current.conjoined).toEqual(join);
   });
 });

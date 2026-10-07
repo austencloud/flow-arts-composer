@@ -1,3 +1,15 @@
+---
+status: active
+value: null
+effort: null
+work_state: unverified
+remaining: Verify ratio reduction, Farey-9 catalog, closure, animation seams, and Shape Matrix integration.
+depends_on: ''
+plan_path: ''
+tags: []
+last_triaged: '2026-10-07'
+---
+
 # Rational Ratio Theory Atlas
 
 **Status:** Approved for implementation  

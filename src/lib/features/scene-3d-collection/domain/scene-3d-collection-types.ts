@@ -1,4 +1,6 @@
 import { z } from "zod";
+import type { GridJoin } from "@tka/tka-types";
+import { isGridJoin } from "@tka/render-core";
 import { StepDataSchema } from "$lib/shared/foundation/domain/schemas";
 import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
 import type { CameraStateSnapshot } from "@austencloud/scene-3d";
@@ -120,6 +122,10 @@ export interface Collected3DScene {
   /** Present → opening reproduces the exact performance in the scene. Absent →
    *  the entry is a reusable "look" applied to whatever sequence is opened. */
   steps?: StepData[];
+  /** The grid join the performance was made under (blue's hand on one grid,
+   *  red's on a second beside it). Saved with `steps` only; absent means one
+   *  grid, which is also how entries saved before joins read. */
+  conjoined?: GridJoin;
   /** Lineage stamp — the source sequence's simplified word (never a raw
    *  repeated word; see simplifyRepeatedWord) and, when known at save time,
    *  its library id. Optional: old entries simply lack them. */
@@ -270,6 +276,8 @@ export const Collected3DSceneSchema = z.object({
   updatedAt: z.any().optional(),
   snapshot: Scene3DSnapshotSchema,
   steps: z.array(StepDataSchema).optional(),
+  // A malformed stored join reads as one grid instead of failing the entry.
+  conjoined: z.custom<GridJoin>(isGridJoin).optional().catch(undefined),
   sourceWord: z.string().optional(),
   sourceSequenceId: z.string().optional(),
   film: Scene3DFilmSchema.optional(),

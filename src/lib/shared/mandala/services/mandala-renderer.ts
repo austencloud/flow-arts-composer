@@ -20,6 +20,10 @@ import {
 import { DEFAULT_OVERLAP_CONFIG } from "../domain/mandala-types";
 import type { MandalaPaths, MandalaRenderOptions } from "../domain/mandala-types";
 import { compositeMandalaOverlap } from "./mandala-overlap-compositor";
+import {
+	mandalaJoinReach,
+	type MandalaHandOffsets,
+} from "./mandala-grid-join";
 
 let maskIdCounter = 0;
 
@@ -203,10 +207,42 @@ function pathCoordinateExtent(d: string): number {
 }
 
 /**
+ * The joined-grid hand offsets a render applies: only when both hands show,
+ * since a one-hand view keeps its figure centered.
+ */
+function joinedHandOffsets(
+	options: Pick<MandalaRenderOptions, "show" | "handOffsets">
+): MandalaHandOffsets | null {
+	return options.show === "both" ? (options.handOffsets ?? null) : null;
+}
+
+/** `<g>` that moves a hand's paths onto its own grid; "" when unmoved. */
+function handGroupOpen(offset: { x: number; y: number } | undefined): string {
+	return offset
+		? `<g transform="translate(${offset.x.toFixed(2)}, ${offset.y.toFixed(2)})">`
+		: "";
+}
+
+function handGroupClose(offset: { x: number; y: number } | undefined): string {
+	return offset ? "</g>" : "";
+}
+
+/**
  * Preserve the established scale for ordinary mandalas, but make room when a
  * prop's real traced points extend farther than the standard staff-sized fit.
+ * Joined grids add how far the pair reaches past one figure.
  */
 export function resolveMandalaRenderExtent(
+	paths: MandalaPaths,
+	options: Pick<MandalaRenderOptions, "show" | "tipDx" | "handOffsets">
+): number {
+	return (
+		resolveFigureExtent(paths, options) +
+		mandalaJoinReach(joinedHandOffsets(options))
+	);
+}
+
+function resolveFigureExtent(
 	paths: MandalaPaths,
 	options: Pick<MandalaRenderOptions, "show" | "tipDx">
 ): number {
@@ -255,6 +291,9 @@ export function renderMandalaSVG(paths: MandalaPaths, options: MandalaRenderOpti
 	const uid = maskIdCounter++;
 	const needsMask = show === "both" && paths.left.length > 0 && paths.right.length > 0;
 	const ov = options.overlap ?? DEFAULT_OVERLAP_CONFIG;
+	const offsets = joinedHandOffsets(options);
+	const leftOffset = offsets?.left;
+	const rightOffset = offsets?.right;
 
 	parts.push(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${size} ${size}" width="100%" height="100%" overflow="hidden">`);
 	parts.push(`  <defs>`);
@@ -272,7 +311,7 @@ export function renderMandalaSVG(paths: MandalaPaths, options: MandalaRenderOpti
 		parts.push(`      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>`);
 		parts.push(`    </filter>`);
 		parts.push(`    <mask id="bom${uid}" maskUnits="userSpaceOnUse" x="${(-featherExtent).toFixed(2)}" y="${(-featherExtent).toFixed(2)}" width="${(featherExtent * 2).toFixed(2)}" height="${(featherExtent * 2).toFixed(2)}">`);
-		parts.push(`      <g filter="url(#feather${uid})">`);
+		parts.push(`      <g filter="url(#feather${uid})">${handGroupOpen(leftOffset)}`);
 		for (const pathData of paths.left) {
 			if (style === "filled") {
 				const sw = (strokeWidth * 0.6).toFixed(2);
@@ -281,7 +320,7 @@ export function renderMandalaSVG(paths: MandalaPaths, options: MandalaRenderOpti
 				parts.push(`        <path d="${pathData.d}" fill="none" stroke="white" stroke-width="${strokeWidth}" stroke-linecap="round"/>`);
 			}
 		}
-		parts.push(`      </g>`);
+		parts.push(`      ${handGroupClose(leftOffset)}</g>`);
 		parts.push(`    </mask>`);
 	}
 
@@ -319,21 +358,25 @@ export function renderMandalaSVG(paths: MandalaPaths, options: MandalaRenderOpti
 	const rightColor = options.gradient ? `url(#gRed${uid})` : palette.rightStroke;
 
 	if (show === "left" || show === "both") {
+		if (leftOffset) parts.push(`    ${handGroupOpen(leftOffset)}`);
 		for (const pathData of paths.left) {
 			const attrs = style === "filled"
 				? filledAttributes(leftColor, palette.leftFill, strokeWidth)
 				: strokeAttributes(leftColor, strokeWidth);
 			parts.push(`    <path d="${pathData.d}" ${attrs}/>`);
 		}
+		if (leftOffset) parts.push(`    ${handGroupClose(leftOffset)}`);
 	}
 
 	if (show === "right" || show === "both") {
+		if (rightOffset) parts.push(`    ${handGroupOpen(rightOffset)}`);
 		for (const pathData of paths.right) {
 			const attrs = style === "filled"
 				? filledAttributes(rightColor, palette.rightFill, strokeWidth)
 				: strokeAttributes(rightColor, strokeWidth);
 			parts.push(`    <path d="${pathData.d}" ${attrs}/>`);
 		}
+		if (rightOffset) parts.push(`    ${handGroupClose(rightOffset)}`);
 	}
 
 	if (needsMask) {
@@ -341,18 +384,18 @@ export function renderMandalaSVG(paths: MandalaPaths, options: MandalaRenderOpti
 		const purpleCore = style === "filled"
 			? `fill="${palette.purpleFill}" stroke="${purpleColor}" stroke-width="${(strokeWidth * 0.6).toFixed(2)}" stroke-linecap="round"`
 			: `fill="none" stroke="${purpleColor}" stroke-width="${strokeWidth}" stroke-linecap="round"`;
-		parts.push(`    <g mask="url(#bom${uid})" opacity="${ov.coreOpacity}">`);
+		parts.push(`    <g mask="url(#bom${uid})" opacity="${ov.coreOpacity}">${handGroupOpen(rightOffset)}`);
 		for (const pathData of paths.right) {
 			parts.push(`      <path d="${pathData.d}" ${purpleCore}/>`);
 		}
-		parts.push(`    </g>`);
+		parts.push(`    ${handGroupClose(rightOffset)}</g>`);
 
 		const bloomWidth = style === "filled" ? strokeWidth : strokeWidth * ov.bloomWidth;
-		parts.push(`    <g mask="url(#bom${uid})" filter="url(#bloom${uid})" opacity="${ov.bloomOpacity}">`);
+		parts.push(`    <g mask="url(#bom${uid})" filter="url(#bloom${uid})" opacity="${ov.bloomOpacity}">${handGroupOpen(rightOffset)}`);
 		for (const pathData of paths.right) {
 			parts.push(`      <path d="${pathData.d}" fill="none" stroke="${purpleColor}" stroke-width="${bloomWidth}" stroke-linecap="round"/>`);
 		}
-		parts.push(`    </g>`);
+		parts.push(`    ${handGroupClose(rightOffset)}</g>`);
 	}
 
 	parts.push(`  </g>`);
@@ -405,7 +448,27 @@ export function renderMandalaToCanvas(
 	const glowLeft = glow ? (scratchFits ? sc!.a : new OffscreenCanvas(w, h)) : null;
 	const glowRight = glow ? (scratchFits ? sc!.b : new OffscreenCanvas(w, h)) : null;
 
+	const offsets = joinedHandOffsets(options);
+
 	const paintColor = (
+		layerPaths: { d: string }[],
+		solidStroke: string,
+		fillColor: string,
+		gradientPair: [string, string] | undefined,
+		glowCanvas: OffscreenCanvas | null,
+		offset: { x: number; y: number } | undefined,
+	): void => {
+		// A joined hand's figure moves onto its own grid. The glow pass copies
+		// this transform, so the glow layer moves with it.
+		if (offset) {
+			ctx.save();
+			ctx.translate(offset.x, offset.y);
+		}
+		paintLayer(layerPaths, solidStroke, fillColor, gradientPair, glowCanvas);
+		if (offset) ctx.restore();
+	};
+
+	const paintLayer = (
 		layerPaths: { d: string }[],
 		solidStroke: string,
 		fillColor: string,
@@ -437,10 +500,10 @@ export function renderMandalaToCanvas(
 	};
 
 	if (show === "left" || show === "both") {
-		paintColor(paths.left, palette.leftStroke, palette.leftFill, gradient?.left, glowLeft);
+		paintColor(paths.left, palette.leftStroke, palette.leftFill, gradient?.left, glowLeft, offsets?.left);
 	}
 	if (show === "right" || show === "both") {
-		paintColor(paths.right, palette.rightStroke, palette.rightFill, gradient?.right, glowRight);
+		paintColor(paths.right, palette.rightStroke, palette.rightFill, gradient?.right, glowRight, offsets?.right);
 	}
 
 	if (show === "both" && paths.left.length > 0 && paths.right.length > 0) {
@@ -469,6 +532,10 @@ export function renderMandalaToCanvas(
 
 		bC.setTransform(transform);
 		rC.setTransform(transform);
+		if (offsets) {
+			bC.translate(offsets.left.x, offsets.left.y);
+			rC.translate(offsets.right.x, offsets.right.y);
+		}
 
 		for (const p of paths.left) {
 			drawMaskPath(bC, p.d, style, strokeWidth);

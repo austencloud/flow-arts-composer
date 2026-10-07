@@ -1,13 +1,15 @@
 ---
-status: active
+status: backlog
 value: 2
 effort: L
-remaining: 'Dependency stub; entire program unbuilt. No LessonMediaRequest or video-inventory anywhere; consuming page still on StaffSpinningChoreographyDraft.svelte.'
-depends_on: ""
-plan_path: ""
+remaining: Current source has no LessonMediaRequest or video inventory; design and implement the VIDEO-001 media production contract before lesson integration.
+depends_on: ''
+plan_path: ''
 tags: []
-last_triaged: 2026-08-02
+last_triaged: '2026-10-07'
+work_state: ready
 ---
+
 # VIDEO-001: TKA Video Production System
 
 **Date:** 2026-07-27  

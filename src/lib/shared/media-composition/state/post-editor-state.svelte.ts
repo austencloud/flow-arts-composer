@@ -67,11 +67,6 @@ import {
   type TakeClock,
 } from "$lib/shared/media-composition/services/frame-evaluator";
 import {
-  openPostProject,
-  backupPostProjectBeforeImport,
-  savePostProject,
-} from "$lib/shared/media-composition/services/post-project-store";
-import {
   projectDraftRecord,
   resolvePostStudioDraft,
 } from "$lib/shared/media-composition/services/post-project-backup";
@@ -79,16 +74,13 @@ import { normalizeProject } from "$lib/shared/media-composition/domain/post-proj
 import { bridgeLockedChange } from "$lib/shared/media-composition/domain/post-project-bridge-guard";
 import {
   catalogTakeKey,
-  loadTakeTiming,
   localTakeKey,
-  openTakeTiming,
-  saveTakeTiming,
 } from "$lib/shared/media-composition/services/take-timing-store";
+import type { PostTimingEffect } from "$lib/shared/media-composition/services/post-editor-history-store";
 import {
-  loadPostEditorHistory,
-  savePostEditorHistory,
-  type PostTimingEffect,
-} from "$lib/shared/media-composition/services/post-editor-history-store";
+  devicePostEditorStore,
+  type PostEditorStore,
+} from "$lib/shared/media-composition/services/post-editor-store";
 import { deepEqual } from "$lib/shared/sequence-viewer/services/viewer-url-state-codec";
 
 /**
@@ -97,8 +89,9 @@ import { deepEqual } from "$lib/shared/sequence-viewer/services/viewer-url-state
  * canvas, the timeline, the inspector and the export all read it, so an edit
  * in one shows in all of them.
  *
- * Nothing here touches Firestore. The project and the timings save on this
- * device as they change, and the undo history is kept in the tab, so Undo
+ * Nothing here touches Firestore. The project and the timings save through
+ * the editor's store as they change: this device by default, or a feature
+ * video's folder on disk. The undo history is kept in the tab, so Undo
  * still works after a reload.
  */
 
@@ -143,6 +136,11 @@ export interface PostEditorDeps {
   getCatalogVideo?: (videoId: string) => CatalogTakeSource | null;
   /** True when a painter can draw the beat overlay on animation items. */
   hasAnimationOverlay?: () => boolean;
+  /**
+   * Where the post, its timings and its undo history are kept: this
+   * device's storage unless a feature video passes its own.
+   */
+  store?: PostEditorStore;
   now?: () => number;
 }
 
@@ -154,6 +152,7 @@ export type PostEdit = (
 
 export function createPostEditorState(deps: PostEditorDeps) {
   const now = deps.now ?? (() => Date.now());
+  const store = deps.store ?? devicePostEditorStore;
   const context = (): EditContext => ({ now: now() });
   const sequence = $derived(deps.getSequence());
   const moveBeats = $derived(sequence.steps.map((step) => step.duration ?? 1));
@@ -163,14 +162,14 @@ export function createPostEditorState(deps: PostEditorDeps) {
     initialProject.success && initialProject.data.sequenceId === sequence.id
       ? // A post saved with its opening as a separate item opens as one item.
         normalizeProject(initialProject.data)
-      : openPostProject(sequence.id, now())
+      : store.openProject(sequence.id, now())
   );
   // History keeps its original objects; saved copies must still be newer
   // than the edit that undo, session cancellation, or import replaces.
   let savedUpdatedAt = project.updatedAt;
   // A reload in this tab brings back the undo history, but only when this is
   // the very save it led up to.
-  const restoredHistory = loadPostEditorHistory(project);
+  const restoredHistory = store.loadHistory(project);
   let past = $state.raw<PostProject[]>(
     restoredHistory?.past.map((entry) => entry.project) ?? []
   );
@@ -363,7 +362,7 @@ export function createPostEditorState(deps: PostEditorDeps) {
   ): void {
     savedUpdatedAt = Math.max(now(), project.updatedAt, savedUpdatedAt + 1);
     const snapshot = snapshotFor(project);
-    const result = savePostProject(snapshot);
+    const result = store.saveProject(snapshot);
     saveRevision += 1;
     saveError = !result.ok
       ? `Post Studio could not save this post: ${result.error}`
@@ -399,7 +398,7 @@ export function createPostEditorState(deps: PostEditorDeps) {
       return effect ? { project: step, effect } : { project: step };
     };
     const headEffect = timingEffects.get(pending.headProject);
-    savePostEditorHistory({
+    store.saveHistory({
       head: pending.head,
       ...(headEffect ? { headEffect } : {}),
       past: pending.past.map(entry),
@@ -647,7 +646,7 @@ export function createPostEditorState(deps: PostEditorDeps) {
     legacy?: StepMap,
     sourceProject: PostProject = project
   ): TakeTiming {
-    const saved = loadTakeTiming(sequence.id, take.takeKey);
+    const saved = store.loadTiming(sequence.id, take.takeKey);
     const embedded = sourceProject.timings?.[take.id];
     const validEmbedded =
       embedded?.sequenceId === sequence.id &&
@@ -673,11 +672,11 @@ export function createPostEditorState(deps: PostEditorDeps) {
         now: now(),
       });
       if (seeded) {
-        saveTakeTiming(seeded);
+        store.saveTiming(seeded);
         return seeded;
       }
     }
-    return openTakeTiming({
+    return store.openTiming({
       sequenceId: sequence.id,
       takeKey: take.takeKey,
       durationSeconds: take.durationSeconds,
@@ -733,7 +732,7 @@ export function createPostEditorState(deps: PostEditorDeps) {
         if (video) attach(take, video.url, false, video.legacyStepMap);
         else if (
           project.timings?.[take.id] ||
-          loadTakeTiming(sequence.id, take.takeKey)
+          store.loadTiming(sequence.id, take.takeKey)
         ) {
           timings = { ...timings, [take.id]: openTiming(take) };
         }
@@ -791,7 +790,7 @@ export function createPostEditorState(deps: PostEditorDeps) {
       }
     }
     // Preserve the old post before changing the project or its loaded media.
-    backupPostProjectBeforeImport(snapshotFor(project));
+    store.backupBeforeImport(snapshotFor(project));
     const retained: Record<string, TakeTiming> = {};
     for (const take of parsed.takes) {
       const existing = timings[take.id];
@@ -845,8 +844,14 @@ export function createPostEditorState(deps: PostEditorDeps) {
    * post never drift apart. It joins the undo history like an edit but is
    * not saved again: the other tab already saved it. A copy that needs a
    * video only the other tab holds (a file picked there) is left alone.
+   *
+   * A feature video passes `evenIfOlder`: its copy on disk wins even when
+   * this editor's edits are later, and Undo brings those edits back.
    */
-  function adoptSaved(next: PostProject): boolean {
+  function adoptSaved(
+    next: PostProject,
+    options: { evenIfOlder?: boolean } = {}
+  ): boolean {
     if (gestureBase || session) return false;
     const parsed = PostProjectSchema.safeParse(next);
     if (
@@ -854,7 +859,8 @@ export function createPostEditorState(deps: PostEditorDeps) {
       parsed.data.sequenceId !== project.sequenceId ||
       // This tab's own saves carry savedUpdatedAt, so only a later save from
       // somewhere else gets through.
-      parsed.data.updatedAt <= Math.max(project.updatedAt, savedUpdatedAt)
+      (!options.evenIfOlder &&
+        parsed.data.updatedAt <= Math.max(project.updatedAt, savedUpdatedAt))
     )
       return false;
     const incoming = parsed.data;
@@ -945,6 +951,8 @@ export function createPostEditorState(deps: PostEditorDeps) {
       ...normalized,
       updatedAt: Math.max(now(), project.updatedAt + 1, normalized.updatedAt),
     });
+    // A take added through the bridge plays straight away.
+    loadSavedMedia();
     return { ok: true };
   }
 
@@ -1322,7 +1330,7 @@ export function createPostEditorState(deps: PostEditorDeps) {
       timingRedo = { ...timingRedo, [takeId]: [] };
     }
     timings = { ...timings, [takeId]: next };
-    const result = saveTakeTiming(next);
+    const result = store.saveTiming(next);
     persistProject(result);
   }
 

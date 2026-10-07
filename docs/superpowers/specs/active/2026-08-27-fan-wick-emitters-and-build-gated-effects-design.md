@@ -1,7 +1,19 @@
+---
+status: active
+value: null
+effort: null
+work_state: verification
+remaining: Verify build-aware emitters, per-performer build, and auto-equip against the shipped code and visual acceptance.
+depends_on: ''
+plan_path: ''
+tags: []
+last_triaged: '2026-10-07'
+---
+
 # Fan Wick Emitters and Build-Gated Effects
 
 **Date:** 2026-08-27
-**Status:** Shipped 2026-08-27. Phase 1 (build-aware emitters) and Phase 2
+**Status:** Implemented in 2026-08-27; current acceptance verification pending. Phase 1 (build-aware emitters) and Phase 2
 (per-performer build) landed earlier; Phase 3 (auto-equip) landed in
 `2b04dcd094`.
 

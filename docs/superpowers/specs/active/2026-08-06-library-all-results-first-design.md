@@ -1,3 +1,14 @@
+---
+status: active
+value: null
+effort: null
+remaining: "Verify library date normalization, recent filtering and sorting, and all-results-first UI against current browse code and runtime."
+depends_on: ""
+plan_path: ""
+tags: []
+last_triaged: 2026-10-07
+work_state: unverified
+---
 # Library All: Results First
 
 **Date:** 2026-08-06  

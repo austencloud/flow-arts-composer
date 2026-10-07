@@ -745,5 +745,8 @@
   "viewer_sequence_viewer": "Программа просмотра последовательностей",
   "viewer_share": "Поделиться",
   "viewer_unnamed_sequence": "Безымянная последовательность",
-  "visibility_animation": "Анимация"
+  "visibility_animation": "Анимация",
+  "color_cool_colors": "Холодные цвета",
+  "color_warm_colors": "Тёплые цвета",
+  "color_neutral_colors": "Нейтральные цвета"
 }

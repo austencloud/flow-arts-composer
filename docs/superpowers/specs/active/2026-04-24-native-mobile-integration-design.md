@@ -2,11 +2,12 @@
 status: active
 value: 5
 effort: XL
-remaining: 'Android + deep links + Capgo OTA + native Google sign-in shipped; no ios/ dir at all, no store listings, no SQLite/share/BLE/NFC'
+remaining: "Verify TKA Composer — Native Mobile Integration Design Spec against the current TKA Composer — Native Mobile Integration Design Spec runtime and acceptance criteria before resuming implementation. Prior recorded remainder: 'Android + deep links + Capgo OTA + native Google sign-in shipped; no ios/ dir at all, no store listings, no SQLite/share/BLE/NFC'"
 depends_on: ""
 plan_path: ""
 tags: []
-last_triaged: 2026-08-02
+last_triaged: 2026-10-07
+work_state: unverified
 ---
 # TKA Composer — Native Mobile Integration Design Spec
 

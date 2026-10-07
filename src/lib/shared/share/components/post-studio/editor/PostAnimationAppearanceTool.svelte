@@ -30,6 +30,7 @@
   import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
   import {
     normalizePropLook,
+    versionAfterPick,
     type PropLook,
   } from "$lib/shared/pictograph/prop/domain/prop-look";
   import { getSettings } from "$lib/shared/application/state/app-state.svelte";
@@ -455,8 +456,15 @@
             <BentoPropGrid
               selectedPropType={pickedPropType ?? defaultPropType}
               onSelect={(propType, look) => {
+                // A version belongs to the pick, so a different prop that
+                // names none starts at Version 1.
+                pickedPropLook = versionAfterPick(
+                  pickedPropType ?? defaultPropType,
+                  pickedPropLook,
+                  propType,
+                  look
+                );
                 pickedPropType = propType;
-                if (look !== undefined) pickedPropLook = look;
                 save();
               }}
               propLook={pickedPropLook}

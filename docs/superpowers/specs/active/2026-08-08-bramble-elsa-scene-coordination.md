@@ -1,3 +1,14 @@
+---
+status: active
+value: null
+effort: null
+remaining: "Resolve the open Bramble-to-Elsa and Fathom coordination entries against later scene work; record which handoffs remain actionable."
+depends_on: ""
+plan_path: ""
+tags: []
+last_triaged: 2026-10-07
+work_state: unverified
+---
 # Bramble and Elsa Scene Coordination
 
 - **Forest steward:** Bramble

@@ -506,6 +506,8 @@
 {#snippet animatorOrHint()}
   {#if sequence}
     {#key sequence.id}
+      <!-- In codex mode the animation matches the Version 1 cells beside it
+           instead of the account's version. -->
       <InlineAnimationPlayer
         {sequence}
         displayWord={sequence.word ? guideTurnDisplayWord(sequence.word) : null}
@@ -515,6 +517,7 @@
         externalBpm={bpm}
         leftPropType={propType}
         rightPropType={propType}
+        propLook={isCodexMode ? "pictograph" : undefined}
         {showPlacementGlyph}
         onStepChange={onStep}
       />

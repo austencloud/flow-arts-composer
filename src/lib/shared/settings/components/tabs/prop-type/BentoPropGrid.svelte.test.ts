@@ -2,6 +2,12 @@ import { render } from "vitest-browser-svelte";
 import { page, userEvent } from "vitest/browser";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+import type { PropLook } from "$lib/shared/pictograph/prop/domain/prop-look";
+import { normalizePropPatch } from "$lib/shared/settings/domain/prop-pair-rule";
+import {
+  withPickVersion,
+  type PickVersionFields,
+} from "$lib/shared/settings/domain/prop-version-rule";
 import BentoPropGrid from "./BentoPropGrid.svelte";
 
 const CLUB_PICKER_PROPS = [
@@ -34,7 +40,7 @@ describe("BentoPropGrid style drill-down", () => {
       name: "Select Club prop type", exact: true,
     })).toBeVisible();
     await expect.element(page.getByRole("button", {
-      name: "Select Club 3D prop type", exact: true,
+      name: "Select Club V2 prop type", exact: true,
     })).not.toBeInTheDocument();
   });
 
@@ -59,7 +65,7 @@ describe("BentoPropGrid style drill-down", () => {
       .not.toBeInTheDocument();
 
     const torchOption = page.getByRole("button", {
-      name: "Select Torch prop type",
+      name: "Select Torch V1 prop type",
     });
     await torchOption.click();
 
@@ -125,7 +131,7 @@ describe("BentoPropGrid style settings", () => {
       .toBeVisible();
 
     await page
-      .getByRole("button", { name: "Select Triad 3D prop type", exact: true })
+      .getByRole("button", { name: "Select Triad V2 prop type", exact: true })
       .click();
     expect(onSelect).toHaveBeenLastCalledWith(PropType.TRIAD, "model");
     // Past the page swap a details page would take.
@@ -139,7 +145,7 @@ describe("BentoPropGrid style settings", () => {
     // The tiles follow the size, so a later pick keeps it.
     await rerender({ selectedPropType: PropType.BIGTRIAD });
     const bigModel = page.getByRole("button", {
-      name: "Select Big Triad 3D prop type",
+      name: "Select Big Triad V2 prop type",
       exact: true,
     });
     await expect.element(bigModel).toBeVisible();
@@ -148,6 +154,41 @@ describe("BentoPropGrid style settings", () => {
       .toHaveAttribute("aria-pressed", "true");
     await bigModel.click();
     expect(onSelect).toHaveBeenLastCalledWith(PropType.BIGTRIAD, "model");
+  });
+
+  // A size twin is the same prop, so the global pick rule keeps the version a
+  // Version 2 pick chose. The host here writes the way SettingsState does:
+  // pair normalization, then the pick rule.
+  it("keeps Version 2 when the size changes under the global pick rule", async () => {
+    let held: PickVersionFields = {
+      leftPropType: PropType.TRIAD,
+      rightPropType: PropType.TRIAD,
+      propType: PropType.TRIAD,
+      catDogMode: false,
+      propArtwork: "pictograph",
+    };
+    const write = (patch: PickVersionFields) => {
+      held = { ...held, ...withPickVersion(held, normalizePropPatch(held, patch)) };
+    };
+    const { rerender } = render(BentoPropGrid, {
+      selectedPropType: PropType.TRIAD,
+      onSelect: (prop: PropType) => write({ propType: prop }),
+      propLook: held.propArtwork,
+      onPropLookChange: (look: PropLook) => write({ propArtwork: look }),
+      allowedProps: [PropType.TRIAD, PropType.TRIGENG, PropType.BIGTRIAD],
+    });
+
+    await page.getByRole("button", { name: "Choose Triad style" }).click();
+    await page
+      .getByRole("button", { name: "Select Triad V2 prop type", exact: true })
+      .click();
+    expect(held.propArtwork).toBe("model");
+
+    await rerender({ propLook: "model" });
+    const styles = page.getByRole("region", { name: "Triad styles" });
+    await styles.getByRole("button", { name: "Big", exact: true }).click();
+    expect(held.propType).toBe(PropType.BIGTRIAD);
+    expect(held.propArtwork).toBe("model");
   });
 
   it("keeps a buugeng style's chirality on the same page", async () => {
@@ -234,7 +275,7 @@ describe("BentoPropGrid colours on a drill", () => {
   });
 });
 
-describe("BentoPropGrid prop look", () => {
+describe("BentoPropGrid prop version", () => {
   beforeEach(async () => {
     await page.viewport(760, 800);
     document.body.style.margin = "0";
@@ -255,20 +296,23 @@ describe("BentoPropGrid prop look", () => {
       .toBeVisible();
   }
 
-  it("offers the 2D artwork choice by default", async () => {
+  it("offers the Version 1 and 2 choice by default", async () => {
     await openBuugengDetails();
     await expect
-      .element(page.getByRole("radio", { name: "Realistic" }))
+      .element(page.getByRole("radio", { name: "Version 1" }))
+      .toBeVisible();
+    await expect
+      .element(page.getByRole("radio", { name: "Version 2" }))
       .toBeVisible();
   });
 
   it("leaves it out when the host renders in 3D", async () => {
     await openBuugengDetails(false);
     await expect
-      .element(page.getByRole("radio", { name: "Realistic" }))
+      .element(page.getByRole("radio", { name: "Version 2" }))
       .not.toBeInTheDocument();
     await expect
-      .element(page.getByRole("radio", { name: "Pictograph" }))
+      .element(page.getByRole("radio", { name: "Version 1" }))
       .not.toBeInTheDocument();
   });
 });

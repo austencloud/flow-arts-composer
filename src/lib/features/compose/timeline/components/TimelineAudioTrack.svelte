@@ -11,7 +11,7 @@
   import WaveSurfer from "wavesurfer.js";
   import { getTimelineState } from "$lib/shared/animation-engine/state/timeline-state.svelte";
   import { getTimelinePlayer } from "../services/timeline-playback-service";
-  import { generateStepTimestamps } from "$lib/features/compose/compose/phases/audio/bpm-analyzer";
+  import { generateStepTimestamps } from "$lib/shared/audio/bpm-analyzer";
   import { timeToPixels } from "$lib/shared/animation-engine/domain/timeline-types";
 
   interface Props {
@@ -214,7 +214,7 @@
 
     try {
       const { analyzeAudioBpm } =
-        await import("$lib/features/compose/compose/phases/audio/bpm-analyzer");
+        await import("$lib/shared/audio/bpm-analyzer");
 
       // Use the audio URL from state (would need to store this)
       // For now, this is a placeholder

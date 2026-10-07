@@ -2,14 +2,15 @@
 status: active
 value: 5
 effort: L
-remaining: implementation and visual sign-off
+remaining: "Verify 2D Fish Character System Design against the current 2D Fish Character System Design runtime and acceptance criteria before resuming implementation. Prior recorded remainder: implementation and visual sign-off"
 depends_on: ""
 plan_path: ""
 tags:
   - ocean
   - animation
   - character
-last_triaged: 2026-08-13
+last_triaged: 2026-10-07
+work_state: unverified
 ---
 
 # 2D Fish Character System Design

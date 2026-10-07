@@ -22,14 +22,19 @@ function renderPicker(overrides: Record<string, unknown> = {}) {
 }
 
 async function openLeft() {
-  await page.getByRole("button", { name: `Edit Left prop, ${LEFT.toUpperCase()}` }).click();
+  await page
+    .getByRole("button", { name: `Edit Left prop, ${LEFT.toUpperCase()}` })
+    .click();
 }
 
 /** Waits out the editor's open animation, as a person reaching the field would. */
 async function settled(container: HTMLElement) {
   const editor = container.querySelector<HTMLElement>(".color-editor")!;
   await expect
-    .poll(() => editor.getAnimations().filter((a) => a.playState === "running").length)
+    .poll(
+      () =>
+        editor.getAnimations().filter((a) => a.playState === "running").length
+    )
     .toBe(0);
 }
 
@@ -38,7 +43,9 @@ describe("LabeledColorPairPicker", () => {
     const { onchange } = renderPicker();
     await openLeft();
     const first = COLOR_PRESETS[0]!;
-    await page.getByRole("button", { name: `Left prop: ${first.name}` }).click();
+    await page
+      .getByRole("button", { name: `Left prop: ${first.name}` })
+      .click();
     expect(onchange).toHaveBeenCalledWith("left", first.hex);
   });
 
@@ -46,19 +53,27 @@ describe("LabeledColorPairPicker", () => {
     const preset = COLOR_PRESETS[5]!;
     renderPicker({ left: preset.hex });
     await page
-      .getByRole("button", { name: `Edit Left prop, ${preset.hex.toUpperCase()}` })
+      .getByRole("button", {
+        name: `Edit Left prop, ${preset.hex.toUpperCase()}`,
+      })
       .click();
     await expect
       .element(page.getByRole("button", { name: `Left prop: ${preset.name}` }))
       .toHaveAttribute("aria-pressed", "true");
     await expect
-      .element(page.getByRole("button", { name: `Left prop: ${COLOR_PRESETS[0]!.name}` }))
+      .element(
+        page.getByRole("button", {
+          name: `Left prop: ${COLOR_PRESETS[0]!.name}`,
+        })
+      )
       .toHaveAttribute("aria-pressed", "false");
   });
 
   it("swaps through the caller", async () => {
     const { onswap } = renderPicker();
-    await page.getByRole("button", { name: "Swap left and right colors" }).click();
+    await page
+      .getByRole("button", { name: "Swap left and right colors" })
+      .click();
     expect(onswap).toHaveBeenCalledTimes(1);
   });
 
@@ -108,23 +123,27 @@ describe("LabeledColorPairPicker", () => {
   });
 
   it.each([
-    [300, 6, 1],
-    [420, 8, 1],
-    [640, 12, 1],
-    [900, 12, 2],
+    [300, 1, 5, 1],
+    [420, 1, 6, 1],
+    [640, 2, 12, 1],
+    [900, 2, 12, 2],
   ])(
-    "in a %ipx box the matrix has %i columns and the editor %i tracks",
-    async (width, cols, tracks) => {
+    "in a %ipx box the hue groups use %i tracks, neutrals %i columns, and editor %i tracks",
+    async (width, groups, neutrals, tracks) => {
       const { screen } = renderPicker();
       screen.container.style.width = `${width}px`;
       await openLeft();
-      const grid = screen.container.querySelector<HTMLElement>(".preset-grid")!;
-      const editor = screen.container.querySelector<HTMLElement>(".color-editor")!;
+      const hues = screen.container.querySelector<HTMLElement>(".hue-groups")!;
+      const grid =
+        screen.container.querySelector<HTMLElement>(".neutral-grid")!;
+      const editor =
+        screen.container.querySelector<HTMLElement>(".color-editor")!;
       const trackCount = (el: HTMLElement) =>
         getComputedStyle(el).gridTemplateColumns.split(" ").length;
-      await expect.poll(() => trackCount(grid)).toBe(cols);
+      await expect.poll(() => trackCount(hues)).toBe(groups);
+      await expect.poll(() => trackCount(grid)).toBe(neutrals);
       await expect.poll(() => trackCount(editor)).toBe(tracks);
-    },
+    }
   );
 
   it("keeps the hue slider and hex row inside the fine-tune block", async () => {
@@ -133,7 +152,9 @@ describe("LabeledColorPairPicker", () => {
     await openLeft();
     const block = screen.container.querySelector<HTMLElement>(".fine-tune")!;
     const hue = page.getByRole("slider", { name: "Left prop hue" }).element();
-    const field = page.getByRole("textbox", { name: "Left prop hex color" }).element();
+    const field = page
+      .getByRole("textbox", { name: "Left prop hex color" })
+      .element();
     await expect.poll(() => block.getBoundingClientRect().width).toBe(256);
     for (const el of [hue, field]) {
       const r = el.getBoundingClientRect();
@@ -156,7 +177,8 @@ describe("LabeledColorPairPicker", () => {
   it("animates the editor open and keeps it mounted while it closes", async () => {
     const { screen } = renderPicker();
     await openLeft();
-    const editor = screen.container.querySelector<HTMLElement>(".color-editor")!;
+    const editor =
+      screen.container.querySelector<HTMLElement>(".color-editor")!;
     // Svelte 5 runs css transitions through the Web Animations API, so a
     // running animation on the node is the proof the intro is playing.
     const running = () =>
@@ -174,14 +196,18 @@ describe("LabeledColorPairPicker", () => {
     const { screen } = renderPicker();
     await openLeft();
     await settled(screen.container);
-    const editor = screen.container.querySelector<HTMLElement>(".color-editor")!;
+    const editor =
+      screen.container.querySelector<HTMLElement>(".color-editor")!;
     const running = () =>
       editor.getAnimations().filter((a) => a.playState === "running").length;
     const height = () => editor.getBoundingClientRect().height;
-    const nextFrame = () => new Promise((resolve) => requestAnimationFrame(resolve));
+    const nextFrame = () =>
+      new Promise((resolve) => requestAnimationFrame(resolve));
     const full = height();
 
-    const control = page.getByRole("button", { name: /^Edit Left prop/ }).element() as HTMLElement;
+    const control = page
+      .getByRole("button", { name: /^Edit Left prop/ })
+      .element() as HTMLElement;
     control.click();
     await new Promise((resolve) => setTimeout(resolve, 90));
     const interrupted = height();
@@ -207,7 +233,9 @@ describe("LabeledColorPairPicker", () => {
   it("emits exactly once for a swatch click", async () => {
     const { onchange } = renderPicker();
     await openLeft();
-    await page.getByRole("button", { name: `Left prop: ${COLOR_PRESETS[5]!.name}` }).click();
+    await page
+      .getByRole("button", { name: `Left prop: ${COLOR_PRESETS[5]!.name}` })
+      .click();
     expect(onchange).toHaveBeenCalledTimes(1);
     expect(onchange).toHaveBeenCalledWith("left", COLOR_PRESETS[5]!.hex);
   });
@@ -216,9 +244,27 @@ describe("LabeledColorPairPicker", () => {
     const { onchange } = renderPicker();
     await openLeft();
     await page.getByRole("button", { name: /^Edit Right prop/ }).click();
-    await page.getByRole("button", { name: `Right prop: ${COLOR_PRESETS[7]!.name}` }).click();
+    await page
+      .getByRole("button", { name: `Right prop: ${COLOR_PRESETS[7]!.name}` })
+      .click();
     expect(onchange).toHaveBeenCalledTimes(1);
     expect(onchange).toHaveBeenCalledWith("right", COLOR_PRESETS[7]!.hex);
+  });
+
+  it("keeps warm and cool presets available to both hands", async () => {
+    const { onchange } = renderPicker();
+    await openLeft();
+    await page
+      .getByRole("button", { name: `Left prop: ${COLOR_PRESETS[12]!.name}` })
+      .click();
+    await page.getByRole("button", { name: /^Edit Right prop/ }).click();
+    await page
+      .getByRole("button", { name: `Right prop: ${COLOR_PRESETS[20]!.name}` })
+      .click();
+    expect(onchange.mock.calls).toEqual([
+      ["left", COLOR_PRESETS[12]!.hex],
+      ["right", COLOR_PRESETS[20]!.hex],
+    ]);
   });
 
   it("has no axe violations with the editor open", async () => {

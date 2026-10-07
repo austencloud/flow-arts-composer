@@ -14,7 +14,12 @@
     saveSyncedPostDraft,
   } from "./services/post-account-projects";
   import { savePostDraft } from "$lib/shared/media-composition/services/post-draft-storage";
-  import { createPostModuleState } from "./state/post-module-state.svelte";
+  import type { PostProject } from "$lib/shared/media-composition/domain/post-project";
+  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+  import {
+    createPostModuleState,
+    featureSelectionId,
+  } from "./state/post-module-state.svelte";
   import { setPostModuleContext } from "./context/post-module-context";
   import { canAccessPostStudio } from "$lib/shared/sequence-viewer/services/post-studio-access";
   import { providePostEditorHeader } from "$lib/shared/share/components/post-studio/editor/post-editor-header.svelte";
@@ -27,6 +32,26 @@
     list: listSyncedPostProjects,
     resolve: resolveSyncedPostSequence,
     loadDraft: loadSyncedPostDraft,
+    // Feature videos are folders the dev server reads. A production build
+    // drops this branch, and the client with it.
+    ...(import.meta.env.DEV
+      ? {
+          listFeatures: async () =>
+            (
+              await import(
+                "$lib/shared/media-composition/services/feature-video-client"
+              )
+            ).listFeatureVideos(),
+          loadFeature: async (slug: string) => {
+            const client = await import(
+              "$lib/shared/media-composition/services/feature-video-client"
+            );
+            return client.createFeatureVideoSync(
+              await client.loadFeatureVideo(slug)
+            );
+          },
+        }
+      : {}),
   });
   setPostModuleContext(state);
   /** The editor puts Save, more actions and Export in this header row. */
@@ -39,18 +64,29 @@
     getResolvedAutoLayout: () => null,
   });
   let previousParam: string | null = null;
+  let previousFeature: string | null = null;
   let initialVisit = true;
   const currentWord = $derived(
     simplifyRepeatedWord(state.sequence?.word || "")
   );
   const currentTitle = $derived(
-    simplifyRepeatedWord(
-      state.sequence?.displayName ||
-        state.sequence?.name ||
-        currentWord ||
-        state.selectedId ||
-        ""
-    )
+    state.feature?.title ??
+      simplifyRepeatedWord(
+        state.sequence?.displayName ||
+          state.sequence?.name ||
+          currentWord ||
+          state.selectedId ||
+          ""
+      )
+  );
+  /**
+   * A feature video opens on a dev server without Post's early access:
+   * everything behind it exists only there, and the signed-out capture
+   * browser must be able to open and render one.
+   */
+  const featureMode = $derived(
+    import.meta.env.DEV &&
+      (page.url.searchParams.has("feature") || state.feature !== null)
   );
 
   let previousAccount: string | null | undefined = undefined;
@@ -61,21 +97,31 @@
     previousAccount = uid;
     initialVisit = true;
     previousParam = null;
+    previousFeature = null;
     state.resetForAccount();
   });
   $effect(() => {
     if (!authState.initialized) return;
     authState.user?.uid;
     const project = page.url.searchParams.get("project");
+    const feature = import.meta.env.DEV
+      ? page.url.searchParams.get("feature")
+      : null;
     if (initialVisit) {
       initialVisit = false;
-      const target = project || state.lastSelectedId();
-      if (target) void state.open(target);
       previousParam = project;
+      previousFeature = feature;
+      if (feature) void state.openFeature(feature);
+      else {
+        const target = project || state.lastSelectedId();
+        if (target) void state.open(target);
+      }
       return;
     }
-    if (project && project !== previousParam) void state.open(project);
+    if (feature && feature !== previousFeature) void state.openFeature(feature);
+    else if (project && project !== previousParam) void state.open(project);
     previousParam = project;
+    previousFeature = feature;
   });
 
   function openProject(id: string): void {
@@ -83,14 +129,28 @@
     void goto(`/post?project=${encodeURIComponent(id)}`);
   }
 
+  function openFeature(slug: string): void {
+    if (featureSelectionId(slug) === state.selectedId && !state.showingProjects)
+      return;
+    void goto(`/post?feature=${encodeURIComponent(slug)}`);
+  }
+
   function showProjects(): void {
     state.showProjects();
     void goto("/post", { replaceState: true });
   }
+
+  /**
+   * The account save for one sequence, bound when the editor opens: a copy
+   * it still holds when another post opens saves with its own sequence.
+   */
+  function saveSyncedFor(sequence: SequenceData) {
+    return (project: PostProject) => saveSyncedPostDraft(project, sequence);
+  }
 </script>
 
 <section class="post-module" aria-label="Post">
-  {#if !canAccessPostStudio()}
+  {#if !canAccessPostStudio() && !featureMode}
     <div class="editor-status" role="status">Post is in early access.</div>
   {:else}
     <div class="project-list" hidden={!state.showingProjects}>
@@ -152,6 +212,45 @@
           {/each}
         </ul>
       {/if}
+      {#if state.features.length || state.unreadableFeatures.length || state.featureError}
+        <section class="feature-videos" aria-labelledby="feature-videos-title">
+          <h2 id="feature-videos-title">Feature videos</h2>
+          {#if state.featureError}<p class="notice" role="status">
+              {state.featureError}
+            </p>{/if}
+          {#if state.unreadableFeatures.length}<p class="notice" role="status">
+              Could not read the project.json in {state.unreadableFeatures.join(", ")}.
+              Each folder's history keeps earlier copies.
+            </p>{/if}
+          {#if state.features.length}
+            <ul>
+              {#each state.features as video (video.slug)}
+                <li>
+                  <button
+                    type="button"
+                    aria-label={`Open ${video.title}`}
+                    onclick={() => openFeature(video.slug)}
+                  >
+                    <span class="project-mark"
+                      ><i class="fas fa-film" aria-hidden="true"></i></span
+                    >
+                    <div class="project-info">
+                      <strong>{video.title}</strong>
+                      <div class="project-details">
+                        <span>{video.slug} · {video.sequenceId}</span>
+                      </div>
+                    </div>
+                    <span class="project-date"
+                      >{new Date(video.savedAt).toLocaleDateString()}</span
+                    >
+                    <i class="fas fa-chevron-right" aria-hidden="true"></i>
+                  </button>
+                </li>
+              {/each}
+            </ul>
+          {/if}
+        </section>
+      {/if}
     </div>
     <div class="editor-host" hidden={state.showingProjects}>
       <div class="project-toolbar">
@@ -179,20 +278,18 @@
         </div>
       {:else if !state.sequence}<div class="editor-status error" role="alert">
           <p>{state.projectError || "This sequence could not be opened."}</p>
-          <button
-            type="button"
-            onclick={() =>
-              state.selectedId && void state.open(state.selectedId)}
+          <button type="button" onclick={() => void state.retry()}
             >Try again</button
           >
         </div>
       {:else}
-        {#key `${authState.user && !authState.user.isAnonymous ? authState.user.uid : "guest"}:${state.sequence.id}`}
+        {#key `${authState.user && !authState.user.isAnonymous ? authState.user.uid : "guest"}:${state.feature ? featureSelectionId(state.feature.slug) : state.sequence.id}`}
           <PostStudio
             active={visible && !state.showingProjects}
             sequence={state.sequence}
-            initialProject={state.draft ?? undefined}
-            onSaveDraft={authState.user && !authState.user.isAnonymous ? (project) => saveSyncedPostDraft(project, state.sequence!) : state.diskAvailable ? savePostDraft : undefined}
+            feature={state.feature ?? undefined}
+            initialProject={state.feature ? state.feature.initialProject : (state.draft ?? undefined)}
+            onSaveDraft={state.feature ? state.feature.save : authState.user && !authState.user.isAnonymous ? saveSyncedFor(state.sequence) : state.diskAvailable ? savePostDraft : undefined}
             draftLoadError={state.projectError}
             cardPreviewUrl={cardPreview.url}
             cardRenderOptions={cardPreview.renderOptions}
@@ -251,6 +348,15 @@
   .list-status {
     padding: 40px 0;
     color: var(--theme-text-secondary);
+  }
+  .feature-videos {
+    margin-top: 36px;
+  }
+  .feature-videos h2 {
+    margin: 0;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--theme-stroke);
+    font-size: 18px;
   }
   ul {
     margin: 0;

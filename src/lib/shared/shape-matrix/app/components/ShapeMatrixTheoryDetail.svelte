@@ -554,7 +554,8 @@
           showTempoControls={false}
           showEffectsPlayback={false}
           selectedPropType={app.addressedPropType}
-          onPropChange={(next: PropType) => void app.setPropType(next)}
+          onPropChange={(next: PropType, look) =>
+            void app.setPropType(next, undefined, look)}
           handProps={app.handProps}
           onPropPickerRequest={app.togglePropPicker}
           propPickerActive={app.propPickerOpen}

@@ -725,12 +725,7 @@ const MODEL_SIDE_BIAS = 0.1;
  * tables point at the centre for "in". The paint is centred and the tip table
  * two-ended, so the geometry below cannot tell which way these face.
  */
-const MODEL_THUMB_END_ON_NEGATIVE_X = new Set([
-  "staff",
-  "simple_staff",
-  "staff_v2",
-  "bigstaff",
-]);
+const MODEL_THUMB_END_ON_NEGATIVE_X = new Set(["staff", "bigstaff"]);
 
 /**
  * True when a capture paints on the opposite side of the hand from its tip

@@ -1,3 +1,15 @@
+---
+status: active
+value: null
+effort: null
+work_state: unverified
+remaining: Verify fan appearance normalization and asset resolution across 2D, Tunnel, 3D, and prop rails.
+depends_on: ''
+plan_path: ''
+tags: []
+last_triaged: '2026-10-07'
+---
+
 # Shared Fan Appearance in 2D, Tunnel, 3D, and Prop Rails
 
 ## Outcome

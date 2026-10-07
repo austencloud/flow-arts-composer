@@ -1,3 +1,15 @@
+---
+status: active
+value: null
+effort: null
+work_state: unverified
+remaining: Run the opposite-point landing audit and compare measured fan placements against the gate in this design.
+depends_on: ''
+plan_path: ''
+tags: []
+last_triaged: '2026-10-07'
+---
+
 # Fan Opposite-Point Landing Audit
 
 ## Goal

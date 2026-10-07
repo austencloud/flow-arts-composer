@@ -1,8 +1,11 @@
+import { isFeatureVideoMediaUrl } from "$lib/shared/media-composition/domain/feature-video";
 import type { PostProject } from "$lib/shared/media-composition/domain/post-project";
 
 /**
  * Parts of a post the manifest bridge may not change: the media and timing
  * a post is built from. A take's name is only a label, so it may change.
+ * A feature video's own footage, a take playing from its media folder, may
+ * be added and removed: the CLI puts the file there first.
  */
 const LOCKED_KEYS = [
   "takes",
@@ -15,7 +18,12 @@ const LOCKED_KEYS = [
 
 function lockedValue(project: PostProject, key: (typeof LOCKED_KEYS)[number]) {
   if (key !== "takes") return project[key] ?? null;
-  return project.takes.map(({ label: _label, ...take }) => take);
+  return project.takes
+    .filter(
+      (take) =>
+        !(take.ref.kind === "linked" && isFeatureVideoMediaUrl(take.ref.url))
+    )
+    .map(({ label: _label, ...take }) => take);
 }
 
 /** The first locked part `next` changes, or null when it changes none. */

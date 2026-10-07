@@ -58,6 +58,7 @@ import type { StartPlacementData } from "../../../src/lib/shared/foundation/doma
 registerLoadedAuthState({
   isAdmin: () => mockIsAdmin,
   isAuthenticated: () => true,
+  userId: () => null,
 });
 
 function makeMotion(
