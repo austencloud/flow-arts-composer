@@ -12,6 +12,7 @@ import { settingsService } from "$lib/shared/settings/state/settings-state.svelt
 import { buildRenderOptions as buildCellRenderOptions } from "$lib/shared/choreo-card/services/choreo-card-cell-pipeline";
 import { isCatDogMode } from "$lib/shared/browse/utils/prop-mode-helpers";
 import { createStartPlacementFromBeatStart } from "$lib/shared/create/services/sequence-transforms";
+import { gridJoinCellResolver } from "@tka/render-core";
 import { getVisibilityStateManager } from "$lib/shared/pictograph/shared/state/visibility-state.svelte";
 
 interface CellTask {
@@ -166,11 +167,16 @@ export class CellPreWarmer {
     isDark: boolean
   ): CellTask[] {
     const tasks: CellTask[] = [];
+    // A joined sequence draws every cell joined (display-only: the stored steps
+    // stay as they are), so the warmed key and image must be the joined ones.
+    // Unjoined cells pass through untouched and keep their exact keys.
+    const withJoin = gridJoinCellResolver({ conjoined: sequence.conjoined });
 
     const firstStep = sequence.steps![0];
     if (sequence.startPlacement || firstStep) {
-      const startData =
-        sequence.startPlacement || createStartPlacementFromBeatStart(firstStep!);
+      const startData = withJoin(
+        sequence.startPlacement || createStartPlacementFromBeatStart(firstStep!)
+      );
       tasks.push({
         pictographData: startData,
         stepNumber: undefined,
@@ -180,8 +186,9 @@ export class CellPreWarmer {
     }
 
     for (let i = 0; i < sequence.steps!.length; i++) {
-      const step = sequence.steps![i];
-      if (!step) continue;
+      const source = sequence.steps![i];
+      if (!source) continue;
+      const step = withJoin(source);
       const stepNumber = i + 1;
       tasks.push({
         pictographData: step,

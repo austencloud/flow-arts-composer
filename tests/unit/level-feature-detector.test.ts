@@ -154,6 +154,36 @@ describe("detectLevelFeatures", () => {
     expect(report.minLevel).toBe(7);
   });
 
+  it("flags a grid join as L7 with the join in the feature string", () => {
+    const s = seq({
+      conjoined: { toward: "e", steps: 1 },
+      steps: [stepWith({
+        left: { startLocation: "n", endLocation: "e", motionType: "pro" },
+      })] as unknown as SequenceData["steps"],
+    });
+    const report = detectLevelFeatures(s);
+    expect(report.beyondLevel3).toBe(true);
+    expect(report.minLevel).toBe(7);
+    expect(report.features).toContain("conjoined:e1");
+  });
+
+  it("ignores a malformed stored join", () => {
+    const s = seq({ conjoined: { toward: "up", steps: 5 } as never, steps: [] });
+    const report = detectLevelFeatures(s);
+    expect(report.beyondLevel3).toBe(false);
+    expect(report.features).toEqual([]);
+  });
+
+  it("keeps a higher level when a join sits beside an L8 feature", () => {
+    const s = seq({
+      conjoined: { toward: "ne", steps: 2 },
+      steps: [stepWith({
+        left: { plane: "wall", startLocation: "n", endLocation: "e" },
+      })] as unknown as SequenceData["steps"],
+    });
+    expect(detectLevelFeatures(s).minLevel).toBe(8);
+  });
+
   it("flags plane on motion as L8", () => {
     const s = seq({
       steps: [stepWith({
