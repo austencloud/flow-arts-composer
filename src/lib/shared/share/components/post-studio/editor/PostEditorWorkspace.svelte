@@ -143,6 +143,7 @@
   import PostMusicTool from "./PostMusicTool.svelte";
   import {
     removeMusic,
+    trimMusic,
     updateMusic,
     type MusicPatch,
   } from "$lib/shared/media-composition/domain/post-music-edits";
@@ -3036,7 +3037,10 @@
           selectedPart={editor.selectedPart}
           {labelFor}
           onSeek={seekFromTimeline}
-          onSelect={(itemId) => (editor.selectedItemId = itemId)}
+          onSelect={(itemId) => {
+            musicSelected = false;
+            editor.selectedItemId = itemId;
+          }}
           onSelectTunnel={(itemId) => editor.selectTunnel(itemId)}
           onGestureStart={() => {
             editor.pause();
@@ -3086,6 +3090,20 @@
             ? timelineKeys
             : undefined}
           onAddVideo={pickDeviceVideo}
+          {musicSelected}
+          onSelectMusic={selectMusic}
+          onMoveMusic={(startSeconds) =>
+            applyMove((project, context) =>
+              updateMusic(project, { startSeconds }, context)
+            )}
+          onTrimMusic={(edge, seconds) =>
+            applyMove((project, context) =>
+              trimMusic(project, edge, seconds, context)
+            )}
+          onMoveDownbeat={(downbeatSeconds) =>
+            applyMove((project, context) =>
+              updateMusic(project, { downbeatSeconds }, context)
+            )}
           bind:pixelsPerSecond
         />
       </div>

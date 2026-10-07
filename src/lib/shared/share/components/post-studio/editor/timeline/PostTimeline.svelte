@@ -23,6 +23,12 @@
     keyframeIndexAt,
     moveKeyframe,
   } from "$lib/shared/media-composition/domain/post-project-keyframes";
+  import {
+    hasGrid,
+    musicBarMarks,
+    musicSnapTargets,
+    musicSpan,
+  } from "$lib/shared/media-composition/domain/music-grid";
   import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { growFade } from "$lib/shared/transitions/motion";
   import TimeRuler from "$lib/shared/timeline/TimeRuler.svelte";
@@ -30,6 +36,7 @@
   import PostTimelineItem from "./PostTimelineItem.svelte";
   import PostTimelineKeyLane from "./PostTimelineKeyLane.svelte";
   import PostTimelineKeyLaneHeader from "./PostTimelineKeyLaneHeader.svelte";
+  import PostTimelineMusicLane from "./PostTimelineMusicLane.svelte";
   import PostTimelineTrackHeader from "./PostTimelineTrackHeader.svelte";
   import PostTimelineZoomControls from "./PostTimelineZoomControls.svelte";
   import {
@@ -138,6 +145,14 @@
     toolbarStart?: Snippet;
     onAddVideo?: () => void;
     pixelsPerSecond?: number;
+    /** The music under the post is selected. */
+    musicSelected?: boolean;
+    onSelectMusic?: () => void;
+    /** Where the music now starts on the post's clock. */
+    onMoveMusic?: (startSeconds: number) => void;
+    onTrimMusic?: (edge: "start" | "end", postSeconds: number) => void;
+    /** Where bar 1 now falls, in the music file's own seconds. */
+    onMoveDownbeat?: (downbeatSeconds: number) => void;
   }
 
   let {
@@ -170,6 +185,11 @@
     toolbarStart,
     onAddVideo,
     pixelsPerSecond = $bindable(POST_TIMELINE_DEFAULT_PIXELS_PER_SECOND),
+    musicSelected = false,
+    onSelectMusic,
+    onMoveMusic,
+    onTrimMusic,
+    onMoveDownbeat,
   }: Props = $props();
 
   // Items sit 3px inside a row with a 1px border, so an overlay stays 44px tall.
@@ -177,6 +197,8 @@
   const MAIN_ROW_HEIGHT_PX = 72;
   const RULER_HEIGHT_PX = 52; // Fits the zoom controls beside the ruler.
   const KEY_LANE_HEIGHT_PX = 44;
+  /** The music's row, under the tracks. */
+  const MUSIC_ROW_HEIGHT_PX = 52;
   const TRAILING_PADDING_PX = 64;
   const DRAG_THRESHOLD_PX = 4;
   const ZOOM_STEP_FACTOR = 1.25;
@@ -542,13 +564,22 @@
         ? keyLanes.heightPx
         : 0)
   );
+  /** Music may run past the post's end; its lane shows all of it. */
+  const contentEndSeconds = $derived(
+    Math.max(durationSeconds, project.music ? musicSpan(project.music).end : 0)
+  );
   const contentWidthPx = $derived(
     Math.max(
       lanesViewportWidthPx,
-      secondsToPixels(durationSeconds, pixelsPerSecond) + TRAILING_PADDING_PX,
+      secondsToPixels(contentEndSeconds, pixelsPerSecond) + TRAILING_PADDING_PX,
       dragExtensionPx
     )
   );
+  /** Bar numbers on the ruler while the music has a beat grid. */
+  const barMarks = $derived.by(() => {
+    const music = project.music;
+    return music && hasGrid(music) ? musicBarMarks(music, pixelsPerSecond) : [];
+  });
   const playheadXPx = $derived(
     secondsToPixels(playheadSeconds, pixelsPerSecond)
   );
@@ -556,7 +587,8 @@
     dragState?.kind === "move-overlay" && dragState.didDrag
   );
 
-  function collectSnapTargets(excludeItemIds: ReadonlySet<string>): number[] {
+  /** Zero, the playhead and the clips' edges: where the music's lane snaps. */
+  function clipSnapTargets(excludeItemIds: ReadonlySet<string>): number[] {
     const targets = new Set<number>([0, playheadSeconds]);
     for (const track of project.tracks) {
       for (const item of track.items) {
@@ -566,6 +598,14 @@
       }
     }
     return Array.from(targets);
+  }
+
+  /** Where a clip snaps: those, plus the music's edges, bars and beats. */
+  function collectSnapTargets(excludeItemIds: ReadonlySet<string>): number[] {
+    const targets = clipSnapTargets(excludeItemIds);
+    return project.music
+      ? [...targets, ...musicSnapTargets(project.music, pixelsPerSecond)]
+      : targets;
   }
 
   /** Measured fresh on every call so a mid-drag scroll never goes stale. */
@@ -1446,6 +1486,12 @@
             {/each}
           {/if}
         {/each}
+        {#if project.music}
+          <PostTimelineTrackHeader
+            name="Music"
+            heightPx={MUSIC_ROW_HEIGHT_PX}
+          />
+        {/if}
       </div>
     </div>
 
@@ -1485,6 +1531,7 @@
             duration={durationSeconds}
             {pixelsPerSecond}
             tickInterval={rulerTickInterval(pixelsPerSecond)}
+            marks={barMarks}
           />
           <div
             class="playhead-line"
@@ -1636,6 +1683,31 @@
               {/each}
             {/if}
           {/each}
+
+          {#if project.music}
+            <div
+              class="lane-row"
+              style="height: {MUSIC_ROW_HEIGHT_PX}px"
+              role="group"
+              aria-label="Music"
+              onpointerdown={handleLaneBackgroundPointerDown}
+            >
+              <PostTimelineMusicLane
+                music={project.music}
+                {pixelsPerSecond}
+                selected={musicSelected}
+                snapTargets={() => clipSnapTargets(new Set())}
+                onSelect={() => onSelectMusic?.()}
+                {onGestureStart}
+                {onGestureEnd}
+                {onGestureCancel}
+                onMove={(startSeconds) => onMoveMusic?.(startSeconds)}
+                onTrim={(edge, seconds) => onTrimMusic?.(edge, seconds)}
+                onMoveDownbeat={(seconds) => onMoveDownbeat?.(seconds)}
+                onSnapGuide={(seconds) => (snapGuideSeconds = seconds)}
+              />
+            </div>
+          {/if}
 
           {#if (dragState?.kind === "move-main" || dragState?.kind === "move-overlay") && dragState.didDrag}
             {#each dragState.members as member (member.id)}
