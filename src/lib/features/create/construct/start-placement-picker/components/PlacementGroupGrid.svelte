@@ -3,6 +3,8 @@
   import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
   import type { HapticFeedback } from "$lib/shared/application/services/haptic-feedback";
   import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
+  import type { GridJoin } from "@tka/tka-types";
+  import { gridJoinCellResolver } from "@tka/render-core";
   import { getLetterBorderColorSafe } from "$lib/shared/pictograph/shared/utils/letter-border-utils";
   import PictographContainer from "$lib/shared/pictograph/shared/components/PictographContainer.svelte";
 
@@ -15,6 +17,7 @@
     isTransitioning,
     onSelect,
     onAnimationEnd,
+    gridJoin = null,
   }: {
     pictographs: PictographData[];
     selectedPictograph?: PictographData | null;
@@ -24,7 +27,12 @@
     isTransitioning: boolean;
     onSelect: (pictograph: PictographData) => void;
     onAnimationEnd: (id: string) => void;
+    /** The sequence's grid join, drawn on the tiles only; selection hands
+     *  back the plain placement. */
+    gridJoin?: GridJoin | null;
   } = $props();
+
+  const withGridJoin = $derived(gridJoinCellResolver({ conjoined: gridJoin }));
 
   const hapticService = getHapticFeedback();
 
@@ -60,7 +68,9 @@
     onanimationend={() => onAnimationEnd(pictographData.id)}
   >
     <div class="pictograph-wrapper">
-      <PictographContainer {pictographData} />
+      <PictographContainer
+        pictographData={gridJoin ? withGridJoin(pictographData) : pictographData}
+      />
     </div>
   </div>
 {/each}
