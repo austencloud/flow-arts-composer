@@ -9,6 +9,8 @@ const assetCopies = [
   ["static/images/letters_trimmed", "assets/images/letters_trimmed"],
   ["static/images/props", "assets/images/props"],
   ["static/fonts/gelasio", "assets/fonts/gelasio"],
+  ["static/images/arrows", "assets/images/arrows"],
+  ["static/data/arrow_placement", "assets/data/arrow_placement"],
 ];
 
 for (const [sourcePath, destinationPath] of assetCopies) {
@@ -33,4 +35,4 @@ for (const [sourcePath, destinationPath] of assetCopies) {
   });
 }
 
-console.log("Generated packaged card glyph, prop, and font assets from the canonical app");
+console.log("Generated packaged card glyph, prop, font, arrow, and arrow placement assets from the canonical app");

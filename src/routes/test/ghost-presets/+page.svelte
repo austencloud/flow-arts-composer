@@ -353,7 +353,7 @@
           </button>
         </div>
         <p class="tuning-note">
-          Color, intensity, persistence, and density update the preview
+          Intensity, persistence, and density update the preview
           immediately.
         </p>
         <EffectControlStack effect="ghost" config={effectsConfig} view="3d" />
@@ -388,8 +388,8 @@
             class:favorite={verdict === "favorite"}
             class:passed={verdict === "pass"}
             style:--preset-accent={preset.previewColor}
-            style:--preset-blue={intent.leftColor}
-            style:--preset-red={intent.rightColor}
+            style:--preset-blue={preset.previewColor}
+            style:--preset-red={preset.previewColor2 ?? preset.previewColor}
           >
             <button
               type="button"

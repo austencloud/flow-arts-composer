@@ -64,8 +64,9 @@ Node side set `TSX_TSCONFIG_PATH` to an untracked tsconfig whose `paths` map
 - `@tka/render-core` and canonical static data own pictograph positioning.
 - Browser and MCP use the exact same bundled Gelasio WOFF2 files. MCP uses Skia,
   with explicit font registration; host-installed fonts are not a requirement.
-- `mcp-server-pkg/scripts/sync-card-assets.mjs` copies canonical font/glyph/prop
-  assets into the distributable package. Do not edit the copies independently.
+- `mcp-server-pkg/scripts/sync-card-assets.mjs` copies canonical font, glyph,
+  prop, arrow and arrow placement assets into the distributable package. Do not
+  edit the copies independently.
 
 Web App CI runs the cross-renderer test and rejects stale packaged assets.
 Its required `Composer and MCP Card Parity` check also installs the release

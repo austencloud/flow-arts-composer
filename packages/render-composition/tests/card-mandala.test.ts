@@ -171,6 +171,39 @@ describe("card mandala geometry", () => {
     expect(halfTurn).not.toEqual(fullTurn);
   });
 
+  it("takes the short way when a later static step has turns but no rotation", () => {
+    // The app's mandala chains a beat with turns but no rotation direction as
+    // a shortest-path beat, so its turns must not spin the drawn path.
+    const withStill = (turns: number): CardMandalaStep[] => [
+      ...STEPS,
+      {
+        stepNumber: 2,
+        leftMotion: {
+          motionType: "static",
+          rotationDirection: "no_rotation",
+          startLocation: "e",
+          endLocation: "e",
+          startOrientation: "in",
+          endOrientation: "in",
+          turns,
+        },
+        rightMotion: {
+          motionType: "static",
+          rotationDirection: "noRotation",
+          startLocation: "w",
+          endLocation: "w",
+          startOrientation: "out",
+          endOrientation: "out",
+          turns,
+        },
+      },
+    ];
+
+    expect(calculateCardMandalaPaths(withStill(1))).toEqual(
+      calculateCardMandalaPaths(withStill(0))
+    );
+  });
+
   it("keeps its local stroke width so canvas scaling matches ImageComposer", () => {
     const widths: number[] = [];
     const context = {
