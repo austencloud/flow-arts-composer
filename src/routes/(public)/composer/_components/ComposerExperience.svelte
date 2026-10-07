@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { flushSync, onMount } from "svelte";
+  import { flushSync, onMount, untrack } from "svelte";
   import { MediaQuery } from "svelte/reactivity";
   import { activateWhenNear } from "$lib/actions/activate-when-near";
   import { observeComposerStopVisibility } from "./observe-composer-stop-visibility";
@@ -46,7 +46,12 @@
   import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
   import ComposerBackgroundCycle from "./ComposerBackgroundCycle.svelte";
   import ComposerPropPicker from "./ComposerPropPicker.svelte";
-  import { resolveComposerCarriedSequence } from "./composer-sequence-ownership";
+  import {
+    carryPageSequence,
+    featuredCaption,
+    openingPageSequence,
+    type PageSequenceSource,
+  } from "./composer-sequence-ownership";
   import type { ComposerPropAppearance } from "./composer-prop-appearance";
   import ProjectStory from "./ProjectStory.svelte";
 
@@ -70,26 +75,39 @@
   // existing prefetch handoff.
   const heroAct = createHeroAct({ initialSequence: FALLBACK_DEMO });
 
-  // A sequence the visitor composed or generated further down the page takes
-  // over the carry; until then the bands hold the hero's FIRST draw.
-  let visitorSequence = $state<SequenceData | null>(null);
+  // The page has one sequence. The hero's live draws write it until the
+  // visitor builds or generates one further down; after that, last write
+  // wins. The baked opening keeps the lower demonstrations usable before the
+  // hero has drawn anything live.
+  let pageSequence = $state(openingPageSequence(FALLBACK_DEMO));
 
-  // The lower demos hold one live hero draw. Rebuilding their readers on every
-  // hero loop is distracting, and a visitor's own sequence always takes over.
-  let latchedHeroSequence = $state<SequenceData | null>(null);
+  function carryFrom(source: PageSequenceSource) {
+    return (next: SequenceData) => {
+      pageSequence = carryPageSequence(pageSequence, source, next);
+    };
+  }
+  const carryConstruct = carryFrom("construct");
+  const carryGenerate = carryFrom("generate");
+  const carryTunnel = carryFrom("tunnel");
+
+  // Every live hero draw becomes the page's sequence. Before the hold the
+  // reader is still at the hero and the lower demos are not mounted, so the
+  // auto-rolls cost nothing downstream; after it the hero only changes on
+  // Roll. The reducer returns the same object for an unchanged id, and the
+  // write is untracked, so this effect cannot feed itself.
   $effect(() => {
-    const first = heroAct.sequence;
-    if (first && first.id !== FALLBACK_DEMO.id && !latchedHeroSequence) {
-      latchedHeroSequence = first;
-    }
+    const drawn = heroAct.sequence;
+    if (!drawn || drawn.id === FALLBACK_DEMO.id) return;
+    untrack(() => {
+      pageSequence = carryPageSequence(pageSequence, "hero", drawn);
+    });
   });
-  const carriedSequence = $derived(
-    resolveComposerCarriedSequence(
-      visitorSequence,
-      latchedHeroSequence,
-      FALLBACK_DEMO
-    )
-  );
+
+  // The hero stops rolling on its own once the visitor touches it or moves
+  // on to Construct, so the word they saw is the word the page carries.
+  function holdHero(): void {
+    heroAct.hold();
+  }
   let selectedProp = $state<PropType>(PropType.STAFF);
   // Appearance and colors stay with this public page's prop choice. There is
   // no app settings service here, so writing to it would lose these edits.
@@ -337,10 +355,6 @@
 
   onMount(() => () => clearTimeout(stillTimer));
 
-  function carryVisitorSequence(next: SequenceData): void {
-    visitorSequence = next;
-  }
-
   // Same handler HomeHero uses: report the interaction, then roll now.
   function handleReroll(): void {
     trackDemoInteraction("try_another");
@@ -362,10 +376,10 @@
       });
   }
 
-  const activateConstruct = activateNear(
-    "making",
-    () => (constructActive = true)
-  );
+  const activateConstruct = activateNear("making", () => {
+    constructActive = true;
+    holdHero();
+  });
   const activateGenerate = activateNear(
     "generating",
     () => (generateActive = true)
@@ -554,7 +568,11 @@
       </p>
     </div>
 
-    <div class="opening-player">
+    <div
+      class="opening-player"
+      onpointerdowncapture={holdHero}
+      onkeydowncapture={holdHero}
+    >
       <div class="player-main">
         <SequenceHeroDemo
           sequence={heroAct.sequence}
@@ -626,7 +644,7 @@
           leftPropType: selectedProp,
           rightPropType: selectedProp,
           primaryPropColors,
-          onVisitorComposed: carryVisitorSequence,
+          onVisitorComposed: carryConstruct,
           propControl,
         }}
         error={constructLoadError}
@@ -650,12 +668,12 @@
         loader={() => import("./ComposerGenerateDemo.svelte")}
         active={generateActive}
         props={{
-          sequence: carriedSequence,
+          sequence: pageSequence.sequence,
           embedded: true,
           leftPropType: selectedProp,
           rightPropType: selectedProp,
           appearance: propAppearance,
-          onGenerated: carryVisitorSequence,
+          onGenerated: carryGenerate,
           propControl,
         }}
         error={generateLoadError}
@@ -682,12 +700,12 @@
            in place, the way SequenceHeroDemo's player deliberately does. -->
       <LazyMount
         loader={() => import("./ComposerTunnelDemo.svelte")}
-        active={tunnelActive && tunnelVisible && !!carriedSequence}
+        active={tunnelActive && tunnelVisible}
         props={{
-          sequence: carriedSequence,
+          sequence: pageSequence.sequence,
           active: tunnelVisible,
           layout: "band",
-          onGenerated: carryVisitorSequence,
+          onGenerated: carryTunnel,
           leftPropType: selectedProp,
           rightPropType: selectedProp,
           appearance: propAppearance,
@@ -834,7 +852,7 @@
           loader={loadViewer}
           active={true}
           props={{
-            sequence: carriedSequence,
+            sequence: pageSequence.sequence,
             fillHeight: true,
             entrance: true,
             railTopOffset: "4.5rem",
