@@ -22,6 +22,8 @@
     PICTOGRAPH_ARRIVAL_PROP_MOTION_MIN_MS,
   } from "../domain/pictograph-arrival-motion";
   import type { PictographStageRequest } from "../state/step-grid-display-state.svelte";
+  import type { GridJoin } from "@tka/tka-types";
+  import { gridJoinCellResolver } from "@tka/render-core";
 
   type ArrivalPhase =
     | "preparing"
@@ -55,6 +57,7 @@
     rightPropTypeOverride = undefined,
     leftColorOverride = undefined,
     rightColorOverride = undefined,
+    gridJoin = null,
   }: {
     request: PictographStageRequest;
     sequence: SequenceData;
@@ -68,19 +71,24 @@
     rightPropTypeOverride?: PropType;
     leftColorOverride?: string;
     rightColorOverride?: string;
+    /** The workspace sequence's join, so the arriving step lands as drawn. */
+    gridJoin?: GridJoin | null;
   } = $props();
 
-  const step = $derived(sequence.steps[request.stepIndex] ?? null);
+  const withGridJoin = $derived(gridJoinCellResolver({ conjoined: gridJoin }));
+  const rawStep = $derived(sequence.steps[request.stepIndex] ?? null);
+  const step = $derived(rawStep && gridJoin ? withGridJoin(rawStep) : rawStep);
   const propMotionDurationMs = $derived(
     step
       ? getPictographArrivalPropMotionDurationMs(step)
       : PICTOGRAPH_ARRIVAL_PROP_MOTION_MIN_MS
   );
   const motionStartData = $derived.by(() => {
-    if (request.stepIndex > 0) {
-      return sequence.steps[request.stepIndex - 1] ?? null;
-    }
-    return sequence.startPlacement ?? sequence.startingPlacement ?? null;
+    const start =
+      request.stepIndex > 0
+        ? (sequence.steps[request.stepIndex - 1] ?? null)
+        : (sequence.startPlacement ?? sequence.startingPlacement ?? null);
+    return start && gridJoin ? withGridJoin(start) : start;
   });
 
   let phase = $state<ArrivalPhase>("preparing");

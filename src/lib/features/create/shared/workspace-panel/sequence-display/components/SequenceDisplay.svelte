@@ -10,6 +10,7 @@
     MandalaRenderOptions,
   } from "$lib/shared/mandala/domain/mandala-types";
   import StepGrid from "./StepGrid.svelte";
+  import { sequenceGridJoin } from "$lib/shared/grid-join/sequence-grid-join";
   import { loopDetector as circularLoopDetector } from "$lib/features/create/generate/circular/services/loop-detector";
   import { createComponentLogger } from "$lib/shared/utils/debug-logger";
   import { getIsTimelineMode } from "../state/timeline-mode.svelte";
@@ -234,6 +235,7 @@
       <div class="step-grid-wrapper" class:shift-mode={isShiftStartMode}>
         <StepGrid
           steps={displaySequence?.steps ?? []}
+          gridJoin={sequenceGridJoin(displaySequence)}
           arrivalSequence={displaySequence}
           {optionAudition}
           startPlacement={startPlacementStep() ?? undefined}

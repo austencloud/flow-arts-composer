@@ -19,6 +19,7 @@ import { getStepOperator } from "$lib/features/create/shared/get-step-operator";
   import { createComponentLogger } from "$lib/shared/utils/debug-logger";
   import { navigationState } from "$lib/shared/navigation/state/navigation-state.svelte";
   import StepEditorPanel from "../sequence-actions/StepEditorPanel.svelte";
+  import { sequenceGridJoin } from "$lib/shared/grid-join/sequence-grid-join";
   import BatchStepEditor from "../sequence-actions/BatchStepEditor.svelte";
   import MandalaViewerPanel from "../sequence-actions/MandalaViewerPanel.svelte";
   import StepControlsZone from "../sequence-actions/StepControlsZone.svelte";
@@ -537,6 +538,7 @@ import { getStepOperator } from "$lib/features/create/shared/get-step-operator";
                 <BatchStepEditor
                   steps={batchSteps}
                   stepNumbers={batchStepNumbers}
+                  gridJoin={sequenceGridJoin(sequence)}
                   {totalBeats}
                   leftPropTypeOverride={leftPropType}
                   rightPropTypeOverride={rightPropType}
