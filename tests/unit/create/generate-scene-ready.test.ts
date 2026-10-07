@@ -68,6 +68,21 @@ describe("Generate scene readiness", () => {
     await vi.waitFor(() => expect(drawMatrixRealization).toHaveBeenCalled());
   });
 
+  it("warns once when the source returns no sequence", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    try {
+      scene = mountGenerateScene(host, SQUARE, vi.fn());
+      await vi.waitFor(() => expect(drawMatrixRealization).toHaveBeenCalled());
+      await vi.waitFor(() => expect(warn).toHaveBeenCalledTimes(1));
+      expect(warn).toHaveBeenCalledWith(
+        "[method preview] Generate source returned no sequence; using the demo"
+      );
+      expect(drawMatrixRealization).toHaveBeenCalledTimes(1);
+    } finally {
+      warn.mockRestore();
+    }
+  });
+
   it("waits while a cell is still drawing", () => {
     fakePictograph.reportBudget = 3;
     const onready = vi.fn();

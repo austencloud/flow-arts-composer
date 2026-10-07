@@ -90,8 +90,14 @@
       if (disposed) return;
       void drawMatrixRealization()
         .then((draw) => {
-          if (!draw) sourceFailed = true;
-          else if (!disposed) fresh = draw.sequence;
+          if (!draw) {
+            // The pool reports its own load failure as null, so this is
+            // almost always a failed fetch, not an unlucky draw.
+            sourceFailed = true;
+            console.warn(
+              "[method preview] Generate source returned no sequence; using the demo"
+            );
+          } else if (!disposed) fresh = draw.sequence;
         })
         .catch((error: unknown) => {
           sourceFailed = true;
