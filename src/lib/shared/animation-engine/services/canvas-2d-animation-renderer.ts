@@ -60,7 +60,7 @@ import {
   CENTERED_HAND_OFFSETS,
   gridJoinLayerAlphas,
   type GridJoinTweenSample,
-} from "$lib/shared/animation-engine/services/grid-join-tween";
+} from "$lib/shared/grid-join/grid-join-tween";
 import { PIXELS_PER_UNIT } from "$lib/shared/multi-grid/domain/constants/grid-mode-offsets";
 
 // Constants matching AnimatorCanvas EXACTLY

@@ -1,6 +1,11 @@
 import { createStepData } from "$lib/shared/foundation/domain/factories/create-step-data";
 import { createSequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { GridPlacement } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+import { createStartPlacementData } from "$lib/shared/foundation/domain/factories/create-start-placement-data";
+import {
+  GridLocation,
+  GridMode,
+  GridPlacement,
+} from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
 import {
   createMotionData,
   type MotionData,
@@ -8,6 +13,7 @@ import {
 import {
   HandSide,
   MotionType,
+  Orientation,
   RotationDirection,
 } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
 import type { ExtensionAnalysis } from "$lib/features/create/shared/services/sequence-extender";
@@ -28,8 +34,34 @@ function motion(
   });
 }
 
+/** Alpha 1: both props at rest, blue south and red north, so the Grid join
+    previews draw a real start position. */
+function staticAt(hand: HandSide, location: GridLocation): MotionData {
+  return createMotionData({
+    hand,
+    motionType: MotionType.STATIC,
+    rotationDirection: RotationDirection.NO_ROTATION,
+    startLocation: location,
+    endLocation: location,
+    startOrientation: Orientation.IN,
+    endOrientation: Orientation.IN,
+    gridMode: GridMode.DIAMOND,
+  });
+}
+
 export const SEQUENCE_ACTIONS_REVIEW_SEQUENCE = createSequenceData({
   id: "sequence-actions-review",
+  gridMode: GridMode.DIAMOND,
+  startPlacement: createStartPlacementData({
+    id: "review-start",
+    startPlacement: GridPlacement.ALPHA1,
+    endPlacement: GridPlacement.ALPHA1,
+    gridPlacement: GridPlacement.ALPHA1,
+    motions: {
+      left: staticAt(HandSide.LEFT, GridLocation.SOUTH),
+      right: staticAt(HandSide.RIGHT, GridLocation.NORTH),
+    },
+  }),
   name: "Sequence Actions review",
   word: "REVIEW",
   steps: Array.from({ length: 40 }, (_, index) => {

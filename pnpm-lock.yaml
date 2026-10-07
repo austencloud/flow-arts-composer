@@ -107,8 +107,8 @@ importers:
         specifier: 8.0.44
         version: 8.0.44(@capacitor/core@8.4.2)
       '@capgo/capacitor-updater':
-        specifier: ^8.45.9
-        version: 8.45.9(@capacitor/core@8.4.2)
+        specifier: 8.51.25
+        version: 8.51.25(@capacitor/core@8.4.2)
       '@datadog/sketches-js':
         specifier: 2.1.1
         version: 2.1.1
@@ -977,8 +977,8 @@ packages:
     peerDependencies:
       '@capacitor/core': '>=8.0.0'
 
-  '@capgo/capacitor-updater@8.45.9':
-    resolution: {integrity: sha512-lAth8jMHXr8tsbq6//XEcKmaybiSqtM4tNny/Tw3AUobKhlScLNYx30/2RSiLAuCWKSOffu8eO8YmkLz8nFmKw==}
+  '@capgo/capacitor-updater@8.51.25':
+    resolution: {integrity: sha512-lznyAv9Ktl1CD6/OKZY+lQZl9ke+dbadLEB2XQKP7VbQO8/5D8yOHS+pysQgVnNkiZYEC3v1AxgY4a5Z+DnxXw==}
     peerDependencies:
       '@capacitor/core': ^8.0.0
 
@@ -9118,7 +9118,7 @@ snapshots:
     dependencies:
       '@capacitor/core': 8.4.2
 
-  '@capgo/capacitor-updater@8.45.9(@capacitor/core@8.4.2)':
+  '@capgo/capacitor-updater@8.51.25(@capacitor/core@8.4.2)':
     dependencies:
       '@capacitor/core': 8.4.2
 
