@@ -11,6 +11,7 @@ import type { CollectedTunnel } from "./tunnel-collection-types";
 export interface TunnelRevisionPayload {
   readonly schemaVersion: 1 | 2;
   readonly steps: CollectedTunnel["steps"];
+  readonly conjoined?: CollectedTunnel["conjoined"];
   readonly snapshot: CollectedTunnel["snapshot"];
   /** V1 retained a thumbnail in the immutable payload. V2 deliberately leaves
    * disposable renderer output on the mutable work document. */
@@ -31,6 +32,7 @@ export function tunnelRevisionPayload(
   tunnel: Pick<
     CollectedTunnel,
     | "steps"
+    | "conjoined"
     | "snapshot"
     | "poster"
     | "source"
@@ -44,6 +46,7 @@ export function tunnelRevisionPayload(
   return {
     schemaVersion,
     steps: tunnel.steps,
+    ...(tunnel.conjoined !== undefined && { conjoined: tunnel.conjoined }),
     snapshot: tunnel.snapshot,
     ...(schemaVersion === 1 ? { poster: tunnel.poster } : {}),
     ...(tunnel.source !== undefined && { source: tunnel.source }),

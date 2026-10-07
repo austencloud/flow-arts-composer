@@ -164,6 +164,7 @@ export function openScene3DInStudio(
     word: scene.name,
     steps: [...steps],
     gridMode: steps.find((s) => s.gridMode)?.gridMode,
+    ...(scene.conjoined ? { conjoined: scene.conjoined } : {}),
   });
 
   if (typeof sessionStorage !== "undefined") {

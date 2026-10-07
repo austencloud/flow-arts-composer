@@ -8,6 +8,7 @@ import {
   captureScene3DSnapshot,
   captureScene3DPoster,
 } from "./capture-3d-scene";
+import { sequenceGridJoin } from "$lib/shared/grid-join/sequence-grid-join";
 import { scene3dCollectionState } from "../state/scene-3d-collection-state.svelte";
 import { SCENE_3D_GROUPS } from "../domain/scene-3d-collection-types";
 import type {
@@ -72,6 +73,7 @@ export async function saveFilmRecipe(
     const poster = captureScene3DPoster(input.viewer3DState);
     const steps = (seq?.steps ?? []) as StepData[];
     const sourceWord = simplifyRepeatedWord(seq?.word || seq?.name || "");
+    const join = sequenceGridJoin(seq);
 
     const durationSeconds =
       keyframes[keyframes.length - 1]!.timestamp - keyframes[0]!.timestamp;
@@ -81,6 +83,7 @@ export async function saveFilmRecipe(
       poster,
       snapshot,
       ...(steps.length > 0 ? { steps } : {}),
+      ...(steps.length > 0 && join ? { conjoined: join } : {}),
       ...(sourceWord
         ? { sourceWord, ...(seq?.id ? { sourceSequenceId: seq.id } : {}) }
         : {}),
