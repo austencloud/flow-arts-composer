@@ -83,6 +83,28 @@ describe("methodPreviewHold", () => {
     expect(turns.hold).toHaveBeenCalledTimes(1);
   });
 
+  it("lets go of both a pointer hold and a keyboard hold when destroyed", () => {
+    keyboardFocus = true;
+    const action = methodPreviewHold(node, { turns, id: "fuse" });
+    node.dispatchEvent(pointer("pointerenter", "mouse"));
+    node.dispatchEvent(new Event("focus"));
+    expect(turns.hold).toHaveBeenCalledTimes(2);
+    action.destroy();
+    expect(turns.release).toHaveBeenCalledTimes(2);
+    expect(turns.release).toHaveBeenNthCalledWith(1, "fuse");
+    expect(turns.release).toHaveBeenNthCalledWith(2, "fuse");
+  });
+
+  it("keeps a resting hold when update brings the same id and turns", () => {
+    const action = methodPreviewHold(node, { turns, id: "generate" });
+    node.dispatchEvent(pointer("pointerenter", "mouse"));
+    action.update({ turns, id: "generate" });
+    expect(turns.release).not.toHaveBeenCalled();
+    node.dispatchEvent(pointer("pointerleave", "mouse"));
+    expect(turns.release).toHaveBeenCalledTimes(1);
+    expect(turns.release).toHaveBeenCalledWith("generate");
+  });
+
   it("moves a held card's hold to its new id", () => {
     const action = methodPreviewHold(node, { turns, id: "construct" });
     node.dispatchEvent(pointer("pointerenter", "mouse"));
