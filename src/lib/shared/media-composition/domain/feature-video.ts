@@ -4,6 +4,22 @@ import {
   PostProjectSchema,
   type PostProject,
 } from "$lib/shared/media-composition/domain/post-project";
+import {
+  FEATURE_VIDEO_API,
+  FEATURE_VIDEO_SLUG_PATTERN,
+  featureVideoMediaUrl,
+  isFeatureVideoMediaUrl,
+  isFeatureVideoSlug,
+} from "$lib/shared/media-composition/domain/feature-video-url";
+
+/** Kept here too, for the callers that already import them from this file. */
+export {
+  FEATURE_VIDEO_API,
+  FEATURE_VIDEO_SLUG_PATTERN,
+  featureVideoMediaUrl,
+  isFeatureVideoMediaUrl,
+  isFeatureVideoSlug,
+};
 
 /**
  * A feature video is a Post project kept as a folder on this computer, such
@@ -18,9 +34,6 @@ import {
  *   <root>/<slug>/exports/       finished renders
  */
 
-/** Lowercase letters, digits and dashes; it names the folder and the URL. */
-export const FEATURE_VIDEO_SLUG_PATTERN = /^[a-z0-9][a-z0-9-]{0,62}$/;
-export const FEATURE_VIDEO_API = "/api/dev/feature-videos";
 export const FEATURE_VIDEO_FILE_FORMAT = "feature-video-v1";
 /** The largest project.json the dev server writes. */
 export const FEATURE_VIDEO_MAX_FILE_BYTES = 12_000_000;
@@ -66,31 +79,6 @@ export interface FeatureVideoSummary {
   revision: number;
   savedAt: number;
   sequenceId: string;
-}
-
-export function isFeatureVideoSlug(value: unknown): value is string {
-  return typeof value === "string" && FEATURE_VIDEO_SLUG_PATTERN.test(value);
-}
-
-/** The URL the editor plays a file in a project's media folder from. */
-export function featureVideoMediaUrl(
-  slug: string,
-  relativePath: string
-): string {
-  if (!isFeatureVideoSlug(slug))
-    throw new Error(`"${slug}" is not a feature video name.`);
-  const segments = relativePath.split("/").filter(Boolean);
-  if (segments.length === 0) throw new Error("A media path is required.");
-  return `${FEATURE_VIDEO_API}/${slug}/media/${segments
-    .map(encodeURIComponent)
-    .join("/")}`;
-}
-
-const MEDIA_URL =
-  /^\/api\/dev\/feature-videos\/[a-z0-9][a-z0-9-]{0,62}\/media\/.+$/;
-
-export function isFeatureVideoMediaUrl(url: unknown): url is string {
-  return typeof url === "string" && MEDIA_URL.test(url);
 }
 
 /**
