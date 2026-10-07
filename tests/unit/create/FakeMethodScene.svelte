@@ -1,8 +1,17 @@
 <!-- A stand-in method preview scene. It reports ready on mount, unless a
      test switches that off, and shows the props the preview box passes it. -->
 <script module lang="ts">
-  /** Tests switch this off to hold a scene before its first picture. */
-  export const fakeScene = { reportsReady: true };
+  /**
+   * Tests change these to shape the scene's first report.
+   * reportsReady: false holds the scene before its first picture.
+   * readyTimes: how many times it calls onready (a real scene can repeat).
+   * readyDelayMs: report this long after mount instead of at once.
+   */
+  export const fakeScene = {
+    reportsReady: true,
+    readyTimes: 1,
+    readyDelayMs: 0,
+  };
 </script>
 
 <script lang="ts">
@@ -19,8 +28,16 @@
     onready,
   }: MethodPreviewSceneProps = $props();
 
+  // The delayed report is never cancelled on destroy, on purpose: it stands
+  // for a renderer that reports from a promise after the box has gone.
   onMount(() => {
-    if (fakeScene.reportsReady) onready();
+    if (!fakeScene.reportsReady) return;
+    const times = fakeScene.readyTimes;
+    const report = () => {
+      for (let i = 0; i < times; i++) onready();
+    };
+    if (fakeScene.readyDelayMs > 0) setTimeout(report, fakeScene.readyDelayMs);
+    else report();
   });
 </script>
 

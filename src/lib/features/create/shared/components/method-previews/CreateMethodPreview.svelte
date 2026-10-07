@@ -17,7 +17,7 @@
    * positioned, sized slot; it fills that slot and is the size container its
    * scene measures against.
    */
-  import { onMount } from "svelte";
+  import { onDestroy, onMount } from "svelte";
   import DualSourceCrossfade from "$lib/shared/components/DualSourceCrossfade.svelte";
   import LazyMount from "$lib/shared/components/LazyMount.svelte";
   import { runAfterNamedRouteMorphIdle } from "$lib/shared/transitions/named-route-morph-state.svelte";
@@ -35,7 +35,10 @@
     onready,
     loader,
   }: {
-    /** A CREATE_TABS id. */
+    /**
+     * A CREATE_TABS id. Fixed for the box's life: hosts key the box by
+     * method id.
+     */
     methodId: string;
     /** The method's color: the tint, and the scene's accent. */
     color: string;
@@ -56,6 +59,8 @@
   let height = $state(0);
   let load = $state(false);
   let ready = $state(false);
+  // A renderer can report from a promise after the box has gone.
+  let destroyed = false;
 
   const shape = $derived(classifyPreviewShape(width, height));
 
@@ -85,8 +90,12 @@
     })
   );
 
+  onDestroy(() => {
+    destroyed = true;
+  });
+
   function handleReady(): void {
-    if (ready) return;
+    if (destroyed || ready) return;
     ready = true;
     onready?.(methodId);
   }

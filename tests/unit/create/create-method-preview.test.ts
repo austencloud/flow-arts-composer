@@ -13,18 +13,38 @@ import FakeMethodScene, { fakeScene } from "./FakeMethodScene.svelte";
 const realCreateElement = Object.getPrototypeOf(document)
   .createElement as typeof document.createElement;
 
-/** jsdom has no ResizeObserver. This one reports a 120×48 box at once. */
+/**
+ * jsdom has no ResizeObserver. This one reports a 120×48 box as soon as it
+ * observes, and resizeTo() reports a new size to every observer still live.
+ */
 class BoxObserver {
+  static live = new Set<BoxObserver>();
+  static resizeTo(width: number, height: number): void {
+    for (const observer of BoxObserver.live) observer.deliver(width, height);
+  }
+
+  private target: Element | null = null;
+
   constructor(private readonly report: ResizeObserverCallback) {}
+
   observe(target: Element): void {
-    const entry = { target, contentRect: { width: 120, height: 48 } };
+    this.target = target;
+    BoxObserver.live.add(this);
+    this.deliver(120, 48);
+  }
+  unobserve(): void {}
+  disconnect(): void {
+    BoxObserver.live.delete(this);
+  }
+
+  private deliver(width: number, height: number): void {
+    if (!this.target) return;
+    const entry = { target: this.target, contentRect: { width, height } };
     this.report(
       [entry as unknown as ResizeObserverEntry],
       this as unknown as ResizeObserver
     );
   }
-  unobserve(): void {}
-  disconnect(): void {}
 }
 
 const fakeLoader = () => Promise.resolve({ default: FakeMethodScene });
@@ -34,6 +54,7 @@ let component: ReturnType<typeof mount> | null = null;
 let stubbedCreateElement: typeof document.createElement;
 
 beforeEach(() => {
+  BoxObserver.live.clear();
   vi.useFakeTimers();
   vi.stubGlobal("ResizeObserver", BoxObserver);
   stubbedCreateElement = document.createElement;
@@ -48,6 +69,8 @@ afterEach(() => {
   host.remove();
   document.createElement = stubbedCreateElement;
   fakeScene.reportsReady = true;
+  fakeScene.readyTimes = 1;
+  fakeScene.readyDelayMs = 0;
   vi.unstubAllGlobals();
   vi.useRealTimers();
 });
@@ -64,6 +87,13 @@ function render(props: Record<string, unknown>): void {
 async function settle(): Promise<void> {
   await vi.advanceTimersByTimeAsync(400);
   flushSync();
+}
+
+/** The crossfade's two layers: the tint's, then the scene's. */
+function layers(): { tint: HTMLElement; scene: HTMLElement } {
+  const sources = host.querySelectorAll<HTMLElement>(".dual-source > .source");
+  expect(sources).toHaveLength(2);
+  return { tint: sources[0]!, scene: sources[1]! };
 }
 
 describe("CreateMethodPreview", () => {
@@ -118,5 +148,70 @@ describe("CreateMethodPreview", () => {
     await settle();
     expect(host.querySelector(".tint")).not.toBeNull();
     expect(host.querySelector(".fake-scene")).toBeNull();
+  });
+
+  it("shows the tint until the scene is ready, then the scene", async () => {
+    fakeScene.readyDelayMs = 1000;
+    render({ loader: fakeLoader });
+    let { tint, scene } = layers();
+    expect(tint.querySelector(".tint")).not.toBeNull();
+    expect(tint.classList.contains("active")).toBe(true);
+    expect(scene.classList.contains("active")).toBe(false);
+
+    await settle();
+    ({ tint, scene } = layers());
+    expect(scene.querySelector(".fake-scene")).not.toBeNull();
+    expect(tint.classList.contains("active")).toBe(true);
+    expect(scene.classList.contains("active")).toBe(false);
+
+    await vi.advanceTimersByTimeAsync(1000);
+    flushSync();
+    ({ tint, scene } = layers());
+    expect(tint.classList.contains("active")).toBe(false);
+    expect(scene.classList.contains("active")).toBe(true);
+  });
+
+  it("reports ready once even if the scene reports twice", async () => {
+    fakeScene.readyTimes = 2;
+    const onready = vi.fn();
+    render({ loader: fakeLoader, onready });
+    await settle();
+    expect(onready).toHaveBeenCalledTimes(1);
+  });
+
+  it("keeps the scene at its last real size when the box reports none", async () => {
+    render({ loader: fakeLoader });
+    await settle();
+    const scene = host.querySelector<HTMLElement>(".fake-scene");
+    expect(scene?.dataset.size).toBe("120x48");
+
+    BoxObserver.resizeTo(90, 40);
+    flushSync();
+    expect(scene?.dataset.size).toBe("90x40");
+
+    for (const [width, height] of [
+      [0, 0],
+      [0, 40],
+      [90, 0],
+    ] as const) {
+      BoxObserver.resizeTo(width, height);
+      flushSync();
+      expect(host.querySelector(".fake-scene")).toBe(scene);
+      expect(scene?.dataset.size).toBe("90x40");
+    }
+  });
+
+  it("ignores a scene that reports ready after the box is gone", async () => {
+    fakeScene.readyDelayMs = 1000;
+    const onready = vi.fn();
+    render({ loader: fakeLoader, onready });
+    await settle();
+    expect(host.querySelector(".fake-scene")).not.toBeNull();
+
+    unmount(component!);
+    component = null;
+    await vi.advanceTimersByTimeAsync(1500);
+    flushSync();
+    expect(onready).not.toHaveBeenCalled();
   });
 });
