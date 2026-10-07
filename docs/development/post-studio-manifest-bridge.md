@@ -120,7 +120,7 @@ A capture records a scripted pass through the app as a take. The script is `<slu
 export default {
   id: "builder-dckpsi",
   url: "/create/construct",
-  viewport: { width: 720, height: 1280, deviceScaleFactor: 1.5, mobile: true },
+  viewport: { width: 432, height: 768, deviceScaleFactor: 2.5, mobile: true },
   ready: "document.querySelector('.canvas-wrapper') !== null", // optional: waits for this to be true
   settleMs: 1500, // optional: a pause after load, 1500 by default
   async run(director) {
@@ -131,16 +131,15 @@ export default {
 };
 ```
 
-Chrome's screencast delivers at most 1.5 times the CSS viewport, so a 9:16 recording uses 720 by 1280 at 1.5 for exactly 1080 by 1920. The runner refuses a higher scale. The director's calls are `click(label)`, `fill(label, value)`, `cell(index)`, `canvas()`, `move(x, y)`, `wait(ms)` and `shot(id, seconds, action)`; the shot named like the capture is the one that is encoded.
+Each recording runs in its own headless Chrome, started at the script's viewport and scale, so a phone's 432 by 768 at 2.5 records 1080 by 1920. A windowed Chrome would send frames at the screen's scale instead: 648 by 1152 on a 150% display. Keep the phone viewport for 9:16. A wider one such as 720 by 1280 at 1.5 also gives 1080 by 1920, but the app lays it out differently and text comes out at 60% of its phone size. The director's calls are `click(label)`, `fill(label, value)`, `cell(index)`, `canvas()`, `move(x, y)`, `wait(ms)` and `shot(id, seconds, action)`; the shot named like the capture is the one that is encoded.
 
 ```powershell
-powershell -File scripts/launch-chrome-debug.ps1 -Port 9223 -UserDataDir C:\Users\Austen\.claude\chrome-profile-capture -ProfileDirectory Default -Url about:blank
 node scripts/feature-video/capture.mjs --feature promo-1-0 --capture builder-dckpsi
 node scripts/post-project.mjs capture-info --feature promo-1-0
 node scripts/post-project.mjs link-capture --feature promo-1-0 --capture builder-dckpsi --media captures/builder-dckpsi.2.mp4
 ```
 
-The capture Chrome is its own browser with its own profile, signed out. It is never your Chrome and never the shared agent browser on 9222. The dev server must be running; the runner never starts it.
+The headless Chrome starts with a fresh profile, signed out, and closes when the recording ends. It is never your Chrome and never the shared agent browser on 9222. The dev server must be running; the runner never starts it. `--origin` records from another dev server on this computer, such as a worktree's, and the runner's CLI calls go to the same server.
 
 Each run writes `media/captures/<id>.<n>.mp4` with n counting up, so no earlier recording is overwritten, then links it. The first run adds a take labelled with the id. Every later run points that same take at the new file, so the clips cut from it stay in the post: a longer file keeps every clip as it was, and a shorter one cuts them back to fit. The take's timing moves with it. A run that fails part way keeps its frames in `captures/frames/<id>/`, writes no video and leaves the project as it was.
 

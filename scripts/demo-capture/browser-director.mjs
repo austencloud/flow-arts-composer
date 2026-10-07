@@ -15,9 +15,10 @@ const DEFAULT_SIZE = { width: 1920, height: 1080 };
  *   `Page.screencastFrame` in `bufferEvents`.
  * - `options.framesDir`: where each shot's frames go, one folder per shot id.
  *   Defaults to `<root>/production/frames`.
- * - `options.size`: the largest frame the screencast may deliver. Chrome
- *   stops at 1.5 times the CSS viewport, so pick a viewport that makes that
- *   the size you want. Defaults to 1920 by 1080.
+ * - `options.size`: the largest frame the screencast may deliver, in device
+ *   pixels. A windowed Chrome sends frames at the screen's scale, whatever the
+ *   emulated one, so phone-sized recordings use a headless Chrome started at
+ *   their scale (`launchHeadlessChrome`). Defaults to 1920 by 1080.
  */
 export function createDirector(page, cdp, root, options = {}) {
   const framesDir =

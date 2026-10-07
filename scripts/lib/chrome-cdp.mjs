@@ -5,15 +5,23 @@
  * `scripts/launch-chrome-debug.ps1` starts on port 9222. Extracted from
  * `capture-seraphic-vault-gate4.mjs` when a third consumer appeared; that file
  * re-exports these names so its own callers keep working.
+ * `launchHeadlessChrome` starts a private Chrome for one app recording instead.
  *
  * No puppeteer, by project rule. Everything here is one WebSocket and the
  * handful of CDP domains a capture needs.
  */
 
+import { spawn } from "node:child_process";
 import { writeFileSync } from "node:fs";
+import { mkdtemp, readFile, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { createEventBuffer } from "./cdp-event-buffer.mjs";
 
 const DEFAULT_PORT = 9222;
+const CHROME =
+  process.env.CHROME_PATH ??
+  "C:/Program Files/Google/Chrome/Application/chrome.exe";
 
 export const delay = (milliseconds) =>
   new Promise((resolveDelay) => setTimeout(resolveDelay, milliseconds));
@@ -47,6 +55,13 @@ export async function connect(
     pending.delete(message.id);
     if (message.error) resolver.reject(new Error(message.error.message));
     else resolver.resolve(message.result);
+  });
+  // A closed tab or a browser that quit answers nothing more, so nothing
+  // waits on it.
+  socket.addEventListener("close", () => {
+    for (const { reject } of pending.values())
+      reject(new Error("The DevTools connection closed."));
+    pending.clear();
   });
 
   return {
@@ -234,6 +249,79 @@ export async function openTab(
       browser.close();
     },
   };
+}
+
+/**
+ * Starts a private headless Chrome for one recording and returns its DevTools
+ * `port` and a `close` that ends it and deletes its profile.
+ *
+ * Headless, at the recording's own scale, because a windowed Chrome's
+ * screencast sends frames at the screen's scale whatever the emulated one: a
+ * 432 by 768 phone at 2.5 came out 648 by 1152 on a 150% display (measured
+ * 2026-10-07). Started this way it sends 1080 by 1920, still draws with the
+ * GPU, shows nothing on screen, and starts each run signed out with a fresh
+ * profile. The browser rules' "never --force-device-scale-factor" is about the
+ * shared verification browser; this one belongs to the recording alone.
+ */
+export async function launchHeadlessChrome({
+  width,
+  height,
+  deviceScaleFactor = 1,
+}) {
+  const profile = await mkdtemp(join(tmpdir(), "tka-capture-"));
+  const chrome = spawn(
+    CHROME,
+    [
+      "--headless=new",
+      "--remote-debugging-port=0",
+      `--user-data-dir=${profile}`,
+      `--force-device-scale-factor=${deviceScaleFactor}`,
+      `--window-size=${width},${height}`,
+      "--hide-scrollbars",
+      "--mute-audio",
+      "--no-first-run",
+      "--no-default-browser-check",
+      "about:blank",
+    ],
+    { stdio: "ignore", windowsHide: true }
+  );
+  let failure = null;
+  const exited = new Promise((resolveExit) => {
+    chrome.once("exit", resolveExit);
+    // A Chrome that never started sends "error" and no "exit".
+    chrome.once("error", (cause) => {
+      failure = cause;
+      resolveExit();
+    });
+  });
+  const running = () =>
+    !failure && chrome.exitCode === null && chrome.signalCode === null;
+  const close = async () => {
+    if (running()) {
+      chrome.kill();
+      await exited;
+    }
+    // Chrome's helpers can hold profile files for a moment after it exits.
+    await rm(profile, {
+      recursive: true,
+      force: true,
+      maxRetries: 10,
+      retryDelay: 200,
+    });
+  };
+  // Chrome writes the port it picked to this file once DevTools listens.
+  const portFile = join(profile, "DevToolsActivePort");
+  for (const deadline = Date.now() + 15000; ; await delay(100)) {
+    const text = await readFile(portFile, "utf8").catch(() => "");
+    const port = Number(text.split(/\r?\n/)[0]);
+    if (port > 0) return { port, close };
+    if (!running() || Date.now() > deadline) {
+      await close();
+      throw new Error(
+        `Headless Chrome did not start (${CHROME}${failure ? `: ${failure.message}` : ""}). Set CHROME_PATH if it lives elsewhere.`
+      );
+    }
+  }
 }
 
 /** Whether the debug browser is listening. */

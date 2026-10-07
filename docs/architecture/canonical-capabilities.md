@@ -360,8 +360,9 @@ The CLI's music commands use `scripts/feature-video/music-import.mjs`,
 soundtrack, beat grid, bar, downbeat, align take, loudness, LUFS.
 
 App recordings for a feature video come from `scripts/feature-video/capture.mjs`,
-the one runner for them. It drives the dedicated capture Chrome on port 9223
-through `scripts/lib/chrome-cdp.mjs` (events through `cdp-event-buffer.mjs`),
+the one runner for them. It starts a private headless Chrome per recording
+(`launchHeadlessChrome` in `scripts/lib/chrome-cdp.mjs`, events through
+`cdp-event-buffer.mjs`),
 `scripts/demo-capture/browser-director.mjs` owns the pointer and the screencast,
 `scripts/demo-capture/encode-frames.py` owns the encode, and
 `scripts/feature-video/capture-files.mjs` owns recording names. The project
