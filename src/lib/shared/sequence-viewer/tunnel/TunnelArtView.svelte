@@ -47,6 +47,7 @@
     rightBuugengFlipped,
     onCanvasReady,
     onActivePerformerStepsChange,
+    decorative = false,
   }: {
     sequence: SequenceData;
     playback?: ViewerPlaybackState;
@@ -84,6 +85,8 @@
     onActivePerformerStepsChange?: (
       stepIndices: Readonly<Record<string, number>>
     ) => void;
+    /** Decorative previews: no tap, hover badge, corner toggle, or context menu. */
+    decorative?: boolean;
   } = $props();
 
   let readyFrame = 0;
@@ -270,9 +273,10 @@
         sequenceData={seq}
         currentStep={displayStep}
         isPlaying={playing}
-        tapToToggle={true}
-        hoverHint="badge"
-        cornerToggle={true}
+        tapToToggle={!decorative}
+        hoverHint={decorative ? "none" : "badge"}
+        cornerToggle={!decorative}
+        disableContextMenu={decorative}
         onPlaybackToggle={handlePlaybackToggle}
         gridMode={effectiveGridMode}
         {trailSettings}
