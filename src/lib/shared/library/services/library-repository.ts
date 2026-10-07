@@ -5,6 +5,7 @@
  */
 
 import { getErrorHandler } from "$lib/shared/application/get-error-handler";
+import { mergeSavedOverStored } from "./library-sequence-merge";
 import {
   collection,
   doc,
@@ -525,9 +526,11 @@ export class LibraryRepository {
           existingData!,
           actualSequenceId
         );
+        // The join is part of the sequence: one removed in the edit must not
+        // survive from the stored copy. The write below is a full set (no
+        // merge), so leaving the key out removes it from the document.
         libSeq = {
-          ...existing,
-          ...sequence,
+          ...mergeSavedOverStored(existing, sequence),
           id: actualSequenceId,
           updatedAt: new Date(),
         };
