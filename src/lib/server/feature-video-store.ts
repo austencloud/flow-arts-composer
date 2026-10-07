@@ -468,7 +468,9 @@ export function createFeatureVideoStore(
    * Copies a project under a new name, such as a 30 s cut of the 60 s
    * promo. The copy starts at revision 1 with an empty history. It gets its
    * own copy of the media unless shareMedia is set; then it plays the
-   * original's files, and the original must stay where it is.
+   * original's files, and the original must stay where it is. Either way it
+   * gets the capture scripts, so it can record the same shots, but not their
+   * frames.
    */
   async function duplicate(
     slug: string,
@@ -511,6 +513,19 @@ export function createFeatureVideoStore(
       }
       for (const sub of ["history", "captures", "exports"])
         await fs.mkdir(path.join(dir, sub), { recursive: true });
+      const captures = path.join(folder(slug), "captures");
+      const scripts = await fs
+        .readdir(captures, { withFileTypes: true })
+        .catch((cause: unknown) => {
+          if (code(cause) !== "ENOENT") throw cause;
+          return [];
+        });
+      for (const entry of scripts)
+        if (entry.isFile() && entry.name.endsWith(".capture.mjs"))
+          await fs.copyFile(
+            path.join(captures, entry.name),
+            path.join(dir, "captures", entry.name)
+          );
       if (!input.shareMedia)
         await fs
           .cp(path.join(folder(slug), "media"), path.join(dir, "media"), {
