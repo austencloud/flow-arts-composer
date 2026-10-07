@@ -1,4 +1,6 @@
 import { z } from "zod";
+import type { GridJoin } from "@tka/tka-types";
+import { isGridJoin } from "@tka/render-core";
 import { StepDataSchema } from "$lib/shared/foundation/domain/schemas";
 import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
 import {
@@ -14,6 +16,9 @@ export interface CollectedTunnel {
   id: string;
   name: string;
   steps: StepData[];
+  /** The grid join the steps were made under; absent means one grid, which
+   *  is also how tunnels saved before joins read. */
+  conjoined?: GridJoin;
   snapshot: TunnelSnapshot;
   poster: string; // ~200px WebP data URL
   createdAt: number;
@@ -47,6 +52,8 @@ export const CollectedTunnelSchema = z.object({
   id: z.string().min(1),
   name: z.string(),
   steps: z.array(StepDataSchema),
+  // A malformed stored join reads as one grid instead of failing the entry.
+  conjoined: z.custom<GridJoin>(isGridJoin).optional().catch(undefined),
   snapshot: TunnelSnapshotSchema,
   poster: z.string(),
   // createdAt is always the client's Date.now() number (saveTunnel passes an

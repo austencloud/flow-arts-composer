@@ -40,6 +40,7 @@
   import { refreshTunnelPoster } from "$lib/features/tunnel-collection/services/tunnel-poster-refresh";
   import { deriveTunnelName } from "$lib/shared/sequence-viewer/tunnel/tunnel-name";
   import { simplifyRepeatedWord } from "$lib/shared/foundation/utils/word-simplifier";
+  import { sequenceGridJoin } from "$lib/shared/grid-join/sequence-grid-join";
   import { toast } from "$lib/shared/toast/state/toast-state.svelte";
   import {
     exportDeliveryStage,
@@ -696,6 +697,9 @@
       const tunnelData = {
         name,
         steps: [...seq.steps],
+        // The join rides beside the steps; absent (one grid) clears an old one
+        // when an existing tunnel is re-saved.
+        conjoined: sequenceGridJoin(seq) ?? undefined,
         snapshot,
         poster,
         ...(savedComposition ? { composition: savedComposition } : {}),
