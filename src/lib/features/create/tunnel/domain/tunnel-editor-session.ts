@@ -1,4 +1,5 @@
 import { canonicalJSON } from "$lib/shared/foundation/utils/canonical-json";
+import { normalizePropLook } from "$lib/shared/pictograph/prop/domain/prop-look";
 import type { TunnelComposition } from "$lib/shared/sequence-viewer/tunnel/tunnel-composition";
 import type { TunnelSnapshot } from "$lib/shared/sequence-viewer/tunnel/tunnel-snapshot";
 import type { TunnelCreatorDraft } from "./tunnel-creator-draft";
@@ -14,7 +15,9 @@ export interface TunnelEditorSessionStatus {
 /**
  * Exact editor-content identity for workspace replacement decisions.
  * `updatedAt` is generated whenever the creator captures a draft, so it cannot
- * participate; every performed-result input and provenance field remains.
+ * participate; every performed-result input and provenance field remains. A
+ * missing prop version reads as Version 1, so a tunnel saved before versions
+ * is not edited by being opened.
  */
 export function tunnelEditorContentKey(
   composition: TunnelComposition | null,
@@ -22,7 +25,16 @@ export function tunnelEditorContentKey(
 ): string | null {
   if (!composition || !presentation) return null;
   const { updatedAt: _updatedAt, ...stableComposition } = composition;
-  return canonicalJSON({ composition: stableComposition, presentation });
+  return canonicalJSON({
+    composition: stableComposition,
+    presentation: {
+      ...presentation,
+      props: {
+        ...presentation.props,
+        propLook: normalizePropLook(presentation.props.propLook),
+      },
+    },
+  });
 }
 
 /**
