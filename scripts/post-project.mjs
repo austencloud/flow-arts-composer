@@ -3,6 +3,7 @@ import fs from "node:fs/promises";
 import http from "node:http";
 import https from "node:https";
 import path from "node:path";
+import { alignTake, mediaPathFromUrl } from "./feature-video/align-take.mjs";
 import { importTake } from "./feature-video/media-import.mjs";
 import { importMusic } from "./feature-video/music-import.mjs";
 import { parseTimeArg } from "./feature-video/time-args.mjs";
@@ -32,6 +33,7 @@ const featureMediaUrl = (slug, relativePath) =>
     .filter(Boolean)
     .map(encodeURIComponent)
     .join("/")}`;
+const NO_MUSIC = "This post has no music. Add it with: add-music <file>.";
 
 async function request(method, query = {}, body, route = BRIDGE) {
   const url = new URL(route, base);
@@ -424,6 +426,60 @@ try {
         },
       ]),
     };
+  } else if (command === "align-take") {
+    const feature = required("feature");
+    const place = option("place");
+    const project = await currentSnapshot();
+    if (!project.music) throw new Error(NO_MUSIC);
+    let takeId = option("take");
+    if (place) {
+      const clip = project.tracks
+        .flatMap((track) => track.items)
+        .find((item) => item.id === place);
+      if (!clip) throw new Error(`No item "${place}" in this post.`);
+      if (clip.kind !== "video")
+        throw new Error(`"${place}" is not a video clip.`);
+      takeId = clip.takeId;
+    }
+    if (!takeId)
+      throw new Error(
+        "align-take needs --place ITEM to line up a clip, or --take ID to measure a take."
+      );
+    const take = project.takes.find((entry) => entry.id === takeId);
+    if (!take) throw new Error(`No take "${takeId}" in this post.`);
+    if (take.ref.kind !== "linked")
+      throw new Error(
+        `Take "${takeId}" is not a file in a feature video folder.`
+      );
+    const { folder } = await request(
+      "GET",
+      {},
+      undefined,
+      featureRoute(feature)
+    );
+    // A copy made with --share-media plays files from the original's folder, beside this one.
+    const root = path.dirname(folder);
+    const match = await alignTake(
+      mediaPathFromUrl(take.ref.url, root),
+      mediaPathFromUrl(project.music.url, root)
+    );
+    if (!place) result = match;
+    else if (match.warning) {
+      // Nothing moves on a doubtful match; the candidates are printed instead.
+      result = { ...match, placed: false };
+      process.exitCode = 1;
+    } else
+      result = {
+        ...match,
+        placed: true,
+        edit: await sendOps([
+          {
+            op: "sync-to-music",
+            item: place,
+            offsetSeconds: match.offsetSeconds,
+          },
+        ]),
+      };
   } else if (command === "duplicate") {
     result = await request(
       "POST",
@@ -498,6 +554,7 @@ Feature videos, folders on the dev server's computer:
   music [--start T] [--from T] [--to T] [--gain 0.8] [--fade-in S] [--fade-out S] [--bpm 85|none] [--downbeat S] [--beats-per-bar 4] [--label --artist --license]
                                --start is where the music begins in the post; --from and --to are the part of the song that plays
   remove-music
+  align-take --place ITEM | --take ID   where a take sits in the music, from its camera sound; --place puts the clip in time with it
   sync-to-music --item ID --offset S   puts a clip in time with the music at one of align-take's offsets
   T is seconds (12.5), a clock (1:02.5), or a bar of the music: @9 is bar 9, @9.3 is bar 9, beat 3.
   With --feature, show and every edit use the editor that has it open, else the file on disk.

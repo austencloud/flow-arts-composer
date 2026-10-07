@@ -12,6 +12,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { cameraTake, clickTrack, wav } from "./feature-video-audio-fixtures";
 import { toolPath } from "../../../scripts/feature-video/media-import.mjs";
 
 const run = promisify(execFile);
@@ -27,6 +28,10 @@ const hasFfmpeg = (() => {
     return false;
   }
 })();
+
+const MUSIC_URL = "/api/dev/feature-videos/promo/media/music/song.wav";
+const TAKE_URL = "/api/dev/feature-videos/promo/media/footage/take.wav";
+const NO_MUSIC = "This post has no music. Add it with: add-music <file>.";
 
 /** The parts of a post these commands read. */
 interface StandInProject {
@@ -305,4 +310,126 @@ describe("music settings from the command line", () => {
       await fs.access(path.join(folder, "media", "music", "derail-theme.wav"));
     }
   );
+});
+
+describe("lining takes up with the music", () => {
+  const RATE = 8000;
+  const song = clickTrack(20, RATE);
+
+  /** The post's music, and clip v1 of a take whose camera heard `heard`. */
+  async function filmed(heard: Float32Array): Promise<void> {
+    const media = path.join(folder, "media");
+    await fs.mkdir(path.join(media, "music"), { recursive: true });
+    await fs.mkdir(path.join(media, "footage"), { recursive: true });
+    await fs.writeFile(path.join(media, "music", "song.wav"), wav(song, RATE));
+    await fs.writeFile(
+      path.join(media, "footage", "take.wav"),
+      wav(heard, RATE)
+    );
+    project = {
+      tracks: [{ items: [{ id: "v1", kind: "video", takeId: "take-1" }] }],
+      takes: [{ id: "take-1", ref: { kind: "linked", url: TAKE_URL } }],
+      music: { url: MUSIC_URL, gain: 1 },
+    };
+  }
+
+  it.skipIf(!hasFfmpeg)(
+    "finds where a clip's take sits in the music and puts it in time",
+    async () => {
+      await filmed(cameraTake(song, RATE, 3.2, 10));
+      const result = await cli(
+        "align-take",
+        "--feature",
+        "promo",
+        "--place",
+        "v1"
+      );
+      expect(result.code).toBe(0);
+      const report = JSON.parse(result.stdout);
+      expect(Math.abs(report.offsetSeconds - 3.2)).toBeLessThanOrEqual(0.005);
+      expect(report.placed).toBe(true);
+      expect(sent()).toEqual([
+        {
+          op: "sync-to-music",
+          item: "v1",
+          offsetSeconds: report.offsetSeconds,
+        },
+      ]);
+    }
+  );
+
+  it.skipIf(!hasFfmpeg)(
+    "measures a take named by its id without moving anything",
+    async () => {
+      await filmed(cameraTake(song, RATE, 3.2, 10));
+      const result = await cli(
+        "align-take",
+        "--feature",
+        "promo",
+        "--take",
+        "take-1"
+      );
+      expect(result.code).toBe(0);
+      const report = JSON.parse(result.stdout);
+      expect(Math.abs(report.offsetSeconds - 3.2)).toBeLessThanOrEqual(0.005);
+      expect(report).not.toHaveProperty("placed");
+      expect(posts()).toEqual([]);
+    }
+  );
+
+  it.skipIf(!hasFfmpeg)(
+    "leaves the clip where it is when the match is doubtful, and exits 1",
+    async () => {
+      await filmed(cameraTake(clickTrack(12, RATE, 31337), RATE, 0, 10));
+      const result = await cli(
+        "align-take",
+        "--feature",
+        "promo",
+        "--place",
+        "v1"
+      );
+      expect(result.code).toBe(1);
+      const report = JSON.parse(result.stdout);
+      expect(report.placed).toBe(false);
+      expect(report.warning).toEqual(expect.any(String));
+      expect(report.candidates.length).toBeGreaterThan(0);
+      expect(posts()).toEqual([]);
+    }
+  );
+
+  it("says what align-take needs", async () => {
+    project = {
+      tracks: [{ items: [{ id: "t1", kind: "titles" }] }],
+      takes: [{ id: "take-2", ref: { kind: "catalog", videoId: "abc123" } }],
+      music: { url: MUSIC_URL, gain: 1 },
+    };
+    const refusals: [string[], string][] = [
+      [
+        [],
+        "align-take needs --place ITEM to line up a clip, or --take ID to measure a take.",
+      ],
+      [["--place", "t1"], '"t1" is not a video clip.'],
+      [["--place", "v9"], 'No item "v9" in this post.'],
+      [["--take", "take-9"], 'No take "take-9" in this post.'],
+      [
+        ["--take", "take-2"],
+        'Take "take-2" is not a file in a feature video folder.',
+      ],
+    ];
+    for (const [flags, message] of refusals) {
+      const result = await cli("align-take", "--feature", "promo", ...flags);
+      expect(result.code).toBe(1);
+      expect(result.stderr).toContain(message);
+    }
+    delete project.music;
+    const silent = await cli(
+      "align-take",
+      "--feature",
+      "promo",
+      "--take",
+      "take-1"
+    );
+    expect(silent.stderr).toContain(NO_MUSIC);
+    expect(posts()).toEqual([]);
+  });
 });
