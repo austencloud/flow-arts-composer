@@ -197,6 +197,16 @@ describe("post-project.mjs with feature videos", () => {
     ]);
   });
 
+  it("titles a new feature video by its name when --title is left out", async () => {
+    expect((await cli("create", "promo", "--sequence", "DCKΨ-")).code).toBe(0);
+    expect(posts()).toEqual([
+      [
+        "/api/dev/feature-videos",
+        { slug: "promo", title: "promo", sequenceId: "DCKΨ-" },
+      ],
+    ]);
+  });
+
   it("creates, copies, lists and shows feature videos through their routes", async () => {
     const created = await cli(
       "create",

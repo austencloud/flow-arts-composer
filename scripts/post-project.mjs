@@ -293,12 +293,13 @@ try {
   } else if (command === "features") {
     result = await request("GET", {}, undefined, FEATURE_API);
   } else if (command === "create") {
+    const slug = positional(0, "a name, such as promo-1-0");
     result = await request(
       "POST",
       {},
       {
-        slug: positional(0, "a name, such as promo-1-0"),
-        title: required("title"),
+        slug,
+        title: option("title") ?? slug,
         sequenceId: required("sequence"),
         ...(option("canvas") ? { canvas: option("canvas") } : {}),
       },
@@ -395,7 +396,7 @@ try {
   read|apply|status            whole-manifest bridge (--session, --base-revision, --base-fingerprint, --file, --command)
 Feature videos, folders on the dev server's computer:
   features                     list them
-  create <slug> --sequence ID --title "Title" [--canvas 9:16]
+  create <slug> --sequence ID [--title "Title"] [--canvas 9:16]
   add-take <clip.mp4|clip.mov> --feature SLUG [--label "Name"] [--append]   copies it into media/footage; HEVC, HDR and .mov become H.264 MP4
   remove-take --take ID
   duplicate <slug> <new-slug> [--title "Title"] [--share-media]
