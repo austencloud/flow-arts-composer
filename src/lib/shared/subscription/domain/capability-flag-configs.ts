@@ -42,12 +42,4 @@ export const PREMIUM_CAPABILITY_CONFIGS: FeatureFlagConfig[] = [
 		enabled: false,
 		category: "capability",
 	},
-	{
-		id: "capability:props:premium-cosmetics",
-		name: "Premium Props",
-		description: "Lightsabers and other fun prop styles",
-		minimumRole: "user",
-		enabled: false,
-		category: "capability",
-	},
 ];
