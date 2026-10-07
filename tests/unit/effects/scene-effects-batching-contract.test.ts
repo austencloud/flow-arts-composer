@@ -24,6 +24,10 @@ const GHOST_PHANTOM = readFileSync(
   resolve("src/lib/shared/3d/effects/motion/GhostPropPhantom3D.svelte"),
   "utf8"
 );
+const GHOST_FROST = readFileSync(
+  resolve("src/lib/shared/3d/effects/motion/ghost-chrono-frost-3d.ts"),
+  "utf8"
+);
 const BLOOM = readFileSync(
   resolve("src/lib/shared/3d/effects/bloom/bloom-renderer-3d.ts"),
   "utf8"
@@ -99,7 +103,12 @@ describe("scene-level particle batching contract", () => {
     expect(GHOST_HISTORY).toContain("Array.from({ length: poolSize }");
     expect(GHOST_PHANTOM).toContain("<Prop3D");
     expect(GHOST_PHANTOM).not.toMatch(/<T\.(?:Cylinder|Sphere)Geometry/);
-    expect(GHOST_PHANTOM).toContain("onDestroy(() => material.dispose())");
+    expect(GHOST_PHANTOM).toContain(
+      "onDestroy(() => sourceMaterials.dispose())"
+    );
+    expect(GHOST_FROST).toContain(
+      "for (const frost of this.frostBySource.values()) frost.dispose();"
+    );
   });
 
   it("rewrites Zap's fixed GPU buffers instead of replacing geometries", () => {
