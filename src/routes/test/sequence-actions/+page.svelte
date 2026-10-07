@@ -49,6 +49,15 @@
       ],
     },
     {
+      id: "grid",
+      title: "Grid join",
+      hint: "One tile opens the join choices; every choice fits without hiding the sequence.",
+      variants: [
+        { value: "tile", label: "Grid tile" },
+        { value: "page", label: "Join choices" },
+      ],
+    },
+    {
       id: "help",
       title: "Long-press Help",
       hint: "Closing a direct mobile explanation returns to Sequence Actions.",
@@ -107,6 +116,7 @@
     direction: "hub",
     duration: "default",
     extend: "loop",
+    grid: "tile",
     help: "direction",
   });
 

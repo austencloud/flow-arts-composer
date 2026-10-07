@@ -44,6 +44,9 @@
   import ExtendView from "./ExtendView.svelte";
   import StepGridSection from "./StepGridSection.svelte";
   import { sequenceGridJoin } from "$lib/shared/grid-join/sequence-grid-join";
+  import GridJoinSection from "$lib/shared/grid-join/GridJoinSection.svelte";
+  import { tryGetGridJoinContext } from "$lib/shared/grid-join/grid-join-controller";
+  import { getSettings } from "$lib/shared/application/state/app-state.svelte";
   import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
   import FirstStepConfirmDialog from "./FirstStepConfirmDialog.svelte";
   import HandSelector from "./HandSelector.svelte";
@@ -58,10 +61,16 @@
     show: boolean;
     onClose?: () => void;
     /** Deterministic entry points used by the isolated responsive review route. */
-    initialSubView?: "turnPattern" | "duration" | "rotation" | "extend" | null;
+    initialSubView?:
+      | "turnPattern"
+      | "duration"
+      | "rotation"
+      | "extend"
+      | "gridJoin"
+      | null;
     initialDirectionRoute?: DirectionDrillRoute;
     initialRotationMode?: "apply" | "save";
-    initialActionCategory?: "transform" | "patterns" | "edit";
+    initialActionCategory?: "transform" | "patterns" | "grid" | "edit";
     initialExtensionAnalysis?: ExtensionAnalysis | null;
     initialHelpAction?: ActionHelpId | null;
     persistReviewState?: boolean;
@@ -325,6 +334,29 @@
       }
     }
   });
+
+  // The Grid group changes the sequence's join through Create's controller,
+  // which records each change as an undoable edit. Hosts without one (the
+  // review route) get no Grid tile.
+  const gridJoinController = tryGetGridJoinContext();
+  const gridJoinPictograph = $derived(
+    sequence?.startPlacement ?? sequence?.startingPlacement ?? null
+  );
+  const gridJoinPropTypes = $derived.by(() => {
+    const settings = getSettings();
+    return {
+      left: settings.leftPropType ?? settings.propType,
+      right: settings.rightPropType ?? settings.propType,
+    };
+  });
+  const handleGridJoin = $derived(
+    gridJoinController
+      ? () => {
+          hapticService?.trigger("selection");
+          viewState.openGridJoin();
+        }
+      : undefined
+  );
 
   const handleMirror = actionOrchestrator.mirror;
   const handleSwap = actionOrchestrator.swap;
@@ -755,6 +787,14 @@
                 onReversalApply={handleReversalApply}
                 onRotationApply={handleRotationDirectionApply}
               />
+            {:else if subView === "gridJoin"}
+              <GridJoinSection
+                pictograph={gridJoinPictograph}
+                leftPropType={gridJoinPropTypes.left}
+                rightPropType={gridJoinPropTypes.right}
+                fill={!isMobileLayout}
+                compact={isMobileLayout}
+              />
             {:else if subView === "extend"}
               <ExtendView
                 analysis={extensionAnalysis}
@@ -907,6 +947,7 @@
                 ? cancelShiftStart
                 : gatedShiftStart}
               onEditInConstructor={handleEditInConstructor}
+              onGridJoin={handleGridJoin}
               {patternsLocked}
             />
           {:else}
@@ -939,6 +980,7 @@
                 onExtend={gatedExtend}
                 onShiftStart={gatedShiftStart}
                 onEditInConstructor={handleEditInConstructor}
+                onGridJoin={handleGridJoin}
                 {patternsLocked}
               />
             </div>

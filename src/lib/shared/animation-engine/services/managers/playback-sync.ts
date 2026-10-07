@@ -46,7 +46,10 @@ import {
   animationGridJoinKey,
   resolveAnimationGridJoin,
 } from "../animation-grid-join";
-import { GRID_JOIN_TWEEN_MS, gridJoinHandOffsets } from "../grid-join-tween";
+import {
+  GRID_JOIN_TWEEN_MS,
+  gridJoinHandOffsets,
+} from "$lib/shared/grid-join/grid-join-tween";
 import { motionDuration } from "$lib/shared/transitions/motion";
 
 /** Default props sentinel used when lastPropsRef is null */

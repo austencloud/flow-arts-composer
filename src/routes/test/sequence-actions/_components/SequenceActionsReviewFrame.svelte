@@ -14,6 +14,10 @@
     SEQUENCE_ACTIONS_EXTENSION_ANALYSIS,
     SEQUENCE_ACTIONS_REVIEW_SEQUENCE,
   } from "../sequence-actions-review-fixtures";
+  import {
+    createGridJoinController,
+    setGridJoinContext,
+  } from "$lib/shared/grid-join/grid-join-controller";
 
   let {
     surface,
@@ -119,6 +123,17 @@
     setGridRotationDirection: () => {},
   });
 
+  setGridJoinContext(
+    createGridJoinController({
+      get: () => currentSequence.conjoined ?? null,
+      apply: (join) => {
+        const { conjoined: _previous, ...rest } = currentSequence;
+        currentSequence = join ? { ...rest, conjoined: join } : rest;
+      },
+      gridMode: () => currentSequence.gridMode,
+    })
+  );
+
   setCreateModuleContext({
     CreateModuleState: createModuleState,
     constructTabState,
@@ -142,14 +157,18 @@
           ? "rotation"
           : surface === "extend"
             ? "extend"
-            : null
+            : surface === "grid" && variant === "page"
+              ? "gridJoin"
+              : null
   );
   const initialActionCategory = $derived(
     variant === "patterns" || variant === "first-step"
       ? "patterns"
       : variant === "edit"
         ? "edit"
-        : "transform"
+        : surface === "grid"
+          ? "grid"
+          : "transform"
   );
   const initialDirectionRoute = $derived<DirectionDrillRoute>(
     variant === "hub"

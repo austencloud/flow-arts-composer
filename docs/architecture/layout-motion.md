@@ -61,6 +61,17 @@ grid-named aliases so existing imports remain source-compatible.
 Use it when survivors change tracks, columns, sizes, or element families. Do
 not use it for a single conditional row or for pointer-driven movement.
 
+## Sequence edits inside a pictograph
+
+When a sequence edit changes what an existing pictograph shows, the drawing
+animates from the old picture to the new one through a single owner in the
+pictograph renderer, so every surface that draws the step moves the same
+way. The join slide (`shared/grid-join/join-slide.svelte.ts`) is the first:
+re-joining the grids glides each hand's grid, props and arrows over
+`GRID_JOIN_TWEEN_MS`. A different drawing snaps, an interruption restarts
+from the shown frame, and reduced motion snaps. Sequence transforms (mirror,
+flip, rotate) are next to move onto this rule.
+
 ## Verification
 
 Content-sized dialogs opt into `BaseModal.animateSize`; the shared

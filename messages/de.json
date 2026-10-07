@@ -6839,6 +6839,7 @@
   "create_transform_mirror_desc": "Links und rechts vertauschen",
   "create_transform_needs_both_hands": "Beide Hände nötig",
   "create_transform_original_path": "Ursprünglicher Verlauf",
+  "create_transform_grid": "Raster",
   "create_transform_patterns": "Muster",
   "create_transform_pick_start_pose": "Startposition auswählen",
   "create_transform_pivot_degrees": "Um {degrees}° drehen",
