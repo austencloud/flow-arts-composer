@@ -161,7 +161,7 @@
     position: absolute;
     top: 22px;
     font-size: var(--font-size-compact);
-    color: var(--theme-accent);
+    color: var(--ruler-mark-color, var(--theme-accent));
     white-space: nowrap;
     transform: translateX(-50%);
     font-variant-numeric: tabular-nums;

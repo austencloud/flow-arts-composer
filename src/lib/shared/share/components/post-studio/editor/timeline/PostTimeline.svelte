@@ -1695,6 +1695,7 @@
               <PostTimelineMusicLane
                 music={project.music}
                 {pixelsPerSecond}
+                postEndSeconds={durationSeconds}
                 selected={musicSelected}
                 snapTargets={() => clipSnapTargets(new Set())}
                 onSelect={() => onSelectMusic?.()}
@@ -1739,7 +1740,10 @@
 </div>
 
 <style>
+  /* --music-tint is the music's colour: its lane, and the bar numbers on
+     the ruler. */
   .post-timeline {
+    --music-tint: #5fd38d;
     display: flex;
     flex-direction: column;
     height: 100%;
@@ -1825,6 +1829,7 @@
   }
 
   .ruler-row {
+    --ruler-mark-color: var(--music-tint);
     position: sticky;
     top: 0;
     z-index: 5;

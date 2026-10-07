@@ -159,6 +159,36 @@ describe("the music lane", () => {
     expect(document.querySelectorAll(".grid-line")).toHaveLength(5);
   });
 
+  it("colours only the bars the ruler numbers", () => {
+    const { setPixelsPerSecond } = open(music({ grid: GRID }));
+    // Bars 16 px apart: the ruler numbers bars 1, 3 and 5, at the post's
+    // 1.5 s, 5.5 s and 9.5 s. Bars 2 and 4 draw as beats.
+    setPixelsPerSecond(8);
+    const bars = document.querySelectorAll<HTMLElement>(".grid-line.bar");
+    expect([...bars].map((bar) => bar.style.left)).toEqual([
+      "4px",
+      "36px",
+      "68px",
+    ]);
+    expect(document.querySelectorAll(".grid-line")).toHaveLength(5);
+  });
+
+  it("shades the part that plays past the post's end", () => {
+    // The music plays at the post's 1 s to 11 s.
+    const { setPostEnd } = open(music());
+    expect(document.querySelector(".past-end")).toBeNull();
+    setPostEnd(8);
+    expect(document.querySelector<HTMLElement>(".past-end")!.style.left).toBe(
+      "700px"
+    );
+    setPostEnd(11);
+    expect(document.querySelector(".past-end")).toBeNull();
+    setPostEnd(0.5);
+    expect(document.querySelector<HTMLElement>(".past-end")!.style.left).toBe(
+      "0px"
+    );
+  });
+
   it("draws no lines without a beat grid", () => {
     open(music());
     expect(document.querySelectorAll(".grid-line")).toHaveLength(0);

@@ -23,6 +23,8 @@ export function mountMusicLane(
   let music = $state.raw(initial);
   let pixelsPerSecond = $state(100);
   let selected = $state(false);
+  // Far past any music in these tests, unless a test moves it.
+  let postEndSeconds = $state(1000);
   const component = mount(PostTimelineMusicLane, {
     target,
     props: {
@@ -31,6 +33,9 @@ export function mountMusicLane(
       },
       get pixelsPerSecond() {
         return pixelsPerSecond;
+      },
+      get postEndSeconds() {
+        return postEndSeconds;
       },
       get selected() {
         return selected;
@@ -66,6 +71,10 @@ export function mountMusicLane(
     },
     setSelected(next: boolean) {
       selected = next;
+      flushSync();
+    },
+    setPostEnd(next: number) {
+      postEndSeconds = next;
       flushSync();
     },
   };

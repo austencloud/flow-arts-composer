@@ -147,20 +147,32 @@ export function musicSnapTargets(
   return targets;
 }
 
+/** How many bars apart the ruler numbers them: 1, 2, 4, 8 and on as they crowd. */
+export function musicBarLabelEvery(
+  music: GriddedMusic,
+  pixelsPerSecond: number
+): number {
+  const barPx =
+    beatSeconds(music.grid) * music.grid.beatsPerBar * pixelsPerSecond;
+  let every = 1;
+  while (barPx * every < MUSIC_BAR_LABEL_MIN_PX && every < 1024) every *= 2;
+  return every;
+}
+
+/** A bar the ruler numbers when it numbers one bar in `every`. */
+export function isNumberedBar(line: MusicGridLine, every: number): boolean {
+  return line.downbeat && line.bar >= 1 && (line.bar - 1) % every === 0;
+}
+
 /** Bar numbers for the ruler: every bar, or every 2nd, 4th, 8th as they crowd. */
 export function musicBarMarks(
   music: GriddedMusic,
   pixelsPerSecond: number
 ): { seconds: number; label: string }[] {
-  const barPx =
-    beatSeconds(music.grid) * music.grid.beatsPerBar * pixelsPerSecond;
-  let every = 1;
-  while (barPx * every < MUSIC_BAR_LABEL_MIN_PX && every < 1024) every *= 2;
+  const every = musicBarLabelEvery(music, pixelsPerSecond);
   const span = musicSpan(music);
   return musicGridLines(music, span.start, span.end)
-    .filter(
-      (line) => line.downbeat && line.bar >= 1 && (line.bar - 1) % every === 0
-    )
+    .filter((line) => isNumberedBar(line, every))
     .map((line) => ({ seconds: line.seconds, label: String(line.bar) }));
 }
 

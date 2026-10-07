@@ -4,6 +4,8 @@
   import {
     beatSeconds,
     hasGrid,
+    isNumberedBar,
+    musicBarLabelEvery,
     musicGridLines,
     musicSnapTargets,
     musicSpan,
@@ -28,6 +30,8 @@
   interface Props {
     music: PostMusic;
     pixelsPerSecond: number;
+    /** Where the post ends. The music past it is not heard, so it is shaded. */
+    postEndSeconds: number;
     selected: boolean;
     /** Where an edge or bar 1 may snap: zero, the playhead and the clips' edges. */
     snapTargets: () => number[];
@@ -45,6 +49,7 @@
   let {
     music,
     pixelsPerSecond,
+    postEndSeconds,
     selected,
     snapTargets,
     onSelect,
@@ -100,11 +105,22 @@
     if (!hasGrid(gridded)) return [];
     const beats =
       beatSeconds(gridded.grid) * pixelsPerSecond >= BEAT_LINE_MIN_PX;
-    return musicGridLines(gridded, span.start, span.end).filter(
-      (line) => beats || line.downbeat
-    );
+    // Only the bars the ruler numbers stand out; the rest draw as beats.
+    const every = musicBarLabelEvery(gridded, pixelsPerSecond);
+    return musicGridLines(gridded, span.start, span.end)
+      .filter((line) => beats || line.downbeat)
+      .map((line) => ({
+        seconds: line.seconds,
+        numbered: isNumberedBar(line, every),
+      }));
   });
   const barOneSeconds = $derived(barOneAt(music));
+  /** Where the part past the post's end begins, from the music's left edge. */
+  const pastEndPx = $derived(
+    span.end > postEndSeconds + POST_TIME_EPSILON
+      ? Math.max(0, (postEndSeconds - span.start) * pixelsPerSecond)
+      : null
+  );
   // The file's 0 s sits sourceIn before the clip's left edge.
   const waveStyle = $derived(
     `left: ${-music.sourceInSeconds * pixelsPerSecond}px; ` +
@@ -341,11 +357,15 @@
     {#each lines as line (line.seconds)}
       <span
         class="grid-line"
-        class:bar={line.downbeat}
+        class:bar={line.numbered}
         style="left: {(line.seconds - span.start) * pixelsPerSecond}px"
         aria-hidden="true"
       ></span>
     {/each}
+    {#if pastEndPx !== null}
+      <span class="past-end" style="left: {pastEndPx}px" aria-hidden="true"
+      ></span>
+    {/if}
     <button
       type="button"
       class="music-body"
@@ -393,10 +413,10 @@
 </div>
 
 <style>
-  /* Lays its parts straight into the row, and gives them one tint. */
+  /* Lays its parts straight into the row. Their tint, --music-tint, comes
+     from the timeline, which also gives it to the ruler's bar numbers. */
   .music-lane {
     display: contents;
-    --music-tint: #5fd38d;
   }
 
   .music-clip {
@@ -416,6 +436,22 @@
   .music-clip.selected {
     border-color: var(--theme-accent);
     box-shadow: inset 0 0 0 2px var(--theme-accent);
+  }
+
+  @media (hover: hover) {
+    .music-clip:not(.selected):hover {
+      border-color: color-mix(
+        in srgb,
+        var(--music-tint) 60%,
+        var(--theme-stroke, rgba(255, 255, 255, 0.14))
+      );
+    }
+  }
+
+  /* The video clip's focus ring, outside the selection ring. */
+  .music-clip:has(.music-body:focus-visible) {
+    outline: 2px solid var(--theme-accent);
+    outline-offset: 2px;
   }
 
   .wave {
@@ -443,6 +479,20 @@
     background: color-mix(in srgb, var(--music-tint) 75%, transparent);
   }
 
+  /* The post ends here, and the music after it is not heard. */
+  .past-end {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    background: color-mix(
+      in srgb,
+      var(--theme-panel-bg, #08080c) 65%,
+      transparent
+    );
+    pointer-events: none;
+  }
+
   .music-body {
     position: absolute;
     inset: 0;
@@ -467,9 +517,9 @@
     touch-action: none;
   }
 
+  /* The ring goes on the strip instead; see .music-clip above. */
   .music-body:focus-visible {
-    outline: 2px solid var(--theme-accent);
-    outline-offset: -3px;
+    outline: none;
   }
 
   .music-body i {
@@ -478,9 +528,18 @@
     opacity: 0.85;
   }
 
+  /* A backing keeps the name readable over the waveform and bar lines. */
   .music-label {
     overflow: hidden;
     min-width: 0;
+    max-width: 16rem;
+    padding: 0 0.25rem;
+    border-radius: 0.25rem;
+    background: color-mix(
+      in srgb,
+      var(--theme-card-bg, #1c1c26) 85%,
+      transparent
+    );
     text-overflow: ellipsis;
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
   }
@@ -489,7 +548,9 @@
     position: absolute;
     top: 3px;
     bottom: 3px;
-    z-index: 2;
+    /* Above bar 1's flag, which can sit on the start edge, and below the
+       sticky ruler (5). */
+    z-index: 4;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -509,6 +570,12 @@
     background: var(--theme-accent);
     box-shadow: 0 0 0 1px
       color-mix(in srgb, var(--theme-text, #fff) 40%, transparent);
+  }
+
+  /* The ring goes on the grip or the flag, not around the wider touch area. */
+  .trim-handle:focus-visible,
+  .bar-one:focus-visible {
+    outline: none;
   }
 
   .trim-handle:focus-visible .handle-grip {
@@ -543,7 +610,7 @@
     border-radius: 0.25rem;
     background: var(--music-tint);
     color: #0b1a10;
-    font-size: 0.7rem;
+    font-size: var(--font-size-compact, 0.75rem);
     font-weight: 700;
   }
 

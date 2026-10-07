@@ -3,6 +3,7 @@ import {
   NO_GRID_MESSAGE,
   barBeatAt,
   downbeatFromTaps,
+  musicBarLabelEvery,
   musicBarMarks,
   musicGridLines,
   musicSnapTargets,
@@ -118,6 +119,14 @@ describe("bar numbers on the ruler", () => {
     expect(marks).toHaveLength(15);
     expect(marks[0]).toEqual({ seconds: 2.25, label: "1" });
     expect(marks[8]).toEqual({ seconds: 18.25, label: "9" });
+  });
+
+  it("numbers one bar in 1, 2, 4 or more as the bars crowd", () => {
+    expect(musicBarLabelEvery(placed, 60)).toBe(1);
+    expect(musicBarLabelEvery(placed, 8)).toBe(2);
+    expect(musicBarLabelEvery(placed, 4)).toBe(4);
+    // Bars 2 px apart: 16 of them make 32 px.
+    expect(musicBarLabelEvery(placed, 1)).toBe(16);
   });
 
   it("labels every 2nd, then every 4th bar as the zoom shrinks", () => {

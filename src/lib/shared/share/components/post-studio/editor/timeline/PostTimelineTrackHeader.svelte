@@ -29,7 +29,11 @@
   }: Props = $props();
 </script>
 
-<div class="track-header" style="height: {heightPx}px">
+<div
+  class="track-header"
+  class:toggleless={!(onToggleHidden && onToggleLocked)}
+  style="height: {heightPx}px"
+>
   <span class="track-name">{name}</span>
   {#if onToggleHidden && onToggleLocked}
     <div class="track-toggles">
@@ -130,8 +134,10 @@
     color: var(--theme-accent);
   }
 
+  /* A narrow column keeps the hide and lock buttons and drops the name. A
+     row without them, such as the music's, keeps its name. */
   @container post-timeline-header (max-width: 7rem) {
-    .track-name {
+    .track-header:not(.toggleless) .track-name {
       display: none;
     }
   }
