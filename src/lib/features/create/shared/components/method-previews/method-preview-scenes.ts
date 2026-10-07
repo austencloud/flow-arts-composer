@@ -41,4 +41,5 @@ export const METHOD_PREVIEW_SCENES: Readonly<
   Record<string, () => Promise<MethodPreviewSceneModule>>
 > = {
   construct: () => import("./ConstructScene.svelte"),
+  generate: () => import("./GenerateScene.svelte"),
 };
