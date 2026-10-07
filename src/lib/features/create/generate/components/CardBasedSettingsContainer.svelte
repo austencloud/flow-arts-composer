@@ -1004,6 +1004,13 @@ Delegates ALL logic to services (SRP compliant)
     align-content: center;
   }
 
+  /* Keep the grid geometry for the LOOP stage while removing the cards from
+     sight and keyboard focus behind its content-sized picker. */
+  .card-grid[data-expanded-card="loop"] > .card-wrapper,
+  .card-grid[data-expanded-card="loop"] > .compact-level-card {
+    visibility: hidden;
+  }
+
   .card-wrapper {
     container: generate-card / size;
     display: flex;

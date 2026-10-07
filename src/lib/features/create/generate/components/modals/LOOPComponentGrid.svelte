@@ -19,6 +19,7 @@ LOOPComponentGrid.svelte - Layout for LOOP component selection buttons
     lockedComponents = null,
     isMultiSelectMode = false,
     layout = "grid",
+    compactChooser = false,
     componentConfigurators = {},
     expandedComponents,
     configurableComponents = null,
@@ -34,6 +35,8 @@ LOOPComponentGrid.svelte - Layout for LOOP component selection buttons
     lockedComponents?: Set<LOOPComponent> | null;
     isMultiSelectMode?: boolean;
     layout?: "grid" | "list" | "responsive";
+    /** Stable five-choice picker used by the expanded LOOP surface only. */
+    compactChooser?: boolean;
     /** Transformation-owned controls rendered inside their selected cards. */
     componentConfigurators?: Partial<
       Record<LOOPComponent, Snippet | undefined>
@@ -88,6 +91,7 @@ LOOPComponentGrid.svelte - Layout for LOOP component selection buttons
   class="loop-component-grid"
   class:list={layout !== "grid"}
   class:responsive={layout === "responsive"}
+  class:compact-chooser={compactChooser}
   class:with-descriptions={showDescriptions}
   class:has-expanded-rotation={hasExpandedRotation}
   class:has-expanded-inversion={hasExpandedInversion}
@@ -100,6 +104,7 @@ LOOPComponentGrid.svelte - Layout for LOOP component selection buttons
       {componentInfo}
       {isMultiSelectMode}
       {compactOnMobile}
+      {compactChooser}
       isSelected={selectedComponents.has(componentInfo.component)}
       isDisabled={disabledComponents?.has(componentInfo.component) ?? false}
       disabledReason={disabledReasons[componentInfo.component]}
@@ -133,6 +138,32 @@ LOOPComponentGrid.svelte - Layout for LOOP component selection buttons
     /* Three columns keep the five compact choices above the drawer footer. */
     grid-template-columns: repeat(3, 1fr);
     grid-auto-rows: minmax(64px, auto);
+  }
+
+  .loop-component-grid.compact-chooser {
+    max-width: none;
+    min-height: 0;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    grid-auto-rows: minmax(72px, auto);
+    align-content: start;
+    gap: 8px;
+  }
+
+  @container (max-width: 590px) {
+    .loop-component-grid.compact-chooser {
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+    }
+    .loop-component-grid.compact-chooser :global(.loop-component-shell) {
+      grid-column: span 2;
+    }
+    .loop-component-grid.compact-chooser
+      :global(.loop-component-shell:nth-child(4)) {
+      grid-column: 2 / span 2;
+    }
+    .loop-component-grid.compact-chooser
+      :global(.loop-component-shell:nth-child(5)) {
+      grid-column: 4 / span 2;
+    }
   }
 
   /* A configured transformation owns a full compact row. Interactive controls
