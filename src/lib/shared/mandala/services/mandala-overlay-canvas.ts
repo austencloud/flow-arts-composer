@@ -21,6 +21,7 @@ import { Canvas2DFadeManager } from "$lib/shared/animation-engine/services/canva
 import { reducedMotion } from "$lib/shared/transitions/motion";
 import { DURATION } from "$lib/shared/transitions/transitions";
 import { MandalaOverlapMasks, paintMandalaGuide } from "./mandala-guide-painter";
+import { mandalaHandOffsetsKey } from "./mandala-grid-join";
 
 /**
  * Prepared mandala paths are scaled to the renderer's square of side
@@ -82,6 +83,8 @@ export class MandalaOverlayCanvas {
 	private lastGuidePaths: MandalaOverlayRenderParams["preparedPaths"] = null;
 	private lastGuideOpacity = -1;
 	private lastGuideStroke = -1;
+	/** Joined-grid hand offsets the guide was last painted with. */
+	private lastGuideOffsetsKey: string | null = null;
 
 	initialize(container: HTMLElement, width: number, height: number): void {
 		this.dispose();
@@ -125,6 +128,7 @@ export class MandalaOverlayCanvas {
 		this.warmupFramesRemaining = OVERLAY_WARMUP_FRAMES;
 		this.lastGuidePaths = null;
 		this.lastGuideOpacity = -1;
+		this.lastGuideOffsetsKey = null;
 	}
 
 	resize(width: number, height: number): void {
@@ -154,6 +158,7 @@ export class MandalaOverlayCanvas {
 		this.resetGuideTransition();
 		this.lastGuidePaths = null;
 		this.lastGuideOpacity = -1;
+		this.lastGuideOffsetsKey = null;
 	}
 
 	renderFrame(params: MandalaOverlayRenderParams): void {
@@ -175,6 +180,11 @@ export class MandalaOverlayCanvas {
 			guideMode && this.lastGuideOpacity !== config.opacity;
 		const guideStrokeChanged =
 			guideMode && this.lastGuideStroke !== config.strokeWidth;
+		// A joined-grid layout change slides each hand's figure with its grid:
+		// repaint in place, never crossfade, so the guide moves with the props.
+		const offsetsKey = mandalaHandOffsetsKey(params.handOffsets);
+		const guideOffsetsChanged =
+			guideMode && this.lastGuideOffsetsKey !== offsetsKey;
 
 		// A guide is immutable until its sequence, prop endpoints, colors, size,
 		// opacity, or line width changes. Avoid re-stroking identical paths on every RAF.
@@ -183,6 +193,7 @@ export class MandalaOverlayCanvas {
 			!guidePathsChanged &&
 			!guideOpacityChanged &&
 			!guideStrokeChanged &&
+			!guideOffsetsChanged &&
 			!this.guideFadeManager.isFadingInProgress()
 		) {
 			return;
@@ -250,7 +261,12 @@ export class MandalaOverlayCanvas {
 		// The incoming guide is painted once, then the two retained canvases are
 		// blended for the rest of the transition. This keeps a prop swap cheap
 		// even when the mandala contains many paths.
-		if (!guideMode || guidePathsChanged || guideStrokeChanged) {
+		if (
+			!guideMode ||
+			guidePathsChanged ||
+			guideStrokeChanged ||
+			guideOffsetsChanged
+		) {
 			// One painter for every mandala the product shows: the live guide,
 			// the progressive reveal, and the still images the Shape Matrix
 			// paints through mandala-guide-image.ts.
@@ -271,6 +287,7 @@ export class MandalaOverlayCanvas {
 					strokeWidth: config.strokeWidth,
 					progress,
 					reveal: !guideMode,
+					handOffsets: params.handOffsets,
 				},
 				this.overlapMasks,
 			);
@@ -282,6 +299,7 @@ export class MandalaOverlayCanvas {
 			this.lastGuidePaths = preparedPaths;
 			this.lastGuideOpacity = config.opacity;
 			this.lastGuideStroke = config.strokeWidth;
+			this.lastGuideOffsetsKey = offsetsKey;
 			return;
 		}
 
@@ -307,6 +325,7 @@ export class MandalaOverlayCanvas {
 		this.resetGuideTransition();
 		this.lastGuidePaths = null;
 		this.lastGuideOpacity = -1;
+		this.lastGuideOffsetsKey = null;
 	}
 
 	onLoopDetected(): void {
@@ -322,6 +341,8 @@ export class MandalaOverlayCanvas {
 			this.resetGuideTransition();
 			this.lastGuidePaths = null;
 			this.lastGuideOpacity = -1;
+			this.lastGuideOffsetsKey = null;
+		this.lastGuideOffsetsKey = null;
 		}
 		this.canvas.style.display = visible ? "block" : "none";
 	}
@@ -349,6 +370,7 @@ export class MandalaOverlayCanvas {
 		this.fadeRampProgress = 0;
 		this.lastGuidePaths = null;
 		this.lastGuideOpacity = -1;
+		this.lastGuideOffsetsKey = null;
 	}
 
 	// Internal helpers

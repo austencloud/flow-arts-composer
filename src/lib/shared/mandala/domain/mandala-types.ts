@@ -1,3 +1,5 @@
+import type { MandalaHandOffsets } from "../services/mandala-grid-join";
+
 export interface SVGPathData {
 	/** SVG path "d" attribute string */
 	d: string;
@@ -95,6 +97,13 @@ export interface MandalaRenderOptions {
 	 * allocation.
 	 */
 	maskScratch?: { a: OffscreenCanvas; b: OffscreenCanvas };
+	/**
+	 * Joined grids: each hand's figure offset (mandala units) onto its own
+	 * grid; the pair is fitted to the box. Applies only when both hands show,
+	 * since a one-hand view has no second grid to sit beside. Absent or null
+	 * for one grid, which renders exactly as before.
+	 */
+	handOffsets?: MandalaHandOffsets | null;
 }
 
 export type MandalaPathShape = "arc" | "linear" | "concave" | "hybrid";

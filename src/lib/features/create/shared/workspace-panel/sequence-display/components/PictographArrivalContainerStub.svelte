@@ -16,6 +16,12 @@
     onReady?: () => void;
   } = $props();
 
+  const joinKey = (step: StepData | null) => {
+    const join = (step as { conjoined?: { toward: string; steps: number } } | null)
+      ?.conjoined;
+    return join ? `${join.toward}${join.steps}` : undefined;
+  };
+
   onMount(() => {
     const frame = requestAnimationFrame(onReady);
     return () => cancelAnimationFrame(frame);
@@ -26,6 +32,8 @@
   data-testid="arrival-pictograph"
   data-step-id={pictographData.id}
   data-motion-start-id={motionStartData?.id}
+  data-join={joinKey(pictographData)}
+  data-motion-start-join={joinKey(motionStartData)}
   data-motion-progress={motionProgress}
   data-arrow-opacity={arrowOpacity}
 ></div>

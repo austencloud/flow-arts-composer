@@ -49,6 +49,7 @@
 	import { TrackingMode } from "$lib/shared/animation-engine/domain/types/trail-types";
 	import { pairTipEnds } from "$lib/shared/pictograph/prop/domain/prop-tip-ends";
 	import { DURATION } from "$lib/shared/transitions/transitions";
+	import type { MandalaHandOffsets } from "../services/mandala-grid-join";
 
 	export type { MandalaPathShape, UndulationEasing } from "../domain/mandala-types";
 
@@ -144,6 +145,11 @@
 		 * explicitly only to force a count regardless of prop (labs/explorers).
 		 */
 		tipEnds?: 1 | 2;
+		/**
+		 * Joined grids: each hand's figure offset (mandala units) onto its own
+		 * grid, applied when both hands show. Null or absent for one grid.
+		 */
+		handOffsets?: MandalaHandOffsets | null;
 	}
 
 	let {
@@ -171,6 +177,7 @@
 		exportRaster = false,
 		gradient,
 		tipEnds,
+		handOffsets = null,
 	}: Props = $props();
 
 	// Prop-aware tip count: an explicit `tipEnds` prop wins (labs / overrides);
@@ -486,6 +493,7 @@
 			tipDx: effectiveDx,
 			strokeWidth,
 			gradient,
+			...(handOffsets ? { handOffsets } : {}),
 		};
 	});
 
