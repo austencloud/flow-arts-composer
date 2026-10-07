@@ -127,3 +127,23 @@ export async function tapAt(
   pose.pressed = false;
   return pressed;
 }
+
+/**
+ * Poll `check` every `stepMs` until it holds. True when it held in time,
+ * false when `timeoutMs` passed first or the turn ended. Scenes use it to
+ * wait for a new picture to draw before showing it.
+ */
+export async function waitUntil(
+  run: SceneRun,
+  check: () => boolean,
+  timeoutMs: number,
+  stepMs = 50
+): Promise<boolean> {
+  let waited = 0;
+  while (!check()) {
+    if (waited >= timeoutMs) return false;
+    if (!(await run.wait(stepMs))) return false;
+    waited += stepMs;
+  }
+  return !run.aborted;
+}

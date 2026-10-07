@@ -9,6 +9,7 @@ import {
   sceneGhost,
   startSceneRun,
   tapAt,
+  waitUntil,
   type SceneFinger,
 } from "$lib/features/create/shared/components/method-previews/method-preview-run";
 
@@ -174,5 +175,32 @@ describe("the real attract ghost", () => {
     } finally {
       root.remove();
     }
+  });
+});
+
+describe("waiting on a condition", () => {
+  it("resolves true once the condition holds", async () => {
+    const { run } = startSceneRun();
+    let ready = false;
+    setTimeout(() => {
+      ready = true;
+    }, 100);
+    const waiting = waitUntil(run, () => ready, 500);
+    await vi.advanceTimersByTimeAsync(150);
+    await expect(waiting).resolves.toBe(true);
+  });
+
+  it("gives up after its timeout", async () => {
+    const { run } = startSceneRun();
+    const waiting = waitUntil(run, () => false, 200);
+    await vi.advanceTimersByTimeAsync(250);
+    await expect(waiting).resolves.toBe(false);
+  });
+
+  it("gives up when the turn ends", async () => {
+    const { run, abort } = startSceneRun();
+    const waiting = waitUntil(run, () => false, 5000);
+    abort();
+    await expect(waiting).resolves.toBe(false);
   });
 });

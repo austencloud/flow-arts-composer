@@ -39,4 +39,6 @@ export type MethodPreviewSceneModule = {
 /** Create method id (CREATE_TABS) to its scene module. */
 export const METHOD_PREVIEW_SCENES: Readonly<
   Record<string, () => Promise<MethodPreviewSceneModule>>
-> = {};
+> = {
+  construct: () => import("./ConstructScene.svelte"),
+};
