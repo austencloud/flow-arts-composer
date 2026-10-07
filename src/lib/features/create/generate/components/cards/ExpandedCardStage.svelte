@@ -388,11 +388,12 @@
   }
 
   .expanded-card-stage[data-destination="stage"][data-card-id="loop"] {
-    inset: auto 0;
-    top: 50%;
-    translate: 0 -50%;
+    /* Use the card area as the height limit, including for a long Combo. */
+    display: flex;
+    align-items: center;
+    justify-content: center;
     width: min(100%, 880px);
-    max-height: 100%;
+    height: 100%;
     margin-inline: auto;
   }
 
@@ -400,7 +401,9 @@
     > :global(.loop-expanded-overlay) {
     position: relative;
     inset: auto;
-    max-height: min(100dvh - 32px, 100%);
+    width: 100%;
+    min-height: 0;
+    max-height: 100%;
   }
 
   .expanded-card-stage[data-destination="viewport"] {
