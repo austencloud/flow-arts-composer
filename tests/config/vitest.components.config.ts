@@ -77,6 +77,12 @@ export default defineConfig({
         projectRoot,
         "tests/setup/stubs/env-static-public.ts"
       ),
+      // As in vitest.config.ts: node_modules/@tka/render-core links to the
+      // primary checkout, so resolve this checkout's source instead.
+      "@tka/render-core": path.resolve(
+        projectRoot,
+        "packages/render-core/src/index.ts"
+      ),
     },
   },
 

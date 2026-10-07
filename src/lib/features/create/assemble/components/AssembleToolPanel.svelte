@@ -20,10 +20,16 @@
   import { isPremiumOrAbove } from "$lib/shared/auth/domain/models/user-role";
   import { toast } from "$lib/shared/toast/state/toast-state.svelte";
   import { motionDuration } from "$lib/shared/transitions/motion";
+  import { sequenceGridJoin } from "$lib/shared/grid-join/sequence-grid-join";
 
   const props: { tabState: AssembleTabState } = $props();
 
   const builderState = $derived(props.tabState.assembleBuilderState);
+  // The join the workspace sets on this tab's sequence; the builder then
+  // draws and takes each hand's clicks on that hand's own grid.
+  const gridJoin = $derived(
+    sequenceGridJoin(props.tabState.sequenceState?.currentSequence)
+  );
   let builderSurfaceRef: HTMLDivElement | null = $state(null);
 
   $effect(() => {
@@ -169,6 +175,7 @@
           <InteractiveGrid
             {builderState}
             onStepCapExceeded={checkStepCap}
+            {gridJoin}
             fillPanel
           />
           <BuilderStageActions {builderState} />
