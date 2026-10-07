@@ -5,13 +5,6 @@
     updateSettings,
   } from "$lib/shared/application/state/app-state.svelte";
   import { isPropUnlocked } from "$lib/shared/gamification/state/prop-collection-state.svelte";
-  import PremiumBadge from "$lib/shared/subscription/components/PremiumBadge.svelte";
-  import PremiumNudge from "$lib/shared/subscription/components/PremiumNudge.svelte";
-  import {
-    checkPremiumCosmeticAccess,
-    isPremiumCosmeticVisible,
-    PREMIUM_COSMETIC_NUDGE,
-  } from "$lib/shared/subscription/domain/premium-prop-access";
   import type { ComponentProps } from "svelte";
   import type { FanAppearance } from "$lib/shared/pictograph/prop/domain/fan-appearance";
   import type { PropLook } from "$lib/shared/pictograph/prop/domain/prop-look";
@@ -19,7 +12,6 @@
   import PropGrid from "./PropGrid.svelte";
   import PrimaryPropColorSettings from "./PrimaryPropColorSettings.svelte";
   import { growFade, STEP_DRIFT_PX } from "$lib/shared/transitions/motion";
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { DEFAULT_TRIANGLE_GRIP } from "$lib/shared/pictograph/prop/domain/triangle-appearance";
 
   // Public hosts own their appearance without writing global settings.
@@ -41,10 +33,6 @@
     | "fanAppearance"
     | "onFanAppearanceChange"
     | "isUnlocked"
-    | "premiumVisible"
-    | "premiumAllowed"
-    | "premiumBadge"
-    | "premiumNudge"
     | "recipeOverrides"
     | "colors"
     | "triangleGrip"
@@ -157,8 +145,6 @@
   onFanAppearanceChange={onFanAppearanceChange ??
     ((next) => void updateSettings({ fanAppearance: next }))}
   isUnlocked={isPropUnlocked}
-  premiumVisible={isPremiumCosmeticVisible()}
-  premiumAllowed={checkPremiumCosmeticAccess().allowed}
   propLook={propLook ?? settings.propArtwork}
   onPropLookChange={(showPropLook ?? props.showAppearance !== false)
     ? (onPropLookChange ??
@@ -168,14 +154,7 @@
   colors={displayedColors}
   triangleGrip={settings.triangleGrip ?? DEFAULT_TRIANGLE_GRIP}
   onTriangleGripChange={(triangleGrip) => void updateSettings({ triangleGrip })}
->
-  {#snippet premiumBadge()}
-    <PremiumBadge tooltip={t("settings_premium_prop")} />
-  {/snippet}
-  {#snippet premiumNudge({ dismiss })}
-    <PremiumNudge nudge={PREMIUM_COSMETIC_NUDGE} onDismiss={dismiss} />
-  {/snippet}
-</PropGrid>
+/>
 {#if colorsPlace === "after"}{@render colorControl()}{/if}
 
 <style>
