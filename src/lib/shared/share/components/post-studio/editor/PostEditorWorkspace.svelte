@@ -140,6 +140,12 @@
   import PostToolPanel from "./PostToolPanel.svelte";
   import PostTransitionTool from "./PostTransitionTool.svelte";
   import PostItemTool from "./PostItemTool.svelte";
+  import PostMusicTool from "./PostMusicTool.svelte";
+  import {
+    removeMusic,
+    updateMusic,
+    type MusicPatch,
+  } from "$lib/shared/media-composition/domain/post-music-edits";
   import PostKeyframeControls from "./PostKeyframeControls.svelte";
   import ConfirmDialog from "$lib/shared/foundation/ui/ConfirmDialog.svelte";
   import OverflowMenu from "$lib/shared/ui/components/OverflowMenu.svelte";
@@ -943,6 +949,33 @@
   let remPixels = $state(16);
   /** The panel last asked for. A wide screen falls back to a default. */
   let activeTool = $state<PostPanelToolId | null>(null);
+
+  /**
+   * The music under the post is selected. It is no item, so the editor's
+   * selection stays empty; picking an item, or removing the music, clears it.
+   */
+  let musicSelected = $state(false);
+  $effect(() => {
+    if (editor.selectedItemId !== null || !editor.project.music)
+      musicSelected = false;
+  });
+
+  function selectMusic(): void {
+    editor.selectedItemId = null;
+    musicSelected = true;
+  }
+
+  /** One setting's change; a slider drag's steps join into one undo step. */
+  function changeMusic(key: string, patch: MusicPatch): void {
+    editor.editSetting(`music:${key}`, (project, context) =>
+      updateMusic(project, patch, context)
+    );
+  }
+
+  function deleteMusic(): void {
+    musicSelected = false;
+    editor.edit((project, context) => removeMusic(project, context));
+  }
   let selectedCut = $state<{ outgoingId: string; incomingId: string } | null>(
     null
   );
@@ -1090,7 +1123,7 @@
 
   const selection = $derived.by((): PostToolSelection => {
     const item = editor.selectedItem;
-    if (!item) return { kind: null, hasLayout: false };
+    if (!item) return { kind: null, hasLayout: false, music: musicSelected };
     // A tunnel folded into its animation has its own block, which carries its
     // speed and framing; only a hook saved as a whole item keeps them here.
     const tunnel = editor.selectedPart === "tunnel";
@@ -1345,8 +1378,9 @@
       case "split":
         return !editor.splitTarget;
       case "duplicate":
-      case "delete":
         return !editor.selectionEditable;
+      case "delete":
+        return !musicSelected && !editor.selectionEditable;
       case "beats":
         return !canTapBeats;
       default:
@@ -1416,6 +1450,11 @@
         }
         return;
       case "delete":
+        if (musicSelected) {
+          deleteMusic();
+          void focusAfterUpdate({ kind: "row" });
+          return;
+        }
         if (editor.deleteSelected()) void focusAfterUpdate({ kind: "row" });
         return;
     }
@@ -1537,12 +1576,14 @@
 
   function deselect(): void {
     editor.selectedItemId = null;
+    musicSelected = false;
     activeTool = null;
   }
 
   /** Export is the post's own panel: sound, the to-do list and the render. */
   function openExport(): void {
     editor.selectedItemId = null;
+    musicSelected = false;
     activeTool = "export";
     void focusAfterUpdate({ kind: "panel" });
   }
@@ -1934,6 +1975,12 @@
       }
       case "Delete":
       case "Backspace":
+        if (musicSelected) {
+          event.preventDefault();
+          deleteMusic();
+          void focusAfterUpdate({ kind: "row" });
+          return;
+        }
         if (!editor.selectedItem) return;
         event.preventDefault();
         // The item's clip and tools go with it, as with the Delete tool.
@@ -1974,7 +2021,7 @@
           closePanel();
           return;
         }
-        if (!editor.selectedItemId) return;
+        if (!editor.selectedItemId && !musicSelected) return;
         event.preventDefault();
         deselect();
         return;
@@ -2603,6 +2650,13 @@
     />
   {:else if tool === "transition" && transitionCut}
     <PostTransitionTool {editor} {...transitionCut} />
+  {:else if tool === "music" && editor.project.music}
+    <PostMusicTool
+      music={editor.project.music}
+      playing={editor.isPlaying}
+      playheadSeconds={() => editor.previewSeconds}
+      onChange={changeMusic}
+    />
   {:else if editor.selectedItem}
     <PostItemTool
       {editor}
@@ -2628,11 +2682,13 @@
     {tool}
     subject={tool === "transition" && transitionCut
       ? `${labelFor(transitionCut.outgoing)} → ${labelFor(transitionCut.incoming)}`
-      : editor.selectedPart === "tunnel"
-        ? t("post_timeline_tunnel")
-        : editor.selectedItem
-          ? labelFor(editor.selectedItem)
-          : undefined}
+      : tool === "music"
+        ? editor.project.music?.label
+        : editor.selectedPart === "tunnel"
+          ? t("post_timeline_tunnel")
+          : editor.selectedItem
+            ? labelFor(editor.selectedItem)
+            : undefined}
     onDone={placement === "dock" && !cropMode ? closePanel : undefined}
     {placement}
     bare={(placement === "dock" && cropMode) ||
