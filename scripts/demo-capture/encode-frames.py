@@ -29,15 +29,18 @@ for folder in folders:
     proof = json.loads((folder / "capture.json").read_text(encoding="utf-8"))
     if proof.get("failure"):
         raise RuntimeError(f"Rejected capture {folder.name}: {proof['failure']}")
-    frames = proof["frames"]
+    # Chrome now and then delivers a screencast frame after a later one (seen
+    # 2026-10-07, 11 ms apart). CDP stamps each frame with its swap time, so
+    # play them in timestamp order and drop a frame that repeats a timestamp.
+    frames = sorted(proof["frames"], key=lambda frame: frame["timestamp"])
+    frames = [frame for index, frame in enumerate(frames)
+              if index == 0 or frame["timestamp"] > frames[index - 1]["timestamp"]]
     if len(frames) < 2:
         raise RuntimeError(f"Insufficient frames for {folder.name}")
     lines = ["ffconcat version 1.0"]
     gaps = []
     for index, frame in enumerate(frames):
         gap = (frames[index + 1]["timestamp"] - frame["timestamp"]) if index + 1 < len(frames) else 1 / 30
-        if gap <= 0:
-            raise RuntimeError("Non-monotonic capture timestamp")
         gaps.append(gap)
         lines.extend([f"file '{frame['file']}'", "option framerate 1000", f"duration {gap:.9f}"])
     lines.append(f"file '{frames[-1]['file']}'")

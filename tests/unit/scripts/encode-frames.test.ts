@@ -30,10 +30,18 @@ afterEach(async () => {
   await fs.rm(folder, { recursive: true, force: true });
 });
 
-async function writeShot(id: string, extra: Record<string, unknown> = {}) {
+async function writeShot(
+  id: string,
+  extra: Record<string, unknown> = {},
+  frames = [
+    { color: "red", timestamp: 10 },
+    { color: "red", timestamp: 10.1 },
+    { color: "red", timestamp: 10.2 },
+  ]
+) {
   const dir = path.join(folder, "frames", id);
   await fs.mkdir(dir, { recursive: true });
-  for (const n of [0, 1, 2]) {
+  for (const [n, { color }] of frames.entries()) {
     await run(toolPath("ffmpeg"), [
       "-y",
       "-v",
@@ -41,7 +49,7 @@ async function writeShot(id: string, extra: Record<string, unknown> = {}) {
       "-f",
       "lavfi",
       "-i",
-      "color=c=red:s=64x112",
+      `color=c=${color}:s=64x112`,
       "-frames:v",
       "1",
       path.join(dir, `0000${n}.jpg`),
@@ -51,11 +59,10 @@ async function writeShot(id: string, extra: Record<string, unknown> = {}) {
     path.join(dir, "capture.json"),
     JSON.stringify({
       id,
-      frames: [
-        { file: "00000.jpg", timestamp: 10 },
-        { file: "00001.jpg", timestamp: 10.1 },
-        { file: "00002.jpg", timestamp: 10.2 },
-      ],
+      frames: frames.map(({ timestamp }, n) => ({
+        file: `0000${n}.jpg`,
+        timestamp,
+      })),
       ...extra,
     })
   );
@@ -94,6 +101,54 @@ describe.skipIf(!haveTools)("encode-frames.py", () => {
       { encoding: "utf8" }
     ).trim();
     expect(size).toBe("108,192");
+  });
+
+  it("plays frames in the order they were drawn when Chrome delivers two swapped", async () => {
+    // Delivered red, blue, green, then blue again with the same timestamp.
+    await writeShot("swap", {}, [
+      { color: "red", timestamp: 10 },
+      { color: "blue", timestamp: 10.2 },
+      { color: "green", timestamp: 10.1 },
+      { color: "blue", timestamp: 10.2 },
+    ]);
+    const output = path.join(folder, "swap.mp4");
+    await run("python", [
+      ENCODER,
+      folder,
+      "swap",
+      "--frames-dir",
+      path.join(folder, "frames"),
+      "--output",
+      output,
+      "--size",
+      "64x112",
+      "--ffmpeg",
+      toolPath("ffmpeg"),
+    ]);
+    const { stdout } = await run(
+      toolPath("ffmpeg"),
+      [
+        "-v",
+        "error",
+        "-i",
+        output,
+        "-vf",
+        "scale=1:1",
+        "-f",
+        "rawvideo",
+        "-pix_fmt",
+        "rgb24",
+        "-",
+      ],
+      { encoding: "buffer" }
+    );
+    const seen: string[] = [];
+    for (let at = 0; at + 2 < stdout.length; at += 3) {
+      const pixel = [stdout[at], stdout[at + 1], stdout[at + 2]];
+      const color = ["red", "green", "blue"][pixel.indexOf(Math.max(...pixel))];
+      if (seen.at(-1) !== color) seen.push(color);
+    }
+    expect(seen).toEqual(["red", "green", "blue"]);
   });
 
   it("rejects a failed capture and leaves no file", async () => {
