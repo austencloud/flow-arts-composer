@@ -120,9 +120,9 @@ const MODEL_LOOK_APPEARANCE_REVISIONS: Readonly<Record<string, string>> = {
   // The Realistic staff captures used to draw with their T-bar (the thumb
   // end) where the notation puts the far end, so "in" read as "out". They now
   // turn to the thumb end, so Realistic cells cached before that must miss.
+  // Simple Staff and Capped Staff have no capture, so they draw their
+  // notation artwork and carry no revision.
   staff: "staff-model-thumb-end-v2",
-  simple_staff: "staff-model-thumb-end-v2",
-  staff_v2: "staff-model-thumb-end-v2",
   bigstaff: "staff-model-thumb-end-v2",
 };
 const NON_RADIAL_ORIENTATIONS = new Set(["clock", "counter"]);

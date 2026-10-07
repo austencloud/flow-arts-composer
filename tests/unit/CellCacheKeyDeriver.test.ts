@@ -410,14 +410,16 @@ describe("CellCacheKeyDeriver (lsp11/lsp12 composition)", () => {
           makeOptions({ ...overrides, propLook: "model" })
         );
 
-      for (const staff of [
-        PropType.STAFF,
-        PropType.SIMPLESTAFF,
-        PropType.STAFF2,
-        PropType.BIGSTAFF,
-      ]) {
+      for (const staff of [PropType.STAFF, PropType.BIGSTAFF]) {
         expect(realistic({ leftPropType: staff })).toContain(
           '"propAppearanceRevision":"staff-model-thumb-end-v2"'
+        );
+      }
+      // Simple Staff and Capped Staff have no model capture, so the model look
+      // draws their notation artwork and their key carries no staff revision.
+      for (const staff of [PropType.SIMPLESTAFF, PropType.STAFF2]) {
+        expect(realistic({ leftPropType: staff })).not.toContain(
+          "propAppearanceRevision"
         );
       }
       expect(

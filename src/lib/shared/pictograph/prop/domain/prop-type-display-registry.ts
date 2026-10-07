@@ -40,7 +40,7 @@ export const PROP_TYPE_DISPLAY_REGISTRY: Record<PropType, PropTypeDisplayInfo> =
       image: "/images/props/buttons/bigstaff.svg?v=2",
     },
     [PropType.STAFF2]: {
-      label: "Staff V2",
+      label: "Capped Staff",
       image: "/images/props/buttons/staff_v2.svg?v=2",
     },
     [PropType.CAPSULE_BATON]: {
@@ -637,7 +637,7 @@ export function toggleBigVariant(propType: PropType): PropType {
  * composition recipes, …), which are left untouched.
  *
  * Curation: props NOT listed here are simply absent from the picker. Simple
- * Staff (backend thumb-orientation prop) and Staff V2 stay fully wired
+ * Staff (backend thumb-orientation prop) and Capped Staff stay fully wired
  * elsewhere but off the picker. Hand is listed under Novelty for now so bare
  * hands can be picked like any prop. Poi IS listed here but
  * dark-gated in BentoPropGrid (dev/admin only, matching the poi-legal filter

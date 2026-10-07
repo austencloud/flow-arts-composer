@@ -419,11 +419,6 @@ export function propGlyphArtwork(
     };
   }
   const art = propTileArtwork(propType, side, appearance, fallback);
-  // The capture's subpixel shaft vanishes at navigation size. Its vector
-  // silhouette preserves the same fire-staff shape, including both wicks.
-  if (art.prelit && propType.toLowerCase() === "fire_double_staff") {
-    return { href: fallback, styled: false, prelit: false };
-  }
   if (
     art.prelit &&
     [
