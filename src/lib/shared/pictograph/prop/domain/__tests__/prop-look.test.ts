@@ -9,6 +9,7 @@ import {
   propArtworkStem,
   propLookOptions,
   resolvePropRenderKey,
+  versionAfterPick,
 } from "../prop-look";
 import { PROP_MODEL_SPRITES } from "../prop-model-sprites.generated";
 
@@ -71,14 +72,16 @@ describe("prop look", () => {
     expect(modelSpriteArtwork("staff", "right")).toMatch(
       /^\/images\/props\/appearances\/model\/staff-red\.svg\?v=/
     );
-    expect(propLookOptions("club").map((o) => o.id)).toEqual([
-      "model",
-      "pictograph",
-    ]);
+  });
+
+  it("lists Version 1 before Version 2", () => {
+    const options = propLookOptions("club");
+    expect(options.map((o) => o.id)).toEqual(["pictograph", "model"]);
+    expect(options.map((o) => o.label)).toEqual(["Version 1", "Version 2"]);
   });
 
   it("frames each look card on the painted half of a grip-centred prop", () => {
-    const [model, pictograph] = propLookOptions("chicken");
+    const [pictograph, model] = propLookOptions("chicken");
     const sprite = PROP_MODEL_SPRITES.chicken!;
     // The capture paints only the left half of its 325-wide box and the
     // notation glyph only the right half; uncropped, both cards sat off-centre.
@@ -99,5 +102,58 @@ describe("prop artwork per hand", () => {
     expect(propArtworkStem("fire_double_staff", "right")).toBe(
       "fire_double_staff"
     );
+  });
+});
+
+describe("version after a pick", () => {
+  it("lets a tile that names a version win", () => {
+    expect(versionAfterPick("staff", "pictograph", "staff", "model")).toBe(
+      "model"
+    );
+    expect(versionAfterPick("staff", "model", "club", "pictograph")).toBe(
+      "pictograph"
+    );
+    expect(versionAfterPick("staff", "pictograph", "club", "model")).toBe(
+      "model"
+    );
+  });
+
+  it("starts a different prop at Version 1 when the pick names none", () => {
+    expect(versionAfterPick("capsule_baton", "model", "club")).toBe(
+      "pictograph"
+    );
+    expect(versionAfterPick(null, "model", "club")).toBe("pictograph");
+    expect(versionAfterPick(undefined, "model", "club")).toBe("pictograph");
+  });
+
+  it("keeps the version when the prop in hand is picked again", () => {
+    expect(versionAfterPick("capsule_baton", "model", "capsule_baton")).toBe(
+      "model"
+    );
+    expect(versionAfterPick("Staff", "model", "staff")).toBe("model");
+    expect(versionAfterPick("staff", "pictograph", "staff")).toBe("pictograph");
+  });
+
+  it("reads a missing held version as Version 1", () => {
+    expect(versionAfterPick("staff", undefined, "staff")).toBe("pictograph");
+    expect(versionAfterPick("staff", null, "staff")).toBe("pictograph");
+  });
+
+  it("keeps the version across a size change, the same prop", () => {
+    expect(versionAfterPick("triad", "model", "bigtriad")).toBe("model");
+    expect(versionAfterPick("bigtriad", "model", "triad")).toBe("model");
+    expect(versionAfterPick("Staff", "model", "BIGSTAFF")).toBe("model");
+    expect(versionAfterPick("triad", "pictograph", "bigtriad")).toBe(
+      "pictograph"
+    );
+  });
+
+  it("keeps the held version when the picked prop has no Version 2", () => {
+    // Fan has none, so there is nothing for the pick to reset to.
+    expect(versionAfterPick("staff", "model", "fan")).toBe("model");
+    expect(versionAfterPick("staff", "model", "bigfan")).toBe("model");
+    // A prop that does have one still starts at Version 1.
+    expect(versionAfterPick("staff", "model", "club")).toBe("pictograph");
+    expect(versionAfterPick("fan", "model", "club")).toBe("pictograph");
   });
 });

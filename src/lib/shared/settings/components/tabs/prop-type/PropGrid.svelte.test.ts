@@ -67,7 +67,7 @@ describe("PropGrid fan look credit", () => {
     expect(document.querySelector(".rail-credit")).toBeNull();
   });
 
-  it("offers the global Realistic choice in a captured prop's rail", async () => {
+  it("offers the Version 1 and 2 choice in a captured prop's rail", async () => {
     const onPropLookChange = vi.fn();
     render(PropGrid, {
       selectedPropType: PropType.STAFF,
@@ -79,9 +79,17 @@ describe("PropGrid fan look credit", () => {
       onPropLookChange,
     });
 
-    await page.getByTestId("prop-look-chip").click();
-    const model = page.getByRole("radio", { name: "Realistic" });
-    const pictograph = page.getByRole("radio", { name: "Pictograph" });
+    const chip = page.getByTestId("prop-look-chip");
+    await expect.element(chip).toHaveTextContent("Version 1");
+    await expect
+      .element(chip)
+      .toHaveAttribute("aria-label", "Version 1. Change");
+    await chip.click();
+    await expect
+      .element(page.getByRole("radiogroup", { name: "Version" }))
+      .toBeVisible();
+    const model = page.getByRole("radio", { name: "Version 2" });
+    const pictograph = page.getByRole("radio", { name: "Version 1" });
     await expect.element(model).toBeVisible();
     await expect.element(pictograph).toHaveAttribute("aria-checked", "true");
 
@@ -89,7 +97,25 @@ describe("PropGrid fan look credit", () => {
     expect(onPropLookChange).toHaveBeenCalledWith("model");
   });
 
-  it("lists every family style in each look as its own tile", async () => {
+  it("names the chip for the version in use", async () => {
+    render(PropGrid, {
+      selectedPropType: PropType.STAFF,
+      onSelect: vi.fn(),
+      layout: "rail",
+      fanAppearance: { build: "fire", frameColor: "black", cover: "bare" },
+      onFanAppearanceChange: vi.fn(),
+      propLook: "model",
+      onPropLookChange: vi.fn(),
+    });
+
+    const chip = page.getByTestId("prop-look-chip");
+    await expect.element(chip).toHaveTextContent("Version 2");
+    await expect
+      .element(chip)
+      .toHaveAttribute("aria-label", "Version 2. Change");
+  });
+
+  it("lists every family style in each version as its own tile", async () => {
     const onSelect = vi.fn();
     const onPropLookChange = vi.fn();
 
@@ -105,10 +131,10 @@ describe("PropGrid fan look credit", () => {
 
     await page.getByRole("button", { name: "Choose Triad style" }).click();
     for (const name of [
-      "Triad prop type",
-      "Trigeng prop type",
-      "Triad 3D prop type",
-      "Trigeng 3D prop type",
+      "Triad V1 prop type",
+      "Trigeng V1 prop type",
+      "Triad V2 prop type",
+      "Trigeng V2 prop type",
     ]) {
       await expect
         .element(
@@ -117,11 +143,11 @@ describe("PropGrid fan look credit", () => {
         .toBeVisible();
     }
     expect(
-      page.getByRole("group", { name: "Prop look" }).elements()
+      page.getByRole("radiogroup", { name: "Version" }).elements()
     ).toHaveLength(0);
 
     await page
-      .getByRole("button", { name: "Select Trigeng 3D prop type", exact: true })
+      .getByRole("button", { name: "Select Trigeng V2 prop type", exact: true })
       .click();
     expect(onSelect).toHaveBeenCalledWith(PropType.TRIGENG, "model");
     expect(onPropLookChange).toHaveBeenCalledWith("model");
@@ -145,8 +171,9 @@ describe("PropGrid fan look credit", () => {
     await page.getByRole("button", { name: "Choose Mini Hoop style" }).click();
     const styles = page.getByRole("region", { name: "Mini Hoop styles" });
     await expect.element(styles).toBeVisible();
-    expect(styles.getByRole("group", { name: "Triangle grip" }).elements())
-      .toHaveLength(0);
+    expect(
+      styles.getByRole("group", { name: "Triangle grip" }).elements()
+    ).toHaveLength(0);
 
     await page
       .getByRole("button", { name: "Select Triangle prop type", exact: true })
@@ -186,16 +213,16 @@ describe("PropGrid fan look credit", () => {
     expect(onSelect).toHaveBeenCalledWith(PropType.BUUGENG);
 
     await expect
-      .element(page.getByRole("radio", { name: "Pictograph" }))
+      .element(page.getByRole("radio", { name: "Version 1" }))
       .toHaveAttribute("aria-checked", "true");
     await expect
-      .element(page.getByRole("radio", { name: "Realistic" }))
+      .element(page.getByRole("radio", { name: "Version 2" }))
       .toBeVisible();
     await expect
       .element(page.getByRole("button", { name: "Big" }))
       .toBeVisible();
 
-    await page.getByRole("radio", { name: "Realistic" }).click();
+    await page.getByRole("radio", { name: "Version 2" }).click();
     expect(onPropLookChange).toHaveBeenCalledWith("model");
 
     await page.getByRole("button", { name: "Back to all props" }).click();
@@ -203,7 +230,230 @@ describe("PropGrid fan look credit", () => {
       .element(page.getByRole("button", { name: "Select Buugeng prop type" }))
       .toBeVisible();
     await expect
-      .element(page.getByRole("radio", { name: "Realistic" }))
+      .element(page.getByRole("radio", { name: "Version 2" }))
       .not.toBeInTheDocument();
+  });
+});
+
+describe("PropGrid prop versions", () => {
+  beforeEach(async () => {
+    await page.viewport(760, 800);
+    document.body.style.margin = "0";
+  });
+
+  const FIRE_FAN = {
+    build: "fire",
+    frameColor: "black",
+    cover: "bare",
+  } as const;
+  const DOUBLE_STAFF_FAMILY = [
+    PropType.STAFF,
+    PropType.CAPSULE_BATON,
+    PropType.FIRE_DOUBLE_STAFF,
+    PropType.ENERGY_STAFF,
+    PropType.STICK,
+    PropType.SIMPLESTAFF,
+    PropType.STAFF2,
+  ];
+  const tile = (name: string) =>
+    page.getByRole("button", { name: `Select ${name} prop type`, exact: true });
+  // A V2 tile draws its pre-lit capture; a V1 tile draws notation art, which
+  // arrives later as a recolored data URI and never from the model folder.
+  const modelArtIn = (selector: string) =>
+    document
+      .querySelector(selector)
+      ?.querySelector('image[href*="/appearances/model/"]') ?? null;
+
+  it("gives only Double Staff and LED Baton a V2 tile in the Double Staff family", async () => {
+    render(PropGrid, {
+      selectedPropType: PropType.STAFF,
+      onSelect: vi.fn(),
+      allowedProps: DOUBLE_STAFF_FAMILY,
+      fanAppearance: FIRE_FAN,
+      onFanAppearanceChange: vi.fn(),
+      propLook: "pictograph",
+      onPropLookChange: vi.fn(),
+    });
+
+    await page
+      .getByRole("button", { name: "Choose Double Staff style" })
+      .click();
+    for (const name of [
+      "Double Staff V1",
+      "Double Staff V2",
+      "LED Baton V1",
+      "LED Baton V2",
+      // One version each: the plain name, no V1 or V2.
+      "Simple Staff",
+      "Capped Staff",
+      "Fire Staff",
+      "Energy Staff",
+      "Stick",
+    ]) {
+      await expect.element(tile(name)).toBeVisible();
+    }
+
+    for (const name of [
+      "Simple Staff",
+      "Capped Staff",
+      "Fire Staff",
+      "Energy Staff",
+      "Stick",
+    ]) {
+      for (const version of [1, 2]) {
+        expect(
+          tile(`${name} V${version}`).elements(),
+          `${name} V${version}`
+        ).toHaveLength(0);
+      }
+    }
+    // A prop with two versions never shows a tile that hides which it is.
+    expect(tile("Double Staff").elements()).toHaveLength(0);
+    expect(tile("LED Baton").elements()).toHaveLength(0);
+  });
+
+  it("marks only the tile of the version in use as selected", async () => {
+    render(PropGrid, {
+      selectedPropType: PropType.CAPSULE_BATON,
+      onSelect: vi.fn(),
+      allowedProps: DOUBLE_STAFF_FAMILY,
+      fanAppearance: FIRE_FAN,
+      onFanAppearanceChange: vi.fn(),
+      propLook: "model",
+      onPropLookChange: vi.fn(),
+    });
+
+    await page
+      .getByRole("button", { name: "Choose Double Staff style" })
+      .click();
+    await expect
+      .element(tile("LED Baton V2"))
+      .toHaveAttribute("aria-pressed", "true");
+    await expect
+      .element(tile("LED Baton V1"))
+      .toHaveAttribute("aria-pressed", "false");
+  });
+
+  it("labels a V2 tile with its prop and version", async () => {
+    render(PropGrid, {
+      selectedPropType: PropType.STAFF,
+      onSelect: vi.fn(),
+      allowedProps: DOUBLE_STAFF_FAMILY,
+      fanAppearance: FIRE_FAN,
+      onFanAppearanceChange: vi.fn(),
+      propLook: "pictograph",
+      onPropLookChange: vi.fn(),
+    });
+
+    await page
+      .getByRole("button", { name: "Choose Double Staff style" })
+      .click();
+    await expect.element(tile("LED Baton V2")).toBeVisible();
+    const label = (selector: string) =>
+      document.querySelector(`${selector} .prop-label`)?.textContent?.trim();
+    expect(
+      label('[data-prop-tile="capsule_baton"][data-prop-look="model"]')
+    ).toBe("LED Baton V2");
+    expect(
+      label('[data-prop-tile="capsule_baton"][data-prop-look="pictograph"]')
+    ).toBe("LED Baton V1");
+    // Staff V2 is a display name only; the prop value is unchanged.
+    expect(label('[data-prop-tile="staff_v2"]')).toBe("Capped Staff");
+  });
+
+  it("draws V1 art on every main-grid tile except the selected prop's", async () => {
+    const { rerender } = render(PropGrid, {
+      selectedPropType: PropType.STAFF,
+      onSelect: vi.fn(),
+      allowedProps: [PropType.STAFF, PropType.CLUB],
+      fanAppearance: FIRE_FAN,
+      onFanAppearanceChange: vi.fn(),
+      propLook: "model",
+      onPropLookChange: vi.fn(),
+    });
+
+    await expect
+      .poll(() => modelArtIn('[data-prop-tile="staff"]'))
+      .not.toBeNull();
+    expect(modelArtIn('[data-prop-tile="club"]')).toBeNull();
+
+    // The version follows the selection, not the prop.
+    await rerender({ selectedPropType: PropType.CLUB });
+    await expect
+      .poll(() => modelArtIn('[data-prop-tile="club"]'))
+      .not.toBeNull();
+    expect(modelArtIn('[data-prop-tile="staff"]')).toBeNull();
+  });
+
+  it("draws V1 art on a family tile unless the selected prop belongs to it", async () => {
+    render(PropGrid, {
+      selectedPropType: PropType.CAPSULE_BATON,
+      onSelect: vi.fn(),
+      allowedProps: [
+        PropType.STAFF,
+        PropType.CAPSULE_BATON,
+        PropType.CLUB,
+        PropType.TORCH,
+      ],
+      fanAppearance: FIRE_FAN,
+      onFanAppearanceChange: vi.fn(),
+      propLook: "model",
+      onPropLookChange: vi.fn(),
+    });
+
+    // The Double Staff family tile shows the LED Baton in hand, at V2.
+    await expect
+      .poll(() => modelArtIn('[data-family-tile="staff"]'))
+      .not.toBeNull();
+    expect(modelArtIn('[data-family-tile="club"]')).toBeNull();
+  });
+
+  // Size is a setting on a prop. A family of one style folds its Big twin into
+  // the single tile, so that tile is the selected prop when the twin is.
+  it("lights and draws the single tile of a prop whose Big twin is selected", async () => {
+    render(PropGrid, {
+      selectedPropType: PropType.BIGCHICKEN,
+      onSelect: vi.fn(),
+      allowedProps: [PropType.CHICKEN, PropType.BIGCHICKEN, PropType.CLUB],
+      fanAppearance: FIRE_FAN,
+      onFanAppearanceChange: vi.fn(),
+      propLook: "model",
+      onPropLookChange: vi.fn(),
+    });
+
+    await expect
+      .element(tile("Chicken"))
+      .toHaveAttribute("aria-pressed", "true");
+    await expect
+      .poll(() => modelArtIn('[data-prop-tile="chicken"]'))
+      .not.toBeNull();
+    // Another prop still reads V1 and stays unselected.
+    await expect
+      .element(tile("Club"))
+      .toHaveAttribute("aria-pressed", "false");
+    expect(modelArtIn('[data-prop-tile="club"]')).toBeNull();
+  });
+
+  it("reports a size change as the other size and names no version", async () => {
+    const onSelect = vi.fn();
+    const onPropLookChange = vi.fn();
+    render(PropGrid, {
+      selectedPropType: PropType.TRIAD,
+      onSelect,
+      allowedProps: [PropType.TRIAD, PropType.TRIGENG, PropType.BIGTRIAD],
+      fanAppearance: FIRE_FAN,
+      onFanAppearanceChange: vi.fn(),
+      propLook: "model",
+      onPropLookChange,
+    });
+
+    await page.getByRole("button", { name: "Choose Triad style" }).click();
+    await page.getByRole("button", { name: "Big", exact: true }).click();
+
+    // The host keeps the version it holds: the grid sends the size twin with
+    // no version and never writes one.
+    expect(onSelect).toHaveBeenCalledTimes(1);
+    expect(onSelect).toHaveBeenLastCalledWith(PropType.BIGTRIAD);
+    expect(onPropLookChange).not.toHaveBeenCalled();
   });
 });

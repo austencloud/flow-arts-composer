@@ -11,6 +11,7 @@ import {
   type PropModelSpriteEntry,
 } from "./prop-model-sprites.generated";
 import { HOOP_FAMILY_GLYPH_CROPS } from "./hoop-family-geometry.generated";
+import { isSameProp, standardSizeProp } from "./prop-type-display-registry";
 import {
   isTrianglePropType,
   normalizeTriangleGrip,
@@ -24,10 +25,11 @@ import {
 /**
  * How the 2D animation canvas draws a prop.
  *
- * - `model` ("Realistic" to viewers, since it is drawn flat): a capture of the
+ * - `model` (Version 2 to viewers, since it is drawn flat): a capture of the
  *   same 3D model the viewer's 3D mode renders, pre-lit in the blue and red
  *   motion colors.
- * - `pictograph`: the flat notation artwork, recolored per hand at runtime.
+ * - `pictograph` (Version 1 to viewers): the flat notation artwork, recolored
+ *   per hand at runtime.
  *
  * Fan keeps its own richer appearance contract (build, frame, cover); this
  * setting covers every other physical prop with one switch.
@@ -419,11 +421,6 @@ export function propGlyphArtwork(
     };
   }
   const art = propTileArtwork(propType, side, appearance, fallback);
-  // The capture's subpixel shaft vanishes at navigation size. Its vector
-  // silhouette preserves the same fire-staff shape, including both wicks.
-  if (art.prelit && propType.toLowerCase() === "fire_double_staff") {
-    return { href: fallback, styled: false, prelit: false };
-  }
   if (
     art.prelit &&
     [
@@ -467,21 +464,46 @@ export interface PropLookOption {
   crop?: PropTileCrop;
 }
 
+/**
+ * A prop's two versions, Version 1 (the notation art) first. The labels are the
+ * plain English fallback; pickers show their localized strings.
+ */
 export function propLookOptions(propType: string): readonly PropLookOption[] {
   const normalized = propType.toLowerCase();
   const sprite = PROP_MODEL_SPRITES[normalized];
   return [
     {
-      id: "model",
-      label: "Realistic",
-      image: modelSpriteArtwork(normalized, "left"),
-      crop: sprite ? modelSpriteCrop(sprite) : undefined,
-    },
-    {
       id: "pictograph",
-      label: "Pictograph",
+      label: "Version 1",
       image: `/images/props/buttons/${normalized}.svg`,
       crop: NOTATION_GLYPH_CROPS[normalized],
     },
+    {
+      id: "model",
+      label: "Version 2",
+      image: modelSpriteArtwork(normalized, "left"),
+      crop: sprite ? modelSpriteCrop(sprite) : undefined,
+    },
   ];
+}
+
+/**
+ * The version a host with its own local look holds after a pick. A version
+ * belongs to the pick: a tile that names one wins, and a different prop that
+ * has a Version 2 starts at Version 1. Choosing the prop already in hand, at
+ * either size, keeps its version, and so does a pick of a prop with no
+ * Version 2 (it has nothing to reset to). Global settings writes follow the
+ * same rule in `withPickVersion`.
+ */
+export function versionAfterPick(
+  heldProp: string | null | undefined,
+  heldLook: PropLook | null | undefined,
+  pickedProp: string,
+  pickedLook?: PropLook
+): PropLook {
+  if (pickedLook !== undefined) return normalizePropLook(pickedLook);
+  return isSameProp(heldProp, pickedProp) ||
+    !hasModelSprite(standardSizeProp(pickedProp))
+    ? normalizePropLook(heldLook)
+    : DEFAULT_PROP_LOOK;
 }

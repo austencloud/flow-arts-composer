@@ -216,11 +216,14 @@ describe("model sprite tip points", () => {
     // The notation staff marks the thumb end at +x, the end the rotation
     // tables point at the centre for "in". Drawn as captured, a Realistic
     // staff set to "in" showed its T-bar on the outside.
-    for (const prop of ["staff", "simple_staff", "staff_v2", "bigstaff"]) {
+    for (const prop of ["staff", "bigstaff"]) {
       expect(modelSpriteFacesAwayFromTips(prop), prop).toBe(true);
     }
     // Symmetric captures with no thumb marker stay as captured.
-    for (const prop of ["capsule_baton", "fire_double_staff"]) {
+    expect(modelSpriteFacesAwayFromTips("capsule_baton")).toBe(false);
+    // Simple Staff, Capped Staff and Fire Staff have no capture to turn.
+    for (const prop of ["simple_staff", "staff_v2", "fire_double_staff"]) {
+      expect(PROP_MODEL_SPRITES[prop], prop).toBeUndefined();
       expect(modelSpriteFacesAwayFromTips(prop), prop).toBe(false);
     }
   });

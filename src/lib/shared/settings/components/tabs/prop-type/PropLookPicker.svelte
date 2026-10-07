@@ -23,7 +23,16 @@
 
   const look = $derived(normalizePropLook(value));
   const available = $derived(hasModelSprite(propType));
-  const options = $derived(propLookOptions(propType));
+  // The domain carries plain English fallbacks; the picker names the versions
+  // in the viewer's language.
+  const options = $derived(
+    propLookOptions(propType).map((option) => ({
+      ...option,
+      label: t("settings_prop_version_n", {
+        version: option.id === "model" ? 2 : 1,
+      }),
+    }))
+  );
 </script>
 
 {#if available}
@@ -34,7 +43,7 @@
     style:--prop-picker-stroke="var(--theme-stroke, rgba(255, 255, 255, 0.12))"
   >
     <PropBuildPicker
-      label={t("settings_prop_look")}
+      label={t("settings_prop_version")}
       value={look}
       {options}
       {onchange}
