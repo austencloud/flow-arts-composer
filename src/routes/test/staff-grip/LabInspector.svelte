@@ -158,8 +158,7 @@
   }
 </script>
 
-<section class="inspector" aria-labelledby="lab-measurements-title">
-  <h2 class="card-title" id="lab-measurements-title">Measurements</h2>
+<div class="inspector">
   <SegmentedControl
     options={PANEL_OPTIONS}
     value={lab.panel}
@@ -422,29 +421,15 @@
       {/if}
     </Crossfade>
   </div>
-</section>
+</div>
 
 <style>
-  /* Same card the controls use, so the rail reads as one set of app panels
-     rather than a heading-and-divider console. */
+  /* The rail's Measurements section owns the card and the heading. */
   .inspector {
     display: flex;
     flex-direction: column;
     gap: 0.6rem;
     min-width: 0;
-    padding: 1rem;
-    border: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.08));
-    border-radius: 12px;
-    background: var(--theme-card-bg, rgba(255, 255, 255, 0.05));
-  }
-
-  .card-title {
-    margin: 0;
-    font-size: var(--font-size-compact, 0.75rem);
-    font-weight: 600;
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
-    color: var(--theme-text-dim, rgba(255, 255, 255, 0.75));
   }
 
   .panel-stage {
