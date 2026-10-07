@@ -792,7 +792,7 @@
                 pictograph={gridJoinPictograph}
                 leftPropType={gridJoinPropTypes.left}
                 rightPropType={gridJoinPropTypes.right}
-                fill={!isMobileLayout}
+                fill
                 compact={isMobileLayout}
               />
             {:else if subView === "extend"}
