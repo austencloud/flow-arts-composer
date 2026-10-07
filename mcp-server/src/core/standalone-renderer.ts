@@ -23,7 +23,10 @@ import {
   type MotionType,
 } from "./enums.js";
 import {
-  getLayer2PointCoordinates,
+  getArrowAnchorCoordinates,
+  generateTurnsTuple,
+  turnsTupleDirection,
+  DIRECTION_DOT,
   getNormalHandPointCoordinates,
   calculatePropPlacement,
   pictographRequiresStrictHandpoints,
@@ -692,7 +695,16 @@ ${sceneParts.join("\n")}
         input.rightMotion?.turns,
         darkMode,
         themeable,
-        primaryPropColors
+        primaryPropColors,
+        input.leftMotion && input.rightMotion
+          ? turnsTupleDirection(
+              generateTurnsTuple(
+                input.letter,
+                input.leftMotion,
+                input.rightMotion
+              )
+            )
+          : null
       );
       if (letterSvg)
         svgParts.push(`<g class="svg-glyph svg-glyph-letter">${letterSvg}</g>`);
@@ -1253,7 +1265,7 @@ ${svgParts.join("\n")}
       );
     }
 
-    const position = getLayer2PointCoordinates(location, gridMode);
+    const position = getArrowAnchorCoordinates(motionType, location, gridMode);
     const canonicalLocation = toCanonical(location) as GridLocation;
     const rotation = rotatePlacementAngleToDisplayed(
       calculateArrowRotation(
@@ -1285,7 +1297,12 @@ ${svgParts.join("\n")}
     const adjustmentInput: PictographAdjustmentInput = {
       letter: pictograph.letter,
       gridMode: canonicalGridMode,
-      endPlacement: pictograph.endPlacement,
+      // Keyed on the displayed grid, as the app's special placements are.
+      turnsTuple: generateTurnsTuple(
+        pictograph.letter,
+        pictograph.leftMotion,
+        pictograph.rightMotion
+      ),
       leftMotion: adjustmentMotion(pictograph.leftMotion, "left"),
       rightMotion: adjustmentMotion(pictograph.rightMotion, "right"),
     };
@@ -1560,7 +1577,8 @@ ${svgParts.join("\n")}
     rightTurns: number | "fl" | undefined,
     darkMode: boolean,
     themeable: boolean = false,
-    customColors?: HandColorPair | null
+    customColors?: HandColorPair | null,
+    direction: "s" | "o" | null = null
   ): string {
     // Determine the correct type folder for this letter
     const typeFolder = LETTER_TYPE_FOLDER[letter] || "Type1";
@@ -1631,12 +1649,31 @@ ${svgParts.join("\n")}
         customColors
       );
 
-      // Combine letter and turn numbers in a group
+      // Same/opposite direction dot: above the letter for "s", below for "o"
+      let directionDotSvg = "";
+      if (direction) {
+        const radius = DIRECTION_DOT.SIZE / 2;
+        const dotCenterY =
+          direction === "s"
+            ? -DIRECTION_DOT.PADDING - radius
+            : height + DIRECTION_DOT.PADDING + radius;
+        const dotFill = this.resolveColor(
+          "--dm-glyph-fill",
+          "#ffffff",
+          "#231f20",
+          darkMode,
+          themeable
+        );
+        directionDotSvg = `<circle cx="${width / 2}" cy="${dotCenterY}" r="${radius}" fill="${dotFill}"/>`;
+      }
+
+      // Combine letter, turn numbers and direction dot in a group
       return `<g transform="translate(${TKA_GLYPH_X}, ${TKA_GLYPH_Y})">
   <svg width="${width}" height="${height}" viewBox="${viewBox}">
     ${innerContent}
   </svg>
 ${turnNumbersSvg}
+${directionDotSvg}
 </g>`;
     } catch (error) {
       console.error("[Renderer] Failed to load letter:", error);
