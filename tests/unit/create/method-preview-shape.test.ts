@@ -8,6 +8,7 @@ import { METHOD_PREVIEW_TIMING } from "$lib/features/create/shared/state/method-
 import {
   shapeCellRect,
   shapeLayout,
+  shapeStageCovers,
   transformOnto,
 } from "$lib/features/create/shared/components/method-previews/method-preview-compositions";
 import { SCENE_TAP } from "$lib/features/create/shared/components/method-previews/method-preview-run";
@@ -93,6 +94,56 @@ describe("Shape preview grow", () => {
     expect(chosenToStage("strip", 146, 48)).toBe(
       "translate(0px, 0px) scale(1)"
     );
+  });
+});
+
+describe("Shape preview stage cover", () => {
+  /** The corner's tiles the finished stage sits over, as [row, column]. */
+  function covered(
+    shape: "strip" | "roomy" | "square",
+    width: number,
+    height: number
+  ) {
+    const layout = shapeLayout(shape, width, height)!;
+    const tiles: Array<[number, number]> = [];
+    for (let row = 0; row < layout.rows; row++) {
+      for (let column = 0; column < layout.columns; column++) {
+        if (shapeStageCovers(layout, row, column)) tiles.push([row, column]);
+      }
+    }
+    return tiles;
+  }
+
+  it("covers only the chosen tile where the stage is that tile", () => {
+    expect(covered("strip", 146, 48)).toEqual([[0, 1]]);
+  });
+
+  it("covers nothing where the stage stands beside the corner", () => {
+    expect(covered("roomy", 308, 96)).toEqual([]);
+  });
+
+  it("covers the four crossings under the square stage", () => {
+    const crossings = [
+      [0, 0],
+      [0, 1],
+      [1, 0],
+      [1, 1],
+    ];
+    expect(covered("square", 144, 144)).toEqual(crossings);
+    expect(covered("square", 200, 200)).toEqual(crossings);
+  });
+
+  it("does not count a tile that only touches the stage's edge", () => {
+    const layout = shapeLayout("square", 144, 144)!;
+    const beside = {
+      ...layout,
+      stage: { ...layout.stage, x: layout.x + 3 * layout.cell },
+    };
+    for (let row = 0; row < layout.rows; row++) {
+      for (let column = 0; column < layout.columns; column++) {
+        expect(shapeStageCovers(beside, row, column)).toBe(false);
+      }
+    }
   });
 });
 

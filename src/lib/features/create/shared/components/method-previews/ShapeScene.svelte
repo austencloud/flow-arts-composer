@@ -50,6 +50,7 @@
     cellCenter,
     shapeCellRect,
     shapeLayout,
+    shapeStageCovers,
     transformOnto,
   } from "./method-preview-compositions";
   import {
@@ -83,8 +84,26 @@
   let data = $state.raw<ShapeMatrixData | null>(null);
   /** Tiles with artwork so far, in reveal order. Each paints in its own task. */
   let paintedTiles = $state(0);
+  /** The stage's laid-out content box, in CSS px (bind:clientWidth). */
+  let stageWidth = $state(0);
+  let stageHeight = $state(0);
+  /** False while the corner rebuilds: the tiles under the stage show then. */
+  let stageShown = $state(true);
+  /** True while the tapped tile grows into the stage. */
+  let growing = $state(false);
 
   const layout = $derived(shapeLayout(shape, width, height));
+  /** The cells the finished stage sits over, as "row:column". */
+  const coveredCells = $derived.by(() => {
+    const keys = new Set<string>();
+    if (!layout) return keys;
+    for (let row = 0; row < layout.rows; row++) {
+      for (let column = 0; column < layout.columns; column++) {
+        if (shapeStageCovers(layout, row, column)) keys.add(`${row}:${column}`);
+      }
+    }
+    return keys;
+  });
   const corner = $derived(
     data && layout ? shapeCorner(data.axis, layout) : null
   );
@@ -104,6 +123,7 @@
   let revealing = false;
   let frame: MandalaGuideRevealFrame | null = null;
   let frameKey = "";
+  let frameCanvas: HTMLCanvasElement | null = null;
   /** Animations and timers a turn started, so settle can end them. */
   let animations: Animation[] = [];
   let timers: ReturnType<typeof setTimeout>[] = [];
@@ -160,8 +180,9 @@
 
   /**
    * The stage's reveal frame for the chosen tile. It is made again when the
-   * box, the props, or the colors change; its finished paint is the tile's
-   * picture at the stage's size.
+   * box, the colors, or the canvas change; its finished paint is the tile's
+   * picture at the stage's size. The colors and size follow live; the props
+   * load once, at mount.
    */
   function stageFrame(): MandalaGuideRevealFrame | null {
     const target = canvas;
@@ -172,8 +193,12 @@
     const colors = getSettings().primaryPropColors ?? undefined;
     const dpr =
       typeof window !== "undefined" ? (window.devicePixelRatio ?? 1) : 1;
-    // The stage's 1px border sits inside its box.
-    const size = box.stage.size - 2;
+    // A border snaps to device pixels (a 1px border is 1 device pixel at a
+    // ratio of 1.5), so the box minus two CSS pixels can be a pixel short.
+    // The laid-out box is the truth, and a tile measures itself the same way
+    // (ShapeMatrixMandalaArt), so the stage matches the tile's own picture.
+    const measured = Math.round(Math.min(stageWidth, stageHeight));
+    const size = measured > 0 ? measured : box.stage.size - 2;
     const key = [
       size,
       dpr,
@@ -185,8 +210,10 @@
       colors?.left,
       colors?.right,
     ].join("|");
-    if (key !== frameKey) {
+    // A stage that remounts at the same size is a new canvas.
+    if (key !== frameKey || target !== frameCanvas) {
       frameKey = key;
+      frameCanvas = target;
       frame = createCellRevealFrame(
         target,
         matrix.left.get(flowerKey(pair.left))!,
@@ -264,6 +291,8 @@
   function settle(): void {
     stopTracked();
     revealing = false;
+    stageShown = true;
+    growing = false;
     pose = null;
     root
       ?.querySelectorAll(`.${SHAPE_MATRIX_REVEAL_CHOSEN_CLASS}`)
@@ -318,7 +347,9 @@
       Math.min(height, chosen.y + box.cell * 0.45)
     );
 
-    // The finished stage steps aside while the corner rebuilds.
+    // The finished stage steps aside while the corner rebuilds, and the tiles
+    // under it show again at once.
+    stageShown = false;
     const stageOut = track(stageBox, [{ opacity: 1 }, { opacity: 0 }], {
       duration: SHAPE_PREVIEW_TIMING.stageOutMs,
       easing: "ease-in",
@@ -335,6 +366,9 @@
     // the preview moves its own stage, starting over the tile.
     finger.ghost.visible = false;
     stageFrame()?.paint(0);
+    // The tiles under the stage fade out as it grows over them.
+    stageShown = true;
+    growing = true;
     track(
       stageBox,
       [
@@ -355,7 +389,13 @@
   });
 </script>
 
-<div class="scene" bind:this={root} style:--accent={accent}>
+<div
+  class="scene"
+  class:growing
+  bind:this={root}
+  style:--accent={accent}
+  style:--grow-ms="{SHAPE_PREVIEW_TIMING.growMs}ms"
+>
   {#if layout && corner && data}
     {@const matrix = data}
     <table
@@ -400,7 +440,12 @@
             </th>
             {#each corner.columns as columnFlower, column (column)}
               <td class="cell-td">
-                <span class="cell" class:sel={isChosen(row, column)}>
+                <span
+                  class="cell"
+                  class:sel={isChosen(row, column)}
+                  class:covered={stageShown &&
+                    coveredCells.has(`${row}:${column}`)}
+                >
                   {#if cellOrder(row, column) < paintedTiles}
                     <span class="artwork">
                       <ShapeMatrixMandalaArt
@@ -429,6 +474,8 @@
     <div
       class="stage"
       bind:this={stage}
+      bind:clientWidth={stageWidth}
+      bind:clientHeight={stageHeight}
       style:left="{layout.stage.x}px"
       style:top="{layout.stage.y}px"
       style:width="{layout.stage.size}px"
@@ -556,6 +603,36 @@
     box-shadow: inset 0 0 0 2px var(--accent);
   }
 
+  /* The finished stage's background is translucent by design, so the tiles
+     under it hide while it shows. The reveal animates .cell opacity itself,
+     so a covered tile hides its contents and decorations instead. These
+     rules sit after .cell.sel and the reveal highlight so they win. */
+  .cell.covered,
+  .cell.covered:global(.reveal-chosen) {
+    background: transparent;
+    border-color: transparent;
+    box-shadow: none;
+  }
+
+  .cell.covered .artwork,
+  .cell.covered::after {
+    opacity: 0;
+  }
+
+  /* The fade runs only while the tile grows into the stage. Uncovering when
+     a turn starts, or after a cut, is instant. */
+  .scene.growing .cell {
+    transition:
+      background var(--grow-ms) cubic-bezier(0.22, 1, 0.36, 1),
+      border-color var(--grow-ms) cubic-bezier(0.22, 1, 0.36, 1),
+      box-shadow var(--grow-ms) cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .scene.growing .cell .artwork,
+  .scene.growing .cell::after {
+    transition: opacity var(--grow-ms) cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
   /* The stage the chosen tile grows into, like the Matrix's detail hero. */
   .stage {
     position: absolute;
@@ -586,7 +663,10 @@
   @media (prefers-reduced-motion: reduce) {
     .colhead,
     .rowhead,
-    .cell {
+    .cell,
+    .scene.growing .cell,
+    .scene.growing .cell .artwork,
+    .scene.growing .cell::after {
       transition: none;
     }
   }

@@ -173,6 +173,28 @@ export function shapeCellRect(
   };
 }
 
+/**
+ * Whether the finished stage sits over a matrix cell. Overlap is strict, so a
+ * cell that only touches the stage's edge is not covered. The scene hides
+ * covered cells while the stage shows: the stage's background is translucent
+ * by design, so whatever lies under it would otherwise show through.
+ * Headers never sit under the stage, so only cells need the check.
+ */
+export function shapeStageCovers(
+  layout: Pick<ShapeLayout, "cell" | "x" | "y" | "columnHeads" | "stage">,
+  row: number,
+  column: number
+): boolean {
+  const tile = shapeCellRect(layout, row, column);
+  const stage = layout.stage;
+  return (
+    tile.x < stage.x + stage.size &&
+    tile.x + tile.size > stage.x &&
+    tile.y < stage.y + stage.size &&
+    tile.y + tile.size > stage.y
+  );
+}
+
 export function shapeLayout(
   shape: MethodPreviewShape,
   width: number,
