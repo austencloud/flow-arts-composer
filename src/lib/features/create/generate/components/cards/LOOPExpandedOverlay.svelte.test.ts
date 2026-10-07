@@ -54,7 +54,7 @@ describe("LOOPExpandedOverlay live single selection", () => {
     await page.viewport(900, 900);
   });
 
-  it("morphs a desktop Single card open and writes its settings through live", async () => {
+  it("keeps the choices in place while Single settings write through live", async () => {
     const handlers = renderOverlay();
 
     await page
@@ -75,7 +75,10 @@ describe("LOOPExpandedOverlay live single selection", () => {
     const rotatedButton = document.querySelector<HTMLButtonElement>(
       `[data-component="${LOOPComponent.ROTATED}"] .loop-component-button`
     );
-    expect(rotatedButton?.getAttribute("aria-expanded")).toBe("true");
+    expect(rotatedButton?.getAttribute("aria-pressed")).toBe("true");
+    expect(
+      document.querySelectorAll(".compact-chooser .loop-component-shell")
+    ).toHaveLength(5);
 
     await page
       .getByRole("radiogroup", { name: "Rotation period" })
@@ -89,7 +92,7 @@ describe("LOOPExpandedOverlay live single selection", () => {
     expect(handlers.onChange).toHaveBeenLastCalledWith(LOOPType.ROTATED);
   });
 
-  it("pushes into focused settings on a phone and restores focus on Back", async () => {
+  it("keeps every choice available next to its settings on a phone", async () => {
     await page.viewport(375, 667);
     const handlers = renderOverlay();
 
@@ -103,26 +106,17 @@ describe("LOOPExpandedOverlay live single selection", () => {
     expect(handlers.onClose).not.toHaveBeenCalled();
     expect(
       document.querySelector('[aria-label="Back to all LOOP types"]')
-    ).not.toBeNull();
-    await vi.waitFor(() => {
-      expect(
-        document.querySelector(
-          `.single-loop-stage [data-component="${LOOPComponent.SWAPPED}"]`
-        )
-      ).toBeNull();
-    });
-
-    await page.getByRole("button", { name: "Back to all LOOP types" }).click();
-
-    const rotatedButton = document.querySelector<HTMLButtonElement>(
-      `.single-loop-stage [data-component="${LOOPComponent.ROTATED}"] .loop-component-button`
-    );
+    ).toBeNull();
     expect(
-      document.querySelector(
-        `.single-loop-stage [data-component="${LOOPComponent.SWAPPED}"]`
-      )
+      document.querySelector(`[data-component="${LOOPComponent.SWAPPED}"]`)
     ).not.toBeNull();
-    expect(document.activeElement).toBe(rotatedButton);
+    await expect
+      .element(page.getByRole("radiogroup", { name: "Rotation period" }))
+      .toBeVisible();
+    const rotatedButton = document.querySelector<HTMLButtonElement>(
+      `[data-component="${LOOPComponent.ROTATED}"] .loop-component-button`
+    );
+    expect(rotatedButton?.getAttribute("aria-pressed")).toBe("true");
   });
 
   it("keeps an invalid single choice visible until a live setting makes it valid", async () => {

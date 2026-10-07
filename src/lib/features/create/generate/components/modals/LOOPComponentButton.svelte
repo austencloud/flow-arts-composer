@@ -22,6 +22,7 @@ Shows description in Quick Apply mode, compact in Build Combo mode
     disabledReason,
     showDescription = false,
     compactOnMobile = false,
+    compactChooser = false,
     isExpanded = false,
     expandedContent,
     expandedContentId,
@@ -40,6 +41,7 @@ Shows description in Quick Apply mode, compact in Build Combo mode
     showDescription?: boolean;
     /** Keep list detail on desktop, then use the compact grid treatment on phones. */
     compactOnMobile?: boolean;
+    compactChooser?: boolean;
     /** Keep component-specific controls visually attached to their card. */
     isExpanded?: boolean;
     expandedContent?: Snippet;
@@ -63,6 +65,7 @@ Shows description in Quick Apply mode, compact in Build Combo mode
   class="loop-component-shell"
   class:expanded={isExpanded && !!expandedContent}
   class:with-configure-action={showConfigureAction}
+  class:compact-chooser={compactChooser}
   data-component={componentInfo.component}
   data-expanded={isExpanded}
   style="--component-color: {color};"
@@ -73,6 +76,8 @@ Shows description in Quick Apply mode, compact in Build Combo mode
     class:multi-select={isMultiSelectMode}
     class:with-description={showDescription}
     class:compact-on-mobile={compactOnMobile}
+    class:compact-chooser={compactChooser}
+    aria-pressed={compactChooser ? isSelected : undefined}
     class:locked={isLocked}
     onclick={onClick}
     disabled={isDisabled}
@@ -173,6 +178,74 @@ Shows description in Quick Apply mode, compact in Build Combo mode
       border-color var(--expansion-duration) var(--expansion-easing),
       box-shadow var(--expansion-duration) var(--expansion-easing);
     position: relative;
+  }
+
+  .loop-component-shell.compact-chooser {
+    height: auto;
+    min-height: 72px;
+  }
+
+  .loop-component-button.compact-chooser {
+    min-height: 72px;
+    padding: 10px 6px;
+    border: 1px solid var(--theme-stroke);
+    border-radius: 8px;
+    background: var(--theme-card-bg);
+    box-shadow: none;
+    transform: none;
+  }
+
+  .loop-component-button.compact-chooser .button-content {
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  .loop-component-button.compact-chooser .loop-component-icon {
+    width: auto;
+    height: auto;
+    font-size: 1.25rem;
+    background: transparent;
+    color: var(--component-color);
+  }
+
+  .loop-component-button.compact-chooser .text-content {
+    align-items: center;
+  }
+
+  .loop-component-button.compact-chooser .loop-component-label {
+    font-size: var(--font-size-sm, 14px);
+    line-height: 1.2;
+    text-align: center;
+  }
+
+  .loop-component-button.compact-chooser:hover {
+    background: var(--theme-card-hover-bg);
+    border-color: var(--theme-text-dim);
+    transform: none;
+  }
+
+  .loop-component-button.compact-chooser.selected {
+    background: color-mix(
+      in srgb,
+      var(--component-color) 14%,
+      var(--theme-card-bg)
+    );
+    border-color: var(--component-color);
+    box-shadow: inset 0 0 0 1px var(--component-color);
+  }
+
+  .loop-component-button.compact-chooser .check-badge {
+    top: 4px;
+    right: 4px;
+    width: 17px;
+    height: 17px;
+    border-width: 0;
+    box-shadow: none;
+  }
+
+  .loop-component-button.compact-chooser .check-badge svg {
+    width: 12px;
+    height: 12px;
   }
 
   .loop-component-button {
