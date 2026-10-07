@@ -74,7 +74,12 @@
     considering?: boolean;
     /** Projection/TV sizing. */
     stage?: boolean;
-    /** Create method previews: a small finger sized off the preview box. */
+    /**
+     * A small finger for preview boxes: the dot sizes off the nearest
+     * `container-type: size` ancestor (14 to 28px) and is 28px without one.
+     * Callers pass no `speed`, as the Composer demos don't: the trail is
+     * sized for page-length glides.
+     */
     compact?: boolean;
     onResume?: () => void;
   } = $props();
@@ -101,7 +106,7 @@
   // The trail only earns its pixels while actually moving. Below this it is
   // noise around a stationary dot.
   const trailing = $derived(speed > 0.12 && !parked && !dimmed);
-  const trailLen = $derived(Math.round(speed * (stage ? 96 : compact ? 18 : 54)));
+  const trailLen = $derived(Math.round(speed * (stage ? 96 : 54)));
   const headingDeg = $derived((heading * 180) / Math.PI);
 </script>
 

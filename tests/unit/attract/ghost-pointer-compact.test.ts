@@ -1,7 +1,7 @@
 /**
  * Create method previews press inside boxes as small as 40px, so the ghost
- * has a compact size: a class the stylesheet sizes off the preview box, and
- * a trail scaled to match.
+ * has a compact size: a class the stylesheet sizes off the preview box. The
+ * trail is unchanged; previews, like the Composer demos, pass no speed.
  */
 import { flushSync, mount, unmount } from "svelte";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
@@ -44,12 +44,6 @@ describe("GhostPointer compact size", () => {
     expect(target.querySelector(".ghost")?.classList.contains("compact")).toBe(
       true
     );
-  });
-
-  it("scales the trail for a compact ghost", () => {
-    const target = render({ compact: true, speed: 1 });
-    const trail = target.querySelector<HTMLElement>(".trail");
-    expect(trail?.style.width).toBe("18px");
   });
 
   it("keeps the default trail without compact", () => {
