@@ -37,7 +37,14 @@ beforeEach(async () => {
 });
 
 afterEach(async () => {
-  await fs.rm(root, { recursive: true, force: true });
+  // Windows can hold a file a test just wrote for a moment after it is
+  // deleted, and then its folder will not go yet.
+  await fs.rm(root, {
+    recursive: true,
+    force: true,
+    maxRetries: 10,
+    retryDelay: 100,
+  });
 });
 
 async function refusal(
@@ -489,6 +496,36 @@ describe("duplicating", () => {
       url: original,
     });
     expect(await fs.readdir(path.join(folder, "media", "footage"))).toEqual([]);
+  });
+
+  it("brings the capture scripts but not their frames, even when sharing media", async () => {
+    await store.create(promo, NOW);
+    const captures = path.join(root, "promo", "captures");
+    await fs.writeFile(
+      path.join(captures, "builder.capture.mjs"),
+      "export default {};"
+    );
+    await fs.mkdir(path.join(captures, "frames", "builder"), {
+      recursive: true,
+    });
+    await fs.writeFile(
+      path.join(captures, "frames", "builder", "00000.jpg"),
+      "frame"
+    );
+    const { folder } = await store.duplicate(
+      "promo",
+      { slug: "promo-cut", shareMedia: true },
+      NOW + 5
+    );
+    expect(await fs.readdir(path.join(folder, "captures"))).toEqual([
+      "builder.capture.mjs",
+    ]);
+    expect(
+      await fs.readFile(
+        path.join(folder, "captures", "builder.capture.mjs"),
+        "utf8"
+      )
+    ).toBe("export default {};");
   });
 
   it("refuses a name in use and a missing original", async () => {

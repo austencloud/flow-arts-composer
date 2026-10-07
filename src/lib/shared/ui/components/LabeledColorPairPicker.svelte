@@ -148,7 +148,9 @@
         </span>
         <span class="color-meta">
           <span class="color-label">{entry.label}</span>
-          <span class="color-value">{entry.value.toUpperCase()}</span>
+          <span class="color-value" dir="ltr"
+            >{entry.value.toUpperCase()}</span
+          >
         </span>
       </button>
     {/each}
@@ -260,7 +262,8 @@
           <label class="hex-field">
             <span>{t("color_hex")}</span>
             <input
-              aria-label={`${entry.label} hex color`}
+              aria-label={`${entry.label}, ${t("color_hex")}`}
+              dir="ltr"
               type="text"
               value={entry.value.toUpperCase()}
               maxlength="7"

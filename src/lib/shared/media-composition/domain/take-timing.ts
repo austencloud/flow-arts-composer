@@ -245,6 +245,57 @@ export function shiftTakeTiming(
 }
 
 /**
+ * The timing for a new recording of the same take, such as a re-run app
+ * capture. Its moments are not the old ones, so it counts as unchecked again.
+ * Sections, taps, dragged landings and beat 1 past its end are dropped, and
+ * the last section left runs to that end.
+ */
+export function rerecordedTakeTiming(
+  timing: TakeTiming,
+  take: { takeKey: string; durationSeconds: number },
+  now: number
+): TakeTiming {
+  const end = take.durationSeconds;
+  const kept = timing.sections.filter(
+    (section, index) => index === 0 || section.startSeconds < end
+  );
+  const last = kept.length - 1;
+  const opened = (section: TimingSection, index: number) =>
+    index === 0 ? { ...section, startSeconds: 0 } : section;
+  return {
+    ...timing,
+    takeKey: take.takeKey,
+    confirmedAt: null,
+    updatedAt: now,
+    sections: kept.map((section, index) => {
+      if (index < last) return opened(section, index);
+      // Nothing follows it now, and a beat 1 past the end goes too.
+      const {
+        continuesIntoNext: _carries,
+        beatOneSeconds,
+        beatOnePosition,
+        ...rest
+      } = opened(section, index);
+      const beatOneGone = beatOneSeconds !== undefined && beatOneSeconds > end;
+      return {
+        ...rest,
+        endSeconds: end,
+        taps: section.taps.filter((tap) => tap <= end),
+        overrides: section.overrides.filter(
+          (override) => override.seconds <= end
+        ),
+        ...(!beatOneGone && beatOneSeconds !== undefined
+          ? { beatOneSeconds }
+          : {}),
+        ...(!beatOneGone && beatOnePosition !== undefined
+          ? { beatOnePosition }
+          : {}),
+      };
+    }),
+  };
+}
+
+/**
  * What the performance does at a split:
  * - `continues`: it carries on through (the performer changed tempo), so the
  *   right-hand side keeps counting from the left's labels.
