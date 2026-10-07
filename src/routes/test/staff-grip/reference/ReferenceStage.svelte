@@ -1,7 +1,9 @@
 <!--
   Each reference video over the 3D view aimed the same way. The clock video
-  plays natively; the others are pulled back into step whenever they drift
-  more than a couple of frames, and every video is seeked while paused.
+  plays natively. The others play a touch faster or slower until they sit
+  exactly on their clap offset, and jump only when they are far off: a seek
+  lands wherever the decoder can, which left them a frame out. Every video
+  is seeked while paused.
 -->
 <script lang="ts">
   import type { Snippet } from "svelte";
@@ -22,7 +24,11 @@
   const elements: Record<string, HTMLVideoElement> = {};
   let paneWidths = $state<number[]>([]);
   let paneHeights = $state<number[]>([]);
-  const DRIFT_SECONDS = 0.08;
+  /** Past this a follower jumps; under it, its speed pulls it into step. */
+  const SEEK_SECONDS = 0.25;
+  /** Speed change per second of drift, and the most it may change. */
+  const CATCH_UP_GAIN = 4;
+  const MAX_CATCH_UP = 0.25;
 
   function aspectAt(index: number): number {
     const width = paneWidths[index] ?? 0;
@@ -49,8 +55,17 @@
         const element = elements[video.key];
         if (!element || video.key === session.clockKey) continue;
         const target = session.videoSeconds(video);
-        if (Math.abs(element.currentTime - target) > DRIFT_SECONDS)
+        const drift = element.currentTime - target;
+        if (Math.abs(drift) > SEEK_SECONDS) {
           element.currentTime = Math.max(0, target);
+          element.playbackRate = session.speed;
+        } else {
+          const catchUp = Math.max(
+            -MAX_CATCH_UP,
+            Math.min(MAX_CATCH_UP, drift * CATCH_UP_GAIN)
+          );
+          element.playbackRate = session.speed * (1 - catchUp);
+        }
       }
       if (clock?.ended) session.playing = false;
       frame = requestAnimationFrame(tick);
