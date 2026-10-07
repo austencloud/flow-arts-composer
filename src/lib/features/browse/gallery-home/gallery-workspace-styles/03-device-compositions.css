@@ -198,7 +198,8 @@
   .drill-ctx.adaptive-value-layout .screen-positions > .value-list {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
-  .drill-ctx.adaptive-value-layout .screen-gridmode > .value-list {
+  .drill-ctx.adaptive-value-layout .screen-gridmode > .value-list,
+  .drill-ctx.adaptive-value-layout .screen-gridjoin > .value-list {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
   .drill-ctx.adaptive-value-layout .screen-performance > .value-list {
