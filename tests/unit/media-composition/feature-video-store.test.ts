@@ -1,0 +1,290 @@
+import { promises as fs } from "node:fs";
+import path from "node:path";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import {
+  FeatureVideoError,
+  createFeatureVideoStore,
+  type FeatureVideoStore,
+} from "$lib/server/feature-video-store";
+import { tempFeatureRoot } from "./feature-video-test-helpers";
+
+const NOW = 1_780_000_000_000;
+const SEQUENCE = "DCK\u03a8-";
+const promo = { slug: "promo", title: "Promo 1.0", sequenceId: SEQUENCE };
+
+let root: string;
+let store: FeatureVideoStore;
+
+beforeEach(async () => {
+  root = await tempFeatureRoot();
+  store = createFeatureVideoStore(root);
+});
+
+afterEach(async () => {
+  await fs.rm(root, { recursive: true, force: true });
+});
+
+async function refusal(
+  run: () => Promise<unknown>
+): Promise<FeatureVideoError> {
+  try {
+    await run();
+  } catch (cause) {
+    if (cause instanceof FeatureVideoError) return cause;
+    throw cause;
+  }
+  throw new Error("Expected the store to refuse.");
+}
+
+describe("creating", () => {
+  it("lays out the folder and writes revision 1", async () => {
+    const { file, folder } = await store.create(
+      { ...promo, canvas: "16:9" },
+      NOW
+    );
+    expect(folder).toBe(path.join(root, "promo"));
+    expect(file).toMatchObject({
+      format: "feature-video-v1",
+      slug: "promo",
+      title: "Promo 1.0",
+      revision: 1,
+      savedAt: NOW,
+    });
+    expect(file.project).toMatchObject({
+      sequenceId: SEQUENCE,
+      canvas: "16:9",
+      takes: [],
+    });
+    for (const sub of [
+      "history",
+      "captures",
+      "exports",
+      "media/footage",
+      "media/captures",
+      "media/music",
+      "media/images",
+    ])
+      expect((await fs.stat(path.join(folder, sub))).isDirectory()).toBe(true);
+    const written = JSON.parse(
+      await fs.readFile(path.join(folder, "project.json"), "utf8")
+    ) as unknown;
+    expect(written).toEqual(file);
+  });
+
+  it("leaves the default 9:16 canvas unset", async () => {
+    const { file } = await store.create({ ...promo, canvas: "9:16" }, NOW);
+    expect(file.project.canvas).toBeUndefined();
+  });
+
+  it("refuses a name in use, a bad name, a bad canvas and a blank title", async () => {
+    await store.create(promo, NOW);
+    expect((await refusal(() => store.create(promo, NOW))).status).toBe(409);
+    expect(
+      (await refusal(() => store.create({ ...promo, slug: "Promo" }, NOW)))
+        .status
+    ).toBe(400);
+    expect(
+      (
+        await refusal(() =>
+          store.create({ ...promo, slug: "other", canvas: "2:7" }, NOW)
+        )
+      ).status
+    ).toBe(400);
+    expect(
+      (
+        await refusal(() =>
+          store.create({ ...promo, slug: "other", title: "   " }, NOW)
+        )
+      ).status
+    ).toBe(400);
+  });
+});
+
+describe("reading", () => {
+  it("returns the file and its fingerprint", async () => {
+    const { file } = await store.create(promo, NOW);
+    const read = await store.read("promo");
+    expect(read.file).toEqual(file);
+    expect(read.fingerprint).toMatch(/^[0-9a-f]{64}$/);
+    expect(read.folder).toBe(path.join(root, "promo"));
+  });
+
+  it("answers 404 for a missing project", async () => {
+    expect((await refusal(() => store.read("missing"))).status).toBe(404);
+  });
+
+  it("answers 422 for a broken file and points at history", async () => {
+    await store.create(promo, NOW);
+    await fs.writeFile(path.join(root, "promo", "project.json"), "{ broken");
+    const refused = await refusal(() => store.read("promo"));
+    expect(refused.status).toBe(422);
+    expect(refused.message).toContain("history/");
+  });
+});
+
+describe("saving", () => {
+  it("writes the next revision and keeps the old file in history", async () => {
+    const { file } = await store.create(promo, NOW);
+    const before = await fs.readFile(
+      path.join(root, "promo", "project.json"),
+      "utf8"
+    );
+    const saved = await store.write(
+      "promo",
+      { baseRevision: 1, project: { ...file.project, audio: "silent" } },
+      NOW + 5
+    );
+    expect(saved).toMatchObject({ revision: 2, savedAt: NOW + 5 });
+    expect((await store.read("promo")).file).toMatchObject({
+      revision: 2,
+      project: { audio: "silent" },
+    });
+    expect(
+      await fs.readFile(
+        path.join(root, "promo", "history", "r000001.json"),
+        "utf8"
+      )
+    ).toBe(before);
+  });
+
+  it("refuses a save from an older revision and names the newer one", async () => {
+    const { file } = await store.create(promo, NOW);
+    await store.write(
+      "promo",
+      { baseRevision: 1, project: { ...file.project, audio: "silent" } },
+      NOW + 1
+    );
+    const refused = await refusal(() =>
+      store.write("promo", { baseRevision: 1, project: file.project }, NOW + 2)
+    );
+    expect(refused).toMatchObject({ status: 409, revision: 2 });
+    expect((await store.read("promo")).file.project.audio).toBe("silent");
+  });
+
+  it("refuses an invalid post and a change of sequence", async () => {
+    const { file } = await store.create(promo, NOW);
+    expect(
+      (
+        await refusal(() =>
+          store.write(
+            "promo",
+            { baseRevision: 1, project: { ...file.project, tracks: [] } },
+            NOW
+          )
+        )
+      ).status
+    ).toBe(422);
+    expect(
+      (
+        await refusal(() =>
+          store.write(
+            "promo",
+            {
+              baseRevision: 1,
+              project: { ...file.project, sequenceId: "other" },
+            },
+            NOW
+          )
+        )
+      ).status
+    ).toBe(422);
+  });
+
+  it("keeps only the newest saves in history", async () => {
+    const small = createFeatureVideoStore(root, { historyLimit: 3 });
+    const { file } = await small.create(promo, NOW);
+    for (let revision = 1; revision <= 5; revision += 1)
+      await small.write(
+        "promo",
+        {
+          baseRevision: revision,
+          project: { ...file.project, updatedAt: NOW + revision },
+        },
+        NOW + revision
+      );
+    expect(
+      (await fs.readdir(path.join(root, "promo", "history"))).sort()
+    ).toEqual(["r000003.json", "r000004.json", "r000005.json"]);
+  });
+
+  it("takes one of two saves from the same revision and refuses the other", async () => {
+    const { file } = await store.create(promo, NOW);
+    const results = await Promise.allSettled([
+      store.write(
+        "promo",
+        { baseRevision: 1, project: { ...file.project, audio: "silent" } },
+        NOW + 1
+      ),
+      store.write(
+        "promo",
+        { baseRevision: 1, project: { ...file.project, mirrored: true } },
+        NOW + 2
+      ),
+    ]);
+    expect(results.map((result) => result.status).sort()).toEqual([
+      "fulfilled",
+      "rejected",
+    ]);
+    const rejected = results.find((result) => result.status === "rejected");
+    expect((rejected as PromiseRejectedResult).reason).toMatchObject({
+      status: 409,
+    });
+  });
+});
+
+describe("revision", () => {
+  it("follows saves and hand edits, and is null once the file is gone", async () => {
+    const { file } = await store.create(promo, NOW);
+    expect(await store.revision("promo")).toBe(1);
+    await store.write(
+      "promo",
+      { baseRevision: 1, project: file.project },
+      NOW + 1
+    );
+    expect(await store.revision("promo")).toBe(2);
+    await fs.writeFile(
+      path.join(root, "promo", "project.json"),
+      JSON.stringify({ ...file, revision: 17 })
+    );
+    expect(await store.revision("promo")).toBe(17);
+    await fs.rm(path.join(root, "promo", "project.json"));
+    expect(await store.revision("promo")).toBeNull();
+    expect(await store.revision("missing")).toBeNull();
+  });
+});
+
+describe("listing", () => {
+  it("is empty before the root folder exists", async () => {
+    expect(
+      await createFeatureVideoStore(path.join(root, "not-yet")).list()
+    ).toEqual({ projects: [], unreadable: [] });
+  });
+
+  it("lists projects newest first, skips stray folders and names unreadable ones", async () => {
+    await store.create(promo, NOW);
+    await store.create({ ...promo, slug: "later", title: "Later" }, NOW + 10);
+    await fs.mkdir(path.join(root, "Not A Name"));
+    await fs.mkdir(path.join(root, "empty"));
+    await store.create({ ...promo, slug: "broken" }, NOW);
+    await fs.writeFile(path.join(root, "broken", "project.json"), "nope");
+    expect(await store.list()).toEqual({
+      projects: [
+        {
+          slug: "later",
+          title: "Later",
+          revision: 1,
+          savedAt: NOW + 10,
+          sequenceId: SEQUENCE,
+        },
+        {
+          slug: "promo",
+          title: "Promo 1.0",
+          revision: 1,
+          savedAt: NOW,
+          sequenceId: SEQUENCE,
+        },
+      ],
+      unreadable: ["broken"],
+    });
+  });
+});
