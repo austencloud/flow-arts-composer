@@ -11,6 +11,28 @@ import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence
 import type { MotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
 import type { SequenceDetailLoader } from "$lib/shared/browse/services/sequence-detail-loader";
 import { simplifyRepeatedWord } from "$lib/shared/foundation/utils/word-simplifier";
+import { sequenceGridJoin } from "$lib/shared/grid-join/sequence-grid-join";
+import type { GridJoin } from "@tka/tka-types";
+
+const JOIN_DIRECTION_WORDS: Record<GridJoin["toward"], string> = {
+  n: "north",
+  ne: "northeast",
+  e: "east",
+  se: "southeast",
+  s: "south",
+  sw: "southwest",
+  w: "west",
+  nw: "northwest",
+};
+
+/** Plain-English join line for the prompt header, with the raw values. */
+function describeGridJoin(join: GridJoin): string {
+  const points = `${join.steps} point${join.steps === 1 ? "" : "s"}`;
+  return (
+    `join: red's grid ${points} ${JOIN_DIRECTION_WORDS[join.toward]} of blue's ` +
+    `(toward ${join.toward}, steps ${join.steps})`
+  );
+}
 
 export interface CopyResult {
   success: boolean;
@@ -54,6 +76,10 @@ export class ClaudeCodeCopier {
       `loop: ${fullSequence.loopType || "none"} | ` +
       `grid: ${fullSequence.gridMode || "diamond"}`
     );
+    const join = sequenceGridJoin(fullSequence);
+    if (join) {
+      lines.push(describeGridJoin(join));
+    }
     if (fullSequence.tags?.length) {
       lines.push(`tags: ${fullSequence.tags.join(", ")}`);
     }

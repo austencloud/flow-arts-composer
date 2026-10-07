@@ -15,6 +15,7 @@ import {
   getDoc,
   setDoc,
   deleteDoc,
+  deleteField,
   getDocs,
   serverTimestamp,
   type Timestamp,
@@ -28,6 +29,7 @@ import {
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
 import { db } from "$lib/shared/persistence/database/tka-database";
 import { UserWorkType } from "$lib/shared/persistence/domain/enums/user-work-type";
+import { sequenceGridJoin } from "$lib/shared/grid-join/sequence-grid-join";
 
 export class Autosaver {
   private autosaveInterval: number | null = null;
@@ -127,6 +129,12 @@ export class Autosaver {
         const cleanData = JSON.parse(JSON.stringify(draftData));
         cleanData.createdAt = serverTimestamp();
         cleanData.updatedAt = serverTimestamp();
+        // The write below merges, and a merge keeps the stored nested
+        // sequenceData.conjoined when this draft has none. The join is part of
+        // the sequence, so a removed join is deleted from the stored draft.
+        if (!sequenceGridJoin(sequenceData)) {
+          cleanData.sequenceData.conjoined = deleteField();
+        }
 
         this.queueCloudSave(async () => {
           const firestore = await getFirestoreInstance();

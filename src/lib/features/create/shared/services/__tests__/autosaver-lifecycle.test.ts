@@ -35,6 +35,7 @@ vi.mock("firebase/firestore", () => ({
   getDoc: vi.fn(),
   setDoc: mocks.setDoc,
   deleteDoc: vi.fn(),
+  deleteField: vi.fn(() => "__deleteField__"),
   getDocs: vi.fn(),
   serverTimestamp: vi.fn(),
 }));
