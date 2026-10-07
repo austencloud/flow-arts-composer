@@ -4,6 +4,12 @@ import http from "node:http";
 import https from "node:https";
 import path from "node:path";
 import { alignTake, mediaPathFromUrl } from "./feature-video/align-take.mjs";
+import {
+  PEAK_CEILING_DBTP,
+  TARGET_LUFS,
+  measureLoudness,
+  suggestMusicGain,
+} from "./feature-video/loudness.mjs";
 import { importTake } from "./feature-video/media-import.mjs";
 import { importMusic } from "./feature-video/music-import.mjs";
 import { parseTimeArg } from "./feature-video/time-args.mjs";
@@ -480,6 +486,24 @@ try {
           },
         ]),
       };
+  } else if (command === "loudness") {
+    const file = path.resolve(positional(0, "a rendered video or sound file"));
+    const measured = await measureLoudness(file);
+    result = {
+      ...measured,
+      targetLufs: TARGET_LUFS,
+      peakCeilingDbtp: PEAK_CEILING_DBTP,
+    };
+    if (option("feature")) {
+      const music = (await currentSnapshot()).music;
+      if (!music) throw new Error(NO_MUSIC);
+      result.musicGain = music.gain;
+      result.suggestedGain = suggestMusicGain(
+        music.gain,
+        measured.integratedLufs,
+        measured.truePeakDbtp
+      );
+    }
   } else if (command === "duplicate") {
     result = await request(
       "POST",
@@ -556,6 +580,7 @@ Feature videos, folders on the dev server's computer:
   remove-music
   align-take --place ITEM | --take ID   where a take sits in the music, from its camera sound; --place puts the clip in time with it
   sync-to-music --item ID --offset S   puts a clip in time with the music at one of align-take's offsets
+  loudness <render.mp4> [--feature SLUG]   loudness and true peak; with --feature, the music level that reaches -14 LUFS
   T is seconds (12.5), a clock (1:02.5), or a bar of the music: @9 is bar 9, @9.3 is bar 9, beat 3.
   With --feature, show and every edit use the editor that has it open, else the file on disk.
   Add --no-wait to return before the editor confirms; --out file to write output.`

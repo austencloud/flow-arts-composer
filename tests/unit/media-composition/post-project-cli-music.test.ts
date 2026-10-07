@@ -13,6 +13,7 @@ import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { cameraTake, clickTrack, wav } from "./feature-video-audio-fixtures";
+import { suggestMusicGain } from "../../../scripts/feature-video/loudness.mjs";
 import { toolPath } from "../../../scripts/feature-video/media-import.mjs";
 
 const run = promisify(execFile);
@@ -432,4 +433,47 @@ describe("lining takes up with the music", () => {
     expect(silent.stderr).toContain(NO_MUSIC);
     expect(posts()).toEqual([]);
   });
+});
+
+describe("measuring a render's loudness", () => {
+  it.skipIf(!hasFfmpeg)(
+    "reports loudness and peak, and with --feature the music level to try",
+    async () => {
+      const render = path.join(root, "render.wav");
+      // ffmpeg's sine source peaks at 1/8 of full scale: -18.06 dB.
+      execFileSync(toolPath("ffmpeg"), [
+        "-hide_banner",
+        "-loglevel",
+        "error",
+        "-f",
+        "lavfi",
+        "-i",
+        "sine=frequency=997:sample_rate=48000",
+        "-t",
+        "3",
+        render,
+      ]);
+      const alone = await cli("loudness", render);
+      expect(alone.code).toBe(0);
+      const measured = JSON.parse(alone.stdout);
+      expect(measured).toMatchObject({ targetLufs: -14, peakCeilingDbtp: -1 });
+      expect(measured.truePeakDbtp).toBeCloseTo(-18.06, 0);
+      expect(measured).not.toHaveProperty("suggestedGain");
+
+      const none = await cli("loudness", render, "--feature", "promo");
+      expect(none.code).toBe(1);
+      expect(none.stderr).toContain(NO_MUSIC);
+
+      project.music = { url: MUSIC_URL, gain: 0.8 };
+      const suggested = JSON.parse(
+        (await cli("loudness", render, "--feature", "promo")).stdout
+      );
+      expect(suggested.musicGain).toBe(0.8);
+      expect(suggested.suggestedGain).toBe(
+        suggestMusicGain(0.8, suggested.integratedLufs, suggested.truePeakDbtp)
+      );
+      expect(suggested.suggestedGain).toBeGreaterThan(0.8);
+      expect(posts()).toEqual([]);
+    }
+  );
 });
