@@ -37,33 +37,12 @@ export function resolveGhost2DAgeVisual(
   };
 }
 
-/** Blue/red separation belongs to Ghost intent, not to the live prop sprite. */
-export function resolveGhostPropColor(
-  propId: number,
-  leftColor: string,
-  rightColor: string
-): string {
-  return propId % 2 === 0 ? leftColor : rightColor;
-}
+/** Cold white the frost and rim lean toward as a ghost ages. */
+export const GHOST_FROST_WHITE = "#e2f9ff";
 
-function parseHexColor(color: string): [number, number, number] | null {
-  const match = /^#([0-9a-f]{6})$/i.exec(color);
-  const digits = match?.[1];
-  if (!digits) return null;
-  const value = Number.parseInt(digits, 16);
-  return [(value >> 16) & 255, (value >> 8) & 255, value & 255];
-}
-
-/** Mix the Ghost hue toward cold white for the cached ice-rim treatment. */
-export function resolveGhostRimColor(color: string): string {
-  const source = parseHexColor(color);
-  const coldWhite: [number, number, number] = [226, 249, 255];
-  if (!source) return "#e2f9ff";
-
-  const amount = 0.68;
-  const channels = source.map((channel, index) => {
-    const target = coldWhite[index] ?? channel;
-    return Math.round(channel + (target - channel) * amount);
-  });
-  return `#${channels.map((channel) => channel.toString(16).padStart(2, "0")).join("")}`;
-}
+/**
+ * How far the rim leans toward frost white. The rim is cut from the prop's own
+ * sprite, so it keeps the bark, tape and hand colors; this lift only keeps a
+ * dark prop's outline readable on a dark stage.
+ */
+export const GHOST_RIM_FROST_MIX = 0.32;

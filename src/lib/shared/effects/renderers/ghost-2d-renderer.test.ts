@@ -1,9 +1,9 @@
 import { describe, expect, it, vi } from "vitest";
 import type { Ghost2DParams } from "../translators/canvas2d-types";
 import {
+  GHOST_FROST_WHITE,
+  GHOST_RIM_FROST_MIX,
   resolveGhost2DAgeVisual,
-  resolveGhostPropColor,
-  resolveGhostRimColor,
 } from "./ghost-chrono-frost-2d";
 import {
   Ghost2DRenderer,
@@ -42,8 +42,6 @@ function makeCtx() {
 
 function makeParams(overrides: Partial<Ghost2DParams> = {}): Ghost2DParams {
   return {
-    leftColor: "#3b82f6",
-    rightColor: "#ef4444",
     intensity: 1,
     decay: 8,
     interval: 0.5,
@@ -298,9 +296,83 @@ describe("2D Chrono-Frost presentation", () => {
     expect(half.frostAlpha).toBeCloseTo(full.frostAlpha * 0.5);
   });
 
-  it("resolves Ghost-owned blue/red colors and a cold rim tint", () => {
-    expect(resolveGhostPropColor(0, "#1122aa", "#bb2233")).toBe("#1122aa");
-    expect(resolveGhostPropColor(1, "#1122aa", "#bb2233")).toBe("#bb2233");
-    expect(resolveGhostRimColor("#1122aa")).not.toBe("#1122aa");
+});
+
+describe("2D ghost keeps the prop's own look", () => {
+  interface FillRecord {
+    composite: GlobalCompositeOperation;
+    alpha: number;
+    fillStyle: string;
+  }
+
+  /** OffscreenCanvas stand-in that records how treatment layers are filled. */
+  function installRecordingOffscreenCanvas(fills: FillRecord[]) {
+    class RecordingOffscreenCanvas {
+      width: number;
+      height: number;
+      constructor(width: number, height: number) {
+        this.width = width;
+        this.height = height;
+      }
+      getContext() {
+        const state = {
+          globalCompositeOperation: "source-over" as GlobalCompositeOperation,
+          globalAlpha: 1,
+          fillStyle: "#000000",
+        };
+        return Object.assign(state, {
+          clearRect: vi.fn(),
+          drawImage: vi.fn(),
+          fillRect: vi.fn(() => {
+            fills.push({
+              composite: state.globalCompositeOperation,
+              alpha: state.globalAlpha,
+              fillStyle: String(state.fillStyle),
+            });
+          }),
+        });
+      }
+    }
+    vi.stubGlobal("OffscreenCanvas", RecordingOffscreenCanvas);
+  }
+
+  function renderOneGhost(): CanvasRenderingContext2D {
+    const renderer = new Ghost2DRenderer();
+    const ctx = makeCtx();
+    renderer.render(ctx, makeParams(), input([prop({ centerX: 100 })]), 0.016, 1);
+    renderer.render(ctx, makeParams(), input([prop({ centerX: 320 })]), 0.016, 1);
+    return ctx;
+  }
+
+  it("draws the ghost body from the live prop sprite itself", () => {
+    installRecordingOffscreenCanvas([]);
+    try {
+      const ctx = renderOneGhost();
+      const drawn = (ctx.drawImage as ReturnType<typeof vi.fn>).mock.calls.map(
+        (call) => call[0]
+      );
+      expect(drawn).toContain(IMG);
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it("never floods a layer with a hand color, only a light frost lift", () => {
+    const fills: FillRecord[] = [];
+    installRecordingOffscreenCanvas(fills);
+    try {
+      renderOneGhost();
+      // A source-in fill would replace the sprite's bark/tape colors with one
+      // flat hue. The rim may only lean toward frost white, atop its own colors.
+      expect(fills.some((fill) => fill.composite === "source-in")).toBe(false);
+      const rimLift = fills.find((fill) => fill.composite === "source-atop");
+      expect(rimLift).toEqual({
+        composite: "source-atop",
+        alpha: GHOST_RIM_FROST_MIX,
+        fillStyle: GHOST_FROST_WHITE,
+      });
+    } finally {
+      vi.unstubAllGlobals();
+    }
   });
 });
