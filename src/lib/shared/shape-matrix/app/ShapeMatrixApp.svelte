@@ -41,7 +41,12 @@
       syncState: (snapshot) => persistence?.persist(snapshot),
       link: persistence?.link,
       onPropPairChange: propSource
-        ? (pair, catDog) => propSource.set({ ...pair, catDog })
+        ? (pair, catDog, look) =>
+            propSource.set(
+              look === undefined
+                ? { ...pair, catDog }
+                : { ...pair, catDog, look }
+            )
         : undefined,
     },
     {

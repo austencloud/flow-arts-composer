@@ -19,7 +19,6 @@ import {
   revertSettingsCheckpoint,
 } from "$lib/shared/collections/settings-checkpoint.svelte";
 import { showToast } from "$lib/shared/toast/state/toast-state.svelte";
-import { handleModuleChange } from "$lib/shared/navigation-coordinator/navigation-coordinator.svelte";
 
 const SCENE_FEATURES_STORAGE_KEY = "tka-scene-features";
 
@@ -193,7 +192,11 @@ export function openScene3DInStudio(
     type: "success",
     duration: 4000,
   });
-  void handleModuleChange("stage", "scene");
+  // The coordinator imports auth-state; loading it here keeps the scene
+  // controls that apply presets from bringing Firebase onto public pages.
+  void import("$lib/shared/navigation-coordinator/navigation-coordinator.svelte").then(
+    ({ handleModuleChange }) => handleModuleChange("stage", "scene")
+  );
 }
 
 /**

@@ -173,7 +173,7 @@ export class OffscreenExportRenderer {
     await this.handle.context.renderer.loadGridTexture(
       gridMode,
       init.showNonRadialPoints,
-      resolveAnimationGridJoin(this.panelState.sequenceData)
+      resolveAnimationGridJoin(this.panelState.sequenceData, 0, gridMode)
     );
 
     // Thread the resolved prop types into the offscreen engine's STATE before the

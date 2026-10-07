@@ -1,6 +1,6 @@
 <script lang="ts">
   import { getViewer3DContext } from "$lib/shared/3d/context/viewer-3d-context";
-  import { authState } from "$lib/shared/auth/state/auth-state.svelte";
+  import { loadedAuthState } from "$lib/shared/auth/state/loaded-auth-state.svelte";
   import EditHistoryShortcutBridge from "$lib/shared/keyboard/components/EditHistoryShortcutBridge.svelte";
   import type {
     SceneControlHostTool,
@@ -176,7 +176,7 @@
         />
       {/if}
 
-      {#if authState.isAdmin}
+      {#if loadedAuthState.isAdmin}
         <div class="rail-separator" aria-hidden="true"></div>
         <SceneChromeButton
           icon="fa-terminal"

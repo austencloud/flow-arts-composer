@@ -106,7 +106,7 @@
     <HandPropToolbar handProps={app.handProps} />
     <BentoPropGrid
       selectedPropType={app.addressedPropType}
-      onSelect={(next) => void app.setPropType(next)}
+      onSelect={(next, look) => void app.setPropType(next, undefined, look)}
       variant="inline"
       accessMode="educational"
       flat
@@ -143,7 +143,8 @@
         showTempoControls={false}
         showEffectsPlayback={false}
         selectedPropType={app.addressedPropType}
-        onPropChange={(next) => void app.setPropType(next)}
+        onPropChange={(next, look) =>
+          void app.setPropType(next, undefined, look)}
         handProps={app.handProps}
         sequence={theory ? null : animation.previewSequence}
         showPathShape={false}

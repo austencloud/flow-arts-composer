@@ -5,66 +5,29 @@
  * so the two show identical items in the same order and change the same
  * sequence value. Hosts opt in by passing a controller; with none, there is no
  * submenu.
+ *
+ * Only the four directions along the sequence's own grid lines are offered
+ * (straight on a diamond grid, diagonal on a box grid): a join along any other
+ * line never lands one grid's points on the other's.
  */
 import { t } from "$lib/shared/i18n/i18n.svelte.js";
 import type { ContextMenuItem } from "$lib/shared/components/context-menu/context-menu-types";
 import type { GridJoin } from "@tka/tka-types";
 import type { GridJoinController } from "./grid-join-controller";
-
-type JoinDirection = GridJoin["toward"];
-
-/** Where red's grid sits from blue's, in the order the menu lists them. */
-const DIRECTIONS: readonly {
-  toward: JoinDirection;
-  /** Clockwise degrees from a right-pointing arrow. */
-  rotate: number;
-  label: () => string;
-}[] = [
-  { toward: "e", rotate: 0, label: () => t("animation_menu_grid_join_red_e") },
-  {
-    toward: "w",
-    rotate: 180,
-    label: () => t("animation_menu_grid_join_red_w"),
-  },
-  {
-    toward: "n",
-    rotate: 270,
-    label: () => t("animation_menu_grid_join_red_n"),
-  },
-  { toward: "s", rotate: 90, label: () => t("animation_menu_grid_join_red_s") },
-  {
-    toward: "ne",
-    rotate: 315,
-    label: () => t("animation_menu_grid_join_red_ne"),
-  },
-  {
-    toward: "se",
-    rotate: 45,
-    label: () => t("animation_menu_grid_join_red_se"),
-  },
-  {
-    toward: "sw",
-    rotate: 135,
-    label: () => t("animation_menu_grid_join_red_sw"),
-  },
-  {
-    toward: "nw",
-    rotate: 225,
-    label: () => t("animation_menu_grid_join_red_nw"),
-  },
-];
-
-/** Direction and distance a join choice keeps when only the other changes. */
-const DEFAULT_DIRECTION: JoinDirection = "e";
-const DEFAULT_STEPS: GridJoin["steps"] = 1;
+import {
+  gridJoinSelection,
+  offeredGridJoinDirections,
+} from "./grid-join-choices";
 
 /** The submenu's children, all radio-style and keeping the menu open. */
 export function buildGridJoinChildren(
   controller: GridJoinController
 ): ContextMenuItem[] {
-  const current = controller.current();
-  const toward = current?.toward ?? DEFAULT_DIRECTION;
-  const steps = current?.steps ?? DEFAULT_STEPS;
+  const gridMode = controller.gridMode();
+  const { current, toward, steps } = gridJoinSelection(
+    controller.current(),
+    gridMode
+  );
 
   const distance = (
     id: string,
@@ -90,7 +53,7 @@ export function buildGridJoinChildren(
     },
     distance("grid-join-steps-1", t("animation_menu_grid_join_one_point"), 1),
     distance("grid-join-steps-2", t("animation_menu_grid_join_two_points"), 2),
-    ...DIRECTIONS.map(
+    ...offeredGridJoinDirections(gridMode).map(
       (direction): ContextMenuItem => ({
         id: `grid-join-${direction.toward}`,
         label: direction.label(),

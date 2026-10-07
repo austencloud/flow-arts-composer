@@ -12,6 +12,7 @@
   import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
   import { onMount } from "svelte";
   import StepGrid from "../../workspace-panel/sequence-display/components/StepGrid.svelte";
+  import { sequenceGridJoin } from "$lib/shared/grid-join/sequence-grid-join";
 
   let {
     isOpen = $bindable(false),
@@ -130,6 +131,7 @@
             >
               <StepGrid
                 steps={currentSequence.steps ?? []}
+                gridJoin={sequenceGridJoin(currentSequence)}
                 startPlacement={currentSequence.startPlacement ??
                   currentSequence.startingPlacement ??
                   null}
@@ -162,6 +164,7 @@
             >
               <StepGrid
                 steps={incomingSequence.steps ?? []}
+                gridJoin={sequenceGridJoin(incomingSequence)}
                 startPlacement={incomingSequence.startPlacement ??
                   incomingSequence.startingPlacement ??
                   null}

@@ -9,7 +9,12 @@ import {
   type PictographInput,
   type RenderVisibilityOptions,
 } from "./standalone-renderer.js";
-import { isGridJoin, type GridJoinSpec } from "@tka/render-core";
+import {
+  alignGridJoin,
+  gridJoinOffsets,
+  isGridJoin,
+  type GridJoinSpec,
+} from "@tka/render-core";
 import type { SequenceStep } from "./sequence-builder.js";
 import { applyCanonicalReversals } from "./card-reversals.js";
 import { renderCardQrCode } from "./qr-code-renderer.js";
@@ -17,6 +22,7 @@ import {
   COMPOSER_CARD_EXPORT_PROFILE_V1,
   DARK_HAND_COLORS,
   LIGHT_HAND_COLORS,
+  CARD_MANDALA_HAND_RADIUS,
   calculateCardMandalaPaths,
   composeSequenceCard,
   renderFooter,
@@ -108,6 +114,11 @@ export interface SequenceRenderOptions {
   accentTintOpacity?: number;
   /** Draws every cell, the start included, on the same joined grids. */
   conjoined?: GridJoinSpec | null;
+  /**
+   * The sequence's grid mode ("diamond", "box" or "skewed") for every cell,
+   * the start included. Diamond when absent.
+   */
+  gridMode?: string;
 }
 const DEFAULT_OPTIONS = {
   ...COMPOSER_CARD_EXPORT_PROFILE_V1,
@@ -218,6 +229,7 @@ export async function renderSequenceToImage(
         },
         leftReversal: step.leftReversal,
         rightReversal: step.rightReversal,
+        gridMode: opts.gridMode,
         conjoined: isGridJoin(opts.conjoined) ? opts.conjoined : null,
       };
       ctx.drawImage(
@@ -245,13 +257,22 @@ export async function renderSequenceToImage(
             })),
             opts.turnAllocation
           );
+          // Joined grids: the full mandala draws each hand's figure on its
+          // own grid, offset as that hand's grid is.
+          const handOffsets = isGridJoin(opts.conjoined)
+            ? gridJoinOffsets(
+                alignGridJoin(opts.conjoined, opts.gridMode),
+                CARD_MANDALA_HAND_RADIUS
+              )
+            : null;
           for (const placement of placements) {
             renderCardMandala(
               ctx,
               paths,
               placement,
               opts.darkMode,
-              primaryPropColors
+              primaryPropColors,
+              handOffsets
             );
           }
         }

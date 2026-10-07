@@ -28,7 +28,7 @@
   import ArrowLayerModal from "../../../components/arrow-adjustment/ArrowLayerModal.svelte";
   import { practiceAnimationStyle } from "../../../state/practice-animation-style.svelte";
   import { createStepCellAnimationManager } from "../services/step-cell-animation-manager";
-  import { isAdmin } from "$lib/shared/auth/state/auth-state.svelte";
+  import { loadedAuthState } from "$lib/shared/auth/state/loaded-auth-state.svelte";
   import { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
 
   let {
@@ -172,7 +172,7 @@
 
   // Show arrow adjustment in context menu for admin users on non-blank beats
   const showArrowAdjustment = $derived(
-    isAdmin() && !step.isBlank && step.stepNumber !== 0
+    loadedAuthState.isAdmin && !step.isBlank && step.stepNumber !== 0
   );
 
   function handleAdjustArrow(hand: HandSide) {

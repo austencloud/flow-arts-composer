@@ -56,6 +56,7 @@ import type { StepData } from "../../../src/lib/shared/foundation/domain/models/
 registerLoadedAuthState({
   isAdmin: () => mockIsAdmin,
   isAuthenticated: () => true,
+  userId: () => null,
 });
 
 // A minimal but representative StepData — round-tripping this through

@@ -33,6 +33,10 @@ import {
   type ViewerMode,
 } from "$lib/shared/sequence-viewer/services/viewer-state-persistence";
 import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+import {
+  normalizePropLook,
+  type PropLook,
+} from "$lib/shared/pictograph/prop/domain/prop-look";
 import { BackgroundType } from "@austencloud/backgrounds";
 import type { EffortId } from "$lib/shared/effort/domain/effort-types";
 import { normalizeLegacyPropConfig } from "@tka/tka-types";
@@ -61,6 +65,14 @@ export interface SettingsCheckpoint {
     trail: TrailSettings;
     leftPropType: PropType;
     rightPropType: PropType;
+    /**
+     * The prop version at capture time. Revert writes the props back through
+     * the settings rule that resets the version when a new prop with a Version
+     * 2 arrives, so without this an Undo that restored such a prop would also
+     * drop the performer to Version 1. Optional because checkpoints saved
+     * before versions were captured have none.
+     */
+    propArtwork?: PropLook;
     backgroundType: BackgroundType;
   };
   raw: {
@@ -161,6 +173,7 @@ export function captureSettingsCheckpoint(label: string): void {
       trail: $state.snapshot(animationSettings.trail) as TrailSettings,
       leftPropType: settings.leftPropType ?? PropType.STAFF,
       rightPropType: settings.rightPropType ?? PropType.STAFF,
+      propArtwork: normalizePropLook(settings.propArtwork),
       backgroundType: settings.backgroundType ?? BackgroundType.COSMIC,
     },
     raw: {
@@ -211,6 +224,13 @@ export function revertSettingsCheckpoint(): string | null {
   void settingsService.updateSettings({
     leftPropType: checkpoint.semantic.leftPropType,
     rightPropType: checkpoint.semantic.rightPropType,
+    // An old checkpoint names no version, so the write names none either and
+    // the settings rule decides, as it did before checkpoints held a version.
+    // Forcing Version 1 there would silently change a version the performer
+    // may have kept on purpose.
+    ...(checkpoint.semantic.propArtwork === undefined
+      ? {}
+      : { propArtwork: normalizePropLook(checkpoint.semantic.propArtwork) }),
     backgroundType: checkpoint.semantic.backgroundType,
   });
 

@@ -5,11 +5,19 @@
   preset reads the way the props will look once applied. An empty slot shows
   a plus. What a click does belongs to the shelf (PresetChipBar): apply, save,
   or choose a slot to manage. This button only reports the click.
+
+  The art is drawn at the preset's own version, not the current global one, so
+  a Version 2 preset reads as Version 2 while the app is on Version 1 and the
+  other way round. The fan build and triangle grip are not part of a preset, so
+  they follow the current settings.
 -->
 <script lang="ts">
   import PropCompositionPreview from "$lib/shared/pictograph/prop/components/PropCompositionPreview.svelte";
   import type { ViewerCustomColorPair } from "$lib/shared/sequence-viewer/domain/viewer-custom-colors";
+  import type { FanAppearance } from "$lib/shared/pictograph/prop/domain/fan-appearance";
+  import type { TriangleGrip } from "$lib/shared/pictograph/prop/domain/triangle-appearance";
   import type { PropPreset } from "../../../domain/app-settings";
+  import { presetVersion } from "../../../domain/prop-presets";
   import { previewPair } from "./prop-preview-pair";
 
   let {
@@ -21,6 +29,8 @@
     managing = false,
     colors,
     darkMode = true,
+    fanAppearance,
+    triangleGrip,
     onclick,
   }: {
     preset: PropPreset | null;
@@ -35,10 +45,22 @@
     managing?: boolean;
     colors?: ViewerCustomColorPair | null;
     darkMode?: boolean;
+    /** The current fan build. Not saved in a preset, so every chip draws it the same. */
+    fanAppearance?: FanAppearance | null;
+    /** The current triangle grip. Not saved in a preset either. */
+    triangleGrip?: TriangleGrip | null;
     onclick: () => void;
   } = $props();
 
   const pair = $derived(preset ? previewPair(preset) : null);
+  // Passing the override replaces the preview's whole settings lookup, which is
+  // why the fan build and grip ride along: leaving them out would draw those
+  // props at their defaults.
+  const appearance = $derived({
+    propLook: preset ? presetVersion(preset) : null,
+    fanAppearance,
+    triangleGrip,
+  });
 </script>
 
 <button
@@ -63,6 +85,7 @@
         pairedGlyph
         darkBackground={darkMode}
         {colors}
+        appearanceOverride={appearance}
         leftFlipped={pair.leftFlipped}
         rightFlipped={pair.rightFlipped}
       />

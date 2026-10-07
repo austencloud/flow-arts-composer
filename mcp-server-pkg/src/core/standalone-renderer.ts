@@ -43,19 +43,26 @@ import {
   BLUE_COLOR_LIGHT,
   RED_COLOR_DARK,
   RED_COLOR_LIGHT,
-  BOX_OUTER_RING_WIDTH,
-  JOINED_POINT_RADIUS,
   getBetaOffsetSize,
+  getGridPoints,
+  gridPointsSvg,
+  isBoxGrid,
+  type GridPointKind,
   getGridJoinLayout,
   gridJoinPropNudges,
   isGridJoin,
+  joinedPointColors,
   type GridJoinLayout,
   type GridJoinSpec,
   type JoinVec,
+  placementFrameRotation,
+  rotatePlacementAngleToDisplayed,
+  rotatePlacementVectorToDisplayed,
+  toCanonicalLocation,
 } from "@tka/render-core";
 // Arrow calculations still use local files (they have MCP-specific logic)
 import {
-  calculateArrowPlacement,
+  calculateArrowLocation,
   calculateArrowRotation,
 } from "./arrow-placement.js";
 import {
@@ -474,6 +481,7 @@ export class StandaloneRenderer {
       showReversals = false,
       showHandColorKey = false,
       showGrid = true,
+      showNonRadialPoints = false,
       showLeftMotion = true,
       showRightMotion = true,
       leftPropType = null,
@@ -500,8 +508,11 @@ export class StandaloneRenderer {
     // 2. Grid
     if (showGrid) {
       const gridSvg = joinLayout
-        ? this.renderJoinedGrid(joinLayout, gridMode, darkMode)
-        : this.renderGrid(darkMode);
+        ? this.renderJoinedGrid(joinLayout, gridMode, darkMode, {
+            left: resolveMotionColor("left", darkMode, primaryPropColors),
+            right: resolveMotionColor("right", darkMode, primaryPropColors),
+          })
+        : this.renderGrid(gridMode, darkMode, showNonRadialPoints);
       if (gridSvg) sceneParts.push(gridSvg);
     }
 
@@ -648,72 +659,60 @@ ${svgParts.join("\n")}
 </svg>`;
   }
 
-  private renderGrid(darkMode: boolean): string {
-    const gridPath = join(this.assetsRoot, "images/grid/diamond_grid.svg");
-
-    if (!existsSync(gridPath)) {
-      console.error("[Renderer] Grid file not found:", gridPath);
-      return "";
-    }
-
-    try {
-      let gridSvg = readFileSync(gridPath, "utf-8");
-
-      // Extract inner content
-      const innerMatch = gridSvg.match(/<svg[^>]*>([\s\S]*)<\/svg>/i);
-      let innerContent = innerMatch ? innerMatch[1] : gridSvg;
-
-      // Grid SVG has several issues to address:
-      // 1. Outer circles and center point have NO fill attribute (default black)
-      // 2. Hand points use class="normal-hand-point" with fill:currentColor
-      // 3. Layer 2 points use fill:none (not visible in normal mode)
-      //
-      // Solution: Add explicit fill to circles without fill attribute
-      const gridColor = darkMode ? "#ffffff" : "#000000";
-      const opacity = darkMode ? "0.85" : "1.0"; // Solid black in light mode
-
-      // Add fill attribute to circles that don't have one
-      // The regex matches <circle that is NOT followed by fill= before the >
-      innerContent = innerContent.replace(
-        /<circle(?![^>]*fill=)/g,
-        `<circle fill="${gridColor}"`
-      );
-
-      // Replace currentColor with the grid color (for hand points with fill:currentColor in CSS)
-      // The CSS class .normal-hand-point { fill: currentColor } needs the color property set
-      if (darkMode) {
-        innerContent = innerContent.replace(/#000000/gi, gridColor);
-        innerContent = innerContent.replace(/black/gi, gridColor);
-      }
-
-      return `<g style="color: ${gridColor}" opacity="${opacity}">${innerContent}</g>`;
-    } catch (error) {
-      console.error("[Renderer] Failed to load grid:", error);
-      return "";
-    }
+  /**
+   * One grid's points from the shared owner, in this renderer's grid colors:
+   * box mode draws the diamond grid turned 45° clockwise, its outer points
+   * as rings, as the app's dot grid does.
+   */
+  private renderGrid(
+    gridMode: GridMode,
+    darkMode: boolean,
+    showNonRadial: boolean
+  ): string {
+    const points = getGridPoints(gridMode).filter(
+      (point) => point.kind !== "nonRadial" || showNonRadial
+    );
+    return this.gridPointsGroup(points, gridMode, darkMode);
   }
 
   /**
-   * The joined grids' points from the shared layout, in this renderer's grid
-   * colors. Box grids draw their outer points as rings, as one box grid does.
-   * Non-radial points are a one-grid overlay and stay off.
+   * The joined grids' points from the shared layout, each in this renderer's
+   * grid color leaning toward its hand's color (both hands' where the grids
+   * share the spot). Box grids draw their outer points as rings, as one box
+   * grid does. Non-radial points are a one-grid overlay and stay off.
    */
   private renderJoinedGrid(
     layout: GridJoinLayout,
     gridMode: GridMode,
-    darkMode: boolean
+    darkMode: boolean,
+    handColors: Record<"left" | "right", string>
   ): string {
     const gridColor = darkMode ? "#ffffff" : "#000000";
+    return this.gridPointsGroup(
+      layout.points,
+      gridMode,
+      darkMode,
+      joinedPointColors(layout.points, gridColor, handColors)
+    );
+  }
+
+  /** Grid points in the grid color, or each in its entry of `colors`. */
+  private gridPointsGroup(
+    points: readonly { kind: GridPointKind; x: number; y: number }[],
+    gridMode: GridMode,
+    darkMode: boolean,
+    colors?: readonly string[]
+  ): string {
+    const gridColor = darkMode ? "#ffffff" : "#000000";
+    // Solid black in light mode; slightly see-through white in dark mode.
     const opacity = darkMode ? "0.85" : "1.0";
-    const box = gridMode === GridMode.BOX;
-    const circles = layout.points.map((point) => {
-      const paint =
-        box && point.kind === "outer"
-          ? `fill="none" stroke="${gridColor}" stroke-width="${BOX_OUTER_RING_WIDTH}"`
-          : `fill="${gridColor}"`;
-      return `<circle cx="${point.x}" cy="${point.y}" r="${JOINED_POINT_RADIUS[point.kind]}" ${paint}/>`;
-    });
-    return `<g style="color: ${gridColor}" opacity="${opacity}">${circles.join("")}</g>`;
+    const box = isBoxGrid(gridMode);
+    const circles = colors
+      ? points
+          .map((point, index) => gridPointsSvg([point], box, colors[index]!))
+          .join("")
+      : gridPointsSvg(points, box, gridColor);
+    return `<g style="color: ${gridColor}" opacity="${opacity}">${circles}</g>`;
   }
 
   /**
@@ -977,7 +976,16 @@ ${svgParts.join("\n")}
       startOrientation === Orientation.IN ||
       startOrientation === Orientation.OUT;
 
-    let placement;
+    // Box is the diamond placement frame turned 45° clockwise. The arrow's
+    // location and anchor come from the displayed grid, but its glyph angle and
+    // adjustment are looked up as the diamond arrow it presents and then turned
+    // back onto the box, as the app's canonical placement frame does.
+    const frameRotation = placementFrameRotation(gridMode);
+    const canonicalGridMode = frameRotation ? GridMode.DIAMOND : gridMode;
+    const toCanonical = (location: string) =>
+      toCanonicalLocation(location, frameRotation);
+
+    let location: GridLocation;
 
     // For DASH motions, use the dash location calculator
     if (motionType === "dash") {
@@ -1003,113 +1011,66 @@ ${svgParts.join("\n")}
         gridMode,
       };
 
-      const dashLocation = calculateDashLocation(dashLocationInput);
-
-      // DEBUG: Log W- left-hand dash location calculation
-      if (pictograph.letter === "W-" && motion.hand === "left") {
-        console.error(`[DEBUG W- BLUE DASH] dashLocation=${dashLocation}`);
-        console.error(
-          `[DEBUG W- BLUE DASH] input: startLoc=${motion.startLocation}, endLoc=${motion.endLocation}, turns=${motion.turns}`
-        );
-        console.error(
-          `[DEBUG W- BLUE DASH] other: type=${otherMotion?.motionType}, start=${otherMotion?.startLocation}, end=${otherMotion?.endLocation}`
-        );
-      }
-
-      // Get coordinates for the calculated dash location
-      const position = getLayer2PointCoordinates(dashLocation, gridMode);
-
-      // Calculate rotation for dash arrow at this location
-      const rotation = calculateArrowRotation(
-        motionType,
-        dashLocation,
-        motion.rotationDirection,
-        startLocation,
-        endLocation,
-        isRadialOrientation
-      );
-
-      placement = {
-        x: position.x,
-        y: position.y,
-        rotation,
-        location: dashLocation,
-      };
+      location = calculateDashLocation(dashLocationInput) as GridLocation;
     } else {
-      // Use the standard placement calculation for non-dash motions
-      placement = calculateArrowPlacement(
+      location = calculateArrowLocation(
         motionType as MotionType,
         startLocation,
-        endLocation,
-        motion.rotationDirection,
-        gridMode,
-        isRadialOrientation
+        endLocation
       );
     }
+
+    const position = getLayer2PointCoordinates(location, gridMode);
+    const canonicalLocation = toCanonical(location) as GridLocation;
+    const rotation = rotatePlacementAngleToDisplayed(
+      calculateArrowRotation(
+        motionType,
+        canonicalLocation,
+        motion.rotationDirection,
+        toCanonical(startLocation),
+        toCanonical(endLocation),
+        isRadialOrientation
+      ),
+      frameRotation
+    );
+
+    const adjustmentMotion = (
+      source: MotionInput,
+      hand: MotionInput["hand"]
+    ): MotionAdjustmentInput => ({
+      letter: pictograph.letter,
+      motionType: source.motionType,
+      rotationDirection: source.rotationDirection,
+      startLocation: toCanonical(source.startLocation),
+      endLocation: toCanonical(source.endLocation),
+      hand,
+      turns: source.turns,
+      endOrientation: source.endOrientation as string | undefined,
+    });
 
     // Calculate arrow adjustment from special placement data
     const adjustmentInput: PictographAdjustmentInput = {
       letter: pictograph.letter,
-      gridMode,
+      gridMode: canonicalGridMode,
       endPlacement: pictograph.endPlacement,
-      leftMotion: {
-        letter: pictograph.letter,
-        motionType: pictograph.leftMotion.motionType,
-        rotationDirection: pictograph.leftMotion.rotationDirection,
-        startLocation: pictograph.leftMotion.startLocation,
-        endLocation: pictograph.leftMotion.endLocation,
-        hand: "left",
-        turns: pictograph.leftMotion.turns,
-        endOrientation: pictograph.leftMotion.endOrientation as
-          | string
-          | undefined,
-      },
-      rightMotion: {
-        letter: pictograph.letter,
-        motionType: pictograph.rightMotion.motionType,
-        rotationDirection: pictograph.rightMotion.rotationDirection,
-        startLocation: pictograph.rightMotion.startLocation,
-        endLocation: pictograph.rightMotion.endLocation,
-        hand: "right",
-        turns: pictograph.rightMotion.turns,
-        endOrientation: pictograph.rightMotion.endOrientation as
-          | string
-          | undefined,
-      },
+      leftMotion: adjustmentMotion(pictograph.leftMotion, "left"),
+      rightMotion: adjustmentMotion(pictograph.rightMotion, "right"),
     };
 
-    const motionAdjustmentInput: MotionAdjustmentInput = {
-      letter: pictograph.letter,
-      motionType: motion.motionType,
-      rotationDirection: motion.rotationDirection,
-      startLocation: motion.startLocation,
-      endLocation: motion.endLocation,
-      hand: motion.hand,
-      turns: motion.turns,
-      endOrientation: motion.endOrientation as string | undefined,
-    };
-
-    const [adjustX, adjustY] = calculateArrowAdjustment(
+    const [canonicalAdjustX, canonicalAdjustY] = calculateArrowAdjustment(
       adjustmentInput,
-      motionAdjustmentInput,
-      placement.location as GridLocation,
+      adjustmentMotion(motion, motion.hand),
+      canonicalLocation,
       { solo: !!joinOffset }
+    );
+    const adjustment = rotatePlacementVectorToDisplayed(
+      { x: canonicalAdjustX, y: canonicalAdjustY },
+      frameRotation
     );
 
     // Apply adjustment to placement
-    const finalX = placement.x + adjustX + (joinOffset?.x ?? 0);
-    const finalY = placement.y + adjustY + (joinOffset?.y ?? 0);
-
-    // DEBUG: Log final placement for W- left-hand dash
-    if (pictograph.letter === "W-" && motion.hand === "left") {
-      console.error(
-        `[DEBUG W- BLUE FINAL] placement.x=${placement.x}, placement.y=${placement.y}, rotation=${placement.rotation}`
-      );
-      console.error(
-        `[DEBUG W- BLUE FINAL] adjustX=${adjustX}, adjustY=${adjustY}`
-      );
-      console.error(`[DEBUG W- BLUE FINAL] finalX=${finalX}, finalY=${finalY}`);
-    }
+    const finalX = position.x + adjustment.x + (joinOffset?.x ?? 0);
+    const finalY = position.y + adjustment.y + (joinOffset?.y ?? 0);
 
     // Determine arrow file path based on motion type and start orientation
     const arrowPath = this.getArrowPath(
@@ -1171,7 +1132,7 @@ ${svgParts.join("\n")}
       // Canvas2D renderer transform order:
       // translate to position → rotate → mirror (if needed) → translate by -center
       const mirrorTransform = shouldMirror ? " scale(-1, 1)" : "";
-      return `<g filter="url(#arrow-halo)" transform="translate(${finalX}, ${finalY}) rotate(${placement.rotation})${mirrorTransform} translate(${-centerX}, ${-centerY})">
+      return `<g filter="url(#arrow-halo)" transform="translate(${finalX}, ${finalY}) rotate(${rotation})${mirrorTransform} translate(${-centerX}, ${-centerY})">
   ${innerContent}
 </g>`;
     } catch (error) {

@@ -8,6 +8,8 @@ import {
   hasBigVariant,
   isBigVariant,
   isPropActive,
+  isSameProp,
+  standardSizeProp,
   toggleBigVariant,
 } from "../prop-type-display-registry";
 
@@ -64,5 +66,20 @@ describe("size is a dial, not a variant", () => {
     expect(getBasePropType(PropType.BIGFAN)).toBe(PropType.FAN);
     expect(isBigVariant(PropType.BIGFAN)).toBe(true);
     expect(toggleBigVariant(PropType.FAN)).toBe(PropType.BIGFAN);
+  });
+
+  it("treats a prop and its size twin as one prop", () => {
+    for (const prop of Object.values(PropType) as PropType[]) {
+      const twin = toggleBigVariant(prop);
+      expect(isSameProp(prop, twin), prop).toBe(true);
+      expect(standardSizeProp(prop), prop).toBe(standardSizeProp(twin));
+      if (isBigVariant(prop)) expect(standardSizeProp(prop)).toBe(twin);
+    }
+    // Case never makes two props differ, and unrelated props stay apart.
+    expect(standardSizeProp("BigTriad")).toBe("triad");
+    expect(isSameProp("Staff", "bigstaff")).toBe(true);
+    expect(isSameProp("staff", "club")).toBe(false);
+    expect(isSameProp("minihoop", "bighoop")).toBe(true);
+    expect(isSameProp(undefined, "staff")).toBe(false);
   });
 });

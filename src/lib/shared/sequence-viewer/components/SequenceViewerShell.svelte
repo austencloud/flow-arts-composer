@@ -172,6 +172,8 @@
     startInSplit?: boolean;
     /** Present card mode first, then promote after its first stable paint. */
     startInCardThenSplit?: boolean;
+    /** Demo scans keep the card's prop choice for this viewer visit. */
+    demoScanProps?: boolean;
     exportOverrides?: ViewerShellExportOverrides;
     /** Optional "See it in the Guide" action — host supplies the handler; the
      *  shell renders it in the overflow menu. Omitted → not shown. */
@@ -239,6 +241,7 @@
     startInSplit = false,
     reviewPostStudio = false,
     startInCardThenSplit = false,
+    demoScanProps = false,
     exportOverrides,
     guideAction = null,
     embedded = false,
@@ -1108,6 +1111,7 @@
       onClose={interactions.handleClose}
       hidden={ctx.isFullscreen}
       {embedded}
+      {demoScanProps}
       navigation={embedded ? undefined : navigation}
       titleOverride={tunnelComposition?.name?.trim() || null}
       {openAppHref}

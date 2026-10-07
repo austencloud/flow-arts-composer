@@ -17,6 +17,7 @@ import {
   normalizePropPatch,
   PROP_PAIR_KEYS,
 } from "../domain/prop-pair-rule";
+import { withPickVersion } from "../domain/prop-version-rule";
 import { DEFAULT_FAN_APPEARANCE } from "../../pictograph/prop/domain/fan-appearance";
 import { DEFAULT_PROP_LOOK } from "../../pictograph/prop/domain/prop-look";
 import { DEFAULT_TRIANGLE_GRIP } from "../../pictograph/prop/domain/triangle-appearance";
@@ -713,7 +714,13 @@ class SettingsState {
   }
 
   async updateSettings(newSettings: Partial<AppSettings>): Promise<void> {
-    newSettings = normalizePropPatch(settingsState, newSettings);
+    // A version belongs to the pick: a write that brings a new prop into the
+    // hands and names no version goes back to Version 1. Loads and remote
+    // applies never come through here, so a restored V2 setup stays V2.
+    newSettings = withPickVersion(
+      settingsState,
+      normalizePropPatch(settingsState, newSettings)
+    );
     const oldBackgroundType = settingsState.backgroundType;
     const newBackgroundType = newSettings.backgroundType;
     const backgroundTypeChanged =

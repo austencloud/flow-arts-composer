@@ -1,3 +1,7 @@
+import type {
+  GridJoinTweenSample,
+  HandOffsets,
+} from "$lib/shared/animation-engine/services/grid-join-tween";
 import type { TrailPoint, TrailSettings } from "./trail-types";
 import type { PropState } from "$lib/shared/foundation/domain/types/prop-state";
 import type { QualityHints } from "./quality-types";
@@ -59,4 +63,14 @@ export interface RenderSceneParams {
   /** Performer spotlight: selected performer (0 = base, k = copy arm k) or null.
    *  When set, non-selected copies' props dim. Default null. */
   tunnelSelectedLayer?: number | readonly number[] | null;
+  /** Hand colors the props wear; joined grids lean each hand's dots toward
+   * its color. Null or absent for the default blue and red. */
+  primaryPropColors?: { left: string; right: string } | null;
+  /** Where each hand's grid sits this frame, in hand-point radii. */
+  gridJoinOffsets?: HandOffsets;
+  /**
+   * The grid layout slide running this frame, or null: each hand's grid is
+   * drawn moving at its offset while the old and new still pictures fade.
+   */
+  gridJoinSlide?: GridJoinTweenSample | null;
 }

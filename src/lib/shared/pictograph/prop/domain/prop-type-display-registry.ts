@@ -40,7 +40,7 @@ export const PROP_TYPE_DISPLAY_REGISTRY: Record<PropType, PropTypeDisplayInfo> =
       image: "/images/props/buttons/bigstaff.svg?v=2",
     },
     [PropType.STAFF2]: {
-      label: "Staff V2",
+      label: "Capped Staff",
       image: "/images/props/buttons/staff_v2.svg?v=2",
     },
     [PropType.CAPSULE_BATON]: {
@@ -141,11 +141,7 @@ export const PROP_TYPE_DISPLAY_REGISTRY: Record<PropType, PropTypeDisplayInfo> =
       category: "singles",
     },
 
-    // === ENERGY FAMILY (premium cosmetics) ===
-    // No `category` on purpose. The category taxonomy feeds getBasePropsByCategory(),
-    // which the 3D prop controls expand without an access check. Leaving these two
-    // out of it keeps them off those surfaces entirely instead of relying on every
-    // future consumer remembering to gate.
+    // Energy Saber is a Sword style and Energy Staff a Double Staff style.
     [PropType.ENERGY_SABER]: {
       label: "Energy Saber",
       image: "/images/props/buttons/energy_saber.svg",
@@ -255,33 +251,6 @@ export function isPropActive(propType: PropType): boolean {
 }
 
 /**
- * Props that cost money rather than practice. These are cosmetic restyles of
- * props the app already has, so nothing about a sequence changes when you pick
- * one — but they are not free, and they are not earned by playing either.
- *
- * This set is pure classification with no opinion on who may use them. The
- * access decision (premium module off, dev/admin preview, subscription gate)
- * lives in `$lib/shared/subscription/domain/premium-prop-access`, so the
- * pictograph domain never has to know about auth.
- */
-export const PREMIUM_COSMETIC_PROP_TYPES: ReadonlySet<PropType> = new Set([
-  PropType.ENERGY_SABER,
-  PropType.ENERGY_STAFF,
-]);
-
-/**
- * Whether a prop is a paid cosmetic. Every place that enumerates prop types
- * raw — keyboard cycling, shuffle, Arena, avatar generation — has to consult
- * this before offering the prop, or it hands out a paid prop for free.
- */
-export function isPremiumCosmeticProp(
-  propType: PropType | string | null | undefined
-): boolean {
-  if (!propType) return false;
-  return PREMIUM_COSMETIC_PROP_TYPES.has(propType as PropType);
-}
-
-/**
  * Gets all available prop types in display order.
  */
 export function getAllPropTypes(): PropType[] {
@@ -334,6 +303,7 @@ export const VARIANT_PROP_TYPES: PropType[] = [
   PropType.STAFF2,
   PropType.CAPSULE_BATON,
   PropType.FIRE_DOUBLE_STAFF,
+  PropType.ENERGY_STAFF,
   PropType.STICK,
   // Club family
   PropType.CLASSIC_CLUB,
@@ -363,6 +333,8 @@ export const VARIANT_PROP_TYPES: PropType[] = [
   // Contact ball family (DOUBLECONTACTBALL is now standalone)
   PropType.BIGCONTACTBALL,
   PropType.BIGDOUBLECONTACTBALL,
+  // Sword family
+  PropType.ENERGY_SABER,
 ];
 
 /**
@@ -375,6 +347,7 @@ const VARIANT_TO_BASE: Partial<Record<PropType, PropType>> = {
   [PropType.STAFF2]: PropType.STAFF,
   [PropType.CAPSULE_BATON]: PropType.STAFF,
   [PropType.FIRE_DOUBLE_STAFF]: PropType.STAFF,
+  [PropType.ENERGY_STAFF]: PropType.STAFF,
   [PropType.STICK]: PropType.STAFF,
   // Club variations
   [PropType.CLASSIC_CLUB]: PropType.CLUB,
@@ -408,6 +381,8 @@ const VARIANT_TO_BASE: Partial<Record<PropType, PropType>> = {
   [PropType.BIGCONTACTBALL]: PropType.CONTACTBALL,
   [PropType.BIGDOUBLECONTACTBALL]: PropType.CONTACTBALL,
   // DOUBLECONTACTBALL is now standalone (not a variant) since its base is deactivated
+  // Sword variations
+  [PropType.ENERGY_SABER]: PropType.SWORD,
 };
 
 /**
@@ -418,6 +393,7 @@ const BASE_TO_VARIANTS: Partial<Record<PropType, PropType[]>> = {
   [PropType.STAFF]: [
     PropType.CAPSULE_BATON,
     PropType.FIRE_DOUBLE_STAFF,
+    PropType.ENERGY_STAFF,
     PropType.STICK,
     PropType.SIMPLESTAFF,
     PropType.BIGSTAFF,
@@ -442,6 +418,7 @@ const BASE_TO_VARIANTS: Partial<Record<PropType, PropType[]>> = {
     PropType.BIGCONTACTBALL,
     PropType.BIGDOUBLECONTACTBALL,
   ],
+  [PropType.SWORD]: [PropType.ENERGY_SABER],
 };
 
 /**
@@ -572,11 +549,6 @@ export function getBasePropsByCategory(): Map<PropCategory, PropType[]> {
     if (!info.category) continue;
     if (!isPropActive(propType)) continue;
     if (VARIANT_PROP_TYPES.includes(propType)) continue;
-    // Callers of this map (the 3D prop popover, the performer hub) expand a
-    // family and select straight from it with no access check. Paid cosmetics
-    // carry no category today, so this is belt and braces: if one ever gets a
-    // category it still cannot leak out through here.
-    if (isPremiumCosmeticProp(propType)) continue;
     result.get(info.category)?.push(propType);
   }
 
@@ -628,6 +600,27 @@ export function toggleBigVariant(propType: PropType): PropType {
 }
 
 /**
+ * A prop at its standard size, lower-cased: Big Triad and Triad are both
+ * "triad". Size is a setting on a prop, so anything that asks whether the
+ * performer picked a different prop (a Version 2 pick, a highlighted tile)
+ * compares these keys rather than the raw prop values. Takes a string because
+ * hosts hand props around in either case.
+ */
+export function standardSizeProp(propType: string): string {
+  const key = propType.toLowerCase();
+  return BIG_TO_STANDARD[key as PropType] ?? key;
+}
+
+/** Whether two props are the same prop at either size. */
+export function isSameProp(
+  a: string | null | undefined,
+  b: string | null | undefined
+): boolean {
+  if (!a || !b) return false;
+  return standardSizeProp(a) === standardSizeProp(b);
+}
+
+/**
  * Flat prop-picker sections (props-tab redesign, 2026-06-18).
  *
  * Single source of truth for the FLAT prop grid (`BentoPropGrid`): every listed
@@ -637,15 +630,12 @@ export function toggleBigVariant(propType: PropType): PropType {
  * composition recipes, …), which are left untouched.
  *
  * Curation: props NOT listed here are simply absent from the picker. Simple
- * Staff (backend thumb-orientation prop) and Staff V2 stay fully wired
+ * Staff (backend thumb-orientation prop) and Capped Staff stay fully wired
  * elsewhere but off the picker. Hand is listed under Novelty for now so bare
  * hands can be picked like any prop. Poi IS listed here but
  * dark-gated in BentoPropGrid (dev/admin only, matching the poi-legal filter
  * gate), so the public picker still omits it while the filter is validated.
  * (Fractalgeng was removed from the codebase entirely.)
- *
- * The Premium section is the one place the paid cosmetics appear. BentoPropGrid
- * decides who sees it and what a click does — see premium-prop-access.ts.
  *
  * Rendering filters by isPropActive, so deactivating a listed prop hides it
  * without editing this list.
@@ -657,6 +647,7 @@ export const PROP_PICKER_SECTIONS: { label: string; props: PropType[] }[] = [
       PropType.STAFF,
       PropType.CAPSULE_BATON,
       PropType.FIRE_DOUBLE_STAFF,
+      PropType.ENERGY_STAFF,
       PropType.STICK,
       PropType.SIMPLESTAFF,
       PropType.STAFF2,
@@ -673,6 +664,7 @@ export const PROP_PICKER_SECTIONS: { label: string; props: PropType[] }[] = [
       PropType.DOUBLECONTACTBALL,
       PropType.TORCH,
       PropType.SWORD,
+      PropType.ENERGY_SABER,
     ],
   },
   {
@@ -705,9 +697,5 @@ export const PROP_PICKER_SECTIONS: { label: string; props: PropType[] }[] = [
       PropType.POI,
       PropType.HAND,
     ],
-  },
-  {
-    label: "Premium",
-    props: [PropType.ENERGY_SABER, PropType.ENERGY_STAFF],
   },
 ];

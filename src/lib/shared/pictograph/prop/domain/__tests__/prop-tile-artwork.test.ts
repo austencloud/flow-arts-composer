@@ -5,15 +5,21 @@ import { PROP_MODEL_SPRITES } from "../prop-model-sprites.generated";
 const glyph = "/images/props/buttons/x.svg";
 
 describe("navigation prop artwork", () => {
-  it("keeps the fire staff shaft visible in navigation while retaining the model in pickers", () => {
-    const appearance = { propLook: "model" as const };
-    expect(
-      propGlyphArtwork("fire_double_staff", "left", appearance, glyph).href
-    ).toBe(glyph);
-    expect(
-      propTileArtwork("fire_double_staff", "left", appearance, glyph).href
-    ).toContain("/model/");
-  });
+  it.each(["fire_double_staff", "simple_staff", "staff_v2"])(
+    "draws %s's notation artwork under the model look, since it has no capture",
+    (type) => {
+      const appearance = { propLook: "model" as const };
+      for (const side of ["left", "right"] as const) {
+        expect(propGlyphArtwork(type, side, appearance, glyph).href).toBe(glyph);
+        expect(propTileArtwork(type, side, appearance, glyph)).toEqual({
+          href: glyph,
+          styled: false,
+          prelit: false,
+        });
+      }
+      expect(PROP_MODEL_SPRITES[type]).toBeUndefined();
+    }
+  );
   it.each(["fan", "bigfan"])(
     "keeps flat grips in both %s glyphs without substituting a tile photo",
     (type) => {

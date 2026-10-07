@@ -15,6 +15,7 @@ export function cardParityCases(): CardParityCase[] {
   const eightSteps = structuredClone(demo);
   eightSteps.steps = eightSteps.steps.slice(0, 8);
   eightSteps.word = eightSteps.steps.map((step) => step.letter).join("");
+  const box = turnedOntoBoxGrid(sequence);
   return [
     {
       name: "loop-metadata",
@@ -185,7 +186,72 @@ export function cardParityCases(): CardParityCase[] {
         conjoined: JOIN_EAST,
       },
     },
+    {
+      name: "box-grid",
+      sequence: box,
+      options: { showDifficulty: true, showMandala: true, gridMode: "box" },
+    },
+    {
+      name: "box-grid-dark",
+      sequence: box,
+      options: {
+        showDifficulty: true,
+        showMandala: true,
+        darkMode: true,
+        gridMode: "box",
+      },
+    },
   ];
+}
+
+const TURN_CLOCKWISE_45: Record<string, string> = {
+  n: "ne",
+  ne: "e",
+  e: "se",
+  se: "s",
+  s: "sw",
+  sw: "w",
+  w: "nw",
+  nw: "n",
+};
+
+/** A placement turned 45° clockwise: the next number within its group of 8. */
+function turnedPlacement(placement: string): string {
+  const [, group, number] = placement.match(/^([a-z]+)(\d+)$/)!;
+  const index = Number(number) - 1;
+  return `${group}${(index & ~7) + ((index + 1) % 8) + 1}`;
+}
+
+/**
+ * The whole sequence turned 45° clockwise onto the box grid: every location
+ * one step clockwise and every placement the next number in its group of 8.
+ * Its arrows and mandala are the diamond ones turned 45°, which is how the app
+ * places box arrows.
+ */
+function turnedOntoBoxGrid(sequence: typeof demo): typeof demo {
+  const turnMotions = (motions: typeof demo.startPlacement.motions) => {
+    for (const motion of Object.values(motions)) {
+      motion.startLocation = TURN_CLOCKWISE_45[motion.startLocation]!;
+      motion.endLocation = TURN_CLOCKWISE_45[motion.endLocation]!;
+      motion.arrowLocation = TURN_CLOCKWISE_45[motion.arrowLocation]!;
+      motion.gridMode = "box";
+    }
+  };
+  const box = structuredClone(sequence);
+  const start = box.startPlacement;
+  start.gridPlacement = turnedPlacement(start.gridPlacement);
+  start.startPlacement = turnedPlacement(start.startPlacement);
+  start.endPlacement = turnedPlacement(start.endPlacement);
+  turnMotions(start.motions);
+  box.gridMode = "box";
+  box.startingPlacement = start as never;
+  for (const step of box.steps) {
+    step.startPlacement = turnedPlacement(step.startPlacement);
+    step.endPlacement = turnedPlacement(step.endPlacement);
+    step.gridMode = "box";
+    turnMotions(step.motions);
+  }
+  return box;
 }
 
 /** The join the 2D animation draws: red's grid one hand-point step east. */

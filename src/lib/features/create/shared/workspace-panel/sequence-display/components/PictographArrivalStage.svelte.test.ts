@@ -169,3 +169,52 @@ describe("PictographArrivalStage commit", () => {
     expect(landingOrder).toEqual(["release-grid", "measure-destination"]);
   });
 });
+
+describe("PictographArrivalStage grid join", () => {
+  it("draws the arriving step and its starting beat on the joined grids", async () => {
+    render(PictographArrivalStage, {
+      request: {
+        intent: "audition",
+        stepIndex: 1,
+        requestId: 9,
+        owner: "stage",
+        phase: "preview",
+      },
+      sequence,
+      gridJoin: { toward: "e", steps: 1 },
+      getDestinationRect: () => null,
+      onBeginLanding: vi.fn(),
+      onBeginHandoff: vi.fn(),
+      onComplete: vi.fn(),
+    });
+
+    const pictograph = page.getByTestId("arrival-pictograph");
+    await expect.element(pictograph).toHaveAttribute("data-join", "e1");
+    await expect
+      .element(pictograph)
+      .toHaveAttribute("data-motion-start-join", "e1");
+  });
+
+  it("leaves one-grid steps unjoined", async () => {
+    render(PictographArrivalStage, {
+      request: {
+        intent: "audition",
+        stepIndex: 1,
+        requestId: 10,
+        owner: "stage",
+        phase: "preview",
+      },
+      sequence,
+      getDestinationRect: () => null,
+      onBeginLanding: vi.fn(),
+      onBeginHandoff: vi.fn(),
+      onComplete: vi.fn(),
+    });
+
+    const pictograph = page.getByTestId("arrival-pictograph");
+    await expect
+      .element(pictograph)
+      .toHaveAttribute("data-step-id", "candidate-step");
+    await expect.element(pictograph).not.toHaveAttribute("data-join");
+  });
+});

@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
+  GRID_JOIN_DIRECTIONS,
   JOIN_HAND_RADIUS,
+  alignGridJoin,
   getGridJoinLayout,
   gridJoinCellResolver,
   gridJoinKey,
@@ -15,6 +17,7 @@ import {
 
 const EAST_1: GridJoinSpec = { toward: "e", steps: 1 };
 const EAST_2: GridJoinSpec = { toward: "e", steps: 2 };
+const SOUTHEAST_1: GridJoinSpec = { toward: "se", steps: 1 };
 const STAFF_HALF = 252.8 / 2;
 const STAFF_NUDGE = 950 / 45;
 
@@ -157,27 +160,26 @@ describe("joined grid layout", () => {
   });
 
   it("box grids keep box hand points and fit without shrinking one step apart", () => {
-    const layout = getGridJoinLayout(EAST_1, "box");
-    expect(countKinds(layout)).toEqual({ center: 2, hand: 8, outer: 8 });
+    const layout = getGridJoinLayout(SOUTHEAST_1, "box");
+    // The box pair is the diamond east pair turned 45°: same points, same fit.
+    expect(countKinds(layout)).toEqual(
+      countKinds(getGridJoinLayout(EAST_1, "diamond"))
+    );
     const blueNortheast = layout.points.find(
       (point) =>
         point.kind === "hand" &&
         point.members[0]!.hand === "left" &&
         point.members[0]!.location === "ne"
     );
-    const expected = handPoint(EAST_1, "left", Math.SQRT1_2, -Math.SQRT1_2);
+    const expected = handPoint(
+      SOUTHEAST_1,
+      "left",
+      Math.SQRT1_2,
+      -Math.SQRT1_2
+    );
     expect(blueNortheast!.x).toBeCloseTo(expected.x, 6);
     expect(blueNortheast!.y).toBeCloseTo(expected.y, 6);
     expect(layout.scale).toBe(1);
-  });
-
-  it("shrinks a diagonal two-step join to keep clear of the cell edge", () => {
-    expect(getGridJoinLayout({ toward: "ne", steps: 1 }, "diamond").scale).toBe(
-      1
-    );
-    expect(
-      getGridJoinLayout({ toward: "ne", steps: 2 }, "diamond").scale
-    ).toBeCloseTo(0.8987, 3);
   });
 
   it("draws skewed and other modes on diamond grids, as one grid does", () => {
@@ -194,6 +196,80 @@ describe("joined grid layout", () => {
     expect(Object.isFrozen(layout)).toBe(true);
     expect(Object.isFrozen(layout.points)).toBe(true);
   });
+});
+
+describe("joins line up with the grid", () => {
+  const ALL: GridJoinSpec["toward"][] = [
+    "n",
+    "ne",
+    "e",
+    "se",
+    "s",
+    "sw",
+    "w",
+    "nw",
+  ];
+
+  it("keeps a join on the grid's own hand-point lines", () => {
+    for (const toward of GRID_JOIN_DIRECTIONS.diamond) {
+      const join: GridJoinSpec = { toward, steps: 2 };
+      expect(alignGridJoin(join, "diamond")).toBe(join);
+    }
+    for (const toward of GRID_JOIN_DIRECTIONS.box) {
+      const join: GridJoinSpec = { toward, steps: 1 };
+      expect(alignGridJoin(join, "box")).toBe(join);
+    }
+  });
+
+  it("turns a join off those lines 45° clockwise onto them", () => {
+    expect(alignGridJoin({ toward: "ne", steps: 1 }, "diamond")).toEqual({
+      toward: "e",
+      steps: 1,
+    });
+    expect(alignGridJoin({ toward: "nw", steps: 2 }, "skewed")).toEqual({
+      toward: "n",
+      steps: 2,
+    });
+    expect(alignGridJoin({ toward: "e", steps: 1 }, "box")).toEqual({
+      toward: "se",
+      steps: 1,
+    });
+    expect(alignGridJoin({ toward: "n", steps: 2 }, "box")).toEqual({
+      toward: "ne",
+      steps: 2,
+    });
+  });
+
+  it("draws a stored off-line join as its aligned join", () => {
+    const stored = getGridJoinLayout({ toward: "ne", steps: 1 }, "diamond");
+    expect(stored).toBe(getGridJoinLayout(EAST_1, "diamond"));
+    expect(stored.join).toEqual(EAST_1);
+  });
+
+  it.each(["diamond", "box"])(
+    "every %s join meets the other grid with no near-misses",
+    (gridMode) => {
+      for (const toward of ALL) {
+        for (const steps of [1, 2] as const) {
+          const { points } = getGridJoinLayout({ toward, steps }, gridMode);
+          let meets = points.filter((point) => point.members.length > 1).length;
+          for (const [i, a] of points.entries()) {
+            for (const b of points.slice(i + 1)) {
+              if (a.members[0]!.hand === b.members[0]!.hand) continue;
+              const gap = Math.hypot(a.x - b.x, a.y - b.y);
+              if (gap < 1) meets++;
+              // Diagonal joins on a diamond grid missed by 59-84 units.
+              else
+                expect(gap, `${gridMode} ${toward}${steps}`).toBeGreaterThan(
+                  100
+                );
+            }
+          }
+          expect(meets, `${gridMode} ${toward}${steps}`).toBeGreaterThan(0);
+        }
+      }
+    }
+  );
 });
 
 describe("joined prop nudge", () => {

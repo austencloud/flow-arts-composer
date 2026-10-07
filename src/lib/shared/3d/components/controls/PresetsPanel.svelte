@@ -11,7 +11,7 @@
   import { applyScene3DLookLive } from "$lib/features/scene-3d-collection/services/open-3d-scene";
   import type { Collected3DScene } from "$lib/features/scene-3d-collection/domain/scene-3d-collection-types";
   import { getViewer3DContext } from "../../context/viewer-3d-context";
-  import { authState } from "$lib/shared/auth/state/auth-state.svelte";
+  import { loadedAuthState } from "$lib/shared/auth/state/loaded-auth-state.svelte";
   import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
   import {
     reportViewerControlChange,
@@ -31,7 +31,7 @@
   let appliedClearTimer: ReturnType<typeof setTimeout> | undefined;
 
   $effect(() => {
-    const uid = authState.user?.uid;
+    const uid = loadedAuthState.userId;
     if (uid) scene3dCollectionState.ensureStarted(uid);
     else scene3dCollectionState.initLocal();
   });

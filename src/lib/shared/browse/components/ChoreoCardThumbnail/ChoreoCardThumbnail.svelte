@@ -29,8 +29,6 @@ Variation support:
   import { buildCardMenuSection } from "$lib/shared/choreo-card/services/card-menu-section";
   import { featureFlagService } from "$lib/shared/auth/services/post-hog-feature-flag-service.svelte";
   import { toast } from "$lib/shared/toast/state/toast-state.svelte";
-  import { openSendSequenceSheetWithCard } from "$lib/shared/inbox/state/send-sequence-state.svelte";
-  import { getSharer } from "$lib/shared/share/get-sharer";
   import { onDestroy, tick, untrack } from "svelte";
   import SheetMorphOverlay from "./SheetMorphOverlay.svelte";
   import {
@@ -45,12 +43,9 @@ Variation support:
   import VariationPill from "./VariationPill.svelte";
   import PreviewPlayChip from "./PreviewPlayChip.svelte";
   import SyncStatusBadge from "./SyncStatusBadge.svelte";
-  import { authState } from "$lib/shared/auth/state/auth-state.svelte";
-  import { getLibraryRepository } from "$lib/shared/library/get-library-repository";
-  import { adminDeleteSequence } from "$lib/shared/library/services/admin-sequence-actions";
+  import type { authState as AuthStateModule } from "$lib/shared/auth/state/auth-state.svelte";
   import { notifyLibraryMutated } from "$lib/shared/library/library-events";
   import ConfirmDialog from "$lib/shared/foundation/ui/ConfirmDialog.svelte";
-  import { openCollectionPicker } from "$lib/features/library/state/collection-picker-state.svelte";
   import { cardHoverPreview } from "$lib/shared/browse/state/card-hover-preview-state.svelte";
   import { userPreviewState } from "$lib/shared/debug/state/user-preview-state.svelte";
   import { t, tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
@@ -76,6 +71,7 @@ Variation support:
     addWord,
     addDifficultyLevel,
     allowQR = true,
+    shareRender = true,
     collectionContext,
     selectedIds,
     selectionMode = false,
@@ -108,6 +104,9 @@ Variation support:
      * short code), so it still loads from static/cloud — no per-card local
      * render. Pass false for surfaces too small to scan (e.g. peeks). */
     allowQR?: boolean;
+    /** Upload a fresh render to the shared thumbnail cache. Pass false on a
+     * public page that must not sign a visitor in (see ThumbnailRequest). */
+    shareRender?: boolean;
     /**
      * Set when this card renders inside one of the viewer's own collections
      * (Browse > Collections detail). Adds a "Remove from this collection"
@@ -462,13 +461,17 @@ Variation support:
     }
     const seq = removeTarget;
     if (!seq) return;
-    const myUid = authState.user?.uid;
+    const myUid = authApi?.user?.uid;
     const isOwner = !!myUid && seq.ownerId === myUid;
     const isPersonalLibrary = !!onSelectionStart;
     try {
       if (isOwner || isPersonalLibrary) {
+        const { getLibraryRepository } =
+          await import("$lib/shared/library/get-library-repository");
         await getLibraryRepository().deleteSequence(seq.id);
       } else {
+        const { adminDeleteSequence } =
+          await import("$lib/shared/library/services/admin-sequence-actions");
         const res = await adminDeleteSequence(seq.ownerId ?? "", seq.id);
         // The callable resolves even when it deleted nothing; treat that as a
         // failure so we don't show success + drop the card for a no-op delete.
@@ -490,8 +493,13 @@ Variation support:
   function handleSendTo() {
     const seq = displayedSequence;
     closeContextMenu();
-    openSendSequenceSheetWithCard(seq, (target) =>
-      getSharer().getCardImageBlob(target, { darkMode: true })
+    void Promise.all([
+      import("$lib/shared/inbox/state/send-sequence-state.svelte"),
+      import("$lib/shared/share/get-sharer"),
+    ]).then(([{ openSendSequenceSheetWithCard }, { getSharer }]) =>
+      openSendSequenceSheetWithCard(seq, (target) =>
+        getSharer().getCardImageBlob(target, { darkMode: true })
+      )
     );
   }
 
@@ -513,7 +521,7 @@ Variation support:
       sequenceForImageActions: seq,
     });
 
-    const myUid = authState.user?.uid;
+    const myUid = authApi?.user?.uid;
     const isOwner = !!myUid && seq.ownerId === myUid;
     const isPersonalLibrary = !!onSelectionStart;
     // Owner-only: filing into a collection is filing YOUR sequence into YOUR
@@ -526,11 +534,14 @@ Variation support:
         icon: "fa-folder-plus",
         action() {
           closeContextMenu();
-          openCollectionPicker({
-            sequenceId: seq.id,
-            sequenceLabel: seq.name,
-            currentCollectionId: collectionContext?.id ?? null,
-          });
+          void import("$lib/features/library/state/collection-picker-state.svelte").then(
+            ({ openCollectionPicker }) =>
+              openCollectionPicker({
+                sequenceId: seq.id,
+                sequenceLabel: seq.name,
+                currentCollectionId: collectionContext?.id ?? null,
+              })
+          );
         },
       });
     }
@@ -565,6 +576,22 @@ Variation support:
     return items;
   });
 
+  // Auth only decides the owner actions in the context menu, and those actions
+  // (send, collections, delete) load when chosen. Static imports pulled the
+  // whole Firebase SDK onto public pages that show these cards (the /composer
+  // gallery) before anyone asked for an account, so auth loads with the first
+  // menu. Wherever a visitor can be signed in, the app or the site header has
+  // loaded it already and this resolves at once.
+  let authApi = $state<typeof AuthStateModule | null>(null);
+  function loadAuthForMenu(): void {
+    if (authApi) return;
+    import("$lib/shared/auth/state/auth-state.svelte")
+      .then((module) => (authApi = module.authState))
+      .catch((error) =>
+        console.warn("[ChoreoCardThumbnail] Could not load auth state:", error)
+      );
+  }
+
   function handleContextMenu(e: MouseEvent) {
     e.preventDefault();
     const pointerType =
@@ -577,6 +604,7 @@ Variation support:
     ) {
       return;
     }
+    loadAuthForMenu();
     contextMenuState = { open: true, x: e.clientX, y: e.clientY };
   }
 
@@ -652,6 +680,7 @@ Variation support:
       {addWord}
       {addDifficultyLevel}
       {allowQR}
+      {shareRender}
     />
 
     {#if previewActive}

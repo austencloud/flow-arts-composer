@@ -18,6 +18,7 @@ import { compositeMandalaOverlap } from "./mandala-overlap-compositor";
 import { mixColors } from "../domain/mandala-palette";
 import { resolveViewerCustomColorPair } from "$lib/shared/sequence-viewer/domain/viewer-custom-colors";
 import type { PreparedMandalaPath } from "./types";
+import type { MandalaHandOffsets } from "./mandala-grid-join";
 
 export type MandalaGuideContext =
 	| CanvasRenderingContext2D
@@ -45,6 +46,11 @@ export interface MandalaGuidePaintOptions {
 	progress?: number;
 	/** Progressive reveal (drawing mode) instead of the complete guide. */
 	reveal?: boolean;
+	/**
+	 * Joined grids: each hand's figure moves this far (mandala units) onto
+	 * its own grid. Absent or null for one grid, which paints as it always has.
+	 */
+	handOffsets?: MandalaHandOffsets | null;
 }
 
 interface OverlapMaskPair {
@@ -133,6 +139,8 @@ function paintHandMask(
 	context.setTransform(target.dpr, 0, 0, target.dpr, 0, 0);
 	context.translate(center.x, center.y);
 	context.scale(options.scale, options.scale);
+	const offset = options.handOffsets?.[hand];
+	if (offset) context.translate(offset.x, offset.y);
 	context.strokeStyle = "white";
 	context.lineWidth = adjustedStrokeWidth;
 	context.lineCap = "round";
@@ -182,7 +190,15 @@ export function paintMandalaGuide(
 		context.globalAlpha = 1;
 		context.setLineDash(revealDash(path, progress, reveal));
 		context.lineDashOffset = 0;
-		context.stroke(path.path2d);
+		const offset = options.handOffsets?.[path.hand];
+		if (offset) {
+			context.save();
+			context.translate(offset.x, offset.y);
+			context.stroke(path.path2d);
+			context.restore();
+		} else {
+			context.stroke(path.path2d);
+		}
 	}
 	context.restore();
 
