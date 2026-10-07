@@ -73,6 +73,7 @@ import {
 } from "$lib/shared/media-composition/domain/post-project-keyframes";
 import type { PostTake } from "$lib/shared/media-composition/domain/post-plan";
 import {
+  rerecordedTakeTiming,
   resolveTakeTiming,
   shiftTakeTiming,
   takePassStartsAround,
@@ -175,11 +176,6 @@ export interface TakeReplacement {
   takeKey: string;
   durationSeconds: number;
   offsetSeconds: number;
-  /**
-   * Accept a copy too short to hold every clip, as a re-recording can be: the
-   * clips are cut back to fit it. Without this, such a copy changes nothing.
-   */
-  clamp?: boolean;
 }
 
 /**
@@ -202,9 +198,7 @@ export function replaceTakeMedia(
     !Number.isFinite(offset) ||
     offset < 0 ||
     !Number.isFinite(durationSeconds) ||
-    durationSeconds <= 0 ||
-    (!replacement.clamp &&
-      offset + take.durationSeconds > durationSeconds + POST_TIME_EPSILON)
+    offset + take.durationSeconds > durationSeconds + POST_TIME_EPSILON
   )
     return project;
   const shiftKeys = <T>(keys: PostKeyframe<T>[] | undefined) =>
@@ -260,6 +254,69 @@ export function replaceTakeMedia(
                 { takeKey: replacement.takeKey, durationSeconds },
                 ctx.now
               ),
+            },
+          }
+        : {}),
+    },
+    ctx
+  );
+}
+
+/** A new recording of a take's shot, such as a re-run app capture. */
+export interface TakeRelink {
+  ref: PostTake["ref"];
+  takeKey: string;
+  durationSeconds: number;
+}
+
+/**
+ * Points a take at a new recording of the same shot, such as a re-run app
+ * capture. Its clips keep their place and range. One that runs past the new
+ * end is cut back to it; one that would keep less than the shortest clip is
+ * removed, and the main track closes up as it does when a take is removed.
+ * The take's timing is cut to the new length and counts as unchecked.
+ */
+export function relinkTake(
+  project: PostProject,
+  takeId: string,
+  relink: TakeRelink,
+  ctx: EditContext
+): PostProject {
+  const take = project.takes.find((entry) => entry.id === takeId);
+  const { durationSeconds } = relink;
+  if (!take || !Number.isFinite(durationSeconds) || durationSeconds <= 0)
+    return project;
+  const gone = new Set<string>();
+  for (const track of project.tracks)
+    for (const item of track.items)
+      if (
+        item.kind === "video" &&
+        item.takeId === takeId &&
+        durationSeconds - item.sourceIn <
+          POST_MIN_ITEM_SECONDS * item.speed - POST_TIME_EPSILON
+      )
+        gone.add(item.id);
+  for (const id of [...gone]) addFillOverlays(project, id, gone);
+  const timing = project.timings?.[takeId];
+  const kept = withoutItems(project, gone);
+  return finish(
+    {
+      ...kept,
+      takes: kept.takes.map((entry) =>
+        entry === take
+          ? {
+              ...take,
+              ref: relink.ref,
+              takeKey: relink.takeKey,
+              durationSeconds,
+            }
+          : entry
+      ),
+      ...(timing
+        ? {
+            timings: {
+              ...kept.timings,
+              [takeId]: rerecordedTakeTiming(timing, relink, ctx.now),
             },
           }
         : {}),

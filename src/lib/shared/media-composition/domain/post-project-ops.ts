@@ -14,9 +14,9 @@ import {
   deleteItem,
   findTunnelHook,
   lineUpTunnelHook,
+  relinkTake,
   removeTake,
   removeTunnelHook,
-  replaceTakeMedia,
   setProjectBackground,
   setProjectCanvas,
   setTunnelHookBackdropFrame,
@@ -532,16 +532,10 @@ function applyOp(
         )
       )
         throw new Error("Another take already plays that file.");
-      return replaceTakeMedia(
+      return relinkTake(
         project,
         op.take,
-        {
-          ref,
-          takeKey,
-          durationSeconds: op.durationSeconds,
-          offsetSeconds: 0,
-          clamp: true,
-        },
+        { ref, takeKey, durationSeconds: op.durationSeconds },
         ctx
       );
     }
