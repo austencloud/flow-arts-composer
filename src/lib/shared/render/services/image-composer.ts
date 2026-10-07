@@ -50,6 +50,7 @@ import { ensureCardFonts } from "./gelasio-fonts";
 // mandala geometry calculate() loaded dynamically to keep its dependency graph out of the worker bundle until needed
 import { renderMandalaToCanvas } from "../../mandala/services/mandala-renderer";
 import { applyMandalaHandColors } from "../../mandala/domain/mandala-palette";
+import { mandalaGridJoinOffsets } from "../../mandala/services/mandala-grid-join";
 import { pairTipEnds } from "../../pictograph/prop/domain/prop-tip-ends";
 import { getMandalaPlacements } from "../../sequence-viewer/services/get-mandala-placements";
 import {
@@ -996,6 +997,12 @@ export class ImageComposer {
       const mandalaScale = 0.85;
       const mandalaSize = Math.floor(stepSize * mandalaScale);
       const padding = (stepSize - mandalaSize) / 2;
+      // Joined grids: the full mandala draws each hand's figure on its own
+      // grid (one-hand cells stay centered), as the MCP card does.
+      const handOffsets = mandalaGridJoinOffsets(
+        sequence.conjoined,
+        sequence.gridMode
+      );
 
       for (const p of placements) {
         const show = p.variant === "full" ? ("both" as const) : p.variant;
@@ -1010,6 +1017,7 @@ export class ImageComposer {
           palette,
           offsetX: x,
           offsetY: y,
+          handOffsets,
         });
       }
     } catch (error) {
