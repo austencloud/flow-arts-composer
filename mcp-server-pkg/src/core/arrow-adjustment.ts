@@ -18,6 +18,7 @@ import { fileURLToPath } from "url";
 
 import { GridLocation, GridMode, MotionType, Orientation } from "./enums.js";
 import type { HandSide } from "@tka/tka-types";
+import { defaultPlacementCandidateKeys } from "@tka/render-core";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -43,7 +44,8 @@ export interface PictographAdjustmentInput {
   leftMotion: MotionAdjustmentInput;
   rightMotion: MotionAdjustmentInput;
   gridMode: GridMode;
-  endPlacement?: string; // e.g., "alpha5", "beta3", "gamma11"
+  /** The app's turns tuple for the pictograph, e.g. "(s, 2.5, 3)". */
+  turnsTuple?: string;
 }
 
 type TurnsTupleKey = string; // e.g., "(1, 1)", "(fl, 0.5)"
@@ -504,73 +506,36 @@ function loadDefaultPlacementData(
   }
 }
 
-function getPlacementType(endPlacement?: string): string {
-  if (!endPlacement) return "alpha";
-  const lower = endPlacement.toLowerCase();
-  if (lower.startsWith("alpha")) return "alpha";
-  if (lower.startsWith("beta")) return "beta";
-  if (lower.startsWith("gamma")) return "gamma";
-  return "alpha";
-}
-
 /**
- * layer1 = radial (IN/OUT), layer2 = non-radial (CLOCK/COUNTER)
+ * Get default adjustment from JSON data: the first candidate key the table
+ * holds, read at this motion's turns, as the app does.
  */
-function getLayerType(endOrientation?: string): string {
-  if (!endOrientation) return "layer1";
-  const lower = endOrientation.toLowerCase();
-  if (lower === "in" || lower === "out") return "layer1";
-  if (lower === "clock" || lower === "counter") return "layer2";
-  return "layer1";
-}
-
-/**
- * Format: {motionType}_to_{layer}_{placementType}
- */
-function generatePlacementKey(
-  motionType: string,
-  endOrientation?: string,
-  endPlacement?: string
-): string {
-  const placementType = getPlacementType(endPlacement);
-  const layerType = getLayerType(endOrientation);
-  return `${motionType}_to_${layerType}_${placementType}`;
-}
-
 function getDefaultAdjustment(
-  motionType: string,
-  turns: number | "fl" | undefined,
-  gridMode: GridMode,
-  endOrientation?: string,
-  endPlacement?: string
+  motion: MotionAdjustmentInput,
+  pictograph: PictographAdjustmentInput,
+  solo: boolean
 ): [number, number] {
-  const normalizedType = motionType.toLowerCase();
-  const data = loadDefaultPlacementData(gridMode, normalizedType);
+  const normalizedType = motion.motionType.toLowerCase();
+  const data = loadDefaultPlacementData(pictograph.gridMode, normalizedType);
 
   if (!data) {
     return [0, 0];
   }
 
-  const placementKey = generatePlacementKey(
-    normalizedType,
-    endOrientation,
-    endPlacement
-  );
-  const turnsStr = turns === "fl" ? "fl" : (turns ?? 0).toString();
+  // A hand placed alone reads its own layer with alpha placements.
+  const candidates = defaultPlacementCandidateKeys({
+    motionType: normalizedType,
+    letter: solo ? null : pictograph.letter,
+    endOrientation: motion.endOrientation,
+    leftEndOrientation: solo
+      ? motion.endOrientation
+      : pictograph.leftMotion.endOrientation,
+    rightEndOrientation: solo ? null : pictograph.rightMotion.endOrientation,
+  });
+  const placementKey = candidates.find((key) => key in data);
+  const turnsStr = motion.turns === "fl" ? "fl" : (motion.turns ?? 0).toString();
 
-  const keyData = data[placementKey];
-  if (keyData && keyData[turnsStr]) {
-    return keyData[turnsStr];
-  }
-
-  // Try without the layer suffix as fallback
-  const simpleKey = `${normalizedType}_to_layer1_${getPlacementType(endPlacement)}`;
-  const simpleData = data[simpleKey];
-  if (simpleData && simpleData[turnsStr]) {
-    return simpleData[turnsStr];
-  }
-
-  return [0, 0];
+  return (placementKey && data[placementKey]?.[turnsStr]) || [0, 0];
 }
 
 /**
@@ -606,10 +571,9 @@ export function calculateArrowAdjustment(
   let hasSpecialPlacement = false;
 
   if (placementData) {
-    const turnsTuple = formatTurnsTuple(
-      pictograph.leftMotion.turns,
-      pictograph.rightMotion.turns
-    );
+    const turnsTuple =
+      pictograph.turnsTuple ??
+      formatTurnsTuple(pictograph.leftMotion.turns, pictograph.rightMotion.turns);
     const specialAdjustment = lookupBaseAdjustment(
       placementData,
       pictograph.letter,
@@ -627,11 +591,9 @@ export function calculateArrowAdjustment(
 
   if (!hasSpecialPlacement) {
     const defaultAdj = getDefaultAdjustment(
-      motion.motionType,
-      motion.turns,
-      pictograph.gridMode,
-      motion.endOrientation,
-      options.solo ? undefined : pictograph.endPlacement
+      motion,
+      pictograph,
+      !!options.solo
     );
     baseX = defaultAdj[0];
     baseY = defaultAdj[1];
