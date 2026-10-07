@@ -2,21 +2,28 @@
  * Guard the emitted startup graph, including Rollup's small-chunk merges.
  * Source import tests cannot see a lazy module merged into a startup chunk.
  * Run after a production build: npm run verify:boot-chunks
- * Compare another build: node scripts/verify-boot-chunks.mjs --manifest <file>
+ * Compare another build: add --manifest <file> --generated-dir <client-optimized>
+ * Both inputs must come from that same build; generated node indices can change.
  */
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { parseArgs } from "node:util";
 import { staticClosure } from "./verify-public-firebase.mjs";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const args = process.argv.slice(2);
-if (args.length && (args.length !== 2 || args[0] !== "--manifest")) {
-  throw new Error("usage: verify-boot-chunks.mjs [--manifest <file>]");
-}
+const { values } = parseArgs({
+  options: {
+    manifest: { type: "string" },
+    "generated-dir": { type: "string" },
+  },
+});
+if (Boolean(values.manifest) !== Boolean(values["generated-dir"]))
+  throw new Error("alternate builds need both --manifest and --generated-dir");
 const manifest = JSON.parse(
   fs.readFileSync(
-    args[1] ?? path.join(root, ".svelte-kit/output/client/.vite/manifest.json"),
+    values.manifest ??
+      path.join(root, ".svelte-kit/output/client/.vite/manifest.json"),
     "utf8"
   )
 );
@@ -28,6 +35,36 @@ const entries = ["entry/app", "entry/start", "nodes/0"].map((name) => {
     throw new Error(`expected one startup entry named ${name}`);
   return keys[0];
 });
+const generatedNodes = path.join(
+  values["generated-dir"] ??
+    path.join(root, ".svelte-kit/generated/client-optimized"),
+  "nodes"
+);
+const generatedSources = fs
+  .readdirSync(generatedNodes)
+  .filter((file) => file.endsWith(".js"))
+  .map((file) => ({
+    file,
+    source: fs.readFileSync(path.join(generatedNodes, file), "utf8"),
+  }));
+for (const sourcePath of [
+  "src/routes/+page.svelte",
+  "src/routes/[...appPath]/+layout.ts",
+  "src/routes/[...appPath]/+page.svelte",
+]) {
+  const nodes = generatedSources.filter(({ source }) =>
+    source.includes(sourcePath)
+  );
+  if (nodes.length !== 1)
+    throw new Error(`expected one generated node for ${sourcePath}`);
+  const name = `nodes/${path.basename(nodes[0].file, ".js")}`;
+  const keys = Object.keys(manifest).filter(
+    (key) => manifest[key].isEntry && manifest[key].name === name
+  );
+  if (keys.length !== 1)
+    throw new Error(`expected one manifest entry for ${sourcePath} (${name})`);
+  entries.push(keys[0]);
+}
 const lazyChunks = [
   "vendor-three",
   "vendor-backgrounds",
@@ -63,6 +100,6 @@ if (failures.length) {
   process.exitCode = 1;
 } else {
   console.log(
-    `Startup graph: ${closure.size} chunks; Three, backgrounds, media export and audio inference stay lazy.`
+    `Startup graph (common, home and app shell): ${closure.size} chunks; Three, backgrounds, media export and audio inference stay lazy.`
   );
 }
