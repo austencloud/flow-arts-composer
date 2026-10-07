@@ -78,8 +78,10 @@
   // The page has one sequence. The hero's live draws write it until the
   // visitor builds or generates one further down; after that, last write
   // wins. The baked opening keeps the lower demonstrations usable before the
-  // hero has drawn anything live.
-  let pageSequence = $state(openingPageSequence(FALLBACK_DEMO));
+  // hero has drawn anything live. Raw, not deep: every write replaces the
+  // whole object, and the tunnel compares the sequence it receives by
+  // reference, so a proxy would make it re-prepare the same sequence.
+  let pageSequence = $state.raw(openingPageSequence(FALLBACK_DEMO));
 
   function carryFrom(source: PageSequenceSource) {
     return (next: SequenceData) => {
@@ -103,11 +105,28 @@
     });
   });
 
-  // The hero stops rolling on its own once the visitor touches it or moves
-  // on to Construct, so the word they saw is the word the page carries.
+  // The hero stops rolling on its own once the visitor touches it or leaves
+  // it, so the word they saw is the word the page carries.
   function holdHero(): void {
     heroAct.hold();
   }
+
+  // The stage keeps the next stop inside the window so it loads early, so
+  // "near Construct" would hold the hero at load. The reader has left the
+  // hero when its stop is no longer the one being read: scrolled past on
+  // the plain page, or no longer the stage's current stop (the stage takes
+  // its pointer events). A deep link or a restored scroll arrives already
+  // past it, so the observer's first real report holds too; only the
+  // synchronous report made before observation starts is ignored.
+  function holdWhenHeroLeaves(node: HTMLElement) {
+    let observing = false;
+    const handle = observeComposerStopVisibility(node, (visible) => {
+      if (observing && !visible) holdHero();
+    });
+    observing = true;
+    return handle;
+  }
+
   let selectedProp = $state<PropType>(PropType.STAFF);
   // Appearance and colors stay with this public page's prop choice. There is
   // no app settings service here, so writing to it would lose these edits.
@@ -376,10 +395,10 @@
       });
   }
 
-  const activateConstruct = activateNear("making", () => {
-    constructActive = true;
-    holdHero();
-  });
+  const activateConstruct = activateNear(
+    "making",
+    () => (constructActive = true)
+  );
   const activateGenerate = activateNear(
     "generating",
     () => (generateActive = true)
@@ -539,6 +558,7 @@
     class="opening"
     aria-labelledby="composer-title"
     style:view-transition-name="launchpad-composer"
+    use:holdWhenHeroLeaves
   >
     <div class="opening-copy">
       <h1 id="composer-title">Flow Arts <span>Composer</span></h1>
@@ -1026,14 +1046,14 @@
      out of the page picture and draw them undimmed above the backdrop until
      the move ends. Every name on these pages is set inline. */
   :global(
-      html.composer-3d-portal-morph
-        [style*="view-transition-name"]:not(
-          .portal-window,
-          .portal-caption,
-          .portal-frame,
-          .portal-close
-        )
-    ) {
+    html.composer-3d-portal-morph
+      [style*="view-transition-name"]:not(
+        .portal-window,
+        .portal-caption,
+        .portal-frame,
+        .portal-close
+      )
+  ) {
     view-transition-name: none !important;
   }
 

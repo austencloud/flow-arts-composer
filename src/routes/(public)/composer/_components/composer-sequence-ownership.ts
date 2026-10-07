@@ -21,8 +21,11 @@ export function openingPageSequence(opening: SequenceData): PageSequence {
 }
 
 /** Last write wins. A missing sequence never replaces the current one, and
- * the same sequence from the same source returns the same state object so a
- * reactive effect that carries it does not loop. */
+ * the same sequence from the same source returns the same state object so
+ * readers are not notified for nothing. The reducer cannot tell a stale
+ * writer firing again from a new write, so each writer must fire only on
+ * a genuinely new value; the page's hero effect reads only the live draw
+ * and writes untracked. */
 export function carryPageSequence(
   state: PageSequence,
   source: PageSequenceSource,
@@ -41,8 +44,13 @@ export function featuredCaption(source: PageSequenceSource): string {
     case "generate":
     case "tunnel":
       return "The sequence you generated.";
-    default:
+    case "opening":
+    case "hero":
       return "The sequence playing above.";
+    default: {
+      const unknown: never = source;
+      return unknown;
+    }
   }
 }
 
