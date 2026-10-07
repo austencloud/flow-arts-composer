@@ -18,6 +18,7 @@
   import { onDestroy, onMount, untrack, type Snippet } from "svelte";
   import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
   import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
+  import ComposerWordRow from "./ComposerWordRow.svelte";
   import FilterChipBase from "$lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
   import TunnelArtView from "$lib/shared/sequence-viewer/tunnel/TunnelArtView.svelte";
   import TunnelPictographStrip from "$lib/shared/sequence-viewer/tunnel/TunnelPictographStrip.svelte";
@@ -379,6 +380,7 @@
 {#if layout === "band"}
   <div class="tunnel-demo band">
     <div class="band-stage">
+      <ComposerWordRow word={sequence.word ?? ""} {propControl} />
       {@render stage()}
       <div class="tunnel-notation">
         <div class="notation-caption">
@@ -420,7 +422,6 @@
         >
           <i class="fas fa-border-all" aria-hidden="true"></i>
         </PanelButton>
-        <div class="band-prop-control">{@render propControl?.()}</div>
       </div>
     </div>
     <div class="band-controls">

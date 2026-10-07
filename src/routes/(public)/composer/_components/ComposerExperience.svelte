@@ -54,6 +54,7 @@
   } from "./composer-sequence-ownership";
   import type { ComposerPropAppearance } from "./composer-prop-appearance";
   import ProjectStory from "./ProjectStory.svelte";
+  import ComposerWordRow from "./ComposerWordRow.svelte";
 
   function trackOpenComposer(): void {
     trackCtaClick("hero", {
@@ -749,6 +750,9 @@
     use:activateViewer
   >
     <h2 id="viewer-title">See it in 3D</h2>
+
+    <!-- The performers carry their own props in 3D, so the row is the word alone. -->
+    <ComposerWordRow word={pageSequence.sequence.word ?? ""} />
 
     <div class="viewer-output">
       <div class="product-frame wide-frame">
