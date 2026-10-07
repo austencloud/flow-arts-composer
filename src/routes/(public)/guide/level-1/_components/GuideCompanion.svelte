@@ -81,7 +81,6 @@
   import { guideTurnDisplayWord } from "../_data/guide-turn-display-word";
   import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
   import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-  import { DEFAULT_PROP_LOOK } from "$lib/shared/pictograph/prop/domain/prop-look";
   import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
   import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
 
@@ -518,7 +517,7 @@
         externalBpm={bpm}
         leftPropType={propType}
         rightPropType={propType}
-        propLook={isCodexMode ? DEFAULT_PROP_LOOK : undefined}
+        propLook={isCodexMode ? "pictograph" : undefined}
         {showPlacementGlyph}
         onStepChange={onStep}
       />
