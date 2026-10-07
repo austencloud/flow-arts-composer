@@ -23,6 +23,10 @@
   import { simplifyRepeatedWord } from "$lib/shared/foundation/utils/word-simplifier";
   import { getTipPointsBaseline } from "$lib/shared/animation-engine/domain/types/prop-tip-points";
   import { engineAlignScale } from "$lib/shared/mandala/services/engine-align";
+  import {
+    mandalaJoinReach,
+    sequenceMandalaHandOffsets,
+  } from "$lib/shared/mandala/services/mandala-grid-join";
   import { settingsService } from "$lib/shared/settings/state/settings-state.svelte";
   import { createAnimationScope } from "$lib/shared/animation-engine/state/animation-scope.svelte";
   import { resolveRecordedPropConfig } from "$lib/shared/foundation/services/recorded-prop-intent";
@@ -212,7 +216,13 @@
    * 150/950 of its viewBox. Left alone the overlay reads ~1.6x too wide for a
    * staff. Same correction the VTG lab's export overlay already applies.
    */
-  const overlayAlign = $derived(engineAlignScale(overlayTipDx));
+  // A joined sequence's floor draws each hand around its own grid, as the
+  // animation over it does; the pair's reach joins the fit, so it joins the
+  // alignment too.
+  const overlayHandOffsets = $derived(sequenceMandalaHandOffsets(sequence));
+  const overlayAlign = $derived(
+    engineAlignScale(overlayTipDx, mandalaJoinReach(overlayHandOffsets))
+  );
 
   function onEnter() {
     liveAtEnter = live;
@@ -313,6 +323,7 @@
               rightPropType={seqPropTypes.right}
               primaryPropColors={viewingPresentation.primaryPropColors}
               tipDx={overlayTipDx}
+              handOffsets={overlayHandOffsets}
               size={320}
             />
           </div>

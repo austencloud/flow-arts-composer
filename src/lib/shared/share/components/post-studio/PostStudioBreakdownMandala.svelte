@@ -2,6 +2,7 @@
   import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
   import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
   import { MandalaPathPreparer } from "$lib/shared/mandala/services/mandala-path-preparer";
+  import { sequenceMandalaHandOffsets } from "$lib/shared/mandala/services/mandala-grid-join";
   import { DEFAULT_TRAIL_SETTINGS } from "$lib/shared/animation-engine/domain/types/trail-types";
 
   let {
@@ -22,6 +23,10 @@
   let clientWidth = $state(0);
   let clientHeight = $state(0);
   const preparer = new MandalaPathPreparer();
+  // Joined grids: each hand's figure sits on its own grid, shifted the way the
+  // animation beside it shifts its props (mandala units, drawn at the same
+  // engine-aligned scale, so the pair needs no refit).
+  const handOffsets = $derived(sequenceMandalaHandOffsets(sequence));
 
   // Both the small strip and the enlarged detail use the same sequence clock.
   // Drawing only when that clock or the box changes avoids a second animation
@@ -74,6 +79,11 @@
     context.lineCap = "round";
     context.lineJoin = "round";
     for (const path of prepared.paths) {
+      const offset = handOffsets?.[path.hand];
+      if (offset) {
+        context.save();
+        context.translate(offset.x, offset.y);
+      }
       // The complete path gives the mandala its shape; its bright leading
       // portion records the trail already travelled in this repetition.
       context.strokeStyle = path.color;
@@ -83,6 +93,7 @@
       context.globalAlpha = 1;
       context.setLineDash([path.totalLength * progress, path.totalLength]);
       context.stroke(path.path2d);
+      if (offset) context.restore();
     }
     context.setLineDash([]);
     context.globalAlpha = 1;

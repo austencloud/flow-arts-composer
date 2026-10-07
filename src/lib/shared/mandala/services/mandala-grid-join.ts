@@ -82,3 +82,21 @@ export function mandalaHandOffsetsKey(
   const { left, right } = offsets;
   return `${left.x},${left.y},${right.x},${right.y}`;
 }
+
+/**
+ * Each hand's figure offset for a whole sequence: the join it carries, lined
+ * up with the grid it is drawn on. Null for an unjoined sequence. Surfaces
+ * that draw a sequence's mandala pass this as `handOffsets` so a joined
+ * sequence shows joined everywhere.
+ */
+export function sequenceMandalaHandOffsets(
+  sequence:
+    | { readonly conjoined?: unknown; readonly gridMode?: unknown }
+    | null
+    | undefined
+): MandalaHandOffsets | null {
+  if (!sequence) return null;
+  const gridMode =
+    typeof sequence.gridMode === "string" ? sequence.gridMode : null;
+  return mandalaGridJoinOffsets(sequence.conjoined, gridMode);
+}
