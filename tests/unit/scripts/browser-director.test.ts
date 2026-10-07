@@ -128,4 +128,40 @@ describe("createDirector shot", () => {
     );
     expect(proof.failure).toContain("button missing");
   });
+
+  it("still writes capture.json when Chrome dies during the shot", async () => {
+    const { cdp, page } = fakes();
+    const crashed = () =>
+      Object.assign(new Error("The page crashed."), { code: "CDP_ENDED" });
+    let dead = false;
+    const answer = cdp.send.getMockImplementation()!;
+    cdp.send.mockImplementation(
+      async (method: string, params: Record<string, unknown> = {}) => {
+        if (dead) throw crashed();
+        return answer(method, params);
+      }
+    );
+    page.url = async () => {
+      throw crashed();
+    };
+    page.snapshot = async () => {
+      throw crashed();
+    };
+    const director = createDirector(page, cdp, root);
+    await expect(
+      director.shot("crash", 0.05, async () => {
+        dead = true;
+        throw crashed();
+      })
+    ).rejects.toThrow("The page crashed.");
+    const proof = JSON.parse(
+      await fs.readFile(
+        path.join(root, "production", "frames", "crash", "capture.json"),
+        "utf8"
+      )
+    );
+    expect(proof.failure).toContain("The page crashed.");
+    expect(proof.url).toBeNull();
+    expect(proof.snapshot).toBeNull();
+  });
 });

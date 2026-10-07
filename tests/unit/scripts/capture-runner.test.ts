@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  cliFailure,
   outputSize,
   parseCaptureArgs,
   validateCaptureScript,
@@ -103,5 +104,60 @@ describe("validateCaptureScript", () => {
     const script = good();
     script.viewport.width = 433;
     expect(() => validateCaptureScript(script, "builder")).toThrow(/even/);
+  });
+});
+
+describe("cliFailure", () => {
+  const printed = (edit: object) =>
+    JSON.stringify({ media: "captures/a.2.mp4", take: "take-1", edit });
+  it("gives the error the CLI printed", () => {
+    expect(
+      cliFailure({
+        code: 1,
+        stdout: "",
+        stderr: "Editor session is not active.\n",
+      })
+    ).toBe("Editor session is not active.");
+  });
+  it("gives the editor's reason when it refused the edit", () => {
+    expect(
+      cliFailure({
+        code: 1,
+        stdout: printed({
+          status: "failed",
+          message: "The editor changed before the edit arrived.",
+        }),
+        stderr: "",
+      })
+    ).toBe("The editor changed before the edit arrived.");
+  });
+  it("gives the editor's reason even when Node printed a warning", () => {
+    expect(
+      cliFailure({
+        code: 1,
+        stdout: printed({
+          status: "failed",
+          message: "Finish the current edit first.",
+        }),
+        stderr: "(node:4120) Warning: something else\n",
+      })
+    ).toBe("Finish the current edit first.");
+  });
+  it("says how to check an edit the editor has not applied yet", () => {
+    expect(
+      cliFailure({
+        code: 1,
+        stdout: printed({
+          status: "pending",
+          note: "The editor has not applied it yet. Check with: x",
+        }),
+        stderr: "",
+      })
+    ).toMatch(/not applied it yet/);
+  });
+  it("names the exit code when nothing was printed", () => {
+    expect(cliFailure({ code: 3, stdout: "", stderr: "" })).toBe(
+      "post-project.mjs exited with code 3."
+    );
   });
 });

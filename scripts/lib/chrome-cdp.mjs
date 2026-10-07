@@ -29,23 +29,59 @@ export const delay = (milliseconds) =>
 /**
  * Open a CDP session against `webSocketDebuggerUrl`. The returned `send`
  * resolves with the command result, or rejects with the protocol error.
+ * See `cdpClient` for the options.
  */
-export async function connect(
-  webSocketDebuggerUrl,
-  { bufferEvents = [], eventCapacity } = {}
-) {
+export async function connect(webSocketDebuggerUrl, options = {}) {
   const socket = new WebSocket(webSocketDebuggerUrl);
   await new Promise((resolveConnection, rejectConnection) => {
     socket.addEventListener("open", resolveConnection, { once: true });
     socket.addEventListener("error", rejectConnection, { once: true });
   });
+  return cdpClient(socket, options);
+}
 
+/** `WebSocket.OPEN`. */
+const OPEN = 1;
+
+/**
+ * The CDP client on an open WebSocket.
+ *
+ * - `bufferEvents`: event names to keep for `readEvents`.
+ * - `commandTimeoutMs`: how long a command may go unanswered before it
+ *   rejects. Unset, a command waits as long as the connection lasts.
+ *
+ * A closed connection, or a page that crashed or was detached, answers
+ * nothing more: every waiting command rejects, and so does every later
+ * one, with an error whose `code` is "CDP_ENDED".
+ */
+export function cdpClient(
+  socket,
+  { bufferEvents = [], eventCapacity, commandTimeoutMs } = {}
+) {
   let nextId = 1;
+  let ended = null;
   const pending = new Map();
   const buffer = createEventBuffer({ capacity: eventCapacity });
+  const endedError = () =>
+    Object.assign(new Error(ended ?? "The DevTools connection closed."), {
+      code: "CDP_ENDED",
+    });
+  const end = (reason) => {
+    ended ??= reason;
+    for (const { reject, timer } of pending.values()) {
+      clearTimeout(timer);
+      reject(endedError());
+    }
+    pending.clear();
+  };
   socket.addEventListener("message", (event) => {
     const message = JSON.parse(event.data);
     if (message.id === undefined && message.method !== undefined) {
+      // Neither closes the connection, but the page answers nothing more.
+      if (message.method === "Inspector.targetCrashed")
+        end("The page crashed.");
+      if (message.method === "Inspector.detached")
+        end(`DevTools was detached from the page (${message.params?.reason}).`);
       if (bufferEvents.includes(message.method))
         buffer.push(message.method, message.params);
       return;
@@ -53,24 +89,35 @@ export async function connect(
     const resolver = pending.get(message.id);
     if (!resolver) return;
     pending.delete(message.id);
+    clearTimeout(resolver.timer);
     if (message.error) resolver.reject(new Error(message.error.message));
     else resolver.resolve(message.result);
   });
-  // A closed tab or a browser that quit answers nothing more, so nothing
-  // waits on it.
-  socket.addEventListener("close", () => {
-    for (const { reject } of pending.values())
-      reject(new Error("The DevTools connection closed."));
-    pending.clear();
-  });
+  socket.addEventListener("close", () =>
+    end("The DevTools connection closed.")
+  );
 
   return {
     async send(method, params = {}) {
+      // A closed WebSocket drops what it is sent without an error.
+      if (ended || socket.readyState !== OPEN) throw endedError();
       const id = nextId++;
       const response = new Promise((resolveResponse, rejectResponse) => {
+        const timer =
+          commandTimeoutMs > 0
+            ? setTimeout(() => {
+                pending.delete(id);
+                rejectResponse(
+                  new Error(
+                    `Chrome did not answer ${method} within ${commandTimeoutMs} ms.`
+                  )
+                );
+              }, commandTimeoutMs)
+            : undefined;
         pending.set(id, {
           resolve: resolveResponse,
           reject: rejectResponse,
+          timer,
         });
       });
       socket.send(JSON.stringify({ id, method, params }));
@@ -150,8 +197,9 @@ export async function evaluate(client, expression) {
 
 /**
  * Poll `expression` until it returns something truthy. Resolves with that
- * value. Throws on timeout, naming the expression, because a bake that hangs
- * silently is indistinguishable from a slow scene.
+ * value. Throws on timeout, naming the expression and the last error it
+ * threw, because a bake that hangs silently is indistinguishable from a slow
+ * scene. A connection that has ended fails at once.
  */
 export async function waitFor(
   client,
@@ -159,11 +207,18 @@ export async function waitFor(
   { timeoutMs = 60000, intervalMs = 250, label = expression } = {}
 ) {
   const deadline = Date.now() + timeoutMs;
+  let lastError = null;
   for (;;) {
-    const value = await evaluate(client, expression).catch(() => null);
+    const value = await evaluate(client, expression).catch((cause) => {
+      if (cause?.code === "CDP_ENDED") throw cause;
+      lastError = cause;
+      return null;
+    });
     if (value) return value;
     if (Date.now() > deadline) {
-      throw new Error(`Timed out after ${timeoutMs}ms waiting for: ${label}`);
+      throw new Error(
+        `Timed out after ${timeoutMs}ms waiting for: ${label}${lastError ? ` (last error: ${lastError.message})` : ""}`
+      );
     }
     await delay(intervalMs);
   }
@@ -182,9 +237,14 @@ export async function setViewport(
   });
 }
 
-/** Navigate and resolve once the load event has fired. */
+/**
+ * Navigate and resolve once the load event has fired. A page Chrome could
+ * not load, such as one from a dev server that is not running, throws
+ * instead of loading Chrome's error page.
+ */
 export async function navigate(client, url) {
-  await client.send("Page.navigate", { url });
+  const { errorText } = (await client.send("Page.navigate", { url })) ?? {};
+  if (errorText) throw new Error(`Chrome could not load ${url}: ${errorText}`);
   await waitFor(client, "document.readyState === 'complete'", {
     label: `load of ${url}`,
   });
@@ -207,9 +267,11 @@ async function browserEndpoint(port) {
  */
 export async function openTab(
   url,
-  { port = DEFAULT_PORT, bufferEvents, eventCapacity } = {}
+  { port = DEFAULT_PORT, bufferEvents, eventCapacity, commandTimeoutMs } = {}
 ) {
-  const browser = await connect(await browserEndpoint(port));
+  const browser = await connect(await browserEndpoint(port), {
+    commandTimeoutMs,
+  });
   let targetId;
   try {
     ({ targetId } = await browser.send("Target.createTarget", { url }));
@@ -236,9 +298,12 @@ export async function openTab(
   const page = await connect(target.webSocketDebuggerUrl, {
     bufferEvents,
     eventCapacity,
+    commandTimeoutMs,
   });
   await page.send("Page.enable");
   await page.send("Runtime.enable");
+  // Sends Inspector.targetCrashed if the page crashes.
+  await page.send("Inspector.enable");
 
   return {
     ...page,
@@ -302,12 +367,17 @@ export async function launchHeadlessChrome({
       await exited;
     }
     // Chrome's helpers can hold profile files for a moment after it exits.
+    // One that stays held is left in the temp folder; the recording is fine.
     await rm(profile, {
       recursive: true,
       force: true,
       maxRetries: 10,
       retryDelay: 200,
-    });
+    }).catch((cause) =>
+      console.warn(
+        `Could not delete the headless Chrome profile ${profile}: ${cause.message}`
+      )
+    );
   };
   // Chrome writes the port it picked to this file once DevTools listens.
   const portFile = join(profile, "DevToolsActivePort");

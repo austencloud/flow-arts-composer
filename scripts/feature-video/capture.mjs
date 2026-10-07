@@ -28,8 +28,11 @@ import { toolPath } from "./media-import.mjs";
  * signed-out profile and closed afterwards. It is never your browser and never
  * the shared 9222 browser.
  *
- * A capture that fails part way exits with an error, keeps its frames in
- * `<folder>/captures/frames/<ID>/`, and leaves the project untouched.
+ * A capture that fails while it records exits with an error, keeps its
+ * frames in `<folder>/captures/frames/<ID>/`, writes no video and leaves the
+ * project untouched. One that records but cannot be put in the post keeps
+ * its video and says how to link it once the reason is fixed. Run one
+ * capture of an id at a time: two would share its frames folder.
  */
 
 const run = promisify(execFile);
@@ -37,6 +40,12 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 const CLI = path.resolve(here, "../post-project.mjs");
 const ENCODER = path.resolve(here, "../demo-capture/encode-frames.py");
 const LOOPBACK = ["localhost", "127.0.0.1", "[::1]"];
+/**
+ * How long Chrome may leave one command unanswered. A page stuck in a loop
+ * then fails the run instead of hanging it; a crashed one fails at once.
+ * Long enough for a cold dev server's first page.
+ */
+const COMMAND_TIMEOUT_MS = 60000;
 
 export function parseCaptureArgs(argv) {
   const option = (name) => {
@@ -113,12 +122,38 @@ export function validateCaptureScript(script, id) {
   return script;
 }
 
+/**
+ * Why a post-project.mjs run failed: when an editor refused or never applied
+ * the edit, what it printed about the edit, even if Node also printed a
+ * warning; otherwise the error it printed.
+ */
+export function cliFailure(failed) {
+  const printed = (() => {
+    try {
+      return JSON.parse(failed.stdout ?? "");
+    } catch {
+      return null;
+    }
+  })();
+  const edit = printed?.edit;
+  return (
+    (edit?.status === "failed" ? edit.message : edit?.note) ||
+    failed.stderr?.trim() ||
+    `post-project.mjs exited with code ${failed.code ?? "unknown"}.`
+  );
+}
+
 async function cli(cliUrl, ...args) {
-  const { stdout } = await run(process.execPath, [
-    CLI,
-    ...args,
-    ...(cliUrl ? ["--url", cliUrl] : []),
-  ]);
+  let stdout;
+  try {
+    ({ stdout } = await run(process.execPath, [
+      CLI,
+      ...args,
+      ...(cliUrl ? ["--url", cliUrl] : []),
+    ]));
+  } catch (failed) {
+    throw new Error(cliFailure(failed));
+  }
   return stdout.trim() ? JSON.parse(stdout) : undefined;
 }
 
@@ -129,6 +164,11 @@ export async function runCapture({ feature, capture, origin, cliUrl }) {
     "captures",
     `${capture}.capture.mjs`
   );
+  await fs.access(scriptFile).catch(() => {
+    throw new Error(
+      `No capture script at ${scriptFile}. Write one first; see docs/development/post-studio-manifest-bridge.md.`
+    );
+  });
   const script = validateCaptureScript(
     (await import(pathToFileURL(scriptFile).href)).default,
     capture
@@ -149,6 +189,7 @@ export async function runCapture({ feature, capture, origin, cliUrl }) {
     const tab = await openTab("about:blank", {
       port: chrome.port,
       bufferEvents: ["Page.screencastFrame"],
+      commandTimeoutMs: COMMAND_TIMEOUT_MS,
     });
     try {
       await setViewport(tab, {
@@ -195,16 +236,24 @@ export async function runCapture({ feature, capture, origin, cliUrl }) {
     "--ffmpeg",
     toolPath("ffmpeg"),
   ]);
-  const linked = await cli(
-    cliUrl,
+  const link = [
     "link-capture",
     "--feature",
     feature,
     "--capture",
     capture,
     "--media",
-    media
-  );
+    media,
+  ];
+  let linked;
+  try {
+    linked = await cli(cliUrl, ...link);
+  } catch (cause) {
+    const retry = [...link, ...(cliUrl ? ["--url", cliUrl] : [])].join(" ");
+    throw new Error(
+      `${cause.message}\nThe recording is saved as ${output}. Once that is fixed, put it in the post with: node scripts/post-project.mjs ${retry}`
+    );
+  }
   return { media, size, ...linked };
 }
 

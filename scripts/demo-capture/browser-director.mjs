@@ -245,8 +245,12 @@ export function createDirector(page, cdp, root, options = {}) {
     } catch (error) {
       failure = String(error);
     } finally {
-      await pump();
-      await cdp.send("Page.stopScreencast");
+      // A crashed or closed page answers nothing more. The shot then fails
+      // with the first reason, and its frames and capture.json are kept.
+      await pump().catch((error) => (failure ??= String(error)));
+      await cdp
+        .send("Page.stopScreencast")
+        .catch((error) => (failure ??= String(error)));
       recording = null;
     }
     const proof = {
@@ -256,8 +260,12 @@ export function createDirector(page, cdp, root, options = {}) {
       events,
       frames,
       failure,
-      url: await page.url(),
-      snapshot: await page.snapshot(),
+      url: await Promise.resolve()
+        .then(() => page.url())
+        .catch(() => null),
+      snapshot: await Promise.resolve()
+        .then(() => page.snapshot())
+        .catch(() => null),
     };
     await fs.writeFile(
       path.join(dir, "capture.json"),
