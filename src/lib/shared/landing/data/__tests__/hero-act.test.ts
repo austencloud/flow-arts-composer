@@ -439,6 +439,29 @@ describe("createHeroAct", () => {
     expect(act.propType).toBe(PropType.FAN);
     expect(act.rerolling).toBe(false);
   });
+
+  it("hold() stops the loop-boundary handoff but leaves the dice press working", async () => {
+    const act = createStaffFirstAct();
+    act.start();
+    await flushPrefetch(); // FAN pre-generation lands
+    const heldId = act.sequence?.id;
+    expect(act.held).toBe(false);
+
+    act.hold();
+    act.hold(); // idempotent
+    expect(act.held).toBe(true);
+
+    for (let i = 0; i < PASSES_PER_SEQUENCE + 2; i++) {
+      expect(act.offerSequenceBoundary()).toBeNull();
+    }
+    expect(act.sequence?.id).toBe(heldId);
+    expect(act.propType).toBe(PropType.STAFF);
+
+    await act.advanceNow();
+    expect(act.sequence?.id).not.toBe(heldId);
+    expect(act.propType).toBe(PropType.FAN);
+    expect(act.held).toBe(true);
+  });
 });
 
 describe("createHeroAct — shape-matrix source", () => {
