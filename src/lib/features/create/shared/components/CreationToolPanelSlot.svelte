@@ -19,6 +19,7 @@
   import { getCreateModuleContext } from "../context/create-module-context";
   import LazyMount from "$lib/shared/components/LazyMount.svelte";
   import ConstructTabContent from "./ConstructTabContent.svelte";
+  import { sequenceGridJoin } from "$lib/shared/grid-join/sequence-grid-join";
   // GeneratePanel (136-file subtree), AssembleToolPanel (21), FuseTab (235!)
   // and ShapeEngineTab are deferred via LazyMount — only the active build-mode
   // tab's chunk loads. Construct is the default tab so ConstructTabContent
@@ -114,6 +115,10 @@
       GridMode.DIAMOND
     );
   });
+  // The join is part of the sequence, so the pickers draw their tiles on it too.
+  const sequenceJoin = $derived(
+    sequenceGridJoin(activeSequenceState.currentSequence)
+  );
   const currentStartPlacement = $derived(
     activeSequenceState.currentSequence?.startingPlacement ??
       activeSequenceState.currentSequence?.startPlacement ??
@@ -259,6 +264,7 @@
                 startPlacementState={constructTabState.startPlacementStateService}
                 currentSequence={currentSequenceData}
                 currentGridMode={sequenceGridMode}
+                gridJoin={sequenceJoin}
                 initialStartPlacement={currentStartPlacement}
                 lockStartGridMode={isEditingExistingStart}
                 startPlacementValidationMessage={constructTabState.error}

@@ -3,6 +3,8 @@
   import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
   import type { HapticFeedback } from "$lib/shared/application/services/haptic-feedback";
   import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
+  import type { GridJoin } from "@tka/tka-types";
+  import { gridJoinCellResolver } from "@tka/render-core";
   import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
   import { getLetterBorderColorSafe } from "$lib/shared/pictograph/shared/utils/letter-border-utils";
   import PictographContainer from "$lib/shared/pictograph/shared/components/PictographContainer.svelte";
@@ -15,6 +17,7 @@
     onPictographSelect,
     leftPropTypeOverride = undefined,
     rightPropTypeOverride = undefined,
+    gridJoin = null,
   }: {
     pictographDataSet: PictographData[];
     selectedPictograph?: PictographData | null;
@@ -22,7 +25,12 @@
     /** Explicit prop types for demo/preview rendering (bypasses global settings). */
     leftPropTypeOverride?: PropType;
     rightPropTypeOverride?: PropType;
+    /** The sequence's grid join, drawn on the tiles only; selection hands
+     *  back the plain placement. */
+    gridJoin?: GridJoin | null;
   } = $props();
+
+  const withGridJoin = $derived(gridJoinCellResolver({ conjoined: gridJoin }));
 
   // Animation disabled - placements appear instantly for speed
   let animatedPictographs = $state(new Set<string>());
@@ -100,7 +108,9 @@
       <!-- Render pictograph using Pictograph component -->
       <div class="pictograph-wrapper">
         <PictographContainer
-          {pictographData}
+          pictographData={gridJoin
+            ? withGridJoin(pictographData)
+            : pictographData}
           {leftPropTypeOverride}
           {rightPropTypeOverride}
           onReady={() =>
