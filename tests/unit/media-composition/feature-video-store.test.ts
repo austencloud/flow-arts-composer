@@ -6,6 +6,7 @@ import {
   createFeatureVideoStore,
   type FeatureVideoStore,
 } from "$lib/server/feature-video-store";
+import { featureVideoMediaUrl } from "$lib/shared/media-composition/domain/feature-video";
 import { tempFeatureRoot } from "./feature-video-test-helpers";
 
 const NOW = 1_780_000_000_000;
@@ -286,5 +287,110 @@ describe("listing", () => {
       ],
       unreadable: ["broken"],
     });
+  });
+});
+
+describe("named edits", () => {
+  it("applies them as the next revision, and writes nothing when they change nothing", async () => {
+    await store.create(promo, NOW);
+    expect(
+      await store.applyOps(
+        "promo",
+        [{ op: "background", background: "blur" }],
+        NOW + 1
+      )
+    ).toMatchObject({ status: "applied", revision: 2, savedAt: NOW + 1 });
+    expect((await store.read("promo")).file.project.background).toBe("blur");
+    expect(
+      await store.applyOps(
+        "promo",
+        [{ op: "background", background: "blur" }],
+        NOW + 2
+      )
+    ).toMatchObject({ status: "unchanged", revision: 2 });
+    expect(await fs.readdir(path.join(root, "promo", "history"))).toEqual([
+      "r000001.json",
+    ]);
+  });
+
+  it("refuses an edit that fails and leaves the file alone", async () => {
+    await store.create(promo, NOW);
+    const refused = await refusal(() =>
+      store.applyOps("promo", [{ op: "remove-take", take: "nope" }], NOW + 1)
+    );
+    expect(refused.status).toBe(400);
+    expect(refused.message).toContain('No take "nope"');
+    expect(await store.revision("promo")).toBe(1);
+  });
+});
+
+describe("duplicating", () => {
+  async function promoWithTake() {
+    await store.create(promo, NOW);
+    await fs.writeFile(
+      path.join(root, "promo", "media", "footage", "a.mp4"),
+      "video"
+    );
+    const url = featureVideoMediaUrl("promo", "footage/a.mp4");
+    await store.applyOps(
+      "promo",
+      [{ op: "add-take", url, durationSeconds: 4, append: true }],
+      NOW + 1
+    );
+    return url;
+  }
+
+  it("copies the media and points the copy at its own files", async () => {
+    const original = await promoWithTake();
+    const { file, folder } = await store.duplicate(
+      "promo",
+      { slug: "promo-30s" },
+      NOW + 5
+    );
+    const moved = featureVideoMediaUrl("promo-30s", "footage/a.mp4");
+    expect(file).toMatchObject({
+      slug: "promo-30s",
+      title: "Promo 1.0 (copy)",
+      revision: 1,
+      savedAt: NOW + 5,
+    });
+    expect(file.project.takes[0]).toMatchObject({
+      ref: { kind: "linked", url: moved },
+      takeKey: `linked:${moved}`,
+    });
+    expect(
+      await fs.readFile(path.join(folder, "media", "footage", "a.mp4"), "utf8")
+    ).toBe("video");
+    expect(await fs.readdir(path.join(folder, "history"))).toEqual([]);
+    expect((await store.read("promo")).file.project.takes[0]?.ref).toEqual({
+      kind: "linked",
+      url: original,
+    });
+  });
+
+  it("can play the original's media instead of copying it", async () => {
+    const original = await promoWithTake();
+    const { file, folder } = await store.duplicate(
+      "promo",
+      { slug: "promo-cut", title: "Cut", shareMedia: true },
+      NOW + 5
+    );
+    expect(file.title).toBe("Cut");
+    expect(file.project.takes[0]?.ref).toEqual({
+      kind: "linked",
+      url: original,
+    });
+    expect(await fs.readdir(path.join(folder, "media", "footage"))).toEqual([]);
+  });
+
+  it("refuses a name in use and a missing original", async () => {
+    await store.create(promo, NOW);
+    await store.create({ ...promo, slug: "taken" }, NOW);
+    expect(
+      (await refusal(() => store.duplicate("promo", { slug: "taken" }))).status
+    ).toBe(409);
+    expect(
+      (await refusal(() => store.duplicate("missing", { slug: "new" }))).status
+    ).toBe(404);
   });
 });

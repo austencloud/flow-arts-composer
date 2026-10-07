@@ -10,9 +10,14 @@ import {
   FEATURE_VIDEO_MEDIA_FOLDERS,
   FeatureVideoFileSchema,
   isFeatureVideoSlug,
+  rehomeFeatureMediaUrls,
   type FeatureVideoFile,
   type FeatureVideoSummary,
 } from "$lib/shared/media-composition/domain/feature-video";
+import {
+  applyPostProjectOps,
+  type PostProjectOp,
+} from "$lib/shared/media-composition/domain/post-project-ops";
 import {
   POST_CANVAS_RATIOS,
   POST_DEFAULT_CANVAS,
@@ -350,7 +355,122 @@ export function createFeatureVideoStore(
     return { projects, unreadable };
   }
 
-  return { root, folder, create, read, write, revision, list };
+  /**
+   * Named edits applied to the file on disk, for when no editor has the
+   * project open. The batch is one revision; edits that change nothing
+   * write nothing.
+   */
+  function applyOps(
+    slug: string,
+    ops: unknown,
+    now = Date.now()
+  ): Promise<FeatureVideoSaved & { status: "applied" | "unchanged" }> {
+    return serialize(slug, async () => {
+      const current = await readFile(slug);
+      let next: PostProject;
+      try {
+        next = applyPostProjectOps(current.project, ops as PostProjectOp[], {
+          now,
+        });
+      } catch (cause) {
+        throw new FeatureVideoError(
+          cause instanceof Error ? cause.message : String(cause),
+          400
+        );
+      }
+      if (next === current.project || sameContent(next, current.project))
+        return {
+          status: "unchanged" as const,
+          revision: current.revision,
+          savedAt: current.savedAt,
+          fingerprint: fingerprint(current.project),
+        };
+      const parsed = PostProjectSchema.safeParse(next);
+      if (!parsed.success)
+        throw new FeatureVideoError(
+          "Those edits would leave the post invalid.",
+          400
+        );
+      return {
+        status: "applied" as const,
+        ...(await commit(slug, current, parsed.data, now)),
+      };
+    });
+  }
+
+  /**
+   * Copies a project under a new name, such as a 30 s cut of the 60 s
+   * promo. The copy starts at revision 1 with an empty history. It gets its
+   * own copy of the media unless shareMedia is set; then it plays the
+   * original's files, and the original must stay where it is.
+   */
+  async function duplicate(
+    slug: string,
+    input: { slug: string; title?: string; shareMedia?: boolean },
+    now = Date.now()
+  ): Promise<{ file: FeatureVideoFile; folder: string }> {
+    const source = await readFile(slug);
+    const dir = folder(input.slug);
+    const project = {
+      ...(input.shareMedia
+        ? source.project
+        : rehomeFeatureMediaUrls(source.project, slug, input.slug)),
+      updatedAt: now,
+    };
+    const parsed = FeatureVideoFileSchema.safeParse({
+      format: FEATURE_VIDEO_FILE_FORMAT,
+      slug: input.slug,
+      title: (input.title ?? `${source.title} (copy)`).slice(0, 120),
+      revision: 1,
+      savedAt: now,
+      project,
+    });
+    if (!parsed.success)
+      throw new FeatureVideoError(
+        "The copy needs a title of 1 to 120 characters.",
+        400
+      );
+    const file = parsed.data;
+    return serialize(input.slug, async () => {
+      await fs.mkdir(root, { recursive: true });
+      try {
+        await fs.mkdir(dir);
+      } catch (cause) {
+        if (code(cause) === "EEXIST")
+          throw new FeatureVideoError(
+            `A feature video named ${input.slug} already exists.`,
+            409
+          );
+        throw cause;
+      }
+      for (const sub of ["history", "captures", "exports"])
+        await fs.mkdir(path.join(dir, sub), { recursive: true });
+      if (!input.shareMedia)
+        await fs
+          .cp(path.join(folder(slug), "media"), path.join(dir, "media"), {
+            recursive: true,
+          })
+          .catch((cause: unknown) => {
+            if (code(cause) !== "ENOENT") throw cause;
+          });
+      for (const name of FEATURE_VIDEO_MEDIA_FOLDERS)
+        await fs.mkdir(path.join(dir, "media", name), { recursive: true });
+      await writeFile(input.slug, file);
+      return { file, folder: dir };
+    });
+  }
+
+  return {
+    root,
+    folder,
+    create,
+    read,
+    write,
+    revision,
+    list,
+    applyOps,
+    duplicate,
+  };
 }
 
 export type FeatureVideoStore = ReturnType<typeof createFeatureVideoStore>;
