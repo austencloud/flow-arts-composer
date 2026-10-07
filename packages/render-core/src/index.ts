@@ -215,7 +215,23 @@ export {
   calculateArrowPlacement,
   calculateArrowPosition,
   calculateArrowLocation,
+  getArrowAnchorCoordinates,
 } from "./calculations/arrow-placement.js";
+export {
+  defaultPlacementCandidateKeys,
+  letterPlacementGroup,
+} from "./calculations/default-placement-key.js";
+export type {
+  DefaultPlacementKeyInput,
+  PlacementGroup,
+} from "./calculations/default-placement-key.js";
+export {
+  generateTurnsTuple,
+  leftPropRotationState,
+  rightPropRotationState,
+  turnsTupleDirection,
+} from "./calculations/turns-tuple.js";
+export type { TurnsTupleMotion } from "./calculations/turns-tuple.js";
 
 // Arrow rotation
 export { calculateArrowRotation } from "./calculations/arrow-rotation.js";

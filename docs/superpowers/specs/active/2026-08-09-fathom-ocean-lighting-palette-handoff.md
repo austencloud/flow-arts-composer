@@ -1,3 +1,14 @@
+---
+status: active
+value: null
+effort: null
+remaining: "Verify Fathom — Ocean Lighting and Palette Pass against src/lib/shared/3d/environments/scenes/ocean/OceanScene.svelte before resuming implementation. Prior recorded remainder: Verify ocean lighting palette and carried zone-pass debt against current OceanScene and scene config before action."
+depends_on: ""
+plan_path: ""
+tags: []
+last_triaged: 2026-10-07
+work_state: unverified
+---
 # Fathom — Ocean Lighting and Palette Pass
 
 - **Ocean steward:** Fathom

@@ -202,7 +202,6 @@ export const EFFECT_CONTROLS: Record<EffectId, ControlDescriptor[]> = {
     slider("sparkles", "gravity", "Gravity", { tier: "advanced" }),
   ],
   ghost: [
-    { id: "ghost-color", label: "Colors", type: "colorPair", field: "leftColor", pairFields: ["leftColor", "rightColor"], tier: "primary" },
     slider("ghost", "intensity", "Intensity", { tier: "primary" }),
     slider("ghost", "decay", "Persistence", { min: 1, max: 10, step: 0.5, pct: false, tier: "primary" }),
     slider("ghost", "interval", "Density", { tier: "primary" }),

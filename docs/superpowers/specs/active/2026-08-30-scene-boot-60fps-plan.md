@@ -1,3 +1,15 @@
+---
+status: active
+value: null
+effort: null
+work_state: verification
+remaining: Check implemented scene-boot phases against the first-visit performance and visual reveal gates; the checked ledger alone is insufficient.
+depends_on: ''
+plan_path: ''
+tags: []
+last_triaged: '2026-10-07'
+---
+
 # Scene Boot 60FPS — Implementation Plan
 
 Spec: `docs/superpowers/specs/active/2026-08-30-scene-boot-60fps-design.md` (read it first).

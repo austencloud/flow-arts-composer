@@ -6,7 +6,8 @@ remaining: "Code shipped 2026-08-15 in ce9121c91; verification gates 1-2 re-prov
 depends_on: "external: a live admin claim plus an authenticated browser session against production RTDB"
 plan_path: ""
 tags: [admin, presence, analytics, verification-only]
-last_triaged: 2026-09-13
+last_triaged: 2026-10-07
+work_state: blocked
 ---
 
 # Admin User Counts and Multi-Connection Presence

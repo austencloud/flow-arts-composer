@@ -1,3 +1,15 @@
+---
+status: active
+value: null
+effort: null
+work_state: unverified
+remaining: Verify Tunnel cast/stage ownership separation and saved-state migration against the design contract.
+depends_on: ''
+plan_path: ''
+tags: []
+last_triaged: '2026-10-07'
+---
+
 # Tunnel Cast and Stage Separation
 
 **Status:** Approved for implementation on 2026-09-04

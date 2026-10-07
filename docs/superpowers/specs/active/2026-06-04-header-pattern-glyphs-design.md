@@ -2,11 +2,12 @@
 status: active
 value: 3
 effort: M
-remaining: "Body status: Specced, not started"
+remaining: "Verify shared turn/reversal glyph primitives, WordHeader data projection, and video-export parity against current AnimatorCanvas before implementing gaps."
 depends_on: ""
 plan_path: ""
 tags: []
-last_triaged: 2026-07-25
+last_triaged: 2026-10-07
+work_state: unverified
 ---
 # Turn + Reversal Pattern Glyphs in the Animation Header — Design
 

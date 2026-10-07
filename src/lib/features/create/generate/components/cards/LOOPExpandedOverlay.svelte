@@ -5,7 +5,7 @@ Animates forward in z-axis and expands to fill the container space
 <script lang="ts">
   import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
-  import { fly, scale } from "svelte/transition";
+  import { scale } from "svelte/transition";
   import { quintOut } from "svelte/easing";
   import { onMount, tick } from "svelte";
   import type { HapticFeedback } from "$lib/shared/application/services/haptic-feedback";
@@ -25,8 +25,6 @@ Animates forward in z-axis and expands to fill the container space
   import { LOOPType } from "../../circular/domain/models/circular-models";
   import LOOPComponentGrid from "../modals/LOOPComponentGrid.svelte";
   import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
-  import FontAwesomeIcon from "$lib/shared/foundation/ui/FontAwesomeIcon.svelte";
-  import LoopDetailPanel from "./LoopDetailPanel.svelte";
   import LoopOverlayHeader from "./LoopOverlayHeader.svelte";
   import LoopRhythmConfigurator from "./LoopRhythmConfigurator.svelte";
   import LoopSelectionSummary from "./LoopSelectionSummary.svelte";
@@ -50,7 +48,6 @@ Animates forward in z-axis and expands to fill the container space
     entrance = "scale",
     titleId,
     onLoopDisable,
-    layout = "grid",
     rhythm,
     sequenceLength,
     onRhythmChange,
@@ -89,16 +86,13 @@ Animates forward in z-axis and expands to fill the container space
 
   let hapticService: HapticFeedback | null = null;
   let overlayElement: HTMLDivElement;
-  let gridContainerElement = $state<HTMLDivElement>();
   let drawerHeightAnimation: Animation | null = null;
-  let componentRevealFrame: number | null = null;
   let pendingCloseTimer: ReturnType<typeof setTimeout> | null = null;
   // A reopened multi-component combo lands on the Combo screen it was applied
   // from, not back on Single (the overlay remounts per open — props are nulled
   // on close — so mount-time init is the reopen path).
   let isMultiSelectMode = $state(selectedComponents.size > 1);
   let localSelectedComponents = $state(new Set<LOOPComponent>());
-  let detailComponent = $state<LOOPComponent | null>(null);
 
   // Sync local state with prop changes
   $effect(() => {
@@ -129,29 +123,9 @@ Animates forward in z-axis and expands to fill the container space
 
   onMount(() => {
     hapticService = getHapticFeedback();
-    const initialComponents = normalizeReflectionSelection(
-      new Set(selectedComponents)
-    );
-    const lowestExpandedComponent = [
-      LOOPComponent.MIRRORED,
-      LOOPComponent.INVERTED,
-      LOOPComponent.ROTATED,
-    ].find((component) => initialComponents.has(component));
-    if (lowestExpandedComponent && !usesMobileDrawerPresentation()) {
-      void keepExpandedComponentVisible(lowestExpandedComponent);
-    }
-
     return () => {
       drawerHeightAnimation?.cancel();
-      drawerHeightAnimation = null;
-      if (componentRevealFrame !== null) {
-        cancelAnimationFrame(componentRevealFrame);
-        componentRevealFrame = null;
-      }
-      if (pendingCloseTimer !== null) {
-        clearTimeout(pendingCloseTimer);
-        pendingCloseTimer = null;
-      }
+      if (pendingCloseTimer !== null) clearTimeout(pendingCloseTimer);
     };
   });
 
@@ -163,7 +137,7 @@ Animates forward in z-axis and expands to fill the container space
       isMultiSelectMode,
       rhythm: localRhythm,
       rhythmControlsAvailable: !!rhythm && !!onRhythmChange,
-      detailComponent,
+      detailComponent: null,
       sequenceLength,
       guestMaxLength,
       handRelationship,
@@ -194,17 +168,6 @@ Animates forward in z-axis and expands to fill the container space
   const quarteredAvailable = $derived(overlayModel.quarteredAvailable);
   const selectionCount = $derived(overlayModel.selectionCount);
   const configurableComponents = $derived(overlayModel.configurableComponents);
-  const canConfigureRotation = $derived(
-    configurableComponents.has(LOOPComponent.ROTATED)
-  );
-  const canConfigureInversion = $derived(
-    configurableComponents.has(LOOPComponent.INVERTED)
-  );
-  const canConfigureReflection = $derived(
-    configurableComponents.has(LOOPComponent.MIRRORED)
-  );
-  const detailInfo = $derived(overlayModel.detailInfo);
-  const detailView = $derived(overlayModel.detailView);
   const specWire = $derived(overlayModel.specWire);
   const rhythmGate = $derived(overlayModel.rhythmGate);
   const guestLock = $derived(overlayModel.guestLock);
@@ -274,22 +237,6 @@ Animates forward in z-axis and expands to fill the container space
     return t("create_deep_apply_combo", { count: selectionCount });
   });
 
-  function usesMobileDrawerPresentation(): boolean {
-    const mobileStage = overlayElement?.querySelector<HTMLElement>(
-      ".mobile-loop-stage, .single-loop-stage"
-    );
-    if (mobileStage && getComputedStyle(mobileStage).display !== "none") {
-      return true;
-    }
-    const drawer = overlayElement?.closest<HTMLElement>(".loop-drawer-sheet");
-    if (drawer) return drawer.dataset.placement === "bottom";
-    return (
-      layout === "responsive" &&
-      typeof window !== "undefined" &&
-      window.matchMedia("(max-width: 768px)").matches
-    );
-  }
-
   function hasComponentConfigurator(component: LOOPComponent): boolean {
     if (!rhythm || !onRhythmChange) return false;
     return (
@@ -301,11 +248,8 @@ Animates forward in z-axis and expands to fill the container space
 
   function handleToggle(component: LOOPComponent) {
     hapticService?.trigger("selection");
-    const usesFocusedDetail = usesMobileDrawerPresentation();
 
-    // Single stays spatially continuous on desktop: the selected card expands
-    // around its controls and pushes its siblings down. Compact drawers use a
-    // focused settings screen because the full list no longer fits beside it.
+    // Single changes apply immediately; settings stay below stable choices.
     if (!isMultiSelectMode) {
       // Guest-gated single pick routes to sign-up instead of applying.
       if (guestMaxLength !== undefined) {
@@ -334,15 +278,7 @@ Animates forward in z-axis and expands to fill the container space
         onChange(newLoopType);
       }
 
-      if (hasComponentConfigurator(component)) {
-        if (usesFocusedDetail) {
-          void openConfigurator(component, false);
-        } else {
-          detailComponent = null;
-          void keepExpandedComponentVisible(component);
-        }
-        return;
-      }
+      if (hasComponentConfigurator(component)) return;
 
       if (isValid) onClose();
       return;
@@ -350,108 +286,12 @@ Animates forward in z-axis and expands to fill the container space
 
     // Multi-select mode: Toggle selection
     const newSet = new Set(localSelectedComponents);
-    const isAdding = !newSet.has(component);
-    if (!isAdding) {
+    if (newSet.has(component)) {
       newSet.delete(component);
     } else {
       newSet.add(component);
     }
     localSelectedComponents = newSet;
-    if (!isAdding && detailComponent === component) {
-      detailComponent = null;
-    }
-    if (
-      isAdding &&
-      !usesFocusedDetail &&
-      (component === LOOPComponent.ROTATED ||
-        component === LOOPComponent.MIRRORED ||
-        component === LOOPComponent.INVERTED)
-    ) {
-      void keepExpandedComponentVisible(component);
-    }
-  }
-
-  async function openConfigurator(
-    component: LOOPComponent,
-    triggerHaptic = true
-  ) {
-    if (!hasComponentConfigurator(component)) return;
-    if (triggerHaptic) hapticService?.trigger("selection");
-    detailComponent = component;
-    await tick();
-    overlayElement
-      ?.querySelector<HTMLButtonElement>(".loop-detail-back")
-      ?.focus({ preventScroll: true });
-  }
-
-  async function closeConfigurator() {
-    const previousComponent = detailComponent;
-    if (!previousComponent) return;
-    hapticService?.trigger("selection");
-    detailComponent = null;
-    await tick();
-    const focusSelector = isMultiSelectMode
-      ? `.mobile-loop-stage [data-configure-component="${previousComponent}"]`
-      : `.single-loop-stage [data-component="${previousComponent}"] .loop-component-button`;
-    overlayElement
-      ?.querySelector<HTMLButtonElement>(focusSelector)
-      ?.focus({ preventScroll: true });
-  }
-
-  async function keepExpandedComponentVisible(component: LOOPComponent) {
-    await tick();
-
-    if (componentRevealFrame !== null) {
-      cancelAnimationFrame(componentRevealFrame);
-      componentRevealFrame = null;
-    }
-
-    const card = gridContainerElement?.querySelector<HTMLElement>(
-      `[data-component="${component}"]`
-    );
-    if (!card || !gridContainerElement?.isConnected) return;
-
-    let scrollViewport: HTMLElement | null = card.parentElement;
-    while (scrollViewport) {
-      const overflowY = getComputedStyle(scrollViewport).overflowY;
-      if (overflowY === "auto" || overflowY === "scroll") break;
-      scrollViewport = scrollViewport.parentElement;
-    }
-    scrollViewport ??= gridContainerElement;
-
-    const duration = motionDuration(DURATION.dramatic);
-    const startedAt = performance.now();
-    const edgePadding = 8;
-
-    // The last selected card can keep growing after its first rendered frame.
-    // Follow that growth for the same duration as the row animation so its
-    // controls never disappear underneath the sticky Apply area.
-    const followExpansion = (now: number) => {
-      if (!card.isConnected || !scrollViewport.isConnected) {
-        componentRevealFrame = null;
-        return;
-      }
-
-      const viewport = scrollViewport.getBoundingClientRect();
-      const cardBounds = card.getBoundingClientRect();
-      const bottomOverflow =
-        cardBounds.bottom - (viewport.bottom - edgePadding);
-      const topOverflow = viewport.top + edgePadding - cardBounds.top;
-
-      if (bottomOverflow > 0) {
-        scrollViewport.scrollTop += bottomOverflow;
-      } else if (topOverflow > 0) {
-        scrollViewport.scrollTop -= topOverflow;
-      }
-
-      if (now - startedAt < duration + 32) {
-        componentRevealFrame = requestAnimationFrame(followExpansion);
-      } else {
-        componentRevealFrame = null;
-      }
-    };
-
-    componentRevealFrame = requestAnimationFrame(followExpansion);
   }
 
   async function handleModeChange(isMulti: boolean) {
@@ -474,7 +314,6 @@ Animates forward in z-axis and expands to fill the container space
 
     drawerHeightAnimation?.cancel();
     drawerHeightAnimation = null;
-    detailComponent = null;
     if (!isMulti && localSelectedComponents.size > 1) {
       // A committed combo has no honest preselection in Single mode. Leave the
       // active combo untouched until the user chooses the single LOOP that
@@ -642,206 +481,56 @@ Animates forward in z-axis and expands to fill the container space
     </div>
   {/snippet}
 
-  {#snippet configurator(
-    component: LOOPComponent,
-    idPrefix: string,
-    includeStatus = false
-  )}
-    <LoopRhythmConfigurator
-      {component}
-      rhythm={localRhythm}
-      {inversionCaption}
-      statusReason={includeStatus && rhythmGate && !rhythmGate.ok
-        ? rhythmGate.reason
-        : undefined}
-      {idPrefix}
-      {reflectionAxisOptions}
-      {quarteredAvailable}
-      onChange={updateRhythm}
-    />
-  {/snippet}
-
-  {#snippet desktopRotationConfigurator()}
-    {@render configurator(LOOPComponent.ROTATED, "desktop")}
-  {/snippet}
-
-  {#snippet desktopInversionConfigurator()}
-    {@render configurator(LOOPComponent.INVERTED, "desktop")}
-  {/snippet}
-
-  {#snippet desktopReflectionConfigurator()}
-    {@render configurator(LOOPComponent.MIRRORED, "desktop")}
-  {/snippet}
-
-  {#snippet desktopSingleRotationConfigurator()}
-    {@render configurator(LOOPComponent.ROTATED, "desktop-single", true)}
-  {/snippet}
-
-  {#snippet desktopSingleInversionConfigurator()}
-    {@render configurator(LOOPComponent.INVERTED, "desktop-single", true)}
-  {/snippet}
-
-  {#snippet desktopSingleReflectionConfigurator()}
-    {@render configurator(LOOPComponent.MIRRORED, "desktop-single", true)}
-  {/snippet}
-
-  {#snippet loopDetail(idPrefix: string)}
-    {#if detailInfo}
-      <LoopDetailPanel
-        detail={detailInfo}
-        rhythm={localRhythm}
-        {inversionCaption}
-        {rhythmGate}
-        {isMultiSelectMode}
-        {idPrefix}
-        onBack={closeConfigurator}
-        onRhythmChange={updateRhythm}
-      />
-    {/if}
-  {/snippet}
-
-  {#if isMultiSelectMode}
+  <div class="picker-content themed-scrollbar">
     {@render modeSelector()}
-
-    <!-- Combo keeps its attached desktop configurators because several
-         selections and settings are reviewed together before Apply. -->
-    <div
-      class="grid-container desktop-loop-grid themed-scrollbar"
-      bind:this={gridContainerElement}
-    >
+    <div class="grid-container">
       <LOOPComponentGrid
         selectedComponents={localSelectedComponents}
         {disabledComponents}
         {disabledReasons}
         {lockedComponents}
         {isMultiSelectMode}
-        {layout}
-        componentConfigurators={{
-          [LOOPComponent.ROTATED]:
-            rhythm && onRhythmChange ? desktopRotationConfigurator : undefined,
-          [LOOPComponent.INVERTED]:
-            rhythm && onRhythmChange ? desktopInversionConfigurator : undefined,
-          [LOOPComponent.MIRRORED]:
-            rhythm && onRhythmChange
-              ? desktopReflectionConfigurator
-              : undefined,
-        }}
-        expandedComponents={new Set([
-          ...(canConfigureRotation ? [LOOPComponent.ROTATED] : []),
-          ...(canConfigureInversion ? [LOOPComponent.INVERTED] : []),
-          ...(canConfigureReflection ? [LOOPComponent.MIRRORED] : []),
-        ])}
+        layout="grid"
+        compactChooser
         onToggleComponent={handleToggle}
       />
     </div>
 
-    <div class="mobile-loop-stage">
-      {#key detailView}
-        <div
-          class="loop-stage-layer"
-          in:fly={{
-            x: detailInfo ? 32 : -32,
-            duration: motionDuration(DURATION.normal),
-            easing: quintOut,
-          }}
-        >
-          {#if detailInfo}
-            {@render loopDetail("mobile-combo")}
-          {:else}
-            <div class="mobile-loop-picker">
-              <LOOPComponentGrid
-                selectedComponents={localSelectedComponents}
-                {disabledComponents}
-                {disabledReasons}
-                {lockedComponents}
-                {isMultiSelectMode}
-                layout="grid"
-                {configurableComponents}
-                onConfigureComponent={openConfigurator}
-                onToggleComponent={handleToggle}
-              />
-              <p class="mobile-picker-hint">
-                {t("create_generate_loop_select_hint_start")}
-                <FontAwesomeIcon icon="fas fa-sliders" size="0.85em" />
-                {t("create_generate_loop_select_hint_end")}
-              </p>
-            </div>
-          {/if}
-        </div>
-      {/key}
-    </div>
-  {:else}
-    <!-- A desktop selection expands the card the user already touched. The
-         identity stays put while its controls reveal and the other LOOP types
-         slide around it, keeping the full-height drawer meaningfully occupied. -->
-    <div class="desktop-single-stack">
-      {@render modeSelector()}
-      <div
-        class="grid-container desktop-single-grid themed-scrollbar"
-        bind:this={gridContainerElement}
-      >
-        <LOOPComponentGrid
-          selectedComponents={localSelectedComponents}
-          {disabledComponents}
-          {disabledReasons}
-          {lockedComponents}
-          {isMultiSelectMode}
-          {layout}
-          componentConfigurators={{
-            [LOOPComponent.ROTATED]:
-              rhythm && onRhythmChange
-                ? desktopSingleRotationConfigurator
-                : undefined,
-            [LOOPComponent.INVERTED]:
-              rhythm && onRhythmChange
-                ? desktopSingleInversionConfigurator
-                : undefined,
-            [LOOPComponent.MIRRORED]:
-              rhythm && onRhythmChange
-                ? desktopSingleReflectionConfigurator
-                : undefined,
-          }}
-          expandedComponents={configurableComponents}
-          onToggleComponent={handleToggle}
-        />
-      </div>
-    </div>
+    {#if selectionCount === 1 && !isMultiSelectMode}
+      <p class="selection-description">
+        {loopComponentDescription(Array.from(localSelectedComponents)[0]!)}
+      </p>
+    {/if}
 
-    <!-- Narrow drawers keep the deliberate two-level flow. The old layer is
-         removed synchronously and the next layer pushes in directionally, so
-         there is never a ghosted duplicate under the live controls. -->
-    <div class="single-loop-stage">
-      {#key detailView}
-        <div
-          class="loop-stage-layer"
-          in:fly={{
-            x: detailInfo ? 32 : -32,
-            duration: motionDuration(DURATION.normal),
-            easing: quintOut,
-          }}
-        >
-          {#if detailInfo}
-            {@render loopDetail("single")}
-          {:else}
-            <div class="single-loop-picker">
-              {@render modeSelector()}
-              <div class="single-loop-grid-shell themed-scrollbar">
-                <LOOPComponentGrid
-                  selectedComponents={localSelectedComponents}
-                  {disabledComponents}
-                  {disabledReasons}
-                  {lockedComponents}
-                  {isMultiSelectMode}
-                  layout="grid"
-                  onToggleComponent={handleToggle}
-                />
-              </div>
-            </div>
+    {#if rhythm && onRhythmChange && configurableComponents.size > 0}
+      <div class="settings-list">
+        {#each [LOOPComponent.ROTATED, LOOPComponent.INVERTED, LOOPComponent.MIRRORED] as component}
+          {#if configurableComponents.has(component)}
+            <section
+              class="settings-section"
+              aria-label={loopComponentLabel(component)}
+            >
+              {#if isMultiSelectMode}
+                <h3>{loopComponentLabel(component)}</h3>
+              {/if}
+              <LoopRhythmConfigurator
+                {component}
+                rhythm={localRhythm}
+                {inversionCaption}
+                statusReason={!isMultiSelectMode && rhythmGate && !rhythmGate.ok
+                  ? rhythmGate.reason
+                  : undefined}
+                idPrefix={`loop-${component.toLowerCase()}`}
+                {reflectionAxisOptions}
+                {quarteredAvailable}
+                onChange={updateRhythm}
+              />
+            </section>
           {/if}
-        </div>
-      {/key}
-    </div>
-  {/if}
+        {/each}
+      </div>
+    {/if}
+  </div>
 
   {#if isMultiSelectMode}
     <LoopSelectionSummary
@@ -863,329 +552,72 @@ Animates forward in z-axis and expands to fill the container space
     position: absolute;
     inset: 0;
     z-index: 100;
-
     display: flex;
     flex-direction: column;
-    gap: 10px;
-    padding: 12px;
-
-    /* Solid background matching the card theme */
-    background: linear-gradient(
-      135deg,
-      color-mix(in srgb, var(--theme-accent-strong, #6366f1) 25%, #1a1a2e) 0%,
-      color-mix(in srgb, var(--theme-accent, #818cf8) 15%, #1a1a2e) 50%,
-      color-mix(in srgb, var(--theme-accent-strong, #6366f1) 20%, #1a1a2e) 100%
-    );
-    border-radius: 16px;
-    border: 2px solid color-mix(in srgb, var(--theme-accent) 50%, transparent);
-    box-shadow:
-      0 8px 32px rgba(0, 0, 0, 0.4),
-      0 0 24px color-mix(in srgb, var(--theme-accent) 30%, transparent);
-
-    overflow-y: auto;
-    overflow-x: hidden;
-    overscroll-behavior: contain;
-  }
-
-  .grid-container {
-    flex: 1;
-    min-height: 0;
-    container-type: inline-size;
-    overflow-y: auto;
-    overflow-anchor: none;
-    overscroll-behavior: contain;
-  }
-
-  .mode-selector {
-    width: min(100%, 360px);
-    margin-inline: auto;
-  }
-
-  .mobile-loop-stage {
-    display: none;
-  }
-
-  .desktop-single-stack {
-    display: flex;
-    flex: 1 1 auto;
-    min-height: 0;
-    flex-direction: column;
-    gap: 10px;
-  }
-
-  .desktop-single-grid {
-    flex: 1 1 auto;
-  }
-
-  .mobile-loop-stage,
-  .single-loop-stage {
-    position: relative;
-    min-height: 0;
-    overflow: hidden;
-  }
-
-  .single-loop-stage {
-    display: none;
-    flex: 1 1 auto;
-  }
-
-  .loop-stage-layer {
-    position: absolute;
-    inset: 0;
-    display: flex;
-    min-height: 0;
-    flex-direction: column;
-  }
-
-  .mobile-loop-picker,
-  .single-loop-picker {
-    height: 100%;
-    min-height: 0;
-  }
-
-  .single-loop-picker {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-  }
-
-  .single-loop-grid-shell {
-    display: flex;
-    flex: 1 1 auto;
-    min-height: 0;
-    align-items: stretch;
-    overflow-y: auto;
-    overflow-anchor: none;
-    overscroll-behavior: contain;
-  }
-
-  .single-loop-grid-shell :global(.loop-component-grid) {
-    width: 100%;
-  }
-
-  .mobile-loop-picker {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
     gap: 12px;
+    padding: 16px;
+    /* Theme panel washes can be translucent. Give the picker an opaque floor
+       so the Generate cards never read through its choices or settings. */
+    background:
+      linear-gradient(
+        var(--theme-panel-bg, rgba(18, 18, 28, 0.98)),
+        var(--theme-panel-bg, rgba(18, 18, 28, 0.98))
+      ),
+      #12141c;
+    border: 1px solid var(--theme-stroke);
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.26);
+    overflow-y: auto;
+    overscroll-behavior: contain;
   }
-
-  /* Six tracks preserve the three-card first row while giving the two-card
-     second row equal breathing room on both sides. Every card still spans the
-     same two tracks, so nothing changes size between rows. */
-  .mobile-loop-picker :global(.loop-component-grid) {
-    grid-template-columns: repeat(6, minmax(0, 1fr));
-  }
-
-  .mobile-loop-picker :global(.loop-component-shell) {
-    grid-column: span 2;
-  }
-
-  .mobile-loop-picker :global(.loop-component-shell:nth-child(4)) {
-    grid-column: 2 / span 2;
-  }
-
-  .mobile-loop-picker :global(.loop-component-shell:nth-child(5)) {
-    grid-column: 4 / span 2;
-  }
-
-  .mobile-picker-hint {
+  .picker-content {
     display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 5px;
+    flex-direction: column;
+    gap: 16px;
+    flex-shrink: 0;
+  }
+  .mode-selector {
+    width: min(100%, 280px);
+    margin-inline: auto;
+    flex-shrink: 0;
+  }
+  .grid-container {
+    container-type: inline-size;
+    flex-shrink: 0;
+    min-width: 0;
+  }
+  .selection-description {
+    align-self: center;
+    width: min(100%, 480px);
     margin: 0;
-    color: var(--theme-text-dim, rgba(255, 255, 255, 0.72));
-    font-size: var(--font-size-compact, 12px);
-    line-height: 1.3;
-    text-align: center;
+    color: var(--theme-text-dim);
+    font-size: var(--font-size-sm, 14px);
+    line-height: 1.45;
   }
-
-  /* Below the side-by-side breakpoint the bottom nav overlaps the sheet's
-     foot (the drawer content reserves clearance for it) — stick above it. */
+  .settings-list {
+    display: flex;
+    flex-direction: column;
+    align-self: center;
+    gap: 14px;
+    width: min(100%, 480px);
+    min-width: 0;
+  }
+  .settings-section {
+    container-type: inline-size;
+  }
+  .settings-section + .settings-section {
+    padding-top: 14px;
+    border-top: 1px solid var(--theme-stroke);
+  }
+  .settings-section h3 {
+    margin: 0 0 8px;
+    color: var(--theme-text);
+    font-size: var(--font-size-sm, 14px);
+    font-weight: 700;
+  }
   @media (max-width: 768px) {
-    .desktop-loop-grid,
-    .desktop-single-stack {
-      display: none;
-    }
-
-    .mobile-loop-stage,
-    .single-loop-stage {
-      display: block;
-      width: 100%;
-      height: clamp(260px, 45dvh, 320px);
-      flex: 0 0 clamp(260px, 45dvh, 320px);
-      min-height: 0;
-      overflow: hidden;
-    }
-
-    .mobile-loop-picker :global(.loop-component-grid),
-    .single-loop-picker :global(.loop-component-grid) {
-      grid-auto-rows: 76px;
-      gap: 8px;
-    }
-
-    .mobile-loop-picker :global(.loop-component-shell),
-    .mobile-loop-picker :global(.loop-component-button),
-    .single-loop-picker :global(.loop-component-shell),
-    .single-loop-picker :global(.loop-component-button) {
-      min-height: 76px;
-    }
-
-    .single-loop-picker :global(.loop-component-grid) {
-      grid-template-columns: repeat(6, minmax(0, 1fr));
-    }
-
-    .single-loop-picker :global(.loop-component-shell) {
-      grid-column: span 2;
-    }
-
-    .single-loop-picker :global(.loop-component-shell:nth-child(4)) {
-      grid-column: 2 / span 2;
-    }
-
-    .single-loop-picker :global(.loop-component-shell:nth-child(5)) {
-      grid-column: 4 / span 2;
-    }
-  }
-
-  /* Portrait tablets remain bottom sheets until the shared layout manager
-     actually chooses side-by-side mode. Match the Drawer's data-placement
-     decision instead of letting a raw width breakpoint expose the desktop
-     accordion inside a bottom sheet. */
-  @media (min-width: 769px) and (max-width: 1023px) {
-    :global(.loop-drawer-sheet[data-placement="bottom"]) .desktop-loop-grid,
-    :global(.loop-drawer-sheet[data-placement="bottom"]) .desktop-single-stack {
-      display: none;
-    }
-
-    :global(.loop-drawer-sheet[data-placement="bottom"]) .mobile-loop-stage,
-    :global(.loop-drawer-sheet[data-placement="bottom"]) .single-loop-stage {
-      display: block;
-      width: 100%;
-      height: clamp(260px, 45dvh, 320px);
-      flex: 0 0 clamp(260px, 45dvh, 320px);
-      min-height: 0;
-      overflow: hidden;
-    }
-
-    :global(.loop-drawer-sheet[data-placement="bottom"])
-      .mobile-loop-picker
-      :global(.loop-component-grid),
-    :global(.loop-drawer-sheet[data-placement="bottom"])
-      .single-loop-picker
-      :global(.loop-component-grid) {
-      grid-auto-rows: 76px;
-      gap: 8px;
-    }
-
-    :global(.loop-drawer-sheet[data-placement="bottom"])
-      .mobile-loop-picker
-      :global(.loop-component-shell),
-    :global(.loop-drawer-sheet[data-placement="bottom"])
-      .mobile-loop-picker
-      :global(.loop-component-button),
-    :global(.loop-drawer-sheet[data-placement="bottom"])
-      .single-loop-picker
-      :global(.loop-component-shell),
-    :global(.loop-drawer-sheet[data-placement="bottom"])
-      .single-loop-picker
-      :global(.loop-component-button) {
-      min-height: 76px;
-    }
-
-    :global(.loop-drawer-sheet[data-placement="bottom"])
-      .single-loop-picker
-      :global(.loop-component-grid) {
-      grid-template-columns: repeat(6, minmax(0, 1fr));
-    }
-
-    :global(.loop-drawer-sheet[data-placement="bottom"])
-      .single-loop-picker
-      :global(.loop-component-shell) {
-      grid-column: span 2;
-    }
-
-    :global(.loop-drawer-sheet[data-placement="bottom"])
-      .single-loop-picker
-      :global(.loop-component-shell:nth-child(4)) {
-      grid-column: 2 / span 2;
-    }
-
-    :global(.loop-drawer-sheet[data-placement="bottom"])
-      .single-loop-picker
-      :global(.loop-component-shell:nth-child(5)) {
-      grid-column: 4 / span 2;
-    }
-  }
-
-  /* Landscape phones and short laptop panes may use a right-side drawer, but
-     they do not have the vertical room for three open desktop accordions. The
-     compact picker owns the remaining height and each settings screen scrolls
-     inside that stable stage. */
-  @media (min-width: 769px) and (max-height: 700px) {
-    :global(.loop-drawer-sheet[data-placement="right"]) .desktop-loop-grid,
-    :global(.loop-drawer-sheet[data-placement="right"]) .desktop-single-stack {
-      display: none;
-    }
-
-    :global(.loop-drawer-sheet[data-placement="right"]) .mobile-loop-stage,
-    :global(.loop-drawer-sheet[data-placement="right"]) .single-loop-stage {
-      display: block;
-      width: 100%;
-      height: auto;
-      flex: 1 1 0;
-      min-height: 188px;
-      overflow: hidden;
-    }
-
-    :global(.loop-drawer-sheet[data-placement="right"])
-      .mobile-loop-picker
-      :global(.loop-component-grid),
-    :global(.loop-drawer-sheet[data-placement="right"])
-      .single-loop-picker
-      :global(.loop-component-grid) {
-      grid-auto-rows: 68px;
-      gap: 6px;
-    }
-
-    :global(.loop-drawer-sheet[data-placement="right"])
-      .mobile-loop-picker
-      :global(.loop-component-shell),
-    :global(.loop-drawer-sheet[data-placement="right"])
-      .mobile-loop-picker
-      :global(.loop-component-button),
-    :global(.loop-drawer-sheet[data-placement="right"])
-      .single-loop-picker
-      :global(.loop-component-shell),
-    :global(.loop-drawer-sheet[data-placement="right"])
-      .single-loop-picker
-      :global(.loop-component-button) {
-      min-height: 68px;
-    }
-
-    :global(.loop-drawer-sheet[data-placement="right"])
-      .single-loop-picker
-      :global(.loop-component-grid) {
-      grid-template-columns: repeat(6, minmax(0, 1fr));
-    }
-
-    :global(.loop-drawer-sheet[data-placement="right"])
-      .single-loop-picker
-      :global(.loop-component-shell) {
-      grid-column: span 2;
-    }
-
-    :global(.loop-drawer-sheet[data-placement="right"])
-      .single-loop-picker
-      :global(.loop-component-shell:nth-child(4)) {
-      grid-column: 2 / span 2;
-    }
-
-    :global(.loop-drawer-sheet[data-placement="right"])
-      .single-loop-picker
-      :global(.loop-component-shell:nth-child(5)) {
-      grid-column: 4 / span 2;
+    .loop-expanded-overlay {
+      padding: 12px;
     }
   }
 </style>

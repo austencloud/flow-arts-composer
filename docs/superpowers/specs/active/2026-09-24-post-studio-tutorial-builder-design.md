@@ -1,3 +1,15 @@
+---
+status: active
+value: null
+effort: null
+work_state: in-progress
+remaining: Verify the tutorial-builder rebuild and finish the unbuilt region morph between consecutive acts on one take.
+depends_on: ''
+plan_path: ''
+tags: []
+last_triaged: '2026-10-07'
+---
+
 # Post Studio Tutorial Builder
 
 Date: 2026-09-24. Owner surface: Post Studio

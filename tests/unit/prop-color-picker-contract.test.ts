@@ -83,7 +83,7 @@ const NON_HOSTS: Record<string, string> = {
     "src/lib/features/library/components/CollectionPropField.svelte",
   // Tunnel layers take performer colours; the 3D scene uses its own materials.
   "viewer tunnel art settings":
-    "src/lib/shared/sequence-viewer/components/art-settings/TunnelArtSettings.svelte",
+    "src/lib/shared/sequence-viewer/components/art-settings/TunnelPropSettings.svelte",
   "3D viewer prop adapter":
     "src/lib/shared/3d/components/controls/ScenePropPicker.svelte",
   // The settings page shows PrimaryPropColorSettings in its own setup card.

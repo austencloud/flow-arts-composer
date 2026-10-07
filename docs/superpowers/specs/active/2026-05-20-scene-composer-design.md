@@ -2,11 +2,12 @@
 status: active
 value: 3
 effort: M
-remaining: "User-facing Firebase persistence and optional per-scene catalog expansion"
+remaining: "Verify Scene Composer — Design Spec against scripts/generate-winter-composer-instance-map.mjs before resuming implementation. Prior recorded remainder: User-facing Firebase persistence and optional per-scene catalog expansion"
 depends_on: ""
 plan_path: ""
 tags: []
-last_triaged: 2026-08-02
+last_triaged: 2026-10-07
+work_state: unverified
 ---
 
 # Scene Composer — Design Spec

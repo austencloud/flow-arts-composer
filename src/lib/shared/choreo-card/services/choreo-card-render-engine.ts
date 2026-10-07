@@ -367,14 +367,12 @@ export function createChoreoCardRenderEngine(
 
       if (deps.livePictographs) {
         const generation = ++liveGeneration;
-        const firstStep = deps.sequence.steps[0];
-        const start =
-          deps.sequence.startPlacement ??
-          createStartPlacementFromBeatStart(firstStep!);
+        // Live cells draw the sequence's join too, so a re-join slides.
+        const cells = cardCells(deps);
         model.cells = buildPlaceholders(deps, columns).map((cell) => ({
           ...cell,
           live: {
-            data: cell.index === -1 ? start : deps.sequence.steps[cell.index]!,
+            data: cell.index === -1 ? cells.start! : cells.steps[cell.index]!,
             options: {
               ...deps.renderOptions,
               widthMultiplier:

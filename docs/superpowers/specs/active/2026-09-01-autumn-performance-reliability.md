@@ -1,3 +1,15 @@
+---
+status: active
+value: null
+effort: null
+work_state: verification
+remaining: 'Complete the Autumn release gate: production-scene performance/reliability run and P0/P1 issue review.'
+depends_on: ''
+plan_path: ''
+tags: []
+last_triaged: '2026-10-07'
+---
+
 # Autumn Performance Reliability
 
 **Status:** Implemented; release qualification pending

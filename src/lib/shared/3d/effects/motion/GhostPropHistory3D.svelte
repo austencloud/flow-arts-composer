@@ -136,7 +136,6 @@
       {fallbackState}
       {propType}
       {propHand}
-      color={propHand === "left" ? params.leftColor : params.rightColor}
       intensity={params.intensity}
       lifetimeSeconds={params.lifetimeSeconds}
       rimPower={params.rimPower}

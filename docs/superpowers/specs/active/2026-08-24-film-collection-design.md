@@ -1,3 +1,15 @@
+---
+status: active
+value: null
+effort: null
+work_state: unverified
+remaining: Audit the Film collection naming, Library entry, persistence, and Director handoff against the design acceptance before claiming completion.
+depends_on: ''
+plan_path: ''
+tags: []
+last_triaged: '2026-10-07'
+---
+
 # Film Collection — Design
 
 **Date:** 2026-08-24

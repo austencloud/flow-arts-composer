@@ -2,12 +2,14 @@
 status: backlog
 value: 2
 effort: M
-remaining: 'Phase 4 (word-simplifier) shipped independently; math.ts/format.ts never created, ~12 lerp definitions remain'
-depends_on: ""
-plan_path: ""
+remaining: Recheck math/format utility duplication and word-simplifier ownership against current source before assigning a deduplication slice.
+depends_on: ''
+plan_path: ''
 tags: []
-last_triaged: 2026-08-02
+last_triaged: '2026-10-07'
+work_state: unverified
 ---
+
 # Utility Deduplication Design
 
 > **DRIFT WARNING — 2026-08-02.** Phase 4 (word-simplifier) shipped independently; `math.ts`/`format.ts` never created, ~12 `lerp` definitions remain

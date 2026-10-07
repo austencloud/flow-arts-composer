@@ -2,12 +2,14 @@
 status: backlog
 value: 3
 effort: M
-remaining: 'Shader warm-up + most material sharing shipped; LOD, ObsidianPillars instancing, shadow-caster limiting did not'
-depends_on: ""
-plan_path: ""
+remaining: Recheck LOD, ObsidianPillars instancing, shadow limits, warmup, and material sharing in current 3D code.
+depends_on: ''
+plan_path: ''
 tags: []
-last_triaged: 2026-08-02
+last_triaged: '2026-10-07'
+work_state: unverified
 ---
+
 # 3D Scene Performance Wins
 
 > **DRIFT WARNING — 2026-08-02.** Shader warm-up + most material sharing shipped; LOD, ObsidianPillars instancing, shadow-caster limiting did not

@@ -73,8 +73,6 @@ export const DEFAULT_EFFECTS_CONFIG: EffectsConfig = {
   // decay=Persistence (trail length), interval=Density (higher=denser).
   // See ghost-2d-renderer.ts.
   ghost: {
-    leftColor: "#3b82f6",
-    rightColor: "#ef4444",
     intensity: 0.85,
     decay: 8,
     interval: 0.5,

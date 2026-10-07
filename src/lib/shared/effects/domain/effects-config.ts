@@ -15,7 +15,7 @@ import type {
 } from "$lib/shared/animation-engine/domain/types/fire-types";
 import type { LedSimulatorConfig } from "$lib/shared/animation-engine/domain/types/led-types";
 
-export const EFFECTS_CONFIG_VERSION = 38;
+export const EFFECTS_CONFIG_VERSION = 39;
 
 /** User-facing 2D Fire look. The renderer translates this into its internal profile. */
 export type FireRenderingStyle = "natural" | "liquid";
@@ -185,13 +185,11 @@ export interface SparklesIntent {
  * Ghost = prop onion-skin (decaying ghost trail). The real prop sprite is ghosted
  * at recent past poses, fading to nothing over a short window, so the prop trails
  * out behind himself with no persistent after-image — not a tip trail, not a
- * stick line, the actual prop graphic. See ghost-2d-renderer.ts.
+ * stick line, the actual prop graphic. Ghosts take their texture and colors
+ * from the prop itself, so there is no Ghost color setting. See
+ * ghost-2d-renderer.ts.
  */
 export interface GhostIntent {
-  /** Hex — frozen exposures from the blue prop. */
-  leftColor: string;
-  /** Hex — frozen exposures from the red prop. */
-  rightColor: string;
   /** 0-1 — overall trail opacity (master brightness). */
   intensity: number;
   /** 1-10 — Persistence: how long each ghost lingers before fading to nothing. */

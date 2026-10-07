@@ -2,11 +2,18 @@
 status: active
 value: 5
 effort: XS
-remaining: "Outcomes 1-6 are BUILT, in 20f0395e7 (feat(auth): add in-app email code sign-in, 2026-08-25) - do not re-implement them. Outcome 7 is the only product work left and it is Austen's, not an agent's: John's older Google UID stays canonical, the Live.com address becomes its Firebase primary email, and his duplicate Firestore work is copied before the second UID is deleted. That mutates production identity data. Verification still owed: a Firebase Auth emulator run proving a Google-provider email plus a different primary email return the same UID, the auth-surface viewport sweep with measured touch input font sizes, and physical iPad proof of the native software keyboard - which no desktop emulator can supply."
-depends_on: "external: Austen's decision on the production UID consolidation, plus a physical iPad session"
-plan_path: ""
-tags: ["auth", "firebase", "ios", "ipad", "pwa", "account-merge"]
-last_triaged: 2026-09-13
+remaining: Austen completes outcome 7 on the iPad; then verify the added-email sign-in flow on both devices.
+depends_on: 'external: Austen''s decision on the production UID consolidation, plus a physical iPad session'
+plan_path: ''
+tags:
+- auth
+- firebase
+- ios
+- ipad
+- pwa
+- account-merge
+last_triaged: '2026-10-07'
+work_state: blocked
 ---
 
 # Multi-email and iPad auth continuity

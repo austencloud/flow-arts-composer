@@ -3,10 +3,11 @@ status: active
 value: 2
 effort: M
 remaining: '1 of 5 tasks shipped (art presets); other 4 deliberately parked by Austen'
-depends_on: ""
+depends_on: "external: Austen decision to resume the four parked Fable identity tasks"
 plan_path: ""
 tags: []
-last_triaged: 2026-08-02
+last_triaged: 2026-10-07
+work_state: blocked
 ---
 # Fable Spec — Mandala Signature Identity (THE FACELIFT)
 

@@ -1,3 +1,15 @@
+---
+status: active
+value: null
+effort: null
+work_state: blocked
+remaining: Calibrate the 32 quarter-turn arrow SVGs against guide artboards with Austen; then verify placement and resolver tests.
+depends_on: 'external: Austen visual calibration against guide artboards'
+plan_path: ''
+tags: []
+last_triaged: '2026-10-07'
+---
+
 # Quarter-Turn Pictograph Arrows
 
 **Status:** Structural support complete 2026-08-23; visual calibration blocked

@@ -1,13 +1,15 @@
 ---
-status: active
+status: backlog
 value: 3
 effort: L
-remaining: 'Phase 1 partial; Phases 1b, 2, 3, 4 unchecked. ~3537 remaining \bbeat\b hits in src/. TKA canon is step, never beat.'
-depends_on: ""
-plan_path: ""
+remaining: Recount beat terminology hits by semantic category in current source before continuing the rename; the prior hit count is stale.
+depends_on: ''
+plan_path: ''
 tags: []
-last_triaged: 2026-08-02
+last_triaged: '2026-10-07'
+work_state: unverified
 ---
+
 # Beat → Step Nomenclature Correction (2026-07-16)
 
 **Decision (Austen, 2026-07-16):** "step" is the canonical term for a pictograph

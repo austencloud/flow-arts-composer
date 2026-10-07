@@ -1,14 +1,18 @@
 ---
-status: active
+status: backlog
 value: 3
 effort: M
 remaining: 'Wave 1 shipped (gamma-loops, misc-permutations, type2-loops). Waves 2-4 have no pool files: prop-reversal-loops, full-reversal-loops, eight-letter-words, sixteen-count, coordinated-triple.'
-depends_on: ""
-plan_path: ""
+depends_on: ''
+plan_path: ''
 tags: []
-last_triaged: 2026-08-02
+last_triaged: '2026-10-07'
+work_state: in-progress
 ---
+
 # Guide Example Pools — full rollout (2026-07-16)
+
+**Triage evidence (2026-10-07):** Four Level 1 pool JSON files exist under `src/routes/(public)/guide/level-1/_data/example-pools/`, matching the recorded Wave 1 pilot. The later named pools remain unbuilt according to the spec and need current source confirmation before scheduling.
 
 > **DRIFT WARNING — 2026-08-02.** Verified 2026-08-02. Wave 1 shipped — exactly four pool files exist (permutations pilot + gamma-loops, misc-permutations, type2-loops). Waves 2-4 are genuinely unbuilt: no pool file for prop-reversal-loops, full-reversal-loops, eight-letter-words, sixteen-count, or coordinated-triple. The spec is accurate; the detector reads neighbouring guide/landing traffic as progress.
 >
@@ -16,7 +20,7 @@ last_triaged: 2026-08-02
 > This banner is the current state.
 
 
-**Status:** pilot APPROVED (Austen, 2026-07-16: "I really like how this turned
+**Status:** Wave 1 implemented; Waves 2–4 remain open. Pilot approved (Austen, 2026-07-16: "I really like how this turned
 out" on the permutations page). This spec is the anticipated detail phase the
 design spec deferred ("Build shape (to spec in detail after pilot approval)").
 It answers two questions: (1) where else in the entire guide does the pool

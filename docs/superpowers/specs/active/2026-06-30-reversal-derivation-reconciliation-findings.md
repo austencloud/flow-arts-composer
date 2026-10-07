@@ -2,11 +2,12 @@
 status: active
 value: 3
 effort: M
-remaining: "Unscored until triage 2026-07-25; spec body carries no status line. Needs a read-through to establish real state before this score is trusted."
+remaining: "Recheck stored stepPairings, hydration, and the three reversal implementations against current code; then decide the canonical derivation and tests."
 depends_on: ""
 plan_path: ""
 tags: []
-last_triaged: 2026-07-25
+last_triaged: 2026-10-07
+work_state: unverified
 ---
 # Reversal-Derivation Reconciliation — Findings
 

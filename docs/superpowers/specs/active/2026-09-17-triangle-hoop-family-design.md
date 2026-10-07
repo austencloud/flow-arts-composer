@@ -1,7 +1,21 @@
+---
+status: active
+value: null
+effort: null
+work_state: in-progress
+remaining: Finish Triangle Hoop family sprites, grip variants, tests, and browser verification; one grip option landed 2026-09-27.
+depends_on: ''
+plan_path: ''
+tags: []
+last_triaged: '2026-10-07'
+---
+
 # Triangle prop and the mini hoop upgrade
 
+**Triage evidence (2026-10-07):** The spec records the grip option in commit `6b27137f29`. The full triangle and mini-hoop family acceptance remains open, including sprites and visual checks.
+
 **Date:** 2026-09-17
-**Status:** approved design, ready for a plan
+**Status:** In progress; one grip option landed, family sprites and verification remain.
 **Branch:** `codex/triangle-hoop-family` at `E:/worktrees/tka-platform/triangle-hoop-family`
 
 ## What this is

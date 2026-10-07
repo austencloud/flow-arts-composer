@@ -19,7 +19,7 @@ in conversation, 2026-08-23
 **Supersedes:** the per-performer mark-chain movement model in
 `2026-08-20-stage-performance-runtime-design.md` (the runtime's facing/walk-style
 semantics, playhead clock, and rig ownership all carry forward unchanged).
-**Related research:** `docs/superpowers/specs/backlog/2026-05-25-stage-locomotion-design.md`
+**Related research:** `docs/superpowers/specs/archived/2026-05-25-stage-locomotion-design.md`
 (historical FormationKeyframe model; superseded but directionally aligned).
 
 ## Why

@@ -1,19 +1,20 @@
 ---
 title: Progressive 3D Studio
 date: 2026-08-27
-status: proposed
+status: active
 value: 5
 effort: L
-depends_on:
-  - 2026-08-26-one-stage-design.md
-  - 2026-08-25-director-module-design.md
-  - 2026-08-25-director-control-surface-design.md
+depends_on: 2026-08-25-director-control-surface-design.md
 tags:
-  - 3d
-  - onboarding
-  - progressive-disclosure
-  - stage
-  - film-director
+- 3d
+- onboarding
+- progressive-disclosure
+- stage
+- film-director
+work_state: unverified
+remaining: Trace Studio persistence ownership and resolve Phase 0 open decisions; then establish which guided-start and Director paths actually exist.
+plan_path: ''
+last_triaged: '2026-10-07'
 ---
 
 # Progressive 3D Studio

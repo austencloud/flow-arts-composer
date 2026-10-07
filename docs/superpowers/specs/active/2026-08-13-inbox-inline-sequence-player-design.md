@@ -1,3 +1,14 @@
+---
+status: active
+value: null
+effort: null
+remaining: "Verify the YR0L inline player in the named Inbox conversation, including pause, focus, and full-view navigation."
+depends_on: ""
+plan_path: ""
+tags: []
+last_triaged: 2026-10-07
+work_state: unverified
+---
 # Inbox Inline Sequence Player
 
 **Date:** 2026-08-13  

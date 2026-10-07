@@ -6,7 +6,8 @@ remaining: "Phases 1 and 2 are built and in the tree; nothing here needs impleme
 depends_on: "external: Meta app review for instagram_business_content_publish, pages_manage_posts, publish_video"
 plan_path: ""
 tags: [share, social, meta, instagram, blocked-external]
-last_triaged: 2026-09-13
+last_triaged: 2026-10-07
+work_state: blocked
 ---
 
 # Social Post Handoff — Design

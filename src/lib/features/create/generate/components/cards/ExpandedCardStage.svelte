@@ -64,7 +64,12 @@
   } = $props();
 
   const openCard = $derived(panelState.openGenerateCard);
-  const destination = $derived(isDesktopLayout ? "stage" : "viewport");
+  let viewportHeight = $state(1000);
+  const destination = $derived(
+    isDesktopLayout && !(openCard === "loop" && viewportHeight < 700)
+      ? "stage"
+      : "viewport"
+  );
   const customize = $derived(panelState.customizeOverlayProps);
 
   let root = $state<HTMLElement | null>(null);
@@ -104,7 +109,9 @@
       const wrapper = document.querySelector<HTMLElement>(
         `.card-wrapper[data-card-id="${card}"] button, .card-wrapper[data-card-id="${card}"] [tabindex="0"]`
       );
-      wrapper?.focus({ preventScroll: true });
+      if (card !== "loop") {
+        wrapper?.focus({ preventScroll: true });
+      }
     };
   });
 
@@ -188,8 +195,30 @@
   function close(onSettled?: () => void) {
     const card = openCard;
     if (!card) return;
+    const returnLoopFocus =
+      card === "loop" && !onSettled && !!root?.contains(document.activeElement);
     morphGenerateCard(card, () => panelState.closeGenerateCard(), {
-      onSettled,
+      onSettled:
+        onSettled || returnLoopFocus
+          ? () => {
+              onSettled?.();
+              // The LOOP tile stays hidden through the card morph. A Svelte
+              // tick lands too early, so focus it only after morph settlement.
+              // Leave any newer focus target alone.
+              if (
+                !returnLoopFocus ||
+                panelState.openGenerateCard ||
+                document.activeElement !== document.body
+              ) {
+                return;
+              }
+              document
+                .querySelector<HTMLElement>(
+                  '.card-wrapper[data-card-id="loop"] button, .card-wrapper[data-card-id="loop"] [tabindex="0"]'
+                )
+                ?.focus({ preventScroll: true });
+            }
+          : undefined,
     });
   }
 
@@ -230,6 +259,8 @@
     close();
   }
 </script>
+
+<svelte:window bind:innerHeight={viewportHeight} />
 
 {#snippet body(titleId: string)}
   {#if openCard === "customize" && customize}
@@ -356,6 +387,25 @@
     z-index: 100;
   }
 
+  .expanded-card-stage[data-destination="stage"][data-card-id="loop"] {
+    /* Use the card area as the height limit, including for a long Combo. */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: min(100%, 880px);
+    height: 100%;
+    margin-inline: auto;
+  }
+
+  .expanded-card-stage[data-destination="stage"][data-card-id="loop"]
+    > :global(.loop-expanded-overlay) {
+    position: relative;
+    inset: auto;
+    width: 100%;
+    min-height: 0;
+    max-height: 100%;
+  }
+
   .expanded-card-stage[data-destination="viewport"] {
     position: fixed;
     inset: 0;
@@ -363,11 +413,47 @@
     background: var(--theme-surface, #101018);
   }
 
+  .expanded-card-stage[data-destination="viewport"][data-card-id="loop"] {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    background: color-mix(
+      in srgb,
+      var(--theme-surface, #101018) 76%,
+      transparent
+    );
+  }
+
+  .expanded-card-stage[data-destination="viewport"][data-card-id="loop"]
+    > :global(.loop-expanded-overlay) {
+    position: relative;
+    inset: auto;
+    width: min(100%, 880px);
+    max-height: calc(100dvh - 32px);
+    border: 1px solid var(--theme-stroke);
+    border-radius: 12px;
+  }
+
+  @media (max-width: 600px) {
+    .expanded-card-stage[data-destination="viewport"][data-card-id="loop"] {
+      align-items: flex-end;
+      padding: 0;
+    }
+
+    .expanded-card-stage[data-destination="viewport"][data-card-id="loop"]
+      > :global(.loop-expanded-overlay) {
+      width: 100%;
+      max-height: 100dvh;
+      border-radius: 12px 12px 0 0;
+    }
+  }
+
   /* The overlay chrome rounds its corners and draws a border for the in-grid
      case. Edge to edge on the viewport. */
   .expanded-card-stage[data-destination="viewport"]
     > :global(.generation-settings-overlay),
-  .expanded-card-stage[data-destination="viewport"]
+  .expanded-card-stage[data-destination="viewport"]:not([data-card-id="loop"])
     > :global(.loop-expanded-overlay) {
     border-radius: 0;
     border: none;

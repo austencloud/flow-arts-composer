@@ -1,3 +1,14 @@
+---
+status: active
+value: null
+effort: null
+remaining: "Verify 3D Smoke Volume Rebuild against the current 3D Smoke Volume Rebuild runtime and acceptance criteria before resuming implementation. Prior recorded remainder: Verify smoke volume at the eight-performer camera, orbit parallax, quality tiers, and fallback gates."
+depends_on: ""
+plan_path: ""
+tags: []
+last_triaged: 2026-10-07
+work_state: unverified
+---
 # 3D Smoke Volume Rebuild
 
 **Status:** Active  

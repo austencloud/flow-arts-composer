@@ -1,3 +1,14 @@
+---
+status: active
+value: null
+effort: null
+remaining: "Verify museum single-destination routing, corridor-null behavior, room filtering, and light-pool caps against current code and scene."
+depends_on: ""
+plan_path: ""
+tags: []
+last_triaged: 2026-10-07
+work_state: unverified
+---
 # Museum Single Destination and Fixed Light Rig
 
 ## Outcome

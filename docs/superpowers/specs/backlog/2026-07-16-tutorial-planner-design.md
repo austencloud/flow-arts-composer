@@ -1,16 +1,20 @@
 ---
-status: active
+status: backlog
 value: 2
 effort: M
 remaining: 'P1 shipped (admin/tutorials routes + _data/tutorial-scripts.ts). P2/P3 unbuilt: no tutorial-plans state module, no tutorialPlans Firestore rule, no editing/persistence/picker.'
-depends_on: ""
-plan_path: ""
+depends_on: ''
+plan_path: ''
 tags: []
-last_triaged: 2026-08-02
+last_triaged: '2026-10-07'
+work_state: in-progress
 ---
+
 # Tutorial Planner — Admin Authoring Surface (Design)
 
-**Date:** 2026-07-16 · **Status:** approved direction (Austen picked: admin
+**Triage evidence (2026-10-07):** The spec records Phase 1 landing. The remaining editable planner, persistence, and script coverage acceptance has not been verified in this review.
+
+**Date:** 2026-07-16 · **Status:** Phase 1 implemented; remaining planner acceptance open. Approved direction (Austen picked: admin
 guide route + editable planner) · **Prereq reading:**
 `docs/tutorial-video-voiceover/HANDOFF.md`, `Voiceover-Scripts-Next.md`,
 `Voiceover-Scripts-Advanced.md`

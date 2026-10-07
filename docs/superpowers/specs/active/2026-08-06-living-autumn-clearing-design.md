@@ -1,3 +1,14 @@
+---
+status: active
+value: null
+effort: null
+remaining: "Verify autumn composition bounds, quiet zone, fixed gust envelope, and visual scene acceptance against current runtime."
+depends_on: ""
+plan_path: ""
+tags: []
+last_triaged: 2026-10-07
+work_state: unverified
+---
 # Living Autumn Clearing
 
 ## Outcome

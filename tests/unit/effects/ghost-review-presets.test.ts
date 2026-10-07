@@ -30,8 +30,6 @@ describe("Ghost preset review candidates", () => {
   it("resolves every candidate to a complete, bounded Ghost intent", () => {
     for (const preset of GHOST_REVIEW_PRESETS) {
       const intent = resolveGhostReviewIntent(preset);
-      expect(intent.leftColor).toMatch(/^#[0-9a-f]{6}$/i);
-      expect(intent.rightColor).toMatch(/^#[0-9a-f]{6}$/i);
       expect(intent.intensity).toBeGreaterThanOrEqual(0);
       expect(intent.intensity).toBeLessThanOrEqual(1);
       expect(intent.decay).toBeGreaterThanOrEqual(1);
@@ -41,14 +39,10 @@ describe("Ghost preset review candidates", () => {
     }
   });
 
-  it("exposes direct left- and right-hand color controls", () => {
-    expect(EFFECT_CONTROLS.ghost).toContainEqual(
-      expect.objectContaining({
-        id: "ghost-color",
-        type: "colorPair",
-        pairFields: ["leftColor", "rightColor"],
-      })
-    );
+  it("offers no color control: ghosts take the prop's own colors", () => {
+    expect(
+      EFFECT_CONTROLS.ghost.some((control) => control.type === "colorPair")
+    ).toBe(false);
   });
 
   it("detects when live tuning has moved off the selected preset", () => {

@@ -1,3 +1,14 @@
+---
+status: active
+value: null
+effort: null
+remaining: "Verify Canonical 3D Stage and Environment Transitions against src/lib/shared/3d/environments/domain/stage-coordinate-frame.ts before resuming implementation. Prior recorded remainder: Verify protected performer anchors and environment transition acceptance across each supported 3D scene before continuing the revision."
+depends_on: ""
+plan_path: ""
+tags: []
+last_triaged: 2026-10-07
+work_state: unverified
+---
 # Canonical 3D Stage and Environment Transitions
 
 **Date:** 2026-08-06  

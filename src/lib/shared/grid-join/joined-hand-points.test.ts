@@ -14,7 +14,10 @@ import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
 import { getPlacementGridPoints } from "$lib/shared/pictograph/grid/services/placement-grid-points";
 import { getHitTargets } from "$lib/shared/assemble-lab/services/grid-hit-target-calculator";
 
-const CASES: readonly [GridJoinSpec, GridMode.DIAMOND | GridMode.BOX][] = [
+const CASES: readonly [
+  GridJoinSpec,
+  typeof GridMode.DIAMOND | typeof GridMode.BOX,
+][] = [
   [{ toward: "e", steps: 1 }, GridMode.DIAMOND],
   [{ toward: "n", steps: 2 }, GridMode.DIAMOND],
   [{ toward: "se", steps: 1 }, GridMode.BOX],

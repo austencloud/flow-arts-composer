@@ -1,3 +1,14 @@
+---
+status: active
+value: null
+effort: null
+remaining: "Verify reduced-motion bypass and Compose-to-Review transitions in the current Deck Releaser."
+depends_on: ""
+plan_path: ""
+tags: []
+last_triaged: 2026-10-07
+work_state: unverified
+---
 # Deck Releaser Motion System
 
 ## Problem

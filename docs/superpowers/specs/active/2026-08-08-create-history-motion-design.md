@@ -1,3 +1,14 @@
+---
+status: active
+value: null
+effort: null
+remaining: "Verify Create history identity across insert, delete, rewind, and shift, then check motion and visual acceptance."
+depends_on: ""
+plan_path: ""
+tags: []
+last_triaged: 2026-10-07
+work_state: unverified
+---
 # Create History Motion
 
 **Status:** Approved for implementation
