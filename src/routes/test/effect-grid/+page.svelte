@@ -27,6 +27,7 @@
   import AnimalPresetReview from "../animal-presets/+page.svelte";
   import { EFFECT_CELLS } from "./effect-grid";
   import { BLOOM_PRESETS } from "$lib/shared/animation-engine/components/effects-panel/presets/bloom-presets";
+  import { GOO_PRESETS } from "$lib/shared/animation-engine/components/effects-panel/presets/goo-presets";
   import type { EffectType } from "$lib/shared/effects/domain/effects-config";
 
   /**
@@ -48,6 +49,27 @@
       requestedBloomPreset.id,
       requestedBloomPreset.patch
     );
+  }
+  // Reproducible liquid review without changing the viewer's saved settings.
+  const requestedGooPreset = GOO_PRESETS.find(
+    (preset) => preset.id === page.url.searchParams.get("preset")
+  );
+  if (requestedGooPreset?.patch) {
+    effectsConfig.applyPreset(
+      "goo",
+      requestedGooPreset.id,
+      requestedGooPreset.patch
+    );
+  }
+  const gooStyle = page.url.searchParams.get("gooStyle");
+  if (gooStyle === "flow" || gooStyle === "splash" || gooStyle === "mist") {
+    effectsConfig.updateEffect("goo", { spewStyle: gooStyle });
+  }
+  const gooTension = page.url.searchParams.get("gooTension");
+  if (gooTension !== null && Number.isFinite(Number(gooTension))) {
+    effectsConfig.updateEffect("goo", {
+      surfaceTension: Math.max(0, Math.min(1, Number(gooTension))),
+    });
   }
   setEffectsConfigContext(effectsConfig);
 
