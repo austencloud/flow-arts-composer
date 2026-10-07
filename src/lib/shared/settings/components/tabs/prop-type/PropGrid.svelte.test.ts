@@ -407,4 +407,53 @@ describe("PropGrid prop versions", () => {
       .not.toBeNull();
     expect(modelArtIn('[data-family-tile="club"]')).toBeNull();
   });
+
+  // Size is a setting on a prop. A family of one style folds its Big twin into
+  // the single tile, so that tile is the selected prop when the twin is.
+  it("lights and draws the single tile of a prop whose Big twin is selected", async () => {
+    render(PropGrid, {
+      selectedPropType: PropType.BIGCHICKEN,
+      onSelect: vi.fn(),
+      allowedProps: [PropType.CHICKEN, PropType.BIGCHICKEN, PropType.CLUB],
+      fanAppearance: FIRE_FAN,
+      onFanAppearanceChange: vi.fn(),
+      propLook: "model",
+      onPropLookChange: vi.fn(),
+    });
+
+    await expect
+      .element(tile("Chicken"))
+      .toHaveAttribute("aria-pressed", "true");
+    await expect
+      .poll(() => modelArtIn('[data-prop-tile="chicken"]'))
+      .not.toBeNull();
+    // Another prop still reads V1 and stays unselected.
+    await expect
+      .element(tile("Club"))
+      .toHaveAttribute("aria-pressed", "false");
+    expect(modelArtIn('[data-prop-tile="club"]')).toBeNull();
+  });
+
+  it("reports a size change as the other size and names no version", async () => {
+    const onSelect = vi.fn();
+    const onPropLookChange = vi.fn();
+    render(PropGrid, {
+      selectedPropType: PropType.TRIAD,
+      onSelect,
+      allowedProps: [PropType.TRIAD, PropType.TRIGENG, PropType.BIGTRIAD],
+      fanAppearance: FIRE_FAN,
+      onFanAppearanceChange: vi.fn(),
+      propLook: "model",
+      onPropLookChange,
+    });
+
+    await page.getByRole("button", { name: "Choose Triad style" }).click();
+    await page.getByRole("button", { name: "Big", exact: true }).click();
+
+    // The host keeps the version it holds: the grid sends the size twin with
+    // no version and never writes one.
+    expect(onSelect).toHaveBeenCalledTimes(1);
+    expect(onSelect).toHaveBeenLastCalledWith(PropType.BIGTRIAD);
+    expect(onPropLookChange).not.toHaveBeenCalled();
+  });
 });

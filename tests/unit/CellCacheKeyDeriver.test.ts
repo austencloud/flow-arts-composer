@@ -451,6 +451,75 @@ describe("CellCacheKeyDeriver (lsp11/lsp12 composition)", () => {
     });
   });
 
+  describe("retired staff captures in a mixed pair", () => {
+    // Simple Staff, Capped Staff and Fire Staff lost their model captures. Alone
+    // they draw no capture, but beside a Realistic prop they still sit in a
+    // model-look cell, and that cell's key used to match one drawn while they
+    // had a capture.
+    const data = makeStartPlacement();
+    const keyFor = (overrides: Partial<PreviewCellRenderOptions>) =>
+      deriver.deriveCacheKey(data, undefined, true, makeOptions(overrides));
+    const pair = (
+      left: PropType,
+      right: PropType,
+      propLook?: "pictograph" | "model"
+    ) =>
+      keyFor({
+        leftPropType: left,
+        rightPropType: right,
+        catDogModeEnabled: true,
+        propLook,
+      });
+    const RETIRED = [
+      PropType.SIMPLESTAFF,
+      PropType.STAFF2,
+      PropType.FIRE_DOUBLE_STAFF,
+    ];
+
+    it("keys a Realistic pair holding a retired staff apart from the old key", () => {
+      for (const retired of RETIRED) {
+        const key = pair(PropType.STAFF, retired, "model");
+        // The key a cell drawn with the old capture was stored under.
+        expect(key).not.toContain(
+          '"propAppearanceRevision":"staff-model-thumb-end-v2"'
+        );
+        expect(key).toContain(
+          '"propAppearanceRevision":"staff-model-capture-retired-v3+staff-model-thumb-end-v2"'
+        );
+        // Order of the hands does not change the key's meaning.
+        expect(pair(retired, PropType.STAFF, "model")).toContain(
+          '"propAppearanceRevision":"staff-model-capture-retired-v3+staff-model-thumb-end-v2"'
+        );
+        expect(key).not.toBe(
+          pair(PropType.STAFF, PropType.STAFF, "model")
+        );
+      }
+      expect(
+        pair(PropType.CLUB, PropType.SIMPLESTAFF, "model")
+      ).toContain(
+        '"propAppearanceRevision":"club-art-v2+staff-model-capture-retired-v3"'
+      );
+    });
+
+    it("keeps single-prop, Version 1 and capture-free keys as they were", () => {
+      for (const retired of RETIRED) {
+        // Alone it draws notation art and carries no model look.
+        const alone = keyFor({ leftPropType: retired, propLook: "model" });
+        expect(alone).not.toContain("propAppearanceRevision");
+        expect(alone).toBe(keyFor({ leftPropType: retired }));
+
+        // Version 1 never draws a capture, so the revision stays out.
+        const version1 = pair(PropType.STAFF, retired, "pictograph");
+        expect(version1).not.toContain("propAppearanceRevision");
+        expect(version1).toBe(pair(PropType.STAFF, retired));
+      }
+      // Two retired staffs together draw no capture, so no model look either.
+      expect(
+        pair(PropType.SIMPLESTAFF, PropType.FIRE_DOUBLE_STAFF, "model")
+      ).toBe(pair(PropType.SIMPLESTAFF, PropType.FIRE_DOUBLE_STAFF));
+    });
+  });
+
   describe("triangle grip", () => {
     const keyFor = (overrides: Partial<PreviewCellRenderOptions>) =>
       deriver.deriveCacheKey(

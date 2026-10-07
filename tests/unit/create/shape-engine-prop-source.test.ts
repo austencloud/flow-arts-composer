@@ -38,6 +38,41 @@ describe("createShapeEnginePropSource", () => {
     });
   });
 
+  it("writes the version a pick names in the same write as the pair", () => {
+    const updateSettings = vi.fn();
+    const source = createShapeEnginePropSource({
+      getSettings: () => ({
+        leftPropType: PropType.STAFF,
+        rightPropType: PropType.STAFF,
+        catDogMode: false,
+      }),
+      updateSettings,
+    });
+    source.set({
+      left: PropType.CAPSULE_BATON,
+      right: PropType.CAPSULE_BATON,
+      catDog: false,
+      look: "model",
+    });
+    expect(updateSettings).toHaveBeenCalledTimes(1);
+    expect(updateSettings).toHaveBeenCalledWith({
+      leftPropType: PropType.CAPSULE_BATON,
+      rightPropType: PropType.CAPSULE_BATON,
+      catDogMode: false,
+      propArtwork: "model",
+    });
+  });
+
+  it("names no version in the write when the pick named none", () => {
+    const updateSettings = vi.fn();
+    const source = createShapeEnginePropSource({
+      getSettings: () => ({}),
+      updateSettings,
+    });
+    source.set({ left: PropType.CLUB, right: PropType.CLUB, catDog: false });
+    expect(updateSettings.mock.calls[0]![0]).not.toHaveProperty("propArtwork");
+  });
+
   it("reads a legacy settings object with no hand fields", () => {
     const source = createShapeEnginePropSource({
       getSettings: () => ({ propType: PropType.FAN }),

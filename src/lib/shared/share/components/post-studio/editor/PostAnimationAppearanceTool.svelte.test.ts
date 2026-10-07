@@ -66,7 +66,7 @@ it("saves a plain staff in one edit without changing the account's props or artw
   }).toEqual(account);
 });
 
-it("saves Version 1 when a pick of a different prop names no version", async () => {
+it("saves Version 1 when a pick of a different prop with a Version 2 names no version", async () => {
   await page.viewport(760, 800);
   const onAppearanceChange = vi.fn();
   const { rerender } = render(PostAnimationAppearanceTool, {
@@ -90,14 +90,73 @@ it("saves Version 1 when a pick of a different prop names no version", async () 
   });
   await rerender({ appearanceOverride: v2 });
 
-  // Stick has one version, so its tile names none. The Version 2 chosen for
-  // the baton must not follow the performer onto it.
+  // Stick has one version, so its tile names none and there is nothing for it
+  // to reset: the baton's Version 2 stays for the next prop that has one.
   await page
     .getByRole("button", { name: "Select Stick prop type", exact: true })
     .click();
-  expect(onAppearanceChange.mock.calls.at(-1)![0]).toMatchObject({
+  const stick = onAppearanceChange.mock.calls.at(-1)![0];
+  expect(stick).toMatchObject({
     propType: PropType.STICK,
+    propLook: "model",
+  });
+  await rerender({ appearanceOverride: stick });
+
+  // Buugeng has a Version 2 of its own, and the pick names none, so it starts
+  // at Version 1. The Version 2 chosen for the baton must not follow it there.
+  await page.getByRole("button", { name: "Back to all props" }).click();
+  await page
+    .getByRole("button", { name: "Select Buugeng prop type", exact: true })
+    .click();
+  expect(onAppearanceChange.mock.calls.at(-1)![0]).toMatchObject({
+    propType: PropType.BUUGENG,
     propLook: "pictograph",
+  });
+});
+
+it("keeps Version 2 when the size changes", async () => {
+  await page.viewport(760, 800);
+  const onAppearanceChange = vi.fn();
+  render(PostAnimationAppearanceTool, {
+    editor: {
+      project: createEmptyPostProject({ sequenceId: "prop-test", now: 1 }),
+    } as PostEditorState,
+    appearanceOverride: { propType: PropType.TRIAD, propLook: "model" },
+    onAppearanceChange,
+    locked: false,
+  });
+  await page.getByRole("tab", { name: "Props", exact: true }).click();
+  await page.getByRole("button", { name: "Choose Triad style" }).click();
+
+  // Big Triad is the same prop as Triad, so the look the performer chose stays.
+  await page.getByRole("button", { name: "Big", exact: true }).click();
+  expect(onAppearanceChange.mock.calls.at(-1)![0]).toMatchObject({
+    propType: PropType.BIGTRIAD,
+    propLook: "model",
+  });
+});
+
+it("keeps Version 2 when the pick has no Version 2 to show", async () => {
+  await page.viewport(760, 800);
+  const onAppearanceChange = vi.fn();
+  render(PostAnimationAppearanceTool, {
+    editor: {
+      project: createEmptyPostProject({ sequenceId: "prop-test", now: 1 }),
+    } as PostEditorState,
+    appearanceOverride: { propType: PropType.STAFF, propLook: "model" },
+    onAppearanceChange,
+    locked: false,
+  });
+  await page.getByRole("tab", { name: "Props", exact: true }).click();
+
+  // Fan has one version. Choosing it leaves the staff's Version 2 in place for
+  // when the performer comes back to a prop that has one.
+  await page
+    .getByRole("button", { name: "Select Fan prop type", exact: true })
+    .click();
+  expect(onAppearanceChange.mock.calls.at(-1)![0]).toMatchObject({
+    propType: PropType.FAN,
+    propLook: "model",
   });
 });
 

@@ -30,7 +30,8 @@
         onmodechange={state.setMode}
         onpropmodechange={state.setPropMode}
         selectedPropType={state.addressedPropType}
-        onproptypechange={(propType) => void state.setPropType(propType)}
+        onproptypechange={(propType, look) =>
+          void state.setPropType(propType, undefined, look)}
         handProps={state.handProps}
         propPickerOpen={state.propPickerOpen}
         onproppickertoggle={state.togglePropPicker}

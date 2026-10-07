@@ -41,6 +41,7 @@
   import DisplayPanel from "$lib/shared/animation-engine/components/settings-panels/DisplayPanel.svelte";
   import PathShapePanel from "$lib/shared/animation-engine/components/settings-panels/PathShapePanel.svelte";
   import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+  import type { PropLook } from "$lib/shared/pictograph/prop/domain/prop-look";
   import { getPropTypeDisplayInfo } from "$lib/shared/pictograph/prop/domain/prop-type-display-registry";
   import type { FanAppearance } from "$lib/shared/pictograph/prop/domain/fan-appearance";
   import type { PropChiralitySeam } from "$lib/shared/settings/components/tabs/prop-type/prop-chirality-seam";
@@ -142,7 +143,12 @@
       startPlacement?: PictographData | null;
       startingPlacement?: PictographData | null;
     } | null;
-    onPropChange?: (propType: PropType) => void;
+    /**
+     * `look` is the version a "V2" tile names. A host that writes the prop
+     * after an await has to carry it into that write, or the late write
+     * resets it to Version 1.
+     */
+    onPropChange?: (propType: PropType, look?: PropLook) => void;
     /** Let a host route the Props destination into its canonical picker drawer
      * instead of squeezing the catalogue into the bottom dock tray. Sidebar
      * consumers keep the inline catalogue by omitting this callback. */

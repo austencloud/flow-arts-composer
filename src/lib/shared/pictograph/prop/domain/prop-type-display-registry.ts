@@ -600,6 +600,27 @@ export function toggleBigVariant(propType: PropType): PropType {
 }
 
 /**
+ * A prop at its standard size, lower-cased: Big Triad and Triad are both
+ * "triad". Size is a setting on a prop, so anything that asks whether the
+ * performer picked a different prop (a Version 2 pick, a highlighted tile)
+ * compares these keys rather than the raw prop values. Takes a string because
+ * hosts hand props around in either case.
+ */
+export function standardSizeProp(propType: string): string {
+  const key = propType.toLowerCase();
+  return BIG_TO_STANDARD[key as PropType] ?? key;
+}
+
+/** Whether two props are the same prop at either size. */
+export function isSameProp(
+  a: string | null | undefined,
+  b: string | null | undefined
+): boolean {
+  if (!a || !b) return false;
+  return standardSizeProp(a) === standardSizeProp(b);
+}
+
+/**
  * Flat prop-picker sections (props-tab redesign, 2026-06-18).
  *
  * Single source of truth for the FLAT prop grid (`BentoPropGrid`): every listed

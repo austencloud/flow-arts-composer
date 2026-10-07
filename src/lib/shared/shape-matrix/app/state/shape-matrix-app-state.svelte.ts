@@ -24,6 +24,7 @@ import {
   type VtgMode,
 } from "$lib/shared/shape-matrix/services/shape-matrix-realizations";
 import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+import type { PropLook } from "$lib/shared/pictograph/prop/domain/prop-look";
 import {
   foldUntraceablePropPair,
   propPairFromLegacy,
@@ -142,7 +143,17 @@ export interface ShapeMatrixPropSource {
   readonly left: PropType;
   readonly right: PropType;
   readonly catDog: boolean;
-  set(pair: { left: PropType; right: PropType; catDog: boolean }): void;
+  /**
+   * `look` is the version a pick named (a "V2" tile). The host writes it with
+   * the pair, in one write: a pair write that arrives after the load without
+   * a version would reset the one the picker just set.
+   */
+  set(pair: {
+    left: PropType;
+    right: PropType;
+    catDog: boolean;
+    look?: PropLook;
+  }): void;
 }
 
 interface ShapeMatrixAppDependencies {
@@ -152,9 +163,14 @@ interface ShapeMatrixAppDependencies {
   /**
    * A pick made inside the engine (a prop, or the cat dog chip), for a host
    * that mirrors the pair somewhere else. Adopted pairs never come back out,
-   * and a superseded load never fires this at all.
+   * and a superseded load never fires this at all. `look` is the version the
+   * pick named, when it named one.
    */
-  onPropPairChange?: (pair: ShapeMatrixPropPair, catDog: boolean) => void;
+  onPropPairChange?: (
+    pair: ShapeMatrixPropPair,
+    catDog: boolean,
+    look?: PropLook
+  ) => void;
 }
 
 const LEVEL_LANDING_TURN: Record<TurnLevel, TurnValue> = {
@@ -765,10 +781,16 @@ export function createShapeMatrixAppState(
    * The picker stays open. It sits beside the animation rather than over it,
    * so a choice is meant to be watched: pick a prop, see the shape traced by
    * it, pick the next one. Closing is its own action.
+   *
+   * A "V2" tile names its version in `look`. The pair reaches the host only
+   * after the load lands, and a host that writes the pair without a version
+   * resets Version 2 to Version 1, so the version travels with the pair
+   * instead of being written before it.
    */
   async function setPropType(
     prop: PropType,
-    hand: ShapeMatrixPropHand | "both" = catDog ? propHand : "both"
+    hand: ShapeMatrixPropHand | "both" = catDog ? propHand : "both",
+    look?: PropLook
   ): Promise<void> {
     const next = {
       left: hand === "right" ? requestedPropPair.left : prop,
@@ -781,10 +803,10 @@ export function createShapeMatrixAppState(
       return;
     if (!(await load(next))) return;
     syncState();
-    dependencies.onPropPairChange?.(
-      { left: leftPropType, right: rightPropType },
-      catDog
-    );
+    const landed = { left: leftPropType, right: rightPropType };
+    // A pick that names no version reports exactly what it always did.
+    if (look === undefined) dependencies.onPropPairChange?.(landed, catDog);
+    else dependencies.onPropPairChange?.(landed, catDog, look);
   }
 
   function setPropHand(hand: ShapeMatrixPropHand): void {

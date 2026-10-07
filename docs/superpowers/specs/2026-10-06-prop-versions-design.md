@@ -23,7 +23,10 @@ model, so Fire Staff and Fire Staff 3D look the same at tile size.
    (`propArtwork: "pictograph"`). A V2 tile, or Version 2 on a prop's details
    page, sets Version 2. Both hands still share one version in Cat Dog mode.
    Changes that bring no new prop in (Cat Dog off mirroring the left hand,
-   re-picking the current prop) keep the version.
+   re-picking the current prop) keep the version. Two refinements from review:
+   a size change (Standard to Big and back) is the same prop, so it keeps the
+   version; and only a newly held prop that has a Version 2 resets it, so
+   Double Staff V2 in the left hand survives picking Fan for the right.
 2. **Main grid shows V1** for every tile except the selected prop's own tile or
    family tile, which shows the current version.
 3. **Presets carry their version.** Saving stores `propArtwork`; applying
@@ -53,6 +56,19 @@ model, so Fire Staff and Fire Staff 3D look the same at tile size.
   Version 1. `PropGrid` itself does not reset the version, because hosts such
   as the deck releaser and tunnel art settings fall back to the global look
   writer while picking a prop for a local purpose.
+- The Shape Engine writes the prop pair only after its matrix loads, so a
+  version written before that would be reset by the late pair write. Its
+  `setPropType` carries the picked version and the host writes it in the same
+  settings write as the pair.
+- Preset chips draw their own version, and settings checkpoints (Undo after
+  opening a tunnel or 3D scene) save and restore it.
+
+## Known limit
+
+The deck releaser, tunnel art settings, Arena drawer and Guide codex pick a
+prop for their own use but still write the version through the global writer.
+They behave as before this change and need a local version of their own to
+stop sharing it.
 
 ## Verification
 

@@ -11,6 +11,7 @@ import {
   type PropModelSpriteEntry,
 } from "./prop-model-sprites.generated";
 import { HOOP_FAMILY_GLYPH_CROPS } from "./hoop-family-geometry.generated";
+import { isSameProp, standardSizeProp } from "./prop-type-display-registry";
 import {
   isTrianglePropType,
   normalizeTriangleGrip,
@@ -488,9 +489,11 @@ export function propLookOptions(propType: string): readonly PropLookOption[] {
 
 /**
  * The version a host with its own local look holds after a pick. A version
- * belongs to the pick: a tile that names one wins, a different prop with no
- * version starts at Version 1, and choosing the prop already in hand keeps its
- * version. Global settings writes follow the same rule in `withPickVersion`.
+ * belongs to the pick: a tile that names one wins, and a different prop that
+ * has a Version 2 starts at Version 1. Choosing the prop already in hand, at
+ * either size, keeps its version, and so does a pick of a prop with no
+ * Version 2 (it has nothing to reset to). Global settings writes follow the
+ * same rule in `withPickVersion`.
  */
 export function versionAfterPick(
   heldProp: string | null | undefined,
@@ -499,7 +502,8 @@ export function versionAfterPick(
   pickedLook?: PropLook
 ): PropLook {
   if (pickedLook !== undefined) return normalizePropLook(pickedLook);
-  return heldProp?.toLowerCase() === pickedProp.toLowerCase()
+  return isSameProp(heldProp, pickedProp) ||
+    !hasModelSprite(standardSizeProp(pickedProp))
     ? normalizePropLook(heldLook)
     : DEFAULT_PROP_LOOK;
 }

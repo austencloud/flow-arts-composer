@@ -1,9 +1,11 @@
 import { PropType } from "../../pictograph/prop/domain/enums/prop-type";
 import {
   DEFAULT_PROP_LOOK,
+  hasModelSprite,
   normalizePropLook,
   type PropLook,
 } from "../../pictograph/prop/domain/prop-look";
+import { standardSizeProp } from "../../pictograph/prop/domain/prop-type-display-registry";
 import {
   PROP_PAIR_KEYS,
   type PropPairFields,
@@ -12,13 +14,17 @@ import {
 /**
  * A version belongs to the pick. `propArtwork` is one switch every prop
  * shares, so a Version 2 pick of one prop used to follow the performer onto
- * every prop they chose afterwards. Any write that brings a new prop into the
- * hands and does not name a version resets it to Version 1 instead.
+ * every prop they chose afterwards. A write that brings a new prop with a
+ * Version 2 into the hands and does not name a version resets it to Version 1
+ * instead.
  *
- * Changes that bring no new prop in keep the version: re-picking the prop in
- * hand, swapping the hands, or turning Cat Dog off (the right hand mirrors the
- * left, so nothing new appears). Turning Cat Dog on with a different right
- * prop remembered does bring one in, and resets.
+ * Changes that bring no such prop in keep the version: re-picking the prop in
+ * hand, swapping the hands, turning Cat Dog off (the right hand mirrors the
+ * left, so nothing new appears), or picking a prop that has no Version 2 (a
+ * Fan beside a Version 2 Double Staff has nothing to reset to). A prop and its
+ * Big or Standard twin are one prop, so a size change keeps the version too.
+ * Turning Cat Dog on with a different right prop remembered does bring one in,
+ * and resets when that prop has a Version 2.
  */
 export interface PickVersionFields extends PropPairFields {
   propArtwork?: PropLook;
@@ -34,15 +40,16 @@ function sets<P extends PickVersionFields>(
 }
 
 /**
- * The props actually in the hands. Same-prop mode puts the left prop in both
- * hands, so a stored right prop that cat dog is not using is not held.
+ * The props actually in the hands, at their standard size. Same-prop mode puts
+ * the left prop in both hands, so a stored right prop that cat dog is not
+ * using is not held.
  */
-function heldPropSet(fields: PropPairFields): Set<PropType> {
+function heldPropSet(fields: PropPairFields): Set<string> {
   const left = fields.leftPropType ?? fields.propType ?? PropType.STAFF;
   const right = fields.catDogMode
     ? (fields.rightPropType ?? fields.propType ?? left)
     : left;
-  return new Set([left, right]);
+  return new Set([standardSizeProp(left), standardSizeProp(right)]);
 }
 
 /**
@@ -75,7 +82,9 @@ export function withPickVersion<P extends PickVersionFields>(
   });
 
   for (const prop of after) {
-    if (!before.has(prop)) return { ...patch, propArtwork: DEFAULT_PROP_LOOK };
+    if (!before.has(prop) && hasModelSprite(prop)) {
+      return { ...patch, propArtwork: DEFAULT_PROP_LOOK };
+    }
   }
   return patch;
 }

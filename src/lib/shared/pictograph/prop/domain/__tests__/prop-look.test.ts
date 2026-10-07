@@ -138,4 +138,22 @@ describe("version after a pick", () => {
     expect(versionAfterPick("staff", undefined, "staff")).toBe("pictograph");
     expect(versionAfterPick("staff", null, "staff")).toBe("pictograph");
   });
+
+  it("keeps the version across a size change, the same prop", () => {
+    expect(versionAfterPick("triad", "model", "bigtriad")).toBe("model");
+    expect(versionAfterPick("bigtriad", "model", "triad")).toBe("model");
+    expect(versionAfterPick("Staff", "model", "BIGSTAFF")).toBe("model");
+    expect(versionAfterPick("triad", "pictograph", "bigtriad")).toBe(
+      "pictograph"
+    );
+  });
+
+  it("keeps the held version when the picked prop has no Version 2", () => {
+    // Fan has none, so there is nothing for the pick to reset to.
+    expect(versionAfterPick("staff", "model", "fan")).toBe("model");
+    expect(versionAfterPick("staff", "model", "bigfan")).toBe("model");
+    // A prop that does have one still starts at Version 1.
+    expect(versionAfterPick("staff", "model", "club")).toBe("pictograph");
+    expect(versionAfterPick("fan", "model", "club")).toBe("pictograph");
+  });
 });

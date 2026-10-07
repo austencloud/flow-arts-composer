@@ -2,6 +2,12 @@ import { render } from "vitest-browser-svelte";
 import { page, userEvent } from "vitest/browser";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+import type { PropLook } from "$lib/shared/pictograph/prop/domain/prop-look";
+import { normalizePropPatch } from "$lib/shared/settings/domain/prop-pair-rule";
+import {
+  withPickVersion,
+  type PickVersionFields,
+} from "$lib/shared/settings/domain/prop-version-rule";
 import BentoPropGrid from "./BentoPropGrid.svelte";
 
 const CLUB_PICKER_PROPS = [
@@ -148,6 +154,41 @@ describe("BentoPropGrid style settings", () => {
       .toHaveAttribute("aria-pressed", "true");
     await bigModel.click();
     expect(onSelect).toHaveBeenLastCalledWith(PropType.BIGTRIAD, "model");
+  });
+
+  // A size twin is the same prop, so the global pick rule keeps the version a
+  // Version 2 pick chose. The host here writes the way SettingsState does:
+  // pair normalization, then the pick rule.
+  it("keeps Version 2 when the size changes under the global pick rule", async () => {
+    let held: PickVersionFields = {
+      leftPropType: PropType.TRIAD,
+      rightPropType: PropType.TRIAD,
+      propType: PropType.TRIAD,
+      catDogMode: false,
+      propArtwork: "pictograph",
+    };
+    const write = (patch: PickVersionFields) => {
+      held = { ...held, ...withPickVersion(held, normalizePropPatch(held, patch)) };
+    };
+    const { rerender } = render(BentoPropGrid, {
+      selectedPropType: PropType.TRIAD,
+      onSelect: (prop: PropType) => write({ propType: prop }),
+      propLook: held.propArtwork,
+      onPropLookChange: (look: PropLook) => write({ propArtwork: look }),
+      allowedProps: [PropType.TRIAD, PropType.TRIGENG, PropType.BIGTRIAD],
+    });
+
+    await page.getByRole("button", { name: "Choose Triad style" }).click();
+    await page
+      .getByRole("button", { name: "Select Triad V2 prop type", exact: true })
+      .click();
+    expect(held.propArtwork).toBe("model");
+
+    await rerender({ propLook: "model" });
+    const styles = page.getByRole("region", { name: "Triad styles" });
+    await styles.getByRole("button", { name: "Big", exact: true }).click();
+    expect(held.propType).toBe(PropType.BIGTRIAD);
+    expect(held.propArtwork).toBe("model");
   });
 
   it("keeps a buugeng style's chirality on the same page", async () => {

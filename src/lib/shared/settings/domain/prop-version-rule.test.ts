@@ -35,14 +35,28 @@ describe("withPickVersion", () => {
     });
   });
 
-  it("resets when only one hand brings in a new prop", () => {
-    expect(write(v2Staff, { rightPropType: PropType.FAN })).toMatchObject({
+  it("resets when only one hand brings in a new prop that has a Version 2", () => {
+    expect(write(v2Staff, { rightPropType: PropType.CLUB })).toMatchObject({
       catDogMode: true,
       propArtwork: "pictograph",
     });
     expect(write(v2Mixed, { leftPropType: PropType.CLUB })).toMatchObject({
       propArtwork: "pictograph",
     });
+  });
+
+  it("keeps the version when the new prop has no Version 2 to show", () => {
+    // Fan has no Version 2; Double Staff V2 in the other hand is untouched.
+    const withFan = write(v2Staff, { rightPropType: PropType.FAN });
+    expect(withFan).toMatchObject({
+      rightPropType: PropType.FAN,
+      catDogMode: true,
+    });
+    expect(withFan).not.toHaveProperty("propArtwork");
+    // The same holds when both hands change to a prop with one version.
+    expect(write(v2Staff, { propType: PropType.FAN })).not.toHaveProperty(
+      "propArtwork"
+    );
   });
 
   it("keeps the version a patch names for itself", () => {
@@ -85,19 +99,24 @@ describe("withPickVersion", () => {
 
   it("resets when Cat Dog turns on with a different right prop remembered", () => {
     // The right hand is restored first, while Cat Dog is still off.
-    expect(write(v2Staff, { rightPropType: PropType.FAN })).toMatchObject({
+    expect(write(v2Staff, { rightPropType: PropType.CLUB })).toMatchObject({
       catDogMode: true,
       propArtwork: "pictograph",
     });
     // A stored right hand that Cat Dog was not using comes into the hands.
     const hidden: PickVersionFields = {
       ...v2Mixed,
+      rightPropType: PropType.CLUB,
       catDogMode: false,
     };
     expect(write(hidden, { catDogMode: true })).toMatchObject({
       catDogMode: true,
       propArtwork: "pictograph",
     });
+    // A remembered prop with no Version 2 brings nothing to reset.
+    expect(
+      write({ ...v2Mixed, catDogMode: false }, { catDogMode: true })
+    ).not.toHaveProperty("propArtwork");
   });
 
   it("keeps the version when Cat Dog turns on with the same prop in both hands", () => {
@@ -139,7 +158,44 @@ describe("withPickVersion", () => {
       withPickVersion(legacy, { leftPropType: PropType.CLUB })
     ).not.toHaveProperty("propArtwork");
     expect(
-      withPickVersion(legacy, { leftPropType: PropType.FAN })
+      withPickVersion(legacy, { leftPropType: PropType.STAFF })
     ).toMatchObject({ propArtwork: "pictograph" });
+  });
+
+  it("keeps the version across a size change, which is the same prop", () => {
+    expect(write(v2Staff, { propType: PropType.BIGSTAFF })).not.toHaveProperty(
+      "propArtwork"
+    );
+    const v2Triad: PickVersionFields = {
+      ...v2Staff,
+      leftPropType: PropType.TRIAD,
+      rightPropType: PropType.TRIAD,
+      propType: PropType.TRIAD,
+    };
+    const big = write(v2Triad, { propType: PropType.BIGTRIAD });
+    expect(big).toMatchObject({ propType: PropType.BIGTRIAD });
+    expect(big).not.toHaveProperty("propArtwork");
+    // And back down again from the big size.
+    const v2BigTriad: PickVersionFields = {
+      ...v2Triad,
+      leftPropType: PropType.BIGTRIAD,
+      rightPropType: PropType.BIGTRIAD,
+      propType: PropType.BIGTRIAD,
+    };
+    expect(write(v2BigTriad, { propType: PropType.TRIAD })).not.toHaveProperty(
+      "propArtwork"
+    );
+  });
+
+  it("still resets when a size change goes with a different prop", () => {
+    expect(write(v2Staff, { propType: PropType.BIGCLUB })).toMatchObject({
+      propArtwork: "pictograph",
+    });
+  });
+
+  it("resets for a different prop with a Version 2 beside a prop kept in hand", () => {
+    expect(write(v2Mixed, { rightPropType: PropType.CLUB })).toMatchObject({
+      propArtwork: "pictograph",
+    });
   });
 });

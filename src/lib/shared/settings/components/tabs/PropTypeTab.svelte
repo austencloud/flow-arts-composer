@@ -370,6 +370,8 @@
         selectedIndex={selectedPresetIndex}
         colors={settings.primaryPropColors}
         {darkMode}
+        fanAppearance={settings.fanAppearance}
+        triangleGrip={settings.triangleGrip}
         showShortcuts={hasKeyboard}
         onApply={applyPreset}
         onSave={savePreset}

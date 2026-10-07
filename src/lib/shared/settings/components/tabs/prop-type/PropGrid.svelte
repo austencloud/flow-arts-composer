@@ -26,6 +26,7 @@
     toggleBigVariant,
     getFamilyTileDisplayProp,
     isPropActive,
+    isSameProp,
   } from "$lib/shared/pictograph/prop/domain/prop-type-display-registry";
   import { tick } from "svelte";
   import Crossfade from "$lib/shared/components/Crossfade.svelte";
@@ -988,7 +989,9 @@
 
       A tile that names no version draws Version 1 unless it is the selected
       prop, which shows the current version. Otherwise one V2 pick would
-      repaint every other tile that has a capture.
+      repaint every other tile that has a capture. Size is a setting on a
+      prop, so the single tile of a prop whose Big twin is selected is the
+      selected prop too: Big Chicken at V2 lights the Chicken tile at V2.
     -->
     {@const label =
       look === undefined
@@ -1008,13 +1011,15 @@
         actionLabel={look === undefined
           ? undefined
           : t("settings_select_prop_type", { prop: label })}
-        selected={selectedPropType === prop &&
-          (look === undefined || currentPropLook === look)}
+        selected={look === undefined
+          ? isSameProp(selectedPropType, prop)
+          : selectedPropType === prop && currentPropLook === look}
         {color}
         buttonProps={{ "data-prop-tile": prop, "data-prop-look": look }}
         onSelect={() => handleTileClick(prop, look)}
         fanAppearance={normalizedFanAppearance}
-        propLook={look ?? (prop === selectedPropType ? propLook : "pictograph")}
+        propLook={look ??
+          (isSameProp(prop, selectedPropType) ? propLook : "pictograph")}
         triangleGrip={currentGrip}
         {recipeOverrides}
         {colors}

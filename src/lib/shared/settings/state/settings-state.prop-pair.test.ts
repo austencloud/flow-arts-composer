@@ -189,11 +189,29 @@ describe("settings give a pick its own version", () => {
     });
   });
 
-  it("goes back to Version 1 for a single-hand pick", async () => {
-    await settingsService.updateSetting("rightPropType", PropType.FAN);
+  it("goes back to Version 1 for a single-hand pick of a prop with a Version 2", async () => {
+    await settingsService.updateSetting("rightPropType", PropType.CLUB);
     expect(settingsService.settings).toMatchObject({
       catDogMode: true,
       propArtwork: "pictograph",
+    });
+  });
+
+  // A Fan has no Version 2, so there is nothing for the pick to reset to and
+  // the Staff in the other hand keeps the version it was picked at.
+  it("keeps the version for a single-hand pick of a prop with no Version 2", async () => {
+    await settingsService.updateSetting("rightPropType", PropType.FAN);
+    expect(settingsService.settings).toMatchObject({
+      catDogMode: true,
+      propArtwork: "model",
+    });
+  });
+
+  it("keeps the version when only the size changes", async () => {
+    await settingsService.updateSetting("propType", PropType.BIGSTAFF);
+    expect(settingsService.settings).toMatchObject({
+      leftPropType: PropType.BIGSTAFF,
+      propArtwork: "model",
     });
   });
 
