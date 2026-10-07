@@ -68,3 +68,10 @@ export function matrixFiltersForTurns(
 export function matrixFiltersForTurn(turn: TurnValue): MatrixFilters {
   return matrixFiltersForTurns(turn, turn);
 }
+
+/**
+ * The level and turn band the Shape Matrix opens on, for both hands. The
+ * Create front door's Shape preview shows the same corner of the matrix.
+ */
+export const SHAPE_MATRIX_DEFAULT_LEVEL: TurnLevel = 2;
+export const SHAPE_MATRIX_DEFAULT_TURN: TurnValue = 2;
