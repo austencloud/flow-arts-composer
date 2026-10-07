@@ -54,6 +54,7 @@ with pre-prepared data for better performance.
   import { calculatePictographMotionPositions } from "../../prop/services/pictograph-motion-positioner";
   import { GridMode, GridLocation } from "../../grid/domain/enums/grid-enums";
   import PictographRenderer from "./PictographRenderer.svelte";
+  import { gridJoinKey, isGridJoin } from "@tka/render-core";
   import { globalAdjustmentVersion } from "../../arrow/positioning/global/state/global-adjustment-version.svelte";
   import type {
     ElementalType,
@@ -566,6 +567,11 @@ with pre-prepared data for better performance.
       // Include global adjustment version so ALL pictographs re-prepare when adjustments are saved
       // This ensures steps 6, 10, 14, etc. (same letter rotated) update when beat 2 is adjusted globally
       globalAdjustmentVersion: globalAdjustmentVersion.version,
+      // The sequence's join moves each hand onto its own grid, so picking or
+      // dropping one re-prepares. Absent on one grid, so those keys are unchanged.
+      ...(isGridJoin(pictographData.conjoined) && {
+        join: gridJoinKey(pictographData.conjoined),
+      }),
     });
   });
 
