@@ -40,12 +40,13 @@
     onFanAppearanceChange,
     propLook,
     onPropLookChange,
+    showPropLook,
   } = $props<{
     isOpen?: boolean;
     selectedPropType: PropType;
     color?: "blue" | "red";
     title?: string;
-    onSelect: (propType: PropType) => void;
+    onSelect: (propType: PropType, look?: PropLook) => void;
     /** Show left/right tab bar for cat/dog mode */
     showTabs?: boolean;
     /** Active tab when showTabs is true */
@@ -71,6 +72,11 @@
     onFanAppearanceChange?: (appearance: FanAppearance) => void;
     propLook?: PropLook;
     onPropLookChange?: (look: PropLook) => void;
+    /**
+     * Turns the Version 1 / Version 2 choice off for a host whose render
+     * ignores it; see BentoPropGrid.
+     */
+    showPropLook?: boolean;
   }>();
 
   const displayTitle = $derived(title ?? t("settings_props_select_prop"));
@@ -104,13 +110,14 @@
     onOpenChange?.(open);
   }
 
-  function handlePropSelect(propType: PropType) {
+  function handlePropSelect(propType: PropType, look?: PropLook) {
     const hapticService = getHapticFeedback();
     hapticService?.trigger("selection");
     // Selection updates the live prop preview while the picker stays available
     // for comparison. Closing is always a separate action: backdrop, X,
     // Escape, or drag-dismiss.
-    onSelect(propType);
+    if (look === undefined) onSelect(propType);
+    else onSelect(propType, look);
   }
 
   function handleTabChange(tab: "left" | "right") {
@@ -207,6 +214,7 @@
         {onFanAppearanceChange}
         {propLook}
         {onPropLookChange}
+        {showPropLook}
       />
     </div>
   </div>
