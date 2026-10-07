@@ -85,6 +85,13 @@
     type ViewerControlValue,
   } from "$lib/shared/sequence-viewer/domain/viewer-control-analytics";
   import { getOptionalViewerAnimatorInspectorContext } from "$lib/shared/sequence-viewer/context/viewer-animator-inspector-context";
+  import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
+  import GridJoinSection from "$lib/shared/grid-join/GridJoinSection.svelte";
+  import { followGridJoin } from "$lib/shared/grid-join/grid-join-follower.svelte";
+  import {
+    gridJoinSelection,
+    offeredGridJoinDirections,
+  } from "$lib/shared/grid-join/grid-join-choices";
 
   type PanelLayout = "sidebar" | "bottom";
   type PanelPresentation = "full" | "navigation" | "content";
@@ -131,6 +138,9 @@
     sequence?: {
       word?: string | null;
       steps?: ReadonlyArray<{ letter?: string | null }> | null;
+      /** The start position the Grids page draws each join with. */
+      startPlacement?: PictographData | null;
+      startingPlacement?: PictographData | null;
     } | null;
     onPropChange?: (propType: PropType) => void;
     /** Let a host route the Props destination into its canonical picker drawer
@@ -572,6 +582,32 @@
       : t("viewer_ui_path_shape");
   });
 
+  // ── Grids (grid join) ──
+  // Offered only where the host gives a join controller over its sequence
+  // (the viewer, Create) and there is a start position to draw each choice.
+  const gridJoin = followGridJoin();
+  const joinPictograph = $derived(
+    sequence?.startPlacement ?? sequence?.startingPlacement ?? null
+  );
+  const joinLeftProp = $derived(
+    handProps?.catDog ? handProps.leftPropType : selectedPropType
+  );
+  const joinRightProp = $derived(
+    handProps?.catDog ? handProps.rightPropType : selectedPropType
+  );
+  const joinSummary = $derived.by(() => {
+    void gridJoin.version();
+    const controller = gridJoin.controller;
+    if (!controller) return "";
+    const gridMode = controller.gridMode();
+    const { current } = gridJoinSelection(controller.current(), gridMode);
+    if (!current) return t("animation_menu_grid_join_one");
+    const direction = offeredGridJoinDirections(gridMode).find(
+      (choice) => choice.toward === current.toward
+    );
+    return `${direction?.label() ?? ""} · ${current.steps}`;
+  });
+
   const displaySummary = $derived.by(() => {
     void vmVersion;
     const s = vm.getSettings();
@@ -704,6 +740,16 @@
           summary: effectsSummary,
           accentColor: effectsAccent,
         },
+        ...(gridJoin.controller && joinPictograph
+          ? {
+              join: {
+                icon: "fa-object-ungroup",
+                label: t("viewer_ui_grids"),
+                summary: joinSummary,
+                accentColor: RAIL_CATEGORY_ACCENTS.formation,
+              },
+            }
+          : {}),
         effort: {
           label: t("viewer_ui_effort"),
           summary: effortSummary,
@@ -902,6 +948,14 @@
     />
   {:else if resolvedPill === "effort"}
     {@render effortBody()}
+  {:else if resolvedPill === "join"}
+    <GridJoinSection
+      pictograph={joinPictograph}
+      leftPropType={joinLeftProp}
+      rightPropType={joinRightProp}
+      fill={layout === "sidebar" || visualPagesFill}
+      compact={layout === "bottom" && !visualPagesFill}
+    />
   {:else if resolvedPill === "playback"}
     {@render playbackBody()}
   {:else if resolvedPill === "display"}
@@ -1327,7 +1381,9 @@
           ? "min(54vh, 360px)"
           : resolvedPill === "props"
             ? "min(80dvh, 380px)"
-            : "min(35vh, 250px)"}
+            : resolvedPill === "join"
+              ? "min(62dvh, 420px)"
+              : "min(35vh, 250px)"}
         tray={presentation === "full" ? dockTray : undefined}
       />
     {/if}
@@ -1344,6 +1400,7 @@
       resolvedPill === "display" ||
       resolvedPill === "effects" ||
       resolvedPill === "props" ||
+      resolvedPill === "join" ||
       (resolvedPill === "motion" && visualPagesFill)}
     fluidBody={resolvedPill === "props" ||
       (visualPagesFill &&

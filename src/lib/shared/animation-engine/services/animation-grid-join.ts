@@ -15,6 +15,7 @@ import type { GridJoin } from "@tka/tka-types";
 import type { PropState } from "$lib/shared/foundation/domain/types/prop-state";
 import { PIXELS_PER_UNIT } from "$lib/shared/multi-grid/domain/constants/grid-mode-offsets";
 import {
+  JOINED_GRID_TINT,
   JOIN_GRID_LOCATIONS,
   alignGridJoin,
   gridJoinKey,
@@ -23,6 +24,7 @@ import {
   joinedPointColors,
   joinedPointKey,
   joinedPointsDrawnBy,
+  mixHexColors,
   planJoinedGridPoints,
   type JoinGridGeometry,
   type JoinVec,
@@ -97,6 +99,25 @@ export function shiftTrailPoints(
   const shift = gridJoinShiftViewBox(join, propIndex);
   const dx = shift.x * scaleFactor;
   const dy = shift.y * scaleFactor;
+  for (const point of points) {
+    point.x += dx;
+    point.y += dy;
+  }
+}
+
+/**
+ * Moves path-cache trail points by a hand's displayed grid offset in
+ * hand-point radii, which during a layout slide sits between two joins'
+ * offsets. `scaleFactor` is canvas pixels per viewBox unit.
+ */
+export function shiftTrailPointsBy(
+  points: { x: number; y: number }[],
+  shiftUnits: JoinVec,
+  scaleFactor: number
+): void {
+  if (shiftUnits.x === 0 && shiftUnits.y === 0) return;
+  const dx = shiftUnits.x * PIXELS_PER_UNIT * scaleFactor;
+  const dy = shiftUnits.y * PIXELS_PER_UNIT * scaleFactor;
   for (const point of points) {
     point.x += dx;
     point.y += dy;
@@ -248,6 +269,41 @@ export function buildJoinedGridSvg(
     ) +
     gridSvg.slice(closeAt)
   );
+}
+
+/**
+ * One whole grid for a hand to slide on while the layout changes: every
+ * hand, outer and center point painted `color`, the nonradial guide points
+ * left out as in the joined view. Unrecognised markup is returned unchanged.
+ */
+export function buildHandGridCopySvg(gridSvg: string, color: string): string {
+  const rootOpen = /<svg\b[^>]*>/.exec(gridSvg);
+  const closeAt = gridSvg.lastIndexOf("</svg>");
+  if (!rootOpen || closeAt < 0) return gridSvg;
+  const bodyStart = rootOpen.index + rootOpen[0].length;
+  const styleClose = gridSvg.indexOf("</style>", bodyStart);
+  const splitAt =
+    styleClose >= 0 && styleClose < closeAt
+      ? styleClose + "</style>".length
+      : bodyStart;
+  const body = gridSvg
+    .slice(splitAt, closeAt)
+    .replace(POINT_ELEMENT, (element, id: string) =>
+      gridPointOfElementId(id) === null ? element : paintElement(element, color)
+    )
+    .replace(NONRADIAL_POINT, "");
+  return gridSvg.slice(0, splitAt) + body + gridSvg.slice(closeAt);
+}
+
+/**
+ * The color a hand's own grid copy is painted while it slides: the color a
+ * joined grid gives a point only that hand's grid draws.
+ */
+export function handGridCopyColor(
+  paint: JoinedGridPaint,
+  hand: "left" | "right"
+): string {
+  return mixHexColors(paint.base, paint.hands[hand], JOINED_GRID_TINT);
 }
 
 function gridCopy(
