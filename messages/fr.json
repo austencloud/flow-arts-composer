@@ -761,5 +761,8 @@
   "viewer_sequence_viewer": "Visionneuse de séquences",
   "viewer_share": "Partager",
   "viewer_unnamed_sequence": "Séquence non nommée",
-  "visibility_animation": "Animation"
+  "visibility_animation": "Animation",
+  "color_cool_colors": "Couleurs froides",
+  "color_warm_colors": "Couleurs chaudes",
+  "color_neutral_colors": "Couleurs neutres"
 }

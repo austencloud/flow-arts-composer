@@ -538,5 +538,8 @@
   "viewer_sequence_viewer": "시퀀스 뷰어",
   "viewer_share": "공유",
   "viewer_unnamed_sequence": "이름 없는 시퀀스",
-  "visibility_animation": "애니메이션"
+  "visibility_animation": "애니메이션",
+  "color_cool_colors": "차가운 색",
+  "color_warm_colors": "따뜻한 색",
+  "color_neutral_colors": "중성 색"
 }
