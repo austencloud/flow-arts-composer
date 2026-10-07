@@ -64,6 +64,7 @@
     word: data.name,
     steps: [...steps],
     gridMode: steps.find((s) => s.gridMode)?.gridMode,
+    ...(data.conjoined ? { conjoined: data.conjoined } : {}),
   });
 
   // Autoplaying motion needs a user-reachable pause (WCAG 2.2.2) — the real

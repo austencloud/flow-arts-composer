@@ -13,6 +13,7 @@ import {
   sampleGradient,
 } from "$lib/shared/mandala/domain/mandala-palette";
 import type { MandalaFrameSpec } from "$lib/shared/mandala/services/mandala-frame-renderer";
+import { sequenceMandalaHandOffsets } from "$lib/shared/mandala/services/mandala-grid-join";
 import {
   toAnimationPathPolicy,
   toMandalaPathShape,
@@ -517,6 +518,8 @@ export class MandalaViewerController {
       rotation: this.rotation,
       morphColors: isFlow ? this.#getPresetMorph() : null,
       solidPair: isFlow ? null : this.#getPresetPair(),
+      // A joined sequence exports joined: each hand around its own grid.
+      handOffsets: sequenceMandalaHandOffsets(sequence),
     };
 
     // The shared exporter owns the worker lifecycle (cache-busted construction,

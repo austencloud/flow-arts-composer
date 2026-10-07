@@ -14,6 +14,7 @@
    * Visible only when focusedSlot is non-null. Closes on Escape, backdrop click,
    * or after a pick/clear, via onClose.
    */
+  import { sequenceFirstStep } from "../services/sequence-first-step";
   import PictographContainer from "$lib/shared/pictograph/shared/components/PictographContainer.svelte";
   import SequencePicker from "./SequencePicker.svelte";
   import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
@@ -46,7 +47,7 @@
   function firstStep(id: string | null): PictographData | null {
     if (!id) return null;
     const seq = seqById.get(id);
-    return (seq?.steps?.[0] as PictographData | undefined) ?? null;
+    return sequenceFirstStep(seq);
   }
 
   function nameFor(id: string | null): string {

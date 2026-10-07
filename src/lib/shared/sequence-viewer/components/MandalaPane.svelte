@@ -8,6 +8,7 @@
   import { getAnimationVisibilityManager } from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
   import type { MandalaRenderOptions } from "$lib/shared/mandala/domain/mandala-types";
   import type { ControlDockAction } from "./ControlDock.svelte";
+  import { sequenceMandalaHandOffsets } from "$lib/shared/mandala/services/mandala-grid-join";
 
   interface Props {
     sequence: SequenceData;
@@ -68,6 +69,8 @@
 
   const takeoverSize = $derived(Math.max(160, containerSize - 32));
   const renderedHands = $derived(show ?? ctrl.show);
+  // A joined sequence draws each hand's figure around its own grid.
+  const handOffsets = $derived(sequenceMandalaHandOffsets(sequence));
 
   // With the dock suppressed (controls in the sidebar) the stage reclaims the
   // bottom padding the dock would otherwise reserve.
@@ -118,6 +121,7 @@
       palette={ctrl.palette}
       strokeWidth={ctrl.lineWeight}
       gradient={ctrl.gradientColors}
+      {handOffsets}
     />
   </div>
 

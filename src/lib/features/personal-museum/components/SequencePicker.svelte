@@ -8,6 +8,7 @@
    * assignment panel (Task 11) and the in-world placement picker (Task 12) so
    * the thumbnail-grid markup/styling lives in one place.
    */
+  import { sequenceFirstStep } from "../services/sequence-first-step";
   import PictographContainer from "$lib/shared/pictograph/shared/components/PictographContainer.svelte";
   import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
   import type { LibrarySequence } from "$lib/shared/library/domain/models/library-sequence";
@@ -41,7 +42,7 @@
 
   function firstStep(id: string): PictographData | null {
     const seq = seqById.get(id);
-    return (seq?.steps?.[0] as PictographData | undefined) ?? null;
+    return sequenceFirstStep(seq);
   }
 
   function nameFor(id: string): string {

@@ -268,3 +268,28 @@ describe("collectedTunnelViewerSequence", () => {
     });
   });
 });
+
+describe("collectedTunnelSequence grid join", () => {
+  it("reopens a joined tunnel on its join", () => {
+    const sequence = collectedTunnelSequence(
+      savedTunnel(undefined, { conjoined: { toward: "se", steps: 1 } })
+    );
+    expect(sequence.conjoined).toEqual({ toward: "se", steps: 1 });
+  });
+
+  it("reopens a tunnel saved before joins on one grid", () => {
+    const sequence = collectedTunnelSequence(savedTunnel());
+    expect("conjoined" in sequence).toBe(false);
+  });
+
+  it("carries the join into the legacy single-performer cast", () => {
+    const composition = collectedTunnelComposition(
+      savedTunnel(undefined, { conjoined: { toward: "n", steps: 2 } })
+    );
+    const lead = composition.performers[0]!;
+    expect(lead.source.kind).toBe("independent");
+    if (lead.source.kind === "independent") {
+      expect(lead.source.sequence.conjoined).toEqual({ toward: "n", steps: 2 });
+    }
+  });
+});

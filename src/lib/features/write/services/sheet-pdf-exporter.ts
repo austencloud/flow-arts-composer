@@ -41,6 +41,7 @@ import {
   type SheetCell,
 } from "./sheet-row-planner";
 import { SHEET_CELL_VISIBILITY } from "./sheet-cell-config";
+import { cellRasterKey, joinedCellStep } from "./sheet-cell-raster";
 import type { ChoreoSheet } from "../domain/types/choreo-sheet";
 import {
   formatSheetRunningTimestamp,
@@ -62,43 +63,6 @@ const PRINT_DPI = 300;
 // for print, cheap to embed.
 function cellRasterSizePx(geo: SheetPageGeometry): number {
   return Math.max(1, Math.round((geo.cellSizePt / 72) * PRINT_DPI));
-}
-
-// Identity key for raster de-dup: identical letter + blue/red motion + reversals
-// + prop types render to identical pixels, so they share one embedded PNG. This
-// mirrors what the preparer's own cache keys on. When step numbers are shown they
-// are baked into the pixels, so the number joins the identity (`bakedNumber` is
-// null when the sheet hides numbers, keeping full de-dup in that mode).
-function cellRasterKey(
-  step: StepData,
-  leftProp: PropType,
-  rightProp: PropType,
-  bakedNumber: number | null
-): string {
-  const motions = step.motions ?? {};
-  const fingerprint = (m: (typeof motions)["left"]): string =>
-    m
-      ? [
-          m.motionType,
-          m.startLocation,
-          m.endLocation,
-          m.rotationDirection,
-          m.turns,
-          m.startOrientation,
-          m.endOrientation,
-        ].join(",")
-      : "none";
-  return [
-    step.letter ?? "none",
-    step.gridMode ?? "",
-    fingerprint(motions.left),
-    fingerprint(motions.right),
-    step.leftReversal ? "B" : "",
-    step.rightReversal ? "R" : "",
-    leftProp,
-    rightProp,
-    bakedNumber ?? "",
-  ].join("|");
 }
 
 // RenderCanvas is an OffscreenCanvas in workers/modern browsers, HTMLCanvasElement
@@ -274,7 +238,9 @@ export async function buildChoreoSheetPDF(
     }
 
     if (cell.isBlank || !cell.step) return;
-    const step = cell.step;
+    // Drawn on the grids its sequence is joined on (display-only stamp).
+    const step = joinedCellStep(cell);
+    if (!step) return;
 
     // Step numbers honor the sheet flag; start positions (stepNumber 0) never
     // get one, though the planner only feeds actual steps (>= 1).

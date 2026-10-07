@@ -13,7 +13,8 @@
  *   L5 - zeta/eta positions, skewed or 8point grid mode, skew modifier on shift
  *   L6 - center grid location ("c"), tau/terra positions, centric grid mode,
  *        hash motions, skew modifier on dash
- *   L7 - trigrid grid mode (conjoined)
+ *   L7 - trigrid grid mode, or a grid join (`SequenceData.conjoined`): blue's
+ *        hand on one grid and red's on a second grid beside it
  *   L8 - any motion/step carrying a `plane` field
  *
  * Levels 4 and 6 traded places in Aug 2026: interradials moved down to 4 and
@@ -26,6 +27,7 @@
  */
 
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import { sequenceGridJoin } from "$lib/shared/grid-join/sequence-grid-join";
 import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
 
 const CENTER_ORIENTATIONS = new Set([
@@ -84,6 +86,10 @@ export function detectLevelFeatures(sequence: SequenceData): LevelFeatureReport 
     else if (mode === "skewed" || mode === "8point") note(5, `gridMode:${mode}`);
     else if (mode === "trigrid") note(7, `gridMode:${mode}`);
   }
+
+  // Only a well-formed join counts; a malformed stored value draws as one grid.
+  const join = sequenceGridJoin(sequence);
+  if (join) note(7, `conjoined:${join.toward}${join.steps}`);
 
   for (const step of sequence.steps as readonly StepData[]) {
     scanStep(step as unknown as StepLike, note);

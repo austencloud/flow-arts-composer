@@ -296,3 +296,37 @@ describe("CollectedTunnelSchema", () => {
     expect(needsTunnelPosterRefresh(migrated.tunnel)).toBe(true);
   });
 });
+
+describe("CollectedTunnelSchema grid join", () => {
+  it("keeps a stored join and reads a missing or malformed one as one grid", () => {
+    const joined = CollectedTunnelSchema.safeParse({
+      ...valid,
+      conjoined: { toward: "w", steps: 1 },
+    });
+    expect(joined.success && joined.data.conjoined).toEqual({
+      toward: "w",
+      steps: 1,
+    });
+
+    const plain = CollectedTunnelSchema.safeParse(valid);
+    expect(plain.success && plain.data.conjoined).toBeUndefined();
+
+    const bad = CollectedTunnelSchema.safeParse({
+      ...valid,
+      conjoined: { toward: "w", steps: 9 },
+    });
+    expect(bad.success).toBe(true);
+    expect(bad.success && bad.data.conjoined).toBeUndefined();
+  });
+
+  it("puts the join in the revision payload only when there is one", async () => {
+    const { tunnelRevisionPayload } = await import("../tunnel-revision");
+    const base = CollectedTunnelSchema.parse(valid);
+    expect("conjoined" in tunnelRevisionPayload(base)).toBe(false);
+    const joined = tunnelRevisionPayload({
+      ...base,
+      conjoined: { toward: "e", steps: 2 },
+    });
+    expect(joined.conjoined).toEqual({ toward: "e", steps: 2 });
+  });
+});

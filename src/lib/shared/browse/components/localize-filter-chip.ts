@@ -51,6 +51,10 @@ export function localizeFilterChip(filter: {
       if (filter.value === "box") return t("browse_audit_box");
       if (filter.value === "diamond") return t("browse_audit_diamond");
       return filter.label;
+    case BrowseFilterType.GRID_JOIN:
+      if (filter.value === "joined") return t("browse_audit_joined_grids");
+      if (filter.value === "single") return t("browse_audit_one_grid");
+      return filter.label;
     case BrowseFilterType.TND_FAMILY: {
       const mode = FAMILY_MODE_BY_ID[String(filter.value)];
       return mode ? localizedModeName(mode) : filter.label;

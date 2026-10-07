@@ -18,6 +18,11 @@ import { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-
 import { MandalaPathPreparer } from "$lib/shared/mandala/services/mandala-path-preparer";
 import { computeEngineAlignedMandalaScale } from "$lib/shared/mandala/services/mandala-path-preparer";
 import type { PreparedMandalaPath } from "$lib/shared/mandala/services/types";
+import {
+  mandalaGridJoinOffsets,
+  type MandalaHandOffsets,
+} from "$lib/shared/mandala/services/mandala-grid-join";
+import { sequenceGridJoin } from "$lib/shared/grid-join/sequence-grid-join";
 import { BASE_SAMPLES_PER_BEAT } from "$lib/shared/mandala/domain/mandala-constants";
 import { DEFAULT_TRAIL_SETTINGS } from "$lib/shared/animation-engine/domain/types/trail-types";
 import {
@@ -131,6 +136,8 @@ class SequenceStripPainter implements PostStudioLayerPainter {
   private preparedCells: PreparedCell[] | null = null;
   private preparedCellsTask: Promise<PreparedCell[]> | null = null;
   private mandalaPaths: PreparedMandalaPath[] | null = null;
+  /** Each hand's mandala figure offset when the sequence is joined, else null. */
+  private readonly mandalaHandOffsets: MandalaHandOffsets | null;
 
   private readonly sizeCaches = new Map<number, SizeCache>();
   private readonly pendingSizes = new Map<number, Promise<void>>();
@@ -141,6 +148,12 @@ class SequenceStripPainter implements PostStudioLayerPainter {
     private readonly showProgressBar: () => boolean
   ) {
     this.cells = buildNotationCells(sequence);
+    // The mandala is traced from the raw steps, which never carry the join, so
+    // a joined sequence draws each hand's figure around its own grid here.
+    this.mandalaHandOffsets = mandalaGridJoinOffsets(
+      sequenceGridJoin(sequence),
+      sequence.gridMode ?? sequence.steps[0]?.gridMode
+    );
     this.moveCount = Math.max(0, this.cells.length - 1);
     this.leftSampleCounts = mandalaSampleCounts(sequence.steps, HandSide.LEFT);
     this.rightSampleCounts = mandalaSampleCounts(
@@ -468,6 +481,9 @@ class SequenceStripPainter implements PostStudioLayerPainter {
       const fraction = path.hand === "left" ? leftFraction : rightFraction;
       // The complete path gives the mandala its shape; its bright leading
       // portion records how far this hand has actually traced it so far.
+      const offset = this.mandalaHandOffsets?.[path.hand];
+      context.save();
+      if (offset) context.translate(offset.x, offset.y);
       context.strokeStyle = path.color;
       context.globalAlpha = baseAlpha * 0.25;
       context.setLineDash([]);
@@ -475,6 +491,7 @@ class SequenceStripPainter implements PostStudioLayerPainter {
       context.globalAlpha = baseAlpha;
       context.setLineDash([path.totalLength * fraction, path.totalLength]);
       context.stroke(path.path2d);
+      context.restore();
     }
     context.setLineDash([]);
     context.restore();

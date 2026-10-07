@@ -73,6 +73,7 @@ workspace spec, the main gallery next — one component, never a copy.
     contains_letters: "browse_audit_chip_group_contains",
     letter_occurrence: "browse_audit_chip_group_letter",
     gridMode: "browse_audit_chip_group_grid",
+    gridJoin: "browse_audit_chip_group_layout",
     owner: "browse_audit_chip_group_creator",
     author: "browse_audit_chip_group_author",
     performance_availability: "browse_audit_chip_group_performances",

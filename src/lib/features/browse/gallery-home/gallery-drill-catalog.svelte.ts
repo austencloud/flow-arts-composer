@@ -10,7 +10,10 @@
  * workspace project. Pure derivation: no DOM, no markup.
  */
 
-import { BrowseFilterType } from "$lib/shared/persistence/domain/enums/filtering-enums";
+import {
+  BrowseFilterType,
+  GridJoinFilterValue,
+} from "$lib/shared/persistence/domain/enums/filtering-enums";
 import { t } from "$lib/shared/i18n/i18n.svelte.js";
 import { ACTIVE_DIFFICULTY_LEVELS } from "$lib/shared/config/difficulty-styles";
 import { TND_ELEMENTS } from "$lib/features/choreo-card/domain/tnd-element";
@@ -45,6 +48,7 @@ export type Section =
   | "letter"
   | "placement"
   | "gridmode"
+  | "gridjoin"
   | "author"
   | "performance"
   | "loop"
@@ -59,6 +63,7 @@ export const SECTIONS: readonly Section[] = [
   "letter",
   "placement",
   "gridmode",
+  "gridjoin",
   "author",
   "performance",
   "loop",
@@ -75,6 +80,7 @@ export const SCREEN_CLASS: Record<Section, string> = {
   letter: "screen-letter",
   placement: "screen-placements",
   gridmode: "screen-gridmode",
+  gridjoin: "screen-gridjoin",
   author: "screen-creator",
   performance: "screen-performance",
   loop: "screen-loop",
@@ -119,6 +125,13 @@ export const PLACEMENTS = [
 export const GRID_MODES = [
   { value: "diamond", label: "Diamond", desc: "Cardinal points: N, E, S, W" },
   { value: "box", label: "Box", desc: "Diagonal points: NE, SE, SW, NW" },
+];
+
+// Joined-grid values + icons. Joined = blue's hand on one grid, red's on a
+// second grid beside it; the other choice is the ordinary single grid.
+export const GRID_JOIN_CHOICES = [
+  { value: GridJoinFilterValue.JOINED, label: "Joined grids", icon: "fa-link" },
+  { value: GridJoinFilterValue.SINGLE, label: "One grid", icon: "fa-square" },
 ];
 
 // Loop structure — the same component catalog the LOOP filter chip exposes
@@ -418,6 +431,22 @@ export function createGalleryCatalog(deps: GalleryCatalogDeps) {
     Math.max(1, ...gridModeValues.map((v) => v.count))
   );
 
+  const gridJoinValues = $derived(
+    GRID_JOIN_CHOICES.map((g) => ({
+      ...g,
+      type: BrowseFilterType.GRID_JOIN,
+      count: deps.getCount(BrowseFilterType.GRID_JOIN, g.value),
+      overallCount: applyFilter(
+        [...deps.pool],
+        BrowseFilterType.GRID_JOIN,
+        g.value
+      ).length,
+    }))
+  );
+  const maxGridJoinCount = $derived(
+    Math.max(1, ...gridJoinValues.map((v) => v.count))
+  );
+
   // Keep APPLIED values in the list even at count 0 — counts compose with the
   // other active filters, so a later pick can zero out an applied structure;
   // its row must stay visible (and toggleable).
@@ -546,6 +575,9 @@ export function createGalleryCatalog(deps: GalleryCatalogDeps) {
     letter: letterValues.length > 1,
     placement: placementValues.length > 1,
     gridmode: gridModeValues.length > 1,
+    // Only offered once the pool holds a joined sequence; before that the
+    // category would be a dead end.
+    gridjoin: (gridJoinValues[0]?.overallCount ?? 0) > 0,
     loop: loopValues.some((v) => v.count > 0),
     author: creatorValues.length > 1,
     performance: performanceValues.some((v) => v.count > 0),
@@ -670,6 +702,18 @@ export function createGalleryCatalog(deps: GalleryCatalogDeps) {
         art: { kind: "grid" },
         section: "gridmode",
         narrowedOut: sectionNarrowedOut("gridmode"),
+      });
+    }
+    if (showSection("gridjoin")) {
+      out.push({
+        key: "gridjoin",
+        title: t("browse_ui_grid_join_category"),
+        sub: sectionNarrowedOut("gridjoin")
+          ? t("browse_ui_narrowed_out_rule")
+          : t("browse_ui_joined_or_one_grid"),
+        art: { kind: "icon", icon: "fa-link" },
+        section: "gridjoin",
+        narrowedOut: sectionNarrowedOut("gridjoin"),
       });
     }
     if (showSection("loop")) {
@@ -837,6 +881,12 @@ export function createGalleryCatalog(deps: GalleryCatalogDeps) {
     },
     get maxGridModeCount() {
       return maxGridModeCount;
+    },
+    get gridJoinValues() {
+      return gridJoinValues;
+    },
+    get maxGridJoinCount() {
+      return maxGridJoinCount;
     },
     get performanceValues() {
       return performanceValues;

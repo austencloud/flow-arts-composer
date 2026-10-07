@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { sequenceGridJoin } from "$lib/shared/grid-join/sequence-grid-join";
   import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
   import StepMapEditor from "../step-mapping/StepMapEditor.svelte";
   import VideoUploadFlow from "./VideoUploadFlow.svelte";
@@ -31,6 +32,7 @@
       videoDuration={workspace.mappingVideo.duration}
       steps={sequence.steps}
       startPlacement={sequence.startPlacement ?? sequence.startingPlacement}
+      gridJoin={sequenceGridJoin(sequence)}
       initialStepMap={workspace.mappingVideo.beatMap}
       draftKey={`${sequence.id}:${workspace.mappingVideo.id}`}
       {bpm}
