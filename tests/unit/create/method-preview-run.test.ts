@@ -203,4 +203,26 @@ describe("waiting on a condition", () => {
     abort();
     await expect(waiting).resolves.toBe(false);
   });
+
+  it("still times out with a zero step", async () => {
+    const { run } = startSceneRun();
+    const waiting = waitUntil(run, () => false, 200, 0);
+    await vi.advanceTimersByTimeAsync(250);
+    await expect(waiting).resolves.toBe(false);
+  });
+
+  it("counts elapsed time, so waits that run long still time out", async () => {
+    // A throttled timer: each 50ms wait takes 500ms of the clock.
+    const slow = {
+      aborted: false,
+      wait: async (ms: number) => {
+        vi.advanceTimersByTime(ms * 10);
+        return true;
+      },
+      onAbort: () => {},
+    };
+    const check = vi.fn(() => false);
+    await expect(waitUntil(slow, check, 200)).resolves.toBe(false);
+    expect(check.mock.calls.length).toBeLessThanOrEqual(2);
+  });
 });

@@ -129,8 +129,9 @@ export async function tapAt(
 }
 
 /**
- * Poll `check` every `stepMs` until it holds. True when it held in time,
- * false when `timeoutMs` passed first or the turn ended. Scenes use it to
+ * Poll `check` every `stepMs` (at least 1) until it holds. True when it held
+ * in time, false when `timeoutMs` passed first or the turn ended. The timeout
+ * is elapsed time, so throttled timers cannot stretch it. Scenes use it to
  * wait for a new picture to draw before showing it.
  */
 export async function waitUntil(
@@ -139,11 +140,11 @@ export async function waitUntil(
   timeoutMs: number,
   stepMs = 50
 ): Promise<boolean> {
-  let waited = 0;
+  const deadline = performance.now() + timeoutMs;
+  const step = Math.max(1, stepMs);
   while (!check()) {
-    if (waited >= timeoutMs) return false;
-    if (!(await run.wait(stepMs))) return false;
-    waited += stepMs;
+    if (performance.now() >= deadline) return false;
+    if (!(await run.wait(step))) return false;
   }
   return !run.aborted;
 }

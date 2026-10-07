@@ -10,11 +10,17 @@
    * Finished picture: the demo sequence's start position and its first
    * steps, in a row in a strip and wrapped 2×2 in a square.
    */
+  import { untrack } from "svelte";
+  import { SvelteSet } from "svelte/reactivity";
   import type { GhostState } from "$lib/shared/attract/services/attract-ghost.svelte";
   import { DEFAULT_ANIMATION_TIMING } from "$lib/features/create/shared/workspace-panel/sequence-display/domain/models/step-grid-display-models";
   import MethodPreviewFinger from "./MethodPreviewFinger.svelte";
   import MethodPreviewPictograph from "./MethodPreviewPictograph.svelte";
-  import { cellCenter, constructLayout } from "./method-preview-compositions";
+  import {
+    CONSTRUCT_MAX_SLOTS,
+    cellCenter,
+    constructLayout,
+  } from "./method-preview-compositions";
   import {
     DEMO_SEQUENCE,
     openingSteps,
@@ -42,13 +48,13 @@
   }: MethodPreviewSceneProps = $props();
 
   const start = startPictograph(DEMO_SEQUENCE);
-  const steps = openingSteps(DEMO_SEQUENCE, 3);
+  const steps = openingSteps(DEMO_SEQUENCE, CONSTRUCT_MAX_SLOTS - 1);
 
   let root = $state<HTMLElement | null>(null);
   let pose = $state.raw<GhostState | null>(null);
   /** One phase per slot while a run builds; empty means every slot rests. */
   let phases = $state.raw<SlotPhase[]>([]);
-  const readySlots = new Set<number>();
+  const readySlots = new SvelteSet<number>();
 
   const slots = $derived(constructLayout(shape, width, height));
 
@@ -58,8 +64,15 @@
 
   function handleReady(index: number): void {
     readySlots.add(index);
-    if (readySlots.size >= slots.length) onready();
   }
+
+  // Ready once every slot now shown has drawn. A resize to fewer slots can
+  // leave the unmounted one unreported, so this re-checks when slots change.
+  $effect(() => {
+    if (slots.length === 0) return;
+    if (!slots.every((_, index) => readySlots.has(index))) return;
+    untrack(() => onready());
+  });
 
   function settle(): void {
     pose = null;

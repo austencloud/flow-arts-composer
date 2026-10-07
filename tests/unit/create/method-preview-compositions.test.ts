@@ -7,6 +7,7 @@ import { describe, expect, it } from "vitest";
 import {
   assembleLayout,
   cellCenter,
+  CONSTRUCT_MAX_SLOTS,
   constructLayout,
   fuseLayout,
   generateLayout,
@@ -15,6 +16,12 @@ import {
   shapeLayout,
   tunnelLayout,
 } from "$lib/features/create/shared/components/method-previews/method-preview-compositions";
+import {
+  DEMO_SEQUENCE,
+  openingSteps,
+  startPictograph,
+} from "$lib/features/create/shared/components/method-previews/method-preview-demo";
+import type { MethodPreviewShape } from "$lib/features/create/shared/components/method-previews/method-preview-layout";
 
 const at = (x: number, y: number, size: number) => ({ x, y, size });
 
@@ -59,6 +66,32 @@ describe("Construct", () => {
       at(0, 104, 96),
       at(104, 104, 96),
     ]);
+  });
+});
+
+describe("Construct slot limit", () => {
+  it("is the most slots any shape or box size lays out", () => {
+    const shapes: MethodPreviewShape[] = ["strip", "roomy", "square"];
+    let most = 0;
+    for (const shape of shapes) {
+      for (let width = 1; width <= 420; width += 7) {
+        for (let height = 1; height <= 260; height += 5) {
+          const count = constructLayout(shape, width, height).length;
+          expect(count, `${shape} ${width}x${height}`).toBeLessThanOrEqual(
+            CONSTRUCT_MAX_SLOTS
+          );
+          most = Math.max(most, count);
+        }
+      }
+    }
+    expect(most).toBe(CONSTRUCT_MAX_SLOTS);
+  });
+
+  it("is covered by the demo's start position and opening steps", () => {
+    expect(startPictograph(DEMO_SEQUENCE)).not.toBeNull();
+    expect(openingSteps(DEMO_SEQUENCE, CONSTRUCT_MAX_SLOTS - 1)).toHaveLength(
+      CONSTRUCT_MAX_SLOTS - 1
+    );
   });
 });
 
