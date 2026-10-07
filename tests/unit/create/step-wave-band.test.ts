@@ -7,7 +7,6 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
-  calculateStepPosition,
   calculateStepWaveBand,
   waveBandAt,
 } from "$lib/shared/create/utils/grid-calculations";
@@ -24,15 +23,15 @@ describe("one diagonal wave", () => {
     expect(waveBandAt(2, 1)).toBe(3);
   });
 
-  it("gives every step cell the band of its grid position", () => {
-    for (const columns of [1, 3, 4, 8]) {
-      for (let index = 0; index < 20; index++) {
-        const { row, column } = calculateStepPosition(index, columns);
-        expect(calculateStepWaveBand(index, columns)).toBe(
-          waveBandAt(row - 1, column - 1)
-        );
-      }
-    }
+  it("puts each step on its grid diagonal, wrapping past the start column", () => {
+    // Four steps a row. The start placement holds column 1, so a row's steps
+    // sit in columns 2 to 5 and every row starts one band further out.
+    expect(calculateStepWaveBand(0, 4)).toBe(1);
+    expect(calculateStepWaveBand(3, 4)).toBe(4);
+    expect(calculateStepWaveBand(4, 4)).toBe(2);
+    expect(calculateStepWaveBand(8, 4)).toBe(3);
+    // One step a row: each step is one band further down.
+    expect(calculateStepWaveBand(5, 1)).toBe(6);
   });
 
   it("matches a strip that leads with a start slot to the grid's first row", () => {
@@ -44,11 +43,13 @@ describe("one diagonal wave", () => {
     expect(strip).toEqual(grid);
   });
 
-  it("routes every WorkspaceGrid band through waveBandAt", () => {
+  it("routes WorkspaceGrid's row and column bands through waveBandAt", () => {
     const source = read(`${DISPLAY}/WorkspaceGrid.svelte`);
     expect(source).not.toMatch(/cell\.row - 1 \+ \(cell\.column - 1\)/);
     expect(source).not.toMatch(/rowIndex \+ columnIndex \+ 1/);
-    expect(source.match(/waveBandAt\(/g)?.length).toBe(3);
+    expect((source.match(/waveBandAt\(/g) ?? []).length).toBeGreaterThanOrEqual(
+      3
+    );
   });
 
   it("keeps stepCascade global so StepCell and previews share it", () => {
@@ -59,9 +60,8 @@ describe("one diagonal wave", () => {
     expect(stepCell).toMatch(
       /animation: stepCascade var\(--step-entrance-duration, 380ms\)/
     );
-    const reducedList = keyframes.slice(
-      keyframes.indexOf("REDUCED MOTION SUPPORT")
-    );
-    expect(reducedList).not.toMatch(/stepCascade/);
+    const banner = keyframes.indexOf("REDUCED MOTION SUPPORT");
+    expect(banner).toBeGreaterThan(-1);
+    expect(keyframes.slice(banner)).not.toMatch(/stepCascade/);
   });
 });

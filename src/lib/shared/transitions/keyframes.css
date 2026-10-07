@@ -296,8 +296,9 @@
  * (band = row + column), so starting up-left and settling down-right puts
  * every cell on the same vector as the light passing over it.
  *
- * Not in the reduced-motion list below: each user owns that rule. StepCell
- * collapses the entrance to 0.01ms so its animationend still fires.
+ * Not in the reduced-motion list below, but under that media query the `*`
+ * rule renames every animation on the page, this one included. StepCell also
+ * collapses its entrance to 0.01ms so its animationend still fires.
  */
 @keyframes stepCascade {
   0% {
