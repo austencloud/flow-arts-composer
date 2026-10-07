@@ -3,13 +3,16 @@ import {
   GRID_JOIN_DIRECTIONS,
   JOIN_HAND_RADIUS,
   alignGridJoin,
+  fromJoinedHandPoint,
   getGridJoinLayout,
   gridJoinCellResolver,
   gridJoinKey,
   gridJoinOffsets,
   gridJoinPropNudges,
   isGridJoin,
+  joinedHandTransform,
   sequenceGridJoinKey,
+  toJoinedHandPoint,
   type GridJoinLayout,
   type GridJoinSpec,
   type JoinPropBody,
@@ -376,5 +379,114 @@ describe("joined prop nudge", () => {
         distances
       )
     ).toBeNull();
+  });
+});
+
+describe("joined hand points", () => {
+  /** Applies a `translate(..) scale(..) translate(..)` transform string. */
+  function applyTransform(transform: string, point: { x: number; y: number }) {
+    const ops = [...transform.matchAll(/(translate|scale)\(([^)]*)\)/g)].map(
+      ([, op, args]) => ({ op, args: args!.trim().split(/\s+/).map(Number) })
+    );
+    let { x, y } = point;
+    for (const { op, args } of ops.reverse()) {
+      if (op === "translate") {
+        x += args[0]!;
+        y += args[1] ?? 0;
+      } else {
+        x *= args[0]!;
+        y *= args[1] ?? args[0]!;
+      }
+    }
+    return { x, y };
+  }
+
+  it("puts red's north hand point on red's grid, shrunk with the fit (east, one step, diamond)", () => {
+    const layout = getGridJoinLayout(EAST_1, "diamond");
+    expect(layout.scale).toBeCloseTo(0.96583, 4);
+    const north = { x: 475, y: 475 - JOIN_HAND_RADIUS };
+    const red = toJoinedHandPoint(layout, "right", north);
+    // Red's grid sits 71.55 east of center; the whole picture scales about 475.
+    expect(red.x).toBeCloseTo(475 + 0.96583 * 71.55, 2);
+    expect(red.y).toBeCloseTo(475 - 0.96583 * 143.1, 2);
+    const blue = toJoinedHandPoint(layout, "left", north);
+    expect(blue.x).toBeCloseTo(475 - 0.96583 * 71.55, 2);
+    expect(blue.y).toBeCloseTo(red.y, 6);
+  });
+
+  it("lands every hand's point on the dot the joined grid draws for it", () => {
+    for (const [join, mode, locations] of [
+      [EAST_1, "diamond", ["n", "e", "s", "w"]],
+      [EAST_2, "diamond", ["n", "e", "s", "w"]],
+      [SOUTHEAST_1, "box", ["ne", "se", "sw", "nw"]],
+    ] as const) {
+      const layout = getGridJoinLayout(join, mode);
+      for (const hand of ["left", "right"] as const) {
+        for (const location of locations) {
+          const drawn = layout.points.find(
+            (point) =>
+              point.kind === "hand" &&
+              point.members.some(
+                (member) => member.hand === hand && member.location === location
+              )
+          );
+          expect(drawn, `${hand} ${location}`).toBeDefined();
+          // One-grid hand point: the layout's own point less this hand's offset.
+          const oneGrid = {
+            x: drawn!.x - layout.offsets[hand].x,
+            y: drawn!.y - layout.offsets[hand].y,
+          };
+          const placed = toJoinedHandPoint(layout, hand, oneGrid);
+          expect(placed.x).toBeCloseTo(
+            475 + layout.scale * (drawn!.x - 475),
+            6
+          );
+          expect(placed.y).toBeCloseTo(
+            475 + layout.scale * (drawn!.y - 475),
+            6
+          );
+        }
+      }
+    }
+  });
+
+  it("meets hand to hand where the two grids share a point (east, two steps)", () => {
+    const layout = getGridJoinLayout(EAST_2, "diamond");
+    const east = { x: 475 + JOIN_HAND_RADIUS, y: 475 };
+    const west = { x: 475 - JOIN_HAND_RADIUS, y: 475 };
+    const blueEast = toJoinedHandPoint(layout, "left", east);
+    const redWest = toJoinedHandPoint(layout, "right", west);
+    expect(blueEast.x).toBeCloseTo(475, 6);
+    expect(redWest.x).toBeCloseTo(475, 6);
+  });
+
+  it("inverts the mapping for each hand", () => {
+    const layout = getGridJoinLayout(SOUTHEAST_1, "box");
+    const pointer = { x: 612.4, y: 288.9 };
+    for (const hand of ["left", "right"] as const) {
+      const local = fromJoinedHandPoint(layout, hand, pointer);
+      const back = toJoinedHandPoint(layout, hand, local);
+      expect(back.x).toBeCloseTo(pointer.x, 9);
+      expect(back.y).toBeCloseTo(pointer.y, 9);
+    }
+    const shrunk = getGridJoinLayout(EAST_2, "diamond");
+    const local = fromJoinedHandPoint(shrunk, "right", { x: 475, y: 475 });
+    // Scene center on red's grid is its west hand point.
+    expect(local.x).toBeCloseTo(475 - JOIN_HAND_RADIUS, 6);
+    expect(local.y).toBeCloseTo(475, 6);
+  });
+
+  it("gives the same move as an SVG transform", () => {
+    const layout = getGridJoinLayout(EAST_2, "diamond");
+    const point = { x: 331.9, y: 475 };
+    for (const hand of ["left", "right"] as const) {
+      const viaTransform = applyTransform(
+        joinedHandTransform(layout, hand),
+        point
+      );
+      const viaPoint = toJoinedHandPoint(layout, hand, point);
+      expect(viaTransform.x).toBeCloseTo(viaPoint.x, 9);
+      expect(viaTransform.y).toBeCloseTo(viaPoint.y, 9);
+    }
   });
 });

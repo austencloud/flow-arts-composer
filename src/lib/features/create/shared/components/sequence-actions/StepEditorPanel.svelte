@@ -627,6 +627,7 @@
                 initialRightLocation={startRightLocation}
                 betaSwapped={displayedStepData.betaSwapped}
                 previewPictographData={displayedStepData}
+                {gridJoin}
                 resetEpoch={placementResetEpoch}
                 motionMove={placementMotionMove}
                 showCenter={startPlacementUsesCenter}

@@ -15,6 +15,8 @@
  * Preview and PDF both consume this output, so layout is identical in both.
  */
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import type { GridJoin } from "@tka/tka-types";
+import { sequenceGridJoin } from "$lib/shared/grid-join/sequence-grid-join";
 import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
 import type { ChoreoSheetLayout } from "../domain/types/choreo-sheet";
 import {
@@ -31,6 +33,11 @@ export interface SheetCell {
   sequenceId: string | null;
   /** True for the first cell of a sequence's run in the flow. */
   isSequenceStart: boolean;
+  /**
+   * The join the cell's sequence is drawn with (null for one grid and for
+   * blank pad cells). Display-only; consumers stamp it on the step to draw.
+   */
+  join: GridJoin | null;
   /**
    * This cell's 0-based index in the ACT — the whole sheet played as one
    * sequence. `buildActSequence` is a literal in-order concatenation of every
@@ -59,12 +66,14 @@ export function planSheet(
   //    each cell's act position.
   const cells: SheetCell[] = [];
   for (const seq of seqs) {
+    const join = sequenceGridJoin(seq);
     seq.steps.forEach((step, i) => {
       cells.push({
         step,
         isBlank: false,
         sequenceId: seq.id,
         isSequenceStart: i === 0,
+        join,
         actStepIndex: cells.length,
       });
     });
@@ -81,6 +90,7 @@ export function planSheet(
         isBlank: true,
         sequenceId: null,
         isSequenceStart: false,
+        join: null,
         actStepIndex: null,
       });
     }
@@ -216,6 +226,7 @@ export function buildBands(input: BandPlanInput): SheetBand[] {
   let beatIndex = 0;
   for (const [rosterIndex, seq] of sequences.entries()) {
     const steps = seq.steps ?? [];
+    const join = sequenceGridJoin(seq);
     const stepCount = steps.length;
     const seqCues = cuesBySequence.get(seq.id) ?? [];
     const seqNotes = notesBySequence.get(seq.id) ?? [];
@@ -240,6 +251,7 @@ export function buildBands(input: BandPlanInput): SheetBand[] {
         isBlank: false,
         sequenceId: seq.id,
         isSequenceStart: row === 0 && i === 0,
+        join,
         // `firstBeatIndex` is already the running step index across the sheet,
         // which is exactly the act's step numbering.
         actStepIndex: beatIndex + s + i,

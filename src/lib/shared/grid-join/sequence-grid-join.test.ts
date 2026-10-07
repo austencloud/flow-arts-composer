@@ -1,6 +1,11 @@
 import { describe, it, expect } from "vitest";
 import type { GridJoin } from "@tka/tka-types";
-import { sequenceGridJoin, withSequenceGridJoin } from "./sequence-grid-join";
+import {
+  sequenceGridJoin,
+  withSequenceGridJoin,
+  withSequenceJoinApplied,
+  withSequenceJoinAppliedToAll,
+} from "./sequence-grid-join";
 
 const join: GridJoin = { toward: "se", steps: 2 };
 
@@ -36,5 +41,41 @@ describe("sequence grid join helpers", () => {
       null
     );
     expect("conjoined" in next).toBe(false);
+  });
+});
+
+describe("drawing cells with the sequence's join", () => {
+  it("stamps the sequence's join on a cell without mutating it", () => {
+    const cell = { id: "c" };
+    const out = withSequenceJoinApplied({ conjoined: join }, cell);
+    expect(out).toEqual({ id: "c", conjoined: join });
+    expect(cell).toEqual({ id: "c" });
+  });
+
+  it("hands one-grid cells back untouched", () => {
+    const cell = { id: "c" };
+    expect(withSequenceJoinApplied({}, cell)).toBe(cell);
+    expect(withSequenceJoinApplied(null, cell)).toBe(cell);
+  });
+
+  it("drops a join a cell carries when its sequence is on one grid", () => {
+    const out = withSequenceJoinApplied({}, { id: "c", conjoined: join });
+    expect(out).toEqual({ id: "c" });
+  });
+
+  it("gives null for a missing cell", () => {
+    expect(withSequenceJoinApplied({ conjoined: join }, null)).toBeNull();
+    expect(withSequenceJoinApplied({ conjoined: join }, undefined)).toBeNull();
+  });
+
+  it("stamps every cell in a list", () => {
+    const out = withSequenceJoinAppliedToAll({ conjoined: join }, [
+      { id: "a" },
+      { id: "b" },
+    ]);
+    expect(out.map((c) => (c as { conjoined?: GridJoin }).conjoined)).toEqual([
+      join,
+      join,
+    ]);
   });
 });

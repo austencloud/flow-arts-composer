@@ -1,5 +1,6 @@
 import type { CompiledPost } from "$lib/shared/media-composition/domain/post-plan-compiler";
 import type { CompiledPostProject } from "$lib/shared/media-composition/domain/post-project-compiler";
+import type { PostMusic } from "$lib/shared/media-composition/domain/post-music";
 
 /**
  * The post's own audio track, mixed once and exported alongside the picture
@@ -11,9 +12,11 @@ import type { CompiledPostProject } from "$lib/shared/media-composition/domain/p
  * spot in the post and trimmed to the act's own source span. A slowed act's
  * take would play back pitch-shifted and detuned if reused as-is, so it (and
  * a card act, which has no take) stays silent. `audio: "silent"` mutes the
- * whole post - Austen adds music in the app he posts to instead.
+ * takes. A feature video's music is planned apart, by `planMusicAudio`, and
+ * plays either way.
  */
 export interface PostAudioSegment {
+  /** The source this segment reads: a take's id, or `musicAudioKey` for the music. */
   takeId: string;
   /** Where this segment starts on the post's own clock. */
   postStartSeconds: number;
@@ -106,6 +109,64 @@ export function planProjectAudio(
     }
   }
   return segments.map(({ trackIndex: _trackIndex, ...segment }) => segment);
+}
+
+/** The music's key among a mix's sources, apart from every take id. */
+export function musicAudioKey(music: Pick<PostMusic, "id">): string {
+  return `music:${music.id}`;
+}
+
+/**
+ * The music's one segment, cut where the post ends; its fades ride on the
+ * crossfade ramps. Kept apart from `planProjectAudio`, whose segments the
+ * preview matches one for one with the compiled video segments.
+ */
+export function planMusicAudio(
+  music: PostMusic | undefined,
+  postDurationSeconds: number
+): PostAudioSegment[] {
+  if (!music || music.gain <= 0) return [];
+  const durationSeconds = Math.min(
+    music.sourceOutSeconds - music.sourceInSeconds,
+    postDurationSeconds - music.startSeconds
+  );
+  if (durationSeconds <= 0) return [];
+  const fadeIn = Math.min(music.fadeInSeconds, durationSeconds);
+  const fadeOut = Math.min(music.fadeOutSeconds, durationSeconds);
+  return [
+    {
+      takeId: musicAudioKey(music),
+      postStartSeconds: music.startSeconds,
+      sourceInSeconds: music.sourceInSeconds,
+      durationSeconds,
+      gain: music.gain,
+      ...(fadeIn > 0 ? { crossfadeInSeconds: fadeIn } : {}),
+      ...(fadeOut > 0 ? { crossfadeOutSeconds: fadeOut } : {}),
+    },
+  ];
+}
+
+/**
+ * A segment's level `elapsedSeconds` into it: its gain under its fades, the
+ * same envelope `mixPostAudio` writes. A side without a crossfade gets the
+ * short edge fade. Zero outside the segment.
+ */
+export function segmentGainAt(
+  segment: PostAudioSegment,
+  elapsedSeconds: number,
+  edgeFadeSeconds = DEFAULT_FADE_SECONDS
+): number {
+  if (elapsedSeconds < 0 || elapsedSeconds >= segment.durationSeconds) return 0;
+  const fadeIn = segment.crossfadeInSeconds ?? edgeFadeSeconds;
+  const fadeOut = segment.crossfadeOutSeconds ?? edgeFadeSeconds;
+  let envelope = 1;
+  if (fadeIn > 0) envelope = Math.min(envelope, elapsedSeconds / fadeIn);
+  if (fadeOut > 0)
+    envelope = Math.min(
+      envelope,
+      (segment.durationSeconds - elapsedSeconds) / fadeOut
+    );
+  return Math.max(0, envelope) * (segment.gain ?? 1);
 }
 
 // ---------------------------------------------------------------------------
@@ -203,6 +264,11 @@ function mixSegmentInto(
   const crossfadeOutSamples = Math.round(
     (segment.crossfadeOutSeconds ?? 0) * outSampleRate
   );
+  // A full-speed source at the bed's own rate is copied sample for sample
+  // from its nearest whole sample: reading between samples would soften
+  // every one of them, which music hears as dull highs.
+  const wholeSamples = rate === 1 && source.sampleRate === outSampleRate;
+  const firstSample = Math.round(segment.sourceInSeconds * source.sampleRate);
 
   for (let i = 0; i < outCount; i++) {
     const outIndex = outStart + i;
@@ -214,8 +280,10 @@ function mixSegmentInto(
     // much source time each output sample advances, so a slowed segment
     // reads its take that same amount slower instead of at the take's own
     // native speed.
-    const sourceSeconds = segment.sourceInSeconds + (i / outSampleRate) * rate;
-    const sourcePosition = sourceSeconds * source.sampleRate;
+    const sourcePosition = wholeSamples
+      ? firstSample + i
+      : (segment.sourceInSeconds + (i / outSampleRate) * rate) *
+        source.sampleRate;
     const left = sampleAt(srcLeft, sourcePosition);
     const right = sampleAt(srcRight, sourcePosition);
 

@@ -90,7 +90,11 @@
   import { itemIdFromTitlesRole } from "$lib/shared/media-composition/domain/tunnel-titles";
   import { createStaffTipAnalysis } from "$lib/shared/media-composition/state/staff-tip-analysis.svelte";
   import { loadAnimationOverlayPainter } from "$lib/shared/media-composition/services/animation-overlay-painter-registry";
-  import { planProjectAudio } from "$lib/shared/media-composition/domain/post-audio-plan";
+  import {
+    musicAudioKey,
+    planMusicAudio,
+    planProjectAudio,
+  } from "$lib/shared/media-composition/domain/post-audio-plan";
   import {
     AudioDownloadStalledError,
     buildMixedAudioTrack,
@@ -136,6 +140,13 @@
   import PostToolPanel from "./PostToolPanel.svelte";
   import PostTransitionTool from "./PostTransitionTool.svelte";
   import PostItemTool from "./PostItemTool.svelte";
+  import PostMusicTool from "./PostMusicTool.svelte";
+  import {
+    removeMusic,
+    trimMusic,
+    updateMusic,
+    type MusicPatch,
+  } from "$lib/shared/media-composition/domain/post-music-edits";
   import PostKeyframeControls from "./PostKeyframeControls.svelte";
   import ConfirmDialog from "$lib/shared/foundation/ui/ConfirmDialog.svelte";
   import OverflowMenu from "$lib/shared/ui/components/OverflowMenu.svelte";
@@ -896,18 +907,33 @@
   let editorHeight = $state(0);
   const DEFAULT_TIMELINE_HEIGHT_PX = 280;
   const MIN_TIMELINE_HEIGHT_PX = 160;
+  /**
+   * With music the timeline must fit the ruler (52), Main (72) and Music
+   * (52) rows plus a sideways scrollbar, or the rows scroll inside an
+   * editor that scrolls too.
+   */
+  const MIN_TIMELINE_HEIGHT_WITH_MUSIC_PX = 196;
+  const minTimelineHeightPx = $derived(
+    editor.project.music
+      ? MIN_TIMELINE_HEIGHT_WITH_MUSIC_PX
+      : MIN_TIMELINE_HEIGHT_PX
+  );
   let timelineHeightPx = $state(DEFAULT_TIMELINE_HEIGHT_PX);
   let timelineResizeStartPx = DEFAULT_TIMELINE_HEIGHT_PX;
   const maxTimelineHeightPx = $derived(
-    Math.max(MIN_TIMELINE_HEIGHT_PX, Math.min(520, editorHeight - 360))
+    Math.max(minTimelineHeightPx, Math.min(520, editorHeight - 360))
   );
+  // A height chosen before music came keeps to the floor music needs.
   const shownTimelineHeightPx = $derived(
-    Math.min(timelineHeightPx, maxTimelineHeightPx)
+    Math.max(
+      minTimelineHeightPx,
+      Math.min(timelineHeightPx, maxTimelineHeightPx)
+    )
   );
 
   function resizeTimeline(delta: number): void {
     timelineHeightPx = Math.max(
-      MIN_TIMELINE_HEIGHT_PX,
+      minTimelineHeightPx,
       Math.min(maxTimelineHeightPx, timelineResizeStartPx - delta)
     );
   }
@@ -922,7 +948,7 @@
         nextHeight = shownTimelineHeightPx - 20;
         break;
       case "Home":
-        nextHeight = MIN_TIMELINE_HEIGHT_PX;
+        nextHeight = minTimelineHeightPx;
         break;
       case "End":
         nextHeight = maxTimelineHeightPx;
@@ -932,13 +958,45 @@
     }
     event.preventDefault();
     timelineHeightPx = Math.max(
-      MIN_TIMELINE_HEIGHT_PX,
+      minTimelineHeightPx,
       Math.min(maxTimelineHeightPx, nextHeight)
     );
   }
   let remPixels = $state(16);
   /** The panel last asked for. A wide screen falls back to a default. */
   let activeTool = $state<PostPanelToolId | null>(null);
+
+  /**
+   * The music under the post is selected. It is no item, so the editor's
+   * selection stays empty; picking an item, or removing the music, clears it.
+   */
+  let musicSelected = $state(false);
+  $effect(() => {
+    if (editor.selectedItemId !== null || !editor.project.music)
+      musicSelected = false;
+  });
+  /**
+   * The preview can't load the music's file and plays without it. The canvas
+   * reports it; the Music row and the Music panel say so.
+   */
+  let musicMissing = $state(false);
+
+  function selectMusic(): void {
+    editor.selectedItemId = null;
+    musicSelected = true;
+  }
+
+  /** One setting's change; a slider drag's steps join into one undo step. */
+  function changeMusic(key: string, patch: MusicPatch): void {
+    editor.editSetting(`music:${key}`, (project, context) =>
+      updateMusic(project, patch, context)
+    );
+  }
+
+  function deleteMusic(): void {
+    musicSelected = false;
+    editor.edit((project, context) => removeMusic(project, context));
+  }
   let selectedCut = $state<{ outgoingId: string; incomingId: string } | null>(
     null
   );
@@ -1086,7 +1144,7 @@
 
   const selection = $derived.by((): PostToolSelection => {
     const item = editor.selectedItem;
-    if (!item) return { kind: null, hasLayout: false };
+    if (!item) return { kind: null, hasLayout: false, music: musicSelected };
     // A tunnel folded into its animation has its own block, which carries its
     // speed and framing; only a hook saved as a whole item keeps them here.
     const tunnel = editor.selectedPart === "tunnel";
@@ -1341,8 +1399,9 @@
       case "split":
         return !editor.splitTarget;
       case "duplicate":
-      case "delete":
         return !editor.selectionEditable;
+      case "delete":
+        return !musicSelected && !editor.selectionEditable;
       case "beats":
         return !canTapBeats;
       default:
@@ -1412,6 +1471,11 @@
         }
         return;
       case "delete":
+        if (musicSelected) {
+          deleteMusic();
+          void focusAfterUpdate({ kind: "row" });
+          return;
+        }
         if (editor.deleteSelected()) void focusAfterUpdate({ kind: "row" });
         return;
     }
@@ -1533,12 +1597,14 @@
 
   function deselect(): void {
     editor.selectedItemId = null;
+    musicSelected = false;
     activeTool = null;
   }
 
   /** Export is the post's own panel: sound, the to-do list and the render. */
   function openExport(): void {
     editor.selectedItemId = null;
+    musicSelected = false;
     activeTool = "export";
     void focusAfterUpdate({ kind: "panel" });
   }
@@ -1930,6 +1996,12 @@
       }
       case "Delete":
       case "Backspace":
+        if (musicSelected) {
+          event.preventDefault();
+          deleteMusic();
+          void focusAfterUpdate({ kind: "row" });
+          return;
+        }
         if (!editor.selectedItem) return;
         event.preventDefault();
         // The item's clip and tools go with it, as with the Delete tool.
@@ -1970,7 +2042,7 @@
           closePanel();
           return;
         }
-        if (!editor.selectedItemId) return;
+        if (!editor.selectedItemId && !musicSelected) return;
         event.preventDefault();
         deselect();
         return;
@@ -2197,6 +2269,14 @@
     }
   });
 
+  // A hidden tab stops animation frames but not the music, so pause both players.
+  function pauseWhenHidden(): void {
+    if (document.visibilityState === "hidden") {
+      editor.pause();
+      session.pause();
+    }
+  }
+
   let frameRequest: number | null = null;
   let previousFrameTime: number | null = null;
   let previousPreviewSeconds: number | null = null;
@@ -2315,10 +2395,16 @@
           videoSources.set(takeRole(take.id), url);
         }
       }
+      const music = editor.project.music;
+      if (music) takeUrls.set(musicAudioKey(music), music.url);
       const audio = await buildMixedAudioTrack({
-        segments: planProjectAudio(compiled, editor.project.audio),
+        segments: [
+          ...planProjectAudio(compiled, editor.project.audio),
+          ...planMusicAudio(music, compiled.durationSeconds),
+        ],
         durationSeconds: compiled.durationSeconds,
         takeUrls,
+        ...(music ? { required: new Set([musicAudioKey(music)]) } : {}),
         signal: exportAbort.signal,
         onProgress: (fraction) => {
           exportProgress = {
@@ -2395,6 +2481,7 @@
   onkeydown={handleKey}
   onbeforeunload={protectUnsavedDraft}
 />
+<svelte:document onvisibilitychange={pauseWhenHidden} />
 
 {#snippet draftStatus()}
   {#if labeledCard.error}
@@ -2593,6 +2680,18 @@
     />
   {:else if tool === "transition" && transitionCut}
     <PostTransitionTool {editor} {...transitionCut} />
+  {:else if tool === "music" && editor.project.music}
+    <PostMusicTool
+      music={editor.project.music}
+      playing={editor.isPlaying}
+      missing={musicMissing}
+      playheadSeconds={() => editor.previewSeconds}
+      onChange={changeMusic}
+      onTrim={(edge, seconds) =>
+        editor.edit((project, context) =>
+          trimMusic(project, edge, seconds, context)
+        )}
+    />
   {:else if editor.selectedItem}
     <PostItemTool
       {editor}
@@ -2618,11 +2717,13 @@
     {tool}
     subject={tool === "transition" && transitionCut
       ? `${labelFor(transitionCut.outgoing)} → ${labelFor(transitionCut.incoming)}`
-      : editor.selectedPart === "tunnel"
-        ? t("post_timeline_tunnel")
-        : editor.selectedItem
-          ? labelFor(editor.selectedItem)
-          : undefined}
+      : tool === "music"
+        ? editor.project.music?.label
+        : editor.selectedPart === "tunnel"
+          ? t("post_timeline_tunnel")
+          : editor.selectedItem
+            ? labelFor(editor.selectedItem)
+            : undefined}
     onDone={placement === "dock" && !cropMode ? closePanel : undefined}
     {placement}
     bare={(placement === "dock" && cropMode) ||
@@ -2811,6 +2912,7 @@
                 {cropSourceView}
                 keepSourceCropRatio={cropSourceShape !== "free"}
                 onSourceSize={noteSourceSize}
+                onMusicMissing={(missing) => (musicMissing = missing)}
                 bind:root={canvasRoot}
               />
             </div>
@@ -2932,7 +3034,7 @@
             ariaValueNow={editorHeight > 0
               ? (100 * (editorHeight - shownTimelineHeightPx)) / editorHeight
               : 50}
-            disabled={maxTimelineHeightPx <= MIN_TIMELINE_HEIGHT_PX}
+            disabled={maxTimelineHeightPx <= minTimelineHeightPx}
             onDragStart={() => (timelineResizeStartPx = shownTimelineHeightPx)}
             onDrag={resizeTimeline}
             onKeydown={resizeTimelineWithKeys}
@@ -2970,7 +3072,10 @@
           selectedPart={editor.selectedPart}
           {labelFor}
           onSeek={seekFromTimeline}
-          onSelect={(itemId) => (editor.selectedItemId = itemId)}
+          onSelect={(itemId) => {
+            musicSelected = false;
+            editor.selectedItemId = itemId;
+          }}
           onSelectTunnel={(itemId) => editor.selectTunnel(itemId)}
           onGestureStart={() => {
             editor.pause();
@@ -3020,6 +3125,21 @@
             ? timelineKeys
             : undefined}
           onAddVideo={pickDeviceVideo}
+          {musicSelected}
+          {musicMissing}
+          onSelectMusic={selectMusic}
+          onMoveMusic={(startSeconds) =>
+            applyMove((project, context) =>
+              updateMusic(project, { startSeconds }, context)
+            )}
+          onTrimMusic={(edge, seconds) =>
+            applyMove((project, context) =>
+              trimMusic(project, edge, seconds, context)
+            )}
+          onMoveDownbeat={(downbeatSeconds) =>
+            applyMove((project, context) =>
+              updateMusic(project, { downbeatSeconds }, context)
+            )}
           bind:pixelsPerSecond
         />
       </div>

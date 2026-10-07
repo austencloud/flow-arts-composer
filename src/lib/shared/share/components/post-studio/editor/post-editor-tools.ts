@@ -35,7 +35,8 @@ export type PostPanelToolId =
   | "shows"
   | "sequence"
   | "text"
-  | "rename";
+  | "rename"
+  | "music";
 
 /** Tools that act at once. */
 export type PostActionToolId =
@@ -64,6 +65,8 @@ export interface PostToolSelection {
   isTunnelHook?: boolean;
   /** The hook plays over its footage, which it frames while it fills the frame. */
   hasBackdrop?: boolean;
+  /** The music under the post is selected; it is no item, so `kind` is null. */
+  music?: boolean;
 }
 
 const ACTION_TOOLS = new Set<PostToolId>([
@@ -88,6 +91,7 @@ const ITEM_TAIL: readonly PostToolId[] = [
 
 /** The row's tools, in order, for a selection. */
 export function toolRow(selection: PostToolSelection): PostToolId[] {
+  if (selection.music) return ["back", "music", "delete"];
   switch (selection.kind) {
     case null:
       return ["videos", "add", "canvas", "split", "look"];
@@ -169,6 +173,7 @@ export function availablePanels(
   selection: PostToolSelection
 ): PostPanelToolId[] {
   const panels = toolRow(selection).filter(isPanelTool);
+  if (selection.music) return panels;
   if (selection.kind === null) return [...panels, "export"];
   return ["video", "image", "card", "animation", "moves", "carousel"].includes(
     selection.kind

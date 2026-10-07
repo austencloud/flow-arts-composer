@@ -14,4 +14,7 @@
     ? pictographData.stepNumber
     : undefined}
   data-grid-mode={pictographData.gridMode}
+  data-join={pictographData.conjoined
+    ? `${pictographData.conjoined.toward}${pictographData.conjoined.steps}`
+    : undefined}
 ></div>

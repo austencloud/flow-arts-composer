@@ -36,6 +36,7 @@ one rail while the live matching grid gets the rest of the canvas.
     | "letter"
     | "placement"
     | "gridmode"
+    | "gridjoin"
     | "author"
     | "performance"
     | "loop"
@@ -132,6 +133,7 @@ one rail while the live matching grid gets the rest of the canvas.
     [BrowseFilterType.STARTING_LETTER]: "letter",
     [BrowseFilterType.STARTING_PLACEMENT]: "placement",
     [BrowseFilterType.GRID_MODE]: "gridmode",
+    [BrowseFilterType.GRID_JOIN]: "gridjoin",
     [BrowseFilterType.OWNER]: "author",
     [BrowseFilterType.PERFORMANCE_AVAILABILITY]: "performance",
     [BrowseFilterType.RECENT_PERFORMANCE]: "performance",

@@ -8,13 +8,28 @@ import {
 const SAMPLE_RATE = 8_000;
 const FILE_BYTES = 1_000;
 
+/** The rate of every decoding context made, in order. */
+let contextRates: number[] = [];
+/** Whether decodeAudioData refuses the next files, as it does a broken one. */
+let unreadable = false;
+
 // decodeAudioData is the browser's job. Every file decodes to three seconds
-// of a steady 0.5, so a segment that received its take's sound is never silent.
+// of a steady 0.5, so a segment that received its take's sound is never
+// silent. Like the browser's, it hands back samples at its context's rate.
 class FakeOfflineAudioContext {
+  constructor(
+    _channels: number,
+    _length: number,
+    readonly sampleRate: number
+  ) {
+    contextRates.push(sampleRate);
+  }
+
   async decodeAudioData(_buffer: ArrayBuffer) {
-    const samples = new Float32Array(SAMPLE_RATE * 3).fill(0.5);
+    if (unreadable) throw new DOMException("Unable to decode", "EncodingError");
+    const samples = new Float32Array(this.sampleRate * 3).fill(0.5);
     return {
-      sampleRate: SAMPLE_RATE,
+      sampleRate: this.sampleRate,
       numberOfChannels: 1,
       getChannelData: () => samples,
     };
@@ -53,12 +68,15 @@ async function wavSampleAt(blob: Blob, seconds: number): Promise<number> {
 
 describe("buildMixedAudioTrack", () => {
   beforeEach(() => {
+    contextRates = [];
+    unreadable = false;
     vi.stubGlobal("OfflineAudioContext", FakeOfflineAudioContext);
   });
 
   afterEach(() => {
     vi.useRealTimers();
     vi.unstubAllGlobals();
+    vi.restoreAllMocks();
   });
 
   it("downloads a recording once when two takes cut from it", async () => {
@@ -129,5 +147,67 @@ describe("buildMixedAudioTrack", () => {
 
     expect(await settled).toBeInstanceOf(AudioDownloadStalledError);
     expect(signals[0]?.aborted).toBe(true);
+  });
+
+  it("decodes each file at the mix's own rate, so nothing is resampled twice", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => fullResponse())
+    );
+    await buildMixedAudioTrack({
+      segments: [
+        {
+          takeId: "demo",
+          postStartSeconds: 0,
+          sourceInSeconds: 0,
+          durationSeconds: 1,
+        },
+      ],
+      durationSeconds: 1,
+      takeUrls: new Map([["demo", "/word-videos/woods-full.mp4"]]),
+      sampleRate: SAMPLE_RATE,
+    });
+    expect(contextRates).toEqual([SAMPLE_RATE]);
+  });
+
+  it("fails the render when the music cannot be read, where a take's sound goes quiet", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => fullResponse())
+    );
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    unreadable = true;
+    const take = await buildMixedAudioTrack({
+      segments: [
+        {
+          takeId: "demo",
+          postStartSeconds: 0,
+          sourceInSeconds: 0,
+          durationSeconds: 1,
+        },
+      ],
+      durationSeconds: 1,
+      takeUrls: new Map([["demo", "/word-videos/woods-full.mp4"]]),
+      sampleRate: SAMPLE_RATE,
+    });
+    expect(await wavSampleAt(take!, 0.5)).toBe(0);
+
+    const music = "/api/dev/feature-videos/promo/media/music/derail.wav";
+    await expect(
+      buildMixedAudioTrack({
+        segments: [
+          {
+            takeId: "music:music-1",
+            postStartSeconds: 0,
+            sourceInSeconds: 0,
+            durationSeconds: 1,
+          },
+        ],
+        durationSeconds: 1,
+        takeUrls: new Map([["music:music-1", music]]),
+        required: new Set(["music:music-1"]),
+        sampleRate: SAMPLE_RATE,
+      })
+    ).rejects.toThrow(`Could not read the sound in ${music}`);
   });
 });

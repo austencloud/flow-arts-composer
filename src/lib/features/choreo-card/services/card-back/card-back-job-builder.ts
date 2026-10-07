@@ -43,6 +43,10 @@ import {
 } from "$lib/shared/mandala/domain/mandala-constants";
 import { calculate as calculateMandalaGeometry } from "$lib/shared/mandala/services/mandala-geometry-calculator";
 import { renderMandalaToCanvas } from "$lib/shared/mandala/services/mandala-renderer";
+import {
+  sequenceMandalaHandOffsets,
+  type MandalaHandOffsets,
+} from "$lib/shared/mandala/services/mandala-grid-join";
 import { LOOPComponent } from "$lib/shared/foundation/domain/models/generation/generate-models";
 import { Period } from "$lib/shared/foundation/domain/models/generation/circular-models";
 import { resolveLoopDisplay } from "$lib/features/loop-labeler/services/loop-display-resolver";
@@ -105,6 +109,7 @@ function renderMandalaPath2D(
   h: number,
   darkMode: boolean,
   primaryPropColors: { left: string; right: string } | null,
+  handOffsets: MandalaHandOffsets | null = null,
 ): ImageBitmap {
   const canvas = new OffscreenCanvas(w, h);
   const ctx = canvas.getContext("2d") as unknown as CanvasRenderingContext2D;
@@ -122,6 +127,7 @@ function renderMandalaPath2D(
     offsetX: 0,
     offsetY: 0,
     glow: { blur: GLOW_STDDEV * sizeScale, bloomBlur: BLOOM_STDDEV * sizeScale },
+    ...(handOffsets ? { handOffsets } : {}),
   });
   return canvas.transferToImageBitmap();
 }
@@ -205,6 +211,8 @@ export interface BuildBackJobDeps {
     h: number,
     darkMode: boolean,
     primaryPropColors: { left: string; right: string } | null,
+    /** Joined grids: each hand's figure offset onto its own grid; null for one grid. */
+    handOffsets?: MandalaHandOffsets | null,
   ) => ImageBitmap;
 }
 
@@ -339,6 +347,9 @@ export async function buildBackJob(
   const mandalaH = Math.round(layout.mandala.h);
   const mandalaBitmap = d.renderMandala(
     mandalaPaths, mandalaW, mandalaH, darkMode, appearance.primaryPropColors,
+    // A joined sequence's back draws each hand around its own grid, as its
+    // front and every other picture of it do.
+    sequenceMandalaHandOffsets(sequence),
   );
   const mandala: BackJob["mandala"] = {
     bitmap: mandalaBitmap,

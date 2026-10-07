@@ -7,6 +7,7 @@
   reads the StepMap it produces. Annotate is the new work.
 -->
 <script lang="ts">
+  import { sequenceGridJoin } from "$lib/shared/grid-join/sequence-grid-join";
   import { onDestroy, onMount } from "svelte";
   import StepMapEditor from "$lib/shared/sequence-viewer/components/step-mapping/StepMapEditor.svelte";
   import type { StepMap } from "$lib/shared/video-collaboration/domain/collaborative-video";
@@ -134,6 +135,7 @@
         steps={movementMap.sequence.steps}
         startPlacement={movementMap.sequence.startPlacement ??
           movementMap.sequence.startingPlacement}
+        gridJoin={sequenceGridJoin(movementMap.sequence)}
         bpm={60}
         initialStepMap={movementMap.stepMap ?? undefined}
         draftKey={`movement:${movementMap.sequence.id}:${movementMap.video.id}`}

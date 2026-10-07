@@ -41,6 +41,19 @@
       location: GridLocation,
       orientation: Orientation | null
     ) => void;
+    /**
+     * Moves each target off the one-grid scene, e.g. onto the active hand's
+     * grid when the hands draw on joined grids. Absent leaves targets where
+     * the one grid draws its points.
+     */
+    placeTarget?:
+      | ((point: { x: number; y: number }) => {
+          x: number;
+          y: number;
+        })
+      | null;
+    /** Size of the drawn grid against one grid's; scales the targets. */
+    targetScale?: number;
   }
 
   let {
@@ -57,11 +70,19 @@
     aimEnabled = false,
     onPointAim,
     onPointAimPreview,
+    placeTarget = null,
+    targetScale = 1,
   }: Props = $props();
 
-  const hitRadius = getHitTargetRadius();
+  const hitRadius = $derived(getHitTargetRadius() * targetScale);
 
-  const hitTargets = $derived(getHitTargets(gridMode, showCenter));
+  const hitTargets = $derived.by(() => {
+    const targets = getHitTargets(gridMode, showCenter);
+    const place = placeTarget;
+    return place
+      ? targets.map((target) => ({ ...target, ...place(target) }))
+      : targets;
+  });
   let overlayElement = $state<SVGSVGElement | null>(null);
   let dragLocation = $state<GridLocation | null>(null);
   let dragAim = $state<Orientation | null>(null);
@@ -211,10 +232,10 @@
         {@const cos = Math.cos(radians)}
         {@const sin = Math.sin(radians)}
         <line
-          x1={dragPoint.x + cos * 72}
-          y1={dragPoint.y + sin * 72}
-          x2={dragPoint.x + cos * 138}
-          y2={dragPoint.y + sin * 138}
+          x1={dragPoint.x + cos * 72 * targetScale}
+          y1={dragPoint.y + sin * 72 * targetScale}
+          x2={dragPoint.x + cos * 138 * targetScale}
+          y2={dragPoint.y + sin * 138 * targetScale}
           class:aimed={direction.orientation === dragAim}
           class:phase-blue={activePhaseHand === HandSide.LEFT}
           class:phase-red={activePhaseHand === HandSide.RIGHT}

@@ -47,6 +47,7 @@ export function collectedTunnelSequence(tunnel: CollectedTunnel): SequenceData {
     steps,
     gridMode: steps.find((step) => step.gridMode)?.gridMode,
     ...(startPlacement ? { startPlacement } : {}),
+    ...(tunnel.conjoined ? { conjoined: tunnel.conjoined } : {}),
   });
 }
 
