@@ -1,9 +1,11 @@
 <script lang="ts">
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
   import TypeableValue from "$lib/shared/ui/components/TypeableValue.svelte";
   import ValueSlider from "$lib/shared/ui/components/ValueSlider.svelte";
   import {
     downbeatFromTaps,
+    musicSpan,
     trackSecondsAt,
   } from "$lib/shared/media-composition/domain/music-grid";
   import {
@@ -13,25 +15,38 @@
     POST_MUSIC_MAX_TEXT,
     type PostMusic,
   } from "$lib/shared/media-composition/domain/post-music";
-  import type { MusicPatch } from "$lib/shared/media-composition/domain/post-music-edits";
+  import {
+    POST_MUSIC_MIN_SECONDS,
+    type MusicPatch,
+  } from "$lib/shared/media-composition/domain/post-music-edits";
+  import { POST_TIME_EPSILON } from "$lib/shared/media-composition/domain/post-project";
+  import { formatTakeClock, parseClock } from "../builder/post-builder-format";
 
   /**
-   * The music's settings: its level and fades, its beat grid, and the names
-   * its credit and license need. Suggest BPM only shows what it heard; the
-   * tempo changes when Use is pressed. Tapping along while the post plays
-   * moves bar 1 onto the beat of the taps, to the beat nearest where bar 1
-   * was, so the bar numbers stay where they were.
+   * The music's settings: its beat grid, where it plays, its level and
+   * fades, and the names its credit and license need. Suggest BPM only
+   * shows what it heard; the tempo changes when Use is pressed. Tapping
+   * along while the post plays moves bar 1 onto the beat of the taps, to the
+   * beat nearest where bar 1 was, so the bar numbers stay where they were.
    */
   interface Props {
     music: PostMusic;
     playing: boolean;
-    /** The playhead in post seconds, read as each tap lands. */
+    /**
+     * The playhead in post seconds, read as each tap lands and to tell
+     * whether an edge can move to it.
+     */
     playheadSeconds: () => number;
     /** `key` names the setting, so one slider drag makes one undo step. */
     onChange: (key: string, patch: MusicPatch) => void;
+    /**
+     * Moves the music's start or end edge to a time on the post's clock.
+     * The song keeps its place; only the part that plays changes.
+     */
+    onTrim: (edge: "start" | "end", postSeconds: number) => void;
   }
 
-  let { music, playing, playheadSeconds, onChange }: Props = $props();
+  let { music, playing, playheadSeconds, onChange, onTrim }: Props = $props();
 
   const id = $props.id();
 
@@ -60,6 +75,15 @@
   const playingSeconds = $derived(
     music.sourceOutSeconds - music.sourceInSeconds
   );
+  const span = $derived(musicSpan(music));
+  /** Far enough inside the music that an edge moved to the playhead leaves a piece. */
+  const playheadInside = $derived.by(() => {
+    const at = playheadSeconds();
+    return (
+      at - span.start > POST_MUSIC_MIN_SECONDS + POST_TIME_EPSILON &&
+      span.end - at > POST_MUSIC_MIN_SECONDS + POST_TIME_EPSILON
+    );
+  });
   const percent = (value: number) => `${Math.round(value)}%`;
   const fadeSeconds = (value: number) => `${value.toFixed(2)} s`;
   const bpmText = (bpm: number) => `${Number(bpm.toFixed(2))} BPM`;
@@ -135,38 +159,42 @@
     }
     onChange(field, { [field]: text || null });
   }
+
+  /** Moves an edge to a time in the song's own seconds. */
+  function trimToSong(edge: "start" | "end", songSeconds: number): void {
+    onTrim(edge, music.startSeconds + (songSeconds - music.sourceInSeconds));
+  }
 </script>
 
-<div class="music-tool">
-  <ValueSlider
-    label="Level"
-    value={music.gain * 100}
-    min={0}
-    max={POST_MUSIC_MAX_GAIN * 100}
-    step={1}
-    origin={100}
-    format={percent}
-    onchange={(value) => onChange("gain", { gain: value / 100 })}
-  />
-  <ValueSlider
-    label="Fade in"
-    value={music.fadeInSeconds}
-    min={0}
-    max={Math.max(0, playingSeconds / 2)}
-    step={0.05}
-    format={fadeSeconds}
-    onchange={(value) => onChange("fadeIn", { fadeInSeconds: value })}
-  />
-  <ValueSlider
-    label="Fade out"
-    value={music.fadeOutSeconds}
-    min={0}
-    max={Math.max(0, playingSeconds / 2)}
-    step={0.05}
-    format={fadeSeconds}
-    onchange={(value) => onChange("fadeOut", { fadeOutSeconds: value })}
-  />
+{#snippet readout(
+  name: string,
+  value: string,
+  typed: (seconds: number) => void,
+  set: { icon: string; disabled: boolean; run: () => void }
+)}
+  <div class="readout">
+    <div class="readout-text">
+      <span class="readout-name" aria-hidden="true">{name}</span>
+      <TypeableValue
+        label={name}
+        text={value}
+        draft={value}
+        parse={parseClock}
+        oncommit={typed}
+      />
+    </div>
+    <PanelButton
+      onclick={set.run}
+      disabled={set.disabled}
+      ariaLabel={`${t("post_editor_set_to_playhead")}: ${name}`}
+    >
+      <i class="fa-solid {set.icon}" aria-hidden="true"></i>
+      {t("post_editor_set_to_playhead")}
+    </PanelButton>
+  </div>
+{/snippet}
 
+<div class="music-tool">
   <section class="group" aria-labelledby="{id}-grid">
     <h4 class="group-title" id="{id}-grid">Beat grid</h4>
     <div class="pairs">
@@ -205,9 +233,6 @@
           <i class="fa-solid fa-hand-pointer" aria-hidden="true"></i>
           Tap the beat
         </PanelButton>
-        <PanelButton onclick={() => onChange("bpm", { bpm: null })}>
-          Remove beat grid
-        </PanelButton>
       </div>
       <p class="status" role="status">
         {#if !playing}
@@ -241,6 +266,81 @@
     {:else if shownNote}
       <p class="status" role="status">{shownNote}</p>
     {/if}
+    {#if music.grid}
+      <div class="actions">
+        <PanelButton onclick={() => onChange("bpm", { bpm: null })}>
+          Remove beat grid
+        </PanelButton>
+      </div>
+    {/if}
+  </section>
+
+  <section class="group" aria-labelledby="{id}-timing">
+    <h4 class="group-title" id="{id}-timing">
+      {t("post_editor_tool_timing")}
+    </h4>
+    {@render readout(
+      t("post_editor_start"),
+      formatTakeClock(music.startSeconds),
+      (seconds) => onChange("start", { startSeconds: seconds }),
+      {
+        icon: "fa-arrow-right-to-bracket",
+        disabled: false,
+        run: () => onChange("start", { startSeconds: playheadSeconds() }),
+      }
+    )}
+    {@render readout(
+      t("post_editor_in"),
+      formatTakeClock(music.sourceInSeconds),
+      (seconds) => trimToSong("start", seconds),
+      {
+        icon: "fa-arrow-right-to-bracket",
+        disabled: !playheadInside,
+        run: () => onTrim("start", playheadSeconds()),
+      }
+    )}
+    {@render readout(
+      t("post_editor_out"),
+      formatTakeClock(music.sourceOutSeconds),
+      (seconds) => trimToSong("end", seconds),
+      {
+        icon: "fa-arrow-right-from-bracket",
+        disabled: !playheadInside,
+        run: () => onTrim("end", playheadSeconds()),
+      }
+    )}
+  </section>
+
+  <section class="group" aria-labelledby="{id}-sound">
+    <h4 class="group-title" id="{id}-sound">Sound</h4>
+    <ValueSlider
+      label="Level"
+      value={music.gain * 100}
+      min={0}
+      max={POST_MUSIC_MAX_GAIN * 100}
+      step={1}
+      origin={100}
+      format={percent}
+      onchange={(value) => onChange("gain", { gain: value / 100 })}
+    />
+    <ValueSlider
+      label="Fade in"
+      value={music.fadeInSeconds}
+      min={0}
+      max={Math.max(0, playingSeconds / 2)}
+      step={0.05}
+      format={fadeSeconds}
+      onchange={(value) => onChange("fadeIn", { fadeInSeconds: value })}
+    />
+    <ValueSlider
+      label="Fade out"
+      value={music.fadeOutSeconds}
+      min={0}
+      max={Math.max(0, playingSeconds / 2)}
+      step={0.05}
+      format={fadeSeconds}
+      onchange={(value) => onChange("fadeOut", { fadeOutSeconds: value })}
+    />
   </section>
 
   <section class="group" aria-labelledby="{id}-credit">
@@ -277,9 +377,10 @@
 </div>
 
 <style>
+  /* Groups sit further apart than the rows inside them. */
   .music-tool {
     display: grid;
-    gap: 1rem;
+    gap: 1.5rem;
     min-width: 0;
   }
 
@@ -296,10 +397,13 @@
     font-weight: 600;
   }
 
-  /* Each name beside a box that takes a typed value. */
+  /* Each name beside a box that takes a typed value. The boxes size to
+     their values, as the clip panel's times do. */
   .pairs {
+    --typeable-min-width: 6rem;
     display: grid;
-    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-columns: auto auto;
+    justify-content: start;
     align-items: center;
     gap: 0.5rem 0.75rem;
   }
@@ -307,6 +411,31 @@
   .pair-name {
     color: var(--theme-text-secondary, #aaa);
     font-size: 0.875rem;
+  }
+
+  /* A time over its box, beside the button that sets it to the playhead:
+     the clip panel's Timing and Trim rows. */
+  .readout {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem 0.75rem;
+    min-width: 0;
+    max-width: 30rem;
+  }
+
+  .readout-text {
+    --typeable-font-size: 1rem;
+    --typeable-min-width: 6rem;
+    display: grid;
+    justify-items: start;
+    gap: 0.125rem;
+  }
+
+  .readout-name {
+    color: var(--theme-text-secondary, #aaa);
+    font-size: 0.8125rem;
   }
 
   .actions {
@@ -326,6 +455,7 @@
     display: grid;
     gap: 0.25rem;
     min-width: 0;
+    max-width: 30rem;
   }
 
   .field {

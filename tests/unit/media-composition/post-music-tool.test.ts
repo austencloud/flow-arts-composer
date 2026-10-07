@@ -1,6 +1,7 @@
 /**
  * The music's panel. Its sliders and boxes hand back patches for
- * updateMusic, keyed by setting so a drag joins one undo step. Suggest BPM
+ * updateMusic, keyed by setting so a drag joins one undo step; its In and
+ * Out hand back an edge on the post's clock for trimMusic. Suggest BPM
  * must never change the tempo by itself, and tapping along must move bar 1
  * onto the taps without renumbering the bars.
  */
@@ -314,5 +315,52 @@ describe("the music's panel", () => {
       license: "Epidemic Sound, trial, 2026-10-07",
     });
     expect(tool!.music.artist).toBeUndefined();
+  });
+
+  it("moves the music and trims its ends to typed times", () => {
+    // The song's 4 s plays at the post's 2 s, through the song's 34 s.
+    const { changes, trims } = open(
+      music({ startSeconds: 2, sourceInSeconds: 4, sourceOutSeconds: 34 })
+    );
+    typeInto("Start: 0:02.00", "3.5");
+    expect(changes).toEqual([["start", { startSeconds: 3.5 }]]);
+    // In and Out are the song's own seconds; the edge moves on the post's clock.
+    typeInto("In: 0:04.00", "6");
+    expect(trims).toEqual([["start", 5.5]]);
+    typeInto("Out: 0:34.00", "0:30");
+    expect(trims.at(-1)).toEqual(["end", 29.5]);
+    expect(tool!.music).toMatchObject({
+      startSeconds: 5.5,
+      sourceInSeconds: 6,
+      sourceOutSeconds: 30,
+    });
+  });
+
+  it("sets an edge to the playhead only from inside the music, and moves its start anywhere", () => {
+    const { changes, trims, setPlayhead } = open(
+      music({ startSeconds: 2, sourceInSeconds: 4, sourceOutSeconds: 34 })
+    );
+    // The playhead starts at the post's 0 s, before the music.
+    expect(buttonNamed("Set to playhead: In")!.disabled).toBe(true);
+    expect(buttonNamed("Set to playhead: Out")!.disabled).toBe(true);
+    setPlayhead(10);
+    buttonNamed("Set to playhead: In")!.click();
+    flushSync();
+    expect(trims).toEqual([["start", 10]]);
+    expect(tool!.music).toMatchObject({
+      startSeconds: 10,
+      sourceInSeconds: 12,
+    });
+    // On the new start, an edge moved there would leave no music.
+    expect(buttonNamed("Set to playhead: Out")!.disabled).toBe(true);
+    setPlayhead(20);
+    buttonNamed("Set to playhead: Out")!.click();
+    flushSync();
+    expect(trims.at(-1)).toEqual(["end", 20]);
+    expect(tool!.music.sourceOutSeconds).toBe(22);
+    setPlayhead(1);
+    buttonNamed("Set to playhead: Start")!.click();
+    flushSync();
+    expect(changes).toEqual([["start", { startSeconds: 1 }]]);
   });
 });

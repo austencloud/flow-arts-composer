@@ -2672,6 +2672,10 @@
       playing={editor.isPlaying}
       playheadSeconds={() => editor.previewSeconds}
       onChange={changeMusic}
+      onTrim={(edge, seconds) =>
+        editor.edit((project, context) =>
+          trimMusic(project, edge, seconds, context)
+        )}
     />
   {:else if editor.selectedItem}
     <PostItemTool
