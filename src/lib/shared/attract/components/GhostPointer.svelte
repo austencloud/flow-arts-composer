@@ -54,6 +54,7 @@
     dimmed = false,
     considering = false,
     stage = false,
+    compact = false,
     onResume,
   }: {
     x: number;
@@ -73,6 +74,8 @@
     considering?: boolean;
     /** Projection/TV sizing. */
     stage?: boolean;
+    /** Create method previews: a small finger sized off the preview box. */
+    compact?: boolean;
     onResume?: () => void;
   } = $props();
 
@@ -98,7 +101,7 @@
   // The trail only earns its pixels while actually moving. Below this it is
   // noise around a stationary dot.
   const trailing = $derived(speed > 0.12 && !parked && !dimmed);
-  const trailLen = $derived(Math.round(speed * (stage ? 96 : 54)));
+  const trailLen = $derived(Math.round(speed * (stage ? 96 : compact ? 18 : 54)));
   const headingDeg = $derived((heading * 180) / Math.PI);
 </script>
 
@@ -109,6 +112,7 @@
   class:stage
   class:dimmed
   class:considering
+  class:compact
   style={`transform: translate(${x}px, ${y}px); --mood-hue: ${tone.hue}deg; --mood-sat: ${tone.sat}; --breath: ${tone.breath}s`}
   aria-hidden={!parked}
 >
@@ -228,6 +232,25 @@
     box-shadow:
       0 0 26px color-mix(in srgb, var(--accent, #8b8cff) 80%, transparent),
       0 0 62px color-mix(in srgb, var(--accent, #8b8cff) 40%, transparent);
+  }
+
+  /* Create method previews press inside boxes as small as 40px. The size
+     follows the preview box (its nearest size container), and the glow
+     tightens so it lights the target without covering it. */
+  .ghost.compact {
+    --size: clamp(14px, 18cqmin, 28px);
+  }
+
+  .ghost.compact .core {
+    box-shadow:
+      0 0 8px color-mix(in srgb, var(--accent, #8b8cff) 65%, transparent),
+      0 0 16px color-mix(in srgb, var(--accent, #8b8cff) 30%, transparent);
+  }
+
+  .ghost.compact.considering .core {
+    box-shadow:
+      0 0 12px color-mix(in srgb, var(--accent, #8b8cff) 80%, transparent),
+      0 0 24px color-mix(in srgb, var(--accent, #8b8cff) 40%, transparent);
   }
 
   /* The wisp. Anchored at the dot's centre and rotated to point back down the
