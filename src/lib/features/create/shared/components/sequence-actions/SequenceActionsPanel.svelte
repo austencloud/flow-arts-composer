@@ -43,6 +43,7 @@
   import DurationPatternView from "./DurationPatternView.svelte";
   import ExtendView from "./ExtendView.svelte";
   import StepGridSection from "./StepGridSection.svelte";
+  import { sequenceGridJoin } from "$lib/shared/grid-join/sequence-grid-join";
   import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
   import FirstStepConfirmDialog from "./FirstStepConfirmDialog.svelte";
   import HandSelector from "./HandSelector.svelte";
@@ -854,6 +855,7 @@
             >
               <StepGridSection
                 steps={sequence.steps}
+                gridJoin={sequenceGridJoin(sequence)}
                 startPlacement={sequence.startPlacement ||
                   sequence.startingPlacement ||
                   null}

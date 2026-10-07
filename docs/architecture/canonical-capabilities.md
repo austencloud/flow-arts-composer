@@ -487,9 +487,10 @@ do not introduce a second QR renderer or scan-asset preparation pipeline.
 Sign-in reads that must not load Firebase go through
 `shared/auth/loaded-auth.ts` (`loadedAuth.currentUser`) and
 `shared/auth/state/loaded-auth-state.svelte.ts` (`loadedAuthState.isAdmin`,
-`loadedAuthState.isAuthenticated`). `firebase.ts` and `auth-state.svelte.ts`
-remain the owners and register a reader when they load; before that nobody can
-be signed in, so the answers are null and false. Public pages import settings,
+`loadedAuthState.isAuthenticated`, `loadedAuthState.userId`). `firebase.ts`
+and `auth-state.svelte.ts` remain the owners and register a reader when they
+load; before that nobody can be signed in, so the answers are null and false.
+Public pages import settings,
 feature flags, the premium prop check, the sequence thumbnails and the Level 1
 guide's admin gate, and importing either owner there put Firebase Auth and
 Firestore on their first download. Firebase calls on those paths (QR short
@@ -514,11 +515,14 @@ does. `ChoreoCardThumbnail` loads auth and its menu actions when the context
 menu opens, so a page that shows cards does not download Firebase with them.
 The workspace step cells read `loadedAuthState.isAdmin`, and the mandala
 "Save to Collection" action loads its store when chosen, for the same reason.
+The shared 3D scene controls read `loadedAuthState` too, the per-user
+collection repository (`firebase-collection-repository.ts`) loads Firestore with
+its first call, and the performer sequence picker mounts through LazyMount.
 `scripts/verify-public-firebase.mjs` checks the listed public pages in the
 built chunk graph, `tests/unit/landing/home-first-visit-firebase.test.ts`
 follows the home page's LazyMount components and first-visit `import()` calls
 in source, and `tests/unit/composer/composer-gallery-firebase.test.ts` walks
-the imports of the /composer Glide stops before the 3D scene. Searches:
+the imports of every /composer Glide stop, the 3D scene included. Searches:
 currentUser, signed-in user, isAdmin, isAuthenticated, whenAuthLoaded, saved
 session, public page Firebase, first download, LazyMount. Decision: extend the two owners; code
 a public page loads at startup uses these readers instead of importing either

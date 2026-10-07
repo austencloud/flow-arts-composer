@@ -15,7 +15,7 @@ export function cardParityCases(): CardParityCase[] {
   const eightSteps = structuredClone(demo);
   eightSteps.steps = eightSteps.steps.slice(0, 8);
   eightSteps.word = eightSteps.steps.map((step) => step.letter).join("");
-  const stillBox = stillOnBoxGrid(sequence);
+  const box = turnedOntoBoxGrid(sequence);
   return [
     {
       name: "loop-metadata",
@@ -188,15 +188,15 @@ export function cardParityCases(): CardParityCase[] {
     },
     {
       name: "box-grid",
-      sequence: stillBox,
-      options: { showDifficulty: true, showMandala: false, gridMode: "box" },
+      sequence: box,
+      options: { showDifficulty: true, showMandala: true, gridMode: "box" },
     },
     {
       name: "box-grid-dark",
-      sequence: stillBox,
+      sequence: box,
       options: {
         showDifficulty: true,
-        showMandala: false,
+        showMandala: true,
         darkMode: true,
         gridMode: "box",
       },
@@ -223,35 +223,34 @@ function turnedPlacement(placement: string): string {
 }
 
 /**
- * The start position on the box grid (the diamond grid turned 45° clockwise),
- * held still for every step (static γ). Still steps draw no arrows and the
- * cases draw no mandala, so they check only the box grid and the props on
- * it; box arrows and the mandala do not yet match the app.
+ * The whole sequence turned 45° clockwise onto the box grid: every location
+ * one step clockwise and every placement the next number in its group of 8.
+ * Its arrows and mandala are the diamond ones turned 45°, which is how the app
+ * places box arrows.
  */
-function stillOnBoxGrid(sequence: typeof demo): typeof demo {
-  const start = structuredClone(sequence.startPlacement);
+function turnedOntoBoxGrid(sequence: typeof demo): typeof demo {
+  const turnMotions = (motions: typeof demo.startPlacement.motions) => {
+    for (const motion of Object.values(motions)) {
+      motion.startLocation = TURN_CLOCKWISE_45[motion.startLocation]!;
+      motion.endLocation = TURN_CLOCKWISE_45[motion.endLocation]!;
+      motion.arrowLocation = TURN_CLOCKWISE_45[motion.arrowLocation]!;
+      motion.gridMode = "box";
+    }
+  };
+  const box = structuredClone(sequence);
+  const start = box.startPlacement;
   start.gridPlacement = turnedPlacement(start.gridPlacement);
   start.startPlacement = turnedPlacement(start.startPlacement);
   start.endPlacement = turnedPlacement(start.endPlacement);
-  for (const motion of Object.values(start.motions)) {
-    motion.startLocation = TURN_CLOCKWISE_45[motion.startLocation]!;
-    motion.endLocation = TURN_CLOCKWISE_45[motion.endLocation]!;
-    motion.arrowLocation = TURN_CLOCKWISE_45[motion.arrowLocation]!;
-    motion.gridMode = "box";
-  }
-  const box = structuredClone(sequence);
+  turnMotions(start.motions);
   box.gridMode = "box";
-  box.startPlacement = start;
   box.startingPlacement = start as never;
-  box.steps = sequence.steps.map((step) => ({
-    ...step,
-    letter: "γ",
-    gridMode: "box",
-    startPlacement: start.startPlacement,
-    endPlacement: start.endPlacement,
-    motions: structuredClone(start.motions),
-  }));
-  box.word = box.steps.map((step) => step.letter).join("");
+  for (const step of box.steps) {
+    step.startPlacement = turnedPlacement(step.startPlacement);
+    step.endPlacement = turnedPlacement(step.endPlacement);
+    step.gridMode = "box";
+    turnMotions(step.motions);
+  }
   return box;
 }
 

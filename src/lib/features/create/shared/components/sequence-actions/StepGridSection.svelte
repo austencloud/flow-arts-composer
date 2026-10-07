@@ -9,6 +9,7 @@
   import StepGrid from "../../workspace-panel/sequence-display/components/StepGrid.svelte";
   import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
   import type { StartPlacementData } from "$lib/shared/foundation/domain/models/start-placement-data";
+  import type { GridJoin } from "@tka/tka-types";
 
   interface Props {
     steps: readonly StepData[];
@@ -21,6 +22,8 @@
     onStartClick: () => void;
     onStepLongPress?: (stepNumber: number) => void;
     onCancelShiftMode: () => void;
+    /** The sequence's grid join; the cells draw joined when set. */
+    gridJoin?: GridJoin | null;
   }
 
   const {
@@ -33,6 +36,7 @@
     onStartClick,
     onStepLongPress,
     onCancelShiftMode,
+    gridJoin = null,
   }: Props = $props();
 </script>
 
@@ -57,6 +61,7 @@
     {onStartClick}
     onStepLongPress={isShiftMode ? undefined : onStepLongPress}
     posePicker={isShiftMode}
+    {gridJoin}
   />
 </div>
 

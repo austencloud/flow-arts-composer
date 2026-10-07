@@ -46,7 +46,6 @@ import {
   getAllPropTypes,
   PROP_TYPE_DISPLAY_REGISTRY,
 } from "../../pictograph/prop/domain/prop-type-display-registry";
-import { filterPremiumCosmeticProps } from "../../subscription/domain/premium-prop-access";
 import { commandPaletteState } from "../state/command-palette-state.svelte";
 import { registerSaveShortcut } from "./register-save-shortcut";
 import { registerEditHistoryShortcuts } from "./register-edit-history-shortcuts";
@@ -261,9 +260,7 @@ export function registerGlobalShortcuts(
     scope: "action",
     priority: "high",
     action: () => {
-      // Cycling walks the whole enum, so paid cosmetics drop out unless the
-      // user may actually use them — otherwise Shift+P hands one over free.
-      const allProps = filterPremiumCosmeticProps(getAllPropTypes());
+      const allProps = getAllPropTypes();
       if (allProps.length === 0) return;
 
       const currentProp = settingsService.settings.leftPropType;
