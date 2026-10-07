@@ -554,12 +554,15 @@
     --sheet-backdrop-filter: blur(3px);
   }
 
-  /* Drawer inner fills available height */
+  /* Drawer inner fills available height. The bottom sheet is content-sized
+     (--sheet-min-height: 0px), so this chain must keep flex-basis AUTO: with
+     `flex: 1` (basis 0%) WebKit sizes the sheet from a 0px basis and the menu
+     opens on iPhones as a bare grab handle. See Drawer.css .drawer-inner. */
   :global(.drawer-content.module-switcher-drawer .drawer-inner) {
     overflow: hidden;
     display: flex;
     flex-direction: column;
-    flex: 1;
+    flex: 1 1 auto;
     min-height: 0;
   }
 
@@ -567,7 +570,7 @@
     display: flex;
     flex-direction: column;
     width: 100%;
-    flex: 1;
+    flex: 1 1 auto;
     min-height: 0;
   }
 
