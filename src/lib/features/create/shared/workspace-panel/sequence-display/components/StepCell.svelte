@@ -867,52 +867,9 @@
       0 0 48px rgba(251, 191, 36, 0.3);
   }
 
-  /**
-   * Cascade with depth: the cell rises into the plane rather than fading in
-   * place. Scale carries the depth cue and the brief overshoot past 1 gives it
-   * something to land against.
-   *
-   * Transform, opacity and a cheap colour filter only. Nothing here can reflow
-   * a neighbour. The depth blur that used to open this gesture was removed: a
-   * 3px gaussian forced an offscreen surface and a convolution pass for every
-   * arriving cell on every frame of the entrance, which is what made a step
-   * landing in the workspace stutter. Brightness and saturation keep the
-   * documented ridge without the convolution.
-   */
-  /**
-   * The cell arrives ALONG the wave axis, not straight up.
-   *
-   * The front travels down-right (band = row + column), so a cell that rose
-   * vertically was moving across the gesture carrying it — which is why a grid
-   * of them read as separate pops rather than one sheet being drawn. Starting
-   * back up-left and settling down-right puts every cell on the same vector as
-   * the light passing over it, and the 75% overshoot carries a hair past the
-   * mark in that same direction before it sets.
-   */
-  @keyframes stepCascade {
-    0% {
-      opacity: 0;
-      transform: translate3d(-11px, -11px, 0) scale(0.88);
-      filter: brightness(1.4) saturate(1.3);
-    }
-    55% {
-      opacity: 1;
-      /* The moment it lands is the moment it is brightest. Because the stagger
-         is 55ms and this decays over the back 45% of a 380ms entrance, three or
-         four bands are lit at once — the front reads as a bright ridge moving
-         across the grid instead of 44 unrelated arrivals. The light lives in
-         the cell, so unlike an overlay it can never fall on empty canvas. */
-      filter: brightness(1.32) saturate(1.24);
-    }
-    75% {
-      transform: translate3d(1.5px, 1.5px, 0) scale(1.015);
-    }
-    100% {
-      opacity: 1;
-      transform: none;
-      filter: brightness(1) saturate(1);
-    }
-  }
+  /* stepCascade lives in src/lib/shared/transitions/keyframes.css. The Create
+     front door's Generate preview enters its cells with it too, so the two
+     waves are one gesture. It is global, so Svelte leaves the name unscoped. */
 
   /**
    * Accessibility: Respect user's motion preferences (WCAG AAA)
