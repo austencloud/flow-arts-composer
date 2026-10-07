@@ -80,7 +80,7 @@ export const PROP_DIMENSIONS: Record<string, PropDimensions> = {
   // Sword
   sword: { width: 572.3, height: 64 },
 
-  // Energy family (premium cosmetics). Both boxes are padded beyond the prop
+  // Energy styles of Sword and Double Staff. Both boxes are padded beyond the prop
   // itself so the blade glow has somewhere to fall off, and both grew that
   // padding symmetrically around the prop center — the torch precedent — so the
   // hand pivot and the tracked tips stay exactly where their parents put them.
