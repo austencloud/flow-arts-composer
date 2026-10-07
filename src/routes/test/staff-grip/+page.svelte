@@ -425,11 +425,11 @@
     // The animated scene is an enhancement: its renderer graph loads after
     // the lab's first frame, the way the marketing shell loads it.
     const frame = requestAnimationFrame(() => {
-      void import(
-        "$lib/shared/background/shared/components/BackgroundHost.svelte"
-      ).then(({ default: BackgroundHost }) => {
-        if (mounted) LiveBackground = BackgroundHost;
-      });
+      void import("$lib/shared/background/shared/components/BackgroundHost.svelte").then(
+        ({ default: BackgroundHost }) => {
+          if (mounted) LiveBackground = BackgroundHost;
+        }
+      );
     });
     return () => {
       mounted = false;

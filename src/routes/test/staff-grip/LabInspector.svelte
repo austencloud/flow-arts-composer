@@ -234,14 +234,15 @@
                 {cm(fit?.fit.maxStaffLengthCm ?? null)} cm
                 {#if fit?.fit.fits}
                   <span class="sub"
-                    >· body fit picks {cm(
-                      fit.fit.recommendedStaffLengthCm
-                    )} cm</span
+                    >· body fit picks {cm(fit.fit.recommendedStaffLengthCm)} cm</span
                   >
                 {/if}
               </dd>
             </div>
-            <div class="metric is-wide" data-diverged={lengthDivergenceCm !== null}>
+            <div
+              class="metric is-wide"
+              data-diverged={lengthDivergenceCm !== null}
+            >
               <dt>Collision model staff</dt>
               <dd>
                 {cm(collisionLengthCm)} cm
@@ -284,19 +285,18 @@
             <p class="note">
               This body is one base rig with a single dimension moved, so a
               failure here names its own cause. The predicted line is the
-              generator's own measurement of the same rest pose; it and the
-              live reading above should agree within a centimetre.
+              generator's own measurement of the same rest pose; it and the live
+              reading above should agree within a centimetre.
             </p>
           {/if}
           {#if fixedLengthCm !== null}
             <p class="note">
               This build is drawn from an authored model that the scene
               package's <code>Prop3D</code> does not stretch, so it measures
-              {cm(fixedLengthCm)} cm whatever it is asked for. Prop length
-              above asks for {cm(configuredLengthCm)} cm and nothing receives
-              it. Switch to the plain Staff to make the control reach the mesh,
-              or change the model's own <code>AUTHORED_LENGTH_M</code> and
-              rebuild it.
+              {cm(fixedLengthCm)} cm whatever it is asked for. Prop length above asks
+              for {cm(configuredLengthCm)} cm and nothing receives it. Switch to the
+              plain Staff to make the control reach the mesh, or change the model's
+              own <code>AUTHORED_LENGTH_M</code> and rebuild it.
             </p>
           {/if}
           <p class="note">
@@ -304,14 +304,14 @@
             prop through <code>propLength</code>, and every build answers it
             except a model the scene does not stretch. The collision model
             builds its segment from the scene package's global
-            <code>staffLength</code> and ignores both, so a per-body length
-            changes the picture and not the physics.
+            <code>staffLength</code> and ignores both, so a per-body length changes
+            the picture and not the physics.
           </p>
           <p class="note">
             The production sequence viewer takes a third route: it sizes the
-            prop from the performer's own <code>staffLengthCm</code> setting,
-            so a body-derived fit reaches this route and not that one. Expose
-            both there before the fit is trusted as a product behaviour.
+            prop from the performer's own <code>staffLengthCm</code> setting, so a
+            body-derived fit reaches this route and not that one. Expose both there
+            before the fit is trusted as a product behaviour.
           </p>
         </div>
       {:else if lab.panel === "grip"}
@@ -410,7 +410,9 @@
             </div>
             <div class="metric">
               <dt>Angular velocity</dt>
-              <dd>{stanceVelocity === null ? "—" : stanceVelocity.toFixed(3)}</dd>
+              <dd>
+                {stanceVelocity === null ? "—" : stanceVelocity.toFixed(3)}
+              </dd>
             </div>
           </dl>
         </div>

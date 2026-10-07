@@ -189,8 +189,8 @@
     </div>
     {#if fixedLengthCm !== null}
       <p class="note">
-        {propLabel} is drawn from a model at {fixedLengthCm.toFixed(0)} cm and
-        ignores this. Pick Staff to size the mesh.
+        {propLabel} is drawn from a model at {fixedLengthCm.toFixed(0)} cm and ignores
+        this. Pick Staff to size the mesh.
       </p>
     {/if}
   </div>
