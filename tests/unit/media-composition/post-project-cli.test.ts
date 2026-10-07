@@ -45,11 +45,14 @@ let url: string;
 let folder: string;
 let sessions: Session[];
 let calls: { method: string; path: string; body: unknown }[];
+/** What the stand-in answers when the CLI asks how its edit went. */
+let editResult: unknown;
 
 /** A dev server stand-in for the bridge and the feature video routes. */
 beforeEach(async () => {
   calls = [];
   sessions = [];
+  editResult = { status: "completed" };
   folder = await fs.mkdtemp(path.join(os.tmpdir(), "feature-cli-"));
   server = http.createServer((request, response) => {
     let text = "";
@@ -70,7 +73,7 @@ beforeEach(async () => {
           return send(
             200,
             target.searchParams.has("commandId")
-              ? { status: "completed" }
+              ? editResult
               : target.searchParams.has("sessionId")
                 ? { snapshot: { tracks: [] } }
                 : { sessions }
@@ -195,6 +198,20 @@ describe("post-project.mjs with feature videos", () => {
         },
       ],
     ]);
+  });
+
+  it("exits 1 when the editor could not apply the edit", async () => {
+    sessions = [PROMO];
+    editResult = {
+      commandId: "c1",
+      status: "failed",
+      message: "The editor changed before the edit arrived.",
+    };
+    const result = await cli("background", "blur", "--feature", "promo");
+    expect(result.code).toBe(1);
+    expect(result.stdout).toContain(
+      "The editor changed before the edit arrived."
+    );
   });
 
   it("titles a new feature video by its name when --title is left out", async () => {

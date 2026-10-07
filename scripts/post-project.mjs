@@ -237,9 +237,18 @@ async function sendToEditor(sessionId, ops) {
       sessionId,
       commandId: queued.commandId,
     });
-    if (status.status !== "pending") return status;
+    if (status.status !== "pending") {
+      // A refused edit fails the command, so a script that checks the exit
+      // code stops there.
+      if (status.status === "failed") process.exitCode = 1;
+      return status;
+    }
   }
-  return { ...queued, note: "The editor has not applied it yet." };
+  process.exitCode = 1;
+  return {
+    ...queued,
+    note: `The editor has not applied it yet. Check with: node scripts/post-project.mjs status --session ${sessionId} --command ${queued.commandId}`,
+  };
 }
 
 /**
