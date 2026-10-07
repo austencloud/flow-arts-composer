@@ -100,6 +100,10 @@ export function updatePreset(
 		...existing.config,
 		...newConfig,
 	};
+	// `conjoined: null` takes the preset back to one grid. Storage merges the
+	// config over the saved one again, so the key is set to undefined (dropped
+	// when written) rather than deleted, which that merge would bring back.
+	if (updates.conjoined === null) mergedConfig.conjoined = undefined;
 
 	const result = storageUpdatePreset(existing.id, {
 		name: updates.name?.trim() || existing.name,
@@ -176,6 +180,11 @@ export function formatPresetSummary(preset: UserSequencePreset): string {
 
 	if (preset.config.level) {
 		configParts.push(`level ${preset.config.level}`);
+	}
+
+	if (preset.config.conjoined) {
+		const { toward, steps } = preset.config.conjoined;
+		configParts.push(`joined grids (toward ${toward}, steps ${steps})`);
 	}
 
 	if (configParts.length > 0) {
