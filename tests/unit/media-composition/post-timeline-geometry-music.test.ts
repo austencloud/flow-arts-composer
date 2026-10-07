@@ -45,4 +45,33 @@ describe("placeDraggedMusic", () => {
       guideSeconds: 0,
     });
   });
+
+  it("shows no guide for a snap that the clamp to 0 would undo", () => {
+    // Bar 1 sounds 2 s in. Dragged left it reaches 0.48 s, 0.02 s from a cut
+    // at 0.5 s, but sitting on the cut needs a start of -1.5 s. The clamp
+    // leaves bar 1 at 2 s, so nothing snapped.
+    expect(placeDraggedMusic(-1.52, [0, 30, 2], [0.5], 100)).toEqual({
+      start: 0,
+      guideSeconds: null,
+    });
+  });
+
+  it("uses another anchor's snap when the closest one would start before 0", () => {
+    // At a start of 0.02 s bar 1 reaches 2.02 s, 0.03 s from a cut at 1.99 s,
+    // but sitting on it needs a start of -0.01 s. The start is 0.05 s from a
+    // cut at 0.07 s, and can take that one.
+    expect(placeDraggedMusic(0.02, [0, 30, 2], [1.99, 0.07], 100)).toEqual({
+      start: 0.07,
+      guideSeconds: 0.07,
+    });
+  });
+
+  it("keeps the guide for a snap that puts the start exactly at 0", () => {
+    // Bar 1 sounds 2 s in, so a start of 0 puts it on a cut at 2 s. Nothing
+    // is clamped, so the snap happened.
+    expect(placeDraggedMusic(0.03, [0, 30, 2], [2], 100)).toEqual({
+      start: 0,
+      guideSeconds: 2,
+    });
+  });
 });

@@ -189,9 +189,12 @@ export function placeDraggedOverlay(
  * Where dragged music lands. `anchors` are times measured from the music's
  * start that may snap: its start (0), its end, and bar 1 while the music
  * sounds it. Whichever anchor lands closest to a target moves the music so
- * it sits exactly on it; with none in range the start is rounded to a frame.
- * Either way it stays at 0 or later. `guideSeconds` is the target it snapped
- * to, for the guide line.
+ * it sits exactly on it. A snap that would start the music before 0 can't
+ * be kept, because the clamp to 0 would pull the anchor off its target, so
+ * that anchor is skipped and the others are tried. A snap that lands the
+ * start exactly on 0 is fine. With no snap left, the start is rounded to a
+ * frame and held at 0 or later. `guideSeconds` is the target the music
+ * snapped to, for the guide line, or null when it didn't snap.
  */
 export function placeDraggedMusic(
   rawStart: number,
@@ -204,16 +207,14 @@ export function placeDraggedMusic(
     const raw = rawStart + anchor;
     const snapped = snapToTargets(raw, targets, pixelsPerSecond);
     if (snapped.snappedToSeconds === null) continue;
+    const start = snapped.seconds - anchor;
+    if (start < 0) continue;
     const gap = Math.abs(snapped.seconds - raw);
     if (!best || gap < best.gap)
-      best = {
-        start: snapped.seconds - anchor,
-        guide: snapped.snappedToSeconds,
-        gap,
-      };
+      best = { start, guide: snapped.snappedToSeconds, gap };
   }
   return best
-    ? { start: Math.max(0, best.start), guideSeconds: best.guide }
+    ? { start: best.start, guideSeconds: best.guide }
     : { start: Math.max(0, roundToFrameSeconds(rawStart)), guideSeconds: null };
 }
 

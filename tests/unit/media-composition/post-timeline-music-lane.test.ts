@@ -173,6 +173,24 @@ describe("the music lane", () => {
     expect(document.querySelectorAll(".grid-line")).toHaveLength(5);
   });
 
+  it("keeps its beat lines through a move instead of rebuilding them", () => {
+    const { setMusic, music: first } = open(music({ grid: GRID }));
+    const before = [...document.querySelectorAll(".grid-line")];
+    expect(before).toHaveLength(21);
+
+    // A quarter second later. Every line is at a new post time, but each is
+    // still the same beat of the song, at the same place in the clip.
+    setMusic({ ...first, startSeconds: 1.25 });
+
+    const clip = document.querySelector<HTMLElement>(".music-clip")!;
+    expect(clip.style.left).toBe("125px");
+    const after = [...document.querySelectorAll(".grid-line")];
+    expect(after).toHaveLength(before.length);
+    after.forEach((line, index) =>
+      expect(line, `beat line ${index}`).toBe(before[index])
+    );
+  });
+
   it("shades the part that plays past the post's end", () => {
     // The music plays at the post's 1 s to 11 s.
     const { setPostEnd } = open(music());

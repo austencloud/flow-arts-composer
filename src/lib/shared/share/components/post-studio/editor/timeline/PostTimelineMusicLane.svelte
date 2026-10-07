@@ -100,6 +100,9 @@
   const wavePixelsPerSecond = $derived(
     Math.min(pixelsPerSecond, WAVE_MAX_PIXELS_PER_SECOND)
   );
+  // Each line carries its bar and beat, which the markup keys on. A move
+  // changes every line's post time but none of their places in the grid, so
+  // the same elements stay through it.
   const lines = $derived.by(() => {
     const gridded = music;
     if (!hasGrid(gridded)) return [];
@@ -111,6 +114,8 @@
       .filter((line) => beats || line.downbeat)
       .map((line) => ({
         seconds: line.seconds,
+        bar: line.bar,
+        beat: line.beat,
         numbered: isNumberedBar(line, every),
       }));
   });
@@ -354,7 +359,7 @@
       aria-hidden="true"
       style={waveStyle}
     ></div>
-    {#each lines as line (line.seconds)}
+    {#each lines as line (`${line.bar}:${line.beat}`)}
       <span
         class="grid-line"
         class:bar={line.numbered}
