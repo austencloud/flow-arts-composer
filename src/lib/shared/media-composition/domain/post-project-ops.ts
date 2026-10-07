@@ -1,6 +1,7 @@
 import {
   POST_BACKGROUNDS,
   POST_CANVAS_RATIOS,
+  findItem,
   type PostAnimationItem,
   type PostItem,
   type PostProject,
@@ -34,6 +35,30 @@ import {
   TunnelHookSchema,
   type TunnelHook,
 } from "$lib/shared/media-composition/domain/tunnel-hook";
+import {
+  resolvePostTime,
+  resolveTrackTime,
+  type PostTimeRef,
+} from "$lib/shared/media-composition/domain/music-grid";
+import {
+  POST_MUSIC_MIN_SECONDS,
+  removeMusic,
+  setMusic,
+  syncedSourceIn,
+  updateMusic,
+  type MusicPatch,
+} from "$lib/shared/media-composition/domain/post-music-edits";
+import {
+  POST_MUSIC_LENGTH_SLACK,
+  POST_MUSIC_MAX_BEATS_PER_BAR,
+  POST_MUSIC_MAX_GAIN,
+  POST_MUSIC_MAX_SECONDS,
+  type PostMusic,
+} from "$lib/shared/media-composition/domain/post-music";
+import {
+  TAKE_MAX_BPM,
+  TAKE_MIN_BPM,
+} from "$lib/shared/media-composition/domain/take-timing";
 
 /**
  * Named edits for saved posts, in a form a command line can send. Each op is
@@ -46,6 +71,39 @@ import {
 
 type Speed = NonNullable<TunnelHook["speed"]>;
 
+/** What every music edit says when the post has none. */
+const NO_MUSIC = "This post has no music. Add it with: add-music <file>.";
+
+/** The settings a `music` edit may change. */
+const MUSIC_OP_KEYS = [
+  "startSeconds",
+  "sourceInSeconds",
+  "sourceOutSeconds",
+  "gain",
+  "fadeInSeconds",
+  "fadeOutSeconds",
+  "label",
+  "artist",
+  "license",
+  "bpm",
+  "downbeatSeconds",
+  "beatsPerBar",
+] as const;
+
+/**
+ * A `music` edit: the music's own patch, except that its three times may also
+ * name a bar. `startSeconds` is on the post's clock; `sourceInSeconds` and
+ * `sourceOutSeconds` are in the music file's own seconds.
+ */
+export type MusicOpPatch = Omit<
+  MusicPatch,
+  "startSeconds" | "sourceInSeconds" | "sourceOutSeconds"
+> & {
+  startSeconds?: PostTimeRef;
+  sourceInSeconds?: PostTimeRef;
+  sourceOutSeconds?: PostTimeRef;
+};
+
 export type PostProjectOp =
   | {
       op: "add-hook";
@@ -56,12 +114,12 @@ export type PostProjectOp =
     }
   | { op: "remove-hook" }
   | { op: "line-up-hook" }
-  | { op: "add-titles"; spoken?: string; at?: number }
+  | { op: "add-titles"; spoken?: string; at?: PostTimeRef }
   | { op: "hook-speed"; speed: string | number[] }
   | { op: "hook-frame"; zoom?: number; x?: number; y?: number; whole?: boolean }
   | { op: "appearance"; item?: string; set: Record<string, unknown> }
   | { op: "item"; item: string; patch: PostItemPatch }
-  | { op: "trim"; item: string; edge: "start" | "end"; seconds: number }
+  | { op: "trim"; item: string; edge: "start" | "end"; seconds: PostTimeRef }
   | { op: "delete"; item: string }
   | { op: "canvas"; canvas: string }
   | { op: "background"; background: string }
@@ -74,7 +132,24 @@ export type PostProjectOp =
       /** Also put the whole take on the end of the main track. */
       append?: boolean;
     }
-  | { op: "remove-take"; take: string };
+  | { op: "remove-take"; take: string }
+  | {
+      op: "add-music";
+      /** A feature video media URL, as featureVideoMediaUrl makes it. */
+      url: string;
+      durationSeconds: number;
+      label?: string;
+      artist?: string;
+      license?: string;
+    }
+  | ({ op: "music" } & MusicOpPatch)
+  | { op: "remove-music" }
+  | {
+      op: "sync-to-music";
+      item: string;
+      /** The music's own time minus the take's own time at one moment, as align-take reports it. */
+      offsetSeconds: number;
+    };
 
 /** The curve names the hook's speed panel offers, plus `default` for the original ease. */
 export const POST_OP_SPEED_NAMES = [
@@ -130,6 +205,129 @@ function mediaLabel(url: string): string {
   return name.replace(/\.[^.]+$/, "").slice(0, 120);
 }
 
+/** Slack for sums of seconds that should meet exactly. */
+const SYNC_SLACK = 1e-6;
+
+function secondsText(value: number): string {
+  return `${Math.round(value * 1000) / 1000} s`;
+}
+
+/** Refuses a `music` edit's unknown settings and wrong kinds of value. */
+function checkedMusicOp(op: { op: "music" } & MusicOpPatch): MusicOpPatch {
+  const { op: _op, ...patch } = op;
+  for (const [key, value] of Object.entries(patch)) {
+    if (!(MUSIC_OP_KEYS as readonly string[]).includes(key))
+      throw new Error(
+        `Unknown music setting "${key}". Use ${MUSIC_OP_KEYS.join(", ")}.`
+      );
+    if (value === undefined) continue;
+    switch (key) {
+      case "startSeconds":
+      case "sourceInSeconds":
+      case "sourceOutSeconds":
+        // These may name a bar; they are checked where they are read.
+        break;
+      case "label":
+        if (typeof value !== "string") throw new Error("label must be text.");
+        break;
+      case "artist":
+      case "license":
+        if (value !== null && typeof value !== "string")
+          throw new Error(`${key} must be text, or null to remove it.`);
+        break;
+      case "bpm":
+        if (
+          value !== null &&
+          (typeof value !== "number" || !Number.isFinite(value))
+        )
+          throw new Error(
+            "bpm must be a number, or null to remove the beat grid."
+          );
+        break;
+      default:
+        if (typeof value !== "number" || !Number.isFinite(value))
+          throw new Error(`${key} must be a number.`);
+    }
+  }
+  return patch;
+}
+
+/**
+ * Refuses a `music` edit's numbers that the music cannot take. The panel
+ * fits such a value into range as you drag; a command or an agent that sent
+ * one made a mistake (bpm 1280 for 128), so it hears about it and nothing
+ * changes.
+ */
+function refuseMusicValues(music: PostMusic, patch: MusicOpPatch): void {
+  const { bpm, beatsPerBar, gain, fadeInSeconds, fadeOutSeconds } = patch;
+  const { downbeatSeconds } = patch;
+  if (typeof bpm === "number" && (bpm < TAKE_MIN_BPM || bpm > TAKE_MAX_BPM))
+    throw new Error(`bpm must be from ${TAKE_MIN_BPM} to ${TAKE_MAX_BPM}.`);
+  if (
+    beatsPerBar !== undefined &&
+    (!Number.isInteger(beatsPerBar) ||
+      beatsPerBar < 1 ||
+      beatsPerBar > POST_MUSIC_MAX_BEATS_PER_BAR)
+  )
+    throw new Error(
+      `beatsPerBar must be a whole number from 1 to ${POST_MUSIC_MAX_BEATS_PER_BAR}.`
+    );
+  if (gain !== undefined && (gain < 0 || gain > POST_MUSIC_MAX_GAIN))
+    throw new Error(`gain must be from 0 to ${POST_MUSIC_MAX_GAIN}.`);
+  if (fadeInSeconds !== undefined && fadeInSeconds < 0)
+    throw new Error("fadeInSeconds must be 0 or more.");
+  if (fadeOutSeconds !== undefined && fadeOutSeconds < 0)
+    throw new Error("fadeOutSeconds must be 0 or more.");
+  if (
+    downbeatSeconds !== undefined &&
+    Math.abs(downbeatSeconds) > music.durationSeconds
+  )
+    throw new Error(
+      `downbeatSeconds must be from ${secondsText(-music.durationSeconds)} to ${secondsText(music.durationSeconds)} (the file is ${secondsText(music.durationSeconds)} long).`
+    );
+}
+
+/**
+ * Refuses times that, once a bar is turned into seconds, put the music off
+ * the post's clock or ask the file for more than it holds. A start or an end
+ * is checked against the other edge the music has now.
+ */
+function refuseMusicTimes(
+  music: PostMusic,
+  times: {
+    startSeconds?: number;
+    sourceInSeconds?: number;
+    sourceOutSeconds?: number;
+  }
+): void {
+  if (
+    times.startSeconds !== undefined &&
+    (times.startSeconds < 0 || times.startSeconds > POST_MUSIC_MAX_SECONDS)
+  )
+    throw new Error(
+      `startSeconds must be from 0 s to ${POST_MUSIC_MAX_SECONDS} s, not ${secondsText(times.startSeconds)}.`
+    );
+  if (
+    times.sourceInSeconds === undefined &&
+    times.sourceOutSeconds === undefined
+  )
+    return;
+  const from = times.sourceInSeconds ?? music.sourceInSeconds;
+  const to = times.sourceOutSeconds ?? music.sourceOutSeconds;
+  if (from < 0)
+    throw new Error(
+      `The music's start (${secondsText(from)}) must be 0 s or later.`
+    );
+  if (to > music.durationSeconds + POST_MUSIC_LENGTH_SLACK)
+    throw new Error(
+      `The music's end (${secondsText(to)}) cannot come after the end of its file (${secondsText(music.durationSeconds)}).`
+    );
+  if (to - from < POST_MUSIC_MIN_SECONDS - POST_MUSIC_LENGTH_SLACK)
+    throw new Error(
+      `The music's end (${secondsText(to)}) must come at least ${secondsText(POST_MUSIC_MIN_SECONDS)} after its start (${secondsText(from)}).`
+    );
+}
+
 function applyOp(
   project: PostProject,
   op: PostProjectOp,
@@ -174,7 +372,9 @@ function applyOp(
     }
     case "add-titles": {
       const result = addTitlesItem(project, ctx, {
-        ...(op.at !== undefined ? { at: op.at } : {}),
+        ...(op.at !== undefined
+          ? { at: resolvePostTime(op.at, project.music, "at") }
+          : {}),
         ...(op.spoken !== undefined ? { spoken: op.spoken } : {}),
       });
       if (!result) throw new Error("The titles could not be placed.");
@@ -243,7 +443,7 @@ function applyOp(
         project,
         itemIds(project, op.item)[0]!,
         op.edge,
-        op.seconds,
+        resolvePostTime(op.seconds, project.music, "seconds"),
         ctx
       );
     }
@@ -307,6 +507,137 @@ function applyOp(
       if (!project.takes.some((take) => take.id === op.take))
         throw new Error(`No take "${op.take}" in this post.`);
       return removeTake(project, op.take, ctx);
+    }
+    case "add-music": {
+      if (!isFeatureVideoMediaUrl(op.url))
+        throw new Error(
+          "Music's url must be a feature video media url (/api/dev/feature-videos/<slug>/media/...)."
+        );
+      if (
+        typeof op.durationSeconds !== "number" ||
+        !Number.isFinite(op.durationSeconds) ||
+        op.durationSeconds <= 0
+      )
+        throw new Error("durationSeconds must be a positive number.");
+      const label = typeof op.label === "string" ? op.label.trim() : "";
+      const same = project.music?.url === op.url ? project.music : undefined;
+      return setMusic(
+        project,
+        {
+          url: op.url,
+          durationSeconds: op.durationSeconds,
+          label: label || same?.label || mediaLabel(op.url),
+          ...(op.artist !== undefined ? { artist: op.artist } : {}),
+          ...(op.license !== undefined ? { license: op.license } : {}),
+        },
+        ctx
+      );
+    }
+    case "music": {
+      if (!project.music) throw new Error(NO_MUSIC);
+      const {
+        startSeconds,
+        sourceInSeconds,
+        sourceOutSeconds,
+        bpm,
+        downbeatSeconds,
+        beatsPerBar,
+        ...rest
+      } = checkedMusicOp(op);
+      refuseMusicValues(project.music, {
+        ...rest,
+        bpm,
+        downbeatSeconds,
+        beatsPerBar,
+      });
+      if (
+        (downbeatSeconds !== undefined || beatsPerBar !== undefined) &&
+        !project.music.grid &&
+        (bpm === undefined || bpm === null)
+      )
+        throw new Error(
+          "A downbeat and beats per bar need a tempo. Add bpm to the same edit."
+        );
+      // The grid changes first, so a bar named in the same edit counts on it.
+      const regridded = updateMusic(
+        project,
+        { bpm, downbeatSeconds, beatsPerBar },
+        ctx
+      );
+      const music = regridded.music!;
+      const times = {
+        ...(startSeconds !== undefined
+          ? {
+              startSeconds: resolvePostTime(
+                startSeconds,
+                music,
+                "startSeconds"
+              ),
+            }
+          : {}),
+        ...(sourceInSeconds !== undefined
+          ? {
+              sourceInSeconds: resolveTrackTime(
+                sourceInSeconds,
+                music.grid,
+                "sourceInSeconds"
+              ),
+            }
+          : {}),
+        ...(sourceOutSeconds !== undefined
+          ? {
+              sourceOutSeconds: resolveTrackTime(
+                sourceOutSeconds,
+                music.grid,
+                "sourceOutSeconds"
+              ),
+            }
+          : {}),
+      };
+      refuseMusicTimes(music, times);
+      return updateMusic(regridded, { ...rest, ...times }, ctx);
+    }
+    case "remove-music":
+      if (!project.music) throw new Error(NO_MUSIC);
+      return removeMusic(project, ctx);
+    case "sync-to-music": {
+      const music = project.music;
+      if (!music) throw new Error(NO_MUSIC);
+      if (
+        typeof op.offsetSeconds !== "number" ||
+        !Number.isFinite(op.offsetSeconds)
+      )
+        throw new Error("offsetSeconds must be a number.");
+      const clip = findItem(project, op.item)?.item;
+      if (!clip) throw new Error(`No item "${op.item}" in this post.`);
+      if (clip.kind !== "video")
+        throw new Error(`"${op.item}" is not a video clip.`);
+      if (Math.abs(clip.speed - 1) > 1e-9)
+        throw new Error(
+          "Only a clip at normal speed can play in time with the music. Set its speed to 1 first."
+        );
+      const sourceIn = syncedSourceIn(music, clip, op.offsetSeconds);
+      const sourceOut = sourceIn + (clip.sourceOut - clip.sourceIn);
+      const takeSeconds =
+        project.takes.find((take) => take.id === clip.takeId)
+          ?.durationSeconds ?? Infinity;
+      if (sourceIn < -SYNC_SLACK)
+        throw new Error(
+          `In time with the music, this clip would start ${secondsText(-sourceIn)} before its take does. Move the clip later, or trim its start.`
+        );
+      if (sourceOut > takeSeconds + SYNC_SLACK)
+        throw new Error(
+          `In time with the music, this clip would run ${secondsText(sourceOut - takeSeconds)} past the end of its take. Move the clip earlier, or trim its end.`
+        );
+      return updateItem(
+        project,
+        clip.id,
+        {
+          sourceIn: Math.max(0, sourceIn),
+          sourceOut: Math.min(sourceOut, takeSeconds),
+        },
+        ctx
+      );
     }
     default:
       throw new Error(`Unknown edit "${(op as { op?: unknown }).op}".`);

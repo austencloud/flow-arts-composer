@@ -11,53 +11,66 @@
    */
   interface Props {
     name: string;
-    hidden: boolean;
-    locked: boolean;
+    hidden?: boolean;
+    locked?: boolean;
     heightPx: number;
-    onToggleHidden: () => void;
-    onToggleLocked: () => void;
+    /** A row without these, such as the music's, shows no hide or lock. */
+    onToggleHidden?: () => void;
+    onToggleLocked?: () => void;
   }
 
-  let { name, hidden, locked, heightPx, onToggleHidden, onToggleLocked }: Props =
-    $props();
+  let {
+    name,
+    hidden = false,
+    locked = false,
+    heightPx,
+    onToggleHidden,
+    onToggleLocked,
+  }: Props = $props();
 </script>
 
-<div class="track-header" style="height: {heightPx}px">
+<div
+  class="track-header"
+  class:toggleless={!(onToggleHidden && onToggleLocked)}
+  style="height: {heightPx}px"
+>
   <span class="track-name">{name}</span>
-  <div class="track-toggles">
-    <button
-      type="button"
-      class="track-toggle"
-      class:active={hidden}
-      aria-pressed={hidden}
-      aria-label={t(
-        hidden ? "post_timeline_show_track" : "post_timeline_hide_track",
-        { track: name }
-      )}
-      onclick={onToggleHidden}
-    >
-      <i
-        class="fa-solid {hidden ? 'fa-eye-slash' : 'fa-eye'}"
-        aria-hidden="true"
-      ></i>
-    </button>
-    <button
-      type="button"
-      class="track-toggle"
-      class:active={locked}
-      aria-pressed={locked}
-      aria-label={t(
-        locked ? "post_timeline_unlock_track" : "post_timeline_lock_track",
-        { track: name }
-      )}
-      onclick={onToggleLocked}
-    >
-      <i
-        class="fa-solid {locked ? 'fa-lock' : 'fa-lock-open'}"
-        aria-hidden="true"
-      ></i>
-    </button>
-  </div>
+  {#if onToggleHidden && onToggleLocked}
+    <div class="track-toggles">
+      <button
+        type="button"
+        class="track-toggle"
+        class:active={hidden}
+        aria-pressed={hidden}
+        aria-label={t(
+          hidden ? "post_timeline_show_track" : "post_timeline_hide_track",
+          { track: name }
+        )}
+        onclick={onToggleHidden}
+      >
+        <i
+          class="fa-solid {hidden ? 'fa-eye-slash' : 'fa-eye'}"
+          aria-hidden="true"
+        ></i>
+      </button>
+      <button
+        type="button"
+        class="track-toggle"
+        class:active={locked}
+        aria-pressed={locked}
+        aria-label={t(
+          locked ? "post_timeline_unlock_track" : "post_timeline_lock_track",
+          { track: name }
+        )}
+        onclick={onToggleLocked}
+      >
+        <i
+          class="fa-solid {locked ? 'fa-lock' : 'fa-lock-open'}"
+          aria-hidden="true"
+        ></i>
+      </button>
+    </div>
+  {/if}
 </div>
 
 <style>
@@ -121,8 +134,10 @@
     color: var(--theme-accent);
   }
 
+  /* A narrow column keeps the hide and lock buttons and drops the name. A
+     row without them, such as the music's, keeps its name. */
   @container post-timeline-header (max-width: 7rem) {
-    .track-name {
+    .track-header:not(.toggleless) .track-name {
       display: none;
     }
   }

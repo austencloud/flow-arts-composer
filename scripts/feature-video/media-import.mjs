@@ -134,16 +134,19 @@ export function transcodeArgs(input, output, probe) {
   ];
 }
 
-/** A name the media route serves as it is: a-z, 0-9, dash and underscore, then .mp4. */
-export function safeMediaName(original) {
+/**
+ * A name the media route serves as it is: a-z, 0-9, dash and underscore, then
+ * `extension`, or `fallback` when nothing of the original name is left.
+ */
+export function safeMediaName(original, extension = ".mp4", fallback = "take") {
   const stem = path
     .basename(original, path.extname(original))
     .normalize("NFKD")
     .toLowerCase()
-    .replace(/[^a-z0-9_-]+/g, "-")
+    .replace(/[^a-z0-9_]+/g, "-")
     .slice(0, 80)
     .replace(/^-+|-+$/g, "");
-  return `${stem || "take"}.mp4`;
+  return `${stem || fallback}${extension}`;
 }
 
 /** `name` in `folder`, or name-2, name-3 and on when it is taken. */
@@ -159,7 +162,7 @@ export function uniqueMediaPath(folder, name) {
   }
 }
 
-function runFfmpeg(args, name) {
+export function runFfmpeg(args, name) {
   return new Promise((resolve, reject) => {
     const child = spawn(toolPath("ffmpeg"), args, {
       // Progress and errors show as they happen.

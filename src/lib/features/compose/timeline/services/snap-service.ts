@@ -14,7 +14,7 @@ import type {
   TimelineClip,
 } from "$lib/shared/animation-engine/domain/timeline-types";
 import { getClipEndTime } from "$lib/shared/animation-engine/domain/timeline-types";
-import { generateStepTimestamps } from "$lib/features/compose/compose/phases/audio/bpm-analyzer";
+import { generateStepTimestamps } from "$lib/shared/audio/bpm-analyzer";
 
 // Types
 

@@ -91,6 +91,11 @@
       color="accent"
       ariaLabel={t("share_studio_sound")}
     />
+    {#if editor.project.music}
+      <p class="help">
+        The music plays either way; this sets only the takes' sound.
+      </p>
+    {/if}
   </div>
 
   {#if todo.length > 0}
