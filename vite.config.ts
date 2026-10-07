@@ -707,6 +707,21 @@ const classifyChunk = (id: string): string | undefined => {
   // which made a lightweight route import `vendor` solely for one tiny helper.
   if (id.includes("vite/preload-helper")) return "vendor-sveltekit";
 
+  // Rollup's small-chunk merge can fold these scene-only modules into shared
+  // startup chunks, making vendor-three a startup import. Keep the exact
+  // modules with their existing Three dependencies before automatic merge.
+  const normalizedId = id.replaceAll("\\", "/").split("?")[0];
+  if (
+    normalizedId.endsWith(
+      "/src/lib/shared/3d/environments/worlds/winter/winter-starfield.ts"
+    ) ||
+    normalizedId.endsWith(
+      "/src/lib/shared/3d/components/CanvasLifecycle.svelte"
+    )
+  ) {
+    return "vendor-three";
+  }
+
   if (id.includes("node_modules")) {
     // Styles are extracted by Vite and should follow their importing feature.
     // Assigning a package CSS module to the shared JS bucket leaves an
@@ -840,6 +855,26 @@ const classifyChunk = (id: string): string | undefined => {
     ) {
       return "vendor-three";
     }
+    // Keep feature-only packages out of the catch-all vendor chunk. A single
+    // import of that chunk otherwise downloads every background, encoder, and
+    // audio inference runtime together.
+    if (id.includes("node_modules/@austencloud/backgrounds/")) {
+      return "vendor-backgrounds";
+    }
+    if (
+      id.includes("node_modules/mediabunny/") ||
+      id.includes("node_modules/h264-mp4-encoder/") ||
+      id.includes("node_modules/gifenc/") ||
+      id.includes("node_modules/modern-screenshot/")
+    ) {
+      return "vendor-media-export";
+    }
+    if (
+      id.includes("node_modules/onnxruntime-web/") ||
+      id.includes("node_modules/@ricky0123/vad-web/")
+    ) {
+      return "vendor-audio-inference";
+    }
     if (id.includes("firebase")) return "vendor-firebase";
     if (id.includes("dexie")) return "vendor-dexie";
     // pixi.js is heavy (~500KB) - keep it in its own chunk
@@ -969,7 +1004,7 @@ export default defineConfig(({ command, mode }) => ({
     process.env.ANALYZE === "true" &&
       visualizer({
         filename: "stats.html",
-        open: true,
+        open: process.env.ANALYZE_OPEN === "true",
         gzipSize: true,
         brotliSize: true,
         template: "treemap", // or "sunburst", "network"
