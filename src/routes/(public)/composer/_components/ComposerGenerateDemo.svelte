@@ -86,7 +86,6 @@
   } = $props();
 
   let current = $state<SequenceData | null>(null);
-  let hasGeneratedLocally = $state(false);
   let generating = $state(false);
   let result = $state<ComposerGenerationResult>("idle");
   let previewActive = $state(false);
@@ -103,15 +102,11 @@
     playbackSequenceId = sequenceId;
   }
 
+  // The page sequence changes when the hero rolls or Construct composes; the
+  // generator shows it when it is in view. Its own draws write the page
+  // sequence first, so they never read back as a change.
   $effect(() => {
-    if (
-      shouldAdoptCarriedSequence(
-        current,
-        sequence,
-        hasGeneratedLocally,
-        inViewport
-      )
-    ) {
+    if (shouldAdoptCarriedSequence(current, sequence, inViewport)) {
       current = sequence;
     }
   });
@@ -145,7 +140,6 @@
       // on its first render and runs the same staggered reveal the Generate tab
       // produces. It clears itself once consumed.
       setPendingGenerationAnimation(true);
-      hasGeneratedLocally = true;
       current = seq;
       onGenerated?.(current);
       result = "success";
