@@ -21,7 +21,8 @@
     pane: Snippet<[ReferenceVideo, number, number]>;
   } = $props();
 
-  const elements: Record<string, HTMLVideoElement> = {};
+  // Reactive, so the sync effects run again once a new video element mounts.
+  const elements = $state<Record<string, HTMLVideoElement>>({});
   let paneWidths = $state<number[]>([]);
   let paneHeights = $state<number[]>([]);
   /** Past this a follower jumps; under it, its speed pulls it into step. */

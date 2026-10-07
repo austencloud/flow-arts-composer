@@ -12,7 +12,10 @@ import type {
   AdditionalLayerProps,
 } from "$lib/shared/animation-engine/services/ITrailCapturer";
 import type { GridJoin } from "@tka/tka-types";
-import type { GridJoinTweenSample, HandOffsets } from "./grid-join-tween";
+import type {
+  GridJoinTweenSample,
+  HandOffsets,
+} from "$lib/shared/grid-join/grid-join-tween";
 import type { TrailSettings } from "../domain/types/trail-types";
 import type { PropState } from "$lib/shared/foundation/domain/types/prop-state";
 import type { AnimationPathCache } from "$lib/shared/animation-engine/services/animation-path-cache";

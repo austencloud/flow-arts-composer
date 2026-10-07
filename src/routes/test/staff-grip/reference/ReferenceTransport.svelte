@@ -69,18 +69,21 @@
     }}
   />
   <span class="time">{session.time.toFixed(2)} s</span>
-  <SegmentedControl
-    options={speeds}
-    value={String(session.speed)}
-    density="tight"
-    ariaLabel="Playback speed"
-    onchange={(speed) => (session.speed = Number(speed))}
-  />
+  <div class="speed">
+    <SegmentedControl
+      options={speeds}
+      value={String(session.speed)}
+      density="tight"
+      ariaLabel="Playback speed"
+      onchange={(speed) => (session.speed = Number(speed))}
+    />
+  </div>
 </div>
 
 <style>
   .transport {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
     gap: 0.5rem;
     padding: 0.75rem 1rem;
@@ -97,9 +100,13 @@
   button:disabled {
     opacity: 0.4;
   }
+  /* The scrubber takes the spare width; on a phone it drops to its own row. */
   input[type="range"] {
-    flex: 1;
+    flex: 1 1 12rem;
     min-width: 0;
+  }
+  .speed {
+    flex: 0 0 10rem;
   }
   .time {
     font-variant-numeric: tabular-nums;
