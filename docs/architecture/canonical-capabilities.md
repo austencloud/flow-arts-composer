@@ -359,6 +359,15 @@ The CLI's music commands use `scripts/feature-video/music-import.mjs`,
 `align-take.mjs`, `loudness.mjs` and `time-args.mjs`. Searches: music,
 soundtrack, beat grid, bar, downbeat, align take, loudness, LUFS.
 
+App recordings for a feature video come from `scripts/feature-video/capture.mjs`,
+the one runner for them. It drives the dedicated capture Chrome on port 9223
+through `scripts/lib/chrome-cdp.mjs` (events through `cdp-event-buffer.mjs`),
+`scripts/demo-capture/browser-director.mjs` owns the pointer and the screencast,
+`scripts/demo-capture/encode-frames.py` owns the encode, and
+`scripts/feature-video/capture-files.mjs` owns recording names. The project
+changes only through `post-project.mjs link-capture`, which sends
+`relink-take` or `add-take`. Do not add a second recorder; extend these.
+
 Post Studio keyframes live on the item: `post-project-keyframes.ts` owns
 content time, sampling, the auto-key rule, easing presets and every keyframe
 edit, and the compiler turns them into the preset's `motion` and

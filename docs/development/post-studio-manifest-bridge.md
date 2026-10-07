@@ -112,6 +112,38 @@ In the editor, the music has its own row under the tracks. Drag it to move it. S
 
 Ownership: `post-music.ts` owns the music's schema, `music-grid.ts` bars, beats and the times that name a bar, `post-music-edits.ts` its edits, and `post-audio-plan.ts` its sound for the export and the preview (`planMusicAudio`). `music-preview-sync.ts` and `PostMusicPreview.svelte` keep the preview's player and clock on the music; `PostTimelineMusicLane.svelte` and `PostMusicTool.svelte` are its lane and panel. `scripts/feature-video/music-import.mjs`, `align-take.mjs`, `loudness.mjs` and `time-args.mjs` serve the CLI.
 
+### App recordings
+
+A capture records a scripted pass through the app as a take. The script is `<slug>/captures/<id>.capture.mjs`; an id is lowercase letters, digits and hyphens.
+
+```js
+export default {
+  id: "builder-dckpsi",
+  url: "/create/construct",
+  viewport: { width: 720, height: 1280, deviceScaleFactor: 1.5, mobile: true },
+  ready: "document.querySelector('.canvas-wrapper') !== null", // optional: waits for this to be true
+  settleMs: 1500, // optional: a pause after load, 1500 by default
+  async run(director) {
+    await director.shot("builder-dckpsi", 8, async () => {
+      await director.click("Play");
+    });
+  },
+};
+```
+
+Chrome's screencast delivers at most 1.5 times the CSS viewport, so a 9:16 recording uses 720 by 1280 at 1.5 for exactly 1080 by 1920. The runner refuses a higher scale. The director's calls are `click(label)`, `fill(label, value)`, `cell(index)`, `canvas()`, `move(x, y)`, `wait(ms)` and `shot(id, seconds, action)`; the shot named like the capture is the one that is encoded.
+
+```powershell
+powershell -File scripts/launch-chrome-debug.ps1 -Port 9223 -UserDataDir C:\Users\Austen\.claude\chrome-profile-capture -ProfileDirectory Default -Url about:blank
+node scripts/feature-video/capture.mjs --feature promo-1-0 --capture builder-dckpsi
+node scripts/post-project.mjs capture-info --feature promo-1-0
+node scripts/post-project.mjs link-capture --feature promo-1-0 --capture builder-dckpsi --media captures/builder-dckpsi.2.mp4
+```
+
+The capture Chrome is its own browser with its own profile, signed out. It is never your Chrome and never the shared agent browser on 9222. The dev server must be running; the runner never starts it.
+
+Each run writes `media/captures/<id>.<n>.mp4` with n counting up, so no earlier recording is overwritten, then links it. The first run adds a take labelled with the id. Every later run points that same take at the new file, so the clips cut from it stay in the post: a longer file keeps every clip as it was, and a shorter one cuts them back to fit. The take's timing moves with it. A run that fails part way keeps its frames in `captures/frames/<id>/`, writes no video and leaves the project as it was.
+
 ### When disk and the editor disagree
 
 Disk wins. Each save from the editor names the revision it started from, and the server refuses one made from an older revision. The editor also checks the file's revision with its heartbeat, about once a second. Either way, when the file on disk is newer, the editor loads it as one undo step and says "Loaded the newer copy from disk." The editor's own version stays one Undo away, and undoing saves it as a new revision, so nothing is lost.
