@@ -16,6 +16,7 @@ import type {
 } from "$lib/shared/mandala/services/mandala-guide-painter";
 import type { PreparedMandalaPath } from "$lib/shared/mandala/services/types";
 import {
+  createCellRevealFrame,
   mergeCellPaths,
   renderCell,
   shapeMatrixGuideOptions,
@@ -96,16 +97,27 @@ describe("mandala guide reveal frame", () => {
     expect(paints[1]?.options.reveal).toBe(false);
   });
 
+  it("counts a NaN progress as done, not a stale partial dash", () => {
+    const { canvas, deps, paints } = harness();
+    const frame = createMandalaGuideRevealFrame(
+      asCanvas(canvas),
+      mergeCellPaths(left, right),
+      shapeMatrixGuideOptions("both", 120, 100, "extent", { dpr: 1 }),
+      deps
+    )!;
+    frame.paint(Number.NaN);
+    expect(paints[0]?.options.reveal).toBe(false);
+    expect(paints[0]?.options.progress).toBe(1);
+  });
+
   it("finishes on the tile's own paint options", () => {
     const tile = harness();
     renderCell(left, right, 120, 100, { dpr: 1, deps: tile.deps });
     const reveal = harness();
-    createMandalaGuideRevealFrame(
-      asCanvas(reveal.canvas),
-      mergeCellPaths(left, right),
-      shapeMatrixGuideOptions("both", 120, 100, "extent", { dpr: 1 }),
-      reveal.deps
-    )!.paint(1);
+    createCellRevealFrame(asCanvas(reveal.canvas), left, right, 120, 100, {
+      dpr: 1,
+      deps: reveal.deps,
+    })!.paint(1);
     const still = tile.paints[0]!;
     const done = reveal.paints[0]!;
     expect(done.target.pixelWidth).toBe(still.target.pixelWidth);

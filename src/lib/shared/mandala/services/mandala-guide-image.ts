@@ -94,10 +94,10 @@ interface GuideSurface {
 
 /**
  * Size `canvas` for a square box of `options.size` at the device pixel ratio
- * and prepare the paths the options show. The still and the reveal frame
- * share this, so a finished reveal is the still's exact raster. Only a
- * reveal measures paths: its dash lengths come from real path lengths, and a
- * complete guide never reads them.
+ * and prepare the paths the options show. The still and the reveal frame share
+ * this, so a finished reveal paints the still's drawing. Only a reveal measures
+ * paths: its dash lengths come from real path lengths, and a complete guide
+ * never reads them.
  */
 function prepareGuideSurface(
 	canvas: HTMLCanvasElement,
@@ -176,7 +176,7 @@ export function renderMandalaGuideImage(
 export interface MandalaGuideRevealFrame {
 	/**
 	 * Paint the guide revealed to `progress` (0..1). At 1 it paints the
-	 * complete guide: the pixels `renderMandalaGuideImage` returns for the
+	 * complete guide: the drawing `renderMandalaGuideImage` returns for the
 	 * same options.
 	 */
 	paint(progress: number): void;
@@ -207,7 +207,8 @@ export function createMandalaGuideRevealFrame(
 	const frameMasks = new MandalaOverlapMasks();
 	return {
 		paint(progress: number): void {
-			const complete = progress >= 1;
+			// NaN (say, a zero-length turn) counts as done, not a stale partial dash.
+			const complete = !(progress < 1);
 			deps.paint(
 				surface.target,
 				{
