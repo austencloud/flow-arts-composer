@@ -15,7 +15,6 @@ import type {
   ViewerPerformerAppearanceAssignment,
 } from "$lib/shared/3d/state/viewer-3d-state.svelte";
 import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-import { filterPremiumCosmeticProps } from "$lib/shared/subscription/domain/premium-prop-access";
 import type { StageChoreography } from "../domain/stage-types";
 import {
   TikaDirectorResponseSchema,
@@ -150,7 +149,7 @@ export function resolveDirectorAppearanceAssignments(input: {
         random: createAxisStream(seed, sceneId, "characterId"),
       })
     : null;
-  const propCatalog = filterPremiumCosmeticProps(Object.values(PropType));
+  const propCatalog = Object.values(PropType);
   const props = assignProps
     ? resolveCastAxis<PropType>({
         axis: "prop",

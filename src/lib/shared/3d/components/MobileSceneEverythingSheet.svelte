@@ -7,7 +7,7 @@
   import CameraPopover from "./CameraPopover.svelte";
   import SceneSelectorPopover from "./SceneSelectorPopover.svelte";
   import LazyMount from "$lib/shared/components/LazyMount.svelte";
-  import { authState } from "$lib/shared/auth/state/auth-state.svelte";
+  import { loadedAuthState } from "$lib/shared/auth/state/loaded-auth-state.svelte";
   import type { ViewerControlSink } from "$lib/shared/sequence-viewer/domain/viewer-control-analytics";
 
   interface Props {
@@ -66,7 +66,7 @@
       {#if active === "scene"}<SceneSelectorPopover {onSettingChange} />{/if}
       {#if active === "formation"}<FormationPopover {onSettingChange} />{/if}
       {#if active === "camera"}<CameraPopover {onSettingChange} />{/if}
-      {#if active === "dev" && authState.isAdmin}
+      {#if active === "dev" && loadedAuthState.isAdmin}
         <LazyMount
           loader={loadDevTools}
           active
@@ -94,7 +94,7 @@
           ></i>
         </button>
       {/each}
-      {#if authState.isAdmin}
+      {#if loadedAuthState.isAdmin}
         <button
           type="button"
           class="section-button"

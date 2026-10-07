@@ -26,7 +26,6 @@
     toggleBigVariant,
     getFamilyTileDisplayProp,
     isPropActive,
-    isPremiumCosmeticProp,
   } from "$lib/shared/pictograph/prop/domain/prop-type-display-registry";
   import { tick } from "svelte";
   import Crossfade from "$lib/shared/components/Crossfade.svelte";
@@ -93,10 +92,6 @@
     fanAppearance,
     onFanAppearanceChange,
     isUnlocked = () => true,
-    premiumVisible = false,
-    premiumAllowed = false,
-    premiumBadge,
-    premiumNudge,
     propLook,
     onPropLookChange,
     recipeOverrides,
@@ -161,8 +156,8 @@
     /** Optional host-owned capability filter. The canonical registry still
      *  owns labels, ordering, active-state, and access rules. */
     allowedProps?: readonly PropType[];
-    /** Educational instruments may select ordinary play-earned props directly
-     *  and include Poi. Premium cosmetics retain their subscription gate. */
+    /** Educational instruments may select play-earned props directly and
+     *  include Poi. */
     accessMode?: "standard" | "educational";
     /** Let a roomy host use all available width for each family row. */
     fluidSections?: boolean;
@@ -171,10 +166,6 @@
     fanAppearance: FanAppearance;
     onFanAppearanceChange: (appearance: FanAppearance) => void;
     isUnlocked?: (prop: PropType) => boolean;
-    premiumVisible?: boolean;
-    premiumAllowed?: boolean;
-    premiumBadge?: Snippet;
-    premiumNudge?: Snippet<[{ dismiss: () => void }]>;
     propLook?: PropLook;
     /** Enables artwork choices; the host owns their persistence. */
     onPropLookChange?: (look: PropLook) => void;
@@ -212,8 +203,6 @@
         return t("settings_prop_section_big");
       case "Novelty":
         return t("settings_prop_section_novelty");
-      case "Premium":
-        return t("settings_prop_section_premium");
       default:
         return label;
     }
@@ -222,7 +211,6 @@
   function canShowProp(prop: PropType): boolean {
     if (prop === PropType.HAND && includeBareHands) return true;
     if (allowedPropSet && !allowedPropSet.has(prop)) return false;
-    if (isPremiumCosmeticProp(prop)) return premiumVisible;
     return isPropActive(prop);
   }
 
@@ -245,9 +233,7 @@
         const bases: PropType[] = [];
         for (const prop of section.props) {
           if (!canShowProp(prop)) continue;
-          const base = isPremiumCosmeticProp(prop)
-            ? prop
-            : getBasePropType(prop);
+          const base = getBasePropType(prop);
           if (prop !== base) continue;
           if (seen.has(base)) continue;
           seen.add(base);
@@ -778,8 +764,6 @@
 
   // Track which locked prop (if any) is showing its inline earn tip.
   let lockedTipFor = $state<PropType | null>(null);
-  // Track which paid prop (if any) is showing its upgrade nudge.
-  let premiumNudgeFor = $state<PropType | null>(null);
 
   // A tile that already carries a look has nothing left to ask about it.
   function opensDetails(prop: PropType, lookChosen: boolean): boolean {
@@ -823,50 +807,19 @@
   }
 
   /**
-   * Central click router for all tiles. The decision itself lives in
-   * routePropTileClick so the ordering it encodes — premium before
-   * play-earned — is pinned by a test rather than by this component.
-   * - select: delegates to the parent onSelect callback.
-   * - premium-nudge: toggles the upgrade callout; never calls onSelect.
-   * - earn-tip: toggles the inline earn tip; never calls onSelect.
+   * Central click router for all tiles: an unlocked prop is selected, a
+   * locked one toggles its inline earn tip and never calls onSelect.
    */
   function handleTileClick(prop: PropType, look?: PropLook) {
-    if (prop === PropType.HAND && includeBareHands) {
+    if (
+      (prop === PropType.HAND && includeBareHands) ||
+      accessMode === "educational" ||
+      isUnlocked(prop)
+    ) {
       lockedTipFor = null;
-      premiumNudgeFor = null;
       selectProp(prop, look);
       return;
     }
-
-    const premium = isPremiumCosmeticProp(prop);
-    if (accessMode === "educational" && !premium) {
-      lockedTipFor = null;
-      premiumNudgeFor = null;
-      selectProp(prop, look);
-      return;
-    }
-    const route = premium
-      ? premiumAllowed
-        ? "select"
-        : "premium-nudge"
-      : isUnlocked(prop)
-        ? "select"
-        : "earn-tip";
-
-    if (route === "select") {
-      lockedTipFor = null;
-      premiumNudgeFor = null;
-      selectProp(prop, look);
-      return;
-    }
-
-    if (route === "premium-nudge") {
-      lockedTipFor = null;
-      premiumNudgeFor = premiumNudgeFor === prop ? null : prop;
-      return;
-    }
-
-    premiumNudgeFor = null;
     lockedTipFor = lockedTipFor === prop ? null : prop;
   }
 </script>
@@ -1029,17 +982,11 @@
 
   {#snippet tile(prop: PropType, columnStart?: number, look?: PropLook)}
     <!--
-      Each tile is wrapped in a relative-positioned container so the lock glyph,
-      crown and earn-tip can be positioned over / below the button. The click
-      is always routed through handleTileClick (via PropTypeButton's onSelect
+      Each tile is wrapped in a relative-positioned container so the lock glyph
+      and earn-tip can be positioned over / below the button. The click is
+      always routed through handleTileClick (via PropTypeButton's onSelect
       prop).
-
-      A paid cosmetic wears a crown and never the play-earned lock or the
-      "Earn by creating" tip — those two states mean different things and
-      showing both would tell the user to spin their way to something that is
-      only for sale.
     -->
-    {@const premium = isPremiumCosmeticProp(prop)}
     {@const label =
       look === "model"
         ? `${localizedPropName(prop)} 3D`
@@ -1047,8 +994,7 @@
     <div
       class="tile-wrapper"
       style:grid-column-start={columnStart}
-      class:premium
-      class:locked={prop !== PropType.HAND && !premium && !isUnlocked(prop)}
+      class:locked={prop !== PropType.HAND && !isUnlocked(prop)}
     >
       <PropGridButton
         propType={prop}
@@ -1075,11 +1021,7 @@
         rightFlipped={chirality?.hands.find((state) => state.hand === "right")
           ?.flipped}
       />
-      {#if premium && premiumBadge}
-        <span class="crown-glyph">
-          {@render premiumBadge()}
-        </span>
-      {:else if prop !== PropType.HAND && !isUnlocked(prop)}
+      {#if prop !== PropType.HAND && !isUnlocked(prop)}
         <i class="fas fa-lock lock-glyph" aria-hidden="true"></i>
         {#if lockedTipFor === prop}
           <span class="earn-tip">{t("settings_earn_by_creating")}</span>
@@ -1366,12 +1308,6 @@
       {/if}
     </Crossfade>
   </div>
-
-  {#if premiumNudgeFor && premiumNudge}
-    <div class="premium-nudge-dock">
-      {@render premiumNudge({ dismiss: () => (premiumNudgeFor = null) })}
-    </div>
-  {/if}
 </div>
 
 <style>
@@ -2198,39 +2134,5 @@
     padding: 2px 6px;
     pointer-events: none;
     z-index: 20;
-  }
-
-  /* ─── Paid cosmetic: crown + upgrade nudge ─── */
-
-  /* Top-left, not bottom-right where the play-earned lock sits: the crown is
-     permanent rather than a transient state, and down there it lands on top of
-     the prop name and eats the last letters of "Energy Saber". Top-right is the
-     selection checkmark's corner; top-left is free in this grid. */
-  .crown-glyph {
-    position: absolute;
-    top: 6px;
-    left: 6px;
-    line-height: 1;
-    pointer-events: none;
-    z-index: 10;
-  }
-
-  /* The nudge belongs to the picker, not one 79px tile. Docking it inside the
-     picker shell keeps it clear of the scroll clip and avoids a layout shift. */
-  .premium-nudge-dock {
-    position: absolute;
-    right: 12px;
-    bottom: 12px;
-    left: 12px;
-    display: flex;
-    justify-content: center;
-    pointer-events: none;
-    z-index: 30;
-  }
-
-  .premium-nudge-dock :global(.nudge-callout) {
-    width: min(280px, 100%);
-    box-sizing: border-box;
-    pointer-events: auto;
   }
 </style>

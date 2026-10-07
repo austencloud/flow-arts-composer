@@ -1,5 +1,5 @@
 <script lang="ts">
-  import SequencePickerModal from "$lib/shared/components/sequence-picker/SequencePickerModal.svelte";
+  import LazyMount from "$lib/shared/components/LazyMount.svelte";
   import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
 
   interface Props {
@@ -21,6 +21,11 @@
   }: Props = $props();
 
   let pickerOpen = $state(false);
+
+  // The picker browses the library and the community through Firebase, so it
+  // loads when first opened rather than with the 3D scene controls.
+  const loadPicker = () =>
+    import("$lib/shared/components/sequence-picker/SequencePickerModal.svelte");
 
   function selectSequence(sequence: SequenceData): void {
     onSelect(sequence);
@@ -67,11 +72,16 @@
   {/if}
 </div>
 
-<SequencePickerModal
-  open={pickerOpen}
-  title={`Choose a sequence for ${performerName}`}
-  onSelect={selectSequence}
-  onClose={() => (pickerOpen = false)}
+<LazyMount
+  loader={loadPicker}
+  active={pickerOpen}
+  debugName="SequencePickerModal"
+  props={{
+    open: pickerOpen,
+    title: `Choose a sequence for ${performerName}`,
+    onSelect: selectSequence,
+    onClose: () => (pickerOpen = false),
+  }}
 />
 
 <style>
