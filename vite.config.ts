@@ -727,6 +727,15 @@ const classifyChunk = (id: string): string | undefined => {
   if (id.includes("vite/preload-helper")) return "vendor-sveltekit";
 
   const normalizedId = id.replaceAll("\\", "/").split("?")[0];
+  // This pure scene helper uses both backgrounds and scene-3d. Give it its
+  // own boundary so Rollup cannot merge it into 2D pictograph route code.
+  if (
+    normalizedId.endsWith(
+      "/src/lib/shared/3d/environments/domain/stage-coordinate-frame.ts"
+    )
+  ) {
+    return "scene-stage-coordinate-frame";
+  }
   if (SCENE_ONLY_THREE_LEAVES.some((suffix) => normalizedId.endsWith(suffix))) {
     return "vendor-three";
   }
