@@ -6,7 +6,7 @@
  * semantics depend on the attribute:
  *
  * - Single-valued attributes (a sequence has exactly ONE start position,
- *   level, length, starting letter, grid mode, creator) stack as
+ *   level, length, starting letter, grid mode, joined or one grid, creator) stack as
  *   ALTERNATIVES: several selected values mean "matches ANY of these".
  *   AND-ing them would always produce zero results.
  * - Property-contains attributes (LOOP components, TnD families — a sequence
@@ -29,6 +29,7 @@ export const OR_STACKING_TYPES: ReadonlySet<BrowseFilterType> = new Set([
   BrowseFilterType.STARTING_LETTER,
   BrowseFilterType.STARTING_PLACEMENT,
   BrowseFilterType.GRID_MODE,
+  BrowseFilterType.GRID_JOIN,
   BrowseFilterType.OWNER,
   BrowseFilterType.PERFORMANCE_AVAILABILITY,
   // Collection membership: "in Bella Sequences OR in Fire Drills" is the

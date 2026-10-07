@@ -279,3 +279,40 @@ describe("Scene3DFilmSchema", () => {
     expect(scene3DHasFilm(entry as never)).toBe(false);
   });
 });
+
+describe("Collected3DSceneSchema grid join", () => {
+  const entry = {
+    id: "abc",
+    name: "Joined",
+    poster: "x",
+    createdAt: 1,
+    snapshot,
+    steps: [],
+  };
+
+  it("keeps the join a joined performance was saved with", () => {
+    const result = Collected3DSceneSchema.safeParse({
+      ...entry,
+      conjoined: { toward: "e", steps: 2 },
+    });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.conjoined).toEqual({ toward: "e", steps: 2 });
+    }
+  });
+
+  it("reads an entry saved before joins as one grid", () => {
+    const result = Collected3DSceneSchema.safeParse(entry);
+    expect(result.success).toBe(true);
+    if (result.success) expect(result.data.conjoined).toBeUndefined();
+  });
+
+  it("reads a malformed stored join as one grid instead of failing the entry", () => {
+    const result = Collected3DSceneSchema.safeParse({
+      ...entry,
+      conjoined: { toward: "up", steps: 7 },
+    });
+    expect(result.success).toBe(true);
+    if (result.success) expect(result.data.conjoined).toBeUndefined();
+  });
+});

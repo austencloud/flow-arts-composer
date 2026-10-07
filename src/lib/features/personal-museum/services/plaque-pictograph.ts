@@ -12,6 +12,16 @@
 import { canvas2DDirectRenderer } from "$lib/shared/render/services/canvas-2d-direct-renderer";
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
 import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
+import { sequenceFirstStep } from "./sequence-first-step";
+
+/**
+ * The step a sequence's plaque shows: its first step, drawn on the grids the
+ * sequence is joined on (display-only; the stored step is untouched). Null
+ * when the sequence has no steps.
+ */
+export function plaqueFirstStep(sequence: SequenceData): StepData | null {
+  return sequenceFirstStep(sequence) as StepData | null;
+}
 
 /**
  * Render a sequence's first step to an ImageBitmap for plaque compositing.
@@ -20,7 +30,7 @@ import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
 export async function renderFirstStepBitmap(
   sequence: SequenceData,
 ): Promise<ImageBitmap | null> {
-  const step = sequence.steps?.[0];
+  const step = plaqueFirstStep(sequence);
   if (!step) return null;
 
   await canvas2DDirectRenderer.initialize();

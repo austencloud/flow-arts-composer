@@ -167,6 +167,7 @@ compensation), so the detail view behind this sheet updates on its own.
     | "letter"
     | "placement"
     | "gridmode"
+    | "gridjoin"
     | "author"
     | "performance"
     | "loop"
@@ -178,6 +179,7 @@ compensation), so the detail view behind this sheet updates on its own.
     [BrowseFilterType.STARTING_LETTER]: "letter",
     [BrowseFilterType.STARTING_PLACEMENT]: "placement",
     [BrowseFilterType.GRID_MODE]: "gridmode",
+    [BrowseFilterType.GRID_JOIN]: "gridjoin",
     [BrowseFilterType.OWNER]: "author",
     [BrowseFilterType.PERFORMANCE_AVAILABILITY]: "performance",
     [BrowseFilterType.RECENT_PERFORMANCE]: "performance",

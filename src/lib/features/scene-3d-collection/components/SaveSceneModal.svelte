@@ -16,6 +16,7 @@
   import { scene3dCollectionState } from "../state/scene-3d-collection-state.svelte";
   import { SCENE_3D_GROUPS } from "../domain/scene-3d-collection-types";
   import { simplifyRepeatedWord } from "$lib/shared/foundation/utils/word-simplifier";
+  import { sequenceGridJoin } from "$lib/shared/grid-join/sequence-grid-join";
   import {
     SceneEnvironmentId,
     getSceneEnvironmentDefinition,
@@ -235,12 +236,14 @@
       // `seq` here rather than reusing the modal-open-time `name` field, since
       // the user may have edited `name` before saving.
       const sourceWord = simplifyRepeatedWord(seq?.word || seq?.name || "");
+      const join = sequenceGridJoin(seq);
 
       await scene3dCollectionState.add({
         name: name.trim() || "3D scene",
         poster,
         snapshot,
         ...(steps && steps.length > 0 ? { steps } : {}),
+        ...(steps && steps.length > 0 && join ? { conjoined: join } : {}),
         ...(sourceWord
           ? { sourceWord, ...(seq?.id ? { sourceSequenceId: seq.id } : {}) }
           : {}),
