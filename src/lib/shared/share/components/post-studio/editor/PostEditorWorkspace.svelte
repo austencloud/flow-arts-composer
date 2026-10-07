@@ -907,18 +907,33 @@
   let editorHeight = $state(0);
   const DEFAULT_TIMELINE_HEIGHT_PX = 280;
   const MIN_TIMELINE_HEIGHT_PX = 160;
+  /**
+   * With music the timeline must fit the ruler (52), Main (72) and Music
+   * (52) rows plus a sideways scrollbar, or the rows scroll inside an
+   * editor that scrolls too.
+   */
+  const MIN_TIMELINE_HEIGHT_WITH_MUSIC_PX = 196;
+  const minTimelineHeightPx = $derived(
+    editor.project.music
+      ? MIN_TIMELINE_HEIGHT_WITH_MUSIC_PX
+      : MIN_TIMELINE_HEIGHT_PX
+  );
   let timelineHeightPx = $state(DEFAULT_TIMELINE_HEIGHT_PX);
   let timelineResizeStartPx = DEFAULT_TIMELINE_HEIGHT_PX;
   const maxTimelineHeightPx = $derived(
-    Math.max(MIN_TIMELINE_HEIGHT_PX, Math.min(520, editorHeight - 360))
+    Math.max(minTimelineHeightPx, Math.min(520, editorHeight - 360))
   );
+  // A height chosen before music came keeps to the floor music needs.
   const shownTimelineHeightPx = $derived(
-    Math.min(timelineHeightPx, maxTimelineHeightPx)
+    Math.max(
+      minTimelineHeightPx,
+      Math.min(timelineHeightPx, maxTimelineHeightPx)
+    )
   );
 
   function resizeTimeline(delta: number): void {
     timelineHeightPx = Math.max(
-      MIN_TIMELINE_HEIGHT_PX,
+      minTimelineHeightPx,
       Math.min(maxTimelineHeightPx, timelineResizeStartPx - delta)
     );
   }
@@ -933,7 +948,7 @@
         nextHeight = shownTimelineHeightPx - 20;
         break;
       case "Home":
-        nextHeight = MIN_TIMELINE_HEIGHT_PX;
+        nextHeight = minTimelineHeightPx;
         break;
       case "End":
         nextHeight = maxTimelineHeightPx;
@@ -943,7 +958,7 @@
     }
     event.preventDefault();
     timelineHeightPx = Math.max(
-      MIN_TIMELINE_HEIGHT_PX,
+      minTimelineHeightPx,
       Math.min(maxTimelineHeightPx, nextHeight)
     );
   }
@@ -2999,7 +3014,7 @@
             ariaValueNow={editorHeight > 0
               ? (100 * (editorHeight - shownTimelineHeightPx)) / editorHeight
               : 50}
-            disabled={maxTimelineHeightPx <= MIN_TIMELINE_HEIGHT_PX}
+            disabled={maxTimelineHeightPx <= minTimelineHeightPx}
             onDragStart={() => (timelineResizeStartPx = shownTimelineHeightPx)}
             onDrag={resizeTimeline}
             onKeydown={resizeTimelineWithKeys}
