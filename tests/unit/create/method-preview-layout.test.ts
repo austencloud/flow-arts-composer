@@ -36,8 +36,16 @@ describe("cell fitting", () => {
     expect(rowOfCells(200, 60, 4, 3, 5)).toEqual({ count: 3, size: 60 });
   });
 
+  it("stops at the cap when more cells would fit", () => {
+    expect(rowOfCells(400, 48, 4, 3, 4)).toEqual({ count: 4, size: 48 });
+  });
+
   it("shrinks cells so the minimum count still fits", () => {
     expect(rowOfCells(146, 60, 4, 3, 4)).toEqual({ count: 3, size: 46 });
+  });
+
+  it("keeps the minimum count even when its cells shrink to nothing", () => {
+    expect(rowOfCells(6, 60, 4, 3, 4)).toEqual({ count: 3, size: 0 });
   });
 
   it("sizes square grid cells by the tighter side", () => {

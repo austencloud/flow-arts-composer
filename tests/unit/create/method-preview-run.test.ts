@@ -69,6 +69,31 @@ describe("scene runs", () => {
     run.onAbort(late);
     expect(late).toHaveBeenCalledTimes(1);
   });
+
+  it("keeps running cleanups when one throws, and says so", () => {
+    const error = vi.spyOn(console, "error").mockImplementation(() => {});
+    try {
+      const { run, abort } = startSceneRun();
+      const after = vi.fn();
+      run.onAbort(() => {
+        throw new Error("first cleanup failed");
+      });
+      run.onAbort(after);
+      expect(() => abort()).not.toThrow();
+      expect(after).toHaveBeenCalledTimes(1);
+      expect(error).toHaveBeenCalledTimes(1);
+
+      // A cleanup added after the turn ended fails just as quietly.
+      expect(() =>
+        run.onAbort(() => {
+          throw new Error("late cleanup failed");
+        })
+      ).not.toThrow();
+      expect(error).toHaveBeenCalledTimes(2);
+    } finally {
+      error.mockRestore();
+    }
+  });
 });
 
 describe("demo taps", () => {
@@ -97,13 +122,57 @@ describe("demo taps", () => {
     expect(ghost).toMatchObject({ considering: false, pressed: false });
   });
 
-  it("gives a scene a live finger that vanishes when the turn ends", () => {
+  it("gives a scene a live finger that vanishes when the turn ends", async () => {
     const { run, abort } = startSceneRun();
     const finger = sceneGhost(run, () => null);
     placeGhost(finger, 10, 20);
     expect(finger.ghost).toMatchObject({ x: 10, y: 20, visible: true });
     abort();
     expect(finger.ghost.visible).toBe(false);
-    expect(finger.halted()).toBe(true);
+    // The finger is halted: a glide asked for now returns without moving.
+    await finger.glideTo(90, 90);
+    expect(finger.ghost).toMatchObject({ x: 10, y: 20 });
+  });
+});
+
+describe("the real attract ghost", () => {
+  it("glides and taps for real, then stops dead when the turn ends", async () => {
+    // The shared test setup stubs document.createElement with plain objects,
+    // so build the real element through the namespaced factory.
+    const root = document.createElementNS(
+      "http://www.w3.org/1999/xhtml",
+      "div"
+    ) as HTMLElement;
+    document.body.appendChild(root);
+    try {
+      const { run, abort } = startSceneRun();
+      const finger = sceneGhost(run, () => root);
+      placeGhost(finger, 10, 10);
+
+      const first = tapAt(finger, run, 40, 30);
+      await vi.advanceTimersByTimeAsync(2000);
+      await expect(first).resolves.toBe(true);
+      expect(finger.ghost).toMatchObject({
+        x: 40,
+        y: 30,
+        pressed: false,
+        considering: false,
+      });
+
+      const second = tapAt(finger, run, 220, 160);
+      await vi.advanceTimersByTimeAsync(200);
+      const midGlide = { x: finger.ghost.x, y: finger.ghost.y };
+      expect(midGlide).not.toEqual({ x: 40, y: 30 });
+      abort();
+      await vi.advanceTimersByTimeAsync(200);
+      await expect(second).resolves.toBe(false);
+      expect(finger.ghost.visible).toBe(false);
+
+      const stopped = { x: finger.ghost.x, y: finger.ghost.y };
+      await vi.advanceTimersByTimeAsync(2000);
+      expect({ x: finger.ghost.x, y: finger.ghost.y }).toEqual(stopped);
+    } finally {
+      root.remove();
+    }
   });
 });

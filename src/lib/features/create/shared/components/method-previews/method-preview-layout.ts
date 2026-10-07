@@ -26,7 +26,9 @@ export function classifyPreviewShape(
 /**
  * Fit a row of square cells into a strip: cells as tall as the strip, as
  * many as fit up to `max`. When fewer than `min` fit at full height, the
- * cells shrink so `min` still fit.
+ * cells shrink so `min` still fit. For a sized box `count` never drops below
+ * `min`, so a box too narrow for `min` cells and their gaps returns
+ * `{ count: min, size: 0 }`.
  */
 export function rowOfCells(
   width: number,

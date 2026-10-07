@@ -22,6 +22,18 @@ export interface SceneRun {
   onAbort(cleanup: () => void): void;
 }
 
+/**
+ * One scene's failing cleanup must not strand the others or throw into the
+ * caller's teardown, so it is reported and the turn ends anyway.
+ */
+function runCleanup(cleanup: () => void): void {
+  try {
+    cleanup();
+  } catch (error) {
+    console.error("Method preview cleanup failed", error);
+  }
+}
+
 export function startSceneRun(): { run: SceneRun; abort: () => void } {
   let aborted = false;
   const waits = new Set<(finished: boolean) => void>();
@@ -45,7 +57,7 @@ export function startSceneRun(): { run: SceneRun; abort: () => void } {
     },
     onAbort(cleanup) {
       if (aborted) {
-        cleanup();
+        runCleanup(cleanup);
         return;
       }
       cleanups.push(cleanup);
@@ -56,7 +68,7 @@ export function startSceneRun(): { run: SceneRun; abort: () => void } {
     if (aborted) return;
     aborted = true;
     for (const settle of [...waits]) settle(false);
-    for (const cleanup of cleanups.splice(0)) cleanup();
+    for (const cleanup of cleanups.splice(0)) runCleanup(cleanup);
   }
 
   return { run, abort };
@@ -75,8 +87,9 @@ export type SceneFinger = Pick<AttractGhost, "ghost" | "glideTo">;
 export function sceneGhost(
   run: SceneRun,
   getRoot: () => HTMLElement | null
-): AttractGhost {
+): SceneFinger {
   const { core } = createAttractGhost({ getRoot });
+  // The motor idles its glides while it thinks it is off screen.
   core.setVisible(true);
   run.onAbort(() => core.kill());
   return core;
