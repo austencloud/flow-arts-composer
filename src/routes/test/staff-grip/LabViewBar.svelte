@@ -96,8 +96,14 @@
     padding: 0.5rem 0.75rem;
   }
 
+  /*
+   * A 20rem basis lets the layout share a row with the two chips down to a
+   * landscape phone's stage; a 34rem basis wrapped them onto a second row
+   * there and took ~50px from four views that only had ~300px between them.
+   */
   .layout {
-    flex: 0 1 34rem;
+    flex: 1 1 20rem;
+    max-width: 34rem;
     min-width: 0;
   }
 
