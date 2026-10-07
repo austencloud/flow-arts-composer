@@ -50,5 +50,10 @@ export function mountMusicTool(target: HTMLElement, initial: PostMusic) {
     setPlayhead(seconds: number) {
       playhead = seconds;
     },
+    /** Swaps in another music, as adding a new file does. */
+    setMusic(next: PostMusic) {
+      music = next;
+      flushSync();
+    },
   };
 }

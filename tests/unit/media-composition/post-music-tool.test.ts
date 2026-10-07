@@ -20,6 +20,7 @@ vi.mock("$lib/shared/audio/bpm-analyzer", () => analyzer);
 await import("$lib/shared/audio/bpm-analyzer");
 
 const URL = "/api/dev/feature-videos/promo/media/music/derail.wav";
+const OTHER_URL = "/api/dev/feature-videos/promo/media/music/thump.wav";
 
 function music(fields: Partial<PostMusic> = {}): PostMusic {
   return {
@@ -261,6 +262,37 @@ describe("the music's panel", () => {
     await vi.waitFor(() =>
       expect(statusText()).toContain("Could not read the music file.")
     );
+  });
+
+  it("drops a suggestion or note once the music is another file", async () => {
+    analyzer.analyzeAudioBpm.mockResolvedValueOnce({
+      bpm: 120,
+      confidence: 0,
+      isUncertain: true,
+    });
+    open();
+    buttonNamed("Suggest BPM")!.click();
+    await vi.waitFor(() =>
+      expect(statusText()).toContain("No steady beat found. Type the tempo in.")
+    );
+    tool!.setMusic(music({ url: OTHER_URL, label: "Thump" }));
+    expect(statusText()).not.toContain(
+      "No steady beat found. Type the tempo in."
+    );
+
+    analyzer.analyzeAudioBpm.mockResolvedValueOnce({
+      bpm: 85,
+      confidence: 0.72,
+      isUncertain: false,
+    });
+    buttonNamed("Suggest BPM")!.click();
+    await vi.waitFor(() =>
+      expect(statusText()).toContain("About 85 BPM, 72% sure.")
+    );
+    expect(analyzer.analyzeAudioBpm).toHaveBeenLastCalledWith(OTHER_URL);
+    tool!.setMusic(music());
+    expect(statusText()).not.toContain("About 85 BPM, 72% sure.");
+    expect(buttonNamed("Use 85 BPM")).toBeNull();
   });
 
   it("keeps the music's name when cleared, and clears the artist and license", () => {

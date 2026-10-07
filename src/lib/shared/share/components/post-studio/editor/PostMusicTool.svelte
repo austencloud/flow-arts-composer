@@ -49,6 +49,13 @@
     uncertain: boolean;
   } | null>(null);
   let suggestNote = $state("");
+  // The file the suggestion or note came from. Either one shows only while
+  // that file is still the music.
+  let suggestedFor = $state<string | null>(null);
+  const shownSuggestion = $derived(
+    suggestedFor === music.url ? suggestion : null
+  );
+  const shownNote = $derived(suggestedFor === music.url ? suggestNote : "");
 
   const playingSeconds = $derived(
     music.sourceOutSeconds - music.sourceInSeconds
@@ -86,6 +93,7 @@
   async function suggestBpm(): Promise<void> {
     if (suggesting) return;
     const url = music.url;
+    suggestedFor = url;
     suggesting = true;
     suggestion = null;
     suggestNote = "";
@@ -110,8 +118,8 @@
   }
 
   function useSuggestion(): void {
-    if (!suggestion) return;
-    onChange("bpm", { bpm: suggestion.bpm });
+    if (!shownSuggestion) return;
+    onChange("bpm", { bpm: shownSuggestion.bpm });
     suggestion = null;
   }
 
@@ -216,22 +224,22 @@
         <i class="fa-solid fa-wave-square" aria-hidden="true"></i>
         {suggesting ? "Listening…" : "Suggest BPM"}
       </PanelButton>
-      {#if suggestion}
+      {#if shownSuggestion}
         <PanelButton onclick={useSuggestion}>
-          Use {bpmText(suggestion.bpm)}
+          Use {bpmText(shownSuggestion.bpm)}
         </PanelButton>
       {/if}
     </div>
-    {#if suggestion}
+    {#if shownSuggestion}
       <p class="status" role="status">
-        About {bpmText(suggestion.bpm)}, {Math.round(
-          suggestion.confidence * 100
-        )}% sure.{suggestion.uncertain
+        About {bpmText(shownSuggestion.bpm)}, {Math.round(
+          shownSuggestion.confidence * 100
+        )}% sure.{shownSuggestion.uncertain
           ? " The beat is unclear; check it by ear."
           : ""}
       </p>
-    {:else if suggestNote}
-      <p class="status" role="status">{suggestNote}</p>
+    {:else if shownNote}
+      <p class="status" role="status">{shownNote}</p>
     {/if}
   </section>
 
