@@ -708,6 +708,7 @@ const SCENE_ONLY_THREE_LEAVES = [
   "/src/lib/shared/3d/environments/worlds/winter/winter-starfield.ts",
   "/src/lib/shared/3d/components/CanvasLifecycle.svelte",
   "/src/lib/shared/3d/environments/primitives/organic-pond-shape.ts",
+  "/src/lib/shared/3d/scene-boot/gltf-decoders.ts",
   "/src/lib/shared/3d/scene-composer/scene-graph-object-adapter.ts",
   "/src/lib/shared/3d/components/grid-render-resources.ts",
   "/src/lib/shared/3d/environments/worlds/cosmic/cosmic-environment-assets.ts",
