@@ -91,12 +91,21 @@ export function mandalaHandOffsetsKey(
  */
 export function sequenceMandalaHandOffsets(
   sequence:
-    | { readonly conjoined?: unknown; readonly gridMode?: unknown }
+    | {
+        readonly conjoined?: unknown;
+        readonly gridMode?: unknown;
+        readonly startPlacement?: { readonly gridMode?: unknown } | null;
+        readonly steps?: readonly { readonly gridMode?: unknown }[];
+      }
     | null
     | undefined
 ): MandalaHandOffsets | null {
   if (!sequence) return null;
-  const gridMode =
-    typeof sequence.gridMode === "string" ? sequence.gridMode : null;
-  return mandalaGridJoinOffsets(sequence.conjoined, gridMode);
+  // Older sequences leave gridMode to their cells, like WorkspaceGrid reads it.
+  const gridMode = [
+    sequence.gridMode,
+    sequence.startPlacement?.gridMode,
+    sequence.steps?.[0]?.gridMode,
+  ].find((mode): mode is string => typeof mode === "string");
+  return mandalaGridJoinOffsets(sequence.conjoined, gridMode ?? null);
 }
