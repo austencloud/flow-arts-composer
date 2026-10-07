@@ -175,6 +175,11 @@ export interface TakeReplacement {
   takeKey: string;
   durationSeconds: number;
   offsetSeconds: number;
+  /**
+   * Accept a copy too short to hold every clip, as a re-recording can be: the
+   * clips are cut back to fit it. Without this, such a copy changes nothing.
+   */
+  clamp?: boolean;
 }
 
 /**
@@ -197,7 +202,9 @@ export function replaceTakeMedia(
     !Number.isFinite(offset) ||
     offset < 0 ||
     !Number.isFinite(durationSeconds) ||
-    offset + take.durationSeconds > durationSeconds + POST_TIME_EPSILON
+    durationSeconds <= 0 ||
+    (!replacement.clamp &&
+      offset + take.durationSeconds > durationSeconds + POST_TIME_EPSILON)
   )
     return project;
   const shiftKeys = <T>(keys: PostKeyframe<T>[] | undefined) =>

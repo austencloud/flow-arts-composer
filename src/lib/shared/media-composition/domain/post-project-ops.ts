@@ -16,6 +16,7 @@ import {
   lineUpTunnelHook,
   removeTake,
   removeTunnelHook,
+  replaceTakeMedia,
   setProjectBackground,
   setProjectCanvas,
   setTunnelHookBackdropFrame,
@@ -133,6 +134,13 @@ export type PostProjectOp =
       append?: boolean;
     }
   | { op: "remove-take"; take: string }
+  | {
+      op: "relink-take";
+      take: string;
+      /** A feature video media URL, as featureVideoMediaUrl makes it. */
+      url: string;
+      durationSeconds: number;
+    }
   | {
       op: "add-music";
       /** A feature video media URL, as featureVideoMediaUrl makes it. */
@@ -502,6 +510,40 @@ function applyOp(
       if (!placed)
         throw new Error("The take could not be placed on the timeline.");
       return placed.project;
+    }
+    case "relink-take": {
+      if (!project.takes.some((take) => take.id === op.take))
+        throw new Error(`No take "${op.take}" in this post.`);
+      if (!isFeatureVideoMediaUrl(op.url))
+        throw new Error(
+          "A take's url must be a feature video media url (/api/dev/feature-videos/<slug>/media/...)."
+        );
+      if (
+        typeof op.durationSeconds !== "number" ||
+        !Number.isFinite(op.durationSeconds) ||
+        op.durationSeconds <= 0
+      )
+        throw new Error("durationSeconds must be a positive number.");
+      const ref = { kind: "linked" as const, url: op.url };
+      const takeKey = takeFileKey(ref);
+      if (
+        project.takes.some(
+          (take) => take.id !== op.take && take.takeKey === takeKey
+        )
+      )
+        throw new Error("Another take already plays that file.");
+      return replaceTakeMedia(
+        project,
+        op.take,
+        {
+          ref,
+          takeKey,
+          durationSeconds: op.durationSeconds,
+          offsetSeconds: 0,
+          clamp: true,
+        },
+        ctx
+      );
     }
     case "remove-take": {
       if (!project.takes.some((take) => take.id === op.take))
