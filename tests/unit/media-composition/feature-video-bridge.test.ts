@@ -10,9 +10,11 @@ import {
   readPostProjectSession,
 } from "$lib/server/post-project-dev-bridge";
 import { featureVideoMediaUrl } from "$lib/shared/media-composition/domain/feature-video";
+import type { PostProject } from "$lib/shared/media-composition/domain/post-project";
 import { bridgeLockedChange } from "$lib/shared/media-composition/domain/post-project-bridge-guard";
 import { applyPostProjectOps } from "$lib/shared/media-composition/domain/post-project-ops";
 import { createTakeTiming } from "$lib/shared/media-composition/domain/take-timing";
+import { devicePostEditorStore } from "$lib/shared/media-composition/services/post-editor-store";
 import { startPostProjectDevBridge } from "$lib/shared/media-composition/services/post-project-dev-client";
 import { createPostEditorState } from "$lib/shared/media-composition/state/post-editor-state.svelte";
 import { POST as postProjectRoute } from "../../../src/routes/api/dev/post-project/+server";
@@ -217,12 +219,14 @@ describe("the editor's bridge client", () => {
   });
 });
 
-describe("a take the bridge adds", () => {
+describe("a take the bridge adds or points at a new file", () => {
   beforeEach(() => {
     localStorage.clear();
   });
 
-  it("plays at once, with its timing open", () => {
+  /** The editor, and every copy it handed its store to save. */
+  function editorWith(initialProject?: PostProject) {
+    const saved: PostProject[] = [];
     const editor = createPostEditorState({
       getSequence: () =>
         ({
@@ -230,7 +234,20 @@ describe("a take the bridge adds", () => {
           steps: Array.from({ length: 8 }, () => ({ duration: 1 })),
         }) as unknown as SequenceData,
       now: () => NOW + 10,
+      ...(initialProject ? { initialProject } : {}),
+      store: {
+        ...devicePostEditorStore,
+        saveProject(project) {
+          saved.push(project);
+          return devicePostEditorStore.saveProject(project);
+        },
+      },
     });
+    return { editor, saved };
+  }
+
+  it("plays at once, with its timing open and saved", () => {
+    const { editor, saved } = editorWith();
     const base = editor.snapshot;
     const next = applyPostProjectOps(
       base,
@@ -241,6 +258,52 @@ describe("a take the bridge adds", () => {
     const takeId = editor.takes[0]?.id ?? "";
     expect(editor.mediaUrl(takeId)).toBe(FEATURE_URL);
     expect(editor.timing(takeId)).not.toBeNull();
+    // A feature video's disk save skips a copy older than the newest one
+    // the editor kept, so the copy kept must be the whole post.
+    expect(saved.at(-1)).toEqual(editor.snapshot);
+    editor.dispose();
+  });
+
+  it("keeps the timing the relink cut back, and saves it", () => {
+    const added = withFeatureTake();
+    const first = added.takes[0]!;
+    const timing = createTakeTiming({
+      sequenceId: "seq",
+      takeKey: first.takeKey,
+      durationSeconds: 4,
+      now: NOW,
+    });
+    const { editor, saved } = editorWith({
+      ...added,
+      timings: {
+        [first.id]: {
+          ...timing,
+          sections: [{ ...timing.sections[0]!, taps: [1, 2, 3.5] }],
+        },
+      },
+    });
+    const base = editor.snapshot;
+    const shorter = featureVideoMediaUrl("promo", "captures/a.2.mp4");
+    const next = applyPostProjectOps(
+      base,
+      [
+        {
+          op: "relink-take",
+          take: first.id,
+          url: shorter,
+          durationSeconds: 3,
+        },
+      ],
+      { now: NOW + 20 }
+    );
+    expect(editor.replaceManifestFromDev(next, base)).toEqual({ ok: true });
+    expect(editor.mediaUrl(first.id)).toBe(shorter);
+    expect(editor.timing(first.id)).toMatchObject({
+      takeKey: `linked:${shorter}`,
+      confirmedAt: null,
+      sections: [{ startSeconds: 0, endSeconds: 3, taps: [1, 2] }],
+    });
+    expect(saved.at(-1)).toEqual(editor.snapshot);
     editor.dispose();
   });
 });
