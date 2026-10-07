@@ -12,6 +12,10 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import {
+  createFeatureVideoStore,
+  type FeatureVideoStore,
+} from "$lib/server/feature-video-store";
 import { cameraTake, clickTrack, wav } from "./feature-video-audio-fixtures";
 import { suggestMusicGain } from "../../../scripts/feature-video/loudness.mjs";
 import { toolPath } from "../../../scripts/feature-video/media-import.mjs";
@@ -51,10 +55,13 @@ let root: string;
 let folder: string;
 let project: StandInProject;
 let calls: { method: string; path: string; body: unknown }[];
+/** When set, the stand-in applies posted edits with this, as the dev server does. */
+let applyEdits: ((ops: unknown) => Promise<unknown>) | undefined;
 
 /** A dev server stand-in: no editor is open, so edits go to the file. */
 beforeEach(async () => {
   calls = [];
+  applyEdits = undefined;
   project = { tracks: [{ items: [] }], takes: [] };
   root = await fs.mkdtemp(path.join(os.tmpdir(), "feature-cli-music-"));
   folder = path.join(root, "promo");
@@ -78,8 +85,17 @@ beforeEach(async () => {
           return send(200, { sessions: [] });
         case "GET /api/dev/feature-videos/promo":
           return send(200, { file: { project }, fingerprint: "f", folder });
-        case "POST /api/dev/feature-videos/promo/ops":
-          return send(200, { status: "applied", revision: 2 });
+        case "POST /api/dev/feature-videos/promo/ops": {
+          if (!applyEdits) return send(200, { status: "applied", revision: 2 });
+          const { ops } = calls[calls.length - 1]!.body as { ops: unknown };
+          // A refusal is a 400 carrying the edit's own message, as the route sends.
+          applyEdits(ops).then(
+            (result) => send(200, result),
+            (cause: { status?: number; message?: string }) =>
+              send(cause.status ?? 500, { message: cause.message })
+          );
+          return;
+        }
         default:
           return send(404, { message: "No such route." });
       }
@@ -311,6 +327,88 @@ describe("music settings from the command line", () => {
       await fs.access(path.join(folder, "media", "music", "derail-theme.wav"));
     }
   );
+});
+
+describe("music values out of range", () => {
+  const SEQUENCE = "DCKΨ-";
+  let store: FeatureVideoStore;
+  const saved = () =>
+    fs.readFile(path.join(root, "store", "promo", "project.json"), "utf8");
+
+  /** A real feature video behind the stand-in: 60 s of music at 120 BPM. */
+  beforeEach(async () => {
+    store = createFeatureVideoStore(path.join(root, "store"));
+    await store.create({ slug: "promo", title: "Promo", sequenceId: SEQUENCE });
+    await store.applyOps("promo", [
+      { op: "add-music", url: MUSIC_URL, durationSeconds: 60 },
+      { op: "music", bpm: 120 },
+    ]);
+    applyEdits = (ops) => store.applyOps("promo", ops);
+  });
+
+  it("refuses a played part that ends before it starts: exit 1, the message printed, the file as it was", async () => {
+    const before = await saved();
+    const result = await cli(
+      "music",
+      "--feature",
+      "promo",
+      "--from",
+      "30",
+      "--to",
+      "20"
+    );
+    expect(result.code).toBe(1);
+    expect(result.stderr).toContain(
+      "The music's end (20 s) must come at least 0.1 s after its start (30 s)."
+    );
+    // The command sent what it was given; the edit itself said no.
+    expect(sent()).toEqual([
+      { op: "music", sourceInSeconds: 30, sourceOutSeconds: 20 },
+    ]);
+    expect(await saved()).toBe(before);
+  });
+
+  it("refuses a mistyped tempo, level and beat count, and a bar beyond the file, instead of fitting them", async () => {
+    const before = await saved();
+    const refusals: [string[], string][] = [
+      [["--bpm", "1280"], "bpm must be from 20 to 300."],
+      [["--gain", "5"], "gain must be from 0 to 2."],
+      [
+        ["--beats-per-bar", "3.5"],
+        "beatsPerBar must be a whole number from 1 to 12.",
+      ],
+      [
+        ["--to", "@1000"],
+        "The music's end (1998 s) cannot come after the end of its file (60 s).",
+      ],
+    ];
+    for (const [flags, message] of refusals) {
+      const result = await cli("music", "--feature", "promo", ...flags);
+      expect(result.code).toBe(1);
+      expect(result.stderr).toContain(message);
+    }
+    expect(await saved()).toBe(before);
+  });
+
+  it("still writes a played part that is in range", async () => {
+    const result = await cli(
+      "music",
+      "--feature",
+      "promo",
+      "--from",
+      "10",
+      "--to",
+      "20"
+    );
+    expect(result.code).toBe(0);
+    const file = JSON.parse(await saved()) as {
+      project: { music: { sourceInSeconds: number; sourceOutSeconds: number } };
+    };
+    expect(file.project.music).toMatchObject({
+      sourceInSeconds: 10,
+      sourceOutSeconds: 20,
+    });
+  });
 });
 
 describe("lining takes up with the music", () => {

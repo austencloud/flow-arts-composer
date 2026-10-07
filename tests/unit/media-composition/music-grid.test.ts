@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  MUSIC_GRID_MAX_LINES,
   NO_GRID_MESSAGE,
   barBeatAt,
   downbeatFromTaps,
@@ -89,6 +90,60 @@ describe("grid lines", () => {
     ]);
     expect(lines[0]).toMatchObject({ bar: 15, beat: 1, downbeat: true });
     expect(musicGridLines(placed, 40, 50)).toEqual([]);
+  });
+
+  it("counts the beats before bar 1 as bar 0 and earlier", () => {
+    // Bar 1 sounds at 1.25 s, so the beats at 0.25 s and 0.75 s come before it.
+    const late = {
+      startSeconds: 0,
+      sourceInSeconds: 0,
+      sourceOutSeconds: 10,
+      grid: { bpm: 120, downbeatSeconds: 1.25, beatsPerBar: 4 },
+    };
+    expect(
+      musicGridLines(late, 0, 2).map((line) => [
+        line.seconds,
+        line.bar,
+        line.beat,
+        line.downbeat,
+      ])
+    ).toEqual([
+      [0.25, 0, 3, false],
+      [0.75, 0, 4, false],
+      [1.25, 1, 1, true],
+      [1.75, 1, 2, false],
+    ]);
+  });
+
+  it("returns when bar 1 is so far off that counting beats cannot move", () => {
+    // Past 2^53 a beat count no longer changes when 1 is added to it, so a
+    // loop that counted up by 1 never ended and used up the tab's memory.
+    const far = { ...placed, grid: { ...grid, downbeatSeconds: 1e17 } };
+    const lines = musicGridLines(far, 0, 4);
+    expect(Array.isArray(lines)).toBe(true);
+    expect(lines.length).toBeLessThanOrEqual(MUSIC_GRID_MAX_LINES);
+  });
+
+  it("stops at the backstop however many beats the music holds", () => {
+    // 300 BPM is a beat every 0.2 s, so 30,000 s hold 150,000 beats.
+    const long = {
+      startSeconds: 0,
+      sourceInSeconds: 0,
+      sourceOutSeconds: 30_000,
+      grid: { bpm: 300, downbeatSeconds: 0, beatsPerBar: 4 },
+    };
+    const lines = musicGridLines(long, 0, 30_000);
+    expect(lines).toHaveLength(MUSIC_GRID_MAX_LINES);
+    expect(lines[0]).toMatchObject({
+      seconds: 0,
+      bar: 1,
+      beat: 1,
+      downbeat: true,
+    });
+    expect(lines[MUSIC_GRID_MAX_LINES - 1]!.seconds).toBeCloseTo(
+      (MUSIC_GRID_MAX_LINES - 1) * 0.2,
+      6
+    );
   });
 });
 

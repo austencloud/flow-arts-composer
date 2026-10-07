@@ -220,6 +220,203 @@ describe("music", () => {
   });
 });
 
+describe("music values out of range", () => {
+  // 120 s of music, gridded at 120 BPM in 4, played from its 10 s to its 100 s.
+  const gridded = withMusic({
+    sourceInSeconds: 10,
+    sourceOutSeconds: 100,
+    grid: GRID,
+  });
+  const edit = (patch: Record<string, unknown>) =>
+    ({ op: "music", ...patch }) as unknown as PostProjectOp;
+
+  /** The edit is refused with this message, and the post is as it was. */
+  function refused(
+    patch: Record<string, unknown>,
+    message: string,
+    before: PostProject = gridded
+  ): void {
+    const frozen = JSON.stringify(before);
+    expect(() => run(before, edit(patch))).toThrow(message);
+    expect(JSON.stringify(before)).toBe(frozen);
+  }
+
+  const TEMPO = "bpm must be from 20 to 300.";
+  const BEATS = "beatsPerBar must be a whole number from 1 to 12.";
+  const DOWNBEAT =
+    "downbeatSeconds must be from -120 s to 120 s (the file is 120 s long).";
+  const START = "startSeconds must be from 0 s to 14400 s";
+
+  it.each([
+    ["a tempo of 1280", { bpm: 1280 }, TEMPO],
+    ["a tempo below 20", { bpm: 19.9 }, TEMPO],
+    ["3.5 beats a bar", { beatsPerBar: 3.5 }, BEATS],
+    ["0 beats a bar", { beatsPerBar: 0 }, BEATS],
+    ["13 beats a bar", { beatsPerBar: 13 }, BEATS],
+    ["a level of 5", { gain: 5 }, "gain must be from 0 to 2."],
+    ["a level below 0", { gain: -0.1 }, "gain must be from 0 to 2."],
+    [
+      "a fade in below 0",
+      { fadeInSeconds: -1 },
+      "fadeInSeconds must be 0 or more.",
+    ],
+    [
+      "a fade out below 0",
+      { fadeOutSeconds: -0.5 },
+      "fadeOutSeconds must be 0 or more.",
+    ],
+    ["a bar 1 at 1e17 s", { downbeatSeconds: 1e17 }, DOWNBEAT],
+    ["a bar 1 at -1e17 s", { downbeatSeconds: -1e17 }, DOWNBEAT],
+    ["a bar 1 past the file's length", { downbeatSeconds: 120.5 }, DOWNBEAT],
+    ["a start below 0", { startSeconds: -3 }, START],
+    ["a start after four hours", { startSeconds: 14401 }, START],
+  ])("refuses %s", (_name, patch, message) => {
+    refused(patch, message);
+  });
+
+  it.each([
+    [
+      "a part that ends before it starts",
+      { sourceInSeconds: 30, sourceOutSeconds: 20 },
+      "The music's end (20 s) must come at least 0.1 s after its start (30 s).",
+    ],
+    [
+      "an end before the start it has now",
+      { sourceOutSeconds: 5 },
+      "The music's end (5 s) must come at least 0.1 s after its start (10 s).",
+    ],
+    [
+      "a start at the end it has now",
+      { sourceInSeconds: 100 },
+      "The music's end (100 s) must come at least 0.1 s after its start (100 s).",
+    ],
+    [
+      "a start that leaves under 0.1 s",
+      { sourceInSeconds: 99.95 },
+      "The music's end (100 s) must come at least 0.1 s after its start (99.95 s).",
+    ],
+    [
+      "a start before the file",
+      { sourceInSeconds: -5 },
+      "The music's start (-5 s) must be 0 s or later.",
+    ],
+    [
+      "an end after the file",
+      { sourceOutSeconds: 130 },
+      "The music's end (130 s) cannot come after the end of its file (120 s).",
+    ],
+  ])("refuses %s", (_name, patch, message) => {
+    refused(patch, message);
+  });
+
+  it("checks times named as bars after they are turned into seconds", () => {
+    // On this grid bar 3 is the file's 9.25 s, bar 30 its 63.25 s.
+    refused(
+      { sourceInSeconds: { bar: 30 }, sourceOutSeconds: { bar: 3 } },
+      "The music's end (9.25 s) must come at least 0.1 s after its start (63.25 s)."
+    );
+    refused(
+      { sourceOutSeconds: { bar: 80 } },
+      "The music's end (163.25 s) cannot come after the end of its file (120 s)."
+    );
+    refused(
+      { sourceInSeconds: { bar: -5 } },
+      "The music's start (-6.75 s) must be 0 s or later."
+    );
+    refused({ startSeconds: { bar: 100000 } }, START);
+    // Bar 1 sounds at the post's 0 + (0.25 - 5) = -4.75 s.
+    const early = withMusic({
+      startSeconds: 0,
+      sourceInSeconds: 5,
+      sourceOutSeconds: 35,
+      grid: { bpm: 120, downbeatSeconds: 0.25, beatsPerBar: 4 },
+    });
+    refused({ startSeconds: { bar: 1 } }, START, early);
+    // Bar 9 sounds at 0 + (0.25 + 32 * 0.5 - 5) = 11.25 s, which is allowed.
+    expect(
+      run(early, edit({ startSeconds: { bar: 9 } })).music?.startSeconds
+    ).toBeCloseTo(11.25, 9);
+  });
+
+  it("refuses the whole edit, so a good setting beside a wrong one is not applied", () => {
+    refused({ gain: 0.5, bpm: 1280 }, TEMPO);
+    refused(
+      { label: "Radio edit", sourceInSeconds: 30, sourceOutSeconds: 20 },
+      "The music's end (20 s) must come at least 0.1 s after its start (30 s)."
+    );
+    expect(() =>
+      applyPostProjectOps(
+        gridded,
+        [edit({ gain: 0.5 }), edit({ bpm: 1280 })],
+        ctx
+      )
+    ).toThrow(`Edit 2 (music): ${TEMPO}`);
+  });
+
+  it("applies values at the edges of their ranges", () => {
+    const next = run(
+      gridded,
+      edit({
+        bpm: 300,
+        beatsPerBar: 12,
+        downbeatSeconds: -120,
+        gain: 2,
+        fadeInSeconds: 0,
+        startSeconds: 14400,
+        sourceInSeconds: 0,
+        sourceOutSeconds: 120,
+      })
+    );
+    expect(next.music).toMatchObject({
+      grid: { bpm: 300, downbeatSeconds: -120, beatsPerBar: 12 },
+      gain: 2,
+      fadeInSeconds: 0,
+      startSeconds: 14400,
+      sourceInSeconds: 0,
+      sourceOutSeconds: 120,
+    });
+    expect(
+      run(gridded, edit({ bpm: 20, downbeatSeconds: 120, gain: 0 })).music
+    ).toMatchObject({
+      grid: { bpm: 20, downbeatSeconds: 120, beatsPerBar: 4 },
+      gain: 0,
+    });
+  });
+
+  it("applies a played part of exactly the shortest length", () => {
+    const music = run(
+      gridded,
+      edit({ sourceInSeconds: 10, sourceOutSeconds: 10.1 })
+    ).music!;
+    expect(music.sourceInSeconds).toBe(10);
+    expect(music.sourceOutSeconds - music.sourceInSeconds).toBeCloseTo(0.1, 9);
+  });
+
+  it("checks an edge it is given against the other edge the music has now", () => {
+    expect(run(gridded, edit({ sourceInSeconds: 50 })).music).toMatchObject({
+      sourceInSeconds: 50,
+      sourceOutSeconds: 100,
+    });
+    expect(run(gridded, edit({ sourceOutSeconds: 60 })).music).toMatchObject({
+      sourceInSeconds: 10,
+      sourceOutSeconds: 60,
+    });
+    expect(
+      run(
+        gridded,
+        edit({ sourceInSeconds: { bar: 2 }, sourceOutSeconds: { bar: 10 } })
+      ).music
+    ).toMatchObject({ sourceInSeconds: 7.25, sourceOutSeconds: 23.25 });
+  });
+
+  it("still fits a fade longer than the part that plays", () => {
+    // The music plays 10 s to 100 s: 90 s.
+    expect(
+      run(gridded, edit({ fadeInSeconds: 500 })).music?.fadeInSeconds
+    ).toBe(90);
+  });
+});
+
 describe("remove-music", () => {
   it("takes the music off the post", () => {
     expect(run(withMusic(), { op: "remove-music" })).not.toHaveProperty(

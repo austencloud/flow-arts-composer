@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import type { PostMusic } from "$lib/shared/media-composition/domain/post-music";
+import {
+  POST_MUSIC_MAX_SECONDS,
+  type PostMusic,
+} from "$lib/shared/media-composition/domain/post-music";
 import {
   POST_MUSIC_ID,
   removeMusic,
@@ -176,6 +179,34 @@ describe("updateMusic", () => {
   it("ignores a downbeat when there is no grid", () => {
     const before = withMusic();
     expect(updateMusic(before, { downbeatSeconds: 1 }, ctx)).toBe(before);
+  });
+
+  it("fits bar 1 into the file's length, before its start or after it", () => {
+    const gridded = withMusic({ grid: GRID });
+    const downbeat = (seconds: number) =>
+      updateMusic(gridded, { downbeatSeconds: seconds }, ctx).music!.grid!
+        .downbeatSeconds;
+    expect(downbeat(1e17)).toBe(120);
+    expect(downbeat(-1e17)).toBe(-120);
+    expect(downbeat(121)).toBe(120);
+    // Inside the file's length, either side of its start, it stays as given.
+    expect(downbeat(-0.25)).toBe(-0.25);
+    expect(downbeat(119.5)).toBe(119.5);
+  });
+
+  it("fits the bar 1 of a grid made in the same edit", () => {
+    expect(
+      updateMusic(withMusic(), { bpm: 85, downbeatSeconds: 1e17 }, ctx).music!
+        .grid
+    ).toEqual({ bpm: 85, downbeatSeconds: 120, beatsPerBar: 4 });
+  });
+
+  it("keeps the start within the longest music a post takes", () => {
+    const start = (seconds: number) =>
+      updateMusic(withMusic(), { startSeconds: seconds }, ctx).music!
+        .startSeconds;
+    expect(start(1e17)).toBe(POST_MUSIC_MAX_SECONDS);
+    expect(start(90)).toBe(90);
   });
 
   it("keeps a label, and clears an artist or license left blank", () => {

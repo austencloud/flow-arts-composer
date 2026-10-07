@@ -33,6 +33,8 @@ export type PostTimeRef = number | { bar: number; beat?: number };
 export const MUSIC_BEAT_SNAP_MIN_PX = 12;
 /** Bar numbers closer than this on the ruler are thinned out. */
 export const MUSIC_BAR_LABEL_MIN_PX = 28;
+/** The most lines one window lists, whatever the grid holds. */
+export const MUSIC_GRID_MAX_LINES = 100_000;
 export const NO_GRID_MESSAGE =
   "This post has no beat grid. Set one with: music --bpm N --downbeat S.";
 
@@ -124,7 +126,12 @@ export function musicGridLines(
   const first = Math.ceil((low - zero) / step - 1e-9);
   const last = Math.floor((high - zero) / step + 1e-9);
   const lines: MusicGridLine[] = [];
-  for (let n = first; n <= last; n += 1) {
+  // Count from 0 and add to `first`: past 2^53 a beat number no longer
+  // changes when 1 is added to it, so counting the beat numbers themselves
+  // could never reach `last`.
+  const count = last - first + 1;
+  for (let i = 0; i < count && i < MUSIC_GRID_MAX_LINES; i += 1) {
+    const n = first + i;
     const bar = Math.floor(n / music.grid.beatsPerBar) + 1;
     const beat = n - (bar - 1) * music.grid.beatsPerBar + 1;
     lines.push({ seconds: zero + n * step, bar, beat, downbeat: beat === 1 });

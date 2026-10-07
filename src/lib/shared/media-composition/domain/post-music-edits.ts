@@ -15,6 +15,7 @@ import {
   POST_MUSIC_MAX_BEATS_PER_BAR,
   POST_MUSIC_MAX_GAIN,
   POST_MUSIC_MAX_LICENSE,
+  POST_MUSIC_MAX_SECONDS,
   POST_MUSIC_MAX_TEXT,
   type PostMusic,
   type PostMusicGrid,
@@ -176,7 +177,11 @@ export function updateMusic(
       grid = {
         bpm,
         downbeatSeconds: finite(patch.downbeatSeconds)
-          ? patch.downbeatSeconds
+          ? clamp(
+              patch.downbeatSeconds,
+              -music.durationSeconds,
+              music.durationSeconds
+            )
           : (grid?.downbeatSeconds ?? sourceInSeconds),
         beatsPerBar: finite(patch.beatsPerBar)
           ? clamp(
@@ -204,7 +209,7 @@ export function updateMusic(
     ...(artist ? { artist } : {}),
     ...(license ? { license } : {}),
     startSeconds: finite(patch.startSeconds)
-      ? Math.max(0, patch.startSeconds)
+      ? clamp(patch.startSeconds, 0, POST_MUSIC_MAX_SECONDS)
       : music.startSeconds,
     sourceInSeconds,
     sourceOutSeconds,

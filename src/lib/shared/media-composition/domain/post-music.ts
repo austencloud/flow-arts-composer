@@ -17,14 +17,24 @@ export const POST_MUSIC_MAX_BEATS_PER_BAR = 12;
 /** The longest label or artist name. */
 export const POST_MUSIC_MAX_TEXT = 120;
 export const POST_MUSIC_MAX_LICENSE = 500;
+/** The longest music file a post takes: four hours. */
+export const POST_MUSIC_MAX_SECONDS = 4 * 60 * 60;
 /** Room for rounding where a file's measured length meets a typed end. */
-const LENGTH_SLACK = 1e-6;
+export const POST_MUSIC_LENGTH_SLACK = 1e-6;
 
 export const PostMusicGridSchema = z
   .object({
     bpm: z.number().finite().min(TAKE_MIN_BPM).max(TAKE_MAX_BPM),
-    /** Bar 1, beat 1, in the file's own seconds. It may come before the file starts. */
-    downbeatSeconds: z.number().finite(),
+    /**
+     * Bar 1, beat 1, in the file's own seconds. It may come before the file
+     * starts or after it ends, by up to the longest file a post takes, so the
+     * grid never has to count an unbounded number of beats.
+     */
+    downbeatSeconds: z
+      .number()
+      .finite()
+      .min(-POST_MUSIC_MAX_SECONDS)
+      .max(POST_MUSIC_MAX_SECONDS),
     beatsPerBar: z.number().int().min(1).max(POST_MUSIC_MAX_BEATS_PER_BAR),
   })
   .strict();
@@ -43,11 +53,11 @@ export const PostMusicSchema = z
     /** Library, license id and purchase date, as free text. */
     license: z.string().trim().min(1).max(POST_MUSIC_MAX_LICENSE).optional(),
     /** Where sourceInSeconds sounds on the post's clock. */
-    startSeconds: z.number().finite().min(0),
+    startSeconds: z.number().finite().min(0).max(POST_MUSIC_MAX_SECONDS),
     sourceInSeconds: z.number().finite().min(0),
     sourceOutSeconds: z.number().finite().min(0),
     /** The file's length. */
-    durationSeconds: z.number().finite().positive(),
+    durationSeconds: z.number().finite().positive().max(POST_MUSIC_MAX_SECONDS),
     /** Linear: 1 plays the file as it is, 0 is silent. */
     gain: z.number().finite().min(0).max(POST_MUSIC_MAX_GAIN),
     fadeInSeconds: z.number().finite().min(0),
@@ -60,7 +70,8 @@ export const PostMusicSchema = z
     path: ["sourceOutSeconds"],
   })
   .refine(
-    (music) => music.sourceOutSeconds <= music.durationSeconds + LENGTH_SLACK,
+    (music) =>
+      music.sourceOutSeconds <= music.durationSeconds + POST_MUSIC_LENGTH_SLACK,
     {
       message: "The music cannot run past the end of its file.",
       path: ["sourceOutSeconds"],

@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
+  FEATURE_VIDEO_FILE_FORMAT,
+  FeatureVideoFileSchema,
+} from "$lib/shared/media-composition/domain/feature-video";
+import {
+  POST_MUSIC_MAX_SECONDS,
   PostMusicSchema,
   type PostMusic,
 } from "$lib/shared/media-composition/domain/post-music";
@@ -114,5 +119,83 @@ describe("post music", () => {
       PostProjectSchema.safeParse({ ...plain, music: music({ gain: 3 }) })
         .success
     ).toBe(false);
+  });
+});
+
+describe("the numbers a post's music can hold", () => {
+  const gridAt = (downbeatSeconds: number) => ({
+    bpm: 85,
+    downbeatSeconds,
+    beatsPerBar: 4,
+  });
+
+  it("takes music up to four hours long", () => {
+    expect(POST_MUSIC_MAX_SECONDS).toBe(4 * 60 * 60);
+  });
+
+  it.each([
+    ["a bar 1 at 1e17 s", music({ grid: gridAt(1e17) })],
+    ["a bar 1 at -1e17 s", music({ grid: gridAt(-1e17) })],
+    [
+      "a bar 1 just after the limit",
+      music({ grid: gridAt(POST_MUSIC_MAX_SECONDS + 1) }),
+    ],
+    [
+      "a bar 1 just before the limit",
+      music({ grid: gridAt(-POST_MUSIC_MAX_SECONDS - 1) }),
+    ],
+    [
+      "a file longer than the limit",
+      music({ durationSeconds: POST_MUSIC_MAX_SECONDS + 1 }),
+    ],
+    [
+      "a start after the limit",
+      music({ startSeconds: POST_MUSIC_MAX_SECONDS + 1 }),
+    ],
+  ])("refuses %s", (_name, value) => {
+    expect(PostMusicSchema.safeParse(value).success).toBe(false);
+  });
+
+  it("takes each limit itself, and a bar 1 before the file starts", () => {
+    for (const value of [
+      music({ grid: gridAt(POST_MUSIC_MAX_SECONDS) }),
+      music({ grid: gridAt(-POST_MUSIC_MAX_SECONDS) }),
+      music({ grid: gridAt(-12.5) }),
+      music({
+        durationSeconds: POST_MUSIC_MAX_SECONDS,
+        sourceOutSeconds: POST_MUSIC_MAX_SECONDS,
+      }),
+      music({ startSeconds: POST_MUSIC_MAX_SECONDS }),
+    ])
+      expect(PostMusicSchema.safeParse(value).success).toBe(true);
+  });
+
+  it("makes a post that holds more invalid, so it does not load, as with any wrong music", () => {
+    // Music is part of the post, which is read whole: a saved copy or a
+    // feature video file with music outside these limits is not a post.
+    const plain = project([video("v1")]);
+    const file = (held: PostMusic) =>
+      FeatureVideoFileSchema.safeParse({
+        format: FEATURE_VIDEO_FILE_FORMAT,
+        slug: "promo",
+        title: "Promo",
+        revision: 1,
+        savedAt: NOW,
+        project: { ...plain, music: held },
+      }).success;
+    expect(
+      PostProjectSchema.safeParse({ ...plain, music: music() }).success
+    ).toBe(true);
+    expect(file(music())).toBe(true);
+    for (const held of [
+      music({ grid: gridAt(1e17) }),
+      music({ durationSeconds: POST_MUSIC_MAX_SECONDS + 1 }),
+      music({ startSeconds: 1e17 }),
+    ]) {
+      expect(
+        PostProjectSchema.safeParse({ ...plain, music: held }).success
+      ).toBe(false);
+      expect(file(held)).toBe(false);
+    }
   });
 });

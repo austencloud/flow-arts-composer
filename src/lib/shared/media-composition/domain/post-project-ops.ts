@@ -41,12 +41,24 @@ import {
   type PostTimeRef,
 } from "$lib/shared/media-composition/domain/music-grid";
 import {
+  POST_MUSIC_MIN_SECONDS,
   removeMusic,
   setMusic,
   syncedSourceIn,
   updateMusic,
   type MusicPatch,
 } from "$lib/shared/media-composition/domain/post-music-edits";
+import {
+  POST_MUSIC_LENGTH_SLACK,
+  POST_MUSIC_MAX_BEATS_PER_BAR,
+  POST_MUSIC_MAX_GAIN,
+  POST_MUSIC_MAX_SECONDS,
+  type PostMusic,
+} from "$lib/shared/media-composition/domain/post-music";
+import {
+  TAKE_MAX_BPM,
+  TAKE_MIN_BPM,
+} from "$lib/shared/media-composition/domain/take-timing";
 
 /**
  * Named edits for saved posts, in a form a command line can send. Each op is
@@ -238,6 +250,82 @@ function checkedMusicOp(op: { op: "music" } & MusicOpPatch): MusicOpPatch {
     }
   }
   return patch;
+}
+
+/**
+ * Refuses a `music` edit's numbers that the music cannot take. The panel
+ * fits such a value into range as you drag; a command or an agent that sent
+ * one made a mistake (bpm 1280 for 128), so it hears about it and nothing
+ * changes.
+ */
+function refuseMusicValues(music: PostMusic, patch: MusicOpPatch): void {
+  const { bpm, beatsPerBar, gain, fadeInSeconds, fadeOutSeconds } = patch;
+  const { downbeatSeconds } = patch;
+  if (typeof bpm === "number" && (bpm < TAKE_MIN_BPM || bpm > TAKE_MAX_BPM))
+    throw new Error(`bpm must be from ${TAKE_MIN_BPM} to ${TAKE_MAX_BPM}.`);
+  if (
+    beatsPerBar !== undefined &&
+    (!Number.isInteger(beatsPerBar) ||
+      beatsPerBar < 1 ||
+      beatsPerBar > POST_MUSIC_MAX_BEATS_PER_BAR)
+  )
+    throw new Error(
+      `beatsPerBar must be a whole number from 1 to ${POST_MUSIC_MAX_BEATS_PER_BAR}.`
+    );
+  if (gain !== undefined && (gain < 0 || gain > POST_MUSIC_MAX_GAIN))
+    throw new Error(`gain must be from 0 to ${POST_MUSIC_MAX_GAIN}.`);
+  if (fadeInSeconds !== undefined && fadeInSeconds < 0)
+    throw new Error("fadeInSeconds must be 0 or more.");
+  if (fadeOutSeconds !== undefined && fadeOutSeconds < 0)
+    throw new Error("fadeOutSeconds must be 0 or more.");
+  if (
+    downbeatSeconds !== undefined &&
+    Math.abs(downbeatSeconds) > music.durationSeconds
+  )
+    throw new Error(
+      `downbeatSeconds must be from ${secondsText(-music.durationSeconds)} to ${secondsText(music.durationSeconds)} (the file is ${secondsText(music.durationSeconds)} long).`
+    );
+}
+
+/**
+ * Refuses times that, once a bar is turned into seconds, put the music off
+ * the post's clock or ask the file for more than it holds. A start or an end
+ * is checked against the other edge the music has now.
+ */
+function refuseMusicTimes(
+  music: PostMusic,
+  times: {
+    startSeconds?: number;
+    sourceInSeconds?: number;
+    sourceOutSeconds?: number;
+  }
+): void {
+  if (
+    times.startSeconds !== undefined &&
+    (times.startSeconds < 0 || times.startSeconds > POST_MUSIC_MAX_SECONDS)
+  )
+    throw new Error(
+      `startSeconds must be from 0 s to ${POST_MUSIC_MAX_SECONDS} s, not ${secondsText(times.startSeconds)}.`
+    );
+  if (
+    times.sourceInSeconds === undefined &&
+    times.sourceOutSeconds === undefined
+  )
+    return;
+  const from = times.sourceInSeconds ?? music.sourceInSeconds;
+  const to = times.sourceOutSeconds ?? music.sourceOutSeconds;
+  if (from < 0)
+    throw new Error(
+      `The music's start (${secondsText(from)}) must be 0 s or later.`
+    );
+  if (to > music.durationSeconds + POST_MUSIC_LENGTH_SLACK)
+    throw new Error(
+      `The music's end (${secondsText(to)}) cannot come after the end of its file (${secondsText(music.durationSeconds)}).`
+    );
+  if (to - from < POST_MUSIC_MIN_SECONDS - POST_MUSIC_LENGTH_SLACK)
+    throw new Error(
+      `The music's end (${secondsText(to)}) must come at least ${secondsText(POST_MUSIC_MIN_SECONDS)} after its start (${secondsText(from)}).`
+    );
 }
 
 function applyOp(
@@ -456,6 +544,12 @@ function applyOp(
         beatsPerBar,
         ...rest
       } = checkedMusicOp(op);
+      refuseMusicValues(project.music, {
+        ...rest,
+        bpm,
+        downbeatSeconds,
+        beatsPerBar,
+      });
       if (
         (downbeatSeconds !== undefined || beatsPerBar !== undefined) &&
         !project.music.grid &&
@@ -471,40 +565,37 @@ function applyOp(
         ctx
       );
       const music = regridded.music!;
-      return updateMusic(
-        regridded,
-        {
-          ...rest,
-          ...(startSeconds !== undefined
-            ? {
-                startSeconds: resolvePostTime(
-                  startSeconds,
-                  music,
-                  "startSeconds"
-                ),
-              }
-            : {}),
-          ...(sourceInSeconds !== undefined
-            ? {
-                sourceInSeconds: resolveTrackTime(
-                  sourceInSeconds,
-                  music.grid,
-                  "sourceInSeconds"
-                ),
-              }
-            : {}),
-          ...(sourceOutSeconds !== undefined
-            ? {
-                sourceOutSeconds: resolveTrackTime(
-                  sourceOutSeconds,
-                  music.grid,
-                  "sourceOutSeconds"
-                ),
-              }
-            : {}),
-        },
-        ctx
-      );
+      const times = {
+        ...(startSeconds !== undefined
+          ? {
+              startSeconds: resolvePostTime(
+                startSeconds,
+                music,
+                "startSeconds"
+              ),
+            }
+          : {}),
+        ...(sourceInSeconds !== undefined
+          ? {
+              sourceInSeconds: resolveTrackTime(
+                sourceInSeconds,
+                music.grid,
+                "sourceInSeconds"
+              ),
+            }
+          : {}),
+        ...(sourceOutSeconds !== undefined
+          ? {
+              sourceOutSeconds: resolveTrackTime(
+                sourceOutSeconds,
+                music.grid,
+                "sourceOutSeconds"
+              ),
+            }
+          : {}),
+      };
+      refuseMusicTimes(music, times);
+      return updateMusic(regridded, { ...rest, ...times }, ctx);
     }
     case "remove-music":
       if (!project.music) throw new Error(NO_MUSIC);
