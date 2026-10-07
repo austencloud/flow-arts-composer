@@ -10,14 +10,17 @@ tags:
   - loops
   - solo-prop
   - vtg
-last_triaged: 2026-08-11
+last_triaged: 2026-10-07
+work_state: verification
 ---
 
 # Fuse one-hand LOOP sources
 
 **Date:** 2026-08-11
 
-**Status:** Approved by Austen on 2026-08-11.
+**Status:** Implementation recorded; browser viewport verification remains (reviewed 2026-10-07).
+
+**Original approval:** Austen approved the design on 2026-08-11.
 
 ## Outcome
 

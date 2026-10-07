@@ -2,13 +2,16 @@
 status: active
 value: 5
 effort: L
-remaining: 'Phases 0-2 shipped via a different subtype architecture; Phase 3 (delete 5 app-side LOOP executors) still open — the bug that motivated the spec'
+remaining: "Verify Sequence Engine Unification — Design Spec against packages/tka-types/src/step.ts before resuming implementation. Prior recorded remainder: 'Phases 0-2 shipped via a different subtype architecture; Phase 3 (delete 5 app-side LOOP executors) still open — the bug that motivated the spec'"
 depends_on: ""
-plan_path: plans/active/2026-04-20-sequence-engine-unification-plan.md
+plan_path: "docs/superpowers/plans/active/2026-04-20-sequence-engine-unification-plan.md"
 tags: []
-last_triaged: 2026-08-02
+last_triaged: 2026-10-07
+work_state: unverified
 ---
 # Sequence Engine Unification — Design Spec
+
+**Queue evidence (2026-10-07):** Phases 0-2 landed through a different subtype architecture; Phase 3 LOOP executor consolidation remains open. See frontmatter for the remaining work.
 
 > **DRIFT WARNING — 2026-08-02.** Phases 0-2 shipped via a **different** subtype architecture; Phase 3 (delete 5 app-side LOOP executors) still open — the bug that motivated the spec
 >
@@ -17,7 +20,7 @@ last_triaged: 2026-08-02
 
 
 **Date:** 2026-04-20
-**Status:** Ready for implementation planning
+**Original status (historical):** Ready for implementation planning
 **Author:** Austen + Claude (brainstorming session)
 
 ## Problem

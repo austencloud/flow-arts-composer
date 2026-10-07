@@ -1,6 +1,20 @@
+---
+status: active
+value: null
+effort: null
+work_state: in-progress
+remaining: Verify Autumn boot/retry and adaptive-quality acceptance on the production scene, then close remaining hardening gaps.
+depends_on: ''
+plan_path: ''
+tags: []
+last_triaged: '2026-10-07'
+---
+
 # Autumn Scene Hardening
 
-**Status:** Approved for implementation
+**Triage evidence (2026-10-07):** `src/lib/shared/3d/environments/scenes/AutumnScene.svelte` is present and the spec describes changes to the shipped scene. Boot, retry, adaptive-quality, and viewpoint acceptance still need production-scene verification.
+
+**Status:** In progress; production-scene boot, retry, and adaptive-quality verification pending.
 **Date:** 2026-08-31
 **Owner:** 3D environments
 **Review route:** `/test/autumn-scene`

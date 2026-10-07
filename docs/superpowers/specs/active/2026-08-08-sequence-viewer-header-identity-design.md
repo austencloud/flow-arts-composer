@@ -6,12 +6,15 @@ remaining: "Code is complete and live (7bbabbf45, 2026-08-08). Only the spec's o
 depends_on: "external: a browser session on the shared authenticated Chrome DevTools target"
 plan_path: ""
 tags: [sequence-viewer, header, responsive, verification-only]
-last_triaged: 2026-09-13
+last_triaged: 2026-10-07
+work_state: verification
 ---
 
 # Sequence Viewer Header Identity
 
-**Status:** IMPLEMENTED 2026-08-08 in `7bbabbf45` (_feat(viewer): art settings
+**Queue evidence (2026-10-07):** Viewer header code shipped; seven-viewport browser proof and interaction checks remain unrecorded. See frontmatter for the remaining work.
+
+**Original status (historical):** IMPLEMENTED 2026-08-08 in `7bbabbf45` (_feat(viewer): art settings
 split, header identity, escape ownership_). Only the seven-viewport visual proof
 under "Verification" below is unrecorded. This header previously read "Approved
 for implementation on 2026-08-08", which made the spec a rebuild hazard — an

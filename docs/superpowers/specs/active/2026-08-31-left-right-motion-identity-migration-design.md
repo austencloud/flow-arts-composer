@@ -1,3 +1,15 @@
+---
+status: active
+value: null
+effort: null
+work_state: unverified
+remaining: Audit left/right motion identity migration across MCP, compact URLs, Firestore, and public index against the verification matrix.
+depends_on: ''
+plan_path: ''
+tags: []
+last_triaged: '2026-10-07'
+---
+
 # Left/Right Motion Identity Migration
 
 **Status:** Approved for implementation by Austen on 2026-08-31

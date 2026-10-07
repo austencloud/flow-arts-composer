@@ -1,3 +1,14 @@
+---
+status: active
+value: null
+effort: null
+remaining: "Verify Ink Preset Curation and Material Redesign against the current Ink Preset Curation and Material Redesign runtime and acceptance criteria before resuming implementation. Prior recorded remainder: Verify revised Sumi stroke and preset curation against the final art-direction criteria and current renderer."
+depends_on: ""
+plan_path: ""
+tags: []
+last_triaged: 2026-10-07
+work_state: unverified
+---
 # Ink Preset Curation and Material Redesign
 
 **Status:** Approved by direct implementation request on 2026-08-14

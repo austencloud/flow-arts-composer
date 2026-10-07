@@ -1,3 +1,15 @@
+---
+status: active
+value: null
+effort: null
+work_state: verification
+remaining: Verify Post Studio shared surfaces and the September 8-9 playback, sharpness, sidebar, and phone reflow follow-ups.
+depends_on: ''
+plan_path: ''
+tags: []
+last_triaged: '2026-10-07'
+---
+
 # Sequence Viewer ↔ Post Studio: live surface continuity
 
 ## Ownership

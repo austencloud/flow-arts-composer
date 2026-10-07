@@ -2,13 +2,16 @@
 status: active
 value: 2
 effort: S
-remaining: 'Shipped, relocated to a footer dock; 4-tier picker narrowed to 2 and Default became editable, both undocumented'
+remaining: "Verify Inspect Panel Redesign — Live Pictograph + Tier-Aware Adjustment Editing against the current Inspect Panel Redesign — Live Pictograph + Tier-Aware Adjustment Editing runtime and acceptance criteria before resuming implementation. Prior recorded remainder: 'Shipped, relocated to a footer dock; 4-tier picker narrowed to 2 and Default became editable, both undocumented'"
 depends_on: ""
 plan_path: ""
 tags: []
-last_triaged: 2026-08-02
+last_triaged: 2026-10-07
+work_state: unverified
 ---
 # Inspect Panel Redesign — Live Pictograph + Tier-Aware Adjustment Editing
+
+**Queue evidence (2026-10-07):** An inspect surface shipped in a footer dock; picker and Default editing differ from this design. See frontmatter for the remaining work.
 
 > **DRIFT WARNING — 2026-08-02.** Shipped, relocated to a footer dock; 4-tier picker narrowed to 2 and Default became editable, both undocumented
 >
@@ -17,7 +20,7 @@ last_triaged: 2026-08-02
 
 
 **Date:** 2026-05-28
-**Status:** Design approved, ready for planning
+**Original status (historical):** Design approved, ready for planning
 **Scope:** `PictographInspectModal` and its sub-components (admin-only Step Editor inspect panel)
 
 ---

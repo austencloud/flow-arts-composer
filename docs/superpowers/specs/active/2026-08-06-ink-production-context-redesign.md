@@ -1,3 +1,14 @@
+---
+status: active
+value: null
+effort: null
+remaining: "Verify Ink width range, Watercolor zero stroke gravity, and dense-ink stroke against current translator and renderer tests before editing."
+depends_on: ""
+plan_path: ""
+tags: []
+last_triaged: 2026-10-07
+work_state: unverified
+---
 # 2D Ink Production-Context Redesign
 
 **Status:** Approved 2026-08-06

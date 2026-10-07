@@ -2,17 +2,20 @@
 status: active
 value: 5
 effort: M
-remaining: "Release the verified app-side changes and validate the next production lifecycle event"
-depends_on: ""
-plan_path: plans/active/2026-08-21-first-session-analytics-reliability-plan.md
+remaining: "Verify whether the app-side analytics changes and PostHog Worker are live in production. If not, use the approved production release process; after release, capture a smoke event through the Worker and validate the next real production lifecycle event in PostHog before closeout."
+depends_on: "external: production release state and authorized release of app-side analytics changes and PostHog Worker"
+plan_path: "docs/superpowers/plans/active/2026-08-21-first-session-analytics-reliability-plan.md"
 tags: [analytics, auth, posthog, reliability]
-last_triaged: 2026-08-21
+last_triaged: 2026-10-07
+work_state: blocked
 ---
 
 # First-session analytics reliability design
 
+**Queue evidence (2026-10-07):** The recorded remainder requires a production release and next real lifecycle event, while this spec's verification contract requires a production Worker smoke event visible in PostHog. Current deployment state has not been established in this audit, so local source verification alone cannot unblock closeout.
+
 **Date:** 2026-08-21  
-**Status:** Approved and in implementation  
+**Original status (historical):** Approved and in implementation.
 **Source:** Production session review of the Krysten Ryan shared account
 
 ## Problem

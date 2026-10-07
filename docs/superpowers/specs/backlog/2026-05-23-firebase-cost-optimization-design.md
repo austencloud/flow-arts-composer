@@ -2,12 +2,14 @@
 status: backlog
 value: 3
 effort: M
-remaining: "Body status: Backlog"
-depends_on: ""
-plan_path: ""
+remaining: Audit the Firebase cost baseline and each optimization owner before implementation; the prior queue note did not establish current state.
+depends_on: ''
+plan_path: ''
 tags: []
-last_triaged: 2026-07-25
+last_triaged: '2026-10-07'
+work_state: unverified
 ---
+
 # Firebase Cost Optimization Design
 
 **Date:** 2026-05-23

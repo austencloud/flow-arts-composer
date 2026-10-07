@@ -1,6 +1,20 @@
+---
+status: active
+value: null
+effort: null
+work_state: in-progress
+remaining: Verify keyframe rows under selected clips and finish remaining zoom, editing, undo, and export acceptance.
+depends_on: ''
+plan_path: ''
+tags: []
+last_triaged: '2026-10-07'
+---
+
 # Post Studio keyframes with easing (drop 2)
 
-Status: approved 2026-09-26 (Austen: "Timeline, then keyframes"; zoom first).
+**Triage evidence (2026-10-07):** `src/lib/shared/share/components/post-studio/editor/PostKeyframeControls.svelte` exists. Its presence does not establish the requested zoom, easing, undo, and export parity; those need focused acceptance verification.
+
+Status: In progress; keyframe lane exists, with zoom, editing, undo, and export acceptance still to verify. Approved 2026-09-26 (Austen: "Timeline, then keyframes"; zoom first).
 Builds on `2026-09-26-post-studio-timeline-editor-design.md`, whose Drop 2
 section this replaces.
 

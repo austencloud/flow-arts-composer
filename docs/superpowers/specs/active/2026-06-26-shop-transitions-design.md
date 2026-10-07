@@ -2,14 +2,18 @@
 status: active
 value: 3
 effort: XS
-remaining: 'Items 1-4 shipped past spec; item 5 (grid entrance stagger) never built. Its depends_on WSL blocker is stale'
+remaining: "Verify Shop Transitions — Design Spec against src/lib/shared/ui-animation/animations.svelte.ts before resuming implementation. Prior recorded remainder: 'Items 1-4 shipped past spec; item 5 (grid entrance stagger) never built. Its depends_on WSL blocker is stale'"
 depends_on: ""
 supersedes_context: ""
 tags: [shop, transitions, view-transitions, polish, ux]
-last_triaged: 2026-08-02
+last_triaged: 2026-10-07
+plan_path: ""
+work_state: unverified
 ---
 
 # Shop Transitions — Design Spec
+
+**Queue evidence (2026-10-07):** Items 1-4 landed; the grid entrance stagger remains open and the WSL blocker is stale. See frontmatter for the remaining work.
 
 > **DRIFT WARNING — 2026-08-02.** Items 1-4 shipped past spec; item 5 (grid entrance stagger) never built. Its `depends_on` WSL blocker is stale
 >
@@ -18,7 +22,7 @@ last_triaged: 2026-08-02
 
 
 **Date:** 2026-06-26
-**Status:** Design approved (brainstorm 2026-06-26). Not yet built.
+**Original status (historical):** Design approved (brainstorm 2026-06-26). Not yet built.
 
 ## Problem
 

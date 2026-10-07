@@ -1,3 +1,14 @@
+---
+status: active
+value: null
+effort: null
+remaining: "Verify long-press cancellation, message selection, keyboard focus, and action sheet geometry on mobile."
+depends_on: ""
+plan_path: ""
+tags: []
+last_triaged: 2026-10-07
+work_state: unverified
+---
 # Mobile Message Actions
 
 **Status:** Approved for implementation on 2026-08-21

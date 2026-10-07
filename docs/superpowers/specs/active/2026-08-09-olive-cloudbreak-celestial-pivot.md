@@ -1,3 +1,14 @@
+---
+status: active
+value: null
+effort: null
+remaining: "Verify cloudbreak silhouette and measured spatial plan in the current celestial scene before declaring acceptance."
+depends_on: ""
+plan_path: ""
+tags: []
+last_triaged: 2026-10-07
+work_state: unverified
+---
 # Olive Cloudbreak celestial pivot
 
 **Date:** 2026-08-09

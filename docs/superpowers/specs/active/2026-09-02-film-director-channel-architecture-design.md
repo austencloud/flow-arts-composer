@@ -1,8 +1,21 @@
+---
+status: active
+value: null
+effort: null
+work_state: in-progress
+remaining: Complete Phase 4 editorial clip instancing and retire scene.extends; then verify phases 1-3 against their gates.
+depends_on: ''
+plan_path: ''
+tags: []
+last_triaged: '2026-10-07'
+---
+
 # Film Director Channel Architecture Design
 
+**Queue evidence, 2026-10-07:** Phase 1–3 landing notes below record implementation; `expand-scene-inheritance.ts` and `resolve-film-director-spec.ts` still use `scene.extends`, so the Phase 4 retirement condition is unmet.
+
 Date: 2026-09-02
-Status: **Proposed**, not started. Evidence re-verified 2026-09-02 23:11; no decision changed, D1 and D4 gained external support. Supersedes nothing yet; the current camera
-model stays shipped until phase 1 lands.
+Status: **In progress** as of 2026-10-07. Phases 1–3 have landing notes below; Phase 4 editorial is open. The prior camera model was the shipped baseline when this design was proposed.
 
 Research backing every decision here:
 `docs/architecture/film-director-research-canon.md`. Read it first. This

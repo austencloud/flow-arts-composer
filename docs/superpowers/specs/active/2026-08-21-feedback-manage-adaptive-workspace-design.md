@@ -1,3 +1,14 @@
+---
+status: active
+value: null
+effort: null
+remaining: "Verify Feedback Manage layout, focus, and capability ownership against current adaptive workspace."
+depends_on: ""
+plan_path: ""
+tags: []
+last_triaged: 2026-10-07
+work_state: unverified
+---
 # Feedback Manage Adaptive Workspace
 
 ## Outcome

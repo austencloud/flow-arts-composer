@@ -1,3 +1,15 @@
+---
+status: active
+value: null
+effort: null
+work_state: unverified
+remaining: Verify nav-sheet module grid counts 1-16 on phone, side drawer, and 720px widths in the real switcher harness.
+depends_on: ''
+plan_path: ''
+tags: []
+last_triaged: '2026-10-07'
+---
+
 # Navigation Sheet Fits Its Contents
 
 Date: 2026-09-24

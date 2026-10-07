@@ -1,3 +1,15 @@
+---
+status: active
+value: null
+effort: null
+work_state: in-progress
+remaining: Finish the Learn/Atlas progress projection and verify lesson start, concept return, and seven-viewport map behavior.
+depends_on: ''
+plan_path: ''
+tags: []
+last_triaged: '2026-10-07'
+---
+
 # Unified Learn and Atlas - Product and Architecture Contract
 
 **Date:** 2026-08-28  

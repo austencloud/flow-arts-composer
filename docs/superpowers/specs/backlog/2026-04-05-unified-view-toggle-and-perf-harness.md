@@ -2,12 +2,14 @@
 status: backlog
 value: 2
 effort: S
-remaining: 'Q-cycle shipped exactly; perf harness never built'
-depends_on: ""
-plan_path: ""
+remaining: Verify the Q-cycle and current performance harness against this spec before assigning remaining work.
+depends_on: ''
+plan_path: ''
 tags: []
-last_triaged: 2026-08-02
+last_triaged: '2026-10-07'
+work_state: unverified
 ---
+
 # Unified View Toggle + Performance Test Harness
 
 > **DRIFT WARNING — 2026-08-02.** Q-cycle shipped exactly; perf harness never built

@@ -1,3 +1,15 @@
+---
+status: active
+value: null
+effort: null
+work_state: blocked
+remaining: Collect Austen's per-gate visual feedback on the remaining sequence viewer transitions, starting with the recorded review pass.
+depends_on: 'external: Austen per-gate visual feedback'
+plan_path: ''
+tags: []
+last_triaged: '2026-10-07'
+---
+
 # Remaining sequence viewer gates: review pass
 
 Date: 2026-09-05. This records implementation and measurements, not Austen's

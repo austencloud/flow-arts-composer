@@ -1,3 +1,14 @@
+---
+status: active
+value: null
+effort: null
+remaining: "Verify Stage 3D Performance Studio against the current Stage 3D Performance Studio runtime and acceptance criteria before resuming implementation. Prior recorded remainder: Verify Stage document, workspace, and viewer ownership plus remaining scope against current 3D studio runtime."
+depends_on: ""
+plan_path: ""
+tags: []
+last_triaged: 2026-10-07
+work_state: unverified
+---
 # Stage 3D Performance Studio
 
 **Date:** 2026-08-20  

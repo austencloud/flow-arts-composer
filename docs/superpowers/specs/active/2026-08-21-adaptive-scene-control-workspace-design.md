@@ -2,11 +2,12 @@
 status: active
 value: 2
 effort: XS
-remaining: "The resolver and the three presentations shipped in 21335f9da - do NOT rebuild them. Three acceptance items are unresolved, each needing a decision rather than code first: (1) the five-action desktop rail ceiling is broken at seven entries; Focus avatar has a documented later decision in 2026-09-05-avatar-camera-recovery.md, Presets has none, and neither document names or retires the ceiling. (2) The compact gate is implemented as 500px unconditional / 544px only under 1100px width, not the flat 34rem this spec states - a 1600x540 workspace resolves overlay in code and compact in the text; decide which is right and align them. (3) The 'always-visible playback timeline' clause has no owner: SceneControlWorkspace.svelte:52 leaves that to the host and nothing asserts host compliance. Also unrecorded: runtime verification of the production surfaces and the seven-viewport sweep."
+remaining: "Verify Adaptive Scene Control Workspace against src/lib/shared/3d/domain/scene-control-layout.ts before resuming implementation. Prior recorded remainder: The resolver and the three presentations shipped in 21335f9da - do NOT rebuild them. Three acceptance items are unresolved, each needing a decision rather than code first: (1) the five-action desktop rail ceiling is broken at seven entries; Focus avatar has a documented later decision in 2026-09-05-avatar-camera-recovery.md, Presets has none, and neither document names or retires the ceiling. (2) The compact gate is implemented as 500px unconditional / 544px only under 1100px width, not the flat 34rem this spec states - a 1600x540 workspace resolves overlay in code and compact in the text; decide which is right and align them. (3) The 'always-visible playback timeline' clause has no owner: SceneControlWorkspace.svelte:52 leaves that to the host and nothing asserts host compliance. Also unrecorded: runtime verification of the production surfaces and the seven-viewport sweep."
 depends_on: ""
 plan_path: "docs/superpowers/plans/active/2026-08-21-adaptive-scene-control-workspace-plan.md"
 tags: [3d, scene-controls, unresolved-acceptance, needs-product-decision]
-last_triaged: 2026-09-13
+last_triaged: 2026-10-07
+work_state: unverified
 ---
 
 # Adaptive Scene Control Workspace

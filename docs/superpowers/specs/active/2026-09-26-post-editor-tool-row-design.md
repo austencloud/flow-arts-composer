@@ -1,3 +1,15 @@
+---
+status: active
+value: null
+effort: null
+work_state: verification
+remaining: Verify the Post editor tool-row layout and selection-specific tools at short and phone viewports; run focused tool and history tests.
+depends_on: ''
+plan_path: ''
+tags: []
+last_triaged: '2026-10-07'
+---
+
 # Post Editor Tool Row
 
 Date: 2026-09-26. Replaces the layout sections of

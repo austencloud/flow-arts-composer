@@ -1,3 +1,14 @@
+---
+status: active
+value: null
+effort: null
+remaining: "Verify solo arrow placement for invisible and absent partners, and one-hand staff beta offset, against canonical prop code."
+depends_on: ""
+plan_path: ""
+tags: []
+last_triaged: 2026-10-07
+work_state: unverified
+---
 # Canonical Solo-Prop Rendering
 
 ## Status

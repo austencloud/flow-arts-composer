@@ -6,7 +6,8 @@ remaining: "Unimplemented. This live judgment loop consumes the real-flow percep
 depends_on: "2026-07-03-fable-real-flow-notation-validation-design.md"
 plan_path: ""
 tags: []
-last_triaged: 2026-08-01
+last_triaged: 2026-10-07
+work_state: blocked
 ---
 # Fable Spec — Practice Judgment Loop (Learn-by-Doing)
 

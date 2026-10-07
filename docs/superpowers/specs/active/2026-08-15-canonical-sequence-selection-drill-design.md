@@ -1,3 +1,14 @@
+---
+status: active
+value: null
+effort: null
+remaining: "Verify shared canonical selection behavior and the specified seven viewports before implementing any missing drill."
+depends_on: ""
+plan_path: ""
+tags: []
+last_triaged: 2026-10-07
+work_state: unverified
+---
 # Canonical Sequence Selection Drill
 
 **Date:** 2026-08-15  

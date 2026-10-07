@@ -2,11 +2,15 @@
 status: backlog
 value: 4
 effort: M
-remaining: "Split the catch-all `vendor` manual chunk so one import cannot drag 3.3 MB of unrelated packages onto a route"
-depends_on: ""
-plan_path: ""
-tags: [performance, build, chunking]
-last_triaged: 2026-09-13
+remaining: Re-measure current vendor bytes, then split the still-present catch-all return "vendor" in vite.config.ts into feature buckets without reintroducing chunk cycles.
+depends_on: ''
+plan_path: ''
+tags:
+- performance
+- build
+- chunking
+last_triaged: '2026-10-07'
+work_state: ready
 ---
 
 # Split the catch-all `vendor` chunk — Design

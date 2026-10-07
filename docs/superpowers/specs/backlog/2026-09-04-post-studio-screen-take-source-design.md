@@ -1,3 +1,15 @@
+---
+status: backlog
+value: null
+effort: null
+work_state: unverified
+remaining: Reconcile prototype screen-take sources with Post Studio ownership and verify the output contract before implementation.
+depends_on: ''
+plan_path: ''
+tags: []
+last_triaged: '2026-10-07'
+---
+
 # Post Studio Screen Take Source
 
 **Status:** Backlog, direction approved

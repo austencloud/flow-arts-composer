@@ -1,3 +1,14 @@
+---
+status: active
+value: null
+effort: null
+remaining: "Verify Post Studio Composition and Time Mapping against src/lib/shared/animation-engine/timeline/services/step-grid-calculator.ts before resuming implementation. Prior recorded remainder: Resolve the unused preset repository, rights-cleared audio, and whole-Compose persistence; verify current export gates."
+depends_on: ""
+plan_path: ""
+tags: []
+last_triaged: 2026-10-07
+work_state: unverified
+---
 # Post Studio Composition and Time Mapping
 
 **Date:** 2026-08-13

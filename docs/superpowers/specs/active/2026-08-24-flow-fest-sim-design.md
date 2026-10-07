@@ -1,3 +1,15 @@
+---
+status: active
+value: null
+effort: null
+work_state: in-progress
+remaining: Advance Flow Fest Sim through its measured Earth and playable graybox gates, then rehearse the Thursday-to-night slice and GNSS replay.
+depends_on: ''
+plan_path: ''
+tags: []
+last_triaged: '2026-10-07'
+---
+
 # Flow Fest Sim
 
 **Status:** Active foundation specification  

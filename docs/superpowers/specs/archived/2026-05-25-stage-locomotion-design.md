@@ -1,13 +1,15 @@
 ---
-status: backlog
+status: archived
 value: 3
 effort: M
-remaining: 'Full Stage module shipped with motion matching (beyond spec''s blend tree); own ledger 0/17 checked; prop-overlay unverified'
-depends_on: ""
-plan_path: ""
+remaining: Use the Stage performance runtime spec for production locomotion; verify its prop-overlay and 3D preview acceptance there.
+depends_on: ''
+plan_path: ''
 tags: []
-last_triaged: 2026-08-02
+last_triaged: '2026-10-07'
+work_state: superseded
 ---
+
 # Stage Locomotion System — Design Spec
 
 > **SUPERSEDED — 2026-08-20.** The Stage editor shell shipped, but its 3D

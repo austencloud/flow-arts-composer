@@ -79,6 +79,9 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Validate active spec queue
+        run: pnpm run specs:check && pnpm run specs:test
+
       - name: Build workspace packages
         run: pnpm run build:packages
 

@@ -1,3 +1,14 @@
+---
+status: active
+value: null
+effort: null
+remaining: "Verify Post Studio Slots — Design against the current Post Studio Slots — Design runtime and acceptance criteria before resuming implementation. Prior recorded remainder: Reconcile the three unchecked slot-phase items and workspace-wide timing bar against current Post Studio, then verify."
+depends_on: ""
+plan_path: ""
+tags: []
+last_triaged: 2026-10-07
+work_state: unverified
+---
 # Post Studio Slots — Design
 
 **Status:** active · **Date:** 2026-08-15 · **Iteration:** 2 of Post Studio

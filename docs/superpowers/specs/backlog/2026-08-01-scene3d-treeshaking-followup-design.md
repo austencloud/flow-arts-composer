@@ -2,11 +2,15 @@
 status: backlog
 value: 3
 effort: S
-remaining: "Ship @austencloud/scene-3d with sideEffects metadata and useful deep exports, then re-measure boot JS in the app"
-depends_on: ""
-plan_path: ""
-tags: [performance, packages, three]
-last_triaged: 2026-08-01
+remaining: Verify the current @austencloud/scene-3d package exports and sideEffects metadata, then measure boot JS before deciding the follow-up.
+depends_on: ''
+plan_path: ''
+tags:
+- performance
+- packages
+- three
+last_triaged: '2026-10-07'
+work_state: unverified
 ---
 
 # @austencloud/scene-3d Tree-Shaking Follow-Up — Design

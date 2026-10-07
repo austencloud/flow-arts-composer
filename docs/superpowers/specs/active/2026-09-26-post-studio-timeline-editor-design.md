@@ -1,3 +1,15 @@
+---
+status: active
+value: null
+effort: null
+work_state: verification
+remaining: Verify the shipped Post Studio timeline editor against clip editing, zoom, keyboard, and responsive acceptance.
+depends_on: ''
+plan_path: ''
+tags: []
+last_triaged: '2026-10-07'
+---
+
 # Post Studio Timeline Editor
 
 Date: 2026-09-26. Supersedes the act-based builder in

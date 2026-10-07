@@ -3,13 +3,16 @@ status: active
 value: 2
 effort: XS
 remaining: "The workspace shipped in 3519cd6b2 - do NOT rebuild it. Two acceptance clauses are unresolved and need a product decision, not code first: (1) 'Every editable source exposes these actions without an overflow-menu step' - 57e911b78 moved five source actions behind a More menu and fuse-actions-contract.test.ts:68 now asserts that shape; decide whether the overflow is wanted and amend the clause, or treat the test as encoding a regression and change both. (2) 'Until Apply Relationship is selected, the current result remains unchanged' - FuseRelationshipComposer.svelte:52-61 previews every draft onto the combined canvas; only the persisted relationship is untouched. No spec, plan or handoff records a decision to change either; 57e911b78 has an empty commit body and touches no docs. Also unrecorded: the seven-viewport sweep of the workspace."
-depends_on: ""
+depends_on: "external: Austen product decision on source-action overflow and draft relationship preview acceptance clauses"
 plan_path: ""
 tags: [fuse, workspace, unresolved-acceptance, needs-product-decision]
-last_triaged: 2026-09-13
+last_triaged: 2026-10-07
+work_state: blocked
 ---
 
 # Fuse 4K Workspace Redesign
+
+**Queue evidence (2026-10-07):** Current source still places five actions behind the More menu (`FuseSourceCard.svelte:624-629`) and previews relationship drafts before Apply (`FuseRelationshipComposer.svelte:42-46`). The approved clauses below say otherwise, and no superseding product decision is recorded. Resolve those two decisions before selecting code work; the seven-viewport sweep remains afterward.
 
 **Status:** Implemented, with two acceptance clauses UNRESOLVED. Stays in
 `active/` — see the open items at the end of this header. Corrected 2026-09-13

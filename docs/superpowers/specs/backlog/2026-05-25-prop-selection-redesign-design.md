@@ -2,12 +2,14 @@
 status: backlog
 value: 2
 effort: S
-remaining: 'Visual half shipped verbatim; popover half abandoned for a flat per-variant grid. Vestigial badge code is dead'
-depends_on: ""
-plan_path: ""
+remaining: Inspect the current per-variant prop picker and vestigial badge code to determine whether the popover half is superseded.
+depends_on: ''
+plan_path: ''
 tags: []
-last_triaged: 2026-08-02
+last_triaged: '2026-10-07'
+work_state: unverified
 ---
+
 # Prop Selection Redesign — Design Spec
 
 > **DRIFT WARNING — 2026-08-02.** Visual half shipped verbatim; popover half abandoned for a flat per-variant grid. Vestigial badge code is dead

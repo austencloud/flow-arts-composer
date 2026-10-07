@@ -1,13 +1,15 @@
 ---
-status: active
+status: backlog
 value: 2
 effort: M
-remaining: 'Shelved by Austen. No merchant/product-image pipeline script exists; pickup checklist fully unchecked.'
-depends_on: ""
-plan_path: ""
+remaining: Wait for real merchant product images and Austen's pickup; then decide renders versus photos and verify Sharp before baking.
+depends_on: 'external: real merchant product images and Austen pickup'
+plan_path: ''
 tags: []
-last_triaged: 2026-08-02
+last_triaged: '2026-10-07'
+work_state: blocked
 ---
+
 # Merchant Product Image Pipeline (Sharp)
 
 **Date:** 2026-07-17

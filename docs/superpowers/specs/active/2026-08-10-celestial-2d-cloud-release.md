@@ -1,6 +1,19 @@
+---
+status: active
+value: null
+effort: null
+remaining: "Verify published celestial package contents, cloud layer test, and release evidence against current tag before archival."
+depends_on: ""
+plan_path: ""
+tags: []
+last_triaged: 2026-10-07
+work_state: verification
+---
 # Celestial 2D Cloud Release
 
-**Status:** Shipped  
+**Queue evidence (2026-10-07):** The historical release claim needs current package contents and release-evidence verification before archival.
+
+**Original status (historical):** Shipped
 **Approved:** 2026-08-10
 **Shipped:** 2026-08-10
 

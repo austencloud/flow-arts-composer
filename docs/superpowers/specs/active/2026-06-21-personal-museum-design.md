@@ -2,13 +2,16 @@
 status: active
 value: 3
 effort: S
-remaining: 'Fully built AND fully wired (module-definitions, ModuleRenderer lazy map, KEEP_ALIVE). Ledger claim of unreachable is refuted. Real gap: PRODUCTION_MODULES["personal-museum"]=false pending Tasks 11/12, then flip the flag.'
+remaining: 'Verify the mounted Task 11 assignment panel and Task 12 in-world picker locally. Then resolve the stale Tasks 11/12 comment; promote PRODUCTION_MODULES["personal-museum"] from false only through the applicable production-enable approval/release gate after acceptance proof.'
 depends_on: ""
 plan_path: ""
 tags: []
-last_triaged: 2026-08-02
+last_triaged: 2026-10-07
+work_state: verification
 ---
 # Personal Museum — Design Document
+
+**Queue evidence (2026-10-07):** `PersonalMuseumModule.svelte` imports and mounts both Task 11 and Task 12 components (lines 30-31, 219-227), but `environment-features.ts:146` still disables the production module and calls them pending. This resolves the recorded implementation prerequisite, not the need for runtime acceptance proof or a production-flag decision.
 
 > **DRIFT WARNING — 2026-08-02.** Entire data/service/state/component layer **and
 > both hard rendering seams** built and tested (22 files under
@@ -21,17 +24,19 @@ last_triaged: 2026-08-02
 > `ModuleRenderer.svelte:77` `KEEP_ALIVE_MODULES`. It is reachable in
 > development today.
 >
-> The real remaining gap is a deliberate production gate:
+> The production gate remains:
 > `environment-features.ts` → `PRODUCTION_MODULES["personal-museum"] = false`,
-> commented *"WIP, Tasks 11/12 pending"*. So this is **not** a one-line
-> closeout — Tasks 11 and 12 are the actual work, then flip the flag.
+> with a stale *"WIP, Tasks 11/12 pending"* comment. Current source mounts
+> both task components, so their runtime behavior needs verification before
+> deciding whether to enable production access.
 >
-> Status lines below predate this check and are left intact deliberately.
-> This banner is the current state. Source: `docs/superpowers/handoffs/2026-07-25-spec-triage-ledger.md`.
+> Status lines below describe the original design approval. The 2026-07-25
+> triage ledger is historical; the dated queue evidence above is current.
 
 
 **Date:** 2026-06-21
-**Status:** Approved (design)
+**Status:** Implemented; local runtime verification and production-enable decision remain
+**Original design status:** Approved
 **Supersedes:** `docs/plans/archived/2026-02-20-web-museum-prototype-{design,impl}.md`
 (the Realm-terrain approach; Realm dissolved, the tile-room museum shipped instead)
 
