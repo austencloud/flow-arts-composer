@@ -331,6 +331,22 @@ from the open editor. `domain/post-project-ops.ts` maps named CLI edits
 edits. `scripts/post-project.mjs` is the local CLI. See
 `docs/development/post-studio-manifest-bridge.md` for the command contract.
 
+Feature videos, such as the 1.0 promo, are Post Studio projects kept as
+folders on this computer, apart from any sequence's own post.
+`domain/feature-video.ts` owns slugs, the file format and media URLs.
+`server/feature-video-store.ts` owns the folders, revisions, history and
+copies; `server/feature-video-media.ts` serves media with byte ranges; the
+routes live under `src/routes/api/dev/feature-videos/`, guarded like every dev
+route by `server/dev-loopback.ts`. In the browser,
+`services/feature-video-client.ts` keeps an open feature video in step with
+its folder through the editor's storage port, `services/post-editor-store.ts`,
+and `features/post/state/post-module-state.svelte.ts` opens one with
+`openFeature`. The CLI reaches them with `--feature`, and
+`scripts/feature-video/media-import.mjs` probes and converts takes. When disk
+and the editor disagree, disk wins and Undo brings back the editor's version.
+Searches: feature video, promo video, project folder, media route, byte range,
+revision, disk wins.
+
 Post Studio keyframes live on the item: `post-project-keyframes.ts` owns
 content time, sampling, the auto-key rule, easing presets and every keyframe
 edit, and the compiler turns them into the preset's `motion` and

@@ -65,8 +65,8 @@ function storage(): Storage | null {
   }
 }
 
-function storageKey(sequenceId: string): string {
-  return `${PREFIX}${sequenceId}`;
+function storageKey(prefix: string, sequenceId: string): string {
+  return `${prefix}${sequenceId}`;
 }
 
 /**
@@ -86,8 +86,16 @@ function forget(store: Storage, key: string): void {
   }
 }
 
-/** Writes the history; when the tab is full, other posts' histories go first. */
-function write(store: Storage, key: string, text: string): void {
+/**
+ * Writes the history; when the tab is full, other posts' histories under
+ * the same prefix go first. Histories under another prefix are left alone.
+ */
+function write(
+  store: Storage,
+  prefix: string,
+  key: string,
+  text: string
+): void {
   try {
     store.setItem(key, text);
     return;
@@ -98,7 +106,7 @@ function write(store: Storage, key: string, text: string): void {
     const others: string[] = [];
     for (let index = 0; index < store.length; index += 1) {
       const other = store.key(index);
-      if (other?.startsWith(PREFIX) && other !== key) others.push(other);
+      if (other?.startsWith(prefix) && other !== key) others.push(other);
     }
     for (const other of others) store.removeItem(other);
     store.setItem(key, text);
@@ -108,10 +116,10 @@ function write(store: Storage, key: string, text: string): void {
   }
 }
 
-export function savePostEditorHistory(history: PostEditorHistory): void {
+function saveHistoryAt(prefix: string, history: PostEditorHistory): void {
   const store = storage();
   if (!store) return;
-  const key = storageKey(history.head.sequenceId);
+  const key = storageKey(prefix, history.head.sequenceId);
   try {
     const past = history.past
       .slice(-PERSISTED_DEPTH)
@@ -142,6 +150,7 @@ export function savePostEditorHistory(history: PostEditorHistory): void {
     // The steps are already JSON; splice them in rather than encode twice.
     write(
       store,
+      prefix,
       key,
       `${envelope.slice(0, -1)},"past":[${past.join(",")}],"future":[${future.join(",")}]}`
     );
@@ -218,16 +227,13 @@ function parseHistory(
   return { ...(headEffect ? { headEffect } : {}), past, future };
 }
 
-/**
- * The history kept for this post, when it leads up to exactly this save.
- * Any other history for the post is stale and is cleared.
- */
-export function loadPostEditorHistory(
+function loadHistoryAt(
+  prefix: string,
   head: PostProject
 ): RestoredPostEditorHistory | null {
   const store = storage();
   if (!store) return null;
-  const key = storageKey(head.sequenceId);
+  const key = storageKey(prefix, head.sequenceId);
   try {
     const raw = store.getItem(key);
     if (!raw) return null;
@@ -238,4 +244,33 @@ export function loadPostEditorHistory(
     forget(store, key);
     return null;
   }
+}
+
+export function savePostEditorHistory(history: PostEditorHistory): void {
+  saveHistoryAt(PREFIX, history);
+}
+
+/**
+ * The history kept for this post, when it leads up to exactly this save.
+ * Any other history for the post is stale and is cleared.
+ */
+export function loadPostEditorHistory(
+  head: PostProject
+): RestoredPostEditorHistory | null {
+  return loadHistoryAt(PREFIX, head);
+}
+
+/**
+ * The same history kept under another key prefix, so a post kept somewhere
+ * else, such as a feature video on disk, never shares or evicts the
+ * ordinary post's history.
+ */
+export function createPostEditorHistoryStorage(prefix: string): {
+  save(history: PostEditorHistory): void;
+  load(head: PostProject): RestoredPostEditorHistory | null;
+} {
+  return {
+    save: (history) => saveHistoryAt(prefix, history),
+    load: (head) => loadHistoryAt(prefix, head),
+  };
 }

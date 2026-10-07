@@ -1,6 +1,12 @@
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import type { FeatureVideoSummary } from "$lib/shared/media-composition/domain/feature-video";
 import type { PostProject } from "$lib/shared/media-composition/domain/post-project";
-import { loadSyncedPostDraft, listSyncedPostProjects, resolveSyncedPostSequence } from "../services/post-account-projects";
+import type { FeatureVideoSync } from "$lib/shared/media-composition/services/feature-video-client";
+import {
+  loadSyncedPostDraft,
+  listSyncedPostProjects,
+  resolveSyncedPostSequence,
+} from "../services/post-account-projects";
 import {
   lastSelectedPostSequenceId,
   selectPostSequence,
@@ -11,7 +17,23 @@ export interface PostModuleServices {
   list: typeof listSyncedPostProjects;
   resolve: typeof resolveSyncedPostSequence;
   loadDraft: typeof loadSyncedPostDraft;
+  /**
+   * Feature videos are folders the dev server reads, so only a dev build
+   * passes these two. Without them the page lists none and opens none.
+   */
+  listFeatures?: () => Promise<{
+    projects: FeatureVideoSummary[];
+    unreadable: string[];
+  }>;
+  /** Reads one feature video and binds it for the editor. */
+  loadFeature?: (slug: string) => Promise<FeatureVideoSync>;
 }
+
+const FEATURE_SELECTION = "feature:";
+
+/** A feature video's selection id, apart from every sequence id. */
+export const featureSelectionId = (slug: string) =>
+  `${FEATURE_SELECTION}${slug}`;
 
 export function createPostModuleState(services: PostModuleServices) {
   let projects = $state<PostProjectChoice[]>([]);
@@ -24,10 +46,17 @@ export function createPostModuleState(services: PostModuleServices) {
   let diskAvailable = $state(false);
   let projectError = $state<string | null>(null);
   let showingProjects = $state(true);
+  let features = $state<FeatureVideoSummary[]>([]);
+  let unreadableFeatures = $state<string[]>([]);
+  let featureError = $state<string | null>(null);
+  // Raw: the editor needs the sync's getters and closures as they are, not
+  // through a deep proxy.
+  let feature = $state.raw<FeatureVideoSync | null>(null);
   let request = 0;
   let catalogRequest = 0;
+  let featureRequest = 0;
 
-  async function refreshProjects(): Promise<void> {
+  async function refreshPosts(): Promise<void> {
     const current = ++catalogRequest;
     loadingCatalog = true;
     try {
@@ -43,6 +72,31 @@ export function createPostModuleState(services: PostModuleServices) {
     }
   }
 
+  async function refreshFeatures(): Promise<void> {
+    const listFeatures = services.listFeatures;
+    if (!listFeatures) return;
+    const current = ++featureRequest;
+    try {
+      const loaded = await listFeatures();
+      if (current !== featureRequest) return;
+      features = loaded.projects;
+      unreadableFeatures = loaded.unreadable;
+      featureError = null;
+    } catch (cause) {
+      if (current !== featureRequest) return;
+      features = [];
+      unreadableFeatures = [];
+      featureError =
+        cause instanceof Error
+          ? cause.message
+          : "Feature videos could not be listed.";
+    }
+  }
+
+  async function refreshProjects(): Promise<void> {
+    await Promise.all([refreshPosts(), refreshFeatures()]);
+  }
+
   async function open(sequenceId: string): Promise<void> {
     if (sequenceId === selectedId && sequence) {
       showingProjects = false;
@@ -56,6 +110,7 @@ export function createPostModuleState(services: PostModuleServices) {
     projectError = null;
     sequence = null;
     draft = null;
+    feature = null;
     try {
       const resolved = await services.resolve(sequenceId);
       if (current !== request) return;
@@ -81,6 +136,60 @@ export function createPostModuleState(services: PostModuleServices) {
     }
   }
 
+  /**
+   * Opens a feature video: its own post on its sequence, read from its
+   * folder. The sequence's ordinary post is never loaded, and the choice is
+   * not remembered, so /post on its own still opens the last ordinary post.
+   */
+  async function openFeature(slug: string): Promise<void> {
+    const id = featureSelectionId(slug);
+    if (id === selectedId && sequence && feature) {
+      showingProjects = false;
+      return;
+    }
+    const current = ++request;
+    selectedId = id;
+    showingProjects = false;
+    loadingProject = true;
+    projectError = null;
+    sequence = null;
+    draft = null;
+    feature = null;
+    try {
+      if (!services.loadFeature) {
+        projectError = "Feature videos open only on a dev server.";
+        return;
+      }
+      const loaded = await services.loadFeature(slug);
+      if (current !== request) return;
+      const sequenceId = loaded.initialProject.sequenceId;
+      const resolved = await services.resolve(sequenceId);
+      if (current !== request) return;
+      if (!resolved) {
+        projectError = `The sequence for this feature video (${sequenceId}) could not be found.`;
+        return;
+      }
+      feature = loaded;
+      sequence = resolved;
+    } catch (cause) {
+      if (current === request)
+        projectError =
+          cause instanceof Error
+            ? cause.message
+            : "This feature video could not be opened.";
+    } finally {
+      if (current === request) loadingProject = false;
+    }
+  }
+
+  /** Tries the last failed open again, a post or a feature video. */
+  function retry(): Promise<void> {
+    if (!selectedId) return Promise.resolve();
+    return selectedId.startsWith(FEATURE_SELECTION)
+      ? openFeature(selectedId.slice(FEATURE_SELECTION.length))
+      : open(selectedId);
+  }
+
   function showProjects(): void {
     ++request;
     showingProjects = true;
@@ -92,9 +201,13 @@ export function createPostModuleState(services: PostModuleServices) {
     ++request;
     projects = [];
     catalogError = null;
+    features = [];
+    unreadableFeatures = [];
+    featureError = null;
     selectedId = null;
     sequence = null;
     draft = null;
+    feature = null;
     showingProjects = true;
     void refreshProjects();
   }
@@ -130,8 +243,23 @@ export function createPostModuleState(services: PostModuleServices) {
     get showingProjects() {
       return showingProjects;
     },
+    get features() {
+      return features;
+    },
+    get unreadableFeatures() {
+      return unreadableFeatures;
+    },
+    get featureError() {
+      return featureError;
+    },
+    /** The open feature video, or null for an ordinary post. */
+    get feature() {
+      return feature;
+    },
     refreshProjects,
     open,
+    openFeature,
+    retry,
     showProjects,
     resetForAccount,
     lastSelectedId: lastSelectedPostSequenceId,

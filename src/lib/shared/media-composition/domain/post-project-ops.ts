@@ -6,11 +6,14 @@ import {
   type PostProject,
 } from "$lib/shared/media-composition/domain/post-project";
 import {
+  addTake,
   addTitlesItem,
   addTunnelHook,
+  appendVideoClip,
   deleteItem,
   findTunnelHook,
   lineUpTunnelHook,
+  removeTake,
   removeTunnelHook,
   setProjectBackground,
   setProjectCanvas,
@@ -21,6 +24,11 @@ import {
   type EditContext,
   type PostItemPatch,
 } from "$lib/shared/media-composition/domain/post-project-edits";
+import { isFeatureVideoMediaUrl } from "$lib/shared/media-composition/domain/feature-video";
+import {
+  PostTakeSchema,
+  takeFileKey,
+} from "$lib/shared/media-composition/domain/post-plan";
 import { EASING_PRESETS } from "$lib/shared/media-composition/domain/post-project-keyframes";
 import {
   TunnelHookSchema,
@@ -56,7 +64,17 @@ export type PostProjectOp =
   | { op: "trim"; item: string; edge: "start" | "end"; seconds: number }
   | { op: "delete"; item: string }
   | { op: "canvas"; canvas: string }
-  | { op: "background"; background: string };
+  | { op: "background"; background: string }
+  | {
+      op: "add-take";
+      /** A feature video media URL, as featureVideoMediaUrl makes it. */
+      url: string;
+      durationSeconds: number;
+      label?: string;
+      /** Also put the whole take on the end of the main track. */
+      append?: boolean;
+    }
+  | { op: "remove-take"; take: string };
 
 /** The curve names the hook's speed panel offers, plus `default` for the original ease. */
 export const POST_OP_SPEED_NAMES = [
@@ -98,6 +116,18 @@ function itemIds(project: PostProject, selector: string): string[] {
   if (!all.some((item) => item.id === selector))
     throw new Error(`No item "${selector}" in this post.`);
   return [selector];
+}
+
+/** A take's default name: its file name without the extension. */
+function mediaLabel(url: string): string {
+  const last = url.split("/").pop() ?? "";
+  let name = last;
+  try {
+    name = decodeURIComponent(last);
+  } catch {
+    // A name that does not decode stays as written.
+  }
+  return name.replace(/\.[^.]+$/, "").slice(0, 120);
 }
 
 function applyOp(
@@ -240,6 +270,43 @@ function applyOp(
           `background must be one of ${POST_BACKGROUNDS.join(", ")}.`
         );
       return setProjectBackground(project, background, ctx);
+    }
+    case "add-take": {
+      if (!isFeatureVideoMediaUrl(op.url))
+        throw new Error(
+          "A take's url must be a feature video media url (/api/dev/feature-videos/<slug>/media/...)."
+        );
+      if (
+        typeof op.durationSeconds !== "number" ||
+        !Number.isFinite(op.durationSeconds) ||
+        op.durationSeconds <= 0
+      )
+        throw new Error("durationSeconds must be a positive number.");
+      const ref = { kind: "linked" as const, url: op.url };
+      const takeKey = takeFileKey(ref);
+      const existing = project.takes.find((take) => take.takeKey === takeKey);
+      const label = typeof op.label === "string" ? op.label.trim() : "";
+      const parsed = PostTakeSchema.safeParse({
+        id: existing?.id ?? `take-${project.takes.length + 1}`,
+        label: label || existing?.label || mediaLabel(op.url),
+        ref,
+        takeKey,
+        durationSeconds: op.durationSeconds,
+      });
+      if (!parsed.success)
+        throw new Error("A take label is 1 to 120 characters.");
+      const next = addTake(project, parsed.data, ctx);
+      if (!op.append) return next;
+      const added = next.takes.find((take) => take.takeKey === takeKey);
+      const placed = added ? appendVideoClip(next, added.id, ctx) : null;
+      if (!placed)
+        throw new Error("The take could not be placed on the timeline.");
+      return placed.project;
+    }
+    case "remove-take": {
+      if (!project.takes.some((take) => take.id === op.take))
+        throw new Error(`No take "${op.take}" in this post.`);
+      return removeTake(project, op.take, ctx);
     }
     default:
       throw new Error(`Unknown edit "${(op as { op?: unknown }).op}".`);

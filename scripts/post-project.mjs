@@ -2,6 +2,8 @@
 import fs from "node:fs/promises";
 import http from "node:http";
 import https from "node:https";
+import path from "node:path";
+import { importTake } from "./feature-video/media-import.mjs";
 
 const [command, ...args] = process.argv.slice(2);
 const option = (name) => {
@@ -16,8 +18,21 @@ if (
   throw new Error("--url must be a loopback HTTP(S) address.");
 }
 
-async function request(method, query = {}, body) {
-  const url = new URL("/api/dev/post-project", base);
+const BRIDGE = "/api/dev/post-project";
+const FEATURE_API = "/api/dev/feature-videos";
+/** A feature video's route: its file, or its `ops`, `duplicate` or `media`. */
+const featureRoute = (slug, ...rest) =>
+  [FEATURE_API, encodeURIComponent(slug), ...rest].join("/");
+/** Where the media route serves a project file; matches featureVideoMediaUrl. */
+const featureMediaUrl = (slug, relativePath) =>
+  `${featureRoute(slug, "media")}/${relativePath
+    .split("/")
+    .filter(Boolean)
+    .map(encodeURIComponent)
+    .join("/")}`;
+
+async function request(method, query = {}, body, route = BRIDGE) {
+  const url = new URL(route, base);
   for (const [key, value] of Object.entries(query))
     if (value !== undefined) url.searchParams.set(key, value);
   const encoded = body === undefined ? undefined : JSON.stringify(body);
@@ -47,18 +62,29 @@ async function request(method, query = {}, body) {
           text += chunk;
         });
         res.on("end", () => {
+          const status = res.statusCode ?? 500;
+          let value;
           try {
-            const value = JSON.parse(text);
-            if ((res.statusCode ?? 500) >= 400)
-              reject(
+            value = JSON.parse(text);
+          } catch {
+            reject(
+              Object.assign(
                 new Error(
-                  value.message ?? value.error ?? `HTTP ${res.statusCode}`
-                )
-              );
-            else resolve(value);
-          } catch (cause) {
-            reject(cause);
+                  `${url.pathname} answered ${status} without JSON. Is this the dev server, and does it have this route?`
+                ),
+                { status }
+              )
+            );
+            return;
           }
+          if (status >= 400)
+            reject(
+              Object.assign(
+                new Error(value.message ?? value.error ?? `HTTP ${status}`),
+                { status }
+              )
+            );
+          else resolve(value);
         });
       }
     );
@@ -119,9 +145,16 @@ const EDIT_COMMANDS = {
     op: "background",
     background: positional(0, "dark or blur"),
   }),
+  "remove-take": () => ({ op: "remove-take", take: required("take") }),
 };
 
-const BOOLEAN_FLAGS = ["--mirror", "--no-wait", "--json"];
+const BOOLEAN_FLAGS = [
+  "--mirror",
+  "--no-wait",
+  "--json",
+  "--append",
+  "--share-media",
+];
 function flag(name) {
   return args.includes(`--${name}`);
 }
@@ -154,20 +187,33 @@ function positional(index, what) {
   return words[index];
 }
 
-/** The editor to talk to: --session, else --sequence, else the only open one. */
+/** An ordinary post's editor: --session, else --sequence, else the only one open. */
 async function resolveSession() {
   if (option("session")) return option("session");
   const { sessions } = await request("GET");
   const wanted = option("sequence");
-  const matches = wanted
-    ? sessions.filter((session) => session.sequenceId === wanted)
-    : sessions;
+  // A feature video's editor takes edits only through --feature.
+  const matches = sessions.filter(
+    (session) =>
+      !session.featureSlug && (!wanted || session.sequenceId === wanted)
+  );
   if (matches.length === 1) return matches[0].id;
   throw new Error(
     matches.length === 0
       ? "No open Post Studio editor matches. Open the post in the browser first."
       : `${matches.length} editors are open; pass --session ID or --sequence ID (see the list command).`
   );
+}
+
+/** The one open editor holding this feature video, or null when none does. */
+async function featureSession(slug) {
+  const { sessions } = await request("GET");
+  const holding = sessions.filter((session) => session.featureSlug === slug);
+  if (holding.length > 1)
+    throw new Error(
+      `${holding.length} editors have ${slug} open. Close all but one, then try again.`
+    );
+  return holding[0]?.id ?? null;
 }
 
 function summarize(snapshot) {
@@ -181,8 +227,7 @@ function summarize(snapshot) {
   return rows.join("\n");
 }
 
-async function sendOps(ops) {
-  const sessionId = await resolveSession();
+async function sendToEditor(sessionId, ops) {
   const queued = await request("POST", {}, { kind: "ops", sessionId, ops });
   if (queued.status === "unchanged") return { status: "unchanged" };
   if (flag("no-wait")) return queued;
@@ -192,19 +237,61 @@ async function sendOps(ops) {
       sessionId,
       commandId: queued.commandId,
     });
-    if (status.status !== "pending") return status;
+    if (status.status !== "pending") {
+      // A refused edit fails the command, so a script that checks the exit
+      // code stops there.
+      if (status.status === "failed") process.exitCode = 1;
+      return status;
+    }
   }
-  return { ...queued, note: "The editor has not applied it yet." };
+  process.exitCode = 1;
+  return {
+    ...queued,
+    note: `The editor has not applied it yet. Check with: node scripts/post-project.mjs status --session ${sessionId} --command ${queued.commandId}`,
+  };
+}
+
+/**
+ * Sends edits. With --feature they go to the editor that has the feature
+ * video open, as undo steps there, or to the file on disk when none does.
+ */
+async function sendOps(ops) {
+  const feature = option("feature");
+  if (!feature || option("session"))
+    return sendToEditor(await resolveSession(), ops);
+  const held = await featureSession(feature);
+  if (held) return sendToEditor(held, ops);
+  try {
+    return await request("POST", {}, { ops }, featureRoute(feature, "ops"));
+  } catch (cause) {
+    // An editor opened it a moment ago: the edit goes there instead.
+    if (cause?.status !== 409) throw cause;
+    const opened = await featureSession(feature);
+    if (!opened) throw cause;
+    return sendToEditor(opened, ops);
+  }
+}
+
+/** The post as it is now: in its editor, else, for a feature video, on disk. */
+async function currentSnapshot() {
+  const feature = option("feature");
+  if (!feature || option("session"))
+    return (await request("GET", { sessionId: await resolveSession() }))
+      .snapshot;
+  const held = await featureSession(feature);
+  if (held) return (await request("GET", { sessionId: held })).snapshot;
+  return (await request("GET", {}, undefined, featureRoute(feature))).file
+    .project;
 }
 
 try {
   let result;
   if (command === "list") result = await request("GET");
   else if (command === "show") {
-    const session = await request("GET", { sessionId: await resolveSession() });
-    if (flag("json")) result = session.snapshot;
+    const snapshot = await currentSnapshot();
+    if (flag("json")) result = snapshot;
     else {
-      process.stdout.write(summarize(session.snapshot) + "\n");
+      process.stdout.write(summarize(snapshot) + "\n");
       result = undefined;
     }
   } else if (command === "ops") {
@@ -212,6 +299,57 @@ try {
     result = await sendOps(JSON.parse(await fs.readFile(file, "utf8")));
   } else if (command in EDIT_COMMANDS) {
     result = await sendOps([EDIT_COMMANDS[command]()]);
+  } else if (command === "features") {
+    result = await request("GET", {}, undefined, FEATURE_API);
+  } else if (command === "create") {
+    const slug = positional(0, "a name, such as promo-1-0");
+    result = await request(
+      "POST",
+      {},
+      {
+        slug,
+        title: option("title") ?? slug,
+        sequenceId: required("sequence"),
+        ...(option("canvas") ? { canvas: option("canvas") } : {}),
+      },
+      FEATURE_API
+    );
+  } else if (command === "add-take") {
+    const feature = required("feature");
+    const file = path.resolve(positional(0, "a video file"));
+    if (!/\.(mp4|mov)$/i.test(file))
+      throw new Error("add-take takes an .mp4 or .mov file.");
+    const { folder } = await request(
+      "GET",
+      {},
+      undefined,
+      featureRoute(feature)
+    );
+    const take = await importTake(file, path.join(folder, "media", "footage"));
+    result = {
+      media: take.relativePath,
+      converted: take.transcoded,
+      edit: await sendOps([
+        {
+          op: "add-take",
+          url: featureMediaUrl(feature, take.relativePath),
+          durationSeconds: take.durationSeconds,
+          ...(option("label") ? { label: option("label") } : {}),
+          ...(flag("append") ? { append: true } : {}),
+        },
+      ]),
+    };
+  } else if (command === "duplicate") {
+    result = await request(
+      "POST",
+      {},
+      {
+        slug: positional(1, "a name for the copy"),
+        ...(option("title") ? { title: option("title") } : {}),
+        ...(flag("share-media") ? { shareMedia: true } : {}),
+      },
+      featureRoute(positional(0, "the feature video to copy"), "duplicate")
+    );
   } else if (command === "read") {
     if (!option("session")) throw new Error("read requires --session.");
     result = await request("GET", { sessionId: option("session") });
@@ -249,7 +387,7 @@ try {
     });
   } else
     throw new Error(
-      `Usage: post-project.mjs <command> [--url loopback-url] [--session ID | --sequence ID]
+      `Usage: post-project.mjs <command> [--url loopback-url] [--session ID | --sequence ID | --feature SLUG]
   list                         open editors
   show [--json]                items of the open post
   add-hook [--seconds 5] [--fold 8] [--mirror] [--speed ease-out]
@@ -265,6 +403,13 @@ try {
   canvas <ratio>   background <dark|blur>
   ops --file ops.json          a batch applied in one step
   read|apply|status            whole-manifest bridge (--session, --base-revision, --base-fingerprint, --file, --command)
+Feature videos, folders on the dev server's computer:
+  features                     list them
+  create <slug> --sequence ID [--title "Title"] [--canvas 9:16]
+  add-take <clip.mp4|clip.mov> --feature SLUG [--label "Name"] [--append]   copies it into media/footage; HEVC, HDR and .mov become H.264 MP4
+  remove-take --take ID
+  duplicate <slug> <new-slug> [--title "Title"] [--share-media]
+  With --feature, show and every edit use the editor that has it open, else the file on disk.
   Add --no-wait to return before the editor confirms; --out file to write output.`
     );
   if (result !== undefined) {

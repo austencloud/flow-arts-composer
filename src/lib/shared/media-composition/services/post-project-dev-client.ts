@@ -2,15 +2,25 @@ import type { PostProject } from "$lib/shared/media-composition/domain/post-proj
 
 const ENDPOINT = "/api/dev/post-project";
 
+export interface PostProjectDevBridgeOptions {
+  /** The feature video this editor has open, so the CLI edits through it. */
+  featureSlug?: string;
+  /** Called after each heartbeat with that project's revision on disk. */
+  onFeatureRevision?: (revision: number) => void;
+}
+
 /** Local editor handshake. The server owns queueing; editor state owns applying. */
-export function startPostProjectDevBridge(editor: {
-  readonly snapshot: PostProject;
-  readonly saveRevision: number;
-  replaceManifestFromDev(
-    project: unknown,
-    base: PostProject
-  ): { ok: boolean; error?: string };
-}): () => void {
+export function startPostProjectDevBridge(
+  editor: {
+    readonly snapshot: PostProject;
+    readonly saveRevision: number;
+    replaceManifestFromDev(
+      project: unknown,
+      base: PostProject
+    ): { ok: boolean; error?: string };
+  },
+  options: PostProjectDevBridgeOptions = {}
+): () => void {
   const sessionId = crypto.randomUUID();
   const abort = new AbortController();
   const seen = new Set<string>();
@@ -34,6 +44,7 @@ export function startPostProjectDevBridge(editor: {
           kind: "heartbeat",
           sessionId,
           revision: editor.saveRevision,
+          ...(options.featureSlug ? { featureSlug: options.featureSlug } : {}),
           ...(includeSnapshot ? { snapshot } : {}),
           ...(result ? { result } : {}),
         }),
@@ -47,6 +58,7 @@ export function startPostProjectDevBridge(editor: {
           baseSnapshot: PostProject;
           project: PostProject;
         } | null;
+        featureRevision?: number | null;
       };
       if (!data || !("command" in data))
         throw new Error("Invalid bridge response");
@@ -78,6 +90,8 @@ export function startPostProjectDevBridge(editor: {
             : (applied.error ?? "Editor rejected the edit."),
         };
       }
+      if (typeof data.featureRevision === "number")
+        options.onFeatureRevision?.(data.featureRevision);
     } catch {
       // A stopped or temporarily unavailable dev server must not affect editing.
       sentSnapshot = "";
