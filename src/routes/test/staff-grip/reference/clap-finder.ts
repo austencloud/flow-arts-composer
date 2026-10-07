@@ -28,7 +28,7 @@ const SETTLE_SECONDS = 0.05;
 export function findClapSeconds(
   samples: Float32Array,
   sampleRate: number,
-  options: ClapSearchOptions = {},
+  options: ClapSearchOptions = {}
 ): number | null {
   const searchSeconds = options.searchSeconds ?? 20;
   const minJump = options.minJump ?? 20;
@@ -49,7 +49,7 @@ export function findClapSeconds(
 
   const backgroundHops = Math.max(
     2,
-    Math.round(BACKGROUND_SECONDS / HOP_SECONDS),
+    Math.round(BACKGROUND_SECONDS / HOP_SECONDS)
   );
   const settleHops = Math.max(1, Math.round(SETTLE_SECONDS / HOP_SECONDS));
   const jumpAt = (index: number): number => {

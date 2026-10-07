@@ -9,7 +9,7 @@ export interface DecodedOpening {
 
 export async function decodeOpeningAudio(
   file: Blob,
-  seconds = 20,
+  seconds = 20
 ): Promise<DecodedOpening | null> {
   if (typeof AudioContext === "undefined") return null;
   const context = new AudioContext();
@@ -17,7 +17,7 @@ export async function decodeOpeningAudio(
     const buffer = await context.decodeAudioData(await file.arrayBuffer());
     const length = Math.min(
       buffer.length,
-      Math.round(seconds * buffer.sampleRate),
+      Math.round(seconds * buffer.sampleRate)
     );
     const samples = new Float32Array(length);
     for (let channel = 0; channel < buffer.numberOfChannels; channel += 1) {

@@ -4,7 +4,7 @@ const body = (
   id: string,
   label: string,
   azimuthDeg: number,
-  elevationDeg = 6,
+  elevationDeg = 6
 ): InspectionView => ({
   id,
   label,
@@ -58,11 +58,11 @@ function isVec3(value: unknown): value is Vec3 {
 }
 
 export function loadReferenceCamera(
-  videoKey: string,
+  videoKey: string
 ): SavedReferenceCamera | null {
   try {
     const raw = JSON.parse(
-      localStorage.getItem(PREFIX + videoKey) ?? "null",
+      localStorage.getItem(PREFIX + videoKey) ?? "null"
     ) as unknown;
     if (!raw || typeof raw !== "object") return null;
     const { presetId, shot } = raw as Record<string, unknown>;
@@ -82,7 +82,7 @@ export function loadReferenceCamera(
 
 export function saveReferenceCamera(
   videoKey: string,
-  camera: SavedReferenceCamera,
+  camera: SavedReferenceCamera
 ): void {
   try {
     localStorage.setItem(PREFIX + videoKey, JSON.stringify(camera));

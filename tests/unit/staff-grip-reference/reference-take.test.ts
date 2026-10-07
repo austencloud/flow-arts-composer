@@ -53,7 +53,7 @@ describe("timingForTake", () => {
     const saved = mapped(9);
     expect(timingForTake(post, post.takes[0]!, () => saved)?.updatedAt).toBe(9);
     expect(
-      timingForTake(post, post.takes[0]!, () => mapped(3))?.updatedAt,
+      timingForTake(post, post.takes[0]!, () => mapped(3))?.updatedAt
     ).toBe(5);
   });
 
@@ -69,7 +69,7 @@ describe("timingForTake", () => {
 describe("timedTakeForFile", () => {
   it("finds the take whose file matches and whose timing is mapped", () => {
     const found = timedTakeForFile(project(), FILE, MOVE_BEATS, () =>
-      mapped(5),
+      mapped(5)
     );
     expect(found?.take.id).toBe("take-1");
   });
@@ -77,14 +77,14 @@ describe("timedTakeForFile", () => {
   it("returns null for a file the post does not hold", () => {
     expect(
       timedTakeForFile(project(), { ...FILE, size: 999 }, MOVE_BEATS, () =>
-        mapped(5),
-      ),
+        mapped(5)
+      )
     ).toBeNull();
   });
 
   it("returns null when the take has no timing yet", () => {
     expect(
-      timedTakeForFile(project(), FILE, MOVE_BEATS, () => null),
+      timedTakeForFile(project(), FILE, MOVE_BEATS, () => null)
     ).toBeNull();
   });
 });

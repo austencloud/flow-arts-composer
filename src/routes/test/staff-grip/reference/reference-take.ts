@@ -20,7 +20,7 @@ export interface PickedFileIdentity {
 
 export type LoadSavedTiming = (
   sequenceId: string,
-  takeKey: string,
+  takeKey: string
 ) => TakeTiming | null;
 
 export interface TimedTake {
@@ -30,14 +30,14 @@ export interface TimedTake {
 
 function takesForFile(
   project: PostProject,
-  file: PickedFileIdentity,
+  file: PickedFileIdentity
 ): PostTake[] {
   return project.takes.filter(
     (take) =>
       take.ref.kind === "local" &&
       take.ref.name === file.name &&
       take.ref.size === file.size &&
-      take.ref.lastModified === file.lastModified,
+      take.ref.lastModified === file.lastModified
   );
 }
 
@@ -45,7 +45,7 @@ function takesForFile(
 export function timingForTake(
   project: PostProject,
   take: PostTake,
-  loadSaved: LoadSavedTiming,
+  loadSaved: LoadSavedTiming
 ): TakeTiming | null {
   const saved = loadSaved(project.sequenceId, take.takeKey);
   const embedded = project.timings?.[take.id];
@@ -66,7 +66,7 @@ export function timedTakeForFile(
   project: PostProject,
   file: PickedFileIdentity,
   moveBeats: readonly number[],
-  loadSaved: LoadSavedTiming,
+  loadSaved: LoadSavedTiming
 ): TimedTake | null {
   for (const take of takesForFile(project, file)) {
     const timing = timingForTake(project, take, loadSaved);

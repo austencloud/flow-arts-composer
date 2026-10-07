@@ -23,7 +23,7 @@ export const LANDED_PHASE_MARGIN = 0.001;
 export function labPhaseAtVideoSeconds(
   resolved: ResolvedTakeTiming,
   moveBeats: readonly number[],
-  seconds: number,
+  seconds: number
 ): number | null {
   const sample = takeSampleAt(resolved, seconds);
   if (!sample) return null;
@@ -40,7 +40,7 @@ const SAME_MOMENT_SECONDS = 1 / 240;
 export function adjacentLandingSeconds(
   resolved: ResolvedTakeTiming,
   seconds: number,
-  direction: 1 | -1,
+  direction: 1 | -1
 ): number | null {
   const times = resolved.sections
     .flatMap((section) => section.landings.map((landing) => landing.seconds))
@@ -65,7 +65,7 @@ export interface ReferenceSync {
 export function followerVideoSeconds(
   masterSeconds: number,
   master: ReferenceSync,
-  follower: ReferenceSync,
+  follower: ReferenceSync
 ): number {
   const clapShift =
     master.clapSeconds !== null && follower.clapSeconds !== null
