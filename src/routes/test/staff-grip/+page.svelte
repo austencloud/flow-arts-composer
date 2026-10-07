@@ -14,7 +14,8 @@
    * arranges them and owns one playback clock for every pane.
    */
   import { Canvas, T } from "@threlte/core";
-  import { onMount } from "svelte";
+  import { onDestroy, onMount } from "svelte";
+  import { Vector3 } from "three";
   import type {
     AvatarGripDiagnostics,
     AvatarPoseDiagnostics,
@@ -48,10 +49,7 @@
   import PanelState from "$lib/shared/components/panel/PanelState.svelte";
 
   import LabTransport from "../_lab-kit/LabTransport.svelte";
-  import {
-    labScrubMax,
-    type ScrubMarker,
-  } from "../_lab-kit/phase-transport";
+  import { labScrubMax, type ScrubMarker } from "../_lab-kit/phase-transport";
 
   import CoverageMatrixMount from "./CoverageMatrixMount.svelte";
   import LabControls from "./LabControls.svelte";
@@ -62,6 +60,8 @@
     INSPECTION_FOV_DEG,
     INSPECTION_VIEWS,
     inspectionShotForView,
+    type InspectionShot,
+    type InspectionView,
   } from "./inspection-framing";
   import {
     bodyDerivedLengthCm,
@@ -78,10 +78,7 @@
     labSweepCharacter,
     resolveLabSequence,
   } from "./lab-catalog";
-  import {
-    labContinuityMarkers,
-    labContinuityStatus,
-  } from "./lab-continuity";
+  import { labContinuityMarkers, labContinuityStatus } from "./lab-continuity";
   import { isLabGoalId } from "./lab-goals";
   import {
     collectFrameMetrics,
@@ -92,6 +89,14 @@
     type PoseMetric,
   } from "./lab-metrics";
   import { StaffLabState } from "./lab-state.svelte";
+  import ReferencePanel from "./reference/ReferencePanel.svelte";
+  import ReferenceStage from "./reference/ReferenceStage.svelte";
+  import ReferenceTransport from "./reference/ReferenceTransport.svelte";
+  import { referencePreset } from "./reference/reference-cameras";
+  import {
+    ReferenceSession,
+    type ReferenceVideo,
+  } from "./reference/reference-session.svelte";
 
   /** Motion steps per second. Slow enough to read a 0.16-step stagger. */
   const PLAYBACK_STEPS_PER_SECOND = 1.2;
@@ -110,6 +115,19 @@
 
   const lab = new StaffLabState({
     stepCount: () => stepCount,
+  });
+
+  /**
+   * Videos of Austen performing the loaded sequence. While any are loaded the
+   * lab shows each beside a 3D view, and the timed one, mapped in Post
+   * Studio, says where the performer is.
+   */
+  const reference = new ReferenceSession(() => sequence);
+  onDestroy(() => reference.dispose());
+
+  $effect(() => {
+    const phase = reference.labPhase;
+    if (phase !== null) lab.setPhase(phase);
   });
 
   /**
@@ -313,8 +331,7 @@
   const lengthDivergenceCm = $derived(
     drawnLengthCm === null || collisionLengthCm === null
       ? null
-      : Math.abs(collisionLengthCm - drawnLengthCm) <
-          LENGTH_DIVERGENCE_NOISE_CM
+      : Math.abs(collisionLengthCm - drawnLengthCm) < LENGTH_DIVERGENCE_NOISE_CM
         ? null
         : collisionLengthCm - drawnLengthCm
   );
@@ -416,7 +433,8 @@
    * scope, so advancing it cannot restart the loop.
    */
   $effect(() => {
-    if (!lab.playing) return;
+    // Reference videos bring their own clock.
+    if (!lab.playing || reference.active) return;
     const span = sequence?.steps.length ?? 0;
     if (span <= 0) return;
     let frame = 0;
@@ -440,6 +458,94 @@
     content="Compare one grip across characters, props and sequences."
   />
 </svelte:head>
+
+<!--
+  One camera on the performer. The lab's own views and each reference video's
+  view are the same pane; only the first measures, so the inspector reads one
+  performer rather than the last pane to report.
+-->
+{#snippet stagePane(
+  loaded: SequenceData,
+  shot: InspectionShot,
+  grid: InspectionView["grid"],
+  paneId: string,
+  primary: boolean,
+  onCameraEnd?: (shot: InspectionShot) => void
+)}
+  <Canvas shadows rendererParameters={{ alpha: true }}>
+    <T.PerspectiveCamera
+      makeDefault
+      position={shot.position}
+      fov={INSPECTION_FOV_DEG}
+    >
+      <OrbitControls
+        enableDamping
+        enablePan={false}
+        rightDragAction="rotate"
+        target={shot.target}
+        minDistance={0.3}
+        maxDistance={12}
+        maxPolarAngle={Math.PI}
+        oncontrolend={onCameraEnd
+          ? (controls) => {
+              const position = controls.getPosition(new Vector3());
+              const target = controls.getTarget(new Vector3());
+              onCameraEnd({
+                position: [position.x, position.y, position.z],
+                target: [target.x, target.y, target.z],
+              });
+            }
+          : undefined}
+      />
+    </T.PerspectiveCamera>
+
+    <StaffGripStage
+      id={paneId}
+      phase={lab.phase}
+      sequence={loaded}
+      characterId={lab.character}
+      propType={lab.prop}
+      propLengthCm={lab.propLength === "body" ? null : lab.propLength}
+      handDistance={labHandDistance}
+      bodyClearance={lab.bodyClearance === "off" ? null : lab.bodyClearance}
+      handPointRadius={isolationHandM ?? undefined}
+      outerPointRadius={isolationHandM === null
+        ? undefined
+        : isolationHandM * 2}
+      gridEmphasis={grid}
+      showGridLabels={lab.gridLabels}
+      onCollisionEvents={primary ? collectGripMetrics : undefined}
+      onStanceTrack={primary
+        ? (track) => {
+            stanceTrack = track;
+          }
+        : undefined}
+      onBodyClearanceTrack={primary
+        ? (track) => {
+            bodyClearanceTrack = track;
+          }
+        : undefined}
+    />
+  </Canvas>
+{/snippet}
+
+{#snippet referencePane(video: ReferenceVideo, index: number, aspect: number)}
+  {#if sequence}
+    {@render stagePane(
+      sequence,
+      video.camera.shot ??
+        inspectionShotForView(referencePreset(video.camera.presetId), aspect),
+      "reference",
+      `staff-grip-reference-${index}`,
+      index === 0,
+      (shot) =>
+        reference.setCamera(video.key, {
+          presetId: video.camera.presetId,
+          shot,
+        })
+    )}
+  {/if}
+{/snippet}
 
 <main
   class="grip-lab"
@@ -547,6 +653,9 @@
   data-rendered-step-number={poseMetric.renderedStepNumber}
   data-rendered-beat-progress={formatMetric(poseMetric.renderedBeatProgress, 3)}
   data-playing={lab.playing}
+  data-reference-videos={reference.videos.length}
+  data-reference-status={reference.status}
+  data-reference-seconds={reference.time.toFixed(3)}
   data-stance-lead-steps={formatMetric(stanceSummary.onsetLeadSteps, 4)}
   data-stance-spine-lead-steps={formatMetric(
     stanceSummary.spineOnsetLeadSteps,
@@ -593,6 +702,8 @@
           bodyMeasured={bodyFit !== null}
         />
 
+        <ReferencePanel session={reference} sequenceId={lab.sequenceId} />
+
         <LabInspector
           {lab}
           {sweepCharacter}
@@ -618,93 +729,58 @@
   </aside>
 
   <div class="stage">
-    <div class="views" data-layout={lab.view === "quad" ? "quad" : "solo"}>
-      {#if sequence}
-        {#each activeViews as view, index (view.id)}
-          <section
-            class="view"
-            aria-label={`${view.label}: ${view.hint}`}
-            bind:clientWidth={paneWidths[index]}
-            bind:clientHeight={paneHeights[index]}
-          >
-            <!--
-              No scene clear colour. An alpha buffer lets the pane's own app
-              surface show through, so the canvases sit on the product's ground
-              rather than on a navy rectangle that appears nowhere else.
-            -->
-            <Canvas shadows rendererParameters={{ alpha: true }}>
-              <T.PerspectiveCamera
-                makeDefault
-                position={shots[index].position}
-                fov={INSPECTION_FOV_DEG}
-              >
-                <OrbitControls
-                  enableDamping
-                  enablePan={false}
-                  rightDragAction="rotate"
-                  target={shots[index].target}
-                  minDistance={0.3}
-                  maxDistance={12}
-                  maxPolarAngle={Math.PI}
-                />
-              </T.PerspectiveCamera>
+    {#if reference.active && sequence}
+      <ReferenceStage session={reference} pane={referencePane} />
+      <ReferenceTransport session={reference} />
+    {:else}
+      <div class="views" data-layout={lab.view === "quad" ? "quad" : "solo"}>
+        {#if sequence}
+          {#each activeViews as view, index (view.id)}
+            <section
+              class="view"
+              aria-label={`${view.label}: ${view.hint}`}
+              bind:clientWidth={paneWidths[index]}
+              bind:clientHeight={paneHeights[index]}
+            >
+              <!--
+                No scene clear colour. An alpha buffer lets the pane's own app
+                surface show through, so the canvases sit on the product's ground
+                rather than on a navy rectangle that appears nowhere else.
+              -->
+              {@render stagePane(
+                sequence,
+                shots[index] ?? inspectionShotForView(view, 1),
+                view.grid,
+                `staff-grip-${view.id}`,
+                index === 0
+              )}
+              <span class="view-label">
+                <b>{view.label}</b>
+                <i>{view.hint}</i>
+              </span>
+            </section>
+          {/each}
+        {:else}
+          <div class="stage-empty">
+            <PanelState type="loading" message="Loading sequence…" />
+          </div>
+        {/if}
+      </div>
 
-              <StaffGripStage
-                id={`staff-grip-${view.id}`}
-                phase={lab.phase}
-                {sequence}
-                characterId={lab.character}
-                propType={lab.prop}
-                propLengthCm={lab.propLength === "body" ? null : lab.propLength}
-                handDistance={labHandDistance}
-                bodyClearance={lab.bodyClearance === "off"
-                  ? null
-                  : lab.bodyClearance}
-                handPointRadius={isolationHandM ?? undefined}
-                outerPointRadius={isolationHandM === null
-                  ? undefined
-                  : isolationHandM * 2}
-                gridEmphasis={view.grid}
-                showGridLabels={lab.gridLabels}
-                onCollisionEvents={index === 0 ? collectGripMetrics : undefined}
-                onStanceTrack={index === 0
-                  ? (track) => {
-                      stanceTrack = track;
-                    }
-                  : undefined}
-                onBodyClearanceTrack={index === 0
-                  ? (track) => {
-                      bodyClearanceTrack = track;
-                    }
-                  : undefined}
-              />
-            </Canvas>
-            <span class="view-label">
-              <b>{view.label}</b>
-              <i>{view.hint}</i>
-            </span>
-          </section>
-        {/each}
-      {:else}
-        <div class="stage-empty">
-          <PanelState type="loading" message="Loading sequence…" />
-        </div>
-      {/if}
-    </div>
-
-    <!--
-      The transport lives under the cameras, where the app puts one, and is the
-      shared TransportControls the rest of the product plays with. It stays
-      mounted while a sequence resolves so the stage above it never resizes.
-    -->
-    <LabTransport
-      {lab}
-      {stepCount}
-      disabled={!sequence}
-      markers={continuityMarkers}
-      markerNote={continuityNote}
-      markerLaneLabel="Prop discontinuities in this sequence"
-    />
+      <!--
+        The transport lives under the cameras, where the app puts one, and is the
+        shared TransportControls the rest of the product plays with. It stays
+        mounted while a sequence resolves so the stage above it never resizes.
+      -->
+      <LabTransport
+        {lab}
+        {stepCount}
+        disabled={!sequence}
+        markers={continuityMarkers}
+        markerNote={continuityNote}
+        markerLaneLabel="Prop discontinuities in this sequence"
+      />
+    {/if}
   </div>
 
   <!--

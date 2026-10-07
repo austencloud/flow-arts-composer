@@ -8,7 +8,7 @@ import {
 import {
   CENTERED_HAND_OFFSETS,
   gridJoinHandOffsets,
-} from "$lib/shared/animation-engine/services/grid-join-tween";
+} from "$lib/shared/grid-join/grid-join-tween";
 import { MANDALA_GRID_RADIUS } from "../../domain/mandala-constants";
 import type { MandalaPaths } from "../../domain/mandala-types";
 import {
