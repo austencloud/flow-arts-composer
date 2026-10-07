@@ -122,10 +122,15 @@ export function rehomeFeatureMediaUrls(
       ? image
       : { ...image, ref: { kind: "linked" as const, url } };
   });
+  const music = project.music && {
+    ...project.music,
+    url: move(project.music.url),
+  };
   return {
     ...project,
     takes,
     ...(timings ? { timings } : {}),
     ...(images ? { images } : {}),
+    ...(music ? { music } : {}),
   };
 }

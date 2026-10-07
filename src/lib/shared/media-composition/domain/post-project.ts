@@ -8,6 +8,7 @@ import {
 import { BREAKDOWN_GEOMETRY } from "$lib/shared/media-composition/domain/post-studio-presets";
 import { TakeTimingSchema } from "$lib/shared/media-composition/domain/take-timing";
 import { TunnelHookSchema } from "$lib/shared/media-composition/domain/tunnel-hook";
+import { PostMusicSchema } from "$lib/shared/media-composition/domain/post-music";
 import type { EffectsConfig } from "$lib/shared/effects/domain/effects-config";
 import {
   TrackingMode,
@@ -820,9 +821,15 @@ export const PostProjectSchema = z
     tracks: z.array(PostTrackSchema).min(1),
     /**
      * - takes: each clip carries its take's sound at its own volume.
-     * - silent: no sound, for music added in the app it is posted from.
+     * - silent: the takes are muted, for music added in the app it is
+     *   posted from. A feature video's own `music` plays either way.
      */
     audio: z.enum(["takes", "silent"]),
+    /**
+     * A feature video's song under the whole post, heard in the preview and
+     * the export.
+     */
+    music: PostMusicSchema.optional(),
     /** The post's shape, and so the export's size; 9:16 when absent. */
     canvas: z.enum(POST_CANVAS_RATIOS).optional(),
     /** What fills the frame where no item covers it; dark when absent. */

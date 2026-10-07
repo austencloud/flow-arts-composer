@@ -196,3 +196,29 @@ describe("feature video file", () => {
     expect(FeatureVideoFileSchema.safeParse(value).success).toBe(false);
   });
 });
+
+describe("moving the music to a copied project", () => {
+  it("moves the music's URL with the folder", () => {
+    const music = {
+      id: "music-1",
+      url: `${FEATURE_VIDEO_API}/promo-1-0/media/music/derail.wav`,
+      label: "Derail",
+      startSeconds: 0,
+      sourceInSeconds: 0,
+      sourceOutSeconds: 120,
+      durationSeconds: 120,
+      gain: 1,
+      fadeInSeconds: 0,
+      fadeOutSeconds: 0,
+    };
+    const moved = rehomeFeatureMediaUrls(
+      postWith([], { music }),
+      "promo-1-0",
+      "copy"
+    );
+    expect(moved.music).toEqual({
+      ...music,
+      url: `${FEATURE_VIDEO_API}/copy/media/music/derail.wav`,
+    });
+  });
+});
