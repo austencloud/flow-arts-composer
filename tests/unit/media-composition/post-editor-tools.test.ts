@@ -152,3 +152,36 @@ describe("keyframeChannelFor", () => {
     expect(keyframeChannelFor(null, "animation")).toBe("box");
   });
 });
+
+describe("the music", () => {
+  const MUSIC: PostToolSelection = {
+    kind: null,
+    hasLayout: false,
+    music: true,
+  };
+
+  it("offers Back, Music and Delete for the selected music", () => {
+    expect(toolRow(MUSIC)).toEqual(["back", "music", "delete"]);
+  });
+
+  it("opens the music's panel, which is a panel tool", () => {
+    expect(isPanelTool("music")).toBe(true);
+    expect(availablePanels(MUSIC)).toEqual(["music"]);
+    expect(defaultPanel(MUSIC)).toBe("music");
+  });
+
+  it("keeps the music's panel while the music is selected", () => {
+    expect(shownPanel("music", MUSIC, false)).toBe("music");
+    expect(shownPanel("trim", MUSIC, true)).toBe("music");
+  });
+
+  it("drops the music's panel once the music is not selected", () => {
+    expect(shownPanel("music", POST, true)).toBe("videos");
+    expect(shownPanel("music", POST, false)).toBeNull();
+  });
+
+  it("offers Music nowhere else", () => {
+    expect(toolRow(POST)).not.toContain("music");
+    expect(toolRow(MAIN_CLIP)).not.toContain("music");
+  });
+});

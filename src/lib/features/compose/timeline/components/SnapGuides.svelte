@@ -8,7 +8,7 @@
 
   import { getTimelineState } from "$lib/shared/animation-engine/state/timeline-state.svelte";
   import { timeToPixels, type TimeSeconds } from "$lib/shared/animation-engine/domain/timeline-types";
-  import { generateStepTimestamps } from "$lib/features/compose/compose/phases/audio/bpm-analyzer";
+  import { generateStepTimestamps } from "$lib/shared/audio/bpm-analyzer";
 
   interface Props {
     /** Active snap point (shown when dragging) */

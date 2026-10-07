@@ -333,7 +333,8 @@ edits. `scripts/post-project.mjs` is the local CLI. See
 
 Feature videos, such as the 1.0 promo, are Post Studio projects kept as
 folders on this computer, apart from any sequence's own post.
-`domain/feature-video.ts` owns slugs, the file format and media URLs.
+`domain/feature-video-url.ts` owns slugs and media URLs, and
+`domain/feature-video.ts` the file format.
 `server/feature-video-store.ts` owns the folders, revisions, history and
 copies; `server/feature-video-media.ts` serves media with byte ranges; the
 routes live under `src/routes/api/dev/feature-videos/`, guarded like every dev
@@ -346,6 +347,17 @@ and `features/post/state/post-module-state.svelte.ts` opens one with
 and the editor disagree, disk wins and Undo brings back the editor's version.
 Searches: feature video, promo video, project folder, media route, byte range,
 revision, disk wins.
+
+A feature video's music is one file under the whole post. `domain/post-music.ts`
+owns its schema, `domain/music-grid.ts` bars, beats and the times that name a
+bar, and `domain/post-music-edits.ts` its edits; `domain/post-audio-plan.ts`
+plans its sound with `planMusicAudio` for the export and the preview alike.
+`services/music-preview-sync.ts` and `PostMusicPreview.svelte` keep the
+preview's player and clock on the music; the timeline lane is
+`timeline/PostTimelineMusicLane.svelte` and its panel `PostMusicTool.svelte`.
+The CLI's music commands use `scripts/feature-video/music-import.mjs`,
+`align-take.mjs`, `loudness.mjs` and `time-args.mjs`. Searches: music,
+soundtrack, beat grid, bar, downbeat, align take, loudness, LUFS.
 
 Post Studio keyframes live on the item: `post-project-keyframes.ts` owns
 content time, sampling, the auto-key rule, easing presets and every keyframe
@@ -447,6 +459,7 @@ another.
 | step grid, pictograph preview swap, visual slot identity, difficulty and LOOP metadata                                              | `features/create/shared/workspace-panel/sequence-display/components/StepGrid.svelte` owns document-vs-slot identity; `SequenceMetadataRail.svelte` owns compact difficulty and LOOP indicators                                                                                                                                                                                                                                                                                                                                                                                                                             |
 | Choreo Card image export, MCP sequence image, renderer profile, packaged glyph assets                                               | `packages/render-composition/src/sequence-card-pipeline.ts` owns card composition and `COMPOSER_CARD_EXPORT_PROFILE_V1`. Composer and both MCP adapters consume that profile. `static/images/letters_trimmed/` owns TKA glyph artwork; `mcp-server-pkg/scripts/sync-card-assets.mjs` generates the publishable package copy during builds. Extend these owners instead of copying layout logic, defaults, or glyph files.                                                                                                                                                                                                  |
 | BPM, tempo, tap tempo, speed preset                                                                                                 | `shared/animation-engine/domain/tempo-behavior.ts` and `shared/animation-engine/domain/constants/timing.ts`; presentations are `BpmChips.svelte` and `TempoControl.svelte`                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| BPM detection, song tempo, beat times, suggest BPM                                                                                  | `shared/audio/bpm-analyzer.ts`: `analyzeAudioBpm` estimates a song's tempo from its sound and `generateStepTimestamps` spaces beats at a tempo; Compose's timeline and the Post Studio music panel's Suggest BPM use it                                                                                                                                                                                                                                                                                                                                                                                                    |
 | effect preview, preset lab, continuous demo                                                                                         | `InfiniteSequenceGenerator` and `isEffectPreviewLoop`; see `.claude/rules/sequence-generation.md`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
 | sequence transform, mirror, flip, invert, rotate, reset                                                                             | `shared/create/services/sequence-transformer.ts`; action tiles use `shared/create/components/SequenceTransformActions.svelte`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
 | contact juggling, contact ball, palm grid                                                                                           | `shared/3d/domain/prop-motion-discipline.ts` routes disciplines; contact state and poses belong to `features/contact-lab`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |

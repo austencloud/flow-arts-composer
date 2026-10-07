@@ -3,7 +3,16 @@ import fs from "node:fs/promises";
 import http from "node:http";
 import https from "node:https";
 import path from "node:path";
+import { alignTake, mediaPathFromUrl } from "./feature-video/align-take.mjs";
+import {
+  PEAK_CEILING_DBTP,
+  TARGET_LUFS,
+  measureLoudness,
+  suggestMusicGain,
+} from "./feature-video/loudness.mjs";
 import { importTake } from "./feature-video/media-import.mjs";
+import { importMusic } from "./feature-video/music-import.mjs";
+import { parseTimeArg } from "./feature-video/time-args.mjs";
 
 const [command, ...args] = process.argv.slice(2);
 const option = (name) => {
@@ -30,6 +39,7 @@ const featureMediaUrl = (slug, relativePath) =>
     .filter(Boolean)
     .map(encodeURIComponent)
     .join("/")}`;
+const NO_MUSIC = "This post has no music. Add it with: add-music <file>.";
 
 async function request(method, query = {}, body, route = BRIDGE) {
   const url = new URL(route, base);
@@ -107,7 +117,7 @@ const EDIT_COMMANDS = {
   "add-titles": () => ({
     op: "add-titles",
     ...(option("spoken") !== undefined ? { spoken: option("spoken") } : {}),
-    ...number("at"),
+    ...time("at"),
   }),
   "hook-speed": () => ({ op: "hook-speed", speed: positional(0, "a curve") }),
   "hook-frame": () => ({
@@ -137,7 +147,7 @@ const EDIT_COMMANDS = {
     op: "trim",
     item: required("item"),
     edge: required("edge"),
-    seconds: Number(required("seconds")),
+    seconds: parseTimeArg(required("seconds"), "seconds"),
   }),
   delete: () => ({ op: "delete", item: required("item") }),
   canvas: () => ({ op: "canvas", canvas: positional(0, "a ratio") }),
@@ -146,6 +156,36 @@ const EDIT_COMMANDS = {
     background: positional(0, "dark or blur"),
   }),
   "remove-take": () => ({ op: "remove-take", take: required("take") }),
+  music: () => {
+    const patch = {
+      ...time("start", "startSeconds"),
+      ...time("from", "sourceInSeconds"),
+      ...time("to", "sourceOutSeconds"),
+      ...number("gain"),
+      ...number("fade-in", "fadeInSeconds"),
+      ...number("fade-out", "fadeOutSeconds"),
+      ...bpm(),
+      ...number("downbeat", "downbeatSeconds"),
+      ...number("beats-per-bar", "beatsPerBar"),
+      ...text("label"),
+      ...text("artist"),
+      ...text("license"),
+    };
+    if (Object.keys(patch).length === 0)
+      throw new Error(
+        "music needs a setting to change, such as --gain 0.8 or --bpm 85."
+      );
+    return { op: "music", ...patch };
+  },
+  "remove-music": () => ({ op: "remove-music" }),
+  "sync-to-music": () => {
+    required("offset");
+    return {
+      op: "sync-to-music",
+      item: required("item"),
+      offsetSeconds: numberOption("offset"),
+    };
+  },
 };
 
 const BOOLEAN_FLAGS = [
@@ -163,8 +203,37 @@ function required(name) {
   if (value === undefined) throw new Error(`--${name} is required.`);
   return value;
 }
-function number(name) {
-  return option(name) === undefined ? {} : { [name]: Number(option(name)) };
+/** A number flag's value, or undefined when the flag is absent. */
+function numberOption(name) {
+  const value = option(name);
+  if (value === undefined) return undefined;
+  // JSON would send NaN as null, which some edits read as "remove".
+  if (!value.trim() || !Number.isFinite(Number(value)))
+    throw new Error(`--${name} must be a number.`);
+  return Number(value);
+}
+function number(name, key = name) {
+  const value = numberOption(name);
+  return value === undefined ? {} : { [key]: value };
+}
+/** A time flag: seconds, a clock, or a bar of the music such as @9.3. */
+function time(name, key = name) {
+  const value = option(name);
+  return value === undefined ? {} : { [key]: parseTimeArg(value, name) };
+}
+/** A text flag; an empty one removes an artist or license. */
+function text(name) {
+  const value = option(name);
+  return value === undefined ? {} : { [name]: value };
+}
+/** --bpm: a tempo, or none to remove the beat grid. */
+function bpm() {
+  const value = option("bpm");
+  if (value === undefined) return {};
+  if (value === "none") return { bpm: null };
+  if (!value.trim() || !Number.isFinite(Number(value)))
+    throw new Error("--bpm must be a number, or none to remove the beat grid.");
+  return { bpm: Number(value) };
 }
 function repeated(name) {
   return args.flatMap((arg, i) => (arg === `--${name}` ? [args[i + 1]] : []));
@@ -284,6 +353,24 @@ async function currentSnapshot() {
     .project;
 }
 
+/**
+ * The file in this feature video's media/music/ that the post plays its music
+ * from, or undefined. The editor keeps a music's place, trims and credits only
+ * while its URL stays the same, so add-music hands this file name to
+ * importMusic to get the same song back as this exact file.
+ */
+function musicFileInUse(project, feature) {
+  const prefix = `${featureMediaUrl(feature, "music")}/`;
+  const url = project.music?.url;
+  if (!url?.startsWith(prefix)) return undefined;
+  try {
+    return decodeURIComponent(url.slice(prefix.length));
+  } catch {
+    // A hand-edited url that no file can match; add-music replaces it.
+    return undefined;
+  }
+}
+
 try {
   let result;
   if (command === "list") result = await request("GET");
@@ -339,6 +426,117 @@ try {
         },
       ]),
     };
+  } else if (command === "add-music") {
+    const feature = required("feature");
+    const file = path.resolve(positional(0, "a music file"));
+    const { folder, file: saved } = await request(
+      "GET",
+      {},
+      undefined,
+      featureRoute(feature)
+    );
+    const music = await importMusic(file, path.join(folder, "media", "music"), {
+      prefer: musicFileInUse(saved.project, feature),
+    });
+    let edit;
+    try {
+      edit = await sendOps([
+        {
+          op: "add-music",
+          url: featureMediaUrl(feature, music.relativePath),
+          durationSeconds: music.durationSeconds,
+          ...text("label"),
+          ...text("artist"),
+          ...text("license"),
+        },
+      ]);
+    } catch (cause) {
+      // The edit did not land, so nothing plays the copy this run just made.
+      // A file it reused was there before, and the post may play it.
+      if (!music.reused)
+        await fs.rm(path.join(folder, "media", music.relativePath), {
+          force: true,
+        });
+      throw cause;
+    }
+    result = {
+      media: music.relativePath,
+      converted: music.transcoded,
+      reused: music.reused,
+      edit,
+    };
+  } else if (command === "align-take") {
+    const feature = required("feature");
+    const place = option("place");
+    const project = await currentSnapshot();
+    if (!project.music) throw new Error(NO_MUSIC);
+    let takeId = option("take");
+    if (place) {
+      const clip = project.tracks
+        .flatMap((track) => track.items)
+        .find((item) => item.id === place);
+      if (!clip) throw new Error(`No item "${place}" in this post.`);
+      if (clip.kind !== "video")
+        throw new Error(`"${place}" is not a video clip.`);
+      takeId = clip.takeId;
+    }
+    if (!takeId)
+      throw new Error(
+        "align-take needs --place ITEM to line up a clip, or --take ID to measure a take."
+      );
+    const take = project.takes.find((entry) => entry.id === takeId);
+    if (!take) throw new Error(`No take "${takeId}" in this post.`);
+    if (take.ref.kind !== "linked")
+      throw new Error(
+        `Take "${takeId}" is not a file in a feature video folder.`
+      );
+    const { folder } = await request(
+      "GET",
+      {},
+      undefined,
+      featureRoute(feature)
+    );
+    // A copy made with --share-media plays files from the original's folder, beside this one.
+    const root = path.dirname(folder);
+    const match = await alignTake(
+      mediaPathFromUrl(take.ref.url, root),
+      mediaPathFromUrl(project.music.url, root)
+    );
+    if (!place) result = match;
+    else if (match.warning) {
+      // Nothing moves on a doubtful match; the candidates are printed instead.
+      result = { ...match, placed: false };
+      process.exitCode = 1;
+    } else
+      result = {
+        ...match,
+        placed: true,
+        edit: await sendOps([
+          {
+            op: "sync-to-music",
+            item: place,
+            offsetSeconds: match.offsetSeconds,
+          },
+        ]),
+      };
+  } else if (command === "loudness") {
+    const file = path.resolve(positional(0, "a rendered video or sound file"));
+    const measured = await measureLoudness(file);
+    result = {
+      ...measured,
+      targetLufs: TARGET_LUFS,
+      peakCeilingDbtp: PEAK_CEILING_DBTP,
+    };
+    if (option("feature")) {
+      const music = (await currentSnapshot()).music;
+      if (!music) throw new Error(NO_MUSIC);
+      result.musicGain = music.gain;
+      result.suggestedGain = suggestMusicGain(
+        music.gain,
+        measured.integratedLufs,
+        measured.truePeakDbtp
+      );
+    }
   } else if (command === "duplicate") {
     result = await request(
       "POST",
@@ -393,12 +591,12 @@ try {
   add-hook [--seconds 5] [--fold 8] [--mirror] [--speed ease-out]
   remove-hook
   line-up-hook                 end the tunnel on the footage's opening pose, footage behind it
-  add-titles [--spoken "how to say it"] [--at N]   name titles clip, over the opening tunnel when there is one
+  add-titles [--spoken "how to say it"] [--at T]   name titles clip, over the opening tunnel when there is one
   hook-speed <ease-out|ease-in|ease-in-out|linear|smooth|overshoot|default|x1,y1,x2,y2>
   hook-frame [--zoom 1.4] [--x 0.5] [--y 0.55] [--whole]   frame the footage behind the opening tunnel
   appearance [--item hook|animations|all|ID] --set glyph=false ...  (keys: tkaGlyph stepNumbers gridMode progressBar ...; null clears)
   item --item ID --patch '{"opacity":0.5}'
-  trim --item ID --edge start|end --seconds N
+  trim --item ID --edge start|end --seconds T
   delete --item ID
   canvas <ratio>   background <dark|blur>
   ops --file ops.json          a batch applied in one step
@@ -409,6 +607,14 @@ Feature videos, folders on the dev server's computer:
   add-take <clip.mp4|clip.mov> --feature SLUG [--label "Name"] [--append]   copies it into media/footage; HEVC, HDR and .mov become H.264 MP4
   remove-take --take ID
   duplicate <slug> <new-slug> [--title "Title"] [--share-media]
+  add-music <file> --feature SLUG [--label "Name"] [--artist "Name"] [--license "Library, id, date"]   copies it into media/music, or reuses the identical copy already there; anything but plain WAV becomes 48 kHz WAV
+  music [--start T] [--from T] [--to T] [--gain 0.8] [--fade-in S] [--fade-out S] [--bpm 85|none] [--downbeat S] [--beats-per-bar 4] [--label --artist --license]
+                               --start is where the music begins in the post; --from and --to are the part of the song that plays
+  remove-music
+  align-take --place ITEM | --take ID   where a take sits in the music, from its camera sound; --place puts the clip in time with it
+  sync-to-music --item ID --offset S   puts a clip in time with the music at one of align-take's offsets
+  loudness <render.mp4> [--feature SLUG]   loudness and true peak; with --feature, the music level that reaches -14 LUFS
+  T is seconds (12.5), a clock (1:02.5), or a bar of the music: @9 is bar 9, @9.3 is bar 9, beat 3.
   With --feature, show and every edit use the editor that has it open, else the file on disk.
   Add --no-wait to return before the editor confirms; --out file to write output.`
     );
