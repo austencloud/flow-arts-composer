@@ -1,3 +1,4 @@
+import { isFeatureVideoMediaUrl } from "../domain/feature-video";
 import {
   EditCopyManifestSchema,
   editCopyPaths,
@@ -14,6 +15,9 @@ export async function findEditCopy(
   signal: AbortSignal,
   request: typeof fetch = fetch
 ): Promise<PreparedPreviewVideo | null> {
+  // A feature video's media folder holds no editing copies, so its takes
+  // skip the two requests.
+  if (isFeatureVideoMediaUrl(sourceUrl)) return null;
   const paths = editCopyPaths(sourceUrl);
   if (!paths) return null;
   try {
