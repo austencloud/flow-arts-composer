@@ -927,16 +927,22 @@
    * under. As a side rail — 20rem to 34rem — this resolves to one column, so
    * no breakpoint has to name the difference.
    */
+  /*
+   * Columns, not grid rows: in a two-column tablet rail a folded section
+   * used to sit in a row as tall as the open one beside it, leaving a hole
+   * under it. Columns stack each side independently, and a rail narrower
+   * than 19rem (a folded phone's side rail) gets one column at its own
+   * width.
+   */
   .rail-sections {
-    display: grid;
-    /* min() so the track can fall below its own floor rather than
-       overflowing a rail narrower than 19rem, which is the 19rem side
-       rail a folded phone gets once padding is taken out of it. */
-    grid-template-columns: repeat(auto-fit, minmax(min(19rem, 100%), 1fr));
-    align-content: start;
-    align-items: start;
-    gap: 0.75rem;
+    column-width: 19rem;
+    column-gap: 0.75rem;
     min-width: 0;
+  }
+
+  .rail-sections > :global(section) {
+    break-inside: avoid;
+    margin-bottom: 0.75rem;
   }
 
   /* Cameras over a transport, the way the product stacks a player. */
