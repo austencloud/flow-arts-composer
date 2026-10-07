@@ -3,6 +3,7 @@
   import { MediaQuery } from "svelte/reactivity";
   import { activateWhenNear } from "$lib/actions/activate-when-near";
   import { observeComposerStopVisibility } from "./observe-composer-stop-visibility";
+  import { holdWhenStopLeaves } from "./hold-when-stop-leaves";
   import LazyMount from "$lib/shared/components/LazyMount.svelte";
   import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
   import BaseModal from "$lib/shared/foundation/ui/modal/BaseModal.svelte";
@@ -94,10 +95,12 @@
   const carryTunnel = carryFrom("tunnel");
 
   // Every live hero draw becomes the page's sequence. Before the hold the
-  // reader is still at the hero and the lower demos are not mounted, so the
-  // auto-rolls cost nothing downstream; after it the hero only changes on
-  // Roll. The reducer returns the same object for an unchanged id, and the
-  // write is untracked, so this effect cannot feed itself.
+  // reader is still at the hero; the lower demos are not active yet, except
+  // Construct, which the stage loads early as the neighbour and which only
+  // writes the page sequence, never reads it, so the auto-rolls cost nothing
+  // downstream. After the hold the hero only changes on Roll. The reducer
+  // returns the same object for an unchanged id, and the write is untracked,
+  // so this effect cannot feed itself.
   $effect(() => {
     const drawn = heroAct.sequence;
     if (!drawn || drawn.id === FALLBACK_DEMO.id) return;
@@ -113,19 +116,10 @@
   }
 
   // The stage keeps the next stop inside the window so it loads early, so
-  // "near Construct" would hold the hero at load. The reader has left the
-  // hero when its stop is no longer the one being read: scrolled past on
-  // the plain page, or no longer the stage's current stop (the stage takes
-  // its pointer events). A deep link or a restored scroll arrives already
-  // past it, so the observer's first real report holds too; only the
-  // synchronous report made before observation starts is ignored.
+  // "near Construct" would hold the hero at load. The hero is held instead
+  // once its stop is no longer the one being read; see holdWhenStopLeaves.
   function holdWhenHeroLeaves(node: HTMLElement) {
-    let observing = false;
-    const handle = observeComposerStopVisibility(node, (visible) => {
-      if (observing && !visible) holdHero();
-    });
-    observing = true;
-    return handle;
+    return holdWhenStopLeaves(node, holdHero);
   }
 
   let selectedProp = $state<PropType>(PropType.STAFF);
