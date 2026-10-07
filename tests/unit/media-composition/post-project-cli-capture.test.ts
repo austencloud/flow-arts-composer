@@ -27,11 +27,20 @@ const canEncode = (() => {
 let server: http.Server;
 let url: string;
 let folder: string;
+type Post = { takes: unknown[]; tracks: unknown[] };
 let takes: unknown[];
+let tracks: unknown[];
+/** The post as an edit leaves it, on disk or in the editor. */
+let edited: Post | null;
+/** The post an open editor holds, or null when none has it open. */
+let editor: Post | null;
 let posts: { path: string; body: { ops: Record<string, unknown>[] } }[];
 
 beforeEach(async () => {
   takes = [];
+  tracks = [];
+  edited = null;
+  editor = null;
   posts = [];
   folder = await fs.mkdtemp(path.join(os.tmpdir(), "capture-cli-"));
   server = http.createServer((request, response) => {
@@ -43,17 +52,32 @@ beforeEach(async () => {
         response.writeHead(status, { "Content-Type": "application/json" });
         response.end(JSON.stringify(value));
       };
+      const query = target.searchParams;
       switch (`${request.method} ${target.pathname}`) {
         case "GET /api/dev/post-project":
-          return send(200, { sessions: [] });
+          if (query.get("commandId"))
+            return send(200, {
+              commandId: query.get("commandId"),
+              status: "completed",
+              message: "Applied in editor.",
+            });
+          if (query.get("sessionId")) return send(200, { snapshot: editor });
+          return send(200, {
+            sessions: editor ? [{ id: "editor-1", featureSlug: "promo" }] : [],
+          });
+        case "POST /api/dev/post-project":
+          posts.push({ path: target.pathname, body: JSON.parse(text) });
+          if (edited) editor = edited;
+          return send(200, { commandId: "command-1", status: "pending" });
         case "GET /api/dev/feature-videos/promo":
           return send(200, {
-            file: { project: { takes } },
+            file: { project: { takes, tracks } },
             fingerprint: "f",
             folder,
           });
         case "POST /api/dev/feature-videos/promo/ops":
           posts.push({ path: target.pathname, body: JSON.parse(text) });
+          if (edited) ({ takes, tracks } = edited);
           return send(200, { status: "applied", revision: 2 });
         default:
           return send(404, { message: "No such route." });
@@ -202,6 +226,66 @@ describe.skipIf(!canEncode)("link-capture", () => {
       take: "take-2",
       url: mediaUrl("captures/builder.2.mp4"),
     });
+  });
+
+  const builder = (n: number) => ({
+    id: "take-2",
+    label: "builder",
+    ref: { kind: "linked", url: mediaUrl(`captures/builder.${n}.mp4`) },
+  });
+  const clip = (id: string, duration: number) => ({
+    id,
+    kind: "video",
+    takeId: "take-2",
+    duration,
+  });
+
+  it("finds the earlier take in the open editor's post", async () => {
+    await makeRecording("captures/builder.2.mp4");
+    editor = { takes: [builder(1)], tracks: [] };
+    const result = await cli(
+      "link-capture",
+      "--feature",
+      "promo",
+      "--capture",
+      "builder",
+      "--media",
+      "captures/builder.2.mp4"
+    );
+    expect(result.code).toBe(0);
+    expect(JSON.parse(result.stdout)).toMatchObject({
+      take: "take-2",
+      edit: { status: "completed" },
+    });
+    expect(posts).toHaveLength(1);
+    expect(posts[0]!.path).toBe("/api/dev/post-project");
+    expect(posts[0]!.body.ops[0]).toMatchObject({
+      op: "relink-take",
+      take: "take-2",
+    });
+  });
+
+  it("names the clips a shorter recording removed or cut back", async () => {
+    await makeRecording("captures/builder.2.mp4");
+    takes = [builder(1)];
+    tracks = [{ items: [clip("whole", 4), clip("late", 3)] }];
+    edited = { takes: [builder(2)], tracks: [{ items: [clip("whole", 1)] }] };
+    const result = await cli(
+      "link-capture",
+      "--feature",
+      "promo",
+      "--capture",
+      "builder",
+      "--media",
+      "captures/builder.2.mp4"
+    );
+    expect(result.code).toBe(0);
+    const output = JSON.parse(result.stdout);
+    expect(output.clips).toEqual({
+      removed: ["late"],
+      shortened: [{ id: "whole", from: 4, to: 1 }],
+    });
+    expect(output.note).toContain("Check the timeline");
   });
 
   it("refuses a media path that is not a recording of that capture", async () => {

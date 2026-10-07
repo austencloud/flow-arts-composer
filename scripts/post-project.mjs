@@ -12,6 +12,7 @@ import {
 } from "./feature-video/loudness.mjs";
 import {
   assertCaptureId,
+  clipChanges,
   findCaptureTake,
 } from "./feature-video/capture-files.mjs";
 import { importTake, probeMedia } from "./feature-video/media-import.mjs";
@@ -456,7 +457,7 @@ try {
     const media = required("media");
     if (!new RegExp(`^captures/${capture}\\.\\d+\\.mp4$`).test(media))
       throw new Error(`--media must be captures/${capture}.<n>.mp4.`);
-    const { folder, file } = await request(
+    const { folder } = await request(
       "GET",
       {},
       undefined,
@@ -466,26 +467,40 @@ try {
       path.join(folder, "media", ...media.split("/"))
     );
     const mediaUrl = featureMediaUrl(feature, media);
-    const earlier = findCaptureTake(file.project.takes ?? [], capture);
+    // The open editor's post, which may hold edits not saved to disk yet.
+    const before = await currentSnapshot();
+    const earlier = findCaptureTake(before.takes ?? [], capture);
+    const edit = await sendOps([
+      earlier
+        ? {
+            op: "relink-take",
+            take: earlier.id,
+            url: mediaUrl,
+            durationSeconds,
+          }
+        : {
+            op: "add-take",
+            url: mediaUrl,
+            durationSeconds,
+            label: option("label") ?? capture,
+          },
+    ]);
+    const landed = edit.status === "completed" || edit.status === "applied";
+    const clips =
+      earlier && landed
+        ? clipChanges(before, await currentSnapshot(), earlier.id)
+        : null;
     result = {
       media,
       durationSeconds,
       take: earlier?.id ?? null,
-      edit: await sendOps([
-        earlier
-          ? {
-              op: "relink-take",
-              take: earlier.id,
-              url: mediaUrl,
-              durationSeconds,
-            }
-          : {
-              op: "add-take",
-              url: mediaUrl,
-              durationSeconds,
-              label: option("label") ?? capture,
-            },
-      ]),
+      edit,
+      ...(clips ? { clips } : {}),
+      ...(clips?.removed.length || clips?.shortened.length
+        ? {
+            note: "The new recording is shorter than the clips cut from the old one: clips.removed are gone and clips.shortened end sooner. Check the timeline.",
+          }
+        : {}),
     };
   } else if (command === "add-music") {
     const feature = required("feature");

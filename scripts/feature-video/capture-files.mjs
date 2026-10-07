@@ -1,3 +1,5 @@
+import { featureMediaUrlParts } from "./align-take.mjs";
+
 /**
  * Where app recordings live in a feature video, and how to tell which take
  * plays one. A capture has an id such as `builder-dckpsi`; each recording of
@@ -35,14 +37,7 @@ export function nextCaptureFile(id, existing) {
 
 /** `captures/a.1.mp4` from a feature video media url, or null for any other url. */
 export function mediaRelativePath(url) {
-  const marker = "/media/";
-  const at = url.indexOf(marker);
-  if (at < 0) return null;
-  return url
-    .slice(at + marker.length)
-    .split("/")
-    .map(decodeURIComponent)
-    .join("/");
+  return featureMediaUrlParts(url)?.path ?? null;
 }
 
 /** The take that plays a recording of capture `id`, or null. */
@@ -56,4 +51,32 @@ export function findCaptureTake(takes, id) {
         pattern.test(mediaRelativePath(take.ref.url) ?? "")
     ) ?? null
   );
+}
+
+/**
+ * What pointing take `takeId` at a new recording did to its clips, from the
+ * post before and after: the clips it removed, and the clips it cut back
+ * with their lengths before and after, in post seconds.
+ */
+export function clipChanges(before, after, takeId) {
+  const lengths = (project) =>
+    new Map(
+      (project.tracks ?? [])
+        .flatMap((track) => track.items)
+        .filter((item) => item.kind === "video" && item.takeId === takeId)
+        .map((item) => [item.id, item.duration])
+    );
+  const was = lengths(before);
+  const now = lengths(after);
+  const round = (seconds) => Math.round(seconds * 100) / 100;
+  return {
+    removed: [...was.keys()].filter((id) => !now.has(id)),
+    shortened: [...was]
+      .filter(([id, seconds]) => now.has(id) && now.get(id) < seconds - 0.005)
+      .map(([id, seconds]) => ({
+        id,
+        from: round(seconds),
+        to: round(now.get(id)),
+      })),
+  };
 }
