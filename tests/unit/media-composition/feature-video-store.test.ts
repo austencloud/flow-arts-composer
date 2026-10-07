@@ -7,11 +7,26 @@ import {
   type FeatureVideoStore,
 } from "$lib/server/feature-video-store";
 import { featureVideoMediaUrl } from "$lib/shared/media-composition/domain/feature-video";
+import { takeFileKey } from "$lib/shared/media-composition/domain/post-plan";
 import { tempFeatureRoot } from "./feature-video-test-helpers";
 
 const NOW = 1_780_000_000_000;
 const SEQUENCE = "DCK\u03a8-";
 const promo = { slug: "promo", title: "Promo 1.0", sequenceId: SEQUENCE };
+/** A take picked on this device: it plays only in the browser that picked it. */
+const phoneRef = {
+  kind: "local" as const,
+  name: "phone.mp4",
+  size: 100,
+  lastModified: 5,
+};
+const phoneTake = {
+  id: "take-phone",
+  label: "phone",
+  ref: phoneRef,
+  takeKey: takeFileKey(phoneRef),
+  durationSeconds: 5,
+};
 
 let root: string;
 let store: FeatureVideoStore;
@@ -279,6 +294,22 @@ describe("saving", () => {
     ).toMatchObject({ revision: 2 });
     expect(await fs.readdir(path.join(root, "promo"))).not.toContain(".lock");
   });
+
+  it("refuses a post that plays a video picked on this device", async () => {
+    const { file } = await store.create(promo, NOW);
+    const refused = await refusal(() =>
+      store.write(
+        "promo",
+        { baseRevision: 1, project: { ...file.project, takes: [phoneTake] } },
+        NOW + 1
+      )
+    );
+    expect(refused.status).toBe(422);
+    expect(refused.message).toContain(
+      "node scripts/post-project.mjs add-take <file> --feature promo"
+    );
+    expect(await store.revision("promo")).toBe(1);
+  });
 });
 
 describe("revision", () => {
@@ -369,6 +400,35 @@ describe("named edits", () => {
     expect(refused.status).toBe(400);
     expect(refused.message).toContain('No take "nope"');
     expect(await store.revision("promo")).toBe(1);
+  });
+
+  it("refuses edits that keep a video picked on this device, and lets one remove it", async () => {
+    const { file } = await store.create(promo, NOW);
+    // A hand edit put the take on disk.
+    await fs.writeFile(
+      path.join(root, "promo", "project.json"),
+      `${JSON.stringify(
+        { ...file, project: { ...file.project, takes: [phoneTake] } },
+        null,
+        2
+      )}\n`
+    );
+    const refused = await refusal(() =>
+      store.applyOps(
+        "promo",
+        [{ op: "background", background: "blur" }],
+        NOW + 1
+      )
+    );
+    expect(refused.status).toBe(422);
+    expect(await store.revision("promo")).toBe(1);
+    expect(
+      await store.applyOps(
+        "promo",
+        [{ op: "remove-take", take: "take-phone" }],
+        NOW + 2
+      )
+    ).toMatchObject({ status: "applied", revision: 2 });
   });
 });
 

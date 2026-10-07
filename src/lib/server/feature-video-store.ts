@@ -93,6 +93,19 @@ export function sameContent(a: PostProject, b: PostProject): boolean {
   );
 }
 
+/**
+ * A feature video plays only files in its folder. A video picked on this
+ * device plays only in the browser that picked it, so a post holding one is
+ * refused with the command that copies the file in.
+ */
+function refuseDeviceVideos(slug: string, project: PostProject): void {
+  if (project.takes.some((take) => take.ref.kind === "local"))
+    throw new FeatureVideoError(
+      `${slug} plays only videos in its folder, and this post has one picked on this device. Remove that take, then add the file with: node scripts/post-project.mjs add-take <file> --feature ${slug}`,
+      422
+    );
+}
+
 export function createFeatureVideoStore(
   root: string,
   options: { historyLimit?: number } = {}
@@ -342,6 +355,7 @@ export function createFeatureVideoStore(
             "A feature video keeps its sequence.",
             422
           );
+        refuseDeviceVideos(slug, parsed.data);
         return commit(slug, current, parsed.data, now);
       })
     );
@@ -441,6 +455,7 @@ export function createFeatureVideoStore(
             "Those edits would leave the post invalid.",
             400
           );
+        refuseDeviceVideos(slug, parsed.data);
         return {
           status: "applied" as const,
           ...(await commit(slug, current, parsed.data, now)),
