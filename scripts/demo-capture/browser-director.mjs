@@ -1,8 +1,28 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 
-// Pass the documented Browser runtime tab and its CDP capability from Node REPL.
-export function createDirector(tab, cdp, root) {
+/** Where the pointer rests between shots, as fractions of the viewport: 1145 by 1020 on a 1920 by 1080 window. */
+const REST = { x: 1145 / 1920, y: 1020 / 1080 };
+const DEFAULT_SIZE = { width: 1920, height: 1080 };
+
+/**
+ * Drives a page the way a person would, with a pointer that moves before it
+ * clicks, and records it with Chrome's screencast.
+ *
+ * - `page`: the page port (evaluate, fillByRole, url, snapshot) from
+ *   scripts/feature-video/capture/cdp-page.mjs or codex-page.mjs.
+ * - `cdp`: a chrome-cdp client with `send` and `readEvents`, opened with
+ *   `Page.screencastFrame` in `bufferEvents`.
+ * - `options.framesDir`: where each shot's frames go, one folder per shot id.
+ *   Defaults to `<root>/production/frames`.
+ * - `options.size`: the largest frame the screencast may deliver. Chrome
+ *   stops at 1.5 times the CSS viewport, so pick a viewport that makes that
+ *   the size you want. Defaults to 1920 by 1080.
+ */
+export function createDirector(page, cdp, root, options = {}) {
+  const framesDir =
+    options.framesDir ?? path.join(root, "production", "frames");
+  const size = options.size ?? DEFAULT_SIZE;
   const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
   let recording = null;
   async function pump() {
@@ -37,11 +57,23 @@ export function createDirector(tab, cdp, root) {
       await sleep(10);
     } while (Date.now() < until);
   }
-  let pointer = { x: 1145, y: 1020 };
+  let pointer = null;
   let events = [];
   let started = 0;
 
+  async function restPoint() {
+    const view = await page.evaluate(() => ({
+      width: window.innerWidth,
+      height: window.innerHeight,
+    }));
+    return {
+      x: Math.round(view.width * REST.x),
+      y: Math.round(view.height * REST.y),
+    };
+  }
+
   async function move(x, y) {
+    pointer ??= await restPoint();
     const from = { ...pointer };
     const start = Date.now();
     do {
@@ -60,12 +92,8 @@ export function createDirector(tab, cdp, root) {
     } while (true);
   }
 
-  async function target(label, role = "button") {
-    const locator = tab.playwright.getByRole(role, {
-      name: label,
-      exact: true,
-    });
-    const rect = await tab.playwright.evaluate((label) => {
+  async function target(label) {
+    const rect = await page.evaluate((label) => {
       const el = [
         ...document.querySelectorAll('button,a,input,[role="radio"]'),
       ].find(
@@ -84,7 +112,7 @@ export function createDirector(tab, cdp, root) {
     }, label);
     await move(rect.x, rect.y);
     await wait(240);
-    const hovered = await tab.playwright.evaluate(
+    const hovered = await page.evaluate(
       (label) =>
         [...document.querySelectorAll(":hover")].some(
           (e) =>
@@ -95,18 +123,9 @@ export function createDirector(tab, cdp, root) {
       label
     );
     if (!hovered) throw Error("Native hover did not reach " + label);
-    return locator;
   }
 
-  async function click(label, role = "button") {
-    await target(label, role);
-    events.push({
-      label,
-      action: "click",
-      time: (Date.now() - started) / 1000,
-      ...pointer,
-      hover: true,
-    });
+  async function press() {
     await cdp.send("Input.dispatchMouseEvent", {
       type: "mousePressed",
       button: "left",
@@ -123,10 +142,26 @@ export function createDirector(tab, cdp, root) {
     await wait(200);
   }
 
+  async function click(label) {
+    await target(label);
+    events.push({
+      label,
+      action: "click",
+      time: (Date.now() - started) / 1000,
+      ...pointer,
+      hover: true,
+    });
+    await press();
+  }
+
   async function fill(label, value) {
-    const locator = await target(label, "spinbutton");
-    await locator.fill(String(value));
-    await locator.press("Tab");
+    await target(label);
+    await page.fillByRole({
+      role: "spinbutton",
+      name: label,
+      value,
+      commitKey: "Tab",
+    });
     events.push({
       label,
       action: "fill",
@@ -138,14 +173,14 @@ export function createDirector(tab, cdp, root) {
   }
 
   async function cell(index = 3) {
-    const labels = await tab.playwright
-      .getByRole("button", { name: / over / })
-      .allTextContents({});
-    const locator = tab.playwright
-      .getByRole("button", { name: / over / })
-      .nth(index);
+    const labels = await page.evaluate(() =>
+      [...document.querySelectorAll("button")]
+        .filter((e) => !e.closest("[inert]") && e.getBoundingClientRect().width)
+        .map((e) => e.getAttribute("aria-label") || e.textContent?.trim() || "")
+        .filter((label) => / over /.test(label))
+    );
     if (index >= labels.length) throw Error("Missing matrix crossing");
-    await click(await locator.getAttribute("aria-label"));
+    await click(labels[index]);
   }
 
   async function mountPointer() {
@@ -154,11 +189,12 @@ export function createDirector(tab, cdp, root) {
         "window.removeCapturePointer?.(); import('/scripts/demo-capture/mount-pointer.ts').then(m=>{window.removeCapturePointer=m.mountCapturePointer()})",
       awaitPromise: true,
     });
+    pointer ??= await restPoint();
     await move(pointer.x, pointer.y);
   }
 
   async function canvas() {
-    const point = await tab.playwright.evaluate(() => {
+    const point = await page.evaluate(() => {
       const el = [...document.querySelectorAll("canvas")].find(
         (e) => !e.closest("[inert]") && e.getBoundingClientRect().width
       );
@@ -168,7 +204,7 @@ export function createDirector(tab, cdp, root) {
     });
     await move(point.x, point.y);
     await wait(240);
-    const hovered = await tab.playwright.evaluate(
+    const hovered = await page.evaluate(
       () => !!document.querySelector(".canvas-wrapper:hover")
     );
     if (!hovered) throw Error("Native hover missed animation canvas");
@@ -179,26 +215,14 @@ export function createDirector(tab, cdp, root) {
       ...pointer,
       hover: true,
     });
-    await cdp.send("Input.dispatchMouseEvent", {
-      type: "mousePressed",
-      button: "left",
-      clickCount: 1,
-      ...pointer,
-    });
-    await wait(140);
-    await cdp.send("Input.dispatchMouseEvent", {
-      type: "mouseReleased",
-      button: "left",
-      clickCount: 1,
-      ...pointer,
-    });
-    await wait(200);
+    await press();
   }
 
   async function shot(id, seconds, action) {
-    const dir = path.join(root, "production", "frames", id);
+    const dir = path.join(framesDir, id);
     await fs.mkdir(dir, { recursive: true });
-    await move(1145, 1020);
+    const rest = await restPoint();
+    await move(rest.x, rest.y);
     events = [];
     const initial = await cdp.readEvents({ methods: ["Page.screencastFrame"] });
     const frames = [];
@@ -207,8 +231,8 @@ export function createDirector(tab, cdp, root) {
     await cdp.send("Page.startScreencast", {
       format: "jpeg",
       quality: 90,
-      maxWidth: 1920,
-      maxHeight: 1080,
+      maxWidth: size.width,
+      maxHeight: size.height,
       everyNthFrame: 1,
     });
     let failure;
@@ -231,8 +255,8 @@ export function createDirector(tab, cdp, root) {
       events,
       frames,
       failure,
-      url: await tab.url(),
-      snapshot: await tab.playwright.domSnapshot(),
+      url: await page.url(),
+      snapshot: await page.snapshot(),
     };
     await fs.writeFile(
       path.join(dir, "capture.json"),
