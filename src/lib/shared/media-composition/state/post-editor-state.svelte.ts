@@ -844,8 +844,14 @@ export function createPostEditorState(deps: PostEditorDeps) {
    * post never drift apart. It joins the undo history like an edit but is
    * not saved again: the other tab already saved it. A copy that needs a
    * video only the other tab holds (a file picked there) is left alone.
+   *
+   * A feature video passes `evenIfOlder`: its copy on disk wins even when
+   * this editor's edits are later, and Undo brings those edits back.
    */
-  function adoptSaved(next: PostProject): boolean {
+  function adoptSaved(
+    next: PostProject,
+    options: { evenIfOlder?: boolean } = {}
+  ): boolean {
     if (gestureBase || session) return false;
     const parsed = PostProjectSchema.safeParse(next);
     if (
@@ -853,7 +859,8 @@ export function createPostEditorState(deps: PostEditorDeps) {
       parsed.data.sequenceId !== project.sequenceId ||
       // This tab's own saves carry savedUpdatedAt, so only a later save from
       // somewhere else gets through.
-      parsed.data.updatedAt <= Math.max(project.updatedAt, savedUpdatedAt)
+      (!options.evenIfOlder &&
+        parsed.data.updatedAt <= Math.max(project.updatedAt, savedUpdatedAt))
     )
       return false;
     const incoming = parsed.data;
