@@ -78,16 +78,13 @@ function loadSpecialPlacement(
   oriKey: string,
   letter: string
 ): PlacementData | null {
-  const gridModeStr =
-    gridMode === GridMode.BOX
-      ? "box"
-      : gridMode === GridMode.SKEWED
-        ? "skewed"
-        : "diamond";
+  // Diamond and box share the app's canonical placement data (the renderer
+  // looks a box arrow up as the diamond arrow it presents); skewed keeps its
+  // own folder, as in static/data/arrow_placement.
   const placementPath = join(
     ASSETS_ROOT,
     "data/arrow_placement",
-    gridModeStr,
+    ...(gridMode === GridMode.SKEWED ? ["skewed"] : []),
     "special",
     oriKey,
     `${letter}_placements.json`
@@ -470,14 +467,14 @@ const defaultPlacementCache: Record<
 > = {};
 
 /**
- * Files are at: static/data/arrow_placement/{gridMode}/default/default_{gridMode}_{motionType}_placements.json
+ * Files are at: assets/data/arrow_placement/default/default_{motionType}_placements.json,
+ * copied from the app's static/data/arrow_placement by scripts/sync-card-assets.mjs.
  */
 function loadDefaultPlacementData(
-  gridMode: GridMode,
+  _gridMode: GridMode,
   motionType: string
 ): Record<string, Record<string, [number, number]>> | null {
-  const gridModeStr = gridMode === GridMode.BOX ? "box" : "diamond";
-  const cacheKey = `${gridModeStr}_${motionType}`;
+  const cacheKey = motionType;
 
   if (defaultPlacementCache[cacheKey]) {
     return defaultPlacementCache[cacheKey];
@@ -486,9 +483,8 @@ function loadDefaultPlacementData(
   const filePath = join(
     ASSETS_ROOT,
     "data/arrow_placement",
-    gridModeStr,
     "default",
-    `default_${gridModeStr}_${motionType}_placements.json`
+    `default_${motionType}_placements.json`
   );
 
   if (!existsSync(filePath)) {

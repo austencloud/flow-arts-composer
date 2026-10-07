@@ -59,6 +59,9 @@ import {
   rotatePlacementAngleToDisplayed,
   rotatePlacementVectorToDisplayed,
   toCanonicalLocation,
+  resolveFullArrowAssetPath,
+  type MotionType as RenderMotionType,
+  type Orientation as RenderOrientation,
 } from "@tka/render-core";
 // Arrow calculations still use local files (they have MCP-specific logic)
 import {
@@ -960,8 +963,9 @@ ${svgParts.join("\n")}
   ): string {
     const motionType = motion.motionType.toLowerCase();
 
-    // Static motions don't have arrows
-    if (motionType === "static") {
+    // A zero-turn static prop stays still, so its canonical arrow is empty.
+    // Once turns are added, the prop spins in place and needs the static arrow.
+    if (motionType === "static" && (motion.turns ?? 0) === 0) {
       return "";
     }
 
@@ -1152,37 +1156,13 @@ ${svgParts.join("\n")}
       return join(this.assetsRoot, "images/arrows/float.svg");
     }
 
-    // Arrow files are organized by START orientation, not location
-    // "from_radial" = starts from radial orientation (IN/OUT)
-    // "from_nonradial" = starts from non-radial orientation (CLOCK/COUNTER)
-    const isNonRadial =
-      startOrientation === Orientation.CLOCK ||
-      startOrientation === Orientation.COUNTER;
-    const startType = isNonRadial ? "from_nonradial" : "from_radial";
-
-    // Format turns for filename (0, 0.5, 1, 1.5, 2, 2.5, 3)
-    const turnsNum = turns ?? 0;
-    // Arrow files use .0 suffix for whole numbers (e.g., pro_1.0.svg, pro_3.0.svg)
-    const turnsStr = Number.isInteger(turnsNum)
-      ? `${turnsNum}.0`
-      : turnsNum.toString();
-
-    if (motionType === "dash") {
-      return join(
-        this.assetsRoot,
-        "images/arrows/dash",
-        startType,
-        `dash_${turnsStr}.svg`
-      );
-    }
-
-    // For pro/anti/static, use the from_radial/from_nonradial structure
     return join(
       this.assetsRoot,
-      "images/arrows",
-      motionType,
-      startType,
-      `${motionType}_${turnsStr}.svg`
+      resolveFullArrowAssetPath({
+        motionType: motionType as RenderMotionType,
+        startOrientation: startOrientation as RenderOrientation | undefined,
+        turns,
+      })
     );
   }
 
