@@ -166,6 +166,7 @@
   } from "$lib/shared/media-composition/services/post-draft-storage";
   import { loadPostProject } from "$lib/shared/media-composition/services/post-project-store";
   import { createPostTabSync } from "$lib/shared/media-composition/services/post-tab-sync";
+  import type { FeatureVideoSync } from "$lib/shared/media-composition/services/feature-video-client";
   import {
     parsePostStudioBackup,
     serializePostStudioBackup,
@@ -206,6 +207,11 @@
     active: boolean;
     sequence: SequenceData;
     initialProject?: PostProject;
+    /**
+     * A feature video. Its post saves to its folder on this computer, never
+     * to this browser's Post Studio storage; see feature-video-client.ts.
+     */
+    feature?: FeatureVideoSync;
     /** Saves elsewhere too; may hand back a later edit saved somewhere else. */
     onSaveDraft?: (project: PostProject) => Promise<PostProject | null | void>;
     draftLoadError?: string | null;
@@ -234,6 +240,7 @@
     active,
     sequence,
     initialProject,
+    feature,
     onSaveDraft,
     draftLoadError = null,
     cardPreviewUrl,
@@ -283,12 +290,18 @@
 
   let overlayPainter = $state.raw<PostStudioLayerPainter | null>(null);
 
+  // Read once: the Post page opens a new workspace for another feature video.
+  const featureVideo = feature;
+
   const editor = createPostEditorState({
     initialProject,
     getSequence: () => sequence,
     getCatalogVideo: (videoId) =>
       catalog.find((video) => video.videoId === videoId) ?? null,
     hasAnimationOverlay: () => overlayPainter !== null,
+    // A feature video keeps its post, timings and undo history apart from
+    // this browser's Post Studio storage.
+    store: featureVideo?.store,
   });
 
   onMount(() => {
@@ -297,7 +310,18 @@
     let stop: (() => void) | undefined;
     void import("$lib/shared/media-composition/services/post-project-dev-client")
       .then(({ startPostProjectDevBridge }) => {
-        if (!disposed) stop = startPostProjectDevBridge(editor);
+        if (disposed) return;
+        stop = startPostProjectDevBridge(
+          editor,
+          featureVideo
+            ? {
+                featureSlug: featureVideo.slug,
+                // Another editor, the CLI or a hand edit saved a newer copy.
+                onFeatureRevision: (revision) =>
+                  void featureVideo.checkRevision(revision),
+              }
+            : {}
+        );
       })
       .catch(() => {});
     return () => {
@@ -362,16 +386,37 @@
       )
     : null;
 
-  // Every open tab of this post stays on the newest saved copy.
-  const tabSync = createPostTabSync(
-    sequence.id,
-    (project) => editor.adoptSaved(project),
-    () => loadPostProject(sequence.id)
-  );
+  // Every open tab of this post stays on the newest saved copy. For a
+  // feature video, disk does that job, and no tab of the sequence's ordinary
+  // post may reach it: the tab sync is keyed by sequence alone.
+  const tabSync = featureVideo
+    ? null
+    : createPostTabSync(
+        sequence.id,
+        (project) => editor.adoptSaved(project),
+        () => loadPostProject(sequence.id)
+      );
+
+  // Disk's newer copy replaced the post as one undo step.
+  const disconnectFeature = featureVideo?.connect(editor, () => {
+    draftError = null;
+    const loaded = editor.project;
+    showToast({
+      message: "Loaded the newer copy from disk.",
+      type: "info",
+      duration: 8000,
+      action: {
+        label: t("post_editor_undo"),
+        onClick: () => {
+          if (editor.project === loaded) editor.undo();
+        },
+      },
+    });
+  });
 
   $effect(() => {
     const revision = editor.saveRevision;
-    if (revision > 0) untrack(() => tabSync.announce(editor.snapshot));
+    if (revision > 0) untrack(() => tabSync?.announce(editor.snapshot));
     if (draftAutosave)
       untrack(() => {
         const snapshot = editor.snapshot;
@@ -385,7 +430,8 @@
       });
   });
   onDestroy(() => {
-    tabSync.dispose();
+    tabSync?.dispose();
+    disconnectFeature?.();
     draftAutosave?.dispose();
     clearTimeout(saveFlashTimer);
   });
