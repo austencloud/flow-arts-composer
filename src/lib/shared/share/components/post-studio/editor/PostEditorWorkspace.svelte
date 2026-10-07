@@ -90,7 +90,11 @@
   import { itemIdFromTitlesRole } from "$lib/shared/media-composition/domain/tunnel-titles";
   import { createStaffTipAnalysis } from "$lib/shared/media-composition/state/staff-tip-analysis.svelte";
   import { loadAnimationOverlayPainter } from "$lib/shared/media-composition/services/animation-overlay-painter-registry";
-  import { planProjectAudio } from "$lib/shared/media-composition/domain/post-audio-plan";
+  import {
+    musicAudioKey,
+    planMusicAudio,
+    planProjectAudio,
+  } from "$lib/shared/media-composition/domain/post-audio-plan";
   import {
     AudioDownloadStalledError,
     buildMixedAudioTrack,
@@ -2315,10 +2319,16 @@
           videoSources.set(takeRole(take.id), url);
         }
       }
+      const music = editor.project.music;
+      if (music) takeUrls.set(musicAudioKey(music), music.url);
       const audio = await buildMixedAudioTrack({
-        segments: planProjectAudio(compiled, editor.project.audio),
+        segments: [
+          ...planProjectAudio(compiled, editor.project.audio),
+          ...planMusicAudio(music, compiled.durationSeconds),
+        ],
         durationSeconds: compiled.durationSeconds,
         takeUrls,
+        ...(music ? { required: new Set([musicAudioKey(music)]) } : {}),
         signal: exportAbort.signal,
         onProgress: (fraction) => {
           exportProgress = {

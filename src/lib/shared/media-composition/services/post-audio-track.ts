@@ -20,8 +20,6 @@ export interface BuildPostAudioTrackInput {
 }
 
 const DEFAULT_SAMPLE_RATE = 48_000;
-/** Any valid rate works - see the comment on its one use in decodeTakeAudio. */
-const DECODE_CONTEXT_SAMPLE_RATE = 44_100;
 
 /**
  * No bytes for this long means the download has stopped, not slowed. Paused
@@ -45,10 +43,14 @@ export class AudioDownloadStalledError extends Error {
 export interface BuildMixedAudioTrackInput {
   segments: readonly PostAudioSegment[];
   durationSeconds: number;
-  /** Fetchable URL for a take's own media, keyed by `PostTake.id`. A take
-   *  missing here is treated the same as one that fails to decode: silent,
-   *  not a failure. */
+  /** Fetchable URL for each source the segments read, keyed by their
+   *  `takeId`: a take's own media by `PostTake.id`, the music by
+   *  `musicAudioKey`. A take missing here is treated the same as one that
+   *  fails to decode: silent, not a failure. */
   takeUrls: ReadonlyMap<string, string>;
+  /** Keys of `takeUrls` the post cannot go without, such as the music's.
+   *  One that cannot be read fails the render instead of going silent. */
+  required?: ReadonlySet<string>;
   sampleRate?: number;
   /** Cancelling the render stops the downloads rather than waiting on them. */
   signal?: AbortSignal;
@@ -93,12 +95,23 @@ export async function buildMixedAudioTrack(
   // sequence layer's pieces), and two takes can cut from the same recording,
   // but each file only needs reading once.
   const decodes = new Map<string, Promise<PostAudioSource | null>>();
+  const requiredUrls = new Set(
+    [...(input.required ?? [])].flatMap((key) => {
+      const url = input.takeUrls.get(key);
+      return url ? [url] : [];
+    })
+  );
   for (const takeId of neededTakeIds) {
     const url = input.takeUrls.get(takeId);
     if (url && !decodes.has(url)) {
       decodes.set(
         url,
-        decodeTakeAudio(takeId, url, downloads.signal, progress.track(url))
+        decodeSourceAudio(takeId, url, {
+          signal: downloads.signal,
+          tracker: progress.track(url),
+          sampleRate,
+          required: requiredUrls.has(url),
+        })
       );
     }
   }
@@ -240,16 +253,25 @@ async function downloadAudioFile(
   }
 }
 
-/** Fetches and decodes one take's audio. Failure - a missing file, a codec
- *  the browser can't decode, a network error - is swallowed and logged: the
- *  mix simply plays that segment's span as silence rather than failing the
- *  whole export over one bad take. A stalled download says nothing about the
- *  take, so it fails the render where it can be seen instead. */
-async function decodeTakeAudio(
-  takeId: string,
+interface DecodeOptions {
+  signal: AbortSignal;
+  tracker: DownloadTracker;
+  /** The mix's rate; the browser resamples the file to it. */
+  sampleRate: number;
+  /** The render needs this file: failing to read it fails the render. */
+  required: boolean;
+}
+
+/** Fetches and decodes one source's audio: a take's, or the music's.
+ *  Failure - a missing file, a codec the browser can't decode, a network
+ *  error - is swallowed and logged for a take: the mix simply plays that
+ *  segment's span as silence rather than failing the whole export over one
+ *  bad take. A required source fails the render instead, and so does a
+ *  stalled download, which says nothing about the take. */
+async function decodeSourceAudio(
+  key: string,
   url: string,
-  signal: AbortSignal,
-  tracker: DownloadTracker
+  { signal, tracker, sampleRate, required }: DecodeOptions
 ): Promise<PostAudioSource | null> {
   try {
     const arrayBuffer = await downloadAudioFile(url, signal, tracker);
@@ -258,9 +280,10 @@ async function decodeTakeAudio(
     // user gesture to leave "suspended" (a real AudioContext can start
     // suspended in some browsers; decode still works, but this sidesteps
     // that entirely). Its (1, 1, rate) render config is never actually
-    // rendered - decodeAudioData returns the source's own native sample rate
-    // and channel count regardless of what the context was built with.
-    const context = new OfflineAudioContext(1, 1, DECODE_CONTEXT_SAMPLE_RATE);
+    // rendered. decodeAudioData resamples the file to the context's rate, so
+    // the context runs at the mix's rate: the mix then reads the samples one
+    // for one instead of resampling them a second time.
+    const context = new OfflineAudioContext(1, 1, sampleRate);
     const audioBuffer = await context.decodeAudioData(arrayBuffer);
     const channels: Float32Array[] = [];
     for (let channel = 0; channel < audioBuffer.numberOfChannels; channel++) {
@@ -270,8 +293,13 @@ async function decodeTakeAudio(
   } catch (error) {
     if (error instanceof AudioDownloadStalledError) throw error;
     if (signal.aborted) return null;
+    if (required)
+      throw new Error(
+        `Could not read the sound in ${url}, which this post needs.`,
+        { cause: error }
+      );
     console.warn(
-      `[post-audio-track] Take "${takeId}" audio could not be decoded; treating it as silent.`,
+      `[post-audio-track] Take "${key}" audio could not be decoded; treating it as silent.`,
       error
     );
     return null;
