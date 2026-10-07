@@ -17,6 +17,7 @@
     type EvaluatedFrameLayer,
   } from "$lib/shared/media-composition/services/frame-evaluator";
   import {
+    previewClockLeads,
     previewClockStep,
     type PreviewVideoController,
   } from "$lib/shared/media-composition/services/post-preview-clock";
@@ -423,8 +424,17 @@
     const requiredControllers = new Set(
       required.map(({ controller }) => controller)
     );
-    for (const controller of playbackVideos.values())
+    // Sounding music sets the clock, so muted footage keeps up with it by
+    // small speed changes: a muted clip's own clock can fall behind and
+    // never make the time up.
+    const leads = musicMedia && !step.waiting ? previewClockLeads(media) : [];
+    for (const controller of playbackVideos.values()) {
       controller.hold(step.waiting || !requiredControllers.has(controller));
+      const index = required.findIndex(
+        (needed) => needed.controller === controller
+      );
+      controller.follow?.(index < 0 ? null : (leads[index + 1] ?? null));
+    }
     musicController?.hold(step.waiting);
     return step.deltaSeconds;
   }

@@ -2,6 +2,7 @@ import { flushSync } from "svelte";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { mountPlaybackMediaLayer } from "./post-studio-media-layer-harness.svelte";
 import { previewClockStep } from "$lib/shared/media-composition/services/post-preview-clock";
+import { FOLLOW_AHEAD_SECONDS } from "$lib/shared/media-composition/services/video-preview-seek";
 
 vi.mock(
   "$lib/shared/media-composition/state/media-composition-context",
@@ -203,5 +204,53 @@ describe("Post Studio playback media lifetime", () => {
     expect(drawImage.mock.calls.length).toBe(paints);
     present(0);
     expect(h.canvas.style.visibility).toBe("visible");
+  });
+
+  it("speeds muted footage up or slows it down to keep up with sounding music", async () => {
+    const h = mountPlaybackMediaLayer();
+    mounted.push(h);
+    present(0);
+    await vi.waitFor(() => expect(h.video.paused).toBe(false));
+    const controller = h.controller!;
+    expect(h.video.muted).toBe(true);
+    controller.follow?.(FOLLOW_AHEAD_SECONDS - 0.015);
+    expect(h.video.playbackRate).toBeCloseTo(1.1);
+    // A frame's read keeps the change.
+    controller.read();
+    expect(h.video.playbackRate).toBeCloseTo(1.1);
+    // Back in its place, the clip returns to its authored speed.
+    controller.follow?.(FOLLOW_AHEAD_SECONDS - 0.0005);
+    expect(h.video.playbackRate).toBe(1);
+    controller.follow?.(FOLLOW_AHEAD_SECONDS - 0.015);
+    controller.follow?.(FOLLOW_AHEAD_SECONDS - 0.015);
+    expect(h.video.playbackRate).toBeCloseTo(1.1);
+    // Music that stops setting the clock gives the authored speed back.
+    controller.follow?.(null);
+    expect(h.video.playbackRate).toBe(1);
+    // Footage that sounds never bends its pitch.
+    h.video.muted = false;
+    controller.follow?.(FOLLOW_AHEAD_SECONDS - 0.015);
+    expect(h.video.playbackRate).toBe(1);
+  });
+
+  it("keeps the authored speed while footage is held or the post is paused", async () => {
+    const h = mountPlaybackMediaLayer();
+    mounted.push(h);
+    present(0);
+    await vi.waitFor(() => expect(h.video.paused).toBe(false));
+    const controller = h.controller!;
+    controller.follow?.(FOLLOW_AHEAD_SECONDS + 0.03);
+    expect(h.video.playbackRate).toBeCloseTo(0.85);
+    controller.hold(true);
+    controller.follow?.(FOLLOW_AHEAD_SECONDS + 0.03);
+    expect(h.video.playbackRate).toBe(1);
+    await vi.waitFor(() => {
+      controller.hold(false);
+      expect(h.video.paused).toBe(false);
+    });
+    controller.follow?.(FOLLOW_AHEAD_SECONDS + 0.03);
+    expect(h.video.playbackRate).toBeCloseTo(0.85);
+    h.setPlaying(false);
+    expect(h.video.playbackRate).toBe(1);
   });
 });
