@@ -89,6 +89,7 @@ Last audit: 2025-12-27
     rightProp,
     additionalLayers = [],
     preloadAdditionalLayers = [],
+    additionalLayersAt = undefined,
     tunnelSpectrum = true,
     tunnelPropColors = null,
     primaryPropColors,
@@ -173,6 +174,7 @@ Last audit: 2025-12-27
     rightProp: PropState | null;
     additionalLayers?: AdditionalLayerProps[];
     preloadAdditionalLayers?: AdditionalLayerProps[];
+    additionalLayersAt?: (step: number) => AdditionalLayerProps[];
     tunnelSpectrum?: boolean;
     tunnelPropColors?: TunnelPropColorPair | null;
     primaryPropColors?: TunnelPropColorPair | null;
@@ -872,6 +874,7 @@ Last audit: 2025-12-27
       {rightProp}
       {additionalLayers}
       {preloadAdditionalLayers}
+      {additionalLayersAt}
       {tunnelSpectrum}
       {tunnelPropColors}
       {primaryPropColors}

@@ -13,6 +13,7 @@ import type {
 } from "$lib/shared/animation-engine/services/ITrailCapturer";
 import type { GridJoin } from "@tka/tka-types";
 import type { GridJoinTweenSample, HandOffsets } from "./grid-join-tween";
+import type { MotionSampleSource } from "./motion-sub-sampler";
 import type { TrailSettings } from "../domain/types/trail-types";
 import type { PropState } from "$lib/shared/foundation/domain/types/prop-state";
 import type { AnimationPathCache } from "$lib/shared/animation-engine/services/animation-path-cache";
@@ -222,6 +223,17 @@ export interface RenderFrameParams {
   gridJoinOffsets?: HandOffsets;
   /** The layout slide running this frame, or null/absent when none is. */
   gridJoinSlide?: GridJoinTweenSample | null;
+  /**
+   * Pure pose source for the sequence being played, with this frame's grid
+   * join applied. The render loop fills slow frames with poses sampled from
+   * it. Absent when the engine's orchestrator has no sequence.
+   */
+  motionSampleSource?: MotionSampleSource;
+  /**
+   * The host's tunnel copies at an arbitrary step, index-aligned with
+   * `props.additionalLayers`. Lets slow frames sample the copies too.
+   */
+  additionalLayersAt?: (step: number) => AdditionalLayerProps[];
   /** Whether the engine-aligned mandala guide is enabled for this canvas. */
   mandalaVisible?: boolean;
   /** Line width of the mandala guide in canvas pixels; default 2.5. */

@@ -72,6 +72,10 @@ import type { MandalaHandVisibility } from "$lib/shared/mandala/domain/mandala-t
 import type { RenderActivityGate } from "$lib/shared/render-gating/render-activity-gate";
 import { shiftTrailPointsBy } from "./animation-grid-join";
 import type { HandOffsets } from "./grid-join-tween";
+import {
+  MotionSubSampler,
+  type MotionSubSample,
+} from "./motion-sub-sampler";
 
 // Longtask observer singleton - one PerformanceObserver shared across every
 // AnimationRenderLoop instance. Without this, each loop attaches its own
@@ -255,6 +259,9 @@ export class AnimationRenderLoop {
    */
   private canvasFrame: CanvasFrame = squareFrame(950);
   private offset = { x: 0, y: 0 };
+  /** Fills slow live frames with on-path poses; see motion-sub-sampler.ts. */
+  private readonly motionSubSampler = new MotionSubSampler();
+  private motionSamples: readonly MotionSubSample[] = [];
   private lastTrailFrameTime: number = 0;
   // Timestamp of the last frame that actually stamped the trail accumulator.
   // Separate from lastTrailFrameTime (which uses 0 as an uninitialized
@@ -631,6 +638,10 @@ export class AnimationRenderLoop {
       charcoalRendererInitialized: charcoalRenderer?.isInitialized() ?? false,
       ledRendererInitialized: ledRenderer?.isInitialized() ?? false,
       hasTrailOverlay: !!trailOverlay,
+      motionResample: {
+        ...this.motionSubSampler.stats,
+        lastFrameSamples: this.motionSamples.length,
+      },
       fireTipDiagnostics: this.fireTipTracker?.getDiagnostics?.() ?? null,
       fireRendererDiagnostics: fireRenderer?.getDiagnostics?.() ?? null,
     };
@@ -1508,6 +1519,36 @@ export class AnimationRenderLoop {
     if (this.loopDetectedThisFrame) {
       this.loopStartTime = currentTime;
     }
+
+    // Slow live frames are filled with the poses the props passed through.
+    // Only the free-running loop plans them: the export driver renders its
+    // own sub-steps per beat and passes an explicit dt.
+    const resampleEnabled =
+      typeof window === "undefined" ||
+      (window as { __TKA_MOTION_RESAMPLE?: boolean }).__TKA_MOTION_RESAMPLE !==
+        false;
+    this.motionSamples =
+      providedDtSeconds === undefined &&
+      isPlaying &&
+      resampleEnabled &&
+      params.motionSampleSource &&
+      rafGap > 0
+        ? this.motionSubSampler.plan({
+            source: params.motionSampleSource,
+            previousStep,
+            currentStep,
+            dtSeconds,
+            isSeamlesslyLoopable: params.isSeamlesslyLoopable ?? false,
+            loopDetected: this.loopDetectedThisFrame,
+            liveLeft: props.leftProp,
+            liveRight: props.rightProp,
+            layerCount: props.additionalLayers.length,
+            layersAt: params.additionalLayersAt ?? null,
+            liveLayers: props.additionalLayers,
+            previousTimeMs: currentTime - rafGap,
+            currentTimeMs: currentTime,
+          })
+        : [];
     // currentStep is the duration-aware, fractional beat coordinate used to
     // paint props. It is therefore the only cache phase that remains correct
     // through pause/resume and playback-speed changes. A generic backwards
@@ -1721,6 +1762,8 @@ export class AnimationRenderLoop {
           isSeamlesslyLoopable: params.isSeamlesslyLoopable ?? false,
           leftPropSwapSuppressed,
           rightPropSwapSuppressed,
+          motionSamples:
+            this.motionSamples.length > 0 ? this.motionSamples : undefined,
         });
       }
     } else if (
