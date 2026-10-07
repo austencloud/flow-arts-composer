@@ -40,7 +40,6 @@
     ContextMenuEntry,
     ContextMenuState,
   } from "$lib/shared/components/context-menu/context-menu-types";
-  import { saveMandalaToCollection } from "$lib/features/mandala/tabs/collection/services/save-mandala-to-collection";
   import { settingsService } from "$lib/shared/settings/state/settings-state.svelte";
   import { BackgroundType } from "@austencloud/backgrounds";
   import { toast } from "$lib/shared/toast/state/toast-state.svelte";
@@ -789,6 +788,10 @@
       label: "Save to Collection",
       icon: "fa-bookmark",
       action: async () => {
+        // The collection store reaches Firestore, so it loads with this
+        // choice, not with every grid (the public /composer Construct stop).
+        const { saveMandalaToCollection } =
+          await import("$lib/features/mandala/tabs/collection/services/save-mandala-to-collection");
         const name = await saveMandalaToCollection({
           steps: [...steps],
           variant: mandalaMenuVariant,

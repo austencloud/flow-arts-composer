@@ -79,6 +79,19 @@ export interface CardMandalaPlacement {
   variant: "left" | "right" | "full";
 }
 
+/**
+ * Center to hand point in the card mandala's own units. A joined card passes
+ * each hand's grid offset in these units (render-core's `gridJoinOffsets`
+ * with this radius), so the figures shift exactly as the grids do.
+ */
+export const CARD_MANDALA_HAND_RADIUS = GRID_RADIUS;
+
+/** Each hand's grid offset on a joined card, in card mandala units. */
+export interface CardMandalaHandOffsets {
+  readonly left: { readonly x: number; readonly y: number };
+  readonly right: { readonly x: number; readonly y: number };
+}
+
 export interface CardMandalaTurnAllocation {
   left: readonly (number | "fl")[];
   right: readonly (number | "fl")[];
@@ -328,17 +341,39 @@ export function calculateCardMandalaPaths(
   return { left: buildHand("left"), right: buildHand("right") };
 }
 
+/** How far a joined pair reaches past one figure's square bound. */
+function joinReach(offsets: CardMandalaHandOffsets): number {
+  return Math.max(
+    Math.abs(offsets.left.x),
+    Math.abs(offsets.left.y),
+    Math.abs(offsets.right.x),
+    Math.abs(offsets.right.y)
+  );
+}
+
+/**
+ * Draws the mandala into its cell. With `handOffsets` (a joined card), the
+ * full cell draws each hand's figure around its own grid's center and fits
+ * the pair; a one-hand cell keeps its figure centered, since it shows no
+ * second grid to sit beside.
+ */
 export function renderCardMandala(
   ctx: CanvasRenderingContext2D,
   paths: CardMandalaPaths,
   placement: CardMandalaPlacement,
   darkMode: boolean,
-  customColors?: HandColorPair | null
+  customColors?: HandColorPair | null,
+  handOffsets?: CardMandalaHandOffsets | null
 ): void {
   const size = Math.floor(placement.cellSize * 0.85);
   const padding = (placement.cellSize - size) / 2;
   const center = size / 2;
-  const extent = GRID_RADIUS + (TIP_OFFSET * GRID_RADIUS) / ENGINE_GRID_RADIUS;
+  const joined =
+    placement.variant === "full" && handOffsets ? handOffsets : null;
+  const extent =
+    GRID_RADIUS +
+    (TIP_OFFSET * GRID_RADIUS) / ENGINE_GRID_RADIUS +
+    (joined ? joinReach(joined) : 0);
   const scale = center / (extent * 1.05);
   const visible =
     placement.variant === "full"
@@ -359,10 +394,16 @@ export function renderCardMandala(
 
   for (const hand of visible) {
     ctx.strokeStyle = colors[hand];
+    const offset = joined?.[hand];
+    if (offset) {
+      ctx.save();
+      ctx.translate(offset.x, offset.y);
+    }
     for (const path of paths[hand]) {
       drawPathCommands(ctx, parsePathData(path));
       ctx.stroke();
     }
+    if (offset) ctx.restore();
   }
   ctx.restore();
 }

@@ -92,6 +92,8 @@
     eager?: boolean;
     /** Allow a QR when this card has a prepared public scan asset. */
     allowQR?: boolean;
+    /** Upload a fresh render for later visitors (see ThumbnailRequest). */
+    shareRender?: boolean;
     /** Use 5:7 playing card layout for physical card export (different from lightMode/printMode) */
     cardMode?: boolean;
   }
@@ -119,6 +121,7 @@
     showRightMotion = true,
     eager = false,
     allowQR = true,
+    shareRender = true,
     cardMode = false,
   }: Props = $props();
 
@@ -444,6 +447,7 @@
         // background queue prepares the exact scan-ready QR. Guests only reuse
         // public prepared artwork, so scrolling can never allocate a code.
         qrPolicy,
+        shareRender,
         onPreview: (preview) => {
           if (requestIsCurrent() && preview.url) {
             displayedKey = preview.key;

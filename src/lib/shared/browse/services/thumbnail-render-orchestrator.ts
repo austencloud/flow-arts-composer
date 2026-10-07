@@ -68,6 +68,11 @@ export interface ThumbnailRequest {
 
   /** Paint a separately cached preview while its QR version is prepared. */
   onPreview?: (preview: ThumbnailResult) => void;
+
+  /** Upload a fresh shared render for later visitors. Defaults to true. An
+   * upload signs a signed-out visitor in anonymously, so a public page that
+   * must not create an account on its own passes false. */
+  shareRender?: boolean;
 }
 export interface ThumbnailResult {
   /** URL to display (either cloud URL or blob URL), null if render failed */
@@ -668,7 +673,7 @@ export class ThumbnailRenderOrchestrator {
 
             // Upload to cloud (for shared/default classes only — includes the
             // deterministic QR variant now)
-            if (key.usesDefaults) {
+            if (key.usesDefaults && request.shareRender !== false) {
               uploadToCloud(this, key, blob);
             }
 

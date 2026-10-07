@@ -5,12 +5,10 @@ Root is a list of rows, each showing a setting's current value. Choosing a row
 gives that one setting the whole panel, with a back arrow. Nothing else is on
 screen while the user decides.
 
-Single column at every size, deliberately. A two-pane variant (list rail +
-detail, above a container-width seam) was built and removed: it required the
-drawer to grow past 840px, and at that width the detail pane ran ~1300px tall
-for a three-row form while the drawer sat 2.75x wider than every sibling drawer
-in the same slot. Those siblings cap at 400px. This panel caps at ~620px and
-fills its column the way they do.
+The default list stays one column. Customize opts into a centered choice grid
+for wide stages; detail screens still use the whole panel. A persistent
+list-plus-detail split was removed because it made the drawer much wider than
+its siblings and stretched a short form through a tall pane.
 
 SCROLLER DISCIPLINE — this component owns it, and nothing inside a detail may
 declare a scroller of its own. `.layer-body` is the single `overflow-y: auto`
@@ -55,6 +53,7 @@ named in .claude/rules/crossfade-primitive.md.
     listHeader,
     listContent,
     onSelect,
+    choiceLayout = "list",
   }: {
     items: SettingsDrillItem[];
     /** Currently drilled-into item id, or null for the root list. */
@@ -66,6 +65,7 @@ named in .claude/rules/crossfade-primitive.md.
     /** Optional custom landing content. The drill still owns navigation. */
     listContent?: Snippet;
     onSelect?: (id: string | null) => void;
+    choiceLayout?: "list" | "cards";
   } = $props();
 
   const activeItem = $derived(items.find((i) => i.id === selected) ?? null);
@@ -116,11 +116,14 @@ named in .claude/rules/crossfade-primitive.md.
           {#if listHeader}
             <div class="layer-header">{@render listHeader()}</div>
           {/if}
-          <div class="layer-body themed-scrollbar">
+          <div
+            class="layer-body themed-scrollbar"
+            class:cards={choiceLayout === "cards"}
+          >
             {#if listContent}
               {@render listContent()}
             {:else}
-              <div class="row-list">
+              <div class="row-list" class:cards={choiceLayout === "cards"}>
                 {#each items as item (item.id)}
                   <SettingsDrillRow
                     label={item.label}
@@ -139,7 +142,7 @@ named in .claude/rules/crossfade-primitive.md.
               class="back-button"
               type="button"
               onclick={goBack}
-              aria-label="{t('settings_back_all')}"
+              aria-label={t("settings_back_all")}
             >
               <svg
                 viewBox="0 0 24 24"
@@ -235,6 +238,33 @@ named in .claude/rules/crossfade-primitive.md.
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
+  }
+
+  .layer-body.cards {
+    container-type: inline-size;
+  }
+
+  .row-list.cards {
+    display: grid;
+    grid-template-columns: 1fr;
+    align-content: center;
+    gap: 0.75rem;
+    width: 100%;
+    max-width: 1050px;
+    min-height: 100%;
+    margin-inline: auto;
+  }
+
+  @container (min-width: 660px) {
+    .row-list.cards {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  @container (min-width: 820px) {
+    .row-list.cards {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
   }
 
   .detail-title-row {

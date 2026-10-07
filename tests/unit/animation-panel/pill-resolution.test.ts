@@ -19,6 +19,7 @@ describe("animationPillOrder", () => {
     expect(animationPillOrder(true)).toEqual([
       "effects",
       "props",
+      "join",
       "motion",
       "display",
       "export",
@@ -29,6 +30,7 @@ describe("animationPillOrder", () => {
     expect(animationPillOrder(false)).toEqual([
       "effects",
       "props",
+      "join",
       "effort",
       "playback",
       "display",

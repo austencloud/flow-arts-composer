@@ -30,10 +30,13 @@ import type { GalleryOfflineCache } from "$lib/shared/offline/services/gallery-o
 import { networkStatusState } from "$lib/shared/offline/state/network-status-state.svelte";
 import { isDesktop } from "$lib/shared/desktop/is-desktop";
 import { normalizeLegacySequence } from "@tka/tka-types";
+import { fetchPublicSequenceIndexPage } from "$lib/shared/browse/services/public-sequence-index-rest-reader";
 
 /** How long the desktop viewer waits on Firestore before opening from the bundled index. */
 const DESKTOP_SOURCE_READ_TIMEOUT_MS = 2500;
 const CATALOG_PAGE_SIZE = 150;
+// Enough of the index by word to hold four distinct four-step sequences.
+const PREVIEW_PAGE_SIZE = 32;
 
 function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T | null> {
   return new Promise((resolve, reject) => {
@@ -151,6 +154,31 @@ export class PublicSequencesLoader {
     if (!networkStatusState.isOnline) return null;
     this.startRefresh();
     return this.firstPagePromise;
+  }
+
+  /**
+   * The first sequences by word for a public page that must not start
+   * Firestore. Each index entry carries its compositional fields, so these
+   * arrive with steps and open without another read. It is a partial page, so
+   * it never stands in for the catalog; offline, the saved catalog answers.
+   */
+  async loadPreviewSequenceMetadata(
+    pageSize = PREVIEW_PAGE_SIZE
+  ): Promise<SequenceData[]> {
+    if (this.cachedSequences) return this.cachedSequences;
+    try {
+      const docs = await fetchPublicSequenceIndexPage(pageSize);
+      return docs.map(({ id, data }) => {
+        if (data.sourceRef) {
+          this.cacheSourceRef(id, data.sourceRef, data.word, data.name);
+        }
+        return this.mapPublicIndexToSequenceData(data, id);
+      });
+    } catch (error) {
+      const cached = await this.loadCachedSequenceMetadata();
+      if (cached) return cached;
+      throw error;
+    }
   }
 
   /**

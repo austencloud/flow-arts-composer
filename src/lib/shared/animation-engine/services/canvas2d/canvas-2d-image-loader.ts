@@ -8,6 +8,7 @@ import { hashString } from "$lib/shared/foundation/services/content-hasher";
 import type { GridJoin } from "@tka/tka-types";
 import {
   animationGridJoinKey,
+  buildHandGridCopySvg,
   buildJoinedGridSvg,
   joinedGridPaintKey,
   type JoinedGridPaint,
@@ -74,27 +75,64 @@ async function loadGridSprite(
 
   let gridSvg = GRID_SVG_CACHE.get(svgKey);
   if (gridSvg === undefined) {
-    const { GridMode } =
-      await import("$lib/shared/pictograph/grid/domain/enums/grid-enums");
-    // "8point" needs special handling since "8POINT" isn't a valid enum key
-    const gridModeEnum =
-      gridMode === "8point"
-        ? GridMode.EIGHT_POINT
-        : GridMode[gridMode.toUpperCase() as keyof typeof GridMode] ||
-          GridMode.DIAMOND;
-    const singleGridSvg = await generateGridSvg(
-      gridModeEnum,
-      true,
-      showNonRadialPoints
-    );
-    gridSvg = gridJoin
-      ? buildJoinedGridSvg(singleGridSvg, gridJoin, paint)
-      : singleGridSvg;
+    const single = await singleGridSvg(gridMode, showNonRadialPoints);
+    gridSvg = gridJoin ? buildJoinedGridSvg(single, gridJoin, paint) : single;
     GRID_SVG_CACHE.set(svgKey, gridSvg);
   }
 
   const image = await svgToImage(gridSvg, canvasSize, canvasSize);
   rememberGridSprite(spriteKey, image);
+  return image;
+}
+
+/** The grid file for a mode, as one grid. */
+async function singleGridSvg(
+  gridMode: string,
+  showNonRadialPoints: boolean
+): Promise<string> {
+  const { GridMode } =
+    await import("$lib/shared/pictograph/grid/domain/enums/grid-enums");
+  // "8point" needs special handling since "8POINT" isn't a valid enum key
+  const gridModeEnum =
+    gridMode === "8point"
+      ? GridMode.EIGHT_POINT
+      : GridMode[gridMode.toUpperCase() as keyof typeof GridMode] ||
+        GridMode.DIAMOND;
+  return generateGridSvg(gridModeEnum, true, showNonRadialPoints);
+}
+
+/** Hand grid copies still decoding, by sprite key. */
+const HAND_COPY_PENDING = new Set<string>();
+
+function handCopySpriteKey(
+  gridMode: string,
+  showNonRadialPoints: boolean,
+  color: string,
+  canvasSize: number
+): string {
+  return `${gridMode}|${showNonRadialPoints}|hand|${color}|${canvasSize}`;
+}
+
+async function loadHandGridCopy(
+  gridMode: string,
+  canvasSize: number,
+  showNonRadialPoints: boolean,
+  color: string
+): Promise<HTMLImageElement> {
+  const svgKey = `${gridMode}|${showNonRadialPoints}|hand|${color}`;
+  let gridSvg = GRID_SVG_CACHE.get(svgKey);
+  if (gridSvg === undefined) {
+    gridSvg = buildHandGridCopySvg(
+      await singleGridSvg(gridMode, showNonRadialPoints),
+      color
+    );
+    GRID_SVG_CACHE.set(svgKey, gridSvg);
+  }
+  const image = await svgToImage(gridSvg, canvasSize, canvasSize);
+  rememberGridSprite(
+    handCopySpriteKey(gridMode, showNonRadialPoints, color, canvasSize),
+    image
+  );
   return image;
 }
 
@@ -150,6 +188,8 @@ export class Canvas2DImageLoader {
   private gridImage: HTMLImageElement | null = null;
   /** Grid loads can overlap (mode and layout change together); the newest wins. */
   private gridLoadSeq = 0;
+  /** The load `gridImage` came from; equal to `gridLoadSeq` once current. */
+  private gridImageSeq = 0;
   /** The arguments of the newest grid load, which a painted copy repeats. */
   private gridRequest: {
     gridMode: string;
@@ -452,7 +492,10 @@ export class Canvas2DImageLoader {
         null
       );
       // Swap reference unless a later request already owns the grid
-      if (loadSeq === this.gridLoadSeq) this.gridImage = newImage;
+      if (loadSeq === this.gridLoadSeq) {
+        this.gridImage = newImage;
+        this.gridImageSeq = loadSeq;
+      }
       return newImage;
     } catch (error) {
       console.error("[Canvas2DImageLoader] Failed to load grid image:", error);
@@ -488,6 +531,46 @@ export class Canvas2DImageLoader {
             error
           );
         });
+    }
+    return null;
+  }
+
+  /** True once the newest grid load has decoded and `getGridImage` shows it. */
+  isGridImageCurrent(): boolean {
+    return this.gridImage !== null && this.gridImageSeq === this.gridLoadSeq;
+  }
+
+  /**
+   * One whole grid of the current mode and size, every point in `color`, for
+   * a hand's grid to slide on while a layout changes; null while it decodes
+   * (the first request starts it).
+   */
+  getHandGridCopy(color: string): HTMLImageElement | null {
+    const request = this.gridRequest;
+    if (!request) return null;
+    const key = handCopySpriteKey(
+      request.gridMode,
+      request.showNonRadialPoints,
+      color,
+      request.canvasSize
+    );
+    const cached = GRID_SPRITE_CACHE.get(key);
+    if (cached) return cached;
+    if (!HAND_COPY_PENDING.has(key)) {
+      HAND_COPY_PENDING.add(key);
+      void loadHandGridCopy(
+        request.gridMode,
+        request.canvasSize,
+        request.showNonRadialPoints,
+        color
+      )
+        .catch((error) => {
+          console.error(
+            "[Canvas2DImageLoader] Failed to load hand grid copy:",
+            error
+          );
+        })
+        .finally(() => HAND_COPY_PENDING.delete(key));
     }
     return null;
   }
