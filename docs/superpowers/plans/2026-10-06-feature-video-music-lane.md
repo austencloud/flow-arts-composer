@@ -10,7 +10,7 @@
 
 **Spec:** `docs/superpowers/specs/2026-10-06-feature-video-pipeline-design.md`, piece 2.
 
-**Depends on:** plan 1, `docs/superpowers/plans/2026-10-06-feature-video-projects.md`, merged into local `main`. This plan's Find blocks were written against `main` at `bbfde94003`, with plan 1's files as plan 1's plan writes them. The coordinator checks that they still fit before Task 1.
+**Depends on:** plan 1, `docs/superpowers/plans/2026-10-06-feature-video-projects.md`, merged into local `main`. This plan's Find blocks were written against `main` at `c63287fc3a`, which already holds plan 1. The coordinator checks that they still fit before Task 1.
 
 **Where this plan departs from the spec:**
 
@@ -3077,6 +3077,8 @@ export function segmentGainAt(
 ```ts
     (segment.crossfadeOutSeconds ?? 0) * outSampleRate
   );
+
+  for (let i = 0; i < outCount; i++) {
 ```
 
 Replace it with:
@@ -3089,6 +3091,8 @@ Replace it with:
   // every one of them, which music hears as dull highs.
   const wholeSamples = rate === 1 && source.sampleRate === outSampleRate;
   const firstSample = Math.round(segment.sourceInSeconds * source.sampleRate);
+
+  for (let i = 0; i < outCount; i++) {
 ```
 
 **Edit 5.** Read it that way when it can. Find:
@@ -3116,12 +3120,15 @@ In `src/lib/shared/media-composition/services/post-audio-track.ts`:
 ```ts
 /** Any valid rate works - see the comment on its one use in decodeTakeAudio. */
 const DECODE_CONTEXT_SAMPLE_RATE = 44_100;
+
+/**
 ```
 
 Replace it with:
 
 ```ts
 
+/**
 ```
 
 **Edit 2.** The URLs may include the music's, and `required` names the sources the render cannot go without. Find:
