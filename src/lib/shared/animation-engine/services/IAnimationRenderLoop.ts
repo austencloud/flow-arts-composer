@@ -216,7 +216,8 @@ export interface RenderFrameParams {
   /**
    * Where each hand's grid sits this frame, in hand-point radii: the join's
    * resting offsets, or the in-between ones while a layout change slides.
-   * Path-cache trail points move by these. Absent means centered.
+   * Path-cache trail points and the mandala guide move by these. Absent
+   * means centered.
    */
   gridJoinOffsets?: HandOffsets;
   /** The layout slide running this frame, or null/absent when none is. */
