@@ -25,6 +25,7 @@ export function mountMusicLane(
   let selected = $state(false);
   // Far past any music in these tests, unless a test moves it.
   let postEndSeconds = $state(1000);
+  let missing = $state(false);
   const component = mount(PostTimelineMusicLane, {
     target,
     props: {
@@ -39,6 +40,9 @@ export function mountMusicLane(
       },
       get selected() {
         return selected;
+      },
+      get missing() {
+        return missing;
       },
       snapTargets: () => snapTargets,
       onSelect: () => {
@@ -75,6 +79,10 @@ export function mountMusicLane(
     },
     setPostEnd(next: number) {
       postEndSeconds = next;
+      flushSync();
+    },
+    setMissing(next: boolean) {
+      missing = next;
       flushSync();
     },
   };

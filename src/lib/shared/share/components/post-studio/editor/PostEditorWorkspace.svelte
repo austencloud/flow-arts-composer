@@ -975,6 +975,11 @@
     if (editor.selectedItemId !== null || !editor.project.music)
       musicSelected = false;
   });
+  /**
+   * The preview can't load the music's file and plays without it. The canvas
+   * reports it; the Music row and the Music panel say so.
+   */
+  let musicMissing = $state(false);
 
   function selectMusic(): void {
     editor.selectedItemId = null;
@@ -2264,6 +2269,14 @@
     }
   });
 
+  // A hidden tab stops animation frames but not the music, so pause both players.
+  function pauseWhenHidden(): void {
+    if (document.visibilityState === "hidden") {
+      editor.pause();
+      session.pause();
+    }
+  }
+
   let frameRequest: number | null = null;
   let previousFrameTime: number | null = null;
   let previousPreviewSeconds: number | null = null;
@@ -2468,6 +2481,7 @@
   onkeydown={handleKey}
   onbeforeunload={protectUnsavedDraft}
 />
+<svelte:document onvisibilitychange={pauseWhenHidden} />
 
 {#snippet draftStatus()}
   {#if labeledCard.error}
@@ -2670,6 +2684,7 @@
     <PostMusicTool
       music={editor.project.music}
       playing={editor.isPlaying}
+      missing={musicMissing}
       playheadSeconds={() => editor.previewSeconds}
       onChange={changeMusic}
       onTrim={(edge, seconds) =>
@@ -2897,6 +2912,7 @@
                 {cropSourceView}
                 keepSourceCropRatio={cropSourceShape !== "free"}
                 onSourceSize={noteSourceSize}
+                onMusicMissing={(missing) => (musicMissing = missing)}
                 bind:root={canvasRoot}
               />
             </div>
@@ -3110,6 +3126,7 @@
             : undefined}
           onAddVideo={pickDeviceVideo}
           {musicSelected}
+          {musicMissing}
           onSelectMusic={selectMusic}
           onMoveMusic={(startSeconds) =>
             applyMove((project, context) =>

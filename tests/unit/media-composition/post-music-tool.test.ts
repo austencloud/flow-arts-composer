@@ -3,7 +3,9 @@
  * updateMusic, keyed by setting so a drag joins one undo step; its In and
  * Out hand back an edge on the post's clock for trimMusic. Suggest BPM
  * must never change the tempo by itself, and tapping along must move bar 1
- * onto the taps without renumbering the bars.
+ * onto the taps without renumbering the bars. It must say when the music's
+ * file can't be loaded, and that a level above 100% is heard only in the
+ * export, since the preview stops there.
  */
 import { flushSync, unmount } from "svelte";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -362,5 +364,51 @@ describe("the music's panel", () => {
     buttonNamed("Set to playhead: Start")!.click();
     flushSync();
     expect(changes).toEqual([["start", { startSeconds: 1 }]]);
+  });
+
+  it("says first, above the beat grid, when the music's file can't be loaded", () => {
+    const { setMissing } = open();
+    const note =
+      "The music file can't be loaded. The preview plays without it.";
+    expect(statusText()).not.toContain(note);
+
+    setMissing(true);
+    expect(statusText()).toEqual([note]);
+    const shown = document.querySelector("[role='status']")!;
+    const gridTitle = [...document.querySelectorAll("h4")].find(
+      (title) => title.textContent?.trim() === "Beat grid"
+    )!;
+    expect(
+      shown.compareDocumentPosition(gridTitle) &
+        Node.DOCUMENT_POSITION_FOLLOWING
+    ).toBeTruthy();
+
+    setMissing(false);
+    expect(statusText()).not.toContain(note);
+  });
+
+  it("says under the level that the preview stops at 100%, only while the level is above it", () => {
+    open();
+    const note =
+      "The preview stops at 100%. Above that, only the exported video gets louder, and its loudest parts may distort.";
+    expect(statusText()).not.toContain(note);
+
+    slide(0, 150);
+    expect(statusText()).toContain(note);
+    // In the Sound group, between the Level and Fade in sliders.
+    const shown = document.querySelector("[role='status']")!;
+    expect(shown.closest("section")?.querySelector("h4")?.textContent).toBe(
+      "Sound"
+    );
+    const [level, fadeIn] = document.querySelectorAll("input[type='range']");
+    expect(
+      level!.compareDocumentPosition(shown) & Node.DOCUMENT_POSITION_FOLLOWING
+    ).toBeTruthy();
+    expect(
+      fadeIn!.compareDocumentPosition(shown) & Node.DOCUMENT_POSITION_PRECEDING
+    ).toBeTruthy();
+
+    slide(0, 100);
+    expect(statusText()).not.toContain(note);
   });
 });

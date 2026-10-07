@@ -174,6 +174,11 @@
     keepSourceCropRatio?: boolean;
     /** A region's footage has reported its own size. */
     onSourceSize?: (regionId: string, size: CropSize) => void;
+    /**
+     * The music's file can't be loaded (true), or that ended because the music
+     * changed or the preview went away (false). The preview runs without it.
+     */
+    onMusicMissing?: (missing: boolean) => void;
     root?: HTMLElement | null;
   }
 
@@ -191,6 +196,7 @@
     cropSourceView = true,
     keepSourceCropRatio = true,
     onSourceSize,
+    onMusicMissing,
     root = $bindable(null),
   }: Props = $props();
 
@@ -2512,6 +2518,7 @@
       postDurationSeconds={editor.durationSeconds}
       playing={editor.isPlaying}
       onController={registerMusic}
+      onMissing={onMusicMissing}
     />
   {/if}
 

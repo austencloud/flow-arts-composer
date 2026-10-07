@@ -147,6 +147,8 @@
     pixelsPerSecond?: number;
     /** The music under the post is selected. */
     musicSelected?: boolean;
+    /** The music's file can't be loaded: its row says so. */
+    musicMissing?: boolean;
     onSelectMusic?: () => void;
     /** Where the music now starts on the post's clock. */
     onMoveMusic?: (startSeconds: number) => void;
@@ -186,6 +188,7 @@
     onAddVideo,
     pixelsPerSecond = $bindable(POST_TIMELINE_DEFAULT_PIXELS_PER_SECOND),
     musicSelected = false,
+    musicMissing = false,
     onSelectMusic,
     onMoveMusic,
     onTrimMusic,
@@ -1697,6 +1700,7 @@
                 {pixelsPerSecond}
                 postEndSeconds={durationSeconds}
                 selected={musicSelected}
+                missing={musicMissing}
                 snapTargets={() => clipSnapTargets(new Set())}
                 onSelect={() => onSelectMusic?.()}
                 {onGestureStart}

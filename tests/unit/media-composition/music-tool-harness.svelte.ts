@@ -11,7 +11,8 @@ import { NOW, project, video } from "./post-project-fixtures";
 /**
  * Mounts the music's panel the way the workspace does: every change goes
  * through updateMusic and every trim through trimMusic, and the panel gets
- * the new music back. The playhead starts at the post's 0 s, paused.
+ * the new music back. The playhead starts at the post's 0 s, paused, and the
+ * music's file loads.
  */
 export function mountMusicTool(target: HTMLElement, initial: PostMusic) {
   const changes: Array<[string, MusicPatch]> = [];
@@ -19,6 +20,7 @@ export function mountMusicTool(target: HTMLElement, initial: PostMusic) {
   let music = $state.raw(initial);
   let playing = $state(false);
   let playhead = $state(0);
+  let missing = $state(false);
   const component = mount(PostMusicTool, {
     target,
     props: {
@@ -27,6 +29,9 @@ export function mountMusicTool(target: HTMLElement, initial: PostMusic) {
       },
       get playing() {
         return playing;
+      },
+      get missing() {
+        return missing;
       },
       playheadSeconds: () => playhead,
       onChange: (key: string, patch: MusicPatch) => {
@@ -62,6 +67,11 @@ export function mountMusicTool(target: HTMLElement, initial: PostMusic) {
     },
     setPlayhead(seconds: number) {
       playhead = seconds;
+      flushSync();
+    },
+    /** The preview reports that the music's file can't be loaded, or can be. */
+    setMissing(next: boolean) {
+      missing = next;
       flushSync();
     },
     /** Swaps in another music, as adding a new file does. */

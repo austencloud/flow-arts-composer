@@ -3,9 +3,13 @@ import type { PreviewVideoController } from "$lib/shared/media-composition/servi
 import type { PostMusic } from "$lib/shared/media-composition/domain/post-music";
 import PostMusicPreview from "$lib/shared/share/components/post-studio/editor/PostMusicPreview.svelte";
 
-/** Mounts the preview's music paused at 0 s in a 60 s post, recording every controller it registers. */
+/**
+ * Mounts the preview's music paused at 0 s in a 60 s post, recording every
+ * controller it registers and every report that its file is missing or not.
+ */
 export function mountMusicPreview(target: HTMLElement, initial: PostMusic) {
   const controllers: Array<PreviewVideoController | null> = [];
+  const missingReports: boolean[] = [];
   let music = $state.raw(initial);
   let postSeconds = $state(0);
   let playing = $state(false);
@@ -25,12 +29,16 @@ export function mountMusicPreview(target: HTMLElement, initial: PostMusic) {
       onController: (controller: PreviewVideoController | null) => {
         controllers.push(controller);
       },
+      onMissing: (missing: boolean) => {
+        missingReports.push(missing);
+      },
     },
   });
   flushSync();
   return {
     component,
     controllers,
+    missingReports,
     get controller() {
       return controllers.at(-1) ?? null;
     },

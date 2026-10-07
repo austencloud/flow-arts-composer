@@ -2,14 +2,17 @@
  * The preview's music element. The canvas reads its clock, aligns it after a
  * jump and holds it while footage buffers, as it does a clip's footage. It
  * must only sound while the post plays inside the music, follow the music's
- * fades, and stop when it leaves the page.
+ * fades, and stop when it leaves the page. A file that can't be loaded must
+ * stay out of the clock, or the preview waits on it forever. The element must
+ * land on the playhead when a scrub's seek finishes and when playback starts.
  */
-import { unmount } from "svelte";
+import { flushSync, unmount } from "svelte";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { mountMusicPreview } from "./music-preview-harness.svelte";
 import type { PostMusic } from "$lib/shared/media-composition/domain/post-music";
 
 const URL = "/api/dev/feature-videos/promo/media/music/derail.wav";
+const OTHER_URL = "/api/dev/feature-videos/promo/media/music/thump.wav";
 
 // The file plays from its 5 s at the post's 2 s, through its 35 s.
 function music(fields: Partial<PostMusic> = {}): PostMusic {
@@ -110,6 +113,15 @@ function open(start: PostMusic = music()) {
   return { preview: current, element, media: fakeMedia(element) };
 }
 
+/** The post is paused inside the music when its file fails to load. */
+function openFailed() {
+  const opened = open();
+  opened.preview.setPostSeconds(10);
+  opened.element.dispatchEvent(new Event("error"));
+  flushSync();
+  return opened;
+}
+
 describe("the preview's music", () => {
   it("loads the music file and hands the canvas a controller", () => {
     const { preview, element } = open();
@@ -187,5 +199,95 @@ describe("the preview's music", () => {
     expect(media.paused).toBe(true);
     expect(element.hasAttribute("src")).toBe(false);
     expect(preview.controllers.at(-1)).toBeNull();
+  });
+
+  it("tells the canvas when the music's file can't be loaded", () => {
+    const { preview } = openFailed();
+    preview.setPlaying(true);
+    expect(preview.missingReports).toEqual([true]);
+  });
+
+  it("keeps a file that can't be loaded out of the preview clock", () => {
+    const { preview } = openFailed();
+    preview.setPlaying(true);
+    // The canvas drops a null controller from the clock. A registered one
+    // would never be ready, and the preview would wait on it for ever.
+    expect(preview.controllers.at(-1)).toBeNull();
+  });
+
+  it("never plays a file that can't be loaded", () => {
+    const { preview, media } = openFailed();
+    preview.setPlaying(true);
+    expect(media.plays).toBe(0);
+  });
+
+  it("silences music that fails while it plays", () => {
+    const { preview, element, media } = open();
+    media.readyState = 4;
+    preview.setPostSeconds(10);
+    preview.setPlaying(true);
+    expect(media.paused).toBe(false);
+    element.dispatchEvent(new Event("error"));
+    flushSync();
+    expect(media.paused).toBe(true);
+    expect(preview.controllers.at(-1)).toBeNull();
+  });
+
+  it("takes the music back into the clock once it is another file", () => {
+    const { preview } = openFailed();
+    preview.setPlaying(true);
+    preview.setMusic(music({ url: OTHER_URL, label: "Thump" }));
+    expect(preview.missingReports).toEqual([true, false]);
+    expect(preview.controllers.at(-1)).not.toBeNull();
+  });
+
+  it("stops saying the file is missing when it leaves the page", () => {
+    const { preview } = openFailed();
+    unmount(preview.component);
+    current = null;
+    expect(preview.missingReports).toEqual([true, false]);
+  });
+
+  it("reports nothing for an error that comes after it left the page", () => {
+    const { preview, element } = open();
+    preview.setPostSeconds(10);
+    unmount(preview.component);
+    current = null;
+    // A listener that throws reaches the window as an error event.
+    const thrown: unknown[] = [];
+    const note = (event: ErrorEvent) => thrown.push(event.error);
+    window.addEventListener("error", note);
+    element.dispatchEvent(new Event("error"));
+    window.removeEventListener("error", note);
+    expect(thrown).toEqual([]);
+    expect(preview.missingReports).toEqual([]);
+  });
+
+  it("lands on the playhead when the seek of a scrub finishes", () => {
+    const { preview, element, media } = open();
+    media.readyState = 4;
+    preview.setPostSeconds(10);
+    expect(media.currentTime).toBe(13);
+    // The scrub moves on while the seek to 13 s is still under way.
+    media.seeking = true;
+    preview.setPostSeconds(12);
+    expect(media.currentTime).toBe(13);
+    media.seeking = false;
+    element.dispatchEvent(new Event("seeked"));
+    expect(media.currentTime).toBe(15);
+  });
+
+  it("lines up exactly when playback starts, after a seek that was dropped", () => {
+    const { preview, media } = open();
+    media.readyState = 4;
+    preview.setPostSeconds(10);
+    media.seeking = true;
+    preview.setPostSeconds(10.2);
+    expect(media.currentTime).toBe(13);
+    // The seek ended without an event. 0.2 s is inside the slack that a
+    // playing element is allowed, so only Play itself can line it up.
+    media.seeking = false;
+    preview.setPlaying(true);
+    expect(media.currentTime).toBeCloseTo(13.2, 9);
   });
 });

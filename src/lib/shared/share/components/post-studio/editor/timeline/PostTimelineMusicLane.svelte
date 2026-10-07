@@ -33,6 +33,8 @@
     /** Where the post ends. The music past it is not heard, so it is shaded. */
     postEndSeconds: number;
     selected: boolean;
+    /** The music's file can't be loaded. The clip says so; the rest works. */
+    missing?: boolean;
     /** Where an edge or bar 1 may snap: zero, the playhead and the clips' edges. */
     snapTargets: () => number[];
     onSelect: () => void;
@@ -51,6 +53,7 @@
     pixelsPerSecond,
     postEndSeconds,
     selected,
+    missing = false,
     snapTargets,
     onSelect,
     onGestureStart,
@@ -133,7 +136,8 @@
       `transform: scaleX(${pixelsPerSecond / wavePixelsPerSecond})`
   );
   const bodyLabel = $derived(
-    `Music: ${music.label}, ${formatPostClock(span.start)} to ${formatPostClock(span.end)}`
+    `Music: ${music.label}, ${formatPostClock(span.start)} to ${formatPostClock(span.end)}` +
+      (missing ? ", can't load the file" : "")
   );
   const url = $derived(music.url);
 
@@ -381,6 +385,12 @@
     >
       <i class="fa-solid fa-music" aria-hidden="true"></i>
       <span class="music-label">{music.label}</span>
+      {#if missing}
+        <span class="music-missing">
+          <i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>
+          Can't load file
+        </span>
+      {/if}
     </button>
   </div>
 
@@ -533,8 +543,10 @@
     opacity: 0.85;
   }
 
-  /* A backing keeps the name readable over the waveform and bar lines. */
-  .music-label {
+  /* A backing keeps the name, and the note that the file can't be loaded,
+     readable over the waveform and bar lines. */
+  .music-label,
+  .music-missing {
     overflow: hidden;
     min-width: 0;
     max-width: 16rem;

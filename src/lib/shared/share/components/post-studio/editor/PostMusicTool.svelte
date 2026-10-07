@@ -28,10 +28,13 @@
    * shows what it heard; the tempo changes when Use is pressed. Tapping
    * along while the post plays moves bar 1 onto the beat of the taps, to the
    * beat nearest where bar 1 was, so the bar numbers stay where they were.
+   * When the preview can't load the music's file, the panel says so first.
    */
   interface Props {
     music: PostMusic;
     playing: boolean;
+    /** The preview can't load the music's file, and plays without it. */
+    missing?: boolean;
     /**
      * The playhead in post seconds, read as each tap lands and to tell
      * whether an edge can move to it.
@@ -46,7 +49,14 @@
     onTrim: (edge: "start" | "end", postSeconds: number) => void;
   }
 
-  let { music, playing, playheadSeconds, onChange, onTrim }: Props = $props();
+  let {
+    music,
+    playing,
+    missing = false,
+    playheadSeconds,
+    onChange,
+    onTrim,
+  }: Props = $props();
 
   const id = $props.id();
 
@@ -195,6 +205,11 @@
 {/snippet}
 
 <div class="music-tool">
+  {#if missing}
+    <p class="status" role="status">
+      The music file can't be loaded. The preview plays without it.
+    </p>
+  {/if}
   <section class="group" aria-labelledby="{id}-grid">
     <h4 class="group-title" id="{id}-grid">Beat grid</h4>
     <div class="pairs">
@@ -323,6 +338,12 @@
       format={percent}
       onchange={(value) => onChange("gain", { gain: value / 100 })}
     />
+    {#if music.gain > 1}
+      <p class="status" role="status">
+        The preview stops at 100%. Above that, only the exported video gets
+        louder, and its loudest parts may distort.
+      </p>
+    {/if}
     <ValueSlider
       label="Fade in"
       value={music.fadeInSeconds}

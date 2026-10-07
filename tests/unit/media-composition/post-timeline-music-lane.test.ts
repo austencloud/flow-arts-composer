@@ -3,7 +3,8 @@
  * snapped and clamped the way the edits will clamp them; bar 1 comes back in
  * the file's own seconds. The waveform must load once per file: the editor
  * replaces the music object on every edit, and reloading the song on each
- * frame of a drag would stall the timeline.
+ * frame of a drag would stall the timeline. A file that can't be loaded must
+ * be said on the clip, since the waveform's own error is swallowed.
  */
 import { flushSync, unmount } from "svelte";
 import {
@@ -210,6 +211,24 @@ describe("the music lane", () => {
   it("draws no lines without a beat grid", () => {
     open(music());
     expect(document.querySelectorAll(".grid-line")).toHaveLength(0);
+  });
+
+  it("says in its clip and its name when the music's file can't be loaded", () => {
+    const { setMissing } = open(music());
+    const clip = document.querySelector<HTMLElement>(".music-clip")!;
+    const named = "Music: Derail, 0:01.0 to 0:11.0";
+    expect(clip.textContent).not.toContain("Can't load file");
+    expect(body().getAttribute("aria-label")).toBe(named);
+
+    setMissing(true);
+    expect(clip.textContent).toContain("Can't load file");
+    expect(body().getAttribute("aria-label")).toBe(
+      `${named}, can't load the file`
+    );
+
+    setMissing(false);
+    expect(clip.textContent).not.toContain("Can't load file");
+    expect(body().getAttribute("aria-label")).toBe(named);
   });
 
   it("loads the waveform once per file, not on every edit", async () => {
