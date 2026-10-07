@@ -1,13 +1,15 @@
 ---
-status: active
+status: backlog
 value: 3
 effort: M
-remaining: 'Approved direction, implementation not started. Zero matches for productionLedger, cardIdentity, or deckIdentity in src/ or scripts/.'
-depends_on: ""
-plan_path: ""
+remaining: Current src/scripts have no productionLedger or deckIdentity owner; implement the official card identity and single release funnel.
+depends_on: ''
+plan_path: ''
 tags: []
-last_triaged: 2026-08-02
+last_triaged: '2026-10-07'
+work_state: ready
 ---
+
 # Official Choreo Card Production Ledger and Single Release Funnel
 
 **Date:** 2026-07-27

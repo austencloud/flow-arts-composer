@@ -1,3 +1,15 @@
+---
+status: active
+value: null
+effort: null
+work_state: verification
+remaining: Recheck camera recovery on the avatar route and confirm persistence, 15 focused tests, and the project check.
+depends_on: ''
+plan_path: ''
+tags: []
+last_triaged: '2026-10-07'
+---
+
 # Avatar camera recovery
 
 ## Scope and ownership

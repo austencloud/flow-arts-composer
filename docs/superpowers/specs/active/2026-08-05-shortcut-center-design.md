@@ -1,3 +1,14 @@
+---
+status: active
+value: null
+effort: null
+remaining: "Verify Ctrl+K and footer launch, binding display, history validation, and visual interaction in the current Shortcut Center before implementing gaps."
+depends_on: ""
+plan_path: ""
+tags: []
+last_triaged: 2026-10-07
+work_state: unverified
+---
 # Shortcut Center
 
 **Status:** approved 2026-08-05

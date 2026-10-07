@@ -1,3 +1,14 @@
+---
+status: active
+value: null
+effort: null
+remaining: "Record the pending 6x CPU trace and compare it with the constrained-network performance target."
+depends_on: ""
+plan_path: ""
+tags: []
+last_triaged: 2026-10-07
+work_state: verification
+---
 # Landing Constrained-Network Performance
 
 **Date:** 2026-08-09  

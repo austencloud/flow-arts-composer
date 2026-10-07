@@ -2,13 +2,21 @@
 status: backlog
 value: 2
 effort: XS
-remaining: "Code complete. Phase 4 step 3 is a runtime activity: monitor errorTelemetry for two weeks and promote recurring user-facing failures with count >10. Authenticated admin verification of the moderation failure toasts is also outstanding."
-depends_on: "external: two-week production errorTelemetry window and authenticated admin failure-path verification"
-plan_path: ""
-tags: ["error-handling", "telemetry", "infrastructure", "reliability"]
-last_triaged: 2026-08-01
+remaining: 'Code complete. Phase 4 step 3 is a runtime activity: monitor errorTelemetry for two weeks and promote recurring user-facing failures with count >10. Authenticated admin verification of the moderation failure toasts is also outstanding.'
+depends_on: 'external: two-week production errorTelemetry window and authenticated admin failure-path verification'
+plan_path: ''
+tags:
+- error-handling
+- telemetry
+- infrastructure
+- reliability
+last_triaged: '2026-10-07'
+work_state: blocked
 ---
+
 # Error Boundary System — Design Spec
+
+**Status:** Implementation recorded; production telemetry and authenticated admin verification remain externally blocked (reviewed 2026-10-07).
 
 > **DRIFT WARNING — 2026-08-02.** Verified 2026-08-02. Re-triaged 2026-08-01 and its own 2026-05-31 trailer is accurate; only the documented P3 residual remains. The detector's alarm comes from 969 commits touching broad shared paths, of which few concern this spec. Not a rebuild hazard.
 >
@@ -44,7 +52,7 @@ last_triaged: 2026-08-01
 > the Svelte compiler accepts `ShameQueuePanel.svelte` with zero warnings.
 
 **Date:** 2026-05-23
-**Status:** Backlog
+**Original status:** Backlog
 **Tier:** 1 (Fix What's Broken)
 **Value:** 5 (every user-facing crash and silent failure is invisible today)
 **Effort:** M (four discrete phases, each small)

@@ -1,3 +1,15 @@
+---
+status: active
+value: null
+effort: null
+work_state: unverified
+remaining: Inspect /composer at the specified viewports and run focused Composer, route morph, and SEO checks against this plan.
+depends_on: ''
+plan_path: ''
+tags: []
+last_triaged: '2026-10-07'
+---
+
 # Composer Information Page Polish Plan
 
 **Status:** Approved for implementation

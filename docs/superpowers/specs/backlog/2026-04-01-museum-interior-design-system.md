@@ -2,12 +2,14 @@
 status: backlog
 value: 3
 effort: M
-remaining: '3 of 4 systems shipped verbatim; TV display system (Section 2) does not exist'
-depends_on: ""
-plan_path: ""
+remaining: Recheck the Museum interior systems against the current Museum code, especially whether the TV display remains absent.
+depends_on: ''
+plan_path: ''
 tags: []
-last_triaged: 2026-08-02
+last_triaged: '2026-10-07'
+work_state: unverified
 ---
+
 # Museum Interior Design System
 
 > **DRIFT WARNING — 2026-08-02.** 3 of 4 systems shipped verbatim; TV display system (Section 2) does not exist

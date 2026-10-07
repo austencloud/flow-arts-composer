@@ -2,7 +2,7 @@
 status: active
 value: 5
 effort: L
-remaining: "Approved in-session. Implementation and verification are in progress."
+remaining: "Verify Collection Sharing and Collaboration against the current Collection Sharing and Collaboration runtime and acceptance criteria before resuming implementation. Prior recorded remainder: Approved in-session. Implementation and verification are in progress."
 depends_on: ""
 plan_path: ""
 tags:
@@ -10,7 +10,8 @@ tags:
   - collections
   - messaging
   - collaboration
-last_triaged: 2026-08-05
+last_triaged: 2026-10-07
+work_state: unverified
 ---
 
 # Collection Sharing and Collaboration

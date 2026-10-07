@@ -2,11 +2,12 @@
 status: active
 value: 3
 effort: M
-remaining: "Unscored until triage 2026-07-25; spec body carries no status line. Needs a read-through to establish real state before this score is trusted."
+remaining: "Re-audit the 90-control telemetry ledger against the current /q resolver and shared /sequence host before wiring any missing events."
 depends_on: ""
 plan_path: ""
 tags: []
-last_triaged: 2026-07-25
+last_triaged: 2026-10-07
+work_state: unverified
 ---
 # /q Scan Page — Analytics Instrumentation Ledger
 

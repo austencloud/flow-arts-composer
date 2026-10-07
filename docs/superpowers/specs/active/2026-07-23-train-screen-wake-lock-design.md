@@ -6,7 +6,8 @@ remaining: "Automated recheck passed all 16 wake-lock tests on 2026-07-29. The c
 depends_on: "external: target iPhone verification requires an elevated pymobiledevice3 tunneld bridge and hands-on session control"
 plan_path: ""
 tags: ["practice", "train", "viewer", "mobile", "wake-lock", "device"]
-last_triaged: 2026-07-29
+last_triaged: 2026-10-07
+work_state: blocked
 ---
 
 # Practice Screen Wake Lock: Design Spec

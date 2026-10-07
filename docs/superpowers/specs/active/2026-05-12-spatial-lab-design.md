@@ -6,7 +6,8 @@ remaining: 'Shipped as a full 3D Threlte scene, directly contradicting the spec'
 depends_on: ""
 plan_path: ""
 tags: []
-last_triaged: 2026-08-02
+last_triaged: 2026-10-07
+work_state: unverified
 ---
 # Spatial Lab — Design Spec
 

@@ -1,3 +1,15 @@
+---
+status: backlog
+value: null
+effort: null
+work_state: unverified
+remaining: Audit current scene startup path, then implement the demand-loaded effects and cooperative warming acceptance if absent.
+depends_on: ''
+plan_path: ''
+tags: []
+last_triaged: '2026-10-07'
+---
+
 # 3D Scene Zero-Jank Startup
 
 **Status:** Backlog

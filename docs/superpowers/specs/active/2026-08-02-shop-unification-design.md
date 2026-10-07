@@ -3,10 +3,11 @@ status: active
 value: 4
 effort: S
 remaining: "ACTIVE, but no longer for the reason recorded in 2026-08. The push gate is spent: a422744d6 (phase 1), 0beba2808 (phase 2) and e84ee4ab4 (round 13) are all on origin/main, verified 2026-09-13. What actually remains: (1) SALES_LIVE is still false in purchase-state.ts, gated on Austen clearing the Stripe payout requirement and Tax registration - every product still resolves to notify; (2) all four items under Decisions Austen owns are untouched - three Chicago fulfilment claims still render (DeckArchitectPage:392, LoopDeckConfiguratorPage:557, TnDTrilogyPage:80), the catalog sequence-id migration is undone so the R8 do-not-key-a-cache-on-sequence-id-alone workaround still stands, and claimUsername is unchanged; (3) round 13 embed chrome trim has no test; (4) the five deferred Codex follow-ups. Do NOT re-implement the front door, the shared shell, the five re-seated PDPs, the cross-sell rail, the 308 redirect or the nav rewire - all shipped."
-depends_on: ""
+depends_on: "external: Stripe payout and Tax registration plus Austen's four product decisions before sales go live"
 plan_path: ""
 tags: []
-last_triaged: 2026-08-02
+last_triaged: 2026-10-07
+work_state: blocked
 ---
 # Shop Unification — Catalog Front Door + Shared Product Shell
 

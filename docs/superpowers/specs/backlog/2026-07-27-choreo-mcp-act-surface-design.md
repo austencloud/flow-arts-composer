@@ -1,17 +1,21 @@
 ---
-status: active
+status: backlog
 value: 3
 effort: L
-remaining: 'Phase 1 shipped (requireBearerAuth in mcp-server, tests/http-auth.test.ts). Phase 0 reconciliation, Phase 2 Firestore bridge, Phase 3 act tools not started.'
-depends_on: ""
-plan_path: ""
+remaining: Phase 1 shipped (requireBearerAuth in mcp-server, tests/http-auth.test.ts). Phase 0 reconciliation, Phase 2 Firestore bridge, Phase 3 act tools not started.
+depends_on: ''
+plan_path: ''
 tags: []
-last_triaged: 2026-08-02
+last_triaged: '2026-10-07'
+work_state: in-progress
 ---
+
 # Choreo — MCP Act Surface: authorization, consolidation, act tools (design)
 
+**Triage evidence (2026-10-07):** `mcp-server/src/http/create-http-app.ts` mounts `requireBearerAuth` for `/mcp`, establishing the auth implementation. Phase 0 audit and the act-tool phases still need separate acceptance evidence.
+
 **Date:** 2026-07-27
-**Status:** Phase 0 + Phase 1 specced to implementation depth. Phases 2–3 sketched; each gets its own spec.
+**Status:** Phase 1 auth implementation landed; Phase 0 verification and Phases 2–3 remain open. Phases 0–1 were specced to implementation depth; Phases 2–3 sketched for separate specs.
 **Supersedes the fork left open by:** `docs/superpowers/specs/2026-07-26-choreo-mcp-and-performance-variants-handoff.md` (Part 1, "The fork that has to be decided first")
 **Prerequisite already landed:** note/cue addressing moved to absolute step indices (`67d4ca3103`), so annotations no longer depend on layout. Everything below assumes that.
 

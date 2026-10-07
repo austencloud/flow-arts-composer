@@ -1,3 +1,15 @@
+---
+status: active
+value: null
+effort: null
+work_state: unverified
+remaining: Run the Film Director adversarial corpus against the current language and categorize remaining unsupported requests.
+depends_on: ''
+plan_path: ''
+tags: []
+last_triaged: '2026-10-07'
+---
+
 # Film Director Adversarial Corpus (round 2)
 
 Forty dictated requests, five tiers of eight, each one pushed until the language

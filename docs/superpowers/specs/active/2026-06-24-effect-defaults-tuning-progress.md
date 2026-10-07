@@ -2,11 +2,12 @@
 status: active
 value: 4
 effort: XL
-remaining: "Infrastructure and bloom tuning are complete. Remaining: build shared 1/sqrt(N) normalization for bloom/echo/pulse/zap, add the all-presets overview, then tune and visually verify 15 effect families in both Clean and Tunnel scenes. Resume with echo/pulse/zap after Chrome DevTools MCP is available."
+remaining: "Verify Effect Defaults Tuning Campaign — IN PROGRESS against the current Effect Defaults Tuning Campaign — IN PROGRESS runtime and acceptance criteria before resuming implementation. Prior recorded remainder: Infrastructure and bloom tuning are complete. Remaining: build shared 1/sqrt(N) normalization for bloom/echo/pulse/zap, add the all-presets overview, then tune and visually verify 15 effect families in both Clean and Tunnel scenes. Resume with echo/pulse/zap after Chrome DevTools MCP is available."
 depends_on: "external: Chrome DevTools MCP is unavailable in this Codex session; every remaining tuning decision requires live Clean/Tunnel visual proof"
 plan_path: ""
 tags: []
-last_triaged: 2026-07-30
+last_triaged: 2026-10-07
+work_state: unverified
 ---
 # Effect Defaults Tuning Campaign — IN PROGRESS
 

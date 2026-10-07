@@ -2,14 +2,22 @@
 status: active
 value: 5
 effort: M
-remaining: "Phase 1 of the Director module. Not started."
-depends_on: "2026-08-25-director-module-design.md"
-plan_path: ""
-tags: [director, film, camera, performers, admin]
-last_triaged: 2026-08-25
+remaining: Audit the Director control surface against the Phase 1 Star acceptance, including performer edits, camera presets, saves, and foot planting.
+depends_on: 2026-08-25-director-module-design.md
+plan_path: ''
+tags:
+- director
+- film
+- camera
+- performers
+- admin
+last_triaged: '2026-10-07'
+work_state: unverified
 ---
 
 # Director Control Surface — Phase 1 Design
+
+**Queue evidence, 2026-10-07:** The live Director workbench mounts `FilmDirectorChannelEditor`; the old “not started” queue claim is stale. The Phase 1 Star acceptance has not been re-proved, so this remains open.
 
 **Goal:** Make every parameter the film document already supports reachable
 without editing JSON, and replace formula-derived camera framing with a curated

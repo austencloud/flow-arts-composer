@@ -23,7 +23,7 @@
  *   DIVERGENT    spec says not-built, but its deliverables have heavy commit
  *                traffic since it was written. Highest risk: rebuild hazard.
  *   PHANTOM_OPEN every box in its own acceptance ledger is checked, yet it
- *                still sits in active/. Free close-out.
+ *                still sits in active/. Requires acceptance review.
  *   LIKELY_DONE  body declares implemented/shipped/resolved, still in active/.
  *   GHOST_PATHS  most named deliverables no longer exist — probably superseded
  *                or the code was renamed out from under the spec.
@@ -43,6 +43,7 @@
 const fs = require("fs");
 const path = require("path");
 const { execFileSync } = require("child_process");
+const YAML = require("yaml");
 
 const ROOT = path.resolve(__dirname, "..");
 const SPECS = path.join(ROOT, "docs", "superpowers", "specs");
@@ -154,10 +155,23 @@ function commitsFor(index, target, sinceDate) {
 // ---------------------------------------------------------------------------
 
 function splitFrontmatter(raw) {
+  raw = raw.replace(/^\uFEFF/, "").replace(/\r\n/g, "\n");
   if (!raw.startsWith("---")) return { fm: "", body: raw };
   const end = raw.indexOf("\n---", 3);
   if (end === -1) return { fm: "", body: raw };
   return { fm: raw.slice(3, end), body: raw.slice(end + 4) };
+}
+
+function frontmatterWorkState(fm) {
+  if (!fm) return null;
+  try {
+    const doc = YAML.parseDocument(fm, { uniqueKeys: true });
+    if (doc.errors.length) return null; // specs:check owns malformed YAML diagnostics
+    const data = doc.toJS({ maxAliasCount: 100 });
+    return typeof data?.work_state === "string" ? data.work_state : null;
+  } catch {
+    return null;
+  }
 }
 
 function declaredStatus(body) {
@@ -280,18 +294,17 @@ function daysSince(dateStr) {
 // ---------------------------------------------------------------------------
 
 function verdictFor(s) {
-  // Drift someone has already documented in the spec is not a new alarm. Without
-  // this, every reconciled spec re-reports forever, the report stops being read,
-  // and the detector becomes noise — the failure mode it exists to prevent.
-  if (s.acked) return "DRIFT_ACKED";
+  // A checked implementation ledger does not prove that acceptance or an
+  // external gate finished. The queue frontmatter records that distinction.
+  const heldRemainder = ["in-progress", "verification", "blocked", "unverified"].includes(s.workState);
+  if (["in-progress", "verification"].includes(s.workState) && s.stateClass === "NOT_STARTED") return "STALE_HEADER";
 
-  // Phantom-open is checked before the not-built signals: a fully-checked
-  // ledger is the spec's own statement that it is finished, and it is the
-  // cheapest thing to act on.
-  if (s.ledger.done > 0 && s.ledger.open === 0 && s.dir === "active") return "PHANTOM_OPEN";
+  // Checked boxes are only a closeout candidate when no current remainder is
+  // recorded. A reviewer still needs to verify the acceptance evidence.
+  if (!heldRemainder && s.ledger.done > 0 && s.ledger.open === 0 && s.dir === "active") return "PHANTOM_OPEN";
 
   if (s.stateClass === "SUPERSEDED") return "LIKELY_DONE";
-  if (s.stateClass === "DONE" && s.dir === "active") return "LIKELY_DONE";
+  if (!heldRemainder && s.stateClass === "DONE" && s.dir === "active") return "LIKELY_DONE";
 
   // Only paths that once existed count. A design spec naming files nobody has
   // written yet is not drift, it is just unimplemented.
@@ -307,7 +320,11 @@ function verdictFor(s) {
     if (s.topicalCount >= WATCH_TOPICAL) return "WATCH";
   }
 
-  if (s.stateClass === "UNKNOWN" && s.ledger.open === 0 && s.ledger.done === 0)
+  // Historical acknowledgements annotate a quiet result; they cannot suppress
+  // a new contradiction or fresh commit/path evidence.
+  if (s.acked) return "DRIFT_ACKED";
+
+  if (s.stateClass === "UNKNOWN" && s.ledger.open === 0 && s.ledger.done === 0 && !s.workState)
     return "NO_STATE";
 
   return "OK";
@@ -317,6 +334,7 @@ function verdictFor(s) {
 // main
 // ---------------------------------------------------------------------------
 
+function main() {
 const gitIndex = buildGitIndex();
 const specs = [];
 
@@ -326,7 +344,7 @@ for (const dir of DIRS) {
   for (const file of fs.readdirSync(abs).filter((f) => f.endsWith(".md"))) {
     const full = path.join(abs, file);
     const raw = fs.readFileSync(full, "utf8");
-    const { body } = splitFrontmatter(raw);
+    const { fm, body } = splitFrontmatter(raw);
     const relSpecPath = `docs/superpowers/specs/${dir}/${file}`;
 
     const status = declaredStatus(body);
@@ -371,6 +389,7 @@ for (const dir of DIRS) {
       ageDays: daysSince(date),
       status,
       stateClass,
+      workState: frontmatterWorkState(fm),
       ledger,
       topics,
       acked: /DRIFT WARNING/.test(body),
@@ -394,22 +413,23 @@ for (const dir of DIRS) {
 // ---------------------------------------------------------------------------
 
 const ORDER = [
-  "DIVERGENT", "PHANTOM_OPEN", "LIKELY_DONE", "GHOST_PATHS",
+  "DIVERGENT", "STALE_HEADER", "PHANTOM_OPEN", "LIKELY_DONE", "GHOST_PATHS",
   "WATCH", "DRIFT_ACKED", "NO_STATE", "OK",
 ];
-const ACTIONABLE = new Set(["DIVERGENT", "PHANTOM_OPEN", "LIKELY_DONE", "GHOST_PATHS"]);
+const ACTIONABLE = new Set(["DIVERGENT", "STALE_HEADER", "PHANTOM_OPEN", "LIKELY_DONE", "GHOST_PATHS"]);
 
 const byVerdict = new Map(ORDER.map((v) => [v, []]));
 for (const s of specs) byVerdict.get(s.verdict).push(s);
 
 const BLURB = {
   DIVERGENT: "spec claims not-built; its deliverables have heavy traffic since. REBUILD HAZARD.",
-  PHANTOM_OPEN: "every acceptance box checked, still in active/. Free close-out.",
+  STALE_HEADER: "body claims not-built while frontmatter records work underway or held.",
+  PHANTOM_OPEN: "checked ledger without a current remainder state; inspect acceptance evidence before closing.",
   LIKELY_DONE: "body declares done/superseded, still in active/.",
   GHOST_PATHS: "most named deliverables no longer exist on disk.",
   WATCH: "moderate traffic against a not-built claim. Inconclusive.",
   NO_STATE: "no status line, no ledger. State unknowable from the file.",
-  DRIFT_ACKED: "drift already documented in-spec via a DRIFT WARNING banner. Not a new alarm.",
+  DRIFT_ACKED: "historical drift acknowledgement; no current actionable signal.",
   OK: "nothing contradicts the spec.",
 };
 
@@ -454,4 +474,8 @@ if (jsonOut) {
   console.log(`\nwrote ${jsonOut}`);
 }
 
-process.exit(actionable.length ? 1 : 0);
+return actionable.length ? 1 : 0;
+}
+
+if (require.main === module) process.exitCode = main();
+module.exports = { verdictFor, classifyStatus, frontmatterWorkState, splitFrontmatter };

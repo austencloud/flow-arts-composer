@@ -2,12 +2,14 @@
 status: backlog
 value: 2
 effort: M
-remaining: "Body status: Design spec, not yet implemented"
-depends_on: ""
-plan_path: ""
+remaining: Verify guest/Scribe access policy, then implement and test mandala shareable-link creation and loading if still absent.
+depends_on: ''
+plan_path: ''
 tags: []
-last_triaged: 2026-07-25
+last_triaged: '2026-10-07'
+work_state: unverified
 ---
+
 # Shareable Mandala Links — Phase 3 Design Spec
 
 **Date:** 2026-05-25

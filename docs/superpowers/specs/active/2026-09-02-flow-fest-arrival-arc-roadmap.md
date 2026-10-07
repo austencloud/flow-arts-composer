@@ -1,7 +1,21 @@
+---
+status: active
+value: null
+effort: null
+work_state: in-progress
+remaining: After the built Drive in, design and implement the next arrival-arc sub-project with its own gate; keep tree-pipeline dependencies explicit.
+depends_on: ''
+plan_path: ''
+tags: []
+last_triaged: '2026-10-07'
+---
+
 # Flow Fest Arrival Arc — Roadmap
 
+**Triage evidence (2026-10-07):** The roadmap records the Drive in as built, and `src/routes/test/flow-fest-sim/FlowFestDrivenCar.svelte` exists. Later arrival-arc deliveries remain separate sub-projects, so the roadmap is still open.
+
 **Date:** 2026-09-02
-**Status:** Decomposition agreed. Sub-project 1 (Drive in) selected for the first design.
+**Status:** Decomposition agreed; Drive in built, later arrival-arc sub-projects remain open.
 **Settled so far:** the whole sim becomes third person — on foot as well as in
 the car; the game opens on the loadout screen and then puts you at the wheel;
 the approach runs the official ODOT centerline re-clipped to the terrain square

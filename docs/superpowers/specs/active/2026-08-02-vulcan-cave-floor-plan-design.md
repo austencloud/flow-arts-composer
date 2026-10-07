@@ -3,15 +3,19 @@ status: active
 value: 2
 effort: M
 remaining: "Rebuild and review one exhibit-scale cave habitat vertical slice before propagating all six"
-depends_on: "5efa348fb2"
+depends_on: ""
 plan_path: ""
 tags:
   - museum
   - exhibit-design
   - experience-design
+last_triaged: 2026-10-07
+work_state: unverified
 ---
 
 # Vulcan Cave Floor Plan
+
+**Queue evidence (2026-10-07):** The old dependency `5efa348fb2` is an existing entrance-lobby implementation commit, not an outstanding prerequisite. The exhibit-scale cave habitat correction below still needs one reviewed vertical slice before wider propagation.
 
 **Date:** 2026-08-02
 **Decision:** `mX982dvKMyhhL2wIvu6V`

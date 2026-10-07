@@ -1,17 +1,21 @@
 ---
-status: active
+status: backlog
 value: 3
 effort: L
-remaining: 'Phase 1 shipped (@layer in app.css:11, drawer-skin !important cut in 0be1f8fa2c). Remaining: !important still ~560 vs target <80; stylelint.config.js advisory-only not CI-blocking (Phase 5); 46 files still carry hardcoded hex/rgba (Phase 4).'
-depends_on: ""
-plan_path: ""
+remaining: Recount !important and hardcoded colors; finish cascade/token migration and make stylelint blocking in CI if still required.
+depends_on: ''
+plan_path: ''
 tags: []
-last_triaged: 2026-08-02
+last_triaged: '2026-10-07'
+work_state: in-progress
 ---
+
 # CSS Debt Elimination — Cascade Layers + Drawer Consolidation
 
+**Triage evidence (2026-10-07):** `src/app.css` now declares `@layer thirdparty, base, components, overrides`, contradicting the original zero-layer baseline. The remaining override and Drawer-consolidation scope still needs source and visual review.
+
 **Date:** 2026-06-22
-**Status:** Design — awaiting review
+**Status:** In progress; cascade layer foundation landed, remaining CSS debt and acceptance need review.
 **Goal:** Remove the antiquated CSS layer (559 `!important`, ~71 hardcoded inline colors) sitting inside an otherwise-modern Svelte 5 runes codebase, and prevent regression. Modern shell, 2019 override habits inside — close the gap.
 
 ## Problem (grounded, measured 2026-06-22)

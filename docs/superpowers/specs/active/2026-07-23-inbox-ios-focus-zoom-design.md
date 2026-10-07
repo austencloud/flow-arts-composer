@@ -6,7 +6,8 @@ remaining: "Implementation is complete. Remaining: verify focus, keyboard, reply
 depends_on: "external: target iPhone device verification"
 plan_path: ""
 tags: ["inbox", "ios", "mobile", "accessibility", "css"]
-last_triaged: 2026-07-23
+last_triaged: 2026-10-07
+work_state: verification
 ---
 
 # Inbox iPhone Focus Zoom: Design Spec

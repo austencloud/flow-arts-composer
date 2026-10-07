@@ -6,7 +6,8 @@ remaining: "Criteria 1, 3, 4, 5, 6 verified 2026-08-02; check is 0 errors / 0 wa
 depends_on: "external: one live Google sign-in with Austen's credentials to confirm the post-auth export resume"
 plan_path: ""
 tags: []
-last_triaged: 2026-07-29
+last_triaged: 2026-10-07
+work_state: blocked
 ---
 
 # /q Account Funnel — Download Gate + Sign-in Chip — Design

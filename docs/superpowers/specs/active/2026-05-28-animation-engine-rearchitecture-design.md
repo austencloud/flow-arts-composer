@@ -2,13 +2,16 @@
 status: active
 value: 3
 effort: S
-remaining: '5 managers + plugin registry + HMR fix shipped; StateSynchronizer was relocated, not dissolved as specced'
+remaining: "Verify Animation Engine Re-Architecture — Fused Design & Handoff Spec against the current Animation Engine Re-Architecture — Fused Design & Handoff Spec runtime and acceptance criteria before resuming implementation. Prior recorded remainder: '5 managers + plugin registry + HMR fix shipped; StateSynchronizer was relocated, not dissolved as specced'"
 depends_on: ""
 plan_path: ""
 tags: []
-last_triaged: 2026-08-02
+last_triaged: 2026-10-07
+work_state: unverified
 ---
 # Animation Engine Re-Architecture — Fused Design & Handoff Spec
+
+**Queue evidence (2026-10-07):** Managers, plugin registry, and HMR fix landed; StateSynchronizer dissolution remains unresolved. See frontmatter for the remaining work.
 
 > **DRIFT WARNING — 2026-08-02.** 5 managers + plugin registry + HMR fix shipped; `StateSynchronizer` was **relocated, not dissolved** as specced
 >
@@ -17,7 +20,7 @@ last_triaged: 2026-08-02
 
 
 **Date:** 2026-05-28
-**Status:** Approved for execution — handoff to the re-architecture agent
+**Original status (historical):** Approved for execution — handoff to the re-architecture agent
 **Supersedes ad-hoc work on:** AnimatorCanvas HMR fix (folded into Phase 4 here)
 
 ---

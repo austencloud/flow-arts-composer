@@ -1,6 +1,19 @@
+---
+status: active
+value: null
+effort: null
+remaining: "Recheck bubble size/lifetime and film shader tests plus visual acceptance before closing the implemented claim."
+depends_on: ""
+plan_path: ""
+tags: []
+last_triaged: 2026-10-07
+work_state: verification
+---
 # Bubbles Film Surface Pass
 
-**Status:** Approved for implementation on 2026-08-12
+**Queue evidence (2026-10-07):** The later implemented-and-verified claim needs a current film-shader and visual acceptance recheck before archival.
+
+**Original status (historical):** Approved for implementation on 2026-08-12
 
 ## 2026-08-13 quality elevation
 

@@ -6,7 +6,8 @@ remaining: "Deliver source-generation parity in four user-verified phases"
 depends_on: ""
 plan_path: ""
 tags: [create, tunnel, composition]
-last_triaged: 2026-08-21
+last_triaged: 2026-10-07
+work_state: unverified
 ---
 
 # Tunnel Creator Design

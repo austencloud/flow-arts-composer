@@ -1,3 +1,15 @@
+---
+status: active
+value: null
+effort: null
+work_state: unverified
+remaining: Verify inspector profile thresholds and no-reflow viewer transitions at the specified viewport sizes.
+depends_on: ''
+plan_path: ''
+tags: []
+last_triaged: '2026-10-07'
+---
+
 # Sequence Viewer Inspector Layout Pass
 
 **Status:** Approved by Austen's direct request

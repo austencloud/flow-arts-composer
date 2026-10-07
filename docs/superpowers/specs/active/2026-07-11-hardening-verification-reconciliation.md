@@ -5,7 +5,10 @@ value: 4
 effort: M
 remaining: "The OPEN-SAFE batch is complete. Remaining OPEN-FLAGGED items require Austen's domain, payment-policy, live-runtime, device, PDF, or visual gates before implementation."
 depends_on: "external: Austen sign-off and the named domain, payment, runtime, device, PDF, and visual verification gates"
-last_triaged: 2026-08-01
+last_triaged: 2026-10-07
+plan_path: ""
+tags: []
+work_state: blocked
 ---
 
 # Hardening Findings — Verified Reconciliation

@@ -1,3 +1,14 @@
+---
+status: active
+value: null
+effort: null
+remaining: "Verify Post Share Sheet — Handoff against src/lib/shared/share/components/PostShareSheet.svelte before resuming implementation. Prior recorded remainder: Reconcile the PostShareSheet handoff open-item list against current share flow and test the remaining transitions."
+depends_on: ""
+plan_path: ""
+tags: []
+last_triaged: 2026-10-07
+work_state: unverified
+---
 # Post Share Sheet — Handoff
 
 **Written for a fresh agent picking this up cold.** Read this, then the design

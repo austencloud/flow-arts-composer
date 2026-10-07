@@ -191,7 +191,7 @@ the session (marked ✓).
 | backlog/2026-05-23-security-hardening-design.md | Its own "PARTIALLY SHIPPED" table is accurate 6 weeks on. F1/F5 need Austen's product decision on guest/anon access | 4/M |
 | backlog/2026-05-23-utility-deduplication-design.md | Phase 4 (word-simplifier) shipped independently; `math.ts`/`format.ts` never created, ~12 `lerp` definitions remain | 2/M |
 | backlog/2026-05-25-prop-selection-redesign-design.md | Visual half shipped verbatim; popover half abandoned for a flat per-variant grid. Vestigial badge code is dead | 2/S |
-| backlog/2026-05-25-stage-locomotion-design.md | Full Stage module shipped with **motion matching** (beyond spec's blend tree); own ledger 0/17 checked; prop-overlay unverified | 3/M |
+| archived/2026-05-25-stage-locomotion-design.md | Full Stage module shipped with **motion matching** (beyond spec's blend tree); own ledger 0/17 checked; prop-overlay unverified | 3/M |
 | backlog/2026-05-25-stage-locomotion-polish-backlog.md | Item 1 (inertialization) shipped; items 2-5 unbuilt | 2/M |
 | active/effects-unification-deferred-items.md | Of 6 items: 1 fixed, **2 moot** (referenced code deleted), 3 genuinely open | 2/S |
 | backlog/2026-04-15-unified-gpu-render-pipeline-design.md | Phases 0-1 shipped and **live in production by default** (WebGL2 trails); Phase 2 half-built unwired; Phase 3 built then **orphaned** (zero mounts); Phase 4 unused scaffolding | 4/L |

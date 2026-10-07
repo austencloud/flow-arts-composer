@@ -2,12 +2,14 @@
 status: backlog
 value: 4
 effort: M
-remaining: 'Its own "PARTIALLY SHIPPED" table is accurate 6 weeks on. F1/F5 need Austen''s product decision on guest/anon access'
-depends_on: ""
-plan_path: ""
+remaining: Its own "PARTIALLY SHIPPED" table is accurate 6 weeks on. F1/F5 need Austen's product decision on guest/anon access
+depends_on: 'external: Austen guest/anonymous access decision for F1/F5'
+plan_path: ''
 tags: []
-last_triaged: 2026-08-02
+last_triaged: '2026-10-07'
+work_state: blocked
 ---
+
 # Security Hardening
 
 > **DRIFT WARNING — 2026-08-02.** Its own "PARTIALLY SHIPPED" table is accurate 6 weeks on. F1/F5 need Austen's product decision on guest/anon access

@@ -1,3 +1,14 @@
+---
+status: active
+value: null
+effort: null
+remaining: "Verify The Water Traverse — Design against the current The Water Traverse — Design runtime and acceptance criteria before resuming implementation. Prior recorded remainder: Verify the amended chamber scale and hand path against the current water traverse scene and acceptance views."
+depends_on: ""
+plan_path: ""
+tags: []
+last_triaged: 2026-10-07
+work_state: unverified
+---
 # The Water Traverse — Design
 
 **Date:** 2026-08-09

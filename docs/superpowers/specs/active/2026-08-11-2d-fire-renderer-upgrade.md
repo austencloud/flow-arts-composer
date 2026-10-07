@@ -1,3 +1,14 @@
+---
+status: active
+value: null
+effort: null
+remaining: "Verify timestep-normalized fire dissipation and shader compilation in the real WebGL2 comparison route."
+depends_on: ""
+plan_path: ""
+tags: []
+last_triaged: 2026-10-07
+work_state: unverified
+---
 # 2D Fire Renderer Upgrade
 
 **Status:** Approved for implementation on 2026-08-11  

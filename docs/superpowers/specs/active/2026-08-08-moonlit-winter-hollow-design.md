@@ -1,3 +1,14 @@
+---
+status: active
+value: null
+effort: null
+remaining: "Verify Winter clearing deviation, authored assets, visual proof, and runtime placement against the current hollow scene."
+depends_on: ""
+plan_path: ""
+tags: []
+last_triaged: 2026-10-07
+work_state: unverified
+---
 # Moonlit Winter Hollow
 
 Status: Pass two implemented and reviewed on 2026-08-08. Further work is

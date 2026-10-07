@@ -1,3 +1,14 @@
+---
+status: active
+value: null
+effort: null
+remaining: "Verify ocean composition matrix proof and downstream scene changes against current asset facts and ecology rules."
+depends_on: ""
+plan_path: ""
+tags: []
+last_triaged: 2026-10-07
+work_state: unverified
+---
 # Ocean Composition Matrix — Design
 
 **Status:** approved 2026-08-09

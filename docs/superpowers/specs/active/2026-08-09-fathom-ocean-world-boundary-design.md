@@ -1,3 +1,14 @@
+---
+status: active
+value: null
+effort: null
+remaining: "Verify Fathom Ocean — Gate 3: World Boundary and Palette against src/lib/shared/3d/environments/primitives/SkyGradient.svelte before resuming implementation. Prior recorded remainder: Verify recorded boundary defects and their fixes against current ocean sky, camera views, and visual proof."
+depends_on: ""
+plan_path: ""
+tags: []
+last_triaged: 2026-10-07
+work_state: unverified
+---
 # Fathom Ocean — Gate 3: World Boundary and Palette
 
 Date: 2026-08-09

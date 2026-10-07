@@ -2,12 +2,14 @@
 status: backlog
 value: 2
 effort: L
-remaining: "Body status: Draft"
-depends_on: ""
-plan_path: ""
+remaining: Resolve the open dyad fusion questions with Austen, then plan the pictograph and encoding implementation.
+depends_on: 'external: Austen decisions on dyad fusion open questions'
+plan_path: ''
 tags: []
-last_triaged: 2026-07-25
+last_triaged: '2026-10-07'
+work_state: blocked
 ---
+
 # Dyads — Fused Pictographs
 
 **Date:** 2026-05-27

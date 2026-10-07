@@ -2,19 +2,23 @@
 status: active
 value: 2
 effort: XS
-remaining: "Shipped in 6a818f9f2 except one acceptance item: criterion 18 wants a provider-named visible action (Connect Google / Connect Facebook / Connect Instagram) but ConnectedAccounts.svelte:295 renders a bare 'Connect' and puts the provider name only in actionAriaLabel:296. That is the whole code task. Unrecorded beyond it: criteria 12-16 are geometry claims (no nested ProfileTab scroller at 1440x900 through 3840x2160, no horizontal overflow at 375x667 and 960x412, DOM/focus order, contrast and 44x44 targets, no clipping at 1280x800 with the sidebar pinned) plus the second-pass measurements, all browser-only. The spec's own Automated list also names four tests that were never written: editor read/edit transitions with focus return, the provider state matrix, the Advanced disclosure, and the relocated storage actions. Do NOT rebuild the Account destination."
+remaining: "Shipped in 6a818f9f2 except the Sign-in methods requirement for a visible provider-named action (Connect Google / Connect Facebook / Connect Instagram): ConnectedAccounts.svelte:312 renders a bare 'Connect' and puts the provider name only in actionAriaLabel:313. Unrecorded beyond it: criteria 12-16 are geometry claims (no nested ProfileTab scroller at 1440x900 through 3840x2160, no horizontal overflow at 375x667 and 960x412, DOM/focus order, contrast and 44x44 targets, no clipping at 1280x800 with the sidebar pinned) plus the second-pass measurements, all browser-only. The spec's Automated list also names four tests not located: editor read/edit transitions with focus return, provider state matrix, Advanced disclosure, and relocated storage actions."
 depends_on: ""
 plan_path: ""
 tags: [settings, account, accessibility, verification-gap]
-last_triaged: 2026-09-13
+last_triaged: 2026-10-07
+work_state: in-progress
 ---
 
 # Account Settings Redesign
 
-**Status:** Implemented; one acceptance item is genuinely unmet and the
+**Queue evidence (2026-10-07):** Account destination shipped; the visible provider Connect label and browser acceptance remain open. See frontmatter for the remaining work.
+
+**Original status (historical):** Implemented; one acceptance item is genuinely unmet and the
 geometry gates are unrecorded. Header corrected 2026-09-13 during spec
-reconciliation -- it read "Implemented and verified" while criterion 18's
-provider-named action was never built.
+reconciliation -- it read "Implemented and verified" while the Sign-in methods
+provider-named action was never built. The earlier handoff called this
+"criterion 18" in error; the numbered acceptance list ends at 17.
 
 **Reconciliation evidence (2026-09-13):** the whole redesign landed in
 `6a818f9f2` (_feat(settings): redesign account management_, 35 files,
@@ -29,10 +33,10 @@ stays `profile`. Two named files were deleted **by** the implementing commit, as
 this document intended. `connected-account-providers.test.ts` and
 `account-setup-navigation-contract.test.ts` pass.
 
-**Unmet:** criterion 18 asks for an explicit provider action such as **Connect
-Google**. The visible label is only "Connect"
-(`ConnectedAccounts.svelte:295`); the provider name appears solely in
-`actionAriaLabel` at `:296`. Sighted users get no provider-named affordance.
+**Unmet:** The Sign-in methods requirement asks for an explicit provider action
+such as **Connect Google**. The visible label is only "Connect"
+(`ConnectedAccounts.svelte:312`); the provider name appears solely in
+`actionAriaLabel` at `:313`. Sighted users get no provider-named affordance.
 
 **Date:** 2026-08-06
 

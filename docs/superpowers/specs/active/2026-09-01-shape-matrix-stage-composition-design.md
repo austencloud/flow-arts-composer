@@ -1,3 +1,15 @@
+---
+status: active
+value: null
+effort: null
+work_state: unverified
+remaining: Verify stage-framed shape-matrix view-box geometry for square, portrait, and landscape containers.
+depends_on: ''
+plan_path: ''
+tags: []
+last_triaged: '2026-10-07'
+---
+
 # Shape Matrix Stage Composition
 
 ## Outcome

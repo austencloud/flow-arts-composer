@@ -6,7 +6,8 @@ remaining: "Verification only - the code shipped in 06d178647 and must NOT be re
 depends_on: "external: a browser session against the production Deck Releaser surface"
 plan_path: ""
 tags: [deck-releaser, gallery, browse, verification-only]
-last_triaged: 2026-09-13
+last_triaged: 2026-10-07
+work_state: verification
 ---
 
 # Canonical Gallery Workspace in Deck Releaser

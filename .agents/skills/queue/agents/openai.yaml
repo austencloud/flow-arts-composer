@@ -1,4 +1,4 @@
 interface:
   display_name: "Spec Queue"
-  short_description: "Starting a session and needing to pick work"
+  short_description: "Picking work, listing the spec queue"
   default_prompt: "Use $queue to apply the Spec Queue workflow to this task."

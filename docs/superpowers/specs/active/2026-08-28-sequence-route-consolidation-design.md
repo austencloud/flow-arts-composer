@@ -1,3 +1,15 @@
+---
+status: active
+value: null
+effort: null
+work_state: unverified
+remaining: Verify /q route ownership, query preservation, scan recording, and legacy-route behavior against the consolidation gates.
+depends_on: ''
+plan_path: ''
+tags: []
+last_triaged: '2026-10-07'
+---
+
 # Sequence Route Consolidation
 
 **Date:** 2026-08-28

@@ -2,11 +2,17 @@
 status: active
 value: 5
 effort: L
-remaining: "Umbrella spec only. Each phase gets its own design before it is built."
-depends_on: "2026-08-20-stage-performance-runtime-design.md"
-plan_path: ""
-tags: [director, film, choreography, 3d, admin]
-last_triaged: 2026-08-25
+remaining: Reconcile Phase 0-3 Director child specs and prove the Star target end to end before closing this umbrella.
+depends_on: 2026-08-20-stage-performance-runtime-design.md
+plan_path: ''
+tags:
+- director
+- film
+- choreography
+- 3d
+- admin
+last_triaged: '2026-10-07'
+work_state: in-progress
 ---
 
 # Director Module — Bird's-Eye Design
@@ -361,5 +367,5 @@ repo's own config, all 10 stage test files and 39 tests pass. The reported
 - `active/2026-08-20-stage-performance-runtime-design.md` — Stage runtime contract
 - `active/2026-08-24-film-collection-design.md` — saved films, the shelf, deep links
 - `2026-08-23-film-director-directive-language-design.md` — the directive language
-- `backlog/2026-05-25-stage-locomotion-design.md` — superseded, useful product research
+- `archived/2026-05-25-stage-locomotion-design.md` — superseded, useful product research
 - `.claude/rules/never-hand-roll.md`, `.claude/rules/effects-earn-their-slot.md`

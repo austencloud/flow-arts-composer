@@ -1,3 +1,15 @@
+---
+status: active
+value: null
+effort: null
+work_state: verification
+remaining: Verify the landed Flow Fest drive-in against gate geometry, tree visibility, arrival choices, and saved campsite return.
+depends_on: ''
+plan_path: ''
+tags: []
+last_triaged: '2026-10-07'
+---
+
 # Flow Fest sim — sub-project 1 "Drive in" (design)
 
 Date: 2026-09-04. Roadmap:

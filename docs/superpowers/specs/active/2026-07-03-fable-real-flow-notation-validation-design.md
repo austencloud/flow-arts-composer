@@ -6,7 +6,8 @@ remaining: "All pre-clip work is implemented: validation tooling, scorecard, tra
 depends_on: "external: Austen-provided real performance clip plus its ground-truth sequence and interactive calibration"
 plan_path: ""
 tags: []
-last_triaged: 2026-08-03
+last_triaged: 2026-10-07
+work_state: blocked
 ---
 # Fable Spec — Real-Flow Notation: Validate + Robust Perception Core (THE MOONSHOT)
 

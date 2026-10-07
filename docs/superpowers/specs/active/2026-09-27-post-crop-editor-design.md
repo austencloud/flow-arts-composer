@@ -1,6 +1,20 @@
+---
+status: active
+value: null
+effort: null
+work_state: verification
+remaining: Verify dedicated crop screen geometry, rotate/reset continuity, undo, and viewport behavior against this design.
+depends_on: ''
+plan_path: ''
+tags: []
+last_triaged: '2026-10-07'
+---
+
 # Post Studio Crop Editor
 
-Status: approved by the request of 2026-09-27 ("do some deep research on what
+**Triage evidence (2026-10-07):** The spec cites the dedicated crop-screen implementation in commit `10729480`. Crop geometry, rotate/reset continuity, undo, and viewport behavior still need a recorded acceptance check.
+
+Status: Dedicated crop screen implemented; interaction and viewport verification pending. Approved by the request of 2026-09-27 ("do some deep research on what
 the most intuitive cropping patterns are and see if you can give the whole crop
 system another high tier pass"). Review label: self-review, less independent.
 

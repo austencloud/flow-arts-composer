@@ -1,3 +1,15 @@
+---
+status: backlog
+value: null
+effort: null
+work_state: blocked
+remaining: Release the locally implemented winter-wind package, then verify the consuming 3D scene against the design acceptance.
+depends_on: 'external: winter-wind package release'
+plan_path: ''
+tags: []
+last_triaged: '2026-10-07'
+---
+
 # Living Winter Wind
 
 **Date:** 2026-08-06  

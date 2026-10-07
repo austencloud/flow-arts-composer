@@ -1,14 +1,18 @@
 ---
-status: active
+status: backlog
 value: 3
 effort: S
-remaining: 'Phases 1, 2a, 3 shipped and commit-verified. Phase 2b remains: visual tuning of half-arrow assets against the guide artboards.'
-depends_on: ""
-plan_path: ""
+remaining: Compare half-arrow art to guide artboards, resolve per-glyph rotational offsets, and audit the live getArrowSvgPath/getArrowPath call path.
+depends_on: ''
+plan_path: ''
 tags: []
-last_triaged: 2026-08-02
+last_triaged: '2026-10-07'
+work_state: verification
 ---
+
 # Halved Pictograph Pipeline — Design
+
+**Triage evidence (2026-10-07):** The implementation ledger records landed pipeline work while three acceptance boxes remain unchecked. Level renumbering and rendered output require current verification before closure.
 
 > **Level renumber, 2026-08-27.** Interradial orientations and quarter turns
 > moved to **Level 4**; the center point moved to **Level 6**. This document
@@ -20,7 +24,7 @@ last_triaged: 2026-08-02
 > exclusively a quarter-turn phenomenon; only the level label changed.
 
 - **Date:** 2026-07-14
-- **Status:** Design (approved to spec; implementation not started)
+- **Status:** Implementation recorded; remaining pipeline acceptance and browser verification pending.
 - **Author:** Austen + Claude
 - **Scope:** Make "halve a pictograph" a first-class, orientation-correct, pipeline-positioned capability. Phases 1–3 in this doc. Phase 4 (product UX) flagged, deferred.
 
