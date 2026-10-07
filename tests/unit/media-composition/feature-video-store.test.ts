@@ -37,7 +37,14 @@ beforeEach(async () => {
 });
 
 afterEach(async () => {
-  await fs.rm(root, { recursive: true, force: true });
+  // Windows can hold a file a test just wrote for a moment after it is
+  // deleted, and then its folder will not go yet.
+  await fs.rm(root, {
+    recursive: true,
+    force: true,
+    maxRetries: 10,
+    retryDelay: 100,
+  });
 });
 
 async function refusal(
