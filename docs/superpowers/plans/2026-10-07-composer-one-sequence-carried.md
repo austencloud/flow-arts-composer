@@ -346,6 +346,20 @@ Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>" -- src/lib/shared/land
 > Construct's near-activation (the stage keeps the next stop inside the window
 > so it loads early, which would have held the hero at load). The steps below
 > are the amended version.
+>
+> Second follow-up, same day: the stage poses every stop when it takes over,
+> before the IntersectionObserver's first entry, and the visibility helper's
+> MutationObserver reported that pose as "not visible", which held the hero at
+> load on desktop. `observeComposerStopVisibility` now ignores style changes
+> until the first measurement (test: "ignores stage style changes until the
+> viewport has been measured"), and the hold lives in
+> `src/routes/(public)/composer/_components/hold-when-stop-leaves.ts`
+> (`holdWhenStopLeaves(node, hold)`, four tests in
+> `__tests__/hold-when-stop-leaves.test.ts`: no hold on a pre-measurement
+> pose, one hold when the stop leaves the viewport, hold when the stage takes
+> its pointer events, hold at once on a deep link). It releases its observers
+> after the hold. The page's `holdWhenHeroLeaves` is now the one-line wrapper
+> shown below.
 
 - [ ] **Step 1: Replace the carry state**
 
@@ -443,21 +457,15 @@ function holdHero(): void {
 }
 
 // The stage keeps the next stop inside the window so it loads early, so
-// "near Construct" would hold the hero at load. The reader has left the
-// hero when its stop is no longer the one being read: scrolled past on
-// the plain page, or no longer the stage's current stop (the stage takes
-// its pointer events). A deep link or a restored scroll arrives already
-// past it, so the observer's first real report holds too; only the
-// synchronous report made before observation starts is ignored.
+// "near Construct" would hold the hero at load. The hero is held instead
+// once its stop is no longer the one being read; see holdWhenStopLeaves.
 function holdWhenHeroLeaves(node: HTMLElement) {
-  let observing = false;
-  const handle = observeComposerStopVisibility(node, (visible) => {
-    if (observing && !visible) holdHero();
-  });
-  observing = true;
-  return handle;
+  return holdWhenStopLeaves(node, holdHero);
 }
 ```
+
+(`import { holdWhenStopLeaves } from "./hold-when-stop-leaves";` sits next to
+the `observeComposerStopVisibility` import, which the tunnel still uses.)
 
 - [ ] **Step 2: Delete the old carry function and hold when the hero leaves**
 
@@ -1175,16 +1183,24 @@ with
 ```ts
 // Same handler HomeHero uses: report the interaction, then roll now. The
 // act's draws fall back to the baked demo rather than rejecting, so the
-// failure copy is a safety net, not an expected state.
+// failure copy is a safety net, not an expected state. Roll is a touch of
+// the hero even when it arrives without a pointer (keyboard activation
+// through a label, or a script), so it holds the hero itself.
 let rerollFailed = $state(false);
 function handleReroll(): void {
   trackDemoInteraction("try_another");
+  holdHero();
   rerollFailed = false;
   heroAct.advanceNow().catch(() => {
     rerollFailed = true;
   });
 }
 ```
+
+> Execution note (2026-10-07): the `holdHero()` call inside `handleReroll`
+> was added at dispatch. The player's capture handlers already hold on a real
+> pointer or key press; this covers a programmatic `click()`, which fires no
+> pointerdown.
 
 Directly before `{#snippet pickerPreview()}` add:
 
