@@ -42,4 +42,5 @@ export const METHOD_PREVIEW_SCENES: Readonly<
 > = {
   construct: () => import("./ConstructScene.svelte"),
   generate: () => import("./GenerateScene.svelte"),
+  "shape-engine": () => import("./ShapeScene.svelte"),
 };

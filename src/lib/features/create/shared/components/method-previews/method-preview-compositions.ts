@@ -332,3 +332,14 @@ export function assembleLayout(width: number, height: number): CellRect | null {
     size,
   };
 }
+
+/**
+ * The transform that draws an element laid out at `box` over `target`
+ * (transform-origin at the top left). Scenes move a picture from one cell
+ * to another with it: Shape's stage starts over the chosen tile, and Fuse's
+ * sources land on their fused cell.
+ */
+export function transformOnto(box: CellRect, target: CellRect): string {
+  const scale = box.size > 0 ? Number((target.size / box.size).toFixed(4)) : 1;
+  return `translate(${target.x - box.x}px, ${target.y - box.y}px) scale(${scale})`;
+}
