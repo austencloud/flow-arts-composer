@@ -8,10 +8,12 @@
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
 import type { StartPlacementData } from "$lib/shared/foundation/domain/models/start-placement-data";
 import type { Step } from "@tka/tka-types";
+import { gridJoinsEqual } from "$lib/shared/grid-join/grid-join-controller";
+import { sequenceGridJoin } from "$lib/shared/grid-join/sequence-grid-join";
 
 /**
  * Compare two sequences for deep equality.
- * Compares the actual sequence content (steps and start placements), not metadata like id, name, etc.
+ * Compares the actual sequence content (steps, start placements and the grid join), not metadata like id, name, etc.
  *
  * @param seq1 First sequence to compare
  * @param seq2 Second sequence to compare
@@ -24,6 +26,12 @@ export function areSequencesEqual(
   // Handle null/undefined cases
   if (!seq1 && !seq2) return true;
   if (!seq1 || !seq2) return false;
+
+  // The join is part of the sequence: the same steps joined differently are
+  // different sequences.
+  if (!gridJoinsEqual(sequenceGridJoin(seq1), sequenceGridJoin(seq2))) {
+    return false;
+  }
 
   // Compare beat arrays
   if (seq1.steps.length !== seq2.steps.length) return false;
