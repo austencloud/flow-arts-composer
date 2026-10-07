@@ -14,6 +14,9 @@ export const PILL_ORDER = [
   "layers",
   "props",
   "effects",
+  // Whether each hand gets its own grid, and where red's sits from blue's.
+  // Only where a host provides a grid-join controller over its sequence.
+  "join",
   // Sidebar-only composite of effort + playback. Both are motion behavior —
   // how fast each step runs and what shape the hands travel — so one page can
   // carry them under one honest name. The individual ids survive for the
@@ -64,8 +67,15 @@ export const MOTION_PARTS = ["effort", "playback"] as const;
  */
 export function animationPillOrder(motionMerged: boolean): readonly PillId[] {
   return motionMerged
-    ? (["effects", "props", "motion", "display", "export"] as const)
-    : (["effects", "props", ...MOTION_PARTS, "display", "export"] as const);
+    ? (["effects", "props", "join", "motion", "display", "export"] as const)
+    : ([
+        "effects",
+        "props",
+        "join",
+        ...MOTION_PARTS,
+        "display",
+        "export",
+      ] as const);
 }
 
 /**

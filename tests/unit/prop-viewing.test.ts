@@ -47,6 +47,19 @@ describe("viewing prop precedence", () => {
       resolveViewingProps({ ...own, propViewingMode: "as-saved" }, saved)
     ).toEqual({ config: mixed, source: "Saved with sequence" });
   });
+  it("can show a demo scan's mixed card props without changing My props", () => {
+    const settings = { ...own, propViewingMode: "my-props" as const };
+    expect(resolveViewingProps(settings, saved, null, "as-saved")).toEqual({
+      config: mixed,
+      source: "Saved with sequence",
+    });
+    expect(resolveViewingProps(settings, saved)).toEqual({
+      config: own,
+      source: "My props",
+    });
+    expect(settings).toEqual({ ...own, propViewingMode: "my-props" });
+    expect(saved.creatorIntent?.propConfig).toEqual(mixed);
+  });
   it("falls back honestly to personal props when the recording is absent or invalid", () => {
     for (const sequence of [
       original,

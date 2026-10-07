@@ -2,7 +2,7 @@
 LOOPComponentGrid.svelte - Layout for LOOP component selection buttons
 - layout="grid" (default): compact 3x2 grid (icon + label), unchanged behavior.
   - layout="list": single vertical column with descriptions.
-  - layout="responsive": descriptive desktop list, compact phone grid.
+- layout="responsive": descriptive desktop choices, compact phone grid.
 -->
 <script lang="ts">
   import {
@@ -46,7 +46,7 @@ LOOPComponentGrid.svelte - Layout for LOOP component selection buttons
     onToggleComponent: (component: LOOPComponent) => void;
   }>();
 
-  // List layout shows descriptions per row; grid stays compact (icon + label).
+  // Descriptive layouts show one explanation per choice; the compact grid does not.
   const showDescriptions = $derived(layout !== "grid");
   const compactOnMobile = $derived(layout === "responsive");
   // New selections use one Reflection component plus an explicit axis.
@@ -141,90 +141,25 @@ LOOPComponentGrid.svelte - Layout for LOOP component selection buttons
     grid-column: 1 / -1;
   }
 
-  /* List layout: single vertical column. Rows stretch to fill a tall panel
-     (desktop). Matching five-track definitions let the browser animate the
-     owner row open while gently compressing its siblings. Minimum expanded
-     heights guarantee that controls can never be clipped on shorter screens;
-     the grid container scrolls when those minimums exceed its viewport. */
+  /* Descriptive choices stay content-sized inside the tall desktop panel. */
   .loop-component-grid.list {
     grid-template-columns: 1fr;
-    grid-auto-rows: minmax(64px, 1fr);
-    grid-template-rows:
-      minmax(64px, 1fr)
-      minmax(64px, 1fr)
-      minmax(64px, 1fr)
-      minmax(64px, 1fr)
-      minmax(64px, 1fr);
-    height: 100%;
-    transition: grid-template-rows var(--loop-expansion-duration)
-      var(--loop-expansion-easing);
+    grid-auto-rows: minmax(96px, auto);
+    max-width: 960px;
+    align-content: start;
+    min-height: 100%;
   }
 
-  /* Only the desktop list owns five explicit row tracks. Letting these rules
-     leak into the phone's three-column grid made compact cards inherit the
-     250–320px desktop expansion heights. */
-  @media (min-width: 769px) {
-    .loop-component-grid.list.has-expanded-rotation {
-      grid-template-rows:
-        minmax(210px, 1fr)
-        minmax(64px, 1fr)
-        minmax(64px, 1fr)
-        minmax(64px, 1fr)
-        minmax(64px, 1fr);
+  @container (min-width: 560px) {
+    .loop-component-grid.list {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
     }
 
-    .loop-component-grid.list.has-expanded-inversion {
-      grid-template-rows:
-        minmax(64px, 1fr)
-        minmax(64px, 1fr)
-        minmax(320px, 1fr)
-        minmax(64px, 1fr)
-        minmax(64px, 1fr);
-    }
-
-    .loop-component-grid.list.has-expanded-reflection {
-      grid-template-rows:
-        minmax(64px, 1fr)
-        minmax(64px, 1fr)
-        minmax(64px, 1fr)
-        minmax(64px, 1fr)
-        minmax(300px, 1fr);
-    }
-
-    .loop-component-grid.list.has-expanded-inversion.has-expanded-reflection {
-      grid-template-rows:
-        minmax(64px, 1fr)
-        minmax(64px, 1fr)
-        minmax(320px, 1fr)
-        minmax(64px, 1fr)
-        minmax(300px, 1fr);
-    }
-
-    .loop-component-grid.list.has-expanded-rotation.has-expanded-inversion {
-      grid-template-rows:
-        minmax(250px, 1fr)
-        minmax(64px, 1fr)
-        minmax(320px, 1fr)
-        minmax(64px, 1fr)
-        minmax(64px, 1fr);
-    }
-
-    .loop-component-grid.list.has-expanded-rotation.has-expanded-reflection {
-      grid-template-rows:
-        minmax(250px, 1fr)
-        minmax(64px, 1fr)
-        minmax(64px, 1fr)
-        minmax(64px, 1fr)
-        minmax(300px, 1fr);
-    }
-
-    .loop-component-grid.list.has-expanded-rotation.has-expanded-inversion.has-expanded-reflection {
-      grid-template-rows:
-        minmax(250px, 1fr)
-        minmax(64px, 1fr)
-        minmax(320px, 1fr)
-        minmax(64px, 1fr)
-        minmax(300px, 1fr);
+    .loop-component-grid.list :global(.loop-component-shell.expanded) {
+      grid-column: 1 / -1;
+      width: min(100%, 420px);
+      justify-self: center;
     }
   }
 
@@ -237,16 +172,11 @@ LOOPComponentGrid.svelte - Layout for LOOP component selection buttons
       grid-template-rows: none;
       grid-auto-rows: minmax(64px, auto);
       height: auto;
+      min-height: 0;
     }
 
     .loop-component-grid.responsive :global(.loop-component-shell.expanded) {
       grid-column: 1 / -1;
-    }
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    .loop-component-grid.list {
-      transition: none;
     }
   }
 </style>

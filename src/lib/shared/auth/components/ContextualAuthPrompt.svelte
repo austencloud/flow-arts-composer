@@ -18,6 +18,7 @@
     active?: boolean;
     idPrefix?: string;
     showClose?: boolean;
+    embedded?: boolean;
     inAppBrowser?: boolean;
     facebookError?: string | null;
     onClose?: () => void;
@@ -32,6 +33,7 @@
     active = true,
     idPrefix = "contextual-auth",
     showClose = false,
+    embedded = false,
     inAppBrowser = false,
     facebookError = null,
     onClose,
@@ -95,31 +97,34 @@
 <section
   class="contextual-auth-prompt"
   class:compact
+  class:embedded
   class:encore-offer={encoreOffer}
   aria-labelledby={titleId}
   aria-describedby={descriptionId}
 >
-  <header class="prompt-header">
-    {#if !compact}
-      <div class="brand-lockup">
-        <span class="brand-mark">
-          <img src="/branding/logo.jpg" alt="" width="56" height="56" />
-        </span>
-        <span class="brand-name">Flow Arts Composer</span>
-      </div>
-    {/if}
+  {#if !embedded}
+    <header class="prompt-header">
+      {#if !compact}
+        <div class="brand-lockup">
+          <span class="brand-mark">
+            <img src="/branding/logo.jpg" alt="" width="56" height="56" />
+          </span>
+          <span class="brand-name">Flow Arts Composer</span>
+        </div>
+      {/if}
 
-    {#if showClose}
-      <button
-        class="close-button"
-        type="button"
-        onclick={onClose}
-        aria-label={t("common_close")}
-      >
-        <i class="fas fa-times" aria-hidden="true"></i>
-      </button>
-    {/if}
-  </header>
+      {#if showClose}
+        <button
+          class="close-button"
+          type="button"
+          onclick={onClose}
+          aria-label={t("common_close")}
+        >
+          <i class="fas fa-times" aria-hidden="true"></i>
+        </button>
+      {/if}
+    </header>
+  {/if}
 
   <div class="prompt-copy">
     {#if compact}
@@ -223,6 +228,33 @@
 </section>
 
 <style>
+  .contextual-auth-prompt.embedded {
+    width: 100%;
+    padding: 0;
+    overflow: visible;
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  .embedded .prompt-copy {
+    min-height: 0;
+    padding-block: 0 1.25rem;
+  }
+
+  .embedded h2 {
+    font-size: clamp(1.5rem, 1.3rem + 1cqw, 2rem);
+  }
+
+  .embedded .prompt-copy p {
+    min-height: 0;
+  }
+
+  .embedded .mode-toggle {
+    flex-wrap: wrap;
+  }
+
   .contextual-auth-prompt {
     --prompt-blue: var(--prop-blue, #4155d8);
     --prompt-red: var(--prop-red, #ef3340);

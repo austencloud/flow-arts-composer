@@ -46,6 +46,8 @@ import {
   animationGridJoinKey,
   resolveAnimationGridJoin,
 } from "../animation-grid-join";
+import { GRID_JOIN_TWEEN_MS, gridJoinHandOffsets } from "../grid-join-tween";
+import { motionDuration } from "$lib/shared/transitions/motion";
 
 /** Default props sentinel used when lastPropsRef is null */
 const DEFAULT_ENGINE_PROPS: AnimationEngineProps = {
@@ -100,6 +102,8 @@ export class PlaybackSync {
   private previousGridMode: string | null = null;
   private previousShowNonRadialPoints: boolean = true;
   private previousGridJoin: GridJoin | null = null;
+  /** The sequence the previous join belonged to: a new one snaps, never slides. */
+  private previousGridJoinSequenceId: string | null = null;
   private cacheSequenceId: string | null = null;
   private lastClearSignal: number = 0;
   private lastPreRenderClearSignal: number = 0;
@@ -110,7 +114,9 @@ export class PlaybackSync {
   constructor(
     private readonly state: AnimatorState,
     private readonly deps: PlaybackSyncDeps
-  ) {}
+  ) {
+    deps.frameSystem.onGridJoinTweenEnd(() => this.settleGridJoinSlide());
+  }
 
   get lastPropsRef(): AnimationEngineProps | null {
     return this._lastPropsRef;
@@ -140,6 +146,8 @@ export class PlaybackSync {
 
   setPreviousGridJoin(value: GridJoin | null): void {
     this.previousGridJoin = value;
+    this.previousGridJoinSequenceId =
+      this._lastPropsRef?.sequenceData?.id ?? null;
   }
 
   // ── Reset (called from engine.dispose()) ────────────────────────────────────
@@ -619,7 +627,9 @@ export class PlaybackSync {
    * The sequence's join changed (a join was picked, changed or removed, or a
    * sequence with a different join loaded): load the matching grid picture
    * and drop trails and flames drawn for the old layout, which would otherwise
-   * streak across to the props' new places.
+   * streak across to the props' new places. A pick on the same sequence
+   * slides the grids, props and trails into place (FrameSystem's tween); a
+   * different sequence, or reduced motion, snaps as it always has.
    */
   private syncGridJoin(): void {
     const { lifecycleManager, frameSystem, effectSystem, buildFrameDeps } =
@@ -636,11 +646,25 @@ export class PlaybackSync {
     ) {
       return;
     }
+    const sequenceId = this._lastPropsRef?.sequenceData?.id ?? null;
+    const sameSequence =
+      sequenceId !== null && sequenceId === this.previousGridJoinSequenceId;
+    const from = gridJoinHandOffsets(this.previousGridJoin);
     this.previousGridJoin = join;
+    this.previousGridJoinSequenceId = sequenceId;
 
-    effectSystem.trailOverlay?.clearBuffers();
-    lifecycleManager.trailCapturer?.clearTrails();
-    effectSystem.fireTipTracker?.reset();
+    if (sameSequence) {
+      frameSystem.gridJoinTween.start(
+        from,
+        gridJoinHandOffsets(join),
+        performance.now(),
+        motionDuration(GRID_JOIN_TWEEN_MS)
+      );
+    } else {
+      frameSystem.gridJoinTween.stop();
+    }
+
+    this.clearGridJoinStreaks();
     effectSystem.fireRenderer?.clearSimulation();
     effectSystem.charcoalRenderer?.clearSimulation();
 
@@ -659,6 +683,31 @@ export class PlaybackSync {
         join
       )
       .then(rerender);
+  }
+
+  /** Trails and the flame tip tracker, which would join old places to new. */
+  private clearGridJoinStreaks(): void {
+    const { lifecycleManager, effectSystem } = this.deps;
+    effectSystem.trailOverlay?.clearBuffers();
+    lifecycleManager.trailCapturer?.clearTrails();
+    effectSystem.fireTipTracker?.reset();
+  }
+
+  /**
+   * A layout slide just finished. Trail capture paused through it, so this
+   * clear only drops any point that straddles the slide; flames trail the
+   * moving props naturally and fade on their own, so they are left alone.
+   */
+  private settleGridJoinSlide(): void {
+    this.clearGridJoinStreaks();
+    if (this.state.isInitialized) {
+      this.deps.lifecycleManager.renderLoop?.triggerRender(() =>
+        this.deps.frameSystem.buildFrameParams(
+          this._lastPropsRef ?? DEFAULT_ENGINE_PROPS,
+          this.deps.buildFrameDeps()
+        )
+      );
+    }
   }
 
   // ── Service-state pull (was engine.syncServiceState) ────────────────────────

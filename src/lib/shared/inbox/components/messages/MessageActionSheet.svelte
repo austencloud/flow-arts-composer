@@ -267,9 +267,12 @@
     -webkit-backdrop-filter: none;
   }
 
+  /* Basis AUTO: the bottom sheet is content-sized (min-height: 0), and a 0%
+     basis here makes WebKit size it to the grab handle alone on iPhones.
+     See Drawer.css .drawer-inner. */
   .sheet-content {
     display: flex;
-    flex: 1;
+    flex: 1 1 auto;
     min-height: 0;
     flex-direction: column;
     gap: 0.875rem;

@@ -184,8 +184,10 @@ Spec: docs/superpowers/specs/2026-08-02-customize-panel-drilldown-design.md
 
   const startPosDisplay = $derived.by(() => {
     if (!startEndOptions) return t("shared_controls_any_position");
-    if (currentPreset === StartPlacementPreset.ANY) return t("shared_controls_any_position");
-    if (currentPreset === StartPlacementPreset.CLASSIC) return t("create_deep_classic_three");
+    if (currentPreset === StartPlacementPreset.ANY)
+      return t("shared_controls_any_position");
+    if (currentPreset === StartPlacementPreset.CLASSIC)
+      return t("create_deep_classic_three");
     return t("create_deep_position_count", { count: enabledCount });
   });
 
@@ -360,6 +362,7 @@ Spec: docs/superpowers/specs/2026-08-02-customize-panel-drilldown-design.md
       items={drillItems}
       bind:selected
       onSelect={handleSelect}
+      choiceLayout="cards"
     >
       {#snippet listHeader()}
         <!-- These settings persist across sessions, which is what made a saved

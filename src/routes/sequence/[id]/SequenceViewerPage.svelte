@@ -134,7 +134,7 @@
 
   // Scan-origin cards keep the cloud pictograph path after /q hands off. This
   // context must exist before the descendant orchestrator mounts.
-  if (scanOriginCode) setScanCardCloudProbe(true);
+  if (scanOriginCode) setScanCardCloudProbe(true, isDemo);
 
   // URL params for state restoration
   const urlViewMode = $derived(
@@ -770,6 +770,7 @@
     {sequence}
     {isMobile}
     {forceGuest}
+    demoScanProps={isDemo && !!scanOriginCode}
     initialBpm={urlBpm ||
       (scanOriginCode ? scanInitialBpm : handoffData?.playbackState?.bpm || 60)}
     initialStep={handoffData?.playbackState?.currentStep || 0}
@@ -814,6 +815,7 @@
           saveOnOpen={saveFromShapeEngine}
           {isMobile}
           startInCardThenSplit={!!scanOriginCode}
+          demoScanProps={isDemo && !!scanOriginCode}
           embedded={isEmbedded}
           onClose={handleClose}
           navigation={{

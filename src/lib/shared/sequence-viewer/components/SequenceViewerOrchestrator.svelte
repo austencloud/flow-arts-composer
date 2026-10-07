@@ -175,6 +175,8 @@
     sequence: SequenceData | null;
     isMobile: boolean;
     collectionPropType?: PropType | null;
+    /** Show a demo scan with the props printed on its card without saving a preference. */
+    demoScanProps?: boolean;
     initialBpm?: number;
     initialPlaybackMode?: PlaybackMode;
     initialStep?: number;
@@ -226,6 +228,7 @@
     sequence: savedSequence,
     isMobile,
     collectionPropType = null,
+    demoScanProps = false,
     initialBpm = 60,
     initialPlaybackMode = "continuous",
     initialStep = 0,
@@ -499,8 +502,12 @@
 
   const exportCoord = createExportCoordinator({
     getPropConfig: () =>
-      resolveViewingProps(getAppSettings(), sequence, collectionPropType)
-        .config,
+      resolveViewingProps(
+        getAppSettings(),
+        sequence,
+        collectionPropType,
+        demoScanProps ? "as-saved" : undefined
+      ).config,
     viewer3DState,
     accessibilityHelper,
     // Read lazily at export time: viewerVisibility is created further down and
@@ -528,7 +535,12 @@
     const settings = getAppSettings();
     return {
       ...settings,
-      ...resolveViewingProps(settings, sequence, collectionPropType).config,
+      ...resolveViewingProps(
+        settings,
+        sequence,
+        collectionPropType,
+        demoScanProps ? "as-saved" : undefined
+      ).config,
     };
   }
 

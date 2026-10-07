@@ -11,9 +11,7 @@
   import {
     PROP_TYPE_DISPLAY_REGISTRY,
     VARIANT_PROP_TYPES,
-    isPremiumCosmeticProp,
   } from "$lib/shared/pictograph/prop/domain/prop-type-display-registry";
-  import { checkPremiumCosmeticAccess } from "$lib/shared/subscription/domain/premium-prop-access";
   import {
     ALL_GRADIENTS,
     COLOR_FAMILIES,
@@ -48,22 +46,19 @@
 
   const NON_PROP_TYPES = new Set([PropType.HAND]);
 
-  // Reading the whole registry also picks up paid cosmetics, so they come out
-  // again unless this user may use them. An avatar is a keepsake, not a demo.
-  const PROPS = $derived.by<PropOption[]>(() => {
-    const premiumPropsAllowed = checkPremiumCosmeticAccess().allowed;
-    return Object.entries(PROP_TYPE_DISPLAY_REGISTRY)
+  // Derived so the labels follow a language change.
+  const PROPS = $derived<PropOption[]>(
+    Object.entries(PROP_TYPE_DISPLAY_REGISTRY)
       .filter(([propType]) => {
         const pt = propType as PropType;
-        if (isPremiumCosmeticProp(pt) && !premiumPropsAllowed) return false;
         return !VARIANT_PROP_TYPES.includes(pt) && !NON_PROP_TYPES.has(pt);
       })
       .map(([propType, info]) => ({
         id: propType as PropType,
         label: localizedPropName(propType as PropType),
         image: info.image,
-      }));
-  });
+      }))
+  );
 
   const selectedGradient = $derived(
     ALL_GRADIENTS.find((g) => g.id === selectedGradientId) ?? ALL_GRADIENTS[0]!

@@ -80,8 +80,10 @@ export {
   type HandColorPair,
 } from "./hand-colors.js";
 export {
+  CARD_MANDALA_HAND_RADIUS,
   calculateCardMandalaPaths,
   renderCardMandala,
+  type CardMandalaHandOffsets,
   type CardMandalaMotion,
   type CardMandalaPaths,
   type CardMandalaPlacement,

@@ -20,7 +20,6 @@ import {
 } from "$lib/shared/application/state/app-state.svelte";
 import type { SequenceTransformCommandId } from "$lib/shared/create/domain/sequence-action-types";
 import { getAllPropTypes } from "$lib/shared/pictograph/prop/domain/prop-type-display-registry";
-import { filterPremiumCosmeticProps } from "$lib/shared/subscription/domain/premium-prop-access";
 import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
 import {
   isLayerOwnedKeyboardTarget,
@@ -540,9 +539,7 @@ export function registerCreateShortcuts(
     action: async () => {
       const settings = getSettings();
       const currentProp = settings.leftPropType ?? PropType.STAFF;
-      // Shuffle draws from the whole enum, so paid cosmetics drop out unless
-      // the user may actually use them.
-      const allProps = filterPremiumCosmeticProps(getAllPropTypes());
+      const allProps = getAllPropTypes();
       const otherProps = allProps.filter((p) => p !== currentProp);
       const randomProp =
         otherProps[Math.floor(Math.random() * otherProps.length)]!;

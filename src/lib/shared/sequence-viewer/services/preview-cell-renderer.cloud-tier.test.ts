@@ -70,6 +70,20 @@ describe("renderCell cloud tier", () => {
     expect(cloudUpload).not.toHaveBeenCalled();
   });
 
+  it("probeCloud failure recovers locally and caches the cell for a repeat demo view", async () => {
+    cloudDownload.mockRejectedValue(new Error("network unavailable"));
+    poolRender.mockResolvedValue(new Blob(["png"], { type: "image/png" }));
+    await renderCell(data, undefined, true, { size: 300, probeCloud: true });
+    expect(poolRender).toHaveBeenCalledTimes(1);
+    expect(blobSet).toHaveBeenCalledWith(expect.any(String), expect.any(Blob));
+
+    blobGet.mockResolvedValue(new Blob(["cached"], { type: "image/png" }));
+    await renderCell(data, undefined, true, { size: 300, probeCloud: true });
+    expect(poolRender).toHaveBeenCalledTimes(1);
+    expect(cloudDownload).toHaveBeenCalledTimes(1);
+    expect(cloudUpload).not.toHaveBeenCalled();
+  });
+
   it("cloudOnly MISS: fails without loading the local renderer", async () => {
     cloudDownload.mockResolvedValue(null);
 
