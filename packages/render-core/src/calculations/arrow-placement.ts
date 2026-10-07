@@ -6,7 +6,10 @@
  */
 
 import type { ArrowPlacement, Coordinates, GridLocation, GridMode, MotionType } from "../types.js";
-import { getLayer2PointCoordinates } from "./grid-placement.js";
+import {
+  getHandPointCoordinates,
+  getLayer2PointCoordinates,
+} from "./grid-placement.js";
 import { calculateArrowRotation } from "./arrow-rotation.js";
 
 
@@ -88,6 +91,21 @@ export function calculateArrowPosition(
   gridMode: GridMode
 ): Coordinates {
   return getLayer2PointCoordinates(location, gridMode);
+}
+
+/**
+ * Where an arrow sits before its placement adjustment: shift arrows (pro,
+ * anti, float) on the layer-2 point, static and dash arrows on the hand point.
+ */
+export function getArrowAnchorCoordinates(
+  motionType: MotionType | string,
+  location: GridLocation | string,
+  gridMode: GridMode
+): Coordinates {
+  const type = motionType.toLowerCase();
+  return type === "static" || type === "dash"
+    ? getHandPointCoordinates(location, gridMode)
+    : getLayer2PointCoordinates(location, gridMode);
 }
 
 export function calculateArrowPlacement(

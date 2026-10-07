@@ -168,6 +168,12 @@ function centerRotationDelta(
   return normalizeSigned(endAngle - startAngle);
 }
 
+function isNoRotation(rotationDirection: string | undefined): boolean {
+  return (
+    rotationDirection === "noRotation" || rotationDirection === "no_rotation"
+  );
+}
+
 function numericTurns(value: number | "fl" | undefined): number {
   return typeof value === "number" && Number.isFinite(value) ? value : 0;
 }
@@ -196,8 +202,7 @@ function motionEndpoints(
     rotationDirection === "ccw" || rotationDirection === "counter_clockwise"
       ? -1
       : 1;
-  const noRotation =
-    rotationDirection === "noRotation" || rotationDirection === "no_rotation";
+  const noRotation = isNoRotation(rotationDirection);
   let staffRotationDelta = 0;
 
   if (motion.motionType === "pro") {
@@ -250,7 +255,7 @@ function pathPoints(
       endpoints.staffRotationDelta =
         motion.motionType === "float"
           ? 0
-          : turns > 0
+          : turns > 0 && !isNoRotation(motion.rotationDirection)
             ? (motion.rotationDirection === "ccw" ||
               motion.rotationDirection === "counter_clockwise"
                 ? -1
