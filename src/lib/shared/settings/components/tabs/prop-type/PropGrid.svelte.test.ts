@@ -5,6 +5,21 @@ import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
 import type { FanAppearance } from "$lib/shared/pictograph/prop/domain/fan-appearance";
 import PropGrid from "./PropGrid.svelte";
 
+const FIRE_FAN = {
+  build: "fire",
+  frameColor: "black",
+  cover: "bare",
+} as const;
+const DOUBLE_STAFF_FAMILY = [
+  PropType.STAFF,
+  PropType.CAPSULE_BATON,
+  PropType.FIRE_DOUBLE_STAFF,
+  PropType.ENERGY_STAFF,
+  PropType.STICK,
+  PropType.SIMPLESTAFF,
+  PropType.STAFF2,
+];
+
 function renderRail(fanAppearance: FanAppearance) {
   const onFanAppearanceChange = vi.fn();
   render(PropGrid, {
@@ -241,20 +256,6 @@ describe("PropGrid prop versions", () => {
     document.body.style.margin = "0";
   });
 
-  const FIRE_FAN = {
-    build: "fire",
-    frameColor: "black",
-    cover: "bare",
-  } as const;
-  const DOUBLE_STAFF_FAMILY = [
-    PropType.STAFF,
-    PropType.CAPSULE_BATON,
-    PropType.FIRE_DOUBLE_STAFF,
-    PropType.ENERGY_STAFF,
-    PropType.STICK,
-    PropType.SIMPLESTAFF,
-    PropType.STAFF2,
-  ];
   const tile = (name: string) =>
     page.getByRole("button", { name: `Select ${name} prop type`, exact: true });
   // A V2 tile draws its pre-lit capture; a V1 tile draws notation art, which
@@ -456,4 +457,105 @@ describe("PropGrid prop versions", () => {
     expect(onSelect).toHaveBeenLastCalledWith(PropType.BIGTRIAD);
     expect(onPropLookChange).not.toHaveBeenCalled();
   });
+});
+
+// An unbounded grid's column count follows its container tier, so a short
+// last row once sat at the left (Bare hands under Novelty on a phone).
+describe("PropGrid short last rows", () => {
+  beforeEach(() => {
+    document.body.style.margin = "0";
+  });
+
+  // Each row's tile count, and how far the widest gap between a row's middle
+  // and the first row's middle is, rounded to the pixel.
+  function rowsOf(grid: Element) {
+    const rows = new Map<number, { left: number; right: number; count: number }>();
+    for (const child of grid.children) {
+      const box = child.getBoundingClientRect();
+      const top = Math.round(box.top);
+      const row = rows.get(top);
+      if (row) {
+        row.left = Math.min(row.left, box.left);
+        row.right = Math.max(row.right, box.right);
+        row.count += 1;
+      } else {
+        rows.set(top, { left: box.left, right: box.right, count: 1 });
+      }
+    }
+    const ordered = [...rows.entries()]
+      .sort(([a], [b]) => a - b)
+      .map(([, row]) => row);
+    const middle = (row: { left: number; right: number }) =>
+      (row.left + row.right) / 2;
+    const first = ordered[0];
+    return {
+      counts: ordered.map((row) => row.count),
+      drift: first
+        ? Math.round(
+            Math.max(...ordered.map((row) => Math.abs(middle(row) - middle(first))))
+          )
+        : 0,
+    };
+  }
+
+  // Seven props, one tile each, so the counts below follow the tiers alone.
+  const SEVEN = [
+    PropType.STAFF,
+    PropType.CLUB,
+    PropType.FAN,
+    PropType.TRIAD,
+    PropType.MINIHOOP,
+    PropType.BUUGENG,
+    PropType.EIGHTRINGS,
+  ];
+
+  it.each([
+    { width: 340, counts: [2, 2, 2, 1] },
+    { width: 420, counts: [3, 3, 1] },
+    { width: 620, counts: [4, 3] },
+    { width: 780, counts: [4, 3] },
+  ])(
+    "centres a section's short last row at $width px",
+    async ({ width, counts }) => {
+      await page.viewport(width, 800);
+      render(PropGrid, {
+        selectedPropType: PropType.STAFF,
+        onSelect: vi.fn(),
+        allowedProps: SEVEN,
+        fanAppearance: FIRE_FAN,
+        onFanAppearanceChange: vi.fn(),
+      });
+
+      await expect.element(page.getByRole("button", { name: "Select Fan prop type" })).toBeVisible();
+      const grid = document.querySelector(".section-buttons");
+      expect(grid).not.toBeNull();
+      await expect.poll(() => rowsOf(grid!)).toEqual({ counts, drift: 0 });
+    }
+  );
+
+  it.each([
+    { width: 340, counts: [2, 2, 2, 2, 1] },
+    { width: 780, counts: [5, 4] },
+  ])(
+    "centres a family's short last row at $width px",
+    async ({ width, counts }) => {
+      await page.viewport(width, 800);
+      render(PropGrid, {
+        selectedPropType: PropType.STAFF,
+        onSelect: vi.fn(),
+        allowedProps: DOUBLE_STAFF_FAMILY,
+        fanAppearance: FIRE_FAN,
+        onFanAppearanceChange: vi.fn(),
+        propLook: "pictograph",
+        onPropLookChange: vi.fn(),
+      });
+
+      await page.getByRole("button", { name: "Choose Double Staff style" }).click();
+      const styles = page.getByRole("group", {
+        name: "Double Staff styles choices",
+      });
+      await expect.element(styles).toBeVisible();
+      await expect.poll(() => rowsOf(styles.element())).toEqual({ counts, drift: 0 });
+    }
+  );
 });
