@@ -353,6 +353,24 @@ async function currentSnapshot() {
     .project;
 }
 
+/**
+ * The file in this feature video's media/music/ that the post plays its music
+ * from, or undefined. The editor keeps a music's place, trims and credits only
+ * while its URL stays the same, so add-music hands this file name to
+ * importMusic to get the same song back as this exact file.
+ */
+function musicFileInUse(project, feature) {
+  const prefix = `${featureMediaUrl(feature, "music")}/`;
+  const url = project.music?.url;
+  if (!url?.startsWith(prefix)) return undefined;
+  try {
+    return decodeURIComponent(url.slice(prefix.length));
+  } catch {
+    // A hand-edited url that no file can match; add-music replaces it.
+    return undefined;
+  }
+}
+
 try {
   let result;
   if (command === "list") result = await request("GET");
@@ -411,17 +429,18 @@ try {
   } else if (command === "add-music") {
     const feature = required("feature");
     const file = path.resolve(positional(0, "a music file"));
-    const { folder } = await request(
+    const { folder, file: saved } = await request(
       "GET",
       {},
       undefined,
       featureRoute(feature)
     );
-    const music = await importMusic(file, path.join(folder, "media", "music"));
-    result = {
-      media: music.relativePath,
-      converted: music.transcoded,
-      edit: await sendOps([
+    const music = await importMusic(file, path.join(folder, "media", "music"), {
+      prefer: musicFileInUse(saved.project, feature),
+    });
+    let edit;
+    try {
+      edit = await sendOps([
         {
           op: "add-music",
           url: featureMediaUrl(feature, music.relativePath),
@@ -430,7 +449,21 @@ try {
           ...text("artist"),
           ...text("license"),
         },
-      ]),
+      ]);
+    } catch (cause) {
+      // The edit did not land, so nothing plays the copy this run just made.
+      // A file it reused was there before, and the post may play it.
+      if (!music.reused)
+        await fs.rm(path.join(folder, "media", music.relativePath), {
+          force: true,
+        });
+      throw cause;
+    }
+    result = {
+      media: music.relativePath,
+      converted: music.transcoded,
+      reused: music.reused,
+      edit,
     };
   } else if (command === "align-take") {
     const feature = required("feature");
@@ -574,7 +607,7 @@ Feature videos, folders on the dev server's computer:
   add-take <clip.mp4|clip.mov> --feature SLUG [--label "Name"] [--append]   copies it into media/footage; HEVC, HDR and .mov become H.264 MP4
   remove-take --take ID
   duplicate <slug> <new-slug> [--title "Title"] [--share-media]
-  add-music <file> --feature SLUG [--label "Name"] [--artist "Name"] [--license "Library, id, date"]   copies it into media/music; anything but plain WAV becomes 48 kHz WAV
+  add-music <file> --feature SLUG [--label "Name"] [--artist "Name"] [--license "Library, id, date"]   copies it into media/music, or reuses the identical copy already there; anything but plain WAV becomes 48 kHz WAV
   music [--start T] [--from T] [--to T] [--gain 0.8] [--fade-in S] [--fade-out S] [--bpm 85|none] [--downbeat S] [--beats-per-bar 4] [--label --artist --license]
                                --start is where the music begins in the post; --from and --to are the part of the song that plays
   remove-music

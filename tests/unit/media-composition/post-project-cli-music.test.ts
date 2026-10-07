@@ -57,11 +57,14 @@ let project: StandInProject;
 let calls: { method: string; path: string; body: unknown }[];
 /** When set, the stand-in applies posted edits with this, as the dev server does. */
 let applyEdits: ((ops: unknown) => Promise<unknown>) | undefined;
+/** When set, the stand-in refuses every posted edit with this status and message. */
+let refuseOps: { status: number; message: string } | undefined;
 
 /** A dev server stand-in: no editor is open, so edits go to the file. */
 beforeEach(async () => {
   calls = [];
   applyEdits = undefined;
+  refuseOps = undefined;
   project = { tracks: [{ items: [] }], takes: [] };
   root = await fs.mkdtemp(path.join(os.tmpdir(), "feature-cli-music-"));
   folder = path.join(root, "promo");
@@ -86,6 +89,8 @@ beforeEach(async () => {
         case "GET /api/dev/feature-videos/promo":
           return send(200, { file: { project }, fingerprint: "f", folder });
         case "POST /api/dev/feature-videos/promo/ops": {
+          if (refuseOps)
+            return send(refuseOps.status, { message: refuseOps.message });
           if (!applyEdits) return send(200, { status: "applied", revision: 2 });
           const { ops } = calls[calls.length - 1]!.body as { ops: unknown };
           // A refusal is a 400 carrying the edit's own message, as the route sends.
@@ -140,6 +145,30 @@ const posts = () =>
 /** Every edit sent to the feature video's file, in order. */
 const sent = () =>
   posts().flatMap(([, body]) => (body as { ops: unknown[] }).ops);
+
+/** A 2 s plain 16-bit WAV, which add-music copies as it is. */
+function songFile(name = "Derail Theme.wav"): string {
+  const file = path.join(root, name);
+  execFileSync(toolPath("ffmpeg"), [
+    "-hide_banner",
+    "-loglevel",
+    "error",
+    "-f",
+    "lavfi",
+    "-i",
+    "sine=frequency=440:sample_rate=48000",
+    "-t",
+    "2",
+    file,
+  ]);
+  return file;
+}
+
+/** The folder add-music copies music into, in the feature video's folder. */
+const songs = () => path.join(folder, "media", "music");
+/** The url the editor plays a file in that folder from. */
+const urlOf = (file: string, slug = "promo") =>
+  `/api/dev/feature-videos/${slug}/media/music/${file}`;
 
 describe("music settings from the command line", () => {
   it("sends the music's settings, with times as bars, clocks or seconds", async () => {
@@ -287,20 +316,7 @@ describe("music settings from the command line", () => {
   it.skipIf(!hasFfmpeg)(
     "copies a music file into the project and adds it",
     async () => {
-      const source = path.join(root, "Derail Theme.wav");
-      // ffmpeg writes a plain 16-bit WAV, which add-music copies as it is.
-      execFileSync(toolPath("ffmpeg"), [
-        "-hide_banner",
-        "-loglevel",
-        "error",
-        "-f",
-        "lavfi",
-        "-i",
-        "sine=frequency=440:sample_rate=48000",
-        "-t",
-        "2",
-        source,
-      ]);
+      const source = songFile();
       const result = await cli(
         "add-music",
         source,
@@ -315,6 +331,7 @@ describe("music settings from the command line", () => {
       expect(JSON.parse(result.stdout)).toMatchObject({
         media: "music/derail-theme.wav",
         converted: false,
+        reused: false,
       });
       const [op] = sent() as { durationSeconds: number }[];
       expect(op).toMatchObject({
@@ -325,6 +342,136 @@ describe("music settings from the command line", () => {
       });
       expect(op?.durationSeconds).toBeCloseTo(2, 2);
       await fs.access(path.join(folder, "media", "music", "derail-theme.wav"));
+    }
+  );
+});
+
+describe("adding music the post may already have", () => {
+  const urls = () => (sent() as { url: string }[]).map((op) => op.url);
+
+  it.skipIf(!hasFfmpeg)(
+    "adds the same song again as the same file, so the editor keeps its settings",
+    async () => {
+      const source = songFile();
+      const first = await cli("add-music", source, "--feature", "promo");
+      expect(first.code).toBe(0);
+      expect(JSON.parse(first.stdout)).toMatchObject({
+        media: "music/derail-theme.wav",
+        reused: false,
+      });
+      // The post now plays what the first run added.
+      project.music = { url: urlOf("derail-theme.wav"), gain: 1 };
+      const again = await cli("add-music", source, "--feature", "promo");
+      expect(again.code).toBe(0);
+      expect(JSON.parse(again.stdout)).toMatchObject({
+        media: "music/derail-theme.wav",
+        converted: false,
+        reused: true,
+      });
+      // Exactly the url the music has, so the editor keeps its place and trims.
+      expect(urls()).toEqual([
+        urlOf("derail-theme.wav"),
+        urlOf("derail-theme.wav"),
+      ]);
+      expect(await fs.readdir(songs())).toEqual(["derail-theme.wav"]);
+    }
+  );
+
+  it.skipIf(!hasFfmpeg)(
+    "goes back to the copy the post plays when two copies are identical",
+    async () => {
+      const source = songFile();
+      await cli("add-music", source, "--feature", "promo");
+      // An older run left a second, identical copy, and the post plays that one.
+      await fs.copyFile(
+        path.join(songs(), "derail-theme.wav"),
+        path.join(songs(), "derail-theme-2.wav")
+      );
+      project.music = { url: urlOf("derail-theme-2.wav"), gain: 1 };
+      const again = await cli("add-music", source, "--feature", "promo");
+      expect(JSON.parse(again.stdout)).toMatchObject({
+        media: "music/derail-theme-2.wav",
+        reused: true,
+      });
+      expect(urls().at(-1)).toBe(urlOf("derail-theme-2.wav"));
+      expect((await fs.readdir(songs())).sort()).toEqual([
+        "derail-theme-2.wav",
+        "derail-theme.wav",
+      ]);
+    }
+  );
+
+  it.skipIf(!hasFfmpeg)(
+    "ignores the music of another feature video when it picks a copy",
+    async () => {
+      const source = songFile();
+      await cli("add-music", source, "--feature", "promo");
+      await fs.copyFile(
+        path.join(songs(), "derail-theme.wav"),
+        path.join(songs(), "derail-theme-2.wav")
+      );
+      // The same file name, in another feature video's folder.
+      project.music = { url: urlOf("derail-theme-2.wav", "other"), gain: 1 };
+      const again = await cli("add-music", source, "--feature", "promo");
+      expect(JSON.parse(again.stdout)).toMatchObject({
+        media: "music/derail-theme.wav",
+        reused: true,
+      });
+      expect(urls().at(-1)).toBe(urlOf("derail-theme.wav"));
+    }
+  );
+
+  it.skipIf(!hasFfmpeg)(
+    "still adds the music when the post's music url is not a readable path",
+    async () => {
+      // A hand edit left a broken escape in the url; adding the file is the repair.
+      project.music = { url: urlOf("%zz.wav"), gain: 1 };
+      const result = await cli("add-music", songFile(), "--feature", "promo");
+      expect(result.code).toBe(0);
+      expect(JSON.parse(result.stdout)).toMatchObject({
+        media: "music/derail-theme.wav",
+        reused: false,
+      });
+    }
+  );
+});
+
+describe("an add-music edit that fails after the file was written", () => {
+  // 400 is the edit's own refusal. 409 says an editor has the post open, and
+  // the command finds none, so the edit goes nowhere.
+  for (const status of [400, 409])
+    it.skipIf(!hasFfmpeg)(
+      `removes the copy it just made when the edit gets a ${status}, exits 1 with the reason, and a retry uses the same name`,
+      async () => {
+        const source = songFile();
+        refuseOps = { status, message: "Refused." };
+        const failed = await cli("add-music", source, "--feature", "promo");
+        expect(failed.code).toBe(1);
+        expect(failed.stderr).toContain("Refused.");
+        expect(await fs.readdir(songs())).toEqual([]);
+
+        refuseOps = undefined;
+        const retry = await cli("add-music", source, "--feature", "promo");
+        expect(retry.code).toBe(0);
+        expect(JSON.parse(retry.stdout)).toMatchObject({
+          media: "music/derail-theme.wav",
+          reused: false,
+        });
+        expect(await fs.readdir(songs())).toEqual(["derail-theme.wav"]);
+      }
+    );
+
+  it.skipIf(!hasFfmpeg)(
+    "keeps a file it reused, since the post may already play it",
+    async () => {
+      const source = songFile();
+      await cli("add-music", source, "--feature", "promo");
+      project.music = { url: urlOf("derail-theme.wav"), gain: 1 };
+      refuseOps = { status: 400, message: "Refused." };
+      const failed = await cli("add-music", source, "--feature", "promo");
+      expect(failed.code).toBe(1);
+      expect(failed.stderr).toContain("Refused.");
+      expect(await fs.readdir(songs())).toEqual(["derail-theme.wav"]);
     }
   );
 });

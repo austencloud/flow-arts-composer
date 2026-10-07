@@ -1,4 +1,6 @@
 import { execFile } from "node:child_process";
+import { createHash } from "node:crypto";
+import { createReadStream } from "node:fs";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { promisify } from "node:util";
@@ -15,6 +17,11 @@ import {
  * is, and anything else (MP3, AAC, FLAC, AIFF, other rates) becomes 16-bit
  * 48 kHz stereo PCM. A compressed file decodes with a codec delay that can
  * differ between browsers and ffmpeg, which would move every beat.
+ *
+ * A file already in the folder with exactly the bytes this import would write
+ * is reused instead of written again. The editor keeps a music's place, trims
+ * and credits only while its URL stays the same, so the same song added twice
+ * must come back as the same file.
  */
 
 const execFileAsync = promisify(execFile);
@@ -96,11 +103,50 @@ export function musicTranscodeArgs(input, output) {
   ];
 }
 
+/** The sha256 of a file, read in chunks so a long song is never held whole. */
+async function sha256(file) {
+  const hash = createHash("sha256");
+  for await (const chunk of createReadStream(file)) hash.update(chunk);
+  return hash.digest("hex");
+}
+
 /**
- * Copies or converts `file` into `musicFolder` under a free, safe name.
- * Returns its path inside media/, its length, and whether it was converted.
+ * The path of a file in `folder` with exactly the bytes of `subject`, or null.
+ * `prefer`, a file name in the folder, is tried first, then the shortest name,
+ * so the first copy ever made wins. Sizes are compared first and only files of
+ * the same size are hashed. A `.partial.wav` is some import's unfinished file,
+ * never a copy to reuse.
  */
-export async function importMusic(file, musicFolder) {
+async function findIdentical(folder, subject, prefer) {
+  const { size } = await fs.stat(subject);
+  const names = (await fs.readdir(folder, { withFileTypes: true }))
+    .filter((entry) => entry.isFile() && !/\.partial\.wav$/i.test(entry.name))
+    .map((entry) => entry.name)
+    .sort(
+      (a, b) =>
+        Number(b === prefer) - Number(a === prefer) ||
+        a.length - b.length ||
+        (a < b ? -1 : 1)
+    );
+  let wanted;
+  for (const name of names) {
+    const candidate = path.join(folder, name);
+    if ((await fs.stat(candidate)).size !== size) continue;
+    wanted ??= await sha256(subject);
+    if ((await sha256(candidate)) === wanted) return candidate;
+  }
+  return null;
+}
+
+/**
+ * Copies or converts `file` into `musicFolder` under a free, safe name, unless
+ * the folder already holds a file with exactly those bytes: that file is used
+ * and nothing is written. `options.prefer` is the name of the file the post
+ * plays now, which wins over any other identical file.
+ * Returns its path inside media/, its length, whether it was converted, and
+ * whether a file already in the folder was reused.
+ */
+export async function importMusic(file, musicFolder, options = {}) {
   const name = path.basename(file);
   const probe = await probeMusic(file);
   const convert = !playsAsIs(probe, file);
@@ -109,20 +155,28 @@ export async function importMusic(file, musicFolder) {
     musicFolder,
     safeMediaName(name, ".wav", "music")
   );
+  let existing = null;
   if (convert) {
     const partial = `${target}.partial.wav`;
     try {
       await runFfmpeg(musicTranscodeArgs(file, partial), name);
-      await fs.rename(partial, target);
+      existing = await findIdentical(musicFolder, partial, options.prefer);
+      if (existing) await fs.rm(partial);
+      else await fs.rename(partial, target);
     } catch (cause) {
       await fs.rm(partial, { force: true });
       throw cause;
     }
-  } else await fs.copyFile(file, target, fs.constants.COPYFILE_EXCL);
-  const result = convert ? await probeMusic(target) : probe;
+  } else {
+    existing = await findIdentical(musicFolder, file, options.prefer);
+    if (!existing) await fs.copyFile(file, target, fs.constants.COPYFILE_EXCL);
+  }
+  const stored = existing ?? target;
+  const result = convert ? await probeMusic(stored) : probe;
   return {
-    relativePath: `music/${path.basename(target)}`,
+    relativePath: `music/${path.basename(stored)}`,
     durationSeconds: result.durationSeconds,
     transcoded: convert,
+    reused: existing !== null,
   };
 }
