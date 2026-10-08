@@ -96,8 +96,8 @@ export const DEFAULT_EFFECTS_CONFIG: EffectsConfig = {
   // Goo (renamed from water 2026-06-28). In 2D, surfaceTension is the Viscosity
   // knob: 0 is watery and sheds drips, 1 congeals and clings. motionEmission is
   // Amount (stream mass). ambientEmission and clarity only reach the 3D
-  // viewer's goo, and spewStyle is read by nothing; it stays for shape
-  // stability. See GooIntent for the per-renderer split.
+  // viewer's goo. In 3D, surfaceTension controls strand breakup and spewStyle
+  // selects connected flow, splashes, or fine mist. See GooIntent for the split.
   goo: {
     ambientEmission: 0.4,
     motionEmission: 0.6,
@@ -106,6 +106,8 @@ export const DEFAULT_EFFECTS_CONFIG: EffectsConfig = {
     customColor: "#3a7fd9",
     clarity: 0.7,
     surfaceTension: 0.45,
+    viscosity: 0,
+    gravity: 1,
     trackingMode: "both_ends",
     spewStyle: "flow",
   },

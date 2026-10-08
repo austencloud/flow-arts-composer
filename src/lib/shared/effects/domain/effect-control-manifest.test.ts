@@ -7,6 +7,7 @@ import {
 } from "./effect-control-manifest";
 import { DEFAULT_EFFECTS_CONFIG } from "./defaults";
 import { EFFECTS } from "$lib/shared/animation-engine/components/effects-panel/effect-registry";
+import { GOO_PRESETS } from "$lib/shared/animation-engine/components/effects-panel/presets/goo-presets";
 
 describe("effect-control-manifest", () => {
   const crossStoreFields = new Set([
@@ -51,7 +52,7 @@ describe("effect-control-manifest", () => {
           (c) => c.tier === "primary" && (!c.showWhen || c.showWhen(intent))
         ).length;
         expect(n, `${effect} (${view})`).toBeGreaterThanOrEqual(3);
-        expect(n, `${effect} (${view})`).toBeLessThanOrEqual(6);
+        expect(n, `${effect} (${view})`).toBeLessThanOrEqual(effect === "goo" && view === "3d" ? 7 : 6);
       }
     }
   });
@@ -72,19 +73,29 @@ describe("effect-control-manifest", () => {
   // slider for a field its view ignores still moves and shows a value, so
   // nobody notices it does nothing; the 2D panels once shipped a dead Ambient
   // slider and no Viscosity that way.
-  it("goo shows Viscosity only in 2D and Ambient only in 3D", () => {
+  it("goo exposes its liquid controls in 3D and keeps the 2D viscosity field", () => {
     const fields = (view: EffectView) =>
       primaryControls("goo", view).map((c) => c.field);
     expect(fields("2d")).toContain("surfaceTension");
     expect(fields("2d")).not.toContain("ambientEmission");
+    expect(fields("2d")).not.toContain("viscosity");
+    expect(fields("2d")).not.toContain("gravity");
     expect(fields("3d")).toContain("ambientEmission");
-    expect(fields("3d")).not.toContain("surfaceTension");
+    expect(fields("3d")).toEqual(expect.arrayContaining(["viscosity", "surfaceTension", "gravity"]));
   });
 
   it("control ids are unique within each effect", () => {
     for (const [effect, controls] of Object.entries(EFFECT_CONTROLS)) {
       const ids = controls.map((c) => c.id);
       expect(new Set(ids).size, effect).toBe(ids.length);
+    }
+  });
+
+  it("each Goo preset resets the 3D liquid controls", () => {
+    for (const preset of GOO_PRESETS) {
+      expect(preset.patch.viscosity, preset.id).toBeTypeOf("number");
+      expect(preset.patch.gravity, preset.id).toBe(1);
+      expect(preset.patch.surfaceTension, preset.id).toBeTypeOf("number");
     }
   });
 });

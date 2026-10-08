@@ -32,6 +32,9 @@
   import { inboxState } from "../../inbox/state/inbox-state.svelte";
   import { parseInboxRouteIntent } from "../../inbox/domain/inbox-route-intent";
   import { myFeedbackDetailState } from "$lib/shared/feedback/state/my-feedback-detail-state.svelte";
+  import { quickFeedbackState } from "$lib/shared/feedback/state/quick-feedback-state.svelte";
+  import { supportModalState } from "../../support/state/support-modal-state.svelte";
+  import LazyMount from "$lib/shared/components/LazyMount.svelte";
   import { appEntryState } from "../../onboarding/state/app-entry-state.svelte.ts";
   import { createAccountSetupState } from "../../onboarding/state/account-setup-state.svelte";
   import { setAccountSetupContext } from "../../onboarding/context/account-setup-context";
@@ -48,10 +51,7 @@
   import { getContext, onMount } from "svelte";
   import { bootProfiler } from "$lib/shared/analytics/boot-profiler";
   import MainInterface from "../../MainInterface.svelte";
-  import AuthSheet from "../../navigation/components/AuthSheet.svelte";
-  import SupportModal from "../../support/components/SupportModal.svelte";
   import PostSaveActivationHost from "../../onboarding/components/PostSaveActivationHost.svelte";
-  import LegalSheet from "../../legal/components/LegalSheet.svelte";
   import {
     getCurrentSheet,
     closeSheet,
@@ -679,7 +679,7 @@
     <!-- Auth Loading State (initial load only - never tears down MainInterface once shown) -->
     <div class="auth-loading">
       <div class="auth-loading-spinner"></div>
-      <p>{t('app_warming_up')}</p>
+      <p>{t("app_warming_up")}</p>
     </div>
   {:else}
     <!-- MainInterface always mounted - guest restrictions via context -->
@@ -696,33 +696,51 @@
 
     <!-- AuthModal for guest sign-up / anonymous-upgrade flow -->
     {#if isGuest}
-      {#await import("../../auth/components/AuthModal.svelte") then mod}
-        <mod.default
-          open={authDrawerState.open}
-          initialMode={authDrawerState.initialMode}
-          reason={authDrawerState.reason}
-          attempt={authDrawerState.stepCapAttempts}
-          encore={authDrawerState.encorePrompt}
-          onAcceptEncore={() => authDrawerState.claimEncore()}
-          onClose={() => authDrawerState.hide()}
-        />
-      {/await}
+      <LazyMount
+        loader={() => import("../../auth/components/AuthModal.svelte")}
+        active={authDrawerState.open}
+        debugName="account dialog"
+        props={{
+          open: authDrawerState.open,
+          initialMode: authDrawerState.initialMode,
+          reason: authDrawerState.reason,
+          attempt: authDrawerState.stepCapAttempts,
+          encore: authDrawerState.encorePrompt,
+          onAcceptEncore: () => authDrawerState.claimEncore(),
+          onClose: () => authDrawerState.hide(),
+        }}
+      />
     {/if}
 
-    <!-- Auth sheet (route-based) -->
-    <AuthSheet isOpen={showAuthSheet} onClose={() => closeSheet()} />
+    <!-- Action-driven dialogs load on first use, then stay mounted so closing
+         animations and retained form state keep their existing behavior. -->
+    <LazyMount
+      loader={() => import("../../navigation/components/AuthSheet.svelte")}
+      active={showAuthSheet}
+      debugName="sign-in sheet"
+      props={{ isOpen: showAuthSheet, onClose: () => closeSheet() }}
+    />
 
     <!-- Support modal — in-app "buy me a coffee" (self-driven via supportModalState) -->
-    <SupportModal />
+    <LazyMount
+      loader={() => import("../../support/components/SupportModal.svelte")}
+      active={supportModalState.open}
+      debugName="support dialog"
+    />
 
     <!-- Post-save account doorway. Actionable toast, never a blocking modal. -->
     <PostSaveActivationHost />
 
     <!-- Legal sheets (terms/privacy - route-based) -->
-    <LegalSheet
-      isOpen={showTermsSheet || showPrivacySheet}
-      type={showPrivacySheet ? "privacy" : "terms"}
-      onClose={() => closeSheet()}
+    <LazyMount
+      loader={() => import("../../legal/components/LegalSheet.svelte")}
+      active={showTermsSheet || showPrivacySheet}
+      debugName="legal sheet"
+      props={{
+        isOpen: showTermsSheet || showPrivacySheet,
+        type: showPrivacySheet ? "privacy" : "terms",
+        onClose: () => closeSheet(),
+      }}
     />
 
     <!-- Inbox Subscriptions (for badge counts) -->
@@ -756,20 +774,27 @@
     {/await}
 
     <!-- Quick Feedback Panel (desktop hotkey: f) -->
-    {#await import("$lib/features/feedback/components/quick/QuickFeedbackPanel.svelte") then mod}
-      <mod.default />
-    {/await}
+    <LazyMount
+      loader={() =>
+        import("$lib/features/feedback/components/quick/QuickFeedbackPanel.svelte")}
+      active={quickFeedbackState.isOpen}
+      debugName="quick feedback"
+    />
 
     <!-- My Feedback Detail Drawer (for viewing/editing user's own feedback) -->
-    {#await import("$lib/features/feedback/components/my-feedback/MyFeedbackDetail.svelte") then mod}
-      <mod.default
-        item={feedbackDetailItem}
-        isOpen={showFeedbackDetail}
-        onClose={() => myFeedbackDetailState.close()}
-        onUpdate={myFeedbackDetailState.updateItem}
-        onDelete={myFeedbackDetailState.deleteItem}
-      />
-    {/await}
+    <LazyMount
+      loader={() =>
+        import("$lib/features/feedback/components/my-feedback/MyFeedbackDetail.svelte")}
+      active={showFeedbackDetail}
+      debugName="feedback detail"
+      props={{
+        item: feedbackDetailItem,
+        isOpen: showFeedbackDetail,
+        onClose: () => myFeedbackDetailState.close(),
+        onUpdate: myFeedbackDetailState.updateItem,
+        onDelete: myFeedbackDetailState.deleteItem,
+      }}
+    />
 
     <!-- System Announcements Modal -->
     {#await import("$lib/features/admin/components/AnnouncementChecker.svelte") then mod}
@@ -828,7 +853,9 @@
     bind:isOpen={anonymousImportPrompt.isOpen}
     variant="info"
     title={t("guest_keep_work_title")}
-    message={anonymousImportPrompt.count === 1 ? t("guest_import_one") : t("guest_import_many", { count: anonymousImportPrompt.count })}
+    message={anonymousImportPrompt.count === 1
+      ? t("guest_import_one")
+      : t("guest_import_many", { count: anonymousImportPrompt.count })}
     confirmText={t("action_import")}
     cancelText={t("action_not_now")}
     onConfirm={confirmAnonymousImport}

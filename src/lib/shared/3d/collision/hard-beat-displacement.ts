@@ -20,8 +20,9 @@
  * ahead of the beat that needs it, and every displaced beat is listed in cm in
  * `track.report`.
  *
- * Frame: origin at the hand's grid centre, the frame of a prop's
- * `worldPosition`. +x is the performer's left, +y is up, +z points the way the
+ * Frame: `worldPosition` uses the performer origin. Radial motion uses the
+ * hand's own grid centre, which may be offset for a joined sequence.
+ * +x is the performer's left, +y is up, +z points the way the
  * performer faces, toward the audience. A positive `depthM` moves the staff
  * toward the audience.
  */
@@ -198,7 +199,18 @@ export interface HardBeatTrack {
   readonly laneKind: Int8Array;
 }
 
-export type HardBeatProp = Pick<PropState3D, "worldPosition" | "plane">;
+export type HardBeatProp = Pick<PropState3D, "worldPosition" | "plane"> & {
+  /** Center of this hand's grid; absent means the performer's shared center. */
+  gridCenter?: Vector3;
+};
+
+function localGridPosition(prop: HardBeatProp): Vec3 {
+  const center = prop.gridCenter;
+  const world = prop.worldPosition;
+  return center
+    ? { x: world.x - center.x, y: world.y - center.y, z: world.z - center.z }
+    : world;
+}
 
 /**
  * Anything that can say where the props are at an arbitrary score time.
@@ -399,21 +411,25 @@ function radialReach(target: Vec3, unit: Vec3, shoulder: Vec3, reach: number) {
  * partner's; what that leaves short is reported as shortfall.
  */
 function holdPairRouting(
-  left: Vec3,
-  right: Vec3,
+  leftProp: HardBeatProp,
+  rightProp: HardBeatProp,
   leftIn: number,
   rightIn: number
 ): { left: number; right: number } {
+  const left = leftProp.worldPosition;
+  const right = rightProp.worldPosition;
+  const leftLocal = localGridPosition(leftProp);
+  const rightLocal = localGridPosition(rightProp);
   const crossing = Math.min(
     clamp(-left.x / ROUTING_SHOULDER_HALF_WIDTH_M, 0, 1),
     clamp(right.x / ROUTING_SHOULDER_HALF_WIDTH_M, 0, 1)
   );
-  const leftRadius = Math.hypot(left.x, left.y, left.z);
-  const rightRadius = Math.hypot(right.x, right.y, right.z);
+  const leftRadius = Math.hypot(leftLocal.x, leftLocal.y, leftLocal.z);
+  const rightRadius = Math.hypot(rightLocal.x, rightLocal.y, rightLocal.z);
   if (crossing < PAIR_CROSS_ENGAGE || leftRadius < 1e-9 || rightRadius < 1e-9)
     return { left: leftIn, right: rightIn };
-  const leftUp = left.y / leftRadius;
-  const rightUp = right.y / rightRadius;
+  const leftUp = leftLocal.y / leftRadius;
+  const rightUp = rightLocal.y / rightRadius;
   const rise = (a: number, b: number) =>
     left.y - a * leftUp - (right.y - b * rightUp);
   const leftOver = (a: number, b: number) =>
@@ -806,9 +822,14 @@ export function buildHardBeatTrack(
       (side === "left" ? leftDepth : rightDepth)[i] = depth;
 
       const wp = prop.worldPosition;
-      const radius = Math.hypot(wp.x, wp.y, wp.z);
+      const local = localGridPosition(prop);
+      const radius = Math.hypot(local.x, local.y, local.z);
       if (radius < 1e-9) continue;
-      const unit = { x: wp.x / radius, y: wp.y / radius, z: wp.z / radius };
+      const unit = {
+        x: local.x / radius,
+        y: local.y / radius,
+        z: local.z / radius,
+      };
       const target = { x: wp.x, y: wp.y, z: wp.z + hand.corridorM + depth };
       const wanted = Math.max(0, radialReach(target, unit, s[side], reach));
       const bound = Math.min(
@@ -821,8 +842,8 @@ export function buildHardBeatTrack(
     const { left, right } = hands[i]!;
     if (left.prop && right.prop) {
       const held = holdPairRouting(
-        left.prop.worldPosition,
-        right.prop.worldPosition,
+        left.prop,
+        right.prop,
         radialRaw.left[i]!,
         radialRaw.right[i]!
       );
@@ -848,8 +869,8 @@ export function buildHardBeatTrack(
       const hand = hands[i]![side];
       const prop = hand.prop;
       if (!prop) continue;
-      const wp = prop.worldPosition;
-      const radius = Math.hypot(wp.x, wp.y, wp.z);
+      const local = localGridPosition(prop);
+      const radius = Math.hypot(local.x, local.y, local.z);
       const radial = side === "left" ? leftRadialIn : rightRadialIn;
       const r = appliedRadialIn(radius, radial[i]!);
       const scale = radius < 1e-9 ? 1 : 1 - r / radius;
@@ -858,9 +879,13 @@ export function buildHardBeatTrack(
       const short = Math.max(
         0,
         Math.hypot(
-          wp.x * scale - shoulder.x,
-          wp.y * scale - shoulder.y,
-          wp.z * scale + hand.corridorM + depth - shoulder.z
+          (prop.gridCenter?.x ?? 0) + local.x * scale - shoulder.x,
+          (prop.gridCenter?.y ?? 0) + local.y * scale - shoulder.y,
+          (prop.gridCenter?.z ?? 0) +
+            local.z * scale +
+            hand.corridorM +
+            depth -
+            shoulder.z
         ) - reach
       );
       (side === "left" ? leftShortfall : rightShortfall)[i] = short;
@@ -1005,8 +1030,8 @@ export function displaceProp<P extends HardBeatProp>(
   hand: HandDisplacement
 ): P | null {
   if (!prop) return prop;
-  const wp = prop.worldPosition;
-  const radius = Math.hypot(wp.x, wp.y, wp.z);
+  const local = localGridPosition(prop);
+  const radius = Math.hypot(local.x, local.y, local.z);
   const r = appliedRadialIn(radius, hand.radialInM);
   const depth = appliedDepth(prop, hand.depthM);
   if (r === 0 && depth === 0) return prop;
@@ -1015,9 +1040,9 @@ export function displaceProp<P extends HardBeatProp>(
   return {
     ...prop,
     worldPosition: new Vector3(
-      wp.x * scale,
-      wp.y * scale,
-      wp.z * scale + depth
+      (prop.gridCenter?.x ?? 0) + local.x * scale,
+      (prop.gridCenter?.y ?? 0) + local.y * scale,
+      (prop.gridCenter?.z ?? 0) + local.z * scale + depth
     ),
   };
 }
@@ -1077,9 +1102,9 @@ function buildReport(
       const prop = side === "left" ? left : right;
       if (!prop) continue;
       const hand = sample[side];
-      const wp = prop.worldPosition;
+      const local = localGridPosition(prop);
       const radialIn = appliedRadialIn(
-        Math.hypot(wp.x, wp.y, wp.z),
+        Math.hypot(local.x, local.y, local.z),
         hand.radialInM
       );
       const depth = appliedDepth(prop, hand.depthM);

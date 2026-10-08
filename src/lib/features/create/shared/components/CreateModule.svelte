@@ -65,7 +65,6 @@
   import type { IToolPanelMethods } from "../types/create-module-types";
   import TransferConfirmDialog from "./TransferConfirmDialog.svelte";
   import ConfirmDialog from "$lib/shared/foundation/ui/ConfirmDialog.svelte";
-  import StandardWorkspaceLayout from "./StandardWorkspaceLayout.svelte";
   import CreateFrontDoor from "./CreateFrontDoor.svelte";
   import DualSourceCrossfade from "$lib/shared/components/DualSourceCrossfade.svelte";
   import { DURATION } from "$lib/shared/transitions/transitions";
@@ -155,6 +154,33 @@
   let error = $state<string | null>(null);
   let servicesInitialized = $state<boolean>(false);
   let initProgress = $state<string>("");
+  let WorkspaceLayout = $state<
+    (typeof import("./StandardWorkspaceLayout.svelte"))["default"] | null
+  >(null);
+  let workspaceLayoutError = $state<string | null>(null);
+  let workspaceLayoutLoad: Promise<void> | null = null;
+
+  function loadWorkspaceLayout(): void {
+    if (WorkspaceLayout || workspaceLayoutLoad) return;
+    workspaceLayoutError = null;
+    workspaceLayoutLoad = import("./StandardWorkspaceLayout.svelte")
+      .then(({ default: component }) => {
+        WorkspaceLayout = component;
+      })
+      .catch((caught) => {
+        console.error("CreateModule: Workspace layout failed to load:", caught);
+        workspaceLayoutError = t("module_load_failed");
+      })
+      .finally(() => {
+        workspaceLayoutLoad = null;
+      });
+  }
+
+  // A direct method link loads its workspace alongside state restoration. The
+  // front door gets its first paint before any editor code is requested.
+  $effect(() => {
+    if (!navigationState.isCreateFrontDoorOpen) loadWorkspaceLayout();
+  });
 
   // Confirmation dialog states
   let showTransferConfirmation = $state(false);
@@ -1016,25 +1042,39 @@
         <ErrorBanner message={error} onDismiss={clearError} />
       {:else if CreateModuleState && constructTabState && services}
         <div class="create-tab">
-          <StandardWorkspaceLayout
-            {shouldUseSideBySideLayout}
-            {CreateModuleState}
-            {panelState}
-            {currentDisplayWord}
-            {currentLetterSources}
-            {isInputMode}
-            bind:animatingStepNumber
-            bind:toolPanelRef
-            bind:buttonPanelElement
-            bind:toolPanelElement
-            onClearSequence={handleClearSequence}
-            onViewSequence={handleOpenSequenceViewer}
-            onOptionSelected={handleOptionSelected}
-            onOpenFilters={handleOpenFilterPanel}
-            onCloseFilters={() => {
-              panelState.closeFilterPanel();
-            }}
-          />
+          {#if WorkspaceLayout}
+            <WorkspaceLayout
+              {shouldUseSideBySideLayout}
+              {CreateModuleState}
+              {panelState}
+              {currentDisplayWord}
+              {currentLetterSources}
+              {isInputMode}
+              bind:animatingStepNumber
+              bind:toolPanelRef
+              bind:buttonPanelElement
+              bind:toolPanelElement
+              onClearSequence={handleClearSequence}
+              onViewSequence={handleOpenSequenceViewer}
+              onOptionSelected={handleOptionSelected}
+              onOpenFilters={handleOpenFilterPanel}
+              onCloseFilters={() => {
+                panelState.closeFilterPanel();
+              }}
+            />
+          {:else if workspaceLayoutError}
+            <!-- A failed import stays in the browser's module map until reload. -->
+            <ErrorBanner
+              message={workspaceLayoutError}
+              onRetry={() => window.location.reload()}
+              onDismiss={() => navigationState.openCreateFrontDoor()}
+            />
+          {:else}
+            <div class="create-tab create-loading">
+              <IndeterminateBar height={3} position="top" />
+              <p class="init-status">{t("create_ui_initializing_workspace")}</p>
+            </div>
+          {/if}
         </div>
 
         <!-- Video Record Coordinator (deferred until first opened) -->

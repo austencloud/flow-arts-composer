@@ -1,5 +1,9 @@
 # Startup pass 4: the boot import graph
 
+**October 7 follow-up:** the [vendor split and startup chunk report](2026-10-07-vendor-chunk-split.md)
+records fresh measurements and repairs to automatic chunk merging. The numbers
+below describe the September build, not the current startup graph.
+
 September 13, 2026. Baseline `c4be1619`. Branch
 `claude/startup-performance-1h87b8`. No deployment, no production data, no
 authenticated session: every measurement is a locally served production build
@@ -226,7 +230,7 @@ can still be expensive and any dependency bump inside it invalidates the whole
 file for returning visitors. Splitting it is a build-configuration change with
 a real chunk-cycle risk (the 2026-06-16 TDZ outage), so it is specified rather
 than attempted here:
-[`docs/superpowers/specs/backlog/2026-09-13-vendor-chunk-split-design.md`](../superpowers/specs/backlog/2026-09-13-vendor-chunk-split-design.md).
+[`docs/superpowers/specs/shipped/2026-09-13-vendor-chunk-split-design.md`](../superpowers/specs/shipped/2026-09-13-vendor-chunk-split-design.md).
 
 `MainApplication.svelte` statically reaches zod, bits-ui, fabric, dexie,
 `qr-code-styling` and the backgrounds package across a 644-module graph, so
