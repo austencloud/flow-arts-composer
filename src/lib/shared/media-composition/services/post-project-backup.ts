@@ -1,6 +1,5 @@
 import { PostProjectSchema } from "$lib/shared/post-studio-plugin";
-import { type PostProject } from "@austencloud/video-editor/core";
-import type { PostTake } from "@austencloud/video-editor/core";
+import type { PostProject, PostTake } from "@austencloud/video-editor/core";
 import {
   TakeTimingSchema,
   type TakeTiming,

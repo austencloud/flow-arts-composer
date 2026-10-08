@@ -1,7 +1,12 @@
 import { describe, expect, expectTypeOf, it } from "vitest";
-import type { PostItem, PostItemKind } from "@austencloud/video-editor/core";
+import type {
+  PluginItemKinds,
+  PostItem,
+  PostItemKind,
+} from "@austencloud/video-editor/core";
 import {
   PostProjectSchema,
+  TKA_ITEM_KINDS,
   createEmptyPostProject,
 } from "$lib/shared/post-studio-plugin";
 
@@ -12,6 +17,26 @@ describe("tka plugin", () => {
     expectTypeOf<"carousel">().toMatchTypeOf<PostItemKind>();
     expectTypeOf<"titles">().toMatchTypeOf<PostItemKind>();
     expectTypeOf<Extract<PostItem, { kind: "animation" }>>().not.toBeNever();
+    // The checks above also pass if a kind type decays to any; these name the exact unions.
+    expectTypeOf<PostItemKind>().toEqualTypeOf<
+      | "video"
+      | "image"
+      | "card"
+      | "text"
+      | "animation"
+      | "moves"
+      | "carousel"
+      | "titles"
+    >();
+    expectTypeOf<keyof PluginItemKinds>().toEqualTypeOf<
+      "animation" | "moves" | "carousel" | "titles"
+    >();
+    expect(TKA_ITEM_KINDS.map((definition) => definition.kind)).toEqual([
+      "animation",
+      "moves",
+      "carousel",
+      "titles",
+    ]);
   });
 
   it("parses an empty project back to itself, key order included", () => {

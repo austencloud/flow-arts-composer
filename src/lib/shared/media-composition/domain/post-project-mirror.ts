@@ -1,10 +1,10 @@
-import {
-  type PostBox,
-  type PostFraming,
-  type PostItem,
-  type PostKeyframe,
-  type PostProject,
-  type PostSourceGeometry,
+import type {
+  PostBox,
+  PostFraming,
+  PostItem,
+  PostKeyframe,
+  PostProject,
+  PostSourceGeometry,
 } from "@austencloud/video-editor/core";
 import {
   finish,

@@ -8,7 +8,7 @@ import {
   PostProjectSchema,
   createEmptyPostProject,
 } from "$lib/shared/post-studio-plugin";
-import { type PostProject } from "@austencloud/video-editor/core";
+import type { PostProject } from "@austencloud/video-editor/core";
 import {
   createTakeTiming,
   type TakeTiming,

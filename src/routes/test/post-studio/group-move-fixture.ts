@@ -1,8 +1,8 @@
 import { createEmptyPostProject } from "$lib/shared/post-studio-plugin";
-import {
-  type PostCardItem,
-  type PostProject,
-  type PostTextItem,
+import type {
+  PostCardItem,
+  PostProject,
+  PostTextItem,
 } from "@austencloud/video-editor/core";
 
 /** Disposable timeline for selection, collisions, and hidden-layer checks. */

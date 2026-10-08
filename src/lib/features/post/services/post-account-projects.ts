@@ -6,8 +6,8 @@ import { awaitAuthSettled } from "$lib/shared/auth/state/auth-state.svelte";
 import {
   PostProjectSchema,
 } from "$lib/shared/post-studio-plugin";
-import {
-  type PostProject,
+import type {
+  PostProject,
 } from "@austencloud/video-editor/core";
 import { loadDiskPostDraft, loadPostDraft, savePostDraftRecords } from "$lib/shared/media-composition/services/post-draft-storage";
 import { projectDraftRecord } from "$lib/shared/media-composition/services/post-project-backup";

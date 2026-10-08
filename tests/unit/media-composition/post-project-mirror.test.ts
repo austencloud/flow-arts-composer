@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { PostProjectSchema } from "$lib/shared/post-studio-plugin";
-import {
-  type PostImageItem,
-  type PostItem,
-  type PostProject,
+import type {
+  PostImageItem,
+  PostItem,
+  PostProject,
 } from "@austencloud/video-editor/core";
 import { mirrorPostProject } from "$lib/shared/media-composition/domain/post-project-mirror";
 import { normalizeProject } from "$lib/shared/media-composition/domain/post-project-normalize";

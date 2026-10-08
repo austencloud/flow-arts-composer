@@ -8,11 +8,12 @@ import {
   type PostItemKeyframes,
   type PostProject,
 } from "@austencloud/video-editor/core";
+// Not the plugin index: this module runs inside the plugin's normalize hooks (see post-studio-plugin/normalize-hooks.ts).
 import {
   POST_MAX_SPOKEN_LENGTH,
   type PostAnimationItem,
   type PostTitlesItem,
-} from "$lib/shared/post-studio-plugin";
+} from "$lib/shared/post-studio-plugin/item-kinds";
 import { openingTitlesSpan } from "$lib/shared/media-composition/domain/tunnel-titles";
 
 /**

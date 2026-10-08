@@ -17,7 +17,7 @@ import {
   POST_MUSIC_MAX_SECONDS,
   type PostMusic,
 } from "@austencloud/video-editor/core";
-import { type PostAnimationItem } from "$lib/shared/post-studio-plugin";
+import type { PostAnimationItem } from "$lib/shared/post-studio-plugin";
 import {
   addTake,
   addTitlesItem,

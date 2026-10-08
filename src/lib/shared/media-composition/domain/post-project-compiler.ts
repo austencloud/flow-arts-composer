@@ -41,10 +41,10 @@ import type {
   RegionEdge,
   PostTake,
 } from "@austencloud/video-editor/core";
-import {
-  type PostAnimationItem,
-  type PostCarouselItem,
-  type PostMovesItem,
+import type {
+  PostAnimationItem,
+  PostCarouselItem,
+  PostMovesItem,
 } from "$lib/shared/post-studio-plugin";
 import {
   channelValueAt,

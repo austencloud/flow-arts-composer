@@ -7,7 +7,7 @@ import {
   type PostSequenceTransforms,
 } from "$lib/shared/media-composition/domain/post-sequence-actions";
 import { PostProjectSchema } from "$lib/shared/post-studio-plugin";
-import { type PostProject } from "@austencloud/video-editor/core";
+import type { PostProject } from "@austencloud/video-editor/core";
 import { project as fixture } from "./post-project-fixtures";
 
 function project(extra: Partial<PostProject> = {}): PostProject {

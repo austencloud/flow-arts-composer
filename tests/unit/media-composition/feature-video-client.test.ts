@@ -6,7 +6,7 @@ import {
   type FeatureVideoFile,
 } from "$lib/shared/media-composition/domain/feature-video";
 import { createEmptyPostProject } from "$lib/shared/post-studio-plugin";
-import { type PostProject } from "@austencloud/video-editor/core";
+import type { PostProject } from "@austencloud/video-editor/core";
 import { applyPostProjectOps } from "$lib/shared/media-composition/domain/post-project-ops";
 import { addTakeTap } from "$lib/shared/media-composition/domain/take-timing";
 import {

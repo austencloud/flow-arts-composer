@@ -4,9 +4,9 @@ import {
   type PostVideoItem,
   takeRole,
 } from "@austencloud/video-editor/core";
-import {
-  type PostAnimationItem,
-  type PostMovesItem,
+import type {
+  PostAnimationItem,
+  PostMovesItem,
 } from "$lib/shared/post-studio-plugin";
 import { compilePostProject } from "$lib/shared/media-composition/domain/post-project-compiler";
 import {

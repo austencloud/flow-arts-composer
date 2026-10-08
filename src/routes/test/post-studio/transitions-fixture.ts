@@ -1,8 +1,5 @@
 import { createEmptyPostProject } from "$lib/shared/post-studio-plugin";
-import {
-  type PostCardItem,
-  type PostProject,
-} from "@austencloud/video-editor/core";
+import type { PostCardItem, PostProject } from "@austencloud/video-editor/core";
 
 /** In-memory cuts for transition inspection without changing a saved post. */
 export function transitionsFixture(sequenceId: string): PostProject {

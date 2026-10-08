@@ -3,8 +3,8 @@ import { normalizeProject } from "$lib/shared/media-composition/domain/post-proj
 import {
   PostProjectSchema,
 } from "$lib/shared/post-studio-plugin";
-import {
-  type PostEasing,
+import type {
+  PostEasing,
 } from "@austencloud/video-editor/core";
 import {
   card,

@@ -3,7 +3,7 @@ import {
   POST_MAX_SEQUENCE_ACTIONS,
   type PostSequenceAction,
 } from "$lib/shared/post-studio-plugin";
-import { type PostProject } from "@austencloud/video-editor/core";
+import type { PostProject } from "@austencloud/video-editor/core";
 import {
   finish,
   type EditContext,

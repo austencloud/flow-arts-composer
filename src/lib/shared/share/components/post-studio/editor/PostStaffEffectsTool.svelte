@@ -4,7 +4,7 @@
     POST_STAFF_EFFECTS,
     type PostStaffEffectId,
   } from "$lib/shared/post-studio-plugin";
-  import { type PostVideoItem } from "@austencloud/video-editor/core";
+  import type { PostVideoItem } from "@austencloud/video-editor/core";
   import { staffTipCoverage } from "$lib/shared/media-composition/domain/staff-tip-track";
   import type { StaffTipAnalysis } from "$lib/shared/media-composition/state/staff-tip-analysis.svelte";
   import {

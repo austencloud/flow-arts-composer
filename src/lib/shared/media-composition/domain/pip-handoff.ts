@@ -5,9 +5,9 @@ import {
   type PostProject,
   MOVE_EASING,
 } from "@austencloud/video-editor/core";
-import {
-  type PostAnimationItem,
-  type PostMovesItem,
+import type {
+  PostAnimationItem,
+  PostMovesItem,
 } from "$lib/shared/post-studio-plugin";
 import type { TakeSample } from "$lib/shared/media-composition/domain/take-timing";
 

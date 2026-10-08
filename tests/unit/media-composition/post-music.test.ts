@@ -8,8 +8,10 @@ import {
   type PostMusic,
   type PostProject,
 } from "@austencloud/video-editor/core";
-import { PostMusicSchema } from "$lib/shared/post-studio-plugin";
-import { PostProjectSchema } from "$lib/shared/post-studio-plugin";
+import {
+  PostMusicSchema,
+  PostProjectSchema,
+} from "$lib/shared/post-studio-plugin";
 import { setProjectAudio } from "$lib/shared/media-composition/domain/post-project-edits";
 import { normalizeProject } from "$lib/shared/media-composition/domain/post-project-normalize";
 import { NOW, project, video } from "./post-project-fixtures";

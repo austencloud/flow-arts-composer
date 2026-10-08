@@ -4,9 +4,9 @@ import {
   type PostItem,
   type PostVideoItem,
 } from "@austencloud/video-editor/core";
-import {
-  type PostAnimationItem,
-  type PostMovesItem,
+import type {
+  PostAnimationItem,
+  PostMovesItem,
 } from "$lib/shared/post-studio-plugin";
 import {
   selectTimelineItem,
