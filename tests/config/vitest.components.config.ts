@@ -83,6 +83,27 @@ export default defineConfig({
         projectRoot,
         "packages/render-core/src/index.ts"
       ),
+      // @austencloud/video-editor dev loop (extraction steps 1 to 3): the same
+      // build output svelte.config.js aliases. Step 4 removes these two
+      // entries with the svelte.config.js ones. The css entry sits first
+      // because the first matching alias prefix wins.
+      "@austencloud/video-editor/css":
+        "E:/worktrees/shared-packages/video-editor/packages/video-editor/css",
+      "@austencloud/video-editor":
+        "E:/worktrees/shared-packages/video-editor/packages/video-editor/dist",
+    },
+    // One copy of each, as in vite.config.ts: the package's dist is outside
+    // node_modules, so it would otherwise load its own zod, dexie, svelte and
+    // mediabunny from the shared-packages pnpm store.
+    dedupe: ["svelte", "mediabunny", "zod", "dexie"],
+  },
+
+  // As in vite.config.ts: browser mode reads the package's dist from the
+  // shared-packages worktree and the primary checkout's node_modules through
+  // the junction, both outside this worktree.
+  server: {
+    fs: {
+      allow: [".", "../../", "../../../"],
     },
   },
 

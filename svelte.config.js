@@ -9,15 +9,18 @@ import { shareCloudflareDevPlatform } from "./src/config/cloudflare-dev-platform
 const adapter = (options) =>
   shareCloudflareDevPlatform(cloudflareAdapter(options));
 
-// Svelte's exports map, read from this app's installed copy, so the TypeScript
-// pin below covers every subpath (svelte/store, svelte/elements, ...) and not
-// only the bare specifier.
-const sveltePackage = JSON.parse(
-  readFileSync(
-    new URL("./node_modules/svelte/package.json", import.meta.url),
-    "utf8"
-  )
-);
+// The exports maps of svelte and zod, read from this app's installed copies,
+// so the TypeScript pin below covers every subpath (svelte/store, zod/mini,
+// ...) and not only the bare specifier.
+const pinnedPackages = ["svelte", "zod"].map((name) => ({
+  name,
+  manifest: JSON.parse(
+    readFileSync(
+      new URL(`./node_modules/${name}/package.json`, import.meta.url),
+      "utf8"
+    )
+  ),
+}));
 
 /** @type {import('@sveltejs/kit').Config} */
 const config = {
@@ -99,23 +102,26 @@ const config = {
 
     // While @austencloud/video-editor is aliased to a path outside
     // node_modules (extraction steps 0 to 3), its declarations would resolve a
-    // second copy of svelte from the shared-packages worktree, and two copies
-    // of svelte's ambient types make every Snippet prop mismatch. Pin
-    // TypeScript's svelte to this app's copy. Vite already dedupes at runtime.
-    // Remove it, the node:fs import and the sveltePackage read with the
-    // aliases in step 4.
+    // second copy of svelte and zod from the shared-packages worktree. Two
+    // copies of svelte's ambient types make every Snippet prop mismatch, and
+    // zod's types carry its version, so package schemas would not be
+    // assignable to this app's zod types. Pin TypeScript's svelte and zod to
+    // this app's copies. Vite already dedupes both at runtime. Remove it, the
+    // node:fs import and the pinnedPackages read with the aliases in step 4.
     typescript: {
       config(tsconfig) {
-        for (const [subpath, entry] of Object.entries(sveltePackage.exports)) {
-          if (
-            !entry ||
-            typeof entry !== "object" ||
-            typeof entry.types !== "string"
-          )
-            continue;
-          tsconfig.compilerOptions.paths["svelte" + subpath.slice(1)] = [
-            "../node_modules/svelte/" + entry.types.slice(2),
-          ];
+        for (const { name, manifest } of pinnedPackages) {
+          for (const [subpath, entry] of Object.entries(manifest.exports)) {
+            if (
+              !entry ||
+              typeof entry !== "object" ||
+              typeof entry.types !== "string"
+            )
+              continue;
+            tsconfig.compilerOptions.paths[name + subpath.slice(1)] = [
+              `../node_modules/${name}/` + entry.types.slice(2),
+            ];
+          }
         }
         return tsconfig;
       },
