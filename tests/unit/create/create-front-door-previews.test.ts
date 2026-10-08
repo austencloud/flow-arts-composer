@@ -101,6 +101,7 @@ function methodsFor(ids: string[]): Section[] {
 describe("Create front door, method previews", () => {
   let host: HTMLElement;
   let frontDoor: ReturnType<typeof mount> | null = null;
+  let bootScreen: HTMLElement | null = null;
   let stubbedCreateElement: typeof document.createElement;
   const onSelect = vi.fn();
   const onLockedSelect = vi.fn();
@@ -218,6 +219,8 @@ describe("Create front door, method previews", () => {
     if (frontDoor) unmount(frontDoor);
     frontDoor = null;
     host.remove();
+    bootScreen?.remove();
+    bootScreen = null;
     document.createElement = stubbedCreateElement;
     delete document.documentElement.dataset.motionPreference;
     appMotionSetting.clear();
@@ -290,6 +293,29 @@ describe("Create front door, method previews", () => {
     advance(TURN_CYCLE_MS);
     expect(playingMethod()).toBe("generate");
     expect(preview("construct")?.dataset.playing).toBe("false");
+  });
+
+  it("keeps the turns waiting while the boot screen covers the page", async () => {
+    // app.html's boot screen covers a first visit while the board mounts.
+    bootScreen = document.createElement("div");
+    bootScreen.id = "app-loading";
+    document.body.append(bootScreen);
+
+    render();
+    setOpen(true);
+
+    advance(FIRST_TURN_MS + TURN_CYCLE_MS * 2);
+    expect(playingMethod()).toBeNull();
+
+    // The turns start after the screen leaves, then the page settles.
+    bootScreen.classList.add("loaded");
+    await Promise.resolve();
+    advance(FIRST_TURN_MS - 1);
+    expect(playingMethod()).toBeNull();
+
+    advance(1);
+    expect(playingMethod()).toBe("construct");
+    expect(preview("construct")?.dataset.playing).toBe("true");
   });
 
   it("ends the turns when a method is chosen", () => {

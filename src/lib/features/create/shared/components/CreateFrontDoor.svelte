@@ -17,6 +17,7 @@
   } from "../services/create-entry-analytics";
   import { createMethodPreviewTurns } from "../state/method-preview-turns.svelte";
   import CreateMethodPreview from "./method-previews/CreateMethodPreview.svelte";
+  import { runAfterBootScreen } from "./method-previews/after-boot-screen";
   import { methodPreviewHold } from "./method-previews/method-preview-hold";
   import { METHOD_PREVIEW_SCENES } from "./method-previews/method-preview-scenes";
 
@@ -77,7 +78,17 @@
         .filter((method) => hasScene(method.id))
         .map((method) => method.id),
     isReady: (methodId) => readyIds.has(methodId),
-    defer: runAfterNamedRouteMorphIdle,
+    // The turns wait for the boot screen to leave, then for the route morph.
+    defer: (go) => {
+      let cancelQuiet = (): void => {};
+      const cancelBoot = runAfterBootScreen(() => {
+        cancelQuiet = runAfterNamedRouteMorphIdle(go);
+      });
+      return () => {
+        cancelBoot();
+        cancelQuiet();
+      };
+    },
   });
 
   function handleReady(methodId: string): void {
