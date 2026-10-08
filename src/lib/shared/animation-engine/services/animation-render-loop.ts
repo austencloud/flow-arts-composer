@@ -74,8 +74,12 @@ import { shiftTrailPointsBy } from "./animation-grid-join";
 import type { HandOffsets } from "./grid-join-tween";
 import {
   MotionSubSampler,
+  pickEvenIndices,
   type MotionSubSample,
 } from "./motion-sub-sampler";
+
+/** Most prior LED sets deposited for one slow frame; picked evenly beyond. */
+const LED_PRIOR_SET_CAP = 15;
 
 // Longtask observer singleton - one PerformanceObserver shared across every
 // AnimationRenderLoop instance. Without this, each loop attaches its own
@@ -262,6 +266,9 @@ export class AnimationRenderLoop {
   /** Fills slow live frames with on-path poses; see motion-sub-sampler.ts. */
   private readonly motionSubSampler = new MotionSubSampler();
   private motionSamples: readonly MotionSubSample[] = [];
+  /** Pooled LED sets for the prior passes, one array per picked sub-sample. */
+  private readonly ledPriorBuffers: LedSample[][] = [];
+  private readonly ledPriorPick: number[] = [];
   private lastTrailFrameTime: number = 0;
   // Timestamp of the last frame that actually stamped the trail accumulator.
   // Separate from lastTrailFrameTime (which uses 0 as an uninitialized
@@ -2123,10 +2130,52 @@ export class AnimationRenderLoop {
         // against the shaft end each LED sits nearest, so the per-end
         // assignment cascade keeps working at 200 LEDs.
         const ledTipMap = params.tipEffectMap ?? {};
-        const leds = allLeds.filter(
-          (l) =>
-            resolveEffect(l.propIndex, l.endpointIndex, ledTipMap, {}) === "led"
-        );
+        const isLedTip = (l: LedSample) =>
+          resolveEffect(l.propIndex, l.endpointIndex, ledTipMap, {}) === "led";
+        const leds = allLeds.filter(isLedTip);
+
+        // One LED set per resampled sub-frame (at most LED_PRIOR_SET_CAP,
+        // picked evenly), built after the frame's own update so warmup frames
+        // are not spent on priors. The renderer deposits one streak pass per
+        // set, so a slow frame paints a curve instead of a chord.
+        let priorSamples: LedSample[][] | undefined;
+        if (this.motionSamples.length > 0 && leds.length > 0) {
+          const pickCount = pickEvenIndices(
+            this.motionSamples.length,
+            LED_PRIOR_SET_CAP,
+            this.ledPriorPick
+          );
+          priorSamples = [];
+          for (let i = 0; i < pickCount; i++) {
+            const s = this.motionSamples[this.ledPriorPick[i]!]!;
+            const sampleConfig: LedSamplerConfig = {
+              ...ledSamplerConfig,
+              additionalLayers:
+                s.layers.length > 0
+                  ? s.layers.map((layer, li) => ({
+                      leftProp: effectiveLeftMotionVisible ? layer.left : null,
+                      rightProp: effectiveRightMotionVisible
+                        ? layer.right
+                        : null,
+                      opacity: props.additionalLayers[li]?.opacity,
+                    }))
+                  : undefined,
+            };
+            const buffer =
+              this.ledPriorBuffers[i] ?? (this.ledPriorBuffers[i] = []);
+            const set = this.toFrameLeds(
+              this.ledSampler.update(
+                visibleLeftProp ? s.left : null,
+                visibleRightProp ? s.right : null,
+                sampleConfig,
+                s.timeMs,
+                params.ledConfig,
+                buffer
+              )
+            ).filter(isLedTip);
+            priorSamples.push(set);
+          }
+        }
 
         // The renderer clears its retained glow and trail buffers when the LED
         // list is empty. Skipping that frame leaves the last LED image visible.
@@ -2136,6 +2185,7 @@ export class AnimationRenderLoop {
             currentTime,
             canvasWidth: this.canvasFrame.width,
             canvasHeight: this.canvasFrame.height,
+            priorSamples,
           },
           params.ledConfig
         );
