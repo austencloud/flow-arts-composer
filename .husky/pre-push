@@ -69,8 +69,16 @@ echo "✅ Unit tests passed"
 
 # Local opt-in: keep Android device builds off contributor machines that do not
 # have the SDK. This also works when Husky is the active hooks path.
+# The script prints its own "[native] ..." outcome line and exits 2 when it
+# stopped before building anything (another push's build holds the lock, low
+# memory, no JDK) or 1 when a build or install step broke. Neither blocks the
+# push. Husky re-runs this file with `sh -e`, so the status is read with `||`.
 if [ "$(git config --bool --get tka.pushDeployAndroid 2>/dev/null)" = "true" ]; then
-  if ! node scripts/native-push-deploy.mjs "$@"; then
-    echo "[native] Android build or install failed. Git push will continue."
+  native_status=0
+  node scripts/native-push-deploy.mjs "$@" || native_status=$?
+  if [ "$native_status" -eq 2 ]; then
+    echo "[native] Android build skipped before it started; the [native] line above says why. Git push will continue."
+  elif [ "$native_status" -ne 0 ]; then
+    echo "[native] Android build or install failed; the [native] line above says where. Git push will continue."
   fi
 fi
