@@ -543,8 +543,13 @@
         id: "create-tool-panel",
         content: toolPanel,
         defaultSize: defaultPanelSizes[1],
-        fixedSize: isWorkspacePlayback || isAssembleComplete ? "0px" : undefined,
+        fixedSize:
+          isWorkspacePlayback || isAssembleComplete ? "0px" : undefined,
         resizable: false,
+        // Play folds the tools away. Their cards keep the size they had and
+        // the closing edge covers them, instead of re-laying out every card
+        // (and their container-query padding) on each frame of the slide.
+        revealContent: true,
       },
     ]}
   />

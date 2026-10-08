@@ -65,6 +65,7 @@
     scaleBackground = false,
     preventScroll = true,
     keepMounted = false,
+    holdOpen = false,
     // Focus behavior
     autoFocus = true,
     keyboardShortcutsPassthrough = false,
@@ -136,6 +137,15 @@
     preventScroll?: boolean;
     /** Keep drawer children mounted while closed. Use for stateful tools whose commands remain available outside the drawer. */
     keepMounted?: boolean;
+    /**
+     * Hold an opening drawer off-screen until this turns false. Its children
+     * mount and lay out at full size in the meantime, so content that does
+     * heavy first-draw work (a lazy chunk, sprite rasterising) finishes before
+     * the slide instead of stalling it. The backdrop fades in at once as tap
+     * feedback. The caller should clear it on a ready signal with its own cap;
+     * the drawer also gives up waiting after HOLD_OPEN_CAP_MS.
+     */
+    holdOpen?: boolean;
     /** Auto-focus the drawer when it opens. Set to false to keep focus on triggering element. Default: true */
     autoFocus?: boolean;
     /**
@@ -169,6 +179,38 @@
   let pendingCloseReason = $state<CloseReason>("programmatic");
   let closeTimeoutId: ReturnType<typeof setTimeout> | null = null; // Track close animation timeout
   let animatingTimeoutId: ReturnType<typeof setTimeout> | null = null; // Track animation duration
+
+  // holdOpen: the open sequence waiting for the caller, and a cap so a ready
+  // signal that never comes can't leave the drawer stuck off-screen.
+  const HOLD_OPEN_CAP_MS = 1200;
+  let heldOpen: (() => void) | null = null;
+  let isHoldingOpen = $state(false);
+  let holdCapId: ReturnType<typeof setTimeout> | null = null;
+
+  function clearHeldOpen() {
+    heldOpen = null;
+    isHoldingOpen = false;
+    if (holdCapId !== null) {
+      clearTimeout(holdCapId);
+      holdCapId = null;
+    }
+  }
+
+  function releaseHeldOpen() {
+    const run = heldOpen;
+    if (!run) return;
+    clearHeldOpen();
+    // The closed state has already painted while held, so one frame is
+    // enough for the slide to start from it.
+    requestAnimationFrame(() => {
+      if (untrack(() => isOpen)) run();
+    });
+  }
+
+  $effect(() => {
+    if (holdOpen) return;
+    untrack(releaseHeldOpen);
+  });
 
   /**
    * Detect if user prefers reduced motion (WCAG 2.2 / AAA).
@@ -414,6 +456,7 @@
           clearTimeout(animatingTimeoutId);
           animatingTimeoutId = null;
         }
+        clearHeldOpen();
 
         // Block swipe gestures during animation
         // This prevents conflicts when user's finger is still down from triggering the drawer
@@ -462,10 +505,17 @@
           requestAnimationFrame(completeOpen);
         } else {
           isAnimatedOpen = false; // Start closed for animation
-          // Force browser to render the closed state first using double-RAF
-          requestAnimationFrame(() => {
-            requestAnimationFrame(completeOpen);
-          });
+          if (untrack(() => holdOpen)) {
+            // Mount and lay out off-screen; the slide starts on release.
+            heldOpen = completeOpen;
+            isHoldingOpen = true;
+            holdCapId = setTimeout(releaseHeldOpen, HOLD_OPEN_CAP_MS);
+          } else {
+            // Force browser to render the closed state first using double-RAF
+            requestAnimationFrame(() => {
+              requestAnimationFrame(completeOpen);
+            });
+          }
         }
       }
 
@@ -473,6 +523,7 @@
       if (previouslyOpen && !isOpen) {
         emitClose(pendingCloseReason);
         pendingCloseReason = "programmatic";
+        clearHeldOpen();
         isAnimatedOpen = false; // Trigger close animation
         swipeToDismiss?.reset(); // Reset drag state when closing
         // Deactivate focus trap immediately so focus can return
@@ -585,6 +636,10 @@
 
   // Compute state attribute for CSS - use animated state for visual transitions
   const dataState = $derived(isAnimatedOpen ? "open" : "closed");
+  // A held drawer fades its backdrop in at once so the tap reads as taken.
+  const overlayState = $derived(
+    isAnimatedOpen || isHoldingOpen ? "open" : "closed"
+  );
 
   // Compute full class names
   const overlayClasses = $derived(
@@ -680,6 +735,7 @@
     swipeToDismiss?.detach();
     focusTrap?.deactivate();
     drawerEffects?.cleanup();
+    clearHeldOpen();
     // Unregister from drawer stack
     unregisterDrawer(drawerId);
   });
@@ -691,7 +747,7 @@
   <!-- Backdrop -->
   <div
     class={overlayClasses}
-    data-state={dataState}
+    data-state={overlayState}
     onclick={handleBackdropClick}
     aria-hidden="true"
     style:z-index={stackZIndex - 1}
