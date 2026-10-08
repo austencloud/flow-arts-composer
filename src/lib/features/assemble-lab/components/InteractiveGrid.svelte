@@ -23,6 +23,7 @@
   import { getHitTargets } from "$lib/shared/assemble-lab/services/grid-hit-target-calculator";
   import HitTargetOverlay from "$lib/shared/interactive-canvas/components/HitTargetOverlay.svelte";
   import {
+    BUILDER_HOP_MS,
     getBuilderMotionPathD,
     SvgPropAnimator,
   } from "../services/svg-prop-animator";
@@ -34,14 +35,10 @@
 
   // Prop SVG rendering.
   // Trust boundary: svgData.svgContent below is injected via {@html}. The source
-  // is this internal propSvgLoader service (bundled static prop SVGs), never user
-  // or external input, so it is a trusted, non-XSS surface — no sanitization pass.
-  import { propSvgLoader } from "$lib/shared/pictograph/prop/services/prop-svg-loader";
-  import { applyHandColorOverride } from "$lib/shared/pictograph/prop/domain/prop-preview-color";
-  import { normalizePropLook } from "$lib/shared/pictograph/prop/domain/prop-look";
-  import { normalizeFanAppearance } from "$lib/shared/pictograph/prop/domain/fan-appearance";
-  import { normalizeTriangleGrip } from "$lib/shared/pictograph/prop/domain/triangle-appearance";
-  import { createMotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
+  // is loadBuilderPropArt, which reads the internal propSvgLoader service
+  // (bundled static prop SVGs), never user or external input, so it is a
+  // trusted, non-XSS surface with no sanitization pass.
+  import { loadBuilderPropArt } from "../services/builder-prop-art";
   import { PropRotAngleManager } from "$lib/shared/pictograph/prop/services/prop-rot-angle-manager";
   import { LOCATION_ANGLES } from "$lib/shared/foundation/domain/math-constants";
   import { getSettings } from "$lib/shared/application/state/app-state.svelte";
@@ -87,8 +84,8 @@
   // Fallback circle radius (shown while SVG loads)
   const FALLBACK_RADIUS = 28;
 
-  // Animation duration in ms
-  const ANIMATION_DURATION_MS = 400;
+  // One builder hop (svg-prop-animator.ts owns its length)
+  const ANIMATION_DURATION_MS = BUILDER_HOP_MS;
 
   // SVG element ref for the active prop's animated group
   let activePropGroupRef: SVGGElement | null = $state(null);
@@ -143,87 +140,21 @@
     getSettings().rightPropType ?? PropType.STAFF
   );
 
-  // The loader paints the default hand color. Repaint with the user's chosen
-  // color so the stage matches the pictographs (PropSvg does the same).
-  function withUserColor(
-    data: PropRenderData,
-    hand: HandSide,
-    propType: PropType,
-    color: string | undefined
-  ): PropRenderData {
-    if (!color || !data.svgData) return data;
-    return {
-      ...data,
-      svgData: {
-        ...data.svgData,
-        svgContent: applyHandColorOverride(
-          data.svgData.svgContent,
-          hand,
-          propType,
-          color
-        ),
-      },
-    };
-  }
-
-  // Load prop SVGs reactively when prop type, look or hand color changes in settings
+  // Load each hand's prop artwork, and reload it when the prop type, look or
+  // hand color changes in settings: loadBuilderPropArt reads them all before
+  // it waits, so this effect tracks every one.
   $effect(() => {
     const settings = getSettings();
-    const leftPropType = settings.leftPropType ?? PropType.STAFF;
-    const rightPropType = settings.rightPropType ?? PropType.STAFF;
-    const leftColor = settings.primaryPropColors?.left;
-    const rightColor = settings.primaryPropColors?.right;
-    // Draw the look the pictographs draw (PictographContainer passes the
-    // same options), so the stage and the Start pictograph show one prop.
-    const appearance = {
-      propLook: normalizePropLook(settings.propArtwork),
-      fanAppearance: normalizeFanAppearance(settings.fanAppearance),
-      triangleGrip: normalizeTriangleGrip(settings.triangleGrip),
-    };
-
-    // Load left-hand prop SVG
-    const leftMotion = createMotionData({
-      propType: leftPropType,
-      hand: HandSide.LEFT,
-    });
-    propSvgLoader
-      .loadPropSvg(
-        { positionX: 0, positionY: 0, rotationAngle: 0 },
-        leftMotion,
-        false,
-        appearance
-      )
+    loadBuilderPropArt(HandSide.LEFT, settings)
       .then((data) => {
-        leftPropData = withUserColor(
-          data,
-          HandSide.LEFT,
-          leftPropType,
-          leftColor
-        );
+        leftPropData = data;
       })
       .catch(() => {
         /* SVG unavailable; fallback circle renders */
       });
-
-    // Load right-hand prop SVG
-    const rightMotion = createMotionData({
-      propType: rightPropType,
-      hand: HandSide.RIGHT,
-    });
-    propSvgLoader
-      .loadPropSvg(
-        { positionX: 0, positionY: 0, rotationAngle: 0 },
-        rightMotion,
-        false,
-        appearance
-      )
+    loadBuilderPropArt(HandSide.RIGHT, settings)
       .then((data) => {
-        rightPropData = withUserColor(
-          data,
-          HandSide.RIGHT,
-          rightPropType,
-          rightColor
-        );
+        rightPropData = data;
       })
       .catch(() => {
         /* SVG unavailable; fallback circle renders */
