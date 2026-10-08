@@ -36,11 +36,6 @@ export function navigationMorphs(
 
   const a = from.url.pathname;
   const b = to.url.pathname;
-  const isTimingPage = (path: string): boolean =>
-    /^\/timing-and-direction(?:\/(?:together|split|quarter)-time-(?:same|opposite)-direction)?$/.test(
-      path
-    );
-  if (isTimingPage(a) && isTimingPage(b)) return true;
   const sequencePair = (x: string, y: string): boolean =>
     isRouteWithin(x, "/browse") && isRouteWithin(y, "/sequence");
   if (sequencePair(a, b) || sequencePair(b, a)) return true;
