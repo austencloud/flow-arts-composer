@@ -4,7 +4,7 @@ import type { AnimationPlaybackController } from "$lib/shared/animation-engine/s
 import type { VideoExporter } from "$lib/shared/animation-engine/services/video-exporter";
 import type { CompositeVideoRenderer } from "$lib/shared/animation-engine/services/composite-video-renderer";
 import type { ExportGlyphPrerenderer } from "$lib/shared/animation-engine/services/export-glyph-prerenderer";
-import type { BackgroundVideoEncoder } from "$lib/shared/animation-engine/services/background-video-encoder";
+import type { BackgroundVideoEncoder } from "@austencloud/video-editor/encoder";
 
 vi.mock(
   "$lib/shared/animation-engine/state/animation-visibility-state.svelte",

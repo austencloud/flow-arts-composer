@@ -3,7 +3,7 @@ import { describe, it, expect } from "vitest";
 import {
   selectCodec,
   selectSupportedEncoderConfig,
-} from "$lib/shared/animation-engine/workers/video-export.worker";
+} from "@austencloud/video-editor/encoder";
 
 describe("video-export worker selectCodec", () => {
   it("uses Constrained Baseline (0x42e0) on mobile", () => {

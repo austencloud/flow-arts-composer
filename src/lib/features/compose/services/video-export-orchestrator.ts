@@ -48,7 +48,7 @@ export type {
   VideoEffectOverrides,
   VideoExportOrchestratorOptions,
 } from "$lib/shared/compose/domain/video-export-types";
-import type { BackgroundVideoEncoder } from "$lib/shared/animation-engine/services/background-video-encoder";
+import type { BackgroundVideoEncoder } from "@austencloud/video-editor/encoder";
 import { getAnimationVisibilityManager } from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
 import { animationSettings } from "$lib/shared/animation-engine/state/animation-settings-state.svelte";
 import { fireCacheInvalidation } from "$lib/shared/animation-engine/state/fire-invalidation-signal.svelte";

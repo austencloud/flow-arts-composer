@@ -1,9 +1,9 @@
 import { tick } from "svelte";
-import { BackgroundVideoEncoder } from "$lib/shared/animation-engine/services/background-video-encoder";
+import { BackgroundVideoEncoder } from "@austencloud/video-editor/encoder";
 import type { EvaluatedFrameLayer } from "$lib/shared/media-composition/services/frame-evaluator";
 import type { MediaCompositionPreset } from "$lib/shared/media-composition/domain/media-composition-preset-schema";
 import { renderPostStudioFrame } from "$lib/shared/media-composition/services/post-studio-frame-compositor";
-import { CanvasFrameCapturer } from "$lib/shared/video-export/services/canvas-frame-capturer";
+import { CanvasFrameCapturer } from "@austencloud/video-editor/encoder";
 import type { PostStudioLayerPainter } from "$lib/shared/media-composition/services/post-studio-layer-painter";
 import { PostStudioExportVideoFrames } from "$lib/shared/media-composition/services/post-studio-export-video-frames";
 import { PostStudioPictographCapture } from "$lib/shared/media-composition/services/post-studio-pictograph-capture";
