@@ -84,6 +84,7 @@
   let viewportHeight = $state(1080);
   let activationEffect = $state<EffectType>("none");
   let activationPreviewReady = $state(false);
+  let previewError = $state("");
   let activationEffectsReady = $state(false);
   let activationShadersReady = $state(false);
   const activationReady = $derived(
@@ -129,6 +130,33 @@
     { value: 2, label: "2" },
     { value: 6, label: "6" },
   ];
+
+  onMount(() => {
+    if (focusedEffect !== "goo" && !activationMode) return;
+    const target = window as unknown as Record<string, unknown>;
+    // Change material/style on the same generated motion for visual comparison.
+    target.__gooReviewHarness = {
+      setPreset(id: string): boolean {
+        const preset = GOO_PRESETS.find((candidate) => candidate.id === id);
+        if (!preset?.patch) return false;
+        effectsConfig.applyPreset("goo", preset.id, preset.patch);
+        return true;
+      },
+      setStyle(style: string): boolean {
+        if (style !== "flow" && style !== "splash" && style !== "mist")
+          return false;
+        effectsConfig.updateEffect("goo", { spewStyle: style });
+        return true;
+      },
+      getState: () => ({
+        ready: activationPreviewReady && activationEffectsReady,
+        error: previewError,
+      }),
+    };
+    return () => {
+      delete target.__gooReviewHarness;
+    };
+  });
 
   onMount(() => {
     if (!activationMode) return;
@@ -211,6 +239,7 @@
           formationCount={activationMode ? 2 : 1}
           showStageMarker={!focusedCell}
           onPreviewReady={() => (activationPreviewReady = true)}
+          onPreviewError={(message) => (previewError = message)}
           onEffectsReadyChange={(ready) => (activationEffectsReady = ready)}
         />
         {#if activationMode}
@@ -221,6 +250,10 @@
         {/if}
       </Canvas>
     </section>
+
+    {#if previewError}
+      <p role="alert">Preview unavailable: {previewError}</p>
+    {/if}
 
     {#if activationMode}
       <output
