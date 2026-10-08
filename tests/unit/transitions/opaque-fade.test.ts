@@ -28,6 +28,17 @@ describe("opaqueFade", () => {
     expect(config.css?.(0.25, 0.75)).toBe("opacity: 0.25");
   });
 
+  it("fades a dimmed layer to the opacity its caller sets", () => {
+    const read = vi.spyOn(window, "getComputedStyle");
+    const node = cell('<div style="opacity: 0.4"></div>');
+
+    const config = opaqueFade(node, { duration: 180, opacity: 0.4 });
+
+    expect(read).not.toHaveBeenCalled();
+    expect(config.css?.(1, 0)).toBe("opacity: 0.4");
+    expect(config.css?.(0.5, 0.5)).toBe("opacity: 0.2");
+  });
+
   it("skips the read entirely when there is nothing to animate", () => {
     const read = vi.spyOn(window, "getComputedStyle");
     const node = cell('<div class="hidden-for-sequential"></div>');
