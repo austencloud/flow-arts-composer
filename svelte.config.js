@@ -102,7 +102,8 @@ const config = {
     // second copy of svelte from the shared-packages worktree, and two copies
     // of svelte's ambient types make every Snippet prop mismatch. Pin
     // TypeScript's svelte to this app's copy. Vite already dedupes at runtime.
-    // Remove with the aliases in step 4.
+    // Remove it, the node:fs import and the sveltePackage read with the
+    // aliases in step 4.
     typescript: {
       config(tsconfig) {
         for (const [subpath, entry] of Object.entries(sveltePackage.exports)) {
