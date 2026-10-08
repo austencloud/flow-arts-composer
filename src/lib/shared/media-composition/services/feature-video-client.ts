@@ -96,11 +96,12 @@ export async function loadFeatureVideo(
 /**
  * Sends a finished render to the project's exports/ folder. `name` picks its
  * file name; the dev server numbers it when an earlier render has that name.
+ * Aborting `signal` stops the upload.
  */
 export async function saveFeatureVideoExport(
   slug: string,
   video: Blob,
-  options: { name?: string; fetcher?: Fetcher } = {}
+  options: { name?: string; fetcher?: Fetcher; signal?: AbortSignal } = {}
 ): Promise<SavedFeatureExport> {
   const fetcher = options.fetcher ?? fetch;
   const url = featureVideoExportUrl(slug, options.name);
@@ -110,9 +111,14 @@ export async function saveFeatureVideoExport(
       method: "POST",
       headers: { "Content-Type": "video/mp4" },
       body: video,
+      ...(options.signal ? { signal: options.signal } : {}),
     });
   } catch {
-    throw new Error("The dev server could not be reached.");
+    throw new Error(
+      options.signal?.aborted
+        ? "The save was cancelled."
+        : "The dev server could not be reached."
+    );
   }
   const body = await readJson(response);
   if (!isSavedFeatureExport(body))
@@ -384,11 +390,15 @@ export function createFeatureVideoSync(
     store,
     save,
     checkRevision,
-    /** Sends a finished render to this project's exports/ folder. */
-    saveExport: (video: Blob, name?: string) =>
+    /**
+     * Sends a finished render to this project's exports/ folder; aborting
+     * `signal` stops the upload.
+     */
+    saveExport: (video: Blob, name?: string, signal?: AbortSignal) =>
       saveFeatureVideoExport(slug, video, {
         ...(name ? { name } : {}),
         fetcher,
+        ...(signal ? { signal } : {}),
       }),
     /**
      * Binds the open editor and what to do when disk's copy replaces its

@@ -74,21 +74,50 @@ describe("saveFeatureVideoExport", () => {
       saveFeatureVideoExport("promo", video(), { fetcher })
     ).rejects.toThrow("The dev server could not be reached.");
   });
+
+  it("stops the upload when its signal aborts, and says it was cancelled", async () => {
+    const cancel = new AbortController();
+    const { fetcher, calls } = answering(() => {
+      // As fetch does: the abort rejects the request in flight.
+      cancel.abort();
+      throw new DOMException("The operation was aborted.", "AbortError");
+    });
+    await expect(
+      saveFeatureVideoExport("promo", video(), {
+        fetcher,
+        signal: cancel.signal,
+      })
+    ).rejects.toThrow("The save was cancelled.");
+    expect(calls[0]?.init?.signal).toBe(cancel.signal);
+  });
 });
 
 describe("the sync's saveExport", () => {
+  const file: FeatureVideoFile = {
+    format: FEATURE_VIDEO_FILE_FORMAT,
+    slug: "promo",
+    title: "Promo",
+    revision: 1,
+    savedAt: 1,
+    project: createEmptyPostProject({ sequenceId: "seq", now: 1 }),
+  };
+
+  it("passes the render's signal on, so Cancel can stop the upload", async () => {
+    const { fetcher, calls } = answering(() =>
+      Response.json(SAVED, { status: 201 })
+    );
+    const cancel = new AbortController();
+    const sync = createFeatureVideoSync(file, { fetcher });
+    await expect(
+      sync.saveExport(video(), undefined, cancel.signal)
+    ).resolves.toEqual(SAVED);
+    expect(calls[0]?.init?.signal).toBe(cancel.signal);
+  });
+
   it("sends through the sync's own fetcher and lets the server pick the name", async () => {
     const { fetcher, calls } = answering(() =>
       Response.json(SAVED, { status: 201 })
     );
-    const file: FeatureVideoFile = {
-      format: FEATURE_VIDEO_FILE_FORMAT,
-      slug: "promo",
-      title: "Promo",
-      revision: 1,
-      savedAt: 1,
-      project: createEmptyPostProject({ sequenceId: "seq", now: 1 }),
-    };
     const sync = createFeatureVideoSync(file, { fetcher });
     await expect(sync.saveExport(video())).resolves.toEqual(SAVED);
     expect(calls[0]?.url).toBe("/api/dev/feature-videos/promo/exports");

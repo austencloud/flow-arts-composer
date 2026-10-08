@@ -2441,11 +2441,15 @@
         shouldCancel: () => exportCancelled,
         signal: exportAbort.signal,
       });
+      // A Cancel can land while the encoder finishes, after its last check.
+      if (exportCancelled) return false;
       if (exportedUrl) URL.revokeObjectURL(exportedUrl);
       exportedUrl = URL.createObjectURL(blob);
       onExported?.(blob);
       if (featureVideo) await keepFeatureExport(blob, name);
-      return true;
+      // A Cancel during the upload stops it; a render saved before the
+      // Cancel stays saved.
+      return !exportCancelled || savedExport !== null;
     } catch (error) {
       if (!exportCancelled) {
         console.error("[PostStudio] Export failed:", error);
@@ -2474,8 +2478,14 @@
   async function keepFeatureExport(blob: Blob, name?: string): Promise<void> {
     if (!featureVideo) return;
     try {
-      savedExport = await featureVideo.saveExport(blob, name);
+      savedExport = await featureVideo.saveExport(
+        blob,
+        name,
+        exportAbort?.signal
+      );
     } catch (cause) {
+      // Cancel stopped the upload, which is no failure to report.
+      if (exportCancelled) return;
       const reason =
         cause instanceof Error
           ? cause.message
