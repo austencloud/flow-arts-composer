@@ -73,6 +73,10 @@ jobs:
 
       # Delta upload: the phone fetches only files whose contents changed.
       # Already-compressed formats skip Brotli, which would only cost time.
+      # Old bundles stay. Capgo serves delta bundles only while its per-app
+      # delta-bundle counter is above zero, and deleting a bundle can lower
+      # that counter twice: after 1.0.902 replaced 1.0.901 on 2026-10-08,
+      # every phone got "no_bundle: Cannot get bundle".
       - name: Upload bundle to Capgo
         env:
           CAPGO_API_KEY: ${{ secrets.CAPGO_API_KEY }}
@@ -94,7 +98,6 @@ jobs:
             --delta-only \
             --no-brotli-patterns '**/*.glb,**/*.png,**/*.jpg,**/*.jpeg,**/*.webp,**/*.avif,**/*.gif,**/*.ktx2,**/*.basis,**/*.mp3,**/*.mp4,**/*.m4a,**/*.ogg,**/*.webm,**/*.woff,**/*.woff2,**/*.pdf' \
             --no-code-check \
-            --delete-linked-bundle-on-upload \
             --comment "main $(git rev-parse --short HEAD)"
 
       # Phones without a channel of their own follow the default channel.
