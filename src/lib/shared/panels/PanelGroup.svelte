@@ -37,9 +37,11 @@
     preferredSize?: string;
     /**
      * While this panel grows, lay its content out at the size it is growing to
-     * and let the moving edge uncover it. Content that is costly to re-lay out,
-     * such as a grid of pictographs, then lays out once instead of on every
-     * frame of the slide. Applies only when the group can compute that size.
+     * and let the moving edge uncover it; while it shrinks, keep its content at
+     * the size it started from and let the edge cover it. Content that is
+     * costly to re-lay out, such as a grid of pictographs or a column of
+     * settings cards, then lays out once instead of on every frame of the
+     * slide. Applies only when the group can compute the settled size.
      * When it is the only panel changing, it also slides in pixels, so its
      * edge follows the easing curve (see startPixelSlide).
      */
@@ -553,12 +555,13 @@
   /**
    * Motion: from the moment a panel's flex allocation changes until its track
    * comes to rest, the root carries `data-panel-motion` so per-resize
-   * measurers can wait, and a growing `revealContent` panel holds its content
-   * at the settled size so that content lays out once.
+   * measurers can wait, and a `revealContent` panel holds its content at the
+   * larger of its start and settled sizes so that content lays out once.
    */
   let containerMainSize = $state(0);
   let inMotion = $state(false);
-  let revealingPanels = $state<ReadonlySet<string | number>>(new Set());
+  /** Held content size for each revealContent panel in motion. */
+  let revealingPanels = $state<ReadonlyMap<string | number, number>>(new Map());
   let motionSafety: ReturnType<typeof setTimeout> | null = null;
   const revealsContent = $derived(panels.some((panel) => panel.revealContent));
 
@@ -615,7 +618,7 @@
     runningTrackTransitions = 0;
     if (!inMotion) return;
     inMotion = false;
-    revealingPanels = new Set();
+    revealingPanels = new Map();
     containerRef?.dispatchEvent(
       new CustomEvent(PANEL_SETTLE_EVENT, { bubbles: true })
     );
@@ -630,7 +633,7 @@
         return;
 
       let changedCount = 0;
-      const revealing = new Set<string | number>();
+      const revealing = new Map<string | number, number>();
       const slides: PixelSlide[] = [];
       panels.forEach((panel, index) => {
         const key = panel.id ?? index;
@@ -643,9 +646,6 @@
         const element = panel.revealContent ? panelWrapperFor(key) : null;
         if (settled === undefined || !element) return;
         const from = measurePanel(element);
-        // Only a growing panel reveals: a shrinking one would crop its
-        // content to the end size before the edge got there.
-        if (settled > from + 0.5) revealing.add(key);
         if (
           Math.abs(settled - from) >= 0.5 &&
           !needsMeasuredBasisHandoff(previous, next)
@@ -654,6 +654,21 @@
         }
       });
       if (changedCount === 0) return;
+
+      // Every revealContent panel whose size moves holds its content still,
+      // including a neighbour that only fills the space another panel gives
+      // up. A growing panel lays out at its end size and is uncovered; a
+      // shrinking one keeps its start size and is covered, since laying it
+      // out at the end size would crop it before the edge got there.
+      panels.forEach((panel, index) => {
+        const settled = settledSizes?.[index];
+        const key = panel.id ?? index;
+        const element = panel.revealContent ? panelWrapperFor(key) : null;
+        if (settled === undefined || !element) return;
+        const from = measurePanel(element);
+        if (Math.abs(settled - from) >= 0.5)
+          revealing.set(key, Math.max(settled, from));
+      });
 
       // A pixel slide needs the rest of the track to give way around it: one
       // moving panel, and a neighbour with a share to absorb the difference.
@@ -731,15 +746,15 @@
   ontransitioncancel={handleTrackTransitionDone}
 >
   {#each panels as panel, i (panel.id ?? i)}
-    {@const revealing =
-      revealingPanels.has(panel.id ?? i) && settledSizes?.[i] !== undefined}
+    {@const heldContentSize = revealingPanels.get(panel.id ?? i)}
+    {@const revealing = heldContentSize !== undefined}
     <!-- Panel wrapper with flex sizing -->
     <div
       class="panel-wrapper"
       class:revealing
       style={getFlexStyle(panel, i)}
-      style:--panel-settled-size={revealing
-        ? `${settledSizes?.[i]}px`
+      style:--panel-content-size={revealing
+        ? `${heldContentSize}px`
         : undefined}
       data-panel-id={panel.id}
       data-min-size={panel.minSize}
@@ -822,15 +837,16 @@
     min-height: 0;
   }
 
-  /* A growing revealContent panel: its content holds the size the track is
-     growing to, so it lays out once and the moving edge uncovers it. */
+  /* A revealContent panel in motion: its content holds one size (where a
+     growing track ends, where a shrinking one started), so it lays out once
+     and the moving edge uncovers or covers it. */
   .panel-group.vertical > .panel-wrapper.revealing > :global(*) {
     flex: none;
-    height: var(--panel-settled-size);
+    height: var(--panel-content-size);
   }
 
   .panel-group.horizontal > .panel-wrapper.revealing > :global(*) {
-    width: var(--panel-settled-size);
+    width: var(--panel-content-size);
   }
 
   .resize-handle-slot {
