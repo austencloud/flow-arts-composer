@@ -774,7 +774,7 @@ There is no unit test for this markup; the coordinator checks it in the browser.
 
 - [ ] **Step 1: The field**
 
-Edit `src/lib/shared/share/components/post-studio/editor/PostItemTool.svelte`. Apply these eight edits in order.
+Edit `src/lib/shared/share/components/post-studio/editor/PostItemTool.svelte`. Apply these seven edits in order.
 
 Find:
 ```ts
@@ -959,7 +959,7 @@ Replace with:
 
 Run: `npx prettier --write src/lib/shared/share/components/post-studio/editor/PostItemTool.svelte src/lib/shared/share/components/post-studio/editor/PostEditorWorkspace.svelte`
 Then run: `git diff --stat`
-Expected: only these two files, with additions only (prettier may rewrap a line you added; it must not touch lines you did not add). If prettier changed lines you did not add, stop and report it.
+Expected: only these two files. Every change adds lines except one: `.hook-titles {` becomes `.hook-titles,` (prettier may rewrap a line you added; it must not touch lines you did not add). If prettier changed lines you did not add, stop and report it.
 
 - [ ] **Step 4: Commit**
 
