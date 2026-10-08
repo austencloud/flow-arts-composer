@@ -70,11 +70,12 @@ describe("AnimatorCanvas host options", () => {
   });
 
   it("annotates the stage for the ghost presenter by default", () => {
-    const stage = render();
+    const stage = render({ word: "ABC" });
     expect(stage.dataset.ghost).toBe("safe");
     expect(stage.dataset.ghostKind).toBe("stage");
     expect(stage.dataset.ghostState).toBe("playing");
     expect(stage.hasAttribute("data-ghost-linger")).toBe(true);
+    expect(stage.dataset.ghostWord).toBe("ABC");
   });
 
   it("publishes no ghost annotations when the host opts out", () => {

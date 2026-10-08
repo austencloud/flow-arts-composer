@@ -344,9 +344,10 @@ Last audit: 2025-12-27
     onSaveToLibrary?: () => void | Promise<void>;
     /** Optional adaptive-quality ceiling for performance-sensitive embeds. */
     initialQualityTier?: QualityTier;
-    /** False never creates the GPU trail layer, which costs a few hundred
-     *  milliseconds of main-thread time at mount. Only for canvases whose
-     *  trails stay off for their whole life, such as decorative previews. */
+    /** False never creates the main canvas's GPU trail layer, which costs a
+     *  few hundred milliseconds of main-thread time at mount. Only for canvases
+     *  whose trails stay off for their whole life, such as decorative previews.
+     *  The split view draws its own canvases and does not take this option. */
     trailOverlay?: boolean;
     /** False omits the data-ghost* annotations, so the admin ghost presenter
      *  neither parks beside this canvas nor reads its playing state. For
