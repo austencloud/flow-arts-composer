@@ -62,6 +62,14 @@ const config = {
     // PATH ALIASES (Clean domain-bounded architecture)
     // ============================================================================
     alias: {
+      // @austencloud/video-editor dev loop (extraction steps 0 to 3): resolve
+      // the package from the shared-packages worktree's build output. Step 4
+      // replaces these with the published dependency. The css entry sits
+      // first because Vite takes the first matching alias prefix.
+      "@austencloud/video-editor/css":
+        "E:/worktrees/shared-packages/video-editor/packages/video-editor/css",
+      "@austencloud/video-editor":
+        "E:/worktrees/shared-packages/video-editor/packages/video-editor/dist",
       // Core aliases
       $lib: "./src/lib",
       "$lib/*": "./src/lib/*",
@@ -76,6 +84,19 @@ const config = {
       // "Cannot find module" errors.
       "$test-helpers": "./tests/helpers",
       "$test-helpers/*": "./tests/helpers/*",
+    },
+
+    // While @austencloud/video-editor is aliased to a path outside
+    // node_modules (extraction steps 0 to 3), its declarations would resolve a
+    // second copy of svelte from the shared-packages worktree, and two copies
+    // of svelte's ambient types make every Snippet prop mismatch. Pin
+    // TypeScript's svelte to this app's copy. Vite already dedupes at runtime.
+    // Remove with the aliases in step 4.
+    typescript: {
+      config(config) {
+        config.compilerOptions.paths.svelte = ["../node_modules/svelte"];
+        return config;
+      },
     },
 
     // ============================================================================

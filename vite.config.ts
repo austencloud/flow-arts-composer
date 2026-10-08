@@ -1050,7 +1050,9 @@ export default defineConfig(({ command, mode }) => ({
     },
   ].filter(Boolean),
   resolve: {
-    dedupe: ["three", "@threlte/core"],
+    // svelte and mediabunny: @austencloud/video-editor ships .svelte files and
+    // a worker that import both; one copy must serve the app and the package.
+    dedupe: ["three", "@threlte/core", "svelte", "mediabunny"],
     conditions: ["svelte", "module", "browser", "development|production"],
     alias: [
       {
@@ -1323,6 +1325,8 @@ export default defineConfig(({ command, mode }) => ({
       // file: linked Svelte packages — esbuild can't parse .svelte exports
       "@austencloud/scene-3d",
       "@austencloud/camera-3d",
+      // Ships .svelte files and a module worker that this app's Vite compiles.
+      "@austencloud/video-editor",
       // ⚡ Lazy-load these heavy libraries on-demand
       "fabric", // ~500KB canvas library (loads when user uses animator)
       "page-flip", // PDF flipbook (loads in learn module)
