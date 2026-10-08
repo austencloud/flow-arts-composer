@@ -5,6 +5,7 @@ import {
   Matrix4,
   MeshPhysicalMaterial,
   Object3D,
+  Quaternion,
   Vector3,
 } from "three";
 import { GooRenderer3D } from "$lib/shared/3d/effects/water/goo-renderer-3d";
@@ -53,6 +54,16 @@ function visibleVertices(positions: Float32Array): number {
       count++;
   }
   return count;
+}
+
+function ringRadius(geometry: BufferGeometry, ring: number): number {
+  const positions = geometry.getAttribute("position");
+  const a = new Vector3().fromBufferAttribute(positions, ring * SIDES);
+  const b = new Vector3().fromBufferAttribute(
+    positions,
+    ring * SIDES + SIDES / 2
+  );
+  return a.distanceTo(b) / 2;
 }
 
 describe("GooRenderer3D", () => {
@@ -310,7 +321,7 @@ describe("GooRenderer3D", () => {
     expect(remaining(1)).toBe(true);
   });
 
-  it("keeps a short retracting body joined to the first detached drop", () => {
+  it("pinches the neck before handing its full bead to a settling drop", () => {
     const renderer = new GooRenderer3D();
     const parent = new Object3D();
     renderer.initialize(parent);
@@ -320,13 +331,21 @@ describe("GooRenderer3D", () => {
     tip.params.ambientSpawnRate = 60;
     renderer.update([tip], 1 / 60);
     tip.params.ambientEmission = 0;
-    for (let frame = 0; frame < 40; frame++) renderer.update([tip], 1 / 60);
+    for (let frame = 0; frame < 37; frame++) renderer.update([tip], 1 / 60);
 
     const tube = parent.children[0] as {
       geometry: BufferGeometry;
       visible: boolean;
     };
     const drops = parent.children[1] as InstancedMesh;
+    const unpinchedNeck = ringRadius(tube.geometry, 13);
+    const earlyBulb = ringRadius(tube.geometry, 17);
+    for (let frame = 0; frame < 6; frame++) renderer.update([tip], 1 / 60);
+    expect(drops.count).toBe(0);
+    expect(ringRadius(tube.geometry, 13)).toBeLessThan(unpinchedNeck * 0.8);
+    expect(ringRadius(tube.geometry, 17)).toBeGreaterThan(earlyBulb * 0.8);
+    for (let frame = 0; frame < 4 && drops.count === 0; frame++)
+      renderer.update([tip], 1 / 60);
     expect(tube.visible).toBe(true);
     expect(drops.count).toBeGreaterThan(0);
     const tipPosition = new Vector3().fromBufferAttribute(
@@ -337,7 +356,15 @@ describe("GooRenderer3D", () => {
     drops.getMatrixAt(0, dropMatrix);
     const dropPosition = new Vector3().setFromMatrixPosition(dropMatrix);
     expect(dropPosition.distanceTo(tipPosition)).toBeLessThan(0.04);
-    for (let frame = 0; frame < 9; frame++) renderer.update([tip], 1 / 60);
+    const dropSize = new Vector3();
+    dropMatrix.decompose(new Vector3(), new Quaternion(), dropSize);
+    expect(dropSize.x).toBeGreaterThan(earlyBulb * 0.6);
+    const initialStretch = dropSize.y / dropSize.x;
+    for (let frame = 0; frame < 4; frame++) renderer.update([tip], 1 / 60);
+    drops.getMatrixAt(0, dropMatrix);
+    dropMatrix.decompose(new Vector3(), new Quaternion(), dropSize);
+    expect(dropSize.y / dropSize.x).toBeLessThan(initialStretch);
+    for (let frame = 0; frame < 8; frame++) renderer.update([tip], 1 / 60);
     expect(tube.visible).toBe(false);
     renderer.dispose();
   });
