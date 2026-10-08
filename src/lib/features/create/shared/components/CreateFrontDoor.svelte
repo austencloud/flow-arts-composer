@@ -506,7 +506,7 @@
      words and the rows share the height. */
   @container create-entry (min-width: 480px) and (max-width: 1199px) and (orientation: landscape) {
     .method-index {
-      --preview-side: clamp(49px, min(18cqi, 20cqh), 140px);
+      --preview-side: clamp(49px, min(18cqi, 18cqh), 140px);
       grid-auto-rows: minmax(min-content, 1fr);
     }
 
