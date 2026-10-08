@@ -22,6 +22,14 @@ import {
   getArrowAnchorCoordinates,
   generateTurnsTuple,
   turnsTupleDirection,
+  parseTurnsTuple,
+  shouldDisplayTurn,
+  getTurnNumberWidth,
+  getSlotUnitWidth,
+  getSlotOffsetX,
+  MARK_GAP,
+  calculateTurnPositions,
+  turnsColumnHands,
   DIRECTION_DOT,
   getNormalHandPointCoordinates,
   // Prop placement calculations
@@ -65,16 +73,19 @@ import {
   resolveFullArrowAssetPath,
   type MotionType as RenderMotionType,
   type Orientation as RenderOrientation,
+  propArtworkStem,
+  PICTOGRAPH_PROP_ARTWORK_DIR,
+  drawsHandPaths,
+  handPathMotionOverrides,
+  shouldMirrorArrow,
 } from "@tka/render-core";
 // Arrow calculations still use local files (they have MCP-specific logic)
-import {
-  calculateArrowLocation,
-  calculateArrowRotation,
-} from "./arrow-placement.js";
+import { calculateArrowLocation } from "./arrow-placement.js";
 import {
   calculateArrowAdjustment,
-  type PictographAdjustmentInput,
-  type MotionAdjustmentInput,
+  resolveArrowRotation,
+  type ArrowAdjustmentMotion,
+  type ArrowAdjustmentPictograph,
 } from "./arrow-adjustment.js";
 import { ensureGelasioRegistered } from "./gelasio-fonts.js";
 
@@ -476,7 +487,21 @@ export class StandaloneRenderer {
     options: RenderVisibilityOptions = {}
   ): Promise<string> {
     // Preprocess input to ensure orientations are calculated
-    const input = this.preprocessInput(rawInput);
+    const prepared = this.preprocessInput(rawInput);
+    // Two hands draw their hand paths, the way the app prepares them.
+    const input = drawsHandPaths(options.leftPropType, options.rightPropType)
+      ? {
+          ...prepared,
+          leftMotion: {
+            ...prepared.leftMotion,
+            ...handPathMotionOverrides(prepared.leftMotion),
+          },
+          rightMotion: {
+            ...prepared.rightMotion,
+            ...handPathMotionOverrides(prepared.rightMotion),
+          },
+        }
+      : prepared;
 
     const {
       darkMode = true,
@@ -570,7 +595,8 @@ export class StandaloneRenderer {
         gridMode,
         darkMode,
         primaryPropColors,
-        joinLayout?.offsets.left
+        joinLayout?.offsets.left,
+        { left: leftPropType, right: rightPropType }
       );
       if (leftArrow) sceneParts.push(leftArrow);
     }
@@ -581,7 +607,8 @@ export class StandaloneRenderer {
         gridMode,
         darkMode,
         primaryPropColors,
-        joinLayout?.offsets.right
+        joinLayout?.offsets.right,
+        { left: leftPropType, right: rightPropType }
       );
       if (rightArrow) sceneParts.push(rightArrow);
     }
@@ -618,8 +645,8 @@ ${sceneParts.join("\n")}
     if (showTKA && input.letter) {
       const letterSvg = this.renderLetterWithTurns(
         input.letter,
-        input.leftMotion?.turns,
-        input.rightMotion?.turns,
+        input.leftMotion,
+        input.rightMotion,
         darkMode,
         primaryPropColors,
         input.leftMotion && input.rightMotion
@@ -846,10 +873,11 @@ ${svgParts.join("\n")}
       ? fanAppearanceFile(resolveFanAppearance(fanAppearance))
       : null;
     const propFileName =
-      fanFile ?? (currentPropType ? `${currentPropType}.svg` : "staff.svg");
+      fanFile ??
+      `${propArtworkStem(currentPropType ?? "staff", motion.hand === "right" ? "right" : "left")}.svg`;
     const propPath = fanFile
       ? join(this.assetsRoot, "images/props/appearances", propFileName)
-      : join(this.assetsRoot, "images/props", propFileName);
+      : join(this.assetsRoot, "images", PICTOGRAPH_PROP_ARTWORK_DIR, propFileName);
     if (!existsSync(propPath)) {
       console.error("[Renderer] Prop file not found:", propPath);
       return null;
@@ -971,7 +999,11 @@ ${svgParts.join("\n")}
     gridMode: GridMode,
     darkMode: boolean,
     customColors?: HandColorPair | null,
-    joinOffset?: JoinVec
+    joinOffset?: JoinVec,
+    propTypes: { left: string | null; right: string | null } = {
+      left: null,
+      right: null,
+    }
   ): string {
     const motionType = motion.motionType.toLowerCase();
 
@@ -980,17 +1012,17 @@ ${svgParts.join("\n")}
     if (motionType === "static" && (motion.turns ?? 0) === 0) {
       return "";
     }
+    // Hands drawing their hand paths cannot spin, so a staying hand has no
+    // arrow at any turns, as the app's hand path preparation drops it.
+    if (motionType === "static" && drawsHandPaths(propTypes.left, propTypes.right)) {
+      return "";
+    }
 
     const startLocation = motion.startLocation.toLowerCase() as GridLocation;
     const endLocation = motion.endLocation.toLowerCase() as GridLocation;
     const startOrientation = motion.startOrientation?.toLowerCase() as
       | Orientation
       | undefined;
-
-    // Check if orientation is radial (IN/OUT vs CLOCK/COUNTER)
-    const isRadialOrientation =
-      startOrientation === Orientation.IN ||
-      startOrientation === Orientation.OUT;
 
     // Box is the diamond placement frame turned 45° clockwise. The arrow's
     // location and anchor come from the displayed grid, but its glyph angle and
@@ -1038,36 +1070,28 @@ ${svgParts.join("\n")}
 
     const position = getArrowAnchorCoordinates(motionType, location, gridMode);
     const canonicalLocation = toCanonical(location) as GridLocation;
-    const rotation = rotatePlacementAngleToDisplayed(
-      calculateArrowRotation(
-        motionType,
-        canonicalLocation,
-        motion.rotationDirection,
-        toCanonical(startLocation),
-        toCanonical(endLocation),
-        isRadialOrientation
-      ),
-      frameRotation
-    );
 
     const adjustmentMotion = (
       source: MotionInput,
       hand: MotionInput["hand"]
-    ): MotionAdjustmentInput => ({
-      letter: pictograph.letter,
-      motionType: source.motionType,
-      rotationDirection: source.rotationDirection,
-      startLocation: toCanonical(source.startLocation),
-      endLocation: toCanonical(source.endLocation),
+    ): ArrowAdjustmentMotion => ({
       hand,
+      motionType: source.motionType.toLowerCase(),
+      rotationDirection: source.rotationDirection,
+      startLocation: toCanonical(source.startLocation.toLowerCase()),
+      endLocation: toCanonical(source.endLocation.toLowerCase()),
+      startOrientation: source.startOrientation,
+      endOrientation: source.endOrientation,
       turns: source.turns,
-      endOrientation: source.endOrientation as string | undefined,
+      propType: (hand === "left" ? propTypes.left : propTypes.right) ?? undefined,
     });
 
-    // Calculate arrow adjustment from special placement data
-    const adjustmentInput: PictographAdjustmentInput = {
+    // The app's special placements, rotation overrides and defaults, read in
+    // the canonical frame.
+    const adjustmentInput: ArrowAdjustmentPictograph = {
       letter: pictograph.letter,
-      gridMode: canonicalGridMode,
+      placementFrame:
+        canonicalGridMode === GridMode.SKEWED ? "skewed" : "canonical",
       // Keyed on the displayed grid, as the app's special placements are.
       turnsTuple: generateTurnsTuple(
         pictograph.letter,
@@ -1076,13 +1100,20 @@ ${svgParts.join("\n")}
       ),
       leftMotion: adjustmentMotion(pictograph.leftMotion, "left"),
       rightMotion: adjustmentMotion(pictograph.rightMotion, "right"),
+      betaSwapped: pictograph.betaSwapped,
     };
+    const arrowMotion = adjustmentMotion(motion, motion.hand);
+    const solo = { solo: !!joinOffset };
 
+    const rotation = rotatePlacementAngleToDisplayed(
+      resolveArrowRotation(adjustmentInput, arrowMotion, canonicalLocation, solo),
+      frameRotation
+    );
     const [canonicalAdjustX, canonicalAdjustY] = calculateArrowAdjustment(
       adjustmentInput,
-      adjustmentMotion(motion, motion.hand),
+      arrowMotion,
       canonicalLocation,
-      { solo: !!joinOffset }
+      solo
     );
     const adjustment = rotatePlacementVectorToDisplayed(
       { x: canonicalAdjustX, y: canonicalAdjustY },
@@ -1132,23 +1163,11 @@ ${svgParts.join("\n")}
       const centerX = width / 2;
       const centerY = height / 2;
 
-      // Determine if arrow should be mirrored (matching browser logic)
-      // Anti + cw → Mirror = True
-      // Anti + ccw → Mirror = False
-      // Pro + cw → Mirror = False
-      // Pro + ccw → Mirror = True
-      // No rotation → Mirror = False (no-rotation dashes are symmetric)
-      const rotDir = motion.rotationDirection.toLowerCase();
-      const isNoRotation =
-        rotDir === "no_rot" ||
-        rotDir === "no_rotation" ||
-        rotDir === "norotation";
-      const isCW = rotDir === "cw" || rotDir === "clockwise";
-      const shouldMirror = isNoRotation
-        ? false
-        : motionType === "anti"
-          ? isCW
-          : !isCW;
+      // Floats never mirror; anti mirrors clockwise, the rest counter.
+      const shouldMirror = shouldMirrorArrow(
+        motionType,
+        motion.rotationDirection
+      );
 
       // Canvas2D renderer transform order:
       // translate to position → rotate → mirror (if needed) → translate by -center
@@ -1184,55 +1203,60 @@ ${svgParts.join("\n")}
   }
 
   private renderTurnNumbers(
-    leftTurns: number | "fl" | undefined,
-    rightTurns: number | "fl" | undefined,
+    letter: string,
+    leftMotion: MotionInput | undefined,
+    rightMotion: MotionInput | undefined,
     letterWidth: number,
     letterHeight: number,
     darkMode: boolean,
     customColors?: HandColorPair | null
   ): string {
+    if (!leftMotion || !rightMotion) return "";
+    // Same column as the app's TurnsColumn: the turns tuple orders the slots,
+    // each number takes its hand's color, sits past the dash, and centers in
+    // the wider slot; a halved motion adds its "/" mark.
+    const parsed = parseTurnsTuple(
+      generateTurnsTuple(letter, leftMotion, rightMotion)
+    );
+    const hands = turnsColumnHands(letter, leftMotion, rightMotion);
+    const positions = calculateTurnPositions(
+      { width: letterWidth, height: letterHeight },
+      45,
+      letter.endsWith("-")
+    );
+    const slots = [
+      { value: parsed.top, halved: parsed.topHalved, hand: hands.top, at: positions.top },
+      { value: parsed.bottom, halved: parsed.bottomHalved, hand: hands.bottom, at: positions.bottom },
+    ];
+    const columnWidth = Math.max(
+      ...slots.map((slot) =>
+        getSlotUnitWidth(getTurnNumberWidth(slot.value), slot.halved)
+      )
+    );
+
     const parts: string[] = [];
-
-    // Position calculation matches turn-position-calculator.ts
-    const PADDING_X = 15;
-    const PADDING_Y = 5;
-    const NUMBER_HEIGHT = 45;
-
-    const baseX = letterWidth + PADDING_X;
-    const topY = -PADDING_Y;
-    const bottomY = letterHeight - NUMBER_HEIGHT + PADDING_Y;
-
-    // Render the top turn number for the left-hand motion.
-    if (leftTurns !== undefined && leftTurns !== 0) {
-      const topTurnSvg = this.renderSingleTurnNumber(
-        leftTurns,
-        baseX,
-        topY,
-        "blue",
-        darkMode,
-        customColors
-      );
-      if (topTurnSvg) parts.push(topTurnSvg);
+    for (const slot of slots) {
+      const ownWidth = getTurnNumberWidth(slot.value);
+      const x =
+        slot.at.x + getSlotOffsetX(columnWidth, ownWidth, slot.halved);
+      const color = slot.hand === "left" ? "blue" : "red";
+      const draw = (value: number | "fl" | "half", atX: number) =>
+        this.renderSingleTurnNumber(
+          value,
+          atX,
+          slot.at.y,
+          color,
+          darkMode,
+          customColors
+        );
+      if (shouldDisplayTurn(slot.value)) parts.push(draw(slot.value, x));
+      if (slot.halved) parts.push(draw("half", x + ownWidth + MARK_GAP));
     }
-
-    // Render the bottom turn number for the right-hand motion.
-    if (rightTurns !== undefined && rightTurns !== 0) {
-      const bottomTurnSvg = this.renderSingleTurnNumber(
-        rightTurns,
-        baseX,
-        bottomY,
-        "red",
-        darkMode,
-        customColors
-      );
-      if (bottomTurnSvg) parts.push(bottomTurnSvg);
-    }
-
-    return parts.join("\n");
+    return parts.filter(Boolean).join("\n");
   }
 
   private renderSingleTurnNumber(
-    turns: number | "fl",
+    turns: number | "fl" | "half",
     x: number,
     y: number,
     color: "blue" | "red",
@@ -1240,7 +1264,7 @@ ${svgParts.join("\n")}
     customColors?: HandColorPair | null
   ): string {
     // Convert turns value to filename
-    const filename = turns === "fl" ? "float.svg" : `${turns}.svg`;
+    const filename = turns === "fl" ? "float.svg" : `${turns}.svg`; // "half" is the halved-motion mark
     const turnPath = join(this.assetsRoot, "images/numbers", filename);
 
     if (!existsSync(turnPath)) {
@@ -1308,6 +1332,10 @@ ${svgParts.join("\n")}
         /fill="black"/gi,
         `fill="${fillColor}"`
       );
+      innerContent = innerContent.replace(
+        /stroke="#000000"/gi,
+        `stroke="${fillColor}"`
+      );
 
       return `<svg x="${x}" y="${y}" width="${width}" height="${height}" viewBox="${viewBox}">
   ${innerContent}
@@ -1320,19 +1348,22 @@ ${svgParts.join("\n")}
 
   private renderLetterWithTurns(
     letter: string,
-    leftTurns: number | "fl" | undefined,
-    rightTurns: number | "fl" | undefined,
+    leftMotion: MotionInput | undefined,
+    rightMotion: MotionInput | undefined,
     darkMode: boolean,
     customColors?: HandColorPair | null,
     direction: "s" | "o" | null = null
   ): string {
-    // Determine the correct type folder for this letter
-    const typeFolder = LETTER_TYPE_FOLDER[letter] || "Type1";
+    // A dash letter draws its base letter, then the dash beside it, as the
+    // app's glyph does; the turns column and direction dot key off the base.
+    const hasDash = letter.endsWith("-");
+    const baseLetter = hasDash ? letter.slice(0, -1) : letter;
+    const typeFolder = LETTER_TYPE_FOLDER[baseLetter] || "Type1";
     const letterPath = join(
       this.assetsRoot,
       "images/letters_trimmed",
       typeFolder,
-      `${letter}.svg`
+      `${baseLetter}.svg`
     );
 
     if (!existsSync(letterPath)) {
@@ -1373,8 +1404,9 @@ ${svgParts.join("\n")}
 
       // Render turn numbers (positioned relative to letter)
       const turnNumbersSvg = this.renderTurnNumbers(
-        leftTurns,
-        rightTurns,
+        letter,
+        leftMotion,
+        rightMotion,
         width,
         height,
         darkMode,
@@ -1393,11 +1425,18 @@ ${svgParts.join("\n")}
         directionDotSvg = `<circle cx="${width / 2}" cy="${dotCenterY}" r="${radius}" fill="${dotFill}"/>`;
       }
 
-      // Combine letter, turn numbers and direction dot in a group
+      let dashSvg = "";
+      if (hasDash) {
+        const dashFill = darkMode ? "#ffffff" : "#231f20";
+        dashSvg = `<rect x="${width + 10}" y="${(height - 20) / 2}" width="70" height="20" rx="9.5" ry="9.5" fill="${dashFill}"/>`;
+      }
+
+      // Combine letter, dash, turn numbers and direction dot in a group
       return `<g transform="translate(${TKA_GLYPH_X}, ${TKA_GLYPH_Y})">
   <svg width="${width}" height="${height}" viewBox="${viewBox}">
     ${innerContent}
   </svg>
+${dashSvg}
 ${turnNumbersSvg}
 ${directionDotSvg}
 </g>`;
