@@ -31,8 +31,6 @@
   import { createEffectsConfigState } from "$lib/shared/effects/state/effects-config-state.svelte";
   import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
   import FontAwesomeIcon from "$lib/shared/foundation/ui/FontAwesomeIcon.svelte";
-  import { runAtBackgroundPriority } from "$lib/shared/foundation/utils/background-scheduling";
-  import { drawMatrixRealization } from "$lib/shared/landing/data/shape-matrix-hero-pool";
   import { DEFAULT_VIEWER_CUSTOM_COLORS } from "$lib/shared/sequence-viewer/domain/viewer-custom-colors";
   import { createViewerCustomColorState } from "$lib/shared/sequence-viewer/state/viewer-custom-colors-state.svelte";
   import TunnelArtView from "$lib/shared/sequence-viewer/tunnel/TunnelArtView.svelte";
@@ -41,6 +39,7 @@
   import MethodPreviewFinger from "./MethodPreviewFinger.svelte";
   import { cellCenter, tunnelLayout } from "./method-preview-compositions";
   import { DEMO_SEQUENCE } from "./method-preview-demo";
+  import { createNextSequenceDraw } from "./method-preview-next-sequence";
   import {
     placeGhost,
     sceneGhost,
@@ -110,44 +109,15 @@
 
   let announced = false;
   /** The next turn's sequence, drawn in the background. */
-  let fresh: SequenceData | null = null;
-  let drawing = false;
-  let sourceFailed = false;
-  let disposed = false;
-
-  onDestroy(() => {
-    disposed = true;
+  const nextSequenceDraw = createNextSequenceDraw({
+    emptyWarning:
+      "[method preview] Tunnel source returned no sequence; turning the current one",
+    errorWarning: "[method preview] Tunnel could not draw a sequence",
   });
 
-  function drawNext(): void {
-    if (disposed || drawing || fresh || sourceFailed) return;
-    drawing = true;
-    runAtBackgroundPriority(() => {
-      // The scene can be gone by the time the scheduler runs this.
-      if (disposed) return;
-      void drawMatrixRealization()
-        .then((draw) => {
-          if (!draw) {
-            // The pool reports its own load failure as null, so this is
-            // almost always a failed fetch, not an unlucky draw.
-            sourceFailed = true;
-            console.warn(
-              "[method preview] Tunnel source returned no sequence; turning the current one"
-            );
-          } else if (!disposed) fresh = draw.sequence;
-        })
-        .catch((error: unknown) => {
-          sourceFailed = true;
-          console.warn(
-            "[method preview] Tunnel could not draw a sequence",
-            error
-          );
-        })
-        .finally(() => {
-          drawing = false;
-        });
-    });
-  }
+  onDestroy(() => {
+    nextSequenceDraw.dispose();
+  });
 
   // The card is ready once the first tunnel has built and painted.
   $effect(() => {
@@ -156,7 +126,7 @@
       frame = requestAnimationFrame(() => {
         announced = true;
         onready();
-        drawNext();
+        nextSequenceDraw.request();
       });
     });
     return () => cancelAnimationFrame(frame);
@@ -186,12 +156,15 @@
   function settle(): void {
     pose = null;
     if (stageHidden) revealWhenReady = true;
-    drawNext();
+    nextSequenceDraw.request();
   }
 
   async function play(run: SceneRun): Promise<void> {
     const box = layout;
     if (!box) return;
+    // Nothing is drawn ahead under reduced motion. Turns that come back
+    // after it ask now, and turn the current sequence if the draw is late.
+    nextSequenceDraw.request();
     const timing = TUNNEL_PREVIEW_TIMING;
     // The tunnel plays a moment before the finger comes in.
     if (!(await run.wait(timing.leadMs))) return;
@@ -204,8 +177,7 @@
     // The stage fades out, and the performer takes its new sequence unseen.
     stageHidden = true;
     if (!(await run.wait(timing.fadeOutMs))) return;
-    sequence = nextTunnelSequence(sequence, fresh);
-    fresh = null;
+    sequence = nextTunnelSequence(sequence, nextSequenceDraw.take());
     step = 1;
     // Let the controller start its rebuild, so the reveal waits for it.
     await tick();

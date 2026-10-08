@@ -21,10 +21,7 @@
   import { onDestroy, untrack } from "svelte";
   import { SvelteSet } from "svelte/reactivity";
   import type { GhostState } from "$lib/shared/attract/services/attract-ghost.svelte";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
   import FontAwesomeIcon from "$lib/shared/foundation/ui/FontAwesomeIcon.svelte";
-  import { runAtBackgroundPriority } from "$lib/shared/foundation/utils/background-scheduling";
-  import { drawMatrixRealization } from "$lib/shared/landing/data/shape-matrix-hero-pool";
   import { DEFAULT_ANIMATION_TIMING } from "$lib/features/create/shared/workspace-panel/sequence-display/domain/models/step-grid-display-models";
   import MethodPreviewFinger from "./MethodPreviewFinger.svelte";
   import MethodPreviewPictograph from "./MethodPreviewPictograph.svelte";
@@ -39,6 +36,7 @@
     rollStep,
     type GenerateRoll,
   } from "./method-preview-generate";
+  import { createNextSequenceDraw } from "./method-preview-next-sequence";
   import {
     placeGhost,
     sceneGhost,
@@ -74,44 +72,15 @@
   const readyCells = new SvelteSet<number>();
   let announced = false;
   /** The next turn's roll, drawn in the background. */
-  let fresh: SequenceData | null = null;
-  let drawing = false;
-  let sourceFailed = false;
-  let disposed = false;
-
-  onDestroy(() => {
-    disposed = true;
+  const nextRollDraw = createNextSequenceDraw({
+    emptyWarning:
+      "[method preview] Generate source returned no sequence; using the demo",
+    errorWarning: "[method preview] Generate could not draw a sequence",
   });
 
-  function drawNextRoll(): void {
-    if (disposed || drawing || fresh || sourceFailed) return;
-    drawing = true;
-    runAtBackgroundPriority(() => {
-      // The scene can be gone by the time the scheduler runs this.
-      if (disposed) return;
-      void drawMatrixRealization()
-        .then((draw) => {
-          if (!draw) {
-            // The pool reports its own load failure as null, so this is
-            // almost always a failed fetch, not an unlucky draw.
-            sourceFailed = true;
-            console.warn(
-              "[method preview] Generate source returned no sequence; using the demo"
-            );
-          } else if (!disposed) fresh = draw.sequence;
-        })
-        .catch((error: unknown) => {
-          sourceFailed = true;
-          console.warn(
-            "[method preview] Generate could not draw a sequence",
-            error
-          );
-        })
-        .finally(() => {
-          drawing = false;
-        });
-    });
-  }
+  onDestroy(() => {
+    nextRollDraw.dispose();
+  });
 
   function handleCellReady(index: number): void {
     readyCells.add(index);
@@ -128,20 +97,23 @@
     announced = true;
     untrack(() => {
       onready();
-      drawNextRoll();
+      nextRollDraw.request();
     });
   });
 
   function settle(): void {
     pose = null;
     phase = "rest";
-    drawNextRoll();
+    nextRollDraw.request();
   }
 
   async function play(run: SceneRun): Promise<void> {
     const box = layout;
     const last = box?.cells[box.cells.length - 1];
     if (!box || !last) return;
+    // Nothing is drawn ahead under reduced motion. Turns that come back
+    // after it ask now, and fall back on the demo if the roll is late.
+    nextRollDraw.request();
     const finger = sceneGhost(run, () => root);
     pose = finger.ghost;
     const start = cellCenter(last);
@@ -150,9 +122,7 @@
     if (!(await tapAt(finger, run, dice.x, dice.y))) return;
     phase = "clearing";
     if (!(await run.wait(GENERATE_CLEAR_MS))) return;
-    const drawn = fresh;
-    fresh = null;
-    roll = nextRoll(roll, drawn, box.cells.length);
+    roll = nextRoll(roll, nextRollDraw.take(), box.cells.length);
     readyCells.clear();
     epoch += 1;
     // A cell still drawing after the wait washes in when it is ready.
