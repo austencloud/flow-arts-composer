@@ -2,7 +2,9 @@ import { describe, expect, it } from "vitest";
 import type { PropState } from "$lib/shared/foundation/domain/types/prop-state";
 import {
   MotionSubSampler,
+  motionBeatSpan,
   motionSubStepCount,
+  motionSubStepCountForBeats,
   pickEvenIndices,
   planMotionSubSteps,
   propPosesMatch,
@@ -45,6 +47,36 @@ describe("motionSubStepCount", () => {
     expect(motionSubStepCount(2)).toBe(64);
     expect(motionSubStepCount(0)).toBe(1);
     expect(motionSubStepCount(Number.NaN)).toBe(1);
+  });
+});
+
+describe("motionSubStepCountForBeats", () => {
+  it("counts 60 Hz slices at 60 BPM with the same cap as the clock count", () => {
+    expect(motionSubStepCountForBeats(0)).toBe(1);
+    expect(motionSubStepCountForBeats(0.5)).toBe(30);
+    expect(motionSubStepCountForBeats(3)).toBe(64);
+    expect(motionSubStepCountForBeats(Number.NaN)).toBe(1);
+  });
+});
+
+describe("motionBeatSpan", () => {
+  it("measures forward motion, both loop kinds and nothing for a scrub back", () => {
+    expect(motionBeatSpan(1, 1.5, TOTAL_BEATS, false, false)).toBeCloseTo(
+      0.5,
+      9
+    );
+    // Seamless: 4.2 → end pose at 5, then 1 → 1.3.
+    expect(motionBeatSpan(4.2, 1.3, TOTAL_BEATS, true, true)).toBeCloseTo(
+      1.1,
+      9
+    );
+    // Non-seamless: the props teleport, only 0 → 0.4 is drawn.
+    expect(motionBeatSpan(4.2, 0.4, TOTAL_BEATS, false, true)).toBeCloseTo(
+      0.4,
+      9
+    );
+    expect(motionBeatSpan(2, 1.5, TOTAL_BEATS, false, false)).toBe(0);
+    expect(motionBeatSpan(2, 2, TOTAL_BEATS, false, false)).toBe(0);
   });
 });
 
@@ -229,6 +261,59 @@ describe("MotionSubSampler", () => {
     expect(samples[0]!.layers[1]!.left).toBeNull();
     expect(samples[0]!.layers[1]!.right).toBeNull();
     expect(sampler.stats.layerGuardRejections).toBe(1);
+  });
+
+  it("sizes the plan by the beats covered when the frame clock is unknown", () => {
+    // Back from a hidden tab: the render loop's clock was reset (dt 0) while
+    // playback advanced half a beat. Without samples the overlay would draw
+    // one straight chord across that half beat.
+    const sampler = new MotionSubSampler();
+    const samples = sampler.plan({
+      source: circleSource(),
+      previousStep: 1,
+      currentStep: 1.5,
+      dtSeconds: 0,
+      isSeamlesslyLoopable: false,
+      loopDetected: false,
+      liveLeft: poseAt(1.5).left,
+      liveRight: poseAt(1.5).right,
+      layerCount: 0,
+      layersAt: null,
+      liveLayers: null,
+      previousTimeMs: 1500,
+      currentTimeMs: 1500,
+    });
+    expect(samples.length).toBe(29);
+    expect(samples[0]!.left.centerPathAngle).toBeCloseTo(1 + 0.5 / 30, 6);
+    expect(samples[28]!.left.centerPathAngle).toBeCloseTo(1.5 - 0.5 / 30, 6);
+    expect(samples[28]!.timeMs).toBe(1500);
+    expect(sampler.stats.framesSampled).toBe(1);
+  });
+
+  it("wraps a seamless loop by its beats when the frame clock is unknown", () => {
+    const sampler = new MotionSubSampler();
+    const samples = sampler.plan({
+      source: circleSource(),
+      previousStep: 4.2,
+      currentStep: 1,
+      dtSeconds: 0,
+      isSeamlesslyLoopable: true,
+      loopDetected: true,
+      liveLeft: poseAt(1).left,
+      liveRight: poseAt(1).right,
+      layerCount: 0,
+      layersAt: null,
+      liveLayers: null,
+      previousTimeMs: 2000,
+      currentTimeMs: 2000,
+    });
+    // 0.8 beats to the end pose and none past it: 48 slices, 47 samples.
+    expect(samples.length).toBe(47);
+    expect(samples[0]!.left.centerPathAngle).toBeCloseTo(4.2 + 0.8 / 48, 6);
+    expect(samples[46]!.left.centerPathAngle).toBeCloseTo(
+      4.2 + (0.8 * 47) / 48,
+      6
+    );
   });
 
   it("returns no samples while paused or at a healthy frame rate", () => {

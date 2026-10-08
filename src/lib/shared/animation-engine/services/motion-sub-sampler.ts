@@ -60,6 +60,45 @@ export function motionSubStepCount(dtSeconds: number): number {
 }
 
 /**
+ * How many 60 Hz slices a span of beats covers at 60 BPM, with the same cap.
+ * Used when the frame clock is unknown: the render loop drops its wall-clock
+ * anchors when it comes back from an activity gate (hidden tab, off-screen
+ * canvas) while playback kept advancing the step, so the beats travelled are
+ * the only measure of how much motion the frame has to fill.
+ */
+export function motionSubStepCountForBeats(beats: number): number {
+  if (!Number.isFinite(beats) || beats <= 0) return 1;
+  return Math.max(
+    1,
+    Math.min(MAX_MOTION_SUB_STEPS, Math.round(beats * MOTION_SAMPLE_HZ))
+  );
+}
+
+/**
+ * Beats the props travelled between two frames, along the path
+ * `planMotionSubSteps` walks: the forward distance; through the end pose and
+ * on from 1 for a seamless loop; from 0 for a non-seamless one; nothing for a
+ * scrub back or a static frame.
+ */
+export function motionBeatSpan(
+  prevStep: number,
+  currentStep: number,
+  totalBeats: number,
+  isSeamlesslyLoopable: boolean,
+  loopDetected: boolean
+): number {
+  if (totalBeats <= 0) return 0;
+  if (loopDetected) {
+    if (isSeamlesslyLoopable) {
+      const end = totalBeats + 1;
+      return Math.max(0, end - prevStep) + Math.max(0, currentStep - 1);
+    }
+    return Math.max(0, currentStep);
+  }
+  return Math.max(0, currentStep - prevStep);
+}
+
+/**
  * Writes the `n - 1` intermediate steps between `prevStep` and `currentStep`
  * into `out`, oldest first, excluding both ends. Returns the count.
  *
@@ -214,6 +253,9 @@ export interface MotionPlanInput {
   source: MotionSampleSource;
   previousStep: number;
   currentStep: number;
+  /** Wall-clock seconds since the previous frame. Zero when the host does
+   *  not know (its clock was just reset); the plan is then sized by the
+   *  beats covered at 60 BPM instead. */
   dtSeconds: number;
   isSeamlesslyLoopable: boolean;
   loopDetected: boolean;
@@ -255,7 +297,18 @@ export class MotionSubSampler {
   /** Fills and returns the samples for this frame; empty when none apply. */
   plan(input: MotionPlanInput): readonly MotionSubSample[] {
     this.view.length = 0;
-    const n = motionSubStepCount(input.dtSeconds);
+    const n =
+      input.dtSeconds > 0
+        ? motionSubStepCount(input.dtSeconds)
+        : motionSubStepCountForBeats(
+            motionBeatSpan(
+              input.previousStep,
+              input.currentStep,
+              input.source.totalBeats,
+              input.isSeamlesslyLoopable,
+              input.loopDetected
+            )
+          );
     const count = planMotionSubSteps(
       input.previousStep,
       input.currentStep,
