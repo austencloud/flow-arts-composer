@@ -21,7 +21,10 @@
   import { toScenePropType } from "../domain/scene-prop-type";
   import { getSceneEnvironmentRendererKey } from "../environments/domain/scene-environment";
   import { getWorkerEnvironmentKey } from "../worker-renderer/domain/worker-viewer-backend";
-  import { getStageCoordinateFrame } from "../environments/domain/stage-coordinate-frame";
+  import {
+    CANONICAL_PERFORMER_ANCHOR_Y,
+    getStageCoordinateFrame,
+  } from "../environments/domain/stage-coordinate-frame";
   import {
     getCanonicalPerformerStageBounds,
     getPerformerStageClearance,
@@ -433,6 +436,8 @@
     }}
     onCameraChange={handleCameraChange}
     onCameraReady={(controller) => {
+      // The welcome shot needs the same rig height as the worker's stage.
+      viewer.setStageGroundOffset(CANONICAL_PERFORMER_ANCHOR_Y);
       const stopOrbitNavigation = configureViewerOrbitNavigation(
         controller.controls
       );
