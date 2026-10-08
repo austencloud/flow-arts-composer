@@ -1,9 +1,17 @@
 import type { CameraStateSnapshot } from "@austencloud/scene-3d";
+import { Plane } from "@austencloud/scene-3d";
+import type { GridJoinSpec } from "@tka/render-core";
 import type { SceneEnvironmentId } from "../environments/domain/scene-environment";
 
 import { GRID_RADIUS_3D } from "../domain/constants/plane-transforms";
 import { getViewerFrontStageCameraZ } from "../domain/viewer-formation-facing";
 import { getBlossomOpeningCamera } from "../environments/scenes/cherry-blossom/blossom-site";
+import { gridJoinOffset3D } from "../services/grid-join-3d";
+import {
+  DEFAULT_PERFORMER_HAND_DISTANCE,
+  fixedHandDistance,
+  type PerformerHandDistance,
+} from "../domain/performer-hand-distance";
 
 const GRID_CENTER_Y = 0;
 const GRID_CENTER_Z = 0.3;
@@ -22,6 +30,31 @@ export interface ViewerCameraFramingOptions {
    * sizes the 3D hand ring to the 2D card's, so a longer reach frames wider.
    */
   handDistance?: number;
+  conjoined?: GridJoinSpec | null;
+  performers?: readonly {
+    position: { x: number; z: number };
+    handDistance?: PerformerHandDistance;
+    conjoined?: GridJoinSpec | null;
+  }[];
+}
+
+export function joinedPerformerExtent(
+  hands: PerformerHandDistance = DEFAULT_PERFORMER_HAND_DISTANCE,
+  conjoined?: GridJoinSpec | null
+): number {
+  const handReach = Math.max(hands.left.max, hands.right.max);
+  if (!conjoined) return handReach;
+  let extent = handReach;
+  for (const plane of [Plane.WALL, Plane.WHEEL, Plane.FLOOR]) {
+    for (const hand of ["left", "right"] as const) {
+      const offset = gridJoinOffset3D(conjoined, hand, plane, hands[hand]);
+      extent = Math.max(
+        extent,
+        Math.hypot(offset.x, offset.y, offset.z) + hands[hand].max
+      );
+    }
+  }
+  return extent;
 }
 
 function isFinitePoint(
@@ -84,23 +117,74 @@ export function isValidViewerCameraPose(
 export function computeViewerAlignedCamera(
   options: ViewerCameraFramingOptions
 ): ViewerCameraFraming {
-  const target = { x: 0, y: GRID_CENTER_Y, z: GRID_CENTER_Z };
-  let fallback = {
-    position: {
-      x: 0,
-      y: 0,
-      z: getViewerFrontStageCameraZ(GRID_CENTER_Z, 2.8, options.environmentId),
-    },
-    target,
-  };
+  const performers = options.performers;
+  const centerX = performers?.length
+    ? performers.reduce((sum, performer) => sum + performer.position.x, 0) /
+      performers.length
+    : 0;
+  const centerZ = performers?.length
+    ? performers.reduce((sum, performer) => sum + performer.position.z, 0) /
+      performers.length
+    : 0;
+  const handDistance = performers?.length
+    ? Math.max(
+        ...performers.map(
+          (performer) =>
+            Math.hypot(
+              performer.position.x - centerX,
+              performer.position.z - centerZ
+            ) +
+            joinedPerformerExtent(performer.handDistance, performer.conjoined)
+        )
+      )
+    : options.conjoined
+      ? joinedPerformerExtent(
+          {
+            left: fixedHandDistance(options.handDistance ?? GRID_RADIUS_3D),
+            right: fixedHandDistance(options.handDistance ?? GRID_RADIUS_3D),
+          },
+          options.conjoined
+        )
+      : (options.handDistance ?? GRID_RADIUS_3D);
+  const target = { x: centerX, y: GRID_CENTER_Y, z: GRID_CENTER_Z + centerZ };
   const ownerDocument =
     options.document === undefined
       ? typeof document === "undefined"
         ? null
         : document
       : options.document;
-  if (options.environmentId === "blossom") {
-    const view = ownerDocument?.defaultView;
+  const view = ownerDocument?.defaultView;
+  const aspect =
+    view && view.innerHeight > 0 ? view.innerWidth / view.innerHeight : 1;
+  const verticalHalfFov = ((options.fov / 2) * Math.PI) / 180;
+  const horizontalHalfFov = Math.atan(
+    Math.tan(verticalHalfFov) * Math.max(0.1, aspect)
+  );
+  const fallbackDistance = Math.max(
+    2.8 * Math.max(1, handDistance / GRID_RADIUS_3D),
+    (handDistance * 1.15) /
+      Math.tan(Math.min(verticalHalfFov, horizontalHalfFov))
+  );
+  let fallback = {
+    position: {
+      x: centerX,
+      y: 0,
+      z: getViewerFrontStageCameraZ(
+        target.z,
+        fallbackDistance,
+        options.environmentId
+      ),
+    },
+    target,
+  };
+  const defaultBlossomFormation =
+    !options.conjoined &&
+    (!performers?.length ||
+      (performers.length === 1 &&
+        performers[0].position.x === 0 &&
+        performers[0].position.z === 0 &&
+        !performers[0].conjoined));
+  if (options.environmentId === "blossom" && defaultBlossomFormation) {
     const camera = getBlossomOpeningCamera(
       Boolean(view && view.innerWidth < view.innerHeight)
     );
@@ -139,11 +223,11 @@ export function computeViewerAlignedCamera(
   if (!Number.isFinite(diameterFraction) || diameterFraction <= 0)
     return fallback;
 
-  const aspect = paneBounds.width / paneBounds.height;
-  const verticalHalfFov = ((options.fov / 2) * Math.PI) / 180;
-  const horizontalHalfFov = Math.atan(Math.tan(verticalHalfFov) * aspect);
-  const visibleWidthAtUnitDistance = 2 * Math.tan(horizontalHalfFov);
-  const handDistance = options.handDistance ?? GRID_RADIUS_3D;
+  const paneAspect = paneBounds.width / paneBounds.height;
+  const paneHorizontalHalfFov = Math.atan(
+    Math.tan(verticalHalfFov) * paneAspect
+  );
+  const visibleWidthAtUnitDistance = 2 * Math.tan(paneHorizontalHalfFov);
   const distance =
     (handDistance * 2) / (diameterFraction * visibleWidthAtUnitDistance);
   const cameraYOffset =
@@ -151,13 +235,9 @@ export function computeViewerAlignedCamera(
 
   return {
     position: {
-      x: 0,
+      x: centerX,
       y: GRID_CENTER_Y + cameraYOffset,
-      z: getViewerFrontStageCameraZ(
-        GRID_CENTER_Z,
-        distance,
-        options.environmentId
-      ),
+      z: getViewerFrontStageCameraZ(target.z, distance, options.environmentId),
     },
     target,
   };

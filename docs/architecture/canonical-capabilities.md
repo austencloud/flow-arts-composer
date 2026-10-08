@@ -163,6 +163,15 @@ to a future junction model. `gridJoinCellResolver` sets every card cell to the
 sequence's join (one-grid cards pass through untouched, keeping their cache
 keys; a stray per-cell join is stripped), `getGridJoinLayout` owns the merged and hidden points and the fit scale,
 and `gridJoinPropNudges` parts two flat props on one line by their beta offset.
+3D playback extends those owners through `shared/3d/services/grid-join-3d.ts`:
+the sequence converter attaches the aligned join to every motion and start
+configuration, and the interpolator and `Grid3D` use the same per-hand center
+offset in the motion plane. `joined-grid-points-3d.ts` reuses the shared point
+plan and tint in card units before drawing in meters. Contact radial movement
+uses each hand's grid center; the shared viewer camera includes joined reach.
+Both viewer renderers consume these authored prop states. Saved scene recipes
+retain `sequenceGridJoin`; `/test/viewer-3d?join=e2` exercises the production
+scene with visible grids (`renderer=worker` hides markers for worker review).
 `PictographPreparer` prepares each hand alone on its grid,
 `render/services/joined-grid-painter.ts` paints the points for
 `Canvas2DDirectRenderer` and the `LayerCompositor` overlay, and

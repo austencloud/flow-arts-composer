@@ -5,6 +5,7 @@
  */
 
 import type { Plane } from "@austencloud/scene-3d";
+import type { GridJoinSpec } from "@tka/render-core";
 import type { GridLocation } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
 import {
   MotionType,
@@ -17,6 +18,10 @@ import {
  * (Full MotionData has many more fields we don't need for the sandbox)
  */
 export interface MotionConfig3D {
+  /** The sequence's aligned joined-grid layout, when each hand has a grid. */
+  gridJoin?: GridJoinSpec;
+  /** Which joined grid carries this motion. */
+  hand?: "left" | "right";
   /** Which plane this motion occurs on */
   plane: Plane;
   /** Starting grid location */

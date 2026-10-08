@@ -9,6 +9,7 @@ import {
 
 import {
   computeViewerAlignedCamera,
+  joinedPerformerExtent,
   isValidViewerCameraPose,
   isValidViewerCameraSnapshot,
 } from "$lib/shared/3d/camera/viewer-camera-framing";
@@ -33,6 +34,50 @@ function rect(
 }
 
 describe("viewer camera framing", () => {
+  it("fits the joined reach and all performers in both opening camera paths", () => {
+    const single = joinedPerformerExtent();
+    const joined = joinedPerformerExtent(undefined, { toward: "e", steps: 2 });
+    expect(joined).toBeGreaterThan(single);
+
+    const base = computeViewerAlignedCamera({
+      environmentId: BackgroundType.OCEAN,
+      fov: 50,
+      document: null,
+    });
+    const group = computeViewerAlignedCamera({
+      environmentId: BackgroundType.OCEAN,
+      fov: 50,
+      document: null,
+      performers: [
+        { position: { x: -1, z: 0 }, conjoined: { toward: "e", steps: 2 } },
+        { position: { x: 2, z: 0 } },
+      ],
+    });
+    expect(group.target.x).toBe(0.5);
+    expect(group.position.x).toBe(0.5);
+    expect(group.position.z - group.target.z).toBeGreaterThan(
+      base.position.z - base.target.z
+    );
+  });
+
+  it("moves back for a joined grid on a narrow portrait viewport", () => {
+    document.body.innerHTML = "";
+    vi.stubGlobal("innerWidth", 240);
+    vi.stubGlobal("innerHeight", 960);
+    const camera = computeViewerAlignedCamera({
+      environmentId: BackgroundType.OCEAN,
+      fov: 50,
+      document,
+      conjoined: { toward: "e", steps: 2 },
+    });
+    const halfHorizontalFov = Math.atan(Math.tan((50 * Math.PI) / 360) * 0.25);
+    const visibleHalfWidth =
+      (camera.position.z - camera.target.z) * Math.tan(halfHorizontalFov);
+    expect(visibleHalfWidth).toBeGreaterThanOrEqual(
+      joinedPerformerExtent(undefined, { toward: "e", steps: 2 })
+    );
+    vi.unstubAllGlobals();
+  });
   it("opens Blossom on the garden approach and widens its portrait composition", () => {
     const desktop = computeViewerAlignedCamera({
       environmentId: "blossom",
@@ -41,6 +86,13 @@ describe("viewer camera framing", () => {
     });
     expect(desktop.position.z).toBe(-24);
     expect(desktop.target.z).toBe(7);
+    const withPerformer = computeViewerAlignedCamera({
+      environmentId: "blossom",
+      fov: 48,
+      document: null,
+      performers: [{ position: { x: 0, z: 0 } }],
+    });
+    expect(withPerformer).toEqual(desktop);
     expect(getViewerFrontStageFacingAngle("blossom")).toBe(Math.PI);
     expect(getViewerFrontStageCameraZ(0, 3, "blossom")).toBe(-3);
     document.body.innerHTML = "";
