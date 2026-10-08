@@ -278,6 +278,7 @@ export class FrameParameterBuilder {
     if (!this.sequenceHasLeftMotion) fp.props.leftProp = null;
     if (!this.sequenceHasRightMotion) fp.props.rightProp = null;
     fp.props.additionalLayers = props.additionalLayers ?? [];
+    fp.additionalLayersAt = props.additionalLayersAt;
     fp.props.leftPropDimensions = state.leftPropDimensions;
     fp.props.rightPropDimensions = state.rightPropDimensions;
     fp.props.tunnelSpectrum = props.tunnelSpectrum ?? true;
