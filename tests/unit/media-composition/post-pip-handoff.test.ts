@@ -6,7 +6,7 @@ import {
   type PostVideoItem,
 } from "$lib/shared/media-composition/domain/post-project";
 import { compilePostProject } from "$lib/shared/media-composition/domain/post-project-compiler";
-import { takeRole } from "$lib/shared/media-composition/domain/post-plan-compiler";
+import { takeRole } from "@austencloud/video-editor/core";
 import {
   pipHandoffLanding,
   pipHandoffOf,

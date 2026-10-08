@@ -1,26 +1,26 @@
-import type { MediaSourceKind } from "$lib/shared/media-composition/domain/media-source-schema";
-import type { MediaCompositionPreset } from "$lib/shared/media-composition/domain/media-composition-preset-schema";
 import type {
+  MediaSourceKind,
+  MediaCompositionPreset,
   ClipTransform,
   LayoutRegion,
-} from "$lib/shared/media-composition/domain/media-layout-schema";
+  SequenceTimeMap,
+} from "@austencloud/video-editor/core";
 import {
   evaluatePresetFrame,
   evaluateRegionRects,
   resolvePresetTimePoint,
 } from "$lib/shared/media-composition/services/frame-evaluator";
-import type { SequenceTimeMap } from "$lib/shared/media-composition/domain/sequence-time-map";
 import type { PostStudioLayerPainter } from "$lib/shared/media-composition/services/post-studio-layer-painter";
 import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import { MediaCompositionPresetSchema } from "$lib/shared/media-composition/domain/media-composition-preset-schema";
-import { clampTempoBpm } from "$lib/shared/animation-engine/domain/tempo-behavior";
-import { getStepDuration } from "$lib/shared/animation-engine/timeline/services/step-grid-calculator";
 import {
+  MediaCompositionPresetSchema,
   BREAKDOWN_MARKER,
   POST_STUDIO_SOURCES,
   type PostStudioRenderMode,
   type PostStudioRoleKey,
-} from "$lib/shared/media-composition/domain/post-studio-presets";
+} from "@austencloud/video-editor/core";
+import { clampTempoBpm } from "$lib/shared/animation-engine/domain/tempo-behavior";
+import { getStepDuration } from "$lib/shared/animation-engine/timeline/services/step-grid-calculator";
 import {
   normalizePresetToSlots,
   slotIsOccupied,

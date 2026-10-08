@@ -4,7 +4,7 @@ import type {
   IPreviewVideoCache,
   PreviewVideoHandle,
 } from "../services/contracts/IPreviewVideoCache";
-import type { PreviewVideoState } from "../domain/preview-video";
+import type { PreviewVideoState } from "@austencloud/video-editor/core";
 
 interface PreviewSource {
   id: string;

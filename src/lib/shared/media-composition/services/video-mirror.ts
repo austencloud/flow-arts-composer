@@ -1,5 +1,5 @@
 import type { Attachment } from "svelte/attachments";
-import type { LayoutRegion } from "$lib/shared/media-composition/domain/media-layout-schema";
+import type { LayoutRegion } from "@austencloud/video-editor/core";
 import { calculateMediaFit } from "$lib/shared/media-composition/services/media-fit";
 
 /**

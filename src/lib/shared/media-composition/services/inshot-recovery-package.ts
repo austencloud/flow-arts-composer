@@ -1,5 +1,8 @@
 import { z } from "zod";
-import { PostTakeRefSchema, type PostTakeRef } from "../domain/post-plan";
+import {
+  PostTakeRefSchema,
+  type PostTakeRef,
+} from "@austencloud/video-editor/core";
 import { importRecoveredInShotDraft } from "../domain/post-inshot-import";
 import type { PostProject } from "../domain/post-project";
 

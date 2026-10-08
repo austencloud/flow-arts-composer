@@ -28,12 +28,11 @@ import {
 } from "../domain/constants/database_constants";
 import type { UserProject } from "../domain/models/user-project";
 import type { UserWorkData } from "../domain/models/user-work-data";
-import type { MediaCompositionPreset } from "$lib/shared/media-composition/domain/media-composition-preset-schema";
+import type { MediaCompositionPreset } from "@austencloud/video-editor/core";
 import type {
   MessageDraftRecord,
   MessageOutboxRecord,
 } from "$lib/shared/inbox/domain/message-delivery-models";
-
 
 /**
  * TKA Database Class
@@ -91,13 +90,11 @@ export class TKADatabase extends Dexie {
   }
 }
 
-
 /**
  * Single database instance for your entire app
  * Import this wherever you need database access
  */
 export const db = new TKADatabase();
-
 
 /**
  * Initialize database - call this when your app starts

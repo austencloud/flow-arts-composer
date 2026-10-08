@@ -7,7 +7,7 @@ import {
   previewVideoCacheKey,
   previewVideoDimensions,
   type PreviewVideoCopy,
-} from "../../src/lib/shared/media-composition/domain/preview-video";
+} from "@austencloud/video-editor/core";
 
 function copy(): PreviewVideoCopy {
   return {

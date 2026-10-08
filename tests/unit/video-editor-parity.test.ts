@@ -14,8 +14,7 @@ import {
   textRole,
   type CompiledPostProject,
 } from "$lib/shared/media-composition/domain/post-project-compiler";
-import { POST_STUDIO_ROLE } from "$lib/shared/media-composition/domain/post-studio-presets";
-import { takeRole } from "$lib/shared/media-composition/domain/post-plan-compiler";
+import { POST_STUDIO_ROLE, takeRole } from "@austencloud/video-editor/core";
 import {
   resolveTakeTiming,
   takeSampleAt,

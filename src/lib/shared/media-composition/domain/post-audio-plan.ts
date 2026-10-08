@@ -1,4 +1,4 @@
-import type { CompiledPost } from "$lib/shared/media-composition/domain/post-plan-compiler";
+import type { CompiledPost } from "@austencloud/video-editor/core";
 import type { CompiledPostProject } from "$lib/shared/media-composition/domain/post-project-compiler";
 import type { PostMusic } from "$lib/shared/media-composition/domain/post-music";
 

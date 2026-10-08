@@ -2,7 +2,7 @@ import { auth } from "$lib/shared/auth/firebase";
 import {
   MediaCompositionPresetSchema,
   type MediaCompositionPreset,
-} from "$lib/shared/media-composition/domain/media-composition-preset-schema";
+} from "@austencloud/video-editor/core";
 import { db } from "$lib/shared/persistence/database/tka-database";
 import {
   firestoreDelete,

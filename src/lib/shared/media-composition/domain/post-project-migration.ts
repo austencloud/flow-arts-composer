@@ -11,10 +11,7 @@ import {
   type PostProject,
   type PostTrack,
 } from "$lib/shared/media-composition/domain/post-project";
-import {
-  POST_ACT,
-  type PostPlan,
-} from "$lib/shared/media-composition/domain/post-plan";
+import { POST_ACT, type PostPlan } from "@austencloud/video-editor/core";
 
 /**
  * Converts a v1 act plan into a v2 project: every enabled act becomes a main
@@ -141,7 +138,9 @@ export function migratePostPlan(
           id: nextId("moves"),
           start: 0,
           duration: 1,
-          box: { ...(act.carousel ? POST_BOX.stripSquare : POST_BOX.stripWide) },
+          box: {
+            ...(act.carousel ? POST_BOX.stripSquare : POST_BOX.stripWide),
+          },
           opacity: 1,
           fadeIn,
           fadeOut: 0,
@@ -157,7 +156,9 @@ export function migratePostPlan(
           start: 0,
           duration: 1,
           box: {
-            ...(act.strip !== "off" ? POST_BOX.stripCarousel : POST_BOX.stripWide),
+            ...(act.strip !== "off"
+              ? POST_BOX.stripCarousel
+              : POST_BOX.stripWide),
           },
           opacity: 1,
           fadeIn,
@@ -226,5 +227,7 @@ const V1_DEFAULT_ACT_LABELS: Readonly<Record<string, string>> = {
 };
 
 function keptLabel(act: { id: string; label: string }): { label?: string } {
-  return V1_DEFAULT_ACT_LABELS[act.id] === act.label ? {} : { label: act.label };
+  return V1_DEFAULT_ACT_LABELS[act.id] === act.label
+    ? {}
+    : { label: act.label };
 }

@@ -1,11 +1,8 @@
 import { z } from "zod";
-import { SequenceTimeMapSchema } from "$lib/shared/media-composition/domain/sequence-time-map";
-import type { SequenceRevisionRefSchema } from "$lib/shared/media-composition/domain/sequence-time-map";
 import {
+  SequenceTimeMapSchema,
   MediaSourceSchema,
   type MediaSource,
-} from "$lib/shared/media-composition/domain/media-source-schema";
-import {
   AudioMixSchema,
   DurationPolicySchema,
   LayoutRegionSchema,
@@ -13,7 +10,8 @@ import {
   MediaTransitionSchema,
   OutputFormatSchema,
   PublishTargetOverridesSchema,
-} from "$lib/shared/media-composition/domain/media-layout-schema";
+} from "@austencloud/video-editor/core";
+import type { SequenceRevisionRefSchema } from "@austencloud/video-editor/core";
 
 const NonEmptyIdSchema = z.string().trim().min(1);
 const TimestampSchema = z.number().finite().int().nonnegative();

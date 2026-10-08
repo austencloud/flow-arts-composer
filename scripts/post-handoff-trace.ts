@@ -19,7 +19,7 @@ import {
 } from "$lib/shared/media-composition/domain/post-project";
 import { normalizeProject } from "$lib/shared/media-composition/domain/post-project-normalize";
 import { compilePostProject } from "$lib/shared/media-composition/domain/post-project-compiler";
-import { takeRole } from "$lib/shared/media-composition/domain/post-plan-compiler";
+import { takeRole } from "@austencloud/video-editor/core";
 import {
   PIP_HANDOFF_MAX_CLOCK_SECONDS,
   pipHandoffOf,

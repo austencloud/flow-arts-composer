@@ -71,7 +71,7 @@ import {
   shiftKeyframes,
   writeChannelValue,
 } from "$lib/shared/media-composition/domain/post-project-keyframes";
-import type { PostTake } from "$lib/shared/media-composition/domain/post-plan";
+import type { PostTake } from "@austencloud/video-editor/core";
 import {
   resolveTakeTiming,
   shiftTakeTiming,
@@ -84,7 +84,7 @@ import {
   DEFAULT_TUNNEL_HOOK_SECONDS,
   type TunnelBackdropFrame,
   type TunnelHook,
-} from "$lib/shared/media-composition/domain/tunnel-hook";
+} from "@austencloud/video-editor/core";
 import { openingTitlesSpan } from "$lib/shared/media-composition/domain/tunnel-titles";
 
 /**
@@ -572,13 +572,13 @@ export function lineUpTunnelHook(
     atIntroEnd
   );
   const before = main.filter(
-    (item) => item.id !== video.id && item.start < video.start - POST_TIME_EPSILON
+    (item) =>
+      item.id !== video.id && item.start < video.start - POST_TIME_EPSILON
   );
   const clear = before.every(
     (item) => itemEnd(item) <= hook.start + POST_TIME_EPSILON
   );
-  const introFor = (cue: number) =>
-    seconds + (cue - atIntroEnd) / video.speed;
+  const introFor = (cue: number) => seconds + (cue - atIntroEnd) / video.speed;
   const fits = (cue: number | null): cue is number => {
     if (cue === null || !clear) return false;
     const intro = introFor(cue);
@@ -661,7 +661,10 @@ function withoutTunnelBackdrop(
             duration: videoPostSeconds({ ...video, sourceIn }),
           };
         }
-        if (item.anchor?.itemId !== video.id || (item.fill && item.id === hook.id))
+        if (
+          item.anchor?.itemId !== video.id ||
+          (item.fill && item.id === hook.id)
+        )
           return item;
         return {
           ...item,

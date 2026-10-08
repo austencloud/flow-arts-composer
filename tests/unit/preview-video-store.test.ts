@@ -6,18 +6,13 @@ import { PreviewVideoLocalStore } from "../../src/lib/shared/media-composition/s
 import {
   previewVideoCacheKey,
   type PreviewVideoCopy,
-} from "../../src/lib/shared/media-composition/domain/preview-video";
+} from "@austencloud/video-editor/core";
 
-vi.mock(
-  "../../src/lib/shared/media-composition/domain/preview-video",
-  async (importOriginal) => ({
-    ...(await importOriginal<
-      typeof import("../../src/lib/shared/media-composition/domain/preview-video")
-    >()),
-    MAX_PREVIEW_CACHE_BYTES: 20,
-    MAX_PREVIEW_VIDEO_BYTES: 8,
-  })
-);
+vi.mock("@austencloud/video-editor/core", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@austencloud/video-editor/core")>()),
+  MAX_PREVIEW_CACHE_BYTES: 20,
+  MAX_PREVIEW_VIDEO_BYTES: 8,
+}));
 
 /** A key made under the current policy, as the cache makes them. */
 const key = (name: string) => previewVideoCacheKey(`/${name}.mp4`, name);

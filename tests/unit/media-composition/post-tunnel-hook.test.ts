@@ -14,8 +14,8 @@ import {
 } from "$lib/shared/media-composition/domain/post-project-edits";
 import { normalizeProject as finishProject } from "$lib/shared/media-composition/domain/post-project-normalize";
 import { compilePostProject } from "$lib/shared/media-composition/domain/post-project-compiler";
-import { takeRole } from "$lib/shared/media-composition/domain/post-plan-compiler";
 import {
+  takeRole,
   MOVE_EASING,
   tunnelHookArrival,
   TUNNEL_HOOK_BACKDROP_OPACITY,
@@ -23,7 +23,7 @@ import {
   tunnelHookChromeOpacity,
   tunnelHookCopyOpacity,
   tunnelHookPanelOpacity,
-} from "$lib/shared/media-composition/domain/tunnel-hook";
+} from "@austencloud/video-editor/core";
 import {
   createTakeTiming,
   resolveTakeTiming,

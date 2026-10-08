@@ -29,7 +29,7 @@ import {
   editCopyPaths,
   previewVideoDimensions,
   type EditCopyManifest,
-} from "$lib/shared/media-composition/domain/preview-video";
+} from "@austencloud/video-editor/core";
 
 const args = process.argv.slice(2);
 const option = (name: string) => {

@@ -6,7 +6,7 @@ import {
   type PostClipEdge,
   type PostEdgeColor,
 } from "$lib/shared/media-composition/domain/post-project";
-import type { RegionEdge } from "$lib/shared/media-composition/domain/media-layout-schema";
+import type { RegionEdge } from "@austencloud/video-editor/core";
 
 /**
  * A clip's edges: rounded corners, a border and a drop shadow. A clip with

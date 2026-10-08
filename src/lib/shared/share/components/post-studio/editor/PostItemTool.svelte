@@ -105,11 +105,9 @@
   import {
     TUNNEL_BACKDROP_MAX_ZOOM,
     type TunnelBackdropFrame,
-  } from "$lib/shared/media-composition/domain/tunnel-hook";
-  import {
     autoGradeVideo,
     type PostVideoColorGrade,
-  } from "$lib/shared/media-composition/domain/post-video-color-grade";
+  } from "@austencloud/video-editor/core";
 
   /**
    * The body of one tool for the selected item. An amount is a slider, a

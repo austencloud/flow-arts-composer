@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { takeFileKey } from "$lib/shared/media-composition/domain/post-plan";
+import { takeFileKey } from "@austencloud/video-editor/core";
 import {
   PostProjectSchema,
   type PostProject,

@@ -5,7 +5,7 @@ import {
   MAX_PREVIEW_VIDEO_BYTES,
   PREVIEW_VIDEO_POLICY,
   type PreviewVideoCopy,
-} from "../domain/preview-video";
+} from "@austencloud/video-editor/core";
 
 /** Copies made under an older policy are never read again. */
 function stale(key: string): boolean {

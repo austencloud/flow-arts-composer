@@ -1,4 +1,4 @@
-import type { CompiledCaption } from "$lib/shared/media-composition/domain/post-plan-compiler";
+import type { CompiledCaption } from "@austencloud/video-editor/core";
 import {
   CAPTION_FADE_SECONDS,
   CAPTION_LINE_HEIGHT_FRACTION,
@@ -11,7 +11,7 @@ import {
   captionFontString,
   captionLineYPositions,
   wrapCaptionText,
-} from "$lib/shared/media-composition/domain/caption-layout";
+} from "@austencloud/video-editor/core";
 import type {
   PaintFrame,
   PaintRect,

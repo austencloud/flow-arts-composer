@@ -29,12 +29,10 @@ import { isFeatureVideoMediaUrl } from "$lib/shared/media-composition/domain/fea
 import {
   PostTakeSchema,
   takeFileKey,
-} from "$lib/shared/media-composition/domain/post-plan";
-import { EASING_PRESETS } from "$lib/shared/media-composition/domain/post-project-keyframes";
-import {
   TunnelHookSchema,
   type TunnelHook,
-} from "$lib/shared/media-composition/domain/tunnel-hook";
+} from "@austencloud/video-editor/core";
+import { EASING_PRESETS } from "$lib/shared/media-composition/domain/post-project-keyframes";
 import {
   resolvePostTime,
   resolveTrackTime,

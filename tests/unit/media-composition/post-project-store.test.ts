@@ -8,7 +8,7 @@ import { savePostPlan } from "$lib/shared/media-composition/services/post-plan-s
 import { migratePostPlan } from "$lib/shared/media-composition/domain/post-project-migration";
 import { createEmptyPostProject } from "$lib/shared/media-composition/domain/post-project";
 import { normalizeProject } from "$lib/shared/media-composition/domain/post-project-normalize";
-import { createDefaultPostPlan } from "$lib/shared/media-composition/domain/post-plan";
+import { createDefaultPostPlan } from "@austencloud/video-editor/core";
 import {
   DEFAULT_TRAIL_SETTINGS,
   TrailMode,

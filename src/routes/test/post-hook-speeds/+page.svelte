@@ -18,7 +18,7 @@
   import {
     DEFAULT_TUNNEL_HOOK,
     tunnelHookArrival,
-  } from "$lib/shared/media-composition/domain/tunnel-hook";
+  } from "@austencloud/video-editor/core";
   import {
     sampleEasing,
     type PostEasingPresetId,

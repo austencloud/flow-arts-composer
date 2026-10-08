@@ -3,7 +3,7 @@ import { findEditCopy } from "../../../src/lib/shared/media-composition/services
 import {
   PREVIEW_VIDEO_POLICY,
   editCopyPaths,
-} from "../../../src/lib/shared/media-composition/domain/preview-video";
+} from "@austencloud/video-editor/core";
 
 const manifest = {
   policy: PREVIEW_VIDEO_POLICY,

@@ -1,15 +1,15 @@
 import { describe, expect, it } from "vitest";
-import { POST_STUDIO_PRESETS } from "$lib/shared/media-composition/domain/post-studio-presets";
+import { POST_STUDIO_PRESETS } from "@austencloud/video-editor/core";
 import {
   evaluatePresetFrame,
   evaluatePresetLayers,
 } from "$lib/shared/media-composition/services/frame-evaluator";
-import type { SequenceTimeMap } from "$lib/shared/media-composition/domain/sequence-time-map";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
 import type {
+  SequenceTimeMap,
   PresetEasing,
   PresetVisualClipMotion,
-} from "$lib/shared/media-composition/domain/media-composition-preset-schema";
+} from "@austencloud/video-editor/core";
+import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
 import {
   POST_MAX_ZOOM,
   POST_MIN_BOX_SIZE,

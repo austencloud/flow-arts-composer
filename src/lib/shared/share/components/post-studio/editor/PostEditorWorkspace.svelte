@@ -19,15 +19,15 @@
     DEFAULT_HAND_LABELING,
     type HandLabeling,
   } from "$lib/shared/video-collaboration/domain/hand-labeling";
-  import { POST_STUDIO_ROLE } from "$lib/shared/media-composition/domain/post-studio-presets";
   import {
+    POST_STUDIO_ROLE,
     ANIMATION_OVERLAY_ROLE,
     stripModeFromRole,
     stripRole,
     takeIdFromRole,
     takeRole,
-  } from "$lib/shared/media-composition/domain/post-plan-compiler";
-  import { takeFileKey } from "$lib/shared/media-composition/domain/post-plan";
+    takeFileKey,
+  } from "@austencloud/video-editor/core";
   import {
     itemIdFromMovesAnimationRole,
     itemIdFromStaffEffectRole,

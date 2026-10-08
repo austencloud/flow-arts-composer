@@ -1,8 +1,8 @@
 import { t } from "$lib/shared/i18n/i18n.svelte.js";
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
 import type { StepMap } from "$lib/shared/video-collaboration/domain/collaborative-video";
-import type { PostTake } from "$lib/shared/media-composition/domain/post-plan";
-import { takeRole } from "$lib/shared/media-composition/domain/post-plan-compiler";
+import type { PostTake } from "@austencloud/video-editor/core";
+import { takeRole } from "@austencloud/video-editor/core";
 import { takeDisplayLabel } from "$lib/shared/media-composition/domain/post-take-labels";
 import {
   POST_FRAME_RATE,

@@ -1,7 +1,7 @@
 import type {
   PreviewVideoCopy,
   PreviewVideoState,
-} from "../../domain/preview-video";
+} from "@austencloud/video-editor/core";
 
 export interface PreviewVideoHandle {
   getState(): PreviewVideoState;

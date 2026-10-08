@@ -1,8 +1,8 @@
 import type {
   MediaCompositionPreset,
   PresetSourceGeometry,
-} from "$lib/shared/media-composition/domain/media-composition-preset-schema";
-import type { LayoutRegion } from "$lib/shared/media-composition/domain/media-layout-schema";
+  LayoutRegion,
+} from "@austencloud/video-editor/core";
 import {
   fadeBlackOpacityAt,
   regionRectIsOnFrame,
@@ -30,10 +30,12 @@ import {
   turnAboutCentre,
 } from "$lib/shared/media-composition/services/region-edge-painter";
 import { traceRoundedRect } from "$lib/shared/render/utils/trace-rounded-rect";
-import { videoColorFilter } from "$lib/shared/media-composition/domain/post-video-color-grade";
+import {
+  videoColorFilter,
+  tunnelHookPanelOpacity,
+} from "@austencloud/video-editor/core";
 import type { PostStudioExportVideoFrames } from "$lib/shared/media-composition/services/post-studio-export-video-frames";
 import { POST_STUDIO_DOM_CAPTURE_OPTIONS } from "$lib/shared/media-composition/services/post-studio-dom-capture";
-import { tunnelHookPanelOpacity } from "$lib/shared/media-composition/domain/tunnel-hook";
 import { sampleEasing } from "$lib/shared/media-composition/domain/post-project-keyframes";
 import type { PostStudioPictographCapture } from "$lib/shared/media-composition/services/post-studio-pictograph-capture";
 

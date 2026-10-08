@@ -3,6 +3,9 @@
   "compilerOptions": {
     "baseUrl": "..",
     "paths": {
+      // Step 4 of the video editor extraction removes these two with the svelte.config.js aliases.
+      "@austencloud/video-editor/*": ["E:/worktrees/shared-packages/video-editor/packages/video-editor/dist/*"],
+      "@austencloud/video-editor": ["E:/worktrees/shared-packages/video-editor/packages/video-editor/dist"],
       "$lib/*": ["src/lib/*"],
       "$lib": ["src/lib"],
       "$app/*": ["scripts/mocks/$app/*"],

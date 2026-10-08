@@ -24,7 +24,7 @@ import {
   MOVE_END_SHARE,
   MOVE_START_SHARE,
   type TunnelHook,
-} from "$lib/shared/media-composition/domain/tunnel-hook";
+} from "@austencloud/video-editor/core";
 import {
   OPENING_TITLES_SHARE,
   titlesPlanOf,

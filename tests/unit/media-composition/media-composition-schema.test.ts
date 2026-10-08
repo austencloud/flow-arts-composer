@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { MediaCompositionProjectSchema } from "$lib/shared/media-composition/domain/media-composition-schema";
-import { MediaCompositionPresetSchema } from "$lib/shared/media-composition/domain/media-composition-preset-schema";
+import { MediaCompositionPresetSchema } from "@austencloud/video-editor/core";
 
 const sequenceRef = {
   sequenceId: "sequence-a",

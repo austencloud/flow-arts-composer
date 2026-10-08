@@ -13,7 +13,7 @@ import {
   MOVE_EASING,
   MOVE_END_SHARE,
   MOVE_START_SHARE,
-} from "$lib/shared/media-composition/domain/tunnel-hook";
+} from "@austencloud/video-editor/core";
 
 /**
  * The opening tunnel's move from full frame into the animation's box, and the

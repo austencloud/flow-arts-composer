@@ -1,7 +1,7 @@
 import {
   PREVIEW_STALL_MS,
   type PreviewVideoCopy,
-} from "../domain/preview-video";
+} from "@austencloud/video-editor/core";
 
 type PreviewWorkerMessage =
   | { type: "progress"; progress: number }

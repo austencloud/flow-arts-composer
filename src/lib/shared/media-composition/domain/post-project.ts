@@ -4,10 +4,10 @@ import { PROP_LOOKS } from "$lib/shared/pictograph/prop/domain/prop-look";
 import {
   PostTakeRefSchema,
   PostTakeSchema,
-} from "$lib/shared/media-composition/domain/post-plan";
-import { BREAKDOWN_GEOMETRY } from "$lib/shared/media-composition/domain/post-studio-presets";
+  BREAKDOWN_GEOMETRY,
+  TunnelHookSchema,
+} from "@austencloud/video-editor/core";
 import { TakeTimingSchema } from "$lib/shared/media-composition/domain/take-timing";
-import { TunnelHookSchema } from "$lib/shared/media-composition/domain/tunnel-hook";
 import { PostMusicSchema } from "$lib/shared/media-composition/domain/post-music";
 import type { EffectsConfig } from "$lib/shared/effects/domain/effects-config";
 import {

@@ -14,7 +14,7 @@ import {
   PREVIEW_KEY_FRAME_SECONDS,
   PREVIEW_VIDEO_BITRATE,
   previewVideoDimensions,
-} from "../domain/preview-video";
+} from "@austencloud/video-editor/core";
 
 self.onmessage = async (event: MessageEvent<{ sourceUrl: string }>) => {
   let input: Input | undefined;

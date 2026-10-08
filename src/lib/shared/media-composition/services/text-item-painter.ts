@@ -8,7 +8,7 @@ import {
   captionFontString,
   captionLineYPositions,
   wrapCaptionText,
-} from "$lib/shared/media-composition/domain/caption-layout";
+} from "@austencloud/video-editor/core";
 import type {
   PaintFrame,
   PaintInsets,

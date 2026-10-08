@@ -1,7 +1,7 @@
 <script lang="ts">
   import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
   import ValueSlider from "$lib/shared/ui/components/ValueSlider.svelte";
-  import type { PostVideoColorGrade } from "$lib/shared/media-composition/domain/post-video-color-grade";
+  import type { PostVideoColorGrade } from "@austencloud/video-editor/core";
 
   interface Props {
     grade?: PostVideoColorGrade;

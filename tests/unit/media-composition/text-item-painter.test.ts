@@ -5,7 +5,7 @@ import { TEXT_BOX_WIDTH } from "$lib/shared/media-composition/domain/post-projec
 import {
   CAPTION_LINE_HEIGHT_FRACTION,
   CAPTION_SIZE_FRACTION,
-} from "$lib/shared/media-composition/domain/caption-layout";
+} from "@austencloud/video-editor/core";
 import type {
   PaintFrame,
   PaintRect,

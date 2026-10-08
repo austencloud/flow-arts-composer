@@ -20,7 +20,7 @@ import {
   postSecondsOfKeyframe,
   sameChannelValue,
 } from "$lib/shared/media-composition/domain/post-project-keyframes";
-import type { PostTake } from "$lib/shared/media-composition/domain/post-plan";
+import type { PostTake } from "@austencloud/video-editor/core";
 import { withMotionKeys } from "$lib/shared/media-composition/domain/post-project-motion-keys";
 import {
   mergeSeparateTunnelHook,

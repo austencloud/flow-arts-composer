@@ -3,7 +3,7 @@
   import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
   import type { SequenceExportOptions } from "$lib/shared/render/domain/models/sequence-export-options";
   import type { ResolvedAutoLayout } from "$lib/shared/render/services/container-aware-layout";
-  import type { SequenceTimeMap } from "$lib/shared/media-composition/domain/sequence-time-map";
+  import type { SequenceTimeMap } from "@austencloud/video-editor/core";
   import type { PostProject } from "$lib/shared/media-composition/domain/post-project";
   import type { FeatureVideoSync } from "$lib/shared/media-composition/services/feature-video-client";
   import {

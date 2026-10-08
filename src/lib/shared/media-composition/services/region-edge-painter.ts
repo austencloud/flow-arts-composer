@@ -1,4 +1,4 @@
-import type { RegionEdge } from "$lib/shared/media-composition/domain/media-layout-schema";
+import type { RegionEdge } from "@austencloud/video-editor/core";
 import type { PixelRect } from "$lib/shared/media-composition/services/media-fit";
 import { traceRoundedRect } from "$lib/shared/render/utils/trace-rounded-rect";
 

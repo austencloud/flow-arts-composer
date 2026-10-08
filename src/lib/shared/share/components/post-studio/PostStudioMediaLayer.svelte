@@ -1,6 +1,9 @@
 <script lang="ts">
   import type { CompositionSourceBinding } from "$lib/shared/media-composition/state/media-composition-state.svelte";
-  import type { LayoutRegion } from "$lib/shared/media-composition/domain/media-layout-schema";
+  import type {
+    LayoutRegion,
+    TunnelHook,
+  } from "@austencloud/video-editor/core";
   import type { EvaluatedFrameLayer } from "$lib/shared/media-composition/services/frame-evaluator";
   import { tryGetMediaCompositionContext } from "$lib/shared/media-composition/state/media-composition-context";
   import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
@@ -13,7 +16,6 @@
     qrImageForAppearance,
     type PostQrAppearance,
   } from "./post-qr-image-appearance";
-  import type { TunnelHook } from "$lib/shared/media-composition/domain/tunnel-hook";
   import PostStudioSequenceAnimationLayer from "./PostStudioSequenceAnimationLayer.svelte";
   import PostStudioChoreoLayer from "./PostStudioChoreoLayer.svelte";
   import PostStudioTunnelLayer from "./PostStudioTunnelLayer.svelte";
@@ -36,7 +38,7 @@
   import {
     videoColorFilter,
     type PostVideoColorGrade,
-  } from "$lib/shared/media-composition/domain/post-video-color-grade";
+  } from "@austencloud/video-editor/core";
 
   interface Props {
     binding: CompositionSourceBinding;

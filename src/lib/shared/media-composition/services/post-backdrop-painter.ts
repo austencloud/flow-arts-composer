@@ -1,5 +1,7 @@
-import type { MediaCompositionPreset } from "$lib/shared/media-composition/domain/media-composition-preset-schema";
-import type { ClipTransform } from "$lib/shared/media-composition/domain/media-layout-schema";
+import type {
+  MediaCompositionPreset,
+  ClipTransform,
+} from "@austencloud/video-editor/core";
 import type { EvaluatedFrameLayer } from "$lib/shared/media-composition/services/frame-evaluator";
 import { turnedExtent } from "$lib/shared/media-composition/services/media-fit";
 

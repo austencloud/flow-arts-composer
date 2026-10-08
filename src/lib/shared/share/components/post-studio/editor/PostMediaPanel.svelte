@@ -1,6 +1,6 @@
 <script lang="ts">
   import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import type { PostTake } from "$lib/shared/media-composition/domain/post-plan";
+  import type { PostTake } from "@austencloud/video-editor/core";
   import type {
     CatalogTakeSource,
     PostEditorState,

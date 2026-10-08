@@ -8,8 +8,9 @@ import type {
   PresetTimeRef,
   PresetSourceGeometry,
   RegionKeyframe,
-} from "$lib/shared/media-composition/domain/media-composition-preset-schema";
-import type { ClipTransform } from "$lib/shared/media-composition/domain/media-layout-schema";
+  ClipTransform,
+  SequenceTimeMap,
+} from "@austencloud/video-editor/core";
 import {
   clampBox,
   clampFraming,
@@ -19,7 +20,9 @@ import {
   tunnelHookArrival,
   tunnelHookBackdropOpacity,
   type TunnelHook,
-} from "$lib/shared/media-composition/domain/tunnel-hook";
+  mediaTimeToSequencePosition,
+  sequenceTimeMapConvention,
+} from "@austencloud/video-editor/core";
 import { itemIdFromTitlesRole } from "$lib/shared/media-composition/domain/tunnel-titles";
 import {
   PIP_HANDOFF_EFFECTS_IN_SECONDS,
@@ -28,11 +31,6 @@ import {
   pipHandoffSample,
   type PipHandoffStep,
 } from "$lib/shared/media-composition/domain/pip-handoff";
-import type { SequenceTimeMap } from "$lib/shared/media-composition/domain/sequence-time-map";
-import {
-  mediaTimeToSequencePosition,
-  sequenceTimeMapConvention,
-} from "$lib/shared/media-composition/domain/sequence-time-map";
 import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
 import {
   sequencePositionToAnimationTime,

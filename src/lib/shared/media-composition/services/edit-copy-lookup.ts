@@ -3,7 +3,7 @@ import {
   EditCopyManifestSchema,
   editCopyPaths,
   type PreparedPreviewVideo,
-} from "../domain/preview-video";
+} from "@austencloud/video-editor/core";
 
 /**
  * The editing copy `scripts/make-edit-copies.ts` left beside a same-site

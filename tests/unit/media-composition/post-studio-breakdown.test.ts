@@ -1,16 +1,16 @@
 import { describe, expect, it } from "vitest";
-import { MediaCompositionPresetSchema } from "$lib/shared/media-composition/domain/media-composition-preset-schema";
 import {
+  MediaCompositionPresetSchema,
   BREAKDOWN_MARKER,
   BREAKDOWN_POST_LAYOUT,
   BREAKDOWN_REGION,
-} from "$lib/shared/media-composition/domain/post-studio-presets";
+  createSectionTimeMap,
+} from "@austencloud/video-editor/core";
 import {
   withBreakdownFraming,
   withBreakdownMarker,
 } from "$lib/shared/media-composition/domain/post-studio-breakdown";
 import { normalizePresetToSlots } from "$lib/shared/media-composition/domain/post-studio-slots";
-import { createSectionTimeMap } from "$lib/shared/media-composition/domain/sequence-time-map";
 import {
   evaluatePresetFrame,
   evaluateRegionRects,

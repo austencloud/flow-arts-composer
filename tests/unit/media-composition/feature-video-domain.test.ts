@@ -8,10 +8,7 @@ import {
   isFeatureVideoSlug,
   rehomeFeatureMediaUrls,
 } from "$lib/shared/media-composition/domain/feature-video";
-import {
-  takeFileKey,
-  type PostTake,
-} from "$lib/shared/media-composition/domain/post-plan";
+import { takeFileKey, type PostTake } from "@austencloud/video-editor/core";
 import {
   createEmptyPostProject,
   type PostProject,

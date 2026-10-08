@@ -7,7 +7,7 @@ import {
 } from "$lib/shared/media-composition/services/post-project-backup";
 import { createEmptyPostProject } from "$lib/shared/media-composition/domain/post-project";
 import { createTakeTiming } from "$lib/shared/media-composition/domain/take-timing";
-import type { PostTake } from "$lib/shared/media-composition/domain/post-plan";
+import type { PostTake } from "@austencloud/video-editor/core";
 
 const SEQUENCE = "post-recovery";
 const PREFIX = `tka:post-studio:take-timing:v1:${SEQUENCE}:`;

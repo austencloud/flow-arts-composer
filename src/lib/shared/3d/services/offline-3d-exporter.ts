@@ -35,7 +35,10 @@
 
 import { tick } from "svelte";
 import { Vector2 } from "three";
-import type { BackgroundVideoEncoder } from "@austencloud/video-editor/encoder";
+import type {
+  BackgroundVideoEncoder,
+  CanvasFrameCapturer,
+} from "@austencloud/video-editor/encoder";
 import type { VideoExportProgress } from "$lib/shared/compose/domain/video-export-types";
 import type { CameraKeyframeBuffer } from "$lib/shared/video-export/domain/camera-keyframe";
 
@@ -117,7 +120,6 @@ import {
   getExportDimensions,
   calculateBitrate,
 } from "$lib/shared/animation-engine/domain/video-export-calculations";
-import type { CanvasFrameCapturer } from "@austencloud/video-editor/encoder";
 import { interpolateKeyframes } from "$lib/shared/video-export/services/camera-keyframe-interpolator";
 import { ExportDiagnostics } from "$lib/shared/video-export/domain/export-diagnostics";
 

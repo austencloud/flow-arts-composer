@@ -7,7 +7,7 @@ import {
   mediaTimeToSequencePosition,
   migrateLegacyStepMap,
   sequencePositionToMediaTime,
-} from "$lib/shared/media-composition/domain/sequence-time-map";
+} from "@austencloud/video-editor/core";
 
 const sequenceRef = {
   sequenceId: "sequence-a",

@@ -1,16 +1,23 @@
 import { z } from "zod";
 import {
+  TAKE_MAX_BPM,
+  TAKE_MIN_BPM,
+  type TakeSample,
+  type TakeSampleOptions,
   SequenceTimeMapSchema,
   mediaTimeToSequencePosition,
   sequencePositionToMediaTime,
   type SequenceTimeAnchor,
   type SequenceTimeMap,
-} from "$lib/shared/media-composition/domain/sequence-time-map";
+} from "@austencloud/video-editor/core";
 import {
   createBeatClock,
   fitTapsToGrid,
   type TapFitResult,
 } from "$lib/shared/media-composition/domain/tap-fit";
+
+export { TAKE_MAX_BPM, TAKE_MIN_BPM };
+export type { TakeSample, TakeSampleOptions };
 
 /**
  * How one take lines up with the sequence: Austen's typed tempo and rough
@@ -29,15 +36,6 @@ import {
  * whichever tap came first, and a take counts as checked only once he has
  * confirmed it against the video.
  */
-
-/**
- * The tempos a take can be typed at. A take's BPM never drives the engine -
- * the map does - so it has its own range rather than the playback limits.
- * A part cut from a fitted grid keeps that grid's exact tempo, which a slow
- * or fast performance can take past these.
- */
-export const TAKE_MIN_BPM = 20;
-export const TAKE_MAX_BPM = 300;
 
 /**
  * One frame at 30 fps. No move resolves shorter, and a dragged landing stops
@@ -613,9 +611,7 @@ export function mergeTimingSectionIntoPrevious(
         moveBeats,
         [section, ...following],
         timing.sections.slice(0, index - 1)
-      )?.landings.find(
-        (landing) => landing.position === previous.lastPosition
-      );
+      )?.landings.find((landing) => landing.position === previous.lastPosition);
       if (stop && stop.seconds <= section.startSeconds) {
         end = previous.lastPosition;
       }
@@ -917,7 +913,12 @@ function edgeTap(
   const drawn = fit.labels.flatMap((label) =>
     label.position === null
       ? []
-      : [{ position: label.position, seconds: label.seconds + part.offsetSeconds }]
+      : [
+          {
+            position: label.position,
+            seconds: label.seconds + part.offsetSeconds,
+          },
+        ]
   );
   return pick(drawn) ?? null;
 }
@@ -1067,7 +1068,10 @@ function drawChain(
       const edgeAfter = edgeTap(parts.slice(index + 1), moveBeats, (drawn) =>
         drawn.find((landing) => landing.seconds >= part.endSeconds)
       );
-      if (edgeBefore && own.every((position) => edgeBefore.position < position)) {
+      if (
+        edgeBefore &&
+        own.every((position) => edgeBefore.position < position)
+      ) {
         tappedAt.set(edgeBefore.position, edgeBefore.seconds);
       }
       if (edgeAfter && own.every((position) => edgeAfter.position > position)) {
@@ -1320,24 +1324,6 @@ export function resolveTakeTiming(
   };
 }
 
-/** Where a take is at one media time, and where its performance ends. */
-export interface TakeSample {
-  /** Arrival position: 0 the opening pose, k move k's landing. */
-  arrival: number;
-  /** The last landing of the section in effect; null when it runs on. */
-  endArrival: number | null;
-}
-
-export interface TakeSampleOptions {
-  /**
-   * Before the section's first landing, keep its opening tempo running back
-   * in time instead of holding the opening pose: the arrival goes negative
-   * and reaches 0 on beat one. A tunnel over the footage before beat one
-   * counts down into it this way.
-   */
-  leadIn?: boolean;
-}
-
 /**
  * The take at a media time, or null when nothing is mapped. Between sections
  * the earlier section holds its last pose; before the first mapped section
@@ -1476,8 +1462,7 @@ export function takeTimingStatus(
   moveBeats: readonly number[]
 ): TakeTimingStatus {
   const hasInput = timing.sections.every(
-    (section) =>
-      section.taps.length > 0 || section.beatOneSeconds !== undefined
+    (section) => section.taps.length > 0 || section.beatOneSeconds !== undefined
   );
   if (!hasInput) return "untapped";
   if (
@@ -1928,8 +1913,7 @@ export function setPerformanceEndAt(
   // Up to the last drawn landing, the drawn landings decide: one dragged
   // late sits past its grid slot, and ending on it must not pick the next.
   const nearest =
-    lastDrawn &&
-    (onGrid <= lastDrawn.position || seconds <= lastDrawn.seconds)
+    lastDrawn && (onGrid <= lastDrawn.position || seconds <= lastDrawn.seconds)
       ? drawn.reduce((best, landing) =>
           Math.abs(landing.seconds - seconds) < Math.abs(best.seconds - seconds)
             ? landing
@@ -1954,8 +1938,7 @@ export function landingDragRange(
 ): { min: number; max: number } | null {
   const resolved = sectionLandings(section, moveBeats, following, preceding);
   const index =
-    resolved?.table.findIndex((landing) => landing.position === position) ??
-    -1;
+    resolved?.table.findIndex((landing) => landing.position === position) ?? -1;
   if (!resolved || index < 0) return null;
   const previous = resolved.table[index - 1];
   const after = resolved.table[index + 1];
@@ -2069,8 +2052,7 @@ export function setTakePerformanceEndAt(
   // Up to the last drawn landing, the drawn landings decide: one dragged
   // late sits past its grid slot, and ending on it must not pick the next.
   const nearest =
-    lastDrawn &&
-    (onGrid <= lastDrawn.position || seconds <= lastDrawn.seconds)
+    lastDrawn && (onGrid <= lastDrawn.position || seconds <= lastDrawn.seconds)
       ? table.reduce((best, landing) =>
           Math.abs(landing.seconds - seconds) < Math.abs(best.seconds - seconds)
             ? landing
@@ -2275,7 +2257,10 @@ export function takeTimingFromLegacyMarks(input: {
         ...createTimingSection({
           id: "section-1",
           startSeconds: 0,
-          endSeconds: Math.max(input.durationSeconds, marks[marks.length - 1]! + 0.01),
+          endSeconds: Math.max(
+            input.durationSeconds,
+            marks[marks.length - 1]! + 0.01
+          ),
           bpm,
         }),
         snap: "taps",

@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   POST_STUDIO_PRESETS,
   POST_STUDIO_ROLE,
-} from "$lib/shared/media-composition/domain/post-studio-presets";
+} from "@austencloud/video-editor/core";
 import {
   DEFAULT_SLOT_SPLIT,
   normalizePresetToSlots,
@@ -14,7 +14,7 @@ import {
   withSlotSplit,
   withSwappedSlots,
 } from "$lib/shared/media-composition/domain/post-studio-slots";
-import type { MediaCompositionPreset } from "$lib/shared/media-composition/domain/media-composition-preset-schema";
+import type { MediaCompositionPreset } from "@austencloud/video-editor/core";
 
 function builtIn(id: string): MediaCompositionPreset {
   const preset = POST_STUDIO_PRESETS.find((candidate) => candidate.id === id);
@@ -228,7 +228,9 @@ describe("withSlotSplit", () => {
     expect(slotSplit(withSlotSplit(builtIn("sequence-breakdown"), 0))).toBe(
       0.2
     );
-    expect(slotSplit(withSlotSplit(builtIn("sequence-breakdown"), 5))).toBe(0.8);
+    expect(slotSplit(withSlotSplit(builtIn("sequence-breakdown"), 5))).toBe(
+      0.8
+    );
   });
 
   it("is a no-op while a slot is empty", () => {

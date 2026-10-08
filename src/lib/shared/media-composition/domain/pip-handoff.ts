@@ -7,7 +7,7 @@ import {
   type PostProject,
 } from "$lib/shared/media-composition/domain/post-project";
 import type { TakeSample } from "$lib/shared/media-composition/domain/take-timing";
-import { MOVE_EASING } from "$lib/shared/media-composition/domain/tunnel-hook";
+import { MOVE_EASING } from "@austencloud/video-editor/core";
 
 /**
  * An animation that ends over a picture-in-picture square shrinks into it

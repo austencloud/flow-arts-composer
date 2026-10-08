@@ -5,7 +5,7 @@ import {
   type PreparedPreviewVideo,
   type PreviewVideoCopy,
   type PreviewVideoState,
-} from "../../domain/preview-video";
+} from "@austencloud/video-editor/core";
 import type {
   IPreviewVideoCache,
   PreviewVideoHandle,

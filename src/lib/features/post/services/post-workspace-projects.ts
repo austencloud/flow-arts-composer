@@ -1,7 +1,7 @@
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
 import { simplifyRepeatedWord } from "$lib/shared/foundation/utils/word-simplifier";
 import { PostProjectSchema } from "$lib/shared/media-composition/domain/post-project";
-import { PostPlanSchema } from "$lib/shared/media-composition/domain/post-plan";
+import { PostPlanSchema } from "@austencloud/video-editor/core";
 import {
   readPostDraftRecords,
   type PostDraftRecord,
@@ -18,12 +18,18 @@ const PLAN_PREFIX = "tka:post-studio:plan:v1:";
 const memorySnapshots = new Map<string, SequenceData>();
 
 function accountId(): string | null {
-  return auth.currentUser && !auth.currentUser.isAnonymous ? auth.currentUser.uid : null;
+  return auth.currentUser && !auth.currentUser.isAnonymous
+    ? auth.currentUser.uid
+    : null;
 }
 
 function scopedKey(key: string): string {
   const uid = accountId();
-  return uid ? `${key}:account:${uid}` : legacyPostOwner() ? `${key}:guest` : key;
+  return uid
+    ? `${key}:account:${uid}`
+    : legacyPostOwner()
+      ? `${key}:guest`
+      : key;
 }
 
 function snapshotKey(sequenceId: string): string {
@@ -151,8 +157,9 @@ function cachedPostSequence(sequenceId: string): SequenceData | null {
   const memory = memorySnapshots.get(snapshotKey(sequenceId));
   if (memory?.id === sequenceId && memory.steps?.length) return memory;
   try {
-    const raw = safeStorage()?.getItem(snapshotKey(sequenceId)) ??
-      ((!legacyPostOwner() || legacyPostOwner() === accountId())
+    const raw =
+      safeStorage()?.getItem(snapshotKey(sequenceId)) ??
+      (!legacyPostOwner() || legacyPostOwner() === accountId()
         ? safeStorage()?.getItem(`${SNAPSHOT_PREFIX}${sequenceId}`)
         : null);
     if (raw) {
@@ -223,8 +230,8 @@ function choicesFromRecords(
       const parsed = PostProjectSchema.safeParse(JSON.parse(record.value));
       if (
         !parsed.success ||
-        record.key !== `${PROJECT_PREFIX}${parsed.data.sequenceId}` &&
-        record.key !== `${PROJECT_PREFIX}guest:${parsed.data.sequenceId}`
+        (record.key !== `${PROJECT_PREFIX}${parsed.data.sequenceId}` &&
+          record.key !== `${PROJECT_PREFIX}guest:${parsed.data.sequenceId}`)
       )
         continue;
       const project = parsed.data;
@@ -248,7 +255,10 @@ export async function listPostProjects(): Promise<{
   projects: PostProjectChoice[];
   error: string | null;
 }> {
-  const guestAfterClaim = !!legacyPostOwner() && legacyPostOwner() !== (auth.currentUser?.isAnonymous ? null : auth.currentUser?.uid);
+  const guestAfterClaim =
+    !!legacyPostOwner() &&
+    legacyPostOwner() !==
+      (auth.currentUser?.isAnonymous ? null : auth.currentUser?.uid);
   let browserRecords: PostDraftRecord[] = [];
   let error: string | null = null;
   try {
@@ -295,12 +305,14 @@ export async function listPostProjects(): Promise<{
         typeof record.value === "string"
     );
   } catch {
-    error = guestAfterClaim ? error : [
-      error,
-      "Computer backups could not be read. Browser projects are shown.",
-    ]
-      .filter(Boolean)
-      .join(" ");
+    error = guestAfterClaim
+      ? error
+      : [
+          error,
+          "Computer backups could not be read. Browser projects are shown.",
+        ]
+          .filter(Boolean)
+          .join(" ");
   } finally {
     clearTimeout(deadline);
   }

@@ -3,12 +3,12 @@ import { flushSync } from "svelte";
 import {
   POST_STUDIO_PRESETS,
   POST_STUDIO_ROLE,
-} from "$lib/shared/media-composition/domain/post-studio-presets";
+} from "@austencloud/video-editor/core";
 import {
   createMediaCompositionState,
   type CompositionSourceBinding,
 } from "$lib/shared/media-composition/state/media-composition-state.svelte";
-import type { SequenceTimeMap } from "$lib/shared/media-composition/domain/sequence-time-map";
+import type { SequenceTimeMap } from "@austencloud/video-editor/core";
 import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
 
 const timeMap: SequenceTimeMap = {

@@ -9,7 +9,7 @@ import {
   captionLineYPositions,
   wrapCaptionText,
   type CaptionLayoutInput,
-} from "$lib/shared/media-composition/domain/caption-layout";
+} from "@austencloud/video-editor/core";
 
 function caption(
   overrides: Partial<CaptionLayoutInput> = {}
@@ -148,10 +148,9 @@ describe("wrapCaptionText", () => {
   });
 
   it("keeps typed line breaks while wrapping long lines", () => {
-    expect(wrapCaptionText("Created with\nFlow Arts Composer", measure, 1000)).toEqual([
-      "Created with",
-      "Flow Arts Composer",
-    ]);
+    expect(
+      wrapCaptionText("Created with\nFlow Arts Composer", measure, 1000)
+    ).toEqual(["Created with", "Flow Arts Composer"]);
     expect(wrapCaptionText("one two three\nfour five", measure, 80)).toEqual([
       "one two",
       "three",

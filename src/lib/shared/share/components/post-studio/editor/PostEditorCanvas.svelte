@@ -21,7 +21,10 @@
     previewClockStep,
     type PreviewVideoController,
   } from "$lib/shared/media-composition/services/post-preview-clock";
-  import type { PresetClip } from "$lib/shared/media-composition/domain/media-composition-preset-schema";
+  import type {
+    PresetClip,
+    LayoutRegion,
+  } from "@austencloud/video-editor/core";
   import type { PostEditorState } from "$lib/shared/media-composition/state/post-editor-state.svelte";
   import {
     paintSurfaceGeometry,
@@ -32,7 +35,6 @@
     regionEdgePixels,
     shadowDropInRegion,
   } from "$lib/shared/media-composition/services/region-edge-painter";
-  import type { LayoutRegion } from "$lib/shared/media-composition/domain/media-layout-schema";
   import {
     itemIdFromClipId,
     itemIdFromStaffEffectRole,
@@ -50,8 +52,9 @@
     ANIMATION_OVERLAY_ROLE,
     STRIP_AREA,
     stripModeFromRole,
-  } from "$lib/shared/media-composition/domain/post-plan-compiler";
-  import { POST_STUDIO_ROLE } from "$lib/shared/media-composition/domain/post-studio-presets";
+    POST_STUDIO_ROLE,
+    tunnelHookChromeOpacity,
+  } from "@austencloud/video-editor/core";
   import {
     POST_MAX_ZOOM,
     POST_MIN_ZOOM,
@@ -65,7 +68,6 @@
     type PostVideoItem,
   } from "$lib/shared/media-composition/domain/post-project";
   import { updateItemAt } from "$lib/shared/media-composition/domain/post-project-edits";
-  import { tunnelHookChromeOpacity } from "$lib/shared/media-composition/domain/tunnel-hook";
   import { posterQrAppearance } from "../post-qr-image-appearance";
   import { dragSourceCrop, type SourceCropHandle } from "./post-source-crop";
   import {

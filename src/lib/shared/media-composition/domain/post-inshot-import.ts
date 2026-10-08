@@ -8,7 +8,7 @@ import {
   type PostTextItem,
   type PostVideoItem,
 } from "$lib/shared/media-composition/domain/post-project";
-import type { PostTakeRef } from "$lib/shared/media-composition/domain/post-plan";
+import type { PostTakeRef } from "@austencloud/video-editor/core";
 
 type Native = Record<string, unknown>;
 const US = 1_000_000;

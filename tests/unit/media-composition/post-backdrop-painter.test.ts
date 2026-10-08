@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi, type MockInstance } from "vitest";
-import type { MediaCompositionPreset } from "$lib/shared/media-composition/domain/media-composition-preset-schema";
+import type { MediaCompositionPreset } from "@austencloud/video-editor/core";
 import type { EvaluatedFrameLayer } from "$lib/shared/media-composition/services/frame-evaluator";
 import {
   backdropLayer,
@@ -33,7 +33,12 @@ function recorder(filter: string | undefined) {
     imageSmoothingEnabled: false,
     imageSmoothingQuality: "low",
     turns: [] as number[],
-    draws: [] as { source: unknown; args: number[]; alpha: number; filter?: string }[],
+    draws: [] as {
+      source: unknown;
+      args: number[];
+      alpha: number;
+      filter?: string;
+    }[],
     save() {},
     restore() {},
     translate() {},
@@ -42,7 +47,12 @@ function recorder(filter: string | undefined) {
       this.turns.push((radians * 180) / Math.PI);
     },
     drawImage(source: unknown, ...args: number[]) {
-      this.draws.push({ source, args, alpha: this.globalAlpha, filter: this.filter });
+      this.draws.push({
+        source,
+        args,
+        alpha: this.globalAlpha,
+        filter: this.filter,
+      });
     },
     fillRect() {},
   };
@@ -54,10 +64,16 @@ describe("backdropLayer", () => {
       backdrop: { kind: "blur", clipIds: ["v1", "v2"] },
     } as MediaCompositionPreset;
 
-    expect(backdropLayer(preset, [layer("t1"), layer("v2")])?.clipId).toBe("v2");
-    expect(backdropLayer(preset, [layer("v2"), layer("v1")])?.clipId).toBe("v1");
+    expect(backdropLayer(preset, [layer("t1"), layer("v2")])?.clipId).toBe(
+      "v2"
+    );
+    expect(backdropLayer(preset, [layer("v2"), layer("v1")])?.clipId).toBe(
+      "v1"
+    );
     expect(backdropLayer(preset, [layer("t1")])).toBeNull();
-    expect(backdropLayer({} as MediaCompositionPreset, [layer("v1")])).toBeNull();
+    expect(
+      backdropLayer({} as MediaCompositionPreset, [layer("v1")])
+    ).toBeNull();
   });
 });
 
@@ -66,7 +82,9 @@ describe("paintBlurredBackdrop", () => {
   afterEach(() => createElement?.mockRestore());
 
   function paint(options: { rotationDegrees: number; filters?: boolean }) {
-    const sampleContext = recorder(options.filters === false ? undefined : "none");
+    const sampleContext = recorder(
+      options.filters === false ? undefined : "none"
+    );
     const sample = { width: 0, height: 0, getContext: () => sampleContext };
     createElement = vi
       .spyOn(document, "createElement")
@@ -77,14 +95,19 @@ describe("paintBlurredBackdrop", () => {
       source,
       sourceSize: { width: 1920, height: 1080 },
       frame: { width: 1080, height: 1920 },
-      transform: { rotationDegrees: options.rotationDegrees, flipHorizontal: false },
+      transform: {
+        rotationDegrees: options.rotationDegrees,
+        flipHorizontal: false,
+      },
       opacity: 0.5,
     });
     return { sample, sampleContext, target, source };
   }
 
   it("fills the whole frame with the picture turned as its clip is", () => {
-    const { sample, sampleContext, target, source } = paint({ rotationDegrees: 90 });
+    const { sample, sampleContext, target, source } = paint({
+      rotationDegrees: 90,
+    });
 
     // Turned upright, the landscape picture covers all of the blur's sample.
     const picture = sampleContext.draws[0]!;

@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, expect, it, vi } from "vitest";
-import { POST_STUDIO_PRESETS } from "$lib/shared/media-composition/domain/post-studio-presets";
+import { POST_STUDIO_PRESETS } from "@austencloud/video-editor/core";
 import { POST_STUDIO_DOM_CAPTURE_OPTIONS } from "$lib/shared/media-composition/services/post-studio-dom-capture";
 import {
   resolveFrameLayerGeometry,
@@ -45,7 +45,10 @@ describe("decoded video export surfaces", () => {
       restore: vi.fn(),
       fillStyle: "",
       globalAlpha: 1,
-      fillRect: vi.fn(function (this: { fillStyle: string; globalAlpha: number }) {
+      fillRect: vi.fn(function (this: {
+        fillStyle: string;
+        globalAlpha: number;
+      }) {
         fills.push({ color: this.fillStyle, alpha: this.globalAlpha });
       }),
     };
@@ -59,7 +62,11 @@ describe("decoded video export surfaces", () => {
       canvas,
       root: document.createElement("div"),
       preset: compiled.preset,
-      layers: evaluatePresetFrame(compiled.preset, compiled.durationSeconds, 3.5),
+      layers: evaluatePresetFrame(
+        compiled.preset,
+        compiled.durationSeconds,
+        3.5
+      ),
       cardFrameCache: new Map(),
       timeSeconds: 3.5,
     });

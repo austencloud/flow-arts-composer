@@ -9,7 +9,7 @@ import {
   PostProjectSchema,
   type PostProject,
 } from "$lib/shared/media-composition/domain/post-project";
-import { takeRole } from "$lib/shared/media-composition/domain/post-plan-compiler";
+import { takeRole } from "@austencloud/video-editor/core";
 import { NOW, project, take, video } from "./post-project-fixtures";
 
 const cameraId = "inshot-123-main-1";

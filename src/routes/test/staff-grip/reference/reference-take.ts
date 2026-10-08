@@ -4,7 +4,7 @@
  * picked file is matched on those three.
  */
 import type { PostProject } from "$lib/shared/media-composition/domain/post-project";
-import type { PostTake } from "$lib/shared/media-composition/domain/post-plan";
+import type { PostTake } from "@austencloud/video-editor/core";
 import {
   TakeTimingSchema,
   isTakeTimingMapped,

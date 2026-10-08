@@ -21,7 +21,7 @@ import {
   type TakeTimingStatus,
   type TimingSection,
 } from "$lib/shared/media-composition/domain/take-timing";
-import type { PostTake } from "$lib/shared/media-composition/domain/post-plan";
+import type { PostTake } from "@austencloud/video-editor/core";
 import { untrack } from "svelte";
 import { sequenceFrameAt } from "$lib/shared/media-composition/domain/sequence-frame";
 import {

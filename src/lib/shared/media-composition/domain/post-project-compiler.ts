@@ -8,19 +8,20 @@ import {
   type PresetRegionKeyframesTrack,
   type PresetSourceRole,
   type PresetVisualClipMotion,
-} from "$lib/shared/media-composition/domain/media-composition-preset-schema";
-import type {
-  LayoutRegion,
-  RegionEdge,
-} from "$lib/shared/media-composition/domain/media-layout-schema";
-import { regionEdge } from "$lib/shared/media-composition/domain/post-clip-edge";
-import {
   ANIMATION_OVERLAY_ROLE,
   stripRole,
   takeRole,
-} from "$lib/shared/media-composition/domain/post-plan-compiler";
-import type { PostTake } from "$lib/shared/media-composition/domain/post-plan";
-import { POST_STUDIO_ROLE } from "$lib/shared/media-composition/domain/post-studio-presets";
+  POST_STUDIO_ROLE,
+  MOVE_EASING,
+  tunnelHookBoxKeys,
+  type TunnelBackdropFrame,
+} from "@austencloud/video-editor/core";
+import type {
+  LayoutRegion,
+  RegionEdge,
+  PostTake,
+} from "@austencloud/video-editor/core";
+import { regionEdge } from "$lib/shared/media-composition/domain/post-clip-edge";
 import {
   MAIN_TRACK_INDEX,
   POST_BOX,
@@ -47,11 +48,6 @@ import {
   postSecondsOfKeyframe,
   sampleEasing,
 } from "$lib/shared/media-composition/domain/post-project-keyframes";
-import {
-  MOVE_EASING,
-  tunnelHookBoxKeys,
-  type TunnelBackdropFrame,
-} from "$lib/shared/media-composition/domain/tunnel-hook";
 import {
   titlesPlanOf,
   type TunnelTitlesPlan,

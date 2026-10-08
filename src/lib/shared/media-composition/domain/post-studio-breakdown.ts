@@ -6,14 +6,14 @@
 import type {
   MediaCompositionPreset,
   PresetTimePoint,
-} from "$lib/shared/media-composition/domain/media-composition-preset-schema";
+} from "@austencloud/video-editor/core";
 import {
   BREAKDOWN_MARKER,
   BREAKDOWN_PERFORMANCE_INSIDE,
   BREAKDOWN_REGION,
   FULL_FRAME,
   breakdownKeyframes,
-} from "$lib/shared/media-composition/domain/post-studio-presets";
+} from "@austencloud/video-editor/core";
 
 /**
  * How the performance shares the frame with the strip.
