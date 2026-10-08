@@ -93,9 +93,9 @@ describe("effect-control-manifest", () => {
 
   it("each Goo preset resets the 3D liquid controls", () => {
     for (const preset of GOO_PRESETS) {
-      expect(preset.patch.viscosity, preset.id).toBeTypeOf("number");
-      expect(preset.patch.gravity, preset.id).toBe(1);
-      expect(preset.patch.surfaceTension, preset.id).toBeTypeOf("number");
+      expect(preset.patch?.viscosity, preset.id).toBeTypeOf("number");
+      expect(preset.patch?.gravity, preset.id).toBe(1);
+      expect(preset.patch?.surfaceTension, preset.id).toBeTypeOf("number");
     }
   });
 });

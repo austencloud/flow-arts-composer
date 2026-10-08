@@ -41,7 +41,9 @@ describe("worker grid production parity contract", () => {
     expect(grid3d).toContain("const dot = Math.abs(_viewDir.dot(normal))");
     expect(grid3d).toContain("labelPlane = bestPlane");
     expect(grid3d).toContain("plane === Plane.WHEEL");
-    expect(grid3d).toContain("PLANE_MODE_CONFIGS[PlaneMode.DUAL_WHEEL]");
+    expect(grid3d).toContain(
+      "return [effectiveStaffHalfLength, -effectiveStaffHalfLength];"
+    );
     expect(grid3d).toContain(
       "showLabels={labelPlane === plane && index === 0}"
     );
