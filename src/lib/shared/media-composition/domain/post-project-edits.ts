@@ -54,6 +54,13 @@ import {
   DEFAULT_TUNNEL_HOOK_SECONDS,
   type TunnelBackdropFrame,
   type TunnelHook,
+  framingAt,
+  channelValueAt,
+  clearItemKeyframes,
+  keyframeCount,
+  isAnimated,
+  shiftKeyframes,
+  writeChannelValue,
 } from "@austencloud/video-editor/core";
 import {
   POST_MAX_SPOKEN_LENGTH,
@@ -62,17 +69,8 @@ import {
   type PostAnimationItem,
   type PostMovesMode,
   type PostStaffEffectId,
+  normalizeProject,
 } from "$lib/shared/post-studio-plugin";
-import { normalizeProject } from "$lib/shared/media-composition/domain/post-project-normalize";
-import {
-  framingAt,
-  channelValueAt,
-  clearItemKeyframes,
-  keyframeCount,
-  isAnimated,
-  shiftKeyframes,
-  writeChannelValue,
-} from "$lib/shared/media-composition/domain/post-project-keyframes";
 import type { PostTake } from "@austencloud/video-editor/core";
 import {
   resolveTakeTiming,

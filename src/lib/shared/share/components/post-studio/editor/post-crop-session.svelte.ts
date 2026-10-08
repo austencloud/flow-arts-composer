@@ -15,6 +15,10 @@ import {
   clipShapeFor,
   shapedBox,
   type PostOutputSize,
+  boxAt,
+  framingAt,
+  isAnimated,
+  postSecondsOfKeyframe,
 } from "@austencloud/video-editor/core";
 import {
   editItemKeyframes,
@@ -22,12 +26,6 @@ import {
   updateItem,
   updateItemAt,
 } from "$lib/shared/media-composition/domain/post-project-edits";
-import {
-  boxAt,
-  framingAt,
-  isAnimated,
-  postSecondsOfKeyframe,
-} from "$lib/shared/media-composition/domain/post-project-keyframes";
 import type { PostEditorState } from "$lib/shared/media-composition/state/post-editor-state.svelte";
 import {
   STRAIGHTEN_LIMIT,

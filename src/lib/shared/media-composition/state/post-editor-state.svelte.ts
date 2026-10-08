@@ -18,6 +18,7 @@ import {
 import {
   PostProjectSchema,
   type PostAnimationItem,
+  normalizeProject,
 } from "$lib/shared/post-studio-plugin";
 import {
   addOverlayItem,
@@ -72,7 +73,6 @@ import {
   projectDraftRecord,
   resolvePostStudioDraft,
 } from "$lib/shared/media-composition/services/post-project-backup";
-import { normalizeProject } from "$lib/shared/media-composition/domain/post-project-normalize";
 import { bridgeLockedChange } from "$lib/shared/media-composition/domain/post-project-bridge-guard";
 import {
   catalogTakeKey,

@@ -19,8 +19,6 @@
     itemEnd,
     type PostItem,
     type PostKeyframeChannel,
-  } from "@austencloud/video-editor/core";
-  import {
     EASING_PRESETS,
     adjacentKeyframeSeconds,
     easingPresetOf,
@@ -31,7 +29,7 @@
     keyframeCount,
     clearChannel,
     type PostEasingPresetId,
-  } from "$lib/shared/media-composition/domain/post-project-keyframes";
+  } from "@austencloud/video-editor/core";
   import { editItemKeyframes } from "$lib/shared/media-composition/domain/post-project-edits";
   import type { PostEdit } from "$lib/shared/media-composition/state/post-editor-state.svelte";
   import type { PostEditorState } from "$lib/shared/media-composition/state/post-editor-state.svelte";

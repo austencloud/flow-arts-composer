@@ -1,4 +1,7 @@
-import { normalizeProject } from "$lib/shared/media-composition/domain/post-project-normalize";
+import {
+  normalizeProject,
+  createEmptyPostProject,
+} from "$lib/shared/post-studio-plugin";
 import {
   MAIN_TRACK_ID,
   POST_BOX,
@@ -12,7 +15,6 @@ import {
   POST_ACT,
   type PostPlan,
 } from "@austencloud/video-editor/core";
-import { createEmptyPostProject } from "$lib/shared/post-studio-plugin";
 
 /**
  * Converts a v1 act plan into a v2 project: every enabled act becomes a main

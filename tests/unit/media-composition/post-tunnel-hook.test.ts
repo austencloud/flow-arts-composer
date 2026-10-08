@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   PostProjectSchema,
   type PostAnimationItem,
+  normalizeProject as finishProject,
 } from "$lib/shared/post-studio-plugin";
 import {
   POST_BOX,
@@ -15,6 +16,7 @@ import {
   tunnelHookPanelOpacity,
   itemEnd,
   type PostVideoItem,
+  sampleEasing,
 } from "@austencloud/video-editor/core";
 import {
   addTunnelHook,
@@ -24,7 +26,6 @@ import {
   setTunnelHookBackdropFrame,
   setTunnelHookSpeed,
 } from "$lib/shared/media-composition/domain/post-project-edits";
-import { normalizeProject as finishProject } from "$lib/shared/media-composition/domain/post-project-normalize";
 import { compilePostProject } from "$lib/shared/media-composition/domain/post-project-compiler";
 import {
   createTakeTiming,
@@ -36,7 +37,6 @@ import {
   takeTimingMovesKey,
   type TakeTiming,
 } from "$lib/shared/media-composition/domain/take-timing";
-import { sampleEasing } from "$lib/shared/media-composition/domain/post-project-keyframes";
 import { evaluatePresetFrame } from "$lib/shared/media-composition/services/frame-evaluator";
 import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
 import {

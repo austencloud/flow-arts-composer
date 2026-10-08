@@ -9,12 +9,14 @@ import {
   MOVE_END_SHARE,
   MOVE_START_SHARE,
   type TunnelHook,
+  sampleEasing,
 } from "@austencloud/video-editor/core";
 import {
   POST_MAX_SPOKEN_LENGTH,
   PostProjectSchema,
   type PostAnimationItem,
   type PostTitlesItem,
+  normalizeProject,
 } from "$lib/shared/post-studio-plugin";
 import { compilePostProject } from "$lib/shared/media-composition/domain/post-project-compiler";
 import {
@@ -22,8 +24,6 @@ import {
   findTunnelHook,
   updateItem,
 } from "$lib/shared/media-composition/domain/post-project-edits";
-import { normalizeProject } from "$lib/shared/media-composition/domain/post-project-normalize";
-import { sampleEasing } from "$lib/shared/media-composition/domain/post-project-keyframes";
 import { evaluatePresetFrame } from "$lib/shared/media-composition/services/frame-evaluator";
 import {
   OPENING_TITLES_SHARE,

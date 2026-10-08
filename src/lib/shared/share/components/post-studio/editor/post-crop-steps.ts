@@ -2,8 +2,8 @@ import {
   POST_TIME_EPSILON,
   itemEnd,
   type PostVideoItem,
+  postSecondsOfKeyframe,
 } from "@austencloud/video-editor/core";
-import { postSecondsOfKeyframe } from "$lib/shared/media-composition/domain/post-project-keyframes";
 import type {
   ResolvedTakeTiming,
   TakeTiming,

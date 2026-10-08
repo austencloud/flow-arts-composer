@@ -7,6 +7,7 @@ import {
   mainItems,
   overlaysAnchoredTo,
   type PostProject,
+  isAnimated,
 } from "@austencloud/video-editor/core";
 import {
   TUTORIAL_FADE_SECONDS,
@@ -19,7 +20,6 @@ import {
   setTrackFlag,
   updateItem,
 } from "$lib/shared/media-composition/domain/post-project-edits";
-import { isAnimated } from "$lib/shared/media-composition/domain/post-project-keyframes";
 import {
   NOW,
   card,

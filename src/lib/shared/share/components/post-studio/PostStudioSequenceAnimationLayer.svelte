@@ -38,8 +38,8 @@
     tunnelHookCopyOpacity,
     tunnelHookPanelOpacity,
     type TunnelHook,
+    sampleEasing,
   } from "@austencloud/video-editor/core";
-  import { sampleEasing } from "$lib/shared/media-composition/domain/post-project-keyframes";
   import type { AdditionalLayerProps } from "$lib/shared/animation-engine/domain/types/trail-capture-types";
   import { DEFAULT_CONFIG } from "$lib/shared/sequence-viewer/tunnel/tunnel-config";
   import { buildTunnelLayers } from "$lib/shared/sequence-viewer/tunnel/tunnel-layer-builder";

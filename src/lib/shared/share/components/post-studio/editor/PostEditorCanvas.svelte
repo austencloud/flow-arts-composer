@@ -66,15 +66,13 @@
     type PostVideoItem,
     postOutputSize,
     postSafeArea,
+    boxAt,
+    channelValueAt,
+    framingAt,
   } from "@austencloud/video-editor/core";
   import { updateItemAt } from "$lib/shared/media-composition/domain/post-project-edits";
   import { posterQrAppearance } from "../post-qr-image-appearance";
   import { dragSourceCrop, type SourceCropHandle } from "./post-source-crop";
-  import {
-    boxAt,
-    channelValueAt,
-    framingAt,
-  } from "$lib/shared/media-composition/domain/post-project-keyframes";
   import PostStudioBackdrop from "../PostStudioBackdrop.svelte";
   import PostStudioMediaLayer from "../PostStudioMediaLayer.svelte";
   import {

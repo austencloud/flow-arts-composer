@@ -10,11 +10,7 @@ import {
   plotWidth,
   type CurvePlotGeometry,
 } from "$lib/shared/share/components/post-studio/editor/post-curve-plot";
-import {
-  POST_EASING_Y_MAX,
-  POST_EASING_Y_MIN,
-} from "@austencloud/video-editor/core";
-import { EASING_PRESETS } from "$lib/shared/media-composition/domain/post-project-keyframes";
+import { POST_EASING_Y_MAX, POST_EASING_Y_MIN, EASING_PRESETS } from "@austencloud/video-editor/core";
 
 function close(actual: number, expected: number) {
   expect(actual).toBeCloseTo(expected, 9);

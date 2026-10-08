@@ -3,6 +3,7 @@ import {
   createPostMusicSchema,
   createProjectSchema,
   defaultBoxFor as defaultBoxForCore,
+  normalizeProject as normalizeCore,
   type PostItemKind,
   type PostProject,
 } from "@austencloud/video-editor/core";
@@ -15,6 +16,10 @@ export const PostMusicSchema = createPostMusicSchema(isFeatureVideoMediaUrl);
 
 export function defaultBoxFor(kind: PostItemKind) {
   return defaultBoxForCore(kind, tkaPlugin);
+}
+
+export function normalizeProject(stored: PostProject): PostProject {
+  return normalizeCore(stored, tkaPlugin);
 }
 
 export function createEmptyPostProject(input: {

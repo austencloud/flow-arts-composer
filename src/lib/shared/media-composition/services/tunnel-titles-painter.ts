@@ -1,6 +1,8 @@
 import { renderHeader } from "@tka/render-composition";
-import { CAPTION_STROKE_WIDTH_FRACTION } from "@austencloud/video-editor/core";
-import { sampleEasing } from "$lib/shared/media-composition/domain/post-project-keyframes";
+import {
+  CAPTION_STROKE_WIDTH_FRACTION,
+  sampleEasing,
+} from "@austencloud/video-editor/core";
 import {
   tunnelTitlesLook,
   type TunnelTitlesPlan,

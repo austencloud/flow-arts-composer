@@ -6,8 +6,10 @@ import {
 } from "$lib/shared/media-composition/services/post-project-store";
 import { savePostPlan } from "$lib/shared/media-composition/services/post-plan-store";
 import { migratePostPlan } from "$lib/shared/media-composition/domain/post-project-migration";
-import { createEmptyPostProject } from "$lib/shared/post-studio-plugin";
-import { normalizeProject } from "$lib/shared/media-composition/domain/post-project-normalize";
+import {
+  createEmptyPostProject,
+  normalizeProject,
+} from "$lib/shared/post-studio-plugin";
 import { createDefaultPostPlan } from "@austencloud/video-editor/core";
 import {
   DEFAULT_TRAIL_SETTINGS,

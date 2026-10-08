@@ -44,6 +44,11 @@
     postCanvasOf,
     postOutputSize,
     ratioValue,
+    channelsOf,
+    keyframeCount,
+    moveKeyframe,
+    removeKeyframe,
+    toggleKeyframe,
   } from "@austencloud/video-editor/core";
   import {
     itemIdFromMovesAnimationRole,
@@ -52,13 +57,6 @@
     staffEffectRole,
     textRole,
   } from "$lib/shared/media-composition/domain/post-project-compiler";
-  import {
-    channelsOf,
-    keyframeCount,
-    moveKeyframe,
-    removeKeyframe,
-    toggleKeyframe,
-  } from "$lib/shared/media-composition/domain/post-project-keyframes";
   import {
     clearProjectKeyframes,
     editItemKeyframes,

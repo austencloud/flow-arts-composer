@@ -33,6 +33,14 @@
     type TunnelBackdropFrame,
     autoGradeVideo,
     type PostVideoColorGrade,
+    boxAt,
+    channelValueAt,
+    EASING_PRESETS,
+    easingPresetOf,
+    framingAt,
+    isAnimated,
+    opacityAt,
+    type PostEasingPresetId,
   } from "@austencloud/video-editor/core";
   import {
     POST_MAX_SPOKEN_LENGTH,
@@ -60,16 +68,6 @@
     lookOf,
     type PostLook,
   } from "$lib/shared/media-composition/domain/post-project-looks";
-  import {
-    boxAt,
-    channelValueAt,
-    EASING_PRESETS,
-    easingPresetOf,
-    framingAt,
-    isAnimated,
-    opacityAt,
-    type PostEasingPresetId,
-  } from "$lib/shared/media-composition/domain/post-project-keyframes";
   import type {
     PostEdit,
     PostEditorState,

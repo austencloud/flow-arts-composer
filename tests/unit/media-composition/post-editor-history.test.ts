@@ -4,10 +4,7 @@ import {
   clearProjectKeyframes,
   updateItem,
 } from "$lib/shared/media-composition/domain/post-project-edits";
-import {
-  setKeyframe,
-  keyframeCount,
-} from "$lib/shared/media-composition/domain/post-project-keyframes";
+import { setKeyframe, keyframeCount } from "@austencloud/video-editor/core";
 import { card, overlay, project as rawProject } from "./post-project-fixtures";
 import { createPostEditorState } from "$lib/shared/media-composition/state/post-editor-state.svelte";
 import { addTakeTap } from "$lib/shared/media-composition/domain/take-timing";

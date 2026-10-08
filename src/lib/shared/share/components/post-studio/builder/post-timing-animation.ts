@@ -5,10 +5,10 @@ import {
   mainItems,
   POST_TIME_EPSILON,
   timingVideoAt,
+  postSecondsOfKeyframe,
 } from "@austencloud/video-editor/core";
 import type { ResolvedTakeTiming } from "$lib/shared/media-composition/domain/take-timing";
 import type { TakeTiming } from "$lib/shared/media-composition/domain/take-timing";
-import { postSecondsOfKeyframe } from "$lib/shared/media-composition/domain/post-project-keyframes";
 
 export interface LayerTimingPart {
   clipId: string;

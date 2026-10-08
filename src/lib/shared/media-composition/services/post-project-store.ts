@@ -1,11 +1,7 @@
-import {
-  PostProjectSchema,
-  createEmptyPostProject,
-} from "$lib/shared/post-studio-plugin";
+import { PostProjectSchema, createEmptyPostProject, normalizeProject } from "$lib/shared/post-studio-plugin";
 import type {
   PostProject,
 } from "@austencloud/video-editor/core";
-import { normalizeProject } from "$lib/shared/media-composition/domain/post-project-normalize";
 import { migratePostPlan } from "$lib/shared/media-composition/domain/post-project-migration";
 import { loadPostPlan } from "$lib/shared/media-composition/services/post-plan-store";
 import { auth } from "$lib/shared/auth/firebase";

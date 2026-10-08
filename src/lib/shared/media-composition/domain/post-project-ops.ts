@@ -16,6 +16,7 @@ import {
   POST_MUSIC_MAX_GAIN,
   POST_MUSIC_MAX_SECONDS,
   type PostMusic,
+  EASING_PRESETS,
 } from "@austencloud/video-editor/core";
 import type { PostAnimationItem } from "$lib/shared/post-studio-plugin";
 import {
@@ -38,7 +39,6 @@ import {
   type PostItemPatch,
 } from "$lib/shared/media-composition/domain/post-project-edits";
 import { isFeatureVideoMediaUrl } from "$lib/shared/media-composition/domain/feature-video";
-import { EASING_PRESETS } from "$lib/shared/media-composition/domain/post-project-keyframes";
 import {
   POST_MUSIC_MIN_SECONDS,
   removeMusic,

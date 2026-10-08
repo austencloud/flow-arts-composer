@@ -4,6 +4,8 @@ import {
   POST_MAX_ZOOM,
   POST_MIN_BOX_SIZE,
   POST_MIN_ZOOM,
+  EASING_PRESETS,
+  sampleEasing,
 } from "@austencloud/video-editor/core";
 import {
   evaluatePresetFrame,
@@ -15,10 +17,6 @@ import type {
   PresetVisualClipMotion,
 } from "@austencloud/video-editor/core";
 import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import {
-  EASING_PRESETS,
-  sampleEasing,
-} from "$lib/shared/media-composition/domain/post-project-keyframes";
 
 const performancePreset = POST_STUDIO_PRESETS.find(
   (preset) => preset.id === "performance-breakdown"

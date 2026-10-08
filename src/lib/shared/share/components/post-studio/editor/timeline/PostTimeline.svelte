@@ -18,15 +18,13 @@
     musicBarMarks,
     musicSnapTargets,
     musicSpan,
-  } from "@austencloud/video-editor/core";
-  import {
     channelKeyframeSeconds,
     channelValueAt,
     channelsOf,
     isAnimated,
     keyframeIndexAt,
     moveKeyframe,
-  } from "$lib/shared/media-composition/domain/post-project-keyframes";
+  } from "@austencloud/video-editor/core";
   import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { growFade } from "$lib/shared/transitions/motion";
   import TimeRuler from "$lib/shared/timeline/TimeRuler.svelte";

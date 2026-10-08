@@ -1,8 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { normalizeProject } from "$lib/shared/media-composition/domain/post-project-normalize";
-import {
-  PostProjectSchema,
-} from "$lib/shared/post-studio-plugin";
+import { normalizeProject, PostProjectSchema } from "$lib/shared/post-studio-plugin";
 import type {
   PostEasing,
 } from "@austencloud/video-editor/core";

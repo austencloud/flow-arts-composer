@@ -11,9 +11,9 @@ import {
 import {
   PostMusicSchema,
   PostProjectSchema,
+  normalizeProject,
 } from "$lib/shared/post-studio-plugin";
 import { setProjectAudio } from "$lib/shared/media-composition/domain/post-project-edits";
-import { normalizeProject } from "$lib/shared/media-composition/domain/post-project-normalize";
 import { NOW, project, video } from "./post-project-fixtures";
 
 function music(fields: Partial<PostMusic> = {}): PostMusic {

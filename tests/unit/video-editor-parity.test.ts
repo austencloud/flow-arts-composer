@@ -3,13 +3,15 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
-import { PostProjectSchema } from "$lib/shared/post-studio-plugin";
+import {
+  PostProjectSchema,
+  normalizeProject,
+} from "$lib/shared/post-studio-plugin";
 import {
   type PostProject,
   POST_STUDIO_ROLE,
   takeRole,
 } from "@austencloud/video-editor/core";
-import { normalizeProject } from "$lib/shared/media-composition/domain/post-project-normalize";
 import {
   compilePostProject,
   itemIdFromMovesAnimationRole,

@@ -4,7 +4,7 @@ import type {
   PostVideoItem,
 } from "@austencloud/video-editor/core";
 import { editItemKeyframes } from "$lib/shared/media-composition/domain/post-project-edits";
-import { setKeyframe } from "$lib/shared/media-composition/domain/post-project-keyframes";
+import { setKeyframe } from "@austencloud/video-editor/core";
 import { createPostEditorState } from "$lib/shared/media-composition/state/post-editor-state.svelte";
 import { isCovered } from "$lib/shared/share/components/post-studio/editor/post-crop-geometry";
 import { createCropSession } from "$lib/shared/share/components/post-studio/editor/post-crop-session.svelte";

@@ -19,6 +19,9 @@ import {
   clampBox,
   wrapDegrees,
   type PostEasing,
+  EASING_PRESETS,
+  boxAt,
+  framingAt,
 } from "@austencloud/video-editor/core";
 import {
   evaluatePresetFrame,
@@ -28,11 +31,6 @@ import {
 import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
 import { PostProjectSchema } from "$lib/shared/post-studio-plugin";
 import { updateItem } from "$lib/shared/media-composition/domain/post-project-edits";
-import {
-  EASING_PRESETS,
-  boxAt,
-  framingAt,
-} from "$lib/shared/media-composition/domain/post-project-keyframes";
 import {
   NOW,
   card,

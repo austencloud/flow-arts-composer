@@ -7,14 +7,14 @@ import {
   channelValueAt,
   sampleEasing,
   setKeyframe,
-} from "$lib/shared/media-composition/domain/post-project-keyframes";
+} from "@austencloud/video-editor/core";
 import {
   duplicateItem,
   splitItemAt,
   trimItem,
   updateItemAt,
 } from "$lib/shared/media-composition/domain/post-project-edits";
-import { normalizeProject } from "$lib/shared/media-composition/domain/post-project-normalize";
+import { normalizeProject } from "$lib/shared/post-studio-plugin";
 
 const matrix = (sx = 0.5625, sy = 1, tx = 0, ty = 0) => [
   sx,

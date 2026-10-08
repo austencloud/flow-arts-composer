@@ -1,6 +1,8 @@
-import { PostProjectSchema } from "$lib/shared/post-studio-plugin";
+import {
+  PostProjectSchema,
+  normalizeProject,
+} from "$lib/shared/post-studio-plugin";
 import type { PostProject } from "@austencloud/video-editor/core";
-import { normalizeProject } from "$lib/shared/media-composition/domain/post-project-normalize";
 import {
   TakeTimingSchema,
   type TakeTiming,

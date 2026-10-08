@@ -19,8 +19,8 @@ import {
   type TunnelHook,
   mediaTimeToSequencePosition,
   sequenceTimeMapConvention,
+  sampleEasing,
 } from "@austencloud/video-editor/core";
-import { sampleEasing } from "$lib/shared/media-composition/domain/post-project-keyframes";
 import { itemIdFromTitlesRole } from "$lib/shared/media-composition/domain/tunnel-titles";
 import {
   PIP_HANDOFF_EFFECTS_IN_SECONDS,

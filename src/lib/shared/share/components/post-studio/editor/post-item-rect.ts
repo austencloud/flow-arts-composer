@@ -2,8 +2,6 @@ import type { PostBox, PostItem } from "@austencloud/video-editor/core";
 import {
   boxAt,
   isAnimated,
-} from "$lib/shared/media-composition/domain/post-project-keyframes";
-import {
   clipBox,
   postOutputSize,
   spotAround,

@@ -13,9 +13,11 @@
 import { readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
-import { PostProjectSchema } from "$lib/shared/post-studio-plugin";
+import {
+  PostProjectSchema,
+  normalizeProject,
+} from "$lib/shared/post-studio-plugin";
 import { type PostProject, takeRole } from "@austencloud/video-editor/core";
-import { normalizeProject } from "$lib/shared/media-composition/domain/post-project-normalize";
 import { compilePostProject } from "$lib/shared/media-composition/domain/post-project-compiler";
 import {
   PIP_HANDOFF_MAX_CLOCK_SECONDS,

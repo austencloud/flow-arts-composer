@@ -1,6 +1,7 @@
 import type { VideoEditorPlugin } from "@austencloud/video-editor/core";
 import { isFeatureVideoMediaUrl } from "$lib/shared/media-composition/domain/feature-video-url";
 import { TKA_ITEM_KINDS, TKA_KIND_EXTENSIONS } from "./item-kinds";
+import { TKA_NORMALIZE } from "./normalize-hooks";
 import { TKA_PROJECT_EXTENSION, emptyProjectFields } from "./project-extension";
 
 export type TkaPlugin = VideoEditorPlugin & {
@@ -13,6 +14,7 @@ export function createTkaPlugin(): TkaPlugin {
     itemKinds: TKA_ITEM_KINDS,
     kindExtensions: TKA_KIND_EXTENSIONS,
     projectExtension: TKA_PROJECT_EXTENSION,
+    normalize: TKA_NORMALIZE,
     isMediaUrl: isFeatureVideoMediaUrl,
     emptyProjectFields,
   };

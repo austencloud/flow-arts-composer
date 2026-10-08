@@ -4,8 +4,10 @@ import {
   replaceOverlayVideoWithAnimation,
 } from "$lib/shared/media-composition/domain/post-project-edits";
 import { compilePostProject } from "$lib/shared/media-composition/domain/post-project-compiler";
-import { normalizeProject } from "$lib/shared/media-composition/domain/post-project-normalize";
-import { PostProjectSchema } from "$lib/shared/post-studio-plugin";
+import {
+  normalizeProject,
+  PostProjectSchema,
+} from "$lib/shared/post-studio-plugin";
 import { type PostProject, takeRole } from "@austencloud/video-editor/core";
 import { NOW, project, take, video } from "./post-project-fixtures";
 

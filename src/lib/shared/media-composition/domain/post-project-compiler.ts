@@ -35,6 +35,9 @@ import {
   clipBox,
   postOutputSize,
   type PostOutputSize,
+  channelValueAt,
+  postSecondsOfKeyframe,
+  sampleEasing,
 } from "@austencloud/video-editor/core";
 import type {
   LayoutRegion,
@@ -46,11 +49,6 @@ import type {
   PostCarouselItem,
   PostMovesItem,
 } from "$lib/shared/post-studio-plugin";
-import {
-  channelValueAt,
-  postSecondsOfKeyframe,
-  sampleEasing,
-} from "$lib/shared/media-composition/domain/post-project-keyframes";
 import {
   titlesPlanOf,
   type TunnelTitlesPlan,

@@ -5,12 +5,10 @@ import type {
   PostItemKind,
   PostKeyframeChannel,
   PostProject,
-} from "@austencloud/video-editor/core";
-import type { PostMovesMode } from "$lib/shared/post-studio-plugin";
-import type {
   PostChannelValue,
   PostEasingPresetId,
-} from "$lib/shared/media-composition/domain/post-project-keyframes";
+} from "@austencloud/video-editor/core";
+import type { PostMovesMode } from "$lib/shared/post-studio-plugin";
 import type { PostToolId } from "./post-editor-tools";
 
 /** The names and icons every part of the editor shows for an item kind. */

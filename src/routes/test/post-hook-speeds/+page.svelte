@@ -18,12 +18,10 @@
   import {
     DEFAULT_TUNNEL_HOOK,
     tunnelHookArrival,
-  } from "@austencloud/video-editor/core";
-  import {
     sampleEasing,
     type PostEasingPresetId,
     EASING_PRESETS,
-  } from "$lib/shared/media-composition/domain/post-project-keyframes";
+  } from "@austencloud/video-editor/core";
 
   interface Variant {
     id: string;
