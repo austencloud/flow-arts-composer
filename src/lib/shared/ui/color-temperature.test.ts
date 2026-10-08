@@ -5,6 +5,7 @@ import {
   type CoolWarmPair,
 } from "./color-temperature";
 import { COLOR_PRESETS } from "./color-presets";
+import { colorVisionDistance } from "./color-vision";
 import { hexToOklch, maxChroma, oklabDistance } from "./oklch";
 import {
   DARK_SURFACE_ANCHOR,
@@ -95,6 +96,29 @@ describe.each([
       const gap = hueGap(hexToOklch(after.left).h, hexToOklch(after.right).h);
       expect(gap).toBeGreaterThanOrEqual(90 - HUE_TOLERANCE);
     }
+  });
+
+  it("keeps the two hands apart for red- and green-blind eyes", () => {
+    for (const { after } of chain) {
+      expect(
+        colorVisionDistance(after.left, after.right)
+      ).toBeGreaterThanOrEqual(0.1);
+    }
+  });
+
+  it("still pairs teal with pink, one hand lighter than the other", () => {
+    const tealPink = colored.filter(({ after }) => {
+      const [left, right] = [hexToOklch(after.left), hexToOklch(after.right)];
+      return (
+        left.h >= 160 && left.h <= 220 && (right.h >= 325 || right.h <= 10)
+      );
+    });
+    expect(tealPink.length).toBeGreaterThan(ROLLS * 0.02);
+    const split = tealPink.filter(
+      ({ after }) =>
+        Math.abs(hexToOklch(after.left).l - hexToOklch(after.right).l) > 0.08
+    );
+    expect(split.length).toBeGreaterThan(tealPink.length / 2);
   });
 
   it("visibly changes both hands on every roll", () => {

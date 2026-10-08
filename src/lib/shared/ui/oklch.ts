@@ -70,14 +70,24 @@ export function oklchToHex(l: number, c: number, hue: number): string {
     chroma = Math.max(0, chroma - 0.002);
     rgb = oklchToLinearSrgb(l, chroma, hue);
   }
+  return linearSrgbToHex(rgb);
+}
+
+/** Light-linear sRGB channels, 0 to 1, the space color mixing happens in. */
+export function hexToLinearSrgb(hex: string): [number, number, number] {
+  const value = hex.replace("#", "");
+  return [0, 2, 4].map((at) =>
+    toLinear(parseInt(value.slice(at, at + 2), 16))
+  ) as [number, number, number];
+}
+
+/** Clamps each light-linear channel into 0 to 1 and rounds to a hex color. */
+export function linearSrgbToHex(rgb: readonly number[]): string {
   return `#${rgb.map((channel) => toGammaByte(channel).toString(16).padStart(2, "0")).join("")}`;
 }
 
 export function hexToOklch(hex: string): Oklch {
-  const value = hex.replace("#", "");
-  const [r, g, b] = [0, 2, 4].map((at) =>
-    toLinear(parseInt(value.slice(at, at + 2), 16))
-  ) as [number, number, number];
+  const [r, g, b] = hexToLinearSrgb(hex);
   const long = Math.cbrt(
     0.4122214708 * r + 0.5363325363 * g + 0.0514459929 * b
   );
