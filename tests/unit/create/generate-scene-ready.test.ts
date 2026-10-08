@@ -68,6 +68,19 @@ describe("Generate scene readiness", () => {
     await vi.waitFor(() => expect(drawMatrixRealization).toHaveBeenCalled());
   });
 
+  it("draws no next roll under reduced motion, since no turn will play", async () => {
+    document.documentElement.dataset.motionPreference = "reduce";
+    try {
+      const onready = vi.fn();
+      scene = mountGenerateScene(host, SQUARE, onready);
+      expect(onready).toHaveBeenCalledTimes(1);
+      await new Promise((resolve) => setTimeout(resolve, 20));
+      expect(drawMatrixRealization).not.toHaveBeenCalled();
+    } finally {
+      delete document.documentElement.dataset.motionPreference;
+    }
+  });
+
   it("warns once when the source returns no sequence", async () => {
     const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
     try {

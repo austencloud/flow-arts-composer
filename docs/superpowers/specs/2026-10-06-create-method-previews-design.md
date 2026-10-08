@@ -295,6 +295,10 @@ The front door must open as fast as it does now.
 
 - The first paint carries no scene code. Scene modules load by dynamic import
   after first paint, in idle time, while the reserved boxes hold their tint.
+  They load only while the board is open: a method chosen before the idle
+  wait leaves them unloaded until the front door opens again.
+- Generate and Tunnel draw each turn's sequence ahead, between turns. Under
+  reduced motion no turn plays, so they draw nothing.
 - No Firestore, workers, or WebGL. Data is the demo sequence (41 KB, loaded
   with the scenes), two small static files (`tnd-base-words.json`, 88 KB, and
   `DiamondPictographDataframe.csv`, 33 KB), and the pictograph assets the

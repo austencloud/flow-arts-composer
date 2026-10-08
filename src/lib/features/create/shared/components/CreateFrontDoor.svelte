@@ -244,6 +244,7 @@
                   <CreateMethodPreview
                     methodId={method.id}
                     color={method.color ?? "var(--theme-accent)"}
+                    open={active}
                     playing={turns.playingId === method.id}
                     turn={turns.turn}
                     onready={handleReady}

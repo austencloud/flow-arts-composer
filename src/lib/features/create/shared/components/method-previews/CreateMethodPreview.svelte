@@ -6,8 +6,8 @@
    * docs/superpowers/specs/2026-10-06-create-method-previews-design.md
    *
    * The box is reserved from first paint and shows the method's tint. Once
-   * the board is idle and any route morph has finished, the method's scene
-   * loads and draws its finished picture in the hidden layer. When the scene
+   * the board is open and idle and any route morph has finished, the
+   * method's scene loads and draws its finished picture in the hidden layer. When the scene
    * reports ready, the box crossfades from the tint to the scene, so nothing
    * around it moves. Turns arrive from the front door's coordinator as
    * `playing` and `turn`.
@@ -17,7 +17,7 @@
    * positioned, sized slot; it fills that slot and is the size container its
    * scene measures against.
    */
-  import { onDestroy, onMount } from "svelte";
+  import { onDestroy } from "svelte";
   import DualSourceCrossfade from "$lib/shared/components/DualSourceCrossfade.svelte";
   import LazyMount from "$lib/shared/components/LazyMount.svelte";
   import { runAfterNamedRouteMorphIdle } from "$lib/shared/transitions/named-route-morph-state.svelte";
@@ -30,6 +30,7 @@
   let {
     methodId,
     color,
+    open = true,
     playing = false,
     turn = 0,
     onready,
@@ -42,6 +43,12 @@
     methodId: string;
     /** The method's color: the tint, and the scene's accent. */
     color: string;
+    /**
+     * Whether the board is open. The front door stays mounted behind a
+     * workspace, so a box mounted on a board that closes before its idle
+     * wait waits to load until the board opens again.
+     */
+    open?: boolean;
     /** True while it is this card's turn. */
     playing?: boolean;
     /** The coordinator's turn number. */
@@ -83,12 +90,15 @@
   });
 
   // Scene code stays out of first paint. It loads once the board is idle
-  // and any route morph has finished (spec: Performance).
-  onMount(() =>
-    runAfterNamedRouteMorphIdle(() => {
+  // and any route morph has finished (spec: Performance), and only while
+  // the board is open: a method picked during the wait would otherwise load
+  // every scene behind its workspace. A loaded scene stays.
+  $effect(() => {
+    if (!open || load) return;
+    return runAfterNamedRouteMorphIdle(() => {
       load = true;
-    })
-  );
+    });
+  });
 
   onDestroy(() => {
     destroyed = true;

@@ -7,6 +7,7 @@ import { flushSync, mount, unmount } from "svelte";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import CreateMethodPreview from "$lib/features/create/shared/components/method-previews/CreateMethodPreview.svelte";
 import FakeMethodScene, { fakeScene } from "./FakeMethodScene.svelte";
+import { mountMethodPreview } from "./create-method-preview-harness.svelte";
 
 // vitest-setup.ts swaps document.createElement for stubs that are not DOM
 // nodes. Mounting a component needs jsdom's own, from document's prototype.
@@ -51,6 +52,7 @@ const fakeLoader = () => Promise.resolve({ default: FakeMethodScene });
 
 let host: HTMLElement;
 let component: ReturnType<typeof mount> | null = null;
+let preview: ReturnType<typeof mountMethodPreview> | null = null;
 let stubbedCreateElement: typeof document.createElement;
 
 beforeEach(() => {
@@ -66,6 +68,8 @@ beforeEach(() => {
 afterEach(() => {
   if (component) unmount(component);
   component = null;
+  preview?.destroy();
+  preview = null;
   host.remove();
   document.createElement = stubbedCreateElement;
   fakeScene.reportsReady = true;
@@ -124,6 +128,34 @@ describe("CreateMethodPreview", () => {
     expect(scene?.dataset.accent).toBe("#3b82f6");
     expect(onready).toHaveBeenCalledTimes(1);
     expect(onready).toHaveBeenCalledWith("construct");
+  });
+
+  it("does not load while the board is closed, and loads when it reopens", async () => {
+    const loader = vi.fn(fakeLoader);
+    preview = mountMethodPreview(host, { open: true, loader });
+    // A method is picked before the idle wait passes.
+    await vi.advanceTimersByTimeAsync(100);
+    preview.setOpen(false);
+    await settle();
+    await vi.advanceTimersByTimeAsync(3000);
+    flushSync();
+    expect(loader).not.toHaveBeenCalled();
+    expect(host.querySelector(".fake-scene")).toBeNull();
+
+    preview.setOpen(true);
+    await settle();
+    expect(loader).toHaveBeenCalledTimes(1);
+    expect(host.querySelector(".fake-scene")).not.toBeNull();
+  });
+
+  it("keeps a loaded scene when the board closes", async () => {
+    preview = mountMethodPreview(host, { open: true, loader: fakeLoader });
+    await settle();
+    const scene = host.querySelector(".fake-scene");
+    expect(scene).not.toBeNull();
+    preview.setOpen(false);
+    await settle();
+    expect(host.querySelector(".fake-scene")).toBe(scene);
   });
 
   it("passes the turn through once the scene is ready", async () => {
