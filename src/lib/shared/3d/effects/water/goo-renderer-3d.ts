@@ -20,11 +20,12 @@ import {
 
 const STRANDS = 64;
 const DROPS = 512;
-const RINGS = 13;
-const SIDES = 8;
+const RINGS = 17;
+const SIDES = 12;
 const VERTICES = RINGS * SIDES;
 const TELEPORT_DISTANCE = 0.75;
 const UP = new Vector3(0, 1, 0);
+const RIGHT = new Vector3(1, 0, 0);
 
 interface Strand {
   active: boolean;
@@ -36,6 +37,7 @@ interface Strand {
   radius: number;
   gravity: number;
   tail: Vector3;
+  bend: Vector3;
   head: Vector3;
   velocity: Vector3;
   core: Color;
@@ -114,12 +116,13 @@ function createWetMaterial(): ShaderMaterial {
       vec3 n = normalize(vNormal);
       vec3 view = normalize(vView);
       vec3 light = normalize(vec3(-0.45, 0.85, 0.65));
-      float diffuse = 0.45 + 0.55 * max(dot(n, light), 0.0);
+      float diffuse = 0.27 + 0.62 * max(dot(n, light), 0.0);
       float fresnel = pow(1.0 - max(dot(n, view), 0.0), 2.4);
-      float glint = pow(max(dot(reflect(-light, n), view), 0.0), 28.0);
-      float fineGlint = pow(max(dot(reflect(-light, n), view), 0.0), 100.0);
+      float glint = pow(max(dot(reflect(-light, n), view), 0.0), 30.0);
+      float fineGlint = pow(max(dot(reflect(-light, n), view), 0.0), 110.0);
+      float softbox = pow(max(dot(reflect(-normalize(vec3(0.35, 0.65, -0.7)), n), view), 0.0), 12.0);
       vec3 body = vColor * diffuse;
-      vec3 wet = vHighlight * (0.45 * fresnel + 0.65 * glint + 0.35 * fineGlint);
+      vec3 wet = vHighlight * (0.12 * fresnel + 0.34 * glint + 0.28 * fineGlint + 0.11 * softbox);
       gl_FragColor = vec4(body + wet, vAlpha);
       #include <tonemapping_fragment>
       #include <colorspace_fragment>
@@ -191,6 +194,7 @@ export class GooRenderer3D {
     radius: 0,
     gravity: -9.8,
     tail: new Vector3(),
+    bend: new Vector3(),
     head: new Vector3(),
     velocity: new Vector3(),
     core: new Color(),
@@ -255,6 +259,7 @@ export class GooRenderer3D {
     this.sphereGeometry.setAttribute("aAlpha", this.dropAlphas);
     this.tubeMesh.frustumCulled = false;
     this.dropMesh.frustumCulled = false;
+    this.dropMesh.instanceMatrix.setUsage(DynamicDrawUsage);
     this.dropMesh.count = 0;
     this.tubeMesh.visible = false;
     this.dropMesh.visible = false;
@@ -344,30 +349,33 @@ export class GooRenderer3D {
     }
     const styleRate =
       p.spewStyle === "flow" ? 1 : p.spewStyle === "splash" ? 0.7 : 0.3;
-    state.accumulator = Math.min(2, state.accumulator + dt * rate * styleRate);
-    while (state.accumulator >= 1) {
-      state.accumulator -= 1;
-      if (p.spewStyle === "mist") {
+    state.accumulator = Math.min(1, state.accumulator + dt * rate * styleRate);
+    if (p.spewStyle === "mist") {
+      if (state.accumulator >= 1) {
+        state.accumulator = 0;
         this.spawnDrop(
           source.position,
           source.velocity,
-          p.baseRadius * 0.48,
+          p.baseRadius * 0.28,
           p.worldGravity * 0.35,
           p.resolvedPalette.edge,
           p.resolvedPalette.highlight,
-          1 - p.clarity * 0.45,
-          0.42
+          0.94 - p.clarity * 0.12,
+          0.34
         );
-      } else {
-        this.spawnStrand(source);
       }
+    } else if (
+      state.accumulator >= 1 &&
+      !this.hasSourceStrand(source.sourceId)
+    ) {
+      if (this.spawnStrand(source)) state.accumulator = 0;
     }
   }
 
-  private spawnStrand(source: GooTipSource3D): void {
+  private spawnStrand(source: GooTipSource3D): boolean {
     const p = source.params;
     const index = this.takeStrand();
-    if (index < 0) return;
+    if (index < 0) return false;
     const strand = this.strands[index]!;
     strand.active = true;
     strand.sourceId = source.sourceId;
@@ -375,29 +383,31 @@ export class GooRenderer3D {
     strand.age = 0;
     strand.tension = Math.min(1, Math.max(0, p.surfaceTension));
     strand.maxAge =
-      (p.spewStyle === "flow" ? 0.36 : 0.18) + 0.22 * strand.tension;
+      (p.spewStyle === "flow" ? 0.58 : 0.34) + 0.24 * strand.tension;
     strand.radius =
       p.baseRadius *
       (0.7 + 0.5 * p.intensity) *
-      (p.spewStyle === "flow" ? 1.25 : 0.9);
+      (p.spewStyle === "flow" ? 0.92 : 0.7);
     strand.gravity = p.worldGravity;
     strand.tail.set(source.position.x, source.position.y, source.position.z);
+    strand.bend.copy(strand.tail);
     strand.head.copy(strand.tail);
     strand.velocity
       .set(source.velocity.x, source.velocity.y, source.velocity.z)
-      .multiplyScalar(0.65);
+      .multiplyScalar(0.25);
     strand.velocity.y += p.spewStyle === "splash" ? 0.3 : -0.15;
     strand.core.set(p.resolvedPalette.core);
     strand.edge.set(p.resolvedPalette.edge);
     strand.highlight.set(p.resolvedPalette.highlight);
-    strand.alpha = 1 - p.clarity * 0.45;
+    strand.alpha = 0.95 - p.clarity * 0.12;
+    return true;
   }
 
   private advanceStrands(sources: readonly GooTipSource3D[], dt: number): void {
     for (const strand of this.strands) {
       if (!strand.active) continue;
       strand.age += dt;
-      strand.velocity.y += strand.gravity * dt * (0.55 + 0.35 * strand.tension);
+      strand.velocity.y += strand.gravity * dt * 0.46;
       strand.head.addScaledVector(strand.velocity, dt);
       if (strand.attached) {
         const source = sources.find(
@@ -411,24 +421,25 @@ export class GooRenderer3D {
             source.position.y,
             source.position.z
           );
-          if (this.next.distanceTo(strand.tail) < TELEPORT_DISTANCE)
+          if (this.next.distanceTo(strand.tail) < TELEPORT_DISTANCE) {
             strand.tail.copy(this.next);
-          else strand.attached = false;
+            strand.bend.lerp(this.next, Math.min(1, dt * 4.5));
+          } else strand.attached = false;
         } else strand.attached = false;
       }
       const reach = strand.head.distanceTo(strand.tail);
-      const pinch = 0.22 + 0.34 * strand.tension;
+      const pinch = 0.42 + 0.3 * strand.tension;
       if (strand.age >= strand.maxAge || reach > pinch || !strand.attached) {
         if (strand.age > 0.045)
           this.spawnDrop(
             strand.head,
             strand.velocity,
-            strand.radius * 1.15,
+            strand.radius * 0.42,
             strand.gravity,
             strand.edge,
             strand.highlight,
             strand.alpha,
-            0.4
+            0.36
           );
         strand.active = false;
       }
@@ -496,31 +507,56 @@ export class GooRenderer3D {
         positions.fill(0, base, base + VERTICES * 3);
         continue;
       }
-      this.tangent.subVectors(strand.head, strand.tail);
-      const length = this.tangent.length();
+      const length = strand.head.distanceTo(strand.tail);
       if (length < 0.002) {
         positions.fill(0, base, base + VERTICES * 3);
         continue;
       }
-      this.tangent.divideScalar(length);
-      this.side.crossVectors(this.tangent, UP);
-      if (this.side.lengthSq() < 0.01) this.side.set(1, 0, 0);
-      this.side.normalize();
-      this.binormal.crossVectors(this.tangent, this.side).normalize();
       const life = Math.min(1, strand.age / strand.maxAge);
+      const stretch = Math.min(
+        1,
+        Math.max(life, length / (0.42 + 0.3 * strand.tension))
+      );
       for (let ring = 0; ring < RINGS; ring++) {
         const t = ring / (RINGS - 1);
-        this.center.copy(strand.tail).lerp(strand.head, t);
-        this.center.y -=
-          Math.sin(Math.PI * t) *
-          Math.min(0.08, length * 0.17) *
-          (1 - strand.tension * 0.45);
-        const bulb = 1 + 0.8 * Math.exp(-Math.pow((t - 0.87) / 0.13, 2));
+        const oneMinusT = 1 - t;
+        this.center
+          .copy(strand.tail)
+          .multiplyScalar(oneMinusT * oneMinusT)
+          .addScaledVector(strand.bend, 2 * oneMinusT * t)
+          .addScaledVector(strand.head, t * t);
+        this.tangent
+          .subVectors(strand.bend, strand.tail)
+          .multiplyScalar(2 * oneMinusT);
+        this.next.subVectors(strand.head, strand.bend);
+        this.tangent.addScaledVector(this.next, 2 * t);
+        if (this.tangent.lengthSq() < 1e-10) {
+          this.tangent.subVectors(strand.head, strand.tail);
+        }
+        this.tangent.normalize();
+        if (ring === 0) {
+          this.side.crossVectors(
+            this.tangent,
+            Math.abs(this.tangent.y) < 0.85 ? UP : RIGHT
+          );
+        } else {
+          // Carry the preceding ring frame along the curve. A fresh cross with
+          // UP changes sign as the tangent passes through vertical.
+          this.side.addScaledVector(this.tangent, -this.side.dot(this.tangent));
+        }
+        if (this.side.lengthSq() < 1e-10) {
+          this.side.crossVectors(
+            this.tangent,
+            Math.abs(this.tangent.y) < 0.85 ? UP : RIGHT
+          );
+        }
+        this.side.normalize();
+        this.binormal.crossVectors(this.tangent, this.side).normalize();
+        const bulb = 1 + 0.7 * Math.exp(-Math.pow((t - 0.84) / 0.12, 2));
         const neck =
-          1 -
-          0.56 * Math.exp(-Math.pow((t - 0.63) / 0.15, 2)) * (0.4 + 0.6 * life);
-        const end = Math.min(1, t * 9 + 0.06, (1 - t) * 10 + 0.08);
-        const radius = strand.radius * bulb * neck * end * (1 - 0.45 * life);
+          1 - 0.56 * Math.exp(-Math.pow((t - 0.66) / 0.11, 2)) * stretch;
+        const cap = Math.pow(Math.max(0, Math.sin(Math.PI * t)), 0.55);
+        const radius = strand.radius * bulb * neck * cap * (1 - 0.25 * t);
         for (let side = 0; side < SIDES; side++) {
           const angle = (side * Math.PI * 2) / SIDES;
           const offset = base + (ring * SIDES + side) * 3;
@@ -534,7 +570,7 @@ export class GooRenderer3D {
             this.center.z + this.side.z * c + this.binormal.z * s;
           this.tint
             .copy(strand.core)
-            .lerp(strand.edge, 0.2 + 0.35 * (1 - Math.cos(angle)));
+            .lerp(strand.edge, 0.08 + 0.16 * (1 - Math.cos(angle)));
           colors[offset] = this.tint.r;
           colors[offset + 1] = this.tint.g;
           colors[offset + 2] = this.tint.b;
@@ -609,6 +645,13 @@ export class GooRenderer3D {
 
   private hasActiveStrands(): boolean {
     for (const strand of this.strands) if (strand.active) return true;
+    return false;
+  }
+
+  private hasSourceStrand(sourceId: number): boolean {
+    for (const strand of this.strands) {
+      if (strand.active && strand.sourceId === sourceId) return true;
+    }
     return false;
   }
 

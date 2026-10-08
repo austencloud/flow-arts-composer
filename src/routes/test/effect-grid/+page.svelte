@@ -73,10 +73,13 @@
   }
   setEffectsConfigContext(effectsConfig);
 
-  let showProps = $state(false);
+  let showProps = $state(page.url.searchParams.get("props") === "1");
   let playing = $state(true);
   let showLabels = $state(true);
-  let centerPlanes = $state(2);
+  const requestedOverlay = Number(page.url.searchParams.get("overlay"));
+  let centerPlanes = $state(
+    requestedOverlay === 1 || requestedOverlay === 6 ? requestedOverlay : 2
+  );
   let viewportWidth = $state(1920);
   let viewportHeight = $state(1080);
   let activationEffect = $state<EffectType>("none");
