@@ -14,6 +14,7 @@ import {
   type CompileEnv,
   type CompileItemEnv,
   type FootageIntro,
+  type PluginCompiledOutputs,
   type PostBox,
   type PostItem,
   type PostProject,
@@ -35,6 +36,11 @@ import type {
   PostCarouselItem,
   PostMovesItem,
 } from "./item-kinds";
+
+// This module and everything it reaches must never import the plugin index by
+// value: item-kinds imports this module, create-plugin imports item-kinds, and
+// the index re-exports create-plugin. tests/unit/video-editor-value-closure.test.ts
+// guards it.
 
 /**
  * tka's part of `compilePostProject`: the `compile` of its four item kinds
@@ -483,7 +489,10 @@ export function compileTitlesItem(
   return true;
 }
 
-/** tka's hooks around the core kinds, in the order the compiler calls them. */
+/**
+ * tka's hooks around the core kinds, listed in the compiler's call order
+ * (`regionSpan` also runs from inside `begin`).
+ */
 export const TKA_COMPILE_HOOKS: ProjectCompileHooks = {
   footageIntro: (env) => footageIntroOf(env.project),
   begin: (env) => {
@@ -506,6 +515,14 @@ export const TKA_COMPILE_HOOKS: ProjectCompileHooks = {
       : null;
     env.state.set(PIP_STATE_KEY, { pipHandoff, pipBoxes } satisfies PipPass);
   },
+  // An animation's tunnel intro carries its region from the full frame.
+  regionSpan: (item) =>
+    item.kind === "animation" && item.tunnelHook?.seconds !== undefined
+      ? {
+          start: item.start,
+          seconds: Math.min(item.tunnelHook.seconds, item.duration),
+        }
+      : null,
   videoCompanions: (item, env, footage) => {
     const { useRole, presetRole } = env;
     // The staff effect rides the footage: same span, media time, framing
@@ -522,17 +539,11 @@ export const TKA_COMPILE_HOOKS: ProjectCompileHooks = {
       });
     }
   },
-  // An animation's tunnel intro carries its region from the full frame.
-  regionSpan: (item) =>
-    item.kind === "animation" && item.tunnelHook?.seconds !== undefined
-      ? {
-          start: item.start,
-          seconds: Math.min(item.tunnelHook.seconds, item.duration),
-        }
-      : null,
 };
 
 /** tka's compiled outputs: each titles clip's words, for `tunnel-titles-painter.ts`. */
 export const TKA_COMPILE_OUTPUTS = {
   titles: () => [] as TunnelTitlesPlan[],
+} satisfies {
+  [K in keyof PluginCompiledOutputs]: () => PluginCompiledOutputs[K];
 };
