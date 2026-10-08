@@ -24,6 +24,10 @@
 	} from "../domain/mandala-types";
 	import { DEFAULT_OVERLAP_CONFIG } from "../domain/mandala-types";
 	import {
+		createMandalaCanvasSizeTracker,
+		unrotatedSquareSide,
+	} from "$lib/shared/mandala/services/mandala-canvas-size";
+	import {
 		MANDALA_DEFAULT_SIZE,
 		MANDALA_STANDARD_TIP_DX,
 		DARK_MOTION_BLUE_STROKE,
@@ -508,6 +512,41 @@
 		return renderMandalaSVG(paths, renderOptions);
 	});
 
+	// On-screen CSS size of the canvas, measured on demand rather than every
+	// frame; see mandala-canvas-size.ts.
+	const canvasSize = createMandalaCanvasSizeTracker();
+
+	function resolveLogicalSize(canvas: HTMLCanvasElement): number {
+		// getBoundingClientRect reflects any CSS transform/zoom on an ancestor
+		// (e.g. a scaled device frame), so the backing matches what is actually on
+		// screen there. The container's own spin is taken back out.
+		return canvasSize.resolve(
+			() => unrotatedSquareSide(canvas.getBoundingClientRect().width, rotationDeg),
+			size,
+		);
+	}
+
+	// A layout resize (pane drag, phone rotation) re-measures exactly. A canvas
+	// no loop is painting redraws here so it is not left stretched.
+	$effect(() => {
+		const canvas = canvasEl;
+		if (!canvas || typeof ResizeObserver === "undefined") return;
+		let first = true;
+		const observer = new ResizeObserver(() => {
+			// The first notification reports the box the mount draw just measured.
+			const settled = first && canvasSize.measured !== null;
+			first = false;
+			if (settled) return;
+			canvasSize.invalidate();
+			if (!rafId && !morphRafId && !changeMorphRafId) draw();
+		});
+		observer.observe(canvas);
+		return () => {
+			observer.disconnect();
+			canvasSize.invalidate();
+		};
+	});
+
 	// Paint the canvas ONCE for the current state. Called exactly once per frame
 	// from the single animation rAF (and once from the morph rAF when not
 	// otherwise animating), so the canvas redraws at the display refresh rate,
@@ -531,10 +570,7 @@
 		// MAX_BACKING caps the pixel count so the per-frame raster (glow is the
 		// expensive part) stays within the 60fps budget on the largest panes.
 		const dpr = typeof window !== "undefined" ? Math.min(3, Math.max(1, window.devicePixelRatio || 1)) : 1;
-		// True rendered size in CSS px — getBoundingClientRect reflects any CSS
-		// transform/zoom on an ancestor (e.g. a scaled device frame), so the backing
-		// matches what's actually on screen even there. Falls back to the prop.
-		const logicalSize = Math.max(1, Math.round(canvas.getBoundingClientRect().width) || size);
+		const logicalSize = resolveLogicalSize(canvas);
 		const device = Math.min(MAX_BACKING, Math.max(1, Math.round(logicalSize * dpr * SUPERSAMPLE)));
 		// Logical→device scale (folds in dpr + supersample + any CSS stretch).
 		const ratio = device / logicalSize;
