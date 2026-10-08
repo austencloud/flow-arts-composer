@@ -170,6 +170,8 @@ Last audit: 2025-12-27
     onPlaybackModeChange = undefined,
     onSaveToLibrary = undefined,
     initialQualityTier = undefined,
+    trailOverlay = true,
+    ghostAnnotations = true,
   }: {
     leftProp: PropState | null;
     rightProp: PropState | null;
@@ -349,6 +351,15 @@ Last audit: 2025-12-27
     onSaveToLibrary?: () => void | Promise<void>;
     /** Optional adaptive-quality ceiling for performance-sensitive embeds. */
     initialQualityTier?: QualityTier;
+    /** False never creates the main canvas's GPU trail layer, which costs a
+     *  few hundred milliseconds of main-thread time at mount. Only for canvases
+     *  whose trails stay off for their whole life, such as decorative previews.
+     *  The split view draws its own canvases and does not take this option. */
+    trailOverlay?: boolean;
+    /** False omits the data-ghost* annotations, so the admin ghost presenter
+     *  neither parks beside this canvas nor reads its playing state. For
+     *  decorative previews that sit inside another control. */
+    ghostAnnotations?: boolean;
   } = $props();
 
   const resolvedContextId =
@@ -814,8 +825,8 @@ Last audit: 2025-12-27
     type="button"
     class="corner-toggle"
     aria-label={isPlaying ? t("viewer_ui_pause") : t("viewer_ui_play")}
-    data-ghost="safe"
-    data-ghost-kind="play"
+    data-ghost={ghostAnnotations ? "safe" : undefined}
+    data-ghost-kind={ghostAnnotations ? "play" : undefined}
     onclick={handleCornerToggle}
   >
     <span class="corner-disc">
@@ -842,11 +853,11 @@ Last audit: 2025-12-27
   data-corner-toggle-at-rest={(cornerToggle && cornerToggleAtRest) || undefined}
   data-playing={isPlaying || undefined}
   data-view={viewState}
-  data-ghost="safe"
-  data-ghost-kind="stage"
-  data-ghost-state={isPlaying ? "playing" : undefined}
-  data-ghost-linger={isPlaying ? "" : undefined}
-  data-ghost-word={word || undefined}
+  data-ghost={ghostAnnotations ? "safe" : undefined}
+  data-ghost-kind={ghostAnnotations ? "stage" : undefined}
+  data-ghost-state={ghostAnnotations && isPlaying ? "playing" : undefined}
+  data-ghost-linger={ghostAnnotations && isPlaying ? "" : undefined}
+  data-ghost-word={ghostAnnotations ? word || undefined : undefined}
   oncontextmenu={handleContextMenu}
   onpointerdown={handlePointerDown}
   onpointermove={handlePointerMove}
@@ -932,6 +943,7 @@ Last audit: 2025-12-27
       {effectsConfigState}
       {prewarmEffects}
       {initialQualityTier}
+      {trailOverlay}
       {beatIndicators}
       contextId={resolvedContextId}
       onCanvasReady={handleCanvasReady}

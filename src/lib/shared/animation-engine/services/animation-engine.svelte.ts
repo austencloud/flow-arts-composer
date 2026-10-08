@@ -232,6 +232,8 @@ export class AnimationEngine {
   private visibilityManagerOverride: AnimationVisibilityStateManager | null =
     null;
   private unsubscribeVisibility: (() => void) | null = null;
+  /** False skips the GPU trail overlay at init (see setTrailOverlayEnabled). */
+  private trailOverlayEnabled = true;
 
   /** Per-performer effort resolver. When set, getEffortForPerformer() calls it
    *  instead of reading the global visibility manager. */
@@ -245,6 +247,18 @@ export class AnimationEngine {
    */
   setVisibilityManager(manager: AnimationVisibilityStateManager): void {
     this.visibilityManagerOverride = manager;
+  }
+
+  /**
+   * Opt out of the GPU trail overlay before this engine initializes. Its
+   * WebGL2 context and shader precompile cost a few hundred milliseconds of
+   * main-thread time at mount, so only a canvas whose trails stay off for its
+   * whole life should turn it off (a decorative preview). The default builds
+   * the overlay. No-op once initialized.
+   */
+  setTrailOverlayEnabled(enabled: boolean): void {
+    if (this.state.isInitialized) return;
+    this.trailOverlayEnabled = enabled;
   }
 
   /** Set the adaptive quality ceiling before this engine initializes. */
@@ -395,6 +409,7 @@ export class AnimationEngine {
     const ctx: LifecycleInitCtx = {
       containerElement,
       visibilityManagerOverride: this.visibilityManagerOverride,
+      trailOverlay: this.trailOverlayEnabled,
       effectsConfigState: this.effectSystem.effectsConfigState,
       effectRendererManager: this.effectSystem.rendererManager,
       propSystem: this.propSystem,

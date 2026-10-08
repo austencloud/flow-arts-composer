@@ -61,6 +61,12 @@ import { squareFrame } from "../domain/types/canvas-frame";
 export interface LifecycleInitCtx {
   containerElement: HTMLDivElement;
   visibilityManagerOverride: AnimationVisibilityStateManager | null;
+  /**
+   * False skips the GPU trail overlay: its WebGL2 context and shader
+   * precompile block the main thread for a few hundred milliseconds at mount.
+   * Only for canvases whose trails stay off for their whole life.
+   */
+  trailOverlay: boolean;
   effectsConfigState: EffectsConfigState | null;
   effectRendererManager: EffectRendererManager;
   propSystem: PropSystem;
@@ -196,6 +202,7 @@ export class CanvasLifecycleManager {
     const {
       containerElement,
       visibilityManagerOverride,
+      trailOverlay,
       effectsConfigState,
       effectRendererManager,
       propSystem,
@@ -271,6 +278,7 @@ export class CanvasLifecycleManager {
         propTypeManager,
         frameBudgetMonitor,
         canvasSize,
+        trailOverlay,
         getLastPropsRef,
         buildFrameParams,
         getVM,
@@ -421,6 +429,7 @@ export class CanvasLifecycleManager {
     propTypeManager: PropTypeManager;
     frameBudgetMonitor: FrameBudgetMonitor;
     canvasSize: number;
+    trailOverlay: boolean;
     getLastPropsRef: () => AnimationEngineProps | null;
     buildFrameParams: (props: AnimationEngineProps) => RenderFrameParams;
     getVM: () => AnimationVisibilityStateManager;
@@ -434,6 +443,7 @@ export class CanvasLifecycleManager {
       propTypeManager,
       frameBudgetMonitor,
       canvasSize,
+      trailOverlay,
       getLastPropsRef,
       buildFrameParams,
       getVM,
@@ -486,18 +496,23 @@ export class CanvasLifecycleManager {
       animationRenderer: this._animationRenderer,
     });
 
-    erm.trailOverlay = erm.createTrailOverlay();
-    erm.trailOverlay.initialize(
-      containerElement,
-      initialFrame.width,
-      initialFrame.height
-    );
-    renderLoop.updateConfig({
-      renderers: {
-        trails:
-          erm.trailOverlay as unknown as import("./effects/effect-renderer").EffectRendererLike,
-      },
-    });
+    // A canvas that opts out never builds the GPU trail layer. The render loop
+    // and playback sync both treat a missing overlay as "draw trails inline",
+    // which is inert while the canvas's trails stay off.
+    if (trailOverlay) {
+      erm.trailOverlay = erm.createTrailOverlay();
+      erm.trailOverlay.initialize(
+        containerElement,
+        initialFrame.width,
+        initialFrame.height
+      );
+      renderLoop.updateConfig({
+        renderers: {
+          trails:
+            erm.trailOverlay as unknown as import("./effects/effect-renderer").EffectRendererLike,
+        },
+      });
+    }
     erm.syncEffectLayers();
   }
 

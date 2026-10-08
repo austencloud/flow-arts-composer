@@ -24,6 +24,7 @@
     calculateStepPosition,
     calculateStepWaveBand,
     getTimelineWidthMultiplier,
+    waveBandAt,
   } from "$lib/shared/create/utils/grid-calculations";
   import { getMandalaPlacements } from "$lib/shared/sequence-viewer/services/get-mandala-placements";
   import {
@@ -732,7 +733,7 @@
           }))
       : standardMandalaCells.map((cell, slot) => ({
           key: mandalaRevealKey(slot),
-          band: cell.row - 1 + (cell.column - 1),
+          band: waveBandAt(cell.row - 1, cell.column - 1),
         }))
   );
 
@@ -976,7 +977,7 @@
               {@const step = steps[stepIndex]!}
               {@const identity = getStepKey(step, stepIndex)}
               <!-- Row plus column, offset past the start tile's band 0. -->
-              {@const waveBand = rowIndex + columnIndex + 1}
+              {@const waveBand = waveBandAt(rowIndex, columnIndex + 1)}
               {@const isDeleting = isStepLeaving(stepIndex)}
               {@const musicalPosition = getDurationDisplay(stepIndex)}
               {@const effectiveDuration = getEffectiveMultiplier(
@@ -1188,7 +1189,7 @@
       {/each}
 
       {#each standardMandalaCells as cell, slot (cell.key)}
-        {@const waveBand = cell.row - 1 + (cell.column - 1)}
+        {@const waveBand = waveBandAt(cell.row - 1, cell.column - 1)}
         <div
           class="mandala-layout-item"
           class:cascading={isMandalaCascading(slot)}

@@ -1,14 +1,25 @@
 <script lang="ts">
   import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import { onMount } from "svelte";
+  import { onMount, untrack } from "svelte";
   import type { Section } from "$lib/shared/navigation/domain/types";
   import type { CreateFrontDoorSource } from "$lib/shared/navigation/state/navigation-state.svelte";
   import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
+  import { getSettings } from "$lib/shared/application/state/app-state.svelte";
   import LastUsedBadge from "$lib/shared/components/LastUsedBadge.svelte";
+  import {
+    createRenderActivityGate,
+    renderGateTarget,
+  } from "$lib/shared/render-gating/render-activity-gate";
+  import { runAfterNamedRouteMorphIdle } from "$lib/shared/transitions/named-route-morph-state.svelte";
   import {
     logCreateFrontDoorViewed,
     logCreateMethodSelected,
   } from "../services/create-entry-analytics";
+  import { createMethodPreviewTurns } from "../state/method-preview-turns.svelte";
+  import CreateMethodPreview from "./method-previews/CreateMethodPreview.svelte";
+  import { runAfterBootScreen } from "./method-previews/after-boot-screen";
+  import { methodPreviewHold } from "./method-previews/method-preview-hold";
+  import { METHOD_PREVIEW_SCENES } from "./method-previews/method-preview-scenes";
 
   const METHOD_ORDER = new Map([
     ["construct", 0],
@@ -51,12 +62,94 @@
   let wasActive = false;
   let haptics: ReturnType<typeof getHapticFeedback> | null = null;
 
+  // Each card shows its method at work, and the cards take turns (spec:
+  // docs/superpowers/specs/2026-10-06-create-method-previews-design.md).
+  // A method without a preview scene keeps its icon box.
+  function hasScene(methodId: string): boolean {
+    return Object.hasOwn(METHOD_PREVIEW_SCENES, methodId);
+  }
+
+  /** Cards whose scene has drawn its finished picture. */
+  const readyIds = new Set<string>();
+
+  const turns = createMethodPreviewTurns({
+    order: () =>
+      orderedMethods
+        .filter((method) => hasScene(method.id))
+        .map((method) => method.id),
+    isReady: (methodId) => readyIds.has(methodId),
+    // The turns wait for the boot screen to leave, then for the route morph.
+    defer: (go) => {
+      let cancelMorphIdle = (): void => {};
+      const cancelBoot = runAfterBootScreen(() => {
+        cancelMorphIdle = runAfterNamedRouteMorphIdle(go);
+      });
+      return () => {
+        cancelBoot();
+        cancelMorphIdle();
+      };
+    },
+  });
+
+  function handleReady(methodId: string): void {
+    readyIds.add(methodId);
+    turns.notifyReady(methodId);
+  }
+
+  // Turns pause while the page is hidden or the board is off screen.
+  const previewGate = createRenderActivityGate({
+    name: "create-method-previews",
+  });
+
+  // CreateModule keeps the front door mounted behind a workspace, so the
+  // previews mount the first time the board opens, not on every Create route.
+  let previewsWanted = $state(false);
+
+  // The system setting reports changes through its media query.
+  let systemMotion = $state(0);
+  const appReducedMotion = $derived(getSettings().reducedMotion ?? false);
+
   onMount(() => {
     try {
       haptics = getHapticFeedback();
     } catch {
       // A browser without haptics still gets the complete button interaction.
     }
+
+    const motionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const onMotionChange = (): void => {
+      systemMotion += 1;
+    };
+    motionQuery.addEventListener("change", onMotionChange);
+
+    turns.setActive(previewGate.active);
+    const unsubscribe = previewGate.subscribe((value) =>
+      turns.setActive(value)
+    );
+
+    return () => {
+      motionQuery.removeEventListener("change", onMotionChange);
+      unsubscribe();
+      previewGate.dispose();
+      turns.dispose();
+    };
+  });
+
+  // Opening the board starts two rounds and closing it ends them. A change
+  // to either reduce-motion setting starts over, so the turns stop at once
+  // when motion is reduced and come back when it is not.
+  $effect(() => {
+    const open = active;
+    void systemMotion;
+    void appReducedMotion;
+    untrack(() => {
+      if (!open) {
+        turns.stop();
+        return;
+      }
+      previewsWanted = true;
+      turns.start();
+    });
   });
 
   $effect(() => {
@@ -83,6 +176,8 @@
       onLockedSelect?.(methodId);
       return;
     }
+    // Choosing a method ends the turns.
+    turns.stop();
     onSelect(methodId);
   }
 
@@ -114,6 +209,8 @@
       role="list"
       aria-label={t("create_ui_creation_methods")}
       data-method-count={orderedMethods.length}
+      data-playing-method={turns.playingId}
+      use:renderGateTarget={previewGate}
     >
       {#each orderedMethods as method (method.id)}
         <!-- On the two-column phone board Construct leads with its own row
@@ -133,6 +230,7 @@
             style:--method-color={method.color ?? "var(--theme-accent)"}
             aria-label={accessibleName(method)}
             onclick={(event) => selectMethod(method.id, event.currentTarget)}
+            use:methodPreviewHold={{ turns, id: method.id }}
           >
             {#if lockedMethodIds.has(method.id)}
               <LastUsedBadge label={t("create_ui_account_badge")} />
@@ -140,12 +238,29 @@
               <LastUsedBadge />
             {/if}
 
-            <span class="method-icon" aria-hidden="true">
-              {@html method.icon}
+            <span class="method-stage" aria-hidden="true">
+              {#if hasScene(method.id)}
+                {#if previewsWanted}
+                  <CreateMethodPreview
+                    methodId={method.id}
+                    color={method.color ?? "var(--theme-accent)"}
+                    playing={turns.playingId === method.id}
+                    turn={turns.turn}
+                    onready={handleReady}
+                  />
+                {/if}
+              {:else}
+                <span class="method-icon">{@html method.icon}</span>
+              {/if}
             </span>
 
             <span class="method-copy">
-              <span class="method-name">{t(method.labelKey)}</span>
+              <span class="method-name"
+                >{#if hasScene(method.id)}<span
+                    class="method-glyph"
+                    aria-hidden="true">{@html method.icon}</span
+                  >{/if}{t(method.labelKey)}</span
+              >
               {#if method.descKey}
                 <span class="method-description">{t(method.descKey)}</span>
               {/if}
@@ -190,10 +305,20 @@
     text-wrap: balance;
   }
 
+  /* Each card holds a stage for its preview, then its words. A strip stage
+     sits above the words and takes the room its row has; a square stage
+     sits beside them (spec: Placement). --preview-min is a strip's least
+     height and --preview-side a square's side. Each tier sets both from the
+     room its cards have, and a square never makes its card taller. */
   .method-index {
+    --preview-min: 40px;
+    --preview-side: clamp(40px, 9cqh, 62px);
+
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    grid-auto-rows: minmax(min-content, 1fr);
+    /* A card takes two rows, its stage and its words. Cards side by side
+       share both, so their stages match and their names line up. */
+    grid-auto-rows: 1fr auto;
     column-gap: 8px;
     row-gap: 16px;
     width: 100%;
@@ -203,7 +328,10 @@
 
   .method-item {
     min-width: 0;
-    display: flex;
+    grid-row: span 2;
+    display: grid;
+    grid-template-rows: subgrid;
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .method-item.default-method {
@@ -214,14 +342,14 @@
     --last-used-badge-accent: var(--method-color);
 
     position: relative;
+    grid-row: 1 / -1;
     width: 100%;
-    min-height: 174px;
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    justify-content: flex-start;
-    gap: 12px;
+    min-width: 0;
+    display: grid;
+    grid-template-rows: subgrid;
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: 12px;
+    column-gap: 12px;
     padding: 14px;
     box-sizing: border-box;
     border: 1px solid
@@ -240,12 +368,12 @@
       border-color var(--transition-normal);
   }
 
+  /* Construct, alone on its row, sets its square beside its words. */
   .method-item.default-method .method-card {
     min-height: 92px;
-    display: grid;
-    grid-template-columns: 40px minmax(0, 1fr);
+    grid-template-rows: none;
+    grid-template-columns: var(--preview-side) minmax(0, 1fr);
     align-items: center;
-    gap: 12px;
   }
 
   .method-card:hover {
@@ -276,6 +404,26 @@
     outline-offset: 2px;
   }
 
+  .method-stage {
+    position: relative;
+    grid-row: 1;
+    grid-column: 1;
+    display: grid;
+    align-items: center;
+    justify-items: start;
+    min-width: 0;
+    min-height: var(--preview-min);
+    border-radius: var(--radius-2026-sm, 10px);
+  }
+
+  .method-item.default-method .method-stage {
+    width: var(--preview-side);
+    aspect-ratio: 1;
+    min-height: 0;
+    justify-items: center;
+  }
+
+  /* A method without a preview scene keeps its icon box in the stage. */
   .method-icon {
     width: 40px;
     height: 40px;
@@ -295,10 +443,17 @@
   }
 
   .method-copy {
+    grid-row: 2;
+    grid-column: 1;
     min-width: 0;
     display: flex;
     flex-direction: column;
     gap: 6px;
+  }
+
+  .method-item.default-method .method-copy {
+    grid-row: 1;
+    grid-column: 2;
   }
 
   .method-name {
@@ -306,6 +461,14 @@
     font-size: var(--font-size-lg, 1.125rem);
     font-weight: 720;
     line-height: 1.15;
+  }
+
+  /* The method's icon stays beside its name. */
+  .method-glyph {
+    display: inline-block;
+    margin-inline-end: 0.4em;
+    color: var(--method-color);
+    font-size: 0.9em;
   }
 
   .method-description {
@@ -320,15 +483,19 @@
       width: calc(100% - 28px);
     }
 
-    .method-card,
-    .method-item.default-method .method-card {
+    .method-index {
+      --preview-min: clamp(44px, 6cqi, 56px);
+      --preview-side: clamp(56px, 12cqi, 102px);
+    }
+
+    .method-card {
       --settings-method-icon-size: clamp(44px, 6cqi, 56px);
-      min-height: 132px;
-      display: grid;
-      grid-template-columns: var(--settings-method-icon-size) minmax(0, 1fr);
-      align-items: center;
-      gap: 14px;
+      column-gap: 14px;
       padding: 14px;
+    }
+
+    .method-item.default-method .method-card {
+      min-height: 132px;
     }
 
     .method-icon {
@@ -346,29 +513,82 @@
     }
   }
 
+  /* A landscape board is short, so every card sets its square beside its
+     words and the rows share the height. */
+  @container create-entry (min-width: 480px) and (max-width: 1199px) and (orientation: landscape) {
+    .method-index {
+      --preview-side: clamp(49px, min(18cqi, 18cqh), 140px);
+      grid-auto-rows: minmax(min-content, 1fr);
+    }
+
+    .method-item {
+      grid-row: auto;
+      display: flex;
+    }
+
+    .method-card,
+    .method-item.default-method .method-card {
+      min-height: 132px;
+      grid-template-rows: none;
+      grid-template-columns: var(--preview-side) minmax(0, 1fr);
+      align-items: start;
+    }
+
+    .method-stage,
+    .method-item.default-method .method-stage {
+      width: var(--preview-side);
+      aspect-ratio: 1;
+      min-height: 0;
+      justify-items: center;
+    }
+
+    .method-copy,
+    .method-item.default-method .method-copy {
+      grid-row: 1;
+      grid-column: 2;
+    }
+  }
+
   @container create-entry (max-width: 619px) {
     .two-methods .method-index {
+      --preview-side: clamp(48px, 16cqi, 74px);
       grid-template-columns: minmax(0, 1fr);
       grid-auto-rows: 1fr;
     }
 
     .two-methods .method-item {
       grid-column: 1 / -1;
+      grid-row: auto;
+      display: flex;
     }
 
     .two-methods .method-card,
     .two-methods .method-item.default-method .method-card {
       min-height: 112px;
-      display: grid;
-      grid-template-columns: auto minmax(0, 1fr);
+      grid-template-rows: none;
+      grid-template-columns: var(--preview-side) minmax(0, 1fr);
       align-items: center;
-      gap: 16px;
+      column-gap: 16px;
       padding: 18px;
+    }
+
+    .two-methods .method-stage,
+    .two-methods .method-item.default-method .method-stage {
+      width: var(--preview-side);
+      aspect-ratio: 1;
+      min-height: 0;
+      justify-items: center;
+    }
+
+    .two-methods .method-copy,
+    .two-methods .method-item.default-method .method-copy {
+      grid-row: 1;
+      grid-column: 2;
     }
   }
 
   /* Foldables keep two readable columns. Four secondary cards only fit
-     once each card has room for its icon, padding, and description. */
+     once each card has room for its stage, padding, and description. */
   @container create-entry (min-width: 1200px) {
     .front-door-inner {
       width: calc(100% - clamp(48px, 6cqi, 160px));
@@ -383,6 +603,8 @@
        the second, so no card ever wraps alone. Three methods sit in one
        row of three. */
     .method-index {
+      --preview-min: clamp(64px, 11cqh, 180px);
+      --preview-side: clamp(72px, 9.5cqi, 134px);
       grid-template-columns: repeat(12, minmax(0, 1fr));
       grid-auto-rows: auto;
       column-gap: 20px;
@@ -410,15 +632,10 @@
       grid-column: span 3;
     }
 
-    .method-card,
-    .method-item.default-method .method-card {
+    .method-card {
       --settings-method-icon-size: 48px;
-      min-height: 208px;
-      display: flex;
-      flex-direction: column;
-      align-items: flex-start;
-      justify-content: flex-start;
-      gap: 20px;
+      row-gap: 20px;
+      column-gap: 20px;
       padding: 28px;
       background: color-mix(
         in srgb,
@@ -427,19 +644,39 @@
       );
     }
 
+    /* Primary cards, and all three cards of a three-method board, set the
+       square beside their words. */
+    .method-item.primary-method .method-card,
+    .method-index[data-method-count="3"] .method-card {
+      min-height: 200px;
+      grid-template-rows: none;
+      grid-template-columns: var(--preview-side) minmax(0, 1fr);
+      align-items: start;
+      column-gap: 24px;
+      padding: 32px;
+    }
+
     .method-item.primary-method .method-card {
       --settings-method-icon-size: 72px;
-      min-height: 200px;
-      display: grid;
-      grid-template-columns: var(--settings-method-icon-size) minmax(0, 1fr);
-      align-items: center;
-      gap: 24px;
-      padding: 32px;
       background: color-mix(
         in srgb,
         var(--method-color) 11%,
         var(--theme-card-bg)
       );
+    }
+
+    .method-item.primary-method .method-stage,
+    .method-index[data-method-count="3"] .method-stage {
+      width: var(--preview-side);
+      aspect-ratio: 1;
+      min-height: 0;
+      justify-items: center;
+    }
+
+    .method-item.primary-method .method-copy,
+    .method-index[data-method-count="3"] .method-copy {
+      grid-row: 1;
+      grid-column: 2;
     }
 
     .method-icon {
@@ -495,19 +732,46 @@
     }
 
     .method-index {
+      --preview-side: clamp(36px, 20cqh, 86px);
+      grid-auto-rows: minmax(min-content, 1fr);
       column-gap: 6px;
       row-gap: 16px;
     }
 
+    .method-item {
+      grid-row: auto;
+      display: flex;
+    }
+
     .method-card,
     .method-item.primary-method .method-card,
-    .method-item.default-method .method-card {
+    .method-item.default-method .method-card,
+    .method-index[data-method-count="3"] .method-card {
       min-height: 104px;
-      display: grid;
-      grid-template-columns: 36px minmax(0, 1fr);
-      align-items: center;
-      gap: 10px;
+      grid-template-rows: none;
+      grid-template-columns: var(--preview-side) minmax(0, 1fr);
+      align-items: start;
+      column-gap: 10px;
       padding: 8px 12px;
+    }
+
+    .method-stage,
+    .method-item.primary-method .method-stage,
+    .method-item.default-method .method-stage,
+    .method-index[data-method-count="3"] .method-stage {
+      width: var(--preview-side);
+      aspect-ratio: 1;
+      min-height: 0;
+      justify-items: center;
+    }
+
+    .method-copy,
+    .method-item.primary-method .method-copy,
+    .method-item.default-method .method-copy,
+    .method-index[data-method-count="3"] .method-copy {
+      grid-row: 1;
+      grid-column: 2;
+      gap: 2px;
     }
 
     .method-icon {
@@ -518,10 +782,6 @@
 
     .primary-method .method-icon {
       font-size: var(--font-size-base, 1rem);
-    }
-
-    .method-copy {
-      gap: 2px;
     }
 
     .method-name,

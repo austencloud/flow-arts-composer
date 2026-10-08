@@ -14,6 +14,9 @@ import {
 const CENTER = 475;
 const GRID_RADIUS = 143.1; // distance from center to hand points
 
+/** One builder hop: a tap on Assemble's grid, and the Create front door's Assemble preview. */
+export const BUILDER_HOP_MS = 400;
+
 /** Apply the user's chosen effort easing, defaulting to linear */
 function applyEasing(t: number): number {
   const preset = getAnimationVisibilityManager().getEffortPreset();

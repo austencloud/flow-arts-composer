@@ -13,6 +13,10 @@
   import { followPropSource } from "./state/follow-prop-source.svelte";
   import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
   import { DEFAULT_THEORY_RATIO } from "$lib/shared/shape-matrix/domain/theory-ratio";
+  import {
+    SHAPE_MATRIX_DEFAULT_LEVEL,
+    SHAPE_MATRIX_DEFAULT_TURN,
+  } from "$lib/shared/shape-matrix/domain/matrix-turn-band";
 
   interface Props {
     persistence?: ShapeMatrixAppPersistence;
@@ -55,9 +59,9 @@
       theoryRightRatio: DEFAULT_THEORY_RATIO,
       theoryMode: "SS",
       theoryPair: null,
-      level: 2,
-      leftTurn: 2,
-      rightTurn: 2,
+      level: SHAPE_MATRIX_DEFAULT_LEVEL,
+      leftTurn: SHAPE_MATRIX_DEFAULT_TURN,
+      rightTurn: SHAPE_MATRIX_DEFAULT_TURN,
       activeAxis: "both",
       labelMode: "turns",
       leftPropType: propSource?.left ?? PropType.STAFF,

@@ -141,6 +141,7 @@ captureEffectDiagnostics to the context menu.
     prewarmEffects = undefined,
     contextId = undefined,
     initialQualityTier = undefined,
+    trailOverlay = true,
     // Callbacks
     onCanvasReady = () => {},
     onInitialized = undefined,
@@ -219,6 +220,9 @@ captureEffectDiagnostics to the context menu.
     contextId?: string;
     /** Optional adaptive-quality ceiling applied before engine startup. */
     initialQualityTier?: QualityTier;
+    /** False never creates the GPU trail layer. Read once, when the engine is
+     *  created, so only for canvases whose trails stay off for their whole life. */
+    trailOverlay?: boolean;
     onCanvasReady?: (canvas: HTMLCanvasElement | null) => void;
     onInitialized?: () => void;
     onEffectError?: (effectName: string, error: Error) => void;
@@ -242,6 +246,7 @@ captureEffectDiagnostics to the context menu.
     if (initialQualityTier) {
       nextEngine.setInitialQualityTier(initialQualityTier);
     }
+    if (!trailOverlay) nextEngine.setTrailOverlayEnabled(false);
     return nextEngine;
   }
 

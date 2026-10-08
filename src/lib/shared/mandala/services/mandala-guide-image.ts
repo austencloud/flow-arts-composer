@@ -87,22 +87,29 @@ const DEFAULT_DEPS: MandalaGuideImageDependencies = {
 	paint: paintMandalaGuide,
 };
 
+interface GuideSurface {
+	target: MandalaGuidePaintTarget;
+	paint: MandalaGuidePaintOptions;
+}
+
 /**
- * Paint the guide into a fresh canvas and return it as a data URL. Returns
- * an empty string where no canvas can exist (server render) or the box has
- * no size yet; the consumer renders nothing until it has one.
+ * Size `canvas` for a square box of `options.size` at the device pixel ratio
+ * and prepare the paths the options show. The still and the reveal frame share
+ * this, so a finished reveal paints the still's drawing. Only a reveal measures
+ * paths: its dash lengths come from real path lengths, and a complete guide
+ * never reads them.
  */
-export function renderMandalaGuideImage(
+function prepareGuideSurface(
+	canvas: HTMLCanvasElement,
 	paths: MandalaPaths,
 	options: MandalaGuideImageOptions,
-	deps: MandalaGuideImageDependencies = DEFAULT_DEPS
-): string {
+	prepare: MandalaGuideImageDependencies["prepare"],
+	measure: boolean
+): GuideSurface | null {
 	const size = Math.round(options.size);
-	if (!(size > 0)) return "";
-	const canvas = deps.createCanvas();
-	if (!canvas) return "";
+	if (!(size > 0)) return null;
 	const context = canvas.getContext("2d");
-	if (!context) return "";
+	if (!context) return null;
 
 	const dpr =
 		options.dpr ??
@@ -115,28 +122,102 @@ export function renderMandalaGuideImage(
 	const prepared: PreparedMandalaPath[] = [];
 	if (show === "left" || show === "both") {
 		prepared.push(
-			...deps.prepare(paths.left, options.leftColor, "left", { measure: false })
+			...prepare(paths.left, options.leftColor, "left", { measure })
 		);
 	}
 	if (show === "right" || show === "both") {
 		prepared.push(
-			...deps.prepare(paths.right, options.rightColor, "right", {
-				measure: false,
-			})
+			...prepare(paths.right, options.rightColor, "right", { measure })
 		);
 	}
 
-	const target: MandalaGuidePaintTarget = {
-		context,
-		pixelWidth: pixelSize,
-		pixelHeight: pixelSize,
-		dpr,
+	return {
+		target: {
+			context,
+			pixelWidth: pixelSize,
+			pixelHeight: pixelSize,
+			dpr,
+		},
+		paint: {
+			paths: prepared,
+			scale: mandalaGuideScale(paths, { ...options, show }),
+			strokeWidth:
+				options.strokeWidth ?? DEFAULT_MANDALA_OVERLAY_CONFIG.strokeWidth,
+		},
 	};
-	const paint: MandalaGuidePaintOptions = {
-		paths: prepared,
-		scale: mandalaGuideScale(paths, { ...options, show }),
-		strokeWidth: options.strokeWidth ?? DEFAULT_MANDALA_OVERLAY_CONFIG.strokeWidth,
-	};
-	deps.paint(target, paint, masks);
+}
+
+/**
+ * Paint the guide into a fresh canvas and return it as a data URL. Returns
+ * an empty string where no canvas can exist (server render) or the box has
+ * no size yet; the consumer renders nothing until it has one.
+ */
+export function renderMandalaGuideImage(
+	paths: MandalaPaths,
+	options: MandalaGuideImageOptions,
+	deps: MandalaGuideImageDependencies = DEFAULT_DEPS
+): string {
+	if (!(Math.round(options.size) > 0)) return "";
+	const canvas = deps.createCanvas();
+	if (!canvas) return "";
+	const surface = prepareGuideSurface(
+		canvas,
+		paths,
+		options,
+		deps.prepare,
+		false
+	);
+	if (!surface) return "";
+	deps.paint(surface.target, surface.paint, masks);
 	return canvas.toDataURL("image/png");
+}
+
+/** A guide drawing itself into a canvas the caller owns. */
+export interface MandalaGuideRevealFrame {
+	/**
+	 * Paint the guide revealed to `progress` (0..1). At 1 it paints the
+	 * complete guide: the drawing `renderMandalaGuideImage` returns for the
+	 * same options.
+	 */
+	paint(progress: number): void;
+}
+
+/**
+ * The still's progressive twin: the live overlay's reveal (`reveal` and
+ * `progress`) at a still's size and fit. The Create front door's Shape
+ * preview draws a matrix tile's mandala with it. Returns null where nothing
+ * can be painted: no size yet, or no 2D context.
+ */
+export function createMandalaGuideRevealFrame(
+	canvas: HTMLCanvasElement,
+	paths: MandalaPaths,
+	options: MandalaGuideImageOptions,
+	deps: Pick<MandalaGuideImageDependencies, "prepare" | "paint"> = DEFAULT_DEPS
+): MandalaGuideRevealFrame | null {
+	const surface = prepareGuideSurface(
+		canvas,
+		paths,
+		options,
+		deps.prepare,
+		true
+	);
+	if (!surface) return null;
+	// Its own scratch masks: a reveal repaints every frame at one size, and the
+	// stills' shared masks would be reallocated between sizes.
+	const frameMasks = new MandalaOverlapMasks();
+	return {
+		paint(progress: number): void {
+			// NaN (say, a zero-length turn) counts as done, not a stale partial dash.
+			const complete = !(progress < 1);
+			deps.paint(
+				surface.target,
+				{
+					...surface.paint,
+					reveal: !complete,
+					progress: complete ? 1 : Math.max(0, progress),
+				},
+				frameMasks
+			);
+		},
+	};
 }
