@@ -159,6 +159,13 @@ export async function saveFeatureExport(
   try {
     const { bytes, head } = await writePart(part, input.body, cap);
     if (bytes === 0) throw new FeatureExportError("The render was empty.", 400);
+    // Over HTTP/2 a sender that stops partway ends the body as if it were
+    // whole; only the declared size shows that the rest never came.
+    if (input.declaredBytes !== undefined && bytes < input.declaredBytes)
+      throw new FeatureExportError(
+        "The upload stopped before the whole render arrived.",
+        400
+      );
     // An MP4 opens with a box whose type, in bytes 4 to 8, is "ftyp".
     if (head.toString("latin1", 4, 8) !== "ftyp")
       throw new FeatureExportError("That is not an MP4 file.", 415);

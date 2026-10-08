@@ -182,6 +182,26 @@ describe("saveFeatureExport", () => {
     ).rejects.toMatchObject({ status: 413 });
   });
 
+  it("refuses an upload that stopped short of its declared size, and keeps nothing", async () => {
+    await expect(
+      saveFeatureExport(dir, {
+        name: "check.mp4",
+        body: stream(mp4(64)),
+        declaredBytes: 128,
+      })
+    ).rejects.toMatchObject({
+      status: 400,
+      message: "The upload stopped before the whole render arrived.",
+    });
+    expect(await exportsList()).toEqual([]);
+    const kept = await saveFeatureExport(dir, {
+      name: "check.mp4",
+      body: stream(mp4(64)),
+      declaredBytes: 64,
+    });
+    expect(kept).toMatchObject({ file: "exports/check.mp4", bytes: 64 });
+  });
+
   it("refuses a bad name and a folder with no project", async () => {
     await expect(
       saveFeatureExport(dir, { name: "../check.mp4", body: stream(mp4()) })
