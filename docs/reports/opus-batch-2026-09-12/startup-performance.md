@@ -1,5 +1,9 @@
 # Startup performance — Opus batch report
 
+**October 7 follow-up:** see the [vendor split and startup chunk report](../../performance/2026-10-07-vendor-chunk-split.md)
+for the later implementation and measurements. This report preserves the
+September baseline and results.
+
 Cloud session, 2026-09-13. Scope: measurable cold startup cost on home, Create
 and Browse, limited to app bootstrap / navigation import boundaries and narrow
 lazy-loading changes. Nothing in auth, library, export, fire, generation
@@ -106,7 +110,7 @@ guards now genuinely prevent the download.
 | `docs/performance/2026-09-13-boot-closure.mjs`                           | manifest closure probe                        |
 | `docs/performance/2026-09-13-boot-graph-probe.mjs`                       | runtime probe                                 |
 | `docs/performance/2026-09-13-gzip-preview-proxy.mjs`                     | transfer-honest preview proxy                 |
-| `docs/superpowers/specs/backlog/2026-09-13-vendor-chunk-split-design.md` | follow-up spec                                |
+| `docs/superpowers/specs/shipped/2026-09-13-vendor-chunk-split-design.md` | follow-up spec                                |
 | `docs/reports/opus-batch-2026-09-12/startup-performance.md`              | this report                                   |
 
 ## Commands and results
@@ -141,7 +145,7 @@ the test: the edge never existed in source, only in the merged chunk, so the
   does mount. Pre-existing environment behaviour, not a regression.
 - `vendor` is still one 3.3 MB chunk. Splitting it is a build-config change
   with real chunk-cycle risk (the 2026-06-16 TDZ outage), specified rather than
-  attempted: `docs/superpowers/specs/backlog/2026-09-13-vendor-chunk-split-design.md`.
+  attempted: `docs/superpowers/specs/shipped/2026-09-13-vendor-chunk-split-design.md`.
   Making `MainApplication`'s own `BackgroundHost` import lazy would save nothing
   until that split lands — its 644-module static graph already reaches zod,
   bits-ui, fabric, dexie and `qr-code-styling`.

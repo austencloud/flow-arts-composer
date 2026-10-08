@@ -99,6 +99,7 @@ export const INSPECTION_VIEWS: readonly InspectionView[] = [
   {
     id: "grip-front",
     label: "Grip front",
+    pickerLabel: "Grip",
     hint: "Where the hold sits on the body",
     subject: "grip",
     azimuthDeg: 0,
