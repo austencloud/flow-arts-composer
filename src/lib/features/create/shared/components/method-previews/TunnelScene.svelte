@@ -5,10 +5,11 @@
    * Mirrors: Tunnel. The tunnel is the real TunnelArtView, set up the way the
    * tunnel gallery's TunnelDetailPreview sets one up: its own effects,
    * visibility, and animation settings, and a controller that saves nothing.
-   * The formation is Radial from TUNNEL_PRESETS, with the grid and the trail
-   * overlay off. TunnelArtView's self-clock runs only while its playing prop
-   * is on, and that prop follows this card's turn, so between turns the
-   * canvas is still.
+   * The formation is Radial from TUNNEL_PRESETS, with the grid off and trails
+   * off for good, so the canvas skips its GPU trail layer (trailOverlay), whose
+   * WebGL2 setup costs a few hundred milliseconds at mount. TunnelArtView's
+   * self-clock runs only while its playing prop is on, and that prop follows
+   * this card's turn, so between turns the canvas is still.
    *
    * The dice is the one on the base performer's card in the Tunnel tool
    * (TunnelPerformerCard): the accent dice that gives that performer a new
@@ -33,7 +34,6 @@
   import { runAtBackgroundPriority } from "$lib/shared/foundation/utils/background-scheduling";
   import { drawMatrixRealization } from "$lib/shared/landing/data/shape-matrix-hero-pool";
   import { DEFAULT_VIEWER_CUSTOM_COLORS } from "$lib/shared/sequence-viewer/domain/viewer-custom-colors";
-  import type { ViewerPlaybackState } from "$lib/shared/sequence-viewer/domain/viewer-prop-groups";
   import { createViewerCustomColorState } from "$lib/shared/sequence-viewer/state/viewer-custom-colors-state.svelte";
   import TunnelArtView from "$lib/shared/sequence-viewer/tunnel/TunnelArtView.svelte";
   import { TunnelViewController } from "$lib/shared/sequence-viewer/tunnel/tunnel-view-controller.svelte";
@@ -97,12 +97,6 @@
   controller.applyPreset(TUNNEL_PREVIEW_PRESET);
   controller.active = true;
 
-  // TunnelArtView reads only playback.animationState.sequenceData and falls
-  // back to its sequence prop when that is undefined (TunnelDetailPreview's stub).
-  const playback = {
-    animationState: { sequenceData: undefined },
-  } as unknown as ViewerPlaybackState;
-
   let root = $state<HTMLElement | null>(null);
   let pose = $state.raw<GhostState | null>(null);
   let canvasReady = $state(false);
@@ -129,10 +123,18 @@
     if (disposed || drawing || fresh || sourceFailed) return;
     drawing = true;
     runAtBackgroundPriority(() => {
+      // The scene can be gone by the time the scheduler runs this.
+      if (disposed) return;
       void drawMatrixRealization()
         .then((draw) => {
-          if (!draw) sourceFailed = true;
-          else if (!disposed) fresh = draw.sequence;
+          if (!draw) {
+            // The pool reports its own load failure as null, so this is
+            // almost always a failed fetch, not an unlucky draw.
+            sourceFailed = true;
+            console.warn(
+              "[method preview] Tunnel source returned no sequence; turning the current one"
+            );
+          } else if (!disposed) fresh = draw.sequence;
         })
         .catch((error: unknown) => {
           sourceFailed = true;
@@ -240,8 +242,8 @@
     >
       <TunnelArtView
         decorative
+        trailOverlay={false}
         {sequence}
-        {playback}
         {controller}
         animationSettingsState={settings}
         visibilityManager={visibility}

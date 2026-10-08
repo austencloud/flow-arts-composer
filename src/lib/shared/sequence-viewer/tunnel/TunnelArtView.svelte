@@ -48,6 +48,7 @@
     onCanvasReady,
     onActivePerformerStepsChange,
     decorative = false,
+    trailOverlay = true,
   }: {
     sequence: SequenceData;
     playback?: ViewerPlaybackState;
@@ -91,6 +92,12 @@
      * make the preview inert.
      */
     decorative?: boolean;
+    /**
+     * False never creates the canvas's GPU trail layer, which costs a few
+     * hundred milliseconds of main-thread time at mount. Only for hosts whose
+     * trails stay off for the tunnel's whole life (a decorative preview).
+     */
+    trailOverlay?: boolean;
   } = $props();
 
   let readyFrame = 0;
@@ -282,6 +289,8 @@
         tapToToggle={!decorative}
         hoverHint={decorative ? "none" : "badge"}
         cornerToggle={!decorative}
+        ghostAnnotations={!decorative}
+        {trailOverlay}
         disableContextMenu={decorative}
         onPlaybackToggle={handlePlaybackToggle}
         gridMode={effectiveGridMode}
