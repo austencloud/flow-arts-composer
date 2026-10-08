@@ -32,7 +32,6 @@ import {
 } from "$lib/shared/sequence-viewer/tunnel/tunnel-prop-colors";
 import type { AnimationVisibilityStateManager } from "../state/animation-visibility-state.svelte";
 import type { SettingsState } from "$lib/shared/settings/state/settings-state.svelte";
-import type { SequenceAnimationOrchestrator } from "$lib/shared/animation-engine/services/sequence-animation-orchestrator";
 import type { EffectsConfigState } from "$lib/shared/effects/state/effects-config-state.svelte";
 
 import type {
@@ -233,7 +232,6 @@ export class FrameParameterBuilder {
       settingsService: SettingsState | null;
       effectRendererManager: EffectRendererManager;
       getVM: () => AnimationVisibilityStateManager;
-      orchestrator: SequenceAnimationOrchestrator | null;
     }
   ): RenderFrameParams {
     const {
@@ -245,7 +243,6 @@ export class FrameParameterBuilder {
       settingsService,
       effectRendererManager: erm,
       getVM,
-      orchestrator, // eslint-disable-line @typescript-eslint/no-unused-vars
     } = deps;
 
     // Mutate the reusable object instead of creating new ones each frame
