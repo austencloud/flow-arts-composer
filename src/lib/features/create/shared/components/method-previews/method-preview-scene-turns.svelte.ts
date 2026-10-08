@@ -8,7 +8,8 @@
  * mid-scene (a held card took the turn, or the turn ran out) fades through
  * the tint: the frozen frame fades out, the scene settles, and the finished
  * picture fades in (spec: Turns; plan: Spec Corrections 12). A run that
- * already finished, or reduced motion, settles at once.
+ * already finished, reduced motion, or a scene leaving the page settles at
+ * once.
  */
 import { untrack } from "svelte";
 import { previewMotionReduced } from "$lib/features/create/shared/state/method-preview-turns.svelte";
@@ -68,9 +69,11 @@ export function playSceneTurns(
 
   function end(cut: boolean): void {
     const element = hooks.root();
+    // An unmounting scene has left the page before its run ends, while
+    // bind:this still holds the root. Nobody sees a fade there.
     if (
       cut &&
-      element &&
+      element?.isConnected &&
       typeof element.animate === "function" &&
       !isReduced()
     ) {

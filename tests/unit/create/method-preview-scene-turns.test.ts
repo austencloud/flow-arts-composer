@@ -14,10 +14,14 @@ interface FakeAnimation {
   cancel: ReturnType<typeof vi.fn>;
 }
 
-/** A root whose animate() records each fade instead of running it. */
+/**
+ * A root whose animate() records each fade instead of running it. It is in
+ * the document until a test sets `isConnected` to false.
+ */
 function fadingRoot() {
   const animations: FakeAnimation[] = [];
   const element = {
+    isConnected: true,
     animate: (keyframes: Keyframe[]) => {
       const animation: FakeAnimation = {
         keyframes,
@@ -154,5 +158,20 @@ describe("scene turns", () => {
     harness.dispose();
     live = null;
     expect(runs[0]!.aborted).toBe(true);
+  });
+
+  it("settles at once when the scene goes away mid-turn", () => {
+    const { runs, play } = recorder();
+    const { element, animations } = fadingRoot();
+    const { harness, settle } = setup(play, { root: () => element });
+    harness.set({ playing: true, turn: 1 });
+    // Unmounting takes the root out of the document before the run ends;
+    // bind:this clears it a microtask later.
+    (element as { isConnected: boolean }).isConnected = false;
+    harness.dispose();
+    live = null;
+    expect(runs[0]!.aborted).toBe(true);
+    expect(animations).toHaveLength(0);
+    expect(settle).toHaveBeenCalledTimes(1);
   });
 });
