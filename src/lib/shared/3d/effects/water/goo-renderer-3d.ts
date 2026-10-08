@@ -26,6 +26,8 @@ const DROPS = 512;
 const RINGS = 25;
 const CAP_RINGS = 7;
 const SIDES = 12;
+const PINCH_TIME = 0.075;
+const RETRACT_TIME = 0.11;
 const VERTICES = RINGS * SIDES;
 const TELEPORT_DISTANCE = 0.75;
 const UP = new Vector3(0, 1, 0);
@@ -36,6 +38,7 @@ interface Strand {
   sourceId: number;
   attached: boolean;
   releaseAge: number;
+  dropReleased: boolean;
   age: number;
   maxAge: number;
   tension: number;
@@ -219,6 +222,7 @@ export class GooRenderer3D {
     sourceId: -1,
     attached: false,
     releaseAge: -1,
+    dropReleased: false,
     age: 0,
     maxAge: 0,
     tension: 0,
@@ -422,6 +426,7 @@ export class GooRenderer3D {
     strand.sourceId = source.sourceId;
     strand.attached = true;
     strand.releaseAge = -1;
+    strand.dropReleased = false;
     strand.age = 0;
     strand.tension = Math.min(1, Math.max(0, p.surfaceTension));
     strand.maxAge =
@@ -478,24 +483,32 @@ export class GooRenderer3D {
       ) {
         strand.releaseAge = 0;
         strand.attached = false;
-        if (strand.age > 0.045)
-          this.spawnDrop(
-            strand.head,
-            strand.velocity,
-            strand.radius * 0.5,
-            strand.gravity,
-            strand.edge,
-            strand.highlight,
-            strand.metalness,
-            strand.alpha,
-            0.28
-          );
       }
       if (strand.releaseAge >= 0) {
         strand.releaseAge += dt;
-        strand.tail.lerp(strand.head, Math.min(1, dt * 11));
-        strand.bend.lerp(strand.head, Math.min(1, dt * 14));
-        if (strand.releaseAge >= 0.14) strand.active = false;
+        if (!strand.dropReleased && strand.releaseAge >= PINCH_TIME) {
+          strand.dropReleased = true;
+          if (strand.age > 0.045) {
+            const length = strand.head.distanceTo(strand.tail);
+            this.spawnDrop(
+              strand.head,
+              strand.velocity,
+              Math.min(strand.radius * 1.46, length * 0.32),
+              strand.gravity,
+              strand.edge,
+              strand.highlight,
+              strand.metalness,
+              strand.alpha,
+              0.32
+            );
+          }
+        }
+        if (strand.dropReleased) {
+          strand.tail.lerp(strand.head, Math.min(1, dt * 13));
+          strand.bend.lerp(strand.head, Math.min(1, dt * 16));
+          if (strand.releaseAge >= PINCH_TIME + RETRACT_TIME)
+            strand.active = false;
+        }
       }
     }
   }
@@ -576,13 +589,17 @@ export class GooRenderer3D {
         1,
         Math.max(life, length / (0.42 + 0.3 * strand.tension))
       );
-      const bulbRadius = Math.min(strand.radius * 1.28, length * 0.32);
+      const bulbRadius = Math.min(
+        strand.radius * (1.38 + 0.1 * life),
+        length * 0.32
+      );
       const capArc = bulbRadius / length;
       const capStart = 1 - capArc;
-      const release =
-        strand.releaseAge < 0
-          ? 1
-          : Math.max(0.06, 1 - strand.releaseAge / 0.14);
+      const retraction = strand.dropReleased
+        ? Math.max(0.04, 1 - (strand.releaseAge - PINCH_TIME) / RETRACT_TIME)
+        : 1;
+      const pinch =
+        strand.releaseAge < 0 ? 0 : Math.min(1, strand.releaseAge / PINCH_TIME);
       const shaftEnd = RINGS - CAP_RINGS - 1;
       for (let ring = 0; ring < RINGS; ring++) {
         // Reserve seven intervals for the hemisphere regardless of strand
@@ -624,20 +641,29 @@ export class GooRenderer3D {
         }
         this.side.normalize();
         this.binormal.crossVectors(this.tangent, this.side).normalize();
-        const rise = Math.max(0, Math.min(1, (t - capStart + 0.2) / 0.2));
+        const rise = Math.max(0, Math.min(1, (t - capStart + 0.24) / 0.24));
         const roundedRise = rise * rise * (3 - 2 * rise);
         const neck =
           1 -
-          0.45 * Math.exp(-Math.pow((t - capStart + 0.2) / 0.1, 2)) * stretch;
+          (0.27 * stretch + 0.66 * pinch) *
+            Math.exp(-Math.pow((t - capStart + 0.24) / 0.075, 2));
+        const pulsePosition = 0.28 + 0.46 * life;
+        const pulse =
+          0.13 *
+          Math.exp(-Math.pow((t - pulsePosition) / 0.14, 2)) *
+          Math.min(1, strand.age / 0.09);
         const shaft =
-          strand.radius * (0.52 + 0.12 * t) * neck * Math.min(1, t / 0.055);
+          strand.radius *
+          (0.62 + 0.1 * t + pulse) *
+          neck *
+          Math.min(1, t / 0.055);
         const radius =
           (t < capStart
             ? shaft * (1 - roundedRise) + bulbRadius * roundedRise
             : bulbRadius *
               Math.sqrt(
                 Math.max(0, 1 - Math.pow((t - capStart) / capArc, 2))
-              )) * release;
+              )) * retraction;
         for (let side = 0; side < SIDES; side++) {
           const angle = (side * Math.PI * 2) / SIDES;
           const offset = base + (ring * SIDES + side) * 3;
@@ -680,11 +706,12 @@ export class GooRenderer3D {
       const size =
         drop.radius * (life > 0.78 ? Math.max(0.05, (1 - life) / 0.22) : 1);
       this.dropObject.position.copy(drop.position);
-      this.dropScale.set(
-        size,
-        size * (1.05 + Math.min(0.8, drop.velocity.length() * 0.12)),
-        size
-      );
+      const stretch =
+        1 +
+        Math.min(0.42, drop.velocity.length() * 0.08) *
+          Math.exp(-drop.age * 18);
+      const width = size / Math.sqrt(stretch);
+      this.dropScale.set(width, size * stretch, width);
       this.dropObject.scale.copy(this.dropScale);
       this.tangent.copy(drop.velocity);
       if (this.tangent.lengthSq() > 0.0001)
