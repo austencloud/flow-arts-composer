@@ -8,6 +8,7 @@
 import { browser } from "$app/environment";
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
 import type { ShareOptions } from "../domain/models/share-options";
+import { sequenceGridJoin } from "$lib/shared/grid-join/sequence-grid-join";
 import { createComponentLogger } from "$lib/shared/utils/debug-logger";
 
 const debug = createComponentLogger("PreviewCache");
@@ -26,6 +27,31 @@ const MAX_CACHE_AGE_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
 // Bump whenever card pixels change so retired footer content cannot survive in
 // IndexedDB after the renderer has stopped producing it.
 const SHARE_PREVIEW_RENDERER_VERSION = 2;
+
+/**
+ * Stable hash of what a share preview draws from the sequence: the steps, the
+ * start placement and the grid join. Exported for tests.
+ */
+export function hashSequenceForPreview(sequence: SequenceData): string {
+  const join = sequenceGridJoin(sequence);
+  // Create a stable string representation of the sequence steps
+  const beatsJson = JSON.stringify({
+    steps: sequence.steps,
+    startingPlacement: sequence.startingPlacement,
+    startPlacement: sequence.startPlacement,
+    // The join redraws every cell, so a join change must miss the cache.
+    // Absent for one grid, which keeps one-grid hashes as they were.
+    ...(join ? { conjoined: join } : {}),
+  });
+
+  // FNV-1a hash (Math.imul keeps the multiply overflow-correct in 32-bit)
+  let hash = 0x811c9dc5;
+  for (let i = 0; i < beatsJson.length; i++) {
+    hash ^= beatsJson.charCodeAt(i);
+    hash = Math.imul(hash, 0x01000193);
+  }
+  return (hash >>> 0).toString(36);
+}
 
 export class PreviewCache {
   private db: IDBDatabase | null = null;
@@ -70,20 +96,7 @@ export class PreviewCache {
    * Generate a hash of the sequence steps for change detection
    */
   private hashSequence(sequence: SequenceData): string {
-    // Create a stable string representation of the sequence steps
-    const beatsJson = JSON.stringify({
-      steps: sequence.steps,
-      startingPlacement: sequence.startingPlacement,
-      startPlacement: sequence.startPlacement,
-    });
-
-    // FNV-1a hash (Math.imul keeps the multiply overflow-correct in 32-bit)
-    let hash = 0x811c9dc5;
-    for (let i = 0; i < beatsJson.length; i++) {
-      hash ^= beatsJson.charCodeAt(i);
-      hash = Math.imul(hash, 0x01000193);
-    }
-    return (hash >>> 0).toString(36);
+    return hashSequenceForPreview(sequence);
   }
 
   /**

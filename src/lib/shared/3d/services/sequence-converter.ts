@@ -20,6 +20,8 @@ import {
 } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
 import { GridLocation } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
 import type { PlaneModeConfig } from "@austencloud/scene-3d";
+import type { GridJoinSpec } from "@tka/render-core";
+import { resolveGridJoin3D } from "./grid-join-3d";
 
 export interface StepMotionConfigs {
   stepNumber: number;
@@ -51,7 +53,8 @@ export function motionDataToConfig3D(
 export function stepDataToConfigs(
   step: StepData | StartPlacementData,
   plane: Plane = Plane.WALL,
-  modeConfig?: PlaneModeConfig
+  modeConfig?: PlaneModeConfig,
+  gridJoin?: GridJoinSpec | null
 ): StepMotionConfigs {
   const leftMotion = step.motions?.[HandSide.LEFT];
   const rightMotion = step.motions?.[HandSide.RIGHT];
@@ -73,12 +76,14 @@ export function stepDataToConfigs(
       ? {
           ...motionDataToConfig3D(leftMotion, leftPlane),
           rotationPlane: rotPlane,
+          ...(gridJoin && { gridJoin, hand: "left" as const }),
         }
       : null,
     right: isVisibleMotion(rightMotion)
       ? {
           ...motionDataToConfig3D(rightMotion, rightPlane),
           rotationPlane: rotPlane,
+          ...(gridJoin && { gridJoin, hand: "right" as const }),
         }
       : null,
   };
@@ -88,7 +93,8 @@ export function stepDataToConfigs(
 function deriveStartConfigFromStep(
   step: StepData | StartPlacementData,
   plane: Plane,
-  modeConfig?: PlaneModeConfig
+  modeConfig?: PlaneModeConfig,
+  gridJoin?: GridJoinSpec | null
 ): StepMotionConfigs {
   const leftMotion = step.motions?.[HandSide.LEFT];
   const rightMotion = step.motions?.[HandSide.RIGHT];
@@ -108,6 +114,7 @@ function deriveStartConfigFromStep(
           turns: 0,
           startOrientation: leftMotion.startOrientation,
           endOrientation: leftMotion.startOrientation,
+          ...(gridJoin && { gridJoin, hand: "left" as const }),
         }
       : null,
     right: isVisibleMotion(rightMotion)
@@ -120,6 +127,7 @@ function deriveStartConfigFromStep(
           turns: 0,
           startOrientation: rightMotion.startOrientation,
           endOrientation: rightMotion.startOrientation,
+          ...(gridJoin && { gridJoin, hand: "right" as const }),
         }
       : null,
   };
@@ -137,10 +145,11 @@ export function sequenceToMotionConfigs(
   if (!sequence.steps || sequence.steps.length === 0) {
     return [];
   }
+  const gridJoin = resolveGridJoin3D(sequence);
 
   return sequence.steps
     .filter((step) => step.stepNumber !== 0)
-    .map((step) => stepDataToConfigs(step, plane, modeConfig))
+    .map((step) => stepDataToConfigs(step, plane, modeConfig, gridJoin))
     .sort((a, b) => a.stepNumber - b.stepNumber);
 }
 
@@ -150,22 +159,33 @@ export function getStartPlacementConfigs(
   plane: Plane = Plane.WALL,
   modeConfig?: PlaneModeConfig
 ): StepMotionConfigs | null {
+  const gridJoin = resolveGridJoin3D(sequence);
   if (sequence.startPlacement) {
-    return stepDataToConfigs(sequence.startPlacement, plane, modeConfig);
+    return stepDataToConfigs(
+      sequence.startPlacement,
+      plane,
+      modeConfig,
+      gridJoin
+    );
   }
 
   const step0 = sequence.steps?.find((step) => step.stepNumber === 0);
   if (step0) {
-    return stepDataToConfigs(step0, plane, modeConfig);
+    return stepDataToConfigs(step0, plane, modeConfig, gridJoin);
   }
 
   if (sequence.startingPlacement) {
-    return stepDataToConfigs(sequence.startingPlacement, plane, modeConfig);
+    return stepDataToConfigs(
+      sequence.startingPlacement,
+      plane,
+      modeConfig,
+      gridJoin
+    );
   }
 
   const firstStep = sequence.steps?.find((step) => step.stepNumber !== 0);
   if (firstStep) {
-    return deriveStartConfigFromStep(firstStep, plane, modeConfig);
+    return deriveStartConfigFromStep(firstStep, plane, modeConfig, gridJoin);
   }
 
   return null;

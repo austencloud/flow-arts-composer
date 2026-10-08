@@ -1,3 +1,15 @@
+---
+status: active
+value: null
+effort: null
+work_state: unverified
+remaining: Inspect the Prop Picker gallery in browser and verify Buugeng chirality, open-picker selection, and dismissal behavior.
+depends_on: ''
+plan_path: ''
+tags: []
+last_triaged: '2026-10-07'
+---
+
 # Prop Picker Gallery
 
 **Status:** Approved for implementation

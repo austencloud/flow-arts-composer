@@ -2,12 +2,14 @@
 status: backlog
 value: 2
 effort: M
-remaining: 'Item 1 (inertialization) shipped; items 2-5 unbuilt'
-depends_on: ""
-plan_path: ""
+remaining: Item 1 (inertialization) shipped; items 2-5 unbuilt
+depends_on: ''
+plan_path: ''
 tags: []
-last_triaged: 2026-08-02
+last_triaged: '2026-10-07'
+work_state: in-progress
 ---
+
 # Stage Locomotion — Polish Backlog
 
 > **DRIFT WARNING — 2026-08-02.** Item 1 (inertialization) shipped; items 2-5 unbuilt

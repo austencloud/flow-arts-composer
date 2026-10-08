@@ -1,5 +1,6 @@
 import demo from "../../src/lib/shared/landing/data/demo-sequence.json";
 import type { GridJoinSpec } from "@tka/render-core";
+import { deriveReversals } from "@tka/sequence-engine";
 import type { SequenceRenderOptions } from "../../mcp-server-pkg/src/core/sequence-renderer";
 
 export interface CardParityCase {
@@ -16,7 +17,24 @@ export function cardParityCases(): CardParityCase[] {
   eightSteps.steps = eightSteps.steps.slice(0, 8);
   eightSteps.word = eightSteps.steps.map((step) => step.letter).join("");
   const box = turnedOntoBoxGrid(sequence);
+  // A still prop spinning in place: the arrow sits on the hand point, the
+  // letter gets its direction dot, and the mandala takes the short way.
+  const stillTurns = structuredClone(sequence);
+  const spinning = stillTurns.steps[1]!.motions.right as Record<string, unknown>;
+  spinning.turns = 2;
+  spinning.rotationDirection = "cw";
+  // The Composer draws stored reversal dots; store the ones the spin causes.
+  const reversals = deriveReversals(stillTurns.steps as never);
+  stillTurns.steps.forEach((step, index) => {
+    step.leftReversal = reversals[index]!.left.propReversal;
+    step.rightReversal = reversals[index]!.right.propReversal;
+  });
   return [
+    {
+      name: "static-turns",
+      sequence: stillTurns,
+      options: { showDifficulty: true, showMandala: true },
+    },
     {
       name: "loop-metadata",
       sequence,

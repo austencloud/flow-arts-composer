@@ -1,3 +1,15 @@
+---
+status: active
+value: null
+effort: null
+work_state: unverified
+remaining: Verify current Generate favorite/setup implementation and locate the implementation plan before declaring detach-on-edit ready.
+depends_on: ''
+plan_path: ''
+tags: []
+last_triaged: '2026-10-07'
+---
+
 # Generate saved setups: detach on edit
 
 Date: 2026-09-11

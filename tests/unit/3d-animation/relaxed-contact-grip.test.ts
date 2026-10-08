@@ -17,6 +17,20 @@ import { sculptFingers } from "../../../src/routes/test/grip-lab/hand-sculpt";
 
 const ORIGIN = new Vector3(0, 1.5621, 0.3);
 const STAFF_RADIUS_M = 0.0102125;
+// Both scenarios are solver-bound, not load-bound. Loading ch07 costs about
+// 15 ms to read, strip and parse and about 60 ms to build the avatar services
+// (measured 2026-10-08), while each sampled frame runs the finger contact solve
+// at roughly 60 to 100 ms: about 70 frames for "saved transition" and about 220
+// for "baseline loop". Alone on a busy machine that was 4 to 12 s and 13 to
+// 29 s; run beside the rest of tests/unit/3d* it was 16 s and 22 to 36 s,
+// because vitest 4 ignores this config's singleFork key and fans files out
+// across worker forks that all compete for the same cores; in a full local run
+// the old 30 s default timed out. Sharing one rig across the scenarios would
+// save well under 0.1 s and would hand the second scenario a hand the first had
+// already posed, so each keeps its own rig and gets a budget sized to the solver
+// work with headroom for a loaded machine, the same 120 s that
+// avatar-clearance-recovery already uses in this folder.
+const SCENARIO_TIMEOUT_MS = 120_000;
 describe.runIf(avatarAssetsPresent())("relaxed strict-contact grip", () => {
   for (const scenario of ["saved transition", "baseline loop"] as const) {
     it(
@@ -555,7 +569,7 @@ describe.runIf(avatarAssetsPresent())("relaxed strict-contact grip", () => {
           ).toBeLessThan(0.001)
         );
       },
-      30_000
+      SCENARIO_TIMEOUT_MS
     );
   }
 });

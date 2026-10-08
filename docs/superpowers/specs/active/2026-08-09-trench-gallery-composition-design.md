@@ -1,6 +1,19 @@
+---
+status: active
+value: null
+effort: null
+remaining: "Recheck built trench gallery composition against current asset placement and the documented proof views."
+depends_on: ""
+plan_path: ""
+tags: []
+last_triaged: 2026-10-07
+work_state: verification
+---
 # Trench Gallery Composition — Design
 
-**Status:** built 2026-08-09
+**Queue evidence (2026-10-07):** The recorded 2026-08-09 build needs current placement and proof-view verification before completion.
+
+**Original status (historical):** built 2026-08-09
 **Scene:** the water traverse's middle leg (`/test/water-traverse`, z 92–190)
 **Consumes:** `scripts/ocean-asset-facts.json`, `scripts/ocean-ecology-rules.json`
 **Related:** `docs/superpowers/specs/active/2026-08-09-ocean-composition-matrix-design.md`

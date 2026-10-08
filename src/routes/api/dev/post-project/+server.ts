@@ -5,15 +5,24 @@ import {
   heartbeatPostProject,
   listPostProjectSessions,
   postProjectEditStatus,
+  postProjectRenderStatus,
   queuePostProjectEdit,
   queuePostProjectOps,
+  queuePostProjectRender,
   readPostProjectSession,
+  readRenderReport,
 } from "$lib/server/post-project-dev-bridge";
 
 export const GET: RequestHandler = ({ request, url, getClientAddress }) => {
   authorizeLoopback(request, getClientAddress);
   const sessionId = url.searchParams.get("sessionId");
   const commandId = url.searchParams.get("commandId");
+  const renderId = url.searchParams.get("renderId");
+  if (sessionId && renderId) {
+    const status = postProjectRenderStatus(sessionId, renderId);
+    if (!status) error(404, "Render not found");
+    return json(status);
+  }
   if (sessionId && commandId) {
     const status = postProjectEditStatus(sessionId, commandId);
     if (!status) error(404, "Edit not found");
@@ -41,11 +50,13 @@ export const POST: RequestHandler = async ({ request, getClientAddress }) => {
         error(400, "Invalid heartbeat");
       const featureSlug =
         typeof input.featureSlug === "string" ? input.featureSlug : undefined;
+      const render = readRenderReport(input.render);
       const answer = heartbeatPostProject({
         sessionId: input.sessionId,
         revision: input.revision,
         ...(featureSlug ? { featureSlug } : {}),
         ...(input.snapshot !== undefined ? { snapshot: input.snapshot } : {}),
+        ...(render ? { render } : {}),
         ...(input.result && typeof input.result === "object"
           ? {
               result: input.result as {
@@ -76,6 +87,19 @@ export const POST: RequestHandler = async ({ request, getClientAddress }) => {
           baseRevision: input.baseRevision,
           baseFingerprint: input.baseFingerprint,
           project: input.project,
+        })
+      );
+    }
+    if (input.kind === "render") {
+      if (
+        typeof input.sessionId !== "string" ||
+        (input.name !== undefined && typeof input.name !== "string")
+      )
+        error(400, "Invalid render request");
+      return json(
+        queuePostProjectRender({
+          sessionId: input.sessionId,
+          ...(typeof input.name === "string" ? { name: input.name } : {}),
         })
       );
     }

@@ -35,10 +35,9 @@ describe("boot import boundary", () => {
   ]);
 
   /**
-   * Each of these is a package whose bundled chunk was measured at 200 KB+ and
-   * that has a working lazy path already: the backgrounds renderer loads two
-   * animation frames after first paint (MarketingChrome, BackgroundHost), and
-   * the compression stack loads with the sequence viewer that needs it.
+   * These packages belong to large or feature-only chunks with working lazy
+   * paths. The backgrounds renderer loads after first paint; media export and
+   * audio inference load with the features that need them.
    */
   const FORBIDDEN_PACKAGES = [
     "@austencloud/backgrounds",
@@ -50,6 +49,12 @@ describe("boot import boundary", () => {
     "zod",
     "bits-ui",
     "fabric",
+    "mediabunny",
+    "h264-mp4-encoder",
+    "gifenc",
+    "modern-screenshot",
+    "onnxruntime-web",
+    "@ricky0123/vad-web",
   ];
 
   for (const pkg of FORBIDDEN_PACKAGES) {

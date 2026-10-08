@@ -79,6 +79,9 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Validate active spec queue
+        run: pnpm run specs:check && pnpm run specs:test
+
       - name: Build workspace packages
         run: pnpm run build:packages
 
@@ -123,6 +126,11 @@ jobs:
       # still works, so this reads the built chunk graph.
       - name: Verify public pages start without Firebase
         run: pnpm run verify:public-firebase
+
+      # Source imports can stay lazy while Rollup merges a Three-dependent
+      # module into a startup chunk. Check the emitted graph as well.
+      - name: Verify heavy feature chunks stay out of startup
+        run: pnpm run verify:boot-chunks
 
       # A red run on main is also a PRODUCTION OUTAGE, and that half is silent.
       # Deploy Pages (gated) fires on workflow_run and exits `skipped` when the

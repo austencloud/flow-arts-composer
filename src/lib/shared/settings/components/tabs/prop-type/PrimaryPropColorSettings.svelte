@@ -12,6 +12,7 @@
   import { getMotionColor } from "$lib/shared/utils/svg-color-utils";
   import { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
   import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+  import { randomCoolWarmPair } from "$lib/shared/ui/color-temperature";
 
   let {
     colors,
@@ -62,9 +63,18 @@
   >
     <div class="color-heading">
       <h4>{t("settings_primary_prop_colors")}</h4>
-      <PanelButton disabled={!colors} onclick={() => onchange(null)}
-        >{t("settings_use_default_colors")}</PanelButton
-      >
+      <div class="color-actions">
+        <PanelButton
+          ariaLabel={t("settings_random_prop_colors")}
+          title={t("settings_random_prop_colors")}
+          onclick={() => onchange(randomCoolWarmPair(palette, darkMode))}
+        >
+          <i class="fas fa-dice" aria-hidden="true"></i>
+        </PanelButton>
+        <PanelButton disabled={!colors} onclick={() => onchange(null)}
+          >{t("settings_use_default_colors")}</PanelButton
+        >
+      </div>
     </div>
     <LabeledColorPairPicker
       left={palette.left}
@@ -125,10 +135,16 @@
     font-size: var(--font-size-min, 14px);
     font-weight: 600;
   }
+  /* A narrow card puts the actions on their own line under the heading. */
   .color-heading {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
     justify-content: space-between;
+    gap: 8px;
+  }
+  .color-actions {
+    display: flex;
     gap: 8px;
   }
   .compact-color-button {

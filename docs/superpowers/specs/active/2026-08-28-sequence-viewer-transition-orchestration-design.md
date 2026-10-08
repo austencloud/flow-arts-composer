@@ -1,3 +1,15 @@
+---
+status: active
+value: null
+effort: null
+work_state: blocked
+remaining: Obtain Austen's visual decisions on gates 5-9, starting with the measured Post Studio gate 6 contract.
+depends_on: 'external: Austen visual approval of viewer transition gates 5-9'
+plan_path: ''
+tags: []
+last_triaged: '2026-10-07'
+---
+
 # Sequence Viewer Transition Orchestration
 
 **Status:** Active, advancing one visual approval gate at a time

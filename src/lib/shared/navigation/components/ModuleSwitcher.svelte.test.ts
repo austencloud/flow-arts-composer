@@ -1,6 +1,7 @@
 import { render } from "vitest-browser-svelte";
 import { page } from "vitest/browser";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { tick } from "svelte";
 import { authState } from "./__test-stubs__/NavigationAuthState.svelte";
 
 const mocks = vi.hoisted(() => ({
@@ -72,6 +73,9 @@ describe("ModuleSwitcher inline sign-in lifecycle", () => {
     openNavigation();
     const dialog = page.getByRole("dialog", { name: "Module navigation menu" });
     await expect.element(dialog).toBeInTheDocument();
+    await expect
+      .element(page.getByRole("button", { name: "Close menu" }))
+      .toHaveFocus();
     await page.getByRole("button", { name: "Sign in" }).click();
 
     await expect.element(page.getByTestId("inline-auth")).toBeInTheDocument();
@@ -92,6 +96,9 @@ describe("ModuleSwitcher inline sign-in lifecycle", () => {
     await page.getByRole("button", { name: "Sign in" }).click();
     await page.getByRole("button", { name: "Close menu" }).click();
     openNavigation();
+    await expect
+      .element(page.getByRole("button", { name: "Close menu" }))
+      .toHaveFocus();
     await expect
       .element(page.getByTestId("inline-auth"))
       .not.toBeInTheDocument();
@@ -130,5 +137,41 @@ describe("ModuleSwitcher inline sign-in lifecycle", () => {
     await expect
       .element(page.getByTestId("inline-auth"))
       .not.toBeInTheDocument();
+  });
+
+  it("keeps one interactive view and restores focus after an interrupted Back", async () => {
+    render(ModuleSwitcher, {
+      currentModule: "create",
+      currentModuleName: "Create",
+      modules: [],
+    });
+    openNavigation();
+    await expect
+      .element(page.getByRole("button", { name: "Sign in" }))
+      .toBeInTheDocument();
+
+    // Direct clicks avoid Playwright's stability wait, reversing the animation
+    // while the outgoing footer and auth layer are still mounted.
+    const accountButton = () =>
+      document.querySelector<HTMLButtonElement>(
+        ".account-footer:not([inert]) .account-row.drawer"
+      );
+    accountButton()!.click();
+    await tick();
+    document
+      .querySelector<HTMLButtonElement>('button[aria-label="Back to modules"]')!
+      .click();
+    await tick();
+    accountButton()!.click();
+    await tick();
+    await expect.element(page.getByTestId("inline-auth")).toBeInTheDocument();
+
+    await page.getByRole("button", { name: "Back to modules" }).click();
+    await expect
+      .element(page.getByRole("button", { name: "Sign in" }))
+      .toHaveFocus();
+    expect(document.activeElement?.closest("[inert]")).toBeNull();
+    expect(document.querySelectorAll("dialog[open]")).toHaveLength(1);
+    expect(mocks.globalAuthShow).not.toHaveBeenCalled();
   });
 });

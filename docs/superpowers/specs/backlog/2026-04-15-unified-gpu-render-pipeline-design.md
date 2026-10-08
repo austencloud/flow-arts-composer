@@ -2,12 +2,14 @@
 status: backlog
 value: 4
 effort: L
-remaining: 'Phases 0-1 shipped and live in production by default (WebGL2 trails); Phase 2 half-built unwired; Phase 3 built then orphaned (zero mounts); Phase 4 unused scaffolding'
-depends_on: ""
-plan_path: ""
+remaining: Audit current GPU pipeline mounts and default renderer; the earlier phase ledger may no longer match the running app.
+depends_on: ''
+plan_path: ''
 tags: []
-last_triaged: 2026-08-02
+last_triaged: '2026-10-07'
+work_state: unverified
 ---
+
 # Unified GPU Render Pipeline — Design Spec
 
 > **DRIFT WARNING — 2026-08-02.** Phases 0-1 shipped and **live in production by default** (WebGL2 trails); Phase 2 half-built unwired; Phase 3 built then **orphaned** (zero mounts); Phase 4 unused scaffolding

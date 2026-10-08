@@ -1,3 +1,14 @@
+---
+status: active
+value: null
+effort: null
+remaining: "Verify choreography card coordinator state transitions and explicit Play/retry behavior in the current Inbox."
+depends_on: ""
+plan_path: ""
+tags: []
+last_triaged: 2026-10-07
+work_state: unverified
+---
 # Inbox Choreo Card and Animation Stage
 
 **Date:** 2026-08-14

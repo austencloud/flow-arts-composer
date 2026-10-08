@@ -1,3 +1,14 @@
+---
+status: active
+value: null
+effort: null
+remaining: "Verify notification session replay tests, exact user/session routing, and current delivery evidence."
+depends_on: ""
+plan_path: ""
+tags: []
+last_triaged: 2026-10-07
+work_state: verification
+---
 # Notification Session Replay
 
 - **Date:** 2026-08-09

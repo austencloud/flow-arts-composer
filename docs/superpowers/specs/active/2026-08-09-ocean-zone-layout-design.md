@@ -6,7 +6,8 @@ remaining: "Six of ten ledger items are done and in the tree. Four are genuinely
 depends_on: ""
 plan_path: ""
 tags: [3d, ocean, scene-composition, blender]
-last_triaged: 2026-09-13
+last_triaged: 2026-10-07
+work_state: in-progress
 ---
 
 # Ocean Zone Layout — Intentional Composition Pass

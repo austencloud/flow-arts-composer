@@ -140,7 +140,11 @@ describe("AnimationPlaybackController boundary handoff", () => {
     expect(loop.stop).not.toHaveBeenCalled();
     expect(state.isPlaying).toBe(true);
     expect(state.setSequenceData).toHaveBeenCalledTimes(1);
-    expect(calculateStateDurationAware).toHaveBeenLastCalledWith(1);
+    // The same-sequence loop keeps the 100ms overrun too: first motion plus
+    // the part of this frame that landed past the end.
+    expect(calculateStateDurationAware).toHaveBeenLastCalledWith(
+      expect.closeTo(1.1, 8)
+    );
   });
 
   it("falls back to the outgoing loop when the engine rejects a prepared sequence", () => {
@@ -171,7 +175,9 @@ describe("AnimationPlaybackController boundary handoff", () => {
       3,
       outgoing
     );
-    expect(calculateStateDurationAware).toHaveBeenLastCalledWith(1);
+    expect(calculateStateDurationAware).toHaveBeenLastCalledWith(
+      expect.closeTo(1.1, 8)
+    );
     expect(state.isPlaying).toBe(true);
   });
 });

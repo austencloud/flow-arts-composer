@@ -71,6 +71,7 @@
   } from "./performer-interaction/performer-pointer-interaction.svelte";
   import { resolvePerformerUpperBodyStance } from "../domain/performer-upper-body-stance";
   import { resolvePerformerContact } from "../domain/performer-contact-displacement";
+  import { resolveGridJoin3D } from "../services/grid-join-3d";
   import { getAvatarSequenceCollisionAudit } from "../collision/avatar-sequence-collision-audit";
   import { getAvatarGripMotionAudit } from "../diagnostics/avatar-grip-motion-audit";
   import {
@@ -786,8 +787,15 @@
           </T.Mesh>
         </T.Group>
       {/if}
-      {@const performerGridMode = (sequenceData?.gridMode ??
-        "diamond") as GridMode}
+      {@const performerSequence = performer.loadedSequence ?? sequenceData}
+      {@const sequenceGridMode =
+        performerSequence?.gridMode ??
+        performerSequence?.startPlacement?.gridMode ??
+        performerSequence?.startingPlacement?.gridMode ??
+        performerSequence?.steps[0]?.gridMode ??
+        "diamond"}
+      {@const performerGridMode: GridMode = sequenceGridMode === "box" ? "box" : "diamond"}
+      {@const performerGridJoin = resolveGridJoin3D(performerSequence)}
       {@const performerGridOffset = GRID_OFFSETS[performer.planeMode]}
       {@const perfStaffCm = performer.settings.staffLengthCm}
       {@const propLength =
@@ -908,6 +916,17 @@
                     <Grid3D
                       visiblePlanes={explicitPlanes}
                       gridMode={performerGridMode}
+                      gridJoin={performerGridJoin}
+                      handDistance={performer.handDistance}
+                      staffHalfLength={(propLength ??
+                        userProportionsState.staffLength) / 2}
+                      outerPointRadius={performerGridJoin
+                        ? Math.max(
+                            performer.handDistance.left.max,
+                            performer.handDistance.right.max
+                          ) +
+                          (propLength ?? userProportionsState.staffLength) / 2
+                        : undefined}
                       planeMode={performer.planeMode}
                       showLabels={viewer3DState.showGridLabels}
                       showOrientationHelpers={!hideOrientationHelpers}

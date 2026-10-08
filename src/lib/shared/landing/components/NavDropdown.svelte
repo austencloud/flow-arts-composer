@@ -4,6 +4,37 @@
     href: string;
     icon?: string;
     desc?: string;
+    /** Items sharing a group render under one small label, after the loose items. */
+    group?: string;
+  }
+
+  export interface NavDropdownSection {
+    /** null for the loose items that lead the menu. */
+    label: string | null;
+    items: NavDropdownItem[];
+  }
+
+  /**
+   * Loose items first as one unlabeled section, then one section per group in
+   * first-seen order. The desktop panel and SiteHeader's phone accordion both
+   * render from this, so the two menus can never disagree on the grouping.
+   */
+  export function sectionNavItems(
+    items: NavDropdownItem[]
+  ): NavDropdownSection[] {
+    const sections: NavDropdownSection[] = [];
+    for (const item of items) {
+      const label = item.group ?? null;
+      let section = sections.find((s) => s.label === label);
+      if (!section) {
+        section = { label, items: [] };
+        sections.push(section);
+      }
+      section.items.push(item);
+    }
+    return sections.sort(
+      (a, b) => Number(a.label !== null) - Number(b.label !== null)
+    );
   }
 </script>
 
@@ -40,6 +71,7 @@
     onOpenChange,
   }: Props = $props();
 
+  const sections = $derived(sectionNavItems(items));
   const uid = $props.id();
   let rootEl: HTMLDivElement | undefined = $state();
   let triggerEl: HTMLButtonElement | undefined = $state();
@@ -126,6 +158,22 @@
   });
 </script>
 
+{#snippet link(item: NavDropdownItem)}
+  <a
+    href={item.href}
+    class:active={isItemActive(item.href)}
+    aria-current={isItemActive(item.href) ? "page" : undefined}
+  >
+    {#if item.icon}
+      <i class="fas {item.icon} dd-icon" aria-hidden="true"></i>
+    {/if}
+    <span class="dd-text">
+      <span class="dd-label">{item.label}</span>
+      {#if item.desc}<span class="dd-desc">{item.desc}</span>{/if}
+    </span>
+  </a>
+{/snippet}
+
 <div
   class="nav-group"
   bind:this={rootEl}
@@ -158,22 +206,23 @@
       role="none"
     >
       <ul>
-        {#each items as item}
-          <li>
-            <a
-              href={item.href}
-              class:active={isItemActive(item.href)}
-              aria-current={isItemActive(item.href) ? "page" : undefined}
-            >
-              {#if item.icon}
-                <i class="fas {item.icon} dd-icon" aria-hidden="true"></i>
-              {/if}
-              <span class="dd-text">
-                <span class="dd-label">{item.label}</span>
-                {#if item.desc}<span class="dd-desc">{item.desc}</span>{/if}
+        {#each sections as section, s (section.label ?? "")}
+          {#if section.label}
+            <li class="dd-section">
+              <span class="dd-group-label" id="{uid}-group-{s}">
+                {section.label}
               </span>
-            </a>
-          </li>
+              <ul aria-labelledby="{uid}-group-{s}">
+                {#each section.items as item (item.href)}
+                  <li>{@render link(item)}</li>
+                {/each}
+              </ul>
+            </li>
+          {:else}
+            {#each section.items as item (item.href)}
+              <li>{@render link(item)}</li>
+            {/each}
+          {/if}
         {/each}
       </ul>
     </div>
@@ -210,7 +259,6 @@
   .trigger.open,
   .trigger.active {
     color: #fff;
-    outline: none;
   }
 
   .chev {
@@ -276,6 +324,23 @@
     gap: 2px;
   }
 
+  /* A grouped run of links: a hairline above and a small caption, so the
+     prop pages read as one answer rather than five more menu rows. */
+  .dd-section {
+    margin-top: 4px;
+    padding-top: 6px;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+  }
+  .dd-group-label {
+    display: block;
+    padding: 4px 12px 6px;
+    color: #8f8bb0;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
   .panel a {
     display: flex;
     align-items: center;
@@ -292,7 +357,6 @@
   .panel a:focus-visible {
     background: rgba(255, 255, 255, 0.06);
     color: #fff;
-    outline: none;
   }
   .panel a.active {
     color: #fff;

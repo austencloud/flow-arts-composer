@@ -21,6 +21,10 @@
     onCancel: () => void;
     onTapBeats: (takeId: string) => void;
     onSharePost?: () => void;
+    /** A feature video's render, once it is in the project's exports/ folder. */
+    savedTo?: string | null;
+    /** Why a feature video's render did not reach exports/. */
+    saveError?: string;
   }
 
   let {
@@ -35,6 +39,8 @@
     onCancel,
     onTapBeats,
     onSharePost,
+    savedTo = null,
+    saveError = "",
   }: Props = $props();
 
   const output = $derived(editor.compiled?.preset.output ?? null);
@@ -91,6 +97,11 @@
       color="accent"
       ariaLabel={t("share_studio_sound")}
     />
+    {#if editor.project.music}
+      <p class="help">
+        The music plays either way; this sets only the takes' sound.
+      </p>
+    {/if}
   </div>
 
   {#if todo.length > 0}
@@ -165,6 +176,12 @@
           </PanelButton>
         {/if}
       </div>
+      {#if savedTo}
+        <p class="help">Saved to {savedTo} in the project folder.</p>
+      {/if}
+      {#if saveError}
+        <p class="error" role="alert">{saveError}</p>
+      {/if}
     </div>
   {/if}
 </div>

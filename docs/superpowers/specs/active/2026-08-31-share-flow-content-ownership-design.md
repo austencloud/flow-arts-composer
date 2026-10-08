@@ -1,3 +1,15 @@
+---
+status: active
+value: null
+effort: null
+work_state: unverified
+remaining: Verify share-session reset, artifact support, card footer ownership, and Library flow against the silent-regression contract.
+depends_on: ''
+plan_path: ''
+tags: []
+last_triaged: '2026-10-07'
+---
+
 # Share Flow Content Ownership
 
 **Status:** Approved for implementation

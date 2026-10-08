@@ -1,8 +1,21 @@
+---
+status: active
+value: null
+effort: null
+remaining: "Verify Repository Root Cleanup against scripts/sync-shortcodes-to-kv.ts before resuming implementation. Prior recorded remainder: Verify phase 1-3 root cleanup and measured size against the current tree; then assess the Later Work section separately."
+depends_on: ""
+plan_path: ""
+tags: []
+last_triaged: 2026-10-07
+work_state: unverified
+---
 # Repository Root Cleanup
+
+**Queue evidence (2026-10-07):** The phase 1–3 implementation claim is historical. Current-tree targets and measured reclaimed size still need checking before closeout.
 
 **Date:** 2026-08-05
 
-**Status:** Implemented for phases 1 through 3
+**Original status (historical):** Implemented for phases 1 through 3
 
 ## Goal
 

@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+  import { withSequenceJoinAppliedToAll } from "$lib/shared/grid-join/sequence-grid-join";
   import PictographContainer from "$lib/shared/pictograph/shared/components/PictographContainer.svelte";
 
   interface Props {
@@ -16,7 +17,10 @@
     loop = false,
   }: Props = $props();
 
-  const visibleSteps = $derived(sequence?.steps.slice(0, 8) ?? []);
+  // Drawn on the grids the sequence is joined on (display-only).
+  const visibleSteps = $derived(
+    withSequenceJoinAppliedToAll(sequence, sequence?.steps.slice(0, 8) ?? [])
+  );
   const overflowCount = $derived(
     Math.max(0, (sequence?.steps.length ?? 0) - visibleSteps.length)
   );

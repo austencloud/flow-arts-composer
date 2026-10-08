@@ -7,6 +7,7 @@ import {
   type FeatureVideoStore,
 } from "$lib/server/feature-video-store";
 import { featureVideoMediaUrl } from "$lib/shared/media-composition/domain/feature-video";
+import { POST_QR_URL_RULE } from "$lib/shared/media-composition/domain/post-project";
 import { takeFileKey } from "$lib/shared/media-composition/domain/post-plan";
 import { tempFeatureRoot } from "./feature-video-test-helpers";
 
@@ -37,7 +38,14 @@ beforeEach(async () => {
 });
 
 afterEach(async () => {
-  await fs.rm(root, { recursive: true, force: true });
+  // Windows can hold a file a test just wrote for a moment after it is
+  // deleted, and then its folder will not go yet.
+  await fs.rm(root, {
+    recursive: true,
+    force: true,
+    maxRetries: 10,
+    retryDelay: 100,
+  });
 });
 
 async function refusal(
@@ -134,6 +142,29 @@ describe("reading", () => {
     await fs.writeFile(path.join(root, "promo", "project.json"), "{ broken");
     const refused = await refusal(() => store.read("promo"));
     expect(refused.status).toBe(422);
+    expect(refused.message).toContain("history/");
+  });
+
+  it("names the field a hand edit broke", async () => {
+    await store.create(promo, NOW);
+    await store.applyOps(
+      "promo",
+      [{ op: "add-card", qrUrl: "https://tka.run/s/abc123" }],
+      NOW + 1
+    );
+    const file = path.join(root, "promo", "project.json");
+    const text = await fs.readFile(file, "utf8");
+    // A card's link must be https.
+    await fs.writeFile(
+      file,
+      text.replace("https://tka.run/s/abc123", "http://tka.run/s/abc123")
+    );
+    const refused = await refusal(() => store.read("promo"));
+    expect(refused.status).toBe(422);
+    expect(refused.message).toMatch(
+      /unreadable at project\.tracks\.\d+\.items\.\d+\.qrUrl: /
+    );
+    expect(refused.message).toContain(POST_QR_URL_RULE.replace(/\.$/, ""));
     expect(refused.message).toContain("history/");
   });
 });
@@ -489,6 +520,36 @@ describe("duplicating", () => {
       url: original,
     });
     expect(await fs.readdir(path.join(folder, "media", "footage"))).toEqual([]);
+  });
+
+  it("brings the capture scripts but not their frames, even when sharing media", async () => {
+    await store.create(promo, NOW);
+    const captures = path.join(root, "promo", "captures");
+    await fs.writeFile(
+      path.join(captures, "builder.capture.mjs"),
+      "export default {};"
+    );
+    await fs.mkdir(path.join(captures, "frames", "builder"), {
+      recursive: true,
+    });
+    await fs.writeFile(
+      path.join(captures, "frames", "builder", "00000.jpg"),
+      "frame"
+    );
+    const { folder } = await store.duplicate(
+      "promo",
+      { slug: "promo-cut", shareMedia: true },
+      NOW + 5
+    );
+    expect(await fs.readdir(path.join(folder, "captures"))).toEqual([
+      "builder.capture.mjs",
+    ]);
+    expect(
+      await fs.readFile(
+        path.join(folder, "captures", "builder.capture.mjs"),
+        "utf8"
+      )
+    ).toBe("export default {};");
   });
 
   it("refuses a name in use and a missing original", async () => {

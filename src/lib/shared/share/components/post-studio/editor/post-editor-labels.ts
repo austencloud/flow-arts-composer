@@ -85,6 +85,7 @@ export const TOOL_ICON: Record<PostToolId, string> = {
   sequence: "fa-shuffle",
   text: "fa-font",
   rename: "fa-pen",
+  music: "fa-music",
   back: "fa-xmark",
   split: "fa-scissors",
   beats: "fa-drum",
@@ -141,6 +142,8 @@ export function toolLabel(id: PostToolId): string {
       return t("post_editor_kind_text");
     case "rename":
       return t("post_editor_tool_rename");
+    case "music":
+      return "Music";
     case "back":
       return t("post_editor_tool_back");
     case "split":

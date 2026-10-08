@@ -27,7 +27,9 @@
   import { onDestroy, untrack } from "svelte";
   import {
     previewPlaybackRate,
+    rememberFollowLead,
     shouldSeekPreviewVideo,
+    type FollowLead,
   } from "$lib/shared/media-composition/services/video-preview-seek";
   import type { PreviewVideoController } from "$lib/shared/media-composition/services/post-preview-clock";
   import { PreviewVideoFrameRecovery } from "$lib/shared/media-composition/services/preview-video-frame-recovery";
@@ -45,6 +47,8 @@
     exporting?: boolean;
     sequence: SequenceData;
     qrSequence?: SequenceData;
+    /** A card's saved scan link, which its QR shows. */
+    qrUrl?: string;
     cardRenderOptions?: Partial<SequenceExportOptions> | null;
     qrAppearance?: PostQrAppearance;
     animationAppearance?: PostAnimationItem["animationAppearance"] | null;
@@ -86,6 +90,7 @@
     exporting = false,
     sequence,
     qrSequence,
+    qrUrl,
     cardRenderOptions = null,
     qrAppearance,
     animationAppearance = null,
@@ -163,6 +168,10 @@
   let lastPresentedTime: number | null = null;
   let lastFrameProgressAt: number | null = null;
   let frameVisibilityBlocked = false;
+  /** This clip's recent leads on sounding music. */
+  let followLeads: FollowLead[] = [];
+  /** Whether the clip plays off its authored speed to keep up with the music. */
+  let speedNudged = false;
   let saveMenuHost: VisualSequenceSaveContextMenuHost | undefined = $state();
 
   /**
@@ -261,6 +270,32 @@
     };
   });
 
+  /**
+   * Muted footage that follows sounding music runs a little fast or slow
+   * until it is back in its place. Footage that sounds keeps its authored
+   * speed, since a speed change would bend its pitch, and so does a clip that
+   * is seeking, waiting for data, held, ended, or not playing.
+   */
+  function applyPlaybackRate(): void {
+    if (!video || exporting) return;
+    const steady =
+      playing &&
+      !playbackHeld &&
+      !video.paused &&
+      !video.seeking &&
+      !video.ended &&
+      !videoWaiting &&
+      !awaitingPlayingFrame &&
+      video.muted;
+    const rate = previewPlaybackRate(
+      playbackRate,
+      steady ? followLeads.map((entry) => entry.seconds) : [],
+      speedNudged
+    );
+    speedNudged = rate !== playbackRate;
+    if (video.playbackRate !== rate) video.playbackRate = rate;
+  }
+
   function syncVideoTime(discontinuity = false): boolean {
     if (exporting) return false;
     if (!video || video.readyState < 1 || !Number.isFinite(sourceTimeSeconds))
@@ -304,8 +339,9 @@
         break;
       }
     }
-    // The post follows native playback. Only scrubs, cuts, and a stalled
-    // decoder need a seek; the authored speed always stays steady.
+    // The post follows native playback. Only scrubs, cuts, a stalled decoder,
+    // and footage a quarter second off sounding music need a seek; smaller
+    // slips from the music are closed by speed changes instead.
     const shouldSeek = shouldSeekPreviewVideo({
       currentTime: video.currentTime,
       targetTime: target,
@@ -322,6 +358,8 @@
       presentedTime: lastPresentedTime,
       sinceLastPresentedFrameMs: frameAge,
       visible,
+      following: followLeads.length > 0,
+      playbackRate,
     });
     if (shouldSeek) {
       if (playing) {
@@ -330,10 +368,11 @@
         lastCorrectionAt = now;
         recoveryStartedAt = now;
       }
+      // A seek starts the clip's lead on the music afresh.
+      followLeads = [];
       video.currentTime = target;
     }
-    const rate = previewPlaybackRate(playbackRate);
-    if (video.playbackRate !== rate) video.playbackRate = rate;
+    applyPlaybackRate();
     return shouldSeek;
   }
 
@@ -566,6 +605,16 @@
         if (held) element.pause();
         else startPlayback(element);
       },
+      follow: (leadSeconds) => {
+        followLeads =
+          leadSeconds === null
+            ? []
+            : rememberFollowLead(followLeads, {
+                atMs: performance.now(),
+                seconds: leadSeconds,
+              });
+        applyPlaybackRate();
+      },
     };
     register(controller);
     return () => register(null);
@@ -583,6 +632,8 @@
     const gain = Math.max(0, Math.min(1, previewGain));
     video.volume = gain;
     video.muted = !playing || gain === 0;
+    // Footage that starts to sound goes back to its authored speed at once.
+    untrack(() => applyPlaybackRate());
   });
 
   $effect(() => {
@@ -600,6 +651,8 @@
       previousPlaybackRate !== null && previousPlaybackRate !== playbackRate;
     previousClipId = clipId;
     previousPlaybackRate = playbackRate;
+    // A new clip or speed measures its lead on the music afresh.
+    if (changedClip || changedSpeed) followLeads = [];
     if (playing && (jumped || changedClip || changedSpeed)) queuedJump = true;
     const seeked = syncVideoTime(changedClip || changedSpeed);
     if (seeked || !playing) queuedJump = false;
@@ -619,6 +672,7 @@
       cancelPlayingFrame();
       awaitingPlayingFrame = false;
       recoveryStartedAt = null;
+      followLeads = [];
       // The frame must arrive from the completed seek, not the old position.
       if (seeked && !video.seeking) showPausedFrame(video);
     }
@@ -686,6 +740,7 @@
       {displayedBeatNumber}
       {cardRenderOptions}
       {qrSequence}
+      {qrUrl}
     />
   {:else if binding.renderMode === "tunnel"}
     <PostStudioTunnelLayer

@@ -336,16 +336,21 @@ describe("landing shared-element contract", () => {
       "const heroAct = createHeroAct({ initialSequence: FALLBACK_DEMO });"
     );
     expect(composer).toContain("runAfterNamedRouteMorphIdle(heroAct.start)");
-    // The tunnel and 3D bands open on the baked fixture, then latch the first
-    // LIVE hero draw so a Threlte scene is never torn down under a reader.
+    // The tunnel and 3D bands open on the baked fixture; every live hero
+    // draw becomes the page sequence, written untracked, and the hero is
+    // held once the reader leaves it, so a Threlte scene is never torn down
+    // under a reader.
     expect(composer).toContain("sequence={heroAct.sequence}");
-    expect(composer).toContain("resolveComposerCarriedSequence(");
     expect(composer).toContain("FALLBACK_DEMO");
     expect(composer).toContain(
-      "if (first && first.id !== FALLBACK_DEMO.id && !latchedHeroSequence) {"
+      "let pageSequence = $state.raw(openingPageSequence(FALLBACK_DEMO));"
     );
-    expect(composer).toContain("latchedHeroSequence = first;");
-    expect(composer).not.toContain("{#key carriedSequence?.id}");
+    expect(composer).toContain(
+      'pageSequence = carryPageSequence(pageSequence, "hero", drawn);'
+    );
+    expect(composer).toContain("use:holdWhenHeroLeaves");
+    expect(composer).toContain("heroAct.hold();");
+    expect(composer).not.toContain("{#key pageSequence");
     // Construct and Generate are separate stops; each demo still arrives
     // through its own lazy loader.
     expect(composer).toContain(

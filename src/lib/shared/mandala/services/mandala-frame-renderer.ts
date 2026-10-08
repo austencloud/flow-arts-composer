@@ -12,6 +12,7 @@ import { renderMandalaSVG, renderMandalaToCanvas } from "./mandala-renderer";
 import { getMandalaPathOptions } from "./mandala-path-options";
 import { pairTipEnds } from "$lib/shared/pictograph/prop/domain/prop-tip-ends";
 import { DEFAULT_OVERLAP_CONFIG } from "../domain/mandala-types";
+import { mandalaJoinReach, type MandalaHandOffsets } from "./mandala-grid-join";
 import type {
   MandalaPalette,
   MandalaPaths,
@@ -101,6 +102,12 @@ export interface MandalaFrameSpec {
   morphColors: string[] | null;
   /** Resolved solid pair, or null in flow mode. */
   solidPair: [string, string] | null;
+  /**
+   * Joined grids: each hand's figure offset (mandala units) onto its own grid,
+   * as the on-screen mandala draws it. Absent or null for one grid. Plain
+   * numbers, so it crosses the worker boundary as is.
+   */
+  handOffsets?: MandalaHandOffsets | null;
 }
 
 export interface MandalaFrameMath {
@@ -275,7 +282,12 @@ export function renderMandalaFrameToCanvas(
   const center = size / 2;
   const effectiveTipDx = Math.max(tipDx, MANDALA_STANDARD_TIP_DX);
   const tipReach = (effectiveTipDx * MANDALA_GRID_RADIUS) / ENGINE_GRID_RADIUS;
-  const renderScale = center / ((MANDALA_GRID_RADIUS + tipReach) * 1.05);
+  const show = spec.show ?? "both";
+  // A joined pair reaches past one figure; the renderer widens its fit by the
+  // same amount (only when both hands show), so the glow scale follows.
+  const joined = show === "both" ? (spec.handOffsets ?? null) : null;
+  const renderScale =
+    center / ((MANDALA_GRID_RADIUS + tipReach + mandalaJoinReach(joined)) * 1.05);
 
   ctx.fillStyle = spec.bgColor;
   ctx.fillRect(0, 0, size, size);
@@ -289,11 +301,12 @@ export function renderMandalaFrameToCanvas(
   renderMandalaToCanvas(ctx as unknown as CanvasRenderingContext2D, paths, {
     size,
     style: "stroke",
-    show: spec.show ?? "both",
+    show,
     palette,
     strokeWidth: spec.lineWeight,
     tipDx,
     gradient,
+    ...(joined ? { handOffsets: joined } : {}),
     glow: { blur: GLOW_STDDEV * renderScale, bloomBlur: DEFAULT_OVERLAP_CONFIG.bloomBlur * renderScale },
     offsetX: 0,
     offsetY: 0,
@@ -322,6 +335,7 @@ export function renderMandalaFrameSVG(
     strokeWidth: spec.lineWeight,
     tipDx,
     gradient,
+    ...(spec.handOffsets ? { handOffsets: spec.handOffsets } : {}),
   });
 
   // renderMandalaSVG emits width/height="100%", which has no intrinsic pixel

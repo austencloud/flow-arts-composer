@@ -2,13 +2,16 @@
 status: active
 value: 2
 effort: S
-remaining: '3 of 4 legs survive; Echo''s rework was deleted and replaced by Ghost'
+remaining: "Verify Effect Leg Bolstering — Design / Progress against src/lib/shared/effects/renderers/bloom-2d-renderer.ts before resuming implementation. Prior recorded remainder: '3 of 4 legs survive; Echo''s rework was deleted and replaced by Ghost'"
 depends_on: ""
 plan_path: ""
 tags: []
-last_triaged: 2026-08-02
+last_triaged: 2026-10-07
+work_state: unverified
 ---
 # Effect Leg Bolstering — Design / Progress
+
+**Queue evidence (2026-10-07):** Three of four upgraded legs survive; Echo was removed and replaced by Ghost. See frontmatter for the remaining work.
 
 > **DRIFT WARNING — 2026-08-02.** 3 of 4 legs survive; Echo's rework was **deleted** and replaced by Ghost
 >
@@ -16,7 +19,7 @@ last_triaged: 2026-08-02
 > This banner is the current state. Source: `docs/superpowers/handoffs/2026-07-25-spec-triage-ledger.md`.
 
 
-**Status:** In progress. Four legs upgraded and committed on `main`
+**Original status (historical):** In progress. Four legs upgraded and committed on `main`
 (bloom, zap, echo, **pulse**). In-browser visual verification still owed for all
 four. Re-assess the remaining cluster before the next leg.
 

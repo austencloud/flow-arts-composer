@@ -20,8 +20,9 @@
  * ahead of the beat that needs it, and every displaced beat is listed in cm in
  * `track.report`.
  *
- * Frame: origin at the hand's grid centre, the frame of a prop's
- * `worldPosition`. +x is the performer's left, +y is up, +z points the way the
+ * Frame: `worldPosition` uses the performer origin. Radial motion uses the
+ * hand's own grid centre, which may be offset for a joined sequence.
+ * +x is the performer's left, +y is up, +z points the way the
  * performer faces, toward the audience. A positive `depthM` moves the staff
  * toward the audience.
  */
@@ -29,6 +30,7 @@
 import { Vector3 } from "three";
 import {
   GRID_OFFSETS,
+  PLANE_MODE_CONFIGS,
   Plane,
   PlaneMode,
   type PropState3D,
@@ -198,7 +200,18 @@ export interface HardBeatTrack {
   readonly laneKind: Int8Array;
 }
 
-export type HardBeatProp = Pick<PropState3D, "worldPosition" | "plane">;
+export type HardBeatProp = Pick<PropState3D, "worldPosition" | "plane"> & {
+  /** Center of this hand's grid; absent means the performer's shared center. */
+  gridCenter?: Vector3;
+};
+
+function localGridPosition(prop: HardBeatProp): Vec3 {
+  const center = prop.gridCenter;
+  const world = prop.worldPosition;
+  return center
+    ? { x: world.x - center.x, y: world.y - center.y, z: world.z - center.z }
+    : world;
+}
 
 /**
  * Anything that can say where the props are at an arbitrary score time.
@@ -217,8 +230,10 @@ export interface HardBeatTrackOptions {
   source: HardBeatScoreSource | null;
   stanceTrack: StanceYawTrack | null;
   heightM: number;
-  /** Only the wall mode is planned; every other mode gets no track. */
+  /** Wall plans lanes; joined non-wall modes plan reach only. */
   planeMode?: PlaneMode;
+  /** The dual-wheel hand anchors sit half a staff length from the torso. */
+  staffLengthM?: number;
   limits?: Partial<HardBeatLimits>;
   body?: HardBeatBodyModel;
   /**
@@ -399,21 +414,25 @@ function radialReach(target: Vec3, unit: Vec3, shoulder: Vec3, reach: number) {
  * partner's; what that leaves short is reported as shortfall.
  */
 function holdPairRouting(
-  left: Vec3,
-  right: Vec3,
+  leftProp: HardBeatProp,
+  rightProp: HardBeatProp,
   leftIn: number,
   rightIn: number
 ): { left: number; right: number } {
+  const left = leftProp.worldPosition;
+  const right = rightProp.worldPosition;
+  const leftLocal = localGridPosition(leftProp);
+  const rightLocal = localGridPosition(rightProp);
   const crossing = Math.min(
     clamp(-left.x / ROUTING_SHOULDER_HALF_WIDTH_M, 0, 1),
     clamp(right.x / ROUTING_SHOULDER_HALF_WIDTH_M, 0, 1)
   );
-  const leftRadius = Math.hypot(left.x, left.y, left.z);
-  const rightRadius = Math.hypot(right.x, right.y, right.z);
+  const leftRadius = Math.hypot(leftLocal.x, leftLocal.y, leftLocal.z);
+  const rightRadius = Math.hypot(rightLocal.x, rightLocal.y, rightLocal.z);
   if (crossing < PAIR_CROSS_ENGAGE || leftRadius < 1e-9 || rightRadius < 1e-9)
     return { left: leftIn, right: rightIn };
-  const leftUp = left.y / leftRadius;
-  const rightUp = right.y / rightRadius;
+  const leftUp = leftLocal.y / leftRadius;
+  const rightUp = rightLocal.y / rightRadius;
   const rise = (a: number, b: number) =>
     left.y - a * leftUp - (right.y - b * rightUp);
   const leftOver = (a: number, b: number) =>
@@ -531,12 +550,131 @@ interface HandInput {
   corridorM: number;
 }
 
+/**
+ * Joined grids can put a non-wall grip across the body. The legacy animator
+ * pair split then moves its IK target away from the rendered prop. Give these
+ * scores a reach track, using each hand's own grid radial, so the shared
+ * contact owner disables that split and moves only targets that need reach.
+ */
+function buildJoinedNonWallTrack(
+  options: HardBeatTrackOptions,
+  stepCount: number,
+  limits: HardBeatLimits,
+  body: HardBeatBodyModel
+): HardBeatTrack | null {
+  const source = options.source!;
+  const mode = options.planeMode!;
+  const perStep = HARD_BEAT_SAMPLES_PER_STEP;
+  const loop = source.loop;
+  const n = stepCount * perStep + (loop ? 0 : 1);
+  const props = Array.from({ length: n }, (_, i) =>
+    source.propStatesAtScoreTime(i / perStep)
+  );
+  if (!props.some(({ left, right }) => left?.gridCenter || right?.gridCenter))
+    return null;
+
+  const modeBody = { ...body, gridOffsetM: GRID_OFFSETS[mode] };
+  const baseShoulders = shoulders(modeBody, 0);
+  const halfStaff = (options.staffLengthM ?? 0.67) / 2;
+  const modeConfig = PLANE_MODE_CONFIGS[mode];
+  const anchors =
+    mode === PlaneMode.DUAL_WHEEL
+      ? { left: halfStaff, right: -halfStaff }
+      : {
+          left: modeConfig.blueLateralOffset,
+          right: modeConfig.redLateralOffset,
+        };
+  const reach = body.reachM - body.reachMarginM;
+  const radialRaw = {
+    left: new Float64Array(n),
+    right: new Float64Array(n),
+  };
+  const cappedRaw = { left: new Uint8Array(n), right: new Uint8Array(n) };
+  for (let i = 0; i < n; i++) {
+    for (const side of ["left", "right"] as const) {
+      const prop = props[i]![side];
+      if (!prop) continue;
+      const local = localGridPosition(prop);
+      const radius = Math.hypot(local.x, local.y, local.z);
+      if (radius < 1e-9) continue;
+      const unit = {
+        x: local.x / radius,
+        y: local.y / radius,
+        z: local.z / radius,
+      };
+      const shoulder = {
+        ...baseShoulders[side],
+        x: baseShoulders[side].x - anchors[side],
+      };
+      const wp = prop.worldPosition;
+      const wanted = Math.max(0, radialReach(wp, unit, shoulder, reach));
+      const bound = Math.min(
+        limits.radialInMaxM,
+        Math.max(0, radius - HARD_BEAT_MIN_RADIUS_M)
+      );
+      radialRaw[side][i] = Math.min(wanted, bound);
+      cappedRaw[side][i] = wanted > bound + 1e-9 ? 1 : 0;
+    }
+  }
+  const leftRadialIn = widen(radialRaw.left, perStep, loop);
+  const rightRadialIn = widen(radialRaw.right, perStep, loop);
+  const leftShortfall = new Float64Array(n);
+  const rightShortfall = new Float64Array(n);
+  const leftCapped = new Uint8Array(n);
+  const rightCapped = new Uint8Array(n);
+  for (let i = 0; i < n; i++) {
+    for (const side of ["left", "right"] as const) {
+      const prop = props[i]![side];
+      if (!prop) continue;
+      const shoulder = {
+        ...baseShoulders[side],
+        x: baseShoulders[side].x - anchors[side],
+      };
+      const displaced = displaceProp(prop, {
+        radialInM: (side === "left" ? leftRadialIn : rightRadialIn)[i]!,
+        depthM: 0,
+      })!;
+      const wp = displaced.worldPosition;
+      const short = Math.max(
+        0,
+        Math.hypot(wp.x - shoulder.x, wp.y - shoulder.y, wp.z - shoulder.z) -
+          reach
+      );
+      (side === "left" ? leftShortfall : rightShortfall)[i] = short;
+      (side === "left" ? leftCapped : rightCapped)[i] =
+        short > REPORT_EPS_M && cappedRaw[side][i] === 1 ? 1 : 0;
+    }
+  }
+  const track: HardBeatTrack = {
+    stepCount,
+    loop,
+    samplesPerStep: perStep,
+    limits,
+    body: modeBody,
+    laneForwardShare: DEFAULT_LANE_FORWARD_SHARE,
+    report: [],
+    leftRadialIn,
+    rightRadialIn,
+    leftDepth: new Float64Array(n),
+    rightDepth: new Float64Array(n),
+    downstage: new Int8Array(n),
+    leftShortfall,
+    rightShortfall,
+    leftCapped,
+    rightCapped,
+    leftDepthUnavailable: new Uint8Array(n),
+    rightDepthUnavailable: new Uint8Array(n),
+    laneRule: new Int8Array(n).fill(-1),
+    laneKind: new Int8Array(n).fill(-1),
+  };
+  return { ...track, report: buildReport(track, source, null, mode) };
+}
+
 export function buildHardBeatTrack(
   options: HardBeatTrackOptions
 ): HardBeatTrack | null {
   const { source } = options;
   if (!source) return null;
-  if ((options.planeMode ?? PlaneMode.WALL) !== PlaneMode.WALL) return null;
   const stepCount = Math.floor(source.motionStepCount);
   if (!(stepCount > 0)) return null;
 
@@ -545,6 +683,8 @@ export function buildHardBeatTrack(
     ...options.limits,
   };
   const body = options.body ?? defaultHardBeatBodyModel(options.heightM);
+  if ((options.planeMode ?? PlaneMode.WALL) !== PlaneMode.WALL)
+    return buildJoinedNonWallTrack(options, stepCount, limits, body);
   const forwardShare = clamp(
     options.laneForwardShare ?? DEFAULT_LANE_FORWARD_SHARE,
     0,
@@ -806,9 +946,14 @@ export function buildHardBeatTrack(
       (side === "left" ? leftDepth : rightDepth)[i] = depth;
 
       const wp = prop.worldPosition;
-      const radius = Math.hypot(wp.x, wp.y, wp.z);
+      const local = localGridPosition(prop);
+      const radius = Math.hypot(local.x, local.y, local.z);
       if (radius < 1e-9) continue;
-      const unit = { x: wp.x / radius, y: wp.y / radius, z: wp.z / radius };
+      const unit = {
+        x: local.x / radius,
+        y: local.y / radius,
+        z: local.z / radius,
+      };
       const target = { x: wp.x, y: wp.y, z: wp.z + hand.corridorM + depth };
       const wanted = Math.max(0, radialReach(target, unit, s[side], reach));
       const bound = Math.min(
@@ -821,8 +966,8 @@ export function buildHardBeatTrack(
     const { left, right } = hands[i]!;
     if (left.prop && right.prop) {
       const held = holdPairRouting(
-        left.prop.worldPosition,
-        right.prop.worldPosition,
+        left.prop,
+        right.prop,
         radialRaw.left[i]!,
         radialRaw.right[i]!
       );
@@ -848,8 +993,8 @@ export function buildHardBeatTrack(
       const hand = hands[i]![side];
       const prop = hand.prop;
       if (!prop) continue;
-      const wp = prop.worldPosition;
-      const radius = Math.hypot(wp.x, wp.y, wp.z);
+      const local = localGridPosition(prop);
+      const radius = Math.hypot(local.x, local.y, local.z);
       const radial = side === "left" ? leftRadialIn : rightRadialIn;
       const r = appliedRadialIn(radius, radial[i]!);
       const scale = radius < 1e-9 ? 1 : 1 - r / radius;
@@ -858,9 +1003,13 @@ export function buildHardBeatTrack(
       const short = Math.max(
         0,
         Math.hypot(
-          wp.x * scale - shoulder.x,
-          wp.y * scale - shoulder.y,
-          wp.z * scale + hand.corridorM + depth - shoulder.z
+          (prop.gridCenter?.x ?? 0) + local.x * scale - shoulder.x,
+          (prop.gridCenter?.y ?? 0) + local.y * scale - shoulder.y,
+          (prop.gridCenter?.z ?? 0) +
+            local.z * scale +
+            hand.corridorM +
+            depth -
+            shoulder.z
         ) - reach
       );
       (side === "left" ? leftShortfall : rightShortfall)[i] = short;
@@ -1005,8 +1154,8 @@ export function displaceProp<P extends HardBeatProp>(
   hand: HandDisplacement
 ): P | null {
   if (!prop) return prop;
-  const wp = prop.worldPosition;
-  const radius = Math.hypot(wp.x, wp.y, wp.z);
+  const local = localGridPosition(prop);
+  const radius = Math.hypot(local.x, local.y, local.z);
   const r = appliedRadialIn(radius, hand.radialInM);
   const depth = appliedDepth(prop, hand.depthM);
   if (r === 0 && depth === 0) return prop;
@@ -1015,9 +1164,9 @@ export function displaceProp<P extends HardBeatProp>(
   return {
     ...prop,
     worldPosition: new Vector3(
-      wp.x * scale,
-      wp.y * scale,
-      wp.z * scale + depth
+      (prop.gridCenter?.x ?? 0) + local.x * scale,
+      (prop.gridCenter?.y ?? 0) + local.y * scale,
+      (prop.gridCenter?.z ?? 0) + local.z * scale + depth
     ),
   };
 }
@@ -1046,7 +1195,8 @@ function greatestCommonDivisor(a: number, b: number): number {
 function buildReport(
   track: HardBeatTrack,
   source: HardBeatScoreSource,
-  stanceTrack: StanceYawTrack | null
+  stanceTrack: StanceYawTrack | null,
+  planeMode: PlaneMode = PlaneMode.WALL
 ): DisplacedBeat[] {
   const beats = new Map<string, BeatAccumulator>();
   const grid =
@@ -1063,28 +1213,33 @@ function buildReport(
     if (k > 0 && k % grid === 0) steps.push(k / grid - 1);
     const sampleTime = !track.loop && k === total ? t - 1e-6 : t;
     const { left, right } = source.propStatesAtScoreTime(sampleTime);
-    const stance = resolveTrackedUpperBodyStance(
-      stanceTrack,
-      sampleTime,
-      PlaneMode.WALL,
-      left,
-      right,
-      null
-    );
+    const stance =
+      planeMode === PlaneMode.WALL
+        ? resolveTrackedUpperBodyStance(
+            stanceTrack,
+            sampleTime,
+            PlaneMode.WALL,
+            left,
+            right,
+            null
+          )
+        : null;
     const sample = sampleHardBeatTrack(track, sampleTime);
     const at = locate(track, sampleTime);
     for (const side of ["left", "right"] as const) {
       const prop = side === "left" ? left : right;
       if (!prop) continue;
       const hand = sample[side];
-      const wp = prop.worldPosition;
+      const local = localGridPosition(prop);
       const radialIn = appliedRadialIn(
-        Math.hypot(wp.x, wp.y, wp.z),
+        Math.hypot(local.x, local.y, local.z),
         hand.radialInM
       );
       const depth = appliedDepth(prop, hand.depthM);
       const corridor = Math.abs(
-        side === "left" ? stance.leftDepthOffsetM : stance.rightDepthOffsetM
+        side === "left"
+          ? (stance?.leftDepthOffsetM ?? 0)
+          : (stance?.rightDepthOffsetM ?? 0)
       );
       if (
         radialIn <= REPORT_EPS_M &&

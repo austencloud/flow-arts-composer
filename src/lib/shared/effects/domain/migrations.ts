@@ -5,7 +5,11 @@ import { migrateLedConfig } from "$lib/shared/animation-engine/domain/types/led-
 
 type UnknownRecord = Record<string, unknown>;
 
-/** Restores the prop-color fields written by pre-left/right effect settings. */
+/**
+ * Restores the prop-color fields written by pre-left/right effect settings.
+ * Ghost draws each prop's own texture and colors, so its old hand colors are
+ * dropped instead of restored.
+ */
 export function normalizeLegacyEffectIntentColors<T>(
   effectId: string,
   value: T
@@ -21,8 +25,13 @@ export function normalizeLegacyEffectIntentColors<T>(
 
   const source = value as UnknownRecord;
   const normalized: UnknownRecord = { ...source };
-  normalized.leftColor ??= source.blueColor;
-  normalized.rightColor ??= source.redColor;
+  if (effectId === "ghost") {
+    delete normalized.leftColor;
+    delete normalized.rightColor;
+  } else {
+    normalized.leftColor ??= source.blueColor;
+    normalized.rightColor ??= source.redColor;
+  }
   delete normalized.blueColor;
   delete normalized.redColor;
   return normalized as T;
@@ -484,13 +493,8 @@ export function migrateEffectsConfig(raw: unknown): EffectsConfig {
     if (anyInput.activeEffect === "menagerie") anyInput.activeEffect = "animal";
   }
 
-  // v31 → v32: Ghost owns its prop colors instead of borrowing Trails colors.
-  // Seed the established prop hues so existing saved looks do not change.
-  if (version < 32 && input.ghost) {
-    const ghost = input.ghost as LegacyRecord;
-    ghost.leftColor ??= DEFAULT_EFFECTS_CONFIG.ghost.leftColor;
-    ghost.rightColor ??= DEFAULT_EFFECTS_CONFIG.ghost.rightColor;
-  }
+  // v31 → v32 seeded Ghost-owned hand colors. v39 retires them again (below),
+  // so there is nothing to seed.
 
   // v32 → v33: Fire can preserve the original broad liquid presentation as a
   // named preset. Existing looks remain on the current natural Fire default.
@@ -542,9 +546,12 @@ export function migrateEffectsConfig(raw: unknown): EffectsConfig {
     if (input.trails) {
       input.trails = normalizeLegacyEffectIntentColors("trails", input.trails);
     }
-    if (input.ghost) {
-      input.ghost = normalizeLegacyEffectIntentColors("ghost", input.ghost);
-    }
+  }
+
+  // v38 → v39: Ghost draws each prop's own texture and colors, so its saved
+  // hand colors (either spelling) no longer mean anything.
+  if (version < 39 && input.ghost) {
+    input.ghost = normalizeLegacyEffectIntentColors("ghost", input.ghost);
   }
 
   const out: EffectsConfig = {

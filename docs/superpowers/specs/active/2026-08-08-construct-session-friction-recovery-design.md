@@ -1,3 +1,14 @@
+---
+status: active
+value: null
+effort: null
+remaining: "Verify one-action prop activation and label behavior for Undo, Save, Clear, Play, Actions, and Share against current Construct UI."
+depends_on: ""
+plan_path: ""
+tags: []
+last_triaged: 2026-10-07
+work_state: unverified
+---
 # Construct Session Friction Recovery
 
 - **Date:** 2026-08-08

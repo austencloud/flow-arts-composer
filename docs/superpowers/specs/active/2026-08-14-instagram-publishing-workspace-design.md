@@ -1,3 +1,14 @@
+---
+status: active
+value: null
+effort: null
+remaining: "Verify current publishing workspace gates and Meta app capabilities; obtain account review before any live publish path."
+depends_on: "external: Meta app permissions and Austen account review for publishing"
+plan_path: ""
+tags: []
+last_triaged: 2026-10-07
+work_state: blocked
+---
 # Instagram Publishing Workspace and Delivery Contract
 
 **Date:** 2026-08-14

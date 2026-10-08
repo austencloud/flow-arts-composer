@@ -1,8 +1,5 @@
 import { Quaternion, Vector3 } from "three";
-import {
-  PROP_COLORS,
-  type PropState3D,
-} from "@austencloud/scene-3d/worker";
+import { PROP_COLORS, type PropState3D } from "@austencloud/scene-3d/worker";
 import { ledBrightnessToFloat } from "$lib/shared/animation-engine/domain/types/led-types";
 import { LedPatternMaterializer } from "$lib/shared/animation-engine/services/led/led-pattern-materializer";
 import { patternFrameIndex } from "$lib/shared/animation-engine/services/led-sampler";
@@ -18,6 +15,7 @@ import { QualityTier, type TipPositionData3D } from "../../effects/types";
 import type {
   Charcoal3DParams,
   Fire3DParams,
+  Goo3DParams,
 } from "$lib/shared/effects/translators/webgl3d-types";
 import type { TrackingMode } from "$lib/shared/animation-engine/domain/types/trail-types";
 import { MOON_FAN_LED_COUNT } from "../../effects/led/moon-fan-diffuser-renderer-3d";
@@ -130,13 +128,19 @@ function pooledSource(
   };
   switch (effect) {
     case "sparkles":
-    case "goo":
     case "petals":
     case "ink":
     case "silk":
     case "animal":
     case "pulse":
       return { ...base, effect, params } as SceneEffectTipSource3D;
+    case "goo":
+      return {
+        ...base,
+        effect,
+        params: params as Goo3DParams,
+        collisionFloorY: input.collisionFloorY,
+      };
     case "bubbles":
     case "smoke":
     case "bloom":

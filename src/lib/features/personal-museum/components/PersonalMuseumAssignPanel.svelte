@@ -14,6 +14,7 @@
    * Interaction: tap a slot to arm it (highlights), then tap a sequence in the
    * picker to place it there. Tapping the armed slot again disarms.
    */
+  import { sequenceFirstStep } from "../services/sequence-first-step";
   import PictographContainer from "$lib/shared/pictograph/shared/components/PictographContainer.svelte";
   import SequencePicker from "./SequencePicker.svelte";
   import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
@@ -40,7 +41,7 @@
   function firstStep(id: string | null): PictographData | null {
     if (!id) return null;
     const seq = seqById.get(id);
-    return (seq?.steps?.[0] as PictographData | undefined) ?? null;
+    return sequenceFirstStep(seq);
   }
 
   function nameFor(id: string | null): string {

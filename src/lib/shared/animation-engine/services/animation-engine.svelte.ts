@@ -84,6 +84,8 @@ export interface AnimationEngineProps {
   additionalLayers?: AdditionalLayerProps[];
   /** Layers whose prop sprites should be ready before they enter a frame. */
   preloadAdditionalLayers?: AdditionalLayerProps[];
+  /** The same copies at any step, for frame-rate-independent trail sampling. */
+  additionalLayersAt?: (step: number) => AdditionalLayerProps[];
   onAdditionalLayerTextureStatusChange?: (
     status: AdditionalLayerTextureStatus
   ) => void;

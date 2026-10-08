@@ -1,13 +1,15 @@
 ---
-status: active
+status: backlog
 value: 2
 effort: S
-remaining: 'Design doc committed (71a5944392) with zero implementation. No surface/highlight fields on ChangelogEntry, no release-tour state, no data-release-anchor usage, no release.js --debt.'
-depends_on: ""
-plan_path: ""
+remaining: Current source has no release-tour or data-release-anchor usage; implement entry anchors and release-tour state, then verify deep links.
+depends_on: ''
+plan_path: ''
 tags: []
-last_triaged: 2026-08-02
+last_triaged: '2026-10-07'
+work_state: ready
 ---
+
 # Release Notes Deep-Linking + Discovery — Design
 
 **Date:** 2026-07-28

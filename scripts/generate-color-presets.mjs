@@ -3,9 +3,12 @@
 // OKLCH so every swatch in a row has the same perceived lightness, then
 // converted to sRGB hex. Run by hand after changing the tables below:
 //   node scripts/generate-color-presets.mjs
+// The OKLCH math lives in src/lib/shared/ui/oklch.ts, shared with the prop
+// color dice; Node 22.18+ loads that TypeScript file directly.
 import { writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
+import { maxChroma, oklchToHex } from "../src/lib/shared/ui/oklch.ts";
 
 const HUES = [
   { hue: 25, name: "red" },
@@ -32,68 +35,16 @@ function capitalize(word) {
   return word[0].toUpperCase() + word.slice(1);
 }
 
-// Björn Ottosson's Oklab matrices: https://bottosson.github.io/posts/oklab/
-function oklchToLinearSrgb(L, C, hueDegrees) {
-  const h = (hueDegrees * Math.PI) / 180;
-  const a = C * Math.cos(h);
-  const b = C * Math.sin(h);
-  const l = (L + 0.3963377774 * a + 0.2158037573 * b) ** 3;
-  const m = (L - 0.1055613458 * a - 0.0638541728 * b) ** 3;
-  const s = (L - 0.0894841775 * a - 1.291485548 * b) ** 3;
-  return [
-    4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * s,
-    -1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s,
-    -0.0041960863 * l - 0.7034186147 * m + 1.707614701 * s,
-  ];
-}
-
-function inGamut(rgb) {
-  return rgb.every((channel) => channel >= -1e-6 && channel <= 1 + 1e-6);
-}
-
-function toGammaByte(linear) {
-  const clamped = Math.min(1, Math.max(0, linear));
-  const gamma =
-    clamped <= 0.0031308
-      ? 12.92 * clamped
-      : 1.055 * clamped ** (1 / 2.4) - 0.055;
-  return Math.round(gamma * 255);
-}
-
-function maxChromaAt(L, hue) {
-  let chroma = 0;
-  while (chroma < 0.4 && inGamut(oklchToLinearSrgb(L, chroma + 0.002, hue))) chroma += 0.002;
-  return chroma;
-}
-
 // The most saturated sRGB color of a hue: the gamut cusp. Yellow lives near
 // L 0.97, blue near L 0.45, so a fixed lightness cannot hold a real rainbow.
 function cuspHex(hue) {
   let best = { lightness: 0.66, chroma: 0 };
   for (let i = 0; i <= 134; i += 1) {
     const lightness = 0.3 + i * 0.005;
-    const chroma = maxChromaAt(lightness, hue);
+    const chroma = maxChroma(lightness, hue);
     if (chroma > best.chroma) best = { lightness, chroma };
   }
   return oklchToHex(best.lightness, best.chroma, hue);
-}
-
-// Walks chroma down until the color fits sRGB; hue and lightness stay put.
-function oklchToHex(L, C, hue) {
-  // Achromatic special case: at C=0, hue is meaningless and floating-point
-  // matrix roundoff can nudge a channel a hair past 0 or 1. Route L=1/L=0
-  // straight to pure white/black so the neutral row's endpoints are exact.
-  if (C === 0) {
-    if (L >= 1) return "#ffffff";
-    if (L <= 0) return "#000000";
-  }
-  let chroma = C;
-  let rgb = oklchToLinearSrgb(L, chroma, hue);
-  while (!inGamut(rgb) && chroma > 0) {
-    chroma = Math.max(0, chroma - 0.002);
-    rgb = oklchToLinearSrgb(L, chroma, hue);
-  }
-  return `#${rgb.map((channel) => toGammaByte(channel).toString(16).padStart(2, "0")).join("")}`;
 }
 
 const presets = [];

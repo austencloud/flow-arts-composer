@@ -2,12 +2,14 @@
 status: backlog
 value: 3
 effort: M
-remaining: "Body status: Backlog"
-depends_on: ""
-plan_path: ""
+remaining: Audit accessibility acceptance; first fix the view-toggle radio buttons lacking aria-label, then verify the remaining keyboard and screen-reader paths.
+depends_on: ''
+plan_path: ''
 tags: []
-last_triaged: 2026-07-25
+last_triaged: '2026-10-07'
+work_state: unverified
 ---
+
 # Accessibility Fixes Design Spec
 
 Date: 2026-05-23

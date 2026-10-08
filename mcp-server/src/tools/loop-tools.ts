@@ -12,7 +12,11 @@ import {
   ensureDataLoaded,
   saveAndOpenImage,
 } from "../shared/server-context.js";
-import { gridJoinSchema } from "../shared/grid-join-schema.js";
+import {
+  gridJoinField,
+  gridJoinLine,
+  gridJoinSchema,
+} from "../shared/grid-join-schema.js";
 import {
   buildSequenceFromLetters,
   parseWordToLetters,
@@ -290,7 +294,7 @@ export function registerLoopTools(server: McpServer): void {
   // Tool: generate_loop_sequence
   server.tool(
     "generate_loop_sequence",
-    "[DEPRECATED: Use generate_sequence with loopType parameter instead.] Generate a complete LOOP sequence from a word + LOOP type. Returns the circular sequence with all transformed steps. Currently supports REWOUND and ROTATED.",
+    "[DEPRECATED: Use generate_sequence with loopType parameter instead.] Generate a complete LOOP sequence from a word + LOOP type. Returns the circular sequence with all transformed steps. Currently supports REWOUND and ROTATED. Pass conjoined to draw each hand on its own joined grid; omitting conjoined means one grid, and the result echoes the join used.",
     {
       word: z.string().describe('The sequence word, e.g., "CAKE"'),
       loopType: z
@@ -327,6 +331,7 @@ export function registerLoopTools(server: McpServer): void {
         .describe(
           'Override starting orientation for the right prop (default: "in")'
         ),
+      conjoined: gridJoinSchema.optional(),
     },
     async ({
       word,
@@ -336,6 +341,7 @@ export function registerLoopTools(server: McpServer): void {
       maxAttempts = 500,
       leftStartOrientation,
       rightStartOrientation,
+      conjoined,
     }) => {
       const allPictographs = ensureDataLoaded(gridMode);
 
@@ -483,6 +489,7 @@ export function registerLoopTools(server: McpServer): void {
         derivedWord: loopResult.derivedWord,
         loopType: loopResult.loopType,
         period: loopResult.period,
+        ...gridJoinField(conjoined, gridMode),
         isCircular: loopResult.isCircular,
         stepCount: finalMcpSteps.length - 1,
         startPlacement: baseResult.startPlacement,
@@ -523,7 +530,7 @@ export function registerLoopTools(server: McpServer): void {
   // Tool: generate_loop_image
   server.tool(
     "generate_loop_image",
-    "[DEPRECATED: Use generate_sequence with loopType parameter instead.] Generate a choreo card image for a LOOP sequence. Displays the complete circular sequence as a composite image.",
+    "[DEPRECATED: Use generate_sequence with loopType parameter instead.] Generate a choreo card image for a LOOP sequence. Displays the complete circular sequence as a composite image. Pass conjoined to draw each hand on its own joined grid; omitting conjoined means one grid, and the result echoes the join used.",
     {
       word: z.string().describe('The sequence word, e.g., "CAKE"'),
       loopType: z.enum(["rewound", "rotated"]).describe("LOOP type to apply"),
@@ -888,7 +895,7 @@ export function registerLoopTools(server: McpServer): void {
           content: [
             {
               type: "text" as const,
-              text: `## LOOP Sequence: ${loopResult.loopWord}\n\n**Original word:** ${word}\n**LOOP type:** ${loopType}\n**Slice size:** ${period}\n**Steps:** ${stepCount}`,
+              text: `## LOOP Sequence: ${loopResult.loopWord}\n\n**Original word:** ${word}\n**LOOP type:** ${loopType}\n**Slice size:** ${period}\n**Steps:** ${stepCount}${gridJoinLine(conjoined, gridMode)}`,
             },
             {
               type: "image" as const,
@@ -920,7 +927,7 @@ export function registerLoopTools(server: McpServer): void {
   // Opens the LOOP sequence in system viewer without returning image data (saves tokens)
   server.tool(
     "view_loop_sequence",
-    "Generate a LOOP sequence choreo card and open it in the system image viewer. Returns only confirmation text - NO image data returned. Use this when the USER needs to see the LOOP sequence but Claude doesn't need to analyze it. Saves ~30-100k tokens compared to generate_loop_image.",
+    "Generate a LOOP sequence choreo card and open it in the system image viewer. Returns only confirmation text - NO image data returned. Use this when the USER needs to see the LOOP sequence but Claude doesn't need to analyze it. Saves ~30-100k tokens compared to generate_loop_image. Pass conjoined to draw each hand on its own joined grid; omitting conjoined means one grid, and the result echoes the join used.",
     {
       word: z.string().describe('The sequence word, e.g., "CAKE"'),
       loopType: z
@@ -1289,7 +1296,7 @@ export function registerLoopTools(server: McpServer): void {
           content: [
             {
               type: "text" as const,
-              text: `Opened LOOP sequence "${loopResult.loopWord}" in system viewer.\n${stepCount} steps, ${layout} layout, ${cellSize}px cells\nLOOP type: ${loopType}\nSeed word: ${loopResult.seedWord}\nDerived steps: ${loopResult.derivedStepIndices.join(", ")}${bridgeNote}`,
+              text: `Opened LOOP sequence "${loopResult.loopWord}" in system viewer.\n${stepCount} steps, ${layout} layout, ${cellSize}px cells\nLOOP type: ${loopType}\nSeed word: ${loopResult.seedWord}\nDerived steps: ${loopResult.derivedStepIndices.join(", ")}${bridgeNote}${gridJoinLine(conjoined, gridMode)}`,
             },
           ],
         };

@@ -89,6 +89,7 @@ Last audit: 2025-12-27
     rightProp,
     additionalLayers = [],
     preloadAdditionalLayers = [],
+    additionalLayersAt = undefined,
     tunnelSpectrum = true,
     tunnelPropColors = null,
     primaryPropColors,
@@ -159,6 +160,7 @@ Last audit: 2025-12-27
     progressLine = false,
     hoverHint = "none",
     cornerToggle = false,
+    cornerToggleAtRest = false,
     showScrubberPlaybackControl = false,
     extraContextMenuItems = [],
     beatIndicators = true,
@@ -175,6 +177,7 @@ Last audit: 2025-12-27
     rightProp: PropState | null;
     additionalLayers?: AdditionalLayerProps[];
     preloadAdditionalLayers?: AdditionalLayerProps[];
+    additionalLayersAt?: (step: number) => AdditionalLayerProps[];
     tunnelSpectrum?: boolean;
     tunnelPropColors?: TunnelPropColorPair | null;
     primaryPropColors?: TunnelPropColorPair | null;
@@ -322,6 +325,10 @@ Last audit: 2025-12-27
      *  canvas via CanvasSurface's cornerControl slot. Pairs with onPlaybackToggle.
      *  Off by default. */
     cornerToggle?: boolean;
+    /** Keeps the corner toggle visible and interactive while playing, not
+     *  only on hover or when paused. Marketing demonstrations opt in so the
+     *  pause control passes the 44 px visible-at-rest rule on every pointer. */
+    cornerToggleAtRest?: boolean;
     /** Adds the canonical play/pause action beside the minimal scrubber. */
     showScrubberPlaybackControl?: boolean;
     /** Extra entries injected into the right-click context menu (e.g. "Save
@@ -843,6 +850,7 @@ Last audit: 2025-12-27
   data-hover-hint={hoverHint !== "none" ? hoverHint : undefined}
   data-tap-toggle={tapToToggle || undefined}
   data-corner-toggle={cornerToggle || undefined}
+  data-corner-toggle-at-rest={(cornerToggle && cornerToggleAtRest) || undefined}
   data-playing={isPlaying || undefined}
   data-view={viewState}
   data-ghost={ghostAnnotations ? "safe" : undefined}
@@ -883,6 +891,7 @@ Last audit: 2025-12-27
       {rightProp}
       {additionalLayers}
       {preloadAdditionalLayers}
+      {additionalLayersAt}
       {tunnelSpectrum}
       {tunnelPropColors}
       {primaryPropColors}
@@ -1322,6 +1331,13 @@ Last audit: 2025-12-27
       opacity 140ms ease,
       transform 150ms ease; /* exit: quick, no overshoot */
     -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Opted-in hosts show the toggle at rest on every pointer type. */
+  .animation-container[data-corner-toggle-at-rest] .corner-toggle {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+    pointer-events: auto;
   }
 
   /* Persistent PAUSED indicator — always visible on every pointer type

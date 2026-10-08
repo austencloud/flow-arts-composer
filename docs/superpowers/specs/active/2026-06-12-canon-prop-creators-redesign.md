@@ -2,13 +2,16 @@
 status: active
 value: 2
 effort: XS
-remaining: '5 of 6 shipped; mobile title-row hide not done, and the panel was since redesigned'
+remaining: "Verify Canon Prop + Browse Creators Redesign — Design against src/lib/shared/settings/services/firebase-settings-persister.ts before resuming implementation. Prior recorded remainder: '5 of 6 shipped; mobile title-row hide not done, and the panel was since redesigned'"
 depends_on: ""
 plan_path: ""
 tags: []
-last_triaged: 2026-08-02
+last_triaged: 2026-10-07
+work_state: unverified
 ---
 # Canon Prop + Browse Creators Redesign — Design
+
+**Queue evidence (2026-10-07):** Five of six changes landed; mobile title-row behavior and later panel redesign need reconciliation. See frontmatter for the remaining work.
 
 > **DRIFT WARNING — 2026-08-02.** 5 of 6 shipped; mobile title-row hide not done, and the panel was since redesigned
 >
@@ -17,7 +20,7 @@ last_triaged: 2026-08-02
 
 
 **Date:** 2026-06-12
-**Status:** Approved direction (brainstormed with Austen 2026-06-12), ready for implementation plan
+**Original status (historical):** Approved direction (brainstormed with Austen 2026-06-12), ready for implementation plan
 **Session:** "Redesign Browse Creators"
 
 ## Problem

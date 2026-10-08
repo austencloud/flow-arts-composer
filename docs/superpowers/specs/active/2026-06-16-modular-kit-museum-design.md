@@ -2,11 +2,12 @@
 status: active
 value: 3
 effort: M
-remaining: 'Kit instancing live for institutional wall-section only; corners/doorways never authored'
+remaining: "Verify Modular Kit Museum — Vertical Slice against the current Modular Kit Museum — Vertical Slice runtime and acceptance criteria before resuming implementation. Prior recorded remainder: 'Kit instancing live for institutional wall-section only; corners/doorways never authored'"
 depends_on: ""
 plan_path: ""
 tags: []
-last_triaged: 2026-08-02
+last_triaged: 2026-10-07
+work_state: unverified
 ---
 # Modular Kit Museum — Vertical Slice
 

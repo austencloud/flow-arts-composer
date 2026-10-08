@@ -2,11 +2,16 @@
 status: backlog
 value: 4
 effort: S
-remaining: "Austen reviews the verdict table and the worktree contradiction; then a single executor session performs the sweep with scoped per-file commits"
-depends_on: ""
-plan_path: ""
-tags: [meta, rules, tokens, fable5]
-last_triaged: 2026-08-01
+remaining: Get Austen's verdict on the rules table and worktree contradiction before a scoped modernization sweep.
+depends_on: 'external: Austen verdict on modernization table and worktree contradiction'
+plan_path: ''
+tags:
+- meta
+- rules
+- tokens
+- fable5
+last_triaged: '2026-10-07'
+work_state: blocked
 ---
 
 # Rules Modernization for the Claude 5 Era — Design

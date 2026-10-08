@@ -25,6 +25,7 @@
     SheetHeader,
   } from "../../domain/types/choreo-sheet";
   import { SHEET_CELL_VISIBILITY } from "../../services/sheet-cell-config";
+  import { joinedCellStep } from "../../services/sheet-cell-raster";
   import { simplifyRepeatedWord } from "$lib/shared/foundation/utils/word-simplifier";
 
   let {
@@ -210,7 +211,7 @@
           >
             {#if cell.step}
               <PictographContainer
-                pictographData={cell.step}
+                pictographData={joinedCellStep(cell)}
                 disableTransitions={true}
                 printMode={true}
                 darkMode={false}

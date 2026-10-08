@@ -147,13 +147,12 @@ describe("Sequence Viewer transition orchestration contract", () => {
     // 18-tile picker needed the room the old two-way condition didn't grant).
     // 7b51429ee5 then filled Effort and Motion wherever a height-bounded host
     // fills its visual pages, and Tunnel's Effort and Motion pages fill beside
-    // its Display and Effects. The Grids (join) page fills like Display.
+    // its Display and Effects.
     expect(animationPanel).toContain(
       'fillBody={(resolvedPill === "effort" && visualPagesFill) ||\n' +
         '      resolvedPill === "display" ||\n' +
         '      resolvedPill === "effects" ||\n' +
         '      resolvedPill === "props" ||\n' +
-        '      resolvedPill === "join" ||\n' +
         '      (resolvedPill === "motion" && visualPagesFill)}'
     );
     expect(tunnelArtSettings).toContain(

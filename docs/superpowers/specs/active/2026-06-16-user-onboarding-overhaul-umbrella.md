@@ -2,13 +2,16 @@
 status: active
 value: 3
 effort: M
-remaining: 'Slices A, B shipped; D shipped copy-only; Slice C unbuilt — the only live gap'
+remaining: "Verify User Onboarding Overhaul — Umbrella against the current User Onboarding Overhaul — Umbrella runtime and acceptance criteria before resuming implementation. Prior recorded remainder: 'Slices A, B shipped; D shipped copy-only; Slice C unbuilt — the only live gap'"
 depends_on: ""
 plan_path: ""
 tags: []
-last_triaged: 2026-08-02
+last_triaged: 2026-10-07
+work_state: unverified
 ---
 # User Onboarding Overhaul — Umbrella
+
+**Queue evidence (2026-10-07):** Slices A and B shipped, D has copy only, and C remains open. See frontmatter for the remaining work.
 
 > **DRIFT WARNING — 2026-08-02.** Slices A, B shipped; D shipped copy-only; **Slice C unbuilt** — the only live gap
 >
@@ -17,7 +20,7 @@ last_triaged: 2026-08-02
 
 
 **Date:** 2026-06-16
-**Status:** Framing approved; slice B spec written, A/C/D pending their own brainstorm
+**Original status (historical):** Framing approved; slice B spec written, A/C/D pending their own brainstorm
 **Owner:** Austen
 
 ## Why this exists

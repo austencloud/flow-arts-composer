@@ -10,6 +10,23 @@ export type LoopType = `${LOOPType}`;
 export { Period };
 export type GridMode = "diamond" | "box" | "skewed";
 
+export const PRESET_GRID_JOIN_DIRECTIONS = [
+	"n",
+	"ne",
+	"e",
+	"se",
+	"s",
+	"sw",
+	"w",
+	"nw",
+] as const;
+
+/** Where red's grid sits from blue's, and how many hand points apart. */
+export interface PresetGridJoin {
+	toward: (typeof PRESET_GRID_JOIN_DIRECTIONS)[number];
+	steps: 1 | 2;
+}
+
 /**
  * Configuration for sequence generation stored in a preset.
  * All fields are optional - unspecified fields use tool defaults.
@@ -38,6 +55,9 @@ export interface PresetConfig {
 	darkMode?: boolean;
 	cellSize?: number;
 	layout?: "grid" | "strip";
+
+	// Joined grids: red's hand on a second grid beside blue's. Absent = one grid.
+	conjoined?: PresetGridJoin;
 }
 
 /**
@@ -85,6 +105,8 @@ export interface CreatePresetInput {
 	darkMode?: boolean;
 	cellSize?: number;
 	layout?: string;
+	/** A join to remember; null on an update removes the one the preset has. */
+	conjoined?: { toward: string; steps: number } | null;
 }
 
 /**
@@ -100,6 +122,16 @@ export function isValidPeriod(value: string): value is Period {
 
 export function isValidGridMode(value: string): value is GridMode {
 	return ["diamond", "box", "skewed"].includes(value);
+}
+
+export function isValidGridJoin(value: unknown): value is PresetGridJoin {
+	if (!value || typeof value !== "object") return false;
+	const join = value as { toward?: unknown; steps?: unknown };
+	return (
+		typeof join.toward === "string" &&
+		(PRESET_GRID_JOIN_DIRECTIONS as readonly string[]).includes(join.toward) &&
+		(join.steps === 1 || join.steps === 2)
+	);
 }
 
 export function isValidLevel(value: number): value is 1 | 2 | 3 {
@@ -174,6 +206,14 @@ export function normalizePresetConfig(input: CreatePresetInput): PresetConfig | 
 	if (input.layout !== undefined) {
 		if (!["grid", "strip"].includes(input.layout)) return null;
 		config.layout = input.layout as "grid" | "strip";
+	}
+
+	if (input.conjoined !== undefined && input.conjoined !== null) {
+		if (!isValidGridJoin(input.conjoined)) return null;
+		config.conjoined = {
+			toward: input.conjoined.toward,
+			steps: input.conjoined.steps,
+		};
 	}
 
 	return config;

@@ -422,6 +422,57 @@ export function getGridJoinLayout(
   return layout;
 }
 
+/** The part of a joined layout that places one hand's drawing. */
+export type JoinedHandFrame = Pick<GridJoinLayout, "offsets" | "scale">;
+
+/**
+ * Where a point of one hand's one-grid scene lands in the joined drawing: on
+ * that hand's own grid, then shrunk with the joined fit about the scene
+ * center. The painters draw each hand's props and arrows exactly this way
+ * (preparation adds the grid offset, the fit transform scales), so a hit
+ * target or drag handle placed here sits on what that hand draws.
+ */
+export function toJoinedHandPoint(
+  layout: JoinedHandFrame,
+  hand: Hand,
+  point: JoinVec
+): JoinVec {
+  const offset = layout.offsets[hand];
+  return {
+    x: SCENE_CENTER + layout.scale * (point.x - SCENE_CENTER + offset.x),
+    y: SCENE_CENTER + layout.scale * (point.y - SCENE_CENTER + offset.y),
+  };
+}
+
+/**
+ * The inverse: a point of the joined drawing (a pointer, say) read in one
+ * hand's one-grid scene, where that hand's grid points have their ordinary
+ * coordinates.
+ */
+export function fromJoinedHandPoint(
+  layout: JoinedHandFrame,
+  hand: Hand,
+  point: JoinVec
+): JoinVec {
+  const offset = layout.offsets[hand];
+  return {
+    x: SCENE_CENTER + (point.x - SCENE_CENTER) / layout.scale - offset.x,
+    y: SCENE_CENTER + (point.y - SCENE_CENTER) / layout.scale - offset.y,
+  };
+}
+
+/**
+ * `toJoinedHandPoint` as an SVG transform, for one-grid content (a prop, a
+ * path) drawn whole on one hand's grid.
+ */
+export function joinedHandTransform(
+  layout: JoinedHandFrame,
+  hand: Hand
+): string {
+  const offset = layout.offsets[hand];
+  return `translate(${SCENE_CENTER} ${SCENE_CENTER}) scale(${layout.scale}) translate(${offset.x - SCENE_CENTER} ${offset.y - SCENE_CENTER})`;
+}
+
 /** A prop as the nudge sees it: a segment through its hand point. */
 export interface JoinPropBody {
   /** Hand point, with the grid offset applied. */

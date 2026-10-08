@@ -4,15 +4,18 @@ value: 5
 effort: S
 remaining: "Re-verified 2026-08-02. Closed since the 2026-07-27 reconciliation: credentials rotated, remediation committed (afb0f2985a), and createCartCheckout/createMerchCheckout/handleMerchWebhook all deployed and listed in production. Austen-hands gates remaining: clear the Stripe payout requirement (past due) and complete Stripe Tax registration. Agent-runnable after that: configure the orders.expiresAt TTL policy, add shipBy metadata to both purchasable products, decide whether Stripe product images are still needed given the cover-card path, run a paid checkout/refund with tax and order-archive proof, then remove the /shop gate."
 depends_on: "external: clear Stripe payout requirement and complete Stripe Tax registration"
-plan_path: "plans/2026-06-26-shop-operations-go-live.md"
+plan_path: "docs/superpowers/plans/2026-06-26-shop-operations-go-live.md"
 supersedes_context: ""
 tags: [revenue, shop, store, stripe, go-live, fulfillment, tax]
-last_triaged: 2026-07-27
+last_triaged: 2026-10-07
+work_state: blocked
 ---
 # Shop Operations & Go-Live — Design Spec
 
+**Queue evidence (2026-10-07):** The earlier uncommitted/undeployed claim is obsolete; remediation is committed and deployed, while Stripe and shop launch gates remain. See frontmatter for the remaining work.
+
 **Date:** 2026-06-26
-**Status:** Active but blocked. Local remediation is verified but not committed or deployed.
+**Original status (historical):** Active but blocked. Local remediation is verified but not committed or deployed.
 Continues the spin-up spec (`2026-06-23-shop-spin-up-design.md`).
 
 ## Reconciliation, 2026-07-27

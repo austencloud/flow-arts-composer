@@ -71,7 +71,15 @@ import {
 import type { MandalaHandVisibility } from "$lib/shared/mandala/domain/mandala-types";
 import type { RenderActivityGate } from "$lib/shared/render-gating/render-activity-gate";
 import { shiftTrailPointsBy } from "./animation-grid-join";
-import type { HandOffsets } from "./grid-join-tween";
+import type { HandOffsets } from "$lib/shared/grid-join/grid-join-tween";
+import {
+  MotionSubSampler,
+  pickEvenIndices,
+  type MotionSubSample,
+} from "./motion-sub-sampler";
+
+/** Most prior LED sets deposited for one slow frame; picked evenly beyond. */
+const LED_PRIOR_SET_CAP = 15;
 
 // Longtask observer singleton - one PerformanceObserver shared across every
 // AnimationRenderLoop instance. Without this, each loop attaches its own
@@ -255,6 +263,12 @@ export class AnimationRenderLoop {
    */
   private canvasFrame: CanvasFrame = squareFrame(950);
   private offset = { x: 0, y: 0 };
+  /** Fills slow live frames with on-path poses; see motion-sub-sampler.ts. */
+  private readonly motionSubSampler = new MotionSubSampler();
+  private motionSamples: readonly MotionSubSample[] = [];
+  /** Pooled LED sets for the prior passes, one array per picked sub-sample. */
+  private readonly ledPriorBuffers: LedSample[][] = [];
+  private readonly ledPriorPick: number[] = [];
   private lastTrailFrameTime: number = 0;
   // Timestamp of the last frame that actually stamped the trail accumulator.
   // Separate from lastTrailFrameTime (which uses 0 as an uninitialized
@@ -298,6 +312,9 @@ export class AnimationRenderLoop {
   // Loop detection for cache-based trail gathering and fire frame cache
   // Tracks when the animation loops to prevent trail artifacts
   private previousStep: number = 0;
+  /** True once a frame has drawn `previousStep` in this run (cleared by
+   *  stop()), so a frame with no clock can still fill the path from it. */
+  private previousStepDrawn = false;
   private loopOccurredAtStep: number | null = null;
   /** True on the frame where a loop was detected. Reset each frame. */
   private loopDetectedThisFrame: boolean = false;
@@ -525,6 +542,7 @@ export class AnimationRenderLoop {
    * Drop every wall-clock anchor so the next frame derives its own delta from
    * scratch. `lastFrameTime = 0` makes dtSeconds fall back to 1/60 instead of
    * the full paused span; the trail and loop anchors re-seed the same way.
+   * The motion sampler sizes that first frame by the beats covered instead.
    */
   private resetFrameClocks(): void {
     this.lastFrameTime = 0;
@@ -552,6 +570,7 @@ export class AnimationRenderLoop {
     this.getFrameParamsCallback = null;
     // Reset loop tracking on stop
     this.previousStep = 0;
+    this.previousStepDrawn = false;
     this.loopOccurredAtStep = null;
     this.hasLoopedAtLeastOnce = false;
     this.loopStartTime = 0;
@@ -631,6 +650,10 @@ export class AnimationRenderLoop {
       charcoalRendererInitialized: charcoalRenderer?.isInitialized() ?? false,
       ledRendererInitialized: ledRenderer?.isInitialized() ?? false,
       hasTrailOverlay: !!trailOverlay,
+      motionResample: {
+        ...this.motionSubSampler.stats,
+        lastFrameSamples: this.motionSamples.length,
+      },
       fireTipDiagnostics: this.fireTipTracker?.getDiagnostics?.() ?? null,
       fireRendererDiagnostics: fireRenderer?.getDiagnostics?.() ?? null,
     };
@@ -1168,6 +1191,7 @@ export class AnimationRenderLoop {
         y: t.y + y,
         prevX: t.prevX + x,
         prevY: t.prevY + y,
+        path: t.path?.map((p) => ({ x: p.x + x, y: p.y + y })),
       })),
     };
   }
@@ -1457,6 +1481,7 @@ export class AnimationRenderLoop {
     } = params;
 
     const previousStep = this.previousStep;
+    const previousStepDrawn = this.previousStepDrawn;
     const stepChangedWhilePaused = !isPlaying && currentStep !== previousStep;
 
     // Tail length is authored as "visible ring points at ~60fps render rate."
@@ -1508,6 +1533,40 @@ export class AnimationRenderLoop {
     if (this.loopDetectedThisFrame) {
       this.loopStartTime = currentTime;
     }
+
+    // Slow live frames are filled with the poses the props passed through.
+    // Only the free-running loop plans them: the export driver renders its
+    // own sub-steps per beat and passes an explicit dt. The first frame back
+    // from an activity gate (hidden tab, off-screen canvas) has no frame gap
+    // because the clocks were reset, while playback kept moving the step; it
+    // hands the sampler dt 0 so the plan is sized by the beats covered. A
+    // run's very first frame has nothing drawn before it and gets no samples.
+    const resampleEnabled =
+      typeof window === "undefined" ||
+      (window as { __TKA_MOTION_RESAMPLE?: boolean }).__TKA_MOTION_RESAMPLE !==
+        false;
+    this.motionSamples =
+      providedDtSeconds === undefined &&
+      isPlaying &&
+      resampleEnabled &&
+      params.motionSampleSource &&
+      (rafGap > 0 || previousStepDrawn)
+        ? this.motionSubSampler.plan({
+            source: params.motionSampleSource,
+            previousStep,
+            currentStep,
+            dtSeconds: rafGap > 0 ? dtSeconds : 0,
+            isSeamlesslyLoopable: params.isSeamlesslyLoopable ?? false,
+            loopDetected: this.loopDetectedThisFrame,
+            liveLeft: props.leftProp,
+            liveRight: props.rightProp,
+            layerCount: props.additionalLayers.length,
+            layersAt: params.additionalLayersAt ?? null,
+            liveLayers: props.additionalLayers,
+            previousTimeMs: currentTime - rafGap,
+            currentTimeMs: currentTime,
+          })
+        : [];
     // currentStep is the duration-aware, fractional beat coordinate used to
     // paint props. It is therefore the only cache phase that remains correct
     // through pause/resume and playback-speed changes. A generic backwards
@@ -1721,6 +1780,8 @@ export class AnimationRenderLoop {
           isSeamlesslyLoopable: params.isSeamlesslyLoopable ?? false,
           leftPropSwapSuppressed,
           rightPropSwapSuppressed,
+          motionSamples:
+            this.motionSamples.length > 0 ? this.motionSamples : undefined,
         });
       }
     } else if (
@@ -1866,7 +1927,8 @@ export class AnimationRenderLoop {
           effectiveLeftMotionVisible ? props.leftProp : null,
           effectiveRightMotionVisible ? props.rightProp : null,
           tipTrackerConfig,
-          currentTime
+          currentTime,
+          this.motionSamples.length > 0 ? this.motionSamples : undefined
         )
       );
     }
@@ -2078,10 +2140,52 @@ export class AnimationRenderLoop {
         // against the shaft end each LED sits nearest, so the per-end
         // assignment cascade keeps working at 200 LEDs.
         const ledTipMap = params.tipEffectMap ?? {};
-        const leds = allLeds.filter(
-          (l) =>
-            resolveEffect(l.propIndex, l.endpointIndex, ledTipMap, {}) === "led"
-        );
+        const isLedTip = (l: LedSample) =>
+          resolveEffect(l.propIndex, l.endpointIndex, ledTipMap, {}) === "led";
+        const leds = allLeds.filter(isLedTip);
+
+        // One LED set per resampled sub-frame (at most LED_PRIOR_SET_CAP,
+        // picked evenly), built after the frame's own update so warmup frames
+        // are not spent on priors. The renderer deposits one streak pass per
+        // set, so a slow frame paints a curve instead of a chord.
+        let priorSamples: LedSample[][] | undefined;
+        if (this.motionSamples.length > 0 && leds.length > 0) {
+          const pickCount = pickEvenIndices(
+            this.motionSamples.length,
+            LED_PRIOR_SET_CAP,
+            this.ledPriorPick
+          );
+          priorSamples = [];
+          for (let i = 0; i < pickCount; i++) {
+            const s = this.motionSamples[this.ledPriorPick[i]!]!;
+            const sampleConfig: LedSamplerConfig = {
+              ...ledSamplerConfig,
+              additionalLayers:
+                s.layers.length > 0
+                  ? s.layers.map((layer, li) => ({
+                      leftProp: effectiveLeftMotionVisible ? layer.left : null,
+                      rightProp: effectiveRightMotionVisible
+                        ? layer.right
+                        : null,
+                      opacity: props.additionalLayers[li]?.opacity,
+                    }))
+                  : undefined,
+            };
+            const buffer =
+              this.ledPriorBuffers[i] ?? (this.ledPriorBuffers[i] = []);
+            const set = this.toFrameLeds(
+              this.ledSampler.update(
+                visibleLeftProp ? s.left : null,
+                visibleRightProp ? s.right : null,
+                sampleConfig,
+                s.timeMs,
+                params.ledConfig,
+                buffer
+              )
+            ).filter(isLedTip);
+            priorSamples.push(set);
+          }
+        }
 
         // The renderer clears its retained glow and trail buffers when the LED
         // list is empty. Skipping that frame leaves the last LED image visible.
@@ -2091,6 +2195,7 @@ export class AnimationRenderLoop {
             currentTime,
             canvasWidth: this.canvasFrame.width,
             canvasHeight: this.canvasFrame.height,
+            priorSamples,
           },
           params.ledConfig
         );
@@ -2426,6 +2531,7 @@ export class AnimationRenderLoop {
       }
     }
     this.previousStep = currentStep;
+    this.previousStepDrawn = true;
 
     // Use cache for perfect gap-free trails (if available and valid)
     const usingCache =

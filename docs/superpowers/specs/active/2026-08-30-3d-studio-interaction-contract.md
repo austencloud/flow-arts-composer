@@ -1,3 +1,15 @@
+---
+status: active
+value: null
+effort: null
+work_state: unverified
+remaining: Exercise 3D Studio selection/delete and undo precedence across canvas, drill chart, inspector, and timeline lenses.
+depends_on: ''
+plan_path: ''
+tags: []
+last_triaged: '2026-10-07'
+---
+
 # 3D Studio Interaction Contract
 
 Status: Active implementation contract  

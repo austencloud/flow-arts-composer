@@ -4,7 +4,8 @@
   import ColorPicker from "svelte-awesome-color-picker";
   import { growFade } from "$lib/shared/transitions/motion";
   import { DURATION } from "$lib/shared/transitions/transitions";
-  import { COLOR_PRESETS, COLOR_PRESET_COLUMNS } from "../color-presets";
+  import { COLOR_PRESETS } from "../color-presets";
+  import { COOL_PRESETS, WARM_PRESETS } from "../color-temperature";
   import BareWrapper from "./color-picker/BareWrapper.svelte";
   import type { HandSide } from "@tka/tka-types";
 
@@ -39,9 +40,23 @@
   let rightInput = $state<HTMLInputElement>();
 
   const entries = $derived([
-    { hand: "left" as const, label: leftLabel ?? t("color_left_prop"), value: left, input: leftInput },
-    { hand: "right" as const, label: rightLabel ?? t("color_right_prop"), value: right, input: rightInput },
+    {
+      hand: "left" as const,
+      label: leftLabel ?? t("color_left_prop"),
+      value: left,
+      input: leftInput,
+    },
+    {
+      hand: "right" as const,
+      label: rightLabel ?? t("color_right_prop"),
+      value: right,
+      input: rightInput,
+    },
   ]);
+
+  const neutralPresets = COLOR_PRESETS.filter(
+    (preset) => preset.row === "neutral"
+  );
 
   type EyeDropperCtor = new () => { open(): Promise<{ sRGBHex: string }> };
   // Chromium only. The editor never renders on the server, so a plain check
@@ -82,7 +97,11 @@
   }
 </script>
 
-<div class="color-pair" role="group" aria-label={groupLabel ?? t("color_prop_colors")}>
+<div
+  class="color-pair"
+  role="group"
+  aria-label={groupLabel ?? t("color_prop_colors")}
+>
   {#if preview}
     <div class="pair-preview-art">{@render preview({ left, right })}</div>
   {/if}
@@ -97,8 +116,8 @@
         <button
           type="button"
           class="swap"
-          aria-label="{t('color_swap_sides')}"
-          title="{t('keyboard_ui_swap')}"
+          aria-label={t("color_swap_sides")}
+          title={t("keyboard_ui_swap")}
           onclick={onswap}
         >
           <i class="fas fa-right-left" aria-hidden="true"></i>
@@ -108,7 +127,10 @@
         type="button"
         class="color-control"
         style:--color={entry.value}
-        aria-label={t("color_edit_value", { label: entry.label, value: entry.value.toUpperCase() })}
+        aria-label={t("color_edit_value", {
+          label: entry.label,
+          value: entry.value.toUpperCase(),
+        })}
         aria-expanded={editing === entry.hand}
         aria-controls={editing === entry.hand ? editorId : undefined}
         onclick={() => (editing = editing === entry.hand ? null : entry.hand)}
@@ -118,7 +140,7 @@
         </span>
         <span class="color-meta">
           <span class="color-label">{entry.label}</span>
-          <span class="color-value">{entry.value.toUpperCase()}</span>
+          <span class="color-value" dir="ltr">{entry.value.toUpperCase()}</span>
         </span>
       </button>
     {/each}
@@ -153,29 +175,60 @@
       id={editorId}
       role="group"
       aria-label={`${entry.label} color`}
-      transition:growFade={{ duration: editing ? DURATION.emphasis : DURATION.normal }}
+      transition:growFade={{
+        duration: editing ? DURATION.emphasis : DURATION.normal,
+      }}
     >
       <div class="preset-block">
-        <div
-          class="preset-grid"
-          role="group"
-          aria-label={`${entry.label} presets`}
-          style:--columns={COLOR_PRESET_COLUMNS}
-        >
-          {#each COLOR_PRESETS as preset (preset.hex)}
-            {@const pressed = entry.value.toLowerCase() === preset.hex}
-            <button
-              type="button"
-              class="preset"
-              style:--preset={preset.hex}
-              aria-label={`${entry.label}: ${preset.name}`}
-              aria-pressed={pressed}
-              title={preset.name}
-              onclick={() => onchange(entry.hand, preset.hex)}
+        <div class="hue-groups">
+          {#each [{ label: t("color_cool_colors"), presets: COOL_PRESETS }, { label: t("color_warm_colors"), presets: WARM_PRESETS }] as group (group.label)}
+            <div
+              class="preset-group"
+              role="group"
+              aria-label={`${entry.label}: ${group.label}`}
             >
-              <span aria-hidden="true">{pressed ? "✓" : ""}</span>
-            </button>
+              <span class="preset-heading">{group.label}</span>
+              <div class="preset-grid">
+                {#each group.presets as preset (preset.hex)}
+                  {@const pressed = entry.value.toLowerCase() === preset.hex}
+                  <button
+                    type="button"
+                    class="preset"
+                    style:--preset={preset.hex}
+                    aria-label={`${entry.label}: ${preset.name}`}
+                    aria-pressed={pressed}
+                    title={preset.name}
+                    onclick={() => onchange(entry.hand, preset.hex)}
+                  >
+                    <span aria-hidden="true">{pressed ? "✓" : ""}</span>
+                  </button>
+                {/each}
+              </div>
+            </div>
           {/each}
+        </div>
+        <div
+          class="preset-group"
+          role="group"
+          aria-label={`${entry.label}: ${t("color_neutral_colors")}`}
+        >
+          <span class="preset-heading">{t("color_neutral_colors")}</span>
+          <div class="preset-grid neutral-grid">
+            {#each neutralPresets as preset (preset.hex)}
+              {@const pressed = entry.value.toLowerCase() === preset.hex}
+              <button
+                type="button"
+                class="preset"
+                style:--preset={preset.hex}
+                aria-label={`${entry.label}: ${preset.name}`}
+                aria-pressed={pressed}
+                title={preset.name}
+                onclick={() => onchange(entry.hand, preset.hex)}
+              >
+                <span aria-hidden="true">{pressed ? "✓" : ""}</span>
+              </button>
+            {/each}
+          </div>
         </div>
       </div>
       <div class="fine-tune">
@@ -197,9 +250,10 @@
         />
         <div class="custom-row">
           <label class="hex-field">
-            <span>{t('color_hex')}</span>
+            <span>{t("color_hex")}</span>
             <input
-              aria-label={`${entry.label} hex color`}
+              aria-label={`${entry.label}, ${t("color_hex")}`}
+              dir="ltr"
               type="text"
               value={entry.value.toUpperCase()}
               maxlength="7"
@@ -207,9 +261,17 @@
               spellcheck="false"
               autocomplete="off"
               oninput={(event) =>
-                applyPicked(entry.hand, entry.value, parseHex(event.currentTarget.value, false))}
+                applyPicked(
+                  entry.hand,
+                  entry.value,
+                  parseHex(event.currentTarget.value, false)
+                )}
               onchange={(event) =>
-                applyPicked(entry.hand, entry.value, parseHex(event.currentTarget.value, true))}
+                applyPicked(
+                  entry.hand,
+                  entry.value,
+                  parseHex(event.currentTarget.value, true)
+                )}
               onblur={(event) => {
                 event.currentTarget.value = entry.value.toUpperCase();
               }}
@@ -219,15 +281,19 @@
             <button
               class="custom-button"
               type="button"
-              aria-label="{t('color_pick_screen_label')}"
-              title="{t('color_pick_screen')}"
+              aria-label={t("color_pick_screen_label")}
+              title={t("color_pick_screen")}
               onclick={() => pickFromScreen(entry.hand)}
             >
               <i class="fas fa-eye-dropper" aria-hidden="true"></i>
             </button>
           {:else}
-            <button class="custom-button" type="button" onclick={() => entry.input?.click()}>
-              {t('color_more')}
+            <button
+              class="custom-button"
+              type="button"
+              onclick={() => entry.input?.click()}
+            >
+              {t("color_more")}
             </button>
           {/if}
         </div>
@@ -397,29 +463,50 @@
 
   .preset-block {
     min-width: 0;
-    container: preset-grid / inline-size;
+    display: grid;
+    gap: 12px;
+    container: preset-block / inline-size;
   }
 
-  /* The matrix picks its column count from the block width so no row is
-     ever short (48 divides by 12, 8 and 6) and every swatch stays at the
-     44px touch floor: 6 columns from 284px, 8 from 24rem, 12 from 36rem. */
-  .preset-grid {
-    --cols: 6;
+  .hue-groups {
     display: grid;
-    grid-template-columns: repeat(var(--cols), minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  .preset-group {
+    min-width: 0;
+    display: grid;
+    gap: 5px;
+  }
+
+  .preset-heading {
+    color: var(--theme-text-dim);
+    font-size: var(--font-size-compact, 12px);
+    font-weight: 600;
+  }
+
+  .preset-grid {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
     gap: 4px;
     align-content: start;
   }
 
-  @container preset-grid (min-width: 24rem) {
+  @container preset-block (max-width: 19rem) {
     .preset-grid {
-      --cols: 8;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
     }
   }
 
-  @container preset-grid (min-width: 36rem) {
-    .preset-grid {
-      --cols: var(--columns, 12);
+  @container preset-block (min-width: 37rem) {
+    .hue-groups {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  @container preset-block (min-width: 36rem) {
+    .neutral-grid {
+      grid-template-columns: repeat(12, minmax(0, 1fr));
     }
   }
 

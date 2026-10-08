@@ -1,7 +1,21 @@
+---
+status: active
+value: null
+effort: null
+work_state: verification
+remaining: Verify the scene boot warmup, prefetch, frame gate, and first-visit 60 FPS acceptance on real scenes.
+depends_on: ''
+plan_path: ''
+tags: []
+last_triaged: '2026-10-07'
+---
+
 # Scene Boot 60FPS — First-Visit Loading That Proves Smoothness Before Reveal
 
+**Triage evidence (2026-10-07):** `src/lib/shared/3d/scene-boot/renderer-warmup.ts`, `scene-prefetch.ts`, and `frame-gate.ts` exist. This establishes implementation files, but first-visit frame-rate measurements on the specified scenes were not recorded in this review.
+
 **Date:** 2026-08-30
-**Status:** Approved for autonomous overnight execution (Austen, 2026-08-30: "A, full fidelity … send this to the moon … across all situations we have a sexy FPS target")
+**Status:** Implementation recorded; first-visit performance verification pending. Austen approved full-fidelity execution on 2026-08-30 ("A, full fidelity … send this to the moon … across all situations we have a sexy FPS target").
 **Scope:** All 3D scenes app-wide (option A)
 
 ## Problem

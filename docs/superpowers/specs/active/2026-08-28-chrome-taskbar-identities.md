@@ -1,3 +1,15 @@
+---
+status: active
+value: null
+effort: null
+work_state: unverified
+remaining: Verify Chrome taskbar identity scripts with AST parsing and disposable shortcut installation before rollout.
+depends_on: ''
+plan_path: ''
+tags: []
+last_triaged: '2026-10-07'
+---
+
 # Chrome Taskbar Identities
 
 ## Problem

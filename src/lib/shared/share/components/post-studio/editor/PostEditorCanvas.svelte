@@ -17,6 +17,7 @@
     type EvaluatedFrameLayer,
   } from "$lib/shared/media-composition/services/frame-evaluator";
   import {
+    previewClockLeads,
     previewClockStep,
     type PreviewVideoController,
   } from "$lib/shared/media-composition/services/post-preview-clock";
@@ -36,7 +37,15 @@
     itemIdFromClipId,
     itemIdFromStaffEffectRole,
   } from "$lib/shared/media-composition/domain/post-project-compiler";
-  import { planProjectAudio } from "$lib/shared/media-composition/domain/post-audio-plan";
+  import {
+    planMusicAudio,
+    planProjectAudio,
+    segmentGainAt,
+  } from "$lib/shared/media-composition/domain/post-audio-plan";
+  import {
+    musicClockBoundaries,
+    musicClockMedia,
+  } from "$lib/shared/media-composition/services/music-preview-sync";
   import {
     ANIMATION_OVERLAY_ROLE,
     STRIP_AREA,
@@ -76,6 +85,7 @@
     tunnelHidesMandala,
   } from "../post-item-render-options";
   import PostStudioPaintedLayer from "../PostStudioPaintedLayer.svelte";
+  import PostMusicPreview from "./PostMusicPreview.svelte";
   import {
     BOX_CORNERS,
     BOX_NUDGE,
@@ -164,6 +174,11 @@
     keepSourceCropRatio?: boolean;
     /** A region's footage has reported its own size. */
     onSourceSize?: (regionId: string, size: CropSize) => void;
+    /**
+     * The music's file can't be loaded (true), or that ended because the music
+     * changed or the preview went away (false). The preview runs without it.
+     */
+    onMusicMissing?: (missing: boolean) => void;
     root?: HTMLElement | null;
   }
 
@@ -181,6 +196,7 @@
     cropSourceView = true,
     keepSourceCropRatio = true,
     onSourceSize,
+    onMusicMissing,
     root = $bindable(null),
   }: Props = $props();
 
@@ -220,19 +236,10 @@
     );
     const segment = previewAudioPlan[index];
     if (!segment) return 0;
-    const elapsed = editor.previewSeconds - segment.postStartSeconds;
-    if (elapsed < 0 || elapsed >= segment.durationSeconds) return 0;
-    const edgeFade = 0.008;
-    let envelope = 1;
-    const fadeIn = segment.crossfadeInSeconds ?? edgeFade;
-    const fadeOut = segment.crossfadeOutSeconds ?? edgeFade;
-    if (fadeIn > 0) envelope = Math.min(envelope, elapsed / fadeIn);
-    if (fadeOut > 0)
-      envelope = Math.min(
-        envelope,
-        (segment.durationSeconds - elapsed) / fadeOut
-      );
-    return Math.max(0, Math.min(1, envelope * (segment.gain ?? 1)));
+    return Math.min(
+      1,
+      segmentGainAt(segment, editor.previewSeconds - segment.postStartSeconds)
+    );
   }
   /** The post's size, before anything is on it too. */
   const outputSize = $derived(
@@ -329,6 +336,16 @@
     else playbackVideos.delete(key);
   }
 
+  /** The music's one stretch under the post, as the export mixes it. */
+  const musicSegment = $derived(
+    planMusicAudio(editor.project.music, editor.durationSeconds)[0] ?? null
+  );
+  let musicController: PreviewVideoController | null = null;
+
+  function registerMusic(controller: PreviewVideoController | null): void {
+    musicController = controller;
+  }
+
   function requiredPlaybackVideos() {
     return [...entries].flatMap(([regionId, layers]) =>
       layers.flatMap((entry) => {
@@ -356,6 +373,7 @@
 
   export function alignPlayback(): void {
     for (const { controller } of requiredPlaybackVideos()) controller?.align();
+    musicController?.align();
   }
 
   export function playbackStep(wallDeltaSeconds: number): number {
@@ -375,7 +393,20 @@
       targetTime: entry.layer.sourceTimeSeconds,
       playbackRate: entry.clip.playbackRate ?? 1,
     }));
+    // Sounding music sets the clock, so the picture keeps to the beat.
+    const music = editor.project.music;
+    const player = musicController;
+    const musicMedia =
+      music && player
+        ? musicClockMedia(music, musicSegment, editor.previewSeconds, () =>
+            player.read()
+          )
+        : null;
+    if (musicMedia) media.unshift(musicMedia);
     let nextBoundary = Infinity;
+    for (const seconds of musicClockBoundaries(musicSegment))
+      if (seconds > editor.previewSeconds + 1e-7)
+        nextBoundary = Math.min(nextBoundary, seconds);
     if (preset) {
       for (const clip of preset.clips) {
         if (clip.kind !== "visual") continue;
@@ -399,8 +430,18 @@
     const requiredControllers = new Set(
       required.map(({ controller }) => controller)
     );
-    for (const controller of playbackVideos.values())
+    // Sounding music sets the clock, so muted footage keeps up with it by
+    // small speed changes: a muted clip's own clock can fall behind and
+    // never make the time up.
+    const leads = musicMedia && !step.waiting ? previewClockLeads(media) : [];
+    for (const controller of playbackVideos.values()) {
       controller.hold(step.waiting || !requiredControllers.has(controller));
+      const index = required.findIndex(
+        (needed) => needed.controller === controller
+      );
+      controller.follow?.(index < 0 ? null : (leads[index + 1] ?? null));
+    }
+    musicController?.hold(step.waiting);
     return step.deltaSeconds;
   }
 
@@ -2397,6 +2438,9 @@
                     !!layer.tunnelHook
                   )}
                   {qrSequence}
+                  qrUrl={sourceItem?.kind === "card"
+                    ? sourceItem.qrUrl
+                    : undefined}
                   tunnelHook={layer.tunnelHook ?? null}
                   chromeOpacity={hookChromeOpacity(region.id)}
                   mandalaIn={!layer.tunnelHook &&
@@ -2468,6 +2512,17 @@
       <i class="fa-solid fa-film" aria-hidden="true"></i>
       <span>{t("post_editor_empty_preview")}</span>
     </div>
+  {/if}
+
+  {#if interactive && editor.project.music}
+    <PostMusicPreview
+      music={editor.project.music}
+      postSeconds={editor.previewSeconds}
+      postDurationSeconds={editor.durationSeconds}
+      playing={editor.isPlaying}
+      onController={registerMusic}
+      onMissing={onMusicMissing}
+    />
   {/if}
 
   {#if interactive}

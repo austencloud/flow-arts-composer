@@ -1,3 +1,15 @@
+---
+status: active
+value: null
+effort: null
+work_state: verification
+remaining: Review the September 30 Post Mapping workspace browser evidence against all acceptance viewports and 200% zoom.
+depends_on: ''
+plan_path: ''
+tags: []
+last_triaged: '2026-10-07'
+---
+
 # Post mapping workspace
 
 ## Brief and evidence

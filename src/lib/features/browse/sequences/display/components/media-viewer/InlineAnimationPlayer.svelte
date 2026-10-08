@@ -177,6 +177,7 @@
     interactive = true,
     hoverHint = "badge",
     cornerToggle = false,
+    cornerToggleAtRest = false,
     showScrubberPlaybackControl = false,
     playbackAllowed = true,
     resumeWhenPlaybackAllowed = false,
@@ -361,6 +362,8 @@
     hoverHint?: "badge" | "none";
     /** Show the canvas-owned keyboard-accessible play/pause button. */
     cornerToggle?: boolean;
+    /** Forwarded to AnimatorCanvas: keep the corner toggle visible while playing. */
+    cornerToggleAtRest?: boolean;
     /** Keeps a persistent transport action adjacent to a minimal scrubber. */
     showScrubberPlaybackControl?: boolean;
     /** Pause this player while its host is not visible. Returning to view does
@@ -1109,6 +1112,7 @@
         hideHeader={fill && !showWordHeader}
         hideProgressBar={fill && !scrubbable}
         {cornerToggle}
+        {cornerToggleAtRest}
         {showScrubberPlaybackControl}
         onInitialized={onCanvasInitialized}
         onCanvasReady={(canvas) => (liveCanvas = canvas)}

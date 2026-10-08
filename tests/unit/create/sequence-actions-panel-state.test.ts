@@ -88,3 +88,18 @@ describe("sequence actions panel state", () => {
     expect(selector.helpMode).toBe("selecting");
   });
 });
+
+describe("the Grid join page", () => {
+  it("opens from the Grid tile and backs out to the actions", () => {
+    const state = createSequenceActionsPanelState();
+
+    state.openGridJoin();
+    expect(state.subView).toBe("gridJoin");
+    expect(state.subViewTitle).toBe("Grid join");
+    expect(state.navDirection).toBe(1);
+
+    expect(state.exitSubView()).toBe("none");
+    expect(state.subView).toBeNull();
+    expect(state.navDirection).toBe(-1);
+  });
+});

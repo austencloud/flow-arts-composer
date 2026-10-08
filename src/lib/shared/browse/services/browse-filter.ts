@@ -6,7 +6,11 @@
  */
 
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { BrowseFilterType } from "$lib/shared/persistence/domain/enums/filtering-enums";
+import {
+  BrowseFilterType,
+  GridJoinFilterValue,
+} from "$lib/shared/persistence/domain/enums/filtering-enums";
+import { sequenceGridJoin } from "$lib/shared/grid-join/sequence-grid-join";
 import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
 import type { BrowseFilterValue } from "$lib/shared/persistence/domain/types/filtering-types";
 import type { LOOPType } from "$lib/shared/foundation/domain/models/generation/circular-models";
@@ -67,6 +71,7 @@ const STARTING_LETTER_RANGES = ["A-D", "E-H", "I-L", "M-P", "Q-T", "U-Z"];
 const LENGTH_OPTIONS = ["3", "4", "5", "6", "7", "8+"];
 const DIFFICULTY_OPTIONS = ["beginner", "intermediate", "advanced"];
 const GRID_MODE_OPTIONS = [GridMode.DIAMOND, GridMode.BOX, GridMode.SKEWED];
+const GRID_JOIN_OPTIONS = [GridJoinFilterValue.JOINED, GridJoinFilterValue.SINGLE];
 
 export function applyFilter(
   sequences: SequenceData[],
@@ -100,6 +105,8 @@ export function applyFilter(
       return filterByOwner(sequences, filterValue);
     case BrowseFilterType.GRID_MODE:
       return filterByGridMode(sequences, filterValue);
+    case BrowseFilterType.GRID_JOIN:
+      return filterByGridJoin(sequences, filterValue);
     case BrowseFilterType.FAVORITES:
       return filterByFavorites(sequences);
     case BrowseFilterType.RECENT:
@@ -138,6 +145,8 @@ export function getFilterOptions(
       return getUniqueAuthors(sequences);
     case BrowseFilterType.GRID_MODE:
       return GRID_MODE_OPTIONS;
+    case BrowseFilterType.GRID_JOIN:
+      return GRID_JOIN_OPTIONS;
     case BrowseFilterType.LOOP_TYPE:
       return getLOOPTypeOptions(sequences);
     default:
@@ -470,6 +479,20 @@ function filterByGridMode(
   }
 
   return sequences.filter((seq) => (seq.gridMode ?? "diamond") === filterValue);
+}
+
+/** Joined = the sequence carries a valid join; anything else is one grid. */
+function filterByGridJoin(
+  sequences: SequenceData[],
+  filterValue: BrowseFilterValue
+): SequenceData[] {
+  if (filterValue === GridJoinFilterValue.JOINED) {
+    return sequences.filter((seq) => sequenceGridJoin(seq) !== null);
+  }
+  if (filterValue === GridJoinFilterValue.SINGLE) {
+    return sequences.filter((seq) => sequenceGridJoin(seq) === null);
+  }
+  return sequences;
 }
 
 function filterByFavorites(sequences: SequenceData[]): SequenceData[] {

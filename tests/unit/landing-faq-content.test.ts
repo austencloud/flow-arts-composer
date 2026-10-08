@@ -17,6 +17,7 @@ const KNOWN_DOORS = new Set([
   "/learn/guide", // Level 1 guide reader (the /guide/level-1 static page is a retired 308)
   "/endless-spinner",
   "/composer",
+  "/notation/poi",
 ]);
 
 describe("landing FAQ content contract", () => {
@@ -45,6 +46,20 @@ describe("landing FAQ content contract", () => {
         `unknown FAQ door: ${item.cta.href}`
       ).toBe(true);
       expect(item.cta.label.trim().length).toBeGreaterThan(0);
+    }
+  });
+
+  it("every note links a known route from inside its own sentence", () => {
+    const notes = FAQ_ITEMS.flatMap((item) => (item.note ? [item.note] : []));
+    expect(notes.length).toBeGreaterThan(0);
+    for (const note of notes) {
+      expect(KNOWN_DOORS.has(note.href), `unknown FAQ door: ${note.href}`).toBe(
+        true
+      );
+      // FaqInterview wraps the label where it appears in the text, so a label
+      // the sentence does not contain would render as a dangling link.
+      expect(note.text).toContain(note.linkLabel);
+      expect(note.text).not.toContain("—");
     }
   });
 

@@ -1,3 +1,14 @@
+---
+status: active
+value: null
+effort: null
+remaining: "Confirm the snow-volume release gate, 4K benchmark, and visual review still apply to the current Winter renderer."
+depends_on: ""
+plan_path: ""
+tags: []
+last_triaged: 2026-10-07
+work_state: verification
+---
 # Cinematic Winter Snow Volume
 
 Status: Implemented, verified, and integrated in `@austencloud/backgrounds`

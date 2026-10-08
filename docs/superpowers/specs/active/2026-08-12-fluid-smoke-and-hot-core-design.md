@@ -1,3 +1,14 @@
+---
+status: active
+value: null
+effort: null
+remaining: "Verify smoke/fluid tier, dissipation, lifecycle, and fallback behavior against current renderer."
+depends_on: ""
+plan_path: ""
+tags: []
+last_triaged: 2026-10-07
+work_state: unverified
+---
 # Fluid Smoke and White-Hot Fire Core
 
 **Status:** Approved for implementation on 2026-08-12  

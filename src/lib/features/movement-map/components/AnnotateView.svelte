@@ -19,6 +19,7 @@
     readingCount,
   } from "../domain/movement-annotation";
   import { describeValue } from "../domain/anatomy-vocabulary";
+  import { withSequenceJoinApplied } from "$lib/shared/grid-join/sequence-grid-join";
   import { getMovementMapContext } from "../context/movement-map-context";
   import AnatomyEditor from "./AnatomyEditor.svelte";
   import FrameTransport from "./FrameTransport.svelte";
@@ -33,6 +34,11 @@
 
   const displayWord = $derived(
     movementMap.sequence?.word ? simplifyRepeatedWord(movementMap.sequence.word) : ""
+  );
+
+  // The face is drawn on the grids the sequence is joined on (display-only).
+  const faceStep = $derived(
+    withSequenceJoinApplied(movementMap.sequence, movementMap.currentStep)
   );
 
   const stepCount = $derived(movementMap.sequence?.steps.length ?? 0);
@@ -140,9 +146,9 @@
     <aside class="rail" aria-label="Describe this instant">
       <div class="rail-head">
         <div class="face">
-          {#if movementMap.currentStep}
+          {#if faceStep}
             <PictographContainer
-              pictographData={movementMap.currentStep}
+              pictographData={faceStep}
               disableTransitions={true}
             />
           {/if}

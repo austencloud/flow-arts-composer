@@ -1,11 +1,21 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { Plane, PropType, type PropState3D } from "@austencloud/scene-3d";
-import { DoubleSide, Quaternion, Vector3 } from "three";
+import {
+  BoxGeometry,
+  DoubleSide,
+  Group,
+  Mesh,
+  MeshStandardMaterial,
+  Quaternion,
+  Texture,
+  Vector3,
+} from "three";
 import { resolveGhost3D } from "$lib/shared/effects/translators/webgl3d-translator";
 import { QualityTier } from "$lib/shared/3d/effects/types";
 import {
   createChronoFrostMaterial,
+  GhostSourceMaterials,
   resolveGhostAgeVisual,
   resolveGhostPoolSize,
   resolveGhostPoseFrostSeed,
@@ -13,8 +23,6 @@ import {
 import { createGhostPropPoseKey3D } from "$lib/shared/3d/effects/motion/ghost-prop-pose-3d";
 
 const GHOST_INTENT = {
-  leftColor: "#27b7ff",
-  rightColor: "#ff3f72",
   intensity: 0.85,
   decay: 8,
   interval: 0.5,
@@ -31,11 +39,9 @@ function propState(rotation = new Quaternion()): PropState3D {
 }
 
 describe("Ghost Chrono-Frost 3D", () => {
-  it("resolves time, density, rim, and Ghost-owned prop colors", () => {
+  it("resolves time, density, and rim", () => {
     const resolved = resolveGhost3D(GHOST_INTENT);
 
-    expect(resolved.leftColor).toBe("#27b7ff");
-    expect(resolved.rightColor).toBe("#ff3f72");
     expect(resolved.lifetimeSeconds).toBeCloseTo(1.64);
     expect(resolved.positionQuantization).toBeGreaterThan(0);
     expect(resolved.angleQuantization).toBeGreaterThan(0);
@@ -84,6 +90,31 @@ describe("Ghost Chrono-Frost 3D", () => {
     expect(material.forceSinglePass).toBe(true);
     expect(material.name).toBe("GhostChronoFrost:0");
     material.dispose();
+  });
+
+  it("builds each ghost from the prop's own color and texture, including late meshes", () => {
+    const sources = new GhostSourceMaterials(0);
+    const root = new Group();
+    const bark = new Texture();
+    const tape = new MeshStandardMaterial({ color: "#3b82f6" });
+    const wood = new MeshStandardMaterial({ map: bark });
+    root.add(new Mesh(new BoxGeometry(), tape));
+
+    const first = sources.apply(root);
+    expect(first).toHaveLength(1);
+    expect(first[0]!.uniforms.uBaseColor!.value.equals(tape.color)).toBe(true);
+    expect(first[0]!.uniforms.uUseMap!.value).toBe(0);
+
+    // A GLTF stick finishes loading after the phantom mounted.
+    root.add(new Mesh(new BoxGeometry(), wood));
+    const second = sources.apply(root);
+    expect(second).toHaveLength(2);
+    const woodFrost = second.find((m) => m.uniforms.uMap!.value === bark);
+    expect(woodFrost?.uniforms.uUseMap!.value).toBe(1);
+
+    // A re-skinned mesh keeps its frost material instead of minting another.
+    expect(sources.apply(root)).toHaveLength(2);
+    sources.dispose();
   });
 
   it("binds frozen breakup to the pose key instead of the reusable slot", () => {

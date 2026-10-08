@@ -2,13 +2,16 @@
 status: active
 value: 5
 effort: M
-remaining: 'Says "awaiting re-review"; SP1/SP2/SP3 substantially built and tested. Remaining: retro-login anonymous guard; 3 SP3 ledger items unverified'
+remaining: "Verify First-Session Activation — Design against src/lib/shared/library/services/library-repository.ts before resuming implementation. Prior recorded remainder: 'Says \"awaiting re-review\"; SP1/SP2/SP3 substantially built and tested. Remaining: retro-login anonymous guard; 3 SP3 ledger items unverified'"
 depends_on: ""
 plan_path: ""
 tags: []
-last_triaged: 2026-08-02
+last_triaged: 2026-10-07
+work_state: unverified
 ---
 # First-Session Activation — Design
+
+**Queue evidence (2026-10-07):** SP1-SP3 are substantially built; retro-login guard and three ledger items remain. See frontmatter for the remaining work.
 
 > **DRIFT WARNING — 2026-08-02.** Says "awaiting re-review"; SP1/SP2/SP3 substantially built and tested. Remaining: retro-login anonymous guard; 3 SP3 ledger items unverified
 >
@@ -17,7 +20,7 @@ last_triaged: 2026-08-02
 
 
 **Date:** 2026-07-22
-**Status:** Revision 3 — full-scope (Austen, 2026-07-22), decomposed into three
+**Original status (historical):** Revision 3 — full-scope (Austen, 2026-07-22), decomposed into three
 sequenced sub-projects. Awaiting re-review before per-sub-project plans.
 **Author:** Claude (Opus 4.8), with Austen; reviewed by GPT-5.6 (Codex) ×2
 

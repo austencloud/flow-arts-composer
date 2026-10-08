@@ -1,3 +1,14 @@
+---
+status: active
+value: null
+effort: null
+remaining: "Verify choreography indicator flags and card-front size ratio in current card and Create workspace."
+depends_on: ""
+plan_path: ""
+tags: []
+last_triaged: 2026-10-07
+work_state: unverified
+---
 # Choreo Indicator Restoration
 
 ## Decision

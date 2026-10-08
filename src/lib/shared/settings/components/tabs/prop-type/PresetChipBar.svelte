@@ -24,6 +24,7 @@
     presetsMatch,
   } from "../../../domain/prop-presets";
   import PresetChip from "./PresetChip.svelte";
+  import { localizedPropName } from "./localized-prop-name";
 
   let {
     slots,
@@ -89,7 +90,9 @@
 
   function chipLabel(index: number, preset: PropPreset | null): string {
     const n = slotNumber(index);
-    const name = preset ? presetLabel(preset) : t("settings_preset_empty");
+    const name = preset
+      ? presetLabel(preset, localizedPropName)
+      : t("settings_preset_empty");
     if (managing) return t("settings_preset_slot", { n, name });
     return preset
       ? t("settings_preset_apply", { n, name })
@@ -182,7 +185,7 @@
           : t("settings_preset_slot", {
               n: slotNumber(target),
               name: targetPreset
-                ? presetLabel(targetPreset)
+                ? presetLabel(targetPreset, localizedPropName)
                 : t("settings_preset_empty"),
             })}
       </p>

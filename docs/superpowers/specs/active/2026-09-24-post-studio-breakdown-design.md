@@ -1,3 +1,15 @@
+---
+status: active
+value: null
+effort: null
+work_state: unverified
+remaining: Verify whether the Breakdown Strip acceptance survived the later Tutorial Builder and timeline rebuild before assigning unfinished work.
+depends_on: ''
+plan_path: ''
+tags: []
+last_triaged: '2026-10-07'
+---
+
 # Post Studio Breakdown Strip and Tutorial Roadmap
 
 Date: 2026-09-24. Owner surface: Post Studio

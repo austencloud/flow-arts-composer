@@ -2,11 +2,12 @@
 status: active
 value: 2
 effort: M
-remaining: 'Phases 1-2 shipped past spec; Phase 0''s actual goal (collapse 3 reversal + 2 turn representations) and Phases 3-4 unstarted'
+remaining: "Verify Unified Generation Vocabulary — Generate Panel · Deck Composer · Sequence Actions against the current Unified Generation Vocabulary — Generate Panel · Deck Composer · Sequence Actions runtime and acceptance criteria before resuming implementation. Prior recorded remainder: 'Phases 1-2 shipped past spec; Phase 0''s actual goal (collapse 3 reversal + 2 turn representations) and Phases 3-4 unstarted'"
 depends_on: ""
 plan_path: ""
 tags: []
-last_triaged: 2026-08-02
+last_triaged: 2026-10-07
+work_state: unverified
 ---
 # Unified Generation Vocabulary — Generate Panel · Deck Composer · Sequence Actions
 
