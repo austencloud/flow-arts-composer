@@ -48,6 +48,9 @@ export const POST_MAX_LABEL_LENGTH = 60;
 /** Longest "how to say it" line a titles clip takes. */
 export const POST_MAX_SPOKEN_LENGTH = 60;
 export const POST_DEFAULT_CARD_SECONDS = 5;
+/** Longest scan link a card keeps. */
+export const POST_MAX_QR_URL_LENGTH = 200;
+export const POST_QR_URL_RULE = `A card's link must be an https address with no spaces, at most ${POST_MAX_QR_URL_LENGTH} characters.`;
 export const POST_DEFAULT_OVERLAY_SECONDS = 3;
 /** The export's frame rate; nudges step by one of its frames. */
 export const POST_FRAME_RATE = 30;
@@ -515,10 +518,32 @@ export const PostFontSchema = z
   .strict();
 export type PostFont = z.infer<typeof PostFontSchema>;
 
+/**
+ * Whether a card can carry this scan link: an https address with a host, no
+ * spaces, and at most POST_MAX_QR_URL_LENGTH characters.
+ */
+export function isPostCardQrUrl(value: unknown): value is string {
+  if (
+    typeof value !== "string" ||
+    value.length > POST_MAX_QR_URL_LENGTH ||
+    /\s/.test(value) ||
+    !value.startsWith("https://")
+  )
+    return false;
+  try {
+    const url = new URL(value);
+    return url.protocol === "https:" && url.hostname.length > 0;
+  } catch {
+    return false;
+  }
+}
+
 export const PostCardItemSchema = z
   .object({
     ...itemBase,
     kind: z.literal("card"),
+    /** The link the card's QR shows instead of the account's own code. */
+    qrUrl: z.string().refine(isPostCardQrUrl, POST_QR_URL_RULE).optional(),
     /** Overrides for this card only; absent fields retain the viewer look. */
     cardAppearance: z
       .object({
