@@ -26,6 +26,7 @@
   swapping a prop.
 -->
 <script lang="ts">
+  import type { Snippet } from "svelte";
   import { MediaQuery } from "svelte/reactivity";
   import { activateWhenNear } from "$lib/actions/activate-when-near";
   import LazyMount from "$lib/shared/components/LazyMount.svelte";
@@ -74,6 +75,7 @@
     showCaption = true,
     autoPlay = true,
     cornerToggle = false,
+    toolbar,
     loadPriority = "idle",
     connectionAware = false,
     serverReducedData = false,
@@ -144,6 +146,10 @@
     autoPlay?: boolean;
     /** Exposes the inline player's keyboard-accessible play/pause button. */
     cornerToggle?: boolean;
+    /** Replaces the built-in Roll row. A host that owns its own controls
+        (Roll, prop chooser, theme) renders them here as one row; hosts that
+        omit it keep the dice button exactly as before. */
+    toolbar?: Snippet;
     /** Above-the-fold hosts can skip the idle wait once the stage is near.
         Below-the-fold embeds keep the default so they do not contend with the
         page's first paint. */
@@ -429,7 +435,9 @@
     </figcaption>
   </figure>
 
-  {#if onReroll}
+  {#if toolbar}
+    <div class="toolbar-row">{@render toolbar()}</div>
+  {:else if onReroll}
     <div class="reroll-row">
       <button
         type="button"
@@ -643,7 +651,16 @@
     justify-content: center;
     margin-top: 1rem;
   }
-  .with-notation-strip .reroll-row {
+  .toolbar-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 0.65rem;
+    margin-top: 1rem;
+  }
+  .with-notation-strip .reroll-row,
+  .with-notation-strip .toolbar-row {
     margin-top: 0.85rem;
   }
   .reroll-button {
@@ -717,7 +734,8 @@
       border-bottom: 1px solid oklch(0.4 0.04 270 / 0.14);
       border-radius: 18px;
     }
-    .with-notation-strip .reroll-row {
+    .with-notation-strip .reroll-row,
+    .with-notation-strip .toolbar-row {
       margin-top: 0.35rem;
     }
     .with-notation-strip .reroll-button {
@@ -737,7 +755,8 @@
       border-bottom: 1px solid oklch(0.4 0.04 270 / 0.14);
       border-radius: 18px;
     }
-    .with-notation-strip .reroll-row {
+    .with-notation-strip .reroll-row,
+    .with-notation-strip .toolbar-row {
       margin-top: 0.25rem;
     }
     .with-notation-strip .reroll-button {
@@ -781,7 +800,8 @@
       border-top: 1px solid oklch(0.4 0.04 270 / 0.14);
       border-radius: 18px;
     }
-    .with-notation-strip .reroll-row {
+    .with-notation-strip .reroll-row,
+    .with-notation-strip .toolbar-row {
       margin-top: 0.35rem;
     }
     .with-notation-strip .reroll-button {

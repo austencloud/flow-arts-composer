@@ -370,10 +370,19 @@
 
   onMount(() => () => clearTimeout(stillTimer));
 
-  // Same handler HomeHero uses: report the interaction, then roll now.
+  // Same handler HomeHero uses: report the interaction, then roll now. The
+  // act's draws fall back to the baked demo rather than rejecting, so the
+  // failure copy is a safety net, not an expected state. Roll is a touch of
+  // the hero even when it arrives without a pointer (keyboard activation
+  // through a label, or a script), so it holds the hero itself.
+  let rerollFailed = $state(false);
   function handleReroll(): void {
     trackDemoInteraction("try_another");
-    void heroAct.advanceNow();
+    holdHero();
+    rerollFailed = false;
+    heroAct.advanceNow().catch(() => {
+      rerollFailed = true;
+    });
   }
 
   // Each stop loads its demonstration as it nears the window and reports the
@@ -438,6 +447,34 @@
       />
     </PanelButton>
   </span>
+{/snippet}
+
+{#snippet heroToolbar()}
+  <PanelButton
+    onclick={handleReroll}
+    disabled={heroAct.rerolling}
+    ariaBusy={heroAct.rerolling}
+  >
+    <i
+      class="fas {heroAct.rerolling
+        ? 'fa-circle-notch fa-spin'
+        : rerollFailed
+          ? 'fa-rotate-right'
+          : 'fa-dice'}"
+      aria-hidden="true"
+    ></i>
+    <span
+      >{heroAct.rerolling
+        ? rerollFailed
+          ? "Trying again..."
+          : "Rolling..."
+        : rerollFailed
+          ? "Try again"
+          : "Roll a new one"}</span
+    >
+  </PanelButton>
+  {@render propControl()}
+  <ComposerBackgroundCycle />
 {/snippet}
 
 {#snippet pickerPreview()}
@@ -580,7 +617,8 @@
 
       <p class="opening-note">
         Free in your browser, no account needed. Guests keep three sequences on
-        this device.
+        this device. The pictures under the player are letters of The Kinetic
+        Alphabet; the sequence is the word they spell.
       </p>
     </div>
 
@@ -593,8 +631,7 @@
         <SequenceHeroDemo
           sequence={heroAct.sequence}
           element={heroAct.element}
-          onReroll={handleReroll}
-          rerolling={heroAct.rerolling}
+          toolbar={heroToolbar}
           leftPropType={selectedProp}
           rightPropType={selectedProp}
           {...propAppearance}
@@ -608,11 +645,7 @@
           cornerToggle={true}
           loadPriority="immediate"
         />
-        <div class="hero-props">
-          {@render propControl()}
-        </div>
       </div>
-      <div class="player-theme"><ComposerBackgroundCycle /></div>
     </div>
 
     <!-- Absolutely positioned, so revealing it cannot move the hero content.
@@ -624,20 +657,6 @@
     >
       Scroll
     </LinkChip>
-  </section>
-
-  <section class="notation-bridge" aria-labelledby="notation-title">
-    <h2 id="notation-title">The Kinetic Alphabet</h2>
-    <p>
-      TKA is a pictographic notation system for flow arts choreography. Each
-      picture records a movement step. Arrange the pictures into a sequence,
-      then play it in Composer.
-    </p>
-    <div class="notation-links">
-      <PanelButton href="/guide">Read the Guide</PanelButton>
-      <PanelButton href="/history">Notation history</PanelButton>
-      <PanelButton href="/faq">Common questions</PanelButton>
-    </div>
   </section>
 
   <!-- One stop per thing the visitor can do with a sequence, in the order the
@@ -1336,16 +1355,6 @@
     min-width: 0;
   }
 
-  .player-theme {
-    min-width: 0;
-  }
-
-  .hero-props {
-    display: flex;
-    justify-content: center;
-    margin-top: var(--spacing-md, 16px);
-  }
-
   .prop-trigger {
     display: inline-block;
     width: max(var(--min-touch-target, 48px), 48px);
@@ -1723,39 +1732,6 @@
   .keeping {
     border-top: 1px solid var(--theme-stroke, oklch(0.45 0.03 270 / 0.2));
     border-bottom: 1px solid var(--theme-stroke, oklch(0.45 0.03 270 / 0.2));
-  }
-
-  .notation-bridge {
-    margin: 0 auto;
-    padding: clamp(2rem, 4vw, 64px) 0;
-    text-align: center;
-  }
-
-  .notation-bridge h2 {
-    margin: 0 0 1rem;
-    font-family: "Fraunces", Georgia, serif;
-    font-weight: 650;
-    letter-spacing: -0.04em;
-    line-height: 1;
-  }
-
-  .notation-bridge h2 {
-    font-size: clamp(2.4rem, 1.9rem + 2.5vw, 72px);
-  }
-
-  .notation-bridge p {
-    margin: 1.25rem auto 0;
-    color: var(--theme-text-secondary, oklch(0.74 0.018 270));
-    font-size: clamp(1rem, 0.97rem + 0.18vw, 1.12rem);
-    line-height: 1.65;
-  }
-
-  .notation-bridge .notation-links {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: var(--spacing-sm, 8px);
-    margin-top: 1.4rem;
   }
 
   /* Same bounded frame ComposerGalleryDemo renders into, so the LazyMount
