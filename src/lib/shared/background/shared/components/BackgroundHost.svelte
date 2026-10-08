@@ -179,7 +179,9 @@
 			if (!controller || !containerRef) return;
 			// Every visible foreground surface owns its full area, not just the buttons
 			// inside it. Empty drawer and viewer space must never ring the ocean behind.
-			if (foregroundOwnsPointer(e)) return;
+			// A pointerdown starts before any capture, so its target already is the
+			// element on top; a second hit test cost 4-12 ms per tap.
+			if (isBackgroundInteractionBlocked(e.target)) return;
 			const rect = containerRef.getBoundingClientRect();
 			const { x, y } = backgroundCoordinates(e, rect);
 			const r = controller.pokeAt?.(x, y);
