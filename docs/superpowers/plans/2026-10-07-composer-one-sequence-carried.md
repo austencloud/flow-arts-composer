@@ -1828,6 +1828,28 @@ Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>" -- "src/routes/(public
 
 **Files:** none modified unless a check fails.
 
+> Execution notes (2026-10-07). A whole-branch review before this task found
+> no Critical issue and four to fix first; commit `eca4dd0d16` fixed them
+> with the cheap hygiene items from the same review: the Keep card loads
+> through `LazyMount` like the gallery (its static import had put the card
+> renderer and its QR modules in the page's first chunk); on the stage the
+> Keep stop no longer overflows its room (`--composer-gallery-height` moved
+> up to `.keeping` with a 14rem card allowance that the plain-page fallback
+> adds back, and `.keeping-card` gives way to the room with an 8rem floor);
+> the hero sentence names the alphabet without pointing at the notation
+> strip, which the hero hides on some window sizes; the Theme button lost the
+> 16px top margin from its old row; a parked tunnel's word row is `live="off"`;
+> the difficulty badge label uses `t("create_difficulty_level")`; and the
+> guardrails describe the word rows as built (the hero uses its player's word
+> header, the 3D row has no chooser, Keep shows a card). Left as designed: the
+> Roll handler's failure copy (a safety net the act never triggers), the Keep
+> caption wording, and the badge's visible-label hosts.
+>
+> Step 2 was not run: three other tasks' Vite servers were already up, over
+> the two-server cap in `resource-budget.md`, so no worktree preview was
+> started. Steps 3 to 5 ran on the primary server after Step 7 instead, with
+> Step 8; the results are in the task report.
+
 - [ ] **Step 1: Resource gate**
 
 ```powershell
