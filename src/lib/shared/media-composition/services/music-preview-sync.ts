@@ -1,13 +1,13 @@
-import { POST_FRAME_RATE } from "$lib/shared/media-composition/domain/post-project";
+import {
+  POST_FRAME_RATE,
+  musicSpan,
+  trackSecondsAt,
+  type MusicPlacement,
+} from "@austencloud/video-editor/core";
 import type {
   PreviewClockMedia,
   PreviewVideoState,
 } from "$lib/shared/media-composition/services/post-preview-clock";
-import {
-  musicSpan,
-  trackSecondsAt,
-  type MusicPlacement,
-} from "$lib/shared/media-composition/domain/music-grid";
 import type { PostAudioSegment } from "$lib/shared/media-composition/domain/post-audio-plan";
 
 /**

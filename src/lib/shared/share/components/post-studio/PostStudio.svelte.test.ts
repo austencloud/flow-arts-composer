@@ -6,7 +6,7 @@ import { createSequenceData } from "$lib/shared/foundation/domain/models/sequenc
 import { createPlaceholderMotion } from "$lib/shared/pictograph/shared/domain/models/motion-data";
 import { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
 import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-import { createEmptyPostProject } from "$lib/shared/media-composition/domain/post-project";
+import { createEmptyPostProject } from "$lib/shared/post-studio-plugin";
 import { loadPostProject } from "$lib/shared/media-composition/services/post-project-store";
 import { settingsService } from "$lib/shared/settings/state/settings-state.svelte";
 import { createViewerUrlSession } from "$lib/shared/sequence-viewer/services/viewer-url-session";

@@ -1,4 +1,4 @@
-import type { PostProject } from "$lib/shared/media-composition/domain/post-project";
+import type { PostProject } from "@austencloud/video-editor/core";
 
 const ENDPOINT = "/api/dev/post-project";
 

@@ -6,7 +6,6 @@
     POST_FRAME_RATE,
     POST_MAX_LABEL_LENGTH,
     POST_MAX_SPEED,
-    POST_MAX_SPOKEN_LENGTH,
     POST_MAX_TEXT_LENGTH,
     POST_MAX_VOLUME,
     POST_MAX_EDGE_BORDER,
@@ -21,13 +20,25 @@
     mainItemAt,
     textBox,
     wrapDegrees,
-    type PostAnimationAppearance,
     type PostBox,
     type PostEdgeColor,
     type PostItem,
-    type PostMovesMode,
     type PostTextSize,
-  } from "$lib/shared/media-composition/domain/post-project";
+    POST_DEFAULT_EDGE_BORDER,
+    POST_EDGE_COLOR_HEX,
+    edgeOf,
+    postOutputSize,
+    ratioValue,
+    TUNNEL_BACKDROP_MAX_ZOOM,
+    type TunnelBackdropFrame,
+    autoGradeVideo,
+    type PostVideoColorGrade,
+  } from "@austencloud/video-editor/core";
+  import {
+    POST_MAX_SPOKEN_LENGTH,
+    type PostAnimationAppearance,
+    type PostMovesMode,
+  } from "$lib/shared/post-studio-plugin";
   import type { SequenceExportOptions } from "$lib/shared/render/domain/models/sequence-export-options";
   import {
     setItemFill,
@@ -59,11 +70,6 @@
     opacityAt,
     type PostEasingPresetId,
   } from "$lib/shared/media-composition/domain/post-project-keyframes";
-  import {
-    POST_DEFAULT_EDGE_BORDER,
-    POST_EDGE_COLOR_HEX,
-    edgeOf,
-  } from "$lib/shared/media-composition/domain/post-clip-edge";
   import type {
     PostEdit,
     PostEditorState,
@@ -88,10 +94,6 @@
   } from "./post-crop-geometry";
   import type { CropSession, CropShapeKind } from "./post-crop-session.svelte";
   import PostRatioPicker, { type RatioOption } from "./PostRatioPicker.svelte";
-  import {
-    postOutputSize,
-    ratioValue,
-  } from "$lib/shared/media-composition/domain/post-canvas";
   import type { StaffTipAnalysis } from "$lib/shared/media-composition/state/staff-tip-analysis.svelte";
   import PostStaffEffectsTool from "./PostStaffEffectsTool.svelte";
   import PostNativeTextTool from "./PostNativeTextTool.svelte";
@@ -102,12 +104,6 @@
   import PostCardAppearanceTool from "./PostCardAppearanceTool.svelte";
   import PostSequenceActionsTool from "./PostSequenceActionsTool.svelte";
   import PostVideoColorTool from "./PostVideoColorTool.svelte";
-  import {
-    TUNNEL_BACKDROP_MAX_ZOOM,
-    type TunnelBackdropFrame,
-    autoGradeVideo,
-    type PostVideoColorGrade,
-  } from "@austencloud/video-editor/core";
 
   /**
    * The body of one tool for the selected item. An amount is a slider, a

@@ -13,7 +13,7 @@ import {
 import {
   POST_EASING_Y_MAX,
   POST_EASING_Y_MIN,
-} from "$lib/shared/media-composition/domain/post-project";
+} from "@austencloud/video-editor/core";
 import { EASING_PRESETS } from "$lib/shared/media-composition/domain/post-project-keyframes";
 
 function close(actual: number, expected: number) {

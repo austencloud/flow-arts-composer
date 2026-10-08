@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { authorizeLoopback, readJsonBody } from "$lib/server/dev-loopback";
-import { createEmptyPostProject } from "$lib/shared/media-composition/domain/post-project";
+import { createEmptyPostProject } from "$lib/shared/post-studio-plugin";
 import { POST as postProjectRoute } from "../../../src/routes/api/dev/post-project/+server";
 import {
   routeEvent,

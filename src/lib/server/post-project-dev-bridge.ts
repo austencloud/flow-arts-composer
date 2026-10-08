@@ -8,10 +8,8 @@ import {
   applyPostProjectOps,
   type PostProjectOp,
 } from "$lib/shared/media-composition/domain/post-project-ops";
-import {
-  PostProjectSchema,
-  type PostProject,
-} from "$lib/shared/media-composition/domain/post-project";
+import { PostProjectSchema } from "$lib/shared/post-studio-plugin";
+import { type PostProject } from "@austencloud/video-editor/core";
 
 type Command = {
   id: string;

@@ -1,7 +1,7 @@
 import type {
   PostCardItem,
   PostImageItem,
-} from "$lib/shared/media-composition/domain/post-project";
+} from "@austencloud/video-editor/core";
 import type { SequenceExportOptions } from "$lib/shared/render/domain/models/sequence-export-options";
 import { DARK_POST_QR_STYLE } from "@tka/render-composition";
 import { cardOptionsForItem } from "./post-item-render-options";

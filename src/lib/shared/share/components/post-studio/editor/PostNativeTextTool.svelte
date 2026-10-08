@@ -2,7 +2,7 @@
   import type {
     PostTextAnimation,
     PostTextStyle,
-  } from "$lib/shared/media-composition/domain/post-project";
+  } from "@austencloud/video-editor/core";
   import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
   import TypeableValue from "$lib/shared/ui/components/TypeableValue.svelte";
   import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";

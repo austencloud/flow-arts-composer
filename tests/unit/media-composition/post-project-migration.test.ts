@@ -2,17 +2,15 @@ import { describe, expect, it } from "vitest";
 import { migratePostPlan } from "$lib/shared/media-composition/domain/post-project-migration";
 import {
   POST_BOX,
-  PostProjectSchema,
   findItem,
   itemEnd,
-} from "$lib/shared/media-composition/domain/post-project";
-import {
   DEFAULT_FRAMING,
   POST_ACT,
   PostPlanSchema,
   addTakeToPlan,
   createDefaultPostPlan,
 } from "@austencloud/video-editor/core";
+import { PostProjectSchema } from "$lib/shared/post-studio-plugin";
 import { NOW, spans, take } from "./post-project-fixtures";
 
 describe("migratePostPlan", () => {

@@ -27,15 +27,6 @@
     takeIdFromRole,
     takeRole,
     takeFileKey,
-  } from "@austencloud/video-editor/core";
-  import {
-    itemIdFromMovesAnimationRole,
-    itemIdFromStaffEffectRole,
-    itemIdFromTextRole,
-    staffEffectRole,
-    textRole,
-  } from "$lib/shared/media-composition/domain/post-project-compiler";
-  import {
     POST_CANVAS_RATIOS,
     POST_DEFAULT_BACKGROUND,
     POST_FRAME_RATE,
@@ -50,7 +41,17 @@
     type PostKeyframeChannel,
     type PostProject,
     type PostVideoItem,
-  } from "$lib/shared/media-composition/domain/post-project";
+    postCanvasOf,
+    postOutputSize,
+    ratioValue,
+  } from "@austencloud/video-editor/core";
+  import {
+    itemIdFromMovesAnimationRole,
+    itemIdFromStaffEffectRole,
+    itemIdFromTextRole,
+    staffEffectRole,
+    textRole,
+  } from "$lib/shared/media-composition/domain/post-project-compiler";
   import {
     channelsOf,
     keyframeCount,
@@ -69,11 +70,6 @@
     setTrackFlag,
   } from "$lib/shared/media-composition/domain/post-project-edits";
   import type { StripMode } from "$lib/shared/media-composition/domain/strip-view";
-  import {
-    postCanvasOf,
-    postOutputSize,
-    ratioValue,
-  } from "$lib/shared/media-composition/domain/post-canvas";
   import type { CompositionSourceBinding } from "$lib/shared/media-composition/state/media-composition-state.svelte";
   import {
     createPostEditorState,

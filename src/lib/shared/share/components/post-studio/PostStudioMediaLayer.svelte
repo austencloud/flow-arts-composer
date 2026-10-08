@@ -11,7 +11,7 @@
   import type {
     PostAnimationItem,
     PostMovesMode,
-  } from "$lib/shared/media-composition/domain/post-project";
+  } from "$lib/shared/post-studio-plugin";
   import {
     qrImageForAppearance,
     type PostQrAppearance,

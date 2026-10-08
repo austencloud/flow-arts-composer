@@ -8,11 +8,12 @@ import {
   isFeatureVideoSlug,
   rehomeFeatureMediaUrls,
 } from "$lib/shared/media-composition/domain/feature-video";
-import { takeFileKey, type PostTake } from "@austencloud/video-editor/core";
 import {
-  createEmptyPostProject,
+  takeFileKey,
+  type PostTake,
   type PostProject,
-} from "$lib/shared/media-composition/domain/post-project";
+} from "@austencloud/video-editor/core";
+import { createEmptyPostProject } from "$lib/shared/post-studio-plugin";
 import { createTakeTiming } from "$lib/shared/media-composition/domain/take-timing";
 
 const NOW = 1_780_000_000_000;

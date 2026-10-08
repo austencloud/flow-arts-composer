@@ -5,7 +5,7 @@ import {
   TrailMode,
   type TrailSettings,
 } from "$lib/shared/animation-engine/domain/types/trail-types";
-import type { PostAnimationItem } from "$lib/shared/media-composition/domain/post-project";
+import type { PostAnimationItem } from "$lib/shared/post-studio-plugin";
 
 /** Detach saved appearance effects before handing them to scoped effect state. */
 export function copyPostAnimationEffects(

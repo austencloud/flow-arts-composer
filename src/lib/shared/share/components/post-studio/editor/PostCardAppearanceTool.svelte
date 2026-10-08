@@ -1,5 +1,7 @@
 <script lang="ts">
-  import type { PostCardItem } from "$lib/shared/media-composition/domain/post-project";
+  import type {
+  PostCardItem,
+} from "@austencloud/video-editor/core";
   import type { SequenceExportOptions } from "$lib/shared/render/domain/models/sequence-export-options";
   import type { ExportOptionsStateManager } from "$lib/shared/animation-panel/state/export-options-state.svelte";
   import { getImageCompositionManager } from "$lib/shared/share/state/image-composition-state.svelte";

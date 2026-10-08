@@ -1,9 +1,9 @@
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
 import {
   POST_MAX_SEQUENCE_ACTIONS,
-  type PostProject,
   type PostSequenceAction,
-} from "$lib/shared/media-composition/domain/post-project";
+} from "$lib/shared/post-studio-plugin";
+import { type PostProject } from "@austencloud/video-editor/core";
 import {
   finish,
   type EditContext,

@@ -1,6 +1,6 @@
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
 import type { FeatureVideoSummary } from "$lib/shared/media-composition/domain/feature-video";
-import type { PostProject } from "$lib/shared/media-composition/domain/post-project";
+import type { PostProject } from "@austencloud/video-editor/core";
 import type { FeatureVideoSync } from "$lib/shared/media-composition/services/feature-video-client";
 import {
   loadSyncedPostDraft,

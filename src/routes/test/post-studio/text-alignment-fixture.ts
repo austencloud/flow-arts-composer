@@ -1,8 +1,8 @@
+import { createEmptyPostProject } from "$lib/shared/post-studio-plugin";
 import {
-  createEmptyPostProject,
   type PostProject,
   type PostTextItem,
-} from "$lib/shared/media-composition/domain/post-project";
+} from "@austencloud/video-editor/core";
 
 /** Disposable native text for alignment checks, independent of saved drafts. */
 export function textAlignmentFixture(sequenceId: string): PostProject {

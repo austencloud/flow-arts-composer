@@ -21,11 +21,13 @@ import {
 import {
   POST_CANVAS_RATIOS,
   POST_DEFAULT_CANVAS,
-  PostProjectSchema,
-  createEmptyPostProject,
   type PostCanvasRatio,
   type PostProject,
-} from "$lib/shared/media-composition/domain/post-project";
+} from "@austencloud/video-editor/core";
+import {
+  PostProjectSchema,
+  createEmptyPostProject,
+} from "$lib/shared/post-studio-plugin";
 
 /**
  * Feature videos on disk: one folder per project under a root folder,

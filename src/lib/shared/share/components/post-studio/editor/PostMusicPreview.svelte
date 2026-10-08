@@ -5,7 +5,7 @@
     planMusicAudio,
     segmentGainAt,
   } from "$lib/shared/media-composition/domain/post-audio-plan";
-  import type { PostMusic } from "$lib/shared/media-composition/domain/post-music";
+  import type { PostMusic } from "@austencloud/video-editor/core";
   import {
     musicPreviewTarget,
     musicSoundsAt,

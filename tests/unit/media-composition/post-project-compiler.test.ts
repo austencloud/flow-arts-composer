@@ -16,6 +16,9 @@ import {
   stripRole,
   takeRole,
   POST_STUDIO_ROLE,
+  clampBox,
+  wrapDegrees,
+  type PostEasing,
 } from "@austencloud/video-editor/core";
 import {
   evaluatePresetFrame,
@@ -23,12 +26,7 @@ import {
   resolvePresetTimePoint,
 } from "$lib/shared/media-composition/services/frame-evaluator";
 import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import {
-  clampBox,
-  PostProjectSchema,
-  wrapDegrees,
-  type PostEasing,
-} from "$lib/shared/media-composition/domain/post-project";
+import { PostProjectSchema } from "$lib/shared/post-studio-plugin";
 import { updateItem } from "$lib/shared/media-composition/domain/post-project-edits";
 import {
   EASING_PRESETS,

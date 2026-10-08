@@ -5,7 +5,9 @@
   import { createCardPreviewState } from "$lib/shared/share/state/card-preview-state.svelte";
   import PostStudio from "$lib/shared/share/components/post-studio/PostStudio.svelte";
   import type { PostStudioShareExport } from "$lib/shared/share/components/post-studio/post-studio-share-export";
-  import type { PostProject } from "$lib/shared/media-composition/domain/post-project";
+  import type {
+  PostProject,
+} from "@austencloud/video-editor/core";
   import { authState } from "$lib/shared/auth/state/auth-state.svelte";
   import { savePostDraft } from "$lib/shared/media-composition/services/post-draft-storage";
   import { loadSyncedPostDraft, saveSyncedPostDraft } from "$lib/features/post/services/post-account-projects";

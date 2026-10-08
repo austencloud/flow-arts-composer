@@ -3,7 +3,7 @@ import {
   POST_MIN_ITEM_SECONDS,
   mainItemAt,
   type PostProject,
-} from "$lib/shared/media-composition/domain/post-project";
+} from "@austencloud/video-editor/core";
 import type { NewOverlaySpec } from "$lib/shared/media-composition/domain/post-project-edits";
 
 /**

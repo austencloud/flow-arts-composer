@@ -2,10 +2,12 @@ import { beforeEach, describe, expect, it } from "vitest";
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
 import {
   PostProjectSchema,
-  POST_BOX,
   type PostAnimationItem,
+} from "$lib/shared/post-studio-plugin";
+import {
+  POST_BOX,
   type PostProject,
-} from "$lib/shared/media-composition/domain/post-project";
+} from "@austencloud/video-editor/core";
 import {
   addTunnelHook,
   findTunnelHook,

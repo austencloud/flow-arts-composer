@@ -1,7 +1,7 @@
 import { untrack } from "svelte";
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
 import type { HandLabeling } from "$lib/shared/video-collaboration/domain/hand-labeling";
-import type { PostSequenceAction } from "$lib/shared/media-composition/domain/post-project";
+import type { PostSequenceAction } from "$lib/shared/post-studio-plugin";
 import {
   applySequenceActions,
   type PostSequenceTransforms,

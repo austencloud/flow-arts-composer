@@ -2,10 +2,22 @@ import {
   POST_BACKGROUNDS,
   POST_CANVAS_RATIOS,
   findItem,
-  type PostAnimationItem,
   type PostItem,
   type PostProject,
-} from "$lib/shared/media-composition/domain/post-project";
+  PostTakeSchema,
+  takeFileKey,
+  TunnelHookSchema,
+  type TunnelHook,
+  resolvePostTime,
+  resolveTrackTime,
+  type PostTimeRef,
+  POST_MUSIC_LENGTH_SLACK,
+  POST_MUSIC_MAX_BEATS_PER_BAR,
+  POST_MUSIC_MAX_GAIN,
+  POST_MUSIC_MAX_SECONDS,
+  type PostMusic,
+} from "@austencloud/video-editor/core";
+import { type PostAnimationItem } from "$lib/shared/post-studio-plugin";
 import {
   addTake,
   addTitlesItem,
@@ -26,18 +38,7 @@ import {
   type PostItemPatch,
 } from "$lib/shared/media-composition/domain/post-project-edits";
 import { isFeatureVideoMediaUrl } from "$lib/shared/media-composition/domain/feature-video";
-import {
-  PostTakeSchema,
-  takeFileKey,
-  TunnelHookSchema,
-  type TunnelHook,
-} from "@austencloud/video-editor/core";
 import { EASING_PRESETS } from "$lib/shared/media-composition/domain/post-project-keyframes";
-import {
-  resolvePostTime,
-  resolveTrackTime,
-  type PostTimeRef,
-} from "$lib/shared/media-composition/domain/music-grid";
 import {
   POST_MUSIC_MIN_SECONDS,
   removeMusic,
@@ -46,13 +47,6 @@ import {
   updateMusic,
   type MusicPatch,
 } from "$lib/shared/media-composition/domain/post-music-edits";
-import {
-  POST_MUSIC_LENGTH_SLACK,
-  POST_MUSIC_MAX_BEATS_PER_BAR,
-  POST_MUSIC_MAX_GAIN,
-  POST_MUSIC_MAX_SECONDS,
-  type PostMusic,
-} from "$lib/shared/media-composition/domain/post-music";
 import {
   TAKE_MAX_BPM,
   TAKE_MIN_BPM,

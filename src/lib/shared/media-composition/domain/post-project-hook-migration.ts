@@ -1,16 +1,18 @@
 import {
   POST_BOX,
-  POST_MAX_SPOKEN_LENGTH,
   POST_TIME_EPSILON,
   createIdAllocator,
   itemEnd,
   mainItemAt,
-  type PostAnimationItem,
   type PostItem,
   type PostItemKeyframes,
   type PostProject,
+} from "@austencloud/video-editor/core";
+import {
+  POST_MAX_SPOKEN_LENGTH,
+  type PostAnimationItem,
   type PostTitlesItem,
-} from "$lib/shared/media-composition/domain/post-project";
+} from "$lib/shared/post-studio-plugin";
 import { openingTitlesSpan } from "$lib/shared/media-composition/domain/tunnel-titles";
 
 /**

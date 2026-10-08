@@ -19,7 +19,7 @@
     itemEnd,
     type PostItem,
     type PostKeyframeChannel,
-  } from "$lib/shared/media-composition/domain/post-project";
+  } from "@austencloud/video-editor/core";
   import {
     EASING_PRESETS,
     adjacentKeyframeSeconds,

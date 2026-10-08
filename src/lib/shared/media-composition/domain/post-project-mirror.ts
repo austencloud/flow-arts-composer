@@ -5,7 +5,7 @@ import {
   type PostKeyframe,
   type PostProject,
   type PostSourceGeometry,
-} from "$lib/shared/media-composition/domain/post-project";
+} from "@austencloud/video-editor/core";
 import {
   finish,
   type EditContext,

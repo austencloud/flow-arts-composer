@@ -2,7 +2,14 @@ import {
   POST_MIN_ITEM_SECONDS,
   type PostProject,
   type PostVideoItem,
-} from "$lib/shared/media-composition/domain/post-project";
+  POST_MUSIC_MAX_BEATS_PER_BAR,
+  POST_MUSIC_MAX_GAIN,
+  POST_MUSIC_MAX_LICENSE,
+  POST_MUSIC_MAX_SECONDS,
+  POST_MUSIC_MAX_TEXT,
+  type PostMusic,
+  type PostMusicGrid,
+} from "@austencloud/video-editor/core";
 import {
   finish,
   type EditContext,
@@ -11,15 +18,6 @@ import {
   TAKE_MAX_BPM,
   TAKE_MIN_BPM,
 } from "$lib/shared/media-composition/domain/take-timing";
-import {
-  POST_MUSIC_MAX_BEATS_PER_BAR,
-  POST_MUSIC_MAX_GAIN,
-  POST_MUSIC_MAX_LICENSE,
-  POST_MUSIC_MAX_SECONDS,
-  POST_MUSIC_MAX_TEXT,
-  type PostMusic,
-  type PostMusicGrid,
-} from "$lib/shared/media-composition/domain/post-music";
 
 /**
  * Edits to the post's music. Like the timeline's edits, each is pure, runs

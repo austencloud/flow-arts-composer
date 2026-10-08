@@ -1,8 +1,5 @@
 <script lang="ts">
-  import type {
-    PostItem,
-    PostItemKind,
-  } from "$lib/shared/media-composition/domain/post-project";
+  import type { PostItem, PostItemKind } from "@austencloud/video-editor/core";
   import { formatPostClock } from "../../builder/post-builder-format";
   import { t } from "$lib/shared/i18n/i18n.svelte.js";
 

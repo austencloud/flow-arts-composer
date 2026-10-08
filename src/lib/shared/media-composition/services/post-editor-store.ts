@@ -1,4 +1,4 @@
-import type { PostProject } from "$lib/shared/media-composition/domain/post-project";
+import type { PostProject } from "@austencloud/video-editor/core";
 import type { TakeTiming } from "$lib/shared/media-composition/domain/take-timing";
 import {
   loadPostEditorHistory,

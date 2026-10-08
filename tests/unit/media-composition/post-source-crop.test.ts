@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { PostSourceGeometry } from "$lib/shared/media-composition/domain/post-project";
+import type { PostSourceGeometry } from "@austencloud/video-editor/core";
 import {
   dragSourceCrop,
   setSourceCropEdge,

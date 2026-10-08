@@ -1,7 +1,7 @@
 import type {
   PostItemKind,
   PostKeyframeChannel,
-} from "$lib/shared/media-composition/domain/post-project";
+} from "@austencloud/video-editor/core";
 
 /**
  * Which tools the editor's one row offers, and which tool's panel is on

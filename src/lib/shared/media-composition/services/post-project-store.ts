@@ -1,8 +1,10 @@
 import {
   PostProjectSchema,
   createEmptyPostProject,
+} from "$lib/shared/post-studio-plugin";
+import {
   type PostProject,
-} from "$lib/shared/media-composition/domain/post-project";
+} from "@austencloud/video-editor/core";
 import { normalizeProject } from "$lib/shared/media-composition/domain/post-project-normalize";
 import { migratePostPlan } from "$lib/shared/media-composition/domain/post-project-migration";
 import { loadPostPlan } from "$lib/shared/media-composition/services/post-plan-store";

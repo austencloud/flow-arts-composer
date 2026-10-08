@@ -13,7 +13,7 @@
   import type {
     PostAnimationItem,
     PostMovesMode,
-  } from "$lib/shared/media-composition/domain/post-project";
+  } from "$lib/shared/post-studio-plugin";
   import { getViewerStudioSurfaces } from "$lib/shared/sequence-viewer/context/viewer-studio-surfaces-context";
   import { AnimationStateManager } from "$lib/shared/animation-engine/services/animation-state-manager";
   import { SequenceAnimationOrchestrator } from "$lib/shared/animation-engine/services/sequence-animation-orchestrator";

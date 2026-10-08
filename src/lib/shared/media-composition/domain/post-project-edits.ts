@@ -8,7 +8,6 @@ import {
   POST_MAX_LABEL_LENGTH,
   POST_MIN_BOX_SIZE,
   POST_MAX_SPEED,
-  POST_MAX_SPOKEN_LENGTH,
   POST_MAX_TEXT_LENGTH,
   POST_MAX_VOLUME,
   POST_MAX_ZOOM,
@@ -18,7 +17,6 @@ import {
   POST_TIME_EPSILON,
   clampBox,
   createIdAllocator,
-  defaultBoxFor,
   findItem,
   itemEnd,
   mainItemAt,
@@ -28,8 +26,6 @@ import {
   videoPostSeconds,
   wrapDegrees,
   type PostAnchor,
-  type PostAnimationAppearance,
-  type PostAnimationItem,
   type PostBackground,
   type PostBox,
   type PostCanvasRatio,
@@ -46,22 +42,28 @@ import {
   type PostItem,
   type PostItemKeyframes,
   type PostKeyframe,
-  type PostMovesMode,
   type PostProject,
-  type PostStaffEffectId,
   type PostTextSize,
   type PostTrack,
   type PostVideoItem,
-} from "$lib/shared/media-composition/domain/post-project";
-import { normalizeProject } from "$lib/shared/media-composition/domain/post-project-normalize";
-import {
   clampShapeRatio,
   postCanvasOf,
-} from "$lib/shared/media-composition/domain/post-canvas";
-import {
   edgeOf,
   mergeEdge,
-} from "$lib/shared/media-composition/domain/post-clip-edge";
+  DEFAULT_TUNNEL_HOOK,
+  DEFAULT_TUNNEL_HOOK_SECONDS,
+  type TunnelBackdropFrame,
+  type TunnelHook,
+} from "@austencloud/video-editor/core";
+import {
+  POST_MAX_SPOKEN_LENGTH,
+  defaultBoxFor,
+  type PostAnimationAppearance,
+  type PostAnimationItem,
+  type PostMovesMode,
+  type PostStaffEffectId,
+} from "$lib/shared/post-studio-plugin";
+import { normalizeProject } from "$lib/shared/media-composition/domain/post-project-normalize";
 import {
   framingAt,
   channelValueAt,
@@ -79,12 +81,6 @@ import {
   takeTimingMoveBeats,
   type TakeTiming,
 } from "$lib/shared/media-composition/domain/take-timing";
-import {
-  DEFAULT_TUNNEL_HOOK,
-  DEFAULT_TUNNEL_HOOK_SECONDS,
-  type TunnelBackdropFrame,
-  type TunnelHook,
-} from "@austencloud/video-editor/core";
 import { openingTitlesSpan } from "$lib/shared/media-composition/domain/tunnel-titles";
 
 /**

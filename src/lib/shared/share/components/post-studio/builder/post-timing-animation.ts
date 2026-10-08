@@ -1,13 +1,11 @@
-import type {
-  PostAnimationItem,
-  PostProject,
-} from "$lib/shared/media-composition/domain/post-project";
+import type { PostAnimationItem } from "$lib/shared/post-studio-plugin";
+import type { PostProject } from "@austencloud/video-editor/core";
 import {
   itemEnd,
   mainItems,
   POST_TIME_EPSILON,
   timingVideoAt,
-} from "$lib/shared/media-composition/domain/post-project";
+} from "@austencloud/video-editor/core";
 import type { ResolvedTakeTiming } from "$lib/shared/media-composition/domain/take-timing";
 import type { TakeTiming } from "$lib/shared/media-composition/domain/take-timing";
 import { postSecondsOfKeyframe } from "$lib/shared/media-composition/domain/post-project-keyframes";

@@ -3,10 +3,10 @@ import { bridgeLockedChange } from "$lib/shared/media-composition/domain/post-pr
 import type {
   PostProject,
   PostVideoItem,
-} from "$lib/shared/media-composition/domain/post-project";
+  PostMusic,
+} from "@austencloud/video-editor/core";
 import { featureVideoMediaUrl } from "$lib/shared/media-composition/domain/feature-video-url";
-import { NO_GRID_MESSAGE } from "$lib/shared/media-composition/domain/music-grid";
-import type { PostMusic } from "$lib/shared/media-composition/domain/post-music";
+import { NO_GRID_MESSAGE } from "@austencloud/video-editor/core";
 import {
   applyPostProjectOps,
   type PostProjectOp,

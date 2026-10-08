@@ -25,7 +25,7 @@
   import { ShortcutRegistry } from "$lib/shared/keyboard/services/shortcut-registry";
   import { registerEditHistoryShortcuts } from "$lib/shared/keyboard/registration/register-edit-history-shortcuts";
   import { keyboardShortcutState } from "$lib/shared/keyboard/state/keyboard-shortcut-state.svelte";
-  import type { PostProject } from "$lib/shared/media-composition/domain/post-project";
+  import type { PostProject } from "@austencloud/video-editor/core";
   import {
     loadPostDraft,
     savePostDraft,

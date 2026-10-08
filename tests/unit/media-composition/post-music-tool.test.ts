@@ -10,7 +10,7 @@
 import { flushSync, unmount } from "svelte";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { mountMusicTool } from "./music-tool-harness.svelte";
-import type { PostMusic } from "$lib/shared/media-composition/domain/post-music";
+import type { PostMusic } from "@austencloud/video-editor/core";
 
 const analyzer = vi.hoisted(() => ({
   analyzeAudioBpm: vi.fn(),

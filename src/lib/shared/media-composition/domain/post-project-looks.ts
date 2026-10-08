@@ -13,7 +13,7 @@ import {
   type PostProject,
   type PostTrack,
   type PostVideoItem,
-} from "$lib/shared/media-composition/domain/post-project";
+} from "@austencloud/video-editor/core";
 import {
   appendCardClip,
   appendVideoClip,

@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { POST_STUDIO_PRESETS } from "@austencloud/video-editor/core";
+import {
+  POST_STUDIO_PRESETS,
+  POST_MAX_ZOOM,
+  POST_MIN_BOX_SIZE,
+  POST_MIN_ZOOM,
+} from "@austencloud/video-editor/core";
 import {
   evaluatePresetFrame,
   evaluatePresetLayers,
@@ -10,11 +15,6 @@ import type {
   PresetVisualClipMotion,
 } from "@austencloud/video-editor/core";
 import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import {
-  POST_MAX_ZOOM,
-  POST_MIN_BOX_SIZE,
-  POST_MIN_ZOOM,
-} from "$lib/shared/media-composition/domain/post-project";
 import {
   EASING_PRESETS,
   sampleEasing,

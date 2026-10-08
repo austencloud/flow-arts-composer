@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
   PostProjectSchema,
+} from "$lib/shared/post-studio-plugin";
+import {
   POST_BOX,
   POST_MAX_SPEED,
   POST_MIN_ITEM_SECONDS,
@@ -8,7 +10,7 @@ import {
   type PostItem,
   type PostProject,
   type PostVideoItem,
-} from "$lib/shared/media-composition/domain/post-project";
+} from "@austencloud/video-editor/core";
 import {
   addOverlayItem,
   addTake,

@@ -1,18 +1,10 @@
 import { describe, expect, it } from "vitest";
-import {
-  clipBox,
-  clipShapeFor,
-  postOutputSize,
-  postSafeArea,
-  shapedBox,
-  spotAround,
-} from "$lib/shared/media-composition/domain/post-canvas";
+import { clipBox, clipShapeFor, postOutputSize, postSafeArea, shapedBox, spotAround, POST_BOX } from "@austencloud/video-editor/core";
 import { compilePostProject } from "$lib/shared/media-composition/domain/post-project-compiler";
 import { EASING_PRESETS } from "$lib/shared/media-composition/domain/post-project-keyframes";
 import {
-  POST_BOX,
   PostProjectSchema,
-} from "$lib/shared/media-composition/domain/post-project";
+} from "$lib/shared/post-studio-plugin";
 import {
   setProjectCanvas,
   updateItem,

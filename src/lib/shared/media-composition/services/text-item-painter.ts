@@ -1,6 +1,6 @@
 import type { CompiledTextItem } from "$lib/shared/media-composition/domain/post-project-compiler";
-import { TEXT_BOX_WIDTH } from "$lib/shared/media-composition/domain/post-project";
 import {
+  TEXT_BOX_WIDTH,
   CAPTION_LINE_HEIGHT_FRACTION,
   CAPTION_SIZE_FRACTION,
   CAPTION_STROKE_WIDTH_FRACTION,

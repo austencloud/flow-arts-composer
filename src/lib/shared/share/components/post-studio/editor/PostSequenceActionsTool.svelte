@@ -1,6 +1,6 @@
 <script lang="ts">
   import SequenceTransformActions from "$lib/shared/create/components/SequenceTransformActions.svelte";
-  import type { PostSequenceAction } from "$lib/shared/media-composition/domain/post-project";
+  import type { PostSequenceAction } from "$lib/shared/post-studio-plugin";
   import {
     pressSequenceAction,
     resetSequenceActions,

@@ -1,9 +1,21 @@
 import { describe, expect, it } from "vitest";
 import {
   PostProjectSchema,
-  POST_BOX,
   type PostAnimationItem,
-} from "$lib/shared/media-composition/domain/post-project";
+} from "$lib/shared/post-studio-plugin";
+import {
+  POST_BOX,
+  takeRole,
+  MOVE_EASING,
+  tunnelHookArrival,
+  TUNNEL_HOOK_BACKDROP_OPACITY,
+  TUNNEL_HOOK_CHROME_SECONDS,
+  tunnelHookChromeOpacity,
+  tunnelHookCopyOpacity,
+  tunnelHookPanelOpacity,
+  itemEnd,
+  type PostVideoItem,
+} from "@austencloud/video-editor/core";
 import {
   addTunnelHook,
   findTunnelHook,
@@ -14,16 +26,6 @@ import {
 } from "$lib/shared/media-composition/domain/post-project-edits";
 import { normalizeProject as finishProject } from "$lib/shared/media-composition/domain/post-project-normalize";
 import { compilePostProject } from "$lib/shared/media-composition/domain/post-project-compiler";
-import {
-  takeRole,
-  MOVE_EASING,
-  tunnelHookArrival,
-  TUNNEL_HOOK_BACKDROP_OPACITY,
-  TUNNEL_HOOK_CHROME_SECONDS,
-  tunnelHookChromeOpacity,
-  tunnelHookCopyOpacity,
-  tunnelHookPanelOpacity,
-} from "@austencloud/video-editor/core";
 import {
   createTakeTiming,
   resolveTakeTiming,
@@ -37,10 +39,6 @@ import {
 import { sampleEasing } from "$lib/shared/media-composition/domain/post-project-keyframes";
 import { evaluatePresetFrame } from "$lib/shared/media-composition/services/frame-evaluator";
 import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import {
-  itemEnd,
-  type PostVideoItem,
-} from "$lib/shared/media-composition/domain/post-project";
 import {
   NOW,
   overlay,

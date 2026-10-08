@@ -4,7 +4,9 @@ import {
   FEATURE_VIDEO_FILE_FORMAT,
   type FeatureVideoFile,
 } from "$lib/shared/media-composition/domain/feature-video";
-import { createEmptyPostProject } from "$lib/shared/media-composition/domain/post-project";
+import {
+  createEmptyPostProject,
+} from "$lib/shared/post-studio-plugin";
 import {
   createFeatureVideoSync,
   type FeatureVideoSync,

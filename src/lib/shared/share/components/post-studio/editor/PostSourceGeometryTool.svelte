@@ -1,6 +1,6 @@
 <script lang="ts">
   import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import type { PostSourceGeometry } from "$lib/shared/media-composition/domain/post-project";
+  import type { PostSourceGeometry } from "@austencloud/video-editor/core";
   import TypeableValue from "$lib/shared/ui/components/TypeableValue.svelte";
 
   interface Props {

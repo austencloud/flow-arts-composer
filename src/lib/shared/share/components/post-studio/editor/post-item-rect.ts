@@ -1,7 +1,4 @@
-import type {
-  PostBox,
-  PostItem,
-} from "$lib/shared/media-composition/domain/post-project";
+import type { PostBox, PostItem } from "@austencloud/video-editor/core";
 import {
   boxAt,
   isAnimated,
@@ -10,7 +7,7 @@ import {
   clipBox,
   postOutputSize,
   spotAround,
-} from "$lib/shared/media-composition/domain/post-canvas";
+} from "@austencloud/video-editor/core";
 import type { PostEditorState } from "$lib/shared/media-composition/state/post-editor-state.svelte";
 
 /**

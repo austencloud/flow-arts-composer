@@ -2,7 +2,7 @@ import { render } from "vitest-browser-svelte";
 import { page, userEvent } from "vitest/browser";
 import { expect, it, vi } from "vitest";
 import { getSettings } from "$lib/shared/application/state/app-state.svelte";
-import { createEmptyPostProject } from "$lib/shared/media-composition/domain/post-project";
+import { createEmptyPostProject } from "$lib/shared/post-studio-plugin";
 import type { PostEditorState } from "$lib/shared/media-composition/state/post-editor-state.svelte";
 import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
 import { DEFAULT_EFFECTS_CONFIG } from "$lib/shared/effects/domain/defaults";

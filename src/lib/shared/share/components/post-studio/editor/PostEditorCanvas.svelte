@@ -54,8 +54,6 @@
     stripModeFromRole,
     POST_STUDIO_ROLE,
     tunnelHookChromeOpacity,
-  } from "@austencloud/video-editor/core";
-  import {
     POST_MAX_ZOOM,
     POST_MIN_ZOOM,
     POST_TIME_EPSILON,
@@ -66,7 +64,9 @@
     type PostItem,
     type PostSourceGeometry,
     type PostVideoItem,
-  } from "$lib/shared/media-composition/domain/post-project";
+    postOutputSize,
+    postSafeArea,
+  } from "@austencloud/video-editor/core";
   import { updateItemAt } from "$lib/shared/media-composition/domain/post-project-edits";
   import { posterQrAppearance } from "../post-qr-image-appearance";
   import { dragSourceCrop, type SourceCropHandle } from "./post-source-crop";
@@ -75,10 +75,6 @@
     channelValueAt,
     framingAt,
   } from "$lib/shared/media-composition/domain/post-project-keyframes";
-  import {
-    postOutputSize,
-    postSafeArea,
-  } from "$lib/shared/media-composition/domain/post-canvas";
   import PostStudioBackdrop from "../PostStudioBackdrop.svelte";
   import PostStudioMediaLayer from "../PostStudioMediaLayer.svelte";
   import {

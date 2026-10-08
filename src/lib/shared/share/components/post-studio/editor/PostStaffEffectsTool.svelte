@@ -3,8 +3,8 @@
   import {
     POST_STAFF_EFFECTS,
     type PostStaffEffectId,
-    type PostVideoItem,
-  } from "$lib/shared/media-composition/domain/post-project";
+  } from "$lib/shared/post-studio-plugin";
+  import { type PostVideoItem } from "@austencloud/video-editor/core";
   import { staffTipCoverage } from "$lib/shared/media-composition/domain/staff-tip-track";
   import type { StaffTipAnalysis } from "$lib/shared/media-composition/state/staff-tip-analysis.svelte";
   import {

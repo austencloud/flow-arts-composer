@@ -1,9 +1,10 @@
 import {
   itemEnd,
   type PostProject,
-  type PostTitlesItem,
-} from "$lib/shared/media-composition/domain/post-project";
-import { LIFT_EASING, MOVE_START_SHARE } from "@austencloud/video-editor/core";
+  LIFT_EASING,
+  MOVE_START_SHARE,
+} from "@austencloud/video-editor/core";
+import { type PostTitlesItem } from "$lib/shared/post-studio-plugin";
 
 /**
  * A titles clip: the sequence's name in its glyphs, with how to say it under

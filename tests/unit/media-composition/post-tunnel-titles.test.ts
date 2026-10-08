@@ -2,14 +2,20 @@ import { describe, expect, it } from "vitest";
 import {
   POST_BOX,
   POST_DEFAULT_OVERLAY_SECONDS,
+  type PostItem,
+  type PostProject,
+  type PostVideoItem,
+  DEFAULT_TUNNEL_HOOK,
+  MOVE_END_SHARE,
+  MOVE_START_SHARE,
+  type TunnelHook,
+} from "@austencloud/video-editor/core";
+import {
   POST_MAX_SPOKEN_LENGTH,
   PostProjectSchema,
   type PostAnimationItem,
-  type PostItem,
-  type PostProject,
   type PostTitlesItem,
-  type PostVideoItem,
-} from "$lib/shared/media-composition/domain/post-project";
+} from "$lib/shared/post-studio-plugin";
 import { compilePostProject } from "$lib/shared/media-composition/domain/post-project-compiler";
 import {
   addTitlesItem,
@@ -19,12 +25,6 @@ import {
 import { normalizeProject } from "$lib/shared/media-composition/domain/post-project-normalize";
 import { sampleEasing } from "$lib/shared/media-composition/domain/post-project-keyframes";
 import { evaluatePresetFrame } from "$lib/shared/media-composition/services/frame-evaluator";
-import {
-  DEFAULT_TUNNEL_HOOK,
-  MOVE_END_SHARE,
-  MOVE_START_SHARE,
-  type TunnelHook,
-} from "@austencloud/video-editor/core";
 import {
   OPENING_TITLES_SHARE,
   titlesPlanOf,

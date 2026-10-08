@@ -1,12 +1,14 @@
 import { describe, expect, it } from "vitest";
 import {
   POST_BOX,
+  type PostVideoItem,
+  takeRole,
+} from "@austencloud/video-editor/core";
+import {
   type PostAnimationItem,
   type PostMovesItem,
-  type PostVideoItem,
-} from "$lib/shared/media-composition/domain/post-project";
+} from "$lib/shared/post-studio-plugin";
 import { compilePostProject } from "$lib/shared/media-composition/domain/post-project-compiler";
-import { takeRole } from "@austencloud/video-editor/core";
 import {
   pipHandoffLanding,
   pipHandoffOf,

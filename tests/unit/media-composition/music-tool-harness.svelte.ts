@@ -1,5 +1,5 @@
 import { flushSync, mount } from "svelte";
-import type { PostMusic } from "$lib/shared/media-composition/domain/post-music";
+import type { PostMusic } from "@austencloud/video-editor/core";
 import {
   trimMusic,
   updateMusic,

@@ -1,10 +1,9 @@
 import { describe, expect, it } from "vitest";
+import { POST_BOX, type PostProject } from "@austencloud/video-editor/core";
 import {
-  POST_BOX,
   type PostAnimationItem,
   type PostMovesItem,
-  type PostProject,
-} from "$lib/shared/media-composition/domain/post-project";
+} from "$lib/shared/post-studio-plugin";
 import { withMotionKeys } from "$lib/shared/media-composition/domain/post-project-motion-keys";
 import {
   moveKeyframe,

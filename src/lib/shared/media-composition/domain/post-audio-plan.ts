@@ -1,6 +1,5 @@
-import type { CompiledPost } from "@austencloud/video-editor/core";
+import type { CompiledPost, PostMusic } from "@austencloud/video-editor/core";
 import type { CompiledPostProject } from "$lib/shared/media-composition/domain/post-project-compiler";
-import type { PostMusic } from "$lib/shared/media-composition/domain/post-music";
 
 /**
  * The post's own audio track, mixed once and exported alongside the picture

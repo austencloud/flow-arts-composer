@@ -4,7 +4,7 @@ import {
   type PostTakeRef,
 } from "@austencloud/video-editor/core";
 import { importRecoveredInShotDraft } from "../domain/post-inshot-import";
-import type { PostProject } from "../domain/post-project";
+import type { PostProject } from "@austencloud/video-editor/core";
 
 const PackageSchema = z
   .object({

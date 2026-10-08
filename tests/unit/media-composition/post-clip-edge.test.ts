@@ -1,16 +1,8 @@
 import { describe, expect, it } from "vitest";
+import { POST_MAX_EDGE_BORDER, POST_PLAIN_EDGE, type PostProject, type PostVideoItem, POST_EDGE_COLOR_HEX, mergeEdge, regionEdge } from "@austencloud/video-editor/core";
 import {
-  POST_MAX_EDGE_BORDER,
-  POST_PLAIN_EDGE,
   PostProjectSchema,
-  type PostProject,
-  type PostVideoItem,
-} from "$lib/shared/media-composition/domain/post-project";
-import {
-  POST_EDGE_COLOR_HEX,
-  mergeEdge,
-  regionEdge,
-} from "$lib/shared/media-composition/domain/post-clip-edge";
+} from "$lib/shared/post-studio-plugin";
 import { updateItem } from "$lib/shared/media-composition/domain/post-project-edits";
 import {
   compilePostProject,

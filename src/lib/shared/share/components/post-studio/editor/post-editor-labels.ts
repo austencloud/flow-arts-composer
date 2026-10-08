@@ -4,9 +4,9 @@ import type {
   PostItem,
   PostItemKind,
   PostKeyframeChannel,
-  PostMovesMode,
   PostProject,
-} from "$lib/shared/media-composition/domain/post-project";
+} from "@austencloud/video-editor/core";
+import type { PostMovesMode } from "$lib/shared/post-studio-plugin";
 import type {
   PostChannelValue,
   PostEasingPresetId,

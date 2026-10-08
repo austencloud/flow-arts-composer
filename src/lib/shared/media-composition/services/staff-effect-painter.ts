@@ -1,5 +1,5 @@
 import type { LayoutRegion } from "@austencloud/video-editor/core";
-import type { PostStaffEffectId } from "$lib/shared/media-composition/domain/post-project";
+import type { PostStaffEffectId } from "$lib/shared/post-studio-plugin";
 import {
   staffTipPath,
   staffTipsAt,

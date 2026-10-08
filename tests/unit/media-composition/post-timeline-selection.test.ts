@@ -1,11 +1,13 @@
 import { describe, expect, it } from "vitest";
 import {
   POST_BOX,
-  type PostAnimationItem,
   type PostItem,
-  type PostMovesItem,
   type PostVideoItem,
-} from "$lib/shared/media-composition/domain/post-project";
+} from "@austencloud/video-editor/core";
+import {
+  type PostAnimationItem,
+  type PostMovesItem,
+} from "$lib/shared/post-studio-plugin";
 import {
   selectTimelineItem,
   timelineGroupOf,

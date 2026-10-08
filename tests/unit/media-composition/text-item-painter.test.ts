@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { createTextItemPainter } from "$lib/shared/media-composition/services/text-item-painter";
 import type { CompiledTextItem } from "$lib/shared/media-composition/domain/post-project-compiler";
-import { TEXT_BOX_WIDTH } from "$lib/shared/media-composition/domain/post-project";
 import {
+  TEXT_BOX_WIDTH,
   CAPTION_LINE_HEIGHT_FRACTION,
   CAPTION_SIZE_FRACTION,
 } from "@austencloud/video-editor/core";

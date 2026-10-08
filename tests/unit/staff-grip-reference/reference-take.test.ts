@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { createEmptyPostProject } from "$lib/shared/media-composition/domain/post-project";
+import { createEmptyPostProject } from "$lib/shared/post-studio-plugin";
 import {
   createTakeTiming,
   type TakeTiming,

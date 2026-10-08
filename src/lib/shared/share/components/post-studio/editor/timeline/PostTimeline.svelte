@@ -5,7 +5,7 @@
     PostKeyframeChannel,
     PostProject,
     PostTrack,
-  } from "$lib/shared/media-composition/domain/post-project";
+  } from "@austencloud/video-editor/core";
   import {
     MAIN_TRACK_INDEX,
     POST_FRAME_RATE,
@@ -14,7 +14,11 @@
     findItem,
     itemEnd,
     mainItems,
-  } from "$lib/shared/media-composition/domain/post-project";
+    hasGrid,
+    musicBarMarks,
+    musicSnapTargets,
+    musicSpan,
+  } from "@austencloud/video-editor/core";
   import {
     channelKeyframeSeconds,
     channelValueAt,
@@ -23,12 +27,6 @@
     keyframeIndexAt,
     moveKeyframe,
   } from "$lib/shared/media-composition/domain/post-project-keyframes";
-  import {
-    hasGrid,
-    musicBarMarks,
-    musicSnapTargets,
-    musicSpan,
-  } from "$lib/shared/media-composition/domain/music-grid";
   import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { growFade } from "$lib/shared/transitions/motion";
   import TimeRuler from "$lib/shared/timeline/TimeRuler.svelte";

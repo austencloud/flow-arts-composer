@@ -1,9 +1,6 @@
 import { z } from "zod";
-import { takeFileKey } from "@austencloud/video-editor/core";
-import {
-  PostProjectSchema,
-  type PostProject,
-} from "$lib/shared/media-composition/domain/post-project";
+import { takeFileKey, type PostProject } from "@austencloud/video-editor/core";
+import { PostProjectSchema } from "$lib/shared/post-studio-plugin";
 import {
   FEATURE_VIDEO_API,
   FEATURE_VIDEO_SLUG_PATTERN,

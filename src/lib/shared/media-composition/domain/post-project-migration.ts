@@ -4,14 +4,15 @@ import {
   POST_BOX,
   POST_MIN_ITEM_SECONDS,
   POST_PROJECT_SCHEMA_VERSION,
-  createEmptyPostProject,
   createIdAllocator,
   textBox,
   type PostItem,
   type PostProject,
   type PostTrack,
-} from "$lib/shared/media-composition/domain/post-project";
-import { POST_ACT, type PostPlan } from "@austencloud/video-editor/core";
+  POST_ACT,
+  type PostPlan,
+} from "@austencloud/video-editor/core";
+import { createEmptyPostProject } from "$lib/shared/post-studio-plugin";
 
 /**
  * Converts a v1 act plan into a v2 project: every enabled act becomes a main

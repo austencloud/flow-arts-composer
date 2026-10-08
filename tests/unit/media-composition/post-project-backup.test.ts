@@ -5,7 +5,7 @@ import {
   resolvePostStudioDraft,
   serializePostStudioBackup,
 } from "$lib/shared/media-composition/services/post-project-backup";
-import { createEmptyPostProject } from "$lib/shared/media-composition/domain/post-project";
+import { createEmptyPostProject } from "$lib/shared/post-studio-plugin";
 import { createTakeTiming } from "$lib/shared/media-composition/domain/take-timing";
 import type { PostTake } from "@austencloud/video-editor/core";
 

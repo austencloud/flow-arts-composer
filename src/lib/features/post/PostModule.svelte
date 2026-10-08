@@ -14,7 +14,9 @@
     saveSyncedPostDraft,
   } from "./services/post-account-projects";
   import { savePostDraft } from "$lib/shared/media-composition/services/post-draft-storage";
-  import type { PostProject } from "$lib/shared/media-composition/domain/post-project";
+  import type {
+  PostProject,
+} from "@austencloud/video-editor/core";
   import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
   import {
     createPostModuleState,

@@ -1,19 +1,17 @@
 import {
   POST_BOX,
   POST_TIME_EPSILON,
-  type PostAnimationItem,
   type PostBox,
   type PostKeyframe,
   type PostMotionKey,
   type PostProject,
-} from "$lib/shared/media-composition/domain/post-project";
-import { boxAt } from "$lib/shared/media-composition/domain/post-project-keyframes";
-import { pipHandoffOf } from "$lib/shared/media-composition/domain/pip-handoff";
-import {
   MOVE_EASING,
   MOVE_END_SHARE,
   MOVE_START_SHARE,
 } from "@austencloud/video-editor/core";
+import { type PostAnimationItem } from "$lib/shared/post-studio-plugin";
+import { boxAt } from "$lib/shared/media-composition/domain/post-project-keyframes";
+import { pipHandoffOf } from "$lib/shared/media-composition/domain/pip-handoff";
 
 /**
  * The opening tunnel's move from full frame into the animation's box, and the

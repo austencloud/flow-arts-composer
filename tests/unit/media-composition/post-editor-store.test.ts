@@ -1,9 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import {
-  createEmptyPostProject,
-  type PostProject,
-} from "$lib/shared/media-composition/domain/post-project";
+import { createEmptyPostProject } from "$lib/shared/post-studio-plugin";
+import { type PostProject } from "@austencloud/video-editor/core";
 import {
   addTakeTap,
   createTakeTiming,

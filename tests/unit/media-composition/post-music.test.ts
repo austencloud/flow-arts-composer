@@ -5,13 +5,11 @@ import {
 } from "$lib/shared/media-composition/domain/feature-video";
 import {
   POST_MUSIC_MAX_SECONDS,
-  PostMusicSchema,
   type PostMusic,
-} from "$lib/shared/media-composition/domain/post-music";
-import {
-  PostProjectSchema,
   type PostProject,
-} from "$lib/shared/media-composition/domain/post-project";
+} from "@austencloud/video-editor/core";
+import { PostMusicSchema } from "$lib/shared/post-studio-plugin";
+import { PostProjectSchema } from "$lib/shared/post-studio-plugin";
 import { setProjectAudio } from "$lib/shared/media-composition/domain/post-project-edits";
 import { normalizeProject } from "$lib/shared/media-composition/domain/post-project-normalize";
 import { NOW, project, video } from "./post-project-fixtures";

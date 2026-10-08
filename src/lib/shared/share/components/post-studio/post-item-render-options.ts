@@ -2,8 +2,10 @@ import type {
   PostAnimationAppearance,
   PostAnimationItem,
   PostMovesItem,
+} from "$lib/shared/post-studio-plugin";
+import type {
   PostCardItem,
-} from "$lib/shared/media-composition/domain/post-project";
+} from "@austencloud/video-editor/core";
 import type { SequenceExportOptions } from "$lib/shared/render/domain/models/sequence-export-options";
 
 /** A card keeps the viewer's current options until its own setting is changed. */

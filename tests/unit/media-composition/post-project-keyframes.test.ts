@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { POST_MAX_ZOOM } from "$lib/shared/media-composition/domain/post-project";
+import { POST_MAX_ZOOM } from "@austencloud/video-editor/core";
 import {
   DEFAULT_EASING,
   EASING_PRESETS,

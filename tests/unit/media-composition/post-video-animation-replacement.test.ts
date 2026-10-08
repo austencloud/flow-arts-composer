@@ -5,11 +5,8 @@ import {
 } from "$lib/shared/media-composition/domain/post-project-edits";
 import { compilePostProject } from "$lib/shared/media-composition/domain/post-project-compiler";
 import { normalizeProject } from "$lib/shared/media-composition/domain/post-project-normalize";
-import {
-  PostProjectSchema,
-  type PostProject,
-} from "$lib/shared/media-composition/domain/post-project";
-import { takeRole } from "@austencloud/video-editor/core";
+import { PostProjectSchema } from "$lib/shared/post-studio-plugin";
+import { type PostProject, takeRole } from "@austencloud/video-editor/core";
 import { NOW, project, take, video } from "./post-project-fixtures";
 
 const cameraId = "inshot-123-main-1";

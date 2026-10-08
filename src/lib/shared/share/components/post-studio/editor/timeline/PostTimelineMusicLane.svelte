@@ -1,7 +1,6 @@
 <script lang="ts">
-  import { POST_TIME_EPSILON } from "$lib/shared/media-composition/domain/post-project";
-  import { formatPostClock } from "$lib/shared/share/components/post-studio/builder/post-builder-format";
   import {
+    POST_TIME_EPSILON,
     beatSeconds,
     hasGrid,
     isNumberedBar,
@@ -12,8 +11,9 @@
     postSecondsAtBar,
     trackSecondsAt,
     type MusicPlacement,
-  } from "$lib/shared/media-composition/domain/music-grid";
-  import type { PostMusic } from "$lib/shared/media-composition/domain/post-music";
+  } from "@austencloud/video-editor/core";
+  import { formatPostClock } from "$lib/shared/share/components/post-studio/builder/post-builder-format";
+  import type { PostMusic } from "@austencloud/video-editor/core";
   import { POST_MUSIC_MIN_SECONDS } from "$lib/shared/media-composition/domain/post-music-edits";
   import {
     placeDraggedMusic,

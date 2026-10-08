@@ -2,7 +2,7 @@ import {
   POST_TIME_EPSILON,
   itemEnd,
   type PostProject,
-} from "$lib/shared/media-composition/domain/post-project";
+} from "@austencloud/video-editor/core";
 import { pipHandoffOf } from "$lib/shared/media-composition/domain/pip-handoff";
 
 export interface TimelineSelection {

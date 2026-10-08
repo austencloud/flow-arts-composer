@@ -9,10 +9,8 @@ import {
   queuePostProjectOps,
   readPostProjectSession,
 } from "$lib/server/post-project-dev-bridge";
-import {
-  POST_BOX,
-  type PostAnimationItem,
-} from "$lib/shared/media-composition/domain/post-project";
+import { POST_BOX } from "@austencloud/video-editor/core";
+import { type PostAnimationItem } from "$lib/shared/post-studio-plugin";
 import { findTunnelHook } from "$lib/shared/media-composition/domain/post-project-edits";
 import { applyPostProjectOps } from "$lib/shared/media-composition/domain/post-project-ops";
 import { NOW, overlay, project, video } from "./post-project-fixtures";

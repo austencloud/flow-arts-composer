@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   POST_SHAPE_RATIO_MIN,
   type PostFraming,
-} from "$lib/shared/media-composition/domain/post-project";
+} from "@austencloud/video-editor/core";
 import {
   cameraDisplayScale,
   cameraWindowCenter,

@@ -2,21 +2,23 @@ import { t } from "$lib/shared/i18n/i18n.svelte.js";
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
 import type { StepMap } from "$lib/shared/video-collaboration/domain/collaborative-video";
 import type { PostTake } from "@austencloud/video-editor/core";
-import { takeRole } from "@austencloud/video-editor/core";
-import { takeDisplayLabel } from "$lib/shared/media-composition/domain/post-take-labels";
 import {
+  takeRole,
+  takeDisplayLabel,
   POST_FRAME_RATE,
   POST_MIN_ITEM_SECONDS,
   POST_TIME_EPSILON,
-  PostProjectSchema,
   findItem,
   itemEnd,
   mainItemAt,
   projectDurationSeconds,
-  type PostAnimationItem,
   type PostItem,
   type PostProject,
-} from "$lib/shared/media-composition/domain/post-project";
+} from "@austencloud/video-editor/core";
+import {
+  PostProjectSchema,
+  type PostAnimationItem,
+} from "$lib/shared/post-studio-plugin";
 import {
   addOverlayItem,
   addTitlesItem,

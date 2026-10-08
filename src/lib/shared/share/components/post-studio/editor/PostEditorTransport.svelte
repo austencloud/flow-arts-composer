@@ -1,6 +1,8 @@
 <script lang="ts">
   import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import { POST_FRAME_RATE } from "$lib/shared/media-composition/domain/post-project";
+  import {
+  POST_FRAME_RATE,
+} from "@austencloud/video-editor/core";
   import type { PostEditorState } from "$lib/shared/media-composition/state/post-editor-state.svelte";
   import TypeableValue from "$lib/shared/ui/components/TypeableValue.svelte";
   import { formatTakeClock, parseClock } from "../builder/post-builder-format";

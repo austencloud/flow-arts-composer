@@ -1,6 +1,8 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { PostVideoItem } from "$lib/shared/media-composition/domain/post-project";
+import type {
+  PostVideoItem,
+} from "@austencloud/video-editor/core";
 import { editItemKeyframes } from "$lib/shared/media-composition/domain/post-project-edits";
 import { setKeyframe } from "$lib/shared/media-composition/domain/post-project-keyframes";
 import { createPostEditorState } from "$lib/shared/media-composition/state/post-editor-state.svelte";

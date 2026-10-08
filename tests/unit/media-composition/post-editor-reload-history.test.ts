@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { PostProject } from "$lib/shared/media-composition/domain/post-project";
+import type { PostProject } from "@austencloud/video-editor/core";
 import { addTakeTap } from "$lib/shared/media-composition/domain/take-timing";
 import { resolvePostStudioDraft } from "$lib/shared/media-composition/services/post-project-backup";
 import { readPostDraftRecords } from "$lib/shared/media-composition/services/post-draft-storage";

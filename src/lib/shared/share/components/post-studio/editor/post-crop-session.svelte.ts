@@ -11,13 +11,11 @@ import {
   type PostFraming,
   type PostKeyframe,
   type PostVideoItem,
-} from "$lib/shared/media-composition/domain/post-project";
-import {
   clipBox,
   clipShapeFor,
   shapedBox,
   type PostOutputSize,
-} from "$lib/shared/media-composition/domain/post-canvas";
+} from "@austencloud/video-editor/core";
 import {
   editItemKeyframes,
   resetFraming,

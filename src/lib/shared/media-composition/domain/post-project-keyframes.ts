@@ -18,7 +18,7 @@ import {
   type PostKeyframe,
   type PostKeyframeChannel,
   type PostVideoItem,
-} from "$lib/shared/media-composition/domain/post-project";
+} from "@austencloud/video-editor/core";
 
 /**
  * Pure, item-level keyframe reading and editing. `s` is always post seconds;

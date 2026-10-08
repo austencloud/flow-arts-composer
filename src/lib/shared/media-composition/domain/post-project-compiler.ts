@@ -15,14 +15,7 @@ import {
   MOVE_EASING,
   tunnelHookBoxKeys,
   type TunnelBackdropFrame,
-} from "@austencloud/video-editor/core";
-import type {
-  LayoutRegion,
-  RegionEdge,
-  PostTake,
-} from "@austencloud/video-editor/core";
-import { regionEdge } from "$lib/shared/media-composition/domain/post-clip-edge";
-import {
+  regionEdge,
   MAIN_TRACK_INDEX,
   POST_BOX,
   POST_TIME_EPSILON,
@@ -30,19 +23,29 @@ import {
   itemEnd,
   shortestTurn,
   timingVideoAt,
-  type PostAnimationItem,
   type PostBox,
-  type PostCarouselItem,
   type PostItem,
   type PostImageItem,
-  type PostMovesItem,
   type PostProject,
   type PostSourceGeometry,
   type PostTextSize,
   type PostTextStyle,
   type PostTextAnimation,
   type PostVideoItem,
-} from "$lib/shared/media-composition/domain/post-project";
+  clipBox,
+  postOutputSize,
+  type PostOutputSize,
+} from "@austencloud/video-editor/core";
+import type {
+  LayoutRegion,
+  RegionEdge,
+  PostTake,
+} from "@austencloud/video-editor/core";
+import {
+  type PostAnimationItem,
+  type PostCarouselItem,
+  type PostMovesItem,
+} from "$lib/shared/post-studio-plugin";
 import {
   channelValueAt,
   postSecondsOfKeyframe,
@@ -58,11 +61,6 @@ import {
   pipHandoffOf,
   withPipHandoffBoxKeys,
 } from "$lib/shared/media-composition/domain/pip-handoff";
-import {
-  clipBox,
-  postOutputSize,
-  type PostOutputSize,
-} from "$lib/shared/media-composition/domain/post-canvas";
 
 /**
  * Turns an edited project into the free-layout preset the evaluator, the

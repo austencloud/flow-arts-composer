@@ -3,7 +3,7 @@ import {
   createStaffEffectPainter,
   createStaffPointMapper,
 } from "$lib/shared/media-composition/services/staff-effect-painter";
-import { POST_STAFF_EFFECTS } from "$lib/shared/media-composition/domain/post-project";
+import { POST_STAFF_EFFECTS } from "$lib/shared/post-studio-plugin";
 import type { StaffTipTrack } from "$lib/shared/media-composition/domain/staff-tip-track";
 import {
   compilePostProject,

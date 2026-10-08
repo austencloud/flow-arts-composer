@@ -1,13 +1,13 @@
 import { describe, expect, it } from "vitest";
+import { PostProjectSchema } from "$lib/shared/post-studio-plugin";
 import {
-  PostProjectSchema,
   POST_BOX,
   POST_DEFAULT_CARD_SECONDS,
   findItem,
   mainItems,
   overlaysAnchoredTo,
   type PostProject,
-} from "$lib/shared/media-composition/domain/post-project";
+} from "@austencloud/video-editor/core";
 import {
   TUTORIAL_FADE_SECONDS,
   applyLook,

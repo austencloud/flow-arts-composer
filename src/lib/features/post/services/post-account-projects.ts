@@ -3,7 +3,12 @@ import { doc, runTransaction } from "firebase/firestore";
 import { auth, getFirestoreInstance } from "$lib/shared/auth/firebase";
 import { firestoreGetDetailed, firestoreList } from "$lib/shared/firestore";
 import { awaitAuthSettled } from "$lib/shared/auth/state/auth-state.svelte";
-import { PostProjectSchema, type PostProject } from "$lib/shared/media-composition/domain/post-project";
+import {
+  PostProjectSchema,
+} from "$lib/shared/post-studio-plugin";
+import {
+  type PostProject,
+} from "@austencloud/video-editor/core";
 import { loadDiskPostDraft, loadPostDraft, savePostDraftRecords } from "$lib/shared/media-composition/services/post-draft-storage";
 import { projectDraftRecord } from "$lib/shared/media-composition/services/post-project-backup";
 import { accountPostProjectKeys, claimLegacyPosts, legacyPostOwner, loadPostProject, savePostProject } from "$lib/shared/media-composition/services/post-project-store";

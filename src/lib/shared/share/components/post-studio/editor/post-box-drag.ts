@@ -3,7 +3,7 @@ import {
   clampBox,
   wrapDegrees,
   type PostBox,
-} from "$lib/shared/media-composition/domain/post-project";
+} from "@austencloud/video-editor/core";
 
 /**
  * Moving, resizing and turning an item's box on the preview. All values are

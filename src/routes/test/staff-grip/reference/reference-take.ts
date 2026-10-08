@@ -3,8 +3,7 @@
  * open for it. A local take keeps only its file's name, size and date, so a
  * picked file is matched on those three.
  */
-import type { PostProject } from "$lib/shared/media-composition/domain/post-project";
-import type { PostTake } from "@austencloud/video-editor/core";
+import type { PostProject, PostTake } from "@austencloud/video-editor/core";
 import {
   TakeTimingSchema,
   isTakeTimingMapped,

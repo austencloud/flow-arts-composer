@@ -1,4 +1,4 @@
-import type { PostProject } from "../domain/post-project";
+import type { PostProject } from "@austencloud/video-editor/core";
 import { auth } from "$lib/shared/auth/firebase";
 import { legacyPostOwner } from "./post-project-store";
 import {

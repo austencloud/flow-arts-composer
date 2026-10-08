@@ -1,4 +1,6 @@
-import { POST_FRAME_RATE } from "$lib/shared/media-composition/domain/post-project";
+import {
+  POST_FRAME_RATE,
+} from "@austencloud/video-editor/core";
 
 /**
  * All the math PostTimeline needs to turn pixels into post-seconds and back:

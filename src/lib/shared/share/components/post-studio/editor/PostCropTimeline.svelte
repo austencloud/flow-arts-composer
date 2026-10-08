@@ -21,7 +21,7 @@
     POST_TIME_EPSILON,
     itemEnd,
     type PostVideoItem,
-  } from "$lib/shared/media-composition/domain/post-project";
+  } from "@austencloud/video-editor/core";
   import { moveKeyframe } from "$lib/shared/media-composition/domain/post-project-keyframes";
   import type { PostEditorState } from "$lib/shared/media-composition/state/post-editor-state.svelte";
   import TypeableValue from "$lib/shared/ui/components/TypeableValue.svelte";

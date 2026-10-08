@@ -5,7 +5,7 @@
 -->
 <script lang="ts">
   import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import type { PostProject } from "$lib/shared/media-composition/domain/post-project";
+  import type { PostProject } from "@austencloud/video-editor/core";
   import { setViewerStudioSurfaces } from "$lib/shared/sequence-viewer/context/viewer-studio-surfaces-context";
   import {
     setViewerUrlSessionContext,

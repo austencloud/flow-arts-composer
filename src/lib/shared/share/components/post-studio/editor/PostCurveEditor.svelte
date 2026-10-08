@@ -21,7 +21,7 @@
     POST_EASING_X_MAX,
     POST_EASING_X_MIN,
     type PostEasing,
-  } from "$lib/shared/media-composition/domain/post-project";
+  } from "@austencloud/video-editor/core";
   import { easingControlPoints } from "$lib/shared/media-composition/domain/post-project-keyframes";
   import ScrubbableNumber from "$lib/shared/ui/components/ScrubbableNumber.svelte";
   import {

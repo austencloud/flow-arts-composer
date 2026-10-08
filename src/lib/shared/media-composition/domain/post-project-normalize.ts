@@ -13,7 +13,7 @@ import {
   type PostKeyframeChannel,
   type PostProject,
   type PostTrack,
-} from "$lib/shared/media-composition/domain/post-project";
+} from "@austencloud/video-editor/core";
 import {
   channelsOf,
   clampChannelValue,

@@ -7,19 +7,17 @@
     downbeatFromTaps,
     musicSpan,
     trackSecondsAt,
-  } from "$lib/shared/media-composition/domain/music-grid";
-  import {
     POST_MUSIC_MAX_BEATS_PER_BAR,
     POST_MUSIC_MAX_GAIN,
     POST_MUSIC_MAX_LICENSE,
     POST_MUSIC_MAX_TEXT,
     type PostMusic,
-  } from "$lib/shared/media-composition/domain/post-music";
+    POST_TIME_EPSILON,
+  } from "@austencloud/video-editor/core";
   import {
     POST_MUSIC_MIN_SECONDS,
     type MusicPatch,
   } from "$lib/shared/media-composition/domain/post-music-edits";
-  import { POST_TIME_EPSILON } from "$lib/shared/media-composition/domain/post-project";
   import { formatTakeClock, parseClock } from "../builder/post-builder-format";
 
   /**
