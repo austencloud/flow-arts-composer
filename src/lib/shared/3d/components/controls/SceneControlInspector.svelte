@@ -116,6 +116,12 @@
     color: var(--theme-text, rgba(255, 255, 255, 0.94));
   }
 
+  /* Keep the performer tabs in one place as panels with different amounts of
+     content open. The hub scrolls its content inside this bounded height. */
+  .scene-control-inspector.fills {
+    height: 100%;
+  }
+
   .inspector-header {
     display: grid;
     grid-template-columns: 2.75rem minmax(0, 1fr) 2.75rem;
