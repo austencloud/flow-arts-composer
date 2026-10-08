@@ -455,9 +455,30 @@ function applyOp(
       // updateItem passes over a link that breaks the rule; a script should hear why.
       if (qrUrl !== undefined && qrUrl !== null && !isPostCardQrUrl(qrUrl))
         throw new Error(POST_QR_URL_RULE);
+      const ids = itemIds(project, op.item);
+      if (
+        qrUrl !== undefined &&
+        !ids.some((id) => findItem(project, id)?.item.kind === "card")
+      )
+        throw new Error("Only a card keeps a scan link.");
       let next = project;
-      for (const id of itemIds(project, op.item))
-        next = updateItem(next, id, op.patch, ctx);
+      for (const id of ids) {
+        const item = findItem(next, id)?.item;
+        // As in the editor, a card given a link shows it in its QR cell.
+        const patch =
+          typeof qrUrl === "string" &&
+          item?.kind === "card" &&
+          op.patch.cardAppearance === undefined
+            ? {
+                ...op.patch,
+                cardAppearance: {
+                  ...item.cardAppearance,
+                  infoCellChoice: "qr" as const,
+                },
+              }
+            : op.patch;
+        next = updateItem(next, id, patch, ctx);
+      }
       return next;
     }
     case "trim": {

@@ -88,6 +88,33 @@ describe("the item op and a card's link", () => {
       })
     ).toThrow(POST_QR_URL_RULE);
   });
+
+  it("shows a new link in the card's QR cell and keeps its other looks", () => {
+    const before = project([
+      card("end", 5, {
+        cardAppearance: { darkMode: true, infoCellChoice: "mandala" },
+      }),
+    ]);
+    const linked = apply(before, {
+      op: "item",
+      item: "end",
+      patch: { qrUrl: LINK },
+    });
+    expect(findItem(linked, "end")?.item).toMatchObject({
+      qrUrl: LINK,
+      cardAppearance: { darkMode: true, infoCellChoice: "qr" },
+    });
+  });
+
+  it("refuses a link on an item that is not a card", () => {
+    expect(() =>
+      apply(project([video("v1")]), {
+        op: "item",
+        item: "v1",
+        patch: { qrUrl: LINK },
+      })
+    ).toThrow("Only a card keeps a scan link.");
+  });
 });
 
 describe("sound", () => {
