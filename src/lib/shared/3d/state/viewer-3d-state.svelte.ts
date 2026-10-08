@@ -10,6 +10,10 @@
  */
 
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import {
+  isOpenedSequence,
+  refreshOpenedPerformers,
+} from "./refresh-opened-sequence";
 import { reducedMotion } from "$lib/shared/transitions/motion";
 // propInterpolator / sequenceConverter are now module-level functions; no type imports needed
 import type { CameraStateSnapshot } from "@austencloud/scene-3d";
@@ -1402,6 +1406,16 @@ function buildViewer3DState(
     return applied;
   }
 
+  /** Keep the opened score current without replacing a performer's own score. */
+  function refreshOpenedSequence(
+    previous: SequenceData,
+    next: SequenceData
+  ): void {
+    if (isOpenedSequence(_currentSequenceData, previous))
+      _currentSequenceData = next;
+    refreshOpenedPerformers(performerManager.performers, previous, next);
+  }
+
   function clearSequenceScoped(): boolean {
     return applyScopedPerformerEdit(
       "change-sequence",
@@ -2748,6 +2762,7 @@ function buildViewer3DState(
     serialize,
     applyPersistConfig,
     enter3D,
+    refreshOpenedSequence,
     exit3D,
     toggleEffect,
     updateCameraSnapshot,
