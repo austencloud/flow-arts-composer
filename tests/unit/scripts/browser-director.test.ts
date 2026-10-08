@@ -165,3 +165,70 @@ describe("createDirector shot", () => {
     expect(proof.snapshot).toBeNull();
   });
 });
+
+describe("createDirector pick", () => {
+  /** A page whose nth match sits at (300, 400) and takes the hover when `hovered`. */
+  function pickFakes(hovered: boolean) {
+    const made = fakes({ width: 432, height: 768 });
+    const asked: unknown[] = [];
+    made.page.evaluate = vi.fn(
+      async (fn: () => unknown, arg?: { hover?: boolean }) => {
+        if (!arg) return { width: 432, height: 768 };
+        asked.push(arg);
+        return arg.hover ? hovered : { x: 300, y: 400 };
+      }
+    );
+    return { ...made, asked };
+  }
+
+  it("clicks the nth on-screen match of a selector and logs it", async () => {
+    const { cdp, page, sent, asked } = pickFakes(true);
+    const director = createDirector(page, cdp, root);
+    await director.shot("pick", 0.05, async () => {
+      await director.pick('[data-letter="C"]', 3);
+    });
+    expect(asked).toEqual([
+      { selector: '[data-letter="C"]', index: 3 },
+      { selector: '[data-letter="C"]', index: 3, hover: true },
+    ]);
+    const mouse = sent
+      .filter(([method]) => method === "Input.dispatchMouseEvent")
+      .map(([, params]) => params);
+    const pressed = mouse.find((event) => event.type === "mousePressed");
+    expect(pressed).toMatchObject({ x: 300, y: 400, button: "left" });
+    const released = mouse.find((event) => event.type === "mouseReleased");
+    expect(released).toMatchObject({ x: 300, y: 400 });
+    const proof = JSON.parse(
+      await fs.readFile(
+        path.join(root, "production", "frames", "pick", "capture.json"),
+        "utf8"
+      )
+    );
+    expect(proof.events).toEqual([
+      expect.objectContaining({
+        label: '[data-letter="C"] #3',
+        action: "click",
+        hover: true,
+        x: 300,
+        y: 400,
+      }),
+    ]);
+  });
+
+  it("refuses to click when the page's own hover misses the target", async () => {
+    const { cdp, page, sent } = pickFakes(false);
+    const director = createDirector(page, cdp, root);
+    await expect(
+      director.shot("covered", 0.05, async () => {
+        await director.pick(".tile", 0);
+      })
+    ).rejects.toThrow("Native hover did not reach .tile #0");
+    expect(
+      sent.some(
+        ([method, params]) =>
+          method === "Input.dispatchMouseEvent" &&
+          params.type === "mousePressed"
+      )
+    ).toBe(false);
+  });
+});
