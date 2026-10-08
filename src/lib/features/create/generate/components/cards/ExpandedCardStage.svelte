@@ -30,8 +30,15 @@
 -->
 <script lang="ts">
   import { tick } from "svelte";
-  import { fade, scale } from "svelte/transition";
+  import {
+    fade,
+    scale,
+    type FadeParams,
+    type ScaleParams,
+    type TransitionConfig,
+  } from "svelte/transition";
   import { quintOut } from "svelte/easing";
+  import { innerHeight, innerWidth } from "svelte/reactivity/window";
   import { portal } from "../modals/portal";
   import { claimedViewTransitionName } from "$lib/shared/transitions/claimed-view-transition-name";
   import { reducedMotion } from "$lib/shared/transitions/motion";
@@ -70,8 +77,11 @@
   } = $props();
 
   const openCard = $derived(panelState.openGenerateCard);
-  let viewportHeight = $state(1000);
-  let viewportWidth = $state(1000);
+  // Read on demand: only an open card needs the viewport. A window binding
+  // read it as the stage mounted, forcing a layout of the half-built panel
+  // every time Generate came back.
+  const viewportHeight = $derived(innerHeight.current ?? 1000);
+  const viewportWidth = $derived(innerWidth.current ?? 1000);
   const destination = $derived(
     isDesktopLayout && !(openCard === "loop" && viewportHeight < 700)
       ? "stage"
@@ -120,6 +130,18 @@
       duration:
         lastGenerateCardMorphRan() || reducedMotion() ? 0 : DURATION.normal,
     };
+  }
+
+  // Svelte's scale and fade read the node's computed style before they start,
+  // even at zero duration. After a morph that read lands inside the view
+  // transition callback and lays out the panel it just mounted, so a
+  // motionless entrance or exit skips the transition outright.
+  function stageScale(node: Element, params: ScaleParams): TransitionConfig {
+    return params.duration === 0 ? { duration: 0 } : scale(node, params);
+  }
+
+  function backdropFade(node: Element, params: FadeParams): TransitionConfig {
+    return params.duration === 0 ? { duration: 0 } : fade(node, params);
   }
 
   // A pre-effect, not $effect: its teardown has to run before the {#if}
@@ -291,11 +313,6 @@
   }
 </script>
 
-<svelte:window
-  bind:innerHeight={viewportHeight}
-  bind:innerWidth={viewportWidth}
-/>
-
 {#snippet body(titleId: string)}
   {#if openCard === "customize" && customize}
     <CustomizeExpandedOverlay
@@ -373,7 +390,7 @@
         aria-hidden="true"
         onclick={() => close()}
         use:portal
-        transition:fade={backdropMotion()}
+        transition:backdropFade={backdropMotion()}
       ></div>
     {/if}
     {#if openCard}
@@ -391,7 +408,7 @@
         use:claimedViewTransitionName={{
           name: generateCardMorphName(openCard),
         }}
-        transition:scale={stageEntrance()}
+        transition:stageScale={stageEntrance()}
       >
         {@render body(expandedCardTitleId(openCard))}
       </div>
@@ -409,7 +426,7 @@
       use:claimedViewTransitionName={{
         name: generateCardMorphName(openCard),
       }}
-      transition:scale={stageEntrance()}
+      transition:stageScale={stageEntrance()}
     >
       {@render body(expandedCardTitleId(openCard))}
     </div>

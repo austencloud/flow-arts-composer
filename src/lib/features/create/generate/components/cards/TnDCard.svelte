@@ -62,7 +62,12 @@
 
   // Icon size tracks the card, like the LOOP card's strip: a fixed 16px is
   // punctuation on a 4K card and crowds the words on a phone.
-  let cardHeight = $state(0);
+  // Read from the resize observer rather than `bind:clientHeight`, which also
+  // reads the height synchronously as the card mounts and forces a layout of
+  // the whole half-built Generate panel. The observer reports before the first
+  // paint, and the button has no border, so its border box is its client box.
+  let cardBox = $state<readonly ResizeObserverSize[]>();
+  const cardHeight = $derived(Math.round(cardBox?.[0]?.blockSize ?? 0));
   const iconSize = $derived(
     Math.min(28, Math.max(14, Math.round(cardHeight * 0.2)))
   );
@@ -90,7 +95,7 @@
   <button
     class="tnd-card"
     class:active={display.active}
-    bind:clientHeight={cardHeight}
+    bind:borderBoxSize={cardBox}
     onclick={handleClick}
     onkeydown={handleKeydown}
     aria-label={ariaLabel}

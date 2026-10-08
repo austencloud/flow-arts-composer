@@ -347,16 +347,15 @@
       return;
     }
 
-    const updateHeight = () => {
-      buttonPanelHeight = buttonPanelElement?.offsetHeight ?? 0;
-    };
-
-    // Initial measurement
-    updateHeight();
-
-    // Use ResizeObserver to track size changes (responsive layouts, container queries)
-    const resizeObserver = new ResizeObserver(updateHeight);
-    resizeObserver.observe(buttonPanelElement);
+    // Take the height from the observer entry. Reading offsetHeight here
+    // forced a layout whenever an earlier observer callback had dirtied the
+    // page, as a remounting Generate panel does. The first entry arrives
+    // before the first paint, so no synchronous read is needed on mount.
+    const resizeObserver = new ResizeObserver((entries) => {
+      const box = entries.at(-1)?.borderBoxSize?.[0];
+      if (box) buttonPanelHeight = Math.round(box.blockSize);
+    });
+    resizeObserver.observe(buttonPanelElement, { box: "border-box" });
 
     return () => resizeObserver.disconnect();
   });
