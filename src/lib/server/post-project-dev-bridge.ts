@@ -77,7 +77,18 @@ export interface PostProjectRenderReport {
   bytes?: number;
 }
 
-const sessions = new Map<string, Session>();
+/**
+ * The open editors and their renders. Vite runs this module again when it or
+ * a file it imports changes, as a merge into main does under a running dev
+ * server. Keeping the map on globalThis keeps a render going across that.
+ */
+const bridgeGlobal = globalThis as typeof globalThis & {
+  __tkaPostProjectSessions?: Map<string, Session>;
+};
+const sessions = (bridgeGlobal.__tkaPostProjectSessions ??= new Map<
+  string,
+  Session
+>());
 const ACTIVE_MS = 10_000;
 const MAX_SESSIONS = 12;
 /** An editor starts a render on the heartbeat after it is queued. */

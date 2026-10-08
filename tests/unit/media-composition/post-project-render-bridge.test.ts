@@ -183,6 +183,20 @@ describe("a render job", () => {
       message: "The editor closed before the render finished.",
     });
   });
+
+  it("keeps its jobs when the dev server runs the bridge's module again", async () => {
+    const sessionId = openEditor();
+    const { renderId } = queuePostProjectRender({ sessionId });
+    // As Vite does when a change under a running dev server reaches the bridge.
+    vi.resetModules();
+    const reloaded = await import("$lib/server/post-project-dev-bridge");
+    expect(reloaded.postProjectRenderStatus(sessionId, renderId)).toMatchObject(
+      {
+        id: renderId,
+        state: "queued",
+      }
+    );
+  });
 });
 
 describe("readRenderReport", () => {
