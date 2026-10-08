@@ -828,9 +828,22 @@
       </div>
     </div>
 
-    <p class="small-screen-3d-note">
-      The 3D viewer needs WebGL2 and a screen at least 600px in both directions.
-    </p>
+    <!-- Small screens cannot run the viewer, so they get the poster the
+         portal card shows, plus the reason. -->
+    <figure class="small-screen-3d-poster">
+      <img
+        src={PORTAL_STILL}
+        alt="A still from the 3D viewer."
+        width="2400"
+        height="1090"
+        loading="lazy"
+        decoding="async"
+      />
+      <figcaption class="small-screen-3d-note">
+        The 3D viewer needs WebGL2 and a screen at least 600px in both
+        directions.
+      </figcaption>
+    </figure>
   </section>
 
   <section class="keeping" aria-labelledby="keeping-title" use:activateShelf>
@@ -1722,9 +1735,21 @@
     font-size: var(--font-size-min, 0.875rem);
   }
 
-  .small-screen-3d-note {
+  .small-screen-3d-poster {
     display: none;
-    margin: 1.4rem 0 0;
+    margin: 0;
+  }
+
+  .small-screen-3d-poster img {
+    display: block;
+    width: 100%;
+    height: auto;
+    border-radius: 1rem;
+    border: 1px solid var(--theme-stroke, oklch(0.45 0.03 270 / 0.2));
+  }
+
+  .small-screen-3d-note {
+    margin: 1rem 0 0;
     color: oklch(0.74 0.018 270);
     font-size: var(--font-size-min, 0.875rem);
     line-height: 1.55;
@@ -1849,7 +1874,7 @@
       display: none;
     }
 
-    .small-screen-3d-note {
+    .small-screen-3d-poster {
       display: block;
     }
   }
