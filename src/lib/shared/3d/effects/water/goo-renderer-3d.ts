@@ -5,13 +5,14 @@ import {
   DataTexture,
   DynamicDrawUsage,
   EquirectangularReflectionMapping,
+  FloatType,
   InstancedBufferAttribute,
   InstancedMesh,
   Mesh,
   MeshPhysicalMaterial,
   Object3D,
   RGBAFormat,
-  SRGBColorSpace,
+  LinearSRGBColorSpace,
   SphereGeometry,
   Vector3,
 } from "three";
@@ -23,6 +24,7 @@ import {
 const STRANDS = 64;
 const DROPS = 512;
 const RINGS = 25;
+const CAP_RINGS = 7;
 const SIDES = 12;
 const VERTICES = RINGS * SIDES;
 const TELEPORT_DISTANCE = 0.75;
@@ -47,6 +49,7 @@ interface Strand {
   edge: Color;
   highlight: Color;
   alpha: number;
+  metalness: number;
 }
 
 interface Drop {
@@ -60,6 +63,7 @@ interface Drop {
   color: Color;
   highlight: Color;
   alpha: number;
+  metalness: number;
 }
 
 // A tiny owned studio map gives the liquid broad reflections even in a dim
@@ -67,7 +71,7 @@ interface Drop {
 function createStudioMap(): DataTexture {
   const width = 128;
   const height = 64;
-  const pixels = new Uint8Array(width * height * 4);
+  const pixels = new Float32Array(width * height * 4);
   for (let y = 0; y < height; y++) {
     for (let x = 0; x < width; x++) {
       const u = x / width;
@@ -78,17 +82,17 @@ function createStudioMap(): DataTexture {
       const fill =
         Math.exp(-Math.pow((u - 0.7) / 0.11, 4)) *
         Math.exp(-Math.pow((v - 0.54) / 0.16, 4));
-      const light = Math.min(255, 11 + 235 * key + 105 * fill);
+      const light = 0.025 + 14 * key + 4 * fill;
       const offset = (y * width + x) * 4;
       pixels[offset] = light;
       pixels[offset + 1] = light;
       pixels[offset + 2] = light;
-      pixels[offset + 3] = 255;
+      pixels[offset + 3] = 1;
     }
   }
-  const texture = new DataTexture(pixels, width, height, RGBAFormat);
+  const texture = new DataTexture(pixels, width, height, RGBAFormat, FloatType);
   texture.mapping = EquirectangularReflectionMapping;
-  texture.colorSpace = SRGBColorSpace;
+  texture.colorSpace = LinearSRGBColorSpace;
   texture.needsUpdate = true;
   return texture;
 }
@@ -98,11 +102,11 @@ function createWetMaterial(envMap: DataTexture): MeshPhysicalMaterial {
     color: 0xffffff,
     vertexColors: true,
     roughness: 0.12,
-    metalness: 0.14,
+    metalness: 1,
     clearcoat: 1,
     clearcoatRoughness: 0.08,
     envMap,
-    envMapIntensity: 2.1,
+    envMapIntensity: 1.5,
     transparent: true,
     depthWrite: false,
     fog: true,
@@ -114,26 +118,35 @@ function createWetMaterial(envMap: DataTexture): MeshPhysicalMaterial {
         `#include <common>
          attribute vec3 aHighlight;
          attribute float aAlpha;
+         attribute float aMetalness;
          varying vec3 vGooHighlight;
-         varying float vGooAlpha;`
+         varying float vGooAlpha;
+         varying float vGooMetalness;`
       )
       .replace(
         "#include <begin_vertex>",
         `#include <begin_vertex>
          vGooHighlight = aHighlight;
-         vGooAlpha = aAlpha;`
+         vGooAlpha = aAlpha;
+         vGooMetalness = aMetalness;`
       );
     shader.fragmentShader = shader.fragmentShader
       .replace(
         "#include <common>",
         `#include <common>
          varying vec3 vGooHighlight;
-         varying float vGooAlpha;`
+         varying float vGooAlpha;
+         varying float vGooMetalness;`
       )
       .replace(
         "#include <color_fragment>",
         `#include <color_fragment>
          diffuseColor.a *= vGooAlpha;`
+      )
+      .replace(
+        "#include <metalnessmap_fragment>",
+        `#include <metalnessmap_fragment>
+         metalnessFactor *= vGooMetalness;`
       )
       .replace(
         "#include <opaque_fragment>",
@@ -150,6 +163,7 @@ function makeTubeGeometry(): BufferGeometry {
   const colors = new Float32Array(positions.length);
   const highlights = new Float32Array(positions.length);
   const alphas = new Float32Array(STRANDS * VERTICES);
+  const metalnesses = new Float32Array(STRANDS * VERTICES);
   const indices = new Uint16Array(STRANDS * (RINGS - 1) * SIDES * 6);
   let index = 0;
   for (let strand = 0; strand < STRANDS; strand++) {
@@ -187,6 +201,10 @@ function makeTubeGeometry(): BufferGeometry {
     new BufferAttribute(alphas, 1).setUsage(DynamicDrawUsage)
   );
   geometry.setAttribute(
+    "aMetalness",
+    new BufferAttribute(metalnesses, 1).setUsage(DynamicDrawUsage)
+  );
+  geometry.setAttribute(
     "normal",
     new BufferAttribute(new Float32Array(positions.length), 3).setUsage(
       DynamicDrawUsage
@@ -214,6 +232,7 @@ export class GooRenderer3D {
     edge: new Color(),
     highlight: new Color(),
     alpha: 1,
+    metalness: 0.08,
   }));
   private readonly drops: Drop[] = Array.from({ length: DROPS }, () => ({
     active: false,
@@ -226,6 +245,7 @@ export class GooRenderer3D {
     color: new Color(),
     highlight: new Color(),
     alpha: 1,
+    metalness: 0.08,
   }));
   private readonly tubeGeometry = makeTubeGeometry();
   private readonly studioMap = createStudioMap();
@@ -237,6 +257,10 @@ export class GooRenderer3D {
     3
   ).setUsage(DynamicDrawUsage);
   private readonly dropAlphas = new InstancedBufferAttribute(
+    new Float32Array(DROPS),
+    1
+  ).setUsage(DynamicDrawUsage);
+  private readonly dropMetalnesses = new InstancedBufferAttribute(
     new Float32Array(DROPS),
     1
   ).setUsage(DynamicDrawUsage);
@@ -271,6 +295,7 @@ export class GooRenderer3D {
     this.sphereGeometry.setAttribute("color", new BufferAttribute(colors, 3));
     this.sphereGeometry.setAttribute("aHighlight", this.dropHighlights);
     this.sphereGeometry.setAttribute("aAlpha", this.dropAlphas);
+    this.sphereGeometry.setAttribute("aMetalness", this.dropMetalnesses);
     this.tubeMesh.frustumCulled = false;
     this.dropMesh.frustumCulled = false;
     this.dropMesh.instanceMatrix.setUsage(DynamicDrawUsage);
@@ -375,6 +400,7 @@ export class GooRenderer3D {
           p.worldGravity * 0.35,
           p.resolvedPalette.edge,
           p.resolvedPalette.highlight,
+          p.palette === "mercury" ? 0.88 : 0.08,
           0.94 - p.clarity * 0.12,
           0.34
         );
@@ -415,6 +441,7 @@ export class GooRenderer3D {
     strand.core.set(p.resolvedPalette.core);
     strand.edge.set(p.resolvedPalette.edge);
     strand.highlight.set(p.resolvedPalette.highlight);
+    strand.metalness = p.palette === "mercury" ? 0.88 : 0.08;
     strand.alpha = 0.98 - p.clarity * 0.05;
     return true;
   }
@@ -459,6 +486,7 @@ export class GooRenderer3D {
             strand.gravity,
             strand.edge,
             strand.highlight,
+            strand.metalness,
             strand.alpha,
             0.28
           );
@@ -479,6 +507,7 @@ export class GooRenderer3D {
     gravity: number,
     color: string | Color,
     highlight: string | Color,
+    metalness: number,
     alpha: number,
     maxAge: number
   ): void {
@@ -494,6 +523,7 @@ export class GooRenderer3D {
     drop.velocity.set(velocity.x, velocity.y, velocity.z);
     drop.color.set(color);
     drop.highlight.set(highlight);
+    drop.metalness = metalness;
     drop.alpha = alpha;
   }
 
@@ -526,6 +556,9 @@ export class GooRenderer3D {
     ).array as Float32Array;
     const alphas = (this.tubeGeometry.getAttribute("aAlpha") as BufferAttribute)
       .array as Float32Array;
+    const metalnesses = (
+      this.tubeGeometry.getAttribute("aMetalness") as BufferAttribute
+    ).array as Float32Array;
     for (let index = 0; index < STRANDS; index++) {
       const strand = this.strands[index]!;
       const base = index * VERTICES * 3;
@@ -550,8 +583,14 @@ export class GooRenderer3D {
         strand.releaseAge < 0
           ? 1
           : Math.max(0.06, 1 - strand.releaseAge / 0.14);
+      const shaftEnd = RINGS - CAP_RINGS - 1;
       for (let ring = 0; ring < RINGS; ring++) {
-        const t = ring / (RINGS - 1);
+        // Reserve seven intervals for the hemisphere regardless of strand
+        // length, so a long strand cannot turn its rounded tip into a cone.
+        const t =
+          ring <= shaftEnd
+            ? (capStart * ring) / shaftEnd
+            : capStart + (capArc * (ring - shaftEnd)) / CAP_RINGS;
         const oneMinusT = 1 - t;
         this.center
           .copy(strand.tail)
@@ -620,6 +659,8 @@ export class GooRenderer3D {
           highlights[offset + 1] = strand.highlight.g;
           highlights[offset + 2] = strand.highlight.b;
           alphas[index * VERTICES + ring * SIDES + side] = strand.alpha;
+          metalnesses[index * VERTICES + ring * SIDES + side] =
+            strand.metalness;
         }
       }
     }
@@ -627,6 +668,7 @@ export class GooRenderer3D {
     this.tubeGeometry.getAttribute("color").needsUpdate = true;
     this.tubeGeometry.getAttribute("aHighlight").needsUpdate = true;
     this.tubeGeometry.getAttribute("aAlpha").needsUpdate = true;
+    this.tubeGeometry.getAttribute("aMetalness").needsUpdate = true;
     this.tubeGeometry.computeVertexNormals();
   }
 
@@ -661,6 +703,7 @@ export class GooRenderer3D {
         drop.highlight.b
       );
       this.dropAlphas.setX(count, drop.alpha);
+      this.dropMetalnesses.setX(count, drop.metalness);
       count++;
     }
     this.dropMesh.count = count;
@@ -671,6 +714,7 @@ export class GooRenderer3D {
         this.dropMesh.instanceColor.needsUpdate = true;
       this.dropHighlights.needsUpdate = true;
       this.dropAlphas.needsUpdate = true;
+      this.dropMetalnesses.needsUpdate = true;
     }
   }
 
