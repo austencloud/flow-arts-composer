@@ -1,7 +1,8 @@
 // The preset matrix split into cool and warm hues, and the random pair the
 // prop color editor rolls: a cool color for the left hand and a warm one for
 // the right, drawn from anywhere in those hue ranges at any lightness and
-// saturation the theme can show, not only from the swatches.
+// saturation the theme can show, not only from the swatches. Now and then one
+// hand is white, black or a grey instead.
 import {
   DARK_SURFACE_ANCHOR,
   contrastRatio,
@@ -62,10 +63,17 @@ const MIN_PROP_CONTRAST = 3;
 const LIGHT_SURFACE = "#ffffff";
 // Each hand may sit this far above or below the pair's shared lightness.
 const LIGHTNESS_SPREAD = 0.04;
-// A pair shares one saturation, as a fraction of the most chroma each hue can
-// show at its lightness: 1 is vivid, the floor is soft. Below about half,
-// colors turn muddy.
+// Each hand's saturation, as a fraction of the most chroma its hue can show at
+// its lightness: 1 is vivid, the floor is soft. Below about half, colors turn
+// muddy.
 const MIN_SATURATION = 0.5;
+// About one roll in six trades a hand's color for a neutral swatch that reads
+// on the page: white or a light grey on dark, black or a dark grey on light.
+const NEUTRAL_CHANCE = 1 / 6;
+const READABLE_NEUTRALS = {
+  dark: readableNeutrals(DARK_SURFACE_ANCHOR),
+  light: readableNeutrals(LIGHT_SURFACE),
+};
 // A quarter turn keeps neighbours such as green and yellow, which barely read
 // as cool against warm, out of one pair.
 const MIN_HUE_GAP = 90;
@@ -81,6 +89,14 @@ export interface CoolWarmPair {
 
 function between(min: number, max: number, unit: number): number {
   return min + unit * (max - min);
+}
+
+function readableNeutrals(surface: string): readonly string[] {
+  return COLOR_PRESETS.filter(
+    (preset) =>
+      preset.row === "neutral" &&
+      contrastRatio(preset.hex, surface) >= MIN_PROP_CONTRAST
+  ).map((preset) => preset.hex);
 }
 
 /** Steps lightness away from the surface until the color clears the floor. */
@@ -106,8 +122,9 @@ function drawPair(darkMode: boolean, random: () => number): CoolWarmPair {
     lightness: band,
   } = darkMode ? DICE_RANGES.dark : DICE_RANGES.light;
   const lightness = between(band.min, band.max, random());
-  // The square root leans toward vivid: about one roll in four is soft.
-  const saturation = between(MIN_SATURATION, 1, Math.sqrt(random()));
+  // Each hand draws its own; the square root leans toward vivid, so about one
+  // hand in four is soft.
+  const saturation = () => between(MIN_SATURATION, 1, Math.sqrt(random()));
   const coolHue = between(cool.from, cool.to, random());
   // The part of the warm arc at least a quarter turn from the cool hue either
   // way round; it is never empty, because the arcs face each other.
@@ -119,15 +136,21 @@ function drawPair(darkMode: boolean, random: () => number): CoolWarmPair {
     ) % 360;
   const handLightness = () =>
     lightness + between(-LIGHTNESS_SPREAD, LIGHTNESS_SPREAD, random());
-  return {
-    left: readableHex(handLightness(), saturation, coolHue, darkMode),
-    right: readableHex(handLightness(), saturation, warmHue, darkMode),
+  const pair = {
+    left: readableHex(handLightness(), saturation(), coolHue, darkMode),
+    right: readableHex(handLightness(), saturation(), warmHue, darkMode),
   };
+  if (random() >= NEUTRAL_CHANCE) return pair;
+  const neutrals = darkMode ? READABLE_NEUTRALS.dark : READABLE_NEUTRALS.light;
+  const neutral = neutrals[Math.floor(random() * neutrals.length)]!;
+  return random() < 0.5
+    ? { ...pair, left: neutral }
+    : { ...pair, right: neutral };
 }
 
 /**
  * A random readable pair, cool on the left and warm on the right, in which
- * both hands visibly change.
+ * both hands visibly change. Sometimes one hand is a neutral instead.
  */
 export function randomCoolWarmPair(
   current: CoolWarmPair | null | undefined,
