@@ -105,7 +105,6 @@ export class FrameSystem {
         settingsService: this.deps.lifecycleManager.settingsService,
         effectRendererManager: buildDeps.effectRendererManager,
         getVM: buildDeps.getVM,
-        orchestrator: this.deps.lifecycleManager.orchestrator,
       }
     );
 
