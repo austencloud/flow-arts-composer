@@ -32,6 +32,20 @@ export const WARM_PRESETS = huePresets(WARM_HUE_COLUMNS);
 const MIN_PROP_CONTRAST = 3;
 // Pictograph cells stay white in light mode.
 const LIGHT_SURFACE = "#ffffff";
+// The columns sit 30 degrees apart in OKLCH. Three columns keeps the hands a
+// quarter turn apart, so a roll never lands on neighbours such as green and
+// yellow that barely read as cool against warm.
+const MIN_HUE_STEPS = 3;
+
+function hueColumn(preset: ColorPreset): number {
+  return COLOR_PRESETS.indexOf(preset) % COLOR_PRESET_COLUMNS;
+}
+
+/** Columns between two hues the short way round the wheel. */
+export function hueSteps(a: ColorPreset, b: ColorPreset): number {
+  const gap = Math.abs(hueColumn(a) - hueColumn(b));
+  return Math.min(gap, COLOR_PRESET_COLUMNS - gap);
+}
 
 export interface CoolWarmPair {
   left: string;
@@ -41,7 +55,8 @@ export interface CoolWarmPair {
 /**
  * Every cool-left, warm-right pair that reads on the theme. Both colors come
  * from one row, so a pair is light with light or deep with deep and the two
- * hands carry the same weight.
+ * hands carry the same weight, and their hues sit at least a quarter turn
+ * apart.
  */
 export function coolWarmPairs(darkMode: boolean): CoolWarmPair[] {
   const surface = darkMode ? DARK_SURFACE_ANCHOR : LIGHT_SURFACE;
@@ -51,7 +66,9 @@ export function coolWarmPairs(darkMode: boolean): CoolWarmPair[] {
     const cools = COOL_PRESETS.filter((p) => p.row === row && readable(p));
     const warms = WARM_PRESETS.filter((p) => p.row === row && readable(p));
     return cools.flatMap((cool) =>
-      warms.map((warm) => ({ left: cool.hex, right: warm.hex }))
+      warms
+        .filter((warm) => hueSteps(cool, warm) >= MIN_HUE_STEPS)
+        .map((warm) => ({ left: cool.hex, right: warm.hex }))
     );
   });
 }
