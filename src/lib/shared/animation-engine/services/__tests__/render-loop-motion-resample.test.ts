@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { AnimationRenderLoop } from "../animation-render-loop";
 import type {
   RenderFrameParams,
@@ -12,6 +12,7 @@ import type {
   TrailOverlayRenderParams,
 } from "../ITrailOverlayCanvas";
 import type { MotionSampleSource } from "../motion-sub-sampler";
+import type { RenderActivityGate } from "$lib/shared/render-gating/render-activity-gate";
 import type { PropState } from "$lib/shared/foundation/domain/types/prop-state";
 import { DEFAULT_TRAIL_SETTINGS } from "../../domain/types/trail-types";
 
@@ -113,6 +114,42 @@ interface LoopInternals {
   render(p: RenderFrameParams, t: number, dt?: number): void;
   renderSync(p: RenderFrameParams, t: number, dt: number): void;
   getDiagnostics(): Record<string, unknown>;
+  start(getFrameParams: () => RenderFrameParams): void;
+  stop(): void;
+  setActivityGate(gate: RenderActivityGate | null): void;
+}
+
+/** A gate the test flips by hand, the way a tab hide/show would. */
+function fakeGate(): RenderActivityGate & { set(active: boolean): void } {
+  let listener: ((active: boolean) => void) | null = null;
+  const gate = {
+    active: true,
+    attach() {},
+    detach() {},
+    subscribe(l: (active: boolean) => void) {
+      listener = l;
+      return () => {
+        listener = null;
+      };
+    },
+    hold() {},
+    release() {},
+    snapshot() {
+      return {
+        active: gate.active,
+        intersecting: gate.active,
+        documentVisible: gate.active,
+        holds: [],
+        attached: true,
+      };
+    },
+    dispose() {},
+    set(active: boolean) {
+      gate.active = active;
+      listener?.(active);
+    },
+  };
+  return gate;
 }
 
 function createLoop(trails: FakeTrailOverlay): LoopInternals {
@@ -139,6 +176,10 @@ function lastSamples(trails: FakeTrailOverlay) {
 }
 
 describe("AnimationRenderLoop motion resampling", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
   it("passes sub-samples to the trail overlay on a slow live frame", () => {
     const trails = new FakeTrailOverlay();
     const loop = createLoop(trails);
@@ -178,6 +219,42 @@ describe("AnimationRenderLoop motion resampling", () => {
     expect(diag.guardRejections).toBe(1);
 
     loop.renderSync(params(3.1), 1300, 0.1);
+    expect(lastSamples(trails).length).toBe(0);
+  });
+
+  it("fills the step jump after the activity gate reset the frame clock", () => {
+    // A hidden tab (or an off-screen canvas) parks the rAF loop and drops its
+    // wall-clock anchors, while the playback loop keeps advancing the step.
+    // The first frame back therefore has no frame gap but a large step jump;
+    // it must still be filled, or the trail draws one straight chord.
+    vi.stubGlobal("requestAnimationFrame", () => 1);
+    vi.stubGlobal("cancelAnimationFrame", () => {});
+    const trails = new FakeTrailOverlay();
+    const loop = createLoop(trails);
+    loop.start(() => params(1));
+    loop.render(params(1), 1000);
+    loop.render(params(1.1), 1016);
+
+    const gate = fakeGate();
+    loop.setActivityGate(gate);
+    gate.set(false);
+    gate.set(true);
+
+    loop.render(params(1.7), 1500);
+    const samples = lastSamples(trails);
+    // 0.6 beats at 60 BPM is 36 slices: 35 poses between the two frames.
+    expect(samples.length).toBe(35);
+    expect(samples[0]!.left.centerPathAngle).toBeCloseTo(1.1 + 0.6 / 36, 6);
+    expect(samples[34]!.left.centerPathAngle).toBeCloseTo(1.7 - 0.6 / 36, 6);
+    expect(samples[34]!.timeMs).toBe(1500);
+  });
+
+  it("draws no instant trail on the first frame of a run", () => {
+    // Nothing was drawn before this frame, so there is no path to fill in:
+    // a play started mid-sequence must not conjure the trail up to there.
+    const trails = new FakeTrailOverlay();
+    const loop = createLoop(trails);
+    loop.render(params(2.5), 1000);
     expect(lastSamples(trails).length).toBe(0);
   });
 

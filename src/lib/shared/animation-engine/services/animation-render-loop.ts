@@ -312,6 +312,9 @@ export class AnimationRenderLoop {
   // Loop detection for cache-based trail gathering and fire frame cache
   // Tracks when the animation loops to prevent trail artifacts
   private previousStep: number = 0;
+  /** True once a frame has drawn `previousStep` in this run (cleared by
+   *  stop()), so a frame with no clock can still fill the path from it. */
+  private previousStepDrawn = false;
   private loopOccurredAtStep: number | null = null;
   /** True on the frame where a loop was detected. Reset each frame. */
   private loopDetectedThisFrame: boolean = false;
@@ -539,6 +542,7 @@ export class AnimationRenderLoop {
    * Drop every wall-clock anchor so the next frame derives its own delta from
    * scratch. `lastFrameTime = 0` makes dtSeconds fall back to 1/60 instead of
    * the full paused span; the trail and loop anchors re-seed the same way.
+   * The motion sampler sizes that first frame by the beats covered instead.
    */
   private resetFrameClocks(): void {
     this.lastFrameTime = 0;
@@ -566,6 +570,7 @@ export class AnimationRenderLoop {
     this.getFrameParamsCallback = null;
     // Reset loop tracking on stop
     this.previousStep = 0;
+    this.previousStepDrawn = false;
     this.loopOccurredAtStep = null;
     this.hasLoopedAtLeastOnce = false;
     this.loopStartTime = 0;
@@ -1476,6 +1481,7 @@ export class AnimationRenderLoop {
     } = params;
 
     const previousStep = this.previousStep;
+    const previousStepDrawn = this.previousStepDrawn;
     const stepChangedWhilePaused = !isPlaying && currentStep !== previousStep;
 
     // Tail length is authored as "visible ring points at ~60fps render rate."
@@ -1530,7 +1536,11 @@ export class AnimationRenderLoop {
 
     // Slow live frames are filled with the poses the props passed through.
     // Only the free-running loop plans them: the export driver renders its
-    // own sub-steps per beat and passes an explicit dt.
+    // own sub-steps per beat and passes an explicit dt. The first frame back
+    // from an activity gate (hidden tab, off-screen canvas) has no frame gap
+    // because the clocks were reset, while playback kept moving the step; it
+    // hands the sampler dt 0 so the plan is sized by the beats covered. A
+    // run's very first frame has nothing drawn before it and gets no samples.
     const resampleEnabled =
       typeof window === "undefined" ||
       (window as { __TKA_MOTION_RESAMPLE?: boolean }).__TKA_MOTION_RESAMPLE !==
@@ -1540,12 +1550,12 @@ export class AnimationRenderLoop {
       isPlaying &&
       resampleEnabled &&
       params.motionSampleSource &&
-      rafGap > 0
+      (rafGap > 0 || previousStepDrawn)
         ? this.motionSubSampler.plan({
             source: params.motionSampleSource,
             previousStep,
             currentStep,
-            dtSeconds,
+            dtSeconds: rafGap > 0 ? dtSeconds : 0,
             isSeamlesslyLoopable: params.isSeamlesslyLoopable ?? false,
             loopDetected: this.loopDetectedThisFrame,
             liveLeft: props.leftProp,
@@ -2521,6 +2531,7 @@ export class AnimationRenderLoop {
       }
     }
     this.previousStep = currentStep;
+    this.previousStepDrawn = true;
 
     // Use cache for perfect gap-free trails (if available and valid)
     const usingCache =
