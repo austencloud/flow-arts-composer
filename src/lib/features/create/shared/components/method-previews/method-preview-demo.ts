@@ -15,6 +15,7 @@ export const DEMO_SEQUENCE = demoJson as unknown as SequenceData;
  * Where each scene's steps start in the demo sequence, so cards resting side
  * by side never show the same pictograph. Construct takes the opening, Fuse
  * the two steps after Construct's, and Generate starts a half turn on.
+ * Construct's 0 is fixed: ConstructScene always shows the sequence's opening.
  */
 export const DEMO_STEP_START = Object.freeze({
   construct: 0,

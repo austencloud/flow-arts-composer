@@ -35,12 +35,19 @@ describe("method preview demo data", () => {
       DEMO_STEP_START.fuse,
       fuseLayout("strip", 146, 48)!.combined.length
     );
-    // Generate fills the most cells its roomiest layout draws.
+    // Generate fills the most cells any of its layouts draws: a strip wide
+    // enough for its most slots, and the square's 3x3 grid.
     const generate = range(
       DEMO_STEP_START.generate,
       Math.max(
-        ...(["strip", "roomy", "square"] as const).map(
-          (shape) => generateLayout(shape, 400, 400)?.cells.length ?? 0
+        ...(
+          [
+            ["strip", 2000, 48],
+            ["square", 400, 400],
+          ] as const
+        ).map(
+          ([shape, width, height]) =>
+            generateLayout(shape, width, height)?.cells.length ?? 0
         )
       )
     );

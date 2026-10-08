@@ -32,7 +32,7 @@ export const FUSE_PREVIEW_TIMING = Object.freeze({
 /**
  * `count` steps from index `from`, each at the start of its travel, through
  * Fuse's own motion seam: the step, the pose its props leave from (the
- * previous step's end, or the start position for the first step), and the
+ * previous step's end, or the start position for step 0), and the
  * progress Fuse's cards play on.
  */
 export function fuseFrames(
