@@ -43,6 +43,12 @@ vi.mock(
     }),
   })
 );
+// Setting changes import the analytics logger without awaiting it; left real,
+// posthog-js can still be loading when the worker closes ("Closing rpc while
+// fetch was pending" failed CI on 2026-10-08 with every test green).
+vi.mock("$lib/shared/analytics/services/posthog-activity-logger", () => ({
+  logSettingChange: vi.fn(async () => {}),
+}));
 vi.mock("$lib/shared/utils/debug-logger", () => ({
   createComponentLogger: () => ({
     info: () => {},
