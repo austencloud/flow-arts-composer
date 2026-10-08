@@ -7,6 +7,7 @@ import { GRID_RADIUS_3D } from "../domain/constants/plane-transforms";
 import { getViewerFrontStageCameraZ } from "../domain/viewer-formation-facing";
 import { getBlossomOpeningCamera } from "../environments/scenes/cherry-blossom/blossom-site";
 import { gridJoinOffset3D } from "../services/grid-join-3d";
+import { CANONICAL_PERFORMER_ANCHOR_Y } from "../environments/domain/stage-coordinate-frame";
 import {
   DEFAULT_PERFORMER_HAND_DISTANCE,
   fixedHandDistance,
@@ -19,6 +20,30 @@ const GRID_CENTER_Z = 0.3;
 export interface ViewerCameraFraming {
   position: { x: number; y: number; z: number };
   target: { x: number; y: number; z: number };
+}
+
+/** Level a joined opening at the rig's grid center without losing the elevated shot's fit distance. */
+export function levelJoinedViewerOpeningShot(
+  shot: {
+    eye: { x: number; y: number; z: number };
+    target: { x: number; y: number; z: number };
+  },
+  stageGroundOffset: number,
+  environmentId: SceneEnvironmentId
+): ViewerCameraFraming {
+  const distance = Math.hypot(
+    shot.eye.x - shot.target.x,
+    shot.eye.y - stageGroundOffset,
+    shot.eye.z - shot.target.z
+  );
+  return {
+    position: {
+      x: shot.target.x,
+      y: stageGroundOffset,
+      z: getViewerFrontStageCameraZ(shot.target.z, distance, environmentId),
+    },
+    target: { x: shot.target.x, y: stageGroundOffset, z: shot.target.z },
+  };
 }
 
 export interface ViewerCameraFramingOptions {
@@ -146,7 +171,14 @@ export function computeViewerAlignedCamera(
           options.conjoined
         )
       : (options.handDistance ?? GRID_RADIUS_3D);
-  const target = { x: centerX, y: GRID_CENTER_Y, z: GRID_CENTER_Z + centerZ };
+  const hasJoinedGrid =
+    Boolean(options.conjoined) ||
+    Boolean(performers?.some((performer) => performer.conjoined));
+  const target = {
+    x: centerX,
+    y: hasJoinedGrid ? CANONICAL_PERFORMER_ANCHOR_Y : GRID_CENTER_Y,
+    z: GRID_CENTER_Z + centerZ,
+  };
   const ownerDocument =
     options.document === undefined
       ? typeof document === "undefined"
@@ -168,7 +200,7 @@ export function computeViewerAlignedCamera(
   let fallback = {
     position: {
       x: centerX,
-      y: 0,
+      y: target.y,
       z: getViewerFrontStageCameraZ(
         target.z,
         fallbackDistance,
@@ -192,6 +224,9 @@ export function computeViewerAlignedCamera(
     const [tx, ty, tz] = camera.target;
     fallback = { position: { x, y, z }, target: { x: tx, y: ty, z: tz } };
   }
+  // The neighboring 2D card scales a single grid. Its pixel diameter cannot
+  // size the joined outer rings, so retain the 3D FOV fit for those scores.
+  if (hasJoinedGrid) return fallback;
   if (!ownerDocument) return fallback;
 
   let canvas2D: HTMLCanvasElement | null = null;

@@ -43,6 +43,8 @@ export interface PerformerShotSubject {
   position: { x: number; z: number };
   loadedSequence?: SequenceData | null;
   handDistance?: PerformerHandDistance;
+  /** Actual outer ring adds half the performer's staff length to hand reach. */
+  staffHalfLength?: number;
 }
 
 /**
@@ -71,13 +73,17 @@ export function computeGroupBounds(
   for (const p of performers) {
     const d = Math.hypot(p.position.x - center.x, p.position.z - center.z);
     const join = resolveGridJoin3D(p.loadedSequence);
-    const extent = join
-      ? PER_PERFORMER_EXTENT +
-        joinedPerformerExtent(
+    const joinedReach = join
+      ? joinedPerformerExtent(
           p.handDistance ?? DEFAULT_PERFORMER_HAND_DISTANCE,
           join
-        ) -
-        defaultReach
+        )
+      : 0;
+    const extent = join
+      ? Math.max(
+          PER_PERFORMER_EXTENT + joinedReach - defaultReach,
+          joinedReach + (p.staffHalfLength ?? 0)
+        )
       : PER_PERFORMER_EXTENT;
     maxDist = Math.max(maxDist, d + extent);
   }
