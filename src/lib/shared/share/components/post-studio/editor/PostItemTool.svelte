@@ -15,8 +15,10 @@
     POST_MIN_ITEM_SECONDS,
     POST_MIN_SPEED,
     POST_MIN_ZOOM,
+    POST_QR_URL_RULE,
     POST_TIME_EPSILON,
     findItem,
+    isPostCardQrUrl,
     itemEnd,
     mainItemAt,
     textBox,
@@ -140,6 +142,8 @@
     sequenceBusy?: boolean;
     /** The animation's opening tunnel is what is selected, with a look of its own. */
     tunnel?: boolean;
+    /** A feature video's editor: a card can carry the link its QR shows. */
+    featureMode?: boolean;
   }
 
   let {
@@ -157,6 +161,7 @@
     stepCount = 0,
     sequenceBusy = false,
     tunnel = false,
+    featureMode = false,
   }: Props = $props();
   let grading = $state(false);
   let gradeError = $state("");
@@ -203,6 +208,29 @@
   function patchItem(patch: PostItemPatch): void {
     if (locked) return;
     editor.edit((project, ctx) => updateItem(project, item.id, patch, ctx));
+  }
+
+  /** The card whose typed link broke the rule, so its field says why. */
+  let cardLinkErrorFor = $state<string | null>(null);
+
+  function changeCardLink(value: string): void {
+    if (item.kind !== "card") return;
+    const link = value.trim();
+    if (!link) {
+      cardLinkErrorFor = null;
+      patchItem({ qrUrl: null });
+      return;
+    }
+    if (!isPostCardQrUrl(link)) {
+      cardLinkErrorFor = item.id;
+      return;
+    }
+    cardLinkErrorFor = null;
+    // The link shows only in the QR cell, so setting one picks that cell.
+    patchItem({
+      qrUrl: link,
+      cardAppearance: { ...item.cardAppearance, infoCellChoice: "qr" },
+    });
   }
 
   async function autoAdjustColor(): Promise<void> {
@@ -1416,6 +1444,30 @@
       {locked}
       onchange={(value) => patchItem({ cardAppearance: value })}
     />
+    {#if featureMode}
+      <!-- Keyed so text typed for one card never shows on the next. -->
+      {#key item.id}
+        <div class="card-link">
+          <span class="readout-name">Scan link</span>
+          <input
+            class="field"
+            type="url"
+            value={item.qrUrl ?? ""}
+            placeholder="https://tka.run/..."
+            aria-label="Scan link"
+            disabled={locked}
+            onchange={(event) => changeCardLink(event.currentTarget.value)}
+          />
+          {#if cardLinkErrorFor === item.id}
+            <p class="link-error" role="alert">{POST_QR_URL_RULE}</p>
+          {:else}
+            <p class="hint">
+              The card's QR opens this link for anyone who scans it.
+            </p>
+          {/if}
+        </div>
+      {/key}
+    {/if}
   {:else if tool === "appearance" && item.kind === "image"}
     <div class="qr-appearance">
       <strong>QR code</strong>
@@ -1555,7 +1607,8 @@
     min-height: 0;
   }
 
-  .hook-titles {
+  .hook-titles,
+  .card-link {
     display: grid;
     gap: 0.5rem;
     min-width: 0;
@@ -1684,5 +1737,12 @@
 
   .field:disabled {
     opacity: 0.5;
+  }
+
+  .link-error {
+    margin: 0;
+    color: var(--semantic-error, #f87171);
+    font-size: 0.875rem;
+    line-height: 1.4;
   }
 </style>

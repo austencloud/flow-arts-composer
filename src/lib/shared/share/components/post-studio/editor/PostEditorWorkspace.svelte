@@ -2708,6 +2708,7 @@
       {cardRenderOptions}
       stepCount={displaySequence.steps?.length ?? 0}
       sequenceBusy={labeledCard.pending}
+      featureMode={!!featureVideo}
     />
   {/if}
 {/snippet}
