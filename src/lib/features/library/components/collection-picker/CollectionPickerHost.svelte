@@ -9,17 +9,22 @@ when you untick the collection you're currently browsing).
 -->
 <script lang="ts">
   import { collectionPickerState } from "$lib/features/library/state/collection-picker-state.svelte";
-  import CollectionPickerSheet from "./CollectionPickerSheet.svelte";
+  import LazyMount from "$lib/shared/components/LazyMount.svelte";
 </script>
 
 {#if collectionPickerState.sequenceIds.length > 0}
-  <CollectionPickerSheet
-    isOpen={collectionPickerState.isOpen}
-    sequenceIds={collectionPickerState.sequenceIds}
-    isBulk={collectionPickerState.isBulk}
-    sequenceLabel={collectionPickerState.sequenceLabel}
-    currentCollectionId={collectionPickerState.currentCollectionId}
-    onClose={() => collectionPickerState.close()}
-    onBulkComplete={() => collectionPickerState.completeBulk()}
+  <LazyMount
+    loader={() => import("./CollectionPickerSheet.svelte")}
+    active={true}
+    debugName="collection picker"
+    props={{
+      isOpen: collectionPickerState.isOpen,
+      sequenceIds: collectionPickerState.sequenceIds,
+      isBulk: collectionPickerState.isBulk,
+      sequenceLabel: collectionPickerState.sequenceLabel,
+      currentCollectionId: collectionPickerState.currentCollectionId,
+      onClose: () => collectionPickerState.close(),
+      onBulkComplete: () => collectionPickerState.completeBulk(),
+    }}
   />
 {/if}
