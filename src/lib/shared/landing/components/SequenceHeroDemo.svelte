@@ -662,6 +662,10 @@
     justify-content: center;
     gap: 0.65rem;
     margin-top: 1rem;
+    /* The host's controls read this row's width (ComposerBackgroundCycle
+       shortens its chip in a narrow row) so the toolbar stays one line at
+       every hero width. */
+    container: hero-toolbar / inline-size;
   }
   .with-notation-strip .reroll-row,
   .with-notation-strip .toolbar-row {
