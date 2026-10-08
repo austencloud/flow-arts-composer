@@ -155,7 +155,12 @@ icons when enabled. Click opens the expanded overlay.
 
   // Icon size tracks the card. A literal 16px reads as punctuation on a native
   // 4K card, and overwhelms the label on a phone.
-  let cardHeight = $state(0);
+  // Read from the resize observer rather than `bind:clientHeight`, which also
+  // reads the height synchronously as the card mounts and forces a layout of
+  // the whole half-built Generate panel. The observer reports before the first
+  // paint, and the button has no border, so its border box is its client box.
+  let cardBox = $state<readonly ResizeObserverSize[]>();
+  const cardHeight = $derived(Math.round(cardBox?.[0]?.blockSize ?? 0));
   const iconSize = $derived(
     Math.min(24, Math.max(12, Math.round(cardHeight * 0.15)))
   );
@@ -209,7 +214,7 @@ icons when enabled. Click opens the expanded overlay.
   <button
     class="loop-consolidated-card"
     class:enabled={loopEnabled}
-    bind:clientHeight={cardHeight}
+    bind:borderBoxSize={cardBox}
     onclick={handleClick}
     onkeydown={handleKeydown}
     aria-label={t("create_deep_loop_card_aria", {
