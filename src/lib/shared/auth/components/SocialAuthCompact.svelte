@@ -12,6 +12,8 @@
   import FacebookIcon from "./icons/FacebookIcon.svelte";
   import GoogleIcon from "./icons/GoogleIcon.svelte";
   import ProgressRing from "$lib/shared/components/loading/ProgressRing.svelte";
+  import Crossfade from "$lib/shared/components/Crossfade.svelte";
+  import { growFade } from "$lib/shared/transitions/motion";
   import { browser } from "$app/environment";
   import { configureAuthPersistence, getAuthInstance } from "../firebase";
   import {
@@ -287,13 +289,15 @@
       {#if lastMethod === "google"}
         <LastUsedBadge />
       {/if}
-      {#if loadingProvider === "google"}
-        <ProgressRing percent={-1} size={24} strokeWidth={2} />
-        {t("auth_signing_in")}
-      {:else}
-        <GoogleIcon />
-        {t("auth_continue_google")}
-      {/if}
+      <Crossfade key={loadingProvider === "google"}>
+        {#if loadingProvider === "google"}
+          <ProgressRing percent={-1} size={24} strokeWidth={2} />
+          {t("auth_signing_in")}
+        {:else}
+          <GoogleIcon />
+          {t("auth_continue_google")}
+        {/if}
+      </Crossfade>
     </button>
     {#if showFacebook}
       <button
@@ -324,23 +328,31 @@
         {#if lastMethod === "instagram"}
           <LastUsedBadge />
         {/if}
-        {#if loadingProvider === "instagram"}
-          <ProgressRing percent={-1} size={24} strokeWidth={2} />
-          {t("auth_opening")}
-        {:else}
-          <i class="fab fa-instagram" aria-hidden="true"></i>
-          {t("auth_continue_instagram")}
-        {/if}
+        <Crossfade key={loadingProvider === "instagram"}>
+          {#if loadingProvider === "instagram"}
+            <ProgressRing percent={-1} size={24} strokeWidth={2} />
+            {t("auth_opening")}
+          {:else}
+            <i class="fab fa-instagram" aria-hidden="true"></i>
+            {t("auth_continue_instagram")}
+          {/if}
+        </Crossfade>
       </button>
     {/if}
   </div>
   {#if showInstagram}
-    <p id="instagram-account-requirement" class="provider-note">
+    <p
+      id="instagram-account-requirement"
+      class="provider-note"
+      transition:growFade
+    >
       {t("auth_instagram_requirement")}
     </p>
   {/if}
   {#if providerError}
-    <p class="error-message" role="alert">{providerError}</p>
+    <p class="error-message" role="alert" transition:growFade>
+      {providerError}
+    </p>
   {/if}
   {#if showEscapeNote}
     <div
@@ -348,6 +360,11 @@
       id="inapp-escape-note"
       role="region"
       aria-label={t("auth_open_in_browser")}
+      transition:growFade
+      onoutrostart={(event) =>
+        ((event.currentTarget as HTMLElement).inert = true)}
+      onintrostart={(event) =>
+        ((event.currentTarget as HTMLElement).inert = false)}
     >
       <p class="escape-note-lead">{t("auth_or_open_in_browser")}</p>
       <InAppEscapeControls
@@ -407,6 +424,13 @@
       transform var(--duration-normal, 200ms) ease;
     border: 1px solid #747775;
     box-shadow: 0 2px 6px var(--theme-shadow, rgba(0, 0, 0, 0.24));
+  }
+
+  .social-compact-button :global(.crossfade > .layer) {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: clamp(4px, 1vw, 8px);
   }
 
   .social-compact-button:disabled {

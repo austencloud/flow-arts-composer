@@ -22,6 +22,8 @@
   import { recordAuthSubmission } from "$lib/shared/auth/services/auth-analytics-bridge";
   import { recordLastAuthMethod } from "$lib/shared/auth/services/last-auth-method.svelte";
   import { trackAuthProviderResult } from "$lib/shared/analytics/auth-events";
+  import Crossfade from "$lib/shared/components/Crossfade.svelte";
+  import { growFade } from "$lib/shared/transitions/motion";
 
   let {
     mode = $bindable("signin" as "signin" | "signup"),
@@ -243,7 +245,14 @@
     onsubmit={(e) => (e.preventDefault(), void handleSubmit())}
   >
     {#if mode === "signup"}
-      <label class="label">
+      <label
+        class="label"
+        transition:growFade
+        onoutrostart={(event) =>
+          ((event.currentTarget as HTMLElement).inert = true)}
+        onintrostart={(event) =>
+          ((event.currentTarget as HTMLElement).inert = false)}
+      >
         {t("auth_name")}
         <input
           class="input"
@@ -288,20 +297,22 @@
             ? t("auth_hide_password")
             : t("auth_show_password")}
         >
-          <i
-            class="fas {showPassword ? 'fa-eye-slash' : 'fa-eye'}"
-            aria-hidden="true"
-          ></i>
+          <Crossfade key={showPassword}>
+            <i
+              class="fas {showPassword ? 'fa-eye-slash' : 'fa-eye'}"
+              aria-hidden="true"
+            ></i>
+          </Crossfade>
         </button>
       </div>
     </label>
 
     {#if error}
-      <p class="message error" role="alert">{error}</p>
+      <p class="message error" role="alert" transition:growFade>{error}</p>
     {/if}
 
     {#if success}
-      <p class="message success" role="status">{success}</p>
+      <p class="message success" role="status" transition:growFade>{success}</p>
     {/if}
 
     <button
@@ -310,16 +321,25 @@
       data-form-type={mode === "signin" ? "action,login" : "action,register"}
       disabled={loading}
     >
-      {#if loading}
-        {mode === "signin" ? t("auth_logging_in") : t("auth_creating_account")}
-      {:else}
-        {mode === "signin" ? t("auth_sign_in") : t("auth_sign_up")}
-      {/if}
+      <Crossfade key={`${mode}:${loading}`}>
+        {loading
+          ? mode === "signin"
+            ? t("auth_logging_in")
+            : t("auth_creating_account")
+          : mode === "signin"
+            ? t("auth_sign_in")
+            : t("auth_sign_up")}
+      </Crossfade>
     </button>
 
     {#if mode === "signin" && onUseCode}
       <button
         class="switch"
+        transition:growFade
+        onoutrostart={(event) =>
+          ((event.currentTarget as HTMLElement).inert = true)}
+        onintrostart={(event) =>
+          ((event.currentTarget as HTMLElement).inert = false)}
         type="button"
         onclick={onUseCode}
         disabled={loading}
@@ -335,9 +355,11 @@
         onclick={toggleMode}
         disabled={loading}
       >
-        {mode === "signin"
-          ? t("auth_need_account")
-          : t("auth_have_account_signin")}
+        <Crossfade key={mode}>
+          {mode === "signin"
+            ? t("auth_need_account")
+            : t("auth_have_account_signin")}
+        </Crossfade>
       </button>
     {/if}
   </form>
@@ -351,8 +373,11 @@
   .form {
     display: flex;
     flex-direction: column;
-    gap: clamp(8px, 1.5vh, 12px);
     width: 100%;
+  }
+
+  .form > :not(:last-child) {
+    margin-block-end: clamp(8px, 1.5vh, 12px);
   }
 
   .label {
