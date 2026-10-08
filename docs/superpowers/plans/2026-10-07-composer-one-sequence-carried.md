@@ -855,6 +855,18 @@ Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>" -- "src/routes/(public
 - Modify: `src/routes/(public)/composer/_components/ComposerTunnelDemo.svelte`
 - Modify: `src/routes/(public)/composer/_components/ComposerExperience.svelte`
 
+> Executed 2026-10-07. Review follow-up the same day: the stage formulas
+> below did not subtract the row's 3.25rem, so at 1440x900 the stop-room term
+> won the tunnel size `min()` and the stop overflowed its room on the stage.
+> `.stop` now sets `--word-row-h: 3.25rem`; `.band-frame --tunnel-stage-size`
+> and `.viewer-stop .wide-frame` both subtract it, and `ComposerWordRow`
+> reads the same token (`min-height: var(--word-row-h, 3.25rem)`). The tunnel
+> placeholder gained a `.placeholder-word-row` of that height and dropped to
+> two toolbar tiles, matching the band's two buttons. The same commit made
+> the tunnel row `live="polite"`, had the generator hand `onGenerated` its
+> raw draw instead of the `$state` proxy, and added the hold helper's fifth
+> test, "releases both observers once it has held".
+
 - [ ] **Step 1: Tunnel band gets the row**
 
 In `ComposerTunnelDemo.svelte` add the import next to the `PanelButton` import:
