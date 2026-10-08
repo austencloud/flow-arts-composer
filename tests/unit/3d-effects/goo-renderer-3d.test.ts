@@ -3,6 +3,7 @@ import {
   BufferGeometry,
   InstancedMesh,
   Matrix4,
+  MeshPhysicalMaterial,
   Object3D,
   Vector3,
 } from "three";
@@ -176,8 +177,31 @@ describe("GooRenderer3D", () => {
         .distanceTo(center);
     };
     expect(radiusAt(22)).toBeGreaterThan(radiusAt(12) * 1.3);
-    expect(radiusAt(23)).toBeGreaterThan(radiusAt(12));
+    expect(radiusAt(23)).toBeGreaterThan(radiusAt(17) * 0.4);
     expect(radiusAt(24)).toBeLessThan(0.00001);
+    renderer.dispose();
+  });
+
+  it("keeps HDR reflections and gives Mercury its own metalness", () => {
+    const renderer = new GooRenderer3D();
+    const parent = new Object3D();
+    renderer.initialize(parent);
+    const classic = source();
+    const mercury = source({
+      sourceId: 2,
+      position: { x: 5, y: 2, z: 3 },
+    });
+    mercury.params = resolveGoo3D({ ...mercury.params, palette: "mercury" });
+    renderer.update([classic, mercury], 1 / 15);
+    const tube = parent.children[0] as {
+      geometry: BufferGeometry;
+      material: MeshPhysicalMaterial;
+    };
+    const metalness = tube.geometry.getAttribute("aMetalness");
+    expect(metalness.getX(0)).toBeLessThan(0.2);
+    expect(metalness.getX(RINGS * SIDES)).toBeGreaterThan(0.8);
+    const studio = tube.material.envMap!.image.data as Float32Array;
+    expect(studio.some((channel) => channel > 1)).toBe(true);
     renderer.dispose();
   });
 
