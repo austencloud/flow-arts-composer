@@ -13,11 +13,16 @@
   - stacked: portaled to <body> and fixed to the viewport, bottom nav included.
     It cannot stay inside the settings container: `container-type: size`
     applies layout containment, which makes the container the containing
-    block for fixed descendants.
+    block for fixed descendants. On a narrow phone Customize, Setups and
+    Timing fill the screen. Anywhere wider (an unfolded foldable, a tablet
+    held upright), and for LOOP everywhere, the grown card is a panel along
+    the bottom edge over a dimmed backdrop: a full-screen panel there was
+    mostly empty space and hid the sequence it was configuring.
 
-  No backdrop: the workspace beside the grown card stays live. On desktop, a
-  click outside closes the card without consuming the interaction, so the
-  workspace control underneath still works. X and Escape close everywhere.
+  No backdrop beside the desktop stage: the workspace beside the grown card
+  stays live. On desktop, a click outside closes the card without consuming
+  the interaction, so the workspace control underneath still works. A tap on
+  the bottom panel's backdrop closes it. X and Escape close everywhere.
   Focus moves in on open and back to the card that opened it on close. The
   {#key destination} remount on a layout flip (desktop <-> stacked) drops the
   panel's local state and focus along with it; acceptable for a resize or fold
@@ -25,11 +30,12 @@
 -->
 <script lang="ts">
   import { tick } from "svelte";
-  import { scale } from "svelte/transition";
+  import { fade, scale } from "svelte/transition";
   import { quintOut } from "svelte/easing";
   import { portal } from "../modals/portal";
   import { claimedViewTransitionName } from "$lib/shared/transitions/claimed-view-transition-name";
   import { reducedMotion } from "$lib/shared/transitions/motion";
+  import { DURATION } from "$lib/shared/transitions/transitions";
   import { getEscapeLayerManager } from "$lib/shared/keyboard/get-escape-layer-manager";
   import { isEditableKeyboardTarget } from "$lib/shared/keyboard/domain/shortcut-target-resolution";
   import type { PanelCoordinationState } from "$lib/shared/create/state/panel-coordination-state.svelte";
@@ -65,10 +71,26 @@
 
   const openCard = $derived(panelState.openGenerateCard);
   let viewportHeight = $state(1000);
+  let viewportWidth = $state(1000);
   const destination = $derived(
     isDesktopLayout && !(openCard === "loop" && viewportHeight < 700)
       ? "stage"
       : "viewport"
+  );
+  // Widths up to this are a phone held upright, where a settings panel needs
+  // the whole screen.
+  const PHONE_MAX_WIDTH = 600;
+  // How the viewport destination presents on a stacked layout: a bottom panel,
+  // or the whole screen. A desktop window too short for the LOOP stage keeps
+  // its centered panel.
+  const presentation = $derived(
+    destination !== "viewport"
+      ? "stage"
+      : isDesktopLayout
+        ? "centered"
+        : openCard === "loop" || viewportWidth > PHONE_MAX_WIDTH
+          ? "sheet"
+          : "fill"
   );
   const customize = $derived(panelState.customizeOverlayProps);
 
@@ -89,6 +111,15 @@
     return lastGenerateCardMorphRan() || reducedMotion()
       ? { start: 1, duration: 0 }
       : { start: 0.95, duration: 250, easing: quintOut };
+  }
+
+  // The bottom panel's backdrop fades on a plain open. A morph's own
+  // crossfade of the page already brings it in, so it does not fade twice.
+  function backdropMotion() {
+    return {
+      duration:
+        lastGenerateCardMorphRan() || reducedMotion() ? 0 : DURATION.normal,
+    };
   }
 
   // A pre-effect, not $effect: its teardown has to run before the {#if}
@@ -260,7 +291,10 @@
   }
 </script>
 
-<svelte:window bind:innerHeight={viewportHeight} />
+<svelte:window
+  bind:innerHeight={viewportHeight}
+  bind:innerWidth={viewportWidth}
+/>
 
 {#snippet body(titleId: string)}
   {#if openCard === "customize" && customize}
@@ -331,10 +365,22 @@
 
 {#key destination}
   {#if destination === "viewport"}
+    {#if openCard && presentation === "sheet"}
+      <!-- Pointer-only: X and Escape are the keyboard and screen reader
+           routes to the same close. -->
+      <div
+        class="expanded-card-backdrop"
+        aria-hidden="true"
+        onclick={() => close()}
+        use:portal
+        transition:fade={backdropMotion()}
+      ></div>
+    {/if}
     {#if openCard}
       <div
         class="expanded-card-stage"
         data-destination="viewport"
+        data-presentation={presentation}
         data-card-id={openCard}
         role="dialog"
         aria-labelledby={expandedCardTitleId(openCard)}
@@ -406,14 +452,29 @@
     max-height: 100%;
   }
 
-  .expanded-card-stage[data-destination="viewport"] {
+  /* A phone held upright: the whole screen, bottom nav included. */
+  .expanded-card-stage[data-presentation="fill"] {
     position: fixed;
     inset: 0;
     z-index: var(--z-drawer, 400);
     background: var(--theme-surface, #101018);
   }
 
-  .expanded-card-stage[data-destination="viewport"][data-card-id="loop"] {
+  /* Edge to edge: the overlay chrome's rounded border is for the in-grid
+     case. */
+  .expanded-card-stage[data-presentation="fill"]
+    > :global(.generation-settings-overlay) {
+    border-radius: 0;
+    border: none;
+    padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+  }
+
+  /* A desktop window too short for the LOOP stage: centered over the dimmed
+     workspace. */
+  .expanded-card-stage[data-presentation="centered"] {
+    position: fixed;
+    inset: 0;
+    z-index: var(--z-drawer, 400);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -425,38 +486,60 @@
     );
   }
 
-  .expanded-card-stage[data-destination="viewport"][data-card-id="loop"]
+  .expanded-card-stage[data-presentation="centered"]
     > :global(.loop-expanded-overlay) {
     position: relative;
     inset: auto;
     width: min(100%, 880px);
     max-height: calc(100dvh - 32px);
-    border: 1px solid var(--theme-stroke);
-    border-radius: 12px;
   }
 
-  @media (max-width: 600px) {
-    .expanded-card-stage[data-destination="viewport"][data-card-id="loop"] {
-      align-items: flex-end;
-      padding: 0;
-    }
-
-    .expanded-card-stage[data-destination="viewport"][data-card-id="loop"]
-      > :global(.loop-expanded-overlay) {
-      width: 100%;
-      max-height: 100dvh;
-      border-radius: 12px 12px 0 0;
-    }
+  .expanded-card-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: var(--z-drawer, 400);
+    background: color-mix(
+      in srgb,
+      var(--theme-surface, #101018) 76%,
+      transparent
+    );
   }
 
-  /* The overlay chrome rounds its corners and draws a border for the in-grid
-     case. Edge to edge on the viewport. */
-  .expanded-card-stage[data-destination="viewport"]
-    > :global(.generation-settings-overlay),
-  .expanded-card-stage[data-destination="viewport"]:not([data-card-id="loop"])
+  /* The bottom panel. The stage root is the panel's own box, not a full-screen
+     layer around it, so the card morph carries the card into the panel. The
+     height fits every panel without scrolling at an unfolded foldable's 707px
+     width: Timing and direction needs 460px, Customize 380px, Setups and LOOP
+     less. Start placement sizes its grid to whatever height it gets. */
+  .expanded-card-stage[data-presentation="sheet"] {
+    position: fixed;
+    inset: auto 0 0;
+    z-index: calc(var(--z-drawer, 400) + 1);
+    width: min(100%, 880px);
+    height: min(30rem, calc(100dvh - 16px));
+    margin-inline: auto;
+  }
+
+  /* LOOP's content has a height of its own (a Combo is taller than a Single),
+     so it sizes its panel. */
+  .expanded-card-stage[data-presentation="sheet"][data-card-id="loop"] {
+    height: auto;
+  }
+
+  .expanded-card-stage[data-presentation="sheet"][data-card-id="loop"]
     > :global(.loop-expanded-overlay) {
-    border-radius: 0;
-    border: none;
+    position: relative;
+    inset: auto;
+    max-height: calc(100dvh - 16px);
+  }
+
+  /* The panel rests on the bottom edge: only its top corners round. */
+  .expanded-card-stage[data-presentation="sheet"]
+    > :global(.generation-settings-overlay),
+  .expanded-card-stage[data-presentation="sheet"]
+    > :global(.loop-expanded-overlay) {
+    border-bottom: none;
+    border-end-start-radius: 0;
+    border-end-end-radius: 0;
     padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
   }
 </style>
