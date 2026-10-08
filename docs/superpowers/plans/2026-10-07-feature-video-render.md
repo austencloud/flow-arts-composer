@@ -4531,7 +4531,10 @@ import { toolPath } from "./media-import.mjs";
  */
 
 const execFileAsync = promisify(execFile);
-const CLI = fileURLToPath(new URL("../post-project.mjs", import.meta.url));
+// Not `new URL("../post-project.mjs", import.meta.url)`: Vitest rewrites
+// that pattern to an http URL, which fileURLToPath refuses.
+const here = path.dirname(fileURLToPath(import.meta.url));
+const CLI = path.join(here, "../post-project.mjs");
 const FRAME_SECONDS = 1 / 30;
 const SAMPLE_RATE = 48000;
 /** White from frame 15 to frame 17: 0.5 s to 0.6 s at 30 fps. */
