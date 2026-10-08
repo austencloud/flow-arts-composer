@@ -158,6 +158,16 @@ describe("render", () => {
     );
     expect(posts).toEqual([]);
   });
+
+  it("stops at a feature video that does not exist", async () => {
+    editorOpen = false;
+    const result = await cli("render", "--feature", "nope");
+    expect(result.code).toBe(1);
+    // This stand-in dev server answers so for any feature video but promo.
+    expect(result.stderr).toContain("No such route.");
+    expect(result.stderr).not.toContain("or pass --open");
+    expect(posts).toEqual([]);
+  });
 });
 
 describe("sound and add-card", () => {

@@ -640,6 +640,7 @@ try {
       origin: browserOrigin(base),
       log: (line) => process.stderr.write(`${line}\n`),
       pollMs: Number(process.env.TKA_RENDER_POLL_MS) || 1000,
+      findFeature: (slug) => request("GET", {}, undefined, featureRoute(slug)),
     });
   } else if (command === "stills") {
     result = {

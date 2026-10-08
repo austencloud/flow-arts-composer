@@ -192,7 +192,7 @@ describe("renderInEditor", () => {
         now: () => (clock += 1000),
       })
     ).rejects.toThrow(
-      "The render has not moved for 3 s (rendering 10%). Is the editor's tab in front?"
+      "The render has not moved for 3 s (rendering 10%). Is the editor's tab in front? If that tab stays open, the render carries on there; press Cancel in it to stop the render."
     );
   });
 });
@@ -305,5 +305,24 @@ describe("renderFeature", () => {
       })
     ).rejects.toThrow("There is no room on the disk.");
     expect(close).toHaveBeenCalledOnce();
+  });
+
+  it("checks the name before it opens an editor", async () => {
+    const openEditor = vi.fn();
+    const findFeature = vi.fn(async (slug: string) => {
+      throw new Error(`No feature video named ${slug}.`);
+    });
+    await expect(
+      renderFeature({
+        request: bridgeWith([]),
+        feature: "promo-1-O",
+        open: true,
+        origin,
+        openEditor,
+        findFeature,
+      })
+    ).rejects.toThrow("No feature video named promo-1-O.");
+    expect(findFeature).toHaveBeenCalledWith("promo-1-O");
+    expect(openEditor).not.toHaveBeenCalled();
   });
 });

@@ -112,7 +112,7 @@ export async function renderInEditor({
       movedAt = now();
     } else if (now() - movedAt > stallMs) {
       throw new Error(
-        `The render has not moved for ${Math.round(stallMs / 1000)} s (${line}). Is the editor's tab in front?`
+        `The render has not moved for ${Math.round(stallMs / 1000)} s (${line}). Is the editor's tab in front? If that tab stays open, the render carries on there; press Cancel in it to stop the render.`
       );
     }
     const next =
@@ -129,7 +129,8 @@ export async function renderInEditor({
 /**
  * Renders a feature video through the editor that has it open or, with
  * `open`, through one this call opens and closes again. `request` is
- * post-project.mjs's bridge request.
+ * post-project.mjs's bridge request; `findFeature` rejects for a name no
+ * feature video has.
  */
 export async function renderFeature({
   request,
@@ -140,6 +141,7 @@ export async function renderFeature({
   log = () => {},
   pollMs,
   openEditor = openFeatureEditor,
+  findFeature = async () => {},
 }) {
   const listSessions = async () => (await request("GET")).sessions;
   const holding = (await listSessions()).filter(
@@ -152,6 +154,8 @@ export async function renderFeature({
   const follow = (sessionId) =>
     renderInEditor({ request, sessionId, name, log, pollMs });
   if (holding[0]) return follow(holding[0].id);
+  // A misspelled name would otherwise wait for an editor that never opens.
+  await findFeature(feature);
   if (!open)
     throw new Error(
       `No editor has ${feature} open. Open ${origin}/post?feature=${feature}, or pass --open.`
