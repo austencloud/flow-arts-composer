@@ -7,12 +7,20 @@
    * produce. "Compositions" shows the two card compositions the composition
    * review compares, at the opened Fold's card sizes. One turn coordinator
    * drives both views, with the front door's hover and keyboard holds.
+   *
+   * `?view=front-door` renders the real front door alone, for the layout
+   * check: `count` (2 to 6 methods, in board order), `guest=1` (Free
+   * account badges), and `last` (a method id, or `none`; default Generate);
+   * `w` and `h` (CSS px) size the board like /create's, which loses the
+   * app's navigation.
    */
   import { onMount } from "svelte";
+  import { page } from "$app/state";
   import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import LastUsedBadge from "$lib/shared/components/LastUsedBadge.svelte";
   import { isTabAccessible } from "$lib/shared/auth/domain/guest-access-config";
   import { CREATE_TABS } from "$lib/shared/navigation/config/tab-definitions";
+  import CreateFrontDoor from "$lib/features/create/shared/components/CreateFrontDoor.svelte";
   import CreateMethodPreview from "$lib/features/create/shared/components/method-previews/CreateMethodPreview.svelte";
   import { methodPreviewHold } from "$lib/features/create/shared/components/method-previews/method-preview-hold";
   import {
@@ -44,9 +52,38 @@
     landscape: { label: "Fold landscape 394×172", width: 394, height: 172 },
   } as const;
   type CardShape = keyof typeof CARDS;
-  type View = "sizes" | "compositions";
+  type View = "sizes" | "compositions" | "front-door";
 
-  let view = $state<View>("sizes");
+  // Each check loads the page fresh, so the URL is read once.
+  const params = page.url.searchParams;
+  const frontDoorCount = Math.min(
+    6,
+    Math.max(2, Number(params.get("count") ?? 6) || 6)
+  );
+  const frontDoorLastParam = params.get("last") ?? "generate";
+  const frontDoorLast =
+    frontDoorLastParam === "none" ? null : frontDoorLastParam;
+  const frontDoorMethods = methods.slice(0, frontDoorCount);
+  const frontDoorLocked: ReadonlySet<string> = new Set(
+    params.get("guest") === "1"
+      ? frontDoorMethods
+          .filter((method) => !isTabAccessible("create", method.id, "guest"))
+          .map((method) => method.id)
+      : []
+  );
+  // The layout check passes /create's board size (`w`, `h`, in CSS px), so the
+  // bench board gets the same container as the real one, which loses the
+  // app's navigation. Without them the board fills the window.
+  const sizeParam = (name: string) => {
+    const value = Number(params.get(name));
+    return Number.isFinite(value) && value > 0 ? `${value}px` : null;
+  };
+  const frontDoorWidth = sizeParam("w");
+  const frontDoorHeight = sizeParam("h");
+
+  let view = $state<View>(
+    params.get("view") === "front-door" ? "front-door" : "sizes"
+  );
   let cardShape = $state<CardShape>("portrait");
   let reduce = $state(false);
   let initialPreference: string | undefined;
@@ -122,7 +159,8 @@
     );
     initialPreference = document.documentElement.dataset.motionPreference;
     reduce = previewMotionReduced();
-    turns.start();
+    // The front door view runs the real front door's own turns.
+    if (view !== "front-door") turns.start();
     return () => {
       turns.dispose();
       setMotionAttribute(initialPreference);
@@ -134,54 +172,137 @@
   <title>Create method previews</title>
 </svelte:head>
 
-<main class="bench">
-  <header class="bench-bar">
-    <h1>Create method previews</h1>
-    <div class="bench-controls">
-      <button
-        type="button"
-        aria-pressed={view === "sizes"}
-        onclick={() => showView("sizes")}>Sizes</button
-      >
-      <button
-        type="button"
-        aria-pressed={view === "compositions"}
-        onclick={() => showView("compositions")}>Compositions</button
-      >
-      <button type="button" onclick={() => turns.start()}>Restart rounds</button
-      >
-      <button type="button" aria-pressed={reduce} onclick={toggleReduce}
-        >Reduce motion</button
-      >
-      <output data-testid="turn-status"
-        >{turns.playingId ?? "resting"} · turn {turns.turn}</output
-      >
-    </div>
-  </header>
+{#if view === "front-door"}
+  <div
+    class="front-door-frame"
+    style:width={frontDoorWidth}
+    style:height={frontDoorHeight}
+    data-count={frontDoorMethods.length}
+    data-last={frontDoorLast ?? "none"}
+    data-guest={frontDoorLocked.size > 0}
+  >
+    <CreateFrontDoor
+      methods={frontDoorMethods}
+      lockedMethodIds={frontDoorLocked}
+      active={true}
+      source="direct"
+      lastUsedMode={frontDoorLast}
+      onSelect={() => {}}
+      onLockedSelect={() => {}}
+    />
+  </div>
+{:else}
+  <main class="bench">
+    <header class="bench-bar">
+      <h1>Create method previews</h1>
+      <div class="bench-controls">
+        <button
+          type="button"
+          aria-pressed={view === "sizes"}
+          onclick={() => showView("sizes")}>Sizes</button
+        >
+        <button
+          type="button"
+          aria-pressed={view === "compositions"}
+          onclick={() => showView("compositions")}>Compositions</button
+        >
+        <button type="button" onclick={() => turns.start()}
+          >Restart rounds</button
+        >
+        <button type="button" aria-pressed={reduce} onclick={toggleReduce}
+          >Reduce motion</button
+        >
+        <output data-testid="turn-status"
+          >{turns.playingId ?? "resting"} · turn {turns.turn}</output
+        >
+      </div>
+    </header>
 
-  {#if view === "sizes"}
-    <div class="sizes-scroll">
-      <table class="sizes">
-        <thead>
-          <tr>
-            <th scope="col">Method</th>
-            {#each BOXES as box (box.label)}
-              <th scope="col">{box.label}</th>
-            {/each}
-          </tr>
-        </thead>
-        <tbody>
-          {#each methods as method (method.id)}
+    {#if view === "sizes"}
+      <div class="sizes-scroll">
+        <table class="sizes">
+          <thead>
             <tr>
-              <th scope="row">{t(method.labelKey)}</th>
+              <th scope="col">Method</th>
               {#each BOXES as box (box.label)}
-                <td>
-                  <span
-                    class="bench-box"
-                    style:width="{box.width}px"
-                    style:height="{box.height}px"
-                    use:methodPreviewHold={{ turns, id: method.id }}
-                  >
+                <th scope="col">{box.label}</th>
+              {/each}
+            </tr>
+          </thead>
+          <tbody>
+            {#each methods as method (method.id)}
+              <tr>
+                <th scope="row">{t(method.labelKey)}</th>
+                {#each BOXES as box (box.label)}
+                  <td>
+                    <span
+                      class="bench-box"
+                      style:width="{box.width}px"
+                      style:height="{box.height}px"
+                      use:methodPreviewHold={{ turns, id: method.id }}
+                    >
+                      <CreateMethodPreview
+                        methodId={method.id}
+                        color={method.color ?? "#8b8cff"}
+                        playing={turns.playingId === method.id}
+                        turn={turns.turn}
+                        onready={handleReady}
+                      />
+                    </span>
+                  </td>
+                {/each}
+              </tr>
+            {/each}
+          </tbody>
+        </table>
+      </div>
+    {:else}
+      <div class="bench-controls">
+        {#each Object.entries(CARDS) as [key, card] (key)}
+          <button
+            type="button"
+            aria-pressed={cardShape === key}
+            onclick={() => showCardShape(key as CardShape)}>{card.label}</button
+          >
+        {/each}
+        <button
+          type="button"
+          aria-pressed={guest}
+          onclick={() => (guest = !guest)}>Guest</button
+        >
+      </div>
+      <div class="compositions">
+        {#each ["inset", "edge"] as composition (composition)}
+          <section aria-labelledby={`composition-${composition}`}>
+            <h2 id={`composition-${composition}`}>
+              {composition === "inset" ? "A: inset stage" : "B: edge to edge"}
+            </h2>
+            <div
+              class="mock-board"
+              class:landscape={cardShape === "landscape"}
+              style:height={portraitBoardHeight === undefined
+                ? undefined
+                : `${portraitBoardHeight}px`}
+            >
+              {#each methods as method (method.id)}
+                <button
+                  type="button"
+                  class="mock-card"
+                  class:edge={composition === "edge"}
+                  class:square={cardShape === "landscape"}
+                  style:--method-color={method.color ?? "#8b8cff"}
+                  style:width="{CARDS[cardShape].width}px"
+                  style:height={cardShape === "landscape"
+                    ? `${CARDS.landscape.height}px`
+                    : undefined}
+                  use:methodPreviewHold={{ turns, id: method.id }}
+                >
+                  {#if lockedFor(method.id)}
+                    <LastUsedBadge label={t("create_ui_account_badge")} />
+                  {:else if method.id === LAST_USED}
+                    <LastUsedBadge />
+                  {/if}
+                  <span class="mock-stage">
                     <CreateMethodPreview
                       methodId={method.id}
                       color={method.color ?? "#8b8cff"}
@@ -190,87 +311,26 @@
                       onready={handleReady}
                     />
                   </span>
-                </td>
-              {/each}
-            </tr>
-          {/each}
-        </tbody>
-      </table>
-    </div>
-  {:else}
-    <div class="bench-controls">
-      {#each Object.entries(CARDS) as [key, card] (key)}
-        <button
-          type="button"
-          aria-pressed={cardShape === key}
-          onclick={() => showCardShape(key as CardShape)}>{card.label}</button
-        >
-      {/each}
-      <button
-        type="button"
-        aria-pressed={guest}
-        onclick={() => (guest = !guest)}>Guest</button
-      >
-    </div>
-    <div class="compositions">
-      {#each ["inset", "edge"] as composition (composition)}
-        <section aria-labelledby={`composition-${composition}`}>
-          <h2 id={`composition-${composition}`}>
-            {composition === "inset" ? "A: inset stage" : "B: edge to edge"}
-          </h2>
-          <div
-            class="mock-board"
-            class:landscape={cardShape === "landscape"}
-            style:height={portraitBoardHeight === undefined
-              ? undefined
-              : `${portraitBoardHeight}px`}
-          >
-            {#each methods as method (method.id)}
-              <button
-                type="button"
-                class="mock-card"
-                class:edge={composition === "edge"}
-                class:square={cardShape === "landscape"}
-                style:--method-color={method.color ?? "#8b8cff"}
-                style:width="{CARDS[cardShape].width}px"
-                style:height={cardShape === "landscape"
-                  ? `${CARDS.landscape.height}px`
-                  : undefined}
-                use:methodPreviewHold={{ turns, id: method.id }}
-              >
-                {#if lockedFor(method.id)}
-                  <LastUsedBadge label={t("create_ui_account_badge")} />
-                {:else if method.id === LAST_USED}
-                  <LastUsedBadge />
-                {/if}
-                <span class="mock-stage">
-                  <CreateMethodPreview
-                    methodId={method.id}
-                    color={method.color ?? "#8b8cff"}
-                    playing={turns.playingId === method.id}
-                    turn={turns.turn}
-                    onready={handleReady}
-                  />
-                </span>
-                <span class="mock-copy">
-                  <span class="mock-name">
-                    <span class="mock-icon" aria-hidden="true"
-                      >{@html method.icon}</span
-                    >
-                    {t(method.labelKey)}
+                  <span class="mock-copy">
+                    <span class="mock-name">
+                      <span class="mock-icon" aria-hidden="true"
+                        >{@html method.icon}</span
+                      >
+                      {t(method.labelKey)}
+                    </span>
+                    {#if method.descKey}
+                      <span class="mock-description">{t(method.descKey)}</span>
+                    {/if}
                   </span>
-                  {#if method.descKey}
-                    <span class="mock-description">{t(method.descKey)}</span>
-                  {/if}
-                </span>
-              </button>
-            {/each}
-          </div>
-        </section>
-      {/each}
-    </div>
-  {/if}
-</main>
+                </button>
+              {/each}
+            </div>
+          </section>
+        {/each}
+      </div>
+    {/if}
+  </main>
+{/if}
 
 <style>
   .bench {
@@ -451,5 +511,13 @@
     font-size: 14px;
     line-height: 1.42;
     text-wrap: pretty;
+  }
+
+  /* The front door view fills the window unless `w` and `h` size it. */
+  .front-door-frame {
+    position: fixed;
+    inset: 0;
+    background: var(--theme-panel-bg, #0f0f14);
+    color: var(--theme-text, #f4f4f8);
   }
 </style>
