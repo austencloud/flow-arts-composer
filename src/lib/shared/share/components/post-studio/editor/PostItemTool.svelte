@@ -163,6 +163,7 @@
     tunnel = false,
     featureMode = false,
   }: Props = $props();
+  const uid = $props.id();
   let grading = $state(false);
   let gradeError = $state("");
 
@@ -210,22 +211,36 @@
     editor.edit((project, ctx) => updateItem(project, item.id, patch, ctx));
   }
 
-  /** The card whose typed link broke the rule, so its field says why. */
-  let cardLinkErrorFor = $state<string | null>(null);
+  /** The Scan link field on screen; another card or tool makes a new one. */
+  let cardLinkField = $state<HTMLInputElement | null>(null);
+  /** The card the field belongs to and the saved link it shows. */
+  const cardLinkShown = $derived(
+    item.kind === "card" ? `${item.id} ${item.qrUrl ?? ""}` : ""
+  );
+  /**
+   * True while the field holds a typed link the rule refused; the field's
+   * handler sets it. A new field, or a saved link put in this one by an undo
+   * or a script's edit, makes it false again.
+   */
+  let cardLinkRefused = $derived.by(() => {
+    void cardLinkField;
+    void cardLinkShown;
+    return false;
+  });
 
   function changeCardLink(value: string): void {
     if (item.kind !== "card") return;
     const link = value.trim();
     if (!link) {
-      cardLinkErrorFor = null;
+      cardLinkRefused = false;
       patchItem({ qrUrl: null });
       return;
     }
     if (!isPostCardQrUrl(link)) {
-      cardLinkErrorFor = item.id;
+      cardLinkRefused = true;
       return;
     }
-    cardLinkErrorFor = null;
+    cardLinkRefused = false;
     // The link shows only in the QR cell, so setting one picks that cell.
     patchItem({
       qrUrl: link,
@@ -1455,13 +1470,18 @@
             value={item.qrUrl ?? ""}
             placeholder="https://tka.run/..."
             aria-label="Scan link"
+            aria-invalid={cardLinkRefused}
+            aria-describedby="{uid}-link-note"
             disabled={locked}
+            bind:this={cardLinkField}
             onchange={(event) => changeCardLink(event.currentTarget.value)}
           />
-          {#if cardLinkErrorFor === item.id}
-            <p class="link-error" role="alert">{POST_QR_URL_RULE}</p>
+          {#if cardLinkRefused}
+            <p class="link-error" id="{uid}-link-note" role="alert">
+              {POST_QR_URL_RULE}
+            </p>
           {:else}
-            <p class="hint">
+            <p class="hint" id="{uid}-link-note">
               The card's QR opens this link for anyone who scans it.
             </p>
           {/if}
