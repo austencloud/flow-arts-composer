@@ -455,14 +455,15 @@ Last audit: 2025-12-27
     (hideProgressBar ? 3.5 : focused ? 8.5 : 7) * 16
   );
 
+  // The observer's first notification arrives before the host paints, so no
+  // mount-time read is needed. Its entry carries the size: reading the box
+  // back from the node forced a fresh layout (~10 ms) when Play mounted it.
   function observeDisassemblyHost(node: HTMLElement) {
-    const update = () => {
-      const { width, height } = node.getBoundingClientRect();
-      if (width <= 0 || height <= 0) return;
-      disassemblyHostBox = { width, height };
-    };
-    update();
-    const observer = new ResizeObserver(update);
+    const observer = new ResizeObserver(([entry]) => {
+      const size = entry?.borderBoxSize?.[0];
+      if (!size || size.inlineSize <= 0 || size.blockSize <= 0) return;
+      disassemblyHostBox = { width: size.inlineSize, height: size.blockSize };
+    });
     observer.observe(node);
     return {
       destroy() {
