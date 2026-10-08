@@ -43,8 +43,12 @@
   // side of any cursor has room for the menu, so right/left flipping suffices.
   const MENU_MAX_WIDTH = 300;
   const COLLISION_PADDING = 8;
+  // Read the window only while the menu is open. Reading innerWidth makes the
+  // browser finish layout first, and a closed menu mounts with whatever hosts
+  // it, so the first sequence's step grid paid that layout mid-mount.
   const menuSide = $derived(
-    (innerWidth.current ?? 0) >= 2 * (MENU_MAX_WIDTH + COLLISION_PADDING)
+    menuState.open &&
+      (innerWidth.current ?? 0) >= 2 * (MENU_MAX_WIDTH + COLLISION_PADDING)
       ? "right"
       : "bottom"
   );

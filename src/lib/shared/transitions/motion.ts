@@ -1,8 +1,15 @@
 import { cubicInOut, cubicOut } from "svelte/easing";
 import type { TransitionConfig } from "svelte/transition";
 import { DURATION } from "./transitions";
+import { cssCubicBezier } from "./ws-ease";
 
 const STANDARD_MOTION_EASING = "cubic-bezier(0.4, 0, 0.2, 1)";
+
+/**
+ * JS twin of `--ease-in-out`, the curve PanelGroup tracks move on. Give it to
+ * a Svelte transition that has to move in step with a panel slide.
+ */
+export const standardEasing = cssCubicBezier(0.4, 0, 0.2, 1);
 
 /**
  * motion — reduced-motion-aware Svelte transitions on the DURATION tokens.
@@ -154,6 +161,8 @@ interface GrowFadeParams {
   axis?: "x" | "y";
   /** Extra drift-in offset in px along the cross feel (translateX). */
   x?: number;
+  /** Defaults to cubicOut. Pass standardEasing to keep pace with a panel slide. */
+  easing?: (t: number) => number;
 }
 
 interface FlexPresenceParams {
@@ -214,6 +223,7 @@ export function growFade(
     delay = 0,
     axis = "y",
     x = 0,
+    easing = cubicOut,
   }: GrowFadeParams = {}
 ): TransitionConfig {
   // Like svelte's `slide`, collapse padding/margin/border along the axis too —
@@ -249,7 +259,7 @@ export function growFade(
   return {
     duration: motionDuration(duration),
     delay,
-    easing: cubicOut,
+    easing,
     css: (t) =>
       props.map((p, i) => `${p}: ${t * (values[i] ?? 0)}px;`).join(" ") +
       ` opacity: ${t}; overflow: hidden; box-sizing: border-box;` +
