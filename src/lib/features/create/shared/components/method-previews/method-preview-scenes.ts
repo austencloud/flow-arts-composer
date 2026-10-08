@@ -45,4 +45,5 @@ export const METHOD_PREVIEW_SCENES: Readonly<
   "shape-engine": () => import("./ShapeScene.svelte"),
   fuse: () => import("./FuseScene.svelte"),
   tunnel: () => import("./TunnelScene.svelte"),
+  assemble: () => import("./AssembleScene.svelte"),
 };
