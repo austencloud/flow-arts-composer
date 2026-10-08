@@ -190,23 +190,25 @@
     reducedMotion ? speed * REDUCED_MOTION_DAMP : speed
   );
 
-  onMount(() => {
+  // The self-clock runs only while playing, so a paused tunnel (a gallery
+  // preview, or a Create method preview between turns) keeps no frame loop.
+  // Each tick reads the speed and loop length without tracking them, so only
+  // playing and the step count restart the loop.
+  $effect(() => {
+    if (!playing || stepCount === 0) return;
     let raf = 0;
     let last = performance.now();
     const tick = (now: number) => {
-      const dt = (now - last) / 1000;
+      const dt = Math.max(0, now - last) / 1000;
       last = now;
-      if (stepCount > 0 && playing) {
-        currentStep = ((currentStep - 1 + dt * effSpeed) % loopSteps) + 1;
-      }
+      currentStep = ((currentStep - 1 + dt * effSpeed) % loopSteps) + 1;
       raf = requestAnimationFrame(tick);
     };
     raf = requestAnimationFrame(tick);
-    return () => {
-      cancelAnimationFrame(raf);
-      cancelAnimationFrame(readyFrame);
-    };
+    return () => cancelAnimationFrame(raf);
   });
+
+  onMount(() => () => cancelAnimationFrame(readyFrame));
 
   // Unbounded-within-loop playhead (1-indexed) for the kaleidoscope sampling —
   // the controller wraps it per-arm so drift works.
