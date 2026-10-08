@@ -393,8 +393,10 @@
         >
           {#snippet error(_caught, retry)}
             <div class="preview-error" role="alert">
-              <span>{t('preview_player_failed')}</span>
-              <button type="button" onclick={retry}>{t('browse_ui_try_again')}</button>
+              <span>{t("preview_player_failed")}</span>
+              <button type="button" onclick={retry}
+                >{t("browse_ui_try_again")}</button
+              >
             </div>
           {/snippet}
         </LazyMount>
@@ -481,8 +483,10 @@
 
       {#if showCardLayer && resolutionState === "unavailable" && activation === "manual"}
         <div class="preview-error" role="alert">
-          <span>{t('preview_unavailable')}</span>
-          <button type="button" onclick={retrySequence}>{t('browse_ui_try_again')}</button>
+          <span>{t("preview_unavailable")}</span>
+          <button type="button" onclick={retrySequence}
+            >{t("browse_ui_try_again")}</button
+          >
         </div>
       {:else if showCardLayer && activation === "manual"}
         <button
@@ -568,9 +572,13 @@
     inset: auto;
   }
 
+  /* A host that fits the whole frame to the viewport sets the rail width and
+     strip height, so it knows the player's height before anything loads. */
   .with-controls .player-zone {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(6rem, 9rem);
+    grid-template-columns:
+      minmax(0, 1fr)
+      minmax(6rem, var(--sequence-showcase-rail-width, 9rem));
     align-items: stretch;
   }
 
@@ -600,17 +608,24 @@
 
   .with-controls .strip-zone {
     flex: none;
-    height: clamp(3.75rem, 18cqw, 6.5rem);
+    height: var(
+      --sequence-showcase-strip-height,
+      clamp(3.75rem, 18cqw, 6.5rem)
+    );
   }
 
-  @container (max-width: 28rem) {
-    .with-controls .player-zone {
-      grid-template-columns: minmax(0, 1fr);
-    }
+  /* A narrow portrait frame moves the rail under the player. In landscape the
+     rail stays beside it, because height is the scarce dimension there. */
+  @media (orientation: portrait) {
+    @container (max-width: 28rem) {
+      .with-controls .player-zone {
+        grid-template-columns: minmax(0, 1fr);
+      }
 
-    .control-rail {
-      border-top: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.08));
-      border-left: 0;
+      .control-rail {
+        border-top: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.08));
+        border-left: 0;
+      }
     }
   }
 
