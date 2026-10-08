@@ -10,6 +10,8 @@
   import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
   import { WORKSPACE_BUTTON_ICON } from "../../workspace-button-layout";
+  import { prefetchSequenceViewerWhenIdle } from "$lib/shared/sequence-viewer/services/prefetch-sequence-viewer";
+  import { onMount } from "svelte";
 
   let {
     onclick,
@@ -73,6 +75,12 @@
   const ghostKind = $derived(
     isActive ? undefined : purpose === "play" ? "play" : "viewer"
   );
+
+  // A button that opens the viewer warms its chunk, so the tap does not
+  // load it during the opening slide.
+  onMount(() => {
+    if (purpose !== "play") prefetchSequenceViewerWhenIdle();
+  });
 
   // Resolve haptic feedback service
   const hapticService = getHapticFeedback();

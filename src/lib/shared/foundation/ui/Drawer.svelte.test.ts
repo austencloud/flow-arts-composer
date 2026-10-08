@@ -107,3 +107,46 @@ describe("Drawer accessible name", () => {
     expect(drawer()?.hasAttribute("aria-label")).toBe(false);
   });
 });
+
+describe("Drawer held opening", () => {
+  afterEach(() => {
+    document.body.innerHTML = "";
+  });
+
+  function overlay(): HTMLElement | null {
+    return document.querySelector<HTMLElement>(".drawer-overlay");
+  }
+
+  it("lays its content out off-screen and slides only when released", async () => {
+    const screen = render(DrawerKeyboardTestHarness, {
+      isOpen: true,
+      holdOpen: true,
+      title: "Viewer",
+    });
+    await settle(300);
+
+    // The sequence viewer relies on this: its first draw happens while held,
+    // so the slide no longer shares frames with it.
+    expect(drawer()?.dataset.state, "sheet waits while held").toBe("closed");
+    const inside = document.querySelector<HTMLElement>(
+      '[data-testid="inside"]'
+    );
+    expect(inside?.getBoundingClientRect().width ?? 0).toBeGreaterThan(0);
+    expect(overlay()?.dataset.state, "backdrop answers the tap").toBe("open");
+
+    await screen.rerender({ holdOpen: false });
+    await settle(150);
+    expect(drawer()?.dataset.state, "sheet slides on release").toBe("open");
+  });
+
+  it("gives up waiting if the release never comes", async () => {
+    render(DrawerKeyboardTestHarness, {
+      isOpen: true,
+      holdOpen: true,
+      title: "Viewer",
+    });
+    await settle(1500);
+
+    expect(drawer()?.dataset.state, "cap opens a stuck hold").toBe("open");
+  });
+});

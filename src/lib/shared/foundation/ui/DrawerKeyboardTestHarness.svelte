@@ -6,7 +6,7 @@
   first press) and a plain button (which does not).
 
   `title` is forwarded so one harness covers both the keyboard and the naming
-  assertions.
+  assertions, and `holdOpen` so it covers the held opening slide too.
 -->
 <script lang="ts">
   import Drawer from "./Drawer.svelte";
@@ -16,17 +16,26 @@
     title,
     ariaLabel,
     labelledBy,
+    holdOpen = false,
   }: {
     isOpen?: boolean;
     title?: string;
     ariaLabel?: string;
     labelledBy?: string;
+    holdOpen?: boolean;
   } = $props();
 </script>
 
 <button type="button" data-testid="outside">Outside</button>
 
-<Drawer bind:isOpen {title} {ariaLabel} {labelledBy} placement="bottom">
+<Drawer
+  bind:isOpen
+  {title}
+  {ariaLabel}
+  {labelledBy}
+  {holdOpen}
+  placement="bottom"
+>
   {#if labelledBy}
     <h2 id={labelledBy}>Header title</h2>
   {/if}
