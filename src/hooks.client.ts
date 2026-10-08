@@ -26,10 +26,8 @@ if (browser && dev) {
 }
 
 if (typeof window !== "undefined" && "Capacitor" in window) {
-  import("@capgo/capacitor-updater")
-    .then(({ CapacitorUpdater }) => {
-      CapacitorUpdater.notifyAppReady();
-    })
+  import("$lib/shared/offline/services/native-update.svelte")
+    .then(({ startNativeUpdates }) => startNativeUpdates())
     .catch(() => {});
 }
 
