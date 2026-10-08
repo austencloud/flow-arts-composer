@@ -380,7 +380,7 @@
 {#if layout === "band"}
   <div class="tunnel-demo band">
     <div class="band-stage">
-      <ComposerWordRow word={sequence.word ?? ""} {propControl} />
+      <ComposerWordRow word={sequence.word ?? ""} live="polite" {propControl} />
       {@render stage()}
       <div class="tunnel-notation">
         <div class="notation-caption">

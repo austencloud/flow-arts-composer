@@ -503,13 +503,13 @@
 />
 
 {#snippet tunnelPlaceholder()}
-  <!-- Reserve the stage, toolbar, and seven-card preset bank during lazy load. -->
+  <!-- Reserve the word row, stage, toolbar, and seven-card preset bank during lazy load. -->
   <div class="tunnel-placeholder" aria-hidden="true">
     <div class="placeholder-stage-wrap">
+      <div class="placeholder-word-row"></div>
       <div class="placeholder-square"></div>
       <div class="placeholder-notation"></div>
       <div class="placeholder-toolbar">
-        <div class="placeholder-tool"></div>
         <div class="placeholder-tool"></div>
         <div class="placeholder-tool"></div>
       </div>
@@ -1494,6 +1494,9 @@
     --stop-title-size: clamp(2.45rem, 1.8rem + 2.5vw, 74px);
     --stop-gap: var(--spacing-lg, 24px);
     --stop-head: calc(var(--stop-title-size) + var(--stop-gap));
+    /* ComposerWordRow's height on every demo. The stage formulas below
+       subtract it, and the row reads the same token. */
+    --word-row-h: 3.25rem;
     padding-block: var(--stop-pad, var(--stop-pad-plain));
     border-top: 1px solid var(--theme-stroke, oklch(0.45 0.03 270 / 0.2));
   }
@@ -1593,17 +1596,18 @@
 
   /* The frame hugs the stage-plus-controls composition instead of spanning a
      wide shell with dark margins on both sides of it. On the stage the square
-     also fits the room: less the heading, this frame's padding and border,
-     and the notation rail and toolbar under the square. Without the stage the 200vh fallback
-     leaves the plain page's own sizing in charge. */
+     also fits the room: less the heading, the word row above the square,
+     this frame's padding and border, and the notation rail and toolbar under
+     the square. Without the stage the 200vh fallback leaves the plain page's
+     own sizing in charge. */
   .band-frame {
     max-width: min(100%, 92rem);
     margin-inline: auto;
     --tunnel-stage-size: min(
       46rem,
       62vh,
-      var(--stop-room, 200vh) - var(--stop-head) - 2 * var(--frame-pad) -
-        12.625rem - 2px
+      var(--stop-room, 200vh) - var(--stop-head) - var(--word-row-h) - 2 *
+        var(--frame-pad) - 12.625rem - 2px
     );
   }
 
@@ -1613,8 +1617,8 @@
     max-width: min(
       100%,
       (
-          var(--stop-room, 200vh) - var(--stop-head) - 2 * var(--frame-pad) -
-            2px
+          var(--stop-room, 200vh) - var(--stop-head) - var(--word-row-h) - 2 *
+            var(--frame-pad) - 2px
         ) *
         16 / 9 + 2 * var(--frame-pad) + 2px
     );
@@ -1654,6 +1658,9 @@
   }
   .placeholder-stage-wrap {
     min-width: 0;
+  }
+  .placeholder-word-row {
+    height: var(--word-row-h, 3.25rem);
   }
   .placeholder-notation {
     height: 8.125rem;

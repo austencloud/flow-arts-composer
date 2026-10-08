@@ -3,6 +3,7 @@ import { holdWhenStopLeaves } from "../hold-when-stop-leaves";
 
 function stubIntersectionObserver() {
   let reportIntersection = (_visible: boolean) => {};
+  const disconnects = vi.fn();
   vi.stubGlobal(
     "IntersectionObserver",
     class {
@@ -14,10 +15,15 @@ function stubIntersectionObserver() {
           );
       }
       observe() {}
-      disconnect() {}
+      disconnect() {
+        disconnects();
+      }
     }
   );
-  return (visible: boolean) => reportIntersection(visible);
+  return {
+    report: (visible: boolean) => reportIntersection(visible),
+    disconnects,
+  };
 }
 
 function mountSection(pointerEvents: string) {
@@ -34,12 +40,13 @@ const tick = () => new Promise((resolve) => setTimeout(resolve, 0));
 
 describe("holdWhenStopLeaves", () => {
   afterEach(() => {
+    vi.restoreAllMocks();
     vi.unstubAllGlobals();
     document.body.innerHTML = "";
   });
 
   it("does not hold on a stage pose made before the viewport is measured", async () => {
-    const reportIntersection = stubIntersectionObserver();
+    const { report: reportIntersection } = stubIntersectionObserver();
     const section = mountSection("");
     const hold = vi.fn();
     const handle = holdWhenStopLeaves(section, hold);
@@ -55,7 +62,7 @@ describe("holdWhenStopLeaves", () => {
   });
 
   it("holds once when the stop leaves the viewport", () => {
-    const reportIntersection = stubIntersectionObserver();
+    const { report: reportIntersection } = stubIntersectionObserver();
     const section = mountSection("");
     const hold = vi.fn();
     holdWhenStopLeaves(section, hold);
@@ -71,7 +78,7 @@ describe("holdWhenStopLeaves", () => {
   });
 
   it("holds when the stage takes the stop's pointer events", async () => {
-    const reportIntersection = stubIntersectionObserver();
+    const { report: reportIntersection } = stubIntersectionObserver();
     const section = mountSection("");
     const hold = vi.fn();
     holdWhenStopLeaves(section, hold);
@@ -83,12 +90,30 @@ describe("holdWhenStopLeaves", () => {
   });
 
   it("holds at once when a deep link arrives already past the stop", () => {
-    const reportIntersection = stubIntersectionObserver();
+    const { report: reportIntersection } = stubIntersectionObserver();
     const section = mountSection("none");
     const hold = vi.fn();
     holdWhenStopLeaves(section, hold);
 
     reportIntersection(false);
     expect(hold).toHaveBeenCalledTimes(1);
+  });
+
+  it("releases both observers once it has held", () => {
+    const { report: reportIntersection, disconnects } =
+      stubIntersectionObserver();
+    const stageDisconnect = vi.spyOn(MutationObserver.prototype, "disconnect");
+    const section = mountSection("");
+    const hold = vi.fn();
+    holdWhenStopLeaves(section, hold);
+
+    reportIntersection(true);
+    expect(disconnects).not.toHaveBeenCalled();
+    expect(stageDisconnect).not.toHaveBeenCalled();
+
+    reportIntersection(false);
+    expect(hold).toHaveBeenCalledTimes(1);
+    expect(disconnects).toHaveBeenCalledTimes(1);
+    expect(stageDisconnect).toHaveBeenCalledTimes(1);
   });
 });

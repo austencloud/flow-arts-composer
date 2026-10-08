@@ -5,7 +5,8 @@
   chooser at the start, the app's own WordLabel (TKA glyphs, letter
   highlighting during playback) on the center line, and an optional trailing
   control. The chooser sits outside the live region so changing props is not
-  announced as a new word. The fixed height keeps the grid below from moving
+  announced as a new word. The fixed height (--word-row-h, which a host stop
+  sets so its own sizing can subtract it) keeps the grid below from moving
   when a hint swaps for a word.
 -->
 <script lang="ts">
@@ -57,7 +58,7 @@
 <style>
   /* WordLabel reads --text-color (its default is a light-theme navy). */
   .word-row {
-    min-height: 3.25rem;
+    min-height: var(--word-row-h, 3.25rem);
     display: grid;
     grid-template-columns: minmax(0, 1fr);
     align-items: center;

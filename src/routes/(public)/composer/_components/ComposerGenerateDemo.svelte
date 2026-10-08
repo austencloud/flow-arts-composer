@@ -103,8 +103,9 @@
   }
 
   // The page sequence changes when the hero rolls or Construct composes; the
-  // generator shows it when it is in view. Its own draws write the page
-  // sequence first, so they never read back as a change.
+  // generator shows it when it is in view. Its own draws set the local copy
+  // and then write the page sequence, so the write comes back with the id
+  // already shown and never reads as a change.
   $effect(() => {
     if (shouldAdoptCarriedSequence(current, sequence, inViewport)) {
       current = sequence;
@@ -141,7 +142,7 @@
       // produces. It clears itself once consumed.
       setPendingGenerationAnimation(true);
       current = seq;
-      onGenerated?.(current);
+      onGenerated?.(seq);
       result = "success";
     } catch (error) {
       result = classifyComposerGenerationFailure(error);
