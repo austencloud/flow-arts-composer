@@ -1,5 +1,5 @@
 import { cubicInOut, cubicOut } from "svelte/easing";
-import type { TransitionConfig } from "svelte/transition";
+import { fade, type TransitionConfig } from "svelte/transition";
 import { DURATION } from "./transitions";
 import { cssCubicBezier } from "./ws-ease";
 
@@ -265,6 +265,35 @@ export function growFade(
       ` opacity: ${t}; overflow: hidden; box-sizing: border-box;` +
       ` transform: translateX(${(1 - t) * x}px);`,
   };
+}
+
+interface OpaqueFadeParams {
+  duration?: number;
+  delay?: number;
+  /**
+   * Classes that hold the node below full opacity. A node carrying one falls
+   * back to Svelte's `fade`, which reads the opacity it should fade from.
+   */
+  dimmedBy?: readonly string[];
+}
+
+/**
+ * Svelte's `fade` for nodes that rest at full opacity. `fade` reads the node's
+ * computed opacity before it starts, even at zero duration, which forces a
+ * style recalc (and layout inside size containers) for every element. Undo in
+ * the sequence grid paid that once per entering and leaving cell, ~18 times in
+ * one frame.
+ */
+export function opaqueFade(
+  node: Element,
+  { duration = DURATION.fast, delay = 0, dimmedBy = [] }: OpaqueFadeParams = {}
+): TransitionConfig {
+  const ms = motionDuration(duration);
+  if (ms === 0) return { duration: 0 };
+  if (dimmedBy.some((name) => node.classList.contains(name))) {
+    return fade(node, { duration: ms, delay });
+  }
+  return { duration: ms, delay, css: (t) => `opacity: ${t}` };
 }
 
 interface PopInParams {
