@@ -3,12 +3,17 @@ import {
   BufferGeometry,
   InstancedMesh,
   Matrix4,
+  MeshPhysicalMaterial,
   Object3D,
+  Quaternion,
   Vector3,
 } from "three";
 import { GooRenderer3D } from "$lib/shared/3d/effects/water/goo-renderer-3d";
 import type { GooTipSource3D } from "$lib/shared/3d/effects/scene-effects/scene-effect-source-3d";
 import { resolveGoo3D } from "$lib/shared/effects/translators/webgl3d-translator";
+
+const RINGS = 25;
+const SIDES = 12;
 
 function source(overrides: Partial<GooTipSource3D> = {}): GooTipSource3D {
   return {
@@ -29,6 +34,8 @@ function source(overrides: Partial<GooTipSource3D> = {}): GooTipSource3D {
       customColor: "#3a7fd9",
       clarity: 0,
       surfaceTension: 0.5,
+      viscosity: 0,
+      gravity: 1,
       trackingMode: "both_ends",
       spewStyle: "flow",
     }),
@@ -51,7 +58,88 @@ function visibleVertices(positions: Float32Array): number {
   return count;
 }
 
+function ringRadius(geometry: BufferGeometry, ring: number): number {
+  const positions = geometry.getAttribute("position");
+  const a = new Vector3().fromBufferAttribute(positions, ring * SIDES);
+  const b = new Vector3().fromBufferAttribute(
+    positions,
+    ring * SIDES + SIDES / 2
+  );
+  return a.distanceTo(b) / 2;
+}
+
+function ringCenter(geometry: BufferGeometry, ring: number): Vector3 {
+  const positions = geometry.getAttribute("position");
+  const a = new Vector3().fromBufferAttribute(positions, ring * SIDES);
+  const b = new Vector3().fromBufferAttribute(
+    positions,
+    ring * SIDES + SIDES / 2
+  );
+  return a.add(b).multiplyScalar(0.5);
+}
+
 describe("GooRenderer3D", () => {
+  it("resolves legacy liquid values and gravity in Earth multiples", () => {
+    const legacy = { ...source().params, viscosity: undefined, gravity: undefined } as unknown as Parameters<typeof resolveGoo3D>[0];
+    expect(resolveGoo3D(legacy)).toMatchObject({ viscosity: 0, gravity: 1, worldGravity: -9.8 });
+    expect(resolveGoo3D({ ...legacy, viscosity: Infinity, gravity: -1, surfaceTension: NaN })).toMatchObject({ viscosity: 0, gravity: 0, surfaceTension: 0.45, worldGravity: -0 });
+    expect(resolveGoo3D({ ...legacy, viscosity: 3, gravity: 3, surfaceTension: 3 })).toMatchObject({ viscosity: 1, gravity: 2, surfaceTension: 1, worldGravity: -19.6 });
+  });
+
+  it("makes connected liquid resist stretch at high viscosity", () => {
+    const reachAfter = (viscosity: number) => {
+      const renderer = new GooRenderer3D();
+      const parent = new Object3D();
+      renderer.initialize(parent);
+      const tip = source({ velocity: { x: 2, y: 0, z: 0 }, speed: 0 });
+      tip.params.viscosity = viscosity;
+      tip.params.worldGravity = 0;
+      tip.params.ambientSpawnRate = 60;
+      renderer.update([tip], 1 / 60);
+      tip.params.ambientEmission = 0;
+      const internal = renderer as unknown as { strands: Array<{ active: boolean; attached: boolean; head: Vector3; tail: Vector3 }> };
+      for (let frame = 0; frame < 20; frame++) renderer.update([tip], 1 / 60);
+      const strand = internal.strands.find((item) => item.active)!;
+      const result = { attached: strand.attached, reach: strand.head.distanceTo(strand.tail) };
+      renderer.dispose();
+      return result;
+    };
+    const thin = reachAfter(0);
+    const thick = reachAfter(1);
+    expect(thin.attached).toBe(true);
+    expect(thick.attached).toBe(true);
+    expect(thick.reach).toBeLessThan(thin.reach * 0.8);
+  });
+
+  it("releases thick liquid at its damped speed, then follows gravity without drag", () => {
+    const renderer = new GooRenderer3D();
+    const parent = new Object3D();
+    renderer.initialize(parent);
+    const tip = source({ velocity: { x: 2, y: 0, z: 0 }, speed: 0 });
+    tip.params.viscosity = 1;
+    tip.params.worldGravity = -4;
+    tip.params.ambientSpawnRate = 60;
+    renderer.update([tip], 1 / 60);
+    tip.params.ambientEmission = 0;
+    const internal = renderer as unknown as {
+      strands: Array<{ active: boolean; velocity: Vector3 }>;
+      drops: Array<{ active: boolean; velocity: Vector3 }>;
+    };
+    for (let frame = 0; frame < 20; frame++) renderer.update([tip], 1 / 60);
+    const strand = internal.strands.find((item) => item.active)!;
+    const attachedSpeed = strand.velocity.x;
+    expect(attachedSpeed).toBeLessThan(0.35);
+    for (let frame = 0; frame < 7; frame++) renderer.update([], 1 / 60);
+    const drop = internal.drops.find((item) => item.active)!;
+    expect(drop).toBeDefined();
+    expect(drop.velocity.x).toBeCloseTo(attachedSpeed, 5);
+    const verticalSpeed = drop.velocity.y;
+    renderer.update([], 1 / 60);
+    expect(drop.velocity.x).toBeCloseTo(attachedSpeed, 5);
+    expect(drop.velocity.y - verticalSpeed).toBeCloseTo(-4 / 60, 5);
+    renderer.dispose();
+  });
+
   it("keeps tube geometry finite through movement, retirement, and clearing", () => {
     const renderer = new GooRenderer3D();
     const parent = new Object3D();
@@ -80,7 +168,7 @@ describe("GooRenderer3D", () => {
       .geometry;
     const positions = geometry.getAttribute("position");
     const normals = geometry.getAttribute("normal");
-    const ringStart = 8 * 12;
+    const ringStart = 12 * SIDES;
     let centerX = 0;
     let centerY = 0;
     let centerZ = 0;
@@ -122,13 +210,13 @@ describe("GooRenderer3D", () => {
     ).geometry.getAttribute("position");
     expect(Array.from(positions.array).every(Number.isFinite)).toBe(true);
     let previous: Vector3 | null = null;
-    for (let ring = 1; ring < 16; ring++) {
-      const start = ring * 12;
+    for (let ring = 1; ring < RINGS - 1; ring++) {
+      const start = ring * SIDES;
       const center = new Vector3();
-      for (let side = 0; side < 12; side++) {
+      for (let side = 0; side < SIDES; side++) {
         center.add(new Vector3().fromBufferAttribute(positions, start + side));
       }
-      center.divideScalar(12);
+      center.divideScalar(SIDES);
       const radial = new Vector3()
         .fromBufferAttribute(positions, start)
         .sub(center)
@@ -136,6 +224,139 @@ describe("GooRenderer3D", () => {
       if (previous) expect(radial.dot(previous)).toBeGreaterThan(0.5);
       previous = radial;
     }
+    renderer.dispose();
+  });
+
+  it("forms a rounded distal bulb wider than the middle neck", () => {
+    const renderer = new GooRenderer3D();
+    const parent = new Object3D();
+    renderer.initialize(parent);
+    renderer.update([source()], 1 / 15);
+    const internal = renderer as unknown as {
+      strands: Array<{
+        active: boolean;
+        tail: Vector3;
+        bend: Vector3;
+        head: Vector3;
+      }>;
+      writeStrands(): void;
+    };
+    const strand = internal.strands.find((candidate) => candidate.active)!;
+    strand.tail.set(0, 0, 0);
+    strand.bend.set(0, -0.25, 0);
+    strand.head.set(0, -0.5, 0);
+    internal.writeStrands();
+    const positions = (
+      parent.children[0] as { geometry: BufferGeometry }
+    ).geometry.getAttribute("position");
+    const radiusAt = (ring: number): number => {
+      const start = ring * SIDES;
+      const center = new Vector3();
+      for (let side = 0; side < SIDES; side++) {
+        center.add(new Vector3().fromBufferAttribute(positions, start + side));
+      }
+      center.divideScalar(SIDES);
+      return new Vector3()
+        .fromBufferAttribute(positions, start)
+        .distanceTo(center);
+    };
+    expect(radiusAt(22)).toBeGreaterThan(radiusAt(12) * 1.3);
+    expect(radiusAt(23)).toBeGreaterThan(radiusAt(17) * 0.4);
+    expect(radiusAt(24)).toBeLessThan(0.00001);
+    renderer.dispose();
+  });
+
+  it("keeps HDR reflections and gives Mercury its own metalness", () => {
+    const renderer = new GooRenderer3D();
+    const parent = new Object3D();
+    renderer.initialize(parent);
+    const classic = source();
+    const mercury = source({
+      sourceId: 2,
+      position: { x: 5, y: 2, z: 3 },
+    });
+    mercury.params = resolveGoo3D({ ...mercury.params, palette: "mercury" });
+    renderer.update([classic, mercury], 1 / 15);
+    const tube = parent.children[0] as {
+      geometry: BufferGeometry;
+      material: MeshPhysicalMaterial;
+    };
+    const metalness = tube.geometry.getAttribute("aMetalness");
+    expect(metalness.getX(0)).toBeLessThan(0.2);
+    expect(metalness.getX(RINGS * SIDES)).toBeGreaterThan(0.8);
+    const studio = tube.material.envMap!.image.data as Float32Array;
+    expect(studio.some((channel) => channel > 1)).toBe(true);
+    renderer.dispose();
+  });
+
+  it("thins the shaft under stretch while keeping the distal bead", () => {
+    const renderer = new GooRenderer3D();
+    const parent = new Object3D();
+    renderer.initialize(parent);
+    const tip = source();
+    tip.params.worldGravity = 0;
+    renderer.update([tip], 1 / 15);
+    const internal = renderer as unknown as {
+      strands: Array<{
+        active: boolean;
+        tail: Vector3;
+        bend: Vector3;
+        head: Vector3;
+        age: number;
+      }>;
+      writeStrands(): void;
+    };
+    const strand = internal.strands.find((candidate) => candidate.active)!;
+    strand.age = 0.2;
+    strand.tail.set(0, 0, 0);
+    strand.bend.set(0.1, 0, 0);
+    strand.head.set(0.2, 0, 0);
+    internal.writeStrands();
+    const geometry = (parent.children[0] as { geometry: BufferGeometry })
+      .geometry;
+    const shortShaft = ringRadius(geometry, 8);
+    const shortBead = ringRadius(geometry, 17);
+    strand.bend.set(0.3, 0, 0);
+    strand.head.set(0.6, 0, 0);
+    internal.writeStrands();
+    expect(ringRadius(geometry, 8)).toBeLessThan(shortShaft * 0.8);
+    expect(ringRadius(geometry, 17)).toBeGreaterThan(shortBead * 0.9);
+    renderer.dispose();
+  });
+
+  it("uses the same gravity before and after a bead separates", () => {
+    const renderer = new GooRenderer3D();
+    const parent = new Object3D();
+    renderer.initialize(parent);
+    const tip = source({ velocity: { x: 1, y: 0, z: 0 }, speed: 0 });
+    tip.params.worldGravity = -6;
+    tip.params.surfaceTension = 0;
+    tip.params.ambientSpawnRate = 60;
+    renderer.update([tip], 1 / 60);
+    tip.params.ambientEmission = 0;
+    tip.params.motionEmission = 0;
+    const internal = renderer as unknown as {
+      strands: Array<{ active: boolean; velocity: Vector3; gravity: number }>;
+      drops: Array<{ active: boolean; velocity: Vector3; gravity: number }>;
+    };
+    const strand = internal.strands.find((candidate) => candidate.active)!;
+    const initialVelocity = strand.velocity.y;
+    renderer.update([tip], 1 / 60);
+    expect(strand.velocity.y - initialVelocity).toBeCloseTo(-6 / 60, 5);
+    for (
+      let frame = 0;
+      frame < 60 && !internal.drops.some((drop) => drop.active);
+      frame++
+    ) {
+      renderer.update([tip], 1 / 60);
+    }
+    const drop = internal.drops.find((candidate) => candidate.active)!;
+    expect(drop).toBeDefined();
+    expect(drop.gravity).toBe(strand.gravity);
+    expect(drop.velocity.y - strand.velocity.y).toBeCloseTo(-6 / 60, 5);
+    const releasedVelocity = drop.velocity.y;
+    renderer.update([tip], 1 / 60);
+    expect(drop.velocity.y - releasedVelocity).toBeCloseTo(-6 / 60, 5);
     renderer.dispose();
   });
 
@@ -153,7 +374,7 @@ describe("GooRenderer3D", () => {
       if (!mesh.visible) continue;
       observed = true;
       expect(visibleVertices(renderedPositions(parent))).toBeLessThanOrEqual(
-        17 * 12
+        RINGS * SIDES
       );
     }
     expect(observed).toBe(true);
@@ -161,16 +382,20 @@ describe("GooRenderer3D", () => {
     renderer.update([tip], 1 / 15);
     const positions = renderedPositions(parent);
     let bodyOffset = -1;
-    for (let offset = 0; offset < positions.length; offset += 17 * 12 * 3) {
+    for (
+      let offset = 0;
+      offset < positions.length;
+      offset += RINGS * SIDES * 3
+    ) {
       if (positions[offset] !== 0 || positions[offset + 1] !== 0) {
         bodyOffset = offset;
         break;
       }
     }
     expect(bodyOffset).toBeGreaterThanOrEqual(0);
-    for (const ring of [0, 16]) {
-      const offset = bodyOffset + ring * 12 * 3;
-      for (let side = 1; side < 12; side++) {
+    for (const ring of [0, RINGS - 1]) {
+      const offset = bodyOffset + ring * SIDES * 3;
+      for (let side = 1; side < SIDES; side++) {
         const other = offset + side * 3;
         for (let axis = 0; axis < 3; axis++) {
           expect(positions[other + axis]).toBeCloseTo(
@@ -240,7 +465,7 @@ describe("GooRenderer3D", () => {
     expect(remaining(1)).toBe(true);
   });
 
-  it("keeps a short retracting body joined to the first detached drop", () => {
+  it("pinches the neck before handing its full bead to a settling drop", () => {
     const renderer = new GooRenderer3D();
     const parent = new Object3D();
     renderer.initialize(parent);
@@ -250,25 +475,63 @@ describe("GooRenderer3D", () => {
     tip.params.ambientSpawnRate = 60;
     renderer.update([tip], 1 / 60);
     tip.params.ambientEmission = 0;
-    for (let frame = 0; frame < 40; frame++) renderer.update([tip], 1 / 60);
+    for (let frame = 0; frame < 37; frame++) renderer.update([tip], 1 / 60);
 
     const tube = parent.children[0] as {
       geometry: BufferGeometry;
       visible: boolean;
     };
     const drops = parent.children[1] as InstancedMesh;
+    const unpinchedNeck = ringRadius(tube.geometry, 13);
+    const earlyBulb = ringRadius(tube.geometry, 17);
+    for (let frame = 0; frame < 6; frame++) renderer.update([tip], 1 / 60);
+    expect(drops.count).toBe(0);
+    expect(ringRadius(tube.geometry, 13)).toBeLessThan(unpinchedNeck * 0.8);
+    expect(ringRadius(tube.geometry, 17)).toBeGreaterThan(earlyBulb * 0.8);
+    let previousBulbCenter = ringCenter(tube.geometry, 17);
+    for (let frame = 0; frame < 4 && drops.count === 0; frame++) {
+      previousBulbCenter = ringCenter(tube.geometry, 17);
+      renderer.update([tip], 1 / 60);
+    }
     expect(tube.visible).toBe(true);
     expect(drops.count).toBeGreaterThan(0);
     const tipPosition = new Vector3().fromBufferAttribute(
       tube.geometry.getAttribute("position"),
-      16 * 12
+      (RINGS - 1) * SIDES
     );
     const dropMatrix = new Matrix4();
     drops.getMatrixAt(0, dropMatrix);
     const dropPosition = new Vector3().setFromMatrixPosition(dropMatrix);
     expect(dropPosition.distanceTo(tipPosition)).toBeLessThan(0.04);
-    for (let frame = 0; frame < 9; frame++) renderer.update([tip], 1 / 60);
+    expect(dropPosition.distanceTo(previousBulbCenter)).toBeLessThan(0.03);
+    const dropSize = new Vector3();
+    dropMatrix.decompose(new Vector3(), new Quaternion(), dropSize);
+    expect(dropSize.x).toBeGreaterThan(earlyBulb * 0.6);
+    expect(ringRadius(tube.geometry, 22)).toBeLessThan(dropSize.x * 0.4);
+    const initialStretch = dropSize.y / dropSize.x;
+    for (let frame = 0; frame < 4; frame++) renderer.update([tip], 1 / 60);
+    drops.getMatrixAt(0, dropMatrix);
+    dropMatrix.decompose(new Vector3(), new Quaternion(), dropSize);
+    expect(dropSize.y / dropSize.x).toBeLessThan(initialStretch);
+    for (let frame = 0; frame < 8; frame++) renderer.update([tip], 1 / 60);
     expect(tube.visible).toBe(false);
+    renderer.dispose();
+  });
+
+  it("keeps a fully collapsed strand finite through release", () => {
+    const renderer = new GooRenderer3D();
+    const parent = new Object3D();
+    renderer.initialize(parent);
+    const tip = source({ velocity: { x: 0, y: 0.6, z: 0 }, speed: 0 });
+    tip.params.worldGravity = 0;
+    tip.params.ambientSpawnRate = 60;
+    renderer.update([tip], 1 / 60);
+    tip.params.ambientEmission = 0;
+    for (let frame = 0; frame < 60; frame++) renderer.update([tip], 1 / 60);
+    expect(Array.from(renderedPositions(parent)).every(Number.isFinite)).toBe(
+      true
+    );
+    expect((parent.children[1] as InstancedMesh).count).toBe(0);
     renderer.dispose();
   });
 
@@ -328,7 +591,7 @@ describe("GooRenderer3D", () => {
     );
     for (let frame = 0; frame < 12; frame++) renderer.update(crowded, 1 / 15);
     expect(Array.from(positions).every(Number.isFinite)).toBe(true);
-    expect(positions.length).toBe(64 * 17 * 12 * 3);
+    expect(positions.length).toBe(64 * RINGS * SIDES * 3);
     renderer.dispose();
   });
 });

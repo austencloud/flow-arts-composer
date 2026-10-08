@@ -230,13 +230,13 @@ export const EFFECT_CONTROLS: Record<EffectId, ControlDescriptor[]> = {
       { value: "blood", label: "Blood" }, { value: "spirit", label: "Spirit" }, { value: "custom", label: "Custom" },
     ]),
     slider("goo", "intensity", "Intensity", { tier: "primary" }),
-    // The two goo renderers read different fields (see GooIntent), so this
-    // slot holds a different knob in each view. The 2D canvas turns Viscosity
-    // into drip rate, body length and taper, and ignores Ambient. The 3D
-    // viewer uses Ambient for a steady drip while the prop is still, and
-    // ignores Viscosity. clarity (3D-only opacity) and spewStyle (read by
-    // nothing) are not listed.
+    // The 2D renderer still reads surfaceTension as its Viscosity setting.
+    // In 3D, that field controls cohesion; the new viscosity field controls
+    // connected liquid's resistance to stretching.
     slider("goo", "surfaceTension", "Viscosity", { tier: "primary", view: "2d" }),
+    slider("goo", "viscosity", "Viscosity", { tier: "primary", view: "3d" }),
+    slider("goo", "surfaceTension", "Surface tension", { id: "goo-surfaceTension-3d", tier: "primary", view: "3d" }),
+    slider("goo", "gravity", "Gravity (×)", { min: 0, max: 2, step: 0.1, pct: false, tier: "primary", view: "3d" }),
     slider("goo", "ambientEmission", "Ambient", { tier: "primary", view: "3d" }),
     slider("goo", "motionEmission", "Motion", { tier: "primary" }),
     { id: "goo-track", label: "Track", type: "segmented", field: "trackingMode", options: TRACK_OPTS, tier: "tracking" },

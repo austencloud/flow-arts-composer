@@ -17,6 +17,7 @@ import type {
   AnimalIntent,
   PulseIntent,
 } from "../domain/effects-config";
+import { normalizeGooLiquidControls } from "../domain/effects-config";
 import type {
   Trails3DParams,
   Fire3DParams,
@@ -207,16 +208,20 @@ export function resolveGoo3D(
   intent: GooIntent,
   override: Partial<Goo3DParams> = {}
 ): Goo3DParams {
+  const goo = {
+    ...intent,
+    ...normalizeGooLiquidControls(intent),
+  };
   const defaults: Omit<Goo3DParams, keyof GooIntent> = {
-    resolvedPalette: resolveWaterPalette(intent),
+    resolvedPalette: resolveWaterPalette(goo),
     poolSize: 1024,
     baseRadius: 0.04,
     ambientSpawnRate: 8,
     motionSpawnRate: 40,
     motionReferenceSpeed: 3.0,
-    worldGravity: -9.8,
+    worldGravity: -9.8 * goo.gravity,
   };
-  return { ...intent, ...defaults, ...override };
+  return { ...goo, ...defaults, ...override };
 }
 
 export function resolveBubbles3D(

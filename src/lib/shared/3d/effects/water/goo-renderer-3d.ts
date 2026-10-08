@@ -2,15 +2,18 @@ import {
   BufferAttribute,
   BufferGeometry,
   Color,
+  DataTexture,
   DynamicDrawUsage,
+  EquirectangularReflectionMapping,
+  FloatType,
   InstancedBufferAttribute,
   InstancedMesh,
   Mesh,
+  MeshPhysicalMaterial,
   Object3D,
-  ShaderMaterial,
+  RGBAFormat,
+  LinearSRGBColorSpace,
   SphereGeometry,
-  UniformsLib,
-  UniformsUtils,
   Vector3,
 } from "three";
 import {
@@ -20,8 +23,11 @@ import {
 
 const STRANDS = 64;
 const DROPS = 512;
-const RINGS = 17;
+const RINGS = 25;
+const CAP_RINGS = 7;
 const SIDES = 12;
+const PINCH_TIME = 0.075;
+const RETRACT_TIME = 0.11;
 const VERTICES = RINGS * SIDES;
 const TELEPORT_DISTANCE = 0.75;
 const UP = new Vector3(0, 1, 0);
@@ -32,9 +38,11 @@ interface Strand {
   sourceId: number;
   attached: boolean;
   releaseAge: number;
+  dropReleased: boolean;
   age: number;
   maxAge: number;
   tension: number;
+  viscosity: number;
   radius: number;
   gravity: number;
   tail: Vector3;
@@ -43,8 +51,8 @@ interface Strand {
   velocity: Vector3;
   core: Color;
   edge: Color;
-  highlight: Color;
   alpha: number;
+  metalness: number;
 }
 
 interface Drop {
@@ -56,92 +64,98 @@ interface Drop {
   position: Vector3;
   velocity: Vector3;
   color: Color;
-  highlight: Color;
   alpha: number;
+  metalness: number;
 }
 
-// The highlight is directional even in dim scenes; the rim catches light as a
-// curved liquid edge instead of reading as a flat translucent glow.
-function createWetMaterial(): ShaderMaterial {
-  return new ShaderMaterial({
+// A tiny owned studio map gives the liquid broad reflections even in a dim
+// scene. The dark surroundings preserve the resolved palette's body color.
+function createStudioMap(): DataTexture {
+  const width = 128;
+  const height = 64;
+  const pixels = new Float32Array(width * height * 4);
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      const u = x / width;
+      const v = y / height;
+      const key =
+        Math.exp(-Math.pow((u - 0.3) / 0.065, 4)) *
+        Math.exp(-Math.pow((v - 0.38) / 0.24, 4));
+      const fill =
+        Math.exp(-Math.pow((u - 0.7) / 0.11, 4)) *
+        Math.exp(-Math.pow((v - 0.54) / 0.16, 4));
+      const light = 0.025 + 3.5 * key + 1 * fill;
+      const offset = (y * width + x) * 4;
+      pixels[offset] = light;
+      pixels[offset + 1] = light;
+      pixels[offset + 2] = light;
+      pixels[offset + 3] = 1;
+    }
+  }
+  const texture = new DataTexture(pixels, width, height, RGBAFormat, FloatType);
+  texture.mapping = EquirectangularReflectionMapping;
+  texture.colorSpace = LinearSRGBColorSpace;
+  texture.needsUpdate = true;
+  return texture;
+}
+
+function createWetMaterial(envMap: DataTexture): MeshPhysicalMaterial {
+  const material = new MeshPhysicalMaterial({
+    color: 0xffffff,
     vertexColors: true,
+    roughness: 0.24,
+    metalness: 1,
+    clearcoat: 0.7,
+    clearcoatRoughness: 0.16,
+    envMap,
+    envMapIntensity: 0.8,
     transparent: true,
     depthWrite: false,
     fog: true,
-    uniforms: UniformsUtils.merge([UniformsLib.fog]),
-    vertexShader: `
-    varying vec3 vNormal;
-    varying vec3 vView;
-    varying vec3 vColor;
-    varying vec3 vHighlight;
-    varying float vAlpha;
-    attribute vec3 aHighlight;
-    attribute float aAlpha;
-    #include <fog_pars_vertex>
-    void main() {
-      vec4 localPosition = vec4(position, 1.0);
-      vec3 localNormal = normal;
-      vec3 tint = color;
-      #ifdef USE_INSTANCING
-        localPosition = instanceMatrix * localPosition;
-        vec3 inverseScaleSq = vec3(
-          1.0 / max(dot(instanceMatrix[0].xyz, instanceMatrix[0].xyz), 0.000001),
-          1.0 / max(dot(instanceMatrix[1].xyz, instanceMatrix[1].xyz), 0.000001),
-          1.0 / max(dot(instanceMatrix[2].xyz, instanceMatrix[2].xyz), 0.000001)
-        );
-        localNormal = mat3(instanceMatrix) * (localNormal * inverseScaleSq);
-      #endif
-      #ifdef USE_INSTANCING_COLOR
-        tint *= instanceColor;
-      #endif
-      vec4 worldPosition = modelMatrix * localPosition;
-      vec4 mvPosition = viewMatrix * worldPosition;
-      vNormal = normalize(mat3(viewMatrix * modelMatrix) * localNormal);
-      vView = normalize(-mvPosition.xyz);
-      vColor = tint;
-      vHighlight = aHighlight;
-      vAlpha = aAlpha;
-      gl_Position = projectionMatrix * mvPosition;
-      #include <fog_vertex>
-    }
-  `,
-    fragmentShader: `
-    varying vec3 vNormal;
-    varying vec3 vView;
-    varying vec3 vColor;
-    varying vec3 vHighlight;
-    varying float vAlpha;
-    #include <common>
-    #include <fog_pars_fragment>
-    void main() {
-      vec3 n = normalize(vNormal);
-      vec3 view = normalize(vView);
-      vec3 light = normalize(vec3(-0.48, 0.78, 0.42));
-      float diffuse = 0.18 + 0.53 * max(dot(n, light), 0.0);
-      float fresnel = pow(1.0 - max(dot(n, view), 0.0), 3.0);
-      vec3 reflection = reflect(-view, n);
-      float strip = exp(-pow((reflection.x + 0.27) / 0.13, 2.0))
-        * smoothstep(-0.45, 0.28, reflection.y)
-        * (1.0 - smoothstep(0.68, 0.96, reflection.y));
-      float glint = exp(-pow((reflection.x - 0.38) / 0.22, 2.0)
-        - pow((reflection.y - 0.44) / 0.25, 2.0));
-      vec3 body = vColor * diffuse;
-      vec3 wet = vHighlight * (0.065 * fresnel + 0.8 * strip + 0.65 * glint);
-      gl_FragColor = vec4(body + wet, vAlpha);
-      #include <tonemapping_fragment>
-      #include <colorspace_fragment>
-      #include <fog_fragment>
-    }
-  `,
   });
+  material.onBeforeCompile = (shader) => {
+    shader.vertexShader = shader.vertexShader
+      .replace(
+        "#include <common>",
+        `#include <common>
+         attribute float aAlpha;
+         attribute float aMetalness;
+         varying float vGooAlpha;
+         varying float vGooMetalness;`
+      )
+      .replace(
+        "#include <begin_vertex>",
+        `#include <begin_vertex>
+         vGooAlpha = aAlpha;
+         vGooMetalness = aMetalness;`
+      );
+    shader.fragmentShader = shader.fragmentShader
+      .replace(
+        "#include <common>",
+        `#include <common>
+         varying float vGooAlpha;
+         varying float vGooMetalness;`
+      )
+      .replace(
+        "#include <color_fragment>",
+        `#include <color_fragment>
+         diffuseColor.a *= vGooAlpha;`
+      )
+      .replace(
+        "#include <metalnessmap_fragment>",
+        `#include <metalnessmap_fragment>
+         metalnessFactor *= vGooMetalness;`
+      );
+  };
+  return material;
 }
 
 function makeTubeGeometry(): BufferGeometry {
   const geometry = new BufferGeometry();
   const positions = new Float32Array(STRANDS * VERTICES * 3);
   const colors = new Float32Array(positions.length);
-  const highlights = new Float32Array(positions.length);
   const alphas = new Float32Array(STRANDS * VERTICES);
+  const metalnesses = new Float32Array(STRANDS * VERTICES);
   const indices = new Uint16Array(STRANDS * (RINGS - 1) * SIDES * 6);
   let index = 0;
   for (let strand = 0; strand < STRANDS; strand++) {
@@ -171,12 +185,12 @@ function makeTubeGeometry(): BufferGeometry {
     new BufferAttribute(colors, 3).setUsage(DynamicDrawUsage)
   );
   geometry.setAttribute(
-    "aHighlight",
-    new BufferAttribute(highlights, 3).setUsage(DynamicDrawUsage)
-  );
-  geometry.setAttribute(
     "aAlpha",
     new BufferAttribute(alphas, 1).setUsage(DynamicDrawUsage)
+  );
+  geometry.setAttribute(
+    "aMetalness",
+    new BufferAttribute(metalnesses, 1).setUsage(DynamicDrawUsage)
   );
   geometry.setAttribute(
     "normal",
@@ -193,9 +207,11 @@ export class GooRenderer3D {
     sourceId: -1,
     attached: false,
     releaseAge: -1,
+    dropReleased: false,
     age: 0,
     maxAge: 0,
     tension: 0,
+    viscosity: 0,
     radius: 0,
     gravity: -9.8,
     tail: new Vector3(),
@@ -204,8 +220,8 @@ export class GooRenderer3D {
     velocity: new Vector3(),
     core: new Color(),
     edge: new Color(),
-    highlight: new Color(),
     alpha: 1,
+    metalness: 0.08,
   }));
   private readonly drops: Drop[] = Array.from({ length: DROPS }, () => ({
     active: false,
@@ -216,18 +232,19 @@ export class GooRenderer3D {
     position: new Vector3(),
     velocity: new Vector3(),
     color: new Color(),
-    highlight: new Color(),
     alpha: 1,
+    metalness: 0.08,
   }));
   private readonly tubeGeometry = makeTubeGeometry();
-  private readonly wetMaterial = createWetMaterial();
+  private readonly studioMap = createStudioMap();
+  private readonly wetMaterial = createWetMaterial(this.studioMap);
   private readonly tubeMesh = new Mesh(this.tubeGeometry, this.wetMaterial);
   private readonly sphereGeometry = new SphereGeometry(1, 12, 8);
-  private readonly dropHighlights = new InstancedBufferAttribute(
-    new Float32Array(DROPS * 3),
-    3
-  ).setUsage(DynamicDrawUsage);
   private readonly dropAlphas = new InstancedBufferAttribute(
+    new Float32Array(DROPS),
+    1
+  ).setUsage(DynamicDrawUsage);
+  private readonly dropMetalnesses = new InstancedBufferAttribute(
     new Float32Array(DROPS),
     1
   ).setUsage(DynamicDrawUsage);
@@ -260,8 +277,8 @@ export class GooRenderer3D {
     );
     colors.fill(1);
     this.sphereGeometry.setAttribute("color", new BufferAttribute(colors, 3));
-    this.sphereGeometry.setAttribute("aHighlight", this.dropHighlights);
     this.sphereGeometry.setAttribute("aAlpha", this.dropAlphas);
+    this.sphereGeometry.setAttribute("aMetalness", this.dropMetalnesses);
     this.tubeMesh.frustumCulled = false;
     this.dropMesh.frustumCulled = false;
     this.dropMesh.instanceMatrix.setUsage(DynamicDrawUsage);
@@ -331,6 +348,7 @@ export class GooRenderer3D {
     this.sphereGeometry.dispose();
     // Each renderer owns the material lifetime, even though both meshes share it.
     this.wetMaterial.dispose();
+    this.studioMap.dispose();
   }
 
   private advanceSource(
@@ -364,7 +382,7 @@ export class GooRenderer3D {
           p.baseRadius * 0.28,
           p.worldGravity * 0.35,
           p.resolvedPalette.edge,
-          p.resolvedPalette.highlight,
+          p.palette === "mercury" ? 0.88 : 0,
           0.94 - p.clarity * 0.12,
           0.34
         );
@@ -386,10 +404,14 @@ export class GooRenderer3D {
     strand.sourceId = source.sourceId;
     strand.attached = true;
     strand.releaseAge = -1;
+    strand.dropReleased = false;
     strand.age = 0;
     strand.tension = Math.min(1, Math.max(0, p.surfaceTension));
+    strand.viscosity = Math.min(1, Math.max(0, p.viscosity));
     strand.maxAge =
-      (p.spewStyle === "flow" ? 0.68 : 0.4) + 0.3 * strand.tension;
+      (p.spewStyle === "flow" ? 0.68 : 0.4) +
+      0.3 * strand.tension +
+      0.22 * strand.viscosity;
     strand.radius =
       p.baseRadius *
       (0.55 + 0.35 * p.intensity) *
@@ -404,7 +426,7 @@ export class GooRenderer3D {
     strand.velocity.y += p.spewStyle === "splash" ? 0.3 : -0.15;
     strand.core.set(p.resolvedPalette.core);
     strand.edge.set(p.resolvedPalette.edge);
-    strand.highlight.set(p.resolvedPalette.highlight);
+    strand.metalness = p.palette === "mercury" ? 0.88 : 0;
     strand.alpha = 0.98 - p.clarity * 0.05;
     return true;
   }
@@ -413,14 +435,19 @@ export class GooRenderer3D {
     for (const strand of this.strands) {
       if (!strand.active) continue;
       strand.age += dt;
-      strand.velocity.y += strand.gravity * dt * 0.46;
-      strand.head.addScaledVector(strand.velocity, dt);
+      const source =
+        strand.attached && strand.releaseAge < 0
+          ? sources.find(
+              (item) =>
+                item.sourceId === strand.sourceId &&
+                isTrackedTip(item.params.trackingMode, item.tipIndex)
+            )
+          : undefined;
+      if (source) {
+        strand.gravity = source.params.worldGravity;
+        strand.viscosity = source.params.viscosity;
+      }
       if (strand.attached && strand.releaseAge < 0) {
-        const source = sources.find(
-          (item) =>
-            item.sourceId === strand.sourceId &&
-            isTrackedTip(item.params.trackingMode, item.tipIndex)
-        );
         if (source) {
           this.next.set(
             source.position.x,
@@ -428,12 +455,29 @@ export class GooRenderer3D {
             source.position.z
           );
           if (this.next.distanceTo(strand.tail) < TELEPORT_DISTANCE) {
+            if (dt > 0 && strand.viscosity > 0) {
+              // While joined, thick liquid approaches the prop's actual motion.
+              // Damping velocity also preserves its slower speed at separation.
+              this.side.copy(this.next).sub(strand.tail).divideScalar(dt);
+              this.side.clampLength(0, 12);
+              strand.velocity.lerp(
+                this.side,
+                1 - Math.exp(-1.8 * strand.viscosity * dt)
+              );
+            }
             strand.tail.copy(this.next);
-            strand.bend.lerp(this.next, Math.min(1, dt * 4.5));
           } else strand.attached = false;
         } else strand.attached = false;
       }
+      strand.velocity.y += strand.gravity * dt;
+      strand.head.addScaledVector(strand.velocity, dt);
       const reach = strand.head.distanceTo(strand.tail);
+      strand.bend.copy(strand.tail).add(strand.head).multiplyScalar(0.5);
+      strand.bend.y -=
+        Math.min(
+          0.07,
+          Math.abs(strand.gravity) * strand.age * strand.age * 0.08
+        ) * Math.min(1, reach / 0.15);
       const pinch = 0.52 + 0.38 * strand.tension;
       if (
         strand.releaseAge < 0 &&
@@ -441,23 +485,45 @@ export class GooRenderer3D {
       ) {
         strand.releaseAge = 0;
         strand.attached = false;
-        if (strand.age > 0.045)
-          this.spawnDrop(
-            strand.head,
-            strand.velocity,
-            strand.radius * 0.5,
-            strand.gravity,
-            strand.edge,
-            strand.highlight,
-            strand.alpha,
-            0.28
-          );
       }
       if (strand.releaseAge >= 0) {
         strand.releaseAge += dt;
-        strand.tail.lerp(strand.head, Math.min(1, dt * 11));
-        strand.bend.lerp(strand.head, Math.min(1, dt * 14));
-        if (strand.releaseAge >= 0.14) strand.active = false;
+        if (!strand.dropReleased && strand.releaseAge >= PINCH_TIME) {
+          strand.dropReleased = true;
+          const length = strand.head.distanceTo(strand.tail);
+          if (strand.age > 0.045 && length > 0.002) {
+            const bulbRadius = Math.min(
+              strand.radius *
+                (1.38 + 0.1 * Math.min(1, strand.age / strand.maxAge)),
+              length * 0.32
+            );
+            const bulbT = 1 - bulbRadius / length;
+            const oneMinusT = 1 - bulbT;
+            this.next
+              .copy(strand.tail)
+              .multiplyScalar(oneMinusT * oneMinusT)
+              .addScaledVector(strand.bend, 2 * oneMinusT * bulbT)
+              .addScaledVector(strand.head, bulbT * bulbT);
+            this.spawnDrop(
+              this.next,
+              strand.velocity,
+              bulbRadius,
+              strand.gravity,
+              strand.edge,
+              strand.metalness,
+              strand.alpha,
+              0.32
+            );
+            // The bead takes the old bulb's place; only its neck remains.
+            strand.head.copy(this.next);
+          }
+        }
+        if (strand.dropReleased) {
+          strand.tail.lerp(strand.head, Math.min(1, dt * 13));
+          strand.bend.lerp(strand.head, Math.min(1, dt * 16));
+          if (strand.releaseAge >= PINCH_TIME + RETRACT_TIME)
+            strand.active = false;
+        }
       }
     }
   }
@@ -468,7 +534,7 @@ export class GooRenderer3D {
     radius: number,
     gravity: number,
     color: string | Color,
-    highlight: string | Color,
+    metalness: number,
     alpha: number,
     maxAge: number
   ): void {
@@ -483,7 +549,7 @@ export class GooRenderer3D {
     drop.position.set(position.x, position.y, position.z);
     drop.velocity.set(velocity.x, velocity.y, velocity.z);
     drop.color.set(color);
-    drop.highlight.set(highlight);
+    drop.metalness = metalness;
     drop.alpha = alpha;
   }
 
@@ -511,11 +577,11 @@ export class GooRenderer3D {
     ).array as Float32Array;
     const colors = (this.tubeGeometry.getAttribute("color") as BufferAttribute)
       .array as Float32Array;
-    const highlights = (
-      this.tubeGeometry.getAttribute("aHighlight") as BufferAttribute
-    ).array as Float32Array;
     const alphas = (this.tubeGeometry.getAttribute("aAlpha") as BufferAttribute)
       .array as Float32Array;
+    const metalnesses = (
+      this.tubeGeometry.getAttribute("aMetalness") as BufferAttribute
+    ).array as Float32Array;
     for (let index = 0; index < STRANDS; index++) {
       const strand = this.strands[index]!;
       const base = index * VERTICES * 3;
@@ -533,8 +599,28 @@ export class GooRenderer3D {
         1,
         Math.max(life, length / (0.42 + 0.3 * strand.tension))
       );
+      const bulbRadius = Math.min(
+        strand.radius * (1.38 + 0.1 * life),
+        length * 0.32
+      );
+      const capArc = bulbRadius / length;
+      const capStart = 1 - capArc;
+      const retraction = strand.dropReleased
+        ? Math.max(0.04, 1 - (strand.releaseAge - PINCH_TIME) / RETRACT_TIME)
+        : 1;
+      const pinch =
+        strand.releaseAge < 0 ? 0 : Math.min(1, strand.releaseAge / PINCH_TIME);
+      const shaftEnd = RINGS - CAP_RINGS - 1;
+      // As a strand stretches, its shaft narrows instead of gaining volume.
+      const thinning = Math.max(0.55, Math.sqrt(0.18 / Math.max(0.18, length)));
       for (let ring = 0; ring < RINGS; ring++) {
-        const t = ring / (RINGS - 1);
+        // Reserve seven intervals for the hemisphere regardless of strand
+        // length, so a long strand cannot turn its rounded tip into a cone.
+        const t = strand.dropReleased
+          ? ring / (RINGS - 1)
+          : ring <= shaftEnd
+            ? (capStart * ring) / shaftEnd
+            : capStart + (capArc * (ring - shaftEnd)) / CAP_RINGS;
         const oneMinusT = 1 - t;
         this.center
           .copy(strand.tail)
@@ -568,16 +654,30 @@ export class GooRenderer3D {
         }
         this.side.normalize();
         this.binormal.crossVectors(this.tangent, this.side).normalize();
-        const bulb = 1 + 0.38 * Math.exp(-Math.pow((t - 0.85) / 0.12, 2));
+        const rise = Math.max(0, Math.min(1, (t - capStart + 0.24) / 0.24));
+        const roundedRise = rise * rise * (3 - 2 * rise);
         const neck =
-          1 - 0.56 * Math.exp(-Math.pow((t - 0.66) / 0.11, 2)) * stretch;
-        const cap = Math.pow(Math.max(0, Math.sin(Math.PI * t)), 0.55);
-        const release =
-          strand.releaseAge < 0
-            ? 1
-            : Math.max(0.06, 1 - strand.releaseAge / 0.14);
-        const radius =
-          strand.radius * bulb * neck * cap * (1 - 0.2 * t) * release;
+          1 -
+          (0.27 * stretch + 0.66 * pinch) *
+            Math.exp(-Math.pow((t - capStart + 0.24) / 0.075, 2));
+        const pulsePosition = 0.28 + 0.46 * life;
+        const pulse =
+          0.13 *
+          Math.exp(-Math.pow((t - pulsePosition) / 0.14, 2)) *
+          Math.min(1, strand.age / 0.09);
+        const shaft =
+          strand.radius *
+          (0.62 + 0.1 * t + pulse) *
+          thinning *
+          neck *
+          Math.min(1, t / 0.055);
+        const neckEnd = Math.max(0, Math.min(1, (t - 0.72) / 0.28));
+        const radius = strand.dropReleased
+          ? shaft * (1 - neckEnd * neckEnd * (3 - 2 * neckEnd)) * retraction
+          : t < capStart
+            ? shaft * (1 - roundedRise) + bulbRadius * roundedRise
+            : bulbRadius *
+              Math.sqrt(Math.max(0, 1 - Math.pow((t - capStart) / capArc, 2)));
         for (let side = 0; side < SIDES; side++) {
           const angle = (side * Math.PI * 2) / SIDES;
           const offset = base + (ring * SIDES + side) * 3;
@@ -591,21 +691,20 @@ export class GooRenderer3D {
             this.center.z + this.side.z * c + this.binormal.z * s;
           this.tint
             .copy(strand.core)
-            .lerp(strand.edge, 0.08 + 0.16 * (1 - Math.cos(angle)));
+            .lerp(strand.edge, 0.8 + 0.08 * (1 - Math.cos(angle)));
           colors[offset] = this.tint.r;
           colors[offset + 1] = this.tint.g;
           colors[offset + 2] = this.tint.b;
-          highlights[offset] = strand.highlight.r;
-          highlights[offset + 1] = strand.highlight.g;
-          highlights[offset + 2] = strand.highlight.b;
           alphas[index * VERTICES + ring * SIDES + side] = strand.alpha;
+          metalnesses[index * VERTICES + ring * SIDES + side] =
+            strand.metalness;
         }
       }
     }
     this.tubeGeometry.getAttribute("position").needsUpdate = true;
     this.tubeGeometry.getAttribute("color").needsUpdate = true;
-    this.tubeGeometry.getAttribute("aHighlight").needsUpdate = true;
     this.tubeGeometry.getAttribute("aAlpha").needsUpdate = true;
+    this.tubeGeometry.getAttribute("aMetalness").needsUpdate = true;
     this.tubeGeometry.computeVertexNormals();
   }
 
@@ -617,11 +716,12 @@ export class GooRenderer3D {
       const size =
         drop.radius * (life > 0.78 ? Math.max(0.05, (1 - life) / 0.22) : 1);
       this.dropObject.position.copy(drop.position);
-      this.dropScale.set(
-        size,
-        size * (1.05 + Math.min(0.8, drop.velocity.length() * 0.12)),
-        size
-      );
+      const stretch =
+        1 +
+        Math.min(0.42, drop.velocity.length() * 0.08) *
+          Math.exp(-drop.age * 18);
+      const width = size / Math.sqrt(stretch);
+      this.dropScale.set(width, size * stretch, width);
       this.dropObject.scale.copy(this.dropScale);
       this.tangent.copy(drop.velocity);
       if (this.tangent.lengthSq() > 0.0001)
@@ -633,13 +733,8 @@ export class GooRenderer3D {
       this.dropObject.updateMatrix();
       this.dropMesh.setMatrixAt(count, this.dropObject.matrix);
       this.dropMesh.setColorAt(count, drop.color);
-      this.dropHighlights.setXYZ(
-        count,
-        drop.highlight.r,
-        drop.highlight.g,
-        drop.highlight.b
-      );
       this.dropAlphas.setX(count, drop.alpha);
+      this.dropMetalnesses.setX(count, drop.metalness);
       count++;
     }
     this.dropMesh.count = count;
@@ -648,8 +743,8 @@ export class GooRenderer3D {
       this.dropMesh.instanceMatrix.needsUpdate = true;
       if (this.dropMesh.instanceColor)
         this.dropMesh.instanceColor.needsUpdate = true;
-      this.dropHighlights.needsUpdate = true;
       this.dropAlphas.needsUpdate = true;
+      this.dropMetalnesses.needsUpdate = true;
     }
   }
 

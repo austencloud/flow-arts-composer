@@ -106,6 +106,8 @@ export const DEFAULT_EFFECTS_CONFIG: EffectsConfig = {
     customColor: "#3a7fd9",
     clarity: 0.7,
     surfaceTension: 0.45,
+    viscosity: 0,
+    gravity: 1,
     trackingMode: "both_ends",
     spewStyle: "flow",
   },
