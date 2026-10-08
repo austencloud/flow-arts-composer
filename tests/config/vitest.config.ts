@@ -70,17 +70,35 @@ export default defineConfig({
       ),
     },
 
-    // Vitest 4.0: poolOptions deprecated, use pool config directly
+    // Worker pool. `pool: "forks"` is Vitest 4's default; it stays explicit so
+    // a future default change cannot quietly move the suite into worker
+    // threads. Vitest 4 removed `poolOptions` and with it `singleFork`: the
+    // `forks: { singleFork: true }` that sat here from 2025-11 to 2026-10 was
+    // an unknown key Vitest 4 ignored without a warning, so the suite has
+    // fanned files out across Vitest's default worker count (cores minus one
+    // in `run` mode, half the cores in watch mode: 31 forks on the 32-core dev
+    // machine, fewer on CI's runner) ever since Vitest 4 arrived in 2025-12.
+    // That fan-out is the intended shape. Measured 2026-10-08 in a task
+    // worktree, two full 2,566-file runs took 6 min 34 s and 6 min 38 s of
+    // wall time on 31 forks while each summed to 3.1 hours of worker time
+    // (environment 72 to 87 min, import 35 to 47 min, tests 27 to 33 min,
+    // transform 18 to 27 min, setup 12 min); one fork would serialize all of
+    // it. Saturated like that, a file can run five to eight times slower than
+    // in a small run (worktree-automerge.test.ts: 22 s in a ten-file run, 120
+    // to 133 s in the full run; german-catalog-contract: 13 s against 27 to
+    // 110 s), so a test that spawns processes, scans the repo or solves avatar
+    // contacts sets its own budget the way tests/unit/3d-animation does
+    // instead of leaning on the 30 s default below. To bisect a cross-file
+    // leak, pass `--no-file-parallelism` on the command line rather than
+    // pinning a single worker here.
     pool: "forks",
-    forks: {
-      singleFork: true,
-    },
 
-    // The default five-second budget is too short once the full 1,600+ file
-    // suite shares one fork: otherwise-fast dynamic imports and repository
-    // scans can spend several seconds behind unrelated transforms. Keep real
-    // hangs bounded while allowing the release gate to produce deterministic
-    // results under normal shared-machine load.
+    // The default five-second budget is too short when 2,566 files share the
+    // machine across worker forks: otherwise-fast dynamic imports and
+    // repository scans can spend several seconds behind other workers'
+    // transforms and disk reads. Keep real hangs bounded while allowing the
+    // release gate to produce deterministic results under normal
+    // shared-machine load.
     testTimeout: 30_000,
 
     isolate: true,
