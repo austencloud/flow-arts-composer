@@ -488,12 +488,24 @@ export class GooRenderer3D {
         strand.releaseAge += dt;
         if (!strand.dropReleased && strand.releaseAge >= PINCH_TIME) {
           strand.dropReleased = true;
-          if (strand.age > 0.045) {
-            const length = strand.head.distanceTo(strand.tail);
+          const length = strand.head.distanceTo(strand.tail);
+          if (strand.age > 0.045 && length > 0.002) {
+            const bulbRadius = Math.min(
+              strand.radius *
+                (1.38 + 0.1 * Math.min(1, strand.age / strand.maxAge)),
+              length * 0.32
+            );
+            const bulbT = 1 - bulbRadius / length;
+            const oneMinusT = 1 - bulbT;
+            this.next
+              .copy(strand.tail)
+              .multiplyScalar(oneMinusT * oneMinusT)
+              .addScaledVector(strand.bend, 2 * oneMinusT * bulbT)
+              .addScaledVector(strand.head, bulbT * bulbT);
             this.spawnDrop(
-              strand.head,
+              this.next,
               strand.velocity,
-              Math.min(strand.radius * 1.46, length * 0.32),
+              bulbRadius,
               strand.gravity,
               strand.edge,
               strand.highlight,
@@ -501,6 +513,8 @@ export class GooRenderer3D {
               strand.alpha,
               0.32
             );
+            // The bead takes the old bulb's place; only its neck remains.
+            strand.head.copy(this.next);
           }
         }
         if (strand.dropReleased) {
@@ -604,8 +618,9 @@ export class GooRenderer3D {
       for (let ring = 0; ring < RINGS; ring++) {
         // Reserve seven intervals for the hemisphere regardless of strand
         // length, so a long strand cannot turn its rounded tip into a cone.
-        const t =
-          ring <= shaftEnd
+        const t = strand.dropReleased
+          ? ring / (RINGS - 1)
+          : ring <= shaftEnd
             ? (capStart * ring) / shaftEnd
             : capStart + (capArc * (ring - shaftEnd)) / CAP_RINGS;
         const oneMinusT = 1 - t;
@@ -657,13 +672,13 @@ export class GooRenderer3D {
           (0.62 + 0.1 * t + pulse) *
           neck *
           Math.min(1, t / 0.055);
-        const radius =
-          (t < capStart
+        const neckEnd = Math.max(0, Math.min(1, (t - 0.72) / 0.28));
+        const radius = strand.dropReleased
+          ? shaft * (1 - neckEnd * neckEnd * (3 - 2 * neckEnd)) * retraction
+          : t < capStart
             ? shaft * (1 - roundedRise) + bulbRadius * roundedRise
             : bulbRadius *
-              Math.sqrt(
-                Math.max(0, 1 - Math.pow((t - capStart) / capArc, 2))
-              )) * retraction;
+              Math.sqrt(Math.max(0, 1 - Math.pow((t - capStart) / capArc, 2)));
         for (let side = 0; side < SIDES; side++) {
           const angle = (side * Math.PI * 2) / SIDES;
           const offset = base + (ring * SIDES + side) * 3;
