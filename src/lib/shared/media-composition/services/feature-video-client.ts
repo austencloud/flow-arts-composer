@@ -5,6 +5,11 @@ import {
   type FeatureVideoSummary,
 } from "$lib/shared/media-composition/domain/feature-video";
 import {
+  featureVideoExportUrl,
+  isSavedFeatureExport,
+  type SavedFeatureExport,
+} from "$lib/shared/media-composition/domain/feature-video-export";
+import {
   PostProjectSchema,
   createEmptyPostProject,
   type PostProject,
@@ -86,6 +91,35 @@ export async function loadFeatureVideo(
   if (!parsed.success)
     throw new Error(`The dev server sent an unreadable copy of ${slug}.`);
   return parsed.data;
+}
+
+/**
+ * Sends a finished render to the project's exports/ folder. `name` picks its
+ * file name; the dev server numbers it when an earlier render has that name.
+ */
+export async function saveFeatureVideoExport(
+  slug: string,
+  video: Blob,
+  options: { name?: string; fetcher?: Fetcher } = {}
+): Promise<SavedFeatureExport> {
+  const fetcher = options.fetcher ?? fetch;
+  const url = featureVideoExportUrl(slug, options.name);
+  let response: Response;
+  try {
+    response = await fetcher(url, {
+      method: "POST",
+      headers: { "Content-Type": "video/mp4" },
+      body: video,
+    });
+  } catch {
+    throw new Error("The dev server could not be reached.");
+  }
+  const body = await readJson(response);
+  if (!isSavedFeatureExport(body))
+    throw new Error(
+      "The dev server sent an unreadable answer about the export."
+    );
+  return { file: body.file, path: body.path, bytes: body.bytes };
 }
 
 interface Buffered {
@@ -350,6 +384,12 @@ export function createFeatureVideoSync(
     store,
     save,
     checkRevision,
+    /** Sends a finished render to this project's exports/ folder. */
+    saveExport: (video: Blob, name?: string) =>
+      saveFeatureVideoExport(slug, video, {
+        ...(name ? { name } : {}),
+        fetcher,
+      }),
     /**
      * Binds the open editor and what to do when disk's copy replaces its
      * post. Returns the unbind.
