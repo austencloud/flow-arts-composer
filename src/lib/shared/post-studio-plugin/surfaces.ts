@@ -17,6 +17,10 @@ import { PostStudioPictographCapture } from "$lib/shared/media-composition/servi
  * and the choreo card. Each call returns fresh surfaces for one render; the
  * sequence animation keeps its screenshot setup across that render's frames
  * and frees it in `release()`.
+ *
+ * This module and everything it reaches must never import the plugin index by
+ * value: the index re-exports this module.
+ * tests/unit/video-editor-value-closure.test.ts guards it.
  */
 export function createTkaSurfaces(): SurfaceCapture[] {
   return [createSequenceAnimationSurface(), createChoreoCardSurface()];

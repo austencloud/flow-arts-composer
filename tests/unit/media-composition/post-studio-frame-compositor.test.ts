@@ -243,6 +243,83 @@ describe("split animation export", () => {
     expect(fillRect).toHaveBeenCalledTimes(2);
   });
 
+  it("names the layer when a mounted sequence animation has no surface", async () => {
+    const compiled = compilePostProject(
+      project(
+        [
+          video("first", { takeId: "a", sourceOut: 4 }),
+          video("second", { takeId: "b", start: 4, sourceOut: 3 }),
+        ],
+        [[overlay("motion", "animation", { start: 0, duration: 7 })]]
+      ),
+      { now: NOW }
+    )!;
+    const layers = evaluatePresetFrame(
+      compiled.preset,
+      compiled.durationSeconds,
+      4
+    ).filter((layer) => layer.regionId === "motion");
+    expect(layers.map((layer) => layer.clipId)).toEqual([
+      "motion~0",
+      "motion~1",
+    ]);
+
+    const root = document.createElementNS(
+      "http://www.w3.org/1999/xhtml",
+      "div"
+    );
+    const mounted = document.createElementNS(
+      "http://www.w3.org/1999/xhtml",
+      "div"
+    );
+    mounted.className = "media-layer";
+    mounted.dataset.clipId = "motion~1";
+    mounted.dataset.renderMode = "sequence-animation";
+    const animation = document.createElementNS(
+      "http://www.w3.org/1999/xhtml",
+      "div"
+    ) as HTMLElement;
+    animation.dataset.sequenceProgressVisible = "false";
+    vi.spyOn(animation, "getBoundingClientRect").mockReturnValue({
+      width: 200,
+      height: 200,
+    } as DOMRect);
+    mounted.append(animation);
+    captureMotion
+      .mockReset()
+      .mockResolvedValue(document.createElement("canvas"));
+    root.append(mounted);
+    const fillRect = vi.fn();
+    const context = new Proxy(
+      { fillRect },
+      {
+        get(target, key) {
+          return Reflect.get(target, key) ?? vi.fn();
+        },
+      }
+    );
+    const canvas = document.createElementNS(
+      "http://www.w3.org/1999/xhtml",
+      "canvas"
+    ) as HTMLCanvasElement;
+    vi.spyOn(canvas, "getContext").mockReturnValue(
+      context as unknown as CanvasRenderingContext2D
+    );
+
+    await expect(
+      renderPostStudioFrame({
+        canvas,
+        root,
+        preset: compiled.preset,
+        layers,
+        surfaceCache: new Map(),
+      })
+    ).rejects.toThrow(
+      /^The .+ layer has no surface for its sequence-animation render mode\.$/
+    );
+    expect(captureMotion).not.toHaveBeenCalled();
+  });
+
   it("covers a non-square region with the captured animation, not a centred square", async () => {
     // The tutorial posts give the animation the lower half of the frame, a
     // region wider than it is tall. The preview fills that box; the export

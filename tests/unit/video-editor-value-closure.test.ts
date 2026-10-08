@@ -127,11 +127,11 @@ function resolveSpecifier(specifier: string, from: string): string | null {
   throw new Error(`${from}: cannot resolve "${specifier}"`);
 }
 
-/** Walks value edges from bound.ts; the index is recorded when reached, never walked into. */
+/** Walks value edges from bound.ts and surfaces.ts; the index is recorded when reached, never walked into. */
 function valueClosure(): { modules: string[]; indexImports: string[] } {
   const seen = new Set<string>();
   const indexImports: string[] = [];
-  const queue = [BOUND_FILE];
+  const queue = [BOUND_FILE, "src/lib/shared/post-studio-plugin/surfaces.ts"];
   while (queue.length > 0) {
     const file = queue.shift()!;
     if (seen.has(file)) continue;
@@ -187,7 +187,7 @@ describe("plugin bound.ts value closure", () => {
     );
   });
 
-  it("never reaches the plugin index by value from bound.ts", () => {
+  it("never reaches the plugin index by value from bound.ts or surfaces.ts", () => {
     const { modules, indexImports } = valueClosure();
     expect(modules.length).toBeGreaterThan(10);
     for (const name of [
@@ -195,6 +195,7 @@ describe("plugin bound.ts value closure", () => {
       "create-plugin.ts",
       "item-kinds.ts",
       "normalize-hooks.ts",
+      "surfaces.ts",
     ]) {
       expect(modules).toContain(`src/lib/shared/post-studio-plugin/${name}`);
     }

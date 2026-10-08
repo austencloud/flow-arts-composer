@@ -41,6 +41,11 @@ export interface TkaPainterDeps {
  * null for a role that is not its own. Painters are kept across calls the way
  * the editor keeps them: the carousel and the strips per sequence, the titles
  * and staff effects per clip, each reading the latest project and compile.
+ *
+ * This module and everything it reaches must never import the plugin index by
+ * value: the workspace and the parity test will build the registry from it,
+ * and a value import of the index would drag bound.ts and the plugin into the
+ * render graph.
  */
 export function createTkaPainters(
   deps: TkaPainterDeps
@@ -91,7 +96,7 @@ export function createTkaPainters(
           painter: createSequenceStripPainter({
             sequence,
             mode,
-            showProgressBar: deps.showProgressBar,
+            showProgressBar: () => deps.showProgressBar(),
           }),
         };
         strips.set(mode, entry);

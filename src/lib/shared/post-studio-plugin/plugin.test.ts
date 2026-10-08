@@ -20,11 +20,11 @@ import {
   TKA_NORMALIZE,
   compilePostProject,
   createEmptyPostProject,
-  createTkaPainters,
   createTkaPlugin,
   normalizeProject,
   staffEffectRole,
 } from "$lib/shared/post-studio-plugin";
+import { createTkaPainters } from "$lib/shared/post-studio-plugin/painters";
 
 describe("tka plugin", () => {
   it("adds the tka item kinds to the core union", () => {
