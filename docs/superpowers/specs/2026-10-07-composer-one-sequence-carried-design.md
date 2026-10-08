@@ -117,9 +117,12 @@ while held. `hold()` is idempotent and has no release; a reload starts fresh.
 
 - the first pointerdown or keydown inside the hero's player column (Roll, prop
   chooser, pause, scrub, Theme);
-- the Construct stop activating, through the existing `activateConstruct`
-  action, which fires on the stage and on the plain page alike. The page has
-  no view of the stage's index and does not need one.
+- the hero stop leaving view, through an action on the hero section built on
+  `observeComposerStopVisibility`: scrolled past on the plain page, or no
+  longer the stage's current stop. Construct's near-activation cannot be the
+  trigger: the stage keeps the next stop inside the window so it loads early,
+  which would hold the hero at load. A deep link or a restored scroll arrives
+  already past the hero and holds it at once.
 
 Reduced motion: the hero already starts paused (`autoPlay={!reduceMotion}`),
 so no boundary ever fires; hold changes nothing there.
@@ -145,8 +148,9 @@ Where it appears:
   copy when there is no word yet. The build becomes the page word only when
   the visitor composes it.
 - Generate: the page word, as today.
-- Tunnel (the page uses the square layout): a row above the square stage with
-  the page word and the prop chooser. The band layout is unchanged.
+- Tunnel (the page uses the band layout): a row above the square stage inside
+  the band's stage column, with the page word and the prop chooser, which
+  leaves the stage toolbar. The square layout is unchanged.
 - 3D: a row above the product frame in `ComposerExperience.svelte` with the
   page word only. The 3D performers carry their own props, so no chooser.
 
@@ -163,22 +167,18 @@ sequence." (from "Keep the sequence you made."), the limits sentence stays
 library and collections."), the "Choose a sequence below to watch it here."
 sentence goes, and the "Browse the Gallery" link stays in the intro actions.
 
-`ComposerGalleryDemo.svelte` gains `featured?: PageSequence | null` and
-renders two tiers inside its existing frame while no sequence is open:
+The intro's second column holds the featured card: the landing's own
+`ChoreoCardPreview` renders the page sequence as a card straight from its
+steps (a hero draw or a fresh build has no saved thumbnail, and the gallery's
+`ChoreoCardThumbnail` goes through the cloud thumbnail cache, which an
+ephemeral sequence must not touch). It is a picture, not a button. Under it a
+one-line caption names the origin from the page sequence's source: "The
+sequence playing above." for opening and hero, "The sequence you built." for
+construct, "The sequence you generated." for generate and tunnel. It mounts
+when the Keep stop nears, with the gallery.
 
-1. One `ChoreoCardThumbnail` of `featured.sequence` with a one-line origin
-   caption chosen by `featured.source`: "The sequence playing above." for
-   opening and hero, "The sequence you built." for construct, "The sequence
-   you generated." for generate and tunnel.
-2. An h3 "Or start from the community." (replacing the "Community sequences"
-   eyebrow and the "Pick a sequence" h3) with the existing prop select, above
-   the four community cards.
-
-Tapping the featured card opens the same inline viewer the community cards
-open, through the existing `open(sequence)` path. While a sequence is open the
-frame shows the viewer, its name, and the Back control exactly as today, and
-both tiers are hidden with it. `LazyMount` spreads `props`, so passing a fresh
-`{ featured }` object on each change is enough.
+`ComposerGalleryDemo.svelte` keeps its frame, viewer and Back control; its
+header reads "Or start from the community." while no sequence is open.
 
 No link into the app is added; the header's Open button remains the way in.
 
@@ -199,7 +199,7 @@ No link into the app is added; the header's Open button remains the way in.
   interactive while playing, not only on hover or when paused.
   `InlineAnimationPlayer.svelte` and `SequenceHeroDemo.svelte` thread the prop
   through unchanged. The composer hero and Generate players set it; every other
-  caller keeps today's hover reveal. The tunnel's square-layout pause and the
+  caller keeps today's hover reveal. The tunnel band toolbar's pause and the
   3D demo's pause are already 48 px and visible.
 - The Kinetic Alphabet fold: the `notation-bridge` section and its h2 are
   removed, which removes one rail stop. The hero's opening note gains one
