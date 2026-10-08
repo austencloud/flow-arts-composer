@@ -37,18 +37,9 @@
   } from "$lib/shared/media-composition/services/region-edge-painter";
   import {
     itemIdFromClipId,
-    itemIdFromStaffEffectRole,
-  } from "$lib/shared/media-composition/domain/post-project-compiler";
-  import {
     planMusicAudio,
     planProjectAudio,
     segmentGainAt,
-  } from "$lib/shared/media-composition/domain/post-audio-plan";
-  import {
-    musicClockBoundaries,
-    musicClockMedia,
-  } from "$lib/shared/media-composition/services/music-preview-sync";
-  import {
     ANIMATION_OVERLAY_ROLE,
     STRIP_AREA,
     stripModeFromRole,
@@ -70,6 +61,11 @@
     channelValueAt,
     framingAt,
   } from "@austencloud/video-editor/core";
+  import { itemIdFromStaffEffectRole } from "$lib/shared/post-studio-plugin";
+  import {
+    musicClockBoundaries,
+    musicClockMedia,
+  } from "$lib/shared/media-composition/services/music-preview-sync";
   import { updateItemAt } from "$lib/shared/media-composition/domain/post-project-edits";
   import { posterQrAppearance } from "../post-qr-image-appearance";
   import { dragSourceCrop, type SourceCropHandle } from "./post-source-crop";

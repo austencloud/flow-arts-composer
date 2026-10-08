@@ -4,7 +4,7 @@ import {
   musicAudioKey,
   planMusicAudio,
   segmentGainAt,
-} from "$lib/shared/media-composition/domain/post-audio-plan";
+} from "@austencloud/video-editor/core";
 import type { PostMusic } from "@austencloud/video-editor/core";
 
 function music(fields: Partial<PostMusic> = {}): PostMusic {

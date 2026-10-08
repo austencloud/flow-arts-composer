@@ -3,8 +3,8 @@ import {
   canReplaceOverlayVideoWithAnimation,
   replaceOverlayVideoWithAnimation,
 } from "$lib/shared/media-composition/domain/post-project-edits";
-import { compilePostProject } from "$lib/shared/media-composition/domain/post-project-compiler";
 import {
+  compilePostProject,
   normalizeProject,
   PostProjectSchema,
 } from "$lib/shared/post-studio-plugin";

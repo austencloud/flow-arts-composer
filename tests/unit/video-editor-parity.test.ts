@@ -6,18 +6,16 @@ import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import {
   PostProjectSchema,
   normalizeProject,
+  compilePostProject,
+  itemIdFromMovesAnimationRole,
 } from "$lib/shared/post-studio-plugin";
 import {
   type PostProject,
   POST_STUDIO_ROLE,
   takeRole,
-} from "@austencloud/video-editor/core";
-import {
-  compilePostProject,
-  itemIdFromMovesAnimationRole,
   textRole,
   type CompiledPostProject,
-} from "$lib/shared/media-composition/domain/post-project-compiler";
+} from "@austencloud/video-editor/core";
 import {
   resolveTakeTiming,
   takeSampleAt,

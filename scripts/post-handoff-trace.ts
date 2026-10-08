@@ -16,14 +16,15 @@ import { join } from "node:path";
 import {
   PostProjectSchema,
   normalizeProject,
+  compilePostProject,
 } from "$lib/shared/post-studio-plugin";
-import { type PostProject, takeRole } from "@austencloud/video-editor/core";
-import { compilePostProject } from "$lib/shared/media-composition/domain/post-project-compiler";
 import {
+  type PostProject,
+  takeRole,
   PIP_HANDOFF_MAX_CLOCK_SECONDS,
-  pipHandoffOf,
   type PipHandoffStep,
-} from "$lib/shared/media-composition/domain/pip-handoff";
+} from "@austencloud/video-editor/core";
+import { pipHandoffOf } from "$lib/shared/media-composition/domain/pip-handoff";
 import {
   resolveTakeTiming,
   takeSampleAt,

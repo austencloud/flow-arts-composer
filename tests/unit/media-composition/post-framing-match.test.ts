@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { PostVideoItem } from "@austencloud/video-editor/core";
-import { compilePostProject } from "$lib/shared/media-composition/domain/post-project-compiler";
+import { compilePostProject } from "$lib/shared/post-studio-plugin";
 import { evaluatePresetFrame } from "$lib/shared/media-composition/services/frame-evaluator";
 import { NOW, project, take, video } from "./post-project-fixtures";
 

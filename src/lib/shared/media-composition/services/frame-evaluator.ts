@@ -20,15 +20,13 @@ import {
   mediaTimeToSequencePosition,
   sequenceTimeMapConvention,
   sampleEasing,
-} from "@austencloud/video-editor/core";
-import { itemIdFromTitlesRole } from "$lib/shared/media-composition/domain/tunnel-titles";
-import {
+  itemIdFromTitlesRole,
   PIP_HANDOFF_EFFECTS_IN_SECONDS,
   pipHandoffEffectsIn,
   pipHandoffLookBlend,
   pipHandoffSample,
   type PipHandoffStep,
-} from "$lib/shared/media-composition/domain/pip-handoff";
+} from "@austencloud/video-editor/core";
 import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
 import {
   sequencePositionToAnimationTime,

@@ -20,6 +20,8 @@ describe("functions the package copies from tka", () => {
     [0.4, 0, 0.2, 1],
     [0, 0, 1, 1],
     [0.42, 0, 0.58, 1],
+    // At x = 0.9 this curve reaches the bisection fallback.
+    [1, 0, 1, 1],
   ] as const)("keeps cssCubicBezier(%s, %s, %s, %s)", (p1x, p1y, p2x, p2y) => {
     const copied = packageEase.cssCubicBezier(p1x, p1y, p2x, p2y);
     const original = tkaEase.cssCubicBezier(p1x, p1y, p2x, p2y);

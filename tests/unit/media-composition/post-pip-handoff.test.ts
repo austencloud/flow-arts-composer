@@ -3,18 +3,16 @@ import {
   POST_BOX,
   type PostVideoItem,
   takeRole,
+  pipHandoffLanding,
+  pipHandoffSample,
+  type PipHandoffClocks,
 } from "@austencloud/video-editor/core";
 import type {
   PostAnimationItem,
   PostMovesItem,
 } from "$lib/shared/post-studio-plugin";
-import { compilePostProject } from "$lib/shared/media-composition/domain/post-project-compiler";
-import {
-  pipHandoffLanding,
-  pipHandoffOf,
-  pipHandoffSample,
-  type PipHandoffClocks,
-} from "$lib/shared/media-composition/domain/pip-handoff";
+import { compilePostProject } from "$lib/shared/post-studio-plugin";
+import { pipHandoffOf } from "$lib/shared/media-composition/domain/pip-handoff";
 import type { TakeSample } from "$lib/shared/media-composition/domain/take-timing";
 import { evaluatePresetFrame } from "$lib/shared/media-composition/services/frame-evaluator";
 import type { StepData } from "$lib/shared/foundation/domain/models/step-data";

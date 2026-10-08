@@ -6,8 +6,12 @@ import type {
 } from "@austencloud/video-editor/core";
 import {
   PostProjectSchema,
+  TKA_COMPILE_HOOKS,
+  TKA_COMPILE_OUTPUTS,
   TKA_ITEM_KINDS,
+  TKA_NORMALIZE,
   createEmptyPostProject,
+  createTkaPlugin,
 } from "$lib/shared/post-studio-plugin";
 
 describe("tka plugin", () => {
@@ -37,6 +41,16 @@ describe("tka plugin", () => {
       "carousel",
       "titles",
     ]);
+  });
+
+  it("wires the tka hooks and each kind's compile into the plugin", () => {
+    const plugin = createTkaPlugin();
+    expect(plugin.normalize).toBe(TKA_NORMALIZE);
+    expect(plugin.compileHooks).toBe(TKA_COMPILE_HOOKS);
+    expect(plugin.compileOutputs).toBe(TKA_COMPILE_OUTPUTS);
+    for (const definition of TKA_ITEM_KINDS) {
+      expect(typeof definition.compile, definition.kind).toBe("function");
+    }
   });
 
   it("parses an empty project back to itself, key order included", () => {

@@ -3,12 +3,12 @@ import {
   createStaffEffectPainter,
   createStaffPointMapper,
 } from "$lib/shared/media-composition/services/staff-effect-painter";
-import { POST_STAFF_EFFECTS } from "$lib/shared/post-studio-plugin";
-import type { StaffTipTrack } from "$lib/shared/media-composition/domain/staff-tip-track";
 import {
+  POST_STAFF_EFFECTS,
   compilePostProject,
   staffEffectRole,
-} from "$lib/shared/media-composition/domain/post-project-compiler";
+} from "$lib/shared/post-studio-plugin";
+import type { StaffTipTrack } from "$lib/shared/media-composition/domain/staff-tip-track";
 import { evaluatePresetFrame } from "$lib/shared/media-composition/services/frame-evaluator";
 import { renderPostStudioFrame } from "$lib/shared/media-composition/services/post-studio-frame-compositor";
 import type {

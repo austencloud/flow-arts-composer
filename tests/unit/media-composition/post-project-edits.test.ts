@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { PostProjectSchema, normalizeProject } from "$lib/shared/post-studio-plugin";
+import { PostProjectSchema, normalizeProject, compilePostProject } from "$lib/shared/post-studio-plugin";
 import { POST_BOX, POST_MAX_SPEED, POST_MIN_ITEM_SECONDS, findItem, type PostItem, type PostProject, type PostVideoItem, framingAt, isAnimated, opacityAt, setKeyframe } from "@austencloud/video-editor/core";
 import {
   addOverlayItem,
@@ -30,7 +30,6 @@ import {
   updateItem,
   updateItemAt,
 } from "$lib/shared/media-composition/domain/post-project-edits";
-import { compilePostProject } from "$lib/shared/media-composition/domain/post-project-compiler";
 import {
   createTakeTiming,
   resolveTakeTiming,

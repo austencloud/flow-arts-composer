@@ -8,7 +8,7 @@ import type {
   PreviewClockMedia,
   PreviewVideoState,
 } from "$lib/shared/media-composition/services/post-preview-clock";
-import type { PostAudioSegment } from "$lib/shared/media-composition/domain/post-audio-plan";
+import type { PostAudioSegment } from "@austencloud/video-editor/core";
 
 /**
  * Where the preview's music element should be. While the music sounds it sets

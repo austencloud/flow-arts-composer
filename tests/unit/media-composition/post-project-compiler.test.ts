@@ -1,16 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
   TEXT_ROLE_PREFIX,
-  compilePostProject,
   itemIdFromClipId,
-  itemIdFromMovesAnimationRole,
-  itemIdFromStaffEffectRole,
   itemIdFromTextRole,
-  movesAnimationRole,
-  staffEffectRole,
   textRole,
-} from "$lib/shared/media-composition/domain/post-project-compiler";
-import {
   MediaCompositionPresetSchema,
   ANIMATION_OVERLAY_ROLE,
   stripRole,
@@ -24,12 +17,19 @@ import {
   framingAt,
 } from "@austencloud/video-editor/core";
 import {
+  compilePostProject,
+  itemIdFromMovesAnimationRole,
+  itemIdFromStaffEffectRole,
+  movesAnimationRole,
+  staffEffectRole,
+  PostProjectSchema,
+} from "$lib/shared/post-studio-plugin";
+import {
   evaluatePresetFrame,
   fadeBlackOpacityAt,
   resolvePresetTimePoint,
 } from "$lib/shared/media-composition/services/frame-evaluator";
 import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import { PostProjectSchema } from "$lib/shared/post-studio-plugin";
 import { updateItem } from "$lib/shared/media-composition/domain/post-project-edits";
 import {
   NOW,

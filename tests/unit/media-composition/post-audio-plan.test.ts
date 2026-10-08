@@ -5,9 +5,11 @@ import {
   planPostAudio,
   planProjectAudio,
   type PostAudioSource,
-} from "$lib/shared/media-composition/domain/post-audio-plan";
-import type { CompiledAct } from "@austencloud/video-editor/core";
-import type { CompiledPostProject } from "$lib/shared/media-composition/domain/post-project-compiler";
+} from "@austencloud/video-editor/core";
+import type {
+  CompiledAct,
+  CompiledPostProject,
+} from "@austencloud/video-editor/core";
 
 function act(overrides: Partial<CompiledAct>): CompiledAct {
   return {

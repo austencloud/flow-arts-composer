@@ -1,26 +1,27 @@
 /**
  * Only the plugin's bound.ts calls the video editor's plugin-taking functions.
  *
- * The package's createProjectSchema, createEmptyPostProject, defaultBoxFor and normalizeProject
- * take the tka plugin as an argument. A file that imported them straight from the package would
- * build a core-only schema or project: no animation, moves, carousel or titles kinds, none of
- * tka's project fields, and no hook migrations or motion keys on normalize.
- * `$lib/shared/post-studio-plugin` exports the same names with the plugin already bound.
+ * The package's createProjectSchema, createEmptyPostProject, defaultBoxFor, normalizeProject and
+ * compilePostProject take the tka plugin as an argument. A file that imported them straight from
+ * the package would build a core-only schema or project: no animation, moves, carousel or titles
+ * kinds, none of tka's project fields, no hook migrations or motion keys on normalize, and no tka
+ * kinds in the compiled preset. `$lib/shared/post-studio-plugin` exports the same names with the
+ * plugin already bound.
  *
  * If this fails, import the name from `$lib/shared/post-studio-plugin` instead. A whole-module
- * import (`import * as x from` or `export * from` the core) is caught too, because it reaches
- * these names without listing them.
+ * import (`import * as x from`, `export * from` or a dynamic `import()` of the core) is caught
+ * too, because it reaches these names without listing them.
  */
 import { readdirSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import { describe, expect, it } from "vitest";
 
-// Task 8 appends compilePostProject, which also takes the plugin.
 const BOUND_ONLY = [
   "createProjectSchema",
   "createEmptyPostProject",
   "defaultBoxFor",
   "normalizeProject",
+  "compilePostProject",
 ];
 const BOUND_FILE = "src/lib/shared/post-studio-plugin/bound.ts";
 
@@ -28,11 +29,14 @@ const BOUND_FILE = "src/lib/shared/post-studio-plugin/bound.ts";
 const FROM_CORE =
   /\b(?:import|export)\s*(?:type\s*)?\{([^}]*)\}\s*from\s*["']@austencloud\/video-editor\/core["']/g;
 
-/** `import * as x from "@austencloud/video-editor/core"` and `export * from` it (with or without `as`). */
+/**
+ * `import * as x from "@austencloud/video-editor/core"`, `export * from` it (with or without
+ * `as`) and `import("@austencloud/video-editor/core")`.
+ */
 const WHOLE_CORE =
-  /\bimport\s*(?:type\s+)?\*\s*as\s+\w+\s*from\s*["']@austencloud\/video-editor\/core["']|\bexport\s*(?:type\s+)?\*\s*(?:as\s+\w+\s*)?from\s*["']@austencloud\/video-editor\/core["']/;
+  /\bimport\s*(?:type\s+)?\*\s*as\s+[\w$]+\s*from\s*["']@austencloud\/video-editor\/core["']|\bexport\s*(?:type\s+)?\*\s*(?:as\s+[\w$]+\s*)?from\s*["']@austencloud\/video-editor\/core["']|\bimport\s*\(\s*["']@austencloud\/video-editor\/core["']\s*\)/;
 
-/** Whether a source file takes the whole package core as a namespace or re-exports all of it. */
+/** Whether a source file takes the whole package core as a namespace, re-exports or loads all of it. */
 function importsWholeCore(source: string): boolean {
   return WHOLE_CORE.test(source);
 }
@@ -117,15 +121,33 @@ describe("bound-only video editor functions", () => {
     ).toEqual([]);
   });
 
-  it("finds a namespace import and a star re-export of the core, and nothing else", () => {
+  it("finds a namespace import, a star re-export and a dynamic import of the core, and nothing else", () => {
     expect(
       importsWholeCore(
         'import * as core from "@austencloud/video-editor/core";'
       )
     ).toBe(true);
     expect(
+      importsWholeCore(
+        'import * as $core from "@austencloud/video-editor/core";'
+      )
+    ).toBe(true);
+    expect(
       importsWholeCore('export * from "@austencloud/video-editor/core";')
     ).toBe(true);
+    expect(
+      importsWholeCore('export * as ns from "@austencloud/video-editor/core";')
+    ).toBe(true);
+    expect(
+      importsWholeCore(
+        'const core = await import("@austencloud/video-editor/core");'
+      )
+    ).toBe(true);
+    expect(
+      importsWholeCore(
+        'import * as x from "@austencloud/video-editor/core/deep";'
+      )
+    ).toBe(false);
     expect(
       importsWholeCore('import * as x from "$lib/shared/post-studio-plugin";')
     ).toBe(false);

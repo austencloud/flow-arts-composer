@@ -10,6 +10,8 @@ import {
   MOVE_START_SHARE,
   type TunnelHook,
   sampleEasing,
+  OPENING_TITLES_SHARE,
+  titlesRole,
 } from "@austencloud/video-editor/core";
 import {
   POST_MAX_SPOKEN_LENGTH,
@@ -17,8 +19,8 @@ import {
   type PostAnimationItem,
   type PostTitlesItem,
   normalizeProject,
+  compilePostProject,
 } from "$lib/shared/post-studio-plugin";
-import { compilePostProject } from "$lib/shared/media-composition/domain/post-project-compiler";
 import {
   addTitlesItem,
   findTunnelHook,
@@ -26,9 +28,7 @@ import {
 } from "$lib/shared/media-composition/domain/post-project-edits";
 import { evaluatePresetFrame } from "$lib/shared/media-composition/services/frame-evaluator";
 import {
-  OPENING_TITLES_SHARE,
   titlesPlanOf,
-  titlesRole,
   tunnelTitlesLook,
 } from "$lib/shared/media-composition/domain/tunnel-titles";
 import {

@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   PostProjectSchema,
   normalizeProject,
+  compilePostProject,
 } from "$lib/shared/post-studio-plugin";
 import type {
   PostImageItem,
@@ -9,7 +10,6 @@ import type {
   PostProject,
 } from "@austencloud/video-editor/core";
 import { mirrorPostProject } from "$lib/shared/media-composition/domain/post-project-mirror";
-import { compilePostProject } from "$lib/shared/media-composition/domain/post-project-compiler";
 import {
   NOW,
   card,

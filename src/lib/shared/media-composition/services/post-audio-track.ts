@@ -4,7 +4,7 @@ import {
   planPostAudio,
   type PostAudioSegment,
   type PostAudioSource,
-} from "$lib/shared/media-composition/domain/post-audio-plan";
+} from "@austencloud/video-editor/core";
 import type { CompiledPost } from "@austencloud/video-editor/core";
 
 export interface BuildPostAudioTrackInput {

@@ -49,14 +49,18 @@
     moveKeyframe,
     removeKeyframe,
     toggleKeyframe,
+    itemIdFromTextRole,
+    textRole,
+    itemIdFromTitlesRole,
+    musicAudioKey,
+    planMusicAudio,
+    planProjectAudio,
   } from "@austencloud/video-editor/core";
   import {
     itemIdFromMovesAnimationRole,
     itemIdFromStaffEffectRole,
-    itemIdFromTextRole,
     staffEffectRole,
-    textRole,
-  } from "$lib/shared/media-composition/domain/post-project-compiler";
+  } from "$lib/shared/post-studio-plugin";
   import {
     clearProjectKeyframes,
     editItemKeyframes,
@@ -81,14 +85,8 @@
   import { createTextItemPainter } from "$lib/shared/media-composition/services/text-item-painter";
   import { createStaffEffectPainter } from "$lib/shared/media-composition/services/staff-effect-painter";
   import { createTunnelTitlesPainter } from "$lib/shared/media-composition/services/tunnel-titles-painter";
-  import { itemIdFromTitlesRole } from "$lib/shared/media-composition/domain/tunnel-titles";
   import { createStaffTipAnalysis } from "$lib/shared/media-composition/state/staff-tip-analysis.svelte";
   import { loadAnimationOverlayPainter } from "$lib/shared/media-composition/services/animation-overlay-painter-registry";
-  import {
-    musicAudioKey,
-    planMusicAudio,
-    planProjectAudio,
-  } from "$lib/shared/media-composition/domain/post-audio-plan";
   import {
     AudioDownloadStalledError,
     buildMixedAudioTrack,

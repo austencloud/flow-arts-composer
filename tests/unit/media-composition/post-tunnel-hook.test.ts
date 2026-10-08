@@ -3,6 +3,7 @@ import {
   PostProjectSchema,
   type PostAnimationItem,
   normalizeProject as finishProject,
+  compilePostProject,
 } from "$lib/shared/post-studio-plugin";
 import {
   POST_BOX,
@@ -26,7 +27,6 @@ import {
   setTunnelHookBackdropFrame,
   setTunnelHookSpeed,
 } from "$lib/shared/media-composition/domain/post-project-edits";
-import { compilePostProject } from "$lib/shared/media-composition/domain/post-project-compiler";
 import {
   createTakeTiming,
   resolveTakeTiming,

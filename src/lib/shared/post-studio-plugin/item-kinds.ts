@@ -18,6 +18,7 @@ import {
 } from "$lib/shared/animation-engine/domain/types/trail-types";
 import type { TunnelTitlesPlan } from "$lib/shared/media-composition/domain/tunnel-titles";
 import type { tkaProjectShape } from "./project-extension";
+import { compileSequenceItem, compileTitlesItem } from "./compile-hooks";
 
 /**
  * TKA's item kinds and the fields TKA adds to the core kinds of
@@ -388,6 +389,7 @@ export const TKA_ITEM_KINDS: readonly ItemKindDefinition[] = [
     },
     // An animation's intro is written as its own keys, which may be edited.
     ownsIntroKeys: true,
+    compile: compileSequenceItem,
   },
   {
     kind: "moves",
@@ -395,6 +397,7 @@ export const TKA_ITEM_KINDS: readonly ItemKindDefinition[] = [
     label: "Picture in picture",
     defaultBox: () => ({ ...POST_BOX.stripSquare }),
     transitionVisual: true,
+    compile: compileSequenceItem,
   },
   {
     kind: "carousel",
@@ -402,11 +405,13 @@ export const TKA_ITEM_KINDS: readonly ItemKindDefinition[] = [
     label: "Carousel",
     defaultBox: () => ({ ...POST_BOX.stripCarousel }),
     transitionVisual: true,
+    compile: compileSequenceItem,
   },
   {
     kind: "titles",
     schema: PostTitlesItemSchema,
     label: "Titles",
     defaultBox: () => ({ ...POST_BOX.full }),
+    compile: compileTitlesItem,
   },
 ];

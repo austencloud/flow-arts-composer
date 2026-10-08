@@ -2,7 +2,10 @@ import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { importRecoveredInShotDraft } from "$lib/shared/media-composition/domain/post-inshot-import";
-import { compilePostProject } from "$lib/shared/media-composition/domain/post-project-compiler";
+import {
+  compilePostProject,
+  normalizeProject,
+} from "$lib/shared/post-studio-plugin";
 import {
   channelValueAt,
   sampleEasing,
@@ -14,7 +17,6 @@ import {
   trimItem,
   updateItemAt,
 } from "$lib/shared/media-composition/domain/post-project-edits";
-import { normalizeProject } from "$lib/shared/post-studio-plugin";
 
 const matrix = (sx = 0.5625, sy = 1, tx = 0, ty = 0) => [
   sx,

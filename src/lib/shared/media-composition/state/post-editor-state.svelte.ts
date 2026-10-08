@@ -14,11 +14,13 @@ import {
   projectDurationSeconds,
   type PostItem,
   type PostProject,
+  type CompiledPostProject,
 } from "@austencloud/video-editor/core";
 import {
   PostProjectSchema,
   type PostAnimationItem,
   normalizeProject,
+  compilePostProject,
 } from "$lib/shared/post-studio-plugin";
 import {
   addOverlayItem,
@@ -45,10 +47,6 @@ import {
   applyTutorialPreset,
   type TutorialLabels,
 } from "$lib/shared/media-composition/domain/post-project-looks";
-import {
-  compilePostProject,
-  type CompiledPostProject,
-} from "$lib/shared/media-composition/domain/post-project-compiler";
 import {
   confirmTakeTiming,
   resolveTakeTiming,
