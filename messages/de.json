@@ -8810,5 +8810,14 @@
   "guide_companion_transform_done": "Transformation angewendet.",
   "guide_companion_transform_failed": "Transformation fehlgeschlagen.",
   "guide_companion_updated": "Leitfaden-Sequenz aktualisiert.",
-  "guide_companion_edit_failed": "Bearbeitete Sequenz konnte nicht gespeichert werden."
+  "guide_companion_edit_failed": "Bearbeitete Sequenz konnte nicht gespeichert werden.",
+  "settings_app_update_ready": "Ein Update ist bereit.",
+  "settings_app_update_restart": "Neu starten",
+  "settings_app_update_restart_to_update": "Neu starten zum Aktualisieren",
+  "settings_app_update_check": "Nach Updates suchen",
+  "settings_app_update_checking": "Wird gesucht…",
+  "settings_app_update_downloading": "Wird geladen: {percent} %",
+  "settings_app_update_up_to_date": "Auf dem neuesten Stand",
+  "settings_app_update_failed": "Prüfung fehlgeschlagen. Erneut versuchen",
+  "settings_app_update_bundle": "Update {version}"
 }
