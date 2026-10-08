@@ -31,6 +31,7 @@ interface Strand {
   active: boolean;
   sourceId: number;
   attached: boolean;
+  releaseAge: number;
   age: number;
   maxAge: number;
   tension: number;
@@ -94,12 +95,12 @@ function createWetMaterial(): ShaderMaterial {
         tint *= instanceColor;
       #endif
       vec4 worldPosition = modelMatrix * localPosition;
-      vNormal = normalize(mat3(modelMatrix) * localNormal);
-      vView = normalize(cameraPosition - worldPosition.xyz);
+      vec4 mvPosition = viewMatrix * worldPosition;
+      vNormal = normalize(mat3(viewMatrix * modelMatrix) * localNormal);
+      vView = normalize(-mvPosition.xyz);
       vColor = tint;
       vHighlight = aHighlight;
       vAlpha = aAlpha;
-      vec4 mvPosition = viewMatrix * worldPosition;
       gl_Position = projectionMatrix * mvPosition;
       #include <fog_vertex>
     }
@@ -115,14 +116,17 @@ function createWetMaterial(): ShaderMaterial {
     void main() {
       vec3 n = normalize(vNormal);
       vec3 view = normalize(vView);
-      vec3 light = normalize(vec3(-0.45, 0.85, 0.65));
-      float diffuse = 0.27 + 0.62 * max(dot(n, light), 0.0);
-      float fresnel = pow(1.0 - max(dot(n, view), 0.0), 2.4);
-      float glint = pow(max(dot(reflect(-light, n), view), 0.0), 30.0);
-      float fineGlint = pow(max(dot(reflect(-light, n), view), 0.0), 110.0);
-      float softbox = pow(max(dot(reflect(-normalize(vec3(0.35, 0.65, -0.7)), n), view), 0.0), 12.0);
+      vec3 light = normalize(vec3(-0.48, 0.78, 0.42));
+      float diffuse = 0.18 + 0.53 * max(dot(n, light), 0.0);
+      float fresnel = pow(1.0 - max(dot(n, view), 0.0), 3.0);
+      vec3 reflection = reflect(-view, n);
+      float strip = exp(-pow((reflection.x + 0.27) / 0.13, 2.0))
+        * smoothstep(-0.45, 0.28, reflection.y)
+        * (1.0 - smoothstep(0.68, 0.96, reflection.y));
+      float glint = exp(-pow((reflection.x - 0.38) / 0.22, 2.0)
+        - pow((reflection.y - 0.44) / 0.25, 2.0));
       vec3 body = vColor * diffuse;
-      vec3 wet = vHighlight * (0.12 * fresnel + 0.34 * glint + 0.28 * fineGlint + 0.11 * softbox);
+      vec3 wet = vHighlight * (0.065 * fresnel + 0.8 * strip + 0.65 * glint);
       gl_FragColor = vec4(body + wet, vAlpha);
       #include <tonemapping_fragment>
       #include <colorspace_fragment>
@@ -188,6 +192,7 @@ export class GooRenderer3D {
     active: false,
     sourceId: -1,
     attached: false,
+    releaseAge: -1,
     age: 0,
     maxAge: 0,
     tension: 0,
@@ -380,14 +385,15 @@ export class GooRenderer3D {
     strand.active = true;
     strand.sourceId = source.sourceId;
     strand.attached = true;
+    strand.releaseAge = -1;
     strand.age = 0;
     strand.tension = Math.min(1, Math.max(0, p.surfaceTension));
     strand.maxAge =
-      (p.spewStyle === "flow" ? 0.58 : 0.34) + 0.24 * strand.tension;
+      (p.spewStyle === "flow" ? 0.68 : 0.4) + 0.3 * strand.tension;
     strand.radius =
       p.baseRadius *
-      (0.7 + 0.5 * p.intensity) *
-      (p.spewStyle === "flow" ? 0.92 : 0.7);
+      (0.55 + 0.35 * p.intensity) *
+      (p.spewStyle === "flow" ? 0.86 : 0.7);
     strand.gravity = p.worldGravity;
     strand.tail.set(source.position.x, source.position.y, source.position.z);
     strand.bend.copy(strand.tail);
@@ -399,7 +405,7 @@ export class GooRenderer3D {
     strand.core.set(p.resolvedPalette.core);
     strand.edge.set(p.resolvedPalette.edge);
     strand.highlight.set(p.resolvedPalette.highlight);
-    strand.alpha = 0.95 - p.clarity * 0.12;
+    strand.alpha = 0.98 - p.clarity * 0.05;
     return true;
   }
 
@@ -409,7 +415,7 @@ export class GooRenderer3D {
       strand.age += dt;
       strand.velocity.y += strand.gravity * dt * 0.46;
       strand.head.addScaledVector(strand.velocity, dt);
-      if (strand.attached) {
+      if (strand.attached && strand.releaseAge < 0) {
         const source = sources.find(
           (item) =>
             item.sourceId === strand.sourceId &&
@@ -428,20 +434,30 @@ export class GooRenderer3D {
         } else strand.attached = false;
       }
       const reach = strand.head.distanceTo(strand.tail);
-      const pinch = 0.42 + 0.3 * strand.tension;
-      if (strand.age >= strand.maxAge || reach > pinch || !strand.attached) {
+      const pinch = 0.52 + 0.38 * strand.tension;
+      if (
+        strand.releaseAge < 0 &&
+        (strand.age >= strand.maxAge || reach > pinch || !strand.attached)
+      ) {
+        strand.releaseAge = 0;
+        strand.attached = false;
         if (strand.age > 0.045)
           this.spawnDrop(
             strand.head,
             strand.velocity,
-            strand.radius * 0.42,
+            strand.radius * 0.5,
             strand.gravity,
             strand.edge,
             strand.highlight,
             strand.alpha,
-            0.36
+            0.28
           );
-        strand.active = false;
+      }
+      if (strand.releaseAge >= 0) {
+        strand.releaseAge += dt;
+        strand.tail.lerp(strand.head, Math.min(1, dt * 11));
+        strand.bend.lerp(strand.head, Math.min(1, dt * 14));
+        if (strand.releaseAge >= 0.14) strand.active = false;
       }
     }
   }
@@ -552,11 +568,16 @@ export class GooRenderer3D {
         }
         this.side.normalize();
         this.binormal.crossVectors(this.tangent, this.side).normalize();
-        const bulb = 1 + 0.7 * Math.exp(-Math.pow((t - 0.84) / 0.12, 2));
+        const bulb = 1 + 0.38 * Math.exp(-Math.pow((t - 0.85) / 0.12, 2));
         const neck =
           1 - 0.56 * Math.exp(-Math.pow((t - 0.66) / 0.11, 2)) * stretch;
         const cap = Math.pow(Math.max(0, Math.sin(Math.PI * t)), 0.55);
-        const radius = strand.radius * bulb * neck * cap * (1 - 0.25 * t);
+        const release =
+          strand.releaseAge < 0
+            ? 1
+            : Math.max(0.06, 1 - strand.releaseAge / 0.14);
+        const radius =
+          strand.radius * bulb * neck * cap * (1 - 0.2 * t) * release;
         for (let side = 0; side < SIDES; side++) {
           const angle = (side * Math.PI * 2) / SIDES;
           const offset = base + (ring * SIDES + side) * 3;

@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { BufferGeometry, Object3D, Vector3 } from "three";
+import {
+  BufferGeometry,
+  InstancedMesh,
+  Matrix4,
+  Object3D,
+  Vector3,
+} from "three";
 import { GooRenderer3D } from "$lib/shared/3d/effects/water/goo-renderer-3d";
 import type { GooTipSource3D } from "$lib/shared/3d/effects/scene-effects/scene-effect-source-3d";
 import { resolveGoo3D } from "$lib/shared/effects/translators/webgl3d-translator";
@@ -219,18 +225,51 @@ describe("GooRenderer3D", () => {
       const renderer = new GooRenderer3D();
       const parent = new Object3D();
       renderer.initialize(parent);
-      const tip = source({ velocity: { x: 0, y: 0, z: 0 }, speed: 0 });
+      const tip = source({ velocity: { x: 1, y: 0, z: 0 }, speed: 0 });
       tip.params.surfaceTension = tension;
       tip.params.ambientSpawnRate = 60;
+      tip.params.worldGravity = 0;
       renderer.update([tip], 1 / 60);
       tip.params.ambientEmission = 0;
-      for (let frame = 0; frame < 29; frame++) renderer.update([tip], 1 / 60);
+      for (let frame = 0; frame < 52; frame++) renderer.update([tip], 1 / 60);
       const visible = parent.children[0]!.visible;
       renderer.dispose();
       return visible;
     }
     expect(remaining(0)).toBe(false);
     expect(remaining(1)).toBe(true);
+  });
+
+  it("keeps a short retracting body joined to the first detached drop", () => {
+    const renderer = new GooRenderer3D();
+    const parent = new Object3D();
+    renderer.initialize(parent);
+    const tip = source({ velocity: { x: 1, y: 0, z: 0 }, speed: 0 });
+    tip.params.worldGravity = 0;
+    tip.params.surfaceTension = 0;
+    tip.params.ambientSpawnRate = 60;
+    renderer.update([tip], 1 / 60);
+    tip.params.ambientEmission = 0;
+    for (let frame = 0; frame < 40; frame++) renderer.update([tip], 1 / 60);
+
+    const tube = parent.children[0] as {
+      geometry: BufferGeometry;
+      visible: boolean;
+    };
+    const drops = parent.children[1] as InstancedMesh;
+    expect(tube.visible).toBe(true);
+    expect(drops.count).toBeGreaterThan(0);
+    const tipPosition = new Vector3().fromBufferAttribute(
+      tube.geometry.getAttribute("position"),
+      16 * 12
+    );
+    const dropMatrix = new Matrix4();
+    drops.getMatrixAt(0, dropMatrix);
+    const dropPosition = new Vector3().setFromMatrixPosition(dropMatrix);
+    expect(dropPosition.distanceTo(tipPosition)).toBeLessThan(0.04);
+    for (let frame = 0; frame < 9; frame++) renderer.update([tip], 1 / 60);
+    expect(tube.visible).toBe(false);
+    renderer.dispose();
   });
 
   it("never connects separate source positions", () => {
