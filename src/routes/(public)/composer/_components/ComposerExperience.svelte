@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { flushSync, onMount, untrack } from "svelte";
+  import { flushSync, onDestroy, onMount, untrack } from "svelte";
   import { MediaQuery } from "svelte/reactivity";
   import { activateWhenNear } from "$lib/actions/activate-when-near";
   import { observeComposerStopVisibility } from "./observe-composer-stop-visibility";
@@ -27,6 +27,7 @@
   } from "$lib/shared/pictograph/prop/domain/prop-look";
   import type { PropChiralitySeam } from "$lib/shared/settings/components/tabs/prop-type/prop-chirality-seam";
   import type { ViewerCustomColorPair } from "$lib/shared/sequence-viewer/domain/viewer-custom-colors";
+  import { pinLandingSettings } from "$lib/shared/application/state/app-state.svelte";
   import {
     trackCtaClick,
     trackDemoInteraction,
@@ -123,6 +124,14 @@
   }
 
   let selectedProp = $state<PropType>(PropType.STAFF);
+  // Every demo on this page draws the canonical hands, blue left and red
+  // right, whatever this browser saved in the app: the page is prerendered
+  // with them, its poster and card images carry them, and its own prop picker
+  // is the only color control here. Pinned before any child reads settings;
+  // the picker's choice reaches the demos as explicit overrides.
+  pinLandingSettings({ primaryPropColors: null });
+  onDestroy(() => pinLandingSettings(null));
+
   // Appearance and colors stay with this public page's prop choice. There is
   // no app settings service here, so writing to it would lose these edits.
   let fanAppearance = $state<FanAppearance>(DEFAULT_FAN_APPEARANCE);
@@ -462,7 +471,7 @@
           : 'fa-dice'}"
       aria-hidden="true"
     ></i>
-    <span
+    <span class="roll-label"
       >{heroAct.rerolling
         ? rerollFailed
           ? "Trying again..."
@@ -1373,6 +1382,22 @@
     min-width: 0;
   }
 
+  /* The hero's toolbar row is a size container (SequenceHeroDemo). The Theme
+     chip shortens first (ComposerBackgroundCycle, under 27rem). In a row too
+     narrow for Roll's name beside the two chips (a 1280x720 stage window
+     leaves 265px, the 1024x768 plain page 238px) Roll keeps its die and its
+     name stays for assistive technology. */
+  @container hero-toolbar (max-width: 18.5rem) {
+    .roll-label {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip-path: inset(50%);
+      white-space: nowrap;
+    }
+  }
+
   .prop-trigger {
     display: inline-block;
     width: max(var(--min-touch-target, 48px), 48px);
@@ -1437,9 +1462,10 @@
   }
 
   /* Full size when the room allows. On the stage the card gives way so the
-     intro, its gap and the gallery add up to the stop's room (the 2rem is
-     the caption); without the stage the fallback room leaves the cap in
-     charge. The floor keeps a very short window from erasing the card. */
+     intro, its gap and the gallery add up to the stop's room (the 3.25rem is
+     the two-line caption); without the stage the fallback room leaves the
+     cap in charge. The floor keeps a very short window from erasing the
+     card. */
   .keeping-card {
     margin: 0;
     justify-self: end;
@@ -1450,7 +1476,7 @@
         8rem,
         (
             var(--stop-room, 200vh) - var(--composer-gallery-height) -
-              var(--keep-intro-gap) - 2rem
+              var(--keep-intro-gap) - 3.25rem
           ) *
           5 / 7
       )
@@ -1542,13 +1568,18 @@
         ) -
         var(--stop-head)
     );
+    /* On the stage the frames' 34rem floor gives way to the room so a short
+       window does not pan Construct and Generate for the floor's sake (a
+       720px window leaves 479px); the plain page keeps the floor and
+       scrolls. */
+    --making-floor: min(34rem, var(--stop-room, 200vh) - var(--stop-head));
   }
 
   /* The width cap keeps a very tall window (3840 x 2160) from stretching
      a demo into a column of empty space. */
   .stop-frame {
     box-sizing: border-box;
-    height: clamp(34rem, var(--making-fill), 62cqw);
+    height: clamp(var(--making-floor), var(--making-fill), 62cqw);
     min-width: 0;
     overflow: hidden;
     border: 1px solid var(--theme-stroke, oklch(0.45 0.03 270 / 0.2));
@@ -1562,7 +1593,7 @@
      its grid and player with its width, so it keeps the whole room. */
   .construct-frame {
     max-width: 108rem;
-    height: clamp(34rem, min(var(--making-fill), 52rem), 62cqw);
+    height: clamp(var(--making-floor), min(var(--making-fill), 52rem), 62cqw);
     margin-inline: auto;
   }
 

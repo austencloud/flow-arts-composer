@@ -36,10 +36,15 @@
     <DropdownMenu.Trigger>
       {#snippet child({ props })}
         {@const triggerProps = asButtonAttributes(props)}
-        <button {...triggerProps} type="button" class="theme-trigger">
+        <button
+          {...triggerProps}
+          type="button"
+          class="theme-trigger"
+          title={`Theme: ${current.label}`}
+        >
           <span class="theme-label">Theme:</span>
           <i class="fas {current.icon}" aria-hidden="true"></i>
-          <span>{current.label}</span>
+          <span class="theme-value">{current.label}</span>
           <i class="fas fa-chevron-down theme-chevron" aria-hidden="true"></i>
         </button>
       {/snippet}
@@ -82,6 +87,7 @@
 
 <style>
   .theme-trigger {
+    position: relative;
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -122,6 +128,22 @@
   .theme-chevron {
     font-size: 0.7em;
     color: var(--theme-text-dim, rgb(255 255 255 / 0.72));
+  }
+
+  /* The hero toolbar (SequenceHeroDemo's .toolbar-row) is the hero-toolbar
+     container. Where it is too narrow for Roll, the prop chooser and this
+     chip with its words, the words leave the screen but stay in the
+     accessible name, and the chip is its icon and chevron. */
+  @container hero-toolbar (max-width: 27rem) {
+    .theme-label,
+    .theme-value {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip-path: inset(50%);
+      white-space: nowrap;
+    }
   }
 
   :global(.composer-theme-menu) {

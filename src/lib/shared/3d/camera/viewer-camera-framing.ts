@@ -213,9 +213,9 @@ export function computeViewerAlignedCamera(
     !options.conjoined &&
     (!performers?.length ||
       (performers.length === 1 &&
-        performers[0].position.x === 0 &&
-        performers[0].position.z === 0 &&
-        !performers[0].conjoined));
+        performers[0]?.position.x === 0 &&
+        performers[0]?.position.z === 0 &&
+        !performers[0]?.conjoined));
   if (options.environmentId === "blossom" && defaultBlossomFormation) {
     const camera = getBlossomOpeningCamera(
       Boolean(view && view.innerWidth < view.innerHeight)

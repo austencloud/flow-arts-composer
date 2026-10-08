@@ -881,7 +881,7 @@ function buildViewer3DState(
     if (
       environmentId === "blossom" &&
       performers.length === 1 &&
-      !resolveGridJoin3D(performers[0].loadedSequence)
+      !resolveGridJoin3D(performers[0]?.loadedSequence)
     ) {
       const camera = getBlossomOpeningCamera(currentViewportAspect() < 1);
       const [x, y, z] = camera.position;

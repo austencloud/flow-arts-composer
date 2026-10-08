@@ -23,6 +23,11 @@
   import OfflineLocalDataSection from "./preferences/OfflineLocalDataSection.svelte";
   import LanguagePreference from "./preferences/LanguagePreference.svelte";
   import { Collapsible } from "bits-ui";
+  import {
+    applyNativeUpdate,
+    checkForNativeUpdate,
+    nativeUpdate,
+  } from "$lib/shared/offline/services/native-update.svelte";
 
   let { currentSettings, onSettingUpdate } = $props<{
     currentSettings: AppSettings;
@@ -40,6 +45,35 @@
     hapticService = getHapticFeedback();
     setTimeout(() => (isVisible = true), 30);
   });
+
+  // Phone app only: what the update button says and does right now.
+  const appUpdateLabel = $derived.by(() => {
+    switch (nativeUpdate.status) {
+      case "checking":
+        return t("settings_app_update_checking");
+      case "downloading":
+        return t("settings_app_update_downloading", {
+          percent: nativeUpdate.percent,
+        });
+      case "ready":
+        return t("settings_app_update_restart_to_update");
+      case "up-to-date":
+        return t("settings_app_update_up_to_date");
+      case "failed":
+        return t("settings_app_update_failed");
+      default:
+        return t("settings_app_update_check");
+    }
+  });
+  const appUpdateBusy = $derived(
+    nativeUpdate.status === "checking" || nativeUpdate.status === "downloading"
+  );
+
+  function handleAppUpdate() {
+    hapticService?.trigger("selection");
+    if (nativeUpdate.status === "ready") void applyNativeUpdate();
+    else void checkForNativeUpdate();
+  }
 
   // Derive toggle state from settings
   const showClearConfirmation = $derived(
@@ -208,6 +242,13 @@
   </section>
   <section class="section version-section">
     <span>v{__APP_VERSION__}</span>
+    {#if nativeUpdate.currentVersion}
+      <span>
+        {t("settings_app_update_bundle", {
+          version: nativeUpdate.currentVersion,
+        })}
+      </span>
+    {/if}
     <button
       type="button"
       class="version-button"
@@ -215,6 +256,18 @@
     >
       {t("nav_ui_what_s_new")}
     </button>
+    {#if nativeUpdate.available}
+      <button
+        type="button"
+        class="version-button"
+        class:ready={nativeUpdate.status === "ready"}
+        disabled={appUpdateBusy}
+        aria-live="polite"
+        onclick={handleAppUpdate}
+      >
+        {appUpdateLabel}
+      </button>
+    {/if}
   </section>
 </div>
 
@@ -431,6 +484,7 @@
 
   .version-section {
     flex-direction: row;
+    flex-wrap: wrap;
     align-items: center;
     color: var(--theme-text-dim);
     font-size: var(--font-size-compact);
@@ -450,6 +504,16 @@
   .version-button:focus-visible {
     outline: 2px solid var(--theme-accent);
     outline-offset: 2px;
+  }
+
+  .version-button:disabled {
+    cursor: default;
+    color: var(--theme-text-dim);
+  }
+
+  .version-button.ready {
+    border-color: var(--theme-accent);
+    color: var(--theme-accent);
   }
 
   :global(.advanced-trigger) {
