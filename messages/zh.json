@@ -579,6 +579,7 @@
   "settings_prop_choices": "道具选项",
   "settings_primary_prop_colors": "主要道具颜色",
   "settings_use_default_colors": "使用默认颜色",
+  "settings_random_prop_colors": "随机颜色：左侧冷色，右侧暖色",
   "settings_edit_prop_colors": "编辑道具颜色",
   "settings_colors": "颜色",
   "settings_prop_colors": "道具颜色",
