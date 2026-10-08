@@ -98,17 +98,42 @@ function getPreloadedSettings(): AppSettings {
   }
 }
 
+// A public page that must show the product's canonical look whatever this
+// browser saved in the app (the composer page's demos) pins the settings its
+// children read, before they render. The pin applies only to the read-once
+// landing copy below; app routes start the settings service and read the live
+// settings untouched. Server renders ignore it so prerendered markup matches
+// the defaults it already uses.
+let landingSettingsPin: Partial<AppSettings> | null = null;
+let pinnedLandingSettingsCache: AppSettings | null = null;
+
+export function pinLandingSettings(pin: Partial<AppSettings> | null): void {
+  if (typeof window === "undefined") return;
+  landingSettingsPin = pin;
+  pinnedLandingSettingsCache = null;
+}
+
+function getLandingSettings(): AppSettings {
+  const preloaded = getPreloadedSettings();
+  if (landingSettingsPin === null) return preloaded;
+  if (pinnedLandingSettingsCache === null) {
+    pinnedLandingSettingsCache = { ...preloaded, ...landingSettingsPin };
+  }
+  return pinnedLandingSettingsCache;
+}
+
 export function getSettings() {
   const initialized = areServicesInitialized();
 
   if (!initialized) {
     // The saved settings rather than hardcoded defaults, so BackgroundHost
     // paints the user's background immediately. This copy is read once and
-    // never changes. The root layout starts the settings service on every app
-    // route. A landing-mode page starts it with its first settings change
-    // (see withSettingsService), or calls initializeAppServices() itself when
-    // it has to follow changes made in another tab.
-    return getPreloadedSettings();
+    // never changes, apart from a landing page's pin (pinLandingSettings). The
+    // root layout starts the settings service on every app route. A
+    // landing-mode page starts it with its first settings change (see
+    // withSettingsService), or calls initializeAppServices() itself when it
+    // has to follow changes made in another tab.
+    return getLandingSettings();
   }
 
   // When in preview mode, return the previewed user's settings (read-only)
