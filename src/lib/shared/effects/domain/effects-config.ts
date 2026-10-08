@@ -241,9 +241,9 @@ export interface BloomIntent {
  * The 2D and 3D renderers read different fields:
  * - 2D canvas (Goo2DRenderer) reads intensity, motionEmission, surfaceTension
  *   (as Viscosity), palette, customColor and trackingMode. It ignores
- *   ambientEmission, clarity and spewStyle.
- * - Pooled 3D viewer reads every field. The legacy WaterEmitter3D still ignores
- *   surfaceTension and spewStyle when the pooled scene-effects manager is absent.
+ *   ambientEmission, clarity, spewStyle, viscosity and gravity.
+ * - Pooled 3D viewer reads every field. The legacy WaterEmitter3D uses a
+ *   simpler droplet path when the pooled scene-effects manager is absent.
  */
 export interface GooIntent {
   /** 0-1. 3D only: a steady droplet rate that keeps flowing while the prop is
@@ -260,12 +260,31 @@ export interface GooIntent {
   customColor: string;
   /** 0-1. 3D only: higher is more see-through. */
   clarity: number;
-  /** 0-1. Viscosity. Higher values keep strands connected longer in 3D. */
+  /** 0-1. 2D viscosity; 3D cohesion and resistance to strand breakup. */
   surfaceTension: number;
+  /** 0-1. 3D resistance to stretching while liquid is connected. */
+  viscosity: number;
+  /** 0-2. 3D downward gravity in Earth multiples. */
+  gravity: number;
   /** Which staff end(s) droplets track. */
   trackingMode: "left_end" | "right_end" | "both_ends";
   /** 3D: connected flow, short splash strands, or fine detached mist. */
   spewStyle: "splash" | "flow" | "mist";
+}
+
+/** Shared bounds for 3D Goo controls, including older saved looks. */
+export function normalizeGooLiquidControls(
+  intent: Partial<GooIntent>
+): Pick<GooIntent, "surfaceTension" | "viscosity" | "gravity"> {
+  const inRange = (value: unknown, fallback: number, max: number) =>
+    typeof value === "number" && Number.isFinite(value)
+      ? Math.max(0, Math.min(max, value))
+      : fallback;
+  return {
+    surfaceTension: inRange(intent.surfaceTension, 0.45, 1),
+    viscosity: inRange(intent.viscosity, 0, 1),
+    gravity: inRange(intent.gravity, 1, 2),
+  };
 }
 
 export interface BubblesIntent {

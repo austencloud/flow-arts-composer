@@ -42,6 +42,7 @@ interface Strand {
   age: number;
   maxAge: number;
   tension: number;
+  viscosity: number;
   radius: number;
   gravity: number;
   tail: Vector3;
@@ -210,6 +211,7 @@ export class GooRenderer3D {
     age: 0,
     maxAge: 0,
     tension: 0,
+    viscosity: 0,
     radius: 0,
     gravity: -9.8,
     tail: new Vector3(),
@@ -405,8 +407,11 @@ export class GooRenderer3D {
     strand.dropReleased = false;
     strand.age = 0;
     strand.tension = Math.min(1, Math.max(0, p.surfaceTension));
+    strand.viscosity = Math.min(1, Math.max(0, p.viscosity));
     strand.maxAge =
-      (p.spewStyle === "flow" ? 0.68 : 0.4) + 0.3 * strand.tension;
+      (p.spewStyle === "flow" ? 0.68 : 0.4) +
+      0.3 * strand.tension +
+      0.22 * strand.viscosity;
     strand.radius =
       p.baseRadius *
       (0.55 + 0.35 * p.intensity) *
@@ -430,14 +435,19 @@ export class GooRenderer3D {
     for (const strand of this.strands) {
       if (!strand.active) continue;
       strand.age += dt;
-      strand.velocity.y += strand.gravity * dt;
-      strand.head.addScaledVector(strand.velocity, dt);
+      const source =
+        strand.attached && strand.releaseAge < 0
+          ? sources.find(
+              (item) =>
+                item.sourceId === strand.sourceId &&
+                isTrackedTip(item.params.trackingMode, item.tipIndex)
+            )
+          : undefined;
+      if (source) {
+        strand.gravity = source.params.worldGravity;
+        strand.viscosity = source.params.viscosity;
+      }
       if (strand.attached && strand.releaseAge < 0) {
-        const source = sources.find(
-          (item) =>
-            item.sourceId === strand.sourceId &&
-            isTrackedTip(item.params.trackingMode, item.tipIndex)
-        );
         if (source) {
           this.next.set(
             source.position.x,
@@ -445,10 +455,22 @@ export class GooRenderer3D {
             source.position.z
           );
           if (this.next.distanceTo(strand.tail) < TELEPORT_DISTANCE) {
+            if (dt > 0 && strand.viscosity > 0) {
+              // While joined, thick liquid approaches the prop's actual motion.
+              // Damping velocity also preserves its slower speed at separation.
+              this.side.copy(this.next).sub(strand.tail).divideScalar(dt);
+              this.side.clampLength(0, 12);
+              strand.velocity.lerp(
+                this.side,
+                1 - Math.exp(-1.8 * strand.viscosity * dt)
+              );
+            }
             strand.tail.copy(this.next);
           } else strand.attached = false;
         } else strand.attached = false;
       }
+      strand.velocity.y += strand.gravity * dt;
+      strand.head.addScaledVector(strand.velocity, dt);
       const reach = strand.head.distanceTo(strand.tail);
       strand.bend.copy(strand.tail).add(strand.head).multiplyScalar(0.5);
       strand.bend.y -=

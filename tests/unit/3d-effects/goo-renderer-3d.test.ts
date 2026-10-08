@@ -34,6 +34,8 @@ function source(overrides: Partial<GooTipSource3D> = {}): GooTipSource3D {
       customColor: "#3a7fd9",
       clarity: 0,
       surfaceTension: 0.5,
+      viscosity: 0,
+      gravity: 1,
       trackingMode: "both_ends",
       spewStyle: "flow",
     }),
@@ -77,6 +79,67 @@ function ringCenter(geometry: BufferGeometry, ring: number): Vector3 {
 }
 
 describe("GooRenderer3D", () => {
+  it("resolves legacy liquid values and gravity in Earth multiples", () => {
+    const legacy = { ...source().params, viscosity: undefined, gravity: undefined } as unknown as Parameters<typeof resolveGoo3D>[0];
+    expect(resolveGoo3D(legacy)).toMatchObject({ viscosity: 0, gravity: 1, worldGravity: -9.8 });
+    expect(resolveGoo3D({ ...legacy, viscosity: Infinity, gravity: -1, surfaceTension: NaN })).toMatchObject({ viscosity: 0, gravity: 0, surfaceTension: 0.45, worldGravity: -0 });
+    expect(resolveGoo3D({ ...legacy, viscosity: 3, gravity: 3, surfaceTension: 3 })).toMatchObject({ viscosity: 1, gravity: 2, surfaceTension: 1, worldGravity: -19.6 });
+  });
+
+  it("makes connected liquid resist stretch at high viscosity", () => {
+    const reachAfter = (viscosity: number) => {
+      const renderer = new GooRenderer3D();
+      const parent = new Object3D();
+      renderer.initialize(parent);
+      const tip = source({ velocity: { x: 2, y: 0, z: 0 }, speed: 0 });
+      tip.params.viscosity = viscosity;
+      tip.params.worldGravity = 0;
+      tip.params.ambientSpawnRate = 60;
+      renderer.update([tip], 1 / 60);
+      tip.params.ambientEmission = 0;
+      const internal = renderer as unknown as { strands: Array<{ active: boolean; attached: boolean; head: Vector3; tail: Vector3 }> };
+      for (let frame = 0; frame < 20; frame++) renderer.update([tip], 1 / 60);
+      const strand = internal.strands.find((item) => item.active)!;
+      const result = { attached: strand.attached, reach: strand.head.distanceTo(strand.tail) };
+      renderer.dispose();
+      return result;
+    };
+    const thin = reachAfter(0);
+    const thick = reachAfter(1);
+    expect(thin.attached).toBe(true);
+    expect(thick.attached).toBe(true);
+    expect(thick.reach).toBeLessThan(thin.reach * 0.8);
+  });
+
+  it("releases thick liquid at its damped speed, then follows gravity without drag", () => {
+    const renderer = new GooRenderer3D();
+    const parent = new Object3D();
+    renderer.initialize(parent);
+    const tip = source({ velocity: { x: 2, y: 0, z: 0 }, speed: 0 });
+    tip.params.viscosity = 1;
+    tip.params.worldGravity = -4;
+    tip.params.ambientSpawnRate = 60;
+    renderer.update([tip], 1 / 60);
+    tip.params.ambientEmission = 0;
+    const internal = renderer as unknown as {
+      strands: Array<{ active: boolean; velocity: Vector3 }>;
+      drops: Array<{ active: boolean; velocity: Vector3 }>;
+    };
+    for (let frame = 0; frame < 20; frame++) renderer.update([tip], 1 / 60);
+    const strand = internal.strands.find((item) => item.active)!;
+    const attachedSpeed = strand.velocity.x;
+    expect(attachedSpeed).toBeLessThan(0.35);
+    for (let frame = 0; frame < 7; frame++) renderer.update([], 1 / 60);
+    const drop = internal.drops.find((item) => item.active)!;
+    expect(drop).toBeDefined();
+    expect(drop.velocity.x).toBeCloseTo(attachedSpeed, 5);
+    const verticalSpeed = drop.velocity.y;
+    renderer.update([], 1 / 60);
+    expect(drop.velocity.x).toBeCloseTo(attachedSpeed, 5);
+    expect(drop.velocity.y - verticalSpeed).toBeCloseTo(-4 / 60, 5);
+    renderer.dispose();
+  });
+
   it("keeps tube geometry finite through movement, retirement, and clearing", () => {
     const renderer = new GooRenderer3D();
     const parent = new Object3D();
