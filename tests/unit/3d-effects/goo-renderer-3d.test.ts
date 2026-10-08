@@ -226,6 +226,77 @@ describe("GooRenderer3D", () => {
     renderer.dispose();
   });
 
+  it("thins the shaft under stretch while keeping the distal bead", () => {
+    const renderer = new GooRenderer3D();
+    const parent = new Object3D();
+    renderer.initialize(parent);
+    const tip = source();
+    tip.params.worldGravity = 0;
+    renderer.update([tip], 1 / 15);
+    const internal = renderer as unknown as {
+      strands: Array<{
+        active: boolean;
+        tail: Vector3;
+        bend: Vector3;
+        head: Vector3;
+        age: number;
+      }>;
+      writeStrands(): void;
+    };
+    const strand = internal.strands.find((candidate) => candidate.active)!;
+    strand.age = 0.2;
+    strand.tail.set(0, 0, 0);
+    strand.bend.set(0.1, 0, 0);
+    strand.head.set(0.2, 0, 0);
+    internal.writeStrands();
+    const geometry = (parent.children[0] as { geometry: BufferGeometry })
+      .geometry;
+    const shortShaft = ringRadius(geometry, 8);
+    const shortBead = ringRadius(geometry, 17);
+    strand.bend.set(0.3, 0, 0);
+    strand.head.set(0.6, 0, 0);
+    internal.writeStrands();
+    expect(ringRadius(geometry, 8)).toBeLessThan(shortShaft * 0.8);
+    expect(ringRadius(geometry, 17)).toBeGreaterThan(shortBead * 0.9);
+    renderer.dispose();
+  });
+
+  it("uses the same gravity before and after a bead separates", () => {
+    const renderer = new GooRenderer3D();
+    const parent = new Object3D();
+    renderer.initialize(parent);
+    const tip = source({ velocity: { x: 1, y: 0, z: 0 }, speed: 0 });
+    tip.params.worldGravity = -6;
+    tip.params.surfaceTension = 0;
+    tip.params.ambientSpawnRate = 60;
+    renderer.update([tip], 1 / 60);
+    tip.params.ambientEmission = 0;
+    tip.params.motionEmission = 0;
+    const internal = renderer as unknown as {
+      strands: Array<{ active: boolean; velocity: Vector3; gravity: number }>;
+      drops: Array<{ active: boolean; velocity: Vector3; gravity: number }>;
+    };
+    const strand = internal.strands.find((candidate) => candidate.active)!;
+    const initialVelocity = strand.velocity.y;
+    renderer.update([tip], 1 / 60);
+    expect(strand.velocity.y - initialVelocity).toBeCloseTo(-6 / 60, 5);
+    for (
+      let frame = 0;
+      frame < 60 && !internal.drops.some((drop) => drop.active);
+      frame++
+    ) {
+      renderer.update([tip], 1 / 60);
+    }
+    const drop = internal.drops.find((candidate) => candidate.active)!;
+    expect(drop).toBeDefined();
+    expect(drop.gravity).toBe(strand.gravity);
+    expect(drop.velocity.y - strand.velocity.y).toBeCloseTo(-6 / 60, 5);
+    const releasedVelocity = drop.velocity.y;
+    renderer.update([tip], 1 / 60);
+    expect(drop.velocity.y - releasedVelocity).toBeCloseTo(-6 / 60, 5);
+    renderer.dispose();
+  });
+
   it("keeps one smoothly capped attached body per source", () => {
     const renderer = new GooRenderer3D();
     const parent = new Object3D();
