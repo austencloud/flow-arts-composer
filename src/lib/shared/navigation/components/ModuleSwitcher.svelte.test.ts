@@ -73,6 +73,9 @@ describe("ModuleSwitcher inline sign-in lifecycle", () => {
     openNavigation();
     const dialog = page.getByRole("dialog", { name: "Module navigation menu" });
     await expect.element(dialog).toBeInTheDocument();
+    await expect
+      .element(page.getByRole("button", { name: "Close menu" }))
+      .toHaveFocus();
     await page.getByRole("button", { name: "Sign in" }).click();
 
     await expect.element(page.getByTestId("inline-auth")).toBeInTheDocument();
@@ -93,6 +96,9 @@ describe("ModuleSwitcher inline sign-in lifecycle", () => {
     await page.getByRole("button", { name: "Sign in" }).click();
     await page.getByRole("button", { name: "Close menu" }).click();
     openNavigation();
+    await expect
+      .element(page.getByRole("button", { name: "Close menu" }))
+      .toHaveFocus();
     await expect
       .element(page.getByTestId("inline-auth"))
       .not.toBeInTheDocument();
