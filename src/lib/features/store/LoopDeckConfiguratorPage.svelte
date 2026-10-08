@@ -21,7 +21,9 @@
   import { getProductLoader } from "$lib/features/store/get-product-loader";
   import { createStoreState } from "./state/store-state.svelte";
   import { setStoreContext } from "./context/store-context";
-  import ShopProductShell from "./components/shell/ShopProductShell.svelte";
+  import ShopProductShell, {
+    type ShopAssurance,
+  } from "./components/shell/ShopProductShell.svelte";
   import ShopPurchaseCta from "./components/shell/ShopPurchaseCta.svelte";
   import { deriveCrossSell } from "./domain/catalog-listings";
   import { purchaseCtaLabel, resolvePurchaseState, SALES_LIVE } from "./domain/purchase-state";
@@ -531,9 +533,10 @@
   // flavor SKU stands in while it isn't seeded yet (neither has a Stripe price
   // in that state, so the buyer gets the same honest waitlist either way).
   const buySku = $derived(customSku ?? flavorSkus[0] ?? null);
-  const purchasable = $derived(
-    buySku !== null && resolvePurchaseState(buySku, SALES_LIVE) !== "notify"
+  const purchaseState = $derived(
+    buySku === null ? "notify" : resolvePurchaseState(buySku, SALES_LIVE)
   );
+  const purchasable = $derived(purchaseState !== "notify");
 
   // The dock is the same offer as the primary CTA, so it reads from the same
   // resolver instead of hard-coding "Preorder now" — a hard-coded preorder
@@ -553,8 +556,14 @@
   // teaching aid, not a preview — it should stay put while the buyer configures.
   const anatomyCard = $derived(flavorSkus[0]?.coverCards?.[0]);
 
-  const ASSURANCES = [
-    { icon: "fas fa-calendar-check", text: "Preorder now. Decks ship October 1." },
+  // The ship-date line is the preorder promise. It reads from the same
+  // resolver as the buy button, so a page that can only take an email never
+  // claims a ship date beside its "Preorders open soon" box.
+  const PREORDER_ASSURANCE: ShopAssurance = {
+    icon: "fas fa-calendar-check",
+    text: "Preorder now. Decks ship October 1.",
+  };
+  const STANDING_ASSURANCES: readonly ShopAssurance[] = [
     {
       icon: "fas fa-box-open",
       text: "Explainer card, laminated quick-reference sheet, and deck box included",
@@ -564,6 +573,11 @@
       text: "Printed and cut by hand in Chicago, small batches",
     },
   ];
+  const assurances = $derived(
+    purchaseState === "preorder"
+      ? [PREORDER_ASSURANCE, ...STANDING_ASSURANCES]
+      : STANDING_ASSURANCES
+  );
 
   const NOTIFY_TEXT =
     "Preorders open soon. Leave an email and you'll hear the moment they do.";
@@ -584,7 +598,7 @@
   price={flavorSkus.length > 0 ? price : undefined}
   checkoutError={store.checkoutError}
   {crossSell}
-  assurances={ASSURANCES}
+  {assurances}
   loading={store.isLoading && flavorSkus.length === 0}
   loadingLabel="Loading the deck..."
   error={store.error ??

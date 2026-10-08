@@ -1,6 +1,10 @@
 /**
  * The export guard must stop any card whose QR is missing, carries the wrong
  * payload, or prints too small to scan, and name that card in the error.
+ *
+ * The planned-size checks are pure math and always run. Rendering and
+ * decoding real fronts needs node-canvas, so those suites run only where its
+ * native binding loads (see nodeCanvasAvailable).
  */
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { PRINT_QR_RENDER_SIZE } from "@tka/render-composition";
@@ -12,6 +16,7 @@ import {
   createNodeQrDetector,
   createNodeQrGenerator,
   installNodeCanvas,
+  nodeCanvasAvailable,
 } from "../../../../../../tests/helpers/node-print-qr";
 import { TND_ELEMENTS } from "../../domain/tnd-element";
 import { exportHomePrintPDF } from "../print-pdf-exporter";
@@ -65,73 +70,6 @@ function printOptions(
   };
 }
 
-let restoreCanvas: () => void;
-let generator: QRCodeGenerator;
-let detector: TkaQrDetector;
-
-beforeAll(() => {
-  restoreCanvas = installNodeCanvas();
-  generator = createNodeQrGenerator();
-  detector = createNodeQrDetector();
-});
-
-afterAll(() => {
-  restoreCanvas();
-});
-
-/** A framed front with a white QR cell, holding `payload` when given. */
-async function cardPair(
-  word: string,
-  options: PrintRenderOptions,
-  payload: string | null
-): Promise<CardPair> {
-  const cardSequence = sequence(4, word);
-  const placement = getSerializedQrPlacement(cardSequence, options)!;
-  const front = createNodeCanvas(822, 1122);
-  const context = front.getContext("2d")!;
-  context.fillStyle = "#e8e2d4";
-  context.fillRect(0, 0, 822, 1122);
-  context.fillStyle = "#ffffff";
-  const flood = Math.ceil(placement.size * 0.06);
-  context.fillRect(
-    placement.x - flood,
-    placement.y - flood,
-    placement.size + flood * 2,
-    placement.size + flood * 2
-  );
-  if (payload) {
-    const qr = await generator.generateUrlAsImage(
-      payload,
-      PRINT_QR_RENDER_SIZE,
-      { style: "modern", margin: 1, darkMode: false }
-    );
-    context.drawImage(
-      qr,
-      placement.x,
-      placement.y,
-      placement.size,
-      placement.size
-    );
-  }
-  return {
-    front,
-    back: createNodeCanvas(1, 1),
-    label: word,
-    renderMeta: { sequence: cardSequence, options },
-  };
-}
-
-function countingDetector(): TkaQrDetector & { calls: number } {
-  const counter = {
-    calls: 0,
-    async detect(source: ImageBitmapSource) {
-      counter.calls++;
-      return detector.detect(source);
-    },
-  };
-  return counter;
-}
-
 describe("planned serialized QR size", () => {
   it("prints home-print cards at the denser of the two squeezed axes", () => {
     expect(homePrintPixelsPerInch({ width: 822, height: 1122 }, "poker")).toBe(
@@ -168,76 +106,157 @@ describe("planned serialized QR size", () => {
   });
 });
 
-describe("finished front QR verification", () => {
-  it("passes a front whose QR decodes to its card URL", async () => {
-    const pair = await cardPair(
-      "ABCD",
-      printOptions("row", CARD_URL),
-      CARD_URL
-    );
-    await expect(
-      verifyCardFrontQrs([pair], () => 328.8, detector)
-    ).resolves.toBeUndefined();
+describe.runIf(nodeCanvasAvailable())("rendered front QR guard", () => {
+  let restoreCanvas: () => void;
+  let generator: QRCodeGenerator;
+  let detector: TkaQrDetector;
+
+  beforeAll(() => {
+    restoreCanvas = installNodeCanvas();
+    generator = createNodeQrGenerator();
+    detector = createNodeQrDetector();
   });
 
-  it("stops a front whose QR never rendered", async () => {
-    const pair = await cardPair("BLANK", printOptions("row", CARD_URL), null);
-    const failure = verifyCardFrontQrs([pair], () => 300, detector);
-    await expect(failure).rejects.toMatchObject({
-      name: "PrintedQrError",
-      cardLabel: "BLANK",
-      problem: "missing",
-    });
-    await expect(failure).rejects.toThrow(
-      'Card "BLANK": its QR code is missing or unreadable.'
-    );
+  afterAll(() => {
+    restoreCanvas();
   });
 
-  it("stops a front whose QR carries another card's URL", async () => {
-    const pair = await cardPair(
-      "SWAP",
-      printOptions("row", CARD_URL),
-      "HTTPS://TKA.RUN/ZZZZ?bp=staff&rp=staff"
+  /** A framed front with a white QR cell, holding `payload` when given. */
+  async function cardPair(
+    word: string,
+    options: PrintRenderOptions,
+    payload: string | null
+  ): Promise<CardPair> {
+    const cardSequence = sequence(4, word);
+    const placement = getSerializedQrPlacement(cardSequence, options)!;
+    const front = createNodeCanvas(822, 1122);
+    const context = front.getContext("2d")!;
+    context.fillStyle = "#e8e2d4";
+    context.fillRect(0, 0, 822, 1122);
+    context.fillStyle = "#ffffff";
+    const flood = Math.ceil(placement.size * 0.06);
+    context.fillRect(
+      placement.x - flood,
+      placement.y - flood,
+      placement.size + flood * 2,
+      placement.size + flood * 2
     );
-    await expect(
-      verifyCardFrontQrs([pair], () => 300, detector)
-    ).rejects.toMatchObject({ cardLabel: "SWAP", problem: "wrong-payload" });
-  });
-
-  it("decodes a shared front once and skips cards without a QR cell", async () => {
-    const pair = await cardPair(
-      "ABCD",
-      printOptions("row", CARD_URL),
-      CARD_URL
-    );
-    const insert: CardPair = {
-      front: createNodeCanvas(822, 1122),
+    if (payload) {
+      const qr = await generator.generateUrlAsImage(
+        payload,
+        PRINT_QR_RENDER_SIZE,
+        { style: "modern", margin: 1, darkMode: false }
+      );
+      context.drawImage(
+        qr,
+        placement.x,
+        placement.y,
+        placement.size,
+        placement.size
+      );
+    }
+    return {
+      front,
       back: createNodeCanvas(1, 1),
-      label: "How to Read",
+      label: word,
+      renderMeta: { sequence: cardSequence, options },
     };
-    const counting = countingDetector();
-    await verifyCardFrontQrs([pair, { ...pair }, insert], () => 300, counting);
-    expect(counting.calls).toBe(1);
-  });
-});
+  }
 
-describe("exporter QR guard", () => {
-  it("refuses a home-print PDF with a QR-less card", async () => {
-    const good = await cardPair(
-      "GOOD",
-      printOptions("row", CARD_URL),
-      CARD_URL
-    );
-    const blank = await cardPair("BLANK", printOptions("row", CARD_URL), null);
-    await expect(
-      exportHomePrintPDF([good, blank], "Deck_001", "poker")
-    ).rejects.toThrow('Card "BLANK": its QR code is missing or unreadable.');
+  function countingDetector(): TkaQrDetector & { calls: number } {
+    const counter = {
+      calls: 0,
+      async detect(source: ImageBitmapSource) {
+        counter.calls++;
+        return detector.detect(source);
+      },
+    };
+    return counter;
+  }
+
+  describe("finished front QR verification", () => {
+    it("passes a front whose QR decodes to its card URL", async () => {
+      const pair = await cardPair(
+        "ABCD",
+        printOptions("row", CARD_URL),
+        CARD_URL
+      );
+      await expect(
+        verifyCardFrontQrs([pair], () => 328.8, detector)
+      ).resolves.toBeUndefined();
+    });
+
+    it("stops a front whose QR never rendered", async () => {
+      const pair = await cardPair("BLANK", printOptions("row", CARD_URL), null);
+      const failure = verifyCardFrontQrs([pair], () => 300, detector);
+      await expect(failure).rejects.toMatchObject({
+        name: "PrintedQrError",
+        cardLabel: "BLANK",
+        problem: "missing",
+      });
+      await expect(failure).rejects.toThrow(
+        'Card "BLANK": its QR code is missing or unreadable.'
+      );
+    });
+
+    it("stops a front whose QR carries another card's URL", async () => {
+      const pair = await cardPair(
+        "SWAP",
+        printOptions("row", CARD_URL),
+        "HTTPS://TKA.RUN/ZZZZ?bp=staff&rp=staff"
+      );
+      await expect(
+        verifyCardFrontQrs([pair], () => 300, detector)
+      ).rejects.toMatchObject({ cardLabel: "SWAP", problem: "wrong-payload" });
+    });
+
+    it("decodes a shared front once and skips cards without a QR cell", async () => {
+      const pair = await cardPair(
+        "ABCD",
+        printOptions("row", CARD_URL),
+        CARD_URL
+      );
+      const insert: CardPair = {
+        front: createNodeCanvas(822, 1122),
+        back: createNodeCanvas(1, 1),
+        label: "How to Read",
+      };
+      const counting = countingDetector();
+      await verifyCardFrontQrs(
+        [pair, { ...pair }, insert],
+        () => 300,
+        counting
+      );
+      expect(counting.calls).toBe(1);
+    });
   });
 
-  it("refuses a print-service ZIP with a QR-less card", async () => {
-    const blank = await cardPair("BLANK", printOptions("row", CARD_URL), null);
-    await expect(exportDeckZIP([blank], "Deck_001")).rejects.toThrow(
-      'Card "BLANK": its QR code is missing or unreadable.'
-    );
+  describe("exporter QR guard", () => {
+    it("refuses a home-print PDF with a QR-less card", async () => {
+      const good = await cardPair(
+        "GOOD",
+        printOptions("row", CARD_URL),
+        CARD_URL
+      );
+      const blank = await cardPair(
+        "BLANK",
+        printOptions("row", CARD_URL),
+        null
+      );
+      await expect(
+        exportHomePrintPDF([good, blank], "Deck_001", "poker")
+      ).rejects.toThrow('Card "BLANK": its QR code is missing or unreadable.');
+    });
+
+    it("refuses a print-service ZIP with a QR-less card", async () => {
+      const blank = await cardPair(
+        "BLANK",
+        printOptions("row", CARD_URL),
+        null
+      );
+      await expect(exportDeckZIP([blank], "Deck_001")).rejects.toThrow(
+        'Card "BLANK": its QR code is missing or unreadable.'
+      );
+    });
   });
 });

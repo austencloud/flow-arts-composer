@@ -1,11 +1,9 @@
 <!-- StartTile.svelte - Reusable start placement tile for all grid modes -->
 <script lang="ts">
   import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
   import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
   import type { StartPlacementData } from "$lib/shared/foundation/domain/models/start-placement-data";
   import type { BuildModeId } from "$lib/shared/foundation/ui/ui-types";
-  import type { HapticFeedback } from "$lib/shared/application/services/haptic-feedback";
   import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
   import type { FanAppearance } from "$lib/shared/pictograph/prop/domain/fan-appearance";
   import type { PropLook } from "$lib/shared/pictograph/prop/domain/prop-look";
@@ -55,39 +53,22 @@
     /** Forwarded from the inner cell — see StepCell's onContentReady. */
     onContentReady?: () => void;
   }>();
-
-  const hapticService: HapticFeedback | null = getHapticFeedback();
-
-  function handleStartClick() {
-    hapticService?.trigger("selection");
-    onStartClick?.();
-  }
-
-  function handleKeydown(e: KeyboardEvent) {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      handleStartClick();
-    } else if (e.key === " ") {
-      // Prevent browser default click, let global shortcuts handle Space
-      e.preventDefault();
-    }
-  }
 </script>
 
+<!-- The cell is the control. StepCell already renders role="button" with the
+     start-placement label, handles Enter and gives the selection haptic, so a
+     second button wrapped around it was one control nested in another and two
+     Tab stops for one tile. -->
 <div
   class="start-tile"
   class:has-pictograph={true}
   title={t("browse_start_placement")}
-  role="button"
-  tabindex="0"
-  onclick={handleStartClick}
-  onkeydown={handleKeydown}
-  aria-label={t("browse_start_placement")}
 >
   <StepCell
     step={startPlacement}
     index={-1}
     transitionKey="start-placement"
+    onClick={() => onStartClick?.()}
     {shouldAnimate}
     {isSelected}
     {isPracticeStep}

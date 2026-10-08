@@ -786,6 +786,7 @@
   "settings_prop_choices": "道具の選択肢",
   "settings_primary_prop_colors": "メインの道具の色",
   "settings_use_default_colors": "デフォルトの色を使う",
+  "settings_random_prop_colors": "ランダムな色：左は寒色、右は暖色",
   "settings_edit_prop_colors": "道具の色を編集",
   "settings_colors": "色",
   "settings_prop_colors": "道具の色",

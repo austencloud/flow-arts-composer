@@ -15,7 +15,10 @@
   import { LAUNCHPAD_TILES } from "./launchpad/launchpad-tiles";
   import { onMount, type Component } from "svelte";
   import RobustAvatar from "../../components/avatar/RobustAvatar.svelte";
-  import NavDropdown, { type NavDropdownItem } from "./NavDropdown.svelte";
+  import NavDropdown, {
+    sectionNavItems,
+    type NavDropdownItem,
+  } from "./NavDropdown.svelte";
   import {
     hasSavedFirebaseUser,
     signInWhenIdle,
@@ -32,6 +35,7 @@
   let mobileOpen = $state(false);
   let accountOpen = $state(false);
   let accountEl: HTMLDivElement | undefined = $state();
+  let toggleEl: HTMLButtonElement | undefined = $state();
 
   // Auth-aware header WITHOUT breaking landing-lite. The landing page boots in
   // firebase-free "landing mode" (see detectSiteMode + +layout.svelte), so we
@@ -166,7 +170,7 @@
 
   const NAV: NavEntry[] = [
     // History is a site-level destination, not a child of notation. The
-    // Notation group now contains only the two live reference systems it names.
+    // Notation group holds the live reference system and one page per prop.
     { label: "History", href: "/history", icon: "fa-clock-rotate-left" },
     {
       label: "Notation",
@@ -177,6 +181,33 @@
           href: "/shape-engine",
           icon: "fa-diagram-project",
           desc: "Generate exact flowers from level and ratio matrices",
+        },
+        // The same five props the home launchpad lists, so "does it work with
+        // my prop" has an answer from any page, not only the front door.
+        {
+          label: "Staves",
+          href: "/notation/staves",
+          icon: "fa-grip-lines-vertical",
+          group: "By prop",
+        },
+        {
+          label: "Poi",
+          href: "/notation/poi",
+          icon: "fa-circle-dot",
+          group: "By prop",
+        },
+        { label: "Fans", href: "/notation/fans", icon: "fa-fan", group: "By prop" },
+        {
+          label: "Clubs",
+          href: "/notation/clubs",
+          icon: "fa-wine-bottle",
+          group: "By prop",
+        },
+        {
+          label: "Buugeng",
+          href: "/notation/buugeng",
+          icon: "fa-yin-yang",
+          group: "By prop",
         },
       ],
     },
@@ -322,7 +353,12 @@
   function handleKeydown(e: KeyboardEvent) {
     if (e.key === "Escape") {
       if (accountOpen) accountOpen = false;
-      else if (mobileOpen) mobileOpen = false;
+      else if (mobileOpen) {
+        // Focus was inside the overlay. Hand it back to the control that
+        // opened it instead of dropping it on the page body.
+        mobileOpen = false;
+        toggleEl?.focus();
+      }
     }
   }
 
@@ -382,6 +418,7 @@
               ...item,
               label: siteCopy(item.label),
               desc: item.desc ? siteCopy(item.desc) : undefined,
+              group: item.group ? siteCopy(item.group) : undefined,
             }))}
             active={groupActive(entry)}
             activeHref={getActiveItemHref(entry.items)}
@@ -470,6 +507,7 @@
         <span class="label-tiny">{siteCopy("Composer")}</span>
       </a>
       <button
+        bind:this={toggleEl}
         class="toggle"
         aria-label={siteCopy(mobileOpen ? "Close menu" : "Open menu")}
         aria-expanded={mobileOpen}
@@ -514,25 +552,37 @@
               aria-hidden="true"
             ></i>
           </button>
-          <div class="m-sub" class:expanded>
-            <ul class="m-sub-inner">
-              {#each entry.items as item}
-                <li>
-                  <a
-                    href={item.href}
-                    class:active={item.href === activeItemHref}
-                  >
-                    <i
-                      class="fas {item.icon} m-icon m-sub-icon"
-                      aria-hidden="true"
-                    ></i>
-                    <span class="m-label">{siteCopy(item.label)}</span>
-                    <i class="fas fa-chevron-right m-chev" aria-hidden="true"
-                    ></i>
-                  </a>
-                </li>
+          <!-- A folded group is 0px tall but still in the DOM, so without
+               inert its links sit in the Tab order with nothing on screen. -->
+          <div class="m-sub" class:expanded inert={!expanded}>
+            <div class="m-sub-inner">
+              {#each sectionNavItems(entry.items) as section}
+                {#if section.label}
+                  <span class="m-sub-group">{siteCopy(section.label)}</span>
+                {/if}
+                <ul
+                  class="m-sub-list"
+                  aria-label={section.label ? siteCopy(section.label) : undefined}
+                >
+                  {#each section.items as item}
+                    <li>
+                      <a
+                        href={item.href}
+                        class:active={item.href === activeItemHref}
+                      >
+                        <i
+                          class="fas {item.icon} m-icon m-sub-icon"
+                          aria-hidden="true"
+                        ></i>
+                        <span class="m-label">{siteCopy(item.label)}</span>
+                        <i class="fas fa-chevron-right m-chev" aria-hidden="true"
+                        ></i>
+                      </a>
+                    </li>
+                  {/each}
+                </ul>
               {/each}
-            </ul>
+            </div>
           </div>
         {:else}
           <a
@@ -678,7 +728,6 @@
     background: rgba(139, 108, 255, 0.16);
     border-color: rgba(139, 108, 255, 0.4);
     color: #fff;
-    outline: none;
     transform: translateX(-2px);
   }
   .surface-back i {
@@ -715,7 +764,6 @@
   .desktop-nav a:hover,
   .desktop-nav a:focus-visible {
     color: #fff;
-    outline: none;
   }
   .desktop-nav a.active {
     color: #fff;
@@ -747,7 +795,6 @@
   .signin:hover,
   .signin:focus-visible {
     color: #fff;
-    outline: none;
   }
   /* Reserve the auth slot at the avatar's footprint so swapping
      placeholder → Sign in / avatar never nudges the CTA. */
@@ -783,7 +830,6 @@
   .avatar-btn:focus-visible {
     border-color: rgba(176, 163, 255, 0.7);
     box-shadow: 0 0 0 3px rgba(139, 108, 255, 0.18);
-    outline: none;
   }
   .account-menu {
     position: absolute;
@@ -848,7 +894,6 @@
   .acct-signout:focus-visible {
     background: rgba(255, 255, 255, 0.06);
     color: #ff8a8a;
-    outline: none;
   }
   /* One look for the Composer button in the desktop row and in the compact
      bar. The desktop copy needs !important to beat `.desktop-nav a`. */
@@ -991,7 +1036,6 @@
   .m-list a:focus-visible {
     background: rgba(255, 255, 255, 0.06);
     border-color: rgba(255, 255, 255, 0.12);
-    outline: none;
   }
   .m-list a:active {
     transform: scale(0.98);
@@ -1026,7 +1070,6 @@
   .m-group-btn:focus-visible {
     background: rgba(255, 255, 255, 0.06);
     border-color: rgba(255, 255, 255, 0.12);
-    outline: none;
   }
   .m-group-btn.active {
     color: #fff;
@@ -1054,9 +1097,22 @@
   .m-sub-inner {
     overflow: hidden;
     min-height: 0;
+    padding: 0 0 0 22px;
+  }
+  .m-sub-list {
     list-style: none;
     margin: 0;
-    padding: 0 0 0 22px;
+    padding: 0;
+  }
+  /* The caption over a grouped run of links, mirroring the desktop panel. */
+  .m-sub-group {
+    display: block;
+    padding: 12px 16px 4px;
+    color: #8f8bb0;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
   }
   .m-sub-inner a {
     font-size: 1.08rem;

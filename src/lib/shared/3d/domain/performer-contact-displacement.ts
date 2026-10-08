@@ -1,4 +1,4 @@
-import { userProportionsState } from "@austencloud/scene-3d";
+import { PlaneMode, userProportionsState } from "@austencloud/scene-3d";
 import type { CharacterInstanceState } from "../state/character-instance-state.svelte";
 import {
   buildStanceYawTrackForSource,
@@ -73,6 +73,7 @@ export class ScoreSeekDetector {
 /** The score's prop motion, and the body the track is planned for. */
 interface HardBeatTrackKey extends ScoreMotionKey {
   heightCm: number;
+  staffLengthM: number;
 }
 
 interface CachedHardBeatTrack {
@@ -84,9 +85,17 @@ interface CachedHardBeatTrack {
 
 function hardBeatTrackKey(
   performer: CharacterInstanceState,
-  heightCm: number
+  heightCm: number,
+  staffLengthM: number
 ): HardBeatTrackKey {
-  return { ...scoreMotionKey(performer), heightCm };
+  const motion = scoreMotionKey(performer);
+  // Only dual-wheel grip anchors depend on staff length. Other modes keep
+  // their existing track and contact history when the staff changes size.
+  return {
+    ...motion,
+    heightCm,
+    staffLengthM: motion.planeMode === PlaneMode.DUAL_WHEEL ? staffLengthM : 0,
+  };
 }
 
 const hardBeatTracks = new WeakMap<
@@ -130,9 +139,10 @@ function seekDetectorFor(performer: CharacterInstanceState): ScoreSeekDetector {
  */
 function resolveHardBeatTrack(
   performer: CharacterInstanceState,
-  heightCm: number
+  heightCm: number,
+  staffLengthM: number
 ): CachedHardBeatTrack {
-  const key = hardBeatTrackKey(performer, heightCm);
+  const key = hardBeatTrackKey(performer, heightCm, staffLengthM);
   const cached = hardBeatTracks.get(performer);
   if (cached && sameScoreMotionKey(cached.key, key)) return cached;
 
@@ -148,6 +158,7 @@ function resolveHardBeatTrack(
           source: performer,
           stanceTrack,
           heightM: heightCm / 100,
+          staffLengthM,
           planeMode: key.planeMode,
         })
       : null;
@@ -248,14 +259,15 @@ export function resolvePerformerContact(
   options: PerformerContactOptions = {}
 ): PerformerContact {
   const heightCm = options.heightCm ?? userProportionsState.heightCm;
-  const hardBeat = resolveHardBeatTrack(performer, heightCm);
+  const staffLengthM = options.staffLengthM ?? userProportionsState.staffLength;
+  const hardBeat = resolveHardBeatTrack(performer, heightCm, staffLengthM);
   const { track } = hardBeat;
   const bodyTrack =
     track && options.displace !== false && options.clearBody === true
       ? resolveBodyClearanceTrack(
           performer,
           hardBeat,
-          options.staffLengthM ?? userProportionsState.staffLength,
+          staffLengthM,
           options.measurements ?? null
         )
       : null;

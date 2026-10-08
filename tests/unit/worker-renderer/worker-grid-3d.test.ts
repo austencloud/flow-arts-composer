@@ -198,6 +198,18 @@ describe("worker grid 3D", () => {
       )
     ).toHaveLength(1);
     grid.dispose();
+
+    const sized = createWorkerGrid3D({
+      ...BASE_OPTIONS,
+      visiblePlanes: new Set([Plane.WHEEL]),
+      planeMode: PlaneMode.DUAL_WHEEL,
+      staffHalfLength: 0.55,
+      showOrientationHelpers: false,
+    });
+    expect(sized.root.children.map(({ position }) => position.x)).toEqual([
+      0.55, -0.55,
+    ]);
+    sized.dispose();
   });
 
   it("builds the exact center marker and three orientation arrows", () => {

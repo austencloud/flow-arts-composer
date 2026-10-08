@@ -106,6 +106,14 @@ export function createHeroAct(options?: {
   let preparedNextProp: PropType = nextPropInCycle(currentProp);
   let passesSinceAdvance = 0;
   let started = false;
+  // Once a visitor touches the hero or leaves it, the act stops advancing on
+  // its own so the word they saw stays the page's word. A dice press still
+  // advances. There is no release; a reload starts fresh.
+  let held = $state(false);
+
+  function hold(): void {
+    held = true;
+  }
 
   function pickInitialProp(): PropType {
     const index = Math.floor(random() * PROP_CYCLE.length);
@@ -233,6 +241,7 @@ export function createHeroAct(options?: {
    */
   function offerSequenceBoundary(): PreparedSequenceHandoff | null {
     passesSinceAdvance += 1;
+    if (held) return null;
     if (passesSinceAdvance < PASSES_PER_SEQUENCE) return null;
     if (busy || !preparedNext) return null;
 
@@ -307,6 +316,10 @@ export function createHeroAct(options?: {
     get rerolling() {
       return busy;
     },
+    get held() {
+      return held;
+    },
+    hold,
     start,
     offerSequenceBoundary,
     advanceNow,

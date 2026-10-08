@@ -15,6 +15,8 @@
   import { GRID_OFFSETS } from "@austencloud/scene-3d";
   import { userProportionsState } from "@austencloud/scene-3d";
   import { largestHandDistance } from "../domain/performer-hand-distance";
+  import { joinedPerformerExtent } from "../camera/viewer-camera-framing";
+  import { resolveGridJoin3D } from "../services/grid-join-3d";
   import {
     reportViewerControlChange,
     type ViewerControlSink,
@@ -49,7 +51,12 @@
 
   const FOV_DEG = 50;
   const gridRadius = $derived(
-    largestHandDistance(characterState?.handDistance)
+    characterState
+      ? joinedPerformerExtent(
+          characterState.handDistance,
+          resolveGridJoin3D(characterState.loadedSequence)
+        )
+      : largestHandDistance()
   );
   const GRID_FILL_FRACTION = 0.2;
   const dualWheelOffset = $derived(userProportionsState.staffLength / 2);

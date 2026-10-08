@@ -86,4 +86,41 @@ describe("ContextualAuthPrompt", () => {
     component.focusFirstField();
     await expect.element(page.getByLabelText("Stub email")).toHaveFocus();
   });
+
+  it("hands focus into and out of the email choice through rapid reversals", async () => {
+    render(ContextualAuthPrompt, { content: signIn, mode: "signin" });
+
+    const emailChoice = page.getByRole("button", {
+      name: "Continue with email",
+    });
+    await emailChoice.click();
+    await expect.element(page.getByLabelText("Stub email")).toHaveFocus();
+
+    await page.getByRole("button", { name: "Other sign-in options" }).click();
+    await expect.element(emailChoice).toHaveFocus();
+    expect(document.activeElement?.closest("[inert]")).toBeNull();
+
+    await emailChoice.click();
+    await expect.element(page.getByLabelText("Stub email")).toHaveFocus();
+    await expect.element(page.getByTestId("email-form")).toBeVisible();
+  });
+
+  it("retains the typed address through sign-in and sign-up copy changes", async () => {
+    render(ContextualAuthPrompt, { content: signIn, mode: "signin" });
+    await page.getByRole("button", { name: "Continue with email" }).click();
+    const email = page.getByLabelText("Stub email");
+    await email.fill("dancer@example.com");
+
+    await page.getByRole("button", { name: /New here/ }).click();
+    await expect.element(email).toHaveValue("dancer@example.com");
+    await expect
+      .element(page.getByTestId("email-form"))
+      .toHaveAttribute("data-mode", "signup");
+
+    await page.getByRole("button", { name: /Already have an account/ }).click();
+    await expect.element(email).toHaveValue("dancer@example.com");
+    await expect
+      .element(page.getByTestId("email-form"))
+      .toHaveAttribute("data-mode", "signin");
+  });
 });

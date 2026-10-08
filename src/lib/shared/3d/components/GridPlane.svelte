@@ -17,6 +17,7 @@
     getOuterPoints,
   } from "../domain/constants/grid-layout";
   import { userProportionsState } from "@austencloud/scene-3d";
+  import type { HandDistance } from "../domain/performer-hand-distance";
   import {
     getGridMarkerGeometry,
     getGridMaterial,
@@ -33,6 +34,9 @@
     handRadius?: number;
     outerRadius?: number;
     gridMode?: GridMode;
+    /** Joined grids share point ownership; a missing key is not drawn. */
+    pointColors?: ReadonlyMap<string, string>;
+    handDistance?: HandDistance;
   }
 
   let {
@@ -44,6 +48,8 @@
     handRadius,
     outerRadius,
     gridMode = "diamond",
+    pointColors,
+    handDistance,
   }: Props = $props();
 
   const handPointRadius = $derived(
@@ -54,8 +60,16 @@
   );
   const effectiveSize = $derived(size ?? userProportionsState.gridSize);
 
-  const handPoints = $derived(getHandPoints(gridMode));
-  const outerPoints = $derived(getOuterPoints(gridMode));
+  const handPoints = $derived(
+    getHandPoints(gridMode).filter(
+      (location) => !pointColors || pointColors.has(`hand:${location}`)
+    )
+  );
+  const outerPoints = $derived(
+    getOuterPoints(gridMode).filter(
+      (location) => !pointColors || pointColors.has(`outer:${location}`)
+    )
+  );
   const planeGeometry = $derived(getGridPlaneGeometry(effectiveSize));
   const handRingGeometry = $derived(
     getGridRingGeometry(handPointRadius, 0.015, 64)
@@ -134,20 +148,29 @@
   />
 
   <!-- Center point (largest, white/gold) -->
-  <T.Mesh
-    geometry={centerGeometry}
-    material={centerMaterial}
-    position={[0, 0, 0.01]}
-    dispose={false}
-  />
+  {#if !pointColors || pointColors.has("center:c")}
+    <T.Mesh
+      geometry={centerGeometry}
+      material={pointColors
+        ? getGridMaterial(pointColors.get("center:c")!)
+        : centerMaterial}
+      position={[0, 0, 0.01]}
+      dispose={false}
+    />
+  {/if}
 </T.Group>
 
 <!-- Hand point markers (medium size, at hand radius) -->
 {#each handPoints as location}
-  {@const pos = getGridPointPosition(location, handPointRadius)}
+  {@const pos = getGridPointPosition(
+    location,
+    handDistance?.toward(plane, LOCATION_ANGLES[location]) ?? handPointRadius
+  )}
   <T.Mesh
     geometry={handMarkerGeometry}
-    material={pointMaterial}
+    material={pointColors
+      ? getGridMaterial(pointColors.get(`hand:${location}`)!)
+      : pointMaterial}
     position={pos}
     dispose={false}
   />
@@ -158,7 +181,9 @@
   {@const pos = getGridPointPosition(location, outerPointRadius)}
   <T.Mesh
     geometry={outerMarkerGeometry}
-    material={outerPointMaterial}
+    material={pointColors
+      ? getGridMaterial(pointColors.get(`outer:${location}`)!, { opacity: 0.6 })
+      : outerPointMaterial}
     position={pos}
     dispose={false}
   />

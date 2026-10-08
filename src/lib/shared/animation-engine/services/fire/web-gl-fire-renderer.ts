@@ -26,6 +26,7 @@
  */
 
 import { FireFrameCache } from "./fire-frame-cache";
+import { sweepPolyline, type SweepPoint } from "./fire-sweep";
 import {
   computeResidualHeatFloor,
   decayResidualHeat,
@@ -186,6 +187,25 @@ export function computeFireStepDt(dt: number, reducedMotion: boolean): number {
  *  outward. At 30fps export (dt=33ms) that produced massive bloom halos absent
  *  from the 60fps live preview. */
 const MAX_FIRE_SUB_DT = 0.017;
+
+/** Reused per tip for the prev -> path -> cur sweep (UV space). */
+const sweepPathScratch: SweepPoint[] = [];
+const sweepOutScratch: SweepPoint[] = [];
+
+function writeSweepPoint(
+  out: SweepPoint[],
+  i: number,
+  x: number,
+  y: number
+): void {
+  const existing = out[i];
+  if (existing) {
+    existing.x = x;
+    existing.y = y;
+  } else {
+    out[i] = { x, y };
+  }
+}
 
 /** Pure: the sub-step shape one rendered frame turns into. Owns the split so
  *  the solver and anything reasoning about how far the field advanced (the
@@ -1127,11 +1147,29 @@ export class WebGLFireRenderer {
       const prevUvY = 1.0 - tip.prevY / input.canvasHeight;
       const fs = tip.flameScale;
 
-      const dxUV = curUvX - prevUvX;
-      const dyUV = curUvY - prevUvY;
-      const distUV = Math.sqrt(dxUV * dxUV + dyUV * dyUV);
-
-      const splatCount = Math.min(32, Math.max(1, Math.ceil(distUV / stepUV)));
+      // The sweep follows prev, any sub-frame path points, cur. Fuel and
+      // temperature per splat divide by the same count as before, so a slow
+      // frame deposits the same total energy, spread along the arc.
+      let pathLen = 0;
+      writeSweepPoint(sweepPathScratch, pathLen++, prevUvX, prevUvY);
+      if (tip.path) {
+        for (const pt of tip.path) {
+          writeSweepPoint(
+            sweepPathScratch,
+            pathLen++,
+            pt.x / input.canvasWidth,
+            1.0 - pt.y / input.canvasHeight
+          );
+        }
+      }
+      writeSweepPoint(sweepPathScratch, pathLen++, curUvX, curUvY);
+      sweepPathScratch.length = pathLen;
+      const splatCount = sweepPolyline(
+        sweepPathScratch,
+        stepUV,
+        32,
+        sweepOutScratch
+      );
 
       const velScale = config.velocityReactive ? p.velocityInjectScale : 0;
       const injectVx = -tip.velocityX * velScale * fs;
@@ -1146,9 +1184,8 @@ export class WebGLFireRenderer {
       const tipPhase = tip.propIndex * 3.7 + tip.tipIndex * 2.3;
 
       for (let s = 0; s < splatCount; s++) {
-        const t = splatCount === 1 ? 1.0 : s / (splatCount - 1);
-        const uvX = prevUvX + dxUV * t;
-        const uvY = prevUvY + dyUV * t;
+        const uvX = sweepOutScratch[s]!.x;
+        const uvY = sweepOutScratch[s]!.y;
 
         const tempNoise =
           Math.sin(tc * 8.3 + tipPhase) * 0.15 +

@@ -142,8 +142,11 @@
 <div class="gallery-frame" aria-busy={opening}>
   <header class="gallery-header">
     <div class="header-copy">
-      <span class="eyebrow">Community sequences</span>
-      <h3>{selected ? selected.name || selected.word : "Pick a sequence"}</h3>
+      <h3>
+        {selected
+          ? selected.name || selected.word
+          : "Or start from the community."}
+      </h3>
     </div>
     {#if selected}
       <button
@@ -255,15 +258,8 @@
   .header-copy {
     min-width: 0;
   }
-  .eyebrow {
-    color: var(--theme-text-muted, #b5b3c4);
-    font-size: 0.75rem;
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-  }
   h3 {
-    margin: 0.2rem 0 0;
+    margin: 0;
     overflow: hidden;
     color: var(--theme-text, white);
     font-size: clamp(1rem, 1.6vw, 1.25rem);

@@ -10,6 +10,7 @@
   import {
     buildConceptPath,
     CONCEPT_LIST_PATH,
+    conceptIdFromPathname,
   } from "../domain/concept-routes";
   import Seo from "$lib/shared/components/Seo.svelte";
   import { LANDING_DOMAIN } from "../../../../config/domains";
@@ -19,9 +20,12 @@
   const courseName = $derived(tDynamic("learn_public_course_name"));
   const courseDescription = $derived(tDynamic("learn_public_course_description"));
 
-  const concept = $derived(
-    page.params.conceptId ? getConceptById(page.params.conceptId) : undefined
-  );
+  // Lesson links inside the course move with shallow routing (pushState),
+  // which updates page.url but never page.params. Reading the lesson from the
+  // pathname keeps the title, description and canonical on the lesson that is
+  // actually open instead of the one the page first loaded with.
+  const conceptId = $derived(conceptIdFromPathname(page.url.pathname));
+  const concept = $derived(conceptId ? getConceptById(conceptId) : undefined);
 
   // The server-rendered page is what search engines and no-JS readers get, so
   // it carries the course order and links the app itself renders client-side.

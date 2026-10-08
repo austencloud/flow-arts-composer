@@ -46,6 +46,8 @@ export interface SparkleTipSource3D extends SceneEffectTipBase3D {
 export interface GooTipSource3D extends SceneEffectTipBase3D {
   effect: "goo";
   params: Goo3DParams;
+  /** World-space supporting surface below this performer. */
+  collisionFloorY: number;
 }
 
 export interface BubbleTipSource3D extends SceneEffectTipBase3D {

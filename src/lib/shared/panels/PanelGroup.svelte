@@ -35,6 +35,17 @@
      * drag turns that preferred allocation into the user's saved flex sizes.
      */
     preferredSize?: string;
+    /**
+     * While this panel grows, lay its content out at the size it is growing to
+     * and let the moving edge uncover it; while it shrinks, keep its content at
+     * the size it started from and let the edge cover it. Content that is
+     * costly to re-lay out, such as a grid of pictographs or a column of
+     * settings cards, then lays out once instead of on every frame of the
+     * slide. Applies only when the group can compute the settled size.
+     * When it is the only panel changing, it also slides in pixels, so its
+     * edge follows the easing curve (see startPixelSlide).
+     */
+    revealContent?: boolean;
     /** Whether the handle after this panel is available (default: true). */
     resizable?: boolean;
     /** Accessible name for the handle after this panel. */
@@ -53,8 +64,11 @@
     needsMeasuredBasisHandoff,
     panelFlexStyle,
     resolvePanelFlex,
+    settledPanelSizes,
     type PanelFlex,
   } from "./panel-flex";
+  // The root's `data-panel-motion` attribute is PANEL_MOTION_ATTRIBUTE.
+  import { PANEL_SETTLE_EVENT } from "./panel-motion";
 
   interface Props {
     /** Layout direction */
@@ -74,6 +88,13 @@
      * Useful when a compact layout presents one panel at a time.
      */
     flattened?: boolean;
+    /**
+     * While true, a revealContent panel that starts to slide lays its content
+     * out at the destination size but stays where it is; the slide runs once
+     * this turns false. Lets the owner keep one-off work, such as the first
+     * draw of what the panel reveals, out of the slide's frames.
+     */
+    holdMotion?: boolean;
   }
 
   let {
@@ -84,6 +105,7 @@
     onHandleDoubleClick,
     gap = 6,
     flattened = false,
+    holdMotion = false,
   }: Props = $props();
 
   let containerRef = $state<HTMLDivElement | null>(null);
@@ -407,6 +429,10 @@
       const handoffs = pendingBasisHandoffs;
       pendingBasisHandoffs = [];
       for (const handoff of handoffs) startBasisHandoff(handoff);
+
+      const slides = pendingPixelSlides;
+      pendingPixelSlides = [];
+      for (const slide of slides) startPixelSlide(slide);
     });
   });
 
@@ -450,8 +476,259 @@
     basisHandoffs.set(key, settle);
   }
 
+  /**
+   * A revealContent panel trading a held size for a share of the track (or
+   * back) changes flex-grow, and a panel's size is not proportional to its
+   * grow factor. Opening the Create workspace beside a tool panel on 4, grow
+   * 0 -> 5 covered a third of the distance in the first twentieth of the
+   * curve and crawled through the rest. Its settled size is known, so the
+   * panel slides in pixels instead -- pinned at its current size, eased to
+   * the settled one -- and takes its declared flex back once it lands, which
+   * changes nothing on screen. The other panels keep their shares and fill
+   * the rest of the track as it moves.
+   */
+  interface PixelSlide {
+    key: string | number;
+    element: HTMLElement;
+    from: number;
+    to: number;
+    flex: PanelFlex;
+  }
+  const pixelSlides = new Map<string | number, () => void>();
+  const heldSlides = new Map<string | number, () => void>();
+  let pendingPixelSlides: PixelSlide[] = [];
+
+  function setPanelFlex(element: HTMLElement, flex: PanelFlex): void {
+    element.style.flexGrow = String(flex.grow);
+    element.style.flexShrink = String(flex.shrink);
+    element.style.flexBasis = flex.basis;
+  }
+
+  function startPixelSlide(slide: PixelSlide): void {
+    pixelSlides.get(slide.key)?.();
+
+    const { element, from, to, flex, key } = slide;
+    element.style.transition = "none";
+    setPanelFlex(element, { grow: 0, shrink: 0, basis: `${from}px` });
+    void element.offsetWidth;
+    element.style.transition = "";
+
+    let safety: ReturnType<typeof setTimeout> | undefined;
+    const run = () => {
+      heldSlides.delete(key);
+      element.style.flexBasis = `${to}px`;
+      safety = setTimeout(settle, DURATION.emphasis + DURATION.instant);
+      armMotionSafety();
+    };
+
+    const settle = () => {
+      element.removeEventListener("transitionend", onTransitionEnd);
+      clearTimeout(safety);
+      heldSlides.delete(key);
+      pixelSlides.delete(key);
+      // The declared flex resolves to the size the slide ended on; without
+      // the transition it is a swap, not another trip.
+      element.style.transition = "none";
+      setPanelFlex(element, flex);
+      void element.offsetWidth;
+      element.style.transition = "";
+    };
+    const onTransitionEnd = (event: TransitionEvent) => {
+      if (event.target !== element || event.propertyName !== "flex-basis")
+        return;
+      settle();
+    };
+
+    element.addEventListener("transitionend", onTransitionEnd);
+    pixelSlides.set(key, settle);
+    if (untrack(() => holdMotion)) heldSlides.set(key, run);
+    else run();
+  }
+
+  $effect(() => {
+    if (holdMotion) return;
+    untrack(() => {
+      for (const run of Array.from(heldSlides.values())) run();
+    });
+  });
+
+  /**
+   * Motion: from the moment a panel's flex allocation changes until its track
+   * comes to rest, the root carries `data-panel-motion` so per-resize
+   * measurers can wait, and a `revealContent` panel holds its content at the
+   * larger of its start and settled sizes so that content lays out once.
+   */
+  let containerMainSize = $state(0);
+  let inMotion = $state(false);
+  /** Held content size for each revealContent panel in motion. */
+  let revealingPanels = $state<ReadonlyMap<string | number, number>>(new Map());
+  let motionSafety: ReturnType<typeof setTimeout> | null = null;
+  const revealsContent = $derived(panels.some((panel) => panel.revealContent));
+
+  $effect(() => {
+    const element = containerRef;
+    const axis = direction;
+    if (!element || !revealsContent) return;
+    const resizeObserver = new ResizeObserver((entries) => {
+      const box = entries[0]?.contentRect;
+      if (box)
+        containerMainSize = axis === "horizontal" ? box.width : box.height;
+    });
+    resizeObserver.observe(element);
+    return () => resizeObserver.disconnect();
+  });
+
+  const settledSizes = $derived.by(() => {
+    if (!revealsContent || flattened || containerMainSize <= 0) return null;
+    const handleCount = panels
+      .slice(0, -1)
+      .filter((panel) => panel.resizable !== false).length;
+    return settledPanelSizes(
+      panels.map((panel, index) => getPanelFlex(panel, index)),
+      containerMainSize,
+      handleCount * gap
+    );
+  });
+
+  function flexChanged(previous: PanelFlex, next: PanelFlex): boolean {
+    return (
+      previous.grow !== next.grow ||
+      previous.shrink !== next.shrink ||
+      previous.basis !== next.basis
+    );
+  }
+
+  function armMotionSafety(): void {
+    if (motionSafety !== null) clearTimeout(motionSafety);
+    // transitionend normally settles first. This covers a change the browser
+    // had nothing to interpolate, so the group never stays "moving".
+    motionSafety = setTimeout(
+      settleMotion,
+      DURATION.emphasis + DURATION.normal
+    );
+  }
+
+  function settleMotion(): void {
+    if (motionSafety !== null) clearTimeout(motionSafety);
+    motionSafety = null;
+    // A held slide has not started; it re-arms the safety when it does.
+    if (heldSlides.size > 0) return;
+    // After the safety net, a transition whose wrapper left mid-slide never
+    // reports its end; start the next motion's count from zero.
+    runningTrackTransitions = 0;
+    if (!inMotion) return;
+    inMotion = false;
+    revealingPanels = new Map();
+    containerRef?.dispatchEvent(
+      new CustomEvent(PANEL_SETTLE_EVENT, { bubbles: true })
+    );
+  }
+
+  $effect.pre(() => {
+    void panels;
+    void sizes;
+    void manuallySizedPanels;
+    untrack(() => {
+      if (!containerRef || activeDragIndex !== null || prefersReducedMotion())
+        return;
+
+      let changedCount = 0;
+      const revealing = new Map<string | number, number>();
+      const slides: PixelSlide[] = [];
+      panels.forEach((panel, index) => {
+        const key = panel.id ?? index;
+        const previous = appliedFlex.get(key);
+        const next = getPanelFlex(panel, index);
+        if (!previous || !flexChanged(previous, next)) return;
+        changedCount++;
+
+        const settled = settledSizes?.[index];
+        const element = panel.revealContent ? panelWrapperFor(key) : null;
+        if (settled === undefined || !element) return;
+        const from = measurePanel(element);
+        if (
+          Math.abs(settled - from) >= 0.5 &&
+          !needsMeasuredBasisHandoff(previous, next)
+        ) {
+          slides.push({ key, element, from, to: settled, flex: next });
+        }
+      });
+      if (changedCount === 0) return;
+
+      // Every revealContent panel whose size moves holds its content still,
+      // including a neighbour that only fills the space another panel gives
+      // up. A growing panel lays out at its end size and is uncovered; a
+      // shrinking one keeps its start size and is covered, since laying it
+      // out at the end size would crop it before the edge got there.
+      panels.forEach((panel, index) => {
+        const settled = settledSizes?.[index];
+        const key = panel.id ?? index;
+        const element = panel.revealContent ? panelWrapperFor(key) : null;
+        if (settled === undefined || !element) return;
+        const from = measurePanel(element);
+        if (Math.abs(settled - from) >= 0.5)
+          revealing.set(key, Math.max(settled, from));
+      });
+
+      // A pixel slide needs the rest of the track to give way around it: one
+      // moving panel, and a neighbour with a share to absorb the difference.
+      const slide = slides[0];
+      pendingPixelSlides =
+        changedCount === 1 &&
+        slide &&
+        panels.some(
+          (panel, index) =>
+            (panel.id ?? index) !== slide.key &&
+            getPanelFlex(panel, index).grow > 0
+        )
+          ? [slide]
+          : [];
+
+      inMotion = true;
+      revealingPanels = revealing;
+      armMotionSafety();
+    });
+  });
+
+  function isFlexTrackTransition(event: TransitionEvent): boolean {
+    return (
+      (event.propertyName === "flex-grow" ||
+        event.propertyName === "flex-basis") &&
+      event.target instanceof HTMLElement &&
+      event.target.parentElement === containerRef
+    );
+  }
+
+  // Track transitions still running, counted from their own events. Asking
+  // each wrapper for its running animations instead flushed style for the
+  // whole page at the tail of every slide.
+  let runningTrackTransitions = 0;
+  let settleCheck: ReturnType<typeof setTimeout> | null = null;
+
+  function handleTrackTransitionRun(event: TransitionEvent): void {
+    if (!isFlexTrackTransition(event)) return;
+    runningTrackTransitions++;
+    if (inMotion) armMotionSafety();
+  }
+
+  function handleTrackTransitionDone(event: TransitionEvent): void {
+    if (!isFlexTrackTransition(event)) return;
+    runningTrackTransitions = Math.max(0, runningTrackTransitions - 1);
+    if (!inMotion || runningTrackTransitions > 0 || settleCheck !== null)
+      return;
+    // A retargeted transition reports its cancel and its replacement's run in
+    // the same frame, in either order, so wait for that frame's events to end.
+    settleCheck = setTimeout(() => {
+      settleCheck = null;
+      if (runningTrackTransitions === 0) settleMotion();
+    }, 0);
+  }
+
   onDestroy(() => {
     for (const settle of Array.from(basisHandoffs.values())) settle();
+    for (const settle of Array.from(pixelSlides.values())) settle();
+    if (motionSafety !== null) clearTimeout(motionSafety);
+    if (settleCheck !== null) clearTimeout(settleCheck);
   });
 </script>
 
@@ -462,13 +739,23 @@
   class:dragging={activeDragIndex !== null}
   class:flattened
   style:--panel-gap="{gap}px"
+  data-panel-motion={inMotion ? "" : undefined}
   bind:this={containerRef}
+  ontransitionrun={handleTrackTransitionRun}
+  ontransitionend={handleTrackTransitionDone}
+  ontransitioncancel={handleTrackTransitionDone}
 >
   {#each panels as panel, i (panel.id ?? i)}
+    {@const heldContentSize = revealingPanels.get(panel.id ?? i)}
+    {@const revealing = heldContentSize !== undefined}
     <!-- Panel wrapper with flex sizing -->
     <div
       class="panel-wrapper"
+      class:revealing
       style={getFlexStyle(panel, i)}
+      style:--panel-content-size={revealing
+        ? `${heldContentSize}px`
+        : undefined}
       data-panel-id={panel.id}
       data-min-size={panel.minSize}
       data-max-size={panel.maxSize}
@@ -548,6 +835,18 @@
     flex: 1;
     min-width: 0;
     min-height: 0;
+  }
+
+  /* A revealContent panel in motion: its content holds one size (where a
+     growing track ends, where a shrinking one started), so it lays out once
+     and the moving edge uncovers or covers it. */
+  .panel-group.vertical > .panel-wrapper.revealing > :global(*) {
+    flex: none;
+    height: var(--panel-content-size);
+  }
+
+  .panel-group.horizontal > .panel-wrapper.revealing > :global(*) {
+    width: var(--panel-content-size);
   }
 
   .resize-handle-slot {

@@ -47,7 +47,7 @@
   import StepGrid from "$lib/features/create/shared/workspace-panel/sequence-display/components/StepGrid.svelte";
   import { createStepGridDisplayState } from "$lib/features/create/shared/workspace-panel/sequence-display/state/step-grid-display-state.svelte";
   import { createScrollState } from "$lib/features/create/shared/workspace-panel/sequence-display/state/scroll-state.svelte";
-  import WordLabel from "$lib/features/create/shared/workspace-panel/sequence-display/components/WordLabel.svelte";
+  import ComposerWordRow from "../_components/ComposerWordRow.svelte";
   import ViewSequenceButton from "$lib/features/create/shared/workspace-panel/shared/components/buttons/ViewSequenceButton.svelte";
   import HorizontalTransportRow from "$lib/shared/sequence-viewer/components/HorizontalTransportRow.svelte";
   import ClearSequenceButton from "$lib/features/create/shared/workspace-panel/shared/components/buttons/ClearSequenceButton.svelte";
@@ -764,40 +764,29 @@
 
         <!-- WORKSPACE: the real WorkspaceGrid — start column + step columns. -->
         <div class="workspace" class:has-sequence={!!startStepData}>
-          <!-- Canonical word display: the same WordLabel the real workspace shows
-           top-center (TKA glyphs, click-to-copy, letter highlighting during
-           playback). No step counter — the app doesn't count steps at you.
-           The host's prop chooser sits at the row's start, outside the live
-           region, so changing props is not announced as a change to the word. -->
-          <header
-            class="demo-status word-label-area"
-            class:with-prop={!!propControl}
+          <!-- The page's one word row (see ComposerWordRow). No step counter:
+               the app doesn't count steps at you. -->
+          <ComposerWordRow
+            word={rawWord}
+            activeStepNumber={(phase === "play" || isContinuous) &&
+            playingStepNumber
+              ? playingStepNumber
+              : null}
+            live={tookOver ? "polite" : "off"}
+            {propControl}
           >
-            {#if propControl}
-              <div class="status-prop">{@render propControl()}</div>
-            {/if}
-            <div class="status-content" aria-live={tookOver ? "polite" : "off"}>
-              {#if rawWord}
-                <WordLabel
-                  word={rawWord}
-                  activeStepNumber={(phase === "play" || isContinuous) &&
-                  playingStepNumber
-                    ? playingStepNumber
-                    : null}
-                />
-              {:else}
-                <p class="hint">
-                  {#if phase === "pick-start" && act && !tookOver}
-                    Watch it build. Tap anything to take over.
-                  {:else if phase === "pick-start"}
-                    Pick a starting position to begin.
-                  {:else}
-                    Tap a pictograph to add it.
-                  {/if}
-                </p>
-              {/if}
-            </div>
-          </header>
+            {#snippet hint()}
+              <p class="hint">
+                {#if phase === "pick-start" && act && !tookOver}
+                  Watch it build. Tap anything to take over.
+                {:else if phase === "pick-start"}
+                  Pick a starting position to begin.
+                {:else}
+                  Tap a pictograph to add it.
+                {/if}
+              </p>
+            {/snippet}
+          </ComposerWordRow>
 
           <div class="ws-frame" bind:clientWidth={wsW} bind:clientHeight={wsH}>
             {#if startStepData}
@@ -822,6 +811,8 @@
                   arrivalSequence={composedSequence}
                   leftPropTypeOverride={effectiveLeftPropType}
                   rightPropTypeOverride={effectiveRightPropType}
+                  leftColorOverride={primaryPropColors?.left}
+                  rightColorOverride={primaryPropColors?.right}
                   sequenceWord={rawWord}
                 />
               {:else}
@@ -846,6 +837,8 @@
                   getDurationDisplay={(stepIndex) => String(stepIndex + 1)}
                   leftPropTypeOverride={effectiveLeftPropType}
                   rightPropTypeOverride={effectiveRightPropType}
+                  leftColorOverride={primaryPropColors?.left}
+                  rightColorOverride={primaryPropColors?.right}
                   sequenceWord={rawWord}
                 />
               {/if}
@@ -1502,45 +1495,6 @@
     flex-direction: column;
     gap: 0.625rem;
     min-width: 0;
-  }
-
-  /* Word row: the canonical WordLabel, centered like the real workspace.
-     Fixed height so hint ↔ word swaps never shift the grid below. WordLabel
-     reads --text-color (its default is a light-theme navy). */
-  .demo-status {
-    min-height: 3.25rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    --text-color: var(--theme-text, #fff);
-  }
-
-  /* With the host's prop chooser the row becomes three tracks: the chooser,
-     the word, and an empty track of the same width, so the word stays on the
-     workspace's center line. */
-  .demo-status.with-prop {
-    display: grid;
-    grid-template-columns: 3rem minmax(0, 1fr) 3rem;
-    column-gap: 0.75rem;
-  }
-
-  .status-prop {
-    display: flex;
-    align-items: center;
-    justify-content: flex-start;
-    min-width: 0;
-  }
-
-  .status-content {
-    width: 100%;
-    min-width: 0;
-    display: flex;
-    justify-content: center;
-    text-align: center;
-  }
-
-  .status-content :global(.word-label-container) {
-    justify-content: center;
   }
 
   .hint {

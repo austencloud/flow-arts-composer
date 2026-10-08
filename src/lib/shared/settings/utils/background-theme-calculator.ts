@@ -221,7 +221,7 @@ export interface DangerTheme {
 /** Darkest light-mode surface (cardHoverBg) — the worst case for dark-on-light. */
 const LIGHT_WORST_SURFACE = "#c8c8c2";
 /** Approximate effective dark-mode panel: rgba(0,0,0,.75+) over a dark scene. */
-const DARK_SURFACE_ANCHOR = "#16161f";
+export const DARK_SURFACE_ANCHOR = "#16161f";
 const LIGHT_ACCENT_TARGET = 7; // AAA
 const DARK_ACCENT_TARGET = 4.5; // AA — see ceiling note above
 const ACCENT_TEXT_TARGET = 7; // AAA, both modes (--theme-accent-text)

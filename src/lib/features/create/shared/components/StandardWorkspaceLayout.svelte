@@ -9,14 +9,22 @@
    * Domain: Create module - Layout
    */
 
+  import { untrack } from "svelte";
   import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
   import ButtonPanel from "../workspace-panel/shared/components/ButtonPanel.svelte";
   import UndoButton from "../workspace-panel/shared/components/buttons/UndoButton.svelte";
   import SaveToLibraryButton from "../workspace-panel/shared/components/buttons/SaveToLibraryButton.svelte";
   import LazyMount from "$lib/shared/components/LazyMount.svelte";
   import PanelGroup from "$lib/shared/panels/PanelGroup.svelte";
+  import {
+    growFade,
+    reducedMotion,
+    standardEasing,
+  } from "$lib/shared/transitions/motion";
+  import { DURATION } from "$lib/shared/transitions/transitions";
   // CreationWorkspaceArea (85-file subtree) only renders once a sequence exists,
-  // so its chunk is deferred via LazyMount — empty/first-paint Create loads skip it.
+  // so its chunk is deferred via LazyMount — empty/first-paint Create loads skip
+  // it and warm it on idle instead.
   import CreationToolPanelSlot from "./CreationToolPanelSlot.svelte";
   import GenerateEmptyState from "../../generate/components/GenerateEmptyState.svelte";
   import type { createCreateModuleState as CreateModuleStateType } from "../state/create-module-state.svelte";
@@ -96,6 +104,27 @@
   });
 
   const isGeneratorTab = $derived(navigationState.activeTab === "generate");
+
+  // The Generate hint leaves as the workspace opens (and returns as it closes),
+  // over the same span as the panel slide, so the settings cards travel once
+  // instead of first jumping up into the hint's space. A tab switch swaps the
+  // whole tool panel, so there the hint just appears or goes.
+  let generateHintTab = navigationState.activeTab;
+  let generateHintAnimates = false;
+  $effect.pre(() => {
+    const tab = navigationState.activeTab;
+    void hasWorkspaceContent;
+    generateHintAnimates = tab === generateHintTab;
+    generateHintTab = tab;
+  });
+  function generateHintMotion() {
+    return {
+      duration: generateHintAnimates ? DURATION.emphasis : 0,
+      // The panel's curve: on growFade's default the hint shrank faster than
+      // the panel opened, and the cards nudged up before travelling down.
+      easing: standardEasing,
+    };
+  }
   const isAssembleTab = $derived(navigationState.activeTab === "assemble");
   // A tall Assemble stage needs the sequence above the grid so both can use
   // the full width. Other Create tabs keep their existing desktop layout.
@@ -196,6 +225,56 @@
     !isInputMode && !ownsFullWorkspace && (hasWorkspaceContent || isAssembleTab)
   );
   const showCompactHistory = $derived(shouldShowWorkspace && useCompactToolbar);
+
+  // A generated sequence draws its pictographs a tenth of a second or so after
+  // the tap. Sliding the workspace open at once shared those frames and
+  // stalled the slide partway, so the panel lays its content out at full size
+  // but holds still until the pictures report ready (capped, so a slow draw
+  // can't hold the open), and the hint waits to leave with it.
+  const WORKSPACE_HOLD_CAP = DURATION.emphasis;
+  let holdWorkspaceSlide = $state(false);
+  let workspaceShownBefore: boolean | null = null;
+  let workspaceShownTab = navigationState.activeTab;
+  $effect.pre(() => {
+    const shown = Boolean(shouldShowWorkspace);
+    const tab = navigationState.activeTab;
+    untrack(() => {
+      const opening =
+        workspaceShownBefore === false && shown && tab === workspaceShownTab;
+      workspaceShownBefore = shown;
+      workspaceShownTab = tab;
+      if (opening && tab === "generate" && !reducedMotion()) {
+        holdWorkspaceSlide = true;
+      } else if (!shown || tab !== "generate") {
+        holdWorkspaceSlide = false;
+      }
+    });
+  });
+
+  $effect(() => {
+    const content = workspaceContainerRef;
+    if (!holdWorkspaceSlide) return;
+    if (!content) {
+      holdWorkspaceSlide = false;
+      return;
+    }
+    const heldAt = performance.now();
+    // Pictures that report ready still paint in the frame that found them
+    // ready, so the slide starts on the frame after.
+    let drawnBefore = false;
+    let frame = requestAnimationFrame(function check(now) {
+      const drawn =
+        content.querySelector(".pictograph-container") !== null &&
+        !content.querySelector('.pictograph-container[aria-busy="true"]');
+      if (drawnBefore || now - heldAt >= WORKSPACE_HOLD_CAP) {
+        holdWorkspaceSlide = false;
+        return;
+      }
+      drawnBefore = drawn;
+      frame = requestAnimationFrame(check);
+    });
+    return () => cancelAnimationFrame(frame);
+  });
   const showHistoryRecovery = $derived(
     !hasWorkspaceContent &&
       !isInputMode &&
@@ -268,16 +347,15 @@
       return;
     }
 
-    const updateHeight = () => {
-      buttonPanelHeight = buttonPanelElement?.offsetHeight ?? 0;
-    };
-
-    // Initial measurement
-    updateHeight();
-
-    // Use ResizeObserver to track size changes (responsive layouts, container queries)
-    const resizeObserver = new ResizeObserver(updateHeight);
-    resizeObserver.observe(buttonPanelElement);
+    // Take the height from the observer entry. Reading offsetHeight here
+    // forced a layout whenever an earlier observer callback had dirtied the
+    // page, as a remounting Generate panel does. The first entry arrives
+    // before the first paint, so no synchronous read is needed on mount.
+    const resizeObserver = new ResizeObserver((entries) => {
+      const box = entries.at(-1)?.borderBoxSize?.[0];
+      if (box) buttonPanelHeight = Math.round(box.blockSize);
+    });
+    resizeObserver.observe(buttonPanelElement, { box: "border-box" });
 
     return () => resizeObserver.disconnect();
   });
@@ -311,23 +389,28 @@
   >
     <!-- Workspace Content Area -->
     <div class="workspace-content">
-      {#if hasWorkspaceContent}
-        <LazyMount
-          loader={() => import("./CreationWorkspaceArea.svelte")}
-          active
-          props={{
-            animatingStepNumber,
-            currentDisplayWord,
-            buttonPanelHeight,
-            compactToolbar: useCompactToolbar,
-            isSideBySideLayout: useSideBySidePanels,
-            letterSources: currentLetterSources,
-            ...(toolPanelRef?.getAnimationStateRef?.()
-              ? { animationStateRef: toolPanelRef.getAnimationStateRef() }
-              : {}),
-          }}
-        />
-      {:else if isAssembleTab}
+      <!-- Its code is fetched on idle, so the first sequence mounts in the
+           same task that opens the workspace instead of arriving mid-slide.
+           It still unmounts whenever the workspace empties. -->
+      <LazyMount
+        loader={() => import("./CreationWorkspaceArea.svelte")}
+        active={hasWorkspaceContent}
+        keepAlive={false}
+        prefetch
+        debugName="CreationWorkspaceArea"
+        props={{
+          animatingStepNumber,
+          currentDisplayWord,
+          buttonPanelHeight,
+          compactToolbar: useCompactToolbar,
+          isSideBySideLayout: useSideBySidePanels,
+          letterSources: currentLetterSources,
+          ...(toolPanelRef?.getAnimationStateRef?.()
+            ? { animationStateRef: toolPanelRef.getAnimationStateRef() }
+            : {}),
+        }}
+      />
+      {#if !hasWorkspaceContent && isAssembleTab}
         <div class="assemble-workspace-placeholder">
           <i class="fas fa-layer-group" aria-hidden="true"></i>
           <p>{t("create_ui_build_on_the_grid_pictographs_appear_here")}</p>
@@ -415,12 +498,15 @@
       </div>
     {/if}
 
-    <div
-      class="tool-panel-content"
-      class:has-generate-empty={!hasWorkspaceContent && isGeneratorTab}
-    >
-      {#if !hasWorkspaceContent && isGeneratorTab}
-        <GenerateEmptyState />
+    <div class="tool-panel-content">
+      {#if (!hasWorkspaceContent || holdWorkspaceSlide) && isGeneratorTab}
+        <div
+          class="generate-empty-slot"
+          in:growFade={generateHintMotion()}
+          out:growFade={generateHintMotion()}
+        >
+          <GenerateEmptyState />
+        </div>
       {/if}
       <CreationToolPanelSlot
         bind:toolPanelRef
@@ -440,6 +526,7 @@
     direction={useSideBySidePanels ? "horizontal" : "vertical"}
     bind:sizes={panelSizes}
     gap={0}
+    holdMotion={holdWorkspaceSlide}
     panels={[
       {
         id: "create-workspace",
@@ -447,13 +534,21 @@
         defaultSize: defaultPanelSizes[0],
         fixedSize: !shouldShowWorkspace ? "0px" : undefined,
         resizable: false,
+        // The step grid lays out once at its final size and the opening
+        // edge uncovers it, rather than resizing every pictograph per frame.
+        revealContent: true,
       },
       {
         id: "create-tool-panel",
         content: toolPanel,
         defaultSize: defaultPanelSizes[1],
-        fixedSize: isWorkspacePlayback || isAssembleComplete ? "0px" : undefined,
+        fixedSize:
+          isWorkspacePlayback || isAssembleComplete ? "0px" : undefined,
         resizable: false,
+        // Play folds the tools away. Their cards keep the size they had and
+        // the closing edge covers them, instead of re-laying out every card
+        // (and their container-query padding) on each frame of the slide.
+        revealContent: true,
       },
     ]}
   />
@@ -651,26 +746,31 @@
     );
   }
 
+  /* On stacked empty Generate screens the hint owns real space above the
+     settings. The routed panel used to keep height: 100%, which added the
+     hint's height on top and pushed Generate underneath the mobile nav. The
+     column holds whether or not the hint is there: switched on only with the
+     hint, it switched off the moment Generate was tapped, while the hint was
+     still collapsing, and the settings jumped 116px taller under it. */
   .tool-panel-content {
     position: relative;
+    display: flex;
+    flex-direction: column;
     flex: 1;
     min-width: 0;
     min-height: 0;
     overflow: hidden;
   }
 
-  /* On stacked empty Generate screens the hint owns real space above the
-     settings. The routed panel used to keep height: 100%, which added the
-     hint's height on top and pushed Generate underneath the mobile nav. */
-  .tool-panel-content.has-generate-empty {
-    display: flex;
-    flex-direction: column;
-  }
-
-  .tool-panel-content.has-generate-empty > :global(.tool-panel-wrapper) {
+  .tool-panel-content > :global(.tool-panel-wrapper) {
     flex: 1 1 0;
     height: auto;
     min-height: 0;
+  }
+
+  /* The hint's own box, so it can collapse in step with the workspace slide. */
+  .generate-empty-slot {
+    flex-shrink: 0;
   }
 
   .clear-recovery-action {
