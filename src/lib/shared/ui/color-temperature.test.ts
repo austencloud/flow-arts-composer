@@ -3,6 +3,7 @@ import {
   COOL_PRESETS,
   WARM_PRESETS,
   coolWarmPairs,
+  hueSteps,
   randomCoolWarmPair,
 } from "./color-temperature";
 import {
@@ -10,12 +11,17 @@ import {
   contrastRatio,
 } from "$lib/shared/settings/utils/background-theme-calculator";
 
-const rowOf = (hex: string) =>
-  [...COOL_PRESETS, ...WARM_PRESETS].find((preset) => preset.hex === hex)?.row;
+const presetOf = (hex: string) =>
+  [...COOL_PRESETS, ...WARM_PRESETS].find((preset) => preset.hex === hex)!;
+const rowOf = (hex: string) => presetOf(hex).row;
 
-/** Every value a random source can hand back, at the pool's resolution. */
+/** One draw from the middle of each slot of a pool this size; a slot's edge
+    can round down into its neighbour. */
 function draws(count: number) {
-  return Array.from({ length: count }, (_, index) => () => index / count);
+  return Array.from(
+    { length: count },
+    (_, index) => () => (index + 0.5) / count
+  );
 }
 
 describe.each([
@@ -44,6 +50,14 @@ describe.each([
   it("matches the two hands from one row", () => {
     for (const pair of pairs) {
       expect(rowOf(pair.left)).toBe(rowOf(pair.right));
+    }
+  });
+
+  it("keeps the two hues at least a quarter turn apart", () => {
+    for (const pair of pairs) {
+      expect(
+        hueSteps(presetOf(pair.left), presetOf(pair.right))
+      ).toBeGreaterThanOrEqual(3);
     }
   });
 
