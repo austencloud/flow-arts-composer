@@ -1,21 +1,30 @@
 /**
- * The slide between two grid layouts. When a sequence's join changes in the
- * viewer, each hand's grid, prop, trail and path line glides from where it
- * sat to where the new join puts it, so the viewer sees what changed instead
- * of a jump.
+ * The slide between two grid layouts, the one owner of the join slide. When a
+ * sequence's join changes, each hand's grid, prop, arrow, trail and path line
+ * glides from where it sat to where the new join puts it, so the change shows
+ * instead of jumping. The animation canvas and every pictograph run it.
  *
- * Offsets are per hand, in hand-point radii (the unit of prop x/y), and
- * {0, 0} for one grid. Time is wall-clock milliseconds, never playback time,
- * so the slide runs the same whether the sequence is playing or paused.
+ * Offsets are per hand and {0, 0} for one grid, in the caller's unit: the
+ * canvas uses hand-point radii (the unit of prop x/y), pictographs use scene
+ * units with the joined fit scale alongside. Time is wall-clock milliseconds,
+ * never playback time, so the slide runs the same playing or paused.
  */
 import { cubicInOut } from "svelte/easing";
 import type { GridJoin } from "@tka/tka-types";
-import type { JoinVec } from "@tka/render-core";
-import { gridJoinShiftUnits } from "./animation-grid-join";
+import {
+  getGridJoinLayout,
+  gridJoinOffsets,
+  type JoinVec,
+} from "@tka/render-core";
 
 export interface HandOffsets {
   readonly left: JoinVec;
   readonly right: JoinVec;
+  /**
+   * The joined fit scale about the scene center, for painters that shrink
+   * joined content to clear the cell's edge glyphs. Absent reads as 1.
+   */
+  readonly scale?: number;
 }
 
 /** One grid: both hands at the canvas center. */
@@ -30,7 +39,37 @@ export const GRID_JOIN_TWEEN_MS = 450;
 /** Each hand's resting offset for a join; centered for one grid. */
 export function gridJoinHandOffsets(join: GridJoin | null): HandOffsets {
   if (!join) return CENTERED_HAND_OFFSETS;
-  return { left: gridJoinShiftUnits(join, 0), right: gridJoinShiftUnits(join, 1) };
+  const offsets = gridJoinOffsets(join, 1);
+  return { left: offsets.left, right: offsets.right };
+}
+
+/**
+ * A pictograph's resting frame for a join: each hand's grid offset in scene
+ * units and the fit scale, as `getGridJoinLayout` draws it. One grid is
+ * centered at scale 1.
+ */
+export function pictographJoinFrame(
+  join: GridJoin | null,
+  gridMode: string | undefined
+): HandOffsets {
+  if (!join) return { ...CENTERED_HAND_OFFSETS, scale: 1 };
+  const layout = getGridJoinLayout(join, gridMode);
+  return {
+    left: layout.offsets.left,
+    right: layout.offsets.right,
+    scale: layout.scale,
+  };
+}
+
+/** Same frame: offsets and scale all equal. */
+export function handOffsetsEqual(a: HandOffsets, b: HandOffsets): boolean {
+  return (
+    a.left.x === b.left.x &&
+    a.left.y === b.left.y &&
+    a.right.x === b.right.x &&
+    a.right.y === b.right.y &&
+    (a.scale ?? 1) === (b.scale ?? 1)
+  );
 }
 
 export interface GridJoinTweenSample {
@@ -67,7 +106,12 @@ export class GridJoinTween {
    * it is now, so a second pick mid-slide never jumps. A zero duration
    * (reduced motion) leaves nothing running: the layout snaps, as before.
    */
-  start(from: HandOffsets, to: HandOffsets, nowMs: number, durationMs: number): void {
+  start(
+    from: HandOffsets,
+    to: HandOffsets,
+    nowMs: number,
+    durationMs: number
+  ): void {
     const displayed = this.running ? this.offsetsAt(nowMs) : from;
     if (durationMs <= 0) {
       this.running = false;
@@ -104,10 +148,14 @@ export class GridJoinTween {
     const t = this.progressAt(nowMs);
     if (t >= 1) return this.to;
     const k = cubicInOut(t);
-    return {
-      left: lerpVec(this.from.left, this.to.left, k),
-      right: lerpVec(this.from.right, this.to.right, k),
-    };
+    const left = lerpVec(this.from.left, this.to.left, k);
+    const right = lerpVec(this.from.right, this.to.right, k);
+    if (this.from.scale === undefined && this.to.scale === undefined) {
+      return { left, right };
+    }
+    const fromScale = this.from.scale ?? 1;
+    const toScale = this.to.scale ?? 1;
+    return { left, right, scale: fromScale + (toScale - fromScale) * k };
   }
 }
 

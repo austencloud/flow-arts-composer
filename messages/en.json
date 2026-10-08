@@ -7547,6 +7547,7 @@
   "create_transform_mirror_desc": "Flip left and right",
   "create_transform_needs_both_hands": "Needs both hands",
   "create_transform_original_path": "Original path",
+  "create_transform_grid": "Grid",
   "create_transform_patterns": "Patterns",
   "create_transform_pick_start_pose": "Pick the start pose",
   "create_transform_pivot_degrees": "Pivot {degrees}°",

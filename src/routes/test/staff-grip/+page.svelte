@@ -14,7 +14,8 @@
    * arranges them and owns one playback clock for every pane.
    */
   import { Canvas, T } from "@threlte/core";
-  import { onMount } from "svelte";
+  import { onDestroy, onMount } from "svelte";
+  import { Vector3 } from "three";
   import type {
     AvatarGripDiagnostics,
     AvatarPoseDiagnostics,
@@ -43,31 +44,40 @@
     type BodyClearanceTrack,
   } from "$lib/shared/3d/collision/body-clearance";
 
+  import type { BackgroundType } from "@austencloud/backgrounds";
+  import {
+    holdBackground,
+    releaseBackground,
+  } from "$lib/shared/background/shared/state/background-hold.svelte";
   import PanelContent from "$lib/shared/components/panel/PanelContent.svelte";
   import PanelHeader from "$lib/shared/components/panel/PanelHeader.svelte";
   import PanelState from "$lib/shared/components/panel/PanelState.svelte";
 
   import LabTransport from "../_lab-kit/LabTransport.svelte";
-  import {
-    labScrubMax,
-    type ScrubMarker,
-  } from "../_lab-kit/phase-transport";
+  import { labScrubMax, type ScrubMarker } from "../_lab-kit/phase-transport";
 
   import CoverageMatrixMount from "./CoverageMatrixMount.svelte";
-  import LabControls from "./LabControls.svelte";
+  import LabGoalsSection from "./LabGoalsSection.svelte";
   import LabInspector from "./LabInspector.svelte";
+  import LabPerformerSection from "./LabPerformerSection.svelte";
+  import LabSection from "./LabSection.svelte";
+  import LabSequenceSection from "./LabSequenceSection.svelte";
+  import LabViewBar from "./LabViewBar.svelte";
   import StaffGripStage from "./StaffGripStage.svelte";
   import type { CoverageMatrix } from "./coverage-matrix-contract";
   import {
     INSPECTION_FOV_DEG,
     INSPECTION_VIEWS,
     inspectionShotForView,
+    type InspectionShot,
+    type InspectionView,
   } from "./inspection-framing";
   import {
     bodyDerivedLengthCm,
     compareLengths,
     readBodyPropFit,
     type BodyPropFit,
+    type FitVerdict,
   } from "./lab-body-fit";
   import {
     DEFAULT_LAB_SEQUENCE_ID,
@@ -78,10 +88,7 @@
     labSweepCharacter,
     resolveLabSequence,
   } from "./lab-catalog";
-  import {
-    labContinuityMarkers,
-    labContinuityStatus,
-  } from "./lab-continuity";
+  import { labContinuityMarkers, labContinuityStatus } from "./lab-continuity";
   import { isLabGoalId } from "./lab-goals";
   import {
     collectFrameMetrics,
@@ -92,6 +99,14 @@
     type PoseMetric,
   } from "./lab-metrics";
   import { StaffLabState } from "./lab-state.svelte";
+  import ReferencePanel from "./reference/ReferencePanel.svelte";
+  import ReferenceStage from "./reference/ReferenceStage.svelte";
+  import ReferenceTransport from "./reference/ReferenceTransport.svelte";
+  import { referencePreset } from "./reference/reference-cameras";
+  import {
+    ReferenceSession,
+    type ReferenceVideo,
+  } from "./reference/reference-session.svelte";
 
   /** Motion steps per second. Slow enough to read a 0.16-step stagger. */
   const PLAYBACK_STEPS_PER_SECOND = 1.2;
@@ -110,6 +125,19 @@
 
   const lab = new StaffLabState({
     stepCount: () => stepCount,
+  });
+
+  /**
+   * Videos of Austen performing the loaded sequence. While any are loaded the
+   * lab shows each beside a 3D view, and the timed one, mapped in Post
+   * Studio, says where the performer is.
+   */
+  const reference = new ReferenceSession(() => sequence);
+  onDestroy(() => reference.dispose());
+
+  $effect(() => {
+    const phase = reference.labPhase;
+    if (phase !== null) lab.setPhase(phase);
   });
 
   /**
@@ -295,6 +323,15 @@
   /** Can this body clear the shaft that is actually on screen? */
   const fitComparison = $derived(compareLengths(bodyFit, drawnLengthCm));
 
+  /** The fit verdict in a word or two, for the folded Measurements header. */
+  const MEASUREMENT_SUMMARY: Record<FitVerdict, string> = {
+    fits: "Prop fits",
+    over: "Prop too long",
+    under: "Prop short",
+    unsupported: "No fit",
+    unknown: "Measuring",
+  };
+
   /**
    * When the body on stage is one of the controlled proportion sweep rigs, the
    * generator recorded what it measured off the GLB's rest pose and whether it
@@ -313,8 +350,7 @@
   const lengthDivergenceCm = $derived(
     drawnLengthCm === null || collisionLengthCm === null
       ? null
-      : Math.abs(collisionLengthCm - drawnLengthCm) <
-          LENGTH_DIVERGENCE_NOISE_CM
+      : Math.abs(collisionLengthCm - drawnLengthCm) < LENGTH_DIVERGENCE_NOISE_CM
         ? null
         : collisionLengthCm - drawnLengthCm
   );
@@ -353,14 +389,62 @@
     if (fit) bodyFit = fit;
   }
 
+  type BackgroundHostComponent =
+    (typeof import("$lib/shared/background/shared/components/BackgroundHost.svelte"))["default"];
+
+  let LiveBackground = $state<BackgroundHostComponent | null>(null);
+  let backgroundType = $state<BackgroundType | null>(null);
+
+  /** Whether the device turned the animated background off in Settings. */
+  function savedBackgroundEnabled(): boolean {
+    try {
+      const stored = localStorage.getItem("tka-modern-web-settings");
+      return stored === null || JSON.parse(stored).backgroundEnabled !== false;
+    } catch {
+      return true;
+    }
+  }
+
   onMount(() => {
     // This route breaks out of the app layout, so nothing has set the theme
-    // variables the shared pickers and chips paint with. Reading the device's
-    // own saved background keeps the lab in the app's palette instead of every
-    // primitive falling back to its hardcoded default.
+    // variables the shared pickers and chips paint with, or the background
+    // every module sits on. Reading the device's own saved background keeps
+    // the lab in the app's palette and on the app's scene.
     void import("$lib/shared/settings/utils/background-theme-calculator").then(
-      ({ ensureThemeApplied }) => ensureThemeApplied()
+      ({ ensureThemeApplied, getSavedBackgroundType }) => {
+        ensureThemeApplied();
+        backgroundType = getSavedBackgroundType();
+      }
     );
+    void import("$lib/shared/settings/utils/background-preloader").then(
+      ({ ensureBackgroundApplied }) => ensureBackgroundApplied()
+    );
+
+    if (!savedBackgroundEnabled()) return;
+    let mounted = true;
+    // The animated scene is an enhancement: its renderer graph loads after
+    // the lab's first frame, the way the marketing shell loads it.
+    const frame = requestAnimationFrame(() => {
+      void import("$lib/shared/background/shared/components/BackgroundHost.svelte").then(
+        ({ default: BackgroundHost }) => {
+          if (mounted) LiveBackground = BackgroundHost;
+        }
+      );
+    });
+    return () => {
+      mounted = false;
+      cancelAnimationFrame(frame);
+    };
+  });
+
+  // The background loop repaints a viewport-sized canvas every frame, which
+  // the cameras and reference videos cannot spare while they play. Hold it
+  // still for the length of any playback, the way the app shell pauses it.
+  const BACKGROUND_HOLD_KEY = "staff-grip-lab-playback";
+  $effect(() => {
+    if (!(lab.playing || reference.playing)) return;
+    holdBackground(BACKGROUND_HOLD_KEY);
+    return () => releaseBackground(BACKGROUND_HOLD_KEY);
   });
 
   // A pasted link or a reload arrives as a real navigation, which is the one
@@ -416,7 +500,8 @@
    * scope, so advancing it cannot restart the loop.
    */
   $effect(() => {
-    if (!lab.playing) return;
+    // Reference videos bring their own clock.
+    if (!lab.playing || reference.active) return;
     const span = sequence?.steps.length ?? 0;
     if (span <= 0) return;
     let frame = 0;
@@ -440,6 +525,94 @@
     content="Compare one grip across characters, props and sequences."
   />
 </svelte:head>
+
+<!--
+  One camera on the performer. The lab's own views and each reference video's
+  view are the same pane; only the first measures, so the inspector reads one
+  performer rather than the last pane to report.
+-->
+{#snippet stagePane(
+  loaded: SequenceData,
+  shot: InspectionShot,
+  grid: InspectionView["grid"],
+  paneId: string,
+  primary: boolean,
+  onCameraEnd?: (shot: InspectionShot) => void
+)}
+  <Canvas shadows rendererParameters={{ alpha: true }}>
+    <T.PerspectiveCamera
+      makeDefault
+      position={shot.position}
+      fov={INSPECTION_FOV_DEG}
+    >
+      <OrbitControls
+        enableDamping
+        enablePan={false}
+        rightDragAction="rotate"
+        target={shot.target}
+        minDistance={0.3}
+        maxDistance={12}
+        maxPolarAngle={Math.PI}
+        oncontrolend={onCameraEnd
+          ? (controls) => {
+              const position = controls.getPosition(new Vector3());
+              const target = controls.getTarget(new Vector3());
+              onCameraEnd({
+                position: [position.x, position.y, position.z],
+                target: [target.x, target.y, target.z],
+              });
+            }
+          : undefined}
+      />
+    </T.PerspectiveCamera>
+
+    <StaffGripStage
+      id={paneId}
+      phase={lab.phase}
+      sequence={loaded}
+      characterId={lab.character}
+      propType={lab.prop}
+      propLengthCm={lab.propLength === "body" ? null : lab.propLength}
+      handDistance={labHandDistance}
+      bodyClearance={lab.bodyClearance === "off" ? null : lab.bodyClearance}
+      handPointRadius={isolationHandM ?? undefined}
+      outerPointRadius={isolationHandM === null
+        ? undefined
+        : isolationHandM * 2}
+      gridEmphasis={grid}
+      showGridLabels={lab.gridLabels}
+      onCollisionEvents={primary ? collectGripMetrics : undefined}
+      onStanceTrack={primary
+        ? (track) => {
+            stanceTrack = track;
+          }
+        : undefined}
+      onBodyClearanceTrack={primary
+        ? (track) => {
+            bodyClearanceTrack = track;
+          }
+        : undefined}
+    />
+  </Canvas>
+{/snippet}
+
+{#snippet referencePane(video: ReferenceVideo, index: number, aspect: number)}
+  {#if sequence}
+    {@render stagePane(
+      sequence,
+      video.camera.shot ??
+        inspectionShotForView(referencePreset(video.camera.presetId), aspect),
+      "reference",
+      `staff-grip-reference-${index}`,
+      index === 0,
+      (shot) =>
+        reference.setCamera(video.key, {
+          presetId: video.camera.presetId,
+          shot,
+        })
+    )}
+  {/if}
+{/snippet}
 
 <main
   class="grip-lab"
@@ -547,6 +720,9 @@
   data-rendered-step-number={poseMetric.renderedStepNumber}
   data-rendered-beat-progress={formatMetric(poseMetric.renderedBeatProgress, 3)}
   data-playing={lab.playing}
+  data-reference-videos={reference.videos.length}
+  data-reference-status={reference.status}
+  data-reference-seconds={reference.time.toFixed(3)}
   data-stance-lead-steps={formatMetric(stanceSummary.onsetLeadSteps, 4)}
   data-stance-spine-lead-steps={formatMetric(
     stanceSummary.spineOnsetLeadSteps,
@@ -570,6 +746,10 @@
   data-stance-arrival-head={formatMetric(stanceSummary.arrivals.head, 4)}
   data-stance-angular-velocity={formatMetric(stanceVelocity, 5)}
 >
+  {#if LiveBackground && backgroundType}
+    <LiveBackground {backgroundType} />
+  {/if}
+
   <aside class="rail" aria-label="Lab configuration and measurements">
     <!--
       The app's own panel masthead, at the rank a page owes its document. The
@@ -584,127 +764,111 @@
     />
 
     <PanelContent>
+      <!--
+        What you are working on first: the sequence, then the video you are
+        comparing it against, then the goal list to move between sequences.
+        The performer setup changes less often, and the numbers are for
+        digging in, so they come last and Measurements starts folded.
+      -->
       <div class="rail-sections">
-        <LabControls
+        <LabSequenceSection {lab} {sequence} {sequenceLoading} />
+
+        <ReferencePanel session={reference} sequenceId={lab.sequenceId} />
+
+        <LabGoalsSection {lab} />
+
+        <LabPerformerSection
           {lab}
-          {sequence}
-          {sequenceLoading}
           {bodyLengthCm}
           bodyMeasured={bodyFit !== null}
         />
 
-        <LabInspector
-          {lab}
-          {sweepCharacter}
-          fit={bodyFit}
-          verdict={fitComparison.verdict}
-          deltaCm={fitComparison.deltaCm}
-          {configuredLengthCm}
-          {drawnLengthCm}
-          {fixedLengthCm}
-          {characterHeightCm}
-          {collisionLengthCm}
-          {lengthDivergenceCm}
-          {leftMetric}
-          {rightMetric}
-          {poseMetric}
-          {stanceTrack}
-          {stanceSummary}
-          {stanceVelocity}
-          {coverageMatrix}
-        />
+        <LabSection
+          id="lab-measurements"
+          title="Measurements"
+          icon="fa-ruler-combined"
+          summary={MEASUREMENT_SUMMARY[fitComparison.verdict]}
+          defaultOpen={false}
+        >
+          <LabInspector
+            {lab}
+            {sweepCharacter}
+            fit={bodyFit}
+            verdict={fitComparison.verdict}
+            deltaCm={fitComparison.deltaCm}
+            {configuredLengthCm}
+            {drawnLengthCm}
+            {fixedLengthCm}
+            {characterHeightCm}
+            {collisionLengthCm}
+            {lengthDivergenceCm}
+            {leftMetric}
+            {rightMetric}
+            {poseMetric}
+            {stanceTrack}
+            {stanceSummary}
+            {stanceVelocity}
+            {coverageMatrix}
+          />
+        </LabSection>
       </div>
     </PanelContent>
   </aside>
 
   <div class="stage">
-    <div class="views" data-layout={lab.view === "quad" ? "quad" : "solo"}>
-      {#if sequence}
-        {#each activeViews as view, index (view.id)}
-          <section
-            class="view"
-            aria-label={`${view.label}: ${view.hint}`}
-            bind:clientWidth={paneWidths[index]}
-            bind:clientHeight={paneHeights[index]}
-          >
-            <!--
-              No scene clear colour. An alpha buffer lets the pane's own app
-              surface show through, so the canvases sit on the product's ground
-              rather than on a navy rectangle that appears nowhere else.
-            -->
-            <Canvas shadows rendererParameters={{ alpha: true }}>
-              <T.PerspectiveCamera
-                makeDefault
-                position={shots[index].position}
-                fov={INSPECTION_FOV_DEG}
-              >
-                <OrbitControls
-                  enableDamping
-                  enablePan={false}
-                  rightDragAction="rotate"
-                  target={shots[index].target}
-                  minDistance={0.3}
-                  maxDistance={12}
-                  maxPolarAngle={Math.PI}
-                />
-              </T.PerspectiveCamera>
+    <LabViewBar {lab} referenceActive={reference.active && sequence !== null} />
+    {#if reference.active && sequence}
+      <ReferenceStage session={reference} pane={referencePane} />
+      <ReferenceTransport session={reference} />
+    {:else}
+      <div class="views" data-layout={lab.view === "quad" ? "quad" : "solo"}>
+        {#if sequence}
+          {#each activeViews as view, index (view.id)}
+            <section
+              class="view"
+              aria-label={`${view.label}: ${view.hint}`}
+              bind:clientWidth={paneWidths[index]}
+              bind:clientHeight={paneHeights[index]}
+            >
+              <!--
+                No scene clear colour. An alpha buffer lets the pane's own app
+                surface show through, so the canvases sit on the product's ground
+                rather than on a navy rectangle that appears nowhere else.
+              -->
+              {@render stagePane(
+                sequence,
+                shots[index] ?? inspectionShotForView(view, 1),
+                view.grid,
+                `staff-grip-${view.id}`,
+                index === 0
+              )}
+              <span class="view-label">
+                <b>{view.label}</b>
+                <i>{view.hint}</i>
+              </span>
+            </section>
+          {/each}
+        {:else}
+          <div class="stage-empty">
+            <PanelState type="loading" message="Loading sequence…" />
+          </div>
+        {/if}
+      </div>
 
-              <StaffGripStage
-                id={`staff-grip-${view.id}`}
-                phase={lab.phase}
-                {sequence}
-                characterId={lab.character}
-                propType={lab.prop}
-                propLengthCm={lab.propLength === "body" ? null : lab.propLength}
-                handDistance={labHandDistance}
-                bodyClearance={lab.bodyClearance === "off"
-                  ? null
-                  : lab.bodyClearance}
-                handPointRadius={isolationHandM ?? undefined}
-                outerPointRadius={isolationHandM === null
-                  ? undefined
-                  : isolationHandM * 2}
-                gridEmphasis={view.grid}
-                showGridLabels={lab.gridLabels}
-                onCollisionEvents={index === 0 ? collectGripMetrics : undefined}
-                onStanceTrack={index === 0
-                  ? (track) => {
-                      stanceTrack = track;
-                    }
-                  : undefined}
-                onBodyClearanceTrack={index === 0
-                  ? (track) => {
-                      bodyClearanceTrack = track;
-                    }
-                  : undefined}
-              />
-            </Canvas>
-            <span class="view-label">
-              <b>{view.label}</b>
-              <i>{view.hint}</i>
-            </span>
-          </section>
-        {/each}
-      {:else}
-        <div class="stage-empty">
-          <PanelState type="loading" message="Loading sequence…" />
-        </div>
-      {/if}
-    </div>
-
-    <!--
-      The transport lives under the cameras, where the app puts one, and is the
-      shared TransportControls the rest of the product plays with. It stays
-      mounted while a sequence resolves so the stage above it never resizes.
-    -->
-    <LabTransport
-      {lab}
-      {stepCount}
-      disabled={!sequence}
-      markers={continuityMarkers}
-      markerNote={continuityNote}
-      markerLaneLabel="Prop discontinuities in this sequence"
-    />
+      <!--
+        The transport lives under the cameras, where the app puts one, and is the
+        shared TransportControls the rest of the product plays with. It stays
+        mounted while a sequence resolves so the stage above it never resizes.
+      -->
+      <LabTransport
+        {lab}
+        {stepCount}
+        disabled={!sequence}
+        markers={continuityMarkers}
+        markerNote={continuityNote}
+        markerLaneLabel="Prop discontinuities in this sequence"
+      />
+    {/if}
   </div>
 
   <!--
@@ -724,7 +888,9 @@
     position: relative;
     display: grid;
     min-height: 100dvh;
-    background: var(--background, #0a0a0a);
+    /* The app's own background (the device's saved scene) shows through,
+       the way it does behind every module, instead of a flat black page. */
+    background: transparent;
     color: var(--theme-text, #fff);
 
     /* Narrow is the base: the rail first, so the controls and the numbers are
@@ -747,9 +913,9 @@
     flex-direction: column;
     min-width: 0;
     min-height: 0;
-    background: var(--panel-bg-current, rgba(255, 255, 255, 0.05));
-    backdrop-filter: var(--glass-backdrop, blur(20px));
-    border-bottom: var(--glass-border, 1px solid rgba(255, 255, 255, 0.08));
+    /* A matte app panel: no blur on a working surface. */
+    background: var(--theme-panel-bg, rgba(12, 14, 20, 0.92));
+    border-bottom: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.08));
   }
 
   /*
@@ -761,29 +927,43 @@
    * under. As a side rail — 20rem to 34rem — this resolves to one column, so
    * no breakpoint has to name the difference.
    */
+  /*
+   * Columns, not grid rows: in a two-column tablet rail a folded section
+   * used to sit in a row as tall as the open one beside it, leaving a hole
+   * under it. Columns stack each side independently, and a rail narrower
+   * than 19rem (a folded phone's side rail) gets one column at its own
+   * width.
+   */
   .rail-sections {
-    display: grid;
-    /* min() so the track can fall below its own floor rather than
-       overflowing a rail narrower than 19rem, which is the 19rem side
-       rail a folded phone gets once padding is taken out of it. */
-    grid-template-columns: repeat(auto-fit, minmax(min(19rem, 100%), 1fr));
-    align-content: start;
-    align-items: start;
-    gap: 1rem 1.25rem;
+    column-width: 19rem;
+    column-gap: 0.75rem;
     min-width: 0;
   }
 
+  .rail-sections > :global(section) {
+    break-inside: avoid;
+    margin-bottom: 0.75rem;
+  }
+
   /* Cameras over a transport, the way the product stacks a player. */
+  /* The camera bar, the cameras, then the transport under them. */
   .stage {
     grid-area: stage;
     display: grid;
-    grid-template-rows: minmax(0, 1fr) auto;
+    grid-template-rows: auto minmax(0, 1fr) auto;
     min-width: 0;
     min-height: 0;
   }
 
+  /*
+   * Each camera is its own matte panel over the app background, with the
+   * background showing in the gutters, the way Generate sets its sequence
+   * grid on the scene.
+   */
   .views {
     display: grid;
+    gap: 0.5rem;
+    padding: 0 0.75rem;
     min-width: 0;
     min-height: 0;
     /* A Threlte canvas reports the size it was last measured at, so an auto
@@ -810,8 +990,8 @@
     display: none;
     min-width: 0;
     padding: 0.9rem 1.1rem;
-    background: var(--panel-bg-current, rgba(255, 255, 255, 0.05));
-    border-top: var(--glass-border, 1px solid rgba(255, 255, 255, 0.08));
+    background: var(--theme-panel-bg, rgba(12, 14, 20, 0.92));
+    border-top: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.08));
     overflow: auto;
   }
 
@@ -820,8 +1000,9 @@
     min-width: 0;
     min-height: 0;
     overflow: hidden;
-    border-bottom: var(--glass-border, 1px solid rgba(255, 255, 255, 0.08));
-    background: var(--surface-inset, rgba(0, 0, 0, 0.2));
+    border: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.08));
+    border-radius: 12px;
+    background: var(--theme-panel-bg, rgba(12, 14, 20, 0.92));
   }
 
   .view :global(canvas) {
@@ -839,12 +1020,10 @@
     gap: 0.1rem;
     max-width: calc(100% - 1.5rem);
     padding: 0.35rem 0.6rem;
-    border: var(--glass-border, 1px solid rgba(255, 255, 255, 0.08));
-    border-radius: 0.4rem;
-    background: var(--surface-glass, rgba(0, 0, 0, 0.5));
-    box-shadow: var(--shadow-glass);
+    border: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.08));
+    border-radius: 8px;
+    background: var(--theme-card-bg, rgba(0, 0, 0, 0.5));
     pointer-events: none;
-    backdrop-filter: var(--glass-backdrop, blur(20px));
   }
 
   .view-label b {
@@ -885,7 +1064,7 @@
     }
 
     .rail {
-      border-right: var(--glass-border, 1px solid rgba(255, 255, 255, 0.08));
+      border-right: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.08));
       border-bottom: 0;
       overflow: hidden;
     }
@@ -897,14 +1076,6 @@
 
     .views[data-layout="solo"] {
       grid-template-rows: minmax(0, 1fr);
-    }
-
-    .view:nth-child(odd) {
-      border-right: var(--glass-border, 1px solid rgba(255, 255, 255, 0.08));
-    }
-
-    .view:nth-last-child(-n + 2) {
-      border-bottom: 0;
     }
   }
 
@@ -924,7 +1095,7 @@
     }
 
     .rail {
-      border-right: var(--glass-border, 1px solid rgba(255, 255, 255, 0.08));
+      border-right: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.08));
       border-bottom: 0;
       overflow: hidden;
     }

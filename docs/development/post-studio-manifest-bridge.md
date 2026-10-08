@@ -112,6 +112,39 @@ In the editor, the music has its own row under the tracks. Drag it to move it. S
 
 Ownership: `post-music.ts` owns the music's schema, `music-grid.ts` bars, beats and the times that name a bar, `post-music-edits.ts` its edits, and `post-audio-plan.ts` its sound for the export and the preview (`planMusicAudio`). `music-preview-sync.ts` and `PostMusicPreview.svelte` keep the preview's player and clock on the music; `PostTimelineMusicLane.svelte` and `PostMusicTool.svelte` are its lane and panel. `scripts/feature-video/music-import.mjs`, `align-take.mjs`, `loudness.mjs` and `time-args.mjs` serve the CLI.
 
+### App recordings
+
+A capture records a scripted pass through the app as a take. The script is `<slug>/captures/<id>.capture.mjs`; an id is lowercase letters, digits and hyphens.
+
+```js
+export default {
+  id: "builder-dckpsi",
+  url: "/create/construct",
+  viewport: { width: 432, height: 768, deviceScaleFactor: 2.5, mobile: true },
+  ready: "document.querySelector('.canvas-wrapper') !== null", // optional: waits for this to be true
+  settleMs: 1500, // optional: a pause after load, 1500 by default
+  async run(director) {
+    await director.shot("builder-dckpsi", 8, async () => {
+      await director.click("Play");
+    });
+  },
+};
+```
+
+Each recording runs in its own headless Chrome, started at the script's viewport and scale, so a phone's 432 by 768 at 2.5 records 1080 by 1920. `mobile` is true unless the script sets it to false. A windowed Chrome would send frames at the screen's scale instead: 648 by 1152 on a 150% display. Keep the phone viewport for 9:16. A wider one such as 720 by 1280 at 1.5 also gives 1080 by 1920, but the app lays it out differently and text comes out at 60% of its phone size. The director's calls are `click(label)`, `fill(label, value)`, `cell(index)`, `canvas()`, `move(x, y)`, `wait(ms)` and `shot(id, seconds, action)`; the shot named like the capture is the one that is encoded.
+
+```powershell
+node scripts/feature-video/capture.mjs --feature promo-1-0 --capture builder-dckpsi
+node scripts/post-project.mjs capture-info --feature promo-1-0
+node scripts/post-project.mjs link-capture --feature promo-1-0 --capture builder-dckpsi --media captures/builder-dckpsi.2.mp4
+```
+
+The headless Chrome starts with a fresh profile, signed out, and closes when the recording ends. It is never your Chrome and never the shared agent browser on 9222. The dev server must be running; the runner never starts it, and a page Chrome cannot load fails the run with Chrome's reason. A page that crashes fails the run at once, and so does any command Chrome leaves unanswered for 60 s. `--origin` records from another dev server on this computer, such as a worktree's, and the runner's CLI calls go to the same server. A 10 s capture took about 2½ minutes on 2026-10-07, so give the command at least that long.
+
+Each run writes `media/captures/<id>.<n>.mp4` with n counting up, so no earlier recording is overwritten, then links it. The first run adds a take labelled with the id. Every later run points that same take at the new file, so the clips cut from it stay in the post. A longer file keeps every clip as it was. A shorter one cuts back a clip it ends inside and removes a clip it no longer reaches, and the main track closes up as it does when a take is removed. The output then lists them under `clips`, `removed` by id and `shortened` with each clip's old and new length, with a note to check the timeline. The take's timing now ends where the new file ends, and a timing you had checked shows "Timing not checked" until you check it again. While an editor has the feature video open, `link-capture` finds the take in the editor's post, and the editor saves the change to disk.
+
+A run that fails while it records keeps its frames in `captures/frames/<id>/`, writes no video and leaves the project as it was. One that records but cannot be linked, for example because the editor refused the edit, keeps its video and prints the `link-capture` command that links it once the reason is fixed. Frames stay after a good run too, until the next run of the same id replaces them; a 10 s run left 37 MB on 2026-10-07. Run one capture of an id at a time, since two would share its frames folder. `duplicate` copies the capture scripts, without their frames.
+
 ### When disk and the editor disagree
 
 Disk wins. Each save from the editor names the revision it started from, and the server refuses one made from an older revision. The editor also checks the file's revision with its heartbeat, about once a second. Either way, when the file on disk is newer, the editor loads it as one undo step and says "Loaded the newer copy from disk." The editor's own version stays one Undo away, and undoing saves it as a new revision, so nothing is lost.

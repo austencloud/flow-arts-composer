@@ -16,15 +16,12 @@ import {
   DEFAULT_HAND_DISTANCE,
   type HandDistance,
 } from "../domain/performer-hand-distance";
-import {
-  normalizeAngle,
-  lerpAngle,
-  lerp,
-} from "./angle-math-calculator";
+import { normalizeAngle, lerpAngle, lerp } from "./angle-math-calculator";
 import { mapOrientationToAngle } from "./orientation-mapper";
 import { concaveRadiusProfile } from "./petal-path";
 import { calculateTargetStaffAngle } from "./motion-calculator";
 import { getAnimationVisibilityManager } from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
+import { gridJoinOffset3D } from "./grid-join-3d";
 
 /**
  * The concave petal path was built to give future teaching avatars a route
@@ -36,6 +33,9 @@ import { getAnimationVisibilityManager } from "$lib/shared/animation-engine/stat
 const CONCAVE_PATHS_ENABLED_IN_3D = false;
 
 type ResolvedPathType = "arc" | "linear" | "concave";
+
+/** Grid center is carried so contact retraction can keep joined grids fixed. */
+export type GridPropState3D = PropState3D & { gridCenter?: Vector3 };
 
 /**
  * Interpolate center path angle (position on grid).
@@ -115,7 +115,11 @@ function interpolateConcavePosition(
   // petal profile dips once per petal (petalsPerStep = 1 + turns).
   const centerPathAngle = lerpAngle(startAngle, endAngle, progress);
   const turns = typeof config.turns === "number" ? config.turns : 0;
-  const radius = concaveRadiusProfile(progress, turns, config.concaveDepth ?? 0);
+  const radius = concaveRadiusProfile(
+    progress,
+    turns,
+    config.concaveDepth ?? 0
+  );
 
   const worldPosition = planeAngleToWorldPosition(
     config.plane,
@@ -137,7 +141,18 @@ export function calculatePropState(
   config: MotionConfig3D,
   progress: number,
   handDistance: HandDistance = DEFAULT_HAND_DISTANCE
-): PropState3D {
+): GridPropState3D {
+  const gridCenter =
+    config.gridJoin && config.hand
+      ? gridJoinOffset3D(
+          config.gridJoin,
+          config.hand,
+          config.plane,
+          handDistance
+        )
+      : undefined;
+  const joinedPosition = (position: Vector3): Vector3 =>
+    gridCenter ? position.add(gridCenter) : position;
   const startCenterAngle = LOCATION_ANGLES[config.startLocation] ?? 0;
   const endCenterAngle = LOCATION_ANGLES[config.endLocation] ?? 0;
 
@@ -180,7 +195,8 @@ export function calculatePropState(
       plane: config.plane,
       centerPathAngle,
       staffRotationAngle,
-      worldPosition,
+      worldPosition: joinedPosition(worldPosition),
+      ...(gridCenter && { gridCenter }),
       worldRotation,
     };
   }
@@ -198,7 +214,8 @@ export function calculatePropState(
       plane: config.plane,
       centerPathAngle,
       staffRotationAngle,
-      worldPosition,
+      worldPosition: joinedPosition(worldPosition),
+      ...(gridCenter && { gridCenter }),
       worldRotation,
     };
   }
@@ -219,7 +236,8 @@ export function calculatePropState(
     plane: config.plane,
     centerPathAngle,
     staffRotationAngle,
-    worldPosition,
+    worldPosition: joinedPosition(worldPosition),
+    ...(gridCenter && { gridCenter }),
     worldRotation,
   };
 }

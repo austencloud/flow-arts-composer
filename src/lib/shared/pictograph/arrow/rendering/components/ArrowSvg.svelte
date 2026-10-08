@@ -246,6 +246,14 @@ even when Svelte recreates the component instance.
     if (disableTransitions || cacheIdentity === null) {
       displayedX = targetX;
       displayedY = targetY;
+      // Remember where it snapped to, so turning transitions back on (after
+      // a join slide, say) does not glide in from an older position.
+      if (cacheIdentity !== null) {
+        arrowPositionCache.set(`${cacheIdentity}-${color}`, {
+          x: targetX,
+          y: targetY,
+        });
+      }
       return;
     }
 

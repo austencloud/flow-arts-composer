@@ -155,6 +155,13 @@ export interface LedFrameInput {
   canvasWidth: number;
   /** Canvas height in viewbox coordinates (e.g. 950) */
   canvasHeight: number;
+  /**
+   * LED sets at the sub-frame instants since the previous frame, oldest
+   * first, each the same shape as `leds`. The renderer deposits one streak
+   * pass per set, then the final pass for `leds`, sharing the frame's shutter.
+   * Absent at a healthy frame rate and during export.
+   */
+  priorSamples?: readonly (readonly LedSample[])[];
 }
 
 

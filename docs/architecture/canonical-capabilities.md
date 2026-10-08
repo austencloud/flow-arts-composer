@@ -163,13 +163,40 @@ to a future junction model. `gridJoinCellResolver` sets every card cell to the
 sequence's join (one-grid cards pass through untouched, keeping their cache
 keys; a stray per-cell join is stripped), `getGridJoinLayout` owns the merged and hidden points and the fit scale,
 and `gridJoinPropNudges` parts two flat props on one line by their beta offset.
+3D playback extends those owners through `shared/3d/services/grid-join-3d.ts`:
+the sequence converter attaches the aligned join to every motion and start
+configuration, and the interpolator and `Grid3D` use the same per-hand center
+offset in the motion plane. `joined-grid-points-3d.ts` reuses the shared point
+plan and tint in card units before drawing in meters. Contact radial movement
+uses each hand's grid center; the shared viewer camera includes joined reach.
+Both viewer renderers consume these authored prop states. Saved scene recipes
+retain `sequenceGridJoin`; `/test/viewer-3d?join=e2` exercises the production
+scene with visible grids (`renderer=worker` hides markers for worker review).
 `PictographPreparer` prepares each hand alone on its grid,
 `render/services/joined-grid-painter.ts` paints the points for
 `Canvas2DDirectRenderer` and the `LayerCompositor` overlay, and
 `image-composer.ts` and `choreo-card-render-engine.ts` give each card cell the
 sequence's join. The MCP `StandaloneRenderer` draws joins too, and its picture tools take
-a `conjoined` option. The live Svelte `PictographRenderer` draws one grid only,
-so a joined `ChoreoCard` renders image cells instead of live ones.
+a `conjoined` option. The live Svelte `PictographRenderer` draws joined grids
+too (`joined-grid-markup.ts`), so a joined `ChoreoCard` keeps live cells.
+
+The join is part of the sequence, never a viewer setting. In Create the Grid
+group of Sequence Actions (the "Grid join" tile, `subView: "gridJoin"`) and
+the step cells' right-click "Grid join" submenu change it through the
+`GridJoinController` that `CreateModule` provides, which records an undoable
+`SET_GRID_JOIN` edit. `GridJoinSection` is the one join picker. The viewer is
+look-only: `SequenceViewerOrchestrator` clears the controller context, and old
+`gj` or `an` links still open joined through its override.
+
+The join slide is owned by `shared/grid-join/join-slide.svelte.ts`
+(`followJoinSlide`) on top of `GridJoinTween` in `grid-join-tween.ts`. When
+the same drawing's join changes, `PictographRenderer` glides each hand's
+grid, props and arrows from the old layout to the new one over
+`GRID_JOIN_TWEEN_MS` through `motionDuration`; a different drawing snaps, and
+an interrupted slide restarts from the shown frame. Every live pictograph
+(step cells, start tile, pickers, live card cells) gets it from the renderer.
+Searches: join slide, grid join tween, re-join animation. Do not animate a
+join anywhere else.
 
 The 2D animation's Conjoined switch stays a viewing choice;
 `animation-engine/services/conjoined-grid-layout.ts` owns its fixed join and
@@ -358,6 +385,18 @@ preview's player and clock on the music; the timeline lane is
 The CLI's music commands use `scripts/feature-video/music-import.mjs`,
 `align-take.mjs`, `loudness.mjs` and `time-args.mjs`. Searches: music,
 soundtrack, beat grid, bar, downbeat, align take, loudness, LUFS.
+
+App recordings for a feature video come from `scripts/feature-video/capture.mjs`,
+the one runner for them. It starts a private headless Chrome per recording
+(`launchHeadlessChrome` in `scripts/lib/chrome-cdp.mjs`, events through
+`cdp-event-buffer.mjs`),
+`scripts/demo-capture/browser-director.mjs` owns the pointer and the screencast,
+`scripts/demo-capture/encode-frames.py` owns the encode, and
+`scripts/feature-video/capture-files.mjs` owns recording names. The project
+changes only through `post-project.mjs link-capture`, which sends
+`relink-take` (`relinkTake` in `domain/post-project-edits.ts`) or `add-take`.
+Scripts read a feature video media URL with `featureMediaUrlParts` in
+`align-take.mjs`. Do not add a second recorder; extend these.
 
 Post Studio keyframes live on the item: `post-project-keyframes.ts` owns
 content time, sampling, the auto-key rule, easing presets and every keyframe

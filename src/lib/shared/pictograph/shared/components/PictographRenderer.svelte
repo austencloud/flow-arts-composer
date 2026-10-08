@@ -63,7 +63,13 @@ Usage:
   import {
     joinedGridFitTransform,
     joinedGridMarkup,
+    slidingGridsMarkup,
   } from "../../grid/services/joined-grid-markup";
+  import {
+    followJoinSlide,
+    joinSlideDrawingKey,
+  } from "$lib/shared/grid-join/join-slide.svelte";
+  import { gridJoinLayerAlphas } from "$lib/shared/grid-join/grid-join-tween";
   import { getJoinedActiveHandPoints } from "$lib/shared/render/services/layer-key-deriver";
   import {
     type ElementalType,
@@ -559,11 +565,10 @@ Usage:
       ? getGridJoinLayout(pictograph._prepared.join, gridMode)
       : null
   );
-  const joinedGrid = $derived.by(() => {
-    if (!joinLayout) return "";
+  const joinedGridOptions = $derived.by(() => {
     const dark = darkMode ?? true;
     const mode = dark ? "dark" : "light";
-    return joinedGridMarkup(joinLayout, {
+    return {
       darkMode: dark,
       box: gridMode === GridMode.BOX,
       handColors: {
@@ -575,17 +580,63 @@ Usage:
         handPointVisibility === "active"
           ? getJoinedActiveHandPoints(pictograph)
           : undefined,
-    });
+    };
   });
+  const joinedGrid = $derived(
+    joinLayout ? joinedGridMarkup(joinLayout, joinedGridOptions) : ""
+  );
+  const joinedGridOpacity = $derived((darkMode ?? true) ? 0.85 : 1);
+
+  // A re-join of the same drawing slides: each hand's grid, props and arrows
+  // glide from the old layout to the new one (the shared join slide), while
+  // the old grid picture fades out and the new one in. A different drawing
+  // snaps.
+  const joinSlide = followJoinSlide(() => ({
+    join: pictograph._prepared?.join ?? null,
+    gridMode,
+    drawingKey: joinSlideDrawingKey(pictograph),
+  }));
+  const slide = $derived(joinSlide.current);
+  const slideLayers = $derived(
+    slide ? gridJoinLayerAlphas(slide.t, true, 1, slide.from ? 0 : 1) : null
+  );
+  const slideOutgoingGrid = $derived(
+    slide?.from
+      ? joinedGridMarkup(
+          getGridJoinLayout(slide.from, gridMode),
+          joinedGridOptions
+        )
+      : ""
+  );
+  const slideMovingGrids = $derived(
+    slide
+      ? slidingGridsMarkup(
+          slide.frame,
+          slide.secondGridAlpha,
+          joinedGridOptions
+        )
+      : ""
+  );
+  /** Moves a hand's props and arrows from where its grid is drawn to where it shows. */
+  function slideHandTransform(hand: string): string | undefined {
+    if (!slide) return undefined;
+    const side = hand === HandSide.RIGHT ? "right" : "left";
+    const shown = slide.frame[side];
+    const drawn = joinLayout?.offsets[side] ?? { x: 0, y: 0 };
+    return `translate(${shown.x - drawn.x} ${shown.y - drawn.y})`;
+  }
+  const slideScale = $derived(slide?.frame.scale ?? joinLayout?.scale ?? 1);
   // The joined dots are drawn in the same pass, with no grid file to load, so
   // they are ready as soon as they are in the DOM.
   $effect(() => {
     if (joinLayout && joinedGrid) onGridReady?.();
   });
   const coreContentTransform = $derived(
-    joinLayout
-      ? `translate(${coreContentOffset} 0) ${joinedGridFitTransform(joinLayout, BASE_SIZE)}`
-      : `translate(${coreContentOffset}, 0)`
+    slide
+      ? `translate(${coreContentOffset} 0) translate(${BASE_SIZE / 2} ${BASE_SIZE / 2}) scale(${slideScale}) translate(${-BASE_SIZE / 2} ${-BASE_SIZE / 2})`
+      : joinLayout
+        ? `translate(${coreContentOffset} 0) ${joinedGridFitTransform(joinLayout, BASE_SIZE)}`
+        : `translate(${coreContentOffset}, 0)`
   );
 
   // Start-position hand colour key: shared geometry with the MCP renderer so the
@@ -630,36 +681,60 @@ Usage:
     <!-- Core content (grid, props, arrows) - centered in expanded viewBox -->
     <g transform={coreContentTransform}>
       <!-- Grid -->
+      {#if slide && slideLayers && showGrid}
+        {#if slideOutgoingGrid && slideLayers.outgoing > 0}
+          <g
+            class="joined-grid"
+            opacity={joinedGridOpacity * slideLayers.outgoing}
+            pointer-events="none"
+          >
+            {@html slideOutgoingGrid}
+          </g>
+        {/if}
+        <g
+          class="joined-grid sliding"
+          opacity={joinedGridOpacity * slideLayers.moving}
+          pointer-events="none"
+        >
+          {@html slideMovingGrids}
+        </g>
+      {/if}
       {#if joinLayout}
         {#if showGrid}
           <g
             class="joined-grid"
-            opacity={(darkMode ?? true) ? 0.85 : 1}
+            opacity={joinedGridOpacity * (slideLayers?.composite ?? 1)}
             pointer-events="none"
           >
             {@html joinedGrid}
           </g>
         {/if}
       {:else if showGrid || previewMode || animateVisibility}
-        <GridSvg
-          rotationOverride={gridRotation}
-          {gridMode}
-          {showNonRadialPoints}
-          {handPointVisibility}
-          {activeLocations}
-          {previewMode}
-          {darkMode}
-          {animateVisibility}
-          visible={showGrid}
-          onLoaded={() => onGridReady?.()}
-          onError={() => onGridReady?.()}
-          {onToggleNonRadial}
-        />
+        <g opacity={slideLayers?.composite ?? 1}>
+          <GridSvg
+            rotationOverride={gridRotation}
+            {gridMode}
+            {showNonRadialPoints}
+            {handPointVisibility}
+            {activeLocations}
+            {previewMode}
+            {darkMode}
+            {animateVisibility}
+            visible={showGrid}
+            onLoaded={() => onGridReady?.()}
+            onError={() => onGridReady?.()}
+            {onToggleNonRadial}
+          />
+        </g>
       {/if}
 
       <!-- Props -->
       {#each showProps ? renderedProps : [] as { hand, data, opacity, asset, position } (hand)}
-        <g {opacity} transition:fade={{ duration: contentDuration() }}>
+        <g
+          {opacity}
+          transform={slideHandTransform(hand)}
+          transition:fade={{ duration: contentDuration() }}
+        >
           <PropSvg
             motionData={data}
             propAssets={asset}
@@ -673,6 +748,7 @@ Usage:
             {cellIndex}
             {transitionKey}
             directPositioning={directPropPositioning ||
+              !!slide ||
               propPositionOverrides?.[hand] !== undefined}
             colorOverride={hand === HandSide.LEFT
               ? effectiveLeftColor
@@ -694,7 +770,7 @@ Usage:
           <!-- Split rendering: shafts first, then tips on top -->
           {#each motions as { hand, data, opacity } (hand + "-shaft")}
             {#if arrowAssets[hand] && arrowPositions[hand]}
-              <g {opacity}>
+              <g {opacity} transform={slideHandTransform(hand)}>
                 <ArrowSvg
                   motionData={data}
                   color={hand}
@@ -708,7 +784,7 @@ Usage:
                   {transitionKey}
                   {darkMode}
                   renderPart="shaft"
-                  {disableTransitions}
+                  disableTransitions={disableTransitions || !!slide}
                   colorOverride={hand === HandSide.LEFT
                     ? effectiveLeftColor
                     : effectiveRightColor}
@@ -718,7 +794,7 @@ Usage:
           {/each}
           {#each motions as { hand, data, opacity } (hand + "-tip")}
             {#if arrowAssets[hand] && arrowPositions[hand]}
-              <g {opacity}>
+              <g {opacity} transform={slideHandTransform(hand)}>
                 <ArrowSvg
                   motionData={data}
                   color={hand}
@@ -732,7 +808,7 @@ Usage:
                   {transitionKey}
                   {darkMode}
                   renderPart="tip"
-                  {disableTransitions}
+                  disableTransitions={disableTransitions || !!slide}
                   colorOverride={hand === HandSide.LEFT
                     ? effectiveLeftColor
                     : effectiveRightColor}
@@ -744,7 +820,7 @@ Usage:
           <!-- Normal rendering: single combined path per arrow (identical to current behavior) -->
           {#each motions as { hand, data, opacity } (hand)}
             {#if arrowAssets[hand] && arrowPositions[hand]}
-              <g {opacity}>
+              <g {opacity} transform={slideHandTransform(hand)}>
                 <ArrowSvg
                   motionData={data}
                   color={hand}
@@ -757,7 +833,7 @@ Usage:
                   {cellIndex}
                   {transitionKey}
                   {darkMode}
-                  {disableTransitions}
+                  disableTransitions={disableTransitions || !!slide}
                   colorOverride={hand === HandSide.LEFT
                     ? effectiveLeftColor
                     : effectiveRightColor}

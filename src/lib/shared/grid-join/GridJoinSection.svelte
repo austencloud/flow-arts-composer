@@ -217,11 +217,6 @@
     pointer-events: none;
   }
 
-  /* The query container for the tray's one-row layout (below). */
-  .join-host {
-    container: join-host / inline-size;
-  }
-
   .join-host.fill {
     flex: 1 1 0;
     min-height: 0;
@@ -345,29 +340,6 @@
     gap: 16px;
   }
 
-  /* The phone tray: pictures capped by the screen's height so a landscape
-     tray stays short, and the two groups side by side once the tray is wide
-     enough for eight tiles in a row. */
-  .compact .groups {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr));
-    gap: 10px 20px;
-  }
-
-  .compact .group {
-    width: fit-content;
-    max-width: 100%;
-    justify-self: center;
-  }
-
-  .compact .tile-grid {
-    --art: min(5.5rem, 22dvh);
-    grid-template-columns: repeat(
-      4,
-      minmax(0, calc(var(--art) + 2 * var(--tile-pad) + 2px))
-    );
-  }
-
   .group {
     display: flex;
     flex-direction: column;
@@ -423,7 +395,8 @@
      both its column and its row allow. A wide box puts each group's four
      tiles in one row; a tall one gives each group two rows of two, which
      makes the pictures larger there. Below the smallest readable picture the
-     box scrolls instead of shrinking further. */
+     box scrolls instead of shrinking further; the width always fits, so a
+     narrow phone never scrolls sideways. */
   .fill .groups {
     flex: 1 1 0;
     min-height: 0;
@@ -445,91 +418,44 @@
   }
 
   .fill .tile-grid {
-    --art: max(
-      5rem,
-      min(
-        14rem,
-        (100cqw - 3 * var(--tile-gap)) / 4 - 2 * var(--tile-pad) - 2px,
-        (100cqh - var(--heads)) / 2 - var(--chrome) - 1px
-      )
+    --art-w: calc(
+      (100cqw - 3 * var(--tile-gap)) / 4 - 2 * var(--tile-pad) - 2px
+    );
+    --art: min(
+      var(--art-w),
+      max(5rem, min(14rem, (100cqh - var(--heads)) / 2 - var(--chrome) - 1px))
     );
     grid-template-columns: repeat(
       4,
-      calc(var(--art) + 2 * var(--tile-pad) + 2px)
+      minmax(0, calc(var(--art) + 2 * var(--tile-pad) + 2px))
     );
     justify-content: center;
   }
 
+  /* The columns may give up a scrollbar's width, so the picture never
+     outgrows its tile. */
   .fill .tile-art {
-    width: var(--art);
+    width: min(var(--art), 100%);
   }
 
   @container join-groups (aspect-ratio < 1) {
     .fill .tile-grid {
-      --art: max(
-        5rem,
-        min(
-          14rem,
-          (100cqw - var(--tile-gap)) / 2 - 2 * var(--tile-pad) - 2px,
-          (100cqh - var(--heads) - 2 * var(--tile-gap)) / 4 - var(--chrome) -
-            1px
+      --art-w: calc((100cqw - var(--tile-gap)) / 2 - 2 * var(--tile-pad) - 2px);
+      --art: min(
+        var(--art-w),
+        max(
+          5rem,
+          min(
+            14rem,
+            (100cqh - var(--heads) - 2 * var(--tile-gap)) / 4 - var(--chrome) -
+              1px
+          )
         )
       );
       grid-template-columns: repeat(
         2,
-        calc(var(--art) + 2 * var(--tile-pad) + 2px)
+        minmax(0, calc(var(--art) + 2 * var(--tile-pad) + 2px))
       );
-    }
-  }
-
-  /* ── The tray, wide ──
-     A tray wide enough for all nine choices in one row puts them there,
-     "One grid" first as a tile like the rest. Stacked rows would take the
-     height the animation above needs on a wide, short window. The pictures
-     share the row's width, capped by the screen's height. */
-  .compact.join-page {
-    --row-chrome: calc(2 * var(--tile-pad) + 2px);
-    --row-art: min(
-      clamp(3.5rem, 13dvh, 5.5rem),
-      (100cqi - 24px - 6 * var(--tile-gap) - 56px) / 9 - var(--row-chrome)
-    );
-  }
-
-  @container join-host (min-width: 50rem) {
-    .compact.join-page {
-      flex-direction: row;
-      align-items: flex-end;
-      justify-content: center;
-      gap: 28px;
-    }
-
-    .compact .groups {
-      display: flex;
-      flex-direction: row;
-      gap: 28px;
-    }
-
-    .compact .one-card .tile-name,
-    .compact .join-tile .tile-name {
-      font-size: var(--font-size-compact);
-    }
-
-    .compact .group {
-      width: auto;
-    }
-
-    .compact .tile-grid {
-      --art: var(--row-art);
-    }
-
-    .compact .one-card {
-      flex-direction: column;
-      gap: 2px;
-      padding: var(--tile-pad) var(--tile-pad) calc(var(--tile-pad) + 2px);
-    }
-
-    .compact .one-art {
-      width: var(--row-art);
     }
   }
 

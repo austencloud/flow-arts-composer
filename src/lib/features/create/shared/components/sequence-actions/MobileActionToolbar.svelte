@@ -2,7 +2,7 @@
   MobileActionToolbar.svelte
 
   M3-inspired floating contextual toolbar for mobile sequence actions.
-  Segmented category tabs (Transform | Patterns | Edit) switch which
+  Segmented category tabs (Transform | Patterns | Grid | Edit) switch which
   action buttons are visible. Long-press any button for help.
 -->
 <script lang="ts">
@@ -11,10 +11,10 @@
   import SwapIcon from "$lib/shared/icons/SwapIcon.svelte";
   import type { ActionHelpId } from "../../domain/transforms/transform-help-content";
 
-  type Category = "transform" | "patterns" | "edit";
+  type Category = "transform" | "patterns" | "grid" | "edit";
 
   interface ActionDef {
-    id: ActionHelpId | "edit-turns" | "edit-in-construct";
+    id: ActionHelpId | "edit-turns" | "edit-in-construct" | "grid-join";
     icon: string;
     label: string;
     btnColor: string;
@@ -57,6 +57,8 @@
     onShiftStart?: () => void;
     onTurns: () => void;
     onEditInConstructor: () => void;
+    /** Opens the Grid join page. Without it the Grid category is hidden. */
+    onGridJoin?: () => void;
   }
 
   let {
@@ -88,11 +90,12 @@
     onShiftStart,
     onTurns,
     onEditInConstructor,
+    onGridJoin,
   }: Props = $props();
 
   // Persist active category across panel open/close cycles
   const CATEGORY_KEY = "tka_sequence_actions_category";
-  const validCategories: Category[] = ["transform", "patterns", "edit"];
+  const validCategories: Category[] = ["transform", "patterns", "grid", "edit"];
 
   function getStoredCategory(): Category {
     if (typeof sessionStorage === "undefined") return "transform";
@@ -102,7 +105,11 @@
       : "transform";
   }
 
-  let activeCategory = $state<Category>(initialCategory ?? getStoredCategory());
+  let chosenCategory = $state<Category>(initialCategory ?? getStoredCategory());
+  // A stored Grid choice falls back to Transform where Grid is not offered.
+  const activeCategory = $derived<Category>(
+    chosenCategory === "grid" && !onGridJoin ? "transform" : chosenCategory
+  );
 
   $effect(() => {
     if (persistCategory && typeof sessionStorage !== "undefined") {
@@ -233,6 +240,21 @@
       : []),
   ]);
 
+  const gridActions = $derived<ActionDef[]>(
+    onGridJoin
+      ? [
+          {
+            id: "grid-join",
+            icon: "border-all",
+            label: t("animation_menu_grid_join"),
+            btnColor: "217, 70, 239",
+            action: onGridJoin,
+            disabled: !hasSequence,
+          },
+        ]
+      : []
+  );
+
   const editActions = $derived<ActionDef[]>([
     {
       id: "edit-turns",
@@ -262,12 +284,17 @@
       ? transformActions
       : activeCategory === "patterns"
         ? patternsActions
-        : editActions
+        : activeCategory === "grid"
+          ? gridActions
+          : editActions
   );
 
   const categories = $derived<{ id: Category; label: string }[]>([
     { id: "transform", label: t("create_transform_heading") },
     { id: "patterns", label: t("create_transform_patterns") },
+    ...(onGridJoin
+      ? [{ id: "grid" as const, label: t("create_transform_grid") }]
+      : []),
     { id: "edit", label: t("viewer_edit") },
   ]);
 
@@ -310,7 +337,7 @@
         role="tab"
         aria-selected={activeCategory === cat.id}
         aria-controls="panel-{cat.id}"
-        onclick={() => (activeCategory = cat.id)}
+        onclick={() => (chosenCategory = cat.id)}
       >
         {cat.label}
       </button>

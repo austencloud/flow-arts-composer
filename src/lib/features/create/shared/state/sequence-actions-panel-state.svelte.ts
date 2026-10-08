@@ -21,6 +21,7 @@ export type SequenceActionsSubView =
   | "duration"
   | "rotation"
   | "extend"
+  | "gridJoin"
   | null;
 
 export type SequenceActionsHelpMode = "inactive" | "selecting" | "viewing";
@@ -101,6 +102,11 @@ export function createSequenceActionsPanelState(
   function openDuration(): void {
     navDirection = 1;
     subView = "duration";
+  }
+
+  function openGridJoin(): void {
+    navDirection = 1;
+    subView = "gridJoin";
   }
 
   function openExtend(result: ExtensionFlowStart): void {
@@ -321,6 +327,7 @@ export function createSequenceActionsPanelState(
       if (subView === "turnPattern") return "Turn Patterns";
       if (subView === "duration") return "Duration Patterns";
       if (subView === "rotation") return getDirectionDrillTitle(directionRoute);
+      if (subView === "gridJoin") return "Grid join";
       if (subView === "extend")
         return this.extendDirectlyLoopable ? "Extend" : "Choose Bridge";
       return "";
@@ -335,6 +342,7 @@ export function createSequenceActionsPanelState(
     get subViewSubtitle() {
       if (subView === "rotation")
         return getDirectionDrillSubtitle(directionRoute);
+      if (subView === "gridJoin") return "One grid, or a grid for each hand";
       if (subView !== "extend") return "";
       if (!this.extendDirectlyLoopable)
         return "Select a pictograph to reach a loopable placement";
@@ -350,6 +358,7 @@ export function createSequenceActionsPanelState(
     openDirection,
     changeDirectionRoute,
     openDuration,
+    openGridJoin,
     openExtend,
     updateExtensionAfterBridge,
     completeExtension,

@@ -25,7 +25,7 @@
   import { DURATION } from "$lib/shared/transitions/transitions";
   import type { GridJoin } from "@tka/tka-types";
   import { gridJoinShiftViewBox } from "../../services/animation-grid-join";
-  import { GRID_JOIN_TWEEN_MS } from "../../services/grid-join-tween";
+  import { GRID_JOIN_TWEEN_MS } from "$lib/shared/grid-join/grid-join-tween";
 
   let {
     sequenceData = null,
