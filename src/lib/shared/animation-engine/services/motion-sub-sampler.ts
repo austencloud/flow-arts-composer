@@ -16,7 +16,7 @@
 import type { PropState } from "$lib/shared/foundation/domain/types/prop-state";
 import type { SequenceAnimationOrchestrator } from "./sequence-animation-orchestrator";
 import type { AdditionalLayerProps } from "./ITrailCapturer";
-import type { HandOffsets } from "./grid-join-tween";
+import type { HandOffsets } from "$lib/shared/grid-join/grid-join-tween";
 import { shiftPropState } from "./animation-grid-join";
 
 /** Target points per second. Tail length, recession and the leading edge are

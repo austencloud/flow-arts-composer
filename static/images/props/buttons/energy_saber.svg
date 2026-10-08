@@ -1,65 +1,45 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  Energy Saber — premium cosmetic prop, Sword family.
-  Original generic energy prop. No franchise hilt silhouette or marking.
-
-  Geometry (matches PROP_DIMENSIONS.energy_saber and PROP_TIP_POINTS.energy_saber):
-    viewBox 620 x 96, so the hand pivot sits at (310, 48).
-    Blade root is at the pivot; the blade tip lands at x = 590, which is
-    dx = +280 from center — the exact reach sword traces, so the mandala radius
-    and trail attachment come out identical to its physical parent.
-    The extra width and height beyond the blade is halo padding. It is symmetric
-    about the pivot, following the torch precedent: grow the box around the
-    prop center so placement, tip reach, and mandala radius never move.
-
-  Color contract (packages/render-core/src/svg-color.ts, selective mode):
-    Blade layers are flat neutral grays (saturation 0, luminance > 0.4), so the
-    fill passes recolor them to the motion color.
-    The pale core is #FFF6E8 (saturation 0.09 > 0.05), so it is preserved and
-    reads the same on blue and red.
-    Every hilt fill sits below 0.4 luminance, so selective mode preserves it.
-    Gradients carry hilt sheen only; stop-color is never rewritten, so a
-    gradient-filled blade would be frozen gray.
-    Every id is prefixed `saber` and gets suffixed per motion color when the
-    loader inlines both props into one document.
+  Energy Saber: a straight energy katana, a Sword style.
+  viewBox 620 x 96, hand pivot (310, 48) at the guard, blade tip (590, 48):
+  sword's reach. A single-edged blade with an angled katana tip; the tip
+  lands on the axis. Katana proportions: the grip is about as tall as the
+  blade and about 40% of its length; the guard is 2.5 times the grip's height.
+  Color: #C8C8C8 (blade and grip windows) is the only paint that takes the
+  hand color. The cutting edge is #FFF6E8, which selective coloring keeps.
+  Metal is gradient-filled, so it never recolors.
 -->
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 620 96">
-  <defs>
-    <linearGradient id="saberGripSheen" x1="0" y1="30" x2="0" y2="66" gradientUnits="userSpaceOnUse">
-      <stop offset="0.05" stop-color="#ffffff" stop-opacity="0"/>
-      <stop offset="0.30" stop-color="#ffffff" stop-opacity="0.45"/>
-      <stop offset="0.52" stop-color="#ffffff" stop-opacity="0.04"/>
-      <stop offset="1" stop-color="#000000" stop-opacity="0.45"/>
-    </linearGradient>
-    <filter id="saberHalo" x="-12%" y="-200%" width="124%" height="500%">
-      <feGaussianBlur stdDeviation="8"/>
-    </filter>
-    <filter id="saberSoft" x="-6%" y="-120%" width="112%" height="340%">
-      <feGaussianBlur stdDeviation="3"/>
-    </filter>
-  </defs>
-
-  <!-- Blade: outer halo -->
-  <rect x="308" y="30" width="286" height="36" rx="18" fill="#D0D0D0" opacity="0.32" filter="url(#saberHalo)"/>
-  <!-- Blade: inner bloom -->
-  <rect x="310" y="37" width="282" height="22" rx="11" fill="#DCDCDC" opacity="0.9" filter="url(#saberSoft)"/>
-  <!-- Blade: hard body. The dark hairline keeps the edge readable on light backgrounds. -->
-  <rect x="310" y="40" width="280" height="16" rx="8" fill="#E4E4E4" stroke="#101319" stroke-width="1.4" stroke-opacity="0.55"/>
-  <!-- Pale core: preserved, identical on blue and red -->
-  <rect x="316" y="44.5" width="268" height="7" rx="3.5" fill="#FFF6E8"/>
-
-  <!-- Hilt: pommel end cap -->
-  <rect x="132" y="41" width="9" height="14" rx="3" fill="#3A3F49"/>
-  <rect x="138" y="38" width="26" height="20" rx="6" fill="#1A1D22"/>
-  <!-- Hilt: grip -->
-  <rect x="160" y="36" width="108" height="24" rx="10" fill="#24272E"/>
-  <rect x="160" y="36" width="108" height="24" rx="10" fill="url(#saberGripSheen)"/>
-  <!-- Hilt: two control bands -->
-  <rect x="188" y="34" width="11" height="28" rx="3" fill="#3A3F49"/>
-  <rect x="224" y="34" width="11" height="28" rx="3" fill="#3A3F49"/>
-  <!-- Hilt: emitter shroud -->
-  <rect x="268" y="30" width="38" height="36" rx="7" fill="#4A505B" stroke="#12151A" stroke-width="1.5"/>
-  <rect x="268" y="30" width="38" height="36" rx="7" fill="url(#saberGripSheen)"/>
-  <!-- Hilt: emitter throat ring, straddling the pivot -->
-  <rect x="300" y="26" width="12" height="44" rx="3" fill="#5C6470" stroke="#12151A" stroke-width="1.2"/>
+<defs>
+<linearGradient id="sabMetalSheen" x1="0" y1="39" x2="0" y2="57" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#07080a"/><stop offset=".16" stop-color="#2e333c"/><stop offset=".3" stop-color="#7d8794"/><stop offset=".42" stop-color="#3a414c"/><stop offset=".72" stop-color="#14171c"/><stop offset="1" stop-color="#22262d"/></linearGradient>
+<linearGradient id="sabChromeSheen" x1="0" y1="36.3" x2="0" y2="59.7" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#1c1f24"/><stop offset=".18" stop-color="#9aa4b2"/><stop offset=".28" stop-color="#f2f5f9"/><stop offset=".4" stop-color="#a3adba"/><stop offset=".6" stop-color="#454c57"/><stop offset=".86" stop-color="#15181d"/><stop offset="1" stop-color="#2f343c"/></linearGradient>
+<linearGradient id="sabGuardSheen" x2="1"><stop offset="0" stop-color="#0b0d10"/><stop offset=".25" stop-color="#8a94a2"/><stop offset=".4" stop-color="#e8edf3"/><stop offset=".55" stop-color="#5a626e"/><stop offset="1" stop-color="#101318"/></linearGradient>
+<linearGradient id="sabGoldSheen" x2="1"><stop offset="0" stop-color="#3a2a0c"/><stop offset=".3" stop-color="#d9b25c"/><stop offset=".45" stop-color="#fff0c4"/><stop offset=".65" stop-color="#a8822f"/><stop offset="1" stop-color="#2a1d07"/></linearGradient>
+<filter id="sabHalo" x="-30%" y="-150%" width="160%" height="400%" color-interpolation-filters="sRGB"><feGaussianBlur stdDeviation="10"/><feColorMatrix type="saturate" values="1.6"/></filter>
+<filter id="sabBloom" x="-15%" y="-100%" width="130%" height="300%"><feGaussianBlur stdDeviation="3"/></filter>
+<filter id="sabSoft" x="-10%" y="-100%" width="120%" height="300%"><feGaussianBlur stdDeviation="1.2"/></filter>
+</defs>
+<!-- Blade: halo, bloom, body, white-hot cutting edge -->
+<path d="M316 38.2L439.3 38.8L562.6 39.4L566 39.4L569.5 39.6L572.9 39.8L576.3 40.1L579.7 40.6L583.1 41.2L586.6 42.2L590 44.8L590 51.2L586.6 52.1L583.1 52.9L579.7 53.5L576.3 54.2L572.9 54.8L569.5 55.4L566 56L562.6 56.6L439.3 57.2L316 57.8Z" fill="#C8C8C8" opacity=".55" filter="url(#sabHalo)"/>
+<path d="M316 38.2L439.3 38.8L562.6 39.4L566 39.4L569.5 39.6L572.9 39.8L576.3 40.1L579.7 40.6L583.1 41.2L586.6 42.2L590 44.8L590 51.2L586.6 52.1L583.1 52.9L579.7 53.5L576.3 54.2L572.9 54.8L569.5 55.4L566 56L562.6 56.6L439.3 57.2L316 57.8Z" fill="#C8C8C8" opacity=".75" filter="url(#sabBloom)"/>
+<path d="M316 41.4L439.3 42L562.6 42.6L566 42.6L569.5 42.8L572.9 43L576.3 43.3L579.7 43.8L583.1 44.4L586.6 45.4L590 48L590 48L586.6 48.9L583.1 49.7L579.7 50.3L576.3 51L572.9 51.6L569.5 52.2L566 52.8L562.6 53.4L439.3 54L316 54.6Z" fill="#C8C8C8"/>
+<path d="M316 42.4L439.3 43L562.6 43.6L566 43.6L569.5 43.8L572.9 44L576.3 44.3L579.7 44.8L583.1 45.4L586.6 46.4L590 48L590 49L586.6 48.6L583.1 48.7L579.7 48.9L576.3 49.1L572.9 49.3L569.5 49.6L566 50L562.6 50.3L439.3 50.4L316 50.6Z" fill="#FFF6E8" opacity=".8" filter="url(#sabSoft)"/>
+<path d="M316 42.9L439.3 43.5L562.6 44.1L566 44.1L569.5 44.3L572.9 44.5L576.3 44.8L579.7 45.3L583.1 45.9L586.6 46.9L590 48L590 48L586.6 48.2L583.1 47.7L579.7 47.3L576.3 46.8L572.9 46.5L569.5 46.3L566 46.1L562.6 46.1L439.3 45.5L316 44.9Z" fill="#FFF6E8"/>
+<!-- Tsuka: dark cord wrap over lit diamond windows -->
+<rect x="186" y="40.5" width="109.5" height="15" rx="2.5" fill="url(#sabMetalSheen)" stroke="#050608" stroke-width=".7"/>
+<path d="M187.2 48L192.8 42.7L198.5 48L192.8 53.3ZM200.9 48L206.5 42.7L212.1 48L206.5 53.3ZM214.6 48L220.2 42.7L225.8 48L220.2 53.3ZM228.3 48L233.9 42.7L239.5 48L233.9 53.3ZM242 48L247.6 42.7L253.2 48L247.6 53.3ZM255.7 48L261.3 42.7L266.9 48L261.3 53.3ZM269.4 48L275 42.7L280.6 48L275 53.3ZM283 48L288.7 42.7L294.3 48L288.7 53.3Z" fill="#C8C8C8" opacity=".55" filter="url(#sabSoft)"/>
+<path d="M187.2 48L192.8 42.7L198.5 48L192.8 53.3ZM200.9 48L206.5 42.7L212.1 48L206.5 53.3ZM214.6 48L220.2 42.7L225.8 48L220.2 53.3ZM228.3 48L233.9 42.7L239.5 48L233.9 53.3ZM242 48L247.6 42.7L253.2 48L247.6 53.3ZM255.7 48L261.3 42.7L266.9 48L261.3 53.3ZM269.4 48L275 42.7L280.6 48L275 53.3ZM283 48L288.7 42.7L294.3 48L288.7 53.3Z" fill="#C8C8C8"/>
+<path d="M180.4 40.1L191.6 55.9M191.6 40.1L180.4 55.9M194.1 40.1L205.3 55.9M205.3 40.1L194.1 55.9M207.8 40.1L219 55.9M219 40.1L207.8 55.9M221.5 40.1L232.7 55.9M232.7 40.1L221.5 55.9M235.1 40.1L246.4 55.9M246.4 40.1L235.1 55.9M248.8 40.1L260 55.9M260 40.1L248.8 55.9M262.5 40.1L273.7 55.9M273.7 40.1L262.5 55.9M276.2 40.1L287.4 55.9M287.4 40.1L276.2 55.9M289.9 40.1L301.1 55.9M301.1 40.1L289.9 55.9" stroke="#0a0b0e" stroke-width="3.6" stroke-linecap="round" fill="none"/>
+<path d="M180.4 40.1L191.6 55.9M191.6 40.1L180.4 55.9M194.1 40.1L205.3 55.9M205.3 40.1L194.1 55.9M207.8 40.1L219 55.9M219 40.1L207.8 55.9M221.5 40.1L232.7 55.9M232.7 40.1L221.5 55.9M235.1 40.1L246.4 55.9M246.4 40.1L235.1 55.9M248.8 40.1L260 55.9M260 40.1L248.8 55.9M262.5 40.1L273.7 55.9M273.7 40.1L262.5 55.9M276.2 40.1L287.4 55.9M287.4 40.1L276.2 55.9M289.9 40.1L301.1 55.9M301.1 40.1L289.9 55.9" stroke="#2a2e36" stroke-width="1" stroke-linecap="round" fill="none" opacity=".9"/>
+<!-- Kashira pommel cap -->
+<rect x="178" y="39" width="10" height="18" rx="4" fill="url(#sabMetalSheen)" stroke="#050608" stroke-width=".8"/>
+<rect x="186.4" y="39" width="1.6" height="18" fill="url(#sabGoldSheen)"/>
+<!-- Fuchi collar, guard, habaki -->
+<rect x="294" y="39.7" width="6.2" height="16.6" rx="1.6" fill="url(#sabMetalSheen)" stroke="#050608" stroke-width=".7"/>
+<rect x="298.6" y="39.7" width="1.6" height="16.6" fill="url(#sabGoldSheen)"/>
+<rect x="300.2" y="38.5" width="1.6" height="19" rx=".7" fill="url(#sabGoldSheen)"/>
+<rect x="301.8" y="30" width="6" height="36" rx="3" fill="url(#sabGuardSheen)" stroke="#050608" stroke-width=".8"/>
+<rect x="302.9" y="31.8" width="3.8" height="32.4" rx="1.9" fill="none" stroke="url(#sabGoldSheen)" stroke-width=".9"/>
+<rect x="307.8" y="38.5" width="1.6" height="19" rx=".7" fill="url(#sabGoldSheen)"/>
+<path d="M309.4 40.8L317.2 41.8L317.2 54.2L309.4 55.2Z" fill="url(#sabChromeSheen)" stroke="#050608" stroke-width=".7"/>
 </svg>

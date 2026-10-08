@@ -71,7 +71,7 @@ import {
 import type { MandalaHandVisibility } from "$lib/shared/mandala/domain/mandala-types";
 import type { RenderActivityGate } from "$lib/shared/render-gating/render-activity-gate";
 import { shiftTrailPointsBy } from "./animation-grid-join";
-import type { HandOffsets } from "./grid-join-tween";
+import type { HandOffsets } from "$lib/shared/grid-join/grid-join-tween";
 import {
   MotionSubSampler,
   pickEvenIndices,

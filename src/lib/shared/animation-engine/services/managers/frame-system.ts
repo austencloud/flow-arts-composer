@@ -34,7 +34,10 @@ import {
   resolveAnimationGridJoin,
   shiftPropState,
 } from "../animation-grid-join";
-import { GridJoinTween, gridJoinHandOffsets } from "../grid-join-tween";
+import {
+  GridJoinTween,
+  gridJoinHandOffsets,
+} from "$lib/shared/grid-join/grid-join-tween";
 import { OrchestratorMotionSampleSource } from "../motion-sub-sampler";
 
 export class FrameSystem {

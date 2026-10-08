@@ -52,9 +52,14 @@ durations or easing curves in feature code. Use `DURATION`, the global
 | A flex workspace panel entering/leaving                                  | `PanelGroup.svelte`, which owns `flexPresence`; do not reproduce its sizing transition in a feature     |
 | Keyed list reorder                                                       | Svelte `animate:flip` with `flipDuration()`                                                             |
 | Several survivors recomposing across grids, families, or keyed blocks    | `createLayoutMotion()` from `shared/transitions/layout-flip.ts`                                         |
-| Content-driven dialog height changes                                    | `BaseModal` with `animateSize`; `createIntrinsicHeightMotion()` in `shared/transitions/motion.ts`         |
+| Content-driven dialog height changes                                     | `BaseModal` with `animateSize`; `createIntrinsicHeightMotion()` in `shared/transitions/motion.ts`       |
 | Small overlay/control presence that does not reflow siblings             | `flyFade` or `popIn` from `shared/transitions/motion.ts`                                                |
 | Route/module navigation                                                  | the existing native view-transition/module-transition owner in `src/app.css` and `view-transitions.css` |
+| A sequence edit that changes what a pictograph shows                     | the shared pictograph owner; the join slide (`followJoinSlide` in `shared/grid-join/`) is the first     |
+
+A sequence edit that changes what an existing pictograph shows animates
+through one shared owner in the pictograph renderer, never per surface. The
+join slide is the first such owner; sequence transforms follow it.
 
 If none fits, extend the closest shared owner first and document the new route
 in `docs/architecture/canonical-capabilities.md`. Do not create a feature-local

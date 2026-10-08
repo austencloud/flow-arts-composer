@@ -1,19 +1,43 @@
 ---
-status: backlog
+status: shipped
 value: 4
 effort: M
-remaining: Re-measure current vendor bytes, then split the still-present catch-all return "vendor" in vite.config.ts into feature buckets without reintroducing chunk cycles.
-depends_on: ''
-plan_path: ''
+remaining: None. Implemented and verified; measurements and limits are recorded in docs/performance/2026-10-07-vendor-chunk-split.md.
+depends_on: ""
+plan_path: ""
 tags:
-- performance
-- build
-- chunking
-last_triaged: '2026-10-07'
-work_state: ready
+  - performance
+  - build
+  - chunking
+last_triaged: "2026-10-07"
+work_state: complete
 ---
 
 # Split the catch-all `vendor` chunk — Design
+
+## October 7 implementation
+
+The implementation separates the measured large backgrounds, media-export and
+audio-inference packages. Shared UI, maps and `pako` stay in the residual bucket;
+the proposed extra splits below remain design history, not outstanding work.
+Thirteen exact scene helpers join the existing Three bucket after production
+artifacts showed repeated accidental startup merges. Four were observed in
+startup chunks; nine others were selected from small emitted chunks with the
+same dependency pattern. The 20 KB automatic merge threshold stays in place.
+One additional scene-coordinate helper gets a separate exact chunk boundary
+after it was found merged with 2D pictograph code, pulling in Three and backgrounds.
+
+The source import test now includes the newly separated packages. An emitted
+manifest guard also checks the common, home and app-shell startup graphs in CI, covering accidental
+Rollup merges that source tests cannot see. The analyzer opens a browser only
+with `ANALYZE_OPEN=true`.
+
+See the [measurement report](../../../performance/2026-10-07-vendor-chunk-split.md)
+for package attribution, production graph checks and browser evidence. Browser
+byte figures count requested JavaScript, including unfinished requests. They do
+not measure parsing or evaluation, and estimated gzip is distinct from transfer.
+
+## Original design, September 13
 
 **Origin:** measured during the 2026-09-13 startup pass
 ([report](../../../performance/2026-09-13-startup-boot-graph.md)). That pass

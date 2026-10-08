@@ -235,4 +235,24 @@ describe("switching a card's grids", () => {
     expect(model.cells[1]!.live!.data).toBe(ONE_GRID.steps[0]);
     engine.dispose();
   });
+
+  it("keeps live cells live when the join changes, each drawn joined", async () => {
+    // Live cells redraw in place, so a re-join slides instead of swapping
+    // every cell for a new image.
+    const { engine, model, setDeps } = setup({ livePictographs: true });
+    await engine.renderAllCells();
+
+    setDeps({ livePictographs: true, sequence: JOINED });
+    await engine.transitionCellImages("swap");
+    expect(renderCell).not.toHaveBeenCalled();
+    expect(model.cells.every((cell) => cell.live)).toBe(true);
+    for (const cell of model.cells) {
+      expect(cell.live!.data.conjoined).toEqual(EAST_1);
+    }
+
+    setDeps({ livePictographs: true, sequence: ONE_GRID });
+    await engine.transitionCellImages("swap");
+    expect(model.cells[1]!.live!.data).toBe(ONE_GRID.steps[0]);
+    engine.dispose();
+  });
 });

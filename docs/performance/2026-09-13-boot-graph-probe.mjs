@@ -10,8 +10,9 @@
  * `vite preview` serves uncompressed, so gzip figures are computed from the
  * built files on disk rather than read off the wire. The gzip column is a local
  * compression estimate for controlled before/after comparison; deployed
- * transfer was not measured and may use Brotli instead. The raw column is what
- * the browser has to parse and evaluate. Do not add them together.
+ * transfer was not measured and may use Brotli instead. The raw column is the
+ * requested code size, not proof that every byte was evaluated. Do not add
+ * them together. Pending local JS requests count toward requested bytes too.
  *
  * Two conditions run by default. `fast` is loopback with no throttling, which
  * hides exactly the cost this measures; `throttled` is DevTools Slow 4G plus a
@@ -20,7 +21,7 @@
  *
  * Environment: BASE, ROUTES, REPEATS, CONDITIONS, WINDOW_MS, CHROME (an
  * explicit Chromium executable, for sandboxes where Playwright's download is
- * pinned elsewhere).
+ * pinned elsewhere), LOCAL_ONLY=1 (block external services for isolated runs).
  */
 import { chromium } from "playwright";
 import fs from "node:fs";
@@ -42,6 +43,8 @@ const WINDOW_MS = Number(process.env.WINDOW_MS ?? 12000);
 const ROUTES = (process.env.ROUTES ?? "/,/create,/browse").split(",");
 const REPEATS = Number(process.env.REPEATS ?? 5);
 const CONDITIONS = (process.env.CONDITIONS ?? "fast,throttled").split(",");
+const LOCAL_ONLY = process.env.LOCAL_ONLY === "1";
+const BASE_ORIGIN = new URL(BASE).origin;
 
 /** Chrome DevTools "Slow 4G". */
 const SLOW_4G = {
@@ -73,8 +76,49 @@ async function measure(browser, route, condition) {
     viewport: { width: 1280, height: 900 },
     deviceScaleFactor: 1,
   });
+  const blockedExternal = new Set();
+  if (LOCAL_ONLY) {
+    await context.route("**/*", (route) => {
+      const url = new URL(route.request().url());
+      if (url.protocol.startsWith("http") && url.origin !== BASE_ORIGIN) {
+        blockedExternal.add(url.origin);
+        return route.abort();
+      }
+      return route.continue();
+    });
+  }
   const page = await context.newPage();
+  const scriptRequests = [];
+  const finishedScripts = new Set();
+  const failedRequests = [];
+  const pageErrors = [];
+  const httpErrors = [];
+  const isLocal = (url) => new URL(url).origin === BASE_ORIGIN;
+  page.on("request", (request) => {
+    if (isLocal(request.url()) && /\.js($|\?)/.test(request.url())) {
+      scriptRequests.push({ request, observedAt: Date.now() });
+    }
+  });
+  page.on("requestfinished", (request) => finishedScripts.add(request));
+  page.on("requestfailed", (request) => {
+    if (isLocal(request.url())) {
+      failedRequests.push({
+        url: new URL(request.url()).pathname,
+        error: request.failure()?.errorText,
+      });
+    }
+  });
+  page.on("pageerror", (error) => pageErrors.push(error.message));
+  page.on("response", (response) => {
+    if (isLocal(response.url()) && response.status() >= 400) {
+      httpErrors.push({
+        url: new URL(response.url()).pathname,
+        status: response.status(),
+      });
+    }
+  });
   await page.addInitScript(() => {
+    performance.setResourceTimingBufferSize(10000);
     window.__longTasks = [];
     try {
       new PerformanceObserver((list) => {
@@ -107,8 +151,9 @@ async function measure(browser, route, condition) {
         .map((entry) => [entry.name, Math.round(entry.startTime)])
     );
     return {
+      timeOrigin: performance.timeOrigin,
       dcl: nav ? Math.round(nav.domContentLoadedEventEnd) : null,
-      load: nav ? Math.round(nav.loadEventEnd) : null,
+      load: nav?.loadEventEnd ? Math.round(nav.loadEventEnd) : null,
       fcp: paints["first-contentful-paint"] ?? null,
       resources: performance.getEntriesByType("resource").map((entry) => ({
         name: entry.name,
@@ -131,10 +176,29 @@ async function measure(browser, route, condition) {
       ),
     };
   });
-  await context.close();
-
-  const scripts = raw.resources.filter((r) => /\.js($|\?)/.test(r.name));
   const pathOf = (url) => new URL(url).pathname;
+  const scripts = scriptRequests.map(({ request, observedAt }) => {
+    const name = request.url();
+    const resource = raw.resources.find((entry) => entry.name === name);
+    const file = path.join(CLIENT_DIR, pathOf(name));
+    return {
+      name,
+      start:
+        resource?.start ??
+        Math.round(
+          (request.timing().startTime > 0
+            ? request.timing().startTime
+            : observedAt) - raw.timeOrigin
+        ),
+      dec: fs.existsSync(file) ? fs.statSync(file).size : (resource?.dec ?? 0),
+      finished: finishedScripts.has(request),
+    };
+  });
+  const pendingJs = scripts
+    .filter((script) => !script.finished)
+    .map((script) => pathOf(script.name));
+  const observedFailures = failedRequests.slice();
+  await context.close();
   const upTo = (t) => {
     const inWindow = scripts.filter((s) => s.start <= t);
     return {
@@ -159,12 +223,17 @@ async function measure(browser, route, condition) {
     marks: raw.marks,
     // Scripts requested before the load event: in practice the document's
     // modulepreload set, i.e. what the router needs before it can render.
-    beforeLoad: upTo(raw.load ?? 0),
+    beforeLoad: raw.load === null ? null : upTo(raw.load),
     beforeHydration: hydrated === null ? null : upTo(hydrated),
     at3s: upTo(3000),
     at10s: upTo(10000),
     longTasks3s: longTasksUpTo(3000),
     longTasksAll: longTasksUpTo(Number.MAX_SAFE_INTEGER),
+    pendingJs,
+    pageErrors,
+    failedRequests: observedFailures,
+    httpErrors,
+    blockedExternal: [...blockedExternal].sort(),
     topJs: scripts
       .slice()
       .sort((a, b) => b.dec - a.dec)
@@ -188,7 +257,7 @@ for (const condition of CONDITIONS) {
       console.log(
         `${LABEL} ${condition.padEnd(9)} ${route.padEnd(8)} #${repeat}  ` +
           `hydrated=${String(result.hydrated).padStart(6)}ms  FCP=${String(result.fcp).padStart(5)}  ` +
-          `boot(<=load): ${String(bl.requests).padStart(3)} req ${bl.rawBytes.toLocaleString().padStart(10)} raw / ${bl.gzipBytes.toLocaleString().padStart(9)} gz  |  ` +
+          `boot(<=load): ${bl ? `${bl.requests} req ${bl.rawBytes.toLocaleString()} raw / ${bl.gzipBytes.toLocaleString()} gz` : "load incomplete"}  |  ` +
           `10s: ${String(result.at10s.requests).padStart(3)} req ${result.at10s.gzipBytes.toLocaleString().padStart(9)} gz  |  ` +
           `LT<3s=${result.longTasks3s.count}/${result.longTasks3s.ms}ms`
       );
@@ -204,6 +273,7 @@ fs.writeFileSync(
       base: BASE,
       windowMs: WINDOW_MS,
       cpuRate: CPU_RATE,
+      localOnly: LOCAL_ONLY,
       results,
     },
     null,

@@ -87,7 +87,7 @@ describe("LabeledColorPairPicker", () => {
   it("accepts a full hex from the field and ignores a partial one", async () => {
     const { onchange } = renderPicker();
     await openLeft();
-    const field = page.getByRole("textbox", { name: "Left prop hex color" });
+    const field = page.getByRole("textbox", { name: "Left prop, Hex color" });
     await field.fill("#12");
     expect(onchange).not.toHaveBeenCalledWith("left", "#12");
     await field.fill("#123456");
@@ -98,7 +98,7 @@ describe("LabeledColorPairPicker", () => {
     const { screen, onchange } = renderPicker();
     await openLeft();
     await settled(screen.container);
-    const field = page.getByRole("textbox", { name: "Left prop hex color" });
+    const field = page.getByRole("textbox", { name: "Left prop, Hex color" });
     await field.fill("12ab56");
     expect(onchange).toHaveBeenLastCalledWith("left", "#12ab56");
     // Shorthand waits for the commit, so typing a six-digit value that
@@ -153,7 +153,7 @@ describe("LabeledColorPairPicker", () => {
     const block = screen.container.querySelector<HTMLElement>(".fine-tune")!;
     const hue = page.getByRole("slider", { name: "Left prop hue" }).element();
     const field = page
-      .getByRole("textbox", { name: "Left prop hex color" })
+      .getByRole("textbox", { name: "Left prop, Hex color" })
       .element();
     await expect.poll(() => block.getBoundingClientRect().width).toBe(256);
     for (const el of [hue, field]) {

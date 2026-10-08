@@ -1,68 +1,63 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  Energy Staff — premium cosmetic prop, Staff family.
-  Original generic energy prop. No franchise hilt silhouette or marking.
-
-  Geometry (matches PROP_DIMENSIONS.energy_staff and PROP_TIP_POINTS.energy_staff):
-    viewBox 300 x 90, so the hand pivot sits at (150, 45).
-    Both blades are exactly 78.4 units long and both tips land 126.4 units from
-    the pivot — the same reach staff traces, so the mandala radius and both
-    tracked tips come out identical to its physical parent. The remaining width
-    and height is halo padding, grown symmetrically about the pivot so
-    placement, tip reach, and mandala radius never move.
-
-  Both blade collars use the same rounded silhouette, mirrored around the hand
-  pivot so the staff remains visually balanced at every orientation.
-
-  Color contract (packages/render-core/src/svg-color.ts, selective mode):
-    Blade layers are flat neutral grays (saturation 0, luminance > 0.4), so the
-    fill passes recolor them to the motion color.
-    The pale cores are #FFF6E8 (saturation 0.09 > 0.05), so they are preserved
-    and read the same on blue and red.
-    Every grip and collar fill sits below 0.4 luminance, so selective mode
-    preserves it. Gradients carry sheen only; stop-color is never rewritten.
-    Every id is prefixed `estaff` and gets suffixed per motion color when the
-    loader inlines both props into one document.
+  Energy Staff: two straight energy katana blades on a wrapped grip, a
+  Double Staff style. viewBox 300 x 90, hand pivot (150, 45), tips
+  (23.6, 45) and (276.4, 45): staff's reach on both ends. Each blade is
+  single-edged with an angled tip that lands on the axis. The two ends are
+  the same blade turned half a turn, so the staff balances and the cutting
+  edges face opposite ways.
+  Color: #C8C8C8 (blades and grip windows) is the only paint that takes the
+  hand color. The cutting edges are #FFF6E8, which selective coloring keeps.
+  Metal is gradient-filled, so it never recolors.
 -->
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 90">
-  <defs>
-    <linearGradient id="estaffSheen" x1="0" y1="32" x2="0" y2="58" gradientUnits="userSpaceOnUse">
-      <stop offset="0.05" stop-color="#ffffff" stop-opacity="0"/>
-      <stop offset="0.30" stop-color="#ffffff" stop-opacity="0.45"/>
-      <stop offset="0.52" stop-color="#ffffff" stop-opacity="0.04"/>
-      <stop offset="1" stop-color="#000000" stop-opacity="0.45"/>
-    </linearGradient>
-    <filter id="estaffHalo" x="-20%" y="-60%" width="140%" height="220%">
-      <feGaussianBlur stdDeviation="5"/>
-    </filter>
-    <filter id="estaffSoft" x="-14%" y="-60%" width="128%" height="220%">
-      <feGaussianBlur stdDeviation="3"/>
-    </filter>
-  </defs>
-
-  <!-- Blades: outer halo -->
-  <rect x="196" y="31" width="82.4" height="28" rx="14" fill="#D0D0D0" opacity="0.3" filter="url(#estaffHalo)"/>
-  <rect x="21.6" y="31" width="82.4" height="28" rx="14" fill="#D0D0D0" opacity="0.3" filter="url(#estaffHalo)"/>
-  <!-- Blades: inner bloom -->
-  <rect x="198" y="36" width="78.4" height="18" rx="9" fill="#DCDCDC" opacity="0.9" filter="url(#estaffSoft)"/>
-  <rect x="23.6" y="36" width="78.4" height="18" rx="9" fill="#DCDCDC" opacity="0.9" filter="url(#estaffSoft)"/>
-  <!-- Blades: hard bodies, equal length, tips at +/- 126.4 from the pivot -->
-  <rect x="198" y="38" width="78.4" height="14" rx="7" fill="#E4E4E4" stroke="#101319" stroke-width="1.2" stroke-opacity="0.55"/>
-  <rect x="23.6" y="38" width="78.4" height="14" rx="7" fill="#E4E4E4" stroke="#101319" stroke-width="1.2" stroke-opacity="0.55"/>
-  <!-- Blades: preserved pale cores -->
-  <rect x="202" y="41.5" width="70.4" height="7" rx="3.5" fill="#FFF6E8"/>
-  <rect x="27.6" y="41.5" width="70.4" height="7" rx="3.5" fill="#FFF6E8"/>
-
-  <!-- Grip, centered on the pivot -->
-  <rect x="128" y="35" width="44" height="20" rx="9" fill="#24272E"/>
-  <rect x="128" y="35" width="44" height="20" rx="9" fill="url(#estaffSheen)"/>
-  <rect x="143" y="32" width="14" height="26" rx="4" fill="#3A3F49"/>
-
-  <!-- Matching rounded blade collars -->
-  <rect x="172" y="36" width="26" height="18" rx="9" fill="#4A505B" stroke="#12151A" stroke-width="1.5"/>
-  <rect x="172" y="36" width="26" height="18" rx="9" fill="url(#estaffSheen)"/>
-  <rect x="186" y="34" width="8" height="22" rx="4" fill="#5C6470"/>
-  <rect x="102" y="36" width="26" height="18" rx="9" fill="#4A505B" stroke="#12151A" stroke-width="1.5"/>
-  <rect x="102" y="36" width="26" height="18" rx="9" fill="url(#estaffSheen)"/>
-  <rect x="106" y="34" width="8" height="22" rx="4" fill="#5C6470"/>
+<defs>
+<linearGradient id="stfMetalSheen" x1="0" y1="37" x2="0" y2="53" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#07080a"/><stop offset=".16" stop-color="#2e333c"/><stop offset=".3" stop-color="#7d8794"/><stop offset=".42" stop-color="#3a414c"/><stop offset=".72" stop-color="#14171c"/><stop offset="1" stop-color="#22262d"/></linearGradient>
+<linearGradient id="stfChromeSheen" x1="0" y1="34.6" x2="0" y2="55.4" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#1c1f24"/><stop offset=".18" stop-color="#9aa4b2"/><stop offset=".28" stop-color="#f2f5f9"/><stop offset=".4" stop-color="#a3adba"/><stop offset=".6" stop-color="#454c57"/><stop offset=".86" stop-color="#15181d"/><stop offset="1" stop-color="#2f343c"/></linearGradient>
+<linearGradient id="stfGuardSheen" x2="1"><stop offset="0" stop-color="#0b0d10"/><stop offset=".25" stop-color="#8a94a2"/><stop offset=".4" stop-color="#e8edf3"/><stop offset=".55" stop-color="#5a626e"/><stop offset="1" stop-color="#101318"/></linearGradient>
+<linearGradient id="stfGoldSheen" x2="1"><stop offset="0" stop-color="#3a2a0c"/><stop offset=".3" stop-color="#d9b25c"/><stop offset=".45" stop-color="#fff0c4"/><stop offset=".65" stop-color="#a8822f"/><stop offset="1" stop-color="#2a1d07"/></linearGradient>
+<filter id="stfHalo" x="-30%" y="-150%" width="160%" height="400%" color-interpolation-filters="sRGB"><feGaussianBlur stdDeviation="7"/><feColorMatrix type="saturate" values="1.6"/></filter>
+<filter id="stfBloom" x="-15%" y="-100%" width="130%" height="300%"><feGaussianBlur stdDeviation="2.5"/></filter>
+<filter id="stfSoft" x="-10%" y="-100%" width="120%" height="300%"><feGaussianBlur stdDeviation="1"/></filter>
+</defs>
+<!-- Blades -->
+<g>
+<path d="M190 35.6L227.2 36.2L264.3 36.8L266 36.9L267.8 37L269.5 37.3L271.2 37.7L272.9 38.3L274.7 39.2L276.4 41.8L276.4 48.2L274.7 49.2L272.9 49.9L271.2 50.6L269.5 51.3L267.8 52L266 52.6L264.3 53.2L227.2 53.8L190 54.4Z" fill="#C8C8C8" opacity=".55" filter="url(#stfHalo)"/>
+<path d="M190 35.6L227.2 36.2L264.3 36.8L266 36.9L267.8 37L269.5 37.3L271.2 37.7L272.9 38.3L274.7 39.2L276.4 41.8L276.4 48.2L274.7 49.2L272.9 49.9L271.2 50.6L269.5 51.3L267.8 52L266 52.6L264.3 53.2L227.2 53.8L190 54.4Z" fill="#C8C8C8" opacity=".75" filter="url(#stfBloom)"/>
+<path d="M190 38.8L227.2 39.4L264.3 40L266 40.1L267.8 40.2L269.5 40.5L271.2 40.9L272.9 41.5L274.7 42.4L276.4 45L276.4 45L274.7 46L272.9 46.7L271.2 47.4L269.5 48.1L267.8 48.8L266 49.4L264.3 50L227.2 50.6L190 51.2Z" fill="#C8C8C8"/>
+<path d="M190 39.8L227.2 40.4L264.3 41L266 41.1L267.8 41.2L269.5 41.5L271.2 41.9L272.9 42.5L274.7 43.4L276.4 45L276.4 46L274.7 45.6L272.9 45.7L271.2 45.9L269.5 46.2L267.8 46.5L266 46.8L264.3 47.2L227.2 47.3L190 47.5Z" fill="#FFF6E8" opacity=".8" filter="url(#stfSoft)"/>
+<path d="M190 40.3L227.2 40.9L264.3 41.5L266 41.6L267.8 41.7L269.5 42L271.2 42.4L272.9 43L274.7 43.9L276.4 45L276.4 45L274.7 45.2L272.9 44.8L271.2 44.4L269.5 44L267.8 43.7L266 43.6L264.3 43.5L227.2 42.9L190 42.3Z" fill="#FFF6E8"/>
+</g>
+<g transform="rotate(180 150 45)">
+<path d="M190 35.6L227.2 36.2L264.3 36.8L266 36.9L267.8 37L269.5 37.3L271.2 37.7L272.9 38.3L274.7 39.2L276.4 41.8L276.4 48.2L274.7 49.2L272.9 49.9L271.2 50.6L269.5 51.3L267.8 52L266 52.6L264.3 53.2L227.2 53.8L190 54.4Z" fill="#C8C8C8" opacity=".55" filter="url(#stfHalo)"/>
+<path d="M190 35.6L227.2 36.2L264.3 36.8L266 36.9L267.8 37L269.5 37.3L271.2 37.7L272.9 38.3L274.7 39.2L276.4 41.8L276.4 48.2L274.7 49.2L272.9 49.9L271.2 50.6L269.5 51.3L267.8 52L266 52.6L264.3 53.2L227.2 53.8L190 54.4Z" fill="#C8C8C8" opacity=".75" filter="url(#stfBloom)"/>
+<path d="M190 38.8L227.2 39.4L264.3 40L266 40.1L267.8 40.2L269.5 40.5L271.2 40.9L272.9 41.5L274.7 42.4L276.4 45L276.4 45L274.7 46L272.9 46.7L271.2 47.4L269.5 48.1L267.8 48.8L266 49.4L264.3 50L227.2 50.6L190 51.2Z" fill="#C8C8C8"/>
+<path d="M190 39.8L227.2 40.4L264.3 41L266 41.1L267.8 41.2L269.5 41.5L271.2 41.9L272.9 42.5L274.7 43.4L276.4 45L276.4 46L274.7 45.6L272.9 45.7L271.2 45.9L269.5 46.2L267.8 46.5L266 46.8L264.3 47.2L227.2 47.3L190 47.5Z" fill="#FFF6E8" opacity=".8" filter="url(#stfSoft)"/>
+<path d="M190 40.3L227.2 40.9L264.3 41.5L266 41.6L267.8 41.7L269.5 42L271.2 42.4L272.9 43L274.7 43.9L276.4 45L276.4 45L274.7 45.2L272.9 44.8L271.2 44.4L269.5 44L267.8 43.7L266 43.6L264.3 43.5L227.2 42.9L190 42.3Z" fill="#FFF6E8"/>
+</g>
+<!-- Tsuka: dark cord wrap over lit diamond windows -->
+<rect x="127" y="37.8" width="46" height="14.5" rx="2.5" fill="url(#stfMetalSheen)" stroke="#050608" stroke-width=".7"/>
+<path d="M128 45L132.8 40L137.5 45L132.8 50ZM139.5 45L144.2 40L149 45L144.2 50ZM151 45L155.8 40L160.5 45L155.8 50ZM162.5 45L167.2 40L172 45L167.2 50Z" fill="#C8C8C8" opacity=".55" filter="url(#stfSoft)"/>
+<path d="M128 45L132.8 40L137.5 45L132.8 50ZM139.5 45L144.2 40L149 45L144.2 50ZM151 45L155.8 40L160.5 45L155.8 50ZM162.5 45L167.2 40L172 45L167.2 50Z" fill="#C8C8C8"/>
+<path d="M122.3 37.4L131.7 52.6M131.7 37.4L122.3 52.6M133.8 37.4L143.2 52.6M143.2 37.4L133.8 52.6M145.3 37.4L154.7 52.6M154.7 37.4L145.3 52.6M156.8 37.4L166.2 52.6M166.2 37.4L156.8 52.6M168.3 37.4L177.7 52.6M177.7 37.4L168.3 52.6" stroke="#0a0b0e" stroke-width="3.6" stroke-linecap="round" fill="none"/>
+<path d="M122.3 37.4L131.7 52.6M131.7 37.4L122.3 52.6M133.8 37.4L143.2 52.6M143.2 37.4L133.8 52.6M145.3 37.4L154.7 52.6M154.7 37.4L145.3 52.6M156.8 37.4L166.2 52.6M166.2 37.4L156.8 52.6M168.3 37.4L177.7 52.6M177.7 37.4L168.3 52.6" stroke="#2a2e36" stroke-width="1" stroke-linecap="round" fill="none" opacity=".9"/>
+<!-- Collars, guards, habakis -->
+<g>
+<rect x="172" y="37" width="6.2" height="16.1" rx="1.6" fill="url(#stfMetalSheen)" stroke="#050608" stroke-width=".7"/>
+<rect x="176.6" y="37" width="1.6" height="16.1" fill="url(#stfGoldSheen)"/>
+<rect x="178.2" y="35.8" width="1.6" height="18.5" rx=".7" fill="url(#stfGoldSheen)"/>
+<rect x="179.8" y="29" width="6" height="32" rx="3" fill="url(#stfGuardSheen)" stroke="#050608" stroke-width=".8"/>
+<rect x="180.9" y="30.8" width="3.8" height="28.4" rx="1.9" fill="none" stroke="url(#stfGoldSheen)" stroke-width=".9"/>
+<rect x="185.8" y="35.8" width="1.6" height="18.5" rx=".7" fill="url(#stfGoldSheen)"/>
+<path d="M187.4 38L195.2 39L195.2 51L187.4 52Z" fill="url(#stfChromeSheen)" stroke="#050608" stroke-width=".7"/>
+</g>
+<g transform="rotate(180 150 45)">
+<rect x="172" y="37" width="6.2" height="16.1" rx="1.6" fill="url(#stfMetalSheen)" stroke="#050608" stroke-width=".7"/>
+<rect x="176.6" y="37" width="1.6" height="16.1" fill="url(#stfGoldSheen)"/>
+<rect x="178.2" y="35.8" width="1.6" height="18.5" rx=".7" fill="url(#stfGoldSheen)"/>
+<rect x="179.8" y="29" width="6" height="32" rx="3" fill="url(#stfGuardSheen)" stroke="#050608" stroke-width=".8"/>
+<rect x="180.9" y="30.8" width="3.8" height="28.4" rx="1.9" fill="none" stroke="url(#stfGoldSheen)" stroke-width=".9"/>
+<rect x="185.8" y="35.8" width="1.6" height="18.5" rx=".7" fill="url(#stfGoldSheen)"/>
+<path d="M187.4 38L195.2 39L195.2 51L187.4 52Z" fill="url(#stfChromeSheen)" stroke="#050608" stroke-width=".7"/>
+</g>
 </svg>
