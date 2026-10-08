@@ -8,6 +8,14 @@
  */
 
 import { Vector3 } from "three";
+import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import { joinedPerformerExtent } from "$lib/shared/3d/camera/viewer-camera-framing";
+import {
+  DEFAULT_PERFORMER_HAND_DISTANCE,
+  largestHandDistance,
+  type PerformerHandDistance,
+} from "$lib/shared/3d/domain/performer-hand-distance";
+import { resolveGridJoin3D } from "$lib/shared/3d/services/grid-join-3d";
 
 export type Plane3 = "wall" | "wheel" | "floor";
 
@@ -30,9 +38,11 @@ export interface PerformerGroupBounds {
   radius: number;
 }
 
-/** The camera only needs a performer's stage position to frame a group. */
+/** Stage position plus optional loaded score and reach for joined-grid framing. */
 export interface PerformerShotSubject {
   position: { x: number; z: number };
+  loadedSequence?: SequenceData | null;
+  handDistance?: PerformerHandDistance;
 }
 
 /**
@@ -56,12 +66,22 @@ export function computeGroupBounds(
 
   // Radius = farthest performer + per-performer extent (arm span + prop).
   const PER_PERFORMER_EXTENT = 1.2;
+  const defaultReach = largestHandDistance(DEFAULT_PERFORMER_HAND_DISTANCE);
   let maxDist = 0;
   for (const p of performers) {
     const d = Math.hypot(p.position.x - center.x, p.position.z - center.z);
-    if (d > maxDist) maxDist = d;
+    const join = resolveGridJoin3D(p.loadedSequence);
+    const extent = join
+      ? PER_PERFORMER_EXTENT +
+        joinedPerformerExtent(
+          p.handDistance ?? DEFAULT_PERFORMER_HAND_DISTANCE,
+          join
+        ) -
+        defaultReach
+      : PER_PERFORMER_EXTENT;
+    maxDist = Math.max(maxDist, d + extent);
   }
-  return { center, radius: maxDist + PER_PERFORMER_EXTENT };
+  return { center, radius: maxDist };
 }
 
 /**
@@ -138,7 +158,6 @@ export function computeAutoOrbitShot(
   );
   return { eye, target: center };
 }
-
 
 /** Elevation angle from horizontal — 36° matches the ideal choreographer sightline. */
 const CHOREO_POLAR_RAD = (36 * Math.PI) / 180;

@@ -209,7 +209,7 @@
   {#each joinedPlanes as { plane, frames } (plane)}
     {#each frames as frame (frame.hand)}
       <T.Group
-        position={frame.position}
+        position={[frame.position.x, frame.position.y, frame.position.z]}
         userData={{ joinedGridHand: frame.hand, joinedGridPlane: plane }}
       >
         <GridPlane
