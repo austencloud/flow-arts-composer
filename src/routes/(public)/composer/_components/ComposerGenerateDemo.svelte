@@ -32,7 +32,7 @@
   import { activateWhenNear } from "$lib/actions/activate-when-near";
   import LazyMount from "$lib/shared/components/LazyMount.svelte";
   import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
-  import WordLabel from "$lib/features/create/shared/workspace-panel/sequence-display/components/WordLabel.svelte";
+  import ComposerWordRow from "./ComposerWordRow.svelte";
   import {
     HERO_TIP_EFFECT_MAP,
     HERO_TRAIL_PRESET,
@@ -86,7 +86,6 @@
   } = $props();
 
   let current = $state<SequenceData | null>(null);
-  let hasGeneratedLocally = $state(false);
   let generating = $state(false);
   let result = $state<ComposerGenerationResult>("idle");
   let previewActive = $state(false);
@@ -103,15 +102,12 @@
     playbackSequenceId = sequenceId;
   }
 
+  // The page sequence changes when the hero rolls or Construct composes; the
+  // generator shows it when it is in view. Its own draws set the local copy
+  // and then write the page sequence, so the write comes back with the id
+  // already shown and never reads as a change.
   $effect(() => {
-    if (
-      shouldAdoptCarriedSequence(
-        current,
-        sequence,
-        hasGeneratedLocally,
-        inViewport
-      )
-    ) {
+    if (shouldAdoptCarriedSequence(current, sequence, inViewport)) {
       current = sequence;
     }
   });
@@ -145,9 +141,8 @@
       // on its first render and runs the same staggered reveal the Generate tab
       // produces. It clears itself once consumed.
       setPendingGenerationAnimation(true);
-      hasGeneratedLocally = true;
       current = seq;
-      onGenerated?.(current);
+      onGenerated?.(seq);
       result = "success";
     } catch (error) {
       result = classifyComposerGenerationFailure(error);
@@ -173,20 +168,7 @@
          grid, and the player beside it already traces that same figure. -->
 
     <div class="stage notation-stage">
-      <!-- The prop chooser sits outside the live region, so changing props is
-           not announced as a new word. -->
-      <header class="word-slot" class:with-prop={!!propControl}>
-        {#if propControl}
-          <div class="slot-prop">{@render propControl()}</div>
-        {/if}
-        <div class="slot-word" aria-live="polite">
-          {#if current}
-            <WordLabel word={current.word ?? ""} />
-          {:else}
-            <span aria-hidden="true"></span>
-          {/if}
-        </div>
-      </header>
+      <ComposerWordRow word={current?.word ?? ""} live="polite" {propControl} />
       <div class="stage-content">
         {#key current?.id}
           <LazyMount
@@ -228,6 +210,7 @@
             chrome: "minimal",
             fill: true,
             cornerToggle: true,
+            cornerToggleAtRest: true,
             playbackAllowed: active && inViewport,
             resumeWhenPlaybackAllowed: true,
             onStepChange: handlePlayerStepChange,
@@ -299,34 +282,6 @@
     border-radius: 0;
     background: transparent;
     box-shadow: none;
-  }
-
-  .word-slot {
-    min-height: 2.5rem;
-    display: grid;
-    place-items: center;
-    color: var(--theme-text, #fff);
-    --text-color: var(--theme-text, #fff);
-  }
-
-  /* The chooser, the word, and an empty track as wide as the chooser, so the
-     word stays centered over the grid below it. */
-  .word-slot.with-prop {
-    grid-template-columns: 3rem minmax(0, 1fr) 3rem;
-    column-gap: 0.75rem;
-    padding-bottom: 0.5rem;
-  }
-
-  .slot-prop {
-    justify-self: start;
-    display: flex;
-  }
-
-  .slot-word {
-    width: 100%;
-    min-width: 0;
-    display: grid;
-    place-items: center;
   }
 
   .stages {

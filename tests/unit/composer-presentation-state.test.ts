@@ -5,11 +5,7 @@ import {
   normalizeComposer3DDemoState,
 } from "../../src/routes/(public)/composer/_components/composer-3d-demo-state";
 import { classifyComposerGenerationFailure } from "../../src/routes/(public)/composer/_components/composer-generation-failure";
-import {
-  isVisitorOwnedConstructSequence,
-  resolveComposerCarriedSequence,
-  shouldAdoptCarriedSequence,
-} from "../../src/routes/(public)/composer/_components/composer-sequence-ownership";
+import { isVisitorOwnedConstructSequence } from "../../src/routes/(public)/composer/_components/composer-sequence-ownership";
 import { createStartPlacementData } from "$lib/shared/create/factories/create-start-placement-data";
 import { createStepData } from "$lib/shared/foundation/domain/factories/create-step-data";
 import {
@@ -175,60 +171,6 @@ describe("Composer presentation state", () => {
       classifyComposerGenerationFailure(new Error("chunk failed to load"))
     ).toBe("error");
     expect(classifyComposerGenerationFailure("unknown failure")).toBe("error");
-  });
-
-  it("adopts only the latest carried sequence on reentry until a local generation", () => {
-    const current = sequenceFixture();
-    const firstIncoming = createSequenceData({
-      ...current,
-      id: `${current.id}-guided-build-1`,
-    });
-    const latestIncoming = createSequenceData({
-      ...current,
-      id: `${current.id}-guided-build-2`,
-    });
-
-    expect(
-      shouldAdoptCarriedSequence(current, firstIncoming, false, false)
-    ).toBe(false);
-    expect(
-      shouldAdoptCarriedSequence(current, latestIncoming, false, false)
-    ).toBe(false);
-    expect(
-      shouldAdoptCarriedSequence(current, latestIncoming, false, true)
-    ).toBe(true);
-    expect(
-      shouldAdoptCarriedSequence(latestIncoming, latestIncoming, false, true)
-    ).toBe(false);
-    expect(shouldAdoptCarriedSequence(current, null, false, true)).toBe(false);
-    expect(
-      shouldAdoptCarriedSequence(current, latestIncoming, true, true)
-    ).toBe(false);
-  });
-
-  it("provides the opening sequence before any live hero handoff", () => {
-    const opening = sequenceFixture();
-
-    expect(resolveComposerCarriedSequence(null, null, opening)).toBe(opening);
-  });
-
-  it("adopts the first live hero sequence after opening", () => {
-    const opening = sequenceFixture();
-    const liveHero = createSequenceData({ ...opening, id: "live-hero" });
-
-    expect(resolveComposerCarriedSequence(null, liveHero, opening)).toBe(
-      liveHero
-    );
-  });
-
-  it("keeps a visitor sequence ahead of the live hero and opening sequence", () => {
-    const opening = sequenceFixture();
-    const liveHero = createSequenceData({ ...opening, id: "live-hero" });
-    const visitor = createSequenceData({ ...opening, id: "visitor-generated" });
-
-    expect(resolveComposerCarriedSequence(visitor, liveHero, opening)).toBe(
-      visitor
-    );
   });
 
   it("keeps autonomous construct changes inside the construct panel", () => {

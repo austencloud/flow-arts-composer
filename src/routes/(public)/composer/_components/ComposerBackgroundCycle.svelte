@@ -102,7 +102,6 @@
     display: flex;
     justify-content: center;
     min-height: var(--min-touch-target, 48px);
-    margin-top: var(--spacing-md, 16px);
   }
 
   .theme-trigger:hover {

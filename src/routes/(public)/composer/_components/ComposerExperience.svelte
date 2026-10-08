@@ -1,8 +1,9 @@
 <script lang="ts">
-  import { flushSync, onMount } from "svelte";
+  import { flushSync, onMount, untrack } from "svelte";
   import { MediaQuery } from "svelte/reactivity";
   import { activateWhenNear } from "$lib/actions/activate-when-near";
   import { observeComposerStopVisibility } from "./observe-composer-stop-visibility";
+  import { holdWhenStopLeaves } from "./hold-when-stop-leaves";
   import LazyMount from "$lib/shared/components/LazyMount.svelte";
   import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
   import BaseModal from "$lib/shared/foundation/ui/modal/BaseModal.svelte";
@@ -46,9 +47,15 @@
   import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
   import ComposerBackgroundCycle from "./ComposerBackgroundCycle.svelte";
   import ComposerPropPicker from "./ComposerPropPicker.svelte";
-  import { resolveComposerCarriedSequence } from "./composer-sequence-ownership";
+  import {
+    carryPageSequence,
+    featuredCaption,
+    openingPageSequence,
+    type PageSequenceSource,
+  } from "./composer-sequence-ownership";
   import type { ComposerPropAppearance } from "./composer-prop-appearance";
   import ProjectStory from "./ProjectStory.svelte";
+  import ComposerWordRow from "./ComposerWordRow.svelte";
 
   function trackOpenComposer(): void {
     trackCtaClick("hero", {
@@ -70,26 +77,51 @@
   // existing prefetch handoff.
   const heroAct = createHeroAct({ initialSequence: FALLBACK_DEMO });
 
-  // A sequence the visitor composed or generated further down the page takes
-  // over the carry; until then the bands hold the hero's FIRST draw.
-  let visitorSequence = $state<SequenceData | null>(null);
+  // The page has one sequence. The hero's live draws write it until the
+  // visitor builds or generates one further down; after that, last write
+  // wins. The baked opening keeps the lower demonstrations usable before the
+  // hero has drawn anything live. Raw, not deep: every write replaces the
+  // whole object, and the tunnel compares the sequence it receives by
+  // reference, so a proxy would make it re-prepare the same sequence.
+  let pageSequence = $state.raw(openingPageSequence(FALLBACK_DEMO));
 
-  // The lower demos hold one live hero draw. Rebuilding their readers on every
-  // hero loop is distracting, and a visitor's own sequence always takes over.
-  let latchedHeroSequence = $state<SequenceData | null>(null);
+  function carryFrom(source: PageSequenceSource) {
+    return (next: SequenceData) => {
+      pageSequence = carryPageSequence(pageSequence, source, next);
+    };
+  }
+  const carryConstruct = carryFrom("construct");
+  const carryGenerate = carryFrom("generate");
+  const carryTunnel = carryFrom("tunnel");
+
+  // Every live hero draw becomes the page's sequence. Before the hold the
+  // reader is still at the hero; the lower demos are not active yet, except
+  // Construct, which the stage loads early as the neighbour and which only
+  // writes the page sequence, never reads it, so the auto-rolls cost nothing
+  // downstream. After the hold the hero only changes on Roll. The reducer
+  // returns the same object for an unchanged id, and the write is untracked,
+  // so this effect cannot feed itself.
   $effect(() => {
-    const first = heroAct.sequence;
-    if (first && first.id !== FALLBACK_DEMO.id && !latchedHeroSequence) {
-      latchedHeroSequence = first;
-    }
+    const drawn = heroAct.sequence;
+    if (!drawn || drawn.id === FALLBACK_DEMO.id) return;
+    untrack(() => {
+      pageSequence = carryPageSequence(pageSequence, "hero", drawn);
+    });
   });
-  const carriedSequence = $derived(
-    resolveComposerCarriedSequence(
-      visitorSequence,
-      latchedHeroSequence,
-      FALLBACK_DEMO
-    )
-  );
+
+  // The hero stops rolling on its own once the visitor touches it or leaves
+  // it, so the word they saw is the word the page carries.
+  function holdHero(): void {
+    heroAct.hold();
+  }
+
+  // The stage keeps the next stop inside the window so it loads early, so
+  // "near Construct" would hold the hero at load. The hero is held instead
+  // once its stop is no longer the one being read; see holdWhenStopLeaves.
+  function holdWhenHeroLeaves(node: HTMLElement) {
+    return holdWhenStopLeaves(node, holdHero);
+  }
+
   let selectedProp = $state<PropType>(PropType.STAFF);
   // Appearance and colors stay with this public page's prop choice. There is
   // no app settings service here, so writing to it would lose these edits.
@@ -337,14 +369,19 @@
 
   onMount(() => () => clearTimeout(stillTimer));
 
-  function carryVisitorSequence(next: SequenceData): void {
-    visitorSequence = next;
-  }
-
-  // Same handler HomeHero uses: report the interaction, then roll now.
+  // Same handler HomeHero uses: report the interaction, then roll now. The
+  // act's draws fall back to the baked demo rather than rejecting, so the
+  // failure copy is a safety net, not an expected state. Roll is a touch of
+  // the hero even when it arrives without a pointer (keyboard activation
+  // through a label, or a script), so it holds the hero itself.
+  let rerollFailed = $state(false);
   function handleReroll(): void {
     trackDemoInteraction("try_another");
-    void heroAct.advanceNow();
+    holdHero();
+    rerollFailed = false;
+    heroAct.advanceNow().catch(() => {
+      rerollFailed = true;
+    });
   }
 
   // Each stop loads its demonstration as it nears the window and reports the
@@ -411,6 +448,34 @@
   </span>
 {/snippet}
 
+{#snippet heroToolbar()}
+  <PanelButton
+    onclick={handleReroll}
+    disabled={heroAct.rerolling}
+    ariaBusy={heroAct.rerolling}
+  >
+    <i
+      class="fas {heroAct.rerolling
+        ? 'fa-circle-notch fa-spin'
+        : rerollFailed
+          ? 'fa-rotate-right'
+          : 'fa-dice'}"
+      aria-hidden="true"
+    ></i>
+    <span
+      >{heroAct.rerolling
+        ? rerollFailed
+          ? "Trying again..."
+          : "Rolling..."
+        : rerollFailed
+          ? "Try again"
+          : "Roll a new one"}</span
+    >
+  </PanelButton>
+  {@render propControl()}
+  <ComposerBackgroundCycle />
+{/snippet}
+
 {#snippet pickerPreview()}
   <SequenceHeroDemo
     sequence={heroAct.sequence}
@@ -437,13 +502,13 @@
 />
 
 {#snippet tunnelPlaceholder()}
-  <!-- Reserve the stage, toolbar, and seven-card preset bank during lazy load. -->
+  <!-- Reserve the word row, stage, toolbar, and seven-card preset bank during lazy load. -->
   <div class="tunnel-placeholder" aria-hidden="true">
     <div class="placeholder-stage-wrap">
+      <div class="placeholder-word-row"></div>
       <div class="placeholder-square"></div>
       <div class="placeholder-notation"></div>
       <div class="placeholder-toolbar">
-        <div class="placeholder-tool"></div>
         <div class="placeholder-tool"></div>
         <div class="placeholder-tool"></div>
       </div>
@@ -525,6 +590,7 @@
     class="opening"
     aria-labelledby="composer-title"
     style:view-transition-name="launchpad-composer"
+    use:holdWhenHeroLeaves
   >
     <div class="opening-copy">
       <h1 id="composer-title">Flow Arts <span>Composer</span></h1>
@@ -550,17 +616,21 @@
 
       <p class="opening-note">
         Free in your browser, no account needed. Guests keep three sequences on
-        this device.
+        this device. Each step is a letter of The Kinetic Alphabet; the sequence
+        is the word they spell.
       </p>
     </div>
 
-    <div class="opening-player">
+    <div
+      class="opening-player"
+      onpointerdowncapture={holdHero}
+      onkeydowncapture={holdHero}
+    >
       <div class="player-main">
         <SequenceHeroDemo
           sequence={heroAct.sequence}
           element={heroAct.element}
-          onReroll={handleReroll}
-          rerolling={heroAct.rerolling}
+          toolbar={heroToolbar}
           leftPropType={selectedProp}
           rightPropType={selectedProp}
           {...propAppearance}
@@ -572,13 +642,10 @@
           showWordHeader={true}
           autoPlay={!reduceMotion.current}
           cornerToggle={true}
+          cornerToggleAtRest={true}
           loadPriority="immediate"
         />
-        <div class="hero-props">
-          {@render propControl()}
-        </div>
       </div>
-      <div class="player-theme"><ComposerBackgroundCycle /></div>
     </div>
 
     <!-- Absolutely positioned, so revealing it cannot move the hero content.
@@ -590,20 +657,6 @@
     >
       Scroll
     </LinkChip>
-  </section>
-
-  <section class="notation-bridge" aria-labelledby="notation-title">
-    <h2 id="notation-title">The Kinetic Alphabet</h2>
-    <p>
-      TKA is a pictographic notation system for flow arts choreography. Each
-      picture records a movement step. Arrange the pictures into a sequence,
-      then play it in Composer.
-    </p>
-    <div class="notation-links">
-      <PanelButton href="/guide">Read the Guide</PanelButton>
-      <PanelButton href="/history">Notation history</PanelButton>
-      <PanelButton href="/faq">Common questions</PanelButton>
-    </div>
   </section>
 
   <!-- One stop per thing the visitor can do with a sequence, in the order the
@@ -626,7 +679,7 @@
           leftPropType: selectedProp,
           rightPropType: selectedProp,
           primaryPropColors,
-          onVisitorComposed: carryVisitorSequence,
+          onVisitorComposed: carryConstruct,
           propControl,
         }}
         error={constructLoadError}
@@ -650,12 +703,12 @@
         loader={() => import("./ComposerGenerateDemo.svelte")}
         active={generateActive}
         props={{
-          sequence: carriedSequence,
+          sequence: pageSequence.sequence,
           embedded: true,
           leftPropType: selectedProp,
           rightPropType: selectedProp,
           appearance: propAppearance,
-          onGenerated: carryVisitorSequence,
+          onGenerated: carryGenerate,
           propControl,
         }}
         error={generateLoadError}
@@ -682,12 +735,12 @@
            in place, the way SequenceHeroDemo's player deliberately does. -->
       <LazyMount
         loader={() => import("./ComposerTunnelDemo.svelte")}
-        active={tunnelActive && tunnelVisible && !!carriedSequence}
+        active={tunnelActive && tunnelVisible}
         props={{
-          sequence: carriedSequence,
+          sequence: pageSequence.sequence,
           active: tunnelVisible,
           layout: "band",
-          onGenerated: carryVisitorSequence,
+          onGenerated: carryTunnel,
           leftPropType: selectedProp,
           rightPropType: selectedProp,
           appearance: propAppearance,
@@ -704,13 +757,16 @@
   </section>
 
   <!-- Activation sits on the stop, not the viewer, because small screens
-       hide the viewer and show only the note. -->
+       hide the viewer and show the poster and its note instead. -->
   <section
     class="stop viewer-stop"
     aria-labelledby="viewer-title"
     use:activateViewer
   >
     <h2 id="viewer-title">See it in 3D</h2>
+
+    <!-- The performers carry their own props in 3D, so the row is the word alone. -->
+    <ComposerWordRow word={pageSequence.sequence.word ?? ""} />
 
     <div class="viewer-output">
       <div class="product-frame wide-frame">
@@ -771,24 +827,54 @@
       </div>
     </div>
 
-    <p class="small-screen-3d-note">
-      The 3D viewer needs WebGL2 and a screen at least 600px in both directions.
-    </p>
+    <!-- Small screens cannot run the viewer, so they get the poster the
+         portal card shows, plus the reason. -->
+    <figure class="small-screen-3d-poster">
+      <img
+        src={PORTAL_STILL}
+        alt="A still from the 3D viewer."
+        width="2400"
+        height="1090"
+        loading="lazy"
+        decoding="async"
+      />
+      <figcaption class="small-screen-3d-note">
+        The 3D viewer needs WebGL2 and a screen at least 600px in both
+        directions.
+      </figcaption>
+    </figure>
   </section>
 
   <section class="keeping" aria-labelledby="keeping-title" use:activateShelf>
     <div class="keeping-intro">
-      <h2 id="keeping-title">Keep the sequence you made.</h2>
       <div class="keeping-lede">
+        <h2 id="keeping-title">Keep this sequence.</h2>
         <p>
           Guests keep three sequences on this device. A full account keeps a
-          cloud library and collections. Choose a sequence below to watch it
-          here.
+          cloud library and collections.
         </p>
         <div class="keeping-actions">
           <a href="/browse" class="primary-action">Browse the Gallery</a>
         </div>
       </div>
+      <!-- The page sequence as the card the app would keep. Rendered from the
+           sequence itself, so a hero draw or a fresh build needs no saved
+           thumbnail. Its chunk (the card renderer and its QR modules) loads
+           when the stop nears, like the gallery, not with the page. The
+           preview draws the app's canonical card (staff props), not the
+           chosen prop; that is the card the app keeps. -->
+      <figure class="keeping-card">
+        <div class="keeping-card-art">
+          <LazyMount
+            loader={() =>
+              import("$lib/shared/landing/components/launchpad/ChoreoCardPreview.svelte")}
+            active={shelfActive}
+            props={{ sequence: pageSequence.sequence }}
+            debugName="composer keep card"
+          />
+        </div>
+        <figcaption>{featuredCaption(pageSequence.source)}</figcaption>
+      </figure>
     </div>
 
     <div class="keeping-shelf">
@@ -834,7 +920,7 @@
           loader={loadViewer}
           active={true}
           props={{
-            sequence: carriedSequence,
+            sequence: pageSequence.sequence,
             fillHeight: true,
             entrance: true,
             railTopOffset: "4.5rem",
@@ -1008,14 +1094,14 @@
      out of the page picture and draw them undimmed above the backdrop until
      the move ends. Every name on these pages is set inline. */
   :global(
-      html.composer-3d-portal-morph
-        [style*="view-transition-name"]:not(
-          .portal-window,
-          .portal-caption,
-          .portal-frame,
-          .portal-close
-        )
-    ) {
+    html.composer-3d-portal-morph
+      [style*="view-transition-name"]:not(
+        .portal-window,
+        .portal-caption,
+        .portal-frame,
+        .portal-close
+      )
+  ) {
     view-transition-name: none !important;
   }
 
@@ -1287,16 +1373,6 @@
     min-width: 0;
   }
 
-  .player-theme {
-    min-width: 0;
-  }
-
-  .hero-props {
-    display: flex;
-    justify-content: center;
-    margin-top: var(--spacing-md, 16px);
-  }
-
   .prop-trigger {
     display: inline-block;
     width: max(var(--min-touch-target, 48px), 48px);
@@ -1336,6 +1412,16 @@
      generous; it is the CONTENT that gets the extra 4K width. */
   .keeping {
     padding-block: var(--stop-pad, clamp(2.5rem, 4.5vw, 4.5rem));
+    --keep-intro-gap: clamp(1.5rem, 2.5vw, 2.5rem);
+    /* The gallery's share of the stop. On the stage the intro beside it also
+       holds the card, so its budget leaves 14rem more than the lede alone
+       needed; without the stage the fallback adds the same 14rem back, so
+       the plain page keeps its old height. */
+    --composer-gallery-height: clamp(
+      360px,
+      calc(var(--stop-room, 100dvh + 14rem) - 220px - 14rem),
+      480px
+    );
   }
 
   .keeping-intro {
@@ -1343,11 +1429,50 @@
     grid-template-columns: minmax(0, 0.95fr) minmax(18rem, 1.05fr);
     gap: clamp(1.75rem, 4vw, 4rem);
     align-items: start;
-    margin-bottom: clamp(1.5rem, 2.5vw, 2.5rem);
+    margin-bottom: var(--keep-intro-gap);
   }
 
   .keeping-lede > p {
     margin: 0;
+  }
+
+  /* Full size when the room allows. On the stage the card gives way so the
+     intro, its gap and the gallery add up to the stop's room (the 2rem is
+     the caption); without the stage the fallback room leaves the cap in
+     charge. The floor keeps a very short window from erasing the card. */
+  .keeping-card {
+    margin: 0;
+    justify-self: end;
+    width: min(
+      100%,
+      18rem,
+      max(
+        8rem,
+        (
+            var(--stop-room, 200vh) - var(--composer-gallery-height) -
+              var(--keep-intro-gap) - 2rem
+          ) *
+          5 / 7
+      )
+    );
+  }
+
+  /* 5:7 is the card's own 960x1344 ratio; the preview's img already fills
+     its box with object-fit: contain, so the box holds the layout while the
+     render is in flight. */
+  .keeping-card-art {
+    aspect-ratio: 5 / 7;
+    border-radius: 0.9rem;
+    overflow: hidden;
+    background: var(--theme-card-bg, oklch(0.2 0.025 270 / 0.75));
+    border: 1px solid var(--theme-stroke, oklch(0.45 0.03 270 / 0.2));
+  }
+
+  .keeping-card figcaption {
+    margin-top: 0.6rem;
+    color: oklch(0.76 0.014 270);
+    font-size: var(--font-size-min, 0.875rem);
+    text-align: center;
   }
 
   .keeping-intro .keeping-actions {
@@ -1363,11 +1488,6 @@
       calc((var(--composer-gallery-height) - 110px) * 2.28 + 80px)
     );
     margin-inline: auto;
-    --composer-gallery-height: clamp(
-      360px,
-      calc(var(--stop-room, 100dvh) - 220px),
-      480px
-    );
   }
 
   /* px ceiling — see the note on h1. Was 5rem, which the root ramp turned into
@@ -1398,6 +1518,9 @@
     --stop-title-size: clamp(2.45rem, 1.8rem + 2.5vw, 74px);
     --stop-gap: var(--spacing-lg, 24px);
     --stop-head: calc(var(--stop-title-size) + var(--stop-gap));
+    /* ComposerWordRow's height on every demo. The stage formulas below
+       subtract it, and the row reads the same token. */
+    --word-row-h: 3.25rem;
     padding-block: var(--stop-pad, var(--stop-pad-plain));
     border-top: 1px solid var(--theme-stroke, oklch(0.45 0.03 270 / 0.2));
   }
@@ -1497,17 +1620,18 @@
 
   /* The frame hugs the stage-plus-controls composition instead of spanning a
      wide shell with dark margins on both sides of it. On the stage the square
-     also fits the room: less the heading, this frame's padding and border,
-     and the notation rail and toolbar under the square. Without the stage the 200vh fallback
-     leaves the plain page's own sizing in charge. */
+     also fits the room: less the heading, the word row above the square,
+     this frame's padding and border, and the notation rail and toolbar under
+     the square. Without the stage the 200vh fallback leaves the plain page's
+     own sizing in charge. */
   .band-frame {
     max-width: min(100%, 92rem);
     margin-inline: auto;
     --tunnel-stage-size: min(
       46rem,
       62vh,
-      var(--stop-room, 200vh) - var(--stop-head) - 2 * var(--frame-pad) -
-        12.625rem - 2px
+      var(--stop-room, 200vh) - var(--stop-head) - var(--word-row-h) - 2 *
+        var(--frame-pad) - 12.625rem - 2px
     );
   }
 
@@ -1517,8 +1641,8 @@
     max-width: min(
       100%,
       (
-          var(--stop-room, 200vh) - var(--stop-head) - 2 * var(--frame-pad) -
-            2px
+          var(--stop-room, 200vh) - var(--stop-head) - var(--word-row-h) - 2 *
+            var(--frame-pad) - 2px
         ) *
         16 / 9 + 2 * var(--frame-pad) + 2px
     );
@@ -1558,6 +1682,9 @@
   }
   .placeholder-stage-wrap {
     min-width: 0;
+  }
+  .placeholder-word-row {
+    height: var(--word-row-h, 3.25rem);
   }
   .placeholder-notation {
     height: 8.125rem;
@@ -1639,9 +1766,21 @@
     font-size: var(--font-size-min, 0.875rem);
   }
 
-  .small-screen-3d-note {
+  .small-screen-3d-poster {
     display: none;
-    margin: 1.4rem 0 0;
+    margin: 0;
+  }
+
+  .small-screen-3d-poster img {
+    display: block;
+    width: 100%;
+    height: auto;
+    border-radius: 1rem;
+    border: 1px solid var(--theme-stroke, oklch(0.45 0.03 270 / 0.2));
+  }
+
+  .small-screen-3d-note {
+    margin: 1rem 0 0;
     color: oklch(0.74 0.018 270);
     font-size: var(--font-size-min, 0.875rem);
     line-height: 1.55;
@@ -1650,39 +1789,6 @@
   .keeping {
     border-top: 1px solid var(--theme-stroke, oklch(0.45 0.03 270 / 0.2));
     border-bottom: 1px solid var(--theme-stroke, oklch(0.45 0.03 270 / 0.2));
-  }
-
-  .notation-bridge {
-    margin: 0 auto;
-    padding: clamp(2rem, 4vw, 64px) 0;
-    text-align: center;
-  }
-
-  .notation-bridge h2 {
-    margin: 0 0 1rem;
-    font-family: "Fraunces", Georgia, serif;
-    font-weight: 650;
-    letter-spacing: -0.04em;
-    line-height: 1;
-  }
-
-  .notation-bridge h2 {
-    font-size: clamp(2.4rem, 1.9rem + 2.5vw, 72px);
-  }
-
-  .notation-bridge p {
-    margin: 1.25rem auto 0;
-    color: var(--theme-text-secondary, oklch(0.74 0.018 270));
-    font-size: clamp(1rem, 0.97rem + 0.18vw, 1.12rem);
-    line-height: 1.65;
-  }
-
-  .notation-bridge .notation-links {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: var(--spacing-sm, 8px);
-    margin-top: 1.4rem;
   }
 
   /* Same bounded frame ComposerGalleryDemo renders into, so the LazyMount
@@ -1723,6 +1829,10 @@
     .keeping-intro {
       grid-template-columns: 1fr;
       gap: 1.25rem;
+    }
+
+    .keeping-card {
+      justify-self: center;
     }
 
     .opening {
@@ -1770,7 +1880,7 @@
   /* Phones: the player is the whole point of this screen, so it keeps its
      width and the hero grows past the fold instead of shrinking it. */
   @media (max-width: 48rem) {
-    .keeping-shelf {
+    .keeping {
       --composer-gallery-height: 36rem;
     }
 
@@ -1795,7 +1905,7 @@
       display: none;
     }
 
-    .small-screen-3d-note {
+    .small-screen-3d-poster {
       display: block;
     }
   }
