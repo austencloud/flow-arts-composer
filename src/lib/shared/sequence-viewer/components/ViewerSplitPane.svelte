@@ -36,6 +36,7 @@
     resolveViewerPaneDestinationBox,
     resolveViewerPaneRevealReady,
     type ViewerFocusedPane,
+    type ViewerPaneBox,
     type ViewerPanelDirection,
   } from "./viewer-panel-layout";
   import { motionDuration } from "$lib/shared/transitions/motion";
@@ -139,8 +140,13 @@
   // The tunnel's controls, renderer, and export path all steer this one
   // controller. Keeping it above both pane surfaces lets the already-mounted 2D
   // canvas adopt the tunnel without growing a second controller or render loop.
+  // `playback` is rebuilt whenever any viewer setting changes. Settle on the
+  // sequence itself so the tunnel rebuilds only when the sequence does.
+  const tunnelSequence = $derived(
+    playback.animationState.sequenceData ?? sequence
+  );
   const tunnelController = new TunnelViewController({
-    getSequence: () => playback.animationState.sequenceData ?? sequence,
+    getSequence: () => tunnelSequence,
     getComposition: () => tunnelComposition,
     // The base pair and Tunnel copies occupy one persistent Animator canvas.
     // Give both settings panels the same visibility owner so a Grid change is
@@ -457,9 +463,13 @@
     };
   });
 
+  // The live box is a fresh object whenever the layout re-derives. Hand the
+  // Card the previous one while the size is unchanged: a new identity re-runs
+  // its resize observer setup and forces a layout read.
+  let lastCardContainMotionBox: ViewerPaneBox | null = null;
   const cardContainMotionBox = $derived.by(() => {
     void cardPaneBoxMemoVersion;
-    return resolveViewerCardMotionBox({
+    const box = resolveViewerCardMotionBox({
       remembered: readViewerCardPaneBox(
         cardPaneBoxKey,
         window.innerWidth,
@@ -468,6 +478,11 @@
       live: liveCardPaneBox,
       inMotion: cardContainSizeMotion !== null,
     });
+    const last = lastCardContainMotionBox;
+    if (box && last && box.width === last.width && box.height === last.height)
+      return last;
+    lastCardContainMotionBox = box;
+    return box;
   });
 
   $effect(() => {
