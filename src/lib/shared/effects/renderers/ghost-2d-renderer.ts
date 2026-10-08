@@ -6,9 +6,9 @@ import {
   resolveGhostPositionQuantization,
 } from "../domain/ghost-parameters";
 import {
+  GHOST_FROST_WHITE,
+  GHOST_RIM_FROST_MIX,
   resolveGhost2DAgeVisual,
-  resolveGhostPropColor,
-  resolveGhostRimColor,
 } from "./ghost-chrono-frost-2d";
 import {
   GhostPoseHistory,
@@ -23,7 +23,9 @@ import {
  * recent past poses. The live prop (drawn at full opacity by the prop renderer)
  * is the head; Ghost lays faded copies of it behind, fading to NOTHING over a
  * short trail window, so the prop trails out behind himself and old poses vanish
- * cleanly. There is no persistent floor (that merged every faded ghost into a
+ * cleanly. Every layer is cut from that sprite, so a ghost keeps the prop's own
+ * texture and colors (a bark stick stays bark with its tape, a staff keeps its
+ * hand color) instead of a flat hand tint. There is no persistent floor (that merged every faded ghost into a
  * muddy solid) — a ghost decays to zero and is pruned.
  *
  * Capture is keyed by the prop's QUANTIZED POSE (position + angle): it is
@@ -36,7 +38,7 @@ import {
  * changes (`epoch`).
  */
 export interface GhostProp {
-  /** Stable per-prop id (0 blue, 1 red, …) — keeps blue/red ghosts distinct. */
+  /** Stable per-prop id (0 blue, 1 red, …) — keeps each hand's trail separate. */
   id: number;
   /** The prop sprite to blit (already colored). */
   image: CanvasImageSource;
@@ -67,7 +69,6 @@ const MAX_TREATMENTS_PER_SPRITE = 12;
 type TreatmentSurface = HTMLCanvasElement | OffscreenCanvas;
 
 interface GhostSpriteTreatment {
-  body: TreatmentSurface;
   rim: TreatmentSurface;
   frost: TreatmentSurface;
   width: number;
@@ -144,12 +145,7 @@ export class Ghost2DRenderer {
           intensity
         );
         if (visual.rimAlpha <= 0.012) continue;
-        const color = resolveGhostPropColor(
-          sample.snapshot.id,
-          params.leftColor,
-          params.rightColor
-        );
-        this.blit(ctx, sample.snapshot, color, visual);
+        this.blit(ctx, sample.snapshot, visual);
       }
     } finally {
       ctx.globalAlpha = prevAlpha;
@@ -179,10 +175,9 @@ export class Ghost2DRenderer {
   private blit(
     ctx: CanvasRenderingContext2D,
     g: GhostProp,
-    color: string,
     visual: ReturnType<typeof resolveGhost2DAgeVisual>
   ): void {
-    const treatment = this.resolveTreatment(g, color);
+    const treatment = this.resolveTreatment(g);
     ctx.save();
     ctx.translate(g.centerX, g.centerY);
     ctx.rotate(g.angle);
@@ -195,11 +190,13 @@ export class Ghost2DRenderer {
       return;
     }
 
+    // The body is the real sprite, faded: same bark, tape and colors as the
+    // live prop. Frost and rim sit on top as light, never as a recolor.
     const x = -treatment.width / 2;
     const y = -treatment.height / 2;
     ctx.globalCompositeOperation = "source-over";
     ctx.globalAlpha = visual.bodyAlpha;
-    ctx.drawImage(treatment.body, x, y);
+    ctx.drawImage(g.image, -g.width / 2, -g.height / 2, g.width, g.height);
     ctx.globalCompositeOperation = "screen";
     ctx.globalAlpha = visual.frostAlpha;
     ctx.drawImage(treatment.frost, x, y);
@@ -208,10 +205,7 @@ export class Ghost2DRenderer {
     ctx.restore();
   }
 
-  private resolveTreatment(
-    g: GhostProp,
-    color: string
-  ): GhostSpriteTreatment | null {
+  private resolveTreatment(g: GhostProp): GhostSpriteTreatment | null {
     const imageKey = g.image as object;
     let treatments = this.treatmentCache.get(imageKey);
     if (!treatments) {
@@ -221,11 +215,11 @@ export class Ghost2DRenderer {
 
     const width = Math.max(1, Math.ceil(g.width));
     const height = Math.max(1, Math.ceil(g.height));
-    const key = `${width}x${height}|${color.toLowerCase()}`;
+    const key = `${width}x${height}`;
     if (treatments.has(key)) return treatments.get(key) ?? null;
     if (treatments.size >= MAX_TREATMENTS_PER_SPRITE) treatments.clear();
 
-    const treatment = this.buildTreatment(g.image, width, height, color);
+    const treatment = this.buildTreatment(g.image, width, height);
     treatments.set(key, treatment);
     return treatment;
   }
@@ -233,8 +227,7 @@ export class Ghost2DRenderer {
   private buildTreatment(
     image: CanvasImageSource,
     spriteWidth: number,
-    spriteHeight: number,
-    color: string
+    spriteHeight: number
   ): GhostSpriteTreatment | null {
     const rimRadius = Math.max(
       2,
@@ -243,21 +236,10 @@ export class Ghost2DRenderer {
     const padding = rimRadius + 2;
     const width = spriteWidth + padding * 2;
     const height = spriteHeight + padding * 2;
-    const body = this.createTreatmentCanvas(width, height);
     const rim = this.createTreatmentCanvas(width, height);
     const frost = this.createTreatmentCanvas(width, height);
-    if (!body || !rim || !frost) return null;
+    if (!rim || !frost) return null;
 
-    this.tintSprite(
-      body.ctx,
-      image,
-      padding,
-      spriteWidth,
-      spriteHeight,
-      color,
-      width,
-      height
-    );
     this.buildRim(
       rim.ctx,
       image,
@@ -265,7 +247,6 @@ export class Ghost2DRenderer {
       spriteWidth,
       spriteHeight,
       rimRadius,
-      resolveGhostRimColor(color),
       width,
       height
     );
@@ -279,7 +260,6 @@ export class Ghost2DRenderer {
       height
     );
     return {
-      body: body.canvas,
       rim: rim.canvas,
       frost: frost.canvas,
       width,
@@ -305,24 +285,6 @@ export class Ghost2DRenderer {
     }
   }
 
-  private tintSprite(
-    ctx: CanvasRenderingContext2D,
-    image: CanvasImageSource,
-    padding: number,
-    spriteWidth: number,
-    spriteHeight: number,
-    color: string,
-    width: number,
-    height: number
-  ): void {
-    ctx.clearRect(0, 0, width, height);
-    ctx.globalCompositeOperation = "source-over";
-    ctx.drawImage(image, padding, padding, spriteWidth, spriteHeight);
-    ctx.globalCompositeOperation = "source-in";
-    ctx.fillStyle = color;
-    ctx.fillRect(0, 0, width, height);
-  }
-
   private buildRim(
     ctx: CanvasRenderingContext2D,
     image: CanvasImageSource,
@@ -330,10 +292,11 @@ export class Ghost2DRenderer {
     spriteWidth: number,
     spriteHeight: number,
     radius: number,
-    color: string,
     width: number,
     height: number
   ): void {
+    // Spread the sprite outward in every direction, then cut the sprite itself
+    // back out. What remains is a ring carrying the colors at the prop's edge.
     ctx.clearRect(0, 0, width, height);
     ctx.globalCompositeOperation = "source-over";
     const directions = 16;
@@ -349,9 +312,11 @@ export class Ghost2DRenderer {
     }
     ctx.globalCompositeOperation = "destination-out";
     ctx.drawImage(image, padding, padding, spriteWidth, spriteHeight);
-    ctx.globalCompositeOperation = "source-in";
-    ctx.fillStyle = color;
+    ctx.globalCompositeOperation = "source-atop";
+    ctx.globalAlpha = GHOST_RIM_FROST_MIX;
+    ctx.fillStyle = GHOST_FROST_WHITE;
     ctx.fillRect(0, 0, width, height);
+    ctx.globalAlpha = 1;
   }
 
   private buildFrost(
@@ -365,7 +330,7 @@ export class Ghost2DRenderer {
   ): void {
     ctx.clearRect(0, 0, width, height);
     ctx.globalCompositeOperation = "source-over";
-    ctx.fillStyle = "#e2f9ff";
+    ctx.fillStyle = GHOST_FROST_WHITE;
     const shardCount = Math.max(
       18,
       Math.min(72, Math.round((spriteWidth * spriteHeight) / 160))

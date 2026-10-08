@@ -27,6 +27,7 @@
   import AnimalPresetReview from "../animal-presets/+page.svelte";
   import { EFFECT_CELLS } from "./effect-grid";
   import { BLOOM_PRESETS } from "$lib/shared/animation-engine/components/effects-panel/presets/bloom-presets";
+  import { GOO_PRESETS } from "$lib/shared/animation-engine/components/effects-panel/presets/goo-presets";
   import type { EffectType } from "$lib/shared/effects/domain/effects-config";
 
   /**
@@ -49,16 +50,41 @@
       requestedBloomPreset.patch
     );
   }
+  // Reproducible liquid review without changing the viewer's saved settings.
+  const requestedGooPreset = GOO_PRESETS.find(
+    (preset) => preset.id === page.url.searchParams.get("preset")
+  );
+  if (requestedGooPreset?.patch) {
+    effectsConfig.applyPreset(
+      "goo",
+      requestedGooPreset.id,
+      requestedGooPreset.patch
+    );
+  }
+  const gooStyle = page.url.searchParams.get("gooStyle");
+  if (gooStyle === "flow" || gooStyle === "splash" || gooStyle === "mist") {
+    effectsConfig.updateEffect("goo", { spewStyle: gooStyle });
+  }
+  const gooTension = page.url.searchParams.get("gooTension");
+  if (gooTension !== null && Number.isFinite(Number(gooTension))) {
+    effectsConfig.updateEffect("goo", {
+      surfaceTension: Math.max(0, Math.min(1, Number(gooTension))),
+    });
+  }
   setEffectsConfigContext(effectsConfig);
 
-  let showProps = $state(false);
+  let showProps = $state(page.url.searchParams.get("props") === "1");
   let playing = $state(true);
   let showLabels = $state(true);
-  let centerPlanes = $state(2);
+  const requestedOverlay = Number(page.url.searchParams.get("overlay"));
+  let centerPlanes = $state(
+    requestedOverlay === 1 || requestedOverlay === 6 ? requestedOverlay : 2
+  );
   let viewportWidth = $state(1920);
   let viewportHeight = $state(1080);
   let activationEffect = $state<EffectType>("none");
   let activationPreviewReady = $state(false);
+  let previewError = $state("");
   let activationEffectsReady = $state(false);
   let activationShadersReady = $state(false);
   const activationReady = $derived(
@@ -104,6 +130,33 @@
     { value: 2, label: "2" },
     { value: 6, label: "6" },
   ];
+
+  onMount(() => {
+    if (focusedEffect !== "goo" && !activationMode) return;
+    const target = window as unknown as Record<string, unknown>;
+    // Change material/style on the same generated motion for visual comparison.
+    target.__gooReviewHarness = {
+      setPreset(id: string): boolean {
+        const preset = GOO_PRESETS.find((candidate) => candidate.id === id);
+        if (!preset?.patch) return false;
+        effectsConfig.applyPreset("goo", preset.id, preset.patch);
+        return true;
+      },
+      setStyle(style: string): boolean {
+        if (style !== "flow" && style !== "splash" && style !== "mist")
+          return false;
+        effectsConfig.updateEffect("goo", { spewStyle: style });
+        return true;
+      },
+      getState: () => ({
+        ready: activationPreviewReady && activationEffectsReady,
+        error: previewError,
+      }),
+    };
+    return () => {
+      delete target.__gooReviewHarness;
+    };
+  });
 
   onMount(() => {
     if (!activationMode) return;
@@ -186,6 +239,7 @@
           formationCount={activationMode ? 2 : 1}
           showStageMarker={!focusedCell}
           onPreviewReady={() => (activationPreviewReady = true)}
+          onPreviewError={(message) => (previewError = message)}
           onEffectsReadyChange={(ready) => (activationEffectsReady = ready)}
         />
         {#if activationMode}
@@ -196,6 +250,10 @@
         {/if}
       </Canvas>
     </section>
+
+    {#if previewError}
+      <p role="alert">Preview unavailable: {previewError}</p>
+    {/if}
 
     {#if activationMode}
       <output

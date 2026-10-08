@@ -1,8 +1,5 @@
 import { Quaternion, Vector3 } from "three";
-import {
-  PROP_COLORS,
-  type PropState3D,
-} from "@austencloud/scene-3d/worker";
+import { PROP_COLORS, type PropState3D } from "@austencloud/scene-3d/worker";
 import { ledBrightnessToFloat } from "$lib/shared/animation-engine/domain/types/led-types";
 import { LedPatternMaterializer } from "$lib/shared/animation-engine/services/led/led-pattern-materializer";
 import { patternFrameIndex } from "$lib/shared/animation-engine/services/led-sampler";
@@ -130,13 +127,19 @@ function pooledSource(
   };
   switch (effect) {
     case "sparkles":
-    case "goo":
     case "petals":
     case "ink":
     case "silk":
     case "animal":
     case "pulse":
       return { ...base, effect, params } as SceneEffectTipSource3D;
+    case "goo":
+      return {
+        ...base,
+        effect,
+        params,
+        collisionFloorY: input.collisionFloorY,
+      };
     case "bubbles":
     case "smoke":
     case "bloom":

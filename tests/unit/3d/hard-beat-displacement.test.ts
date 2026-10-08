@@ -562,4 +562,55 @@ describe("hard-beat lanes", () => {
     })!.worldPosition;
     expect(centred.toArray()).toEqual([0, 0, 0.05]);
   });
+
+  it("retracts a joined prop around its own grid without moving the grid centre", () => {
+    const center = new Vector3(0.52, 0.13, 0);
+    const local = wallProp(0.3, 0.4);
+    const joined = {
+      ...local,
+      gridCenter: center,
+      worldPosition: local.worldPosition.clone().add(center),
+    };
+    const move = { radialInM: 0.2, depthM: 0.05 };
+    const plainResult = displaceProp(local, move)!.worldPosition;
+    const joinedResult = displaceProp(joined, move)!;
+    expect(
+      joinedResult.worldPosition.distanceTo(plainResult.clone().add(center))
+    ).toBeLessThan(1e-10);
+    expect(joinedResult.gridCenter).toBe(center);
+
+    const atCenter = displaceProp(
+      { ...joined, worldPosition: center.clone() },
+      move
+    )!;
+    expect(
+      atCenter.worldPosition.distanceTo(
+        center.clone().add(new Vector3(0, 0, 0.05))
+      )
+    ).toBeLessThan(1e-10);
+  });
+
+  it("plans joined reach in world space while applying radial motion around the hand grid", () => {
+    const center = new Vector3(0.45, 0, 0);
+    const local = new Vector3(0.3, 0.8, 0);
+    const joined = {
+      worldPosition: center.clone().add(local),
+      plane: Plane.WALL,
+      gridCenter: center,
+    };
+    const track = build(heldPair(joined, null));
+    const displacement = sampleHardBeatTrack(track, 1.5).left;
+    expect(displacement.radialInM).toBeGreaterThan(0);
+
+    const moved = displaceProp(joined, displacement)!.worldPosition;
+    const movedLocal = moved.clone().sub(center);
+    movedLocal.z -= displacement.depthM;
+    expect(movedLocal.length()).toBeCloseTo(
+      local.length() - displacement.radialInM,
+      6
+    );
+    expect(
+      movedLocal.clone().normalize().distanceTo(local.clone().normalize())
+    ).toBeLessThan(1e-9);
+  });
 });

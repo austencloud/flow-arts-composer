@@ -308,7 +308,12 @@
           source = { ...base, effect, params: resolvedSparkles };
           break;
         case "goo":
-          source = { ...base, effect, params: resolvedGoo };
+          source = {
+            ...base,
+            effect,
+            params: resolvedGoo,
+            collisionFloorY: userProportionsState.groundY,
+          };
           break;
         case "bubbles":
           source = {
@@ -379,6 +384,9 @@
         break;
       case "goo":
         source.params = resolvedGoo;
+        pooledPosition.set(0, userProportionsState.groundY, 0);
+        if (effectsParentRef) effectsParentRef.localToWorld(pooledPosition);
+        source.collisionFloorY = pooledPosition.y;
         break;
       case "bubbles":
         source.params = resolvedBubbles;

@@ -20,7 +20,7 @@ import {
   GridJoinTween,
   gridJoinHandOffsets,
   gridJoinLayerAlphas,
-} from "$lib/shared/animation-engine/services/grid-join-tween";
+} from "$lib/shared/grid-join/grid-join-tween";
 
 const GRID_DIR = resolve(__dirname, "../../../static/images/grid");
 const EAST_ONE: GridJoin = { toward: "e", steps: 1 };

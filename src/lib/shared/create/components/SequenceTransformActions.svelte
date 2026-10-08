@@ -59,6 +59,8 @@
     onExtend?: () => void;
     onShiftStart?: () => void;
     onEditInConstructor?: () => void;
+    /** Opens the Grid join page. Without it the Grid section is absent. */
+    onGridJoin?: () => void;
   }
 
   let {
@@ -97,6 +99,7 @@
     onExtend,
     onShiftStart,
     onEditInConstructor,
+    onGridJoin,
   }: Props = $props();
 
   // In help mode, clicking any action button shows help instead of applying
@@ -492,6 +495,30 @@
     </section>
   {/if}
 
+  <!-- GRID and EDIT share the last row on the desktop panel, so the Grid
+       section costs no extra tile row. Elsewhere the row wrapper is
+       display: contents and the sections stack as before. -->
+  <div class="tail-row">
+  {#if onGridJoin}
+    <section class="section grid-section" class:help-dimmed={helpMode}>
+      <span class="section-label">{t("create_transform_grid")}</span>
+      <div class="section-grid">
+        <button
+          class="grid-btn grid-join"
+          onclick={onGridJoin}
+          disabled={!hasSequence}
+        >
+          <div class="btn-icon">
+            <i class="fas fa-border-all" aria-hidden="true"></i>
+          </div>
+          <div class="btn-text">
+            <span class="btn-label">{t("animation_menu_grid_join")}</span>
+          </div>
+        </button>
+      </div>
+    </section>
+  {/if}
+
   <!-- EDIT Section - dimmed in help mode since these don't have help content -->
   {#if hasEditActions}
     <section class="section edit-section" class:help-dimmed={helpMode}>
@@ -538,9 +565,14 @@
       </div>
     </section>
   {/if}
+  </div>
 </div>
 
 <style>
+  .tail-row {
+    display: contents;
+  }
+
   .rotation-pair {
     display: contents;
   }
@@ -979,6 +1011,26 @@
   .actions-container.desktop .edit-section .grid-btn {
     flex: 0 1 clamp(140px, 30cqw, 264px);
   }
+  /* Grid beside Edit: each section sizes to its tiles and the pair is
+     centered, like the sparse Edit row was on its own. */
+  .actions-container.desktop .tail-row {
+    display: flex;
+    justify-content: center;
+    gap: clamp(12px, 2.4cqw, 24px);
+    flex-shrink: 0;
+  }
+  .actions-container.desktop .tail-row .section {
+    flex: 0 1 auto;
+    min-width: 0;
+  }
+  .actions-container.desktop .grid-section .section-grid {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .actions-container.desktop .tail-row .grid-btn {
+    flex: 0 1 clamp(112px, 24cqw, 220px);
+  }
   .actions-container.desktop .source-section .section-grid {
     display: flex;
     flex-wrap: wrap;
@@ -1031,6 +1083,9 @@
   .grid-btn.construct {
     --btn-color: 124, 58, 237;
   } /* Violet */
+  .grid-btn.grid-join {
+    --btn-color: 217, 70, 239;
+  } /* Fuchsia */
 
   .grid-btn[class] {
     background: linear-gradient(

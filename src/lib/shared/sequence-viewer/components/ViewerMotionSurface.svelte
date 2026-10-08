@@ -700,6 +700,9 @@
             : playback.animationState.rightPropState}
           additionalLayers={inStudio ? [] : tunnelLayers}
           preloadAdditionalLayers={preparedTunnelLayers}
+          additionalLayersAt={inStudio
+            ? undefined
+            : (step) => tunnelController.preparedAdditionalLayersAt(step)}
           onAdditionalLayerTextureStatusChange={handleTunnelTextureStatus}
           tunnelSpectrum={tunnelController.spectrum}
           tunnelPropColors={tunnelController.exactPropColors}
