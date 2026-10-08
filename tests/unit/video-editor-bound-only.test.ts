@@ -218,6 +218,20 @@ describe("bound-only video editor functions", () => {
         'import * as x from "@austencloud/video-editor/core/deep";'
       )
     ).toBe(false);
+    for (const nearMiss of [
+      "@austencloud/video-editor/render/deep",
+      "@austencloud/video-editor/renderX",
+    ]) {
+      expect(
+        boundNamesIn(
+          `import { evaluatePresetLayers } from "${nearMiss}";`,
+          RENDER_ENTRY
+        )
+      ).toEqual([]);
+      expect(
+        importsWholeEntry(`import * as x from "${nearMiss}";`, RENDER_ENTRY)
+      ).toBe(false);
+    }
     expect(
       importsWholeCore('import * as x from "$lib/shared/post-studio-plugin";')
     ).toBe(false);

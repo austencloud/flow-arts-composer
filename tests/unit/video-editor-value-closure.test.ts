@@ -191,6 +191,7 @@ describe("plugin bound.ts value closure", () => {
     const { modules, indexImports } = valueClosure();
     expect(modules.length).toBeGreaterThan(10);
     for (const name of [
+      "alignment.ts",
       "create-plugin.ts",
       "item-kinds.ts",
       "normalize-hooks.ts",
