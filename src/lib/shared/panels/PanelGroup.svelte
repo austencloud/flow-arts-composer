@@ -57,6 +57,7 @@
 
 <script lang="ts">
   import { onDestroy, onMount, untrack } from "svelte";
+  import { holdBackgroundFor } from "$lib/shared/background/shared/state/background-hold.svelte";
   import { flexPresence, growFade } from "$lib/shared/transitions/motion";
   import { DURATION } from "$lib/shared/transitions/transitions";
   import ResizeHandle from "./ResizeHandle.svelte";
@@ -564,6 +565,24 @@
   let revealingPanels = $state<ReadonlyMap<string | number, number>>(new Map());
   let motionSafety: ReturnType<typeof setTimeout> | null = null;
   const revealsContent = $derived(panels.some((panel) => panel.revealContent));
+
+  /**
+   * The animated backdrop repaints a viewport-sized canvas every frame, and
+   * while the track moves those frames belong to the slide. It holds its last
+   * frame from the moment the allocation changes until the track settles, plus
+   * a short tail so the landing frame and the settle swap are covered too. The
+   * hold is capped, so a motion that never reports settling can't keep the
+   * backdrop still.
+   */
+  const BACKDROP_HOLD_CAP_MS = 1000;
+  const BACKDROP_SETTLE_TAIL_MS = 60;
+  const groupId = $props.id();
+  const backdropHoldKey = `panel-group-motion:${groupId}`;
+  $effect(() => {
+    if (!inMotion) return;
+    untrack(() => holdBackgroundFor(backdropHoldKey, BACKDROP_HOLD_CAP_MS));
+    return () => holdBackgroundFor(backdropHoldKey, BACKDROP_SETTLE_TAIL_MS);
+  });
 
   $effect(() => {
     const element = containerRef;
