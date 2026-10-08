@@ -284,6 +284,9 @@ export function createMethodPreviewTurns(
 
   function hold(id: string): void {
     if (disposed || !open || isReduced()) return;
+    // A card with no scene has nothing to play, and holding it would stop
+    // the rotation for as long as the pointer rests there.
+    if (!options.order().includes(id)) return;
     holds.set(id, (holds.get(id) ?? 0) + 1);
     clearPendingHold();
     pendingHold = setTimeout(() => {
