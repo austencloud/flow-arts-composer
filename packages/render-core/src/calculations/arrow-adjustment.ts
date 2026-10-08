@@ -399,7 +399,8 @@ export function arrowDirectionalTuples(
   }
 
   if (motionType === "float") {
-    const order = diamond ? DIAGONALS : CARDINALS;
+    // A clockwise hand path turns the nudge; a counter-clockwise one reflects it.
+    const order = diamond ? CARDINALS : DIAGONALS;
     const start = order.indexOf(motion.startLocation);
     const end = order.indexOf(motion.endLocation);
     return (start + 1) % 4 === end ? turning : reflected;
