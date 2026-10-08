@@ -102,7 +102,10 @@ export function selectModeLoops(
         throw new Error(`The canonical ${word} sequence is unavailable.`);
       // The box versions change timing under rotation; the word alone cannot
       // establish which family the actual paths belong to.
-      const sequence = applyBoxMode(source, gridMode);
+      const sequence = applyBoxMode(
+        source,
+        gridMode === GridMode.BOX ? "box" : "diamond"
+      );
       if (
         sequence.steps.length !== 4 ||
         !sequence.steps.every((step) => stepMode(step) === code)
