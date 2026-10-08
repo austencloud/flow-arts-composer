@@ -440,10 +440,13 @@ row, toolbar, dock, bottom sheet, side panel, inspector, crop tool.
 The editor's numbers are typed in a `TypeableValue`: a `ValueSlider`'s value,
 the clocks, trim points, the beat grid's offset and the Position tool's X, Y,
 width, height and turn. The small readings inside timeline buttons (a clip's speed,
-a lane's zoom or opacity) stay labels, typed in their tool. Where an item
+a lane's zoom or opacity) stay labels, typed in their tool. A clip's speed
+reads the same on its badge and in its tool (0.98×) through `formatPostSpeed`
+in `builder/post-builder-format.ts`. Where an item
 shows on the frame, for the preview's handles and the typed position alike, is
 `editor/post-item-rect.ts`; `typeBox` in `editor/post-box-drag.ts` applies a
-typed side. Searches: typed value, exact value, numeric entry, type a time.
+typed side. Searches: typed value, exact value, numeric entry, type a time,
+speed badge, speed label.
 
 While a box, the picture or a pinch moves, `PostEditorCanvas.svelte` shows a
 rule-of-thirds grid and, on a 9:16 post, the part of a Reel that Instagram's

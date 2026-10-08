@@ -75,7 +75,11 @@
   import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
   import TypeableValue from "$lib/shared/ui/components/TypeableValue.svelte";
   import ValueSlider from "$lib/shared/ui/components/ValueSlider.svelte";
-  import { formatTakeClock, parseClock } from "../builder/post-builder-format";
+  import {
+    formatPostSpeed,
+    formatTakeClock,
+    parseClock,
+  } from "../builder/post-builder-format";
   import { easingPresetLabel, itemDisplayLabel } from "./post-editor-labels";
   import ChipPopoverOption from "$lib/shared/browse/components/filter-chips/ChipPopoverOption.svelte";
   import PostCurveEditor from "./PostCurveEditor.svelte";
@@ -850,8 +854,7 @@
       POST_MAX_SPEED,
       Math.max(POST_MIN_SPEED, Math.round(2 ** stop * 100) / 100)
     );
-  const formatSpeed = (stop: number) =>
-    `${Number(speedFromStop(stop).toFixed(2))}×`;
+  const formatSpeed = (stop: number) => formatPostSpeed(speedFromStop(stop));
 </script>
 
 {#snippet status(text: string, icon: string, action: string, run: () => void)}
