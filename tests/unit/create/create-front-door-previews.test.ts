@@ -15,6 +15,7 @@ import { CREATE_TABS } from "$lib/shared/navigation/config/tab-definitions";
 import { t } from "$lib/shared/i18n/i18n.svelte.js";
 import { METHOD_PREVIEW_SCENES } from "$lib/features/create/shared/components/method-previews/method-preview-scenes";
 import { METHOD_PREVIEW_TIMING } from "$lib/features/create/shared/state/method-preview-turns.svelte";
+import { __resetRenderGatingSharedState } from "$lib/shared/render-gating/render-activity-gate";
 
 const analytics = vi.hoisted(() => ({
   logCreateFrontDoorViewed: vi.fn(),
@@ -28,6 +29,32 @@ vi.mock(
 vi.mock("$lib/shared/application/get-haptic-feedback", () => ({
   getHapticFeedback: () => ({ trigger: vi.fn() }),
 }));
+// Outside the app shell getSettings() returns a copy read once, so the app's
+// Reduce Motion setting cannot change mid-test. This stand-in reads it from a
+// reactive map the tests flip, as the live settings object lets the front door
+// follow a change.
+const appMotionSetting = await vi.hoisted(async () => {
+  const { SvelteMap } = await import("svelte/reactivity");
+  return new SvelteMap<"reducedMotion", boolean>();
+});
+vi.mock(
+  "$lib/shared/application/state/app-state.svelte",
+  async (importOriginal) => {
+    const original =
+      await importOriginal<
+        typeof import("$lib/shared/application/state/app-state.svelte")
+      >();
+    return {
+      ...original,
+      getSettings: () => ({
+        ...original.getSettings(),
+        get reducedMotion() {
+          return appMotionSetting.get("reducedMotion") ?? false;
+        },
+      }),
+    };
+  }
+);
 // The real preview box loads scene modules jsdom cannot draw. The stand-in
 // reports ready on mount and shows the props it was given.
 vi.mock(
@@ -134,6 +161,47 @@ describe("Create front door, method previews", () => {
     );
   }
 
+  /**
+   * jsdom has no IntersectionObserver, so the render gate fails open and the
+   * board always counts as on screen. This stand-in records what the gate
+   * observes and lets a test say whether that element is on screen. Install
+   * it before render(): the gate checks for the observer when it is created.
+   */
+  function stubIntersectionObserver(): {
+    observed: Set<Element>;
+    report(target: Element, isIntersecting: boolean): void;
+  } {
+    const observed = new Set<Element>();
+    let notify: IntersectionObserverCallback | null = null;
+
+    class FakeIntersectionObserver {
+      constructor(callback: IntersectionObserverCallback) {
+        notify = callback;
+      }
+      observe(target: Element): void {
+        observed.add(target);
+      }
+      unobserve(target: Element): void {
+        observed.delete(target);
+      }
+      disconnect(): void {
+        observed.clear();
+      }
+    }
+    vi.stubGlobal("IntersectionObserver", FakeIntersectionObserver);
+
+    return {
+      observed,
+      report(target, isIntersecting) {
+        if (!notify) throw new Error("The render gate made no observer");
+        notify(
+          [{ target, isIntersecting } as IntersectionObserverEntry],
+          {} as IntersectionObserver
+        );
+      },
+    };
+  }
+
   beforeEach(() => {
     vi.useFakeTimers();
     stubbedCreateElement = document.createElement;
@@ -152,6 +220,11 @@ describe("Create front door, method previews", () => {
     host.remove();
     document.createElement = stubbedCreateElement;
     delete document.documentElement.dataset.motionPreference;
+    appMotionSetting.clear();
+    // The gate's observer pool is module-level, so a stubbed observer would
+    // outlive the test that installed it.
+    __resetRenderGatingSharedState();
+    vi.unstubAllGlobals();
     vi.useRealTimers();
   });
 
@@ -259,6 +332,93 @@ describe("Create front door, method previews", () => {
     );
     advance(FIRST_TURN_MS + TURN_CYCLE_MS * 2);
     expect(playingMethod()).toBeNull();
+  });
+
+  it("plays only while the board is on screen", () => {
+    const observer = stubIntersectionObserver();
+    render();
+    const board = host.querySelector(".method-index");
+    if (!board) throw new Error("No board");
+    expect(observer.observed.has(board)).toBe(true);
+
+    // An observer reports once as soon as it watches an element. The board
+    // starts below the fold, so the opened board waits.
+    observer.report(board, false);
+    setOpen(true);
+    advance(FIRST_TURN_MS + TURN_CYCLE_MS);
+    expect(playingMethod()).toBeNull();
+
+    observer.report(board, true);
+    advance(METHOD_PREVIEW_TIMING.gapMs);
+    expect(playingMethod()).toBe("construct");
+
+    // Scrolling away cuts the turn. Nothing plays however long it stays away.
+    observer.report(board, false);
+    flushSync();
+    expect(playingMethod()).toBeNull();
+    expect(preview("construct")?.dataset.playing).toBe("false");
+    advance(TURN_CYCLE_MS * 3);
+    expect(playingMethod()).toBeNull();
+
+    // Coming back replays the cut card, then the turns carry on.
+    observer.report(board, true);
+    advance(METHOD_PREVIEW_TIMING.gapMs);
+    expect(playingMethod()).toBe("construct");
+    advance(TURN_CYCLE_MS);
+    expect(playingMethod()).toBe("generate");
+  });
+
+  it("stops the turns when reduced motion is switched on mid-round", () => {
+    const queriesBefore = vi.mocked(window.matchMedia).mock.results.length;
+    render();
+    setOpen(true);
+    advance(FIRST_TURN_MS);
+    expect(playingMethod()).toBe("construct");
+
+    // vitest-setup.ts stubs matchMedia, and the stub's addEventListener
+    // records its calls. The front door listens on the reduced-motion query
+    // for changes to the system setting.
+    const changeListeners = vi
+      .mocked(window.matchMedia)
+      .mock.results.slice(queriesBefore)
+      .map((result) => result.value as MediaQueryList)
+      .filter((query) => query.media === "(prefers-reduced-motion: reduce)")
+      .flatMap((query) =>
+        vi
+          .mocked(query.addEventListener)
+          .mock.calls.filter(([type]) => type === "change")
+          .map(([, listener]) => listener as EventListener)
+      );
+    expect(changeListeners).toHaveLength(1);
+
+    // reducedMotion() reads this attribute beside the media query.
+    document.documentElement.dataset.motionPreference = "reduce";
+    changeListeners[0]?.(new Event("change"));
+    flushSync();
+
+    expect(playingMethod()).toBeNull();
+    advance(TURN_CYCLE_MS * 3);
+    expect(playingMethod()).toBeNull();
+  });
+
+  it("follows the app's Reduce Motion setting while the board is open", () => {
+    render();
+    setOpen(true);
+    advance(FIRST_TURN_MS);
+    expect(playingMethod()).toBe("construct");
+
+    appMotionSetting.set("reducedMotion", true);
+    flushSync();
+
+    expect(playingMethod()).toBeNull();
+    advance(TURN_CYCLE_MS * 3);
+    expect(playingMethod()).toBeNull();
+
+    // Switching it back off starts the rounds over.
+    appMotionSetting.set("reducedMotion", false);
+    flushSync();
+    advance(FIRST_TURN_MS);
+    expect(playingMethod()).toBe("construct");
   });
 
   it("ends the turns when the board closes and starts over when it opens again", () => {
