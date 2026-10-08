@@ -1179,6 +1179,7 @@ export class AnimationRenderLoop {
         y: t.y + y,
         prevX: t.prevX + x,
         prevY: t.prevY + y,
+        path: t.path?.map((p) => ({ x: p.x + x, y: p.y + y })),
       })),
     };
   }
@@ -1909,7 +1910,8 @@ export class AnimationRenderLoop {
           effectiveLeftMotionVisible ? props.leftProp : null,
           effectiveRightMotionVisible ? props.rightProp : null,
           tipTrackerConfig,
-          currentTime
+          currentTime,
+          this.motionSamples.length > 0 ? this.motionSamples : undefined
         )
       );
     }
