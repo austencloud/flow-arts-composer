@@ -347,16 +347,15 @@
       return;
     }
 
-    const updateHeight = () => {
-      buttonPanelHeight = buttonPanelElement?.offsetHeight ?? 0;
-    };
-
-    // Initial measurement
-    updateHeight();
-
-    // Use ResizeObserver to track size changes (responsive layouts, container queries)
-    const resizeObserver = new ResizeObserver(updateHeight);
-    resizeObserver.observe(buttonPanelElement);
+    // Take the height from the observer entry. Reading offsetHeight here
+    // forced a layout whenever an earlier observer callback had dirtied the
+    // page, as a remounting Generate panel does. The first entry arrives
+    // before the first paint, so no synchronous read is needed on mount.
+    const resizeObserver = new ResizeObserver((entries) => {
+      const box = entries.at(-1)?.borderBoxSize?.[0];
+      if (box) buttonPanelHeight = Math.round(box.blockSize);
+    });
+    resizeObserver.observe(buttonPanelElement, { box: "border-box" });
 
     return () => resizeObserver.disconnect();
   });
@@ -543,8 +542,13 @@
         id: "create-tool-panel",
         content: toolPanel,
         defaultSize: defaultPanelSizes[1],
-        fixedSize: isWorkspacePlayback || isAssembleComplete ? "0px" : undefined,
+        fixedSize:
+          isWorkspacePlayback || isAssembleComplete ? "0px" : undefined,
         resizable: false,
+        // Play folds the tools away. Their cards keep the size they had and
+        // the closing edge covers them, instead of re-laying out every card
+        // (and their container-query padding) on each frame of the slide.
+        revealContent: true,
       },
     ]}
   />

@@ -891,7 +891,7 @@
     height: calc(100dvh - var(--iab-banner-height, 0px));
     width: 100%;
     position: relative;
-    z-index: 2; /* Above body::after transition layer (z-index: 1) */
+    z-index: 2;
     overflow: hidden;
     transition: all var(--duration-emphasis) ease;
     background: transparent;

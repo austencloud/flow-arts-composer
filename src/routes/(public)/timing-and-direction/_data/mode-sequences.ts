@@ -16,44 +16,88 @@ import {
 import { deriveWord } from "$lib/shared/foundation/services/word-deriver";
 import { stripWordNotation } from "$lib/shared/foundation/utils/word-notation";
 import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import { TnDMode } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
 import { deriveTnDFromPictograph } from "$lib/shared/pictograph/shared/domain/utils/tnd-deriver";
+import {
+  MODE_FAMILY_ID,
+  type VtgMode,
+} from "$lib/shared/shape-matrix/services/shape-matrix-realizations";
 
-export interface TogetherOppositeLoop {
+export interface ModeLoop {
   readonly id: string;
   readonly word: string;
   readonly gridMode: GridMode;
-  readonly spinLabel: string;
   readonly sequence: SequenceData;
 }
 
-export type TogetherOppositeTransform =
+export type ModeLoopTransform =
   | "mirror"
   | "flip"
   | "rotate-clockwise"
   | "rotate-counterclockwise"
   | "swap";
 
-const GROUPS = [
-  { gridMode: GridMode.DIAMOND, words: ["DJDJ", "EKEK", "FLFL"] },
-  { gridMode: GridMode.BOX, words: ["MPMP", "NQNQ", "OROR"] },
-] as const;
-const SPINS = ["Pro-spin", "Anti-spin", "Mixed"] as const;
-const TND_FAMILY_BY_MODE: Readonly<Record<TnDMode, string>> = {
-  [TnDMode.SPLIT_SAME]: "split-same",
-  [TnDMode.SPLIT_OPP]: "split-opp",
-  [TnDMode.TOG_SAME]: "tog-same",
-  [TnDMode.TOG_OPP]: "tog-opp",
-  [TnDMode.QUARTER_SAME]: "quarter-same",
-  [TnDMode.QUARTER_OPP]: "quarter-opp",
+interface LoopGroup {
+  readonly gridMode: GridMode;
+  readonly words: readonly string[];
+}
+
+/**
+ * The four-count loops each mode guide offers, drawn from the canonical T&D
+ * base pool. Each row is ordered pro-spin, anti-spin, then mixed. The same
+ * letters can land in a different family on the other grid (DJDJ is
+ * Together-Opposite on diamond and Quarter-Opposite on box), so every word is
+ * listed with the grid that gives it this mode; selection verifies each step.
+ */
+const MODE_LOOP_GROUPS: Readonly<Record<VtgMode, readonly LoopGroup[]>> = {
+  SS: [
+    { gridMode: GridMode.DIAMOND, words: ["AAAA", "BBBB", "CCCC"] },
+    { gridMode: GridMode.BOX, words: ["AAAA", "BBBB", "CCCC"] },
+  ],
+  TS: [
+    { gridMode: GridMode.DIAMOND, words: ["GGGG", "HHHH", "IIII"] },
+    { gridMode: GridMode.BOX, words: ["GGGG", "HHHH", "IIII"] },
+  ],
+  // Quarter-Same has two mixed loops, one for each hand leading pro.
+  QS: [
+    { gridMode: GridMode.DIAMOND, words: ["SSSS", "TTTT", "UUUU", "VVVV"] },
+    { gridMode: GridMode.BOX, words: ["SSSS", "TTTT", "UUUU", "VVVV"] },
+  ],
+  SO: [
+    { gridMode: GridMode.DIAMOND, words: ["JDJD", "KEKE", "LFLF"] },
+    { gridMode: GridMode.BOX, words: ["PMPM", "QNQN", "RORO"] },
+  ],
+  TO: [
+    { gridMode: GridMode.DIAMOND, words: ["DJDJ", "EKEK", "FLFL"] },
+    { gridMode: GridMode.BOX, words: ["MPMP", "NQNQ", "OROR"] },
+  ],
+  QO: [
+    { gridMode: GridMode.DIAMOND, words: ["MPMP", "NQNQ", "OROR"] },
+    { gridMode: GridMode.BOX, words: ["DJDJ", "EKEK", "FLFL"] },
+  ],
 };
 
-export function selectTogetherOppositeLoops(
+/** Loops per grid for a mode, known before any sequence data loads. */
+export function modeLoopsPerGrid(code: VtgMode): number {
+  return MODE_LOOP_GROUPS[code][0]!.words.length;
+}
+
+/** Total loops a mode guide offers. */
+export function modeLoopCount(code: VtgMode): number {
+  return MODE_LOOP_GROUPS[code].reduce(
+    (total, group) => total + group.words.length,
+    0
+  );
+}
+
+export function selectModeLoops(
+  code: VtgMode,
   sequences: readonly SequenceData[]
-): TogetherOppositeLoop[] {
-  return GROUPS.flatMap(({ gridMode, words }) =>
-    words.map((word, index) => {
-      const source = sequences.find((sequence) => stripWordNotation(sequence.word) === word);
+): ModeLoop[] {
+  return MODE_LOOP_GROUPS[code].flatMap(({ gridMode, words }) =>
+    words.map((word) => {
+      const source = sequences.find(
+        (sequence) => stripWordNotation(sequence.word) === word
+      );
       if (!source)
         throw new Error(`The canonical ${word} sequence is unavailable.`);
       // The box versions change timing under rotation; the word alone cannot
@@ -61,25 +105,20 @@ export function selectTogetherOppositeLoops(
       const sequence = applyBoxMode(source, gridMode);
       if (
         sequence.steps.length !== 4 ||
-        !sequence.steps.every(
-          (step) => deriveTnDFromPictograph(step).tndMode === TnDMode.TOG_OPP
-        )
+        !sequence.steps.every((step) => stepMode(step) === code)
       ) {
-        throw new Error(
-          `${word} does not contain four Together–Opposite steps.`
-        );
+        throw new Error(`${word} does not contain four ${code} steps.`);
       }
-      const id = `to-${gridMode}-${word.toLowerCase()}`;
+      const id = `${code.toLowerCase()}-${gridMode}-${word.toLowerCase()}`;
       return {
         id,
         word,
         gridMode,
-        spinLabel: SPINS[index]!,
         sequence: processReversals(
           updateSequenceData(sequence, {
             id,
             gridMode,
-            metadata: { ...sequence.metadata, familyId: "tog-opp" },
+            metadata: { ...sequence.metadata, familyId: MODE_FAMILY_ID[code] },
           })
         ),
       };
@@ -87,16 +126,14 @@ export function selectTogetherOppositeLoops(
   );
 }
 
-export async function loadTogetherOppositeLoops(): Promise<
-  TogetherOppositeLoop[]
-> {
+export async function loadModeLoops(code: VtgMode): Promise<ModeLoop[]> {
   const { loadCanonicalTnDBaseSequences } =
     await import("$lib/features/browse/gallery-home/canonical-tnd-pool");
-  return selectTogetherOppositeLoops(await loadCanonicalTnDBaseSequences());
+  return selectModeLoops(code, await loadCanonicalTnDBaseSequences());
 }
 
-export async function adjustTogetherOppositeLoop(
-  loop: TogetherOppositeLoop,
+export async function adjustModeLoop(
+  loop: ModeLoop,
   leftTurns: number,
   rightTurns: number,
   stepIndex?: number
@@ -142,15 +179,15 @@ export async function adjustTogetherOppositeLoop(
 }
 
 /** Resolve a turn edit for every displayed card before the caller replaces its deck. */
-export async function adjustTogetherOppositeLoops(
-  loops: readonly TogetherOppositeLoop[],
+export async function adjustModeLoops(
+  loops: readonly ModeLoop[],
   leftTurns: number,
   rightTurns: number,
   stepIndex?: number
-): Promise<TogetherOppositeLoop[]> {
+): Promise<ModeLoop[]> {
   return Promise.all(
     loops.map(async (loop) => {
-      const sequence = await adjustTogetherOppositeLoop(
+      const sequence = await adjustModeLoop(
         loop,
         leftTurns,
         rightTurns,
@@ -162,9 +199,9 @@ export async function adjustTogetherOppositeLoops(
 }
 
 /** Apply one canonical geometric action to the actual sequence on a card. */
-export async function transformTogetherOppositeLoop(
-  loop: TogetherOppositeLoop,
-  transform: TogetherOppositeTransform
+export async function transformModeLoop(
+  loop: ModeLoop,
+  transform: ModeLoopTransform
 ): Promise<SequenceData> {
   let transformed: SequenceData;
   switch (transform) {
@@ -186,13 +223,13 @@ export async function transformTogetherOppositeLoop(
   }
 
   const { familyId: _staleFamilyId, ...metadata } = transformed.metadata;
-  const tndMode = deriveTnDFromPictograph(transformed.steps[0]!).tndMode;
+  const tndMode = stepMode(transformed.steps[0]!);
   const withWord = updateSequenceData(transformed, {
     id: `${loop.id}-${crypto.randomUUID()}`,
     word: deriveWord(transformed),
     metadata: {
       ...metadata,
-      ...(tndMode ? { familyId: TND_FAMILY_BY_MODE[tndMode] } : {}),
+      ...(tndMode ? { familyId: MODE_FAMILY_ID[tndMode] } : {}),
       turnLoopClosed: loopCloses(transformed),
     },
   });
@@ -200,13 +237,13 @@ export async function transformTogetherOppositeLoop(
 }
 
 /** Resolve one geometric action for every displayed card as one replacement deck. */
-export async function transformTogetherOppositeLoops(
-  loops: readonly TogetherOppositeLoop[],
-  transform: TogetherOppositeTransform
-): Promise<TogetherOppositeLoop[]> {
+export async function transformModeLoops(
+  loops: readonly ModeLoop[],
+  transform: ModeLoopTransform
+): Promise<ModeLoop[]> {
   return Promise.all(
     loops.map(async (loop) => {
-      const sequence = await transformTogetherOppositeLoop(loop, transform);
+      const sequence = await transformModeLoop(loop, transform);
       return {
         ...loop,
         sequence,
@@ -215,6 +252,11 @@ export async function transformTogetherOppositeLoops(
       };
     })
   );
+}
+
+// TnDMode's enum values are the same two-letter codes as VtgMode.
+function stepMode(step: SequenceData["steps"][number]): VtgMode | null {
+  return deriveTnDFromPictograph(step).tndMode as VtgMode | null;
 }
 
 function loopCloses(sequence: SequenceData): boolean {

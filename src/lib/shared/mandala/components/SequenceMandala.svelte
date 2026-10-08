@@ -45,7 +45,7 @@
 	} from "../services/mandala-geometry-calculator";
 	import { getMandalaPathOptions } from "../services/mandala-path-options";
 	import { resolveMandalaTipOffsets } from "../services/mandala-path-preparer";
-	import { interpolateMandalaPaths, mandalaPathsEqual } from "../services/mandala-path-interpolator";
+	import { createMandalaMorph, mandalaPathsEqual } from "../services/mandala-path-interpolator";
 	import { TrackingMode } from "$lib/shared/animation-engine/domain/types/trail-types";
 	import { pairTipEnds } from "$lib/shared/pictograph/prop/domain/prop-tip-ends";
 	import { DURATION } from "$lib/shared/transitions/transitions";
@@ -456,13 +456,14 @@
 		if (changeMorphRafId) cancelAnimationFrame(changeMorphRafId);
 		changeMorphPaths = from;
 		changeMorphActive = true;
+		const morphAt = createMandalaMorph(from, target);
 
 		let start: number | null = null;
 		const stepChangeMorph = (timestamp: number) => {
 			if (start === null) start = timestamp;
 			const linearProgress = Math.min(1, (timestamp - start) / CHANGE_MORPH_MS);
 			const progress = EASING_FNS.bloom(linearProgress);
-			changeMorphPaths = interpolateMandalaPaths(from, target, progress);
+			changeMorphPaths = morphAt(progress);
 			draw();
 
 			if (linearProgress < 1) {

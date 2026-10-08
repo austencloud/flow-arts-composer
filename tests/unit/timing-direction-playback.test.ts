@@ -54,7 +54,28 @@ describe("timing-direction playback commands", () => {
     state.propDisplay = "staff";
     expect(state.step).toBe(1.625);
     state.select("split-time-same-direction");
-    expect(state.propDisplay).toBe("hands");
+    expect(state.propDisplay).toBe("staff");
+  });
+
+  it("opens guides on props, keeps a choice between guides, and shows the hub by hand", () => {
+    const hub = createTimingDirectionState();
+    expect(hub.propDisplay).toBe("hands");
+    hub.followRoute(undefined);
+    expect(hub.propDisplay).toBe("hands");
+
+    hub.followRoute("split-time-same-direction");
+    expect(hub.selected.article.code).toBe("SS");
+    expect(hub.propDisplay).toBe("staff");
+    hub.propDisplay = "hands";
+    hub.followRoute("quarter-time-same-direction");
+    expect(hub.selected.article.code).toBe("QS");
+    expect(hub.propDisplay).toBe("hands");
+
+    hub.followRoute(undefined);
+    expect(hub.selected.article.code).toBe("QS");
+    expect(hub.propDisplay).toBe("hands");
+    hub.followRoute("together-time-opposite-direction");
+    expect(hub.propDisplay).toBe("staff");
   });
 
   it("seeks within the active sequence and ignores frames from a retired sequence", () => {

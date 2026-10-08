@@ -17,6 +17,7 @@
   import TransportControls from "$lib/shared/animation-engine/components/controls/TransportControls.svelte";
   import SequenceShowcasePreview from "$lib/shared/sequence-preview/components/SequenceShowcasePreview.svelte";
   import ChoreoCard from "$lib/shared/sequence-viewer/components/ChoreoCard.svelte";
+  import { simplifyRepeatedWord } from "$lib/shared/foundation/utils/word-simplifier";
   import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
   import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
   import { DEFAULT_VIEWER_CUSTOM_COLORS } from "$lib/shared/sequence-viewer/domain/viewer-custom-colors";
@@ -28,12 +29,14 @@
     TIMING_DIRECTION_ARTICLES,
   } from "../_data/timing-direction-articles";
   import {
-    adjustTogetherOppositeLoops,
-    loadTogetherOppositeLoops,
-    transformTogetherOppositeLoops,
-    type TogetherOppositeTransform,
-    type TogetherOppositeLoop,
-  } from "../_data/together-opposite-sequences";
+    adjustModeLoops,
+    loadModeLoops,
+    modeLoopCount,
+    modeLoopsPerGrid,
+    transformModeLoops,
+    type ModeLoop,
+    type ModeLoopTransform,
+  } from "../_data/mode-sequences";
 
   let { data }: { data: PageData } = $props();
 
@@ -58,16 +61,19 @@
   const canonical = $derived(
     `https://tkaflowarts.com/timing-and-direction/${article.slug}`
   );
-  const lessonHref = $derived(
-    article.timing === "Quarter"
-      ? "/learn/concepts/gamma-motion"
-      : "/learn/concepts/dual-shifts-alpha-beta"
+  const loopsPerGrid = $derived(modeLoopsPerGrid(article.code));
+  const loopCount = $derived(modeLoopCount(article.code));
+  const loopCountWord = $derived(
+    (["six", "seven", "eight"] as const)[loopCount - 6] ?? String(loopCount)
   );
-  const spinLabels = ["Pro-spin", "Anti-spin", "Mixed"] as const;
-  let togetherOppositeLoops = $state<TogetherOppositeLoop[]>([]);
-  let originalTogetherOppositeLoops = $state<TogetherOppositeLoop[]>([]);
-  let selectedTogetherOppositeLoop = $state<string | null>(null);
-  let loopsLoading = $state(false);
+  const gridTitles = [
+    { gridMode: GridMode.DIAMOND, title: "Diamond" },
+    { gridMode: GridMode.BOX, title: "Box" },
+  ] as const;
+  let loops = $state<ModeLoop[]>([]);
+  let originalLoops = $state<ModeLoop[]>([]);
+  let selectedLoopId = $state<string | null>(null);
+  let loopsLoading = $state(true);
   let loopsError = $state<string | null>(null);
   let loopsRetry = $state(0);
   let loopsRequest = 0;
@@ -89,11 +95,10 @@
   let editingStep = $state(0);
   let examplePlayer: HTMLElement | undefined = $state();
   const selectedLoop = $derived(
-    togetherOppositeLoops.find(
-      (loop) => loop.id === selectedTogetherOppositeLoop
-    ) ??
-      togetherOppositeLoops[0] ??
-      null
+    loops.find((loop) => loop.id === selectedLoopId) ?? loops[0] ?? null
+  );
+  const selectedWord = $derived(
+    selectedLoop ? simplifyRepeatedWord(selectedLoop.word) : article.name
   );
   const currentStripStep = $derived(
     Math.max(
@@ -104,22 +109,16 @@
       )
     )
   );
-  const loopGroups = $derived([
-    {
-      title: "Diamond",
-      loops: togetherOppositeLoops.filter(
-        (loop) => loop.gridMode === GridMode.DIAMOND
-      ),
-    },
-    {
-      title: "Box",
-      loops: togetherOppositeLoops.filter(
-        (loop) => loop.gridMode === GridMode.BOX
-      ),
-    },
-  ]);
+  // Cards group by the grid each sequence actually uses, so a quarter
+  // rotation moves them between Diamond and Box.
+  const loopGroups = $derived(
+    gridTitles.map(({ gridMode, title }) => ({
+      title,
+      loops: loops.filter((loop) => loop.gridMode === gridMode),
+    }))
+  );
   const turnsAreReset = $derived(
-    togetherOppositeLoops.every((loop) =>
+    loops.every((loop) =>
       loop.sequence.steps.every(
         (step) =>
           (Number(step.motions.left.turns) || 0) === 0 &&
@@ -129,40 +128,34 @@
   );
 
   $effect(() => {
-    if (article.code !== "TO") {
-      loopsRequest += 1;
+    const code = article.code;
+    loopsRetry;
+    const request = ++loopsRequest;
+    untrack(() => {
       adjustmentRequest += 1;
       adjusting = false;
       adjustmentError = null;
-      selectedTogetherOppositeLoop = null;
-      togetherOppositeLoops = [];
-      originalTogetherOppositeLoops = [];
+      turnEditorOpen = false;
+      actionEditorOpen = false;
+      loopsLoading = true;
       loopsError = null;
-      loopsLoading = false;
-      return;
-    }
-    loopsRetry;
-    const request = ++loopsRequest;
-    adjustmentRequest += 1;
-    adjusting = false;
-    adjustmentError = null;
-    loopsLoading = true;
-    loopsError = null;
-    togetherOppositeLoops = [];
-    originalTogetherOppositeLoops = [];
-    void loadTogetherOppositeLoops()
-      .then((loops) => {
-        if (request !== loopsRequest || article.code !== "TO") return;
-        if (loops.length === 0) {
-          loopsError = "No Together-Opposite loops are available yet.";
+      loops = [];
+      originalLoops = [];
+      selectedLoopId = null;
+    });
+    void loadModeLoops(code)
+      .then((loaded) => {
+        if (request !== loopsRequest) return;
+        if (loaded.length === 0) {
+          loopsError = "No loops are available for this mode yet.";
           return;
         }
-        originalTogetherOppositeLoops = loops;
-        togetherOppositeLoops = loops;
-        untrack(() => selectTogetherOppositeLoop(loops[0]!));
+        originalLoops = loaded;
+        loops = loaded;
+        untrack(() => selectLoop(loaded[0]!));
       })
       .catch(() => {
-        if (request !== loopsRequest || article.code !== "TO") return;
+        if (request !== loopsRequest) return;
         loopsError = "Loops could not load. Try again.";
       })
       .finally(() => {
@@ -174,14 +167,11 @@
     };
   });
 
-  function selectTogetherOppositeLoop(
-    loop: TogetherOppositeLoop,
-    reveal = false
-  ) {
+  function selectLoop(loop: ModeLoop, reveal = false) {
     adjustmentRequest += 1;
     adjusting = false;
     adjustmentError = null;
-    selectedTogetherOppositeLoop = loop.id;
+    selectedLoopId = loop.id;
     turnEditorOpen = false;
     actionEditorOpen = false;
     editingStep = 0;
@@ -190,15 +180,28 @@
       (loop.sequence.metadata as { turnLoopClosed?: boolean } | undefined)
         ?.turnLoopClosed !== false;
     playback.selectExample(loop.sequence, 0);
-    if (reveal && window.matchMedia("(max-width: 1439px)").matches) {
-      examplePlayer?.scrollIntoView({
-        block: "center",
-        behavior: reducedMotion() ? "instant" : "smooth",
-      });
-    }
+    if (reveal) revealPlayer();
   }
 
-  function retryTogetherOppositeLoops() {
+  /** Bring the player back into view when the chosen card sits below it. */
+  function revealPlayer() {
+    const node = examplePlayer;
+    if (!node) return;
+    const headerHeight =
+      parseFloat(
+        getComputedStyle(document.documentElement).getPropertyValue(
+          "--marketing-header-h"
+        )
+      ) || 64;
+    const rect = node.getBoundingClientRect();
+    if (rect.top >= headerHeight && rect.bottom <= window.innerHeight) return;
+    node.scrollIntoView({
+      block: "start",
+      behavior: reducedMotion() ? "instant" : "smooth",
+    });
+  }
+
+  function retryLoops() {
     loopsRetry += 1;
   }
 
@@ -217,17 +220,15 @@
       Math.min(playback.sequence.steps.length + 1, playback.step)
     );
     try {
-      const loops = await adjustTogetherOppositeLoops(
-        togetherOppositeLoops,
+      const adjusted = await adjustModeLoops(
+        loops,
         nextLeftTurns,
         nextRightTurns,
         applyTo === "current" ? editingStep : undefined
       );
       if (request !== adjustmentRequest) return;
-      togetherOppositeLoops = loops;
-      const selected = loops.find(
-        (loop) => loop.id === selectedTogetherOppositeLoop
-      );
+      loops = adjusted;
+      const selected = adjusted.find((loop) => loop.id === selectedLoopId);
       if (!selected) return;
       const sequence = selected.sequence;
       playback.selectExample(sequence, sampledPlaybackStep);
@@ -250,25 +251,24 @@
   }
 
   function resetAllLoops() {
-    if (!selectedLoop || originalTogetherOppositeLoops.length === 0) return;
+    if (!selectedLoop || originalLoops.length === 0) return;
     adjustmentRequest += 1;
     adjusting = false;
     adjustmentError = null;
     playback.playing = false;
-    togetherOppositeLoops = originalTogetherOppositeLoops;
+    loops = originalLoops;
     const selected =
-      originalTogetherOppositeLoops.find(
-        (loop) => loop.id === selectedTogetherOppositeLoop
-      ) ?? originalTogetherOppositeLoops[0];
+      originalLoops.find((loop) => loop.id === selectedLoopId) ??
+      originalLoops[0];
     if (!selected) return;
-    selectedTogetherOppositeLoop = selected.id;
+    selectedLoopId = selected.id;
     editingStep = 0;
     syncTurnControls(selected.sequence, editingStep);
     turnLoopClosed = true;
     playback.selectExample(selected.sequence, 0);
   }
 
-  async function transformAllLoops(transform: TogetherOppositeTransform) {
+  async function transformAllLoops(transform: ModeLoopTransform) {
     if (!selectedLoop || adjusting) return;
     const request = ++adjustmentRequest;
     const sampledPlaybackStep = Math.max(
@@ -279,15 +279,10 @@
     adjustmentError = null;
     playback.playing = false;
     try {
-      const loops = await transformTogetherOppositeLoops(
-        togetherOppositeLoops,
-        transform
-      );
+      const transformed = await transformModeLoops(loops, transform);
       if (request !== adjustmentRequest) return;
-      togetherOppositeLoops = loops;
-      const selected = loops.find(
-        (loop) => loop.id === selectedTogetherOppositeLoop
-      );
+      loops = transformed;
+      const selected = transformed.find((loop) => loop.id === selectedLoopId);
       if (!selected) return;
       playback.selectExample(selected.sequence, sampledPlaybackStep);
       syncTurnControls(selected.sequence, editingStep);
@@ -303,10 +298,7 @@
     }
   }
 
-  function syncTurnControls(
-    sequence: TogetherOppositeLoop["sequence"],
-    index: number
-  ) {
+  function syncTurnControls(sequence: ModeLoop["sequence"], index: number) {
     const step = sequence.steps[index];
     leftTurns = Number(step?.motions.left.turns) || 0;
     rightTurns = Number(step?.motions.right.turns) || 0;
@@ -420,376 +412,312 @@
   {@html `<script type="application/ld+json">${JSON.stringify(jsonLd).replace(/</g, "\\u003c")}<\/script>`}
 </Seo>
 
+{#snippet playerControls()}
+  <div class="player-controls">
+    <div class="display-switch">
+      <SegmentedControl
+        options={[
+          { value: "staff", label: "With props", shortLabel: "Props" },
+          { value: "hands", label: "Hands" },
+        ]}
+        value={playback.propDisplay}
+        onchange={(value) => (playback.propDisplay = value)}
+        ariaLabel="Player display"
+        density="tight"
+        color="accent"
+      />
+    </div>
+    {#if playback.propDisplay === "staff"}
+      <div class="turn-editor-toggle">
+        <PanelButton
+          bind:ref={turnTrigger}
+          onclick={openTurnEditor}
+          ariaExpanded={turnEditorOpen}
+          disabled={!selectedLoop}
+          fullWidth
+        >
+          Turns
+        </PanelButton>
+      </div>
+    {/if}
+    <div class="action-editor-toggle">
+      <PanelButton
+        bind:ref={actionTrigger}
+        onclick={() => (actionEditorOpen = !actionEditorOpen)}
+        ariaExpanded={actionEditorOpen}
+        disabled={!selectedLoop}
+        fullWidth
+      >
+        Actions
+      </PanelButton>
+    </div>
+    {#if browser}
+      <TransportControls
+        isPlaying={playback.playing}
+        onPlaybackToggle={playback.togglePlayback}
+      />
+    {/if}
+  </div>
+{/snippet}
+
 <article
   class="mode-page"
-  class:sequence-reference={article.code === "TO"}
   style:--mode-accent={mode.element.accentColor}
+  style:--loops-per-grid={loopsPerGrid}
 >
-  <nav class="page-nav" aria-label="Timing and direction">
-    <PanelButton href="/timing-and-direction">
-      <i class="fa-solid fa-arrow-left" aria-hidden="true"></i>
-      All six modes
-    </PanelButton>
-  </nav>
-
-  {#if article.code === "TO"}
-    {#snippet playerControls()}
-      <div class="player-controls">
-        <div class="display-switch">
-          <SegmentedControl
-            options={[
-              { value: "staff", label: "With props", shortLabel: "Props" },
-              { value: "hands", label: "Hands" },
-            ]}
-            value={playback.propDisplay}
-            onchange={(value) => (playback.propDisplay = value)}
-            ariaLabel="Player display"
-            density="tight"
-            color="accent"
-          />
-        </div>
-        {#if playback.propDisplay === "staff"}
-          <div class="turn-editor-toggle">
-            <PanelButton
-              bind:ref={turnTrigger}
-              onclick={openTurnEditor}
-              ariaExpanded={turnEditorOpen}
-              disabled={!selectedLoop}
-              fullWidth
-            >
-              Turns
-            </PanelButton>
-          </div>
-        {/if}
-        <div class="action-editor-toggle">
-          <PanelButton
-            bind:ref={actionTrigger}
-            onclick={() => (actionEditorOpen = !actionEditorOpen)}
-            ariaExpanded={actionEditorOpen}
-            disabled={!selectedLoop}
-            fullWidth
-          >
-            Actions
-          </PanelButton>
-        </div>
-        {#if browser}
-          <TransportControls
-            isPlaying={playback.playing}
-            onPlaybackToggle={playback.togglePlayback}
-          />
-        {/if}
+  <div class="mode-top">
+    <header class="mode-header">
+      <nav class="page-nav" aria-label="Timing and direction">
+        <PanelButton href="/timing-and-direction">
+          <i class="fa-solid fa-arrow-left" aria-hidden="true"></i>
+          <span class="nav-label">All six modes</span>
+        </PanelButton>
+      </nav>
+      <div class="mode-title">
+        <img src={mode.element.iconPath} alt="" width="48" height="48" />
+        <h1 id="mode-title">{article.name}</h1>
       </div>
-    {/snippet}
-    <section class="to-reference" aria-labelledby="to-reference-title">
-      <header class="to-header">
-        <div class="to-title">
-          <img src={mode.element.iconPath} alt="" width="64" height="64" />
-          <h1 id="to-reference-title">Together Time, Opposite Direction</h1>
+    </header>
+
+    <section class="mode-hero" aria-labelledby="mode-title">
+      <figure
+        class="demonstration"
+        aria-label={`${selectedWord} sequence player`}
+      >
+        <div class="mode-showcase" bind:this={examplePlayer}>
+          <SequenceShowcasePreview
+            word={selectedWord}
+            sequence={selectedLoop ? playback.sequence : null}
+            alwaysLive
+            playbackActive={playback.playing}
+            externalPlaying={playback.playing}
+            initialStep={playback.step}
+            onExternalPlayingChange={(value) => {
+              if (value !== playback.playing) playback.togglePlayback();
+            }}
+            onStepChange={playback.followStep}
+            onSeekRef={playback.registerSeek}
+            onCellClick={(stepNumber) => selectCount(stepNumber - 1)}
+            singlePlay={!turnLoopClosed}
+            leftPropType={displayPropType}
+            rightPropType={displayPropType}
+            primaryPropColors={DEFAULT_VIEWER_CUSTOM_COLORS}
+            controls={playerControls}
+          />
         </div>
-      </header>
+      </figure>
 
-      <div class="to-stage">
-        <figure
-          class="demonstration"
-          aria-label={`${selectedLoop?.word ?? "Together-Opposite"} sequence player`}
-        >
-          <div class="to-showcase" bind:this={examplePlayer}>
-            <SequenceShowcasePreview
-              word={selectedLoop?.word ?? "Together-Opposite"}
-              sequence={selectedLoop ? playback.sequence : null}
-              alwaysLive
-              playbackActive={playback.playing}
-              externalPlaying={playback.playing}
-              initialStep={playback.step}
-              onExternalPlayingChange={(value) => {
-                if (value !== playback.playing) playback.togglePlayback();
-              }}
-              onStepChange={playback.followStep}
-              onSeekRef={playback.registerSeek}
-              onCellClick={(stepNumber) => selectCount(stepNumber - 1)}
-              singlePlay={!turnLoopClosed}
-              leftPropType={displayPropType}
-              rightPropType={displayPropType}
-              primaryPropColors={DEFAULT_VIEWER_CUSTOM_COLORS}
-              controls={playerControls}
-            />
-          </div>
-        </figure>
-
-        <Popover.Root
-          open={playback.propDisplay === "staff" && turnEditorOpen}
-          onOpenChange={(open) => (turnEditorOpen = open)}
-        >
-          <Popover.Portal>
-            <Popover.Content
-              customAnchor={turnTrigger ?? undefined}
-              side="bottom"
-              align="end"
-              sideOffset={8}
-              collisionPadding={12}
-              onInteractOutside={(event) => {
-                if (
-                  event.target instanceof Node &&
-                  turnTrigger?.contains(event.target)
-                )
-                  event.preventDefault();
-              }}
-              onCloseAutoFocus={(event) => {
+      <Popover.Root
+        open={playback.propDisplay === "staff" && turnEditorOpen}
+        onOpenChange={(open) => (turnEditorOpen = open)}
+      >
+        <Popover.Portal>
+          <Popover.Content
+            customAnchor={turnTrigger ?? undefined}
+            side="bottom"
+            align="end"
+            sideOffset={8}
+            collisionPadding={12}
+            onInteractOutside={(event) => {
+              if (
+                event.target instanceof Node &&
+                turnTrigger?.contains(event.target)
+              )
                 event.preventDefault();
-                if (playback.propDisplay === "staff") turnTrigger?.focus();
-              }}
-              forceMount
-            >
-              {#snippet child({ open, wrapperProps, props })}
-                <div {...wrapperProps} style:z-index="50">
-                  {#if open}
-                    <section
-                      {...props}
-                      class="turn-disclosure"
-                      aria-label="Prop turns"
-                      transition:flyFade={{ y: -6 }}
-                    >
-                      <div class="to-workbench">
-                        <div class="turn-controls">
-                          <div class="turn-scope">
-                            <SegmentedControl
-                              options={[
-                                { value: "all", label: "All steps" },
-                                { value: "current", label: "Current step" },
-                              ]}
-                              value={applyTo}
-                              onchange={setApplyTo}
-                              ariaLabel="Turn adjustment scope"
-                              density="tight"
-                              color="accent"
-                            />
-                            <PanelButton
-                              onclick={resetTurns}
-                              disabled={adjusting || turnsAreReset}
-                              >Reset</PanelButton
-                            >
-                          </div>
-                          <div aria-busy={adjusting}>
-                            <TurnNotationControls
-                              leftTurn={leftTurns}
-                              rightTurn={rightTurns}
-                              labelMode={turnLabelMode}
-                              onlabelmodechange={(value) =>
-                                (turnLabelMode = value)}
-                              onturn={chooseTurn}
-                              turnValues={availableTurns}
-                              primaryPropColors={DEFAULT_VIEWER_CUSTOM_COLORS}
-                              disabled={adjusting}
-                            />
-                          </div>
+            }}
+            onCloseAutoFocus={(event) => {
+              event.preventDefault();
+              if (playback.propDisplay === "staff") turnTrigger?.focus();
+            }}
+            forceMount
+          >
+            {#snippet child({ open, wrapperProps, props })}
+              <div {...wrapperProps} style:z-index="50">
+                {#if open}
+                  <section
+                    {...props}
+                    class="turn-disclosure"
+                    aria-label="Prop turns"
+                    transition:flyFade={{ y: -6 }}
+                  >
+                    <div class="turn-workbench">
+                      <div class="turn-controls">
+                        <div class="turn-scope">
+                          <SegmentedControl
+                            options={[
+                              { value: "all", label: "All steps" },
+                              { value: "current", label: "Current step" },
+                            ]}
+                            value={applyTo}
+                            onchange={setApplyTo}
+                            ariaLabel="Turn adjustment scope"
+                            density="tight"
+                            color="accent"
+                          />
+                          <PanelButton
+                            onclick={resetTurns}
+                            disabled={adjusting || turnsAreReset}
+                            >Reset</PanelButton
+                          >
                         </div>
-                        <div class="turn-status" aria-live="polite">
-                          <p>Applies to all six sequences.</p>
-                          {#if adjustmentError}
-                            <p>{adjustmentError}</p>
-                          {:else if !turnLoopClosed}
-                            <p>
-                              Props finish at a different orientation. Plays
-                              once.
-                            </p>
-                          {/if}
+                        <div aria-busy={adjusting}>
+                          <TurnNotationControls
+                            leftTurn={leftTurns}
+                            rightTurn={rightTurns}
+                            labelMode={turnLabelMode}
+                            onlabelmodechange={(value) =>
+                              (turnLabelMode = value)}
+                            onturn={chooseTurn}
+                            turnValues={availableTurns}
+                            primaryPropColors={DEFAULT_VIEWER_CUSTOM_COLORS}
+                            disabled={adjusting}
+                          />
                         </div>
                       </div>
-                    </section>
-                  {/if}
-                </div>
-              {/snippet}
-            </Popover.Content>
-          </Popover.Portal>
-        </Popover.Root>
+                      <div class="turn-status" aria-live="polite">
+                        <p>Applies to all {loopCountWord} sequences.</p>
+                        {#if adjustmentError}
+                          <p>{adjustmentError}</p>
+                        {:else if !turnLoopClosed}
+                          <p>
+                            Props finish at a different orientation. Plays once.
+                          </p>
+                        {/if}
+                      </div>
+                    </div>
+                  </section>
+                {/if}
+              </div>
+            {/snippet}
+          </Popover.Content>
+        </Popover.Portal>
+      </Popover.Root>
 
-        <Popover.Root
-          open={actionEditorOpen}
-          onOpenChange={(open) => (actionEditorOpen = open)}
-        >
-          <Popover.Portal>
-            <Popover.Content
-              customAnchor={actionTrigger ?? undefined}
-              side="bottom"
-              align="end"
-              sideOffset={8}
-              collisionPadding={12}
-              onInteractOutside={(event) => {
-                if (
-                  event.target instanceof Node &&
-                  actionTrigger?.contains(event.target)
-                )
-                  event.preventDefault();
-              }}
-              onCloseAutoFocus={(event) => {
+      <Popover.Root
+        open={actionEditorOpen}
+        onOpenChange={(open) => (actionEditorOpen = open)}
+      >
+        <Popover.Portal>
+          <Popover.Content
+            customAnchor={actionTrigger ?? undefined}
+            side="bottom"
+            align="end"
+            sideOffset={8}
+            collisionPadding={12}
+            onInteractOutside={(event) => {
+              if (
+                event.target instanceof Node &&
+                actionTrigger?.contains(event.target)
+              )
                 event.preventDefault();
-                actionTrigger?.focus();
-              }}
-              forceMount
-            >
-              {#snippet child({ open, wrapperProps, props })}
-                <div {...wrapperProps} style:z-index="50">
-                  {#if open}
-                    <section
-                      {...props}
-                      class="turn-disclosure action-disclosure"
-                      aria-label="Sequence actions"
-                      transition:flyFade={{ y: -6 }}
-                    >
-                      <SequenceTransformActions
-                        hasSequence={!!selectedLoop}
-                        hasSelection={false}
-                        isTransforming={adjusting}
-                        showEditInConstructor={false}
-                        toolbar
-                        actionSubject="all six sequences"
-                        onMirror={() => void transformAllLoops("mirror")}
-                        onFlip={() => void transformAllLoops("flip")}
-                        onSwap={() => void transformAllLoops("swap")}
-                        onReset={resetAllLoops}
-                      />
-                      <p class="action-scope">
-                        Applies to all six sequences. Reset restores the
-                        originals.
+            }}
+            onCloseAutoFocus={(event) => {
+              event.preventDefault();
+              actionTrigger?.focus();
+            }}
+            forceMount
+          >
+            {#snippet child({ open, wrapperProps, props })}
+              <div {...wrapperProps} style:z-index="50">
+                {#if open}
+                  <section
+                    {...props}
+                    class="turn-disclosure action-disclosure"
+                    aria-label="Sequence actions"
+                    transition:flyFade={{ y: -6 }}
+                  >
+                    <SequenceTransformActions
+                      hasSequence={!!selectedLoop}
+                      hasSelection={false}
+                      isTransforming={adjusting}
+                      showEditInConstructor={false}
+                      toolbar
+                      actionSubject={`all ${loopCountWord} sequences`}
+                      onMirror={() => void transformAllLoops("mirror")}
+                      onFlip={() => void transformAllLoops("flip")}
+                      onSwap={() => void transformAllLoops("swap")}
+                      onReset={resetAllLoops}
+                    />
+                    <p class="action-scope">
+                      Applies to all {loopCountWord} sequences. Reset restores the
+                      originals.
+                    </p>
+                    {#if adjustmentError}
+                      <p class="action-scope" aria-live="polite">
+                        {adjustmentError}
                       </p>
-                      {#if adjustmentError}
-                        <p class="action-scope" aria-live="polite">
-                          {adjustmentError}
-                        </p>
-                      {/if}
-                    </section>
-                  {/if}
-                </div>
-              {/snippet}
-            </Popover.Content>
-          </Popover.Portal>
-        </Popover.Root>
-      </div>
+                    {/if}
+                  </section>
+                {/if}
+              </div>
+            {/snippet}
+          </Popover.Content>
+        </Popover.Portal>
+      </Popover.Root>
 
       <section class="loop-library" aria-labelledby="loop-library-title">
-        <div class="library-heading">
-          <h2 id="loop-library-title">Choose a sequence</h2>
-        </div>
-        <div class="loop-columns" aria-busy={loopsLoading}>
-          {#if loopsLoading}
-            <p class="loop-status">Loading six loops…</p>
-          {:else if loopsError}
-            <div class="loop-status">
-              <p>{loopsError}</p>
-              <PanelButton onclick={retryTogetherOppositeLoops}
-                >Try again</PanelButton
-              >
-            </div>
-          {:else}
-            {#each loopGroups as group (group.title)}
-              <section
-                class="loop-group"
-                aria-labelledby={`${group.title}-loops`}
-              >
-                <h3 id={`${group.title}-loops`}>{group.title}</h3>
-                <div class="spin-grid">
-                  {#each spinLabels as spinLabel}
-                    <div class="spin-column">
-                      {#each group.loops.filter((loop) => loop.spinLabel === spinLabel) as loop (loop.id)}
-                        <PanelButton
-                          fullWidth
-                          ariaPressed={selectedTogetherOppositeLoop === loop.id}
-                          ariaLabel={loop.word}
-                          onclick={() => selectTogetherOppositeLoop(loop, true)}
-                        >
-                          <div class="loop-card" aria-hidden="true" inert>
-                            <ChoreoCard
-                              sequence={loop.sequence}
-                              showMandala={true}
-                              includeStartPlacement={true}
-                              startPlacementLayoutOverride="row"
-                              columnCount={2}
-                              showQRCode={false}
-                              showWord={true}
-                              showDifficultyLevel={false}
-                              showNotes={false}
-                              showLoopGlyph={false}
-                              handPathMode={playback.propDisplay === "hands"}
-                              darkMode={true}
-                              leftPropType={displayPropType}
-                              rightPropType={displayPropType}
-                              primaryPropColors={DEFAULT_VIEWER_CUSTOM_COLORS}
-                              fitWidth={true}
-                            />
-                          </div>
-                        </PanelButton>
-                      {/each}
+        <h2 id="loop-library-title">Choose a sequence</h2>
+        <div class="loop-groups" aria-busy={loopsLoading}>
+          {#each loopGroups as group (group.title)}
+            <section
+              class="loop-group"
+              aria-labelledby={`${group.title}-loops`}
+            >
+              <h3 id={`${group.title}-loops`}>{group.title}</h3>
+              <div class="loop-grid">
+                {#each group.loops as loop (loop.id)}
+                  <PanelButton
+                    fullWidth
+                    ariaPressed={selectedLoopId === loop.id}
+                    ariaLabel={simplifyRepeatedWord(loop.word)}
+                    onclick={() => selectLoop(loop, true)}
+                  >
+                    <div class="loop-card" aria-hidden="true" inert>
+                      <ChoreoCard
+                        sequence={loop.sequence}
+                        showMandala={true}
+                        includeStartPlacement={true}
+                        startPlacementLayoutOverride="row"
+                        columnCount={2}
+                        showQRCode={false}
+                        showWord={true}
+                        showDifficultyLevel={false}
+                        showNotes={false}
+                        showLoopGlyph={false}
+                        handPathMode={playback.propDisplay === "hands"}
+                        darkMode={true}
+                        leftPropType={displayPropType}
+                        rightPropType={displayPropType}
+                        primaryPropColors={DEFAULT_VIEWER_CUSTOM_COLORS}
+                        fitWidth={true}
+                      />
+                    </div>
+                  </PanelButton>
+                {:else}
+                  <!-- Reserve each card's box so loading never moves the page. -->
+                  {#each { length: loopsPerGrid } as _, slot (slot)}
+                    <div class="loop-slot" aria-hidden="true">
+                      <div class="loop-card"></div>
                     </div>
                   {/each}
-                </div>
-              </section>
-            {/each}
+                {/each}
+              </div>
+            </section>
+          {/each}
+          {#if loopsLoading || loopsError}
+            <div class="loop-status" role="status">
+              {#if loopsError}
+                <p>{loopsError}</p>
+                <PanelButton onclick={retryLoops}>Try again</PanelButton>
+              {:else}
+                <p>Loading {loopCountWord} loops…</p>
+              {/if}
+            </div>
           {/if}
         </div>
       </section>
     </section>
-  {:else}
-    <div class="mode-overview">
-      <div class="mode-copy">
-        <header>
-          <div class="mode-identity">
-            <img src={mode.element.iconPath} alt="" width="44" height="44" />
-            <span>{article.code} · {mode.element.element}</span>
-          </div>
-          <h1>
-            {article.timing} time <span>{article.direction} direction</span>
-          </h1>
-          <p class="definition">{article.definition}</p>
-        </header>
-        <p>{article.watchFor}</p>
-        <PanelButton
-          href="/learn/concepts/timing-and-direction"
-          accentColor={mode.element.accentColor}
-        >
-          <i class="fa-solid fa-graduation-cap" aria-hidden="true"></i>
-          Try timing and direction
-        </PanelButton>
-      </div>
-      <div class="mode-notes">
-        <section class="practice" aria-labelledby="practice-title">
-          <h2 id="practice-title">In practice</h2>
-          <p>{article.example}</p>
-        </section>
-        <section aria-labelledby="distinction-title">
-          <h2 id="distinction-title">
-            {article.timing === "Quarter"
-              ? "Timing and placement"
-              : "Timing and direction"}
-          </h2>
-          <p>{article.commonMistake}</p>
-        </section>
-        <section aria-labelledby="tka-title">
-          <h2 id="tka-title">In TKA</h2>
-          <p>{article.tkaConnection}</p>
-          <PanelButton href={lessonHref} accentColor={mode.element.accentColor}>
-            <i class="fa-solid fa-graduation-cap" aria-hidden="true"></i>
-            Explore this in TKA
-          </PanelButton>
-        </section>
-      </div>
-
-      <figure class="demonstration">
-        <div class="demo-toolbar">
-          <span>Hand paths</span>
-          {#if browser}
-            <TransportControls
-              isPlaying={playback.playing}
-              onPlaybackToggle={() => (playback.playing = !playback.playing)}
-            />
-          {/if}
-        </div>
-        <div class="demo-canvas" use:playback.registerTarget></div>
-        <figcaption>
-          Drag the bar to follow the hands through the cycle.
-        </figcaption>
-      </figure>
-    </div>
-  {/if}
+  </div>
 
   <section class="history" aria-labelledby="learning-title">
     <h2 id="learning-title">Learn from other spinners</h2>
@@ -842,101 +770,95 @@
 </article>
 
 <style>
+  /*
+   * The first view is one composed frame: a title row, then the player beside
+   * (or above) the sequence chooser. Every length below is a design token, so
+   * the hero height can be solved from the space alone, before any sequence
+   * or canvas loads. The player is H + rail - strip wide when H tall; the
+   * chooser is as tall as the player, with its cards sized to fit.
+   */
   .mode-page {
     --sequence-seek-target-size: 48px;
+    --page-pad: 1.5rem;
+    --header-h: var(--marketing-header-h, 64px);
+    --title-h: 3rem;
+    --title-gap: 1rem;
+    --hero-foot: 1.5rem;
+    --hero-gap: 1.5rem;
+    --rail-w: 9rem;
+    --strip-h: 6.5rem;
+    --lib-head: 2.5rem;
+    --lib-gap: 0.5rem;
+    --group-head: 1.5rem;
+    --group-head-gap: 0.5rem;
+    --group-gap: 1rem;
+    --card-gap: 0.5rem;
+    /* PanelButton's 4px padding and 1px border on both sides. */
+    --card-chrome: 10px;
+    --n: var(--loops-per-grid, 3);
+    /* Chooser height that is not card: heading, two group labels, one gap. */
+    --chooser-stacked: calc(
+      var(--lib-head) + var(--lib-gap) + 2 *
+        (var(--group-head) + var(--group-head-gap)) + var(--group-gap)
+    );
+    /* The same with Diamond and Box side by side: one row of labels. */
+    --chooser-row: calc(
+      var(--lib-head) + var(--lib-gap) + var(--group-head) +
+        var(--group-head-gap)
+    );
+    /* svh, not dvh: a collapsing mobile toolbar must not resize the frame. */
+    --fit-h: calc(
+      100svh - var(--header-h) - 1rem - var(--title-h) - var(--title-gap) -
+        var(--hero-foot)
+    );
+    container: mode-page / inline-size;
     position: relative;
-    max-width: min(var(--shell-w), 100rem);
+    max-width: var(--shell-w);
     margin: 0 auto;
-    padding: 88px 1.5rem 3rem;
+    padding: calc(var(--header-h) + 1rem) var(--page-pad) 3rem;
     color: var(--theme-text);
     background: var(--theme-panel-bg);
   }
-  .page-nav {
-    margin-bottom: 1.5rem;
-  }
-  .mode-page.sequence-reference {
-    max-width: min(var(--shell-w), 90rem);
-    padding-top: 76px;
-  }
-  .sequence-reference .page-nav {
-    margin-bottom: 1rem;
-  }
-  .mode-overview {
+  .mode-top {
     display: grid;
-    grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
-    grid-template-rows: auto 1fr;
-    gap: clamp(1.5rem, 4vw, 4rem);
-    align-items: start;
+    gap: var(--title-gap);
   }
-  .to-reference {
-    max-width: 86rem;
-    display: grid;
-    grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
-    gap: 1.5rem;
-    align-items: start;
+  .mode-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.75rem 1rem;
+    min-height: var(--title-h);
   }
-  .to-header {
-    grid-column: 1 / -1;
-    max-width: 100%;
-    margin-bottom: 0;
-  }
-  .to-title {
+  .mode-title {
     display: flex;
     align-items: center;
-    justify-content: center;
     gap: 0.75rem;
-    text-align: center;
+    min-width: 0;
   }
-  .to-title img {
-    flex: 0 0 auto;
-    width: clamp(48px, 4.5vw, 64px);
-    height: clamp(48px, 4.5vw, 64px);
+  .mode-title img {
+    flex: none;
+    width: 48px;
+    height: 48px;
     object-fit: contain;
   }
-  .to-header h1 {
-    margin-bottom: 0;
-    font-size: clamp(1.75rem, 1.25rem + 1.5vw, 2.5rem);
+  h1 {
+    margin: 0;
+    font-size: clamp(1.375rem, 0.875rem + 1.25vw, 2rem);
+    line-height: 1.15;
+    letter-spacing: -0.02em;
+    font-weight: 720;
     text-wrap: balance;
   }
-  .to-stage {
+  .mode-hero {
     display: grid;
-    grid-template-columns: minmax(0, 1fr);
-    gap: 0.75rem;
-    align-items: start;
+    gap: var(--hero-gap);
   }
-  .to-stage .demonstration {
-    grid-column: auto;
-    grid-row: auto;
-    width: 100%;
-  }
-  .to-workbench {
-    display: grid;
+  .demonstration {
     min-width: 0;
-    container-type: inline-size;
+    margin: 0;
   }
-  .turn-disclosure {
-    width: min(32rem, calc(100vw - 24px));
-    max-height: calc(100dvh - 24px);
-    overflow-y: auto;
-    padding: 0.75rem;
-    border: 1px solid var(--theme-stroke);
-    border-radius: var(--radius-lg, 0.75rem);
-    background: var(--sheet-bg-solid);
-  }
-  .library-heading,
-  .turn-scope {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 1rem;
-  }
-  .display-switch {
-    width: 100%;
-  }
-  .to-showcase {
-    width: 100%;
-  }
-  .to-showcase :global(.sequence-preview) {
+  .mode-showcase :global(.sequence-preview) {
     border-color: color-mix(
       in srgb,
       var(--mode-accent) 55%,
@@ -949,6 +871,9 @@
     gap: 0.5rem;
     min-width: 0;
   }
+  .display-switch {
+    width: 100%;
+  }
   .player-controls :global(.segmented-control) {
     width: 100%;
   }
@@ -956,12 +881,28 @@
     margin: auto 0 0;
     align-self: center;
   }
+  .turn-workbench {
+    display: grid;
+    min-width: 0;
+  }
+  .turn-disclosure {
+    width: min(32rem, calc(100vw - 24px));
+    max-height: calc(100dvh - 24px);
+    overflow-y: auto;
+    padding: 0.75rem;
+    border: 1px solid var(--theme-stroke);
+    border-radius: var(--radius-lg, 0.75rem);
+    background: var(--sheet-bg-solid);
+  }
   .turn-controls {
     display: grid;
     gap: 0.5rem;
   }
   .turn-scope {
+    display: flex;
     align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
   }
   .turn-scope :global(.segmented-control) {
     width: min(100%, 16rem);
@@ -982,49 +923,53 @@
     color: var(--theme-text-dim);
     font-size: 0.875rem;
   }
+
   .loop-library {
     min-width: 0;
   }
-  .library-heading {
-    min-height: 48px;
-    margin-bottom: 0.5rem;
+  .loop-library h2 {
+    display: flex;
+    align-items: center;
+    height: var(--lib-head);
+    margin: 0 0 var(--lib-gap);
   }
-  .library-heading h2 {
-    margin: 0;
-  }
-  .loop-columns {
+  .loop-groups {
+    position: relative;
     display: grid;
-    grid-template-columns: minmax(0, 1fr);
-    gap: 1rem;
-    margin-top: 0;
+    gap: var(--group-gap);
   }
   .loop-group {
     min-width: 0;
   }
   .loop-group h3 {
-    margin: 0 0 0.625rem;
+    height: var(--group-head);
+    margin: 0 0 var(--group-head-gap);
     font-size: 1rem;
+    line-height: var(--group-head);
   }
-  .spin-grid {
+  .loop-grid {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 0.5rem;
+    grid-template-columns: repeat(var(--n), minmax(0, 1fr));
+    gap: var(--card-gap);
   }
-  .spin-column {
-    min-width: 0;
-  }
-  .spin-column :global(.panel-btn) {
+  .loop-grid :global(.panel-btn),
+  .loop-slot {
     display: grid;
     grid-template-columns: minmax(0, 1fr);
     min-height: 0;
     padding: 0.25rem;
+  }
+  .loop-slot {
+    border: 1px solid var(--theme-stroke);
+    border-radius: 8px;
+    background: var(--theme-card-bg);
   }
   .loop-card {
     width: 100%;
     aspect-ratio: 5 / 8;
     pointer-events: none;
   }
-  .spin-column :global(.panel-btn[aria-pressed="true"]) {
+  .loop-grid :global(.panel-btn[aria-pressed="true"]) {
     outline: 2px solid var(--mode-accent);
     outline-offset: -2px;
     background: color-mix(
@@ -1034,45 +979,20 @@
     );
   }
   .loop-status {
+    position: absolute;
+    inset: 0;
     display: grid;
+    place-content: center;
+    justify-items: center;
     gap: 0.5rem;
-    min-height: 6rem;
-    align-content: center;
+    text-align: center;
   }
   .loop-status p {
     margin: 0;
     font-size: 1rem;
+    color: var(--theme-text-dim);
   }
-  .mode-copy,
-  .mode-notes {
-    min-width: 0;
-  }
-  .mode-notes {
-    grid-column: 1;
-  }
-  .mode-identity {
-    display: flex;
-    align-items: center;
-    gap: 0.6rem;
-    margin-bottom: 0.75rem;
-    font-size: 1rem;
-    font-weight: 650;
-    text-transform: capitalize;
-    color: var(--theme-text);
-  }
-  .mode-identity img {
-    object-fit: contain;
-  }
-  h1 {
-    margin: 0 0 1.25rem;
-    font-size: clamp(2rem, 1.5rem + 1.5vw, 3rem);
-    line-height: 1.12;
-    letter-spacing: -0.025em;
-    font-weight: 720;
-  }
-  h1 span {
-    display: block;
-  }
+
   h2 {
     margin: 0 0 0.5rem;
     font-size: 1.125rem;
@@ -1085,42 +1005,6 @@
     line-height: 1.6;
     color: var(--theme-text);
   }
-  .definition {
-    color: var(--theme-text);
-    font-size: 1.125rem;
-    line-height: 1.55;
-  }
-  .mode-notes section + section {
-    margin-top: 1.5rem;
-  }
-  .demonstration {
-    grid-column: 2;
-    grid-row: 1 / span 2;
-    min-width: 0;
-    margin: 0;
-  }
-  .demo-toolbar {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 0.5rem;
-    padding: 0 0 0.75rem;
-    font-size: 1rem;
-    font-weight: 600;
-  }
-  .demo-canvas {
-    width: 100%;
-    aspect-ratio: 1;
-  }
-  .demo-toolbar :global(.transport-controls) {
-    margin: 0;
-  }
-  figcaption {
-    padding: 0.75rem 1rem 1rem;
-    color: var(--theme-text);
-    font-size: 1rem;
-    line-height: 1.5;
-  }
   .history,
   .related {
     margin-top: 2.5rem;
@@ -1132,7 +1016,7 @@
   }
   .sources {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 24rem), 1fr));
     gap: 0.5rem;
     padding: 0;
     margin: 1rem 0 0;
@@ -1175,79 +1059,200 @@
     font-size: 1rem;
     min-height: 48px;
   }
+  .mode-page .loop-grid :global(.panel-btn) {
+    min-height: 0;
+  }
   .mode-page :global(.panel-btn:focus-visible),
   .mode-page :global(.progress-bar-container.interactive:focus-visible) {
     outline: 3px solid var(--theme-text);
     outline-offset: -3px;
   }
-  @media (max-width: 1100px) {
-    .to-reference {
-      grid-template-columns: minmax(0, 1fr);
-    }
-    .to-header {
-      grid-column: auto;
-    }
-    .to-stage {
-      width: min(100%, 38rem);
-      justify-self: center;
-    }
-  }
-  @media (max-width: 800px) {
-    .to-stage .demonstration {
-      justify-self: center;
-    }
-    .mode-overview {
-      grid-template-columns: minmax(0, 1fr);
-      grid-template-rows: auto;
-    }
-    .mode-notes {
-      grid-row: 3;
-    }
-    .demonstration {
-      grid-column: 1;
-      grid-row: 2;
-      width: min(100%, 34rem);
-      justify-self: center;
-    }
-    .sources {
-      grid-template-columns: minmax(0, 1fr);
-    }
-    .loop-columns {
-      grid-template-columns: minmax(0, 1fr);
-    }
-  }
-  @media (max-width: 600px) {
+
+  /* Phones held upright: one column, the player first. The back button keeps
+     its name for assistive tech but shows only its arrow, so the title and
+     the whole player fit the first screen. */
+  @media (max-width: 599.98px) {
     .mode-page {
+      --page-pad: 1rem;
+      --title-gap: 0.75rem;
       max-width: 100%;
-      padding: 76px 1rem 2rem;
+      padding: calc(var(--header-h) + 0.75rem) var(--page-pad) 2rem;
     }
-    .page-nav {
-      margin-bottom: 1rem;
+    .mode-header {
+      flex-wrap: nowrap;
+      gap: 0.75rem;
     }
-    .library-heading {
-      display: grid;
-      grid-template-columns: minmax(0, 1fr);
+    .nav-label {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip-path: inset(50%);
+      white-space: nowrap;
     }
-    .display-switch {
-      width: 100%;
-      grid-column: 1 / -1;
+    .mode-title img {
+      width: 40px;
+      height: 40px;
     }
-    .spin-grid {
+    .loop-grid {
       gap: 0.375rem;
     }
   }
-  @container (max-width: 28rem) {
-    .player-controls {
-      display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      align-items: center;
+
+  /* A narrow upright frame stacks the rail under the player; lay its controls
+     out in a row there. */
+  @media (orientation: portrait) {
+    @container (max-width: 28rem) {
+      .player-controls {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        align-items: center;
+      }
+      .player-controls .display-switch {
+        grid-column: 1 / -1;
+      }
+      .player-controls :global(.transport-controls) {
+        margin: 0;
+        justify-self: center;
+      }
     }
-    .player-controls .display-switch {
-      grid-column: 1 / -1;
+  }
+
+  /* Upright tablets: the player above one row of every card, both sized so
+     the pair fills the first screen. */
+  @media (orientation: portrait) and (min-width: 600px) {
+    .mode-page {
+      --card-w: calc(
+        ((100cqw - var(--group-gap)) / 2 - (var(--n) - 1) * var(--card-gap)) /
+          var(--n)
+      );
+      --chooser-h: calc(
+        var(--chooser-row) + (var(--card-w) - var(--card-chrome)) * 1.6 +
+          var(--card-chrome)
+      );
     }
-    .player-controls :global(.transport-controls) {
-      margin: 0;
-      justify-self: center;
+    .mode-showcase {
+      --sequence-showcase-rail-width: var(--rail-w);
+      --sequence-showcase-strip-height: var(--strip-h);
+      width: min(
+        100cqw,
+        max(
+          28.5rem,
+          var(--fit-h) - var(--chooser-h) - var(--hero-gap) + var(--rail-w) -
+            var(--strip-h)
+        )
+      );
+      margin-inline: auto;
+    }
+    .loop-groups {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  /* Landscape screens with room to spare: player and chooser side by side at
+     one height H. With n cards per grid and the groups stacked, the pair is
+     band wide when H(1 + 5n/16) = band - rail + strip - gap + 5n/16 * C
+     - 3n/8 * chrome - (n - 1) * card gap, where C is the chooser's non-card
+     height. H never exceeds the height left under the title. */
+  @media (orientation: landscape) and (min-height: 600px) {
+    .mode-page {
+      --hero-h: min(
+        var(--fit-h),
+        (
+            100cqw - var(--rail-w) + var(--strip-h) - var(--hero-gap) + 0.3125 *
+              var(--n) * var(--chooser-stacked) - 0.375 * var(--n) *
+              var(--card-chrome) - (var(--n) - 1) * var(--card-gap)
+          ) /
+          (1 + 0.3125 * var(--n))
+      );
+      --art-h: calc(
+        (var(--hero-h) - var(--chooser-stacked)) / 2 - var(--card-chrome)
+      );
+    }
+    .mode-top {
+      width: fit-content;
+      max-width: 100%;
+      margin-inline: auto;
+    }
+    .mode-hero {
+      grid-template-columns: auto auto;
+      align-items: start;
+    }
+    .mode-showcase {
+      --sequence-showcase-rail-width: var(--rail-w);
+      --sequence-showcase-strip-height: var(--strip-h);
+      width: calc(var(--hero-h) + var(--rail-w) - var(--strip-h));
+    }
+    .loop-library {
+      height: var(--hero-h);
+    }
+    .loop-grid {
+      grid-template-columns: repeat(var(--n), auto);
+    }
+    .loop-card {
+      width: calc(var(--art-h) * 0.625);
+      height: var(--art-h);
+      aspect-ratio: auto;
+    }
+  }
+
+  /* Squarer screens, and a 4K panel at 100%, have height to spare once the
+     band is full. Diamond and Box then stand side by side as two columns of
+     n cards, which gives the player more of the width: H(1 + 1.25/n) = band
+     - rail + strip - gap - 3/4 * chrome - group gap + 1.25/n * (C + (n - 1)
+     * card gap). */
+  @media (orientation: landscape) and (min-height: 600px) and (max-aspect-ratio: 4/3),
+    (min-width: 2955px) and (min-height: 1953px) {
+    .mode-page {
+      --hero-h: min(
+        var(--fit-h),
+        (
+            100cqw - var(--rail-w) + var(--strip-h) - var(--hero-gap) - 0.75 *
+              var(--card-chrome) - var(--group-gap) + 1.25 / var(--n) *
+              (var(--chooser-row) + (var(--n) - 1) * var(--card-gap))
+          ) /
+          (1 + 1.25 / var(--n))
+      );
+      --art-h: calc(
+        (
+            var(--hero-h) - var(--chooser-row) - (var(--n) - 1) *
+              var(--card-gap)
+          ) /
+          var(--n) - var(--card-chrome)
+      );
+    }
+    .loop-groups {
+      grid-template-columns: auto auto;
+    }
+    .loop-grid {
+      grid-template-columns: auto;
+    }
+  }
+
+  /* Short landscape (a phone on its side): the player holds still beside the
+     chooser, sized to the window's height, while the cards scroll past. */
+  @media (orientation: landscape) and (max-height: 599.98px) {
+    .mode-page {
+      --page-pad: 1rem;
+      --rail-w: 8rem;
+      --strip-h: 4rem;
+      --sticky-top: calc(var(--header-h) + 0.5rem);
+      padding-top: var(--sticky-top);
+    }
+    .mode-hero {
+      grid-template-columns: auto minmax(0, 1fr);
+      align-items: start;
+    }
+    .demonstration {
+      position: sticky;
+      top: var(--sticky-top);
+    }
+    .mode-showcase {
+      --sequence-showcase-rail-width: var(--rail-w);
+      --sequence-showcase-strip-height: var(--strip-h);
+      width: calc(
+        100svh - var(--sticky-top) - 0.5rem + var(--rail-w) - var(--strip-h)
+      );
     }
   }
 </style>
