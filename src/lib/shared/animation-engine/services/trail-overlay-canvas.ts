@@ -25,6 +25,7 @@ import type {
 import type { TrailPoint, TrailSettings } from "../domain/types/trail-types";
 import { TrackingMode } from "../domain/types/trail-types";
 import type { PropState } from "$lib/shared/foundation/domain/types/prop-state";
+import type { MotionSubSampleLayer } from "./motion-sub-sampler";
 import { Canvas2DTrailRenderer } from "$lib/shared/animation-engine/services/canvas2d/canvas-2d-trail-renderer";
 import { Canvas2DVisibilityFadeManager } from "$lib/shared/animation-engine/services/canvas2d/canvas-2d-visibility-fade-manager";
 import { calculateTrailSourceEndpoint } from "$lib/shared/animation-engine/services/prop-position-calculator";
@@ -521,38 +522,14 @@ export class TrailOverlayCanvas implements ITrailOverlayCanvas {
     // so the ring doesn't keep growing invisibly in the background.
     const leftCaptureLive = hasLeft || leftFade.alpha > 0;
     const rightCaptureLive = hasRight || rightFade.alpha > 0;
-    if (leftProp && leftCaptureLive && !leftPropSwapSuppressed) {
-      this.capturePropTips(
-        leftProp,
-        canvasSize,
-        leftPropType,
-        0,
-        leftTrackLeft && leftLeftTrails,
-        leftTrackRight && leftRightTrails,
-        leftTrailConfig,
-        currentTime
-      );
-    }
-    if (rightProp && rightCaptureLive && !rightPropSwapSuppressed) {
-      this.capturePropTips(
-        rightProp,
-        canvasSize,
-        rightPropType,
-        1,
-        rightTrackLeft && rightLeftTrails,
-        rightTrackRight && rightRightTrails,
-        rightTrailConfig,
-        currentTime
-      );
-    }
 
-    // Capture overlaid tunnel-layer tips into per-layer rings (same color/tip
-    // gating as the base pair). These draw into the shared blue/red accumulators.
-    let formationTrailCaptures = 0;
-    if (additionalLayers && additionalLayers.length > 0) {
-      this.ensureLayerRings(additionalLayers.length);
-      for (let i = 0; i < additionalLayers.length; i++) {
-        const layer = additionalLayers[i]!;
+    // Per-layer rings reset when a copy's capture suppression flips, before
+    // any slice of this frame is captured.
+    const captureLayerCount = additionalLayers?.length ?? 0;
+    if (captureLayerCount > 0) {
+      this.ensureLayerRings(captureLayerCount);
+      for (let i = 0; i < captureLayerCount; i++) {
+        const layer = additionalLayers![i]!;
         const leftRings = this.leftLayerRings[i]!;
         const rightRings = this.rightLayerRings[i]!;
         const captureSuppressed = layer.trailCaptureSuppressed === true;
@@ -563,20 +540,82 @@ export class TrailOverlayCanvas implements ITrailOverlayCanvas {
           rightRings.right.length = 0;
         }
         this.layerTrailCaptureSuppressed[i] = captureSuppressed;
+      }
+      this.layerTrailCaptureSuppressed.length = captureLayerCount;
+    } else if (
+      this.leftLayerRings.length > 0 ||
+      this.rightLayerRings.length > 0
+    ) {
+      this.leftLayerRings = [];
+      this.rightLayerRings = [];
+      this.layerTrailCaptureSuppressed = [];
+    }
+
+    // A slow frame is captured as several slices: each motion sub-sample
+    // first (oldest to newest), then the current frame, every slice under the
+    // same gates as a frame. The ring then holds the arc the tip really swept
+    // instead of one chord per rendered frame.
+    let formationTrailCaptures = 0;
+    const captureSlice = (
+      sliceLeft: PropState | null | undefined,
+      sliceRight: PropState | null | undefined,
+      sliceLayers: readonly MotionSubSampleLayer[] | null,
+      timestamp: number
+    ): void => {
+      if (sliceLeft && leftCaptureLive && !leftPropSwapSuppressed) {
+        this.capturePropTips(
+          sliceLeft,
+          canvasSize,
+          leftPropType,
+          0,
+          leftTrackLeft && leftLeftTrails,
+          leftTrackRight && leftRightTrails,
+          leftTrailConfig,
+          timestamp
+        );
+      }
+      if (sliceRight && rightCaptureLive && !rightPropSwapSuppressed) {
+        this.capturePropTips(
+          sliceRight,
+          canvasSize,
+          rightPropType,
+          1,
+          rightTrackLeft && rightLeftTrails,
+          rightTrackRight && rightRightTrails,
+          rightTrailConfig,
+          timestamp
+        );
+      }
+
+      // Capture overlaid tunnel-layer tips into per-layer rings (same color/tip
+      // gating as the base pair). These draw into the shared blue/red
+      // accumulators. A sub-sample carries its own layer poses; a layer the
+      // sampler could not vouch for is null there and holds still that slice.
+      for (let i = 0; i < captureLayerCount; i++) {
+        const layer = additionalLayers![i]!;
+        const leftRings = this.leftLayerRings[i]!;
+        const rightRings = this.rightLayerRings[i]!;
+        const captureSuppressed = layer.trailCaptureSuppressed === true;
+        const layerLeft = sliceLayers
+          ? (sliceLayers[i]?.left ?? null)
+          : layer.leftProp;
+        const layerRight = sliceLayers
+          ? (sliceLayers[i]?.right ?? null)
+          : layer.rightProp;
         const pointsBefore =
           leftRings.left.length +
           leftRings.right.length +
           rightRings.left.length +
           rightRings.right.length;
         if (
-          layer.leftProp &&
+          layerLeft &&
           layer.hasLeft &&
           leftCaptureLive &&
           !leftPropSwapSuppressed &&
           !captureSuppressed
         ) {
           this.capturePropTipsInto(
-            layer.leftProp,
+            layerLeft,
             canvasSize,
             leftNotationType,
             0,
@@ -585,18 +624,18 @@ export class TrailOverlayCanvas implements ITrailOverlayCanvas {
             leftTrackLeft && leftLeftTrails,
             leftTrackRight && leftRightTrails,
             leftTrailConfig,
-            currentTime
+            timestamp
           );
         }
         if (
-          layer.rightProp &&
+          layerRight &&
           layer.hasRight &&
           rightCaptureLive &&
           !rightPropSwapSuppressed &&
           !captureSuppressed
         ) {
           this.capturePropTipsInto(
-            layer.rightProp,
+            layerRight,
             canvasSize,
             rightNotationType,
             1,
@@ -605,7 +644,7 @@ export class TrailOverlayCanvas implements ITrailOverlayCanvas {
             rightTrackLeft && rightLeftTrails,
             rightTrackRight && rightRightTrails,
             rightTrailConfig,
-            currentTime
+            timestamp
           );
         }
         if (layer.formationTransitionActive) {
@@ -617,15 +656,15 @@ export class TrailOverlayCanvas implements ITrailOverlayCanvas {
           formationTrailCaptures += Math.max(0, pointsAfter - pointsBefore);
         }
       }
-      this.layerTrailCaptureSuppressed.length = additionalLayers.length;
-    } else if (
-      this.leftLayerRings.length > 0 ||
-      this.rightLayerRings.length > 0
-    ) {
-      this.leftLayerRings = [];
-      this.rightLayerRings = [];
-      this.layerTrailCaptureSuppressed = [];
+    };
+
+    const samples = params.motionSamples;
+    if (samples) {
+      for (const sample of samples) {
+        captureSlice(sample.left, sample.right, sample.layers, sample.timeMs);
+      }
     }
+    captureSlice(leftProp, rightProp, null, currentTime);
     recordTunnelFormationTrailCaptures(formationTrailCaptures);
 
     const fadeAmount = this.computeFadeAmount(

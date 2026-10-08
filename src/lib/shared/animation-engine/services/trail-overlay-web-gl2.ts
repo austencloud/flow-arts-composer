@@ -24,6 +24,7 @@ import type {
 import type { TrailPoint } from "../domain/types/trail-types";
 import { TrackingMode } from "../domain/types/trail-types";
 import type { PropState } from "$lib/shared/foundation/domain/types/prop-state";
+import type { MotionSubSampleLayer } from "./motion-sub-sampler";
 import { calculateTrailSourceEndpoint } from "$lib/shared/animation-engine/services/prop-position-calculator";
 import {
   resolveTrailPointConfig,
@@ -561,10 +562,6 @@ export class TrailOverlayWebGL2 implements ITrailOverlayCanvas {
     }
     this.prevTipTrailMask = tipMask;
 
-    let leftLeftMoved = false;
-    let leftRightMoved = false;
-    let rightLeftMoved = false;
-    let rightRightMoved = false;
     // Keep capturing while the envelope is still fading so the trail
     // tracks the prop through the fade-out instead of freezing in place.
     const leftCaptureLive = hasLeft || leftAlpha > 0;
@@ -575,43 +572,15 @@ export class TrailOverlayWebGL2 implements ITrailOverlayCanvas {
     // feeds the normal "prop is stationary" path into advanceTail below, so
     // the tail recedes/shrinks toward the frozen point exactly like a real
     // stationary prop, instead of jumping to the new (mismatched) geometry.
-    if (leftProp && leftCaptureLive && !leftPropSwapSuppressed) {
-      const r = this.capturePropTips(
-        leftProp,
-        canvasSize,
-        leftPropType,
-        0,
-        leftTrackLeft && leftLeftTrails,
-        leftTrackRight && leftRightTrails,
-        leftTrailConfig
-      );
-      leftLeftMoved = r.leftMoved;
-      leftRightMoved = r.rightMoved;
-    }
-    if (rightProp && rightCaptureLive && !rightPropSwapSuppressed) {
-      const r = this.capturePropTips(
-        rightProp,
-        canvasSize,
-        rightPropType,
-        1,
-        rightTrackLeft && rightLeftTrails,
-        rightTrackRight && rightRightTrails,
-        rightTrailConfig
-      );
-      rightLeftMoved = r.leftMoved;
-      rightRightMoved = r.rightMoved;
-    }
 
-    // Capture overlaid tunnel-layer tips into per-layer rings (same color/tip
-    // gating as the base pair). Each layer's left prop feeds a left tip, right
-    // prop a red tip — so every kaleidoscope copy trails in its own color.
+    // Per-layer rings and tails reset when a copy's capture suppression flips,
+    // before any slice of this frame is captured.
     const additionalLayers = params.additionalLayers;
-    const dtMsCapture = Math.max(0, params.deltaTime * 1000);
-    let formationTrailCaptures = 0;
-    if (additionalLayers && additionalLayers.length > 0) {
-      this.ensureLayerState(additionalLayers.length, leadingEdge);
-      for (let i = 0; i < additionalLayers.length; i++) {
-        const layer = additionalLayers[i]!;
+    const captureLayerCount = additionalLayers?.length ?? 0;
+    if (captureLayerCount > 0) {
+      this.ensureLayerState(captureLayerCount, leadingEdge);
+      for (let i = 0; i < captureLayerCount; i++) {
+        const layer = additionalLayers![i]!;
         const rings = this.layerRings[i]!;
         const tails = this.layerTails[i]!;
         const captureSuppressed = layer.trailCaptureSuppressed === true;
@@ -626,6 +595,76 @@ export class TrailOverlayWebGL2 implements ITrailOverlayCanvas {
           tails.rightRight = createTailState(leadingEdge);
         }
         this.layerTrailCaptureSuppressed[i] = captureSuppressed;
+      }
+      this.layerTrailCaptureSuppressed.length = captureLayerCount;
+    } else if (this.layerRings.length > 0) {
+      this.resetLayerState();
+    }
+
+    // A slow frame is captured as several slices: each motion sub-sample
+    // first (oldest to newest), then the current frame. Every slice runs the
+    // same gates as a frame and advances the tails by its share of the frame
+    // time, so points per second and the recession speed EMA stay at their
+    // 60 Hz authoring whatever the real render cadence is.
+    const samples = params.motionSamples;
+    const sliceCount = (samples?.length ?? 0) + 1;
+    const sliceDtMs = Math.max(0, params.deltaTime * 1000) / sliceCount;
+    let formationTrailCaptures = 0;
+    const captureSlice = (
+      sliceLeft: PropState | null | undefined,
+      sliceRight: PropState | null | undefined,
+      sliceLayers: readonly MotionSubSampleLayer[] | null,
+      timestamp: number
+    ): void => {
+      let leftLeftMoved = false;
+      let leftRightMoved = false;
+      let rightLeftMoved = false;
+      let rightRightMoved = false;
+      if (sliceLeft && leftCaptureLive && !leftPropSwapSuppressed) {
+        const r = this.capturePropTips(
+          sliceLeft,
+          canvasSize,
+          leftPropType,
+          0,
+          leftTrackLeft && leftLeftTrails,
+          leftTrackRight && leftRightTrails,
+          leftTrailConfig,
+          timestamp
+        );
+        leftLeftMoved = r.leftMoved;
+        leftRightMoved = r.rightMoved;
+      }
+      if (sliceRight && rightCaptureLive && !rightPropSwapSuppressed) {
+        const r = this.capturePropTips(
+          sliceRight,
+          canvasSize,
+          rightPropType,
+          1,
+          rightTrackLeft && rightLeftTrails,
+          rightTrackRight && rightRightTrails,
+          rightTrailConfig,
+          timestamp
+        );
+        rightLeftMoved = r.leftMoved;
+        rightRightMoved = r.rightMoved;
+      }
+
+      // Capture overlaid tunnel-layer tips into per-layer rings (same color/tip
+      // gating as the base pair). Each layer's left prop feeds a left tip, right
+      // prop a red tip, so every kaleidoscope copy trails in its own color. A
+      // sub-sample carries its own layer poses; a layer the sampler could not
+      // vouch for is null there and simply holds still for that slice.
+      for (let i = 0; i < captureLayerCount; i++) {
+        const layer = additionalLayers![i]!;
+        const rings = this.layerRings[i]!;
+        const tails = this.layerTails[i]!;
+        const captureSuppressed = layer.trailCaptureSuppressed === true;
+        const layerLeft = sliceLayers
+          ? (sliceLayers[i]?.left ?? null)
+          : layer.leftProp;
+        const layerRight = sliceLayers
+          ? (sliceLayers[i]?.right ?? null)
+          : layer.rightProp;
         const pointsBefore =
           rings.leftLeft.length +
           rings.leftRight.length +
@@ -636,14 +675,14 @@ export class TrailOverlayWebGL2 implements ITrailOverlayCanvas {
           rL = false,
           rR = false;
         if (
-          layer.leftProp &&
+          layerLeft &&
           layer.hasLeft &&
           leftCaptureLive &&
           !leftPropSwapSuppressed &&
           !captureSuppressed
         ) {
           const m = this.capturePropTipsInto(
-            layer.leftProp,
+            layerLeft,
             canvasSize,
             leftNotationType,
             0,
@@ -651,20 +690,21 @@ export class TrailOverlayWebGL2 implements ITrailOverlayCanvas {
             rings.leftRight,
             leftTrackLeft && leftLeftTrails,
             leftTrackRight && leftRightTrails,
-            leftTrailConfig
+            leftTrailConfig,
+            timestamp
           );
           bL = m.leftMoved;
           bR = m.rightMoved;
         }
         if (
-          layer.rightProp &&
+          layerRight &&
           layer.hasRight &&
           rightCaptureLive &&
           !rightPropSwapSuppressed &&
           !captureSuppressed
         ) {
           const m = this.capturePropTipsInto(
-            layer.rightProp,
+            layerRight,
             canvasSize,
             rightNotationType,
             1,
@@ -672,40 +712,41 @@ export class TrailOverlayWebGL2 implements ITrailOverlayCanvas {
             rings.rightRight,
             rightTrackLeft && rightLeftTrails,
             rightTrackRight && rightRightTrails,
-            rightTrailConfig
+            rightTrailConfig,
+            timestamp
           );
           rL = m.leftMoved;
           rR = m.rightMoved;
         }
-        // Advance every tail each frame (moved=false freezes recession during a
+        // Advance every tail each slice (moved=false freezes recession during a
         // fade-out the same way the base pair does), so layer trails recede
         // identically whether the prop is moving, stationary, or fading out.
         tails.leftLeft = advanceTail(
           tails.leftLeft,
           rings.leftLeft,
           bL,
-          dtMsCapture,
+          sliceDtMs,
           leadingEdge
         );
         tails.leftRight = advanceTail(
           tails.leftRight,
           rings.leftRight,
           bR,
-          dtMsCapture,
+          sliceDtMs,
           leadingEdge
         );
         tails.rightLeft = advanceTail(
           tails.rightLeft,
           rings.rightLeft,
           rL,
-          dtMsCapture,
+          sliceDtMs,
           leadingEdge
         );
         tails.rightRight = advanceTail(
           tails.rightRight,
           rings.rightRight,
           rR,
-          dtMsCapture,
+          sliceDtMs,
           leadingEdge
         );
         if (layer.formationTransitionActive) {
@@ -717,47 +758,49 @@ export class TrailOverlayWebGL2 implements ITrailOverlayCanvas {
           formationTrailCaptures += Math.max(0, pointsAfter - pointsBefore);
         }
       }
-      this.layerTrailCaptureSuppressed.length = additionalLayers.length;
-    } else if (this.layerRings.length > 0) {
-      this.resetLayerState();
+
+      // Advance per-ring tail recession state. Moving slices update the
+      // per-ring speed EMA and keep visibleCount at LEADING_EDGE. Stationary
+      // slices walk the visible endpoint forward along the captured path at
+      // the pre-stop speed - so stopping on a dime reads as "the trail
+      // finishes the motion" instead of freezing at constant length.
+      this.leftLeftTail = advanceTail(
+        this.leftLeftTail,
+        this.leftLeftRing,
+        leftLeftMoved,
+        sliceDtMs,
+        leadingEdge
+      );
+      this.leftRightTail = advanceTail(
+        this.leftRightTail,
+        this.leftRightRing,
+        leftRightMoved,
+        sliceDtMs,
+        leadingEdge
+      );
+      this.rightLeftTail = advanceTail(
+        this.rightLeftTail,
+        this.rightLeftRing,
+        rightLeftMoved,
+        sliceDtMs,
+        leadingEdge
+      );
+      this.rightRightTail = advanceTail(
+        this.rightRightTail,
+        this.rightRightRing,
+        rightRightMoved,
+        sliceDtMs,
+        leadingEdge
+      );
+    };
+
+    if (samples) {
+      for (const sample of samples) {
+        captureSlice(sample.left, sample.right, sample.layers, sample.timeMs);
+      }
     }
+    captureSlice(leftProp, rightProp, null, params.currentTime);
     recordTunnelFormationTrailCaptures(formationTrailCaptures);
-
-    // Advance per-ring tail recession state. Moving frames update the
-    // per-ring speed EMA and keep visibleCount at LEADING_EDGE. Stationary
-    // frames walk the visible endpoint forward along the captured path at
-    // the pre-stop speed - so stopping on a dime reads as "the trail
-    // finishes the motion" instead of freezing at constant length.
-    const dtMs = Math.max(0, params.deltaTime * 1000);
-
-    this.leftLeftTail = advanceTail(
-      this.leftLeftTail,
-      this.leftLeftRing,
-      leftLeftMoved,
-      dtMs,
-      leadingEdge
-    );
-    this.leftRightTail = advanceTail(
-      this.leftRightTail,
-      this.leftRightRing,
-      leftRightMoved,
-      dtMs,
-      leadingEdge
-    );
-    this.rightLeftTail = advanceTail(
-      this.rightLeftTail,
-      this.rightLeftRing,
-      rightLeftMoved,
-      dtMs,
-      leadingEdge
-    );
-    this.rightRightTail = advanceTail(
-      this.rightRightTail,
-      this.rightRightRing,
-      rightRightMoved,
-      dtMs,
-      leadingEdge
-    );
 
     // lineWidth is authored in reference-size (500px) pixels. On smaller
     // canvases, scale it down so the trail + glow halo stay the same
@@ -1140,7 +1183,8 @@ export class TrailOverlayWebGL2 implements ITrailOverlayCanvas {
     propIndex: 0 | 1,
     trackLeft: boolean,
     trackRight: boolean,
-    trailConfig: TrailPointConfig
+    trailConfig: TrailPointConfig,
+    timestamp: number
   ): { leftMoved: boolean; rightMoved: boolean } {
     const leftRing = propIndex === 0 ? this.leftLeftRing : this.rightLeftRing;
     const rightRing =
@@ -1154,7 +1198,8 @@ export class TrailOverlayWebGL2 implements ITrailOverlayCanvas {
       rightRing,
       trackLeft,
       trackRight,
-      trailConfig
+      trailConfig,
+      timestamp
     );
   }
 
@@ -1172,7 +1217,8 @@ export class TrailOverlayWebGL2 implements ITrailOverlayCanvas {
     rightRing: TrailPoint[],
     trackLeft: boolean,
     trackRight: boolean,
-    trailConfig: TrailPointConfig
+    trailConfig: TrailPointConfig,
+    timestamp: number
   ): { leftMoved: boolean; rightMoved: boolean } {
     let leftMoved = false;
     let rightMoved = false;
@@ -1200,7 +1246,8 @@ export class TrailOverlayWebGL2 implements ITrailOverlayCanvas {
           endpoint.y + offsetY,
           canvasSize,
           propIndex,
-          endpoint.tipIndex ?? 0
+          endpoint.tipIndex ?? 0,
+          timestamp
         );
       }
     }
@@ -1218,7 +1265,8 @@ export class TrailOverlayWebGL2 implements ITrailOverlayCanvas {
           endpoint.y + offsetY,
           canvasSize,
           propIndex,
-          endpoint.tipIndex ?? 1
+          endpoint.tipIndex ?? 1,
+          timestamp
         );
       }
     }
@@ -1266,7 +1314,8 @@ export class TrailOverlayWebGL2 implements ITrailOverlayCanvas {
     worldY: number,
     canvasSize: number,
     propIndex: 0 | 1,
-    tipIndex: number
+    tipIndex: number,
+    timestamp: number
   ): boolean {
     if (ring.length > 0) {
       const last = ring[ring.length - 1]!;
@@ -1286,7 +1335,7 @@ export class TrailOverlayWebGL2 implements ITrailOverlayCanvas {
     ring.push({
       x: worldX,
       y: worldY,
-      timestamp: performance.now(),
+      timestamp,
       propIndex,
       tipIndex,
     });
