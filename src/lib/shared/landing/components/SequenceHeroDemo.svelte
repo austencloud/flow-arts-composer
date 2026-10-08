@@ -663,8 +663,9 @@
     gap: 0.65rem;
     margin-top: 1rem;
     /* The host's controls read this row's width (ComposerBackgroundCycle
-       shortens its chip in a narrow row) so the toolbar stays one line at
-       every hero width. */
+       shortens its chip under 27rem, the composer page hides Roll's name
+       under 18.5rem) so the toolbar stays one line down to the narrowest
+       hero, 238px. */
     container: hero-toolbar / inline-size;
   }
   .with-notation-strip .reroll-row,

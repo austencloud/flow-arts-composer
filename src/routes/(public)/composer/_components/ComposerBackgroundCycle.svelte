@@ -36,7 +36,12 @@
     <DropdownMenu.Trigger>
       {#snippet child({ props })}
         {@const triggerProps = asButtonAttributes(props)}
-        <button {...triggerProps} type="button" class="theme-trigger">
+        <button
+          {...triggerProps}
+          type="button"
+          class="theme-trigger"
+          title={`Theme: ${current.label}`}
+        >
           <span class="theme-label">Theme:</span>
           <i class="fas {current.icon}" aria-hidden="true"></i>
           <span class="theme-value">{current.label}</span>
