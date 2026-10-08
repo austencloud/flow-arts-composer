@@ -1860,14 +1860,17 @@ Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>" -- "src/routes/(public
 > real Chrome. Follow-up branch `codex/composer-live-fixes`, from measurements
 > at 1440x800, 1280x720, 1024x768, 820x1180 and 375x667: the hero toolbar
 > wrapped in every stage window (the row is 350px at 1440x900 and 265px at
-> 1280x720), so the row is a size container, the Theme chip shortens to its icon
-> under 27rem and Roll keeps only its die under 18.5rem; the Keep card's room
-> allowance names the two-line caption (3.25rem; the stop was 20px over at
-> 1440x800); and the making frames' 34rem floor gives way to the room on the
-> stage (a 720px window leaves 479px, and nothing inside overflows at that
-> height). Left as designed: a stop taller than its room pans before the glide
-> (the tunnel's controls column is 595px, the gallery keeps its 360px floor),
-> and the stage's 700px height gate.
+> 1280x720), so the row is a size container, the Theme chip shortens to its
+> icon and chevron under 27rem and Roll keeps only its die under 18.5rem; the
+> Keep card's room allowance names the two-line caption (3.25rem; the stop was
+> 20px over at 1440x800); and the making frames' 34rem floor gives way to the
+> room on the stage (a 720px window leaves 479px; the frames were checked at
+> 519 and 479px, and the 700px gate allows about 459px). Left as designed: a
+> stop taller than its room pans before the glide (the tunnel's controls column
+> is 595px, the gallery keeps its 360px floor, and on a stage 1100 to 1235px
+> wide Construct keeps its 52rem stacked floor), the stage's 700px height gate,
+> and the plain page's 31svh hero cap, which leaves a landscape phone a hero
+> too narrow for one toolbar line.
 
 - [ ] **Step 1: Resource gate**
 
