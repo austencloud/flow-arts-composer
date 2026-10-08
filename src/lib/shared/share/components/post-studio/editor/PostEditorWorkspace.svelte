@@ -178,6 +178,7 @@
   import { loadPostProject } from "$lib/shared/media-composition/services/post-project-store";
   import { createPostTabSync } from "$lib/shared/media-composition/services/post-tab-sync";
   import type { FeatureVideoSync } from "$lib/shared/media-composition/services/feature-video-client";
+  import type { SavedFeatureExport } from "$lib/shared/media-composition/domain/feature-video-export";
   import {
     parsePostStudioBackup,
     serializePostStudioBackup,
@@ -330,6 +331,8 @@
                 // Another editor, the CLI or a hand edit saved a newer copy.
                 onFeatureRevision: (revision) =>
                   void featureVideo.checkRevision(revision),
+                // `post-project.mjs render` runs the export in this editor.
+                render: { run: bridgeRender, progress: renderProgress },
               }
             : {}
         );
@@ -1023,6 +1026,9 @@
   let exportedUrl = $state<string | null>(null);
   let exportCancelled = false;
   let exportAbort: AbortController | null = null;
+  /** A feature video's render, once it is in the project's exports/ folder. */
+  let savedExport = $state<SavedFeatureExport | null>(null);
+  let saveExportError = $state("");
 
   const exporting = $derived(exportProgress !== null);
   const exportPercent = $derived(
@@ -2337,7 +2343,8 @@
     return new Promise((resolve) => requestAnimationFrame(() => resolve()));
   }
 
-  async function renderPost(): Promise<boolean> {
+  /** Renders the post; a feature video's render also lands in exports/. */
+  async function renderPost(name?: string): Promise<boolean> {
     if (!canRender) {
       exportError =
         labeledCard.error ??
@@ -2363,6 +2370,8 @@
     exportCancelled = false;
     exportAbort = new AbortController();
     exportError = "";
+    savedExport = null;
+    saveExportError = "";
     const totalFrames = Math.ceil(
       compiled.durationSeconds * compiled.preset.output.frameRate
     );
@@ -2432,10 +2441,15 @@
         shouldCancel: () => exportCancelled,
         signal: exportAbort.signal,
       });
+      // A Cancel can land while the encoder finishes, after its last check.
+      if (exportCancelled) return false;
       if (exportedUrl) URL.revokeObjectURL(exportedUrl);
       exportedUrl = URL.createObjectURL(blob);
       onExported?.(blob);
-      return true;
+      if (featureVideo) await keepFeatureExport(blob, name);
+      // A Cancel during the upload stops it; a render saved before the
+      // Cancel stays saved.
+      return !exportCancelled || savedExport !== null;
     } catch (error) {
       if (!exportCancelled) {
         console.error("[PostStudio] Export failed:", error);
@@ -2460,8 +2474,63 @@
     exportAbort?.abort();
   }
 
+  /** Sends a feature video's render to its folder's exports/. */
+  async function keepFeatureExport(blob: Blob, name?: string): Promise<void> {
+    if (!featureVideo) return;
+    try {
+      savedExport = await featureVideo.saveExport(
+        blob,
+        name,
+        exportAbort?.signal
+      );
+    } catch (cause) {
+      // Cancel stopped the upload, which is no failure to report.
+      if (exportCancelled) return;
+      const reason =
+        cause instanceof Error
+          ? cause.message
+          : "The dev server did not answer.";
+      saveExportError = `Not saved to exports/. ${reason}`;
+    }
+  }
+
+  /**
+   * `post-project.mjs render` runs this through the dev bridge: it waits for
+   * the editor to be ready, renders, and answers where the file landed.
+   */
+  async function bridgeRender(name?: string): Promise<SavedFeatureExport> {
+    const deadline = Date.now() + 60_000;
+    while (!canRender) {
+      if (exporting) throw new Error("This editor is already rendering.");
+      if (Date.now() > deadline)
+        throw new Error(
+          labeledCard.error ??
+            overlayError ??
+            "The editor was not ready to render after 60 s."
+        );
+      await new Promise((resolve) => setTimeout(resolve, 250));
+    }
+    if (!(await renderPost(name)))
+      throw new Error(
+        exportError ||
+          (exportCancelled ? "The render was cancelled." : "The render failed.")
+      );
+    if (!savedExport)
+      throw new Error(
+        saveExportError || "The render finished but was not saved."
+      );
+    return savedExport;
+  }
+
+  /** How far the current render is, for the bridge; null between renders. */
+  function renderProgress(): { phase: string; percent: number } | null {
+    return exportProgress
+      ? { phase: exportProgress.phase, percent: exportPercent }
+      : null;
+  }
+
   const releaseExport = registerExport({
-    render: renderPost,
+    render: () => renderPost(),
     cancel: cancelExport,
   });
 
@@ -2673,6 +2742,8 @@
       {exportedUrl}
       {exportFilename}
       {exportError}
+      savedTo={savedExport?.file ?? null}
+      saveError={saveExportError}
       onRender={() => void renderPost()}
       onCancel={cancelExport}
       onTapBeats={openTakeBeats}
@@ -2708,6 +2779,7 @@
       {cardRenderOptions}
       stepCount={displaySequence.steps?.length ?? 0}
       sequenceBusy={labeledCard.pending}
+      featureMode={!!featureVideo}
     />
   {/if}
 {/snippet}

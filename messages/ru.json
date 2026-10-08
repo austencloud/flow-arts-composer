@@ -786,6 +786,7 @@
   "settings_prop_choices": "Выбор реквизита",
   "settings_primary_prop_colors": "Цвета основного реквизита",
   "settings_use_default_colors": "Использовать цвета по умолчанию",
+  "settings_random_prop_colors": "Случайные цвета: слева холодный, справа тёплый",
   "settings_edit_prop_colors": "Изменить цвета реквизита",
   "settings_colors": "Цвета",
   "settings_prop_colors": "Цвета реквизита",

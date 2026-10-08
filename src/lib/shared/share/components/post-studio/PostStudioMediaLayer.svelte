@@ -47,6 +47,8 @@
     exporting?: boolean;
     sequence: SequenceData;
     qrSequence?: SequenceData;
+    /** A card's saved scan link, which its QR shows. */
+    qrUrl?: string;
     cardRenderOptions?: Partial<SequenceExportOptions> | null;
     qrAppearance?: PostQrAppearance;
     animationAppearance?: PostAnimationItem["animationAppearance"] | null;
@@ -88,6 +90,7 @@
     exporting = false,
     sequence,
     qrSequence,
+    qrUrl,
     cardRenderOptions = null,
     qrAppearance,
     animationAppearance = null,
@@ -737,6 +740,7 @@
       {displayedBeatNumber}
       {cardRenderOptions}
       {qrSequence}
+      {qrUrl}
     />
   {:else if binding.renderMode === "tunnel"}
     <PostStudioTunnelLayer

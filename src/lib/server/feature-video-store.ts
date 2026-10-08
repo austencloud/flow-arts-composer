@@ -195,7 +195,19 @@ export function createFeatureVideoStore(
       throw unreadable;
     }
     const parsed = FeatureVideoFileSchema.safeParse(value);
-    if (!parsed.success || parsed.data.slug !== slug) throw unreadable;
+    if (!parsed.success) {
+      // A hand edit usually breaks one field; naming it lets it be put right.
+      const issue = parsed.error.issues[0];
+      if (!issue) throw unreadable;
+      const at = issue.path.length
+        ? ` at ${issue.path.map(String).join(".")}`
+        : "";
+      throw new FeatureVideoError(
+        `${slug}/project.json is unreadable${at}: ${issue.message.replace(/\.$/, "")}. Fix that, or restore the file from history/ (the newest file there is the last good save).`,
+        422
+      );
+    }
+    if (parsed.data.slug !== slug) throw unreadable;
     return parsed.data;
   }
 

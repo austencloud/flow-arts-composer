@@ -669,7 +669,7 @@
                   <PanelButton
                     fullWidth
                     ariaPressed={selectedLoopId === loop.id}
-                    ariaLabel={simplifyRepeatedWord(loop.word)}
+                    ariaLabel={`${simplifyRepeatedWord(loop.word)}, ${group.title}`}
                     onclick={() => selectLoop(loop, true)}
                   >
                     <div class="loop-card" aria-hidden="true" inert>
@@ -1068,19 +1068,17 @@
     outline-offset: -3px;
   }
 
-  /* Phones held upright: one column, the player first. The back button keeps
-     its name for assistive tech but shows only its arrow, so the title and
-     the whole player fit the first screen. */
-  @media (max-width: 599.98px) {
-    .mode-page {
-      --page-pad: 1rem;
-      --title-gap: 0.75rem;
-      max-width: 100%;
-      padding: calc(var(--header-h) + 0.75rem) var(--page-pad) 2rem;
-    }
+  /* Wherever the title row is short of room, the back button keeps its name
+     for assistive tech but shows only its arrow. The title stays beside it
+     while it can hold two lines; a narrower column puts the arrow on its own
+     row above the title. */
+  @media (max-width: 599.98px),
+    (orientation: landscape) and (max-height: 599.98px) {
     .mode-header {
-      flex-wrap: nowrap;
       gap: 0.75rem;
+    }
+    .mode-title {
+      flex: 1 1 15.5rem;
     }
     .nav-label {
       position: absolute;
@@ -1093,6 +1091,17 @@
     .mode-title img {
       width: 40px;
       height: 40px;
+    }
+  }
+
+  /* Phones held upright: one column, the player first, so the title and the
+     whole player fit the first screen. */
+  @media (max-width: 599.98px) {
+    .mode-page {
+      --page-pad: 1rem;
+      --title-gap: 0.75rem;
+      max-width: 100%;
+      padding: calc(var(--header-h) + 0.75rem) var(--page-pad) 2rem;
     }
     .loop-grid {
       gap: 0.375rem;
@@ -1229,30 +1238,60 @@
     }
   }
 
-  /* Short landscape (a phone on its side): the player holds still beside the
-     chooser, sized to the window's height, while the cards scroll past. */
+  /* Short landscape (a phone on its side, or a zoomed-in window): the player
+     docks on the left from the top of the page, sized to the window's height,
+     and holds still while the title and chooser scroll beside it. The hero
+     only groups those parts, so here they join the top grid directly. */
   @media (orientation: landscape) and (max-height: 599.98px) {
     .mode-page {
       --page-pad: 1rem;
       --rail-w: 8rem;
       --strip-h: 4rem;
       --sticky-top: calc(var(--header-h) + 0.5rem);
+      /* The title and chooser column never gets narrower than this. */
+      --side-min: 16rem;
       padding-top: var(--sticky-top);
     }
-    .mode-hero {
+    .mode-top {
       grid-template-columns: auto minmax(0, 1fr);
-      align-items: start;
+      grid-template-rows: auto 1fr;
+      column-gap: var(--hero-gap);
+    }
+    .mode-header {
+      grid-column: 2;
+      grid-row: 1;
+    }
+    .mode-hero {
+      display: contents;
     }
     .demonstration {
+      grid-column: 1;
+      grid-row: 1 / span 2;
+      align-self: start;
       position: sticky;
       top: var(--sticky-top);
+    }
+    .loop-library {
+      grid-column: 2;
+      grid-row: 2;
     }
     .mode-showcase {
       --sequence-showcase-rail-width: var(--rail-w);
       --sequence-showcase-strip-height: var(--strip-h);
-      width: calc(
-        100svh - var(--sticky-top) - 0.5rem + var(--rail-w) - var(--strip-h)
+      width: min(
+        100svh - var(--sticky-top) - 0.5rem + var(--rail-w) - var(--strip-h),
+        100cqw - var(--hero-gap) - var(--side-min)
       );
+    }
+  }
+
+  /* A narrow short window, such as a small phone on its side or a laptop
+     zoomed to 200%, gives the shell's side margins to the player. */
+  @media (orientation: landscape) and (max-height: 599.98px) and (max-width: 759.98px) {
+    .mode-page {
+      max-width: 100%;
+      padding-left: max(var(--page-pad), env(safe-area-inset-left));
+      padding-right: max(var(--page-pad), env(safe-area-inset-right));
     }
   }
 </style>
