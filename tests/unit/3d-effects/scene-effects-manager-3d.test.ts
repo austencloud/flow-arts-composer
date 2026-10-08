@@ -17,10 +17,10 @@ describe("SceneEffectsManager3D", () => {
     const manager = new SceneEffectsManager3D();
     manager.initialize(scene);
 
-    // Existing pooled visuals, one shared Coal renderer (two draws), Fire's
+    // Existing pooled visuals, Goo's strand and drop meshes, Coal (two draws), Fire's
     // four stable lights, and the four-light scene pool shared by Bloom,
     // Trails, and Zap.
-    expect(scene.children).toHaveLength(30);
+    expect(scene.children).toHaveLength(31);
     manager.update(1 / 60);
     manager.dispose();
     expect(scene.children).toHaveLength(0);
@@ -43,7 +43,10 @@ describe("SceneEffectsManager3D", () => {
     manager.initialize(scene);
 
     const petalMesh = scene.children.find(
-      (child) => child.renderOrder === 103
+      (child) =>
+        child instanceof InstancedMesh &&
+        child.renderOrder === 103 &&
+        (child.material as ShaderMaterial).uniforms?.uBackdropLuminance
     ) as InstancedMesh | undefined;
     const material = petalMesh?.material as ShaderMaterial | undefined;
     expect(material?.uniforms.uBackdropLuminance?.value).toBe(
