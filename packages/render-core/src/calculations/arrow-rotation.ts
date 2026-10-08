@@ -21,6 +21,39 @@ import {
   FLOAT_CLOCKWISE_MAP,
   FLOAT_COUNTER_CLOCKWISE_MAP,
 } from "../constants/rotation-maps.js";
+import { getHandpathDirection } from "./orientation.js";
+
+const SCREEN_DIRECTIONS: Record<string, [number, number]> = {
+  n: [0, -1],
+  ne: [1, -1],
+  e: [1, 0],
+  se: [1, 1],
+  s: [0, 1],
+  sw: [-1, 1],
+  w: [-1, 0],
+  nw: [-1, -1],
+  c: [0, 0],
+};
+
+/**
+ * A float turns with the hand's path, not its rotation direction: the
+ * clockwise or counter-clockwise path map, or, for a straight skewed path,
+ * the screen angle from start to end, as the app's float rotation does.
+ */
+function floatRotation(location: string, startLocation: string, endLocation: string): number {
+  const handpath = getHandpathDirection(startLocation, endLocation);
+  if (handpath === "cw") return FLOAT_CLOCKWISE_MAP[location as GridLocation] ?? 0;
+  if (handpath === "ccw") return FLOAT_COUNTER_CLOCKWISE_MAP[location as GridLocation] ?? 0;
+  if (handpath === "dash" && startLocation !== endLocation) {
+    const start = SCREEN_DIRECTIONS[startLocation];
+    const end = SCREEN_DIRECTIONS[endLocation];
+    if (start && end) {
+      const degrees = (Math.atan2(end[1] - start[1], end[0] - start[0]) * 180) / Math.PI;
+      return ((degrees % 360) + 360) % 360;
+    }
+  }
+  return 0;
+}
 
 function selectRotationMap(
   motionType: MotionType,
@@ -90,6 +123,14 @@ export function calculateArrowRotation(
         return DASH_NO_ROTATION_MAP[key] ?? 0;
       }
     }
+  }
+
+  if (normalizedMotionType === "float" && startLocation && endLocation) {
+    return floatRotation(
+      normalizedLocation,
+      String(startLocation).toLowerCase(),
+      String(endLocation).toLowerCase()
+    );
   }
 
   const rotationMap = selectRotationMap(normalizedMotionType, rotationDirection, isRadialOrientation);

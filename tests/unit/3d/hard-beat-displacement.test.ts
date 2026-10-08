@@ -29,6 +29,7 @@ import {
   type HardBeatTrack,
 } from "$lib/shared/3d/collision/hard-beat-displacement";
 import { propContinuityCorpus } from "../../tools/prop-continuity-corpus";
+import { gridJoinOffset3D } from "$lib/shared/3d/services/grid-join-3d";
 
 /**
  * The rules for moving a staff so the hand can hold it: only along its own
@@ -612,5 +613,123 @@ describe("hard-beat lanes", () => {
     expect(
       movedLocal.clone().normalize().distanceTo(local.clone().normalize())
     ).toBeLessThan(1e-9);
+  });
+});
+
+describe("joined non-wall reach", () => {
+  it("keeps crossed floor grips reachable without moving them off either grid radial", () => {
+    // The browser capture includes the rig's 0.55 m ground offset and the
+    // CUSTOM hand anchor's 0.3 m Z offset. Score states use the hand-anchor
+    // frame, where these crossed grips are already within arm reach. A contact
+    // track is still needed to disable the legacy pair split.
+    const join = { toward: "n" as const, steps: 1 as const };
+    const left: HardBeatProp = {
+      worldPosition: new Vector3(-0.028, 0, -0.14),
+      gridCenter: gridJoinOffset3D(join, "left", Plane.FLOOR),
+      plane: Plane.FLOOR,
+    };
+    const right: HardBeatProp = {
+      worldPosition: new Vector3(-0.52, 0, -0.46),
+      gridCenter: gridJoinOffset3D(join, "right", Plane.FLOOR),
+      plane: Plane.FLOOR,
+    };
+    const track = buildHardBeatTrack({
+      source: heldPair(left, right, 2),
+      stanceTrack: null,
+      heightM: HEIGHT_M,
+      planeMode: PlaneMode.CUSTOM,
+    });
+    expect(track).not.toBeNull();
+    const shoulder = {
+      left: new Vector3(0.199, -0.038, -0.307),
+      right: new Vector3(-0.199, -0.038, -0.307),
+    };
+    for (const time of [0, 0.5, 1, 1.5, 1.99]) {
+      const sample = sampleHardBeatTrack(track, time);
+      expect(sample.downstageHand).toBeNull();
+      for (const side of ["left", "right"] as const) {
+        const authored = side === "left" ? left : right;
+        const hand = sample[side];
+        expect(hand.radialInM).toBe(0);
+        expect(hand.depthM).toBe(0);
+        const moved = displaceProp(authored, hand)!.worldPosition;
+        expect(moved.distanceTo(shoulder[side])).toBeLessThanOrEqual(
+          0.604 - 0.02 + 1e-8
+        );
+        const localBefore = authored.worldPosition
+          .clone()
+          .sub(authored.gridCenter);
+        const localAfter = moved.clone().sub(authored.gridCenter);
+        expect(
+          localBefore.normalize().distanceTo(localAfter.normalize())
+        ).toBeLessThan(1e-9);
+      }
+    }
+    expect(track.report).toEqual([]);
+  });
+
+  it("pulls an out-of-reach joined floor grip inward along its own grid radial", () => {
+    const join = { toward: "n" as const, steps: 1 as const };
+    const leftCenter = gridJoinOffset3D(join, "left", Plane.FLOOR);
+    const rightCenter = gridJoinOffset3D(join, "right", Plane.FLOOR);
+    const left: HardBeatProp = {
+      worldPosition: leftCenter.clone().add(new Vector3(0.85, 0, 0)),
+      gridCenter: leftCenter,
+      plane: Plane.FLOOR,
+    };
+    const right: HardBeatProp = {
+      worldPosition: rightCenter.clone().add(new Vector3(-0.55, 0, 0)),
+      gridCenter: rightCenter,
+      plane: Plane.FLOOR,
+    };
+    const track = buildHardBeatTrack({
+      source: heldPair(left, right, 2),
+      stanceTrack: null,
+      heightM: HEIGHT_M,
+      planeMode: PlaneMode.CUSTOM,
+    });
+    expect(track).not.toBeNull();
+    const shoulder = {
+      left: new Vector3(0.199, -0.038, -0.307),
+      right: new Vector3(-0.199, -0.038, -0.307),
+    };
+    for (const time of [0, 0.5, 1, 1.5, 1.99]) {
+      const sample = sampleHardBeatTrack(track, time);
+      for (const side of ["left", "right"] as const) {
+        const authored = side === "left" ? left : right;
+        const hand = sample[side];
+        expect(hand.radialInM).toBeGreaterThan(0);
+        const moved = displaceProp(authored, hand)!.worldPosition;
+        expect(moved.distanceTo(shoulder[side])).toBeLessThanOrEqual(
+          0.604 - 0.02 + 1e-8
+        );
+        const localBefore = authored.worldPosition
+          .clone()
+          .sub(authored.gridCenter);
+        const localAfter = moved.clone().sub(authored.gridCenter);
+        expect(
+          localBefore.normalize().distanceTo(localAfter.normalize())
+        ).toBeLessThan(1e-9);
+      }
+    }
+    expect(track.report.some((beat) => beat.causes.includes("reach"))).toBe(
+      true
+    );
+    expect(track.report.every((beat) => beat.laneRule === null)).toBe(true);
+  });
+
+  it("keeps an unjoined non-wall score untouched", () => {
+    const source = heldPair(
+      { worldPosition: new Vector3(0.3, 0, 0), plane: Plane.FLOOR },
+      { worldPosition: new Vector3(-0.3, 0, 0), plane: Plane.FLOOR }
+    );
+    expect(
+      buildHardBeatTrack({
+        source,
+        stanceTrack: null,
+        heightM: HEIGHT_M,
+        planeMode: PlaneMode.CUSTOM,
+      })
+    ).toBeNull();
   });
 });

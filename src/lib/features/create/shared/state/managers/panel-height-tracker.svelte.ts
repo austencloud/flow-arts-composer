@@ -8,6 +8,10 @@
  */
 
 import { untrack } from "svelte";
+import {
+  isInMovingPanelGroup,
+  PANEL_SETTLE_EVENT,
+} from "$lib/shared/panels/panel-motion";
 import type { PanelCoordinationState } from "../panel-coordination-state.svelte";
 
 export interface PanelHeightTrackerConfig {
@@ -18,13 +22,18 @@ export interface PanelHeightTrackerConfig {
   isToolPanelVisible?: () => boolean;
 }
 
+export type PanelHeightTrackerCleanup = (options?: {
+  /** Leave the published metrics in place for a replacement tracker. */
+  keepMetrics?: boolean;
+}) => void;
+
 /**
  * Creates panel height tracking effects
  * @returns Cleanup function
  */
 export function createPanelHeightTracker(
   config: PanelHeightTrackerConfig
-): () => void {
+): PanelHeightTrackerCleanup {
   const {
     toolPanelElement,
     buttonPanelElement,
@@ -119,8 +128,12 @@ export function createPanelHeightTracker(
 
   // A collapsing workspace can notify both panels several times in one paint.
   // Read the settled rectangle once, then publish the final overlay geometry.
+  // While the workspace slides, every frame resizes the tool panel; measuring
+  // then forced an extra layout and rewrote root variables that restyle the
+  // whole page each frame. The panel group's settle event measures once.
   const scheduleToolPanelMetrics = () => {
     if (scheduledFrame !== null) return;
+    if (toolPanelElement && isInMovingPanelGroup(toolPanelElement)) return;
     scheduledFrame = requestAnimationFrame(() => {
       scheduledFrame = null;
       updateToolPanelMetrics();
@@ -129,7 +142,10 @@ export function createPanelHeightTracker(
 
   // Track tool panel height
   if (toolPanelElement) {
-    updateToolPanelMetrics();
+    // The first sequence brings the button panel with it, which replaces this
+    // tracker while the workspace is opening. A tracker born mid-slide waits
+    // for the settle event like every other measurement.
+    if (!isInMovingPanelGroup(toolPanelElement)) updateToolPanelMetrics();
 
     const toolResizeObserver = new ResizeObserver((entries) => {
       if (entries.length === 0) {
@@ -142,14 +158,24 @@ export function createPanelHeightTracker(
 
     if (typeof window !== "undefined") {
       const handleViewportChange = () => scheduleToolPanelMetrics();
+      const handlePanelSettle = (event: Event) => {
+        if (
+          event.target instanceof Node &&
+          event.target.contains(toolPanelElement)
+        ) {
+          scheduleToolPanelMetrics();
+        }
+      };
       window.addEventListener("resize", handleViewportChange);
       window.addEventListener("orientationchange", handleViewportChange);
       window.addEventListener("scroll", handleViewportChange, true);
+      document.addEventListener(PANEL_SETTLE_EVENT, handlePanelSettle);
 
       cleanups.push(() => {
         window.removeEventListener("resize", handleViewportChange);
         window.removeEventListener("orientationchange", handleViewportChange);
         window.removeEventListener("scroll", handleViewportChange, true);
+        document.removeEventListener(PANEL_SETTLE_EVENT, handlePanelSettle);
       });
     }
   }
@@ -166,9 +192,11 @@ export function createPanelHeightTracker(
     cleanups.push(() => buttonResizeObserver.disconnect());
   }
 
-  return () => {
+  return ({ keepMetrics = false }: { keepMetrics?: boolean } = {}) => {
     if (scheduledFrame !== null) cancelAnimationFrame(scheduledFrame);
     cleanups.forEach((cleanup) => cleanup());
-    clearCreatePanelMetrics();
+    // A replacement tracker publishes the same values again. Clearing them in
+    // between restyled the whole page twice while the workspace opened.
+    if (!keepMetrics) clearCreatePanelMetrics();
   };
 }

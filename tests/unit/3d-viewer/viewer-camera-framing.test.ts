@@ -1,7 +1,17 @@
 // @vitest-environment jsdom
 
 import { BackgroundType } from "@austencloud/backgrounds";
+import { Plane } from "@austencloud/scene-3d";
 import { describe, expect, it, vi } from "vitest";
+import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import demo from "$lib/shared/landing/data/demo-sequence.json";
+import { computeChoreographerShot } from "$lib/shared/sequence-viewer/camera-choreography/presets/shots";
+import {
+  gridJoinOffset3D,
+  resolveGridJoin3D,
+} from "$lib/shared/3d/services/grid-join-3d";
+import { DEFAULT_PERFORMER_HAND_DISTANCE } from "$lib/shared/3d/domain/performer-hand-distance";
+import { CANONICAL_PERFORMER_ANCHOR_Y } from "$lib/shared/3d/environments/domain/stage-coordinate-frame";
 import {
   getViewerFrontStageFacingAngle,
   getViewerFrontStageCameraZ,
@@ -10,6 +20,7 @@ import {
 import {
   computeViewerAlignedCamera,
   joinedPerformerExtent,
+  levelJoinedViewerOpeningShot,
   isValidViewerCameraPose,
   isValidViewerCameraSnapshot,
 } from "$lib/shared/3d/camera/viewer-camera-framing";
@@ -34,6 +45,52 @@ function rect(
 }
 
 describe("viewer camera framing", () => {
+  it.each([1440 / 900, 375 / 667])(
+    "keeps the north-joined outer ring inside the level opening at aspect %s",
+    (aspect) => {
+      const sequence = {
+        ...(demo as unknown as SequenceData),
+        conjoined: { toward: "n", steps: 1 },
+      } as SequenceData;
+      const join = resolveGridJoin3D(sequence);
+      expect(join).not.toBeNull();
+      const stageY = CANONICAL_PERFORMER_ANCHOR_Y;
+      const handReach = DEFAULT_PERFORMER_HAND_DISTANCE.right.max;
+      const staffHalfLength = 0.43;
+      const shot = computeChoreographerShot(
+        [
+          {
+            position: { x: 0, z: 0 },
+            loadedSequence: sequence,
+            handDistance: DEFAULT_PERFORMER_HAND_DISTANCE,
+            staffHalfLength,
+          },
+        ],
+        stageY,
+        aspect
+      );
+      shot.eye.z = getViewerFrontStageCameraZ(
+        shot.target.z,
+        shot.eye.z - shot.target.z,
+        "blossom"
+      );
+      const opening = levelJoinedViewerOpeningShot(shot, stageY, "blossom");
+      const rightOffset = gridJoinOffset3D(
+        join,
+        "right",
+        Plane.WALL,
+        DEFAULT_PERFORMER_HAND_DISTANCE.right
+      );
+      const topY =
+        stageY + Math.abs(rightOffset.y) + handReach + staffHalfLength;
+      // The wall grid is 0.3 m in front of the avatar, toward the camera.
+      const gridDepth = Math.abs(opening.position.z + 0.3);
+      const visibleTop =
+        opening.target.y + gridDepth * Math.tan((50 * Math.PI) / 360);
+      expect(opening.target.y).toBe(stageY);
+      expect(visibleTop).toBeGreaterThan(topY);
+    }
+  );
   it("fits the joined reach and all performers in both opening camera paths", () => {
     const single = joinedPerformerExtent();
     const joined = joinedPerformerExtent(undefined, { toward: "e", steps: 2 });
