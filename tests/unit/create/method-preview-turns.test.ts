@@ -154,6 +154,21 @@ describe("method preview turns", () => {
     expect(turns.turn).toBe(2);
   });
 
+  it("ignores a hold on a card that has no scene", () => {
+    const { turns } = setup();
+    turns.start();
+    const plays = tick(turns, 1000, { 2: () => turns.hold("no-scene") });
+    expect(plays).toEqual([
+      [5, "a"],
+      [115, "b"],
+      [225, "c"],
+      [335, "a"],
+      [445, "b"],
+      [555, "c"],
+    ]);
+    turns.release("no-scene");
+  });
+
   it("holds the first turn for a card held before it", () => {
     const { turns } = setup();
     turns.start();
