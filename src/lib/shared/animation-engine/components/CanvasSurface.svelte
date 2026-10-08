@@ -86,6 +86,7 @@ captureEffectDiagnostics to the context menu.
     rightProp,
     additionalLayers = [],
     preloadAdditionalLayers = [],
+    additionalLayersAt = undefined,
     tunnelSpectrum = true,
     tunnelPropColors = null,
     primaryPropColors,
@@ -156,6 +157,7 @@ captureEffectDiagnostics to the context menu.
     rightProp: PropState | null;
     additionalLayers?: AdditionalLayerProps[];
     preloadAdditionalLayers?: AdditionalLayerProps[];
+    additionalLayersAt?: (step: number) => AdditionalLayerProps[];
     tunnelSpectrum?: boolean;
     tunnelPropColors?: TunnelPropColorPair | null;
     /** undefined = fall back to the viewer's Settings; null = theme default. */
@@ -506,6 +508,7 @@ captureEffectDiagnostics to the context menu.
       rightProp,
       additionalLayers,
       preloadAdditionalLayers,
+      additionalLayersAt,
       onAdditionalLayerTextureStatusChange,
       tunnelSpectrum,
       tunnelPropColors,
