@@ -1069,12 +1069,16 @@
   }
 
   /* Wherever the title row is short of room, the back button keeps its name
-     for assistive tech but shows only its arrow. */
+     for assistive tech but shows only its arrow. The title stays beside it
+     while it can hold two lines; a narrower column puts the arrow on its own
+     row above the title. */
   @media (max-width: 599.98px),
     (orientation: landscape) and (max-height: 599.98px) {
     .mode-header {
-      flex-wrap: nowrap;
       gap: 0.75rem;
+    }
+    .mode-title {
+      flex: 1 1 15.5rem;
     }
     .nav-label {
       position: absolute;
@@ -1244,6 +1248,8 @@
       --rail-w: 8rem;
       --strip-h: 4rem;
       --sticky-top: calc(var(--header-h) + 0.5rem);
+      /* The title and chooser column never gets narrower than this. */
+      --side-min: 16rem;
       padding-top: var(--sticky-top);
     }
     .mode-top {
@@ -1272,9 +1278,20 @@
     .mode-showcase {
       --sequence-showcase-rail-width: var(--rail-w);
       --sequence-showcase-strip-height: var(--strip-h);
-      width: calc(
-        100svh - var(--sticky-top) - 0.5rem + var(--rail-w) - var(--strip-h)
+      width: min(
+        100svh - var(--sticky-top) - 0.5rem + var(--rail-w) - var(--strip-h),
+        100cqw - var(--hero-gap) - var(--side-min)
       );
+    }
+  }
+
+  /* A narrow short window, such as a small phone on its side or a laptop
+     zoomed to 200%, gives the shell's side margins to the player. */
+  @media (orientation: landscape) and (max-height: 599.98px) and (max-width: 759.98px) {
+    .mode-page {
+      max-width: 100%;
+      padding-left: max(var(--page-pad), env(safe-area-inset-left));
+      padding-right: max(var(--page-pad), env(safe-area-inset-right));
     }
   }
 </style>
