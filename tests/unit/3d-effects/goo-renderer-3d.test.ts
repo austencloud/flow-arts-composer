@@ -10,6 +10,9 @@ import { GooRenderer3D } from "$lib/shared/3d/effects/water/goo-renderer-3d";
 import type { GooTipSource3D } from "$lib/shared/3d/effects/scene-effects/scene-effect-source-3d";
 import { resolveGoo3D } from "$lib/shared/effects/translators/webgl3d-translator";
 
+const RINGS = 25;
+const SIDES = 12;
+
 function source(overrides: Partial<GooTipSource3D> = {}): GooTipSource3D {
   return {
     effect: "goo",
@@ -80,7 +83,7 @@ describe("GooRenderer3D", () => {
       .geometry;
     const positions = geometry.getAttribute("position");
     const normals = geometry.getAttribute("normal");
-    const ringStart = 8 * 12;
+    const ringStart = 12 * SIDES;
     let centerX = 0;
     let centerY = 0;
     let centerZ = 0;
@@ -122,13 +125,13 @@ describe("GooRenderer3D", () => {
     ).geometry.getAttribute("position");
     expect(Array.from(positions.array).every(Number.isFinite)).toBe(true);
     let previous: Vector3 | null = null;
-    for (let ring = 1; ring < 16; ring++) {
-      const start = ring * 12;
+    for (let ring = 1; ring < RINGS - 1; ring++) {
+      const start = ring * SIDES;
       const center = new Vector3();
-      for (let side = 0; side < 12; side++) {
+      for (let side = 0; side < SIDES; side++) {
         center.add(new Vector3().fromBufferAttribute(positions, start + side));
       }
-      center.divideScalar(12);
+      center.divideScalar(SIDES);
       const radial = new Vector3()
         .fromBufferAttribute(positions, start)
         .sub(center)
@@ -136,6 +139,45 @@ describe("GooRenderer3D", () => {
       if (previous) expect(radial.dot(previous)).toBeGreaterThan(0.5);
       previous = radial;
     }
+    renderer.dispose();
+  });
+
+  it("forms a rounded distal bulb wider than the middle neck", () => {
+    const renderer = new GooRenderer3D();
+    const parent = new Object3D();
+    renderer.initialize(parent);
+    renderer.update([source()], 1 / 15);
+    const internal = renderer as unknown as {
+      strands: Array<{
+        active: boolean;
+        tail: Vector3;
+        bend: Vector3;
+        head: Vector3;
+      }>;
+      writeStrands(): void;
+    };
+    const strand = internal.strands.find((candidate) => candidate.active)!;
+    strand.tail.set(0, 0, 0);
+    strand.bend.set(0, -0.25, 0);
+    strand.head.set(0, -0.5, 0);
+    internal.writeStrands();
+    const positions = (
+      parent.children[0] as { geometry: BufferGeometry }
+    ).geometry.getAttribute("position");
+    const radiusAt = (ring: number): number => {
+      const start = ring * SIDES;
+      const center = new Vector3();
+      for (let side = 0; side < SIDES; side++) {
+        center.add(new Vector3().fromBufferAttribute(positions, start + side));
+      }
+      center.divideScalar(SIDES);
+      return new Vector3()
+        .fromBufferAttribute(positions, start)
+        .distanceTo(center);
+    };
+    expect(radiusAt(22)).toBeGreaterThan(radiusAt(12) * 1.3);
+    expect(radiusAt(23)).toBeGreaterThan(radiusAt(12));
+    expect(radiusAt(24)).toBeLessThan(0.00001);
     renderer.dispose();
   });
 
@@ -153,7 +195,7 @@ describe("GooRenderer3D", () => {
       if (!mesh.visible) continue;
       observed = true;
       expect(visibleVertices(renderedPositions(parent))).toBeLessThanOrEqual(
-        17 * 12
+        RINGS * SIDES
       );
     }
     expect(observed).toBe(true);
@@ -161,16 +203,20 @@ describe("GooRenderer3D", () => {
     renderer.update([tip], 1 / 15);
     const positions = renderedPositions(parent);
     let bodyOffset = -1;
-    for (let offset = 0; offset < positions.length; offset += 17 * 12 * 3) {
+    for (
+      let offset = 0;
+      offset < positions.length;
+      offset += RINGS * SIDES * 3
+    ) {
       if (positions[offset] !== 0 || positions[offset + 1] !== 0) {
         bodyOffset = offset;
         break;
       }
     }
     expect(bodyOffset).toBeGreaterThanOrEqual(0);
-    for (const ring of [0, 16]) {
-      const offset = bodyOffset + ring * 12 * 3;
-      for (let side = 1; side < 12; side++) {
+    for (const ring of [0, RINGS - 1]) {
+      const offset = bodyOffset + ring * SIDES * 3;
+      for (let side = 1; side < SIDES; side++) {
         const other = offset + side * 3;
         for (let axis = 0; axis < 3; axis++) {
           expect(positions[other + axis]).toBeCloseTo(
@@ -261,7 +307,7 @@ describe("GooRenderer3D", () => {
     expect(drops.count).toBeGreaterThan(0);
     const tipPosition = new Vector3().fromBufferAttribute(
       tube.geometry.getAttribute("position"),
-      16 * 12
+      (RINGS - 1) * SIDES
     );
     const dropMatrix = new Matrix4();
     drops.getMatrixAt(0, dropMatrix);
@@ -328,7 +374,7 @@ describe("GooRenderer3D", () => {
     );
     for (let frame = 0; frame < 12; frame++) renderer.update(crowded, 1 / 15);
     expect(Array.from(positions).every(Number.isFinite)).toBe(true);
-    expect(positions.length).toBe(64 * 17 * 12 * 3);
+    expect(positions.length).toBe(64 * RINGS * SIDES * 3);
     renderer.dispose();
   });
 });

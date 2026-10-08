@@ -2,15 +2,17 @@ import {
   BufferAttribute,
   BufferGeometry,
   Color,
+  DataTexture,
   DynamicDrawUsage,
+  EquirectangularReflectionMapping,
   InstancedBufferAttribute,
   InstancedMesh,
   Mesh,
+  MeshPhysicalMaterial,
   Object3D,
-  ShaderMaterial,
+  RGBAFormat,
+  SRGBColorSpace,
   SphereGeometry,
-  UniformsLib,
-  UniformsUtils,
   Vector3,
 } from "three";
 import {
@@ -20,7 +22,7 @@ import {
 
 const STRANDS = 64;
 const DROPS = 512;
-const RINGS = 17;
+const RINGS = 25;
 const SIDES = 12;
 const VERTICES = RINGS * SIDES;
 const TELEPORT_DISTANCE = 0.75;
@@ -60,80 +62,86 @@ interface Drop {
   alpha: number;
 }
 
-// The highlight is directional even in dim scenes; the rim catches light as a
-// curved liquid edge instead of reading as a flat translucent glow.
-function createWetMaterial(): ShaderMaterial {
-  return new ShaderMaterial({
+// A tiny owned studio map gives the liquid broad reflections even in a dim
+// scene. The dark surroundings preserve the resolved palette's body color.
+function createStudioMap(): DataTexture {
+  const width = 128;
+  const height = 64;
+  const pixels = new Uint8Array(width * height * 4);
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      const u = x / width;
+      const v = y / height;
+      const key =
+        Math.exp(-Math.pow((u - 0.3) / 0.065, 4)) *
+        Math.exp(-Math.pow((v - 0.38) / 0.24, 4));
+      const fill =
+        Math.exp(-Math.pow((u - 0.7) / 0.11, 4)) *
+        Math.exp(-Math.pow((v - 0.54) / 0.16, 4));
+      const light = Math.min(255, 11 + 235 * key + 105 * fill);
+      const offset = (y * width + x) * 4;
+      pixels[offset] = light;
+      pixels[offset + 1] = light;
+      pixels[offset + 2] = light;
+      pixels[offset + 3] = 255;
+    }
+  }
+  const texture = new DataTexture(pixels, width, height, RGBAFormat);
+  texture.mapping = EquirectangularReflectionMapping;
+  texture.colorSpace = SRGBColorSpace;
+  texture.needsUpdate = true;
+  return texture;
+}
+
+function createWetMaterial(envMap: DataTexture): MeshPhysicalMaterial {
+  const material = new MeshPhysicalMaterial({
+    color: 0xffffff,
     vertexColors: true,
+    roughness: 0.12,
+    metalness: 0.14,
+    clearcoat: 1,
+    clearcoatRoughness: 0.08,
+    envMap,
+    envMapIntensity: 2.1,
     transparent: true,
     depthWrite: false,
     fog: true,
-    uniforms: UniformsUtils.merge([UniformsLib.fog]),
-    vertexShader: `
-    varying vec3 vNormal;
-    varying vec3 vView;
-    varying vec3 vColor;
-    varying vec3 vHighlight;
-    varying float vAlpha;
-    attribute vec3 aHighlight;
-    attribute float aAlpha;
-    #include <fog_pars_vertex>
-    void main() {
-      vec4 localPosition = vec4(position, 1.0);
-      vec3 localNormal = normal;
-      vec3 tint = color;
-      #ifdef USE_INSTANCING
-        localPosition = instanceMatrix * localPosition;
-        vec3 inverseScaleSq = vec3(
-          1.0 / max(dot(instanceMatrix[0].xyz, instanceMatrix[0].xyz), 0.000001),
-          1.0 / max(dot(instanceMatrix[1].xyz, instanceMatrix[1].xyz), 0.000001),
-          1.0 / max(dot(instanceMatrix[2].xyz, instanceMatrix[2].xyz), 0.000001)
-        );
-        localNormal = mat3(instanceMatrix) * (localNormal * inverseScaleSq);
-      #endif
-      #ifdef USE_INSTANCING_COLOR
-        tint *= instanceColor;
-      #endif
-      vec4 worldPosition = modelMatrix * localPosition;
-      vec4 mvPosition = viewMatrix * worldPosition;
-      vNormal = normalize(mat3(viewMatrix * modelMatrix) * localNormal);
-      vView = normalize(-mvPosition.xyz);
-      vColor = tint;
-      vHighlight = aHighlight;
-      vAlpha = aAlpha;
-      gl_Position = projectionMatrix * mvPosition;
-      #include <fog_vertex>
-    }
-  `,
-    fragmentShader: `
-    varying vec3 vNormal;
-    varying vec3 vView;
-    varying vec3 vColor;
-    varying vec3 vHighlight;
-    varying float vAlpha;
-    #include <common>
-    #include <fog_pars_fragment>
-    void main() {
-      vec3 n = normalize(vNormal);
-      vec3 view = normalize(vView);
-      vec3 light = normalize(vec3(-0.48, 0.78, 0.42));
-      float diffuse = 0.18 + 0.53 * max(dot(n, light), 0.0);
-      float fresnel = pow(1.0 - max(dot(n, view), 0.0), 3.0);
-      vec3 reflection = reflect(-view, n);
-      float strip = exp(-pow((reflection.x + 0.27) / 0.13, 2.0))
-        * smoothstep(-0.45, 0.28, reflection.y)
-        * (1.0 - smoothstep(0.68, 0.96, reflection.y));
-      float glint = exp(-pow((reflection.x - 0.38) / 0.22, 2.0)
-        - pow((reflection.y - 0.44) / 0.25, 2.0));
-      vec3 body = vColor * diffuse;
-      vec3 wet = vHighlight * (0.065 * fresnel + 0.8 * strip + 0.65 * glint);
-      gl_FragColor = vec4(body + wet, vAlpha);
-      #include <tonemapping_fragment>
-      #include <colorspace_fragment>
-      #include <fog_fragment>
-    }
-  `,
   });
+  material.onBeforeCompile = (shader) => {
+    shader.vertexShader = shader.vertexShader
+      .replace(
+        "#include <common>",
+        `#include <common>
+         attribute vec3 aHighlight;
+         attribute float aAlpha;
+         varying vec3 vGooHighlight;
+         varying float vGooAlpha;`
+      )
+      .replace(
+        "#include <begin_vertex>",
+        `#include <begin_vertex>
+         vGooHighlight = aHighlight;
+         vGooAlpha = aAlpha;`
+      );
+    shader.fragmentShader = shader.fragmentShader
+      .replace(
+        "#include <common>",
+        `#include <common>
+         varying vec3 vGooHighlight;
+         varying float vGooAlpha;`
+      )
+      .replace(
+        "#include <color_fragment>",
+        `#include <color_fragment>
+         diffuseColor.a *= vGooAlpha;`
+      )
+      .replace(
+        "#include <opaque_fragment>",
+        `outgoingLight += vGooHighlight * 0.025;
+         #include <opaque_fragment>`
+      );
+  };
+  return material;
 }
 
 function makeTubeGeometry(): BufferGeometry {
@@ -220,7 +228,8 @@ export class GooRenderer3D {
     alpha: 1,
   }));
   private readonly tubeGeometry = makeTubeGeometry();
-  private readonly wetMaterial = createWetMaterial();
+  private readonly studioMap = createStudioMap();
+  private readonly wetMaterial = createWetMaterial(this.studioMap);
   private readonly tubeMesh = new Mesh(this.tubeGeometry, this.wetMaterial);
   private readonly sphereGeometry = new SphereGeometry(1, 12, 8);
   private readonly dropHighlights = new InstancedBufferAttribute(
@@ -331,6 +340,7 @@ export class GooRenderer3D {
     this.sphereGeometry.dispose();
     // Each renderer owns the material lifetime, even though both meshes share it.
     this.wetMaterial.dispose();
+    this.studioMap.dispose();
   }
 
   private advanceSource(
@@ -533,6 +543,13 @@ export class GooRenderer3D {
         1,
         Math.max(life, length / (0.42 + 0.3 * strand.tension))
       );
+      const bulbRadius = Math.min(strand.radius * 1.28, length * 0.32);
+      const capArc = bulbRadius / length;
+      const capStart = 1 - capArc;
+      const release =
+        strand.releaseAge < 0
+          ? 1
+          : Math.max(0.06, 1 - strand.releaseAge / 0.14);
       for (let ring = 0; ring < RINGS; ring++) {
         const t = ring / (RINGS - 1);
         const oneMinusT = 1 - t;
@@ -568,16 +585,20 @@ export class GooRenderer3D {
         }
         this.side.normalize();
         this.binormal.crossVectors(this.tangent, this.side).normalize();
-        const bulb = 1 + 0.38 * Math.exp(-Math.pow((t - 0.85) / 0.12, 2));
+        const rise = Math.max(0, Math.min(1, (t - capStart + 0.2) / 0.2));
+        const roundedRise = rise * rise * (3 - 2 * rise);
         const neck =
-          1 - 0.56 * Math.exp(-Math.pow((t - 0.66) / 0.11, 2)) * stretch;
-        const cap = Math.pow(Math.max(0, Math.sin(Math.PI * t)), 0.55);
-        const release =
-          strand.releaseAge < 0
-            ? 1
-            : Math.max(0.06, 1 - strand.releaseAge / 0.14);
+          1 -
+          0.45 * Math.exp(-Math.pow((t - capStart + 0.2) / 0.1, 2)) * stretch;
+        const shaft =
+          strand.radius * (0.52 + 0.12 * t) * neck * Math.min(1, t / 0.055);
         const radius =
-          strand.radius * bulb * neck * cap * (1 - 0.2 * t) * release;
+          (t < capStart
+            ? shaft * (1 - roundedRise) + bulbRadius * roundedRise
+            : bulbRadius *
+              Math.sqrt(
+                Math.max(0, 1 - Math.pow((t - capStart) / capArc, 2))
+              )) * release;
         for (let side = 0; side < SIDES; side++) {
           const angle = (side * Math.PI * 2) / SIDES;
           const offset = base + (ring * SIDES + side) * 3;
