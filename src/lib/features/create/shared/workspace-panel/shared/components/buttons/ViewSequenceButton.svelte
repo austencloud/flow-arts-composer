@@ -116,6 +116,7 @@
 
 <style>
   .view-sequence-button {
+    position: relative;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -148,6 +149,23 @@
       breathe 2.4s ease-in-out 0.5s infinite;
   }
 
+  /* The glow pulse is a second shadow on its own layer whose opacity swells
+     and fades, so the compositor runs it. Animating box-shadow repainted the
+     button every frame while the screen sat idle. Its alphas are picked so
+     the two stacked shadows peak where the old animated shadow peaked. */
+  .view-sequence-button::after {
+    content: "";
+    position: absolute;
+    inset: -1px;
+    border-radius: inherit;
+    opacity: 0;
+    pointer-events: none;
+    box-shadow:
+      0 4px 16px color-mix(in srgb, var(--semantic-success) 17%, transparent),
+      0 0 24px color-mix(in srgb, var(--semantic-success) 35%, transparent);
+    animation: glow-swell 2.4s ease-in-out 0.5s infinite;
+  }
+
   .view-sequence-button.play-purpose {
     width: var(--workspace-play-action-width, 50px);
     min-width: 50px;
@@ -155,11 +173,29 @@
     border-width: 2px;
     transform-origin: center bottom;
     box-shadow:
-      0 6px 18px color-mix(in srgb, var(--semantic-success) 55%, transparent),
-      0 0 24px color-mix(in srgb, var(--semantic-success) 25%, transparent);
-    animation:
-      play-arrive 400ms ease-out both,
-      play-glow 2.4s ease-in-out 0.5s infinite;
+      0 5px 14px color-mix(in srgb, var(--semantic-success) 45%, transparent),
+      0 0 18px color-mix(in srgb, var(--semantic-success) 20%, transparent);
+    animation: play-arrive 400ms ease-out both;
+  }
+
+  .view-sequence-button.play-purpose::after {
+    inset: -2px;
+    box-shadow:
+      0 6px 18px color-mix(in srgb, var(--semantic-success) 18%, transparent),
+      0 0 24px color-mix(in srgb, var(--semantic-success) 13%, transparent);
+  }
+
+  /* Wherever the button stops pulsing, its glow layer stops too. */
+  .view-sequence-button.expand-purpose::after,
+  .view-sequence-button.retry::after,
+  .view-sequence-button.quiet::after,
+  .view-sequence-button:hover::after {
+    animation: none;
+  }
+
+  /* A still Play button keeps its brighter resting glow. */
+  .view-sequence-button.play-purpose.retry:not(.quiet):not(:hover)::after {
+    opacity: 1;
   }
 
   .view-sequence-button.expand-purpose {
@@ -214,18 +250,14 @@
     }
   }
 
-  @keyframes play-glow {
+  @keyframes glow-swell {
     0%,
     100% {
-      box-shadow:
-        0 5px 14px color-mix(in srgb, var(--semantic-success) 45%, transparent),
-        0 0 18px color-mix(in srgb, var(--semantic-success) 20%, transparent);
+      opacity: 0;
     }
 
     50% {
-      box-shadow:
-        0 6px 18px color-mix(in srgb, var(--semantic-success) 55%, transparent),
-        0 0 24px color-mix(in srgb, var(--semantic-success) 30%, transparent);
+      opacity: 1;
     }
   }
 
@@ -253,19 +285,14 @@
     }
   }
 
-  /* Gentle breathing - scale + glow expand together */
+  /* Gentle breathing - scale here, glow on ::after, in step */
   @keyframes breathe {
     0%,
     100% {
       transform: scale(1);
-      box-shadow: 0 4px 12px
-        color-mix(in srgb, var(--semantic-success) 40%, transparent);
     }
     50% {
       transform: scale(1.06);
-      box-shadow:
-        0 4px 16px color-mix(in srgb, var(--semantic-success) 50%, transparent),
-        0 0 24px color-mix(in srgb, var(--semantic-success) 35%, transparent);
     }
   }
 
@@ -390,9 +417,14 @@
 
   /* Reduced motion */
   @media (prefers-reduced-motion: reduce) {
-    .view-sequence-button {
+    .view-sequence-button,
+    .view-sequence-button::after {
       transition: none;
       animation: none;
+    }
+
+    .view-sequence-button.play-purpose:not(.quiet):not(:hover)::after {
+      opacity: 1;
     }
 
     .view-sequence-button:hover {
