@@ -8,7 +8,7 @@
 
 **Tech Stack:** TypeScript, Svelte 5 (two prop pass-throughs), Vitest with the project jsdom config.
 
-**Spec:** `docs/superpowers/specs/active/2026-10-07-trail-resampling-design.md`
+**Spec:** `docs/superpowers/specs/shipped/2026-10-07-trail-resampling-design.md`
 
 **Worktree:** `E:/worktrees/tka-platform/trail-resampling`, branch `codex/trail-resampling`. `node_modules` is a junction into `E:/tka-platform/node_modules`: never run `pnpm install` or `npm install` here, never delete `node_modules`.
 

@@ -1,11 +1,11 @@
 ---
-status: active
+status: shipped
 value: 4
 effort: M
-work_state: in-progress
-remaining: "Implement the motion sub-sampler, feed it to both trail overlays, the fire tracker and the LED renderer, then prove round trails under a throttled frame rate in the browser."
+work_state: complete
+remaining: "None. Motion sub-sampler, both trail overlays, fire path sweep and LED prior passes are implemented and tested; browser proof recorded in the plan."
 depends_on: ''
-plan_path: 'docs/superpowers/plans/active/2026-10-07-trail-resampling.md'
+plan_path: 'docs/superpowers/plans/shipped/2026-10-07-trail-resampling.md'
 tags: [animation-engine, trails, effects, performance]
 last_triaged: '2026-10-07'
 ---
