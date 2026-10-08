@@ -7,6 +7,7 @@ import {
   type FeatureVideoStore,
 } from "$lib/server/feature-video-store";
 import { featureVideoMediaUrl } from "$lib/shared/media-composition/domain/feature-video";
+import { POST_QR_URL_RULE } from "$lib/shared/media-composition/domain/post-project";
 import { takeFileKey } from "$lib/shared/media-composition/domain/post-plan";
 import { tempFeatureRoot } from "./feature-video-test-helpers";
 
@@ -141,6 +142,29 @@ describe("reading", () => {
     await fs.writeFile(path.join(root, "promo", "project.json"), "{ broken");
     const refused = await refusal(() => store.read("promo"));
     expect(refused.status).toBe(422);
+    expect(refused.message).toContain("history/");
+  });
+
+  it("names the field a hand edit broke", async () => {
+    await store.create(promo, NOW);
+    await store.applyOps(
+      "promo",
+      [{ op: "add-card", qrUrl: "https://tka.run/s/abc123" }],
+      NOW + 1
+    );
+    const file = path.join(root, "promo", "project.json");
+    const text = await fs.readFile(file, "utf8");
+    // A card's link must be https.
+    await fs.writeFile(
+      file,
+      text.replace("https://tka.run/s/abc123", "http://tka.run/s/abc123")
+    );
+    const refused = await refusal(() => store.read("promo"));
+    expect(refused.status).toBe(422);
+    expect(refused.message).toMatch(
+      /unreadable at project\.tracks\.\d+\.items\.\d+\.qrUrl: /
+    );
+    expect(refused.message).toContain(POST_QR_URL_RULE.replace(/\.$/, ""));
     expect(refused.message).toContain("history/");
   });
 });

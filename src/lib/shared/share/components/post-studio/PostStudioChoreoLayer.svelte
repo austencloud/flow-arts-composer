@@ -13,12 +13,15 @@
     displayedBeatNumber,
     cardRenderOptions = null,
     qrSequence = sequence,
+    qrUrl,
   }: {
     sequence: SequenceData;
     displayedBeatNumber?: number;
     cardRenderOptions?: Partial<SequenceExportOptions> | null;
     /** The source behind a labeled `sequence`; what a scan of the card opens. */
     qrSequence?: SequenceData;
+    /** A saved scan link the card's QR shows instead of the account's own code. */
+    qrUrl?: string;
   } = $props();
 
   const highlightedStepIndex = $derived(
@@ -60,6 +63,7 @@
         // not replace its Off, Credit, or Custom selection.
         handLabeling: null,
         qrSequence,
+        qrUrl,
         highlightedStepIndex,
         options: cardRenderOptions,
         automatic,
@@ -73,6 +77,7 @@
     <ChoreoCard
       {sequence}
       {qrSequence}
+      {qrUrl}
       {highlightedStepIndex}
       showHighlight={highlightedStepIndex !== null}
       visibilityOverrides={cardRenderOptions?.visibilityOverrides}

@@ -20,6 +20,7 @@ import {
   createIdAllocator,
   defaultBoxFor,
   findItem,
+  isPostCardQrUrl,
   itemEnd,
   mainItemAt,
   overlaysAnchoredTo,
@@ -1853,6 +1854,8 @@ export interface PostItemPatch {
   animationAppearance?: PostAnimationItem["animationAppearance"] | null;
   cardAppearance?: PostCardItem["cardAppearance"] | null;
   qrAppearance?: PostImageItem["qrAppearance"] | null;
+  /** A card's scan link; null removes it. A link that breaks the rule is passed over. */
+  qrUrl?: string | null;
 }
 
 export function updateItem(
@@ -2017,6 +2020,10 @@ export function updateItem(
   if (item.kind === "card" && patch.cardAppearance !== undefined) {
     if (patch.cardAppearance) next.cardAppearance = patch.cardAppearance;
     else delete next.cardAppearance;
+  }
+  if (item.kind === "card" && patch.qrUrl !== undefined) {
+    if (patch.qrUrl === null) delete next.qrUrl;
+    else if (isPostCardQrUrl(patch.qrUrl)) next.qrUrl = patch.qrUrl;
   }
   if (item.kind === "moves" && patch.mode) next.mode = patch.mode;
   if (item.kind === "titles" && patch.spoken !== undefined) {
