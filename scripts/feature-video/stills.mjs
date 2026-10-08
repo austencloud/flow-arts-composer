@@ -27,7 +27,10 @@ export function parseStillTimes(text) {
   return times;
 }
 
-/** One frame a second, in rows of at most `columns`. */
+/**
+ * One frame a second, in rows of at most `columns`: ceil(seconds) frames,
+ * the count ffmpeg's `fps=1:eof_action=pass` makes.
+ */
 export function contactSheetLayout(seconds, columns = 10) {
   const frames = Math.max(1, Math.ceil(seconds));
   const across = Math.min(columns, frames);
@@ -99,10 +102,38 @@ export async function writeStills(file, times) {
   return written;
 }
 
+/**
+ * How long the video stream runs. A render's audio can end a few
+ * milliseconds after its last frame, and the file's duration counts that.
+ */
+async function videoSeconds(file) {
+  const { durationSeconds } = await probeMedia(file);
+  try {
+    const { stdout } = await execFileAsync(
+      toolPath("ffprobe"),
+      [
+        "-v",
+        "error",
+        "-select_streams",
+        "v:0",
+        "-show_entries",
+        "stream=duration",
+        "-of",
+        "csv=p=0",
+        file,
+      ],
+      { windowsHide: true }
+    );
+    const seconds = Number(stdout.trim());
+    return Number.isFinite(seconds) && seconds > 0 ? seconds : durationSeconds;
+  } catch {
+    return durationSeconds;
+  }
+}
+
 /** Writes the render's contact sheet: one frame a second, 240 px wide each. */
 export async function writeContactSheet(file, columns = 10) {
-  const { durationSeconds } = await probeMedia(file);
-  const layout = contactSheetLayout(durationSeconds, columns);
+  const layout = contactSheetLayout(await videoSeconds(file), columns);
   const folder = stillsFolder(file);
   await fs.mkdir(folder, { recursive: true });
   const output = path.join(folder, `${stem(file)}-contact.jpg`);
@@ -112,7 +143,9 @@ export async function writeContactSheet(file, columns = 10) {
       "-i",
       file,
       "-vf",
-      `fps=1,scale=240:-2,tile=${layout.columns}x${layout.rows}:padding=4:margin=4:color=0x202020`,
+      // pass gives the video's last part second a frame too, so ffmpeg
+      // makes exactly the layout's frames and no tile stays empty.
+      `fps=1:eof_action=pass,scale=240:-2,tile=${layout.columns}x${layout.rows}:padding=4:margin=4:color=0x202020`,
       "-frames:v",
       "1",
       "-q:v",
@@ -121,5 +154,11 @@ export async function writeContactSheet(file, columns = 10) {
     ],
     "a contact sheet"
   );
+  const made = await fs.stat(output).then(
+    () => true,
+    () => false
+  );
+  if (!made)
+    throw new Error(`ffmpeg made no contact sheet of ${path.basename(file)}.`);
   return { file: output, ...layout };
 }

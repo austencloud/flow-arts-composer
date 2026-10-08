@@ -80,6 +80,55 @@ describe.skipIf(!canEncode)("with ffmpeg", () => {
     await fs.rm(folder, { recursive: true, force: true });
   });
 
+  /** A test clip `seconds` long, with a tone `audioSeconds` long if given. */
+  async function makeClip(
+    name: string,
+    seconds: number,
+    audioSeconds?: number
+  ): Promise<string> {
+    const file = path.join(folder, name);
+    await run(toolPath("ffmpeg"), [
+      "-hide_banner",
+      "-loglevel",
+      "error",
+      "-y",
+      "-f",
+      "lavfi",
+      "-i",
+      `testsrc2=s=180x320:r=30:d=${seconds}`,
+      ...(audioSeconds === undefined
+        ? []
+        : ["-f", "lavfi", "-i", `sine=d=${audioSeconds}`, "-c:a", "aac"]),
+      "-c:v",
+      "libx264",
+      "-pix_fmt",
+      "yuv420p",
+      file,
+    ]);
+    return file;
+  }
+
+  /** Mean brightness of the middle of a first-row tile; the padding is 32. */
+  async function tileBrightness(sheet: string, index: number): Promise<number> {
+    const { stdout } = await run(
+      toolPath("ffmpeg"),
+      [
+        "-hide_banner",
+        "-loglevel",
+        "error",
+        "-i",
+        sheet,
+        "-vf",
+        `crop=200:200:${24 + index * 244}:24,format=gray,scale=1:1:flags=area`,
+        "-f",
+        "rawvideo",
+        "-",
+      ],
+      { encoding: "buffer" }
+    );
+    return stdout[0];
+  }
+
   it("writes a still at each time in stills/", async () => {
     const written = await writeStills(clip, [0, 1.5]);
     expect(written).toEqual([
@@ -117,5 +166,23 @@ describe.skipIf(!canEncode)("with ffmpeg", () => {
     ]);
     // Three frames 240 wide, 4 px between them and 4 px around them.
     expect(Number(stdout.trim())).toBe(736);
+  });
+
+  it("sizes the sheet from the video, not audio that runs past it", async () => {
+    const sheet = await writeContactSheet(await makeClip("padded.mp4", 2, 2.4));
+    expect(sheet).toMatchObject({ frames: 2, columns: 2, rows: 1 });
+    expect(await tileBrightness(sheet.file, 1)).toBeGreaterThan(60);
+  });
+
+  it("fills the last tile when the video ends early in a second", async () => {
+    const sheet = await writeContactSheet(await makeClip("short.mp4", 2.2));
+    expect(sheet).toMatchObject({ frames: 3, columns: 3, rows: 1 });
+    expect(await tileBrightness(sheet.file, 2)).toBeGreaterThan(60);
+  });
+
+  it("makes a sheet of a video under half a second", async () => {
+    const sheet = await writeContactSheet(await makeClip("blink.mp4", 0.4));
+    expect(sheet).toMatchObject({ frames: 1, columns: 1, rows: 1 });
+    expect(await tileBrightness(sheet.file, 0)).toBeGreaterThan(60);
   });
 });
