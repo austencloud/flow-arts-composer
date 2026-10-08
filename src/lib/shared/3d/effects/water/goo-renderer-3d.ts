@@ -146,11 +146,11 @@ function makeTubeGeometry(): BufferGeometry {
         const c = a + SIDES;
         const d = b + SIDES;
         indices[index++] = a;
-        indices[index++] = c;
-        indices[index++] = b;
         indices[index++] = b;
         indices[index++] = c;
+        indices[index++] = b;
         indices[index++] = d;
+        indices[index++] = c;
       }
     }
   }

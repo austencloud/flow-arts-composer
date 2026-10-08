@@ -65,6 +65,32 @@ describe("GooRenderer3D", () => {
     expect(parent.children).toHaveLength(0);
   });
 
+  it("points tube normals away from the strand center", () => {
+    const renderer = new GooRenderer3D();
+    const parent = new Object3D();
+    renderer.initialize(parent);
+    renderer.update([source()], 1 / 15);
+    const geometry = (parent.children[0] as { geometry: BufferGeometry })
+      .geometry;
+    const positions = geometry.getAttribute("position");
+    const normals = geometry.getAttribute("normal");
+    const ringStart = 6 * 8;
+    let centerX = 0;
+    let centerY = 0;
+    let centerZ = 0;
+    for (let side = 0; side < 8; side++) {
+      centerX += positions.getX(ringStart + side) / 8;
+      centerY += positions.getY(ringStart + side) / 8;
+      centerZ += positions.getZ(ringStart + side) / 8;
+    }
+    const radialDotNormal =
+      (positions.getX(ringStart) - centerX) * normals.getX(ringStart) +
+      (positions.getY(ringStart) - centerY) * normals.getY(ringStart) +
+      (positions.getZ(ringStart) - centerZ) * normals.getZ(ringStart);
+    expect(radialDotNormal).toBeGreaterThan(0);
+    renderer.dispose();
+  });
+
   it("honors tracked ends and zero emission without leaving stale geometry", () => {
     const renderer = new GooRenderer3D();
     const parent = new Object3D();
