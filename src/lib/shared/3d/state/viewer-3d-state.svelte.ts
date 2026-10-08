@@ -58,6 +58,7 @@ import {
 } from "../domain/viewer-formation-facing";
 import { isWebGL2Available } from "../capabilities/webgl-capabilities";
 import { getBlossomOpeningCamera } from "../environments/scenes/cherry-blossom/blossom-site";
+import { resolveGridJoin3D } from "../services/grid-join-3d";
 import { fits3DViewportNow } from "../capabilities/viewport-3d-gate.svelte";
 import { userProportionsState } from "@austencloud/scene-3d";
 import { createCameraChoreographyState } from "$lib/shared/sequence-viewer/camera-choreography/state.svelte";
@@ -866,7 +867,11 @@ function buildViewer3DState(
     performers: readonly PerformerShotSubject[]
   ) {
     const shot = computeViewerFrontStageShot(performers);
-    if (environmentId === "blossom" && performers.length === 1) {
+    if (
+      environmentId === "blossom" &&
+      performers.length === 1 &&
+      !resolveGridJoin3D(performers[0].loadedSequence)
+    ) {
       const camera = getBlossomOpeningCamera(currentViewportAspect() < 1);
       const [x, y, z] = camera.position;
       const [tx, ty, tz] = camera.target;
