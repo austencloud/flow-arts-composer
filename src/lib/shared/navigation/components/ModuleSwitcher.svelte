@@ -384,6 +384,7 @@
           ? t("nav_ui_back_to_modules")
           : t("nav_ui_back_to_all_modules")}
         aria-hidden={selectedModule === null && !authView}
+        disabled={selectedModule === null && !authView}
         tabindex={selectedModule === null && !authView ? -1 : 0}
         onclick={authView ? handleAuthBack : handleDrillBack}
       >
