@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { BufferGeometry, Object3D } from "three";
+import { BufferGeometry, Object3D, Vector3 } from "three";
 import { GooRenderer3D } from "$lib/shared/3d/effects/water/goo-renderer-3d";
 import type { GooTipSource3D } from "$lib/shared/3d/effects/scene-effects/scene-effect-source-3d";
 import { resolveGoo3D } from "$lib/shared/effects/translators/webgl3d-translator";
@@ -74,20 +74,106 @@ describe("GooRenderer3D", () => {
       .geometry;
     const positions = geometry.getAttribute("position");
     const normals = geometry.getAttribute("normal");
-    const ringStart = 6 * 8;
+    const ringStart = 8 * 12;
     let centerX = 0;
     let centerY = 0;
     let centerZ = 0;
-    for (let side = 0; side < 8; side++) {
-      centerX += positions.getX(ringStart + side) / 8;
-      centerY += positions.getY(ringStart + side) / 8;
-      centerZ += positions.getZ(ringStart + side) / 8;
+    for (let side = 0; side < 12; side++) {
+      centerX += positions.getX(ringStart + side) / 12;
+      centerY += positions.getY(ringStart + side) / 12;
+      centerZ += positions.getZ(ringStart + side) / 12;
     }
     const radialDotNormal =
       (positions.getX(ringStart) - centerX) * normals.getX(ringStart) +
       (positions.getY(ringStart) - centerY) * normals.getY(ringStart) +
       (positions.getZ(ringStart) - centerZ) * normals.getZ(ringStart);
     expect(radialDotNormal).toBeGreaterThan(0);
+    renderer.dispose();
+  });
+
+  it("keeps the tube ring frame continuous as a curve passes through vertical", () => {
+    const renderer = new GooRenderer3D();
+    const parent = new Object3D();
+    renderer.initialize(parent);
+    renderer.update([source()], 1 / 15);
+    const internal = renderer as unknown as {
+      strands: Array<{
+        active: boolean;
+        tail: Vector3;
+        bend: Vector3;
+        head: Vector3;
+      }>;
+      writeStrands(): void;
+    };
+    const strand = internal.strands.find((candidate) => candidate.active)!;
+    strand.tail.set(0, 0, 0);
+    strand.bend.set(0.2, 0.3, 0);
+    strand.head.set(0, 0.6, 0);
+    internal.writeStrands();
+
+    const positions = (
+      parent.children[0] as { geometry: BufferGeometry }
+    ).geometry.getAttribute("position");
+    expect(Array.from(positions.array).every(Number.isFinite)).toBe(true);
+    let previous: Vector3 | null = null;
+    for (let ring = 1; ring < 16; ring++) {
+      const start = ring * 12;
+      const center = new Vector3();
+      for (let side = 0; side < 12; side++) {
+        center.add(new Vector3().fromBufferAttribute(positions, start + side));
+      }
+      center.divideScalar(12);
+      const radial = new Vector3()
+        .fromBufferAttribute(positions, start)
+        .sub(center)
+        .normalize();
+      if (previous) expect(radial.dot(previous)).toBeGreaterThan(0.5);
+      previous = radial;
+    }
+    renderer.dispose();
+  });
+
+  it("keeps one smoothly capped attached body per source", () => {
+    const renderer = new GooRenderer3D();
+    const parent = new Object3D();
+    renderer.initialize(parent);
+    const tip = source();
+    let observed = false;
+    for (let frame = 0; frame < 35; frame++) {
+      tip.position.x += 0.012;
+      tip.position.z += Math.sin(frame * 0.12) * 0.006;
+      renderer.update([tip], 1 / 60);
+      const mesh = parent.children[0]!;
+      if (!mesh.visible) continue;
+      observed = true;
+      expect(visibleVertices(renderedPositions(parent))).toBeLessThanOrEqual(
+        17 * 12
+      );
+    }
+    expect(observed).toBe(true);
+    renderer.clear();
+    renderer.update([tip], 1 / 15);
+    const positions = renderedPositions(parent);
+    let bodyOffset = -1;
+    for (let offset = 0; offset < positions.length; offset += 17 * 12 * 3) {
+      if (positions[offset] !== 0 || positions[offset + 1] !== 0) {
+        bodyOffset = offset;
+        break;
+      }
+    }
+    expect(bodyOffset).toBeGreaterThanOrEqual(0);
+    for (const ring of [0, 16]) {
+      const offset = bodyOffset + ring * 12 * 3;
+      for (let side = 1; side < 12; side++) {
+        const other = offset + side * 3;
+        for (let axis = 0; axis < 3; axis++) {
+          expect(positions[other + axis]).toBeCloseTo(
+            positions[offset + axis]!,
+            5
+          );
+        }
+      }
+    }
     renderer.dispose();
   });
 
@@ -138,7 +224,7 @@ describe("GooRenderer3D", () => {
       tip.params.ambientSpawnRate = 60;
       renderer.update([tip], 1 / 60);
       tip.params.ambientEmission = 0;
-      for (let frame = 0; frame < 17; frame++) renderer.update([tip], 1 / 60);
+      for (let frame = 0; frame < 29; frame++) renderer.update([tip], 1 / 60);
       const visible = parent.children[0]!.visible;
       renderer.dispose();
       return visible;
@@ -203,7 +289,7 @@ describe("GooRenderer3D", () => {
     );
     for (let frame = 0; frame < 12; frame++) renderer.update(crowded, 1 / 15);
     expect(Array.from(positions).every(Number.isFinite)).toBe(true);
-    expect(positions.length).toBe(64 * 13 * 8 * 3);
+    expect(positions.length).toBe(64 * 17 * 12 * 3);
     renderer.dispose();
   });
 });
