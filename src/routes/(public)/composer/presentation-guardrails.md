@@ -90,9 +90,10 @@ announced chapters:
 2. Let the visitor see how a sequence is made or generated.
 3. Carry that same sequence into the views that genuinely change how it is
    seen. The page has one sequence: the hero's draw until the visitor builds
-   or generates one, then the last of those. Every demonstration names it in
-   the same word row (prop chooser, then the word in notation glyphs), and
-   Keep offers that sequence first (2026-10-07).
+   or generates one, then the last of those. Construct, Generate, the tunnel
+   and 3D name it in the shared word row (the word in notation glyphs, with
+   the prop chooser where the demonstration has one); the hero names it in
+   its player's word header, and Keep shows it as a card first (2026-10-07).
 4. Show what can be kept, collected, exported, or shared, with account limits stated plainly.
 5. Place Composer in relation to The Kinetic Alphabet and end at the app.
 

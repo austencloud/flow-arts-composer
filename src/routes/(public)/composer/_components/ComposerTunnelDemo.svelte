@@ -380,7 +380,13 @@
 {#if layout === "band"}
   <div class="tunnel-demo band">
     <div class="band-stage">
-      <ComposerWordRow word={sequence.word ?? ""} live="polite" {propControl} />
+      <!-- The band stays mounted while its stop is parked, so only the
+           current stop announces a new word. -->
+      <ComposerWordRow
+        word={sequence.word ?? ""}
+        live={active ? "polite" : "off"}
+        {propControl}
+      />
       {@render stage()}
       <div class="tunnel-notation">
         <div class="notation-caption">

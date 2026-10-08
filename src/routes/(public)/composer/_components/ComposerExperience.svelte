@@ -56,7 +56,6 @@
   import type { ComposerPropAppearance } from "./composer-prop-appearance";
   import ProjectStory from "./ProjectStory.svelte";
   import ComposerWordRow from "./ComposerWordRow.svelte";
-  import ChoreoCardPreview from "$lib/shared/landing/components/launchpad/ChoreoCardPreview.svelte";
 
   function trackOpenComposer(): void {
     trackCtaClick("hero", {
@@ -617,8 +616,8 @@
 
       <p class="opening-note">
         Free in your browser, no account needed. Guests keep three sequences on
-        this device. The pictures under the player are letters of The Kinetic
-        Alphabet; the sequence is the word they spell.
+        this device. Each step is a letter of The Kinetic Alphabet; the sequence
+        is the word they spell.
       </p>
     </div>
 
@@ -758,7 +757,7 @@
   </section>
 
   <!-- Activation sits on the stop, not the viewer, because small screens
-       hide the viewer and show only the note. -->
+       hide the viewer and show the poster and its note instead. -->
   <section
     class="stop viewer-stop"
     aria-labelledby="viewer-title"
@@ -860,14 +859,19 @@
       </div>
       <!-- The page sequence as the card the app would keep. Rendered from the
            sequence itself, so a hero draw or a fresh build needs no saved
-           thumbnail. It mounts when the stop nears, like the gallery. The
+           thumbnail. Its chunk (the card renderer and its QR modules) loads
+           when the stop nears, like the gallery, not with the page. The
            preview draws the app's canonical card (staff props), not the
            chosen prop; that is the card the app keeps. -->
       <figure class="keeping-card">
         <div class="keeping-card-art">
-          {#if shelfActive}
-            <ChoreoCardPreview sequence={pageSequence.sequence} />
-          {/if}
+          <LazyMount
+            loader={() =>
+              import("$lib/shared/landing/components/launchpad/ChoreoCardPreview.svelte")}
+            active={shelfActive}
+            props={{ sequence: pageSequence.sequence }}
+            debugName="composer keep card"
+          />
         </div>
         <figcaption>{featuredCaption(pageSequence.source)}</figcaption>
       </figure>
@@ -1408,6 +1412,16 @@
      generous; it is the CONTENT that gets the extra 4K width. */
   .keeping {
     padding-block: var(--stop-pad, clamp(2.5rem, 4.5vw, 4.5rem));
+    --keep-intro-gap: clamp(1.5rem, 2.5vw, 2.5rem);
+    /* The gallery's share of the stop. On the stage the intro beside it also
+       holds the card, so its budget leaves 14rem more than the lede alone
+       needed; without the stage the fallback adds the same 14rem back, so
+       the plain page keeps its old height. */
+    --composer-gallery-height: clamp(
+      360px,
+      calc(var(--stop-room, 100dvh + 14rem) - 220px - 14rem),
+      480px
+    );
   }
 
   .keeping-intro {
@@ -1415,17 +1429,32 @@
     grid-template-columns: minmax(0, 0.95fr) minmax(18rem, 1.05fr);
     gap: clamp(1.75rem, 4vw, 4rem);
     align-items: start;
-    margin-bottom: clamp(1.5rem, 2.5vw, 2.5rem);
+    margin-bottom: var(--keep-intro-gap);
   }
 
   .keeping-lede > p {
     margin: 0;
   }
 
+  /* Full size when the room allows. On the stage the card gives way so the
+     intro, its gap and the gallery add up to the stop's room (the 2rem is
+     the caption); without the stage the fallback room leaves the cap in
+     charge. The floor keeps a very short window from erasing the card. */
   .keeping-card {
     margin: 0;
     justify-self: end;
-    width: min(100%, 18rem);
+    width: min(
+      100%,
+      18rem,
+      max(
+        8rem,
+        (
+            var(--stop-room, 200vh) - var(--composer-gallery-height) -
+              var(--keep-intro-gap) - 2rem
+          ) *
+          5 / 7
+      )
+    );
   }
 
   /* 5:7 is the card's own 960x1344 ratio; the preview's img already fills
@@ -1459,11 +1488,6 @@
       calc((var(--composer-gallery-height) - 110px) * 2.28 + 80px)
     );
     margin-inline: auto;
-    --composer-gallery-height: clamp(
-      360px,
-      calc(var(--stop-room, 100dvh) - 220px),
-      480px
-    );
   }
 
   /* px ceiling — see the note on h1. Was 5rem, which the root ramp turned into
@@ -1856,7 +1880,7 @@
   /* Phones: the player is the whole point of this screen, so it keeps its
      width and the hero grows past the fold instead of shrinking it. */
   @media (max-width: 48rem) {
-    .keeping-shelf {
+    .keeping {
       --composer-gallery-height: 36rem;
     }
 
