@@ -526,7 +526,7 @@
   .corner {
     border-right: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.1));
     border-bottom: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.1));
-    background: var(--theme-card-bg, #111922);
+    background: transparent;
   }
 
   .colhead {

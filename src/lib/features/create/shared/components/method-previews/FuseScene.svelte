@@ -24,7 +24,7 @@
   import { SvelteSet } from "svelte/reactivity";
   import MethodPreviewPictograph from "./MethodPreviewPictograph.svelte";
   import { fuseLayout } from "./method-preview-compositions";
-  import { DEMO_SEQUENCE } from "./method-preview-demo";
+  import { DEMO_SEQUENCE, DEMO_STEP_START } from "./method-preview-demo";
   import {
     FUSE_PREVIEW_TIMING,
     fuseFrames,
@@ -47,7 +47,7 @@
     onready,
   }: MethodPreviewSceneProps = $props();
 
-  const frames = fuseFrames(DEMO_SEQUENCE, 2);
+  const frames = fuseFrames(DEMO_SEQUENCE, 2, DEMO_STEP_START.fuse);
 
   let root = $state<HTMLElement | null>(null);
   let fusedRow = $state<HTMLElement | null>(null);

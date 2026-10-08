@@ -27,6 +27,18 @@ describe("Fuse preview frames", () => {
     expect(frames[0]?.motionStartData).toBe(startPictograph(DEMO_SEQUENCE));
     expect(frames[1]?.motionStartData).toBe(DEMO_SEQUENCE.steps[0]);
     expect(frames.map((frame) => frame.motionProgress)).toEqual([0, 0]);
+    expect(frames.map((frame) => frame.stepIndex)).toEqual([0, 1]);
+  });
+
+  it("starts from a later step, leaving from the one before it", () => {
+    const frames = fuseFrames(DEMO_SEQUENCE, 2, 3);
+    expect(frames.map((frame) => frame.stepIndex)).toEqual([3, 4]);
+    expect(frames.map((frame) => frame.step)).toEqual(
+      DEMO_SEQUENCE.steps.slice(3, 5)
+    );
+    expect(frames[0]?.motionStartData).toBe(DEMO_SEQUENCE.steps[2]);
+    expect(frames[1]?.motionStartData).toBe(DEMO_SEQUENCE.steps[3]);
+    expect(frames.map((frame) => frame.motionProgress)).toEqual([0, 0]);
   });
 });
 

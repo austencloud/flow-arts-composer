@@ -5,7 +5,7 @@
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
 import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
 import { DEFAULT_ANIMATION_TIMING } from "$lib/features/create/shared/workspace-panel/sequence-display/domain/models/step-grid-display-models";
-import { DEMO_SEQUENCE } from "./method-preview-demo";
+import { DEMO_SEQUENCE, DEMO_STEP_START } from "./method-preview-demo";
 import { slotWaveBand } from "./method-preview-layout";
 
 /** How long the last roll fades before the next washes in. */
@@ -20,10 +20,13 @@ export interface GenerateRoll {
   offset: number;
 }
 
-/** The resting picture before the first turn: the demo sequence's opening. */
+/**
+ * The resting picture before the first turn: the demo sequence from
+ * Generate's own start, so no other card rests on the same steps.
+ */
 export const FIRST_ROLL: Readonly<GenerateRoll> = Object.freeze({
   sequence: DEMO_SEQUENCE,
-  offset: 0,
+  offset: DEMO_STEP_START.generate,
 });
 
 /** The step cell `index` shows, wrapping around a short roll. */
@@ -36,7 +39,7 @@ export function rollStep(roll: GenerateRoll, index: number): StepData | null {
 /**
  * The roll a turn shows. A fresh draw shows from its first step. Without
  * one, turns step through the demo sequence a window at a time, starting
- * over at its opening after a fresh roll.
+ * over at the resting picture after a fresh roll.
  */
 export function nextRoll(
   current: GenerateRoll,
@@ -45,9 +48,7 @@ export function nextRoll(
 ): GenerateRoll {
   if (fresh && fresh.steps.length > 0) return { sequence: fresh, offset: 0 };
   const length = DEMO_SEQUENCE.steps.length;
-  if (current.sequence !== DEMO_SEQUENCE || length === 0) {
-    return { sequence: DEMO_SEQUENCE, offset: 0 };
-  }
+  if (current.sequence !== DEMO_SEQUENCE || length === 0) return FIRST_ROLL;
   return {
     sequence: DEMO_SEQUENCE,
     offset: (current.offset + Math.max(1, cellCount)) % length,

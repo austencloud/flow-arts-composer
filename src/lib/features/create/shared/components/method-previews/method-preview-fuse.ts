@@ -30,16 +30,18 @@ export const FUSE_PREVIEW_TIMING = Object.freeze({
 });
 
 /**
- * The opening steps, each at the start of its travel, through Fuse's own
- * motion seam: the step, the pose its props leave from (the start position
- * for the first step), and the progress Fuse's cards play on.
+ * `count` steps from index `from`, each at the start of its travel, through
+ * Fuse's own motion seam: the step, the pose its props leave from (the
+ * previous step's end, or the start position for the first step), and the
+ * progress Fuse's cards play on.
  */
 export function fuseFrames(
   sequence: SequenceData,
-  count: number
+  count: number,
+  from = 0
 ): FusePictographMotionFrame[] {
   const frames: FusePictographMotionFrame[] = [];
-  for (let index = 0; index < count; index++) {
+  for (let index = from; index < from + count; index++) {
     const frame = resolveFusePictographMotionFrame(sequence, index);
     if (frame) frames.push(frame);
   }

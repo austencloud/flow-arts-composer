@@ -15,7 +15,8 @@
    * sequence instead.
    *
    * Finished picture: the dice and the latest roll's opening steps. Before
-   * the first turn, the demo sequence's.
+   * the first turn, the demo sequence's from Generate's own start
+   * (DEMO_STEP_START), so no other card rests on the same steps.
    */
   import { onDestroy, untrack } from "svelte";
   import { SvelteSet } from "svelte/reactivity";
