@@ -109,7 +109,11 @@ export function createViewerOrchestratorContextState(
       hasSequence: inputs.getEffectiveSequence() !== null,
 
       isPlayingLocal: inputs.playback.isPlayingLocal,
-      currentStepLocal: inputs.playback.currentStepLocal,
+      // The playhead moves every frame. Read it on demand so this object, and
+      // everything that reads any field of it, is not rebuilt once per frame.
+      get currentStepLocal() {
+        return inputs.playback.currentStepLocal;
+      },
       bpmLocal: inputs.playback.bpmLocal,
       currentLetter: inputs.getIsHandPath()
         ? null
@@ -310,7 +314,9 @@ export function createViewerOrchestratorContextState(
       splitPanePlayback: {
         animationState: inputs.modalAnimationState,
         animationLoading: inputs.interactive.animationLoading,
-        currentStep: inputs.playback.currentStepLocal,
+        get currentStep() {
+          return inputs.playback.currentStepLocal;
+        },
         isPlaying: inputs.playback.isPlayingLocal,
         currentLetter: inputs.getIsHandPath()
           ? null
