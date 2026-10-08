@@ -102,6 +102,22 @@
     playbackSequenceId = sequenceId;
   }
 
+  // Viewer parity: clicking a cell snaps the player to that step and keeps its
+  // play state, as the sequence viewer's rail and the Construct stop do. The
+  // player publishes its seek through onSeekRef and re-registers only when the
+  // callback identity changes, so these stay stable across LazyMount's rebuilt
+  // props objects.
+  let seekToStep: ((step: number) => void) | null = null;
+  function handleSeekRef(seek: ((step: number) => void) | null) {
+    seekToStep = seek;
+  }
+  function handleStepClick(stepNumber: number) {
+    seekToStep?.(stepNumber);
+  }
+  function handleStartClick() {
+    seekToStep?.(0);
+  }
+
   // The page sequence changes when the hero rolls or Construct composes; the
   // generator shows it when it is in view. Its own draws set the local copy
   // and then write the page sequence, so the write comes back with the id
@@ -182,6 +198,8 @@
               activeMode: "generate",
               selectedStepNumber,
               autoFocusSelectedStep: false,
+              onStepClick: handleStepClick,
+              onStartClick: handleStartClick,
               fitAllSteps: true,
               sequenceWord: current?.word ?? "",
               leftPropTypeOverride: leftPropType,
@@ -214,6 +232,7 @@
             playbackAllowed: active && inViewport,
             resumeWhenPlaybackAllowed: true,
             onStepChange: handlePlayerStepChange,
+            onSeekRef: handleSeekRef,
             leftPropType,
             rightPropType: rightPropType ?? leftPropType,
             ...appearance,

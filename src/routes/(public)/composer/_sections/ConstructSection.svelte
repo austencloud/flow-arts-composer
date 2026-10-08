@@ -811,6 +811,8 @@
                   arrivalSequence={composedSequence}
                   leftPropTypeOverride={effectiveLeftPropType}
                   rightPropTypeOverride={effectiveRightPropType}
+                  leftColorOverride={primaryPropColors?.left}
+                  rightColorOverride={primaryPropColors?.right}
                   sequenceWord={rawWord}
                 />
               {:else}
@@ -835,6 +837,8 @@
                   getDurationDisplay={(stepIndex) => String(stepIndex + 1)}
                   leftPropTypeOverride={effectiveLeftPropType}
                   rightPropTypeOverride={effectiveRightPropType}
+                  leftColorOverride={primaryPropColors?.left}
+                  rightColorOverride={primaryPropColors?.right}
                   sequenceWord={rawWord}
                 />
               {/if}
