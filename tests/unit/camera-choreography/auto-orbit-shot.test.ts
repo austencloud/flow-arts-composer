@@ -52,6 +52,13 @@ describe("camera-choreography shot helpers", () => {
     }
   });
 
+  it("includes the actual staff half length in joined bounds", () => {
+    const joined = { ...fakePerformer(0, 0), loadedSequence: joinedSequence };
+    const standard = computeGroupBounds([{ ...joined, staffHalfLength: 0.43 }]);
+    const longStaff = computeGroupBounds([{ ...joined, staffHalfLength: 2 }]);
+    expect(longStaff.radius - standard.radius).toBeGreaterThan(1);
+  });
+
   it("uses the widest joined performer, even when it is off center", () => {
     const bounds = computeGroupBounds([
       fakePerformer(-2, 0),
